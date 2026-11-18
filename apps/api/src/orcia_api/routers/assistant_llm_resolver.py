@@ -8,7 +8,6 @@ from typing import Any
 
 from fastapi import Request
 
-from orcia_api.dependencies import get_or_create_shared_db_engine
 from orcia_api.routers.assistant_llm_providers import (
     ResolvedLiveLlmEndpoint,
     is_safe_llm_endpoint_url,
@@ -76,13 +75,15 @@ async def resolve_configured_llm_endpoint(
         if chosen is not None:
             return chosen
 
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
+
+    engine = get_configured_db_engine(request)
+    if engine is not None:
         t0 = time.perf_counter()
         try:
             import orcia_core.bootstrap as bstrap
             import orcia_core.orchestration._internal.sql_ai_model_mappings as bm
 
-            engine = get_or_create_shared_db_engine(request)
             auth = getattr(request.app.state, "auth_service", None)
             tier = requested_tier or "medium"
             if auth is not None and getattr(auth, "vault_cipher", None) is not None:

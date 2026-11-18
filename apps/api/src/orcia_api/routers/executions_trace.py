@@ -24,6 +24,7 @@ from orcia_api.dependencies import (
     get_reflexive_event_stream_broker,
     get_reflexive_runtime_service,
 )
+from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.reflexive_execution import (
     ApproveReflexiveWriteRequest,
@@ -79,7 +80,7 @@ def _resolve_has_read_source(request: Request) -> bool:
     return raw not in _DENIED_HEADER_VALUES
 
 
-def _enforce_not_observer(
+async def _enforce_not_observer(
     request: Request,
     *,
     persona_key: str | None,
@@ -95,7 +96,9 @@ def _enforce_not_observer(
     ):
         raise ObserverModeReadOnlyError(instance=str(request.url.path))
     if workspace_id:
-        ws_access = get_auth_service(request).evaluator.resolve_workspace_access(user, workspace_id)
+        auth_svc = get_auth_service(request)
+        await sync_evaluator_topology_from_pg(request, auth_svc)
+        ws_access = auth_svc.evaluator.resolve_workspace_access(user, workspace_id)
         if ws_access is not None and ws_access.access_mode == "READ_ONLY_OBSERVER":
             raise ObserverModeReadOnlyError(instance=str(request.url.path))
     return user
@@ -124,7 +127,7 @@ async def start_reflexive_execution_endpoint(
     persona_key: PersonaQuery = None,
 ) -> ReflexiveExecutionSnapshotResponse:
     """Launch a reflexive execution loop (`run_in_background=True` or synchronous await)."""
-    user = _enforce_not_observer(
+    user = await _enforce_not_observer(
         request, persona_key=persona_key, workspace_id=payload.workspace_id
     )
     locale = resolve_locale(request.headers.get("accept-language"))
@@ -247,7 +250,7 @@ async def synthesize_reflexive_execution_now_endpoint(
     persona_key: PersonaQuery = None,
 ) -> ReflexiveExecutionSnapshotResponse:
     """Request immediate synthesis on the active or paused reflexive session."""
-    _enforce_not_observer(request, persona_key=persona_key)
+    await _enforce_not_observer(request, persona_key=persona_key)
     snapshot = await runtime.request_synthesize_now(execution_id, resume_if_idle=True)
     return _serialize_snapshot(snapshot, _trace(request))
 
@@ -264,7 +267,7 @@ async def cancel_reflexive_execution_endpoint(
     persona_key: PersonaQuery = None,
 ) -> ReflexiveExecutionSnapshotResponse:
     """Cancel an in-flight or waiting reflexive execution without triggering synthesis."""
-    _enforce_not_observer(request, persona_key=persona_key)
+    await _enforce_not_observer(request, persona_key=persona_key)
     snapshot = await runtime.cancel_execution(execution_id)
     return _serialize_snapshot(snapshot, _trace(request))
 
@@ -282,7 +285,7 @@ async def approve_reflexive_write_endpoint(
     persona_key: PersonaQuery = None,
 ) -> ReflexiveExecutionSnapshotResponse:
     """Statelessly reload `WAITING_WRITE_PREVIEW` session, enforce write gate, and resume."""
-    user = _enforce_not_observer(request, persona_key=persona_key)
+    user = await _enforce_not_observer(request, persona_key=persona_key)
     snapshot = await runtime.get_session_snapshot(execution_id)
     if snapshot is None:
         raise ResourceNotFoundError(

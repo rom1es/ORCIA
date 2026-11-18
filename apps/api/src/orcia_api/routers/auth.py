@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import os
-
 import sqlalchemy as sa
 from fastapi import APIRouter, Request, Response
 
@@ -68,7 +66,9 @@ router.include_router(session_router)
 
 
 def _pg_enabled() -> bool:
-    return os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1"
+    from orcia_api.dependencies._core_providers import is_pg_runtime_active
+
+    return is_pg_runtime_active()
 
 
 @router.get(

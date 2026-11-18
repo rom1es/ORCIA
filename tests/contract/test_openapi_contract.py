@@ -22,7 +22,9 @@ def test_schemathesis_openapi_contract_compliance(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Fuzz all registered OpenAPI 3.1 operations via Schemathesis ASGI runner."""
-    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
+    monkeypatch.setenv("ORCIA_ENV_FILE", "/nonexistent/.env")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.delenv("ORCIA_ENABLE_PG_SESSION_MAKER", raising=False)
     app = create_app()
     schema = schemathesis.openapi.from_dict(app.openapi())
 

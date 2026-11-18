@@ -84,19 +84,46 @@
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
-> *[En attente d'implémentation de la Story 22.1]*
-
 ### 3.1 Fichiers Développés & Modifiés
 | Fichier | Nature (Création / Modification / Refactoring) | Description synthétique |
 | :--- | :--- | :--- |
-| `packages/orcia-core/src/orcia_core/permissions/evaluator.py` | Modification | *[À compléter après implémentation]* |
-| `apps/api/src/orcia_api/...` | Modification | *[À compléter après implémentation]* |
-| `apps/web/src/components/platformSetupStore.tsx` | Modification | *[À compléter après implémentation]* |
-| `apps/web/src/features/cockpit/...` | Modification | *[À compléter après implémentation]* |
+| `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_workspaces.py` | Création | Adaptateur PG18 `create_workspace_on_postgres18` (`UUIDv7`, `slug` exact via `resolve_exact_workspace_slug`, membership propriétaire `PLATFORM_ADMIN` et synchronisation `platform_settings`). |
+| `packages/orcia-core/src/orcia_core/bootstrap/__init__.py` | Modification | Export public de `WorkspaceCreationRecord`, `create_workspace_on_postgres18` et `resolve_exact_workspace_slug`. |
+| `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_platform_setup_relational_sync.py` | Modification | Conservation exacte de `ws.slug` (`^[a-z0-9-]+$`) et création idempotente de `workspace_memberships` `PLATFORM_ADMIN`. |
+| `packages/orcia-core/src/orcia_core/permissions/evaluator.py` | Modification | `MatrixPermissionEvaluator.resolve_workspace_access` : `PLATFORM_ADMIN` sur `STANDARD` $\rightarrow$ `CONTRIBUTOR_ACTION_REQUIRED` (`GLOBAL_ADMIN`), `CONFIDENTIAL_RESTRICTED` sans délégation $\rightarrow$ `None`, `OBSERVER` $\rightarrow$ `READ_ONLY_OBSERVER`. |
+| `apps/api/src/orcia_api/schemas/auth_and_org.py` | Modification | Ajout des schémas `WorkspaceCreateRequest` et `WorkspaceCreateResponse` (`UUIDv7` + `slug` + droits évalués). |
+| `apps/api/src/orcia_api/routers/org_and_workspaces.py` | Modification | Route `POST /api/v1/workspaces` persistée PG18 retournant `UUIDv7` + `slug` exact, avec `enforce_observer_headers_guard` et mise à jour de l'évaluateur. |
+| `apps/api/src/orcia_api/routers/_finops_scope_guards.py` | Modification | Suppression de `resolve_workspace_uuid_or_setup_key` / contournement `ws-\d+`, validation stricte `validate_uuid`, synchronisation des memberships PG18 dans `sync_evaluator_topology_from_pg`. |
+| `apps/api/src/orcia_api/dependencies/portal_and_assistant.py` | Modification | Injection `ORCIA_ENV` / `ORCIA_BOOTSTRAP_TOKEN` dans `get_accostage_service` avec refus strict du secret par défaut hors `local`/`test`. |
+| `apps/api/src/orcia_api/dependencies/` (`_core_providers.py`, `orchestration_and_settings.py`, `reflexive_execution.py`) & `apps/api/src/orcia_api/routers/` (`24` routeurs/helpers dont `gates.py`, `executions_trace.py`, `workflow_triggers.py`, `workspace_datasources.py`, `autonomy_contracts.py`, `enterprise_connectors.py`, `_auth_session_routes.py`, etc.) | Modification | Purge intégrale de `ORCIA_DISABLE_PG_BOOTSTRAP_SYNC`, suppression des contournements `ws-\d+` (validation `validate_uuid` ajoutée aussi sur `/api/v1/webhooks/triggers/{trigger_id}`), et alignement `sync_evaluator_topology_from_pg` sur `gates.py` / `executions_trace.py`. |
+| `packages/api-client/` (`openapi.json`, `src/domains/authAndShell.ts`, `src/generated/auth_and_org.ts`, `src/generated/schema.ts`) | Modification (généré) | Régénération OpenAPI 3.1 `0-diff` avec `createWorkspace` (`POST /api/v1/workspaces`). |
+| `packages/ui/src/primitives/WorkspaceControlCenter.tsx` | Modification | Support de la propagation et du typage du `slug` d'espace. |
+| `apps/web/src/components/platformSetupWorkspaces.ts`, `platformSetupGovernanceActions.ts`, `platformSetupHydration.ts`, `platformSetupOrgAndGovernance.ts`, `platformSetupStore.tsx` | Création / Refactoring / Modification | Découpage modulaire de `platformSetupStore.tsx`, suppression de `"ws-${workspaces.length + 1}"`, attente asynchrone de `POST /api/v1/workspaces` (`createWorkspaceViaServer`), propagation exacte de `slug`, suppression des `.catch(() => undefined)` et garde contre l'écrasement `DAY0_CLEAN_RESET` après mutation utilisateur. |
+| `apps/web/src/features/cockpit/` (`index.tsx`, `CockpitHumanLedGovernanceSection.tsx`, `CockpitRunsSection.tsx`) | Modification / Création | Suppression de toutes les occurrences codées en dur de `"marc"`, résolution de l'acteur depuis `useAuthSessionStore`, découpage de `CockpitRunsSection.tsx`. |
+| `apps/web/src/features/workspaces/` (`CreateWorkspaceCard.tsx`, `WorkspaceStudioCardsAndDetailView.tsx`, `index.tsx`) & `apps/web/src/routes/wizards.tsx` | Modification | Remontée des erreurs RFC 9457 sans `.catch(() => undefined)`, propagation de `slug` et `activeHat`. |
+| `tests/unit/test_story_22_1_workspaces_permissions_and_bootstrap.py`, `tests/integration/test_story_22_1_workspaces_permissions_pg18.py`, `tests/security/test_story_22_1_security_guards.py`, `apps/web/src/__tests__/story-22-1-workspace-uuid-and-identity.test.tsx` | Création | Nouveaux harnais de validation Story 22.1 couvrant Couches 1a, 1b, 2 (`testcontainers` PG18) et Sécurité. |
+| `tests/unit/test_story_17_2_pg_guard_and_reconcilers.py`, `tests/contract/test_openapi_contract.py`, `apps/web/src/__tests__/vitest.setup.ts`, `apps/web/src/__tests__/i18n-and-shell.test.tsx` | Modification | Réalignement sur `ORCIA_ENABLE_PG_SESSION_MAKER="1"`, isolation `.env` sans `ORCIA_DISABLE_PG_BOOTSTRAP_SYNC`, mock `POST /api/v1/workspaces` retournant un `UUIDv7` synthétique + `slug`, suppression de `"ws-1"` dans les tests shell/espaces. |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
-- **Couverture de tests** : *[$\ge 90\%$ requis à mesurer après implémentation]*
-- **Qualité statique & Architecture** : `ruff`, `mypy --strict`, `pnpm typecheck`, `lint-imports`, `lint_spine.py`, `gitnexus_detect_changes()` *[À compléter]*
+- **Couverture de tests (ciblée Story 22.1)** :
+  - `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_workspaces.py` : **`93 %`** (`100` instructions, `3` manquées sur exécution unit + sécurité + PG18 Story 22.1).
+  - `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_platform_setup_relational_sync.py` : **`96 %`** (`128` instructions, `3` manquées sur `tests/unit`).
+  - `packages/orcia-core/src/orcia_core/permissions/evaluator.py` : **`96 %`** (`158` instructions, `3` manquées sur `tests/unit`).
+  - Note : la mesure globale `--cov=packages/orcia-core` sur `tests/unit tests/security tests/evals` seuls s'établit à `84.24 %` (les adaptateurs `sql_*.py` sont exercés dans `tests/integration/` contre PostgreSQL 18).
+- **Qualité statique & Architecture** :
+  - `.venv/bin/ruff check . && .venv/bin/ruff format --check .` : **`0` erreur** (`All checks passed!`, `1150 files already formatted`).
+  - `.venv/bin/mypy --strict packages/orcia-core apps/api apps/worker` : **`0` erreur** (`Success: no issues found in 480 source files`).
+  - `.venv/bin/lint-imports` : **`5 contracts kept, 0 broken`** (`562` fichiers, `4025` dépendances analysées).
+  - `.venv/bin/python scripts/export_openapi.py --check` : **`0-diff`** (`OpenAPI 3.1` & SDK TS synchronisés).
+  - `.venv/bin/python .agent/skills/bmad-architecture/scripts/lint_spine.py --workspace docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24` : **`0` finding** (`"ok": true`).
+  - `pnpm turbo run lint typecheck test` : **`9/9` tâches vertes** (`@orcia/api-client` `13/13`, `@orcia/ui` `110/110`, `@orcia/web` `156/156` répartis sur `39/39` fichiers).
+  - `gitnexus_detect_changes({scope: "all", repo: "/home/romain/Documents/Projects/ORCIA"})` : `changed_count: 151`, `affected_count: 370`, `changed_files: 52`, `risk_level: "critical"` (cohérent avec le refactoring transverse `evaluator.py`, `platformSetupStore.tsx` et routeurs FastAPI).
 
 ### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17`)
-- *[À compléter après exécution des 5 couches `AD-17`, test `F5` et `pnpm db:reset`]*
+- **Couche 1a (Python unitaires)** : `.venv/bin/pytest tests/unit tests/security tests/evals -q` $\rightarrow$ **`806/806` tests verts** (dont `6/6` dans `test_story_22_1_workspaces_permissions_and_bootstrap.py` et `4/4` dans `test_story_17_2_pg_guard_and_reconcilers.py`).
+- **Couche 1b (TypeScript / Vitest + survie `F5`)** : `pnpm turbo run lint typecheck test` $\rightarrow$ **`156/156`** (`apps/web`, dont `3/3` dans `story-22-1-workspace-uuid-and-identity.test.tsx` avec cycle `unmount()`/`render()` et `26/26` dans `i18n-and-shell.test.tsx`), **`110/110`** (`packages/ui`), **`13/13`** (`packages/api-client`).
+- **Couche 2 (Intégration HTTP $\rightarrow$ PostgreSQL 18 réel `testcontainers`)** :
+  - `.venv/bin/pytest tests/integration/test_story_22_1_workspaces_permissions_pg18.py tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py tests/integration/api/test_story_18_1_workspace_sources_postgres18.py tests/integration/test_http_vertical_day0_and_agents_postgres18.py -q` $\rightarrow$ **`8/8` tests verts**, validant `POST /api/v1/workspaces` (`UUIDv7` + `slug` exact + `workspace_memberships` `PLATFORM_ADMIN` vérifiés par `SELECT`), `POST /api/v1/workspaces/{uuid}/datasources`, `POST /api/v1/gates/deterministic/evaluate` (`200`) et `POST /api/v1/executions/reflexive` (`200`/`201`) sous `PLATFORM_ADMIN`, ainsi que le rejet `403 ERR_OBSERVER_MODE_READ_ONLY` sous header explicite et sous vrai JWT `OBSERVER`.
+- **Couche 3 (Contrats & Architecture)** : `export_openapi.py --check` (`0-diff`) & `lint-imports` (`5/5` contrats gardés). Note : lors de l'exécution `tests/contract/test_openapi_contract.py`, `test_openapi_client_zero_diff_gate` passe ; `test_schemathesis_openapi_contract_compliance` échoue encore sur un défaut pré-existant hors périmètre 22.1 (`POST /api/v1/executions/reflexive` : `StartReflexiveExecutionRequest.step_delay_ms <= 5000` vs `ReflexiveRuntimeConfig.step_delay_ms <= 500`), le point `/api/v1/webhooks/triggers/{trigger_id}` ayant été sécurisé via `validate_uuid`.
+- **Couche Sécurité (`tests/security/`)** : `test_story_22_1_security_guards.py` $\rightarrow$ rejet `422` sur `"ws-1"`, rejet `403 ERR_OBSERVER_MODE_READ_ONLY` pour JWT `OBSERVER` et header `X-Orcia-Access-Mode: READ_ONLY_OBSERVER`, isolation stricte des espaces `CONFIDENTIAL_RESTRICTED` sans délégation (`403 ERR_SCOPE_ACCESS_DENIED`).
+- **Reset Jour 0 (`infra/scripts/maintenance/09_reset_db_first_boot.py --dry-run`)** : exécuté avec succès (`cleared_tables=72, deleted_rows=20, remaining_users=0, remaining_org_units=0, remaining_workspaces=0`).

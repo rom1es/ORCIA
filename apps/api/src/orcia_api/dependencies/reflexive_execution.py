@@ -48,8 +48,6 @@ def _resolve_reflexive_session_maker(
     if cached is not None:
         return cached
 
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") == "1":
-        return None
     has_pg_env = bool((os.environ.get("DATABASE_URL") or "").strip()) or (
         os.environ.get("ORCIA_ENABLE_PG_SESSION_MAKER") == "1"
     )

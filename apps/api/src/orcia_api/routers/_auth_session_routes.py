@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import os
-
 from fastapi import APIRouter, Query, Request, Response
 
 from orcia_api.dependencies import get_auth_service, get_or_create_shared_db_engine
@@ -44,7 +42,9 @@ router = APIRouter()
 
 
 def _pg_enabled() -> bool:
-    return os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1"
+    from orcia_api.dependencies._core_providers import is_pg_runtime_active
+
+    return is_pg_runtime_active()
 
 
 async def _rotate_refresh_and_hydrate(

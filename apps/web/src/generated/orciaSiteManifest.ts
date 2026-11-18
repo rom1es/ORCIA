@@ -600,7 +600,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "phaseOrStory": "Story 22.1",
       "reportFile": "22-1-socle-identite-uuid-workspaces-permissions-admin-et-fin-bypass-pg-tech-lead-report.md",
       "domain": "Vague 0 (REM-01, REM-02, REM-07) — Unification UUIDv7 Workspaces (0 \"ws-1\"), Fix 403 PLATFORM_ADMIN & Fin \"marc\" / ORCIA_DISABLE_PG_BOOTSTRAP_SYNC",
-      "summary": "Pré-implémentation : suppression génération \"ws-N\", propagation slug exact (workspaces), membership propriétaire auto + règle MatrixPermissionEvaluator STANDARD vs CONFIDENTIAL_RESTRICTED, purge \"marc\" cockpit & suppression du drapeau de bypass PG (CAP-011, CAP-022, CAP-050, CAP-067, CAP-072, CAP-076, CAP-080, CAP-180)."
+      "summary": "Implémentée (done) : création POST /api/v1/workspaces retournant UUIDv7 + slug exact (sql_workspaces.py), conservation ws.slug + membership propriétaire PLATFORM_ADMIN, règle MatrixPermissionEvaluator (STANDARD → CONTRIBUTOR_ACTION_REQUIRED, CONFIDENTIAL_RESTRICTED → None, OBSERVER → READ_ONLY_OBSERVER), purge de \"marc\" dans Cockpit, injection ORCIA_ENV/ORCIA_BOOTSTRAP_TOKEN dans get_accostage_service, purge intégrale ORCIA_DISABLE_PG_BOOTSTRAP_SYNC (packages/ & apps/) et validation 5 couches AD-17 (806 tests unit/sec/eval, 156/156 Web, 110/110 UI, 13/13 API-Client, testcontainers PG18)."
     },
     {
       "date": "2026-11-18",

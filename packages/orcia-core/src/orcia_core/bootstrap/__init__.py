@@ -90,6 +90,11 @@ from orcia_core.bootstrap._internal.sql_workspace_datasources import (
     trigger_workspace_datasource_sync_on_postgres18,
     update_workspace_datasource_on_postgres18,
 )
+from orcia_core.bootstrap._internal.sql_workspaces import (
+    WorkspaceCreationRecord,
+    create_workspace_on_postgres18,
+    resolve_exact_workspace_slug,
+)
 from orcia_core.bootstrap.durable_wizards import (
     WIZARD_STEPS_BY_TYPE,
     DemoWorkspaceProvisionResult,
@@ -256,6 +261,9 @@ __all__ = [
     "WizardStepDescriptor",
     "WizardType",
     "WorkspaceBootstrapInput",
+    "WorkspaceCreationRecord",
+    "create_workspace_on_postgres18",
+    "resolve_exact_workspace_slug",
     "SqlAutonomyContractRepository",
     "persist_autonomous_run_outcome_on_postgres18",
     "build_default_system_bootstrap_service",

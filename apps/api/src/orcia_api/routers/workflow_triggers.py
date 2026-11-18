@@ -12,7 +12,7 @@ from orcia_api.routers._finops_auth_guards import (
     enforce_workspace_governed_mutation,
     resolve_finops_read_scope,
 )
-from orcia_api.routers._finops_scope_guards import resolve_workspace_uuid_or_setup_key
+from orcia_api.routers._finops_scope_guards import validate_uuid
 from orcia_api.routers._workflow_triggers_helpers import (
     TRIGGER_PROBLEM_RESPONSES,
     authenticate_platform_alert_webhook,
@@ -62,7 +62,7 @@ async def list_workflow_triggers(
     user: Annotated[UserIdentity, Depends(resolve_request_user)],
     svc: Annotated[TriggerDispatcherService, Depends(get_trigger_dispatcher_service)],
 ) -> WorkflowTriggerListResponse:
-    ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
+    ws_uuid = validate_uuid(workspace_id, "workspace_id")
     await resolve_finops_read_scope(request, user, "WORKSPACE", ws_uuid)
     items = await svc.list_triggers(workspace_id=ws_uuid, workflow_id=workflow_id)
     return WorkflowTriggerListResponse(
@@ -86,7 +86,7 @@ async def create_workflow_trigger(
     user: Annotated[UserIdentity, Depends(resolve_request_user)],
     svc: Annotated[TriggerDispatcherService, Depends(get_trigger_dispatcher_service)],
 ) -> WorkflowTriggerResponse:
-    ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
+    ws_uuid = validate_uuid(workspace_id, "workspace_id")
     await enforce_workspace_governed_mutation(request, user, ws_uuid)
     created = await svc.create_trigger(
         CreateTriggerCommand(
@@ -125,7 +125,7 @@ async def update_workflow_trigger(
     svc: Annotated[TriggerDispatcherService, Depends(get_trigger_dispatcher_service)],
 ) -> WorkflowTriggerResponse:
     del workflow_id
-    ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
+    ws_uuid = validate_uuid(workspace_id, "workspace_id")
     await enforce_workspace_governed_mutation(request, user, ws_uuid)
     updated = await svc.update_trigger(
         workspace_id=ws_uuid,
@@ -161,7 +161,7 @@ async def delete_workflow_trigger(
     svc: Annotated[TriggerDispatcherService, Depends(get_trigger_dispatcher_service)],
 ) -> DeleteWorkflowTriggerResponse:
     del workflow_id
-    ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
+    ws_uuid = validate_uuid(workspace_id, "workspace_id")
     await enforce_workspace_governed_mutation(request, user, ws_uuid)
     await svc.delete_trigger(workspace_id=ws_uuid, trigger_id=trigger_id)
     return DeleteWorkflowTriggerResponse(
@@ -184,7 +184,7 @@ async def fire_manual_workflow_trigger(
     svc: Annotated[TriggerDispatcherService, Depends(get_trigger_dispatcher_service)],
 ) -> TriggerDispatchResponse:
     del workflow_id
-    ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
+    ws_uuid = validate_uuid(workspace_id, "workspace_id")
     await enforce_workspace_governed_mutation(request, user, ws_uuid)
     entity, _ = await svc.get_trigger(trigger_id)
     if entity.workspace_id != ws_uuid:
@@ -214,7 +214,7 @@ async def reset_workflow_trigger_circuit(
     svc: Annotated[TriggerDispatcherService, Depends(get_trigger_dispatcher_service)],
 ) -> WorkflowTriggerResponse:
     del workflow_id
-    ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
+    ws_uuid = validate_uuid(workspace_id, "workspace_id")
     await enforce_workspace_governed_mutation(request, user, ws_uuid)
     reset = await svc.reset_circuit(workspace_id=ws_uuid, trigger_id=trigger_id)
     return serialize_trigger(reset)
@@ -233,6 +233,7 @@ async def ingest_workflow_trigger_webhook(
 ) -> TriggerDispatchResponse:
     """Ingest external webhook with shared HMAC verification, deduplication & Self-Trigger Guard."""
     trace_id = trace_id_from_request(request)
+    trigger_uuid = validate_uuid(trigger_id, "trigger_id")
     raw_body = await request.body()
     try:
         decoded = json.loads(raw_body.decode("utf-8")) if raw_body else {}
@@ -245,7 +246,7 @@ async def ingest_workflow_trigger_webhook(
     ).strip() or new_uuid7_str()
     sig_hdr = x_orcia_webhook_signature or x_hub_signature_256
     entity, is_new = await svc.verify_webhook_request(
-        trigger_id=trigger_id,
+        trigger_id=trigger_uuid,
         raw_body=raw_body,
         signature_header=sig_hdr,
         delivery_key=delivery_key,

@@ -2,7 +2,6 @@ import { createOrciaApiClient } from "@orcia/api-client";
 import {
   ContextualInfoTriggerButton,
   ProgressiveDay0AccostageBanner,
-  StatusBadge,
   StreamlinedCockpitView,
 } from "@orcia/ui";
 import type { Edge, Node } from "@xyflow/react";
@@ -10,7 +9,9 @@ import React, { useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
+import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { CockpitHumanLedGovernanceSection } from "./CockpitHumanLedGovernanceSection";
+import { CockpitRunsSection } from "./CockpitRunsSection";
 
 export function buildCockpitWorkflowPreviewGraph(): {
   nodes: Node[];
@@ -36,6 +37,8 @@ export function buildCockpitWorkflowPreviewGraph(): {
 export function CockpitFeaturePanel() {
   const { dictionary, locale } = useI18n();
   const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
+  const authEmail = useAuthSessionStore((s) => s.email);
+  const authDisplayName = useAuthSessionStore((s) => s.displayName);
   const {
     platformAdmin,
     llmTiers,
@@ -85,9 +88,7 @@ export function CockpitFeaturePanel() {
     {
       index: 1,
       key: "step-llm",
-      title: isFr
-        ? "1. Modèles IA"
-        : "1. AI Models",
+      title: isFr ? "1. Modèles IA" : "1. AI Models",
       completed: llmTiers.length > 0,
       targetRoute: "/settings",
     },
@@ -103,18 +104,14 @@ export function CockpitFeaturePanel() {
     {
       index: 3,
       key: "step-workspaces",
-      title: isFr
-        ? "3. Espaces de Travail"
-        : "3. Workspaces",
+      title: isFr ? "3. Espaces de Travail" : "3. Workspaces",
       completed: workspaces.length > 0,
       targetRoute: "/workspaces",
     },
     {
       index: 4,
       key: "step-connectors",
-      title: isFr
-        ? "4. Sources Documentaires & Outils"
-        : "4. Document Sources & Tools",
+      title: isFr ? "4. Sources Documentaires & Outils" : "4. Document Sources & Tools",
       completed: datasources.length > 0,
       targetRoute: "/settings",
     },
@@ -147,19 +144,23 @@ export function CockpitFeaturePanel() {
     setRunTitle("");
     void (async () => {
       try {
-        await createOrciaApiClient({ baseUrl: "" }).instantiateWorkflowRun(
-          {
-            workflow_uri: "orcia://workflows/claims-engineering-delivery",
-            workspace_id: targetWs.workspaceId,
-          },
-          "marc",
-        );
+        await createOrciaApiClient({ baseUrl: "" }).instantiateWorkflowRun({
+          workflow_uri: "orcia://workflows/claims-engineering-delivery",
+          workspace_id: targetWs.workspaceId,
+        });
         setRunRefreshSignal((n) => n + 1);
       } catch {
         // Handled in CockpitHumanLedGovernanceSection
       }
     })();
   };
+
+  const currentUserId = authEmail?.trim() || platformAdmin?.email || "";
+  const resolvedAuthorName =
+    authDisplayName?.trim() ||
+    authEmail?.trim() ||
+    platformAdmin?.displayName ||
+    dictionary.humanAnchor.defaultAuthorName;
 
   return (
     <div
@@ -210,7 +211,7 @@ export function CockpitFeaturePanel() {
           title: r.title,
           summary: `${r.workspaceName} · ${r.currentStepKey}`,
         }))}
-        currentUserId="local-operator"
+        currentUserId={currentUserId}
         labels={dictionary.streamlinedCockpit}
         onOpenAssistant={() => navigateToRoute("/assistant")}
         onNavigateModule={(href) => navigateToRoute(href)}
@@ -224,197 +225,25 @@ export function CockpitFeaturePanel() {
         onNavigateMilestone={(href) => navigateToRoute(href)}
       />
 
-      <section
-        data-testid="cockpit-prompt-and-runs-section"
-        className="orcia-bento-card"
-        style={{ display: "flex", flexDirection: "column", gap: "14px" }}
-      >
-        {workspaces.length === 0 ? (
-          <div
-            data-testid="cockpit-no-workspace-empty-state"
-            style={{
-              padding: "16px",
-              borderRadius: "var(--radius-md)",
-              border: "1px dashed var(--color-border)",
-              backgroundColor: "var(--color-surface-bg)",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "12px",
-            }}
-          >
-            <div>
-              <strong>
-                {isFr
-                  ? "Aucun Espace de Travail ni processus en cours"
-                  : "No Workspace or active process yet"}
-              </strong>
-              <p
-                style={{
-                  margin: "4px 0 0 0",
-                  fontSize: "13px",
-                  color: "var(--color-muted-foreground)",
-                }}
-              >
-                {isFr
-                  ? "Créez votre premier Espace de Travail pour lancer vos processus, utiliser Mon Assistant et suivre vos validations."
-                  : "Create your first Workspace to run processes, use My Assistant, and track your reviews."}
-              </p>
-            </div>
-            <button
-              type="button"
-              data-testid="cockpit-go-create-workspace-btn"
-              onClick={() => navigateToRoute("/workspaces")}
-              style={{
-                padding: "7px 14px",
-                borderRadius: "var(--radius-sm)",
-                border: "none",
-                backgroundColor: "var(--color-primary-cobalt)",
-                color: "var(--color-primary-foreground)",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              {isFr ? "+ Créer un Espace de Travail" : "+ Create a Workspace"}
-            </button>
-          </div>
-        ) : (
-          <form
-            data-testid="cockpit-launch-run-form"
-            autoComplete="off"
-            data-lpignore="true"
-            data-form-type="other"
-            onSubmit={handleLaunchRun}
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "10px",
-              alignItems: "center",
-              padding: "12px",
-              borderRadius: "var(--radius-md)",
-              border: "1px solid var(--color-border)",
-              backgroundColor: "var(--color-surface-bg)",
-            }}
-          >
-            <select
-              data-testid="cockpit-select-workspace"
-              value={selectedWsId || availableWorkspaces[0]?.workspaceId || ""}
-              onChange={(e) => setSelectedWsId(e.target.value)}
-              style={{
-                padding: "7px 10px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid var(--color-border)",
-              }}
-            >
-              {availableWorkspaces.map((ws) => (
-                <option key={ws.workspaceId} value={ws.workspaceId}>
-                  {ws.name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              data-testid="cockpit-select-workflow"
-              value={selectedWfKey || workflows[0]?.workflowKey || "assistant-agent"}
-              onChange={(e) => setSelectedWfKey(e.target.value)}
-              style={{
-                padding: "7px 10px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid var(--color-border)",
-              }}
-            >
-              <option value="assistant-agent">
-                {isFr ? "Assistant ORCIA (Processus standard)" : "ORCIA Assistant (Standard process)"}
-              </option>
-              {workflows.map((wf) => (
-                <option key={wf.workflowKey} value={wf.workflowKey}>
-                  {wf.title} (v{wf.version})
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="text"
-              autoComplete="off"
-              data-lpignore="true"
-              data-1p-ignore="true"
-              data-bwignore="true"
-              data-form-type="other"
-              data-testid="cockpit-run-title-input"
-              value={runTitle}
-              onChange={(e) => setRunTitle(e.target.value)}
-              placeholder={
-                isFr ? "Intitulé de l'exécution..." : "Execution title..."
-              }
-              style={{
-                flex: 1,
-                minWidth: "200px",
-                padding: "7px 10px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid var(--color-border)",
-              }}
-            />
-
-            <button
-              type="submit"
-              data-testid="cockpit-launch-run-submit-btn"
-              style={{
-                padding: "7px 14px",
-                borderRadius: "var(--radius-sm)",
-                border: "none",
-                backgroundColor: "var(--color-primary-cobalt)",
-                color: "var(--color-primary-foreground)",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              {isFr ? "Démarrer le processus" : "Start process"}
-            </button>
-          </form>
-        )}
-
-        {scopedRuns.length > 0 && (
-          <div
-            data-testid="cockpit-active-runs-list"
-            style={{ display: "grid", gap: "8px" }}
-          >
-            {scopedRuns.map((run) => (
-              <div
-                key={run.runId}
-                data-testid={`cockpit-run-card-${run.runId}`}
-                style={{
-                  padding: "10px 12px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--color-border)",
-                  backgroundColor: "var(--color-surface-bg)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <div>
-                  <strong>{run.title}</strong>
-                  <span
-                    style={{
-                      marginLeft: "8px",
-                      fontSize: "12px",
-                      color: "var(--color-muted-foreground)",
-                    }}
-                  >
-                    ({run.workspaceName} · {run.currentStepKey})
-                  </span>
-                </div>
-                <StatusBadge label={run.status} tone="emerald" monospace />
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      <CockpitRunsSection
+        isFr={isFr}
+        workspaces={workspaces}
+        availableWorkspaces={availableWorkspaces}
+        workflows={workflows}
+        scopedRuns={scopedRuns}
+        selectedWsId={selectedWsId}
+        selectedWfKey={selectedWfKey}
+        runTitle={runTitle}
+        onSelectWsId={setSelectedWsId}
+        onSelectWfKey={setSelectedWfKey}
+        onChangeRunTitle={setRunTitle}
+        onLaunchRun={handleLaunchRun}
+        onNavigateToWorkspaces={() => navigateToRoute("/workspaces")}
+      />
 
       <CockpitHumanLedGovernanceSection
         workspaceId={selectedWsId || availableWorkspaces[0]?.workspaceId}
-        authorName={platformAdmin?.displayName ?? dictionary.humanAnchor.defaultAuthorName}
+        authorName={resolvedAuthorName}
         refreshSignal={runRefreshSignal}
       />
     </div>

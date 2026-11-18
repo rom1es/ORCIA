@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import os
 from typing import Annotated
 
 from fastapi import APIRouter, Query, Request
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from orcia_api.dependencies import get_or_create_shared_db_engine
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.user_profile import (
     PopularUsageItemResponse,
@@ -29,12 +27,9 @@ def _trace(request: Request) -> str:
 
 
 def _resolve_optional_engine(request: Request) -> AsyncEngine | None:
-    engine: AsyncEngine | None = getattr(request.app.state, "db_engine", None)
-    if engine is not None:
-        return engine
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") == "1":
-        return None
-    return get_or_create_shared_db_engine(request)
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
+
+    return get_configured_db_engine(request)
 
 
 @router.get(

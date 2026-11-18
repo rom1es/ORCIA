@@ -32615,6 +32615,172 @@
         "title": "WorkspaceBootstrapInputItem",
         "type": "object"
       },
+      "WorkspaceCreateRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/workspaces` (`REM-01`, `UUIDv7` + exact `slug`).",
+        "properties": {
+          "lifecycle_phase": {
+            "default": "BUILD",
+            "enum": [
+              "BUILD",
+              "RUN",
+              "MIGRATION"
+            ],
+            "title": "Lifecycle Phase",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "owner_org_unit_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Org Unit Id"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          },
+          "visibility_mode": {
+            "default": "STANDARD",
+            "enum": [
+              "STANDARD",
+              "CONFIDENTIAL_RESTRICTED",
+              "PRIVATE_USER"
+            ],
+            "title": "Visibility Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "WorkspaceCreateRequest",
+        "type": "object"
+      },
+      "WorkspaceCreateResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/workspaces` returning persisted PG18 `UUIDv7` & `slug`.",
+        "properties": {
+          "access_mode": {
+            "enum": [
+              "CONTRIBUTOR_ACTION_REQUIRED",
+              "READ_ONLY_OBSERVER"
+            ],
+            "title": "Access Mode",
+            "type": "string"
+          },
+          "access_origin": {
+            "enum": [
+              "DIRECT_TEAM",
+              "ROLLUP_PARENT",
+              "PARTNER_INVITE",
+              "GLOBAL_ADMIN"
+            ],
+            "title": "Access Origin",
+            "type": "string"
+          },
+          "effective_role": {
+            "enum": [
+              "PLATFORM_ADMIN",
+              "SECOPS",
+              "BU_LEAD",
+              "BU_DIRECTOR",
+              "TEAM_LEAD",
+              "ONTOLOGY_LEAD",
+              "CONTRIBUTOR",
+              "GATE_REVIEWER",
+              "ONTOLOGY_STEWARD_L3",
+              "OBSERVER"
+            ],
+            "title": "Effective Role",
+            "type": "string"
+          },
+          "finops_cost_usd": {
+            "default": 0.0,
+            "title": "Finops Cost Usd",
+            "type": "number"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "lifecycle_phase": {
+            "enum": [
+              "BUILD",
+              "RUN",
+              "MIGRATION"
+            ],
+            "title": "Lifecycle Phase",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "owner_org_unit_id": {
+            "title": "Owner Org Unit Id",
+            "type": "string"
+          },
+          "owner_org_unit_name": {
+            "title": "Owner Org Unit Name",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "visibility_mode": {
+            "enum": [
+              "STANDARD",
+              "CONFIDENTIAL_RESTRICTED",
+              "PRIVATE_USER"
+            ],
+            "title": "Visibility Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "owner_org_unit_id",
+          "owner_org_unit_name",
+          "visibility_mode",
+          "lifecycle_phase",
+          "effective_role",
+          "access_mode",
+          "access_origin",
+          "trace_id"
+        ],
+        "title": "WorkspaceCreateResponse",
+        "type": "object"
+      },
       "WorkspaceDatasourceDeleteResponse": {
         "additionalProperties": false,
         "description": "Response for `DELETE /api/v1/workspaces/{workspace_id}/datasources/{datasource_id}`.",
@@ -64552,6 +64718,144 @@
           }
         },
         "summary": "List accessible Multi-Source Workspaces with Upward Roll-up and FinOps consolidation",
+        "tags": [
+          "workspaces-and-catalog"
+        ]
+      },
+      "post": {
+        "description": "Persist a Workspace with real `UUIDv7`, exact `slug`, and owner membership.",
+        "operationId": "create_workspace_endpoint_api_v1_workspaces_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkspaceCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceCreateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Create a Workspace in PostgreSQL 18 returning canonical `UUIDv7` and exact `slug`",
         "tags": [
           "workspaces-and-catalog"
         ]

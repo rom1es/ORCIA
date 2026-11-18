@@ -206,15 +206,11 @@ def get_provenance_exporter_service(request: Request) -> ProvenanceExporterServi
 
 def get_finops_accounting_service(request: Request) -> FinopsAccountingService:
     """FastAPI `Depends` provider returning `FinopsAccountingService` (`Story 6.2`)."""
-    import os
-
-    from orcia_api.dependencies._core_providers import get_or_create_shared_db_engine
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
     from orcia_core.audit_finops import FinopsAccountingService
     from orcia_core.observability.logging import get_logger
 
-    engine = getattr(request.app.state, "db_engine", None)
-    if engine is None and os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
-        engine = get_or_create_shared_db_engine(request)
+    engine = get_configured_db_engine(request)
 
     async def _resume_dbos_run(run_id: str) -> None:
         from dbos import DBOS

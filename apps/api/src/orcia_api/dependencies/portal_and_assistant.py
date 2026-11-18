@@ -62,9 +62,23 @@ def get_accostage_service(request: Request) -> ProgressiveDay0AccostageService:
         request.app.state, "accostage_service", None
     )
     if svc is None:
+        raw_env = getattr(request.app.state, "orcia_env", None) or os.environ.get(
+            "ORCIA_ENV", "local"
+        )
+        orcia_env = str(raw_env).strip().lower() or "local"
+        app_token = getattr(request.app.state, "bootstrap_token", None)
+        env_token = os.environ.get("ORCIA_BOOTSTRAP_TOKEN", "").strip()
+        if app_token is not None:
+            bootstrap_token: str | None = str(app_token).strip() or None
+        elif env_token:
+            bootstrap_token = env_token
+        elif orcia_env in ("local", "test"):
+            bootstrap_token = "orcia-day0-bootstrap-token"
+        else:
+            bootstrap_token = None
         svc = ProgressiveDay0AccostageService(
-            orcia_env="local",
-            expected_bootstrap_token="orcia-day0-bootstrap-token",
+            orcia_env=orcia_env,
+            expected_bootstrap_token=bootstrap_token,
         )
         request.app.state.accostage_service = svc
     return svc

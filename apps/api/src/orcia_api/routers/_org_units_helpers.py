@@ -7,7 +7,6 @@ and strict PostgreSQL exception classification
 
 from __future__ import annotations
 
-import os
 import unicodedata
 
 from fastapi import Request
@@ -167,8 +166,10 @@ def filter_org_unit_summaries_in_memory(
 
 
 def pg_sync_enabled() -> bool:
-    """Return True if PostgreSQL sync is active (disabled by default in isolated unit tests)."""
-    return os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1"
+    """Return True if PostgreSQL sync is active."""
+    from orcia_api.dependencies._core_providers import is_pg_runtime_active
+
+    return is_pg_runtime_active()
 
 
 def is_pg_connectivity_error(exc: Exception) -> bool:

@@ -16,6 +16,7 @@ import React, { useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
+import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { CreateWorkspaceCard } from "./CreateWorkspaceCard";
 import { WorkspaceStudioCardsAndDetailView } from "./WorkspaceStudioCardsAndDetailView";
 
@@ -30,6 +31,7 @@ export function WorkspacesFeaturePanel({
 }: WorkspacesFeaturePanelProps = {}) {
   const { dictionary, locale } = useI18n();
   const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
+  const activeHat = useAuthSessionStore((s) => s.activeHat);
   const isFr = locale === "fr";
   const {
     orgUnits,
@@ -128,7 +130,20 @@ export function WorkspacesFeaturePanel({
           activeScopeCategoryLabel={activeScopeCategoryLabel}
           openHelpSection={openHelpSection}
           onNavigateToSettings={() => navigateToRoute("/settings")}
-          onCreateWorkspace={(input) => createWorkspace(input)}
+          onCreateWorkspace={async (input) => {
+            try {
+              const created = await createWorkspace(input);
+              setActionFeedback(
+                isFr
+                  ? `✅ Espace « ${created.name} » créé (${created.slug ?? created.workspaceId}).`
+                  : `✅ Workspace "${created.name}" created (${created.slug ?? created.workspaceId}).`,
+              );
+            } catch (err: unknown) {
+              setActionFeedback(
+                `⚠️ ${err instanceof Error ? err.message : "Erreur lors de la création de l'espace."}`,
+              );
+            }
+          }}
         />
       </div>
 
@@ -222,7 +237,7 @@ export function WorkspacesFeaturePanel({
         />
 
         <WorkspaceTopologyPanel
-          activePersona="marc"
+          activePersona={activeHat === "OBSERVER" ? "claire" : "karim"}
           workspaces={displayedWorkspaces.map((ws) => ({
             id: ws.workspaceId,
             name: ws.name,

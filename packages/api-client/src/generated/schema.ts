@@ -4844,6 +4844,27 @@ export interface components {
       workspace_ontology_terms?: (components["schemas"]["OntologyTermInputItem"])[];
       workspace_override_scalars?: Record<string, string | number | boolean>;
     };
+    WorkspaceCreateRequest: {
+      lifecycle_phase?: "BUILD" | "RUN" | "MIGRATION";
+      name: string;
+      owner_org_unit_id?: string | null;
+      slug?: string | null;
+      visibility_mode?: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER";
+    };
+    WorkspaceCreateResponse: {
+      access_mode: "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER";
+      access_origin: "DIRECT_TEAM" | "ROLLUP_PARENT" | "PARTNER_INVITE" | "GLOBAL_ADMIN";
+      effective_role: "PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "BU_DIRECTOR" | "TEAM_LEAD" | "ONTOLOGY_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
+      finops_cost_usd?: number;
+      id: string;
+      lifecycle_phase: "BUILD" | "RUN" | "MIGRATION";
+      name: string;
+      owner_org_unit_id: string;
+      owner_org_unit_name: string;
+      slug: string;
+      trace_id: string;
+      visibility_mode: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER";
+    };
     WorkspaceDatasourceDeleteResponse: {
       datasource_id: string;
       deleted?: boolean;
@@ -6617,6 +6638,11 @@ export interface paths {
         200: components["schemas"]["WorkspacesListResponse"];
       };
     };
+    post: {
+      responses: {
+        200: unknown;
+      };
+    };
   };
   "/api/v1/workspaces/{workspace_id}/artifacts/external-rebase": {
     post: {
@@ -7347,6 +7373,8 @@ export type WorkflowV2RunResponse = components["schemas"]["WorkflowV2RunResponse
 export type WorkflowValidationFindingSchemaItem = components["schemas"]["WorkflowValidationFindingSchemaItem"];
 export type WorkflowsV2ListResponse = components["schemas"]["WorkflowsV2ListResponse"];
 export type WorkspaceBootstrapInputItem = components["schemas"]["WorkspaceBootstrapInputItem"];
+export type WorkspaceCreateRequest = components["schemas"]["WorkspaceCreateRequest"];
+export type WorkspaceCreateResponse = components["schemas"]["WorkspaceCreateResponse"];
 export type WorkspaceDatasourceDeleteResponse = components["schemas"]["WorkspaceDatasourceDeleteResponse"];
 export type WorkspaceDatasourceItem = components["schemas"]["WorkspaceDatasourceItem"];
 export type WorkspaceDatasourceItemResponse = components["schemas"]["WorkspaceDatasourceItemResponse"];

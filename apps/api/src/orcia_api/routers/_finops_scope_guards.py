@@ -3,23 +3,25 @@
 from __future__ import annotations
 
 import json
-import os
-import re
 from typing import cast
-from uuid import UUID, uuid5
+from uuid import UUID
 
 import sqlalchemy as sa
 from fastapi import Request
 
 from orcia_api.dependencies import get_auth_service
+from orcia_api.dependencies._core_providers import get_configured_db_engine
 from orcia_core.audit_finops.finops_models import ScopeType
 from orcia_core.observability.logging import get_logger
 from orcia_core.permissions.errors import ResourceNotFoundError, ScopeAccessDeniedError
 from orcia_core.permissions.models import (
+    AccessMode,
     OrgUnitNode,
     OrgUnitType,
+    PlatformRole,
     UserIdentity,
     WorkspaceEntity,
+    WorkspaceMembershipEntity,
     WorkspaceVisibilityMode,
 )
 from orcia_core.permissions.service import AuthAndOrganizationService
@@ -28,37 +30,24 @@ from orcia_kernel.errors import ValidationDomainError
 logger = get_logger("orcia.api.finops.guards")
 
 
-_NAMESPACE_ORCIA_SETUP = UUID("0192c4e0-0000-7000-8000-000000000099")
-_SETUP_WS_KEY_RE = re.compile(r"^ws-\d+$")
-
-
 def validate_uuid(val: str, field_name: str) -> str:
     """Validate UUID syntax and raise `ValidationDomainError` (RFC 9457 422) on failure."""
+    trimmed = (val or "").strip()
     try:
-        UUID(val)
-        return val
+        UUID(trimmed)
+        return trimmed
     except (ValueError, TypeError, AttributeError) as err:
         raise ValidationDomainError(
             detail_override=f"Invalid UUID format for '{field_name}': {val!r}"
         ) from err
 
 
-def resolve_workspace_uuid_or_setup_key(raw_ws_id: str, field_name: str = "workspace_id") -> str:
-    """Map UI setup workspace key (`ws-1` -> deterministic UUIDv5) or validate UUID."""
-    trimmed = raw_ws_id.strip()
-    if _SETUP_WS_KEY_RE.match(trimmed):
-        return str(uuid5(_NAMESPACE_ORCIA_SETUP, f"ws:{trimmed}"))
-    return validate_uuid(trimmed, field_name)
-
-
 async def sync_evaluator_topology_from_pg(
     request: Request,
     auth_svc: AuthAndOrganizationService,
 ) -> None:
-    """Ensure `auth_svc.evaluator` reflects `org_units` and `workspaces` present in PG18."""
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") == "1":
-        return
-    engine = getattr(request.app.state, "db_engine", None)
+    """Ensure `auth_svc.evaluator` reflects `org_units`, `workspaces`, and memberships in PG18."""
+    engine = get_configured_db_engine(request)
     if engine is None:
         return
     try:
@@ -127,6 +116,32 @@ async def sync_evaluator_topology_from_pg(
                             datasources=existing.datasources if existing else (),
                         )
                     )
+
+            mem_rows = (
+                (
+                    await conn.execute(
+                        sa.text(
+                            "SELECT id, workspace_id, user_id, invited_org_unit_id, "
+                            "role, access_mode FROM workspace_memberships;"
+                        )
+                    )
+                )
+                .mappings()
+                .all()
+            )
+            for m in mem_rows:
+                auth_svc.evaluator.upsert_membership(
+                    WorkspaceMembershipEntity(
+                        id=str(m["id"]),
+                        workspace_id=str(m["workspace_id"]),
+                        role=cast(PlatformRole, str(m["role"])),
+                        access_mode=cast(AccessMode, str(m["access_mode"])),
+                        user_id=str(m["user_id"]) if m["user_id"] else None,
+                        invited_org_unit_id=(
+                            str(m["invited_org_unit_id"]) if m["invited_org_unit_id"] else None
+                        ),
+                    )
+                )
     except Exception as exc:
         logger.warning(
             "finops_sync_evaluator_topology_fallback",

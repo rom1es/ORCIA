@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from typing import Any
 
 import sqlalchemy as sa
@@ -107,7 +106,7 @@ async def resolve_workspace_scope_ids(
         scope_ids.append(ws.owner_org_unit_id)
         scope_ids.extend(auth_svc.evaluator.get_ancestor_org_unit_ids(ws.owner_org_unit_id))
     engine = getattr(request.app.state, "db_engine", None)
-    if engine is not None and os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
+    if engine is not None:
         try:
             async with engine.connect() as conn:
                 row = (
@@ -136,7 +135,7 @@ async def load_iam_accounts_merged(
 
     by_id: dict[str, IamAccountRecord] = {acc.id: acc for acc in iam_svc.list_accounts()}
     engine = getattr(request.app.state, "db_engine", None)
-    if engine is not None and os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
+    if engine is not None:
         try:
             pg_accounts = await sync_and_list_iam_accounts_from_postgres18(engine)
             for acc in pg_accounts:

@@ -32,13 +32,18 @@ if TYPE_CHECKING:
 
 def should_auto_init_infra(env_var: str) -> bool:
     """Return True when PG18 or Redis should auto-initialize in Composition Root."""
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") == "1":
-        return False
     if os.environ.get("ORCIA_ENABLE_PG_SESSION_MAKER") == "1":
         return True
     if "pytest" in sys.modules:
         return bool(os.environ.get(env_var, "").strip())
     return True
+
+
+def is_pg_runtime_active(request: Request | None = None) -> bool:
+    """Return True when PostgreSQL 18 is active (always True outside unit tests without DB)."""
+    if request is not None and getattr(request.app.state, "db_engine", None) is not None:
+        return True
+    return should_auto_init_infra("DATABASE_URL")
 
 
 def get_or_create_shared_db_engine(request: Request) -> AsyncEngine:
@@ -63,8 +68,6 @@ def get_configured_db_engine(request: Request) -> AsyncEngine | None:
     """Return `db_engine` when auto-init is enabled, creating it lazily if missing."""
     engine: AsyncEngine | None = getattr(request.app.state, "db_engine", None)
     if engine is not None:
-        if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") == "1":
-            return None
         return engine
     if should_auto_init_infra("DATABASE_URL"):
         return get_or_create_shared_db_engine(request)

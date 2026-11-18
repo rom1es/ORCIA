@@ -1,4 +1,3 @@
-import { createOrciaApiClient, type PlatformSetupStatePutRequest } from "@orcia/api-client";
 import type {
   ControlCenterDatasourceItem,
   ControlCenterOverrideItem,
@@ -6,17 +5,17 @@ import type {
   ControlCenterWorkspaceGovItem,
   ProductLifecyclePhaseType,
   UiCatalogExplorerItemView,
-  UiInferenceEffort,
-  UiInferenceTier,
   UiOntologyConceptView,
   UiOntologyLevel,
   UiScopeNode,
 } from "@orcia/ui";
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import { useAuthSessionStore } from "../stores/authSessionStore";
+import { createPlatformGovernanceActions } from "./platformSetupGovernanceActions";
 import {
-  resolveWebApiBaseUrl,
-  useAuthSessionStore,
-} from "../stores/authSessionStore";
+  fetchAndBuildHydrationOutcome,
+  savePlatformSetupSnapshotToApi,
+} from "./platformSetupHydration";
 import {
   cleanAuditSummaryJargon,
   clearPlatformSetupStorage,
@@ -27,8 +26,6 @@ import {
   PLATFORM_SETUP_STATE_STORAGE_KEY,
   readCachedPlatformAdmin,
   readCachedPlatformSetupState,
-  syncBrowserBootEpoch,
-  writeCachedPlatformAdmin,
   writeCachedPlatformSetupState,
   type CachedPlatformSetupState,
   type ConfiguredAuditEvent,
@@ -40,10 +37,15 @@ import {
   type ConfiguredWorkflowItem,
   type LlmAuthMode,
 } from "./platformSetupStorageHelpers";
-
-const isVitest =
-  typeof process !== "undefined" &&
-  (process.env?.NODE_ENV === "test" || process.env?.VITEST === "true");
+import {
+  applyRegisterDatasource,
+  applyWorkspacePhaseUpdate,
+  applyWorkspaceVisibilityUpdate,
+  buildScopeNodes,
+  createWorkspaceViaServer,
+  type CreateWorkspaceInput,
+  type RegisterDatasourceInput,
+} from "./platformSetupWorkspaces";
 
 export {
   cleanAuditSummaryJargon,
@@ -64,8 +66,13 @@ export {
   type LlmAuthMode,
 };
 
+const isVitest =
+  typeof process !== "undefined" &&
+  (process.env?.NODE_ENV === "test" || process.env?.VITEST === "true");
+
 export interface PlatformSetupContextValue {
   readonly isInitialLoading: boolean;
+  readonly lastSyncError: string | null;
   readonly platformAdmin: ConfiguredPlatformAdmin | null;
   readonly orgUnits: readonly ConfiguredOrgUnit[];
   readonly rbacGrants: readonly ConfiguredRbacGrant[];
@@ -117,29 +124,18 @@ export interface PlatformSetupContextValue {
     },
   ) => void;
   readonly upsertLlmTier: (input: ConfiguredLlmTierMapping) => void;
-  readonly createWorkspace: (input: {
-    name: string;
-    slug: string;
-    visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER";
-    lifecyclePhase: ProductLifecyclePhaseType;
-    ownerOrgUnitId?: string;
-  }) => void;
+  readonly createWorkspace: (
+    input: CreateWorkspaceInput,
+  ) => Promise<ControlCenterWorkspaceGovItem>;
   readonly updateWorkspacePhase: (
     workspaceId: string,
     phase: ProductLifecyclePhaseType,
-  ) => void;
+  ) => Promise<void>;
   readonly updateWorkspaceVisibility: (
     workspaceId: string,
     visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER",
-  ) => void;
-  readonly registerDatasource: (input: {
-    workspaceName: string;
-    alias: string;
-    scheme: "git" | "confluence" | "jira" | "db";
-    uri: string;
-    executionIdentity: "passthrough" | "service_account";
-    freshnessTtlDays: number;
-  }) => void;
+  ) => Promise<void>;
+  readonly registerDatasource: (input: RegisterDatasourceInput) => Promise<void>;
   readonly registerPack: (input: ConfiguredPackItem) => void;
   readonly removePack: (packKey: string, scopePath?: string) => void;
   readonly upsertWorkflow: (input: ConfiguredWorkflowItem) => void;
@@ -157,17 +153,11 @@ export interface PlatformSetupContextValue {
   ) => void;
 }
 
-const BASE_GLOBAL_SCOPE: UiScopeNode = {
-  id: "scope-global",
-  level: "GLOBAL",
-  name: "Plateforme Globale ORCIA",
-  accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
-};
-
 const PlatformSetupContext = createContext<PlatformSetupContextValue | null>(null);
 
 export function PlatformSetupProvider({ children }: { children: React.ReactNode }) {
   const [isInitialLoading, setIsInitialLoading] = useState<boolean>(() => !isVitest);
+  const [lastSyncError, setLastSyncError] = useState<string | null>(null);
   const [platformAdmin, setPlatformAdmin] = useState<ConfiguredPlatformAdmin | null>(() =>
     readCachedPlatformAdmin(),
   );
@@ -201,239 +191,91 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   );
   const hasMutatedSinceMountRef = useRef(false);
 
-  const persistSnapshot = (next: CachedPlatformSetupState) => {
+  const applySnapshotToState = (next: CachedPlatformSetupState) => {
+    setOrgUnits(next.orgUnits);
+    setRbacGrants(next.rbacGrants);
+    setLlmTiers(next.llmTiers);
+    setWorkspaces(next.workspaces);
+    setDatasources(next.datasources);
+    setPacks(next.packs);
+    setWorkflows(next.workflows);
+    setRuns(next.runs);
+    setCatalogItems(next.catalogItems);
+    setOntologyConcepts(next.ontologyConcepts);
+    setAuditEvents(next.auditEvents);
+  };
+
+  const resetAllSetupState = () => {
+    setPlatformAdmin(null);
+    applySnapshotToState({
+      orgUnits: [],
+      rbacGrants: [],
+      llmTiers: [],
+      workspaces: [],
+      datasources: [],
+      packs: [],
+      workflows: [],
+      runs: [],
+      catalogItems: [],
+      ontologyConcepts: [],
+      auditEvents: [],
+    });
+  };
+
+  const persistSnapshotStrict = async (next: CachedPlatformSetupState): Promise<void> => {
     hasMutatedSinceMountRef.current = true;
     writeCachedPlatformSetupState(next);
-    const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
-    const payload: PlatformSetupStatePutRequest = {
-      org_units: next.orgUnits as unknown as Record<string, unknown>[],
-      rbac_grants: next.rbacGrants as unknown as Record<string, unknown>[],
-      llm_tiers: next.llmTiers.map((t) => ({
-        tier: t.tier,
-        tierKey: t.tier,
-        primaryModel: t.primaryModel,
-        secondaryModel: t.secondaryModel,
-        modelFamily: t.modelFamily,
-        defaultEffort: t.defaultEffort,
-        provider: t.modelFamily,
-        model: t.primaryModel,
-        endpointUrl: t.endpointUrl ?? "",
-        authMode: t.authMode ?? "api_key",
-        apiKeyConfigured: Boolean(t.apiKeyConfigured),
-      })),
-      workspaces: next.workspaces as unknown as Record<string, unknown>[],
-      datasources: next.datasources as unknown as Record<string, unknown>[],
-      packs: next.packs as unknown as Record<string, unknown>[],
-      workflows: next.workflows as unknown as Record<string, unknown>[],
-      runs: next.runs as unknown as Record<string, unknown>[],
-      catalog_items: next.catalogItems as unknown as Record<string, unknown>[],
-      ontology_concepts: next.ontologyConcepts as unknown as Record<string, unknown>[],
-      audit_events: next.auditEvents as unknown as Record<string, unknown>[],
-    };
-    void client.savePlatformSetupState(payload).catch(() => undefined);
+    try {
+      await savePlatformSetupSnapshotToApi(next);
+      setLastSyncError(null);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Erreur de synchronisation plateforme.";
+      setLastSyncError(msg);
+      throw err;
+    }
+  };
+
+  const persistSnapshot = (next: CachedPlatformSetupState) => {
+    void persistSnapshotStrict(next).catch((err: unknown) => {
+      const msg = err instanceof Error ? err.message : "Erreur de synchronisation plateforme.";
+      setLastSyncError(msg);
+    });
   };
 
   useEffect(() => {
     let cancelled = false;
     let safetyTimer: ReturnType<typeof setTimeout> | undefined = setTimeout(() => {
-      if (!cancelled) {
-        setIsInitialLoading(false);
-      }
+      if (!cancelled) setIsInitialLoading(false);
     }, 5000);
 
-    const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
-    Promise.all([
-      client.getAccostageStatus(),
-      client.getPlatformSetupState().catch(() => null),
-      client.listOrgUnits().catch(() => null),
-      client.listIamGrants().catch(() => null),
-    ])
-      .then(([status, remoteState, remoteOrgUnitsResp, remoteIamGrantsResp]) => {
+    void fetchAndBuildHydrationOutcome({
+      hasMutatedSinceMount: hasMutatedSinceMountRef.current,
+      currentAdmin: platformAdmin,
+    })
+      .then((outcome) => {
         if (cancelled) return;
-        if (syncBrowserBootEpoch(status.boot_epoch)) {
+        if (outcome.kind === "BOOT_EPOCH_RESET") {
           hasMutatedSinceMountRef.current = false;
           useAuthSessionStore.getState().resetAuthSession();
-          setPlatformAdmin(null);
-          setOrgUnits([]);
-          setRbacGrants([]);
-          setLlmTiers([]);
-          setWorkspaces([]);
-          setDatasources([]);
-          setPacks([]);
-          setWorkflows([]);
-          setRuns([]);
-          setCatalogItems([]);
-          setOntologyConcepts([]);
-          setAuditEvents([]);
+          resetAllSetupState();
           return;
         }
-        const mappedApiOrgUnits: ConfiguredOrgUnit[] = (
-          remoteOrgUnitsResp?.org_units ?? []
-        ).map((dto) => {
-          const rawLeads = Array.isArray(dto.lead_user_ids) ? dto.lead_user_ids : [];
-          const leadUserIds = rawLeads.length > 0
-            ? rawLeads
-            : dto.lead_user_id ? [dto.lead_user_id] : [];
-          return {
-            id: dto.id,
-            name: dto.name,
-            slug: dto.slug,
-            level: dto.kind,
-            parentId: dto.parent_id ?? "scope-global",
-            billingEnabled: dto.billing_enabled ?? true,
-            leadUserId: leadUserIds[0] ?? dto.lead_user_id ?? null,
-            leadUserIds,
-            ontologyLeadUserIds:
-              dto.kind === "BU" && Array.isArray(dto.ontology_lead_user_ids)
-                ? dto.ontology_lead_user_ids
-                : [],
-            memberUserIds: dto.kind === "BU" ? [] : (dto.member_user_ids ?? []),
-            attachedWorkspacesCount: dto.attached_workspaces_count ?? 0,
-            attachedWorkspaces: Array.isArray(dto.attached_workspaces)
-              ? dto.attached_workspaces.map((w) => ({ id: w.id, slug: w.slug, name: w.name }))
-              : [],
-          };
-        });
-        const mappedApiGrants: ConfiguredRbacGrant[] = Array.isArray(remoteIamGrantsResp)
-          ? remoteIamGrantsResp.map((g) => ({
-              id: g.id,
-              subjectType: g.subject_type,
-              subjectId: g.subject_id,
-              scopePath: g.scope_path,
-              verb: g.verb,
-              effect: g.effect,
-              resourceKind: g.resource_kind ?? "ALL",
-            }))
-          : [];
-        if (
-          status.first_admin_initialized === false &&
-          mappedApiOrgUnits.length === 0 &&
-          mappedApiGrants.length === 0
-        ) {
-          if (hasMutatedSinceMountRef.current || readCachedPlatformAdmin() !== null) {
-            return;
-          }
-          writeCachedPlatformAdmin(null);
-          writeCachedPlatformSetupState(null);
-          setPlatformAdmin(null);
-          setOrgUnits([]);
-          setRbacGrants([]);
-          setLlmTiers([]);
-          setWorkspaces([]);
-          setDatasources([]);
-          setPacks([]);
-          setWorkflows([]);
-          setRuns([]);
-          setCatalogItems([]);
-          setOntologyConcepts([]);
-          setAuditEvents([]);
+        if (outcome.kind === "DAY0_CLEAN_RESET") {
+          if (hasMutatedSinceMountRef.current) return;
+          resetAllSetupState();
           return;
         }
-        if (status.first_admin_initialized && status.first_admin_email) {
-          const existingLocal = readCachedPlatformAdmin();
-          const synced: ConfiguredPlatformAdmin = {
-            displayName: status.first_admin_display_name ?? status.first_admin_email,
-            email: status.first_admin_email,
-            role: "PLATFORM_ADMIN",
-            ...(existingLocal?.memberTeamIds ? { memberTeamIds: existingLocal.memberTeamIds } : {}),
-          };
-          writeCachedPlatformAdmin(synced);
-          setPlatformAdmin(synced);
-        }
-        if (remoteState || mappedApiOrgUnits.length > 0 || mappedApiGrants.length > 0) {
-          const rOrgUnits =
-            mappedApiOrgUnits.length > 0
-              ? mappedApiOrgUnits
-              : ((remoteState?.org_units ?? []) as unknown as ConfiguredOrgUnit[]);
-          const rRbacGrants =
-            mappedApiGrants.length > 0
-              ? mappedApiGrants
-              : ((remoteState?.rbac_grants ?? []) as unknown as ConfiguredRbacGrant[]);
-          const rLlmTiers = remoteState?.llm_tiers ?? [];
-          const rWorkspaces = remoteState?.workspaces ?? [];
-          const rDatasources = remoteState?.datasources ?? [];
-          const rPacks = remoteState?.packs ?? [];
-          const rWorkflows = remoteState?.workflows ?? [];
-          const rRuns = remoteState?.runs ?? [];
-          const rCatalogItems = remoteState?.catalog_items ?? [];
-          const rOntologyConcepts = remoteState?.ontology_concepts ?? [];
-          const rAuditEvents = remoteState?.audit_events ?? [];
-          const hasRemoteEntities =
-            rOrgUnits.length > 0 ||
-            rRbacGrants.length > 0 ||
-            rLlmTiers.length > 0 ||
-            rWorkspaces.length > 0 ||
-            rDatasources.length > 0 ||
-            rPacks.length > 0 ||
-            rWorkflows.length > 0 ||
-            rRuns.length > 0 ||
-            rCatalogItems.length > 0 ||
-            rOntologyConcepts.length > 0;
-          if (hasRemoteEntities) {
-            const hydrated: CachedPlatformSetupState = {
-              orgUnits: rOrgUnits,
-              rbacGrants: rRbacGrants as unknown as ConfiguredRbacGrant[],
-              llmTiers: rLlmTiers.map((raw) => ({
-                tier: (raw.tier ?? raw.tierKey ?? "medium") as UiInferenceTier,
-                primaryModel: String(raw.primaryModel ?? raw.model ?? ""),
-                secondaryModel: String(raw.secondaryModel ?? ""),
-                modelFamily: String(raw.modelFamily ?? raw.provider ?? "Anthropic"),
-                defaultEffort: (raw.defaultEffort ?? "balanced") as UiInferenceEffort,
-                endpointUrl: raw.endpointUrl ? String(raw.endpointUrl) : undefined,
-                authMode: (raw.authMode ?? "api_key") as LlmAuthMode,
-                apiKeyConfigured: Boolean(raw.apiKeyConfigured),
-              })),
-              workspaces: rWorkspaces as unknown as ControlCenterWorkspaceGovItem[],
-              datasources: rDatasources as unknown as ControlCenterDatasourceItem[],
-              packs: deduplicateConfiguredPacks(
-                rPacks as unknown as ConfiguredPackItem[],
-              ),
-              workflows: rWorkflows as unknown as ConfiguredWorkflowItem[],
-              runs: rRuns as unknown as ControlCenterRunItem[],
-              catalogItems: rCatalogItems as unknown as UiCatalogExplorerItemView[],
-              ontologyConcepts: rOntologyConcepts as unknown as UiOntologyConceptView[],
-              auditEvents: (rAuditEvents as unknown as Array<Partial<ConfiguredAuditEvent> & Record<string, unknown>>).map(
-                (ev) => normalizeConfiguredAuditEvent(ev, platformAdmin),
-              ),
-            };
-            writeCachedPlatformSetupState(hydrated);
-            setOrgUnits(hydrated.orgUnits);
-            setRbacGrants(hydrated.rbacGrants);
-            setLlmTiers(hydrated.llmTiers);
-            setWorkspaces(hydrated.workspaces);
-            setDatasources(hydrated.datasources);
-            setPacks(hydrated.packs);
-            setWorkflows(hydrated.workflows);
-            setRuns(hydrated.runs);
-            setCatalogItems(hydrated.catalogItems);
-            setOntologyConcepts(hydrated.ontologyConcepts);
-            setAuditEvents(hydrated.auditEvents);
-            if (!hasMutatedSinceMountRef.current && status.first_admin_initialized && status.first_admin_email) {
-              const remoteTeamIds = hydrated.orgUnits
-                .filter((u) => u.level === "TEAM")
-                .map((u) => u.id);
-              const existingLocal = readCachedPlatformAdmin();
-              const validLocalTeams = (existingLocal?.memberTeamIds ?? []).filter((id) =>
-                remoteTeamIds.includes(id),
-              );
-              const effectiveTeamIds =
-                validLocalTeams.length > 0 ? validLocalTeams : remoteTeamIds;
-              if (effectiveTeamIds.length > 0) {
-                const updatedAdmin: ConfiguredPlatformAdmin = {
-                  displayName: status.first_admin_display_name ?? status.first_admin_email,
-                  email: status.first_admin_email,
-                  role: "PLATFORM_ADMIN",
-                  memberTeamIds: effectiveTeamIds,
-                };
-                writeCachedPlatformAdmin(updatedAdmin);
-                setPlatformAdmin(updatedAdmin);
-              }
-            }
-          }
+        if (outcome.kind === "HYDRATED") {
+          if (outcome.admin) setPlatformAdmin(outcome.admin);
+          if (outcome.snapshot) applySnapshotToState(outcome.snapshot);
         }
       })
-      .catch(() => {
-        // Offline or test mode: keep current state
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setLastSyncError(
+            err instanceof Error ? err.message : "Chargement initial plateforme interrompu.",
+          );
+        }
       })
       .finally(() => {
         if (!cancelled) {
@@ -444,11 +286,10 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
           setIsInitialLoading(false);
         }
       });
+
     return () => {
       cancelled = true;
-      if (safetyTimer) {
-        clearTimeout(safetyTimer);
-      }
+      if (safetyTimer) clearTimeout(safetyTimer);
     };
   }, []);
 
@@ -485,7 +326,8 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         timestampIso: new Date().toISOString(),
         eventType,
         summary,
-        actorName: meta?.actorName ?? platformAdmin?.displayName ?? "Administrateur de la plateforme",
+        actorName:
+          meta?.actorName ?? platformAdmin?.displayName ?? "Administrateur de la plateforme",
         actorEmail: meta?.actorEmail ?? platformAdmin?.email,
         scopeId: meta?.scopeId,
         scopePath: meta?.scopePath ?? "GLOBAL",
@@ -496,738 +338,108 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     ...auditEvents,
   ];
 
-  const createPlatformAdmin = (input: {
-    displayName: string;
-    email: string;
-    password?: string;
-  }) => {
-    const admin: ConfiguredPlatformAdmin = {
-      displayName: input.displayName.trim(),
-      email: input.email.trim().toLowerCase(),
-      role: "PLATFORM_ADMIN",
-      memberTeamIds: [],
-    };
-    writeCachedPlatformAdmin(admin);
-    setPlatformAdmin(admin);
-    const nextAudit = appendAudit(
-      "PlatformAdminInitialized",
-      `Compte Administrateur de la plateforme "${admin.displayName}" (${admin.email}) créé`,
-      {
-        actorName: admin.displayName,
-        actorEmail: admin.email,
-        scopeId: "scope-global",
-        scopePath: "GLOBAL",
-        scopeLabel: "Plateforme entière",
-      },
-    );
-    setAuditEvents(nextAudit);
-    persistSnapshot(buildSnapshot({ auditEvents: nextAudit }));
-
-    const rawPassword =
-      input.password && input.password.trim().length >= 8
-        ? input.password.trim()
-        : "OrciaInitialAdmin!2026";
-    const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
-    void client
-      .createWelcomeSetupFirstAdmin({
-        email: admin.email,
-        display_name: admin.displayName,
-        password: rawPassword,
-        orcia_env: "local",
-      })
-      .then((res) => {
-        if (res && (res.access_token || (res as Record<string, unknown>).accessToken)) {
-          useAuthSessionStore.getState().loginWithSession({
-            access_token:
-              res.access_token ??
-              ((res as Record<string, unknown>).accessToken as string | undefined),
-            email: admin.email,
-            display_name: admin.displayName,
-            platform_role: "PLATFORM_ADMIN",
-            roles: ["PLATFORM_ADMIN"],
-            must_change_password: Boolean(res.must_change_password),
-          });
-        } else {
-          void useAuthSessionStore.getState().hydrateSession({ force: true });
-        }
-      })
-      .catch(() => {
-        void client
-          .getAccostageStatus()
-          .then((status) => {
-            if (status.first_admin_initialized && status.first_admin_email) {
-              const existing: ConfiguredPlatformAdmin = {
-                displayName:
-                  status.first_admin_display_name ?? status.first_admin_email,
-                email: status.first_admin_email,
-                role: "PLATFORM_ADMIN",
-                memberTeamIds: admin.memberTeamIds ?? [],
-              };
-              writeCachedPlatformAdmin(existing);
-              setPlatformAdmin(existing);
-            }
-          })
-          .catch(() => undefined);
-      });
-  };
-
-  const toggleAdminTeamMembership = (teamId: string) => {
-    const targetTeam = orgUnits.find((u) => u.id === teamId && u.level === "TEAM");
-    if (!targetTeam) return;
-    const baseAdmin: ConfiguredPlatformAdmin = platformAdmin ?? {
-      displayName: "Administrateur de la plateforme",
-      email: "admin@orcia.local",
-      role: "PLATFORM_ADMIN",
-      memberTeamIds: [],
-    };
-    const currentTeamIds = baseAdmin.memberTeamIds ?? [];
-    const isMember = currentTeamIds.includes(teamId);
-    const nextTeamIds = isMember
-      ? currentTeamIds.filter((id) => id !== teamId)
-      : [...currentTeamIds, teamId];
-    const updatedAdmin: ConfiguredPlatformAdmin = {
-      ...baseAdmin,
-      memberTeamIds: nextTeamIds,
-    };
-    writeCachedPlatformAdmin(updatedAdmin);
-    setPlatformAdmin(updatedAdmin);
-    const nextAudit = appendAudit(
-      isMember ? "PermissionRevoked" : "PermissionGranted",
-      isMember
-        ? `Rattachement à l'Équipe "${targetTeam.name}" retiré pour ${updatedAdmin.displayName}`
-        : `Compte ${updatedAdmin.displayName} rattaché à l'Équipe de facturation "${targetTeam.name}"`,
-      {
-        scopeId: targetTeam.id,
-        scopePath: targetTeam.slug,
-        scopeLabel: `Équipe · ${targetTeam.name}`,
-      },
-    );
-    setAuditEvents(nextAudit);
-    persistSnapshot(buildSnapshot({ auditEvents: nextAudit }));
-  };
-
-  const addOrgUnit = (
-    input: Omit<ConfiguredOrgUnit, "id"> & { readonly attachCurrentAdmin?: boolean },
-  ) => {
-    const id = orgUnits.length === 0 ? "org-1" : `org-${orgUnits.length + 1}`;
-    const newUnit: ConfiguredOrgUnit = {
-      id,
-      name: input.name,
-      slug: input.slug,
-      level: input.level,
-      parentId: input.parentId,
-      billingEnabled: input.billingEnabled ?? true,
-      leadUserId: input.leadUserId ?? null,
-      memberUserIds: input.memberUserIds ?? [],
-      attachedWorkspacesCount: input.attachedWorkspacesCount ?? 0,
-    };
-    const nextOrgUnits = [...orgUnits, newUnit];
-    const shouldAttachAdmin =
-      input.level === "TEAM" && input.attachCurrentAdmin !== false;
-    if (shouldAttachAdmin && platformAdmin) {
-      const currentTeamIds = platformAdmin.memberTeamIds ?? [];
-      if (!currentTeamIds.includes(id)) {
-        const updatedAdmin: ConfiguredPlatformAdmin = {
-          ...platformAdmin,
-          memberTeamIds: [...currentTeamIds, id],
-        };
-        writeCachedPlatformAdmin(updatedAdmin);
-        setPlatformAdmin(updatedAdmin);
-      }
-    }
-    const levelLabel = input.level === "BU" ? "Direction (BU)" : "Équipe";
-    const nextAudit = appendAudit(
-      "OrgUnitCreated",
-      `${levelLabel} "${input.name}" (${input.slug}) créée`,
-      {
-        scopeId: id,
-        scopePath: input.slug,
-        scopeLabel: `${levelLabel} · ${input.name}`,
-      },
-    );
-    setOrgUnits(nextOrgUnits);
-    setAuditEvents(nextAudit);
-    persistSnapshot(buildSnapshot({ orgUnits: nextOrgUnits, auditEvents: nextAudit }));
-  };
-
-  const syncOrgUnitsFromServer = (
-    units: readonly ConfiguredOrgUnit[],
-    auditMeta?: {
-      readonly eventType: string;
-      readonly summary: string;
-      readonly scopeId?: string;
-      readonly scopePath?: string;
-      readonly scopeLabel?: string;
-    },
-  ) => {
-    setOrgUnits(units);
-    if (auditMeta) {
-      const nextAudit = appendAudit(auditMeta.eventType, auditMeta.summary, {
-        scopeId: auditMeta.scopeId,
-        scopePath: auditMeta.scopePath,
-        scopeLabel: auditMeta.scopeLabel,
-      });
-      setAuditEvents(nextAudit);
-      persistSnapshot(buildSnapshot({ orgUnits: units, auditEvents: nextAudit }));
-    } else {
+  const governanceActions = createPlatformGovernanceActions({
+    platformAdmin,
+    orgUnits,
+    rbacGrants,
+    llmTiers,
+    workspaces,
+    packs,
+    workflows,
+    runs,
+    catalogItems,
+    ontologyConcepts,
+    setPlatformAdmin,
+    setOrgUnits,
+    setRbacGrants,
+    setLlmTiers,
+    setPacks,
+    setWorkflows,
+    setRuns,
+    setCatalogItems,
+    setOntologyConcepts,
+    setAuditEvents,
+    setLastSyncError,
+    markMutated: () => {
       hasMutatedSinceMountRef.current = true;
-      writeCachedPlatformSetupState(buildSnapshot({ orgUnits: units }));
-    }
-  };
-
-  const removeOrgUnit = (
-    orgUnitId: string,
-  ): { readonly deleted: boolean; readonly blockedReason: string | null } => {
-    const target = orgUnits.find((u) => u.id === orgUnitId);
-    if (!target) {
-      return { deleted: false, blockedReason: null };
-    }
-    const childUnits = orgUnits.filter((u) => u.parentId === target.id);
-    if (childUnits.length > 0) {
-      const childLabel =
-        childUnits.length > 1
-          ? `${childUnits.length} Équipes sont rattachées`
-          : "1 Équipe est rattachée";
-      return {
-        deleted: false,
-        blockedReason: `Suppression refusée : ${childLabel} à « ${target.name} » (${childUnits.map((c) => c.name).join(", ")}). Supprimez ou détachez d'abord les éléments enfants pour éviter toute configuration orpheline.`,
-      };
-    }
-    const attachedWorkspaces = workspaces.filter((w) => w.ownerOrgUnitId === target.id);
-    if (attachedWorkspaces.length > 0) {
-      const wsLabel =
-        attachedWorkspaces.length > 1
-          ? `${attachedWorkspaces.length} Espaces de Travail sont rattachés`
-          : "1 Espace de Travail est rattaché";
-      return {
-        deleted: false,
-        blockedReason: `Suppression refusée : ${wsLabel} à « ${target.name} » (${attachedWorkspaces.map((w) => w.name).join(", ")}). Supprimez ou réattribuez d'abord ces espaces.`,
-      };
-    }
-    const dependentGrants = rbacGrants.filter(
-      (g) =>
-        g.scopePath === target.slug ||
-        g.scopePath === target.name ||
-        g.scopePath.includes(`/${target.slug}`) ||
-        g.scopePath.startsWith(`${target.slug}/`),
-    );
-    if (dependentGrants.length > 0) {
-      const grantLabel =
-        dependentGrants.length > 1
-          ? `${dependentGrants.length} règles d'habilitation ciblent`
-          : "1 règle d'habilitation cible";
-      return {
-        deleted: false,
-        blockedReason: `Suppression refusée : ${grantLabel} « ${target.name} ». Supprimez d'abord ces habilitations pour ne pas laisser de configuration orpheline.`,
-      };
-    }
-    const nextOrgUnits = orgUnits.filter((u) => u.id !== orgUnitId);
-    if (platformAdmin?.memberTeamIds?.includes(orgUnitId)) {
-      const updatedAdmin: ConfiguredPlatformAdmin = {
-        ...platformAdmin,
-        memberTeamIds: platformAdmin.memberTeamIds.filter((id) => id !== orgUnitId),
-      };
-      writeCachedPlatformAdmin(updatedAdmin);
-      setPlatformAdmin(updatedAdmin);
-    }
-    const levelLabel = target.level === "BU" ? "Direction (BU)" : "Équipe";
-    const nextAudit = appendAudit(
-      "OrgUnitDeleted",
-      `${levelLabel} "${target.name}" (${target.slug}) supprimée`,
-      {
-        scopeId: target.id,
-        scopePath: target.slug,
-        scopeLabel: `${levelLabel} · ${target.name}`,
-      },
-    );
-    setOrgUnits(nextOrgUnits);
-    setAuditEvents(nextAudit);
-    persistSnapshot(buildSnapshot({ orgUnits: nextOrgUnits, auditEvents: nextAudit }));
-    return { deleted: true, blockedReason: null };
-  };
-
-  const addRbacGrant = (input: Omit<ConfiguredRbacGrant, "id">) => {
-    const id = rbacGrants.length === 0 ? "grant-1" : `grant-${rbacGrants.length + 1}`;
-    const nextRbacGrants = [...rbacGrants, { ...input, id }];
-    const readableScope = formatHumanReadableScopePath(input.scopePath);
-    const nextAudit = appendAudit(
-      "PermissionGranted",
-      `${input.subjectType === "ROLE" ? "Rôle" : "Utilisateur"} ${input.subjectId} → ${input.verb} sur ${readableScope}`,
-      {
-        scopePath: input.scopePath,
-        scopeLabel: readableScope,
-      },
-    );
-    setRbacGrants(nextRbacGrants);
-    setAuditEvents(nextAudit);
-    persistSnapshot(buildSnapshot({ rbacGrants: nextRbacGrants, auditEvents: nextAudit }));
-  };
-
-  const removeRbacGrant = (grantId: string) => {
-    const target = rbacGrants.find((g) => g.id === grantId);
-    if (!target) return;
-    const nextRbacGrants = rbacGrants.filter((g) => g.id !== grantId);
-    const readableScope = formatHumanReadableScopePath(target.scopePath);
-    const nextAudit = appendAudit(
-      "PermissionRevoked",
-      `${target.subjectType === "ROLE" ? "Rôle" : "Utilisateur"} ${target.subjectId} → ${target.verb} révoqué sur ${readableScope}`,
-      {
-        scopePath: target.scopePath,
-        scopeLabel: readableScope,
-      },
-    );
-    setRbacGrants(nextRbacGrants);
-    setAuditEvents(nextAudit);
-    persistSnapshot(buildSnapshot({ rbacGrants: nextRbacGrants, auditEvents: nextAudit }));
-  };
-
-  const syncRbacGrantsFromServer = (
-    grants: readonly ConfiguredRbacGrant[],
-    auditMeta?: {
-      readonly eventType: string;
-      readonly summary: string;
-      readonly scopePath?: string;
-      readonly scopeLabel?: string;
     },
-  ) => {
-    setRbacGrants(grants);
-    if (auditMeta) {
-      const nextAudit = appendAudit(auditMeta.eventType, auditMeta.summary, {
-        scopePath: auditMeta.scopePath,
-        scopeLabel: auditMeta.scopeLabel,
-      });
-      setAuditEvents(nextAudit);
-      persistSnapshot(buildSnapshot({ rbacGrants: grants, auditEvents: nextAudit }));
-    } else {
-      hasMutatedSinceMountRef.current = true;
-      writeCachedPlatformSetupState(buildSnapshot({ rbacGrants: grants }));
-    }
-  };
+    appendAudit,
+    buildSnapshot,
+    persistSnapshot,
+  });
 
-  const upsertLlmTier = (input: ConfiguredLlmTierMapping) => {
-    const nextLlmTiers = [...llmTiers.filter((item) => item.tier !== input.tier), input];
-    const nextAudit = appendAudit(
-      "SettingsChanged",
-      `Niveau IA "${input.tier}" associé au modèle ${input.primaryModel} (${input.modelFamily})`,
-      {
-        scopeId: "scope-global",
-        scopePath: "GLOBAL",
-        scopeLabel: "Plateforme entière",
-      },
-    );
-    setLlmTiers(nextLlmTiers);
-    setAuditEvents(nextAudit);
-    persistSnapshot(buildSnapshot({ llmTiers: nextLlmTiers, auditEvents: nextAudit }));
-
-    const client = createOrciaApiClient({ baseUrl: "" });
-    const resolvedUri =
-      input.endpointUrl &&
-      (input.endpointUrl.startsWith("http://") || input.endpointUrl.startsWith("https://"))
-        ? input.endpointUrl
-        : `https://api.${input.modelFamily.toLowerCase().replace(/[^a-z0-9-]+/g, "-")}.local/v1`;
-    void client
-      .registerProgressiveLlmEndpoint({
-        endpoint_key: input.tier,
-        provider_slug: input.modelFamily,
-        model_family: input.modelFamily,
-        model_name: input.primaryModel,
-        endpoint_uri: resolvedUri,
-      })
-      .catch(() => undefined);
-  };
-
-  const createWorkspace = (input: {
-    name: string;
-    slug: string;
-    visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER";
-    lifecyclePhase: ProductLifecyclePhaseType;
-    ownerOrgUnitId?: string;
-  }) => {
-    const workspaceId = `ws-${workspaces.length + 1}`;
-    const teamUnits = orgUnits.filter((u) => u.level === "TEAM");
-    const resolvedOwnerUnit =
-      orgUnits.find((u) => u.id === input.ownerOrgUnitId) ??
-      teamUnits[0] ??
-      orgUnits[orgUnits.length - 1];
-    const ownerOrgUnitId = resolvedOwnerUnit?.id;
-    const ownerOrgUnitName =
-      resolvedOwnerUnit?.name ?? "Plateforme Globale ORCIA";
-    const newWs: ControlCenterWorkspaceGovItem = {
-      workspaceId,
-      name: input.name,
-      visibilityMode: input.visibilityMode,
-      ...(ownerOrgUnitId ? { ownerOrgUnitId } : {}),
-      ownerOrgUnitName,
-      ...(input.visibilityMode === "PRIVATE_USER"
-        ? { ownerUserId: platformAdmin?.email ?? "local-operator" }
-        : {}),
-      lifecyclePhase: input.lifecyclePhase,
-      suggestedWorkflows: workflows.map((w) => w.workflowKey),
-      accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
-      finopsCostUsd: 0,
-    };
-    const nextWorkspaces = [...workspaces, newWs];
-    const modeLabel =
-      input.visibilityMode === "PRIVATE_USER"
-        ? "Privé personnel"
-        : input.visibilityMode === "CONFIDENTIAL_RESTRICTED"
-          ? "Confidentiel"
-          : "Collectif d'équipe";
-    const nextAudit = appendAudit(
-      "WorkspaceCreated",
-      `Espace de travail "${input.name}" (${input.slug}, ${modeLabel}, facturé à ${ownerOrgUnitName}) créé`,
-      {
-        scopeId: workspaceId,
-        scopePath: input.slug,
-        scopeLabel: `Espace · ${input.name}`,
-      },
-    );
+  const createWorkspace = async (
+    input: CreateWorkspaceInput,
+  ): Promise<ControlCenterWorkspaceGovItem> => {
+    hasMutatedSinceMountRef.current = true;
+    const { workspace, auditEvent } = await createWorkspaceViaServer({
+      input,
+      orgUnits,
+      workflows,
+      platformAdmin,
+    });
+    const nextWorkspaces = [...workspaces, workspace];
+    const nextAudit = appendAudit(auditEvent.eventType, auditEvent.summary, {
+      scopeId: auditEvent.scopeId,
+      scopePath: auditEvent.scopePath,
+      scopeLabel: auditEvent.scopeLabel,
+    });
     setWorkspaces(nextWorkspaces);
     setAuditEvents(nextAudit);
-    persistSnapshot(buildSnapshot({ workspaces: nextWorkspaces, auditEvents: nextAudit }));
+    await persistSnapshotStrict(
+      buildSnapshot({ workspaces: nextWorkspaces, auditEvents: nextAudit }),
+    );
+    return workspace;
   };
 
-  const updateWorkspacePhase = (
+  const updateWorkspacePhase = async (
     workspaceId: string,
     phase: ProductLifecyclePhaseType,
-  ) => {
-    const targetWs = workspaces.find((w) => w.workspaceId === workspaceId);
-    const nextWorkspaces = workspaces.map((ws) =>
-      ws.workspaceId === workspaceId ? { ...ws, lifecyclePhase: phase } : ws,
-    );
-    const nextAudit = appendAudit(
-      "WorkspacePhaseUpdated",
-      `Espace "${targetWs?.name ?? workspaceId}" passé en phase ${phase}`,
-      {
-        scopeId: workspaceId,
-        scopePath: targetWs?.name ?? workspaceId,
-        scopeLabel: `Espace · ${targetWs?.name ?? workspaceId}`,
-      },
-    );
+  ): Promise<void> => {
+    const { nextWorkspaces, nextAudit } = applyWorkspacePhaseUpdate({
+      workspaces,
+      workspaceId,
+      phase,
+      appendAudit,
+    });
     setWorkspaces(nextWorkspaces);
     setAuditEvents(nextAudit);
-    persistSnapshot(buildSnapshot({ workspaces: nextWorkspaces, auditEvents: nextAudit }));
+    await persistSnapshotStrict(
+      buildSnapshot({ workspaces: nextWorkspaces, auditEvents: nextAudit }),
+    );
   };
 
-  const updateWorkspaceVisibility = (
+  const updateWorkspaceVisibility = async (
     workspaceId: string,
     visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER",
-  ) => {
-    const targetWs = workspaces.find((w) => w.workspaceId === workspaceId);
-    const nextWorkspaces = workspaces.map((ws) =>
-      ws.workspaceId === workspaceId ? { ...ws, visibilityMode } : ws,
-    );
-    const modeLabel =
-      visibilityMode === "PRIVATE_USER"
-        ? "Privé personnel"
-        : visibilityMode === "CONFIDENTIAL_RESTRICTED"
-          ? "Confidentiel isolé"
-          : "Collectif d'équipe";
-    const nextAudit = appendAudit(
-      "SettingsChanged",
-      `Visibilité de l'Espace "${targetWs?.name ?? workspaceId}" mise à jour : ${modeLabel}`,
-      {
-        scopeId: workspaceId,
-        scopePath: targetWs?.name ?? workspaceId,
-        scopeLabel: `Espace · ${targetWs?.name ?? workspaceId}`,
-      },
-    );
+  ): Promise<void> => {
+    const { nextWorkspaces, nextAudit } = applyWorkspaceVisibilityUpdate({
+      workspaces,
+      workspaceId,
+      visibilityMode,
+      appendAudit,
+    });
     setWorkspaces(nextWorkspaces);
     setAuditEvents(nextAudit);
-    persistSnapshot(buildSnapshot({ workspaces: nextWorkspaces, auditEvents: nextAudit }));
+    await persistSnapshotStrict(
+      buildSnapshot({ workspaces: nextWorkspaces, auditEvents: nextAudit }),
+    );
   };
 
-  const registerDatasource = (input: {
-    workspaceName: string;
-    alias: string;
-    scheme: "git" | "confluence" | "jira" | "db";
-    uri: string;
-    executionIdentity: "passthrough" | "service_account";
-    freshnessTtlDays: number;
-  }) => {
-    const id = `ds-${datasources.length + 1}`;
-    const nextDatasources: readonly ControlCenterDatasourceItem[] = [
-      ...datasources,
-      {
-        id,
-        workspaceName: input.workspaceName,
-        alias: input.alias,
-        scheme: input.scheme,
-        uri: input.uri,
-        executionIdentity: input.executionIdentity,
-        freshnessTtlDays: input.freshnessTtlDays,
-        tripartiteStatus: "ALIGNED",
-      },
-    ];
-    const identityLabel =
-      input.executionIdentity === "passthrough"
-        ? "Identité personnelle"
-        : "Compte technique partagé";
-    const nextAudit = appendAudit(
-      "ConnectorConfigured",
-      `Connecteur "${input.alias}" (${input.uri}) enregistré (${identityLabel})`,
-      {
-        scopePath: input.workspaceName,
-        scopeLabel: formatHumanReadableScopePath(input.workspaceName),
-      },
-    );
+  const registerDatasource = async (input: RegisterDatasourceInput): Promise<void> => {
+    const { nextDatasources, nextAudit } = applyRegisterDatasource({
+      datasources,
+      input,
+      appendAudit,
+    });
     setDatasources(nextDatasources);
     setAuditEvents(nextAudit);
-    persistSnapshot(buildSnapshot({ datasources: nextDatasources, auditEvents: nextAudit }));
-  };
-
-  const registerPack = (input: ConfiguredPackItem) => {
-    const nextPacks = deduplicateConfiguredPacks([
-      ...packs.filter(
-        (p) =>
-          !(
-            p.packKey === input.packKey &&
-            (p.scopePath === input.scopePath || input.scopePath === "GLOBAL")
-          ),
-      ),
-      input,
-    ]);
-    const nextCatalogItems: readonly UiCatalogExplorerItemView[] = [
-      ...catalogItems.filter((item) => item.resourceId !== `pack-${input.packKey}`),
-      {
-        resourceId: `pack-${input.packKey}`,
-        uri: `orcia://packs/${input.packKey}@${input.version}`,
-        scheme: "orcia",
-        title: input.packKey,
-        description: `Pack ${input.packKey} (${input.status})`,
-        resourceType: "workflow",
-        sourceFormat: "ORCIA",
-        version: input.version,
-        sha256Short: "e3b0c44298fc", // pragma: allowlist secret
-        casKey: "cas/e3b0c44298fc", // pragma: allowlist secret
-        visibilityScope: "PUBLISHED_ORG",
-        grantedPermissions: ["DISCOVER", "EXECUTE"],
-        sourceMasked: false,
-      },
-    ];
-    const readableScope = formatHumanReadableScopePath(input.scopePath);
-    const nextAudit = appendAudit(
-      "PackRegistered",
-      `Pack "${input.packKey}@${input.version}" activé sur ${readableScope}`,
-      {
-        scopePath: input.scopePath,
-        scopeLabel: readableScope,
-      },
-    );
-    setPacks(nextPacks);
-    setCatalogItems(nextCatalogItems);
-    setAuditEvents(nextAudit);
-    persistSnapshot(
-      buildSnapshot({
-        packs: nextPacks,
-        catalogItems: nextCatalogItems,
-        auditEvents: nextAudit,
-      }),
+    await persistSnapshotStrict(
+      buildSnapshot({ datasources: nextDatasources, auditEvents: nextAudit }),
     );
   };
 
-  const removePack = (packKey: string, scopePath?: string) => {
-    const nextPacks = packs.filter(
-      (p) =>
-        !(
-          p.packKey === packKey &&
-          (scopePath === undefined || p.scopePath === scopePath)
-        ),
-    );
-    const stillActiveSomewhere = nextPacks.some((p) => p.packKey === packKey);
-    const nextCatalogItems = stillActiveSomewhere
-      ? catalogItems
-      : catalogItems.filter((item) => item.resourceId !== `pack-${packKey}`);
-    const readableScope = formatHumanReadableScopePath(scopePath ?? "GLOBAL");
-    const nextAudit = appendAudit(
-      "PackDeactivated",
-      `Pack "${packKey}" désactivé sur ${readableScope}`,
-      {
-        scopePath: scopePath ?? "GLOBAL",
-        scopeLabel: readableScope,
-      },
-    );
-    setPacks(nextPacks);
-    setCatalogItems(nextCatalogItems);
-    setAuditEvents(nextAudit);
-    persistSnapshot(
-      buildSnapshot({
-        packs: nextPacks,
-        catalogItems: nextCatalogItems,
-        auditEvents: nextAudit,
-      }),
-    );
-  };
-
-  const upsertWorkflow = (input: ConfiguredWorkflowItem) => {
-    const nextWorkflows = [
-      ...workflows.filter((w) => w.workflowKey !== input.workflowKey),
-      input,
-    ];
-    const nextCatalogItems: readonly UiCatalogExplorerItemView[] = [
-      ...catalogItems.filter((item) => item.resourceId !== `wf-${input.workflowKey}`),
-      {
-        resourceId: `wf-${input.workflowKey}`,
-        uri: `orcia://workflows/${input.workflowKey}@${input.version}`,
-        scheme: "orcia",
-        title: input.title,
-        description: input.prePrompt || input.title,
-        resourceType: "workflow",
-        sourceFormat: "ORCIA",
-        version: input.version,
-        sha256Short: input.prePromptSha256.slice(0, 12),
-        casKey: `cas/${input.prePromptSha256.slice(0, 12)}`,
-        visibilityScope: "SHARED_WORKSPACE",
-        grantedPermissions: ["DISCOVER", "EXECUTE", "EDIT"],
-        sourceMasked: false,
-      },
-    ];
-    const statusLabel = input.status === "PUBLISHED" ? "Publié" : "Brouillon";
-    const nextAudit = appendAudit(
-      "WorkflowSaved",
-      `Processus "${input.title || input.workflowKey}" (${statusLabel}) enregistré`,
-      {
-        scopeId: "scope-global",
-        scopePath: "GLOBAL",
-        scopeLabel: "Plateforme entière",
-      },
-    );
-    setWorkflows(nextWorkflows);
-    setCatalogItems(nextCatalogItems);
-    setAuditEvents(nextAudit);
-    persistSnapshot(
-      buildSnapshot({
-        workflows: nextWorkflows,
-        catalogItems: nextCatalogItems,
-        auditEvents: nextAudit,
-      }),
-    );
-  };
-
-  const launchRun = (input: {
-    workspaceId: string;
-    workspaceName: string;
-    title: string;
-    workflowKey: string;
-  }) => {
-    const runId = `run-${runs.length + 1}`;
-    const nextRuns: readonly ControlCenterRunItem[] = [
-      ...runs,
-      {
-        runId,
-        workspaceId: input.workspaceId,
-        workspaceName: input.workspaceName,
-        title: input.title,
-        status: "RUNNING",
-        currentStepKey: input.workflowKey,
-        executionMode: "COACHING",
-        accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
-        budgetConsumedUsd: 0,
-        blackboardSummary: "Exécution initialisée par l'utilisateur.",
-      },
-    ];
-    const nextAudit = appendAudit(
-      "RunLaunched",
-      `Exécution "${input.title}" (${runId}) démarrée sur ${input.workspaceName}`,
-      {
-        scopeId: input.workspaceId,
-        scopePath: input.workspaceName,
-        scopeLabel: `Espace · ${input.workspaceName}`,
-      },
-    );
-    setRuns(nextRuns);
-    setAuditEvents(nextAudit);
-    persistSnapshot(buildSnapshot({ runs: nextRuns, auditEvents: nextAudit }));
-  };
-
-  const addOntologyConcept = (input: UiOntologyConceptView) => {
-    const nextConcepts = [...ontologyConcepts, input];
-    const readableLevel =
-      input.level === "1_ENTERPRISE"
-        ? "Entreprise (Global)"
-        : input.level === "2_DOMAIN"
-          ? "Direction (BU)"
-          : input.level === "3_TEAM"
-            ? "Équipe"
-            : "Espace de travail";
-    const nextAudit = appendAudit(
-      "OntologyConceptCreated",
-      `Terme métier "${input.canonicalTerm}" (${readableLevel}) créé`,
-      {
-        scopeId: input.scopeId || "scope-global",
-        scopePath: input.scopeId || "GLOBAL",
-        scopeLabel: formatHumanReadableScopePath(input.scopeId || "GLOBAL"),
-      },
-    );
-    setOntologyConcepts(nextConcepts);
-    setAuditEvents(nextAudit);
-    persistSnapshot(
-      buildSnapshot({ ontologyConcepts: nextConcepts, auditEvents: nextAudit }),
-    );
-  };
-
-  const promoteOntologyConcept = (
-    conceptKey: string,
-    targetLevel: UiOntologyLevel,
-    targetScopeId?: string,
-  ) => {
-    const targetConcept = ontologyConcepts.find((c) => c.conceptKey === conceptKey);
-    if (!targetConcept) return;
-    const nextScopeId =
-      targetScopeId ??
-      (targetLevel === "1_ENTERPRISE" ? "scope-global" : targetConcept.scopeId);
-    const nextConcepts = ontologyConcepts.map((c) =>
-      c.conceptKey === conceptKey
-        ? {
-            ...c,
-            level: targetLevel,
-            scopeId: nextScopeId,
-            immutable: targetLevel === "1_ENTERPRISE",
-          }
-        : c,
-    );
-    const readableTargetLevel =
-      targetLevel === "1_ENTERPRISE"
-        ? "Entreprise (Global)"
-        : targetLevel === "2_DOMAIN"
-          ? "Direction (BU)"
-          : targetLevel === "3_TEAM"
-            ? "Équipe"
-            : "Espace de travail";
-    const nextAudit = appendAudit(
-      "OntologyConceptCreated",
-      `Terme métier "${targetConcept.canonicalTerm}" promu au niveau ${readableTargetLevel}`,
-      {
-        scopeId: nextScopeId,
-        scopePath: nextScopeId,
-        scopeLabel: formatHumanReadableScopePath(nextScopeId),
-      },
-    );
-    setOntologyConcepts(nextConcepts);
-    setAuditEvents(nextAudit);
-    persistSnapshot(
-      buildSnapshot({ ontologyConcepts: nextConcepts, auditEvents: nextAudit }),
-    );
-  };
-
-  const scopes: UiScopeNode[] = [
-    BASE_GLOBAL_SCOPE,
-    ...orgUnits.map((unit) => ({
-      id: unit.id,
-      level: unit.level,
-      name: unit.name,
-      parentId: unit.parentId,
-      accessMode: "CONTRIBUTOR_ACTION_REQUIRED" as const,
-    })),
-    ...workspaces.map((ws) => ({
-      id: ws.workspaceId,
-      level: "WORKSPACE" as const,
-      name: ws.name,
-      parentId: ws.ownerOrgUnitId ?? orgUnits[orgUnits.length - 1]?.id ?? BASE_GLOBAL_SCOPE.id,
-      accessMode: ws.accessMode,
-    })),
-  ];
-
+  const scopes = buildScopeNodes(orgUnits, workspaces);
   const completedSetupStepsCount = [
     llmTiers.length > 0,
     orgUnits.length > 0 || rbacGrants.length > 0,
@@ -1235,9 +447,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     datasources.length > 0,
     workflows.length > 0 || packs.length > 0,
   ].filter(Boolean).length;
-
   const isDay0Complete = completedSetupStepsCount === 5;
-
   const workflowOverrides: ControlCenterOverrideItem[] = workflows.map((wf) => ({
     workflowKey: wf.workflowKey,
     title: wf.title,
@@ -1252,6 +462,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     <PlatformSetupContext.Provider
       value={{
         isInitialLoading,
+        lastSyncError,
         platformAdmin,
         orgUnits,
         rbacGrants,
@@ -1268,25 +479,11 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         scopes,
         isDay0Complete,
         completedSetupStepsCount,
-        createPlatformAdmin,
-        toggleAdminTeamMembership,
-        addOrgUnit,
-        removeOrgUnit,
-        syncOrgUnitsFromServer,
-        addRbacGrant,
-        removeRbacGrant,
-        syncRbacGrantsFromServer,
-        upsertLlmTier,
+        ...governanceActions,
         createWorkspace,
         updateWorkspacePhase,
         updateWorkspaceVisibility,
         registerDatasource,
-        registerPack,
-        removePack,
-        upsertWorkflow,
-        launchRun,
-        addOntologyConcept,
-        promoteOntologyConcept,
       }}
     >
       {children}

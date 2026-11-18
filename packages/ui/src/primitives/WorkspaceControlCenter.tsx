@@ -56,6 +56,7 @@ export interface ControlCenterOverrideItem {
 
 export interface ControlCenterWorkspaceGovItem {
   readonly workspaceId: string;
+  readonly slug?: string;
   readonly name: string;
   readonly visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER";
   readonly ownerOrgUnitId?: string;

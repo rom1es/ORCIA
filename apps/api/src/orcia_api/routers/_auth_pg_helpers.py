@@ -110,13 +110,11 @@ async def rehydrate_user_from_pg_by_id(
 
 
 def resolve_app_db_engine(request: Request) -> AsyncEngine | None:
-    """Resolve shared PostgreSQL `AsyncEngine`, returning `None` if PG is disabled."""
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") == "1":
-        return None
-    try:
-        from orcia_api.dependencies import get_or_create_shared_db_engine
+    """Resolve shared PostgreSQL `AsyncEngine`, returning `None` in pure in-memory unit tests."""
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
 
-        return get_or_create_shared_db_engine(request)
+    try:
+        return get_configured_db_engine(request)
     except Exception as exc:
         logger.warning("resolve_app_db_engine_failed", error_type=type(exc).__name__)
         return None

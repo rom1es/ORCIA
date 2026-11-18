@@ -214,9 +214,11 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("create-workspace-submit-btn"));
 
     // FinOps is now unlocked in the sidebar!
-    expect(
-      (screen.getByTestId("eight-menu-item-finops") as HTMLButtonElement).disabled,
-    ).toBe(false);
+    await waitFor(() => {
+      expect(
+        (screen.getByTestId("eight-menu-item-finops") as HTMLButtonElement).disabled,
+      ).toBe(false);
+    });
 
     // Navigate to /cockpit -> Onboarding progress is 1/5 and Run launcher is unlocked
     await act(async () => {
@@ -800,6 +802,11 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       target: { value: "Espace Survie F5" },
     });
     fireEvent.click(screen.getByTestId("create-workspace-submit-btn"));
+    await waitFor(() => {
+      expect(
+        (screen.getByTestId("eight-menu-item-finops") as HTMLButtonElement).disabled,
+      ).toBe(false);
+    });
 
     // Simulate F5 full browser reload by unmounting the entire React tree and mounting a fresh router
     firstRender.unmount();
@@ -1845,6 +1852,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     });
     expect(createWsBtn.disabled).toBe(false);
     fireEvent.click(createWsBtn);
+    await waitFor(() => {
+      expect(screen.getByTestId("workspaces-filter-all").textContent).toContain("Tous (1)");
+    });
 
     // Also create a collective workspace ("Projet Socle IA", STANDARD) under "Équipe Core IA" (org-2)
     fireEvent.change(ownerTeamSelect, { target: { value: "org-2" } });
@@ -1853,6 +1863,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       target: { value: "Projet Socle IA" },
     });
     fireEvent.click(createWsBtn);
+    await waitFor(() => {
+      expect(screen.getByTestId("workspaces-filter-all").textContent).toContain("Tous (2)");
+    });
 
     // 4. Open TopHeader Context Switcher and verify the 3 explicit groups:
     // - 🔒 Mes Espaces Privés
@@ -1867,8 +1880,13 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(dropdownMenu.textContent).toContain("🔒 Espace · Mon Bac à Sable R&D · Équipe Core IA");
     expect(dropdownMenu.textContent).toContain("📦 Espace · Projet Socle IA · Équipe Core IA");
 
-    // Select the Private Workspace ("ws-1") in the TopHeader -> filters /workspaces to that private workspace
-    fireEvent.click(screen.getByTestId("topbar-workspace-option-ws-1"));
+    // Select the Private Workspace (UUIDv7) in the TopHeader -> filters /workspaces to that private workspace
+    const privateOption = screen
+      .getAllByTestId(/^topbar-workspace-option-/)
+      .find((el) => el.textContent?.includes("Mon Bac à Sable R&D"));
+    expect(privateOption).toBeDefined();
+    expect(privateOption?.getAttribute("data-testid")).not.toBe("topbar-workspace-option-ws-1");
+    fireEvent.click(privateOption!);
     expect(screen.getByTestId("workspace-active-scope-banner").textContent).toContain(
       "Mon Bac à Sable R&D",
     );
@@ -1946,6 +1964,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       target: { value: "Mon Labo Perso" },
     });
     fireEvent.click(screen.getByTestId("create-workspace-submit-btn"));
+    await waitFor(() => {
+      expect(screen.getByTestId("workspaces-filter-all").textContent).toContain("Tous (1)");
+    });
 
     // Expand creation form via "+ Créer un Espace de Travail" button and create a 2nd workspace
     const toggleCreateBtn = screen.getByTestId("toggle-create-workspace-form-btn");
@@ -1955,6 +1976,22 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       target: { value: "Espace Produit" },
     });
     fireEvent.click(screen.getByTestId("create-workspace-submit-btn"));
+    await waitFor(() => {
+      expect(screen.getByTestId("workspaces-filter-all").textContent).toContain("Tous (2)");
+    });
+
+    const cards = screen.getAllByTestId(/^workspace-studio-card-/);
+    expect(cards.length).toBe(2);
+    const ws1Card = cards.find((el) => el.textContent?.includes("Mon Labo Perso"));
+    const ws2Card = cards.find((el) => el.textContent?.includes("Espace Produit"));
+    expect(ws1Card).toBeDefined();
+    expect(ws2Card).toBeDefined();
+    const ws1Id = ws1Card!.getAttribute("data-testid")!.replace("workspace-studio-card-", "");
+    const ws2Id = ws2Card!.getAttribute("data-testid")!.replace("workspace-studio-card-", "");
+    expect(ws1Id).not.toBe("ws-1");
+    expect(ws2Id).not.toBe("ws-2");
+    expect(ws1Id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(ws2Id).toMatch(/^[0-9a-f-]{36}$/);
 
     // 4. Verify Quick Filters (Tous (2), 👥 Espaces d'Équipe (1), 🔒 Mes Espaces Privés (1))
     expect(screen.getByTestId("workspaces-filter-all").textContent).toContain("Tous (2)");
@@ -1962,30 +1999,32 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(screen.getByTestId("workspaces-filter-private").textContent).toContain("(1)");
 
     fireEvent.click(screen.getByTestId("workspaces-filter-private"));
-    expect(screen.getByTestId("workspace-studio-card-ws-1")).toBeDefined();
-    expect(screen.queryByTestId("workspace-studio-card-ws-2")).toBeNull();
+    expect(screen.getByTestId(`workspace-studio-card-${ws1Id}`)).toBeDefined();
+    expect(screen.queryByTestId(`workspace-studio-card-${ws2Id}`)).toBeNull();
     fireEvent.click(screen.getByTestId("workspaces-filter-all"));
 
-    // 5. Test 1-click sharing of Private Workspace ("ws-1") to Team ("STANDARD") + Phase auto-save with "✓ Enregistré" badge
-    fireEvent.click(screen.getByTestId("share-private-workspace-btn-ws-1"));
-    expect(screen.getByTestId("workspace-visibility-badge-ws-1").textContent).toContain(
-      "Collectif d'équipe",
-    );
-    expect(
-      screen.getByTestId("workspace-autosaved-badge-ws-1").querySelector("svg"),
-    ).not.toBeNull();
-    expect(screen.getByTestId("workspace-autosaved-badge-ws-1").textContent).toContain(
-      "Enregistré",
-    );
+    // 5. Test 1-click sharing of Private Workspace (UUIDv7) to Team ("STANDARD") + Phase auto-save with "✓ Enregistré" badge
+    fireEvent.click(screen.getByTestId(`share-private-workspace-btn-${ws1Id}`));
+    await waitFor(() => {
+      expect(screen.getByTestId(`workspace-visibility-badge-${ws1Id}`).textContent).toContain(
+        "Collectif d'équipe",
+      );
+      expect(
+        screen.getByTestId(`workspace-autosaved-badge-${ws1Id}`).querySelector("svg"),
+      ).not.toBeNull();
+      expect(screen.getByTestId(`workspace-autosaved-badge-${ws1Id}`).textContent).toContain(
+        "Enregistré",
+      );
+    });
 
-    fireEvent.change(screen.getByTestId("workspace-card-phase-select-ws-1"), {
+    fireEvent.change(screen.getByTestId(`workspace-card-phase-select-${ws1Id}`), {
       target: { value: "RUN" },
     });
     expect(
-      (screen.getByTestId("workspace-card-phase-select-ws-1") as HTMLSelectElement).value,
+      (screen.getByTestId(`workspace-card-phase-select-${ws1Id}`) as HTMLSelectElement).value,
     ).toBe("RUN");
 
-    // 6. Test Unified 3-Tab Detail Panel for active workspace ("Mon Labo Perso", ws-1)
+    // 6. Test Unified 3-Tab Detail Panel for active workspace ("Mon Labo Perso", UUIDv7)
     // Tab 1: Sources & Documents de l'Espace -> connect a source via modal without navigating to /settings
     expect(screen.getByTestId("workspace-sources-empty-state")).toBeDefined();
     fireEvent.click(screen.getByTestId("open-attach-source-modal-btn"));
@@ -2025,23 +2064,23 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("workspace-glossary-submit-btn"));
 
     const conceptCard = await screen.findByTestId(
-      "glossary-concept-card-4-workspace-ws-1-marge-brute-r-currente",
+      `glossary-concept-card-4-workspace-${ws1Id}-marge-brute-r-currente`,
     );
     expect(conceptCard.textContent).toContain("Marge Brute Récurrente");
     expect(
-      screen.getByTestId("glossary-concept-level-badge-4-workspace-ws-1-marge-brute-r-currente")
+      screen.getByTestId(`glossary-concept-level-badge-4-workspace-${ws1Id}-marge-brute-r-currente`)
         .textContent,
     ).toContain("Mon Labo Perso");
 
     // Propose step-up promotion (L4 -> L3 Team) -> shows "En attente de validation" badge
     fireEvent.click(
       screen.getByTestId(
-        "promote-glossary-concept-btn-4-workspace-ws-1-marge-brute-r-currente",
+        `promote-glossary-concept-btn-4-workspace-${ws1Id}-marge-brute-r-currente`,
       ),
     );
     await waitFor(() => {
       expect(
-        screen.getByTestId("promoted-glossary-badge-4-workspace-ws-1-marge-brute-r-currente")
+        screen.getByTestId(`promoted-glossary-badge-4-workspace-${ws1Id}-marge-brute-r-currente`)
           .textContent,
       ).toContain("En attente de validation");
     });
@@ -2069,7 +2108,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       </QueryClientProvider>,
     );
 
-    expect(screen.getByTestId("workspace-visibility-badge-ws-1").textContent).toContain(
+    expect(screen.getByTestId(`workspace-visibility-badge-${ws1Id}`).textContent).toContain(
       "Collectif d'équipe",
     );
     expect(screen.getByTestId("workspace-detail-source-row-ds-1").textContent).toContain(
@@ -2079,12 +2118,12 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     await waitFor(() => {
       expect(
         screen.getByTestId(
-          "glossary-concept-level-badge-4-workspace-ws-1-marge-brute-r-currente",
+          `glossary-concept-level-badge-4-workspace-${ws1Id}-marge-brute-r-currente`,
         ).textContent,
       ).toContain("Mon Labo Perso");
       expect(
         screen.getByTestId(
-          "promoted-glossary-badge-4-workspace-ws-1-marge-brute-r-currente",
+          `promoted-glossary-badge-4-workspace-${ws1Id}-marge-brute-r-currente`,
         ).textContent,
       ).toContain("En attente de validation");
     });

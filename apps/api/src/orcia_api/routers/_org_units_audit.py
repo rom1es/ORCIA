@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import os
 from uuid import UUID
 
 from fastapi import Request
 
-from orcia_api.dependencies import get_audit_ledger_service, get_or_create_shared_db_engine
+from orcia_api.dependencies import get_audit_ledger_service
 from orcia_core.observability.logging import get_current_trace_id, get_logger
 from orcia_core.permissions import UserIdentity
 from orcia_core.ports.finops_telemetry import FinopsCostLedgerEntry
@@ -52,14 +51,14 @@ async def record_governance_audit_event(
         scope_path=scope_path or "GLOBAL",
         metadata=metadata or {},
     )
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
+
     audit_svc = get_audit_ledger_service(request)
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") == "1":
+    engine = get_configured_db_engine(request)
+    if engine is None:
         await audit_svc.record_entry(entry)
         return
     try:
-        engine = getattr(request.app.state, "db_engine", None) or get_or_create_shared_db_engine(
-            request
-        )
         async with engine.begin() as conn:
             await audit_svc.record_entry(entry, conn=conn)
     except Exception as exc:

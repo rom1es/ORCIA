@@ -116,6 +116,37 @@ class WorkspaceSummaryItem(BaseModel):
     datasources: list[WorkspaceDatasourceItem]
 
 
+class WorkspaceCreateRequest(BaseModel):
+    """Request payload for `POST /api/v1/workspaces` (`REM-01`, `UUIDv7` + exact `slug`)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    name: str = Field(..., min_length=1, max_length=255)
+    slug: str | None = Field(default=None, min_length=2, max_length=120)
+    visibility_mode: Literal["STANDARD", "CONFIDENTIAL_RESTRICTED", "PRIVATE_USER"] = "STANDARD"
+    lifecycle_phase: Literal["BUILD", "RUN", "MIGRATION"] = "BUILD"
+    owner_org_unit_id: str | None = Field(default=None, max_length=128)
+
+
+class WorkspaceCreateResponse(BaseModel):
+    """Response payload for `POST /api/v1/workspaces` returning persisted PG18 `UUIDv7` & `slug`."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    id: str
+    slug: str
+    name: str
+    owner_org_unit_id: str
+    owner_org_unit_name: str
+    visibility_mode: Literal["STANDARD", "CONFIDENTIAL_RESTRICTED", "PRIVATE_USER"]
+    lifecycle_phase: Literal["BUILD", "RUN", "MIGRATION"]
+    effective_role: PlatformRole
+    access_mode: AccessMode
+    access_origin: Literal["DIRECT_TEAM", "ROLLUP_PARENT", "PARTNER_INVITE", "GLOBAL_ADMIN"]
+    finops_cost_usd: float = 0.0
+    trace_id: str = Field(..., min_length=32, max_length=32)
+
+
 class WorkspacesListResponse(BaseModel):
     """Consolidated response for `GET /api/v1/workspaces`."""
 
@@ -326,6 +357,8 @@ __all__ = [
     "OrgUnitTreeItem",
     "UserPreferencesResponse",
     "UserPreferencesUpdateRequest",
+    "WorkspaceCreateRequest",
+    "WorkspaceCreateResponse",
     "WorkspaceDatasourceItem",
     "WorkspaceSummaryItem",
 ]

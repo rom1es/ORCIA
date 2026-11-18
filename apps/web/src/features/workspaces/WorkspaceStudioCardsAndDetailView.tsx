@@ -31,8 +31,8 @@ export interface WorkspaceStudioCardsAndDetailViewProps {
   readonly onToggleCreateForm: () => void;
   readonly openHelpSection: (sectionId: string) => void;
   readonly onNavigateToRoute: (route: string) => void;
-  readonly onUpdateWorkspacePhase: (workspaceId: string, phase: ProductLifecyclePhaseType) => void;
-  readonly onUpdateWorkspaceVisibility: (workspaceId: string, visibilityMode: WorkspaceVisibilityMode) => void;
+  readonly onUpdateWorkspacePhase: (workspaceId: string, phase: ProductLifecyclePhaseType) => void | Promise<void>;
+  readonly onUpdateWorkspaceVisibility: (workspaceId: string, visibilityMode: WorkspaceVisibilityMode) => void | Promise<void>;
   readonly onRegisterDatasource: PlatformSetupContextValue["registerDatasource"];
   readonly onAddOntologyConcept: (input: UiOntologyConceptView) => void;
   readonly onPromoteOntologyConcept: (conceptKey: string, targetLevel: UiOntologyLevel, targetScopeId?: string) => void;
@@ -277,8 +277,12 @@ export function WorkspaceStudioCardsAndDetailView({
                     aria-label={isFr ? "Phase de l'espace" : "Workspace phase"}
                     value={ws.lifecyclePhase}
                     onChange={(e) => {
-                      onUpdateWorkspacePhase(ws.workspaceId, e.target.value as ProductLifecyclePhaseType);
-                      markAutosaved(ws.workspaceId);
+                      const nextPhase = e.target.value as ProductLifecyclePhaseType;
+                      void Promise.resolve(onUpdateWorkspacePhase(ws.workspaceId, nextPhase))
+                        .then(() => markAutosaved(ws.workspaceId))
+                        .catch((err: unknown) => {
+                          onFeedback(`⚠️ ${err instanceof Error ? err.message : "Erreur de mise à jour"}`);
+                        });
                     }}
                     style={{ ...inputStyle, fontSize: "11px", padding: "4px 8px" }}
                   >
@@ -292,8 +296,12 @@ export function WorkspaceStudioCardsAndDetailView({
                     aria-label={isFr ? "Visibilité de l'espace" : "Workspace visibility"}
                     value={ws.visibilityMode}
                     onChange={(e) => {
-                      onUpdateWorkspaceVisibility(ws.workspaceId, e.target.value as WorkspaceVisibilityMode);
-                      markAutosaved(ws.workspaceId);
+                      const nextVis = e.target.value as WorkspaceVisibilityMode;
+                      void Promise.resolve(onUpdateWorkspaceVisibility(ws.workspaceId, nextVis))
+                        .then(() => markAutosaved(ws.workspaceId))
+                        .catch((err: unknown) => {
+                          onFeedback(`⚠️ ${err instanceof Error ? err.message : "Erreur de mise à jour"}`);
+                        });
                     }}
                     style={{ ...inputStyle, fontSize: "11px", padding: "4px 8px" }}
                   >
@@ -313,13 +321,18 @@ export function WorkspaceStudioCardsAndDetailView({
                       type="button"
                       data-testid={`share-private-workspace-btn-${ws.workspaceId}`}
                       onClick={() => {
-                        onUpdateWorkspaceVisibility(ws.workspaceId, "STANDARD");
-                        markAutosaved(ws.workspaceId);
-                        onFeedback(
-                          isFr
-                            ? `✅ L'espace « ${ws.name} » est désormais partagé avec l'équipe.`
-                            : `✅ Workspace "${ws.name}" is now shared with the team.`,
-                        );
+                        void Promise.resolve(onUpdateWorkspaceVisibility(ws.workspaceId, "STANDARD"))
+                          .then(() => {
+                            markAutosaved(ws.workspaceId);
+                            onFeedback(
+                              isFr
+                                ? `✅ L'espace « ${ws.name} » est désormais partagé avec l'équipe.`
+                                : `✅ Workspace "${ws.name}" is now shared with the team.`,
+                            );
+                          })
+                          .catch((err: unknown) => {
+                            onFeedback(`⚠️ ${err instanceof Error ? err.message : "Erreur de partage"}`);
+                          });
                       }}
                       style={{
                         padding: "4px 8px",

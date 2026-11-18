@@ -7,7 +7,6 @@ Exposes:
 
 from __future__ import annotations
 
-import os
 from typing import Annotated, Any
 
 from fastapi import APIRouter, HTTPException, Path, Request
@@ -54,7 +53,9 @@ def _trace(request: Request) -> str:
 
 
 def _pg_enabled() -> bool:
-    return os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1"
+    from orcia_api.dependencies._core_providers import is_pg_runtime_active
+
+    return is_pg_runtime_active()
 
 
 async def _get_workspace_datasources(request: Request, workspace_id: str) -> list[Any]:

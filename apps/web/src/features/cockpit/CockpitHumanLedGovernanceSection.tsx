@@ -35,10 +35,16 @@ export function CockpitHumanLedGovernanceSection({
   const isFr = locale === "fr";
   const apiClient = useMemo(() => createOrciaApiClient({ baseUrl: "" }), []);
 
+  const isHydrating = useAuthSessionStore((s) => s.isHydrating);
+  const accessToken = useAuthSessionStore((s) => s.accessToken);
+  const authDisplayName = useAuthSessionStore((s) => s.displayName);
+  const authEmail = useAuthSessionStore((s) => s.email);
+  const resolvedAuthorName = authDisplayName?.trim() || authEmail?.trim() || authorName;
+
   const [serverRunId, setServerRunId] = useState<string | null>(null);
   const [stepStatus, setStepStatus] = useState<string>("PENDING");
   const [anchorText, setAnchorText] = useState<string>("");
-  const [signatureText, setSignatureText] = useState<string>(authorName);
+  const [signatureText, setSignatureText] = useState<string>(resolvedAuthorName);
   const [signedSha256, setSignedSha256] = useState<string | null>(null);
   const [pendingArbitrationId, setPendingArbitrationId] = useState<string | null>(null);
   const [resolvedOptionKey, setResolvedOptionKey] = useState<string | null>(null);
@@ -51,7 +57,7 @@ export function CockpitHumanLedGovernanceSection({
   const hydrateFromRun = useCallback(
     async (runId: string) => {
       try {
-        const bb = await apiClient.getRunBlackboardState(runId, "marc");
+        const bb = await apiClient.getRunBlackboardState(runId);
         setServerRunId(bb.run_id);
         const step =
           bb.step_executions.find((s) => s.step_key === DEFAULT_STEP_KEY) ??
@@ -98,9 +104,6 @@ export function CockpitHumanLedGovernanceSection({
     [apiClient],
   );
 
-  const isHydrating = useAuthSessionStore((s) => s.isHydrating);
-  const accessToken = useAuthSessionStore((s) => s.accessToken);
-
   useEffect(() => {
     if (isHydrating) {
       return;
@@ -109,7 +112,7 @@ export function CockpitHumanLedGovernanceSection({
     let cancelled = false;
     void (async () => {
       try {
-        const state = await apiClient.getOrchestrationState("marc");
+        const state = await apiClient.getOrchestrationState();
         if (cancelled) return;
         const scopedRuns = (state.runs ?? []).filter(
           (r) => r.workspace_id === effectiveWorkspaceId,
@@ -149,13 +152,10 @@ export function CockpitHumanLedGovernanceSection({
     if (serverRunId) {
       return serverRunId;
     }
-    const created = await apiClient.instantiateWorkflowRun(
-      {
-        workflow_uri: DEFAULT_WORKFLOW_URI,
-        workspace_id: effectiveWorkspaceId,
-      },
-      "marc",
-    );
+    const created = await apiClient.instantiateWorkflowRun({
+      workflow_uri: DEFAULT_WORKFLOW_URI,
+      workspace_id: effectiveWorkspaceId,
+    });
     const nextRunId = created.run.id;
     setServerRunId(nextRunId);
     return nextRunId;
@@ -165,17 +165,14 @@ export function CockpitHumanLedGovernanceSection({
     setErrorBanner(null);
     try {
       const runId = await ensureServerRun();
-      const res = await apiClient.signHumanAnchor(
-        {
-          run_id: runId,
-          step_key: DEFAULT_STEP_KEY,
-          section_key: sectionKey,
-          content_text: content,
-          signature_text: signatureText.trim() || authorName,
-          author_type: "HUMAN",
-        },
-        "marc",
-      );
+      const res = await apiClient.signHumanAnchor({
+        run_id: runId,
+        step_key: DEFAULT_STEP_KEY,
+        section_key: sectionKey,
+        content_text: content,
+        signature_text: signatureText.trim() || resolvedAuthorName,
+        author_type: "HUMAN",
+      });
       setSignedSha256(res.signature.content_sha256);
       setStepStatus(res.step_execution.status);
     } catch (err) {
@@ -205,7 +202,6 @@ export function CockpitHumanLedGovernanceSection({
             ontology_concept_key: null,
           })),
         },
-        "marc",
       );
       setPendingArbitrationId(res.arbitration.id);
       setStepStatus(res.step_execution.status);
@@ -240,7 +236,6 @@ export function CockpitHumanLedGovernanceSection({
           selected_option_key: optionKey,
           human_justification: cleanJustification,
         },
-        "marc",
       );
       setResolvedOptionKey(res.arbitration.selected_option_key ?? optionKey);
       setResolvedJustification(res.arbitration.human_justification ?? cleanJustification);
@@ -328,11 +323,11 @@ export function CockpitHumanLedGovernanceSection({
         signatureTestId="cockpit-human-anchor-signature-input"
         sectionKey={DEFAULT_SECTION_KEY}
         sectionTitle={dictionary.humanAnchor.defaultSectionTitle}
-        authorName={authorName}
+        authorName={resolvedAuthorName}
         value={anchorText}
         signatureLabel={isFr ? "Signature de l'auteur" : "Author signature"}
         signatureValue={signatureText}
-        signaturePlaceholder={authorName}
+        signaturePlaceholder={resolvedAuthorName}
         labels={dictionary.humanAnchor}
         onChange={setAnchorText}
         onSignatureChange={setSignatureText}

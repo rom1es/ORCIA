@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import os
 from collections.abc import Sequence
 from dataclasses import replace
 
 from fastapi import Request
 
-from orcia_api.dependencies import get_or_create_shared_db_engine
 from orcia_api.routers._org_units_audit import record_governance_audit_event
 from orcia_api.routers._org_units_helpers import (
     serialize_org_unit_summary,
@@ -71,10 +69,12 @@ async def ensure_evaluator_org_units_synced(
     evaluator: MatrixPermissionEvaluator,
 ) -> None:
     """Ensure `evaluator.org_units` reflects PG18 state before delegation checks."""
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") == "1":
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
+
+    engine = get_configured_db_engine(request)
+    if engine is None:
         return
     try:
-        engine = get_or_create_shared_db_engine(request)
         summaries = await list_org_units_from_postgres18(engine)
         sync_evaluator_from_summaries(evaluator, summaries)
     except Exception as exc:

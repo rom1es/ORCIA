@@ -13,6 +13,8 @@ import type {
   PassthroughSecretStoreRequest,
   ScopeMutationCheckResponse,
   UserMeResponse,
+  WorkspaceCreateRequest,
+  WorkspaceCreateResponse,
   WorkspacesListResponse,
 } from "../generated/auth_and_org";
 import type {
@@ -100,6 +102,16 @@ export function createAuthAndShellDomainClient(requestJson: RequestJsonFn) {
     listWorkspaces(personaKey?: string): Promise<WorkspacesListResponse> {
       return requestJson<WorkspacesListResponse>(
         `/api/v1/workspaces${buildPersonaQuery(personaKey)}`,
+      );
+    },
+    createWorkspace(
+      payload: WorkspaceCreateRequest,
+      personaKey?: string,
+    ): Promise<WorkspaceCreateResponse> {
+      return requestJson<WorkspaceCreateResponse>(
+        `/api/v1/workspaces${buildPersonaQuery(personaKey)}`,
+        "POST",
+        payload,
       );
     },
     listOrgUnits(params?: ListOrgUnitsParams | string): Promise<OrgUnitsListResponse> {

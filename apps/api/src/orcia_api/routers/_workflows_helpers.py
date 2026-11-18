@@ -9,7 +9,7 @@ from orcia_api.dependencies import (
     get_help_generation_and_attachment_service,
     get_trigger_dispatcher_service,
 )
-from orcia_api.routers._finops_scope_guards import resolve_workspace_uuid_or_setup_key
+from orcia_api.routers._finops_scope_guards import validate_uuid
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.routers.packs import load_declarative_pack_bundles
 from orcia_connectors.bounded_workflow_v2 import BoundedWorkflowRunState
@@ -106,9 +106,7 @@ async def publish_workflow_outbox_event(request: Request, saved: WorkflowDefinit
     """Emit `WorkflowPublished` to Outbox and dispatch trigger/help hooks."""
     raw_ws = request.headers.get("X-Orcia-Workspace-Id", "").strip()
     ws_id = (
-        resolve_workspace_uuid_or_setup_key(raw_ws, "workspace_id")
-        if raw_ws
-        else "0192c4e0-0000-7000-8000-000000000201"
+        validate_uuid(raw_ws, "workspace_id") if raw_ws else "0192c4e0-0000-7000-8000-000000000201"
     )
     trace_id = str(getattr(request.state, "trace_id", None) or get_current_trace_id())
     pub_event = WorkflowPublished.create(

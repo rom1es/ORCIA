@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import os
-
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -50,7 +48,9 @@ def resolve_trace_id(request: Request) -> str:
 
 
 def is_pg_sync_enabled() -> bool:
-    return os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1"
+    from orcia_api.dependencies._core_providers import is_pg_runtime_active
+
+    return is_pg_runtime_active()
 
 
 def serialize_iam_account(

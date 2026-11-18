@@ -34,8 +34,10 @@ logger = get_logger("orcia.api.auth_policy_runtime")
 
 
 def pg_auth_enabled() -> bool:
-    """Return True unless tests explicitly disabled PostgreSQL bootstrap sync."""
-    return os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1"
+    """Return True when PostgreSQL bootstrap auth is active."""
+    from orcia_api.dependencies._core_providers import is_pg_runtime_active
+
+    return is_pg_runtime_active()
 
 
 def get_in_memory_auth_policy_store(request: Request) -> InMemoryPlatformAuthPolicyStore:

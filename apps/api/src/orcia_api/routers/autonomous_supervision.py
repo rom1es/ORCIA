@@ -13,7 +13,6 @@ from orcia_api.routers._finops_auth_guards import (
     resolve_run_workspace_server_side,
     validate_uuid,
 )
-from orcia_api.routers._finops_scope_guards import resolve_workspace_uuid_or_setup_key
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.autonomous_supervision import (
     AutonomousRunsListResponse,
@@ -85,7 +84,7 @@ async def list_workspace_autonomous_runs(
     user: CurrentUserDep,
     svc: SupervisionDep,
 ) -> AutonomousRunsListResponse:
-    resolved_ws_id = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
+    resolved_ws_id = validate_uuid(workspace_id, "workspace_id")
     await resolve_finops_read_scope(request, user, "WORKSPACE", resolved_ws_id)
     runs = await svc.list_autonomous_runs(workspace_id=resolved_ws_id)
     return AutonomousRunsListResponse(
@@ -129,7 +128,7 @@ async def emergency_stop_autonomous_run(
     validate_uuid(run_id, "run_id")
     req_body = body or EmergencyStopRequest()
     req_ws_id = (
-        resolve_workspace_uuid_or_setup_key(req_body.workspace_id, "workspace_id")
+        validate_uuid(req_body.workspace_id, "workspace_id")
         if req_body.workspace_id is not None
         else None
     )
@@ -166,7 +165,7 @@ async def invalidate_and_restore_autonomous_run(
     validate_uuid(run_id, "run_id")
     req_body = body or InvalidateAndRestoreRequest()
     req_ws_id = (
-        resolve_workspace_uuid_or_setup_key(req_body.workspace_id, "workspace_id")
+        validate_uuid(req_body.workspace_id, "workspace_id")
         if req_body.workspace_id is not None
         else None
     )
@@ -204,9 +203,7 @@ async def review_post_hoc_autonomous_run(
 ) -> PostHocReviewResponse:
     validate_uuid(run_id, "run_id")
     req_ws_id = (
-        resolve_workspace_uuid_or_setup_key(body.workspace_id, "workspace_id")
-        if body.workspace_id is not None
-        else None
+        validate_uuid(body.workspace_id, "workspace_id") if body.workspace_id is not None else None
     )
     await _enforce_run_mutation_guard(request, user, svc, run_id, requested_workspace_id=req_ws_id)
     res = await svc.review_post_hoc_sample(

@@ -14,10 +14,12 @@ from uuid import UUID, uuid5
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncConnection
+from uuid_utils import uuid7
 
 ROOT_ORG_UNIT_ID = UUID("0192c4e0-0000-7000-8000-000000000001")
 _NAMESPACE_ORCIA_SETUP = UUID("0192c4e0-0000-7000-8000-000000000099")
 _SLUG_CLEAN_RE = re.compile(r"[^a-z0-9-]+")
+_EXACT_SLUG_RE = re.compile(r"^[a-z0-9-]+$")
 
 
 def deterministic_setup_uuid(seed: str) -> UUID:
@@ -253,11 +255,18 @@ async def sync_relational_tables_on_postgres18(
     # 2. Synchronize workspaces
     active_ws_uuids: list[UUID] = []
     for idx, ws in enumerate(workspaces):
-        ws_key = str(ws.get("workspaceId") or ws.get("id") or f"ws-{idx + 1}")
-        ws_uuid = deterministic_setup_uuid(f"ws:{ws_key}")
+        ws_key = str(ws.get("workspaceId") or ws.get("id") or "").strip() or f"ws-{idx + 1}"
+        try:
+            ws_uuid = UUID(ws_key)
+        except (ValueError, TypeError):
+            ws_uuid = deterministic_setup_uuid(f"ws:{ws_key}")
         name = str(ws.get("name") or ws_key).strip() or ws_key
-        raw_slug = str(ws.get("slug") or name)
-        slug = normalize_setup_slug(raw_slug, f"ws-{idx + 1}")
+        raw_explicit_slug = str(ws.get("slug") or "").strip()
+        if raw_explicit_slug and _EXACT_SLUG_RE.fullmatch(raw_explicit_slug):
+            slug = raw_explicit_slug[:120]
+        else:
+            raw_slug = raw_explicit_slug or name
+            slug = normalize_setup_slug(raw_slug, f"ws-{idx + 1}")
         vis_raw = str(ws.get("visibilityMode") or "STANDARD").upper()
         visibility_mode = (
             "CONFIDENTIAL_RESTRICTED" if vis_raw == "CONFIDENTIAL_RESTRICTED" else "STANDARD"
@@ -311,6 +320,38 @@ async def sync_relational_tables_on_postgres18(
             UUID(str(ws_row[0])) if ws_row is not None and ws_row[0] is not None else ws_uuid
         )
         active_ws_uuids.append(persisted_ws_uuid)
+
+        admin_rows = (
+            await conn.execute(
+                sa.text(
+                    "SELECT id FROM users "
+                    "WHERE platform_role = 'PLATFORM_ADMIN' AND is_active = TRUE"
+                )
+            )
+        ).fetchall()
+        for admin_row in admin_rows:
+            if not admin_row or admin_row[0] is None:
+                continue
+            admin_user_uuid = UUID(str(admin_row[0]))
+            await conn.execute(
+                sa.text(
+                    """
+                    INSERT INTO workspace_memberships (
+                        id, workspace_id, user_id, role, access_mode
+                    )
+                    SELECT :id, :ws_id, :user_id, 'PLATFORM_ADMIN', 'CONTRIBUTOR_ACTION_REQUIRED'
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM workspace_memberships
+                        WHERE workspace_id = :ws_id AND user_id = :user_id
+                    )
+                    """
+                ),
+                {
+                    "id": UUID(str(uuid7())),
+                    "ws_id": persisted_ws_uuid,
+                    "user_id": admin_user_uuid,
+                },
+            )
 
     await _purge_removed_workspaces(conn, active_ws_uuids=active_ws_uuids)
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import os
+import sys
 from typing import Literal
 
 import httpx
@@ -11,8 +11,8 @@ from fastapi import APIRouter, Request, Response
 from orcia_api.dependencies import (
     get_accostage_service,
     get_auth_service,
-    get_or_create_shared_db_engine,
 )
+from orcia_api.dependencies._core_providers import get_configured_db_engine
 from orcia_api.routers._auth_pg_helpers import set_auth_refresh_cookie
 from orcia_api.routers._auth_policy_runtime import resolve_auth_policy_runtime
 from orcia_api.routers._bootstrap_evaluator_sync import sync_setup_snapshot_to_evaluator
@@ -24,6 +24,7 @@ from orcia_core.bootstrap import (
     save_platform_setup_state_to_postgres18,
 )
 from orcia_core.bootstrap.errors import OrciaDomainError
+from orcia_core.kernel.errors import TransientInfraError
 from orcia_core.observability.logging import get_current_trace_id, get_logger
 from orcia_core.orchestration import (
     LlmProtocolMode,
@@ -41,20 +42,29 @@ def _trace(request: Request) -> str:
     return str(getattr(request.state, "trace_id", None) or get_current_trace_id())
 
 
+def _raise_if_non_test_pg_error(exc: Exception, *, path: str) -> None:
+    if "pytest" not in sys.modules:
+        raise TransientInfraError(
+            detail_override="PostgreSQL 18 indisponible lors du bootstrap plateforme.",
+            instance=path,
+        ) from exc
+
+
 async def _sync_first_admin_with_postgres18(
     request: Request, svc: bm.ProgressiveDay0AccostageService
 ) -> None:
-    """Synchronize `svc.first_admin` with PostgreSQL 18 `users` table when reachable."""
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") == "1":
+    """Synchronize `svc.first_admin` with PostgreSQL 18 `users` table when active."""
+    engine = get_configured_db_engine(request)
+    if engine is None:
         return
     try:
-        engine = get_or_create_shared_db_engine(request)
         db_record = await bm.get_first_platform_admin_from_postgres18(
             engine, orcia_env=svc.orcia_env
         )
         svc.set_first_platform_admin_record(db_record)
     except Exception as exc:
         logger.warning("bootstrap_first_admin_pg_sync_skipped", error_type=type(exc).__name__)
+        _raise_if_non_test_pg_error(exc, path=str(request.url.path))
 
 
 def _serialize_accostage_status(
@@ -117,9 +127,9 @@ async def create_welcome_setup_first_admin(
     password_hash = auth_svc.hasher.hash_password(payload.password)
 
     rec: bm.FirstPlatformAdminRecord | None = None
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
+    engine = get_configured_db_engine(request)
+    if engine is not None:
         try:
-            engine = get_or_create_shared_db_engine(request)
             rec = await bm.create_first_platform_admin_on_postgres18(
                 engine,
                 email=payload.email,
@@ -137,6 +147,7 @@ async def create_welcome_setup_first_admin(
             logger.warning(
                 "bootstrap_first_admin_pg_create_fallback", error_type=type(exc).__name__
             )
+            _raise_if_non_test_pg_error(exc, path=str(request.url.path))
             rec = None
 
     if rec is None:
@@ -208,14 +219,15 @@ async def register_welcome_setup_progressive_llm(
         endpoint_uri=payload.endpoint_uri,
     )
     rep = svc.register_progressive_llm_endpoint(endpoint)
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
+    engine = get_configured_db_engine(request)
+    if engine is not None:
         try:
-            engine = get_or_create_shared_db_engine(request)
             await bm.persist_progressive_llm_endpoint_to_postgres18(engine, endpoint)
         except Exception as exc:
             logger.warning(
                 "bootstrap_progressive_llm_pg_sync_skipped", error_type=type(exc).__name__
             )
+            _raise_if_non_test_pg_error(exc, path=str(request.url.path))
     policy_state, _, _ = await resolve_auth_policy_runtime(request)
     return _serialize_accostage_status(
         rep,
@@ -411,9 +423,9 @@ def _serialize_setup_snapshot(
 async def get_platform_setup_state(request: Request) -> bs.PlatformSetupStateResponse:
     svc = get_accostage_service(request)
     snap: bm.PlatformSetupSnapshotRecord | None = None
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
+    engine = get_configured_db_engine(request)
+    if engine is not None:
         try:
-            engine = get_or_create_shared_db_engine(request)
             snap = await load_platform_setup_state_from_postgres18(engine, orcia_env=svc.orcia_env)
             db_admin = await bm.get_first_platform_admin_from_postgres18(
                 engine, orcia_env=svc.orcia_env
@@ -421,6 +433,7 @@ async def get_platform_setup_state(request: Request) -> bs.PlatformSetupStateRes
             svc.set_first_platform_admin_record(db_admin)
         except Exception as exc:
             logger.warning("bootstrap_platform_setup_load_fallback", error_type=type(exc).__name__)
+            _raise_if_non_test_pg_error(exc, path=str(request.url.path))
             snap = None
 
     if snap is None:
@@ -468,14 +481,15 @@ async def put_platform_setup_state(
         audit_events=list(payload.audit_events),
     )
     saved: bm.PlatformSetupSnapshotRecord | None = None
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
+    engine = get_configured_db_engine(request)
+    if engine is not None:
         try:
-            engine = get_or_create_shared_db_engine(request)
             saved = await save_platform_setup_state_to_postgres18(
                 engine, candidate, orcia_env=svc.orcia_env
             )
         except Exception as exc:
             logger.warning("bootstrap_platform_setup_save_fallback", error_type=type(exc).__name__)
+            _raise_if_non_test_pg_error(exc, path=str(request.url.path))
             saved = None
 
     final_snap = saved or candidate

@@ -202,6 +202,14 @@ class MatrixPermissionEvaluator:
             ):
                 if workspace.visibility_mode == "CONFIDENTIAL_RESTRICTED":
                     return None
+                if is_global and user.platform_role != "OBSERVER":
+                    return WorkspaceAccessSummary(
+                        workspace,
+                        "PLATFORM_ADMIN",
+                        "CONTRIBUTOR_ACTION_REQUIRED",
+                        "GLOBAL_ADMIN",
+                        True,
+                    )
                 return WorkspaceAccessSummary(
                     workspace,
                     "OBSERVER",

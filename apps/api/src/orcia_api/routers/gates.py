@@ -7,6 +7,8 @@ from dataclasses import asdict
 from fastapi import APIRouter, Query, Request
 
 from orcia_api.dependencies import get_bootstrap_service
+from orcia_api.routers._finops_auth_guards import enforce_observer_headers_guard
+from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.bootstrap import SystemBootstrapRunItem
 from orcia_api.schemas.catalog import CatalogItemResponse
@@ -114,7 +116,9 @@ async def evaluate_deterministic_gate_endpoint(
     persona_key: str | None = Query(default=None, min_length=1, max_length=64),
 ) -> DeterministicGateEvaluateResponse:
     user = resolve_request_user(request, persona_key=persona_key)
+    enforce_observer_headers_guard(request, user)
     bootstrap_svc = get_bootstrap_service(request)
+    await sync_evaluator_topology_from_pg(request, bootstrap_svc.auth_service)
     bootstrap_svc.auth_service.evaluator.enforce_scope_mutation_guard(
         user, payload.workspace_id, instance=str(request.url.path)
     )
@@ -275,7 +279,9 @@ async def verify_tier2_tdd_endpoint(
     persona_key: str | None = Query(default=None, min_length=1, max_length=64),
 ) -> Tier2TddVerifyResponse:
     user = resolve_request_user(request, persona_key=persona_key)
+    enforce_observer_headers_guard(request, user)
     bootstrap_svc = get_bootstrap_service(request)
+    await sync_evaluator_topology_from_pg(request, bootstrap_svc.auth_service)
     bootstrap_svc.auth_service.evaluator.enforce_scope_mutation_guard(
         user, payload.workspace_id, instance=str(request.url.path)
     )
@@ -350,7 +356,9 @@ async def evaluate_agentic_gate_endpoint(
     persona_key: str | None = Query(default=None, min_length=1, max_length=64),
 ) -> AgenticGateEvaluateResponse:
     user = resolve_request_user(request, persona_key=persona_key)
+    enforce_observer_headers_guard(request, user)
     bootstrap_svc = get_bootstrap_service(request)
+    await sync_evaluator_topology_from_pg(request, bootstrap_svc.auth_service)
     bootstrap_svc.auth_service.evaluator.enforce_scope_mutation_guard(
         user, payload.workspace_id, instance=str(request.url.path)
     )

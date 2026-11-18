@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import hashlib
-import os
 from decimal import Decimal
 from typing import Annotated, Any
 
@@ -29,7 +28,7 @@ from orcia_api.routers._finops_auth_guards import (
     resolve_finops_read_scope,
 )
 from orcia_api.routers._finops_scope_guards import (
-    resolve_workspace_uuid_or_setup_key,
+    validate_uuid,
 )
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.autonomy_contracts import (
@@ -88,7 +87,7 @@ async def get_autonomy_contract_state(
     iam_svc: Annotated[IamAccountsGovernanceService, Depends(get_iam_accounts_service)],
     rbac_svc: Annotated[HierarchicalRbacService, Depends(get_hierarchical_rbac_service)],
 ) -> AutonomyContractStateResponse:
-    ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
+    ws_uuid = validate_uuid(workspace_id, "workspace_id")
     await resolve_finops_read_scope(request, user, "WORKSPACE", ws_uuid)
     active = await svc.get_active_contract(workspace_id=ws_uuid, workflow_id=workflow_id)
     history = await svc.list_contracts(workspace_id=ws_uuid, workflow_id=workflow_id)
@@ -135,7 +134,7 @@ async def sign_autonomy_contract(
     auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
     iam_svc: Annotated[IamAccountsGovernanceService, Depends(get_iam_accounts_service)],
 ) -> AutonomyContractResponse:
-    ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
+    ws_uuid = validate_uuid(workspace_id, "workspace_id")
     derived_scope = await enforce_workspace_governed_mutation(
         request, user, ws_uuid, allowed_roles=_CONTRACT_GOVERNOR_ROLES
     )
@@ -185,7 +184,7 @@ async def revoke_autonomy_contract(
     body: RevokeAutonomyContractRequest | None = None,
 ) -> AutonomyContractResponse:
     del body
-    ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
+    ws_uuid = validate_uuid(workspace_id, "workspace_id")
     derived_scope = await enforce_workspace_governed_mutation(
         request, user, ws_uuid, allowed_roles=_CONTRACT_GOVERNOR_ROLES
     )
@@ -217,7 +216,7 @@ async def start_autonomous_run(
         AutonomousSupervisionService, Depends(get_autonomous_supervision_service)
     ],
 ) -> AutonomousRunExecutionResponse:
-    ws_uuid = resolve_workspace_uuid_or_setup_key(workspace_id, "workspace_id")
+    ws_uuid = validate_uuid(workspace_id, "workspace_id")
     derived_scope = await enforce_workspace_governed_mutation(request, user, ws_uuid)
     contract = await svc.get_active_contract(workspace_id=ws_uuid, workflow_id=workflow_id)
     if contract is None:
@@ -258,7 +257,7 @@ async def start_autonomous_run(
         scope_path=derived_scope,
     )
     engine = getattr(request.app.state, "db_engine", None)
-    if engine is not None and os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") != "1":
+    if engine is not None:
         await persist_autonomous_run_outcome_on_postgres18(
             engine,
             run_id=outcome.run_id,

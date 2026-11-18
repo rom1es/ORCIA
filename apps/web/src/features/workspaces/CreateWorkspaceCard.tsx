@@ -20,7 +20,7 @@ export interface CreateWorkspaceCardProps {
     visibilityMode: WorkspaceVisibilityMode;
     lifecyclePhase: ProductLifecyclePhaseType;
     ownerOrgUnitId?: string;
-  }) => void;
+  }) => void | Promise<unknown>;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -59,10 +59,10 @@ export function CreateWorkspaceCard({
         ? "Saisissez le nom de l'Espace de Travail pour le créer."
         : "Enter the Workspace name to create it.";
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!wsName.trim()) return;
-    onCreateWorkspace({
+    await onCreateWorkspace({
       name: wsName.trim(),
       slug: wsSlug.trim() || wsName.trim().toLowerCase().replace(/\s+/g, "-"),
       visibilityMode: wsVisibility,

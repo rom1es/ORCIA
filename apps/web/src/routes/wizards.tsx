@@ -70,20 +70,25 @@ function WizardsRouteComponent() {
         parentId: "scope-global",
       });
     } else if (stepNumber === 2 && workspaceName.trim()) {
-      createWorkspace({
+      void createWorkspace({
         name: workspaceName.trim(),
         slug: workspaceName.trim().toLowerCase().replace(/\s+/g, "-"),
         visibilityMode: "STANDARD",
         lifecyclePhase: "BUILD",
+      }).catch((err: unknown) => {
+        setStatus("IN_PROGRESS");
+        console.error(err);
       });
     } else if (stepNumber === 3 && connectorAlias.trim() && connectorUri.trim()) {
-      registerDatasource({
+      void registerDatasource({
         workspaceName: workspaceName.trim() || "Plateforme Globale ORCIA",
         alias: connectorAlias.trim(),
         scheme: "git",
         uri: connectorUri.trim(),
         executionIdentity: "passthrough",
         freshnessTtlDays: 30,
+      }).catch((err: unknown) => {
+        console.error(err);
       });
     } else if (stepNumber === 4 && primaryModelId.trim()) {
       upsertLlmTier({

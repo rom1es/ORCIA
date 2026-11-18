@@ -55,6 +55,8 @@ interface MockBackendState {
   platformSetupState: Record<string, unknown> | null;
   orgUnits: MockOrganizationalUnit[];
   orgUnitSeq: number;
+  workspaces: Array<Record<string, unknown>>;
+  workspaceSeq: number;
   agents: Array<Record<string, unknown>>;
   skills: Array<Record<string, unknown>>;
   assistantFolders: Array<Record<string, unknown>>;
@@ -97,6 +99,8 @@ const backendState: MockBackendState = {
   platformSetupState: null,
   orgUnits: [],
   orgUnitSeq: 0,
+  workspaces: [],
+  workspaceSeq: 0,
   agents: [],
   skills: [],
   assistantFolders: [],
@@ -266,6 +270,8 @@ export function resetVitestApiBackend(): void {
   backendState.platformSetupState = null;
   backendState.orgUnits = [];
   backendState.orgUnitSeq = 0;
+  backendState.workspaces = [];
+  backendState.workspaceSeq = 0;
   backendState.agents = [];
   backendState.skills = [];
   backendState.assistantFolders = [];
@@ -1449,6 +1455,82 @@ async function vitestFetchTransport(
         trace_id: "0195f000000070008000000000000999",
       });
     }
+  }
+
+  if (path === "/api/v1/workspaces" && method === "GET") {
+    return jsonResponse({
+      workspaces: backendState.workspaces,
+      consolidated_finops_usd: 0,
+      trace_id: "0195f000000070008000000000000999",
+    });
+  }
+
+  if (path === "/api/v1/workspaces" && method === "POST") {
+    const accessMode = (reqHeaders.get("x-orcia-access-mode") ?? "").toUpperCase();
+    const activeHat = (reqHeaders.get("x-orcia-active-hat") ?? "PLATFORM_ADMIN").toUpperCase();
+    if (accessMode === "READ_ONLY_OBSERVER" || activeHat === "OBSERVER") {
+      return problemResponse(
+        403,
+        "ERR_OBSERVER_MODE_READ_ONLY",
+        "Mode observateur en lecture seule",
+        "Les mutations sont refusées en mode observateur lecture seule.",
+        path,
+      );
+    }
+    const name = String(body.name ?? "").trim();
+    if (!name) {
+      return problemResponse(
+        422,
+        "ERR_VALIDATION_ERROR",
+        "Nom d'espace requis",
+        "Le nom de l'espace de travail ne peut pas être vide.",
+        path,
+      );
+    }
+    const rawExplicitSlug = typeof body.slug === "string" ? body.slug.trim() : "";
+    const slug =
+      rawExplicitSlug && /^[a-z0-9-]+$/.test(rawExplicitSlug)
+        ? rawExplicitSlug.slice(0, 120)
+        : (rawExplicitSlug || name)
+            .toLowerCase()
+            .replace(/[^a-z0-9-]+/g, "-")
+            .replace(/^-|-$/g, "") || `ws-${backendState.workspaceSeq + 1}`;
+    const rawOwnerId =
+      typeof body.owner_org_unit_id === "string" && body.owner_org_unit_id.trim()
+        ? body.owner_org_unit_id.trim()
+        : null;
+    const ownerUnit = rawOwnerId
+      ? backendState.orgUnits.find((u) => u.id === rawOwnerId)
+      : backendState.orgUnits.find((u) => u.kind === "TEAM") ?? backendState.orgUnits[0];
+    const ownerOrgUnitId = ownerUnit?.id ?? rawOwnerId ?? "0192c4e0-0000-7000-8000-000000000101";
+    const ownerOrgUnitName = ownerUnit?.name ?? "Plateforme Globale ORCIA";
+    const visibilityMode =
+      body.visibility_mode === "CONFIDENTIAL_RESTRICTED" || body.visibility_mode === "PRIVATE_USER"
+        ? body.visibility_mode
+        : "STANDARD";
+    const lifecyclePhase =
+      body.lifecycle_phase === "RUN" || body.lifecycle_phase === "MIGRATION"
+        ? body.lifecycle_phase
+        : "BUILD";
+
+    backendState.workspaceSeq += 1;
+    const id = `0195f000-0000-7000-8000-${String(backendState.workspaceSeq).padStart(12, "0")}`;
+    const created = {
+      id,
+      slug,
+      name,
+      owner_org_unit_id: ownerOrgUnitId,
+      owner_org_unit_name: ownerOrgUnitName,
+      visibility_mode: visibilityMode,
+      lifecycle_phase: lifecyclePhase,
+      effective_role: "PLATFORM_ADMIN",
+      access_mode: "CONTRIBUTOR_ACTION_REQUIRED",
+      access_origin: "GLOBAL_ADMIN",
+      finops_cost_usd: 0,
+      trace_id: "0195f000000070008000000000000999",
+    };
+    backendState.workspaces = [...backendState.workspaces, created];
+    return jsonResponse(created, 201);
   }
 
   const authPolicyResp = handleVitestAuthPolicyRoute({

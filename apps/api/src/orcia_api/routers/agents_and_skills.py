@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from collections.abc import Awaitable, Callable
 from dataclasses import asdict
 from typing import Annotated
@@ -10,7 +9,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Path, Query, Request
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from orcia_api.dependencies import get_agents_and_skills_service, get_or_create_shared_db_engine
+from orcia_api.dependencies import get_agents_and_skills_service
 from orcia_api.routers.assistant_llm_bridge import invoke_configured_llm_for_assistant_turn
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.agents_and_skills import (
@@ -80,10 +79,12 @@ def _serialize_agent(a: ManagedAgentRecord) -> AgentItemResponse:
 async def _run_pg_persistence(
     request: Request, fn: Callable[[AsyncEngine], Awaitable[None]]
 ) -> None:
-    if os.environ.get("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC") == "1":
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
+
+    engine = get_configured_db_engine(request)
+    if engine is None:
         return
     try:
-        engine = get_or_create_shared_db_engine(request)
         await fn(engine)
     except Exception as exc:
         logger.warning("agents_skills_pg_persistence_failed", error_type=type(exc).__name__)
