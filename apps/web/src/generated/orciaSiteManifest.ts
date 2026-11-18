@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 54,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 182,
+    "techLeadReportsCount": 184,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 14,
@@ -534,6 +534,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "techLeadReports": [
     {
       "date": "2026-11-18",
+      "phaseOrStory": "Ajustement Transverse / RCA Epic 21 & Vague 3 (22.8 + 22.8a)",
+      "reportFile": "2026-11-18-rca-epic-21-enrichissement-22-8-et-story-22-8a-tech-lead-report.md",
+      "domain": "RCA Complète « L'Illusion du Vert » (RC-1..RC-7 sur 5 Couches AD-17), Enrichissement Story 22.8, Création Story 22.8a & Gouvernance Shift-Left",
+      "summary": "Analyse des angles morts sur les 5 couches (vitest.setup.ts, Composition Root, faux F5, regex Goodhart, CI partielle), regroupement des 34/34 REM-* en 7 causes racines (RC-1..RC-7), enrichissement 22.8, création Story 22.8a (epics.md, sprint-status.yaml, plan directeur), durcissement testing-strategy.md & GEMINI.md et synchronisation /showcase."
+    },
+    {
+      "date": "2026-11-18",
       "phaseOrStory": "Story 22.10",
       "reportFile": "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23-tech-lead-report.md",
       "domain": "Clôture Epic 22 — Rapports Tech Lead Individuels (23-1..23-N), Plan de Correction Global & Initialisation Complète de l'Epic 23",
@@ -548,10 +555,17 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     },
     {
       "date": "2026-11-18",
+      "phaseOrStory": "Story 22.8a",
+      "reportFile": "22-8a-assainissement-fail-closed-vitest-composition-root-sans-override-et-ci-complete-tech-lead-report.md",
+      "domain": "Vague 3 (Post-RCA RC-1, RC-2, RC-7) — Assainissement *Fail-Closed* vitest.setup.ts (< 350 L) Validé OpenAPI, Composition Root PG18 Sans Override / Zéro Silo RAM & CI GitHub Actions 5 Couches",
+      "summary": "Pré-implémentation : découpage < 350 L et mode *Fail-Closed* de vitest.setup.ts validé contre openapi.json, test Composition Root create_app() sans dependency_overrides ni app.state.* manuel + test_zero_orphan_sql_adapters_audit.py, et pipeline CI 5 couches (ci.yml + e2e.yml shardé 4 shards, couverture combinée >= 90 % orcia-core, gouvernance Shift-Left par Story)."
+    },
+    {
+      "date": "2026-11-18",
       "phaseOrStory": "Story 22.8",
       "reportFile": "22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime-tech-lead-report.md",
-      "domain": "Vague 3 (REM-33, REM-34) — Activation des 5 Gardes CI Anti-Régression, Couverture 100 % Assertions SQL PG18 sur 55 Blocs test(...) E2E, Paramétrage ORCIA_E2E_CAMPAIGN_DIR & Budget < 35s",
-      "summary": "Pré-implémentation : création des 5 gardes automatisées (anti-jargon UI, zéro display: none, intégrité CSS Tailwind, zéro [LAYER_5_*]/ORCIA_DISABLE_PG_BOOTSTRAP_SYNC, géométrie Playwright rect.right <= innerWidth & elementFromPoint modales), généralisation des assertions SELECT PG18 sur 55/55 blocs test(...) (test_e2e_sql_coverage_audit.py), paramétrage ORCIA_E2E_CAMPAIGN_DIR (e2e-campaign-epic-22) et budget < 35s."
+      "domain": "Vague 3 (REM-33, REM-34) — Activation des 5 Gardes CI Anti-Régression + 4 Verrous RCA Epic 21, Couverture 100 % Assertions SQL PG18 à Froid sur 55 Blocs test(...) E2E, Paramétrage ORCIA_E2E_CAMPAIGN_DIR & Budget < 35s",
+      "summary": "Pré-implémentation : 5 gardes CI initiales + audit data-testid E2E ↔ UI (e2e-testids-sync-audit.test.ts), helper HTTP E2E typé (typedApiRequest.ts), purge ORCIA_E2E_SEED_FIXTURES + reloadColdFromPg, refonte <RouterProvider> de zero-dead-buttons + sonde erreurs muettes/Direction C/WCAG AA, assertions SELECT PG18 sur 55/55 blocs test(...) (test_e2e_sql_coverage_audit.py), ORCIA_E2E_CAMPAIGN_DIR (e2e-campaign-epic-22) et budget < 35s."
     },
     {
       "date": "2026-11-18",
@@ -586,7 +600,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "phaseOrStory": "Story 22.3",
       "reportFile": "22-3-persistance-pg18-assistant-notifications-sse-et-permission-broker-tech-lead-report.md",
       "domain": "Vague 1 (REM-08, REM-10, REM-13) — Persistance PG18 assistant_folders (+ purge LAYER_5), task_notifications/SSE & permission_broker_tickets (fallback git://*)",
-      "summary": "Pré-implémentation : adaptateurs SQLAlchemy Asyncio injectés au Composition Root pour AssistantFoldersAndSharingService (séparation pinned_notes vs layer5_prompt_injection), UnifiedNotificationAndClaimService (task_notifications + resource_leases + Redis/SSE < 500ms), et PermissionBrokerService (permission_broker_tickets + politique socle git://*, CAP-003, CAP-040, CAP-043, CAP-070, CAP-071, CAP-073..075)."
+      "summary": "Implémentée (done) : découpage modulaire < 400 L + adaptateurs PG18 sql_assistant_folders.py, sql_task_notifications.py, sql_resource_leases.py et sql_permission_broker.py injectés au Composition Root ; séparation pinned_notes_markdown vs Couche 5 interne (0 fuite [LAYER_5_*]) ; vue /inbox dédiée (InboxNotificationsCenterView) + relais OutboxEventBus vers notifications/SSE < 500 ms ; politiques fallback git://*, jira://*, confluence://* en base ; 90 % couv. Story 22.3, 817 tests unit/sécu/évals, 3/3 PG18 testcontainers, 9/9 Turbo (165 web + 110 UI), 5/5 contrats lint-imports et 0 finding lint_spine."
     },
     {
       "date": "2026-11-18",

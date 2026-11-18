@@ -4,13 +4,18 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 from collections.abc import AsyncIterator
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import StreamingResponse
 
-from orcia_api.dependencies import get_notification_service, get_resource_lease_service
+from orcia_api.dependencies import (
+    get_auth_service,
+    get_notification_service,
+    get_resource_lease_service,
+)
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.inbox_and_leases import (
     AcquireResourceLeasesRequest,
@@ -27,12 +32,14 @@ from orcia_api.schemas.inbox_and_leases import (
 )
 from orcia_api.schemas.problem_details import ProblemDetails
 from orcia_core.observability.logging import get_current_trace_id
+from orcia_core.orchestration.errors import ObserverModeReadOnlyError, ScopeAccessDeniedError
 from orcia_core.orchestration.notifications_and_claims import (
     ClaimActionOutcome,
     NotificationType,
     SseEventEnvelope,
     TaskNotificationEntity,
 )
+from orcia_core.permissions.models import UserIdentity
 
 router = APIRouter(prefix="/api/v1", tags=["inbox"])
 
@@ -96,6 +103,29 @@ def _to_claim_response(
     )
 
 
+def _enforce_inbox_workspace_guard(
+    request: Request,
+    user: UserIdentity,
+    workspace_id: str | None,
+    *,
+    require_write: bool,
+) -> None:
+    if require_write and (
+        request.headers.get("x-orcia-access-mode", "").strip().upper() == "READ_ONLY_OBSERVER"
+        or user.platform_role == "OBSERVER"
+    ):
+        raise ObserverModeReadOnlyError(instance=str(request.url.path))
+    if not workspace_id:
+        return
+    evaluator = get_auth_service(request).evaluator
+    if any(w.id == workspace_id for w in evaluator.workspaces):
+        access = evaluator.resolve_workspace_access(user, workspace_id)
+        if access is None:
+            raise ScopeAccessDeniedError(instance=str(request.url.path))
+        if require_write and access.access_mode == "READ_ONLY_OBSERVER":
+            raise ObserverModeReadOnlyError(instance=str(request.url.path))
+
+
 @router.get(
     "/inbox/notifications",
     response_model=InboxNotificationListResponse,
@@ -114,17 +144,27 @@ async def list_inbox_notifications(
 ) -> InboxNotificationListResponse:
     trace_id: str = getattr(request.state, "trace_id", None) or get_current_trace_id()
     user = resolve_request_user(request, persona_key=persona_key)
+    _enforce_inbox_workspace_guard(request, user, workspace_id, require_write=False)
     svc = get_notification_service(request)
-    items = svc.list_notifications(
+    if os.environ.get("ORCIA_E2E_SEED_FIXTURES", "").strip() == "1":
+        await svc.seed_default_notifications_if_empty_async(
+            workspace_id=workspace_id,
+            team_id="0195f000-0000-7000-8000-000000000103",
+            user_id=user.id,
+            run_id="0195f000-0000-7000-8000-000000000701",
+            step_execution_id="0195f000-0000-7000-8000-000000000801",
+        )
+    items = await svc.list_notifications_async(
         workspace_id=workspace_id,
         scope_filter=scope_filter,
         notification_type=notification_type,
         viewer_user_id=user.id,
     )
+    badge_count = await svc.count_unclaimed_action_required_async(workspace_id=workspace_id)
     return InboxNotificationListResponse(
         workspace_id=workspace_id,
         viewer_user_id=user.id,
-        amber_badge_count=svc.count_unclaimed_action_required(workspace_id=workspace_id),
+        amber_badge_count=badge_count,
         items=[_to_notification_item_response(item, user.id) for item in items],
         trace_id=trace_id,
     )
@@ -144,8 +184,11 @@ async def claim_task_notification(
 ) -> ClaimTaskResponse:
     trace_id: str = getattr(request.state, "trace_id", None) or get_current_trace_id()
     user = resolve_request_user(request, persona_key=persona_key)
+    _enforce_inbox_workspace_guard(
+        request, user, getattr(payload, "workspace_id", None), require_write=True
+    )
     svc = get_notification_service(request)
-    outcome = svc.claim_by_task_id(
+    outcome = await svc.claim_by_task_id_async(
         user,
         task_id=task_id,
         ttl_seconds=payload.ttl_seconds,
@@ -169,8 +212,11 @@ async def release_task_notification_claim(
 ) -> ClaimTaskResponse:
     trace_id: str = getattr(request.state, "trace_id", None) or get_current_trace_id()
     user = resolve_request_user(request, persona_key=persona_key)
+    _enforce_inbox_workspace_guard(
+        request, user, getattr(payload, "workspace_id", None), require_write=True
+    )
     svc = get_notification_service(request)
-    outcome = svc.release_claim(
+    outcome = await svc.release_claim_async(
         user,
         task_id=task_id,
         force=payload.force,
@@ -194,8 +240,11 @@ async def claim_step_execution(
 ) -> ClaimTaskResponse:
     trace_id: str = getattr(request.state, "trace_id", None) or get_current_trace_id()
     user = resolve_request_user(request, persona_key=persona_key)
+    _enforce_inbox_workspace_guard(
+        request, user, getattr(payload, "workspace_id", None), require_write=True
+    )
     svc = get_notification_service(request)
-    outcome = svc.claim_by_step_execution(
+    outcome = await svc.claim_by_step_execution_async(
         user,
         run_id=run_id,
         step_execution_id=step_id,
@@ -308,7 +357,7 @@ async def acquire_resource_leases(
     notif_svc = get_notification_service(request)
     notif_svc._enforce_not_observer(user, instance=str(request.url.path))
     lease_svc = get_resource_lease_service(request)
-    records = lease_svc.acquire_leases(
+    records = await lease_svc.acquire_leases_async(
         resource_uris=tuple(payload.resource_uris),
         holder_run_id=payload.holder_run_id,
         holder_root_run_id=payload.holder_root_run_id,
@@ -354,7 +403,7 @@ async def execute_fenced_resource_write(
     notif_svc = get_notification_service(request)
     notif_svc._enforce_not_observer(user, instance=str(request.url.path))
     lease_svc = get_resource_lease_service(request)
-    outcome = lease_svc.execute_fenced_write(
+    outcome = await lease_svc.execute_fenced_resource_write_async(
         resource_uri=payload.resource_uri,
         fencing_token=payload.fencing_token,
         payload=payload.payload,

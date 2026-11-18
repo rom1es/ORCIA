@@ -26,7 +26,9 @@ from orcia_core.permissions.models import UserIdentity
 logger = get_logger("orcia.assistant.llm")
 
 
-def resolve_turn_history(request: Request, payload: ThreeSpeedTurnRequest) -> list[dict[str, Any]]:
+async def resolve_turn_history(
+    request: Request, payload: ThreeSpeedTurnRequest
+) -> list[dict[str, Any]]:
     """Build multi-turn conversation history, hydrating from thread summary if empty."""
     history: list[dict[str, Any]] = [
         {"role": m.role, "content": m.content, "name": m.name, "tool_call_id": m.tool_call_id}
@@ -35,7 +37,9 @@ def resolve_turn_history(request: Request, payload: ThreeSpeedTurnRequest) -> li
     if payload.thread_id and not history:
         try:
             folders_svc = get_assistant_folders_and_sharing_service(request)
-            overview = folders_svc.get_workspace_overview(workspace_id=payload.workspace_id)
+            overview = await folders_svc.get_workspace_overview_async(
+                workspace_id=payload.workspace_id
+            )
             for t in overview.threads:
                 if t.thread_id == payload.thread_id and t.thread_summary:
                     for part in t.thread_summary.split(" | "):
@@ -49,14 +53,16 @@ def resolve_turn_history(request: Request, payload: ThreeSpeedTurnRequest) -> li
     return history
 
 
-def resolve_folder_notes(request: Request, payload: ThreeSpeedTurnRequest) -> str | None:
+async def resolve_folder_notes(request: Request, payload: ThreeSpeedTurnRequest) -> str | None:
     """Resolve pinned folder notes from payload or persisted folder state."""
     if payload.folder_pinned_notes and payload.folder_pinned_notes.strip():
         return payload.folder_pinned_notes.strip()
     if payload.folder_id:
         try:
             folders_svc = get_assistant_folders_and_sharing_service(request)
-            overview = folders_svc.get_workspace_overview(workspace_id=payload.workspace_id)
+            overview = await folders_svc.get_workspace_overview_async(
+                workspace_id=payload.workspace_id
+            )
             for f in overview.folders:
                 if f.folder_id == payload.folder_id and f.pinned_notes_markdown.strip():
                     return f.pinned_notes_markdown.strip()

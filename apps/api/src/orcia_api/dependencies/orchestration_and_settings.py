@@ -53,6 +53,9 @@ def get_orchestration_service(request: Request) -> WorkflowOrchestrationSetupSer
 
 def get_notification_service(request: Request) -> UnifiedNotificationAndClaimService:
     """FastAPI `Depends` provider returning `UnifiedNotificationAndClaimService`."""
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
+
+    engine = get_configured_db_engine(request)
     svc: UnifiedNotificationAndClaimService | None = getattr(
         request.app.state, "notification_service", None
     )
@@ -60,16 +63,23 @@ def get_notification_service(request: Request) -> UnifiedNotificationAndClaimSer
         initialize_app_services(request.app)
         svc = request.app.state.notification_service
     assert svc is not None
+    if getattr(svc, "_engine", None) is None and engine is not None:
+        svc.set_engine(engine)
     return svc
 
 
 def get_resource_lease_service(request: Request) -> ResourceLeaseService:
     """FastAPI `Depends` provider returning `ResourceLeaseService` (`DEC-CONC-01`)."""
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
+
+    engine = get_configured_db_engine(request)
     svc: ResourceLeaseService | None = getattr(request.app.state, "resource_lease_service", None)
     if svc is None:
         initialize_app_services(request.app)
         svc = request.app.state.resource_lease_service
     assert svc is not None
+    if getattr(svc, "_engine", None) is None and engine is not None:
+        svc.set_engine(engine)
     return svc
 
 

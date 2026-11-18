@@ -1,23 +1,12 @@
-"""Shared Resource Lease Port & Monotonic Fencing Service (`DEC-CONC-01`, `AD-4`, `Story 5.1`).
-
-Enforces:
-1. Monotonic fencing tokens (`fencing_token >= highest_token(resource_uri)`), rejecting stale
-   writes with `StaleFencingTokenError` (`HTTP 409`).
-2. Canonical acquisition ordering (`sorted(set(resource_uris))`) to eliminate cross-resource
-   deadlocks when a step locks multiple shared URIs.
-3. Parent-child cyclic wait detection (`SUB_WORKFLOW` deadlock guard): if a child run attempts to
-   acquire a resource currently leased by an ancestor run in its lineage, raises
-   `CyclicResourceWaitDetectedError` (`HTTP 409`) immediately.
-4. Lease expiration (`expires_at <= now`) allowing fenced preemption with an incremented fencing
-   token.
-"""
+"""Shared Resource Lease Port & Monotonic Fencing Service (`DEC-CONC-01`, `AD-4`, `Story 5.1`)."""
 
 from __future__ import annotations
 
 import threading
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+from orcia_core.orchestration._internal.sql_resource_leases import SqlResourceLeaseRepository
 from orcia_core.orchestration.errors import (
     CyclicResourceWaitDetectedError,
     ResourceLeaseHeldByOtherRunError,
@@ -26,6 +15,9 @@ from orcia_core.orchestration.errors import (
 )
 from orcia_kernel.ids import new_uuid7_str
 from orcia_kernel.ports import ResourceLeasePort, ResourceLeaseRecord
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 def _classify_resource_uri(resource_uri: str) -> str:
@@ -40,11 +32,23 @@ def _classify_resource_uri(resource_uri: str) -> str:
 class ResourceLeaseService(ResourceLeasePort):
     """Concurrent-ready shared resource lease manager with monotonic fencing & deadlock guard."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, engine: AsyncEngine | None = None) -> None:
+        self._engine: AsyncEngine | None = engine
+        self._sql_repo: SqlResourceLeaseRepository | None = (
+            SqlResourceLeaseRepository(engine) if engine is not None else None
+        )
         self._lock = threading.Lock()
         self._active_leases: dict[str, ResourceLeaseRecord] = {}
         self._fencing_counters: dict[str, int] = {}
         self._run_parent_map: dict[str, str] = {}
+
+    def set_engine(self, engine: AsyncEngine | None) -> None:
+        """Bind or refresh the SQLAlchemy `AsyncEngine` from the Composition Root."""
+        self._engine = engine
+        self._sql_repo = SqlResourceLeaseRepository(engine) if engine is not None else None
+
+    async def _pg_ready(self) -> bool:
+        return self._sql_repo is not None and await self._sql_repo.pg_tables_ready()
 
     def register_run_parent(self, child_run_id: str, parent_run_id: str) -> None:
         """Record parent-child `SUB_WORKFLOW` relationship for cyclic wait detection."""
@@ -91,20 +95,17 @@ class ResourceLeaseService(ResourceLeasePort):
             ancestors = self._resolve_ancestors_unlocked(
                 holder_run_id, holder_parent_run_id, ancestor_run_ids
             )
-            # Phase 1: Validate all requested URIs in canonical order before mutating state
             for uri in cleaned:
                 existing = self._active_leases.get(uri)
                 if existing is None:
                     continue
                 exp_dt = datetime.fromisoformat(existing.expires_at)
                 if exp_dt <= now:
-                    # Expired lease can be safely preempted
                     continue
                 if (
                     existing.holder_run_id == holder_run_id
                     and existing.holder_step_execution_id == holder_step_execution_id
                 ):
-                    # Re-entrant acquisition by same run + step
                     continue
                 if existing.holder_run_id in ancestors or (
                     holder_parent_run_id is not None
@@ -124,7 +125,6 @@ class ResourceLeaseService(ResourceLeasePort):
                     )
                 )
 
-            # Phase 2: Commit leases in canonical order with monotonically increasing fencing tokens
             acquired: list[ResourceLeaseRecord] = []
             for uri in cleaned:
                 existing = self._active_leases.get(uri)
@@ -169,6 +169,45 @@ class ResourceLeaseService(ResourceLeasePort):
 
             return tuple(acquired)
 
+    async def acquire_leases_async(
+        self,
+        *,
+        resource_uris: tuple[str, ...],
+        holder_run_id: str,
+        holder_root_run_id: str,
+        holder_step_execution_id: str,
+        holder_parent_run_id: str | None = None,
+        ancestor_run_ids: tuple[str, ...] = (),
+        ttl_seconds: int = 120,
+        now_utc: datetime | None = None,
+    ) -> tuple[ResourceLeaseRecord, ...]:
+        """Acquire leases and persist them into PG18 `resource_leases`."""
+        pg_ready = await self._pg_ready()
+        if pg_ready:
+            assert self._sql_repo is not None
+            for uri in sorted({u.strip() for u in resource_uris if u and u.strip()}):
+                db_lease = await self._sql_repo.get_lease(uri)
+                if db_lease is not None:
+                    with self._lock:
+                        self._active_leases[uri] = db_lease
+                        self._fencing_counters[uri] = max(
+                            self._fencing_counters.get(uri, 0), db_lease.fencing_token
+                        )
+        records = self.acquire_leases(
+            resource_uris=resource_uris,
+            holder_run_id=holder_run_id,
+            holder_root_run_id=holder_root_run_id,
+            holder_step_execution_id=holder_step_execution_id,
+            holder_parent_run_id=holder_parent_run_id,
+            ancestor_run_ids=ancestor_run_ids,
+            ttl_seconds=ttl_seconds,
+            now_utc=now_utc,
+        )
+        if pg_ready:
+            assert self._sql_repo is not None
+            await self._sql_repo.upsert_leases(records)
+        return records
+
     def validate_fencing_token(self, *, resource_uri: str, fencing_token: int) -> None:
         """Verify that `fencing_token` is not stale compared to the latest issued token."""
         norm_uri = resource_uri.strip()
@@ -199,6 +238,27 @@ class ResourceLeaseService(ResourceLeasePort):
             "payload": dict(payload),
         }
 
+    async def execute_fenced_resource_write_async(
+        self,
+        *,
+        resource_uri: str,
+        fencing_token: int,
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Validate fencing token against PG18 `resource_leases` and return envelope."""
+        if await self._pg_ready():
+            assert self._sql_repo is not None
+            db_lease = await self._sql_repo.get_lease(resource_uri)
+            if db_lease is not None:
+                with self._lock:
+                    self._fencing_counters[resource_uri.strip()] = max(
+                        self._fencing_counters.get(resource_uri.strip(), 0),
+                        db_lease.fencing_token,
+                    )
+        return self.execute_fenced_write(
+            resource_uri=resource_uri, fencing_token=fencing_token, payload=payload
+        )
+
     def release_leases(self, *, holder_run_id: str, holder_step_execution_id: str) -> int:
         """Release all active leases held by `(holder_run_id, holder_step_execution_id)`."""
         with self._lock:
@@ -212,6 +272,21 @@ class ResourceLeaseService(ResourceLeasePort):
                 self._active_leases.pop(uri, None)
             return len(to_delete)
 
+    async def release_leases_async(
+        self, *, holder_run_id: str, holder_step_execution_id: str
+    ) -> int:
+        """Release active leases in memory and in PG18 `resource_leases`."""
+        cnt = self.release_leases(
+            holder_run_id=holder_run_id, holder_step_execution_id=holder_step_execution_id
+        )
+        if await self._pg_ready():
+            assert self._sql_repo is not None
+            pg_cnt = await self._sql_repo.release_leases(
+                holder_run_id=holder_run_id, holder_step_execution_id=holder_step_execution_id
+            )
+            return max(cnt, pg_cnt)
+        return cnt
+
     def list_active_leases(
         self, *, now_utc: datetime | None = None
     ) -> tuple[ResourceLeaseRecord, ...]:
@@ -223,6 +298,16 @@ class ResourceLeaseService(ResourceLeasePort):
                 for _uri, lease in sorted(self._active_leases.items())
                 if datetime.fromisoformat(lease.expires_at) > now
             )
+
+    async def list_active_leases_async(
+        self, *, now_utc: datetime | None = None
+    ) -> tuple[ResourceLeaseRecord, ...]:
+        """Return all non-expired active leases from PG18."""
+        now = now_utc or datetime.now(UTC)
+        if await self._pg_ready():
+            assert self._sql_repo is not None
+            return await self._sql_repo.list_active_leases(now_utc=now)
+        return self.list_active_leases(now_utc=now)
 
 
 __all__ = [

@@ -170,7 +170,9 @@ def initialize_app_services(app: FastAPI) -> None:
 
     if getattr(app.state, "permission_broker_service", None) is None:
         permission_broker_service = build_default_permission_broker_service(
-            evaluator=auth_service.evaluator, vault_cipher=auth_service.vault_cipher
+            evaluator=auth_service.evaluator,
+            vault_cipher=auth_service.vault_cipher,
+            engine=getattr(app.state, "db_engine", None),
         )
         app.state.permission_broker_service = permission_broker_service
     else:
@@ -217,7 +219,10 @@ def initialize_app_services(app: FastAPI) -> None:
         app.state.sse_broker.set_redis_client(app.state.redis_client)
 
     if getattr(app.state, "notification_service", None) is None:
-        notif_svc = UnifiedNotificationAndClaimService(sse_broker=app.state.sse_broker)
+        notif_svc = UnifiedNotificationAndClaimService(
+            sse_broker=app.state.sse_broker,
+            engine=getattr(app.state, "db_engine", None),
+        )
         # Zéro donnée fictive : les notifications d'amorce ne sont semées que pour la pile E2E
         # isolée (ORCIA_E2E_SEED_FIXTURES=1, posé uniquement par infra/scripts/e2e/).
         if _e2e_fixtures_enabled():
@@ -231,7 +236,9 @@ def initialize_app_services(app: FastAPI) -> None:
         app.state.notification_service = notif_svc
 
     if getattr(app.state, "resource_lease_service", None) is None:
-        app.state.resource_lease_service = ResourceLeaseService()
+        app.state.resource_lease_service = ResourceLeaseService(
+            engine=getattr(app.state, "db_engine", None)
+        )
 
     if getattr(app.state, "control_center_service", None) is None:
         app.state.control_center_service = ControlCenterOverviewService(
@@ -365,10 +372,17 @@ def initialize_app_services(app: FastAPI) -> None:
                 "post_hoc_audit_service",
                 "autonomous_supervision_service",
                 "contextual_help_service",
+                "notification_service",
+                "resource_lease_service",
+                "permission_broker_service",
+                "assistant_folders_and_sharing_service",
             ):
                 svc_inst = getattr(app.state, attr_name, None)
                 if svc_inst is not None and getattr(svc_inst, "_engine", None) is None:
-                    svc_inst._engine = db_engine
+                    if hasattr(svc_inst, "set_engine"):
+                        svc_inst.set_engine(db_engine)
+                    else:
+                        svc_inst._engine = db_engine
         except Exception as exc:
             from orcia_core.observability.logging import get_logger
 

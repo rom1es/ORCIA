@@ -1,4 +1,7 @@
-import type { AutonomousRunSupervisionItemSchema } from "@orcia/api-client";
+import type {
+  AutonomousRunSupervisionItemSchema,
+  TaskNotificationItemResponse,
+} from "@orcia/api-client";
 import {
   getOrciaIconGlyph,
   type ControlCenterRunItem,
@@ -144,6 +147,7 @@ export function buildShellNotificationItems(params: {
   readonly llmTiers: readonly ConfiguredLlmTierMapping[];
   readonly runs: readonly ControlCenterRunItem[];
   readonly autonomousRuns?: readonly AutonomousRunSupervisionItemSchema[];
+  readonly inboxNotifications?: readonly TaskNotificationItemResponse[];
   readonly lastClaimEvent: WorkspaceSseClaimEvent | null;
   readonly mustChangePassword?: boolean;
 }): readonly UiNotificationCenterItem[] {
@@ -155,6 +159,7 @@ export function buildShellNotificationItems(params: {
     llmTiers,
     runs,
     autonomousRuns = [],
+    inboxNotifications = [],
     lastClaimEvent,
     mustChangePassword,
   } = params;
@@ -258,6 +263,17 @@ export function buildShellNotificationItems(params: {
       targetRoute: "/cockpit",
       ctaLabel: isFr ? "Ouvrir →" : "Open →",
     })),
+    ...inboxNotifications
+      .filter((n) => n.status !== "RESOLVED")
+      .map((n) => ({
+        id: `task-notif-${n.id}`,
+        kind: (n.status === "OPEN" ? "ACTION_REQUIRED" : "DECISION_WAITING") as "ACTION_REQUIRED" | "DECISION_WAITING",
+        badgeLabel: n.status === "OPEN" ? (isFr ? "Action requise" : "Action required") : (isFr ? "Prise en charge" : "Claimed"),
+        title: n.title,
+        description: n.summary,
+        targetRoute: "/inbox",
+        ctaLabel: isFr ? "Boîte de réception →" : "Open inbox →",
+      })),
     ...autonomousRuns.map((autoRun): UiNotificationCenterItem => {
       const isEscalation = autoRun.run_status === "PAUSED_AUTONOMOUS_ESCALATION";
       const isTriggerSuspended = autoRun.trigger_status === "CIRCUIT_OPEN";

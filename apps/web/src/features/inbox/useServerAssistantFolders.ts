@@ -17,14 +17,16 @@ const VISIBILITY_MODES: readonly AssistantFolderVisibilityMode[] = ["PRIVATE", "
 
 export function mapServerFolder(payload: ServerFolderPayload): UiAssistantFolderItem {
   const visibility = VISIBILITY_MODES.find((m) => m === payload.visibility_mode) ?? "PRIVATE";
+  const rawBlock = payload.assembled_layer5_prompt_block ?? "";
+  const safeBlock = rawBlock.includes("[LAYER_5_") ? "" : rawBlock;
   return {
     folderId: payload.folder_id,
     title: payload.title,
-    pinnedNotesMarkdown: payload.pinned_notes_markdown ?? "",
+    pinnedNotesMarkdown: (payload.pinned_notes_markdown ?? "").replace(/\[LAYER_5_[^\]]*\]\s*/g, "").trim(),
     consolidatedSummary: payload.consolidated_summary ?? "",
     visibilityMode: visibility,
     hasRestrictedSources: payload.has_restricted_sources ?? false,
-    assembledLayer5PromptBlock: payload.assembled_layer5_prompt_block ?? "",
+    assembledLayer5PromptBlock: safeBlock,
   };
 }
 

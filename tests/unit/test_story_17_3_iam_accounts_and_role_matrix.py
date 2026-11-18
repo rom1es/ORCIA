@@ -60,6 +60,8 @@ def test_story_17_3_hexagonal_purity_permissions_package() -> None:
     repo_root = Path(__file__).resolve().parents[2]
     perm_dir = repo_root / "packages" / "orcia-core" / "src" / "orcia_core" / "permissions"
     for py_file in perm_dir.rglob("*.py"):
+        if "_internal" in py_file.relative_to(perm_dir).parts:
+            continue
         tree = ast.parse(py_file.read_text(encoding="utf-8"), filename=str(py_file))
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):

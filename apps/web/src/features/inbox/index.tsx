@@ -1,6 +1,7 @@
 import {
   AgentExecutionTrace,
   AssistantSpeedSelectorAndStreamView,
+  PermissionBrokerCard,
   SourceLineInspectorDrawer,
 } from "@orcia/ui";
 import React from "react";
@@ -8,6 +9,7 @@ import { useShellNavigation } from "../../components/ShellContainer";
 import { AssistantNoEmbeddingBanner } from "./AssistantNoEmbeddingBanner";
 import { AssistantReindexingBanner } from "./AssistantReindexingBanner";
 import { InboxAuxiliaryPanels } from "./InboxAuxiliaryPanels";
+import { InboxNotificationsCenterView } from "./InboxNotificationsCenterView";
 import {
   ActiveConversationMessagesView,
   AssistantTopToolbar,
@@ -17,10 +19,22 @@ import {
   ASSISTANT_REFLEXIVE_STORAGE_KEY,
   useInboxPanelController,
 } from "./useInboxPanelController";
+import { usePermissionBrokerTickets } from "./usePermissionBrokerTickets";
 
 export { ASSISTANT_REFLEXIVE_STORAGE_KEY };
 
-export function InboxFeaturePanel() {
+export interface InboxFeaturePanelProps {
+  readonly mode?: "assistant" | "notifications";
+}
+
+export function InboxFeaturePanel({ mode = "assistant" }: InboxFeaturePanelProps = {}) {
+  if (mode === "notifications") {
+    return <InboxNotificationsCenterView />;
+  }
+  return <AssistantInboxFeatureContent />;
+}
+
+function AssistantInboxFeatureContent() {
   const { navigateToRoute, openHelpSection } = useShellNavigation();
   const ctrl = useInboxPanelController();
   const {
@@ -66,6 +80,12 @@ export function InboxFeaturePanel() {
     handleStopAll,
     handleDeleteConversation,
   } = ctrl;
+
+  const broker = usePermissionBrokerTickets({
+    workspaceId: activeWorkspaceId,
+    isFr,
+    onFeedback: setGovernanceFeedback,
+  });
 
   const disabledReasonBannerNode = !hasActiveEmbeddingModel ? (
     <AssistantNoEmbeddingBanner
@@ -204,6 +224,15 @@ export function InboxFeaturePanel() {
         onToggleGovernanceModal={() => setGovernanceOpen((prev) => !prev)}
         onOpenHelpSection={openHelpSection}
       />
+
+      {broker.activeTicket ? (
+        <PermissionBrokerCard
+          ticket={broker.activeTicket}
+          labels={dictionary.permissionBroker}
+          onPauseStep={broker.pauseTicket}
+          onReplayStep={broker.replayTicket}
+        />
+      ) : null}
 
       {savedConversationsOpen && (
         <SavedConversationsPanel

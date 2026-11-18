@@ -92,9 +92,9 @@ async def execute_three_speed_turn_endpoint(
 ) -> ThreeSpeedTurnResponse:
     """Execute a 3-Speed conversational turn (`⚡ Rapide`, `@Agent / /Skill`, `🧠 Approfondi`)."""
     effective_deep_audit, effective_speed, resolved_speed = _resolve_effective_speed(payload)
-    resolved_notes = resolve_folder_notes(request, payload)
+    resolved_notes = await resolve_folder_notes(request, payload)
     active_hat = payload.hat or user.human_profile_archetype or "PLATFORM_ADMIN"
-    history = resolve_turn_history(request, payload)
+    history = await resolve_turn_history(request, payload)
     live_outcome = await invoke_configured_llm_for_assistant_turn(
         request,
         user_prompt=payload.user_prompt,
@@ -246,8 +246,8 @@ async def stream_three_speed_turn_endpoint(
     """Stream SSE events (`cache_status`, `step_progress`, `thinking_delta`, `token_delta`)."""
     effective_deep_audit, effective_speed, resolved_speed = _resolve_effective_speed(payload)
     active_hat = payload.hat or user.human_profile_archetype or "PLATFORM_ADMIN"
-    history = resolve_turn_history(request, payload)
-    resolved_notes = resolve_folder_notes(request, payload)
+    history = await resolve_turn_history(request, payload)
+    resolved_notes = await resolve_folder_notes(request, payload)
     client_host = getattr(getattr(request, "client", None), "host", "") or ""
 
     async def _event_generator() -> AsyncIterator[str]:

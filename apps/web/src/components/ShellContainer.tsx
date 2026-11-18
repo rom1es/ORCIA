@@ -129,7 +129,7 @@ function InnerShellContainer({
 
   const activeWorkspaceName =
     selectedScope.name ?? workspaces[0]?.name ?? "Plateforme Globale ORCIA";
-  const { lastClaimEvent, autonomousRuns } = useShellAutonomousSupervision({
+  const { lastClaimEvent, autonomousRuns, inboxNotifications } = useShellAutonomousSupervision({
     isAuthenticated, selectedScope, workspaces,
   });
 
@@ -140,7 +140,7 @@ function InnerShellContainer({
   });
   const disabledMenuKeys = buildShellDisabledMenuKeys({ isFr, llmTiers, workspaces });
   const notificationItems = buildShellNotificationItems({
-    isFr, platformAdmin, orgUnits, workspaces, llmTiers, runs, autonomousRuns, lastClaimEvent, mustChangePassword,
+    isFr, platformAdmin, orgUnits, workspaces, llmTiers, runs, autonomousRuns, inboxNotifications, lastClaimEvent, mustChangePassword,
   });
 
   const contextualHelpArticle = buildContextualHelpArticle({

@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 11-18-2026 21:35
+last_updated: 11-18-2026 22:57
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -227,7 +227,7 @@ development_status:
   epic-22: in-progress
   22-1-socle-identite-uuid-workspaces-permissions-admin-et-fin-bypass-pg: done
   22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats: done
-  22-3-persistance-pg18-assistant-notifications-sse-et-permission-broker: ready-for-dev
+  22-3-persistance-pg18-assistant-notifications-sse-et-permission-broker: done
   22-4-persistance-pg18-orchestration-gates-et-garde-kill-switch: ready-for-dev
   22-5-persistance-pg18-packs-declaratifs-et-wizards-durables: ready-for-dev
   22-6-coquille-direction-c-8-entrees-mobile-companion-aide-dynamique-et-cockpit: ready-for-dev

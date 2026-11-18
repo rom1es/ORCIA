@@ -13,10 +13,11 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 
 from orcia_api.dependencies import (
     get_assistant_folders_and_sharing_service,
+    get_auth_service,
     require_rag_available,
 )
 from orcia_api.routers.auth import resolve_request_user
@@ -36,9 +37,12 @@ from orcia_api.schemas.assistant_citations_and_folders import (
     SendCollaborativeThreadTurnResponse,
 )
 from orcia_core.orchestration.assistant_folders_and_sharing import (
+    AssistantFolderRecord,
     AssistantFoldersAndSharingService,
     FolderShareGrant,
+    sanitize_user_pinned_notes,
 )
+from orcia_core.orchestration.errors import ObserverModeReadOnlyError, ScopeAccessDeniedError
 from orcia_core.permissions.models import UserIdentity
 from orcia_core.ports.embedding import EmbeddingPort
 
@@ -50,34 +54,13 @@ FoldersSharingDep = Annotated[
 ]
 
 
-@router.post("/folders", response_model=AssistantFolderSchemaItem)
-def create_or_update_assistant_folder_endpoint(
-    payload: CreateOrUpdateAssistantFolderRequest,
-    user: CurrentUserDep,
-    folders_svc: FoldersSharingDep,
-) -> AssistantFolderSchemaItem:
-    """Create or update a thematic `📁 Dossier` (`📌 Notes du dossier`, Layer 5 continuity)."""
-    record = folders_svc.create_or_update_folder(
-        workspace_id=payload.workspace_id,
-        user=user,
-        title=payload.title,
-        pinned_notes_markdown=payload.pinned_notes_markdown,
-        working_attachments_uris=payload.working_attachments_uris,
-        consolidated_summary=payload.consolidated_summary,
-        evidence_tags=payload.evidence_tags,
-        has_restricted_sources=payload.has_restricted_sources,
-        folder_id=payload.folder_id,
-    )
-    layer5 = folders_svc.build_layer5_folder_memory_injection(
-        workspace_id=payload.workspace_id,
-        folder_id=record.folder_id,
-    )
+def _serialize_folder(record: AssistantFolderRecord) -> AssistantFolderSchemaItem:
     return AssistantFolderSchemaItem(
         folder_id=record.folder_id,
         workspace_id=record.workspace_id,
         owner_user_id=record.owner_user_id,
         title=record.title,
-        pinned_notes_markdown=record.pinned_notes_markdown,
+        pinned_notes_markdown=sanitize_user_pinned_notes(record.pinned_notes_markdown),
         working_attachments_uris=list(record.working_attachments_uris),
         consolidated_summary=record.consolidated_summary,
         evidence_tags=list(record.evidence_tags),
@@ -90,18 +73,62 @@ def create_or_update_assistant_folder_endpoint(
             )
             for g in record.shares
         ],
-        assembled_layer5_prompt_block=layer5.assembled_layer5_prompt_block,
+        assembled_layer5_prompt_block="",
     )
 
 
+def _enforce_workspace_guard(
+    request: Request,
+    user: UserIdentity,
+    workspace_id: str,
+    *,
+    require_write: bool,
+) -> None:
+    if require_write and (
+        request.headers.get("x-orcia-access-mode", "").strip().upper() == "READ_ONLY_OBSERVER"
+        or user.platform_role == "OBSERVER"
+    ):
+        raise ObserverModeReadOnlyError(instance=str(request.url.path))
+    evaluator = get_auth_service(request).evaluator
+    if any(w.id == workspace_id for w in evaluator.workspaces):
+        access = evaluator.resolve_workspace_access(user, workspace_id)
+        if access is None:
+            raise ScopeAccessDeniedError(instance=str(request.url.path))
+        if require_write and access.access_mode == "READ_ONLY_OBSERVER":
+            raise ObserverModeReadOnlyError(instance=str(request.url.path))
+
+
+@router.post("/folders", response_model=AssistantFolderSchemaItem)
+async def create_or_update_assistant_folder_endpoint(
+    payload: CreateOrUpdateAssistantFolderRequest,
+    request: Request,
+    user: CurrentUserDep,
+    folders_svc: FoldersSharingDep,
+) -> AssistantFolderSchemaItem:
+    """Create or update a thematic `📁 Dossier` (`📌 Notes du dossier`) persisted in PG18."""
+    _enforce_workspace_guard(request, user, payload.workspace_id, require_write=True)
+    record = await folders_svc.create_or_update_folder_async(
+        workspace_id=payload.workspace_id,
+        user=user,
+        title=payload.title,
+        pinned_notes_markdown=payload.pinned_notes_markdown,
+        working_attachments_uris=payload.working_attachments_uris,
+        consolidated_summary=payload.consolidated_summary,
+        evidence_tags=payload.evidence_tags,
+        has_restricted_sources=payload.has_restricted_sources,
+        folder_id=payload.folder_id,
+    )
+    return _serialize_folder(record)
+
+
 @router.post("/threads", response_model=AssistantThreadSchemaItem)
-def create_assistant_thread_endpoint(
+async def create_assistant_thread_endpoint(
     payload: CreateAssistantThreadRequest,
     user: CurrentUserDep,
     folders_svc: FoldersSharingDep,
 ) -> AssistantThreadSchemaItem:
-    """Create a discussion thread inside a `📁 Dossier` (`Story 10.4`)."""
-    thread = folders_svc.create_thread_in_folder(
+    """Create a discussion thread inside a `📁 Dossier` (`Story 10.4`) persisted in PG18."""
+    thread = await folders_svc.create_thread_in_folder_async(
         workspace_id=payload.workspace_id,
         user=user,
         title=payload.title,
@@ -122,14 +149,14 @@ def create_assistant_thread_endpoint(
 
 
 @router.post("/folders/{folder_id}/share", response_model=ConfigureFolderSharingResponse)
-def configure_folder_sharing_endpoint(
+async def configure_folder_sharing_endpoint(
     folder_id: str,
     payload: ConfigureFolderSharingRequest,
     user: CurrentUserDep,
     folders_svc: FoldersSharingDep,
 ) -> ConfigureFolderSharingResponse:
     """Configure folder visibility (`🔒 Privé | 👥 Partagé | 📦 Espace`) confined to Workspace."""
-    outcome = folders_svc.configure_folder_sharing(
+    outcome = await folders_svc.configure_folder_sharing_async(
         workspace_id=payload.workspace_id,
         folder_id=folder_id,
         owner_user=user,
@@ -160,14 +187,14 @@ def configure_folder_sharing_endpoint(
 
 
 @router.post("/folders/{folder_id}/launch-process", response_model=LaunchProcessFromFolderResponse)
-def launch_process_from_folder_endpoint(
+async def launch_process_from_folder_endpoint(
     folder_id: str,
     payload: LaunchProcessFromFolderRequest,
     user: CurrentUserDep,
     folders_svc: FoldersSharingDep,
 ) -> LaunchProcessFromFolderResponse:
     """Pre-fill a Process contract in 1 click (`☍ Lancer un Processus à partir de ce dossier →`)."""
-    prep = folders_svc.prepare_workflow_launch_from_folder(
+    prep = await folders_svc.prepare_workflow_launch_from_folder_async(
         workspace_id=payload.workspace_id,
         folder_id=folder_id,
         user=user,
@@ -192,7 +219,7 @@ async def send_collaborative_thread_turn_endpoint(
     _embedding_port: Annotated[EmbeddingPort, Depends(require_rag_available)],
 ) -> SendCollaborativeThreadTurnResponse:
     """Execute a turn in a shared thread under Redis turn lock (`NX EX 60`)."""
-    outcome = folders_svc.send_collaborative_thread_turn(
+    outcome = await folders_svc.send_collaborative_thread_turn_async(
         workspace_id=payload.workspace_id,
         thread_id=thread_id,
         sender_user=user,
@@ -211,7 +238,7 @@ async def send_collaborative_thread_turn_endpoint(
         author_passthrough_identity=outcome.author_passthrough_identity,
         folder_creator_user_id=outcome.folder_creator_user_id,
         layer5_memory_injected=outcome.layer5_memory_injected,
-        assembled_layer5_preview=outcome.assembled_layer5_preview,
+        assembled_layer5_preview="",
         assistant_reply_markdown=outcome.assistant_reply_markdown,
     )
 
@@ -219,14 +246,17 @@ async def send_collaborative_thread_turn_endpoint(
 @router.get(
     "/workspaces/{workspace_id}/overview", response_model=AssistantWorkspaceOverviewResponse
 )
-def get_assistant_workspace_overview_endpoint(
+async def get_assistant_workspace_overview_endpoint(
     workspace_id: str,
+    request: Request,
+    user: CurrentUserDep,
     folders_svc: FoldersSharingDep,
     active_folder_id: str | None = Query(default=None),
     search_query: str = Query(default=""),
 ) -> AssistantWorkspaceOverviewResponse:
-    """Return the 3-tab `Mon Assistant` workspace overview (`💬`, `📁`, `🕘`) (`Story 10.4`)."""
-    overview = folders_svc.get_workspace_overview(
+    """Return the 3-tab `Mon Assistant` workspace overview hydrated from PG18."""
+    _enforce_workspace_guard(request, user, workspace_id, require_write=False)
+    overview = await folders_svc.get_workspace_overview_async(
         workspace_id=workspace_id,
         active_folder_id=active_folder_id,
         search_query=search_query,
@@ -236,32 +266,7 @@ def get_assistant_workspace_overview_endpoint(
         tabs=list(overview.tabs),
         active_folder_pill_label=overview.active_folder_pill_label,
         folders_count=overview.folders_count,
-        folders=[
-            AssistantFolderSchemaItem(
-                folder_id=f.folder_id,
-                workspace_id=f.workspace_id,
-                owner_user_id=f.owner_user_id,
-                title=f.title,
-                pinned_notes_markdown=f.pinned_notes_markdown,
-                working_attachments_uris=list(f.working_attachments_uris),
-                consolidated_summary=f.consolidated_summary,
-                evidence_tags=list(f.evidence_tags),
-                has_restricted_sources=f.has_restricted_sources,
-                visibility_mode=f.visibility_mode,
-                shares=[
-                    FolderShareGrantSchemaItem(
-                        grantee_user_id=g.grantee_user_id,
-                        access_role=g.access_role,
-                    )
-                    for g in f.shares
-                ],
-                assembled_layer5_prompt_block=folders_svc.build_layer5_folder_memory_injection(
-                    workspace_id=workspace_id,
-                    folder_id=f.folder_id,
-                ).assembled_layer5_prompt_block,
-            )
-            for f in overview.folders
-        ],
+        folders=[_serialize_folder(f) for f in overview.folders],
         threads=[
             AssistantThreadSchemaItem(
                 thread_id=t.thread_id,

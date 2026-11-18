@@ -286,6 +286,91 @@ DEFAULT_PERMISSION_BROKER_POLICY_SEEDS: tuple[PermissionBrokerPolicySeed, ...] =
         approved_by_admin_id=None,
         freshness_ttl_days=90,
     ),
+    PermissionBrokerPolicySeed(
+        id="0192c4e0-0000-7000-8000-000000001007",
+        policy_key="pol-git-default-fallback",
+        uri_pattern="git://*",
+        connector_scheme="git",
+        required_role="ROLE_GIT_REPOSITORY_READER",
+        approver_team="SecOps & Platform IAM",
+        request_url_template=(
+            "https://jira.enterprise.internal/secure/CreateIssueDetails!init.jspa"
+            "?pid=10420&issuetype=10002&summary={summary}&description={description}"
+        ),
+        sla_hours=4,
+        procedure_markdown=(
+            "### Procédure d'habilitation Dépôt Git\n"
+            "1. Ouvrir la demande d'accès IAM pré-remplie auprès de `SecOps & Platform IAM`.\n"
+            "2. Faire valider le rôle `ROLE_GIT_REPOSITORY_READER` pour la source demandée.\n"
+            "3. Cliquer sur **Relancer l'étape** une fois l'accès confirmé."
+        ),
+        service_principal_allowed=False,
+        approved_by_admin_id=None,
+        freshness_ttl_days=90,
+    ),
+    PermissionBrokerPolicySeed(
+        id="0192c4e0-0000-7000-8000-000000001008",
+        policy_key="pol-jira-default-fallback",
+        uri_pattern="jira://*",
+        connector_scheme="jira",
+        required_role="ROLE_JIRA_PROJECT_CONTRIBUTOR",
+        approver_team="SecOps & PMO IAM",
+        request_url_template=(
+            "https://jira.enterprise.internal/secure/CreateIssueDetails!init.jspa"
+            "?pid=10422&issuetype=10002&summary={summary}&description={description}"
+        ),
+        sla_hours=4,
+        procedure_markdown=(
+            "### Procédure d'habilitation Projet Jira\n"
+            "1. Ouvrir la demande d'accès IAM pré-remplie auprès de `SecOps & PMO IAM`.\n"
+            "2. Faire valider `ROLE_JIRA_PROJECT_CONTRIBUTOR` puis relancer l'étape."
+        ),
+        service_principal_allowed=False,
+        approved_by_admin_id=None,
+        freshness_ttl_days=90,
+    ),
+    PermissionBrokerPolicySeed(
+        id="0192c4e0-0000-7000-8000-000000001009",
+        policy_key="pol-confluence-default-fallback",
+        uri_pattern="confluence://*",
+        connector_scheme="confluence",
+        required_role="ROLE_CONFLUENCE_SPACE_READER",
+        approver_team="Knowledge & SecOps Governance",
+        request_url_template=(
+            "https://jira.enterprise.internal/secure/CreateIssueDetails!init.jspa"
+            "?pid=10421&issuetype=10002&summary={summary}&description={description}"
+        ),
+        sla_hours=4,
+        procedure_markdown=(
+            "### Procédure d'habilitation Espace Confluence\n"
+            "1. Ouvrir la demande d'accès IAM pré-remplie.\n"
+            "2. Faire valider `ROLE_CONFLUENCE_SPACE_READER` puis relancer l'étape."
+        ),
+        service_principal_allowed=False,
+        approved_by_admin_id=None,
+        freshness_ttl_days=90,
+    ),
+    PermissionBrokerPolicySeed(
+        id="0192c4e0-0000-7000-8000-000000001010",
+        policy_key="pol-mcp-default-fallback",
+        uri_pattern="mcp://*",
+        connector_scheme="mcp",
+        required_role="ROLE_MCP_TOOL_EXECUTOR",
+        approver_team="Platform Engineering & SecOps",
+        request_url_template=(
+            "https://jira.enterprise.internal/secure/CreateIssueDetails!init.jspa"
+            "?pid=10425&issuetype=10002&summary={summary}&description={description}"
+        ),
+        sla_hours=4,
+        procedure_markdown=(
+            "### Procédure d'habilitation Outil MCP\n"
+            "1. Faire valider `ROLE_MCP_TOOL_EXECUTOR` par `Platform Engineering & SecOps`.\n"
+            "2. Relancer l'étape."
+        ),
+        service_principal_allowed=False,
+        approved_by_admin_id=None,
+        freshness_ttl_days=90,
+    ),
 )
 
 DEFAULT_PERMISSION_BROKER_TICKET_SEEDS: tuple[PermissionBrokerTicketSeed, ...] = (

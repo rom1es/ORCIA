@@ -190,7 +190,7 @@ def test_permission_broker_passthrough_vs_service_principal_and_ticket_lifecycle
         nadia,
         connector_scheme="git",
         target_host="github.enterprise",
-        plaintext_secret="pat-secret",
+        plaintext_secret="pat-secret",  # pragma: allowlist secret
     )
     broker.register_passthrough_credential(cred)
     with_cred = broker.check_or_intercept_access(
@@ -273,9 +273,16 @@ def test_permission_broker_passthrough_vs_service_principal_and_ticket_lifecycle
     )
     assert no_exec.allowed is False
 
-    # Unmapped URI on existing scheme raises ResourceNotFoundError (no cross-pattern fallback)
-    with pytest.raises(ResourceNotFoundError):
-        broker.resolve_matching_policy("git://github.enterprise/hr/payroll.git")
+    from orcia_core.permissions.errors import ValidationDomainError as BrokerValidationError
+
+    # REM-13: Unmapped Git URI resolves via default fallback policy (`git://*`) instead of 404
+    fallback_policy = broker.resolve_matching_policy("git://github.enterprise/hr/payroll.git")
+    assert fallback_policy.policy_key == "pol-git-default-fallback"
+    assert fallback_policy.uri_pattern == "git://*"
+
+    # Unknown scheme raises ValidationDomainError and empty broker raises ResourceNotFoundError
+    with pytest.raises(BrokerValidationError):
+        broker.resolve_matching_policy("s3://unknown-bucket/path")
     empty_broker = PermissionBrokerService(policies=())
     with pytest.raises(ResourceNotFoundError):
         empty_broker.resolve_matching_policy("mcp://unknown/server")

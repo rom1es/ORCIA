@@ -102,6 +102,7 @@ def get_permission_broker_service(request: Request) -> PermissionBrokerService:
     """FastAPI `Depends` provider returning `PermissionBrokerService` from `app.state`."""
     from orcia_api.dependencies.core_and_lifespan import initialize_app_services
 
+    engine = get_configured_db_engine(request)
     svc: PermissionBrokerService | None = getattr(
         request.app.state, "permission_broker_service", None
     )
@@ -109,6 +110,8 @@ def get_permission_broker_service(request: Request) -> PermissionBrokerService:
         initialize_app_services(request.app)
         svc = request.app.state.permission_broker_service
     assert svc is not None
+    if getattr(svc, "_engine", None) is None and engine is not None:
+        svc.set_engine(engine)
     return svc
 
 

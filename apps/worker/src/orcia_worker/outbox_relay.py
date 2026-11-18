@@ -22,7 +22,12 @@ from orcia_core.observability.logging import (
     ensure_logging_configured,
     get_logger,
 )
-from orcia_core.orchestration import DbosSqlAlchemyUnitOfWork, SqlDomainEventsOutboxRepository
+from orcia_core.orchestration import (
+    DbosSqlAlchemyUnitOfWork,
+    SqlDomainEventsOutboxRepository,
+    UnifiedNotificationAndClaimService,
+)
+from orcia_core.orchestration.presence_and_sse import SseBroadcastPort
 from orcia_core.ports.finops_telemetry import AuditLedgerSinkPort
 from orcia_kernel.events import DomainEvent
 from orcia_kernel.ports import OutboxRelayPort
@@ -48,6 +53,8 @@ class OutboxEventBus:
     sse_published_messages: list[tuple[str, DomainEvent]] = field(default_factory=list)
     audit_sink: AuditLedgerSinkPort | None = None
     audit_subscriber: AuditLedgerOutboxSubscriber | None = None
+    notification_service: UnifiedNotificationAndClaimService | None = None
+    sse_broker: SseBroadcastPort | None = None
     on_workflow_published: Callable[[DomainEvent], Awaitable[Any] | Any] | None = None
 
     def __post_init__(self) -> None:
@@ -89,6 +96,8 @@ class OutboxEventBus:
         self.publish_idempotent(event)
         if self.audit_subscriber is not None:
             await self.audit_subscriber.on_domain_event(event)
+        if self.notification_service is not None:
+            await self.notification_service.consume_outbox_event_async(event)
         if event.event_type == "WorkflowPublished" and self.on_workflow_published is not None:
             res = self.on_workflow_published(event)
             if asyncio.iscoroutine(res):
@@ -112,10 +121,23 @@ class OutboxEventBus:
         self.sse_published_messages.append((topic, event))
 
 
-def build_default_outbox_event_bus(engine: AsyncEngine | None = None) -> OutboxEventBus:
-    """Construct an `OutboxEventBus` wired to `SqlAuditLedgerService(engine)` when available."""
+def build_default_outbox_event_bus(
+    engine: AsyncEngine | None = None,
+    *,
+    sse_broker: SseBroadcastPort | None = None,
+) -> OutboxEventBus:
+    """Construct an `OutboxEventBus` wired to PG18 audit & notification sinks."""
     sink = SqlAuditLedgerService(engine=engine) if engine is not None else None
-    return OutboxEventBus(audit_sink=sink)
+    notif_svc = (
+        UnifiedNotificationAndClaimService(sse_broker=sse_broker, engine=engine)
+        if engine is not None
+        else None
+    )
+    return OutboxEventBus(
+        audit_sink=sink,
+        notification_service=notif_svc,
+        sse_broker=sse_broker,
+    )
 
 
 class DramatiqOutboxRelay(OutboxRelayPort):

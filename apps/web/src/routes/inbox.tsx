@@ -12,6 +12,6 @@ export const Route = createRoute({
   loader: ({ context, deps }) =>
     preloadModuleQueryData(context.queryClient, "inbox", deps.fixture),
   component: function InboxRouteComponent() {
-    return <ModuleWorkspaceView moduleKey="inbox" />;
+    return <ModuleWorkspaceView moduleKey="inbox" inboxMode="notifications" />;
   },
 });

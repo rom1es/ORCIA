@@ -35801,7 +35801,7 @@
     },
     "/api/v1/assistant/folders": {
       "post": {
-        "description": "Create or update a thematic `📁 Dossier` (`📌 Notes du dossier`, Layer 5 continuity).",
+        "description": "Create or update a thematic `📁 Dossier` (`📌 Notes du dossier`) persisted in PG18.",
         "operationId": "create_or_update_assistant_folder_endpoint_api_v1_assistant_folders_post",
         "parameters": [
           {
@@ -36845,7 +36845,7 @@
     },
     "/api/v1/assistant/threads": {
       "post": {
-        "description": "Create a discussion thread inside a `📁 Dossier` (`Story 10.4`).",
+        "description": "Create a discussion thread inside a `📁 Dossier` (`Story 10.4`) persisted in PG18.",
         "operationId": "create_assistant_thread_endpoint_api_v1_assistant_threads_post",
         "parameters": [
           {
@@ -38003,7 +38003,7 @@
     },
     "/api/v1/assistant/workspaces/{workspace_id}/overview": {
       "get": {
-        "description": "Return the 3-tab `Mon Assistant` workspace overview (`💬`, `📁`, `🕘`) (`Story 10.4`).",
+        "description": "Return the 3-tab `Mon Assistant` workspace overview hydrated from PG18.",
         "operationId": "get_assistant_workspace_overview_endpoint_api_v1_assistant_workspaces__workspace_id__overview_get",
         "parameters": [
           {
@@ -38039,6 +38039,22 @@
               "default": "",
               "title": "Search Query",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
             }
           }
         ],

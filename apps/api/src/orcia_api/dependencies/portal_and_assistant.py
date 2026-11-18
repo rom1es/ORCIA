@@ -176,13 +176,18 @@ def get_assistant_citation_and_v5_guard_service(
 def get_assistant_folders_and_sharing_service(
     request: Request,
 ) -> AssistantFoldersAndSharingService:
-    """FastAPI `Depends` provider returning `AssistantFoldersAndSharingService`."""
+    """FastAPI `Depends` provider returning `AssistantFoldersAndSharingService` (PG18-backed)."""
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
+
+    engine = get_configured_db_engine(request)
     svc: AssistantFoldersAndSharingService | None = getattr(
         request.app.state, "assistant_folders_and_sharing_service", None
     )
     if svc is None:
-        svc = AssistantFoldersAndSharingService()
+        svc = AssistantFoldersAndSharingService(engine=engine)
         request.app.state.assistant_folders_and_sharing_service = svc
+    elif getattr(svc, "_engine", None) is None and engine is not None:
+        svc.set_engine(engine)
     return svc
 
 

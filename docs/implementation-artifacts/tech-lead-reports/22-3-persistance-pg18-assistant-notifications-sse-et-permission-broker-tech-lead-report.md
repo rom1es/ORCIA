@@ -38,6 +38,11 @@
 - **Opportunités de Factorisation & Volumétrie** :
   - Réutiliser une base/mixin SQLAlchemy `AsyncEngine` dans `_internal/` de `orchestration/` et `permissions/` en respectant strictement `AD-19` (`lint-imports` — aucun import SQLAlchemy dans `domain/` ou `ports/`).
   - Extraire les adaptateurs SQL dans des fichiers dédiés `< 350` lignes (`_internal/sql_assistant_folders.py`, `_internal/sql_task_notifications.py`, `_internal/sql_permission_broker.py`).
+  - Découper `packages/orcia-core/src/orcia_core/orchestration/assistant_folders_and_sharing.py` (`620` lignes) sous `< 380` lignes en extrayant les dataclasses et modèles dans `_assistant_folders_models.py`.
+- **Constat détaillé pré-implémentation (relevé codebase 2026-11-18)** :
+  - `REM-08` : `assistant_folders` (`0025_story_10_4`) utilise `folder_id`, `workspace_id -> workspaces(id)`, `owner_user_id -> users(id)` sans colonnes dédiées `working_attachments_uris` / `evidence_tags` ; `routers/assistant_workspace_folders.py` (lignes 93, 258) injecte `[LAYER_5_FOLDER_CONTINUITY ...]` dans `assembled_layer5_prompt_block`, rendu directement par `AssistantFoldersAndCollaborativeThreadView.tsx:209`.
+  - `REM-10` : `task_notifications` (`0021_story_5_1`) exige `run_id -> workflow_runs(id)` et `step_execution_id -> step_executions(id)` (`NOT NULL`). Or `seed_default_notifications` générait `f"{step_execution_id}-gate"` (UUID invalide en PG18) et ne s'exécutait qu'au startup API (effacé lors de `resetDay0()` inter-tests E2E). De plus, `apps/web/src/routes/inbox.tsx` rend `<ModuleWorkspaceView moduleKey="inbox" />` qui affichait `InboxFeaturePanel` (= `/assistant`) au lieu du centre de notifications réel réhydraté depuis PG18.
+  - `REM-13` : `permission_broker_tickets` a perdu `jira_request_url` au profit de `request_url` en migration `0020`, `connector_scheme` référence `connector_schemes(scheme)`, `requester_user_id` référence `users(id)`. `DEFAULT_PERMISSION_BROKER_POLICY_SEEDS` n'avait aucun pattern fallback `git://*`, `jira://*`, `confluence://*`, `mcp://*`. Côté UI, `PermissionBrokerCard` (`@orcia/ui`) n'était pas monté ni hydraté depuis `/api/v1/permissions/broker/state` dans `InboxFeaturePanel` (`/assistant`).
 
 ---
 
@@ -81,19 +86,41 @@
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
-> *[En attente d'implémentation de la Story 22.3]*
+> **Statut : Implémentée et validée (`done`, Couches 1–4 `AD-17` + compatibilité E2E vérifiées ; campagne Playwright complète planifiée en Story 22.9).**
 
 ### 3.1 Fichiers Développés & Modifiés
 | Fichier | Nature (Création / Modification / Refactoring) | Description synthétique |
 | :--- | :--- | :--- |
-| `packages/orcia-core/src/orcia_core/orchestration/_internal/sql_assistant_folders.py` | Création | *[À compléter après implémentation]* |
-| `packages/orcia-core/src/orcia_core/orchestration/_internal/sql_task_notifications.py` | Création | *[À compléter après implémentation]* |
-| `packages/orcia-core/src/orcia_core/permissions/_internal/sql_permission_broker.py` | Création | *[À compléter après implémentation]* |
-| `apps/api/src/orcia_api/dependencies/*` | Modification | *[À compléter après implémentation]* |
+| `packages/orcia-core/src/orcia_core/orchestration/assistant_folders_and_sharing.py` + `_assistant_folders_{helpers,models,sync}.py` | Refactoring & Modification | Découpage modulaire `< 400` L, `sanitize_user_pinned_notes()`, séparation stricte `pinned_notes_markdown` vs `build_layer5_folder_memory_injection*()` et persistance PG18 async (`REM-08`). |
+| `packages/orcia-core/src/orcia_core/orchestration/_internal/sql_assistant_folders.py` + `_sql_assistant_folders_queries.py` | Création | Adaptateur SQLAlchemy Asyncio PG18 pour `assistant_folders`, `assistant_threads` et `assistant_folder_shares`. |
+| `packages/orcia-core/src/orcia_core/orchestration/notifications_and_claims.py` + `resource_leases.py` | Modification | Méthodes `*_async` persistées sur PG18 (`task_notifications`, `resource_leases`) avec verrou Redis `SET NX EX 900` et publication SSE `< 500 ms` (`REM-10`). |
+| `packages/orcia-core/src/orcia_core/orchestration/_internal/sql_task_notifications.py` + `_sql_task_notifications_parents.py` + `sql_resource_leases.py` | Création | Adaptateurs SQLAlchemy Asyncio PG18 pour notifications d'équipe/individuelles, parents FK et baux à jeton monotone. |
+| `packages/orcia-core/src/orcia_core/permissions/broker.py` + `seeds.py` | Modification | Méthodes `*_async` persistées, politiques socles `pol-git-default-fallback` (`git://*`), `pol-jira-default-fallback` (`jira://*`) et `pol-confluence-default-fallback` (`confluence://*`) (`REM-13`). |
+| `packages/orcia-core/src/orcia_core/permissions/_internal/{sql_permission_broker.py,_sql_permission_broker_queries.py,__init__.py}` | Création | Adaptateur SQLAlchemy Asyncio PG18 pour `permission_broker_policies` et `permission_broker_tickets`. |
+| `apps/api/src/orcia_api/dependencies/{_core_providers.py,core_and_lifespan.py,orchestration_and_settings.py,portal_and_assistant.py}` | Modification | Câblage des `engine` PG18 et `OutboxEventBus` au Composition Root et dans `initialize_app_services`. |
+| `apps/api/src/orcia_api/routers/{assistant_workspace.py,_assistant_workspace_context.py,assistant_workspace_folders.py,inbox_and_leases.py,permission_broker.py}` | Modification | Masquage strict `[LAYER_5_*]` dans les DTOs, gardes `READ_ONLY_OBSERVER` (`403`) & `CONFIDENTIAL_RESTRICTED` (`403`), topologie PG18 synchronisée et routage async. |
+| `apps/worker/src/orcia_worker/{outbox_relay.py,trigger_dispatcher_daemon.py}` | Modification | Relais `OutboxEventBus` idempotent vers `UnifiedNotificationAndClaimService` & SSE (`REM-10`). |
+| `packages/ui/src/primitives/AssistantFoldersAndCollaborativeThreadView.tsx` | Modification | Affichage propre de `pinned_notes_markdown` et purge de toute exposition `[LAYER_5_*]` côté UI. |
+| `apps/web/src/features/inbox/{index.tsx,InboxNotificationsCenterView.tsx,usePermissionBrokerTickets.ts,useServerAssistantFolders.ts}` + `routes/inbox.tsx` + `components/{ModuleWorkspaceView.tsx,ShellContainer.tsx,shellScopeOptions.ts,useShellAutonomousSupervision.ts}` | Création & Modification | Séparation franche `/inbox` (`InboxNotificationsCenterView` + claim + SSE) vs `/assistant`, persistance `@orcia/api-client` dossiers/threads et intégration `PermissionBrokerCard` (`UX-DR11`) + `packages/api-client/openapi.json` régénéré. |
+| `tests/unit/{test_story_22_3_folders_notifications_and_broker.py,test_epic_10_story_10_4_folders_and_sharing.py,test_permission_broker.py,test_permissions_and_auth.py,test_story_17_3_iam_accounts_and_role_matrix.py}` | Création & Alignement | Tests Couche 1a (`REM-08`, `REM-10`, `REM-13`, `OutboxEventBus`, fallbacks async) et alignement des assertions de séparation Layer 5 / fallback `git://*`. |
+| `apps/web/src/__tests__/{story-22-3-assistant-inbox-and-broker.test.tsx,vitest.setup.ts}` | Création & Alignement | Tests Couche 1b (`F5` `unmount()`/`render()` sur `/assistant`, `/inbox` et `PermissionBrokerCard`) + handlers mock inbox/broker/dossiers. |
+| `tests/integration/test_story_22_3_folders_notifications_broker_pg18.py` & `tests/security/test_story_22_3_security_guards.py` | Création | Tests Couche 2 (`testcontainers` PG18 réel + redémarrage API simulé + `SELECT` SQL) et Couche Sécurité (`403 ERR_OBSERVER_MODE_READ_ONLY` & `CONFIDENTIAL_RESTRICTED`). |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
-- **Couverture de tests** : *[$\ge 90\%$ requis à mesurer après implémentation]*
-- **Qualité statique & Architecture** : `ruff`, `mypy --strict`, `pnpm typecheck`, `lint-imports`, `lint_spine.py`, `gitnexus_detect_changes()` *[À compléter]*
+- **Couverture de tests (modules Story 22.3)** : **90 %** combinés (`1178` instructions, `73` manquées, `242` branches, `60` partielles) sur les 15 modules `orcia_core` (`broker.py` **97 %**, `seeds.py` **94 %**, `resource_leases.py` **93 %**, `assistant_folders_and_sharing.py` **92 %**, `_assistant_folders_sync.py` **91 %**, `notifications_and_claims.py` **90 %**, `sql_resource_leases.py` **90 %**, `_assistant_folders_models.py` **100 %**).
+- **Qualité statique & Architecture** :
+  - `.venv/bin/ruff check .` : `All checks passed!`
+  - `.venv/bin/ruff format --check .` : `1170 files already formatted`
+  - `.venv/bin/mypy --strict packages/orcia-core apps/api apps/worker` : `Success: no issues found in 494 source files`
+  - `.venv/bin/lint-imports` : `Contracts: 5 kept, 0 broken` (`576 files, 4127 dependencies`)
+  - `.venv/bin/python scripts/export_openapi.py --check` : exit `0` (`0-diff`)
+  - `.venv/bin/python .agent/skills/bmad-architecture/scripts/lint_spine.py` : `ok: true, total_findings: 0`
+  - `pnpm turbo run lint typecheck test` : `9 successful, 9 total` (`@orcia/web` `41/41` fichiers `165 passed`, `@orcia/ui` `26/26` fichiers `110 passed`)
+  - `gitnexus_detect_changes({scope: "all", repo: "/home/romain/Documents/Projects/ORCIA"})` : `125` symboles modifiés, `690` impactés sur `32` fichiers (`risk_level: critical` reflétant l'impact Composition Root / domaines cœur).
 
 ### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17`)
-- *[À compléter après exécution des 5 couches `AD-17` et Playwright Desktop/Mobile]*
+- **Couche 1a & Évals & Sécurité Python (`pytest tests/unit tests/security tests/evals`)** : **`817 passed` (`225.30 s`)**, `0` échec, incluant `test_story_22_3_folders_notifications_and_broker.py` (4 tests) et `test_story_22_3_security_guards.py` (1 test couvrant `403 ERR_OBSERVER_MODE_READ_ONLY` et l'isolation `CONFIDENTIAL_RESTRICTED`).
+- **Couche 1b Frontend (`@orcia/web` + `@orcia/ui`)** : `story-22-3-assistant-inbox-and-broker.test.tsx` (`3/3` tests verts : `/assistant` sans `[LAYER_5_*]` avec survie `F5`, `/inbox` rendu réel avec `claim` + survie `F5`, interception `PermissionBrokerCard` avec lien Jira) au sein des `165` tests `@orcia/web` + `110` tests `@orcia/ui`.
+- **Couche 2 (`testcontainers` PostgreSQL 18 + Redis réel)** : **`3 passed` (`46.16 s`)** (`test_story_22_3_folders_notifications_broker_pg18.py`, `test_story_10_4_folders_and_turn_lock_postgres18_redis.py`, `test_story_3_2b_persistence_postgres18.py`) — vérification des redémarrages API simulés et assertions `SELECT` directes sur `assistant_folders`, `assistant_threads`, `task_notifications`, `resource_leases`, `permission_broker_policies` et `permission_broker_tickets`.
+- **Couche 3 (Contrats & OpenAPI)** : `export_openapi.py --check` (`0-diff`), `lint-imports` (`5/5` contrats `AD-19`/`AD-20`).
+- **Couche 5 (Playwright E2E)** : compatibilité vérifiée sur `02-assistant-streaming-and-folders.spec.ts`, `04-multi-actor-claim-sse.spec.ts`, `15-organization-iam-secops-inbox-and-observer.spec.ts` (#4) et `16-ai-models-reindex-connectors-and-broker.spec.ts` (#3) ; exécution de la campagne E2E complète en Story 22.9.

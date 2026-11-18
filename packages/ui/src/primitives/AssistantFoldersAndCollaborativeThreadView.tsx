@@ -205,9 +205,17 @@ export function AssistantFoldersAndCollaborativeThreadView({
             className="w-full rounded border border-border-subtle bg-surface-secondary px-2.5 py-1.5 text-xs"
           />
           <div className="flex items-center justify-between gap-2">
-            <span data-testid="assistant-layer5-injected-preview" className="font-mono text-[11px] text-text-secondary truncate">
-              {activeFolder.assembledLayer5PromptBlock}
-            </span>
+            {activeFolder.assembledLayer5PromptBlock.trim() ? (
+              <span data-testid="assistant-layer5-injected-preview" className="font-mono text-[11px] text-text-secondary truncate">
+                {activeFolder.assembledLayer5PromptBlock}
+              </span>
+            ) : (
+              <span className="text-[11px] text-text-secondary">
+                {isFr
+                  ? "Les notes enregistrées enrichissent automatiquement vos questions dans ce dossier."
+                  : "Saved notes automatically enrich your questions in this folder."}
+              </span>
+            )}
             <button
               type="button"
               data-testid="assistant-save-pinned-notes-btn"

@@ -67,8 +67,14 @@ async def run_trigger_dispatcher_cycle(
     if engine is not None:
         uow = await DbosSqlAlchemyUnitOfWork.create("", engine=engine, run_migrations=False)
         help_svc = help_service or HelpGenerationAndHotAttachmentService()
+        sse_broker = getattr(dispatcher, "_sse", None)
+        from orcia_core.orchestration import UnifiedNotificationAndClaimService
+
+        notif_svc = UnifiedNotificationAndClaimService(sse_broker=sse_broker, engine=engine)
         bus = OutboxEventBus(
             audit_sink=SqlAuditLedgerService(engine=engine),
+            notification_service=notif_svc,
+            sse_broker=sse_broker,
             on_workflow_published=lambda evt: dispatcher.handle_workflow_published(
                 evt, help_service=help_svc
             ),

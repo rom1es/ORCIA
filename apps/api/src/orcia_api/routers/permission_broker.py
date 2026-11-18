@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Path, Query, Request
 
-from orcia_api.dependencies import get_permission_broker_service
+from orcia_api.dependencies import get_auth_service, get_permission_broker_service
+from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.permission_broker import (
     PermissionBrokerPolicyItem,
@@ -22,8 +23,14 @@ from orcia_core.permissions import (
     PermissionBrokerPolicy,
     PermissionBrokerTicket,
 )
+from orcia_core.permissions.errors import ObserverModeReadOnlyError
 
 router = APIRouter(prefix="/api/v1/permissions/broker", tags=["permission-broker"])
+
+
+def _enforce_not_observer_header(request: Request) -> None:
+    if request.headers.get("x-orcia-access-mode", "").strip().upper() == "READ_ONLY_OBSERVER":
+        raise ObserverModeReadOnlyError(instance=str(request.url.path))
 
 
 def _trace(request: Request) -> str:
@@ -86,16 +93,16 @@ async def get_permission_broker_state(
     workspace_id: str | None = Query(default=None, min_length=1, max_length=128),
 ) -> PermissionBrokerStateResponse:
     """Return all Permission Broker KB policies and step denial tickets for `workspace_id`."""
+    await sync_evaluator_topology_from_pg(request, get_auth_service(request))
     user = resolve_request_user(request, persona_key=persona_key)
     svc = get_permission_broker_service(request)
+    policies = await svc.list_policies_async()
+    tickets = await svc.list_tickets_async(
+        workspace_id=workspace_id, user=user, instance=str(request.url.path)
+    )
     return PermissionBrokerStateResponse(
-        policies=[_serialize_policy(p) for p in svc.list_policies()],
-        tickets=[
-            _serialize_ticket(t)
-            for t in svc.list_tickets(
-                workspace_id=workspace_id, user=user, instance=str(request.url.path)
-            )
-        ],
+        policies=[_serialize_policy(p) for p in policies],
+        tickets=[_serialize_ticket(t) for t in tickets],
         trace_id=_trace(request),
     )
 
@@ -114,7 +121,7 @@ async def import_permission_policy_markdown(
     """Parse and upsert a Permission KB policy (`READ_ONLY_OBSERVER` rejected with HTTP 403)."""
     user = resolve_request_user(request, persona_key=persona_key)
     svc = get_permission_broker_service(request)
-    policy = svc.import_policy_markdown(
+    policy = await svc.import_policy_markdown_async(
         user,
         payload.markdown_text,
         policy_key=payload.policy_key,
@@ -139,9 +146,11 @@ async def check_or_intercept_connector_access(
     persona_key: str | None = Query(default=None, min_length=1, max_length=64),
 ) -> PermissionCheckResponse:
     """Execute governed connector access check with anti-Confused Deputy and Jira KB brokering."""
+    _enforce_not_observer_header(request)
+    await sync_evaluator_topology_from_pg(request, get_auth_service(request))
     user = resolve_request_user(request, persona_key=persona_key)
     svc = get_permission_broker_service(request)
-    outcome = svc.check_or_intercept_access(
+    outcome = await svc.check_or_intercept_access_async(
         user,
         target_uri=payload.target_uri,
         execution_identity=payload.execution_identity,
@@ -182,7 +191,7 @@ async def apply_permission_ticket_action(
     """Transition `ticket_id` to `PAUSED` or `REPLAYED` (`READ_ONLY_OBSERVER` rejected)."""
     user = resolve_request_user(request, persona_key=persona_key)
     svc = get_permission_broker_service(request)
-    updated = svc.apply_ticket_action(
+    updated = await svc.apply_ticket_action_async(
         user,
         ticket_id,
         payload.action,

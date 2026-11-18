@@ -9,6 +9,7 @@ import { InboxFeaturePanel } from "../features/inbox";
 import { OntologyFeaturePanel } from "../features/ontology";
 import { WorkspacesFeaturePanel } from "../features/workspaces";
 import { useI18n } from "../i18n";
+import { useOrciaNavigation } from "./navigationAdapter";
 import { useShellNavigation } from "./ShellContainer";
 
 export interface ModuleWorkspaceViewProps {
@@ -16,6 +17,7 @@ export interface ModuleWorkspaceViewProps {
   readonly initialWorkspaceId?: string;
   readonly initialTab?: string;
   readonly catalogMode?: "catalog" | "agents";
+  readonly inboxMode?: "assistant" | "notifications";
 }
 
 export function ModuleWorkspaceView({
@@ -23,13 +25,28 @@ export function ModuleWorkspaceView({
   initialWorkspaceId,
   initialTab,
   catalogMode,
+  inboxMode,
 }: ModuleWorkspaceViewProps) {
   const { dictionary, locale } = useI18n();
+  const { pathname } = useOrciaNavigation();
   const { activeModuleKey, openHelpSection } = useShellNavigation();
 
   const currentModule = activeModuleKey ?? moduleKey;
+  const isInboxNotifications =
+    currentModule === "inbox" &&
+    (inboxMode === "notifications" || Boolean(pathname?.startsWith("/inbox")));
   const pageCopy = dictionary.modulePages[currentModule];
   const isFr = locale === "fr";
+  const headerSubtitle = isInboxNotifications
+    ? isFr
+      ? "Centre de Notifications & Prises en Charge Équipe"
+      : "Team Notification & Claim Center"
+    : pageCopy.subtitle;
+  const headerDescription = isInboxNotifications
+    ? isFr
+      ? "Suivi temps réel des arbitrages humains, validations en attente et prises en charge d'équipe."
+      : "Real-time tracking of human arbitrations, pending gates, and team claims."
+    : pageCopy.description;
 
   return (
     <div
@@ -59,13 +76,13 @@ export function ModuleWorkspaceView({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <strong style={{ fontSize: "16px" }}>{pageCopy.subtitle}</strong>
+              <strong style={{ fontSize: "16px" }}>{headerSubtitle}</strong>
               <ContextualInfoTriggerButton
                 sectionId="module-overview"
                 label={
                   isFr
-                    ? `Afficher l'aide sur ${pageCopy.subtitle}`
-                    : `Show help for ${pageCopy.subtitle}`
+                    ? `Afficher l'aide sur ${headerSubtitle}`
+                    : `Show help for ${headerSubtitle}`
                 }
                 onOpenHelpSection={openHelpSection}
               />
@@ -77,12 +94,14 @@ export function ModuleWorkspaceView({
               monospace
             />
           </div>
-          <p style={{ margin: 0, color: "var(--color-muted-foreground)" }}>{pageCopy.description}</p>
+          <p style={{ margin: 0, color: "var(--color-muted-foreground)" }}>{headerDescription}</p>
         </div>
       )}
 
       {currentModule === "cockpit" && <CockpitFeaturePanel />}
-      {currentModule === "inbox" && <InboxFeaturePanel />}
+      {currentModule === "inbox" && (
+        <InboxFeaturePanel mode={isInboxNotifications ? "notifications" : "assistant"} />
+      )}
       {currentModule === "catalog" && <CatalogFeaturePanel catalogMode={catalogMode} />}
       {currentModule === "ontology" && <OntologyFeaturePanel />}
       {currentModule === "gates" && <GatesFeaturePanel />}

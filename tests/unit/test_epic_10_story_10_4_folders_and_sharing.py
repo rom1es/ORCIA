@@ -19,7 +19,6 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from orcia_api.main import app
 from orcia_core.orchestration.assistant_folders_and_sharing import (
     PILOT_WORKFLOW_TICKET_TO_TECH_SPEC_URI,
     AssistantFoldersAndSharingService,
@@ -181,9 +180,36 @@ def test_story_10_4_sharing_workspace_confinement_turn_lock_and_passthrough_isol
         )
 
 
-def test_story_10_4_fastapi_endpoints_and_rfc9457_errors() -> None:
+def test_story_10_4_fastapi_endpoints_and_rfc9457_errors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """FastAPI endpoints for Story 10.4 return 200 OK and RFC 9457 409 on turn lock contention."""
-    with TestClient(app) as client:
+    from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
+
+    from orcia_api.dependencies import get_embedding_port, require_rag_available
+    from orcia_api.dependencies.core_and_lifespan import initialize_app_services
+    from orcia_api.main import create_app
+
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
+    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.setattr(
+        "orcia_api.dependencies._core_providers.should_auto_init_infra", lambda *_a: False
+    )
+    isolated_app = create_app()
+    initialize_app_services(isolated_app)
+    isolated_app.state.db_engine = None
+    fake_emb = FakeDeterministicEmbeddingAdapter()
+    isolated_app.dependency_overrides[get_embedding_port] = lambda: fake_emb
+    isolated_app.dependency_overrides[require_rag_available] = lambda: fake_emb
+    _run_story_10_4_fastapi_endpoints_assertions(isolated_app)
+
+
+def _run_story_10_4_fastapi_endpoints_assertions(isolated_app: object) -> None:
+    from fastapi import FastAPI
+
+    assert isinstance(isolated_app, FastAPI)
+    with TestClient(isolated_app) as client:
         # 1. Create folder as karim
         folder_resp = client.post(
             "/api/v1/assistant/folders",
@@ -199,8 +225,20 @@ def test_story_10_4_fastapi_endpoints_and_rfc9457_errors() -> None:
             },
         )
         assert folder_resp.status_code == 200
-        folder_id = folder_resp.json()["folder_id"]
-        assert "LAYER_5_FOLDER_CONTINUITY" in folder_resp.json()["assembled_layer5_prompt_block"]
+        folder_data = folder_resp.json()
+        folder_id = folder_data["folder_id"]
+        # REM-08: API responses never leak internal [LAYER_5_*] tags to UI DTOs
+        assert "[LAYER_5_" not in folder_data["assembled_layer5_prompt_block"]
+        assert folder_data["assembled_layer5_prompt_block"] == ""
+        assert "[LAYER_5_" not in folder_data["pinned_notes_markdown"]
+        assert folder_data["pinned_notes_markdown"] == "Décision #1 : 3DS2 obligatoire."
+        # Internal Layer 5 block remains assembled internally for AssistantHarness
+        folders_svc = isolated_app.state.assistant_folders_and_sharing_service
+        internal_l5 = folders_svc.build_layer5_folder_memory_injection(
+            workspace_id="ws-claims-alpha",
+            folder_id=folder_id,
+        )
+        assert "LAYER_5_FOLDER_CONTINUITY" in internal_l5.assembled_layer5_prompt_block
 
         # 2. Launch process from folder in 1 click
         launch_resp = client.post(

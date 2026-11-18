@@ -1,6 +1,7 @@
 import {
   createOrciaApiClient,
   type AutonomousRunSupervisionItemSchema,
+  type TaskNotificationItemResponse,
 } from "@orcia/api-client";
 import { useEffect, useMemo, useState } from "react";
 import { useWorkspaceEventsSse } from "./useWorkspaceEventsSse";
@@ -24,6 +25,7 @@ export function useShellAutonomousSupervision({
 }) {
   const { lastClaimEvent } = useWorkspaceEventsSse(workspaces[0]?.workspaceId);
   const [autonomousRuns, setAutonomousRuns] = useState<AutonomousRunSupervisionItemSchema[]>([]);
+  const [inboxNotifications, setInboxNotifications] = useState<TaskNotificationItemResponse[]>([]);
   const shellApiClient = useMemo(() => createOrciaApiClient({ baseUrl: "" }), []);
 
   const activeWsUuid = useMemo(() => {
@@ -39,18 +41,24 @@ export function useShellAutonomousSupervision({
   useEffect(() => {
     if (!isAuthenticated || !activeWsUuid) {
       setAutonomousRuns([]);
+      setInboxNotifications([]);
       return;
     }
     let cancelled = false;
     void (async () => {
       try {
-        const res = await shellApiClient.listWorkspaceAutonomousRuns(activeWsUuid);
+        const [autoRes, inboxRes] = await Promise.all([
+          shellApiClient.listWorkspaceAutonomousRuns(activeWsUuid),
+          shellApiClient.listInboxNotifications({ workspaceId: activeWsUuid }),
+        ]);
         if (!cancelled) {
-          setAutonomousRuns(res.runs ?? []);
+          setAutonomousRuns(Array.isArray(autoRes?.runs) ? autoRes.runs : []);
+          setInboxNotifications(Array.isArray(inboxRes?.items) ? inboxRes.items : []);
         }
       } catch {
         if (!cancelled) {
           setAutonomousRuns([]);
+          setInboxNotifications([]);
         }
       }
     })();
@@ -59,5 +67,5 @@ export function useShellAutonomousSupervision({
     };
   }, [activeWsUuid, isAuthenticated, lastClaimEvent?.eventId, shellApiClient]);
 
-  return { lastClaimEvent, autonomousRuns };
+  return { lastClaimEvent, autonomousRuns, inboxNotifications };
 }
