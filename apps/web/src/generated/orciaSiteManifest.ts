@@ -14,13 +14,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 54,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 169,
+    "techLeadReportsCount": 170,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 29,
     "userJourneysCount": 20,
     "coveredUserJourneysCount": 20,
-    "e2eCoveredCapabilitiesCount": 50
+    "e2eCoveredCapabilitiesCount": 62
   },
   "activeRoutes": [
     "/",
@@ -532,6 +532,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 21.7 (Lot C)",
+      "reportFile": "21-7-e2e-lot-c-orchestration-vsm-finops-citations-et-showcase-tech-lead-report.md",
+      "domain": "Specs E2E Lot C (19–21), Helper processAndAssistantHelpers.ts, Audit data-testid/PG18 & capabilities.yaml (0 backlog résiduel)",
+      "summary": "Rédaction complète du rapport Tech Lead, création de apps/web/e2e/support/processAndAssistantHelpers.ts (124 L) et des 3 specs E2E 19 (191 L), 20 (254 L), 21 (220 L) sans test.skip avec assertions F5 + SELECT PG18, retrait complet de e2e_backlog_story dans capabilities.yaml (62/62 E2E fonctionnels, 20/20 UJ), tsc --noEmit OK, detect-secrets OK, 9/9 Turbo OK (153/153 tests web), 29 passed (pytest registre/UJ/sync) et site:sync/site:check OK."
+    },
     {
       "date": "2026-11-18",
       "phaseOrStory": "Story 21.6 (Lot B)",

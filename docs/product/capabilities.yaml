@@ -156,8 +156,8 @@ capabilities:
     kind: feature
     uj: [UJ-1, UJ-10]
     db_tables: [workflow_definitions, catalog_items]
-    tests: [tests/unit/test_workflow_as_code_and_run_lock.py]
-    e2e_backlog_story: "21-7"
+    tests: [tests/unit/test_workflow_as_code_and_run_lock.py, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
+    verification: docs
   - id: CAP-021
     title: Moteur d'orchestration durable (DBOS), blackboard, checkpoints, version pinning, exécution réelle des étapes
     fr: [FR-14, FR-15]
@@ -167,9 +167,8 @@ capabilities:
     kind: feature
     uj: [UJ-4, UJ-5, UJ-10]
     db_tables: [workflow_runs, step_executions, blackboard_snapshots, run_lock_manifests, domain_events_outbox]
-    tests: [tests/unit/test_story_3_2f_step_executors_invoker_and_finance.py, tests/integration/test_story_3_2f_real_api_run_and_restart_postgres18.py]
+    tests: [tests/unit/test_story_3_2f_step_executors_invoker_and_finance.py, tests/integration/test_story_3_2f_real_api_run_and_restart_postgres18.py, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
     verification: docs
-    e2e_backlog_story: "21-7"
     surfaces: { api: "/api/v1/orchestration + blackboard_and_engine.py" }
   - id: CAP-022
     title: Agent assistant DAG 5 nœuds (AssistantHarness 5 couches)
@@ -180,9 +179,8 @@ capabilities:
     kind: feature
     uj: [UJ-1, UJ-17]
     db_tables: [workflow_runs, step_executions, blackboard_snapshots, assistant_threads]
-    tests: [tests/unit/test_story_3_3_assistant_agent_5_nodes_and_context_ports.py, tests/evals/test_assistant_and_ontology_evals.py]
+    tests: [tests/unit/test_story_3_3_assistant_agent_5_nodes_and_context_ports.py, tests/evals/test_assistant_and_ontology_evals.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
     verification: docs
-    e2e_backlog_story: "21-7"
     surfaces: { api: /api/v1/assistant }
   - id: CAP-023
     title: Ancrages humains obligatoires et arbitrage / tie-break
@@ -205,9 +203,8 @@ capabilities:
     kind: feature
     uj: [UJ-2, UJ-3, UJ-7]
     db_tables: [upstream_challenges, workflow_runs, step_executions, blackboard_snapshots]
-    tests: [tests/unit/test_story_3_5_challenge_and_replay.py]
+    tests: [tests/unit/test_story_3_5_challenge_and_replay.py, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
     verification: docs
-    e2e_backlog_story: "21-7"
     surfaces: { api: challenge_and_replay.py, ui: UpstreamChallengeRewindModal, migration: "0016" }
 
   # ───────────── Gates, sandbox, Jira (Epic 4) ─────────────
@@ -220,9 +217,8 @@ capabilities:
     kind: feature
     uj: [UJ-6]
     db_tables: [gate_evaluations, step_executions]
-    tests: [tests/unit/test_story_4_1_sandbox_tier1_and_pattern_drift.py, tests/unit/test_story_4_1a_bimodal_sandbox_and_roles.py]
+    tests: [tests/unit/test_story_4_1_sandbox_tier1_and_pattern_drift.py, tests/unit/test_story_4_1a_bimodal_sandbox_and_roles.py, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
     verification: docs
-    e2e_backlog_story: "21-7"
     surfaces: { route: /gates, api: gates.py, migration: "0017" }
   - id: CAP-031
     title: Gates agentiques (orthogonalité des modèles, scrub PII, SecretRef DEK/KEK)
@@ -233,8 +229,8 @@ capabilities:
     kind: feature
     uj: [UJ-6]
     db_tables: [gate_evaluations, inference_attempts]
-    tests: [tests/unit/test_story_4_2_agentic_gates_and_secrets.py, tests/evals/test_assistant_and_ontology_evals.py]
-    e2e_backlog_story: "21-7"
+    tests: [tests/unit/test_story_4_2_agentic_gates_and_secrets.py, tests/evals/test_assistant_and_ontology_evals.py, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
+    verification: docs
   - id: CAP-032
     title: Gates humaines adaptatives, briefing 4 blocs, validation par découpage
     fr: [FR-6, FR-19]
@@ -244,7 +240,7 @@ capabilities:
     kind: feature
     uj: [UJ-6]
     db_tables: [gate_evaluations, chunk_approvals]
-    tests: [tests/unit/test_story_4_3_adaptive_human_gates.py, apps/web/e2e/06-gates-review-and-anti-rubber-stamping.spec.ts]
+    tests: [tests/unit/test_story_4_3_adaptive_human_gates.py, apps/web/e2e/06-gates-review-and-anti-rubber-stamping.spec.ts, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
     verification: runtime
     surfaces: { route: /gates, api: human_gates.py, ui: CognitiveReviewBriefingGrid + ChunkValidationCard, migration: "0018" }
   - id: CAP-033
@@ -256,7 +252,7 @@ capabilities:
     kind: feature
     uj: [UJ-3, UJ-6]
     db_tables: [gate_evaluations, enterprise_connectors, audit_ledger]
-    tests: [tests/unit/test_story_4_4_jira_staged_actions_and_mcp.py, apps/web/e2e/06-gates-review-and-anti-rubber-stamping.spec.ts]
+    tests: [tests/unit/test_story_4_4_jira_staged_actions_and_mcp.py, apps/web/e2e/06-gates-review-and-anti-rubber-stamping.spec.ts, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
     verification: runtime
     surfaces: { api: jira_and_mcp.py }
 
@@ -484,7 +480,7 @@ capabilities:
     kind: feature
     uj: [UJ-20]
     db_tables: [catalog_items, kb_chunks]
-    tests: [apps/web/e2e/09-pack-builder-and-contextual-help.spec.ts, apps/web/src/__tests__/story-20-2-glossaire-ontology-and-promotions.test.tsx]
+    tests: [apps/web/e2e/09-pack-builder-and-contextual-help.spec.ts, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts, apps/web/src/__tests__/story-20-2-glossaire-ontology-and-promotions.test.tsx]
     verification: runtime
     surfaces: { route: /help, api: portal_and_help.py, ui: "HelpCenterRouteView (Centre d'Aide & Showcase)" }
   - id: CAP-065
@@ -525,9 +521,8 @@ capabilities:
     kind: feature
     uj: [UJ-20]
     read_only_surface: true
-    tests: [apps/web/src/__tests__/orcia-showcase-site.test.tsx]
+    tests: [apps/web/src/__tests__/orcia-showcase-site.test.tsx, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
     verification: docs
-    e2e_backlog_story: "21-7"
     surfaces: { route: /showcase }
   - id: CAP-069
     title: Page Profil utilisateur (/profile), 4 KPIs tokens/séries, éléments populaires et télémétrie tokens de Mon Assistant
@@ -585,9 +580,8 @@ capabilities:
     kind: feature
     uj: [UJ-1, UJ-17]
     db_tables: [kb_chunks, ontology_concepts, assistant_threads]
-    tests: [tests/evals/test_citations_golden_dataset.py]
+    tests: [tests/evals/test_citations_golden_dataset.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
     verification: docs
-    e2e_backlog_story: "21-7"
     surfaces: { api: assistant_workspace_citations.py, ui: AssistantCitationPillsAndArtifactCard }
   - id: CAP-073
     title: Dossiers thématiques, fils collaboratifs, partage et lancement de processus
@@ -748,9 +742,8 @@ capabilities:
     kind: feature
     uj: [UJ-17]
     db_tables: [llm_model_endpoints, workspace_llm_tier_mappings, inference_attempts]
-    tests: [tests/unit/test_assistant_agnostic_async_llm_bridge.py, tests/unit/test_gemini_argon_provider_adapter.py, apps/web/src/__tests__/gemini-settings-and-assistant.test.tsx]
+    tests: [tests/unit/test_assistant_agnostic_async_llm_bridge.py, tests/unit/test_gemini_argon_provider_adapter.py, apps/web/src/__tests__/gemini-settings-and-assistant.test.tsx, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
     verification: docs
-    e2e_backlog_story: "21-7"
     surfaces: { api: assistant_llm_gemini_adapter.py + assistant_llm_providers.py }
   - id: CAP-084
     title: Mes Espaces — intégration glossaire/ontologie (option A) et processus de génération de documentation pack-builder
@@ -773,9 +766,8 @@ capabilities:
     kind: feature
     uj: [UJ-19]
     db_tables: [catalog_items, declarative_pack_bundles]
-    tests: [packages/ui/src/__tests__/agents-and-skills.test.tsx, tests/unit/test_agents_and_skills_router_and_service.py]
+    tests: [packages/ui/src/__tests__/agents-and-skills.test.tsx, tests/unit/test_agents_and_skills_router_and_service.py, apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts]
     verification: docs
-    e2e_backlog_story: "21-7"
     surfaces: { route: /agents }
   - id: CAP-068
     title: Documentation / FAQ — lien workspace ↔ org unit
@@ -786,9 +778,8 @@ capabilities:
     kind: feature
     uj: [UJ-20]
     read_only_surface: true
-    tests: [tests/unit/test_epic_9_story_9_5_contextual_help.py]
+    tests: [tests/unit/test_epic_9_story_9_5_contextual_help.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
     verification: docs
-    e2e_backlog_story: "21-7"
     surfaces: { route: /help }
 
   # ───────────── Epics 14 & 15 : ORCIA Process Studio v2, VSM Interactive & Packs 100 % Déclaratifs ─────────────
@@ -801,9 +792,8 @@ capabilities:
     kind: feature
     uj: [UJ-10, UJ-19]
     db_tables: [vsm_definitions_v2, workflow_definitions_v2, declarative_pack_bundles, claim_check_artifacts, workflow_runs]
-    tests: [tests/integration/api/test_dbos_return_loops_and_claim_check.py, tests/unit/core/test_generic_gate_runners_and_auto_heal.py, apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx]
+    tests: [tests/integration/api/test_dbos_return_loops_and_claim_check.py, tests/unit/core/test_generic_gate_runners_and_auto_heal.py, apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx, apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts]
     verification: docs
-    e2e_backlog_story: "21-7"
     surfaces: { route: "/processes + /processes/vsm/$vsmId + /processes/studio/$workflowId", api: "/api/v1/vsm + /api/v1/workflows/v2 + /api/v1/runs (workflows.py)", ui: "ProcessesHubPage + ValueStreamMapView + StepDetailSheet + ReturnLoopsSvgOverlay + WorkflowFiveBlocksCanvas + StudioCopilotSidebar + InteractiveRunDrawer", migration: 20261108_0910_declarative_packs_and_workflows_v2.py }
   - id: CAP-150
     title: Simplification Architecturale des Packs 100 % Déclaratifs (packs/sdlc & packs/orcia-docs), Fusion de orcia-kernel dans orcia-core.kernel & Package Unifié packages/orcia-connectors
@@ -955,6 +945,7 @@ capabilities:
       - tests/integration/api/test_story_6_4_connector_quotas_postgres18.py
       - apps/web/src/__tests__/story-6-4-finops-connector-quotas-and-circuit.test.tsx
       - apps/web/e2e/12-finops-and-audit-provenance.spec.ts
+      - apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts
     notes: "Story 6.1 (registre d'audit immuable et contrôle d'accès par périmètre), Story 6.2 (comptabilité FinOps consolidée, garde-fous mensuels hiérarchiques et reprise après rallonge budgétaire), Story 6.3 (tableau de bord de maîtrise humaine, alertes sur validations expéditives, indice de réversibilité d'architecture et mise à jour des politiques adaptatives) et Story 6.4 (télémétrie multi-métriques des services externes, plafonnement des anomalies, coupe-circuit isolé par connecteur et onglet Services externes)."
   - id: CAP-201
     title: Exécution autonome sous contrat, déclencheurs événementiels idempotents et supervision post-hoc
@@ -988,6 +979,7 @@ capabilities:
       - tests/integration/api/test_epic_7_composition_root_postgres18.py
       - apps/web/src/__tests__/story-7-4-autonomous-supervision-and-f5.test.tsx
       - apps/web/e2e/13-epic-7-autonomous-governance-and-supervision.spec.ts
+      - apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts
     notes: "Epic 7 complet (2026-11-17, AD-3, AD-6, AD-18) : Story 7.1 (autonomy_contracts, signature unique TEAM_LEAD/BU_LEAD/PLATFORM_ADMIN, SignedApprovalToken.issue_autonomous, AutonomyContractModal), Story 7.2 (déclencheurs idempotents WEBHOOK/LOG_SINK_ALERT/CRON/OUTBOX_EVENT opt-in/MANUAL_AUTONOMOUS, triple verrou Redis NX + UNIQUE SQL + DBOS SetWorkflowID, Self-Trigger Guard, coupe-circuit SSE < 500 ms, WorkflowTriggersModal), et Story 7.4 (supervision /processes, AutonomousExecutionBadge Cyan/Cobalt sans violet humain, arrêt d'urgence KILL_SWITCH_STOPPED au niveau @DBOS.step, invalidation & restauration @v(N-1) HELP_ARTICLE avec purge Redis < 10 ms, échantillonnage post-hoc déterministe 10-20%, métriques SM-A1..A3 isolées dans FinOps Maîtrise humaine & Qualité, 0 jargon technique)."
   - id: CAP-202
     title: Journalisation unifiée 12-factor JSON stdout, puits de logs paramétrable (Elasticsearch / Loki), traces distribuées OpenTelemetry OTLP et conformité OpenShift SCC restricted
