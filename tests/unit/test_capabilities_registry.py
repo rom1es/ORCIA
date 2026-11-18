@@ -185,3 +185,17 @@ def test_feature_capability_requires_db_tables_or_read_only_surface() -> None:
     assert any(e.startswith("CAP-001:") and "db_tables" in e for e in errors)
     assert any(e.startswith("CAP-002:") and "db_tables" in e for e in errors)
     assert not any(e.startswith("CAP-003:") for e in errors)
+
+
+def test_e2e_backlog_story_and_remediation_ref_validation() -> None:
+    mod = _load()
+    bad_backlog = _cap("CAP-001", e2e_backlog_story="99-9")
+    bad_remediation = _cap("CAP-002", e2e_remediation_ref="   ")
+    failed_e2e = _cap("CAP-003", verification="failed_e2e", e2e_remediation_ref="REM-21")
+    errors = mod.validate_registry(
+        {"capabilities": [bad_backlog, bad_remediation, failed_e2e]},
+        max_fr=36,
+    )
+    assert any(e.startswith("CAP-001:") and "e2e_backlog_story" in e for e in errors)
+    assert any(e.startswith("CAP-002:") and "e2e_remediation_ref" in e for e in errors)
+    assert not any(e.startswith("CAP-003:") for e in errors)

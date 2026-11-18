@@ -39,6 +39,9 @@ def test_sync_site_catalog_check_is_up_to_date() -> None:
     assert manifest["stats"]["alembicMigrationsCount"] >= 27
     assert manifest["stats"]["architectureDecisionsCount"] >= 21
     assert manifest["stats"]["techLeadReportsCount"] >= 71
+    assert manifest["stats"]["userJourneysCount"] >= 20
+    assert manifest["stats"]["coveredUserJourneysCount"] >= 20
+    assert manifest["stats"]["e2eCoveredCapabilitiesCount"] >= 26
     assert "/showcase" in manifest["activeRoutes"]
     assert "OrciaProductShowcaseSiteView" in manifest["uiPrimitives"]
 

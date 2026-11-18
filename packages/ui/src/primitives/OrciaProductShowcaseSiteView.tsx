@@ -45,6 +45,9 @@ export interface OrciaShowcaseManifestStats {
   readonly capabilitiesCount?: number;
   readonly liveCapabilitiesCount?: number;
   readonly verifiedCapabilitiesCount?: number;
+  readonly userJourneysCount?: number;
+  readonly coveredUserJourneysCount?: number;
+  readonly e2eCoveredCapabilitiesCount?: number;
 }
 
 export interface OrciaShowcaseManifestData {

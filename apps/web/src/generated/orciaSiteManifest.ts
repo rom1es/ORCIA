@@ -14,10 +14,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 54,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 165,
+    "techLeadReportsCount": 166,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
-    "verifiedCapabilitiesCount": 50
+    "verifiedCapabilitiesCount": 29,
+    "userJourneysCount": 20,
+    "coveredUserJourneysCount": 20,
+    "e2eCoveredCapabilitiesCount": 26
   },
   "activeRoutes": [
     "/",
@@ -529,6 +532,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 21.3",
+      "reportFile": "21-3-decoupage-site-sync-et-verrou-ci-uj-e2e-tech-lead-report.md",
+      "domain": "Découpage Modulaire sync_site_catalog.py (< 350 L), Verrou CI Bloquant CAP ↔ UJ ↔ Spec E2E (uj_e2e_coverage.py) & Assainissement capabilities.yaml",
+      "summary": "Découpage de sync_site_catalog.py (883 -> 220 L) en 5 modules < 200 L (_site_repo_parsers.py, _site_html_renderer.py, _site_html_styles.py, _site_html_template.py), création du verrou CI uj_e2e_coverage.py (244 L) intégré à capabilities_registry.py (233 L) et pnpm site:check, assainissement des 36 capacités sans spec E2E fonctionnelle (e2e_backlog_story 21-5/21-6/21-7 et verification: docs), suite dédiée tests/unit/test_uj_e2e_coverage_gate.py (277 L), 29 passed (pytest), ruff, mypy --strict, 9/9 Turbo et site:sync/site:check (65/65 live, 26/62 E2E fonctionnels, 20/20 UJ)."
+    },
     {
       "date": "2026-11-18",
       "phaseOrStory": "Story 21.2",
