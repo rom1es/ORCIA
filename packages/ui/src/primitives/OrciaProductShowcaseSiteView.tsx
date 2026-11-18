@@ -268,7 +268,7 @@ const NINE_SCREENS_GUIDE: readonly ScreenGuideSpec[] = [
   {
     id: "help",
     get icon() {
-      return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.help);
+      return getOrciaIconGlyph("help");
     },
     titleFr: "9. ❓ Aide Contextuelle (ⓘ) & Recherche Globale (⌘K)",
     titleEn: "9. ❓ Contextual Help (ⓘ) & Global Search (⌘K)",

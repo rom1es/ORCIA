@@ -12,6 +12,7 @@ import type {
   UiShellLabels,
   UiWorkspaceTopologyLabels,
   UpstreamChallengeModalLabels,
+  UserProfileOverviewLabels,
 } from "@orcia/ui";
 import type { ActivityDictionarySection } from "./locales/activity_labels";
 import type { AdminAndStudioDictionarySection } from "./locales/admin_and_studio_labels";
@@ -24,6 +25,7 @@ import type { Epic18SourcesLabels } from "./locales/epic18_sources_labels";
 import type { FinopsDictionarySection } from "./locales/finops_labels";
 import type { GovernanceAndPacksDictionarySection } from "./locales/governance_and_packs_labels";
 import type { InboxAndCockpitDictionarySection } from "./locales/inbox_and_cockpit_labels";
+import type { OntologyGlossaryCopy } from "./locales/ontology_glossary_labels";
 import type { ProcessOrchestrationModesDictionarySection } from "./locales/process_orchestration_modes_labels";
 import type { ReflexiveTraceAndInspectorDictionarySection } from "./locales/reflexive_trace_and_inspector_labels";
 import type { ShellAndSearchDictionarySection } from "./locales/shell_and_search_labels";
@@ -86,5 +88,7 @@ export interface TranslationDictionary
   permissionBroker: UiPermissionBrokerLabels;
   bootstrapOnboarding: UiBootstrapOnboardingLabels;
   ontologyExplorer: UiOntologyExplorerLabels;
+  ontologyGlossary: OntologyGlossaryCopy;
+  profileOverview: UserProfileOverviewLabels;
   modulePages: Record<UiModuleKey, ModulePageCopy>;
 }

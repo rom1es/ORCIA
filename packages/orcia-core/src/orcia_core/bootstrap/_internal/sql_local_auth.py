@@ -18,13 +18,29 @@ from orcia_kernel.ids import new_uuid7_str
 _DEFAULT_HUMAN_ROLES: tuple[str, ...] = ("CONTRIBUTOR",)
 _VALID_PLATFORM_ROLES = {
     "PLATFORM_ADMIN",
+    "SECOPS",
+    "BU_LEAD",
     "BU_DIRECTOR",
     "TEAM_LEAD",
+    "ONTOLOGY_LEAD",
     "CONTRIBUTOR",
     "GATE_REVIEWER",
     "ONTOLOGY_STEWARD_L3",
     "OBSERVER",
 }
+
+_ROLE_PRIORITY: tuple[str, ...] = (
+    "PLATFORM_ADMIN",
+    "BU_LEAD",
+    "BU_DIRECTOR",
+    "TEAM_LEAD",
+    "SECOPS",
+    "ONTOLOGY_LEAD",
+    "GATE_REVIEWER",
+    "ONTOLOGY_STEWARD_L3",
+    "CONTRIBUTOR",
+    "OBSERVER",
+)
 
 
 @dataclass(frozen=True)
@@ -47,13 +63,13 @@ class LocalAuthCandidate:
 
 
 def _resolve_platform_role(roles: list[str] | tuple[str, ...]) -> str:
+    norm = {str(r).strip().upper() for r in roles if str(r).strip()}
+    for candidate in _ROLE_PRIORITY:
+        if candidate in norm:
+            return candidate
     for r in roles:
-        if r == "PLATFORM_ADMIN":
-            return "PLATFORM_ADMIN"
         if r in _VALID_PLATFORM_ROLES:
             return r
-        if r == "BU_LEAD":
-            return "BU_DIRECTOR"
     return "CONTRIBUTOR"
 
 

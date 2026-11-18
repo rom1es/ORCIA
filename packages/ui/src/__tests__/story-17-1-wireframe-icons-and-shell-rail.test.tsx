@@ -9,10 +9,12 @@ import {
   ORCIA_ICONS,
   OrciaIcon,
   resolveUserRoleDisplayLabel,
-  UserAccountDropdownAndSettingsModal,
+  SidebarAccountPopover,
+  UserSettingsModalDialog,
   type FourZoneDirectionCShellLabels,
   type OrciaIconName,
 } from "../index";
+import { TEST_USER_SETTINGS_LABELS } from "./userSettingsLabelsFixture";
 
 const SHELL_LABELS: FourZoneDirectionCShellLabels = {
   workspacePrefix: "Espace",
@@ -36,7 +38,7 @@ const SHELL_LABELS: FourZoneDirectionCShellLabels = {
     spaces: "Mes Espaces",
     finops: "Coûts & Budgets",
     configuration: "Configuration",
-    help: "Aide",
+    glossary: "Glossaire",
   },
   activityMenuLabel: "Journal d'Activité",
 };
@@ -146,7 +148,7 @@ describe("Story 17.1 — Wireframe SVG Icons, CSS Button Reset & Sidebar Collaps
     expect(screen.getByTestId("footer-account-btn").textContent).toBe("");
   });
 
-  it("CA-17.1.3: supports controlled modalOpen on UserAccountDropdownAndSettingsModal and localized FR/EN governance roles", () => {
+  it("CA-17.1.3: supports controlled open on UserSettingsModalDialog, SidebarAccountPopover, and localized FR/EN governance roles", () => {
     expect(resolveUserRoleDisplayLabel("SECOPS", "fr")).toBe(
       "Responsable Sécurité & Habilitations",
     );
@@ -155,41 +157,45 @@ describe("Story 17.1 — Wireframe SVG Icons, CSS Button Reset & Sidebar Collaps
 
     const onModalOpenChange = vi.fn();
     render(
-      <UserAccountDropdownAndSettingsModal
-        userDisplayName="Claire"
-        userEmail="claire@orcia.io"
-        userRole="SECOPS"
-        initialHat="SECOPS"
-        initialLocale="fr"
-        modalOpen={true}
-        onModalOpenChange={onModalOpenChange}
-        labels={{
-          triggerAriaLabel: "Mon compte",
-          dropdownWidthNote: "",
-          hatSelectorLabel: "Rôle",
-          themeQuickToggleLabel: "Thème",
-          localeQuickToggleLabel: "Langue",
-          openAccountSettingsLabel: "Paramètres de mon compte",
-          openPassthroughSourcesLabel: "Sources personnelles",
-          logoutButtonLabel: "Déconnexion",
-          modalTitle: "Paramètres de mon compte",
-          tab1PreferencesTitle: "Préférences",
-          tab2SecurityTitle: "Profil & Sécurité",
-          tab3PassthroughTitle: "Sources",
-          tab4McpKeysTitle: "Clés MCP",
-          customizeAssistantRedirectCta: "Personnaliser",
-          testPassthroughTokenCta: "Tester",
-          generateMcpTokenCta: "Générer",
-          revokeMcpTokenCta: "Révoquer",
-          targetWholeSpaceLabel: "Espace",
-          targetSingleAgentLabel: "Agent",
-          ideJsonReadyTitle: "Configuration IDE",
-        }}
-      />,
+      <>
+        <SidebarAccountPopover
+          railCollapsed={false}
+          userDisplayName="Claire"
+          userEmail="claire@orcia.io"
+          userRoleLabel={resolveUserRoleDisplayLabel("SECOPS", "fr")}
+          labels={TEST_USER_SETTINGS_LABELS.popover}
+          onOpenSettingsTab={vi.fn()}
+          onNavigateProfile={vi.fn()}
+          onNavigateHelp={vi.fn()}
+          onNavigateShowcase={vi.fn()}
+          onLogout={vi.fn()}
+        />
+        <UserSettingsModalDialog
+          open={true}
+          onOpenChange={onModalOpenChange}
+          activeTab="GENERAL"
+          onSelectTab={vi.fn()}
+          userEmail="claire@orcia.io"
+          userRole="SECOPS"
+          theme="light"
+          locale="fr"
+          defaultAssistantHat="ANALYST_PM_PO"
+          assistantTone="balanced"
+          personalInstructions=""
+          autoOpenHelp={true}
+          notificationsEnabled={true}
+          mcpTokens={[]}
+          lastIssuedPlaintext={null}
+          labels={TEST_USER_SETTINGS_LABELS}
+          onUpdatePreferences={vi.fn()}
+          onCreateMcpToken={vi.fn()}
+          onRevokeMcpToken={vi.fn()}
+        />
+      </>,
     );
 
     expect(screen.getByTestId("user-settings-modal")).toBeDefined();
-    expect(screen.getByTestId("user-account-role-pill").textContent).toContain(
+    expect(screen.getByTestId("sidebar-account-role-label").textContent).toContain(
       "Responsable Sécurité & Habilitations",
     );
     fireEvent.click(screen.getByTestId("user-settings-modal-close-btn"));

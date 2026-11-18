@@ -198,13 +198,13 @@ PERMISSIONS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] 
     "ERR_IAM_INVALID_ROLE": {
         "fr": LocalizedErrorCopy(
             "Rôle d'habilitation invalide",
-            "Le rôle demandé n'appartient pas aux 6 rôles officiels (PLATFORM_ADMIN, SECOPS, "
-            "BU_LEAD, TEAM_LEAD, CONTRIBUTOR, OBSERVER).",
+            "Le rôle demandé n'appartient pas aux 7 rôles officiels (PLATFORM_ADMIN, SECOPS, "
+            "BU_LEAD, TEAM_LEAD, ONTOLOGY_LEAD, CONTRIBUTOR, OBSERVER).",
         ),
         "en": LocalizedErrorCopy(
             "Invalid IAM role",
-            "The requested role is not among the 6 official roles (PLATFORM_ADMIN, SECOPS, "
-            "BU_LEAD, TEAM_LEAD, CONTRIBUTOR, OBSERVER).",
+            "The requested role is not among the 7 official roles (PLATFORM_ADMIN, SECOPS, "
+            "BU_LEAD, TEAM_LEAD, ONTOLOGY_LEAD, CONTRIBUTOR, OBSERVER).",
         ),
     },
     "ERR_IAM_DUPLICATE_PRINCIPAL": {
@@ -252,6 +252,51 @@ PERMISSIONS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] 
         "en": LocalizedErrorCopy(
             "Unknown or inactive user",
             "The specified identifier does not match any active known human user on the platform.",
+        ),
+    },
+    "ERR_ORG_UNIT_SCOPE_FORBIDDEN": {
+        "fr": LocalizedErrorCopy(
+            "Action refusée hors de votre périmètre organisationnel",
+            "Vous ne pouvez gérer que les unités relevant de votre Direction (BU) ou de vos "
+            "équipes dirigées.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Action forbidden outside your organizational scope",
+            "You can only manage units within your governed Business Unit subtree or led teams.",
+        ),
+    },
+    "ERR_ORG_UNIT_ROOT_DELETE_FORBIDDEN": {
+        "fr": LocalizedErrorCopy(
+            "Suppression de votre Direction (BU) racine interdite",
+            "Un Responsable de Direction (BU) ne peut supprimer que les sous-BUs et équipes "
+            "enfants ; la suppression de sa BU racine relève de l'Administrateur Plateforme.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Deleting your root Business Unit is forbidden",
+            "A Division Lead (BU) can only delete child sub-BUs and teams; deleting the root BU "
+            "requires a Platform Administrator.",
+        ),
+    },
+    "ERR_ORG_UNIT_LAST_LEAD_REMOVAL_FORBIDDEN": {
+        "fr": LocalizedErrorCopy(
+            "Retrait du dernier responsable interdit",
+            "Une unité ne peut pas perdre son dernier responsable ni être laissée sans "
+            "responsable par auto-retrait.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Removing the last lead is forbidden",
+            "A unit cannot lose its last lead or be left without a lead via self-removal.",
+        ),
+    },
+    "ERR_PRIVILEGE_ESCALATION_FORBIDDEN": {
+        "fr": LocalizedErrorCopy(
+            "Élévation de privilèges interdite",
+            "L'attribution ou la modification des rôles PLATFORM_ADMIN et SECOPS est interdite "
+            "dans ce contexte.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Privilege escalation forbidden",
+            "Granting or modifying PLATFORM_ADMIN or SECOPS roles is forbidden in this context.",
         ),
     },
     "ERR_CONNECTOR_CIRCUIT_OPEN": {

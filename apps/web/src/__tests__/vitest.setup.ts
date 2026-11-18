@@ -36,7 +36,14 @@ interface MockOrganizationalUnit {
   billing_enabled: boolean;
   lead_user_id: string | null;
   lead_user_ids?: string[];
+  ontology_lead_user_ids?: string[];
   member_user_ids: string[];
+  can_edit?: boolean;
+  can_create_child?: boolean;
+  can_delete?: boolean;
+  can_manage_members?: boolean;
+  can_manage_ontology_leads?: boolean;
+  can_invite_users?: boolean;
 }
 
 interface MockBackendState {
@@ -108,6 +115,7 @@ import {
   handleVitestIamRoute,
   resetVitestIamMockState,
   syncVitestIamRolesWithOrgUnits,
+  upsertVitestIamOrgInvitedUser,
 } from "./vitestIamMockHandlers";
 import {
   handleVitestConnectorsRoute,
@@ -117,6 +125,10 @@ import {
   handleVitestAutonomousSupervisionRoute,
   resetVitestAutonomousSupervisionMockState,
 } from "./vitestAutonomousSupervisionMockHandlers";
+import {
+  handleVitestOntologyRoute,
+  resetVitestOntologyMockState,
+} from "./vitestOntologyMockHandlers";
 
 function hydrateMockOrgUnitsFromSetup(rawUnits: unknown): MockOrganizationalUnit[] {
   if (!Array.isArray(rawUnits)) return [];
@@ -147,6 +159,11 @@ function hydrateMockOrgUnitsFromSetup(rawUnits: unknown): MockOrganizationalUnit
     const lead_user_ids = Array.isArray(rawLeadIds) && rawLeadIds.length > 0
       ? rawLeadIds.map((l) => String(l).trim()).filter(Boolean)
       : (lead_user_id ? [lead_user_id] : []);
+    const rawOntologyLeads = item.ontologyLeadUserIds ?? item.ontology_lead_user_ids ?? [];
+    const ontology_lead_user_ids =
+      kind === "BU" && Array.isArray(rawOntologyLeads)
+        ? rawOntologyLeads.map((l) => String(l).trim()).filter(Boolean)
+        : [];
     const rawMembers = item.memberUserIds ?? item.member_user_ids ?? [];
     const member_user_ids = Array.isArray(rawMembers)
       ? rawMembers.map((m) => String(m).trim()).filter(Boolean)
@@ -160,6 +177,7 @@ function hydrateMockOrgUnitsFromSetup(rawUnits: unknown): MockOrganizationalUnit
       billing_enabled,
       lead_user_id: lead_user_ids[0] ?? lead_user_id,
       lead_user_ids,
+      ontology_lead_user_ids,
       member_user_ids: kind === "BU" ? [] : member_user_ids,
     };
   });
@@ -175,6 +193,7 @@ function syncSetupOrgUnitsFromMock(): void {
     billingEnabled: u.billing_enabled,
     leadUserId: u.lead_user_id,
     leadUserIds: u.lead_user_ids ?? (u.lead_user_id ? [u.lead_user_id] : []),
+    ontologyLeadUserIds: u.kind === "BU" ? (u.ontology_lead_user_ids ?? []) : [],
     memberUserIds: u.kind === "BU" ? [] : u.member_user_ids,
   }));
   if (backendState.platformSetupState) {
@@ -260,6 +279,7 @@ export function resetVitestApiBackend(): void {
   resetVitestIamMockState();
   resetVitestConnectorsMockState();
   resetVitestAutonomousSupervisionMockState();
+  resetVitestOntologyMockState();
   resetVitestAuthPolicyMockState();
   resetVitestReflexiveBackend();
   resetAuthSessionStore();
@@ -743,18 +763,176 @@ async function vitestFetchTransport(
     });
   }
 
+  const resolveMockOrgActor = () => {
+    const session = useAuthSessionStore.getState();
+    const headerHat = reqHeaders.get("x-orcia-active-hat")?.trim().toUpperCase();
+    const activeHat =
+      headerHat ||
+      (session.activeHat ? String(session.activeHat).toUpperCase() : "") ||
+      (session.roles?.[0] ? String(session.roles[0]).toUpperCase() : "") ||
+      "PLATFORM_ADMIN";
+    const candidates = new Set<string>();
+    if (session.email) candidates.add(session.email.toLowerCase());
+    if (session.displayName) candidates.add(session.displayName.toLowerCase());
+    const hasSessionUser = Boolean(
+      session.email || session.activeHat || (session.roles && session.roles.length > 0),
+    );
+    return { activeHat, candidates, hasSessionUser };
+  };
+
+  const computeOrgSubtreeAndAncestors = (actorCandidates: Set<string>, activeHat: string) => {
+    const byId = new Map(backendState.orgUnits.map((u) => [u.id, u]));
+    const isLead = (u: MockOrganizationalUnit) => {
+      const leads = u.lead_user_ids ?? (u.lead_user_id ? [u.lead_user_id] : []);
+      return leads.some((id) => actorCandidates.has(id.toLowerCase()));
+    };
+    const isOntologyLead = (u: MockOrganizationalUnit) =>
+      (u.ontology_lead_user_ids ?? []).some((id) => actorCandidates.has(id.toLowerCase()));
+    const isMember = (u: MockOrganizationalUnit) =>
+      u.member_user_ids.some((id) => actorCandidates.has(id.toLowerCase()));
+
+    const collectDescendants = (seeds: Set<string>) => {
+      const result = new Set(seeds);
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const u of backendState.orgUnits) {
+          if (u.parent_id && result.has(u.parent_id) && !result.has(u.id)) {
+            result.add(u.id);
+            changed = true;
+          }
+        }
+      }
+      return result;
+    };
+    const collectAncestors = (seeds: Set<string>) => {
+      const result = new Set<string>();
+      for (const id of seeds) {
+        let cur = byId.get(id)?.parent_id ?? null;
+        const guard = new Set<string>([id]);
+        while (cur && !guard.has(cur)) {
+          guard.add(cur);
+          result.add(cur);
+          cur = byId.get(cur)?.parent_id ?? null;
+        }
+      }
+      return result;
+    };
+
+    if (activeHat === "BU_LEAD" || activeHat === "BU_DIRECTOR") {
+      const directBus = new Set(
+        backendState.orgUnits.filter((u) => u.kind === "BU" && isLead(u)).map((u) => u.id),
+      );
+      const managed = collectDescendants(directBus);
+      const rootLedBus = new Set(
+        Array.from(directBus).filter((id) => {
+          const p = byId.get(id)?.parent_id;
+          return !p || !managed.has(p);
+        }),
+      );
+      const ancestors = collectAncestors(managed);
+      const visible = new Set([...managed, ...ancestors]);
+      return { managed, rootLedBus, visible };
+    }
+    if (activeHat === "TEAM_LEAD") {
+      const managed = new Set(
+        backendState.orgUnits.filter((u) => u.kind === "TEAM" && isLead(u)).map((u) => u.id),
+      );
+      const ancestors = collectAncestors(managed);
+      const visible = new Set([...managed, ...ancestors]);
+      return { managed, rootLedBus: new Set<string>(), visible };
+    }
+    if (activeHat === "ONTOLOGY_LEAD") {
+      const ledBus = new Set(
+        backendState.orgUnits.filter((u) => u.kind === "BU" && isOntologyLead(u)).map((u) => u.id),
+      );
+      const visible = new Set([...collectDescendants(ledBus), ...collectAncestors(ledBus)]);
+      return { managed: new Set<string>(), rootLedBus: new Set<string>(), visible };
+    }
+    if (activeHat === "CONTRIBUTOR") {
+      const teams = new Set(
+        backendState.orgUnits.filter((u) => u.kind === "TEAM" && isMember(u)).map((u) => u.id),
+      );
+      const visible = new Set([...teams, ...collectAncestors(teams)]);
+      return { managed: new Set<string>(), rootLedBus: new Set<string>(), visible };
+    }
+    return {
+      managed: new Set(backendState.orgUnits.map((u) => u.id)),
+      rootLedBus: new Set<string>(),
+      visible: new Set(backendState.orgUnits.map((u) => u.id)),
+    };
+  };
+
   if (path === "/api/v1/org-units" && method === "GET") {
     const qParam = parsedUrl.searchParams.get("q")?.trim()?.toLowerCase() ?? null;
     const kindParam = parsedUrl.searchParams.get("kind")?.toUpperCase() ?? null;
     const limitParamRaw = parsedUrl.searchParams.get("limit");
     const limitParam = limitParamRaw ? parseInt(limitParamRaw, 10) : null;
 
-    let units = backendState.orgUnits.map((u) => ({
-      ...u,
-      lead_user_id: u.lead_user_id ?? (u.lead_user_ids?.[0] ?? null),
-      lead_user_ids: u.lead_user_ids ?? (u.lead_user_id ? [u.lead_user_id] : []),
-      attached_workspaces_count: countAttachedWorkspacesForUnit(u.id).count,
-    }));
+    const { activeHat, candidates, hasSessionUser } = resolveMockOrgActor();
+    const scopeInfo = hasSessionUser
+      ? computeOrgSubtreeAndAncestors(candidates, activeHat)
+      : null;
+
+    let units = backendState.orgUnits
+      .filter((u) => {
+        if (!scopeInfo || activeHat === "PLATFORM_ADMIN" || activeHat === "SECOPS") {
+          return true;
+        }
+        return scopeInfo.visible.has(u.id);
+      })
+      .map((u) => {
+        const isBu = u.kind === "BU";
+        let canEdit = true;
+        let canCreateChild = isBu;
+        let canDelete = true;
+        let canManageMembers = !isBu;
+        let canManageOntologyLeads = isBu;
+        let canInviteUsers = true;
+
+        if (hasSessionUser) {
+          if (activeHat === "PLATFORM_ADMIN") {
+            // full access
+          } else if ((activeHat === "BU_LEAD" || activeHat === "BU_DIRECTOR") && scopeInfo) {
+            const inManaged = scopeInfo.managed.has(u.id);
+            canEdit = inManaged;
+            canCreateChild = inManaged && isBu;
+            canDelete = inManaged && !scopeInfo.rootLedBus.has(u.id);
+            canManageMembers = inManaged && !isBu;
+            canManageOntologyLeads = inManaged && isBu;
+            canInviteUsers = inManaged;
+          } else if (activeHat === "TEAM_LEAD" && scopeInfo) {
+            const inManaged = scopeInfo.managed.has(u.id);
+            canEdit = inManaged;
+            canCreateChild = false;
+            canDelete = false;
+            canManageMembers = inManaged && !isBu;
+            canManageOntologyLeads = false;
+            canInviteUsers = false;
+          } else {
+            canEdit = false;
+            canCreateChild = false;
+            canDelete = false;
+            canManageMembers = false;
+            canManageOntologyLeads = false;
+            canInviteUsers = false;
+          }
+        }
+
+        return {
+          ...u,
+          lead_user_id: u.lead_user_id ?? (u.lead_user_ids?.[0] ?? null),
+          lead_user_ids: u.lead_user_ids ?? (u.lead_user_id ? [u.lead_user_id] : []),
+          ontology_lead_user_ids: isBu ? (u.ontology_lead_user_ids ?? []) : [],
+          attached_workspaces_count: countAttachedWorkspacesForUnit(u.id).count,
+          can_edit: u.can_edit ?? canEdit,
+          can_create_child: u.can_create_child ?? canCreateChild,
+          can_delete: u.can_delete ?? canDelete,
+          can_manage_members: u.can_manage_members ?? canManageMembers,
+          can_manage_ontology_leads: u.can_manage_ontology_leads ?? canManageOntologyLeads,
+          can_invite_users: u.can_invite_users ?? canInviteUsers,
+        };
+      });
 
     if (kindParam) {
       units = units.filter(
@@ -775,6 +953,114 @@ async function vitestFetchTransport(
     return jsonResponse({
       org_units: units,
       known_users: getAllMockKnownOrgUsers(),
+      trace_id: "0195f000000070008000000000000999",
+    });
+  }
+
+  if (path === "/api/v1/org-units/invite-user" && method === "POST") {
+    const accessMode = (reqHeaders.get("x-orcia-access-mode") ?? "").toUpperCase();
+    const { activeHat, candidates, hasSessionUser } = resolveMockOrgActor();
+    if (accessMode === "READ_ONLY_OBSERVER" || activeHat === "OBSERVER") {
+      return problemResponse(
+        403,
+        "ERR_OBSERVER_MODE_READ_ONLY",
+        "Mode observateur en lecture seule",
+        "Les mutations sont refusées en mode observateur lecture seule.",
+        path,
+      );
+    }
+    if (!["PLATFORM_ADMIN", "BU_LEAD", "BU_DIRECTOR"].includes(activeHat)) {
+      return problemResponse(
+        403,
+        "ERR_SCOPE_ACCESS_DENIED",
+        "Accès au périmètre refusé",
+        "Seul un Administrateur Plateforme ou un Responsable de BU peut inviter dans son périmètre.",
+        path,
+      );
+    }
+    const requestedRole = String(body.assignment_role ?? body.role ?? "").trim().toUpperCase();
+    if (requestedRole === "PLATFORM_ADMIN" || requestedRole === "SECOPS") {
+      return problemResponse(
+        403,
+        "ERR_PRIVILEGE_ESCALATION_FORBIDDEN",
+        "Escalade de privilèges interdite",
+        "L'attribution de PLATFORM_ADMIN ou SECOPS est interdite depuis Mon Organisation.",
+        path,
+      );
+    }
+    const targetUnitId = String(body.target_org_unit_id ?? "").trim();
+    const targetUnit = backendState.orgUnits.find((u) => u.id === targetUnitId);
+    if (!targetUnit) {
+      return problemResponse(
+        404,
+        "ERR_RESOURCE_NOT_FOUND",
+        "Unité introuvable",
+        `Unité organisationnelle introuvable : '${targetUnitId}'.`,
+        path,
+      );
+    }
+    if (hasSessionUser && (activeHat === "BU_LEAD" || activeHat === "BU_DIRECTOR")) {
+      const scopeInfo = computeOrgSubtreeAndAncestors(candidates, activeHat);
+      if (!scopeInfo.managed.has(targetUnit.id)) {
+        return problemResponse(
+          403,
+          "ERR_SCOPE_ACCESS_DENIED",
+          "Hors périmètre de délégation",
+          "Cette unité n'appartient pas à votre périmètre BU.",
+          path,
+        );
+      }
+    }
+    const email = String(body.email ?? "").trim().toLowerCase();
+    const displayName = String(body.display_name ?? email).trim();
+    const account = upsertVitestIamOrgInvitedUser({
+      email,
+      displayName,
+      role: requestedRole,
+      targetUnitId: targetUnit.id,
+      targetUnitKind: targetUnit.kind,
+    });
+    if (requestedRole === "TEAM_MEMBER") {
+      if (!targetUnit.member_user_ids.includes(email)) {
+        targetUnit.member_user_ids = [...targetUnit.member_user_ids, email];
+      }
+    } else if (requestedRole === "TEAM_LEAD" || requestedRole === "BU_LEAD") {
+      const leads = targetUnit.lead_user_ids ?? (targetUnit.lead_user_id ? [targetUnit.lead_user_id] : []);
+      if (!leads.includes(email)) {
+        targetUnit.lead_user_ids = [...leads, email];
+        targetUnit.lead_user_id = targetUnit.lead_user_ids[0] ?? null;
+      }
+    } else if (requestedRole === "ONTOLOGY_LEAD") {
+      const ontoLeads = targetUnit.ontology_lead_user_ids ?? [];
+      if (!ontoLeads.includes(email)) {
+        targetUnit.ontology_lead_user_ids = [...ontoLeads, email];
+      }
+    }
+    syncSetupOrgUnitsFromMock();
+    return jsonResponse({
+      account_id: account.id,
+      user_id: account.id,
+      principal_id: account.principal_id,
+      email: account.email ?? email,
+      display_name: account.display_name,
+      assignment_role: requestedRole,
+      role: requestedRole,
+      target_org_unit_id: targetUnit.id,
+      temporary_password: "OrciaMock!2026", // pragma: allowlist secret
+      auth_mode: "LOCAL",
+      org_unit: {
+        ...targetUnit,
+        lead_user_id: targetUnit.lead_user_id ?? (targetUnit.lead_user_ids?.[0] ?? null),
+        lead_user_ids: targetUnit.lead_user_ids ?? (targetUnit.lead_user_id ? [targetUnit.lead_user_id] : []),
+        ontology_lead_user_ids: targetUnit.kind === "BU" ? (targetUnit.ontology_lead_user_ids ?? []) : [],
+        attached_workspaces_count: countAttachedWorkspacesForUnit(targetUnit.id).count,
+        can_edit: true,
+        can_create_child: targetUnit.kind === "BU",
+        can_delete: activeHat === "PLATFORM_ADMIN",
+        can_manage_members: targetUnit.kind === "TEAM",
+        can_manage_ontology_leads: targetUnit.kind === "BU",
+        can_invite_users: true,
+      },
       trace_id: "0195f000000070008000000000000999",
     });
   }
@@ -890,6 +1176,19 @@ async function vitestFetchTransport(
         }
       }
 
+      const rawOntologyLeads = Array.isArray(body.ontology_lead_user_ids)
+        ? body.ontology_lead_user_ids.map((l) => String(l).trim()).filter(Boolean)
+        : [];
+      if (kind === "TEAM" && rawOntologyLeads.length > 0) {
+        return problemResponse(
+          422,
+          "ERR_ORG_UNIT_ONTOLOGY_LEAD_ONLY_BU",
+          "Référents Glossaire réservés aux Directions (BU)",
+          "Seule une Direction ou Sous-BU (BU) peut désigner des Référents Glossaire.",
+          path,
+        );
+      }
+
       backendState.orgUnitSeq += 1;
       const id = `org-${backendState.orgUnitSeq}`;
       const created: MockOrganizationalUnit = {
@@ -901,6 +1200,7 @@ async function vitestFetchTransport(
         billing_enabled: body.billing_enabled !== undefined ? Boolean(body.billing_enabled) : true,
         lead_user_id: rawLeadIds[0] ?? null,
         lead_user_ids: rawLeadIds,
+        ontology_lead_user_ids: kind === "BU" ? rawOntologyLeads : [],
         member_user_ids: kind === "BU" ? [] : rawMembers,
       };
       backendState.orgUnits = [...backendState.orgUnits, created];
@@ -908,6 +1208,12 @@ async function vitestFetchTransport(
       return jsonResponse({
         ...created,
         attached_workspaces_count: 0,
+        can_edit: true,
+        can_create_child: created.kind === "BU",
+        can_delete: true,
+        can_manage_members: created.kind === "TEAM",
+        can_manage_ontology_leads: created.kind === "BU",
+        can_invite_users: true,
       });
     }
 
@@ -1045,6 +1351,45 @@ async function vitestFetchTransport(
         nextMemberUserIds = rawMembers;
       }
 
+      let nextOntologyLeadUserIds = target.kind === "BU" ? (target.ontology_lead_user_ids ?? []) : [];
+      if ("ontology_lead_user_ids" in body && Array.isArray(body.ontology_lead_user_ids)) {
+        const rawOnto = body.ontology_lead_user_ids.map((l) => String(l).trim()).filter(Boolean);
+        if (target.kind === "TEAM" && rawOnto.length > 0) {
+          return problemResponse(
+            422,
+            "ERR_ORG_UNIT_ONTOLOGY_LEAD_ONLY_BU",
+            "Référents Glossaire réservés aux Directions (BU)",
+            "Seule une Direction ou Sous-BU (BU) peut désigner des Référents Glossaire.",
+            path,
+          );
+        }
+        nextOntologyLeadUserIds = target.kind === "BU" ? rawOnto : [];
+      }
+
+      const { activeHat: patchHat, candidates: patchCandidates, hasSessionUser: patchHasUser } =
+        resolveMockOrgActor();
+      if (patchHasUser && (patchHat === "BU_LEAD" || patchHat === "BU_DIRECTOR" || patchHat === "TEAM_LEAD")) {
+        const patchScope = computeOrgSubtreeAndAncestors(patchCandidates, patchHat);
+        if (!patchScope.managed.has(target.id)) {
+          return problemResponse(
+            403,
+            "ERR_SCOPE_ACCESS_DENIED",
+            "Hors périmètre de délégation",
+            "Cette unité n'appartient pas à votre périmètre de délégation.",
+            path,
+          );
+        }
+        if (nextLeadUserIds.length === 0) {
+          return problemResponse(
+            422,
+            "ERR_ORG_UNIT_LAST_LEAD_REMOVAL_FORBIDDEN",
+            "Dernier responsable requis",
+            "Impossible de retirer le dernier responsable de cette unité.",
+            path,
+          );
+        }
+      }
+
       const updated: MockOrganizationalUnit = {
         ...target,
         name: nextName,
@@ -1055,6 +1400,7 @@ async function vitestFetchTransport(
             : target.billing_enabled,
         lead_user_id: nextLeadUserId,
         lead_user_ids: nextLeadUserIds,
+        ontology_lead_user_ids: target.kind === "BU" ? nextOntologyLeadUserIds : [],
         member_user_ids: target.kind === "BU" ? [] : nextMemberUserIds,
       };
       backendState.orgUnits = backendState.orgUnits.map((u) =>
@@ -2166,6 +2512,26 @@ async function vitestFetchTransport(
       workflow: saved,
       forked_as_draft: false,
     });
+  }
+
+  const setupWorkspaces = Array.isArray(
+    (backendState.platformSetupState as Record<string, unknown> | null)?.workspaces,
+  )
+    ? ((backendState.platformSetupState as Record<string, unknown>).workspaces as Array<
+        Record<string, unknown>
+      >)
+    : [];
+  const ontologyResponse = handleVitestOntologyRoute({
+    path,
+    method,
+    body,
+    orgUnits: backendState.orgUnits,
+    workspaces: setupWorkspaces,
+    jsonResponse,
+    problemResponse,
+  });
+  if (ontologyResponse) {
+    return ontologyResponse;
   }
 
   const supervisionResponse = handleVitestAutonomousSupervisionRoute(

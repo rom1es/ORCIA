@@ -227,23 +227,62 @@ export {
   type TopSearchScopeMode,
 } from "./primitives/TopHeaderSearchCommand";
 export {
+  computeUserInitials,
   resolveUserRoleDisplayLabel,
   ROLE_DISPLAY_LABELS_EN,
   ROLE_DISPLAY_LABELS_FR,
-  UserAccountDropdownAndSettingsModal,
-  type UiLocalePreference,
-  type UiMcpTargetKind,
-  type UiPersonalMcpTokenItem,
-  type UiThemePreference,
-  type UiUserAccountOrgUnitView,
-  type UiUserAccountProfileView,
-  type UiUserPassthroughConnectorView,
-  type UiUserSettingsTabKey,
-  type UserAccountDropdownAndSettingsLabels,
-  type UserAccountDropdownAndSettingsModalProps,
-  type UserAccountPreferencesPatch,
-  type UserPasswordSecurityLabels,
-} from "./primitives/UserAccountDropdownAndSettingsModal";
+} from "./primitives/UserRoleDisplayLabels";
+export {
+  SidebarAccountPopover,
+  type SidebarAccountPopoverProps,
+} from "./primitives/SidebarAccountPopover";
+export {
+  UserProfileOverviewPage,
+  type UserProfileOverviewPageProps,
+} from "./primitives/UserProfileOverviewPage";
+export type {
+  UiProfilePopularItemType,
+  UiProfilePopularUsageItem,
+  UiUserProfileSummaryView,
+  UserProfileOverviewLabels,
+} from "./primitives/UserProfileOverviewTypes";
+export {
+  UserSettingsModalDialog,
+  type UserSettingsModalDialogProps,
+} from "./primitives/UserSettingsModalDialog";
+export {
+  UserSettingsGeneralTab,
+  type UserSettingsGeneralTabProps,
+} from "./primitives/UserSettingsGeneralTab";
+export {
+  UserSettingsPersonalizationTab,
+  type UserSettingsPersonalizationTabProps,
+} from "./primitives/UserSettingsPersonalizationTab";
+export {
+  UserSettingsMcpTokensTab,
+  type UserSettingsMcpTokensTabProps,
+} from "./primitives/UserSettingsMcpTokensTab";
+export {
+  UserSettingsPassthroughTab,
+  UserSettingsProfileTab,
+  type UserSettingsPassthroughTabProps,
+} from "./primitives/UserSettingsProfileAndPassthroughTabs";
+export type {
+  CreateMcpTokenDraftInput,
+  SidebarAccountPopoverLabels,
+  UiAssistantTone,
+  UiLocalePreference,
+  UiMcpTargetKind,
+  UiPersonalMcpTokenItem,
+  UiThemePreference,
+  UiUserAccountOrgUnitView,
+  UiUserAccountProfileView,
+  UiUserPassthroughConnectorView,
+  UiUserSettingsTabKey,
+  UserAccountDropdownAndSettingsLabels,
+  UserAccountPreferencesPatch,
+  UserPasswordSecurityLabels,
+} from "./primitives/UserAccountDropdownTypes";
 export {
   TemporaryPasswordInvitationModal,
   buildInvitationMessage,

@@ -4,6 +4,7 @@ import {
   type OrganizationCreateModalLabels,
   type OrganizationDeleteModalLabels,
   type OrganizationEditModalLabels,
+  type OrganizationInviteModalLabels,
   type OrganizationMembersModalLabels,
   type OrganizationModalsSection,
 } from "./organization_modals_labels";
@@ -12,15 +13,20 @@ export type {
   OrganizationCreateModalLabels,
   OrganizationDeleteModalLabels,
   OrganizationEditModalLabels,
+  OrganizationInviteModalLabels,
   OrganizationMembersModalLabels,
   OrganizationModalsSection,
 };
 
 export interface OrganizationTabDictionarySection extends OrganizationModalsSection {
   readonly sectionTitle: string;
+  readonly pageTitle: string;
+  readonly pageSubtitle: string;
   readonly helpTriggerLabel: string;
   readonly openCreateModalCta: string;
+  readonly openInviteModalCta: string;
   readonly emptyStateText: string;
+  readonly scopedViewNotice: string;
   readonly pedagogyTitle: string;
   readonly pedagogyBuSummary: string;
   readonly pedagogyTeamSummary: string;
@@ -34,6 +40,9 @@ export interface OrganizationTabDictionarySection extends OrganizationModalsSect
     readonly billingDisabled: string;
     readonly leadPrefix: string;
     readonly leadsPluralPrefix: string;
+    readonly ontologyLeadPrefix: string;
+    readonly ontologyLeadsPluralPrefix: string;
+    readonly readOnlyAncestor: string;
     readonly rootAttachment: string;
     readonly parentAttachmentPrefix: string;
   };
@@ -60,9 +69,15 @@ export interface OrganizationTabDictionarySection extends OrganizationModalsSect
 export const ORGANIZATION_TAB_FR_LABELS: OrganizationTabDictionarySection = {
   ...ORGANIZATION_MODALS_FR_LABELS,
   sectionTitle: "Structure de l'Organisation (Directions / BU & Équipes)",
+  pageTitle: "Mon Organisation",
+  pageSubtitle:
+    "Pilotez les Directions (BU), sous-BU, équipes, co-responsables et référents glossaire de votre périmètre.",
   helpTriggerLabel: "Comprendre la structure Directions (BU), Pôles et Équipes",
   openCreateModalCta: "+ Nouvelle unité",
+  openInviteModalCta: "+ Inviter un utilisateur",
   emptyStateText: "Aucune unité d'organisation (Direction / BU ou Équipe) configurée.",
+  scopedViewNotice:
+    "Vue déléguée à votre périmètre : les unités parentes sont affichées à titre contextuel en lecture seule.",
   pedagogyTitle: "Repères : Direction / Pôle, Équipe et Espace de travail",
   pedagogyBuSummary:
     "Direction / BU & Pôle (Sous-BU) : structure managériale et périmètre d'héritage des règles.",
@@ -84,6 +99,9 @@ export const ORGANIZATION_TAB_FR_LABELS: OrganizationTabDictionarySection = {
     billingDisabled: "Sans imputation FinOps",
     leadPrefix: "Responsable :",
     leadsPluralPrefix: "Responsables :",
+    ontologyLeadPrefix: "Référent Glossaire :",
+    ontologyLeadsPluralPrefix: "Référents Glossaire :",
+    readOnlyAncestor: "Contexte parent (lecture seule)",
     rootAttachment: "Racine — Plateforme entière",
     parentAttachmentPrefix: "Rattaché à :",
   },
@@ -107,9 +125,15 @@ export const ORGANIZATION_TAB_FR_LABELS: OrganizationTabDictionarySection = {
 export const ORGANIZATION_TAB_EN_LABELS: OrganizationTabDictionarySection = {
   ...ORGANIZATION_MODALS_EN_LABELS,
   sectionTitle: "Organization Structure (Divisions / BUs & Teams)",
+  pageTitle: "My Organization",
+  pageSubtitle:
+    "Manage Divisions (BUs), sub-BUs, teams, co-leads, and glossary leads within your delegated scope.",
   helpTriggerLabel: "Understand Divisions (BUs), Sub-Divisions, and Teams structure",
   openCreateModalCta: "+ New unit",
+  openInviteModalCta: "+ Invite user",
   emptyStateText: "No organization unit (Division / BU or Team) configured yet.",
+  scopedViewNotice:
+    "Delegated scope view: ancestor units are displayed for context in read-only mode.",
   pedagogyTitle: "Reference: Division / Sub-BU, Team, and Workspace",
   pedagogyBuSummary:
     "Division / BU & Sub-BU: management hierarchy and rule inheritance scope.",
@@ -131,6 +155,9 @@ export const ORGANIZATION_TAB_EN_LABELS: OrganizationTabDictionarySection = {
     billingDisabled: "FinOps billing disabled",
     leadPrefix: "Lead:",
     leadsPluralPrefix: "Leads:",
+    ontologyLeadPrefix: "Glossary Lead:",
+    ontologyLeadsPluralPrefix: "Glossary Leads:",
+    readOnlyAncestor: "Parent context (read-only)",
     rootAttachment: "Root — Entire platform",
     parentAttachmentPrefix: "Attached to:",
   },

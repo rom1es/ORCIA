@@ -102,6 +102,7 @@ export interface ConfiguredOrgUnit {
   readonly billingEnabled?: boolean;
   readonly leadUserId?: string | null;
   readonly leadUserIds?: readonly string[];
+  readonly ontologyLeadUserIds?: readonly string[];
   readonly memberUserIds?: readonly string[];
   readonly attachedWorkspacesCount?: number;
   readonly attachedWorkspaces?: readonly AttachedWorkspaceRef[];

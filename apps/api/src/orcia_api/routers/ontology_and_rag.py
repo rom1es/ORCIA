@@ -7,8 +7,13 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Query, Request
 
 from orcia_api.dependencies import (
+    get_auth_service,
     get_ontology_and_rag_services,
     require_rag_available,
+)
+from orcia_api.routers._ontology_promotions_helpers import (
+    load_ontology_topology,
+    resolve_ontology_caller,
 )
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.routers.ontology_rag_helpers import (
@@ -23,9 +28,11 @@ from orcia_api.routers.ontology_rag_helpers import (
 )
 from orcia_api.schemas import ontology_and_rag as s
 from orcia_core.ontology import (
-    OntologyConceptEntity,
     OntologyHierarchyResolver,
     ProfileSemanticTranslator,
+    can_read_ontology_item,
+    list_concepts_pg,
+    list_proposals_pg,
 )
 from orcia_core.ontology.errors import ObserverModeReadOnlyError
 from orcia_core.ports.embedding import EmbeddingPort
@@ -33,7 +40,6 @@ from orcia_core.rag import (
     DifferentiatedIncrementalIndexer,
     SqlHybridRagRepository,
 )
-from orcia_kernel.ids import new_uuid7_str
 
 router = APIRouter(prefix="/api/v1/ontology-rag", tags=["ontology-rag"])
 
@@ -58,6 +64,7 @@ async def get_ontology_and_rag_state(
     workspace_id: str | None = Query(default=None),
     seed_uri: str | None = Query(default=None),
 ) -> s.OntologyAndRagStateResponse:
+    user = resolve_ontology_caller(request, None)
     gov, rag, trip = get_ontology_and_rag_services(request, fixture=fixture)
     edges = list(trip.list_edges())
     sql_rag_repo = _get_optional_sql_rag_repo(request)
@@ -71,10 +78,23 @@ async def get_ontology_and_rag_state(
         for sql_edge in sql_edges:
             if sql_edge.edge_key not in existing_keys:
                 edges.append(sql_edge)
+    concepts = list(gov.concepts)
+    proposals = list(gov.proposals)
+    if not fixture:
+        engine, org_units, workspaces = await load_ontology_topology(request, fixture=False)
+        memberships = get_auth_service(request).evaluator.list_memberships()
+        if not concepts and engine is not None:
+            concepts = await list_concepts_pg(engine)
+            proposals = await list_proposals_pg(engine)
+        concepts = [
+            c
+            for c in concepts
+            if can_read_ontology_item(user, c.level, c.scope_id, org_units, workspaces, memberships)
+        ]
     return s.OntologyAndRagStateResponse(
-        concepts=[serialize_concept(c) for c in gov.concepts],
+        concepts=[serialize_concept(c) for c in concepts],
         relations=[serialize_relation(r) for r in gov.relations],
-        promotions=[serialize_promotion(p) for p in gov.proposals],
+        promotions=[serialize_promotion(p) for p in proposals],
         documents=[serialize_doc(d) for d in rag.list_documents()],
         tripartite_edges=[serialize_trace_edge(e) for e in edges],
         stale_alerts=[serialize_stale_alert(a) for a in trip.list_alerts()],
@@ -114,54 +134,6 @@ async def resolve_ontology_hierarchy(
 
 
 @router.post(
-    "/ontology/concepts",
-    response_model=s.OntologyConceptSchemaItem,
-    summary="Upsert an Ontology Concept (enforces L1 immutable axiom protection -> HTTP 422)",
-    responses=PROBLEM_RESPONSES,
-)
-async def upsert_ontology_concept(
-    request: Request,
-    body: s.OntologyUpsertConceptRequest,
-    fixture: bool = Query(default=False),
-    persona_key: str | None = Query(default=None),
-) -> s.OntologyConceptSchemaItem:
-    user = resolve_request_user(request, persona_key=persona_key)
-    gov, _, _ = get_ontology_and_rag_services(request, fixture=fixture)
-    candidate = OntologyConceptEntity(
-        id=new_uuid7_str(),
-        concept_key=body.concept_key,
-        canonical_term=body.canonical_term,
-        level=body.level,
-        scope_id=body.scope_id,
-        definition_text=body.definition_text,
-        parent_concept_id=body.parent_concept_id,
-        synonyms=tuple(body.synonyms),
-        banned_terms=tuple(body.banned_terms),
-        profile_translations=body.profile_translations,
-        expected_schema=body.expected_schema,
-        introduced_in_snapshot_id=body.introduced_in_snapshot_id,
-    )
-    default_teams = ("scope-subteam-checkout", "scope-team-core")
-    team_scopes = (
-        (body.scope_id, *default_teams)
-        if body.level == "3_TEAM" and body.scope_id not in default_teams
-        else default_teams
-    )
-    OntologyHierarchyResolver.resolve_effective_ontology(
-        concepts=(*gov.concepts, candidate),
-        relations=gov.relations,
-        axioms=gov.axioms,
-        enterprise_scope_id=body.scope_id if body.level == "1_ENTERPRISE" else "scope-global",
-        domain_scope_id=body.scope_id if body.level == "2_DOMAIN" else "scope-bu-digital",
-        team_chain_scope_ids=team_scopes,
-        workspace_scope_id=body.scope_id if body.level == "3_WORKSPACE" else "ws-solution-paiement",
-        run_scope_id=body.scope_id if body.level == "4_RUN_EPHEMERAL" else None,
-    )
-    concept = gov.upsert_concept(user, candidate)
-    return serialize_concept(concept)
-
-
-@router.post(
     "/ontology/what-if",
     response_model=s.WhatIfSimulationResponse,
     summary="Execute What-If impact simulation across concepts, templates, workflows & runs",
@@ -192,9 +164,18 @@ async def promote_ontology_proposal(
     fixture: bool = Query(default=False),
     persona_key: str | None = Query(default=None),
 ) -> s.OntologyPromotionProposalSchemaItem:
-    user = resolve_request_user(request, persona_key=persona_key)
+    user = resolve_ontology_caller(request, persona_key)
     gov, _, _ = get_ontology_and_rag_services(request, fixture=fixture)
-    proposal = gov.promote_concept(user, proposal_key=body.proposal_key)
+    _, org_units, workspaces = await load_ontology_topology(request, fixture=fixture)
+    memberships = get_auth_service(request).evaluator.list_memberships()
+    proposal = gov.promote_concept(
+        user,
+        proposal_key=body.proposal_key,
+        org_units=org_units,
+        workspaces=workspaces,
+        memberships=memberships,
+        allow_fixture_fallback=fixture,
+    )
     return serialize_promotion(proposal)
 
 

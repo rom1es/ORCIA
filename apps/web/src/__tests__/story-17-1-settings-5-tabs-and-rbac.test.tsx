@@ -21,8 +21,8 @@ afterEach(() => {
   resetAuthSessionStore();
 });
 
-describe("Settings Tabs (6 Tabs), Exclusive PLATFORM_ADMIN Visibility & Mon Compte Sidebar", () => {
-  it("grants /settings tabs exclusively to PLATFORM_ADMIN and restricts all non-admin roles across the 6 governance roles", () => {
+describe("Settings Tabs (5 Tabs), Exclusive PLATFORM_ADMIN Visibility & Mon Compte Sidebar", () => {
+  it("grants /settings tabs exclusively to PLATFORM_ADMIN and restricts all non-admin roles across the 7 governance roles", () => {
     const adminAccess = resolveSettingsAccess({
       roles: ["PLATFORM_ADMIN"],
       activeHat: "PLATFORM_ADMIN",
@@ -40,7 +40,21 @@ describe("Settings Tabs (6 Tabs), Exclusive PLATFORM_ADMIN Visibility & Mon Comp
       "grant",
     ]);
 
-    for (const nonAdminRole of ["SECOPS", "BU_LEAD", "TEAM_LEAD", "CONTRIBUTOR", "OBSERVER"] as const) {
+    const secopsAccess = resolveSettingsAccess({
+      roles: ["SECOPS"],
+      activeHat: "SECOPS",
+    });
+    expect(secopsAccess.visibleTabs).toEqual(["iam"]);
+    expect(secopsAccess.canMutate).toBe(true);
+    expect(secopsAccess.isReadOnlyRestricted).toBe(false);
+
+    for (const nonAdminRole of [
+      "BU_LEAD",
+      "TEAM_LEAD",
+      "ONTOLOGY_LEAD",
+      "CONTRIBUTOR",
+      "OBSERVER",
+    ] as const) {
       const access = resolveSettingsAccess({
         roles: [nonAdminRole],
         activeHat: nonAdminRole,
@@ -80,7 +94,7 @@ describe("Settings Tabs (6 Tabs), Exclusive PLATFORM_ADMIN Visibility & Mon Comp
     );
   });
 
-  it("renders all 6 wireframe-icon tabs including Authentification & Connecteurs for PLATFORM_ADMIN, removes Workflows & Glossary, and applies .orcia-ds-btn-danger", async () => {
+  it("renders all 5 wireframe-icon tabs including Authentification & Connecteurs for PLATFORM_ADMIN, separates Mon Organisation into /organization, and applies .orcia-ds-btn-danger", async () => {
     useAuthSessionStore.getState().setAuthSession({
       roles: ["PLATFORM_ADMIN"],
       activeHat: "PLATFORM_ADMIN",
@@ -99,7 +113,7 @@ describe("Settings Tabs (6 Tabs), Exclusive PLATFORM_ADMIN Visibility & Mon Comp
 
     const tablist = screen.getByTestId("settings-domain-tabs");
     const tabButtons = tablist.querySelectorAll('[role="tab"]');
-    expect(tabButtons.length).toBe(6);
+    expect(tabButtons.length).toBe(5);
 
     for (const key of ALL_SETTINGS_TABS) {
       const btn = screen.getByTestId(`settings-tab-${key}`);
@@ -108,13 +122,18 @@ describe("Settings Tabs (6 Tabs), Exclusive PLATFORM_ADMIN Visibility & Mon Comp
     expect(screen.getByTestId("settings-tab-authentication").textContent).toBe("Authentification");
     expect(screen.getByTestId("settings-tab-connectors").textContent).toBe("Connecteurs");
 
+    expect(screen.queryByTestId("settings-tab-organization")).toBeNull();
     expect(screen.queryByTestId("settings-tab-workflows")).toBeNull();
     expect(screen.queryByTestId("settings-tab-glossary")).toBeNull();
     expect(screen.queryByTestId("settings-tab-ai-models")).toBeNull();
 
-    // Tab 1 (organization) shows Organization Units ONLY, not IAM grants
-    expect(screen.getByTestId("settings-organization-section")).toBeDefined();
-    expect(screen.queryByTestId("settings-iam-section")).toBeNull();
+    // Default tab 1 (iam) shows IAM Permission Grants ONLY, not Organization Units
+    expect(screen.getByTestId("settings-iam-section")).toBeDefined();
+    expect(screen.queryByTestId("settings-organization-section")).toBeNull();
+
+    // Navigate to dedicated Mon Organisation menu (/organization)
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    expect(await screen.findByTestId("settings-organization-section")).toBeDefined();
 
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
@@ -124,14 +143,9 @@ describe("Settings Tabs (6 Tabs), Exclusive PLATFORM_ADMIN Visibility & Mon Comp
 
     const deleteOrgBtn = await screen.findByTestId("delete-org-unit-btn-org-1");
     expect(deleteOrgBtn.className).toContain("orcia-ds-btn-danger");
-
-    // Tab 2 (iam) shows IAM Permission Grants ONLY, not Organization Units
-    fireEvent.click(screen.getByTestId("settings-tab-iam"));
-    expect(screen.getByTestId("settings-iam-section")).toBeDefined();
-    expect(screen.queryByTestId("settings-organization-section")).toBeNull();
   });
 
-  it("hides platform settings tabs & Configuration menu from SECOPS/BU_LEAD/CONTRIBUTOR and shows read-only notice + Mon Compte modal shortcut", async () => {
+  it("grants SECOPS access ONLY to IAM tab in Configuration, hides platform settings tabs from BU_LEAD/CONTRIBUTOR, and shows Mon Compte shortcut", async () => {
     useAuthSessionStore.getState().setAuthSession({
       roles: ["SECOPS"],
       activeHat: "SECOPS",
@@ -148,11 +162,15 @@ describe("Settings Tabs (6 Tabs), Exclusive PLATFORM_ADMIN Visibility & Mon Comp
       </QueryClientProvider>,
     );
 
-    expect(screen.queryByTestId("settings-domain-tabs")).toBeNull();
-    expect(screen.queryByTestId("eight-menu-item-configuration")).toBeNull();
-    expect(screen.getByTestId("settings-readonly-access-banner").textContent).toContain("lecture seule");
+    expect(screen.getByTestId("eight-menu-item-configuration")).toBeDefined();
+    expect(screen.getByTestId("settings-tab-iam")).toBeDefined();
+    expect(screen.queryByTestId("settings-tab-authentication")).toBeNull();
+    expect(screen.queryByTestId("settings-tab-models")).toBeNull();
+    expect(screen.queryByTestId("settings-tab-connectors")).toBeNull();
+    expect(screen.queryByTestId("settings-tab-packs")).toBeNull();
+    expect(screen.getByTestId("settings-iam-section")).toBeDefined();
 
-    // Switch role dynamically to CONTRIBUTOR -> still restricted with Open My Account CTA
+    // Switch role dynamically to CONTRIBUTOR -> restricted with Open My Account CTA
     act(() => {
       useAuthSessionStore.getState().setAuthSession({
         roles: ["CONTRIBUTOR"],
@@ -169,7 +187,7 @@ describe("Settings Tabs (6 Tabs), Exclusive PLATFORM_ADMIN Visibility & Mon Comp
     expect(screen.getByTestId("user-settings-modal")).toBeDefined();
   });
 
-  it("displays dynamic localized userHatLabel (FR & EN), hides Configuration sidebar menu for SECOPS, and opens UserSettingsModal", () => {
+  it("displays dynamic localized userHatLabel (FR & EN), exposes IAM-scoped Configuration menu for SECOPS, and opens UserSettingsModal", () => {
     useAuthSessionStore.getState().setAuthSession({
       roles: ["SECOPS"],
       activeHat: "SECOPS",
@@ -191,21 +209,18 @@ describe("Settings Tabs (6 Tabs), Exclusive PLATFORM_ADMIN Visibility & Mon Comp
       </I18nProvider>,
     );
 
-    expect(screen.queryByTestId("eight-menu-item-configuration")).toBeNull();
-
-    const dropdownTrigger = screen.getByTestId("user-account-dropdown-trigger");
-    expect(dropdownTrigger.textContent).toContain("Sophie SecOps");
-    expect(screen.getByTestId("user-account-role-pill").textContent).toContain(
-      "Responsable Sécurité & Habilitations",
-    );
-    expect(dropdownTrigger.textContent).not.toContain("Administrateur de la plateforme");
+    expect(screen.getByTestId("eight-menu-item-configuration")).toBeDefined();
+    expect(screen.queryByTestId("user-account-dropdown-trigger")).toBeNull();
 
     const sidebarAccountBtn = screen.getByTestId("sidebar-open-my-account-btn");
     expect(sidebarAccountBtn.className).toContain("orcia-sidebar-nav-btn");
     expect(sidebarAccountBtn.querySelector("svg")).not.toBeNull();
-    expect(sidebarAccountBtn.textContent).toContain("Mon Compte");
+    expect(sidebarAccountBtn.textContent).toContain("Sophie SecOps");
+    expect(sidebarAccountBtn.textContent).toContain("Responsable Sécurité & Habilitations");
+    expect(sidebarAccountBtn.textContent).not.toContain("Administrateur de la plateforme");
 
-    fireEvent.click(sidebarAccountBtn);
+    fireEvent.keyDown(sidebarAccountBtn, { key: "Enter" });
+    fireEvent.click(screen.getByTestId("account-popover-settings-btn"));
     expect(screen.getByTestId("user-settings-modal")).toBeDefined();
   });
 });

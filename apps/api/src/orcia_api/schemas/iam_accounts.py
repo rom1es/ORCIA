@@ -14,6 +14,7 @@ OfficialIamRoleLiteral = Literal[
     "SECOPS",
     "BU_LEAD",
     "TEAM_LEAD",
+    "ONTOLOGY_LEAD",
     "CONTRIBUTOR",
     "OBSERVER",
 ]
@@ -49,6 +50,7 @@ class IamAccountResponse(BaseModel):
     updated_at_iso: str
     led_bu_ids: list[str] = Field(default_factory=list)
     led_team_ids: list[str] = Field(default_factory=list)
+    ontology_led_bu_ids: list[str] = Field(default_factory=list)
 
 
 class IamAccountsListResponse(BaseModel):
@@ -75,6 +77,7 @@ class IamAccountCreateRequest(BaseModel):
     status: IamAccountStatusLiteral = "ACTIVE"
     led_bu_ids: list[str] | None = Field(default=None, max_length=64)
     led_team_ids: list[str] | None = Field(default=None, max_length=64)
+    ontology_led_bu_ids: list[str] | None = Field(default=None, max_length=64)
 
 
 class IamAccountPatchRequest(BaseModel):
@@ -89,6 +92,7 @@ class IamAccountPatchRequest(BaseModel):
     status: IamAccountStatusLiteral | None = None
     led_bu_ids: list[str] | None = Field(default=None, max_length=64)
     led_team_ids: list[str] | None = Field(default=None, max_length=64)
+    ontology_led_bu_ids: list[str] | None = Field(default=None, max_length=64)
 
 
 class IamAccountDeleteResponse(BaseModel):

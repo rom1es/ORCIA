@@ -8,7 +8,13 @@ export type { IamDirectoryLabels };
 
 export interface IamTabDictionarySection {
   readonly roles: Record<
-    "PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "TEAM_LEAD" | "CONTRIBUTOR" | "OBSERVER",
+    | "PLATFORM_ADMIN"
+    | "SECOPS"
+    | "BU_LEAD"
+    | "TEAM_LEAD"
+    | "ONTOLOGY_LEAD"
+    | "CONTRIBUTOR"
+    | "OBSERVER",
     string
   >;
   readonly roleScopes: Record<"GLOBAL" | "BU" | "TEAM" | "WORKSPACE", string>;
@@ -33,6 +39,7 @@ export interface IamTabDictionarySection {
     readonly summarySecurityAudit: string;
     readonly summaryBuSupervision: string;
     readonly summaryTeamLead: string;
+    readonly summaryOntologyLead: string;
     readonly summaryContributor: string;
     readonly summaryObserver: string;
   };
@@ -88,6 +95,7 @@ export const IAM_TAB_FR_LABELS: IamTabDictionarySection = {
   roles: {
     PLATFORM_ADMIN: "Administrateur Plateforme", SECOPS: "Responsable Sécurité (SecOps)",
     BU_LEAD: "Responsable de Direction (BU)", TEAM_LEAD: "Responsable d'Équipe",
+    ONTOLOGY_LEAD: "Référent Glossaire",
     CONTRIBUTOR: "Contributeur", OBSERVER: "Observateur",
   },
   roleScopes: {
@@ -100,10 +108,10 @@ export const IAM_TAB_FR_LABELS: IamTabDictionarySection = {
   },
   directory: IAM_DIRECTORY_FR_LABELS,
   matrix: {
-    sectionTitle: "Matrice des 6 Rôles Officiels de la Plateforme",
+    sectionTitle: "Matrice des 7 Rôles Officiels de la Plateforme",
     sectionSubtitle:
       "Synthèse claire des droits natifs par périmètre. Vous n'avez aucune règle manuelle à créer pour le fonctionnement courant.",
-    openRoleMatrixCta: "Voir la matrice des 6 rôles",
+    openRoleMatrixCta: "Voir la matrice des 7 rôles",
     closeRoleMatrixCta: "Fermer",
     secretBannerTitle: "Confidentialité absolue des secrets (saisie seule)", // pragma: allowlist secret
     secretBannerBody:
@@ -117,6 +125,7 @@ export const IAM_TAB_FR_LABELS: IamTabDictionarySection = {
     summarySecurityAudit: "Politiques de sécurité, audit de conformité et exceptions d'accès",
     summaryBuSupervision: "Pilotage des équipes, budgets et espaces de sa Direction (BU)",
     summaryTeamLead: "Animation d'équipe, validation des livrables et délégation locale",
+    summaryOntologyLead: "Validation et promotion des concepts glossaire L1–L4 sur sa Direction (BU)",
     summaryContributor: "Exécution des processus, usage de l'assistant et contribution métier",
     summaryObserver: "Consultation uniquement — aucune modification ni exécution",
   },
@@ -179,6 +188,7 @@ export const IAM_TAB_EN_LABELS: IamTabDictionarySection = {
   roles: {
     PLATFORM_ADMIN: "Platform Administrator", SECOPS: "Security Officer (SecOps)",
     BU_LEAD: "Division Lead (BU)", TEAM_LEAD: "Team Lead",
+    ONTOLOGY_LEAD: "Glossary Lead",
     CONTRIBUTOR: "Contributor", OBSERVER: "Observer",
   },
   roleScopes: {
@@ -191,10 +201,10 @@ export const IAM_TAB_EN_LABELS: IamTabDictionarySection = {
   },
   directory: IAM_DIRECTORY_EN_LABELS,
   matrix: {
-    sectionTitle: "Platform 6 Official Roles Matrix",
+    sectionTitle: "Platform 7 Official Roles Matrix",
     sectionSubtitle:
       "Clear overview of native permissions per scope. No manual rule is needed for standard operations.",
-    openRoleMatrixCta: "View 6-role matrix",
+    openRoleMatrixCta: "View 7-role matrix",
     closeRoleMatrixCta: "Close",
     secretBannerTitle: "Strict write-only secret confidentiality", // pragma: allowlist secret
     secretBannerBody:
@@ -208,6 +218,7 @@ export const IAM_TAB_EN_LABELS: IamTabDictionarySection = {
     summarySecurityAudit: "Security policies, compliance audit, and access exceptions",
     summaryBuSupervision: "Supervises teams, budgets, and spaces across its Division (BU)",
     summaryTeamLead: "Leads team operations, deliverable sign-off, and local delegation",
+    summaryOntologyLead: "Reviews and promotes BU-level L1–L4 glossary concepts",
     summaryContributor: "Runs processes, uses the assistant, and contributes deliverables",
     summaryObserver: "Read-only consultation — no edits or executions",
   },

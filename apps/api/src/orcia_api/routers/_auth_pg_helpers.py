@@ -251,6 +251,7 @@ async def hydrate_user_identity_from_pg(
                 raise ResourceNotFoundError()
             hydrated = replace(
                 user,
+                platform_role=candidate.platform_role,  # type: ignore[arg-type]
                 roles=candidate.roles,
                 must_change_password=candidate.must_change_password,
                 is_active=candidate.is_active,

@@ -11,6 +11,8 @@ export interface FourZoneSidebarRailProps {
   readonly railCollapsed: boolean;
   readonly onToggleRailCollapsed: () => void;
   readonly activeMenuKey: EightFixedMenuKey;
+  readonly showOrganizationMenu?: boolean;
+  readonly organizationMenuActive?: boolean;
   readonly activityMenuActive: boolean;
   readonly activePackKey: string;
   readonly availablePacks: readonly string[];
@@ -18,6 +20,7 @@ export interface FourZoneSidebarRailProps {
   readonly disabledMenuKeys?: Partial<Record<EightFixedMenuKey, string>>;
   readonly hiddenMenuKeys?: readonly EightFixedMenuKey[];
   readonly onSelectMenu: (key: EightFixedMenuKey, route: string) => void;
+  readonly onSelectOrganizationMenu?: (route: string) => void;
   readonly onSelectActivityMenu?: (route: string) => void;
   readonly onSelectPack?: (packKey: string) => void;
   readonly sidebarSecondarySlot?: React.ReactNode;
@@ -36,6 +39,8 @@ export function FourZoneSidebarRail({
   railCollapsed,
   onToggleRailCollapsed,
   activeMenuKey,
+  showOrganizationMenu = false,
+  organizationMenuActive = false,
   activityMenuActive,
   activePackKey,
   availablePacks,
@@ -43,6 +48,7 @@ export function FourZoneSidebarRail({
   disabledMenuKeys,
   hiddenMenuKeys,
   onSelectMenu,
+  onSelectOrganizationMenu,
   onSelectActivityMenu,
   onSelectPack,
   sidebarSecondarySlot,
@@ -52,6 +58,7 @@ export function FourZoneSidebarRail({
   const cleanCollapseLabel = sanitizeRailToggleLabel(labels.railCollapseLabel);
   const cleanExpandLabel = sanitizeRailToggleLabel(labels.railExpandLabel);
   const collapsedTooltip = `${cleanExpandLabel} ([)`;
+  const organizationLabel = labels.organizationMenuLabel ?? "Mon Organisation";
   const activityLabel = labels.activityMenuLabel ?? "Journal d'Activité";
 
   return (
@@ -100,7 +107,7 @@ export function FourZoneSidebarRail({
         {DEFAULT_EIGHT_FIXED_MENU_ENTRIES.filter(
           (entry) => !hiddenMenuKeys?.includes(entry.key),
         ).map((entry) => {
-          const isActive = !activityMenuActive && entry.key === activeMenuKey;
+          const isActive = !activityMenuActive && !organizationMenuActive && entry.key === activeMenuKey;
           const entryLabel = labels.menuEntries[entry.key];
           const disabledReason = disabledMenuKeys?.[entry.key];
           const isDisabled = Boolean(disabledReason);
@@ -131,6 +138,28 @@ export function FourZoneSidebarRail({
                   testIdSuffix={`eight-menu-item-${entry.key}`}
                 />
               </button>
+
+              {entry.key === "spaces" && showOrganizationMenu && (
+                <button
+                  type="button"
+                  data-testid="eight-menu-item-organization"
+                  data-active={organizationMenuActive ? "true" : "false"}
+                  aria-label={railCollapsed ? organizationLabel : undefined}
+                  title={railCollapsed ? organizationLabel : undefined}
+                  aria-current={organizationMenuActive ? "page" : undefined}
+                  onClick={() => {
+                    if (onSelectOrganizationMenu) {
+                      onSelectOrganizationMenu("/organization");
+                    } else {
+                      onSelectMenu("spaces", "/organization");
+                    }
+                  }}
+                  className={`orcia-sidebar-nav-btn ${railCollapsed ? "justify-center px-0 py-2" : "gap-2.5 px-2.5 py-2"}`}
+                >
+                  <OrciaIcon name="organizationBu" />
+                  {!railCollapsed && <span className="flex-1">{organizationLabel}</span>}
+                </button>
+              )}
 
               {entry.key === "finops" && (
                 <button

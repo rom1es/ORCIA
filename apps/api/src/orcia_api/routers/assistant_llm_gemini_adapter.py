@@ -153,3 +153,41 @@ def extract_gemini_stream_chunk_deltas(chunk: dict[str, Any]) -> tuple[str, str]
         if isinstance(part, dict) and (txt := str(part.get("text") or "")):
             (r_deltas if part.get("thought") is True else c_deltas).append(txt)
     return "".join(c_deltas), "".join(r_deltas)
+
+
+def build_anthropic_native_request_body(
+    model_name: str,
+    messages: list[dict[str, Any]],
+    *,
+    stream: bool,
+    tools: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Build Anthropic `/v1/messages` JSON request body."""
+    sys_blocks = [str(m.get("content") or "") for m in messages if m.get("role") == "system"]
+    conv_msgs = [
+        {
+            "role": "assistant" if m.get("role") == "assistant" else "user",
+            "content": str(m.get("content") or ""),
+        }
+        for m in messages
+        if m.get("role") != "system"
+    ]
+    body: dict[str, Any] = {
+        "model": model_name,
+        "max_tokens": 4096,
+        "messages": conv_msgs or [{"role": "user", "content": "Hello"}],
+        "stream": stream,
+    }
+    if sys_blocks:
+        body["system"] = "\n\n".join(sys_blocks)
+    if tools:
+        body["tools"] = [
+            {
+                "name": t.get("function", {}).get("name", "tool"),
+                "description": t.get("function", {}).get("description", ""),
+                "input_schema": t.get("function", {}).get("parameters", {"type": "object"}),
+            }
+            for t in tools
+            if isinstance(t, dict)
+        ]
+    return body

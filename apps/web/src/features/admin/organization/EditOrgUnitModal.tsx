@@ -14,19 +14,24 @@ import { isKnownUserIdentifier } from "./orgUnitsApiBridge";
 import { useKnownOrgUsersSearch } from "./useKnownOrgUsersSearch";
 import { useParentOrgSearch } from "./useParentOrgSearch";
 
+import type { OrgUnitServerCapabilities } from "./orgUnitsApiBridge";
+
 export interface EditOrgUnitFormValues {
   readonly name: string;
   readonly parentId: string;
   readonly billingEnabled: boolean;
   readonly leadUserId?: string | null;
   readonly leadUserIds?: readonly string[];
+  readonly ontologyLeadUserIds?: readonly string[];
 }
 
 export interface EditOrgUnitModalProps {
   readonly unit: ConfiguredOrgUnit | null;
+  readonly unitCapabilities?: OrgUnitServerCapabilities;
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
   readonly canMutate: boolean;
+  readonly allowParentAndBillingEdit?: boolean;
   readonly orgUnits: readonly ConfiguredOrgUnit[];
   readonly knownUsers?: readonly KnownUserOption[];
   readonly labels: AdminAndStudioDictionarySection["settingsHub"]["organizationTab"]["editModal"];
@@ -39,9 +44,11 @@ export interface EditOrgUnitModalProps {
 
 export function EditOrgUnitModal({
   unit,
+  unitCapabilities,
   open,
   onOpenChange,
   canMutate,
+  allowParentAndBillingEdit = true,
   orgUnits,
   knownUsers = [],
   labels,
@@ -63,11 +70,14 @@ export function EditOrgUnitModal({
   });
 
   const leadSearch = useKnownOrgUsersSearch({ initialKnownUsers: knownUsers });
+  const ontoSearch = useKnownOrgUsersSearch({ initialKnownUsers: knownUsers });
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState("scope-global");
   const [billingEnabled, setBillingEnabled] = useState(true);
   const [leadUserIds, setLeadUserIds] = useState<readonly string[]>([]);
   const [leadDraft, setLeadDraft] = useState("");
+  const [ontologyLeadUserIds, setOntologyLeadUserIds] = useState<readonly string[]>([]);
+  const [ontologyLeadDraft, setOntologyLeadDraft] = useState("");
   const [leadValidationError, setLeadValidationError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -80,6 +90,12 @@ export function EditOrgUnitModal({
         : (unit.leadUserId ? [unit.leadUserId] : []);
       setLeadUserIds(initialLeads);
       setLeadDraft("");
+      setOntologyLeadUserIds(
+        unit.level === "BU" && Array.isArray(unit.ontologyLeadUserIds)
+          ? unit.ontologyLeadUserIds
+          : [],
+      );
+      setOntologyLeadDraft("");
       setLeadValidationError(null);
       resetParentSearch();
     }
@@ -88,12 +104,22 @@ export function EditOrgUnitModal({
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!unit || !canMutate || !name.trim() || isSubmitting) return;
-    const allKnownUsers = [...leadSearch.knownUsers, ...knownUsers];
+    const allKnownUsers = [...leadSearch.knownUsers, ...ontoSearch.knownUsers, ...knownUsers];
     const pendingId = resolvePendingKnownUserId(leadDraft, allKnownUsers);
     const finalLeads = pendingId && !leadUserIds.some((id) => id.toLowerCase() === pendingId.toLowerCase())
       ? [...leadUserIds, pendingId]
       : leadUserIds;
-    const invalidLead = finalLeads.find((lid) => !isKnownUserIdentifier(lid, allKnownUsers));
+    const pendingOntoId = resolvePendingKnownUserId(ontologyLeadDraft, allKnownUsers);
+    const finalOntoLeads =
+      unit.level === "BU"
+        ? pendingOntoId &&
+          !ontologyLeadUserIds.some((id) => id.toLowerCase() === pendingOntoId.toLowerCase())
+          ? [...ontologyLeadUserIds, pendingOntoId]
+          : ontologyLeadUserIds
+        : undefined;
+    const invalidLead = [...finalLeads, ...(finalOntoLeads ?? [])].find(
+      (lid) => !isKnownUserIdentifier(lid, allKnownUsers),
+    );
     if (invalidLead) {
       setLeadValidationError(
         unknownUserErrorLabel ||
@@ -107,6 +133,7 @@ export function EditOrgUnitModal({
       billingEnabled,
       leadUserId: finalLeads[0] ?? null,
       leadUserIds: finalLeads,
+      ontologyLeadUserIds: finalOntoLeads,
     });
   };
 
@@ -160,7 +187,7 @@ export function EditOrgUnitModal({
           <OrciaSearchableSelect
             id="edit-org-unit-parent-select"
             testId="edit-org-unit-parent-select"
-            disabled={!canMutate || isSubmitting}
+            disabled={!canMutate || !allowParentAndBillingEdit || isSubmitting}
             value={parentId}
             onChange={setParentId}
             options={parentOptions}
@@ -192,7 +219,33 @@ export function EditOrgUnitModal({
           ) : null}
         </div>
 
-        <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600, cursor: canMutate ? "pointer" : "not-allowed" }}>
+        {unit?.level === "BU" ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <label htmlFor="edit-org-unit-ontology-lead-input" className="orcia-ds-label">
+              {labels.ontologyLeadLabel}
+            </label>
+            <OrciaUserPillsSelect
+              inputId="edit-org-unit-ontology-lead-input"
+              inputTestId="edit-org-unit-ontology-lead-input"
+              disabled={
+                !canMutate ||
+                isSubmitting ||
+                (unitCapabilities ? !unitCapabilities.canManageOntologyLeads : false)
+              }
+              selectedUserIds={ontologyLeadUserIds}
+              onChange={setOntologyLeadUserIds}
+              draftQuery={ontologyLeadDraft}
+              onDraftQueryChange={(val) => {
+                setOntologyLeadDraft(val);
+                setLeadValidationError(null);
+              }}
+              knownUsers={ontoSearch.knownUsers}
+              placeholder={labels.ontologyLeadPlaceholder}
+            />
+          </div>
+        ) : null}
+
+        <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600, cursor: canMutate && allowParentAndBillingEdit ? "pointer" : "not-allowed" }}>
           <input
             type="checkbox"
             name="org_unit_billing_enabled"
@@ -202,7 +255,7 @@ export function EditOrgUnitModal({
             data-bwignore="true"
             data-form-type="other"
             data-testid="edit-org-unit-billing-checkbox"
-            disabled={!canMutate || isSubmitting}
+            disabled={!canMutate || !allowParentAndBillingEdit || isSubmitting}
             checked={billingEnabled}
             onChange={(e) => setBillingEnabled(e.target.checked)}
           />

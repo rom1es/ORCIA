@@ -5,15 +5,20 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import AsyncIterator
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 
 from orcia_api.dependencies import (
-    get_assistant_folders_and_sharing_service,
     get_assistant_three_speed_router_service,
     require_rag_available,
+)
+from orcia_api.routers._assistant_workspace_context import (
+    record_non_stream_turn_telemetry,
+    resolve_folder_notes,
+    resolve_turn_history,
+    to_active_turn_response,
 )
 from orcia_api.routers.assistant_llm_bridge import (
     get_active_turn_for_workspace,
@@ -58,29 +63,6 @@ ThreeSpeedRouterDep = Annotated[
 _SPEED2_MENTION_OR_SLASH_RE = re.compile(r"(?:^|\s)(?:@[a-zA-Z0-9_-]{2,}|/[a-zA-Z0-9_-]{2,})")
 
 
-def _resolve_turn_history(request: Request, payload: ThreeSpeedTurnRequest) -> list[dict[str, Any]]:
-    history: list[dict[str, Any]] = [
-        {"role": m.role, "content": m.content, "name": m.name, "tool_call_id": m.tool_call_id}
-        for m in payload.conversation_history
-    ]
-    if payload.thread_id and not history:
-        try:
-            folders_svc = get_assistant_folders_and_sharing_service(request)
-            overview = folders_svc.get_workspace_overview(workspace_id=payload.workspace_id)
-            for t in overview.threads:
-                if t.thread_id == payload.thread_id and t.thread_summary:
-                    for part in t.thread_summary.split(" | "):
-                        if part.strip():
-                            history.append({"role": "user", "content": part.strip()})
-        except Exception as exc:
-            from orcia_core.observability.logging import get_logger
-
-            get_logger("orcia.assistant.llm").warning(
-                "assistant_thread_history_resolution_fallback", error_type=type(exc).__name__
-            )
-    return history
-
-
 def _resolve_effective_speed(
     payload: ThreeSpeedTurnRequest,
 ) -> tuple[bool, AssistantSpeedMode | None, AssistantSpeedMode]:
@@ -100,25 +82,6 @@ def _resolve_effective_speed(
     return effective_deep_audit, effective_speed, resolved_for_llm
 
 
-def _resolve_folder_notes(request: Request, payload: ThreeSpeedTurnRequest) -> str | None:
-    if payload.folder_pinned_notes and payload.folder_pinned_notes.strip():
-        return payload.folder_pinned_notes.strip()
-    if payload.folder_id:
-        try:
-            folders_svc = get_assistant_folders_and_sharing_service(request)
-            overview = folders_svc.get_workspace_overview(workspace_id=payload.workspace_id)
-            for f in overview.folders:
-                if f.folder_id == payload.folder_id and f.pinned_notes_markdown.strip():
-                    return f.pinned_notes_markdown.strip()
-        except Exception as exc:
-            from orcia_core.observability.logging import get_logger
-
-            get_logger("orcia.assistant.llm").warning(
-                "assistant_folder_notes_resolution_fallback", error_type=type(exc).__name__
-            )
-    return None
-
-
 @router.post("/three-speed/turn", response_model=ThreeSpeedTurnResponse)
 async def execute_three_speed_turn_endpoint(
     payload: ThreeSpeedTurnRequest,
@@ -129,9 +92,9 @@ async def execute_three_speed_turn_endpoint(
 ) -> ThreeSpeedTurnResponse:
     """Execute a 3-Speed conversational turn (`⚡ Rapide`, `@Agent / /Skill`, `🧠 Approfondi`)."""
     effective_deep_audit, effective_speed, resolved_speed = _resolve_effective_speed(payload)
-    resolved_notes = _resolve_folder_notes(request, payload)
+    resolved_notes = resolve_folder_notes(request, payload)
     active_hat = payload.hat or user.human_profile_archetype or "PLATFORM_ADMIN"
-    history = _resolve_turn_history(request, payload)
+    history = resolve_turn_history(request, payload)
     live_outcome = await invoke_configured_llm_for_assistant_turn(
         request,
         user_prompt=payload.user_prompt,
@@ -180,18 +143,15 @@ async def execute_three_speed_turn_endpoint(
         llm_latency_ms_override=live_outcome.latency_ms if live_outcome is not None else None,
         llm_thinking_override=live_outcome.thinking_text if live_outcome is not None else None,
     )
-    record_prompt_telemetry_entry(
-        workspace_id=turn.workspace_id,
-        turn_id=turn.turn_id,
-        user_prompt=payload.user_prompt,
-        assembled_system_prompt=assembled_sys_prompt,
-        conversation_history_count=len(history),
-        folder_pinned_notes=resolved_notes,
-        thinking_text=live_outcome.thinking_text
-        if live_outcome and live_outcome.thinking_text
-        else "",
-        assistant_reply=turn.response_text,
-        thinking_effort=payload.thinking_effort or "balanced",
+    await record_non_stream_turn_telemetry(
+        request,
+        user=user,
+        payload=payload,
+        turn=turn,
+        live_outcome=live_outcome,
+        assembled_sys_prompt=assembled_sys_prompt,
+        history_count=len(history),
+        resolved_notes=resolved_notes,
     )
     return ThreeSpeedTurnResponse(
         turn_id=turn.turn_id,
@@ -233,18 +193,7 @@ def get_active_three_speed_turn_endpoint(
     state = get_active_turn_for_workspace(workspace_id)
     if state is None:
         return ActiveBackgroundTurnStatusResponse(workspace_id=workspace_id, status="IDLE")
-    return ActiveBackgroundTurnStatusResponse(
-        workspace_id=state.workspace_id,
-        turn_id=state.turn_id,
-        status=state.status,
-        user_prompt=state.user_prompt,
-        thinking_text=state.thinking_text,
-        streamed_text=state.streamed_text,
-        assembled_system_prompt=state.assembled_system_prompt,
-        started_at_ms=state.started_at_ms,
-        elapsed_ms=state.elapsed_ms,
-        error_message=state.error_message,
-    )
+    return to_active_turn_response(state)
 
 
 @router.post("/three-speed/stop", response_model=ActiveBackgroundTurnStatusResponse)
@@ -258,18 +207,7 @@ async def stop_active_three_speed_turn_endpoint(
         return ActiveBackgroundTurnStatusResponse(
             workspace_id=payload.workspace_id, status="STOPPED"
         )
-    return ActiveBackgroundTurnStatusResponse(
-        workspace_id=state.workspace_id,
-        turn_id=state.turn_id,
-        status=state.status,
-        user_prompt=state.user_prompt,
-        thinking_text=state.thinking_text,
-        streamed_text=state.streamed_text,
-        assembled_system_prompt=state.assembled_system_prompt,
-        started_at_ms=state.started_at_ms,
-        elapsed_ms=state.elapsed_ms,
-        error_message=state.error_message,
-    )
+    return to_active_turn_response(state)
 
 
 @router.post("/three-speed/feedback")
@@ -308,8 +246,8 @@ async def stream_three_speed_turn_endpoint(
     """Stream SSE events (`cache_status`, `step_progress`, `thinking_delta`, `token_delta`)."""
     effective_deep_audit, effective_speed, resolved_speed = _resolve_effective_speed(payload)
     active_hat = payload.hat or user.human_profile_archetype or "PLATFORM_ADMIN"
-    history = _resolve_turn_history(request, payload)
-    resolved_notes = _resolve_folder_notes(request, payload)
+    history = resolve_turn_history(request, payload)
+    resolved_notes = resolve_folder_notes(request, payload)
     client_host = getattr(getattr(request, "client", None), "host", "") or ""
 
     async def _event_generator() -> AsyncIterator[str]:
@@ -354,6 +292,8 @@ async def stream_three_speed_turn_endpoint(
                     folder_pinned_notes=resolved_notes,
                     locale=payload.locale,
                     fallback_response_text=full_txt,
+                    user_email=user.email,
+                    user_display_name=user.display_name,
                 ):
                     if stream_evt["event"] in (
                         "thinking_delta",

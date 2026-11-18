@@ -1,262 +1,302 @@
 import {
-  ContextualHelpColumnAndCenter,
   ContextualInfoTriggerButton,
   OntologyAndKbExplorerPanel,
+  OrciaAlertBanner,
   OrciaIcon,
+  type UiOntologyConceptView,
   type UiOntologyLevel,
 } from "@orcia/ui";
-import React, { useState } from "react";
-import { usePlatformSetup } from "../../components/platformSetupStore";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  decideOntologyPromotionToApi,
+  fetchOntologyConceptsFromApi,
+  fetchOntologyPromotionsFromApi,
+  proposeOntologyPromotionToApi,
+  slugifyScopedConceptKey,
+  upsertOntologyConceptToApi,
+  type OntologyPromotionProposalDetailItem,
+  type WritableScopeOptionItem,
+} from "../../components/ontologyApiBridge";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
+import { OntologyPromotionProposalsTab } from "./OntologyPromotionProposalsTab";
 
 export function OntologyFeaturePanel() {
   const { dictionary, locale } = useI18n();
-  const { ontologyConcepts, addOntologyConcept } = usePlatformSetup();
-  const { openHelpSection, navigateToRoute } = useShellNavigation();
-  const isFr = locale === "fr";
+  const { openHelpSection } = useShellNavigation();
+  const copy = dictionary.ontologyGlossary;
+  const typedLocale = locale === "en" ? "en" : "fr";
+
+  const [activeTab, setActiveTab] = useState<"EXPLORER" | "PROPOSALS">("EXPLORER");
+  const [concepts, setConcepts] = useState<UiOntologyConceptView[]>([]);
+  const [writableScopes, setWritableScopes] = useState<WritableScopeOptionItem[]>([]);
+  const [proposals, setProposals] = useState<OntologyPromotionProposalDetailItem[]>([]);
+  const [pendingCount, setPendingCount] = useState<number>(0);
 
   const [conceptName, setConceptName] = useState("");
-  const [conceptLevel, setConceptLevel] = useState<UiOntologyLevel>("1_ENTERPRISE");
   const [conceptDef, setConceptDef] = useState("");
+  const [selectedScopeIdx, setSelectedScopeIdx] = useState<number>(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [busyProposalId, setBusyProposalId] = useState<string | null>(null);
+  const [feedbackBanner, setFeedbackBanner] = useState<string | null>(null);
+  const [errorBanner, setErrorBanner] = useState<string | null>(null);
 
-  const handleAddConcept = (e: React.FormEvent) => {
+  const loadOntologyData = useCallback(async () => {
+    try {
+      const [conceptsRes, promosRes] = await Promise.all([
+        fetchOntologyConceptsFromApi(typedLocale),
+        fetchOntologyPromotionsFromApi(typedLocale),
+      ]);
+      setConcepts(conceptsRes.concepts);
+      setWritableScopes(conceptsRes.writableScopes);
+      setProposals(promosRes.proposals);
+      setPendingCount(promosRes.pendingCount);
+      setSelectedScopeIdx(0);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : copy.errorFallback;
+      setErrorBanner(msg);
+    }
+  }, [typedLocale, copy.errorFallback]);
+
+  useEffect(() => {
+    void loadOntologyData();
+  }, [loadOntologyData]);
+
+  const activeScopeOption = writableScopes[selectedScopeIdx] ?? writableScopes[0] ?? null;
+
+  const handleAddConcept = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!conceptName.trim()) return;
-    addOntologyConcept({
-      conceptKey: `concept-${ontologyConcepts.length + 1}`,
-      canonicalTerm: conceptName.trim(),
-      level: conceptLevel,
-      scopeId: "scope-global",
-      definitionText: conceptDef.trim() || conceptName.trim(),
-      immutable: conceptLevel === "1_ENTERPRISE",
-      synonyms: [],
-      profileTranslations: {
-        EXECUTIVE: conceptDef.trim() || conceptName.trim(),
-        PM_PO: conceptDef.trim() || conceptName.trim(),
-        ARCHITECT: conceptDef.trim() || conceptName.trim(),
-        TECH_LEAD: conceptDef.trim() || conceptName.trim(),
-        DEVELOPER: conceptDef.trim() || conceptName.trim(),
-        SECOPS: conceptDef.trim() || conceptName.trim(),
-      },
-      impactedTemplates: [],
-      impactedWorkflows: [],
-      impactedRuns: [],
-    });
-    setConceptName("");
-    setConceptDef("");
+    if (!conceptName.trim() || !activeScopeOption) return;
+    setIsSaving(true);
+    setErrorBanner(null);
+    setFeedbackBanner(null);
+    try {
+      const term = conceptName.trim();
+      const def = conceptDef.trim() || term;
+      const targetLevel = activeScopeOption.level as UiOntologyLevel;
+      await upsertOntologyConceptToApi(typedLocale, {
+        conceptKey: slugifyScopedConceptKey(term, targetLevel, activeScopeOption.scope_id),
+        canonicalTerm: term,
+        level: targetLevel,
+        scopeId: activeScopeOption.scope_id,
+        definitionText: def,
+        profileTranslations: {
+          EXECUTIVE: def,
+          PM_BUSINESS: def,
+          ARCHITECT: def,
+          TECH_LEAD: def,
+          DEVELOPER: def,
+          SECOPS: def,
+        },
+      });
+      setConceptName("");
+      setConceptDef("");
+      setFeedbackBanner(`${copy.createdSuccessPrefix} ${term}`);
+      await loadOntologyData();
+    } catch (err: unknown) {
+      setErrorBanner(err instanceof Error ? err.message : copy.errorFallback);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleProposePromotion = async (concept: UiOntologyConceptView) => {
+    setErrorBanner(null);
+    setFeedbackBanner(null);
+    try {
+      await proposeOntologyPromotionToApi(typedLocale, {
+        concept_key: concept.conceptKey,
+        target_level: concept.nextPromotionLevel ?? undefined,
+        target_scope_id: concept.nextPromotionScopeId ?? undefined,
+      });
+      setFeedbackBanner(`${copy.proposedSuccessPrefix} ${concept.canonicalTerm}`);
+      await loadOntologyData();
+    } catch (err: unknown) {
+      setErrorBanner(err instanceof Error ? err.message : copy.errorFallback);
+    }
+  };
+
+  const handleDecideProposal = async (
+    proposalId: string,
+    decision: "APPROVE" | "REJECT",
+    comment?: string,
+  ) => {
+    setBusyProposalId(proposalId);
+    setErrorBanner(null);
+    setFeedbackBanner(null);
+    try {
+      await decideOntologyPromotionToApi(typedLocale, proposalId, {
+        decision,
+        review_comment: comment?.trim() || undefined,
+      });
+      setFeedbackBanner(
+        decision === "APPROVE" ? copy.decisionSuccessApproved : copy.decisionSuccessRejected,
+      );
+      await loadOntologyData();
+    } catch (err: unknown) {
+      setErrorBanner(err instanceof Error ? err.message : copy.errorFallback);
+    } finally {
+      setBusyProposalId(null);
+    }
   };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <section
-        data-testid="help-showcase-site-banner"
-        className="orcia-bento-card"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "12px",
-        }}
-      >
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          <strong>
-            <OrciaIcon name="globe" />{" "}
-            {isFr
-              ? "Site de Présentation & Documentation Vivante d'ORCIA"
-              : "ORCIA Living Product & Architecture Showcase Site"}
-          </strong>
-          <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
-            {isFr
-              ? "Découvrez la vision Human-Led, la double barrière anti-hallucination, le guide des 9 écrans et les choix d'architecture en 3 espaces séparés."
-              : "Explore the Human-Led vision, double anti-hallucination barrier, 9-screen functional guide, and engineering architecture across 3 separated spaces."}
-          </span>
-        </div>
+      <nav role="tablist" className="orcia-ds-tabs">
         <button
           type="button"
-          data-testid="open-orcia-showcase-site-btn"
-          onClick={() => navigateToRoute("/showcase")}
-          className="orcia-ds-btn orcia-ds-btn-primary"
+          role="tab"
+          data-testid="ontology-tab-explorer"
+          aria-selected={activeTab === "EXPLORER"}
+          onClick={() => setActiveTab("EXPLORER")}
+          className="orcia-ds-tab"
         >
-          <OrciaIcon name="globe" /> <span>Documentation</span>
+          <OrciaIcon name="bookOpen" /> <span>{copy.tabExplorer}</span>
         </button>
-      </section>
-
-      <section
-        data-testid="ontology-create-concept-card"
-        className="orcia-bento-card"
-        style={{ display: "flex", flexDirection: "column", gap: "10px" }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <strong>
-            {isFr
-              ? "Ajouter un Terme Métier ou une Règle au Glossaire"
-              : "Add a Business Term or Rule to the Glossary"}
-          </strong>
-          <ContextualInfoTriggerButton
-            sectionId="glossary-rules"
-            label={
-              isFr
-                ? "Comprendre le glossaire métier et les règles de l'organisation"
-                : "Understand the business glossary and organization rules"
-            }
-            onOpenHelpSection={openHelpSection}
-          />
-        </div>
-        <form
-          data-testid="ontology-create-concept-form"
-          autoComplete="off"
-          data-lpignore="true"
-          data-form-type="other"
-          onSubmit={handleAddConcept}
-          style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}
+        <button
+          type="button"
+          role="tab"
+          data-testid="ontology-tab-proposals"
+          aria-selected={activeTab === "PROPOSALS"}
+          onClick={() => setActiveTab("PROPOSALS")}
+          className="orcia-ds-tab"
         >
-          <select
-            data-testid="ontology-level-select"
-            value={conceptLevel}
-            onChange={(e) => setConceptLevel(e.target.value as UiOntologyLevel)}
-            style={{
-              padding: "7px 10px",
-              borderRadius: "var(--radius-sm)",
-              border: "1px solid var(--color-border)",
-            }}
-          >
-            <option value="1_ENTERPRISE">
-              {isFr ? "1. Organisation (Règle commune)" : "1. Organization (Shared rule)"}
-            </option>
-            <option value="2_DOMAIN">
-              {isFr ? "2. Direction / Pôle (BU)" : "2. Division / Department (BU)"}
-            </option>
-            <option value="3_TEAM">
-              {isFr ? "3a. Équipe" : "3a. Team"}
-            </option>
-            <option value="3_WORKSPACE">
-              {isFr ? "3b. Espace de Travail" : "3b. Workspace"}
-            </option>
-            <option value="4_RUN_EPHEMERAL">
-              {isFr ? "4. Exécution en cours" : "4. Current execution"}
-            </option>
-          </select>
-          <input
-            type="text"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid="ontology-concept-name-input"
-            value={conceptName}
-            onChange={(e) => setConceptName(e.target.value)}
-            placeholder={isFr ? "Intitulé du terme métier..." : "Business term name..."}
-            style={{
-              flex: 1,
-              minWidth: "180px",
-              padding: "7px 10px",
-              borderRadius: "var(--radius-sm)",
-              border: "1px solid var(--color-border)",
-            }}
-          />
-          <input
-            type="text"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid="ontology-concept-def-input"
-            value={conceptDef}
-            onChange={(e) => setConceptDef(e.target.value)}
-            placeholder={isFr ? "Définition claire et partagée..." : "Clear shared definition..."}
-            style={{
-              flex: 2,
-              minWidth: "220px",
-              padding: "7px 10px",
-              borderRadius: "var(--radius-sm)",
-              border: "1px solid var(--color-border)",
-            }}
-          />
-          <button
-            type="submit"
-            data-testid="ontology-create-concept-btn"
-            style={{
-              padding: "7px 14px",
-              borderRadius: "var(--radius-sm)",
-              border: "none",
-              backgroundColor: "var(--color-primary-cobalt)",
-              color: "var(--color-primary-foreground)",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            {isFr ? "+ Ajouter au glossaire" : "+ Add to glossary"}
-          </button>
-        </form>
-      </section>
+          <OrciaIcon name="promoteUp" />{" "}
+          <span>{`${copy.tabProposalsPrefix} (${pendingCount})`}</span>
+        </button>
+      </nav>
 
-      <div className="orcia-bento-card">
-        <OntologyAndKbExplorerPanel
-          concepts={[...ontologyConcepts]}
-          tripartiteEdges={[]}
-          staleAlerts={[]}
-          labels={dictionary.ontologyExplorer}
+      {errorBanner && (
+        <OrciaAlertBanner tone="crimson" testId="ontology-error-banner">
+          {errorBanner}
+        </OrciaAlertBanner>
+      )}
+      {feedbackBanner && (
+        <OrciaAlertBanner tone="emerald" testId="ontology-feedback-banner">
+          {feedbackBanner}
+        </OrciaAlertBanner>
+      )}
+
+      {activeTab === "EXPLORER" ? (
+        <>
+          <section
+            data-testid="ontology-create-concept-card"
+            className="orcia-bento-card"
+            style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <strong>{copy.addSectionTitle}</strong>
+              <ContextualInfoTriggerButton
+                sectionId="glossary-rules"
+                label={copy.addHelpLabel}
+                onOpenHelpSection={openHelpSection}
+              />
+            </div>
+
+            {writableScopes.length === 0 ? (
+              <p
+                data-testid="ontology-readonly-notice"
+                style={{ margin: 0, fontSize: "12px", color: "var(--color-muted-foreground)" }}
+              >
+                {copy.noWritableLevelBanner}
+              </p>
+            ) : (
+              <form
+                data-testid="ontology-create-concept-form"
+                autoComplete="off"
+                data-lpignore="true"
+                data-form-type="other"
+                onSubmit={handleAddConcept}
+                style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}
+              >
+                <select
+                  data-testid="ontology-level-select"
+                  value={String(selectedScopeIdx)}
+                  onChange={(e) => setSelectedScopeIdx(Number(e.target.value))}
+                  style={{
+                    padding: "7px 10px",
+                    borderRadius: "var(--radius-sm)",
+                    border: "1px solid var(--color-border)",
+                    backgroundColor: "var(--color-surface-card)",
+                    color: "var(--color-foreground)",
+                  }}
+                >
+                  {writableScopes.map((opt, idx) => (
+                    <option key={`${opt.level}:${opt.scope_id}`} value={String(idx)}>
+                      {`${copy.levelLabels[opt.level as UiOntologyLevel] ?? opt.level} · ${opt.label}`}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
+                  data-testid="ontology-concept-name-input"
+                  value={conceptName}
+                  onChange={(e) => setConceptName(e.target.value)}
+                  placeholder={copy.termPlaceholder}
+                  style={{
+                    flex: 1,
+                    minWidth: "180px",
+                    padding: "7px 10px",
+                    borderRadius: "var(--radius-sm)",
+                    border: "1px solid var(--color-border)",
+                  }}
+                />
+                <input
+                  type="text"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
+                  data-testid="ontology-concept-def-input"
+                  value={conceptDef}
+                  onChange={(e) => setConceptDef(e.target.value)}
+                  placeholder={copy.defPlaceholder}
+                  style={{
+                    flex: 2,
+                    minWidth: "220px",
+                    padding: "7px 10px",
+                    borderRadius: "var(--radius-sm)",
+                    border: "1px solid var(--color-border)",
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={isSaving || !conceptName.trim()}
+                  data-testid="ontology-create-concept-btn"
+                  className="orcia-ds-btn orcia-ds-btn-primary"
+                >
+                  {isSaving ? copy.addingLabel : copy.addButtonLabel}
+                </button>
+              </form>
+            )}
+          </section>
+
+          <div className="orcia-bento-card">
+            <OntologyAndKbExplorerPanel
+              concepts={concepts}
+              tripartiteEdges={[]}
+              staleAlerts={[]}
+              labels={dictionary.ontologyExplorer}
+              onProposePromotion={(c) => void handleProposePromotion(c)}
+            />
+          </div>
+        </>
+      ) : (
+        <OntologyPromotionProposalsTab
+          proposals={proposals}
+          copy={copy}
+          busyProposalId={busyProposalId}
+          onDecideProposal={(id, decision, comment) =>
+            void handleDecideProposal(id, decision, comment)
+          }
         />
-      </div>
-
-      {/* Story 9.5 & 12.3 — Centre d'Aide (mode=HELP_MENU_CENTER) sur /help */}
-      <ContextualHelpColumnAndCenter
-        mode="HELP_MENU_CENTER"
-        route="/help"
-        pack="orcia-pack-sdlc@1.0.0"
-        redisCacheKey={`help:route:/help:orcia-pack-sdlc@1.0.0:${locale}`}
-        mergedLayers={["BASE", "PACK", "WORKSPACE"]}
-        article={{
-          resourceId: "help-center-overview",
-          uri: "orcia://system/help/help-center-overview@1.0.0",
-          title: isFr
-            ? "Centre d'Aide Contextuelle & Glossaire de Votre Organisation"
-            : "Contextual Help Center & Organization Glossary",
-          version: "1.0.0",
-          lang: locale,
-          layer: "BASE",
-          packName: "orcia-pack-sdlc",
-          boundRoutes: ["/cockpit", "/assistant", "/spaces", "/processes", "/agents", "/help"],
-          summaryWhatFor: isFr
-            ? "Ce centre rassemble les guides pratiques et explications rattachés à vos écrans et à vos Packs métiers."
-            : "This center gathers practical guides and explanations bound to your screens and Business Packs.",
-          stepByStepItems: isFr
-            ? [
-                "Ouvrez la colonne ❓ ou cliquez sur une icône ⓘ sur n'importe quel écran pour afficher l'explication dédiée.",
-                "Utilisez l'outil de création de fiches d'aide dans Mes Processus pour rédiger et publier de nouveaux guides pour vos équipes.",
-              ]
-            : [
-                "Open the ❓ column or click an ⓘ icon on any screen to display the dedicated explanation.",
-                "Use the help guide authoring tool in My Processes to write and publish new guides for your teams.",
-              ],
-          keyTermsItems: isFr
-            ? [
-                "Fiche de référence : Guide officiel associé à un écran.",
-                "Adaptation par niveau : Guides enrichis par votre métier et votre Espace.",
-                "Vérification de qualité : Contrôle automatique des liens et du vocabulaire.",
-              ]
-            : [
-                "Reference guide: Official guide linked to a screen.",
-                "Level customization: Guides enriched by your domain and Workspace.",
-                "Quality check: Automated verification of links and terminology.",
-              ],
-          faqItems: [
-            isFr
-              ? "Comment rétablir la version précédente d'un guide ? Cliquez sur ⏪ Version précédente."
-              : "How can I restore the previous version of a guide? Click ⏪ Previous version.",
-          ],
-          casKey: "cas/help-center-overview-v1",
-          sha256: "sha256-help-center-v1",
-          previousVersion: "0.9.0",
-        }}
-        rollbackAvailable={true}
-        isAdmin={true}
-        labels={dictionary.contextualHelpHybrid}
-      />
+      )}
     </div>
   );
 }

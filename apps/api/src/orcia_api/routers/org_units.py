@@ -8,15 +8,23 @@ from fastapi import APIRouter, Path, Query, Request
 
 from orcia_api.dependencies import get_auth_service, get_or_create_shared_db_engine
 from orcia_api.routers._auth_pg_helpers import sync_auth_service_user_by_email_from_pg
+from orcia_api.routers._org_units_delegation_helpers import (
+    enforce_org_create_delegation,
+    enforce_org_delete_delegation,
+    enforce_org_patch_delegation,
+    ensure_evaluator_org_units_synced,
+    filter_and_annotate_org_units,
+    record_governance_audit_event,
+    resolve_org_caller,
+    serialize_org_unit_with_capabilities,
+)
 from orcia_api.routers._org_units_helpers import (
     classify_and_handle_pg_error,
     create_in_evaluator,
     delete_in_evaluator,
-    enforce_org_unit_mutation_access,
     filter_org_unit_summaries_in_memory,
     pg_sync_enabled,
     resolve_trace_id,
-    serialize_org_unit_summary,
     sync_evaluator_from_summaries,
     update_in_evaluator,
 )
@@ -69,8 +77,7 @@ async def list_org_units(
     limit: int | None = Query(default=None, ge=1, le=100),
 ) -> OrgUnitsListResponse:
     svc = get_auth_service(request)
-    effective_persona = persona_key or request.headers.get("x-orcia-persona", "").strip() or None
-    resolve_request_user(request, persona_key=effective_persona)
+    caller = resolve_org_caller(request, persona_key)
     summaries: list[OrgUnitSummary] | None = None
     known_users_raw: list[KnownOrgUser] = []
     if pg_sync_enabled():
@@ -79,6 +86,8 @@ async def list_org_units(
             summaries = await list_org_units_from_postgres18(engine, q=q, kind=kind, limit=limit)
             if q is None and kind is None and limit is None:
                 sync_evaluator_from_summaries(svc.evaluator, summaries)
+            else:
+                await ensure_evaluator_org_units_synced(request, svc.evaluator)
             async with engine.connect() as conn:
                 known_users_raw = await collect_known_org_users(request, conn)
         except OrciaDomainError:
@@ -102,7 +111,7 @@ async def list_org_units(
     if not known_users_raw:
         known_users_raw = await collect_known_org_users(request, None)
     return OrgUnitsListResponse(
-        org_units=[serialize_org_unit_summary(s) for s in summaries],
+        org_units=filter_and_annotate_org_units(request, caller, summaries, svc.evaluator),
         known_users=serialize_known_users(known_users_raw),
         trace_id=resolve_trace_id(request),
     )
@@ -141,8 +150,10 @@ async def create_org_unit(
     request: Request,
     persona_key: str | None = Query(default=None, min_length=1, max_length=64),
 ) -> OrgUnitResponse:
-    enforce_org_unit_mutation_access(request, persona_key)
     svc = get_auth_service(request)
+    caller = resolve_org_caller(request, persona_key)
+    await ensure_evaluator_org_units_synced(request, svc.evaluator)
+    enforce_org_create_delegation(request, caller, payload, svc.evaluator)
     created: OrgUnitSummary | None = None
     if pg_sync_enabled():
         try:
@@ -156,6 +167,7 @@ async def create_org_unit(
                 billing_enabled=payload.billing_enabled,
                 lead_user_id=payload.lead_user_id,
                 lead_user_ids=payload.lead_user_ids,
+                ontology_lead_user_ids=payload.ontology_lead_user_ids,
                 member_user_ids=payload.member_user_ids,
             )
             svc.evaluator.upsert_org_unit(
@@ -168,10 +180,11 @@ async def create_org_unit(
                     billing_enabled=created.billing_enabled,
                     lead_user_id=created.lead_user_id,
                     lead_user_ids=created.lead_user_ids,
+                    ontology_lead_user_ids=created.ontology_lead_user_ids,
                     member_user_ids=created.member_user_ids,
                 )
             )
-            for uid in created.lead_user_ids:
+            for uid in {*created.lead_user_ids, *created.ontology_lead_user_ids}:
                 await sync_auth_service_user_by_email_from_pg(request, svc, uid)
         except OrciaDomainError:
             raise
@@ -189,7 +202,16 @@ async def create_org_unit(
             resolved_lead=resolved_lead,
             resolved_members=resolved_members,
         )
-    return serialize_org_unit_summary(created)
+    await record_governance_audit_event(
+        request,
+        actor=caller,
+        event_type="ORG_UNIT_CREATED",
+        summary=f"Création de l'unité '{created.name}' ({created.kind})",
+        org_unit_id=created.id,
+        scope_path=created.slug or "GLOBAL",
+        metadata={"kind": created.kind, "slug": created.slug},
+    )
+    return serialize_org_unit_with_capabilities(request, caller, created, svc.evaluator)
 
 
 @router.patch(
@@ -204,8 +226,11 @@ async def patch_org_unit(
     org_unit_id: str = Path(..., min_length=1, max_length=128),
     persona_key: str | None = Query(default=None, min_length=1, max_length=64),
 ) -> OrgUnitResponse:
-    enforce_org_unit_mutation_access(request, persona_key)
     svc = get_auth_service(request)
+    caller = resolve_org_caller(request, persona_key)
+    await ensure_evaluator_org_units_synced(request, svc.evaluator)
+    target_node = enforce_org_patch_delegation(request, caller, org_unit_id, payload, svc.evaluator)
+    old_leads_and_onto = {*target_node.lead_user_ids, *target_node.ontology_lead_user_ids}
     updated: OrgUnitSummary | None = None
     if pg_sync_enabled():
         try:
@@ -221,6 +246,10 @@ async def patch_org_unit(
                 lead_user_id_provided="lead_user_id" in payload.model_fields_set,
                 lead_user_ids=payload.lead_user_ids,
                 lead_user_ids_provided="lead_user_ids" in payload.model_fields_set,
+                ontology_lead_user_ids=payload.ontology_lead_user_ids,
+                ontology_lead_user_ids_provided=(
+                    "ontology_lead_user_ids" in payload.model_fields_set
+                ),
                 member_user_ids=payload.member_user_ids,
             )
             svc.evaluator.upsert_org_unit(
@@ -233,10 +262,15 @@ async def patch_org_unit(
                     billing_enabled=updated.billing_enabled,
                     lead_user_id=updated.lead_user_id,
                     lead_user_ids=updated.lead_user_ids,
+                    ontology_lead_user_ids=updated.ontology_lead_user_ids,
                     member_user_ids=updated.member_user_ids,
                 )
             )
-            for uid in updated.lead_user_ids:
+            for uid in {
+                *old_leads_and_onto,
+                *updated.lead_user_ids,
+                *updated.ontology_lead_user_ids,
+            }:
                 await sync_auth_service_user_by_email_from_pg(request, svc, uid)
         except OrciaDomainError:
             raise
@@ -268,7 +302,16 @@ async def patch_org_unit(
             resolved_lead=resolved_lead,
             resolved_members=resolved_members,
         )
-    return serialize_org_unit_summary(updated)
+    await record_governance_audit_event(
+        request,
+        actor=caller,
+        event_type="ORG_UNIT_UPDATED",
+        summary=f"Mise à jour de l'unité '{updated.name}' ({updated.kind})",
+        org_unit_id=updated.id,
+        scope_path=updated.slug or "GLOBAL",
+        metadata={"changed_fields": sorted(payload.model_fields_set)},
+    )
+    return serialize_org_unit_with_capabilities(request, caller, updated, svc.evaluator)
 
 
 @router.delete(
@@ -282,11 +325,12 @@ async def delete_org_unit(
     org_unit_id: str = Path(..., min_length=1, max_length=128),
     persona_key: str | None = Query(default=None, min_length=1, max_length=64),
 ) -> OrgUnitDeleteResponse:
-    enforce_org_unit_mutation_access(request, persona_key)
     svc = get_auth_service(request)
+    caller = resolve_org_caller(request, persona_key)
+    await ensure_evaluator_org_units_synced(request, svc.evaluator)
+    old_node = enforce_org_delete_delegation(request, caller, org_unit_id, svc.evaluator)
+    old_leads = {*old_node.lead_user_ids, *old_node.ontology_lead_user_ids}
     deleted_id: str | None = None
-    old_node = svc.evaluator.get_org_unit(org_unit_id)
-    old_leads = list(old_node.lead_user_ids) if old_node else []
     if pg_sync_enabled():
         try:
             engine = get_or_create_shared_db_engine(request)
@@ -302,6 +346,15 @@ async def delete_org_unit(
             deleted_id = None
     if deleted_id is None:
         deleted_id = delete_in_evaluator(svc.evaluator, org_unit_id)
+    await record_governance_audit_event(
+        request,
+        actor=caller,
+        event_type="ORG_UNIT_DELETED",
+        summary=f"Suppression de l'unité '{old_node.name}' ({old_node.unit_type})",
+        org_unit_id=deleted_id,
+        scope_path=old_node.slug or "GLOBAL",
+        metadata={"kind": old_node.unit_type},
+    )
     return OrgUnitDeleteResponse(
         deleted_id=deleted_id,
         deleted=True,

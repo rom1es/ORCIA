@@ -8,7 +8,7 @@ import * as orgUnitsApiBridge from "../features/admin/organization/orgUnitsApiBr
 import { createOrciaQueryClient, createOrciaRouter } from "../router";
 import { resetAuthSessionStore, useAuthSessionStore } from "../stores/authSessionStore";
 
-async function renderOrganizationSettings(initialEntry = "/settings") {
+async function renderOrganizationSettings(initialEntry = "/organization") {
   const queryClient = createOrciaQueryClient();
   const history = createMemoryHistory({ initialEntries: [initialEntry] });
   const router = createOrciaRouter({ queryClient, history });
@@ -135,7 +135,7 @@ describe("Story 17.2 — Indented Hierarchical Org Tree, Modals, Members, FinOps
       activeHat: "OBSERVER",
       readOnlyObserver: true,
     });
-    await renderOrganizationSettings();
+    await renderOrganizationSettings("/settings");
     dismissFirstBootAdminIfOpen();
     expect(screen.queryByTestId("settings-domain-tabs")).toBeNull();
     expect(screen.getByTestId("settings-readonly-access-banner")).toBeDefined();

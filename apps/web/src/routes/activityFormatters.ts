@@ -26,6 +26,13 @@ export const EVENT_TYPE_FR_LABELS: Record<string, { label: string; tone: StatusB
   BudgetOverrideApproved: { label: "Dérogation budgétaire approuvée", tone: "emerald" },
   RemoteUsageAnomalyCapped: { label: "Télémétrie externe plafonnée", tone: "amber" },
   ConnectorCircuitTripped: { label: "Coupe-circuit de connecteur", tone: "amber" },
+  ORG_UNIT_CREATED: { label: "Unité d'organisation créée", tone: "cobalt" },
+  ORG_UNIT_UPDATED: { label: "Unité d'organisation mise à jour", tone: "cobalt" },
+  ORG_UNIT_DELETED: { label: "Unité d'organisation supprimée", tone: "amber" },
+  IAM_ACCOUNT_CREATED: { label: "Compte IAM créé", tone: "emerald" },
+  IAM_ACCOUNT_UPDATED: { label: "Compte IAM mis à jour", tone: "cobalt" },
+  IAM_ACCOUNT_DELETED: { label: "Compte IAM supprimé", tone: "amber" },
+  IAM_ACCOUNT_INVITED: { label: "Collaborateur invité", tone: "emerald" },
 };
 
 export const EVENT_TYPE_EN_LABELS: Record<string, { label: string; tone: StatusBadgeTone }> = {
@@ -54,6 +61,13 @@ export const EVENT_TYPE_EN_LABELS: Record<string, { label: string; tone: StatusB
   BudgetOverrideApproved: { label: "Budget override approved", tone: "emerald" },
   RemoteUsageAnomalyCapped: { label: "External usage capped", tone: "amber" },
   ConnectorCircuitTripped: { label: "Connector circuit tripped", tone: "amber" },
+  ORG_UNIT_CREATED: { label: "Organization unit created", tone: "cobalt" },
+  ORG_UNIT_UPDATED: { label: "Organization unit updated", tone: "cobalt" },
+  ORG_UNIT_DELETED: { label: "Organization unit deleted", tone: "amber" },
+  IAM_ACCOUNT_CREATED: { label: "IAM account created", tone: "emerald" },
+  IAM_ACCOUNT_UPDATED: { label: "IAM account updated", tone: "cobalt" },
+  IAM_ACCOUNT_DELETED: { label: "IAM account deleted", tone: "amber" },
+  IAM_ACCOUNT_INVITED: { label: "Collaborator invited", tone: "emerald" },
 };
 
 export function formatActivityTimestamp(timestampIso: string, isFr: boolean): string {
@@ -88,6 +102,26 @@ export interface ScopeSourceWorkspace {
   readonly visibilityMode?: string;
 }
 
+function collectDescendantUnits(
+  rootId: string,
+  orgUnits: readonly ScopeSourceOrgUnit[],
+): readonly ScopeSourceOrgUnit[] {
+  const out: ScopeSourceOrgUnit[] = [];
+  const queue = [rootId];
+  const seen = new Set<string>([rootId]);
+  while (queue.length > 0) {
+    const curr = queue.shift()!;
+    for (const u of orgUnits) {
+      if (u.parentId === curr && !seen.has(u.id)) {
+        seen.add(u.id);
+        out.push(u);
+        queue.push(u.id);
+      }
+    }
+  }
+  return out;
+}
+
 export function buildActivityScopeOptions(
   orgUnits: readonly ScopeSourceOrgUnit[],
   workspaces: readonly ScopeSourceWorkspace[],
@@ -98,26 +132,36 @@ export function buildActivityScopeOptions(
     privateSpacePrefix: string;
     spacePrefix: string;
   },
+  options?: {
+    readonly includeGlobal?: boolean;
+  },
 ): UiActivityScopeFilterOption[] {
+  const includeGlobal = options?.includeGlobal ?? true;
+  const globalEntries: UiActivityScopeFilterOption[] = includeGlobal
+    ? [
+        {
+          id: "scope-global",
+          label: labels.entirePlatform,
+          scopePath: "GLOBAL",
+          level: "GLOBAL",
+          childScopeIds: [
+            ...orgUnits.map((u) => u.id),
+            ...workspaces.map((w) => w.workspaceId),
+          ],
+          childScopePaths: [
+            "GLOBAL",
+            labels.entirePlatform,
+            ...orgUnits.flatMap((u) => [u.slug, u.name]),
+            ...workspaces.map((w) => w.name),
+          ],
+        },
+      ]
+    : [];
+
   return [
-    {
-      id: "scope-global",
-      label: labels.entirePlatform,
-      scopePath: "GLOBAL",
-      level: "GLOBAL",
-      childScopeIds: [
-        ...orgUnits.map((u) => u.id),
-        ...workspaces.map((w) => w.workspaceId),
-      ],
-      childScopePaths: [
-        "GLOBAL",
-        labels.entirePlatform,
-        ...orgUnits.flatMap((u) => [u.slug, u.name]),
-        ...workspaces.map((w) => w.name),
-      ],
-    },
+    ...globalEntries,
     ...orgUnits.map((u): UiActivityScopeFilterOption => {
-      const childUnits = orgUnits.filter((c) => c.parentId === u.id);
+      const childUnits = collectDescendantUnits(u.id, orgUnits);
       const childTeamIds = new Set([u.id, ...childUnits.map((c) => c.id)]);
       const childWorkspaces = workspaces.filter(
         (w) => w.ownerOrgUnitId && childTeamIds.has(w.ownerOrgUnitId),

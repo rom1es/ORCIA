@@ -12,6 +12,8 @@ from orcia_api.schemas.org_unit_models import (
     KnownOrgUsersSearchResponse,
     OrgUnitCreateRequest,
     OrgUnitDeleteResponse,
+    OrgUnitInviteUserRequest,
+    OrgUnitInviteUserResponse,
     OrgUnitPatchRequest,
     OrgUnitResponse,
     OrgUnitsListResponse,
@@ -209,19 +211,22 @@ class PassthroughSecretMetadataResponse(BaseModel):
 
 
 class UserPreferencesUpdateRequest(BaseModel):
-    """Story 9.4 — Request payload for `PATCH /api/v1/users/me/preferences` (`0 ms` Anti-FOUC)."""
+    """Story 9.4 & 20.3 — Payload for `PATCH /api/v1/users/me/preferences` (`0 ms` Anti-FOUC)."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     theme: Literal["light", "dark", "system"] | None = None
     locale: Literal["fr", "en"] | None = None
     default_hat: str | None = Field(default=None, min_length=1, max_length=64)
+    default_assistant_hat: str | None = Field(default=None, min_length=1, max_length=64)
+    assistant_tone: Literal["balanced", "concise", "detailed"] | None = None
+    personal_instructions: str | None = Field(default=None, max_length=4000)
     auto_open_contextual_help: bool | None = None
     notifications_enabled: bool | None = None
 
 
 class UserPreferencesResponse(BaseModel):
-    """Story 9.4 — Response payload for `/api/v1/users/me/preferences`."""
+    """Story 9.4 & 20.3 — Response payload for `/api/v1/users/me/preferences`."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -229,6 +234,9 @@ class UserPreferencesResponse(BaseModel):
     theme: Literal["light", "dark", "system"]
     locale: Literal["fr", "en"]
     default_hat: str
+    default_assistant_hat: str
+    assistant_tone: Literal["balanced", "concise", "detailed"]
+    personal_instructions: str
     auto_open_contextual_help: bool
     notifications_enabled: bool
     assistant_behavior_redirect_uri: str
@@ -272,6 +280,9 @@ class McpPersonalTokenMetadataItem(BaseModel):
     mcp_endpoint_uri: str
     ide_json_snippet: str
     revoked: bool
+    created_at_iso: str | None = None
+    expires_at_iso: str | None = None
+    revoked_at_iso: str | None = None
 
 
 class McpPersonalTokenIssuedResponse(BaseModel):
@@ -307,6 +318,8 @@ __all__ = [
     "OidcLoginRequest",
     "OrgUnitCreateRequest",
     "OrgUnitDeleteResponse",
+    "OrgUnitInviteUserRequest",
+    "OrgUnitInviteUserResponse",
     "OrgUnitPatchRequest",
     "OrgUnitResponse",
     "OrgUnitsListResponse",

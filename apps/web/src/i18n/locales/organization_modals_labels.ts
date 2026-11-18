@@ -18,6 +18,8 @@ export interface OrganizationCreateModalLabels {
   readonly billingCheckboxLabel: string;
   readonly leadLabel: string;
   readonly leadPlaceholder: string;
+  readonly ontologyLeadLabel: string;
+  readonly ontologyLeadPlaceholder: string;
   readonly cancelButton: string;
   readonly submitButton: string;
 }
@@ -34,8 +36,31 @@ export interface OrganizationEditModalLabels {
   readonly billingCheckboxLabel: string;
   readonly leadLabel: string;
   readonly leadPlaceholder: string;
+  readonly ontologyLeadLabel: string;
+  readonly ontologyLeadPlaceholder: string;
   readonly cancelButton: string;
   readonly saveButton: string;
+}
+
+export interface OrganizationInviteModalLabels {
+  readonly title: string;
+  readonly description: string;
+  readonly targetUnitLabel: string;
+  readonly emailLabel: string;
+  readonly emailPlaceholder: string;
+  readonly displayNameLabel: string;
+  readonly displayNamePlaceholder: string;
+  readonly roleLabel: string;
+  readonly roleOptions: {
+    readonly TEAM_MEMBER: string;
+    readonly OBSERVER: string;
+    readonly TEAM_LEAD: string;
+    readonly BU_LEAD: string;
+    readonly ONTOLOGY_LEAD: string;
+  };
+  readonly securityHint: string;
+  readonly cancelButton: string;
+  readonly submitButton: string;
 }
 
 export interface OrganizationMembersModalLabels {
@@ -78,6 +103,7 @@ export interface OrganizationModalsSection {
   readonly editModal: OrganizationEditModalLabels;
   readonly membersModal: OrganizationMembersModalLabels;
   readonly deleteModal: OrganizationDeleteModalLabels;
+  readonly inviteModal: OrganizationInviteModalLabels;
 }
 
 export const ORGANIZATION_MODALS_FR_LABELS: OrganizationModalsSection = {
@@ -102,6 +128,8 @@ export const ORGANIZATION_MODALS_FR_LABELS: OrganizationModalsSection = {
     billingCheckboxLabel: "Activer l'imputation FinOps sur cette unité",
     leadLabel: "Responsable de l'unité (optionnel)",
     leadPlaceholder: "Rechercher un membre par nom (ex. : Claire Martin)...",
+    ontologyLeadLabel: "Référent(s) Glossaire de la BU (optionnel)",
+    ontologyLeadPlaceholder: "Rechercher un référent glossaire par nom ou e-mail...",
     cancelButton: "Annuler",
     submitButton: "+ Créer l'unité",
   },
@@ -118,6 +146,8 @@ export const ORGANIZATION_MODALS_FR_LABELS: OrganizationModalsSection = {
     billingCheckboxLabel: "Activer l'imputation FinOps sur cette unité",
     leadLabel: "Responsable(s) de l'unité",
     leadPlaceholder: "Rechercher par nom, identifiant ou e-mail...",
+    ontologyLeadLabel: "Référent(s) Glossaire (BU uniquement)",
+    ontologyLeadPlaceholder: "Rechercher un référent glossaire par nom ou e-mail...",
     cancelButton: "Annuler",
     saveButton: "Enregistrer les modifications",
   },
@@ -158,6 +188,28 @@ export const ORGANIZATION_MODALS_FR_LABELS: OrganizationModalsSection = {
     cancelButton: "Annuler",
     confirmDeleteButton: "Confirmer la suppression",
   },
+  inviteModal: {
+    title: "Inviter un utilisateur dans mon périmètre",
+    description:
+      "Créez un compte collaborateur et rattachez-le immédiatement à une unité de votre périmètre.",
+    targetUnitLabel: "Unité cible (Direction / BU ou Équipe)",
+    emailLabel: "Adresse e-mail professionnelle",
+    emailPlaceholder: "Ex. : camille.laurent@entreprise.fr",
+    displayNameLabel: "Nom complet",
+    displayNamePlaceholder: "Ex. : Camille Laurent",
+    roleLabel: "Rôle attribué sur l'unité",
+    roleOptions: {
+      TEAM_MEMBER: "Membre d'Équipe (Contributeur)",
+      OBSERVER: "Observateur (Lecture seule)",
+      TEAM_LEAD: "Responsable d'Équipe",
+      BU_LEAD: "Co-responsable de Direction (BU)",
+      ONTOLOGY_LEAD: "Référent Glossaire (BU)",
+    },
+    securityHint:
+      "Délégation bornée : seuls les rôles opérationnels de votre périmètre peuvent être attribués (jamais PLATFORM_ADMIN ni SECOPS).",
+    cancelButton: "Annuler",
+    submitButton: "+ Inviter et rattacher",
+  },
 };
 
 export const ORGANIZATION_MODALS_EN_LABELS: OrganizationModalsSection = {
@@ -182,6 +234,8 @@ export const ORGANIZATION_MODALS_EN_LABELS: OrganizationModalsSection = {
     billingCheckboxLabel: "Enable FinOps cost allocation on this unit",
     leadLabel: "Unit lead (optional)",
     leadPlaceholder: "Search directory member by name (e.g. Claire Martin)...",
+    ontologyLeadLabel: "BU Glossary Lead(s) (optional)",
+    ontologyLeadPlaceholder: "Search glossary lead by name or email...",
     cancelButton: "Cancel",
     submitButton: "+ Create unit",
   },
@@ -198,6 +252,8 @@ export const ORGANIZATION_MODALS_EN_LABELS: OrganizationModalsSection = {
     billingCheckboxLabel: "Enable FinOps cost allocation on this unit",
     leadLabel: "Unit lead(s)",
     leadPlaceholder: "Search by name, principal ID, or email...",
+    ontologyLeadLabel: "Glossary Lead(s) (BU only)",
+    ontologyLeadPlaceholder: "Search glossary lead by name or email...",
     cancelButton: "Cancel",
     saveButton: "Save changes",
   },
@@ -237,5 +293,27 @@ export const ORGANIZATION_MODALS_EN_LABELS: OrganizationModalsSection = {
     deleteOpenWorkspacesAction: "Manage attached workspaces",
     cancelButton: "Cancel",
     confirmDeleteButton: "Confirm delete",
+  },
+  inviteModal: {
+    title: "Invite a user within my scope",
+    description:
+      "Create a collaborator account and immediately attach it to a unit in your scope.",
+    targetUnitLabel: "Target unit (Division / BU or Team)",
+    emailLabel: "Work email address",
+    emailPlaceholder: "e.g. camille.laurent@company.com",
+    displayNameLabel: "Full name",
+    displayNamePlaceholder: "e.g. Camille Laurent",
+    roleLabel: "Role assigned on this unit",
+    roleOptions: {
+      TEAM_MEMBER: "Team Member (Contributor)",
+      OBSERVER: "Observer (Read-only)",
+      TEAM_LEAD: "Team Lead",
+      BU_LEAD: "Co-Division Lead (BU)",
+      ONTOLOGY_LEAD: "Glossary Lead (BU)",
+    },
+    securityHint:
+      "Scoped delegation: only operational roles within your subtree can be assigned (never PLATFORM_ADMIN or SECOPS).",
+    cancelButton: "Cancel",
+    submitButton: "+ Invite & attach",
   },
 };

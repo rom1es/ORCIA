@@ -1,6 +1,7 @@
 import type {
   CatalogResourceInspectionResponse, CatalogResourceSourceResponse,
   KnownOrgUsersSearchResponse, OrgUnitCreateRequest, OrgUnitDeleteResponse,
+  OrgUnitInviteUserRequest, OrgUnitInviteUserResponse,
   OrgUnitPatchRequest, OrgUnitResponse, OrgUnitsListResponse,
 } from "../generated/auth_and_org";
 import type {
@@ -70,6 +71,9 @@ export function createCatalogAndPermissionsDomainClient(requestJson: RequestJson
     },
     deleteOrgUnit(orgUnitId: string, personaKey?: string): Promise<OrgUnitDeleteResponse> {
       return requestJson<OrgUnitDeleteResponse>(`/api/v1/org-units/${encodeURIComponent(orgUnitId)}${buildPersonaQuery(personaKey)}`, "DELETE");
+    },
+    inviteOrgUnitUser(payload: OrgUnitInviteUserRequest, personaKey?: string): Promise<OrgUnitInviteUserResponse> {
+      return requestJson<OrgUnitInviteUserResponse>(`/api/v1/org-units/invite-user${buildPersonaQuery(personaKey)}`, "POST", payload);
     },
     getIamRoleMatrix(): Promise<RoleMatrixResponse> {
       return requestJson<RoleMatrixResponse>("/api/v1/settings/iam/role-matrix");

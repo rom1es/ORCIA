@@ -13,10 +13,13 @@ import { Route as catalogRoute } from "./routes/catalog";
 import { Route as cockpitRoute } from "./routes/cockpit";
 import { Route as finopsRoute } from "./routes/finops";
 import { Route as gatesRoute } from "./routes/gates";
+import { Route as helpRoute } from "./routes/help";
 import { Route as inboxRoute } from "./routes/inbox";
 import { Route as indexRoute } from "./routes/index";
 import { Route as loginRoute } from "./routes/login";
 import { Route as ontologyRoute } from "./routes/ontology";
+import { Route as organizationRoute } from "./routes/organization";
+import { Route as profileRoute } from "./routes/profile";
 import { validateOrciaRouteSearch } from "./routes/searchSchema";
 import { Route as settingsRoute, SettingsHubView } from "./routes/settings";
 import { Route as showcaseRoute } from "./routes/showcase";
@@ -130,15 +133,6 @@ const workspaceSourcesRoute = createRoute({
   },
 });
 
-const helpRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/help",
-  validateSearch: validateOrciaRouteSearch,
-  component: function HelpRouteComponent() {
-    return <ModuleWorkspaceView moduleKey="ontology" />;
-  },
-});
-
 export const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
@@ -164,6 +158,8 @@ export const routeTree = rootRoute.addChildren([
   processesStudioRoute,
   agentsRoute,
   spacesRoute,
+  organizationRoute,
+  profileRoute,
   configurationRoute,
   helpRoute,
 ]);

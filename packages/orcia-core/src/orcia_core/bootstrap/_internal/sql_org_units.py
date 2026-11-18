@@ -18,6 +18,10 @@ from orcia_core.bootstrap._internal.sql_org_iam_role_sync import (
     resolve_canonical_lead_user_ids,
     sync_iam_lead_roles_from_org_units,
 )
+from orcia_core.bootstrap._internal.sql_org_ontology_lead_sync import (
+    resolve_canonical_ontology_lead_user_ids,
+    sync_iam_ontology_lead_roles_from_org_units,
+)
 from orcia_core.bootstrap._internal.sql_org_units_queries import (
     build_sorted_summaries,
     load_all_nodes_and_workspaces,
@@ -33,6 +37,7 @@ from orcia_core.permissions.org_hierarchy import (
     OrgUnitKind,
     OrgUnitSummary,
     assert_bu_has_no_members,
+    assert_bu_only_ontology_leads,
     assert_org_unit_deletable,
     assert_unique_org_unit_slug,
     build_org_unit_summary,
@@ -68,6 +73,7 @@ async def create_org_unit_on_postgres18(
     billing_enabled: bool = True,
     lead_user_id: str | None = None,
     lead_user_ids: Sequence[str] | None = None,
+    ontology_lead_user_ids: Sequence[str] | None = None,
     member_user_ids: Sequence[str] | None = None,
 ) -> OrgUnitSummary:
     """Create a `BU` or `TEAM` on PostgreSQL 18 with hierarchy validation (`UUIDv7`)."""
@@ -76,6 +82,7 @@ async def create_org_unit_on_postgres18(
         raise ValidationDomainError(detail_override="Le nom de l'unité ne peut pas être vide.")
     normalized_slug = normalize_org_unit_slug(slug, cleaned_name)
     assert_bu_has_no_members(kind, member_user_ids)
+    assert_bu_only_ontology_leads(kind, ontology_lead_user_ids)
 
     async with engine.begin() as conn:
         nodes_by_id, ws_counts, ws_refs = await load_all_nodes_and_workspaces(conn)
@@ -91,6 +98,10 @@ async def create_org_unit_on_postgres18(
             lead_user_ids=lead_user_ids,
             lead_user_id=lead_user_id,
         )
+        resolved_ontology_leads = await resolve_canonical_ontology_lead_user_ids(
+            conn,
+            ontology_lead_user_ids=ontology_lead_user_ids,
+        )
         known_users = await load_known_org_users_from_postgres18(conn)
         _, resolved_members = resolve_and_validate_org_unit_users(
             lead_user_id=None,
@@ -103,12 +114,14 @@ async def create_org_unit_on_postgres18(
                 """
                 INSERT INTO org_units (
                     id, slug, name, unit_type, parent_id,
-                    billing_enabled, lead_user_id, lead_user_ids_jsonb, member_user_ids_jsonb
+                    billing_enabled, lead_user_id, lead_user_ids_jsonb,
+                    ontology_lead_user_ids_jsonb, member_user_ids_jsonb
                 )
                 VALUES (
                     :id, :slug, :name, :unit_type, :parent_id,
                     :billing_enabled, :lead_user_id,
                     CAST(:lead_user_ids_jsonb AS jsonb),
+                    CAST(:ontology_lead_user_ids_jsonb AS jsonb),
                     CAST(:member_user_ids_jsonb AS jsonb)
                 )
                 """
@@ -122,6 +135,7 @@ async def create_org_unit_on_postgres18(
                 "billing_enabled": billing_enabled,
                 "lead_user_id": resolved_lead,
                 "lead_user_ids_jsonb": json.dumps(list(resolved_leads)),
+                "ontology_lead_user_ids_jsonb": json.dumps(list(resolved_ontology_leads)),
                 "member_user_ids_jsonb": json.dumps(list(resolved_members)),
             },
         )
@@ -134,6 +148,7 @@ async def create_org_unit_on_postgres18(
             billing_enabled=billing_enabled,
             lead_user_id=resolved_lead,
             lead_user_ids=resolved_leads,
+            ontology_lead_user_ids=resolved_ontology_leads,
             member_user_ids=resolved_members,
         )
         nodes_by_id[new_id] = new_node
@@ -142,6 +157,7 @@ async def create_org_unit_on_postgres18(
         summaries = build_sorted_summaries(nodes_by_id, ws_counts, ws_refs)
         await sync_platform_settings_org_units_if_present(conn, summaries)
         await sync_iam_lead_roles_from_org_units(conn, resolved_leads)
+        await sync_iam_ontology_lead_roles_from_org_units(conn, resolved_ontology_leads)
 
     return build_org_unit_summary(
         new_node,
@@ -163,6 +179,8 @@ async def update_org_unit_on_postgres18(
     lead_user_id_provided: bool = False,
     lead_user_ids: Sequence[str] | None = None,
     lead_user_ids_provided: bool = False,
+    ontology_lead_user_ids: Sequence[str] | None = None,
+    ontology_lead_user_ids_provided: bool = False,
     member_user_ids: Sequence[str] | None = None,
 ) -> OrgUnitSummary:
     """Update name, parent_id, billing_enabled, lead_user_ids, or member_user_ids on PG18."""
@@ -210,6 +228,16 @@ async def update_org_unit_on_postgres18(
             next_leads = target.lead_user_ids
             next_lead = target.lead_user_id
 
+        # Ontology leads resolution (BU only)
+        if ontology_lead_user_ids_provided:
+            assert_bu_only_ontology_leads(target_kind, ontology_lead_user_ids)
+            next_ontology_leads = await resolve_canonical_ontology_lead_user_ids(
+                conn,
+                ontology_lead_user_ids=ontology_lead_user_ids,
+            )
+        else:
+            next_ontology_leads = target.ontology_lead_user_ids
+
         # Members resolution
         if member_user_ids is not None:
             assert_bu_has_no_members(target_kind, member_user_ids)
@@ -231,6 +259,7 @@ async def update_org_unit_on_postgres18(
                     billing_enabled = :billing_enabled,
                     lead_user_id = :lead_user_id,
                     lead_user_ids_jsonb = CAST(:lead_user_ids_jsonb AS jsonb),
+                    ontology_lead_user_ids_jsonb = CAST(:ontology_lead_user_ids_jsonb AS jsonb),
                     member_user_ids_jsonb = CAST(:member_user_ids_jsonb AS jsonb)
                 WHERE id = :id
                 """
@@ -242,6 +271,7 @@ async def update_org_unit_on_postgres18(
                 "billing_enabled": next_billing,
                 "lead_user_id": next_lead,
                 "lead_user_ids_jsonb": json.dumps(list(next_leads)),
+                "ontology_lead_user_ids_jsonb": json.dumps(list(next_ontology_leads)),
                 "member_user_ids_jsonb": json.dumps(list(next_members)),
             },
         )
@@ -254,6 +284,7 @@ async def update_org_unit_on_postgres18(
             billing_enabled=next_billing,
             lead_user_id=next_lead,
             lead_user_ids=next_leads,
+            ontology_lead_user_ids=next_ontology_leads,
             member_user_ids=next_members,
         )
         nodes_by_id[target.id] = updated_node
@@ -266,6 +297,8 @@ async def update_org_unit_on_postgres18(
         if next_lead:
             impacted.add(next_lead)
         await sync_iam_lead_roles_from_org_units(conn, list(impacted))
+        impacted_ontology = {*target.ontology_lead_user_ids, *next_ontology_leads}
+        await sync_iam_ontology_lead_roles_from_org_units(conn, list(impacted_ontology))
 
     return build_org_unit_summary(
         updated_node,
@@ -308,6 +341,7 @@ async def delete_org_unit_on_postgres18(
         if target.lead_user_id:
             old_leads.add(target.lead_user_id)
         await sync_iam_lead_roles_from_org_units(conn, list(old_leads))
+        await sync_iam_ontology_lead_roles_from_org_units(conn, list(target.ontology_lead_user_ids))
     return target.id
 
 

@@ -68,13 +68,12 @@ async def list_audit_ledger_entries(
     offset: Annotated[int, Query(ge=0, description="Offset for pagination")] = 0,
 ) -> AuditLedgerPageResponse:
     """Query the append-only audit ledger with strict anti-IDOR scope filtering."""
-    allowed_ws = await enforce_audit_read_access(
+    read_scope = await enforce_audit_read_access(
         request,
         user,
         requested_workspace_id=workspace_id,
         requested_run_id=run_id,
     )
-    is_platform_admin = user.platform_role == "PLATFORM_ADMIN" or "PLATFORM_ADMIN" in user.roles
     params = AuditLedgerFilterParams(
         scope_path=scope_path,
         workspace_id=workspace_id,
@@ -88,8 +87,11 @@ async def list_audit_ledger_entries(
         date_to=date_to,
         limit=limit,
         offset=offset,
-        allowed_workspace_ids=allowed_ws,
-        include_null_workspace=(is_platform_admin and workspace_id is None and run_id is None),
+        allowed_workspace_ids=read_scope.allowed_workspace_ids,
+        allowed_org_unit_ids=read_scope.allowed_org_unit_ids,
+        include_null_workspace=(
+            read_scope.include_null_workspace and workspace_id is None and run_id is None
+        ),
     )
     entries, total = await svc.list_entries(params)
     schemas = [

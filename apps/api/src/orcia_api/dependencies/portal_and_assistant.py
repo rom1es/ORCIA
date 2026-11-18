@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import cast
 from urllib.parse import urlparse
 
@@ -10,6 +11,9 @@ from fastapi import Request
 
 from orcia_api.dependencies.core_and_lifespan import initialize_app_services
 from orcia_core.bootstrap import ProgressiveDay0AccostageService
+from orcia_core.bootstrap._internal.sql_user_preferences import (
+    SqlUserPreferencesAndMcpService,
+)
 from orcia_core.catalog.contextual_help import ContextualHelpResolutionService
 from orcia_core.orchestration import AssistantAgentService
 from orcia_core.orchestration._internal.sql_ai_model_mappings import (
@@ -28,9 +32,6 @@ from orcia_core.orchestration.assistant_governance import (
 )
 from orcia_core.orchestration.assistant_three_speed_router import (
     AssistantThreeSpeedRouterService,
-)
-from orcia_core.permissions.user_preferences_and_mcp_tokens import (
-    UserPreferencesAndMcpTokenService,
 )
 from orcia_core.ports.embedding import EmbeddingPort
 from orcia_core.rag import TwoSpeedFederatedSearchService
@@ -82,14 +83,19 @@ def get_two_speed_search_service(request: Request) -> TwoSpeedFederatedSearchSer
 
 def get_user_preferences_and_mcp_token_service(
     request: Request,
-) -> UserPreferencesAndMcpTokenService:
-    """FastAPI `Depends` provider returning `UserPreferencesAndMcpTokenService`."""
-    svc: UserPreferencesAndMcpTokenService | None = getattr(
+) -> SqlUserPreferencesAndMcpService:
+    """FastAPI `Depends` provider returning `SqlUserPreferencesAndMcpService` (PG18)."""
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
+
+    engine = get_configured_db_engine(request)
+    svc: SqlUserPreferencesAndMcpService | None = getattr(
         request.app.state, "user_preferences_and_mcp_token_service", None
     )
     if svc is None:
-        svc = UserPreferencesAndMcpTokenService()
+        svc = SqlUserPreferencesAndMcpService(engine=engine)
         request.app.state.user_preferences_and_mcp_token_service = svc
+    elif getattr(svc, "_engine", None) is None and engine is not None:
+        svc._engine = engine
     return svc
 
 
@@ -253,6 +259,14 @@ async def get_embedding_port(request: Request) -> EmbeddingPort:
                 packed=rec.encrypted_api_key,
                 target_host=host,
             )
+
+    if (
+        os.environ.get("ORCIA_USE_CASSETTE_LLM", "").strip().lower() in ("1", "true", "yes")
+        and os.environ.get("ORCIA_FORCE_LIVE_LLM_IN_TESTS") != "1"
+    ):
+        from orcia_core.testing.cassette_llm import DeterministicCassetteEmbedding
+
+        return DeterministicCassetteEmbedding()
 
     if rec.protocol_mode == "gemini_native":
         return HttpxGeminiNativeEmbeddingAdapter(

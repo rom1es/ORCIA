@@ -169,7 +169,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       (screen.getByTestId("eight-menu-item-configuration") as HTMLButtonElement).disabled,
     ).toBe(false);
     expect(
-      (screen.getByTestId("eight-menu-item-help") as HTMLButtonElement).disabled,
+      (screen.getByTestId("eight-menu-item-glossary") as HTMLButtonElement).disabled,
     ).toBe(false);
     expect(
       (screen.getByTestId("eight-menu-item-assistant") as HTMLButtonElement).disabled,
@@ -238,11 +238,15 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       </QueryClientProvider>,
     );
 
-    // Journal d'Activité is no longer a tab inside /settings
+    // Journal d'Activité and Organisation are no longer tabs inside /settings
     expect(screen.queryByTestId("settings-tab-audit")).toBeNull();
+    expect(screen.queryByTestId("settings-tab-organization")).toBeNull();
 
-    // Tab 1: Organization (starts empty, create Org Unit via modal)
-    expect(screen.getByTestId("iam-org-units-empty-state")).toBeDefined();
+    // Navigate to dedicated Mon Organisation menu (/organization) to create Org Unit via modal
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    expect(await screen.findByTestId("iam-org-units-empty-state")).toBeDefined();
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "Direction Technique" },
@@ -252,7 +256,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       "Direction Technique",
     );
 
-    // Tab 3: AI Models (starts empty, bind tier)
+    // Return to /settings -> Tab 3: AI Models (starts empty, bind tier)
+    fireEvent.click(screen.getByTestId("eight-menu-item-configuration"));
+    await screen.findByTestId("settings-tab-models");
     fireEvent.click(screen.getByTestId("settings-tab-models"));
     expect(screen.getByTestId("llm-tiers-empty-state")).toBeDefined();
     fireEvent.change(screen.getByTestId("llm-primary-model-input"), {
@@ -316,7 +322,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(screen.getByTestId("eight-menu-item-agents")).toBeDefined();
     expect(screen.getByTestId("eight-menu-item-finops")).toBeDefined();
     expect(screen.getByTestId("eight-menu-item-configuration")).toBeDefined();
-    expect(screen.getByTestId("eight-menu-item-help")).toBeDefined();
+    expect(screen.getByTestId("eight-menu-item-glossary")).toBeDefined();
     expect(screen.getByTestId("progressive-day0-accostage-banner")).toBeDefined();
     expect(screen.getByTestId("streamlined-cockpit-view")).toBeDefined();
   });
@@ -493,9 +499,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       expect(serializedEn).not.toContain(forbidden);
     }
 
-    // Role label is "Rôle" / "Role"
-    expect(frDictionary.userAccountAndSettings.hatSelectorLabel).toBe("Rôle");
-    expect(enDictionary.userAccountAndSettings.hatSelectorLabel).toBe("Role");
+    // Popover labels exist in FR/EN without emoji prefixes
+    expect(frDictionary.userAccountAndSettings.popover.settingsLabel).toBe("Paramètres");
+    expect(enDictionary.userAccountAndSettings.popover.settingsLabel).toBe("Settings");
 
     render(
       <I18nProvider initialLocale="fr">
@@ -522,16 +528,13 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     });
     fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
 
-    // Modal closes and header shows Romain Admin · Administrateur de la plateforme
+    // Modal closes, top-right login control is gone, and bottom-left account button shows Romain Admin · Administrateur de la plateforme
     expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
-    const userTrigger = screen.getByTestId("user-account-dropdown-trigger");
-    expect(userTrigger.textContent).toContain("Romain Admin");
-    expect(userTrigger.textContent).toContain("Administrateur de la plateforme");
-
-    // Open user dropdown and check Role selector ("Rôle")
-    fireEvent.click(userTrigger);
-    const roleSelect = screen.getByTestId("dropdown-hat-selector") as HTMLSelectElement;
-    expect(roleSelect.value).toBe("PLATFORM_ADMIN");
+    expect(screen.queryByTestId("topbar-user-account-trigger")).toBeNull();
+    expect(screen.queryByTestId("dropdown-hat-selector")).toBeNull();
+    const accountBtn = screen.getByTestId("sidebar-open-my-account-btn");
+    expect(accountBtn.textContent).toContain("Romain Admin");
+    expect(accountBtn.textContent).toContain("Administrateur de la plateforme");
   });
 
   it("supports TopHeader workspace dropdown, BU/Espace linkage with orphan-safe deletion, greyed-out section 2 until org exists, single scope selector, zero English parenthetical terms in FR, and contextual help on /settings", async () => {
@@ -547,7 +550,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     );
 
     // 1. No "(IAM 6 verbes)" jargon in the tabs or header, and no English parenthetical terms in French IAM section
-    expect(screen.getByTestId("settings-tab-organization").textContent).toBe("Organisation");
+    expect(screen.getByTestId("eight-menu-item-organization").textContent).toContain(
+      "Mon Organisation",
+    );
     expect(screen.getByTestId("settings-tab-iam").textContent).toBe("Comptes & Habilitations");
 
     fireEvent.click(screen.getByTestId("settings-tab-iam"));
@@ -585,8 +590,11 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       screen.getByTestId("iam-secops-drawer-toggle").getAttribute("aria-expanded"),
     ).toBe("false");
 
-    // 2. Switch to Organization tab, create a BU ("BU Finance") and a Team ("Espace Comptabilité", slug aqwZSX)
-    fireEvent.click(screen.getByTestId("settings-tab-organization"));
+    // 2. Navigate to Mon Organisation (/organization), create a BU ("BU Finance") and a Team ("Espace Comptabilité", slug aqwZSX)
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    await screen.findByTestId("open-create-org-unit-modal-btn");
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "BU Finance" },
@@ -594,6 +602,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
     expect((await screen.findByTestId("org-unit-row-org-1")).textContent).toContain("BU Finance");
 
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
 
     fireEvent.change(screen.getByTestId("org-unit-level-select"), {
@@ -630,6 +640,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("cancel-delete-org-unit-btn-org-1"));
 
     // 3 & 4. Habilitations (Story 17.3 SecOps Drawer): closed Beneficiary select (TEAM_LEAD) vs Target Scope (aqwzsx), individual grant verb, and French display
+    fireEvent.click(screen.getByTestId("eight-menu-item-configuration"));
+    await screen.findByTestId("settings-tab-iam");
     fireEvent.click(screen.getByTestId("settings-tab-iam"));
     fireEvent.click(screen.getByTestId("iam-secops-drawer-toggle"));
     fireEvent.change(screen.getByTestId("rbac-subject-select"), {
@@ -665,13 +677,16 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("topbar-contextual-help-toggle"));
     expect(screen.queryByTestId("four-zone-contextual-help-column")).toBeNull();
 
-    fireEvent.click(screen.getByTestId("settings-tab-organization"));
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    await screen.findByTestId("contextual-info-trigger-iam-org-tree");
     fireEvent.click(screen.getByTestId("contextual-info-trigger-iam-org-tree"));
     expect(screen.getByTestId("four-zone-contextual-help-column")).toBeDefined();
     expect(
       screen.getByTestId("help-section-iam-org-tree").getAttribute("data-active"),
     ).toBe("true");
 
+    fireEvent.click(screen.getByTestId("eight-menu-item-configuration"));
+    await screen.findByTestId("settings-tab-iam");
     fireEvent.click(screen.getByTestId("settings-tab-iam"));
     fireEvent.click(screen.getByTestId("iam-open-role-matrix-modal-btn"));
     fireEvent.click(screen.getByTestId("contextual-info-trigger-iam-role-grants"));
@@ -765,8 +780,11 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     });
     fireEvent.click(screen.getByTestId("save-llm-tier-btn"));
 
-    // 3. Configure an Organization Unit in /settings -> Organization tab (satisfies milestone 2)
-    fireEvent.click(screen.getByTestId("settings-tab-organization"));
+    // 3. Configure an Organization Unit in /organization (satisfies milestone 2)
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    await screen.findByTestId("open-create-org-unit-modal-btn");
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "Direction Persistance" },
@@ -799,7 +817,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
 
     // Verify First-Boot Admin Modal does NOT reappear after F5
     expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
-    expect(screen.getByTestId("user-account-dropdown-trigger").textContent).toContain(
+    expect(screen.getByTestId("sidebar-open-my-account-btn").textContent).toContain(
       "Romain Persistant",
     );
 
@@ -1019,7 +1037,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.keyDown(submitBtn, { key: "Enter" });
 
     expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
-    expect(screen.getByTestId("user-account-dropdown-trigger").textContent).toContain(
+    expect(screen.getByTestId("sidebar-open-my-account-btn").textContent).toContain(
       "Hélène Admin",
     );
   });
@@ -1120,6 +1138,10 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     );
 
     // Create a BU so it appears in the scope selector
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    await screen.findByTestId("open-create-org-unit-modal-btn");
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "Direction Produit" },
@@ -1127,7 +1149,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
     await screen.findByTestId("org-unit-row-org-1");
 
-    // Switch to Packs Métiers tab
+    // Return to /settings and switch to Packs Métiers tab
+    fireEvent.click(screen.getByTestId("eight-menu-item-configuration"));
+    await screen.findByTestId("settings-tab-packs");
     fireEvent.click(screen.getByTestId("settings-tab-packs"));
     expect(screen.getByTestId("settings-packs-section")).toBeDefined();
 
@@ -1415,6 +1439,10 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(activityMenuBtn.textContent).toContain("Journal d'Activité");
 
     // 3. Perform actions on two different scopes: a BU ("Direction Produit") and Global Platform (activate/deactivate pack)
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    await screen.findByTestId("open-create-org-unit-modal-btn");
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "Direction Produit" },
@@ -1422,6 +1450,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
     await screen.findByTestId("org-unit-row-org-1");
 
+    fireEvent.click(screen.getByTestId("eight-menu-item-configuration"));
+    await screen.findByTestId("settings-tab-packs");
     fireEvent.click(screen.getByTestId("settings-tab-packs"));
     fireEvent.click(screen.getByTestId("activate-pack-btn-orcia-pack-builder"));
     fireEvent.click(screen.getByTestId("deactivate-pack-btn-orcia-pack-builder"));
@@ -1587,13 +1617,16 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
         .getAttribute("data-tooltip-text"),
     ).toContain("Configurez au moins un modèle IA");
 
-    // 3. In /settings > Organisation & Comptes & Habilitations:
-    // - Organization tab uses "Structure de l'Organisation (Directions / BU & Équipes)" and "Équipe" (never "Espace (Équipe)")
-    const orgSection = screen.getByTestId("settings-organization-section");
+    // 3. In Mon Organisation (/organization) & Configuration > Comptes & Habilitations:
+    // - Organization page uses "Structure de l'Organisation (Directions / BU & Équipes)" and "Équipe" (never "Espace (Équipe)")
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    const orgSection = await screen.findByTestId("settings-organization-section");
     expect(orgSection.textContent).toContain(
       "Structure de l'Organisation (Directions / BU & Équipes)",
     );
     expect(orgSection.textContent).not.toContain("Espace (Équipe)");
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     expect(
       (screen.getByTestId("org-unit-level-select") as HTMLSelectElement).textContent,
@@ -1604,6 +1637,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("cancel-create-org-unit-btn"));
 
     // - IAM tab SecOps drawer "+ Ajouter l'exception" button shows DisabledButtonAlertIndicator when no verb is selected
+    fireEvent.click(screen.getByTestId("eight-menu-item-configuration"));
+    await screen.findByTestId("settings-tab-iam");
     fireEvent.click(screen.getByTestId("settings-tab-iam"));
     fireEvent.click(screen.getByTestId("iam-secops-drawer-toggle"));
     fireEvent.click(screen.getByTestId("rbac-verb-checkbox-execute"));
@@ -1624,14 +1659,19 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       screen.queryByTestId("disabled-button-alert-icon-create-rbac-grant-btn"),
     ).toBeNull();
 
-    // Create a BU ("Direction Tech") and a Team ("Équipe Plateforme") in Organization tab
-    fireEvent.click(screen.getByTestId("settings-tab-organization"));
+    // Create a BU ("Direction Tech") and a Team ("Équipe Plateforme") in Mon Organisation (/organization)
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    await screen.findByTestId("open-create-org-unit-modal-btn");
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "Direction Tech" },
     });
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
     await screen.findByTestId("org-unit-row-org-1");
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-level-select"), {
       target: { value: "TEAM" },
@@ -1658,6 +1698,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
 
     // Configure an AI model -> assistant & agents menu buttons become enabled and their red '!' badges disappear!
     fireEvent.click(screen.getByTestId("topbar-notifications-close"));
+    fireEvent.click(screen.getByTestId("eight-menu-item-configuration"));
+    await screen.findByTestId("settings-tab-models");
     fireEvent.click(screen.getByTestId("settings-tab-models"));
     fireEvent.change(screen.getByTestId("llm-primary-model-input"), {
       target: { value: "claude-3-7-sonnet" },
@@ -1705,8 +1747,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     });
     fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
 
-    // Verify empty state in /settings > Organisation before creating any team, and Notification Center alert
-    expect(screen.getByTestId("iam-org-units-empty-state")).toBeDefined();
+    // Verify empty state in /organization before creating any team, and Notification Center alert
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    expect(await screen.findByTestId("iam-org-units-empty-state")).toBeDefined();
     expect(screen.queryByTestId("admin-team-membership-summary-badge")).toBeNull();
 
     // Verify Notification Center includes the "setup-billing-team-missing" alert
@@ -1717,6 +1760,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("topbar-notifications-close"));
 
     // 2. Step B: Create a BU ("Direction Produit") and two Teams ("Équipe Core IA" & "Équipe Data") via Story 17.2 modals
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
       target: { value: "Direction Produit" },
@@ -1724,6 +1769,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
     await screen.findByTestId("org-unit-row-org-1");
 
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-level-select"), {
       target: { value: "TEAM" },
@@ -1740,6 +1787,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     );
 
     // Create a second Team ("Équipe Data", org-3)
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-level-select"), {
       target: { value: "TEAM" },
@@ -1824,8 +1873,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       "Mon Bac à Sable R&D",
     );
 
-    // 5. Verify orphan protection in /settings: cannot delete "Équipe Core IA" (org-2) while workspaces are attached to it
-    fireEvent.click(screen.getByTestId("eight-menu-item-configuration"));
+    // 5. Verify orphan protection in /organization: cannot delete "Équipe Core IA" (org-2) while workspaces are attached to it
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
     await act(async () => {
       await Promise.resolve();
     });
@@ -1863,6 +1912,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     });
     fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
 
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     const levelSelect = screen.getByTestId("org-unit-level-select") as HTMLSelectElement;
     fireEvent.change(levelSelect, { target: { value: "TEAM" } });
@@ -1973,24 +2024,27 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     });
     fireEvent.click(screen.getByTestId("workspace-glossary-submit-btn"));
 
-    const conceptCard = screen.getByTestId(
-      "glossary-concept-card-marge-brute-r-currente",
+    const conceptCard = await screen.findByTestId(
+      "glossary-concept-card-4-workspace-ws-1-marge-brute-r-currente",
     );
     expect(conceptCard.textContent).toContain("Marge Brute Récurrente");
     expect(
-      screen.getByTestId("glossary-concept-level-badge-marge-brute-r-currente").textContent,
-    ).toContain("Cet Espace");
+      screen.getByTestId("glossary-concept-level-badge-4-workspace-ws-1-marge-brute-r-currente")
+        .textContent,
+    ).toContain("Mon Labo Perso");
 
-    // Promote in 1 click from Workspace (3_WORKSPACE) to Organization/BU (2_DOMAIN) -> shows "Promu" badge
+    // Propose step-up promotion (L4 -> L3 Team) -> shows "En attente de validation" badge
     fireEvent.click(
-      screen.getByTestId("promote-glossary-concept-btn-marge-brute-r-currente"),
+      screen.getByTestId(
+        "promote-glossary-concept-btn-4-workspace-ws-1-marge-brute-r-currente",
+      ),
     );
-    expect(
-      screen.getByTestId("promoted-glossary-badge-marge-brute-r-currente").textContent,
-    ).toContain("Promu");
-    expect(
-      screen.getByTestId("glossary-concept-level-badge-marge-brute-r-currente").textContent,
-    ).toContain("Direction (BU)");
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("promoted-glossary-badge-4-workspace-ws-1-marge-brute-r-currente")
+          .textContent,
+      ).toContain("En attente de validation");
+    });
 
     // Tab 3: Membres, Accès & Consignes -> auto-save workspace instructions
     fireEvent.click(screen.getByTestId("workspace-detail-tab-members"));
@@ -2001,7 +2055,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       "Enregistré",
     );
 
-    // 7. F5 Reload Survival Gate: unmount() and re-render() -> verify shared visibility, attached source, and promoted glossary term persist
+    // 7. F5 Reload Survival Gate: unmount() and re-render() -> verify shared visibility, attached source, and persisted glossary term survive F5
     unmount();
 
     const reloadedRouter = createOrciaRouter({
@@ -2022,9 +2076,18 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       "Wiki Produit Interne",
     );
     fireEvent.click(screen.getByTestId("workspace-detail-tab-glossary"));
-    expect(
-      screen.getByTestId("glossary-concept-level-badge-marge-brute-r-currente").textContent,
-    ).toContain("Direction (BU)");
+    await waitFor(() => {
+      expect(
+        screen.getByTestId(
+          "glossary-concept-level-badge-4-workspace-ws-1-marge-brute-r-currente",
+        ).textContent,
+      ).toContain("Mon Labo Perso");
+      expect(
+        screen.getByTestId(
+          "promoted-glossary-badge-4-workspace-ws-1-marge-brute-r-currente",
+        ).textContent,
+      ).toContain("En attente de validation");
+    });
   });
 
   it("preserves the user question bubble, animated ThinkingDots spinner, and ongoing thinking counter when navigating away from Mon Assistant (/assistant) and returning while thinking is in progress", () => {

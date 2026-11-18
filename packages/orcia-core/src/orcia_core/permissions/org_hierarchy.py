@@ -57,11 +57,17 @@ class OrgUnitSummary:
     attached_workspaces_count: int = 0
     attached_workspaces: tuple[AttachedWorkspaceRef, ...] = ()
     lead_user_ids: tuple[str, ...] = ()
+    ontology_lead_user_ids: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         leads, primary = normalize_lead_user_ids(self.lead_user_ids, self.lead_user_id)
         object.__setattr__(self, "lead_user_ids", leads)
         object.__setattr__(self, "lead_user_id", primary)
+        if self.kind == "BU":
+            onto_leads, _ = normalize_lead_user_ids(self.ontology_lead_user_ids, None)
+        else:
+            onto_leads = ()
+        object.__setattr__(self, "ontology_lead_user_ids", onto_leads)
 
 
 def assert_bu_has_no_members(kind_or_type: str, member_user_ids: Sequence[str] | None) -> None:
@@ -70,6 +76,21 @@ def assert_bu_has_no_members(kind_or_type: str, member_user_ids: Sequence[str] |
         cleaned = [m for m in member_user_ids if str(m).strip()]
         if cleaned:
             raise OrgUnitBuMembersForbiddenError()
+
+
+def assert_bu_only_ontology_leads(
+    kind_or_type: str, ontology_lead_user_ids: Sequence[str] | None
+) -> None:
+    """Reject non-empty ontology leads on TEAM units (`HTTP 422`)."""
+    if str(kind_or_type).upper() not in ("BU", "TRIBE") and ontology_lead_user_ids:
+        cleaned = [m for m in ontology_lead_user_ids if str(m).strip()]
+        if cleaned:
+            raise ValidationDomainError(
+                detail_override=(
+                    "Les référents glossaire (ONTOLOGY_LEAD) ne peuvent être désignés "
+                    "que sur une Direction (BU)."
+                )
+            )
 
 
 def normalize_org_unit_slug(raw_slug: str | None, fallback_name: str) -> str:
@@ -264,6 +285,7 @@ def build_org_unit_summary(
         attached_workspaces_count=attached_workspaces_count,
         attached_workspaces=tuple(attached_workspaces),
         lead_user_ids=node.lead_user_ids,
+        ontology_lead_user_ids=node.ontology_lead_user_ids,
     )
 
 
@@ -327,6 +349,7 @@ __all__ = [
     "OrgUnitKind",
     "OrgUnitSummary",
     "assert_bu_has_no_members",
+    "assert_bu_only_ontology_leads",
     "assert_unique_org_unit_slug",
     "build_org_unit_summary",
     "list_evaluator_org_unit_summaries",

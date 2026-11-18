@@ -111,12 +111,21 @@ export function CockpitHumanLedGovernanceSection({
       try {
         const state = await apiClient.getOrchestrationState("marc");
         if (cancelled) return;
+        const scopedRuns = (state.runs ?? []).filter(
+          (r) => r.workspace_id === effectiveWorkspaceId,
+        );
         const latestRun =
-          state.runs && state.runs.length > 0
-            ? state.runs[state.runs.length - 1]
-            : undefined;
+          scopedRuns.length > 0 ? scopedRuns[scopedRuns.length - 1] : undefined;
         if (latestRun?.id) {
           await hydrateFromRun(latestRun.id);
+        } else {
+          setServerRunId(null);
+          setStepStatus("PENDING");
+          setSignedSha256(null);
+          setPendingArbitrationId(null);
+          setResolvedOptionKey(null);
+          setResolvedJustification(null);
+          setCommittedSnapshotId(null);
         }
       } catch (err) {
         if (!cancelled) {
@@ -127,7 +136,14 @@ export function CockpitHumanLedGovernanceSection({
     return () => {
       cancelled = true;
     };
-  }, [apiClient, hydrateFromRun, refreshSignal, isHydrating, accessToken]);
+  }, [
+    apiClient,
+    effectiveWorkspaceId,
+    hydrateFromRun,
+    refreshSignal,
+    isHydrating,
+    accessToken,
+  ]);
 
   const ensureServerRun = async (): Promise<string> => {
     if (serverRunId) {

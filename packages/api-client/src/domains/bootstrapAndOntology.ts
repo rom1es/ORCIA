@@ -42,6 +42,10 @@ type RequestJsonFn = ReturnType<typeof createRequestJson>;
 export type FederatedSearchResponse = components["schemas"]["TwoSpeedSearchResponse"];
 export type UserPreferencesResponse = components["schemas"]["UserPreferencesResponse"];
 export type UserPreferencesPatchRequest = components["schemas"]["UserPreferencesUpdateRequest"];
+export type McpPersonalTokenCreatePayload = components["schemas"]["McpPersonalTokenCreateRequest"];
+export type McpPersonalTokenIssuedResult = components["schemas"]["McpPersonalTokenIssuedResponse"];
+export type McpPersonalTokenListResult = components["schemas"]["McpPersonalTokenListResponse"];
+export type McpPersonalTokenItemResult = components["schemas"]["McpPersonalTokenMetadataItem"];
 export type ContextualHelpResolveResponse = components["schemas"]["ContextualHelpResolveResponse"];
 export type ContextualHelpRollbackRequest = components["schemas"]["ContextualHelpRollbackRequest"];
 export type HelpArticleSchemaItem = components["schemas"]["HelpArticleSchemaItem"];
@@ -283,6 +287,30 @@ export function createBootstrapAndOntologyDomainClient(requestJson: RequestJsonF
         `/api/v1/users/me/preferences${buildPersonaQuery(personaKey)}`,
         "PATCH",
         payload,
+      );
+    },
+    listMcpTokens(personaKey?: string): Promise<McpPersonalTokenListResult> {
+      return requestJson<McpPersonalTokenListResult>(
+        `/api/v1/users/me/mcp-tokens${buildPersonaQuery(personaKey)}`,
+      );
+    },
+    createMcpToken(
+      payload: McpPersonalTokenCreatePayload,
+      personaKey?: string,
+    ): Promise<McpPersonalTokenIssuedResult> {
+      return requestJson<McpPersonalTokenIssuedResult>(
+        `/api/v1/users/me/mcp-tokens${buildPersonaQuery(personaKey)}`,
+        "POST",
+        payload,
+      );
+    },
+    revokeMcpToken(
+      tokenId: string,
+      personaKey?: string,
+    ): Promise<McpPersonalTokenItemResult> {
+      return requestJson<McpPersonalTokenItemResult>(
+        `/api/v1/users/me/mcp-tokens/${encodeURIComponent(tokenId)}${buildPersonaQuery(personaKey)}`,
+        "DELETE",
       );
     },
     resolveContextualHelp(

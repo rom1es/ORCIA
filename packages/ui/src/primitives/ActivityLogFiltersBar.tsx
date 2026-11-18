@@ -11,6 +11,7 @@ export interface ActivityLogFiltersBarProps {
   readonly scopeOptions: readonly UiActivityScopeFilterOption[];
   readonly selectedScopeId: string;
   readonly onScopeChange: (scopeId: string) => void;
+  readonly allowAllScopesOption?: boolean;
   readonly distinctActors: readonly string[];
   readonly selectedActor: string;
   readonly onActorChange: (actor: string) => void;
@@ -40,6 +41,7 @@ export function ActivityLogFiltersBar({
   scopeOptions,
   selectedScopeId,
   onScopeChange,
+  allowAllScopesOption = true,
   distinctActors,
   selectedActor,
   onActorChange,
@@ -79,7 +81,7 @@ export function ActivityLogFiltersBar({
                 {opt.label}
               </option>
             ))}
-            {!scopeOptions.some((o) => o.id === "ALL") && (
+            {allowAllScopesOption && !scopeOptions.some((o) => o.id === "ALL") && (
               <option value="ALL">{labels.allScopesOptionLabel}</option>
             )}
           </select>

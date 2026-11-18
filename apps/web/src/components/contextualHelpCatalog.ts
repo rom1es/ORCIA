@@ -28,7 +28,8 @@ export function buildContextualHelpArticle({
   const isConfigurationScreen =
     activeMenuKey === "configuration" ||
     pathname === "/settings" ||
-    pathname === "/configuration";
+    pathname === "/configuration" ||
+    pathname === "/organization";
 
   if (isConfigurationScreen) {
     return {
@@ -45,12 +46,12 @@ export function buildContextualHelpArticle({
         : "This screen structures your organization (BUs and Teams), manages the accounts directory, and governs permission rules (Create, Read & view resources, Update, Delete, Execute / Use, Delegate rights), AI models, and connectors.",
       stepByStepItems: isFr
         ? [
-            "1. Gérez vos comptes utilisateurs et comptes techniques dans l'annuaire, puis consultez la matrice des 6 rôles officiels de la plateforme.",
+            "1. Gérez vos comptes utilisateurs et comptes techniques dans l'annuaire, puis consultez la matrice des 7 rôles officiels de la plateforme.",
             "2. Dans Exceptions & Isolation SecOps, indiquez Qui ? (Rôle ou Compte, ex: Rôle : Chef1) et choisissez Sur quoi ? (Périmètre cible : Plateforme entière, Direction / BU, Équipe ou Espace de travail, ex: aqwZSX).",
             "3. Cochez les habilitations à attribuer et choisissez l'effet de la règle (Autoriser, Interdire ou Isoler ce périmètre). Utilisez les cases à cocher de la liste pour supprimer une ou plusieurs règles.",
           ]
         : [
-            "1. Manage human and service accounts in the directory, then review the native 6-role matrix.",
+            "1. Manage human and service accounts in the directory, then review the native 7-role matrix.",
             "2. In SecOps Exceptions & Isolation, specify Who? (Role or Account, e.g. Role: Chef1) and select On what? (Target scope: Entire platform, BU, Team, or Workspace, e.g. aqwZSX).",
             "3. Check the permissions to grant and choose the rule effect (Allow, Deny, or Isolate this scope). Use the list checkboxes to delete one or more rules.",
           ],

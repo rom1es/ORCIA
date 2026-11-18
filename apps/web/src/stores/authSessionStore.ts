@@ -2,9 +2,13 @@ import { createOrciaApiClient, registerDefaultAccessTokenProvider } from "@orcia
 import { create } from "zustand";
 import {
   ALL_SETTINGS_TABS,
+  canAccessConfigurationSettings,
+  canAccessMyOrganization,
+  canObserveGlobalAuditScope,
   formatCountNoun,
   FULL_ADMIN_PERMISSION_VERBS,
   isPlatformAdministratorSession,
+  isSecopsSession,
   READ_ONLY_PERMISSION_VERBS,
   resolveSessionHatLabel,
   resolveSettingsAccess,
@@ -18,9 +22,13 @@ import {
 
 export {
   ALL_SETTINGS_TABS,
+  canAccessConfigurationSettings,
+  canAccessMyOrganization,
+  canObserveGlobalAuditScope,
   formatCountNoun,
   FULL_ADMIN_PERMISSION_VERBS,
   isPlatformAdministratorSession,
+  isSecopsSession,
   READ_ONLY_PERMISSION_VERBS,
   resolveSessionHatLabel,
   resolveSettingsAccess,
@@ -33,8 +41,9 @@ export {
 };
 
 export type UserSettingsModalTabKey =
-  | "PREFERENCES_DISPLAY"
-  | "PROFILE_SECURITY"
+  | "GENERAL"
+  | "PERSONALIZATION"
+  | "ACCOUNT_SECURITY"
   | "PASSTHROUGH_SOURCES"
   | "IDE_MCP_KEYS";
 
@@ -42,7 +51,6 @@ export function resolveWebApiBaseUrl(): string {
   const meta = import.meta as unknown as { env?: Record<string, string | undefined> };
   const envUrl = meta?.env?.VITE_ORCIA_API_BASE_URL ?? meta?.env?.VITE_ORCIA_API_URL;
   if (envUrl && envUrl.trim().length > 0) {
-    // Domain client paths already begin with `/api/v1/...`, so strip any trailing `/api` or slashes.
     const trimmed = envUrl.trim().replace(/\/+$/, "");
     if (trimmed === "/api" || trimmed.endsWith("/api")) {
       return trimmed.slice(0, -4);
@@ -72,6 +80,7 @@ export interface AuthSessionStoreState {
   readonly mustChangePassword: boolean;
   readonly accessToken: string | null;
   readonly roles: readonly string[];
+  /** Primary authenticated role key (derived read-only from `roles[0]`, never mutable for RBAC). */
   readonly activeHat: string;
   readonly readOnlyObserver: boolean;
   readonly email: string | null;
@@ -91,7 +100,6 @@ export interface AuthSessionStoreState {
       displayName: string | null;
     }>,
   ) => void;
-  readonly setActiveHat: (hat: string) => void;
   readonly setUserSettingsModalOpen: (open: boolean) => void;
   readonly openUserSettingsModalAtTab: (tab: UserSettingsModalTabKey) => void;
   readonly clearMustChangePassword: () => void;
@@ -145,22 +153,13 @@ export const useAuthSessionStore = create<AuthSessionStoreState>((set, get) => (
   setAuthSession: (patch) =>
     set((state) => {
       const nextRoles = patch.roles ?? state.roles;
-      const nextHat =
-        patch.activeHat ??
-        (patch.roles && patch.roles.length > 0 ? patch.roles[0]! : state.activeHat);
+      const derivedPrimaryRole = nextRoles[0] || state.activeHat || "CONTRIBUTOR";
       return {
         ...state,
         ...patch,
         roles: nextRoles,
-        activeHat: nextHat,
+        activeHat: derivedPrimaryRole,
       };
-    }),
-  setActiveHat: (hat) =>
-    set((state) => {
-      if (hat === "PLATFORM_ADMIN" && !state.roles.includes("PLATFORM_ADMIN")) {
-        return state;
-      }
-      return { activeHat: hat };
     }),
   setUserSettingsModalOpen: (open) =>
     set((state) => ({
@@ -243,17 +242,12 @@ export const useAuthSessionStore = create<AuthSessionStoreState>((set, get) => (
                 : me?.roles && me.roles.length > 0
                   ? me.roles
                   : [tokenRes.platform_role];
-            const currentHat = get().activeHat;
-            const nextHat =
-              currentHat && roles.includes(currentHat)
-                ? currentHat
-                : roles[0] || "CONTRIBUTOR";
             set({
               isAuthenticated: true,
               isHydrating: false,
               accessToken: tokenRes.access_token,
               roles,
-              activeHat: nextHat,
+              activeHat: roles[0] || "CONTRIBUTOR",
               email: tokenRes.email || me?.email || null,
               displayName: tokenRes.display_name || me?.display_name || null,
               mustChangePassword: Boolean(tokenRes.must_change_password || me?.must_change_password),

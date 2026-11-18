@@ -53,6 +53,7 @@ from orcia_api.routers.mcp_and_test_bench import (
     router as mcp_and_test_bench_router,
 )
 from orcia_api.routers.ontology_and_rag import router as ontology_and_rag_router
+from orcia_api.routers.ontology_promotions import router as ontology_promotions_router
 from orcia_api.routers.orchestration import router as orchestration_router
 from orcia_api.routers.org_and_workspaces import router as org_and_workspaces_router
 from orcia_api.routers.pack_builder import (
@@ -65,6 +66,8 @@ from orcia_api.routers.settings_and_studio import router as settings_and_studio_
 from orcia_api.routers.shell import router as shell_router
 from orcia_api.routers.sources_surgical import router as sources_surgical_router
 from orcia_api.routers.studio_and_wizards import router as studio_and_wizards_router
+from orcia_api.routers.user_account_settings import router as user_account_settings_router
+from orcia_api.routers.user_profile import router as user_profile_router
 from orcia_api.routers.workflow_triggers import router as workflow_triggers_router
 from orcia_api.routers.workflows import router as workflows_v2_router
 from orcia_api.routers.workspace_datasources import (
@@ -141,11 +144,14 @@ def create_app() -> FastAPI:
     application.include_router(jira_and_mcp_router)
     application.include_router(bootstrap_router)
     application.include_router(ontology_and_rag_router)
+    application.include_router(ontology_promotions_router)
     application.include_router(orchestration_router)
     application.include_router(blackboard_and_engine_router)
     application.include_router(challenge_and_replay_router)
     application.include_router(assistant_router)
     application.include_router(portal_and_help_router)
+    application.include_router(user_account_settings_router)
+    application.include_router(user_profile_router)
     application.include_router(assistant_workspace_router)
     application.include_router(workspace_governance_router)
     application.include_router(workspace_datasources_router)

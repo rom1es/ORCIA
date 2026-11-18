@@ -57,7 +57,6 @@ export function SettingsIamOrganizationSection({
 }: SettingsIamOrganizationSectionProps): React.ReactElement {
   const locale: "fr" | "en" = isFr ? "fr" : "en";
   const roles = useAuthSessionStore((s) => s.roles);
-  const activeHat = useAuthSessionStore((s) => s.activeHat);
   const userEmail = useAuthSessionStore((s) => s.email);
   const readOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
   const isHydrating = useAuthSessionStore((s) => s.isHydrating);
@@ -82,7 +81,6 @@ export function SettingsIamOrganizationSection({
   );
   const hasSecopsRole =
     roles.includes("SECOPS") ||
-    activeHat === "SECOPS" ||
     Boolean(currentAccount?.roles.includes("SECOPS"));
   const isSecopsAuthorized = canMutate && !readOnlyObserver && hasSecopsRole;
   const [tempPasswordModalData, setTempPasswordModalData] = useState<{
@@ -155,6 +153,7 @@ export function SettingsIamOrganizationSection({
           team_ids: [...values.teamIds],
           led_bu_ids: values.ledBuIds ? [...values.ledBuIds] : [],
           led_team_ids: values.ledTeamIds ? [...values.ledTeamIds] : [],
+          ontology_led_bu_ids: values.ontologyLedBuIds ? [...values.ontologyLedBuIds] : [],
           status: values.status,
         },
         locale,
@@ -177,6 +176,7 @@ export function SettingsIamOrganizationSection({
           team_ids: [...values.teamIds],
           led_bu_ids: values.ledBuIds ? [...values.ledBuIds] : [],
           led_team_ids: values.ledTeamIds ? [...values.ledTeamIds] : [],
+          ontology_led_bu_ids: values.ontologyLedBuIds ? [...values.ontologyLedBuIds] : [],
           status: values.status,
         },
         locale,

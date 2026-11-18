@@ -325,7 +325,7 @@ describe("ORCIA Centralized Icon Registry (@orcia/ui) & Anti-Regression Audit", 
                 spaces: "Mes Espaces",
                 finops: "Coûts & Activité",
                 configuration: "Configuration",
-                help: "Aide",
+                glossary: "Glossaire",
               },
             }}
             onSelectMenu={() => {}}

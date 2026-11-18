@@ -29,6 +29,7 @@ export interface ActivityLogExplorerViewProps {
   readonly scopeOptions: readonly UiActivityScopeFilterOption[];
   readonly activeObservationScopeId: string;
   readonly activeObservationScopeLabel: string;
+  readonly allowAllScopesOption?: boolean;
   readonly connectedUserName?: string;
   readonly nowTimestampMs?: number;
   readonly labels: ActivityLogExplorerLabels;
@@ -46,6 +47,7 @@ export function ActivityLogExplorerView({
   scopeOptions,
   activeObservationScopeId,
   activeObservationScopeLabel,
+  allowAllScopesOption = true,
   connectedUserName,
   nowTimestampMs,
   labels,
@@ -57,7 +59,14 @@ export function ActivityLogExplorerView({
   onExportProvenance,
   isExporting = false,
 }: ActivityLogExplorerViewProps): React.ReactElement {
-  const [selectedScopeId, setSelectedScopeId] = useState<string>(activeObservationScopeId);
+  const resolvedDefaultScopeId =
+    !allowAllScopesOption &&
+    (activeObservationScopeId === "ALL" || activeObservationScopeId === "scope-global")
+      ? (scopeOptions.find((o) => o.id !== "ALL" && o.id !== "scope-global")?.id ??
+        activeObservationScopeId)
+      : activeObservationScopeId;
+
+  const [selectedScopeId, setSelectedScopeId] = useState<string>(resolvedDefaultScopeId);
   const [selectedActor, setSelectedActor] = useState<string>("ALL");
   const [actorSearchQuery, setActorSearchQuery] = useState<string>("");
   const [maxLimit, setMaxLimit] = useState<ActivityMaxLimitOption>(100);
@@ -66,8 +75,8 @@ export function ActivityLogExplorerView({
   const [dateTo, setDateTo] = useState<string>("");
 
   useEffect(() => {
-    setSelectedScopeId(activeObservationScopeId);
-  }, [activeObservationScopeId]);
+    setSelectedScopeId(resolvedDefaultScopeId);
+  }, [resolvedDefaultScopeId]);
 
   const distinctActors = Array.from(
     new Set(events.map((e) => e.actorName).filter(Boolean)),
@@ -208,6 +217,7 @@ export function ActivityLogExplorerView({
           scopeOptions={scopeOptions}
           selectedScopeId={selectedScopeId}
           onScopeChange={setSelectedScopeId}
+          allowAllScopesOption={allowAllScopesOption}
           distinctActors={distinctActors}
           selectedActor={selectedActor}
           onActorChange={setSelectedActor}

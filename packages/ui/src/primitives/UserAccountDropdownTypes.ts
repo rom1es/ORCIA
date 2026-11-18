@@ -1,5 +1,5 @@
 /**
- * Types and interfaces for User Account dropdown, profile & passthrough tokens (`AD-21`, `Story 17.4`).
+ * Types and interfaces for Sidebar Account Popover & 5-Tab Settings Modal (`AD-21`, `Story 20.3`).
  *
  * Isolated in `packages/ui` — zero imports of `@orcia/api-client` or `@tanstack/react-router`.
  */
@@ -8,9 +8,11 @@ import type { RgaaModalGuardLabels } from "../components/RgaaModalDialog";
 
 export type UiThemePreference = "light" | "dark" | "system";
 export type UiLocalePreference = "fr" | "en";
+export type UiAssistantTone = "balanced" | "concise" | "detailed";
 export type UiUserSettingsTabKey =
-  | "PREFERENCES_DISPLAY"
-  | "PROFILE_SECURITY"
+  | "GENERAL"
+  | "PERSONALIZATION"
+  | "ACCOUNT_SECURITY"
   | "PASSTHROUGH_SOURCES"
   | "IDE_MCP_KEYS";
 
@@ -28,6 +30,16 @@ export interface UiPersonalMcpTokenItem {
   readonly mcpEndpointUri: string;
   readonly ideJsonSnippet: string;
   readonly revoked: boolean;
+  readonly createdAtIso?: string | null;
+  readonly expiresAtIso?: string | null;
+}
+
+export interface CreateMcpTokenDraftInput {
+  readonly label: string;
+  readonly targetKind: UiMcpTargetKind;
+  readonly targetSlug: string;
+  readonly expiresInDays: 30 | 90;
+  readonly rpmLimit: number;
 }
 
 export interface UserPasswordSecurityLabels {
@@ -48,34 +60,102 @@ export interface UserPasswordSecurityLabels {
   readonly genericError: string;
 }
 
+export interface SidebarAccountPopoverLabels {
+  readonly triggerAriaLabel: string;
+  readonly personalizationLabel: string;
+  readonly profileLabel: string;
+  readonly settingsLabel: string;
+  readonly helpMenuLabel: string;
+  readonly helpCenterLabel: string;
+  readonly showcaseLabel: string;
+  readonly logoutLabel: string;
+}
+
 export interface UserAccountDropdownAndSettingsLabels extends RgaaModalGuardLabels {
   readonly triggerAriaLabel: string;
-  readonly dropdownWidthNote: string;
-  readonly hatSelectorLabel: string;
-  readonly themeQuickToggleLabel: string;
-  readonly localeQuickToggleLabel: string;
-  readonly openAccountSettingsLabel: string;
-  readonly openPassthroughSourcesLabel: string;
-  readonly logoutButtonLabel: string;
+  readonly popover: SidebarAccountPopoverLabels;
   readonly modalTitle: string;
-  readonly tab1PreferencesTitle: string;
-  readonly tab2SecurityTitle: string;
-  readonly tab3PassthroughTitle: string;
-  readonly tab4McpKeysTitle: string;
+  readonly closeButtonLabel: string;
+  readonly tabGeneralTitle: string;
+  readonly tabPersonalizationTitle: string;
+  readonly tabAccountSecurityTitle: string;
+  readonly tabPassthroughTitle: string;
+  readonly tabMcpKeysTitle: string;
+  readonly appearanceLabel: string;
+  readonly themeLightLabel: string;
+  readonly themeDarkLabel: string;
+  readonly themeSystemLabel: string;
+  readonly languageLabel: string;
+  readonly localeFrLabel: string;
+  readonly localeEnLabel: string;
+  readonly autoOpenHelpLabel: string;
+  readonly notificationsEnabledLabel: string;
+  readonly assistantHatLabel: string;
+  readonly assistantHatOptions: Readonly<Record<string, string>>;
+  readonly assistantToneLabel: string;
+  readonly assistantToneOptions: Readonly<Record<UiAssistantTone, string>>;
+  readonly personalInstructionsLabel: string;
+  readonly personalInstructionsPlaceholder: string;
+  readonly savePersonalizationLabel: string;
+  readonly personalizationSavedMessage: string;
   readonly customizeAssistantRedirectCta: string;
   readonly testPassthroughTokenCta: string;
+  readonly mcpTargetKindLabel: string;
+  readonly mcpTokenLabelField: string;
+  readonly mcpTokenLabelPlaceholder: string;
+  readonly mcpTargetSlugLabel: string;
+  readonly mcpTargetSlugPlaceholder: string;
+  readonly mcpExpiryLabel: string;
+  readonly mcpExpiry30Label: string;
+  readonly mcpExpiry90Label: string;
+  readonly mcpRpmLimitLabel: string;
   readonly generateMcpTokenCta: string;
+  readonly issuedPlaintextWarning: string;
+  readonly copyPlaintextCta: string;
+  readonly copiedPlaintextLabel: string;
   readonly revokeMcpTokenCta: string;
+  readonly revokedBadgeLabel: string;
+  readonly emptyMcpTokensLabel: string;
   readonly targetWholeSpaceLabel: string;
   readonly targetSingleAgentLabel: string;
   readonly ideJsonReadyTitle: string;
+  readonly savingLabel: string;
+  readonly preferencesSavedMessage: string;
+  readonly twoFactorSectionTitle: string;
+  readonly twoFactorConfiguredLabel: string;
+  readonly twoFactorOptionalPolicyLabel: string;
+  readonly profileIdentityTitle: string;
+  readonly profileTeamsFinopsTitle: string;
+  readonly profileTeamsReadOnlyBadge: string;
+  readonly profileTeamsEmptyText: string;
+  readonly profileBillingActiveLabel: string;
+  readonly profileBillingInactiveLabel: string;
+  readonly profileBillingUnitsPrefix: string;
+  readonly passthroughAttributionTitle: string;
+  readonly passthroughAttributionSubtitle: string;
+  readonly passthroughTokenSavedMessage: string;
+  readonly passthroughTokenSaveError: string;
+  readonly passthroughTokenRevokedMessage: string;
+  readonly passthroughTokenRevokeError: string;
+  readonly passthroughNotConnectedLabel: string;
+  readonly passthroughLoginPlaceholder: string;
+  readonly passthroughTokenPlaceholder: string;
+  readonly passthroughSaveTokenCta: string;
+  readonly passthroughCancelCta: string;
+  readonly passthroughNoLoginLabel: string;
+  readonly passthroughReplaceTokenCta: string;
+  readonly passthroughConnectTokenCta: string;
+  readonly passthroughRevokeTokenCta: string;
+  readonly passthroughEmptyConnectorsMessage: string;
   readonly passwordSecurity?: UserPasswordSecurityLabels;
 }
 
 export interface UserAccountPreferencesPatch {
   readonly theme?: UiThemePreference;
   readonly locale?: UiLocalePreference;
-  readonly defaultHat?: string;
+  readonly defaultAssistantHat?: string;
+  readonly assistantTone?: UiAssistantTone;
+  readonly personalInstructions?: string;
   readonly autoOpenContextualHelp?: boolean;
   readonly notificationsEnabled?: boolean;
 }
@@ -111,36 +191,4 @@ export interface UiUserPassthroughConnectorView {
     readonly fingerprint?: string | null;
     readonly updatedAtIso?: string | null;
   };
-}
-
-export interface UserAccountDropdownAndSettingsModalProps {
-  readonly userDisplayName: string;
-  readonly userEmail: string;
-  readonly userRole: string;
-  readonly initialTheme?: UiThemePreference;
-  readonly initialLocale?: UiLocalePreference;
-  readonly initialHat?: string;
-  readonly initialMcpTokens?: readonly UiPersonalMcpTokenItem[];
-  readonly initialTab?: UiUserSettingsTabKey;
-  readonly activeTab?: UiUserSettingsTabKey;
-  readonly onActiveTabChange?: (tab: UiUserSettingsTabKey) => void;
-  readonly modalOpen?: boolean;
-  readonly onModalOpenChange?: (open: boolean) => void;
-  readonly labels: UserAccountDropdownAndSettingsLabels;
-  readonly accountProfile?: UiUserAccountProfileView;
-  readonly passthroughConnectors?: readonly UiUserPassthroughConnectorView[];
-  readonly onPreferencesSync?: (patch: UserAccountPreferencesPatch) => void;
-  readonly onLogout?: () => void;
-  readonly mustChangePassword?: boolean;
-  readonly onChangePassword?: (
-    currentPassword: string,
-    newPassword: string,
-  ) => Promise<{ success: boolean; error?: string } | void>;
-  readonly onNavigateAssistantBehavior?: (redirectUri: string) => void;
-  readonly onSavePassthroughToken?: (
-    connectorId: string,
-    externalLogin: string,
-    secretValue: string,
-  ) => void | Promise<void>;
-  readonly onRevokePassthroughToken?: (connectorId: string) => void | Promise<void>;
 }

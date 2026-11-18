@@ -311,6 +311,7 @@ export type UiOntologyLevel =
   | "2_DOMAIN"
   | "3_TEAM"
   | "3_WORKSPACE"
+  | "4_WORKSPACE"
   | "4_RUN_EPHEMERAL";
 
 export interface UiOntologyConceptView {
@@ -325,6 +326,10 @@ export interface UiOntologyConceptView {
   impactedTemplates: string[];
   impactedWorkflows: string[];
   impactedRuns: string[];
+  canEdit?: boolean;
+  canProposePromotion?: boolean;
+  nextPromotionLevel?: UiOntologyLevel | null;
+  nextPromotionScopeId?: string | null;
 }
 
 export interface UiTripartiteEdgeView {
@@ -348,7 +353,7 @@ export interface UiOntologyExplorerLabels {
   panelTitle: string;
   panelSubtitle: string;
   emptyStateMessage: string;
-  columns: Record<UiOntologyLevel, string>;
+  columns: Record<Exclude<UiOntologyLevel, "4_WORKSPACE">, string> & { "4_WORKSPACE"?: string };
   profileSelectorLabel: string;
   whatIfButtonLabel: string;
   promoteButtonLabel: string;

@@ -36,6 +36,7 @@ def build_ontology_resolution_cte_sql() -> str:
         "), ranked_concepts AS ("
         " SELECT c.*, CASE c.level"
         "   WHEN '4_RUN_EPHEMERAL' THEN 500"
+        "   WHEN '4_WORKSPACE' THEN 400"
         "   WHEN '3_WORKSPACE' THEN 400"
         "   WHEN '3_TEAM' THEN 350 - COALESCE(ta.depth, 0)"
         "   WHEN '2_DOMAIN' THEN 200"
@@ -49,7 +50,7 @@ def build_ontology_resolution_cte_sql() -> str:
         "     (c.level = '1_ENTERPRISE' AND c.scope_id = :enterprise_scope_id)"
         "     OR (c.level = '2_DOMAIN' AND c.scope_id = :domain_scope_id)"
         "     OR (c.level = '3_TEAM' AND (ta.id IS NOT NULL OR c.scope_id = :team_org_unit_id))"
-        "     OR (c.level = '3_WORKSPACE' AND c.scope_id = :workspace_scope_id)"
+        "     OR (c.level IN ('3_WORKSPACE', '4_WORKSPACE') AND c.scope_id = :workspace_scope_id)"
         "     OR (c.level = '4_RUN_EPHEMERAL' AND c.scope_id = :run_id)"
         "   )"
         ")"
@@ -94,7 +95,10 @@ class OntologyHierarchyResolver:
             # team_chain_scope_ids is ordered from Sub-Team (index 0, highest priority) to Parent
             idx = team_chain_scope_ids.index(concept.scope_id)
             return 350 - idx
-        if concept.level == "3_WORKSPACE" and concept.scope_id == workspace_scope_id:
+        if (
+            concept.level in ("3_WORKSPACE", "4_WORKSPACE")
+            and concept.scope_id == workspace_scope_id
+        ):
             return 400
         if (
             concept.level == "4_RUN_EPHEMERAL"

@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
+import { createBuAndTeamViaUi, createWorkspaceViaUi } from "./support/orgAndWorkspace";
 
 /**
  * TEST-04 · 03 — Workflow « Human-Led » (UJ-5, Epic 3 / Story 3.4, FR-4/FR-5, BUG-E2E-02).
@@ -22,6 +23,8 @@ test.describe("TEST-04 · 03 — Human-Led : ancrage obligatoire et arbitrage", 
         return ((await res.json()) as { first_admin_email: string | null }).first_admin_email;
       })
       .toBe(E2E_ADMIN.email);
+    await createBuAndTeamViaUi(page);
+    await createWorkspaceViaUi(page, "Espace Gouvernance E2E", "ws-gov-e2e");
   });
 
   test("signature de l'ancrage violet (≥ 30 car.), rejet agent 422, arbitrage motivé et survie au F5", async ({
@@ -64,9 +67,14 @@ test.describe("TEST-04 · 03 — Human-Led : ancrage obligatoire et arbitrage", 
     expect(runId.length).toBeGreaterThan(0);
 
     // 3. Rejet 422 ERR_HUMAN_ANCHOR_REQUIRED pour une identité agentique (FR-4)
+    const refreshRes = await page.request.post("/api/v1/auth/refresh");
+    expect(refreshRes.status()).toBe(200);
+    const { access_token: adminToken } = (await refreshRes.json()) as { access_token?: string };
+    expect(adminToken).toBeTruthy();
     const agentAttempt = await page.request.post(
-      "/api/v1/orchestration/runs/anchors/sign?persona_key=marc",
+      "/api/v1/orchestration/runs/anchors/sign",
       {
+        headers: { Authorization: `Bearer ${adminToken}` },
         data: {
           run_id: runId,
           step_key: "frame-architecture-intent",

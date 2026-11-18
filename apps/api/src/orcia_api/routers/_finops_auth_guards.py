@@ -9,6 +9,8 @@ Centralizes:
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import sqlalchemy as sa
 from fastapi import Request
 
@@ -28,6 +30,7 @@ from orcia_core.permissions.errors import (
     ScopeAccessDeniedError,
 )
 from orcia_core.permissions.models import UserIdentity
+from orcia_core.permissions.org_delegation import compute_managed_org_scope
 from orcia_core.permissions.service import AuthAndOrganizationService
 from orcia_kernel.errors import ValidationDomainError
 
@@ -89,9 +92,10 @@ async def enforce_scope_level_mutation(
         raise ResourceNotFoundError(instance=path)
     if is_platform_admin:
         return
-    if scope_type == "BU" and user.platform_role != "BU_DIRECTOR":
+    user_roles = {str(user.platform_role).upper(), *(str(r).upper() for r in user.roles)}
+    if scope_type == "BU" and not (user_roles & {"BU_DIRECTOR", "BU_LEAD"}):
         raise ScopeAccessDeniedError(instance=path)
-    if scope_type == "TEAM" and user.platform_role not in ("BU_DIRECTOR", "TEAM_LEAD"):
+    if scope_type == "TEAM" and not (user_roles & {"BU_DIRECTOR", "BU_LEAD", "TEAM_LEAD"}):
         raise ScopeAccessDeniedError(instance=path)
     if not user_governs_org_unit(auth_svc, user, scope_id):
         raise ScopeAccessDeniedError(instance=path)
@@ -148,19 +152,31 @@ async def enforce_workspace_governed_mutation(
     return resolve_workspace_canonical_scope_path(auth_svc, workspace_id)
 
 
+@dataclass(frozen=True)
+class AuditReadScope:
+    """Resolved read scope across workspaces and org units for `/api/v1/audit/ledger`."""
+
+    allowed_workspace_ids: tuple[str, ...] | None
+    allowed_org_unit_ids: tuple[str, ...] | None
+    include_null_workspace: bool
+
+
 async def enforce_audit_read_access(
     request: Request,
     user: UserIdentity,
     *,
     requested_workspace_id: str | None = None,
     requested_run_id: str | None = None,
-) -> tuple[str, ...] | None:
+) -> AuditReadScope:
     """Enforce read-side anti-IDOR permissions for `/api/v1/audit/ledger*` endpoints."""
     path = str(request.url.path)
     auth_svc = get_auth_service(request)
     await sync_evaluator_topology_from_pg(request, auth_svc)
 
-    is_platform_admin = user.platform_role == "PLATFORM_ADMIN" or "PLATFORM_ADMIN" in user.roles
+    user_roles = {str(user.platform_role).upper(), *(str(r).upper() for r in user.roles)}
+    is_global_auditor = (
+        bool(user_roles & {"PLATFORM_ADMIN", "SECOPS"}) or user.human_profile_archetype == "SECOPS"
+    )
     accessible = auth_svc.evaluator.resolve_accessible_workspaces(user)
     accessible_ids = tuple(a.workspace.id for a in accessible)
 
@@ -171,7 +187,11 @@ async def enforce_audit_read_access(
             raise ResourceNotFoundError(instance=path)
         if auth_svc.evaluator.resolve_workspace_access(user, ws.id) is None:
             raise ScopeAccessDeniedError(instance=path)
-        return (ws.id,)
+        return AuditReadScope(
+            allowed_workspace_ids=(ws.id,),
+            allowed_org_unit_ids=(),
+            include_null_workspace=False,
+        )
 
     if requested_run_id is not None:
         validate_uuid(requested_run_id, "run_id")
@@ -190,7 +210,11 @@ async def enforce_audit_read_access(
                 if run_ws:
                     if auth_svc.evaluator.resolve_workspace_access(user, str(run_ws)) is None:
                         raise ScopeAccessDeniedError(instance=path)
-                    return (str(run_ws),)
+                    return AuditReadScope(
+                        allowed_workspace_ids=(str(run_ws),),
+                        allowed_org_unit_ids=(),
+                        include_null_workspace=False,
+                    )
                 ledger_rows = (
                     await conn.execute(
                         sa.text(
@@ -202,25 +226,50 @@ async def enforce_audit_read_access(
                 ).all()
                 if ledger_rows:
                     ws_vals = [str(r[0]) for r in ledger_rows if r[0] is not None]
-                    if not ws_vals and not is_platform_admin:
+                    if not ws_vals and not is_global_auditor:
                         raise ScopeAccessDeniedError(instance=path)
                     for wid in ws_vals:
                         if auth_svc.evaluator.resolve_workspace_access(user, wid) is None:
                             raise ScopeAccessDeniedError(instance=path)
-                    return None if is_platform_admin else accessible_ids
+                    return AuditReadScope(
+                        allowed_workspace_ids=None if is_global_auditor else accessible_ids,
+                        allowed_org_unit_ids=None if is_global_auditor else (),
+                        include_null_workspace=is_global_auditor,
+                    )
 
-    if is_platform_admin:
+    if is_global_auditor:
         restricted_unaccessible = [
             w
             for w in auth_svc.evaluator.workspaces
             if auth_svc.evaluator.resolve_workspace_access(user, w.id) is None
         ]
-        return None if not restricted_unaccessible else accessible_ids
+        return AuditReadScope(
+            allowed_workspace_ids=None if not restricted_unaccessible else accessible_ids,
+            allowed_org_unit_ids=None,
+            include_null_workspace=True,
+        )
 
-    return accessible_ids
+    org_scope = compute_managed_org_scope(user, auth_svc.evaluator.org_units)
+    allowed_ou_set = set(org_scope.governed_bu_ids) | set(org_scope.direct_led_team_ids)
+    allowed_ou = tuple(sorted(allowed_ou_set))
+
+    accessible_ws_set = set(accessible_ids)
+    for ws in auth_svc.evaluator.workspaces:
+        if (
+            ws.owner_org_unit_id in allowed_ou_set
+            and ws.visibility_mode != "CONFIDENTIAL_RESTRICTED"
+        ):
+            accessible_ws_set.add(ws.id)
+
+    return AuditReadScope(
+        allowed_workspace_ids=tuple(sorted(accessible_ws_set)),
+        allowed_org_unit_ids=allowed_ou,
+        include_null_workspace=False,
+    )
 
 
 __all__ = [
+    "AuditReadScope",
     "enforce_audit_read_access",
     "enforce_observer_headers_guard",
     "enforce_scope_level_mutation",

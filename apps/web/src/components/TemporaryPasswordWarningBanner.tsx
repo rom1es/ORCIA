@@ -1,4 +1,4 @@
-import { OrciaAlertBanner, OrciaIcon } from "@orcia/ui";
+import { OrciaAlertBanner } from "@orcia/ui";
 import React from "react";
 
 export interface TemporaryPasswordWarningBannerProps {
@@ -16,14 +16,11 @@ export function TemporaryPasswordWarningBanner({
       testId="temporary-password-warning-banner"
       className="flex items-center justify-between gap-3 px-4 py-2 text-xs"
     >
-      <div className="flex items-center gap-2">
-        <OrciaIcon name="warning" />
-        <span>
-          {isFr
-            ? "Attention : vous utilisez un mot de passe temporaire. Modifiez-le dès maintenant pour sécuriser votre compte."
-            : "Warning: you are using a temporary password. Change it now to secure your account."}
-        </span>
-      </div>
+      <span>
+        {isFr
+          ? "Attention : vous utilisez un mot de passe temporaire. Modifiez-le dès maintenant pour sécuriser votre compte."
+          : "Warning: you are using a temporary password. Change it now to secure your account."}
+      </span>
       <button
         type="button"
         data-testid="temporary-password-open-settings-btn"

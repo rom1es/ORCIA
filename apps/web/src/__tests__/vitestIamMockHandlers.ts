@@ -9,6 +9,7 @@ export interface MockIamAccountItem {
   team_ids: string[];
   led_bu_ids?: string[];
   led_team_ids?: string[];
+  ontology_led_bu_ids?: string[];
   status: "ACTIVE" | "INVITED" | "DISABLED";
   created_at_iso: string;
   updated_at_iso: string;
@@ -36,6 +37,7 @@ interface MockOrgUnitRef {
   member_user_ids: string[];
   lead_user_id?: string | null;
   lead_user_ids?: string[];
+  ontology_lead_user_ids?: string[];
 }
 
 const VALID_ROLES = new Set([
@@ -43,6 +45,7 @@ const VALID_ROLES = new Set([
   "SECOPS",
   "BU_LEAD",
   "TEAM_LEAD",
+  "ONTOLOGY_LEAD",
   "CONTRIBUTOR",
   "OBSERVER",
 ]);
@@ -229,7 +232,7 @@ export function handleVitestIamRoute(params: {
         422,
         "ERR_IAM_INVALID_ROLE",
         "Rôle IAM non officiel",
-        "Le rôle demandé n'appartient pas aux 6 rôles officiels de la plateforme.",
+        "Le rôle demandé n'appartient pas aux 7 rôles officiels de la plateforme.",
         path,
       );
     }
@@ -346,7 +349,7 @@ export function handleVitestIamRoute(params: {
             422,
             "ERR_IAM_INVALID_ROLE",
             "Rôle IAM non officiel",
-            "Le rôle demandé n'appartient pas aux 6 rôles officiels de la plateforme.",
+            "Le rôle demandé n'appartient pas aux 7 rôles officiels de la plateforme.",
             path,
           );
         }
@@ -524,11 +527,23 @@ export function syncVitestIamRolesWithOrgUnits(orgUnits: readonly MockOrgUnitRef
             isMatch(u.lead_user_id)),
       )
       .map((u) => u.id);
+    const ontologyLedBus = orgUnits
+      .filter(
+        (u) =>
+          u.kind === "BU" &&
+          Array.isArray(u.ontology_lead_user_ids) &&
+          u.ontology_lead_user_ids.some(isMatch),
+      )
+      .map((u) => u.id);
 
     const mergedLedBus = Array.from(new Set([...(acc.led_bu_ids ?? []), ...ledBus]));
     const mergedLedTeams = Array.from(new Set([...(acc.led_team_ids ?? []), ...ledTeams]));
+    const mergedOntologyBus = Array.from(
+      new Set([...(acc.ontology_led_bu_ids ?? []), ...ontologyLedBus]),
+    );
     acc.led_bu_ids = mergedLedBus;
     acc.led_team_ids = mergedLedTeams;
+    acc.ontology_led_bu_ids = mergedOntologyBus;
 
     const rolesSet = new Set(acc.roles);
     if (mergedLedBus.length > 0) {
@@ -537,6 +552,62 @@ export function syncVitestIamRolesWithOrgUnits(orgUnits: readonly MockOrgUnitRef
     if (mergedLedTeams.length > 0) {
       rolesSet.add("TEAM_LEAD");
     }
+    if (mergedOntologyBus.length > 0) {
+      rolesSet.add("ONTOLOGY_LEAD");
+    }
     acc.roles = Array.from(rolesSet);
   }
+}
+
+export function upsertVitestIamOrgInvitedUser(params: {
+  readonly email: string;
+  readonly displayName: string;
+  readonly role: string;
+  readonly targetUnitId: string;
+  readonly targetUnitKind: "BU" | "TEAM";
+}): MockIamAccountItem {
+  const emailLower = params.email.trim().toLowerCase();
+  const existing = iamAccounts.find(
+    (a) =>
+      a.principal_id.toLowerCase() === emailLower ||
+      (a.email ?? "").toLowerCase() === emailLower,
+  );
+  const roleNormalized = params.role.toUpperCase();
+  const nowIso = "2026-11-18T10:00:00Z";
+  if (existing) {
+    const rolesSet = new Set(existing.roles);
+    if (roleNormalized === "TEAM_MEMBER") {
+      rolesSet.add("CONTRIBUTOR");
+    } else if (VALID_ROLES.has(roleNormalized)) {
+      rolesSet.add(roleNormalized);
+    }
+    existing.roles = Array.from(rolesSet);
+    if (params.targetUnitKind === "TEAM") {
+      existing.team_ids = Array.from(new Set([...existing.team_ids, params.targetUnitId]));
+    }
+    existing.updated_at_iso = nowIso;
+    return existing;
+  }
+  iamAccountSeq += 1;
+  const initialRoles =
+    roleNormalized === "TEAM_MEMBER"
+      ? ["CONTRIBUTOR"]
+      : VALID_ROLES.has(roleNormalized)
+        ? [roleNormalized]
+        : ["CONTRIBUTOR"];
+  const created: MockIamAccountItem = {
+    id: `acc-${iamAccountSeq}`,
+    principal_id: emailLower,
+    display_name: params.displayName.trim(),
+    email: emailLower,
+    account_kind: "HUMAN",
+    auth_source: "LOCAL_PASSWORD",
+    roles: initialRoles,
+    team_ids: params.targetUnitKind === "TEAM" ? [params.targetUnitId] : [],
+    status: "ACTIVE",
+    created_at_iso: nowIso,
+    updated_at_iso: nowIso,
+  };
+  iamAccounts = [...iamAccounts, created];
+  return created;
 }

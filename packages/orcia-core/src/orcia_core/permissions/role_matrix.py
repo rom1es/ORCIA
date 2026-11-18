@@ -1,4 +1,4 @@
-"""Native 6-Role Permission Matrix & RBAC Value Objects (`Story 8.1`, `Story 17.3`, `AD-21`).
+"""Native 7-Role Permission Matrix & RBAC Value Objects (`Story 8.1`, `17.3`, `20.1`, `AD-21`).
 
 Zero framework or SQL imports (`test_hexagonal_purity_permissions_package`).
 """
@@ -19,6 +19,7 @@ OfficialIamRole = Literal[
     "SECOPS",
     "BU_LEAD",
     "TEAM_LEAD",
+    "ONTOLOGY_LEAD",
     "CONTRIBUTOR",
     "OBSERVER",
 ]
@@ -32,6 +33,8 @@ RoleMatrixResourceFamily = Literal[
     "connectors",
     "org_units",
     "iam_exceptions",
+    "ontology_concepts",
+    "glossary_promotions",
 ]
 
 ALL_PERMISSION_VERBS: tuple[PermissionVerb, ...] = (
@@ -48,6 +51,7 @@ VALID_IAM_ROLES: tuple[OfficialIamRole, ...] = (
     "SECOPS",
     "BU_LEAD",
     "TEAM_LEAD",
+    "ONTOLOGY_LEAD",
     "CONTRIBUTOR",
     "OBSERVER",
 )
@@ -120,13 +124,15 @@ class ResourceDiscoveryOutcome:
 
 @dataclass(frozen=True, slots=True)
 class RoleMatrixDescriptor:
-    """Structured descriptor of one of the 6 official delegated roles (`CA-17.3.2`, `AD-21`)."""
+    """Structured descriptor of one of the 7 official delegated roles (`CA-17.3.2`, `AD-21`)."""
 
     role: OfficialIamRole
     natural_scope: RoleNaturalScope
     native_verbs: tuple[PermissionVerb, ...]
     resource_permissions: dict[RoleMatrixResourceFamily, tuple[PermissionVerb, ...]]
-    secret_visibility: SecretVisibilityPolicy = "WRITE_ONLY_NEVER_READABLE"
+    secret_visibility: SecretVisibilityPolicy = (
+        "WRITE_ONLY_NEVER_READABLE"  # pragma: allowlist secret
+    )
 
 
 DEFAULT_ROLE_PERMISSION_MATRIX: dict[OfficialIamRole, RoleMatrixDescriptor] = {
@@ -141,6 +147,8 @@ DEFAULT_ROLE_PERMISSION_MATRIX: dict[OfficialIamRole, RoleMatrixDescriptor] = {
             "connectors": ("create", "read", "update", "delete", "execute"),
             "org_units": ("create", "read", "update", "delete"),
             "iam_exceptions": ("read",),
+            "ontology_concepts": ("create", "read", "update", "delete"),
+            "glossary_promotions": ("create", "read", "update", "grant"),
         },
     ),
     "SECOPS": RoleMatrixDescriptor(
@@ -154,6 +162,8 @@ DEFAULT_ROLE_PERMISSION_MATRIX: dict[OfficialIamRole, RoleMatrixDescriptor] = {
             "connectors": ("read", "update"),
             "org_units": ("read",),
             "iam_exceptions": ("create", "read", "update", "delete", "grant"),
+            "ontology_concepts": ("read",),
+            "glossary_promotions": ("read",),
         },
     ),
     "BU_LEAD": RoleMatrixDescriptor(
@@ -167,6 +177,8 @@ DEFAULT_ROLE_PERMISSION_MATRIX: dict[OfficialIamRole, RoleMatrixDescriptor] = {
             "connectors": ("execute",),
             "org_units": ("create", "read", "update", "delete"),
             "iam_exceptions": ("read",),
+            "ontology_concepts": ("create", "read", "update", "delete"),
+            "glossary_promotions": ("create", "read", "update", "grant"),
         },
     ),
     "TEAM_LEAD": RoleMatrixDescriptor(
@@ -180,6 +192,23 @@ DEFAULT_ROLE_PERMISSION_MATRIX: dict[OfficialIamRole, RoleMatrixDescriptor] = {
             "connectors": ("execute",),
             "org_units": ("read", "update"),
             "iam_exceptions": (),
+            "ontology_concepts": ("create", "read", "update"),
+            "glossary_promotions": ("create", "read", "update"),
+        },
+    ),
+    "ONTOLOGY_LEAD": RoleMatrixDescriptor(
+        role="ONTOLOGY_LEAD",
+        natural_scope="BU",
+        native_verbs=("create", "read", "update", "delete", "execute", "grant"),
+        resource_permissions={
+            "workflows": ("read", "execute"),
+            "agents": ("read", "execute"),
+            "datasources": ("read",),
+            "connectors": (),
+            "org_units": ("read",),
+            "iam_exceptions": (),
+            "ontology_concepts": ("create", "read", "update", "delete"),
+            "glossary_promotions": ("create", "read", "update", "grant"),
         },
     ),
     "CONTRIBUTOR": RoleMatrixDescriptor(
@@ -193,6 +222,8 @@ DEFAULT_ROLE_PERMISSION_MATRIX: dict[OfficialIamRole, RoleMatrixDescriptor] = {
             "connectors": ("execute",),
             "org_units": ("read",),
             "iam_exceptions": (),
+            "ontology_concepts": ("create", "read"),
+            "glossary_promotions": ("create", "read"),
         },
     ),
     "OBSERVER": RoleMatrixDescriptor(
@@ -206,13 +237,15 @@ DEFAULT_ROLE_PERMISSION_MATRIX: dict[OfficialIamRole, RoleMatrixDescriptor] = {
             "connectors": (),
             "org_units": ("read",),
             "iam_exceptions": (),
+            "ontology_concepts": ("read",),
+            "glossary_promotions": ("read",),
         },
     ),
 }
 
 
 def list_native_role_matrix() -> tuple[RoleMatrixDescriptor, ...]:
-    """Return the ordered 6-role native permission matrix (`VALID_IAM_ROLES`)."""
+    """Return the ordered 7-role native permission matrix (`VALID_IAM_ROLES`)."""
     return tuple(DEFAULT_ROLE_PERMISSION_MATRIX[r] for r in VALID_IAM_ROLES)
 
 

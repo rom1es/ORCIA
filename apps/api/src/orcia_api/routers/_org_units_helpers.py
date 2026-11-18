@@ -1,6 +1,7 @@
 """Story 17.2 — Helpers for Hierarchical Organizational Units router (`/api/v1/org-units`).
 
-DTO serialization, memory evaluator mutations, and strict PostgreSQL exception classification
+DTO serialization, memory evaluator mutations (via `_org_units_evaluator_ops`),
+and strict PostgreSQL exception classification
 (connectivity loss fallback vs `HTTP 503 ERR_ORG_STORAGE_SCHEMA_OUTDATED` on schema drift).
 """
 
@@ -11,36 +12,30 @@ import unicodedata
 
 from fastapi import Request
 
+from orcia_api.routers._org_units_evaluator_ops import (
+    create_in_evaluator,
+    delete_in_evaluator,
+    update_in_evaluator,
+)
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.auth_and_org import (
     AttachedWorkspaceRefResponse,
-    OrgUnitCreateRequest,
-    OrgUnitPatchRequest,
     OrgUnitResponse,
 )
 from orcia_core.observability.logging import get_current_trace_id, get_logger
 from orcia_core.permissions import (
     ADMIN_MODULE_ALLOWED_ROLES,
     MatrixPermissionEvaluator,
+    OrgUnitCapabilities,
     OrgUnitKind,
     OrgUnitNode,
     OrgUnitSummary,
-    assert_bu_has_no_members,
-    assert_org_unit_deletable,
-    assert_unique_org_unit_slug,
-    build_org_unit_summary,
-    generate_new_org_unit_id,
-    normalize_member_user_ids,
-    normalize_org_unit_slug,
-    validate_org_unit_hierarchy,
 )
 from orcia_core.permissions.errors import (
     ObserverModeReadOnlyError,
     OrciaDomainError,
     OrgUnitStorageSchemaError,
-    ResourceNotFoundError,
     ScopeAccessDeniedError,
-    ValidationDomainError,
 )
 
 logger = get_logger("orcia.api.org_units.helpers")
@@ -60,7 +55,10 @@ def resolve_trace_id(request: Request) -> str:
     return str(getattr(request.state, "trace_id", None) or get_current_trace_id())
 
 
-def serialize_org_unit_summary(summary: OrgUnitSummary) -> OrgUnitResponse:
+def serialize_org_unit_summary(
+    summary: OrgUnitSummary,
+    capabilities: OrgUnitCapabilities | None = None,
+) -> OrgUnitResponse:
     """Serialize pure domain `OrgUnitSummary` to OpenAPI `OrgUnitResponse` DTO."""
     return OrgUnitResponse(
         id=summary.id,
@@ -77,6 +75,17 @@ def serialize_org_unit_summary(summary: OrgUnitSummary) -> OrgUnitResponse:
             for ws in summary.attached_workspaces
         ],
         lead_user_ids=list(summary.lead_user_ids),
+        ontology_lead_user_ids=list(summary.ontology_lead_user_ids),
+        can_edit=capabilities.can_edit if capabilities else True,
+        can_create_child=capabilities.can_create_child if capabilities else (summary.kind == "BU"),
+        can_delete=capabilities.can_delete if capabilities else True,
+        can_manage_members=(
+            capabilities.can_manage_members if capabilities else (summary.kind == "TEAM")
+        ),
+        can_manage_ontology_leads=(
+            capabilities.can_manage_ontology_leads if capabilities else (summary.kind == "BU")
+        ),
+        can_invite_users=capabilities.can_invite_users if capabilities else True,
     )
 
 
@@ -116,6 +125,7 @@ def sync_evaluator_from_summaries(
             billing_enabled=s.billing_enabled,
             lead_user_id=s.lead_user_id,
             lead_user_ids=s.lead_user_ids,
+            ontology_lead_user_ids=s.ontology_lead_user_ids,
             member_user_ids=s.member_user_ids,
         )
         for s in summaries
@@ -173,7 +183,6 @@ def is_pg_connectivity_error(exc: Exception) -> bool:
         curr_type = type(current).__name__
         curr_msg = str(current).lower()
 
-        # Explicit SQL schema/syntax errors are NEVER connectivity errors
         if curr_type in _SCHEMA_DRIFT_EXC_NAMES:
             return False
 
@@ -226,153 +235,17 @@ def classify_and_handle_pg_error(exc: Exception, operation: str) -> None:
     raise OrgUnitStorageSchemaError(detail_override=detail) from exc
 
 
-def create_in_evaluator(
-    evaluator: MatrixPermissionEvaluator,
-    payload: OrgUnitCreateRequest,
-    *,
-    resolved_lead: str | None = None,
-    resolved_members: tuple[str, ...] | None = None,
-) -> OrgUnitSummary:
-    """Create unit in memory evaluator when PostgreSQL sync is disabled or disconnected."""
-    cleaned_name = payload.name.strip()
-    if not cleaned_name:
-        raise ValidationDomainError(detail_override="Le nom de l'unité ne peut pas être vide.")
-    normalized_slug = normalize_org_unit_slug(payload.slug, cleaned_name)
-    units_by_id = {u.id: u for u in evaluator.org_units}
-    assert_unique_org_unit_slug(normalized_slug, units_by_id)
-    resolved_parent = validate_org_unit_hierarchy(
-        unit_id=None,
-        kind=payload.kind,
-        parent_id=payload.parent_id,
-        units_by_id=units_by_id,
-    )
-    assert_bu_has_no_members(payload.kind, payload.member_user_ids)
-    effective_lead = resolved_lead or (
-        (payload.lead_user_id or "").strip() if payload.lead_user_id else None
-    )
-    effective_members = (
-        resolved_members
-        if resolved_members is not None
-        else normalize_member_user_ids(payload.member_user_ids)
-    )
-    effective_leads = (
-        tuple(str(x).strip() for x in payload.lead_user_ids if str(x).strip())
-        if payload.lead_user_ids is not None
-        else tuple([effective_lead] if effective_lead else [])
-    )
-    node = OrgUnitNode(
-        id=generate_new_org_unit_id(),
-        slug=normalized_slug,
-        name=cleaned_name,
-        unit_type=payload.kind,
-        parent_id=resolved_parent,
-        billing_enabled=payload.billing_enabled,
-        lead_user_id=effective_lead,
-        lead_user_ids=effective_leads,
-        member_user_ids=effective_members,
-    )
-    evaluator.upsert_org_unit(node)
-    units_by_id[node.id] = node
-    return build_org_unit_summary(node, units_by_id, attached_workspaces_count=0)
-
-
-def update_in_evaluator(
-    evaluator: MatrixPermissionEvaluator,
-    org_unit_id: str,
-    payload: OrgUnitPatchRequest,
-    *,
-    resolved_lead: str | None = None,
-    resolved_members: tuple[str, ...] | None = None,
-) -> OrgUnitSummary:
-    """Update unit in memory evaluator when PostgreSQL sync is disabled or disconnected."""
-    units_by_id = {u.id: u for u in evaluator.org_units}
-    target = evaluator.get_org_unit(org_unit_id)
-    if target is None or target.unit_type == "ENTERPRISE":
-        raise ResourceNotFoundError(
-            detail_override=f"Unité organisationnelle introuvable : '{org_unit_id}'."
-        )
-    target_kind: OrgUnitKind = "BU" if target.unit_type in ("BU", "TRIBE") else "TEAM"
-    next_name = target.name
-    if payload.name is not None:
-        stripped = payload.name.strip()
-        if not stripped:
-            raise ValidationDomainError(detail_override="Le nom de l'unité ne peut pas être vide.")
-        next_name = stripped
-
-    if "parent_id" in payload.model_fields_set:
-        next_parent = validate_org_unit_hierarchy(
-            unit_id=target.id,
-            kind=target_kind,
-            parent_id=payload.parent_id,
-            units_by_id=units_by_id,
-        )
-    else:
-        parent_node = units_by_id.get(target.parent_id or "")
-        next_parent = (
-            None
-            if parent_node is not None and parent_node.unit_type == "ENTERPRISE"
-            else target.parent_id
-        )
-
-    next_billing = (
-        target.billing_enabled if payload.billing_enabled is None else payload.billing_enabled
-    )
-    next_lead = (
-        resolved_lead
-        if resolved_lead is not None
-        else ((payload.lead_user_id or "").strip() or None)
-        if "lead_user_id" in payload.model_fields_set
-        else target.lead_user_id
-    )
-    if payload.member_user_ids is not None:
-        assert_bu_has_no_members(target_kind, payload.member_user_ids)
-        next_members = (
-            resolved_members
-            if resolved_members is not None
-            else normalize_member_user_ids(payload.member_user_ids)
-        )
-    else:
-        next_members = target.member_user_ids
-
-    if payload.lead_user_ids is not None:
-        next_leads = tuple(str(x).strip() for x in payload.lead_user_ids if str(x).strip())
-    elif "lead_user_id" in payload.model_fields_set:
-        next_leads = tuple([next_lead] if next_lead else [])
-    else:
-        next_leads = target.lead_user_ids
-
-    updated = OrgUnitNode(
-        id=target.id,
-        slug=target.slug,
-        name=next_name,
-        unit_type=target_kind,
-        parent_id=next_parent,
-        billing_enabled=next_billing,
-        lead_user_id=next_lead,
-        lead_user_ids=next_leads,
-        member_user_ids=next_members,
-    )
-    evaluator.upsert_org_unit(updated)
-    units_by_id[updated.id] = updated
-    ws_cnt = sum(1 for w in evaluator.workspaces if w.owner_org_unit_id == updated.id)
-    return build_org_unit_summary(updated, units_by_id, attached_workspaces_count=ws_cnt)
-
-
-def delete_in_evaluator(evaluator: MatrixPermissionEvaluator, org_unit_id: str) -> str:
-    """Delete unit in memory evaluator when PostgreSQL sync is disabled or disconnected."""
-    target = evaluator.get_org_unit(org_unit_id)
-    if target is None or target.unit_type == "ENTERPRISE":
-        raise ResourceNotFoundError(
-            detail_override=f"Unité organisationnelle introuvable : '{org_unit_id}'."
-        )
-    child_cnt = sum(
-        1 for u in evaluator.org_units if u.parent_id == target.id and u.unit_type != "ENTERPRISE"
-    )
-    ws_cnt = sum(1 for w in evaluator.workspaces if w.owner_org_unit_id == target.id)
-    assert_org_unit_deletable(
-        target_name=target.name,
-        child_units_count=child_cnt,
-        attached_workspaces_count=ws_cnt,
-    )
-    evaluator.remove_org_unit_node(target.id)
-    return target.id
+__all__ = [
+    "classify_and_handle_pg_error",
+    "create_in_evaluator",
+    "delete_in_evaluator",
+    "enforce_org_unit_mutation_access",
+    "filter_org_unit_summaries_in_memory",
+    "is_pg_connectivity_error",
+    "normalize_text_search",
+    "pg_sync_enabled",
+    "resolve_trace_id",
+    "serialize_org_unit_summary",
+    "sync_evaluator_from_summaries",
+    "update_in_evaluator",
+]

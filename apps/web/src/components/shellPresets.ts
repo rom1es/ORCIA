@@ -36,7 +36,10 @@ export function evaluateScopeModuleVisibility(
   hasWorkspaces: boolean,
 ): Record<UiModuleKey, boolean> {
   const isSupervisorOrAdmin =
-    role === "PLATFORM_ADMIN" || role === "BU_DIRECTOR" || role === "TEAM_LEAD";
+    role === "PLATFORM_ADMIN" ||
+    role === "BU_DIRECTOR" ||
+    role === "BU_LEAD" ||
+    role === "TEAM_LEAD";
   return {
     cockpit: true,
     inbox: hasWorkspaces,
@@ -47,7 +50,7 @@ export function evaluateScopeModuleVisibility(
     gates: hasWorkspaces,
     finops: hasWorkspaces && isSupervisorOrAdmin,
     admin: isSupervisorOrAdmin,
-    bootstrap: role === "PLATFORM_ADMIN",
+    bootstrap: role === "PLATFORM_ADMIN" || role === "SECOPS",
   };
 }
 
@@ -77,6 +80,7 @@ export function resolveModuleFromPathname(pathname: string | null): UiModuleKey 
   if (
     pathname.startsWith("/workspaces") ||
     pathname.startsWith("/spaces") ||
+    pathname.startsWith("/organization") ||
     pathname.startsWith("/admin")
   ) {
     return "admin";
@@ -88,11 +92,17 @@ export function resolveEightMenuKeyFromModule(
   moduleKey: UiModuleKey,
   pathname: string | null,
 ): EightFixedMenuKey {
-  if (pathname?.startsWith("/help") || pathname?.startsWith("/showcase")) return "help";
+  if (pathname?.startsWith("/ontology")) return "glossary";
+  if (pathname?.startsWith("/help") || pathname?.startsWith("/showcase")) return "cockpit";
   if (pathname?.startsWith("/agents")) return "agents";
   if (pathname?.startsWith("/processes")) return "processes";
   if (pathname?.startsWith("/assistant")) return "assistant";
-  if (pathname?.startsWith("/spaces") || pathname?.startsWith("/workspaces")) return "spaces";
+  if (
+    pathname?.startsWith("/spaces") ||
+    pathname?.startsWith("/workspaces") ||
+    pathname?.startsWith("/organization")
+  )
+    return "spaces";
   if (pathname?.startsWith("/finops") || pathname?.startsWith("/activity")) return "finops";
   if (pathname?.startsWith("/configuration") || pathname?.startsWith("/settings")) {
     return "configuration";
@@ -105,7 +115,7 @@ export function resolveEightMenuKeyFromModule(
     case "catalog":
       return "agents";
     case "ontology":
-      return "spaces";
+      return "glossary";
     case "gates":
       return "processes";
     case "finops":
@@ -136,7 +146,7 @@ export function mapEightMenuKeyToModule(key: EightFixedMenuKey): {
       return { moduleKey: "finops", route: "/finops" };
     case "configuration":
       return { moduleKey: "bootstrap", route: "/settings" };
-    case "help":
-      return { moduleKey: "ontology", route: "/help" };
+    case "glossary":
+      return { moduleKey: "ontology", route: "/ontology" };
   }
 }

@@ -2,6 +2,7 @@ import { OrciaButton, OrciaIcon, StatusBadge, type KnownUserOption } from "@orci
 import React from "react";
 import type { ConfiguredOrgUnit } from "../components/platformSetupStore";
 import type { OrgTreeRowItem } from "../features/admin/organization/orgTreeHelpers";
+import type { OrgUnitServerCapabilities } from "../features/admin/organization/orgUnitsApiBridge";
 import type { AdminAndStudioDictionarySection } from "../i18n/locales/admin_and_studio_labels";
 import { formatCountNoun } from "../stores/authSessionStore";
 
@@ -9,6 +10,7 @@ export interface SettingsOrganizationUnitRowProps {
   readonly rowItem: OrgTreeRowItem;
   readonly isFr: boolean;
   readonly canMutate: boolean;
+  readonly capabilities?: OrgUnitServerCapabilities;
   readonly knownUsers?: readonly KnownUserOption[];
   readonly labels: AdminAndStudioDictionarySection["settingsHub"]["organizationTab"];
   readonly onEdit: (unit: ConfiguredOrgUnit) => void;
@@ -20,6 +22,7 @@ export function SettingsOrganizationUnitRow({
   rowItem,
   isFr,
   canMutate,
+  capabilities,
   knownUsers = [],
   labels,
   onEdit,
@@ -64,6 +67,10 @@ export function SettingsOrganizationUnitRow({
     locale,
   );
   const billingActive = unit.billingEnabled !== false;
+  const isReadOnlyContext = Boolean(capabilities && !capabilities.canEdit);
+  const rowCanEdit = canMutate && (capabilities ? capabilities.canEdit : true);
+  const rowCanManageMembers = canMutate && (capabilities ? capabilities.canManageMembers : true);
+  const rowCanDelete = canMutate && (capabilities ? capabilities.canDelete : true);
 
   return (
     <div
@@ -188,6 +195,41 @@ export function SettingsOrganizationUnitRow({
           );
         })()}
 
+        {isReadOnlyContext ? (
+          <StatusBadge
+            testId={`org-unit-readonly-badge-${unit.id}`}
+            label={labels.badges.readOnlyAncestor}
+            tone="neutral"
+          />
+        ) : null}
+
+        {(() => {
+          const ontoLeads =
+            unit.level === "BU" && Array.isArray(unit.ontologyLeadUserIds)
+              ? unit.ontologyLeadUserIds
+              : [];
+          if (ontoLeads.length === 0) return null;
+          const names = ontoLeads.map((lid) => {
+            const u = knownUsers.find(
+              (k) =>
+                k.principalId.toLowerCase() === lid.toLowerCase() ||
+                (k.email && k.email.toLowerCase() === lid.toLowerCase()),
+            );
+            return u?.displayName || lid;
+          });
+          const prefix =
+            ontoLeads.length === 1
+              ? labels.badges.ontologyLeadPrefix
+              : labels.badges.ontologyLeadsPluralPrefix;
+          return (
+            <StatusBadge
+              testId={`org-unit-ontology-lead-badge-${unit.id}`}
+              label={`${prefix} ${names.join(", ")}`}
+              tone="cobalt"
+            />
+          );
+        })()}
+
         {unit.level === "TEAM" ? (
           <StatusBadge
             testId={`org-unit-members-count-${unit.id}`}
@@ -211,7 +253,7 @@ export function SettingsOrganizationUnitRow({
         <OrciaButton
           variant="secondary"
           testId={`edit-org-unit-btn-${unit.id}`}
-          disabled={!canMutate}
+          disabled={!rowCanEdit}
           onClick={() => onEdit(unit)}
           style={{ padding: "5px 10px", fontSize: "12px" }}
         >
@@ -222,7 +264,7 @@ export function SettingsOrganizationUnitRow({
           <OrciaButton
             variant="secondary"
             testId={`manage-members-org-unit-btn-${unit.id}`}
-            disabled={!canMutate}
+            disabled={!rowCanManageMembers}
             onClick={() => onManageMembers(unit)}
             style={{ padding: "5px 10px", fontSize: "12px" }}
           >
@@ -233,7 +275,7 @@ export function SettingsOrganizationUnitRow({
         <OrciaButton
           variant="danger"
           testId={`delete-org-unit-btn-${unit.id}`}
-          disabled={!canMutate}
+          disabled={!rowCanDelete}
           onClick={() => onRequestDelete(rowItem)}
           style={{ padding: "5px 10px", fontSize: "12px" }}
         >

@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { watchApiServerErrors } from "./support/apiErrors";
 import { resetDay0 } from "./support/day0";
+import { configureActiveEmbeddingModelViaApi } from "./support/embeddingModel";
 import { createFirstAdminViaUi } from "./support/firstAdmin";
 
 test.describe("TEST-06 · 10 — Recherche ⌘K à 2 vitesses", () => {
@@ -24,6 +25,7 @@ test.describe("TEST-06 · 10 — Recherche ⌘K à 2 vitesses", () => {
   });
 
   test("la recherche fédérée (vitesse 2) aboutit côté API", async ({ page }) => {
+    await configureActiveEmbeddingModelViaApi(page);
     await page.keyboard.press("Control+k");
     await page.getByTestId("cmdk-search-input").fill("agents");
     const federated = page.waitForResponse(

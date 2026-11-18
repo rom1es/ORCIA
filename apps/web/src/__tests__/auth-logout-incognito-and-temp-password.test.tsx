@@ -147,9 +147,9 @@ describe("Auth, Incognito Navigation, Logout & Temporary Password Warning Banner
 
     expect(screen.getByTestId("protected-workspace-content")).toBeDefined();
 
-    // Open user account dropdown
-    fireEvent.click(screen.getByTestId("user-account-dropdown-trigger"));
-    const logoutBtn = screen.getByTestId("dropdown-logout-btn");
+    // Open sidebar account popover & click logout
+    fireEvent.keyDown(screen.getByTestId("sidebar-open-my-account-btn"), { key: "Enter" });
+    const logoutBtn = await screen.findByTestId("account-popover-logout-btn");
 
     fireEvent.click(logoutBtn);
 
@@ -275,9 +275,9 @@ describe("Auth, Incognito Navigation, Logout & Temporary Password Warning Banner
 
     expect(screen.getByTestId("protected-workspace-content")).toBeDefined();
 
-    // Open user account dropdown & click logout
-    fireEvent.click(screen.getByTestId("user-account-dropdown-trigger"));
-    const logoutBtn = screen.getByTestId("dropdown-logout-btn");
+    // Open sidebar account popover & click logout
+    fireEvent.keyDown(screen.getByTestId("sidebar-open-my-account-btn"), { key: "Enter" });
+    const logoutBtn = await screen.findByTestId("account-popover-logout-btn");
     fireEvent.click(logoutBtn);
 
     // Wait for logout call and standalone login screen
@@ -289,7 +289,7 @@ describe("Auth, Incognito Navigation, Logout & Temporary Password Warning Banner
 
     // 4-zone shell is gone
     expect(screen.queryByTestId("protected-workspace-content")).toBeNull();
-    expect(screen.queryByTestId("user-account-dropdown-trigger")).toBeNull();
+    expect(screen.queryByTestId("sidebar-open-my-account-btn")).toBeNull();
     expect(screen.queryByTestId("eight-menu-item-cockpit")).toBeNull();
 
     // Verify POST /api/v1/auth/logout was recorded

@@ -52,12 +52,14 @@ SCHEMA_DOMAIN_MODULES: tuple[str, ...] = (
     "iam_accounts",
     "iam_password_models",
     "ontology_and_rag",
+    "ontology_promotions",
     "orchestration",
     "permission_broker",
     "problem_details",
     "process_studio_v2",
     "reflexive_execution",
     "shell",
+    "user_profile",
     "workflow_triggers",
 )
 

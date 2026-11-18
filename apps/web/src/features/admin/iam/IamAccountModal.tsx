@@ -15,6 +15,7 @@ export interface IamAccountModalSubmitValues {
   readonly teamIds: readonly string[];
   readonly ledBuIds?: readonly string[];
   readonly ledTeamIds?: readonly string[];
+  readonly ontologyLedBuIds?: readonly string[];
   readonly authSource?: IamAccountResponse["auth_source"] | null;
 }
 
@@ -62,6 +63,7 @@ export function IamAccountModal({
   const [selectedTeamIds, setSelectedTeamIds] = useState<readonly string[]>([]);
   const [selectedLedBuIds, setSelectedLedBuIds] = useState<readonly string[]>([]);
   const [selectedLedTeamIds, setSelectedLedTeamIds] = useState<readonly string[]>([]);
+  const [selectedOntologyLedBuIds, setSelectedOntologyLedBuIds] = useState<readonly string[]>([]);
 
   useEffect(() => {
     if (!open) return;
@@ -74,6 +76,7 @@ export function IamAccountModal({
       setSelectedTeamIds(editingAccount.team_ids);
       setSelectedLedBuIds(editingAccount.led_bu_ids ?? []);
       setSelectedLedTeamIds(editingAccount.led_team_ids ?? []);
+      setSelectedOntologyLedBuIds(editingAccount.ontology_led_bu_ids ?? []);
     } else {
       setAccountKind("HUMAN");
       setDisplayName(initialCreateDefaults?.displayName ?? "");
@@ -83,6 +86,7 @@ export function IamAccountModal({
       setSelectedTeamIds(initialCreateDefaults?.teamIds ?? []);
       setSelectedLedBuIds([]);
       setSelectedLedTeamIds([]);
+      setSelectedOntologyLedBuIds([]);
     }
   }, [open, editingAccount, initialCreateDefaults]);
 
@@ -93,6 +97,7 @@ export function IamAccountModal({
         : prev.filter((r) => r !== roleKey);
       if (!nextRoles.includes("BU_LEAD")) setSelectedLedBuIds([]);
       if (!nextRoles.includes("TEAM_LEAD")) setSelectedLedTeamIds([]);
+      if (!nextRoles.includes("ONTOLOGY_LEAD")) setSelectedOntologyLedBuIds([]);
       return nextRoles;
     });
   };
@@ -133,6 +138,9 @@ export function IamAccountModal({
             teamIds: selectedTeamIds,
             ledBuIds: selectedRoles.includes("BU_LEAD") ? selectedLedBuIds : [],
             ledTeamIds: selectedRoles.includes("TEAM_LEAD") ? selectedLedTeamIds : [],
+            ontologyLedBuIds: selectedRoles.includes("ONTOLOGY_LEAD")
+              ? selectedOntologyLedBuIds
+              : [],
             authSource: isEditing ? editingAccount.auth_source : undefined,
           });
         }}
@@ -264,6 +272,8 @@ export function IamAccountModal({
           onChangeSelectedLedBuIds={setSelectedLedBuIds}
           selectedLedTeamIds={selectedLedTeamIds}
           onChangeSelectedLedTeamIds={setSelectedLedTeamIds}
+          selectedOntologyLedBuIds={selectedOntologyLedBuIds}
+          onChangeSelectedOntologyLedBuIds={setSelectedOntologyLedBuIds}
           canMutate={canMutate}
           isSubmitting={isSubmitting}
           labels={dir}

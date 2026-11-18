@@ -312,16 +312,12 @@ describe("Exclusive Auth Policy (LOCAL vs SSO), Configurable 2FA, Settings Organ
     );
   });
 
-  it("hides Configuration sidebar menu for all non-PLATFORM_ADMIN roles, blocks hat escalation, and wipes cache on boot_epoch rotation", async () => {
-    for (const nonAdmin of ["SECOPS", "BU_LEAD", "TEAM_LEAD", "CONTRIBUTOR", "OBSERVER"] as const) {
+  it("hides Configuration sidebar menu for non-admin/non-SecOps roles, ignores activeHat for RBAC, and wipes cache on boot_epoch rotation", async () => {
+    for (const nonAdmin of ["BU_LEAD", "TEAM_LEAD", "CONTRIBUTOR", "OBSERVER"] as const) {
       useAuthSessionStore.getState().setAuthSession({
         roles: [nonAdmin],
-        activeHat: nonAdmin,
+        activeHat: "PLATFORM_ADMIN",
       });
-      act(() => {
-        useAuthSessionStore.getState().setActiveHat("PLATFORM_ADMIN");
-      });
-      expect(useAuthSessionStore.getState().activeHat).not.toBe("PLATFORM_ADMIN");
 
       const { unmount } = render(
         <I18nProvider initialLocale="fr">

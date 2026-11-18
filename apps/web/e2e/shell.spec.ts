@@ -13,7 +13,7 @@ const PUBLIC_DAY0_MENU_KEYS = [
   "agents",
   "spaces",
   "finops",
-  "help",
+  "glossary",
 ] as const;
 
 test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, UX-DR8)", () => {
@@ -47,7 +47,10 @@ test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, 
     for (const key of PUBLIC_DAY0_MENU_KEYS) {
       const entry = page.getByTestId(`eight-menu-item-${key}`);
       await expect(entry).toBeAttached();
-      const text = (await entry.innerText()).trim();
+      const text =
+        (await entry.innerText()).trim() ||
+        (await entry.getAttribute("aria-label"))?.trim() ||
+        "";
       expect(text.length, `libellé vide pour ${key}`).toBeGreaterThan(0);
       expect(text, `préfixe numérique interdit pour ${key}`).not.toMatch(/^\d+[.)]?\s/);
     }

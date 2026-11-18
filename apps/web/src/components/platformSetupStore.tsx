@@ -269,17 +269,31 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         }
         const mappedApiOrgUnits: ConfiguredOrgUnit[] = (
           remoteOrgUnitsResp?.org_units ?? []
-        ).map((dto) => ({
-          id: dto.id,
-          name: dto.name,
-          slug: dto.slug,
-          level: dto.kind,
-          parentId: dto.parent_id ?? "scope-global",
-          billingEnabled: dto.billing_enabled ?? true,
-          leadUserId: dto.lead_user_id ?? null,
-          memberUserIds: dto.member_user_ids ?? [],
-          attachedWorkspacesCount: dto.attached_workspaces_count ?? 0,
-        }));
+        ).map((dto) => {
+          const rawLeads = Array.isArray(dto.lead_user_ids) ? dto.lead_user_ids : [];
+          const leadUserIds = rawLeads.length > 0
+            ? rawLeads
+            : dto.lead_user_id ? [dto.lead_user_id] : [];
+          return {
+            id: dto.id,
+            name: dto.name,
+            slug: dto.slug,
+            level: dto.kind,
+            parentId: dto.parent_id ?? "scope-global",
+            billingEnabled: dto.billing_enabled ?? true,
+            leadUserId: leadUserIds[0] ?? dto.lead_user_id ?? null,
+            leadUserIds,
+            ontologyLeadUserIds:
+              dto.kind === "BU" && Array.isArray(dto.ontology_lead_user_ids)
+                ? dto.ontology_lead_user_ids
+                : [],
+            memberUserIds: dto.kind === "BU" ? [] : (dto.member_user_ids ?? []),
+            attachedWorkspacesCount: dto.attached_workspaces_count ?? 0,
+            attachedWorkspaces: Array.isArray(dto.attached_workspaces)
+              ? dto.attached_workspaces.map((w) => ({ id: w.id, slug: w.slug, name: w.name }))
+              : [],
+          };
+        });
         const mappedApiGrants: ConfiguredRbacGrant[] = Array.isArray(remoteIamGrantsResp)
           ? remoteIamGrantsResp.map((g) => ({
               id: g.id,

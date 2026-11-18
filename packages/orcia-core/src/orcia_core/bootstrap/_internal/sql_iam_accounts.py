@@ -23,10 +23,15 @@ from orcia_core.bootstrap._internal.sql_iam_account_helpers import (
     row_to_account,
     sync_team_memberships_in_org_units,
 )
+from orcia_core.bootstrap._internal.sql_local_auth import _resolve_platform_role
 from orcia_core.bootstrap._internal.sql_org_iam_role_sync import (
     hydrate_iam_accounts_led_units,
     resolve_default_human_auth_source,
     sync_lead_units_from_iam_account,
+)
+from orcia_core.bootstrap._internal.sql_org_ontology_lead_sync import (
+    hydrate_iam_accounts_ontology_led_bus,
+    sync_ontology_lead_bus_from_iam_account,
 )
 from orcia_core.permissions.errors import (
     DuplicateIamPrincipalError,
@@ -110,7 +115,8 @@ async def sync_and_list_iam_accounts_from_postgres18(
                 },
             )
             existing = await load_accounts_from_conn(conn)
-        return await hydrate_iam_accounts_led_units(conn, existing)
+        hydrated = await hydrate_iam_accounts_led_units(conn, existing)
+        return await hydrate_iam_accounts_ontology_led_bus(conn, hydrated)
 
 
 async def create_iam_account_on_postgres18(
@@ -126,6 +132,7 @@ async def create_iam_account_on_postgres18(
     status: IamAccountStatus = "ACTIVE",
     led_bu_ids: Sequence[str] | None = None,
     led_team_ids: Sequence[str] | None = None,
+    ontology_led_bu_ids: Sequence[str] | None = None,
     instance: str | None = None,
 ) -> IamAccountRecord:
     cleaned_name = display_name.strip()
@@ -198,7 +205,15 @@ async def create_iam_account_on_postgres18(
             led_bu_ids=led_bu_ids,
             led_team_ids=led_team_ids,
         )
+        await sync_ontology_lead_bus_from_iam_account(
+            conn,
+            principal_id=norm_principal,
+            email=cleaned_email,
+            roles=valid_roles,
+            ontology_led_bu_ids=ontology_led_bu_ids,
+        )
         hydrated = await hydrate_iam_accounts_led_units(conn, [row_to_account(row)])
+        hydrated = await hydrate_iam_accounts_ontology_led_bus(conn, hydrated)
         return hydrated[0]
 
 
@@ -214,6 +229,7 @@ async def update_iam_account_on_postgres18(
     status: IamAccountStatus | None = None,
     led_bu_ids: Sequence[str] | None = None,
     led_team_ids: Sequence[str] | None = None,
+    ontology_led_bu_ids: Sequence[str] | None = None,
     instance: str | None = None,
 ) -> IamAccountRecord:
     try:
@@ -291,7 +307,24 @@ async def update_iam_account_on_postgres18(
             led_bu_ids=led_bu_ids,
             led_team_ids=led_team_ids,
         )
+        await sync_ontology_lead_bus_from_iam_account(
+            conn,
+            principal_id=target.principal_id,
+            email=next_email,
+            roles=next_roles,
+            ontology_led_bu_ids=ontology_led_bu_ids,
+        )
+        if roles is not None and next_email:
+            users_reg = (await conn.execute(sa.text("SELECT to_regclass('public.users')"))).scalar()
+            if users_reg is not None:
+                await conn.execute(
+                    sa.text(
+                        "UPDATE users SET platform_role = :role WHERE LOWER(email) = LOWER(:email)"
+                    ),
+                    {"role": _resolve_platform_role(next_roles), "email": next_email},
+                )
         hydrated = await hydrate_iam_accounts_led_units(conn, [row_to_account(row)])
+        hydrated = await hydrate_iam_accounts_ontology_led_bus(conn, hydrated)
         return hydrated[0]
 
 
@@ -325,6 +358,13 @@ async def delete_iam_account_on_postgres18(
             remove_all=True,
         )
         await sync_lead_units_from_iam_account(
+            conn,
+            principal_id=target.principal_id,
+            email=target.email,
+            roles=(),
+            remove_all=True,
+        )
+        await sync_ontology_lead_bus_from_iam_account(
             conn,
             principal_id=target.principal_id,
             email=target.email,

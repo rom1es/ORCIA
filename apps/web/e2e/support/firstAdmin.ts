@@ -25,5 +25,5 @@ export async function createFirstAdminViaUi(page: Page): Promise<void> {
   ]);
   expect(firstAdminRes.status()).toBe(200);
   await expect(modal).toBeHidden({ timeout: 30000 });
-  await expect(page.getByTestId("user-account-dropdown-trigger")).toBeVisible({ timeout: 15000 });
+  await expect(page.getByTestId("sidebar-open-my-account-btn")).toBeVisible({ timeout: 15000 });
 }

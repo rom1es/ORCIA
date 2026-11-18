@@ -10,6 +10,7 @@ from typing import Any
 import httpx
 from fastapi import Request
 
+from orcia_api.routers._assistant_usage_telemetry import resolve_audit_ledger_sink
 from orcia_api.routers.assistant_background_turns import (
     ACTIVE_WORKSPACE_TURNS,
     ActiveBackgroundTurnState,
@@ -59,6 +60,12 @@ class LiveLlmTurnOutcome:
     thinking_text: str | None = None
     invoked_tool_names: tuple[str, ...] = ()
     assembled_system_prompt: str = ""
+    input_tokens: int = 0
+    output_tokens: int = 0
+    usage_source: str = "estimated"
+    model_id: str = ""
+    inference_tier: str | None = None
+    effort: str | None = None
 
 
 def _get_or_create_async_http_client(request: Request) -> httpx.AsyncClient:
@@ -188,6 +195,9 @@ async def invoke_configured_llm_for_assistant_turn(
 
     invoked_tools = tuple(tc.get("name", "") for tc in outcome.tool_calls if tc.get("name"))
     content = outcome.content
+    total_in_tokens = outcome.input_tokens
+    total_out_tokens = outcome.output_tokens
+    usage_source = outcome.usage_source
     if not content and invoked_tools:
         followup_msgs = [
             *messages,
@@ -204,6 +214,10 @@ async def invoke_configured_llm_for_assistant_turn(
         )
         if second is not None and second.content:
             content = second.content
+            total_in_tokens += second.input_tokens
+            total_out_tokens += second.output_tokens
+            if second.usage_source == "provider":
+                usage_source = "provider"
 
     if not content:
         return None
@@ -214,6 +228,12 @@ async def invoke_configured_llm_for_assistant_turn(
         thinking_text=outcome.thinking_text or default_thinking,
         invoked_tool_names=invoked_tools,
         assembled_system_prompt=system_msg,
+        input_tokens=total_in_tokens,
+        output_tokens=total_out_tokens,
+        usage_source=usage_source,
+        model_id=ep.model_name,
+        inference_tier=requested_tier or ep.tier,
+        effort=effort,
     )
 
 
@@ -235,6 +255,9 @@ async def stream_configured_llm_for_assistant_turn(
     folder_pinned_notes: str | None = None,
     locale: str | None = None,
     fallback_response_text: str | None = None,
+    user_email: str | None = None,
+    user_display_name: str | None = None,
+    audit_ledger_sink: Any | None = None,
 ) -> AsyncIterator[dict[str, Any]]:
     """True async SSE token streamer decoupled via `ACTIVE_WORKSPACE_TURNS`."""
     resolved_locale = resolve_request_locale(request, locale)
@@ -284,6 +307,13 @@ async def stream_configured_llm_for_assistant_turn(
         conversation_history_count=len(conversation_history or []),
         folder_pinned_notes=folder_pinned_notes,
         thinking_effort=thinking_effort,
+        user_id=user_id,
+        user_email=user_email,
+        user_display_name=user_display_name,
+        model_tier=requested_tier or (ep.tier if ep is not None else "medium"),
+        audit_ledger_sink=audit_ledger_sink or resolve_audit_ledger_sink(request),
+        trace_id=getattr(getattr(request, "state", None), "trace_id", None),
+        speed_mode=speed_mode,
     ):
         yield evt
 

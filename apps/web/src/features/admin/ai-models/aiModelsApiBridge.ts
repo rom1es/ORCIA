@@ -22,8 +22,8 @@ function buildAiModelsClient(locale: "fr" | "en") {
 }
 
 function resolveActorPersona(): string {
-  const { roles, activeHat } = useAuthSessionStore.getState();
-  if (roles.includes("SECOPS") || activeHat === "SECOPS") return "karim";
+  const { roles } = useAuthSessionStore.getState();
+  if (roles.includes("SECOPS")) return "karim";
   return "marc";
 }
 

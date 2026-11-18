@@ -23,12 +23,15 @@ export interface CreateOrgUnitFormValues {
   readonly billingEnabled: boolean;
   readonly leadUserId: string;
   readonly leadUserIds?: readonly string[];
+  readonly ontologyLeadUserIds?: readonly string[];
 }
 
 export interface CreateOrgUnitModalProps {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
   readonly canMutate: boolean;
+  readonly canCreateAtRoot?: boolean;
+  readonly creatableParentUnits?: readonly ConfiguredOrgUnit[];
   readonly orgUnits: readonly ConfiguredOrgUnit[];
   readonly knownUsers?: readonly KnownUserOption[];
   readonly labels: AdminAndStudioDictionarySection["settingsHub"]["organizationTab"]["createModal"];
@@ -42,6 +45,8 @@ export function CreateOrgUnitModal({
   open,
   onOpenChange,
   canMutate,
+  canCreateAtRoot = true,
+  creatableParentUnits,
   orgUnits,
   knownUsers = [],
   labels,
@@ -50,27 +55,34 @@ export function CreateOrgUnitModal({
   isSubmitting,
   onSubmit,
 }: CreateOrgUnitModalProps): React.ReactElement {
-  const buUnits = getEligibleParentBuUnits(orgUnits);
+  const effectiveParentPool = creatableParentUnits ?? orgUnits;
+  const buUnits = getEligibleParentBuUnits(effectiveParentPool);
   const firstBuId = buUnits[0]?.id ?? "scope-global";
 
   const {
-    options: parentOptions,
+    options: rawParentOptions,
     handleSearchQueryChange: onParentSearchChange,
     resetSearch: resetParentSearch,
   } = useParentOrgSearch({
-    initialUnits: orgUnits,
+    initialUnits: effectiveParentPool,
     rootParentOptionLabel: labels.rootParentOption,
     parentBuOptionPrefix: labels.parentBuOptionPrefix,
   });
+  const parentOptions = canCreateAtRoot
+    ? rawParentOptions
+    : rawParentOptions.filter((opt) => opt.value !== "scope-global");
 
   const leadSearch = useKnownOrgUsersSearch({ initialKnownUsers: knownUsers });
+  const ontoSearch = useKnownOrgUsersSearch({ initialKnownUsers: knownUsers });
   const [kind, setKind] = useState<"BU" | "TEAM">("BU");
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
-  const [parentId, setParentId] = useState("scope-global");
+  const [parentId, setParentId] = useState(() => (canCreateAtRoot ? "scope-global" : firstBuId));
   const [billingEnabled, setBillingEnabled] = useState(true);
   const [leadUserIds, setLeadUserIds] = useState<readonly string[]>([]);
   const [leadDraft, setLeadDraft] = useState("");
+  const [ontologyLeadUserIds, setOntologyLeadUserIds] = useState<readonly string[]>([]);
+  const [ontologyLeadDraft, setOntologyLeadDraft] = useState("");
   const [leadValidationError, setLeadValidationError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,29 +90,46 @@ export function CreateOrgUnitModal({
       setKind("BU");
       setName("");
       setSlug("");
-      setParentId("scope-global");
+      setParentId(canCreateAtRoot ? "scope-global" : firstBuId);
       setBillingEnabled(true);
       setLeadUserIds([]);
       setLeadDraft("");
+      setOntologyLeadUserIds([]);
+      setOntologyLeadDraft("");
       setLeadValidationError(null);
       resetParentSearch();
     }
-  }, [open]);
+  }, [open, canCreateAtRoot, firstBuId]);
 
   const handleKindChange = (nextKind: "BU" | "TEAM") => {
     setKind(nextKind);
-    setParentId(nextKind === "TEAM" && buUnits.length > 0 ? firstBuId : "scope-global");
+    setParentId(
+      nextKind === "TEAM" && buUnits.length > 0
+        ? firstBuId
+        : canCreateAtRoot
+          ? "scope-global"
+          : firstBuId,
+    );
   };
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canMutate || !name.trim() || isSubmitting) return;
-    const allKnownUsers = [...leadSearch.knownUsers, ...knownUsers];
+    const allKnownUsers = [...leadSearch.knownUsers, ...ontoSearch.knownUsers, ...knownUsers];
     const pendingId = resolvePendingKnownUserId(leadDraft, allKnownUsers);
     const finalLeads = pendingId && !leadUserIds.some((id) => id.toLowerCase() === pendingId.toLowerCase())
       ? [...leadUserIds, pendingId]
       : leadUserIds;
-    const invalidLead = finalLeads.find((lid) => !isKnownUserIdentifier(lid, allKnownUsers));
+    const pendingOntoId = resolvePendingKnownUserId(ontologyLeadDraft, allKnownUsers);
+    const finalOntoLeads =
+      kind === "BU"
+        ? pendingOntoId && !ontologyLeadUserIds.some((id) => id.toLowerCase() === pendingOntoId.toLowerCase())
+          ? [...ontologyLeadUserIds, pendingOntoId]
+          : ontologyLeadUserIds
+        : [];
+    const invalidLead = [...finalLeads, ...finalOntoLeads].find(
+      (lid) => !isKnownUserIdentifier(lid, allKnownUsers),
+    );
     if (invalidLead) {
       setLeadValidationError(
         unknownUserErrorLabel ||
@@ -116,6 +145,7 @@ export function CreateOrgUnitModal({
       billingEnabled,
       leadUserId: finalLeads[0] ?? "",
       leadUserIds: finalLeads,
+      ontologyLeadUserIds: finalOntoLeads,
     });
   };
 
@@ -238,6 +268,28 @@ export function CreateOrgUnitModal({
             </div>
           ) : null}
         </div>
+
+        {kind === "BU" ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <label htmlFor="org-unit-ontology-lead-input" className="orcia-ds-label">
+              {labels.ontologyLeadLabel}
+            </label>
+            <OrciaUserPillsSelect
+              inputId="org-unit-ontology-lead-input"
+              inputTestId="org-unit-ontology-lead-input"
+              disabled={!canMutate || isSubmitting}
+              selectedUserIds={ontologyLeadUserIds}
+              onChange={setOntologyLeadUserIds}
+              draftQuery={ontologyLeadDraft}
+              onDraftQueryChange={(val) => {
+                setOntologyLeadDraft(val);
+                setLeadValidationError(null);
+              }}
+              knownUsers={ontoSearch.knownUsers}
+              placeholder={labels.ontologyLeadPlaceholder}
+            />
+          </div>
+        ) : null}
 
         <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600, cursor: canMutate ? "pointer" : "not-allowed" }}>
           <input

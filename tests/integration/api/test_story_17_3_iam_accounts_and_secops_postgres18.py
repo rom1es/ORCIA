@@ -48,7 +48,7 @@ async def test_iam_accounts_day0_sync_anti_lockout_and_secops_grants_postgres18(
         )
 
         async with app_client_factory() as client:
-            # 1. Native 6-role matrix check
+            # 1. Native 7-role matrix check
             r_matrix = await client.get("/api/v1/settings/iam/role-matrix", headers=headers)
             assert r_matrix.status_code == 200, r_matrix.text
             matrix_body = r_matrix.json()
@@ -59,6 +59,7 @@ async def test_iam_accounts_day0_sync_anti_lockout_and_secops_grants_postgres18(
                 "SECOPS",
                 "BU_LEAD",
                 "TEAM_LEAD",
+                "ONTOLOGY_LEAD",
                 "CONTRIBUTOR",
                 "OBSERVER",
             ]

@@ -13,8 +13,11 @@ OrgUnitType = Literal["ENTERPRISE", "BU", "TRIBE", "TEAM", "SUB_TEAM"]
 AuthMode = Literal["OIDC", "LOCAL", "HYBRID"]
 PlatformRole = Literal[
     "PLATFORM_ADMIN",
+    "SECOPS",
+    "BU_LEAD",
     "BU_DIRECTOR",
     "TEAM_LEAD",
+    "ONTOLOGY_LEAD",
     "CONTRIBUTOR",
     "GATE_REVIEWER",
     "ONTOLOGY_STEWARD_L3",
@@ -69,11 +72,17 @@ class OrgUnitNode:
     lead_user_id: str | None = None
     member_user_ids: tuple[str, ...] = field(default_factory=tuple)
     lead_user_ids: tuple[str, ...] = field(default_factory=tuple)
+    ontology_lead_user_ids: tuple[str, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
         leads, primary = normalize_lead_user_ids(self.lead_user_ids, self.lead_user_id)
         object.__setattr__(self, "lead_user_ids", leads)
         object.__setattr__(self, "lead_user_id", primary)
+        if self.unit_type in ("BU", "TRIBE"):
+            onto_leads, _ = normalize_lead_user_ids(self.ontology_lead_user_ids, None)
+        else:
+            onto_leads = ()
+        object.__setattr__(self, "ontology_lead_user_ids", onto_leads)
 
 
 @dataclass(frozen=True, slots=True)

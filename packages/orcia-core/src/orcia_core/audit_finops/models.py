@@ -101,4 +101,5 @@ class AuditLedgerFilterParams:
     limit: int = 100
     offset: int = 0
     allowed_workspace_ids: tuple[str, ...] | None = None
+    allowed_org_unit_ids: tuple[str, ...] | None = None
     include_null_workspace: bool = False

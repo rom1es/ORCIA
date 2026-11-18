@@ -89,14 +89,24 @@ capabilities:
 
   # ───────────── Ontologie & RAG (Epic 2) ─────────────
   - id: CAP-010
-    title: Ontologie 4 niveaux (héritage, extraction temps réel, simulation d'impact)
+    title: Ontologie 4 niveaux PG18 (héritage, rôle ONTOLOGY_LEAD, extraction temps réel, simulation d'impact et promotions L4->L1)
     fr: [FR-8, FR-9, FR-10]
     origin: epic
-    origin_ref: 2-1, 2-2
+    origin_ref: 2-1, 2-2, 20-2
     status: live
-    tests: [apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts, tests/evals/test_assistant_and_ontology_evals.py]
+    tests:
+      - apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts
+      - tests/evals/test_assistant_and_ontology_evals.py
+      - tests/unit/test_story_20_2_ontology_permissions_and_promotions.py
+      - tests/security/test_story_20_2_ontology_rbac_isolation.py
+      - tests/integration/api/test_story_20_2_ontology_promotions_postgres18.py
+      - apps/web/src/__tests__/story-20-2-glossaire-ontology-and-promotions.test.tsx
     verification: runtime
-    surfaces: { route: /ontology, api: "/api/v1/ontology-rag (ontology_and_rag.py)" }
+    surfaces:
+      route: /ontology
+      api: "/api/v1/ontology-rag (ontology_and_rag.py + ontology_promotions.py)"
+      ui: "OntologyFeatureView + OntologyPromotionProposalsTab + WorkspaceGlossaryAndOntologyTab"
+      migration: "0006 + 0007 + 20261117_2002"
   - id: CAP-011
     title: Indexation différenciée incrémentale et graphe tripartite Confluence↔Jira↔Git
     fr: [FR-23]
@@ -214,10 +224,10 @@ capabilities:
 
   # ───────────── Settings & gouvernance (Epic 8 + ad-hoc) ─────────────
   - id: CAP-050
-    title: Modèle d'habilitations RBAC/ABAC à 6 verbes, matrice native des 6 rôles et exceptions SecOps
+    title: Modèle d'habilitations RBAC/ABAC à 6 verbes, matrice native des 7 rôles (incluant ONTOLOGY_LEAD) et exceptions SecOps
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-1, 17-3 + 2026-11-15-anti-lastpass-matrice-roles-modale-sync-secops-et-hierarchie-bu + 2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu
+    origin_ref: 8-1, 17-3, 20-1 + 2026-11-15-anti-lastpass-matrice-roles-modale-sync-secops-et-hierarchie-bu + 2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu
     status: live
     tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, tests/unit/test_story_17_3_iam_accounts_and_role_matrix.py, tests/unit/test_evaluator_multi_lead_rollup.py, tests/integration/api/test_story_17_3_iam_accounts_and_secops_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py]
     verification: runtime
@@ -301,25 +311,25 @@ capabilities:
     tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py]
     surfaces: { route: /wizards, api: studio_and_wizards.py }
   - id: CAP-058
-    title: Coquille Settings à 6 onglets réservée aux Administrateurs Plateforme (PLATFORM_ADMIN), hiérarchie BU et gouvernance Authentification
+    title: Coquille Settings à 5 onglets réservée aux Administrateurs Plateforme (PLATFORM_ADMIN) & SecOps, délégation Mon Organisation (/organization) et gouvernance Authentification
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-3, 17-1 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa + 2026-11-15-anti-lastpass-matrice-roles-modale-sync-secops-et-hierarchie-bu + 2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu
+    origin_ref: 8-3, 17-1, 20-1 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa + 2026-11-15-anti-lastpass-matrice-roles-modale-sync-secops-et-hierarchie-bu + 2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu
     status: live
-    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/unit/test_auth_pg_rehydration_after_reload.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_platform_auth_modes_2fa_and_local_isolation_postgres18.py, tests/integration/api/test_auth_pg_rehydration_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx, packages/ui/src/__tests__/status-badge-and-anti-lastpass-inputs.test.tsx, apps/web/src/__tests__/story-17-1-settings-5-tabs-and-rbac.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, apps/web/src/__tests__/platform-auth-modes-2fa-and-settings-f5.test.tsx, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx]
+    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/unit/test_auth_pg_rehydration_after_reload.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_platform_auth_modes_2fa_and_local_isolation_postgres18.py, tests/integration/api/test_auth_pg_rehydration_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx, packages/ui/src/__tests__/status-badge-and-anti-lastpass-inputs.test.tsx, apps/web/src/__tests__/story-17-1-settings-5-tabs-and-rbac.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx, apps/web/src/__tests__/platform-auth-modes-2fa-and-settings-f5.test.tsx, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx]
     verification: runtime
-    surfaces: { route: "/settings, /configuration", api: "settings_and_studio.py, auth_settings.py, sql_local_auth.py, sql_org_iam_role_sync.py", ui: "SettingsHubView (organization, iam, authentication, models, connectors, packs) + SettingsOrganizationUnitRow + StatusBadge (cobalt pastel) + OrciaKnownUserCombobox (anti-LastPass) + SettingsAuthenticationSection + PlatformAuthSettingsCard + OrciaAlertBanner + authSessionStore", migration: "20261115_1901 + 20261115_1902" }
+    surfaces: { route: "/settings, /configuration, /organization", api: "settings_and_studio.py, auth_settings.py, sql_local_auth.py, sql_org_iam_role_sync.py", ui: "SettingsHubView (iam, authentication, models, connectors, packs) + OrganizationPageView + SettingsOrganizationUnitRow + StatusBadge (cobalt pastel) + OrciaKnownUserCombobox (anti-LastPass) + SettingsAuthenticationSection + PlatformAuthSettingsCard + OrciaAlertBanner + authSessionStore", migration: "20261115_1901 + 20261115_1902 + 20261117_2001" }
 
   # ───────────── Shell, navigation, aide (Epic 9, 12, 17 + ad-hoc) ─────────────
   - id: CAP-060
-    title: Shell 4 zones Direction C (8 entrées, icônes SVG filaires 16px, barre de repli & Mon Compte) et cockpit épuré
+    title: Shell 4 zones Direction C (8 entrées dont Glossaire -> /ontology, icônes SVG filaires 16px, barre de repli, Top-Right épuré & popup Mon Compte bas-gauche) et cockpit épuré
     fr: [FR-32]
     origin: epic
-    origin_ref: 9-1, 12-1, 17-1 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa
+    origin_ref: 9-1, 12-1, 17-1, 20-2, 20-3 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa
     status: live
-    tests: [apps/web/e2e/shell.spec.ts, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, packages/ui/src/__tests__/story-17-1-wireframe-icons-and-shell-rail.test.tsx, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx]
+    tests: [apps/web/e2e/shell.spec.ts, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, packages/ui/src/__tests__/story-17-1-wireframe-icons-and-shell-rail.test.tsx, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx, apps/web/src/__tests__/story-20-3-sidebar-account-popover-and-settings-f5.test.tsx]
     verification: runtime
-    surfaces: { ui: "FourZoneDirectionCShell + FourZoneSidebarRail + OrciaIcon SVG + UserAccountDropdownAndSettingsModal", api: "/api/v1/navigation (shell.py)" }
+    surfaces: { ui: "FourZoneDirectionCShell + FourZoneSidebarRail + OrciaIcon SVG + SidebarAccountPopover", api: "/api/v1/navigation (shell.py)" }
   - id: CAP-061
     title: Accostage progressif Jour 0 (1/6) et protections
     fr: [FR-32]
@@ -339,28 +349,28 @@ capabilities:
     verification: runtime
     surfaces: { ui: CommandPaletteModal + TopHeaderSearchCommand }
   - id: CAP-063
-    title: Menu compte, modale de profil & sécurité, changement de mot de passe et alerte mot de passe temporaire
+    title: Popup Mon Compte bas-gauche style ChatGPT, modale Paramètres 5 onglets persistée PG18 (/profile, préférences, clés IDE/MCP SHA-256) et alerte mot de passe temporaire
     fr: [FR-32]
     origin: epic
-    origin_ref: 9-4 + 17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances + 2026-11-15-correction-erreur-mot-de-passe-actuel-et-repli-ui-post-modification
+    origin_ref: 9-4, 20-3, 20-4 + 17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances + 2026-11-15-correction-erreur-mot-de-passe-actuel-et-repli-ui-post-modification
     status: live
-    tests: [tests/unit/test_epic_9_story_9_4_user_preferences_and_mcp_tokens.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/unit/test_change_password_current_check_and_pg_hydration.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py, packages/ui/src/__tests__/temporary-password-modal.test.tsx, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx, apps/web/src/__tests__/auth-logout-incognito-and-temp-password.test.tsx]
+    tests: [tests/unit/test_epic_9_story_9_4_user_preferences_and_mcp_tokens.py, tests/unit/test_story_20_3_user_preferences_and_mcp_tokens.py, tests/security/test_story_20_3_mcp_tokens_isolation.py, tests/integration/api/test_story_20_3_user_preferences_and_mcp_postgres18.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/unit/test_change_password_current_check_and_pg_hydration.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py, packages/ui/src/__tests__/temporary-password-modal.test.tsx, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx, apps/web/src/__tests__/story-20-3-sidebar-account-popover-and-settings-f5.test.tsx, apps/web/src/__tests__/auth-logout-incognito-and-temp-password.test.tsx]
     verification: runtime
-    surfaces: { ui: "ShellHeaderAccountControl + UserSettingsProfileAndPassthroughTabs + UserPasswordChangeCard + TemporaryPasswordWarningBanner", api: "/api/v1/users/me/account-profile, /api/v1/auth/change-password" }
+    surfaces: { route: /profile, api: "user_account_settings.py (/api/v1/users/me/preferences, /api/v1/users/me/mcp-tokens), /api/v1/users/me/account-profile, /api/v1/auth/change-password", ui: "ShellSidebarAccountControl + SidebarAccountPopover + UserSettingsModalDialog (5 onglets) + UserPasswordChangeCard + TemporaryPasswordWarningBanner + UserProfileOverviewPage", migration: "20261117_2003" }
   - id: CAP-064
-    title: Aide contextuelle hybride (ⓘ, HelpArticle, catalogue d'aide)
+    title: Aide contextuelle hybride (ⓘ, HelpArticle, catalogue d'aide & bannière Vitrine sur /help)
     fr: [FR-32]
     origin: epic
-    origin_ref: 9-5 + 2026-11-05-audit-textes-ux-ui-zero-jargon-et-aide-contextuelle-icone-i
+    origin_ref: 9-5, 20-2 + 2026-11-05-audit-textes-ux-ui-zero-jargon-et-aide-contextuelle-icone-i
     status: live
-    tests: [apps/web/e2e/09-pack-builder-and-contextual-help.spec.ts]
+    tests: [apps/web/e2e/09-pack-builder-and-contextual-help.spec.ts, apps/web/src/__tests__/story-20-2-glossaire-ontology-and-promotions.test.tsx]
     verification: runtime
-    surfaces: { route: /help, api: portal_and_help.py }
+    surfaces: { route: /help, api: portal_and_help.py, ui: "HelpCenterRouteView (Centre d'Aide & Showcase)" }
   - id: CAP-065
-    title: Registre de provenance auditable immuable (`audit_ledger` append-only) & journal d'activité (/activity)
+    title: Registre de provenance auditable immuable (`audit_ledger` append-only) & journal d'activité scopé par rôle (/activity)
     fr: [FR-25, FR-32]
     origin: epic
-    origin_ref: 6-1-registre-de-provenance-auditable-immuable-audit_ledger-appen
+    origin_ref: 6-1-registre-de-provenance-auditable-immuable-audit_ledger-appen, 20-1, 20-4
     status: live
     verification: runtime
     tests:
@@ -369,14 +379,18 @@ capabilities:
       - tests/unit/test_story_6_1_sql_audit_ledger.py
       - tests/integration/api/test_story_6_1_audit_ledger_postgres18.py
       - tests/security/test_story_6_1_canary_leak_and_scope_guard.py
+      - tests/unit/test_story_20_1_org_delegation_and_audit_scope.py
+      - tests/security/test_story_20_1_delegation_and_audit_isolation.py
+      - tests/integration/api/test_story_20_1_org_delegation_and_audit_postgres18.py
       - apps/web/src/__tests__/story-6-1-activity-provenance-export-and-f5.test.tsx
+      - apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx
       - apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx
       - apps/web/e2e/12-finops-and-audit-provenance.spec.ts
     surfaces:
       route: /activity
-      api: audit_ledger.py
-      migration: "20261116_0601"
-      ui: "ActivityLogExplorerView + ActivityProvenanceModal"
+      api: "audit_ledger.py + _finops_auth_guards.py + sql_audit_ledger_mappers.py + _assistant_usage_telemetry.py"
+      migration: "20261116_0601 + 20261117_2001"
+      ui: "ActivityLogExplorerView + ActivityLogFiltersBar + ActivityProvenanceModal"
     notes: "Story 6.1 (réconciliation CAP-ACT-3) : table append-only PostgreSQL 18 protégée contre toute modification ou suppression, traçabilité des tests de connexion à chaud, contrôle anti-IDOR par périmètre et export JSON/Markdown certifié conforme au manifeste d'exécution et aux pièces SeaweedFS."
   - id: CAP-066
     title: Site de présentation /showcase et site statique autonome (sync auto)
@@ -386,6 +400,23 @@ capabilities:
     status: live
     tests: [apps/web/src/__tests__/orcia-showcase-site.test.tsx]
     surfaces: { route: /showcase }
+  - id: CAP-069
+    title: Page Profil utilisateur (/profile), 4 KPIs tokens/séries, éléments populaires et télémétrie tokens de Mon Assistant
+    fr: [FR-25, FR-32]
+    origin: epic
+    origin_ref: 20-4
+    status: live
+    verification: runtime
+    tests:
+      - tests/unit/test_story_20_4_profile_streaks_and_assistant_usage.py
+      - tests/security/test_story_20_4_profile_isolation.py
+      - tests/integration/api/test_story_20_4_profile_summary_postgres18.py
+      - apps/web/src/__tests__/story-20-4-profile-overview-and-f5.test.tsx
+      - apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx
+    surfaces:
+      route: /profile
+      api: "user_profile.py (/api/v1/users/me/profile-summary), assistant_llm_providers.py, _assistant_usage_telemetry.py, assistant_background_turns.py, assistant_workspace.py"
+      ui: "UserProfileOverviewPage + UserProfileRouteView"
 
   # ───────────── Mon Assistant (Epic 10 + ad-hoc) ─────────────
   - id: CAP-070
@@ -511,14 +542,14 @@ capabilities:
     tests: [packages/ui/src/__tests__/inbox-and-cockpit-primitives.test.tsx]
     surfaces: { route: /inbox }
   - id: CAP-067
-    title: Organigramme hiérarchique multi-niveaux (BU / Sous-BU / Équipe), modales d'édition/membres/facturation, espaces privés et sélecteur de contexte
+    title: Organigramme hiérarchique multi-niveaux (BU / Sous-BU / Équipe), délégation Mon Organisation (/organization), modales d'édition/membres/facturation, espaces privés et sélecteur de contexte
     fr: [FR-3, FR-21, FR-22, FR-23, FR-34]
     origin: epic
-    origin_ref: 17-2 + 2026-11-06-rattachement-equipe-facturation-espaces-privés-et-selecteur-contexte + 2026-11-08-distinction-equipes-espaces-et-sync-sql-org-units + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances + 2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu
+    origin_ref: 17-2, 20-1 + 2026-11-06-rattachement-equipe-facturation-espaces-privés-et-selecteur-contexte + 2026-11-08-distinction-equipes-espaces-et-sync-sql-org-units + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances + 2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu
     status: live
-    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/src/__tests__/scope-switcher-and-org-sync.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, tests/unit/test_story_17_2_org_hierarchy.py, tests/unit/test_story_17_2_pg_guard_and_reconcilers.py, tests/unit/test_evaluator_multi_lead_rollup.py, tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
+    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/src/__tests__/scope-switcher-and-org-sync.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx, tests/unit/test_story_17_2_org_hierarchy.py, tests/unit/test_story_17_2_pg_guard_and_reconcilers.py, tests/unit/test_evaluator_multi_lead_rollup.py, tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
     verification: runtime
-    surfaces: { route: "/spaces, /settings", api: "org_and_workspaces.py, org_units.py, sql_org_iam_role_sync.py", ui: "SettingsOrganizationUnitsBlock + OrgPedagogicalCallout + CreateOrgUnitModal + EditOrgUnitModal + ManageOrgUnitMembersModal + ConfirmDeleteOrgUnitModal + OrciaUserPillsSelect", migration: "20261111_1702 + 20261115_1902" }
+    surfaces: { route: "/spaces, /organization", api: "org_and_workspaces.py, org_units.py, org_unit_invitations.py, sql_org_iam_role_sync.py", ui: "OrganizationPageView + SettingsOrganizationUnitsBlock + OrgPedagogicalCallout + CreateOrgUnitModal + EditOrgUnitModal + ManageOrgUnitMembersModal + ConfirmDeleteOrgUnitModal + InviteOrganizationUserModal + OrciaUserPillsSelect", migration: "20261111_1702 + 20261115_1902 + 20261117_2001" }
   - id: CAP-075
     title: Assistant — streaming réel, bouton Stop, réflexion progressive repliable, sauvegarde des conversations, pièces jointes, citations RAG, autosave/autocomplete
     fr: [FR-33]
@@ -753,3 +784,21 @@ capabilities:
     verification: runtime
     surfaces: { api: "observability (logging.py, _internal/ecs_formatter.py, tracing.py, fingerprint.py, log_sink_factory.py, _internal/elasticsearch_sink.py, ports/log_sink.py, dependencies, main.py, routers/health.py /ready & /api/v1/ready)", worker: "configure_logging() / configure_tracing() / instrument_runtime() + roles.py (--serve/--once) + sandbox_daemon.py (sidecar Tier 1 sous /tmp)", compose: "profiles logs-loki / logs-elastic + rotation json-file 50m/3 + services app-roles durcis (10001:0, read_only, tmpfs /tmp)", docker: "infra/docker/Dockerfile (python:3.12-slim non-root 10001:0) + infra/docker/Dockerfile.web (nginx-unprivileged 101:0 port 8080) + infra/docker/nginx.conf", k8s: "infra/k8s/base/ + infra/k8s/overlays/openshift/ (SCC restricted sans runAsUser figé, readOnlyRootFilesystem, emptyDir /tmp, NetworkPolicy sandbox-runner egress:[], Routes TLS edge)", operations: "docs/operations/openshift-clusterlogforwarder-contract.md (OPS-OPENSHIFT-LOGGING-01)" }
     notes: "Formalisé dans AD-23 (ARCHITECTURE-SPINE.md) et livré intégralement via Stories 7.0a, 7.0b et 7.0c (done). Socle complet débloqué pour les déclencheurs LOG_SINK_ALERT (Story 7.2) et POST_ACTION_VERIFICATION (AIOPS-INCIDENT-LOOP-01) de l'Epic 7."
+  - id: CAP-203
+    title: Menu dédié Mon Organisation, délégation stricte par sous-arbre BU/Équipe, invitation scopée, rôle Référent Glossaire (ONTOLOGY_LEAD) et filtrage de périmètre /activity
+    fr: [FR-3, FR-17, FR-21, FR-22, FR-23, FR-24, FR-34]
+    origin: epic
+    origin_ref: 20-1
+    status: live
+    verification: runtime
+    surfaces:
+      route: "/organization, /activity, /settings"
+      api: "org_units.py (GET/POST/PATCH/DELETE avec can_* et périmètre), org_unit_invitations.py (POST /api/v1/org-units/invite-user), org_delegation.py, sql_org_ontology_lead_sync.py, iam_accounts.py (verrou PLATFORM_ADMIN + SECOPS), _auth_pg_helpers.py (hydrate platform_role), audit_ledger.py & _finops_auth_guards.py (filtrage org_unit_id + workspace_id)"
+      ui: "OrganizationPageView + FourZoneDirectionCShell (menu Mon Organisation) + SettingsOrganizationUnitsBlock + InviteOrganizationUserModal + TemporaryPasswordInvitationModal + EditOrgUnitModal (Référents Glossaire) + ActivityLogExplorerView (scope filtré par rôle)"
+      migration: "20261117_2001"
+    tests:
+      - tests/unit/test_story_20_1_org_delegation_and_audit_scope.py
+      - tests/security/test_story_20_1_delegation_and_audit_isolation.py
+      - tests/integration/api/test_story_20_1_org_delegation_and_audit_postgres18.py
+      - apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx
+    notes: "Story 20.1 (Epic 20) : séparation de Mon Organisation (/organization) sous Mes Espaces (visibilité PLATFORM_ADMIN, BU_LEAD, TEAM_LEAD ; /settings ramené à 5 onglets avec redirection ?tab=organization), délégation stricte par sous-arbre et booléens can_*, invitation scopée avec garde anti-escalade, 7e rôle ONTOLOGY_LEAD (B1 sync bidirectionnelle BU <-> IAM), journalisation org_unit_id et isolation de lecture /activity."

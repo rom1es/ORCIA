@@ -13,6 +13,7 @@ OntologyLevel = Literal[
     "2_DOMAIN",
     "3_TEAM",
     "3_WORKSPACE",
+    "4_WORKSPACE",
     "4_RUN_EPHEMERAL",
 ]
 
@@ -34,6 +35,7 @@ ONTOLOGY_LEVEL_PRIORITY: dict[OntologyLevel, int] = {
     "2_DOMAIN": 2,
     "3_TEAM": 3,
     "3_WORKSPACE": 4,
+    "4_WORKSPACE": 4,
     "4_RUN_EPHEMERAL": 5,
 }
 
@@ -131,7 +133,7 @@ class WhatIfImpactReport:
 
 @dataclass(frozen=True, slots=True)
 class OntologyPromotionProposal:
-    """Governed promotion proposal from L4/L3 to higher ontology levels (Story 2.2)."""
+    """Governed promotion proposal from L4/L3/L2 to higher ontology levels (Stories 2.2, 20.2)."""
 
     id: str
     proposal_key: str
@@ -144,6 +146,15 @@ class OntologyPromotionProposal:
     status: PromotionStatus
     impact_report: WhatIfImpactReport
     badge_color_token: str = "ontology-cyan"
+    source_concept_id: str | None = None
+    source_scope_id: str | None = None
+    definition_text: str = ""
+    reviewed_by_user_id: str | None = None
+    review_comment: str | None = None
+    created_at: str | None = None
+    reviewed_at: str | None = None
+    collision_detected: bool = False
+    colliding_definition: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -157,4 +168,13 @@ class OntologyPromotionProposal:
             "proposed_by_user_id": self.proposed_by_user_id,
             "status": self.status,
             "badge_color_token": self.badge_color_token,
+            "source_concept_id": self.source_concept_id,
+            "source_scope_id": self.source_scope_id,
+            "definition_text": self.definition_text,
+            "reviewed_by_user_id": self.reviewed_by_user_id,
+            "review_comment": self.review_comment,
+            "created_at": self.created_at,
+            "reviewed_at": self.reviewed_at,
+            "collision_detected": self.collision_detected,
+            "colliding_definition": self.colliding_definition,
         }

@@ -3,8 +3,8 @@ import {
   PermissionGuard,
   type InferenceTierAndEffortLabels,
 } from "@orcia/ui";
-import { createRoute } from "@tanstack/react-router";
-import React, { useState } from "react";
+import { createRoute, useNavigate } from "@tanstack/react-router";
+import React, { useEffect, useState } from "react";
 import { usePlatformSetup } from "../components/platformSetupStore";
 import { useShellNavigation } from "../components/ShellContainer";
 import { useI18n } from "../i18n";
@@ -19,7 +19,6 @@ import { validateOrciaRouteSearch } from "./searchSchema";
 import { SettingsAiModelsSection } from "./SettingsAiModelsSection";
 import { SettingsAuthenticationSection } from "../features/admin/auth/SettingsAuthenticationSection";
 import { SettingsIamOrganizationSection } from "./SettingsIamOrganizationSection";
-import { SettingsOrganizationUnitsBlock } from "./SettingsOrganizationUnitsBlock";
 import { SettingsPacksSection } from "./SettingsPacksSection";
 import { SettingsSecondaryTabsSection } from "./SettingsSecondaryTabsSection";
 
@@ -31,7 +30,7 @@ export interface SettingsHubViewProps {
 
 export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
   const { dictionary, locale } = useI18n();
-  const { openHelpSection } = useShellNavigation();
+  const { openHelpSection, navigateToRoute } = useShellNavigation();
   const copy = dictionary.settingsHub;
   const isFr = locale === "fr";
 
@@ -61,6 +60,18 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
     removePack,
   } = usePlatformSetup();
 
+  useEffect(() => {
+    try {
+      const sp = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+      if (sp.get("tab") === "organization") {
+        navigateToRoute("/organization");
+      }
+    } catch {
+      // ignore
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [activeTab, setActiveTab] = useState<SettingsSectionTab>(() => {
     if (initialTab) return initialTab;
     try {
@@ -68,23 +79,14 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
       const tabParam = sp.get("tab") as SettingsSectionTab | null;
       if (
         tabParam &&
-        [
-          "organization",
-          "iam",
-          "authentication",
-          "models",
-          "packs",
-          "connectors",
-          "datasources",
-          "retention",
-        ].includes(tabParam)
+        ["iam", "authentication", "models", "packs", "connectors"].includes(tabParam)
       ) {
         return tabParam;
       }
     } catch {
       // ignore
     }
-    return "organization";
+    return "iam";
   });
   const effectiveTab: SettingsSectionTab | null =
     access.visibleTabs.length === 0
@@ -202,16 +204,7 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
             data-testid={`settings-panel-${effectiveTab}`}
             style={{ display: "flex", flexDirection: "column", gap: "16px" }}
           >
-            {effectiveTab === "organization" ? (
-              <SettingsOrganizationUnitsBlock
-                isFr={isFr}
-                canMutate={access.canMutate}
-                orgUnits={orgUnits}
-                workspaces={workspaces}
-                openHelpSection={openHelpSection}
-                syncOrgUnitsFromServer={syncOrgUnitsFromServer}
-              />
-            ) : effectiveTab === "iam" ? (
+            {effectiveTab === "iam" ? (
               <SettingsIamOrganizationSection
                 isFr={isFr}
                 canMutate={access.canMutate}
@@ -264,9 +257,29 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
   );
 }
 
+function SettingsRouteComponent(): React.ReactElement {
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (search.tab === "organization") {
+      void navigate({ to: "/organization", replace: true });
+    }
+  }, [search.tab, navigate]);
+
+  if (search.tab === "organization") {
+    return <div data-testid="settings-org-redirect-placeholder" />;
+  }
+  const initialTab: SettingsSectionTab | undefined =
+    search.tab && ["iam", "authentication", "models", "packs", "connectors"].includes(search.tab)
+      ? (search.tab as SettingsSectionTab)
+      : undefined;
+  return <SettingsHubView initialTab={initialTab} />;
+}
+
 export const Route = createRoute({
   getParentRoute: () => rootRoute,
   path: "/settings",
   validateSearch: validateOrciaRouteSearch,
-  component: SettingsHubView,
+  component: SettingsRouteComponent,
 });
