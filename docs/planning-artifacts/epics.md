@@ -144,7 +144,7 @@ This document provides the complete epic and story breakdown for ORCIA, decompos
 - **FR-35** : Epic 11 (+ ad-hoc, Epic 13) - Exposition MCP/A2A, banc de test, atelier orcia-pack-builder (`CAP-082`..`CAP-084`)
 - **FR-36** : ad-hoc, Epic 13 - Gestion des agents et compétences (`CAP-090`..`CAP-092`)
 - **Couverture Intégrale User Journeys & Vérité E2E PG18 (`FR-1`..`FR-36`, `UJ-1`..`UJ-20`, `CAP-001`..`CAP-203`)** : Epic 21 - Classification `feature | foundation` (`capabilities.yaml`), référentiel complet `UJ-1`..`UJ-20` (`prd.md` & `EXPERIENCE.md`), verrou CI `pnpm site:check`, campagne Playwright intégrale (`00..21` + `shell.spec.ts`) avec survie `F5`, assertions `SELECT` PostgreSQL 18, captures PNG finales, audit croisé Sally × Winston & initialisation de l'Epic 22
-- **Remédiation E2E Vérité PG18, Portails & Shell Direction C, Purge Jargon & Gardes CI (`FR-1`..`FR-36`, `REM-01`..`REM-34`, `CAP-001`..`CAP-203`)** : Epic 22 - Unification UUIDv7 Workspaces & droits `PLATFORM_ADMIN`, Portals `OrciaDialog` & Tailwind v4, purge `display: none` & découplage `/catalog`/`/agents`/`/help`, câblage PG18 de tous les silos RAM (`assistant_folders`, `task_notifications`, `permission_broker_tickets`, `dbos_uow`, `human_anchor_signatures`, `upstream_challenges`, `run_lock_manifests`, `gate_evaluations`, `chunk_approvals`, `declarative_pack_bundles`, `wizard_sessions`, garde `KILL_SWITCH_STOPPED`), refonte Direction C `8` entrées / Mobile `< 768px` / `docs/help/` dynamique / Cockpit `<= 3` blocs, purge intégrale du jargon technique, activation des `5` gardes CI anti-régression, campagne E2E `110/110` vert et `62/62` capacités `feature` à `verification: runtime`
+- **Remédiation E2E Vérité PG18, Portails & Shell Direction C, Purge Jargon, Gardes CI, Campagne & Initialisation Epic 23 (`FR-1`..`FR-36`, `REM-01`..`REM-34`, `CAP-001`..`CAP-203`)** : Epic 22 (`22.1`..`22.10`) - Unification UUIDv7 Workspaces & droits `PLATFORM_ADMIN`, Portals `OrciaDialog` & Tailwind v4, purge `display: none` & découplage `/catalog`/`/agents`/`/help`, câblage PG18 de tous les silos RAM (`assistant_folders`, `task_notifications`, `permission_broker_tickets`, `dbos_uow`, `human_anchor_signatures`, `upstream_challenges`, `run_lock_manifests`, `gate_evaluations`, `chunk_approvals`, `declarative_pack_bundles`, `wizard_sessions`, garde `KILL_SWITCH_STOPPED`), refonte Direction C `8` entrées / Mobile `< 768px` / `docs/help/` dynamique / Cockpit `<= 3` blocs, purge intégrale du jargon technique, activation des `5` gardes CI anti-régression & assertions `SELECT` PG18 sur `100 %` des `55` blocs `test(...)` E2E (`22.8`), campagne E2E intégrale `e2e-campaign-epic-22` + captures PNG + audit croisé Sally × Winston + mise à jour honnête `capabilities.yaml` (`22.9`), rapports Tech Lead individuels & initialisation de l'Epic 23 (`22.10`)
 
 > Source de vérité du statut réel de chaque capacité : `docs/product/capabilities.yaml` (voir `AGENTS.md` §5).
 
@@ -203,8 +203,8 @@ Les Administrateurs Plateforme et Responsables IA découvrent automatiquement le
 Systématiser la preuve de fonctionnement réel de 100 % des `62` capacités métier (`kind: feature`) d'ORCIA : classification complète des `65` capacités de `capabilities.yaml`, référentiel complet `UJ-1` à `UJ-20` dans `prd.md` et `EXPERIENCE.md`, refactoring modulaire de `sync_site_catalog.py` (`< 350` lignes) et verrouillage CI `CAP ↔ UJ ↔ Spec E2E`, harnais Playwright de vérité PostgreSQL 18 en lecture seule (`orcia_e2e`) avec capture PNG systématique de l'état final (succès et échecs), mise à niveau des 16 specs existantes + écriture des 8 nouvelles specs (`14`..`21`), exécution intégrale sans retry ni maquillage, inspection croisée **Sally (UX) × Winston (Architecture)**, rapports Tech Lead pré-implémentation et initialisation complète de l'**Epic 22** de remédiation.
 **FRs covered:** `FR-1`..`FR-36`, `UJ-1`..`UJ-20`, `CAP-001`..`CAP-203` (`AD-17`, `NFR-TEST-1`)
 
-### Epic 22: Remédiation E2E Vérité PG18, Portails & Shell Direction C, Purge Jargon & Gardes CI (`110/110` Vert & `62/62` Capacités Runtime)
-Résoudre de bout en bout les `34` chantiers issus de l'audit croisé Sally × Winston (`REM-01`..`REM-34`) et les `47` échecs/timeouts de la campagne E2E Epic 21 en 4 vagues topologiques (`Stories 22.1`..`22.8`) : unification UUIDv7 des espaces et correction des faux `403` admin (`22.1`), Portals `OrciaDialog` + Tailwind v4 + purge `display: none` + découplage `/catalog`/`/agents`/`/help` + bouton invitation `/organization` + alignement `data-testid`/contrats (`22.2`), câblage PostgreSQL 18 de tous les silos RAM (`assistant_folders`, `task_notifications`/SSE, `permission_broker_tickets` + fallback `git://*` en `22.3` ; `dbos_uow`, `human_anchor_signatures`, `upstream_challenges`, `run_lock_manifests`, `gate_evaluations`, `chunk_approvals` & garde `KILL_SWITCH_STOPPED` en `22.4` ; `declarative_pack_bundles` & `wizard_sessions` en `22.5`), alignement coquille Direction C `8` entrées + Mobile Companion `< 768px` + `docs/help/` dynamique sans `Chef1`/`aqwZSX` + Cockpit `<= 3` blocs (`22.6`), finitions UX/UI et purge intégrale du jargon technique (`22.7`), et activation des `5` gardes CI anti-régression suivie de la campagne E2E `110/110` verte sous `< 35s` ramenant `62/62` capacités `feature` à `verification: runtime` (`22.8`).
+### Epic 22: Remédiation E2E Vérité PG18, Portails & Shell Direction C, Purge Jargon, Gardes CI, Campagne Intégrale & Initialisation Epic 23 (`Stories 22.1`..`22.10`)
+Résoudre de bout en bout les `34` chantiers issus de l'audit croisé Sally × Winston (`REM-01`..`REM-34`) et les `47` échecs/timeouts de la campagne E2E Epic 21 en **`10` Stories (`22.1`..`22.10`)** réparties sur `4` vagues topologiques : unification UUIDv7 des espaces et correction des faux `403` admin (`22.1`), Portals `OrciaDialog` + Tailwind v4 + purge `display: none` + découplage `/catalog`/`/agents`/`/help` + bouton invitation `/organization` + alignement `data-testid`/contrats (`22.2`), câblage PostgreSQL 18 de tous les silos RAM (`assistant_folders`, `task_notifications`/SSE, `permission_broker_tickets` + fallback `git://*` en `22.3` ; `dbos_uow`, `human_anchor_signatures`, `upstream_challenges`, `run_lock_manifests`, `gate_evaluations`, `chunk_approvals` & garde `KILL_SWITCH_STOPPED` en `22.4` ; `declarative_pack_bundles` & `wizard_sessions` en `22.5`), alignement coquille Direction C `8` entrées + Mobile Companion `< 768px` + `docs/help/` dynamique sans `Chef1`/`aqwZSX` + Cockpit `<= 3` blocs (`22.6`), finitions UX/UI et purge intégrale du jargon technique (`22.7`), activation des `5` gardes CI anti-régression (`REM-34`), couverture `SELECT` PostgreSQL 18 sur `100 %` des `55` blocs `test(...)` E2E (`110` scénarios) + paramétrage `ORCIA_E2E_CAMPAIGN_DIR` + budget `< 35s` (`REM-33`) (`22.8`), exécution intégrale de la campagne E2E (`e2e-campaign-epic-22`), archivage des captures PNG, bilan d'exécution, audit croisé Sally × Winston et mise à jour honnête de `capabilities.yaml` (`22.9`), puis rédaction des rapports Tech Lead individuels (`23-1..23-N`), plan de correction global et initialisation complète de l'Epic 23 (`22.10`).
 **FRs covered:** `FR-1`..`FR-36`, `UJ-1`..`UJ-20`, `CAP-001`..`CAP-203`, `REM-01`..`REM-34` (`AD-1`..`AD-24`, `UX-DR1`..`UX-DR17`)
 
 ## Epic 1: Amorçage Gouverné de l'Organisation, Onboarding Autonome d'Équipe (`TEAM_LEAD`), Catalogue Fédéré & Permission Broker connecté à Jira
@@ -2254,11 +2254,11 @@ So that chaque correction de l'Epic 22 démarre avec une architecture validée, 
 
 ---
 
-## Epic 22: Remédiation E2E Vérité PostgreSQL 18, Portails & Shell Direction C, Purge Jargon & Gardes CI (`110/110` Vert & `62/62` Capacités Runtime)
+## Epic 22: Remédiation E2E Vérité PostgreSQL 18, Portails & Shell Direction C, Purge Jargon, Gardes CI, Campagne Intégrale & Initialisation Epic 23 (`Stories 22.1`..`22.10`)
 
-Résoudre de manière ordonnée et définitive les **`34` chantiers de l'audit croisé Sally × Winston (`REM-01` .. `REM-34`)** et les **`47` scénarios E2E en échec ou timeout (`14 / 24` specs)** identifiés à l'issue de la campagne Epic 21, afin d'éliminer tout silo mémoire RAM (« Dual-Stack »), restaurer la conformité Direction C (`8` menus, Mobile Companion `< 768px`, aide contextuelle dynamique sans jargon ni faux exemples, Cockpit `<= 3` blocs), verrouiller la non-régression par `5` gardes CI automatisées, et ramener **`100 %` des `62` capacités `feature`** à **`verification: runtime`** (`0` échec sur `110` scénarios Playwright PG18).
+Résoudre de manière ordonnée et définitive les **`34` chantiers de l'audit croisé Sally × Winston (`REM-01` .. `REM-34`)** et les **`47` scénarios E2E en échec ou timeout (`14 / 24` specs)** identifiés à l'issue de la campagne Epic 21, afin d'éliminer tout silo mémoire RAM (« Dual-Stack »), restaurer la conformité Direction C (`8` menus, Mobile Companion `< 768px`, aide contextuelle dynamique sans jargon ni faux exemples, Cockpit `<= 3` blocs), verrouiller la non-régression par `5` gardes CI automatisées et `100 %` d'assertions `SELECT` PostgreSQL 18 sur les `55` blocs `test(...)` E2E (`22.8`), exécuter la campagne intégrale `e2e-campaign-epic-22` avec captures PNG finales, bilan factuel, audit croisé **Sally × Winston** et mise à jour honnête de `capabilities.yaml` (`22.9`), puis produire les rapports Tech Lead individuels, le plan de correction global et l'initialisation complète de l'**Epic 23** pour traiter tout reliquat ou amélioration (`22.10`).
 
-> **Référentiel directeur :** `docs/planning-artifacts/sprint-change-proposal-2026-11-18-epic-22-remediation-plan.md` — chaque Story dispose de son rapport Tech Lead pré-implémentation individuel dans `docs/implementation-artifacts/tech-lead-reports/22-1-*` .. `22-8-*`.
+> **Référentiel directeur :** `docs/planning-artifacts/sprint-change-proposal-2026-11-18-epic-22-remediation-plan.md` — chaque Story dispose de son rapport Tech Lead pré-implémentation individuel dans `docs/implementation-artifacts/tech-lead-reports/22-1-*` .. `22-10-*`.
 
 ### Story 22.1: Socle Identité UUIDv7 Workspaces, Permissions `PLATFORM_ADMIN` & Fin du Mode Dégradé `marc` / Bypass PG (`REM-01`, `REM-02`, `REM-07`)
 
@@ -2445,16 +2445,16 @@ So that chaque écran d'ORCIA atteigne un niveau irréprochable d'ergonomie, de 
 
 ---
 
-### Story 22.8: Activation des `5` Gardes CI Anti-Régression, Campagne E2E `110/110` Vert sous `< 35s` & Passage `62/62` `verification: runtime` (`REM-33`, `REM-34`)
+### Story 22.8: Activation des `5` Gardes CI Anti-Régression, Couverture `100 %` Assertions SQL PG18 sur `55` Blocs `test(...)` E2E, Paramétrage `ORCIA_E2E_CAMPAIGN_DIR` & Budget `< 35s` (`REM-33`, `REM-34`)
 
 As a Tech Lead, Architecte & QA Automation (`Amelia`, `Winston`, `Sally`),
-I want activer les `5` gardes automatisées anti-régression en CI (anti-jargon UI, interdiction `display: none`, intégrité CSS Tailwind, interdiction `[LAYER_5_*]` & `ORCIA_DISABLE_PG_BOOTSTRAP_SYNC`, contrôle géométrique Playwright Desktop/Mobile), vérifier les temps d'exécution sous `< 35 s`, exécuter la campagne Playwright intégrale (`00..21` + `shell.spec.ts`) jusqu'à `100 %` de succès (`0` `failed`, `0` `timedOut`), et promouvoir les `62/62` capacités `feature` à `verification: runtime` dans `capabilities.yaml`,
-So that ORCIA dispose d'une preuve runtime complète sur PostgreSQL 18 et d'un filet de sécurité permanent empêchant tout retour des défauts détectés en Epic 21 (`AD-17`, `NFR-TEST-1`, `NFR-PERF-1`, `NFR-A11Y-1`, `GEMINI.md` §5).
+I want activer les `5` gardes automatisées anti-régression en CI (anti-jargon UI, interdiction `display: none`, intégrité CSS Tailwind, interdiction `[LAYER_5_*]` & `ORCIA_DISABLE_PG_BOOTSTRAP_SYNC`, contrôle géométrique Playwright Desktop/Mobile), généraliser les assertions `SELECT` PostgreSQL 18 effectives sur **100 % des `55` blocs `test(...)` E2E (`110` scénarios)** avec un test statique de couverture SQL E2E, paramétrer `ORCIA_E2E_CAMPAIGN_DIR` (ciblant `e2e-campaign-epic-22`) dans le harnais, et optimiser les temps d'exécution E2E sous `< 35 s`,
+So that l'ensemble de la pyramide CI/E2E soit verrouillé, outillé pour la vérité PostgreSQL 18 à `100 %` et prêt pour l'exécution de la campagne intégrale en `Story 22.9` suivie de l'initialisation Epic 23 en `Story 22.10` (`AD-17`, `NFR-TEST-1`, `NFR-PERF-1`, `NFR-A11Y-1`). *(Note : l'exécution de la campagne E2E intégrale, l'archivage des captures PNG, l'audit croisé Sally × Winston et la mise à jour de `capabilities.yaml` sont portés par `Story 22.9`, et les rapports Tech Lead + initialisation Epic 23 par `Story 22.10`.)*
 
-**Dépendances :** Dépend de `Stories 22.1`..`22.7`. Clôture l'Epic 22.
+**Dépendances :** Dépend de `Stories 22.1`..`22.7`. Précède `Story 22.9`.
 **REM couverts :** `REM-33`, `REM-34`.
-**CAP couvertes :** `CAP-100` (`hygiène`) + promotion finale de `100 %` des `62` capacités `feature` (`CAP-001`..`CAP-203`) vers `verification: runtime`.
-**Fichiers impactés :** `apps/web/src/__tests__/anti-jargon-and-secrets-ui-audit.test.ts`, `apps/web/src/__tests__/no-hidden-legacy-panels-audit.test.ts`, `apps/web/src/__tests__/css-class-integrity-audit.test.ts`, `tests/unit/test_no_raw_enum_codes_in_ui_streams.py`, `apps/web/e2e/support/layoutGeometryAssertions.ts`, `apps/web/e2e/{14,16}-*.spec.ts`, `docs/product/capabilities.yaml`.
+**CAP couvertes :** `CAP-100` (`hygiène` — durcissement CI & couverture SQL E2E `100 %` préparant la vérification runtime en `22.9`).
+**Fichiers impactés :** `apps/web/src/__tests__/anti-jargon-and-secrets-ui-audit.test.ts`, `apps/web/src/__tests__/no-hidden-legacy-panels-audit.test.ts`, `apps/web/src/__tests__/css-class-integrity-audit.test.ts`, `tests/unit/test_no_raw_enum_codes_in_ui_streams.py`, `tests/unit/test_e2e_sql_coverage_audit.py`, `apps/web/e2e/support/{layoutGeometryAssertions,e2eCaptureFixture}.ts`, `apps/web/e2e/*.spec.ts` (assertions PG18 sur `55/55` blocs `test(...)` et budget `< 35 s`).
 
 **Acceptance Criteria:**
 
@@ -2462,10 +2462,62 @@ So that ORCIA dispose d'une preuve runtime complète sur PostgreSQL 18 et d'un f
 **When** `pnpm turbo run lint typecheck test` et `.venv/bin/pytest` s'exécutent
 **Then** (1) `anti-jargon-and-secrets-ui-audit.test.ts` garantit `0` terme banni dans `i18n`, `_contextualHelpSections.ts`, `packages/ui/src` et `docs/help/` ; (2) `no-hidden-legacy-panels-audit.test.ts` garantit `0` `display: none` sur panneaux métier et `100 %` des `role="dialog"` via `Portal` ; (3) `css-class-integrity-audit.test.ts` vérifie la compilation CSS ; (4) `test_no_raw_enum_codes_in_ui_streams.py` garantit `0` `[LAYER_5_*]` dans les DTOs/streams et `0` `ORCIA_DISABLE_PG_BOOTSTRAP_SYNC` hors tests unitaires ; et (5) `layoutGeometryAssertions.ts` vérifie dans Playwright `rect.right <= window.innerWidth + 1` et `elementFromPoint` sur les boutons de modales ouvertes.
 
-**Given** l'ensemble des `24` specs Playwright (`110` scénarios Desktop `1440×900` et Mobile `390×844`) avec `--retries=0 --max-failures=0 --timeout=35000`
-**When** la campagne E2E intégrale s'exécute contre PostgreSQL 18 + Redis 7.4 (y compris `14-auth` #2 et `16-ai-models` #2 re-mesurés sous `< 35 s`)
-**Then** la totalité des scénarios exécutés passe à `100 %` (`unexpected: 0`, `flaky: 0`, `0` timeout, `100 %` des `SELECT` PG18 et `F5` validés) et les captures PNG finales attestent visuellement la conformité Direction C.
+**Given** les `24` specs Playwright (`55` blocs `test(...)` produisant `110` scénarios Desktop `1440×900` + Mobile `390×844`) et le test statique `tests/unit/test_e2e_sql_coverage_audit.py`
+**When** l'audit de couverture SQL E2E et les ciblages `14-auth` / `16-ai-models` s'exécutent
+**Then** **100 % des `55` blocs `test(...)` E2E (`55/55`)** exécutent au moins une assertion réelle `SELECT` PostgreSQL 18 (`queryPgCount`/`queryPgRows`) adaptée au domaine testé (vérifié automatiquement par `test_e2e_sql_coverage_audit.py`), `e2eCaptureFixture.ts` supporte `ORCIA_E2E_CAMPAIGN_DIR` (ex. `docs/implementation-artifacts/e2e-campaign-epic-22`), et les parcours lents (`14-auth` #2, `16-ai-models` #2) sont optimisés sous `< 35 s` (`REM-33`).
 
-**Given** `docs/product/capabilities.yaml` mis à jour après le passage intégral au vert
-**When** `pnpm site:sync && pnpm site:check` s'exécutent
-**Then** **`62 / 62` capacités `feature`** et **`3 / 3` capacités `foundation`** déclarent **`verification: runtime`** (`0` `failed_e2e`, `0` `e2e_remediation_ref` résiduel), clôturant l'Epic 22 sur une pyramide `AD-17` à `>= 90 %` de couverture unitaire et `0` finding `lint_spine.py` / `lint-imports`.
+**Given** la pyramide Python + TypeScript validée après ces ajouts
+**When** `.venv/bin/pytest`, `pnpm turbo run lint typecheck test`, `lint-imports` et `lint_spine.py` s'exécutent
+**Then** toutes les vérifications unitaires, statiques et architecturales passent avec `>= 90 %` de couverture unitaire et `0` anomalie, débloquant l'exécution intégrale de la campagne en `Story 22.9`.
+
+---
+
+### Story 22.9: Campagne E2E Intégrale Vérité PostgreSQL 18, Captures PNG Finales (Succès & Échecs), Bilan & Audit Croisé Sally × Winston
+
+As a UX Designer (`Sally`), Architecte (`Winston`) & Tech Lead (`Amelia`),
+I want exécuter l'intégralité de la campagne Playwright E2E (`00..21` + `shell.spec.ts`, `110` scénarios Desktop `1440×900` et Mobile `390×844`) sans aucun retry ni arrêt anticipé (`--retries=0 --max-failures=0 --timeout=35000`) avec `ORCIA_E2E_CAMPAIGN_DIR=docs/implementation-artifacts/e2e-campaign-epic-22`, archiver toutes les captures PNG d'état final (succès et échecs), rédiger le bilan factuel d'exécution, mener l'audit croisé **Sally (UX) × Winston (Architecture)** sur l'ensemble des résultats et captures, et mettre à jour honnêtement `docs/product/capabilities.yaml`,
+So that ORCIA dispose d'une preuve runtime exhaustive et vérifiable post-remédiation Epic 22 sur PostgreSQL 18 et identifie sans complaisance tout échec résiduel ou axe d'amélioration UX/Architecture (`AD-17`, `NFR-TEST-1`, `GEMINI.md` §5).
+
+**Dépendances :** Dépend de `Story 22.8`. Précède `Story 22.10`.
+**CAP couvertes :** Vérification runtime réelle de `100 %` des `65` capacités (`62` `feature` + `3` `foundation`, `CAP-001`..`CAP-203`) dans `docs/product/capabilities.yaml`.
+**Fichiers impactés :** `docs/implementation-artifacts/e2e-campaign-epic-22/playwright-results.json`, `docs/implementation-artifacts/e2e-campaign-epic-22/manifest.jsonl`, `docs/implementation-artifacts/e2e-campaign-epic-22/screenshots/**/*.png`, `docs/implementation-artifacts/e2e-campaign-epic-22/bilan-execution-tests-e2e-epic-22.md`, `docs/implementation-artifacts/e2e-campaign-epic-22/notes-audit-sally-ux.md`, `docs/implementation-artifacts/e2e-campaign-epic-22/notes-audit-winston-architecture.md`, `docs/implementation-artifacts/e2e-campaign-epic-22/synthese-remediation-sally-winston-epic-22.md`, `docs/product/capabilities.yaml`, `infra/scripts/uj_e2e_coverage.py` (référentiel résultats campagne active).
+
+**Acceptance Criteria:**
+
+**Given** l'ensemble des `24` specs Playwright (`110` scénarios Desktop `1440×900` + Mobile `390×844`) configuré avec `ORCIA_E2E_CAMPAIGN_DIR=docs/implementation-artifacts/e2e-campaign-epic-22`
+**When** la campagne E2E intégrale s'exécute contre PostgreSQL 18 + `pgvector` + Redis 7.4 avec `--retries=0 --max-failures=0 --timeout=35000`
+**Then** la totalité des `24` specs s'exécute jusqu'au bout sans aucun `test.skip`/`test.fixme` masquant un échec, et tous les artefacts bruts sont archivés dans `docs/implementation-artifacts/e2e-campaign-epic-22/` : `playwright-results.json`, `manifest.jsonl` (`110` entrées) et `100 %` des captures PNG d'état final (succès comme échecs) sous `screenshots/`.
+
+**Given** les artefacts bruts (`playwright-results.json`, `manifest.jsonl`, `screenshots/**/*.png`)
+**When** le bilan et l'audit croisé **Sally × Winston** sont conduits
+**Then** `bilan-execution-tests-e2e-epic-22.md` inventorie exactement les résultats (`passed`, `failed`, `timedOut`, `skipped`, assertions `F5` et `SELECT` PG18), `notes-audit-sally-ux.md` analyse les captures PNG Desktop/Mobile (ergonomie, surcharge, jargon, accessibilité), `notes-audit-winston-architecture.md` évalue la conformité `AD-1`..`AD-24`, et `synthese-remediation-sally-winston-epic-22.md` consolide chaque échec résiduel et chaque point d'amélioration priorisé (`P0`..`P3`) en chantiers structurés.
+
+**Given** l'état réel observé dans `docs/implementation-artifacts/e2e-campaign-epic-22/playwright-results.json`
+**When** `docs/product/capabilities.yaml` est mis à jour et validé par `pnpm site:sync && pnpm site:check`
+**Then** toute capacité dont `100 %` des specs E2E associées sont vertes passe à `verification: runtime` (`verified_at` à jour, `e2e_remediation_ref` supprimé), tandis que toute capacité touchée par au moins un échec résiduel est honnêtement maintenue/marquée en `verification: failed_e2e` en vue de son traitement dans `Story 22.10` / `Epic 23`.
+
+---
+
+### Story 22.10: Rapports Tech Lead Individuels pour Tests en Échec & Plan Sally × Winston, Plan de Correction Global & Initialisation Epic 23
+
+As a Tech Lead (`Amelia`) & Architecte (`Winston`),
+I want conduire l'analyse d'impact GitNexus (`repo: "ORCIA"`) sur les constats issus de la campagne Epic 22, rédiger les Rapports Tech Lead individuels (`23-1-...` à `23-N-...`) pour chaque lot cohérent couvrant les tests E2E en échec et les points d'amélioration du plan Sally × Winston (`synthese-remediation-sally-winston-epic-22.md`), produire le plan de correction global `docs/planning-artifacts/sprint-change-proposal-2026-11-18-epic-23-remediation-plan.md`, et initialiser complètement l'**Epic 23** dans `epics.md`, `sprint-status.yaml` et `capabilities.yaml` avec un test automatique `tests/unit/test_epic22_to_epic23_traceability.py`,
+So that chaque échec résiduel ou amélioration identifié à l'issue de l'Epic 22 démarre dans l'Epic 23 avec une traçabilité totale et zéro angle mort (`GEMINI.md` § Policy, `AD-17`).
+
+**Dépendances :** Dépend de `Story 22.9`. Clôture l'Epic 22.
+**CAP couvertes :** `none (gouvernance documentaire & planification Epic 23 — rattache toute capacité failed_e2e résiduelle et tout chantier Sally × Winston Epic 22)` — classification : `doc`.
+**Fichiers impactés :** `docs/implementation-artifacts/tech-lead-reports/23-1-*.md` .. `23-N-*.md`, `docs/implementation-artifacts/tech-lead-reports/README.md`, `docs/planning-artifacts/sprint-change-proposal-2026-11-18-epic-23-remediation-plan.md`, `docs/planning-artifacts/epics.md` (ajout `Epic 23`), `docs/implementation-artifacts/sprint-status.yaml` (ajout `epic-23` + `23-1..23-N`, clôture `epic-22: done`), `docs/product/capabilities.yaml` (références `e2e_remediation_ref`), `tests/unit/test_epic22_to_epic23_traceability.py`.
+
+**Acceptance Criteria:**
+
+**Given** l'ensemble des tests E2E en échec de `bilan-execution-tests-e2e-epic-22.md` et des points d'amélioration du plan Sally × Winston (`synthese-remediation-sally-winston-epic-22.md`)
+**When** le Tech Lead exécute l'analyse d'impact GitNexus (`gitnexus_query`, `gitnexus_context`, `gitnexus_impact` avec `repo: "ORCIA"`) sur les symboles et modules concernés
+**Then** tous les échecs E2E résiduels et points d'amélioration Sally × Winston sont regroupés en `N` lots cohérents (`Story 23.1` à `Story 23.N`), chacun doté d'un Rapport Tech Lead pré-implémentation individuel (`docs/implementation-artifacts/tech-lead-reports/23-1-...-tech-lead-report.md` .. `23-N-...`) conforme à `TECH-LEAD-REPORT-TEMPLATE.md` et enregistré dans `docs/implementation-artifacts/tech-lead-reports/README.md`.
+
+**Given** le plan de correction global `docs/planning-artifacts/sprint-change-proposal-2026-11-18-epic-23-remediation-plan.md`
+**When** il consolide la feuille de route de l'Epic 23
+**Then** il contient l'ordonnancement par vagues et les matrices complètes reliant chaque échec E2E résiduel, chaque point d'amélioration Sally × Winston et chaque éventuelle `CAP-*` en `failed_e2e` à une Story `23.k` et son rapport Tech Lead `23-k-*`.
+
+**Given** l'initialisation complète de l'**Epic 23** dans `epics.md`, `sprint-status.yaml` et `capabilities.yaml`, ainsi que `tests/unit/test_epic22_to_epic23_traceability.py`
+**When** `.venv/bin/pytest tests/unit/test_epic22_to_epic23_traceability.py`, `.venv/bin/python scripts/check_implementation_docs.py` et `pnpm site:sync && pnpm site:check` s'exécutent
+**Then** `100 %` de traçabilité bidirectionnelle est prouvée (aucun échec E2E ni point Sally × Winston orphelin), `epic-22` passe à `done`, et `Epic 23` est prêt pour exécution immédiate.

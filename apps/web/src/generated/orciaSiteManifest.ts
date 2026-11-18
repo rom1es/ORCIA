@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 54,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 180,
+    "techLeadReportsCount": 182,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 14,
@@ -534,10 +534,24 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "techLeadReports": [
     {
       "date": "2026-11-18",
+      "phaseOrStory": "Story 22.10",
+      "reportFile": "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23-tech-lead-report.md",
+      "domain": "Clôture Epic 22 — Rapports Tech Lead Individuels (23-1..23-N), Plan de Correction Global & Initialisation Complète de l'Epic 23",
+      "summary": "Pré-implémentation : analyse d'impact GitNexus (repo: \"ORCIA\"), rapports Tech Lead pré-implémentation 23-1..23-N pour chaque lot couvrant les tests E2E en échec et points d'amélioration Sally × Winston, sprint-change-proposal-2026-11-18-epic-23-remediation-plan.md, initialisation Epic 23 dans epics.md/sprint-status.yaml/capabilities.yaml et suite test_epic22_to_epic23_traceability.py."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 22.9",
+      "reportFile": "22-9-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston-tech-lead-report.md",
+      "domain": "Vague 4 — Campagne E2E Intégrale Vérité PostgreSQL 18 (e2e-campaign-epic-22), Captures PNG Finales, Bilan, Audit Croisé Sally × Winston & Vérité capabilities.yaml",
+      "summary": "Pré-implémentation : exécution sans retry (--retries=0 --max-failures=0 --timeout=35000) des 110 scénarios (24 specs) vers e2e-campaign-epic-22/, archivage manifest.jsonl/playwright-results.json/screenshots/, bilan factuel, audit croisé Sally × Winston (synthese-remediation-sally-winston-epic-22.md) et mise à jour honnête de capabilities.yaml (pnpm site:sync && pnpm site:check)."
+    },
+    {
+      "date": "2026-11-18",
       "phaseOrStory": "Story 22.8",
       "reportFile": "22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime-tech-lead-report.md",
-      "domain": "Vague 3 (REM-33, REM-34) — Activation des 5 Gardes CI Anti-Régression, Campagne E2E 110/110 Vert < 35s & Passage 62/62 verification: runtime",
-      "summary": "Pré-implémentation : création des 5 gardes automatisées (anti-jargon UI, zéro display: none, intégrité CSS Tailwind, zéro [LAYER_5_*]/ORCIA_DISABLE_PG_BOOTSTRAP_SYNC, géométrie Playwright rect.right <= innerWidth & elementFromPoint modales), budget < 35s, re-jeu complet --retries=0 --max-failures=0 et passage 62/62 feature à verification: runtime (pnpm site:sync && pnpm site:check)."
+      "domain": "Vague 3 (REM-33, REM-34) — Activation des 5 Gardes CI Anti-Régression, Couverture 100 % Assertions SQL PG18 sur 55 Blocs test(...) E2E, Paramétrage ORCIA_E2E_CAMPAIGN_DIR & Budget < 35s",
+      "summary": "Pré-implémentation : création des 5 gardes automatisées (anti-jargon UI, zéro display: none, intégrité CSS Tailwind, zéro [LAYER_5_*]/ORCIA_DISABLE_PG_BOOTSTRAP_SYNC, géométrie Playwright rect.right <= innerWidth & elementFromPoint modales), généralisation des assertions SELECT PG18 sur 55/55 blocs test(...) (test_e2e_sql_coverage_audit.py), paramétrage ORCIA_E2E_CAMPAIGN_DIR (e2e-campaign-epic-22) et budget < 35s."
     },
     {
       "date": "2026-11-18",

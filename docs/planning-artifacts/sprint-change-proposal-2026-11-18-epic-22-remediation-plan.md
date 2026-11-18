@@ -27,17 +27,20 @@ related:
 
 La campagne End-to-End intégrale de l'**Epic 21 (`Story 21.8`, commit `575cf4a`)** sur pile réelle PostgreSQL 18 + `pgvector` (`orcia_e2e`) et Redis 7.4 (`--retries=0 --max-failures=0 --timeout=35000`) a produit `110 / 110` captures PNG et objectivé **47 scénarios `unexpected`** (`36` `failed` + `11` `timedOut`) répartis sur **`14 / 24` specs**, **`51 / 62` capacités `feature`** en statut `verification: failed_e2e`, ainsi que des non-conformités UX/UI sur plusieurs écrans `PASSED` (faux positifs mobiles, sidebar `11` entrées vs `8`, aide contextuelle figée sur `@1.1.0`, fuites de jargon technique).
 
-L'**Epic 22** regroupe sans aucun recouvrement **100 % des `34` chantiers (`REM-01` .. `REM-34`)**, **100 % des `14` specs (`47` échecs/timeouts)** et **100 % des `51` capacités `failed_e2e`** en **`8` Stories ordonnées (`22.1` .. `22.8`)**.
+L'**Epic 22** regroupe sans aucun recouvrement **100 % des `34` chantiers (`REM-01` .. `REM-34`)**, **100 % des `14` specs (`47` échecs/timeouts)** et **100 % des `51` capacités `failed_e2e`** en **`8` Stories de remédiation et gardes CI (`22.1` .. `22.8`)**, prolongées par **`2` Stories de clôture de campagne et transition (`22.9` & `22.10`)** :
+- `22.8` : activation des `5` gardes CI anti-régression (`REM-34`), généralisation des assertions `SELECT` PostgreSQL 18 sur **100 % des `55` blocs `test(...)` E2E (`110` scénarios)** + test statique de couverture SQL E2E, paramétrage `ORCIA_E2E_CAMPAIGN_DIR` (`e2e-campaign-epic-22`) et optimisation `< 35s` (`REM-33`) ;
+- `22.9` : exécution intégrale de la campagne E2E (`--retries=0 --max-failures=0 --timeout=35000`), archivage des captures PNG (`e2e-campaign-epic-22/`), bilan d'exécution, audit croisé **Sally × Winston** et mise à jour honnête de `capabilities.yaml` ;
+- `22.10` : analyse GitNexus sur les constats post-campagne, rédaction des rapports Tech Lead individuels (`23-1..23-N`), plan de correction global et initialisation complète de l'**Epic 23**.
 
 ### Critères de Sortie Bloquants de l'Epic 22
-1. **Campagne Playwright E2E `100 %` verte** : `0` `failed`, `0` `timedOut`, `0` `flaky` sur l'ensemble des `24` specs (`110` scénarios planifiés, `--retries=0 --max-failures=0 --timeout=35000`) avec assertions `SELECT` PostgreSQL 18 réelles et survie au `F5`.
-2. **Registre des capacités (`docs/product/capabilities.yaml`)** : **`62 / 62` capacités `feature`** + **`3 / 3` capacités `foundation`** à **`verification: runtime`** (`0` `failed_e2e`, `0` `e2e_remediation_ref` résiduel), validé par `pnpm site:sync && pnpm site:check`.
-3. **5 Gardes CI Anti-Régression Actives** : anti-jargon UI/i18n/SSE, interdiction totale de `display: none` sur panneaux métier, intégrité CSS Tailwind v4 / `tokens.css`, interdiction `[LAYER_5_*]` & `ORCIA_DISABLE_PG_BOOTSTRAP_SYNC`, et assertions géométriques Playwright `rect.right <= innerWidth` + `elementFromPoint` sur modales.
+1. **Gardes CI & Couverture SQL E2E `100 %` (`Story 22.8`)** : `5` gardes CI anti-régression actives + assertions `SELECT` PG18 effectives sur `55/55` blocs `test(...)` (`110` scénarios) vérifiées par `test_e2e_sql_coverage_audit.py` + `ORCIA_E2E_CAMPAIGN_DIR` + budget `< 35 s`.
+2. **Campagne Playwright E2E Intégrale & Audit Croisé (`Story 22.9`)** : exécution complète des `24` specs (`110` scénarios, `--retries=0 --max-failures=0 --timeout=35000`) dans `docs/implementation-artifacts/e2e-campaign-epic-22/` avec `100 %` captures PNG, `bilan-execution-tests-e2e-epic-22.md`, `notes-audit-sally-ux.md`, `notes-audit-winston-architecture.md`, `synthese-remediation-sally-winston-epic-22.md` et mise à jour honnête de `docs/product/capabilities.yaml` (`pnpm site:sync && pnpm site:check`).
+3. **Transition & Initialisation Epic 23 (`Story 22.10`)** : rapports Tech Lead individuels (`23-1..23-N`), plan de correction global `sprint-change-proposal-2026-11-18-epic-23-remediation-plan.md`, initialisation complète de l'**Epic 23** dans `epics.md`, `sprint-status.yaml` et `capabilities.yaml` (`test_epic22_to_epic23_traceability.py` vert).
 4. **Pyramide `AD-17` complète** : couverture unitaire `>= 90 %` sur `orcia-kernel` et `orcia-core`, `ruff`/`mypy --strict`/`pnpm typecheck` à `0` erreur, `lint-imports` (`5 contracts kept, 0 broken`), `lint_spine.py` (`0 findings`), `openapi-typescript` `0-diff`.
 
 ---
 
-## 2. Stratégie par Vagues & Ordonnancement Topologique (`22.1 → 22.8`)
+## 2. Stratégie par Vagues & Ordonnancement Topologique (`22.1 → 22.10`)
 
 ```mermaid
 flowchart TD
@@ -56,9 +59,14 @@ flowchart TD
         S226["22-6 : Sidebar 8 entrées + Double Sélecteur + Breadcrumb, Mobile Companion <768px, Aide dynamique docs/help/ sans Chef1/aqwZSX & Cockpit <= 3 blocs<br/>(REM-17, REM-18, REM-19, REM-20, REM-21)"]
     end
 
-    subgraph V3["Vague 3 — Finitions UX, Purge Jargon, 5 Gardes CI & Retour Runtime 62/62 (P0-P3)"]
+    subgraph V3["Vague 3 — Finitions UX, Purge Jargon, 5 Gardes CI & Couverture SQL 100% (P0-P3)"]
         S227["22-7 : Compteurs 0/Modales, Erreurs RFC 9457, Grilles, Studio V2, Assistant/⌘K, Devise €/Dates FR, Retrait (!) & Purge Jargon i18n/SSE<br/>(REM-22, REM-23, REM-26..REM-32)"]
-        S228["22-8 : 5 Gardes CI Anti-Régression, Budget E2E <35s, Campagne Playwright 110/110 Vert & 62/62 CAP-* verification: runtime<br/>(REM-33, REM-34)"]
+        S228["22-8 : 5 Gardes CI Anti-Régression, Assertions SQL PG18 sur 55/55 blocs test() E2E, ORCIA_E2E_CAMPAIGN_DIR & Budget <35s<br/>(REM-33, REM-34)"]
+    end
+
+    subgraph V4["Vague 4 — Campagne Intégrale E2E, Audit Croisé & Transition Epic 23"]
+        S229["22-9 : Campagne E2E Intégrale (e2e-campaign-epic-22), Captures PNG, Bilan, Audit Sally × Winston & Maj capabilities.yaml"]
+        S2210["22-10 : Rapports Tech Lead 23-1..23-N, Plan de Correction Global & Initialisation Epic 23"]
     end
 
     S221 --> S223
@@ -72,13 +80,16 @@ flowchart TD
     S225 --> S226
     S226 --> S227
     S227 --> S228
+    S228 --> S229
+    S229 --> S2210
 ```
 
 ### Justification de l'Ordonnancement
 - **Vague 0 (`22.1`, `22.2`)** : supprime d'abord les causes transverses bloquantes (`"ws-1"` qui cassait sources/ADN/permissions, les faux `403` admin, les modales écrasées par Zone 4 sans Portal/Tailwind v4, les `4` wrappers `display: none` et le routage `/catalog` vs `/agents` vs `/help`). `22.1` et `22.2` peuvent être exécutées séquentiellement ou sur branches disjointes (`backend/store` vs `ui/vite/routes`).
 - **Vague 1 (`22.3`, `22.4`, `22.5`)** : raccorde tous les silos RAM restants sur PostgreSQL 18 une fois que les UUIDs `workspaces` et le `PLATFORM_ADMIN` sont sains (`assistant_folders`, `task_notifications`, `permission_broker_tickets`, `dbos_uow` + `human_anchor_signatures`/`upstream_challenges`/`run_lock_manifests`, `gate_evaluations`/`chunk_approvals`, garde `KILL_SWITCH_STOPPED`, `declarative_pack_bundles`, `wizard_sessions`).
 - **Vague 2 (`22.6`)** : aligne la coquille globale Direction C (`8` entrées, Double Sélecteur + Breadcrumb), câble `MobileCompanionView` (`< 768 px`), peuple le catalogue `docs/help/{fr,en}/*.md` dynamique par route et simplifie le Cockpit (`<= 3` blocs, Accostage réel PG18).
-- **Vague 3 (`22.7`, `22.8`)** : applique les finitions UX/ergonomie et la purge intégrale du jargon (`REM-22..32`), puis active les `5` gardes CI bloquantes et rejoue la campagne complète jusqu'à `62/62` `verification: runtime`.
+- **Vague 3 (`22.7`, `22.8`)** : applique les finitions UX/ergonomie et la purge intégrale du jargon (`REM-22..32`), puis active les `5` gardes CI bloquantes, généralise les assertions `SELECT` PostgreSQL 18 sur **100 % des `55` blocs `test(...)` E2E (`110` scénarios)** avec test statique `test_e2e_sql_coverage_audit.py`, paramètre `ORCIA_E2E_CAMPAIGN_DIR` (`e2e-campaign-epic-22`) et optimise les parcours sous `< 35 s` (`REM-33`).
+- **Vague 4 (`22.9`, `22.10`)** : exécute sans retry ni maquillage la campagne Playwright intégrale (`22.9`), archive captures PNG, bilan et audit croisé Sally × Winston, met à jour honnêtement `capabilities.yaml`, puis initialise les rapports Tech Lead individuels, le plan global et l'**Epic 23** (`22.10`).
 
 ---
 
@@ -140,7 +151,7 @@ flowchart TD
 | `REM-31` | `P2` | Vague 3 | Suppression des numérotations de titres (`/settings?tab=iam`, `/ontology`) & nettoyage `12-epic16` | `22-7-finitions-ux-ui-erreurs-rfc9457-grilles-devise-euro-et-purge-jargon` | `22-7-finitions-ux-ui-erreurs-rfc9457-grilles-devise-euro-et-purge-jargon-tech-lead-report.md` |
 | `REM-32` | `P3` | Vague 3 | Retrait des pastilles rouges `(!)` dans les boutons bleus & sidebar + correction troncatures RGAA | `22-7-finitions-ux-ui-erreurs-rfc9457-grilles-devise-euro-et-purge-jargon` | `22-7-finitions-ux-ui-erreurs-rfc9457-grilles-devise-euro-et-purge-jargon-tech-lead-report.md` |
 | `REM-33` | `P1` | Vague 3 | Budget temps E2E & fluidité parcours multi-étapes (`14-auth` #2, `16-ai-models` #2) sous `< 35 s` | `22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime` | `22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime-tech-lead-report.md` |
-| `REM-34` | `P0` | Vague 3 | Activation des 5 Gardes CI anti-régression & re-jeu intégral Playwright (`110/110` vert, `62/62` `runtime`) | `22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime` | `22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime-tech-lead-report.md` |
+| `REM-34` | `P0` | Vague 3 | Activation des 5 Gardes CI anti-régression, assertions SQL PG18 sur `55/55` blocs `test()` E2E & paramétrage `ORCIA_E2E_CAMPAIGN_DIR` (campagne portée par `22.9`) | `22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime` | `22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime-tech-lead-report.md` |
 
 ---
 
@@ -213,5 +224,7 @@ flowchart TD
 | `22.5` | `22-5-persistance-pg18-packs-declaratifs-et-wizards-durables` | `22-5-persistance-pg18-packs-declaratifs-et-wizards-durables-tech-lead-report.md` | `REM-14`, `REM-15` (`2`) | `CAP-055`, `CAP-056`, `CAP-057`, `CAP-150` (`4`) |
 | `22.6` | `22-6-coquille-direction-c-8-entrees-mobile-companion-aide-dynamique-et-cockpit` | `22-6-coquille-direction-c-8-entrees-mobile-companion-aide-dynamique-et-cockpit-tech-lead-report.md` | `REM-17`, `REM-18`, `REM-19`, `REM-20`, `REM-21` (`5`) | `CAP-068` (`1`) + UX Shell/Mobile transverse |
 | `22.7` | `22-7-finitions-ux-ui-erreurs-rfc9457-grilles-devise-euro-et-purge-jargon` | `22-7-finitions-ux-ui-erreurs-rfc9457-grilles-devise-euro-et-purge-jargon-tech-lead-report.md` | `REM-22`, `REM-23`, `REM-26`, `REM-27`, `REM-28`, `REM-29`, `REM-30`, `REM-31`, `REM-32` (`9`) | Transverse `CAP-*` UX/i18n (`0` ancrage bloquant exclusif) |
-| `22.8` | `22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime` | `22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime-tech-lead-report.md` | `REM-33`, `REM-34` (`2`) | `CAP-100` (hygiène) + validation `62/62` `runtime` |
-| **Total** | **`8` Stories** | **`8` Rapports Tech Lead** | **`34 / 34` (`100 %`)** | **`51 / 51` `failed_e2e` (`100 %`)** |
+| `22.8` | `22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime` | `22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime-tech-lead-report.md` | `REM-33`, `REM-34` (`2`) | `CAP-100` (hygiène) + assertions SQL PG18 `55/55` blocs `test()` + `ORCIA_E2E_CAMPAIGN_DIR` |
+| `22.9` | `22-9-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston` | `22-9-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston-tech-lead-report.md` | Validation campagne `REM-01`..`REM-34` | Campagne E2E `e2e-campaign-epic-22`, captures PNG, bilan, audit Sally × Winston & vérité `capabilities.yaml` |
+| `22.10` | `22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23` | `22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23-tech-lead-report.md` | Transition post-audit Sally × Winston | Rapports Tech Lead `23-1..23-N`, plan de correction global & initialisation `Epic 23` |
+| **Total** | **`10` Stories (`22.1..22.8` remédiation + `22.9..22.10` campagne & Epic 23)** | **`10` Rapports Tech Lead** | **`34 / 34` (`100 %`)** | **`51 / 51` `failed_e2e` (`100 %`)** |

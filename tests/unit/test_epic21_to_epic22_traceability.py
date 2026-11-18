@@ -23,6 +23,17 @@ CAPABILITIES_PATH = REPO_ROOT / "docs" / "product" / "capabilities.yaml"
 SPRINT_STATUS_PATH = REPO_ROOT / "docs" / "implementation-artifacts" / "sprint-status.yaml"
 EPICS_PATH = REPO_ROOT / "docs" / "planning-artifacts" / "epics.md"
 
+MASTER_PLAN_CORE_KEYS = (
+    "22-1-socle-identite-uuid-workspaces-permissions-admin-et-fin-bypass-pg",
+    "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats",
+    "22-3-persistance-pg18-assistant-notifications-sse-et-permission-broker",
+    "22-4-persistance-pg18-orchestration-gates-et-garde-kill-switch",
+    "22-5-persistance-pg18-packs-declaratifs-et-wizards-durables",
+    "22-6-coquille-direction-c-8-entrees-mobile-companion-aide-dynamique-et-cockpit",
+    "22-7-finitions-ux-ui-erreurs-rfc9457-grilles-devise-euro-et-purge-jargon",
+    "22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime",
+)
+
 
 def _collect_failing_spec_files(suites: list[dict[str, Any]]) -> set[str]:
     failing: set[str] = set()
@@ -107,7 +118,8 @@ def test_every_cross_audit_remediation_item_is_mapped_to_master_plan_and_tech_le
 
     master_plan_text = MASTER_PLAN_PATH.read_text(encoding="utf-8")
     reports_by_name = _load_remediation_reports()
-    assert len(reports_by_name) == 8
+    expected_core_reports = {f"{key}-tech-lead-report.md" for key in MASTER_PLAN_CORE_KEYS}
+    assert expected_core_reports.issubset(reports_by_name.keys())
 
     for rem_id in remediation_ids:
         assert rem_id in master_plan_text, f"{rem_id} missing from master plan"
@@ -122,13 +134,13 @@ def test_every_failed_capability_points_to_valid_sprint_key_and_report() -> None
     dev_status = sprint_data.get("development_status", {})
     assert isinstance(dev_status, dict)
 
-    valid_keys = {k for k in dev_status if isinstance(k, str) and k.startswith("22-")}
-    failed_caps = [
-        cap
-        for cap in capabilities_data.get("capabilities", [])
-        if isinstance(cap, dict) and cap.get("verification") == "failed_e2e"
+    valid_keys = {
+        k for k in dev_status if isinstance(k, str) and (k.startswith("22-") or k.startswith("23-"))
+    }
+    capabilities = [
+        cap for cap in capabilities_data.get("capabilities", []) if isinstance(cap, dict)
     ]
-    assert len(failed_caps) == 51
+    failed_caps = [cap for cap in capabilities if cap.get("verification") == "failed_e2e"]
 
     for cap in failed_caps:
         cap_id = cap.get("id")
@@ -141,6 +153,13 @@ def test_every_failed_capability_points_to_valid_sprint_key_and_report() -> None
             f"Capability {cap_id} points to missing report {report_path.name}"
         )
 
+    runtime_caps = [cap for cap in capabilities if cap.get("verification") == "runtime"]
+    for cap in runtime_caps:
+        cap_id = cap.get("id")
+        assert not cap.get("e2e_remediation_ref"), (
+            f"Runtime capability {cap_id} must not retain e2e_remediation_ref"
+        )
+
 
 def test_every_remediation_sprint_key_has_backlog_definition_report_and_index_entry() -> None:
     sprint_data = _load_yaml_mapping(SPRINT_STATUS_PATH)
@@ -150,7 +169,7 @@ def test_every_remediation_sprint_key_has_backlog_definition_report_and_index_en
     remediation_keys = sorted(
         key for key in dev_status if isinstance(key, str) and key.startswith("22-")
     )
-    assert len(remediation_keys) == 8
+    assert set(MASTER_PLAN_CORE_KEYS).issubset(remediation_keys)
 
     epics_text = EPICS_PATH.read_text(encoding="utf-8")
     index_text = REPORTS_INDEX_PATH.read_text(encoding="utf-8")

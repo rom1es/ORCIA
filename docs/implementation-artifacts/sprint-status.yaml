@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 11-18-2026 11:18
+last_updated: 11-18-2026 19:52
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -222,9 +222,9 @@ development_status:
   21-9-analyse-gitnexus-rapports-tech-lead-plan-directeur-et-initialisation-epic-22: done
   epic-21-retrospective: optional
 
-  # Epic 22 — Remédiation E2E Vérité PG18, Portails & Shell Direction C, Purge Jargon & Gardes CI (REM-01..REM-34)
+  # Epic 22 — Remédiation E2E Vérité PG18, Portails & Shell Direction C, Purge Jargon, Gardes CI, Campagne & Initialisation Epic 23 (REM-01..REM-34)
   # Plan directeur : docs/planning-artifacts/sprint-change-proposal-2026-11-18-epic-22-remediation-plan.md
-  epic-22: backlog
+  epic-22: in-progress
   22-1-socle-identite-uuid-workspaces-permissions-admin-et-fin-bypass-pg: ready-for-dev
   22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats: ready-for-dev
   22-3-persistance-pg18-assistant-notifications-sse-et-permission-broker: ready-for-dev
@@ -233,6 +233,8 @@ development_status:
   22-6-coquille-direction-c-8-entrees-mobile-companion-aide-dynamique-et-cockpit: ready-for-dev
   22-7-finitions-ux-ui-erreurs-rfc9457-grilles-devise-euro-et-purge-jargon: ready-for-dev
   22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime: ready-for-dev
+  22-9-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston: ready-for-dev
+  22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23: ready-for-dev
   epic-22-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
