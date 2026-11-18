@@ -1,4 +1,6 @@
-import { expect, test } from "@playwright/test";
+/** @uj UJ-5 | @cap CAP-023 */
+import { expect, test } from "./support/e2eCaptureFixture";
+import { expectDbRowExists } from "./support/dbAssertions";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
 import { createBuAndTeamViaUi, createWorkspaceViaUi } from "./support/orgAndWorkspace";
@@ -133,6 +135,11 @@ test.describe("TEST-04 · 03 — Human-Led : ancrage obligatoire et arbitrage", 
     await expect(page.getByTestId("cockpit-arbitration-resolved-summary")).toHaveAttribute(
       "data-selected-option",
       "OPT_A_SPOT_15M",
+    );
+    expectDbRowExists(
+      "SELECT id, section_key, char_length FROM human_anchor_signatures WHERE section_key = :section_key AND content_text = :content_text AND char_length >= 30",
+      { section_key: "human_architecture_intent", content_text: validIntent },
+      "ancrage humain signé persisté dans human_anchor_signatures",
     );
   });
 });

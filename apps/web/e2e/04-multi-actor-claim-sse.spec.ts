@@ -1,4 +1,7 @@
-import { type APIRequestContext, expect, request as pwRequest, test } from "@playwright/test";
+/** @uj UJ-4 | @cap CAP-040 */
+import { type APIRequestContext, request as pwRequest } from "@playwright/test";
+import { expectDbRowExists } from "./support/dbAssertions";
+import { expect, test } from "./support/e2eCaptureFixture";
 
 const API = `http://127.0.0.1:${process.env.ORCIA_E2E_API_PORT ?? "8100"}`;
 const SSE_BUDGET_MS = 500;
@@ -73,6 +76,11 @@ test.describe("TEST-04 · 04 — Multi-acteurs : Claim exclusif et diffusion SSE
         data: { ttl_seconds: 900, force: false },
       });
       expect(claimA.status()).toBe(200);
+      expectDbRowExists(
+        "SELECT id, status FROM task_notifications WHERE id::text = :task_id AND status = 'CLAIMED'",
+        { task_id: taskId },
+        "prise en charge persistée dans task_notifications PG18",
+      );
 
       const claimB = await actorB.post(`/api/v1/tasks/${taskId}/claim?persona_key=nadia`, {
         data: { ttl_seconds: 900, force: false },

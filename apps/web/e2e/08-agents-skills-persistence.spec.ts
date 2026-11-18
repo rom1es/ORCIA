@@ -1,4 +1,6 @@
-import { expect, test } from "@playwright/test";
+/** @uj UJ-9, UJ-19 | @cap CAP-090, CAP-091 */
+import { expect, test } from "./support/e2eCaptureFixture";
+import { expectDbRowExists } from "./support/dbAssertions";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi } from "./support/firstAdmin";
 import { createBuAndTeamViaUi } from "./support/orgAndWorkspace";
@@ -70,7 +72,13 @@ test.describe("TEST-05 · 08 — Mes Agents : Studio 6 Blocs Gouvernés, Banc de
       window.sessionStorage.clear();
     });
     await page.goto("/agents");
+    await page.reload();
     await expect(page.getByText("Agent E2E Conformité").first()).toBeVisible({ timeout: 20000 });
+    expectDbRowExists(
+      "SELECT id, resource_id, title, resource_type FROM catalog_items WHERE resource_type = 'agent' AND title = :title",
+      { title: "Agent E2E Conformité" },
+      "agent persisté dans catalog_items PG18",
+    );
     await expect(
       page.getByTestId("agent-posture-badge-agent-e2e-conformite"),
     ).toContainText("Contradicteur / Gate");

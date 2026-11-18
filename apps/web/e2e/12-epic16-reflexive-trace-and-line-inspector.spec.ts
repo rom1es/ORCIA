@@ -1,4 +1,7 @@
-import { expect, test, type Page } from "@playwright/test";
+/** @uj UJ-10, UJ-17 | @cap CAP-160 */
+import type { Page } from "@playwright/test";
+import { expect, test } from "./support/e2eCaptureFixture";
+import { expectDbRowExists } from "./support/dbAssertions";
 import { watchApiServerErrors } from "./support/apiErrors";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi } from "./support/firstAdmin";
@@ -170,6 +173,11 @@ test.describe("Story 16.4 — Trace d'exécution réflexive, Inspecteur chirurgi
     await expect(page.getByTestId("trace-write-preview-card")).toBeHidden({
       timeout: 15000,
     });
+    expectDbRowExists(
+      "SELECT id, execution_id, actor_slug, status FROM reflexive_execution_sessions WHERE status = 'COMPLETED'",
+      undefined,
+      "session réflexive COMPLETED persistée dans reflexive_execution_sessions PG18",
+    );
     expect(serverErrors, serverErrors.join("\n")).toEqual([]);
   });
 });

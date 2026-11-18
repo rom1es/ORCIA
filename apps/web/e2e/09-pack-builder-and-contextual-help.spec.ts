@@ -1,4 +1,6 @@
-import { expect, test } from "@playwright/test";
+/** @uj UJ-10, UJ-19, UJ-20 | @cap CAP-064, CAP-083, CAP-160 */
+import { expect, test } from "./support/e2eCaptureFixture";
+import { expectDbRowExists } from "./support/dbAssertions";
 import { watchApiServerErrors } from "./support/apiErrors";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi } from "./support/firstAdmin";
@@ -95,6 +97,11 @@ test.describe("TEST-06 · 09 — Mes Processus (Objectif vs Jalons), Studio 5 bl
     );
     await expect(page.getByTestId("studio-goal-reflexive-objective-input")).toHaveValue(
       customObjective,
+    );
+    expectDbRowExists(
+      "SELECT id, workflow_id, status FROM workflow_definitions_v2 WHERE workflow_id = :workflow_id",
+      { workflow_id: "wf-01-qualification-prd" },
+      "brouillon workflow V2 persisté dans workflow_definitions_v2 PG18",
     );
 
     const studioVisibleText = await page

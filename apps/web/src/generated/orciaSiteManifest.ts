@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 54,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 166,
+    "techLeadReportsCount": 167,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 29,
@@ -532,6 +532,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 21.4",
+      "reportFile": "21-4-harnais-playwright-assertions-pg18-et-screenshots-finaux-tech-lead-report.md",
+      "domain": "Harnais Playwright Vérité PostgreSQL 18 (query_db.py + dbAssertions.ts), Fixture Capture PNG Finale (e2eCaptureFixture.ts) & Mise à Niveau des 16 Specs Existantes",
+      "summary": "Création de l'exécuteur lecture seule infra/scripts/e2e/query_db.py (177 L, SET TRANSACTION READ ONLY, garde orcia_e2e), du pont Playwright dbAssertions.ts (98 L, 0 package npm ajouté), de la fixture e2eCaptureFixture.ts (135 L, captures screenshots/<spec>/<project>--<test>--<status>.png + manifest.jsonl), suite unitaire test_e2e_query_db_readonly.py (208 L, 41 tests), mise à niveau des 16 specs apps/web/e2e/*.spec.ts (@uj/@cap, F5, assertions SQL PG18, retrait test.fixme 02-assistant), 73 passed (pytest), ruff/mypy --strict, 9/9 Turbo (153 tests @orcia/web), tsc E2E OK et site:sync/site:check OK."
+    },
     {
       "date": "2026-11-18",
       "phaseOrStory": "Story 21.3",
