@@ -14,10 +14,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 54,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 163,
+    "techLeadReportsCount": 180,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
-    "verifiedCapabilitiesCount": 50
+    "verifiedCapabilitiesCount": 14,
+    "userJourneysCount": 20,
+    "coveredUserJourneysCount": 20,
+    "e2eCoveredCapabilitiesCount": 62
   },
   "activeRoutes": [
     "/",
@@ -529,6 +532,125 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 22.8",
+      "reportFile": "22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime-tech-lead-report.md",
+      "domain": "Vague 3 (REM-33, REM-34) — Activation des 5 Gardes CI Anti-Régression, Campagne E2E 110/110 Vert < 35s & Passage 62/62 verification: runtime",
+      "summary": "Pré-implémentation : création des 5 gardes automatisées (anti-jargon UI, zéro display: none, intégrité CSS Tailwind, zéro [LAYER_5_*]/ORCIA_DISABLE_PG_BOOTSTRAP_SYNC, géométrie Playwright rect.right <= innerWidth & elementFromPoint modales), budget < 35s, re-jeu complet --retries=0 --max-failures=0 et passage 62/62 feature à verification: runtime (pnpm site:sync && pnpm site:check)."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 22.7",
+      "reportFile": "22-7-finitions-ux-ui-erreurs-rfc9457-grilles-devise-euro-et-purge-jargon-tech-lead-report.md",
+      "domain": "Vague 3 (REM-22, REM-23, REM-26..32) — Finitions UX/UI, Erreurs RFC 9457 Actionnables, Grilles, Devise €/Dates FR, Retrait (!) & Purge Intégrale Jargon",
+      "summary": "Pré-implémentation : masquage compteurs 0 & modales + Nouveau..., bannières RFC 9457 sur toutes erreurs HTTP, purge exhaustive i18n/SSE (SYNTHESIS_READY, TECH_LEAD, PAUSE_AND_ESCALATE, etc.), devise € & dates jj/mm/aaaa, grilles /finops//profile//ontology, Studio V2 & /agents MCP, ergonomie /assistant/⌘K, et retrait (!) dans boutons bleus."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 22.6",
+      "reportFile": "22-6-coquille-direction-c-8-entrees-mobile-companion-aide-dynamique-et-cockpit-tech-lead-report.md",
+      "domain": "Vague 2 (REM-17..21) — Coquille Direction C 8 Entrées, Mobile Companion < 768px, Aide Dynamique docs/help/ & Cockpit <= 3 Blocs",
+      "summary": "Pré-implémentation : useResponsiveBreakpoint() + barre basse 3 onglets mobile + purge faux positifs overflow-x: hidden, scroll SSE /assistant mobile, catalogue docs/help/{fr,en}/*.md dynamique par route sans Chef1/aqwZSX, Sidebar 8 entrées + Double Sélecteur + Breadcrumb, et Accostage piloté par PG18 (<= 3 blocs sans LOCK TABLE..., CAP-068 + transverse)."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 22.5",
+      "reportFile": "22-5-persistance-pg18-packs-declaratifs-et-wizards-durables-tech-lead-report.md",
+      "domain": "Vague 1 (REM-14, REM-15) — Persistance PG18 declarative_pack_bundles & Parcours Wizards Durables (wizard_sessions)",
+      "summary": "Pré-implémentation : upsert idempotent des packs déclaratifs dans declarative_pack_bundles, persistance wizard_sessions dans DurableOnboardingWizardService, câblage @orcia/api-client dans routes/wizards.tsx et suppression de la triple numérotation / sdlc_tech_lead (CAP-055, CAP-056, CAP-057, CAP-150)."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 22.4",
+      "reportFile": "22-4-persistance-pg18-orchestration-gates-et-garde-kill-switch-tech-lead-report.md",
+      "domain": "Vague 1 (REM-09, REM-11, REM-12) — Persistance PG18 Orchestration (dbos_uow, ancres, challenges, run_lock), Gates & Garde KILL_SWITCH_STOPPED",
+      "summary": "Pré-implémentation : initialisation app.state.dbos_uow, adaptateurs SQL human_anchor_signatures, upstream_challenges, run_lock_manifests, montage UpstreamChallengeRewindModal, SqlGateEvaluationRepository (gate_evaluations, chunk_approvals) + séparation /gates vs /processes, et garde AND status <> 'KILL_SWITCH_STOPPED' dans _sql_autonomous_rollback.py (CAP-020, CAP-021, CAP-023, CAP-024, CAP-030..033, CAP-201)."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 22.3",
+      "reportFile": "22-3-persistance-pg18-assistant-notifications-sse-et-permission-broker-tech-lead-report.md",
+      "domain": "Vague 1 (REM-08, REM-10, REM-13) — Persistance PG18 assistant_folders (+ purge LAYER_5), task_notifications/SSE & permission_broker_tickets (fallback git://*)",
+      "summary": "Pré-implémentation : adaptateurs SQLAlchemy Asyncio injectés au Composition Root pour AssistantFoldersAndSharingService (séparation pinned_notes vs layer5_prompt_injection), UnifiedNotificationAndClaimService (task_notifications + resource_leases + Redis/SSE < 500ms), et PermissionBrokerService (permission_broker_tickets + politique socle git://*, CAP-003, CAP-040, CAP-043, CAP-070, CAP-071, CAP-073..075)."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 22.2",
+      "reportFile": "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats-tech-lead-report.md",
+      "domain": "Vague 0 (REM-03..06, REM-16, REM-24, REM-25) — Portals OrciaDialog & Tailwind v4, Purge display: none, Découplage /catalog//agents//help, Invitation /organization & data-testid/Contrats",
+      "summary": "Pré-implémentation : activation @tailwindcss/vite, Portals DialogPrimitive.Portal + footer sticky modales, purge des 4 wrappers display: none, séparation /catalog vs /agents (1 seul banc MCP) et masquage Zone 4 sur /help, bouton invitation visible sur /organization, alignement llm-provider-preset-ollama, studio-view-mode-whatif et plaintext_value (21 CAP-* ancrées)."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 22.1",
+      "reportFile": "22-1-socle-identite-uuid-workspaces-permissions-admin-et-fin-bypass-pg-tech-lead-report.md",
+      "domain": "Vague 0 (REM-01, REM-02, REM-07) — Unification UUIDv7 Workspaces (0 \"ws-1\"), Fix 403 PLATFORM_ADMIN & Fin \"marc\" / ORCIA_DISABLE_PG_BOOTSTRAP_SYNC",
+      "summary": "Pré-implémentation : suppression génération \"ws-N\", propagation slug exact (workspaces), membership propriétaire auto + règle MatrixPermissionEvaluator STANDARD vs CONFIDENTIAL_RESTRICTED, purge \"marc\" cockpit & suppression du drapeau de bypass PG (CAP-011, CAP-022, CAP-050, CAP-067, CAP-072, CAP-076, CAP-080, CAP-180)."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 21.9",
+      "reportFile": "21-9-rapports-tech-lead-echecs-et-initialisation-epic-22-tech-lead-report.md",
+      "domain": "Analyse d'Impact GitNexus, Rapports Pré-Implémentation 22-1..22-8, Plan Directeur & Initialisation Epic 22",
+      "summary": "Consolidation des constats E2E (47 échecs/14 specs), des 34 chantiers REM-01..REM-34 et des 51 capacités failed_e2e en 8 Stories cohérentes ; analyse d'impact GitNexus sur les 13 symboles critiques ; production du Plan Directeur sprint-change-proposal-2026-11-18-epic-22-remediation-plan.md, des 8 rapports Tech Lead pré-implémentation, initialisation de epics.md, sprint-status.yaml (epic-21: done) et capabilities.yaml, suite de traçabilité tests/unit/test_epic21_to_epic22_traceability.py (168 L, 5 tests) et synchronisation pnpm site:sync && pnpm site:check."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 21.8",
+      "reportFile": "21-8-campagne-e2e-captures-bilan-et-analyse-croisee-sally-winston-tech-lead-report.md",
+      "domain": "Campagne E2E Intégrale (110 cas / 24 specs), Captures PNG (110/110), Audit Croisé Sally × Winston (REM-01..REM-34) & Vérité capabilities.yaml",
+      "summary": "Exécution sans retry (--retries=0 --max-failures=0) de la campagne Playwright bi-serveur PostgreSQL 18 (47 passed, 36 failed, 11 timedOut, 16 skipped), archivage de playwright-results.json, manifest.jsonl et 110/110 captures PNG, consolidation synthese-remediation-sally-winston-epic-21.md (34 chantiers REM-01..REM-34 sur 4 vagues couvrant 100 % des 47 échecs E2E, 49 captures Sally et constats Winston), mise à jour honnête de capabilities.yaml (11 feature + 3 foundation en runtime, 51 feature en failed_e2e avec e2e_remediation_ref: \"epic-22\"), pnpm site:sync && pnpm site:check 0 erreur."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 21.7 (Lot C)",
+      "reportFile": "21-7-e2e-lot-c-orchestration-vsm-finops-citations-et-showcase-tech-lead-report.md",
+      "domain": "Specs E2E Lot C (19–21), Helper processAndAssistantHelpers.ts, Audit data-testid/PG18 & capabilities.yaml (0 backlog résiduel)",
+      "summary": "Rédaction complète du rapport Tech Lead, création de apps/web/e2e/support/processAndAssistantHelpers.ts (124 L) et des 3 specs E2E 19 (191 L), 20 (254 L), 21 (220 L) sans test.skip avec assertions F5 + SELECT PG18, retrait complet de e2e_backlog_story dans capabilities.yaml (62/62 E2E fonctionnels, 20/20 UJ), tsc --noEmit OK, detect-secrets OK, 9/9 Turbo OK (153/153 tests web), 29 passed (pytest registre/UJ/sync) et site:sync/site:check OK."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 21.6 (Lot B)",
+      "reportFile": "21-6-e2e-lot-b-sources-codegraph-dna-ontologie-catalogue-packs-wizards-mcp-tech-lead-report.md",
+      "domain": "Specs E2E Lot B (17 & 18), Helper workspaceAndCatalogHelpers.ts, Audit data-testid/PG18 & capabilities.yaml",
+      "summary": "Préparation 21.6-impl (Sections 1 & 2, workspaceAndCatalogHelpers.ts, audit data-testid / SQL vs mémoire / schémas PG18, mise à jour capabilities.yaml) — Section 3 à compléter par 21.6-test."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 21.5 (Lot A)",
+      "reportFile": "21-5-e2e-lot-a-auth-org-iam-profil-modeles-ia-et-broker-tech-lead-report.md",
+      "domain": "Specs E2E Lot A (14–16), Helper authAndOrgHelpers.ts, Audit data-testid/PG18 & capabilities.yaml",
+      "summary": "Rédaction complète du rapport Tech Lead, création de apps/web/e2e/support/authAndOrgHelpers.ts (169 L) et des 3 specs E2E 14 (262 L), 15 (209 L), 16 (236 L) sans test.skip avec assertions F5 + SELECT PG18, mise à jour de capabilities.yaml (39/62 E2E fonctionnels, 20/20 UJ), tsc --noEmit OK, detect-secrets OK, 9/9 Turbo OK, test_uj_e2e_coverage_gate.py 7 passed et site:sync/site:check OK."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 21.4",
+      "reportFile": "21-4-harnais-playwright-assertions-pg18-et-screenshots-finaux-tech-lead-report.md",
+      "domain": "Harnais Playwright Vérité PostgreSQL 18 (query_db.py + dbAssertions.ts), Fixture Capture PNG Finale (e2eCaptureFixture.ts) & Mise à Niveau des 16 Specs Existantes",
+      "summary": "Création de l'exécuteur lecture seule infra/scripts/e2e/query_db.py (177 L, SET TRANSACTION READ ONLY, garde orcia_e2e), du pont Playwright dbAssertions.ts (98 L, 0 package npm ajouté), de la fixture e2eCaptureFixture.ts (135 L, captures screenshots/<spec>/<project>--<test>--<status>.png + manifest.jsonl), suite unitaire test_e2e_query_db_readonly.py (208 L, 41 tests), mise à niveau des 16 specs apps/web/e2e/*.spec.ts (@uj/@cap, F5, assertions SQL PG18, retrait test.fixme 02-assistant), 73 passed (pytest), ruff/mypy --strict, 9/9 Turbo (153 tests @orcia/web), tsc E2E OK et site:sync/site:check OK."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 21.3",
+      "reportFile": "21-3-decoupage-site-sync-et-verrou-ci-uj-e2e-tech-lead-report.md",
+      "domain": "Découpage Modulaire sync_site_catalog.py (< 350 L), Verrou CI Bloquant CAP ↔ UJ ↔ Spec E2E (uj_e2e_coverage.py) & Assainissement capabilities.yaml",
+      "summary": "Découpage de sync_site_catalog.py (883 -> 220 L) en 5 modules < 200 L (_site_repo_parsers.py, _site_html_renderer.py, _site_html_styles.py, _site_html_template.py), création du verrou CI uj_e2e_coverage.py (244 L) intégré à capabilities_registry.py (233 L) et pnpm site:check, assainissement des 36 capacités sans spec E2E fonctionnelle (e2e_backlog_story 21-5/21-6/21-7 et verification: docs), suite dédiée tests/unit/test_uj_e2e_coverage_gate.py (277 L), 29 passed (pytest), ruff, mypy --strict, 9/9 Turbo et site:sync/site:check (65/65 live, 26/62 E2E fonctionnels, 20/20 UJ)."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 21.2",
+      "reportFile": "21-2-referentiel-user-journeys-uj1-uj20-prd-et-experience-tech-lead-report.md",
+      "domain": "Référentiel Complet UJ-1..UJ-20 (prd.md §2.3 & §4.10, AIOPS-INCIDENT-LOOP-01), Key Flows (EXPERIENCE.md §9) & Test de Cohérence capabilities.yaml",
+      "summary": "Annotation AIOPS-INCIDENT-LOOP-01 sur UJ-12 (boucle d'incident sans écriture de code/Git), rédaction structurée de UJ-13..UJ-20 dans prd.md §2.3 et ajout de Réalise UJ-... sur FR-31..FR-36 (§4.10), ajout des Flows 4..11 dans EXPERIENCE.md §9 couvrant UJ-1..UJ-20 sans jargon interne, création de tests/unit/test_uj_prd_experience_consistency.py (139 lignes, 4 tests), 21 passed (pytest), ruff OK et pnpm site:sync && pnpm site:check (65/65 capacités)."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 21.1",
+      "reportFile": "21-1-classification-capacites-kind-uj-et-tables-pg18-tech-lead-report.md",
+      "domain": "Classification des 65 Capacités (kind: feature \\",
+      "summary": "foundation, uj, db_tables, read_only_surface) & Validation capabilities_registry.py"
+    },
     {
       "date": "2026-11-18",
       "phaseOrStory": "Epic 20 VALIDATE (CAP-010, CAP-030, CAP-034, CAP-036, CAP-202)",

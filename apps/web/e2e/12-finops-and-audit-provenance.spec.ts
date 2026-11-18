@@ -1,4 +1,6 @@
-import { expect, test } from "@playwright/test";
+/** @uj UJ-8, UJ-14 | @cap CAP-065, CAP-200 */
+import { expect, test } from "./support/e2eCaptureFixture";
+import { expectDbRowExists } from "./support/dbAssertions";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi } from "./support/firstAdmin";
 import {
@@ -39,6 +41,11 @@ test.describe("TEST-06 · 12 — FinOps Gouvernance, Services externes & Journal
 
     await page.reload();
     await expect(page.getByTestId("finops-governance-dashboard")).toBeVisible({ timeout: 30000 });
+    expectDbRowExists(
+      "SELECT id, scope_type, monthly_budget_usd FROM finops_scope_budgets WHERE scope_type = :scope_type AND monthly_budget_usd > 0",
+      { scope_type: "GLOBAL" },
+      "plafond budgétaire GLOBAL persisté dans finops_scope_budgets PG18",
+    );
 
     // Bascule entre les 4 onglets (dont Services et agents externes & Maîtrise humaine)
     await page.getByTestId("finops-tab-processes").click();

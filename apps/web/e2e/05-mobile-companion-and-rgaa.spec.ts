@@ -1,4 +1,5 @@
-import { expect, test } from "@playwright/test";
+/** @uj UJ-20 | @cap CAP-042 */
+import { expect, test } from "./support/e2eCaptureFixture";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi } from "./support/firstAdmin";
 

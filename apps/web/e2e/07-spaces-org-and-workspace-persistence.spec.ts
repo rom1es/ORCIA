@@ -1,4 +1,6 @@
-import { expect, test } from "@playwright/test";
+/** @uj UJ-9, UJ-14, UJ-18 | @cap CAP-050, CAP-067, CAP-080 */
+import { expect, test } from "./support/e2eCaptureFixture";
+import { expectDbRowExists } from "./support/dbAssertions";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi } from "./support/firstAdmin";
 import { createBuAndTeamViaUi, createWorkspaceViaUi } from "./support/orgAndWorkspace";
@@ -33,6 +35,22 @@ test.describe("TEST-05 · 07 — Mes Espaces : organisation, espace de travail e
       window.sessionStorage.clear();
     });
     await page.goto("/spaces");
+    await page.reload();
     await expect(page.getByText("Espace E2E Comptabilité").first()).toBeVisible({ timeout: 20000 });
+    expectDbRowExists(
+      "SELECT id, slug, unit_type FROM org_units WHERE slug = :slug AND unit_type = 'BU'",
+      { slug: "bu-e2e" },
+      "Direction BU persistée dans org_units PG18",
+    );
+    expectDbRowExists(
+      "SELECT id, slug, unit_type FROM org_units WHERE slug = :slug AND unit_type = 'TEAM'",
+      { slug: "team-e2e" },
+      "Équipe persistée dans org_units PG18",
+    );
+    expectDbRowExists(
+      "SELECT id, slug, name FROM workspaces WHERE slug = :slug",
+      { slug: "espace-e2e-compta" },
+      "Espace de travail persisté dans workspaces PG18",
+    );
   });
 });

@@ -143,6 +143,8 @@ This document provides the complete epic and story breakdown for ORCIA, decompos
 - **FR-34** : Epic 11 (+ ad-hoc, Epic 13) - Mes Espaces : ADN, glossaire, routage d'artefacts, rattachement d'équipe (`CAP-067`, `CAP-080`, `CAP-081`, `CAP-084`)
 - **FR-35** : Epic 11 (+ ad-hoc, Epic 13) - Exposition MCP/A2A, banc de test, atelier orcia-pack-builder (`CAP-082`..`CAP-084`)
 - **FR-36** : ad-hoc, Epic 13 - Gestion des agents et compétences (`CAP-090`..`CAP-092`)
+- **Couverture Intégrale User Journeys & Vérité E2E PG18 (`FR-1`..`FR-36`, `UJ-1`..`UJ-20`, `CAP-001`..`CAP-203`)** : Epic 21 - Classification `feature | foundation` (`capabilities.yaml`), référentiel complet `UJ-1`..`UJ-20` (`prd.md` & `EXPERIENCE.md`), verrou CI `pnpm site:check`, campagne Playwright intégrale (`00..21` + `shell.spec.ts`) avec survie `F5`, assertions `SELECT` PostgreSQL 18, captures PNG finales, audit croisé Sally × Winston & initialisation de l'Epic 22
+- **Remédiation E2E Vérité PG18, Portails & Shell Direction C, Purge Jargon & Gardes CI (`FR-1`..`FR-36`, `REM-01`..`REM-34`, `CAP-001`..`CAP-203`)** : Epic 22 - Unification UUIDv7 Workspaces & droits `PLATFORM_ADMIN`, Portals `OrciaDialog` & Tailwind v4, purge `display: none` & découplage `/catalog`/`/agents`/`/help`, câblage PG18 de tous les silos RAM (`assistant_folders`, `task_notifications`, `permission_broker_tickets`, `dbos_uow`, `human_anchor_signatures`, `upstream_challenges`, `run_lock_manifests`, `gate_evaluations`, `chunk_approvals`, `declarative_pack_bundles`, `wizard_sessions`, garde `KILL_SWITCH_STOPPED`), refonte Direction C `8` entrées / Mobile `< 768px` / `docs/help/` dynamique / Cockpit `<= 3` blocs, purge intégrale du jargon technique, activation des `5` gardes CI anti-régression, campagne E2E `110/110` vert et `62/62` capacités `feature` à `verification: runtime`
 
 > Source de vérité du statut réel de chaque capacité : `docs/product/capabilities.yaml` (voir `AGENTS.md` §5).
 
@@ -196,6 +198,14 @@ Les Responsables d'Espace (`TEAM_LEAD`), Stewards Métier (`ONTOLOGY_STEWARD_L3`
 ### Epic 19: Hub Modèles IA Fiable, Découverte 0 Token, Test Réel & Embeddings Sémantiques (`AD-24`)
 Les Administrateurs Plateforme et Responsables IA découvrent automatiquement les modèles disponibles via des appels légers aux endpoints standards des fournisseurs sans consommer de tokens (`0 $`), configurent leurs modèles chat/raisonnement et leur **modèle d'embedding sémantique unique GLOBAL** dans une modale épurée avec placeholders contextuels dynamiques, valident la connectivité réelle (chat `max_tokens=1` et validation stricte de dimension 1024 pour embeddings) avec latence mesurée et erreurs explicites RFC 9457, s'appuient sur un démarrage Jour 0 sans aucun nom de modèle propriétaire codé en dur dans le code source où le wizard guide obligatoirement vers la configuration du modèle d'embedding (faute de quoi Mon Assistant, la recherche RAG et l'ingestion documentaire sont totalement bloqués avec l'erreur harmonisée `ERR_NO_ACTIVE_EMBEDDING_MODEL`), et bénéficient d'une recherche vectorielle RAG robuste reposant sur de vrais embeddings vectoriels (`EmbeddingPort`) avec réindexation bloquante gouvernée (Assistant totalement bloqué, recherche renvoyant HTTP 503 `ERR_RAG_REINDEX_IN_PROGRESS` sans aucun repli dégradé lexical, et nouvelles ingestions mises en file) et suppression définitive de tout hachage SHA-256 en production (`AD-8`, `AD-10`, `AD-16`, `AD-24`, `CAP-190`).
 **FRs covered:** `FR-14`, `FR-18`, `FR-23`, `FR-28`, `FR-31`, `FR-33` (`AD-8`, `AD-10`, `AD-16`, `AD-24`)
+
+### Epic 21: Couverture Intégrale par User Journeys (`UJ-1`..`UJ-20`), Campagne End-to-End avec Vérité PostgreSQL 18, Captures d'État Final, Audit Croisé UX/Architecture & Préparation de l'Epic 22
+Systématiser la preuve de fonctionnement réel de 100 % des `62` capacités métier (`kind: feature`) d'ORCIA : classification complète des `65` capacités de `capabilities.yaml`, référentiel complet `UJ-1` à `UJ-20` dans `prd.md` et `EXPERIENCE.md`, refactoring modulaire de `sync_site_catalog.py` (`< 350` lignes) et verrouillage CI `CAP ↔ UJ ↔ Spec E2E`, harnais Playwright de vérité PostgreSQL 18 en lecture seule (`orcia_e2e`) avec capture PNG systématique de l'état final (succès et échecs), mise à niveau des 16 specs existantes + écriture des 8 nouvelles specs (`14`..`21`), exécution intégrale sans retry ni maquillage, inspection croisée **Sally (UX) × Winston (Architecture)**, rapports Tech Lead pré-implémentation et initialisation complète de l'**Epic 22** de remédiation.
+**FRs covered:** `FR-1`..`FR-36`, `UJ-1`..`UJ-20`, `CAP-001`..`CAP-203` (`AD-17`, `NFR-TEST-1`)
+
+### Epic 22: Remédiation E2E Vérité PG18, Portails & Shell Direction C, Purge Jargon & Gardes CI (`110/110` Vert & `62/62` Capacités Runtime)
+Résoudre de bout en bout les `34` chantiers issus de l'audit croisé Sally × Winston (`REM-01`..`REM-34`) et les `47` échecs/timeouts de la campagne E2E Epic 21 en 4 vagues topologiques (`Stories 22.1`..`22.8`) : unification UUIDv7 des espaces et correction des faux `403` admin (`22.1`), Portals `OrciaDialog` + Tailwind v4 + purge `display: none` + découplage `/catalog`/`/agents`/`/help` + bouton invitation `/organization` + alignement `data-testid`/contrats (`22.2`), câblage PostgreSQL 18 de tous les silos RAM (`assistant_folders`, `task_notifications`/SSE, `permission_broker_tickets` + fallback `git://*` en `22.3` ; `dbos_uow`, `human_anchor_signatures`, `upstream_challenges`, `run_lock_manifests`, `gate_evaluations`, `chunk_approvals` & garde `KILL_SWITCH_STOPPED` en `22.4` ; `declarative_pack_bundles` & `wizard_sessions` en `22.5`), alignement coquille Direction C `8` entrées + Mobile Companion `< 768px` + `docs/help/` dynamique sans `Chef1`/`aqwZSX` + Cockpit `<= 3` blocs (`22.6`), finitions UX/UI et purge intégrale du jargon technique (`22.7`), et activation des `5` gardes CI anti-régression suivie de la campagne E2E `110/110` verte sous `< 35s` ramenant `62/62` capacités `feature` à `verification: runtime` (`22.8`).
+**FRs covered:** `FR-1`..`FR-36`, `UJ-1`..`UJ-20`, `CAP-001`..`CAP-203`, `REM-01`..`REM-34` (`AD-1`..`AD-24`, `UX-DR1`..`UX-DR17`)
 
 ## Epic 1: Amorçage Gouverné de l'Organisation, Onboarding Autonome d'Équipe (`TEAM_LEAD`), Catalogue Fédéré & Permission Broker connecté à Jira
 
@@ -1998,3 +2008,464 @@ So that je dispose d'une vue synthétique claire de mon activité réelle sur la
 **Given** l'utilisateur authentifié ouvrant `/profile` (via l'entrée `Profil` ou l'en-tête du popup `Mon Compte`)
 **When** `GET /api/v1/users/me/profile-summary` s'exécute
 **Then** l'agrégation SQL strictement confinée à l'utilisateur retourne son identité, ses BU/équipes/rôles, ses 4 KPIs (`total_tokens`, `peak_daily_tokens`, `longest_streak_days`, `current_streak_days`) et ses `popular_items` (Top 5 agents/processus/compétences/outils utilisés, vide `[]` au Jour 0), rendus dans `UserProfileOverviewPage` avec un bouton `Modifier` ouvrant la modale Paramètres (`Compte & Sécurité`), tandis que la Heatmap 12 mois et le tableau Statistiques détaillées restent différés dans `ACTION_ITEM-20.1`.
+
+---
+
+## Epic 21: Couverture Intégrale par User Journeys (UJ-1..UJ-20), Campagne End-to-End avec Vérité PostgreSQL 18, Captures d'État Final, Audit Croisé UX/Architecture & Préparation de l'Epic 22
+
+Garantir que **100 % des fonctionnalités métier (`kind: feature`, soit les `62` capacités fonctionnelles sur les `65` entrées de `docs/product/capabilities.yaml`)** d'ORCIA sont décrites par des User Journeys complets (`UJ-1` à `UJ-20`) dans le PRD (`prd.md`) et `EXPERIENCE.md`, contrôlées de manière bloquante en CI par `pnpm site:check`, et couvertes par des tests End-to-End Playwright vérifiant systématiquement le rendu et les interactions UI, la survie au rechargement `F5` (`page.reload()`) **ET** la persistance réelle en base PostgreSQL 18 (`orcia_e2e`, zéro validation sur état uniquement conservé en mémoire RAM Python). L'Epic organise ensuite l'exécution de la campagne intégrale avec capture PNG de l'état final de chaque test (succès comme échecs), son analyse croisée par **Sally (UX)** et **Winston (Architecture)**, la production des rapports Tech Lead pré-implémentation individuels et l'initialisation complète du plan directeur de l'**Epic 22** de remédiation.
+
+> **Règle stricte de non-maquillage pour l'Epic 21 :** les tests E2E ne doivent ni omettre les assertions `SELECT` PostgreSQL 18, ni affaiblir les vérifications de survie au `F5`, ni neutraliser (`test.skip` / `test.fixme`) les échecs révélant une persistance encore en mémoire RAM Python, un câblage vertical incomplet ou un défaut UI ; les échecs honnêtes constatés durant la campagne constituent l'entrée officielle de l'audit Sally × Winston et de l'Epic 22.
+
+### Story 21.1: Classification des 65 Capacités (`kind: feature | foundation`, `e2e_exempt_reason`, `uj`, `db_tables`, `read_only_surface`) & Validation de Schéma dans `capabilities_registry.py`
+
+As a Product Manager / Tech Lead (`John` / `Amelia`),
+I want classifier exhaustivement les 65 capacités recensées dans `docs/product/capabilities.yaml` en `kind: feature` (62 capacités métier) ou `kind: foundation` (3 capacités socles d'architecture/hygiène : `CAP-006`, `CAP-100`, `CAP-202`) avec les champs structurés `e2e_exempt_reason`, `uj`, `db_tables` et `read_only_surface`, et renforcer la validation de schéma dans `infra/scripts/capabilities_registry.py`,
+So that le périmètre exact à couvrir par des User Journeys et des tests End-to-End avec vérité PostgreSQL 18 soit formellement tracé et contrôlé sans angle mort (`FR-1`..`FR-36`, `AD-17`, `NFR-TEST-1`).
+
+**Dépendances :** Aucune (socle documentaire et schéma de pilotage de l'Epic 21). Précède Story 21.2, Story 21.3 et Stories 21.5..21.7.
+**Références :** `docs/product/capabilities.yaml`, `infra/scripts/capabilities_registry.py`, `AD-17`, `NFR-TEST-1`, `GEMINI.md` §5.
+**Fichiers impactés :** `docs/product/capabilities.yaml`, `infra/scripts/capabilities_registry.py`, `tests/unit/test_capabilities_registry.py`.
+
+**Acceptance Criteria:**
+
+**Given** les 65 capacités (`CAP-001` à `CAP-203`) présentes dans `docs/product/capabilities.yaml`
+**When** le schéma de chaque entrée est complété et audité
+**Then** chaque capacité déclare explicitement `kind: feature` (62 entrées métier) ou `kind: foundation` (3 entrées d'infrastructure/hygiène : `CAP-006`, `CAP-100`, `CAP-202`) ; toute capacité `foundation` possède un champ non vide `e2e_exempt_reason` justifiant sa couverture hors E2E, et toute capacité `feature` renseigne `uj: [UJ-...]` ainsi que soit `db_tables: [...]` (tables PostgreSQL 18 cibles pour les assertions SQL), soit `read_only_surface: true` lorsque la surface est strictement en lecture/consultation sans écriture SQL propre.
+
+**Given** les règles de validation ajoutées dans `infra/scripts/capabilities_registry.py` (`validate_registry`)
+**When** la validation du registre est exécutée
+**Then** elle rejette avec un message explicite : toute capacité sans `kind` dans `{feature, foundation}`, toute capacité `foundation` sans `e2e_exempt_reason`, toute capacité `feature` sans `uj` valide (`UJ-1`..`UJ-20`), et toute capacité `feature` dépourvue à la fois de `db_tables` non vide et de `read_only_surface: true`.
+
+**Given** la suite de tests unitaires du registre (`tests/unit/test_capabilities_registry.py`)
+**When** `.venv/bin/pytest tests/unit/test_capabilities_registry.py` est exécuté
+**Then** les cas nominaux sur les 65 capacités et les cas de rejet de schéma (absence de `kind`, `foundation` sans exemption, `feature` sans `db_tables` ni `read_only_surface`) passent à `100 %` et `pnpm site:check` reste vert.
+
+---
+
+### Story 21.2: Référentiel Complet des User Journeys (`UJ-1` à `UJ-20`) dans `prd.md` & `Key Flows` dans `EXPERIENCE.md` avec Test de Cohérence Automatique
+
+As a Product Manager (`John`) & UX Designer (`Sally`),
+I want compléter le référentiel des User Journeys (`UJ-1` à `UJ-20`) dans `prd.md` (§2.3 et §4.10) en annotant `AIOPS-INCIDENT-LOOP-01` sur `UJ-12` et en rédigeant `UJ-13` à `UJ-20`, puis enrichir les `Key Flows` dans `EXPERIENCE.md` (§9) et verrouiller l'alignement par un test de cohérence automatique,
+So that chaque capacité fonctionnelle `feature` et chaque exigence `FR-1`..`FR-36` dispose d'un scénario utilisateur nommé, bout-en-bout et testable sans ambiguïté de périmètre (`FR-1`..`FR-36`, `UX-DR1`..`UX-DR17`).
+
+**Dépendances :** Dépend de Story 21.1 (attribution cible des `UJ` dans `capabilities.yaml`). Précède Story 21.3 et Stories 21.5..21.7.
+**Références :** `docs/planning-artifacts/prds/prd-ORCIA-2026-10-24/prd.md` (§2.3, §4.10), `docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/EXPERIENCE.md` (§9, §1.2), `docs/implementation-artifacts/sprint-status.yaml` (`AIOPS-INCIDENT-LOOP-01`).
+**Fichiers impactés :** `docs/planning-artifacts/prds/prd-ORCIA-2026-10-24/prd.md`, `docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/EXPERIENCE.md`, `tests/unit/test_uj_prd_experience_consistency.py`.
+
+**Acceptance Criteria:**
+
+**Given** `docs/planning-artifacts/prds/prd-ORCIA-2026-10-24/prd.md` (§2.3 et §4.10)
+**When** le référentiel des User Journeys est complété
+**Then** `UJ-12` inclut l'annotation explicite `AIOPS-INCIDENT-LOOP-01` bornant la boucle d'incident sans écriture de code ni mutation Git, les 8 nouveaux parcours `UJ-13` à `UJ-20` sont rédigés au format standard du PRD (`Persona + contexte`, `Entry state`, `Path`, `Climax`, `Resolution`, `Edge case`) pour couvrir l'intégralité des capacités post-MVP (`Auth/2FA/Compte/Profil`, `Mon Organisation/IAM/SecOps/Observateur`, `Hub Modèles IA/Réindexation/Connecteurs`, `Préférences/Clés MCP`, `Citations Assistant/V5/Background Audit`, `Sources multi-nature/codegraph-mcp/ADN Starlark/Promotions Glossaire ONTOLOGY_LEAD`, `Catalogue RBAC/Packs/Process Studio v2/Wizards/Banc MCP`, `Aide contextuelle /help & /showcase`), et chaque `FR-31`..`FR-36` (§4.10) référence explicitement ses `UJ-*` (`Réalise UJ-...`).
+
+**Given** `docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/EXPERIENCE.md` (§9)
+**When** la section `Key Flows` est mise à jour
+**Then** les flux comportementaux couvrent `UJ-1` à `UJ-20` en respectant les 3 invariants de microcopy utilisateur sans jargon technique interne (`EXPERIENCE.md` §1.2).
+
+**Given** le test de cohérence automatique `tests/unit/test_uj_prd_experience_consistency.py`
+**When** `.venv/bin/pytest tests/unit/test_uj_prd_experience_consistency.py` est exécuté
+**Then** il vérifie automatiquement : l'existence des 20 titres `UJ-1` à `UJ-20` dans `prd.md` (§2.3), l'absence de trou de numérotation, le référencement `UJ-*` sur `FR-1`..`FR-36` (incluant `§4.10`), la couverture de `UJ-1`..`UJ-20` dans `EXPERIENCE.md` (§9), et l'absence de `UJ` référencé dans `capabilities.yaml` qui serait absent du PRD ou de `EXPERIENCE.md`.
+
+---
+
+### Story 21.3: Refactoring Modulaire de `sync_site_catalog.py` (`< 350` Lignes) & Verrouillage CI Bloquant `CAP ↔ UJ ↔ Spec E2E` (`pnpm site:check`)
+
+As a Tech Lead / Ingénieur Plateforme (`Amelia` / `Karim`),
+I want découper `infra/scripts/sync_site_catalog.py` sous `< 350` lignes via `_site_repo_parsers.py` et `_site_html_renderer.py`, et implémenter le contrôle CI bloquant `CAP ↔ UJ ↔ Spec E2E` dans `infra/scripts/uj_e2e_coverage.py` et `infra/scripts/capabilities_registry.py`,
+So that `pnpm site:check` bloque automatiquement toute capacité `feature` sans `UJ`, toute capacité `live` `feature` sans spec E2E fonctionnelle (hors smoke `11-*`), et toute mention abusive `verification: runtime` sans E2E passant, tout en éliminant la dette de taille sur `sync_site_catalog.py` (`GEMINI.md` § Policy & §5, `AD-17`).
+
+**Dépendances :** Dépend de Story 21.1 et Story 21.2. Précède Stories 21.4..21.8.
+**Références :** `infra/scripts/sync_site_catalog.py`, `infra/scripts/capabilities_registry.py`, `GEMINI.md` (seuil 300–400 lignes & §5).
+**Fichiers impactés :** `infra/scripts/sync_site_catalog.py`, `infra/scripts/_site_repo_parsers.py`, `infra/scripts/_site_html_renderer.py`, `infra/scripts/uj_e2e_coverage.py`, `infra/scripts/capabilities_registry.py`, `tests/unit/test_uj_e2e_coverage_gate.py`, `apps/web/src/generated/orciaSiteManifest.ts`, `docs/site-catalog/index.html`.
+
+**Acceptance Criteria:**
+
+**Given** le script `infra/scripts/sync_site_catalog.py` (actuellement > 880 lignes)
+**When** l'extraction modulaire est réalisée
+**Then** les fonctions d'introspection du dépôt sont déplacées dans `infra/scripts/_site_repo_parsers.py` et le rendu HTML statique dans `infra/scripts/_site_html_renderer.py`, ramenant `infra/scripts/sync_site_catalog.py` strictement sous `< 350` lignes, tout en conservant `parse_active_routes` et les artefacts générés par `pnpm site:sync` strictement fonctionnels et conformes à `pnpm site:check`.
+
+**Given** le nouveau module `infra/scripts/uj_e2e_coverage.py` intégré à `infra/scripts/capabilities_registry.py` (`run_registry_check`)
+**When** `pnpm site:check` s'exécute
+**Then** il échoue avec un diagnostic explicite si :
+- une capacité `kind: feature` ne possède pas au moins un `UJ` valide (`UJ-1`..`UJ-20`) présent dans `prd.md` ;
+- une capacité `live` de type `feature` ne référence aucune spec E2E fonctionnelle sous `apps/web/e2e/` (les specs purement smoke `11-*` comme `11-screens-smoke-without-server-errors.spec.ts` sont explicitement exclues du décompte fonctionnel), sauf exemption transitoire déclarée via `e2e_backlog_story` ou `e2e_remediation_ref` ;
+- une capacité déclare `verification: runtime` sans au moins une spec E2E fonctionnelle référencée et active (ou alors que son dernier statut E2E enregistré est en échec).
+
+**Given** les tests unitaires `tests/unit/test_uj_e2e_coverage_gate.py` et les outils qualité Python
+**When** `.venv/bin/pytest tests/unit/test_uj_e2e_coverage_gate.py`, `.venv/bin/ruff check infra/scripts`, et `pnpm site:check` s'exécutent
+**Then** tous les scénarios de blocage (smoke `11-*` seul, `feature` sans `UJ`, `runtime` sans spec fonctionnelle, taille de `sync_site_catalog.py < 350` lignes) et le cas nominal passent sans contournement.
+
+---
+
+### Story 21.4: Harnais Playwright de Vérité PostgreSQL 18 (`query_db.py` + `dbAssertions.ts`), Fixture Capture PNG Systématique (`e2eCaptureFixture.ts`) & Mise à Niveau des 16 Specs Existantes
+
+As a Tech Lead / QA Automation (`Amelia` / `Winston`),
+I want fournir un harnais Playwright interrogeant PostgreSQL 18 (`orcia_e2e`) en lecture seule stricte sans ajouter de package npm (`infra/scripts/e2e/query_db.py` + `apps/web/e2e/support/dbAssertions.ts`), une fixture capturant systématiquement le screenshot PNG final de chaque test en succès comme en échec (`apps/web/e2e/support/e2eCaptureFixture.ts`), et mettre à niveau les 16 specs existantes (`00..13` + `shell.spec.ts`) avec en-têtes `@uj`/`@cap`, vérification `F5` et assertions `SELECT` PostgreSQL 18,
+So that chaque test E2E prouve la persistance réelle en base de données (zéro faux positif sur état en RAM Python) et produise une preuve visuelle exploitable par Sally et Winston (`AD-17`, `GEMINI.md` §3).
+
+**Dépendances :** Dépend de Story 21.3. Précède Stories 21.5..21.8.
+**Références :** `infra/scripts/e2e/e2e_stack.py`, `infra/scripts/e2e/e2e_stack_config.py`, `apps/web/playwright.config.ts`, `GEMINI.md` §3, règle de non-maquillage Epic 21.
+**Fichiers impactés :** `infra/scripts/e2e/query_db.py`, `apps/web/e2e/support/dbAssertions.ts`, `apps/web/e2e/support/e2eCaptureFixture.ts`, `apps/web/e2e/00-stack-smoke.spec.ts` .. `apps/web/e2e/13-epic-7-autonomous-governance-and-supervision.spec.ts`, `apps/web/e2e/shell.spec.ts`, `tests/unit/test_e2e_query_db_readonly.py`.
+
+**Acceptance Criteria:**
+
+**Given** le script `infra/scripts/e2e/query_db.py` et les helpers `apps/web/e2e/support/dbAssertions.ts` (exécutant `.venv/bin/python infra/scripts/e2e/query_db.py` sans aucun ajout dans `apps/web/package.json`)
+**When** un test Playwright invoque une assertion PostgreSQL 18 (`queryDbRows`, `expectDbRowExists`, `expectDbRowCount`)
+**Then** `query_db.py` charge `.orcia-run/e2e-stack-state.json`, vérifie `is_isolated_e2e_database_url` (refus strict hors base `orcia_e2e` éphémère), rejette toute requête non strictement lecture seule (`SELECT` / `WITH ... SELECT` uniquement, rejet de `INSERT`/`UPDATE`/`DELETE`/`DDL`/multi-statements `;`, transaction PostgreSQL en mode `READ ONLY`), et retourne le résultat JSON structuré sans erreur.
+
+**Given** la fixture `apps/web/e2e/support/e2eCaptureFixture.ts`
+**When** n'importe quel test E2E se termine (statut `passed`, `failed` ou `timedOut`)
+**Then** une capture PNG pleine page de l'état final est enregistrée systématiquement sous `docs/implementation-artifacts/e2e-campaign-epic-21/screenshots/<spec-slug>/<test-slug>--<status>.png` et une entrée JSONL correspondante (`spec`, `test_title`, `uj`, `cap`, `status`, `screenshot_path`, `url`, `duration_ms`, `timestamp`) est ajoutée à `docs/implementation-artifacts/e2e-campaign-epic-21/manifest.jsonl`.
+
+**Given** les 16 specs E2E existantes (`00` à `13` incluant `12-finops-*` et `12-epic16-*`, plus `shell.spec.ts`)
+**When** elles sont mises à niveau
+**Then** chaque fichier déclare ses métadonnées d'en-tête `@uj` et `@cap`, utilise `e2eCaptureFixture`, vérifie la survie au rafraîchissement (`await page.reload()`) après toute mutation, et exécute des assertions `SELECT` PostgreSQL 18 réelles sur les tables cibles (`db_tables`) — sans jamais contourner, désactiver ni marquer `test.skip` / `test.fixme` les échecs révélant un défaut réel.
+
+---
+
+### Story 21.5: Nouvelles Specs E2E Lot A (`14` à `16`) — Auth/2FA/Compte/Profil (`UJ-13`, `UJ-16`), Mon Organisation/IAM/SecOps/Inbox & Garde `READ_ONLY_OBSERVER` `403` (`UJ-4`, `UJ-14`), Hub Modèles IA/Réindexation/Connecteurs & Permission Broker (`UJ-7`, `UJ-15`)
+
+As a Utilisateur, Responsable BU/Équipe, Administrateur Plateforme & Développeur (`UJ-4`, `UJ-7`, `UJ-13`, `UJ-14`, `UJ-15`, `UJ-16`),
+I want couvrir par trois nouvelles specs Playwright (`14`, `15`, `16`) les parcours Authentification exclusive / 2FA / Mot de passe temporaire / Mon Compte / `/profile`, Gouvernance déléguée « Mon Organisation » / IAM / SecOps / `/inbox` navigateur + garde `READ_ONLY_OBSERVER` `403`, et Hub Modèles IA / Réindexation bloquante / Connecteurs / Passthrough & Permission Broker avec `F5` et assertions `SELECT` PostgreSQL 18,
+So that les fondations identitaires, organisationnelles et IA soient validées bout en bout de l'UI jusqu'à la base de données (`FR-2`, `FR-3`, `FR-21`, `FR-22`, `FR-31`, `FR-32`).
+
+**Dépendances :** Dépend de Story 21.3 et Story 21.4.
+**Références :** `UJ-4`, `UJ-7`, `UJ-13`, `UJ-14`, `UJ-15`, `UJ-16`, `CAP-001`, `CAP-003`, `CAP-040`, `CAP-041`, `CAP-043`, `CAP-050`..`CAP-054`, `CAP-058`, `CAP-063`, `CAP-067`, `CAP-069`, `CAP-190`, `CAP-203`.
+**Fichiers impactés :** `apps/web/e2e/14-auth-2fa-account-and-profile.spec.ts`, `apps/web/e2e/15-organization-iam-secops-inbox-and-observer.spec.ts`, `apps/web/e2e/16-ai-models-reindex-connectors-and-broker.spec.ts`, `docs/product/capabilities.yaml`.
+
+**Acceptance Criteria:**
+
+**Given** `apps/web/e2e/14-auth-2fa-account-and-profile.spec.ts` (`@uj UJ-13 UJ-16`)
+**When** la spec s'exécute sur `orcia_e2e` avec `e2eCaptureFixture`
+**Then** elle teste la politique d'authentification exclusive (`LOCAL` / `OIDC`), le double facteur (`TOTP` / `EMAIL_OTP`), la connexion par mot de passe temporaire et changement obligatoire, le popup « Mon Compte » + modale Paramètres 5 onglets (préférences, clés IDE/MCP) et la page `/profile` (identité, 4 KPIs tokens/séries, éléments populaires), contrôle la survie après `page.reload()` (`F5`), et vérifie via `SELECT` PG18 (`iam_accounts`, `platform_auth_settings`, `user_preferences`, `user_mcp_tokens`, `audit_ledger`).
+
+**Given** `apps/web/e2e/15-organization-iam-secops-inbox-and-observer.spec.ts` (`@uj UJ-4 UJ-14`)
+**When** la spec s'exécute sur `orcia_e2e` avec `e2eCaptureFixture`
+**Then** elle teste `/organization` avec `BU_LEAD` et `TEAM_LEAD` (création de sous-BU/équipe, invitation scopée sans escalade, interdiction `403` de suppression de la BU racine), `/settings` IAM (matrice des rôles, exceptions SecOps), `/inbox` navigateur (filtres personnel/équipe/autonome) et la garde `READ_ONLY_OBSERVER` rejetant toute mutation (`403`), contrôle la survie au `page.reload()` (`F5`), et vérifie via `SELECT` PG18 (`org_units`, `iam_accounts`, `iam_secops_exceptions`, `audit_ledger` avec `org_unit_id`, `inbox_notifications`).
+
+**Given** `apps/web/e2e/16-ai-models-reindex-connectors-and-broker.spec.ts` (`@uj UJ-7 UJ-15`)
+**When** la spec s'exécute sur `orcia_e2e` avec `e2eCaptureFixture`
+**Then** elle teste `/settings/ai-models` (champs vides initiaux, découverte `0` token, test de connexion chat/embedding dim 1024, modèle d'embedding unique GLOBAL, blocage Assistant/RAG sans embedding `ERR_NO_ACTIVE_EMBEDDING_MODEL` et réindexation bloquante `503 ERR_RAG_REINDEX_IN_PROGRESS`), les connecteurs socle et Passthrough utilisateur, et le `PermissionBroker` affichant la procédure + lien Jira + `Replay Step N`, vérifie la survie au `page.reload()` (`F5`) et exécute des `SELECT` PG18 (`workspace_llm_tier_mappings`, `enterprise_connectors`, `user_passthrough_credentials`, `rag_reindexing_jobs`), sans masquer un éventuel échec via `test.skip`.
+
+---
+
+### Story 21.6: Nouvelles Specs E2E Lot B (`17` & `18`) — Sources d'Espace Multi-Nature / Fraîcheur `SHA-256` / `codegraph-mcp` / Chaîne ADN Starlark / Promotions Glossaire `L4 → L1` (`UJ-5`, `UJ-18`) & Catalogue Fédéré RBAC / Packs / Wizards / Banc de Test MCP-A2A (`UJ-9`, `UJ-19`)
+
+As a Tech Lead, Référent Glossaire (`ONTOLOGY_LEAD`), Administrateur Plateforme & Concepteur de Packs (`UJ-5`, `UJ-9`, `UJ-18`, `UJ-19`),
+I want couvrir par deux nouvelles specs Playwright (`17` & `18`) les sources d'espace multi-nature, la fraîcheur `SHA-256`, `codegraph-mcp`, la chaîne ADN Starlark & waivers, les promotions Glossaire `ONTOLOGY_LEAD` (`L4 → L1`), le Catalogue Fédéré RBAC, les packs déclaratifs, les wizards durables et le banc de test MCP/A2A avec `F5` et assertions `SELECT` PostgreSQL 18,
+So that la gouvernance documentaire, sémantique et catalogue soit validée jusqu'en base PostgreSQL (`FR-8`, `FR-9`, `FR-10`, `FR-20`, `FR-23`, `FR-28`, `FR-34`, `FR-35`).
+
+**Dépendances :** Dépend de Story 21.3 et Story 21.4.
+**Références :** `UJ-5`, `UJ-9`, `UJ-18`, `UJ-19`, `CAP-002`, `CAP-010`, `CAP-011`, `CAP-055`..`CAP-057`, `CAP-080`..`CAP-084`, `CAP-150`, `CAP-180`.
+**Fichiers impactés :** `apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts`, `apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts`, `docs/product/capabilities.yaml`.
+
+**Acceptance Criteria:**
+
+**Given** `apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts` (`@uj UJ-5 UJ-18`)
+**When** la spec s'exécute sur `orcia_e2e` avec `e2eCaptureFixture`
+**Then** elle valide l'ajout et la gestion de sources multi-nature dans `/workspaces/$wsId/sources`, la sonde de fraîcheur `SHA-256` et `[STALE_WARNING]`, l'invocation lecture seule `codegraph-mcp`, la compilation `Text-to-Starlark` de la chaîne ADN (`Directive → Norme → Mécanisme`) + acquittement `workspace_exception_waivers`, et le workflow complet de promotion Glossaire `ONTOLOGY_LEAD` (`L4 → L3 → L2 → L1`) dans `/ontology` avec détection de collision, contrôle la survie au `page.reload()` (`F5`), et vérifie par `SELECT` PG18 (`workspace_datasources`, `datasource_webhook_deliveries`, `workspace_exception_waivers`, `ontology_concepts`, `ontology_promotion_proposals`).
+
+**Given** `apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts` (`@uj UJ-9 UJ-19`)
+**When** la spec s'exécute sur `orcia_e2e` avec `e2eCaptureFixture`
+**Then** elle valide le Catalogue Fédéré (`/catalog`) avec ses permissions RBAC (`DISCOVER`, `EXECUTE`, `READ_SOURCE`, `EDIT`, `ADMIN`) et cycle de publication, l'écran `/settings/packs` (packs déclaratifs `packs/sdlc`, `packs/orcia-docs`, activation et prérequis connecteurs), les wizards d'initialisation durables (`/wizards`) et le banc de test MCP/A2A (`🔌`), contrôle la survie au `page.reload()` (`F5`), et vérifie par `SELECT` PG18 (`catalog_items`, `workflow_definitions`, `declarative_packs`, `workspace_pack_activations`, `wizard_runs`, `audit_ledger`).
+
+---
+
+### Story 21.7: Nouvelles Specs E2E Lot C (`19` à `21`) — Orchestration `What-If`/Replay/Gates Orthogonales (`UJ-1`..`UJ-3`, `UJ-6`), Process Studio v2/FinOps/Autonomie/`LOG_SINK_ALERT` (`UJ-8`, `UJ-11`, `UJ-12`, `UJ-19`), Citations Assistant `[S1]/[G1]/[O1]`/Verrou V5/Background Audit/`/help`/`/showcase` (`UJ-10`, `UJ-17`, `UJ-20`) — Couverture `100 %` des `62` Capacités `feature`
+
+As a PM, Architecte, Tech Lead, SecOps, Directrice BU & Utilisateur (`UJ-1`..`UJ-3`, `UJ-6`, `UJ-8`, `UJ-10`..`UJ-12`, `UJ-17`, `UJ-19`, `UJ-20`),
+I want couvrir par trois nouvelles specs Playwright (`19`, `20`, `21`) l'orchestration `What-If` / `[STALE_WARNING]` / Replay Step N / Gates orthogonales, Process Studio v2 (Macro-VSM 11 étapes, Studio 5 blocs, HITL 4 actions), FinOps cognitif, autonomie & déclencheur `LOG_SINK_ALERT`, ainsi que les citations Assistant `[S1]/[G1]/[O1]` & Verrou V5, audit en tâche de fond, `/help` (`ⓘ`) & `/showcase` avec `F5` et assertions `SELECT` PostgreSQL 18,
+So that **100 % des `62` capacités `feature` soient couvertes avec `0` `e2e_backlog_story` résiduel** et vérifiées par `pnpm site:check` (`FR-1`..`FR-36`, `AD-17`).
+
+**Dépendances :** Dépend de Story 21.3, Story 21.4, Story 21.5 et Story 21.6. Précède Story 21.8.
+**Références :** `UJ-1`..`UJ-3`, `UJ-6`, `UJ-8`, `UJ-10`..`UJ-12`, `UJ-17`, `UJ-19`, `UJ-20`, `CAP-020`..`CAP-024`, `CAP-030`..`CAP-033`, `CAP-064`, `CAP-065`, `CAP-066`, `CAP-068`, `CAP-070`..`CAP-076`, `CAP-090`..`CAP-092`, `CAP-140`, `CAP-160`, `CAP-200`, `CAP-201`.
+**Fichiers impactés :** `apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts`, `apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts`, `apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts`, `docs/product/capabilities.yaml`.
+
+**Acceptance Criteria:**
+
+**Given** `apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts` (`@uj UJ-1 UJ-2 UJ-3 UJ-6`)
+**When** la spec s'exécute sur `orcia_e2e` avec `e2eCaptureFixture`
+**Then** elle teste `Workflow-as-Code`, Challenge Amont avec simulation `What-If`, signalement `[STALE_WARNING]` + Replay Step N, Gate Déterministe Sandbox et Gate Agentique Orthogonale (`evaluator_model_family != executor_model_family`) + Gate Humaine, vérifie la survie au `page.reload()` (`F5`), et valide via `SELECT` PG18 (`workflow_runs`, `step_executions`, `blackboard_snapshots`, `gate_evaluations`, `run_locks`).
+
+**Given** `apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts` (`@uj UJ-8 UJ-11 UJ-12 UJ-19`)
+**When** la spec s'exécute sur `orcia_e2e` avec `e2eCaptureFixture`
+**Then** elle teste la Macro-VSM 11 étapes (`/processes/vsm/$vsmId`), le Studio 5 blocs (`/processes/studio/$workflowId`), la revue HITL 4 actions, le tableau FinOps cognitif + quotas connecteurs (`/finops`), et le déclenchement idempotent `LOG_SINK_ALERT` (`AIOPS-INCIDENT-LOOP-01`) avec contrat d'autonomie et `Kill-Switch`/`Rollback`, vérifie la survie au `page.reload()` (`F5`), et valide via `SELECT` PG18 (`workflows_v2`, `autonomy_contracts`, `workflow_triggers`, `finops_cost_entries`, `audit_ledger`).
+
+**Given** `apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts` (`@uj UJ-10 UJ-17 UJ-20`)
+**When** la spec s'exécute et que `docs/product/capabilities.yaml` est mis à jour
+**Then** elle teste les citations déterministes `[S1]/[G1]/[O1]`, le Verrou V5 d'officialisation via Gate, l'audit en tâche de fond (`BACKGROUND_AUDIT`), le renvoi ciblé `/help` (`ⓘ`) et le site vitrine `/showcase` avec `F5` et assertions `SELECT` PG18 (`assistant_threads`, `assistant_messages`, `catalog_items`), et **100 % des `62` capacités `feature` possèdent une couverture E2E fonctionnelle (`0` `e2e_backlog_story` résiduel dans `capabilities.yaml`, `pnpm site:check` passant à `0` erreur)**.
+
+---
+
+### Story 21.8: Campagne E2E Intégrale (`00..21` + `shell.spec.ts`, `--retries=0 --max-failures=0`), Archivage Screenshots PNG & `playwright-results.json`, Bilan d'Exécution, Audit Croisé Sally × Winston & Vérité dans `capabilities.yaml`
+
+As a UX Designer (`Sally`), Architecte (`Winston`) & Tech Lead (`Amelia`),
+I want exécuter l'intégralité des specs E2E (`00..21` + `shell.spec.ts`) sans aucun retry ni arrêt anticipé (`--retries=0 --max-failures=0`), archiver toutes les captures PNG d'état final (succès et échecs) et `playwright-results.json`, produire le bilan factuel d'exécution, mener l'inspection croisée Sally × Winston dans `synthese-remediation-sally-winston-epic-21.md`, et mettre à jour honnêtement `docs/product/capabilities.yaml`,
+So that chaque écart UI, UX, de persistance ou d'architecture soit objectivé par des preuves visuelles et SQL irréfutables avant planification de la remédiation (`AD-17`, `GEMINI.md` §5).
+
+**Dépendances :** Dépend de Story 21.7 (100 % des specs écrites). Précède Story 21.9.
+**Références :** `apps/web/playwright.config.ts`, `docs/product/capabilities.yaml`, `EXPERIENCE.md`, `DESIGN.md`, `ARCHITECTURE-SPINE.md`.
+**Fichiers impactés :** `docs/implementation-artifacts/e2e-campaign-epic-21/playwright-results.json`, `docs/implementation-artifacts/e2e-campaign-epic-21/manifest.jsonl`, `docs/implementation-artifacts/e2e-campaign-epic-21/screenshots/**/*.png`, `docs/implementation-artifacts/e2e-campaign-epic-21/bilan-execution-tests-e2e-epic-21.md`, `docs/implementation-artifacts/e2e-campaign-epic-21/synthese-remediation-sally-winston-epic-21.md`, `docs/product/capabilities.yaml`.
+
+**Acceptance Criteria:**
+
+**Given** l'ensemble des suites Playwright (`00..21` incluant `12-finops-*` et `12-epic16-*`, plus `shell.spec.ts`) sur `desktop-cockpit` (`1440x900`) et `mobile-companion` (`390x844`)
+**When** la campagne intégrale est lancée avec `--retries=0 --max-failures=0` et le reporter JSON activé
+**Then** la totalité des tests s'exécute sans aucun `test.skip` / `test.fixme` masquant un échec, et les artefacts complets (`playwright-results.json`, `manifest.jsonl`, et l'intégralité des captures PNG d'état final en succès comme en échec sous `screenshots/`) sont archivés dans `docs/implementation-artifacts/e2e-campaign-epic-21/`.
+
+**Given** les résultats et captures archivés
+**When** `docs/implementation-artifacts/e2e-campaign-epic-21/bilan-execution-tests-e2e-epic-21.md` est rédigé
+**Then** il dresse l'inventaire chiffré exact (total tests, verts, rouges, 0 skippé), la matrice de couverture `CAP ↔ UJ ↔ Spec ↔ Vérification UI/F5/SQL`, la cause racine observée de chaque échec et les liens vers toutes les captures PNG correspondantes.
+
+**Given** la revue croisée de toutes les captures PNG et traces d'échecs par **Sally (UX)** et **Winston (Architecture)**
+**When** ils produisent `docs/implementation-artifacts/e2e-campaign-epic-21/synthese-remediation-sally-winston-epic-21.md`
+**Then** chaque défaillance E2E et chaque anomalie visuelle/ergonomique/architecturale détectée sur capture (surcharge, jargon, défaut de feedback, état RAM non persisté en PG18, violation `AD-*`) est formalisée avec sévérité (`P0`..`P3`), capacité `CAP-*` / parcours `UJ-*` touché et recommandation de correction ciblée.
+
+**Given** l'état réel constaté à l'issue de la campagne
+**When** `docs/product/capabilities.yaml` est mis à jour et contrôlé par `pnpm site:check`
+**Then** seules les capacités dont 100 % des assertions E2E (UI + `F5` + `SELECT` PG18) ont réussi conservent ou reçoivent `verification: runtime` (avec date `verified_at`), tandis que toute capacité touchée par au moins un échec passe honnêtement à `verification: failed_e2e`.
+
+---
+
+### Story 21.9: Analyse Tech Lead & Impact GitNexus (`repo: "ORCIA"`), Rapports Tech Lead Pré-Implémentation (`22-1-...` à `22-N-...`), Plan Directeur & Initialisation Complète de l'Epic 22
+
+As a Tech Lead (`Amelia`) & Architecte (`Winston`),
+I want conduire l'analyse Tech Lead et d'impact GitNexus (`repo: "ORCIA"`) pour chaque échec E2E et chaque point de la synthèse Sally × Winston, rédiger les Rapports Tech Lead pré-implémentation individuels (`22-1-...` à `22-N-...`), publier le plan directeur `docs/planning-artifacts/sprint-change-proposal-2026-11-18-epic-22-remediation-plan.md`, et initialiser complètement l'**Epic 22** dans `epics.md` et `sprint-status.yaml` avec un test automatique garantissant `100 %` de traçabilité,
+So that chaque correction de l'Epic 22 démarre avec une architecture validée, zéro angle mort et une traçabilité intégrale jusqu'au retour au vert de toutes les capacités (`GEMINI.md` § Policy, `AD-17`).
+
+**Dépendances :** Dépend de Story 21.8. Clôture l'Epic 21.
+**Références :** `docs/implementation-artifacts/TECH-LEAD-REPORT-TEMPLATE.md`, `docs/implementation-artifacts/e2e-campaign-epic-21/bilan-execution-tests-e2e-epic-21.md`, `docs/implementation-artifacts/e2e-campaign-epic-21/synthese-remediation-sally-winston-epic-21.md`, `GEMINI.md` (§ Protocole Tech Lead).
+**Fichiers impactés :** `docs/implementation-artifacts/tech-lead-reports/22-1-*.md` .. `22-N-*.md`, `docs/implementation-artifacts/tech-lead-reports/README.md`, `docs/planning-artifacts/sprint-change-proposal-2026-11-18-epic-22-remediation-plan.md`, `docs/planning-artifacts/epics.md` (ajout Epic 22), `docs/implementation-artifacts/sprint-status.yaml` (ajout `epic-22` et `22-1-...`..`22-N-...`), `tests/unit/test_epic21_to_epic22_traceability.py`.
+
+**Acceptance Criteria:**
+
+**Given** l'ensemble des échecs E2E de `bilan-execution-tests-e2e-epic-21.md` et des points de remédiation de `synthese-remediation-sally-winston-epic-21.md`
+**When** le Tech Lead exécute l'analyse d'impact GitNexus (`gitnexus_query`, `gitnexus_context`, `gitnexus_impact` avec `repo: "ORCIA"`) sur les modules concernés
+**Then** tous les défauts sont regroupés en `N` Stories cohérentes `Story 22.1` à `Story 22.N`, et chaque Story dispose d'un Rapport Tech Lead pré-implémentation individuel (`docs/implementation-artifacts/tech-lead-reports/22-1-...-tech-lead-report.md` .. `22-N-...`) conforme à `TECH-LEAD-REPORT-TEMPLATE.md` (Sections 1 & 2 rédigées, Section 3 préparée) et enregistré dans `docs/implementation-artifacts/tech-lead-reports/README.md`.
+
+**Given** le plan directeur `docs/planning-artifacts/sprint-change-proposal-2026-11-18-epic-22-remediation-plan.md`
+**When** il consolide la feuille de route de remédiation
+**Then** il contient la matrice complète reliant chaque échec E2E, chaque constat Sally × Winston (`P0`..`P3`) et chaque `CAP-*` en `failed_e2e` à une Story `22.k`, l'ordonnancement topologique d'exécution, les migrations/refactorings requis et la condition de sortie de l'Epic 22 (`100 %` des capacités `feature` repassées à `verification: runtime`).
+
+**Given** l'ajout de l'**Epic 22** et de ses Stories `22.1` à `22.N` dans `docs/planning-artifacts/epics.md` et `docs/implementation-artifacts/sprint-status.yaml`, ainsi que `tests/unit/test_epic21_to_epic22_traceability.py`
+**When** `.venv/bin/pytest tests/unit/test_epic21_to_epic22_traceability.py` et `pnpm site:sync` + `pnpm site:check` s'exécutent
+**Then** le test automatique prouve `100 %` de traçabilité bidirectionnelle (aucun échec E2E, aucun constat Sally × Winston et aucune capacité `failed_e2e` orpheline), et `epics.md`, `sprint-status.yaml` et les rapports Tech Lead sont prêts pour le démarrage de l'Epic 22.
+
+---
+
+## Epic 22: Remédiation E2E Vérité PostgreSQL 18, Portails & Shell Direction C, Purge Jargon & Gardes CI (`110/110` Vert & `62/62` Capacités Runtime)
+
+Résoudre de manière ordonnée et définitive les **`34` chantiers de l'audit croisé Sally × Winston (`REM-01` .. `REM-34`)** et les **`47` scénarios E2E en échec ou timeout (`14 / 24` specs)** identifiés à l'issue de la campagne Epic 21, afin d'éliminer tout silo mémoire RAM (« Dual-Stack »), restaurer la conformité Direction C (`8` menus, Mobile Companion `< 768px`, aide contextuelle dynamique sans jargon ni faux exemples, Cockpit `<= 3` blocs), verrouiller la non-régression par `5` gardes CI automatisées, et ramener **`100 %` des `62` capacités `feature`** à **`verification: runtime`** (`0` échec sur `110` scénarios Playwright PG18).
+
+> **Référentiel directeur :** `docs/planning-artifacts/sprint-change-proposal-2026-11-18-epic-22-remediation-plan.md` — chaque Story dispose de son rapport Tech Lead pré-implémentation individuel dans `docs/implementation-artifacts/tech-lead-reports/22-1-*` .. `22-8-*`.
+
+### Story 22.1: Socle Identité UUIDv7 Workspaces, Permissions `PLATFORM_ADMIN` & Fin du Mode Dégradé `marc` / Bypass PG (`REM-01`, `REM-02`, `REM-07`)
+
+As a Administrateur Plateforme, Chef d'Équipe & Développeur (`Karim`, `Marc`, `Amelia`),
+I want unifier l'identité des espaces de travail sur l'`UUIDv7` réel retourné par PostgreSQL 18 avec propagation exacte du `slug`, corriger l'évaluation `MatrixPermissionEvaluator` afin qu'un `PLATFORM_ADMIN` ne soit pas rétrogradé à tort en `READ_ONLY_OBSERVER` (`HTTP 403`) sur ses nouveaux espaces `STANDARD`, et purger l'identité `"marc"` codée en dur ainsi que le drapeau `ORCIA_DISABLE_PG_BOOTSTRAP_SYNC`,
+So that toute création d'espace, rattachement de source, évaluation de Gate ou exécution réflexive persiste en PostgreSQL 18 avec son identifiant canonique sans jamais recevoir de faux rejet `403`/`404` ni masquer d'erreur (`FR-3`, `FR-21`, `FR-23`, `FR-28`, `AD-1`, `AD-6`, `AD-19`, `UJ-5`, `UJ-6`, `UJ-9`, `UJ-14`, `UJ-17`, `UJ-18`).
+
+**Dépendances :** Vague 0 (socle transverse prioritaire). Précède Stories `22.3`, `22.4`, `22.5`.
+**REM couverts :** `REM-01`, `REM-02`, `REM-07`.
+**CAP ancrées (`failed_e2e`) :** `CAP-011`, `CAP-022`, `CAP-050`, `CAP-067`, `CAP-072`, `CAP-076`, `CAP-080`, `CAP-180`.
+**Fichiers impactés :** `apps/web/src/components/platformSetupStore.tsx`, `apps/web/src/features/cockpit/*`, `packages/orcia-core/src/orcia_core/permissions/evaluator.py`, `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_platform_setup_relational_sync.py`, `apps/api/src/orcia_api/routers/*`, `apps/api/src/orcia_api/dependencies/portal_and_assistant.py`.
+
+**Acceptance Criteria:**
+
+**Given** un utilisateur qui crée une BU, une équipe et un espace (ex. `slug: 'espace-e2e-compta'`) depuis l'UI ou l'API
+**When** `POST /api/v1/workspaces` et `platformSetupStore.createWorkspace` s'exécutent
+**Then** aucun identifiant synthétique `"ws-1"` / `"ws-${len+1}"` ni `.catch(() => undefined)` n'est utilisé : l'API retourne l'`UUIDv7` PostgreSQL 18 et persiste exactement `input.slug` dans `workspaces` (`SELECT id, slug FROM workspaces` retrouve l'espace après `F5`), et le rattachement d'une source `SOURCE_CODE` (`/api/v1/workspaces/{uuid}/datasources`) persiste dans `workspace_datasources` sans `404` ni contournement `ws-\d+`.
+
+**Given** un `PLATFORM_ADMIN` agissant sur un espace `STANDARD` fraîchement créé (sans header `X-Orcia-Access-Mode: READ_ONLY_OBSERVER`)
+**When** il appelle `POST /api/v1/gates/deterministic/evaluate` ou `POST /api/v1/executions/reflexive`
+**Then** un `WorkspaceMembershipEntity` propriétaire est enregistré pour le créateur/admin sur l'UUID réel PG18, `MatrixPermissionEvaluator.resolve_workspace_access` maintient un accès contributeur/admin autorisé (n'appliquant `READ_ONLY_OBSERVER` que sur `CONFIDENTIAL_RESTRICTED` sans délégation ou sur header explicite), et les requêtes réussissent (`HTTP 200`/`201`) tout en conservant `403 ERR_OBSERVER_MODE_READ_ONLY` pour un véritable observateur.
+
+**Given** le Cockpit, le Composition Root et les routeurs FastAPI
+**When** l'application démarre en dehors des harnais de tests unitaires
+**Then** `CockpitHumanLedGovernanceSection` et `cockpit/index.tsx` utilisent exclusivement l'identité JWT session issue de `useAuthSessionStore` (`0` occurrence `"marc"`), `get_accostage_service` lit `orcia_env`/`bootstrap_token` depuis les settings injectés, et `ORCIA_DISABLE_PG_BOOTSTRAP_SYNC` est totalement supprimé des routeurs (`HTTP 503` fail-fast si PG18 absent).
+
+---
+
+### Story 22.2: Portals Modales `OrciaDialog`, Compilation Tailwind v4, Purge `display: none`, Découplage `/catalog`/`/agents`/`/help`, Bouton Invitation & Alignement `data-testid`/Contrats (`REM-03`, `REM-04`, `REM-05`, `REM-06`, `REM-16`, `REM-24`, `REM-25`)
+
+As a Utilisateur, Administrateur & QA (`Karim`, `Alice`, `Sally`),
+I want unifier 100 % des modales derrière `<OrciaDialog>` (`DialogPrimitive.Portal`) avec Tailwind CSS v4 compilé et footer sticky, purger les `4` wrappers `style={{ display: "none" }}`, découpler `/catalog`, `/agents` et `/help`, exposer explicitement le bouton d'invitation sur `/organization` et aligner les `data-testid` et le payload `plaintext_value`,
+So that aucune modale ne soit coupée par Zone 4 ou le bord bas d'écran, qu'aucun doublon DOM ni panneau caché ne bloque les parcours utilisateur et que les contrats UI/API soient rigoureusement alignés (`FR-1`, `FR-20`, `FR-21`, `FR-31`, `FR-32`, `FR-34`, `FR-35`, `AD-22`, `UJ-5`, `UJ-9`, `UJ-13`..`UJ-20`).
+
+**Dépendances :** Vague 0. Complémentaire à `Story 22.1`.
+**REM couverts :** `REM-03`, `REM-04`, `REM-05`, `REM-06`, `REM-16`, `REM-24`, `REM-25`.
+**CAP ancrées (`failed_e2e`) :** `CAP-001`, `CAP-002`, `CAP-010`, `CAP-041`, `CAP-051`, `CAP-052`, `CAP-053`, `CAP-054`, `CAP-058`, `CAP-063`, `CAP-064`, `CAP-066`, `CAP-069`, `CAP-081`, `CAP-082`, `CAP-084`, `CAP-092`, `CAP-140`, `CAP-190`, `CAP-200`, `CAP-203`.
+**Fichiers impactés :** `apps/web/vite.config.ts`, `packages/ui/src/styles/tokens.css`, `packages/ui/src/primitives/{RadixDesignSystemPrimitives,UserSettingsModalDialog,AiModelConfigModal,FourZoneSidebarRail}.tsx`, `apps/web/src/router.tsx`, `apps/web/src/components/{ShellContainer,SettingsOrganizationUnitsBlock}.tsx`, `apps/web/src/features/{catalog,workspaces,inbox}/index.tsx`, `apps/web/src/routes/{help,settingsAiModelsPresets}.ts*`, `WorkflowStudioHeaderBar.tsx`, `apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts`.
+
+**Acceptance Criteria:**
+
+**Given** `apps/web/vite.config.ts` et `packages/ui`
+**When** n'importe quelle modale (`UserSettingsModalDialog`, `FirstBootAdminSetupModal`, `AiModelConfigModal`, `UpstreamChallengeRewindModal`) s'ouvre sur Desktop `1440×900` ou Mobile `390×844`
+**Then** `@tailwindcss/vite` compile les classes utilitaires (`@source "../../packages/ui/src"`), les tokens `--z-overlay: 1000` / `--z-dialog: 1010` s'appliquent, la modale monte via `OrciaDialog` (`DialogPrimitive.Portal` dans `document.body`) au-dessus de Zone 4 (`four-zone-contextual-help-column`), son corps défile dans `max-height: min(90vh, 760px)` avec un footer sticky visible (`Annuler` / `Enregistrer`), et `AiModelConfigModal` n'affiche aucune erreur de clé API avant saisie/soumission.
+
+**Given** les vues `/catalog`, `/agents`, `/spaces`, `/workspaces/$wsId` et `/help`
+**When** l'utilisateur navigue vers chacune de ces routes
+**Then** les `4` wrappers `style={{ display: "none" }}` (`features/catalog`, `features/workspaces`, `InboxAuxiliaryPanels`, `FourZoneSidebarRail`) sont supprimés ; `/catalog` affiche `CatalogExplorerPanel` visible (`catalog-explorer-panel`) ; `/agents` onglet MCP ne monte qu'**une seule** instance de `RemoteServiceTestBenchAndMcpExposureView` ; `/workspaces/$wsId` affiche `DnaStarlarkCompilerAndGlossaryLifecycleView` visible dans son onglet et persiste les waivers (`workspace_exception_waivers`) en PG18 ; et `/help` masque `<ShellContextualHelpColumn>` dans Zone 4 (`1` seule instance `contextual-help-hybrid-panel`), ouvre `help-accordion-steps-content` sur mobile et applique `pl-5` sur les puces.
+
+**Given** l'écran `/organization`, la modale Modèles IA, le Studio V2 et le test `20-process-studio` #2
+**When** l'utilisateur ou le test accède à ces contrôles
+**Then** `open-invite-org-user-modal-btn` est toujours rendu sur `/organization` (invitation racine autorisée ou état explicite), `settingsAiModelsPresets.ts` expose `llm-provider-preset-ollama`, `WorkflowStudioHeaderBar.tsx` expose `studio-view-mode-whatif` (avec libellés distincts), et `20-process-studio` #2 envoie `SecretInputPayload.plaintext_value` conforme au contrat OpenAPI (`HTTP 201`).
+
+---
+
+### Story 22.3: Persistance PG18 Assistant (`assistant_folders`), Notifications (`task_notifications`, `/inbox`, SSE) & Permission Broker (`permission_broker_tickets`, fallback `git://*`) (`REM-08`, `REM-10`, `REM-13`)
+
+As a Utilisateur, Collaborateur d'Équipe & Développeur (`Nadia`, `Lucas`, `Marc`),
+I want persister en PostgreSQL 18 les dossiers collaboratifs de Mon Assistant (sans fuite de prompt interne `[LAYER_5_*]`), les notifications d'équipe + baux de ressources (`task_notifications`, `resource_leases`) couplés au SSE `< 500 ms` sur `/inbox`, et les tickets du Permission Broker (`permission_broker_tickets`) avec politique socle fallback pour `git://*`,
+So that toute création de dossier, prise en charge multi-acteurs et interception d'accès survive au redémarrage de l'API et au `F5` (`FR-2`, `FR-22`, `FR-33`, `AD-1`, `AD-4`, `AD-6`, `NFR-PERF-2`, `NFR-REL-1`, `UJ-4`, `UJ-7`, `UJ-14`, `UJ-17`).
+
+**Dépendances :** Dépend de `Story 22.1` et `Story 22.2`.
+**REM couverts :** `REM-08`, `REM-10`, `REM-13`.
+**CAP ancrées (`failed_e2e`) :** `CAP-003`, `CAP-040`, `CAP-043`, `CAP-070`, `CAP-071`, `CAP-073`, `CAP-074`, `CAP-075`.
+**Fichiers impactés :** `packages/orcia-core/src/orcia_core/orchestration/{assistant_folders_and_sharing,_internal/sql_assistant_folders,_internal/sql_task_notifications}.py`, `packages/orcia-core/src/orcia_core/permissions/{broker,seeds,_internal/sql_permission_broker}.py`, `apps/api/src/orcia_api/dependencies/{core_and_lifespan,portal_and_assistant}.py`, `apps/api/src/orcia_api/routers/{assistant_workspace_folders,inbox_and_leases,permission_broker}.py`.
+
+**Acceptance Criteria:**
+
+**Given** un utilisateur créant un dossier ou une note épinglée dans `/assistant`
+**When** `POST /api/v1/assistant/folders` s'exécute puis que l'API redémarre et le navigateur exécute `F5`
+**Then** l'adaptateur SQLAlchemy Asyncio écrit et relit dans `assistant_folders`, `assistant_threads` et `assistant_folder_shares` (`SELECT` PG18 retrouve le dossier), et la balise `[LAYER_5_FOLDER_CONTINUITY ...]` reste confinée à l'assemblage interne `AssistantHarness` sans jamais apparaître dans `pinned_notes` ni dans l'UI.
+
+**Given** deux acteurs `A` et `B` sur `/inbox` ou `POST /api/v1/tasks/{id}/claim`
+**When** `A` prend en charge une notification d'équipe puis `B` tente la même action
+**Then** `SqlTaskNotificationRepository` et `SqlResourceLeaseRepository` persistent l'état `CLAIMED` dans `task_notifications` et `resource_leases` en PG18 tout en maintenant le verrou Redis `SET NX` et la diffusion SSE `< 500 ms`, `B` reçoit `HTTP 409`, et `/inbox` affiche la boîte de réception réelle sans redirection erronée vers `/assistant`.
+
+**Given** un accès refusé ou testé via `POST /api/v1/permissions/broker/check-access` avec `target_uri: "git://gitlab.internal/platform/infra-core"`
+**When** le `PermissionBrokerService` évalue la requête
+**Then** la politique fallback configurable (`git://*`, `jira://*`, `confluence://*`) ou la fiche `workspace_datasources` est résolue (`HTTP 200`, zéro `404`), un ticket est persisté dans `permission_broker_tickets` (`SELECT` PG18 `>= 1` ligne) et l'UI affiche la carte ambre de procédure (`UX-DR11`) avec lien Jira et action de replay.
+
+---
+
+### Story 22.4: Persistance PG18 Orchestration (`dbos_uow`, `human_anchor_signatures`, `upstream_challenges`, `run_lock_manifests`), Gates (`gate_evaluations`, `chunk_approvals`) & Garde `KILL_SWITCH_STOPPED` (`REM-09`, `REM-11`, `REM-12`)
+
+As a Tech Lead, Architecte, Valideur & Superviseur (`Yanis`, `Antoine`, `Claire`, `Sophie`),
+I want initialiser `app.state.dbos_uow` et persister dans PostgreSQL 18 les ancres humaines (`human_anchor_signatures`), challenges amont (`upstream_challenges`), verrous de version (`run_lock_manifests`), évaluations de Gates (`gate_evaluations`, `chunk_approvals`), monter `<UpstreamChallengeRewindModal>` avec séparation stricte `/gates` vs `/processes`, et protéger `KILL_SWITCH_STOPPED` dans `_sql_autonomous_rollback.py`,
+So that tout cycle d'orchestration durable, contestation What-If, validation par découpage et arrêt d'urgence survive au redémarrage de l'API et au `F5` avec une traçabilité SQL complète (`FR-4`..`FR-7`, `FR-14`..`FR-19`, `FR-29`, `AD-2`, `AD-3`, `AD-7`, `AD-11`, `AD-18`, `UJ-1`..`UJ-3`, `UJ-5`, `UJ-6`, `UJ-11`, `UJ-12`).
+
+**Dépendances :** Dépend de `Story 22.1` et `Story 22.2`.
+**REM couverts :** `REM-09`, `REM-11`, `REM-12`.
+**CAP ancrées (`failed_e2e`) :** `CAP-020`, `CAP-021`, `CAP-023`, `CAP-024`, `CAP-030`, `CAP-031`, `CAP-032`, `CAP-033`, `CAP-201`.
+**Fichiers impactés :** `apps/api/src/orcia_api/dependencies/core_and_lifespan.py`, `apps/api/src/orcia_api/routers/{orchestration,blackboard_and_engine,challenge_and_replay,gates,human_gates}.py`, `packages/orcia-core/src/orcia_core/orchestration/_internal/{sql_repository,_sql_autonomous_rollback}.py`, `packages/orcia-core/src/orcia_core/gates/_internal/sql_gate_repository.py`, `apps/web/src/features/{cockpit,gates}/*`.
+
+**Acceptance Criteria:**
+
+**Given** un run instancié depuis le Cockpit puis signé sur une ancre violette (`>= 30` car.) et contesté via `<UpstreamChallengeRewindModal>`
+**When** les mutations `POST /anchors/sign`, `POST /challenges` et `POST /replay` s'exécutent puis la page est rechargée (`F5`)
+**Then** `app.state.dbos_uow` est initialisé dans `core_and_lifespan.py`, `human_anchor_signatures`, `run_lock_manifests`, `workflow_runs`, `step_executions`, `blackboard_snapshots` (append-only `ACTIVE`/`SUPERSEDED`) et `upstream_challenges` contiennent les lignes persistées en PG18, `get_orchestration_state` relit depuis PG18, et `UpstreamChallengeRewindModal` est monté et interactif (`upstream-challenge-reason-input` visible).
+
+**Given** une Gate Déterministe, Agentique ou Humaine ouverte sur `/gates`
+**When** le valideur inspecte le Briefing 4 blocs, approuve les sections par découpage (`chunk_approvals`) avec contrôle `< 15 s`, ou déclenche l'action Jira Staged puis rafraîchit (`F5`)
+**Then** `/gates` affiche la vue dédiée aux Gates (sans empiler `Mes Processus` ni son formulaire permanent), et `SqlGateEvaluationRepository` persiste les évaluations et approbations dans `gate_evaluations` et `chunk_approvals` en PG18.
+
+**Given** un run autonome arrêté d'urgence (`KILL_SWITCH_STOPPED`) et un second run audité post-hoc (`invalidate-and-restore`)
+**When** `restore_help_article_and_rollback_run_sql` (`_sql_autonomous_rollback.py`) s'exécute
+**Then** la clause `AND status <> 'KILL_SWITCH_STOPPED'` interdit l'écrasement d'un run stoppé par kill-switch, et le `SELECT status FROM workflow_runs WHERE status = 'KILL_SWITCH_STOPPED'` après `F5` retrouve bien la ligne arrêtée.
+
+---
+
+### Story 22.5: Persistance PG18 Packs Déclaratifs (`declarative_pack_bundles`) & Parcours Wizards Durables (`wizard_sessions`) (`REM-14`, `REM-15`)
+
+As a Administrateur Plateforme & Concepteur de Packs (`Karim`, `Marc`),
+I want synchroniser les manifests YAML dans `declarative_pack_bundles` au démarrage et à l'export dans `packs.py`, et raccorder intégralement `/wizards` (`DurableOnboardingWizardService` + `routes/wizards.tsx` via `@orcia/api-client`) à `wizard_sessions` tout en supprimant la triple numérotation et `sdlc_tech_lead`,
+So that les bundles de packs déclaratifs et la progression des wizards survivent au redémarrage et au `F5` avec une ergonomie propre au-dessus de la ligne de flottaison (`FR-11`, `FR-28`, `FR-31`, `FR-34`, `FR-35`, `AD-1`, `AD-20`, `NFR-REL-1`, `UJ-19`).
+
+**Dépendances :** Dépend de `Story 22.1` et `Story 22.2`.
+**REM couverts :** `REM-14`, `REM-15`.
+**CAP ancrées (`failed_e2e`) :** `CAP-055`, `CAP-056`, `CAP-057`, `CAP-150`.
+**Fichiers impactés :** `packages/orcia-core/src/orcia_core/bootstrap/{durable_wizards,_internal/sql_wizard_sessions,_internal/sql_declarative_packs}.py`, `apps/api/src/orcia_api/dependencies/core_and_lifespan.py`, `apps/api/src/orcia_api/routers/{packs,studio_and_wizards}.py`, `apps/web/src/routes/wizards.tsx`, `packages/ui/src/primitives/DurableWizardRunnerView.tsx`.
+
+**Acceptance Criteria:**
+
+**Given** le démarrage du serveur FastAPI et la page `/settings/packs`
+**When** les packs `packs/<domaine>/pack.yaml` sont chargés ou exportés en ZIP (`packs.py`)
+**Then** un upsert idempotent (`INSERT ... ON CONFLICT DO UPDATE`) persiste les bundles et empreintes `SHA-256` dans `declarative_pack_bundles` (`SELECT COUNT(*) FROM declarative_pack_bundles >= 1` après `F5`).
+
+**Given** l'utilisateur ouvrant `/wizards` et avançant/reculant dans un parcours guidé jusqu'à l'achèvement
+**When** il interagit avec les étapes puis recharge la page (`F5`)
+**Then** `routes/wizards.tsx` appelle `@orcia/api-client` (`GET`/`POST /api/v1/wizards/*`) sans état `useState` purement local, `DurableOnboardingWizardService` lit/écrit dans `wizard_sessions` PG18, `wizard-completed-badge` s'affiche après `F5`, l'identifiant brut `sdlc_tech_lead` est remplacé par son libellé métier traduit, la triple numérotation `1. #1/5 1.` est supprimée, et l'étape active apparaît au-dessus de la ligne de flottaison.
+
+---
+
+### Story 22.6: Coquille Direction C `8` Entrées, Mobile Companion `< 768px`, Aide Contextuelle Dynamique par Route (`docs/help/`) & Cockpit `<= 3` Blocs (`REM-17`, `REM-18`, `REM-19`, `REM-20`, `REM-21`)
+
+As a Utilisateur Desktop & Mobile Companion (`Claire`, `Nadia`, `Marc`, `Sally`),
+I want aligner la coquille sur les `8` entrées de `DESIGN.md` avec Double Sélecteur + Fil d'Ariane et état actif exact, câbler le `MobileCompanionView` (`< 768px`) avec barre basse `3` onglets + réponse SSE visible et fin des faux positifs `overflow-x: hidden`, servir une aide contextuelle dynamique par route sans `Chef1`/`aqwZSX`, et ramener le Cockpit à `<= 3` blocs réhydratés depuis PG18 sans `"LOCK TABLE..."`,
+So that l'expérience globale Desktop et Mobile soit conforme à Direction C (`DESIGN.md` / `EXPERIENCE.md`) sur 100 % des écrans, y compris ceux précédemment `PASSED` (`FR-1`, `FR-3`, `FR-28`, `FR-32`, `FR-33`, `UX-DR1`, `UX-DR2`, `UX-DR13`, `UX-DR16`, `NFR-A11Y-1`, `UJ-8`, `UJ-13`, `UJ-14`, `UJ-17`, `UJ-20`).
+
+**Dépendances :** Dépend de `Stories 22.1`..`22.5`.
+**REM couverts :** `REM-17`, `REM-18`, `REM-19`, `REM-20`, `REM-21`.
+**CAP ancrées (`failed_e2e`) :** `CAP-068` (+ conformité transverse `CAP-042`, `CAP-060`, `CAP-061`, `CAP-064`, `CAP-065`, `CAP-067`, `CAP-071`, `CAP-074`, `CAP-075`, `CAP-200`, `CAP-203`).
+**Fichiers impactés :** `packages/ui/src/primitives/{FourZoneDirectionCShell,FourZoneSidebarRail,FourZoneTopHeaderSection,MobileCompanionView,ProgressiveDay0AccostageBanner,StreamlinedCockpitView,AssistantSpeedSelectorAndStreamView}.tsx`, `packages/ui/src/styles/tokens.css`, `apps/web/src/components/{ShellContextualHelpColumn,_contextualHelpSections,shellPresets,shellScopeOptions}.ts*`, `packages/orcia-core/src/orcia_core/catalog/contextual_help.py`, `docs/help/{fr,en}/*.md`.
+
+**Acceptance Criteria:**
+
+**Given** un viewport Mobile (`390×844`, `< 768px`)
+**When** `FourZoneDirectionCShell` rend la coquille via `useResponsiveBreakpoint()`
+**Then** la sidebar rail gauche disparaît au profit d'une barre basse fixe à `3` onglets (`Cockpit`, `Mon Assistant / Arbitrage`, `Décisions`), la `TopHeaderBar` tient sur `1` ligne (`min-w-0`), les routes Desktop-only (`/settings`, `/organization`, `/processes/studio/*`) affichent la bannière dédiée, aucun `<select>` ou bouton ne déborde hors de `390px` (y compris `/activity` et `/cockpit`), et dans `/assistant` la réponse streamée reste visible au-dessus d'un compositeur à `2` lignes propres.
+
+**Given** la navigation Desktop dans `FourZoneSidebarRail` et `FourZoneTopHeaderSection`
+**When** l'utilisateur parcourt les écrans (`Cockpit`, `/profile`, `/help`, `/finops`, `/spaces`, `/settings`)
+**Then** la sidebar affiche strictement les `8` entrées de `DESIGN.md` (`Cockpit`, `Mon Assistant`, `Mes Processus`, `Mes Agents`, `Mes Espaces`, `FinOps`, `Configuration`, `Aide`), le Double Sélecteur empilé (`Équipe / BU` + `Espace`) figure en tête de sidebar, le Breadcrumb cliquable figure dans `TopHeaderBar`, et `Cockpit` n'est plus surligné à tort sur `/profile` ou `/help`.
+
+**Given** la colonne droite d'aide contextuelle (`340px`) et le Cockpit post-admin
+**When** l'utilisateur change de route ou clique sur un bouton `ⓘ`, ou observe le Cockpit après création de `Alice Admin E2E`
+**Then** `contextual_help.py` et `docs/help/{fr,en}/*.md` servent une fiche dédiée à la route active (format 4 sections, zéro `Chef1`/`aqwZSX`, zéro blocage sur `@1.1.0`), `ProgressiveDay0AccostageBanner` reflète fidèlement PG18 (`Étape 1` cochée/repliée après création admin, `Étape 2` décochée si `0` `org_units`, libellé explicite `Accostage X/5`, zéro `"LOCK TABLE users IN EXCLUSIVE MODE"`), et le Cockpit ne dépasse pas `3` blocs majeurs.
+
+---
+
+### Story 22.7: Finitions UX/UI (Compteurs `0`/Modales, Erreurs RFC 9457 Actionnables, Grilles, Studio V2, Assistant/`⌘K`, Devise `€`/Dates FR, Contraste `(!)`) & Purge Intégrale du Jargon Technique (`REM-22`, `REM-23`, `REM-26`, `REM-27`, `REM-28`, `REM-29`, `REM-30`, `REM-31`, `REM-32`)
+
+As a Utilisateur Métier, Auditeur & Responsable UX (`Sally`, `Claire`, `Yanis`),
+I want masquer les compteurs à `0` et convertir les formulaires permanents en modales `+ Nouveau...`, afficher des bannières RFC 9457 actionnables sur toute erreur HTTP, purger intégralement le jargon technique et les constantes brutes de l'UI/SSE, unifier l'affichage sur `€` et les dates FR, corriger les grilles `/finops`/`/profile`/`/ontology`/Studio/`/agents` MCP/`/assistant`/`⌘K`, et retirer les pastilles rouges `(!)` des boutons primaires bleus,
+So that chaque écran d'ORCIA atteigne un niveau irréprochable d'ergonomie, de contraste WCAG 2.2 AA et de langage métier sans aucun terme d'implémentation (`FR-25`, `FR-26`, `FR-32..FR-36`, `NFR-A11Y-1`, `NFR-OBS-1`, `UX-DR1`, `UX-DR11`, `UX-DR12`, `UJ-1`..`UJ-20`).
+
+**Dépendances :** Dépend de `Story 22.6`.
+**REM couverts :** `REM-22`, `REM-23`, `REM-26`, `REM-27`, `REM-28`, `REM-29`, `REM-30`, `REM-31`, `REM-32`.
+**CAP impactées (transverse UX) :** `CAP-002`, `CAP-003`, `CAP-010`, `CAP-023`, `CAP-030`, `CAP-051`, `CAP-052`, `CAP-054`, `CAP-060`, `CAP-062`, `CAP-065`, `CAP-069`, `CAP-073`, `CAP-075`, `CAP-080`, `CAP-082`, `CAP-083`, `CAP-090`, `CAP-091`, `CAP-100`, `CAP-140`, `CAP-150`, `CAP-160`, `CAP-200`, `CAP-201`.
+**Fichiers impactés :** `apps/web/src/i18n/locales/*.ts`, `packs/*/help/**/*.md`, `packages/ui/src/primitives/{AssistantThinkingSubWindow,WorkflowStudioHeaderBar,StudioCopilotSidebar,RemoteServiceTestBenchAndMcpExposureView,FinopsGovernanceDashboardView,UserProfileOverviewPage,CommandPaletteModal,AgentExecutionTrace}.tsx`, `packages/ui/src/components/DisabledButtonAlertIndicator.tsx`, `apps/web/src/features/*`.
+
+**Acceptance Criteria:**
+
+**Given** les vues `/processes`, `/gates`, `/agents`, `/spaces`, `/profile` et toute mutation `@orcia/api-client` en erreur (`403`/`404`/`422`)
+**When** les collections sont vides (`total === 0`) ou qu'une requête échoue côté API
+**Then** les badges/compteurs `0` sont masqués, la création de processus ou d'espace passe par une modale `<OrciaDialog>` (`+ Nouveau processus` / `+ Nouvel espace`), et toute erreur HTTP déclenche `<OrciaAlertBanner>` traduite depuis le RFC 9457 en français métier actionnable (zéro échec silencieux).
+
+**Given** les dictionnaires `i18n`, `packs/*/help/**/*.md`, `AssistantThinkingSubWindow` et `AgentExecutionTrace`
+**When** l'utilisateur parcourt l'ensemble de l'application (y compris les traces réflexives `12-epic16`, l'arbitrage `19-orchestration`, `/settings/packs`, `/finops`, `/ontology` et `/spaces`)
+**Then** aucune constante brute ou jargon interne (`SYNTHESIS_READY`, `OAUTH2_PASSTHROUGH`, `TECH_LEAD`, `IMMUTABLE`, `PAUSE_AND_ESCALATE`, `OPT_A_*`, `OPT_B_*`, `PENDING`, `Vitesse 2 (450 ms)`, `DeclarativePackLoader`, `orcia-connectors`, `WritePreviewCard`, `packs/<domaine>/`, `Tier cognitif`, `Guardrails`, `Dry-Run`, `AES-256-GCM`, `1024-dim RAG`, `demande_source`, `(published)`/`(draft)`, `[STALE_WARNING]`, routes brutes) n'apparaît à l'écran ; toutes les sommes utilisent `€` et toutes les dates utilisent `Intl.DateTimeFormat(locale)` (`jj/mm/aaaa`).
+
+**Given** les grilles, Studio V2, `/agents` MCP, `/assistant`, `⌘K` et les boutons primaires désactivés
+**When** ils sont rendus sur `1440×900`
+**Then** `/finops` (`4` KPIs + onglets 1 ligne), `/profile` (`2×2` ou `4×1`) et `/ontology` (`2×2`) sont équilibrés ; Studio V2 supprime le doublon de version et le débordement de `Demander` ; `/agents` MCP supprime le vide gauche ; `+ Nouvelle conversation` est stylé en bouton secondaire, le pavé central est déporté vers `ⓘ`, `⌘K` masque les sections vides ; les titres numérotés et `||` doubles sont retirés ; et `DisabledButtonAlertIndicator` retire la pastille rouge `(!)` des boutons bleus et de l'onglet actif sidebar tout en évitant les troncatures abusives.
+
+---
+
+### Story 22.8: Activation des `5` Gardes CI Anti-Régression, Campagne E2E `110/110` Vert sous `< 35s` & Passage `62/62` `verification: runtime` (`REM-33`, `REM-34`)
+
+As a Tech Lead, Architecte & QA Automation (`Amelia`, `Winston`, `Sally`),
+I want activer les `5` gardes automatisées anti-régression en CI (anti-jargon UI, interdiction `display: none`, intégrité CSS Tailwind, interdiction `[LAYER_5_*]` & `ORCIA_DISABLE_PG_BOOTSTRAP_SYNC`, contrôle géométrique Playwright Desktop/Mobile), vérifier les temps d'exécution sous `< 35 s`, exécuter la campagne Playwright intégrale (`00..21` + `shell.spec.ts`) jusqu'à `100 %` de succès (`0` `failed`, `0` `timedOut`), et promouvoir les `62/62` capacités `feature` à `verification: runtime` dans `capabilities.yaml`,
+So that ORCIA dispose d'une preuve runtime complète sur PostgreSQL 18 et d'un filet de sécurité permanent empêchant tout retour des défauts détectés en Epic 21 (`AD-17`, `NFR-TEST-1`, `NFR-PERF-1`, `NFR-A11Y-1`, `GEMINI.md` §5).
+
+**Dépendances :** Dépend de `Stories 22.1`..`22.7`. Clôture l'Epic 22.
+**REM couverts :** `REM-33`, `REM-34`.
+**CAP couvertes :** `CAP-100` (`hygiène`) + promotion finale de `100 %` des `62` capacités `feature` (`CAP-001`..`CAP-203`) vers `verification: runtime`.
+**Fichiers impactés :** `apps/web/src/__tests__/anti-jargon-and-secrets-ui-audit.test.ts`, `apps/web/src/__tests__/no-hidden-legacy-panels-audit.test.ts`, `apps/web/src/__tests__/css-class-integrity-audit.test.ts`, `tests/unit/test_no_raw_enum_codes_in_ui_streams.py`, `apps/web/e2e/support/layoutGeometryAssertions.ts`, `apps/web/e2e/{14,16}-*.spec.ts`, `docs/product/capabilities.yaml`.
+
+**Acceptance Criteria:**
+
+**Given** les `5` gardes CI créées en Story `22.8`
+**When** `pnpm turbo run lint typecheck test` et `.venv/bin/pytest` s'exécutent
+**Then** (1) `anti-jargon-and-secrets-ui-audit.test.ts` garantit `0` terme banni dans `i18n`, `_contextualHelpSections.ts`, `packages/ui/src` et `docs/help/` ; (2) `no-hidden-legacy-panels-audit.test.ts` garantit `0` `display: none` sur panneaux métier et `100 %` des `role="dialog"` via `Portal` ; (3) `css-class-integrity-audit.test.ts` vérifie la compilation CSS ; (4) `test_no_raw_enum_codes_in_ui_streams.py` garantit `0` `[LAYER_5_*]` dans les DTOs/streams et `0` `ORCIA_DISABLE_PG_BOOTSTRAP_SYNC` hors tests unitaires ; et (5) `layoutGeometryAssertions.ts` vérifie dans Playwright `rect.right <= window.innerWidth + 1` et `elementFromPoint` sur les boutons de modales ouvertes.
+
+**Given** l'ensemble des `24` specs Playwright (`110` scénarios Desktop `1440×900` et Mobile `390×844`) avec `--retries=0 --max-failures=0 --timeout=35000`
+**When** la campagne E2E intégrale s'exécute contre PostgreSQL 18 + Redis 7.4 (y compris `14-auth` #2 et `16-ai-models` #2 re-mesurés sous `< 35 s`)
+**Then** la totalité des scénarios exécutés passe à `100 %` (`unexpected: 0`, `flaky: 0`, `0` timeout, `100 %` des `SELECT` PG18 et `F5` validés) et les captures PNG finales attestent visuellement la conformité Direction C.
+
+**Given** `docs/product/capabilities.yaml` mis à jour après le passage intégral au vert
+**When** `pnpm site:sync && pnpm site:check` s'exécutent
+**Then** **`62 / 62` capacités `feature`** et **`3 / 3` capacités `foundation`** déclarent **`verification: runtime`** (`0` `failed_e2e`, `0` `e2e_remediation_ref` résiduel), clôturant l'Epic 22 sur une pyramide `AD-17` à `>= 90 %` de couverture unitaire et `0` finding `lint_spine.py` / `lint-imports`.

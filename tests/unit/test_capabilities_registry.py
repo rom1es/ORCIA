@@ -25,6 +25,9 @@ def _cap(cap_id: str = "CAP-001", **extra: Any) -> dict[str, Any]:
         "origin": "epic",
         "origin_ref": "1-1",
         "status": "live",
+        "kind": "feature",
+        "uj": ["UJ-1"],
+        "db_tables": ["users"],
     }
     base.update(extra)
     return base
@@ -112,3 +115,87 @@ def test_capability_test_stats_counts_live_capabilities_without_tests() -> None:
     }
     stats = mod.capability_test_stats(data)
     assert stats == {"live": 2, "with_tests": 1, "without_tests": ["CAP-002"]}
+
+
+def test_real_registry_classifies_features_and_foundations_without_errors() -> None:
+    mod = _load()
+    data = mod.load_registry()
+    errors = mod.validate_registry(data)
+    assert errors == []
+    capabilities = data["capabilities"]
+    foundations = [c for c in capabilities if c.get("kind") == "foundation"]
+    features = [c for c in capabilities if c.get("kind") == "feature"]
+    assert len(capabilities) == 65
+    assert len(foundations) == 3
+    assert len(features) == 62
+
+
+def test_missing_or_invalid_capability_kind_is_rejected() -> None:
+    mod = _load()
+    missing_kind = _cap("CAP-001")
+    del missing_kind["kind"]
+    invalid_kind = _cap("CAP-002", kind="unknown")
+    errors = mod.validate_registry({"capabilities": [missing_kind, invalid_kind]}, max_fr=36)
+    assert any(e.startswith("CAP-001:") and "kind" in e for e in errors)
+    assert any(e.startswith("CAP-002:") and "kind" in e for e in errors)
+
+
+def test_foundation_capability_requires_non_empty_exemption_reason() -> None:
+    mod = _load()
+    missing_reason = _cap("CAP-001", kind="foundation")
+    blank_reason = _cap("CAP-002", kind="foundation", e2e_exempt_reason="   ")
+    valid_foundation = _cap("CAP-003", kind="foundation", e2e_exempt_reason="Transverse guard")
+    errors = mod.validate_registry(
+        {"capabilities": [missing_reason, blank_reason, valid_foundation]},
+        max_fr=36,
+    )
+    assert any(e.startswith("CAP-001:") and "e2e_exempt_reason" in e for e in errors)
+    assert any(e.startswith("CAP-002:") and "e2e_exempt_reason" in e for e in errors)
+    assert not any(e.startswith("CAP-003:") for e in errors)
+
+
+def test_feature_capability_requires_non_empty_valid_journeys() -> None:
+    mod = _load()
+    missing_journeys = _cap("CAP-001")
+    del missing_journeys["uj"]
+    empty_journeys = _cap("CAP-002", uj=[])
+    bad_pattern = _cap("CAP-003", uj=["UJ-0", "BAD-1", "UJ-100"])
+    errors = mod.validate_registry(
+        {"capabilities": [missing_journeys, empty_journeys, bad_pattern]},
+        max_fr=36,
+    )
+    assert any(e.startswith("CAP-001:") and "uj" in e for e in errors)
+    assert any(e.startswith("CAP-002:") and "uj" in e for e in errors)
+    assert any(e.startswith("CAP-003:") and "UJ-0" in e for e in errors)
+    assert any(e.startswith("CAP-003:") and "BAD-1" in e for e in errors)
+    assert any(e.startswith("CAP-003:") and "UJ-100" in e for e in errors)
+
+
+def test_feature_capability_requires_db_tables_or_read_only_surface() -> None:
+    mod = _load()
+    missing_tables = _cap("CAP-001")
+    del missing_tables["db_tables"]
+    empty_tables = _cap("CAP-002", db_tables=[])
+    read_only = _cap("CAP-003", read_only_surface=True)
+    del read_only["db_tables"]
+    errors = mod.validate_registry(
+        {"capabilities": [missing_tables, empty_tables, read_only]},
+        max_fr=36,
+    )
+    assert any(e.startswith("CAP-001:") and "db_tables" in e for e in errors)
+    assert any(e.startswith("CAP-002:") and "db_tables" in e for e in errors)
+    assert not any(e.startswith("CAP-003:") for e in errors)
+
+
+def test_e2e_backlog_story_and_remediation_ref_validation() -> None:
+    mod = _load()
+    bad_backlog = _cap("CAP-001", e2e_backlog_story="99-9")
+    bad_remediation = _cap("CAP-002", e2e_remediation_ref="   ")
+    failed_e2e = _cap("CAP-003", verification="failed_e2e", e2e_remediation_ref="REM-21")
+    errors = mod.validate_registry(
+        {"capabilities": [bad_backlog, bad_remediation, failed_e2e]},
+        max_fr=36,
+    )
+    assert any(e.startswith("CAP-001:") and "e2e_backlog_story" in e for e in errors)
+    assert any(e.startswith("CAP-002:") and "e2e_remediation_ref" in e for e in errors)
+    assert not any(e.startswith("CAP-003:") for e in errors)

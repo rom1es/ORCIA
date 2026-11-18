@@ -1,4 +1,6 @@
-import { expect, test } from "@playwright/test";
+/** @uj UJ-10, UJ-13, UJ-17 | @cap CAP-004, CAP-160 */
+import { expect, test } from "./support/e2eCaptureFixture";
+import { expectDbRowExists } from "./support/dbAssertions";
 import { resetDay0 } from "./support/day0";
 
 test.describe("Socle E2E bi-serveur (TEST-01 & Stories 16.1–16.2 Reflexive Harness)", () => {
@@ -112,6 +114,11 @@ test.describe("Socle E2E bi-serveur (TEST-01 & Stories 16.1–16.2 Reflexive Har
     };
     expect(completed.status).toBe("COMPLETED");
     expect(completed.artifact_pointer?.sha256).toHaveLength(64);
+    expectDbRowExists(
+      "SELECT id, execution_id, status FROM reflexive_execution_sessions WHERE execution_id = :execution_id AND status = 'COMPLETED'",
+      { execution_id: paused.execution_id },
+      "session réflexive persistée en base PostgreSQL 18",
+    );
 
     const sseResp = await request.get(`/api/v1/executions/${paused.execution_id}/trace-stream`);
     expect(sseResp.status()).toBe(200);

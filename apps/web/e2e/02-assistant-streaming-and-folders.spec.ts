@@ -1,4 +1,6 @@
-import { expect, test } from "@playwright/test";
+/** @uj UJ-17 | @cap CAP-070, CAP-071, CAP-073, CAP-074, CAP-075 */
+import { expect, test } from "./support/e2eCaptureFixture";
+import { expectDbRowExists } from "./support/dbAssertions";
 import { resetDay0 } from "./support/day0";
 import { configureActiveEmbeddingModelViaApi } from "./support/embeddingModel";
 import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
@@ -37,6 +39,11 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
     await expect(page.getByTestId("assistant-streamed-response-box").first()).not.toBeEmpty({
       timeout: 30000,
     });
+    expectDbRowExists(
+      "SELECT id, email FROM users WHERE email = :email",
+      { email: E2E_ADMIN.email },
+      "utilisateur initiateur présent en PostgreSQL 18",
+    );
   });
 
   test("un dossier créé dans un espace est réhydraté depuis l'API après un vrai F5 (cache navigateur vidé)", async ({
@@ -68,11 +75,35 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
     expect((await overview).status()).toBeLessThan(400);
     await page.getByRole("button", { name: /^Dossiers \(\d+\)$/ }).click();
     await expect(page.getByText("Dossier E2E persistant").first()).toBeVisible({ timeout: 20000 });
+    expectDbRowExists(
+      "SELECT folder_id, title FROM assistant_folders WHERE title = :title",
+      { title: "Dossier E2E persistant" },
+      "dossier Assistant persisté dans assistant_folders",
+    );
   });
 
-  test("un dossier survit au redémarrage de l'API (persistance PostgreSQL)", async () => {
-    // BUG-E2E-01b : le service des dossiers est encore en mémoire ; l'adaptateur SQL (tables 0025)
-    // dépend d'AUTH-01 (propriétaire = vrai compte `users`, clé étrangère). À activer avec ce ticket.
-    test.fixme(true, "BUG-E2E-01b : persistance PostgreSQL des dossiers (dépend d'AUTH-01)");
+  test("un dossier survit au redémarrage de l'API (persistance PostgreSQL)", async ({ page }) => {
+    await createBuAndTeamViaUi(page);
+    await createWorkspaceViaUi(page, "Espace E2E Dossiers PG", "espace-e2e-dossiers-pg");
+
+    await page.goto("/assistant");
+    await page.getByRole("button", { name: /^Dossiers \(\d+\)$/ }).click();
+    await page.getByTestId("assistant-new-folder-title-input").fill("Dossier E2E PostgreSQL");
+    const created = page.waitForResponse(
+      (r) => r.url().includes("/folders") && r.request().method() === "POST",
+      { timeout: 20000 },
+    );
+    await page.getByTestId("assistant-create-folder-btn").click();
+    expect((await created).status()).toBeLessThan(400);
+
+    await page.reload();
+    await page.getByRole("button", { name: /^Dossiers \(\d+\)$/ }).click();
+    await expect(page.getByText("Dossier E2E PostgreSQL").first()).toBeVisible({ timeout: 20000 });
+
+    expectDbRowExists(
+      "SELECT folder_id, title, visibility_mode FROM assistant_folders WHERE title = :title",
+      { title: "Dossier E2E PostgreSQL" },
+      "persistance SQL réelle du dossier dans assistant_folders",
+    );
   });
 });

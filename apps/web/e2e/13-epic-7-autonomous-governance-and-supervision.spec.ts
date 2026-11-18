@@ -1,4 +1,6 @@
-import { expect, test } from "@playwright/test";
+/** @uj UJ-11, UJ-12 | @cap CAP-201 */
+import { expect, test } from "./support/e2eCaptureFixture";
+import { expectDbRowExists } from "./support/dbAssertions";
 import {
   expectZeroVisibleErrorBanners,
   watchUnexpectedPageAndApiErrors,
@@ -160,6 +162,32 @@ test.describe("TEST-07 · 13 — Story 7.4 Gouvernance & Supervision des Exécut
     await expect(page.getByTestId("finops-autonomous-invalidation-alert")).toBeVisible({
       timeout: 15000,
     });
+
+    expectDbRowExists(
+      "SELECT id, workflow_id, status FROM autonomy_contracts WHERE workflow_id = :workflow_id AND status = 'ACTIVE'",
+      { workflow_id: "wf-01-qualification-prd" },
+      "contrat d'autonomie signé persisté dans autonomy_contracts PG18",
+    );
+    expectDbRowExists(
+      "SELECT id, workflow_id, trigger_type FROM workflow_triggers WHERE workflow_id = :workflow_id AND trigger_type = 'MANUAL_AUTONOMOUS'",
+      { workflow_id: "wf-01-qualification-prd" },
+      "déclencheur autonome persisté dans workflow_triggers PG18",
+    );
+    expectDbRowExists(
+      "SELECT id, status FROM workflow_runs WHERE status = 'KILL_SWITCH_STOPPED'",
+      undefined,
+      "arrêt d'urgence KILL_SWITCH_STOPPED persisté dans workflow_runs PG18",
+    );
+    expectDbRowExists(
+      "SELECT id, review_status FROM autonomous_post_hoc_audits WHERE review_status = 'INVALIDATED_ROLLED_BACK'",
+      undefined,
+      "audit post-hoc invalidé persisté dans autonomous_post_hoc_audits PG18",
+    );
+    expectDbRowExists(
+      "SELECT id, event_type FROM audit_ledger",
+      undefined,
+      "trace de provenance immuable persistée dans audit_ledger PG18",
+    );
 
     await expectZeroVisibleErrorBanners(page);
     expect(errors, errors.join("\n")).toEqual([]);

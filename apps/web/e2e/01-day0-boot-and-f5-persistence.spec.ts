@@ -1,4 +1,6 @@
-import { expect, test } from "@playwright/test";
+/** @uj UJ-13 | @cap CAP-004, CAP-005, CAP-061 */
+import { expect, test } from "./support/e2eCaptureFixture";
+import { expectDbRowExists, queryDbRows } from "./support/dbAssertions";
 import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
 import { resetDay0 } from "./support/day0";
 
@@ -36,6 +38,11 @@ test.describe("TEST-04 · 01 — Boot Jour 0, premier administrateur et vrai F5 
     // Réhydraté depuis l'API : l'accostage-status reste « initialisé » après le rechargement.
     const after = await page.request.get("/api/v1/bootstrap/accostage-status");
     expect(((await after.json()) as { first_admin_initialized: boolean }).first_admin_initialized).toBe(true);
+    expectDbRowExists(
+      "SELECT id, email, platform_role FROM users WHERE email = :email AND platform_role = 'PLATFORM_ADMIN'",
+      { email: E2E_ADMIN.email },
+      "premier administrateur persisté dans users",
+    );
   });
 
   test("après reset Jour 0, la modale revient (0 utilisateur en base)", async ({ page }) => {
@@ -44,5 +51,7 @@ test.describe("TEST-04 · 01 — Boot Jour 0, premier administrateur et vrai F5 
     await page.evaluate(() => window.localStorage.clear());
     await page.reload();
     await expect(page.getByTestId("first-boot-admin-setup-modal")).toBeVisible({ timeout: 30000 });
+    const countRows = queryDbRows<{ count: number }>("SELECT COUNT(*)::int AS count FROM users");
+    expect(countRows[0]?.count).toBe(0);
   });
 });

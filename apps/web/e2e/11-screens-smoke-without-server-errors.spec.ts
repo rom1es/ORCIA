@@ -1,4 +1,5 @@
-import { expect, test } from "@playwright/test";
+/** @uj UJ-13, UJ-14, UJ-18, UJ-20 | @cap CAP-001, CAP-002, CAP-010 */
+import { expect, test } from "./support/e2eCaptureFixture";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
 import {

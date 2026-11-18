@@ -1,4 +1,5 @@
-import { expect, test } from "@playwright/test";
+/** @uj UJ-20 | @cap CAP-062 */
+import { expect, test } from "./support/e2eCaptureFixture";
 import { watchApiServerErrors } from "./support/apiErrors";
 import { resetDay0 } from "./support/day0";
 import { configureActiveEmbeddingModelViaApi } from "./support/embeddingModel";

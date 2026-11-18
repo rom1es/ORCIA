@@ -1,4 +1,6 @@
-import { expect, test } from "@playwright/test";
+/** @uj UJ-6 | @cap CAP-032, CAP-033 */
+import { expect, test } from "./support/e2eCaptureFixture";
+import { expectDbRowCount, expectDbRowExists } from "./support/dbAssertions";
 import { watchApiServerErrors } from "./support/apiErrors";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi } from "./support/firstAdmin";
@@ -111,6 +113,17 @@ test.describe("TEST-05 · 06 — Gates : briefing de revue et anti-rubber-stampi
       timeout: 20000,
     });
     await expect(page.getByTestId("gates-staged-jira-status-badge")).toContainText("EXECUTED");
+    expectDbRowExists(
+      "SELECT id, gate_type, status FROM gate_evaluations WHERE id::text = :eval_id AND gate_type = 'HUMAN' AND status = 'PASS'",
+      { eval_id: evalId },
+      "évaluation humaine PASS persistée dans gate_evaluations PG18",
+    );
+    expectDbRowCount(
+      "SELECT COUNT(*)::int AS count FROM chunk_approvals WHERE gate_evaluation_id::text = :eval_id AND status IN ('APPROVED', 'CO_EDITED')",
+      { eval_id: evalId },
+      2,
+      "approbations de découpages persistées dans chunk_approvals PG18",
+    );
     expect(serverErrors, serverErrors.join("\n")).toEqual([]);
   });
 });
