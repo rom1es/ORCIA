@@ -14,13 +14,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 54,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 167,
+    "techLeadReportsCount": 168,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 29,
     "userJourneysCount": 20,
     "coveredUserJourneysCount": 20,
-    "e2eCoveredCapabilitiesCount": 26
+    "e2eCoveredCapabilitiesCount": 39
   },
   "activeRoutes": [
     "/",
@@ -532,6 +532,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 21.5 (Lot A)",
+      "reportFile": "21-5-e2e-lot-a-auth-org-iam-profil-modeles-ia-et-broker-tech-lead-report.md",
+      "domain": "Specs E2E Lot A (14–16), Helper authAndOrgHelpers.ts, Audit data-testid/PG18 & capabilities.yaml",
+      "summary": "Rédaction complète du rapport Tech Lead, création de apps/web/e2e/support/authAndOrgHelpers.ts (169 L) et des 3 specs E2E 14 (262 L), 15 (209 L), 16 (236 L) sans test.skip avec assertions F5 + SELECT PG18, mise à jour de capabilities.yaml (39/62 E2E fonctionnels, 20/20 UJ), tsc --noEmit OK, detect-secrets OK, 9/9 Turbo OK, test_uj_e2e_coverage_gate.py 7 passed et site:sync/site:check OK."
+    },
     {
       "date": "2026-11-18",
       "phaseOrStory": "Story 21.4",
