@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 54,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 164,
+    "techLeadReportsCount": 165,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 50
@@ -529,6 +529,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 21.2",
+      "reportFile": "21-2-referentiel-user-journeys-uj1-uj20-prd-et-experience-tech-lead-report.md",
+      "domain": "Référentiel Complet UJ-1..UJ-20 (prd.md §2.3 & §4.10, AIOPS-INCIDENT-LOOP-01), Key Flows (EXPERIENCE.md §9) & Test de Cohérence capabilities.yaml",
+      "summary": "Annotation AIOPS-INCIDENT-LOOP-01 sur UJ-12 (boucle d'incident sans écriture de code/Git), rédaction structurée de UJ-13..UJ-20 dans prd.md §2.3 et ajout de Réalise UJ-... sur FR-31..FR-36 (§4.10), ajout des Flows 4..11 dans EXPERIENCE.md §9 couvrant UJ-1..UJ-20 sans jargon interne, création de tests/unit/test_uj_prd_experience_consistency.py (139 lignes, 4 tests), 21 passed (pytest), ruff OK et pnpm site:sync && pnpm site:check (65/65 capacités)."
+    },
     {
       "date": "2026-11-18",
       "phaseOrStory": "Story 21.1",

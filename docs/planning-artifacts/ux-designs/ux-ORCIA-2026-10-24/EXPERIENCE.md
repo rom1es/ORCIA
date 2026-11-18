@@ -163,7 +163,7 @@ Contrairement aux interfaces statiques qui parlent de la même manière à tous 
 
 ---
 
-## 9. Key Flows (Ancrés sur les User Journeys `UJ-1` à `UJ-9`)
+## 9. Key Flows (Ancrés sur les User Journeys `UJ-1` à `UJ-20`)
 
 ### Flow 1 — Triage Matinal & Prise en Charge d'Équipe (`Nadia, UJ-4`)
 1. Nadia ouvre ORCIA sur son Desktop. Elle sélectionne son couple `(Équipe Core Ledger, Espace Paiement)` en haut de la Sidebar et arrive sur le **`Cockpit`** (3 blocs sobres : `3 Décisions attendues` dans les compteurs, la Carte Prioritaire en dessous).
@@ -182,3 +182,77 @@ Contrairement aux interfaces statiques qui parlent de la même manière à tous 
 1. **Lucas (Développeur)** exécute une étape de processus appelant la source `nexus://bundles/prod-deploy-mcp@3.0.0` ou un dépôt GitLab restreint.
 2. L'étape se met en pause (`WAITING_FOR_PERMISSION`) et affiche dans **`Cockpit`** et **`Mes Processus › Exécutions & Décisions`** la bannière ambre du **Permission Broker** avec la procédure exacte (`#IAM-PROD-12` : groupe `ORCIA-Release-Managers`, valideur `Claire`) et un lien direct vers **`👤 Mon Profil`** s'il doit renseigner son jeton personnel `Passthrough`.
 3. Une fois l'habilitation accordée ou le jeton renseigné, Lucas clique sur **Replay Step 3** : l'exécution repart immédiatement de l'étape 3 grâce au cache `SHA-256` et au **Blackboard** épinglé.
+
+### Flow 4 — Cadrage Humain, Revue par Découpage & Pilotage FinOps (`Marc UJ-5`, `Sophie UJ-6`, `Claire UJ-8`)
+1. **Écrans d'entrée** : `Mes Processus › Exécutions & Décisions` pour Marc (`UJ-5`) et Sophie (`UJ-6`), puis `FinOps` (`/finops`) et `Journal d'activité` (`/activity`) pour Claire (`UJ-8`).
+2. **Gestes clés** :
+   - **Ancrage humain & arbitrage (`Marc UJ-5`)** : Marc lance un processus technique, rédige obligatoirement ses contraintes d'architecture dans la carte violette *Ancrage Humain* avant de débloquer la génération, tranche dans la matrice d'arbitrage entre deux solutions équivalentes proposées par l'agent et promeut un nouveau terme détecté vers le Glossaire de l'Espace.
+   - **Revue guidée par découpage (`Sophie UJ-6`)** : Sur une étape de sécurité, Sophie ouvre le *Briefing de Revue* en 4 blocs, parcourt et approuve chaque section individuellement dans la carte de validation découpée, corrige une hypothèse retenue et valide l'étape.
+   - **Pilotage budgétaire & maîtrise humaine (`Claire UJ-8`)** : Claire sélectionne sa BU dans `FinOps`, consulte les 4 indicateurs (coût consolidé, jetons, unités externes, économies), ajuste un plafond mensuel en modale, accorde une rallonge budgétaire sur une exécution en pause et inspecte l'onglet *Maîtrise humaine & Qualité* (taux de validations trop rapides, indice de dérive des motifs).
+3. **Vérification `F5`** : Après rechargement complet de la page (`F5`), la décision d'arbitrage de Marc, les sections approuvées par Sophie et les plafonds budgétaires enregistrés par Claire restent inchangés.
+4. **Retours d'erreur & RBAC** : Un observateur en consultation seule voit les boutons d'approbation ou d'ajustement budgétaire désactivés et reçoit un refus explicite côté serveur s'il tente une écriture ; une validation en moins de `15` secondes sans parcours des sections déclenche la modale de confirmation active contre la validation expéditive.
+
+### Flow 5 — Conception Assistée, Exécution Planifiée sous Contrat & Qualification d'Incident (`Arthur UJ-10`, `Claire & Marc UJ-11`, `Yanis & Karim UJ-12`)
+1. **Écrans d'entrée** : `Mon Assistant` (`/assistant`) pour Arthur (`UJ-10`), `Mes Processus › Studio` et `Exécutions & Décisions` (`/processes`) pour Claire, Marc (`UJ-11`), Yanis et Karim (`UJ-12`).
+2. **Gestes clés** :
+   - **Co-conception & audit en tâche de fond (`Arthur UJ-10`)** : Arthur demande à `Mon Assistant` de composer un processus comparant la documentation à la base de code, affine le périmètre, enregistre le processus dans l'Espace et le lance en tâche de fond ; à réception de la notification en temps réel, il ouvre le rapport et arbitre chaque écart entre suspicion d'anomalie logicielle et documentation obsolète.
+   - **Exécution autonome planifiée (`Claire & Marc UJ-11`)** : Marc signe le *Contrat d'Autonomie* et active un déclencheur hebdomadaire ; les exécutions nominales apparaissent regroupées sous le badge cyan *Exécuté sous Contrat d'Autonomie* (jamais en violet), avec échantillonnage de revue post-hoc et bouton *Arrêt d'urgence* ou *Invalider & Restaurer*.
+   - **Boucle d'incident sans écriture de code (`Yanis & Karim UJ-12`)** : Une rafale d'alertes issue du puits de logs centralisé est dédupliquée en une seule exécution autonome de qualification ; l'agent établit le diagnostic en lecture seule, rédige le dossier d'intention de remédiation, qualifie le ticket Jira d'incident et publie un paquet de contexte exploitable dans l'IDE du développeur (**zéro modification de code source et zéro écriture Git par ORCIA**), puis vérifie après résolution externe la disparition de l'erreur dans le puits de logs.
+3. **Vérification `F5`** : Après `F5`, le processus enregistré, le contrat d'autonomie signé, les déclencheurs actifs et le statut de vérification post-résolution restent persistés.
+4. **Retours d'erreur & RBAC** : L'activation d'un déclencheur sans contrat signé ou sur un processus à criticité élevée est bloquée ; un échec de vérification post-résolution ou un dépassement de plafond ouvre immédiatement le coupe-circuit du déclencheur et remonte une alerte prioritaire dans `Mes Processus` et `Notifications`.
+
+### Flow 6 — Amorçage Jour 0, Politique d'Authentification Exclusive & Mot de Passe Temporaire (`Thomas UJ-13`)
+1. **Écran d'entrée** : Mire d'accueil `/login` ou `/bootstrap` à l'état initial vierge (aucun compte utilisateur enregistré).
+2. **Gestes clés** :
+   - Thomas saisit le jeton d'amorçage si requis, crée le premier compte *Administrateur Plateforme* dans la modale Jour 0 et arrive sur le `Cockpit` guidé par la bannière *Accostage 1/6*.
+   - Il ouvre `Configuration › Authentification` (`/settings`), choisit la politique exclusive (*Authentification locale* ou *SSO d'entreprise*), active la double authentification (*Code par e-mail* ou *Application d'authentification*) et enregistre.
+   - Un collaborateur invité se connecte avec son mot de passe temporaire, saisit son code à 6 chiffres à l'étape de vérification, puis renouvelle son mot de passe via la bannière d'alerte dédiée (saisie du mot de passe actuel et du nouveau mot de passe).
+3. **Vérification `F5`** : Après `F5`, l'utilisateur reste authentifié sur sa session sécurisée, la bannière d'accostage affiche la progression réelle et la politique d'authentification demeure appliquée.
+4. **Retours d'erreur & RBAC** : Un jeton d'amorçage invalide ou un mot de passe actuel erroné affiche un bandeau d'alerte explicite sans vider le formulaire ni casser la session ; l'onglet *Authentification* de `Configuration` reste inaccessible aux comptes non habilités.
+
+### Flow 7 — Gouvernance Déléguée `Mon Organisation`, Invitations Scopées, Annuaire IAM & `/activity` (`Claire, Marc & Sophie UJ-14`)
+1. **Écrans d'entrée** : `Mon Organisation` (`/organization`) pour Claire (`Responsable de BU`) et Marc (`Chef d'équipe`), `Configuration › Habilitations & Équipes` (`/settings`) pour Sophie (`Sécurité & Conformité`), `Notifications` (`/inbox`) et `Journal d'activité` (`/activity`).
+2. **Gestes clés** :
+   - Dans `Mon Organisation`, Claire crée une sous-équipe sous sa BU, désigne un co-responsable et consulte la matrice des 7 rôles (incluant *Référent Glossaire*) en modale.
+   - Marc invite une nouvelle collaboratrice sur son équipe : la modale affiche le mot de passe temporaire généré à copier-coller en une seule fois.
+   - Dans `Configuration`, l'administrateur et Sophie gèrent l'annuaire des comptes et accordent ou révoquent des exceptions de sécurité dans le tiroir dédié.
+   - Marc traite les notifications adressées à son équipe dans `Notifications` puis consulte `Journal d'activité` (`/activity`), filtré sur sa BU/équipe, et exporte une trace certifiée au format JSON ou Markdown.
+3. **Vérification `F5`** : Après `F5`, les unités créées, les co-responsables, les exceptions accordées et les traces d'audit apparaissent à l'identique.
+4. **Retours d'erreur & RBAC** : Impossible de supprimer une unité ayant encore des rattachements actifs (modale de dépendances bloquante), impossible de retirer les droits du dernier administrateur (protection anti-verrouillage), et toute tentative d'invitation ou de lecture `/activity` hors de son sous-arbre est refusée.
+
+### Flow 8 — Hub Modèles IA, Garde de Sécurité d'URL, Réindexation Sémantique & Connecteurs Socles (`Thomas UJ-15`)
+1. **Écrans d'entrée** : `Configuration › Modèles IA` (`/settings/ai-models`) et `Configuration › Connecteurs` (`/settings`).
+2. **Gestes clés** :
+   - Thomas ouvre la modale d'ajout de modèle IA, saisit l'adresse du fournisseur et lance *Découvrir les modèles* (récupération automatique de la liste sans consommer de crédit), puis enregistre un modèle de conversation et **le modèle unique d'indexation sémantique global**.
+   - Il clique sur *Tester la connexion* : ORCIA valide réellement l'appel de conversation et la dimension attendue du modèle d'indexation, puis affiche la latence mesurée.
+   - En cas de remplacement ultérieur du modèle d'indexation global, Thomas suit la bannière de réindexation en cours jusqu'au retour à l'état nominal.
+   - Dans `Connecteurs`, il enregistre `Git`, `Jira`, `Confluence` et le serveur d'envoi d'e-mails via le champ secret protégé qui n'affiche plus que l'empreinte après enregistrement.
+3. **Vérification `F5`** : Après `F5`, les modèles, leur statut de test, le modèle d'indexation actif et l'état *Configuré* des connecteurs restent affichés ; le panneau de réindexation reflète l'avancement réel du traitement.
+4. **Retours d'erreur & RBAC** : Tant qu'aucun modèle d'indexation valide n'est configuré (ou pendant une réindexation bloquante), `Mon Assistant` et l'ajout de documents affichent une bannière explicite redirigeant vers `Modèles IA` ; toute adresse pointant vers des métadonnées internes sensibles ou tout modèle d'indexation incompatible est rejeté avec un message clair.
+
+### Flow 9 — Mon Compte Bas-Gauche, Modale Paramètres 5 Onglets, Clés IDE & `/profile` (`Lucas UJ-16`)
+1. **Écrans d'entrée** : Menu `Mon Compte` en bas à gauche de la barre latérale (remplaçant l'ancien menu en haut à droite), modale `Paramètres` (5 onglets) et page `Mon Profil` (`/profile`).
+2. **Gestes clés** :
+   - Lucas clique sur son nom en bas à gauche, ouvre `Paramètres` et bascule le thème (Clair/Sombre) et la langue (`FR`/`EN`).
+   - Dans l'onglet *Accès aux outils*, il enregistre ses jetons personnels pour `Git`, `Jira` et `Confluence`.
+   - Dans l'onglet *Clés IDE & MCP*, il génère une nouvelle clé d'accès avec durée d'expiration, la copie depuis la modale de confirmation unique et révoque une ancienne clé obsolète.
+   - Il ouvre ensuite `Mon Profil` (`/profile`) pour consulter son identité, ses badges d'équipes/rôles, ses 4 indicateurs d'activité et ses 5 éléments les plus utilisés, avec un bouton *Modifier* renvoyant vers l'onglet *Profil & Sécurité*.
+3. **Vérification `F5`** : Après `F5`, le thème choisi s'applique immédiatement sans clignotement visuel, les clés actives restent listées (sans réexposer le secret) et les compteurs de `/profile` demeurent exacts.
+4. **Retours d'erreur & RBAC** : Un jeton expiré ou révoqué est immédiatement rejeté lors d'un appel depuis l'IDE ; aucun utilisateur ne peut consulter ou révoquer les jetons ni la page `/profile` d'un autre compte.
+
+### Flow 10 — Quotidien dans `Mon Assistant` & Gouvernance des Espaces / Glossaire (`Hélène & Lucas UJ-17`, `Yanis & Nadia UJ-18`)
+1. **Écrans d'entrée** : `Mon Assistant` (`/assistant`) pour Hélène et Lucas (`UJ-17`), puis `Mes Espaces › Documents & Sources` (`/workspaces/$wsId/sources`) et `Glossaire` (`/ontology`) pour Yanis et Nadia (`UJ-18`).
+2. **Gestes clés** :
+   - **Mon Assistant (`Hélène & Lucas UJ-17`)** : Lucas ajuste ses consignes dans *Réglages de l'assistant*, joint un fichier, choisit entre vitesse *Standard* et *Approfondi*, observe la réflexion progressive repliable séparée de la réponse mise en forme (ou interrompt via *Stop*), clique sur une citation `[S1]`/`[G1]`/`[O1]`, range le fil dans un dossier partagé avec Hélène (avec notes épinglées et verrou de tour empêchant les envois simultanés) et inspecte ligne par ligne un extrait cité par un `@Agent`.
+   - **Sources, Fraîcheur, ADN & Glossaire (`Yanis & Nadia UJ-18`)** : Yanis rattache plusieurs sources (`Git`, `Confluence`, `Jira`, schéma de base de données et graphe de code) dans `/workspaces/$wsId/sources`, acquitte le cas échéant une alerte d'obsolescence sur une norme locale, puis génère et teste une règle exécutable depuis une norme métier dans *Glossaire*. Nadia (*Référente Glossaire*) examine la file *À valider*, prévisualise les impacts sur les processus liés et promeut les termes validés jusqu'au niveau *Entreprise*.
+3. **Vérification `F5`** : Après `F5`, les dossiers, notes, fils de discussion, sources attachées, alertes acquittées et promotions du glossaire restent exactement dans l'état validé.
+4. **Retours d'erreur & RBAC** : Dans un dossier partagé, une citation issue d'une source non autorisée pour le lecteur masque l'extrait et propose *Demander l'accès* ; publier un brouillon d'assistant directement vers un outil externe est bloqué au profit d'une validation par processus ; seuls les comptes *Référent Glossaire* peuvent promouvoir une règle aux niveaux *BU* ou *Entreprise* et toute collision de clé est signalée explicitement.
+
+### Flow 11 — Agents en 6 Blocs, Banc de Test, Process Studio v2, Recherche `⌘K`, Aide & Vitrine (`Karim & Marc UJ-19`, `Nadia UJ-20`)
+1. **Écrans d'entrée** : `Mes Agents` (`/agents`), `Catalogue` (`/catalog`), `Mes Processus` (`/processes`, `/processes/vsm/$vsmId`, `/processes/studio/$workflowId`), barre de recherche `⌘K`, `Aide` (`/help`) et `Vitrine` (`/showcase`).
+2. **Gestes clés** :
+   - **Agents, Services distants & Banc de test (`Karim UJ-19`)** : Karim configure un agent structuré en `6` blocs, vérifie sa visibilité par pack métier, déclare un service distant et valide la sonde en `4` étapes dans le banc de test à chaud sans impacter les exécutions de production.
+   - **Catalogue, Packs, Wizards & Process Studio v2 (`Karim & Marc UJ-19`)** : Karim publie une brique dans le Catalogue avec droits dissociés (exécution sans lecture des instructions), active le pack métier du périmètre et déroule l'atelier de création de pack jusqu'à validation des fiches d'aide. Marc navigue dans la carte de chaîne de valeur à `11` étapes, édite un processus dans le Studio à `5` blocs et traite une validation humaine à `4` actions sur diff d'artefact.
+   - **Navigation, Compagnon Mobile, Recherche `⌘K`, Aide & Vitrine (`Nadia UJ-20`)** : Nadia bascule entre les `8` menus, replie le rail au clavier (`[`), ouvre le panneau `⌘K` (résultats instantanés verrouillés en tête puis enrichissement sémantique sans décalage de ligne), clique sur `ⓘ` pour ouvrir la fiche d'aide à droite ou consulte `/help` et `/showcase`. Sur écran mobile, l'application bascule sur la barre basse à `3` onglets sans débordement horizontal.
+3. **Vérification `F5`** : Après `F5`, l'état du rail, les agents créés, le pack actif unique, les définitions du Studio et la progression des wizards sont restitués à l'identique.
+4. **Retours d'erreur & RBAC** : Un pack sans aide validée ne peut pas être activé ; sur mobile, le Studio graphique et `Configuration` affichent un message explicite renvoyant vers le poste Desktop ; la recherche `⌘K` n'expose jamais de résultat hors périmètre d'habilitation.
