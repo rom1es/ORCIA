@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 54,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 171,
+    "techLeadReportsCount": 180,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 14,
@@ -532,6 +532,69 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 22.8",
+      "reportFile": "22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime-tech-lead-report.md",
+      "domain": "Vague 3 (REM-33, REM-34) — Activation des 5 Gardes CI Anti-Régression, Campagne E2E 110/110 Vert < 35s & Passage 62/62 verification: runtime",
+      "summary": "Pré-implémentation : création des 5 gardes automatisées (anti-jargon UI, zéro display: none, intégrité CSS Tailwind, zéro [LAYER_5_*]/ORCIA_DISABLE_PG_BOOTSTRAP_SYNC, géométrie Playwright rect.right <= innerWidth & elementFromPoint modales), budget < 35s, re-jeu complet --retries=0 --max-failures=0 et passage 62/62 feature à verification: runtime (pnpm site:sync && pnpm site:check)."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 22.7",
+      "reportFile": "22-7-finitions-ux-ui-erreurs-rfc9457-grilles-devise-euro-et-purge-jargon-tech-lead-report.md",
+      "domain": "Vague 3 (REM-22, REM-23, REM-26..32) — Finitions UX/UI, Erreurs RFC 9457 Actionnables, Grilles, Devise €/Dates FR, Retrait (!) & Purge Intégrale Jargon",
+      "summary": "Pré-implémentation : masquage compteurs 0 & modales + Nouveau..., bannières RFC 9457 sur toutes erreurs HTTP, purge exhaustive i18n/SSE (SYNTHESIS_READY, TECH_LEAD, PAUSE_AND_ESCALATE, etc.), devise € & dates jj/mm/aaaa, grilles /finops//profile//ontology, Studio V2 & /agents MCP, ergonomie /assistant/⌘K, et retrait (!) dans boutons bleus."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 22.6",
+      "reportFile": "22-6-coquille-direction-c-8-entrees-mobile-companion-aide-dynamique-et-cockpit-tech-lead-report.md",
+      "domain": "Vague 2 (REM-17..21) — Coquille Direction C 8 Entrées, Mobile Companion < 768px, Aide Dynamique docs/help/ & Cockpit <= 3 Blocs",
+      "summary": "Pré-implémentation : useResponsiveBreakpoint() + barre basse 3 onglets mobile + purge faux positifs overflow-x: hidden, scroll SSE /assistant mobile, catalogue docs/help/{fr,en}/*.md dynamique par route sans Chef1/aqwZSX, Sidebar 8 entrées + Double Sélecteur + Breadcrumb, et Accostage piloté par PG18 (<= 3 blocs sans LOCK TABLE..., CAP-068 + transverse)."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 22.5",
+      "reportFile": "22-5-persistance-pg18-packs-declaratifs-et-wizards-durables-tech-lead-report.md",
+      "domain": "Vague 1 (REM-14, REM-15) — Persistance PG18 declarative_pack_bundles & Parcours Wizards Durables (wizard_sessions)",
+      "summary": "Pré-implémentation : upsert idempotent des packs déclaratifs dans declarative_pack_bundles, persistance wizard_sessions dans DurableOnboardingWizardService, câblage @orcia/api-client dans routes/wizards.tsx et suppression de la triple numérotation / sdlc_tech_lead (CAP-055, CAP-056, CAP-057, CAP-150)."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 22.4",
+      "reportFile": "22-4-persistance-pg18-orchestration-gates-et-garde-kill-switch-tech-lead-report.md",
+      "domain": "Vague 1 (REM-09, REM-11, REM-12) — Persistance PG18 Orchestration (dbos_uow, ancres, challenges, run_lock), Gates & Garde KILL_SWITCH_STOPPED",
+      "summary": "Pré-implémentation : initialisation app.state.dbos_uow, adaptateurs SQL human_anchor_signatures, upstream_challenges, run_lock_manifests, montage UpstreamChallengeRewindModal, SqlGateEvaluationRepository (gate_evaluations, chunk_approvals) + séparation /gates vs /processes, et garde AND status <> 'KILL_SWITCH_STOPPED' dans _sql_autonomous_rollback.py (CAP-020, CAP-021, CAP-023, CAP-024, CAP-030..033, CAP-201)."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 22.3",
+      "reportFile": "22-3-persistance-pg18-assistant-notifications-sse-et-permission-broker-tech-lead-report.md",
+      "domain": "Vague 1 (REM-08, REM-10, REM-13) — Persistance PG18 assistant_folders (+ purge LAYER_5), task_notifications/SSE & permission_broker_tickets (fallback git://*)",
+      "summary": "Pré-implémentation : adaptateurs SQLAlchemy Asyncio injectés au Composition Root pour AssistantFoldersAndSharingService (séparation pinned_notes vs layer5_prompt_injection), UnifiedNotificationAndClaimService (task_notifications + resource_leases + Redis/SSE < 500ms), et PermissionBrokerService (permission_broker_tickets + politique socle git://*, CAP-003, CAP-040, CAP-043, CAP-070, CAP-071, CAP-073..075)."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 22.2",
+      "reportFile": "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats-tech-lead-report.md",
+      "domain": "Vague 0 (REM-03..06, REM-16, REM-24, REM-25) — Portals OrciaDialog & Tailwind v4, Purge display: none, Découplage /catalog//agents//help, Invitation /organization & data-testid/Contrats",
+      "summary": "Pré-implémentation : activation @tailwindcss/vite, Portals DialogPrimitive.Portal + footer sticky modales, purge des 4 wrappers display: none, séparation /catalog vs /agents (1 seul banc MCP) et masquage Zone 4 sur /help, bouton invitation visible sur /organization, alignement llm-provider-preset-ollama, studio-view-mode-whatif et plaintext_value (21 CAP-* ancrées)."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 22.1",
+      "reportFile": "22-1-socle-identite-uuid-workspaces-permissions-admin-et-fin-bypass-pg-tech-lead-report.md",
+      "domain": "Vague 0 (REM-01, REM-02, REM-07) — Unification UUIDv7 Workspaces (0 \"ws-1\"), Fix 403 PLATFORM_ADMIN & Fin \"marc\" / ORCIA_DISABLE_PG_BOOTSTRAP_SYNC",
+      "summary": "Pré-implémentation : suppression génération \"ws-N\", propagation slug exact (workspaces), membership propriétaire auto + règle MatrixPermissionEvaluator STANDARD vs CONFIDENTIAL_RESTRICTED, purge \"marc\" cockpit & suppression du drapeau de bypass PG (CAP-011, CAP-022, CAP-050, CAP-067, CAP-072, CAP-076, CAP-080, CAP-180)."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 21.9",
+      "reportFile": "21-9-rapports-tech-lead-echecs-et-initialisation-epic-22-tech-lead-report.md",
+      "domain": "Analyse d'Impact GitNexus, Rapports Pré-Implémentation 22-1..22-8, Plan Directeur & Initialisation Epic 22",
+      "summary": "Consolidation des constats E2E (47 échecs/14 specs), des 34 chantiers REM-01..REM-34 et des 51 capacités failed_e2e en 8 Stories cohérentes ; analyse d'impact GitNexus sur les 13 symboles critiques ; production du Plan Directeur sprint-change-proposal-2026-11-18-epic-22-remediation-plan.md, des 8 rapports Tech Lead pré-implémentation, initialisation de epics.md, sprint-status.yaml (epic-21: done) et capabilities.yaml, suite de traçabilité tests/unit/test_epic21_to_epic22_traceability.py (168 L, 5 tests) et synchronisation pnpm site:sync && pnpm site:check."
+    },
     {
       "date": "2026-11-18",
       "phaseOrStory": "Story 21.8",
