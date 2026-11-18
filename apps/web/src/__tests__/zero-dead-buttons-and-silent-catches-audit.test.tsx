@@ -143,6 +143,25 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
         "onRejectWrite",
       ],
       SourceLineInspectorDrawer: ["onOpenChange", "onCopySlice"],
+      SidebarAccountPopover: [
+        "onOpenSettingsTab",
+        "onNavigateProfile",
+        "onNavigateHelp",
+        "onNavigateShowcase",
+        "onLogout",
+      ],
+      UserProfileOverviewPage: [
+        "onEditAccount",
+        "onSelectPopularItem",
+        "onExploreAgents",
+      ],
+      UserSettingsModalDialog: [
+        "onOpenChange",
+        "onSelectTab",
+        "onUpdatePreferences",
+        "onCreateMcpToken",
+        "onRevokeMcpToken",
+      ],
     };
 
     const allFiles = collectTsxFiles(WEB_SRC_DIR);

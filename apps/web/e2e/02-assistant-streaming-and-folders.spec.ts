@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { resetDay0 } from "./support/day0";
+import { configureActiveEmbeddingModelViaApi } from "./support/embeddingModel";
 import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
 import { createBuAndTeamViaUi, createWorkspaceViaUi } from "./support/orgAndWorkspace";
 
@@ -18,6 +19,7 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
   test("un tour d'assistant traverse le navigateur, l'API et la cassette LLM (0 $) et affiche une réponse", async ({
     page,
   }) => {
+    await configureActiveEmbeddingModelViaApi(page);
     await page.goto("/assistant");
     const input = page.getByRole("textbox", { name: /Tapez @ pour les agents/ });
     await expect(input).toBeVisible({ timeout: 30000 });

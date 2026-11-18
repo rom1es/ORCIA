@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from orcia_core.audit_finops._internal.sql_audit_ledger import SqlAuditLedgerService
+from orcia_core.audit_finops._internal.sql_user_profile_stats import (
+    fetch_user_profile_summary_sql,
+)
 from orcia_core.audit_finops.budget_guard_service import BudgetGuardService
 from orcia_core.audit_finops.cognitive_impact_service import (
     CognitiveImpactService,
@@ -55,6 +58,14 @@ from orcia_core.audit_finops.remote_usage_sanitizer import (
     RemoteUsageSanitizer,
     extract_remote_usage_payload,
 )
+from orcia_core.audit_finops.user_profile_service import (
+    PopularItemType,
+    PopularUsageItem,
+    UserProfileSummary,
+    compute_activity_streaks,
+    derive_user_handle,
+    rank_popular_usage_items,
+)
 
 DOMAIN_NAME: str = "audit_finops"
 
@@ -86,6 +97,8 @@ __all__ = [
     "FinopsTierEffortItem",
     "FinopsWorkflowBaseline",
     "GatePolicyRecommendation",
+    "PopularItemType",
+    "PopularUsageItem",
     "PostHocAuditSampleRecord",
     "PostHocAuditService",
     "PostHocReviewStatus",
@@ -94,9 +107,14 @@ __all__ = [
     "ScopeType",
     "SqlAuditLedgerService",
     "SqlConnectorQuotaGuardService",
+    "UserProfileSummary",
     "WorkflowCognitiveMetrics",
+    "compute_activity_streaks",
     "compute_autonomous_governance_metrics",
+    "derive_user_handle",
     "extract_remote_usage_payload",
+    "fetch_user_profile_summary_sql",
     "map_domain_event_to_ledger_entry",
+    "rank_popular_usage_items",
     "select_post_hoc_sample_deterministic",
 ]

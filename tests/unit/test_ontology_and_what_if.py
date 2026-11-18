@@ -231,9 +231,10 @@ def test_fastapi_ontology_rag_endpoints_and_rfc9457() -> None:
     assert res_upsert_ok.status_code == 200
     assert res_upsert_ok.json()["concept_key"] == "concept-l4-valid-new"
 
-    # 4b. Observer persona on upsert returns HTTP 403 ERR_OBSERVER_MODE_READ_ONLY
+    # 4b. Observer role on upsert returns HTTP 403 ERR_OBSERVER_MODE_READ_ONLY
     res_upsert_obs = client.post(
-        "/api/v1/ontology-rag/ontology/concepts?fixture=true&persona_key=claire",
+        "/api/v1/ontology-rag/ontology/concepts?fixture=true&persona_key=marc",
+        headers={"X-Orcia-Active-Hat": "OBSERVER"},
         json={
             "concept_key": "concept-l4-obs",
             "canonical_term": "Interdit",
@@ -281,7 +282,8 @@ def test_fastapi_ontology_rag_endpoints_and_rfc9457() -> None:
     assert res_prom_ok.json()["status"] == "APPROVED"
 
     res_prom_obs = client.post(
-        "/api/v1/ontology-rag/ontology/promote?fixture=true&persona_key=claire",
+        "/api/v1/ontology-rag/ontology/promote?fixture=true&persona_key=marc",
+        headers={"X-Orcia-Active-Hat": "OBSERVER"},
         json={"proposal_key": "prop-concept-l4-3ds-frictionless-exemption-to-3_workspace"},
     )
     assert res_prom_obs.status_code == 403

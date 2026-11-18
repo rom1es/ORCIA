@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { clearPlatformSetupStorage } from "../components/platformSetupStorageHelpers";
 import { EnterpriseConnectorsSettingsSection } from "../features/admin/connectors/EnterpriseConnectorsSettingsSection";
 import { WorkspaceSourcesRagTab } from "../features/workspaces/WorkspaceSourcesRagTab";
-import { ShellHeaderAccountControl } from "../components/ShellHeaderAccountControl";
+import { ShellSidebarAccountControl } from "../components/ShellSidebarAccountControl";
 import { frDictionary } from "../i18n/locales/fr";
 import { useAuthSessionStore } from "../stores/authSessionStore";
 import {
@@ -114,18 +114,21 @@ describe("Story 17.4 — Connecteurs Socle, Mon Compte Passthrough & RAG Référ
       email: "marie.curie@orcia.fr",
       displayName: "Marie Curie",
       roles: ["PLATFORM_ADMIN"],
-      activeHat: "PLATFORM_ADMIN",
     });
 
-    // Mount header control
+    // Mount sidebar account control
     const { unmount } = render(
-      <ShellHeaderAccountControl
+      <ShellSidebarAccountControl
+        railCollapsed={false}
         userDisplayName="Marie Curie"
         userEmail="marie.curie@orcia.fr"
         userRole="PLATFORM_ADMIN"
-        activeHat="PLATFORM_ADMIN"
+        userRoleLabel="Administrateur de la plateforme"
         locale="fr"
         labels={frDictionary.userAccountAndSettings}
+        onLocaleChange={() => undefined}
+        onNavigate={() => undefined}
+        onLogout={() => undefined}
       />,
     );
 
@@ -161,13 +164,17 @@ describe("Story 17.4 — Connecteurs Socle, Mon Compte Passthrough & RAG Référ
     unmount();
 
     render(
-      <ShellHeaderAccountControl
+      <ShellSidebarAccountControl
+        railCollapsed={false}
         userDisplayName="Marie Curie"
         userEmail="marie.curie@orcia.fr"
         userRole="PLATFORM_ADMIN"
-        activeHat="PLATFORM_ADMIN"
+        userRoleLabel="Administrateur de la plateforme"
         locale="fr"
         labels={frDictionary.userAccountAndSettings}
+        onLocaleChange={() => undefined}
+        onNavigate={() => undefined}
+        onLogout={() => undefined}
       />,
     );
 

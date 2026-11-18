@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { watchApiServerErrors } from "./support/apiErrors";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi } from "./support/firstAdmin";
+import { createBuAndTeamViaUi, createWorkspaceViaUi } from "./support/orgAndWorkspace";
 
 /**
  * TEST-05 · 06 — Gates tri-modales (UJ-6, Epic 4, FR-6/FR-18/FR-19).
@@ -22,6 +23,8 @@ test.describe("TEST-05 · 06 — Gates : briefing de revue et anti-rubber-stampi
     test.skip(testInfo.project.name !== "desktop-cockpit", "parcours complet : bureau");
     resetDay0();
     await createFirstAdminViaUi(page);
+    await createBuAndTeamViaUi(page);
+    await createWorkspaceViaUi(page, "Espace Gates E2E", "ws-gates-e2e");
 
     const serverErrors = watchApiServerErrors(page);
     await page.goto("/gates");
@@ -58,7 +61,13 @@ test.describe("TEST-05 · 06 — Gates : briefing de revue et anti-rubber-stampi
     await expect(page.getByTestId("chunk-status-badge-sec-security-jira")).toHaveText("CO_EDITED");
 
     // 4. Vérifier que le garde-fou API rejette une finalisation < 15 s sans confirmation explicite
-    const listRes = await page.request.get("/api/v1/gates/human/evaluations");
+    const refreshRes = await page.request.post("/api/v1/auth/refresh");
+    expect(refreshRes.status()).toBe(200);
+    const { access_token: adminToken } = (await refreshRes.json()) as { access_token?: string };
+    expect(adminToken).toBeTruthy();
+    const listRes = await page.request.get("/api/v1/gates/human/evaluations", {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
     expect(listRes.ok()).toBeTruthy();
     const listBody = (await listRes.json()) as {
       evaluations: Array<{ id: string }>;
@@ -67,6 +76,7 @@ test.describe("TEST-05 · 06 — Gates : briefing de revue et anti-rubber-stampi
     expect(evalId).toBeTruthy();
 
     const prematureRes = await page.request.post(`/api/v1/gates/human/${evalId}/finalize`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
       data: {
         review_duration_ms: 2100,
         explicit_hypotheses_confirmation: false,

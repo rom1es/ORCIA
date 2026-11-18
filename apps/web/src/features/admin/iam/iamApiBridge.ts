@@ -16,6 +16,7 @@ export type OfficialIamRoleKey =
   | "SECOPS"
   | "BU_LEAD"
   | "TEAM_LEAD"
+  | "ONTOLOGY_LEAD"
   | "CONTRIBUTOR"
   | "OBSERVER";
 
@@ -24,6 +25,7 @@ export const OFFICIAL_IAM_ROLES: readonly OfficialIamRoleKey[] = [
   "SECOPS",
   "BU_LEAD",
   "TEAM_LEAD",
+  "ONTOLOGY_LEAD",
   "CONTRIBUTOR",
   "OBSERVER",
 ] as const;

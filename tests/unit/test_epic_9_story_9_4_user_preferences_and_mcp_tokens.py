@@ -124,7 +124,7 @@ def test_story_9_4_api_preferences_and_mcp_tokens_endpoints() -> None:
                 "target_slug": "sdlc-architect-agent",
             },
         )
-        assert create_resp.status_code == 200
+        assert create_resp.status_code == 201
         created = create_resp.json()
         assert created["plaintext_token"].startswith("pat_mcp_")
         token_id = created["record"]["token_id"]

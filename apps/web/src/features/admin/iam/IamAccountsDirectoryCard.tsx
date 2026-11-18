@@ -53,6 +53,7 @@ export function IamAccountsDirectoryCard({
     };
 
     const ledBus: ConfiguredOrgUnit[] = [];
+    const ontologyLedBus: ConfiguredOrgUnit[] = [];
     const ledTeams: ConfiguredOrgUnit[] = [];
     const memberTeams: ConfiguredOrgUnit[] = [];
 
@@ -62,10 +63,18 @@ export function IamAccountsDirectoryCard({
         (unit.level === "TEAM" && acc.led_team_ids?.includes(unit.id)) ||
         (Array.isArray(unit.leadUserIds) && unit.leadUserIds.some(isMatchUser)) ||
         isMatchUser(unit.leadUserId);
+      const isOntoLead =
+        unit.level === "BU" &&
+        (Boolean(acc.ontology_led_bu_ids?.includes(unit.id)) ||
+          (Array.isArray(unit.ontologyLeadUserIds) &&
+            unit.ontologyLeadUserIds.some(isMatchUser)));
 
       if (unit.level === "BU") {
         if (isLead && !ledBus.some((b) => b.id === unit.id)) {
           ledBus.push(unit);
+        }
+        if (isOntoLead && !ontologyLedBus.some((b) => b.id === unit.id)) {
+          ontologyLedBus.push(unit);
         }
       } else if (unit.level === "TEAM") {
         if (isLead) {
@@ -84,7 +93,7 @@ export function IamAccountsDirectoryCard({
       }
     }
 
-    return { ledBus, ledTeams, memberTeams };
+    return { ledBus, ontologyLedBus, ledTeams, memberTeams };
   };
 
   return (
@@ -148,16 +157,19 @@ export function IamAccountsDirectoryCard({
         <div style={{ display: "grid", gap: "8px" }}>
           {accounts.map((acc) => {
             const statusInfo = formatStatus(acc.status);
-            const { ledBus, ledTeams, memberTeams } = resolveAccountTopology(acc);
+            const { ledBus, ontologyLedBus, ledTeams, memberTeams } = resolveAccountTopology(acc);
             const hasBuLeadRole = acc.roles.includes("BU_LEAD");
             const hasTeamLeadRole = acc.roles.includes("TEAM_LEAD");
+            const hasOntologyLeadRole = acc.roles.includes("ONTOLOGY_LEAD");
             const showFallbackNoTeams =
               acc.account_kind === "HUMAN" &&
               ledBus.length === 0 &&
+              ontologyLedBus.length === 0 &&
               ledTeams.length === 0 &&
               memberTeams.length === 0 &&
               !hasBuLeadRole &&
               !hasTeamLeadRole &&
+              !hasOntologyLeadRole &&
               acc.roles.some((r) => r !== "PLATFORM_ADMIN" && r !== "SECOPS");
 
             return (
@@ -234,6 +246,32 @@ export function IamAccountsDirectoryCard({
                         }}
                       >
                         · {dir.ledBusPrefix} {dir.noLedBusAssigned}
+                      </span>
+                    ) : null}
+
+                    {ontologyLedBus.length > 0 ? (
+                      <span
+                        data-testid={`iam-account-ontology-led-bus-${acc.id}`}
+                        style={{
+                          fontSize: "12px",
+                          color: "var(--color-foreground)",
+                          fontWeight: 600,
+                          marginLeft: "4px",
+                        }}
+                      >
+                        · {ontologyLedBus.length > 1 ? dir.ontologyLedBusPluralPrefix : dir.ontologyLedBusPrefix} {ontologyLedBus.map((u) => u.name).join(", ")}
+                      </span>
+                    ) : hasOntologyLeadRole ? (
+                      <span
+                        data-testid={`iam-account-ontology-led-bus-unassigned-${acc.id}`}
+                        style={{
+                          fontSize: "12px",
+                          color: "var(--color-arbitration-amber)",
+                          fontWeight: 500,
+                          marginLeft: "4px",
+                        }}
+                      >
+                        · {dir.ontologyLedBusPrefix} {dir.noOntologyLedBusAssigned}
                       </span>
                     ) : null}
 

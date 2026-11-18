@@ -14,6 +14,7 @@ import {
 } from "../components/platformSetupStore";
 import { useShellNavigation } from "../components/ShellContainer";
 import { useI18n } from "../i18n";
+import { canObserveGlobalAuditScope, useAuthSessionStore } from "../stores/authSessionStore";
 import {
   exportRunProvenanceFromApi,
   fetchAuditLedgerFromApi,
@@ -35,6 +36,10 @@ export function ActivityLogRouteView(): React.ReactElement {
   const isFr = locale === "fr";
   const { activeScopeId, openHelpSection } = useShellNavigation();
   const { platformAdmin, orgUnits, workspaces, scopes } = usePlatformSetup();
+  const roles = useAuthSessionStore((s) => s.roles);
+  const activeHat = useAuthSessionStore((s) => s.activeHat);
+  const readOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
+  const allowGlobalScope = canObserveGlobalAuditScope({ roles, activeHat, readOnlyObserver });
 
   const [apiEvents, setApiEvents] = useState<readonly UiActivityLogEventItem[]>([]);
   const [selectedRunId, setSelectedRunId] = useState<string | undefined>(undefined);
@@ -68,7 +73,7 @@ export function ActivityLogRouteView(): React.ReactElement {
             summary: cleanAuditSummaryJargon(e.summary),
             actorName: e.actor_display_name || e.actor_id,
             actorEmail: e.actor_email || undefined,
-            scopeId: e.workspace_id || undefined,
+            scopeId: e.workspace_id || e.org_unit_id || undefined,
             scopePath: rawScope,
             scopeLabel: resolvedScopeLabel,
             runId: e.run_id || undefined,
@@ -97,15 +102,21 @@ export function ActivityLogRouteView(): React.ReactElement {
       privateSpacePrefix: activityDict.privateSpacePrefix,
       spacePrefix: activityDict.spacePrefix,
     },
+    { includeGlobal: allowGlobalScope },
   );
 
-  const activeScopeNode = scopes.find((s) => s.id === activeScopeId);
-  const activeObservationOption = scopeOptions.find((o) => o.id === activeScopeId);
+  const effectiveActiveScopeId =
+    !allowGlobalScope && (activeScopeId === "scope-global" || activeScopeId === "ALL")
+      ? (scopeOptions[0]?.id ?? activeScopeId)
+      : activeScopeId;
+
+  const activeScopeNode = scopes.find((s) => s.id === effectiveActiveScopeId);
+  const activeObservationOption = scopeOptions.find((o) => o.id === effectiveActiveScopeId);
   const activeObservationScopeLabel =
     activeObservationOption?.label ??
-    (activeScopeNode?.level === "GLOBAL"
+    (allowGlobalScope && activeScopeNode?.level === "GLOBAL"
       ? activityDict.entirePlatform
-      : (activeScopeNode?.name ?? activityDict.entirePlatform));
+      : (activeScopeNode?.name ?? scopeOptions[0]?.label ?? ""));
 
   // Pure source of truth: PostgreSQL 18 audit_ledger via apiEvents (zero local store fallback)
   const effectiveEvents: readonly UiActivityLogEventItem[] = apiEvents;
@@ -150,8 +161,9 @@ export function ActivityLogRouteView(): React.ReactElement {
       <ActivityLogExplorerView
         events={effectiveEvents}
         scopeOptions={scopeOptions}
-        activeObservationScopeId={activeScopeId}
+        activeObservationScopeId={effectiveActiveScopeId}
         activeObservationScopeLabel={activeObservationScopeLabel}
+        allowAllScopesOption={allowGlobalScope}
         connectedUserName={connectedUserName}
         labels={activityDict.explorer}
         provenanceLabels={activityDict.provenanceExport}

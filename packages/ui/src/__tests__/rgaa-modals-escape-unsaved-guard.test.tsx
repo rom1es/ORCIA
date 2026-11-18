@@ -9,7 +9,7 @@ import {
   RgaaModalDialog,
   TopHeaderSearchCommand,
   UpstreamChallengeRewindModal,
-  UserAccountDropdownAndSettingsModal,
+  UserSettingsModalDialog,
   type AssistantGovernanceModalAndStudioLabels,
   type CommandPaletteItemSpec,
   type CommandPaletteModalLabels,
@@ -18,31 +18,9 @@ import {
   type TopSearchHitItem,
   type UpstreamChallengeModalLabels,
   type UpstreamChallengeWhatIfPreview,
-  type UserAccountDropdownAndSettingsLabels,
+  type UiUserSettingsTabKey,
 } from "../index.js";
-
-const SAMPLE_USER_SETTINGS_LABELS: UserAccountDropdownAndSettingsLabels = {
-  triggerAriaLabel: "Menu compte utilisateur",
-  dropdownWidthNote: "",
-  hatSelectorLabel: "Rôle",
-  themeQuickToggleLabel: "Thème",
-  localeQuickToggleLabel: "Langue",
-  openAccountSettingsLabel: "⚙ Mes Préférences",
-  openPassthroughSourcesLabel: "Connexions personnelles",
-  logoutButtonLabel: "Déconnexion",
-  modalTitle: "Mes Préférences & Compte",
-  tab1PreferencesTitle: "Préférences",
-  tab2SecurityTitle: "Sécurité",
-  tab3PassthroughTitle: "Sources Passthrough",
-  tab4McpKeysTitle: "Clés MCP IDE",
-  customizeAssistantRedirectCta: "Personnaliser Mon Assistant",
-  testPassthroughTokenCta: "Tester la connexion",
-  generateMcpTokenCta: "Générer un jeton MCP",
-  revokeMcpTokenCta: "Révoquer",
-  targetWholeSpaceLabel: "Espace complet",
-  targetSingleAgentLabel: "Agent unique",
-  ideJsonReadyTitle: "Configuration IDE prête",
-};
+import { TEST_USER_SETTINGS_LABELS } from "./userSettingsLabelsFixture";
 
 const SAMPLE_ASSISTANT_GOV_LABELS: AssistantGovernanceModalAndStudioLabels = {
   modalTitle: "⚙ Réglages de l'assistant",
@@ -269,33 +247,45 @@ describe("RGAA Modal & Popup Accessibility — Escape, Cancel, Unsaved Changes G
     });
   });
 
-  describe("2. UserAccountDropdownAndSettingsModal", () => {
-    it("closes on Escape when clean, guards unsaved changes when dirty, and validates on Enter", () => {
-      const onSync = vi.fn();
-      render(
-        <UserAccountDropdownAndSettingsModal
-          userDisplayName="Romain"
-          userEmail="romain@orcia.io"
-          userRole="PLATFORM_ADMIN"
-          initialLocale="fr"
-          initialTheme="system"
-          labels={SAMPLE_USER_SETTINGS_LABELS}
-          onPreferencesSync={onSync}
-        />,
-      );
+  describe("2. UserSettingsModalDialog", () => {
+    it("closes on Escape when clean and guards unsaved changes when dirty", () => {
+      function Wrapper() {
+        const [open, setOpen] = React.useState(true);
+        const [tab, setTab] = React.useState<UiUserSettingsTabKey>("GENERAL");
+        return (
+          <UserSettingsModalDialog
+            open={open}
+            onOpenChange={setOpen}
+            activeTab={tab}
+            onSelectTab={setTab}
+            userEmail="romain@orcia.io"
+            userRole="PLATFORM_ADMIN"
+            theme="system"
+            locale="fr"
+            defaultAssistantHat="ANALYST_PM_PO"
+            assistantTone="balanced"
+            personalInstructions=""
+            autoOpenHelp={true}
+            notificationsEnabled={true}
+            mcpTokens={[]}
+            lastIssuedPlaintext={null}
+            labels={TEST_USER_SETTINGS_LABELS}
+            onUpdatePreferences={vi.fn()}
+            onCreateMcpToken={vi.fn()}
+            onRevokeMcpToken={vi.fn()}
+          />
+        );
+      }
 
-      // Open dropdown and open modal
-      fireEvent.click(screen.getByTestId("user-account-dropdown-trigger"));
-      fireEvent.click(screen.getByTestId("dropdown-open-settings-modal-btn"));
+      const { rerender } = render(<Wrapper />);
       expect(screen.getByTestId("user-settings-modal")).toBeDefined();
 
       // 1. Clean close via Escape
       fireEvent.keyDown(window, { key: "Escape" });
       expect(screen.queryByTestId("user-settings-modal")).toBeNull();
 
-      // Re-open modal
-      fireEvent.click(screen.getByTestId("user-account-dropdown-trigger"));
-      fireEvent.click(screen.getByTestId("dropdown-open-settings-modal-btn"));
+      // Remount open modal
+      rerender(<Wrapper key="reopened" />);
       expect(screen.getByTestId("user-settings-modal")).toBeDefined();
 
       // 2. Switch to IDE_MCP_KEYS tab and modify slug -> dirty state
@@ -317,10 +307,9 @@ describe("RGAA Modal & Popup Accessibility — Escape, Cancel, Unsaved Changes G
         screen.queryByTestId("user-settings-modal-unsaved-changes-alert"),
       ).toBeNull();
 
-      // 3. Focus Valider button and press Enter -> saves and closes modal
-      const submitBtn = screen.getByTestId("user-settings-modal-submit-btn");
-      submitBtn.focus();
-      fireEvent.keyDown(submitBtn, { key: "Enter" });
+      // Discard and close via confirm button
+      fireEvent.keyDown(window, { key: "Escape" });
+      fireEvent.click(screen.getByTestId("user-settings-modal-unsaved-discard-btn"));
       expect(screen.queryByTestId("user-settings-modal")).toBeNull();
     });
   });

@@ -15,6 +15,7 @@ from orcia_api.dependencies import (
 )
 from orcia_api.routers._auth_pg_helpers import set_auth_refresh_cookie
 from orcia_api.routers._auth_policy_runtime import resolve_auth_policy_runtime
+from orcia_api.routers._bootstrap_evaluator_sync import sync_setup_snapshot_to_evaluator
 from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.schemas import bootstrap as bs
 from orcia_core import bootstrap as bm
@@ -24,7 +25,11 @@ from orcia_core.bootstrap import (
 )
 from orcia_core.bootstrap.errors import OrciaDomainError
 from orcia_core.observability.logging import get_current_trace_id, get_logger
-from orcia_core.orchestration import LlmProtocolMode, test_ai_model_endpoint_connection
+from orcia_core.orchestration import (
+    LlmProtocolMode,
+    build_default_orchestration_setup_service,
+    test_ai_model_endpoint_connection,
+)
 from orcia_core.permissions import UserIdentity
 from orcia_kernel.ids import new_uuid7_str
 
@@ -157,6 +162,9 @@ async def create_welcome_setup_first_admin(
         must_change_password=False,
     )
     auth_svc.register_user(admin_user)
+    request.app.state.orchestration_service = build_default_orchestration_setup_service(
+        evaluator=auth_svc.evaluator,
+    )
     tokens = auth_svc.jwt_manager.issue_token_pair(
         user_id=admin_user.id,
         email=admin_user.email,
@@ -427,6 +435,7 @@ async def get_platform_setup_state(request: Request) -> bs.PlatformSetupStateRes
         )
     request.app.state.platform_setup_snapshot = snap
     _sync_accostage_from_snapshot(svc, snap)
+    sync_setup_snapshot_to_evaluator(request, snap, svc.first_admin)
     return _serialize_setup_snapshot(snap, _trace(request))
 
 
@@ -472,4 +481,5 @@ async def put_platform_setup_state(
     final_snap = saved or candidate
     request.app.state.platform_setup_snapshot = final_snap
     _sync_accostage_from_snapshot(svc, final_snap)
+    sync_setup_snapshot_to_evaluator(request, final_snap, svc.first_admin)
     return _serialize_setup_snapshot(final_snap, _trace(request))

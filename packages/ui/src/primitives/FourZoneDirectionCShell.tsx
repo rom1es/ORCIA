@@ -17,7 +17,7 @@ export type EightFixedMenuKey =
   | "spaces"
   | "finops"
   | "configuration"
-  | "help";
+  | "glossary";
 
 export interface EightFixedMenuEntrySpec {
   readonly key: EightFixedMenuKey;
@@ -34,7 +34,7 @@ export const DEFAULT_EIGHT_FIXED_MENU_ENTRIES: readonly EightFixedMenuEntrySpec[
   { key: "spaces", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.spaces, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.spaces); }, route: "/spaces" },
   { key: "finops", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.finops, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.finops); }, route: "/finops" },
   { key: "configuration", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.configuration, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.configuration); }, route: "/configuration" },
-  { key: "help", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.help, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.help); }, route: "/help" },
+  { key: "glossary", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.glossary, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.glossary); }, route: "/ontology" },
 ] as const;
 
 export type UiNotificationCenterItemKind =
@@ -75,6 +75,7 @@ export interface FourZoneDirectionCShellLabels {
   readonly helpColumnExpectedTitle: string;
   readonly helpColumnExpectedBody: string;
   readonly menuEntries: Record<EightFixedMenuKey, string>;
+  readonly organizationMenuLabel?: string;
   readonly activityMenuLabel?: string;
 }
 
@@ -86,14 +87,16 @@ export interface WorkspaceSwitcherOption {
 
 export interface FourZoneDirectionCShellProps {
   readonly activeMenuKey: EightFixedMenuKey;
+  readonly showOrganizationMenu?: boolean;
+  readonly organizationMenuActive?: boolean;
   readonly activityMenuActive?: boolean;
   readonly activeWorkspaceName: string;
   readonly activeScopeId?: string;
   readonly workspaceOptions?: readonly WorkspaceSwitcherOption[];
   readonly activePackKey: string;
   readonly availablePacks: readonly string[];
-  readonly userDisplayName: string;
-  readonly userHatLabel: string;
+  readonly userDisplayName?: string;
+  readonly userHatLabel?: string;
   readonly pendingDecisionsTotal: number;
   readonly notifications?: readonly UiNotificationCenterItem[];
   readonly onSelectNotification?: (item: UiNotificationCenterItem) => void;
@@ -102,6 +105,7 @@ export interface FourZoneDirectionCShellProps {
   readonly disabledMenuKeys?: Partial<Record<EightFixedMenuKey, string>>;
   readonly hiddenMenuKeys?: readonly EightFixedMenuKey[];
   readonly onSelectMenu: (key: EightFixedMenuKey, route: string) => void;
+  readonly onSelectOrganizationMenu?: (route: string) => void;
   readonly onSelectActivityMenu?: (route: string) => void;
   readonly onOpenWorkspaceSwitcher?: () => void;
   readonly onSelectWorkspace?: (scopeId: string) => void;
@@ -132,6 +136,8 @@ export function computeDefaultHelpColumnOpen(
 
 export function FourZoneDirectionCShell({
   activeMenuKey,
+  showOrganizationMenu = false,
+  organizationMenuActive = false,
   activityMenuActive = false,
   activeWorkspaceName,
   activeScopeId,
@@ -148,6 +154,7 @@ export function FourZoneDirectionCShell({
   disabledMenuKeys,
   hiddenMenuKeys,
   onSelectMenu,
+  onSelectOrganizationMenu,
   onSelectActivityMenu,
   onOpenWorkspaceSwitcher,
   onSelectWorkspace,
@@ -236,10 +243,6 @@ export function FourZoneDirectionCShell({
         notificationsOpen={notificationsOpen}
         onToggleNotifications={() => setNotificationsOpen((prev) => !prev)}
         effectiveNotificationCount={effectiveNotificationCount}
-        headerUserControl={headerUserControl}
-        onOpenUserDropdown={onOpenUserDropdown}
-        userDisplayName={userDisplayName}
-        userHatLabel={userHatLabel}
         labels={labels}
       />
 
@@ -262,6 +265,8 @@ export function FourZoneDirectionCShell({
           railCollapsed={railCollapsed}
           onToggleRailCollapsed={() => setRailCollapsed((prev) => !prev)}
           activeMenuKey={activeMenuKey}
+          showOrganizationMenu={showOrganizationMenu}
+          organizationMenuActive={organizationMenuActive}
           activityMenuActive={activityMenuActive}
           activePackKey={activePackKey}
           availablePacks={availablePacks}
@@ -269,6 +274,7 @@ export function FourZoneDirectionCShell({
           disabledMenuKeys={disabledMenuKeys}
           hiddenMenuKeys={hiddenMenuKeys}
           onSelectMenu={onSelectMenu}
+          onSelectOrganizationMenu={onSelectOrganizationMenu}
           onSelectActivityMenu={onSelectActivityMenu}
           onSelectPack={onSelectPack}
           sidebarSecondarySlot={sidebarSecondarySlot}

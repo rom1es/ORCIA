@@ -70,7 +70,7 @@ def parse_attached_workspaces_jsonb(raw: object) -> tuple[AttachedWorkspaceRef, 
 
 
 async def ensure_org_units_schema(conn: AsyncConnection) -> None:
-    """Ensure `lead_user_ids_jsonb` column exists idempotently."""
+    """Ensure `lead_user_ids_jsonb` & `ontology_lead_user_ids_jsonb` exist idempotently."""
     reg = (await conn.execute(sa.text("SELECT to_regclass('public.org_units')"))).scalar()
     if reg is None:
         return
@@ -78,7 +78,10 @@ async def ensure_org_units_schema(conn: AsyncConnection) -> None:
         sa.text(
             """
             ALTER TABLE org_units
-                ADD COLUMN IF NOT EXISTS lead_user_ids_jsonb JSONB NOT NULL DEFAULT '[]'::jsonb;
+                ADD COLUMN IF NOT EXISTS lead_user_ids_jsonb
+                JSONB NOT NULL DEFAULT '[]'::jsonb,
+                ADD COLUMN IF NOT EXISTS ontology_lead_user_ids_jsonb
+                JSONB NOT NULL DEFAULT '[]'::jsonb;
             """
         )
     )
@@ -99,7 +102,7 @@ async def load_all_nodes_and_workspaces(
                 """
                 SELECT o.id, o.slug, o.name, o.unit_type, o.parent_id,
                        o.billing_enabled, o.lead_user_id, o.member_user_ids_jsonb,
-                       o.lead_user_ids_jsonb,
+                       o.lead_user_ids_jsonb, o.ontology_lead_user_ids_jsonb,
                        COALESCE(ws.ws_cnt, 0) AS attached_ws_cnt,
                        COALESCE(ws.attached_ws_json, '[]'::jsonb) AS attached_ws_json
                 FROM org_units o
@@ -137,10 +140,11 @@ async def load_all_nodes_and_workspaces(
             lead_user_id=str(row[6]).strip() if row[6] else None,
             member_user_ids=parse_member_ids_jsonb(row[7]),
             lead_user_ids=parse_member_ids_jsonb(row[8]),
+            ontology_lead_user_ids=parse_member_ids_jsonb(row[9]),
         )
         nodes_by_id[uid] = node
-        ws_counts[uid] = int(row[9] or 0)
-        ws_refs_by_owner[uid] = parse_attached_workspaces_jsonb(row[10])
+        ws_counts[uid] = int(row[10] or 0)
+        ws_refs_by_owner[uid] = parse_attached_workspaces_jsonb(row[11])
     return nodes_by_id, ws_counts, ws_refs_by_owner
 
 
@@ -261,6 +265,11 @@ async def sync_platform_settings_org_units_if_present(
             "billingEnabled": item.billing_enabled,
             **({"leadUserId": item.lead_user_id} if item.lead_user_id else {}),
             **({"leadUserIds": list(item.lead_user_ids)} if item.lead_user_ids else {}),
+            **(
+                {"ontologyLeadUserIds": list(item.ontology_lead_user_ids)}
+                if item.ontology_lead_user_ids
+                else {}
+            ),
             **({"memberUserIds": list(item.member_user_ids)} if item.member_user_ids else {}),
         }
         for item in summaries
@@ -323,7 +332,7 @@ async def query_filtered_org_unit_summaries(
         SELECT o.id, o.slug, o.name, o.unit_type,
                CASE WHEN p.unit_type = 'ENTERPRISE' THEN NULL ELSE o.parent_id END AS parent_id,
                o.billing_enabled, o.lead_user_id, o.member_user_ids_jsonb,
-               o.lead_user_ids_jsonb,
+               o.lead_user_ids_jsonb, o.ontology_lead_user_ids_jsonb,
                COALESCE(ws.ws_cnt, 0) AS attached_ws_cnt,
                COALESCE(ws.attached_ws_json, '[]'::jsonb) AS attached_ws_json
         FROM org_units o
@@ -360,9 +369,10 @@ async def query_filtered_org_unit_summaries(
                 billing_enabled=bool(row[5]) if row[5] is not None else True,
                 lead_user_id=str(row[6]).strip() if row[6] else None,
                 member_user_ids=parse_member_ids_jsonb(row[7]),
-                attached_workspaces_count=int(row[9] or 0),
-                attached_workspaces=parse_attached_workspaces_jsonb(row[10]),
+                attached_workspaces_count=int(row[10] or 0),
+                attached_workspaces=parse_attached_workspaces_jsonb(row[11]),
                 lead_user_ids=parse_member_ids_jsonb(row[8]),
+                ontology_lead_user_ids=parse_member_ids_jsonb(row[9]),
             )
         )
     return summaries

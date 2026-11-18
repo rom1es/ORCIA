@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 11-17-2026 08:25
+last_updated: 11-18-2026 07:07
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -200,6 +200,14 @@ development_status:
   19-6-migration-alembic-suppression-hachage-sha256-prod-et-blocage-sans-modele: done
   19-7-reindexation-bloquante-idempotente-suivi-progression-et-verrouillage-assistant: done
   epic-19-retrospective: optional
+
+  # Epic 20 — Gouvernance Déléguée (« Mon Organisation » & Audit Scopé), Glossaire PG18 & ONTOLOGY_LEAD, Consolidation « Mon Compte » & Page « Profil »
+  epic-20: done
+  20-1-menu-mon-organisation-delegation-bu-team-lead-invitation-iam-et-audit-scope: done
+  20-2-menu-glossaire-persistance-ontologie-pg18-role-ontology-lead-et-promotions-l4-l1: done
+  20-3-suppression-login-top-right-popup-mon-compte-bas-gauche-et-modale-parametres-pg18: done
+  20-4-page-profil-utilisateur-kpis-tokens-series-populaires-et-telemetrie-assistant: done
+  epic-20-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
     title: "Politiques de restriction explicite (DENY prioritaire, INHERITANCE_BLOCK) sur sous-entités sensibles"
@@ -1168,7 +1176,7 @@ action_items:
     priority: P1
     depends_on: []
     owner: "Winston (Architect) / Sally (UX) / Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-17
     story_ref: "17-2-organigramme-hierarchique-indente-modales-edition-membres-et-facturation"
     tech_lead_report: "docs/implementation-artifacts/tech-lead-reports/2026-11-16-cadrage-delegation-hierarchique-bu-equipe-et-invitation-comptes-tech-lead-report.md"
@@ -1186,7 +1194,7 @@ action_items:
     priority: P3
     depends_on: []
     owner: "Sally (UX) / Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-17
     story_ref: "17-1-coquille-ui-direction-c-reset-boutons-icones-svg-filaires-et-5-onglets-configuration"
     tech_lead_report: "docs/implementation-artifacts/tech-lead-reports/2026-11-16-cadrage-delegation-hierarchique-bu-equipe-et-invitation-comptes-tech-lead-report.md"
@@ -1225,3 +1233,20 @@ action_items:
       le 2026-11-17 car ORCIA ne gère ni le code source ni le déploiement des applications représentées dans les Espaces (arbitrage Epics 14 & 18).
       Ce ticket conserve l'intention métier utile (qualification autonome d'incident depuis les logs et vérification post-résolution en boucle fermée)
       100 % dans le périmètre d'orchestration de contexte et de gouvernance d'ORCIA.
+  - id: ACTION_ITEM-20.1
+    title: "Heatmap d'activité des jetons sur 12 mois (Quotidienne / Hebdomadaire / Cumulé) et tableau des Statistiques détaillées d'orchestration sur /profile"
+    action: >
+      Enrichir la page `/profile` (UserProfileOverviewPage) et l'endpoint `GET /api/v1/users/me/profile-summary` avec la matrice Heatmap 12 mois
+      commutable (`Quotidienne`, `Hebdomadaire`, `Cumulé`) ainsi que le tableau des statistiques détaillées d'orchestration
+      (vitesse d'assistant, mode de raisonnement le plus utilisé, compétences explorées et total des compétences utilisées).
+    priority: P2
+    depends_on:
+      - 20-4-page-profil-utilisateur-kpis-tokens-series-populaires-et-telemetrie-assistant
+    owner: "Sally (UX) / Amelia (Dev)"
+    status: open
+    epic: epic-20
+    story_ref: "20-4-page-profil-utilisateur-kpis-tokens-series-populaires-et-telemetrie-assistant"
+    description: >
+      Suite à l'arbitrage utilisateur du 2026-11-17 sur la Story 20.4 (page `/profile` inspirée de ChatGPT), la carte identité, les 4 KPIs
+      (total tokens, pic tokens, série la plus longue, série en cours) et les éléments populaires sont livrés dans la Story 20.4, tandis que
+      la Heatmap 12 mois et le tableau de statistiques avancées sont planifiés en lot dédié `ACTION_ITEM-20.1`.

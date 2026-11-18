@@ -31,13 +31,10 @@ export function ShellContextualHelpColumn({
 }: ShellContextualHelpColumnProps): React.ReactElement {
   const effectiveRoute = pathname ?? "/cockpit";
   const roles = useAuthSessionStore((s) => s.roles);
-  const activeHat = useAuthSessionStore((s) => s.activeHat);
   const readOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
   const isAdmin =
     !readOnlyObserver &&
-    (roles.some((r) => r === "PLATFORM_ADMIN" || r === "ARCHITECT" || r === "TEAM_LEAD") ||
-      activeHat === "PLATFORM_ADMIN" ||
-      activeHat === "ARCHITECT");
+    roles.some((r) => r === "PLATFORM_ADMIN" || r === "ARCHITECT" || r === "TEAM_LEAD");
 
   const [resolvedArticle, setResolvedArticle] = useState<UiContextualHelpArticleView | null>(null);
   const [resolvedLayers, setResolvedLayers] = useState<readonly UiHelpArticleLayer[]>([

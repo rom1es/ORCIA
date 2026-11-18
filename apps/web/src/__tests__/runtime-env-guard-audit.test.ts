@@ -121,7 +121,7 @@ describe("garde jsdom supprimée & transport @orcia/api-client sous Vitest (TEST
     // La réhydratation par GET /api/v1/bootstrap/accostage-status restaure Claire Admin et ferme la modale Jour 0
     await waitFor(() => {
       expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
-      expect(screen.getByTestId("user-account-dropdown-trigger").textContent).toContain(
+      expect(screen.getByTestId("sidebar-open-my-account-btn").textContent).toContain(
         "Claire Admin",
       );
     });

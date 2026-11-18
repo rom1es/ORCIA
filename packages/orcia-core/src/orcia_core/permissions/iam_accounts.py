@@ -58,6 +58,7 @@ class IamAccountRecord:
     updated_at_iso: str = ""
     led_bu_ids: tuple[str, ...] = ()
     led_team_ids: tuple[str, ...] = ()
+    ontology_led_bu_ids: tuple[str, ...] = ()
 
 
 def validate_iam_roles(
@@ -230,6 +231,7 @@ class IamAccountsGovernanceService:
         status: IamAccountStatus = "ACTIVE",
         led_bu_ids: Sequence[str] | None = None,
         led_team_ids: Sequence[str] | None = None,
+        ontology_led_bu_ids: Sequence[str] | None = None,
         instance: str | None = None,
     ) -> IamAccountRecord:
         cleaned_name = display_name.strip()
@@ -266,8 +268,9 @@ class IamAccountsGovernanceService:
             status=status,
             created_at_iso=ts,
             updated_at_iso=ts,
-            led_bu_ids=tuple(str(x).strip() for x in (led_bu_ids or ()) if str(x).strip()),
-            led_team_ids=tuple(str(x).strip() for x in (led_team_ids or ()) if str(x).strip()),
+            led_bu_ids=normalize_team_ids(led_bu_ids),
+            led_team_ids=normalize_team_ids(led_team_ids),
+            ontology_led_bu_ids=normalize_team_ids(ontology_led_bu_ids),
         )
         self._accounts[created.id] = created
         return created
@@ -284,6 +287,7 @@ class IamAccountsGovernanceService:
         status: IamAccountStatus | None = None,
         led_bu_ids: Sequence[str] | None = None,
         led_team_ids: Sequence[str] | None = None,
+        ontology_led_bu_ids: Sequence[str] | None = None,
         instance: str | None = None,
     ) -> IamAccountRecord:
         target = self._accounts.get(account_id)
@@ -307,14 +311,15 @@ class IamAccountsGovernanceService:
         next_teams = normalize_team_ids(team_ids) if team_ids is not None else target.team_ids
         next_status = status if status is not None else target.status
         next_led_bu = (
-            tuple(str(x).strip() for x in led_bu_ids if str(x).strip())
-            if led_bu_ids is not None
-            else target.led_bu_ids
+            normalize_team_ids(led_bu_ids) if led_bu_ids is not None else target.led_bu_ids
         )
         next_led_teams = (
-            tuple(str(x).strip() for x in led_team_ids if str(x).strip())
-            if led_team_ids is not None
-            else target.led_team_ids
+            normalize_team_ids(led_team_ids) if led_team_ids is not None else target.led_team_ids
+        )
+        next_onto_bu = (
+            normalize_team_ids(ontology_led_bu_ids)
+            if ontology_led_bu_ids is not None
+            else target.ontology_led_bu_ids
         )
 
         mutated = replace(
@@ -326,6 +331,7 @@ class IamAccountsGovernanceService:
             status=next_status,
             led_bu_ids=next_led_bu,
             led_team_ids=next_led_teams,
+            ontology_led_bu_ids=next_onto_bu,
             updated_at_iso=now_utc_iso(),
         )
         assert_anti_lockout_on_accounts(

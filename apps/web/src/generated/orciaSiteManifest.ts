@@ -6,18 +6,18 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-17",
+  "lastSyncedDate": "2026-11-18",
   "stats": {
-    "activeRoutesCount": 26,
-    "uiPrimitivesCount": 126,
+    "activeRoutesCount": 28,
+    "uiPrimitivesCount": 133,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 51,
+    "alembicMigrationsCount": 54,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 158,
-    "capabilitiesCount": 63,
-    "liveCapabilitiesCount": 63,
-    "verifiedCapabilitiesCount": 48
+    "techLeadReportsCount": 163,
+    "capabilitiesCount": 65,
+    "liveCapabilitiesCount": 65,
+    "verifiedCapabilitiesCount": 50
   },
   "activeRoutes": [
     "/",
@@ -34,9 +34,11 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "/inbox",
     "/login",
     "/ontology",
+    "/organization",
     "/processes",
     "/processes/studio/$workflowId",
     "/processes/vsm/$vsmId",
+    "/profile",
     "/settings",
     "/settings/ai-models",
     "/settings/packs",
@@ -155,6 +157,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "ScopeSwitcher",
     "ScopedPromptBox",
     "SecretField",
+    "SidebarAccountPopover",
     "SkillDetailAndSandboxModal",
     "SkillStudioCardItem",
     "SourceLineInspectorDrawer",
@@ -166,8 +169,14 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "TopHeaderBar",
     "TopHeaderSearchCommand",
     "UpstreamChallengeRewindModal",
-    "UserAccountDropdownAndSettingsModal",
     "UserPasswordChangeCard",
+    "UserProfileOverviewPage",
+    "UserSettingsGeneralTab",
+    "UserSettingsMcpTokensTab",
+    "UserSettingsModalDialog",
+    "UserSettingsPassthroughTab",
+    "UserSettingsPersonalizationTab",
+    "UserSettingsProfileTab",
     "WorkflowStudioSection",
     "WorkflowTriggersModal",
     "WorkspaceAssistantPinnedCard",
@@ -238,7 +247,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261117_0702_story_7_2_triggers_outbox_and_optin_help",
     "20261117_0704_story_7_4_post_hoc_audit_and_kill_switch",
     "20261117_0705_epic7_review_fk_constraints",
-    "20261117_1601_merge_epic7_and_epic16_heads"
+    "20261117_1601_merge_epic7_and_epic16_heads",
+    "20261117_2001_story_20_1_ontology_leads_and_platform_roles",
+    "20261117_2002_story_20_2_ontology_pg18_and_promotions",
+    "20261117_2003_story_20_3_user_preferences_and_mcp_tokens_pg18"
   ],
   "architectureDecisions": [
     {
@@ -517,6 +529,41 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Epic 20 VALIDATE (CAP-010, CAP-030, CAP-034, CAP-036, CAP-202)",
+      "reportFile": "2026-11-18-epic-20-validate-fixes-tech-lead-report.md",
+      "domain": "Correctifs Intégraux des 10 Findings (3 BLOCKING, 4 MAJOR, 3 MINOR) Revue VALIDATE Epic 20",
+      "summary": "Collision concept_key inter-périmètres (OntologyScopeConflictError HTTP 409 + slugifyScopedConceptKey), confinement canonique target_scope_id (403) + auth/filtrage GET /ontology-rag/state + confinement POST /ontology/promote, garde PLATFORM_ADMIN/SECOPS sur GET /settings/iam/accounts, fail-closed L4 + audit_ledger (workspace_id/org_unit_id stricts), façade orcia_core.ontology + MatrixPermissionEvaluator.list_memberships(), union governed_bu_ids \\"
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 20.4 (CAP-065, CAP-069)",
+      "reportFile": "20-4-page-profil-utilisateur-kpis-tokens-series-populaires-et-telemetrie-assistant-tech-lead-report.md",
+      "domain": "Page Dédiée « Mon Profil » (/profile, Style ChatGPT : Identité, 4 KPIs Tokens/Séries & Éléments Populaires) & Télémétrie Tokens de Mon Assistant",
+      "summary": "Télémétrie tokens Mon Assistant (stream_options: {\"include_usage\": true} + extraction usage/usageMetadata + repli déterministe estimated dans _assistant_usage_telemetry.py et persistance ASSISTANT_TURN_COMPLETED dans audit_ledger), noyau pur user_profile_service.py (compute_activity_streaks), requêtes PG18 confinées sql_user_profile_stats.py + _sql_user_profile_orgs.py, routeur GET /api/v1/users/me/profile-summary (user_profile.py, anti-IDOR), SDK OpenAPI 0-diff (getUserProfileSummary), primitive @orcia/ui UserProfileOverviewPage + apps/web/src/routes/profile.tsx (avatar initiales 64px, @handle · email, badges rôles/BU/équipes, bouton Modifier ouvrant ACCOUNT_SECURITY, 4 KPIs, Top 5 éléments populaires ou état vide Jour 0, survie F5), tests unitaires, sécurité (401/anti-IDOR), testcontainers PG18, Vitest & CAP-069 (site:check)."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 20.3 (CAP-060, CAP-063, CAP-064, CAP-100)",
+      "reportFile": "20-3-suppression-login-top-right-popup-mon-compte-bas-gauche-et-modale-parametres-pg18-tech-lead-report.md",
+      "domain": "Suppression Login Top-Right, Fin du Faux Sélecteur Rôle, Popup « Mon Compte » Bas-Gauche (Style ChatGPT) & Modale Unifiée « Paramètres » 5 Onglets Persistée PG18",
+      "summary": "Migration réversible 20261117_2003 (user_preferences, user_mcp_tokens SHA-256 + 09_reset_db_first_boot.py), _mcp_token_helpers.py (pat_mcp_<secrets.token_urlsafe(24)>, suppression totale \"pat_mcp_9a8b7c6d5e4f3a2b1c0d\"), adaptateur PG18 bootstrap/_internal/sql_user_preferences*.py (97 % couv.), routeur user_account_settings.py + SDK OpenAPI 0-diff, suppression contrôle Login/Compte top-right (FourZoneTopHeaderSection), fin du faux sélecteur dropdown-hat-selector (settingsRbacResolver évalué sur union session.roles), SidebarAccountPopover bas-gauche style ChatGPT + modale 5 onglets verticaux (UserSettingsModalDialog), correction UX-AUTH-DOUBLE-ICON-01 (TemporaryPasswordWarningBanner), stub /profile, validation 5 couches AD-17 (testcontainers PG18, isolation MCP 403/404, Turbo 9/9 151/151 web + 110/110 ui)."
+    },
+    {
+      "date": "2026-11-18",
+      "phaseOrStory": "Story 20.2 (CAP-010, CAP-060, CAP-064)",
+      "reportFile": "20-2-menu-glossaire-persistance-ontologie-pg18-role-ontology-lead-et-promotions-l4-l1-tech-lead-report.md",
+      "domain": "Menu « Glossaire » (/ontology), Séparation /help, Persistance PG18 Ontologie, Rôle ONTOLOGY_LEAD & Promotions Palier par Palier (L4 -> L3 -> L2 -> L1)",
+      "summary": "Migration réversible 20261117_2002 (4_WORKSPACE + colonnes de workflow de promotion & 09_reset_db_first_boot.py), module pur ontology/permissions.py + adaptateur PG18 _internal/sql_ontology_*.py (96,69 % couv.), routeur ontology_promotions.py + SDK OpenAPI 0-diff, renommage entrée gauche Glossaire -> /ontology (sans /showcase ni aide) et séparation /help, onglet Propositions à valider (N) avec alerte de collision, survie au F5 sur /ontology et WorkspaceGlossaryAndOntologyTab, et validation 5 couches AD-17 (testcontainers PG18, RBAC 403/422, Turbo 9/9, site:check 64/64)."
+    },
+    {
+      "date": "2026-11-17",
+      "phaseOrStory": "Story 20.1 (CAP-203, CAP-050, CAP-051, CAP-058, CAP-065, CAP-067)",
+      "reportFile": "20-1-menu-mon-organisation-delegation-bu-team-lead-invitation-iam-et-audit-scope-tech-lead-report.md",
+      "domain": "Menu Dédié « Mon Organisation » (/organization), Délégation Stricte BU_LEAD / TEAM_LEAD, Invitation IAM Scopée, Rôle ONTOLOGY_LEAD & Journal d'Activité Filtré par Périmètre",
+      "summary": "Migration 20261117_2001 (ONTOLOGY_LEAD sur BU + index audit_ledger.org_unit_id), entrée gauche /organization sous « Mes Espaces » (/settings ramené à 5 onglets), gouvernance sous-arbre (org_delegation* 96,93 % couv.) avec invitation scopée POST /api/v1/org-units/invite-user, synchronisation B1 ONTOLOGY_LEAD, journalisation org_unit_id et filtrage strict /activity sans Plateforme entière hors Admin/SecOps, validation PG18 testcontainers, Vitest (F5) et 0 finding lint_spine."
+    },
     {
       "date": "2026-11-17",
       "phaseOrStory": "Ajustement Transverse (CAP-160, CAP-200, CAP-201, CAP-202)",

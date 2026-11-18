@@ -464,7 +464,7 @@ def test_org_units_router_crud_hierarchy_rbac_and_errors(monkeypatch: pytest.Mon
         json={"name": "Refusé"},
     )
     assert member_persona.status_code == 403
-    assert member_persona.json()["error_code"] == "ERR_SCOPE_ACCESS_DENIED"
+    assert member_persona.json()["error_code"] == "ERR_ORG_UNIT_SCOPE_FORBIDDEN"
 
     # Non-empty deletion guard: Sub-BU has child TEAM -> 409 ERR_ORG_UNIT_NOT_EMPTY
     del_non_empty = client.delete(f"/api/v1/org-units/{sub_id}", headers=admin_headers)
@@ -498,7 +498,7 @@ def test_list_org_units_search_query_kind_and_limit(
     monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
     app = create_app()
     client = TestClient(app)
-    admin_headers = {"X-Orcia-Persona": "claire", "X-Orcia-Active-Hat": "PLATFORM_ADMIN"}
+    admin_headers = {"X-Orcia-Persona": "karim"}
 
     # Create 12 BU units + 2 TEAM units
     for i in range(12):
@@ -546,7 +546,7 @@ def test_search_known_org_users_route_with_nfd_null_byte_and_pagination(
     monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
     app = create_app()
     client = TestClient(app)
-    admin_headers = {"X-Orcia-Persona": "claire", "X-Orcia-Active-Hat": "PLATFORM_ADMIN"}
+    admin_headers = {"X-Orcia-Persona": "karim"}
 
     # 1. Unfiltered search with limit=2 -> has_more is True if > 2 users exist
     resp = client.get("/api/v1/org-units/known-users?limit=2", headers=admin_headers)

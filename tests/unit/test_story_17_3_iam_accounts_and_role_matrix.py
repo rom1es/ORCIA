@@ -69,20 +69,22 @@ def test_story_17_3_hexagonal_purity_permissions_package() -> None:
                 assert node.module.split(".")[0] not in FORBIDDEN_IMPORTS
 
 
-def test_story_17_3_closed_six_roles_and_matrix_invariants() -> None:
+def test_story_17_3_closed_seven_roles_and_matrix_invariants() -> None:
     assert VALID_IAM_ROLES == (
         "PLATFORM_ADMIN",
         "SECOPS",
         "BU_LEAD",
         "TEAM_LEAD",
+        "ONTOLOGY_LEAD",
         "CONTRIBUTOR",
         "OBSERVER",
     )
     assert set(DEFAULT_ROLE_PERMISSION_MATRIX.keys()) == set(VALID_IAM_ROLES)
     assert "BU_LEAD" in DEFAULT_ROLE_PERMISSION_MATRIX
+    assert "ONTOLOGY_LEAD" in DEFAULT_ROLE_PERMISSION_MATRIX
 
     matrix_list = list_native_role_matrix()
-    assert len(matrix_list) == 6
+    assert len(matrix_list) == 7
     for entry in matrix_list:
         assert entry.secret_visibility == "WRITE_ONLY_NEVER_READABLE"  # pragma: allowlist secret
         assert set(entry.resource_permissions.keys()) == {
@@ -92,6 +94,8 @@ def test_story_17_3_closed_six_roles_and_matrix_invariants() -> None:
             "connectors",
             "org_units",
             "iam_exceptions",
+            "ontology_concepts",
+            "glossary_promotions",
         }
 
     bu_lead_entry = DEFAULT_ROLE_PERMISSION_MATRIX["BU_LEAD"]
@@ -284,8 +288,12 @@ def test_story_17_3_http_endpoints_in_memory_fallback_and_observer_guard(
     assert matrix_json["secret_visibility_policy"] == expected_policy
     assert [r["role"] for r in matrix_json["roles"]] == list(VALID_IAM_ROLES)
 
-    # 2. GET /api/v1/settings/iam/accounts auto-seeds Day-0 admin with PLATFORM_ADMIN + SECOPS
-    list_resp = client.get("/api/v1/settings/iam/accounts")
+    # 2. GET /api/v1/settings/iam/accounts is restricted to PLATFORM_ADMIN / SECOPS (403 else)
+    forbidden_list = client.get("/api/v1/settings/iam/accounts")
+    assert forbidden_list.status_code == 403
+    assert forbidden_list.json()["error_code"] == "ERR_SCOPE_ACCESS_DENIED"
+
+    list_resp = client.get("/api/v1/settings/iam/accounts", params={"persona_key": "karim"})
     assert list_resp.status_code == 200
     accounts = list_resp.json()["accounts"]
     assert len(accounts) >= 1
@@ -293,8 +301,16 @@ def test_story_17_3_http_endpoints_in_memory_fallback_and_observer_guard(
     assert "PLATFORM_ADMIN" in day0["roles"]
     assert "SECOPS" in day0["roles"]
 
-    # 3. Anti-lockout over HTTP returns 422 ERR_ADMIN_LOCKOUT_PREVENTED
-    lockout_resp = client.delete(f"/api/v1/settings/iam/accounts/{day0['id']}")
+    # 3. Non-admin (default BU_DIRECTOR) is rejected with 403 ERR_SCOPE_ACCESS_DENIED;
+    #    PLATFORM_ADMIN gets 422 ERR_ADMIN_LOCKOUT_PREVENTED
+    non_admin_del = client.delete(f"/api/v1/settings/iam/accounts/{day0['id']}")
+    assert non_admin_del.status_code == 403
+    assert non_admin_del.json()["error_code"] == "ERR_SCOPE_ACCESS_DENIED"
+
+    lockout_resp = client.delete(
+        f"/api/v1/settings/iam/accounts/{day0['id']}",
+        params={"persona_key": "karim"},
+    )
     assert lockout_resp.status_code == 422
     assert lockout_resp.json()["error_code"] == "ERR_ADMIN_LOCKOUT_PREVENTED"
 

@@ -11,7 +11,9 @@ import { FINOPS_FR_LABELS } from "./finops_labels";
 import { GATES_AND_INBOX_FR_LABELS } from "./gates_and_inbox_labels";
 import { GOVERNANCE_AND_PACKS_FR_LABELS } from "./governance_and_packs_labels";
 import { INBOX_AND_COCKPIT_FR_LABELS } from "./inbox_and_cockpit_labels";
+import { ONTOLOGY_GLOSSARY_FR } from "./ontology_glossary_labels";
 import { PROCESS_ORCHESTRATION_MODES_FR_LABELS } from "./process_orchestration_modes_labels";
+import { PROFILE_OVERVIEW_FR_LABELS } from "./profile_overview_labels";
 import { REFLEXIVE_TRACE_AND_INSPECTOR_FR_LABELS } from "./reflexive_trace_and_inspector_labels";
 import { SHELL_AND_SEARCH_FR_LABELS } from "./shell_and_search_labels";
 import { WORKFLOW_TRIGGERS_FR_LABELS } from "./workflow_triggers_labels";
@@ -278,6 +280,8 @@ export const frDictionary: TranslationDictionary = {
     staleAlertsTitle: "Surveillance de l'Actualité des Documents",
     docObsoleteBadgeLabel: "Mise à jour recommandée",
   },
+  ontologyGlossary: ONTOLOGY_GLOSSARY_FR,
+  profileOverview: PROFILE_OVERVIEW_FR_LABELS,
   modulePages: {
     cockpit: {
       subtitle: "Votre tableau de bord des décisions et actions prioritaires",

@@ -24,10 +24,10 @@ from orcia_core.permissions.models import (
 )
 
 ADMIN_MODULE_ALLOWED_ROLES: frozenset[PlatformRole] = frozenset(
-    {"PLATFORM_ADMIN", "BU_DIRECTOR", "TEAM_LEAD"}
+    {"PLATFORM_ADMIN", "BU_DIRECTOR", "BU_LEAD", "TEAM_LEAD"}
 )
 ROLLUP_SUPERVISOR_ROLES: frozenset[PlatformRole] = frozenset(
-    {"PLATFORM_ADMIN", "BU_DIRECTOR", "TEAM_LEAD"}
+    {"PLATFORM_ADMIN", "BU_DIRECTOR", "BU_LEAD", "TEAM_LEAD"}
 )
 
 
@@ -114,6 +114,10 @@ class MatrixPermissionEvaluator:
     def upsert_membership(self, mem: WorkspaceMembershipEntity) -> None:
         kept = [m for m in self._memberships if (m.workspace_id, m.user_id) != (mem.workspace_id, mem.user_id)]  # noqa: E501  # fmt: skip
         self._memberships = (*kept, mem)
+
+    def list_memberships(self) -> tuple[WorkspaceMembershipEntity, ...]:
+        """Return all workspace membership records tracked by this evaluator."""
+        return self._memberships
 
     def has_org_unit(self, org_unit_id: str) -> bool:
         return org_unit_id in self._org_units_by_id
@@ -255,7 +259,10 @@ class MatrixPermissionEvaluator:
             and entry.grantee_transverse_group in user.transverse_groups
         ):
             return True
-        if entry.visibility_scope == "PENDING_APPROVAL" and user.platform_role == "BU_DIRECTOR":
+        if entry.visibility_scope == "PENDING_APPROVAL" and user.platform_role in (
+            "BU_DIRECTOR",
+            "BU_LEAD",
+        ):
             return True
         ws_scoped = entry.visibility_scope == "SHARED_WORKSPACE" or (
             entry.visibility_scope == "DRAFT" and entry.owner_workspace_id is not None
@@ -325,7 +332,7 @@ class MatrixPermissionEvaluator:
         user: UserIdentity, *, scope_level: str | None = None, has_workspaces: bool = True
     ) -> dict[str, bool]:
         is_admin = user.platform_role in ADMIN_MODULE_ALLOWED_ROLES
-        is_supervisor_or_admin = is_admin or user.platform_role == "BU_DIRECTOR"
+        is_supervisor_or_admin = is_admin or user.platform_role in ("BU_DIRECTOR", "BU_LEAD")
         return {
             "cockpit": True,
             "inbox": has_workspaces,

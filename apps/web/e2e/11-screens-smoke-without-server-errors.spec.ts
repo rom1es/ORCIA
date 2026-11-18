@@ -8,12 +8,14 @@ import {
 
 const SCREENS: ReadonlyArray<{ route: string; testId: string }> = [
   { route: "/cockpit", testId: "four-zone-central-workspace" },
-  { route: "/configuration", testId: "settings-organization-section" },
+  { route: "/organization", testId: "settings-organization-section" },
+  { route: "/configuration", testId: "settings-iam-section" },
   { route: "/ontology", testId: "four-zone-central-workspace" },
   { route: "/catalog", testId: "four-zone-central-workspace" },
   { route: "/activity", testId: "four-zone-central-workspace" },
   { route: "/finops", testId: "four-zone-central-workspace" },
   { route: "/help", testId: "four-zone-central-workspace" },
+  { route: "/profile", testId: "user-profile-overview-page" },
 ];
 
 test.describe("TEST-06 · 11 — Écrans Configuration, Ontologie, Catalogue, Activité, Coûts & /login : zéro 4xx/5xx", () => {

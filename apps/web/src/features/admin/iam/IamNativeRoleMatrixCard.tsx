@@ -53,6 +53,13 @@ const DEFAULT_FALLBACK_ROWS: readonly FallbackMatrixRow[] = [
     orgIamVerbs: ["read", "update", "grant"],
   },
   {
+    role: "ONTOLOGY_LEAD",
+    naturalScope: "BU",
+    workflowsVerbs: ["read"],
+    connectorsVerbs: ["read"],
+    orgIamVerbs: ["read"],
+  },
+  {
     role: "CONTRIBUTOR",
     naturalScope: "WORKSPACE",
     workflowsVerbs: ["create", "read", "update", "execute"],
@@ -80,6 +87,7 @@ export function IamNativeRoleMatrixCard({
     SECOPS: mat.summarySecurityAudit,
     BU_LEAD: mat.summaryBuSupervision,
     TEAM_LEAD: mat.summaryTeamLead,
+    ONTOLOGY_LEAD: mat.summaryOntologyLead,
     CONTRIBUTOR: mat.summaryContributor,
     OBSERVER: mat.summaryObserver,
   };

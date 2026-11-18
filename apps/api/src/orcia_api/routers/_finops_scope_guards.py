@@ -144,10 +144,14 @@ def user_governs_org_unit(
     """Return `True` if `user` has administrative or lead governance over `org_unit_id`."""
     if user.platform_role == "PLATFORM_ADMIN" or "PLATFORM_ADMIN" in user.roles:
         return True
-    if user.primary_org_unit_id == org_unit_id:
-        return user.platform_role in ("BU_DIRECTOR", "TEAM_LEAD")
-    if auth_svc.evaluator.is_ancestor_of(user.primary_org_unit_id, org_unit_id):
-        return user.platform_role in ("BU_DIRECTOR", "TEAM_LEAD")
+    governor_roles = {"BU_DIRECTOR", "BU_LEAD", "TEAM_LEAD"}
+    user_roles = {str(user.platform_role).upper(), *(str(r).upper() for r in user.roles)}
+    if user.primary_org_unit_id == org_unit_id and (user_roles & governor_roles):
+        return True
+    if auth_svc.evaluator.is_ancestor_of(user.primary_org_unit_id, org_unit_id) and (
+        user_roles & governor_roles
+    ):
+        return True
     for node in auth_svc.evaluator.org_units:
         extra = (node.lead_user_id,) if node.lead_user_id else ()
         leads = {x.lower() for x in (*node.lead_user_ids, *extra)}

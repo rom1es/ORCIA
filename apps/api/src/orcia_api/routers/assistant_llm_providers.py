@@ -12,10 +12,15 @@ from urllib.parse import urlparse
 
 import httpx
 
+from orcia_api.routers._assistant_usage_telemetry import (
+    extract_usage_tokens_from_payload,
+    resolve_usage_with_fallback,
+)
 from orcia_api.routers.assistant_llm_gemini_adapter import (
     _separate_think_tags as _separate_think_tags,
 )
 from orcia_api.routers.assistant_llm_gemini_adapter import (
+    build_anthropic_native_request_body,
     build_gemini_native_headers,
     build_gemini_native_request_body,
     extract_gemini_stream_chunk_deltas,
@@ -60,6 +65,9 @@ class ProviderChatTurnResponse:
     thinking_text: str
     latency_ms: float
     tool_calls: tuple[dict[str, Any], ...] = field(default_factory=tuple)
+    input_tokens: int = 0
+    output_tokens: int = 0
+    usage_source: str = "estimated"
 
 
 def is_safe_llm_endpoint_url(url: str) -> bool:
@@ -114,35 +122,12 @@ def build_provider_request_body(
     if is_google_gemini_native_provider(target_url, ep.provider):
         return build_gemini_native_request_body(messages, include_thoughts=True, tools=tools)
     if is_anthropic_provider(target_url, ep.provider):
-        sys_blocks = [str(m.get("content") or "") for m in messages if m.get("role") == "system"]
-        conv_msgs = [
-            {
-                "role": "assistant" if m.get("role") == "assistant" else "user",
-                "content": str(m.get("content") or ""),
-            }
-            for m in messages
-            if m.get("role") != "system"
-        ]
-        body: dict[str, Any] = {
-            "model": ep.model_name,
-            "max_tokens": 4096,
-            "messages": conv_msgs or [{"role": "user", "content": "Hello"}],
-            "stream": stream,
-        }
-        if sys_blocks:
-            body["system"] = "\n\n".join(sys_blocks)
-        if tools:
-            body["tools"] = [
-                {
-                    "name": t.get("function", {}).get("name", "tool"),
-                    "description": t.get("function", {}).get("description", ""),
-                    "input_schema": t.get("function", {}).get("parameters", {"type": "object"}),
-                }
-                for t in tools
-                if isinstance(t, dict)
-            ]
-        return body
+        return build_anthropic_native_request_body(
+            ep.model_name, messages, stream=stream, tools=tools
+        )
     payload: dict[str, Any] = {"model": ep.model_name, "messages": messages, "stream": stream}
+    if stream:
+        payload["stream_options"] = {"include_usage": True}
     if tools:
         payload["tools"] = tools
     return payload
@@ -230,7 +215,15 @@ async def invoke_provider_chat_async(
         clean_content, thinking_text, tool_calls = _parse_non_stream_json(data)
         if not clean_content and not tool_calls:
             return None
-        return ProviderChatTurnResponse(clean_content, thinking_text, elapsed_ms, tool_calls)
+        obs = extract_usage_tokens_from_payload(data)
+        in_tok, out_tok, u_src = resolve_usage_with_fallback(
+            messages=messages,
+            reply_text=f"{clean_content}\n{thinking_text}",
+            observed_input_tokens=obs[0] if obs else 0,
+            observed_output_tokens=obs[1] if obs else 0,
+            saw_provider_usage=obs is not None,
+        )
+        return ProviderChatTurnResponse(clean_content, thinking_text, elapsed_ms, tool_calls, in_tok, out_tok, u_src)  # fmt: skip  # noqa: E501
     except httpx.HTTPStatusError as exc:
         _log_provider_error("llm_provider_http_status_error", exc, ep, target_url, t0)
         return None
@@ -269,7 +262,7 @@ def _make_thinking_evt(delta: str, acc: list[str], t0: float) -> dict[str, Any]:
             "delta": delta,
             "thinking_text": "".join(acc),
             "elapsed_ms": round((time.perf_counter() - t0) * 1000.0, 2),
-        },
+        },  # fmt: skip  # noqa: E501
     }
 
 
@@ -290,6 +283,7 @@ async def stream_provider_chat_sse_async(
     )
     t0 = time.perf_counter()
     acc_content, acc_thinking, in_think = [], [], False
+    saw_usage, obs_in_tok, obs_out_tok = False, 0, 0
     try:
         async with http_client.stream("POST", target_url, json=body, headers=headers) as resp:
             resp.raise_for_status()
@@ -306,6 +300,10 @@ async def stream_provider_chat_sse_async(
                     continue
                 if not isinstance(chunk, dict):
                     continue
+                if (u_tok := extract_usage_tokens_from_payload(chunk)) is not None:
+                    saw_usage = True
+                    obs_in_tok = u_tok[0] if u_tok[0] > 0 else obs_in_tok
+                    obs_out_tok = u_tok[1] if u_tok[1] > 0 else obs_out_tok
                 c_delta, r_delta = _extract_stream_chunk_deltas(chunk)
                 if r_delta:
                     acc_thinking.append(r_delta)
@@ -329,12 +327,23 @@ async def stream_provider_chat_sse_async(
                             "event": "token_delta",
                             "data": {"delta": c_delta, "accumulated_text": "".join(acc_content)},
                         }
+        resp_txt, think_txt = "".join(acc_content), "".join(acc_thinking)
+        in_tok, out_tok, u_src = resolve_usage_with_fallback(
+            messages=messages,
+            reply_text=f"{resp_txt}\n{think_txt}",
+            observed_input_tokens=obs_in_tok,
+            observed_output_tokens=obs_out_tok,
+            saw_provider_usage=saw_usage,  # fmt: skip  # noqa: E501
+        )
         yield {
             "event": "turn_completed",
             "data": {
-                "response_text": "".join(acc_content),
-                "thinking_text": "".join(acc_thinking),
+                "response_text": resp_txt,
+                "thinking_text": think_txt,
                 "latency_ms": round((time.perf_counter() - t0) * 1000.0, 2),
+                "input_tokens": in_tok,
+                "output_tokens": out_tok,
+                "usage_source": u_src,
             },
         }
     except httpx.HTTPStatusError as exc:

@@ -22,7 +22,7 @@ from orcia_core.observability.errors import (
     UnsafeLogSinkUrlError,
     UnsupportedLogSinkBackendError,
 )
-from orcia_core.ontology.errors import OntologyConflictError
+from orcia_core.ontology.errors import OntologyConflictError, OntologyScopeConflictError
 from orcia_core.orchestration.ai_models_errors import (
     LastTierModelInUseError,
     ModelConnectionAuthFailedError,
@@ -117,6 +117,7 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     HumanAnchorRequiredError,
     ReadSourceDeniedError,
     ModelOrthogonalityViolationError,
+    OntologyScopeConflictError,
     OntologyConflictError,
     DdlOnlyTransactionalDataError,
     SubWorkflowMaxDepthExceededError,
@@ -240,6 +241,7 @@ __all__ = [
     "ModelOrthogonalityViolationError",
     "ObserverModeReadOnlyError",
     "OntologyConflictError",
+    "OntologyScopeConflictError",
     "OrciaDomainError",
     "OrgUnitBuMembersForbiddenError",
     "OrgUnitDuplicateSlugError",

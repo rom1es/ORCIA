@@ -2,6 +2,17 @@
 
 from __future__ import annotations
 
+from orcia_core.ontology._internal.sql_ontology_mappers import load_org_and_workspaces_context
+from orcia_core.ontology._internal.sql_ontology_repository import (
+    create_proposal_pg,
+    decide_proposal_pg,
+    get_proposal_pg,
+    list_concepts_pg,
+    list_proposals_pg,
+    record_ontology_audit_event_pg,
+    upsert_concept_pg,
+)
+from orcia_core.ontology.errors import OntologyConflictError, OntologyScopeConflictError
 from orcia_core.ontology.impact_and_promotion import (
     ImpactSimulatorService,
     OntologyGovernanceService,
@@ -20,6 +31,18 @@ from orcia_core.ontology.models import (
     ResolvedOntologySnapshot,
     SnapshotBranchStatus,
     WhatIfImpactReport,
+)
+from orcia_core.ontology.permissions import (
+    assert_can_review_promotion,
+    assert_can_write_ontology_level,
+    can_read_ontology_item,
+    can_review_promotion_target,
+    can_write_ontology_level,
+    find_org_unit,
+    find_workspace,
+    is_observer_user,
+    resolve_next_promotion_target,
+    user_effective_roles,
 )
 from orcia_core.ontology.resolver import (
     OntologyHierarchyResolver,
@@ -220,17 +243,37 @@ __all__ = [
     "ImpactSimulatorService",
     "OntologyAxiomEntity",
     "OntologyConceptEntity",
+    "OntologyConflictError",
     "OntologyGovernanceService",
     "OntologyHierarchyResolver",
     "OntologyLevel",
     "OntologyPromotionProposal",
     "OntologyRelationEntity",
+    "OntologyScopeConflictError",
     "ProfileSemanticTranslator",
     "PromotionStatus",
     "ResolvedOntologySnapshot",
     "SnapshotBranchStatus",
     "WhatIfImpactReport",
+    "assert_can_review_promotion",
+    "assert_can_write_ontology_level",
     "build_empty_ontology_service",
     "build_ontology_resolution_cte_sql",
     "build_seeded_ontology_service",
+    "can_read_ontology_item",
+    "can_review_promotion_target",
+    "can_write_ontology_level",
+    "create_proposal_pg",
+    "decide_proposal_pg",
+    "find_org_unit",
+    "find_workspace",
+    "get_proposal_pg",
+    "is_observer_user",
+    "list_concepts_pg",
+    "list_proposals_pg",
+    "load_org_and_workspaces_context",
+    "record_ontology_audit_event_pg",
+    "resolve_next_promotion_target",
+    "upsert_concept_pg",
+    "user_effective_roles",
 ]

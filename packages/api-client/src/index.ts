@@ -14,6 +14,17 @@ import { createCodegraphMcpDomainClient } from "./domains/codegraphMcp";
 import { createEpics1To7OperationsDomainClient } from "./domains/epics1To7Operations";
 import { createFinopsDomainClient } from "./domains/finops";
 import {
+  createOntologyPromotionsDomainClient,
+  type OntologyConceptWithPermissionsItem,
+  type OntologyConceptsListResponse,
+  type OntologyPromotionCreateRequest,
+  type OntologyPromotionDecideRequest,
+  type OntologyPromotionDecideResponse,
+  type OntologyPromotionProposalDetailItem,
+  type OntologyPromotionsListResponse,
+  type WritableScopeOptionItem,
+} from "./domains/ontologyPromotions";
+import {
   createReflexiveExecutionDomainClient,
   type InspectSourceLinesParams,
 } from "./domains/reflexiveExecution";
@@ -37,6 +48,7 @@ import {
 } from "./helpers";
 
 export type * from "./generated/schema";
+export type { PopularUsageItemResponse, UserProfileSummaryResponse } from "./generated/user_profile";
 export {
   buildKnownOrgUsersQuery,
   buildOrgUnitsQuery,
@@ -51,6 +63,7 @@ export {
   createCodegraphMcpDomainClient,
   createEpics1To7OperationsDomainClient,
   createFinopsDomainClient,
+  createOntologyPromotionsDomainClient,
   createReflexiveExecutionDomainClient,
   createWorkflowsV2DomainClient,
   createWorkflowTriggersDomainClient,
@@ -62,7 +75,15 @@ export {
   type ListAuditLedgerParams,
   type ListKnownOrgUsersParams,
   type ListOrgUnitsParams,
+  type OntologyConceptWithPermissionsItem,
+  type OntologyConceptsListResponse,
+  type OntologyPromotionCreateRequest,
+  type OntologyPromotionDecideRequest,
+  type OntologyPromotionDecideResponse,
+  type OntologyPromotionProposalDetailItem,
+  type OntologyPromotionsListResponse,
   type SaveWorkflowV2Options,
+  type WritableScopeOptionItem,
   type OrciaApiClientOptions,
 };
 
@@ -99,6 +120,7 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
     ...createEpics1To7OperationsDomainClient(requestJson),
     ...createAgentsAndSkillsDomainClient(requestJson),
     ...createFinopsDomainClient(requestJson),
+    ...createOntologyPromotionsDomainClient(requestJson),
     ...createReflexiveExecutionDomainClient(requestJson, options.baseUrl),
     ...createWorkflowsV2DomainClient(requestJson),
     ...createWorkflowTriggersDomainClient(requestJson),

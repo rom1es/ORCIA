@@ -38,6 +38,13 @@ AUDITABLE_EVENT_TYPES: frozenset[str] = frozenset(
         "PostHocSampleSelected",
         "KillSwitchActivated",
         "AutonomousArtifactRolledBack",
+        "ORG_UNIT_CREATED",
+        "ORG_UNIT_UPDATED",
+        "ORG_UNIT_DELETED",
+        "IAM_ACCOUNT_CREATED",
+        "IAM_ACCOUNT_UPDATED",
+        "IAM_ACCOUNT_DELETED",
+        "IAM_ACCOUNT_INVITED",
     }
 )
 
@@ -173,6 +180,7 @@ def map_domain_event_to_ledger_entry(event: DomainEvent) -> FinopsCostLedgerEntr
     cas_refs: list[str] = [str(r) for r in cas_refs_raw] if isinstance(cas_refs_raw, list) else []
 
     scope_path = str(clean_payload.get("scope_path") or "GLOBAL")
+    org_unit_id = str(clean_payload["org_unit_id"]) if clean_payload.get("org_unit_id") else None
 
     return FinopsCostLedgerEntry(
         source_event_id=event.event_id,
@@ -184,6 +192,7 @@ def map_domain_event_to_ledger_entry(event: DomainEvent) -> FinopsCostLedgerEntr
         summary=summary,
         trace_id=event.trace_id,
         workspace_id=event.workspace_id,
+        org_unit_id=org_unit_id,
         scope_path=scope_path,
         run_id=event.run_id,
         root_run_id=str(clean_payload["root_run_id"]) if clean_payload.get("root_run_id") else None,

@@ -11,6 +11,10 @@ from typing import Any, Literal
 
 import httpx
 
+from orcia_api.routers._assistant_usage_telemetry import (
+    persist_assistant_turn_ledger_entry,
+    resolve_usage_with_fallback,
+)
 from orcia_api.routers.assistant_llm_providers import (
     ResolvedLiveLlmEndpoint,
     stream_provider_chat_sse_async,
@@ -143,6 +147,13 @@ async def run_and_consume_decoupled_turn_stream(
     conversation_history_count: int,
     folder_pinned_notes: str | None,
     thinking_effort: str | None,
+    user_id: str | None = None,
+    user_email: str | None = None,
+    user_display_name: str | None = None,
+    model_tier: str | None = None,
+    audit_ledger_sink: Any | None = None,
+    trace_id: str | None = None,
+    speed_mode: str | None = None,
 ) -> AsyncIterator[dict[str, Any]]:
     """Spawn a decoupled `asyncio.Task` producer and yield SSE events."""
     t0 = time.perf_counter()
@@ -155,6 +166,47 @@ async def run_and_consume_decoupled_turn_stream(
     )
     ACTIVE_WORKSPACE_TURNS[workspace_id] = bg_state
 
+    async def _finalize(
+        reply: str, thinking: str, obs_in_tok: int, obs_out_tok: int, saw_usage: bool, lat_ms: float
+    ) -> None:
+        record_prompt_telemetry_entry(
+            workspace_id=workspace_id,
+            turn_id=turn_id,
+            user_prompt=user_prompt,
+            assembled_system_prompt=system_msg,
+            conversation_history_count=conversation_history_count,
+            folder_pinned_notes=folder_pinned_notes,
+            thinking_text=thinking,
+            assistant_reply=reply,
+            model_label=ep.model_name if ep is not None else "Polyvalent",
+            thinking_effort=thinking_effort or "balanced",
+            thinking_elapsed_seconds=max(1, round(time.perf_counter() - t0)),
+        )
+        in_tok, out_tok, u_src = resolve_usage_with_fallback(
+            prompt_text=f"{system_msg}\n{user_prompt}",
+            reply_text=f"{reply}\n{thinking}",
+            observed_input_tokens=obs_in_tok,
+            observed_output_tokens=obs_out_tok,
+            saw_provider_usage=saw_usage,
+        )
+        await persist_assistant_turn_ledger_entry(
+            audit_ledger_sink=audit_ledger_sink,
+            user_id=user_id,
+            user_email=user_email,
+            user_display_name=user_display_name,
+            workspace_id=workspace_id,
+            turn_id=turn_id,
+            model_id=ep.model_name if ep is not None else "assistant-router",
+            inference_tier=model_tier or (ep.tier if ep is not None else None),
+            effort=thinking_effort or "balanced",
+            input_tokens=in_tok,
+            output_tokens=out_tok,
+            latency_ms=lat_ms,
+            usage_source=u_src,
+            trace_id=trace_id,
+            speed_mode=speed_mode,
+        )
+
     async def _producer() -> None:
         try:
             if ep is not None:
@@ -162,6 +214,7 @@ async def run_and_consume_decoupled_turn_stream(
                 messages = messages_builder()
                 tools = tools_builder()
                 emitted_tokens = False
+                obs_in, obs_out, obs_src, obs_lat = 0, 0, "estimated", 0.0
                 async for evt in stream_provider_chat_sse_async(
                     http_client, ep=ep, messages=messages, tools=tools or None
                 ):
@@ -175,6 +228,10 @@ async def run_and_consume_decoupled_turn_stream(
                     elif evt["event"] == "turn_completed":
                         data_dict["turn_id"] = turn_id
                         data_dict["assembled_system_prompt"] = system_msg
+                        obs_in = int(data_dict.get("input_tokens") or 0)
+                        obs_out = int(data_dict.get("output_tokens") or 0)
+                        obs_src = str(data_dict.get("usage_source") or "estimated")
+                        obs_lat = float(data_dict.get("latency_ms") or 0.0)
                         bg_state.streamed_text = str(
                             data_dict.get("response_text") or bg_state.streamed_text
                         )
@@ -184,18 +241,13 @@ async def run_and_consume_decoupled_turn_stream(
                     await notify_background_turn_event(bg_state, evt)
                 if emitted_tokens:
                     bg_state.status = "COMPLETED"
-                    record_prompt_telemetry_entry(
-                        workspace_id=workspace_id,
-                        turn_id=turn_id,
-                        user_prompt=user_prompt,
-                        assembled_system_prompt=system_msg,
-                        conversation_history_count=conversation_history_count,
-                        folder_pinned_notes=folder_pinned_notes,
-                        thinking_text=bg_state.thinking_text,
-                        assistant_reply=bg_state.streamed_text,
-                        model_label=ep.model_name,
-                        thinking_effort=thinking_effort or "balanced",
-                        thinking_elapsed_seconds=max(1, round(time.perf_counter() - t0)),
+                    await _finalize(
+                        bg_state.streamed_text,
+                        bg_state.thinking_text,
+                        obs_in,
+                        obs_out,
+                        obs_src == "provider",
+                        obs_lat or (time.perf_counter() - t0) * 1000.0,
                     )
                     return
                 if client_host != "testclient":
@@ -237,6 +289,11 @@ async def run_and_consume_decoupled_turn_stream(
                     },
                 )
             bg_state.status = "COMPLETED"
+            fb_in, fb_out, fb_src = resolve_usage_with_fallback(
+                prompt_text=f"{system_msg}\n{user_prompt}",
+                reply_text=f"{full_text}\n{default_thinking}",
+            )
+            fb_lat = round((time.perf_counter() - t0) * 1000.0, 2)
             await notify_background_turn_event(
                 bg_state,
                 {
@@ -246,21 +303,14 @@ async def run_and_consume_decoupled_turn_stream(
                         "response_text": full_text,
                         "thinking_text": default_thinking,
                         "assembled_system_prompt": system_msg,
-                        "latency_ms": round((time.perf_counter() - t0) * 1000.0, 2),
+                        "latency_ms": fb_lat,
+                        "input_tokens": fb_in,
+                        "output_tokens": fb_out,
+                        "usage_source": fb_src,
                     },
                 },
             )
-            record_prompt_telemetry_entry(
-                workspace_id=workspace_id,
-                turn_id=turn_id,
-                user_prompt=user_prompt,
-                assembled_system_prompt=system_msg,
-                conversation_history_count=conversation_history_count,
-                folder_pinned_notes=folder_pinned_notes,
-                thinking_text=default_thinking,
-                assistant_reply=full_text,
-                thinking_effort=thinking_effort or "balanced",
-            )
+            await _finalize(full_text, default_thinking, 0, 0, False, fb_lat)
         except asyncio.CancelledError:
             bg_state.status = "STOPPED"
             raise

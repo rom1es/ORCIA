@@ -26,8 +26,8 @@ async function mountSettingsHub(initialPath = "/settings") {
   return { view, router };
 }
 
-describe("Story 17.3 — Accounts Directory, Native 6-Role Matrix, SecOps Drawer & Zero Exposed Secrets", () => {
-  it("eradicates 'Lire / Voir les secrets', displays AD-21 Write-Only secret banner inside on-demand modal, and renders all 6 roles including BU_LEAD", async () => {
+describe("Story 17.3 — Accounts Directory, Native 7-Role Matrix, SecOps Drawer & Zero Exposed Secrets", () => {
+  it("eradicates 'Lire / Voir les secrets', displays AD-21 Write-Only secret banner inside on-demand modal, and renders all 7 roles including BU_LEAD & ONTOLOGY_LEAD", async () => {
     seedVitestPlatformSetupState(
       { org_units: [], rbac_grants: [], llm_tiers: [], workspaces: [] },
       { email: "claire.admin@orcia.fr", displayName: "Claire Fondatrice" },
@@ -59,12 +59,13 @@ describe("Story 17.3 — Accounts Directory, Native 6-Role Matrix, SecOps Drawer
     expect(secretBanner.textContent).toContain("saisie seule");
     expect(secretBanner.textContent).toContain("Aucun rôle");
 
-    // All 6 official roles including BU_LEAD are rendered inside the modal
+    // All 7 official roles including BU_LEAD & ONTOLOGY_LEAD are rendered inside the modal
     for (const roleKey of [
       "PLATFORM_ADMIN",
       "SECOPS",
       "BU_LEAD",
       "TEAM_LEAD",
+      "ONTOLOGY_LEAD",
       "CONTRIBUTOR",
       "OBSERVER",
     ]) {

@@ -6,6 +6,7 @@ Generates 12-char temporary passwords, computes Argon2id hashes, and enforces RB
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from fastapi import Request
@@ -21,7 +22,6 @@ from orcia_core.bootstrap import (
 )
 from orcia_core.observability.logging import get_logger
 from orcia_core.permissions import (
-    ADMIN_MODULE_ALLOWED_ROLES,
     AuthAndOrganizationService,
     IamAccountRecord,
     IamAccountsGovernanceService,
@@ -32,6 +32,7 @@ from orcia_core.permissions import (
 )
 from orcia_core.permissions.errors import (
     ObserverModeReadOnlyError,
+    PrivilegeEscalationForbiddenError,
     ResourceNotFoundError,
     ScopeAccessDeniedError,
     ValidationDomainError,
@@ -40,8 +41,16 @@ from orcia_core.permissions.errors import (
 logger = get_logger("orcia.api.iam.passwords")
 
 
-def enforce_iam_accounts_mutation_access(request: Request, persona_key: str | None) -> None:
-    """Reject `READ_ONLY_OBSERVER` (`403`) and unauthorized callers (`403`)."""
+_IAM_MUTATION_ROLES: frozenset[str] = frozenset({"PLATFORM_ADMIN", "SECOPS"})
+
+
+def enforce_iam_accounts_access(
+    request: Request,
+    persona_key: str | None,
+    *,
+    require_write: bool = True,
+) -> UserIdentity:
+    """Restrict IAM accounts endpoints to `PLATFORM_ADMIN` / `SECOPS` (`403` otherwise)."""
     access_mode_hdr = request.headers.get("x-orcia-access-mode", "").strip().upper()
     observer_hdr = request.headers.get("x-orcia-observer-mode", "").strip().lower()
     active_hat = request.headers.get("x-orcia-active-hat", "").strip().upper()
@@ -50,19 +59,64 @@ def enforce_iam_accounts_mutation_access(request: Request, persona_key: str | No
         or observer_hdr in ("1", "true", "yes")
         or active_hat == "OBSERVER"
     ):
-        raise ObserverModeReadOnlyError(instance=str(request.url.path))
-    if active_hat and active_hat not in (*ADMIN_MODULE_ALLOWED_ROLES, "SECOPS", "BU_LEAD"):
+        if require_write:
+            raise ObserverModeReadOnlyError(instance=str(request.url.path))
+        raise ScopeAccessDeniedError(instance=str(request.url.path))
+    if active_hat and active_hat not in _IAM_MUTATION_ROLES:
         raise ScopeAccessDeniedError(instance=str(request.url.path))
 
     effective_persona = persona_key or request.headers.get("x-orcia-persona", "").strip() or None
     user = resolve_request_user(request, persona_key=effective_persona)
-    if user.platform_role == "OBSERVER":
-        raise ObserverModeReadOnlyError(instance=str(request.url.path))
-    if (
-        user.platform_role not in ADMIN_MODULE_ALLOWED_ROLES
-        and user.human_profile_archetype != "SECOPS"
-    ):
+    if user.platform_role in ("OBSERVER", "READ_ONLY_OBSERVER"):
+        if require_write:
+            raise ObserverModeReadOnlyError(instance=str(request.url.path))
         raise ScopeAccessDeniedError(instance=str(request.url.path))
+    caller_roles = {r.strip().upper() for r in (user.platform_role, *user.roles) if r}
+    if not (caller_roles & _IAM_MUTATION_ROLES) and user.human_profile_archetype != "SECOPS":
+        raise ScopeAccessDeniedError(instance=str(request.url.path))
+    return user
+
+
+def enforce_iam_accounts_mutation_access(request: Request, persona_key: str | None) -> UserIdentity:
+    """Reject `READ_ONLY_OBSERVER` (`403`) and restrict IAM writes to `PLATFORM_ADMIN`/`SECOPS`."""
+    return enforce_iam_accounts_access(request, persona_key, require_write=True)
+
+
+def enforce_iam_accounts_read_access(request: Request, persona_key: str | None) -> UserIdentity:
+    """Restrict IAM directory read (`GET /settings/iam/accounts`) to `PLATFORM_ADMIN`/`SECOPS`."""
+    return enforce_iam_accounts_access(request, persona_key, require_write=False)
+
+
+def enforce_iam_anti_escalation(
+    caller: UserIdentity,
+    *,
+    existing_roles: Sequence[str] = (),
+    next_roles: Sequence[str] | None = None,
+    is_delete: bool = False,
+    instance: str | None = None,
+) -> None:
+    """Forbid a `SECOPS` caller without `PLATFORM_ADMIN` from managing `PLATFORM_ADMIN`."""
+    caller_roles = {r.strip().upper() for r in (caller.platform_role, *caller.roles) if r}
+    if "PLATFORM_ADMIN" in caller_roles:
+        return
+    existing_norm = {r.strip().upper() for r in existing_roles if r}
+    if is_delete and "PLATFORM_ADMIN" in existing_norm:
+        raise PrivilegeEscalationForbiddenError(
+            instance=instance,
+            detail_override=(
+                "Seul un Administrateur Plateforme peut supprimer un compte PLATFORM_ADMIN."
+            ),
+        )
+    if next_roles is not None:
+        next_norm = {r.strip().upper() for r in next_roles if r}
+        if ("PLATFORM_ADMIN" in next_norm) != ("PLATFORM_ADMIN" in existing_norm):
+            raise PrivilegeEscalationForbiddenError(
+                instance=instance,
+                detail_override=(
+                    "Seul un Administrateur Plateforme peut attribuer ou retirer "
+                    "le rôle PLATFORM_ADMIN."
+                ),
+            )
 
 
 def sync_in_memory_team_memberships(
@@ -87,6 +141,8 @@ def sync_in_memory_team_memberships(
                         parent_id=node.parent_id,
                         billing_enabled=node.billing_enabled,
                         lead_user_id=node.lead_user_id,
+                        lead_user_ids=node.lead_user_ids,
+                        ontology_lead_user_ids=node.ontology_lead_user_ids,
                         member_user_ids=next_members,
                     )
                 )
@@ -110,6 +166,8 @@ def sync_in_memory_team_memberships(
                 parent_id=node.parent_id,
                 billing_enabled=node.billing_enabled,
                 lead_user_id=node.lead_user_id,
+                lead_user_ids=node.lead_user_ids,
+                ontology_lead_user_ids=node.ontology_lead_user_ids,
                 member_user_ids=next_members,
             )
         )
@@ -122,6 +180,8 @@ async def provision_human_temporary_password(
     roles: list[str] | tuple[str, ...],
     auth_svc: AuthAndOrganizationService,
     engine: AsyncEngine | None,
+    *,
+    primary_org_unit_id: str | None = None,
 ) -> str:
     """Generate 12-char temporary password, persist to `users` with must_change_password=True."""
     temp_pw = generate_temporary_password(12)  # pragma: allowlist secret
@@ -136,6 +196,7 @@ async def provision_human_temporary_password(
                 roles=roles,
                 password_hash_argon2id=pw_hash,
                 must_change_password=True,
+                primary_org_unit_id=primary_org_unit_id,
             )
 
     platform_role = roles[0] if roles else "CONTRIBUTOR"
@@ -146,7 +207,7 @@ async def provision_human_temporary_password(
         auth_mode="LOCAL",
         human_profile_archetype="CONTRIBUTOR",
         platform_role=platform_role,  # type: ignore[arg-type]
-        primary_org_unit_id="0192c4e0-0000-7000-8000-000000000101",
+        primary_org_unit_id=primary_org_unit_id or "0192c4e0-0000-7000-8000-000000000101",
         password_hash_argon2id=pw_hash,
         must_change_password=True,
         roles=tuple(roles),

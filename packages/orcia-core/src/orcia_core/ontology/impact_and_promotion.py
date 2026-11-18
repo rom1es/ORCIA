@@ -5,10 +5,15 @@ Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`)
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+from dataclasses import replace
+
 from orcia_core.ontology.errors import (
     ObserverModeReadOnlyError,
     OntologyConflictError,
+    OntologyScopeConflictError,
     ResourceNotFoundError,
+    ScopeAccessDeniedError,
 )
 from orcia_core.ontology.models import (
     ONTOLOGY_LEVEL_PRIORITY,
@@ -20,8 +25,18 @@ from orcia_core.ontology.models import (
     ResolvedOntologySnapshot,
     WhatIfImpactReport,
 )
+from orcia_core.ontology.permissions import (
+    assert_can_review_promotion,
+    can_write_ontology_level,
+    user_effective_roles,
+)
 from orcia_core.ontology.resolver import OntologyHierarchyResolver
-from orcia_core.permissions.models import UserIdentity
+from orcia_core.permissions.models import (
+    OrgUnitNode,
+    UserIdentity,
+    WorkspaceEntity,
+    WorkspaceMembershipEntity,
+)
 from orcia_kernel.ids import new_uuid7_str
 
 
@@ -108,7 +123,7 @@ class ImpactSimulatorService:
 
 
 def _assert_mutable_actor(user: UserIdentity, instance: str) -> None:
-    if user.platform_role in ("OBSERVER", "BU_DIRECTOR"):
+    if str(user.platform_role).upper() in ("OBSERVER", "READ_ONLY_OBSERVER"):
         raise ObserverModeReadOnlyError(instance=instance)
 
 
@@ -176,8 +191,25 @@ class OntologyGovernanceService:
         self, user: UserIdentity, concept: OntologyConceptEntity
     ) -> OntologyConceptEntity:
         _assert_mutable_actor(user, "/api/v1/ontology-rag/ontology/concepts")
+        existing = self._concepts.get(concept.concept_key)
+        if existing is not None and (existing.level, existing.scope_id or "") != (
+            concept.level,
+            concept.scope_id or "",
+        ):
+            raise OntologyScopeConflictError(
+                detail_override=(
+                    f"La clé '{concept.concept_key}' appartient déjà au périmètre "
+                    f"({existing.level}, '{existing.scope_id}') et ne peut être écrasée "
+                    f"depuis ({concept.level}, '{concept.scope_id}')."
+                )
+            )
         self._concepts[concept.concept_key] = concept
         return concept
+
+    def save_proposal(self, proposal: OntologyPromotionProposal) -> OntologyPromotionProposal:
+        """Store or update an ontology promotion proposal in the service registry."""
+        self._proposals[proposal.proposal_key] = proposal
+        return proposal
 
     def extract_l4_concept(
         self,
@@ -270,6 +302,10 @@ class OntologyGovernanceService:
         user: UserIdentity,
         *,
         proposal_key: str,
+        org_units: Sequence[OrgUnitNode] = (),
+        workspaces: Sequence[WorkspaceEntity] = (),
+        memberships: Sequence[WorkspaceMembershipEntity] = (),
+        allow_fixture_fallback: bool = False,
     ) -> OntologyPromotionProposal:
         _assert_mutable_actor(user, "/api/v1/ontology-rag/ontology/promote")
 
@@ -278,12 +314,8 @@ class OntologyGovernanceService:
             raise ResourceNotFoundError(detail_override=f"Proposal '{proposal_key}' not found.")
         if proposal.status != "PENDING_REVIEW":
             raise OntologyConflictError(
-                detail_override=(
-                    f"Proposal '{proposal_key}' has status '{proposal.status}' "
-                    "and cannot be promoted."
-                )
+                detail_override=f"Proposal '{proposal_key}' has status '{proposal.status}'."
             )
-
         source_concept = self._concepts.get(proposal.concept_key)
         if source_concept is None:
             raise ResourceNotFoundError(
@@ -292,8 +324,7 @@ class OntologyGovernanceService:
         if source_concept.snapshot_branch_status != "ACTIVE":
             raise OntologyConflictError(
                 detail_override=(
-                    f"Concept '{source_concept.concept_key}' belongs to a SUPERSEDED branch "
-                    "and cannot be promoted."
+                    f"Concept '{source_concept.concept_key}' belongs to a SUPERSEDED branch."
                 )
             )
         if proposal.impact_report.has_immutable_axiom_conflict:
@@ -302,25 +333,93 @@ class OntologyGovernanceService:
                     f"Proposal '{proposal_key}' conflicts with an immutable parent axiom."
                 )
             )
-        if proposal.target_level in ("1_ENTERPRISE", "2_DOMAIN") and user.platform_role not in (
-            "SYSTEM_ADMIN",
-            "ONTOLOGY_STEWARD_L1_L2",
-        ):
-            raise OntologyConflictError(
-                detail_override=(
-                    f"Promotion to {proposal.target_level} requires SYSTEM_ADMIN or "
-                    "ONTOLOGY_STEWARD_L1_L2."
-                )
+        roles = user_effective_roles(user)
+        if proposal.target_level == "1_ENTERPRISE" and "PLATFORM_ADMIN" not in roles:
+            raise ScopeAccessDeniedError(
+                detail_override="Promotion to 1_ENTERPRISE requires PLATFORM_ADMIN."
             )
-
+        if org_units or workspaces:
+            if proposal.target_level in ("3_WORKSPACE", "4_WORKSPACE"):
+                allowed_ws = can_write_ontology_level(
+                    user,
+                    proposal.target_level,
+                    proposal.target_scope_id,
+                    org_units,
+                    workspaces,
+                    memberships,
+                    allow_ephemeral_fallback=(
+                        allow_fixture_fallback
+                        and proposal.target_scope_id == "ws-solution-paiement"
+                    ),
+                )
+                if not allowed_ws:
+                    raise ScopeAccessDeniedError(
+                        detail_override=(
+                            f"Validation refusée pour le palier {proposal.target_level} "
+                            f"({proposal.target_scope_id})."
+                        )
+                    )
+            else:
+                assert_can_review_promotion(
+                    user,
+                    proposal.target_level,
+                    proposal.target_scope_id,
+                    org_units,
+                    workspaces,
+                    instance="/api/v1/ontology-rag/ontology/promote",
+                )
+        else:
+            if proposal.target_level == "2_DOMAIN":
+                if not (roles & {"PLATFORM_ADMIN", "BU_LEAD", "BU_DIRECTOR", "ONTOLOGY_LEAD"}):
+                    raise ScopeAccessDeniedError(
+                        detail_override=(
+                            "Promotion to 2_DOMAIN requires PLATFORM_ADMIN, "
+                            "BU_LEAD, or ONTOLOGY_LEAD."
+                        )
+                    )
+                if (
+                    "PLATFORM_ADMIN" not in roles
+                    and user.primary_org_unit_id
+                    and proposal.target_scope_id != user.primary_org_unit_id
+                ):
+                    raise ScopeAccessDeniedError(
+                        detail_override=(
+                            f"Validation refusée pour le palier 2_DOMAIN "
+                            f"({proposal.target_scope_id})."
+                        )
+                    )
+            elif proposal.target_level == "3_TEAM":
+                team_review_roles = {
+                    "PLATFORM_ADMIN",
+                    "BU_LEAD",
+                    "BU_DIRECTOR",
+                    "ONTOLOGY_LEAD",
+                    "TEAM_LEAD",
+                }
+                if not (roles & team_review_roles):
+                    raise ScopeAccessDeniedError(
+                        detail_override=(
+                            "Promotion to 3_TEAM requires TEAM_LEAD, BU_LEAD, or ONTOLOGY_LEAD."
+                        )
+                    )
+                if (
+                    "PLATFORM_ADMIN" not in roles
+                    and user.primary_org_unit_id
+                    and proposal.target_scope_id != user.primary_org_unit_id
+                ):
+                    raise ScopeAccessDeniedError(
+                        detail_override=(
+                            f"Validation refusée pour le palier 3_TEAM "
+                            f"({proposal.target_scope_id})."
+                        )
+                    )
         if (
             ONTOLOGY_LEVEL_PRIORITY[proposal.target_level]
             >= ONTOLOGY_LEVEL_PRIORITY[proposal.source_level]
         ):
             raise OntologyConflictError(
                 detail_override=(
-                    f"Promotion target {proposal.target_level} must be a higher governance "
-                    f"level than {proposal.source_level}."
+                    f"Target {proposal.target_level} must outrank {proposal.source_level}."
                 )
             )
 
@@ -339,18 +438,6 @@ class OntologyGovernanceService:
             expected_schema=source_concept.expected_schema,
             snapshot_branch_status="ACTIVE",
         )
-        approved = OntologyPromotionProposal(
-            id=proposal.id,
-            proposal_key=proposal.proposal_key,
-            concept_key=proposal.concept_key,
-            canonical_term=proposal.canonical_term,
-            source_level=proposal.source_level,
-            target_level=proposal.target_level,
-            target_scope_id=proposal.target_scope_id,
-            proposed_by_user_id=proposal.proposed_by_user_id,
-            status="APPROVED",
-            impact_report=proposal.impact_report,
-            badge_color_token=proposal.badge_color_token,
-        )
+        approved = replace(proposal, status="APPROVED")
         self._proposals[proposal_key] = approved
         return approved

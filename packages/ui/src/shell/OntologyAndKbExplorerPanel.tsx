@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { OrciaIcon } from "../components/icons";
 import { StatusBadge } from "../primitives/StatusBadge";
+import { OntologyTripartiteAndStaleSection } from "./OntologyTripartiteAndStaleSection";
 import type {
   UiOntologyConceptView,
   UiOntologyExplorerLabels,
@@ -14,9 +14,10 @@ export interface OntologyAndKbExplorerPanelProps {
   tripartiteEdges: UiTripartiteEdgeView[];
   staleAlerts: UiStaleAlertView[];
   labels: UiOntologyExplorerLabels;
+  onProposePromotion?: (concept: UiOntologyConceptView) => void;
 }
 
-const ONTOLOGY_COLUMNS: UiOntologyLevel[] = [
+const ONTOLOGY_COLUMNS: Exclude<UiOntologyLevel, "4_WORKSPACE">[] = [
   "1_ENTERPRISE",
   "2_DOMAIN",
   "3_TEAM",
@@ -38,6 +39,7 @@ export function OntologyAndKbExplorerPanel({
   tripartiteEdges,
   staleAlerts,
   labels,
+  onProposePromotion,
 }: OntologyAndKbExplorerPanelProps) {
   const [selectedProfile, setSelectedProfile] = useState<string>("TECH_LEAD");
   const [selectedConcept, setSelectedConcept] = useState<UiOntologyConceptView | null>(
@@ -149,7 +151,15 @@ export function OntologyAndKbExplorerPanel({
             }}
           >
             {ONTOLOGY_COLUMNS.map((lvl) => {
-              const colConcepts = concepts.filter((c) => c.level === lvl);
+              const colConcepts = concepts.filter((c) =>
+                lvl === "3_WORKSPACE"
+                  ? c.level === "3_WORKSPACE" || c.level === "4_WORKSPACE"
+                  : c.level === lvl,
+              );
+              const columnLabel =
+                lvl === "3_WORKSPACE"
+                  ? (labels.columns["4_WORKSPACE"] ?? labels.columns["3_WORKSPACE"])
+                  : labels.columns[lvl];
               return (
                 <div
                   key={lvl}
@@ -164,7 +174,7 @@ export function OntologyAndKbExplorerPanel({
                     gap: "8px",
                   }}
                 >
-                  <StatusBadge label={labels.columns[lvl]} tone="cyan" monospace />
+                  <StatusBadge label={columnLabel} tone="cyan" monospace />
                   {colConcepts.map((c) => (
                     <div
                       key={c.conceptKey}
@@ -214,15 +224,18 @@ export function OntologyAndKbExplorerPanel({
                         >
                           {labels.whatIfButtonLabel}
                         </button>
-                        {!c.immutable && (
+                        {!c.immutable && c.level !== "1_ENTERPRISE" && (c.canProposePromotion ?? true) && (
                           <button
                             type="button"
                             data-testid={`promote-btn-${c.conceptKey}`}
-                            onClick={() =>
+                            onClick={() => {
+                              if (onProposePromotion) {
+                                onProposePromotion(c);
+                              }
                               setStatusBanner(
-                                `${labels.promoteButtonLabel} : ${c.canonicalTerm} -> 3_WORKSPACE`,
-                              )
-                            }
+                                `${labels.promoteButtonLabel} : ${c.canonicalTerm} -> ${c.nextPromotionLevel ?? "3_WORKSPACE"}`,
+                              );
+                            }}
                             style={{
                               backgroundColor: "var(--color-surface-card)",
                               color: "var(--color-foreground)",
@@ -279,117 +292,16 @@ export function OntologyAndKbExplorerPanel({
             </div>
           )}
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-              gap: "12px",
-            }}
-          >
-            <div
-              data-testid="tripartite-graph-section"
-              style={{
-                padding: "10px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid var(--color-border)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "8px",
-              }}
-            >
-              <strong>
-                {labels.tripartiteTitle} · {labels.hybridRagTitle}
-              </strong>
-              <input
-                type="search"
-                autoComplete="off"
-                data-lpignore="true"
-                data-1p-ignore="true"
-                data-bwignore="true"
-                data-form-type="other"
-                data-testid="hybrid-rag-search-input"
-                value={ragQuery}
-                onChange={(e) => setRagQuery(e.target.value)}
-                placeholder={labels.hybridRagSearchPlaceholder}
-                style={{
-                  padding: "6px 8px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--color-border)",
-                  backgroundColor: "var(--color-surface-card)",
-                  color: "var(--color-foreground)",
-                }}
-              />
-              {filteredEdges.map((edge) => (
-                <div
-                  key={edge.edgeKey}
-                  data-testid={`tripartite-edge-${edge.edgeKey}`}
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "var(--font-size-mono)",
-                    color: "var(--color-muted-foreground)",
-                  }}
-                >
-                  {edge.sourceUri} —[{edge.relationType}]→ {edge.targetUri}
-                </div>
-              ))}
-            </div>
-
-            <div
-              data-testid="stale-alerts-section"
-              style={{
-                padding: "10px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid var(--color-stale-crimson)",
-                backgroundColor: "var(--color-stale-bg)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "8px",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}>
-                <strong>{labels.staleAlertsTitle}</strong>
-                <StatusBadge label={labels.docObsoleteBadgeLabel} tone="crimson" monospace />
-              </div>
-              {staleAlerts.map((alert) => (
-                <div
-                  key={alert.alertKey}
-                  data-testid={`stale-alert-${alert.alertKey}`}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: "8px",
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "var(--font-size-mono)",
-                    color: "var(--color-stale-crimson)",
-                  }}
-                >
-                  <span>
-                    {alert.diagnosticMarker} {alert.sourceUri} (Jira:{" "}
-                    {alert.justifyingJiraKey ?? "TTL"}, Runs: {alert.impactedRunIds.join(", ")})
-                  </span>
-                  <button
-                    type="button"
-                    data-testid={`stale-alert-replay-btn-${alert.alertKey}`}
-                    onClick={() =>
-                      setStatusBanner(`${labels.docObsoleteBadgeLabel} -> ${alert.sourceUri}`)
-                    }
-                    style={{
-                      backgroundColor: "var(--color-surface-card)",
-                      color: "var(--color-stale-crimson)",
-                      border: "1px solid var(--color-stale-crimson)",
-                      borderRadius: "var(--radius-sm)",
-                      padding: "2px 6px",
-                      fontSize: "10px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <OrciaIcon name="regenerate" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
+          <OntologyTripartiteAndStaleSection
+            ragQuery={ragQuery}
+            onRagQueryChange={setRagQuery}
+            filteredEdges={filteredEdges}
+            staleAlerts={staleAlerts}
+            labels={labels}
+            onReplayAlert={(alert) =>
+              setStatusBanner(`${labels.docObsoleteBadgeLabel} -> ${alert.sourceUri}`)
+            }
+          />
         </>
       )}
     </section>

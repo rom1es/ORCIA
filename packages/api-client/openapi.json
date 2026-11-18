@@ -3736,8 +3736,11 @@
           "platform_role": {
             "enum": [
               "PLATFORM_ADMIN",
+              "SECOPS",
+              "BU_LEAD",
               "BU_DIRECTOR",
               "TEAM_LEAD",
+              "ONTOLOGY_LEAD",
               "CONTRIBUTOR",
               "GATE_REVIEWER",
               "ONTOLOGY_STEWARD_L3",
@@ -13434,6 +13437,21 @@
             ],
             "title": "Led Team Ids"
           },
+          "ontology_led_bu_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 64,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ontology Led Bu Ids"
+          },
           "principal_id": {
             "anyOf": [
               {
@@ -13555,6 +13573,21 @@
             ],
             "title": "Led Team Ids"
           },
+          "ontology_led_bu_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 64,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ontology Led Bu Ids"
+          },
           "roles": {
             "anyOf": [
               {
@@ -13664,6 +13697,13 @@
             "title": "Led Team Ids",
             "type": "array"
           },
+          "ontology_led_bu_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ontology Led Bu Ids",
+            "type": "array"
+          },
           "principal_id": {
             "title": "Principal Id",
             "type": "string"
@@ -13675,6 +13715,7 @@
                 "SECOPS",
                 "BU_LEAD",
                 "TEAM_LEAD",
+                "ONTOLOGY_LEAD",
                 "CONTRIBUTOR",
                 "OBSERVER"
               ],
@@ -15907,6 +15948,28 @@
             "title": "Allowed Workspace Slugs",
             "type": "array"
           },
+          "created_at_iso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At Iso"
+          },
+          "expires_at_iso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At Iso"
+          },
           "expires_in_days": {
             "enum": [
               30,
@@ -15943,6 +16006,17 @@
           "revoked": {
             "title": "Revoked",
             "type": "boolean"
+          },
+          "revoked_at_iso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At Iso"
           },
           "rpm_limit": {
             "title": "Rpm Limit",
@@ -16179,8 +16253,11 @@
             "default": "CONTRIBUTOR",
             "enum": [
               "PLATFORM_ADMIN",
+              "SECOPS",
+              "BU_LEAD",
               "BU_DIRECTOR",
               "TEAM_LEAD",
+              "ONTOLOGY_LEAD",
               "CONTRIBUTOR",
               "GATE_REVIEWER",
               "ONTOLOGY_STEWARD_L3",
@@ -16599,6 +16676,7 @@
               "2_DOMAIN",
               "3_TEAM",
               "3_WORKSPACE",
+              "4_WORKSPACE",
               "4_RUN_EPHEMERAL"
             ],
             "title": "Level",
@@ -16658,6 +16736,209 @@
         "title": "OntologyConceptSchemaItem",
         "type": "object"
       },
+      "OntologyConceptWithPermissionsItem": {
+        "additionalProperties": false,
+        "description": "Ontology concept enriched with caller write & step-up promotion capabilities.",
+        "properties": {
+          "banned_terms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Banned Terms",
+            "type": "array"
+          },
+          "can_edit": {
+            "default": false,
+            "title": "Can Edit",
+            "type": "boolean"
+          },
+          "can_propose_promotion": {
+            "default": false,
+            "title": "Can Propose Promotion",
+            "type": "boolean"
+          },
+          "canonical_term": {
+            "title": "Canonical Term",
+            "type": "string"
+          },
+          "concept_key": {
+            "title": "Concept Key",
+            "type": "string"
+          },
+          "definition_text": {
+            "title": "Definition Text",
+            "type": "string"
+          },
+          "expected_schema": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Expected Schema",
+            "type": "object"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "introduced_in_snapshot_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Introduced In Snapshot Id"
+          },
+          "level": {
+            "enum": [
+              "1_ENTERPRISE",
+              "2_DOMAIN",
+              "3_TEAM",
+              "3_WORKSPACE",
+              "4_WORKSPACE",
+              "4_RUN_EPHEMERAL"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "next_promotion_level": {
+            "anyOf": [
+              {
+                "enum": [
+                  "1_ENTERPRISE",
+                  "2_DOMAIN",
+                  "3_TEAM",
+                  "3_WORKSPACE",
+                  "4_WORKSPACE",
+                  "4_RUN_EPHEMERAL"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Promotion Level"
+          },
+          "next_promotion_scope_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Promotion Scope Id"
+          },
+          "parent_concept_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Concept Id"
+          },
+          "profile_translations": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Profile Translations",
+            "type": "object"
+          },
+          "scope_id": {
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "snapshot_branch_status": {
+            "enum": [
+              "ACTIVE",
+              "SUPERSEDED"
+            ],
+            "title": "Snapshot Branch Status",
+            "type": "string"
+          },
+          "synonyms": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Synonyms",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "concept_key",
+          "canonical_term",
+          "level",
+          "scope_id",
+          "definition_text",
+          "synonyms",
+          "banned_terms",
+          "profile_translations",
+          "expected_schema",
+          "snapshot_branch_status"
+        ],
+        "title": "OntologyConceptWithPermissionsItem",
+        "type": "object"
+      },
+      "OntologyConceptsListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "concepts": {
+            "items": {
+              "$ref": "#/components/schemas/OntologyConceptWithPermissionsItem"
+            },
+            "title": "Concepts",
+            "type": "array"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
+          "writable_levels": {
+            "items": {
+              "enum": [
+                "1_ENTERPRISE",
+                "2_DOMAIN",
+                "3_TEAM",
+                "3_WORKSPACE",
+                "4_WORKSPACE",
+                "4_RUN_EPHEMERAL"
+              ],
+              "type": "string"
+            },
+            "title": "Writable Levels",
+            "type": "array"
+          },
+          "writable_scopes": {
+            "items": {
+              "$ref": "#/components/schemas/WritableScopeOptionItem"
+            },
+            "title": "Writable Scopes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "concepts",
+          "writable_levels",
+          "writable_scopes"
+        ],
+        "title": "OntologyConceptsListResponse",
+        "type": "object"
+      },
       "OntologyPromoteRequest": {
         "additionalProperties": false,
         "properties": {
@@ -16670,6 +16951,310 @@
           "proposal_key"
         ],
         "title": "OntologyPromoteRequest",
+        "type": "object"
+      },
+      "OntologyPromotionCreateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "concept_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Concept Key",
+            "type": "string"
+          },
+          "proposed_change": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Proposed Change",
+            "type": "string"
+          },
+          "target_level": {
+            "anyOf": [
+              {
+                "enum": [
+                  "1_ENTERPRISE",
+                  "2_DOMAIN",
+                  "3_TEAM",
+                  "3_WORKSPACE",
+                  "4_WORKSPACE",
+                  "4_RUN_EPHEMERAL"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Level"
+          },
+          "target_scope_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Scope Id"
+          }
+        },
+        "required": [
+          "concept_key"
+        ],
+        "title": "OntologyPromotionCreateRequest",
+        "type": "object"
+      },
+      "OntologyPromotionDecideRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "enum": [
+              "APPROVE",
+              "REJECT"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "review_comment": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Comment"
+          }
+        },
+        "required": [
+          "decision"
+        ],
+        "title": "OntologyPromotionDecideRequest",
+        "type": "object"
+      },
+      "OntologyPromotionDecideResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "promoted_concept": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OntologyConceptSchemaItem"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "proposal": {
+            "$ref": "#/components/schemas/OntologyPromotionProposalDetailItem"
+          },
+          "status": {
+            "enum": [
+              "PENDING_REVIEW",
+              "APPROVED",
+              "REJECTED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          }
+        },
+        "required": [
+          "proposal",
+          "status"
+        ],
+        "title": "OntologyPromotionDecideResponse",
+        "type": "object"
+      },
+      "OntologyPromotionProposalDetailItem": {
+        "additionalProperties": false,
+        "description": "Promotion proposal enriched with collision metadata, reviewer details, and `can_decide`.",
+        "properties": {
+          "badge_color_token": {
+            "default": "ontology-cyan",
+            "title": "Badge Color Token",
+            "type": "string"
+          },
+          "can_decide": {
+            "default": false,
+            "title": "Can Decide",
+            "type": "boolean"
+          },
+          "canonical_term": {
+            "title": "Canonical Term",
+            "type": "string"
+          },
+          "colliding_definition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Colliding Definition"
+          },
+          "collision_detected": {
+            "default": false,
+            "title": "Collision Detected",
+            "type": "boolean"
+          },
+          "concept_key": {
+            "title": "Concept Key",
+            "type": "string"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "definition_text": {
+            "default": "",
+            "title": "Definition Text",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "impact_report": {
+            "$ref": "#/components/schemas/WhatIfSimulationResponse"
+          },
+          "proposal_key": {
+            "title": "Proposal Key",
+            "type": "string"
+          },
+          "proposed_by_user_id": {
+            "title": "Proposed By User Id",
+            "type": "string"
+          },
+          "review_comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Comment"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "reviewed_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed By User Id"
+          },
+          "source_concept_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Concept Id"
+          },
+          "source_level": {
+            "enum": [
+              "1_ENTERPRISE",
+              "2_DOMAIN",
+              "3_TEAM",
+              "3_WORKSPACE",
+              "4_WORKSPACE",
+              "4_RUN_EPHEMERAL"
+            ],
+            "title": "Source Level",
+            "type": "string"
+          },
+          "source_scope_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Scope Id"
+          },
+          "status": {
+            "enum": [
+              "PENDING_REVIEW",
+              "APPROVED",
+              "REJECTED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "target_level": {
+            "enum": [
+              "1_ENTERPRISE",
+              "2_DOMAIN",
+              "3_TEAM",
+              "3_WORKSPACE",
+              "4_WORKSPACE",
+              "4_RUN_EPHEMERAL"
+            ],
+            "title": "Target Level",
+            "type": "string"
+          },
+          "target_scope_id": {
+            "title": "Target Scope Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "proposal_key",
+          "concept_key",
+          "canonical_term",
+          "source_level",
+          "target_level",
+          "target_scope_id",
+          "proposed_by_user_id",
+          "status",
+          "impact_report"
+        ],
+        "title": "OntologyPromotionProposalDetailItem",
         "type": "object"
       },
       "OntologyPromotionProposalSchemaItem": {
@@ -16709,6 +17294,7 @@
               "2_DOMAIN",
               "3_TEAM",
               "3_WORKSPACE",
+              "4_WORKSPACE",
               "4_RUN_EPHEMERAL"
             ],
             "title": "Source Level",
@@ -16729,6 +17315,7 @@
               "2_DOMAIN",
               "3_TEAM",
               "3_WORKSPACE",
+              "4_WORKSPACE",
               "4_RUN_EPHEMERAL"
             ],
             "title": "Target Level",
@@ -16752,6 +17339,39 @@
           "impact_report"
         ],
         "title": "OntologyPromotionProposalSchemaItem",
+        "type": "object"
+      },
+      "OntologyPromotionsListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "pending_count": {
+            "title": "Pending Count",
+            "type": "integer"
+          },
+          "proposals": {
+            "items": {
+              "$ref": "#/components/schemas/OntologyPromotionProposalDetailItem"
+            },
+            "title": "Proposals",
+            "type": "array"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          }
+        },
+        "required": [
+          "proposals",
+          "pending_count"
+        ],
+        "title": "OntologyPromotionsListResponse",
         "type": "object"
       },
       "OntologyRelationSchemaItem": {
@@ -16963,6 +17583,7 @@
               "2_DOMAIN",
               "3_TEAM",
               "3_WORKSPACE",
+              "4_WORKSPACE",
               "4_RUN_EPHEMERAL"
             ],
             "title": "Level",
@@ -17103,6 +17724,21 @@
             "title": "Name",
             "type": "string"
           },
+          "ontology_lead_user_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 20,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ontology Lead User Ids"
+          },
           "parent_id": {
             "anyOf": [
               {
@@ -17160,6 +17796,118 @@
           "trace_id"
         ],
         "title": "OrgUnitDeleteResponse",
+        "type": "object"
+      },
+      "OrgUnitInviteUserRequest": {
+        "additionalProperties": false,
+        "description": "Scoped user invitation payload for `POST /api/v1/org-units/invite-user` (`Story 20.1`).",
+        "properties": {
+          "assignment_role": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Assignment Role",
+            "type": "string"
+          },
+          "display_name": {
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "target_org_unit_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Target Org Unit Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_org_unit_id",
+          "email",
+          "display_name",
+          "assignment_role"
+        ],
+        "title": "OrgUnitInviteUserRequest",
+        "type": "object"
+      },
+      "OrgUnitInviteUserResponse": {
+        "additionalProperties": false,
+        "description": "Scoped user invitation confirmation returned by `POST /api/v1/org-units/invite-user`.",
+        "properties": {
+          "account_id": {
+            "title": "Account Id",
+            "type": "string"
+          },
+          "assignment_role": {
+            "title": "Assignment Role",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "effective_roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Effective Roles",
+            "type": "array"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "must_change_password": {
+            "default": true,
+            "title": "Must Change Password",
+            "type": "boolean"
+          },
+          "org_unit": {
+            "$ref": "#/components/schemas/OrgUnitResponse"
+          },
+          "principal_id": {
+            "title": "Principal Id",
+            "type": "string"
+          },
+          "target_org_unit_id": {
+            "title": "Target Org Unit Id",
+            "type": "string"
+          },
+          "temporary_password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temporary Password"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "account_id",
+          "principal_id",
+          "email",
+          "display_name",
+          "target_org_unit_id",
+          "assignment_role",
+          "org_unit",
+          "trace_id"
+        ],
+        "title": "OrgUnitInviteUserResponse",
         "type": "object"
       },
       "OrgUnitPatchRequest": {
@@ -17232,6 +17980,21 @@
             ],
             "title": "Name"
           },
+          "ontology_lead_user_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 20,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ontology Lead User Ids"
+          },
           "parent_id": {
             "anyOf": [
               {
@@ -17268,6 +18031,36 @@
           "billing_enabled": {
             "default": true,
             "title": "Billing Enabled",
+            "type": "boolean"
+          },
+          "can_create_child": {
+            "default": true,
+            "title": "Can Create Child",
+            "type": "boolean"
+          },
+          "can_delete": {
+            "default": true,
+            "title": "Can Delete",
+            "type": "boolean"
+          },
+          "can_edit": {
+            "default": true,
+            "title": "Can Edit",
+            "type": "boolean"
+          },
+          "can_invite_users": {
+            "default": true,
+            "title": "Can Invite Users",
+            "type": "boolean"
+          },
+          "can_manage_members": {
+            "default": true,
+            "title": "Can Manage Members",
+            "type": "boolean"
+          },
+          "can_manage_ontology_leads": {
+            "default": true,
+            "title": "Can Manage Ontology Leads",
             "type": "boolean"
           },
           "id": {
@@ -17310,6 +18103,13 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "ontology_lead_user_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ontology Lead User Ids",
+            "type": "array"
           },
           "parent_id": {
             "anyOf": [
@@ -18885,6 +19685,47 @@
           "trace_id"
         ],
         "title": "PlatformSetupStateResponse",
+        "type": "object"
+      },
+      "PopularUsageItemResponse": {
+        "description": "Single popular agent, process, skill, or tool card on `/profile`.",
+        "properties": {
+          "item_key": {
+            "title": "Item Key",
+            "type": "string"
+          },
+          "item_type": {
+            "enum": [
+              "AGENT",
+              "PROCESS",
+              "SKILL",
+              "TOOL"
+            ],
+            "title": "Item Type",
+            "type": "string"
+          },
+          "target_route": {
+            "title": "Target Route",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "usage_count": {
+            "minimum": 0.0,
+            "title": "Usage Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "item_type",
+          "item_key",
+          "title",
+          "usage_count",
+          "target_route"
+        ],
+        "title": "PopularUsageItemResponse",
         "type": "object"
       },
       "PostHocAuditSampleSchema": {
@@ -21458,6 +22299,7 @@
               "SECOPS",
               "BU_LEAD",
               "TEAM_LEAD",
+              "ONTOLOGY_LEAD",
               "CONTRIBUTOR",
               "OBSERVER"
             ],
@@ -22074,8 +22916,11 @@
           "effective_role": {
             "enum": [
               "PLATFORM_ADMIN",
+              "SECOPS",
+              "BU_LEAD",
               "BU_DIRECTOR",
               "TEAM_LEAD",
+              "ONTOLOGY_LEAD",
               "CONTRIBUTOR",
               "GATE_REVIEWER",
               "ONTOLOGY_STEWARD_L3",
@@ -28332,8 +29177,11 @@
           "platform_role": {
             "enum": [
               "PLATFORM_ADMIN",
+              "SECOPS",
+              "BU_LEAD",
               "BU_DIRECTOR",
               "TEAM_LEAD",
+              "ONTOLOGY_LEAD",
               "CONTRIBUTOR",
               "GATE_REVIEWER",
               "ONTOLOGY_STEWARD_L3",
@@ -28404,8 +29252,11 @@
           "assigned_role": {
             "enum": [
               "PLATFORM_ADMIN",
+              "SECOPS",
+              "BU_LEAD",
               "BU_DIRECTOR",
               "TEAM_LEAD",
+              "ONTOLOGY_LEAD",
               "CONTRIBUTOR",
               "GATE_REVIEWER",
               "ONTOLOGY_STEWARD_L3",
@@ -28588,15 +29439,28 @@
       },
       "UserPreferencesResponse": {
         "additionalProperties": false,
-        "description": "Story 9.4 — Response payload for `/api/v1/users/me/preferences`.",
+        "description": "Story 9.4 & 20.3 — Response payload for `/api/v1/users/me/preferences`.",
         "properties": {
           "assistant_behavior_redirect_uri": {
             "title": "Assistant Behavior Redirect Uri",
             "type": "string"
           },
+          "assistant_tone": {
+            "enum": [
+              "balanced",
+              "concise",
+              "detailed"
+            ],
+            "title": "Assistant Tone",
+            "type": "string"
+          },
           "auto_open_contextual_help": {
             "title": "Auto Open Contextual Help",
             "type": "boolean"
+          },
+          "default_assistant_hat": {
+            "title": "Default Assistant Hat",
+            "type": "string"
           },
           "default_hat": {
             "title": "Default Hat",
@@ -28613,6 +29477,10 @@
           "notifications_enabled": {
             "title": "Notifications Enabled",
             "type": "boolean"
+          },
+          "personal_instructions": {
+            "title": "Personal Instructions",
+            "type": "string"
           },
           "theme": {
             "enum": [
@@ -28644,6 +29512,9 @@
           "theme",
           "locale",
           "default_hat",
+          "default_assistant_hat",
+          "assistant_tone",
+          "personal_instructions",
           "auto_open_contextual_help",
           "notifications_enabled",
           "assistant_behavior_redirect_uri"
@@ -28653,8 +29524,24 @@
       },
       "UserPreferencesUpdateRequest": {
         "additionalProperties": false,
-        "description": "Story 9.4 — Request payload for `PATCH /api/v1/users/me/preferences` (`0 ms` Anti-FOUC).",
+        "description": "Story 9.4 & 20.3 — Payload for `PATCH /api/v1/users/me/preferences` (`0 ms` Anti-FOUC).",
         "properties": {
+          "assistant_tone": {
+            "anyOf": [
+              {
+                "enum": [
+                  "balanced",
+                  "concise",
+                  "detailed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assistant Tone"
+          },
           "auto_open_contextual_help": {
             "anyOf": [
               {
@@ -28665,6 +29552,19 @@
               }
             ],
             "title": "Auto Open Contextual Help"
+          },
+          "default_assistant_hat": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Assistant Hat"
           },
           "default_hat": {
             "anyOf": [
@@ -28705,6 +29605,18 @@
             ],
             "title": "Notifications Enabled"
           },
+          "personal_instructions": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personal Instructions"
+          },
           "theme": {
             "anyOf": [
               {
@@ -28723,6 +29635,111 @@
           }
         },
         "title": "UserPreferencesUpdateRequest",
+        "type": "object"
+      },
+      "UserProfileSummaryResponse": {
+        "description": "Personal user profile overview (identity, org attachments, 4 KPIs, top 5 popular).",
+        "properties": {
+          "current_streak_days": {
+            "minimum": 0.0,
+            "title": "Current Streak Days",
+            "type": "integer"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "handle": {
+            "title": "Handle",
+            "type": "string"
+          },
+          "led_business_units": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Led Business Units",
+            "type": "array"
+          },
+          "led_teams": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Led Teams",
+            "type": "array"
+          },
+          "longest_streak_days": {
+            "minimum": 0.0,
+            "title": "Longest Streak Days",
+            "type": "integer"
+          },
+          "member_teams": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Member Teams",
+            "type": "array"
+          },
+          "ontology_business_units": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ontology Business Units",
+            "type": "array"
+          },
+          "peak_daily_tokens": {
+            "minimum": 0.0,
+            "title": "Peak Daily Tokens",
+            "type": "integer"
+          },
+          "popular_items": {
+            "items": {
+              "$ref": "#/components/schemas/PopularUsageItemResponse"
+            },
+            "title": "Popular Items",
+            "type": "array"
+          },
+          "primary_role": {
+            "title": "Primary Role",
+            "type": "string"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Roles",
+            "type": "array"
+          },
+          "total_tokens": {
+            "minimum": 0.0,
+            "title": "Total Tokens",
+            "type": "integer"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "display_name",
+          "handle",
+          "email",
+          "primary_role",
+          "total_tokens",
+          "peak_daily_tokens",
+          "longest_streak_days",
+          "current_streak_days",
+          "trace_id"
+        ],
+        "title": "UserProfileSummaryResponse",
         "type": "object"
       },
       "ValidateFencedWriteRequest": {
@@ -32368,8 +33385,11 @@
           "effective_role": {
             "enum": [
               "PLATFORM_ADMIN",
+              "SECOPS",
+              "BU_LEAD",
               "BU_DIRECTOR",
               "TEAM_LEAD",
+              "ONTOLOGY_LEAD",
               "CONTRIBUTOR",
               "GATE_REVIEWER",
               "ONTOLOGY_STEWARD_L3",
@@ -32456,6 +33476,38 @@
           "trace_id"
         ],
         "title": "WorkspacesListResponse",
+        "type": "object"
+      },
+      "WritableScopeOptionItem": {
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "level": {
+            "enum": [
+              "1_ENTERPRISE",
+              "2_DOMAIN",
+              "3_TEAM",
+              "3_WORKSPACE",
+              "4_WORKSPACE",
+              "4_RUN_EPHEMERAL"
+            ],
+            "title": "Level",
+            "type": "string"
+          },
+          "scope_id": {
+            "title": "Scope Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "level",
+          "scope_id",
+          "label"
+        ],
+        "title": "WritableScopeOptionItem",
         "type": "object"
       },
       "WritePreviewCard": {
@@ -47369,7 +48421,133 @@
       }
     },
     "/api/v1/ontology-rag/ontology/concepts": {
+      "get": {
+        "description": "List concepts readable by caller along with edit/promotion capabilities.",
+        "operationId": "list_ontology_concepts_api_v1_ontology_rag_ontology_concepts_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fixture",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Fixture",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OntologyConceptsListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "List Ontology Concepts",
+        "tags": [
+          "ontology-rag"
+        ]
+      },
       "post": {
+        "description": "Create or update an ontology concept with L1–L4 RBAC & immutable axiom guard.",
         "operationId": "upsert_ontology_concept_api_v1_ontology_rag_ontology_concepts_post",
         "parameters": [
           {
@@ -47498,7 +48676,7 @@
             "description": "Precondition Required"
           }
         },
-        "summary": "Upsert an Ontology Concept (enforces L1 immutable axiom protection -> HTTP 422)",
+        "summary": "Upsert Ontology Concept",
         "tags": [
           "ontology-rag"
         ]
@@ -47635,6 +48813,432 @@
           }
         },
         "summary": "Promote an Ontology concept proposal (L4 -> L3 or L3 -> L2 -> L1)",
+        "tags": [
+          "ontology-rag"
+        ]
+      }
+    },
+    "/api/v1/ontology-rag/ontology/promotions": {
+      "get": {
+        "description": "List visible promotion proposals annotated with caller `can_decide`.",
+        "operationId": "list_ontology_promotions_api_v1_ontology_rag_ontology_promotions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "fixture",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Fixture",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OntologyPromotionsListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "List Ontology Promotions",
+        "tags": [
+          "ontology-rag"
+        ]
+      },
+      "post": {
+        "description": "Propose promotion strictly to the immediate next level (`L4 -> L3 -> L2 -> L1`).",
+        "operationId": "create_ontology_promotion_api_v1_ontology_rag_ontology_promotions_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fixture",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Fixture",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OntologyPromotionCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OntologyPromotionProposalDetailItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Create Ontology Promotion",
+        "tags": [
+          "ontology-rag"
+        ]
+      }
+    },
+    "/api/v1/ontology-rag/ontology/promotions/{proposal_id}/decide": {
+      "post": {
+        "description": "Approve or reject a pending proposal (`ONTOLOGY_LEAD` for L2, `PLATFORM_ADMIN` for L1).",
+        "operationId": "decide_ontology_promotion_api_v1_ontology_rag_ontology_promotions__proposal_id__decide_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "fixture",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Fixture",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OntologyPromotionDecideRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OntologyPromotionDecideResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Decide Ontology Promotion",
         "tags": [
           "ontology-rag"
         ]
@@ -50888,6 +52492,134 @@
           }
         },
         "summary": "Create a Division (`BU`), Sub-Division (`BU` with parent), or Team (`TEAM`)",
+        "tags": [
+          "workspaces-and-catalog"
+        ]
+      }
+    },
+    "/api/v1/org-units/invite-user": {
+      "post": {
+        "operationId": "invite_org_unit_user_api_v1_org_units_invite_user_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrgUnitInviteUserRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrgUnitInviteUserResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Invite a new human user scoped to a governed organizational unit (`BU_LEAD` / `PLATFORM_ADMIN`)",
         "tags": [
           "workspaces-and-catalog"
         ]
@@ -58898,7 +60630,7 @@
             "description": "Precondition Required"
           }
         },
-        "summary": "Return the native 6-role permission matrix (`WRITE_ONLY_NEVER_READABLE`)",
+        "summary": "Return the native 7-role permission matrix (`WRITE_ONLY_NEVER_READABLE`)",
         "tags": [
           "iam-accounts"
         ]
@@ -59901,6 +61633,7 @@
     },
     "/api/v1/users/me/mcp-tokens": {
       "get": {
+        "description": "List personal MCP token metadata rows strictly isolated to the authenticated user.",
         "operationId": "list_my_mcp_tokens_api_v1_users_me_mcp_tokens_get",
         "parameters": [
           {
@@ -60011,12 +61744,13 @@
             "description": "Precondition Required"
           }
         },
-        "summary": "List personal IDE/MCP tokens (`pat_mcp_*` SHA-256 metadata, `Story 9.4`)",
+        "summary": "List personal IDE/MCP tokens (`pat_mcp_*` SHA-256 metadata, never plaintext)",
         "tags": [
-          "portal-and-help"
+          "user-account-settings"
         ]
       },
       "post": {
+        "description": "Issue a `pat_mcp_*` token (plaintext returned once at creation, SHA-256 in PG18).",
         "operationId": "create_my_mcp_token_api_v1_users_me_mcp_tokens_post",
         "parameters": [
           {
@@ -60049,7 +61783,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -60137,14 +61871,15 @@
             "description": "Precondition Required"
           }
         },
-        "summary": "Issue a scoped personal IDE/MCP token (`pat_mcp_*` hashed SHA-256, `Story 9.4`)",
+        "summary": "Issue a scoped personal IDE/MCP token (`pat_mcp_*` hashed SHA-256 in PG18)",
         "tags": [
-          "portal-and-help"
+          "user-account-settings"
         ]
       }
     },
     "/api/v1/users/me/mcp-tokens/{token_id}": {
       "delete": {
+        "description": "Revoke `token_id` strictly scoped to `user.id` (`403` for `OBSERVER`, `404` otherwise).",
         "operationId": "revoke_my_mcp_token_api_v1_users_me_mcp_tokens__token_id__delete",
         "parameters": [
           {
@@ -60264,9 +61999,9 @@
             "description": "Precondition Required"
           }
         },
-        "summary": "Revoke a personal IDE/MCP token in `< 10 ms` Redis (`Story 9.4`)",
+        "summary": "Revoke a personal IDE/MCP token owned by the authenticated user",
         "tags": [
-          "portal-and-help"
+          "user-account-settings"
         ]
       }
     },
@@ -60679,6 +62414,7 @@
     },
     "/api/v1/users/me/preferences": {
       "get": {
+        "description": "Return persisted preferences for the authenticated user.",
         "operationId": "get_my_preferences_api_v1_users_me_preferences_get",
         "parameters": [
           {
@@ -60789,12 +62525,13 @@
             "description": "Precondition Required"
           }
         },
-        "summary": "Get current user's display & workspace preferences (`Story 9.4`)",
+        "summary": "Get current user's display, assistant & notification preferences (PG18)",
         "tags": [
-          "portal-and-help"
+          "user-account-settings"
         ]
       },
       "patch": {
+        "description": "Upsert preferences for the authenticated user in PostgreSQL 18.",
         "operationId": "patch_my_preferences_api_v1_users_me_preferences_patch",
         "parameters": [
           {
@@ -60915,9 +62652,128 @@
             "description": "Precondition Required"
           }
         },
-        "summary": "Synchronize user preferences (`0 ms` Anti-FOUC background sync, `Story 9.4`)",
+        "summary": "Persist user preferences (`0 ms` Anti-FOUC & Assistant personalization in PG18)",
         "tags": [
-          "portal-and-help"
+          "user-account-settings"
+        ]
+      }
+    },
+    "/api/v1/users/me/profile-summary": {
+      "get": {
+        "description": "Return personal identity, BU/team attachments, token KPIs, streaks & popular items.\n\nAnti-IDOR by construction: no `user_id` query/path parameter is accepted;\nidentity is strictly resolved from the authenticated session.",
+        "operationId": "get_my_profile_summary_api_v1_users_me_profile_summary_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileSummaryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Get authenticated user's profile summary, 4 token/streak KPIs & top 5 popular items",
+        "tags": [
+          "user-profile"
         ]
       }
     },

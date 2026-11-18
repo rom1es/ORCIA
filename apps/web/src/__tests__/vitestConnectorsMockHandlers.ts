@@ -1,6 +1,10 @@
 /**
  * Story 17.4 — Mock Handlers for Enterprise Connectors, User Passthrough Tokens & Workspace Datasources.
  */
+import {
+  handleVitestUserSettingsRoute,
+  resetVitestUserSettingsMockState,
+} from "./vitestUserSettingsMockHandlers";
 
 export interface MockEnterpriseConnectorItem {
   id: string;
@@ -61,6 +65,7 @@ export function resetVitestConnectorsMockState(): void {
   userTokens = [];
   datasources = [];
   datasourceSeq = 0;
+  resetVitestUserSettingsMockState();
 }
 
 export function seedVitestConnectorsInitialData(params?: {
@@ -93,6 +98,19 @@ export function handleVitestConnectorsRoute(params: HandleConnectorsRouteParams)
 
   const accessMode = reqHeaders.get("x-orcia-access-mode")?.toUpperCase();
   const isObserver = accessMode === "READ_ONLY_OBSERVER";
+
+  const userSettingsResp = handleVitestUserSettingsRoute({
+    path,
+    method,
+    body,
+    isObserver,
+    jsonResponse,
+    problemResponse: (status, detail, title, errorCode) =>
+      problemResponse(status, title, detail, errorCode),
+  });
+  if (userSettingsResp !== null) {
+    return userSettingsResp;
+  }
 
   // 1. /api/v1/settings/connectors
   if (path === "/api/v1/settings/connectors") {

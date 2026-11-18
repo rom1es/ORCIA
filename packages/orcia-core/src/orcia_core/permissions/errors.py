@@ -158,6 +158,38 @@ class OrgUnitUnknownUserError(OrciaDomainError):
     )
 
 
+class OrgUnitScopeForbiddenError(OrciaDomainError):
+    error_code, http_status, type_slug = (
+        "ERR_ORG_UNIT_SCOPE_FORBIDDEN",
+        403,
+        "org-unit-scope-forbidden",
+    )
+
+
+class OrgUnitRootDeleteForbiddenError(OrciaDomainError):
+    error_code, http_status, type_slug = (
+        "ERR_ORG_UNIT_ROOT_DELETE_FORBIDDEN",
+        403,
+        "org-unit-root-delete-forbidden",
+    )
+
+
+class OrgUnitLastLeadRemovalForbiddenError(OrciaDomainError):
+    error_code, http_status, type_slug = (
+        "ERR_ORG_UNIT_LAST_LEAD_REMOVAL_FORBIDDEN",
+        422,
+        "org-unit-last-lead-removal-forbidden",
+    )
+
+
+class PrivilegeEscalationForbiddenError(OrciaDomainError):
+    error_code, http_status, type_slug = (
+        "ERR_PRIVILEGE_ESCALATION_FORBIDDEN",
+        403,
+        "privilege-escalation-forbidden",
+    )
+
+
 class InvalidIamRoleError(OrciaDomainError):
     error_code, http_status, type_slug = "ERR_IAM_INVALID_ROLE", 422, "iam-invalid-role"
 
@@ -311,14 +343,18 @@ __all__ = [
     "OrgUnitDuplicateSlugError",
     "OrgUnitHierarchyCycleError",
     "OrgUnitInvalidParentKindError",
+    "OrgUnitLastLeadRemovalForbiddenError",
     "OrgUnitNotEmptyError",
     "OrgUnitNotFoundError",
+    "OrgUnitRootDeleteForbiddenError",
+    "OrgUnitScopeForbiddenError",
     "OrgUnitStorageSchemaError",
     "OrgUnitUnknownUserError",
     "PERMISSIONS_ERROR_CATALOG",
     "PasswordUnchangedError",
     "PermissionBrokerDeniedError",
     "PreconditionRequiredError",
+    "PrivilegeEscalationForbiddenError",
     "ReadSourceDeniedError",
     "ResourceNotFoundError",
     "RevokedTokenError",

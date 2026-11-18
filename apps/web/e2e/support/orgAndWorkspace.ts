@@ -9,9 +9,9 @@ async function createOrgUnit(page: Page, level: "BU" | "TEAM", name: string, slu
   await page.getByTestId("create-org-unit-btn").click();
 }
 
-/** Crée une Direction (BU) puis une Équipe rattachée, via /configuration (parcours réel). */
+/** Crée une Direction (BU) puis une Équipe rattachée, via /organization (parcours réel). */
 export async function createBuAndTeamViaUi(page: Page): Promise<void> {
-  await page.goto("/configuration");
+  await page.goto("/organization");
   await expect(page.getByTestId("settings-organization-section")).toBeVisible({ timeout: 30000 });
   await createOrgUnit(page, "BU", "Direction E2E", "bu-e2e");
   await expect(page.getByTestId("iam-org-units-empty-state")).toBeHidden({ timeout: 15000 });

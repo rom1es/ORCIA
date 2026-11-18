@@ -38,9 +38,14 @@ export interface IamDirectoryLabels {
   readonly noBusAvailableHint: string;
   readonly ledTeamsFieldsetLabel: string;
   readonly ledTeamsFieldsetHint: string;
+  readonly ontologyLedBusFieldsetLabel: string;
+  readonly ontologyLedBusFieldsetHint: string;
   readonly ledBusPrefix: string;
   readonly ledBusPluralPrefix: string;
   readonly noLedBusAssigned: string;
+  readonly ontologyLedBusPrefix: string;
+  readonly ontologyLedBusPluralPrefix: string;
+  readonly noOntologyLedBusAssigned: string;
   readonly ledTeamSingularPrefix: string;
   readonly ledTeamsPluralPrefix: string;
   readonly noLedTeamsAssigned: string;
@@ -56,7 +61,7 @@ export const IAM_DIRECTORY_FR_LABELS: IamDirectoryLabels = {
   sectionSubtitle:
     "Gérez les comptes utilisateurs humains et techniques, leurs rôles officiels et leur rattachement aux équipes.",
   createAccountCta: "+ Nouveau compte",
-  openRoleMatrixCta: "Consulter la matrice des 6 rôles",
+  openRoleMatrixCta: "Consulter la matrice des 7 rôles",
   emptyText: "Aucun compte enregistré dans l'annuaire.",
   humanBadge: "Utilisateur",
   servicePrincipalBadge: "Compte technique",
@@ -74,7 +79,7 @@ export const IAM_DIRECTORY_FR_LABELS: IamDirectoryLabels = {
   modalCreateTitle: "Créer ou inviter un compte",
   modalEditTitle: "Modifier les rôles et équipes du compte",
   modalDescription:
-    "Sélectionnez strictement parmi les 6 rôles officiels de la plateforme. Au moins un Administrateur Plateforme actif est garanti à tout moment.",
+    "Sélectionnez strictement parmi les 7 rôles officiels de la plateforme. Au moins un Administrateur Plateforme actif est garanti à tout moment.",
   kindLabel: "Nature du compte",
   kindHumanOption: "Utilisateur humain",
   kindServicePrincipalOption: "Compte technique (service)",
@@ -88,16 +93,22 @@ export const IAM_DIRECTORY_FR_LABELS: IamDirectoryLabels = {
   rolesHelperText:
     "Un compte peut cumuler plusieurs rôles (ex. : Administrateur Plateforme + Responsable Sécurité au démarrage, dissociables ultérieurement).",
   teamsFieldsetLabel: "Équipes rattachées (membre)",
-  noTeamsAvailableHint: "Aucune équipe n'est encore créée dans l'onglet Organisation.",
+  noTeamsAvailableHint: "Aucune équipe n'est encore créée dans Mon Organisation.",
   ledBusFieldsetLabel: "Directions (BU) supervisées",
   ledBusFieldsetHint:
     "Sélectionnez les Directions / BUs dont ce compte est responsable. Vous pouvez également créer le compte avant de rattacher les BUs.",
-  noBusAvailableHint: "Aucune Direction (BU) n'est encore créée dans l'onglet Organisation.",
+  noBusAvailableHint: "Aucune Direction (BU) n'est encore créée dans Mon Organisation.",
   ledTeamsFieldsetLabel: "Équipes dirigées",
   ledTeamsFieldsetHint: "Sélectionnez les équipes dont ce compte est responsable.",
+  ontologyLedBusFieldsetLabel: "Directions (BU) — Référent Glossaire",
+  ontologyLedBusFieldsetHint:
+    "Sélectionnez les Directions / BUs pour lesquelles ce compte valide le glossaire métier.",
   ledBusPrefix: "Direction (BU) :",
   ledBusPluralPrefix: "Directions (BU) :",
   noLedBusAssigned: "aucune assignée",
+  ontologyLedBusPrefix: "Référent Glossaire (BU) :",
+  ontologyLedBusPluralPrefix: "Référents Glossaire (BU) :",
+  noOntologyLedBusAssigned: "aucune BU assignée",
   ledTeamSingularPrefix: "Équipe dirigée :",
   ledTeamsPluralPrefix: "Équipes dirigées :",
   noLedTeamsAssigned: "aucune assignée",
@@ -113,7 +124,7 @@ export const IAM_DIRECTORY_EN_LABELS: IamDirectoryLabels = {
   sectionSubtitle:
     "Manage human user accounts and technical service accounts, their official roles, and team memberships.",
   createAccountCta: "+ New account",
-  openRoleMatrixCta: "View 6-role matrix",
+  openRoleMatrixCta: "View 7-role matrix",
   emptyText: "No account registered in the directory.",
   humanBadge: "User",
   servicePrincipalBadge: "Service account",
@@ -131,7 +142,7 @@ export const IAM_DIRECTORY_EN_LABELS: IamDirectoryLabels = {
   modalCreateTitle: "Create or invite an account",
   modalEditTitle: "Edit account roles and teams",
   modalDescription:
-    "Select strictly from the 6 official platform roles. At least one active Platform Administrator is enforced at all times.",
+    "Select strictly from the 7 official platform roles. At least one active Platform Administrator is enforced at all times.",
   kindLabel: "Account type",
   kindHumanOption: "Human user",
   kindServicePrincipalOption: "Technical service account",
@@ -145,16 +156,22 @@ export const IAM_DIRECTORY_EN_LABELS: IamDirectoryLabels = {
   rolesHelperText:
     "An account may hold multiple roles (e.g. Platform Administrator + Security Officer at initial setup, separable later).",
   teamsFieldsetLabel: "Assigned teams (member)",
-  noTeamsAvailableHint: "No team has been created yet in the Organization tab.",
+  noTeamsAvailableHint: "No team has been created yet in My Organization.",
   ledBusFieldsetLabel: "Supervised Divisions (BU)",
   ledBusFieldsetHint:
     "Select Divisions / BUs supervised by this account. You can also create the account before attaching BUs.",
-  noBusAvailableHint: "No Division (BU) has been created yet in the Organization tab.",
+  noBusAvailableHint: "No Division (BU) has been created yet in My Organization.",
   ledTeamsFieldsetLabel: "Led teams",
   ledTeamsFieldsetHint: "Select teams led by this account.",
+  ontologyLedBusFieldsetLabel: "Glossary Lead Divisions (BU)",
+  ontologyLedBusFieldsetHint:
+    "Select Divisions / BUs where this account governs the business glossary.",
   ledBusPrefix: "Division (BU):",
   ledBusPluralPrefix: "Divisions (BU):",
   noLedBusAssigned: "none assigned",
+  ontologyLedBusPrefix: "Glossary Lead (BU):",
+  ontologyLedBusPluralPrefix: "Glossary Leads (BU):",
+  noOntologyLedBusAssigned: "none assigned",
   ledTeamSingularPrefix: "Led team:",
   ledTeamsPluralPrefix: "Led teams:",
   noLedTeamsAssigned: "none assigned",

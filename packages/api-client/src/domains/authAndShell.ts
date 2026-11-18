@@ -29,6 +29,7 @@ import type {
   ChangePasswordResponse,
 } from "../generated/iam_password_models";
 import type { HealthResponse, ShellNavigationResponse } from "../generated/shell";
+import type { UserProfileSummaryResponse } from "../generated/user_profile";
 import {
   buildKnownOrgUsersQuery,
   buildOrgUnitsQuery,
@@ -160,6 +161,11 @@ export function createAuthAndShellDomainClient(requestJson: RequestJsonFn) {
         `/api/v1/auth/passthrough-credentials${buildPersonaQuery(personaKey)}`,
         "POST",
         payload,
+      );
+    },
+    getUserProfileSummary(personaKey?: string): Promise<UserProfileSummaryResponse> {
+      return requestJson<UserProfileSummaryResponse>(
+        `/api/v1/users/me/profile-summary${buildPersonaQuery(personaKey)}`,
       );
     },
   };

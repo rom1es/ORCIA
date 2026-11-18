@@ -20,10 +20,6 @@ export interface FourZoneTopHeaderSectionProps {
   readonly notificationsOpen: boolean;
   readonly onToggleNotifications: () => void;
   readonly effectiveNotificationCount: number;
-  readonly headerUserControl?: React.ReactNode;
-  readonly onOpenUserDropdown?: () => void;
-  readonly userDisplayName: string;
-  readonly userHatLabel: string;
   readonly labels: FourZoneDirectionCShellLabels;
 }
 
@@ -42,10 +38,6 @@ export function FourZoneTopHeaderSection({
   notificationsOpen,
   onToggleNotifications,
   effectiveNotificationCount,
-  headerUserControl,
-  onOpenUserDropdown,
-  userDisplayName,
-  userHatLabel,
   labels,
 }: FourZoneTopHeaderSectionProps): React.ReactElement {
   return (
@@ -209,35 +201,6 @@ export function FourZoneTopHeaderSection({
             </span>
           )}
         </button>
-
-        {headerUserControl ?? (
-          <button
-            type="button"
-            data-testid="topbar-user-account-trigger"
-            onClick={onOpenUserDropdown}
-            className="flex items-center gap-2 rounded border px-2.5 py-1 text-xs"
-            style={{
-              backgroundColor: "var(--color-bg-elevated)",
-              borderColor: "var(--color-border-subtle)",
-              color: "var(--color-text-primary)",
-            }}
-          >
-            <span className="inline-flex items-center gap-1.5">
-              <OrciaIcon name="user" />
-              <span>{userDisplayName}</span>
-            </span>
-            <span
-              data-testid="topbar-hat-badge"
-              className="rounded px-1.5 py-0.5 text-[11px] font-semibold"
-              style={{
-                backgroundColor: "var(--color-action-primary-subtle)",
-                color: "var(--color-action-primary)",
-              }}
-            >
-              {userHatLabel}
-            </span>
-          </button>
-        )}
       </div>
     </header>
   );

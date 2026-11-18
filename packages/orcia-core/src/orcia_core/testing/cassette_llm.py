@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import hashlib
+import math
+import struct
+from collections.abc import Sequence
 from dataclasses import dataclass
 
+from orcia_core.ports.embedding import EMBEDDING_FIXED_DIMENSION, EmbeddingPort
 from orcia_core.ports.llm_port import (
     LlmCompletionResponse,
     LlmGatewayPort,
@@ -87,3 +92,37 @@ class DeterministicCassetteLLM(LlmGatewayPort):
             estimated_cost_usd=0.0,
             scenario_tag=entry.scenario_tag,
         )
+
+
+def _cassette_vector_1024(text: str) -> list[float]:
+    """Derive a deterministic 1024-dim unit-normalized vector from `text` ($0 cost)."""
+    current = hashlib.sha256(text.encode("utf-8")).digest()
+    values: list[float] = []
+    while len(values) < EMBEDDING_FIXED_DIMENSION:
+        current = hashlib.sha256(current).digest()
+        for val in struct.unpack("8f", current):
+            values.append(val if math.isfinite(val) else 0.0)
+            if len(values) == EMBEDDING_FIXED_DIMENSION:
+                break
+    norm = math.sqrt(sum(v * v for v in values)) or 1.0
+    return [round(v / norm, 6) for v in values]
+
+
+class DeterministicCassetteEmbedding(EmbeddingPort):
+    """Deterministic 1024-dim embedding adapter for CI/E2E cassette mode (`0 $` network calls)."""
+
+    @property
+    def dimension(self) -> int:
+        return EMBEDDING_FIXED_DIMENSION
+
+    async def embed(self, texts: Sequence[str]) -> list[list[float]]:
+        return [_cassette_vector_1024(text) for text in texts]
+
+    async def embed_texts(self, texts: Sequence[str]) -> list[list[float]]:
+        return await self.embed(texts)
+
+    async def embed_query(self, query: str) -> list[float]:
+        return _cassette_vector_1024(query)
+
+    def embed_query_sync(self, query: str) -> list[float]:
+        return _cassette_vector_1024(query)

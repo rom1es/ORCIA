@@ -66,6 +66,13 @@ class OrgUnitResponse(BaseModel):
     attached_workspaces_count: int = Field(default=0, ge=0)
     attached_workspaces: list[AttachedWorkspaceRefResponse] = Field(default_factory=list)
     lead_user_ids: list[str] = Field(default_factory=list)
+    ontology_lead_user_ids: list[str] = Field(default_factory=list)
+    can_edit: bool = True
+    can_create_child: bool = True
+    can_delete: bool = True
+    can_manage_members: bool = True
+    can_manage_ontology_leads: bool = True
+    can_invite_users: bool = True
 
 
 class OrgUnitsListResponse(BaseModel):
@@ -90,6 +97,7 @@ class OrgUnitCreateRequest(BaseModel):
     billing_enabled: bool = True
     lead_user_id: str | None = Field(default=None, max_length=128)
     lead_user_ids: list[str] | None = Field(default=None, max_length=20)
+    ontology_lead_user_ids: list[str] | None = Field(default=None, max_length=20)
     member_user_ids: list[str] = Field(default_factory=list, max_length=200)
 
 
@@ -103,6 +111,7 @@ class OrgUnitPatchRequest(BaseModel):
     billing_enabled: bool | None = None
     lead_user_id: str | None = Field(default=None, max_length=128)
     lead_user_ids: list[str] | None = Field(default=None, max_length=20)
+    ontology_lead_user_ids: list[str] | None = Field(default=None, max_length=20)
     member_user_ids: list[str] | None = Field(default=None, max_length=200)
 
 
@@ -116,12 +125,43 @@ class OrgUnitDeleteResponse(BaseModel):
     trace_id: str = Field(..., min_length=32, max_length=32)
 
 
+class OrgUnitInviteUserRequest(BaseModel):
+    """Scoped user invitation payload for `POST /api/v1/org-units/invite-user` (`Story 20.1`)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    target_org_unit_id: str = Field(..., min_length=1, max_length=128)
+    email: str = Field(..., min_length=3, max_length=255)
+    display_name: str = Field(..., min_length=1, max_length=160)
+    assignment_role: str = Field(..., min_length=1, max_length=64)
+
+
+class OrgUnitInviteUserResponse(BaseModel):
+    """Scoped user invitation confirmation returned by `POST /api/v1/org-units/invite-user`."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    account_id: str
+    principal_id: str
+    email: str
+    display_name: str
+    target_org_unit_id: str
+    assignment_role: str
+    effective_roles: list[str] = Field(default_factory=list)
+    temporary_password: str | None = Field(default=None)  # pragma: allowlist secret
+    must_change_password: bool = True
+    org_unit: OrgUnitResponse
+    trace_id: str = Field(..., min_length=32, max_length=32)
+
+
 __all__ = [
     "AttachedWorkspaceRefResponse",
     "KnownOrgUserResponse",
     "KnownOrgUsersSearchResponse",
     "OrgUnitCreateRequest",
     "OrgUnitDeleteResponse",
+    "OrgUnitInviteUserRequest",
+    "OrgUnitInviteUserResponse",
     "OrgUnitPatchRequest",
     "OrgUnitResponse",
     "OrgUnitsListResponse",

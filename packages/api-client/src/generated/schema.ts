@@ -533,7 +533,7 @@ export interface components {
       human_profile_archetype: string;
       masked_destination?: string | null;
       must_change_password?: boolean;
-      platform_role: "PLATFORM_ADMIN" | "BU_DIRECTOR" | "TEAM_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
+      platform_role: "PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "BU_DIRECTOR" | "TEAM_LEAD" | "ONTOLOGY_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
       primary_org_unit_id: string;
       requires_two_factor?: boolean;
       roles?: (string)[];
@@ -2050,6 +2050,7 @@ export interface components {
       email?: string | null;
       led_bu_ids?: (string)[] | null;
       led_team_ids?: (string)[] | null;
+      ontology_led_bu_ids?: (string)[] | null;
       principal_id?: string | null;
       roles?: (string)[];
       status?: "ACTIVE" | "INVITED" | "DISABLED";
@@ -2064,6 +2065,7 @@ export interface components {
       email?: string | null;
       led_bu_ids?: (string)[] | null;
       led_team_ids?: (string)[] | null;
+      ontology_led_bu_ids?: (string)[] | null;
       roles?: (string)[] | null;
       status?: "ACTIVE" | "INVITED" | "DISABLED" | null;
       team_ids?: (string)[] | null;
@@ -2077,8 +2079,9 @@ export interface components {
       id: string;
       led_bu_ids?: (string)[];
       led_team_ids?: (string)[];
+      ontology_led_bu_ids?: (string)[];
       principal_id: string;
-      roles: ("PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "TEAM_LEAD" | "CONTRIBUTOR" | "OBSERVER")[];
+      roles: ("PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "TEAM_LEAD" | "ONTOLOGY_LEAD" | "CONTRIBUTOR" | "OBSERVER")[];
       status: "ACTIVE" | "INVITED" | "DISABLED";
       team_ids: (string)[];
       temporary_password?: string | null;
@@ -2438,12 +2441,15 @@ export interface components {
     };
     McpPersonalTokenMetadataItem: {
       allowed_workspace_slugs: (string)[];
+      created_at_iso?: string | null;
+      expires_at_iso?: string | null;
       expires_in_days: 30 | 90;
       exposed_capabilities: ("ASSISTANT" | "PUBLISHED_AGENTS" | "KB_GLOSSARY_SEARCH" | "STAGED_DRAFTS")[];
       ide_json_snippet: string;
       label: string;
       mcp_endpoint_uri: string;
       revoked: boolean;
+      revoked_at_iso?: string | null;
       rpm_limit: number;
       target_kind: "SPACE" | "AGENT";
       target_slug: string;
@@ -2483,7 +2489,7 @@ export interface components {
       display_name: string;
       email: string;
       human_profile_archetype: string;
-      role?: "PLATFORM_ADMIN" | "BU_DIRECTOR" | "TEAM_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
+      role?: "PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "BU_DIRECTOR" | "TEAM_LEAD" | "ONTOLOGY_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
     };
     NonDeterministicControlSpec: {
       agent_ref: string;
@@ -2546,15 +2552,79 @@ export interface components {
       expected_schema: Record<string, string>;
       id: string;
       introduced_in_snapshot_id?: string | null;
-      level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_RUN_EPHEMERAL";
+      level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_WORKSPACE" | "4_RUN_EPHEMERAL";
       parent_concept_id?: string | null;
       profile_translations: Record<string, string>;
       scope_id: string;
       snapshot_branch_status: "ACTIVE" | "SUPERSEDED";
       synonyms: (string)[];
     };
+    OntologyConceptWithPermissionsItem: {
+      banned_terms: (string)[];
+      can_edit?: boolean;
+      can_propose_promotion?: boolean;
+      canonical_term: string;
+      concept_key: string;
+      definition_text: string;
+      expected_schema: Record<string, string>;
+      id: string;
+      introduced_in_snapshot_id?: string | null;
+      level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_WORKSPACE" | "4_RUN_EPHEMERAL";
+      next_promotion_level?: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_WORKSPACE" | "4_RUN_EPHEMERAL" | null;
+      next_promotion_scope_id?: string | null;
+      parent_concept_id?: string | null;
+      profile_translations: Record<string, string>;
+      scope_id: string;
+      snapshot_branch_status: "ACTIVE" | "SUPERSEDED";
+      synonyms: (string)[];
+    };
+    OntologyConceptsListResponse: {
+      concepts: (components["schemas"]["OntologyConceptWithPermissionsItem"])[];
+      trace_id?: string | null;
+      writable_levels: ("1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_WORKSPACE" | "4_RUN_EPHEMERAL")[];
+      writable_scopes: (components["schemas"]["WritableScopeOptionItem"])[];
+    };
     OntologyPromoteRequest: {
       proposal_key: string;
+    };
+    OntologyPromotionCreateRequest: {
+      concept_key: string;
+      proposed_change?: string;
+      target_level?: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_WORKSPACE" | "4_RUN_EPHEMERAL" | null;
+      target_scope_id?: string | null;
+    };
+    OntologyPromotionDecideRequest: {
+      decision: "APPROVE" | "REJECT";
+      review_comment?: string | null;
+    };
+    OntologyPromotionDecideResponse: {
+      promoted_concept?: components["schemas"]["OntologyConceptSchemaItem"] | null;
+      proposal: components["schemas"]["OntologyPromotionProposalDetailItem"];
+      status: "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+      trace_id?: string | null;
+    };
+    OntologyPromotionProposalDetailItem: {
+      badge_color_token?: string;
+      can_decide?: boolean;
+      canonical_term: string;
+      colliding_definition?: string | null;
+      collision_detected?: boolean;
+      concept_key: string;
+      created_at?: string | null;
+      definition_text?: string;
+      id: string;
+      impact_report: components["schemas"]["WhatIfSimulationResponse"];
+      proposal_key: string;
+      proposed_by_user_id: string;
+      review_comment?: string | null;
+      reviewed_at?: string | null;
+      reviewed_by_user_id?: string | null;
+      source_concept_id?: string | null;
+      source_level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_WORKSPACE" | "4_RUN_EPHEMERAL";
+      source_scope_id?: string | null;
+      status: "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+      target_level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_WORKSPACE" | "4_RUN_EPHEMERAL";
+      target_scope_id: string;
     };
     OntologyPromotionProposalSchemaItem: {
       badge_color_token?: string;
@@ -2564,10 +2634,15 @@ export interface components {
       impact_report: components["schemas"]["WhatIfSimulationResponse"];
       proposal_key: string;
       proposed_by_user_id: string;
-      source_level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_RUN_EPHEMERAL";
+      source_level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_WORKSPACE" | "4_RUN_EPHEMERAL";
       status: "PENDING_REVIEW" | "APPROVED" | "REJECTED";
-      target_level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_RUN_EPHEMERAL";
+      target_level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_WORKSPACE" | "4_RUN_EPHEMERAL";
       target_scope_id: string;
+    };
+    OntologyPromotionsListResponse: {
+      pending_count: number;
+      proposals: (components["schemas"]["OntologyPromotionProposalDetailItem"])[];
+      trace_id?: string | null;
     };
     OntologyRelationSchemaItem: {
       cardinality: string;
@@ -2603,7 +2678,7 @@ export interface components {
       definition_text: string;
       expected_schema?: Record<string, string>;
       introduced_in_snapshot_id?: string | null;
-      level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_RUN_EPHEMERAL";
+      level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_WORKSPACE" | "4_RUN_EPHEMERAL";
       parent_concept_id?: string | null;
       profile_translations?: Record<string, string>;
       scope_id: string;
@@ -2622,6 +2697,7 @@ export interface components {
       lead_user_ids?: (string)[] | null;
       member_user_ids?: (string)[];
       name: string;
+      ontology_lead_user_ids?: (string)[] | null;
       parent_id?: string | null;
       slug?: string | null;
     };
@@ -2630,24 +2706,51 @@ export interface components {
       deleted_id: string;
       trace_id: string;
     };
+    OrgUnitInviteUserRequest: {
+      assignment_role: string;
+      display_name: string;
+      email: string;
+      target_org_unit_id: string;
+    };
+    OrgUnitInviteUserResponse: {
+      account_id: string;
+      assignment_role: string;
+      display_name: string;
+      effective_roles?: (string)[];
+      email: string;
+      must_change_password?: boolean;
+      org_unit: components["schemas"]["OrgUnitResponse"];
+      principal_id: string;
+      target_org_unit_id: string;
+      temporary_password?: string | null;
+      trace_id: string;
+    };
     OrgUnitPatchRequest: {
       billing_enabled?: boolean | null;
       lead_user_id?: string | null;
       lead_user_ids?: (string)[] | null;
       member_user_ids?: (string)[] | null;
       name?: string | null;
+      ontology_lead_user_ids?: (string)[] | null;
       parent_id?: string | null;
     };
     OrgUnitResponse: {
       attached_workspaces?: (components["schemas"]["AttachedWorkspaceRefResponse"])[];
       attached_workspaces_count?: number;
       billing_enabled?: boolean;
+      can_create_child?: boolean;
+      can_delete?: boolean;
+      can_edit?: boolean;
+      can_invite_users?: boolean;
+      can_manage_members?: boolean;
+      can_manage_ontology_leads?: boolean;
       id: string;
       kind: "BU" | "TEAM";
       lead_user_id?: string | null;
       lead_user_ids?: (string)[];
       member_user_ids?: (string)[];
       name: string;
+      ontology_lead_user_ids?: (string)[];
       parent_id?: string | null;
       slug: string;
     };
@@ -2876,6 +2979,13 @@ export interface components {
       trace_id: string;
       workflows?: (Record<string, unknown>)[];
       workspaces?: (Record<string, unknown>)[];
+    };
+    PopularUsageItemResponse: {
+      item_key: string;
+      item_type: "AGENT" | "PROCESS" | "SKILL" | "TOOL";
+      target_route: string;
+      title: string;
+      usage_count: number;
     };
     PostHocAuditSampleSchema: {
       contract_id: string;
@@ -3269,7 +3379,7 @@ export interface components {
       native_verbs: ("create" | "read" | "update" | "delete" | "execute" | "grant")[];
       natural_scope: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
       resource_permissions: Record<string, ("create" | "read" | "update" | "delete" | "execute" | "grant")[]>;
-      role: "PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "TEAM_LEAD" | "CONTRIBUTOR" | "OBSERVER";
+      role: "PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "TEAM_LEAD" | "ONTOLOGY_LEAD" | "CONTRIBUTOR" | "OBSERVER";
       secret_visibility: "WRITE_ONLY_NEVER_READABLE"; // pragma: allowlist secret
     };
     RoleMatrixResponse: {
@@ -3365,7 +3475,7 @@ export interface components {
     ScopeMutationCheckResponse: {
       access_mode: "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER";
       allowed?: boolean;
-      effective_role: "PLATFORM_ADMIN" | "BU_DIRECTOR" | "TEAM_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
+      effective_role: "PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "BU_DIRECTOR" | "TEAM_LEAD" | "ONTOLOGY_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
       trace_id: string;
       workspace_id: string;
     };
@@ -4236,7 +4346,7 @@ export interface components {
       modules: Record<string, boolean>;
       must_change_password?: boolean;
       org_units: (components["schemas"]["OrgUnitTreeItem"])[];
-      platform_role: "PLATFORM_ADMIN" | "BU_DIRECTOR" | "TEAM_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
+      platform_role: "PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "BU_DIRECTOR" | "TEAM_LEAD" | "ONTOLOGY_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
       primary_org_unit_id: string;
       roles?: (string)[];
       totp_enabled: boolean;
@@ -4245,7 +4355,7 @@ export interface components {
       workspaces: (components["schemas"]["WorkspaceSummaryItem"])[];
     };
     UserOnboardingStateItem: {
-      assigned_role: "PLATFORM_ADMIN" | "BU_DIRECTOR" | "TEAM_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
+      assigned_role: "PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "BU_DIRECTOR" | "TEAM_LEAD" | "ONTOLOGY_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
       human_profile_archetype: string;
       id: string;
       init_user_completed: boolean;
@@ -4272,20 +4382,44 @@ export interface components {
     };
     UserPreferencesResponse: {
       assistant_behavior_redirect_uri: string;
+      assistant_tone: "balanced" | "concise" | "detailed";
       auto_open_contextual_help: boolean;
+      default_assistant_hat: string;
       default_hat: string;
       locale: "fr" | "en";
       notifications_enabled: boolean;
+      personal_instructions: string;
       theme: "light" | "dark" | "system";
       trace_id?: string | null;
       user_id: string;
     };
     UserPreferencesUpdateRequest: {
+      assistant_tone?: "balanced" | "concise" | "detailed" | null;
       auto_open_contextual_help?: boolean | null;
+      default_assistant_hat?: string | null;
       default_hat?: string | null;
       locale?: "fr" | "en" | null;
       notifications_enabled?: boolean | null;
+      personal_instructions?: string | null;
       theme?: "light" | "dark" | "system" | null;
+    };
+    UserProfileSummaryResponse: {
+      current_streak_days: number;
+      display_name: string;
+      email: string;
+      handle: string;
+      led_business_units?: (string)[];
+      led_teams?: (string)[];
+      longest_streak_days: number;
+      member_teams?: (string)[];
+      ontology_business_units?: (string)[];
+      peak_daily_tokens: number;
+      popular_items?: (components["schemas"]["PopularUsageItemResponse"])[];
+      primary_role: string;
+      roles?: (string)[];
+      total_tokens: number;
+      trace_id: string;
+      user_id: string;
     };
     ValidateFencedWriteRequest: {
       fencing_token: number;
@@ -4818,7 +4952,7 @@ export interface components {
       access_mode: "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER";
       access_origin: "DIRECT_TEAM" | "ROLLUP_PARENT" | "PARTNER_INVITE" | "GLOBAL_ADMIN";
       datasources: (components["schemas"]["WorkspaceDatasourceItem"])[];
-      effective_role: "PLATFORM_ADMIN" | "BU_DIRECTOR" | "TEAM_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
+      effective_role: "PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "BU_DIRECTOR" | "TEAM_LEAD" | "ONTOLOGY_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
       finops_cost_usd?: number | null;
       id: string;
       name: string;
@@ -4830,6 +4964,11 @@ export interface components {
       consolidated_finops_usd: number;
       trace_id: string;
       workspaces: (components["schemas"]["WorkspaceSummaryItem"])[];
+    };
+    WritableScopeOptionItem: {
+      label: string;
+      level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_WORKSPACE" | "4_RUN_EPHEMERAL";
+      scope_id: string;
     };
     WritePreviewCard: {
       action_summary: string;
@@ -5655,6 +5794,11 @@ export interface paths {
     };
   };
   "/api/v1/ontology-rag/ontology/concepts": {
+    get: {
+      responses: {
+        200: components["schemas"]["OntologyConceptsListResponse"];
+      };
+    };
     post: {
       responses: {
         200: components["schemas"]["OntologyConceptSchemaItem"];
@@ -5665,6 +5809,25 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["OntologyPromotionProposalSchemaItem"];
+      };
+    };
+  };
+  "/api/v1/ontology-rag/ontology/promotions": {
+    get: {
+      responses: {
+        200: components["schemas"]["OntologyPromotionsListResponse"];
+      };
+    };
+    post: {
+      responses: {
+        200: components["schemas"]["OntologyPromotionProposalDetailItem"];
+      };
+    };
+  };
+  "/api/v1/ontology-rag/ontology/promotions/{proposal_id}/decide": {
+    post: {
+      responses: {
+        200: components["schemas"]["OntologyPromotionDecideResponse"];
       };
     };
   };
@@ -5831,6 +5994,13 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["OrgUnitResponse"];
+      };
+    };
+  };
+  "/api/v1/org-units/invite-user": {
+    post: {
+      responses: {
+        200: components["schemas"]["OrgUnitInviteUserResponse"];
       };
     };
   };
@@ -6303,7 +6473,7 @@ export interface paths {
     };
     post: {
       responses: {
-        200: components["schemas"]["McpPersonalTokenIssuedResponse"];
+        200: unknown;
       };
     };
   };
@@ -6342,6 +6512,13 @@ export interface paths {
     patch: {
       responses: {
         200: components["schemas"]["UserPreferencesResponse"];
+      };
+    };
+  };
+  "/api/v1/users/me/profile-summary": {
+    get: {
+      responses: {
+        200: components["schemas"]["UserProfileSummaryResponse"];
       };
     };
   };
@@ -6926,8 +7103,15 @@ export type OidcLoginRequest = components["schemas"]["OidcLoginRequest"];
 export type OntologyAndRagStateResponse = components["schemas"]["OntologyAndRagStateResponse"];
 export type OntologyAxiomRuleInputItem = components["schemas"]["OntologyAxiomRuleInputItem"];
 export type OntologyConceptSchemaItem = components["schemas"]["OntologyConceptSchemaItem"];
+export type OntologyConceptWithPermissionsItem = components["schemas"]["OntologyConceptWithPermissionsItem"];
+export type OntologyConceptsListResponse = components["schemas"]["OntologyConceptsListResponse"];
 export type OntologyPromoteRequest = components["schemas"]["OntologyPromoteRequest"];
+export type OntologyPromotionCreateRequest = components["schemas"]["OntologyPromotionCreateRequest"];
+export type OntologyPromotionDecideRequest = components["schemas"]["OntologyPromotionDecideRequest"];
+export type OntologyPromotionDecideResponse = components["schemas"]["OntologyPromotionDecideResponse"];
+export type OntologyPromotionProposalDetailItem = components["schemas"]["OntologyPromotionProposalDetailItem"];
 export type OntologyPromotionProposalSchemaItem = components["schemas"]["OntologyPromotionProposalSchemaItem"];
+export type OntologyPromotionsListResponse = components["schemas"]["OntologyPromotionsListResponse"];
 export type OntologyRelationSchemaItem = components["schemas"]["OntologyRelationSchemaItem"];
 export type OntologyResolveRequest = components["schemas"]["OntologyResolveRequest"];
 export type OntologyResolveResponse = components["schemas"]["OntologyResolveResponse"];
@@ -6936,6 +7120,8 @@ export type OntologyUpsertConceptRequest = components["schemas"]["OntologyUpsert
 export type OrchestrationSetupStateResponse = components["schemas"]["OrchestrationSetupStateResponse"];
 export type OrgUnitCreateRequest = components["schemas"]["OrgUnitCreateRequest"];
 export type OrgUnitDeleteResponse = components["schemas"]["OrgUnitDeleteResponse"];
+export type OrgUnitInviteUserRequest = components["schemas"]["OrgUnitInviteUserRequest"];
+export type OrgUnitInviteUserResponse = components["schemas"]["OrgUnitInviteUserResponse"];
 export type OrgUnitPatchRequest = components["schemas"]["OrgUnitPatchRequest"];
 export type OrgUnitResponse = components["schemas"]["OrgUnitResponse"];
 export type OrgUnitSummaryResponse = components["schemas"]["OrgUnitSummaryResponse"];
@@ -6962,6 +7148,7 @@ export type PlatformAuthSettingsResponse = components["schemas"]["PlatformAuthSe
 export type PlatformSettingResponse = components["schemas"]["PlatformSettingResponse"];
 export type PlatformSetupStatePutRequest = components["schemas"]["PlatformSetupStatePutRequest"];
 export type PlatformSetupStateResponse = components["schemas"]["PlatformSetupStateResponse"];
+export type PopularUsageItemResponse = components["schemas"]["PopularUsageItemResponse"];
 export type PostHocAuditSampleSchema = components["schemas"]["PostHocAuditSampleSchema"];
 export type PostHocReviewRequest = components["schemas"]["PostHocReviewRequest"];
 export type PostHocReviewResponse = components["schemas"]["PostHocReviewResponse"];
@@ -7118,6 +7305,7 @@ export type UserPassthroughConnectorItemResponse = components["schemas"]["UserPa
 export type UserPassthroughTokensListResponse = components["schemas"]["UserPassthroughTokensListResponse"];
 export type UserPreferencesResponse = components["schemas"]["UserPreferencesResponse"];
 export type UserPreferencesUpdateRequest = components["schemas"]["UserPreferencesUpdateRequest"];
+export type UserProfileSummaryResponse = components["schemas"]["UserProfileSummaryResponse"];
 export type ValidateFencedWriteRequest = components["schemas"]["ValidateFencedWriteRequest"];
 export type ValidateFencedWriteResponse = components["schemas"]["ValidateFencedWriteResponse"];
 export type ValidateHelpArticleRequest = components["schemas"]["ValidateHelpArticleRequest"];
@@ -7170,6 +7358,7 @@ export type WorkspaceSourceSummarySchema = components["schemas"]["WorkspaceSourc
 export type WorkspaceSpineBaselineSchemaItem = components["schemas"]["WorkspaceSpineBaselineSchemaItem"];
 export type WorkspaceSummaryItem = components["schemas"]["WorkspaceSummaryItem"];
 export type WorkspacesListResponse = components["schemas"]["WorkspacesListResponse"];
+export type WritableScopeOptionItem = components["schemas"]["WritableScopeOptionItem"];
 export type WritePreviewCard = components["schemas"]["WritePreviewCard"];
 export type XyFlowEdgeSchemaItem = components["schemas"]["XyFlowEdgeSchemaItem"];
 export type XyFlowNodeSchemaItem = components["schemas"]["XyFlowNodeSchemaItem"];

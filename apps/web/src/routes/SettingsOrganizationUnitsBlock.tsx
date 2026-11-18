@@ -2,28 +2,18 @@ import {
   ContextualInfoTriggerButton,
   OrciaAlertBanner,
   OrciaButton,
+  TemporaryPasswordInvitationModal,
   type ControlCenterWorkspaceGovItem,
-  type KnownUserOption,
 } from "@orcia/ui";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import type { ConfiguredOrgUnit } from "../components/platformSetupStore";
 import { useShellNavigation } from "../components/ShellContainer";
-import { useAuthSessionStore } from "../stores/authSessionStore";
 import { OrgPedagogicalCallout } from "../features/admin/organization/OrgPedagogicalCallout";
-import { buildIndentedOrgTree, type OrgTreeRowItem } from "../features/admin/organization/orgTreeHelpers";
-import {
-  createOrgUnitViaApi,
-  deleteOrgUnitViaApi,
-  fetchOrgUnitsFromApi,
-  patchOrgUnitViaApi,
-} from "../features/admin/organization/orgUnitsApiBridge";
-import {
-  SettingsOrganizationModalsGroup,
-  type CreateOrgUnitFormValues,
-  type EditOrgUnitFormValues,
-} from "../features/admin/organization/SettingsOrganizationModalsGroup";
+import { buildIndentedOrgTree } from "../features/admin/organization/orgTreeHelpers";
+import { SettingsOrganizationModalsGroup } from "../features/admin/organization/SettingsOrganizationModalsGroup";
 import { useI18n } from "../i18n";
 import { SettingsOrganizationUnitRow } from "./SettingsOrganizationUnitRow";
+import { type OrgUnitAuditMeta, useOrgUnitsBlockActions } from "./useOrgUnitsBlockActions";
 
 export interface SettingsOrganizationUnitsBlockProps {
   readonly isFr: boolean;
@@ -33,13 +23,7 @@ export interface SettingsOrganizationUnitsBlockProps {
   readonly openHelpSection: (sectionId: string) => void;
   readonly syncOrgUnitsFromServer: (
     units: readonly ConfiguredOrgUnit[],
-    auditMeta?: {
-      readonly eventType: string;
-      readonly summary: string;
-      readonly scopeId?: string;
-      readonly scopePath?: string;
-      readonly scopeLabel?: string;
-    },
+    auditMeta?: OrgUnitAuditMeta,
   ) => void;
 }
 
@@ -54,192 +38,25 @@ export function SettingsOrganizationUnitsBlock({
   const { dictionary, locale } = useI18n();
   const { navigateToRoute } = useShellNavigation();
   const labels = dictionary.settingsHub.organizationTab;
+  const typedLocale = locale === "en" ? "en" : "fr";
 
-  const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [editingUnit, setEditingUnit] = useState<ConfiguredOrgUnit | null>(null);
-  const [managingMembersUnit, setManagingMembersUnit] = useState<ConfiguredOrgUnit | null>(null);
-  const [deletingRowItem, setDeletingRowItem] = useState<OrgTreeRowItem | null>(null);
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [modalError, setModalError] = useState<string | null>(null);
-  const [orgDeleteFeedback, setOrgDeleteFeedback] = useState<string | null>(null);
-  const [knownUsers, setKnownUsers] = useState<readonly KnownUserOption[]>([]);
-
-  const isHydrating = useAuthSessionStore((s) => s.isHydrating);
-  const accessToken = useAuthSessionStore((s) => s.accessToken);
-
-  useEffect(() => {
-    if (isHydrating) {
-      return;
-    }
-    let cancelled = false;
-    void fetchOrgUnitsFromApi(locale).then((res) => {
-      if (cancelled) return;
-      if (res.ok) {
-        setOrgDeleteFeedback(null);
-        if (res.units.length > 0) {
-          syncOrgUnitsFromServer(res.units);
-        }
-        if (res.knownUsers) {
-          setKnownUsers(res.knownUsers);
-        }
-      } else {
-        setOrgDeleteFeedback(res.errorMessage);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [locale, isHydrating, accessToken]);
+  const s = useOrgUnitsBlockActions({
+    locale: typedLocale,
+    orgUnits,
+    syncOrgUnitsFromServer,
+  });
 
   const treeRows = buildIndentedOrgTree(orgUnits, workspaces);
-
-  const handleCreateSubmit = async (values: CreateOrgUnitFormValues) => {
-    setIsSubmitting(true);
-    setModalError(null);
-    setOrgDeleteFeedback(null);
-    const parentPayload = values.parentId && values.parentId !== "scope-global" ? values.parentId : null;
-    const effectiveLeads = Array.isArray(values.leadUserIds) && values.leadUserIds.length > 0
-      ? values.leadUserIds
-      : (values.leadUserId ? [values.leadUserId] : []);
-    const res = await createOrgUnitViaApi(
-      {
-        name: values.name,
-        kind: values.kind,
-        slug: values.slug || null,
-        parent_id: parentPayload,
-        billing_enabled: values.billingEnabled,
-        lead_user_id: effectiveLeads[0] ?? null,
-        lead_user_ids: effectiveLeads,
-        member_user_ids: [],
-      },
-      locale,
-    );
-    setIsSubmitting(false);
-    if (!res.ok) {
-      setModalError(res.errorMessage);
-      return;
-    }
-    const nextUnits = [...orgUnits.filter((u) => u.id !== res.unit.id), res.unit];
-    const levelLabel = values.kind === "BU" ? "Direction (BU)" : "Équipe";
-    syncOrgUnitsFromServer(nextUnits, {
-      eventType: "OrgUnitCreated",
-      summary: `${levelLabel} "${res.unit.name}" (${res.unit.slug}) créée`,
-      scopeId: res.unit.id,
-      scopePath: res.unit.slug,
-      scopeLabel: `${levelLabel} · ${res.unit.name}`,
-    });
-    void useAuthSessionStore.getState().hydrateSession({ force: true });
-    setCreateModalOpen(false);
-  };
-
-  const handleEditSave = async (orgUnitId: string, values: EditOrgUnitFormValues) => {
-    setIsSubmitting(true);
-    setModalError(null);
-    const parentPayload = values.parentId && values.parentId !== "scope-global" ? values.parentId : null;
-    const effectiveLeads = Array.isArray(values.leadUserIds) && values.leadUserIds.length > 0
-      ? values.leadUserIds
-      : (values.leadUserId ? [values.leadUserId] : undefined);
-    const res = await patchOrgUnitViaApi(
-      orgUnitId,
-      {
-        name: values.name,
-        parent_id: parentPayload,
-        billing_enabled: values.billingEnabled,
-        ...(effectiveLeads !== undefined ? {
-          lead_user_id: effectiveLeads[0] ?? null,
-          lead_user_ids: effectiveLeads,
-        } : {}),
-      },
-      locale,
-    );
-    setIsSubmitting(false);
-    if (!res.ok) {
-      setModalError(res.errorMessage);
-      return;
-    }
-    const nextUnits = orgUnits.map((u) => (u.id === orgUnitId ? res.unit : u));
-    const levelLabel = res.unit.level === "BU" ? "Direction (BU)" : "Équipe";
-    syncOrgUnitsFromServer(nextUnits, {
-      eventType: "SettingsChanged",
-      summary: `${levelLabel} "${res.unit.name}" mise à jour`,
-      scopeId: res.unit.id,
-      scopePath: res.unit.slug,
-      scopeLabel: `${levelLabel} · ${res.unit.name}`,
-    });
-    void useAuthSessionStore.getState().hydrateSession({ force: true });
-    setEditingUnit(null);
-  };
-
-  const handleMembersSave = async (
-    orgUnitId: string,
-    values: {
-      readonly leadUserId: string | null;
-      readonly leadUserIds?: readonly string[];
-      readonly memberUserIds: readonly string[];
-    },
-  ) => {
-    setIsSubmitting(true);
-    setModalError(null);
-    const effectiveLeads = Array.isArray(values.leadUserIds) && values.leadUserIds.length > 0
-      ? values.leadUserIds
-      : (values.leadUserId ? [values.leadUserId] : []);
-    const res = await patchOrgUnitViaApi(
-      orgUnitId,
-      {
-        lead_user_id: effectiveLeads[0] ?? null,
-        lead_user_ids: effectiveLeads,
-        member_user_ids: [...values.memberUserIds],
-      },
-      locale,
-    );
-    setIsSubmitting(false);
-    if (!res.ok) {
-      setModalError(res.errorMessage);
-      return;
-    }
-    const nextUnits = orgUnits.map((u) => (u.id === orgUnitId ? res.unit : u));
-    const levelLabel = res.unit.level === "BU" ? "Direction (BU)" : "Équipe";
-    syncOrgUnitsFromServer(nextUnits, {
-      eventType: "PermissionGranted",
-      summary: `Membres de ${levelLabel} "${res.unit.name}" mis à jour (${res.unit.memberUserIds?.length ?? 0})`,
-      scopeId: res.unit.id,
-      scopePath: res.unit.slug,
-      scopeLabel: `${levelLabel} · ${res.unit.name}`,
-    });
-    void useAuthSessionStore.getState().hydrateSession({ force: true });
-    setManagingMembersUnit(null);
-  };
-
-  const handleConfirmDelete = async (orgUnitId: string) => {
-    setIsSubmitting(true);
-    setModalError(null);
-    const target = orgUnits.find((u) => u.id === orgUnitId);
-    const res = await deleteOrgUnitViaApi(orgUnitId, locale);
-    setIsSubmitting(false);
-    if (!res.ok) {
-      setOrgDeleteFeedback(res.errorMessage);
-      setDeletingRowItem(null);
-      return;
-    }
-    const nextUnits = orgUnits.filter((u) => u.id !== orgUnitId);
-    const levelLabel = target?.level === "BU" ? "Direction (BU)" : "Équipe";
-    syncOrgUnitsFromServer(
-      nextUnits,
-      target
-        ? {
-            eventType: "OrgUnitDeleted",
-            summary: `${levelLabel} "${target.name}" (${target.slug}) supprimée`,
-            scopeId: target.id,
-            scopePath: target.slug,
-            scopeLabel: `${levelLabel} · ${target.name}`,
-          }
-        : undefined,
-    );
-    void useAuthSessionStore.getState().hydrateSession({ force: true });
-    setOrgDeleteFeedback(null);
-    setDeletingRowItem(null);
-  };
+  const hasServerCaps = Object.keys(s.capabilitiesById).length > 0;
+  const creatableParentUnits = orgUnits.filter((u) =>
+    hasServerCaps ? Boolean(s.capabilitiesById[u.id]?.canCreateChild) : u.level === "BU",
+  );
+  const canCreateUnit =
+    canMutate && (s.isPlatformAdmin || creatableParentUnits.length > 0 || !hasServerCaps);
+  const invitableUnits = orgUnits.filter((u) =>
+    hasServerCaps ? Boolean(s.capabilitiesById[u.id]?.canInviteUsers) : s.isPlatformAdmin,
+  );
+  const hasReadOnlyAncestor = orgUnits.some((u) => s.capabilitiesById[u.id]?.canEdit === false);
 
   return (
     <section
@@ -265,61 +82,84 @@ export function SettingsOrganizationUnitsBlock({
           />
         </div>
 
-        <OrciaButton
-          variant="primary"
-          testId="open-create-org-unit-modal-btn"
-          disabled={!canMutate}
-          onClick={() => {
-            setModalError(null);
-            setOrgDeleteFeedback(null);
-            setCreateModalOpen(true);
-          }}
-        >
-          {labels.openCreateModalCta}
-        </OrciaButton>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+          {invitableUnits.length > 0 ? (
+            <OrciaButton
+              variant="secondary"
+              testId="open-invite-org-user-modal-btn"
+              disabled={!canMutate}
+              onClick={() => {
+                s.setModalError(null);
+                s.setOrgDeleteFeedback(null);
+                s.setInviteModalOpen(true);
+              }}
+            >
+              {labels.openInviteModalCta}
+            </OrciaButton>
+          ) : null}
+
+          <OrciaButton
+            variant="primary"
+            testId="open-create-org-unit-modal-btn"
+            disabled={!canCreateUnit}
+            onClick={() => {
+              s.setModalError(null);
+              s.setOrgDeleteFeedback(null);
+              s.setCreateModalOpen(true);
+            }}
+          >
+            {labels.openCreateModalCta}
+          </OrciaButton>
+        </div>
       </div>
+
+      {hasReadOnlyAncestor ? (
+        <OrciaAlertBanner tone="cobalt" testId="org-scoped-view-notice">
+          {labels.scopedViewNotice}
+        </OrciaAlertBanner>
+      ) : null}
 
       <OrgPedagogicalCallout
         labels={labels}
         onOpenWorkspaces={() => navigateToRoute("/workspaces")}
       />
 
-      {orgDeleteFeedback ? (
+      {s.orgDeleteFeedback ? (
         <OrciaAlertBanner tone="crimson" role="alert" testId="org-unit-delete-feedback">
-          {orgDeleteFeedback}
+          {s.orgDeleteFeedback}
         </OrciaAlertBanner>
       ) : null}
 
       {treeRows.length === 0 ? (
         <p
           data-testid="iam-org-units-empty-state"
-          style={{
-            margin: 0,
-            fontSize: "13px",
-            color: "var(--color-muted-foreground)",
-          }}
+          style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}
         >
           {labels.emptyStateText}
         </p>
       ) : (
-        <div
-          data-testid="settings-organization-tree"
-          style={{ display: "grid", gap: "6px" }}
-        >
+        <div data-testid="settings-organization-tree" style={{ display: "grid", gap: "6px" }}>
           {treeRows.map((rowItem) => (
             <SettingsOrganizationUnitRow
               key={rowItem.unit.id}
               rowItem={rowItem}
               isFr={isFr}
               canMutate={canMutate}
+              capabilities={s.capabilitiesById[rowItem.unit.id]}
               labels={labels}
-              knownUsers={knownUsers}
-              onEdit={(unit) => { setModalError(null); setEditingUnit(unit); }}
-              onManageMembers={(unit) => { setModalError(null); setManagingMembersUnit(unit); }}
+              knownUsers={s.knownUsers}
+              onEdit={(unit) => {
+                s.setModalError(null);
+                s.setEditingUnit(unit);
+              }}
+              onManageMembers={(unit) => {
+                s.setModalError(null);
+                s.setManagingMembersUnit(unit);
+              }}
               onRequestDelete={(item) => {
-                setModalError(null);
-                setOrgDeleteFeedback(null);
-                setDeletingRowItem(item);
+                s.setModalError(null);
+                s.setOrgDeleteFeedback(null);
+                s.setDeletingRowItem(item);
               }}
             />
           ))}
@@ -329,25 +169,46 @@ export function SettingsOrganizationUnitsBlock({
       <SettingsOrganizationModalsGroup
         isFr={isFr}
         canMutate={canMutate}
+        canCreateAtRoot={s.isPlatformAdmin}
+        creatableParentUnits={creatableParentUnits}
+        invitableUnits={invitableUnits}
+        capabilitiesById={s.capabilitiesById}
         orgUnits={orgUnits}
-        knownUsers={knownUsers}
+        knownUsers={s.knownUsers}
         labels={labels}
-        modalError={modalError}
-        isSubmitting={isSubmitting}
-        createModalOpen={createModalOpen}
-        onOpenChangeCreate={setCreateModalOpen}
-        onCreateSubmit={(values) => void handleCreateSubmit(values)}
-        editingUnit={editingUnit}
-        onOpenChangeEdit={(open) => !open && setEditingUnit(null)}
-        onEditSave={(orgUnitId, values) => void handleEditSave(orgUnitId, values)}
-        managingMembersUnit={managingMembersUnit}
-        onOpenChangeMembers={(open) => !open && setManagingMembersUnit(null)}
-        onMembersSave={(orgUnitId, values) => void handleMembersSave(orgUnitId, values)}
-        deletingRowItem={deletingRowItem}
-        onOpenChangeDelete={(open) => !open && setDeletingRowItem(null)}
+        modalError={s.modalError}
+        isSubmitting={s.isSubmitting}
+        createModalOpen={s.createModalOpen}
+        onOpenChangeCreate={s.setCreateModalOpen}
+        onCreateSubmit={(values) => void s.handleCreateSubmit(values)}
+        inviteModalOpen={s.inviteModalOpen}
+        onOpenChangeInvite={s.setInviteModalOpen}
+        onInviteSubmit={(values) => void s.handleInviteSubmit(values)}
+        editingUnit={s.editingUnit}
+        onOpenChangeEdit={(open) => !open && s.setEditingUnit(null)}
+        onEditSave={(orgUnitId, values) => void s.handleEditSave(orgUnitId, values)}
+        managingMembersUnit={s.managingMembersUnit}
+        onOpenChangeMembers={(open) => !open && s.setManagingMembersUnit(null)}
+        onMembersSave={(orgUnitId, values) => void s.handleMembersSave(orgUnitId, values)}
+        deletingRowItem={s.deletingRowItem}
+        onOpenChangeDelete={(open) => !open && s.setDeletingRowItem(null)}
         onOpenWorkspaces={() => navigateToRoute("/workspaces")}
-        onConfirmDelete={(orgUnitId) => void handleConfirmDelete(orgUnitId)}
+        onConfirmDelete={(orgUnitId) => void s.handleConfirmDelete(orgUnitId)}
       />
+
+      {s.inviteTempPasswordData ? (
+        <TemporaryPasswordInvitationModal
+          isOpen={true}
+          isFr={isFr}
+          displayName={s.inviteTempPasswordData.displayName}
+          email={s.inviteTempPasswordData.email}
+          temporaryPassword={s.inviteTempPasswordData.temporaryPassword}
+          orciaUrl={
+            typeof window !== "undefined" ? window.location.origin : "http://localhost:3100"
+          }
+          onClose={() => s.setInviteTempPasswordData(null)}
+        />
+      ) : null}
     </section>
   );
 }
