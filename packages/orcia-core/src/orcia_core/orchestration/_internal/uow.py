@@ -35,11 +35,36 @@ class DbosSqlAlchemyUnitOfWork:
     `create_async_engine("postgresql+asyncpg://...")` preserves the `asyncpg` driver.
     """
 
-    def __init__(self, datasource: AsyncSQLAlchemyDatasource) -> None:
-        self._datasource = datasource
-        self._session_factory: async_sessionmaker[AsyncSession] = async_sessionmaker(
-            datasource.engine, expire_on_commit=False
+    def __init__(
+        self,
+        datasource: AsyncSQLAlchemyDatasource | None = None,
+        *,
+        engine: AsyncEngine | None = None,
+        session_factory: async_sessionmaker[AsyncSession] | None = None,
+    ) -> None:
+        if datasource is not None:
+            self._datasource: AsyncSQLAlchemyDatasource | None = datasource
+            self._engine: AsyncEngine = datasource.engine
+        elif engine is not None:
+            self._datasource = None
+            self._engine = engine
+        else:
+            raise ValueError("DbosSqlAlchemyUnitOfWork requires either datasource or engine.")
+        self._session_factory: async_sessionmaker[AsyncSession] = (
+            session_factory
+            if session_factory is not None
+            else async_sessionmaker(self._engine, expire_on_commit=False)
         )
+
+    @classmethod
+    def from_engine(
+        cls,
+        engine: AsyncEngine,
+        *,
+        session_factory: async_sessionmaker[AsyncSession] | None = None,
+    ) -> DbosSqlAlchemyUnitOfWork:
+        """Build a lightweight `DbosSqlAlchemyUnitOfWork` backed by an existing `AsyncEngine`."""
+        return cls(None, engine=engine, session_factory=session_factory)
 
     @classmethod
     async def create(
@@ -69,11 +94,17 @@ class DbosSqlAlchemyUnitOfWork:
 
     @property
     def datasource(self) -> AsyncSQLAlchemyDatasource:
+        if self._datasource is None:
+            raise RuntimeError("DbosSqlAlchemyUnitOfWork has no AsyncSQLAlchemyDatasource bound.")
         return self._datasource
 
     @property
+    def has_datasource(self) -> bool:
+        return self._datasource is not None
+
+    @property
     def engine(self) -> AsyncEngine:
-        return self._datasource.engine
+        return self._engine
 
     @property
     def session_factory(self) -> async_sessionmaker[AsyncSession]:
@@ -83,7 +114,7 @@ class DbosSqlAlchemyUnitOfWork:
     @property
     def session(self) -> AsyncSession:
         """Return the active `AsyncSession` bound to the current DBOS transaction."""
-        return self._datasource.sql_session()
+        return self.datasource.sql_session()
 
     @asynccontextmanager
     async def session_scope(self) -> AsyncIterator[AsyncSession]:
@@ -100,6 +131,8 @@ class DbosSqlAlchemyUnitOfWork:
         **kwargs: Any,
     ) -> R:
         """Execute an async repository callback inside an atomic SQLAlchemy + DBOS transaction."""
+        if self._datasource is None:
+            return await func(*args, **kwargs)
         options: dict[str, Any] = {"isolation_level": isolation_level}
         if name is not None:
             options["name"] = name
@@ -111,4 +144,4 @@ class DbosSqlAlchemyUnitOfWork:
         )
 
     async def close(self) -> None:
-        await self._datasource.engine.dispose()
+        await self._engine.dispose()

@@ -6,7 +6,10 @@ import asyncio
 import concurrent.futures
 import json
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from orcia_core.gates._internal.sql_gate_repository import SqlGateEvaluationRepository
 
 from orcia_core.gates.agentic import (
     AgenticGateEvaluationResult,
@@ -67,6 +70,7 @@ class DeterministicGateService:
         sandbox_port: SandboxPort | None = None,
         outbox_relay: OutboxRelayPort | None = None,
         agentic_service: AgenticGateService | None = None,
+        repository: SqlGateEvaluationRepository | None = None,
     ) -> None:
         self.sandbox_port: SandboxPort = sandbox_port or BimodalSandboxAdapter()
         self.tier2_runner: ContainerSandboxRunner = (
@@ -77,11 +81,20 @@ class DeterministicGateService:
         self.agentic_service: AgenticGateService = agentic_service or AgenticGateService(
             outbox_relay=outbox_relay
         )
-        self.human_service: AdaptiveHumanGateService = AdaptiveHumanGateService()
+        self.human_service: AdaptiveHumanGateService = AdaptiveHumanGateService(
+            outbox_relay=outbox_relay,
+            repository=repository,
+        )
+        self._repository = repository
         self._outbox_relay = outbox_relay
         self._evaluations: dict[str, GateEvaluationEntity] = {}
         self._outbox_events: list[GateEvaluated] = []
         self._workspace_spines: dict[str, WorkspaceSpineBaseline] = {}
+
+    def set_repository(self, repository: SqlGateEvaluationRepository | None) -> None:
+        """Attach `SqlGateEvaluationRepository` to Deterministic & Human Gate services."""
+        self._repository = repository
+        self.human_service.set_repository(repository)
 
     def register_workspace_spine_baseline(self, baseline: WorkspaceSpineBaseline) -> None:
         """Register or update the `[ADOPTED]` `ARCHITECTURE-SPINE.md` baseline for a Workspace."""
@@ -296,4 +309,44 @@ class DeterministicGateService:
         for evt in self.agentic_service.list_outbox_events():
             if evt not in self._outbox_events:
                 self._outbox_events.append(evt)
+        return result
+
+    async def list_evaluations_async(
+        self, *, run_id: str | None = None
+    ) -> list[GateEvaluationEntity]:
+        """List gate evaluations from PostgreSQL 18 when `SqlGateEvaluationRepository` is set."""
+        if self._repository is not None:
+            return await self._repository.list_gate_evaluations(run_id=run_id)
+        return self.list_evaluations(run_id=run_id)
+
+    async def evaluate_deterministic_gate_async(
+        self,
+        gate_input: DeterministicGateInput,
+        *,
+        raise_on_failure: bool = False,
+    ) -> GateEvaluationEntity:
+        """Evaluate a Deterministic Gate and persist the result in PG18."""
+        try:
+            entity = self.evaluate_deterministic_gate(gate_input, raise_on_failure=raise_on_failure)
+        except Exception:
+            if self._repository is not None and self._evaluations:
+                latest = list(self._evaluations.values())[-1]
+                if latest.run_id == gate_input.run_id and latest.step_key == gate_input.step_key:
+                    await self._repository.save_gate_evaluation(latest)
+            raise
+        if self._repository is not None:
+            await self._repository.save_gate_evaluation(entity)
+        return entity
+
+    async def evaluate_agentic_gate_async(
+        self, gate_input: AgenticGateInput
+    ) -> AgenticGateEvaluationResult:
+        """Evaluate the 5-lens Agentic Gate asynchronously and persist in PG18."""
+        result = await self.agentic_service.evaluate_agentic_gate_async(gate_input)
+        self._evaluations[result.evaluation.id] = result.evaluation
+        for evt in self.agentic_service.list_outbox_events():
+            if evt not in self._outbox_events:
+                self._outbox_events.append(evt)
+        if self._repository is not None:
+            await self._repository.save_gate_evaluation(result.evaluation)
         return result

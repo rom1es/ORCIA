@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from orcia_core.gates._internal.sql_gate_repository import SqlGateEvaluationRepository
 from orcia_core.gates._internal.starlark_sandbox import (
     StarlarkEvaluationResult,
     StarlarkMechanismSandbox,
@@ -128,6 +129,7 @@ __all__ = [
     "PolicyDeniedError",
     "RubberStampingGuardTriggeredError",
     "SandboxTierLiteral",
+    "SqlGateEvaluationRepository",
     "StarlarkEvaluationResult",
     "StarlarkMechanismSandbox",
     "StarlarkSandboxError",

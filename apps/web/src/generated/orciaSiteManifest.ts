@@ -589,11 +589,11 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "summary": "Pré-implémentation : upsert idempotent des packs déclaratifs dans declarative_pack_bundles, persistance wizard_sessions dans DurableOnboardingWizardService, câblage @orcia/api-client dans routes/wizards.tsx et suppression de la triple numérotation / sdlc_tech_lead (CAP-055, CAP-056, CAP-057, CAP-150)."
     },
     {
-      "date": "2026-11-18",
+      "date": "2026-11-19",
       "phaseOrStory": "Story 22.4",
       "reportFile": "22-4-persistance-pg18-orchestration-gates-et-garde-kill-switch-tech-lead-report.md",
       "domain": "Vague 1 (REM-09, REM-11, REM-12) — Persistance PG18 Orchestration (dbos_uow, ancres, challenges, run_lock), Gates & Garde KILL_SWITCH_STOPPED",
-      "summary": "Pré-implémentation : initialisation app.state.dbos_uow, adaptateurs SQL human_anchor_signatures, upstream_challenges, run_lock_manifests, montage UpstreamChallengeRewindModal, SqlGateEvaluationRepository (gate_evaluations, chunk_approvals) + séparation /gates vs /processes, et garde AND status <> 'KILL_SWITCH_STOPPED' dans _sql_autonomous_rollback.py (CAP-020, CAP-021, CAP-023, CAP-024, CAP-030..033, CAP-201)."
+      "summary": "Implémentée (done) : initialisation app.state.dbos_uow/dbos_datasource au Composition Root et adaptateurs SQL PG18 (_sql_orchestration_governance.py, _sql_orchestration_challenges.py, _sql_orchestration_parents.py, _orchestration_sql_hydration.py) ; montage UpstreamChallengeRewindModal (inline + Radix Portal) dans CockpitUpstreamChallengePanel.tsx & GatesChallengeModalSection.tsx ; SqlGateEvaluationRepository (gate_evaluations, chunk_approvals) + découplage /gates vs /processes (ProcessStudioAndPackAuthoringSection.tsx) ; garde AND status <> 'KILL_SWITCH_STOPPED' dans _sql_autonomous_rollback.py ; 92 % couv. Story 22.4, 826 tests unit/sécu/évals (8/8 unitaires Story 22.4), 2/2 PG18 testcontainers sans override, 9/9 Turbo (168/168 Web, 110/110 UI, 13/13 API-Client), 5/5 contrats lint-imports et 0 finding lint_spine."
     },
     {
       "date": "2026-11-18",

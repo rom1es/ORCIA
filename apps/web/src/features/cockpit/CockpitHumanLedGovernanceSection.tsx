@@ -1,7 +1,6 @@
 import { createOrciaApiClient } from "@orcia/api-client";
 import {
   ArbitrationTieBreakCard,
-  type ArbitrationTieBreakOptionView,
   HumanLedAnchorCard,
   OrciaAlertBanner,
   StatusBadge,
@@ -9,27 +8,28 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { useI18n } from "../../i18n";
-
-const DEFAULT_WORKFLOW_URI = "orcia://workflows/claims-engineering-delivery";
-const DEFAULT_STEP_KEY = "frame-architecture-intent";
-const DEFAULT_SECTION_KEY = "human_architecture_intent";
-const DEFAULT_FALLBACK_WORKSPACE_ID = "0192c4e0-0000-7000-8000-000000000201";
-
-const DEFAULT_ARBITRATION_OPTIONS: ArbitrationTieBreakOptionView[] = [
-  { optionKey: "OPT_A_SPOT_15M", title: "Option A — Taux Spot 15 min", pros: ["Compatible API partenaire v3", "Latence minimale"], cons: ["Fenêtre client 15 min"], siImpact: "1 microservice impacté", finopsImpact: "0.02 USD / run", recommended: true },
-  { optionKey: "OPT_B_LOCK_48H", title: "Option B — Taux Bloqué 48h", pros: ["Confort client 48h"], cons: ["Incompatible API v3"], siImpact: "3 systèmes centraux impactés", finopsImpact: "0.18 USD / run", recommended: false },
-];
+import {
+  DEFAULT_ARBITRATION_OPTIONS,
+  DEFAULT_FALLBACK_WORKSPACE_ID,
+  DEFAULT_SECTION_KEY,
+  DEFAULT_STEP_KEY,
+  DEFAULT_WORKFLOW_URI,
+  extractGovernanceStateFromBlackboard,
+} from "./cockpitGovernanceHelpers";
+import { CockpitUpstreamChallengePanel } from "./CockpitUpstreamChallengePanel";
 
 export interface CockpitHumanLedGovernanceSectionProps {
   readonly workspaceId?: string;
   readonly authorName: string;
   readonly refreshSignal?: number;
+  readonly activeRunId?: string | null;
 }
 
 export function CockpitHumanLedGovernanceSection({
   workspaceId,
   authorName,
   refreshSignal = 0,
+  activeRunId = null,
 }: CockpitHumanLedGovernanceSectionProps) {
   const { dictionary, locale } = useI18n();
   const isFr = locale === "fr";
@@ -50,6 +50,7 @@ export function CockpitHumanLedGovernanceSection({
   const [resolvedOptionKey, setResolvedOptionKey] = useState<string | null>(null);
   const [resolvedJustification, setResolvedJustification] = useState<string | null>(null);
   const [committedSnapshotId, setCommittedSnapshotId] = useState<string | null>(null);
+  const [hasStaleWarning, setHasStaleWarning] = useState<boolean>(false);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
 
   const effectiveWorkspaceId = workspaceId?.trim() || DEFAULT_FALLBACK_WORKSPACE_ID;
@@ -58,51 +59,31 @@ export function CockpitHumanLedGovernanceSection({
     async (runId: string) => {
       try {
         const bb = await apiClient.getRunBlackboardState(runId);
-        setServerRunId(bb.run_id);
-        const step =
-          bb.step_executions.find((s) => s.step_key === DEFAULT_STEP_KEY) ??
-          bb.step_executions[0];
-        if (step) {
-          setStepStatus(step.status);
-          const draft = (step.draft_artifact ?? {}) as Record<string, unknown>;
-          const anchors = (draft.human_anchors ?? {}) as Record<
-            string,
-            { content_text?: string; content_sha256?: string }
-          >;
-          const anchorEntry = anchors[DEFAULT_SECTION_KEY];
-          if (anchorEntry?.content_text) {
-            setAnchorText(anchorEntry.content_text);
-          }
-          if (anchorEntry?.content_sha256) {
-            setSignedSha256(anchorEntry.content_sha256);
-          }
-          if (typeof draft.pending_arbitration_id === "string") {
-            setPendingArbitrationId(draft.pending_arbitration_id);
-          }
-          const resolution = draft.arbitration_resolution as
-            | {
-                selected_option_key?: string;
-                human_justification?: string | null;
-              }
-            | undefined;
-          if (resolution?.selected_option_key) {
-            setResolvedOptionKey(resolution.selected_option_key);
-            setResolvedJustification(resolution.human_justification ?? null);
-          }
-          if (step.committed_snapshot_id) {
-            setCommittedSnapshotId(step.committed_snapshot_id);
-          }
+        const h = extractGovernanceStateFromBlackboard(bb);
+        setServerRunId(h.runId);
+        setStepStatus(h.stepStatus);
+        if (h.anchorText) setAnchorText(h.anchorText);
+        if (h.signedSha256) setSignedSha256(h.signedSha256);
+        if (h.pendingArbitrationId) setPendingArbitrationId(h.pendingArbitrationId);
+        if (h.resolvedOptionKey) {
+          setResolvedOptionKey(h.resolvedOptionKey);
+          setResolvedJustification(h.resolvedJustification);
         }
-        const firstSnap = bb.active_snapshots[0];
-        if (firstSnap?.id) {
-          setCommittedSnapshotId(firstSnap.id);
-        }
+        if (h.committedSnapshotId) setCommittedSnapshotId(h.committedSnapshotId);
+        setHasStaleWarning(h.hasStaleWarning);
       } catch (err) {
         setErrorBanner(err instanceof Error ? err.message : String(err));
       }
     },
     [apiClient],
   );
+
+  useEffect(() => {
+    if (activeRunId) {
+      setServerRunId(activeRunId);
+      void hydrateFromRun(activeRunId);
+    }
+  }, [activeRunId, hydrateFromRun]);
 
   useEffect(() => {
     if (isHydrating) {
@@ -352,6 +333,18 @@ export function CockpitHumanLedGovernanceSection({
             : `✓ Human anchor signed (SHA-256: ${signedSha256.slice(0, 16)}…)`}
         </div>
       )}
+
+      <CockpitUpstreamChallengePanel
+        runId={serverRunId}
+        isOpen={Boolean(signedSha256 && serverRunId)}
+        initialStaleWarning={hasStaleWarning}
+        onError={setErrorBanner}
+        onReplayCompleted={() => {
+          if (serverRunId) {
+            void hydrateFromRun(serverRunId);
+          }
+        }}
+      />
 
       <ArbitrationTieBreakCard
         testId="cockpit-arbitration-tiebreak-card"

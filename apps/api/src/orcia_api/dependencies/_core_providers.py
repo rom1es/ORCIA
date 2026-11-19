@@ -118,6 +118,7 @@ def get_permission_broker_service(request: Request) -> PermissionBrokerService:
 def get_bootstrap_service(request: Request) -> SystemBootstrapWorkflowService:
     """FastAPI `Depends` provider returning `SystemBootstrapWorkflowService` from `app.state`."""
     from orcia_api.dependencies.core_and_lifespan import initialize_app_services
+    from orcia_core.gates import SqlGateEvaluationRepository
 
     svc: SystemBootstrapWorkflowService | None = getattr(
         request.app.state, "bootstrap_service", None
@@ -126,6 +127,13 @@ def get_bootstrap_service(request: Request) -> SystemBootstrapWorkflowService:
         initialize_app_services(request.app)
         svc = request.app.state.bootstrap_service
     assert svc is not None
+    engine = get_configured_db_engine(request)
+    if engine is not None and getattr(svc.gate_service, "_repository", None) is None:
+        repo = getattr(request.app.state, "gate_repository", None)
+        if repo is None:
+            repo = SqlGateEvaluationRepository(engine)
+            request.app.state.gate_repository = repo
+        svc.gate_service.set_repository(repo)
     return svc
 
 

@@ -4,9 +4,14 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Query, Request
 
-from orcia_api.dependencies import get_orchestration_service
+from orcia_api.dependencies import get_auth_service, get_orchestration_service
+from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
-from orcia_api.routers.orchestration_sql_wiring import sync_instantiated_run_to_sql
+from orcia_api.routers.orchestration_sql_wiring import (
+    hydrate_orchestration_runs_from_sql,
+    hydrate_run_from_sql_if_missing,
+    sync_instantiated_run_to_sql,
+)
 from orcia_api.schemas.catalog import RunLockSourceTripletItem
 from orcia_api.schemas.orchestration import (
     ArtifactTemplateCompileRequest,
@@ -207,6 +212,7 @@ async def get_orchestration_state(
     """Return registered Workflow-as-Code definitions, runs, and compiled ADR template."""
     resolve_request_user(request, persona_key=persona_key)
     svc = get_orchestration_service(request)
+    await hydrate_orchestration_runs_from_sql(request, svc)
     compiled_tpl = svc.compile_artifact_template(
         "tpl-architecture-decision-record",
         variables={"project_name": "Claims Core Engine", "jira_key": "PAY-142"},
@@ -271,6 +277,7 @@ async def register_workflow_manifest(
 ) -> WorkflowManifestRegisterResponse:
     """Register a validated Workflow-as-Code manifest (`ScopeAccessGuard` enforced)."""
     user = resolve_request_user(request, persona_key=persona_key)
+    await sync_evaluator_topology_from_pg(request, get_auth_service(request))
     wf = get_orchestration_service(request).register_workflow_manifest(
         user,
         payload.raw_manifest,
@@ -322,6 +329,9 @@ async def instantiate_workflow_run(
     """Instantiate a Workflow Run and lock all sources, overrides, KB hash, and sub-workflows."""
     user = resolve_request_user(request, persona_key=persona_key)
     svc = get_orchestration_service(request)
+    await sync_evaluator_topology_from_pg(request, get_auth_service(request))
+    if payload.parent_run_id:
+        await hydrate_run_from_sql_if_missing(request, svc, payload.parent_run_id)
     run = svc.instantiate_workflow_run(
         user,
         workflow_uri=payload.workflow_uri,

@@ -8,6 +8,7 @@ import { CatalogFeaturePanel } from "../features/catalog";
 import { CockpitFeaturePanel } from "../features/cockpit";
 import { GatesFeaturePanel } from "../features/gates";
 import { InboxFeaturePanel } from "../features/inbox";
+import { PacksRegistryPage } from "../features/settings/packs/PacksRegistryPage";
 import { WorkspacesFeaturePanel } from "../features/workspaces";
 import { I18nProvider } from "../i18n";
 import { seedVitestPlatformSetupState } from "./vitest.setup";
@@ -84,6 +85,7 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
       ],
       PackBuilderProcessesStudioView: ["onCreateBusinessPack", "onPromoteAssetToPack"],
       HelpArticleGeneratorAndValidatorView: ["onGenerateAndAttach"],
+      UpstreamChallengeRewindModal: ["onSubmitChallenge", "onTriggerReplay", "onClose"],
       CommandPaletteModal: ["onSelectItem", "onClose"],
       WorkspaceFiveTabsAndExternalRebaseView: ["onSelectTab", "onRegisterWaiver"],
       DnaStarlarkCompilerAndGlossaryLifecycleView: [
@@ -449,11 +451,11 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
     });
   });
 
-  it("dynamically verifies that clicking 'Promouvoir vers le Pack' and 'Générer et rattacher la fiche d'aide' in GatesFeaturePanel updates the DOM", async () => {
+  it("dynamically verifies that clicking 'Promouvoir vers le Pack' and 'Générer et rattacher la fiche d'aide' in PacksRegistryPage updates the DOM, and GatesFeaturePanel renders dedicated Gates view", async () => {
     render(
       <I18nProvider initialLocale="fr">
         <ShellContainer>
-          <GatesFeaturePanel />
+          <PacksRegistryPage />
         </ShellContainer>
       </I18nProvider>,
     );
@@ -462,7 +464,7 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
     fireEvent.click(promoteBtn);
 
     await waitFor(() => {
-      expect(screen.getByTestId("gates-action-feedback-banner").textContent).toContain(
+      expect(screen.getByTestId("pack-authoring-feedback-banner").textContent).toContain(
         "Composant promu",
       );
     });
@@ -472,10 +474,26 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
     fireEvent.click(generateHelpBtn);
 
     await waitFor(() => {
-      expect(screen.getByTestId("gates-action-feedback-banner").textContent).toContain(
+      expect(screen.getByTestId("pack-authoring-feedback-banner").textContent).toContain(
         "Fiche d'aide",
       );
     });
+
+    cleanup();
+
+    render(
+      <I18nProvider initialLocale="fr">
+        <ShellContainer>
+          <GatesFeaturePanel />
+        </ShellContainer>
+      </I18nProvider>,
+    );
+
+    expect(screen.getByTestId("gates-dedicated-review-page")).toBeDefined();
+    expect(screen.getByTestId("gates-adaptive-human-review-section")).toBeDefined();
+    expect(screen.getByTestId("gates-open-human-review-btn")).toBeDefined();
+    expect(screen.queryByTestId("settings-workflows-section")).toBeNull();
+    expect(screen.queryByTestId("pack-builder-studio-view")).toBeNull();
   });
 
   it("dynamically verifies that clicking 'Générer le contrôle automatique' in WorkspacesFeaturePanel compiles a rule and updates the DOM", async () => {

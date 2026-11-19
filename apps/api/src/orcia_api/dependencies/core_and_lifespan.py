@@ -184,6 +184,17 @@ def initialize_app_services(app: FastAPI) -> None:
             catalog_service=catalog_service,
             permission_broker_service=permission_broker_service,
         )
+    if (
+        getattr(app.state, "db_engine", None) is not None
+        and getattr(app.state.bootstrap_service.gate_service, "_repository", None) is None
+    ):
+        from orcia_core.gates import SqlGateEvaluationRepository
+
+        gate_repo = getattr(app.state, "gate_repository", None) or SqlGateEvaluationRepository(
+            app.state.db_engine
+        )
+        app.state.gate_repository = gate_repo
+        app.state.bootstrap_service.gate_service.set_repository(gate_repo)
 
     if getattr(app.state, "orchestration_service", None) is None:
         app.state.orchestration_service = build_default_orchestration_setup_service(
@@ -357,6 +368,19 @@ def initialize_app_services(app: FastAPI) -> None:
                 db_engine = create_async_engine(resolve_database_url(), **engine_kwargs)
                 app.state.db_engine = db_engine
             app.state.session_maker = async_sessionmaker(db_engine, expire_on_commit=False)
+            if getattr(app.state, "dbos_uow", None) is None:
+                from orcia_core.orchestration import DbosSqlAlchemyUnitOfWork
+
+                app.state.dbos_uow = DbosSqlAlchemyUnitOfWork.from_engine(
+                    db_engine, session_factory=app.state.session_maker
+                )
+            if getattr(app.state, "gate_repository", None) is None:
+                from orcia_core.gates import SqlGateEvaluationRepository
+
+                gate_repo = SqlGateEvaluationRepository(db_engine)
+                app.state.gate_repository = gate_repo
+                if getattr(app.state, "bootstrap_service", None) is not None:
+                    app.state.bootstrap_service.gate_service.set_repository(gate_repo)
             from orcia_core.audit_finops import BudgetGuardService
 
             cog_router = getattr(app.state, "cognitive_router_service", None)
@@ -397,6 +421,26 @@ async def app_lifespan(app: FastAPI) -> AsyncIterator[None]:
     from orcia_core.observability import configure_tracing, instrument_runtime, shutdown_tracing
 
     initialize_app_services(app)
+    db_engine = getattr(app.state, "db_engine", None)
+    if db_engine is not None and getattr(app.state, "dbos_datasource", None) is None:
+        try:
+            from orcia_core.config import resolve_database_url
+            from orcia_core.orchestration import DbosSqlAlchemyUnitOfWork
+
+            uow = await DbosSqlAlchemyUnitOfWork.create(
+                resolve_database_url(),
+                engine=db_engine,
+                schema="dbos",
+                run_migrations=True,
+            )
+            app.state.dbos_datasource = uow.datasource
+            app.state.dbos_uow = uow
+        except Exception as exc:
+            from orcia_core.observability.logging import get_logger
+
+            get_logger("orcia.api.lifespan").warning(
+                "lifespan_dbos_datasource_fallback_engine", error_type=type(exc).__name__
+            )
     tracer_provider = configure_tracing(service_name="api")
     instrument_runtime(app=app, engine=getattr(app.state, "db_engine", None))
     sse_broker = getattr(app.state, "sse_broker", None)

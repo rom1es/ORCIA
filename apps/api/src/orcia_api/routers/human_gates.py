@@ -106,7 +106,9 @@ async def list_human_gate_evaluations_endpoint(
 ) -> HumanGateEvaluationListResponse:
     resolve_request_user(request, persona_key=persona_key)
     bootstrap_svc = get_bootstrap_service(request)
-    records = bootstrap_svc.gate_service.human_service.list_evaluations(workspace_id=workspace_id)
+    records = await bootstrap_svc.gate_service.human_service.list_evaluations_async(
+        workspace_id=workspace_id
+    )
     return HumanGateEvaluationListResponse(
         evaluations=[_serialize_human_gate(r) for r in records],
         trace_id=_trace(request),
@@ -130,7 +132,7 @@ async def evaluate_human_gate_endpoint(
     bootstrap_svc = get_bootstrap_service(request)
     await _enforce_human_gate_mutation_guard(request, user, payload.workspace_id)
     trace_id = _trace(request)
-    record = bootstrap_svc.gate_service.human_service.evaluate_human_gate(
+    record = await bootstrap_svc.gate_service.human_service.evaluate_human_gate_async(
         workspace_id=payload.workspace_id,
         run_id=payload.run_id,
         step_execution_id=payload.step_execution_id,
@@ -168,9 +170,9 @@ async def inspect_human_gate_hypotheses_endpoint(
 ) -> HumanGateEvaluateResponse:
     user = resolve_request_user(request, persona_key=persona_key)
     bootstrap_svc = get_bootstrap_service(request)
-    record = bootstrap_svc.gate_service.human_service.get_evaluation(gate_evaluation_id)
+    record = await bootstrap_svc.gate_service.human_service.get_evaluation_async(gate_evaluation_id)
     await _enforce_human_gate_mutation_guard(request, user, record.workspace_id)
-    updated = bootstrap_svc.gate_service.human_service.inspect_briefing_hypotheses(
+    updated = await bootstrap_svc.gate_service.human_service.inspect_briefing_hypotheses_async(
         gate_evaluation_id, reviewer_user_id=user.id
     )
     return HumanGateEvaluateResponse(
@@ -194,9 +196,9 @@ async def decide_human_gate_chunk_endpoint(
 ) -> HumanGateChunkDecideResponse:
     user = resolve_request_user(request, persona_key=persona_key)
     bootstrap_svc = get_bootstrap_service(request)
-    record = bootstrap_svc.gate_service.human_service.get_evaluation(gate_evaluation_id)
+    record = await bootstrap_svc.gate_service.human_service.get_evaluation_async(gate_evaluation_id)
     await _enforce_human_gate_mutation_guard(request, user, record.workspace_id)
-    chunk = bootstrap_svc.gate_service.human_service.decide_chunk(
+    chunk, updated_record = await bootstrap_svc.gate_service.human_service.decide_chunk_async(
         gate_evaluation_id,
         chunk_key,
         action=payload.action,
@@ -206,7 +208,7 @@ async def decide_human_gate_chunk_endpoint(
     )
     return HumanGateChunkDecideResponse(
         chunk=_serialize_chunk(chunk),
-        evaluation=_serialize_human_gate(record),
+        evaluation=_serialize_human_gate(updated_record),
         trace_id=_trace(request),
     )
 
@@ -227,10 +229,10 @@ async def finalize_human_gate_endpoint(
 ) -> HumanGateFinalizeResponse:
     user = resolve_request_user(request, persona_key=persona_key)
     bootstrap_svc = get_bootstrap_service(request)
-    record = bootstrap_svc.gate_service.human_service.get_evaluation(gate_evaluation_id)
+    record = await bootstrap_svc.gate_service.human_service.get_evaluation_async(gate_evaluation_id)
     await _enforce_human_gate_mutation_guard(request, user, record.workspace_id)
     trace_id = _trace(request)
-    finalized = bootstrap_svc.gate_service.human_service.finalize_human_gate(
+    finalized = await bootstrap_svc.gate_service.human_service.finalize_human_gate_async(
         gate_evaluation_id,
         reviewer_user_id=user.id,
         review_duration_ms=payload.review_duration_ms,

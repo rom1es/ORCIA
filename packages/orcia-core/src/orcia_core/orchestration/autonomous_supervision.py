@@ -266,6 +266,12 @@ class AutonomousSupervisionService:
             comment=comment,
             trace_id=trace_id,
         )
+        effective_status = (
+            "KILL_SWITCH_STOPPED"
+            if (pg_row is not None and str(pg_row.get("run_status") or "") == "KILL_SWITCH_STOPPED")
+            or (mem is not None and mem.run_status == "KILL_SWITCH_STOPPED")
+            else "ROLLED_BACK"
+        )
         if self._engine is not None and pg_row is not None:
             res = await restore_help_article_and_rollback_run_sql(
                 self._engine,
@@ -278,6 +284,7 @@ class AutonomousSupervisionService:
                 audit_sink=self._audit_sink,
             )
             if res is not None:
+                effective_status = str(res["status"])
                 restored_ver = str(res["restored_version"])
                 resolved_help_id = res["help_resource_id"]
                 await flush_redis_keys(self._redis, list(res["invalidated_redis_keys"]))
@@ -293,9 +300,10 @@ class AutonomousSupervisionService:
         redis_ms = round((time.perf_counter() - t_cache) * 1000.0, 3)
         mark_mem_rolled_back(self._runs, run_id, mem)
         self._post_hoc.register_in_memory_run(
-            run_id=run_id, workspace_id=ws_id, status="ROLLED_BACK"
+            run_id=run_id, workspace_id=ws_id, status=effective_status
         )
         self._outbox_events.append(event)
+        sse_payload["status"] = effective_status
         sse_payload["restored_version"] = restored_ver
         sse_payload["help_resource_id"] = resolved_help_id
         sse_ms = self._publish_sse(ws_id, "autonomous.artifact.rolled_back", run_id, sse_payload)
@@ -306,6 +314,7 @@ class AutonomousSupervisionService:
             help_resource_id=resolved_help_id,
             redis_ms=redis_ms,
             sse_ms=sse_ms,
+            status=effective_status,
         )
 
     async def review_post_hoc_sample(

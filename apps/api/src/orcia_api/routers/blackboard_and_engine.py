@@ -6,9 +6,12 @@ from typing import cast
 
 from fastapi import APIRouter, Path, Query, Request
 
-from orcia_api.dependencies import get_orchestration_service
+from orcia_api.dependencies import get_auth_service, get_orchestration_service
+from orcia_api.routers._finops_auth_guards import enforce_observer_headers_guard
+from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.routers.orchestration_sql_wiring import (
+    hydrate_run_from_sql_if_missing,
     read_sql_blackboard_if_available,
     serialize_anchor,
     serialize_arbitration,
@@ -17,6 +20,8 @@ from orcia_api.routers.orchestration_sql_wiring import (
     serialize_snapshot,
     serialize_step_exec,
     sync_arbitration_request_to_sql,
+    sync_arbitration_resolution_to_sql,
+    sync_human_anchor_to_sql,
     sync_step_execution_and_snapshot_to_sql,
 )
 from orcia_api.schemas.blackboard import (
@@ -63,6 +68,7 @@ async def get_run_blackboard_state(
     """Return durable `step_executions` and active `blackboard_snapshots` for `run_id`."""
     resolve_request_user(request, persona_key=persona_key)
     svc = get_orchestration_service(request)
+    await hydrate_run_from_sql_if_missing(request, svc, run_id)
     run = svc.engine._get_run(run_id, instance=str(request.url.path))
     wf = svc.engine._get_workflow(run.workflow_uri, instance=str(request.url.path))
     svc.engine.initialize_run_steps(run, wf)
@@ -99,6 +105,7 @@ async def hydrate_step_context(
     """Resolve isolated `HydratedStepContext` for Step $k$ (`JitStepHydrator`, `AD-13`)."""
     resolve_request_user(request, persona_key=persona_key)
     svc = get_orchestration_service(request)
+    await hydrate_run_from_sql_if_missing(request, svc, payload.run_id)
     run = svc.engine._get_run(payload.run_id, instance=str(request.url.path))
     wf = svc.engine._get_workflow(run.workflow_uri, instance=str(request.url.path))
     hydrated = JitStepHydrator.hydrate_step(
@@ -126,7 +133,10 @@ async def execute_workflow_step(
 ) -> StepExecuteResponse:
     """Execute a step via `orcia.step_executors` and commit to `blackboard_snapshots`."""
     user = resolve_request_user(request, persona_key=persona_key)
+    enforce_observer_headers_guard(request, user)
     svc = get_orchestration_service(request)
+    await sync_evaluator_topology_from_pg(request, get_auth_service(request))
+    await hydrate_run_from_sql_if_missing(request, svc, payload.run_id)
     trace_id = _trace(request)
     step_exec, snap = svc.engine.execute_step(
         user,
@@ -168,7 +178,10 @@ async def sign_human_anchor(
 ) -> HumanAnchorSignResponse:
     """Sign a mandatory human-authored section (`>= 30` chars, rejects agent callers with 422)."""
     user = resolve_request_user(request, persona_key=persona_key)
+    enforce_observer_headers_guard(request, user)
     svc = get_orchestration_service(request)
+    await sync_evaluator_topology_from_pg(request, get_auth_service(request))
+    await hydrate_run_from_sql_if_missing(request, svc, payload.run_id)
     sig = svc.engine.anchors_and_arbitration.sign_human_anchor(
         user,
         run_id=payload.run_id,
@@ -188,6 +201,12 @@ async def sign_human_anchor(
         step_exec=step_exec,
         snapshot=None,
         trace_id=trace_id,
+    )
+    await sync_human_anchor_to_sql(
+        request,
+        run=run,
+        step_exec=step_exec,
+        signature=sig,
     )
     return HumanAnchorSignResponse(
         signature=serialize_anchor(sig),
@@ -211,7 +230,10 @@ async def request_human_arbitration(
 ) -> HumanArbitrationCreateResponse:
     """Evaluate `options_matrix` against `tie_break_policy` (`AD-3`, `AD-18`, `UX-DR6`)."""
     user = resolve_request_user(request, persona_key=persona_key)
+    enforce_observer_headers_guard(request, user)
     svc = get_orchestration_service(request)
+    await sync_evaluator_topology_from_pg(request, get_auth_service(request))
+    await hydrate_run_from_sql_if_missing(request, svc, run_id)
     trace_id = _trace(request)
     arb, step_exec = svc.engine.anchors_and_arbitration.request_human_arbitration(
         user,
@@ -266,7 +288,10 @@ async def resolve_human_arbitration(
 ) -> HumanArbitrationResolveResponse:
     """Record human option selection in Blackboard and immediately resume the paused step."""
     user = resolve_request_user(request, persona_key=persona_key)
+    enforce_observer_headers_guard(request, user)
     svc = get_orchestration_service(request)
+    await sync_evaluator_topology_from_pg(request, get_auth_service(request))
+    await hydrate_run_from_sql_if_missing(request, svc, run_id)
     trace_id = _trace(request)
     arb, step_exec, snap = svc.engine.anchors_and_arbitration.resolve_human_arbitration(
         user,
@@ -285,6 +310,7 @@ async def resolve_human_arbitration(
         snapshot=snap,
         trace_id=trace_id,
     )
+    await sync_arbitration_resolution_to_sql(request, run=run, arb=arb)
     return HumanArbitrationResolveResponse(
         arbitration=serialize_arbitration(arb),
         step_execution=serialize_step_exec(step_exec),
@@ -309,6 +335,8 @@ async def resume_human_workflow_step(
     """Resume a paused `HUMAN_TASK` step with an explicit human arbitration decision."""
     user = resolve_request_user(request, persona_key=persona_key)
     svc = get_orchestration_service(request)
+    await sync_evaluator_topology_from_pg(request, get_auth_service(request))
+    await hydrate_run_from_sql_if_missing(request, svc, run_id)
     trace_id = _trace(request)
     step_exec, snap = svc.engine.resume_human_task(
         user,
@@ -346,13 +374,26 @@ async def execute_background_fast_path_audit(
     """Run all steps in `BACKGROUND_FAST_PATH` mode, recording assumptions and divergences."""
     user = resolve_request_user(request, persona_key=persona_key)
     svc = get_orchestration_service(request)
+    await sync_evaluator_topology_from_pg(request, get_auth_service(request))
+    await hydrate_run_from_sql_if_missing(request, svc, payload.run_id)
+    trace_id = _trace(request)
     report = svc.engine.run_background_fast_path_audit(
         user,
         run_id=payload.run_id,
         divergence_note=payload.divergence_note,
         instance=str(request.url.path),
     )
+    run = svc.engine._get_run(payload.run_id, instance=str(request.url.path))
+    active_by_step = {sn.step_key: sn for sn in svc.engine.blackboard.get_active_snapshots(run.id)}
+    for s_exec in svc.engine.blackboard.list_step_executions(run.id):
+        await sync_step_execution_and_snapshot_to_sql(
+            request,
+            run=run,
+            step_exec=s_exec,
+            snapshot=active_by_step.get(s_exec.step_key),
+            trace_id=trace_id,
+        )
     return BackgroundAuditRunResponse(
         report=serialize_audit_report(report),
-        trace_id=_trace(request),
+        trace_id=trace_id,
     )

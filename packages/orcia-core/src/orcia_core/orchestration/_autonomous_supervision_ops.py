@@ -77,11 +77,14 @@ def mark_mem_rolled_back(
     run_id: str,
     mem: AutonomousRunSupervisionItem | None,
 ) -> None:
-    """Update in-memory run status after `@v(N-1)` rollback."""
+    """Update in-memory run status after `@v(N-1)` rollback (preserving `KILL_SWITCH_STOPPED`)."""
     if mem is not None:
+        next_status = (
+            "KILL_SWITCH_STOPPED" if mem.run_status == "KILL_SWITCH_STOPPED" else "ROLLED_BACK"
+        )
         runs[run_id] = replace(
             mem,
-            run_status="ROLLED_BACK",
+            run_status=next_status,
             post_hoc_status="INVALIDATED_ROLLED_BACK",
             previous_version_available=False,
         )
@@ -211,6 +214,7 @@ def make_rollback_outcome(
     help_resource_id: str | None,
     redis_ms: float,
     sse_ms: float,
+    status: str = "ROLLED_BACK",
 ) -> Any:
     """Build `InvalidateAndRestoreOutcome` instance."""
     from orcia_core.orchestration._autonomous_supervision_models import InvalidateAndRestoreOutcome
@@ -218,7 +222,7 @@ def make_rollback_outcome(
     return InvalidateAndRestoreOutcome(
         run_id=run_id,
         workspace_id=workspace_id,
-        status="ROLLED_BACK",
+        status=status,
         restored_version=restored_ver,
         help_resource_id=help_resource_id,
         redis_cache_invalidated_ms=redis_ms,

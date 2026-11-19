@@ -122,7 +122,7 @@ async def evaluate_deterministic_gate_endpoint(
     bootstrap_svc.auth_service.evaluator.enforce_scope_mutation_guard(
         user, payload.workspace_id, instance=str(request.url.path)
     )
-    gate_eval = bootstrap_svc.gate_service.evaluate_deterministic_gate(
+    gate_eval = await bootstrap_svc.gate_service.evaluate_deterministic_gate_async(
         DeterministicGateInput(
             workspace_id=payload.workspace_id,
             run_id=payload.run_id,
@@ -172,7 +172,7 @@ async def list_gate_evaluations_endpoint(
 ) -> GateEvaluationsListResponse:
     resolve_request_user(request, persona_key=persona_key)
     bootstrap_svc = get_bootstrap_service(request)
-    evals = bootstrap_svc.gate_service.list_evaluations(run_id=run_id)
+    evals = await bootstrap_svc.gate_service.list_evaluations_async(run_id=run_id)
     return GateEvaluationsListResponse(
         evaluations=[_serialize_gate_evaluation(e) for e in evals],
         trace_id=_trace(request),
@@ -362,7 +362,7 @@ async def evaluate_agentic_gate_endpoint(
     bootstrap_svc.auth_service.evaluator.enforce_scope_mutation_guard(
         user, payload.workspace_id, instance=str(request.url.path)
     )
-    res = bootstrap_svc.gate_service.evaluate_agentic_gate(
+    res = await bootstrap_svc.gate_service.evaluate_agentic_gate_async(
         AgenticGateInput(
             workspace_id=payload.workspace_id,
             run_id=payload.run_id,

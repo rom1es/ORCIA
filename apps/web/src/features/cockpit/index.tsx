@@ -58,6 +58,7 @@ export function CockpitFeaturePanel() {
   const [selectedWfKey, setSelectedWfKey] = useState<string>("");
   const [runTitle, setRunTitle] = useState<string>("");
   const [runRefreshSignal, setRunRefreshSignal] = useState<number>(0);
+  const [latestRunId, setLatestRunId] = useState<string | null>(null);
 
   const isFr = locale === "fr";
   const activeScopeNode = scopes.find((s) => s.id === activeScopeId);
@@ -144,10 +145,13 @@ export function CockpitFeaturePanel() {
     setRunTitle("");
     void (async () => {
       try {
-        await createOrciaApiClient({ baseUrl: "" }).instantiateWorkflowRun({
+        const res = await createOrciaApiClient({ baseUrl: "" }).instantiateWorkflowRun({
           workflow_uri: "orcia://workflows/claims-engineering-delivery",
           workspace_id: targetWs.workspaceId,
         });
+        if (res?.run?.id) {
+          setLatestRunId(res.run.id);
+        }
         setRunRefreshSignal((n) => n + 1);
       } catch {
         // Handled in CockpitHumanLedGovernanceSection
@@ -245,6 +249,7 @@ export function CockpitFeaturePanel() {
         workspaceId={selectedWsId || availableWorkspaces[0]?.workspaceId}
         authorName={resolvedAuthorName}
         refreshSignal={runRefreshSignal}
+        activeRunId={latestRunId}
       />
     </div>
   );

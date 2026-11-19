@@ -5,6 +5,20 @@ from __future__ import annotations
 from typing import Any
 
 from orcia_core.orchestration import seeds as _seeds
+from orcia_core.orchestration._internal._sql_orchestration_governance import (
+    ensure_run_row_exists_in_session,
+    ensure_workflow_definition_sql,
+    list_human_anchor_signatures_sql,
+    list_human_arbitrations_sql,
+    list_upstream_challenges_sql,
+    list_workflow_runs_with_locks_sql,
+    mark_upstream_challenges_replayed_sql,
+    resolve_existing_user_id_sql,
+    upsert_human_anchor_signature_sql,
+    upsert_human_arbitration_sql,
+    upsert_run_lock_manifest_sql,
+    upsert_upstream_challenge_sql,
+)
 from orcia_core.orchestration._internal.dbos_engine import (
     DbosDurableWorkflowEngine,
     DurableWorkflowRunSummary,
@@ -450,13 +464,25 @@ __all__ = [
     "compute_text_sha256",
     "delete_agent_from_postgres18",
     "delete_skill_from_postgres18",
+    "ensure_run_row_exists_in_session",
+    "ensure_workflow_definition_sql",
+    "list_human_anchor_signatures_sql",
+    "list_human_arbitrations_sql",
+    "list_upstream_challenges_sql",
+    "list_workflow_runs_with_locks_sql",
     "load_agents_and_skills_from_postgres18",
+    "mark_upstream_challenges_replayed_sql",
     "persist_agent_to_postgres18",
     "persist_skill_to_postgres18",
     "register_default_step_executors",
     "register_memlog_marker_plugin",
     "register_workflow_policy_plugin",
+    "resolve_existing_user_id_sql",
     "resolve_profile_adaptation",
     "scrub_connector_secrets",
+    "upsert_human_anchor_signature_sql",
+    "upsert_human_arbitration_sql",
+    "upsert_run_lock_manifest_sql",
+    "upsert_upstream_challenge_sql",
     "validate_human_anchor_submission",
 ]

@@ -4,6 +4,7 @@ import {
   INITIAL_DECLARATIVE_PACKS,
   type DeclarativePackItem,
 } from "../../processes/processStudioV2Data";
+import { ProcessStudioAndPackAuthoringSection } from "../../processes/ProcessStudioAndPackAuthoringSection";
 
 export function PacksRegistryPage() {
   const { locale } = useI18n();
@@ -283,6 +284,8 @@ export function PacksRegistryPage() {
           </article>
         ))}
       </div>
+
+      <ProcessStudioAndPackAuthoringSection />
     </section>
   );
 }

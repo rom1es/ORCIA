@@ -383,9 +383,19 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(screen.queryByTestId("settings-workflows-section")).toBeNull();
     expect(screen.queryByTestId("pack-builder-studio-view")).toBeNull();
 
-    // Navigate to /gates -> SimplifiedProcessBuilderSection + PackBuilderProcessesStudioView + HelpArticleGeneratorAndValidatorView
+    // Navigate to /gates -> dedicated Adaptive Human Review & Chunk Validation view (zero legacy Process Studio forms)
     await act(async () => {
       await router.navigate({ to: "/gates" });
+    });
+    expect(screen.getByTestId("gates-dedicated-review-page")).toBeDefined();
+    expect(screen.getByTestId("gates-adaptive-human-review-section")).toBeDefined();
+    expect(screen.getByTestId("gates-open-human-review-btn")).toBeDefined();
+    expect(screen.queryByTestId("settings-workflows-section")).toBeNull();
+    expect(screen.queryByTestId("pack-builder-studio-view")).toBeNull();
+
+    // Navigate to /settings/packs -> SimplifiedProcessBuilderSection + PackBuilderProcessesStudioView + HelpArticleGeneratorAndValidatorView
+    await act(async () => {
+      await router.navigate({ to: "/settings/packs" });
     });
     const processStudioSection = screen.getByTestId("settings-workflows-section");
     expect(processStudioSection).toBeDefined();

@@ -8,6 +8,7 @@ import {
 import React, { useCallback, useEffect, useState } from "react";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { useI18n } from "../../i18n";
+import { GatesChallengeModalSection } from "./GatesChallengeModalSection";
 
 type HumanGateEvaluationItem = components["schemas"]["HumanGateEvaluationSchemaItem"];
 type StagedJiraActionItem = components["schemas"]["StagedJiraActionItemSchema"];
@@ -34,6 +35,8 @@ export function GatesAdaptiveHumanReviewSection({
   const [evaluation, setEvaluation] = useState<HumanGateEvaluationItem | null>(null);
   const [stagedJira, setStagedJira] = useState<StagedJiraActionItem | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [challengeModalOpen, setChallengeModalOpen] = useState<boolean>(false);
+  const [challengedSectionKey, setChallengedSectionKey] = useState<string>("sec-architecture");
 
   const loadPersistedState = useCallback(async () => {
     const client = createOrciaApiClient({ baseUrl: "" });
@@ -174,6 +177,10 @@ export function GatesAdaptiveHumanReviewSection({
             : null,
       });
       setEvaluation(res.evaluation);
+      if (action === "CHALLENGE") {
+        setChallengedSectionKey(chunkKey);
+        setChallengeModalOpen(true);
+      }
       onFeedback(
         isFr
           ? `✅ Section « ${chunkKey} » mise à jour (${res.chunk.status}).`
@@ -329,6 +336,14 @@ export function GatesAdaptiveHumanReviewSection({
             }
             onFinalizeGate={(opts) => void handleFinalizeGate(opts)}
             labels={dictionary.humanGates.chunkValidation}
+          />
+          <GatesChallengeModalSection
+            isOpen={challengeModalOpen}
+            runId={evaluation.run_id}
+            sectionKey={challengedSectionKey}
+            isFr={isFr}
+            onClose={() => setChallengeModalOpen(false)}
+            onFeedback={onFeedback}
           />
         </>
       ) : null}

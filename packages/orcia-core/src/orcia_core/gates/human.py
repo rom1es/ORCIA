@@ -6,7 +6,7 @@ import hashlib
 import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from orcia_core.gates.errors import (
     HumanGateNotFoundError,
@@ -16,6 +16,9 @@ from orcia_core.gates.errors import (
 from orcia_kernel.events import GateEvaluated
 from orcia_kernel.ids import new_uuid7_str
 from orcia_kernel.ports import OutboxRelayPort
+
+if TYPE_CHECKING:
+    from orcia_core.gates._internal.sql_gate_repository import SqlGateEvaluationRepository
 
 HumanGatePolicy = Literal["mandatory_full", "risk_or_exception_based", "sampling"]
 ChunkApprovalStatus = Literal["PENDING", "APPROVED", "CO_EDITED", "CHALLENGED"]
@@ -161,10 +164,20 @@ def _extract_chunks_from_payload(
 class AdaptiveHumanGateService:
     """Service orchestrating Adaptive Human Gates, Chunked Approvals & Anti-Rubber-Stamping."""
 
-    def __init__(self, *, outbox_relay: OutboxRelayPort | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        outbox_relay: OutboxRelayPort | None = None,
+        repository: SqlGateEvaluationRepository | None = None,
+    ) -> None:
         self._outbox_relay = outbox_relay
+        self._repository = repository
         self._outbox_events: list[GateEvaluated] = []
         self._evaluations: dict[str, HumanGateEvaluationRecord] = {}
+
+    def set_repository(self, repository: SqlGateEvaluationRepository | None) -> None:
+        """Attach PostgreSQL 18 repository (`SqlGateEvaluationRepository`) in Composition Root."""
+        self._repository = repository
 
     def list_outbox_events(self) -> list[GateEvaluated]:
         return list(self._outbox_events)
@@ -436,3 +449,128 @@ class AdaptiveHumanGateService:
         if self._outbox_relay is not None:
             self._outbox_relay.enqueue_in_transaction(outbox_evt)
         return outbox_evt.event_id
+
+    async def get_evaluation_async(self, gate_evaluation_id: str) -> HumanGateEvaluationRecord:
+        """Load a Human Gate evaluation from cache or PostgreSQL 18."""
+        record = self._evaluations.get(gate_evaluation_id)
+        if record is not None:
+            return record
+        if self._repository is not None:
+            loaded = await self._repository.get_human_evaluation(gate_evaluation_id)
+            if loaded is not None:
+                self._evaluations[loaded.id] = loaded
+                return loaded
+        raise HumanGateNotFoundError(
+            detail_override=f"Human Gate evaluation '{gate_evaluation_id}' not found."
+        )
+
+    async def list_evaluations_async(
+        self, *, workspace_id: str | None = None
+    ) -> list[HumanGateEvaluationRecord]:
+        """List Human Gate evaluations from PostgreSQL 18 when configured."""
+        if self._repository is not None:
+            rows = await self._repository.list_human_evaluations(workspace_id=workspace_id)
+            for row in rows:
+                self._evaluations[row.id] = row
+            return rows
+        return self.list_evaluations(workspace_id=workspace_id)
+
+    async def evaluate_human_gate_async(
+        self,
+        *,
+        workspace_id: str,
+        run_id: str,
+        step_execution_id: str,
+        step_key: str,
+        policy: HumanGatePolicy,
+        artifact_payload: dict[str, Any],
+        deterministic_status: str = "PASS",
+        agentic_score: float = 0.92,
+        ontology_conflicts: int = 0,
+        stale_warnings: int = 0,
+        briefing_4blocks_jsonb: dict[str, Any] | None = None,
+        sampling_override: bool | None = None,
+        trace_id: str | None = None,
+    ) -> HumanGateEvaluationRecord:
+        """Evaluate a Human Gate and persist evaluation + chunks into PG18."""
+        record = self.evaluate_human_gate(
+            workspace_id=workspace_id,
+            run_id=run_id,
+            step_execution_id=step_execution_id,
+            step_key=step_key,
+            policy=policy,
+            artifact_payload=artifact_payload,
+            deterministic_status=deterministic_status,
+            agentic_score=agentic_score,
+            ontology_conflicts=ontology_conflicts,
+            stale_warnings=stale_warnings,
+            briefing_4blocks_jsonb=briefing_4blocks_jsonb,
+            sampling_override=sampling_override,
+            trace_id=trace_id,
+        )
+        if self._repository is not None:
+            await self._repository.save_human_evaluation(record)
+        return record
+
+    async def inspect_briefing_hypotheses_async(
+        self, gate_evaluation_id: str, *, reviewer_user_id: str
+    ) -> HumanGateEvaluationRecord:
+        """Mark Block 4 as inspected and persist the update in PG18."""
+        await self.get_evaluation_async(gate_evaluation_id)
+        updated = self.inspect_briefing_hypotheses(
+            gate_evaluation_id, reviewer_user_id=reviewer_user_id
+        )
+        if self._repository is not None:
+            await self._repository.save_human_evaluation(updated)
+        return updated
+
+    async def decide_chunk_async(
+        self,
+        gate_evaluation_id: str,
+        chunk_key: str,
+        *,
+        action: ChunkDecisionAction,
+        reviewer_user_id: str,
+        co_edited_content: str | None = None,
+        challenge_reason: str | None = None,
+    ) -> tuple[ChunkApprovalRecord, HumanGateEvaluationRecord]:
+        """Decide a chunk approval and persist `chunk_approvals` + evaluation into PG18."""
+        record = await self.get_evaluation_async(gate_evaluation_id)
+        chunk = self.decide_chunk(
+            gate_evaluation_id,
+            chunk_key,
+            action=action,
+            reviewer_user_id=reviewer_user_id,
+            co_edited_content=co_edited_content,
+            challenge_reason=challenge_reason,
+        )
+        if self._repository is not None:
+            await self._repository.save_human_evaluation(record)
+        return chunk, record
+
+    async def finalize_human_gate_async(
+        self,
+        gate_evaluation_id: str,
+        *,
+        reviewer_user_id: str,
+        review_duration_ms: int,
+        explicit_hypotheses_confirmation: bool = False,
+        trace_id: str | None = None,
+    ) -> HumanGateEvaluationRecord:
+        """Finalize Human Gate with `<15s` guard and persist final state to PG18."""
+        record = await self.get_evaluation_async(gate_evaluation_id)
+        try:
+            finalized = self.finalize_human_gate(
+                gate_evaluation_id,
+                reviewer_user_id=reviewer_user_id,
+                review_duration_ms=review_duration_ms,
+                explicit_hypotheses_confirmation=explicit_hypotheses_confirmation,
+                trace_id=trace_id,
+            )
+        except RubberStampingGuardTriggeredError:
+            if self._repository is not None:
+                await self._repository.save_human_evaluation(record)
+            raise
+        if self._repository is not None:
+            await self._repository.save_human_evaluation(finalized)
+        return finalized

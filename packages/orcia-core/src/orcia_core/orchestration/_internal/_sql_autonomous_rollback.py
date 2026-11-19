@@ -44,6 +44,7 @@ async def restore_help_article_and_rollback_run_sql(
                     UPDATE workflow_runs
                     SET status = 'ROLLED_BACK'
                     WHERE id = :run_id
+                      AND status <> 'KILL_SWITCH_STOPPED'
                     RETURNING id::text AS run_id, workspace_id::text AS workspace_id, status;
                     """
                     ),
@@ -53,6 +54,23 @@ async def restore_help_article_and_rollback_run_sql(
             .mappings()
             .first()
         )
+        if run_row is None:
+            run_row = (
+                (
+                    await conn.execute(
+                        sa.text(
+                            """
+                            SELECT id::text AS run_id, workspace_id::text AS workspace_id, status
+                            FROM workflow_runs
+                            WHERE id = :run_id;
+                            """
+                        ),
+                        {"run_id": run_uuid},
+                    )
+                )
+                .mappings()
+                .first()
+            )
         if run_row is None:
             return None
 

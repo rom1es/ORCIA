@@ -11,9 +11,15 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Path, Query, Request
 
-from orcia_api.dependencies import get_orchestration_service
+from orcia_api.dependencies import get_auth_service, get_orchestration_service
+from orcia_api.routers._finops_auth_guards import enforce_observer_headers_guard
+from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
-from orcia_api.routers.orchestration_sql_wiring import sync_replay_fork_to_sql
+from orcia_api.routers.orchestration_sql_wiring import (
+    hydrate_run_from_sql_if_missing,
+    sync_replay_fork_to_sql,
+    sync_upstream_challenge_to_sql,
+)
 from orcia_api.schemas.challenge_and_replay import (
     StepReplayRequest,
     StepReplayResponse,
@@ -108,6 +114,7 @@ async def preview_upstream_challenge(
     """Compute DAG + Ontology `What-If Impact Preview` for an upstream step (`UX-DR7`)."""
     resolve_request_user(request, persona_key=persona_key)
     svc = get_orchestration_service(request)
+    await hydrate_run_from_sql_if_missing(request, svc, run_id)
     preview = svc.engine.challenge_and_replay.preview_upstream_challenge(
         run_id=run_id,
         challenger_step_key=step_key,
@@ -138,7 +145,11 @@ async def submit_upstream_challenge(
 ) -> UpstreamChallengeSubmitResponse:
     """Record an upstream challenge, translate for upstream profile, and emit Outbox event."""
     user = resolve_request_user(request, persona_key=persona_key)
+    enforce_observer_headers_guard(request, user)
     svc = get_orchestration_service(request)
+    await sync_evaluator_topology_from_pg(request, get_auth_service(request))
+    await hydrate_run_from_sql_if_missing(request, svc, run_id)
+    trace_id = _trace(request)
     record, preview = svc.engine.challenge_and_replay.submit_upstream_challenge(
         user,
         run_id=run_id,
@@ -148,13 +159,24 @@ async def submit_upstream_challenge(
         challenge_reason=payload.challenge_reason,
         target_profile_archetype=payload.target_profile_archetype,
         proposed_upstream_revision=payload.proposed_upstream_revision,
-        trace_id=_trace(request),
+        trace_id=trace_id,
         instance=str(request.url.path),
+    )
+    run = svc.engine._get_run(run_id, instance=str(request.url.path))
+    target_step_exec = svc.engine.blackboard.get_step_execution(
+        run.id, payload.target_upstream_step_key
+    )
+    await sync_upstream_challenge_to_sql(
+        request,
+        run=run,
+        challenge=record,
+        trace_id=trace_id,
+        step_exec=target_step_exec,
     )
     return UpstreamChallengeSubmitResponse(
         challenge=_serialize_challenge(record),
         preview=_serialize_preview(preview),
-        trace_id=_trace(request),
+        trace_id=trace_id,
     )
 
 
@@ -178,7 +200,10 @@ async def replay_workflow_from_step(
 ) -> StepReplayResponse:
     """Replay from Step $N$ (or intra-sub-workflow Step $k$) reusing $1..N-1$ snapshots."""
     user = resolve_request_user(request, persona_key=persona_key)
+    enforce_observer_headers_guard(request, user)
     svc = get_orchestration_service(request)
+    await sync_evaluator_topology_from_pg(request, get_auth_service(request))
+    await hydrate_run_from_sql_if_missing(request, svc, run_id)
     eff = payload or StepReplayRequest()
     res = svc.engine.challenge_and_replay.replay_from_step(
         user,
@@ -194,6 +219,7 @@ async def replay_workflow_from_step(
         run=run,
         step_key=step_key,
         revised_payload=eff.revised_section_payload,
+        steps_to_sync=svc.engine.blackboard.list_step_executions(run.id),
     )
     return StepReplayResponse(
         replay=_serialize_replay(res),

@@ -243,6 +243,17 @@ class AppendOnlyBlackboardStore:
             return "SUPERSEDED"
         return "ACTIVE"
 
+    def hydrate_snapshot(self, snapshot: BlackboardSnapshotEntity) -> None:
+        """Rehydrate an immutable `BlackboardSnapshotEntity` loaded from PostgreSQL 18."""
+        self._snapshots_by_id[snapshot.id] = snapshot
+        run_list = self._snapshots_by_run.setdefault(snapshot.run_id, [])
+        if snapshot.id not in run_list:
+            run_list.append(snapshot.id)
+        for sup_id in snapshot.superseded_snapshot_ids:
+            self._superseded_ids.add(sup_id)
+        if snapshot.branch_status == "SUPERSEDED":
+            self._superseded_ids.add(snapshot.id)
+
     def list_all_snapshots(self, run_id: str) -> tuple[BlackboardSnapshotEntity, ...]:
         """Return all immutable snapshots ever appended for `run_id` in append order."""
         snap_ids = self._snapshots_by_run.get(run_id, [])

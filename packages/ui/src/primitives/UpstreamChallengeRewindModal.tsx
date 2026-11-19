@@ -50,7 +50,9 @@ export interface UpstreamChallengeRewindModalProps {
   readonly preview: UpstreamChallengeWhatIfPreview;
   readonly labels: UpstreamChallengeModalLabels;
   readonly subWorkflowStepKey?: string;
+  readonly inline?: boolean;
   readonly rgaaLabels?: Partial<RgaaModalDialogLabels>;
+  readonly onReasonChange?: (reason: string) => void;
   readonly onSubmitChallenge?: (payload: {
     targetUpstreamStepKey: string;
     challengedSectionKey: string;
@@ -74,7 +76,9 @@ export function UpstreamChallengeRewindModal({
   preview,
   labels,
   subWorkflowStepKey,
+  inline = false,
   rgaaLabels,
+  onReasonChange,
   onSubmitChallenge,
   onTriggerReplay,
   onClose,
@@ -132,6 +136,267 @@ export function UpstreamChallengeRewindModal({
     });
   };
 
+  const headerTitleStyle: React.CSSProperties = {
+    margin: 0,
+    fontSize: "0.75rem",
+    fontWeight: 700,
+    textTransform: "uppercase",
+    color: "var(--color-arbitration-amber)",
+    letterSpacing: "0.04em",
+  };
+  const headerSubtitleStyle: React.CSSProperties = {
+    margin: "2px 0 0 0",
+    fontSize: "0.8125rem",
+    color: "var(--color-text-secondary)",
+  };
+
+  const renderInnerContent = (): React.ReactElement => (
+    <>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "8px",
+          flexWrap: "wrap",
+          flexShrink: 0,
+        }}
+      >
+        <div>
+          {inline ? (
+            <>
+              <h3 style={headerTitleStyle}>
+                <OrciaIcon name="lightning" /> {labels.modalTitle}
+              </h3>
+              <p style={headerSubtitleStyle}>{labels.modalSubtitle}</p>
+            </>
+          ) : (
+            <>
+              <DialogPrimitive.Title style={headerTitleStyle}>
+                <OrciaIcon name="lightning" /> {labels.modalTitle}
+              </DialogPrimitive.Title>
+              <DialogPrimitive.Description style={headerSubtitleStyle}>
+                {labels.modalSubtitle}
+              </DialogPrimitive.Description>
+            </>
+          )}
+        </div>
+        {onClose ? (
+          <button
+            type="button"
+            onClick={requestClose}
+            data-testid="upstream-challenge-close-btn"
+            className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
+          >
+            {labels.closeCta} (Esc)
+          </button>
+        ) : null}
+      </div>
+
+      <div className="orcia-ds-dialog-body">
+        {showUnsavedConfirm ? (
+          <RgaaUnsavedChangesAlert
+            testIdPrefix="upstream-challenge"
+            labels={resolvedRgaaLabels}
+            onStay={cancelDiscardAndStay}
+            onDiscard={confirmDiscardAndClose}
+          />
+        ) : null}
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "8px",
+            fontSize: "0.75rem",
+          }}
+        >
+          <div
+            style={{
+              padding: "8px",
+              borderRadius: "var(--radius-sm)",
+              backgroundColor: "var(--color-surface-canvas)",
+              border: "1px solid var(--color-border-subtle)",
+            }}
+          >
+            <strong style={{ color: "var(--color-text-secondary)" }}>
+              {labels.targetStepLabel}:
+            </strong>{" "}
+            <code style={{ fontFamily: "var(--font-mono)", color: "var(--color-text-primary)" }}>
+              {preview.targetUpstreamStepKey}
+              {subWorkflowStepKey ? (
+                <>
+                  {" "}
+                  <OrciaIcon name="arrowRight" /> {subWorkflowStepKey}
+                </>
+              ) : (
+                ""
+              )}
+            </code>
+          </div>
+          <div
+            style={{
+              padding: "8px",
+              borderRadius: "var(--radius-sm)",
+              backgroundColor: "var(--color-surface-canvas)",
+              border: "1px solid var(--color-border-subtle)",
+            }}
+          >
+            <strong style={{ color: "var(--color-text-secondary)" }}>
+              {labels.sectionKeyLabel}:
+            </strong>{" "}
+            <code style={{ fontFamily: "var(--font-mono)", color: "var(--color-text-primary)" }}>
+              {preview.challengedSectionKey}
+            </code>
+          </div>
+        </div>
+
+        <label
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "4px",
+            fontSize: "0.75rem",
+            fontWeight: 600,
+            color: "var(--color-text-primary)",
+          }}
+        >
+          {labels.reasonLabel}
+          <textarea
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+            data-form-type="other"
+            value={reason}
+            onChange={(e) => {
+              const nextVal = e.target.value;
+              setReason(nextVal);
+              onReasonChange?.(nextVal);
+            }}
+            placeholder={labels.reasonPlaceholder}
+            rows={2}
+            data-testid="upstream-challenge-reason-input"
+            style={{
+              width: "100%",
+              padding: "8px",
+              borderRadius: "var(--radius-sm)",
+              border: "1px solid var(--color-border-subtle)",
+              backgroundColor: "var(--color-surface-canvas)",
+              color: "var(--color-text-primary)",
+              fontFamily: "var(--font-sans)",
+              fontSize: "0.8125rem",
+            }}
+          />
+        </label>
+
+        <UpstreamChallengeWhatIfPreviewCard preview={preview} labels={labels} />
+      </div>
+
+      <div className="orcia-ds-dialog-footer" style={{ justifyContent: "flex-start" }}>
+        {onClose ? (
+          <button
+            type="button"
+            onClick={requestClose}
+            data-testid="upstream-challenge-cancel-btn"
+            className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
+          >
+            {resolvedRgaaLabels.cancelCta}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          disabled={!canSubmit}
+          onClick={handleSubmitChallenge}
+          onKeyDown={(e) => handleRgaaSubmitKeyDown(e, handleSubmitChallenge, !canSubmit)}
+          data-testid="upstream-challenge-submit-btn"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "6px 12px",
+            fontSize: "0.75rem",
+            fontWeight: 600,
+            borderRadius: "var(--radius-sm)",
+            border: "1px solid var(--color-arbitration-amber)",
+            backgroundColor: "var(--color-arbitration-amber)",
+            color: "var(--color-surface-card)",
+            cursor: canSubmit ? "pointer" : "not-allowed",
+            opacity: canSubmit ? 1 : 0.5,
+          }}
+        >
+          <span>{labels.submitChallengeCta}</span>
+          <DisabledButtonAlertIndicator
+            disabled={!canSubmit}
+            reason="Saisissez le motif de remise en cause pour activer l'envoi."
+            testIdSuffix="upstream-challenge-submit-btn"
+          />
+        </button>
+        <button
+          type="button"
+          onClick={handleReplay}
+          onKeyDown={(e) => handleRgaaSubmitKeyDown(e, handleReplay)}
+          data-testid="upstream-replay-trigger-btn"
+          style={{
+            padding: "6px 12px",
+            fontSize: "0.75rem",
+            fontWeight: 600,
+            borderRadius: "var(--radius-sm)",
+            border: "1px solid var(--color-gate-pass)",
+            backgroundColor: "var(--color-gate-pass-bg)",
+            color: "var(--color-gate-pass)",
+            cursor: "pointer",
+          }}
+        >
+          {labels.replayStepCta}
+        </button>
+        {submittedChallenge ? (
+          <span
+            role="status"
+            data-testid="upstream-challenge-feedback"
+            style={{
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              color: "var(--color-arbitration-amber)",
+            }}
+          >
+            {labels.challengeSubmittedFeedback}
+          </span>
+        ) : null}
+        {replayed ? (
+          <span
+            role="status"
+            data-testid="upstream-replay-feedback"
+            style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--color-gate-pass)" }}
+          >
+            {labels.replayTriggeredFeedback}
+          </span>
+        ) : null}
+      </div>
+    </>
+  );
+
+  if (inline) {
+    return (
+      <div
+        data-ux-component="upstream-challenge-rewind-modal"
+        data-testid="upstream-challenge-inline-panel"
+        style={{
+          padding: "14px",
+          borderRadius: "var(--radius-md)",
+          backgroundColor: "var(--color-surface-card)",
+          border: "1px solid var(--color-border-subtle)",
+          borderLeft: "4px solid var(--color-arbitration-amber)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+        }}
+      >
+        {renderInnerContent()}
+      </div>
+    );
+  }
+
   return (
     <DialogPrimitive.Root
       open={isOpen}
@@ -156,222 +421,7 @@ export function UpstreamChallengeRewindModal({
             borderLeft: "4px solid var(--color-arbitration-amber)",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "8px",
-              flexWrap: "wrap",
-              flexShrink: 0,
-            }}
-          >
-            <div>
-              <DialogPrimitive.Title
-                style={{
-                  margin: 0,
-                  fontSize: "0.75rem",
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  color: "var(--color-arbitration-amber)",
-                  letterSpacing: "0.04em",
-                }}
-              >
-                <OrciaIcon name="lightning" /> {labels.modalTitle}
-              </DialogPrimitive.Title>
-              <DialogPrimitive.Description
-                style={{
-                  margin: "2px 0 0 0",
-                  fontSize: "0.8125rem",
-                  color: "var(--color-text-secondary)",
-                }}
-              >
-                {labels.modalSubtitle}
-              </DialogPrimitive.Description>
-            </div>
-            <button
-              type="button"
-              onClick={requestClose}
-              data-testid="upstream-challenge-close-btn"
-              className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
-            >
-              {labels.closeCta} (Esc)
-            </button>
-          </div>
-
-          <div className="orcia-ds-dialog-body">
-            {showUnsavedConfirm ? (
-              <RgaaUnsavedChangesAlert
-                testIdPrefix="upstream-challenge"
-                labels={resolvedRgaaLabels}
-                onStay={cancelDiscardAndStay}
-                onDiscard={confirmDiscardAndClose}
-              />
-            ) : null}
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                gap: "8px",
-                fontSize: "0.75rem",
-              }}
-            >
-              <div
-                style={{
-                  padding: "8px",
-                  borderRadius: "var(--radius-sm)",
-                  backgroundColor: "var(--color-surface-canvas)",
-                  border: "1px solid var(--color-border-subtle)",
-                }}
-              >
-                <strong style={{ color: "var(--color-text-secondary)" }}>
-                  {labels.targetStepLabel}:
-                </strong>{" "}
-                <code style={{ fontFamily: "var(--font-mono)", color: "var(--color-text-primary)" }}>
-                  {preview.targetUpstreamStepKey}
-                  {subWorkflowStepKey ? (
-                    <>
-                      {" "}
-                      <OrciaIcon name="arrowRight" /> {subWorkflowStepKey}
-                    </>
-                  ) : (
-                    ""
-                  )}
-                </code>
-              </div>
-              <div
-                style={{
-                  padding: "8px",
-                  borderRadius: "var(--radius-sm)",
-                  backgroundColor: "var(--color-surface-canvas)",
-                  border: "1px solid var(--color-border-subtle)",
-                }}
-              >
-                <strong style={{ color: "var(--color-text-secondary)" }}>
-                  {labels.sectionKeyLabel}:
-                </strong>{" "}
-                <code style={{ fontFamily: "var(--font-mono)", color: "var(--color-text-primary)" }}>
-                  {preview.challengedSectionKey}
-                </code>
-              </div>
-            </div>
-
-            <label
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "4px",
-                fontSize: "0.75rem",
-                fontWeight: 600,
-                color: "var(--color-text-primary)",
-              }}
-            >
-              {labels.reasonLabel}
-              <textarea
-                autoComplete="off"
-                data-lpignore="true"
-                data-1p-ignore="true"
-                data-bwignore="true"
-                data-form-type="other"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder={labels.reasonPlaceholder}
-                rows={2}
-                data-testid="upstream-challenge-reason-input"
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--color-border-subtle)",
-                  backgroundColor: "var(--color-surface-canvas)",
-                  color: "var(--color-text-primary)",
-                  fontFamily: "var(--font-sans)",
-                  fontSize: "0.8125rem",
-                }}
-              />
-            </label>
-
-            <UpstreamChallengeWhatIfPreviewCard preview={preview} labels={labels} />
-          </div>
-
-          <div
-            className="orcia-ds-dialog-footer"
-            style={{ justifyContent: "flex-start" }}
-          >
-            <button
-              type="button"
-              onClick={requestClose}
-              data-testid="upstream-challenge-cancel-btn"
-              className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
-            >
-              {resolvedRgaaLabels.cancelCta}
-            </button>
-            <button
-              type="button"
-              disabled={!canSubmit}
-              onClick={handleSubmitChallenge}
-              onKeyDown={(e) => handleRgaaSubmitKeyDown(e, handleSubmitChallenge, !canSubmit)}
-              data-testid="upstream-challenge-submit-btn"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "6px 12px",
-                fontSize: "0.75rem",
-                fontWeight: 600,
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid var(--color-arbitration-amber)",
-                backgroundColor: "var(--color-arbitration-amber)",
-                color: "var(--color-surface-card)",
-                cursor: canSubmit ? "pointer" : "not-allowed",
-                opacity: canSubmit ? 1 : 0.5,
-              }}
-            >
-              <span>{labels.submitChallengeCta}</span>
-              <DisabledButtonAlertIndicator
-                disabled={!canSubmit}
-                reason="Saisissez le motif de remise en cause pour activer l'envoi."
-                testIdSuffix="upstream-challenge-submit-btn"
-              />
-            </button>
-            <button
-              type="button"
-              onClick={handleReplay}
-              onKeyDown={(e) => handleRgaaSubmitKeyDown(e, handleReplay)}
-              data-testid="upstream-replay-trigger-btn"
-              style={{
-                padding: "6px 12px",
-                fontSize: "0.75rem",
-                fontWeight: 600,
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid var(--color-gate-pass)",
-                backgroundColor: "var(--color-gate-pass-bg)",
-                color: "var(--color-gate-pass)",
-                cursor: "pointer",
-              }}
-            >
-              {labels.replayStepCta}
-            </button>
-            {submittedChallenge ? (
-              <span
-                role="status"
-                data-testid="upstream-challenge-feedback"
-                style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--color-arbitration-amber)" }}
-              >
-                {labels.challengeSubmittedFeedback}
-              </span>
-            ) : null}
-            {replayed ? (
-              <span
-                role="status"
-                data-testid="upstream-replay-feedback"
-                style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--color-gate-pass)" }}
-              >
-                {labels.replayTriggeredFeedback}
-              </span>
-            ) : null}
-          </div>
+          {renderInnerContent()}
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
