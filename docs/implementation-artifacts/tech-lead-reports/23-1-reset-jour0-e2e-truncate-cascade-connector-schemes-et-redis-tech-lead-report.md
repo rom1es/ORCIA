@@ -4,7 +4,7 @@
 - **Story / Clé Sprint** : `23-1-reset-jour0-e2e-truncate-cascade-connector-schemes-et-redis` (`Epic 23` — Vague 0 `P0`)
 - **Capacité(s)** : `CAP-003`, `CAP-011`, `CAP-020`, `CAP-021`, `CAP-022`, `CAP-024`, `CAP-030`, `CAP-031`, `CAP-032`, `CAP-033`, `CAP-054`, `CAP-065`, `CAP-082`, `CAP-140`, `CAP-200`, `CAP-201` *(et déblocage transverse des `87` échecs `beforeEach` affectant la campagne E2E)* — classification : `feature` + `hygiène` (`REM23-01` / `ARCH23-01`)
 - **Auteur / Contexte** : `22.10-impl` (Winston, Architecte BMAD — pré-implémentation Epic 23). Résout le paradoxe de maturité PostgreSQL 18 révélé en `Story 22.9` : dès que le scénario `#10` (`03-human-led-anchor-and-arbitration.spec.ts`) persiste réellement des lignes dans `step_executions` et `blackboard_snapshots`, les `87` scénarios E2E suivants (`#11`–`#110`, hors `13` skips) échouent dans `beforeEach` (`resetDay0()`) sur `RestrictViolationError` (`blackboard_snapshots_step_execution_id_fkey`).
-- **Commits associés** : `En attente d'implémentation (initialisé par Story 22.10)`
+- **Commits associés** : `fix(epic-23): story 23.1 - unblock e2e reset_day0 truncate cascade, protect connector_schemes and flush redis` (branche `feat/epic-23-remediation-pg18-sse-direction-c`)
 
 ---
 
@@ -78,18 +78,36 @@
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
-> *[Pré-implémentation initialisée en Story 22.10 — à compléter après implémentation et validation de la Story 23.1]*
-
 ### 3.1 Fichiers Développés & Modifiés
 | Fichier | Nature (Création / Modification / Refactoring) | Description synthétique |
 | :--- | :--- | :--- |
-| `infra/scripts/maintenance/09_reset_db_first_boot.py` | Modification | *[À compléter après implémentation Story 23.1]* |
-| `infra/scripts/e2e/reset_day0.py` | Modification | *[À compléter après implémentation Story 23.1]* |
-| `tests/integration/...` & `tests/unit/...` | Création / Modification | *[À compléter après implémentation Story 23.1]* |
+| `infra/scripts/maintenance/09_reset_db_first_boot.py` (`329` L) | Modification | Ajout de `"connector_schemes"` à `PROTECTED_TABLES`, extraction du helper réutilisable `reset_platform_auth_settings_and_system_seed()`, et garde `_assert_no_append_only_restrict_refs()` rejetant explicitement par `RuntimeError` toute suppression de `step_executions`/`workflow_runs` référencées par `blackboard_snapshots`/`audit_ledger` sans jamais désactiver aucun trigger (`0` `DISABLE TRIGGER`). |
+| `infra/scripts/e2e/reset_day0.py` (`214` L) | Modification | Exécution atomique `TRUNCATE TABLE ... RESTART IDENTITY CASCADE` sur `public` (excluant `alembic_version`, `connector_schemes`) et `dbos` (excluant `dbos_migrations`, `dbos_datasource_migrations`, `alembic_version`) derrière le garde-fou strict `is_isolated_e2e_database_url()`, réinitialisation `platform_auth_settings` (`LOCAL`/`NONE`, nouveau `boot_epoch`) + seed socle `connector_schemes`, `FLUSHDB` Redis 7.4 et `POST /api/v1/_e2e/evict-memory-caches` (`ConnectError` non bloquant -> `False`, HTTP `>= 400` -> `RuntimeError`). |
+| `apps/api/src/orcia_api/routers/e2e_test_hooks.py` (`116` L) | Modification | Mise à jour de `_E2E_EVICTABLE_STATE_ATTRS` et ré-initialisation Composition Root via `initialize_app_services(request.app)` sans jamais évincer les handles infra critiques (`db_engine`, `session_maker`, `reflexive_session_maker`, `http_client`, `redis_client`, `sse_broker`, `dbos_uow`, `dbos_datasource`). |
+| `tests/unit/test_e2e_reset_day0_guard.py` (`313` L) | Création | Couche 1a (`16` tests) : protection `connector_schemes`, refus immédiat des URLs hors `orcia_e2e`/non locales/ports `5432`/`5433`, comportement `ConnectError` vs HTTP `>= 400` vs `200`, absence d'attributs infra critiques dans `_E2E_EVICTABLE_STATE_ATTRS`, garde `ON DELETE RESTRICT` et CLI `main()`. |
+| `tests/integration/test_e2e_reset_day0_postgres18_and_redis.py` (`398` L) | Création | Couche 2 (`testcontainers` `pgvector/pgvector:pg18` sur base `orcia_e2e` port éphémère + `redis:7.4-alpine` + vrai `create_app()` `ORCIA_ENV="e2e"` sans override ni `app.state` manuel) : vérifie le `RuntimeError` de `09_reset_db_first_boot.py`, l'exécution de `reset_day0_environment()` + `POST /api/v1/_e2e/evict-memory-caches`, `COUNT(*) == 0` sur `users`/`workflow_runs`/`step_executions`/`blackboard_snapshots`/`audit_ledger`, `COUNT(*) >= 7` sur `connector_schemes`, triggers `trg_blackboard_snapshots_append_only` & `prevent_audit_ledger_mutation` toujours actifs (`tgenabled = 'O'`), `platform_auth_settings` réinitialisé (`LOCAL`/`NONE`) et Redis `DBSIZE == 0`. |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
-- **Couverture de tests** : *[À compléter — $\ge 90\%$ requis]*
-- **Qualité statique & Architecture** : `ruff`, `mypy --strict`, `lint-imports`, `lint_spine.py`, `gitnexus_detect_changes()` *[À compléter]*
+- **Couverture de tests ciblée (`coverage` sur les 3 modules modifiés Story 23.1)** : **`95 %`** (`232` statements, `3` missed, `64` branches, `11` partial) :
+  - `apps/api/src/orcia_api/routers/e2e_test_hooks.py` : **`100 %`** (`23/23` stmts, `6/6` branches)
+  - `infra/scripts/e2e/reset_day0.py` : **`97 %`** (`101` stmts, `1` miss)
+  - `infra/scripts/maintenance/09_reset_db_first_boot.py` : **`93 %`** (`108` stmts, `2` miss)
+- **Qualité statique & Architecture (Couche 3)** :
+  - `.venv/bin/ruff check . && .venv/bin/ruff format --check .` : **`0` erreur**, `1254` fichiers formatés.
+  - `.venv/bin/mypy --strict packages/orcia-core packages/orcia-connectors apps/api apps/worker` : **`0` erreur** (`550` fichiers source).
+  - `MYPYPATH=infra/scripts/e2e .venv/bin/mypy --strict infra/scripts/maintenance/09_reset_db_first_boot.py infra/scripts/e2e/reset_day0.py` : **`0` erreur** (`2` fichiers source).
+  - `.venv/bin/lint-imports` : **`5` contrats conservés, `0` brisé** (`596` fichiers, `4279` dépendances).
+  - `.venv/bin/python .agent/skills/bmad-architecture/scripts/lint_spine.py --workspace docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24` : **`0` finding** (`ok: true`).
+  - **GitNexus (`npx gitnexus analyze .` + `detect_changes(scope="all")`)** : `37 416` nœuds / `75 002` arêtes indexés ; `changed_count: 2` (`PUBLIC_EXCLUDED_TABLES`, `_SAFE_IDENT_RE` dans `infra/scripts/e2e/reset_day0.py`), `changed_files: 3`, `affected_count: 1724`, `risk_level: "critical"` (couvert par la garde `is_isolated_e2e_database_url()` et les tests Couche 1a + Couche 2 PG18/Redis).
 
 ### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17` + 5 Garde-Fous de Câblage Vertical)
-- *[À compléter après validation des couches 1a, 2, 3 et tir E2E enchaîné `03 -> 04 -> shell`]*
+- **Couche 1a & Audits AST** :
+  - `.venv/bin/pytest tests/unit/test_e2e_reset_day0_guard.py tests/unit/test_e2e_stack_config.py tests/unit/test_integration_no_manual_app_state_audit.py tests/unit/test_zero_orphan_sql_adapters_audit.py tests/unit/test_codebase_architectural_anti_patterns_audit.py -v` : **`35 passed` (`100 %`)**.
+- **Couche 2 (Intégration Verticale PG18 + Redis + `09_reset_db_first_boot.py` non-régression)** :
+  - `.venv/bin/pytest tests/integration/test_e2e_reset_day0_postgres18_and_redis.py -v` : **`1 passed` (`19.90s`)**.
+  - Suite complète des tests existants invoquant `09_reset_db_first_boot.py` (`test_story_6_4`, `test_story_9_2`, `test_platform_auth_modes_2fa_and_local_isolation`, `test_story_7_1`, `test_story_7_2`, `test_story_7_4`, `test_story_16_2`, `test_story_16_3`, `test_story_20_3`) : **`11 passed` (`128.73s`)**.
+- **Couche 5 (Tir Playwright enchaîné `03 -> 04 -> shell`, `ORCIA_E2E_CAMPAIGN_DIR=/tmp/orcia-e2e-verify-23-1`)** :
+  - `RestrictViolationError` dans `beforeEach` (`resetDay0()`) : **`0` occurrence** (`87` échecs en cascade de l'Epic 22 intégralement levés).
+  - `03-human-led-anchor-and-arbitration.spec.ts` : **`2/2 passed`** (`desktop-cockpit` `15.9s`, `mobile-companion` `12.7s`).
+  - `04-multi-actor-claim-sse.spec.ts` : **`2/2 passed`** (`desktop-cockpit` `5.4s` & `5.0s` — précédemment bloqués dès `beforeEach` en Epic 22), **`2 skipped`** (`mobile-companion` skip attendu).
+  - `shell.spec.ts` : `resetDay0()` s'exécute sans erreur sur les `8` cas (`4` desktop + `4` mobile) qui atteignent tous le shell et butent uniquement sur les erreurs `HTTP 401` pré-existantes sur `/api/v1/org-units`, `/api/v1/orchestration/state`, `/api/v1/users/me/preferences` au Jour 0 (périmètre `Story 23.2` / `Story 23.4`).

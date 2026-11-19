@@ -586,7 +586,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "phaseOrStory": "Story 23.1",
       "reportFile": "23-1-reset-jour0-e2e-truncate-cascade-connector-schemes-et-redis-tech-lead-report.md",
       "domain": "Vague 0 (REM23-01 / ARCH23-01) — Déblocage resetDay0() (TRUNCATE CASCADE E2E isolé orcia_e2e), Protection connector_schemes & Purge Redis FLUSHDB",
-      "summary": "Pré-implémentation (ready-for-dev) : protection connector_schemes dans 09_reset_db_first_boot.py sans affaiblir les triggers append-only, TRUNCATE ... RESTART IDENTITY CASCADE strictement gardé dans reset_day0.py + FLUSHDB Redis + test testcontainers PG18/Redis (débloque les 87 échecs cascade #11–teinte-110)."
+      "summary": "Clôture (done) : protection connector_schemes + garde ON DELETE RESTRICT sans DISABLE TRIGGER dans 09_reset_db_first_boot.py, TRUNCATE ... RESTART IDENTITY CASCADE (public & dbos) gardé is_isolated_e2e_database_url() + FLUSHDB Redis + /api/v1/_e2e/evict-memory-caches dans reset_day0.py/e2e_test_hooks.py, 95 % couv. Story 23.1 (100 % e2e_test_hooks, 97 % reset_day0, 93 % 09_reset_db_first_boot), 35/35 unit/AST, 1/1 testcontainers PG18/Redis sans override + 11/11 non-régression 09_reset, ruff/mypy --strict/lint-imports (5/5)/lint_spine 0 erreur et tir Playwright 03 -> 04 -> shell avec 0 RestrictViolationError (03 & 04 desktop PASS)."
     },
     {
       "date": "2026-11-19",
