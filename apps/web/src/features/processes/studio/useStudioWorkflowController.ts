@@ -6,6 +6,7 @@ import {
   type WorkflowDefinitionV2Item,
 } from "../processStudioV2Data";
 import type { ProcessOrchestrationModesCopy } from "../../../i18n/locales/process_orchestration_modes_labels";
+import { formatRfc9457ErrorToBanner } from "../../../lib/formatRfc9457ErrorToBanner";
 import {
   buildNextPublishedWorkflow,
   createProcessesApiClient,
@@ -73,12 +74,13 @@ export function useStudioWorkflowController({
       })
       .catch((err: unknown) => {
         if (cancelled || !isMountedRef.current) return;
-        const detail = err instanceof Error ? err.message : String(err);
         setStatusBanner({
           tone: "error",
-          message: isFr
-            ? `Impossible d'actualiser le processus depuis le serveur (${detail}). Copie locale affichée.`
-            : `Unable to refresh process from server (${detail}). Showing local working copy.`,
+          message: formatRfc9457ErrorToBanner(
+            err,
+            locale,
+            isFr ? "Processus" : "Process",
+          ).fullText,
         });
       });
     return () => {
@@ -116,12 +118,13 @@ export function useStudioWorkflowController({
       })
       .catch((err: unknown) => {
         if (!isMountedRef.current) return;
-        const detail = err instanceof Error ? err.message : String(err);
         setStatusBanner({
           tone: "error",
-          message: isFr
-            ? `Échec de l'enregistrement sur le serveur : ${detail}`
-            : `Failed to save process on server: ${detail}`,
+          message: formatRfc9457ErrorToBanner(
+            err,
+            locale,
+            isFr ? "Enregistrement du processus" : "Process save",
+          ).fullText,
         });
       });
   };

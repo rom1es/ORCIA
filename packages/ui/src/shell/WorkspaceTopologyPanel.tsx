@@ -68,7 +68,11 @@ export function WorkspaceTopologyPanel({
         {showPersonaSimulator && (
           <StatusBadge
             testId="finops-rollup-badge"
-            label={`${labels.finopsRollupPrefix}: ${consolidatedFinopsUsd.toFixed(2)} USD`}
+            label={`${labels.finopsRollupPrefix}: ${new Intl.NumberFormat("fr-FR", {
+              style: "currency",
+              currency: "EUR",
+              minimumFractionDigits: 2,
+            }).format(consolidatedFinopsUsd)}`}
             tone="cyan"
             monospace
           />

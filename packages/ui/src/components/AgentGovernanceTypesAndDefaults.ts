@@ -116,18 +116,18 @@ export const AGENT_STUDIO_BLOCKS: readonly {
   },
   {
     key: "F",
-    badge: "Bloc F",
-    titleFr: "Garde-fous & Contrat de Sortie",
-    subtitleFr: "Sécurité, citations obligatoires et gabarit du livrable",
+    badge: "Qualité",
+    titleFr: "Règles de sécurité & Format de sortie",
+    subtitleFr: "Fiabilité, citations obligatoires et gabarit du livrable",
   },
 ];
 
 export const HUMAN_PARTNER_ROLE_LABELS_FR: Readonly<
   Record<UiAgentHumanPartnerRole, string>
 > = {
-  PO_PM: "Product Owner / Product Manager (PO/PM)",
+  PO_PM: "Responsable Produit / Métier",
   ARCHITECT: "Architecte Logiciel / Solution",
-  TECH_LEAD: "Tech Lead / Développeur Senior",
+  TECH_LEAD: "Référent Technique / Développeur Senior",
   SECURITY_QA: "Auditeur Sécurité / Responsable Qualité",
   ALL: "Tout membre habilité de l'Espace",
 };
@@ -250,7 +250,7 @@ export function computeAgentReadinessChecklist(
       satisfied: hasCitationsPolicy,
       detailFr: hasCitationsPolicy
         ? `Contrat : ${OUTPUT_CONTRACT_FORMAT_LABELS_FR[draft.outputContractFormat]}`
-        : "Activez les citations vérifiables obligatoires (Bloc F)",
+        : "Activez les citations vérifiables obligatoires (Règles de sécurité)",
     },
     {
       index: 5,

@@ -122,6 +122,7 @@ export function FourZoneSidebarRail({
               <select
                 data-testid="sidebar-team-bu-selector"
                 value={activeTeamBuId ?? teamBuOptions[0]?.id ?? ""}
+                title={teamBuOptions.find((o) => o.id === (activeTeamBuId ?? teamBuOptions[0]?.id))?.label}
                 onChange={(e) => onSelectTeamBu?.(e.target.value)}
                 className="w-full min-w-0 rounded border px-2 py-1 text-xs"
                 style={{
@@ -145,6 +146,11 @@ export function FourZoneSidebarRail({
               <select
                 data-testid="sidebar-workspace-selector"
                 value={activeWorkspaceSelectorId ?? ""}
+                title={
+                  (workspaceSelectorOptions ?? []).find((o) => o.id === activeWorkspaceSelectorId)?.label ??
+                  selectorLabels?.allWorkspacesOption ??
+                  "Tous les espaces"
+                }
                 onChange={(e) => onSelectWorkspaceFromSidebar?.(e.target.value)}
                 className="w-full min-w-0 rounded border px-2 py-1 text-xs"
                 style={{
@@ -171,7 +177,7 @@ export function FourZoneSidebarRail({
         ).map((entry) => {
           const isActive = activeMenuKey !== null && entry.key === activeMenuKey;
           const entryLabel = labels.menuEntries[entry.key];
-          const disabledReason = disabledMenuKeys?.[entry.key];
+          const disabledReason = isActive ? undefined : disabledMenuKeys?.[entry.key];
           const isDisabled = Boolean(disabledReason);
           return (
             <button
@@ -194,11 +200,13 @@ export function FourZoneSidebarRail({
             >
               <OrciaIcon name={entry.iconName} />
               {!railCollapsed && <span className="flex-1">{entryLabel}</span>}
-              <DisabledButtonAlertIndicator
-                disabled={isDisabled}
-                reason={disabledReason}
-                testIdSuffix={`eight-menu-item-${entry.key}`}
-              />
+              {!isActive && (
+                <DisabledButtonAlertIndicator
+                  disabled={isDisabled}
+                  reason={disabledReason}
+                  testIdSuffix={`eight-menu-item-${entry.key}`}
+                />
+              )}
             </button>
           );
         })}

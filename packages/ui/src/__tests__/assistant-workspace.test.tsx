@@ -184,7 +184,7 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     );
     fireEvent.click(screen.getByTestId("studio-test-dryrun-btn"));
     expect(screen.getByTestId("studio-dry-run-banner").textContent).toContain(
-      "Dry-Run OK",
+      "Simulation vérifiée",
     );
 
     fireEvent.click(screen.getByTestId("studio-save-override-btn"));

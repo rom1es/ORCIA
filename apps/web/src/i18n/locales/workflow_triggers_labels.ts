@@ -48,7 +48,7 @@ export const WORKFLOW_TRIGGERS_FR_LABELS: WorkflowTriggersStudioCopy = {
     logServicePlaceholder: "api",
     cooldownLabel: "Délai anti-doublon (secondes)",
     maxRunsPerHourLabel: "Limite d'exécutions / heure",
-    maxDailyCostLabel: "Plafond journalier (USD)",
+    maxDailyCostLabel: "Plafond journalier (€)",
     autoHelpCheckboxLabel:
       "Mettre à jour automatiquement la fiche d'aide à chaque publication",
     webhookSecretFieldLabel: "Clé secrète de signature", // pragma: allowlist secret
@@ -108,7 +108,7 @@ export const WORKFLOW_TRIGGERS_EN_LABELS: WorkflowTriggersStudioCopy = {
     logServicePlaceholder: "api",
     cooldownLabel: "Deduplication window (seconds)",
     maxRunsPerHourLabel: "Max runs / hour",
-    maxDailyCostLabel: "Daily budget cap (USD)",
+    maxDailyCostLabel: "Daily budget cap (€)",
     autoHelpCheckboxLabel: "Automatically update the help article on each publication",
     webhookSecretFieldLabel: "Signing secret key", // pragma: allowlist secret
     secretConfiguredBadge: "Key configured", // pragma: allowlist secret

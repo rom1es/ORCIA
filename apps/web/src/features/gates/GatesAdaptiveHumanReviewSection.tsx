@@ -275,12 +275,38 @@ export function GatesAdaptiveHumanReviewSection({
           </strong>
           {evaluation ? (
             <div style={{ display: "flex", gap: "8px", marginTop: "6px", flexWrap: "wrap" }}>
-              <span data-testid="gates-human-evaluation-status-badge" className="orcia-uri-pill">
-                Gate: {evaluation.status}
+              <span
+                data-testid="gates-human-evaluation-status-badge"
+                data-status={evaluation.status}
+                className="orcia-uri-pill"
+              >
+                {isFr ? "Point de contrôle" : "Gate"} :{" "}
+                {evaluation.status === "PENDING_HUMAN_REVIEW"
+                  ? isFr
+                    ? "Validation humaine requise"
+                    : "Pending human review"
+                  : evaluation.status === "PASS"
+                    ? isFr
+                      ? "Validé"
+                      : "Passed"
+                    : evaluation.status}
               </span>
               {stagedJira ? (
-                <span data-testid="gates-staged-jira-status-badge" className="orcia-uri-pill">
-                  Jira {stagedJira.issue_key}: {stagedJira.status}
+                <span
+                  data-testid="gates-staged-jira-status-badge"
+                  data-status={stagedJira.status}
+                  className="orcia-uri-pill"
+                >
+                  Jira {stagedJira.issue_key} :{" "}
+                  {stagedJira.status === "STAGED"
+                    ? isFr
+                      ? "Préparée (en attente)"
+                      : "Prepared (pending)"
+                    : stagedJira.status === "EXECUTED"
+                      ? isFr
+                        ? "Exécutée"
+                        : "Executed"
+                      : stagedJira.status}
                 </span>
               ) : null}
             </div>

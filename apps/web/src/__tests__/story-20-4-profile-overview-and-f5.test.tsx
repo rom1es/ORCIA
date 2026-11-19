@@ -60,8 +60,9 @@ describe("Story 20.4 — Mon Profil (/profile), 4 KPIs, Éléments Populaires & 
     expect(page).toBeDefined();
     expect((await screen.findByTestId("profile-display-name")).textContent).toBe("Nadia Benali");
     expect(screen.getByTestId("profile-handle-email").textContent).toContain("@nadia · nadia@orcia.ia");
-    expect(screen.getByTestId("profile-kpi-total-tokens").textContent).toContain("0");
-    expect(screen.getByTestId("profile-kpi-longest-streak").textContent).toContain("0 jour");
+    expect(screen.getByTestId("profile-kpis-empty-state")).toBeDefined();
+    expect(screen.queryByTestId("profile-kpi-total-tokens")).toBeNull();
+    expect(screen.queryByTestId("profile-kpi-longest-streak")).toBeNull();
     expect(await screen.findByTestId("profile-popular-items-empty")).toBeDefined();
 
     // Clicking "Modifier" opens the unified Settings modal on ACCOUNT_SECURITY tab

@@ -49,6 +49,13 @@ export function UserProfileOverviewPage({
     { testId: "profile-kpi-current-streak", label: labels.currentStreakLabel, value: fmtDays(profile.currentStreakDays), hint: "", icon: "clock" as const },
   ];
 
+  const allKpisZero =
+    !isLoading &&
+    profile.totalTokens === 0 &&
+    profile.peakDailyTokens === 0 &&
+    profile.longestStreakDays === 0 &&
+    profile.currentStreakDays === 0;
+
   return (
     <div data-testid="user-profile-overview-page" className="mx-auto flex w-full max-w-4xl flex-col gap-6 py-4">
       {errorMessage && (
@@ -120,20 +127,37 @@ export function UserProfileOverviewPage({
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {kpiCards.map((kpi) => (
-          <div key={kpi.testId} data-testid={kpi.testId} className="orcia-bento-card flex flex-col justify-between gap-2 p-4" style={{ backgroundColor: "var(--color-bg-surface)" }}>
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-medium" style={{ color: "var(--color-text-secondary)" }}>{kpi.label}</span>
-              <OrciaIcon name={kpi.icon} size={15} />
+      {allKpisZero ? (
+        <section
+          data-testid="profile-kpis-empty-state"
+          className="orcia-bento-card flex items-center justify-between gap-3 px-5 py-4 text-xs"
+          style={{
+            backgroundColor: "var(--color-bg-surface)",
+            color: "var(--color-text-secondary)",
+          }}
+        >
+          <span>
+            {locale === "en"
+              ? "No assistant activity or token usage recorded yet. Your metrics will appear here after your first exchanges."
+              : "Aucune activité enregistrée pour le moment. Vos indicateurs d'usage apparaîtront ici dès vos premiers échanges avec Mon Assistant."}
+          </span>
+        </section>
+      ) : (
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {kpiCards.map((kpi) => (
+            <div key={kpi.testId} data-testid={kpi.testId} className="orcia-bento-card flex flex-col justify-between gap-2 p-4" style={{ backgroundColor: "var(--color-bg-surface)" }}>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-medium" style={{ color: "var(--color-text-secondary)" }}>{kpi.label}</span>
+                <OrciaIcon name={kpi.icon} size={15} />
+              </div>
+              <div className="text-xl font-semibold tabular-nums" style={{ color: "var(--color-text-primary)" }}>
+                {isLoading ? "…" : kpi.value}
+              </div>
+              {kpi.hint && <span className="text-[11px]" style={{ color: "var(--color-text-secondary)" }}>{kpi.hint}</span>}
             </div>
-            <div className="text-xl font-semibold tabular-nums" style={{ color: "var(--color-text-primary)" }}>
-              {isLoading ? "…" : kpi.value}
-            </div>
-            {kpi.hint && <span className="text-[11px]" style={{ color: "var(--color-text-secondary)" }}>{kpi.hint}</span>}
-          </div>
-        ))}
-      </section>
+          ))}
+        </section>
+      )}
 
       <section data-testid="profile-popular-items-section" className="orcia-bento-card flex flex-col gap-4 p-5" style={{ backgroundColor: "var(--color-bg-surface)" }}>
         <div className="space-y-0.5">
@@ -161,7 +185,14 @@ export function UserProfileOverviewPage({
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             {profile.popularItems.map((item) => {
               const countUnit = item.usageCount === 1 ? labels.usageCountSingular : labels.usageCountPlural;
-              return (
+              const allKpisZero =
+    !isLoading &&
+    profile.totalTokens === 0 &&
+    profile.peakDailyTokens === 0 &&
+    profile.longestStreakDays === 0 &&
+    profile.currentStreakDays === 0;
+
+  return (
                 <button
                   key={`${item.itemType}-${item.itemKey}`}
                   type="button"

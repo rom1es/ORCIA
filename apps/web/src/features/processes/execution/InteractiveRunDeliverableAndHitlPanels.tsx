@@ -1,3 +1,4 @@
+import { FormattedMarkdownContent } from "@orcia/ui";
 import React from "react";
 import type {
   DeterministicSubStepItem,
@@ -110,21 +111,15 @@ export function InteractiveRunDeliverableAndHitlPanels({
             </div>
           </div>
         ) : (
-          <pre
+          <div
             data-testid="artifact-markdown-preview"
-            style={{
-              margin: 0,
-              padding: "12px",
-              borderRadius: "6px",
-              backgroundColor: "var(--color-surface-card)",
-              border: "1px solid var(--color-border-subtle)",
-              fontSize: "13px",
-              lineHeight: 1.5,
-              whiteSpace: "pre-wrap",
-            }}
+            className="rounded-md border border-border-subtle bg-surface-card p-3"
           >
-            {artifactMarkdown}
-          </pre>
+            <FormattedMarkdownContent
+              content={artifactMarkdown}
+              testId="artifact-markdown-formatted"
+            />
+          </div>
         )}
       </div>
 

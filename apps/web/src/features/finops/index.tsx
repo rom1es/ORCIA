@@ -14,6 +14,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
+import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import {
   mapCognitiveTabProps,
   mapProcessesRows,
@@ -115,10 +116,15 @@ export function FinopsFeaturePanel() {
       setCognitiveData(cog);
       setRemoteData(remote);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setErrorMessage(msg);
+      setErrorMessage(
+        formatRfc9457ErrorToBanner(
+          err,
+          locale,
+          locale === "fr" ? "Tableau de bord FinOps" : "FinOps dashboard",
+        ).fullText,
+      );
     }
-  }, [apiClient, selectedScope, resolveValidScopeIdForLevel]);
+  }, [apiClient, locale, selectedScope, resolveValidScopeIdForLevel]);
 
   useEffect(() => {
     void loadDashboard();
@@ -146,11 +152,16 @@ export function FinopsFeaturePanel() {
         setSuccessMessage(dictionary.finops.modals.saveButton + " ✓");
         setReloadTrigger((prev) => prev + 1);
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        setErrorMessage(msg);
+        setErrorMessage(
+          formatRfc9457ErrorToBanner(
+            err,
+            locale,
+            locale === "fr" ? "Plafond budgétaire" : "Budget ceiling",
+          ).fullText,
+        );
       }
     },
-    [apiClient, dictionary.finops.modals.saveButton],
+    [apiClient, dictionary.finops.modals.saveButton, locale],
   );
 
   const handleSubmitOverride = useCallback(
@@ -166,13 +177,19 @@ export function FinopsFeaturePanel() {
         setSuccessMessage(dictionary.finops.modals.overrideSubmitButton + " ✓");
         setReloadTrigger((prev) => prev + 1);
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        setErrorMessage(msg);
+        setErrorMessage(
+          formatRfc9457ErrorToBanner(
+            err,
+            locale,
+            locale === "fr" ? "Dérogation budgétaire" : "Budget override",
+          ).fullText,
+        );
       }
     },
     [
       apiClient,
       dictionary.finops.modals.overrideSubmitButton,
+      locale,
       resolvedScopeIdsByLevel.WORKSPACE,
     ],
   );
@@ -186,11 +203,16 @@ export function FinopsFeaturePanel() {
         setSuccessMessage(dictionary.finops.humanMastery.appliedBadge);
         setReloadTrigger((prev) => prev + 1);
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        setErrorMessage(msg);
+        setErrorMessage(
+          formatRfc9457ErrorToBanner(
+            err,
+            locale,
+            locale === "fr" ? "Recommandation FinOps" : "FinOps recommendation",
+          ).fullText,
+        );
       }
     },
-    [apiClient, dictionary.finops.humanMastery.appliedBadge],
+    [apiClient, dictionary.finops.humanMastery.appliedBadge, locale],
   );
 
   const handleUpdateConnectorQuota = useCallback(
@@ -215,8 +237,13 @@ export function FinopsFeaturePanel() {
         setSuccessMessage(dictionary.finops.remoteServices.quotaModal.saveButton + " ✓");
         setReloadTrigger((prev) => prev + 1);
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        setErrorMessage(msg);
+        setErrorMessage(
+          formatRfc9457ErrorToBanner(
+            err,
+            locale,
+            locale === "fr" ? "Quota de service distant" : "Remote service quota",
+          ).fullText,
+        );
       }
     },
     [
@@ -224,6 +251,7 @@ export function FinopsFeaturePanel() {
       selectedScope,
       resolveValidScopeIdForLevel,
       dictionary.finops.remoteServices.quotaModal.saveButton,
+      locale,
     ],
   );
 
@@ -240,8 +268,13 @@ export function FinopsFeaturePanel() {
         setSuccessMessage(dictionary.finops.remoteServices.circuitStates.closed + " ✓");
         setReloadTrigger((prev) => prev + 1);
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        setErrorMessage(msg);
+        setErrorMessage(
+          formatRfc9457ErrorToBanner(
+            err,
+            locale,
+            locale === "fr" ? "Réarmement du connecteur" : "Connector circuit reset",
+          ).fullText,
+        );
       }
     },
     [
@@ -249,6 +282,7 @@ export function FinopsFeaturePanel() {
       selectedScope,
       resolveValidScopeIdForLevel,
       dictionary.finops.remoteServices.circuitStates.closed,
+      locale,
     ],
   );
 
@@ -269,14 +303,20 @@ export function FinopsFeaturePanel() {
         );
         setReloadTrigger((prev) => prev + 1);
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        setErrorMessage(msg);
+        setErrorMessage(
+          formatRfc9457ErrorToBanner(
+            err,
+            locale,
+            locale === "fr" ? "Audit exécution autonome" : "Autonomous run review",
+          ).fullText,
+        );
       }
     },
     [
       apiClient,
       dictionary.autonomousSupervision.restoreSuccessBanner,
       dictionary.autonomousSupervision.reviewValidatedBanner,
+      locale,
       resolvedScopeIdsByLevel.WORKSPACE,
     ],
   );

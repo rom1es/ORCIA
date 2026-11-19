@@ -89,7 +89,11 @@ export function FinopsAutonomousGovernanceSection({
 
   const escPct = Math.round(data.autonomousEscalationRate * 1000) / 10;
   const invPct = Math.round(data.postHocInvalidationRate * 1000) / 10;
-  const costFormatted = `${data.avgAutonomousCostUsd.toFixed(2)} $`;
+  const costFormatted = new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+  }).format(data.avgAutonomousCostUsd);
   const ttmFormatted = `${Math.round(data.avgTtmGainMinutes)} ${labels.efficiencyGauge.minutesUnit}`;
 
   return (

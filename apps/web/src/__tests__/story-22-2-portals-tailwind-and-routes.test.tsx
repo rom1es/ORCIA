@@ -296,6 +296,7 @@ describe("Story 22.2 — Portals OrciaDialog, Tailwind v4 Compilation, Display:N
     fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
 
     await router1.navigate({ to: "/spaces" });
+    fireEvent.click(await screen.findByTestId("toggle-create-workspace-form-btn"));
     await screen.findByTestId("workspace-name-input");
 
     fireEvent.change(screen.getByTestId("workspace-name-input"), {

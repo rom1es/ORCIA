@@ -210,13 +210,19 @@ test.describe("Auth, 2FA, compte utilisateur et profil personnel", () => {
     await openAccountPopover(page);
     await page.getByTestId("account-popover-profile-btn").click();
     await expect(page.getByTestId("user-profile-overview-page")).toBeVisible({ timeout: 20000 });
-    for (const kpiId of [
-      "profile-kpi-total-tokens",
-      "profile-kpi-peak-tokens",
-      "profile-kpi-longest-streak",
-      "profile-kpi-current-streak",
-    ]) {
-      await expect(page.getByTestId(kpiId)).toBeVisible();
+    const kpiEmptyState = page.getByTestId("profile-kpis-empty-state");
+    const kpiTotalTokens = page.getByTestId("profile-kpi-total-tokens");
+    if (await kpiEmptyState.isVisible()) {
+      await expect(kpiTotalTokens).toHaveCount(0);
+    } else {
+      for (const kpiId of [
+        "profile-kpi-total-tokens",
+        "profile-kpi-peak-tokens",
+        "profile-kpi-longest-streak",
+        "profile-kpi-current-streak",
+      ]) {
+        await expect(page.getByTestId(kpiId)).toBeVisible();
+      }
     }
     await page.getByTestId("profile-open-account-settings-btn").click();
     await expect(page.getByTestId("user-settings-modal")).toBeVisible({ timeout: 15000 });
@@ -229,6 +235,9 @@ test.describe("Auth, 2FA, compte utilisateur et profil personnel", () => {
     await page.goto("/profile");
     await page.reload();
     await expect(page.getByTestId("user-profile-overview-page")).toBeVisible({ timeout: 20000 });
+    await expect(
+      page.getByTestId("profile-kpis-empty-state").or(page.getByTestId("profile-kpi-total-tokens")),
+    ).toBeVisible();
 
     await openUserSettingsTab(page, "PERSONALIZATION");
     await expect(page.getByTestId("settings-assistant-hat-select")).toHaveValue("ARCHITECT");

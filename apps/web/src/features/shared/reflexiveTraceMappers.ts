@@ -73,6 +73,44 @@ export function mapApiKindToUiKind(rawKind: string): UiTraceEventKind {
   return "CHECK_EXECUTED";
 }
 
+function humanizeTraceKindFallback(kind: UiTraceEventKind): string {
+  switch (kind) {
+    case "SYNTHESIS_READY":
+      return "Synthèse prête";
+    case "CHECK_EXECUTED":
+      return "Vérification exécutée";
+    case "FILE_ANALYZED":
+      return "Document inspecté";
+    case "AGENT_DELEGATED":
+      return "Délégation à un agent spécialisé";
+    case "WRITE_PREVIEW_REQUESTED":
+      return "Validation d'écriture requise";
+    case "THOUGHT_DELTA":
+    case "THOUGHT_COMPLETED":
+      return "Analyse en cours";
+    case "GROUP_HEADER":
+      return "Inspection du dossier";
+    case "EXECUTION_FINISHED":
+      return "Traitement terminé";
+    default:
+      return "Étape exécutée";
+  }
+}
+
+function sanitizeTraceDisplayLabel(rawLabel: string): string {
+  if (rawLabel === "SYNTHESIS_READY") {
+    return "Synthèse prête";
+  }
+  return rawLabel
+    .replace(/\bSYNTHESIS_READY\b/g, "Synthèse prête")
+    .replace(/\bOAUTH2_PASSTHROUGH\b/g, "Connexion déléguée (OAuth2)")
+    .replace(/\bTECH_LEAD_DEV\b|\bTECH_LEAD\b/g, "Référent Technique")
+    .replace(/\bIMMUTABLE\b/g, "Verrouillé")
+    .replace(/\bPAUSE_AND_ESCALATE\b/g, "Pause et escalade humaine")
+    .replace(/\[STALE_WARNING\]\s*/g, "")
+    .trim();
+}
+
 export function mapApiTraceEventToUi(
   item: ApiTraceEventLike,
   fallbackActorSlug = "assistant",
@@ -83,13 +121,14 @@ export function mapApiTraceEventToUi(
       : null;
   const actorSlug = metaActor || fallbackActorSlug;
   const kind = mapApiKindToUiKind(String(item.kind || "check_executed"));
-  const label =
+  const rawLabel =
     item.group_title ||
     item.check_label ||
     item.status_label ||
     item.display_filename ||
     item.delegate_agent_slug ||
-    kind;
+    humanizeTraceKindFallback(kind);
+  const label = sanitizeTraceDisplayLabel(rawLabel) || humanizeTraceKindFallback(kind);
   const durationSeconds =
     typeof item.thought_duration_ms === "number"
       ? Math.max(1, Math.round(item.thought_duration_ms / 1000))

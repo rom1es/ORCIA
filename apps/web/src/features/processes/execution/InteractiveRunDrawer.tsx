@@ -87,7 +87,6 @@ export function InteractiveRunDrawer({
     <section
       data-testid="interactive-run-hitl-drawer"
       className="orcia-bento-card flex flex-col gap-3.5"
-      style={{ borderLeft: "4px solid var(--color-primary-cobalt)" }}
     >
       <div className="sr-only" aria-hidden="true">
         <span data-testid="run-drawer-status-badge">{status}</span>

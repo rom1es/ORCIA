@@ -916,7 +916,7 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
     expect(windowScrollSpy).not.toHaveBeenCalled();
   });
 
-  it("renders DisabledButtonAlertIndicator (red '!' circle badge + red tooltip) only when disabled=true and enriches FourZoneDirectionCShell Notification Center with badge, items, and Activity Log link", () => {
+  it("renders DisabledButtonAlertIndicator as non-intrusive accessible sr-only tooltip without red '!' SVG badge when disabled=true", () => {
     const { rerender } = render(
       <OrciaButton
         data-testid="sample-action-btn"
@@ -931,13 +931,15 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
     expect(btn.disabled).toBe(true);
     const alertIcon = screen.getByTestId("disabled-button-alert-icon-sample-action-btn");
     const alertTooltip = screen.getByTestId("disabled-button-alert-tooltip-sample-action-btn");
-    expect(alertIcon.querySelector("svg")).not.toBeNull();
-    expect(alertTooltip.style.color).toBe("var(--color-status-error)");
+    expect(alertIcon.querySelector("svg")).toBeNull();
+    expect(alertIcon.className).toContain("sr-only");
+    expect(alertIcon.getAttribute("title")).toBe("Complétez d'abord les champs obligatoires.");
+    expect(alertTooltip.getAttribute("role")).toBe("tooltip");
     expect(alertTooltip.getAttribute("data-tooltip-text")).toBe(
       "Complétez d'abord les champs obligatoires.",
     );
 
-    // Enable button -> both red '!' circle badge and red tooltip disappear completely from DOM
+    // Enable button -> accessible reason and tooltip disappear completely from DOM
     rerender(
       <OrciaButton
         data-testid="sample-action-btn"

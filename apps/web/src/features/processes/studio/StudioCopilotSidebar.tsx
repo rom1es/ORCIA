@@ -129,11 +129,12 @@ export function StudioCopilotSidebar({
   return (
     <aside
       data-testid="studio-copilot-sidebar"
-      className="orcia-bento-card"
+      className="orcia-bento-card min-w-0 overflow-hidden"
       style={{
         display: "flex",
         flexDirection: "column",
         gap: "12px",
+        minWidth: 0,
       }}
     >
       <div>
@@ -176,7 +177,7 @@ export function StudioCopilotSidebar({
         ))}
       </div>
 
-      <div style={{ display: "flex", gap: "6px" }}>
+      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", minWidth: 0 }}>
         <input
           type="text"
           data-testid="studio-copilot-input"
@@ -192,14 +193,14 @@ export function StudioCopilotSidebar({
               ? "Ex : Ajouter un contrôle de priorisation..."
               : "E.g., Add prioritization check..."
           }
-          className="orcia-ds-input"
-          style={{ flex: 1 }}
+          className="orcia-ds-input min-w-0"
+          style={{ flex: "1 1 140px", minWidth: 0 }}
         />
         <button
           type="button"
           data-testid="studio-copilot-send-btn"
           onClick={handleSendPrompt}
-          className="orcia-ds-btn-primary"
+          className="orcia-ds-btn-primary shrink-0"
         >
           {isFr ? "Demander" : "Ask"}
         </button>

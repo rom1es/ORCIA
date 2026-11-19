@@ -133,7 +133,7 @@ export const SkillDetailAndSandboxModal: React.FC<SkillDetailAndSandboxModalProp
 
           <div className="space-y-2 rounded-lg border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3">
             <h4 className="font-semibold">
-              <OrciaIcon name="playOutline" /> Tester la Compétence / Dry-Run
+              <OrciaIcon name="playOutline" /> Tester la Compétence (Simulation)
             </h4>
             <div className="flex flex-wrap gap-2">
               <input

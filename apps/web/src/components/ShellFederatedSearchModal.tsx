@@ -114,8 +114,8 @@ export function ShellFederatedSearchModal({
         const detail = err instanceof Error ? err.message : String(err);
         setSpeed2Error(
           isFr
-            ? `Erreur lors de la recherche fédérée (Vitesse 2) : ${detail}`
-            : `Federated search error (Speed 2): ${detail}`,
+            ? `Erreur lors de la recherche fédérée (recherche approfondie) : ${detail}`
+            : `Federated search error (deep search): ${detail}`,
         );
       });
   };

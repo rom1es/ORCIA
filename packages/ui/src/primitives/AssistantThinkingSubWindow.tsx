@@ -26,6 +26,24 @@ export function formatStepDurationSeconds(
   return "< 1s";
 }
 
+function sanitizeTechnicalConstants(text: string): string {
+  return text
+    .replace(/\[STALE_WARNING\]\s*/g, "")
+    .replace(/\bSYNTHESIS_READY\b/g, "Synthèse prête")
+    .replace(/\bOAUTH2_PASSTHROUGH\b/g, "Connexion déléguée (OAuth2)")
+    .replace(/\bTECH_LEAD_DEV\b|\bTECH_LEAD\b/g, "Référent Technique")
+    .replace(/\bPLATFORM_ADMIN\b/g, "Administrateur")
+    .replace(/\bIMMUTABLE\b/g, "Verrouillé")
+    .replace(/\bPAUSE_AND_ESCALATE\b/g, "Pause et escalade humaine")
+    .replace(/\bOPT_A_[A-Z0-9_]+\b/g, "Option A")
+    .replace(/\bOPT_B_[A-Z0-9_]+\b/g, "Option B")
+    .replace(/\bPENDING\b/g, "En attente")
+    .replace(/\bhuman_authored_required\b/g, "validation humaine requise")
+    .replace(/\bAES-256-GCM\b/g, "chiffrement avancé")
+    .replace(/\b1024-dim\b/g, "haute précision")
+    .replace(/\bDry-Run\b/gi, "Simulation");
+}
+
 export function humanizeStepLabel(rawLabel: string): string {
   if (
     /Nœuds 1–4 déterministes/i.test(rawLabel) ||
@@ -40,7 +58,7 @@ export function humanizeStepLabel(rawLabel: string): string {
   ) {
     return "Élaboration de la réponse par Mon Assistant";
   }
-  return rawLabel;
+  return sanitizeTechnicalConstants(rawLabel);
 }
 
 export function humanizeIntermediateOutput(
@@ -57,8 +75,7 @@ export function humanizeIntermediateOutput(
     /\s*\(rôle(?:\s+actif)?\s*:\s*PLATFORM_ADMIN\)/gi,
     "",
   );
-  cleaned = cleaned.replace(/\bPLATFORM_ADMIN\b/g, "Administrateur");
-  return cleaned;
+  return sanitizeTechnicalConstants(cleaned);
 }
 
 export function AssistantThinkingSubWindow({

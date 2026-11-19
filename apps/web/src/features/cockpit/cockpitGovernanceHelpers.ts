@@ -1,4 +1,5 @@
 import type { ArbitrationTieBreakOptionView } from "@orcia/ui";
+import { formatCurrency } from "../../lib/formatters";
 
 export const DEFAULT_WORKFLOW_URI = "orcia://workflows/claims-engineering-delivery";
 export const DEFAULT_STEP_KEY = "frame-architecture-intent";
@@ -12,7 +13,7 @@ export const DEFAULT_ARBITRATION_OPTIONS: ArbitrationTieBreakOptionView[] = [
     pros: ["Compatible API partenaire v3", "Latence minimale"],
     cons: ["Fenêtre client 15 min"],
     siImpact: "1 microservice impacté",
-    finopsImpact: "0.02 USD / run",
+    finopsImpact: `${formatCurrency(0.02, "fr")} / exécution`,
     recommended: true,
   },
   {
@@ -21,7 +22,7 @@ export const DEFAULT_ARBITRATION_OPTIONS: ArbitrationTieBreakOptionView[] = [
     pros: ["Confort client 48h"],
     cons: ["Incompatible API v3"],
     siImpact: "3 systèmes centraux impactés",
-    finopsImpact: "0.18 USD / run",
+    finopsImpact: `${formatCurrency(0.18, "fr")} / exécution`,
     recommended: false,
   },
 ];

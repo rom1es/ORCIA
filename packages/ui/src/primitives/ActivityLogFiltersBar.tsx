@@ -66,7 +66,7 @@ export function ActivityLogFiltersBar({
         data-testid="activity-filters-bar"
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(220px, 100%), 1fr))",
           gap: "10px",
           marginTop: "4px",
           width: "100%",
@@ -79,6 +79,7 @@ export function ActivityLogFiltersBar({
           <select
             data-testid="activity-scope-filter-select"
             value={selectedScopeId}
+            title={scopeOptions.find((o) => o.id === selectedScopeId)?.label ?? labels.allScopesOptionLabel}
             onChange={(e) => onScopeChange(e.target.value)}
             style={inputStyle}
           >

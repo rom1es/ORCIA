@@ -101,43 +101,51 @@ export const RemoteServiceTestBenchAndMcpExposureView: React.FC<
         </div>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <ol className="space-y-2">
-            {steps.map((step) => (
-              <li
-                key={step.stepCode}
-                data-testid={`test-bench-step-${step.stepNumber}`}
-                className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-2.5 text-xs"
-              >
-                <div className="flex items-center justify-between font-mono">
-                  <span>
-                    {step.stepNumber}. {step.stepCode}
-                  </span>
-                  <span data-testid={`test-bench-status-${step.stepNumber}`}>
-                    {step.status}
-                  </span>
-                </div>
-                <p className="mt-1 text-[11px] text-[var(--orcia-text-secondary)]">
-                  {step.detailFr}
-                </p>
-              </li>
-            ))}
-          </ol>
+      <div
+        className={
+          steps.length === 0 && discoveredCapabilities.length === 0
+            ? "grid grid-cols-1 gap-4"
+            : "grid grid-cols-1 gap-4 md:grid-cols-2"
+        }
+      >
+        {(steps.length > 0 || discoveredCapabilities.length > 0) && (
+          <div className="space-y-2">
+            <ol className="space-y-2">
+              {steps.map((step) => (
+                <li
+                  key={step.stepCode}
+                  data-testid={`test-bench-step-${step.stepNumber}`}
+                  className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-2.5 text-xs"
+                >
+                  <div className="flex items-center justify-between font-mono">
+                    <span>
+                      {step.stepNumber}. {step.stepCode}
+                    </span>
+                    <span data-testid={`test-bench-status-${step.stepNumber}`}>
+                      {step.status}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-[var(--orcia-text-secondary)]">
+                    {step.detailFr}
+                  </p>
+                </li>
+              ))}
+            </ol>
 
-          <ul className="space-y-1.5 pt-1">
-            {discoveredCapabilities.map((cap) => (
-              <li
-                key={cap.toolName}
-                data-testid={`discovered-tool-${cap.toolName}`}
-                className="flex items-center justify-between rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2.5 py-1.5 text-xs"
-              >
-                <code className="font-mono">{cap.toolName}</code>
-                <span>{cap.badgeFr}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+            <ul className="space-y-1.5 pt-1">
+              {discoveredCapabilities.map((cap) => (
+                <li
+                  key={cap.toolName}
+                  data-testid={`discovered-tool-${cap.toolName}`}
+                  className="flex items-center justify-between rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2.5 py-1.5 text-xs"
+                >
+                  <code className="font-mono">{cap.toolName}</code>
+                  <span>{cap.badgeFr}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div
           data-testid="governed-mcp-exposure-panel"

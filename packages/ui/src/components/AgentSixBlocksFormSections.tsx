@@ -123,7 +123,8 @@ export const AgentSixBlocksEditorBody: React.FC<AgentSixBlocksEditorBodyProps> =
             </strong>
             <code
               data-testid={`${testIdPrefix}-agent-handle-preview`}
-              className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 font-mono text-[11px]"
+              title={computedHandle}
+              className="whitespace-nowrap rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 font-mono text-[11px]"
             >
               {computedHandle}
             </code>

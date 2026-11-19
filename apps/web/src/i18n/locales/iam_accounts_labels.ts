@@ -130,7 +130,7 @@ export const IAM_TAB_FR_LABELS: IamTabDictionarySection = {
     summaryObserver: "Consultation uniquement — aucune modification ni exécution",
   },
   secopsDrawer: {
-    toggleTitle: "2. Exceptions & Isolation de Périmètre (Avancé — SecOps)",
+    toggleTitle: "Exceptions & Isolation de Périmètre (Avancé — SecOps)",
     toggleSubtitle:
       "Réservé aux cas particuliers : isoler un espace confidentiel, interdire une action précise ou accorder une dérogation ciblée.",
     secopsBadge: "Gouvernance SecOps",
@@ -223,7 +223,7 @@ export const IAM_TAB_EN_LABELS: IamTabDictionarySection = {
     summaryObserver: "Read-only consultation — no edits or executions",
   },
   secopsDrawer: {
-    toggleTitle: "2. Scope Exceptions & Isolation (Advanced — SecOps)",
+    toggleTitle: "Scope Exceptions & Isolation (Advanced — SecOps)",
     toggleSubtitle:
       "Reserved for special cases: isolate a confidential workspace, deny a specific action, or grant a targeted override.",
     secopsBadge: "SecOps Governance",

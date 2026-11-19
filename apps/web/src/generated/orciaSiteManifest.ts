@@ -568,11 +568,11 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "summary": "Pré-implémentation (enrichie RCA Epic 21) : 5 gardes initiales + 4 verrous (e2e-testids-sync-audit, typedApiRequest.ts + e2e-openapi-helper-audit, purge ORCIA_E2E_SEED_FIXTURES + reloadColdFromPg via POST /api/v1/_e2e/evict-memory-caches, réécriture <RouterProvider> de zero-dead-buttons + sonde [role=\"alert\"] + Direction C / WCAG AA), test_e2e_sql_coverage_audit.py (55/55), ORCIA_E2E_CAMPAIGN_DIR et budget < 35s."
     },
     {
-      "date": "2026-11-18",
+      "date": "2026-11-19",
       "phaseOrStory": "Story 22.7",
       "reportFile": "22-7-finitions-ux-ui-erreurs-rfc9457-grilles-devise-euro-et-purge-jargon-tech-lead-report.md",
       "domain": "Vague 3 (REM-22, REM-23, REM-26..32) — Finitions UX/UI, Erreurs RFC 9457 Actionnables, Grilles, Devise €/Dates FR, Retrait (!) & Purge Intégrale Jargon",
-      "summary": "Pré-implémentation : masquage compteurs 0 & modales + Nouveau..., bannières RFC 9457 sur toutes erreurs HTTP, purge exhaustive i18n/SSE (SYNTHESIS_READY, TECH_LEAD, PAUSE_AND_ESCALATE, etc.), devise € & dates jj/mm/aaaa, grilles /finops//profile//ontology, Studio V2 & /agents MCP, ergonomie /assistant/⌘K, et retrait (!) dans boutons bleus."
+      "summary": "Clôture (done) : formateurs €/dates FR (formatters.ts), catalogue actionnable formatRfc9457ErrorToBanner + <OrciaAlertBanner role=\"alert\">, modales <OrciaDialog> (+ Nouveau processus, + Nouvel espace) et masquage compteurs 0, purge intégrale jargon (SYNTHESIS_READY, TECH_LEAD, [STALE_WARNING], (published), Embeddings Sémantiques, Dry-Run), grilles xl:grid-cols-4/md:grid-cols-2, retrait (!) dans DisabledButtonAlertIndicator (sr-only + tooltip), réalignement 13 suites Vitest (@orcia/ui + @orcia/web) & 4 fichiers E2E + nouvelle suite ux-polish-rfc9457-alerts-euro-and-jargon-purge.test.tsx (5/5), 9/9 Turbo (303/303 tests JS/TS), vite build OK, 878 tests Python (pytest), ruff/mypy --strict/lint-imports/export_openapi/lint_spine 0 erreur."
     },
     {
       "date": "2026-11-19",

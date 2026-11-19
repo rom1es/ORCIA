@@ -18,6 +18,7 @@ export interface OrciaTabBarProps<T extends string = string> {
   readonly onSelectTab: (tabKey: T) => void;
   readonly ariaLabel: string;
   readonly testIdPrefix?: string;
+  readonly tabsClassName?: string;
   readonly panels?: Partial<Record<T, React.ReactNode>>;
 }
 
@@ -27,6 +28,7 @@ export function OrciaTabBar<T extends string = string>({
   onSelectTab,
   ariaLabel,
   testIdPrefix = "orcia-tab",
+  tabsClassName,
   panels,
 }: OrciaTabBarProps<T>): React.ReactElement {
   return (
@@ -34,7 +36,10 @@ export function OrciaTabBar<T extends string = string>({
       value={activeTab}
       onValueChange={(nextValue) => onSelectTab(nextValue as T)}
     >
-      <TabsPrimitive.List aria-label={ariaLabel} className="orcia-ds-tabs">
+      <TabsPrimitive.List
+        aria-label={ariaLabel}
+        className={tabsClassName ? `orcia-ds-tabs ${tabsClassName}` : "orcia-ds-tabs"}
+      >
         {tabs.map((tab) => {
           const isSelected = tab.key === activeTab;
           return (

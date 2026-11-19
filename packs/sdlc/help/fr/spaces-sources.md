@@ -13,11 +13,11 @@ summary_what_for: "Raccordez vos dépôts Git, projets Jira et espaces Confluenc
 ---
 ### Pas-à-pas
 1. Associez votre dépôt Git principal et votre projet Jira de sprint.
-2. Activez la détection automatique d'obsolescence (`[STALE_WARNING]`) entre Confluence et Git.
+2. Activez la détection automatique d'obsolescence entre Confluence et Git.
 
 ### Termes clés
 - **Graphe Tripartite** : Liens causaux vérifiés entre pages Confluence, tickets Jira et commits Git.
-- **Ancrage Humain** : Décision d'architecture rédigée et signée par un humain (`human_authored_required`).
+- **Ancrage Humain** : Décision d'architecture rédigée et signée par un humain (validation humaine requise).
 
 ### Questions fréquentes
-- **Pourquoi un ticket Jira est-il en mode Staged ?** Les transitions Jira sont pré-validées et exécutées uniquement après approbation de la Gate.
+- **Pourquoi un ticket Jira est-il en attente de validation ?** Les transitions Jira sont pré-validées et exécutées uniquement après approbation humaine.

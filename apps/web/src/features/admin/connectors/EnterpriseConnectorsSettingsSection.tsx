@@ -250,9 +250,9 @@ export function EnterpriseConnectorsSettingsSection({
               onChange={(e) => setAuthMode(e.target.value as EnterpriseConnectorCreateRequest["auth_mode"])}
               style={inputStyle}
             >
-              <option value="OAUTH2_PASSTHROUGH">OAuth2 Passthrough</option>
-              <option value="PERSONAL_ACCESS_TOKEN">Jeton d'accès personnel (PAT)</option>
-              <option value="OIDC_FEDERATION">Fédération OIDC</option>
+              <option value="OAUTH2_PASSTHROUGH">Connexion déléguée (OAuth2 utilisateur)</option>
+              <option value="PERSONAL_ACCESS_TOKEN">Jeton d'accès personnel</option>
+              <option value="OIDC_FEDERATION">Fédération d'identité (OIDC)</option>
               <option value="SERVICE_SECRET">Secret de service</option>
             </select>
           </div>
@@ -267,7 +267,7 @@ export function EnterpriseConnectorsSettingsSection({
               data-testid="connector-admin-secret-input"
               value={adminSecret}
               onChange={(e) => setAdminSecret(e.target.value)}
-              placeholder={isFr ? "Secret d'administration (optionnel, chiffré AES-256-GCM)" : "Admin secret (optional)"}
+              placeholder={isFr ? "Secret d'administration (optionnel, chiffré côté serveur)" : "Admin secret (optional)"}
               style={{ ...inputStyle, flex: 1, fontFamily: "monospace", WebkitTextSecurity: "disc" } as React.CSSProperties}
             />
             <button

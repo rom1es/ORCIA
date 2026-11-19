@@ -2,6 +2,7 @@ import {
   AgentExecutionTrace,
   AgentsAndSkillsManagerView,
   CatalogExplorerPanel,
+  OrciaAlertBanner,
   RemoteServiceTestBenchAndMcpExposureView,
   SourceLineInspectorDrawer,
 } from "@orcia/ui";
@@ -90,13 +91,13 @@ export function CatalogFeaturePanel({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       {catalogActionFeedback && (
-        <div
-          data-testid="catalog-action-feedback-banner"
-          role="status"
-          className="orcia-bento-card text-xs font-medium"
+        <OrciaAlertBanner
+          testId="catalog-action-feedback-banner"
+          tone={catalogActionFeedback.startsWith("⚠️") ? "crimson" : "emerald"}
+          role={catalogActionFeedback.startsWith("⚠️") ? "alert" : "status"}
         >
           {catalogActionFeedback}
-        </div>
+        </OrciaAlertBanner>
       )}
 
       {catalogMode === "catalog" ? (

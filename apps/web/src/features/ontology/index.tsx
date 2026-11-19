@@ -19,6 +19,7 @@ import {
 } from "../../components/ontologyApiBridge";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
+import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import { OntologyPromotionProposalsTab } from "./OntologyPromotionProposalsTab";
 
 export function OntologyFeaturePanel() {
@@ -53,10 +54,15 @@ export function OntologyFeaturePanel() {
       setPendingCount(promosRes.pendingCount);
       setSelectedScopeIdx(0);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : copy.errorFallback;
-      setErrorBanner(msg);
+      setErrorBanner(
+        formatRfc9457ErrorToBanner(
+          err,
+          typedLocale,
+          typedLocale === "fr" ? "Glossaire métier" : "Business glossary",
+        ).fullText,
+      );
     }
-  }, [typedLocale, copy.errorFallback]);
+  }, [typedLocale]);
 
   useEffect(() => {
     void loadOntologyData();
@@ -94,7 +100,13 @@ export function OntologyFeaturePanel() {
       setFeedbackBanner(`${copy.createdSuccessPrefix} ${term}`);
       await loadOntologyData();
     } catch (err: unknown) {
-      setErrorBanner(err instanceof Error ? err.message : copy.errorFallback);
+      setErrorBanner(
+        formatRfc9457ErrorToBanner(
+          err,
+          typedLocale,
+          typedLocale === "fr" ? "Terme du glossaire" : "Glossary term",
+        ).fullText,
+      );
     } finally {
       setIsSaving(false);
     }
@@ -112,7 +124,13 @@ export function OntologyFeaturePanel() {
       setFeedbackBanner(`${copy.proposedSuccessPrefix} ${concept.canonicalTerm}`);
       await loadOntologyData();
     } catch (err: unknown) {
-      setErrorBanner(err instanceof Error ? err.message : copy.errorFallback);
+      setErrorBanner(
+        formatRfc9457ErrorToBanner(
+          err,
+          typedLocale,
+          typedLocale === "fr" ? "Proposition de promotion" : "Promotion proposal",
+        ).fullText,
+      );
     }
   };
 
@@ -134,7 +152,13 @@ export function OntologyFeaturePanel() {
       );
       await loadOntologyData();
     } catch (err: unknown) {
-      setErrorBanner(err instanceof Error ? err.message : copy.errorFallback);
+      setErrorBanner(
+        formatRfc9457ErrorToBanner(
+          err,
+          typedLocale,
+          typedLocale === "fr" ? "Terme du glossaire" : "Glossary term",
+        ).fullText,
+      );
     } finally {
       setBusyProposalId(null);
     }
@@ -162,12 +186,14 @@ export function OntologyFeaturePanel() {
           className="orcia-ds-tab"
         >
           <OrciaIcon name="promoteUp" />{" "}
-          <span>{`${copy.tabProposalsPrefix} (${pendingCount})`}</span>
+          <span>
+            {pendingCount > 0 ? `${copy.tabProposalsPrefix} (${pendingCount})` : copy.tabProposalsPrefix}
+          </span>
         </button>
       </nav>
 
       {errorBanner && (
-        <OrciaAlertBanner tone="crimson" testId="ontology-error-banner">
+        <OrciaAlertBanner tone="crimson" role="alert" testId="ontology-error-banner">
           {errorBanner}
         </OrciaAlertBanner>
       )}

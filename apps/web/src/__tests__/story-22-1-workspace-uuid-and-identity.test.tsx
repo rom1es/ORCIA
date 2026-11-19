@@ -47,6 +47,7 @@ describe("Story 22.1 — UUIDv7 Workspace Creation, F5 Survival & Identity Wirin
     fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
 
     await router1.navigate({ to: "/spaces" });
+    fireEvent.click(await screen.findByTestId("toggle-create-workspace-form-btn"));
     await screen.findByTestId("create-workspace-form");
 
     fireEvent.change(screen.getByTestId("workspace-name-input"), {
@@ -108,6 +109,7 @@ describe("Story 22.1 — UUIDv7 Workspace Creation, F5 Survival & Identity Wirin
       </QueryClientProvider>,
     );
 
+    fireEvent.click(await screen.findByTestId("toggle-create-workspace-form-btn"));
     await screen.findByTestId("create-workspace-form");
 
     const originalFetch = globalThis.fetch;

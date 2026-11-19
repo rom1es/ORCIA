@@ -10,6 +10,7 @@ import type {
   UiScopeNode,
 } from "@orcia/ui";
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import { formatRfc9457ErrorToBanner } from "../lib/formatRfc9457ErrorToBanner";
 import { useAuthSessionStore } from "../stores/authSessionStore";
 import { createPlatformGovernanceActions } from "./platformSetupGovernanceActions";
 import {
@@ -233,16 +234,18 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       await savePlatformSetupSnapshotToApi(next);
       setLastSyncError(null);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Erreur de synchronisation plateforme.";
-      setLastSyncError(msg);
+      setLastSyncError(
+        formatRfc9457ErrorToBanner(err, "fr", "Synchronisation plateforme").fullText,
+      );
       throw err;
     }
   };
 
   const persistSnapshot = (next: CachedPlatformSetupState) => {
     void persistSnapshotStrict(next).catch((err: unknown) => {
-      const msg = err instanceof Error ? err.message : "Erreur de synchronisation plateforme.";
-      setLastSyncError(msg);
+      setLastSyncError(
+        formatRfc9457ErrorToBanner(err, "fr", "Synchronisation plateforme").fullText,
+      );
     });
   };
 
@@ -278,7 +281,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       .catch((err: unknown) => {
         if (!cancelled) {
           setLastSyncError(
-            err instanceof Error ? err.message : "Chargement initial plateforme interrompu.",
+            formatRfc9457ErrorToBanner(err, "fr", "Chargement initial plateforme").fullText,
           );
         }
       })

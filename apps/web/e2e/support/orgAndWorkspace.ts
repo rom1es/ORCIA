@@ -21,7 +21,13 @@ export async function createBuAndTeamViaUi(page: Page): Promise<void> {
 /** Crée un Espace de Travail rattaché à l'équipe via /spaces. */
 export async function createWorkspaceViaUi(page: Page, name: string, slug: string) {
   await page.goto("/spaces");
-  await expect(page.getByTestId("create-workspace-form")).toBeVisible({ timeout: 30000 });
+  const toggleBtn = page.getByTestId("toggle-create-workspace-form-btn");
+  await expect(toggleBtn).toBeVisible({ timeout: 30000 });
+  const form = page.getByTestId("create-workspace-form");
+  if (!(await form.isVisible())) {
+    await toggleBtn.click();
+  }
+  await expect(form).toBeVisible({ timeout: 15000 });
   await page.getByTestId("workspace-name-input").fill(name);
   await page.getByTestId("workspace-slug-input").fill(slug);
   await page.getByTestId("create-workspace-submit-btn").click();

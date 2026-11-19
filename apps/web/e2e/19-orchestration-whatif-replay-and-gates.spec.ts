@@ -50,7 +50,10 @@ test.describe("Orchestration durable, contestation amont avec simulation d'impac
     await expect(page.getByTestId("what-if-impact-preview-panel")).toBeVisible({ timeout: 10000 });
     await page.getByTestId("upstream-challenge-submit-btn").click();
     await page.getByTestId("upstream-replay-trigger-btn").click();
-    await expect(page.getByText("[STALE_WARNING]").first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("upstream-replay-stale-warning-banner")).toContainText(
+      "Alerte d'obsolescence",
+      { timeout: 10000 },
+    );
 
     await reloadClearingStorage(page);
     await expect(page.getByTestId("cockpit-active-scope-badge")).toBeVisible({ timeout: 30000 });
@@ -164,16 +167,30 @@ test.describe("Orchestration durable, contestation amont avec simulation d'impac
     await page.getByTestId("rubber-stamp-confirm-checkbox").check();
     await page.getByTestId("rubber-stamp-confirm-submit-btn").click();
 
-    await expect(page.getByTestId("gates-human-evaluation-status-badge")).toContainText("PASS", {
-      timeout: 15000,
-    });
-    await expect(page.getByTestId("gates-staged-jira-status-badge")).toContainText("EXECUTED");
+    await expect(page.getByTestId("gates-human-evaluation-status-badge")).toHaveAttribute(
+      "data-status",
+      "PASS",
+      { timeout: 15000 },
+    );
+    await expect(page.getByTestId("gates-human-evaluation-status-badge")).toContainText("Validé");
+    await expect(page.getByTestId("gates-staged-jira-status-badge")).toHaveAttribute(
+      "data-status",
+      "EXECUTED",
+    );
+    await expect(page.getByTestId("gates-staged-jira-status-badge")).toContainText("Exécutée");
 
     await reloadClearingStorage(page);
-    await expect(page.getByTestId("gates-human-evaluation-status-badge")).toContainText("PASS", {
-      timeout: 20000,
-    });
-    await expect(page.getByTestId("gates-staged-jira-status-badge")).toContainText("EXECUTED");
+    await expect(page.getByTestId("gates-human-evaluation-status-badge")).toHaveAttribute(
+      "data-status",
+      "PASS",
+      { timeout: 20000 },
+    );
+    await expect(page.getByTestId("gates-human-evaluation-status-badge")).toContainText("Validé");
+    await expect(page.getByTestId("gates-staged-jira-status-badge")).toHaveAttribute(
+      "data-status",
+      "EXECUTED",
+    );
+    await expect(page.getByTestId("gates-staged-jira-status-badge")).toContainText("Exécutée");
 
     expectDbRowCount(
       "SELECT COUNT(*)::int AS count FROM gate_evaluations WHERE gate_type IN ('DETERMINISTIC', 'AGENTIC', 'HUMAN')",

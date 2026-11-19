@@ -4,6 +4,7 @@ import {
 } from "@orcia/api-client";
 import {
   ContextualInfoTriggerButton,
+  OrciaAlertBanner,
   StatusBadge,
   type ControlCenterWorkspaceGovItem,
 } from "@orcia/ui";
@@ -12,6 +13,7 @@ import type {
   ConfiguredOrgUnit,
   ConfiguredPackItem,
 } from "../components/platformSetupStore";
+import { formatRfc9457ErrorToBanner } from "../lib/formatRfc9457ErrorToBanner";
 
 export const BUILTIN_INSTALLED_BUSINESS_PACKS: readonly InstalledBusinessPackItemResponse[] = [
   {
@@ -69,6 +71,7 @@ export function SettingsPacksSection({
     readonly InstalledBusinessPackItemResponse[]
   >(BUILTIN_INSTALLED_BUSINESS_PACKS);
   const [selectedScopePath, setSelectedScopePath] = useState<string>("GLOBAL");
+  const [packsLoadError, setPacksLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,15 +81,24 @@ export function SettingsPacksSection({
       .then((res) => {
         if (!cancelled && Array.isArray(res.packs) && res.packs.length > 0) {
           setInstalledPacks(res.packs);
+          setPacksLoadError(null);
         }
       })
-      .catch(() => {
-        // Keep built-in installed packs catalog when offline
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setPacksLoadError(
+            formatRfc9457ErrorToBanner(
+              err,
+              isFr ? "fr" : "en",
+              isFr ? "Catalogue des packs métiers" : "Business packs catalog",
+            ).fullText,
+          );
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isFr]);
 
   const scopeOptions: readonly { readonly value: string; readonly label: string }[] = [
     {
@@ -150,6 +162,11 @@ export function SettingsPacksSection({
       className="orcia-bento-card"
       style={{ display: "flex", flexDirection: "column", gap: "16px" }}
     >
+      {packsLoadError && (
+        <OrciaAlertBanner tone="crimson" role="alert" testId="settings-packs-error-banner">
+          {packsLoadError}
+        </OrciaAlertBanner>
+      )}
       <div
         style={{
           display: "flex",
@@ -189,8 +206,9 @@ export function SettingsPacksSection({
             id="settings-pack-scope-select"
             data-testid="pack-scope-input"
             value={selectedScopePath}
+            title={scopeOptions.find((o) => o.value === selectedScopePath)?.label ?? selectedScopePath}
             onChange={(e) => setSelectedScopePath(e.target.value)}
-            style={selectStyle}
+            style={{ ...selectStyle, minWidth: "220px" }}
           >
             {scopeOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>

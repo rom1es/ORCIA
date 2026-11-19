@@ -157,8 +157,8 @@ export const FINOPS_FR_LABELS: FinopsDictionarySection = {
       emptyProcessesText: "Aucun processus actif sur ce périmètre.",
     },
     tiersTable: {
-      title: "Consommation par Tier Cognitif et Effort",
-      tierCol: "Tier cognitif",
+      title: "Consommation par Niveau de Modèle et Effort",
+      tierCol: "Niveau de modèle",
       effortCol: "Niveau d'effort",
       invocationsCol: "Invocations",
       inputTokensCol: "Tokens en entrée",
@@ -282,7 +282,7 @@ export const FINOPS_EN_LABELS: FinopsDictionarySection = {
       budgetTitle: "Configure Budget Ceiling",
       budgetDescription:
         "Define monthly spending caps, preventive warning, and hard-stop pause thresholds for this scope.",
-      monthlyLimitLabel: "Monthly ceiling in USD",
+      monthlyLimitLabel: "Monthly ceiling (€)",
       warningThresholdLabel: "Preventive warning threshold percentage",
       hardStopLabel: "Hard stop threshold percentage",
       scopeLabel: "Target Scope",
@@ -295,7 +295,7 @@ export const FINOPS_EN_LABELS: FinopsDictionarySection = {
       overrideTitle: "Grant Budget Extension",
       overrideDescription:
         "Extend the budget ceiling of the paused execution to resume workflow processing immediately.",
-      overrideAmountLabel: "Extension amount in USD",
+      overrideAmountLabel: "Extension amount (€)",
       overrideReasonLabel: "Business justification",
       overrideSubmitButton: "Approve and Resume",
     },

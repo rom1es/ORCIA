@@ -34,6 +34,15 @@ const PROFILE_KEYS = [
   "SECOPS",
 ] as const;
 
+const PROFILE_DISPLAY_LABELS: Record<(typeof PROFILE_KEYS)[number], string> = {
+  EXECUTIVE: "Direction / Exécutif",
+  PM_BUSINESS: "Produit & Métier",
+  ARCHITECT: "Architecture",
+  TECH_LEAD: "Référent Technique",
+  DEVELOPER: "Développeur",
+  SECOPS: "Sécurité & Conformité",
+};
+
 export function OntologyAndKbExplorerPanel({
   concepts,
   tripartiteEdges,
@@ -119,7 +128,7 @@ export function OntologyAndKbExplorerPanel({
           >
             {PROFILE_KEYS.map((prof) => (
               <option key={prof} value={prof}>
-                {prof}
+                {PROFILE_DISPLAY_LABELS[prof]}
               </option>
             ))}
           </select>
@@ -144,11 +153,7 @@ export function OntologyAndKbExplorerPanel({
         <>
           <div
             data-testid="ontology-columns-grid"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: "12px",
-            }}
+            className="grid grid-cols-1 gap-3 md:grid-cols-2"
           >
             {ONTOLOGY_COLUMNS.map((lvl) => {
               const colConcepts = concepts.filter((c) =>
@@ -191,7 +196,7 @@ export function OntologyAndKbExplorerPanel({
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", gap: "6px" }}>
                         <strong style={{ fontSize: "13px" }}>{c.canonicalTerm}</strong>
-                        {c.immutable && <StatusBadge label="IMMUTABLE" tone="crimson" monospace />}
+                        {c.immutable && <StatusBadge label="Règle verrouillée" tone="crimson" />}
                       </div>
                       <span
                         data-testid={`ontology-translation-${c.conceptKey}`}

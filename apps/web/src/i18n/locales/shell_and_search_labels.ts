@@ -180,7 +180,7 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
     assistantHatOptions: {
       ANALYST_PM_PO: "Product Manager / Métier",
       ARCHITECT: "Architecte Solution & SI",
-      TECH_LEAD_DEV: "Tech Lead / Développeur",
+      TECH_LEAD_DEV: "Référent Technique / Développeur",
       SECURITY_COMPLIANCE: "Sécurité & Conformité",
       BU_LEAD: "Responsable de Direction (BU)",
     },
@@ -444,7 +444,7 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
     assistantHatOptions: {
       ANALYST_PM_PO: "Product Manager / Business",
       ARCHITECT: "Solution & Enterprise Architect",
-      TECH_LEAD_DEV: "Tech Lead / Developer",
+      TECH_LEAD_DEV: "Technical Lead / Developer",
       SECURITY_COMPLIANCE: "Security & Compliance",
       BU_LEAD: "Business Unit Lead",
     },

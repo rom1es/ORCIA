@@ -237,7 +237,7 @@ export function TopHeaderSearchCommand({
             onClick={() => onTriggerSpeed2Now?.(query, scope)}
             className="px-2 py-1 rounded text-xs border border-surface-border bg-surface-secondary text-text-secondary"
           >
-            <OrciaIcon name="sparkles" /> Vitesse 2 (450 ms)
+            <OrciaIcon name="sparkles" /> Recherche approfondie
           </button>
           <button
             type="button"
@@ -332,6 +332,7 @@ export function TopHeaderSearchCommand({
                 </p>
               ) : null}
               {/* Speed 1 Locked Section */}
+              {speed1Hits.length > 0 && (
               <div data-testid="cmdk-speed1-locked-group" className="space-y-1">
                 <div className="text-[11px] font-semibold uppercase tracking-wide text-text-secondary px-1">
                   {labels.speed1SectionTitle}
@@ -388,9 +389,10 @@ export function TopHeaderSearchCommand({
                   );
                 })}
               </div>
+              )}
 
               {/* Speed 2 Appended Bottom Section (Zero Layout Shift on Top Hits) */}
-              {(deduplicatedSpeed2.length > 0 || speed2Loading || speed2Executed) && (
+              {(deduplicatedSpeed2.length > 0 || speed2Loading) && (
                 <div
                   data-testid="cmdk-speed2-appended-group"
                   className="space-y-1 pt-2 border-t border-surface-border"

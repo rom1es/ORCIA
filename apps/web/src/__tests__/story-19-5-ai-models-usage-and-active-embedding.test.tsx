@@ -133,7 +133,7 @@ describe("Story 19.5 — AI Models Hub Usage Selector & Active Embedding Badge",
     // Custom usage badge is displayed
     const usageBadge = screen.getByTestId(`usage-badge-embedding-${sampleEmbeddingMapping.id}`);
     expect(usageBadge).toBeDefined();
-    expect(usageBadge.textContent).toContain("Embeddings Sémantiques");
+    expect(usageBadge.textContent).toContain(AI_MODELS_HUB_FR.usageEmbedding);
 
     // Embedding mapping row data attributes
     const embeddingRow = screen.getByTestId(`llm-tier-row-${sampleEmbeddingMapping.id}`);

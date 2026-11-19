@@ -57,7 +57,7 @@ export interface IamDirectoryLabels {
 }
 
 export const IAM_DIRECTORY_FR_LABELS: IamDirectoryLabels = {
-  sectionTitle: "1. Annuaire des Comptes & Attribution des Rôles",
+  sectionTitle: "Annuaire des Comptes & Attribution des Rôles",
   sectionSubtitle:
     "Gérez les comptes utilisateurs humains et techniques, leurs rôles officiels et leur rattachement aux équipes.",
   createAccountCta: "+ Nouveau compte",
@@ -120,7 +120,7 @@ export const IAM_DIRECTORY_FR_LABELS: IamDirectoryLabels = {
 };
 
 export const IAM_DIRECTORY_EN_LABELS: IamDirectoryLabels = {
-  sectionTitle: "1. Accounts Directory & Role Assignment",
+  sectionTitle: "Accounts Directory & Role Assignment",
   sectionSubtitle:
     "Manage human user accounts and technical service accounts, their official roles, and team memberships.",
   createAccountCta: "+ New account",

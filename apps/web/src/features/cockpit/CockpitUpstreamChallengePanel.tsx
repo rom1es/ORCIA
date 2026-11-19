@@ -147,8 +147,8 @@ export function CockpitUpstreamChallengePanel({
       });
       setStaleWarningBanner(
         isFr
-          ? `[STALE_WARNING] Replay ciblé exécuté depuis « ${res.replay.replayed_from_step_key} » : les livrables aval liés ont été marqués obsolètes pour revalidation.`
-          : `[STALE_WARNING] Targeted replay executed from "${res.replay.replayed_from_step_key}": linked downstream artifacts flagged stale for revalidation.`,
+          ? `Alerte d'obsolescence : replay ciblé exécuté depuis « ${res.replay.replayed_from_step_key} » — les livrables aval liés ont été marqués à revalider.`
+          : `Stale notice: targeted replay executed from "${res.replay.replayed_from_step_key}" — linked downstream artifacts flagged for revalidation.`,
       );
       onReplayCompleted?.();
     } catch (err) {
@@ -177,8 +177,8 @@ export function CockpitUpstreamChallengePanel({
         >
           {staleWarningBanner ??
             (isFr
-              ? "[STALE_WARNING] Replay amont détecté : les livrables aval liés sont marqués obsolètes pour revalidation."
-              : "[STALE_WARNING] Upstream replay detected: linked downstream artifacts are flagged stale for revalidation.")}
+              ? "Alerte d'obsolescence : replay amont détecté — les livrables aval liés sont marqués à revalider."
+              : "Stale notice: upstream replay detected — linked downstream artifacts are flagged for revalidation.")}
         </OrciaAlertBanner>
       ) : null}
 

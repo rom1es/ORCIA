@@ -254,7 +254,7 @@ describe("Upstream challenge rewind modal, dedicated Gates review view, and RFC 
     fireEvent.click(screen.getByTestId("upstream-replay-trigger-btn"));
     await waitFor(() => {
       expect(screen.getByTestId("upstream-replay-stale-warning-banner").textContent).toContain(
-        "[STALE_WARNING]",
+        "Alerte d'obsolescence :",
       );
     });
 
@@ -272,7 +272,7 @@ describe("Upstream challenge rewind modal, dedicated Gates review view, and RFC 
     await waitFor(() => {
       expect(screen.getByTestId("cockpit-human-anchor-signed-badge")).toBeDefined();
       expect(screen.getByTestId("upstream-replay-stale-warning-banner").textContent).toContain(
-        "[STALE_WARNING]",
+        "Alerte d'obsolescence :",
       );
     });
   });

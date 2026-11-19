@@ -317,7 +317,7 @@ export function AiModelsMasterTable({
                             : "Secondary provider"
                           : (item.model_family || item.provider_slug)}
                       {item.usage === "embedding"
-                        ? ` · ${labels.usageEmbedding} (1024-dim)`
+                        ? ` · ${labels.usageEmbedding} (${isFr ? "haute précision" : "high precision"})`
                         : ` · ${tierLabels[`effort${effortVal.charAt(0).toUpperCase() + effortVal.slice(1)}` as keyof InferenceTierAndEffortLabels] ?? effortVal}`}
                     </span>
                     <span>•</span>

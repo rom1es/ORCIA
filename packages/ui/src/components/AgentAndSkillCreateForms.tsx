@@ -244,7 +244,7 @@ export const AgentsAndSkillsHeaderAndToolbar: React.FC<{
             onClick={() => onSelectTab("AGENTS")}
             className="orcia-ds-tab"
           >
-            {`${labels.tabAgents} (${agentsCount})`}
+            {agentsCount > 0 ? `${labels.tabAgents} (${agentsCount})` : labels.tabAgents}
           </button>
           <button
             type="button"
@@ -254,7 +254,7 @@ export const AgentsAndSkillsHeaderAndToolbar: React.FC<{
             onClick={() => onSelectTab("SKILLS")}
             className="orcia-ds-tab"
           >
-            {`${labels.tabSkills} (${skillsCount})`}
+            {skillsCount > 0 ? `${labels.tabSkills} (${skillsCount})` : labels.tabSkills}
           </button>
           <button
             type="button"
@@ -313,30 +313,41 @@ export const AgentsAndSkillsHeaderAndToolbar: React.FC<{
 
     {agentsCount + skillsCount > 0 && (
       <div data-testid="agents-kpi-strip" className="grid grid-cols-1 gap-2 text-xs md:grid-cols-3">
-        <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2">
-          <span className="block text-[10px] font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
-            AGENTS SPÉCIALISÉS (@)
-          </span>
-          <strong className="text-sm text-[var(--orcia-text-primary)]">
-            {activeAgentsCount ?? agentsCount} actifs
-          </strong>
-        </div>
-        <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2">
-          <span className="block text-[10px] font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
-            COMPÉTENCES (/SKILLS)
-          </span>
-          <strong className="text-sm text-[var(--orcia-text-primary)]">
-            {skillsCount} réutilisables
-          </strong>
-        </div>
-        <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2">
-          <span className="block text-[10px] font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
-            ORIGINE &amp; ACCÈS MCP
-          </span>
-          <strong className="text-sm text-[var(--orcia-text-primary)]">
-            {packOrTeamAgentsCount} Pack/Équipe · {mcpExposedAgentsCount} MCP
-          </strong>
-        </div>
+        {(activeAgentsCount ?? agentsCount) > 0 && (
+          <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2">
+            <span className="block text-[10px] font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
+              AGENTS SPÉCIALISÉS (@)
+            </span>
+            <strong className="text-sm text-[var(--orcia-text-primary)]">
+              {activeAgentsCount ?? agentsCount} actifs
+            </strong>
+          </div>
+        )}
+        {skillsCount > 0 && (
+          <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2">
+            <span className="block text-[10px] font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
+              COMPÉTENCES (/SKILLS)
+            </span>
+            <strong className="text-sm text-[var(--orcia-text-primary)]">
+              {skillsCount} réutilisables
+            </strong>
+          </div>
+        )}
+        {(packOrTeamAgentsCount > 0 || mcpExposedAgentsCount > 0) && (
+          <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2">
+            <span className="block text-[10px] font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
+              ORIGINE &amp; ACCÈS MCP
+            </span>
+            <strong className="text-sm text-[var(--orcia-text-primary)]">
+              {[
+                packOrTeamAgentsCount > 0 ? `${packOrTeamAgentsCount} Pack/Équipe` : null,
+                mcpExposedAgentsCount > 0 ? `${mcpExposedAgentsCount} MCP` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </strong>
+          </div>
+        )}
       </div>
     )}
 

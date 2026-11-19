@@ -13,11 +13,11 @@ summary_what_for: "Connect your Git repositories, Jira projects, and Confluence 
 ---
 ### Step-by-Step
 1. Link your primary Git repository and your sprint Jira project.
-2. Enable automatic staleness detection (`[STALE_WARNING]`) between Confluence and Git.
+2. Enable automatic staleness detection between Confluence and Git.
 
 ### Key Terms
 - **Tripartite Graph**: Verified causal links across Confluence pages, Jira issues, and Git commits.
-- **Human Anchor**: Architectural decision authored and signed by a human (`human_authored_required`).
+- **Human Anchor**: Architectural decision authored and signed by a human (human sign-off required).
 
 ### Frequently Asked Questions
-- **Why is a Jira transition in Staged mode?** Jira transitions are pre-validated and executed only after Gate approval.
+- **Why is a Jira transition pending validation?** Jira transitions are pre-validated and executed only after human approval.

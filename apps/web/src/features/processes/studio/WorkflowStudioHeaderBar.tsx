@@ -109,7 +109,6 @@ export function WorkflowStudioHeaderBar({
                 : isFr
                   ? `En préparation · v${workflow.version}`
                   : `Draft · v${workflow.version}`}
-              <span className="sr-only">{` v${workflow.version} (${workflow.status})`}</span>
             </span>
             {hasActiveAutonomyContract ? (
               <span

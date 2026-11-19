@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
+import { formatCurrency } from "../../lib/formatters";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -17,7 +18,7 @@ function isWorkspaceKey(id: string): boolean {
 }
 
 export function AutonomousRunsSupervisionPanel(): React.ReactElement | null {
-  const { dictionary } = useI18n();
+  const { dictionary, locale } = useI18n();
   const { activeScopeId, openHelpSection } = useShellNavigation();
   const { scopes, workspaces } = usePlatformSetup();
   const labels = dictionary.autonomousSupervision;
@@ -186,7 +187,7 @@ export function AutonomousRunsSupervisionPanel(): React.ReactElement | null {
                   {run.workflow_title}
                 </strong>
                 <span style={{ fontSize: "11.5px", color: "var(--color-text-muted)" }}>
-                  {run.cost_usd.toFixed(2)} $
+                  {formatCurrency(run.cost_usd, locale === "en" ? "en" : "fr")}
                 </span>
               </div>
 

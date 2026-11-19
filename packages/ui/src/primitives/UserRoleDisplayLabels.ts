@@ -12,7 +12,7 @@ export const ROLE_DISPLAY_LABELS_FR: Record<string, string> = {
   READ_ONLY_OBSERVER: "Observateur (Lecture seule)",
   ANALYST_PM_PO: "Product Manager / Métier",
   ARCHITECT: "Architecte",
-  TECH_LEAD_DEV: "Tech Lead / Développeur",
+  TECH_LEAD_DEV: "Référent Technique / Développeur",
   SECURITY_COMPLIANCE: "Sécurité & Conformité",
 };
 
@@ -28,7 +28,7 @@ export const ROLE_DISPLAY_LABELS_EN: Record<string, string> = {
   READ_ONLY_OBSERVER: "Observer (Read-only)",
   ANALYST_PM_PO: "Product Manager / Business",
   ARCHITECT: "Architect",
-  TECH_LEAD_DEV: "Tech Lead / Developer",
+  TECH_LEAD_DEV: "Technical Lead / Developer",
   SECURITY_COMPLIANCE: "Security & Compliance",
 };
 

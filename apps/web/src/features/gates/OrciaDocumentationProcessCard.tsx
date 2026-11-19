@@ -107,19 +107,19 @@ function buildGeneratedDocumentationMarkdown(isFr: boolean): string {
       "Provide a unified, up-to-date reference covering every ORCIA screen, the organizational domain model, and frequently asked questions.",
       "",
       "## Guide Fonctionnel par Écran",
-      "- **Cockpit (`/cockpit`)**: Monitor active processes, pending human decisions, and workspace indicators.",
-      "- **My Assistant (`/assistant`)**: Converse with your AI assistant, select reasoning effort, and organize work into folders.",
-      "- **My Spaces (`/workspaces`)**: Manage project sources, business rules, glossary terms, and deliverables.",
-      "- **My Agents (`/agents`) & My Processes (`/processes`)**: Configure specialized agents, skills, and reusable multi-step processes.",
-      "- **Configuration (`/settings`) & Activity Log (`/activity`)**: Govern organization units, billing teams, AI models, and full audit history.",
+      "- **Cockpit**: Monitor active processes, pending human decisions, and workspace indicators.",
+      "- **My Assistant**: Converse with your AI assistant, select reasoning effort, and organize work into folders.",
+      "- **My Spaces**: Manage project sources, business rules, glossary terms, and deliverables.",
+      "- **My Agents & My Processes**: Configure specialized agents, skills, and reusable multi-step processes.",
+      "- **Platform Configuration & Activity Log**: Govern organization units, billing teams, AI models, and full audit history.",
       "",
-      "## Architecture & Modèle Métier",
+      "## Architecture & Business Model",
       "- **Business Units (BU) & Billing Teams**: Teams group members and carry AI consumption budgets.",
       "- **Workspaces**: Every workspace (shared, private, or confidential) is attached to a billing team and inherits organization rules.",
       "",
-      "## Questions Fréquentes (FAQ)",
+      "## Frequently Asked Questions (FAQ)",
       "- **What is the difference between a Team and a Workspace?** A Team represents people and budget ownership; a Workspace isolates project documents, glossary terms, and deliverables.",
-      "- **How do I refresh contextual help (`ⓘ`) across screens?** Run the `generate-orcia-documentation` process from `☍ My Processes`.",
+      "- **How do I refresh contextual help (`ⓘ`) across screens?** Run the « Génération de la documentation ORCIA » process from `☍ My Processes`.",
     ].join("\n");
   }
 
@@ -130,11 +130,11 @@ function buildGeneratedDocumentationMarkdown(isFr: boolean): string {
     "Fournir un référentiel unifié et à jour couvrant l'ensemble des écrans d'ORCIA, le modèle métier d'organisation et les réponses aux questions fréquentes.",
     "",
     "## Guide Fonctionnel par Écran",
-    "- **Cockpit (`/cockpit`)** : Superviser les processus en cours, les arbitrages humains en attente et l'avancement des espaces.",
-    "- **Mon Assistant (`/assistant`)** : Dialoguer avec l'assistant IA, choisir le niveau de réflexion et classer ses échanges par dossiers.",
-    "- **Mes Espaces (`/workspaces`)** : Gérer les sources documentaires, les règles métiers, le glossaire et les livrables d'un projet.",
-    "- **Mes Agents (`/agents`) & Mes Processus (`/processes`)** : Configurer les agents spécialisés, leurs compétences et les processus gouvernés.",
-    "- **Configuration (`/settings`) & Journal d'Activité (`/activity`)** : Administrer les Directions (BU), les Équipes de facturation, les modèles IA et la traçabilité.",
+    "- **Cockpit** : Superviser les processus en cours, les arbitrages humains en attente et l'avancement des espaces.",
+    "- **Mon Assistant** : Dialoguer avec l'assistant IA, choisir le niveau de réflexion et classer ses échanges par dossiers.",
+    "- **Mes Espaces** : Gérer les sources documentaires, les règles métiers, le glossaire et les livrables d'un projet.",
+    "- **Mes Agents & Mes Processus** : Configurer les agents spécialisés, leurs compétences et les processus gouvernés.",
+    "- **Configuration & Journal d'Activité** : Administrer les Directions (BU), les Équipes de facturation, les modèles IA et la traçabilité.",
     "",
     "## Architecture & Modèle Métier",
     "- **Directions (BU) & Équipes de facturation** : L'Équipe regroupe les utilisateurs et porte le rattachement budgétaire des appels IA.",
@@ -142,7 +142,7 @@ function buildGeneratedDocumentationMarkdown(isFr: boolean): string {
     "",
     "## Questions Fréquentes (FAQ)",
     "- **Quelle est la différence entre une Équipe et un Espace de travail ?** L'Équipe porte les membres et le budget, tandis que l'Espace de travail isole les documents, le glossaire et les livrables d'un projet.",
-    "- **Comment mettre à jour l'aide contextuelle (`ⓘ`) d'un écran ?** Lancez en 1 clic le processus `generate-orcia-documentation` depuis `☍ Mes Processus`.",
+    "- **Comment mettre à jour l'aide contextuelle (`ⓘ`) d'un écran ?** Lancez en 1 clic le processus « Génération de la Documentation ORCIA » depuis `☍ Mes Processus`.",
   ].join("\n");
 }
 
@@ -225,15 +225,15 @@ export function OrciaDocumentationProcessCard({
     setGeneratedMarkdown(markdownPreview);
     onFeedback(
       isFr
-        ? "✅ Processus « generate-orcia-documentation » publié et exécuté avec succès en 4 étapes."
-        : '✅ Process "generate-orcia-documentation" published and executed in 4 steps.',
+        ? "✅ Processus « Génération de la Documentation ORCIA » publié et exécuté avec succès en 4 étapes."
+        : '✅ Process "ORCIA Documentation Generation" published and executed in 4 steps.',
     );
 
     const client = createOrciaApiClient({ baseUrl: "" });
     void client
       .validateHelpArticle({
         markdown_text:
-          "---\nid: help.orcia.complete-documentation\nversion: 1.0.0\npack_id: orcia://packs/orcia-pack-builder\nbound_routes:\n  - /cockpit\n  - /processes\n  - /help\nroles_allowed:\n  - CONTRIBUTOR\nglossary_terms: []\nrelated_workflows:\n  - orcia://pack-builder/workflows/generate-orcia-documentation\n---\n# Documentation Complète d'ORCIA {#top}\n## 1. À quoi sert cet écran ? {#overview}\nGuide complet d'ORCIA. Composant UI : `<ContextualHelpColumnAndCenter />`.\n## 2. Comment faire (Pas-à-pas) {#steps}\n- Lancer generate-orcia-documentation\n## 3. Questions fréquentes & Dépannage {#faq}\n- Comment mettre à jour la documentation ?",
+          "---\nid: help.orcia.complete-documentation\nversion: 1.0.0\npack_id: orcia://packs/orcia-pack-builder\nbound_routes:\n  - /cockpit\n  - /processes\n  - /help\nroles_allowed:\n  - CONTRIBUTOR\nglossary_terms: []\nrelated_workflows:\n  - orcia://pack-builder/workflows/generate-orcia-documentation\n---\n# Documentation Complète d'ORCIA {#top}\n## 1. À quoi sert cet écran ? {#overview}\nGuide complet d'ORCIA.\n## 2. Comment faire (Pas-à-pas) {#steps}\n- Lancer la génération de documentation ORCIA\n## 3. Questions fréquentes & Dépannage {#faq}\n- Comment mettre à jour la documentation ?",
         lang: isFr ? "fr" : "en",
         extra_allowed_routes: ["/cockpit", "/processes", "/help"],
         known_glossary_terms: [],
@@ -243,8 +243,8 @@ export function OrciaDocumentationProcessCard({
           err instanceof Error ? err.message : "Validation locale appliquée";
         onFeedback(
           isFr
-            ? `✅ Processus « generate-orcia-documentation » exécuté en 4 étapes (${detail}).`
-            : `✅ Process "generate-orcia-documentation" executed in 4 steps (${detail}).`,
+            ? `✅ Processus « Génération de la Documentation ORCIA » exécuté en 4 étapes (${detail}).`
+            : `✅ Process "ORCIA Documentation Generation" executed in 4 steps (${detail}).`,
         );
       });
   };
@@ -255,8 +255,8 @@ export function OrciaDocumentationProcessCard({
     onLoadIntoBuilder(draftSpec);
     onFeedback(
       isFr
-        ? "✏️ Modèle « generate-orcia-documentation » chargé dans l'Atelier de Processus pour personnalisation."
-        : '✏️ Template "generate-orcia-documentation" loaded into the Process Studio for customization.',
+        ? "✏️ Modèle « Génération de la Documentation ORCIA » chargé dans l'Atelier de Processus pour personnalisation."
+        : '✏️ Template "ORCIA Documentation Generation" loaded into the Process Studio for customization.',
     );
   };
 
@@ -279,8 +279,8 @@ export function OrciaDocumentationProcessCard({
           <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
             <h3 style={{ margin: 0, fontSize: "15px" }}>
               {isFr
-                ? "📚 Processus du Pack ORCIA — Génération de la Documentation ORCIA (generate-orcia-documentation)"
-                : "📚 ORCIA Pack Process — ORCIA Documentation Generation (generate-orcia-documentation)"}
+                ? "📚 Processus du Pack ORCIA — Génération de la Documentation ORCIA"
+                : "📚 ORCIA Pack Process — ORCIA Documentation Generation"}
             </h3>
             <ContextualInfoTriggerButton
               sectionId="orcia-doc-generation-process"
@@ -299,7 +299,11 @@ export function OrciaDocumentationProcessCard({
           </p>
         </div>
         <StatusBadge
-          label="📦 Pack : orcia-pack-builder · Agent : @Rédacteur-Documentation-Orcia"
+          label={
+            isFr
+              ? "📦 Pack Documentation ORCIA · Agent : @Rédacteur-Documentation-Orcia"
+              : "📦 ORCIA Documentation Pack · Agent: @Rédacteur-Documentation-Orcia"
+          }
           tone="cobalt"
         />
       </div>
@@ -358,8 +362,8 @@ export function OrciaDocumentationProcessCard({
         >
           <strong style={{ fontSize: "13px" }}>
             {isFr
-              ? "Bilan des 4 étapes exécutées (generate-orcia-documentation) :"
-              : "Summary of the 4 executed steps (generate-orcia-documentation):"}
+              ? "Bilan des 4 étapes exécutées :"
+              : "Summary of the 4 executed steps:"}
           </strong>
           {executedSteps.map((step) => (
             <div

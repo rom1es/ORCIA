@@ -1,7 +1,10 @@
-import { ContextualInfoTriggerButton, OrciaIcon } from "@orcia/ui";
+import { ContextualInfoTriggerButton, OrciaAlertBanner, OrciaIcon } from "@orcia/ui";
 import React, { useEffect, useState } from "react";
+import { CreateProcessFormDialog } from "../../components/CreateProcessFormDialog";
+import { useOptionalPlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
+import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import {
   formatAgentHumanLabel,
   InteractiveRunDrawer,
@@ -34,8 +37,10 @@ export const ACTIVE_PROCESS_RUN_WORKFLOW_STORAGE_KEY =
 export function ProcessesHubPage() {
   const { locale, dictionary } = useI18n();
   const { navigateToRoute, openHelpSection } = useShellNavigation();
+  const setupCtx = useOptionalPlatformSetup();
   const isFr = locale === "fr";
   const modesCopy = dictionary.processOrchestrationModes;
+  const [isCreateProcessOpen, setIsCreateProcessOpen] = useState(false);
 
   const [workflows, setWorkflows] = useState<WorkflowDefinitionV2Item[]>(() =>
     loadPersistedWorkflowsV2(),
@@ -70,12 +75,12 @@ export function ProcessesHubPage() {
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        const detail = err instanceof Error ? err.message : String(err);
-        setHubErrorBanner(
-          isFr
-            ? `Impossible d'actualiser le catalogue de processus depuis le serveur (${detail}).`
-            : `Unable to refresh processes catalog from server (${detail}).`,
+        const formatted = formatRfc9457ErrorToBanner(
+          err,
+          isFr ? "fr" : "en",
+          isFr ? "Catalogue de processus" : "Processes catalog",
         );
+        setHubErrorBanner(formatted.fullText);
       });
     return () => {
       cancelled = true;
@@ -92,18 +97,9 @@ export function ProcessesHubPage() {
       style={{ display: "flex", flexDirection: "column", gap: "18px" }}
     >
       {hubErrorBanner ? (
-        <div
-          role="alert"
-          data-testid="processes-hub-error-banner"
-          className="rounded border px-3 py-2 text-xs font-medium"
-          style={{
-            backgroundColor: "var(--color-stale-bg)",
-            borderColor: "var(--color-stale-crimson)",
-            color: "var(--color-text-primary)",
-          }}
-        >
+        <OrciaAlertBanner tone="crimson" role="alert" testId="processes-hub-error-banner">
           {hubErrorBanner}
-        </div>
+        </OrciaAlertBanner>
       ) : null}
 
       {/* ZONE 1 (PRIORITÉ 1) : DOSSIERS EN COURS & ACTIONS ATTENDUES */}
@@ -238,6 +234,49 @@ export function ProcessesHubPage() {
         onChangeFilter={setFilter}
         onExecuteWorkflow={(wfId) => setActiveRunWorkflowId(wfId)}
         onOpenStudio={(wfId) => navigateToRoute(`/processes/studio/${wfId}`)}
+        onOpenCreateProcess={() => setIsCreateProcessOpen(true)}
+      />
+
+      <CreateProcessFormDialog
+        open={isCreateProcessOpen}
+        onOpenChange={setIsCreateProcessOpen}
+        isFr={isFr}
+        openHelpSection={openHelpSection}
+        upsertWorkflow={(item) => {
+          setupCtx?.upsertWorkflow(item);
+          const createdV2: WorkflowDefinitionV2Item = {
+            id: item.workflowKey,
+            slug: item.workflowKey,
+            title: item.title,
+            pack_id: "orcia-pack-custom",
+            vsm_step_num: null,
+            version: item.version,
+            status: item.status === "PUBLISHED" ? "published" : "draft",
+            orchestration_type: "deterministic_dbos",
+            reflexive_objective: item.prePrompt || item.title,
+            execution_mode: "native_orcia",
+            agent_ref: "@assistant",
+            skills_refs: [],
+            knowledge_base_refs: [],
+            triggers: [],
+            contract: {
+              inputs: [],
+              outputs: [],
+              exit_criteria: [],
+            },
+            sub_steps: [],
+            controls: {
+              deterministic_gates: [],
+              probabilistic_evaluations: [],
+            },
+            guardrails: [],
+          };
+          savePersistedWorkflowV2(createdV2);
+          setWorkflows((prev) => [
+            createdV2,
+            ...prev.filter((p) => p.id !== createdV2.id),
+          ]);
+        }}
       />
 
       {/* ZONE 2B : SUPERVISION DES EXÉCUTIONS AUTOMATISÉES SOUS CONTRAT (STORY 7.4) */}

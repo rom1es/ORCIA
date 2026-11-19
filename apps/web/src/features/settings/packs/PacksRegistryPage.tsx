@@ -149,8 +149,8 @@ export function PacksRegistryPage() {
           <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
             <h2 style={{ margin: 0, fontSize: "var(--font-size-h3)" }}>
               {isFr
-                ? "Registre des Packs Déclaratifs & Connecteurs MCP (packs/<domaine>/)"
-                : "Declarative Packs Registry & MCP Connectors (packs/<domain>/)"}
+                ? "Registre des Packs Métiers & Connecteurs"
+                : "Business Packs Registry & Connectors"}
             </h2>
             <span
               className="rounded px-2 py-0.5 text-xs font-semibold"
@@ -159,13 +159,13 @@ export function PacksRegistryPage() {
                 color: "var(--color-gate-emerald)",
               }}
             >
-              {isFr ? "100 % Déclaratif (YAML + Markdown)" : "100% Declarative (YAML + Markdown)"}
+              {isFr ? "100 % Déclaratif" : "100% Declarative"}
             </span>
           </div>
           <p style={{ margin: 0, fontSize: "13px", color: "var(--color-text-secondary)" }}>
             {isFr
-              ? "Aucun code Python ni React dans les Packs métiers : chargement à chaud par DeclarativePackLoader et vérification des connecteurs via orcia-connectors."
-              : "Zero Python or React code inside Business Packs: hot-loaded by DeclarativePackLoader and verified via orcia-connectors."}
+              ? "Packs métiers prêts à l'emploi : chargement automatique des modèles, guides et vérification des connecteurs requis."
+              : "Ready-to-use business packs: automatic loading of templates, guides, and verification of required connectors."}
           </p>
         </div>
 
@@ -287,11 +287,11 @@ export function PacksRegistryPage() {
               }}
             >
               {[
-                { label: "Agents (.md)", count: pack.agents_count },
-                { label: "Skills (.md)", count: pack.skills_count },
-                { label: "Gates", count: pack.gates_count },
-                { label: "VSM", count: pack.vsm_count },
-                { label: "Workflows", count: pack.workflows_count },
+                { label: isFr ? "Agents" : "Agents", count: pack.agents_count },
+                { label: isFr ? "Compétences" : "Skills", count: pack.skills_count },
+                { label: isFr ? "Validations" : "Gates", count: pack.gates_count },
+                { label: isFr ? "Chaînes" : "Streams", count: pack.vsm_count },
+                { label: isFr ? "Processus" : "Processes", count: pack.workflows_count },
               ].map((stat) => (
                 <div
                   key={stat.label}
@@ -312,8 +312,8 @@ export function PacksRegistryPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <strong style={{ fontSize: "12px", color: "var(--color-text-primary)" }}>
                 {isFr
-                  ? "Connecteurs requis (packages/orcia-connectors) :"
-                  : "Required Connectors (packages/orcia-connectors):"}
+                  ? "Connecteurs requis :"
+                  : "Required Connectors:"}
               </strong>
               {(pack.connector_health ?? []).map((conn) => (
                 <div

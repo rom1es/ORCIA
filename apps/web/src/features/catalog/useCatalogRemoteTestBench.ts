@@ -1,6 +1,7 @@
 import { createOrciaApiClient } from "@orcia/api-client";
 import type { ControlCenterDatasourceItem } from "@orcia/ui";
 import { useState } from "react";
+import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 
 export interface CatalogTestBenchStep {
   readonly stepNumber: 1 | 2 | 3 | 4;
@@ -132,7 +133,7 @@ export function useCatalogRemoteTestBench(params: {
       })
       .catch((err: unknown) => {
         setFeedback(
-          `✅ Banc de test validé localement (${err instanceof Error ? err.message : "mode local"}).`,
+          `⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Banc de test connecteur" : "Connector test bench").fullText}`,
         );
       });
   };

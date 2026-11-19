@@ -123,7 +123,7 @@ export const INITIAL_DECLARATIVE_PACKS: DeclarativePackItem[] = [
       {
         connector_type: "mcp:atlassian-jira",
         required_scopes: ["jira:read", "jira:write"],
-        used_for: "Lecture demandes/Epics/US et écriture sous WritePreviewCard",
+        used_for: "Lecture demandes/Epics/US et écriture sous validation humaine préalable",
         health: { connector_type: "mcp:atlassian-jira", ok: true, latency_ms: 14 },
       },
       {
@@ -1102,7 +1102,7 @@ export const INITIAL_WORKFLOWS_V2: WorkflowDefinitionV2Item[] = [
     ],
     "contract": {
       "inputs": [
-        "demande_source (Expression initiale du besoin ou ticket d'entrée)"
+        "Demande initiale (expression du besoin ou ticket d'entrée)"
       ],
       "outputs": [
         "# PRD",

@@ -1,5 +1,4 @@
 import React from "react";
-import { OrciaIcon } from "./icons";
 
 export interface DisabledButtonAlertIndicatorProps {
   /** Whether the parent button is currently disabled (greyed out). */
@@ -14,12 +13,10 @@ const DEFAULT_DISABLED_REASON =
   "Action temporairement indisponible : complétez les prérequis requis pour activer ce bouton.";
 
 /**
- * Right-aligned red exclamation circle badge (`!`) + red tooltip rendered inside
- * any disabled (`greyed out`) button, using the same `18px × 18px` circular badge
- * geometry as `ContextualInfoTriggerButton` (`ⓘ`).
+ * Accessible reason indicator rendered for disabled buttons (`REM-32`).
  *
- * When `disabled` becomes `false` (button is activable), both the red `!` badge
- * and the red tooltip completely disappear from the DOM.
+ * Replaces the former high-contrast-failing red `(!)` circle inside primary blue
+ * buttons with a non-intrusive accessible text/tooltip element (`sr-only` + `title`).
  */
 export function DisabledButtonAlertIndicator({
   disabled = false,
@@ -41,43 +38,18 @@ export function DisabledButtonAlertIndicator({
 
   return (
     <span
-      className="orcia-disabled-alert-badge"
+      className="sr-only"
       data-testid={iconTestId}
       aria-label={resolvedReason}
       title={resolvedReason}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: "18px",
-        height: "18px",
-        minWidth: "18px",
-        minHeight: "18px",
-        marginLeft: "auto",
-        borderRadius: "var(--radius-full)",
-        border: "1px solid var(--color-status-error)",
-        backgroundColor: "var(--color-stale-bg)",
-        color: "var(--color-status-error)",
-        fontFamily: "var(--font-sans)",
-        fontSize: "11px",
-        fontWeight: 700,
-        lineHeight: 1,
-        flexShrink: 0,
-      }}
     >
-      <OrciaIcon name="alertBadge" />
       <span
         role="tooltip"
         data-testid={tooltipTestId}
         data-tooltip-text={resolvedReason}
-        className="orcia-disabled-alert-tooltip"
-        style={{
-          display: "none",
-          color: "var(--color-status-error)",
-          backgroundColor: "var(--color-stale-bg)",
-          borderColor: "var(--color-status-error)",
-        }}
-      />
+      >
+        {resolvedReason}
+      </span>
     </span>
   );
 }

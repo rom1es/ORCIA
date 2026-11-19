@@ -1,4 +1,5 @@
 import type { StatusBadgeTone, UiActivityScopeFilterOption } from "@orcia/ui";
+import { formatShortDateTime } from "../lib/formatters";
 
 export const EVENT_TYPE_FR_LABELS: Record<string, { label: string; tone: StatusBadgeTone }> = {
   PlatformAdminInitialized: { label: "Administrateur initialisé", tone: "emerald" },
@@ -71,20 +72,7 @@ export const EVENT_TYPE_EN_LABELS: Record<string, { label: string; tone: StatusB
 };
 
 export function formatActivityTimestamp(timestampIso: string, isFr: boolean): string {
-  const parsed = new Date(timestampIso);
-  if (Number.isNaN(parsed.getTime())) {
-    return timestampIso;
-  }
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const day = pad(parsed.getUTCDate());
-  const month = pad(parsed.getUTCMonth() + 1);
-  const year = parsed.getUTCFullYear();
-  const hours = pad(parsed.getUTCHours());
-  const minutes = pad(parsed.getUTCMinutes());
-  const seconds = pad(parsed.getUTCSeconds());
-  return isFr
-    ? `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`
-    : `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  return formatShortDateTime(timestampIso, isFr ? "fr" : "en");
 }
 
 export interface ScopeSourceOrgUnit {

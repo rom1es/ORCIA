@@ -166,13 +166,13 @@ describe("Epics 14 & 15 — ORCIA Process Studio v2, Interactive VSM & Declarati
 
     // Initially published v1.0.0
     expect(screen.getByTestId("studio-workflow-version-badge").textContent).toContain(
-      "v1.0.0 (published)",
+      "Actif · v1.0.0",
     );
 
-    // Toggle sub-step 'jira' -> auto-forks into v1.0.0-draft (draft)
+    // Toggle sub-step 'jira' -> auto-forks into En préparation · v1.0.0-draft
     fireEvent.click(screen.getByTestId("toggle-substep-enabled-jira"));
     expect(screen.getByTestId("studio-workflow-version-badge").textContent).toContain(
-      "v1.0.0-draft (draft)",
+      "En préparation · v1.0.0-draft",
     );
 
     // Gate 3: Unmount and re-render to prove F5 reload survival
@@ -197,7 +197,7 @@ describe("Epics 14 & 15 — ORCIA Process Studio v2, Interactive VSM & Declarati
     );
 
     expect(screen.getByTestId("studio-workflow-version-badge").textContent).toContain(
-      "v1.0.0-draft (draft)",
+      "En préparation · v1.0.0-draft",
     );
 
     // Run isolated What-If simulation -> 2 enabled sub-steps evaluated, 0 external writes

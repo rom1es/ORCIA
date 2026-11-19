@@ -14,6 +14,7 @@ import type {
 } from "@orcia/ui";
 import { useEffect, useState } from "react";
 import type { ConfiguredPackItem } from "../../components/platformSetupStore";
+import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import {
   type CachedAgentsAndSkillsState,
   mergeManagedStateWithActivePacks,
@@ -142,9 +143,7 @@ export function useManagedAgentsAndSkills(
         setManagedState(nextState);
       })
       .catch((err: unknown) =>
-        onFeedback(
-          `⚠️ Chargement hors ligne (${err instanceof Error ? err.message : "cache local actif"}).`,
-        ),
+        onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, "fr", "Catalogue des agents").fullText}`),
       );
     return () => {
       cancelled = true;
@@ -204,9 +203,7 @@ export function useManagedAgentsAndSkills(
         visibility_scope: optimisticSkill.visibilityScope,
       })
       .catch((err: unknown) =>
-        onFeedback(
-          `⚠️ Synchronisation compétence différée (${err instanceof Error ? err.message : "hors ligne"}).`,
-        ),
+        onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, "fr", "Compétence").fullText}`),
       );
   };
 
@@ -221,9 +218,7 @@ export function useManagedAgentsAndSkills(
     void createOrciaApiClient({ baseUrl: "" })
       .deleteSkill(skillId)
       .catch((err: unknown) =>
-        onFeedback(
-          `⚠️ Suppression différée (${err instanceof Error ? err.message : "hors ligne"}).`,
-        ),
+        onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, "fr", "Compétence").fullText}`),
       );
   };
 
@@ -274,14 +269,15 @@ export function useManagedAgentsAndSkills(
         })),
       )
       .catch((err: unknown) => {
-        const detail = err instanceof Error ? err.message : "erreur serveur";
+        const detail = formatRfc9457ErrorToBanner(err, "fr", "Compétence").fullText;
+        onFeedback(`⚠️ ${detail}`);
         updateManagedState((prev) => ({
           ...prev,
           skills: prev.skills.map((s) =>
             s.skillId === skillId
               ? {
                   ...s,
-                  lastExecutionOutput: `${s.lastExecutionOutput ?? ""}\n⚠️ Remarque : exécution locale utilisée (${detail}).`,
+                  lastExecutionOutput: `${s.lastExecutionOutput ?? ""}\n⚠️ ${detail}`,
                 }
               : s,
           ),
@@ -362,9 +358,7 @@ export function useManagedAgentsAndSkills(
         test_bench_validated: optimisticAgent.testBenchValidated,
       })
       .catch((err: unknown) =>
-        onFeedback(
-          `⚠️ Synchronisation agent différée (${err instanceof Error ? err.message : "hors ligne"}).`,
-        ),
+        onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, "fr", "Agent").fullText}`),
       );
   };
 
@@ -391,9 +385,7 @@ export function useManagedAgentsAndSkills(
     void createOrciaApiClient({ baseUrl: "" })
       .duplicateAgent(sourceAgent.agentId, { new_name: customName, visibility_scope: "TEAM" })
       .catch((err: unknown) =>
-        onFeedback(
-          `⚠️ Duplication synchronisée localement (${err instanceof Error ? err.message : "hors ligne"}).`,
-        ),
+        onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, "fr", "Duplication d'agent").fullText}`),
       );
   };
 
@@ -407,9 +399,7 @@ export function useManagedAgentsAndSkills(
     void createOrciaApiClient({ baseUrl: "" })
       .updateAgentGovernance(agentId, { enabled_in_workspace: nextEnabled })
       .catch((err: unknown) =>
-        onFeedback(
-          `⚠️ État d'activation enregistré localement (${err instanceof Error ? err.message : "hors ligne"}).`,
-        ),
+        onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, "fr", "Activation agent").fullText}`),
       );
   };
 
@@ -423,9 +413,7 @@ export function useManagedAgentsAndSkills(
     void createOrciaApiClient({ baseUrl: "" })
       .updateAgentGovernance(agentId, { mcp_exposed: nextExposed })
       .catch((err: unknown) =>
-        onFeedback(
-          `⚠️ Exposition MCP enregistrée localement (${err instanceof Error ? err.message : "hors ligne"}).`,
-        ),
+        onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, "fr", "Exposition MCP").fullText}`),
       );
   };
 
@@ -473,9 +461,7 @@ export function useManagedAgentsAndSkills(
         test_bench_validated: patch.testBenchValidated,
       })
       .catch((err: unknown) =>
-        onFeedback(
-          `⚠️ Mise à jour d'agent différée (${err instanceof Error ? err.message : "hors ligne"}).`,
-        ),
+        onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, "fr", "Mise à jour d'agent").fullText}`),
       );
   };
 
@@ -494,9 +480,7 @@ export function useManagedAgentsAndSkills(
     void createOrciaApiClient({ baseUrl: "" })
       .updateAgentSkills(agentId, { skill_ids: nextSkillIdsForApi })
       .catch((err: unknown) =>
-        onFeedback(
-          `⚠️ Rattachement compétence différé (${err instanceof Error ? err.message : "hors ligne"}).`,
-        ),
+        onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, "fr", "Compétences de l'agent").fullText}`),
       );
   };
 
@@ -513,9 +497,7 @@ export function useManagedAgentsAndSkills(
     void createOrciaApiClient({ baseUrl: "" })
       .updateAgentGovernance(agentId, { thinking_level: nextThinkingLevel })
       .catch((err: unknown) =>
-        onFeedback(
-          `⚠️ Palier de réflexion enregistré localement (${err instanceof Error ? err.message : "hors ligne"}).`,
-        ),
+        onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, "fr", "Niveau de réflexion").fullText}`),
       );
   };
 
@@ -532,11 +514,9 @@ export function useManagedAgentsAndSkills(
     if (nextVisibility === "PRIVATE" || nextVisibility === "TEAM") {
       void createOrciaApiClient({ baseUrl: "" })
         .updateAgentGovernance(agentId, { visibility_scope: nextVisibility })
-        .catch((err: unknown) =>
-          onFeedback(
-            `⚠️ Visibilité enregistrée localement (${err instanceof Error ? err.message : "hors ligne"}).`,
-          ),
-        );
+      .catch((err: unknown) =>
+        onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, "fr", "Visibilité de l'agent").fullText}`),
+      );
     }
   };
 
@@ -548,9 +528,7 @@ export function useManagedAgentsAndSkills(
     void createOrciaApiClient({ baseUrl: "" })
       .deleteAgent(agentId)
       .catch((err: unknown) =>
-        onFeedback(
-          `⚠️ Suppression différée (${err instanceof Error ? err.message : "hors ligne"}).`,
-        ),
+        onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, "fr", "Suppression d'agent").fullText}`),
       );
   };
 
@@ -603,7 +581,8 @@ export function useManagedAgentsAndSkills(
         })),
       )
       .catch((err: unknown) => {
-        const detail = err instanceof Error ? err.message : "erreur serveur";
+        const detail = formatRfc9457ErrorToBanner(err, "fr", "Exécution d'agent").fullText;
+        onFeedback(`⚠️ ${detail}`);
         updateManagedState((prev) => ({
           ...prev,
           agents: prev.agents.map((a) =>
@@ -611,7 +590,7 @@ export function useManagedAgentsAndSkills(
               ? {
                   ...a,
                   testBenchValidated: true,
-                  lastExecutionOutput: `${a.lastExecutionOutput ?? ""}\n⚠️ Remarque : exécution locale utilisée (${detail}).`,
+                  lastExecutionOutput: `${a.lastExecutionOutput ?? ""}\n⚠️ ${detail}`,
                 }
               : a,
           ),

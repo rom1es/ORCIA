@@ -69,7 +69,12 @@ export function ActivityProvenanceModal({
           {summary.total_input_tokens + summary.total_output_tokens}
         </div>
         <div>
-          <strong>{labels.consolidatedCostLabel}</strong> ${summary.total_cost_usd} USD
+          <strong>{labels.consolidatedCostLabel}</strong>{" "}
+          {new Intl.NumberFormat("fr-FR", {
+            style: "currency",
+            currency: "EUR",
+            minimumFractionDigits: 2,
+          }).format(Number(summary.total_cost_usd) || 0)}
         </div>
       </div>
     </OrciaDialog>

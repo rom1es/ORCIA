@@ -91,7 +91,7 @@ export function StepDetailSheet({
     },
     {
       key: "opportunities",
-      label: isFr ? "6. Compléments & Garde-fous" : "6. Complements & Guardrails",
+      label: isFr ? "6. Compléments & Règles de protection" : "6. Complements & Safeguards",
     },
   ];
 

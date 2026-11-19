@@ -48,7 +48,7 @@ export function AssistantTopToolbar({
           type="button"
           data-testid="assistant-new-conversation-btn"
           onClick={onNewConversation}
-          className="rounded-full bg-action-primary px-3 py-1 text-xs font-semibold text-white"
+          className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm rounded-full"
         >
           {isFr ? "+ Nouvelle conversation" : "+ New conversation"}
         </button>

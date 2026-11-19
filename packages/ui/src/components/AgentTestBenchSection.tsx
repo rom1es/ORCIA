@@ -97,7 +97,7 @@ export function AgentTestBenchSection({
     <div className="space-y-2 rounded-lg border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h4 className="font-semibold">
-          <OrciaIcon name="playOutline" /> Banc de Test Intégré (Dry-Run &amp; Validation pour « 💬 Mon Assistant »)
+          <OrciaIcon name="playOutline" /> Banc de Test Intégré (Simulation &amp; Validation pour « 💬 Mon Assistant »)
         </h4>
         <span className="text-[11px] text-[var(--orcia-text-secondary)]">
           Conditions réunies : {satisfiedConditionsCount}/6

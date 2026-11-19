@@ -208,6 +208,7 @@ export function ChunkValidationCard({
                 </span>
                 <span
                   data-testid={`chunk-status-badge-${chunk.chunkKey}`}
+                  data-status={chunk.status}
                   style={{
                     fontFamily: "var(--font-mono)",
                     fontSize: "var(--font-size-mono)",
@@ -216,7 +217,13 @@ export function ChunkValidationCard({
                       : "var(--color-arbitration-amber)",
                   }}
                 >
-                  {chunk.status}
+                  {chunk.status === "PENDING"
+                    ? "En attente"
+                    : chunk.status === "APPROVED"
+                      ? "Approuvé"
+                      : chunk.status === "CO_EDITED"
+                        ? "Co-édité"
+                        : chunk.status}
                 </span>
               </div>
 

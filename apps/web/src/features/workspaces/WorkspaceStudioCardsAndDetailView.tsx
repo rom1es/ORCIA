@@ -9,6 +9,8 @@ import {
   type WorkspaceVisibilityMode,
 } from "@orcia/ui";
 import React, { useState } from "react";
+import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
+import { formatCurrency } from "../../lib/formatters";
 import type {
   ConfiguredOrgUnit,
   ConfiguredWorkflowItem,
@@ -117,7 +119,9 @@ export function WorkspaceStudioCardsAndDetailView({
             className="orcia-ds-tab"
             style={getTabStyle(filterMode === "ALL")}
           >
-            {isFr ? `Tous (${workspaces.length})` : `All (${workspaces.length})`}
+            {workspaces.length > 0
+              ? isFr ? `Tous (${workspaces.length})` : `All (${workspaces.length})`
+              : isFr ? "Tous" : "All"}
           </button>
           <button
             type="button"
@@ -128,7 +132,9 @@ export function WorkspaceStudioCardsAndDetailView({
             style={getTabStyle(filterMode === "TEAM")}
           >
             <OrciaIcon name="team" />{" "}
-            {isFr ? `Espaces d'Équipe (${teamWorkspacesCount})` : `Team Spaces (${teamWorkspacesCount})`}
+            {teamWorkspacesCount > 0
+              ? isFr ? `Espaces d'Équipe (${teamWorkspacesCount})` : `Team Spaces (${teamWorkspacesCount})`
+              : isFr ? "Espaces d'Équipe" : "Team Spaces"}
           </button>
           <button
             type="button"
@@ -139,7 +145,9 @@ export function WorkspaceStudioCardsAndDetailView({
             style={getTabStyle(filterMode === "PRIVATE")}
           >
             <OrciaIcon name="lock" />{" "}
-            {isFr ? `Mes Espaces Privés (${privateWorkspacesCount})` : `My Private Spaces (${privateWorkspacesCount})`}
+            {privateWorkspacesCount > 0
+              ? isFr ? `Mes Espaces Privés (${privateWorkspacesCount})` : `My Private Spaces (${privateWorkspacesCount})`
+              : isFr ? "Mes Espaces Privés" : "My Private Spaces"}
           </button>
         </div>
 
@@ -162,20 +170,9 @@ export function WorkspaceStudioCardsAndDetailView({
             data-testid="toggle-create-workspace-form-btn"
             aria-expanded={isCreateFormExpanded}
             onClick={onToggleCreateForm}
-            style={{
-              padding: "7px 12px",
-              borderRadius: "var(--radius-sm)",
-              border: "1px solid var(--color-border)",
-              backgroundColor: "var(--color-primary-cobalt)",
-              color: "var(--color-primary-foreground)",
-              fontWeight: 600,
-              fontSize: "12px",
-              cursor: "pointer",
-            }}
+            className="orcia-ds-btn orcia-ds-btn-primary orcia-ds-btn-sm"
           >
-            {isCreateFormExpanded
-              ? isFr ? "− Replier le formulaire" : "− Hide form"
-              : isFr ? "+ Créer un Espace de Travail" : "+ Create a Workspace"}
+            {isFr ? "+ Nouvel espace" : "+ New space"}
           </button>
         </div>
       </section>
@@ -264,12 +261,26 @@ export function WorkspaceStudioCardsAndDetailView({
                   </div>
                 </div>
 
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", fontSize: "11px", color: "var(--color-text-secondary)" }}>
-                  <span><OrciaIcon name="books" /> <strong>{wsSourcesCount}</strong> {isFr ? "Sources rattachées" : "Attached sources"}</span>
-                  <span><OrciaIcon name="bookOpen" /> <strong>{ontologyConcepts.length}</strong> {isFr ? "Termes & Règles actifs" : "Active terms & rules"}</span>
-                  <span><OrciaIcon name="menuProcesses" /> <strong>{workflows.length}</strong> {isFr ? "Processus" : "Processes"}</span>
-                  <span><OrciaIcon name="moneyBag" /> <strong>{(ws.finopsCostUsd ?? 0).toFixed(2)} $</strong></span>
-                </div>
+                {wsSourcesCount > 0 || ontologyConcepts.length > 0 || workflows.length > 0 || (ws.finopsCostUsd ?? 0) > 0 ? (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", fontSize: "11px", color: "var(--color-text-secondary)" }}>
+                    {wsSourcesCount > 0 && (
+                      <span><OrciaIcon name="books" /> <strong>{wsSourcesCount}</strong> {isFr ? "Sources rattachées" : "Attached sources"}</span>
+                    )}
+                    {ontologyConcepts.length > 0 && (
+                      <span><OrciaIcon name="bookOpen" /> <strong>{ontologyConcepts.length}</strong> {isFr ? "Termes & Règles actifs" : "Active terms & rules"}</span>
+                    )}
+                    {workflows.length > 0 && (
+                      <span><OrciaIcon name="menuProcesses" /> <strong>{workflows.length}</strong> {isFr ? "Processus" : "Processes"}</span>
+                    )}
+                    {(ws.finopsCostUsd ?? 0) > 0 && (
+                      <span><OrciaIcon name="moneyBag" /> <strong>{formatCurrency(ws.finopsCostUsd ?? 0, isFr ? "fr" : "en")}</strong></span>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: "11px", color: "var(--color-muted-foreground)" }}>
+                    {isFr ? "Aucune source ni consommation enregistrée pour le moment." : "No sources or usage recorded yet."}
+                  </div>
+                )}
 
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center", paddingTop: "4px" }}>
                   <select
@@ -281,7 +292,9 @@ export function WorkspaceStudioCardsAndDetailView({
                       void Promise.resolve(onUpdateWorkspacePhase(ws.workspaceId, nextPhase))
                         .then(() => markAutosaved(ws.workspaceId))
                         .catch((err: unknown) => {
-                          onFeedback(`⚠️ ${err instanceof Error ? err.message : "Erreur de mise à jour"}`);
+                          onFeedback(
+                            `⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Phase de l'espace" : "Workspace phase").fullText}`,
+                          );
                         });
                     }}
                     style={{ ...inputStyle, fontSize: "11px", padding: "4px 8px" }}
@@ -300,7 +313,9 @@ export function WorkspaceStudioCardsAndDetailView({
                       void Promise.resolve(onUpdateWorkspaceVisibility(ws.workspaceId, nextVis))
                         .then(() => markAutosaved(ws.workspaceId))
                         .catch((err: unknown) => {
-                          onFeedback(`⚠️ ${err instanceof Error ? err.message : "Erreur de mise à jour"}`);
+                          onFeedback(
+                            `⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Visibilité de l'espace" : "Workspace visibility").fullText}`,
+                          );
                         });
                     }}
                     style={{ ...inputStyle, fontSize: "11px", padding: "4px 8px" }}
@@ -331,7 +346,9 @@ export function WorkspaceStudioCardsAndDetailView({
                             );
                           })
                           .catch((err: unknown) => {
-                            onFeedback(`⚠️ ${err instanceof Error ? err.message : "Erreur de partage"}`);
+                            onFeedback(
+                              `⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Partage d'espace" : "Workspace sharing").fullText}`,
+                            );
                           });
                       }}
                       style={{

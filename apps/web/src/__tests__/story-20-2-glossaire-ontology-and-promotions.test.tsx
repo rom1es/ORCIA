@@ -209,7 +209,9 @@ describe("Story 20.2 — Menu Glossaire (/ontology), Séparation /help, ONTOLOGY
 
     fireEvent.click(screen.getByTestId("approve-promotion-btn-prop-1"));
     await waitFor(() => {
-      expect(screen.getByTestId("ontology-tab-proposals").textContent).toContain("(0)");
+      const proposalsTabText = screen.getByTestId("ontology-tab-proposals").textContent ?? "";
+      expect(proposalsTabText).not.toContain("(1)");
+      expect(proposalsTabText).not.toContain("(0)");
     });
   });
 });

@@ -91,13 +91,8 @@ export function FinopsKpiStrip({
 
   return (
     <div
-      className="finops-kpi-grid"
+      className="finops-kpi-grid grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
       data-testid="finops-kpi-strip"
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-        gap: "16px",
-      }}
     >
       {/* KPI 1 : Coût consolidé */}
       <div

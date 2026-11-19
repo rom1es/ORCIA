@@ -262,11 +262,11 @@ export const enDictionary: TranslationDictionary = {
     emptyStateMessage:
       "No business terms or documents indexed yet. Create a workspace or connect a source to enrich the knowledge base.",
     columns: {
-      "1_ENTERPRISE": "1. Organization (Global)",
-      "2_DOMAIN": "2. Division / Department",
-      "3_TEAM": "3a. Team",
-      "3_WORKSPACE": "3b. Workspace",
-      "4_RUN_EPHEMERAL": "4. Current execution",
+      "1_ENTERPRISE": "Organization (Global)",
+      "2_DOMAIN": "Division / Department",
+      "3_TEAM": "Team",
+      "3_WORKSPACE": "Workspace",
+      "4_RUN_EPHEMERAL": "Current execution",
     },
     profileSelectorLabel: "Adapt wording to role:",
     whatIfButtonLabel: "Preview change impact",

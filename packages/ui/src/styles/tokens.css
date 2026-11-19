@@ -614,7 +614,7 @@ button {
 }
 
 .orcia-ds-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.72;
   cursor: not-allowed;
 }
 
@@ -622,6 +622,13 @@ button {
   border: 1px solid var(--color-primary-cobalt);
   background-color: var(--color-primary-cobalt);
   color: var(--color-primary-foreground);
+}
+
+.orcia-ds-btn-primary:disabled {
+  border: 1px solid var(--color-border-strong);
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  opacity: 1;
 }
 
 .orcia-ds-btn-secondary {

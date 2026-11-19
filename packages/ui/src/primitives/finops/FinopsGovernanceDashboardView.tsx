@@ -208,6 +208,7 @@ export function FinopsGovernanceDashboardView({
           activeTab={activeTab}
           onSelectTab={setActiveTab}
           ariaLabel="Onglets gouvernance FinOps"
+          tabsClassName="flex-nowrap overflow-x-auto"
           panels={{
             processes: (
               <FinopsProcessAndTiersTab

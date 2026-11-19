@@ -136,11 +136,13 @@ describe("Story 16.4 — AgentExecutionTrace & SourceLineInspectorDrawer (@orcia
     expect(screen.getByTestId("trace-status-label")).toHaveTextContent("En cours d'analyse...");
     expect(screen.getByText("Exploration documentaire & architecture")).toBeInTheDocument();
 
-    // Thought is collapsed by default
+    // Thought is collapsed by default and renders cleanly as formatted prose/Markdown without raw border-left
     expect(screen.queryByTestId("trace-thought-content")).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId("trace-thought-toggle-btn"));
-    const thoughtPre = screen.getByTestId("trace-thought-content");
-    expect(thoughtPre.textContent).toBe("Ligne 1 du raisonnement\nLigne 2 conservée intégralement");
+    const thoughtContent = screen.getByTestId("trace-thought-content");
+    expect(thoughtContent.textContent).toContain("Ligne 1 du raisonnement");
+    expect(thoughtContent.textContent).toContain("Ligne 2 conservée intégralement");
+    expect(thoughtContent.style.borderLeft).toBe("");
 
     // Specialist delegation is rendered and collapsible
     expect(screen.getByTestId("trace-delegated-agent-block")).toHaveTextContent(

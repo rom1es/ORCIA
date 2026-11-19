@@ -14,6 +14,7 @@ export interface ProcessCatalogCardGridProps {
   readonly onChangeFilter: (nextFilter: WorkflowHubFilter) => void;
   readonly onExecuteWorkflow: (workflowId: string) => void;
   readonly onOpenStudio: (workflowId: string) => void;
+  readonly onOpenCreateProcess?: () => void;
 }
 
 export function ProcessCatalogCardGrid({
@@ -24,6 +25,7 @@ export function ProcessCatalogCardGrid({
   onChangeFilter,
   onExecuteWorkflow,
   onOpenStudio,
+  onOpenCreateProcess,
 }: ProcessCatalogCardGridProps) {
   const filteredWorkflows = workflows.filter((wf) => {
     if (filter === "published") return wf.status === "published";
@@ -59,34 +61,46 @@ export function ProcessCatalogCardGrid({
           </p>
         </div>
 
-        <div
-          role="tablist"
-          aria-label={isFr ? "Filtrer les processus" : "Filter processes"}
-          className="orcia-ds-tabs"
-        >
-          {(
-            [
-              { key: "all", label: isFr ? "Tous" : "All" },
-              { key: "published", label: isFr ? "Actifs" : "Active" },
-              { key: "draft", label: isFr ? "En préparation" : "Drafts" },
-              {
-                key: "external_delegated",
-                label: isFr ? "Réalisation IDE / Git" : "External IDE / Git",
-              },
-            ] as const
-          ).map((tab) => (
+        <div className="flex flex-wrap items-center gap-2">
+          <div
+            role="tablist"
+            aria-label={isFr ? "Filtrer les processus" : "Filter processes"}
+            className="orcia-ds-tabs"
+          >
+            {(
+              [
+                { key: "all", label: isFr ? "Tous" : "All" },
+                { key: "published", label: isFr ? "Actifs" : "Active" },
+                { key: "draft", label: isFr ? "En préparation" : "Drafts" },
+                {
+                  key: "external_delegated",
+                  label: isFr ? "Réalisation IDE / Git" : "External IDE / Git",
+                },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={filter === tab.key}
+                data-testid={`workflows-hub-filter-${tab.key}`}
+                onClick={() => onChangeFilter(tab.key)}
+                className="orcia-ds-tab"
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          {onOpenCreateProcess ? (
             <button
-              key={tab.key}
               type="button"
-              role="tab"
-              aria-selected={filter === tab.key}
-              data-testid={`workflows-hub-filter-${tab.key}`}
-              onClick={() => onChangeFilter(tab.key)}
-              className="orcia-ds-tab"
+              data-testid="open-create-process-modal-btn"
+              onClick={onOpenCreateProcess}
+              className="orcia-ds-btn orcia-ds-btn-primary orcia-ds-btn-sm"
             >
-              {tab.label}
+              {isFr ? "+ Nouveau processus" : "+ New process"}
             </button>
-          ))}
+          ) : null}
         </div>
       </div>
 

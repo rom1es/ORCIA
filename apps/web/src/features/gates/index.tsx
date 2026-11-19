@@ -1,3 +1,4 @@
+import { OrciaAlertBanner } from "@orcia/ui";
 import React, { useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
@@ -25,18 +26,13 @@ export function GatesFeaturePanel() {
       style={{ display: "flex", flexDirection: "column", gap: "16px" }}
     >
       {actionFeedback ? (
-        <div
+        <OrciaAlertBanner
+          tone={actionFeedback.startsWith("⚠️") ? "crimson" : "emerald"}
           role={actionFeedback.startsWith("⚠️") ? "alert" : "status"}
-          data-testid="gates-action-feedback-banner"
-          className="rounded border px-3 py-2 text-xs font-medium"
-          style={{
-            backgroundColor: "var(--color-bg-elevated)",
-            borderColor: "var(--color-border-subtle)",
-            color: "var(--color-text-primary)",
-          }}
+          testId="gates-action-feedback-banner"
         >
           {actionFeedback}
-        </div>
+        </OrciaAlertBanner>
       ) : null}
 
       <div

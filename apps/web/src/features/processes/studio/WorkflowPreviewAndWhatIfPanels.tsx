@@ -34,7 +34,7 @@ export function WorkflowWhatIfSandboxPanel({
         <h3 style={{ margin: 0, fontSize: "16px" }}>
           {isFr
             ? "Simulation à blanc (sans écriture dans Jira, Confluence ou Git)"
-            : "Dry-Run Simulation (zero external writes)"}
+            : "Simulation Preview (zero external writes)"}
         </h3>
         <button
           type="button"

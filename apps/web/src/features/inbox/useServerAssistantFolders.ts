@@ -1,6 +1,7 @@
 import { createOrciaApiClient } from "@orcia/api-client";
 import type { AssistantFolderVisibilityMode, UiAssistantFolderItem } from "@orcia/ui";
 import { useCallback, useEffect, useState } from "react";
+import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import { readSavedAssistantFolders, writeSavedAssistantFolders } from "./assistantFoldersAndPrefsStore";
 
 interface ServerFolderPayload {
@@ -31,7 +32,7 @@ export function mapServerFolder(payload: ServerFolderPayload): UiAssistantFolder
 }
 
 function errorDetail(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
+  return formatRfc9457ErrorToBanner(err, "fr", "Dossier Assistant").fullText;
 }
 
 export interface ServerAssistantFoldersMessages {

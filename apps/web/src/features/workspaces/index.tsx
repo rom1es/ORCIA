@@ -1,8 +1,9 @@
-import { CommandPaletteModal } from "@orcia/ui";
+import { CommandPaletteModal, OrciaAlertBanner, OrciaDialog } from "@orcia/ui";
 import React, { useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
+import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import { CreateWorkspaceCard } from "./CreateWorkspaceCard";
 import { WorkspaceDnaAndWaiversSection } from "./WorkspaceDnaAndWaiversSection";
 import { WorkspaceStudioCardsAndDetailView } from "./WorkspaceStudioCardsAndDetailView";
@@ -35,7 +36,7 @@ export function WorkspacesFeaturePanel({
     promoteOntologyConcept,
   } = usePlatformSetup();
 
-  const [isCreateFormOpen, setIsCreateFormOpen] = useState(true);
+  const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
@@ -80,7 +81,7 @@ export function WorkspacesFeaturePanel({
     workspaces[0] ??
     null;
 
-  const effectiveCreateFormVisible = workspaces.length === 0 || isCreateFormOpen;
+  const effectiveCreateFormVisible = isCreateFormOpen;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -105,29 +106,33 @@ export function WorkspacesFeaturePanel({
         </button>
       </nav>
       {actionFeedback ? (
-        <div
-          role="status"
-          data-testid="workspaces-action-feedback-banner"
-          className="rounded border px-3 py-2 text-xs font-medium"
-          style={{
-            backgroundColor: "var(--color-bg-elevated)",
-            borderColor: "var(--color-border-subtle)",
-            color: "var(--color-text-primary)",
-          }}
+        <OrciaAlertBanner
+          tone={actionFeedback.startsWith("⚠️") ? "crimson" : "emerald"}
+          role={actionFeedback.startsWith("⚠️") ? "alert" : "status"}
+          testId="workspaces-action-feedback-banner"
         >
           {actionFeedback}
-        </div>
+        </OrciaAlertBanner>
       ) : null}
 
-      {effectiveCreateFormVisible ? (
-        <div data-testid="create-workspace-collapsible-wrapper">
+      <OrciaDialog
+        open={effectiveCreateFormVisible}
+        onOpenChange={setIsCreateFormOpen}
+        title={isFr ? "Créer un Nouvel Espace de Travail" : "Create a New Workspace"}
+        testId="create-workspace-modal"
+        closeLabel={isFr ? "Fermer" : "Close"}
+      >
+        <div className="orcia-ds-dialog-body" data-testid="create-workspace-collapsible-wrapper">
           <CreateWorkspaceCard
             isFr={isFr}
             orgUnits={orgUnits}
             activeScopeName={activeScopeName}
             activeScopeCategoryLabel={activeScopeCategoryLabel}
             openHelpSection={openHelpSection}
-            onNavigateToSettings={() => navigateToRoute("/settings")}
+            onNavigateToSettings={() => {
+              setIsCreateFormOpen(false);
+              navigateToRoute("/settings");
+            }}
             onCreateWorkspace={async (input) => {
               try {
                 const created = await createWorkspace(input);
@@ -136,15 +141,16 @@ export function WorkspacesFeaturePanel({
                     ? `✅ Espace « ${created.name} » créé (${created.slug ?? created.workspaceId}).`
                     : `✅ Workspace "${created.name}" created (${created.slug ?? created.workspaceId}).`,
                 );
+                setIsCreateFormOpen(false);
               } catch (err: unknown) {
                 setActionFeedback(
-                  `⚠️ ${err instanceof Error ? err.message : "Erreur lors de la création de l'espace."}`,
+                  `⚠️ ${formatRfc9457ErrorToBanner(err, locale, isFr ? "Espace de travail" : "Workspace").fullText}`,
                 );
               }
             }}
           />
         </div>
-      ) : null}
+      </OrciaDialog>
 
       <WorkspaceStudioCardsAndDetailView
         isFr={isFr}

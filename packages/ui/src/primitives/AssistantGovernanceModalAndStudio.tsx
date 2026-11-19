@@ -114,7 +114,7 @@ export interface AssistantGovernanceModalAndStudioProps {
 
 export const ASSISTANT_DEFAULT_HAT_OPTIONS: readonly { readonly value: string; readonly label: string }[] = [
   { value: "PM", label: "Chef de Projet / Product Manager" },
-  { value: "TECH_LEAD", label: "Tech Lead / Architecte" },
+  { value: "TECH_LEAD", label: "Référent Technique / Architecte" },
   { value: "DEV", label: "Développeur / Ingénieur" },
   { value: "ANALYST", label: "Analyste Métier" },
   { value: "QA_COMPLIANCE", label: "Responsable Qualité & Conformité" },
@@ -354,7 +354,7 @@ export function AssistantGovernanceModalAndStudio({
             setIsDirty(true);
           }}
           onRunDryRun={() =>
-            setDryRunOutput("▷ Dry-Run OK : étapes et règles de sécurité vérifiées (0 écriture externe).")
+            setDryRunOutput("▷ Simulation vérifiée : étapes et règles de sécurité validées (0 écriture externe).")
           }
           onSaveOverride={() => {
             setIsDirty(false);

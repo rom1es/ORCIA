@@ -207,7 +207,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       (screen.getByTestId("eight-menu-item-finops") as HTMLButtonElement).disabled,
     ).toBe(true);
 
-    // Create a Workspace via the setup form
+    // Create a Workspace via the "+ Nouvel espace" modal form
+    fireEvent.click(screen.getByTestId("toggle-create-workspace-form-btn"));
     fireEvent.change(screen.getByTestId("workspace-name-input"), {
       target: { value: "Mon Premier Espace" },
     });
@@ -434,6 +435,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       screen.getByTestId("help-section-workflows-overview").getAttribute("data-active"),
     ).toBe("true");
 
+    // Open "+ Nouveau processus" dialog to access instructions, deliverable contract, and creation form
+    fireEvent.click(screen.getByTestId("open-create-process-modal-btn"));
     fireEvent.click(screen.getByTestId("contextual-info-trigger-workflows-instructions"));
     expect(
       screen.getByTestId("help-section-workflows-instructions").getAttribute("data-active"),
@@ -455,9 +458,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       "Revue de contrat fournisseur",
     );
 
-    // Verify the dedicated ORCIA Documentation Generation Process card (generate-orcia-documentation) and 1-click actions on /processes
+    // Verify the dedicated ORCIA Documentation Generation Process card and 1-click actions on /processes
     const docProcessCard = screen.getByTestId("orcia-doc-generation-process-card");
-    expect(docProcessCard.textContent).toContain("generate-orcia-documentation");
+    expect(docProcessCard.textContent).toContain("Génération de la Documentation ORCIA");
     expect(docProcessCard.textContent).toContain("@Rédacteur-Documentation-Orcia");
 
     // 1-click run: publishes workflow, displays 4 steps summary & FormattedMarkdownContent preview
@@ -817,6 +820,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     await act(async () => {
       await router1.navigate({ to: "/workspaces" });
     });
+    fireEvent.click(screen.getByTestId("toggle-create-workspace-form-btn"));
     fireEvent.change(screen.getByTestId("workspace-name-input"), {
       target: { value: "Espace Survie F5" },
     });
@@ -1597,7 +1601,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       </QueryClientProvider>,
     );
 
-    // 1. On Day 0, the First-Boot Admin Submit button is disabled and shows the red '!' badge + red tooltip
+    // 1. On Day 0, the First-Boot Admin Submit button is disabled and exposes accessible sr-only reason + tooltip (without red '!' SVG inside primary blue button)
     const adminSubmitBtn = screen.getByTestId("first-boot-admin-submit-btn") as HTMLButtonElement;
     expect(adminSubmitBtn.disabled).toBe(true);
     const adminAlertIcon = screen.getByTestId(
@@ -1606,8 +1610,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     const adminAlertTooltip = screen.getByTestId(
       "disabled-button-alert-tooltip-first-boot-admin-submit-btn",
     );
-    expect(adminAlertIcon.querySelector("svg")).not.toBeNull();
-    expect(adminAlertTooltip.style.color).toBe("var(--color-status-error)");
+    expect(adminAlertIcon.querySelector("svg")).toBeNull();
+    expect(adminAlertIcon.className).toContain("sr-only");
+    expect(adminAlertTooltip.getAttribute("role")).toBe("tooltip");
     expect(adminAlertTooltip.getAttribute("data-tooltip-text")).toContain(
       "Renseignez le nom complet et l'adresse e-mail",
     );
@@ -1835,7 +1840,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       await Promise.resolve();
     });
 
-    // Verify create-workspace-submit-btn has DisabledButtonAlertIndicator when name is empty
+    // Open "+ Nouvel espace" dialog and verify create-workspace-submit-btn has DisabledButtonAlertIndicator when name is empty
+    fireEvent.click(screen.getByTestId("toggle-create-workspace-form-btn"));
     const createWsBtn = screen.getByTestId("create-workspace-submit-btn") as HTMLButtonElement;
     expect(createWsBtn.disabled).toBe(true);
     expect(
@@ -1865,13 +1871,18 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       expect(screen.getByTestId("workspaces-filter-all").textContent).toContain("Tous (1)");
     });
 
-    // Also create a collective workspace ("Projet Socle IA", STANDARD) under "Équipe Core IA" (org-2)
-    fireEvent.change(ownerTeamSelect, { target: { value: "org-2" } });
-    fireEvent.change(visibilitySelect, { target: { value: "STANDARD" } });
+    // Re-open modal and create a collective workspace ("Projet Socle IA", STANDARD) under "Équipe Core IA" (org-2)
+    fireEvent.click(screen.getByTestId("toggle-create-workspace-form-btn"));
+    fireEvent.change(screen.getByTestId("workspace-owner-team-select"), {
+      target: { value: "org-2" },
+    });
+    fireEvent.change(screen.getByTestId("workspace-visibility-select"), {
+      target: { value: "STANDARD" },
+    });
     fireEvent.change(screen.getByTestId("workspace-name-input"), {
       target: { value: "Projet Socle IA" },
     });
-    fireEvent.click(createWsBtn);
+    fireEvent.click(screen.getByTestId("create-workspace-submit-btn"));
     await waitFor(() => {
       expect(screen.getByTestId("workspaces-filter-all").textContent).toContain("Tous (2)");
     });
@@ -1896,9 +1907,12 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(privateOption).toBeDefined();
     expect(privateOption?.getAttribute("data-testid")).not.toBe("topbar-workspace-option-ws-1");
     fireEvent.click(privateOption!);
-    expect(screen.getByTestId("workspace-active-scope-banner").textContent).toContain(
+    expect(screen.getByTestId("topbar-fixed-workspace-selector").textContent).toContain(
       "Mon Bac à Sable R&D",
     );
+    const filteredCards = screen.getAllByTestId(/^workspace-studio-card-/);
+    expect(filteredCards).toHaveLength(1);
+    expect(filteredCards[0]?.textContent).toContain("Mon Bac à Sable R&D");
 
     // 5. Verify orphan protection in /organization: cannot delete "Équipe Core IA" (org-2) while workspaces are attached to it
     fireEvent.click(screen.getByTestId("eight-menu-item-configuration"));
@@ -1961,7 +1975,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     // Legacy redundant panels with display: none have been purged
     expect(screen.queryByTestId("workspaces-legacy-technical-panels")).toBeNull();
 
-    // Create a Private Workspace ("Mon Labo Perso", PRIVATE_USER) and a Team Workspace ("Espace Produit", STANDARD)
+    // Open modal and create a Private Workspace ("Mon Labo Perso", PRIVATE_USER) and a Team Workspace ("Espace Produit", STANDARD)
+    fireEvent.click(screen.getByTestId("toggle-create-workspace-form-btn"));
     const visibilitySelect = screen.getByTestId(
       "workspace-visibility-select",
     ) as HTMLSelectElement;
@@ -1974,13 +1989,11 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       expect(screen.getByTestId("workspaces-filter-all").textContent).toContain("Tous (1)");
     });
 
-    // Toggle creation form (collapse then re-expand) and create a 2nd workspace
+    // Modal closes on creation; re-open via "+ Nouvel espace" button and create a 2nd workspace
     const toggleCreateBtn = screen.getByTestId("toggle-create-workspace-form-btn");
-    if (toggleCreateBtn.getAttribute("aria-expanded") === "true") {
-      fireEvent.click(toggleCreateBtn);
-      expect(screen.queryByTestId("workspace-name-input")).toBeNull();
-    }
-    fireEvent.click(screen.getByTestId("toggle-create-workspace-form-btn"));
+    expect(toggleCreateBtn.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByTestId("workspace-name-input")).toBeNull();
+    fireEvent.click(toggleCreateBtn);
     fireEvent.change(screen.getByTestId("workspace-visibility-select"), {
       target: { value: "STANDARD" },
     });

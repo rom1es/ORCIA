@@ -115,19 +115,34 @@ export function AssistantFoldersAndCollaborativeThreadView({
       data-workspace-id={workspaceId}
       className="rounded-lg border border-border-subtle bg-surface-elevated p-4 text-text-primary space-y-3"
     >
-      <div data-testid="assistant-folders-and-notes-explainer" className="rounded-lg border border-border-subtle bg-surface-primary p-3 text-xs space-y-1.5">
-        <div className="flex items-center justify-between gap-2">
-          <span className="font-semibold text-text-primary">
-            {isFr ? (
-              <>
-                <OrciaIcon name="folder" /> Dossiers thématiques &amp; <OrciaIcon name="pin" /> Notes permanentes (Mémoire de Mon Assistant)
-              </>
-            ) : (
-              <>
-                <OrciaIcon name="folder" /> Thematic Folders &amp; <OrciaIcon name="pin" /> Pinned Notes (My Assistant Memory)
-              </>
-            )}
-          </span>
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle pb-2.5">
+        <div role="tablist" style={{ display: "none" }} className="sr-only">
+          {([["ACTIVE_DISCUSSION", labels.tab1ActiveDiscussionTitle], ["FOLDERS", `${labels.tab2FoldersTitlePrefix} (${folders.length})`], ["HISTORY_SEARCH", labels.tab3HistorySearchTitle]] as const).map(([code, title]) => (
+            <button key={code} type="button" role="tab" data-testid={`assistant-main-tab-${code}`} aria-selected={activeTab === code} onClick={() => setActiveTab(code)}>{title}</button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 w-full">
+          {activeFolder ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span data-testid="assistant-active-folder-pill" className="rounded-full border border-action-primary/40 bg-action-primary/10 px-2.5 py-0.5 text-xs font-semibold text-action-primary">
+                {cleanPillPrefix} : {activeFolder.title}
+              </span>
+              <button type="button" data-testid="assistant-folder-notes-toggle-btn" onClick={() => setNotesOpen((prev) => !prev)} className="rounded border border-border-subtle bg-surface-secondary px-2.5 py-0.5 text-xs font-medium">
+                {labels.pinnedNotesButtonLabel}
+              </button>
+              <button type="button" data-testid="assistant-folder-share-modal-btn" onClick={() => setShareModalOpen((prev) => !prev)} className="rounded border border-border-subtle bg-surface-secondary px-2.5 py-0.5 text-xs font-medium">
+                {labels.shareButtonLabel}
+              </button>
+              <button type="button" data-testid="assistant-deselect-folder-btn" onClick={() => onSelectFolder?.("")} className="rounded border border-border-subtle bg-surface-primary px-2 py-0.5 text-[11px] text-text-secondary hover:text-text-primary">
+                {isFr ? "Désélectionner" : "Clear active folder"}
+              </button>
+            </div>
+          ) : (
+            <span className="text-xs text-text-secondary">
+              {isFr ? "Aucun dossier actif sélectionné. Créez ou cliquez sur un dossier ci-dessous pour activer ses notes." : "No active folder selected. Create or click a folder below to activate its notes."}
+            </span>
+          )}
           {onOpenHelpSection && (
             <ContextualInfoTriggerButton
               sectionId="assistant-folders"
@@ -136,40 +151,6 @@ export function AssistantFoldersAndCollaborativeThreadView({
             />
           )}
         </div>
-        <p className="text-[11px] text-text-secondary leading-relaxed">
-          {isFr
-            ? "1) Un Dossier regroupe vos échanges par sujet. Lorsqu'il est sélectionné comme Dossier actif, vos nouvelles questions y sont rattachées. 2) Les Notes du dossier servent de mémo permanent : elles sont transmises automatiquement à Mon Assistant à chaque question posée dans ce dossier."
-            : "1) A Folder groups your threads by topic. When selected as the Active Folder, new questions are attached to it. 2) Folder Notes act as a permanent memo: they are automatically sent to My Assistant with every question asked in this folder."}
-        </p>
-      </div>
-
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle pb-2.5">
-        <div role="tablist" style={{ display: "none" }} className="sr-only">
-          {([["ACTIVE_DISCUSSION", labels.tab1ActiveDiscussionTitle], ["FOLDERS", `${labels.tab2FoldersTitlePrefix} (${folders.length})`], ["HISTORY_SEARCH", labels.tab3HistorySearchTitle]] as const).map(([code, title]) => (
-            <button key={code} type="button" role="tab" data-testid={`assistant-main-tab-${code}`} aria-selected={activeTab === code} onClick={() => setActiveTab(code)}>{title}</button>
-          ))}
-        </div>
-
-        {activeFolder ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <span data-testid="assistant-active-folder-pill" className="rounded-full border border-action-primary/40 bg-action-primary/10 px-2.5 py-0.5 text-xs font-semibold text-action-primary">
-              {cleanPillPrefix} : {activeFolder.title}
-            </span>
-            <button type="button" data-testid="assistant-folder-notes-toggle-btn" onClick={() => setNotesOpen((prev) => !prev)} className="rounded border border-border-subtle bg-surface-secondary px-2.5 py-0.5 text-xs font-medium">
-              {labels.pinnedNotesButtonLabel}
-            </button>
-            <button type="button" data-testid="assistant-folder-share-modal-btn" onClick={() => setShareModalOpen((prev) => !prev)} className="rounded border border-border-subtle bg-surface-secondary px-2.5 py-0.5 text-xs font-medium">
-              {labels.shareButtonLabel}
-            </button>
-            <button type="button" data-testid="assistant-deselect-folder-btn" onClick={() => onSelectFolder?.("")} className="rounded border border-border-subtle bg-surface-primary px-2 py-0.5 text-[11px] text-text-secondary hover:text-text-primary">
-              {isFr ? "Désélectionner" : "Clear active folder"}
-            </button>
-          </div>
-        ) : (
-          <span className="text-xs text-text-secondary">
-            {isFr ? "Aucun dossier actif sélectionné. Créez ou cliquez sur un dossier ci-dessous pour activer ses notes." : "No active folder selected. Create or click a folder below to activate its notes."}
-          </span>
-        )}
       </header>
 
       {activeTurnLockBanner && (

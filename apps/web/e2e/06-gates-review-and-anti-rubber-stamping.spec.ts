@@ -37,10 +37,20 @@ test.describe("TEST-05 · 06 — Gates : briefing de revue et anti-rubber-stampi
     // 1. Préparer la revue humaine (4 blocs + sections > 1 000 mots + action Jira STAGED)
     await page.getByTestId("gates-open-human-review-btn").click();
     await expect(page.getByTestId("review-briefing-grid")).toBeVisible();
-    await expect(page.getByTestId("gates-human-evaluation-status-badge")).toContainText(
+    await expect(page.getByTestId("gates-human-evaluation-status-badge")).toHaveAttribute(
+      "data-status",
       "PENDING_HUMAN_REVIEW",
     );
-    await expect(page.getByTestId("gates-staged-jira-status-badge")).toContainText("STAGED");
+    await expect(page.getByTestId("gates-human-evaluation-status-badge")).toContainText(
+      "Validation humaine requise",
+    );
+    await expect(page.getByTestId("gates-staged-jira-status-badge")).toHaveAttribute(
+      "data-status",
+      "STAGED",
+    );
+    await expect(page.getByTestId("gates-staged-jira-status-badge")).toContainText(
+      "Préparée (en attente)",
+    );
 
     // 2. Tant que le Bloc 4 et les sections sont en attente, le bouton de finalisation est désactivé
     await expect(page.getByTestId("review-briefing-block-4")).toHaveAttribute(
@@ -57,10 +67,18 @@ test.describe("TEST-05 · 06 — Gates : briefing de revue et anti-rubber-stampi
     );
 
     await page.getByTestId("chunk-approve-btn-sec-architecture").click();
-    await expect(page.getByTestId("chunk-status-badge-sec-architecture")).toHaveText("APPROVED");
+    await expect(page.getByTestId("chunk-status-badge-sec-architecture")).toHaveAttribute(
+      "data-status",
+      "APPROVED",
+    );
+    await expect(page.getByTestId("chunk-status-badge-sec-architecture")).toHaveText("Approuvé");
 
     await page.getByTestId("chunk-coedit-btn-sec-security-jira").click();
-    await expect(page.getByTestId("chunk-status-badge-sec-security-jira")).toHaveText("CO_EDITED");
+    await expect(page.getByTestId("chunk-status-badge-sec-security-jira")).toHaveAttribute(
+      "data-status",
+      "CO_EDITED",
+    );
+    await expect(page.getByTestId("chunk-status-badge-sec-security-jira")).toHaveText("Co-édité");
 
     // 4. Vérifier que le garde-fou API rejette une finalisation < 15 s sans confirmation explicite
     const refreshRes = await page.request.post("/api/v1/auth/refresh");
@@ -100,8 +118,16 @@ test.describe("TEST-05 · 06 — Gates : briefing de revue et anti-rubber-stampi
     await expect(page.getByTestId("rubber-stamp-confirm-submit-btn")).toBeEnabled();
     await page.getByTestId("rubber-stamp-confirm-submit-btn").click();
 
-    await expect(page.getByTestId("gates-human-evaluation-status-badge")).toContainText("PASS");
-    await expect(page.getByTestId("gates-staged-jira-status-badge")).toContainText("EXECUTED");
+    await expect(page.getByTestId("gates-human-evaluation-status-badge")).toHaveAttribute(
+      "data-status",
+      "PASS",
+    );
+    await expect(page.getByTestId("gates-human-evaluation-status-badge")).toContainText("Validé");
+    await expect(page.getByTestId("gates-staged-jira-status-badge")).toHaveAttribute(
+      "data-status",
+      "EXECUTED",
+    );
+    await expect(page.getByTestId("gates-staged-jira-status-badge")).toContainText("Exécutée");
 
     // 7. Survie au F5 après purge du stockage navigateur
     await page.evaluate(() => {
@@ -109,10 +135,17 @@ test.describe("TEST-05 · 06 — Gates : briefing de revue et anti-rubber-stampi
       window.sessionStorage.clear();
     });
     await page.reload();
-    await expect(page.getByTestId("gates-human-evaluation-status-badge")).toContainText("PASS", {
-      timeout: 20000,
-    });
-    await expect(page.getByTestId("gates-staged-jira-status-badge")).toContainText("EXECUTED");
+    await expect(page.getByTestId("gates-human-evaluation-status-badge")).toHaveAttribute(
+      "data-status",
+      "PASS",
+      { timeout: 20000 },
+    );
+    await expect(page.getByTestId("gates-human-evaluation-status-badge")).toContainText("Validé");
+    await expect(page.getByTestId("gates-staged-jira-status-badge")).toHaveAttribute(
+      "data-status",
+      "EXECUTED",
+    );
+    await expect(page.getByTestId("gates-staged-jira-status-badge")).toContainText("Exécutée");
     expectDbRowExists(
       "SELECT id, gate_type, status FROM gate_evaluations WHERE id::text = :eval_id AND gate_type = 'HUMAN' AND status = 'PASS'",
       { eval_id: evalId },

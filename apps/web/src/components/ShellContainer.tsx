@@ -1,5 +1,6 @@
 import {
   FourZoneDirectionCShell,
+  OrciaAlertBanner,
   type EightFixedMenuKey,
   type UiHumanProfileBadge,
   type UiModuleKey,
@@ -329,6 +330,17 @@ function InnerShellContainer({
         }
       >
         <div className="flex h-full flex-col">
+          {setup.lastSyncError && (
+            <div className="px-4 pt-3">
+              <OrciaAlertBanner
+                tone="crimson"
+                role="alert"
+                testId="platform-sync-error-banner"
+              >
+                {setup.lastSyncError}
+              </OrciaAlertBanner>
+            </div>
+          )}
           {mustChangePassword && (
             <TemporaryPasswordWarningBanner
               isFr={isFr}

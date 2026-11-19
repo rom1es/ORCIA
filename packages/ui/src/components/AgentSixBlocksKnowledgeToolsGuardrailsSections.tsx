@@ -54,11 +54,11 @@ const GUARDRAIL_OPTIONS = [
   },
   {
     id: "isolation_prompt_injection",
-    label: "Anti-Prompt Injection : le texte lu est une donnée, jamais une consigne",
+    label: "Protection contre les consignes cachées : le texte lu reste une donnée",
   },
   {
     id: "filtrage_dcp_pii",
-    label: "Filtrage et masquage des données personnelles (DCP / PII)",
+    label: "Filtrage et masquage des données personnelles sensibles",
   },
   {
     id: "lecture_seule_code",
@@ -254,14 +254,14 @@ export const AgentSixBlocksKnowledgeToolsGuardrailsSections: React.FC<
         </div>
       )}
 
-      {/* BLOC F — Garde-fous (Guardrails) & Contrat de Sortie */}
+      {/* BLOC F — Règles de sécurité & Format de sortie */}
       {isVisible("F") && (
         <div
           data-testid={`${testIdPrefix}-agent-block-F`}
           className="space-y-2.5 rounded-lg border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3"
         >
           <strong className="block text-xs font-semibold">
-            🅵 Bloc F — Garde-fous (Guardrails), Contrat de Sortie &amp; Pré-requis Assistant
+            Règles de sécurité, Format de sortie &amp; Pré-requis Assistant
           </strong>
           <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
             <label className="flex flex-col gap-1">

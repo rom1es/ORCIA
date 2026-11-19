@@ -137,8 +137,8 @@ export const EPIC18_SOURCES_LABELS_FR: Epic18SourcesLabels = {
     serviceAccountLabel: "Compte de service",
     leadTokenLabel: "Jeton du responsable",
     leadRequiredTooltip:
-      "L'activation du graphe GitNexus requiert un rôle Responsable d'espace (TEAM_LEAD, BU_LEAD, PLATFORM_ADMIN ou SECOPS).",
-    switchNotice: "Indexation déterministe AST légère (0 $ LLM, lecture seule)",
+      "L'activation de l'analyse structurelle requiert un rôle Responsable d'espace ou Administrateur.",
+    switchNotice: "Indexation structurelle rapide (0 € de consommation IA, lecture seule)",
   },
   actions: {
     syncBtn: "Synchroniser",
@@ -189,12 +189,12 @@ export const EPIC18_SOURCES_LABELS_FR: Epic18SourcesLabels = {
     gitnexusOwnerUserLabel: "Identifiant du Responsable d'espace (titulaire du jeton)",
     observerBlockedError: "Action refusée : espace en mode observateur (lecture seule).",
     leadRequiredError:
-      "Action réservée aux Responsables d'espace (TEAM_LEAD, BU_LEAD, PLATFORM_ADMIN, SECOPS).",
+      "Action réservée aux responsables d'espace ou administrateurs habilités.",
   },
   settingsDeportBanner: {
-    title: "Déport des Sources dans les Espaces d'Équipe",
+    title: "Gestion des Sources par Espace d'Équipe",
     description:
-      "L'administration générale des connecteurs d'entreprise reste sous /settings. Les sources documentaires et dépôts sont désormais gouvernés directement par chaque équipe sous /workspaces/$wsId/sources.",
+      "L'administration générale des connecteurs d'entreprise reste centralisée dans Configuration. Les sources documentaires et dépôts sont désormais gérés directement par chaque équipe dans l'onglet Sources de son Espace.",
     buttonLabel: "Accéder aux Sources de l'Espace",
   },
 };
@@ -237,8 +237,8 @@ export const EPIC18_SOURCES_LABELS_EN: Epic18SourcesLabels = {
     serviceAccountLabel: "Service Account",
     leadTokenLabel: "Lead Personal Token",
     leadRequiredTooltip:
-      "Enabling GitNexus requires a Workspace Lead role (TEAM_LEAD, BU_LEAD, PLATFORM_ADMIN or SECOPS).",
-    switchNotice: "Deterministic lightweight AST indexing (0 $ LLM, read-only)",
+      "L'activation de l'analyse de code nécessite un rôle de responsable d'espace ou d'administrateur.",
+    switchNotice: "Indexation structurelle rapide (0 € de consommation IA, lecture seule)",
   },
   actions: {
     syncBtn: "Synchronize",
@@ -289,12 +289,12 @@ export const EPIC18_SOURCES_LABELS_EN: Epic18SourcesLabels = {
     gitnexusOwnerUserLabel: "Workspace Lead identifier (token owner)",
     observerBlockedError: "Action denied: workspace is in read-only observer mode.",
     leadRequiredError:
-      "Action restricted to Workspace Leads (TEAM_LEAD, BU_LEAD, PLATFORM_ADMIN, SECOPS).",
+      "Action restricted to authorized Workspace Leads or Administrators.",
   },
   settingsDeportBanner: {
-    title: "Relocation of Sources to Team Workspaces",
+    title: "Team Workspace Source Governance",
     description:
-      "Enterprise connector platform administration remains under /settings. Document sources and code repositories are now directly governed by teams within each Workspace under /workspaces/$wsId/sources.",
+      "Enterprise connector platform administration remains centralized in Settings. Document sources and code repositories are now directly governed by teams inside each Workspace's Sources tab.",
     buttonLabel: "Go to Workspace Sources",
   },
 };

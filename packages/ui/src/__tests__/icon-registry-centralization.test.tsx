@@ -234,6 +234,10 @@ describe("ORCIA Centralized Icon Registry (@orcia/ui) & Anti-Regression Audit", 
             sectionId="sec-test"
             label="Aide section"
           />
+          <OrciaIcon
+            name="alertBadge"
+            testId="registry-alert-badge-icon"
+          />
           <DisabledButtonAlertIndicator
             disabled={true}
             reason="Prérequis manquant"
@@ -340,8 +344,11 @@ describe("ORCIA Centralized Icon Registry (@orcia/ui) & Anti-Regression Audit", 
         screen.getByTestId("contextual-info-trigger-sec-test").textContent,
       ).toBe("[CUSTOM_INFO_BADGE]");
       expect(
-        screen.getByTestId("disabled-button-alert-icon-test-btn").textContent,
+        screen.getByTestId("registry-alert-badge-icon").textContent,
       ).toContain("[CUSTOM_ALERT_BADGE]");
+      expect(
+        screen.getByTestId("disabled-button-alert-icon-test-btn").textContent,
+      ).toContain("Prérequis manquant");
       expect(screen.getByTestId("scope-switcher-trigger").textContent).toContain(
         "[CUSTOM_GLOBE_ICON]",
       );

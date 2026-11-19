@@ -5,6 +5,7 @@ import {
 } from "@orcia/ui";
 import React, { useMemo, useState } from "react";
 import { useI18n } from "../../i18n";
+import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 
 const CHALLENGER_STEP_KEY = "delegate-remediation-subworkflow";
 const TARGET_UPSTREAM_STEP_KEY = "frame-architecture-intent";
@@ -79,7 +80,9 @@ export function GatesChallengeModalSection({
           : "⚠️ Upstream challenge recorded and dispatched for revision.",
       );
     } catch (err: unknown) {
-      onFeedback(`⚠️ ${err instanceof Error ? err.message : String(err)}`);
+      onFeedback(
+        `⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Rejeu du processus" : "Process replay").fullText}`,
+      );
     }
   };
 
@@ -93,11 +96,13 @@ export function GatesChallengeModalSection({
       });
       onFeedback(
         isFr
-          ? `[STALE_WARNING] Replay déclenché depuis « ${res.replay.replayed_from_step_key} ».`
-          : `[STALE_WARNING] Replay triggered from "${res.replay.replayed_from_step_key}".`,
+          ? `Alerte d'obsolescence : replay déclenché depuis « ${res.replay.replayed_from_step_key} ».`
+          : `Stale notice: replay triggered from "${res.replay.replayed_from_step_key}".`,
       );
     } catch (err: unknown) {
-      onFeedback(`⚠️ ${err instanceof Error ? err.message : String(err)}`);
+      onFeedback(
+        `⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Rejeu du processus" : "Process replay").fullText}`,
+      );
     }
   };
 

@@ -5,7 +5,22 @@ import type {
   UiReflexivePendingWritePreview,
   UiSourceLineInspectTarget,
 } from "./AgentExecutionTraceTypes";
+import { FormattedMarkdownContent } from "./FormattedMarkdownContent";
 import { OrciaIcon } from "./icons";
+
+function formatVisibleTraceLabel(rawLabel: string, kind: UiAgentTraceEventItem["kind"]): string {
+  const trimmed = rawLabel.trim();
+  if (!trimmed || trimmed === "SYNTHESIS_READY") {
+    return kind === "SYNTHESIS_READY" ? "Synthèse prête" : "Étape exécutée";
+  }
+  return trimmed
+    .replace(/\bSYNTHESIS_READY\b/g, "Synthèse prête")
+    .replace(/\bOAUTH2_PASSTHROUGH\b/g, "Connexion déléguée (OAuth2)")
+    .replace(/\bTECH_LEAD_DEV\b|\bTECH_LEAD\b/g, "Référent Technique")
+    .replace(/\bIMMUTABLE\b/g, "Verrouillé")
+    .replace(/\bPAUSE_AND_ESCALATE\b/g, "Pause et escalade humaine")
+    .replace(/\[STALE_WARNING\]\s*/g, "");
+}
 
 export interface TraceEventRowProps {
   readonly item: UiAgentTraceEventItem;
@@ -45,13 +60,9 @@ export function TraceEventRow({
           <OrciaIcon name={thoughtOpen ? "chevronDown" : "chevronRight"} />
         </button>
         {thoughtOpen && bodyText.length > 0 ? (
-          <pre
+          <div
             data-testid="trace-thought-content"
             style={{
-              margin: 0,
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-              borderLeft: "2px solid var(--color-border-strong)",
               paddingLeft: "10px",
               color: "var(--color-text-secondary)",
               fontFamily: "var(--font-sans)",
@@ -59,8 +70,8 @@ export function TraceEventRow({
               lineHeight: 1.5,
             }}
           >
-            {bodyText}
-          </pre>
+            <FormattedMarkdownContent content={bodyText} />
+          </div>
         ) : null}
       </div>
     );
@@ -177,7 +188,7 @@ export function TraceEventRow({
           name={item.kind === "SYNTHESIS_READY" ? "sparkles" : "search"}
           className="mt-0.5 shrink-0"
         />
-        <span>{item.label}</span>
+        <span>{formatVisibleTraceLabel(item.label, item.kind)}</span>
       </div>
     );
   }

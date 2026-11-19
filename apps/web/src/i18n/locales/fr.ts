@@ -262,11 +262,11 @@ export const frDictionary: TranslationDictionary = {
     emptyStateMessage:
       "Aucun terme métier ni document indexé pour le moment. Créez un espace ou connectez une source pour enrichir la base de connaissances.",
     columns: {
-      "1_ENTERPRISE": "1. Organisation (Global)",
-      "2_DOMAIN": "2. Direction / Pôle",
-      "3_TEAM": "3a. Équipe",
-      "3_WORKSPACE": "3b. Espace de travail",
-      "4_RUN_EPHEMERAL": "4. Exécution en cours",
+      "1_ENTERPRISE": "Organisation (Global)",
+      "2_DOMAIN": "Direction / Pôle",
+      "3_TEAM": "Équipe",
+      "3_WORKSPACE": "Espace de travail",
+      "4_RUN_EPHEMERAL": "Exécution en cours",
     },
     profileSelectorLabel: "Adapter le vocabulaire au rôle :",
     whatIfButtonLabel: "Estimer l'impact d'une modification",

@@ -12,6 +12,7 @@ import {
 } from "@orcia/ui";
 import React, { useEffect, useState } from "react";
 import type { TranslationDictionary } from "../../i18n/types";
+import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 
 export interface WorkspaceDnaAndWaiversSectionProps {
   readonly isFr: boolean;
@@ -71,9 +72,7 @@ export function WorkspaceDnaAndWaiversSection({
       .catch((err: unknown) => {
         if (cancelled) return;
         onFeedback(
-          isFr
-            ? `⚠️ Impossible de charger les dérogations de l'espace : ${err instanceof Error ? err.message : "erreur réseau"}`
-            : `⚠️ Failed to load workspace waivers: ${err instanceof Error ? err.message : "network error"}`,
+          `⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Dérogations de l'espace" : "Workspace waivers").fullText}`,
         );
       });
     return () => {
@@ -128,9 +127,7 @@ export function WorkspaceDnaAndWaiversSection({
       })
       .catch((err: unknown) => {
         onFeedback(
-          isFr
-            ? `⚠️ Échec d'enregistrement de la dérogation : ${err instanceof Error ? err.message : "erreur serveur"}`
-            : `⚠️ Failed to register waiver: ${err instanceof Error ? err.message : "server error"}`,
+          `⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Enregistrement de la dérogation" : "Waiver registration").fullText}`,
         );
       });
   };
@@ -219,12 +216,8 @@ export function WorkspaceDnaAndWaiversSection({
               });
             })
             .catch((err: unknown) => {
-              const detail =
-                err instanceof Error ? err.message : "Erreur de compilation";
               onFeedback(
-                isFr
-                  ? `⚠️ Contrôle généré localement (détail serveur : ${detail}).`
-                  : `⚠️ Check generated locally (server detail: ${detail}).`,
+                `⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Compilation de règle métier" : "Business rule compilation").fullText}`,
               );
             });
         }}

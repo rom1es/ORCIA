@@ -1,4 +1,5 @@
 import { createOrciaApiClient } from "@orcia/api-client";
+import { formatRfc9457ErrorToBanner } from "../lib/formatRfc9457ErrorToBanner";
 import type {
   ControlCenterRunItem,
   ControlCenterWorkspaceGovItem,
@@ -145,7 +146,7 @@ export function createPlatformGovernanceActions(deps: GovernanceActionsDeps) {
       })
       .catch(async (err: unknown) => {
         setLastSyncError(
-          err instanceof Error ? err.message : "Erreur lors de l'initialisation administrateur.",
+          formatRfc9457ErrorToBanner(err, "fr", "Initialisation administrateur").fullText,
         );
         const status = await client.getAccostageStatus();
         if (status.first_admin_initialized && status.first_admin_email) {
@@ -345,7 +346,7 @@ export function createPlatformGovernanceActions(deps: GovernanceActionsDeps) {
       })
       .catch((err: unknown) => {
         setLastSyncError(
-          err instanceof Error ? err.message : "Erreur d'enregistrement du modèle IA.",
+          formatRfc9457ErrorToBanner(err, "fr", "Configuration du modèle IA").fullText,
         );
       });
   };

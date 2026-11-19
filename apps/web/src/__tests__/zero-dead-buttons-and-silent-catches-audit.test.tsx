@@ -318,7 +318,8 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
 
     // 5. Open '📁 Dossiers' and click '+ Nouveau dossier' -> creates and selects a folder without raw PRIVATE or ': :'
     fireEvent.click(screen.getByTestId("assistant-folders-toggle-btn"));
-    expect(screen.getByTestId("assistant-folders-and-notes-explainer")).toBeDefined();
+    expect(screen.queryByTestId("assistant-folders-and-notes-explainer")).toBeNull();
+    expect(screen.getByTestId("contextual-info-trigger-assistant-folders")).toBeDefined();
     expect(screen.getByTestId("assistant-main-tab-ACTIVE_DISCUSSION").parentElement?.style.display).toBe("none");
 
     const folderInput = screen.getByTestId("assistant-new-folder-title-input");
