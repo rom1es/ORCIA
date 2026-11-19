@@ -23,7 +23,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine
 from testcontainers.postgres import PostgresContainer
 
-from orcia_core.permissions import build_default_auth_and_org_service
+from orcia_core.permissions import AuthAndOrganizationService
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DB_NAME = "orcia_rehydrate_test"
@@ -117,53 +117,67 @@ async def test_auth_rehydration_after_uvicorn_reload_postgres18(
 
         # 3. Verify user is in memory
         auth_svc = app.state.auth_service
+        assert isinstance(auth_svc, AuthAndOrganizationService)
         assert auth_svc.has_user_in_memory(admin_id) is True
 
         # =====================================================================
-        # SIMULATE uvicorn --reload: Recreate empty AuthAndOrganizationService
+        # SIMULATE uvicorn --reload: Fresh Composition Root app (empty RAM)
         # =====================================================================
-        new_svc = build_default_auth_and_org_service(seed_reference_personas=False)
-        app.state.auth_service = new_svc
-        assert app.state.auth_service.has_user_in_memory(admin_id) is False
+        app2 = _build_app(database_url, monkeypatch)
+        assert app2.state.auth_service.has_user_in_memory(admin_id) is False
 
-        # 4. GET /api/v1/auth/session with refresh cookie -> must rehydrate and return HTTP 200
-        session_res = await client.get("/api/v1/auth/session")
-        assert session_res.status_code == 200
-        session_body = session_res.json()
-        assert session_body["authenticated"] is True
-        assert session_body["session"] is not None
-        assert session_body["session"]["email"] == admin_email
-        assert session_body["session"]["platform_role"] == "PLATFORM_ADMIN"
-        # User is rehydrated into RAM
-        assert app.state.auth_service.has_user_in_memory(admin_id) is True
+        async with AsyncClient(
+            transport=ASGITransport(app=app2),
+            base_url="http://testserver",
+            cookies=client.cookies,
+        ) as client2:
+            # 4. GET /api/v1/auth/session with refresh cookie -> must rehydrate and return HTTP 200
+            session_res = await client2.get("/api/v1/auth/session")
+            assert session_res.status_code == 200
+            session_body = session_res.json()
+            assert session_body["authenticated"] is True
+            assert session_body["session"] is not None
+            assert session_body["session"]["email"] == admin_email
+            assert session_body["session"]["platform_role"] == "PLATFORM_ADMIN"
+            assert app2.state.auth_service.has_user_in_memory(admin_id) is True
 
         # =====================================================================
         # SIMULATE uvicorn --reload AGAIN before Bearer requests
         # =====================================================================
-        app.state.auth_service = build_default_auth_and_org_service(seed_reference_personas=False)
-        assert app.state.auth_service.has_user_in_memory(admin_id) is False
+        app3 = _build_app(database_url, monkeypatch)
+        assert app3.state.auth_service.has_user_in_memory(admin_id) is False
 
-        # 5. GET /api/v1/org-units with Bearer token -> middleware must rehydrate from PG (200)
-        orgs_res = await client.get("/api/v1/org-units", headers=bearer_header)
-        assert orgs_res.status_code == 200
-        assert app.state.auth_service.has_user_in_memory(admin_id) is True
+        async with AsyncClient(
+            transport=ASGITransport(app=app3),
+            base_url="http://testserver",
+            cookies=client.cookies,
+        ) as client3:
+            # 5. GET /api/v1/org-units with Bearer token -> middleware must rehydrate from PG (200)
+            orgs_res = await client3.get("/api/v1/org-units", headers=bearer_header)
+            assert orgs_res.status_code == 200
+            assert app3.state.auth_service.has_user_in_memory(admin_id) is True
 
         # =====================================================================
         # SIMULATE uvicorn --reload AGAIN before settings request
         # =====================================================================
-        app.state.auth_service = build_default_auth_and_org_service(seed_reference_personas=False)
-        assert app.state.auth_service.has_user_in_memory(admin_id) is False
+        app4 = _build_app(database_url, monkeypatch)
+        assert app4.state.auth_service.has_user_in_memory(admin_id) is False
 
-        # 6. GET /api/v1/settings/authentication with Bearer token -> HTTP 200
-        settings_res = await client.get(
-            "/api/v1/settings/authentication",
-            headers=bearer_header,
-        )
-        assert settings_res.status_code == 200
-        settings_body = settings_res.json()
-        assert settings_body["auth_mode"] == "LOCAL"
-        assert settings_body["boot_epoch"]
-        assert app.state.auth_service.has_user_in_memory(admin_id) is True
+        async with AsyncClient(
+            transport=ASGITransport(app=app4),
+            base_url="http://testserver",
+            cookies=client.cookies,
+        ) as client4:
+            # 6. GET /api/v1/settings/authentication with Bearer token -> HTTP 200
+            settings_res = await client4.get(
+                "/api/v1/settings/authentication",
+                headers=bearer_header,
+            )
+            assert settings_res.status_code == 200
+            settings_body = settings_res.json()
+            assert settings_body["auth_mode"] == "LOCAL"
+            assert settings_body["boot_epoch"]
+            assert app4.state.auth_service.has_user_in_memory(admin_id) is True
 
         # =====================================================================
         # DEACTIVATED USER TEST: user is marked inactive in PG
@@ -178,20 +192,27 @@ async def test_auth_rehydration_after_uvicorn_reload_postgres18(
         finally:
             await engine.dispose()
 
-        # Wipe RAM
-        app.state.auth_service = build_default_auth_and_org_service(seed_reference_personas=False)
-        assert app.state.auth_service.has_user_in_memory(admin_id) is False
+        # Fresh Composition Root app (empty RAM)
+        app5 = _build_app(database_url, monkeypatch)
+        assert app5.state.auth_service.has_user_in_memory(admin_id) is False
 
-        # Session bootstrap must fail gracefully (authenticated: False, clears cookie)
-        deact_session = await client.get("/api/v1/auth/session")
-        assert deact_session.status_code == 200
-        assert deact_session.json()["authenticated"] is False
-        assert deact_session.json()["session"] is None
-        assert "Max-Age=0" in deact_session.headers.get("set-cookie", "")
+        async with AsyncClient(
+            transport=ASGITransport(app=app5),
+            base_url="http://testserver",
+            cookies=client.cookies,
+        ) as client5:
+            # Session bootstrap must fail gracefully (authenticated: False, clears cookie)
+            deact_session = await client5.get("/api/v1/auth/session")
+            assert deact_session.status_code == 200
+            assert deact_session.json()["authenticated"] is False
+            assert deact_session.json()["session"] is None
+            assert "Max-Age=0" in deact_session.headers.get("set-cookie", "")
 
-        # Wipe RAM again
-        app.state.auth_service = build_default_auth_and_org_service(seed_reference_personas=False)
-
-        # Direct Bearer request with deactivated user must be rejected
-        deact_orgs = await client.get("/api/v1/org-units", headers=bearer_header)
-        assert deact_orgs.status_code in (401, 403, 404)
+        # Fresh Composition Root app again for Bearer check
+        app6 = _build_app(database_url, monkeypatch)
+        async with AsyncClient(
+            transport=ASGITransport(app=app6),
+            base_url="http://testserver",
+        ) as client6:
+            deact_orgs = await client6.get("/api/v1/org-units", headers=bearer_header)
+            assert deact_orgs.status_code in (401, 403, 404)

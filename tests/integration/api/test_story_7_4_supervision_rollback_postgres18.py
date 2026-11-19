@@ -27,7 +27,6 @@ try:
 except ImportError:
     from testcontainers.redis import RedisContainer
 
-from orcia_api.dependencies import initialize_app_services
 from orcia_api.main import create_app
 from orcia_core.audit_finops.post_hoc_audit import PostHocAuditService
 from orcia_core.kernel.ids import new_uuid7_str
@@ -79,36 +78,16 @@ async def app_client(
 ) -> AsyncIterator[tuple[AsyncClient, str, str]]:
     pg_url, redis_url = pg_and_redis_urls
     monkeypatch.setenv("DATABASE_URL", pg_url)
+    monkeypatch.setenv("REDIS_URL", redis_url)
     monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "0")
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
 
     app = create_app()
-    initialize_app_services(app)
-    engine = create_async_engine(pg_url)
-    redis_client = aioredis.from_url(redis_url, decode_responses=True)
-    app.state.db_engine = engine
-    app.state.redis_client = redis_client
-    for svc_attr in (
-        "audit_ledger_service",
-        "finops_accounting_service",
-        "cognitive_impact_service",
-        "post_hoc_audit_service",
-        "autonomous_supervision_service",
+    async with (
+        app.router.lifespan_context(app),
+        AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,
     ):
-        svc = getattr(app.state, svc_attr, None)
-        if svc is not None:
-            svc._engine = engine
-            if svc_attr == "autonomous_supervision_service":
-                svc._redis = redis_client
-                post_hoc = getattr(svc, "_post_hoc", None)
-                if post_hoc is not None:
-                    post_hoc._engine = engine
-
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         yield client, pg_url, redis_url
-
-    await redis_client.aclose()
-    await engine.dispose()
 
 
 @pytest.mark.asyncio

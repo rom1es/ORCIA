@@ -118,6 +118,33 @@ def should_seed_test_personas_in_memory() -> bool:
 def initialize_app_services(app: FastAPI) -> None:
     """Wire and attach all domain services to `app.state` (idempotent Composition Root)."""
     activate_sdlc_pack()
+    if getattr(app.state, "session_maker", None) is None and should_auto_init_infra("DATABASE_URL"):
+        try:
+            from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+            from sqlalchemy.pool import NullPool
+
+            from orcia_core.config import resolve_database_url
+            from orcia_core.orchestration import DbosSqlAlchemyUnitOfWork
+
+            engine_kwargs: dict[str, object] = {"connect_args": {"timeout": 1.5}}
+            if "pytest" in sys.modules:
+                engine_kwargs["poolclass"] = NullPool
+            db_engine = getattr(app.state, "db_engine", None)
+            if db_engine is None:
+                db_engine = create_async_engine(resolve_database_url(), **engine_kwargs)
+                app.state.db_engine = db_engine
+            app.state.session_maker = async_sessionmaker(db_engine, expire_on_commit=False)
+            if getattr(app.state, "dbos_uow", None) is None:
+                app.state.dbos_uow = DbosSqlAlchemyUnitOfWork.from_engine(
+                    db_engine, session_factory=app.state.session_maker
+                )
+        except Exception as exc:
+            from orcia_core.observability.logging import get_logger
+
+            get_logger("orcia.api.lifespan").warning(
+                "lifespan_pg_session_maker_init_skipped", error_type=type(exc).__name__
+            )
+
     if getattr(app.state, "llm_gateway", None) is None:
         app.state.llm_gateway = _resolve_default_llm_gateway()
     if getattr(app.state, "finops_sanitizer", None) is None:
@@ -155,7 +182,11 @@ def initialize_app_services(app: FastAPI) -> None:
     else:
         auth_service = app.state.auth_service
 
-    if getattr(app.state, "auth_policy_store", None) is None:
+    if (
+        getattr(app.state, "auth_policy_store", None) is None
+        and getattr(app.state, "db_engine", None) is None
+        and not should_auto_init_infra("DATABASE_URL")
+    ):
         app.state.auth_policy_store = InMemoryPlatformAuthPolicyStore(
             cipher=auth_service.vault_cipher
         )
@@ -371,69 +402,37 @@ def initialize_app_services(app: FastAPI) -> None:
             secret_provider=getattr(app.state, "secret_provider", None),
         )
 
-    if getattr(app.state, "session_maker", None) is None and should_auto_init_infra("DATABASE_URL"):
-        try:
-            from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-            from sqlalchemy.pool import NullPool
+    active_db_engine = getattr(app.state, "db_engine", None)
+    if active_db_engine is not None:
+        if getattr(app.state, "gate_repository", None) is None:
+            from orcia_core.gates import SqlGateEvaluationRepository
 
-            from orcia_core.config import resolve_database_url
-
-            engine_kwargs: dict[str, object] = {"connect_args": {"timeout": 1.5}}
-            if "pytest" in sys.modules:
-                engine_kwargs["poolclass"] = NullPool
-            db_engine = getattr(app.state, "db_engine", None)
-            if db_engine is None:
-                db_engine = create_async_engine(resolve_database_url(), **engine_kwargs)
-                app.state.db_engine = db_engine
-            app.state.session_maker = async_sessionmaker(db_engine, expire_on_commit=False)
-            if getattr(app.state, "dbos_uow", None) is None:
-                from orcia_core.orchestration import DbosSqlAlchemyUnitOfWork
-
-                app.state.dbos_uow = DbosSqlAlchemyUnitOfWork.from_engine(
-                    db_engine, session_factory=app.state.session_maker
-                )
-            if getattr(app.state, "gate_repository", None) is None:
-                from orcia_core.gates import SqlGateEvaluationRepository
-
-                gate_repo = SqlGateEvaluationRepository(db_engine)
-                app.state.gate_repository = gate_repo
-                if getattr(app.state, "bootstrap_service", None) is not None:
-                    app.state.bootstrap_service.gate_service.set_repository(gate_repo)
-            wiz_svc = getattr(app.state, "durable_wizard_service", None)
-            if wiz_svc is not None and getattr(wiz_svc, "_repository", None) is None:
-                wiz_svc.set_repository(SqlWizardSessionRepository(db_engine))
-            from orcia_core.audit_finops import BudgetGuardService
-
-            cog_router = getattr(app.state, "cognitive_router_service", None)
-            if cog_router is not None:
-                cog_router.budget_guard.set_external_guard_port(
-                    BudgetGuardService(engine=db_engine)
-                )
-            for attr_name in (
-                "audit_ledger_service",
-                "connector_quota_guard_service",
-                "finops_accounting_service",
-                "cognitive_impact_service",
-                "post_hoc_audit_service",
-                "autonomous_supervision_service",
-                "contextual_help_service",
-                "notification_service",
-                "resource_lease_service",
-                "permission_broker_service",
-                "assistant_folders_and_sharing_service",
-            ):
-                svc_inst = getattr(app.state, attr_name, None)
-                if svc_inst is not None and getattr(svc_inst, "_engine", None) is None:
-                    if hasattr(svc_inst, "set_engine"):
-                        svc_inst.set_engine(db_engine)
-                    else:
-                        svc_inst._engine = db_engine
-        except Exception as exc:
-            from orcia_core.observability.logging import get_logger
-
-            get_logger("orcia.api.lifespan").warning(
-                "lifespan_pg_session_maker_init_skipped", error_type=type(exc).__name__
-            )
+            gate_repo = SqlGateEvaluationRepository(active_db_engine)
+            app.state.gate_repository = gate_repo
+            if getattr(app.state, "bootstrap_service", None) is not None:
+                app.state.bootstrap_service.gate_service.set_repository(gate_repo)
+        wiz_svc = getattr(app.state, "durable_wizard_service", None)
+        if wiz_svc is not None and getattr(wiz_svc, "_repository", None) is None:
+            wiz_svc.set_repository(SqlWizardSessionRepository(active_db_engine))
+        for attr_name in (
+            "audit_ledger_service",
+            "connector_quota_guard_service",
+            "finops_accounting_service",
+            "cognitive_impact_service",
+            "post_hoc_audit_service",
+            "autonomous_supervision_service",
+            "contextual_help_service",
+            "notification_service",
+            "resource_lease_service",
+            "permission_broker_service",
+            "assistant_folders_and_sharing_service",
+        ):
+            svc_inst = getattr(app.state, attr_name, None)
+            if svc_inst is not None and getattr(svc_inst, "_engine", None) is None:
+                if hasattr(svc_inst, "set_engine"):
+                    svc_inst.set_engine(active_db_engine)
+                else:
+                    svc_inst._engine = active_db_engine
 
 
 @asynccontextmanager

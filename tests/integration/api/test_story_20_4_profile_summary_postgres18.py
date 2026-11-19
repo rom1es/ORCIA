@@ -15,7 +15,7 @@ import json
 import os
 import subprocess
 import sys
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote_plus
@@ -26,28 +26,17 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine
 from testcontainers.postgres import PostgresContainer
 
+from orcia_core.orchestration._internal.sql_ai_model_mappings import (
+    create_ai_model_mapping_pg18,
+    ensure_ai_model_mappings_schema_on_postgres18,
+)
 from orcia_core.permissions import UserIdentity
-from orcia_core.ports.embedding import EMBEDDING_FIXED_DIMENSION, EmbeddingPort
+from orcia_core.permissions.crypto import PassthroughVaultCipher
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DB_NAME = "orcia_story_20_4"
 DB_USER = "orcia"
 DB_PASSWORD = "orcia_story_20_4_pw"  # pragma: allowlist secret
-
-
-class _FakeEmbeddingPort(EmbeddingPort):
-    @property
-    def dimension(self) -> int:
-        return EMBEDDING_FIXED_DIMENSION
-
-    async def embed(self, texts: Sequence[str]) -> list[list[float]]:
-        return [[0.01] * EMBEDDING_FIXED_DIMENSION for _ in texts]
-
-    async def embed_texts(self, texts: Sequence[str]) -> list[list[float]]:
-        return await self.embed(texts)
-
-    async def embed_query(self, query: str) -> list[float]:
-        return [0.01] * EMBEDDING_FIXED_DIMENSION
 
 
 @pytest.fixture(scope="module")
@@ -88,14 +77,10 @@ async def test_story_20_4_profile_summary_and_assistant_telemetry_postgres18(
     monkeypatch.setenv("ORCIA_ENABLE_PG_SESSION_MAKER", "1")
     monkeypatch.delenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", raising=False)
 
-    from orcia_api.dependencies.core_and_lifespan import initialize_app_services
     from orcia_api.main import create_app
 
     app = create_app()
-    initialize_app_services(app)
     engine = create_async_engine(database_url)
-    app.state.db_engine = engine
-    app.state.embedding_port = _FakeEmbeddingPort()
 
     user_a_id = "0195f000-0000-7000-8000-00000000a001"
     user_b_id = "0195f000-0000-7000-8000-00000000b002"
@@ -321,22 +306,43 @@ async def test_story_20_4_profile_summary_and_assistant_telemetry_postgres18(
                     },
                 )
 
-        auth_svc = app.state.auth_service
-        user_a = UserIdentity(
-            id=user_a_id,
-            email="claire.a@orcia.ia",
-            display_name="Claire Alpha",
-            auth_mode="LOCAL",
-            human_profile_archetype="ARCHITECT",
-            platform_role="BU_LEAD",
-            primary_org_unit_id=bu_a_id,
-            roles=("BU_LEAD", "ONTOLOGY_LEAD"),
-        )
-        auth_svc.register_user(user_a)
-        tokens_a = auth_svc._issue_for_user(user_a, "LOCAL", None)  # noqa: SLF001
-        headers_a = {"Authorization": f"Bearer {tokens_a.access_token}"}
+            await ensure_ai_model_mappings_schema_on_postgres18(conn)
+            await create_ai_model_mapping_pg18(
+                conn,
+                cipher=PassthroughVaultCipher("orcia-story-20-4-vault-key-0001"),
+                scope_level="GLOBAL",
+                scope_id=ws_id,
+                display_name="Embedding 20.4 Cassette",
+                inference_tier="simple",
+                effort="default",
+                provider_slug="ollama",
+                model_family="ollama",
+                model_name="bge-m3:latest",
+                endpoint_uri="http://127.0.0.1:11434/v1",
+                auth_mode="none_local",
+                protocol_mode="openai_compatible",
+                usage="embedding",
+            )
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async with (
+            app.router.lifespan_context(app),
+            AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,
+        ):
+            auth_svc = app.state.auth_service
+            user_a = UserIdentity(
+                id=user_a_id,
+                email="claire.a@orcia.ia",
+                display_name="Claire Alpha",
+                auth_mode="LOCAL",
+                human_profile_archetype="ARCHITECT",
+                platform_role="BU_LEAD",
+                primary_org_unit_id=bu_a_id,
+                roles=("BU_LEAD", "ONTOLOGY_LEAD"),
+            )
+            auth_svc.register_user(user_a)
+            tokens_a = auth_svc._issue_for_user(user_a, "LOCAL", None)  # noqa: SLF001
+            headers_a = {"Authorization": f"Bearer {tokens_a.access_token}"}
+
             res = await client.get("/api/v1/users/me/profile-summary", headers=headers_a)
             assert res.status_code == 200, res.text
             data = res.json()

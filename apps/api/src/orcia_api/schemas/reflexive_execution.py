@@ -124,7 +124,7 @@ class StartReflexiveExecutionRequest(BaseModel):
     initial_resources: list[str] = Field(default_factory=list)
     requested_write_preview: RequestedWritePreviewInput | None = None
     run_in_background: bool = False
-    step_delay_ms: int = Field(default=0, ge=0, le=5_000)
+    step_delay_ms: int = Field(default=0, ge=0, le=500)
 
 
 class SignedApprovalTokenInput(BaseModel):

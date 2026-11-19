@@ -29,7 +29,6 @@ import pytest
 import sqlalchemy as sa
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.pool import NullPool
 from testcontainers.postgres import PostgresContainer
 
 from orcia_core.kernel.ids import new_uuid7_str
@@ -85,8 +84,6 @@ def app_client_factory(database_url: str, monkeypatch: pytest.MonkeyPatch):  # t
     def _build_client() -> tuple[AsyncClient, PassthroughVaultCipher]:
         app = create_app()
         initialize_app_services(app)
-        app.state.db_engine = create_async_engine(database_url, poolclass=NullPool)
-        app.state.vault_cipher = cipher
         client = AsyncClient(transport=ASGITransport(app=app), base_url="http://test")
         return client, cipher
 

@@ -95,7 +95,9 @@ def get_reflexive_runtime_service(request: Request) -> NonDeterministicReflexive
         initialize_app_services(request.app)
 
     session_maker = _resolve_reflexive_session_maker(request)
-    strict_sql = os.environ.get("ORCIA_ENABLE_PG_SESSION_MAKER") == "1"
+    strict_sql = (session_maker is not None) or (
+        os.environ.get("ORCIA_ENABLE_PG_SESSION_MAKER") == "1"
+    )
     session_store = SqlReflexiveSessionStore(
         session_maker=session_maker,
         strict_sql=strict_sql,
@@ -120,7 +122,9 @@ def get_workflows_v2_sql_store(request: Request) -> SqlWorkflowDefinitionsV2Stor
     )
     if store is None:
         session_maker = _resolve_reflexive_session_maker(request)
-        strict_sql = os.environ.get("ORCIA_ENABLE_PG_SESSION_MAKER") == "1"
+        strict_sql = (session_maker is not None) or (
+            os.environ.get("ORCIA_ENABLE_PG_SESSION_MAKER") == "1"
+        )
         store = SqlWorkflowDefinitionsV2Store(
             session_maker=session_maker,
             strict_sql=strict_sql,

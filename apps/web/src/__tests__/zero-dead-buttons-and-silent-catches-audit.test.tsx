@@ -201,7 +201,7 @@ describe("Anti-False-Positive Lock 4 — RouterProvider Real Mount Audit, Zero S
       resetVitestApiBackend();
       clearPlatformSetupStorage();
     }
-  });
+  }, 20_000);
 
   it("exposes a visible [role='alert'] banner when an interactive user mutation receives HTTP >= 400", async () => {
     seedAuthenticatedAdminState();

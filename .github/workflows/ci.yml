@@ -1,0 +1,263 @@
+name: ci
+
+# Pyramide complète AD-17 à 5 couches + Sécurité + Contrats & Gouvernance (Story 22.8a).
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-and-contracts:
+    name: Static Analysis, Architecture, OpenAPI & Frontend Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Dépendances Python (.venv, extras dev)
+        run: uv sync --all-packages --extra dev
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Dépendances Node/TS
+        run: pnpm install --frozen-lockfile
+
+      - name: Ruff lint & format
+        run: |
+          .venv/bin/ruff check .
+          .venv/bin/ruff format --check .
+
+      - name: Mypy strict
+        run: .venv/bin/mypy --strict packages/orcia-core apps/api apps/worker
+
+      - name: Import-Linter (AD-19)
+        run: .venv/bin/lint-imports
+
+      - name: Architecture Spine lint
+        run: .venv/bin/python .agent/skills/bmad-architecture/scripts/lint_spine.py --workspace docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24
+
+      - name: OpenAPI 3.1 SDK 0-diff gate
+        run: .venv/bin/python scripts/export_openapi.py --check
+
+      - name: Documentation & Tech Lead Reports check
+        run: .venv/bin/python scripts/check_implementation_docs.py
+
+      - name: Turborepo lint, typecheck & Vitest (Fail-Closed)
+        run: pnpm turbo run lint typecheck test
+
+      - name: Capabilities & Showcase sync check
+        run: pnpm site:check
+
+  python-unit-evals-security:
+    name: Python Couches 1a, 3, 4 & Sécurité (0 $ LLM)
+    needs: [static-and-contracts]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Dépendances Python (.venv, extras dev)
+        run: uv sync --all-packages --extra dev
+
+      - name: Pytest Unit, Contract, Conformance, Evals & Security + Coverage
+        env:
+          COVERAGE_FILE: .coverage.unit
+          ORCIA_USE_CASSETTE_LLM: "true"
+        run: |
+          .venv/bin/pytest tests/unit tests/contract tests/conformance tests/evals tests/security \
+            --cov=packages/orcia-core --cov-report=xml:coverage-unit.xml
+
+      - name: Upload coverage unit
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-coverage-unit
+          path: |
+            .coverage.unit
+            coverage-unit.xml
+          retention-days: 7
+
+  python-integration-pg18:
+    name: Python Couche 2 PG18 + Redis + SeaweedFS & Combined Coverage (>= 90%)
+    needs: [static-and-contracts, python-unit-evals-security]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Dépendances Python (.venv, extras dev)
+        run: uv sync --all-packages --extra dev
+
+      - name: Pré-chargement des images Docker éphémères
+        run: |
+          docker pull pgvector/pgvector:pg18
+          docker pull redis:7.4-alpine
+
+      - name: Download unit coverage data
+        uses: actions/download-artifact@v4
+        with:
+          name: python-coverage-unit
+
+      - name: Pytest Intégration Verticale PostgreSQL 18 + Coverage
+        env:
+          COVERAGE_FILE: .coverage.integration
+          ORCIA_USE_CASSETTE_LLM: "true"
+        run: |
+          .venv/bin/pytest tests/integration --cov=packages/orcia-core
+
+      - name: Combine Coverage & Gate >= 90% sur packages/orcia-core
+        run: |
+          .venv/bin/coverage combine .coverage.unit .coverage.integration
+          .venv/bin/coverage xml -o coverage-combined.xml
+          .venv/bin/coverage report --fail-under=90
+
+      - name: Upload combined coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-coverage-combined
+          path: coverage-combined.xml
+          retention-days: 7
+
+  playwright-e2e-sharded:
+    name: Playwright E2E Sharded (${{ matrix.shard }})
+    needs: [static-and-contracts]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ["1/4", "2/4", "3/4", "4/4"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Dépendances Python (.venv, extras dev)
+        run: uv sync --all-packages --extra dev
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Navigateur Playwright
+        run: pnpm --filter @orcia/web exec playwright install --with-deps chromium
+
+      - name: Pré-chargement des images de la pile éphémère
+        run: |
+          docker pull pgvector/pgvector:pg18
+          docker pull redis:7.4-alpine
+
+      - name: Exécution Playwright E2E (shard ${{ matrix.shard }}, --retries=0)
+        env:
+          ORCIA_E2E_CAMPAIGN_DIR: docs/implementation-artifacts/e2e-campaign-ci
+          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-results-shard-${{ strategy.job-index }}.json
+        run: |
+          mkdir -p docs/implementation-artifacts/e2e-campaign-ci
+          pnpm --filter @orcia/web exec playwright test \
+            --shard=${{ matrix.shard }} \
+            --retries=0 \
+            --max-failures=0 \
+            --timeout=35000 \
+            --reporter=list,json
+
+      - name: Upload artefact shard E2E & captures PNG
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-e2e-shard-${{ strategy.job-index }}
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+            apps/web/playwright-results-shard-*.json
+            docs/implementation-artifacts/e2e-campaign-ci
+          if-no-files-found: ignore
+          retention-days: 7
+
+  playwright-e2e-merge-and-site-check:
+    name: Fusion Rapports E2E & Contrôle final pnpm site:check
+    needs: [playwright-e2e-sharded]
+    if: always() && needs.playwright-e2e-sharded.result != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Dépendances Python (.venv, extras dev)
+        run: uv sync --all-packages --extra dev
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Download Playwright shard artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: playwright-e2e-shard-*
+          path: ci-e2e-artifacts
+          merge-multiple: true
+
+      - name: Fusion des rapports JSON & validation captures PNG
+        run: |
+          .venv/bin/python - <<'PY'
+          import json, pathlib
+          root = pathlib.Path("ci-e2e-artifacts")
+          shards = sorted(root.rglob("playwright-results-shard-*.json"))
+          merged_suites = []
+          for shard_file in shards:
+              data = json.loads(shard_file.read_text(encoding="utf-8"))
+              merged_suites.extend(data.get("suites", []))
+          merged = {"shards": len(shards), "suites": merged_suites}
+          out = pathlib.Path("ci-e2e-artifacts/playwright-results-merged.json")
+          out.write_text(json.dumps(merged, indent=2), encoding="utf-8")
+          pngs = list(root.rglob("*.png"))
+          print(f"Merged {len(shards)} shard JSON reports ({len(merged_suites)} suites, {len(pngs)} PNG screenshots)")
+          PY
+
+      - name: Contrôle final registre & vitrine
+        run: pnpm site:check
+
+      - name: Upload rapport E2E fusionné & captures PNG
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-e2e-consolidated
+          path: ci-e2e-artifacts
+          if-no-files-found: ignore
+          retention-days: 7

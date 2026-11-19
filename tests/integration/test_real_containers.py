@@ -149,10 +149,10 @@ async def test_postgres18_pgvector_alembic_and_append_only_trigger() -> None:
                 "backfill_permission_broker", "03_backfill_permission_broker.py"
             )
             pb_dry = await backfill_pb.backfill_permission_broker(engine, apply_changes=False)
-            assert pb_dry.policies_count == 6 and pb_dry.tickets_count == 1
+            assert pb_dry.policies_count == 10 and pb_dry.tickets_count == 1
             assert pb_dry.committed is False
             pb_apply = await backfill_pb.backfill_permission_broker(engine, apply_changes=True)
-            assert pb_apply.committed is True and pb_apply.policies_count == 6
+            assert pb_apply.committed is True and pb_apply.policies_count == 10
 
             # Verify Story 1.5 maintenance script 04_backfill_system_bootstrap in dry-run & apply
             backfill_sb = _load_script_module(

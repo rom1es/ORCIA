@@ -24281,7 +24281,7 @@
           },
           "step_delay_ms": {
             "default": 0,
-            "maximum": 5000.0,
+            "maximum": 500.0,
             "minimum": 0.0,
             "title": "Step Delay Ms",
             "type": "integer"

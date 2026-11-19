@@ -90,19 +90,22 @@ class CognitiveImpactService:
             scope_id=scope_id,
             allowed_workspace_ids=allowed_workspace_ids,
         )
-        for k, v in self._fallback_applied.items():
-            if k not in applied_map:
-                applied_map[k] = {
-                    "recommendation_id": v.id,
-                    "workflow_id": v.workflow_id,
-                    "workflow_title": v.workflow_title,
-                    "recommendation_type": v.recommendation_type,
-                    "suggested_policy": v.suggested_policy,
-                    "applied_by": v.applied_by or "system",
-                    "applied_at": (
-                        v.applied_at.isoformat() if v.applied_at else datetime.now(UTC).isoformat()
-                    ),
-                }
+        if self._engine is None:
+            for k, v in self._fallback_applied.items():
+                if k not in applied_map:
+                    applied_map[k] = {
+                        "recommendation_id": v.id,
+                        "workflow_id": v.workflow_id,
+                        "workflow_title": v.workflow_title,
+                        "recommendation_type": v.recommendation_type,
+                        "suggested_policy": v.suggested_policy,
+                        "applied_by": v.applied_by or "system",
+                        "applied_at": (
+                            v.applied_at.isoformat()
+                            if v.applied_at
+                            else datetime.now(UTC).isoformat()
+                        ),
+                    }
 
         total_human_ms = ov["total_human_ms"]
         active_framing_ms = ov["active_framing_ms"]

@@ -37,7 +37,8 @@ class SqlWorkflowDefinitionsV2Store:
         """Persist `workflow` idempotently keyed by `(workflow_id, version)`."""
         spec_payload = workflow.model_dump(mode="json")
         key = f"{workflow.id}:{workflow.version}"
-        self._memory_fallback[key] = spec_payload
+        if not self._strict_sql:
+            self._memory_fallback[key] = spec_payload
         if self._session_maker is None:
             return workflow
 

@@ -554,11 +554,11 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "summary": "Clôture cadrage documentaire : classification complète des 34 chantiers REM-01..REM-34 en 7 causes racines (RC-1..RC-7), mise à jour gouvernance (epics.md, sprint-status.yaml, sprint-change-proposal, testing-strategy.md, GEMINI.md, 22-8, 22-8a, 22-9) et vérification traçabilité/vitrine."
     },
     {
-      "date": "2026-11-18",
+      "date": "2026-11-19",
       "phaseOrStory": "Story 22.8a",
       "reportFile": "22-8a-assainissement-fail-closed-vitest-composition-root-sans-override-et-ci-complete-tech-lead-report.md",
       "domain": "Intercalaire Post-RCA Epic 21 — Assainissement *Fail-Closed* vitest.setup.ts (openapi.json), Test Composition Root create_app() sans Override sur PG18 Réel & CI GitHub Actions 5 Couches (AD-17)",
-      "summary": "Pré-implémentation : découpage < 350 L et conversion *Fail-Closed* de vitest.setup.ts validée contre openapi.json (format: \"uuid\" strict rejetant \"ws-1\", zéro jsonResponse({})) ; purge des fallbacks RAM + test_composition_root_zero_ram_silo_postgres18.py sans dependency_overrides/app.state.* + audits AST app.state & adaptateurs SQL orphelins ; .github/workflows/{ci,e2e}.yml (4 shards --retries=0) et couverture combinée >= 90 %."
+      "summary": "Clôture (done) : découpage vitest.setup.ts (2 951 -> 48 L + 13 modules < 350 L) et transport *Fail-Closed* OpenAPI 3.1 (vitest-transport-fail-closed-openapi.test.ts 5/5, 313/313 tests JS/TS) ; purge replis RAM + test_composition_root_zero_ram_silo_postgres18.py sans override (8 tables PG18 + cold restart) + audits AST (app.state & 78/78 adaptateurs SQL sans orphelin) ; .github/workflows/{ci,e2e}.yml (4 shards --retries=0) ; 975/975 tests Python (92.34 % couv. combinée packages/orcia-core), 9/9 Turbo, ruff/mypy/lint-imports/export_openapi/lint_spine 0 erreur."
     },
     {
       "date": "2026-11-19",

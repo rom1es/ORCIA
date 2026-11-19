@@ -29,14 +29,13 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.waiting_utils import wait_for_logs
-from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
 
-from orcia_api.dependencies.portal_and_assistant import (
-    get_embedding_port,
-    require_rag_available,
-)
 from orcia_api.main import create_app
-from orcia_core.orchestration import DbosSqlAlchemyUnitOfWork
+from orcia_core.orchestration._internal.sql_ai_model_mappings import (
+    create_ai_model_mapping_pg18,
+    ensure_ai_model_mappings_schema_on_postgres18,
+)
+from orcia_core.permissions.crypto import PassthroughVaultCipher
 from orcia_worker.outbox_relay import DramatiqOutboxRelay
 
 os.environ["TESTCONTAINERS_RYUK_DISABLED"] = "true"
@@ -128,133 +127,148 @@ async def test_epics_1_7_vertical_http_to_postgres18_persistence_and_outbox_rela
                         if name.startswith(("verify_database_", "backfill_"))
                     )
                     await getattr(mod, fn_name)(setup_engine, apply_changes=True)
+
+                async with setup_engine.begin() as conn:
+                    await ensure_ai_model_mappings_schema_on_postgres18(conn)
+                    await create_ai_model_mapping_pg18(
+                        conn,
+                        cipher=PassthroughVaultCipher("orcia-epics-1-7-vault-key-0001"),
+                        scope_level="GLOBAL",
+                        scope_id="0192c4e0-0000-7000-8000-000000000201",
+                        display_name="Embedding Epics 1-7 Cassette",
+                        inference_tier="simple",
+                        effort="default",
+                        provider_slug="ollama",
+                        model_family="ollama",
+                        model_name="bge-m3:latest",
+                        endpoint_uri="http://127.0.0.1:11434/v1",
+                        auth_mode="none_local",
+                        protocol_mode="openai_compatible",
+                        usage="embedding",
+                    )
             finally:
                 await setup_engine.dispose()
 
-            uow = await DbosSqlAlchemyUnitOfWork.create(
-                async_app_url, schema="dbos", run_migrations=True
+            monkeypatch.setenv("DATABASE_URL", async_app_url)
+            monkeypatch.setenv(
+                "ORCIA_ENV_FILE",
+                str(REPO_ROOT / ".orcia-run" / "does-not-exist.env"),
             )
-            try:
-                app = create_app()
-                app.state.db_engine = uow.engine
-                app.state.session_maker = uow.session_factory
-                app.state.dbos_uow = uow
-                fake_emb = FakeDeterministicEmbeddingAdapter()
-                app.state.embedding_port = fake_emb
-                app.dependency_overrides[get_embedding_port] = lambda: fake_emb
-                app.dependency_overrides[require_rag_available] = lambda: fake_emb
+            monkeypatch.setenv("ORCIA_ENABLE_PG_SESSION_MAKER", "1")
+            monkeypatch.setenv("ORCIA_PASSTHROUGH_MASTER_KEY", "orcia-epics-1-7-vault-key-0001")
 
-                ws_id = "0192c4e0-0000-7000-8000-000000000201"
-                async with AsyncClient(
-                    transport=ASGITransport(app=app), base_url="http://test"
-                ) as client:
-                    # 1. Instantiate a workflow run via HTTP route
-                    inst_res = await client.post(
-                        "/api/v1/orchestration/runs/instantiate?persona_key=marc",
-                        json={
-                            "workflow_uri": "orcia://workflows/claims-engineering-delivery",
-                            "workspace_id": ws_id,
-                        },
-                    )
-                    assert inst_res.status_code == 200
-                    run_data = inst_res.json()["run"]
-                    run_id = run_data["id"]
-                    first_step_key = "frame-architecture-intent"
+            app = create_app()
+            ws_id = "0192c4e0-0000-7000-8000-000000000201"
+            async with (
+                app.router.lifespan_context(app),
+                AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,
+            ):
+                uow = app.state.dbos_uow
+                assert uow is not None
+                # 1. Instantiate a workflow run via HTTP route
+                inst_res = await client.post(
+                    "/api/v1/orchestration/runs/instantiate?persona_key=marc",
+                    json={
+                        "workflow_uri": "orcia://workflows/claims-engineering-delivery",
+                        "workspace_id": ws_id,
+                    },
+                )
+                assert inst_res.status_code == 200
+                run_data = inst_res.json()["run"]
+                run_id = run_data["id"]
+                first_step_key = "frame-architecture-intent"
 
-                    # 2. Sign human anchor and execute step-1 via HTTP route
-                    sign_res = await client.post(
-                        "/api/v1/orchestration/runs/anchors/sign?persona_key=marc",
-                        json={
-                            "run_id": run_id,
-                            "step_key": first_step_key,
-                            "section_key": "human_architecture_intent",
-                            "content_text": (
-                                "Intention métier validée par le Tech Lead pour le flux "
-                                "de paiement critique SEPA avec idempotence."
+                # 2. Sign human anchor and execute step-1 via HTTP route
+                sign_res = await client.post(
+                    "/api/v1/orchestration/runs/anchors/sign?persona_key=marc",
+                    json={
+                        "run_id": run_id,
+                        "step_key": first_step_key,
+                        "section_key": "human_architecture_intent",
+                        "content_text": (
+                            "Intention métier validée par le Tech Lead pour le flux "
+                            "de paiement critique SEPA avec idempotence."
+                        ),
+                        "signature_text": "Marc (Tech Lead)",
+                        "author_type": "HUMAN",
+                    },
+                )
+                assert sign_res.status_code == 200
+
+                exec_res = await client.post(
+                    "/api/v1/orchestration/runs/steps/execute?persona_key=marc",
+                    json={
+                        "run_id": run_id,
+                        "step_key": first_step_key,
+                        "commit_immediately": True,
+                        "cost_usd": 0.42,
+                    },
+                )
+                assert exec_res.status_code == 200
+
+                # 3. Read Blackboard state via HTTP route (reads from PostgreSQL 18)
+                bb_res = await client.get(
+                    f"/api/v1/orchestration/runs/{run_id}/blackboard?persona_key=marc"
+                )
+                assert bb_res.status_code == 200
+                bb_json = bb_res.json()
+                assert len(bb_json["active_snapshots"]) >= 1
+
+                # 4. Verify via direct SQL SELECT on PostgreSQL 18
+                async with uow.session_scope() as session:
+                    run_count = (
+                        await session.execute(
+                            sa.text(
+                                "SELECT count(*) FROM workflow_runs WHERE id = CAST(:id AS uuid)"
                             ),
-                            "signature_text": "Marc (Tech Lead)",
-                            "author_type": "HUMAN",
-                        },
-                    )
-                    assert sign_res.status_code == 200
+                            {"id": run_id},
+                        )
+                    ).scalar_one()
+                    snap_count = (
+                        await session.execute(
+                            sa.text(
+                                "SELECT count(*) FROM blackboard_snapshots "
+                                "WHERE run_id = CAST(:id AS uuid)"
+                            ),
+                            {"id": run_id},
+                        )
+                    ).scalar_one()
+                    outbox_count = (
+                        await session.execute(
+                            sa.text(
+                                "SELECT count(*) FROM domain_events_outbox "
+                                "WHERE run_id = CAST(:id AS uuid) AND status = 'PENDING'"
+                            ),
+                            {"id": run_id},
+                        )
+                    ).scalar_one()
+                assert run_count == 1
+                assert snap_count >= 1
+                assert outbox_count >= 2
 
-                    exec_res = await client.post(
-                        "/api/v1/orchestration/runs/steps/execute?persona_key=marc",
-                        json={
-                            "run_id": run_id,
-                            "step_key": first_step_key,
-                            "commit_immediately": True,
-                            "cost_usd": 0.42,
-                        },
-                    )
-                    assert exec_res.status_code == 200
+                # 5. Relay pending Outbox rows via DramatiqOutboxRelay.relay_sql_pending_batch
+                relay = DramatiqOutboxRelay()
+                relayed_count = await relay.relay_sql_pending_batch(uow, batch_size=20)
+                assert relayed_count >= 2
+                assert len(relay.event_bus.audit_finops_ledger) >= 2
 
-                    # 3. Read Blackboard state via HTTP route (reads from PostgreSQL 18)
-                    bb_res = await client.get(
-                        f"/api/v1/orchestration/runs/{run_id}/blackboard?persona_key=marc"
-                    )
-                    assert bb_res.status_code == 200
-                    bb_json = bb_res.json()
-                    assert len(bb_json["active_snapshots"]) >= 1
+                # 6. Execute Hybrid RAG search & Tripartite neighborhood via HTTP -> PG18
+                rag_res = await client.post(
+                    "/api/v1/ontology-rag/rag/search?fixture=false",
+                    json={
+                        "workspace_id": ws_id,
+                        "query_text": "seuil validation",
+                        "top_k": 5,
+                    },
+                )
+                assert rag_res.status_code == 200
+                assert len(rag_res.json()["hits"]) >= 1
 
-                    # 4. Verify via direct SQL SELECT on PostgreSQL 18
-                    async with uow.session_scope() as session:
-                        run_count = (
-                            await session.execute(
-                                sa.text(
-                                    "SELECT count(*) FROM workflow_runs "
-                                    "WHERE id = CAST(:id AS uuid)"
-                                ),
-                                {"id": run_id},
-                            )
-                        ).scalar_one()
-                        snap_count = (
-                            await session.execute(
-                                sa.text(
-                                    "SELECT count(*) FROM blackboard_snapshots "
-                                    "WHERE run_id = CAST(:id AS uuid)"
-                                ),
-                                {"id": run_id},
-                            )
-                        ).scalar_one()
-                        outbox_count = (
-                            await session.execute(
-                                sa.text(
-                                    "SELECT count(*) FROM domain_events_outbox "
-                                    "WHERE run_id = CAST(:id AS uuid) AND status = 'PENDING'"
-                                ),
-                                {"id": run_id},
-                            )
-                        ).scalar_one()
-                    assert run_count == 1
-                    assert snap_count >= 1
-                    assert outbox_count >= 2
-
-                    # 5. Relay pending Outbox rows via DramatiqOutboxRelay.relay_sql_pending_batch
-                    relay = DramatiqOutboxRelay()
-                    relayed_count = await relay.relay_sql_pending_batch(uow, batch_size=20)
-                    assert relayed_count >= 2
-                    assert len(relay.event_bus.audit_finops_ledger) >= 2
-
-                    # 6. Execute Hybrid RAG search & Tripartite neighborhood via HTTP -> PG18
-                    rag_res = await client.post(
-                        "/api/v1/ontology-rag/rag/search?fixture=false",
-                        json={
-                            "workspace_id": ws_id,
-                            "query_text": "seuil validation",
-                            "top_k": 5,
-                        },
-                    )
-                    assert rag_res.status_code == 200
-                    assert len(rag_res.json()["hits"]) >= 1
-
-                    state_res = await client.get(
-                        f"/api/v1/ontology-rag/state?fixture=false&workspace_id={ws_id}"
-                        "&seed_uri=jira://issues/PAY-142"
-                    )
-                    assert state_res.status_code == 200
-                    assert len(state_res.json()["tripartite_edges"]) >= 1
-            finally:
-                await uow.close()
+                state_res = await client.get(
+                    f"/api/v1/ontology-rag/state?fixture=false&workspace_id={ws_id}"
+                    "&seed_uri=jira://issues/PAY-142"
+                )
+                assert state_res.status_code == 200
+                assert len(state_res.json()["tripartite_edges"]) >= 1
     finally:
         shutil.rmtree(pg_sock_dir, ignore_errors=True)

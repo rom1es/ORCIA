@@ -267,10 +267,11 @@ def get_finops_accounting_service(request: Request) -> FinopsAccountingService:
 
 def get_cognitive_impact_service(request: Request) -> CognitiveImpactService:
     """FastAPI `Depends` provider returning `CognitiveImpactService` (`Story 6.3`, `Story 7.4`)."""
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
     from orcia_api.dependencies.autonomous_supervision import get_post_hoc_audit_service
     from orcia_core.audit_finops import CognitiveImpactService
 
-    engine = getattr(request.app.state, "db_engine", None)
+    engine = get_configured_db_engine(request)
     post_hoc = get_post_hoc_audit_service(request)
     svc: CognitiveImpactService | None = getattr(
         request.app.state, "cognitive_impact_service", None
@@ -298,12 +299,13 @@ def get_remote_usage_sanitizer(request: Request) -> RemoteUsageSanitizer:
 
 def get_connector_quota_guard_service(request: Request) -> SqlConnectorQuotaGuardService:
     """FastAPI `Depends` provider returning `SqlConnectorQuotaGuardService` (`Story 6.4`)."""
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
     from orcia_core.audit_finops import SqlConnectorQuotaGuardService
 
     svc: SqlConnectorQuotaGuardService | None = getattr(
         request.app.state, "connector_quota_guard_service", None
     )
-    engine = getattr(request.app.state, "db_engine", None)
+    engine = get_configured_db_engine(request)
     if svc is None or (getattr(svc, "_engine", None) is None and engine is not None):
         svc = SqlConnectorQuotaGuardService(engine=engine)
         request.app.state.connector_quota_guard_service = svc

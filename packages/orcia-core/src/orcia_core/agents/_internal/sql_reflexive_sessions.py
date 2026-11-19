@@ -57,7 +57,8 @@ class SqlReflexiveSessionStore(ReflexiveSessionStorePort):
         expires_at_utc: str,
     ) -> None:
         """Upsert `reflexive_execution_sessions` in PostgreSQL 18 when `session_maker` is wired."""
-        self._memory_fallback[execution_id] = dict(snapshot_payload)
+        if not self._strict_sql:
+            self._memory_fallback[execution_id] = dict(snapshot_payload)
         if self._session_maker is None:
             return
 

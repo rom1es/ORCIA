@@ -1,6 +1,6 @@
 name: e2e
 
-# TEST-01b — E2E Playwright bi-serveur (FastAPI + Vite + PostgreSQL 18 / Redis 7.4 éphémères).
+# TEST-01b — E2E Playwright bi-serveur shardé (FastAPI + Vite + PostgreSQL 18 / Redis 7.4 éphémères).
 # La pile est démarrée par `apps/web/playwright.config.ts` (infra/scripts/e2e/e2e_stack.py) via
 # testcontainers : le runner doit disposer de Docker (présent sur ubuntu-latest).
 
@@ -14,9 +14,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  e2e:
+  playwright-e2e-sharded:
+    name: E2E Shard (${{ matrix.shard }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ["1/4", "2/4", "3/4", "4/4"]
     steps:
       - uses: actions/checkout@v4
 
@@ -44,16 +49,87 @@ jobs:
           docker pull pgvector/pgvector:pg18
           docker pull redis:7.4-alpine
 
-      - name: Tests E2E
-        run: pnpm e2e
+      - name: Tests E2E Playwright (shard ${{ matrix.shard }}, --retries=0)
+        env:
+          ORCIA_E2E_CAMPAIGN_DIR: docs/implementation-artifacts/e2e-campaign-ci
+          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-results-shard-${{ strategy.job-index }}.json
+        run: |
+          mkdir -p docs/implementation-artifacts/e2e-campaign-ci
+          pnpm --filter @orcia/web exec playwright test \
+            --shard=${{ matrix.shard }} \
+            --retries=0 \
+            --max-failures=0 \
+            --timeout=35000 \
+            --reporter=list,json
 
-      - name: Rapport et traces Playwright
+      - name: Rapport, traces et captures PNG Playwright
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-shard-${{ strategy.job-index }}
           path: |
             apps/web/playwright-report
             apps/web/test-results
+            apps/web/playwright-results-shard-*.json
+            docs/implementation-artifacts/e2e-campaign-ci
+          if-no-files-found: ignore
+          retention-days: 7
+
+  e2e-merge-and-check:
+    name: Fusion Rapports JSON & pnpm site:check
+    needs: [playwright-e2e-sharded]
+    if: always() && needs.playwright-e2e-sharded.result != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Dépendances Python (.venv, extras dev)
+        run: uv sync --all-packages --extra dev
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Download shard artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: playwright-report-shard-*
+          path: e2e-consolidated
+          merge-multiple: true
+
+      - name: Fusion JSON et vérification captures PNG
+        run: |
+          .venv/bin/python - <<'PY'
+          import json, pathlib
+          root = pathlib.Path("e2e-consolidated")
+          shards = sorted(root.rglob("playwright-results-shard-*.json"))
+          merged_suites = []
+          for shard_file in shards:
+              data = json.loads(shard_file.read_text(encoding="utf-8"))
+              merged_suites.extend(data.get("suites", []))
+          out = pathlib.Path("e2e-consolidated/playwright-results-merged.json")
+          out.write_text(json.dumps({"shards": len(shards), "suites": merged_suites}, indent=2), encoding="utf-8")
+          print(f"Merged {len(shards)} shards, PNG count={len(list(root.rglob('*.png')))}")
+          PY
+
+      - name: Contrôle registre & vitrine
+        run: pnpm site:check
+
+      - name: Upload rapport E2E consolidé
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-consolidated
+          path: e2e-consolidated
           if-no-files-found: ignore
           retention-days: 7

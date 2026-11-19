@@ -3,11 +3,11 @@
 > **Convention de nommage du fichier (Obligatoire — à créer AVANT toute modification de code)** :
 > - User Story du sprint : `docs/implementation-artifacts/tech-lead-reports/{story-key}-tech-lead-report.md`
 
-- **Date** : `2026-11-18`
+- **Date** : `2026-11-19`
 - **Story / Clé Sprint** : `22-8a-assainissement-fail-closed-vitest-composition-root-sans-override-et-ci-complete` (`Epic 22` — Vague 3 / Clôture Architecture de Tests & CI)
 - **Capacité(s)** : `CAP-100` (hygiène — éradication structurelle des faux positifs Vitest, Couche 2 et CI, sans nouvelle entrée `CAP-*`) — classification : `hygiène`
 - **Auteur / Contexte** : Tech Lead (`Amelia`) & Architecte (`Winston`) — Story intercalaire issue de l'analyse des causes racines (`RC-1`, `RC-2`, `RC-7`) de l'Epic 21 (`2026-11-18-rca-epic-21-enrichissement-22-8-et-story-22-8a-tech-lead-report.md`). Ordonnancée après `Story 22.8` et avant `Story 22.9` (`AD-1`, `AD-17`, `AD-19`, `NFR-TEST-1`).
-- **Commits associés** : `En attente d'implémentation (planifié en Vague 3 après Story 22.8)`
+- **Commits associés** : `feat/epic-22-remediation-pg18-direction-c` (commit Story `22.8a`)
 
 ---
 
@@ -24,8 +24,9 @@
 
 ### 1.2 Exploration, Analyse d'Impact GitNexus, Factorisation & Dette Technique
 - **Analyse d'Impact GitNexus (`repo: "ORCIA"`, `direction: "upstream"`)** :
-  - `initialize_app_services` (`apps/api/src/orcia_api/dependencies/core_and_lifespan.py`) : `impactedCount: 237`, risque **`CRITICAL`** (`direct: 24`, `d=2: 122`, `d=3: 91`, `processes_affected: 167`, `modules_affected: 9`).
+  - `initialize_app_services` (`apps/api/src/orcia_api/dependencies/core_and_lifespan.py`) : `impactedCount: 240`, risque **`CRITICAL`** (`direct: 25`, `d=2: 122`, `d=3: 93`, `processes_affected: 168`, `modules_affected: 9`).
   - `create_app` (`apps/api/src/orcia_api/main.py`) : `impactedCount: 4`, risque **`LOW`** (`direct: 1`).
+  - `StartReflexiveExecutionRequest` (`apps/api/src/orcia_api/schemas/reflexive_execution.py`) : `impactedCount: 5`, risque **`LOW`** (`direct: 2`, `d=2: 1`, `d=3: 2`).
 - **Factorisation & contrôle de volumétrie (`< 350` L)** :
   - Découpage de `apps/web/src/__tests__/vitest.setup.ts` (`2 951` L) en sous-modules spécialisés par domaine sous `apps/web/src/__tests__/setup/` (`< 350` L chacun) partageant un validateur unique contre `packages/api-client/openapi.json`.
   - Suppression complète des replis `session_factory=None` dans `packages/orcia-core` au profit de ports `RepositoryPort` obligatoires (`tests/unit/fakes/` réservé aux tests unitaires).
@@ -72,21 +73,37 @@
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
-> *[En attente d'implémentation de la Story 22.8a]*
-
 ### 3.1 Fichiers Développés & Modifiés
 | Fichier | Nature (Création / Modification / Refactoring) | Description synthétique |
 | :--- | :--- | :--- |
-| `apps/web/src/__tests__/vitest.setup.ts` & `apps/web/src/__tests__/setup/*.ts` | Refactoring (`< 350` L) | *[À compléter après implémentation]* |
-| `apps/web/src/__tests__/vitest-transport-fail-closed-openapi.test.ts` | Création | *[À compléter après implémentation]* |
-| `tests/integration/test_composition_root_zero_ram_silo_postgres18.py` | Création | *[À compléter après implémentation]* |
-| `tests/unit/test_integration_no_manual_app_state_audit.py` & `test_zero_orphan_sql_adapters_audit.py` | Création | *[À compléter après implémentation]* |
-| `.github/workflows/ci.yml` & `.github/workflows/e2e.yml` | Création / Modification | *[À compléter après implémentation]* |
+| `apps/web/src/__tests__/vitest.setup.ts` & `apps/web/src/__tests__/setup/*.ts` (`13` modules `< 350` L) | Refactoring (`2 951 -> 48` L) | Découpage modulaire par domaine (`aiModelsAndToolsMockHandlers.ts`, `assistantAndInboxMockHandlers.ts`, `authAndBootstrapMockHandlers.ts`, `autonomyTriggersAndWorkflowsV2Handlers.ts`, `finopsAndGatesMockHandlers.ts`, `mockBackendState.ts`, `openApiRequestValidator.ts`, `orchestrationRunsMockHandlers.ts`, `orgUnitsMutationsHandlers.ts`, `orgUnitsReadAndInviteHandlers.ts`, `orgUnitsScopeHelpers.ts`, `transportAndOpenApiValidator.ts`, `workspacesAndCatalogMockHandlers.ts`) + mode *Fail-Closed* validé contre `packages/api-client/openapi.json`. |
+| `apps/web/src/__tests__/vitest-transport-fail-closed-openapi.test.ts` & `zero-dead-buttons-and-silent-catches-audit.test.tsx` | Création / Modification | Prouve en `5/5` tests le rejet immédiat d'une route inexistante, d'un identifiant non-UUID (`"ws-1"`) sur `format: "uuid"`, d'un champ `required` manquant et d'un champ non déclaré sur `additionalProperties: false` (`SecretInputPayload`), sans aucun `return jsonResponse({})`. |
+| `packages/orcia-core/src/orcia_core/**` & `apps/api/src/orcia_api/**` | Modification | Suppression des replis RAM implicites (`sql_reflexive_sessions.py`, `cognitive_impact_service.py`, `sql_user_preferences.py`, `sql_workflows_v2.py`), durcissement Composition Root (`core_and_lifespan.py`, `orchestration_and_settings.py`, `reflexive_execution.py`) et schéma `reflexive_execution.py` + `openapi.json` `0-diff`. |
+| `tests/integration/test_composition_root_zero_ram_silo_postgres18.py` | Création | Démarre `create_app()` via `app.router.lifespan_context(app)` contre PG18 + Redis 7.4 `testcontainers` sans `dependency_overrides` ni écriture `app.state.*`, vérifie `db_engine`/`session_maker`/`dbos_uow`, exécute les 8 flux critiques (`workspaces`, `assistant_folders`, `task_notifications`, `gate_evaluations`, `declarative_pack_bundles`, `wizard_sessions`, `permission_broker_tickets`, `catalog_items`), contrôle par `SELECT` PG18 et revalide après redémarrage à froid sur `app2`. |
+| `tests/unit/test_integration_no_manual_app_state_audit.py` & `tests/unit/test_zero_orphan_sql_adapters_audit.py` | Création | Audits AST prouvant l'absence de mutation `app.state.*` (hors `http_client`/`otp_email_sink` `0 $`) et `dependency_overrides` dans `tests/integration/**/*.py`, ainsi que le câblage effectif de `100 %` des `78` adaptateurs SQL `_internal/{sql_,_sql_}*.py` dans `apps/api` / `apps/worker` (`0` orphelin). |
+| `tests/integration/test_epics_1_7_vertical_sql_wiring_postgres18.py`, `tests/integration/api/test_story_*.py`, `tests/integration/test_http_vertical_day0_and_agents_postgres18.py`, `tests/integration/test_real_containers.py` | Modification | Suppression des contournements `app.state.*` en Couche 2, création explicite du workspace PG18 avant création de dossier assistant et alignement du compteur de seeds `PermissionBroker` (`10` politiques incluant les `4` fallbacks de `Story 22.3`). |
+| `.github/workflows/ci.yml` & `.github/workflows/e2e.yml` | Création / Modification | Pipeline CI GitHub Actions complet à `4` jobs bloquants (`static-and-contracts`, `python-unit-evals-security`, `python-integration-pg18` avec `coverage combine` `>= 90 %`, `playwright-e2e-sharded` `4` shards `--retries=0 --timeout=35000` + `pnpm site:check`). |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
-- **Couverture combinée `packages/orcia-core`** : *[$\ge 90\%$ combiné Unit + Intégration requis]*
-- **Volumétrie `apps/web/src/__tests__/setup/*.ts`** : *[Tous fichiers `< 350` L]*
-- **Qualité statique & CI** : `ruff`, `mypy --strict`, `pnpm turbo run lint typecheck test`, `lint-imports`, `lint_spine.py`, `pnpm site:check` *[À compléter]*
+- **Couverture combinée `packages/orcia-core`** : **`92.34 %`** (`23 410` instructions, `1 211` manquées ; `5 302` branches, `796` partielles ; `132` fichiers à `100 %` — Pass 1 `unit+contract+conformance+evals+security` combiné à Pass 2 `tests/integration`, seuil `--cov-fail-under=90` atteint).
+- **Volumétrie `apps/web/src/__tests__/setup/*.ts`** : `vitest.setup.ts` réduit à **`48`** lignes ; les **`13`** modules sous `apps/web/src/__tests__/setup/` font tous **`<= 346`** lignes (`86` à `346` L, tous `< 350` L).
+- **Qualité statique & CI** :
+  - `.venv/bin/ruff check . && .venv/bin/ruff format --check .` : **PASS** (`0` erreur, `1 238` fichiers formatés).
+  - `.venv/bin/mypy --strict packages/orcia-core apps/api apps/worker` (+ nouveaux tests AST/intégration) : **PASS** (`Success: no issues found in 516 source files`).
+  - `.venv/bin/lint-imports` : **PASS** (`Contracts: 5 kept, 0 broken`, `596` fichiers analysés).
+  - `.venv/bin/python scripts/export_openapi.py --check` : **PASS** (`0-diff`).
+  - `.venv/bin/python .agent/skills/bmad-architecture/scripts/lint_spine.py --workspace docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24` : **PASS** (`0 findings`).
+  - `pnpm turbo run lint typecheck test --force` : **PASS** (`9/9` tâches réussies en `47.539 s` : `@orcia/api-client` `2` fichiers / `13` tests, `@orcia/ui` `26` fichiers / `110` tests, `@orcia/web` `51` fichiers / `190` tests incluant `vitest-transport-fail-closed-openapi.test.ts` `5/5`, soit `313/313` tests JS/TS).
+  - `pnpm site:sync && pnpm site:check` + `scripts/check_implementation_docs.py` : **PASS**.
 
 ### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17`)
-- *[À compléter après implémentation de la Story 22.8a]*
+- **Couche 1a (`pytest` unitaires & audits AST)** :
+  - `tests/unit/test_integration_no_manual_app_state_audit.py` + `tests/unit/test_zero_orphan_sql_adapters_audit.py` : **`3/3` passed** (`78/78` adaptateurs SQL câblés, `0` override/tampering `app.state.*`).
+  - Suites combinées Pass 1a (`356` passed) + Pass 1b (`402` passed) + Pass 1c (`contract` + `conformance` + `evals` + `security`, `137` passed) : **`895/895` passed**.
+- **Couche 1b (`Vitest` *Fail-Closed* OpenAPI)** : **`313/313` tests JS/TS passed** (`@orcia/web` `190/190` dont `5/5` dans `vitest-transport-fail-closed-openapi.test.ts`).
+- **Couche 2 (`testcontainers` PG18 + Redis)** :
+  - `tests/integration/test_composition_root_zero_ram_silo_postgres18.py` : **`1/1` passed** (`create_app()` réel via lifespan sans override, `8/8` tables vérifiées par `SELECT` PG18 + redémarrage à froid `app2`).
+  - Intégralité de `tests/integration/api/` (**`49/49` passed**) + `tests/integration/test_*.py` (**`31/31` passed**) : **`80/80` passed** (`975/975` tests Python sur toute la pyramide, couverture combinée **`92.34 %`**).
+- **Couches 3 & 4 (Contrats OpenAPI / Evals / Sécurité)** : inclus dans Pass 1c (**`137/137` passed**, `Schemathesis` + `0-diff` + gardes RBAC/Observer).
+- **Couche 5 (Playwright E2E CI)** : workflows `.github/workflows/{ci,e2e}.yml` alignés sur le sharding `4` shards (`--retries=0 --max-failures=0 --timeout=35000`), la fusion JSON et `pnpm site:check` en vue de la campagne intégrale `Story 22.9`.
+- **GitNexus (`gitnexus_detect_changes({scope: "all"})`)** : index rafraîchi (`36 947` nœuds, `66 114` arêtes, `1 725` flux) — `18` symboles modifiés, `23` flux affectés sur `24` fichiers, niveau de risque `critical` lié au Composition Root (`initialize_app_services`) et entièrement couvert par les tests `testcontainers` PG18.

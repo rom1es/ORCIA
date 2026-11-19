@@ -39,7 +39,9 @@ class SqlUserPreferencesAndMcpService:
 
     def __init__(self, *, engine: AsyncEngine | None = None) -> None:
         self._engine = engine
-        self._fallback = UserPreferencesAndMcpTokenService()
+        self._fallback: UserPreferencesAndMcpTokenService | None = (
+            UserPreferencesAndMcpTokenService() if engine is None else None
+        )
 
     async def _pg_tables_ready(self) -> bool:
         if self._engine is None:
@@ -48,12 +50,18 @@ class SqlUserPreferencesAndMcpService:
             reg = (
                 await conn.execute(sa.text("SELECT to_regclass('public.user_preferences')"))
             ).scalar()
-            return reg is not None
+            if reg is None:
+                raise RuntimeError("PostgreSQL table 'public.user_preferences' is not migrated.")
+            return True
+
+    def _require_fallback(self) -> UserPreferencesAndMcpTokenService:
+        assert self._fallback is not None, "RAM fallback is forbidden when AsyncEngine is wired."
+        return self._fallback
 
     async def get_preferences(self, user_id: str) -> UserAccountPreferences:
         """Fetch user preferences from PostgreSQL 18 (or default record if absent)."""
         if not await self._pg_tables_ready():
-            return self._fallback.get_preferences(user_id)
+            return self._require_fallback().get_preferences(user_id)
         assert self._engine is not None
         async with self._engine.connect() as conn:
             row = (await conn.execute(SQL_SELECT_PREFS, {"user_id": user_id})).first()
@@ -74,7 +82,7 @@ class SqlUserPreferencesAndMcpService:
     ) -> UserAccountPreferences:
         """Upsert user preferences atomically in PostgreSQL 18."""
         if not await self._pg_tables_ready():
-            return self._fallback.update_preferences(
+            return self._require_fallback().update_preferences(
                 user_id=user_id,
                 theme=theme,
                 locale=locale,
@@ -123,7 +131,7 @@ class SqlUserPreferencesAndMcpService:
     async def list_user_mcp_tokens(self, user_id: str) -> tuple[ScopedMcpPersonalTokenRecord, ...]:
         """List all personal MCP token metadata rows for `user_id`."""
         if not await self._pg_tables_ready():
-            return self._fallback.list_user_mcp_tokens(user_id)
+            return self._require_fallback().list_user_mcp_tokens(user_id)
         assert self._engine is not None
         async with self._engine.connect() as conn:
             rows = (await conn.execute(SQL_LIST_MCP_TOKENS, {"user_id": user_id})).fetchall()
@@ -143,7 +151,7 @@ class SqlUserPreferencesAndMcpService:
     ) -> IssuedScopedMcpTokenResult:
         """Issue and store a hashed `pat_mcp_*` personal token in PostgreSQL 18."""
         if not await self._pg_tables_ready():
-            return self._fallback.issue_mcp_token(
+            return self._require_fallback().issue_mcp_token(
                 user_id=user_id,
                 label=label,
                 expires_in_days=expires_in_days,
@@ -202,7 +210,7 @@ class SqlUserPreferencesAndMcpService:
     ) -> ScopedMcpPersonalTokenRecord:
         """Revoke an existing MCP token strictly owned by `user_id`."""
         if not await self._pg_tables_ready():
-            return self._fallback.revoke_mcp_token(user_id=user_id, token_id=token_id)
+            return self._require_fallback().revoke_mcp_token(user_id=user_id, token_id=token_id)
         assert self._engine is not None
         try:
             token_uuid = UUID(token_id)

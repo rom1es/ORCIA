@@ -32,7 +32,6 @@ try:
 except ImportError:
     from testcontainers.postgres import PostgresContainer
 
-from orcia_api.dependencies import initialize_app_services
 from orcia_api.main import create_app
 from orcia_core.kernel.ids import new_uuid7_str
 
@@ -81,18 +80,11 @@ async def app_client(
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
 
     app = create_app()
-    initialize_app_services(app)
-    engine = create_async_engine(pg_url)
-    app.state.db_engine = engine
-    for svc_attr in ("audit_ledger_service", "finops_accounting_service"):
-        svc = getattr(app.state, svc_attr, None)
-        if svc is not None:
-            svc._engine = engine
-
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with (
+        app.router.lifespan_context(app),
+        AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,
+    ):
         yield client, pg_url
-
-    await engine.dispose()
 
 
 @pytest.mark.asyncio

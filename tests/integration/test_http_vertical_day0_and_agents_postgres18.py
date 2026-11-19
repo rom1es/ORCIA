@@ -452,10 +452,22 @@ async def test_pack_builder_and_help_hot_attach_http_persist_in_pg18_catalog_and
             )
             assert pref_res.status_code == 200
 
+            ws_res = await client.post(
+                "/api/v1/workspaces?persona_key=marc",
+                json={
+                    "name": "Espace Vertical Folders",
+                    "slug": "ws-vertical-alpha",
+                    "visibility_mode": "STANDARD",
+                    "lifecycle_phase": "BUILD",
+                },
+            )
+            assert ws_res.status_code == 201, ws_res.text
+            ws_alpha_id = ws_res.json()["id"]
+
             gov_res = await client.put(
                 "/api/v1/assistant/governance/mode-a/user?persona_key=marc",
                 json={
-                    "workspace_id": "ws-vertical-alpha",
+                    "workspace_id": ws_alpha_id,
                     "response_tone": "SYNTHETIC",
                     "favorite_format": "BULLETS_SUMMARY",
                     "default_hat": "TECH_LEAD",
@@ -467,7 +479,7 @@ async def test_pack_builder_and_help_hot_attach_http_persist_in_pg18_catalog_and
             folder_res = await client.post(
                 "/api/v1/assistant/folders?persona_key=marc",
                 json={
-                    "workspace_id": "ws-vertical-alpha",
+                    "workspace_id": ws_alpha_id,
                     "title": "Dossier Vertical HTTP",
                     "pinned_notes_markdown": "# Notes verticales",
                     "working_attachments_uris": [],
