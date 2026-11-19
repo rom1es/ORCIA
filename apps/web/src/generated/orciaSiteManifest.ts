@@ -534,13 +534,6 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "techLeadReports": [
     {
       "date": "2026-11-18",
-      "phaseOrStory": "Ajustement Transverse / RCA Epic 21 & Vague 3 (22.8 + 22.8a)",
-      "reportFile": "2026-11-18-rca-epic-21-enrichissement-22-8-et-story-22-8a-tech-lead-report.md",
-      "domain": "RCA Complète « L'Illusion du Vert » (RC-1..RC-7 sur 5 Couches AD-17), Enrichissement Story 22.8, Création Story 22.8a & Gouvernance Shift-Left",
-      "summary": "Analyse des angles morts sur les 5 couches (vitest.setup.ts, Composition Root, faux F5, regex Goodhart, CI partielle), regroupement des 34/34 REM-* en 7 causes racines (RC-1..RC-7), enrichissement 22.8, création Story 22.8a (epics.md, sprint-status.yaml, plan directeur), durcissement testing-strategy.md & GEMINI.md et synchronisation /showcase."
-    },
-    {
-      "date": "2026-11-18",
       "phaseOrStory": "Story 22.10",
       "reportFile": "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23-tech-lead-report.md",
       "domain": "Clôture Epic 22 — Rapports Tech Lead Individuels (23-1..23-N), Plan de Correction Global & Initialisation Complète de l'Epic 23",
@@ -555,17 +548,24 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     },
     {
       "date": "2026-11-18",
+      "phaseOrStory": "RCA Epic 21",
+      "reportFile": "2026-11-18-rca-epic-21-enrichissement-22-8-et-story-22-8a-tech-lead-report.md",
+      "domain": "Analyse des Causes Racines (RC-1..RC-7) des 47 Échecs E2E & 51/62 Capacités failed_e2e Epic 21 + Cadrage Enrichissement 22.8 & Story 22.8a",
+      "summary": "Clôture cadrage documentaire : classification complète des 34 chantiers REM-01..REM-34 en 7 causes racines (RC-1..RC-7), mise à jour gouvernance (epics.md, sprint-status.yaml, sprint-change-proposal, testing-strategy.md, GEMINI.md, 22-8, 22-8a, 22-9) et vérification traçabilité/vitrine."
+    },
+    {
+      "date": "2026-11-18",
       "phaseOrStory": "Story 22.8a",
       "reportFile": "22-8a-assainissement-fail-closed-vitest-composition-root-sans-override-et-ci-complete-tech-lead-report.md",
-      "domain": "Vague 3 (Post-RCA RC-1, RC-2, RC-7) — Assainissement *Fail-Closed* vitest.setup.ts (< 350 L) Validé OpenAPI, Composition Root PG18 Sans Override / Zéro Silo RAM & CI GitHub Actions 5 Couches",
-      "summary": "Pré-implémentation : découpage < 350 L et mode *Fail-Closed* de vitest.setup.ts validé contre openapi.json, test Composition Root create_app() sans dependency_overrides ni app.state.* manuel + test_zero_orphan_sql_adapters_audit.py, et pipeline CI 5 couches (ci.yml + e2e.yml shardé 4 shards, couverture combinée >= 90 % orcia-core, gouvernance Shift-Left par Story)."
+      "domain": "Intercalaire Post-RCA Epic 21 — Assainissement *Fail-Closed* vitest.setup.ts (openapi.json), Test Composition Root create_app() sans Override sur PG18 Réel & CI GitHub Actions 5 Couches (AD-17)",
+      "summary": "Pré-implémentation : découpage < 350 L et conversion *Fail-Closed* de vitest.setup.ts validée contre openapi.json (format: \"uuid\" strict rejetant \"ws-1\", zéro jsonResponse({})) ; purge des fallbacks RAM + test_composition_root_zero_ram_silo_postgres18.py sans dependency_overrides/app.state.* + audits AST app.state & adaptateurs SQL orphelins ; .github/workflows/{ci,e2e}.yml (4 shards --retries=0) et couverture combinée >= 90 %."
     },
     {
       "date": "2026-11-18",
       "phaseOrStory": "Story 22.8",
       "reportFile": "22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime-tech-lead-report.md",
-      "domain": "Vague 3 (REM-33, REM-34) — Activation des 5 Gardes CI Anti-Régression + 4 Verrous RCA Epic 21, Couverture 100 % Assertions SQL PG18 à Froid sur 55 Blocs test(...) E2E, Paramétrage ORCIA_E2E_CAMPAIGN_DIR & Budget < 35s",
-      "summary": "Pré-implémentation : 5 gardes CI initiales + audit data-testid E2E ↔ UI (e2e-testids-sync-audit.test.ts), helper HTTP E2E typé (typedApiRequest.ts), purge ORCIA_E2E_SEED_FIXTURES + reloadColdFromPg, refonte <RouterProvider> de zero-dead-buttons + sonde erreurs muettes/Direction C/WCAG AA, assertions SELECT PG18 sur 55/55 blocs test(...) (test_e2e_sql_coverage_audit.py), ORCIA_E2E_CAMPAIGN_DIR (e2e-campaign-epic-22) et budget < 35s."
+      "domain": "Vague 3 (REM-33, REM-34) — Activation des 5 Gardes CI Initiales + 4 Verrous Anti-Faux-Positifs (Sync data-testid, Helper OpenAPI typedApiRequest, Purge ORCIA_E2E_SEED_FIXTURES + Relecture à Froid PG18, <RouterProvider> + [role=\"alert\"]), Couverture 100 % SQL PG18 (55/55 Blocs), ORCIA_E2E_CAMPAIGN_DIR & Budget < 35s",
+      "summary": "Pré-implémentation (enrichie RCA Epic 21) : 5 gardes initiales + 4 verrous (e2e-testids-sync-audit, typedApiRequest.ts + e2e-openapi-helper-audit, purge ORCIA_E2E_SEED_FIXTURES + reloadColdFromPg via POST /api/v1/_e2e/evict-memory-caches, réécriture <RouterProvider> de zero-dead-buttons + sonde [role=\"alert\"] + Direction C / WCAG AA), test_e2e_sql_coverage_audit.py (55/55), ORCIA_E2E_CAMPAIGN_DIR et budget < 35s."
     },
     {
       "date": "2026-11-18",

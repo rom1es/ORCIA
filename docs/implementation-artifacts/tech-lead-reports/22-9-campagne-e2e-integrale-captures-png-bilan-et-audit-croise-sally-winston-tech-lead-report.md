@@ -6,7 +6,7 @@
 - **Date** : 2026-11-18
 - **Story / Clé Sprint** : `22-9-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston` (`Epic 22` — Vague 4 / Campagne Intégrale & Audit Croisé)
 - **Capacité(s)** : Vérification runtime réelle de `100 %` des `65` capacités (`62` `feature` + `3` `foundation`, `CAP-001`..`CAP-203`) dans `docs/product/capabilities.yaml` — classification : `hygiène`
-- **Auteur / Contexte** : `22.0-init` (Pré-implémentation Story 22.9) — Exécution de la campagne Playwright complète post-remédiation Epic 22 (`22.1`..`22.8`) sans retry ni maquillage (`--retries=0 --max-failures=0 --timeout=35000`), archivage des captures PNG dans `docs/implementation-artifacts/e2e-campaign-epic-22/`, rédaction du bilan factuel, audit croisé **Sally (UX) × Winston (Architecture)** et mise à jour honnête de `docs/product/capabilities.yaml` (`AD-17`, `NFR-TEST-1`, `GEMINI.md` §5).
+- **Auteur / Contexte** : `22.0-init` (Pré-implémentation Story 22.9, mise à jour suite ajout Story `22.8a`) — Exécution de la campagne Playwright complète post-remédiation Epic 22 (`22.1`..`22.8` + `22.8a`) sans retry ni maquillage (`--retries=0 --max-failures=0 --timeout=35000`) et avec purge `ORCIA_E2E_SEED_FIXTURES` + relecture à froid PG18 (`reloadColdFromPg`), archivage des captures PNG dans `docs/implementation-artifacts/e2e-campaign-epic-22/`, rédaction du bilan factuel, audit croisé **Sally (UX) × Winston (Architecture)** et mise à jour honnête de `docs/product/capabilities.yaml` (`AD-17`, `NFR-TEST-1`, `GEMINI.md` §5).
 - **Commits associés** : `En attente d'implémentation (initialisé en 22.0)`
 
 ---
@@ -14,8 +14,8 @@
 ## 1. Analyse du Besoin & Étude d'Impact Tech Lead (Pré-Implémentation)
 
 ### 1.1 Contexte & Problématique
-- **Séparation propre entre outillage CI (`22.8`) et exécution de campagne / audit (`22.9`)** :
-  - À l'issue de la Story `22.8`, les `5` gardes CI anti-régression sont actives, les `55` blocs `test(...)` (`110` scénarios Desktop `1440×900` et Mobile `390×844`) disposent d'assertions `SELECT` PostgreSQL 18 effectives (`test_e2e_sql_coverage_audit.py`), et `apps/web/e2e/support/e2eCaptureFixture.ts` supporte `ORCIA_E2E_CAMPAIGN_DIR`.
+- **Séparation propre entre outillage CI (`22.8`), assainissement Fail-Closed & CI (`22.8a`), et exécution de campagne / audit (`22.9`)** :
+  - À l'issue des Stories `22.8` et `22.8a`, les `5` gardes CI initiales + les `4` verrous anti-faux-positifs (sync `data-testid`, `typedApiRequest.ts`, purge `ORCIA_E2E_SEED_FIXTURES` + `reloadColdFromPg` via `/api/v1/_e2e/evict-memory-caches`, réécriture `<RouterProvider>` de `zero-dead-buttons` + sonde `[role="alert"]`) sont actifs, `vitest.setup.ts` est assaini *Fail-Closed* contre `openapi.json`, le Composition Root `create_app()` est vérifié sans `dependency_overrides` sur PG18 réel, les `55` blocs `test(...)` (`110` scénarios Desktop `1440×900` et Mobile `390×844`) disposent d'assertions `SELECT` PostgreSQL 18 effectives (`test_e2e_sql_coverage_audit.py`), et `apps/web/e2e/support/e2eCaptureFixture.ts` supporte `ORCIA_E2E_CAMPAIGN_DIR`.
   - Il faut maintenant exécuter la **campagne intégrale sans retry ni arrêt anticipé** sur pile réelle (`PostgreSQL 18 + pgvector`, `Redis 7.4`, Alembic `head`, FastAPI + cassette LLM `0 $`, SPA Vite) et diriger toutes les sorties vers un répertoire neuf **`docs/implementation-artifacts/e2e-campaign-epic-22/`** afin de préserver intégralement les preuves historiques de `e2e-campaign-epic-21/`.
 - **Vérité absolue sans maquillage ni angle mort** :
   - Aucun `test.skip` ou `test.fixme` destiné à masquer un échec ne doit subsister.
