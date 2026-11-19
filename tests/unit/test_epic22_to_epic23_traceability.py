@@ -34,6 +34,7 @@ EPIC_23_KEYS = (
     "23-5-sobriete-cockpit-topbar-sans-doublon-assistant-et-login",
     "23-6-campagne-e2e-integrale-mobile-companion-audit-et-62-capacites-runtime",
 )
+STORY_23_7_KEY = "23-7-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston"
 
 
 def _collect_failing_spec_files(suites: list[dict[str, Any]]) -> set[str]:
@@ -125,7 +126,7 @@ def test_every_failing_spec_is_attached_to_epic23_key_in_master_plan() -> None:
     dev_status = sprint_data.get("development_status", {})
     assert isinstance(dev_status, dict)
     valid_keys = {k for k in dev_status if isinstance(k, str) and k.startswith("23-")}
-    assert valid_keys == set(EPIC_23_KEYS)
+    assert set(EPIC_23_KEYS).issubset(valid_keys)
 
     plan_text = MASTER_PLAN_PATH.read_text(encoding="utf-8")
     for spec_file in failing_specs:
@@ -161,7 +162,10 @@ def test_every_remediation_ux_and_arch_item_is_mapped_to_master_plan_and_reports
 
     plan_text = MASTER_PLAN_PATH.read_text(encoding="utf-8")
     reports_by_name = _load_epic23_reports()
-    assert {f"{key}-tech-lead-report.md" for key in EPIC_23_KEYS} == set(reports_by_name.keys())
+    core_report_names = {f"{key}-tech-lead-report.md" for key in EPIC_23_KEYS}
+    assert core_report_names.issubset(set(reports_by_name.keys()))
+    assert len(reports_by_name) >= len(EPIC_23_KEYS)
+    assert {f"{key}-tech-lead-report.md" for key in valid_keys} == set(reports_by_name.keys())
 
     for rem_id in remediation_ids:
         rows = _extract_table_rows_containing(plan_text, f"`{rem_id}`")
@@ -199,37 +203,66 @@ def test_every_failed_capability_points_to_epic23_key_master_plan_and_report() -
     sprint_data = _load_yaml_mapping(SPRINT_STATUS_PATH)
     dev_status = sprint_data.get("development_status", {})
     assert isinstance(dev_status, dict)
-    valid_keys = {k for k in dev_status if isinstance(k, str) and k.startswith("23-")}
 
     capabilities = [
         cap for cap in capabilities_data.get("capabilities", []) if isinstance(cap, dict)
     ]
-    failed_caps = [cap for cap in capabilities if cap.get("verification") == "failed_e2e"]
-    assert len(failed_caps) == 62
+    is_23_7_done = dev_status.get(STORY_23_7_KEY) == "done"
 
-    plan_text = MASTER_PLAN_PATH.read_text(encoding="utf-8")
-    for cap in failed_caps:
+    if not is_23_7_done:
+        failed_caps = [cap for cap in capabilities if cap.get("verification") == "failed_e2e"]
+        assert len(failed_caps) == 62
+
+        plan_text = MASTER_PLAN_PATH.read_text(encoding="utf-8")
+        for cap in failed_caps:
+            cap_id = str(cap.get("id", "")).strip()
+            ref = cap.get("e2e_remediation_ref")
+            assert isinstance(ref, str) and ref in EPIC_23_KEYS, (
+                f"Capability {cap_id} has invalid e2e_remediation_ref={ref!r}"
+            )
+            rows = _extract_table_rows_containing(plan_text, f"`{cap_id}`")
+            assert any(ref in row for row in rows), (
+                f"Capability {cap_id} -> {ref} missing from Epic 23 master plan table"
+            )
+            report_path = REPORTS_DIR / f"{ref}-tech-lead-report.md"
+            assert report_path.is_file(), (
+                f"Capability {cap_id} points to missing report {report_path.name}"
+            )
+
+        runtime_caps = [cap for cap in capabilities if cap.get("verification") == "runtime"]
+        assert len(runtime_caps) == 3
+        for cap in runtime_caps:
+            cap_id = cap.get("id")
+            assert not cap.get("e2e_remediation_ref"), (
+                f"Runtime capability {cap_id} must not retain e2e_remediation_ref"
+            )
+        return
+
+    live_caps = [cap for cap in capabilities if cap.get("status") == "live"]
+    assert len(live_caps) == 65
+    for cap in live_caps:
         cap_id = str(cap.get("id", "")).strip()
-        ref = cap.get("e2e_remediation_ref")
-        assert isinstance(ref, str) and ref in valid_keys, (
-            f"Capability {cap_id} has invalid e2e_remediation_ref={ref!r}"
+        verification = cap.get("verification")
+        assert verification in {"runtime", "failed_e2e"}, (
+            f"Capability {cap_id} has unexpected verification={verification!r} after Story 23.7"
         )
-        rows = _extract_table_rows_containing(plan_text, f"`{cap_id}`")
-        assert any(ref in row for row in rows), (
-            f"Capability {cap_id} -> {ref} missing from Epic 23 master plan table"
-        )
-        report_path = REPORTS_DIR / f"{ref}-tech-lead-report.md"
-        assert report_path.is_file(), (
-            f"Capability {cap_id} points to missing report {report_path.name}"
-        )
-
-    runtime_caps = [cap for cap in capabilities if cap.get("verification") == "runtime"]
-    assert len(runtime_caps) == 3
-    for cap in runtime_caps:
-        cap_id = cap.get("id")
-        assert not cap.get("e2e_remediation_ref"), (
-            f"Runtime capability {cap_id} must not retain e2e_remediation_ref"
-        )
+        if verification == "runtime":
+            verified_at = str(cap.get("verified_at") or "").strip()
+            assert verified_at, f"Runtime capability {cap_id} missing verified_at"
+            assert not cap.get("e2e_remediation_ref"), (
+                f"Runtime capability {cap_id} must not retain e2e_remediation_ref"
+            )
+        else:
+            ref = cap.get("e2e_remediation_ref")
+            assert (
+                isinstance(ref, str)
+                and (ref.startswith("23-8-") or ref.startswith("24-"))
+                and ref in dev_status
+            ), f"Capability {cap_id} has invalid post-23.7 e2e_remediation_ref={ref!r}"
+            report_path = REPORTS_DIR / f"{ref}-tech-lead-report.md"
+            assert report_path.is_file(), (
+                f"Capability {cap_id} points to missing report {report_path.name}"
+            )
 
 
 def test_every_epic23_sprint_key_has_story_report_and_index_entry() -> None:
@@ -240,7 +273,7 @@ def test_every_epic23_sprint_key_has_story_report_and_index_entry() -> None:
     remediation_keys = sorted(
         key for key in dev_status if isinstance(key, str) and key.startswith("23-")
     )
-    assert set(remediation_keys) == set(EPIC_23_KEYS)
+    assert set(EPIC_23_KEYS).issubset(set(remediation_keys))
 
     epics_text = EPICS_PATH.read_text(encoding="utf-8")
     index_text = REPORTS_INDEX_PATH.read_text(encoding="utf-8")

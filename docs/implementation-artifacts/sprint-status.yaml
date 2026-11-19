@@ -238,15 +238,17 @@ development_status:
   22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23: done
   epic-22-retrospective: optional
 
-  # Epic 23 — Remédiation Finale E2E, Transport SSE Authentifié, Aide Contextuelle 4 Blocs, Unification Accostage 6 Jalons, Sobriété Cockpit & Campagne 110/110 (REM23-01..REM23-13)
+  # Epic 23 — Remédiation Finale E2E, Transport SSE Authentifié, Aide Contextuelle 4 Blocs, Unification Accostage 6 Jalons, Sobriété Cockpit, Audit SQL PG18, Campagne 110/110 & Initialisation Epic 24 (REM23-01..REM23-13)
   # Plan directeur : docs/planning-artifacts/sprint-change-proposal-2026-11-18-epic-23-remediation-plan.md
-  epic-23: backlog
+  epic-23: in-progress
   23-1-reset-jour0-e2e-truncate-cascade-connector-schemes-et-redis: ready-for-dev
   23-2-transport-sse-authentifie-createrequestsse-smoke-00-et-diagnostic-401: ready-for-dev
   23-3-zone-4-aide-contextuelle-fidele-a-la-route-et-4-blocs-design-md: ready-for-dev
   23-4-unification-accostage-x-sur-6-fin-fantomes-jour0-et-modale-admin: ready-for-dev
   23-5-sobriete-cockpit-topbar-sans-doublon-assistant-et-login: ready-for-dev
   23-6-campagne-e2e-integrale-mobile-companion-audit-et-62-capacites-runtime: ready-for-dev
+  23-7-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston: ready-for-dev
+  23-8-rapports-tech-lead-plan-correction-global-et-initialisation-epic-24: ready-for-dev
   epic-23-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
