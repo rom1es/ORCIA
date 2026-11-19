@@ -10,6 +10,12 @@ import {
   openSettingsTabViaUi,
   openUserSettingsTab,
 } from "./support/authAndOrgHelpers";
+import {
+  assertModalActionClickableViaElementFromPoint,
+  assertNoHorizontalOverflow,
+  assertVisibleErrorBannerOnHttpError,
+} from "./support/layoutGeometryAssertions";
+import { apiPost, reloadColdFromPg } from "./support/typedApiRequest";
 
 function startLocalLlmCassetteServer(): Promise<{ baseUrl: string; close: () => Promise<void> }> {
   return new Promise((resolve) => {
@@ -69,16 +75,23 @@ test.describe("Hub modèles IA, réindexation sémantique, connecteurs et Permis
       await page.getByTestId("open-create-ai-model-modal-btn").click();
       await expect(page.getByTestId("ai-model-display-name-input")).toHaveValue("");
       await expect(page.getByTestId("ai-model-primary-model-input")).toHaveValue("");
+      await assertModalActionClickableViaElementFromPoint(page, "save-and-test-ai-model-btn");
 
-      await page.getByTestId("llm-provider-preset-ollama").click();
+      await page.getByTestId("ai-model-config-modal").getByTestId("llm-provider-preset-ollama").click();
       await page.getByTestId("ai-model-display-name-input").fill("SSRF Probe");
       await page.getByTestId("ai-model-primary-model-input").fill("qwen2.5:14b");
       await page
         .getByTestId("ai-model-endpoint-uri-input")
         .fill("http://169.254.169.254/latest/meta-data/");
       await page.getByTestId("ai-model-auth-mode-select").selectOption("none_local");
-      await page.getByTestId("save-ai-model-btn").click();
-      await expect(page.getByTestId("ai-model-config-error")).toBeVisible({ timeout: 10000 });
+      await assertVisibleErrorBannerOnHttpError(
+        page,
+        () => page.getByTestId("save-ai-model-btn").click(),
+        {
+          urlIncludes: "/api/v1/settings/ai-models",
+          alertSelector: '[role="alert"][data-testid="ai-model-config-error"]',
+        },
+      );
 
       await page.getByTestId("ai-model-display-name-input").fill("Chat E2E Local");
       await page.getByTestId("ai-model-endpoint-uri-input").fill(mockLlm.baseUrl);
@@ -86,7 +99,7 @@ test.describe("Hub modèles IA, réindexation sémantique, connecteurs et Permis
       await expect(page.getByTestId("ai-model-display-name-input")).toBeHidden({ timeout: 15000 });
 
       await page.getByTestId("open-create-ai-model-modal-btn").click();
-      await page.getByTestId("llm-provider-preset-ollama").click();
+      await page.getByTestId("ai-model-config-modal").getByTestId("llm-provider-preset-ollama").click();
       await page.getByTestId("ai-model-usage-embedding-btn").click();
       await page.getByTestId("ai-model-display-name-input").fill("Embedding 1024 E2E");
       await page.getByTestId("ai-model-primary-model-input").fill("bge-m3:latest");
@@ -101,12 +114,8 @@ test.describe("Hub modèles IA, réindexation sémantique, connecteurs et Permis
       await page.goto("/assistant");
       await expect(page.getByTestId("assistant-no-embedding-banner")).toBeHidden({ timeout: 15000 });
 
-      await page.evaluate(() => {
-        window.localStorage.clear();
-        window.sessionStorage.clear();
-      });
       await page.goto("/settings?tab=models");
-      await page.reload();
+      await reloadColdFromPg(page);
       await expect(page.getByTestId("ai-models-master-table")).toContainText("Chat E2E Local", {
         timeout: 20000,
       });
@@ -134,7 +143,7 @@ test.describe("Hub modèles IA, réindexation sémantique, connecteurs et Permis
 
   test("connecteur socle (secret write-only) et jeton Passthrough personnel persistent après F5", async ({
     page,
-  }) => {
+  }, testInfo) => {
     await bootstrapAdminSession(page);
     await openSettingsTabViaUi(page, "connectors");
     await expect(page.getByTestId("settings-connectors-section")).toBeVisible({ timeout: 15000 });
@@ -145,7 +154,14 @@ test.describe("Hub modèles IA, réindexation sémantique, connecteurs et Permis
     await page.getByTestId("connector-base-url-input").fill("https://gitlab.e2e.internal");
     await page.getByTestId("connector-auth-mode-select").selectOption("OAUTH2_PASSTHROUGH");
     await page.getByTestId("connector-admin-secret-input").fill(adminSecretPlaceholder);
-    await page.getByTestId("register-connector-submit-btn").click();
+    await Promise.all([
+      page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/v1/settings/connectors") && res.request().method() === "POST",
+        { timeout: 15000 },
+      ),
+      page.getByTestId("register-connector-submit-btn").click(),
+    ]);
 
     const connectorRow = page.locator("[data-testid^='enterprise-connector-row-']").first();
     await expect(connectorRow).toBeVisible({ timeout: 15000 });
@@ -166,7 +182,16 @@ test.describe("Hub modèles IA, réindexation sémantique, connecteurs et Permis
     await page
       .getByTestId(`passthrough-token-input-${connectorId}`)
       .fill(passthroughSecretPlaceholder);
-    await page.getByTestId(`passthrough-save-btn-${connectorId}`).click();
+    await assertModalActionClickableViaElementFromPoint(page, `passthrough-save-btn-${connectorId}`);
+    await Promise.all([
+      page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/v1/") &&
+          (res.request().method() === "POST" || res.request().method() === "PUT"),
+        { timeout: 15000 },
+      ),
+      page.getByTestId(`passthrough-save-btn-${connectorId}`).click(),
+    ]);
     await expect(page.getByTestId(`passthrough-connected-badge-${connectorId}`)).toBeVisible({
       timeout: 15000,
     });
@@ -174,15 +199,14 @@ test.describe("Hub modèles IA, réindexation sémantique, connecteurs et Permis
       passthroughSecretPlaceholder,
     );
 
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    });
-    await page.reload();
+    await reloadColdFromPg(page);
     await openUserSettingsTab(page, "PASSTHROUGH_SOURCES");
     await expect(page.getByTestId(`passthrough-connected-badge-${connectorId}`)).toBeVisible({
       timeout: 15000,
     });
+    if (testInfo.project.name === "mobile-companion") {
+      await assertNoHorizontalOverflow(page, "16-ai-models #2 mobile");
+    }
 
     expectDbRowExists(
       "SELECT id, connector_kind, name, base_url FROM enterprise_connectors WHERE name = :name",
@@ -203,8 +227,11 @@ test.describe("Hub modèles IA, réindexation sémantique, connecteurs et Permis
     const adminToken = await getBearerTokenFromSession(page);
     const restrictedUri = "git://gitlab.internal/platform/infra-core";
 
-    const brokerRes = await page.request.post("/api/v1/permissions/broker/check-access", {
-      headers: { Authorization: `Bearer ${adminToken}` },
+    const brokerRes = await apiPost<{
+      status: string;
+      ticket?: { request_url?: string } | null;
+    }>(page, "/api/v1/permissions/broker/check-access", {
+      token: adminToken,
       data: {
         target_uri: restrictedUri,
         execution_identity: "passthrough",
@@ -215,10 +242,7 @@ test.describe("Hub modèles IA, réindexation sémantique, connecteurs et Permis
       },
     });
     expect(brokerRes.status()).toBe(200);
-    const brokerPayload = (await brokerRes.json()) as {
-      status: string;
-      ticket?: { request_url?: string } | null;
-    };
+    const brokerPayload = await brokerRes.json();
     expect(brokerPayload.status).toBe("WAITING_FOR_PERMISSION");
     expect(brokerPayload.ticket?.request_url).toBeTruthy();
 

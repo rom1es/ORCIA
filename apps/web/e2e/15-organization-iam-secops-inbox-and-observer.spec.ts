@@ -1,7 +1,7 @@
 /** @uj UJ-4, UJ-14 | @cap CAP-040, CAP-041, CAP-043, CAP-050, CAP-051, CAP-065, CAP-067, CAP-203 */
 import { expect, test } from "./support/e2eCaptureFixture";
 import { resetDay0 } from "./support/day0";
-import { expectDbRowCount, expectDbRowExists } from "./support/dbAssertions";
+import { expectDbRowCount, expectDbRowExists, queryDbRows } from "./support/dbAssertions";
 import { E2E_ADMIN } from "./support/firstAdmin";
 import {
   bootstrapAdminSession,
@@ -12,6 +12,7 @@ import {
   logoutViaAccountPopover,
   openSettingsTabViaUi,
 } from "./support/authAndOrgHelpers";
+import { apiDelete, apiGet, apiPost, reloadColdFromPg } from "./support/typedApiRequest";
 
 test.describe("Organisation, annuaire IAM, exceptions SecOps, notifications et mode observateur", () => {
   test.beforeEach(() => {
@@ -68,12 +69,8 @@ test.describe("Organisation, annuaire IAM, exceptions SecOps, notifications et m
       "trace d'audit scopée avec org_unit_id dans audit_ledger",
     );
 
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    });
     await page.goto("/organization");
-    await page.reload();
+    await reloadColdFromPg(page);
     await expect(page.getByTestId(`org-unit-name-${buId}`)).toBeVisible({ timeout: 20000 });
 
     await logoutViaAccountPopover(page);
@@ -81,13 +78,13 @@ test.describe("Organisation, annuaire IAM, exceptions SecOps, notifications et m
     await expect(page.getByTestId("four-zone-direction-c-shell")).toBeVisible({ timeout: 20000 });
 
     const leadToken = await getBearerTokenFromSession(page);
-    const deleteBuRes = await page.request.delete(`/api/v1/org-units/${buId}`, {
-      headers: { Authorization: `Bearer ${leadToken}` },
+    const deleteBuRes = await apiDelete(page, `/api/v1/org-units/${buId}`, {
+      token: leadToken,
     });
     expect(deleteBuRes.status()).toBe(403);
 
-    const escalateRes = await page.request.post("/api/v1/settings/iam/accounts", {
-      headers: { Authorization: `Bearer ${leadToken}` },
+    const escalateRes = await apiPost(page, "/api/v1/settings/iam/accounts", {
+      token: leadToken,
       data: {
         account_kind: "HUMAN",
         display_name: "Escalade Interdite",
@@ -125,12 +122,8 @@ test.describe("Organisation, annuaire IAM, exceptions SecOps, notifications et m
       timeout: 15000,
     });
 
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    });
     await page.goto("/settings?tab=iam");
-    await page.reload();
+    await reloadColdFromPg(page);
     await expect(page.getByTestId("iam-secops-drawer-toggle")).toBeVisible({ timeout: 20000 });
     await page.getByTestId("iam-secops-drawer-toggle").click();
     await expect(page.locator("[data-testid^='rbac-grant-row-']").first()).toBeVisible({
@@ -165,8 +158,8 @@ test.describe("Organisation, annuaire IAM, exceptions SecOps, notifications et m
     });
 
     const observerToken = await getBearerTokenFromSession(page);
-    const mutationRes = await page.request.post("/api/v1/org-units", {
-      headers: { Authorization: `Bearer ${observerToken}` },
+    const mutationRes = await apiPost<{ error_code?: string }>(page, "/api/v1/org-units", {
+      token: observerToken,
       data: {
         kind: "BU",
         name: "BU Interdite Observateur",
@@ -175,21 +168,61 @@ test.describe("Organisation, annuaire IAM, exceptions SecOps, notifications et m
       },
     });
     expect(mutationRes.status()).toBe(403);
-    const problem = (await mutationRes.json()) as { error_code?: string };
+    const problem = await mutationRes.json();
     expect(problem.error_code).toBe("ERR_OBSERVER_MODE_READ_ONLY");
+    const forbiddenRows = queryDbRows<{ count: number }>(
+      "SELECT COUNT(*)::int AS count FROM org_units WHERE slug = :slug",
+      { slug: "bu-interdite-obs" },
+    );
+    expect(forbiddenRows[0]?.count).toBe(0);
   });
 
   test("centre de notifications et boîte de réception reflètent task_notifications en base PostgreSQL", async ({
     page,
   }) => {
-    await bootstrapAdminSession(page);
-    const adminToken = await getBearerTokenFromSession(page);
-    const inboxRes = await page.request.get("/api/v1/inbox/notifications", {
-      headers: { Authorization: `Bearer ${adminToken}` },
+    const { accessToken: adminToken } = await bootstrapAdminSession(page);
+    const wsRes = await apiPost<{ id: string }>(page, "/api/v1/workspaces", {
+      token: adminToken,
+      data: {
+        name: "Espace Inbox E2E",
+        slug: "ws-inbox-e2e",
+        visibility_mode: "STANDARD",
+        lifecycle_phase: "BUILD",
+      },
     });
+    expect(wsRes.status()).toBe(201);
+    const wsId = (await wsRes.json()).id;
+
+    const claimCreateRes = await apiPost<{ notification: { id: string } }>(
+      page,
+      "/api/v1/runs/0195f300-0000-7000-8000-000000000701/steps/0195f300-0000-7000-8000-000000000801/claim",
+      {
+        token: adminToken,
+        data: {
+          workspace_id: wsId,
+          step_key: "inbox-review-step",
+          ttl_seconds: 900,
+          force: false,
+        },
+      },
+    );
+    expect(claimCreateRes.status()).toBe(200);
+    const createdTaskId = (await claimCreateRes.json()).notification.id;
+    const releaseRes = await apiPost(page, `/api/v1/tasks/${createdTaskId}/release`, {
+      token: adminToken,
+      data: { force: false },
+    });
+    expect(releaseRes.status()).toBe(200);
+
+    const inboxRes = await apiGet<{ items?: unknown[] }>(
+      page,
+      `/api/v1/inbox/notifications?workspace_id=${encodeURIComponent(wsId)}`,
+      { token: adminToken },
+    );
     expect(inboxRes.status()).toBe(200);
-    const inboxPayload = (await inboxRes.json()) as { items?: unknown[] };
+    const inboxPayload = await inboxRes.json();
     expect(Array.isArray(inboxPayload.items)).toBe(true);
+    expect((inboxPayload.items ?? []).length).toBeGreaterThanOrEqual(1);
 
     await page.getByTestId("topbar-notifications-toggle").click();
     await expect(page.getByTestId("topbar-notifications-drawer")).toBeVisible({ timeout: 10000 });

@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { reloadColdFromPg } from "./typedApiRequest";
 import {
   openCatalogOrAgentsPage,
   type CatalogAgentsTabKey,
@@ -13,13 +14,9 @@ export type FinopsTabSlug =
 export type StudioViewModeSlug = "design" | "whatif" | "yaml";
 export type ShowcaseTabSlug = "macro" | "features" | "architecture" | "changelog";
 
-/** Vide `localStorage` et `sessionStorage` puis recharge la page (`F5` réel). */
+/** Évince les caches RAM API, vide `localStorage`/`sessionStorage`, puis recharge la page (`F5` à froid PG18). */
 export async function reloadClearingStorage(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    window.localStorage.clear();
-    window.sessionStorage.clear();
-  });
-  await page.reload();
+  await reloadColdFromPg(page);
 }
 
 /** Navigue vers `/cockpit` et attend l'affichage du Cockpit ou de l'état d'accostage. */

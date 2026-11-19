@@ -4,6 +4,7 @@ import { expectDbRowExists } from "./support/dbAssertions";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
 import { createBuAndTeamViaUi, createWorkspaceViaUi } from "./support/orgAndWorkspace";
+import { apiGet, apiPost, reloadColdFromPg } from "./support/typedApiRequest";
 
 /**
  * TEST-04 · 03 — Workflow « Human-Led » (UJ-5, Epic 3 / Story 3.4, FR-4/FR-5, BUG-E2E-02).
@@ -21,8 +22,11 @@ test.describe("TEST-04 · 03 — Human-Led : ancrage obligatoire et arbitrage", 
     await createFirstAdminViaUi(page);
     await expect
       .poll(async () => {
-        const res = await page.request.get("/api/v1/bootstrap/accostage-status");
-        return ((await res.json()) as { first_admin_email: string | null }).first_admin_email;
+        const res = await apiGet<{ first_admin_email: string | null }>(
+          page,
+          "/api/v1/bootstrap/accostage-status",
+        );
+        return (await res.json()).first_admin_email;
       })
       .toBe(E2E_ADMIN.email);
     await createBuAndTeamViaUi(page);
@@ -69,14 +73,15 @@ test.describe("TEST-04 · 03 — Human-Led : ancrage obligatoire et arbitrage", 
     expect(runId.length).toBeGreaterThan(0);
 
     // 3. Rejet 422 ERR_HUMAN_ANCHOR_REQUIRED pour une identité agentique (FR-4)
-    const refreshRes = await page.request.post("/api/v1/auth/refresh");
+    const refreshRes = await apiPost<{ access_token?: string }>(page, "/api/v1/auth/refresh");
     expect(refreshRes.status()).toBe(200);
-    const { access_token: adminToken } = (await refreshRes.json()) as { access_token?: string };
+    const { access_token: adminToken } = await refreshRes.json();
     expect(adminToken).toBeTruthy();
-    const agentAttempt = await page.request.post(
+    const agentAttempt = await apiPost<{ error_code: string }>(
+      page,
       "/api/v1/orchestration/runs/anchors/sign",
       {
-        headers: { Authorization: `Bearer ${adminToken}` },
+        token: adminToken,
         data: {
           run_id: runId,
           step_key: "frame-architecture-intent",
@@ -89,7 +94,7 @@ test.describe("TEST-04 · 03 — Human-Led : ancrage obligatoire et arbitrage", 
       },
     );
     expect(agentAttempt.status()).toBe(422);
-    expect(((await agentAttempt.json()) as { error_code: string }).error_code).toBe(
+    expect((await agentAttempt.json()).error_code).toBe(
       "ERR_HUMAN_ANCHOR_REQUIRED",
     );
 
@@ -117,14 +122,13 @@ test.describe("TEST-04 · 03 — Human-Led : ancrage obligatoire et arbitrage", 
     const snapshotId = (await summary.getAttribute("data-committed-snapshot-id")) ?? "";
     expect(snapshotId.length).toBeGreaterThan(0);
 
-    // 5. Vrai F5 (localStorage vidé + rechargement) : l'état est réhydraté depuis GET /api/v1/orchestration/...
-    await page.evaluate(() => window.localStorage.clear());
+    // 5. Vrai F5 à froid (éviction RAM + localStorage vidé + rechargement) : réhydraté depuis PG18
     const reloadBb = page.waitForResponse(
       (r) =>
         r.url().includes(`/api/v1/orchestration/runs/${runId}/blackboard`) &&
         r.request().method() === "GET",
     );
-    await page.reload();
+    await reloadColdFromPg(page);
     expect((await reloadBb).status()).toBe(200);
 
     await expect(page.getByTestId("cockpit-human-anchor-signed-badge")).toBeVisible();

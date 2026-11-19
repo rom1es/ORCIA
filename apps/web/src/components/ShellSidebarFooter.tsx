@@ -41,6 +41,7 @@ export function ShellSidebarFooter({
       userRoleLabel={userRoleLabel}
       locale={locale}
       labels={accountLabels}
+      includeModal={false}
       onLocaleChange={onLocaleChange}
       onNavigate={onNavigate}
       onLogout={onLogout}

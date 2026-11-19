@@ -1,3 +1,4 @@
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import React from "react";
 import { OrciaIcon } from "../components/icons";
 import { FourZoneAutonomousNotificationsGroup } from "./FourZoneAutonomousNotificationsGroup";
@@ -30,19 +31,31 @@ export function FourZoneNotificationsDrawer({
     .sort((a, b) => Number(Boolean(b.isAutonomousPriority)) - Number(Boolean(a.isAutonomousPriority)));
 
   return (
-    <aside
-      data-testid="topbar-notifications-drawer"
-      role="dialog"
-      aria-label={labels.notificationsDrawerTitle}
-      className="fixed right-0 top-[52px] z-30 border-b border-l p-4 shadow-md"
-      style={{
-        width: "min(420px, 100vw)",
-        maxHeight: "calc(100vh - 52px)",
-        overflowY: "auto",
-        backgroundColor: "var(--color-bg-surface)",
-        borderColor: "var(--color-border-subtle)",
+    <DialogPrimitive.Root
+      open={true}
+      modal={false}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose();
       }}
     >
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Content asChild aria-describedby={undefined}>
+          <aside
+            data-testid="topbar-notifications-drawer"
+            aria-label={labels.notificationsDrawerTitle}
+            className="fixed right-0 top-[52px] border-b border-l p-4 shadow-md"
+            style={{
+              zIndex: "var(--z-dialog)",
+              width: "min(420px, 100vw)",
+              maxHeight: "calc(100vh - 52px)",
+              overflowY: "auto",
+              backgroundColor: "var(--color-bg-surface)",
+              borderColor: "var(--color-border-subtle)",
+            }}
+          >
+            <DialogPrimitive.Title className="sr-only">
+              {labels.notificationsDrawerTitle}
+            </DialogPrimitive.Title>
       <div className="flex items-center justify-between">
         <h2 className="text-xs font-semibold">{labels.notificationsDrawerTitle}</h2>
         <button
@@ -194,6 +207,9 @@ export function FourZoneNotificationsDrawer({
           <span>{labels.notificationsOpenActivityCta ?? "Ouvrir le Journal d'Activité →"}</span>
         </button>
       </div>
-    </aside>
+          </aside>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }

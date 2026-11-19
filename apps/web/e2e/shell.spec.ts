@@ -1,6 +1,7 @@
 /** @uj UJ-13, UJ-20 | @cap CAP-060, CAP-061 */
 import { expect, test } from "./support/e2eCaptureFixture";
-import { createFirstAdminViaUi } from "./support/firstAdmin";
+import { expectDbRowExists, queryDbRows } from "./support/dbAssertions";
+import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
 import { resetDay0 } from "./support/day0";
 import {
   expectZeroVisibleErrorBanners,
@@ -75,6 +76,11 @@ test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, 
       await page.getByTestId("mobile-menu-drawer-toggle").click();
     }
     await expect(page.getByTestId("eight-menu-item-configuration")).toBeVisible({ timeout: 20000 });
+    expectDbRowExists(
+      "SELECT id, email, platform_role FROM users WHERE email = :email AND platform_role = 'PLATFORM_ADMIN'",
+      { email: E2E_ADMIN.email },
+      "PLATFORM_ADMIN persisté dans users PG18",
+    );
   });
 
   test("grise les entrées de menu tant que la plateforme n'est pas initialisée (Jour 0)", async ({
@@ -94,6 +100,8 @@ test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, 
       }
     }
     expect(disabledReasons.length, "au moins une entrée grisée au Jour 0").toBeGreaterThan(0);
+    const countRows = queryDbRows<{ count: number }>("SELECT COUNT(*)::int AS count FROM users");
+    expect(countRows[0]?.count).toBe(0);
   });
 
   test("le raccourci « [ » replie et déplie la barre latérale", async ({ page }, testInfo) => {
@@ -105,6 +113,8 @@ test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, 
     await expect(sidebar).toHaveAttribute("data-rail-collapsed", "true");
     await page.keyboard.press("[");
     await expect(sidebar).toHaveAttribute("data-rail-collapsed", "false");
+    const countRows = queryDbRows<{ count: number }>("SELECT COUNT(*)::int AS count FROM users");
+    expect(countRows[0]?.count).toBe(0);
   });
 
   test("la modale Jour 0 est un dialogue accessible qui bloque le shell", async ({ page }) => {
@@ -114,5 +124,7 @@ test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, 
     await expect(
       page.getByTestId("sidebar-rail-toggle-btn").click({ timeout: 2000 }),
     ).rejects.toThrow(/intercepts pointer events/);
+    const countRows = queryDbRows<{ count: number }>("SELECT COUNT(*)::int AS count FROM users");
+    expect(countRows[0]?.count).toBe(0);
   });
 });

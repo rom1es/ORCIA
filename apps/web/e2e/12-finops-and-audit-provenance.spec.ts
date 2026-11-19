@@ -2,11 +2,17 @@
 import { expect, test } from "./support/e2eCaptureFixture";
 import { expectDbRowExists } from "./support/dbAssertions";
 import { resetDay0 } from "./support/day0";
-import { createFirstAdminViaUi } from "./support/firstAdmin";
+import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
 import {
   expectZeroVisibleErrorBanners,
   watchUnexpectedPageAndApiErrors,
 } from "./support/apiErrors";
+import {
+  assertModalActionClickableViaElementFromPoint,
+  assertNoHorizontalOverflow,
+  attachErrorAlertProbe,
+} from "./support/layoutGeometryAssertions";
+import { reloadColdFromPg } from "./support/typedApiRequest";
 
 test.describe("TEST-06 · 12 — FinOps Gouvernance, Services externes & Journal de Provenance", () => {
   test("bureau : /activity et /finops (état vide, modale plafond, 4 onglets dont Services externes) sans erreur 4xx/5xx", async ({
@@ -32,14 +38,15 @@ test.describe("TEST-06 · 12 — FinOps Gouvernance, Services externes & Journal
     await page.getByTestId("finops-scope-global").click();
     await expectZeroVisibleErrorBanners(page);
 
-    // Ouverture de la modale "+ Configurer un plafond" et sauvegarde + survie F5
+    // Ouverture de la modale "+ Configurer un plafond" et sauvegarde + survie F5 à froid PG18
     await page.getByTestId("finops-configure-budget-btn").click();
     await expect(page.getByTestId("finops-budget-modal")).toBeVisible();
+    await assertModalActionClickableViaElementFromPoint(page, "finops-budget-save-btn");
     await page.getByTestId("finops-budget-monthly-limit").fill("250");
     await page.getByTestId("finops-budget-save-btn").click();
     await expect(page.getByTestId("finops-success-banner")).toBeVisible({ timeout: 15000 });
 
-    await page.reload();
+    await reloadColdFromPg(page);
     await expect(page.getByTestId("finops-governance-dashboard")).toBeVisible({ timeout: 30000 });
     expectDbRowExists(
       "SELECT id, scope_type, monthly_budget_usd FROM finops_scope_budgets WHERE scope_type = :scope_type AND monthly_budget_usd > 0",
@@ -70,6 +77,7 @@ test.describe("TEST-06 · 12 — FinOps Gouvernance, Services externes & Journal
   }, testInfo) => {
     test.skip(testInfo.project.name !== "mobile-companion", "parcours mobile");
     const errors = watchUnexpectedPageAndApiErrors(page);
+    const alertProbe = attachErrorAlertProbe(page);
     resetDay0();
     await createFirstAdminViaUi(page);
 
@@ -78,23 +86,21 @@ test.describe("TEST-06 · 12 — FinOps Gouvernance, Services externes & Journal
     await expect(page.getByTestId("finops-governance-dashboard")).toBeVisible({ timeout: 15000 });
     await page.waitForLoadState("load");
     await expectZeroVisibleErrorBanners(page);
-    const finopsOverflow = await page.evaluate(() => ({
-      scrollWidth: document.documentElement.scrollWidth,
-      innerWidth: window.innerWidth,
-    }));
-    expect(finopsOverflow.scrollWidth).toBeLessThanOrEqual(finopsOverflow.innerWidth);
+    await assertNoHorizontalOverflow(page, "mobile /finops");
 
     await page.goto("/activity");
     await expect(page.getByTestId("four-zone-central-workspace")).toBeVisible({ timeout: 30000 });
     await expect(page.getByTestId("activity-log-explorer-page")).toBeVisible({ timeout: 15000 });
     await page.waitForLoadState("load");
     await expectZeroVisibleErrorBanners(page);
-    const activityOverflow = await page.evaluate(() => ({
-      scrollWidth: document.documentElement.scrollWidth,
-      innerWidth: window.innerWidth,
-    }));
-    expect(activityOverflow.scrollWidth).toBeLessThanOrEqual(activityOverflow.innerWidth);
+    await assertNoHorizontalOverflow(page, "mobile /activity");
 
+    expectDbRowExists(
+      "SELECT id, email, platform_role FROM users WHERE email = :email AND platform_role = 'PLATFORM_ADMIN'",
+      { email: E2E_ADMIN.email },
+      "admin Jour 0 présent dans users PG18 lors du parcours FinOps/Activity mobile",
+    );
+    alertProbe.assertNoUnexpectedHttpErrors();
     expect(errors, errors.join("\n")).toEqual([]);
   });
 });

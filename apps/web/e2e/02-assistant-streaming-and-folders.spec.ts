@@ -5,6 +5,7 @@ import { resetDay0 } from "./support/day0";
 import { configureActiveEmbeddingModelViaApi } from "./support/embeddingModel";
 import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
 import { createBuAndTeamViaUi, createWorkspaceViaUi } from "./support/orgAndWorkspace";
+import { apiGet, reloadColdFromPg } from "./support/typedApiRequest";
 
 test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et dossiers", () => {
   test.beforeEach(async ({ page }) => {
@@ -12,8 +13,11 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
     await createFirstAdminViaUi(page);
     await expect
       .poll(async () => {
-        const res = await page.request.get("/api/v1/bootstrap/accostage-status");
-        return ((await res.json()) as { first_admin_email: string | null }).first_admin_email;
+        const res = await apiGet<{ first_admin_email: string | null }>(
+          page,
+          "/api/v1/bootstrap/accostage-status",
+        );
+        return (await res.json()).first_admin_email;
       })
       .toBe(E2E_ADMIN.email);
   });
@@ -40,6 +44,11 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
       timeout: 30000,
     });
     expectDbRowExists(
+      "SELECT id, usage, is_active FROM workspace_llm_tier_mappings WHERE usage = 'embedding' AND is_active = TRUE",
+      undefined,
+      "modèle d'embedding actif persisté dans workspace_llm_tier_mappings PG18",
+    );
+    expectDbRowExists(
       "SELECT id, email FROM users WHERE email = :email",
       { email: E2E_ADMIN.email },
       "utilisateur initiateur présent en PostgreSQL 18",
@@ -63,15 +72,11 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
     await page.getByTestId("assistant-create-folder-btn").click();
     expect((await created).status()).toBeLessThan(400);
 
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    });
     const overview = page.waitForResponse(
       (r) => r.url().includes("/api/v1/assistant/workspaces/") && r.url().endsWith("/overview"),
       { timeout: 30000 },
     );
-    await page.reload();
+    await reloadColdFromPg(page);
     expect((await overview).status()).toBeLessThan(400);
     await page.getByRole("button", { name: /^Dossiers \(\d+\)$/ }).click();
     await expect(page.getByText("Dossier E2E persistant").first()).toBeVisible({ timeout: 20000 });
@@ -96,7 +101,7 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
     await page.getByTestId("assistant-create-folder-btn").click();
     expect((await created).status()).toBeLessThan(400);
 
-    await page.reload();
+    await reloadColdFromPg(page);
     await page.getByRole("button", { name: /^Dossiers \(\d+\)$/ }).click();
     await expect(page.getByText("Dossier E2E PostgreSQL").first()).toBeVisible({ timeout: 20000 });
 

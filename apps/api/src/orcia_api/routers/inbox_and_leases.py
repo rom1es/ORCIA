@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
 from collections.abc import AsyncIterator
 from typing import Annotated, Literal
 
@@ -146,14 +145,6 @@ async def list_inbox_notifications(
     user = resolve_request_user(request, persona_key=persona_key)
     _enforce_inbox_workspace_guard(request, user, workspace_id, require_write=False)
     svc = get_notification_service(request)
-    if os.environ.get("ORCIA_E2E_SEED_FIXTURES", "").strip() == "1":
-        await svc.seed_default_notifications_if_empty_async(
-            workspace_id=workspace_id,
-            team_id="0195f000-0000-7000-8000-000000000103",
-            user_id=user.id,
-            run_id="0195f000-0000-7000-8000-000000000701",
-            step_execution_id="0195f000-0000-7000-8000-000000000801",
-        )
     items = await svc.list_notifications_async(
         workspace_id=workspace_id,
         scope_filter=scope_filter,

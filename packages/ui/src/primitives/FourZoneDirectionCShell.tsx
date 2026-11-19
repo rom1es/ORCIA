@@ -92,6 +92,7 @@ export function FourZoneDirectionCShell({
   helpColumnContent,
   helpColumnOpen: controlledHelpColumnOpen,
   onHelpColumnOpenChange,
+  mobileDrawerCloseSignal,
   children,
 }: FourZoneDirectionCShellProps): React.ReactElement {
   const { viewportWidthPx, tier, isMobile } = useResponsiveBreakpoint(viewportWidth);
@@ -121,11 +122,19 @@ export function FourZoneDirectionCShell({
     }
   }, [viewportWidthPx, pendingDecisionsTotal, controlledHelpColumnOpen]);
 
+  const breadcrumbSig = (breadcrumbItems ?? [])
+    .map((item) => item.route ?? item.label)
+    .join("|");
+
   useEffect(() => {
     if (!isMobile) {
       setMobileMenuOpen(false);
     }
   }, [isMobile]);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [breadcrumbSig, mobileDrawerCloseSignal]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {

@@ -25,5 +25,10 @@ export async function createFirstAdminViaUi(page: Page): Promise<void> {
   ]);
   expect(firstAdminRes.status()).toBe(200);
   await expect(modal).toBeHidden({ timeout: 30000 });
-  await expect(page.getByTestId("sidebar-open-my-account-btn")).toBeVisible({ timeout: 15000 });
+  const viewport = page.viewportSize();
+  if (!viewport || viewport.width >= 768) {
+    await expect(page.getByTestId("sidebar-open-my-account-btn")).toBeVisible({ timeout: 15000 });
+  } else {
+    await expect(page.getByTestId("mobile-bottom-tab-bar")).toBeVisible({ timeout: 15000 });
+  }
 }

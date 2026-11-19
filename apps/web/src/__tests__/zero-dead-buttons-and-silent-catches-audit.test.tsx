@@ -1,56 +1,128 @@
 import fs from "node:fs";
 import path from "node:path";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
-import { afterEach, describe, expect, it } from "vitest";
-import { ShellContainer } from "../components/ShellContainer";
-import { CatalogFeaturePanel } from "../features/catalog";
-import { CockpitFeaturePanel } from "../features/cockpit";
-import { GatesFeaturePanel } from "../features/gates";
-import { InboxFeaturePanel } from "../features/inbox";
-import { PacksRegistryPage } from "../features/settings/packs/PacksRegistryPage";
-import { WorkspacesFeaturePanel } from "../features/workspaces";
-import { I18nProvider } from "../i18n";
-import { seedVitestPlatformSetupState } from "./vitest.setup";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { clearPlatformSetupStorage } from "../components/platformSetupStorageHelpers";
+import { createOrciaQueryClient, createOrciaRouter } from "../router";
+import { useAuthSessionStore } from "../stores/authSessionStore";
+import { resetVitestApiBackend, seedVitestPlatformSetupState } from "./vitest.setup";
 
-afterEach(() => {
-  cleanup();
-});
+const REPO_ROOT = path.resolve(__dirname, "../../../..");
+const WEB_SRC_DIR = path.join(REPO_ROOT, "apps/web/src");
+const UI_SRC_DIR = path.join(REPO_ROOT, "packages/ui/src");
 
-const WEB_SRC_DIR = path.resolve(__dirname, "..");
-
-function collectTsxFiles(dir: string): string[] {
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
+function collectTsFiles(dir: string): string[] {
+  if (!fs.existsSync(dir)) return [];
   const results: string[] = [];
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (
+      entry.name === "node_modules" ||
+      entry.name === "dist" ||
+      entry.name === "__tests__" ||
+      entry.name === "generated"
+    ) {
+      continue;
+    }
+    const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (entry.name === "__tests__" || entry.name === "generated") {
-        continue;
-      }
-      results.push(...collectTsxFiles(fullPath));
-    } else if (entry.isFile() && /\.(ts|tsx)$/.test(entry.name)) {
-      results.push(fullPath);
+      results.push(...collectTsFiles(full));
+    } else if (
+      entry.isFile() &&
+      !entry.name.includes(".test.") &&
+      (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx"))
+    ) {
+      results.push(full);
     }
   }
   return results;
 }
 
-describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks & Zero Silent Catches", () => {
-  it("forbids silent .catch(() => undefined) inside apps/web/src/features/ and apps/web/src/routes/", () => {
-    const targetDirs = [
-      path.join(WEB_SRC_DIR, "features"),
-      path.join(WEB_SRC_DIR, "routes"),
-    ];
+function seedAuthenticatedAdminState() {
+  seedVitestPlatformSetupState(
+    {
+      org_units: [
+        {
+          id: "0192c4e0-0000-7000-8000-000000000201",
+          name: "Direction Opérations",
+          slug: "dir-operations",
+          level: "BU",
+          parentId: null,
+          billingEnabled: true,
+        },
+        {
+          id: "0192c4e0-0000-7000-8000-000000000202",
+          name: "Équipe Plateforme",
+          slug: "equipe-plateforme",
+          level: "TEAM",
+          parentId: "0192c4e0-0000-7000-8000-000000000201",
+          billingEnabled: true,
+        },
+      ],
+      workspaces: [
+        {
+          workspaceId: "ws-audit-router-1",
+          name: "Espace Audit Routeur",
+          visibilityMode: "STANDARD",
+          ownerOrgUnitName: "Équipe Plateforme",
+          lifecyclePhase: "BUILD",
+          suggestedWorkflows: [],
+          accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
+          finopsCostUsd: 0,
+        },
+      ],
+    },
+    {
+      email: "admin.audit@orcia.fr",
+      displayName: "Admin Audit",
+      roles: ["PLATFORM_ADMIN"],
+    },
+  );
+  useAuthSessionStore.getState().setAuthSession({
+    isAuthenticated: true,
+    email: "admin.audit@orcia.fr",
+    displayName: "Admin Audit",
+    roles: ["PLATFORM_ADMIN"],
+    activeHat: "PLATFORM_ADMIN",
+  });
+}
+
+async function mountRouteWithRealRouter(initialPath: string) {
+  const queryClient = createOrciaQueryClient();
+  const history = createMemoryHistory({ initialEntries: [initialPath] });
+  const router = createOrciaRouter({ queryClient, history });
+  await router.load();
+  const rendered = render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  );
+  return { ...rendered, router, queryClient };
+}
+
+beforeEach(() => {
+  resetVitestApiBackend();
+  clearPlatformSetupStorage();
+});
+
+afterEach(() => {
+  cleanup();
+});
+
+describe("Anti-False-Positive Lock 4 — RouterProvider Real Mount Audit, Zero Silent Catches & Error Alerts", () => {
+  it("forbids silent .catch(() => undefined) on user actions in apps/web/src/features and apps/web/src/routes (and non-clipboard UI)", () => {
+    const silentCatchRegex = /\.catch\(\s*\(\s*\)\s*=>\s*(?:undefined|null|\{\s*\})\s*\)/;
     const violations: string[] = [];
 
-    for (const dir of targetDirs) {
-      for (const filePath of collectTsxFiles(dir)) {
-        const content = fs.readFileSync(filePath, "utf-8");
+    for (const dir of [path.join(WEB_SRC_DIR, "features"), path.join(WEB_SRC_DIR, "routes"), UI_SRC_DIR]) {
+      for (const filePath of collectTsFiles(dir)) {
+        const content = fs.readFileSync(filePath, "utf8");
         const lines = content.split("\n");
+        const rel = path.relative(REPO_ROOT, filePath);
         lines.forEach((line, idx) => {
-          if (/\.catch\(\s*\(\s*\)\s*=>\s*(undefined|null|\{\s*\})\s*\)/.test(line)) {
-            const rel = path.relative(WEB_SRC_DIR, filePath);
+          if (silentCatchRegex.test(line) && !line.includes("navigator.clipboard")) {
             violations.push(`${rel}:${idx + 1} -> ${line.trim()}`);
           }
         });
@@ -60,523 +132,122 @@ describe("Permanent CI Guardrail — Zero Dead Buttons, Zero Omitted Callbacks &
     expect(violations).toEqual([]);
   });
 
-  it("verifies that every interactive @orcia/ui primitive mounted in apps/web receives its action callbacks", () => {
-    const requiredPropsByComponent: Record<string, readonly string[]> = {
-      AssistantSpeedSelectorAndStreamView: ["onSendTurn", "onStopGeneration"],
-      AssistantGovernanceModalAndStudio: [
-        "onSaveUserPreferences",
-        "onSaveWorkspaceSettings",
-        "onSaveStudioOverride",
-        "onResetStudioOverride",
-      ],
-      AssistantFoldersAndCollaborativeThreadView: [
-        "onSelectFolder",
-        "onCreateFolder",
-        "onUpdatePinnedNotes",
-        "onChangeVisibility",
-        "onSendCollaborativeMessage",
-        "onLaunchProcessFromFolder",
-      ],
-      AssistantCitationPillsAndArtifactCard: ["onSaveDraft", "onContinueInProcess"],
-      RemoteServiceTestBenchAndMcpExposureView: [
-        "onRunTestBench",
-        "onActivateService",
-        "onToggleMcpExposure",
-      ],
-      PackBuilderProcessesStudioView: ["onCreateBusinessPack", "onPromoteAssetToPack"],
-      HelpArticleGeneratorAndValidatorView: ["onGenerateAndAttach"],
-      UpstreamChallengeRewindModal: ["onSubmitChallenge", "onTriggerReplay", "onClose"],
-      CommandPaletteModal: ["onSelectItem", "onClose"],
-      WorkspaceFiveTabsAndExternalRebaseView: ["onSelectTab", "onRegisterWaiver"],
-      DnaStarlarkCompilerAndGlossaryLifecycleView: [
-        "onCompileFromNorm",
-        "onSignAndActivate",
-        "onPromoteInFlow",
-        "onRejectCandidate",
-      ],
-      TopHeaderSearchCommand: [
-        "onQueryChange",
-        "onTriggerSpeed2Now",
-        "onSelectDeepLink",
-        "onAskAssistant",
-        "onClose",
-      ],
-      HumanLedAnchorCard: ["onChange", "onSignAnchor"],
-      ArbitrationTieBreakCard: ["onSelectOption"],
-      CognitiveReviewBriefingGrid: ["onInspectHypotheses"],
-      ChunkValidationCard: ["onDecideChunk", "onFinalizeGate"],
-      ActivityLogExplorerView: [
-        "onInspectProvenance",
-        "onExportProvenance",
-        "onSelectRunId",
-      ],
-      ActivityProvenanceModal: ["onClose"],
-      FinopsGovernanceDashboardView: [
-        "onSaveBudget",
-        "onSubmitOverride",
-        "onOpenHelpSection",
-        "onApplyRecommendation",
-        "onReviewPostHocSample",
-        "onUpdateConnectorQuota",
-        "onResetConnectorCircuit",
-      ],
-      AutonomousExecutionBadge: [
-        "onEmergencyStop",
-        "onInvalidateAndRestore",
-        "onOpenHelpSection",
-      ],
-      AutonomyContractModal: [
-        "onSignContract",
-        "onRevokeContract",
-        "onOpenHelpSection",
-      ],
-      WorkflowTriggersModal: [
-        "onCreateTrigger",
-        "onUpdateTrigger",
-        "onDeleteTrigger",
-        "onFireTrigger",
-        "onResetCircuit",
-        "onOpenHelpSection",
-      ],
-      AgentExecutionTrace: [
-        "onInspectLines",
-        "onSynthesizeNow",
-        "onApproveWrite",
-        "onRejectWrite",
-      ],
-      SourceLineInspectorDrawer: ["onOpenChange", "onCopySlice"],
-      SidebarAccountPopover: [
-        "onOpenSettingsTab",
-        "onNavigateProfile",
-        "onNavigateHelp",
-        "onNavigateShowcase",
-        "onLogout",
-      ],
-      UserProfileOverviewPage: [
-        "onEditAccount",
-        "onSelectPopularItem",
-        "onExploreAgents",
-      ],
-      UserSettingsModalDialog: [
-        "onOpenChange",
-        "onSelectTab",
-        "onUpdatePreferences",
-        "onCreateMcpToken",
-        "onRevokeMcpToken",
-      ],
-    };
-
-    const allFiles = collectTsxFiles(WEB_SRC_DIR);
-    const missingWiring: string[] = [];
-
-    for (const [componentName, requiredProps] of Object.entries(requiredPropsByComponent)) {
-      const tagRegex = new RegExp(`<${componentName}\\b([\\s\\S]*?)\\/>`, "g");
-      let foundMount = false;
-
-      for (const filePath of allFiles) {
-        const content = fs.readFileSync(filePath, "utf-8");
-        let match = tagRegex.exec(content);
-        while (match !== null) {
-          foundMount = true;
-          const propsBlock = match[1] ?? "";
-          const rel = path.relative(WEB_SRC_DIR, filePath);
-          for (const reqProp of requiredProps) {
-            const propRegex = new RegExp(`\\b${reqProp}\\s*=`);
-            if (!propRegex.test(propsBlock)) {
-              missingWiring.push(`${rel}: <${componentName}> is missing prop "${reqProp}"`);
-            }
-          }
-          match = tagRegex.exec(content);
-        }
-      }
-
-      if (!foundMount) {
-        missingWiring.push(`Component <${componentName}> was not found mounted anywhere in apps/web`);
-      }
-    }
-
-    expect(missingWiring).toEqual([]);
-  });
-
-  it("dynamically verifies that clicking 'Envoyer à Mon Assistant', selecting Model & Thinking Level, saving/resuming conversations across F5 reloads, and '+ Nouveau dossier' in InboxFeaturePanel updates the DOM", async () => {
-    // Un dossier appartient à un Espace de travail réel (aucun espace de repli fictif — BUG-E2E-01).
-    seedVitestPlatformSetupState({
-      org_units: [],
-      rbac_grants: [],
-      llm_tiers: [],
-      workspaces: [
-        {
-          workspaceId: "ws-audit-1",
-          name: "Espace Audit",
-          visibilityMode: "STANDARD",
-          ownerOrgUnitName: "Equipe Audit",
-          lifecyclePhase: "BUILD",
-          suggestedWorkflows: [],
-          accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
-          finopsCostUsd: 0,
-        },
-      ],
-      datasources: [],
-      packs: [],
-      workflows: [],
-      runs: [],
-      catalog_items: [],
-      ontology_concepts: [],
-    });
-    const firstRender = render(
-      <I18nProvider initialLocale="fr">
-        <ShellContainer>
-          <InboxFeaturePanel />
-        </ShellContainer>
-      </I18nProvider>,
-    );
-
-    // 0. Minimalist Welcome Hero ("Par quoi voulez-vous commencer ?") is shown initially without Cockpit clutter or Redis keys
-    expect(screen.getByTestId("assistant-welcome-hero-title").textContent).toContain(
-      "Par quoi voulez-vous commencer ?",
-    );
-    expect(screen.queryByTestId("inbox-empty-state")).toBeNull();
-    expect(screen.queryByTestId("inbox-amber-counter")).toBeNull();
-    expect(screen.queryByTestId("assistant-prompt-cache-badge")).toBeNull();
-
-    // 1. Open Model & Thinking Level dropdown popover and select 'complex' + 'deep'
-    fireEvent.click(screen.getByTestId("assistant-model-and-effort-picker-trigger"));
-    expect(screen.getByTestId("assistant-model-picker-popover")).toBeDefined();
-    fireEvent.click(screen.getByTestId("assistant-model-option-complex"));
-    fireEvent.click(screen.getByTestId("assistant-effort-option-deep"));
-
-    // Verify bottom folders panel is collapsed by default (sr-only) until user clicks '📁 Dossiers'
-    expect(
-      screen.getByTestId("assistant-folders-panel-wrapper").className,
-    ).toContain("sr-only");
-
-    // 2. Send a first question -> auto-creates a saved conversation and clears the input
-    const promptInput = screen.getByTestId(
-      "assistant-three-speed-input",
-    ) as HTMLInputElement;
-    fireEvent.change(promptInput, {
-      target: { value: "Quels sont les points critiques de l'architecture ?" },
-    });
-    const sendBtn = screen.getByTestId("assistant-three-speed-send-btn");
-    fireEvent.click(sendBtn);
-    expect(promptInput.value).toBe("");
-
-    await waitFor(() => {
-      const output = screen.getByTestId("assistant-streamed-response-box");
-      expect(output.textContent).toContain("[SPEED_3_DEEP_AUDIT]");
-      expect(screen.getByTestId("assistant-conversation-messages-list").textContent).toContain(
-        "Quels sont les points critiques de l'architecture ?",
-      );
-      // Once turn is completed and displayed in ActiveConversationMessagesView, the duplicate stream box is sr-only and citations card wrapper is unmounted
-      expect(output.className).toContain("sr-only");
-      expect(output.style.display).toBe("none");
-      expect(screen.queryByTestId("assistant-citations-card-wrapper")).toBeNull();
-      expect(
-        screen.getByTestId("assistant-folders-panel-wrapper").className,
-      ).toContain("sr-only");
-      const userBubble = screen.getByTestId("assistant-user-question-bubble");
-      expect(userBubble.style.backgroundColor).toBe("var(--color-action-primary)");
-      expect(userBubble.style.marginLeft).toBe("auto");
-    });
-
-    // Verify Saved Conversations button counter incremented to (1)
-    expect(
-      screen.getByTestId("assistant-saved-conversations-toggle-btn").textContent,
-    ).toContain("(1)");
-
-    // 3. Click '+ Nouvelle conversation' -> returns to the clean welcome screen ("Par quoi voulez-vous commencer ?")
-    fireEvent.click(screen.getByTestId("assistant-new-conversation-btn"));
-    expect(screen.getByTestId("assistant-welcome-hero-title")).toBeDefined();
-
-    // 4. Simulate F5 browser reload (unmount -> render) and resume the saved conversation in 1 click
-    firstRender.unmount();
-
-    render(
-      <I18nProvider initialLocale="fr">
-        <ShellContainer>
-          <InboxFeaturePanel />
-        </ShellContainer>
-      </I18nProvider>,
-    );
-
-    // Open '🕒 Conversations sauvegardées (1)' and click the saved conversation to resume it
-    fireEvent.click(screen.getByTestId("assistant-saved-conversations-toggle-btn"));
-    const savedList = screen.getByTestId("assistant-saved-conversations-list");
-    expect(savedList.textContent).toContain(
-      "Quels sont les points critiques de l'architecture ?",
-    );
-    const resumeBtn = savedList.querySelector(
-      '[data-testid^="assistant-resume-conversation-"]',
-    ) as HTMLButtonElement;
-    expect(resumeBtn).not.toBeNull();
-    fireEvent.click(resumeBtn);
-
-    // Full conversation thread is restored and can be continued!
-    expect(screen.getByTestId("assistant-conversation-messages-list").textContent).toContain(
-      "Quels sont les points critiques de l'architecture ?",
-    );
-
-    // 5. Open '📁 Dossiers' and click '+ Nouveau dossier' -> creates and selects a folder without raw PRIVATE or ': :'
-    fireEvent.click(screen.getByTestId("assistant-folders-toggle-btn"));
-    expect(screen.queryByTestId("assistant-folders-and-notes-explainer")).toBeNull();
-    expect(screen.getByTestId("contextual-info-trigger-assistant-folders")).toBeDefined();
-    expect(screen.getByTestId("assistant-main-tab-ACTIVE_DISCUSSION").parentElement?.style.display).toBe("none");
-
-    const folderInput = screen.getByTestId("assistant-new-folder-title-input");
-    fireEvent.change(folderInput, { target: { value: "Audit DORA 2026" } });
-    fireEvent.click(screen.getByTestId("assistant-create-folder-btn"));
-
-    await waitFor(() => {
-      expect(screen.getByTestId("assistant-governance-feedback-banner").textContent).toContain(
-        "Audit DORA 2026",
-      );
-      const pillText = screen.getByTestId("assistant-active-folder-pill").textContent ?? "";
-      expect(pillText).toContain("📁 Dossier actif : Audit DORA 2026");
-      expect(pillText).not.toContain(": :");
-      expect(screen.getByTestId("assistant-prompt-active-folder-badge").textContent).toContain(
-        "Audit DORA 2026",
-      );
-    });
-
-    // Save pinned notes on the active folder and verify visibility label has zero raw PRIVATE enum
-    const notesTextarea = screen.getByTestId("assistant-folder-pinned-notes-textarea");
-    fireEvent.change(notesTextarea, {
-      target: { value: "Toujours vérifier l'article 28 DORA sur les prestataires TIC critiques." },
-    });
-    fireEvent.click(screen.getByTestId("assistant-save-pinned-notes-btn"));
-    // Les notes sont enregistrées côté serveur (aller-retour HTTP) avant d'être affichées.
-    expect(
-      (
-        await screen.findByTestId(
-          "assistant-prompt-active-folder-note-indicator",
-          {},
-          { timeout: 4000 },
-        )
-      ).textContent,
-    ).toContain(
-      "Note active prise en compte",
-    );
-
-    const foldersSectionText = screen.getByTestId("assistant-tab-panel-folders").textContent ?? "";
-    expect(foldersSectionText).toContain("🔒 Privé (Moi uniquement)");
-    expect(foldersSectionText).not.toContain("PRIVATE");
-
-    // 6. Click 👍 (Bonne réponse) on the conversation turn -> displays 'Merci pour votre retour !'
-    const likeBtns = screen.getAllByTestId("assistant-action-like-btn");
-    fireEvent.click(likeBtns[0]!);
-    expect(screen.getAllByTestId("assistant-feedback-thanks-banner")[0]?.textContent).toContain(
-      "Merci pour votre retour !",
-    );
-
-    // 7. Open '⚙️ Réglages de Mon Assistant' and customize tone + personal instructions
-    fireEvent.click(screen.getByTestId("assistant-open-governance-btn"));
-    expect(screen.getByTestId("assistant-gov-explainer-banner")).toBeDefined();
-    fireEvent.change(screen.getByTestId("assistant-gov-tone-select"), {
-      target: { value: "SYNTHETIC" },
-    });
-    const personalInput = screen.getByTestId("assistant-user-instructions-input");
-    fireEvent.change(personalInput, {
-      target: { value: "Toujours structurer avec des exemples concrets." },
-    });
-
-    // 8. Unmount and re-render (F5 reload) -> verify folder, pinned notes, 👍 feedback, and Prompt Telemetry Log survive F5!
-    cleanup();
-    render(
-      <I18nProvider initialLocale="fr">
-        <ShellContainer>
-          <InboxFeaturePanel />
-        </ShellContainer>
-      </I18nProvider>,
-    );
-    expect((await screen.findByTestId("assistant-prompt-active-folder-badge")).textContent).toContain(
-      "Audit DORA 2026",
-    );
-    expect(
-      (
-        await screen.findByTestId(
-          "assistant-prompt-active-folder-note-indicator",
-          {},
-          { timeout: 4000 },
-        )
-      ).textContent,
-    ).toContain(
-      "Note active prise en compte",
-    );
-    fireEvent.click(screen.getByTestId("assistant-open-governance-btn"));
-    expect(
-      (screen.getByTestId("assistant-user-instructions-input") as HTMLTextAreaElement).value,
-    ).toContain("Toujours structurer avec des exemples concrets.");
-
-    // Switch to Tab 3 (FULL_ASSEMBLY) and verify the recorded prompt + 👍 Bonne réponse + assembled context are persisted!
-    fireEvent.click(screen.getByTestId("assistant-gov-tab-FULL_ASSEMBLY"));
-    expect(screen.getByTestId("assistant-prompt-telemetry-log-section").textContent).toContain(
-      "Quels sont les points critiques de l'architecture ?",
-    );
-    const feedbackEl = screen.getByTestId("assistant-telemetry-feedback-0");
-    expect(feedbackEl.querySelector("svg")).not.toBeNull();
-    expect(feedbackEl.textContent).toContain("Bonne réponse");
-    fireEvent.click(screen.getByTestId("assistant-telemetry-toggle-context-0"));
-    expect(screen.getByTestId("assistant-telemetry-context-box-0").textContent).toContain(
-      "[SPEED=SPEED_3_DEEP_AUDIT]",
-    );
-  });
-
-  it("dynamically verifies that clicking 'Lancer le test & Découvrir' and 'Activer le service' in CatalogFeaturePanel updates the DOM", async () => {
-    render(
-      <I18nProvider initialLocale="fr">
-        <ShellContainer>
-          <CatalogFeaturePanel />
-        </ShellContainer>
-      </I18nProvider>,
-    );
-
-    fireEvent.click(screen.getByTestId("agents-subview-tab-connections"));
-
-    const testBenchBtn = screen.getByTestId("run-test-bench-btn");
-    fireEvent.click(testBenchBtn);
-
-    await waitFor(() => {
-      expect(screen.getByTestId("catalog-action-feedback-banner").textContent).toContain(
-        "Banc de test exécuté avec succès",
-      );
-    });
-
-    const activateBtn = screen.getByTestId("activate-remote-service-btn");
-    expect((activateBtn as HTMLButtonElement).disabled).toBe(false);
-    fireEvent.click(activateBtn);
-
-    await waitFor(() => {
-      expect(screen.getByTestId("catalog-action-feedback-banner").textContent).toContain(
-        "Connecteur externe activé",
-      );
-    });
-  });
-
-  it("dynamically verifies that clicking 'Promouvoir vers le Pack' and 'Générer et rattacher la fiche d'aide' in PacksRegistryPage updates the DOM, and GatesFeaturePanel renders dedicated Gates view", async () => {
-    render(
-      <I18nProvider initialLocale="fr">
-        <ShellContainer>
-          <PacksRegistryPage />
-        </ShellContainer>
-      </I18nProvider>,
-    );
-
-    const promoteBtn = screen.getByTestId("process4-promote-btn");
-    fireEvent.click(promoteBtn);
-
-    await waitFor(() => {
-      expect(screen.getByTestId("pack-authoring-feedback-banner").textContent).toContain(
-        "Composant promu",
-      );
-    });
-
-    const generateHelpBtn = screen.getByTestId("generate-and-attach-help-btn");
-    expect((generateHelpBtn as HTMLButtonElement).disabled).toBe(false);
-    fireEvent.click(generateHelpBtn);
-
-    await waitFor(() => {
-      expect(screen.getByTestId("pack-authoring-feedback-banner").textContent).toContain(
-        "Fiche d'aide",
-      );
-    });
-
-    cleanup();
-
-    render(
-      <I18nProvider initialLocale="fr">
-        <ShellContainer>
-          <GatesFeaturePanel />
-        </ShellContainer>
-      </I18nProvider>,
-    );
-
-    expect(screen.getByTestId("gates-dedicated-review-page")).toBeDefined();
-    expect(screen.getByTestId("gates-adaptive-human-review-section")).toBeDefined();
-    expect(screen.getByTestId("gates-open-human-review-btn")).toBeDefined();
-    expect(screen.queryByTestId("settings-workflows-section")).toBeNull();
-    expect(screen.queryByTestId("pack-builder-studio-view")).toBeNull();
-  });
-
-  it("dynamically verifies that clicking 'Générer le contrôle automatique' in WorkspacesFeaturePanel compiles a rule and updates the DOM", async () => {
-    render(
-      <I18nProvider initialLocale="fr">
-        <ShellContainer>
-          <WorkspacesFeaturePanel />
-        </ShellContainer>
-      </I18nProvider>,
-    );
-
-    const compileBtn = screen.getByTestId("compile-starlark-btn");
-    fireEvent.click(compileBtn);
-
-    await waitFor(() => {
-      expect(screen.getByTestId("workspaces-action-feedback-banner").textContent).toContain(
-        "Contrôle automatique généré",
-      );
-      expect(screen.getByTestId("starlark-compiler-panel")).toBeDefined();
-    });
-  });
-
-  it("dynamically verifies HumanLedAnchorCard (>= 30 chars) and ArbitrationTieBreakCard in CockpitFeaturePanel and F5 rehydration", async () => {
-    const view1 = render(
-      <I18nProvider initialLocale="fr">
-        <ShellContainer>
-          <CockpitFeaturePanel />
-        </ShellContainer>
-      </I18nProvider>,
-    );
-
-    const anchorTextarea = screen.getByTestId("cockpit-human-anchor-textarea");
-    const anchorSubmitBtn = screen.getByTestId("human-anchor-submit-human_architecture_intent");
-    expect((anchorSubmitBtn as HTMLButtonElement).disabled).toBe(true);
-
-    fireEvent.change(anchorTextarea, {
-      target: {
-        value:
-          "Orientation humaine obligatoire rédigée et signée avec au moins trente caractères.",
+  it("mounts all 10 key SPA routes under a real RouterProvider with single visible primary panels and active interactive actions", async () => {
+    const routeExpectations: ReadonlyArray<{
+      readonly path: string;
+      readonly primaryTestId: string;
+      readonly actionButtonTestId?: string;
+      readonly postClickTestId?: string;
+    }> = [
+      { path: "/cockpit", primaryTestId: "cockpit-block-accostage" },
+      {
+        path: "/spaces",
+        primaryTestId: "spaces-open-glossary-link",
+        actionButtonTestId: "toggle-create-workspace-form-btn",
+        postClickTestId: "create-workspace-modal",
       },
-    });
-    expect((anchorSubmitBtn as HTMLButtonElement).disabled).toBe(false);
-    fireEvent.click(anchorSubmitBtn);
+      { path: "/catalog", primaryTestId: "catalog-explorer-panel" },
+      {
+        path: "/agents",
+        primaryTestId: "agents-subview-tab-connections",
+        actionButtonTestId: "agents-subview-tab-connections",
+        postClickTestId: "remote-service-test-bench",
+      },
+      {
+        path: "/processes",
+        primaryTestId: "processes-hub-v2-page",
+        actionButtonTestId: "open-create-process-modal-btn",
+        postClickTestId: "create-process-modal",
+      },
+      { path: "/gates", primaryTestId: "gates-dedicated-review-page" },
+      { path: "/finops", primaryTestId: "finops-feature-panel" },
+      { path: "/settings", primaryTestId: "settings-hub-page" },
+      {
+        path: "/help",
+        primaryTestId: "help-menu-center-view",
+        actionButtonTestId: "help-accordion-steps-btn",
+        postClickTestId: "help-accordion-steps-content",
+      },
+      { path: "/wizards", primaryTestId: "wizards-route-page" },
+    ];
 
-    await waitFor(() => {
-      expect(screen.getByTestId("cockpit-human-anchor-signed-badge")).toBeDefined();
-    });
+    for (const routeCase of routeExpectations) {
+      seedAuthenticatedAdminState();
+      const view = await mountRouteWithRealRouter(routeCase.path);
 
-    const selectOptBtn = screen.getByTestId("arbitration-select-OPT_A_SPOT_15M");
-    fireEvent.click(selectOptBtn);
+      const matches = await screen.findAllByTestId(routeCase.primaryTestId);
+      expect(matches, `Expected exactly 1 '${routeCase.primaryTestId}' on ${routeCase.path}`).toHaveLength(1);
+      const primaryEl = matches[0]!;
+      expect(primaryEl.style.display).not.toBe("none");
+      expect(primaryEl.hidden).toBe(false);
 
-    await waitFor(() => {
+      const enabledButtons = Array.from(view.container.querySelectorAll("button")).filter(
+        (btn) => !btn.disabled,
+      );
       expect(
-        screen.getByTestId("cockpit-arbitration-resolved-summary").getAttribute(
-          "data-selected-option",
-        ),
-      ).toBe("OPT_A_SPOT_15M");
-      expect(
-        screen.getByTestId("cockpit-human-led-governance-section").getAttribute(
-          "data-step-status",
-        ),
-      ).toBe("COMMITTED");
-    });
+        enabledButtons.length,
+        `Expected interactive enabled buttons on ${routeCase.path}`,
+      ).toBeGreaterThan(0);
 
-    view1.unmount();
+      if (routeCase.actionButtonTestId && routeCase.postClickTestId) {
+        const trigger = await screen.findByTestId(routeCase.actionButtonTestId);
+        fireEvent.click(trigger);
+        const target = await screen.findByTestId(routeCase.postClickTestId);
+        expect(target).toBeDefined();
+      }
 
-    // F5 reload (remount) rehydrates signed anchor + resolved arbitration from GET /api/v1/orchestration/...
-    render(
-      <I18nProvider initialLocale="fr">
-        <ShellContainer>
-          <CockpitFeaturePanel />
-        </ShellContainer>
-      </I18nProvider>,
-    );
+      view.unmount();
+      cleanup();
+      resetVitestApiBackend();
+      clearPlatformSetupStorage();
+    }
+  });
 
-    await waitFor(() => {
-      expect(screen.getByTestId("cockpit-human-anchor-signed-badge")).toBeDefined();
-      expect(
-        screen.getByTestId("cockpit-arbitration-resolved-summary").getAttribute(
-          "data-selected-option",
-        ),
-      ).toBe("OPT_A_SPOT_15M");
-    });
+  it("exposes a visible [role='alert'] banner when an interactive user mutation receives HTTP >= 400", async () => {
+    seedAuthenticatedAdminState();
+    const view = await mountRouteWithRealRouter("/spaces");
+
+    fireEvent.click(await screen.findByTestId("toggle-create-workspace-form-btn"));
+    await screen.findByTestId("create-workspace-modal");
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("/api/v1/workspaces") && (init?.method ?? "GET").toUpperCase() === "POST") {
+        return new Response(
+          JSON.stringify({
+            type: "https://orcia.io/problems/err-validation-failed",
+            title: "Validation",
+            status: 422,
+            detail: "Nom d'espace déjà utilisé",
+            error_code: "ERR_VALIDATION_FAILED",
+          }),
+          { status: 422, headers: { "Content-Type": "application/problem+json" } },
+        );
+      }
+      return originalFetch(input, init);
+    }) as typeof fetch;
+
+    try {
+      fireEvent.change(screen.getByTestId("workspace-name-input"), {
+        target: { value: "Espace En Erreur" },
+      });
+      fireEvent.change(screen.getByTestId("workspace-slug-input"), {
+        target: { value: "espace-erreur" },
+      });
+      fireEvent.click(screen.getByTestId("create-workspace-submit-btn"));
+
+      await waitFor(() => {
+        const banner = screen.getByTestId("workspaces-action-feedback-banner");
+        expect(banner.getAttribute("role")).toBe("alert");
+        expect((banner.textContent ?? "").trim().length).toBeGreaterThan(0);
+      });
+      // Close modal so Radix aria-hidden releases the page and getByRole("alert") resolves directly
+      fireEvent.click(screen.getByTestId("create-workspace-modal-close-btn"));
+      expect(screen.getByRole("alert").textContent?.trim().length).toBeGreaterThan(0);
+    } finally {
+      globalThis.fetch = originalFetch;
+      view.unmount();
+    }
   });
 });

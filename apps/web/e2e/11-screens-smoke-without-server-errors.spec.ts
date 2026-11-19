@@ -1,5 +1,6 @@
 /** @uj UJ-13, UJ-14, UJ-18, UJ-20 | @cap CAP-001, CAP-002, CAP-010 */
 import { expect, test } from "./support/e2eCaptureFixture";
+import { expectDbRowCount, expectDbRowExists } from "./support/dbAssertions";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
 import {
@@ -37,6 +38,17 @@ test.describe("TEST-06 · 11 — Écrans Configuration, Ontologie, Catalogue, Ac
       await expectZeroVisibleErrorBanners(page);
     }
     expect(errors, errors.join("\n")).toEqual([]);
+    expectDbRowExists(
+      "SELECT id, email, platform_role FROM users WHERE email = :email AND platform_role = 'PLATFORM_ADMIN'",
+      { email: E2E_ADMIN.email },
+      "admin Jour 0 présent dans users PG18",
+    );
+    expectDbRowCount(
+      "SELECT COUNT(*)::int AS count FROM declarative_pack_bundles",
+      undefined,
+      1,
+      "packs déclaratifs synchronisés en base PG18",
+    );
   });
 
   test("la mire /login s'ouvre sans erreur 404/401 ni bannière d'alerte après création admin et permet la reconnexion", async ({
@@ -67,6 +79,11 @@ test.describe("TEST-06 · 11 — Écrans Configuration, Ontologie, Catalogue, Ac
         timeout: 30000,
       });
       expect(anonErrors, anonErrors.join("\n")).toEqual([]);
+      expectDbRowExists(
+        "SELECT id, email, platform_role FROM users WHERE email = :email AND is_active = TRUE",
+        { email: E2E_ADMIN.email },
+        "compte administrateur authentifié dans users PG18",
+      );
     } finally {
       await anonContext.close();
     }

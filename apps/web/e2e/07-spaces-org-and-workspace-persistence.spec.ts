@@ -4,6 +4,7 @@ import { expectDbRowExists } from "./support/dbAssertions";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi } from "./support/firstAdmin";
 import { createBuAndTeamViaUi, createWorkspaceViaUi } from "./support/orgAndWorkspace";
+import { apiGet, reloadColdFromPg } from "./support/typedApiRequest";
 
 test.describe("TEST-05 · 07 — Mes Espaces : organisation, espace de travail et vrai F5", () => {
   test.beforeEach(async ({ page }) => {
@@ -22,20 +23,19 @@ test.describe("TEST-05 · 07 — Mes Espaces : organisation, espace de travail e
     await expect
       .poll(
         async () => {
-          const res = await page.request.get("/api/v1/bootstrap/platform-setup-state");
-          const body = (await res.json()) as { org_units: unknown[]; workspaces: unknown[] };
+          const res = await apiGet<{ org_units: unknown[]; workspaces: unknown[] }>(
+            page,
+            "/api/v1/bootstrap/platform-setup-state",
+          );
+          const body = await res.json();
           return { orgUnits: body.org_units.length, workspaces: body.workspaces.length };
         },
         { timeout: 20000 },
       )
       .toEqual({ orgUnits: 2, workspaces: 1 });
 
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    });
     await page.goto("/spaces");
-    await page.reload();
+    await reloadColdFromPg(page);
     await expect(page.getByText("Espace E2E Comptabilité").first()).toBeVisible({ timeout: 20000 });
     expectDbRowExists(
       "SELECT id, slug, unit_type FROM org_units WHERE slug = :slug AND unit_type = 'BU'",

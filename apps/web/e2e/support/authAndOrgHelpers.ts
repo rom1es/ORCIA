@@ -1,5 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 import { createFirstAdminViaUi, E2E_ADMIN } from "./firstAdmin";
+import { apiPost } from "./typedApiRequest";
 
 export type SettingsDomainTab = "iam" | "authentication" | "models" | "packs" | "connectors";
 export type UserSettingsTab =
@@ -36,9 +37,9 @@ export interface InviteScopedUserParams {
 
 /** Récupère un jeton JWT Bearer depuis le cookie HttpOnly de session courante. */
 export async function getBearerTokenFromSession(page: Page): Promise<string> {
-  const res = await page.request.post("/api/v1/auth/refresh");
+  const res = await apiPost<{ access_token?: string }>(page, "/api/v1/auth/refresh");
   expect(res.status()).toBe(200);
-  const body = (await res.json()) as { access_token?: string };
+  const body = await res.json();
   expect(body.access_token).toBeTruthy();
   return body.access_token ?? "";
 }
@@ -89,9 +90,20 @@ export async function openSettingsTabViaUi(page: Page, tab: SettingsDomainTab): 
   await expect(page.getByTestId(`settings-panel-${tab}`)).toBeVisible({ timeout: 15000 });
 }
 
-/** Ouvre le popup « Mon Compte » en bas à gauche de la barre latérale. */
+/** Ouvre le popup « Mon Compte » (barre latérale bureau ou tiroir mobile). */
 export async function openAccountPopover(page: Page): Promise<void> {
-  await page.getByTestId("sidebar-open-my-account-btn").click();
+  await expect(page.getByTestId("four-zone-direction-c-shell")).toBeVisible({ timeout: 15000 });
+  const accountBtn = page.getByTestId("sidebar-open-my-account-btn");
+  if ((await accountBtn.count()) === 0 || !(await accountBtn.isVisible())) {
+    const mobileToggle = page.getByTestId("mobile-menu-drawer-toggle");
+    if ((await mobileToggle.count()) > 0 && (await mobileToggle.isVisible())) {
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await mobileToggle.click();
+    }
+  }
+  await expect(accountBtn).toBeVisible({ timeout: 10000 });
+  await accountBtn.scrollIntoViewIfNeeded();
+  await accountBtn.click();
   await expect(page.getByTestId("sidebar-account-popover-menu")).toBeVisible({ timeout: 10000 });
 }
 

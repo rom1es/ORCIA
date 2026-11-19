@@ -101,6 +101,7 @@ export function SidebarAccountPopover({
           data-testid="sidebar-account-popover-menu"
           className="z-50 w-[256px] rounded-xl border p-1.5 text-xs shadow-xl"
           style={{
+            zIndex: "var(--z-popover)",
             backgroundColor: "var(--color-bg-surface)",
             borderColor: "var(--color-border-subtle)",
             color: "var(--color-text-primary)",

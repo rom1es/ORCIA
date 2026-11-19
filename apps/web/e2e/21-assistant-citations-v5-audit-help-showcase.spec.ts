@@ -12,6 +12,7 @@ import {
   openShowcasePage,
   reloadClearingStorage,
 } from "./support/processAndAssistantHelpers";
+import { apiPost } from "./support/typedApiRequest";
 
 test.describe("Assistant conversationnel, citations déterministes, centre d'aide et vitrine produit", () => {
   test.beforeEach(() => {
@@ -52,8 +53,12 @@ test.describe("Assistant conversationnel, citations déterministes, centre d'aid
       timeout: 30000,
     });
 
-    const verifyRes = await page.request.post("/api/v1/assistant/citations/verify-turn", {
-      headers: authHeaders,
+    const verifyRes = await apiPost<{
+      sanitized_text: string;
+      valid_tags: string[];
+      stripped_phantom_tags: string[];
+    }>(page, "/api/v1/assistant/citations/verify-turn", {
+      token,
       data: {
         workspace_id: ws.pgWorkspaceId,
         response_text: "Synthèse appuyée sur [S1], [G1], [O1] et bloc suspect [S99].",
@@ -84,32 +89,32 @@ test.describe("Assistant conversationnel, citations déterministes, centre d'aid
       },
     });
     expect(verifyRes.status()).toBe(200);
-    const verifiedBody = (await verifyRes.json()) as {
-      sanitized_text: string;
-      valid_tags: string[];
-      stripped_phantom_tags: string[];
-    };
+    const verifiedBody = await verifyRes.json();
     expect(verifiedBody.valid_tags).toEqual(["S1", "G1", "O1"]);
     expect(verifiedBody.stripped_phantom_tags).toContain("S99");
     expect(verifiedBody.sanitized_text).toContain("[Citation non vérifiée]");
 
-    const directWriteRes = await page.request.post("/api/v1/assistant/artifacts/action", {
-      headers: authHeaders,
-      data: {
-        workspace_id: ws.pgWorkspaceId,
-        action_type: "DIRECT_SI_WRITE",
-        artifact_title: "Écriture directe interdite",
-        artifact_content: "Contenu non validé",
-        target_uri: "confluence://space/page-42",
+    const directWriteRes = await apiPost<{ error_code: string }>(
+      page,
+      "/api/v1/assistant/artifacts/action",
+      {
+        token,
+        data: {
+          workspace_id: ws.pgWorkspaceId,
+          action_type: "DIRECT_SI_WRITE",
+          artifact_title: "Écriture directe interdite",
+          artifact_content: "Contenu non validé",
+          target_uri: "confluence://space/page-42",
+        },
       },
-    });
+    );
     expect(directWriteRes.status()).toBe(422);
-    expect(((await directWriteRes.json()) as { error_code: string }).error_code).toBe(
+    expect((await directWriteRes.json()).error_code).toBe(
       "ERR_DIRECT_SI_WRITE_REQUIRES_PROCESS_GATE",
     );
 
-    const bgAuditRes = await page.request.post("/api/v1/executions/reflexive", {
-      headers: authHeaders,
+    const bgAuditRes = await apiPost(page, "/api/v1/executions/reflexive", {
+      token,
       data: {
         workspace_id: ws.pgWorkspaceId,
         actor_slug: "assistant",

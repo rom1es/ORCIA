@@ -4,6 +4,7 @@ import { expectDbRowExists } from "./support/dbAssertions";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi } from "./support/firstAdmin";
 import { createBuAndTeamViaUi } from "./support/orgAndWorkspace";
+import { reloadColdFromPg } from "./support/typedApiRequest";
 
 test.describe("TEST-05 · 08 — Mes Agents : Studio 6 Blocs Gouvernés, Banc de Test et Survie au F5 (BDD)", () => {
   test("un agent configuré sur les 6 blocs (Identité/Posture, Moteur cognitif, Instructions, Périmètre RAG/Ontologie, Toolbox MCP Write-Preview, Garde-fous & Contrat) est persisté en base, validé au Banc de Test et réaffiché après un vrai F5", async ({
@@ -66,13 +67,9 @@ test.describe("TEST-05 · 08 — Mes Agents : Studio 6 Blocs Gouvernés, Banc de
     await page.getByTestId("create-agent-submit-btn").click();
     expect((await created).status()).toBeLessThan(400);
 
-    // Survie au vrai F5 (après purge complète de localStorage / sessionStorage)
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    });
+    // Survie au vrai F5 à froid (éviction RAM + purge complète de localStorage / sessionStorage)
     await page.goto("/agents");
-    await page.reload();
+    await reloadColdFromPg(page);
     await expect(page.getByText("Agent E2E Conformité").first()).toBeVisible({ timeout: 20000 });
     expectDbRowExists(
       "SELECT id, resource_id, title, resource_type FROM catalog_items WHERE resource_type = 'agent' AND title = :title",

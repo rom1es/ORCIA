@@ -4,6 +4,7 @@ import { expectDbRowExists } from "./support/dbAssertions";
 import { watchApiServerErrors } from "./support/apiErrors";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi } from "./support/firstAdmin";
+import { reloadColdFromPg } from "./support/typedApiRequest";
 
 const FORBIDDEN_JARGON_REGEX =
   /\b(DBOS|asyncio|SQL|Redis|SSE|Claim-Check|déterministe|non-déterministe|deterministic|non-deterministic)\b/i;
@@ -81,11 +82,11 @@ test.describe("TEST-06 · 09 — Mes Processus (Objectif vs Jalons), Studio 5 bl
       page.getByTestId("studio-save-draft-btn").click(),
     ]);
 
-    // Vider le cache localStorage pour prouver la réhydratation réelle depuis PostgreSQL 18 au F5
+    // Éviction RAM + purge du cache localStorage pour prouver la réhydratation réelle depuis PostgreSQL 18 au F5
     await page.evaluate(() => {
       window.localStorage.removeItem("orcia_studio_v2_workflows");
     });
-    await page.reload();
+    await reloadColdFromPg(page, { clearBrowserStorage: false });
 
     await expect(page.getByTestId("workflow-five-blocks-studio-page")).toBeVisible({
       timeout: 30000,

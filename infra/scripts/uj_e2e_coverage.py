@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 from typing import Any
@@ -17,6 +18,17 @@ PLAYWRIGHT_RESULTS_PATH = (
     / "e2e-campaign-epic-21"
     / "playwright-results.json"
 )
+
+
+def resolve_playwright_results_path(default_path: Path = PLAYWRIGHT_RESULTS_PATH) -> Path:
+    """Resolve `ORCIA_PLAYWRIGHT_RESULTS_PATH` when set, else `PLAYWRIGHT_RESULTS_PATH`."""
+    raw = os.environ.get("ORCIA_PLAYWRIGHT_RESULTS_PATH", "").strip()
+    if not raw:
+        return default_path
+    candidate = Path(raw)
+    return candidate if candidate.is_absolute() else (REPO_ROOT / candidate)
+
+
 VALID_E2E_BACKLOG_STORIES = {"21-5", "21-6", "21-7"}
 SMOKE_ONLY_SPEC_PREFIXES = ("11-",)
 _PRD_UJ_HEADING_RE = re.compile(r"^#### (UJ-[1-9]\d?)\.", re.MULTILINE)
@@ -97,11 +109,12 @@ def _walk_playwright_suites(suites: list[dict[str, Any]], failed: set[str]) -> N
             _walk_playwright_suites(suite["suites"], failed)
 
 
-def load_failed_e2e_specs(results_path: Path = PLAYWRIGHT_RESULTS_PATH) -> set[str]:
+def load_failed_e2e_specs(results_path: Path | None = None) -> set[str]:
     """Return normalized E2E spec paths marked failed in `playwright-results.json` if present."""
-    if not results_path.exists():
+    effective_path = results_path if results_path is not None else resolve_playwright_results_path()
+    if not effective_path.exists():
         return set()
-    payload = json.loads(results_path.read_text(encoding="utf-8"))
+    payload = json.loads(effective_path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict) or not isinstance(payload.get("suites"), list):
         return set()
     failed: set[str] = set()
@@ -217,7 +230,7 @@ def check_uj_e2e_coverage(
     data: dict[str, Any],
     prd_path: Path = PRD_PATH,
     e2e_dir: Path = E2E_DIR,
-    playwright_results_path: Path = PLAYWRIGHT_RESULTS_PATH,
+    playwright_results_path: Path | None = None,
     repo_root: Path = REPO_ROOT,
 ) -> list[str]:
     """Enforce blocking CI gates across PRD UJs, `capabilities.yaml`, and functional E2E specs."""
@@ -226,7 +239,11 @@ def check_uj_e2e_coverage(
         return [f"PRD introuvable ou aucun User Journey `#### UJ-N.` défini dans {prd_path}"]
     prd_uj_set = set(prd_ujs)
     ujs_with_feature: set[str] = set()
-    failed_specs = load_failed_e2e_specs(playwright_results_path)
+    failed_specs = load_failed_e2e_specs(
+        playwright_results_path
+        if playwright_results_path is not None
+        else resolve_playwright_results_path()
+    )
     _ = parse_e2e_spec_headers(e2e_dir)
     errors = [
         err

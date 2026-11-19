@@ -9,6 +9,7 @@ import {
   openSettingsPacksTab,
   openWizardsPage,
 } from "./support/workspaceAndCatalogHelpers";
+import { reloadColdFromPg } from "./support/typedApiRequest";
 
 test.describe("Catalogue fédéré RBAC, packs déclaratifs, parcours guidés et banc MCP-A2A", () => {
   test.beforeEach(() => {
@@ -24,11 +25,7 @@ test.describe("Catalogue fédéré RBAC, packs déclaratifs, parcours guidés et
     await expect(page.getByTestId("catalog-explorer-panel")).toBeVisible({ timeout: 10000 });
     await page.getByTestId("catalog-scheme-filter-ALL").click();
 
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    });
-    await page.reload();
+    await reloadColdFromPg(page);
     await expect(page.getByTestId("catalog-explorer-panel")).toBeVisible({ timeout: 15000 });
 
     expectDbRowCount(
@@ -70,11 +67,7 @@ test.describe("Catalogue fédéré RBAC, packs déclaratifs, parcours guidés et
       "Activation du pack orcia-pack-sdlc persistée dans platform_settings",
     );
 
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    });
-    await page.reload();
+    await reloadColdFromPg(page);
     await openSettingsPacksTab(page);
     await expect(page.getByTestId("pack-card-active-scopes-orcia-pack-sdlc")).toBeVisible({
       timeout: 15000,
@@ -96,11 +89,7 @@ test.describe("Catalogue fédéré RBAC, packs déclaratifs, parcours guidés et
     await expect(page.getByTestId("packs-registry-status-banner")).toBeVisible({ timeout: 10000 });
     await expect(page.getByTestId("exported-pack-zip-filename")).toContainText("sdlc-");
 
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    });
-    await page.reload();
+    await reloadColdFromPg(page);
     await expect(page.getByTestId("declarative-pack-card-sdlc")).toBeVisible({ timeout: 15000 });
 
     expectDbRowCount(
@@ -143,11 +132,7 @@ test.describe("Catalogue fédéré RBAC, packs déclaratifs, parcours guidés et
     await page.getByTestId("wizard-complete-step-btn").click();
     await expect(page.getByTestId("wizard-completed-badge")).toBeVisible({ timeout: 15000 });
 
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    });
-    await page.reload();
+    await reloadColdFromPg(page);
     await expect(page.getByTestId("wizard-completed-badge")).toBeVisible({ timeout: 15000 });
 
     expectDbRowCount(
@@ -180,11 +165,7 @@ test.describe("Catalogue fédéré RBAC, packs déclaratifs, parcours guidés et
     await mcpCheckbox.check();
     await expect(mcpCheckbox).toBeChecked();
 
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    });
-    await page.reload();
+    await reloadColdFromPg(page);
     await page.getByTestId("agents-subview-tab-connections").click();
     await expect(page.getByTestId("toggle-mcp-exposure-checkbox")).toBeChecked({ timeout: 15000 });
 

@@ -5,9 +5,15 @@ import { test as base, expect, type Page, type TestInfo } from "@playwright/test
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "../../../..");
-const campaignDir = path.join(repoRoot, "docs/implementation-artifacts/e2e-campaign-epic-21");
+const rawCampaignDir = process.env.ORCIA_E2E_CAMPAIGN_DIR?.trim();
+const campaignDir = rawCampaignDir
+  ? path.isAbsolute(rawCampaignDir)
+    ? rawCampaignDir
+    : path.resolve(repoRoot, rawCampaignDir)
+  : path.join(repoRoot, "docs/implementation-artifacts/e2e-campaign-epic-22");
 const screenshotsRoot = path.join(campaignDir, "screenshots");
 const manifestPath = path.join(campaignDir, "manifest.jsonl");
+const MAX_SCREENSHOT_BYTES = 440 * 1024;
 
 const UJ_TOKEN_RE = /\bUJ-[1-9]\d?\b/g;
 const CAP_TOKEN_RE = /\bCAP-\d+\b/g;
@@ -29,7 +35,7 @@ function extractHeaderTags(specFile: string): { uj: string[]; cap: string[] } {
       const tagRe = new RegExp(`@${tag}\\s+([^|\\n*]+)`, "g");
       const found = new Set<string>();
       for (const match of head.matchAll(tagRe)) {
-        for (const token of match[1].match(tokenRe) ?? []) {
+        for (const token of (match[1] ?? "").match(tokenRe) ?? []) {
           found.add(token);
         }
       }
@@ -92,6 +98,9 @@ async function captureFinalState(page: Page, testInfo: TestInfo): Promise<void> 
     if (!page.isClosed()) {
       capturedUrl = page.url();
       await page.screenshot({ path: screenshotAbs, fullPage: true, timeout: 8000 });
+      if (fs.existsSync(screenshotAbs) && fs.statSync(screenshotAbs).size > MAX_SCREENSHOT_BYTES) {
+        await page.screenshot({ path: screenshotAbs, fullPage: false, timeout: 8000 });
+      }
       screenshotRel = path.relative(repoRoot, screenshotAbs).replace(/\\/g, "/");
       await testInfo.attach(`final-state-${status}`, {
         path: screenshotAbs,

@@ -2,8 +2,9 @@
 import { expect, test } from "./support/e2eCaptureFixture";
 import { watchApiServerErrors } from "./support/apiErrors";
 import { resetDay0 } from "./support/day0";
+import { expectDbRowCount, expectDbRowExists } from "./support/dbAssertions";
 import { configureActiveEmbeddingModelViaApi } from "./support/embeddingModel";
-import { createFirstAdminViaUi } from "./support/firstAdmin";
+import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
 
 test.describe("TEST-06 · 10 — Recherche ⌘K à 2 vitesses", () => {
   test.beforeEach(async ({ page }, testInfo) => {
@@ -23,6 +24,17 @@ test.describe("TEST-06 · 10 — Recherche ⌘K à 2 vitesses", () => {
     await page.keyboard.press("Escape");
     await expect(palette).toBeHidden();
     expect(serverErrors, serverErrors.join("\n")).toEqual([]);
+    expectDbRowCount(
+      "SELECT COUNT(*)::int AS count FROM catalog_items",
+      undefined,
+      1,
+      "entrées catalogue indexables présentes dans catalog_items PG18",
+    );
+    expectDbRowExists(
+      "SELECT id, email FROM users WHERE email = :email",
+      { email: E2E_ADMIN.email },
+      "session admin présente dans users PG18",
+    );
   });
 
   test("la recherche fédérée (vitesse 2) aboutit côté API", async ({ page }) => {
@@ -38,5 +50,10 @@ test.describe("TEST-06 · 10 — Recherche ⌘K à 2 vitesses", () => {
     expect(res.status(), "recherche fédérée (vitesse 2)").toBeLessThan(400);
     await expect(page.getByTestId("cmdk-speed2-error-banner")).toHaveCount(0);
     await expect(page.getByTestId("cmdk-speed2-appended-group")).toBeVisible();
+    expectDbRowExists(
+      "SELECT id, usage, is_active FROM workspace_llm_tier_mappings WHERE usage = 'embedding' AND is_active = TRUE",
+      undefined,
+      "modèle d'embedding actif persisté dans workspace_llm_tier_mappings PG18",
+    );
   });
 });

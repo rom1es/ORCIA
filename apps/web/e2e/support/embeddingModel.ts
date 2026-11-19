@@ -1,17 +1,18 @@
 import { expect, type Page } from "@playwright/test";
+import { apiPost } from "./typedApiRequest";
 
 /**
  * Configure un modèle d'embedding sémantique GLOBAL actif via l'API réelle
  * (prérequis Story 19.6 pour débloquer Mon Assistant et la recherche fédérée v2).
  */
 export async function configureActiveEmbeddingModelViaApi(page: Page): Promise<void> {
-  const refreshRes = await page.request.post("/api/v1/auth/refresh");
+  const refreshRes = await apiPost<{ access_token?: string }>(page, "/api/v1/auth/refresh");
   expect(refreshRes.status()).toBe(200);
-  const { access_token: token } = (await refreshRes.json()) as { access_token?: string };
+  const { access_token: token } = await refreshRes.json();
   expect(token).toBeTruthy();
 
-  const createRes = await page.request.post("/api/v1/settings/ai-models/mappings", {
-    headers: { Authorization: `Bearer ${token}` },
+  const createRes = await apiPost(page, "/api/v1/settings/ai-models/mappings", {
+    token,
     data: {
       scope_level: "GLOBAL",
       scope_id: "0195f000-0000-7000-8000-000000000301",

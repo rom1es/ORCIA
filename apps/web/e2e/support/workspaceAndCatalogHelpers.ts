@@ -2,6 +2,7 @@ import { expect, type Page } from "@playwright/test";
 import { openSettingsTabViaUi } from "./authAndOrgHelpers";
 import { queryDbRows } from "./dbAssertions";
 import { createBuAndTeamViaUi, createWorkspaceViaUi } from "./orgAndWorkspace";
+import { apiGet } from "./typedApiRequest";
 
 export interface WorkspaceSetupParams {
   readonly name: string;
@@ -31,11 +32,11 @@ export async function resolveWorkspaceIds(
   await expect
     .poll(
       async () => {
-        const res = await page.request.get("/api/v1/bootstrap/platform-setup-state");
-        if (!res.ok()) return "";
-        const body = (await res.json()) as {
+        const res = await apiGet<{
           workspaces?: Array<{ workspaceId?: string; id?: string; slug?: string; name?: string }>;
-        };
+        }>(page, "/api/v1/bootstrap/platform-setup-state");
+        if (!res.ok()) return "";
+        const body = await res.json();
         const found = (body.workspaces ?? []).find(
           (w) => w.name === name || (slug !== undefined && w.slug === slug),
         );

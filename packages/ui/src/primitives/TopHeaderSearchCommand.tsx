@@ -1,3 +1,4 @@
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import React, { useState } from "react";
 import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 import { OrciaIcon } from "../components/icons";
@@ -202,14 +203,29 @@ export function TopHeaderSearchCommand({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={labels.modalTitle}
-      data-testid="top-header-search-command"
-      onKeyDown={handleKeyDown}
-      className="w-[680px] max-h-[480px] flex flex-col rounded-xl border border-surface-border bg-surface-elevated text-text-primary shadow-xl overflow-hidden"
+    <DialogPrimitive.Root
+      open={true}
+      modal={false}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) requestClose();
+      }}
     >
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Content
+          asChild
+          aria-describedby={undefined}
+          onEscapeKeyDown={(e) => {
+            e.preventDefault();
+          }}
+        >
+          <div
+            aria-label={labels.modalTitle}
+            data-testid="top-header-search-command"
+            onKeyDown={handleKeyDown}
+            style={{ zIndex: "var(--z-dialog)" }}
+            className="fixed left-1/2 top-[12vh] -translate-x-1/2 w-[680px] max-w-[95vw] max-h-[480px] flex flex-col rounded-xl border border-surface-border bg-surface-elevated text-text-primary shadow-xl overflow-hidden"
+          >
+            <DialogPrimitive.Title className="sr-only">{labels.modalTitle}</DialogPrimitive.Title>
       {/* Top Search Input + Scope Pills (SCREEN | WORKSPACE | ALL_WORKSPACES) */}
       <div className="p-3 border-b border-surface-border flex flex-col gap-2">
         <div className="flex items-center gap-2">
@@ -545,6 +561,9 @@ export function TopHeaderSearchCommand({
           </button>
         </div>
       </div>
-    </div>
+          </div>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }

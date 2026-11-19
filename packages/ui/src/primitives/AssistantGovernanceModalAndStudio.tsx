@@ -1,3 +1,4 @@
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import React, { useEffect, useState } from "react";
 import { OrciaIcon } from "../components/icons";
 import {
@@ -237,14 +238,32 @@ export function AssistantGovernanceModalAndStudio({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={activeMode === "MODE_A" ? labels.modalTitle : labels.studioHeaderTitle}
-      data-testid="assistant-governance-container"
-      data-active-mode={activeMode}
-      className="rounded-xl border border-surface-border bg-surface-elevated p-4 text-xs text-text-primary space-y-4"
+    <DialogPrimitive.Root
+      open={true}
+      modal={false}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) requestClose();
+      }}
     >
+      <DialogPrimitive.Portal>
+        <div className="orcia-ds-dialog-overlay" />
+        <DialogPrimitive.Content
+          asChild
+          aria-describedby={undefined}
+          onEscapeKeyDown={(e) => {
+            e.preventDefault();
+          }}
+        >
+          <div
+            aria-label={activeMode === "MODE_A" ? labels.modalTitle : labels.studioHeaderTitle}
+            data-testid="assistant-governance-container"
+            data-active-mode={activeMode}
+            style={{ overflowY: "auto" }}
+            className="orcia-ds-dialog-content orcia-ds-dialog-content-wide rounded-xl border border-surface-border bg-surface-elevated p-4 text-xs text-text-primary space-y-4"
+          >
+            <DialogPrimitive.Title className="sr-only">
+              {activeMode === "MODE_A" ? labels.modalTitle : labels.studioHeaderTitle}
+            </DialogPrimitive.Title>
       <div className="flex items-center justify-between border-b border-surface-border pb-3">
         <div className="flex items-center gap-2.5">
           <span className="font-semibold text-sm">
@@ -371,6 +390,9 @@ export function AssistantGovernanceModalAndStudio({
           onCancel={requestClose}
         />
       )}
-    </div>
+          </div>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }

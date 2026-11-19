@@ -741,6 +741,8 @@ capabilities:
     kind: foundation
     e2e_exempt_reason: "Garde-fous transverses d'hygiène UI/CI (zéro bouton muet, modales RGAA/Échap, zéro donnée fictive, anti-LastPass, séparation @orcia/ui, socle Radix UI AD-22) sans parcours métier isolé ; couverts par AD-17 Couches 1a/1b (audit AST/Vitest & Radix UI) et contrôles CI statiques."
     tests: [apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx, tests/unit/test_zero_fictional_data_and_mocks_in_prod.py, tests/unit/test_platform_auth_policy_2fa_and_runtime_isolation.py, apps/web/src/__tests__/design-system-look-and-feel-isolation.test.tsx, packages/ui/src/__tests__/radix-design-system-primitives.test.tsx]
+    surfaces:
+      api: e2e_test_hooks
     verification: runtime
 
   # ───────────── Ajouts hors epic identifiés après audit complémentaire (rapports 06–08/11) ─────────────

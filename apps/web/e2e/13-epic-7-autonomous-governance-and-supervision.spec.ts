@@ -8,6 +8,7 @@ import {
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi } from "./support/firstAdmin";
 import { createBuAndTeamViaUi, createWorkspaceViaUi } from "./support/orgAndWorkspace";
+import { apiGet, apiPost, reloadColdFromPg } from "./support/typedApiRequest";
 
 test.describe("TEST-07 · 13 — Story 7.4 Gouvernance & Supervision des Exécutions Autonomes", () => {
   test("bureau : Publication V2 + contrat + déclencheur + supervision /processes + arrêt d'urgence F5 + /finops échantillon & rollback F5", async ({
@@ -28,20 +29,17 @@ test.describe("TEST-07 · 13 — Story 7.4 Gouvernance & Supervision des Exécut
     await expect(page.getByTestId("finops-autonomous-governance-section")).toHaveCount(0);
 
     // 2. Récupérer le JWT admin (cookie refresh) + le workspace réel et créer un SP éligible
-    const refreshRes = await page.request.post("/api/v1/auth/refresh");
+    const refreshRes = await apiPost<{ access_token?: string }>(page, "/api/v1/auth/refresh");
     expect(refreshRes.status()).toBe(200);
-    const refreshJson = (await refreshRes.json()) as { access_token?: string };
+    const refreshJson = await refreshRes.json();
     const adminToken = refreshJson.access_token ?? "";
     expect(adminToken).not.toBe("");
-    const authHeaders = { Authorization: `Bearer ${adminToken}` };
 
-    const stateRes = await page.request.get("/api/v1/bootstrap/platform-setup-state", {
-      headers: authHeaders,
-    });
-    expect(stateRes.status()).toBe(200);
-    const setupState = (await stateRes.json()) as {
+    const stateRes = await apiGet<{
       workspaces?: Array<{ workspaceId?: string; workspace_id?: string; id?: string }>;
-    };
+    }>(page, "/api/v1/bootstrap/platform-setup-state", { token: adminToken });
+    expect(stateRes.status()).toBe(200);
+    const setupState = await stateRes.json();
     const wsId =
       setupState.workspaces?.[0]?.workspaceId ??
       setupState.workspaces?.[0]?.workspace_id ??
@@ -49,8 +47,8 @@ test.describe("TEST-07 · 13 — Story 7.4 Gouvernance & Supervision des Exécut
       "";
     expect(wsId).not.toBe("");
 
-    const spRes = await page.request.post("/api/v1/settings/iam/accounts", {
-      headers: authHeaders,
+    const spRes = await apiPost(page, "/api/v1/settings/iam/accounts", {
+      token: adminToken,
       data: {
         principal_id: "sp-e2e-auto-docs",
         display_name: "Robot Documentation E2E",
@@ -105,10 +103,11 @@ test.describe("TEST-07 · 13 — Story 7.4 Gouvernance & Supervision des Exécut
     await page.keyboard.press("Escape");
 
     // Créer un second run échantillonné post-hoc pour valider de façon déterministe /finops
-    const sampledRunRes = await page.request.post(
+    const sampledRunRes = await apiPost(
+      page,
       `/api/v1/workspaces/${wsId}/workflows/wf-01-qualification-prd/runs/autonomous`,
       {
-        headers: authHeaders,
+        token: adminToken,
         data: {
           criticality: "STANDARD",
           actions: [],
@@ -135,7 +134,7 @@ test.describe("TEST-07 · 13 — Story 7.4 Gouvernance & Supervision des Exécut
     await expect(page.getByTestId("autonomous-supervision-success-banner")).toBeVisible({
       timeout: 15000,
     });
-    await page.reload();
+    await reloadColdFromPg(page);
     await expect(page.getByTestId("processes-autonomous-supervision-panel")).toBeVisible({
       timeout: 30000,
     });
@@ -156,7 +155,7 @@ test.describe("TEST-07 · 13 — Story 7.4 Gouvernance & Supervision des Exécut
       timeout: 15000,
     });
 
-    await page.reload();
+    await reloadColdFromPg(page);
     await expect(page.getByTestId("finops-governance-dashboard")).toBeVisible({ timeout: 30000 });
     await page.getByTestId("finops-tab-cognitive-governance").click();
     await expect(page.getByTestId("finops-autonomous-invalidation-alert")).toBeVisible({
@@ -226,6 +225,11 @@ test.describe("TEST-07 · 13 — Story 7.4 Gouvernance & Supervision des Exécut
     }));
     expect(finopsOverflow.scrollWidth).toBeLessThanOrEqual(finopsOverflow.innerWidth);
 
+    expectDbRowExists(
+      "SELECT id, slug FROM workspaces WHERE slug = :slug",
+      { slug: "ws-mobile-e2e" },
+      "espace mobile persisté dans workspaces PG18",
+    );
     expect(errors, errors.join("\n")).toEqual([]);
   });
 });

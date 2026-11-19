@@ -1,7 +1,10 @@
 /** @uj UJ-4 | @cap CAP-040 */
 import { type APIRequestContext, request as pwRequest } from "@playwright/test";
+import { resetDay0 } from "./support/day0";
 import { expectDbRowExists } from "./support/dbAssertions";
 import { expect, test } from "./support/e2eCaptureFixture";
+import { E2E_ADMIN } from "./support/firstAdmin";
+import { apiGet, apiPost } from "./support/typedApiRequest";
 
 const API = `http://127.0.0.1:${process.env.ORCIA_E2E_API_PORT ?? "8100"}`;
 const SSE_BUDGET_MS = 500;
@@ -50,30 +53,142 @@ interface InboxItem {
   step_execution_id: string;
 }
 
-async function listOpenItems(actor: APIRequestContext): Promise<InboxItem[]> {
-  const listRes = await actor.get("/api/v1/inbox/notifications?persona_key=marc");
+async function setupActorsAndOpenNotification(
+  actorA: APIRequestContext,
+  actorB: APIRequestContext,
+  suffix: string,
+): Promise<{
+  readonly adminToken: string;
+  readonly peerToken: string;
+  readonly workspaceId: string;
+  readonly taskId: string;
+}> {
+  const firstAdminRes = await apiPost<{ access_token?: string }>(
+    actorA,
+    "/api/v1/bootstrap/welcome-setup/first-admin",
+    {
+      data: {
+        email: E2E_ADMIN.email,
+        display_name: E2E_ADMIN.name,
+        password: E2E_ADMIN.password,
+        orcia_env: "local",
+      },
+    },
+  );
+  expect(firstAdminRes.status()).toBe(200);
+  const adminToken = (await firstAdminRes.json()).access_token ?? "";
+  expect(adminToken).toBeTruthy();
+
+  const wsRes = await apiPost<{ id: string }>(actorA, "/api/v1/workspaces", {
+    token: adminToken,
+    data: {
+      name: `Espace SSE ${suffix}`,
+      slug: `ws-sse-${suffix}`,
+      visibility_mode: "STANDARD",
+      lifecycle_phase: "BUILD",
+    },
+  });
+  expect(wsRes.status()).toBe(201);
+  const workspaceId = (await wsRes.json()).id;
+  expect(workspaceId).toBeTruthy();
+
+  const peerEmail = `peer.sse.${suffix}@e2e.orcia.test`;
+  const peerCreateRes = await apiPost<{ temporary_password?: string | null }>(
+    actorA,
+    "/api/v1/settings/iam/accounts",
+    {
+      token: adminToken,
+      data: {
+        account_kind: "HUMAN",
+        display_name: "Pair SSE E2E",
+        email: peerEmail,
+        principal_id: peerEmail,
+        roles: ["TEAM_LEAD"],
+        team_ids: [],
+        status: "ACTIVE",
+      },
+    },
+  );
+  expect([200, 201]).toContain(peerCreateRes.status());
+  const peerPass = (await peerCreateRes.json()).temporary_password ?? "";
+  expect(peerPass).toBeTruthy();
+
+  const peerLoginRes = await apiPost<{ access_token?: string }>(
+    actorB,
+    "/api/v1/auth/login/local",
+    {
+      data: { email: peerEmail, password: peerPass },
+    },
+  );
+  expect(peerLoginRes.status()).toBe(200);
+  const peerToken = (await peerLoginRes.json()).access_token ?? "";
+  expect(peerToken).toBeTruthy();
+
+  const runId = `0195f200-0000-7000-8000-0000000007${suffix.slice(-2).padStart(2, "0")}`;
+  const stepId = `0195f200-0000-7000-8000-0000000008${suffix.slice(-2).padStart(2, "0")}`;
+  const seedClaimRes = await apiPost<{ notification: { id: string } }>(
+    actorA,
+    `/api/v1/runs/${runId}/steps/${stepId}/claim`,
+    {
+      token: adminToken,
+      data: {
+        workspace_id: workspaceId,
+        step_key: `sse-arbitration-${suffix}`,
+        ttl_seconds: 900,
+        force: false,
+      },
+    },
+  );
+  expect(seedClaimRes.status()).toBe(200);
+  const taskId = (await seedClaimRes.json()).notification.id;
+
+  const releaseRes = await apiPost(actorA, `/api/v1/tasks/${taskId}/release`, {
+    token: adminToken,
+    data: { force: false },
+  });
+  expect(releaseRes.status()).toBe(200);
+
+  return { adminToken, peerToken, workspaceId, taskId };
+}
+
+async function listOpenItems(
+  actor: APIRequestContext,
+  workspaceId: string,
+  token: string,
+): Promise<InboxItem[]> {
+  const listRes = await apiGet<{ items: InboxItem[] }>(
+    actor,
+    `/api/v1/inbox/notifications?workspace_id=${encodeURIComponent(workspaceId)}`,
+    { token },
+  );
   expect(listRes.ok()).toBeTruthy();
-  const { items } = (await listRes.json()) as { items: InboxItem[] };
+  const { items } = await listRes.json();
   return items.filter((i) => i.status === "OPEN");
 }
 
 test.describe("TEST-04 · 04 — Multi-acteurs : Claim exclusif et diffusion SSE (AD-4, AD-17 couche 5)", () => {
-  // Spec purement API (aucun viewport) : le service de notifications est en mémoire et à stock
-  // d'éléments OPEN limité (voir BUG-E2E-04) ; on ne l'exécute qu'une fois par run.
   test.beforeEach(({}, testInfo) => {
     test.skip(testInfo.project.name !== "desktop-cockpit", "spec API : exécutée une seule fois");
+    resetDay0();
   });
 
   test("A prend en charge une tâche, B est refusé (409) et un nouveau flux SSE rejoue l'événement (< 500 ms)", async () => {
     const actorA = await pwRequest.newContext({ baseURL: API });
     const actorB = await pwRequest.newContext({ baseURL: API });
     try {
-      const open = (await listOpenItems(actorA))[0];
-      expect(open, "une notification OPEN à prendre en charge").toBeTruthy();
-      const taskId = open?.id ?? "";
+      const { adminToken, peerToken, workspaceId, taskId } = await setupActorsAndOpenNotification(
+        actorA,
+        actorB,
+        "01",
+      );
+      const open = (await listOpenItems(actorA, workspaceId, adminToken)).find(
+        (item) => item.id === taskId,
+      );
+      expect(open, "une notification OPEN créée par API authentifiée").toBeTruthy();
 
-      const claimA = await actorA.post(`/api/v1/tasks/${taskId}/claim?persona_key=marc`, {
-        data: { ttl_seconds: 900, force: false },
+      const claimA = await apiPost(actorA, `/api/v1/tasks/${taskId}/claim`, {
+        token: adminToken,
+        data: { workspace_id: workspaceId, ttl_seconds: 900, force: false },
       });
       expect(claimA.status()).toBe(200);
       expectDbRowExists(
@@ -82,16 +197,21 @@ test.describe("TEST-04 · 04 — Multi-acteurs : Claim exclusif et diffusion SSE
         "prise en charge persistée dans task_notifications PG18",
       );
 
-      const claimB = await actorB.post(`/api/v1/tasks/${taskId}/claim?persona_key=nadia`, {
-        data: { ttl_seconds: 900, force: false },
-      });
-      expect(claimB.status()).toBe(409);
-      expect(((await claimB.json()) as { error_code: string }).error_code).toBe(
-        "ERR_STEP_ALREADY_CLAIMED_BY_PEER",
+      const claimB = await apiPost<{ error_code: string }>(
+        actorB,
+        `/api/v1/tasks/${taskId}/claim`,
+        {
+          token: peerToken,
+          data: { workspace_id: workspaceId, ttl_seconds: 900, force: false },
+        },
       );
+      expect(claimB.status()).toBe(409);
+      expect((await claimB.json()).error_code).toBe("ERR_STEP_ALREADY_CLAIMED_BY_PEER");
 
       // Un acteur qui (re)connecte son flux voit l'événement de prise en charge, latence de dispatch < 500 ms.
-      const stream = openSseStream(`${API}/api/v1/events/stream`);
+      const stream = openSseStream(
+        `${API}/api/v1/events/stream?workspace_id=${encodeURIComponent(workspaceId)}`,
+      );
       try {
         await stream.ready;
         await expect
@@ -117,16 +237,27 @@ test.describe("TEST-04 · 04 — Multi-acteurs : Claim exclusif et diffusion SSE
 
   test("le flux SSE d'un acteur connecté reçoit en direct la prise en charge d'un pair (< 500 ms)", async () => {
     const actorA = await pwRequest.newContext({ baseURL: API });
-    const stream = openSseStream(`${API}/api/v1/events/stream`);
+    const actorB = await pwRequest.newContext({ baseURL: API });
+    const { adminToken, workspaceId, taskId } = await setupActorsAndOpenNotification(
+      actorA,
+      actorB,
+      "02",
+    );
+    const stream = openSseStream(
+      `${API}/api/v1/events/stream?workspace_id=${encodeURIComponent(workspaceId)}`,
+    );
     try {
       await stream.ready;
       await expect.poll(() => stream.frames.length).toBeGreaterThan(0);
-      const open = (await listOpenItems(actorA))[0];
-      expect(open, "une notification OPEN restante").toBeTruthy();
+      const open = (await listOpenItems(actorA, workspaceId, adminToken)).find(
+        (item) => item.id === taskId,
+      );
+      expect(open, "une notification OPEN créée par API authentifiée").toBeTruthy();
       const framesBefore = stream.frames.length;
       const claimStart = performance.now();
-      const claim = await actorA.post(`/api/v1/tasks/${open?.id}/claim?persona_key=marc`, {
-        data: { ttl_seconds: 900, force: false },
+      const claim = await apiPost(actorA, `/api/v1/tasks/${taskId}/claim`, {
+        token: adminToken,
+        data: { workspace_id: workspaceId, ttl_seconds: 900, force: false },
       });
       expect(claim.status()).toBe(200);
       await expect
@@ -134,9 +265,16 @@ test.describe("TEST-04 · 04 — Multi-acteurs : Claim exclusif et diffusion SSE
         .toBeGreaterThan(framesBefore);
       const latency = (stream.frames[framesBefore]?.receivedAtMs ?? Infinity) - claimStart;
       expect(latency).toBeLessThan(SSE_BUDGET_MS);
+
+      expectDbRowExists(
+        "SELECT id, status FROM task_notifications WHERE id::text = :task_id AND status = 'CLAIMED'",
+        { task_id: taskId },
+        "prise en charge temps réel persistée dans task_notifications PG18",
+      );
     } finally {
       stream.abort();
       await actorA.dispose();
+      await actorB.dispose();
     }
   });
 });

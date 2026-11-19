@@ -216,7 +216,7 @@ export function SettingsAiModelsSection({
       void loadMappings();
       return true;
     }
-    return false;
+    throw new Error(res.errorMessage);
   };
 
   const handleSubmitPatch = async (
@@ -228,7 +228,7 @@ export function SettingsAiModelsSection({
       void loadMappings();
       return true;
     }
-    return false;
+    throw new Error(res.errorMessage);
   };
 
   const evaluateConnectionTest = async () => {

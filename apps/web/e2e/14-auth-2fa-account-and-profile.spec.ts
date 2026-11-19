@@ -11,8 +11,13 @@ import {
   openAccountPopover,
   openSettingsTabViaUi,
   openUserSettingsTab,
-  inviteUserViaOrganizationUi,
 } from "./support/authAndOrgHelpers";
+import {
+  assertModalActionClickableViaElementFromPoint,
+  assertNoHorizontalOverflow,
+  attachErrorAlertProbe,
+} from "./support/layoutGeometryAssertions";
+import { apiPost, reloadColdFromPg } from "./support/typedApiRequest";
 
 function computeTotpCode(secretBase32: string): string {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"; // pragma: allowlist secret
@@ -34,12 +39,12 @@ function computeTotpCode(secretBase32: string): string {
   const counterBuf = Buffer.alloc(8);
   counterBuf.writeBigUInt64BE(BigInt(counter), 0);
   const digest = createHmac("sha1", Buffer.from(bytes)).update(counterBuf).digest();
-  const offset = digest[digest.length - 1] & 0x0f;
+  const offset = (digest[digest.length - 1] ?? 0) & 0x0f;
   const code =
-    ((digest[offset] & 0x7f) << 24) |
-    ((digest[offset + 1] & 0xff) << 16) |
-    ((digest[offset + 2] & 0xff) << 8) |
-    (digest[offset + 3] & 0xff);
+    (((digest[offset] ?? 0) & 0x7f) << 24) |
+    (((digest[offset + 1] ?? 0) & 0xff) << 16) |
+    (((digest[offset + 2] ?? 0) & 0xff) << 8) |
+    ((digest[offset + 3] ?? 0) & 0xff);
   return String(code % 1_000_000).padStart(6, "0");
 }
 
@@ -65,12 +70,8 @@ test.describe("Auth, 2FA, compte utilisateur et profil personnel", () => {
     await page.getByTestId("auth-save-settings-btn").click();
     await expect(page.getByTestId("auth-save-feedback")).toBeVisible({ timeout: 10000 });
 
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    });
-    await page.goto("/settings?tab=authentication");
-    await page.reload();
+    await reloadColdFromPg(page);
+    await page.getByTestId("settings-tab-authentication").click();
     await expect(page.getByTestId("two-factor-mode-option-TOTP")).toHaveAttribute(
       "aria-checked",
       "true",
@@ -105,23 +106,33 @@ test.describe("Auth, 2FA, compte utilisateur et profil personnel", () => {
     );
 
     if (testInfo.project.name === "mobile-companion") {
-      const overflow = await page.evaluate(
-        () => document.documentElement.scrollWidth - window.innerWidth,
-      );
-      expect(overflow).toBeLessThanOrEqual(1);
+      await assertNoHorizontalOverflow(page, "14-auth #1 mobile");
     }
   });
 
   test("mot de passe temporaire d'un compte invité force le renouvellement et persiste dans users", async ({
     page,
   }) => {
-    await bootstrapAdminSession(page);
+    const alertProbe = attachErrorAlertProbe(page);
+    const { accessToken: adminToken } = await bootstrapAdminSession(page);
     const invitedEmail = "claire.invite@e2e.orcia.test";
-    const tempPass = await inviteUserViaOrganizationUi(page, {
-      displayName: "Claire Invitée",
-      email: invitedEmail,
-      role: "CONTRIBUTOR",
-    });
+    const inviteRes = await apiPost<{ temporary_password?: string | null }>(
+      page,
+      "/api/v1/settings/iam/accounts",
+      {
+        token: adminToken,
+        data: {
+          account_kind: "HUMAN",
+          display_name: "Claire Invitée",
+          email: invitedEmail,
+          principal_id: invitedEmail,
+          roles: ["CONTRIBUTOR"],
+          status: "ACTIVE",
+        },
+      },
+    );
+    expect([200, 201]).toContain(inviteRes.status());
+    const tempPass = (await inviteRes.json()).temporary_password ?? "";
     expect(tempPass.length).toBeGreaterThanOrEqual(8);
 
     expectDbRowExists(
@@ -138,6 +149,7 @@ test.describe("Auth, 2FA, compte utilisateur et profil personnel", () => {
     await page.getByTestId("temporary-password-open-settings-btn").click();
     await expect(page.getByTestId("user-password-change-card")).toBeVisible({ timeout: 15000 });
     await expect(page.getByTestId("user-must-change-password-badge")).toBeVisible();
+    await assertModalActionClickableViaElementFromPoint(page, "user-change-password-submit-btn");
 
     const updatedPass = "Claire-N3w-Secur3-Pass!"; // pragma: allowlist secret
     await page.getByTestId("user-current-password-input").fill(tempPass);
@@ -150,11 +162,7 @@ test.describe("Auth, 2FA, compte utilisateur et profil personnel", () => {
       timeout: 15000,
     });
 
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    });
-    await page.reload();
+    await reloadColdFromPg(page);
     await expect(page.getByTestId("four-zone-direction-c-shell")).toBeVisible({ timeout: 20000 });
     await expect(page.getByTestId("temporary-password-warning-banner")).toBeHidden();
 
@@ -167,6 +175,11 @@ test.describe("Auth, 2FA, compte utilisateur et profil personnel", () => {
     await logoutViaAccountPopover(page);
     await loginLocalViaUi(page, { email: invitedEmail, password: updatedPass });
     await expect(page.getByTestId("four-zone-direction-c-shell")).toBeVisible({ timeout: 20000 });
+    alertProbe.assertNoUnexpectedHttpErrors([], [
+      "/api/v1/org-units",
+      "/api/v1/users/me/preferences",
+      "/api/v1/orchestration/state",
+    ]);
   });
 
   test("popup Mon Compte, paramètres 5 onglets, clé IDE/MCP et page profil survivent à un F5", async ({
@@ -189,6 +202,7 @@ test.describe("Auth, 2FA, compte utilisateur et profil personnel", () => {
     }
 
     await openUserSettingsTab(page, "PERSONALIZATION");
+    await assertModalActionClickableViaElementFromPoint(page, "settings-personalization-save-btn");
     await page.getByTestId("settings-assistant-hat-select").selectOption("ARCHITECT");
     await page.getByTestId("settings-assistant-tone-select").selectOption("concise");
     await page
@@ -228,12 +242,8 @@ test.describe("Auth, 2FA, compte utilisateur et profil personnel", () => {
     await expect(page.getByTestId("user-settings-modal")).toBeVisible({ timeout: 15000 });
     await page.getByTestId("user-settings-modal-close-btn").click();
 
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    });
     await page.goto("/profile");
-    await page.reload();
+    await reloadColdFromPg(page);
     await expect(page.getByTestId("user-profile-overview-page")).toBeVisible({ timeout: 20000 });
     await expect(
       page.getByTestId("profile-kpis-empty-state").or(page.getByTestId("profile-kpi-total-tokens")),
@@ -262,10 +272,7 @@ test.describe("Auth, 2FA, compte utilisateur et profil personnel", () => {
     expect(ledgerRows[0]?.total_tokens).toBeGreaterThanOrEqual(0);
 
     if (testInfo.project.name === "mobile-companion") {
-      const overflow = await page.evaluate(
-        () => document.documentElement.scrollWidth - window.innerWidth,
-      );
-      expect(overflow).toBeLessThanOrEqual(1);
+      await assertNoHorizontalOverflow(page, "14-auth #3 mobile");
     }
   });
 });

@@ -23,6 +23,7 @@ import {
 import { useOrciaNavigation } from "./navigationAdapter";
 import { PlatformSetupProvider, usePlatformSetup } from "./platformSetupStore";
 import { ShellContainerModals } from "./ShellContainerModals";
+import { ShellUserSettingsModal } from "./ShellUserSettingsModal";
 import { ShellContextualHelpColumn } from "./ShellContextualHelpColumn";
 import {
   ShellNavigationContext,
@@ -80,7 +81,7 @@ function InnerShellContainer({
   const {
     isAuthenticated, isHydrating, mustChangePassword, roles,
     readOnlyObserver, email: sessionEmail, displayName: sessionDisplayName,
-    openUserSettingsModalAtTab, logoutSession, hydrateSession,
+    userSettingsModalOpen, openUserSettingsModalAtTab, logoutSession, hydrateSession,
   } = useAuthSessionStore();
 
   const canObserveGlobal = canObserveGlobalAuditScope({ roles, readOnlyObserver });
@@ -262,6 +263,7 @@ function InnerShellContainer({
         disabledMenuKeys={disabledMenuKeys}
         hiddenMenuKeys={showConfigurationMenu ? [] : ["configuration"]}
         helpColumnOpen={isHelpCenterRoute ? false : state.helpColumnOpen}
+        mobileDrawerCloseSignal={`${pathname ?? ""}:${String(userSettingsModalOpen)}`}
         onHelpColumnOpenChange={(nextOpen) => {
           if (!isHelpCenterRoute) {
             state.setHelpColumnOpen(nextOpen);
@@ -373,6 +375,14 @@ function InnerShellContainer({
           state.setSelectedModuleOverride("inbox");
           dispatchNavigation("/assistant");
         }}
+      />
+      <ShellUserSettingsModal
+        userEmail={sessionEmail ?? (isAuthenticated ? platformAdmin?.email : "") ?? ""}
+        userRole={roles[0] ?? "CONTRIBUTOR"}
+        locale={locale}
+        labels={dictionary.userAccountAndSettings}
+        onLocaleChange={(nextLocale) => setLocale(nextLocale)}
+        onNavigate={dispatchNavigation}
       />
     </ShellNavigationContext.Provider>
   );

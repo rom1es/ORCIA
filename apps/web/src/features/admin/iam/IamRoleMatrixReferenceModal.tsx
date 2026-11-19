@@ -1,5 +1,5 @@
 import type { RoleMatrixEntryResponse } from "@orcia/api-client";
-import { OrciaButton, OrciaIcon } from "@orcia/ui";
+import { OrciaButton, OrciaDialog, OrciaIcon } from "@orcia/ui";
 import React, { useEffect } from "react";
 import type { IamTabDictionarySection } from "../../../i18n/locales/iam_accounts_labels";
 import { IamNativeRoleMatrixCard } from "./IamNativeRoleMatrixCard";
@@ -35,45 +35,21 @@ export function IamRoleMatrixReferenceModal({
   if (!isOpen) return null;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={labels.matrix.sectionTitle}
-      data-testid="iam-role-matrix-modal"
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 60,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "var(--color-modal-backdrop, rgba(15, 23, 42, 0.45))",
-        padding: "16px",
+    <OrciaDialog
+      open={isOpen}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose();
       }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
+      title={labels.matrix.sectionTitle}
+      testId="iam-role-matrix-modal"
+      closeLabel={labels.matrix.closeRoleMatrixCta || "Fermer"}
+      contentClassName="orcia-ds-dialog-content-wide"
+      onEscapeKeyDown={(event) => {
+        event.preventDefault();
+        onClose();
       }}
     >
-      <div
-        style={{
-          position: "relative",
-          width: "920px",
-          maxWidth: "96vw",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          backgroundColor: "var(--color-surface-card)",
-          border: "1px solid var(--color-border)",
-          borderRadius: "var(--radius-lg)",
-          boxShadow: "var(--shadow-dropdown)",
-          padding: "20px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "16px",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="orcia-ds-dialog-body">
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <OrciaButton
             variant="secondary"
@@ -91,6 +67,6 @@ export function IamRoleMatrixReferenceModal({
           openHelpSection={openHelpSection}
         />
       </div>
-    </div>
+    </OrciaDialog>
   );
 }

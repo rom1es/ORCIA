@@ -12,6 +12,7 @@ import {
   openWorkflowStudioPage,
   reloadClearingStorage,
 } from "./support/processAndAssistantHelpers";
+import { apiPost, apiPut } from "./support/typedApiRequest";
 
 test.describe("Catalogue agents, chaîne de valeur, studio cinq blocs, autonomie, alertes applicatives et FinOps", () => {
   test.beforeEach(() => {
@@ -107,10 +108,9 @@ test.describe("Catalogue agents, chaîne de valeur, studio cinq blocs, autonomie
       slug: "ws-auto-finops",
     });
     const token = await getBearerTokenFromSession(page);
-    const authHeaders = { Authorization: `Bearer ${token}` };
 
-    const spRes = await page.request.post("/api/v1/settings/iam/accounts", {
-      headers: authHeaders,
+    const spRes = await apiPost(page, "/api/v1/settings/iam/accounts", {
+      token,
       data: {
         principal_id: "sp-logsink-finops",
         display_name: "Robot Alertes Applicatives",
@@ -141,10 +141,11 @@ test.describe("Catalogue agents, chaîne de valeur, studio cinq blocs, autonomie
     await page.keyboard.press("Escape");
 
     const alertSecret = "orcia-alert-webhook-key-01"; // pragma: allowlist secret
-    const apiTriggerRes = await page.request.post(
+    const apiTriggerRes = await apiPost<{ id: string }>(
+      page,
       `/api/v1/workspaces/${ws.pgWorkspaceId}/workflows/wf-01-qualification-prd/triggers`,
       {
-        headers: authHeaders,
+        token,
         data: {
           trigger_type: "LOG_SINK_ALERT",
           log_sink_service: "orcia-worker",
@@ -155,7 +156,7 @@ test.describe("Catalogue agents, chaîne de valeur, studio cinq blocs, autonomie
       },
     );
     expect(apiTriggerRes.status()).toBe(201);
-    const createdTrigger = (await apiTriggerRes.json()) as { id: string };
+    const createdTrigger = await apiTriggerRes.json();
 
     const alertPayload = {
       trigger_id: createdTrigger.id,
@@ -164,21 +165,19 @@ test.describe("Catalogue agents, chaîne de valeur, studio cinq blocs, autonomie
       message: "Upstream gateway timeout",
       traceback: "File worker/tasks.py, line 42, in run_step\nTimeoutError: 504",
     };
-    const firstAlert = await page.request.post("/api/v1/triggers/alerts", {
+    const firstAlert = await apiPost<{ outcome: string }>(page, "/api/v1/triggers/alerts", {
       headers: { "x-orcia-alert-secret": alertSecret },
       data: alertPayload,
     });
     expect(firstAlert.status()).toBe(200);
-    expect(((await firstAlert.json()) as { outcome: string }).outcome).toBe("DISPATCHED");
+    expect((await firstAlert.json()).outcome).toBe("DISPATCHED");
 
-    const duplicateAlert = await page.request.post("/api/v1/triggers/alerts", {
+    const duplicateAlert = await apiPost<{ outcome: string }>(page, "/api/v1/triggers/alerts", {
       headers: { "x-orcia-alert-secret": alertSecret },
       data: alertPayload,
     });
     expect(duplicateAlert.status()).toBe(200);
-    expect(((await duplicateAlert.json()) as { outcome: string }).outcome).toBe(
-      "DUPLICATE_SUPPRESSED",
-    );
+    expect((await duplicateAlert.json()).outcome).toBe("DUPLICATE_SUPPRESSED");
 
     await openProcessesHubPage(page);
     await expect(page.getByTestId("processes-autonomous-supervision-panel")).toBeVisible({
@@ -189,8 +188,8 @@ test.describe("Catalogue agents, chaîne de valeur, studio cinq blocs, autonomie
       timeout: 15000,
     });
 
-    const quotaRes = await page.request.put("/api/v1/finops/connectors/jira-prod/quota", {
-      headers: authHeaders,
+    const quotaRes = await apiPut(page, "/api/v1/finops/connectors/jira-prod/quota", {
+      token,
       data: {
         display_name: "Jira Cloud Prod",
         service_kind: "MCP_SERVER",

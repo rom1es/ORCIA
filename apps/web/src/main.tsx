@@ -1,5 +1,5 @@
-import "@orcia/ui/styles/tokens.css";
 import "virtual:orcia-tailwind.css";
+import "@orcia/ui/styles/tokens.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import React from "react";

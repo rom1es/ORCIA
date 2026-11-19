@@ -44,6 +44,11 @@
   8. `apps/web/e2e/support/typedApiRequest.ts` + `apps/web/src/__tests__/e2e-openapi-helper-audit.test.ts` (**Verrou 2** — helper Playwright typé via `@orcia/api-client` / `paths` OpenAPI et interdiction de `page.request.post/put/patch` bruts non typés dans `apps/web/e2e/*.spec.ts`).
   9. Purge totale de `ORCIA_E2E_SEED_FIXTURES="1"` dans `apps/web/playwright.config.ts` / `apps/web/e2e/` + helper `reloadColdFromPg()` adossé à `POST /api/v1/_e2e/evict-memory-caches` (`ORCIA_ENV == "e2e"` uniquement) (**Verrou 3** — preuve de persistance à froid en PG18 sans cache RAM ni fixture pré-injectée).
   10. Réécriture anti-Goodhart de `apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx` (montage via `<RouterProvider>` réel au lieu d'un faux neutre) + sonde `[role="alert"]` sur réponses HTTP `>= 400` dans `apps/web/e2e/support/` (**Verrou 4**).
+- **Analyse d'impact GitNexus (`repo: "/home/romain/Documents/Projects/ORCIA"`) & Inventaire pré-implémentation** :
+  - `gitnexus_query` (`ORCIA_E2E_SEED_FIXTURES e2eCaptureFixture build_api_env initialize_app_services`) et `gitnexus_context` (`list_inbox_notifications` dans `apps/api/src/orcia_api/routers/inbox_and_leases.py:L135-170`) : confirment que `inbox_and_leases.py` et `core_and_lifespan.py` sont les deux seuls points applicatifs injectant des notifications/personas fictives sous `ORCIA_E2E_SEED_FIXTURES=1`, alimentés par `infra/scripts/e2e/e2e_stack_config.py:L76`.
+  - `gitnexus_impact({target: "create_app", direction: "upstream"})` : `impactedCount: 235` (`CRITICAL`, `77` processus, `14` modules), imposant de garder `create_app()` léger, d'exposer le routeur `_e2e` en mode `APIRouter(prefix="/api/v1/_e2e")` avec `ResourceNotFoundError` (RFC 9457 `404`) si `ORCIA_ENV != "e2e"` afin de préserver la conformité `Schemathesis` (`tests/contract/test_openapi_contract.py`), et de déclarer `e2e_test_hooks.py` sur `CAP-100` dans `docs/product/capabilities.yaml`.
+  - **Audit `ORCIA_E2E_SEED_FIXTURES` & impersonation** : `infra/scripts/e2e/e2e_stack_config.py` passe `ORCIA_ENV="e2e"` (désactivant toute impersonation `persona_key` car `persona_impersonation_allowed("e2e") == False`) sans `ORCIA_E2E_SEED_FIXTURES`. Les specs `04-multi-actor-claim-sse.spec.ts` et `15-organization-iam-secops-inbox-and-observer.spec.ts` (#4) créent leurs acteurs et notifications via les vraies API authentifiées (`POST /api/v1/bootstrap/welcome-setup/first-admin`, `POST /api/v1/settings/iam/accounts`, `POST /api/v1/auth/login/local`, `POST /api/v1/runs/{run_id}/steps/{step_id}/claim` + `release`).
+  - **Audit couverture SQL PG18 (`55` blocs `test(...)` dans `24` specs)** : `17` blocs sans assertion SQL directe identifiés (`00` #1/#2/#3, `04` #2, `05` #1/#2, `10` #1/#2, `11` #1/#2, `12-finops` #2, `13` #2, `15` #3, `shell.spec.ts` #1/#2/#3/#4) + renforcement `02` #1 (`assistant_threads` / `audit_ledger`).
 - **Facteur de succès clé** : exécuter cette Story **uniquement après achèvement et validation des Stories `22.1` à `22.7`** afin que les gardes et verrous passent immédiatement sans faux positifs et préparent `Story 22.8a` puis l'exécution de la campagne intégrale en `Story 22.9`.
 
 ---
@@ -82,25 +87,39 @@
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
-> *[En attente d'implémentation de la Story 22.8]*
-
 ### 3.1 Fichiers Développés & Modifiés
 | Fichier | Nature (Création / Modification / Refactoring) | Description synthétique |
 | :--- | :--- | :--- |
-| `apps/web/src/__tests__/anti-jargon-and-secrets-ui-audit.test.ts` | Création | *[À compléter après implémentation]* |
-| `apps/web/src/__tests__/no-hidden-legacy-panels-audit.test.ts` | Création | *[À compléter après implémentation]* |
-| `apps/web/src/__tests__/css-class-integrity-audit.test.ts` | Création | *[À compléter après implémentation]* |
-| `apps/web/src/__tests__/e2e-testids-sync-audit.test.ts` | Création | *[À compléter après implémentation]* |
-| `apps/web/src/__tests__/e2e-openapi-helper-audit.test.ts` & `apps/web/e2e/support/typedApiRequest.ts` | Création | *[À compléter après implémentation]* |
-| `apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx` | Modification (Refactoring) | *[À compléter après implémentation]* |
-| `tests/unit/test_no_raw_enum_codes_in_ui_streams.py` & `tests/unit/test_e2e_sql_coverage_audit.py` | Création | *[À compléter après implémentation]* |
-| `apps/api/src/orcia_api/routers/` (`_e2e/evict-memory-caches`) & `apps/web/playwright.config.ts` | Modification | *[À compléter après implémentation]* |
-| `apps/web/e2e/support/layoutGeometryAssertions.ts` & `docs/product/capabilities.yaml` | Création / Modification | *[À compléter après implémentation]* |
+| `apps/web/src/__tests__/anti-jargon-and-secrets-ui-audit.test.ts` | Création | Garde anti-jargon & anti-fuites (`SYNTHESIS_READY`, `Chef1`, `[LAYER_5_`, `ORCIA_BOOTSTRAP_TOKEN`, etc.) sur dictionnaires i18n, aide contextuelle, `docs/help/**`, `packs/**/help/**` et `packages/ui/src/**`. |
+| `apps/web/src/__tests__/no-hidden-legacy-panels-audit.test.ts` | Création | Garde garantissant `0` `display: none` dans `apps/web/src` & `packages/ui/src` et `100 %` des `role="dialog"` portalisés via `OrciaDialog` / `DialogPrimitive.Portal`. |
+| `apps/web/src/__tests__/css-class-integrity-audit.test.ts` | Création | Garde vérifiant `@theme inline` (`viteTailwindV4Plugin.ts`), la compilation des classes critiques (`.z-50`, `.h-[580px]`, `.max-w-[820px]`, `.pl-5`, `.grid-cols-1`), tokens `--z-overlay`/`--z-dialog`, absence de `#hex` hors `tokens.css` et exclusivité `#6D28D9` pour `HumanLedAnchorCard`. |
+| `apps/web/src/__tests__/e2e-testids-sync-audit.test.ts` | Création | **Verrou 1** : extraction de `100 %` des `getByTestId(...)` et `[data-testid=...]` E2E et vérification de leur présence effective (ou préfixe dynamique explicite) dans `apps/web/src` & `packages/ui/src`. |
+| `apps/web/src/__tests__/e2e-openapi-helper-audit.test.ts` & `apps/web/e2e/support/typedApiRequest.ts` | Création | **Verrou 2** + client typé `@orcia/api-client` (`openapi-fetch`) interdisant tout appel `page.request.*` / `request.*` brut et toute référence à `ORCIA_E2E_SEED_FIXTURES` dans `apps/web/e2e/**`. |
+| `apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx` | Modification (Refactoring) | **Verrou 4** : réécriture anti-Goodhart sous `<RouterProvider>` réel (`createMemoryHistory` sur 10 routes), `0` bouton muet, `0` `.catch(() => undefined)`, `count === 1` et vérification `[role="alert"]` sur erreur HTTP simulée. |
+| `tests/unit/test_no_raw_enum_codes_in_ui_streams.py` & `tests/unit/test_e2e_sql_coverage_audit.py` | Création | Gardes Python : `0` `ORCIA_DISABLE_PG_BOOTSTRAP_SYNC`, `0` `ORCIA_E2E_SEED_FIXTURES`, `0` `[LAYER_5_*]` exposé, contrôle `_e2e/evict-memory-caches` (`404` hors `e2e` / `200` en `e2e`), et couverture SQL PG18 sur **`55/55` blocs `test(...)`** (`24` specs). |
+| `apps/api/src/orcia_api/routers/e2e_test_hooks.py`, `schemas/e2e_test_hooks.py`, `main.py`, `dependencies/core_and_lifespan.py`, `packages/api-client/src/generated/e2e_test_hooks.ts` | Création / Modification | Endpoint `POST /api/v1/_e2e/evict-memory-caches` monté uniquement quand `ORCIA_ENV == "e2e"` + régénération OpenAPI `0-diff` (`export_openapi.py`). |
+| `apps/web/e2e/support/{coldReload.ts,layoutGeometryAssertions.ts,authAndOrgHelpers.ts,firstAdmin.ts,dbAssertions.ts,e2eCaptureFixture.ts}` & `apps/web/e2e/*.spec.ts` (`24` specs) | Création / Modification | **Verrou 3** (`reloadColdFromPg` sans `ORCIA_E2E_SEED_FIXTURES`), assertions géométriques/visibilité, assertions SQL PG18 sur `55/55` tests, `ORCIA_E2E_CAMPAIGN_DIR` et optimisation `14-auth` / `16-ai-models` sous `< 35 s`. |
+| `packages/ui/src/primitives/{AssistantGovernanceModalAndStudio,ChunkValidationCard,FourZoneDirectionCShell,FourZoneNotificationsDrawer,FourZoneShellTypes,MobileCompanionBottomBar,SidebarAccountPopover,TopHeaderSearchCommand}.tsx` & `apps/web/src/...` | Modification / Refactoring | Portalisation Radix des `6` modales/tiroirs restants, auto-fermeture du tiroir mobile à la navigation/modale, suppression de `2` `display: none` dans `WorkspaceSourcesMasterTable.tsx`, montage racine de `ShellUserSettingsModal.tsx`, `@theme inline` (`viteTailwindV4Plugin.ts` / `main.tsx`), affichage `[role="alert"]` SSRF (`SettingsAiModelsSection.tsx`) et wrap mobile (`EnterpriseConnectorsSettingsSection.tsx`). |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
-- **Couverture de tests** : *[$\ge 90\%$ requis à mesurer après implémentation]*
-- **Campagne E2E finale** : *[Attendu `unexpected: 0`, `flaky: 0`, `62/62` `feature` `runtime`]*
-- **Qualité statique & Architecture** : `ruff`, `mypy --strict`, `pnpm typecheck`, `lint-imports`, `lint_spine.py`, `pnpm site:check`, `gitnexus_detect_changes()` *[À compléter]*
+- **Pyramide Python (`tests/unit`, `tests/security`, `tests/evals`)** : **`883 passed`** (`0` échec, `0` skipped) après les dernières modifications, incluant `test_no_raw_enum_codes_in_ui_streams.py` & `test_e2e_sql_coverage_audit.py` (`24` specs, **`55/55` blocs `test(...)`** avec assertion SQL PG18).
+- **Suite TypeScript (`pnpm turbo run lint typecheck test --force`)** : **`9/9` tâches réussies** (`0` erreur `tsc --noEmit` / ESLint) :
+  - `@orcia/ui` : `26` fichiers, **`110 passed`**
+  - `@orcia/api-client` : `2` fichiers, **`13 passed`**
+  - `@orcia/web` : `50` fichiers, **`185 passed`** (incluant les `6` fichiers de gardes et verrous CI).
+- **Tir Playwright Ciblé de Validation (`--retries=0 --timeout=35000`, PG18 + Redis réels, sans `ORCIA_E2E_SEED_FIXTURES`, `ORCIA_E2E_CAMPAIGN_DIR=/tmp/orcia-e2e-22-8-check` puis nettoyé)** : **`17 passed, 3 skipped (3.1m), 0 failed`** sur `04-multi-actor-claim-sse`, `05-mobile-companion-and-rgaa`, `14-auth-2fa-account-and-profile` et `16-ai-models-reindex-connectors-and-broker` (skips uniquement sur gardes desktop-only / mobile-only prévues dans `04` et `05`) :
+  - `14-auth` #1 : `13.1 s` (desktop) / `11.2 s` (mobile)
+  - **`14-auth` #2 (`REM-33`) : `11.4 s` (desktop) / `10.9 s` (mobile)** (`< 35 000 ms`)
+  - `14-auth` #3 : `10.9 s` (desktop) / `11.1 s` (mobile)
+  - `16-ai-models` #1 : `14.7 s` (desktop) / `12.5 s` (mobile)
+  - **`16-ai-models` #2 (`REM-33`) : `11.1 s` (desktop) / `10.7 s` (mobile)** (`< 35 000 ms`)
+  - `16-ai-models` #3 : `6.1 s` (desktop) / `5.7 s` (mobile)
+  - Campagne E2E intégrale `110` cas (`e2e-campaign-epic-22`) & promotion `62/62` `runtime` : portées par `Story 22.9` après `Story 22.8a`.
+- **Qualité statique & Architecture** : `ruff check .` (`0` erreur), `ruff format --check .` (`1235` fichiers conformes), `mypy --strict` (`513` fichiers, `0` erreur), `lint-imports` (`5 contracts kept, 0 broken`), `export_openapi.py --check` (`0-diff`), `lint_spine.py` (`0 findings`), `pnpm site:sync && pnpm site:check`, `scripts/check_implementation_docs.py` et `gitnexus_detect_changes()`.
 
 ### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17`)
-- *[À compléter après validation complète de l'Epic 22]*
+1. **Couche 1 (Unitaires & Gardes CI)** : `pnpm turbo run lint typecheck test --force` (`9/9` tâches vertes, `110` UI + `13` API-Client + `185` Web) et `pytest tests/unit` (`883 passed` sur `unit + security + evals`), incluant les `6` gardes/verrous TS et `2` gardes Python.
+2. **Couche 2 (Intégration PG18 / Redis)** : `POST /api/v1/_e2e/evict-memory-caches` validé (`404` hors `e2e`, `200` en `e2e`) et relecture à froid `reloadColdFromPg` vérifiée sur la pile réelle `testcontainers` PG18 + Redis lors du tir E2E ciblé.
+3. **Couche 3 (Contrats & Architecture)** : `export_openapi.py --check` (`0-diff`), `lint-imports` (`5/5` contrats AD-19/AD-20), `mypy --strict` (`513` fichiers), `ruff`, `lint_spine.py` (`0` finding).
+4. **Couche 4 (Sécurité & Evals)** : inclus dans `pytest tests/unit tests/security tests/evals -q` (`883 passed`, `0` fuite de secret/jargon, garde `_e2e` isolée par `ORCIA_ENV`).
+5. **Couche 5 (Playwright E2E Ciblé `< 35 s`)** : `17 passed, 3 skipped (0 failed)` sur les `4` specs critiques (`04`, `05`, `14`, `16`) desktop & mobile (`max 14.7 s < 35 s`), la campagne complète `110` scénarios restant dédiée à `Story 22.9` après `Story 22.8a`.

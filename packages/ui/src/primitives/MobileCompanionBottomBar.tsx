@@ -1,3 +1,4 @@
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import React from "react";
 import { OrciaIcon } from "../components/icons";
 import {
@@ -112,17 +113,33 @@ export function MobileShellNavigationDrawer({
   }
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={labels.sidebarAriaLabel}
-      data-testid="mobile-navigation-drawer"
-      className="fixed inset-x-0 top-[52px] bottom-[58px] z-40 flex flex-col gap-3 overflow-y-auto border-t p-3"
-      style={{
-        backgroundColor: "var(--color-bg-surface)",
-        borderColor: "var(--color-border-subtle)",
+    <DialogPrimitive.Root
+      open={open}
+      modal={false}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose();
       }}
     >
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Content asChild aria-describedby={undefined}>
+          <div
+            aria-label={labels.sidebarAriaLabel}
+            data-testid="mobile-navigation-drawer"
+            className="flex flex-col gap-3 overflow-y-auto border-t p-3"
+            style={{
+              position: "fixed",
+              left: 0,
+              right: 0,
+              top: "52px",
+              bottom: "58px",
+              zIndex: "var(--z-dialog)",
+              backgroundColor: "var(--color-surface-card)",
+              borderColor: "var(--color-border-subtle)",
+            }}
+          >
+            <DialogPrimitive.Title className="sr-only">
+              {labels.sidebarAriaLabel}
+            </DialogPrimitive.Title>
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-semibold">{labels.sidebarAriaLabel}</span>
         <button
@@ -229,6 +246,9 @@ export function MobileShellNavigationDrawer({
           {renderSidebarFooter(false)}
         </div>
       )}
-    </div>
+          </div>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }

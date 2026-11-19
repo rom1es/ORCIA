@@ -181,7 +181,6 @@ export function WorkspaceSourcesMasterTable({
                 return (
                   <tr key={ds.id} data-testid={`workspace-detail-source-row-${ds.id}`} style={{ borderBottom: "1px solid var(--color-border-subtle)" }}>
                     <td style={tdStyle}>
-                      <span data-testid={`workspace-source-row-${ds.id}`} style={{ display: "none" }} />
                       <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
                         {getNatureIcon(ds.source_nature ?? "DOCUMENT_KB")}
                         <span>{ds.source_nature ?? "DOCUMENT_KB"}</span>
@@ -221,9 +220,6 @@ export function WorkspaceSourcesMasterTable({
                               </button>
                             ) : null}
                           </div>
-                        )}
-                        {(ds as unknown as { sync_status?: string }).sync_status === "ACTIVE" && (
-                          <span data-testid={`rag-sync-active-badge-${ds.id}`} style={{ display: "none" }}>Synchronisation active</span>
                         )}
                       </div>
                     </td>

@@ -256,7 +256,7 @@ export function EnterpriseConnectorsSettingsSection({
               <option value="SERVICE_SECRET">Secret de service</option>
             </select>
           </div>
-          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
             <input
               type="text"
               autoComplete="off"
@@ -307,17 +307,20 @@ export function EnterpriseConnectorsSettingsSection({
                 data-testid={`enterprise-connector-row-${c.id}`}
                 style={{
                   display: "flex",
+                  flexWrap: "wrap",
                   alignItems: "center",
                   justifyContent: "space-between",
+                  gap: "8px",
                   padding: "10px 14px",
                   borderRadius: "var(--radius-sm)",
                   border: "1px solid var(--color-border-subtle)",
                   backgroundColor: "var(--color-surface-primary)",
                   fontSize: "12px",
+                  minWidth: 0,
                 }}
               >
-                <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "3px", minWidth: 0 }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
                     <strong>{c.name}</strong>
                     <span style={{ fontSize: "10px", fontFamily: "monospace", color: "var(--color-muted-foreground)" }}>
                       [{c.connector_kind}]
@@ -326,12 +329,12 @@ export function EnterpriseConnectorsSettingsSection({
                       {c.auth_mode}
                     </span>
                   </div>
-                  <span style={{ fontSize: "11px", color: "var(--color-muted-foreground)", fontFamily: "monospace" }}>
+                  <span style={{ fontSize: "11px", color: "var(--color-muted-foreground)", fontFamily: "monospace", wordBreak: "break-all" }}>
                     {c.base_url}
                   </span>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
                   {c.admin_secret_status.configured ? (
                     <span
                       data-testid={`connector-secret-badge-${c.id}`}

@@ -37,6 +37,7 @@ from orcia_api.routers.datasource_webhooks import (
 from orcia_api.routers.dna_and_glossary import (
     router as dna_and_glossary_router,
 )
+from orcia_api.routers.e2e_test_hooks import router as e2e_test_hooks_router
 from orcia_api.routers.enterprise_connectors import (
     router as enterprise_connectors_router,
 )
@@ -170,6 +171,7 @@ def create_app() -> FastAPI:
     application.include_router(workflow_triggers_router)
     application.include_router(sources_surgical_router)
     application.include_router(executions_trace_router)
+    application.include_router(e2e_test_hooks_router)
     return application
 
 

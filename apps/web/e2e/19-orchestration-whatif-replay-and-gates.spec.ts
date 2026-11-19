@@ -9,6 +9,7 @@ import {
   openGatesPage,
   reloadClearingStorage,
 } from "./support/processAndAssistantHelpers";
+import { apiPost } from "./support/typedApiRequest";
 
 test.describe("Orchestration durable, contestation amont avec simulation d'impact, reprise et validations croisées", () => {
   test.beforeEach(() => {
@@ -107,13 +108,14 @@ test.describe("Orchestration durable, contestation amont avec simulation d'impac
       slug: "ws-gates-ortho",
     });
     const token = await getBearerTokenFromSession(page);
-    const authHeaders = { Authorization: `Bearer ${token}` };
 
     const runId = "0195f100-0000-7000-8000-000000000101";
     const stepExecId = "0195f100-0000-7000-8000-000000000201";
 
-    const detRes = await page.request.post("/api/v1/gates/deterministic/evaluate", {
-      headers: authHeaders,
+    const detRes = await apiPost<{
+      evaluation: { gate_type: string; status: string };
+    }>(page, "/api/v1/gates/deterministic/evaluate", {
+      token,
       data: {
         workspace_id: ws.pgWorkspaceId,
         run_id: runId,
@@ -124,14 +126,15 @@ test.describe("Orchestration durable, contestation amont avec simulation d'impac
       },
     });
     expect(detRes.status()).toBe(200);
-    const detBody = (await detRes.json()) as {
-      evaluation: { gate_type: string; status: string };
-    };
+    const detBody = await detRes.json();
     expect(detBody.evaluation.gate_type).toBe("DETERMINISTIC");
     expect(detBody.evaluation.status).toBe("PASS");
 
-    const agenticRes = await page.request.post("/api/v1/gates/agentic/evaluate", {
-      headers: authHeaders,
+    const agenticRes = await apiPost<{
+      routed_model_family: string;
+      evaluation: { gate_type: string };
+    }>(page, "/api/v1/gates/agentic/evaluate", {
+      token,
       data: {
         workspace_id: ws.pgWorkspaceId,
         run_id: runId,
@@ -144,10 +147,7 @@ test.describe("Orchestration durable, contestation amont avec simulation d'impac
       },
     });
     expect(agenticRes.status()).toBe(200);
-    const agenticBody = (await agenticRes.json()) as {
-      routed_model_family: string;
-      evaluation: { gate_type: string };
-    };
+    const agenticBody = await agenticRes.json();
     expect(agenticBody.routed_model_family).not.toBe("openai");
     expect(agenticBody.evaluation.gate_type).toBe("AGENTIC");
 

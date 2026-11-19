@@ -561,11 +561,11 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "summary": "Pré-implémentation : découpage < 350 L et conversion *Fail-Closed* de vitest.setup.ts validée contre openapi.json (format: \"uuid\" strict rejetant \"ws-1\", zéro jsonResponse({})) ; purge des fallbacks RAM + test_composition_root_zero_ram_silo_postgres18.py sans dependency_overrides/app.state.* + audits AST app.state & adaptateurs SQL orphelins ; .github/workflows/{ci,e2e}.yml (4 shards --retries=0) et couverture combinée >= 90 %."
     },
     {
-      "date": "2026-11-18",
+      "date": "2026-11-19",
       "phaseOrStory": "Story 22.8",
       "reportFile": "22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime-tech-lead-report.md",
       "domain": "Vague 3 (REM-33, REM-34) — Activation des 5 Gardes CI Initiales + 4 Verrous Anti-Faux-Positifs (Sync data-testid, Helper OpenAPI typedApiRequest, Purge ORCIA_E2E_SEED_FIXTURES + Relecture à Froid PG18, <RouterProvider> + [role=\"alert\"]), Couverture 100 % SQL PG18 (55/55 Blocs), ORCIA_E2E_CAMPAIGN_DIR & Budget < 35s",
-      "summary": "Pré-implémentation (enrichie RCA Epic 21) : 5 gardes initiales + 4 verrous (e2e-testids-sync-audit, typedApiRequest.ts + e2e-openapi-helper-audit, purge ORCIA_E2E_SEED_FIXTURES + reloadColdFromPg via POST /api/v1/_e2e/evict-memory-caches, réécriture <RouterProvider> de zero-dead-buttons + sonde [role=\"alert\"] + Direction C / WCAG AA), test_e2e_sql_coverage_audit.py (55/55), ORCIA_E2E_CAMPAIGN_DIR et budget < 35s."
+      "summary": "Clôture (done) : 6 suites gardes/verrous TS (185/185 @orcia/web, 110/110 @orcia/ui, 13/13 @orcia/api-client), 2 gardes Python (55/55 blocs E2E SQL PG18 + _e2e/evict-memory-caches 404/200, 883 passed unit+security+evals), portails Radix 100 % + 0 display: none + @theme inline, tir E2E ciblé 04/05/14/16 vert (17 passed, 3 skipped, 0 failed, 14-auth #2 11.4 s & 16-ai-models #2 11.1 s < 35 s), ruff/mypy/lint-imports/export_openapi/lint_spine 0 erreur."
     },
     {
       "date": "2026-11-19",

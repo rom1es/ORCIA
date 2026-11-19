@@ -9788,6 +9788,36 @@
         "title": "EvaluationLensItem",
         "type": "object"
       },
+      "EvictMemoryCachesResponse": {
+        "description": "Result of evicting all in-memory service caches on the E2E server.",
+        "properties": {
+          "cleared_caches": {
+            "description": "Names of `app.state` service caches cleared for cold PG18 reload.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Cleared Caches",
+            "type": "array"
+          },
+          "evicted": {
+            "description": "True when all RAM caches/mirrors were evicted.",
+            "title": "Evicted",
+            "type": "boolean"
+          },
+          "trace_id": {
+            "description": "W3C OpenTelemetry trace_id.",
+            "minLength": 1,
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evicted",
+          "trace_id"
+        ],
+        "title": "EvictMemoryCachesResponse",
+        "type": "object"
+      },
       "EvidenceGlossaryCitationSchemaItem": {
         "additionalProperties": false,
         "description": "Numbered `[G1..Gn]` glossary / axiom entry (`Story 10.3`).",
@@ -33925,6 +33955,105 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/_e2e/evict-memory-caches": {
+      "post": {
+        "description": "Clear all RAM caches/mirrors on `app.state` without touching PostgreSQL 18.\n\nReturns HTTP 404 (RFC 9457) whenever `ORCIA_ENV != \"e2e\"`.",
+        "operationId": "evict_memory_caches_api_v1__e2e_evict_memory_caches_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvictMemoryCachesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Evict all in-memory application caches for cold PG18 reload (E2E only)",
+        "tags": [
+          "_e2e"
+        ]
+      }
+    },
     "/api/v1/admin/outbox/replays": {
       "post": {
         "description": "Trigger bounded Outbox replay (`<= 500` events, `dry_run: true` default, `Story 8.3`).",

@@ -9,6 +9,7 @@ import {
   openWorkspaceGlossaryTab,
   openWorkspaceSourcesPage,
 } from "./support/workspaceAndCatalogHelpers";
+import { apiGet, apiPost, reloadColdFromPg } from "./support/typedApiRequest";
 
 test.describe("Sources d'espace multi-nature, graphe de code, glossaire, ontologie et RAG tripartite", () => {
   test.beforeEach(() => {
@@ -59,8 +60,8 @@ test.describe("Sources d'espace multi-nature, graphe de code, glossaire, ontolog
     await page.getByTestId("workspace-sources-reconcile-btn").click();
 
     const token = await getBearerTokenFromSession(page);
-    const webhookRes = await page.request.post(`/api/v1/webhooks/datasources/${dsId}`, {
-      headers: { Authorization: `Bearer ${token}` },
+    const webhookRes = await apiPost(page, `/api/v1/webhooks/datasources/${dsId}`, {
+      token,
       data: {
         delivery_key: `deliv-${dsId}-01`,
         provider_event: "push",
@@ -76,19 +77,17 @@ test.describe("Sources d'espace multi-nature, graphe de code, glossaire, ontolog
       "Livraison webhook enregistrée dans datasource_webhook_deliveries",
     );
 
-    const toolsRes = await page.request.get(`/api/v1/workspaces/${ws.pgWorkspaceId}/codegraph/tools`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    expect(toolsRes.status()).toBe(200);
-    const toolsPayload = (await toolsRes.json()) as {
+    const toolsRes = await apiGet<{
       tools: Array<{ name: string; read_only: boolean }>;
       active_repositories: Array<{ alias: string; codegraph_enabled: boolean }>;
-    };
+    }>(page, `/api/v1/workspaces/${ws.pgWorkspaceId}/codegraph/tools`, { token });
+    expect(toolsRes.status()).toBe(200);
+    const toolsPayload = await toolsRes.json();
     expect(toolsPayload.tools.every((t) => t.read_only)).toBe(true);
     expect(toolsPayload.active_repositories.some((r) => r.alias === "core-repo")).toBe(true);
 
-    const invokeRes = await page.request.post(`/api/v1/workspaces/${ws.pgWorkspaceId}/codegraph/invoke`, {
-      headers: { Authorization: `Bearer ${token}` },
+    const invokeRes = await apiPost(page, `/api/v1/workspaces/${ws.pgWorkspaceId}/codegraph/invoke`, {
+      token,
       data: {
         tool_name: "codegraph_locate_symbol",
         arguments: { repo_alias: "core-repo", query: "OrchestrationEngine" },
@@ -96,12 +95,8 @@ test.describe("Sources d'espace multi-nature, graphe de code, glossaire, ontolog
     });
     expect(invokeRes.status()).toBe(200);
 
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    });
     await page.goto(`/workspaces/${ws.uiWorkspaceId}/sources`);
-    await page.reload();
+    await reloadColdFromPg(page);
     await expect(page.getByTestId(`workspace-detail-source-row-${dsId}`)).toBeVisible({ timeout: 20000 });
   });
 
@@ -176,12 +171,8 @@ test.describe("Sources d'espace multi-nature, graphe de code, glossaire, ontolog
     await page.getByTestId("ontology-create-concept-btn").click();
     await expect(page.getByTestId("ontology-feedback-banner")).toBeVisible({ timeout: 15000 });
 
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    });
     await page.goto("/ontology");
-    await page.reload();
+    await reloadColdFromPg(page);
     await expect(page.getByTestId("ontology-kb-explorer-panel")).toContainText("Axiome Qualité Globale", {
       timeout: 20000,
     });
@@ -204,11 +195,7 @@ test.describe("Sources d'espace multi-nature, graphe de code, glossaire, ontolog
     await expect(page.getByTestId("workspace-five-tabs-view")).toBeVisible({ timeout: 10000 });
     await page.locator('[data-testid^="register-waiver-btn-"]').first().click();
 
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    });
-    await page.reload();
+    await reloadColdFromPg(page);
 
     expectDbRowExists(
       "SELECT waiver_id::text AS waiver_id, workspace_id::text AS workspace_id, source_uri, status FROM workspace_exception_waivers WHERE workspace_id = :ws_id",

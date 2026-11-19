@@ -156,5 +156,6 @@ export interface FourZoneDirectionCShellProps {
   readonly helpColumnContent?: React.ReactNode;
   readonly helpColumnOpen?: boolean;
   readonly onHelpColumnOpenChange?: (open: boolean) => void;
+  readonly mobileDrawerCloseSignal?: string | boolean | number;
   readonly children: React.ReactNode;
 }

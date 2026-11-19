@@ -95,21 +95,17 @@ def _resolve_default_llm_gateway() -> LLMPort:
     )
 
 
-def _e2e_fixtures_enabled() -> bool:
-    """`True` only on the isolated E2E stack (`ORCIA_E2E_SEED_FIXTURES=1`)."""
-    return os.environ.get("ORCIA_E2E_SEED_FIXTURES", "").strip() == "1"
-
-
 def should_seed_test_personas_in_memory() -> bool:
-    """Return `True` only inside automated tests or explicit E2E fixture environments.
+    """Return `True` only inside automated unit tests or explicit persona-seed mode.
 
-    A real server process (`uvicorn`) starts with zero in-memory mock personas (`Marc`, `Karim`,
-    `Claire`) so authentication operates strictly against PostgreSQL 18.
+    A real server process (`uvicorn`) or isolated E2E stack (`ORCIA_ENV=e2e`) starts with
+    zero in-memory mock personas (`Marc`, `Karim`, `Claire`) so authentication operates
+    strictly against PostgreSQL 18.
     """
     if os.environ.get("ORCIA_FORCE_REAL_RUNTIME", "").strip() == "1":
         return False
-    if _e2e_fixtures_enabled():
-        return True
+    if os.environ.get("ORCIA_ENV", "").strip().lower() == "e2e":
+        return False
     if os.environ.get("ORCIA_SEED_TEST_PERSONAS", "").strip() == "1":
         return True
     return bool(
@@ -264,16 +260,6 @@ def initialize_app_services(app: FastAPI) -> None:
             sse_broker=app.state.sse_broker,
             engine=getattr(app.state, "db_engine", None),
         )
-        # Zéro donnée fictive : les notifications d'amorce ne sont semées que pour la pile E2E
-        # isolée (ORCIA_E2E_SEED_FIXTURES=1, posé uniquement par infra/scripts/e2e/).
-        if _e2e_fixtures_enabled():
-            notif_svc.seed_default_notifications(
-                workspace_id="0195f000-0000-7000-8000-000000000301",
-                team_id="0195f000-0000-7000-8000-000000000103",
-                user_id="0195f000-0000-7000-8000-000000000203",
-                run_id="0195f000-0000-7000-8000-000000000701",
-                step_execution_id="0195f000-0000-7000-8000-000000000801",
-            )
         app.state.notification_service = notif_svc
 
     if getattr(app.state, "resource_lease_service", None) is None:

@@ -5,6 +5,7 @@ import { watchApiServerErrors } from "./support/apiErrors";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi } from "./support/firstAdmin";
 import { createBuAndTeamViaUi, createWorkspaceViaUi } from "./support/orgAndWorkspace";
+import { apiGet, apiPost, reloadColdFromPg } from "./support/typedApiRequest";
 
 /**
  * TEST-05 · 06 — Gates tri-modales (UJ-6, Epic 4, FR-6/FR-18/FR-19).
@@ -81,29 +82,33 @@ test.describe("TEST-05 · 06 — Gates : briefing de revue et anti-rubber-stampi
     await expect(page.getByTestId("chunk-status-badge-sec-security-jira")).toHaveText("Co-édité");
 
     // 4. Vérifier que le garde-fou API rejette une finalisation < 15 s sans confirmation explicite
-    const refreshRes = await page.request.post("/api/v1/auth/refresh");
+    const refreshRes = await apiPost<{ access_token?: string }>(page, "/api/v1/auth/refresh");
     expect(refreshRes.status()).toBe(200);
-    const { access_token: adminToken } = (await refreshRes.json()) as { access_token?: string };
+    const { access_token: adminToken } = await refreshRes.json();
     expect(adminToken).toBeTruthy();
-    const listRes = await page.request.get("/api/v1/gates/human/evaluations", {
-      headers: { Authorization: `Bearer ${adminToken}` },
-    });
+    const listRes = await apiGet<{ evaluations: Array<{ id: string }> }>(
+      page,
+      "/api/v1/gates/human/evaluations",
+      { token: adminToken },
+    );
     expect(listRes.ok()).toBeTruthy();
-    const listBody = (await listRes.json()) as {
-      evaluations: Array<{ id: string }>;
-    };
+    const listBody = await listRes.json();
     const evalId = listBody.evaluations[listBody.evaluations.length - 1]?.id ?? "";
     expect(evalId).toBeTruthy();
 
-    const prematureRes = await page.request.post(`/api/v1/gates/human/${evalId}/finalize`, {
-      headers: { Authorization: `Bearer ${adminToken}` },
-      data: {
-        review_duration_ms: 2100,
-        explicit_hypotheses_confirmation: false,
+    const prematureRes = await apiPost<{ error_code?: string }>(
+      page,
+      `/api/v1/gates/human/${evalId}/finalize`,
+      {
+        token: adminToken,
+        data: {
+          review_duration_ms: 2100,
+          explicit_hypotheses_confirmation: false,
+        },
       },
-    });
+    );
     expect(prematureRes.status()).toBe(422);
-    const prematureProblem = (await prematureRes.json()) as { error_code?: string };
+    const prematureProblem = await prematureRes.json();
     expect(prematureProblem.error_code).toBe("ERR_RUBBER_STAMPING_GUARD_TRIGGERED");
 
     // 5. Cliquer sur Finaliser dans l'UI (< 15 s sur > 1 000 mots) -> ouvre la modale de garde-fou
@@ -129,12 +134,8 @@ test.describe("TEST-05 · 06 — Gates : briefing de revue et anti-rubber-stampi
     );
     await expect(page.getByTestId("gates-staged-jira-status-badge")).toContainText("Exécutée");
 
-    // 7. Survie au F5 après purge du stockage navigateur
-    await page.evaluate(() => {
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-    });
-    await page.reload();
+    // 7. Survie au F5 à froid après éviction RAM + purge du stockage navigateur
+    await reloadColdFromPg(page);
     await expect(page.getByTestId("gates-human-evaluation-status-badge")).toHaveAttribute(
       "data-status",
       "PASS",

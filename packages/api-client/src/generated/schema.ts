@@ -1476,6 +1476,11 @@ export interface components {
       threshold: number;
       weight: number;
     };
+    EvictMemoryCachesResponse: {
+      cleared_caches?: (string)[];
+      evicted: boolean;
+      trace_id: string;
+    };
     EvidenceGlossaryCitationSchemaItem: {
       definition: string;
       index: number;
@@ -5041,6 +5046,13 @@ export interface components {
 }
 
 export interface paths {
+  "/api/v1/_e2e/evict-memory-caches": {
+    post: {
+      responses: {
+        200: components["schemas"]["EvictMemoryCachesResponse"];
+      };
+    };
+  };
   "/api/v1/admin/outbox/replays": {
     post: {
       responses: {
@@ -7047,6 +7059,7 @@ export type EnterpriseConnectorsListResponse = components["schemas"]["Enterprise
 export type EvaluateResourceAccessRequest = components["schemas"]["EvaluateResourceAccessRequest"];
 export type EvaluateStarlarkMechanismRequest = components["schemas"]["EvaluateStarlarkMechanismRequest"];
 export type EvaluationLensItem = components["schemas"]["EvaluationLensItem"];
+export type EvictMemoryCachesResponse = components["schemas"]["EvictMemoryCachesResponse"];
 export type EvidenceGlossaryCitationSchemaItem = components["schemas"]["EvidenceGlossaryCitationSchemaItem"];
 export type EvidenceSourceCitationSchemaItem = components["schemas"]["EvidenceSourceCitationSchemaItem"];
 export type EvidenceToolCitationSchemaItem = components["schemas"]["EvidenceToolCitationSchemaItem"];

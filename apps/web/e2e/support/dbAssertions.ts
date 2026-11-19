@@ -70,7 +70,7 @@ export function expectDbRowExists(
     rows.length,
     `${label}Aucune ligne persistée trouvée en base PostgreSQL 18 (orcia_e2e). SQL: ${sql} | params: ${formatParams(params)}`,
   ).toBeGreaterThanOrEqual(1);
-  return rows[0];
+  return rows[0] ?? {};
 }
 
 /**
@@ -83,11 +83,13 @@ export function expectDbRowCount(
   contextMessage?: string,
 ): number {
   const rows = queryDbRows<Record<string, unknown>>(sql, params);
+  const firstRow = rows[0];
   const singleCount =
     rows.length === 1 &&
-    Object.keys(rows[0]).length === 1 &&
-    typeof rows[0].count === "number"
-      ? rows[0].count
+    firstRow !== undefined &&
+    Object.keys(firstRow).length === 1 &&
+    typeof firstRow.count === "number"
+      ? firstRow.count
       : rows.length;
   const label = contextMessage ? `${contextMessage} — ` : "";
   expect(
