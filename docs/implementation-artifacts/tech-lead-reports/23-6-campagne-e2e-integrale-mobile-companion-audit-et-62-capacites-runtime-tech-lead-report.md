@@ -1,13 +1,14 @@
-# Story 23.6 — Stabilisation Specs `04`–`21` & Mobile Companion (`390×844`) & Audit `100 %` Assertions SQL PostgreSQL 18 Effectives (`55/55` Blocs E2E)
+# Story 23.6 — Stabilisation Specs `04`–`21` & Mobile Companion (`390×844`) & Audit `100 %` Assertions SQL PostgreSQL 18 Effectives (`55/55` Blocs E2E) *(Reportée en `ACTION_ITEM-23.6`)*
 
-> **Note de passage de relais (`Step 0 Epic 23`, 2026-11-19)** :
-> Par décision de structuration de l'**Epic 23**, l'ancienne portée de la Story `23.6` est découpée proprement en trois temps séquentiels afin de séparer la stabilisation applicative/SQL de l'exécution figée de la campagne finale et de la préparation de l'Epic 24 :
-> - **`Story 23.6` (présent rapport)** : stabilisation des specs `04`–`21`, `shell.spec.ts` et `mobile-companion` (`390×844`) post-déblocage `resetDay0()` (`23.1`–`23.5`) **+** audit et renforcement des `100 %` vérifications effectives en base de données PostgreSQL 18 (`expectDbRowExists`, `expectDbRowCount`, `queryDbRows` ciblant les tables du domaine testé — zéro assertion purement mémoire, zéro `SELECT 1`) sur chacun des `55` blocs `test(...)` E2E (`55/55`).
-> - **`Story 23.7` (relais campagne & audit)** : exécution de la campagne figée sans retouche code (`docs/implementation-artifacts/e2e-campaign-epic-23/`), captures PNG d'état final `110/110`, bilan exhaustif, audit croisé Sally × Winston, bascule `PLAYWRIGHT_RESULTS_PATH` et mise à jour de `docs/product/capabilities.yaml` (`62/62` `runtime` ou `failed_e2e` honnête) $\rightarrow$ [`23-7-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston-tech-lead-report.md`](./23-7-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston-tech-lead-report.md).
-> - **`Story 23.8` (relais clôture & Epic 24)** : rédaction des rapports Tech Lead individuels `24-1..24-K`, plan de correction global et initialisation complète de l'**Epic 24** $\rightarrow$ [`23-8-rapports-tech-lead-plan-correction-global-et-initialisation-epic-24-tech-lead-report.md`](./23-8-rapports-tech-lead-plan-correction-global-et-initialisation-epic-24-tech-lead-report.md).
+> **Décision de gouvernance (`Step 2a Epic 23`, 2026-11-19 — RCA Epic 22)** :
+> - **La `Story 23.6` et l'ensemble du périmètre Mobile Companion (`--project=mobile-companion`, `390×844`, `CAP-042` et assertions responsive mobile) sont explicitement déplacés vers `action_items:` (`ACTION_ITEM-23.6` dans `docs/implementation-artifacts/sprint-status.yaml`) pour priorisation ultérieure.**
+> - L'audit SQL PG18 effectif (`55/55` blocs `test(...)`, zéro `SELECT 1`, zéro table alibi hors domaine) et le durcissement anti-Goodhart des 5 couches sont repris sur le chemin critique par la Story intercalaire **`Story 23.6a`** ([`23-6a-durcissement-anti-goodhart-gardes-openapi-ast-geometrie-et-reset-pg18-tech-lead-report.md`](./23-6a-durcissement-anti-goodhart-gardes-openapi-ast-geometrie-et-reset-pg18-tech-lead-report.md)).
+> - La campagne Playwright E2E de **`Story 23.7`** et la clôture de **`Story 23.8`** portent désormais exclusivement sur **`--project=desktop-cockpit`** (`1440×900`, `24` specs / `55` scénarios Desktop dont `52` exécutés et `3` `mobile-only` skipped) : [`23-7-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston-tech-lead-report.md`](./23-7-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston-tech-lead-report.md) et [`23-8-rapports-tech-lead-plan-correction-global-et-initialisation-epic-24-tech-lead-report.md`](./23-8-rapports-tech-lead-plan-correction-global-et-initialisation-epic-24-tech-lead-report.md).
+>
+> *(Rappel historique `Step 0 Epic 23` : l'ancienne portée de la Story `23.6` avait préalablement été scindée en trois temps : `23.6` stabilisation/audit, `23.7` campagne figée, `23.8` clôture & Epic 24.)*
 
 - **Date** : 2026-11-19
-- **Story / Clé Sprint** : `23-6-campagne-e2e-integrale-mobile-companion-audit-et-62-capacites-runtime` (`Epic 23` — Vague 2 `P0`)
+- **Story / Clé Sprint** : `23-6-campagne-e2e-integrale-mobile-companion-audit-et-62-capacites-runtime` *(Archivée / Déplacée en `action_items:` $\rightarrow$ `ACTION_ITEM-23.6`)*
 - **Capacité(s)** : `CAP-002`, `CAP-010`, `CAP-042`, `CAP-043`, `CAP-050`, `CAP-051`, `CAP-052`, `CAP-053`, `CAP-055`, `CAP-056`, `CAP-057`, `CAP-058`, `CAP-063`, `CAP-066`, `CAP-067`, `CAP-069`, `CAP-076`, `CAP-080`, `CAP-081`, `CAP-083`, `CAP-084`, `CAP-090`, `CAP-091`, `CAP-092`, `CAP-150`, `CAP-180`, `CAP-203` *(préparation et stabilisation bout-en-bout de l'ensemble des `62` capacités `feature` + `3` `foundation` avant campagne figée en `Story 23.7`)* — classification : `feature` + `ux` (`REM23-13` / `ARCH23-10`, `P0-UX-2`)
 - **Auteur / Contexte** : `22.10-impl` (Sally × Winston — pré-implémentation Epic 23), mis à jour `23.0-impl` (2026-11-19). Stabilise les parcours `04`–`21`, `shell.spec.ts` et Mobile Companion (`390×844`) post-Vagues 0 & 1 (`Stories 23.1`–`23.5`) sans retry ni fixture cachée (`ORCIA_E2E_SEED_FIXTURES` absent), résout tout écart fonctionnel ou responsive révélé après déblocage de `resetDay0()`, et réalise l'audit + renforcement des `100 %` assertions SQL PostgreSQL 18 effectives sur les `55` blocs `test(...)` E2E avant gel de la campagne en `Story 23.7`.
 - **Commits associés** : `En attente d'implémentation (initialisé par Story 22.10, recadré Step 0 Epic 23)`
@@ -64,17 +65,20 @@
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
-> *[Pré-implémentation initialisée en Story 22.10 — à compléter après exécution de la campagne Epic 23]*
+> **[Statut : Déplacée vers `action_items:` (`ACTION_ITEM-23.6`, `status: open`, `priority: P2`) le 2026-11-19]**
+> - La **Story `23.6`** et la **compatibilité Mobile Companion (`--project=mobile-companion`, `390×844`, `CAP-042`)** ont été retirées du `development_status:` de l'Epic 23 et déplacées vers **`ACTION_ITEM-23.6`** dans `docs/implementation-artifacts/sprint-status.yaml` pour priorisation ultérieure.
+> - Les volets transverses de durcissement SQL PG18 effectif (`55/55` blocs E2E sans `SELECT 1` ni table hors domaine), de transport OpenAPI `security`, d'audits AST et de contrats géométriques Desktop Direction C sont exécutés dès l'Epic 23 via **`Story 23.6a`** (`23-6a-durcissement-anti-goodhart-gardes-openapi-ast-geometrie-et-reset-pg18`).
+> - La vérification E2E Desktop (`--project=desktop-cockpit`, `1440×900`, `24` specs / `55` scénarios Desktop, `52` exécutés + `3` `mobile-only` skipped) est portée par **`Story 23.7`**.
 
 ### 3.1 Fichiers Développés & Modifiés
 | Fichier | Nature (Création / Modification / Refactoring) | Description synthétique |
 | :--- | :--- | :--- |
-| `docs/implementation-artifacts/e2e-campaign-epic-23/*` | Création | *[À compléter après exécution Story 23.6]* |
-| `infra/scripts/uj_e2e_coverage.py` & `docs/product/capabilities.yaml` | Modification | *[À compléter après exécution Story 23.6]* |
+| `docs/implementation-artifacts/sprint-status.yaml` | Archive / Report | Story `23.6` déplacée vers `action_items:` (`ACTION_ITEM-23.6`) ; périmètre Mobile dépriorisé hors chemin critique Epic 23. |
+| `docs/implementation-artifacts/tech-lead-reports/23-6a-...-tech-lead-report.md` | Relais Epic 23 | Reprend le verrouillage SQL PG18 domaine (`55/55` blocs) et les gardes anti-Goodhart avant `Story 23.7`. |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
-- **Campagne E2E** : *[Objectif bloquant : `97 / 97` exécutés PASS, `0` failed, `0` timedOut, `13` skipped viewport ; `62/62` `feature` + `3/3` `foundation` en `verification: runtime`]*
-- **Qualité statique & Pyramide `AD-17`** : *[À compléter]*
+- **Statut Epic 23** : **Reportée en `ACTION_ITEM-23.6`** (`story_ref: 23-6-campagne-e2e-integrale-mobile-companion-audit-et-62-capacites-runtime`, `CAP-042` maintenue `failed_e2e` en attendant la reprise Mobile Companion).
+- **Relais actif** : `Story 23.6a` (`CAP-100`, `hygiène`) puis `Story 23.7` (`--project=desktop-cockpit`).
 
 ### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17` + 5 Garde-Fous de Câblage Vertical)
-- *[À compléter après clôture de l'audit visuel Sally Mobile + `04`–`21` et `pnpm site:sync && pnpm site:check`]*
+- Reporté sous `ACTION_ITEM-23.6` pour la partie Mobile Companion (`390×844` / `CAP-042`) ; couverture Desktop `52/52` PASS reprise par `Story 23.6a` + `Story 23.7`.

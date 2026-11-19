@@ -1,25 +1,28 @@
-# Story 23.8 — Rapports Tech Lead Individuels, Plan de Correction Global & Initialisation Epic 24
+# Story 23.8 — Clôture Epic 23, Bilan Conditionnel (`52/52` PASS Desktop & `0` `P0`/`P1` $\rightarrow$ Sans Epic 24 Vide) & Éventuelle Initialisation Epic 24
 
 > **Convention de nommage du fichier (Obligatoire — à créer AVANT toute modification de code)** :
 > - User Story du sprint : `docs/implementation-artifacts/tech-lead-reports/{story-key}-tech-lead-report.md`
 
 - **Date** : 2026-11-19
-- **Story / Clé Sprint** : `23-8-rapports-tech-lead-plan-correction-global-et-initialisation-epic-24` (`Epic 23` — Clôture & Initialisation `Epic 24`)
-- **Capacité(s)** : `none (gouvernance documentaire & planification Epic 24 — rattache toute capacité failed_e2e résiduelle et tout chantier Sally × Winston issus de e2e-campaign-epic-23)` — classification : `doc`
-- **Auteur / Contexte** : `23.0-impl` (initialisation Step 0 Epic 23 sur le modèle `Story 22.10`) — Consolidation post-campagne Epic 23 (`bilan-execution-tests-e2e-epic-23.md`, `synthese-remediation-sally-winston-epic-23.md`), analyse d'impact MCP GitNexus (`repo: "/home/romain/Documents/Projects/ORCIA"`), rédaction des rapports Tech Lead individuels (`24-1-...` à `24-K-...`), rédaction du plan directeur global (`sprint-change-proposal-2026-11-19-epic-24-remediation-plan.md`), initialisation complète de l'**Epic 24** dans `epics.md`, `sprint-status.yaml` et `capabilities.yaml`, création de `tests/unit/test_epic23_to_epic24_traceability.py`, validation de la pyramide `AD-17` et clôture `epic-23: done`.
-- **Commits associés** : `En attente d'implémentation (initialisé en Step 0 Epic 23)`
+- **Story / Clé Sprint** : `23-8-rapports-tech-lead-plan-correction-global-et-initialisation-epic-24` (`Epic 23` — Clôture Conditionnelle & Initialisation `Epic 24` uniquement si écart `P0`/`P1` ou échec Desktop)
+- **Capacité(s)** : `none (gouvernance documentaire & clôture Epic 23 — rattache CAP-042 à ACTION_ITEM-23.6 et, uniquement si échec Desktop ou écart P0/P1 résiduel en 23.7, initialise Epic 24)` — classification : `doc`
+- **Auteur / Contexte** : `23.0-impl` (initialisation Step 0 Epic 23), mis à jour `23.6a-doc-init` (2026-11-19 — recadrage RCA Epic 22). Consolide les résultats de la campagne Desktop `23.7` (`--project=desktop-cockpit`, `24` specs / `55` scénarios Desktop dont `52` exécutés et `3` `mobile-only` skipped) :
+  - **Cas A (nominal visé) — `52/52` PASS Desktop (`0` échec, `0` timeout) ET `0` écart `P0`/`P1` dans l'audit Sally × Winston** : clôture directe de l'Epic 23 (`epic-23: done`, `23-8-...: done`), maintien de `CAP-042` sous `ACTION_ITEM-23.6`, **sans créer d'Epic 24 artificiel vide** ;
+  - **Cas B (si échec Desktop ou écart `P0`/`P1` résiduel en `23.7`)** : analyse d'impact MCP GitNexus (`repo: "/home/romain/Documents/Projects/ORCIA"`), rédaction des rapports Tech Lead individuels (`24-1-...` à `24-K-...`), plan directeur global (`sprint-change-proposal-2026-11-19-epic-24-remediation-plan.md`), initialisation complète de l'**Epic 24** dans `epics.md`, `sprint-status.yaml` et `capabilities.yaml`, création de `tests/unit/test_epic23_to_epic24_traceability.py`, validation de la pyramide `AD-17` et clôture `epic-23: done`.
+- **Commits associés** : `En attente d'implémentation (initialisé en Step 0 Epic 23, recadré Step 2a)`
 
 ---
 
 ## 1. Analyse du Besoin & Étude d'Impact Tech Lead (Pré-Implémentation)
 
 ### 1.1 Contexte & Problématique
-- **Exploitation rigoureuse et systématique des constats de `Story 23.7`** :
-  - Une fois la campagne intégrale figée `e2e-campaign-epic-23/` et l'audit croisé **Sally × Winston** achevés (`Story 23.7`), tout reliquat d'échec E2E éventuel et tout point d'amélioration UX/Architecture consigné dans `synthese-remediation-sally-winston-epic-23.md` doivent être convertis en lots actionnables et ordonnancés pour l'**Epic 24**.
+- **Exploitation rigoureuse et sans artefact bureaucratique des constats de `Story 23.7`** :
+  - Une fois la campagne intégrale figée Desktop `e2e-campaign-epic-23/` (`--project=desktop-cockpit`) et l'audit croisé **Sally × Winston** achevés (`Story 23.7`), la décision de clôture suit une règle binaire claire :
+    1. **Condition de clôture sans Epic 24 (`52/52` PASS Desktop et `0` écart `P0`/`P1`)** : si les `52` scénarios Desktop exécutés passent à `100 %` et que Sally × Winston ne relèvent aucun écart `P0`/`P1`, l'Epic 23 est clôturé proprement (`epic-23: done`) **sans initialiser d'Epic 24 artificiel vide** (`CAP-042` / Mobile Companion restant tracés sous `ACTION_ITEM-23.6` dans `sprint-status.yaml`).
+    2. **Condition d'initialisation de l'Epic 24 (si échec Desktop `> 0` ou écart `P0`/`P1` `> 0`)** : tout reliquat est converti en `K` lots cohérents (`Story 24.1`..`Story 24.K`) avec rapports Tech Lead individuels pré-implémentation conformes à `TECH-LEAD-REPORT-TEMPLATE.md`, basés sur GitNexus (`repo: "/home/romain/Documents/Projects/ORCIA"`), plan directeur global et suite `tests/unit/test_epic23_to_epic24_traceability.py`.
 - **Obligations du Protocole Tech Lead (`GEMINI.md`)** :
-  - Chaque lot cohérent (`Story 24.1`..`Story 24.K`) dispose **avant tout codage** de son **Rapport Tech Lead pré-implémentation individuel** (`docs/implementation-artifacts/tech-lead-reports/24-k-...-tech-lead-report.md`) conforme à `TECH-LEAD-REPORT-TEMPLATE.md`, basé sur une analyse d'impact GitNexus réelle (`repo: "/home/romain/Documents/Projects/ORCIA"`).
-  - Le **Plan de Correction Global** (`docs/planning-artifacts/sprint-change-proposal-2026-11-19-epic-24-remediation-plan.md`) relie explicitement chaque éventuel test en échec, chaque item Sally × Winston (`REM24-*` / `P*-UX-*` / `ARCH24-*`) et chaque éventuelle capacité `failed_e2e` résiduelle à une Story `24.k` et son rapport Tech Lead.
-  - Aucune capacité en `failed_e2e` ne peut conserver une référence obsolète `23-*` une fois l'Epic 23 clôturé : toute capacité non promue `runtime` en `23.7` pointe vers une clé exacte `24-k-...` présente dans `sprint-status.yaml` et dotée d'un rapport Tech Lead.
+  - Dans les deux cas, aucune capacité `failed_e2e` autre que `CAP-042` (`e2e_remediation_ref: "ACTION_ITEM-23.6"`) ne peut conserver une référence obsolète `23-*` une fois l'Epic 23 clôturé.
+  - Toutes les vérifications statiques et documentaires (`check_implementation_docs.py`, `pnpm site:sync && pnpm site:check`, `test_epic22_to_epic23_traceability.py`, pyramide `AD-17`) doivent passer à `0` erreur.
 
 ### 1.2 Exploration, Analyse d'Impact GitNexus, Factorisation & Dette Technique
 - **Périmètre d'analyse GitNexus planifié post-`23.7`** :
@@ -44,36 +47,32 @@
 ### 2.3 Couche Backend API, Sécurité & Contrats (`apps/api/`, `packages/api-client/`)
 - Aucune modification d'endpoint dans `Story 23.8`. Les ajustements API/OpenAPI 3.1 nécessaires pour l'Epic 24 sont détaillés dans les rapports `24-k-*`.
 
-### 2.4 Documentation Planification, Rapports Tech Lead & Initialisation Epic 24 (`docs/`)
-1. **Rapports Tech Lead individuels (`24-1-...`..`24-K-...`)** :
-   - Rédaction de `K` rapports conformes à `TECH-LEAD-REPORT-TEMPLATE.md` (Sections 1 & 2 complètes, Section 3 préparée avec les 3 titres obligatoires vérifiés par `scripts/check_implementation_docs.py`).
-   - Indexation de tous les rapports `24-*` (et complétion Section 3 de `23-8`) dans `docs/implementation-artifacts/tech-lead-reports/README.md`.
-2. **Plan de correction global (`docs/planning-artifacts/sprint-change-proposal-2026-11-19-epic-24-remediation-plan.md`)** :
-   - Synthèse exécutive, ordonnancement topologique par vagues (`24.1` $\rightarrow$ `24.K`) et matrices exhaustives reliant chaque constat de `e2e-campaign-epic-23/` à une Story `24.k` et son rapport Tech Lead.
-3. **Initialisation `Epic 24` & Clôture `Epic 23`** :
-   - `docs/planning-artifacts/epics.md` : ajout de `Epic 24` dans `FR Coverage Map`, `Epic List` et section détaillée `## Epic 24:` avec `### Story 24.1:`..`### Story 24.K:` (`Given/When/Then`).
-   - `docs/implementation-artifacts/sprint-status.yaml` : ajout de `epic-24: backlog` + `24-1-...`..`24-K-...: ready-for-dev`, passage de `23-8-...: done` et `epic-23: done`.
-   - `docs/product/capabilities.yaml` : mise à jour de toute éventuelle `e2e_remediation_ref` vers une clé `24-k-...` exacte.
+### 2.4 Documentation Planification, Clôture Epic 23 & Initialisation Conditionnelle Epic 24 (`docs/`)
+1. **Évaluation du critère de sortie `23.7` (`52/52` PASS Desktop & `0` écart `P0`/`P1`)** :
+   - **Si `52/52` PASS Desktop et `0` écart `P0`/`P1`** : passer `23-8-...: done` et `epic-23: done` dans `sprint-status.yaml`, vérifier que `CAP-042` pointe vers `ACTION_ITEM-23.6`, **ne pas créer d'Epic 24 artificiel vide**, et documenter le bilan final de clôture dans le présent rapport.
+   - **Sinon (reliquat Desktop ou écart `P0`/`P1` > 0)** :
+     - Rédiger `K` rapports Tech Lead individuels (`24-1-...`..`24-K-...`) conformes à `TECH-LEAD-REPORT-TEMPLATE.md` et les indexer dans `docs/implementation-artifacts/tech-lead-reports/README.md`.
+     - Rédiger `docs/planning-artifacts/sprint-change-proposal-2026-11-19-epic-24-remediation-plan.md`, initialiser `Epic 24` dans `epics.md`, `sprint-status.yaml` (`epic-24: backlog`) et `capabilities.yaml`, puis créer `tests/unit/test_epic23_to_epic24_traceability.py`.
 
 ### 2.5 Analyse d'Impact sur la Pyramide des Tests (`AD-17` — Couches 1 à 5 + Sécurité, Obligatoire)
-- **Couche 1a (`pytest`)** : création et exécution de `tests/unit/test_epic23_to_epic24_traceability.py` + adaptation finale de `tests/unit/test_epic22_to_epic23_traceability.py` (`23-7: done` + `23-8: done`).
+- **Couche 1a (`pytest`)** : adaptation finale de `tests/unit/test_epic22_to_epic23_traceability.py` (`23-7: done` + `23-8: done`) et, uniquement si un Epic 24 est nécessaire (`échec Desktop > 0` ou `écart P0/P1 > 0`), création de `tests/unit/test_epic23_to_epic24_traceability.py`.
 - **Gouvernance documentaire & Vitrine** : `.venv/bin/python scripts/check_implementation_docs.py`, `pnpm site:sync && pnpm site:check`, `.venv/bin/ruff check/format`, `.venv/bin/lint-imports`, `.venv/bin/python .agent/skills/bmad-architecture/scripts/lint_spine.py`.
 
 ---
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
-> *[Pré-implémentation initialisée en Step 0 Epic 23 — à compléter après exécution de la Story 23.8]*
+> *[Pré-implémentation initialisée en Step 0 Epic 23, recadrée Step 2a — à compléter après exécution de la Story 23.8]*
 
 ### 3.1 Fichiers Développés & Modifiés
 | Fichier | Nature (Création / Modification / Refactoring) | Description synthétique |
 | :--- | :--- | :--- |
-| `docs/implementation-artifacts/tech-lead-reports/24-1-*.md`..`24-K-*.md` | Création | *[À compléter après exécution Story 23.8]* |
-| `docs/planning-artifacts/sprint-change-proposal-2026-11-19-epic-24-remediation-plan.md`, `epics.md`, `sprint-status.yaml`, `tests/unit/test_epic23_to_epic24_traceability.py` | Création / Modification | *[À compléter après exécution Story 23.8]* |
+| `docs/implementation-artifacts/sprint-status.yaml`, `docs/product/capabilities.yaml` | Modification | *[À compléter : passage `epic-23: done`, `CAP-042` sous `ACTION_ITEM-23.6`]* |
+| `docs/implementation-artifacts/tech-lead-reports/24-*.md` & `tests/unit/test_epic23_to_epic24_traceability.py` *(conditionnels)* | Création *(si échec Desktop ou écart P0/P1 > 0)* | *[Non créés si `52/52` PASS Desktop et `0` écart `P0`/`P1`]* |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
-- **Traçabilité `Epic 23 -> Epic 24` (`100 %`)** : *[À compléter]*
+- **Critère de clôture (`52/52` PASS Desktop & `0` écart `P0`/`P1`)** : *[À compléter]*
 - **Qualité statique & Pyramide `AD-17`** : *[À compléter]*
 
 ### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17` + 5 Garde-Fous de Câblage Vertical)
-- *[À compléter après clôture de `tests/unit/test_epic23_to_epic24_traceability.py`, `check_implementation_docs.py`, `pnpm site:sync && pnpm site:check` et passage de `epic-23: done`]*
+- *[À compléter après clôture de `check_implementation_docs.py`, `pnpm site:sync && pnpm site:check`, `test_epic22_to_epic23_traceability.py` et passage de `epic-23: done`]*

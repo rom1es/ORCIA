@@ -246,7 +246,7 @@ development_status:
   23-3-zone-4-aide-contextuelle-fidele-a-la-route-et-4-blocs-design-md: ready-for-dev
   23-4-unification-accostage-x-sur-6-fin-fantomes-jour0-et-modale-admin: ready-for-dev
   23-5-sobriete-cockpit-topbar-sans-doublon-assistant-et-login: ready-for-dev
-  23-6-campagne-e2e-integrale-mobile-companion-audit-et-62-capacites-runtime: ready-for-dev
+  23-6a-durcissement-anti-goodhart-gardes-openapi-ast-geometrie-et-reset-pg18: ready-for-dev
   23-7-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston: ready-for-dev
   23-8-rapports-tech-lead-plan-correction-global-et-initialisation-epic-24: ready-for-dev
   epic-23-retrospective: optional
@@ -327,6 +327,18 @@ action_items:
       (`Inter`/`Geist Sans` + `JetBrains Mono`), renforcer la hiérarchie visuelle,
       les grilles CSS,
       les sorties de secours et les retours visuels immédiats.
+  - id: ACTION_ITEM-23.6
+    title: "Compatibilité Mobile Companion (390×844), CAP-042 & stabilisation des specs 04–21 reportées pour priorisation ultérieure"
+    status: open
+    epic: epic-23
+    story_ref: "23-6-campagne-e2e-integrale-mobile-companion-audit-et-62-capacites-runtime"
+    priority: P2
+    description: >
+      Report explicite de la Story 23.6 et de l'ensemble du périmètre Mobile Companion
+      (`--project=mobile-companion`, 390×844, `CAP-042` et assertions responsive mobile)
+      hors du chemin critique de l'Epic 23 pour priorisation ultérieure. Durant l'Epic 23,
+      les exécutions Playwright ciblent `--project=desktop-cockpit` (1440×900, 24 specs /
+      55 scénarios Desktop).
   - id: SPEC-01
     title: "Génération systématique des spécifications `spec-{story-key}.md` et enrichissement
       des rapports Tech Lead pour l'Epic 2"

@@ -137,6 +137,21 @@ def test_every_failed_capability_points_to_valid_sprint_key_and_report() -> None
     valid_keys = {
         k for k in dev_status if isinstance(k, str) and (k.startswith("22-") or k.startswith("23-"))
     }
+    action_items = [item for item in sprint_data.get("action_items", []) if isinstance(item, dict)]
+    deferred_story_refs = {
+        str(item.get("story_ref", "")).strip()
+        for item in action_items
+        if isinstance(item.get("story_ref"), str)
+        and str(item.get("story_ref", "")).startswith(("22-", "23-"))
+    }
+    action_item_story_refs = {
+        str(item.get("id", "")).strip(): str(item.get("story_ref", "")).strip()
+        for item in action_items
+        if isinstance(item.get("id"), str)
+        and isinstance(item.get("story_ref"), str)
+        and str(item.get("story_ref", "")).startswith(("22-", "23-"))
+    }
+    valid_refs = valid_keys | deferred_story_refs | set(action_item_story_refs)
     capabilities = [
         cap for cap in capabilities_data.get("capabilities", []) if isinstance(cap, dict)
     ]
@@ -145,10 +160,11 @@ def test_every_failed_capability_points_to_valid_sprint_key_and_report() -> None
     for cap in failed_caps:
         cap_id = cap.get("id")
         ref = cap.get("e2e_remediation_ref")
-        assert isinstance(ref, str) and ref in valid_keys, (
+        assert isinstance(ref, str) and ref in valid_refs, (
             f"Capability {cap_id} has invalid e2e_remediation_ref={ref!r}"
         )
-        report_path = REPORTS_DIR / f"{ref}-tech-lead-report.md"
+        report_key = action_item_story_refs.get(ref, ref)
+        report_path = REPORTS_DIR / f"{report_key}-tech-lead-report.md"
         assert report_path.is_file(), (
             f"Capability {cap_id} points to missing report {report_path.name}"
         )

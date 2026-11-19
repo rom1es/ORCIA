@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 54,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 192,
+    "techLeadReportsCount": 193,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 3,
@@ -536,22 +536,29 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "date": "2026-11-19",
       "phaseOrStory": "Story 23.8",
       "reportFile": "23-8-rapports-tech-lead-plan-correction-global-et-initialisation-epic-24-tech-lead-report.md",
-      "domain": "Clôture Epic 23 — Rapports Tech Lead Individuels (24-1..24-K), Plan de Correction Global & Initialisation Complète de l'Epic 24",
-      "summary": "Pré-implémentation (ready-for-dev, Step 0 Epic 23) : analyse d'impact GitNexus post-23.7, rédaction des rapports Tech Lead individuels 24-1..24-K, plan directeur sprint-change-proposal-2026-11-19-epic-24-remediation-plan.md, initialisation complète de l'Epic 24 dans epics.md/sprint-status.yaml/capabilities.yaml, test tests/unit/test_epic23_to_epic24_traceability.py et clôture epic-23: done."
+      "domain": "Clôture Epic 23 — Bilan Conditionnel (52/52 PASS Desktop & 0 P0/P1 → Sans Epic 24 Vide) & Éventuelle Initialisation Epic 24",
+      "summary": "Pré-implémentation (ready-for-dev, recadrée Step 2a) : si 52/52 PASS Desktop et 0 écart P0/P1, clôture directe epic-23: done sans Epic 24 artificiel vide (CAP-042 sous ACTION_ITEM-23.6) ; sinon rédaction des rapports Tech Lead 24-1..24-K, plan directeur, initialisation Epic 24 et test_epic23_to_epic24_traceability.py."
     },
     {
       "date": "2026-11-19",
       "phaseOrStory": "Story 23.7",
       "reportFile": "23-7-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston-tech-lead-report.md",
-      "domain": "Vague 3 — Campagne Playwright E2E Intégrale Figée (e2e-campaign-epic-23, 110/110), Captures PNG (< 450 KB), Bilan, Audit Croisé Sally × Winston & capabilities.yaml",
-      "summary": "Pré-implémentation (ready-for-dev, Step 0 Epic 23) : exécution figée sans retouche code des 24 specs / 110 scénarios (--retries=0 --max-failures=0 --timeout=35000), archivage playwright-results.json, manifest.jsonl et 110/110 PNG, bilan bilan-execution-tests-e2e-epic-23.md, audit croisé Sally × Winston (synthese-remediation-sally-winston-epic-23.md), bascule PLAYWRIGHT_RESULTS_PATH, mise à jour honnête capabilities.yaml et pnpm site:sync && pnpm site:check."
+      "domain": "Vague 3 — Campagne Playwright E2E Intégrale Desktop (--project=desktop-cockpit, 55 scénarios / 24 specs), Captures PNG (< 450 KB), Bilan, Audit Croisé Sally × Winston & capabilities.yaml",
+      "summary": "Pré-implémentation (ready-for-dev, recadrée Step 2a) : prérequis 23.1..23.5 + 23.6a 100 % verts AD-17, exécution figée Desktop --project=desktop-cockpit (52 exécutés + 3 mobile-only skipped), archivage playwright-results.json, manifest.jsonl et 55/55 PNG Desktop, bilan bilan-execution-tests-e2e-epic-23.md, audit croisé Sally × Winston, bascule PLAYWRIGHT_RESULTS_PATH, mise à jour honnête capabilities.yaml (CAP-042 maintenue failed_e2e vers ACTION_ITEM-23.6) et pnpm site:sync && pnpm site:check."
     },
     {
       "date": "2026-11-19",
-      "phaseOrStory": "Story 23.6",
+      "phaseOrStory": "Story 23.6a",
+      "reportFile": "23-6a-durcissement-anti-goodhart-gardes-openapi-ast-geometrie-et-reset-pg18-tech-lead-report.md",
+      "domain": "CAP-100 (hygiène) — Durcissement Anti-Goodhart : Reset PG18 Dynamique, OpenAPI security, Audits AST (catch, SQL domaine, jargon) & Contrats Géométriques Desktop",
+      "summary": "Pré-implémentation (ready-for-dev, Step 2a Epic 23) : introspection dynamique information_schema.tables/pg_constraint dans reset_day0.py/09_reset_db_first_boot.py, enforcement operation.security + interdiction AST fetch/EventSource, détection AST catch muets & constantes fantômes, durcissement SQL domaine (55/55 blocs E2E), regex structurelles anti-jargon, contrats géométriques Direction C (layoutGeometryAssertions.ts + captureMilestoneScreenshot), Chaîne Canari Desktop & Tir de reconnaissance Desktop V0."
+    },
+    {
+      "date": "2026-11-19",
+      "phaseOrStory": "Story 23.6 *(déplacée en ACTION_ITEM-23.6)*",
       "reportFile": "23-6-campagne-e2e-integrale-mobile-companion-audit-et-62-capacites-runtime-tech-lead-report.md",
-      "domain": "Vague 2 (REM23-13 / ARCH23-10, P0-UX-2) — Stabilisation Specs 04–21 & Mobile Companion (390×844) + Audit 100 % Assertions SQL PostgreSQL 18 Effectives (55/55)",
-      "summary": "Pré-implémentation (ready-for-dev, recadrée Step 0) : stabilisation complète des specs 04–21, shell.spec.ts et mobile-companion (390×844) sans retry ni fixture cachée + audit et renforcement des 100 % vérifications SQL PG18 effectives sur chacun des 55 blocs test(...) E2E (relais campagne figée & audit Sally × Winston en Story 23.7, initialisation Epic 24 en Story 23.8)."
+      "domain": "*(Archivée / Déplacée en ACTION_ITEM-23.6)* — Stabilisation Specs 04–21 & Mobile Companion (390×844, CAP-042)",
+      "summary": "Déplacée vers action_items: (ACTION_ITEM-23.6) dans sprint-status.yaml pour priorisation ultérieure (périmètre --project=mobile-companion 390×844 & CAP-042 hors chemin critique Epic 23). Le volet audit SQL PG18 effectif (55/55) est repris par Story 23.6a, et l'exécution E2E Desktop par Story 23.7."
     },
     {
       "date": "2026-11-19",
