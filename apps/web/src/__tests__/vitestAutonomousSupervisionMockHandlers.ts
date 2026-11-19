@@ -205,6 +205,104 @@ export function handleVitestAutonomousSupervisionRoute(
       route.startsWith("/settings") ||
       route.startsWith("/configuration") ||
       route.startsWith("/organization");
+    const isAssistantRoute = route.startsWith("/assistant") || route.startsWith("/inbox");
+    const isSpacesRoute = route.startsWith("/spaces") || route.startsWith("/workspaces");
+    const isCockpitRoute = route === "/" || route.startsWith("/cockpit");
+
+    const titleByRoute = isAssistantRoute
+      ? lang === "fr"
+        ? "Aide contextuelle — /assistant : questions et dossiers"
+        : "Contextual Help — /assistant: questions and folders"
+      : isSpacesRoute
+        ? lang === "fr"
+          ? "Aide contextuelle — /spaces : Mes Espaces et sources"
+          : "Contextual Help — /spaces: My Spaces and sources"
+        : isCockpitRoute
+          ? lang === "fr"
+            ? "Aide contextuelle — /cockpit : décisions et démarrage"
+            : "Contextual Help — /cockpit: decisions and onboarding"
+          : lang === "fr"
+            ? `Aide contextuelle — ${route}`
+            : `Contextual Help — ${route}`;
+
+    const summaryByRoute = isAssistantRoute
+      ? lang === "fr"
+        ? "Mon Assistant répond à vos questions à partir des documents de votre Espace actif avec citations vérifiées."
+        : "My Assistant answers questions grounded in your active Space documents with verified citations."
+      : isSpacesRoute
+        ? lang === "fr"
+          ? "Mes Espaces regroupe vos Espaces de travail rattachés à une unité d'organisation et leurs sources documentaires."
+          : "My Spaces groups your Workspaces linked to an organizational unit and their document sources."
+        : isCockpitRoute
+          ? lang === "fr"
+            ? "Le Cockpit regroupe les décisions en attente de validation humaine et l'avancement du démarrage."
+            : "The Cockpit gathers decisions awaiting human approval and onboarding progress."
+          : lang === "fr"
+            ? `Présentation de l'écran ${route}.`
+            : `Overview for screen ${route}.`;
+
+    const stepsByRoute = isAssistantRoute
+      ? lang === "fr"
+        ? [
+            "Choisissez votre modèle (Rapide, Polyvalent ou Raisonnement avancé) et votre mode de réflexion (Standard ou Approfondi — ex. « Polyvalent · Standard »).",
+            "Rédigez votre question avec @ pour appeler un agent ou / pour une compétence.",
+            "Classez vos échanges dans un dossier avec notes permanentes.",
+          ]
+        : [
+            "Choose your model (Fast, Versatile, or Advanced Reasoning) and thinking mode (Standard or In-Depth — e.g. \"Versatile · Standard\").",
+            "Write your question using @ for agents or / for skills.",
+            "Organize threads into a folder with permanent notes.",
+          ]
+      : isSpacesRoute
+        ? lang === "fr"
+          ? [
+              "Filtrez ou créez un Espace rattaché à une unité d'organisation.",
+              "Ajustez le niveau de confidentialité de l'Espace.",
+              "Connectez vos sources documentaires et enrichissez le glossaire.",
+            ]
+          : [
+              "Filter or create a Space linked to an organizational unit.",
+              "Adjust the Workspace confidentiality level.",
+              "Connect document sources and enrich the glossary.",
+            ]
+        : [
+            lang === "fr" ? `Consultez les éléments de ${route}` : `Review ${route} items`,
+          ];
+
+    const realExampleByRoute = isAssistantRoute
+      ? lang === "fr"
+        ? "Marc sélectionne son Espace produit, ouvre le dossier Conformité et obtient une synthèse avec pastilles de citations vérifiées."
+        : "Marc selects his product Space, opens the Compliance folder, and gets a summary with verified citation pills."
+      : isSpacesRoute
+        ? lang === "fr"
+          ? "L'équipe Sinistres crée un Espace confidentiel rattaché à son unité d'organisation puis y connecte ses documents."
+          : "The Claims team creates a confidential Space linked to its organizational unit and connects its documents."
+        : lang === "fr"
+          ? `Exemple pratique d'utilisation sur l'écran ${route}.`
+          : `Practical usage example on screen ${route}.`;
+
+    const commonPitfallsByRoute = isAssistantRoute
+      ? lang === "fr"
+        ? [
+            "Zone de saisie verrouillée : vérifiez qu'un modèle d'analyse documentaire et un modèle de dialogue sont configurés.",
+          ]
+        : [
+            "Locked input: verify both an indexing model and a chat model are configured.",
+          ]
+      : isSpacesRoute
+        ? lang === "fr"
+          ? [
+              "Unité d'organisation vs Espace de travail : l'unité d'organisation porte les membres et le budget, l'Espace porte les sources.",
+            ]
+          : [
+              "Org unit vs Workspace: the organizational unit carries members and budget, the Workspace carries sources.",
+            ]
+        : [
+            lang === "fr"
+              ? "Vérifiez votre périmètre actif dans la barre latérale gauche."
+              : "Check your active scope in the left sidebar.",
+          ];
+
     const defaultKeyTerms =
       isConfigRoute && lang === "fr"
         ? [
@@ -212,9 +310,7 @@ export function handleVitestAutonomousSupervisionRoute(
             "Qui ? (Bénéficiaire) vs Sur quoi ? (Périmètre cible) : « Rôle : Responsable Produit → Équipe Paiement ».",
             "Isoler ce périmètre (INHERITANCE_BLOCK) : Coupe l'héritage parent sur cette Équipe ou cet Espace.",
           ]
-        : [
-            lang === "fr" ? "Périmètre : unité d'organisation active" : "Scope: active org unit",
-          ];
+        : [];
     return jsonResponse({
       route,
       pack,
@@ -225,25 +321,18 @@ export function handleVitestAutonomousSupervisionRoute(
       active_article: {
         resource_id: `help-base-${slug}-${lang}`,
         uri: `orcia://system/help/${slug}`,
-        title: lang === "fr" ? `Aide contextuelle — ${route}` : `Contextual Help — ${route}`,
+        title: titleByRoute,
         version: "1.0.0",
         lang,
         layer: "BASE",
         pack_name: pack,
         bound_routes: [route],
-        summary_what_for:
-          lang === "fr"
-            ? `Présentation de l'écran ${route}.`
-            : `Overview for screen ${route}.`,
-        step_by_step_items: [
-          lang === "fr" ? `1. Consultez les éléments de ${route}` : `1. Review ${route} items`,
-        ],
+        summary_what_for: summaryByRoute,
+        step_by_step_items: stepsByRoute,
         key_terms_items: defaultKeyTerms,
-        faq_items: [
-          lang === "fr"
-            ? "Où trouver plus d'aide ? Ouvrez la colonne ❓ Aide."
-            : "Where to get more help? Open the ❓ Help column.",
-        ],
+        faq_items: [],
+        real_example_text: realExampleByRoute,
+        common_pitfalls_items: commonPitfallsByRoute,
         cas_key: `cas/${slug}`,
         sha256: "b".repeat(64),
         markdown_body: `# ${route}`,

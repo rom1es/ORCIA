@@ -28,7 +28,7 @@ def row_to_help_dict(row: dict[str, Any]) -> dict[str, Any]:
     meta = dict(row.get("metadata_jsonb") or {})
     routes = meta.get("bound_routes") or []
     bound_routes = tuple(str(r) for r in routes) if isinstance(routes, list) else ("/cockpit",)
-    return {
+    result: dict[str, Any] = {
         "resource_id": str(row["resource_id"]),
         "uri": str(row["uri"]),
         "title": str(row["title"]),
@@ -57,6 +57,13 @@ def row_to_help_dict(row: dict[str, Any]) -> dict[str, Any]:
         "contract_label": (str(meta["contract_label"]) if meta.get("contract_label") else None),
         "trigger_label": (str(meta["trigger_label"]) if meta.get("trigger_label") else None),
     }
+    if "real_example_text" in meta:
+        result["real_example_text"] = meta.get("real_example_text")
+    if "common_pitfalls_items" in meta:
+        result["common_pitfalls_items"] = tuple(
+            str(x) for x in (meta.get("common_pitfalls_items") or [])
+        )
+    return result
 
 
 async def list_pg_help_articles_sql(
@@ -328,6 +335,8 @@ async def seed_help_articles_to_pg18_sql(
                     "step_by_step_items": list(art.step_by_step_items),
                     "key_terms_items": list(art.key_terms_items),
                     "faq_items": list(art.faq_items),
+                    "real_example_text": art.real_example_text,
+                    "common_pitfalls_items": list(art.common_pitfalls_items),
                     "markdown_body": art.markdown_body,
                 }
                 res = await conn.execute(

@@ -12060,6 +12060,13 @@
             "title": "Cas Key",
             "type": "string"
           },
+          "common_pitfalls_items": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Common Pitfalls Items",
+            "type": "array"
+          },
           "faq_items": {
             "items": {
               "type": "string"
@@ -12133,6 +12140,17 @@
               }
             ],
             "title": "Previous Version"
+          },
+          "real_example_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Real Example Text"
           },
           "resource_id": {
             "title": "Resource Id",
@@ -47213,7 +47231,7 @@
             "name": "pack",
             "required": false,
             "schema": {
-              "default": "orcia-pack-sdlc",
+              "default": "core",
               "maxLength": 128,
               "minLength": 1,
               "title": "Pack",

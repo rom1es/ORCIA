@@ -1,6 +1,12 @@
 import type { UiContextualHelpSectionItem } from "@orcia/ui";
+import {
+  CONFIGURATION_SECTIONS_EN,
+  SECTIONS_BY_ROUTE_EN,
+} from "./_contextualHelpSectionsEn";
 
-const SHARED_WORKFLOW_FINOPS_FR: readonly UiContextualHelpSectionItem[] = [
+export { CONFIGURATION_SECTIONS_EN, SECTIONS_BY_ROUTE_EN };
+
+const WORKFLOW_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
   {
     sectionId: "workflows-overview",
     title: "À quoi sert l'Atelier de Processus ?",
@@ -38,30 +44,6 @@ const SHARED_WORKFLOW_FINOPS_FR: readonly UiContextualHelpSectionItem[] = [
     category: "terms",
   },
   {
-    sectionId: "audit-overview",
-    title: "Journal d'activité : auteurs, horodatage et filtres d'observation",
-    body: "Le Journal d'Activité (accessible depuis le menu de gauche 📜 Journal d'Activité) trace qui a effectué chaque action, à quelle date/heure et sur quel périmètre (filtré par défaut sur votre niveau d'observation actif). Vous pouvez filtrer par utilisateur, sur les 50 / 100 / 200 / 500 derniers événements ou sur une fenêtre temporelle. Le suivi des coûts et des budgets par espace est quant à lui géré séparément dans l'écran 📊 Coûts & Activité.",
-    category: "faq",
-  },
-  {
-    sectionId: "finops-overview",
-    title: "Gouvernance des coûts et plafonds budgétaires",
-    body: "Pilotez l'équation économique complète de vos processus : coût de setup initial amorti, coût des exécutions par niveau de modèle IA, et temps humain investi comparé à votre référence sans automatisation. Configurez des seuils d'alerte à 80 % et des suspensions automatiques à 100 % pour protéger vos budgets d'équipe.",
-    category: "whatFor",
-  },
-  {
-    sectionId: "finops-human-mastery",
-    title: "Maîtrise humaine, qualité et réversibilité d'architecture",
-    body: "Préservez le discernement de vos experts et la conformité aux décisions verrouillées. Les trois indicateurs mesurent l'équilibre entre cadrage amont et relecture, préviennent les validations trop rapides et signalent tout écart structurel non couvert par une dérogation.",
-    category: "whatFor",
-  },
-  {
-    sectionId: "finops-remote-services",
-    title: "Télémétrie des services et agents externes",
-    body: "Suivez séparément les coûts déclarés par les serveurs d'outils et agents distants, leurs unités métiers propres et l'état de leur coupe-circuit isolé. Chaque connecteur suspendu peut être réarmé indépendamment sans perturber vos modèles internes.",
-    category: "terms",
-  },
-  {
     sectionId: "workflow-triggers",
     title: "Déclencheurs automatiques et événements planifiés",
     body: "Configurez les événements ou planifications qui lancent automatiquement un processus gouverné (arrivée d'une demande, mise à jour d'un document, revue périodique) dans le respect du budget autorisé.",
@@ -72,105 +54,6 @@ const SHARED_WORKFLOW_FINOPS_FR: readonly UiContextualHelpSectionItem[] = [
     title: "Génération et synchronisation de la documentation d'aide",
     body: "Ce processus met à jour les fiches d'aide de chaque écran et les publie dans votre Centre d'aide sans écraser les adaptations validées.",
     category: "steps",
-  },
-  {
-    sectionId: "assistant-folders",
-    title: "Dossiers thématiques et notes permanentes de Mon Assistant",
-    body: "Regroupez vos échanges par sujet dans un dossier et épinglez vos consignes permanentes pour qu'elles soient automatiquement prises en compte à chaque question.",
-    category: "steps",
-  },
-  {
-    sectionId: "showcase-packs",
-    title: "Packs métiers installés sur la plateforme",
-    body: "Les packs métiers regroupent des processus prêts à l'emploi, des agents spécialisés et un glossaire adapté à un domaine d'activité.",
-    category: "terms",
-  },
-];
-
-const SHARED_WORKFLOW_FINOPS_EN: readonly UiContextualHelpSectionItem[] = [
-  {
-    sectionId: "workflows-overview",
-    title: "What is the Process Studio for?",
-    body: "A Process is a reusable sequence of steps combining your AI agents and human approval checkpoints to produce a reliable deliverable (e.g. contract review, customer request analysis). Save it as a draft and publish it when ready to run.",
-    category: "steps",
-  },
-  {
-    sectionId: "workflows-instructions",
-    title: "How to write the process goal and instructions?",
-    body: "Describe in plain language what your agents should accomplish step by step: which sources to consult, which points of attention to verify, and what tone to use in the summary.",
-    category: "steps",
-  },
-  {
-    sectionId: "workflows-deliverable-contract",
-    title: "Launch inputs and deliverable structure (optional)",
-    body: "Specify the inputs requested from the user when launching the process (e.g. supplier name, amount) as well as the main headings required in the final deliverable.",
-    category: "terms",
-  },
-  {
-    sectionId: "workflows-steps-layers",
-    title: "The 3 main execution steps of a process",
-    body: "Each process runs in 3 stages: 1) Gather documents and Workspace context, 2) AI agent analysis and cross-checking of business rules, 3) Final human approval before sharing the deliverable.",
-    category: "steps",
-  },
-  {
-    sectionId: "autonomy-contract",
-    title: "Governed autonomy contract",
-    body: "An autonomy contract authorizes a non-critical process to run end-to-end through a workspace-scoped service account, bounded by a budget ceiling and automatic team escalation whenever any quality check or ambiguity arises.",
-    category: "terms",
-  },
-  {
-    sectionId: "autonomous-supervision",
-    title: "Supervision, emergency stop & restore",
-    body: "Every automated execution under contract is marked by a distinct cyan badge. If needed, you can trigger an immediate emergency stop or cancel and restore the previous version of a deliverable or help guide in one click.",
-    category: "terms",
-  },
-  {
-    sectionId: "audit-overview",
-    title: "Activity log: authors, timestamps, and observation filters",
-    body: "The Activity Log (accessible from the left menu 📜 Activity Log) tracks who performed each action, when, and on which scope (filtered by default to your active observation level). Filter by user, by the last 50 / 100 / 200 / 500 events, or by time window. Cost tracking and workspace budgets are managed separately in 📊 Costs & Activity.",
-    category: "faq",
-  },
-  {
-    sectionId: "finops-overview",
-    title: "Cost governance and budget thresholds",
-    body: "Track the complete economic equation of your processes: amortized initial setup cost, execution run cost across AI model levels, and human time invested compared to manual baseline without automation. Configure 80% warning alerts and 100% hard stops to safeguard team budgets.",
-    category: "whatFor",
-  },
-  {
-    sectionId: "finops-human-mastery",
-    title: "Human mastery, quality, and architecture reversibility",
-    body: "Preserve active expert critical thinking and compliance with locked architectural decisions. The three indicators balance upstream framing against review time, prevent quick approvals, and report any architectural deviation not covered by an approved exception.",
-    category: "whatFor",
-  },
-  {
-    sectionId: "finops-remote-services",
-    title: "External services & agents telemetry",
-    body: "Track reported external tool and agent costs, distinct business units, and isolated connector circuit breaker states separately from internal models. Any suspended connector can be reset independently without impacting internal AI models.",
-    category: "terms",
-  },
-  {
-    sectionId: "workflow-triggers",
-    title: "Automated triggers and scheduled runs",
-    body: "Configure the events or schedules that automatically start a governed process (incoming request, document update, periodic review) within your approved budget limits.",
-    category: "steps",
-  },
-  {
-    sectionId: "orcia-doc-generation-process",
-    title: "Help documentation generation and sync",
-    body: "This process refreshes screen help guides and publishes them to your Help Center without overwriting validated customizations.",
-    category: "steps",
-  },
-  {
-    sectionId: "assistant-folders",
-    title: "Thematic folders and permanent notes in My Assistant",
-    body: "Organize discussions by topic in a folder and pin permanent instructions so they are automatically applied to every question you ask inside that folder.",
-    category: "steps",
-  },
-  {
-    sectionId: "showcase-packs",
-    title: "Installed business packs on the platform",
-    body: "Business packs bundle ready-to-use processes, specialized agents, and a domain glossary tailored to an operational area.",
-    category: "terms",
   },
 ];
 
@@ -208,7 +91,7 @@ export const CONFIGURATION_SECTIONS_FR: readonly UiContextualHelpSectionItem[] =
   {
     sectionId: "ai-models-overview",
     title: "Modèles IA : Fournisseur, URL d'API, Authentification & Test de connexion",
-    body: "Pour chaque niveau d'usage (Simple, Standard, Approfondi), renseignez : 1) le Fournisseur IA (ex. Anthropic, OpenAI, Mistral AI, Ollama local), 2) l'identifiant du modèle principal (et un modèle de secours optionnel), 3) l'URL de l'API (ex. https://api.anthropic.com/v1 ou http://localhost:11434/v1), et 4) le mode d'authentification (Clé d'API secrète, Variable serveur ou Serveur local sans clé). Cliquez sur « 🔌 Tester la connexion au modèle » avant d'enregistrer pour vérifier immédiatement la réponse du serveur.",
+    body: "Pour chaque niveau d'usage (Simple, Standard, Approfondi), renseignez : 1) le Fournisseur IA (ex. Anthropic, OpenAI, Mistral AI, Ollama local), 2) l'identifiant du modèle principal (et un modèle de secours optionnel), 3) l'URL de l'API, et 4) le mode d'authentification. Cliquez sur « 🔌 Tester la connexion au modèle » avant d'enregistrer pour vérifier immédiatement la réponse du serveur.",
     category: "steps",
   },
   {
@@ -217,119 +100,173 @@ export const CONFIGURATION_SECTIONS_FR: readonly UiContextualHelpSectionItem[] =
     body: "Les Packs métiers sont fournis par la plateforme (ou conçus dans Mes Processus) et regroupent des processus, des agents spécialisés et un glossaire métier. Choisissez un périmètre (Plateforme entière, Direction, Équipe ou Espace de travail) puis activez ou désactivez le Pack en 1 clic.",
     category: "terms",
   },
-  ...SHARED_WORKFLOW_FINOPS_FR,
 ];
 
-export const CONFIGURATION_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
-  {
-    sectionId: "iam-org-tree",
-    title: "Organization structure (Divisions / BUs & Teams)",
-    body: "Structure your company into Divisions (BUs) and Teams. Project/product Workspaces are managed separately in 📦 My Workspaces. An organization unit can only be deleted once no child teams or access rules depend on it.",
-    category: "steps",
-  },
-  {
-    sectionId: "iam-role-grants",
-    title: "Access rules: Who? and On what?",
-    body: "Each rule links a beneficiary (Role or User, e.g. Role: Product Manager) to a target scope (Entire platform, BU, Team, or Workspace, e.g. Payments Team) and specifies granted permissions (Create, Read & view resources, Update, Delete, Execute / Use, Delegate rights). Secrets are strictly write-only and never readable.",
-    category: "terms",
-  },
-  {
-    sectionId: "iam-target-scope",
-    title: "What is Target scope ('On what?')?",
-    body: "The target scope identifies the exact level of your organization where the permission rule applies: either the entire platform, a whole Division (BU) and its teams, a Team, or a single Workspace. For instance, granting a permission to 'Product Manager' on target scope 'Team: Payments' means that right only applies inside the Payments team.",
-    category: "terms",
-  },
-  {
-    sectionId: "iam-inheritance-block",
-    title: "Rule effect (Allow, Deny, Isolate this scope)",
-    body: "'Allow' grants the selected actions. 'Deny' always takes priority. 'Isolate this scope' stops broad permissions inherited from a parent BU on a confidential team or workspace.",
-    category: "terms",
-  },
-  {
-    sectionId: "connectors-overview",
-    title: "Connecting your tools and document sources",
-    body: "Register your documentation spaces, project trackers, or code repositories. Access keys are protected upon saving and never displayed in plain text again.",
-    category: "steps",
-  },
-  {
-    sectionId: "ai-models-overview",
-    title: "AI Models: Provider, API URL, Authentication & Connection Test",
-    body: "For each usage level (Simple, Standard, In-Depth), specify: 1) AI Provider (e.g. Anthropic, OpenAI, Mistral AI, local Ollama), 2) primary model ID (and optional backup model), 3) API Endpoint URL (e.g. https://api.anthropic.com/v1 or http://localhost:11434/v1), and 4) authentication mode (Secret API Key, Server environment variable, or Keyless local server). Click '🔌 Test model connection' before saving to verify server response.",
-    category: "steps",
-  },
-  {
-    sectionId: "packs-overview",
-    title: "Ready-to-use Business Packs",
-    body: "Business Packs are provided by the platform (or authored in My Processes) and bundle processes, specialized agents, and a domain glossary. Select a target scope (Entire Platform, Division, or Workspace) and enable or disable a Pack in 1 click.",
-    category: "terms",
-  },
-  ...SHARED_WORKFLOW_FINOPS_EN,
-];
+export const SECTIONS_BY_ROUTE_FR: Readonly<Record<string, readonly UiContextualHelpSectionItem[]>> = {
+  "/cockpit": [
+    {
+      sectionId: "cockpit-decisions",
+      title: "Décisions en attente et relectures",
+      body: "Le Cockpit regroupe uniquement les points qui demandent votre intervention : rédactions personnelles, arbitrages rapides entre deux options ou relectures détaillées de livrables.",
+      category: "steps",
+    },
+    {
+      sectionId: "module-overview",
+      title: "Repères du Cockpit",
+      body: "Suivez l'avancement du démarrage de la plateforme, traitez vos décisions prioritaires ou lancez directement un processus.",
+      category: "whatFor",
+    },
+  ],
+  "/assistant": [
+    {
+      sectionId: "assistant-modes",
+      title: "Modèle IA et mode de réflexion (Standard ou Approfondi)",
+      body: "Choisissez le modèle adapté (Rapide, Polyvalent ou Raisonnement avancé) et basculez entre « Standard » (réponse directe avec vos sources, ex. « Polyvalent · Standard ») et « Approfondi » (réflexion décomposée en étapes avec citations vérifiées).",
+      category: "steps",
+    },
+    {
+      sectionId: "assistant-folders",
+      title: "Dossiers thématiques et notes permanentes de Mon Assistant",
+      body: "Regroupez vos échanges par sujet dans un dossier et épinglez vos consignes permanentes pour qu'elles soient automatiquement prises en compte à chaque question.",
+      category: "steps",
+    },
+  ],
+  "/spaces": [
+    {
+      sectionId: "workspace-sources",
+      title: "Sources de référence et unités d'organisation",
+      body: "Chaque Espace de travail est rattaché à une unité d'organisation (Direction ou Équipe) et isole ses sources documentaires ainsi que l'enregistrement de ses livrables.",
+      category: "terms",
+    },
+    {
+      sectionId: "glossary-rules",
+      title: "Glossaire métier de l'Espace",
+      body: "Définissez les termes clés de votre équipe et transformez vos règles métiers en vérifications automatiques exécutées à chaque étape.",
+      category: "terms",
+    },
+  ],
+  "/processes": WORKFLOW_SECTIONS_FR,
+  "/gates": [
+    {
+      sectionId: "orcia-doc-generation-process",
+      title: "Génération et synchronisation de la documentation d'aide",
+      body: "Ce processus met à jour les fiches d'aide de chaque écran et les publie dans votre Centre d'aide sans écraser les adaptations validées.",
+      category: "steps",
+    },
+    {
+      sectionId: "autonomous-supervision",
+      title: "Supervision, arrêt d'urgence & rétablissement",
+      body: "Toute exécution automatisée sous contrat est signalée par un badge bleu distinctif. En cas d'anomalie, vous pouvez déclencher un arrêt d'urgence immédiat ou rétablir la version précédente.",
+      category: "terms",
+    },
+  ],
+  "/agents": [
+    {
+      sectionId: "connectors-overview",
+      title: "Agents spécialisés et connexions d'outils",
+      body: "Consultez les agents disponibles et testez les connecteurs autorisés sur votre périmètre actif.",
+      category: "steps",
+    },
+  ],
+  "/catalog": [
+    {
+      sectionId: "showcase-packs",
+      title: "Catalogue des packs, modèles et agents",
+      body: "Parcourez les packs métiers, gabarits de processus et agents disponibles sur la plateforme.",
+      category: "terms",
+    },
+  ],
+  "/finops": [
+    {
+      sectionId: "finops-overview",
+      title: "Gouvernance des coûts et plafonds budgétaires",
+      body: "Pilotez l'équation économique complète de vos processus : coût de setup initial amorti, coût des exécutions par niveau de modèle IA et seuils d'alerte à 80 % et 100 %.",
+      category: "whatFor",
+    },
+    {
+      sectionId: "finops-human-mastery",
+      title: "Maîtrise humaine, qualité et réversibilité d'architecture",
+      body: "Préservez le discernement de vos experts et la conformité aux décisions verrouillées.",
+      category: "whatFor",
+    },
+    {
+      sectionId: "finops-remote-services",
+      title: "Télémétrie des services et agents externes",
+      body: "Suivez séparément les coûts déclarés par les serveurs d'outils et agents distants ainsi que l'état de leur coupe-circuit isolé.",
+      category: "terms",
+    },
+    {
+      sectionId: "autonomous-supervision",
+      title: "Supervision des exécutions automatisées",
+      body: "Auditez les exécutions autonomes sous contrat et rétablissez une version antérieure en un clic si nécessaire.",
+      category: "terms",
+    },
+  ],
+  "/activity": [
+    {
+      sectionId: "audit-overview",
+      title: "Journal d'activité : auteurs, horodatage et filtres d'observation",
+      body: "Le Journal d'Activité trace qui a effectué chaque action, à quelle date/heure et sur quel périmètre (filtré par défaut sur votre niveau d'observation actif). Le suivi des coûts et des budgets par espace est géré séparément dans FinOps.",
+      category: "faq",
+    },
+  ],
+  "/ontology": [
+    {
+      sectionId: "glossary-rules",
+      title: "Glossaire métier et règles automatiques",
+      body: "Définissez les termes clés de votre équipe et transformez vos règles métiers en vérifications automatiques exécutées à chaque étape.",
+      category: "terms",
+    },
+  ],
+  "/settings": CONFIGURATION_SECTIONS_FR,
+  "/settings/packs": [...CONFIGURATION_SECTIONS_FR, ...WORKFLOW_SECTIONS_FR],
+  "/showcase": [
+    {
+      sectionId: "showcase-overview",
+      title: "Présentation vivante d'ORCIA",
+      body: "Explorez la vision Human-Led, les fonctionnalités livrées et les choix d'architecture de la plateforme.",
+      category: "whatFor",
+    },
+    {
+      sectionId: "showcase-packs",
+      title: "Packs métiers installés sur la plateforme",
+      body: "Les packs métiers regroupent des processus prêts à l'emploi, des agents spécialisés et un glossaire adapté à un domaine d'activité.",
+      category: "terms",
+    },
+  ],
+};
 
-export const GENERAL_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
-  {
-    sectionId: "module-overview",
-    title: "Repères de cet écran",
-    body: "Cet écran présente les éléments rattachés à votre Espace actif. Vous pouvez changer d'Espace à tout moment depuis le sélecteur situé en haut à gauche.",
-    category: "whatFor",
-  },
-  {
-    sectionId: "cockpit-decisions",
-    title: "Décisions en attente et relectures",
-    body: "Le Cockpit regroupe uniquement les points qui demandent votre intervention : rédactions personnelles, arbitrages rapides entre deux options ou relectures détaillées de livrables.",
-    category: "steps",
-  },
-  {
-    sectionId: "assistant-modes",
-    title: "Les 3 modes de réponse de Mon Assistant",
-    body: "Choisissez « Réponse rapide » pour une question directe, « Avec un agent » pour mobiliser un outil connecté, ou « Analyse approfondie » pour croiser plusieurs points de vue avec citations vérifiées.",
-    category: "steps",
-  },
-  {
-    sectionId: "workspace-sources",
-    title: "Sources de référence et documents de travail",
-    body: "Rattachez vos sources documentaires à votre Espace et définissez où vos livrables validés doivent être enregistrés par défaut.",
-    category: "terms",
-  },
-  {
-    sectionId: "glossary-rules",
-    title: "Glossaire métier et règles automatiques",
-    body: "Définissez les termes clés de votre équipe et transformez vos règles métiers en vérifications automatiques exécutées à chaque étape.",
-    category: "terms",
-  },
-  ...SHARED_WORKFLOW_FINOPS_FR,
-];
+export function normalizeCanonicalHelpRoute(pathname: string | undefined): string {
+  const clean = (pathname ?? "/cockpit").split("?")[0]?.split("#")[0]?.trim() || "/cockpit";
+  if (clean === "/" || clean.startsWith("/cockpit")) return "/cockpit";
+  if (clean.startsWith("/assistant") || clean.startsWith("/inbox")) return "/assistant";
+  if (clean.startsWith("/spaces") || clean.startsWith("/workspaces")) return "/spaces";
+  if (clean.startsWith("/processes")) return "/processes";
+  if (clean.startsWith("/gates")) return "/gates";
+  if (clean.startsWith("/agents")) return "/agents";
+  if (clean.startsWith("/catalog")) return "/catalog";
+  if (clean.startsWith("/finops")) return "/finops";
+  if (clean.startsWith("/activity")) return "/activity";
+  if (clean.startsWith("/ontology")) return "/ontology";
+  if (clean.startsWith("/settings/packs")) return "/settings/packs";
+  if (
+    clean.startsWith("/settings") ||
+    clean.startsWith("/configuration") ||
+    clean.startsWith("/organization") ||
+    clean.startsWith("/bootstrap")
+  ) {
+    return "/settings";
+  }
+  if (clean.startsWith("/showcase")) return "/showcase";
+  if (clean.startsWith("/help")) return "/help";
+  return "/cockpit";
+}
 
-export const GENERAL_SECTIONS_EN: readonly UiContextualHelpSectionItem[] = [
-  {
-    sectionId: "module-overview",
-    title: "Screen overview",
-    body: "This screen displays items linked to your active Workspace. You can switch Workspaces at any time using the selector in the top-left header.",
-    category: "whatFor",
-  },
-  {
-    sectionId: "cockpit-decisions",
-    title: "Pending decisions and reviews",
-    body: "The Cockpit gathers only items requiring your input: personal authoring entries, quick choices between two options, or detailed deliverable reviews.",
-    category: "steps",
-  },
-  {
-    sectionId: "assistant-modes",
-    title: "My Assistant's 3 response modes",
-    body: "Pick 'Fast response' for a direct question, 'With an agent' to use a connected tool, or 'In-depth analysis' to cross-check multiple perspectives with verified citations.",
-    category: "steps",
-  },
-  {
-    sectionId: "workspace-sources",
-    title: "Reference sources and working documents",
-    body: "Connect your document sources to your Workspace and choose where approved deliverables should be saved by default.",
-    category: "terms",
-  },
-  {
-    sectionId: "glossary-rules",
-    title: "Business glossary and automated rules",
-    body: "Define your team's key terms and turn business rules into automated checks executed at every step.",
-    category: "terms",
-  },
-  ...SHARED_WORKFLOW_FINOPS_EN,
-];
+export function getContextualHelpSectionsForRoute(
+  pathname: string | undefined,
+  locale: "fr" | "en",
+): readonly UiContextualHelpSectionItem[] {
+  const canonical = normalizeCanonicalHelpRoute(pathname);
+  const map = locale === "en" ? SECTIONS_BY_ROUTE_EN : SECTIONS_BY_ROUTE_FR;
+  return map[canonical] ?? [];
+}

@@ -9,6 +9,7 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import type { TranslationDictionary } from "../i18n/types";
 import { useAuthSessionStore } from "../stores/authSessionStore";
+import { getContextualHelpSectionsForRoute } from "./_contextualHelpSections";
 
 export interface ShellContextualHelpColumnProps {
   readonly pathname?: string;
@@ -30,27 +31,29 @@ export function ShellContextualHelpColumn({
   onAskAssistant,
 }: ShellContextualHelpColumnProps): React.ReactElement {
   const effectiveRoute = pathname ?? "/cockpit";
+  const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
   const roles = useAuthSessionStore((s) => s.roles);
   const readOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
   const isAdmin =
     !readOnlyObserver &&
     roles.some((r) => r === "PLATFORM_ADMIN" || r === "ARCHITECT" || r === "TEAM_LEAD");
+  const showTechnicalMetadata = !readOnlyObserver && roles.includes("PLATFORM_ADMIN");
 
   const [resolvedArticle, setResolvedArticle] = useState<UiContextualHelpArticleView | null>(null);
-  const [resolvedLayers, setResolvedLayers] = useState<readonly UiHelpArticleLayer[]>([
-    "BASE",
-    "PACK",
-    "WORKSPACE",
-  ]);
+  const [resolvedLayers, setResolvedLayers] = useState<readonly UiHelpArticleLayer[]>([]);
   const [resolvedCacheKey, setResolvedCacheKey] = useState<string>(
     `help:route:${effectiveRoute}:core:${locale}`,
   );
-  const [rollbackAvailable, setRollbackAvailable] = useState<boolean>(true);
+  const [resolvedPrefill, setResolvedPrefill] = useState<string | null>(null);
+  const [rollbackAvailable, setRollbackAvailable] = useState<boolean>(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const apiClient = useMemo(() => createOrciaApiClient({ baseUrl: "" }), []);
 
   const refreshResolvedHelp = useCallback(async () => {
+    if (!isAuthenticated) {
+      return;
+    }
     try {
       const res = await apiClient.resolveContextualHelp(effectiveRoute, locale, "core");
       if (res && res.active_article) {
@@ -68,7 +71,8 @@ export function ShellContextualHelpColumn({
           stepByStepItems: art.step_by_step_items,
           keyTermsItems: art.key_terms_items,
           faqItems: art.faq_items,
-          sections: contextualHelpArticle.sections,
+          realExampleText: art.real_example_text ?? null,
+          commonPitfallsItems: art.common_pitfalls_items ?? [],
           casKey: art.cas_key,
           sha256: art.sha256,
           previousVersion: art.previous_version ?? null,
@@ -79,17 +83,21 @@ export function ShellContextualHelpColumn({
         });
         setResolvedLayers(res.merged_layers);
         setResolvedCacheKey(res.redis_cache_key);
+        setResolvedPrefill(res.ask_assistant_prefill || null);
         setRollbackAvailable(
           Boolean(res.previous_version_available ?? res.rollback_available),
         );
       }
-    } catch {
-      // Keep local fallback article when unauthenticated or offline
+    } catch (err: unknown) {
+      console.warn("[contextual-help] fallback to local route guide:", effectiveRoute, err);
     }
-  }, [apiClient, contextualHelpArticle.sections, effectiveRoute, locale]);
+  }, [apiClient, effectiveRoute, isAuthenticated, locale]);
 
   useEffect(() => {
     setResolvedArticle(null);
+    setResolvedLayers([]);
+    setResolvedPrefill(null);
+    setRollbackAvailable(false);
     void refreshResolvedHelp();
   }, [effectiveRoute, locale, refreshResolvedHelp]);
 
@@ -123,6 +131,13 @@ export function ShellContextualHelpColumn({
   );
 
   const displayedArticle = resolvedArticle ?? contextualHelpArticle;
+  const routeTargetedSections = useMemo(
+    () =>
+      activeHelpSectionId
+        ? getContextualHelpSectionsForRoute(effectiveRoute, locale)
+        : undefined,
+    [activeHelpSectionId, effectiveRoute, locale],
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -138,9 +153,12 @@ export function ShellContextualHelpColumn({
         redisCacheKey={resolvedCacheKey}
         mergedLayers={resolvedLayers}
         article={displayedArticle}
+        targetedSections={routeTargetedSections}
         activeSectionId={activeHelpSectionId}
         rollbackAvailable={rollbackAvailable}
         isAdmin={isAdmin}
+        showTechnicalMetadata={showTechnicalMetadata}
+        askAssistantPrefill={resolvedPrefill ?? undefined}
         labels={labels}
         autonomousBadgeLabels={autonomousBadgeLabels}
         onRollbackVersion={(resId) => void handleRollbackVersion(resId)}

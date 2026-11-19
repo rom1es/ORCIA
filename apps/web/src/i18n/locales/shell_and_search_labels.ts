@@ -41,6 +41,7 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
     helpColumnExpectedTitle: "À propos de cet écran",
     helpColumnExpectedBody:
       "Retrouvez ici les explications détaillées et les conseils liés à votre écran actuel.",
+    helpColumnScrollMoreLabel: "Défiler pour voir la suite ↓",
     menuEntries: {
       cockpit: "Cockpit",
       assistant: "Mon Assistant",
@@ -281,6 +282,13 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
     rollbackButtonLabel: "⏪ Version précédente",
     rollbackCompletedPrefix: "Version rétablie :",
     mergedLayersPrefix: "Sources du guide :",
+    realExampleTitle: "Un exemple réel",
+    commonPitfallsTitle: "Ce qui coince souvent",
+    technicalDetailsTitle: "Détails techniques",
+    stepsBlockPrefix: "En",
+    stepsBlockSuffix: "gestes",
+    targetedHelpBadgeLabel: "Aide ciblée",
+    askAssistantPrefillTemplate: "Explique-moi comment utiliser l'écran {route} ({title})",
   },
 };
 
@@ -305,6 +313,7 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
     helpColumnExpectedTitle: "About this screen",
     helpColumnExpectedBody:
       "Find detailed explanations and practical tips related to your current screen here.",
+    helpColumnScrollMoreLabel: "Scroll down for more ↓",
     menuEntries: {
       cockpit: "Cockpit",
       assistant: "My Assistant",
@@ -543,5 +552,12 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
     rollbackButtonLabel: "⏪ Previous version",
     rollbackCompletedPrefix: "Restored version:",
     mergedLayersPrefix: "Guide sources:",
+    realExampleTitle: "A real example",
+    commonPitfallsTitle: "Common pitfalls",
+    technicalDetailsTitle: "Technical details",
+    stepsBlockPrefix: "In",
+    stepsBlockSuffix: "steps",
+    targetedHelpBadgeLabel: "Targeted help",
+    askAssistantPrefillTemplate: "Help me understand screen {route} ({title})",
   },
 };

@@ -79,6 +79,7 @@ describe("CI Guardrail — Zero Technical Jargon, Internal Enums, or Secrets in 
     const targetFiles: string[] = [
       ...collectFiles(path.join(REPO_ROOT, "apps/web/src/i18n/locales"), [".ts"]),
       path.join(REPO_ROOT, "apps/web/src/components/_contextualHelpSections.ts"),
+      path.join(REPO_ROOT, "apps/web/src/components/_contextualHelpSectionsEn.ts"),
       ...collectFiles(path.join(REPO_ROOT, "docs/help"), [".md"]),
       ...collectFiles(path.join(REPO_ROOT, "packs"), [".md"]).filter((p) =>
         p.includes(`${path.sep}help${path.sep}`),

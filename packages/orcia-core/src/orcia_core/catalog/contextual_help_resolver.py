@@ -84,6 +84,12 @@ def merge_matched_layers(
         autonomous_run_id=winner.autonomous_run_id,
         contract_label=winner.contract_label,
         trigger_label=winner.trigger_label,
+        real_example_text=next(
+            (a.real_example_text for a in reversed(matching) if a.real_example_text), None
+        ),
+        common_pitfalls_items=tuple(
+            dict.fromkeys(p for a in matching for p in a.common_pitfalls_items)
+        ),
     )
     return merged, tuple(a.layer for a in matching)
 

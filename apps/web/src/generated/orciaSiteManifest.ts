@@ -9,7 +9,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-19",
   "stats": {
     "activeRoutesCount": 28,
-    "uiPrimitivesCount": 133,
+    "uiPrimitivesCount": 135,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 54,
     "architectureDecisionsCount": 24,
@@ -88,6 +88,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "CollapsibleAppRail",
     "CommandPaletteModal",
     "ContextualHelpColumnAndCenter",
+    "ContextualHelpColumnView",
     "ContextualInfoTriggerButton",
     "DIALOGUE_MECHANISM_LABELS_FR",
     "DisabledButtonAlertIndicator",
@@ -112,6 +113,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "GuidanceDrawer",
     "HUMAN_PARTNER_ROLE_LABELS_FR",
     "HelpArticleGeneratorAndValidatorView",
+    "HelpCenterCatalogView",
     "HumanLedAnchorCard",
     "InferenceTierBadge",
     "LLM_MODEL_TIER_LABELS_FR",
@@ -579,7 +581,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "phaseOrStory": "Story 23.3",
       "reportFile": "23-3-zone-4-aide-contextuelle-fidele-a-la-route-et-4-blocs-design-md-tech-lead-report.md",
       "domain": "Vague 1 (REM23-05 / ARCH23-04, P1-UX-5, P2-UX-8) — Zone 4 Aide Contextuelle Fidèle à la Route, 4 Blocs DESIGN.md & Fin de Plomberie Interne",
-      "summary": "Pré-implémentation (ready-for-dev) : suppression GENERAL_SECTIONS_FR/EN et écrasement ShellContextualHelpColumn.tsx:L71, extraction DTO real_example_text & common_pitfalls_items, découpage ContextualHelpColumnAndCenter.tsx (394 L) avec 4 blocs visibles + encadré ambre, masquage @version/BASE → PACK hors admin et indicateur de scroll."
+      "summary": "Clôture (done, validé APPROVED par 23.3-validate) : séparation real_example_text & common_pitfalls_items dans contextual_help_loader.py/HelpArticleSchemaItem (SDK OpenAPI 0-diff), défaut pack=\"core\" + retrait - /spaces sur packs/sdlc, alignement docs/help/{fr,en}/assistant.md (Polyvalent · Standard / Approfondi), suppression GENERAL_SECTIONS_FR/EN & écrasement ShellContextualHelpColumn, découpage modulaire < 200 L de ContextualHelpColumnAndCenter avec 4 blocs natifs DESIGN.md, non-duplication HelpCenterCatalogView, support i18n askAssistantPrefillTemplate / targetedHelpBadgeLabel, masquage @version/Sources du guide hors PLATFORM_ADMIN + <details> replié, indicateur de scroll opaque FourZoneHelpAsideColumn, 94.32 % couv. (77/77 pytest avec PG18 sans override), 9/9 Turbo (338/338 JS/TS), ruff/mypy --strict/lint-imports (5/5) 0 erreur, et Chaîne Canari Desktop 11/13 (00, 01, 02, 03, 09 verts ; 21 #2 UI/help/resolve verts avec 401 pré-existantes hors périmètre et 21 #1 sur 23.5)."
     },
     {
       "date": "2026-11-19",

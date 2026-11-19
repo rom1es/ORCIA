@@ -15,19 +15,27 @@ from orcia_core.catalog.contextual_help_models import (
 )
 
 _STEPS_HEADING_RE = re.compile(
-    r"(pas-à-pas|step-by-step|en\s+\d+\s+gestes|in\s+\d+\s+steps)",
+    r"(pas-à-pas|step-by-step|en\s+\d+\s+gestes|in\s+\d+\s+steps|étapes|steps)",
+    re.IGNORECASE,
+)
+_REAL_EXAMPLE_HEADING_RE = re.compile(
+    r"(un exemple réel|exemple réel|a real example|real example)",
+    re.IGNORECASE,
+)
+_COMMON_PITFALLS_HEADING_RE = re.compile(
+    r"(ce qui coince(?:\s+souvent)?|common pitfalls|pitfalls)",
     re.IGNORECASE,
 )
 _TERMS_HEADING_RE = re.compile(
-    r"(termes|key terms|repères|notions|exemple réel|real example)",
+    r"(termes|key terms|repères|notions)",
     re.IGNORECASE,
 )
 _FAQ_HEADING_RE = re.compile(
-    r"(questions|frequently|ce qui coince|common pitfalls)",
+    r"(questions|frequently)",
     re.IGNORECASE,
 )
 _WHAT_FOR_HEADING_RE = re.compile(
-    r"(à quoi sert|what this screen|what is this screen)",
+    r"(à quoi sert|what this screen|what is this screen|objectif)",
     re.IGNORECASE,
 )
 
@@ -64,6 +72,8 @@ def parse_declarative_help_markdown(raw_markdown: str) -> HelpArticleCatalogItem
 
     what_for_lines: list[str] = []
     step_items: list[str] = []
+    real_example_lines: list[str] = []
+    common_pitfalls_items: list[str] = []
     term_items: list[str] = []
     faq_items: list[str] = []
     current_bucket: list[str] | None = None
@@ -78,6 +88,10 @@ def parse_declarative_help_markdown(raw_markdown: str) -> HelpArticleCatalogItem
                 current_bucket = what_for_lines
             elif _STEPS_HEADING_RE.search(heading):
                 current_bucket = step_items
+            elif _REAL_EXAMPLE_HEADING_RE.search(heading):
+                current_bucket = real_example_lines
+            elif _COMMON_PITFALLS_HEADING_RE.search(heading):
+                current_bucket = common_pitfalls_items
             elif _TERMS_HEADING_RE.search(heading):
                 current_bucket = term_items
             elif _FAQ_HEADING_RE.search(heading):
@@ -86,9 +100,12 @@ def parse_declarative_help_markdown(raw_markdown: str) -> HelpArticleCatalogItem
                 current_bucket = None
             continue
         if current_bucket is not None:
-            cleaned_bullet = (
-                s.lstrip("-1234567890. ").strip() if current_bucket is not what_for_lines else s
-            )
+            if current_bucket is what_for_lines:
+                cleaned_bullet = s
+            elif current_bucket is real_example_lines:
+                cleaned_bullet = s[2:].strip() if s.startswith(("- ", "* ")) else s
+            else:
+                cleaned_bullet = s.lstrip("-1234567890. ").strip()
             if cleaned_bullet:
                 current_bucket.append(cleaned_bullet)
 
@@ -103,6 +120,9 @@ def parse_declarative_help_markdown(raw_markdown: str) -> HelpArticleCatalogItem
     )
     fallback_id = f"help-base-{meta['id']}-{lang_val}" if meta.get("id") else f"help-{digest[:12]}"
     summary_what_for = meta.get("summary_what_for") or " ".join(what_for_lines).strip()
+    real_example_text = (
+        meta.get("real_example_text") or " ".join(real_example_lines).strip() or None
+    )
 
     return HelpArticleCatalogItem(
         resource_id=meta.get("resource_id") or fallback_id,
@@ -120,6 +140,8 @@ def parse_declarative_help_markdown(raw_markdown: str) -> HelpArticleCatalogItem
         cas_key=cas_key,
         sha256=digest,
         markdown_body=body,
+        real_example_text=real_example_text,
+        common_pitfalls_items=tuple(common_pitfalls_items),
     )
 
 
@@ -160,6 +182,21 @@ def dict_to_help_article(data: dict[str, Any]) -> HelpArticleCatalogItem:
         else "BASE"
     )
     lang_val: HelpLanguageCode = "en" if data.get("lang") == "en" else "fr"
+    markdown_body = str(data.get("markdown_body") or "")
+    raw_real_example = data.get("real_example_text")
+    real_example_text = str(raw_real_example).strip() or None if raw_real_example else None
+    common_pitfalls = tuple(str(x) for x in (data.get("common_pitfalls_items") or ()))
+
+    # Backfill dedicated 4-block fields from markdown_body for pre-23.3 DB/Redis records
+    if (
+        "real_example_text" not in data
+        and "common_pitfalls_items" not in data
+        and markdown_body.strip()
+    ):
+        reparsed = parse_declarative_help_markdown(markdown_body)
+        real_example_text = reparsed.real_example_text
+        common_pitfalls = reparsed.common_pitfalls_items
+
     return HelpArticleCatalogItem(
         resource_id=str(data["resource_id"]),
         uri=str(data["uri"]),
@@ -175,7 +212,7 @@ def dict_to_help_article(data: dict[str, Any]) -> HelpArticleCatalogItem:
         faq_items=tuple(str(x) for x in (data.get("faq_items") or ())),
         cas_key=str(data["cas_key"]),
         sha256=str(data["sha256"]),
-        markdown_body=str(data.get("markdown_body") or ""),
+        markdown_body=markdown_body,
         previous_version=(str(data["previous_version"]) if data.get("previous_version") else None),
         previous_cas_key=(str(data["previous_cas_key"]) if data.get("previous_cas_key") else None),
         is_autonomous_generated=bool(data.get("is_autonomous_generated", False)),
@@ -184,6 +221,8 @@ def dict_to_help_article(data: dict[str, Any]) -> HelpArticleCatalogItem:
         ),
         contract_label=str(data["contract_label"]) if data.get("contract_label") else None,
         trigger_label=str(data["trigger_label"]) if data.get("trigger_label") else None,
+        real_example_text=real_example_text,
+        common_pitfalls_items=common_pitfalls,
     )
 
 
@@ -216,6 +255,8 @@ def serialize_redis_help_payload(
                 "autonomous_run_id": article.autonomous_run_id,
                 "contract_label": article.contract_label,
                 "trigger_label": article.trigger_label,
+                "real_example_text": article.real_example_text,
+                "common_pitfalls_items": list(article.common_pitfalls_items),
             },
         },
         ensure_ascii=False,

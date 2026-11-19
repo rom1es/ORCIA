@@ -303,6 +303,8 @@ export {
 } from "./primitives/UserPasswordChangeCard";
 export {
   ContextualHelpColumnAndCenter,
+  ContextualHelpColumnView,
+  HelpCenterCatalogView,
   type ContextualHelpColumnAndCenterLabels,
   type ContextualHelpColumnAndCenterProps,
   type UiContextualHelpArticleView,

@@ -171,9 +171,11 @@ async def test_contextual_help_routes_and_accostage_counts_persist_in_postgres18
 
             # 5. Resolve contextual help via HTTP -> lazy-seeds PG18 `catalog_items`
             resolved_by_route: dict[str, tuple[str, str]] = {}
+            resolved_articles_by_route: dict[str, dict[str, object]] = {}
             for route, expected_resource_id in [
                 ("/finops", "help-base-finops-fr"),
                 ("/assistant", "help-base-assistant-fr"),
+                ("/cockpit", "help-base-cockpit-fr"),
                 ("/profile", "help-base-profile-fr"),
             ]:
                 r_help = await client.get(
@@ -184,10 +186,23 @@ async def test_contextual_help_routes_and_accostage_counts_persist_in_postgres18
                 article = r_help.json()["active_article"]
                 assert article["resource_id"] == expected_resource_id
                 assert article["resource_id"] != "help-base-spaces-sources-fr"
+                assert str(article.get("summary_what_for") or "").strip() != ""
+                assert len(article.get("step_by_step_items") or []) >= 1
+                assert str(article.get("real_example_text") or "").strip() != ""
+                assert len(article.get("common_pitfalls_items") or []) >= 1
                 resolved_by_route[expected_resource_id] = (
                     str(article["resource_id"]),
                     str(article["title"]),
                 )
+                resolved_articles_by_route[route] = article
+
+            # Story 23.3: /assistant and /cockpit return strictly distinct 4-block narratives
+            assistant_art = resolved_articles_by_route["/assistant"]
+            cockpit_art = resolved_articles_by_route["/cockpit"]
+            assert assistant_art["title"] != cockpit_art["title"]
+            assert assistant_art["summary_what_for"] != cockpit_art["summary_what_for"]
+            assert assistant_art["real_example_text"] != cockpit_art["real_example_text"]
+            assert "Le Cockpit regroupe" not in str(assistant_art["summary_what_for"])
 
             # Verify every resolved article exists verbatim in PG18 `catalog_items`
             async with engine.connect() as conn:
@@ -195,7 +210,7 @@ async def test_contextual_help_routes_and_accostage_counts_persist_in_postgres18
                     (
                         await conn.execute(
                             sa.text(
-                                "SELECT resource_id, title FROM catalog_items "
+                                "SELECT resource_id, title, metadata_jsonb FROM catalog_items "
                                 "WHERE item_type = 'HELP_ARTICLE'"
                             )
                         )
@@ -203,10 +218,14 @@ async def test_contextual_help_routes_and_accostage_counts_persist_in_postgres18
                     .mappings()
                     .all()
                 )
-            help_titles_by_id = {str(row["resource_id"]): str(row["title"]) for row in help_rows}
+            help_rows_by_id = {str(row["resource_id"]): row for row in help_rows}
             for resource_id, (_, api_title) in resolved_by_route.items():
-                assert resource_id in help_titles_by_id
-                assert api_title == help_titles_by_id[resource_id]
+                assert resource_id in help_rows_by_id
+                row = help_rows_by_id[resource_id]
+                assert api_title == str(row["title"])
+                meta = dict(row["metadata_jsonb"] or {})
+                assert str(meta.get("real_example_text") or "").strip() != ""
+                assert len(meta.get("common_pitfalls_items") or []) >= 1
 
             # 6. Verify Redis cache hit on second GET, then hot publish + rollback in PG18
             r_help_cached = await client.get(

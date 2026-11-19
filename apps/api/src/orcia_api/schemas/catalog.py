@@ -286,6 +286,8 @@ class HelpArticleSchemaItem(BaseModel):
     step_by_step_items: list[str]
     key_terms_items: list[str]
     faq_items: list[str]
+    real_example_text: str | None = None
+    common_pitfalls_items: list[str] = Field(default_factory=list)
     cas_key: str
     sha256: str
     markdown_body: str

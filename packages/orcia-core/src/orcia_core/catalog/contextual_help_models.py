@@ -43,6 +43,8 @@ class HelpArticleCatalogItem:
     autonomous_run_id: str | None = None
     contract_label: str | None = None
     trigger_label: str | None = None
+    real_example_text: str | None = None
+    common_pitfalls_items: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

@@ -17,7 +17,7 @@ Cet écran vous offre un compagnon conversationnel ancré sur les connaissances 
 
 ## En 3 gestes
 
-1. Choisissez votre niveau d'analyse via le sélecteur de modèle et d'effort (Rapide, Équilibré ou Approfondi) à côté du bouton d'envoi.
+1. Choisissez votre modèle (Rapide, Polyvalent ou Raisonnement avancé) et votre mode de réflexion (Standard ou Approfondi — ex. « Polyvalent · Standard ») via le sélecteur à côté du bouton d'envoi.
 2. Rédigez votre question (tapez `@` pour appeler un agent ou `/` pour déclencher une compétence) puis envoyez.
 3. Ouvrez « Dossiers » si vous souhaitez attacher l'échange à un sujet précis et y épingler des consignes permanentes.
 

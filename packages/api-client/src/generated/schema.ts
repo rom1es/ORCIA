@@ -1847,6 +1847,7 @@ export interface components {
     HelpArticleSchemaItem: {
       bound_routes: (string)[];
       cas_key: string;
+      common_pitfalls_items?: (string)[];
       faq_items: (string)[];
       item_type?: string;
       key_terms_items: (string)[];
@@ -1856,6 +1857,7 @@ export interface components {
       pack_name?: string | null;
       previous_cas_key?: string | null;
       previous_version?: string | null;
+      real_example_text?: string | null;
       resource_id: string;
       sha256: string;
       step_by_step_items: (string)[];

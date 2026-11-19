@@ -3,8 +3,8 @@
 - **Date** : 2026-11-19
 - **Story / Clé Sprint** : `23-3-zone-4-aide-contextuelle-fidele-a-la-route-et-4-blocs-design-md` (`Epic 23` — Vague 1 `P1`/`P2`)
 - **Capacité(s)** : `CAP-064`, `CAP-068` — classification : `feature` + `ux` (`REM23-05` / `ARCH23-04`, `P1-UX-5`, `P2-UX-8`)
-- **Auteur / Contexte** : `22.10-impl` (Sally × Winston — pré-implémentation Epic 23). Aligne la Zone 4 (`Aide Contextuelle`) sur l'écran actif (`/assistant` ≠ `/cockpit`), restaure nativement les `4` blocs prescrits par `DESIGN.md` (`À quoi sert cet écran`, `EN N GESTES`, encadré ambre `UN EXEMPLE RÉEL`, `CE QUI COINCE SOUVENT`), masque la plomberie interne (`@1.0.0`, `BASE → PACK → WORKSPACE (core)`) et signale clairement le défilement bas.
-- **Commits associés** : `En attente d'implémentation (initialisé par Story 22.10)`
+- **Auteur / Contexte** : `22.10-impl` (cadrage) / `23.3-impl` & `23.3-test` / validé `APPROVED` par `23.3-validate`. Aligne la Zone 4 (`Aide Contextuelle`) sur l'écran actif (`/assistant` ≠ `/cockpit`), restaure nativement les `4` blocs prescrits par `DESIGN.md` (`À quoi sert cet écran`, `EN N GESTES`, encadré ambre `UN EXEMPLE RÉEL`, `CE QUI COINCE SOUVENT`), masque la plomberie interne (`@1.0.0`, `BASE → PACK → WORKSPACE (core)`) et signale clairement le défilement bas.
+- **Commits associés** : `feat(epic-23): story 23.3 - align zone 4 route contextual help with 4 design.md blocks`
 
 ---
 
@@ -79,19 +79,38 @@
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
-> *[Pré-implémentation initialisée en Story 22.10 — à compléter après implémentation et validation de la Story 23.3]*
+> *Validé (`APPROVED`) par `23.3-validate` ; `CAP-064` & `CAP-068` restent `failed_e2e` dans `docs/product/capabilities.yaml` jusqu'à la campagne intégrale `Story 23.7`.*
 
 ### 3.1 Fichiers Développés & Modifiés
 | Fichier | Nature (Création / Modification / Refactoring) | Description synthétique |
 | :--- | :--- | :--- |
-| `packages/orcia-core/src/orcia_core/catalog/contextual_help_loader.py` & `docs/help/{fr,en}/*.md` | Modification | *[À compléter après implémentation Story 23.3]* |
-| `apps/api/src/orcia_api/schemas/catalog.py` & `routers/portal_and_help.py` | Modification | *[À compléter après implémentation Story 23.3]* |
-| `apps/web/src/components/ShellContextualHelpColumn.tsx`, `contextualHelpCatalog.ts`, `_contextualHelpSections.ts` | Modification / Refactoring | *[À compléter après implémentation Story 23.3]* |
-| `packages/ui/src/primitives/ContextualHelpColumnAndCenter.tsx` & `FourZoneHelpAsideColumn.tsx` | Refactoring / Modification | *[À compléter après implémentation Story 23.3]* |
+| `packages/orcia-core/src/orcia_core/catalog/contextual_help_models.py` (`121` L), `contextual_help_loader.py` (`263` L), `contextual_help_resolver.py` (`101` L), `contextual_help.py` (`384` L), `_internal/sql_contextual_help.py` (`363` L) | Modification | Ajout des champs dédiés `real_example_text` (`## Un exemple réel` / `## A real example`) et `common_pitfalls_items` (`## Ce qui coince souvent` / `## Common pitfalls`), séparation stricte d'avec `key_terms_items`/`faq_items`, backfill rétrocompatible dans `dict_to_help_article`, défaut `pack="core"`, et persistance/hydratation dans `catalog_items.metadata_jsonb`. |
+| `docs/help/fr/assistant.md`, `docs/help/en/assistant.md` & `packs/sdlc/help/{fr,en}/spaces-sources.md` | Modification | Alignement de la terminologie avec le sélecteur actif (`/assistant` : `Polyvalent · Standard` / `Approfondi`, `Versatile · Standard` / `In-Depth`), suppression des anciens libellés contradictoires, et retrait du binding `- /spaces` sur `packs/sdlc` (cantonné à `/spaces/.../sources`). |
+| `apps/api/src/orcia_api/schemas/catalog.py` (`339` L), `apps/api/src/orcia_api/routers/portal_and_help.py` (`194` L), `packages/api-client/{openapi.json,src/generated/schema.ts}` | Modification / Génération | Exposition de `real_example_text` et `common_pitfalls_items` sur `HelpArticleSchemaItem`, passage du défaut `pack="core"` sur `GET /api/v1/help/resolve`, et régénération OpenAPI 3.1 `0-diff`. |
+| `packages/ui/src/primitives/ContextualHelpColumnAndCenter.tsx` (`27` L), `ContextualHelpTypes.ts` (`75` L), `ContextualHelpSharedBlocks.tsx` (`187` L), `ContextualHelpSectionsAndFooter.tsx` (`193` L), `ContextualHelpColumnView.tsx` (`154` L), `HelpCenterCatalogView.tsx` (`114` L), `packages/ui/src/index.ts`, `styles/tokens.css` | Refactoring / Création / Modification | Découpage modulaire `< 200` L, rendu natif des **4 blocs `DESIGN.md`**, non-duplication dans `HelpCenterCatalogView` quand `keyTermsItems`/`faqItems` sont vides, support i18n `askAssistantPrefillTemplate` & `targetedHelpBadgeLabel` (`0` texte FR en EN), masquage `@version`/`Sources du guide` hors `PLATFORM_ADMIN`, garde `<details>` sur métadonnées non vides et repli par défaut pour `PLATFORM_ADMIN`. |
+| `packages/ui/src/primitives/FourZoneHelpAsideColumn.tsx` (`115` L) & `FourZoneShellTypes.ts` | Modification | Ajout de l'indicateur sticky opaque (`backgroundColor: "var(--color-bg-surface)"`) `data-testid="contextual-help-scroll-indicator"` (« *Défiler pour voir la suite ↓* ») affiché uniquement en cas de débordement vertical. |
+| `apps/web/src/components/ShellContextualHelpColumn.tsx` (`168` L), `_contextualHelpSections.ts` (`272` L), `_contextualHelpSectionsEn.ts` (`231` L), `contextualHelpCatalog.ts` (`211` L), `apps/web/src/routes/help.tsx` (`165` L), `apps/web/src/features/workspaces/WorkspaceStudioCardsAndDetailView.tsx` (`491` L), `apps/web/src/i18n/locales/{ontology_glossary_labels,shell_and_search_labels}.ts` | Modification / Refactoring | Suppression de `GENERAL_SECTIONS_FR/EN` et de l'écrasement optimiste dans `ShellContextualHelpColumn`, résolution stricte par route, garde `!isAuthenticated` évitant tout appel `/api/v1/help/resolve` au Jour 0 / `/login`, log structuré `console.warn` sans `catch {}` muet, `version: ""` sur fallback `/help`, et déclencheur `contextual-info-trigger-workspace-sources` sur `/spaces` même avec `0` workspace. |
+| `tests/unit/test_contextual_help_route_resolution.py` (`699` L) & `tests/integration/test_contextual_help_and_accostage_postgres18.py` (`273` L) | Modification / Extension | Couverture `parse_declarative_help_markdown`, rétrocompatibilité `dict_to_help_article`, `assistant.md` FR/EN, défaut `pack="core"` + `packs/sdlc`, `seed_help_articles_to_pg18_sql`/`row_to_help_dict`, et vérification HTTP $\rightarrow$ PG18 (`create_app()` sans override) de `GET /api/v1/help/resolve?route=/assistant` != `?route=/cockpit`. |
+| `packages/ui/src/__tests__/story-23-3-contextual-help-design-blocks.test.tsx`, `apps/web/src/__tests__/story-23-3-zone4-route-fidelity-and-no-unauth-resolve.test.tsx`, `apps/web/src/__tests__/{anti-jargon-and-secrets-ui-audit.test.ts,vitestAutonomousSupervisionMockHandlers.ts}` | Création / Modification | Suites Couche 1b vérifiant les 4 blocs `DESIGN.md`, `askAssistantPrefillTemplate` / `targetedHelpBadgeLabel`, non-duplication `HelpCenterCatalogView`, indicateur de scroll, suppression `GENERAL_SECTIONS_*`, fidélité `/assistant` != `/cockpit`, masquage/repli admin, `0` appel non authentifié (`/login` / Jour 0), fallback d'erreur propre, et déclencheur `/spaces` à `0` workspace. |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
-- **Couverture de tests** : *[À compléter — $\ge 90\%$ requis]*
-- **Qualité statique & Architecture** : `ruff`, `mypy --strict`, `openapi-typescript` `0-diff`, `pnpm typecheck`, `gitnexus_detect_changes()` *[À compléter]*
+- **Couverture de tests (`COVERAGE_CORE=ctrace`, unitaires + intégration PG18 `contextual_help*`)** : **`94.32 %`** (`458` statements, `158` branches, `--cov-fail-under=90` atteint) — `contextual_help_models.py` (`100 %`), `contextual_help_resolver.py` (`98 %`), `contextual_help.py` (`95 %`), `contextual_help_loader.py` (`93 %`), `sql_contextual_help.py` (`92 %`).
+- **Qualité statique & Architecture** :
+  - `.venv/bin/ruff check .` & `.venv/bin/ruff format --check .` : **`0` erreur** (`1 258` fichiers formatés).
+  - `.venv/bin/mypy --strict packages/orcia-core packages/orcia-connectors apps/api apps/worker` : **`0` erreur** (`551` fichiers vérifiés).
+  - `.venv/bin/lint-imports` : **`5 kept, 0 broken`** (`AD-19` & `AD-20`).
+  - `.venv/bin/python scripts/export_openapi.py --check` : **`0-diff`**.
+  - `pnpm turbo run lint typecheck test --concurrency=2` : **`9/9` tâches réussies** (**`338/338` tests** : `@orcia/api-client` `3` fichiers / `20` tests ; `@orcia/ui` `28` fichiers / `117` tests ; `@orcia/web` `53` fichiers / `201` tests, dont `anti-jargon-and-secrets-ui-audit.test.ts` et `zero-dead-buttons-and-silent-catches-audit.test.tsx` à `100 %`).
+  - `npx gitnexus analyze` (`37 981` nœuds, `94 193` arêtes) + `gitnexus_detect_changes({repo: "/home/romain/Documents/Projects/ORCIA", scope: "all"})` : `changed_count: 30`, `changed_files: 32`, `affected_count: 0`, `risk_level: "low"`.
 
 ### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17` + 5 Garde-Fous de Câblage Vertical)
-- *[À compléter après validation `09-pack-builder` et `21-assistant-citations`]*
+- **Couche 1a & Couche 2 (Python + PG18 `testcontainers` sans override)** : `.venv/bin/pytest tests/unit/test_contextual_help_route_resolution.py tests/unit/test_epic_9_story_9_5_contextual_help.py tests/integration/test_contextual_help_and_accostage_postgres18.py tests/unit/test_epic22_to_epic23_traceability.py tests/unit/test_capabilities_registry.py` $\rightarrow$ **`77 passed`**.
+- **Couche 1b (TS/JS Vitest)** : `338/338` tests verts (`@orcia/api-client` `20`, `@orcia/ui` `117`, `@orcia/web` `201`).
+- **Couche 5 (Chaîne Canari Desktop Playwright `--project=desktop-cockpit --retries=0 --timeout=35000`, `ORCIA_E2E_CAMPAIGN_DIR=/tmp/orcia-e2e-canary-23-3`)** : **`11 passed / 2 failed`** sur `13` tests :
+  - `00-stack-smoke.spec.ts` (`4/4` **PASS**)
+  - `01-day0-boot-and-f5-persistence.spec.ts` (`2/2` **PASS**)
+  - `02-assistant-streaming-and-folders.spec.ts` (`3/3` **PASS** — Zone 4 affiche bien `Mon Assistant : questions, dossiers et citations vérifiées`, `Polyvalent · Standard`, l'encadré ambre `UN EXEMPLE RÉEL`, `Défiler pour voir la suite ↓` et `▶ Détails techniques` replié par défaut)
+  - `03-human-led-anchor-and-arbitration.spec.ts` (`1/1` **PASS**)
+  - `09-pack-builder-and-contextual-help.spec.ts` (`1/1` **PASS**)
+  - `21-assistant-citations-v5-audit-help-showcase.spec.ts` #1 (`L22`, **FAIL** connu `Story 23.5` : `L131` `assistant-citation-pills-and-artifact-card` absent)
+  - `21-assistant-citations-v5-audit-help-showcase.spec.ts` #2 (`L166`, **assertions `/help`, `/spaces`, `contextual-info-trigger-workspace-sources`, Zone 4 `"unité d'organisation"`, `/showcase` et `reloadClearingStorage` toutes PASS**, puis **FAIL** uniquement en `L223` `expect(errors).toEqual([])` à cause de `23` réponses `HTTP 401` hors périmètre `23.3` sur `/api/v1/org-units`, `/api/v1/orchestration/state` et `/api/v1/users/me/preferences` au démarrage Jour 0 / rechargement ; `0` erreur sur `/api/v1/help/resolve`, toutes en `200`).

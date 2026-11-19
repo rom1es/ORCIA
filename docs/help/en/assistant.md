@@ -17,7 +17,7 @@ This screen provides a conversational partner grounded in your team's knowledge.
 
 ## In 3 steps
 
-1. Choose your analysis depth using the model and effort picker next to the send button (Fast, Balanced, or In-Depth).
+1. Choose your model (Fast, Versatile, or Advanced Reasoning) and your thinking mode (Standard or In-Depth — e.g. "Versatile · Standard") using the selector next to the send button.
 2. Type your question (use `@` to mention an agent or `/` to run a skill) and send.
 3. Open "Folders" to attach your conversation to a topic and pin permanent instructions that stay active across questions.
 

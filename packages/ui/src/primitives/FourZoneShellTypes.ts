@@ -96,6 +96,7 @@ export interface FourZoneDirectionCShellLabels {
   readonly helpColumnTitle: string;
   readonly helpColumnExpectedTitle: string;
   readonly helpColumnExpectedBody: string;
+  readonly helpColumnScrollMoreLabel?: string;
   readonly menuEntries: Record<EightFixedMenuKey, string>;
   readonly organizationMenuLabel?: string;
   readonly activityMenuLabel?: string;

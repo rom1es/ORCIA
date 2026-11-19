@@ -1,4 +1,5 @@
 import {
+  ContextualInfoTriggerButton,
   getOrciaIconGlyph,
   OrciaIcon,
   type ControlCenterDatasourceItem,
@@ -181,11 +182,25 @@ export function WorkspaceStudioCardsAndDetailView({
         <section
           data-testid="workspaces-cards-empty-state"
           className="orcia-bento-card"
-          style={{ fontSize: "13px", color: "var(--color-muted-foreground)" }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "10px",
+            fontSize: "13px",
+            color: "var(--color-muted-foreground)",
+          }}
         >
-          {isFr
-            ? "Aucun Espace de Travail ne correspond à ce filtre. Créez votre premier espace ci-dessus pour connecter vos sources et définir votre glossaire métier."
-            : "No Workspace matches this filter. Create your first workspace above to connect sources and define your business glossary."}
+          <span>
+            {isFr
+              ? "Aucun Espace de Travail ne correspond à ce filtre. Créez votre premier espace ci-dessus pour connecter vos sources et définir votre glossaire métier."
+              : "No Workspace matches this filter. Create your first workspace above to connect sources and define your business glossary."}
+          </span>
+          <ContextualInfoTriggerButton
+            sectionId="workspace-sources"
+            label={isFr ? "Aide sources et espaces" : "Spaces & sources help"}
+            onOpenHelpSection={openHelpSection}
+          />
         </section>
       ) : (
         <section

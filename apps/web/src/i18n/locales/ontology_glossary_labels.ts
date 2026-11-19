@@ -41,6 +41,8 @@ export interface OntologyGlossaryCopy {
   readonly helpCenterKeyTerm2: string;
   readonly helpCenterKeyTerm3: string;
   readonly helpCenterFaq1: string;
+  readonly helpCenterRealExample: string;
+  readonly helpCenterCommonPitfall1: string;
   readonly workspaceGlossaryTitlePrefix: string;
   readonly workspaceGlossaryDefaultPlatformName: string;
   readonly workspaceGlossaryHelpLabel: string;
@@ -116,6 +118,10 @@ export const ONTOLOGY_GLOSSARY_FR: OntologyGlossaryCopy = {
   helpCenterKeyTerm3: "Vérification de qualité : Contrôle automatique des liens et du vocabulaire.",
   helpCenterFaq1:
     "Comment rétablir la version précédente d'un guide ? Cliquez sur Version précédente.",
+  helpCenterRealExample:
+    "Claire ouvre l'écran Mon Assistant et clique sur le bouton d'aide en haut à droite : la colonne affiche immédiatement le guide dédié à Mon Assistant avec un exemple concret et les pièges à éviter.",
+  helpCenterCommonPitfall1:
+    "Un guide semble décrire un autre écran : vérifiez l'adresse active ou ouvrez le Centre d'aide pour consulter le répertoire par écran.",
   workspaceGlossaryTitlePrefix: "Glossaire & Règles Métiers applicables à",
   workspaceGlossaryDefaultPlatformName: "Plateforme Globale ORCIA",
   workspaceGlossaryHelpLabel: "Comprendre l'héritage du glossaire et la promotion",
@@ -191,6 +197,10 @@ export const ONTOLOGY_GLOSSARY_EN: OntologyGlossaryCopy = {
   helpCenterKeyTerm2: "Level customization: Guides enriched by your domain and Workspace.",
   helpCenterKeyTerm3: "Quality check: Automated verification of links and terminology.",
   helpCenterFaq1: "How can I restore the previous version of a guide? Click Previous version.",
+  helpCenterRealExample:
+    "Claire opens My Assistant and clicks the Help button in the top-right bar: the side column immediately shows the My Assistant guide with a real example and common pitfalls.",
+  helpCenterCommonPitfall1:
+    "A guide looks off-topic for the current screen: check your active route or browse the screen directory here in the Help Center.",
   workspaceGlossaryTitlePrefix: "Business Glossary & Rules applicable to",
   workspaceGlossaryDefaultPlatformName: "Global Platform ORCIA",
   workspaceGlossaryHelpLabel: "Understand glossary inheritance and promotion",

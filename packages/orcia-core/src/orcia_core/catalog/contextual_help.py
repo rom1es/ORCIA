@@ -153,6 +153,7 @@ class ContextualHelpResolutionService:
         digest = hashlib.sha256(new_markdown_body.encode("utf-8")).hexdigest()
         cas_key = f"cas/{digest}"
         self._cas_blobs[cas_key] = new_markdown_body
+        parsed_update = parse_declarative_help_markdown(new_markdown_body)
         updated = HelpArticleCatalogItem(
             resource_id=existing.resource_id,
             uri=existing.uri,
@@ -163,9 +164,9 @@ class ContextualHelpResolutionService:
             pack_name=existing.pack_name,
             bound_routes=existing.bound_routes,
             summary_what_for=new_summary_what_for,
-            step_by_step_items=existing.step_by_step_items,
-            key_terms_items=existing.key_terms_items,
-            faq_items=existing.faq_items,
+            step_by_step_items=(parsed_update.step_by_step_items or existing.step_by_step_items),
+            key_terms_items=parsed_update.key_terms_items or existing.key_terms_items,
+            faq_items=parsed_update.faq_items or existing.faq_items,
             cas_key=cas_key,
             sha256=digest,
             markdown_body=new_markdown_body,
@@ -175,6 +176,10 @@ class ContextualHelpResolutionService:
             autonomous_run_id=autonomous_run_id,
             contract_label=contract_label,
             trigger_label=trigger_label,
+            real_example_text=parsed_update.real_example_text or existing.real_example_text,
+            common_pitfalls_items=(
+                parsed_update.common_pitfalls_items or existing.common_pitfalls_items
+            ),
         )
         self._articles_by_id[resource_id] = updated
         self._invalidate_redis_keys(updated)
@@ -225,7 +230,7 @@ class ContextualHelpResolutionService:
         self,
         *,
         route: str,
-        pack: str = "orcia-pack-sdlc",
+        pack: str = "core",
         lang: HelpLanguageCode = "fr",
     ) -> ContextualHelpResolutionResult:
         """Resolve contextual help in `< 10 ms` using Redis cache and 4-layer merge (`AD-14`)."""

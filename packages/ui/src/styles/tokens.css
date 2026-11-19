@@ -78,6 +78,10 @@
 
   --color-arbitration-amber: #D97706;
   --color-arbitration-bg: #FFFBEB;
+  --color-help-example-bg: #FFFBEB;
+  --color-help-example-border: #F59E0B;
+  --color-help-example-title: #92400E;
+  --color-help-example-text: #78350F;
 
   --color-gate-emerald: #059669;
   --color-gate-emerald-bg: #ECFDF5;
@@ -186,6 +190,10 @@
   --color-action-primary-subtle: #1E293B;
   --color-gate-emerald-bg: rgba(5, 150, 105, 0.16);
   --color-arbitration-bg: rgba(217, 119, 6, 0.16);
+  --color-help-example-bg: rgba(217, 119, 6, 0.16);
+  --color-help-example-border: #D97706;
+  --color-help-example-title: #FCD34D;
+  --color-help-example-text: #FEF3C7;
   --color-stale-bg: rgba(220, 38, 38, 0.16);
 
   --color-tab-active-bg: #2563EB;

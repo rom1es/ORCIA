@@ -50,6 +50,8 @@ def _serialize_help_article(art: HelpArticleCatalogItem) -> HelpArticleSchemaIte
         step_by_step_items=list(art.step_by_step_items),
         key_terms_items=list(art.key_terms_items),
         faq_items=list(art.faq_items),
+        real_example_text=art.real_example_text,
+        common_pitfalls_items=list(art.common_pitfalls_items),
         cas_key=art.cas_key,
         sha256=art.sha256,
         markdown_body=art.markdown_body,
@@ -127,7 +129,7 @@ async def execute_two_speed_federated_search(
 async def resolve_contextual_help(
     request: Request,
     route: str = Query(default="/mes-espaces/$id/sources", min_length=1, max_length=256),
-    pack: str = Query(default="orcia-pack-sdlc", min_length=1, max_length=128),
+    pack: str = Query(default="core", min_length=1, max_length=128),
     lang: Literal["fr", "en"] = Query(default="fr"),
 ) -> ContextualHelpResolveResponse:
     svc = get_contextual_help_service(request)

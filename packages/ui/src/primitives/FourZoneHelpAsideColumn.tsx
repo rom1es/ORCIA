@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { OrciaIcon } from "../components/icons";
 import type { FourZoneDirectionCShellLabels } from "./FourZoneShellTypes";
 
@@ -6,7 +6,10 @@ export interface FourZoneHelpAsideColumnProps {
   readonly isMobile: boolean;
   readonly labels: Pick<
     FourZoneDirectionCShellLabels,
-    "helpColumnTitle" | "helpColumnExpectedTitle" | "helpColumnExpectedBody"
+    | "helpColumnTitle"
+    | "helpColumnExpectedTitle"
+    | "helpColumnExpectedBody"
+    | "helpColumnScrollMoreLabel"
   >;
   readonly helpColumnContent?: React.ReactNode;
   readonly onClose: () => void;
@@ -18,9 +21,44 @@ export function FourZoneHelpAsideColumn({
   helpColumnContent,
   onClose,
 }: FourZoneHelpAsideColumnProps) {
+  const asideRef = useRef<HTMLElement | null>(null);
+  const [hasMoreBelow, setHasMoreBelow] = useState(false);
+
+  const checkScrollOverflow = useCallback(() => {
+    const el = asideRef.current;
+    if (!el) return;
+    const remaining = el.scrollHeight - el.clientHeight - el.scrollTop;
+    setHasMoreBelow(el.scrollHeight > el.clientHeight + 4 && remaining > 8);
+  }, []);
+
+  useEffect(() => {
+    checkScrollOverflow();
+    const el = asideRef.current;
+    if (!el) return;
+
+    const ro =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(checkScrollOverflow) : null;
+    ro?.observe(el);
+
+    const mo =
+      typeof MutationObserver !== "undefined"
+        ? new MutationObserver(checkScrollOverflow)
+        : null;
+    mo?.observe(el, { childList: true, subtree: true, characterData: true });
+
+    window.addEventListener("resize", checkScrollOverflow);
+    return () => {
+      ro?.disconnect();
+      mo?.disconnect();
+      window.removeEventListener("resize", checkScrollOverflow);
+    };
+  }, [checkScrollOverflow, helpColumnContent]);
+
   return (
     <aside
+      ref={asideRef}
       data-testid="four-zone-contextual-help-column"
+      onScroll={checkScrollOverflow}
       className={
         isMobile
           ? "fixed inset-x-0 top-[52px] bottom-[58px] z-40 overflow-y-auto border-t p-4"
@@ -41,25 +79,57 @@ export function FourZoneHelpAsideColumn({
         <button
           type="button"
           data-testid="contextual-help-close-btn"
+          aria-label={labels.helpColumnTitle}
           onClick={onClose}
           className="text-xs"
         >
           <OrciaIcon name="close" />
         </button>
       </div>
-      <div
-        className="mt-3 rounded border p-3"
-        style={{
-          backgroundColor: "var(--color-bg-elevated)",
-          borderColor: "var(--color-border-subtle)",
-        }}
-      >
-        <h3 className="text-xs font-semibold">{labels.helpColumnExpectedTitle}</h3>
-        <p className="mt-1 text-xs" style={{ color: "var(--color-text-secondary)" }}>
+      {helpColumnContent ? (
+        <div
+          className="mt-3"
+          style={{ paddingBottom: hasMoreBelow ? "44px" : undefined }}
+        >
+          {helpColumnContent}
+        </div>
+      ) : (
+        <p className="mt-3 text-xs" style={{ color: "var(--color-text-secondary)" }}>
           {labels.helpColumnExpectedBody}
         </p>
-      </div>
-      {helpColumnContent && <div className="mt-3">{helpColumnContent}</div>}
+      )}
+      {hasMoreBelow && (
+        <div
+          data-testid="contextual-help-scroll-indicator"
+          aria-hidden="true"
+          style={{
+            position: "sticky",
+            bottom: "-16px",
+            marginLeft: "-16px",
+            marginRight: "-16px",
+            marginBottom: "-16px",
+            zIndex: 10,
+            pointerEvents: "none",
+          }}
+        >
+          <div
+            style={{
+              height: "14px",
+              background: "linear-gradient(to bottom, transparent, var(--color-bg-surface))",
+            }}
+          />
+          <div
+            className="px-4 py-2 text-center text-[11px] font-medium"
+            style={{
+              backgroundColor: "var(--color-bg-surface)",
+              color: "var(--color-text-secondary)",
+              borderTop: "1px solid var(--color-border-subtle)",
+            }}
+          >
+            {labels.helpColumnScrollMoreLabel ?? "↓"}
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

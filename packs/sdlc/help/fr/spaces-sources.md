@@ -8,12 +8,22 @@ layer: PACK
 pack_name: orcia-pack-sdlc
 bound_routes:
   - /mes-espaces/$id/sources
-  - /spaces
+  - /workspaces/$wsId/sources
+  - /spaces/sources
 summary_what_for: "Raccordez vos dépôts Git, projets Jira et espaces Confluence pour alimenter le graphe tripartite SDLC."
 ---
+### À quoi sert cet écran
+Raccordez les sources techniques d'un Espace (dépôts Git, projets Jira, espaces Confluence) pour fiabiliser les synthèses et suivre les évolutions de code.
+
 ### Pas-à-pas
 1. Associez votre dépôt Git principal et votre projet Jira de sprint.
 2. Activez la détection automatique d'obsolescence entre Confluence et Git.
+
+### Un exemple réel
+L'équipe Paiement relie son dépôt Git principal et son projet Jira : chaque changement de schéma signale automatiquement la documentation à relire avant validation.
+
+### Ce qui coince souvent
+- **Une source reste en attente de synchronisation** : vérifiez votre jeton personnel ou la connexion du connecteur dans Configuration › Connecteurs.
 
 ### Termes clés
 - **Graphe Tripartite** : Liens causaux vérifiés entre pages Confluence, tickets Jira et commits Git.
