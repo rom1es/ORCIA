@@ -145,6 +145,7 @@ This document provides the complete epic and story breakdown for ORCIA, decompos
 - **FR-36** : ad-hoc, Epic 13 - Gestion des agents et compétences (`CAP-090`..`CAP-092`)
 - **Couverture Intégrale User Journeys & Vérité E2E PG18 (`FR-1`..`FR-36`, `UJ-1`..`UJ-20`, `CAP-001`..`CAP-203`)** : Epic 21 - Classification `feature | foundation` (`capabilities.yaml`), référentiel complet `UJ-1`..`UJ-20` (`prd.md` & `EXPERIENCE.md`), verrou CI `pnpm site:check`, campagne Playwright intégrale (`00..21` + `shell.spec.ts`) avec survie `F5`, assertions `SELECT` PostgreSQL 18, captures PNG finales, audit croisé Sally × Winston & initialisation de l'Epic 22
 - **Remédiation E2E Vérité PG18, Portails & Shell Direction C, Purge Jargon, Gardes CI, Campagne & Initialisation Epic 23 (`FR-1`..`FR-36`, `REM-01`..`REM-34`, `CAP-001`..`CAP-203`)** : Epic 22 (`22.1`..`22.10`) - Unification UUIDv7 Workspaces & droits `PLATFORM_ADMIN`, Portals `OrciaDialog` & Tailwind v4, purge `display: none` & découplage `/catalog`/`/agents`/`/help`, câblage PG18 de tous les silos RAM (`assistant_folders`, `task_notifications`, `permission_broker_tickets`, `dbos_uow`, `human_anchor_signatures`, `upstream_challenges`, `run_lock_manifests`, `gate_evaluations`, `chunk_approvals`, `declarative_pack_bundles`, `wizard_sessions`, garde `KILL_SWITCH_STOPPED`), refonte Direction C `8` entrées / Mobile `< 768px` / `docs/help/` dynamique / Cockpit `<= 3` blocs, purge intégrale du jargon technique, activation des `5` gardes CI anti-régression & assertions `SELECT` PG18 sur `100 %` des `55` blocs `test(...)` E2E (`22.8`), campagne E2E intégrale `e2e-campaign-epic-22` + captures PNG + audit croisé Sally × Winston + mise à jour honnête `capabilities.yaml` (`22.9`), rapports Tech Lead individuels & initialisation de l'Epic 23 (`22.10`)
+- **Remédiation Finale E2E, Transport SSE Authentifié, Aide Contextuelle 4 Blocs, Unification Accostage `X/6`, Sobriété Direction C & Campagne `110/110` (`FR-1`..`FR-36`, `REM23-01`..`REM23-13`, `P0-UX-1`..`P3-UX-12`, `ARCH23-01`..`ARCH23-10`, `CAP-001`..`CAP-203`)** : Epic 23 (`23.1`..`23.6`) - Déblocage `resetDay0()` (`TRUNCATE ... RESTART IDENTITY CASCADE` strictement isolé `orcia_e2e`, protection `connector_schemes` et `FLUSHDB` Redis sans désactiver les triggers append-only), factorisation SSE authentifié `createRequestSse` (`Bearer` + RFC 9457) sur `/assistant/three-speed/stream`, `/trace-stream` et `/events/stream` + diagnostic critique `401` (`Se reconnecter →`) + alignement *fail-closed* `00-stack-smoke` (#3/#4), Zone 4 `Aide Contextuelle` fidèle à la route avec ses `4` blocs `DESIGN.md` natifs sans plomberie interne, unification PG18 `Accostage X/6` + fin des fantômes Jour 0 (`AP`, `Notifications 4`) + épuration `FirstBootAdminSetupModal`, réduction Cockpit `<= 3` blocs + `TopHeaderBar` sans doublon/troncatures + logo Zone 1 + `/assistant`/`/login` + preuves `#10`, et campagne Playwright intégrale Desktop + Mobile Companion `390×844` (`97/97` exécutés PASS, levée de l'angle mort `0/55` & `04`–`21`, promotion `62/62` `runtime`)
 
 > Source de vérité du statut réel de chaque capacité : `docs/product/capabilities.yaml` (voir `AGENTS.md` §5).
 
@@ -206,6 +207,10 @@ Systématiser la preuve de fonctionnement réel de 100 % des `62` capacités mé
 ### Epic 22: Remédiation E2E Vérité PG18, Portails & Shell Direction C, Purge Jargon, Gardes CI, Assainissement Fail-Closed, Campagne Intégrale & Initialisation Epic 23 (`Stories 22.1`..`22.10` + `22.8a`)
 Résoudre de bout en bout les `34` chantiers issus de l'audit croisé Sally × Winston (`REM-01`..`REM-34`) et les `47` échecs/timeouts de la campagne E2E Epic 21 en **`11` Stories (`22.1`..`22.8` + intercalaire `22.8a` + clôture `22.9`..`22.10`)** réparties sur `4` vagues topologiques : unification UUIDv7 des espaces et correction des faux `403` admin (`22.1`), Portals `OrciaDialog` + Tailwind v4 + purge `display: none` + découplage `/catalog`/`/agents`/`/help` + bouton invitation `/organization` + alignement `data-testid`/contrats (`22.2`), câblage PostgreSQL 18 de tous les silos RAM (`assistant_folders`, `task_notifications`/SSE, `permission_broker_tickets` + fallback `git://*` en `22.3` ; `dbos_uow`, `human_anchor_signatures`, `upstream_challenges`, `run_lock_manifests`, `gate_evaluations`, `chunk_approvals` & garde `KILL_SWITCH_STOPPED` en `22.4` ; `declarative_pack_bundles` & `wizard_sessions` en `22.5`), alignement coquille Direction C `8` entrées + Mobile Companion `< 768px` + `docs/help/` dynamique sans `Chef1`/`aqwZSX` + Cockpit `<= 3` blocs (`22.6`), finitions UX/UI et purge intégrale du jargon technique (`22.7`), activation des `5` gardes CI anti-régression (`REM-34`) + `4` verrous anti-faux-positifs (sync `data-testid` E2E↔UI, helper Playwright typé OpenAPI, purge `ORCIA_E2E_SEED_FIXTURES` + relecture à froid PG18 `reloadColdFromPg` via `/api/v1/_e2e/evict-memory-caches`, réécriture `<RouterProvider>` de `zero-dead-buttons` + sonde `[role="alert"]` + Direction C / WCAG AA), couverture `SELECT` PostgreSQL 18 sur `100 %` des `55` blocs `test(...)` E2E (`110` scénarios) + paramétrage `ORCIA_E2E_CAMPAIGN_DIR` + budget `< 35s` (`REM-33`) (`22.8`), assainissement *Fail-Closed* de `vitest.setup.ts` contre `openapi.json` (`< 350` L), purge des fallbacks RAM + test Composition Root `create_app()` sans `dependency_overrides` ni `app.state.*` manuel et pipeline GitHub Actions complet à `5` couches (`22.8a`), exécution intégrale de la campagne E2E (`e2e-campaign-epic-22`), archivage des captures PNG, bilan d'exécution, audit croisé Sally × Winston et mise à jour honnête de `capabilities.yaml` (`22.9`), puis rédaction des rapports Tech Lead individuels (`23-1..23-N`), plan de correction global et initialisation complète de l'Epic 23 (`22.10`).
 **FRs covered:** `FR-1`..`FR-36`, `UJ-1`..`UJ-20`, `CAP-001`..`CAP-203`, `REM-01`..`REM-34` (`AD-1`..`AD-24`, `UX-DR1`..`UX-DR17`)
+
+### Epic 23: Déblocage Reset PG18/Redis, Transport SSE Authentifié, Zone 4 & Accostage `X/6`, Sobriété Direction C & Campagne Intégrale `110/110` (`Stories 23.1`..`23.6`)
+Résoudre intégralement et sans régression les `90` échecs (`3` `HTTP 401` directs + `87` cascades `resetDay0()`) sur `24` specs E2E ainsi que les `13` chantiers Sally × Winston (`REM23-01`..`REM23-13`, `P0-UX-1`..`P3-UX-12`, `ARCH23-01`..`ARCH23-10`) issus de `e2e-campaign-epic-22` en **`6` Stories ordonnées en `3` vagues** : déblocage `resetDay0()` par `TRUNCATE ... RESTART IDENTITY CASCADE` strictement isolé sur `orcia_e2e` + protection `connector_schemes` + `FLUSHDB` Redis sans jamais désactiver les triggers append-only (`23.1`), factorisation SSE authentifié `createRequestSse` (`Bearer` + RFC 9457) pour `/assistant/three-speed/stream`, `/trace-stream` et `/events/stream` (verrouillé serveur), diagnostic critique `401` (`Se reconnecter →`) et alignement *fail-closed* `00-stack-smoke` #3/#4 (`23.2`), fidélité route-par-route de Zone 4 (`Aide Contextuelle`) avec les `4` blocs `DESIGN.md` natifs et masquage de la plomberie technique (`23.3`), unification PG18 `Accostage X/6` + fin des fantômes pré-admin (`AP`, `Notifications 4`) + purge des `5` props mortes `ShellContainer` + épuration `FirstBootAdminSetupModal` (`23.4`), réduction Cockpit `<= 3` blocs + suppression `topbar-fixed-workspace-selector` Desktop + logo `ORCIA` Zone 1 + `/assistant`/`/login` + captures de preuve `#10` (`23.5`), et campagne Playwright intégrale `e2e-campaign-epic-23` levant l'angle mort `0/55` Mobile Companion & specs `04`–`21` avec audit visuel Sally et promotion `62/62` `runtime` dans `capabilities.yaml` (`23.6`).
+**FRs covered:** `FR-1`..`FR-36`, `UJ-1`..`UJ-20`, `CAP-001`..`CAP-203`, `REM23-01`..`REM23-13` (`AD-1`..`AD-24`, `UX-DR1`..`UX-DR17`)
 
 ## Epic 1: Amorçage Gouverné de l'Organisation, Onboarding Autonome d'Équipe (`TEAM_LEAD`), Catalogue Fédéré & Permission Broker connecté à Jira
 
@@ -2547,3 +2552,129 @@ So that chaque échec résiduel ou amélioration identifié à l'issue de l'Epic
 **Given** l'initialisation complète de l'**Epic 23** dans `epics.md`, `sprint-status.yaml` et `capabilities.yaml`, ainsi que `tests/unit/test_epic22_to_epic23_traceability.py`
 **When** `.venv/bin/pytest tests/unit/test_epic22_to_epic23_traceability.py`, `.venv/bin/python scripts/check_implementation_docs.py` et `pnpm site:sync && pnpm site:check` s'exécutent
 **Then** `100 %` de traçabilité bidirectionnelle est prouvée (aucun échec E2E ni point Sally × Winston orphelin), `epic-22` passe à `done`, et `Epic 23` est prêt pour exécution immédiate.
+
+---
+
+## Epic 23: Déblocage Reset PG18/Redis, Transport SSE Authentifié, Zone 4 & Accostage `X/6`, Sobriété Direction C & Campagne Intégrale `110/110`
+
+Résoudre de manière définitive et vérifiable par PostgreSQL 18 l'ensemble des `90` échecs E2E (`3` rejets `HTTP 401` directs + `87` cascades `resetDay0()`) répartis sur `24` specs ainsi que les `13` chantiers `REM23-01`..`REM23-13` (`12` défauts UX/UI Sally `P0-UX-1`..`P3-UX-12` + `10` défauts d'architecture Winston `ARCH23-01`..`ARCH23-10`), sur `3` vagues strictement séquentielles (`Vague 0` déblocage `23.1`–`23.2` $\rightarrow$ `Vague 1` conformité Direction C `23.3`–`23.5` $\rightarrow$ `Vague 2` campagne complète `23.6`) jusqu'à l'obtention de `97/97` scénarios exécutés PASS (`0` failed, `13` viewport skips) et `62/62` capacités `feature` en `verification: runtime`.
+
+### Story 23.1: Déblocage `resetDay0()` (`TRUNCATE CASCADE` E2E Isolé `orcia_e2e`), Protection `connector_schemes` & Purge Redis `FLUSHDB` (`REM23-01` / `ARCH23-01`)
+
+As a Ingénieur Plateforme & Mainteneur du Harnais E2E (`Winston`),
+I want protéger `connector_schemes` dans `09_reset_db_first_boot.py` sans affaiblir aucun trigger append-only, et implémenter dans `infra/scripts/e2e/reset_day0.py` (sous garde bloquant `is_isolated_e2e_database_url` `orcia_e2e` uniquement) un `TRUNCATE TABLE ... RESTART IDENTITY CASCADE` excluant `alembic_version` et `connector_schemes` complété par un nettoyage `dbos.*`, un reset `platform_auth_settings` (`boot_epoch`), une éviction caches API et un `FLUSHDB` Redis (`state["redis_url"]`),
+So that l'insertion réelle de lignes `step_executions`, `blackboard_snapshots` et `audit_ledger` par les tests E2E (tels que `#10`) ne provoque plus jamais de `RestrictViolationError` en cascade (`87` échecs `#11`–`#110`) tout en respectant strictement la politique `GEMINI.md` interdisant `DISABLE TRIGGER`.
+
+**Dépendances :** Clôture de `Story 22.10`. Vague 0 (`P0`), bloque `Story 23.3`–`23.6`.
+**CAP couvertes :** `CAP-003`, `CAP-011`, `CAP-020`, `CAP-021`, `CAP-022`, `CAP-024`, `CAP-030`, `CAP-031`, `CAP-032`, `CAP-033`, `CAP-054`, `CAP-065`, `CAP-082`, `CAP-140`, `CAP-200`, `CAP-201` (et déblocage des `87` échecs `beforeEach` `#11`–`#110`).
+**Fichiers impactés :** `infra/scripts/maintenance/09_reset_db_first_boot.py`, `infra/scripts/e2e/reset_day0.py`, `apps/web/e2e/support/day0.ts`, `tests/unit/`, `tests/integration/`.
+**Rapport Tech Lead :** `docs/implementation-artifacts/tech-lead-reports/23-1-reset-jour0-e2e-truncate-cascade-connector-schemes-et-redis-tech-lead-report.md`.
+
+**Acceptance Criteria:**
+
+**Given** une base `orcia_e2e` contenant des lignes dans `users`, `workflow_runs`, `step_executions`, `blackboard_snapshots` (protégée `BEFORE UPDATE OR DELETE ... FOR EACH ROW` + FK `ON DELETE RESTRICT`), `audit_ledger`, `connector_schemes` et des clés actives dans Redis (`help:*`, `lock:step:*`)
+**When** `reset_day0.py` s'exécute après validation de `is_isolated_e2e_database_url(database_url)`
+**Then** toutes les tables applicatives et append-only (hors `alembic_version` et `connector_schemes`) sont vidées via `TRUNCATE TABLE ... RESTART IDENTITY CASCADE`, `connector_schemes` reste peuplée, les triggers `trg_blackboard_snapshots_append_only` et `prevent_audit_ledger_mutation` demeurent actifs (`0` `DISABLE TRIGGER`), Redis est vidé par `FLUSHDB`, et un test `testcontainers` PG18 + Redis prouve `COUNT(*) == 0` sur `users`/`step_executions`/`blackboard_snapshots` et l'enchaînement vert `03-human-led` → `04-multi-actor` → `shell.spec.ts`.
+
+**Given** une chaîne de connexion pointant hors de la base isolée `orcia_e2e` ou une invocation de `09_reset_db_first_boot.py`
+**When** `reset_day0.py` ou `09_reset_db_first_boot.py` s'exécute
+**Then** `reset_day0.py` refuse immédiatement l'exécution par `RuntimeError` hors `orcia_e2e`, et `09_reset_db_first_boot.py` préserve `connector_schemes` dans `PROTECTED_TABLES` sans jamais utiliser `TRUNCATE` sur les tables append-only ni `DISABLE TRIGGER`.
+
+---
+
+### Story 23.2: Transport SSE Authentifié `createRequestSse`, Alignement *Fail-Closed* `00-stack-smoke` (#3/#4) & Diagnostic `401` Session Expirée (`REM23-02`, `REM23-03`, `REM23-04`)
+
+As a Utilisateur de `Mon Assistant` & Architecte Sécurité (`Sally` × `Winston`),
+I want factoriser une primitive `createRequestSse` dans `packages/api-client/src/helpers.ts` (injectant `Authorization: Bearer`, `credentials: "include"`, `Accept-Language`, refresh `401` et parsing RFC 9457 `OrciaProblemError`, tout en scindant `bootstrapAndOntology.ts` > 400 L), migrer `streamAssistantTurnSse`, `useReflexiveExecutionController` (`/trace-stream`) et `useWorkspaceEventsSse` (`/events/stream`, protégé serveur par `resolve_request_user` + `_enforce_inbox_workspace_guard`), aligner `00-stack-smoke.spec.ts` #3/#4 sur `ORCIA_ENV="e2e"`, et corriger le message d'erreur `401` dans `useAssistantStreamingTurn.ts` (`P0-UX-1`),
+So that les `3` échecs `HTTP 401` directs disparaissent sans relâcher la sécurité serveur, les flux `/trace-stream` et `/events/stream` soient authentifiés, et une session expirée affiche une alerte claire avec action `Se reconnecter →` au lieu d'accuser le modèle IA.
+
+**Dépendances :** Aucun prérequis bloquant hors Vague 0 (parallélisable/séquentiel avec `Story 23.1`, avant Vague 1).
+**CAP couvertes :** `CAP-004`, `CAP-040`, `CAP-071`, `CAP-074`, `CAP-075`, `CAP-160`.
+**Fichiers impactés :** `packages/api-client/src/helpers.ts`, `packages/api-client/src/domains/bootstrapAndOntology.ts` (+ `assistantStreaming.ts`), `apps/api/src/orcia_api/routers/inbox_and_leases.py`, `apps/web/src/features/shared/useReflexiveExecutionController.ts`, `apps/web/src/components/useWorkspaceEventsSse.ts`, `apps/web/src/features/inbox/useAssistantStreamingTurn.ts`, `apps/web/src/i18n/locales/{fr,en}.ts`, `apps/web/e2e/00-stack-smoke.spec.ts`.
+**Rapport Tech Lead :** `docs/implementation-artifacts/tech-lead-reports/23-2-transport-sse-authentifie-createrequestsse-smoke-00-et-diagnostic-401-tech-lead-report.md`.
+
+**Acceptance Criteria:**
+
+**Given** un utilisateur authentifié envoyant un message dans `Mon Assistant` ou suivant une trace réflexive `/trace-stream` / un flux `/events/stream`
+**When** le client `@orcia/api-client` ouvre le flux SSE via `createRequestSse`
+**Then** l'en-tête `Authorization: Bearer` et `Accept-Language` sont automatiquement transmis (test `02-assistant` #7 vert avec `DeterministicCassetteLLM`), `GET /api/v1/events/stream` rejette en `401` sans jeton et en `403` hors périmètre workspace, et `00-stack-smoke.spec.ts` #3/#4 vérifient explicitement le rejet `401` anonyme puis réussissent avec jeton premier admin.
+
+**Given** un flux `Mon Assistant` recevant une erreur `OrciaProblemError` de statut `401` ou `403` vs `502`/`503`/`504`
+**When** `useAssistantStreamingTurn` affiche le bandeau d'erreur (`role="alert"`)
+**Then** un rejet `401`/`403` affiche un message métier FR/EN (*« Votre session a expiré ou doit être renouvelée pour continuer la conversation. »*, zéro code `HTTP 401`, zéro accusation du modèle IA, contraste WCAG AA `>= 4,5:1`) accompagné d'un CTA **`Se reconnecter →`** vers `/login`, tandis que le diagnostic d'indisponibilité IA reste réservé aux erreurs `502`/`503`/`504` / pannes réseau.
+
+---
+
+### Story 23.3: Zone 4 (`Aide Contextuelle`) 100 % Fidèle à la Route, Blocs `DESIGN.md` Restaurés & Suppression de la Plomberie Interne (`REM23-05`)
+
+As a Utilisateur découvrant ORCIA sur `/cockpit`, `/assistant` ou les écrans métiers (`Sally`),
+I want supprimer l'écrasement global `GENERAL_SECTIONS_FR` dans `ShellContextualHelpColumn.tsx:L71` (et le `catch {}` muet + init optimiste `["BASE","PACK","WORKSPACE"]`), étendre `contextual_help_loader.py` & `HelpArticleSchemaItem` (`real_example_text`, `common_pitfalls_items`) pour rendre nativement les `4` blocs prescrits par `DESIGN.md` (`À quoi sert cet écran`, `EN N GESTES`, encadré ambre `UN EXEMPLE RÉEL`, `CE QUI COINCE SOUVENT`), scinder `ContextualHelpColumnAndCenter.tsx` (`394` L), masquer la plomberie `@version` / `Sources du guide` aux non-admins et ajouter un indicateur visuel de scroll sur `FourZoneHelpAsideColumn.tsx`,
+So that Zone 4 n'affiche plus jamais de fiches Cockpit sur `/assistant` ni de métadonnées internes brutes et présente l'aide structurée attendue par `DESIGN.md`.
+
+**Dépendances :** Vague 0 (`Story 23.1`, `Story 23.2`).
+**CAP couvertes :** `CAP-064`, `CAP-068`.
+**Fichiers impactés :** `packages/orcia-core/src/orcia_core/catalog/contextual_help_loader.py`, `docs/help/{fr,en}/*.md`, `apps/api/src/orcia_api/schemas/catalog.py`, `apps/api/src/orcia_api/routers/portal_and_help.py`, `packages/api-client`, `apps/web/src/components/{ShellContextualHelpColumn,contextualHelpCatalog,_contextualHelpSections}.ts*`, `packages/ui/src/primitives/{ContextualHelpColumnAndCenter,FourZoneHelpAsideColumn}.tsx`.
+**Rapport Tech Lead :** `docs/implementation-artifacts/tech-lead-reports/23-3-zone-4-aide-contextuelle-fidele-a-la-route-et-4-blocs-design-md-tech-lead-report.md`.
+
+**Acceptance Criteria:**
+
+**Given** un utilisateur naviguant vers `/assistant` puis `/cockpit` avec le panneau Zone 4 ouvert
+**When** `/api/v1/help/resolve` retourne le guide Markdown de la route active
+**Then** Zone 4 affiche exclusivement les sections de la route active (zéro carte `"Le Cockpit regroupe..."` sur `/assistant`, zéro incohérence avec `Polyvalent · Standard`), rend nativement `À quoi sert cet écran`, `EN N GESTES`, l'encadré ambre `UN EXEMPLE RÉEL` et `CE QUI COINCE SOUVENT`, masque `@version` / `Sources du guide : BASE...` hors tiroir technique admin, loge proprement toute erreur réseau sans `catch {}` silencieux, et affiche un repère de défilement si le contenu excède la hauteur.
+
+---
+
+### Story 23.4: Unification `Accostage X/6` PG18, Suppression des Fantômes Jour 0 (`AP`, `Notifications 4`) & Ergonomie Modale Premier Admin (`REM23-06`, `REM23-07`, `REM23-08`)
+
+As a Premier Administrateur amorçant ORCIA au Jour 0 (`Sally` × `Winston`),
+I want supprimer le split-brain backend (`{"first-admin"}` en dur dans `progressive_accostage.py:L146`) vs frontend (`/5` sans `adminCreated` dans `platformSetupStore.tsx`, `521` L à scinder) pour aligner toute la pile sur une source PG18 unique **`Accostage X/6`** (incluant `workspace_llm_tier_mappings`), supprimer le profil fantôme `AP` et `Notifications 4` lorsque `platformAdmin === null` (`0` utilisateur en base), homogénéiser les entrées verrouillées au Jour 0 tout en purgeant les `5` props mortes de `ShellContainer.tsx` (`403` L), et corriger `FirstBootAdminSetupModal.tsx` (zéro double `Annuler (Esc)`, placeholder vide + bouton œil, hiérarchie CTA `#2563EB`),
+So that le parcours Jour 0 soit fidèle à la réalité PostgreSQL 18 sans identité fantôme, sans compteur dupliqué ni troncature, et doté d'une modale de premier démarrage irréprochable.
+
+**Dépendances :** Vague 0 (`Story 23.1`, `Story 23.2`).
+**CAP couvertes :** `CAP-005`, `CAP-060`, `CAP-061`.
+**Fichiers impactés :** `packages/orcia-core/src/orcia_core/bootstrap/progressive_accostage.py`, `apps/web/src/components/{platformSetupStore,platformSetupAccostage,platformSetupHydration,ShellContainer,shellPresets,shellScopeOptions,FirstBootAdminSetupModal}.ts*`, `apps/web/src/features/cockpit/index.tsx`, `packages/ui/src/primitives/{ProgressiveDay0AccostageBanner,FourZoneSidebarRail,RadixDesignSystemPrimitives}.tsx`, `apps/web/src/i18n/locales/{fr,en}.ts`, `apps/web/e2e/shell.spec.ts`.
+**Rapport Tech Lead :** `docs/implementation-artifacts/tech-lead-reports/23-4-unification-accostage-x-sur-6-fin-fantomes-jour0-et-modale-admin-tech-lead-report.md`.
+
+**Acceptance Criteria:**
+
+**Given** une plateforme fraîchement réinitialisée au Jour 0 (`0` utilisateur dans `users`)
+**When** la SPA démarre et affiche la modale obligatoire `FirstBootAdminSetupModal`
+**Then** aucun profil fantôme `AP` ni compteur `Notifications 4` n'apparaît dans la coquille, les entrées verrouillées portent un état désactivé uniforme et explicite (tout en respectant la garde RBAC de `Configuration` vérifiée par `shell.spec.ts`), la modale ne comporte ni double bouton `Annuler (Esc)` ni points noirs `••••••••••••` pré-remplis, dispose d'un bouton œil et d'un CTA primaire `#2563EB` net, et après création du premier admin + `F5`, un unique badge **`Accostage 1/6`** (puis `2/6` après modèle IA dans `workspace_llm_tier_mappings`) s'affiche sans doublon `1. Modèles IA` ni libellé tronqué.
+
+---
+
+### Story 23.5: Sobriété Cockpit (`<= 3` Blocs), `TopHeaderBar` Sans Doublon/Troncatures, Logo Zone 1, Épuration `/assistant` & `/login` et Preuves `#10` (`REM23-09`..`REM23-12`)
+
+As a Utilisateur quotidien d'ORCIA sur Desktop (`1440×900`) & Auditeur UX (`Sally`),
+I want ramener `/cockpit` à **`<= 3` blocs visuels** (montage conditionnel de `CockpitHumanLedGovernanceSection` lorsqu'une décision/run le requiert), supprimer `topbar-fixed-workspace-selector` dupliqué sur Desktop `>= 768px`, déplacer le logo `ORCIA` en tête de Zone 1 (`DESIGN.md` §2.1), inclure l'équipe dans `buildShellBreadcrumbItems`, raccourcir le placeholder de recherche à `Rechercher… (⌘K)`, doter le loader initial et `/login` du logo ORCIA + bouton œil, exclure `/assistant` (`inbox`) de la carte d'en-tête `ModuleWorkspaceView`, masquer les compteurs `(0)` (avec mise à jour `02-assistant.spec.ts`), unifier `orcia-ds-btn` + contraste `➤`, remplacer `"embedding"` par `"indexation sémantique"` dans `fr.ts`, et ajouter des captures intermédiaires sur `HumanLedAnchorCard`/`ArbitrationTieBreakCard` dans `03-human-led-anchor-and-arbitration.spec.ts`,
+So that l'écran principal respecte la Loi de Hick sans aucune troncature à `1440px`, l'espace `/assistant` soit épuré de tout jargon et les cartes identitaires `#6D28D9`/`#D97706` soient auditables visuellement.
+
+**Dépendances :** Vague 0 (`Story 23.1`, `Story 23.2`).
+**CAP couvertes :** `CAP-001`, `CAP-023`, `CAP-041`, `CAP-062`, `CAP-070`, `CAP-072`, `CAP-073`, `CAP-190`.
+**Fichiers impactés :** `apps/web/src/features/cockpit/{index,CockpitRunsSection,CockpitHumanLedGovernanceSection}.tsx`, `packages/ui/src/primitives/{StreamlinedCockpitView,FourZoneTopHeaderSection,FourZoneSidebarRail,BiModeLoginView,AssistantSpeedSelectorAndStreamView}.tsx`, `apps/web/src/components/{shellPresets,ShellAuthFallbackView,ModuleWorkspaceView}.ts*`, `apps/web/src/features/inbox/{index,SavedConversationsAndThreadView}.tsx`, `apps/web/src/i18n/locales/fr.ts`, `apps/web/e2e/{02-assistant-streaming-and-folders,03-human-led-anchor-and-arbitration}.spec.ts`.
+**Rapport Tech Lead :** `docs/implementation-artifacts/tech-lead-reports/23-5-sobriete-cockpit-topbar-sans-doublon-assistant-et-login-tech-lead-report.md`.
+
+**Acceptance Criteria:**
+
+**Given** un utilisateur connecté naviguant sur `/cockpit`, `/assistant` et `/login` en résolution Desktop `1440×900`
+**When** les composants Direction C mis à jour sont rendus
+**Then** `/cockpit` présente au plus `3` blocs visuels distincts sans montage à vide au bas de la page, la `TopHeaderBar` ne contient plus `topbar-fixed-workspace-selector` ni aucune troncature sur le fil d'Ariane ou la recherche `Rechercher… (⌘K)`, le logo `ORCIA` figure en tête de Zone 1 et sur `/login` (avec bouton œil), `/assistant` n'affiche ni double carte d'en-tête ni compteur `(0)` ni terme `"embedding"` (sélecteurs `02-assistant.spec.ts` synchronisés), et `03-human-led-anchor-and-arbitration.spec.ts` attache les captures de preuve de `HumanLedAnchorCard` (`#6D28D9`) et `ArbitrationTieBreakCard` (`#D97706`).
+
+---
+
+### Story 23.6: Campagne Playwright E2E Intégrale Epic 23 (`110/110` Desktop + Mobile Companion `390×844`), Audit Visuel Sally & Promotion `62/62` `runtime` (`REM23-13` / `ARCH23-10`)
+
+As a Architecte (`Winston`), UX Designer (`Sally`) & Product Owner,
+I want exécuter l'intégralité de la campagne Playwright E2E (`24` specs, `110` scénarios Desktop `1440×900` + Mobile Companion `390×844`, `--retries=0 --max-failures=0 --timeout=35000`, sans `ORCIA_E2E_SEED_FIXTURES`) dans `docs/implementation-artifacts/e2e-campaign-epic-23/` une fois les Vagues 0 & 1 clôturées, corriger tout défaut résiduel éventuel découvert sur les écrans `04`–`21` ou Mobile Companion jusque-là masqués, réaliser l'audit visuel complet Sally sur `100 %` des captures (`mobile-companion` inclus), basculer `PLAYWRIGHT_RESULTS_PATH` dans `infra/scripts/uj_e2e_coverage.py` et promouvoir les `62/62` capacités `feature` à `verification: runtime` dans `docs/product/capabilities.yaml`,
+So that 100 % des User Journeys (`UJ-1`..`UJ-20`) et capacités (`CAP-001`..`CAP-203`) disposent d'une preuve E2E PostgreSQL 18 et visuelle complète Desktop + Mobile (`P0-UX-2`, `AD-17`).
+
+**Dépendances :** Clôture complète de `Stories 23.1`..`23.5` (Vague 0 + Vague 1). Clôture l'Epic 23.
+**CAP couvertes :** `CAP-002`, `CAP-010`, `CAP-042`, `CAP-043`, `CAP-050`, `CAP-051`, `CAP-052`, `CAP-053`, `CAP-055`, `CAP-056`, `CAP-057`, `CAP-058`, `CAP-063`, `CAP-066`, `CAP-067`, `CAP-069`, `CAP-076`, `CAP-080`, `CAP-081`, `CAP-083`, `CAP-084`, `CAP-090`, `CAP-091`, `CAP-092`, `CAP-150`, `CAP-180`, `CAP-203` (et validation globale des `62` `feature` + `3` `foundation`).
+**Fichiers impactés :** `docs/implementation-artifacts/e2e-campaign-epic-23/{playwright-results.json,manifest.jsonl,screenshots/**/*.png,bilan-execution-tests-e2e-epic-23.md,notes-audit-*.md}`, `infra/scripts/uj_e2e_coverage.py`, `docs/product/capabilities.yaml`, correctifs résiduels `04`–`21` / Mobile si mis au jour.
+**Rapport Tech Lead :** `docs/implementation-artifacts/tech-lead-reports/23-6-campagne-e2e-integrale-mobile-companion-audit-et-62-capacites-runtime-tech-lead-report.md`.
+
+**Acceptance Criteria:**
+
+**Given** les Vagues 0 & 1 (`Stories 23.1`..`23.5`) passées au vert sur la pyramide locale `AD-17`
+**When** la campagne Playwright intégrale (`24` specs, `110` scénarios Desktop + Mobile Companion, `--retries=0 --max-failures=0 --timeout=35000`, `0` `ORCIA_E2E_SEED_FIXTURES`) est exécutée vers `docs/implementation-artifacts/e2e-campaign-epic-23/`
+**Then** **`97 / 97` scénarios exécutés sont `PASS`** (`0` `failed`, `0` `timedOut`, `13` `skipped` viewport attendus), l'intégralité des `55` scénarios `mobile-companion` (`390×844`) et des écrans `04`–`21` est inspectée visuellement sans défaut bloquant par Sally (et tout artefact `< 450 KB`), `PLAYWRIGHT_RESULTS_PATH` pointe vers `e2e-campaign-epic-23/playwright-results.json`, toutes les `62 / 62` capacités `feature` + `3 / 3` `foundation` passent à `verification: runtime` sans aucun `e2e_remediation_ref` résiduel, et `pnpm site:sync && pnpm site:check` ainsi que les `5` couches `AD-17` passent à `0` erreur.

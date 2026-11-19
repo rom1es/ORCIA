@@ -6,7 +6,7 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-18",
+  "lastSyncedDate": "2026-11-19",
   "stats": {
     "activeRoutesCount": 28,
     "uiPrimitivesCount": 133,
@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 54,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 184,
+    "techLeadReportsCount": 190,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 3,
@@ -533,11 +533,53 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   ],
   "techLeadReports": [
     {
-      "date": "2026-11-18",
+      "date": "2026-11-19",
+      "phaseOrStory": "Story 23.6",
+      "reportFile": "23-6-campagne-e2e-integrale-mobile-companion-audit-et-62-capacites-runtime-tech-lead-report.md",
+      "domain": "Vague 2 (REM23-13 / ARCH23-10, P0-UX-2) — Campagne E2E Intégrale Epic 23 (110/110 Desktop + Mobile Companion 390×844), Audit Visuel & Promotion 62/62 runtime",
+      "summary": "Pré-implémentation (ready-for-dev) : campagne complète sans retry ni fixtures cachées (97/97 exécutés PASS, 0 failed), levée angle mort 0/55 Mobile Companion & specs 04–21, audit visuel Sally complet, bascule PLAYWRIGHT_RESULTS_PATH, passage 62/62 feature à runtime dans capabilities.yaml et pnpm site:sync && pnpm site:check."
+    },
+    {
+      "date": "2026-11-19",
+      "phaseOrStory": "Story 23.5",
+      "reportFile": "23-5-sobriete-cockpit-topbar-sans-doublon-assistant-et-login-tech-lead-report.md",
+      "domain": "Vague 1 (REM23-09..12 / ARCH23-06..09, P1-UX-3, P2-UX-8..11, P3-UX-12) — Cockpit <= 3 Blocs, TopHeaderBar Sans Doublon, /assistant, /login & Preuves #10",
+      "summary": "Pré-implémentation (ready-for-dev) : réduction Cockpit à <= 3 blocs visuels (montage conditionnel CockpitHumanLedGovernanceSection), retrait topbar-fixed-workspace-selector Desktop, logo ORCIA Zone 1 + Breadcrumb complet, enrichissement Loader & /login (logo + œil), exclusion en-tête /assistant + retrait (0) + purge embedding, et captures intermédiaires HumanLedAnchorCard/ArbitrationTieBreakCard."
+    },
+    {
+      "date": "2026-11-19",
+      "phaseOrStory": "Story 23.4",
+      "reportFile": "23-4-unification-accostage-x-sur-6-fin-fantomes-jour0-et-modale-admin-tech-lead-report.md",
+      "domain": "Vague 1 (REM23-06..08 / ARCH23-05, P1-UX-4,6,7) — Unification Accostage X/6 PG18, Suppression Fantômes Jour 0 (AP, Notifications 4) & Modale Admin",
+      "summary": "Pré-implémentation (ready-for-dev) : source unique PG18 Accostage X/6 (progressive_accostage.py sans hardcode {\"first-admin\"} + workspace_llm_tier_mappings), découpage platformSetupStore.tsx (521 L) & ShellContainer.tsx (403 L, 5 props mortes), suppression AP et Notifications 4 à 0 utilisateur, et épuration FirstBootAdminSetupModal (zéro double Annuler (Esc), champ vide + œil, CTA Cobalt)."
+    },
+    {
+      "date": "2026-11-19",
+      "phaseOrStory": "Story 23.3",
+      "reportFile": "23-3-zone-4-aide-contextuelle-fidele-a-la-route-et-4-blocs-design-md-tech-lead-report.md",
+      "domain": "Vague 1 (REM23-05 / ARCH23-04, P1-UX-5, P2-UX-8) — Zone 4 Aide Contextuelle Fidèle à la Route, 4 Blocs DESIGN.md & Fin de Plomberie Interne",
+      "summary": "Pré-implémentation (ready-for-dev) : suppression GENERAL_SECTIONS_FR/EN et écrasement ShellContextualHelpColumn.tsx:L71, extraction DTO real_example_text & common_pitfalls_items, découpage ContextualHelpColumnAndCenter.tsx (394 L) avec 4 blocs visibles + encadré ambre, masquage @version/BASE → PACK hors admin et indicateur de scroll."
+    },
+    {
+      "date": "2026-11-19",
+      "phaseOrStory": "Story 23.2",
+      "reportFile": "23-2-transport-sse-authentifie-createrequestsse-smoke-00-et-diagnostic-401-tech-lead-report.md",
+      "domain": "Vague 0 (REM23-02..04 / ARCH23-02..03, P0-UX-1) — Transport SSE Authentifié createRequestSse, Smoke 00 (#3/#4) & Diagnostic 401 Session Expirée",
+      "summary": "Pré-implémentation (ready-for-dev) : découpage bootstrapAndOntology.ts (472 L), factorisation createRequestSse (Bearer + RFC 9457 + refresh 401) pour /assistant/three-speed/stream, /trace-stream et /events/stream (protégé resolve_request_user), alerte critique 401 Se reconnecter → (sans accuser le LLM) et alignement *fail-closed* 00-stack-smoke #3/#4."
+    },
+    {
+      "date": "2026-11-19",
+      "phaseOrStory": "Story 23.1",
+      "reportFile": "23-1-reset-jour0-e2e-truncate-cascade-connector-schemes-et-redis-tech-lead-report.md",
+      "domain": "Vague 0 (REM23-01 / ARCH23-01) — Déblocage resetDay0() (TRUNCATE CASCADE E2E isolé orcia_e2e), Protection connector_schemes & Purge Redis FLUSHDB",
+      "summary": "Pré-implémentation (ready-for-dev) : protection connector_schemes dans 09_reset_db_first_boot.py sans affaiblir les triggers append-only, TRUNCATE ... RESTART IDENTITY CASCADE strictement gardé dans reset_day0.py + FLUSHDB Redis + test testcontainers PG18/Redis (débloque les 87 échecs cascade #11–teinte-110)."
+    },
+    {
+      "date": "2026-11-19",
       "phaseOrStory": "Story 22.10",
       "reportFile": "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23-tech-lead-report.md",
-      "domain": "Clôture Epic 22 — Rapports Tech Lead Individuels (23-1..23-N), Plan de Correction Global & Initialisation Complète de l'Epic 23",
-      "summary": "Pré-implémentation : analyse d'impact GitNexus (repo: \"ORCIA\"), rapports Tech Lead pré-implémentation 23-1..23-N pour chaque lot couvrant les tests E2E en échec et points d'amélioration Sally × Winston, sprint-change-proposal-2026-11-18-epic-23-remediation-plan.md, initialisation Epic 23 dans epics.md/sprint-status.yaml/capabilities.yaml et suite test_epic22_to_epic23_traceability.py."
+      "domain": "Clôture Epic 22 — Rapports Tech Lead Individuels (23-1..23-6), Plan de Correction Global & Initialisation Complète de l'Epic 23",
+      "summary": "Clôture (done, epic-22: done) : analyse d'impact GitNexus (repo: \"ORCIA\"), 6 rapports Tech Lead pré-implémentation 23-1..23-6, plan directeur sprint-change-proposal-2026-11-18-epic-23-remediation-plan.md, initialisation Epic 23 dans epics.md/sprint-status.yaml/capabilities.yaml (62/62 failed_e2e -> 23-1..23-6), test_epic22_to_epic23_traceability.py (5/5 + 32/32 traçabilité/registre), pyramide AD-17 complète (763 unit + 137 contract/conformance/evals/security + 104 intégration PG18 = 1 004 Python, 92.31 % couv. packages/orcia-core), 9/9 Turbo (313/313 JS/TS), ruff/mypy --strict/lint-imports (5/5)/export_openapi (0-diff)/lint_spine (0 finding), check_implementation_docs.py (190/190) et pnpm site:sync && pnpm site:check (0 erreur)."
     },
     {
       "date": "2026-11-19",
