@@ -169,6 +169,10 @@ def get_studio_and_pack_service(request: Request) -> WorkflowStudioAndPackServic
 
 def get_durable_wizard_service(request: Request) -> DurableOnboardingWizardService:
     """FastAPI `Depends` provider returning `DurableOnboardingWizardService`."""
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
+    from orcia_core.bootstrap import SqlWizardSessionRepository
+
+    engine = get_configured_db_engine(request)
     svc: DurableOnboardingWizardService | None = getattr(
         request.app.state, "durable_wizard_service", None
     )
@@ -176,6 +180,8 @@ def get_durable_wizard_service(request: Request) -> DurableOnboardingWizardServi
         initialize_app_services(request.app)
         svc = request.app.state.durable_wizard_service
     assert svc is not None
+    if engine is not None and getattr(svc, "_repository", None) is None:
+        svc.set_repository(SqlWizardSessionRepository(engine))
     return svc
 
 

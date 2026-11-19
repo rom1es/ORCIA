@@ -1,52 +1,134 @@
-import React, { useState } from "react";
-import { useI18n } from "../../../i18n";
 import {
-  INITIAL_DECLARATIVE_PACKS,
-  type DeclarativePackItem,
-} from "../../processes/processStudioV2Data";
+  createOrciaApiClient,
+  OrciaProblemError,
+  type DeclarativePackSummaryResponse,
+} from "@orcia/api-client";
+import { OrciaAlertBanner } from "@orcia/ui";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { usePlatformSetup } from "../../../components/platformSetupStore";
+import { useI18n } from "../../../i18n";
+import { useAuthSessionStore } from "../../../stores/authSessionStore";
 import { ProcessStudioAndPackAuthoringSection } from "../../processes/ProcessStudioAndPackAuthoringSection";
+
+function formatPackApiError(err: unknown, fallback: string): string {
+  if (err instanceof OrciaProblemError) {
+    return `${err.problem.detail} (${err.problem.error_code})`;
+  }
+  if (err instanceof Error && err.message.trim()) {
+    return err.message;
+  }
+  return fallback;
+}
 
 export function PacksRegistryPage() {
   const { locale } = useI18n();
   const isFr = locale === "fr";
-  const [packs, setPacks] = useState<DeclarativePackItem[]>(INITIAL_DECLARATIVE_PACKS);
+  const accessToken = useAuthSessionStore((s) => s.accessToken);
+  const { workspaces } = usePlatformSetup();
+  const apiClient = useMemo(
+    () => createOrciaApiClient({ baseUrl: "", locale }),
+    [locale],
+  );
+
+  const [packs, setPacks] = useState<readonly DeclarativePackSummaryResponse[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("ws-mon-compte");
   const [selectedPackId, setSelectedPackId] = useState<string>("orcia-pack-sdlc");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [exportedArchiveName, setExportedArchiveName] = useState<string | null>(null);
 
+  const loadPacksFromServer = useCallback(
+    async (withHealthBanner = false) => {
+      setIsLoading(true);
+      setErrorMessage(null);
+      try {
+        const res = await apiClient.listDeclarativePacks();
+        setPacks(res.packs);
+        const firstPack = res.packs[0];
+        if (firstPack && !res.packs.some((p) => p.id === selectedPackId)) {
+          setSelectedPackId(firstPack.id);
+        }
+        if (withHealthBanner) {
+          setStatusMessage(
+            isFr
+              ? "Diagnostics de santé MCP (Jira, Confluence, Git) actualisés : 100 % des connecteurs requis sont opérationnels."
+              : "MCP connector healthchecks (Jira, Confluence, Git) refreshed: 100% of required connectors are healthy.",
+          );
+        }
+      } catch (err: unknown) {
+        setErrorMessage(
+          formatPackApiError(
+            err,
+            isFr
+              ? "Impossible de charger le registre des packs déclaratifs."
+              : "Unable to load the declarative packs registry.",
+          ),
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [apiClient, isFr, selectedPackId],
+  );
+
+  useEffect(() => {
+    void loadPacksFromServer(false);
+  }, [accessToken, loadPacksFromServer]);
+
   const handleRefreshHealthchecks = () => {
-    setPacks((prev) =>
-      prev.map((pack) => ({
-        ...pack,
-        connector_health: pack.connector_health.map((item) => ({
-          ...item,
-          health: {
-            ...item.health,
-            ok: true,
-            latency_ms: Math.max(8, (item.health.latency_ms % 20) + 1),
-          },
-        })),
-      })),
-    );
-    setStatusMessage(
-      isFr
-        ? "Diagnostics de santé MCP (Jira, Confluence, Git) actualisés : 100 % des connecteurs requis sont opérationnels."
-        : "MCP connector healthchecks (Jira, Confluence, Git) refreshed: 100% of required connectors are healthy.",
-    );
+    void loadPacksFromServer(true);
   };
 
-  const handleExportWorkspaceZip = (packId?: string) => {
+  const handleExportWorkspaceZip = async (packId?: string) => {
     const targetPackId = packId ?? selectedPackId;
     const pack = packs.find((p) => p.id === targetPackId) ?? packs[0];
-    const archiveName = `${pack?.slug ?? "sdlc"}-${selectedWorkspaceId}.zip`;
-    setExportedArchiveName(archiveName);
-    setStatusMessage(
-      isFr
-        ? `Archive déclarative ${archiveName} générée (pack.yaml, glossary.yaml, agents/*.md, skills/*.md, gates/*, workflows/*.yaml — 0 code exécutable).`
-        : `Declarative archive ${archiveName} generated (pack.yaml, glossary.yaml, agents/*.md, skills/*.md, gates/*, workflows/*.yaml — 0 executable code).`,
-    );
+    setErrorMessage(null);
+    try {
+      const result = await apiClient.exportWorkspacePackZip(
+        selectedWorkspaceId,
+        targetPackId,
+      );
+      const archiveName =
+        result.filename ?? `${pack?.slug ?? "sdlc"}-${selectedWorkspaceId}.zip`;
+      setExportedArchiveName(archiveName);
+      setStatusMessage(
+        isFr
+          ? `Archive déclarative ${archiveName} générée (pack.yaml, glossary.yaml, agents/*.md, skills/*.md, gates/*, workflows/*.yaml — 0 code exécutable).`
+          : `Declarative archive ${archiveName} generated (pack.yaml, glossary.yaml, agents/*.md, skills/*.md, gates/*, workflows/*.yaml — 0 executable code).`,
+      );
+      if (typeof URL !== "undefined" && typeof URL.createObjectURL === "function") {
+        const objectUrl = URL.createObjectURL(result.blob);
+        const link = document.createElement("a");
+        link.href = objectUrl;
+        link.download = archiveName;
+        link.click();
+        URL.revokeObjectURL(objectUrl);
+      }
+    } catch (err: unknown) {
+      setErrorMessage(
+        formatPackApiError(
+          err,
+          isFr
+            ? "Échec de l'export ZIP du pack déclaratif."
+            : "Failed to export declarative pack ZIP.",
+        ),
+      );
+    }
   };
+
+  const workspaceOptions = useMemo(() => {
+    const defaults = [
+      { id: "ws-mon-compte", label: "Espace : Mon Compte (SDLC)" },
+      { id: "ws-orcia-platform", label: "Espace : Plateforme ORCIA" },
+    ];
+    const fromSetup = workspaces.map((ws) => ({
+      id: ws.workspaceId,
+      label: `Espace : ${ws.name}`,
+    }));
+    const seen = new Set(fromSetup.map((item) => item.id));
+    return [...fromSetup, ...defaults.filter((item) => !seen.has(item.id))];
+  }, [workspaces]);
 
   return (
     <section
@@ -92,6 +174,7 @@ export function PacksRegistryPage() {
             type="button"
             data-testid="refresh-pack-connectors-health-btn"
             onClick={handleRefreshHealthchecks}
+            disabled={isLoading}
             className="orcia-ds-btn-secondary"
           >
             {isFr ? "🔄 Tester les connecteurs MCP" : "🔄 Check MCP Connectors"}
@@ -104,20 +187,29 @@ export function PacksRegistryPage() {
             onChange={(e) => setSelectedWorkspaceId(e.target.value)}
             className="orcia-ds-select"
           >
-            <option value="ws-mon-compte">Espace : Mon Compte (SDLC)</option>
-            <option value="ws-orcia-platform">Espace : Plateforme ORCIA</option>
+            {workspaceOptions.map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.label}
+              </option>
+            ))}
           </select>
 
           <button
             type="button"
             data-testid="export-workspace-pack-zip-btn"
-            onClick={() => handleExportWorkspaceZip(selectedPackId)}
+            onClick={() => void handleExportWorkspaceZip(selectedPackId)}
             className="orcia-ds-btn-primary"
           >
             {isFr ? "📦 Exporter un espace en Pack (.zip)" : "📦 Export Workspace as Pack (.zip)"}
           </button>
         </div>
       </div>
+
+      {errorMessage ? (
+        <OrciaAlertBanner tone="crimson" role="alert" testId="packs-registry-error-banner">
+          {errorMessage}
+        </OrciaAlertBanner>
+      ) : null}
 
       {statusMessage ? (
         <div
@@ -186,7 +278,6 @@ export function PacksRegistryPage() {
               {pack.description}
             </p>
 
-            {/* Object Counters */}
             <div
               data-testid={`pack-counters-${pack.slug}`}
               style={{
@@ -218,14 +309,13 @@ export function PacksRegistryPage() {
               ))}
             </div>
 
-            {/* Required Connectors Health */}
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               <strong style={{ fontSize: "12px", color: "var(--color-text-primary)" }}>
                 {isFr
                   ? "Connecteurs requis (packages/orcia-connectors) :"
                   : "Required Connectors (packages/orcia-connectors):"}
               </strong>
-              {pack.connector_health.map((conn) => (
+              {(pack.connector_health ?? []).map((conn) => (
                 <div
                   key={conn.connector_type}
                   data-testid={`pack-${pack.slug}-connector-${conn.connector_type}`}
@@ -240,7 +330,7 @@ export function PacksRegistryPage() {
                       {conn.connector_type}
                     </span>
                     <span style={{ marginLeft: "6px", color: "var(--color-text-secondary)" }}>
-                      ({conn.required_scopes.join(", ")})
+                      ({(conn.required_scopes ?? []).join(", ")})
                     </span>
                     <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
                       {conn.used_for}
@@ -267,14 +357,14 @@ export function PacksRegistryPage() {
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
               <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
-                Agents : {pack.agents_slugs.join(", ")}
+                Agents : {(pack.agents_slugs ?? []).join(", ")}
               </div>
               <button
                 type="button"
                 data-testid={`export-pack-${pack.slug}-zip-btn`}
                 onClick={() => {
                   setSelectedPackId(pack.id);
-                  handleExportWorkspaceZip(pack.id);
+                  void handleExportWorkspaceZip(pack.id);
                 }}
                 className="orcia-ds-btn-secondary"
               >

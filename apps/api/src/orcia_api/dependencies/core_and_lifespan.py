@@ -35,8 +35,10 @@ from orcia_api.dependencies._core_providers import should_auto_init_infra
 from orcia_core.bootstrap import (
     DurableOnboardingWizardService,
     LiteLLMAdapter,
+    SqlWizardSessionRepository,
     build_default_system_bootstrap_service,
     build_litellm_gateway_plugin,
+    upsert_declarative_pack_bundles_sql,
 )
 from orcia_core.catalog import (
     build_default_federated_catalog_service,
@@ -309,7 +311,9 @@ def initialize_app_services(app: FastAPI) -> None:
         app.state.studio_and_pack_service = WorkflowStudioAndPackService()
 
     if getattr(app.state, "durable_wizard_service", None) is None:
-        app.state.durable_wizard_service = DurableOnboardingWizardService()
+        wiz_engine = getattr(app.state, "db_engine", None)
+        wiz_repo = SqlWizardSessionRepository(wiz_engine) if wiz_engine is not None else None
+        app.state.durable_wizard_service = DurableOnboardingWizardService(repository=wiz_repo)
 
     if getattr(app.state, "audit_ledger_service", None) is None:
         from orcia_core.audit_finops import SqlAuditLedgerService
@@ -381,6 +385,9 @@ def initialize_app_services(app: FastAPI) -> None:
                 app.state.gate_repository = gate_repo
                 if getattr(app.state, "bootstrap_service", None) is not None:
                     app.state.bootstrap_service.gate_service.set_repository(gate_repo)
+            wiz_svc = getattr(app.state, "durable_wizard_service", None)
+            if wiz_svc is not None and getattr(wiz_svc, "_repository", None) is None:
+                wiz_svc.set_repository(SqlWizardSessionRepository(db_engine))
             from orcia_core.audit_finops import BudgetGuardService
 
             cog_router = getattr(app.state, "cognitive_router_service", None)
@@ -422,6 +429,20 @@ async def app_lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     initialize_app_services(app)
     db_engine = getattr(app.state, "db_engine", None)
+    if db_engine is not None:
+        try:
+            from orcia_core.packs.loader import DeclarativePackLoader, resolve_default_packs_root
+
+            pack_bundles = DeclarativePackLoader(resolve_default_packs_root()).load_all_packs()
+            app.state.declarative_pack_bundles = pack_bundles
+            await upsert_declarative_pack_bundles_sql(db_engine, pack_bundles)
+        except Exception as exc:
+            from orcia_core.observability.logging import get_logger
+
+            get_logger("orcia.api.lifespan").warning(
+                "lifespan_declarative_packs_pg_sync_skipped",
+                error_type=type(exc).__name__,
+            )
     if db_engine is not None and getattr(app.state, "dbos_datasource", None) is None:
         try:
             from orcia_core.config import resolve_database_url

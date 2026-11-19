@@ -190,6 +190,16 @@ class PackExporter:
         return buf.getvalue()
 
 
+def resolve_default_packs_root() -> Path:
+    """Locate the monorepo `packs/` directory containing declarative pack bundles."""
+    curr = Path(__file__).resolve()
+    for parent in curr.parents:
+        candidate = parent / "packs"
+        if candidate.exists() and candidate.is_dir() and any(candidate.glob("*/pack.yaml")):
+            return candidate
+    return Path("packs")
+
+
 __all__ = [
     "DeclarativePackLoader",
     "DeclarativePackManifest",
@@ -197,4 +207,5 @@ __all__ = [
     "PackExporter",
     "QuickActionSpec",
     "RequiredConnectorSpec",
+    "resolve_default_packs_root",
 ]

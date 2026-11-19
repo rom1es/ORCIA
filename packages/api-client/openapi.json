@@ -30769,7 +30769,7 @@
       },
       "WizardAdvanceStepRequest": {
         "additionalProperties": false,
-        "description": "Save and advance a step in a durable DBOS wizard (`Story 8.6`).",
+        "description": "Save and advance (or step back) in a durable DBOS wizard (`Story 8.6`, `22.5`).",
         "properties": {
           "actor_persona": {
             "default": "marc",
@@ -30785,6 +30785,11 @@
                 "type": "null"
               }
             ]
+          },
+          "step_back": {
+            "default": false,
+            "title": "Step Back",
+            "type": "boolean"
           },
           "step_index": {
             "default": 1,
@@ -30907,6 +30912,54 @@
           "state_jsonb"
         ],
         "title": "WizardSessionResponse",
+        "type": "object"
+      },
+      "WizardSessionsListResponse": {
+        "additionalProperties": false,
+        "description": "List of durable wizard sessions for the authenticated user (`Story 22.5`).",
+        "properties": {
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/WizardSessionResponse"
+            },
+            "title": "Sessions",
+            "type": "array"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sessions",
+          "trace_id"
+        ],
+        "title": "WizardSessionsListResponse",
+        "type": "object"
+      },
+      "WizardStepBackRequest": {
+        "additionalProperties": false,
+        "description": "Non-destructive step-back in a durable DBOS wizard (`Story 22.5`, `REM-15`).",
+        "properties": {
+          "actor_persona": {
+            "default": "marc",
+            "title": "Actor Persona",
+            "type": "string"
+          },
+          "step_index": {
+            "default": 2,
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Step Index",
+            "type": "integer"
+          },
+          "step_payload": {
+            "additionalProperties": true,
+            "title": "Step Payload",
+            "type": "object"
+          }
+        },
+        "title": "WizardStepBackRequest",
         "type": "object"
       },
       "WorkflowAsCodeDefinitionSchemaItem": {
@@ -54076,7 +54129,7 @@
     },
     "/api/v1/packs": {
       "get": {
-        "description": "Return all declarative packs from `packs/<domain>/` with real-time connector healthchecks.",
+        "description": "Return all declarative packs from `packs/<domain>/` with PG18 sync & healthchecks.",
         "operationId": "list_declarative_packs_api_v1_packs_get",
         "responses": {
           "200": {
@@ -54175,7 +54228,7 @@
     },
     "/api/v1/packs/export/{workspace_id}": {
       "post": {
-        "description": "Export a workspace's active declarative pack into a downloadable `.zip` (`CA-10.2.2`).",
+        "description": "Sync packs to PG18 and export a workspace's declarative pack into `.zip` (`CA-10.2.2`).",
         "operationId": "export_workspace_as_declarative_pack_zip_api_v1_packs_export__workspace_id__post",
         "parameters": [
           {
@@ -63618,6 +63671,136 @@
         ]
       }
     },
+    "/api/v1/wizards": {
+      "get": {
+        "description": "List durable onboarding wizard sessions for the authenticated user (`Story 22.5`).",
+        "operationId": "list_wizard_sessions_endpoint_api_v1_wizards_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WizardSessionsListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "List Wizard Sessions Endpoint",
+        "tags": [
+          "studio-and-wizards"
+        ]
+      }
+    },
     "/api/v1/wizards/demo-workspace": {
       "post": {
         "description": "Provision the Zero Empty-State Demo Workspace (`0` plaintext secrets, `Story 8.6`).",
@@ -63748,7 +63931,7 @@
     },
     "/api/v1/wizards/sessions": {
       "post": {
-        "description": "Start or resume a 5-step durable DBOS onboarding wizard (`Story 8.6`).",
+        "description": "Start or resume a 5-step durable DBOS onboarding wizard (`Story 8.6`, `22.5`).",
         "operationId": "start_or_resume_wizard_endpoint_api_v1_wizards_sessions_post",
         "requestBody": {
           "content": {
@@ -63866,9 +64049,283 @@
         ]
       }
     },
+    "/api/v1/wizards/sessions/{session_id}": {
+      "get": {
+        "description": "Fetch a durable onboarding wizard session by ID (`Story 22.5`).",
+        "operationId": "get_wizard_session_endpoint_api_v1_wizards_sessions__session_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WizardSessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Get Wizard Session Endpoint",
+        "tags": [
+          "studio-and-wizards"
+        ]
+      }
+    },
+    "/api/v1/wizards/sessions/{session_id}/step-back": {
+      "post": {
+        "description": "Step back to the previous wizard step while preserving all entered inputs (`REM-15`).",
+        "operationId": "step_back_wizard_endpoint_api_v1_wizards_sessions__session_id__step_back_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WizardStepBackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WizardSessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "summary": "Step Back Wizard Endpoint",
+        "tags": [
+          "studio-and-wizards"
+        ]
+      }
+    },
     "/api/v1/wizards/sessions/{session_id}/steps": {
       "post": {
-        "description": "Save step state (`SecretRef` only) and advance step in durable DBOS wizard (`Story 8.6`).",
+        "description": "Save step state (`SecretRef` only) and advance or step back (`Story 8.6`, `22.5`).",
         "operationId": "save_wizard_step_endpoint_api_v1_wizards_sessions__session_id__steps_post",
         "parameters": [
           {

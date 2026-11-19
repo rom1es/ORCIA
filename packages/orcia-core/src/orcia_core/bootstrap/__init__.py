@@ -23,6 +23,12 @@ from orcia_core.bootstrap._internal.sql_autonomy_contracts import (
     SqlAutonomyContractRepository,
     persist_autonomous_run_outcome_on_postgres18,
 )
+from orcia_core.bootstrap._internal.sql_declarative_packs import (
+    DeclarativePackBundleRecord,
+    get_declarative_pack_bundle_sql,
+    list_declarative_pack_bundles_sql,
+    upsert_declarative_pack_bundles_sql,
+)
 from orcia_core.bootstrap._internal.sql_enterprise_connectors import (
     UserAccountOrgUnitSummary,
     UserAccountProfileRecord,
@@ -82,6 +88,9 @@ from orcia_core.bootstrap._internal.sql_platform_setup_store import (
     persist_progressive_llm_endpoint_to_postgres18,
     save_platform_setup_state_to_postgres18,
 )
+from orcia_core.bootstrap._internal.sql_wizard_sessions import (
+    SqlWizardSessionRepository,
+)
 from orcia_core.bootstrap._internal.sql_workspace_datasources import (
     create_workspace_datasource_on_postgres18,
     delete_workspace_datasource_on_postgres18,
@@ -100,6 +109,7 @@ from orcia_core.bootstrap.durable_wizards import (
     DemoWorkspaceProvisionResult,
     DurableOnboardingWizardService,
     WizardSessionRecord,
+    WizardSessionRepositoryPort,
     WizardSessionStatus,
     WizardStepDescriptor,
     WizardType,
@@ -222,6 +232,7 @@ __all__ = [
     "BootstrapRunStatus",
     "BootstrapScopeLevel",
     "DemoWorkspaceProvisionResult",
+    "DeclarativePackBundleRecord",
     "DurableOnboardingWizardService",
     "FirstPlatformAdminRecord",
     "HumanProfileArchetypeSeed",
@@ -257,14 +268,19 @@ __all__ = [
     "UserAccountProfileRecord",
     "UserOnboardingState",
     "WizardSessionRecord",
+    "WizardSessionRepositoryPort",
     "WizardSessionStatus",
     "WizardStepDescriptor",
     "WizardType",
     "WorkspaceBootstrapInput",
     "WorkspaceCreationRecord",
     "create_workspace_on_postgres18",
+    "get_declarative_pack_bundle_sql",
+    "list_declarative_pack_bundles_sql",
     "resolve_exact_workspace_slug",
     "SqlAutonomyContractRepository",
+    "SqlWizardSessionRepository",
+    "upsert_declarative_pack_bundles_sql",
     "persist_autonomous_run_outcome_on_postgres18",
     "build_default_system_bootstrap_service",
     "build_litellm_gateway_plugin",

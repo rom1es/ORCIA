@@ -87,6 +87,13 @@ export type InstalledBusinessPackItemResponse =
   components["schemas"]["InstalledBusinessPackItemResponse"];
 export type InstalledBusinessPackListResponse =
   components["schemas"]["InstalledBusinessPackListResponse"];
+export type WizardSessionResponse = components["schemas"]["WizardSessionResponse"];
+export type WizardSessionsListResponse = components["schemas"]["WizardSessionsListResponse"];
+export type WizardSessionRequest = components["schemas"]["WizardSessionRequest"];
+export type WizardAdvanceStepRequest = components["schemas"]["WizardAdvanceStepRequest"];
+export type WizardStepBackRequest = components["schemas"]["WizardStepBackRequest"];
+export type DemoWorkspaceProvisionResponse =
+  components["schemas"]["DemoWorkspaceProvisionResponse"];
 
 export function createBootstrapAndOntologyDomainClient(requestJson: RequestJsonFn) {
   return {
@@ -420,6 +427,46 @@ export function createBootstrapAndOntologyDomainClient(requestJson: RequestJsonF
     },
     listInstalledBusinessPacks(): Promise<InstalledBusinessPackListResponse> {
       return requestJson<InstalledBusinessPackListResponse>("/api/v1/pack-builder/installed-packs");
+    },
+    listWizardSessions(personaKey?: string): Promise<WizardSessionsListResponse> {
+      return requestJson<WizardSessionsListResponse>(
+        `/api/v1/wizards${buildPersonaQuery(personaKey)}`,
+      );
+    },
+    getWizardSession(sessionId: string, personaKey?: string): Promise<WizardSessionResponse> {
+      return requestJson<WizardSessionResponse>(
+        `/api/v1/wizards/sessions/${encodeURIComponent(sessionId)}${buildPersonaQuery(personaKey)}`,
+      );
+    },
+    startOrResumeWizard(payload: WizardSessionRequest): Promise<WizardSessionResponse> {
+      return requestJson<WizardSessionResponse>("/api/v1/wizards/sessions", "POST", payload);
+    },
+    saveWizardStep(
+      sessionId: string,
+      payload: WizardAdvanceStepRequest,
+    ): Promise<WizardSessionResponse> {
+      return requestJson<WizardSessionResponse>(
+        `/api/v1/wizards/sessions/${encodeURIComponent(sessionId)}/steps`,
+        "POST",
+        payload,
+      );
+    },
+    stepBackWizard(
+      sessionId: string,
+      payload: WizardStepBackRequest,
+    ): Promise<WizardSessionResponse> {
+      return requestJson<WizardSessionResponse>(
+        `/api/v1/wizards/sessions/${encodeURIComponent(sessionId)}/step-back`,
+        "POST",
+        payload,
+      );
+    },
+    provisionWizardDemoWorkspace(personaKey?: string): Promise<DemoWorkspaceProvisionResponse> {
+      const qs = personaKey ? `?actor_persona=${encodeURIComponent(personaKey)}` : "";
+      return requestJson<DemoWorkspaceProvisionResponse>(
+        `/api/v1/wizards/demo-workspace${qs}`,
+        "POST",
+      );
     },
   };
 }

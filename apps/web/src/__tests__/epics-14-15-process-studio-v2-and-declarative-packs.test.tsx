@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { resetPersistedWorkflowsV2 } from "../features/processes/processStudioV2Data";
@@ -34,20 +34,26 @@ describe("Epics 14 & 15 — ORCIA Process Studio v2, Interactive VSM & Declarati
     );
 
     expect(screen.getByTestId("packs-registry-v2-page")).toBeDefined();
-    expect(screen.getByTestId("declarative-pack-card-sdlc")).toBeDefined();
-    expect(screen.getByTestId("declarative-pack-card-orcia-docs")).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getByTestId("declarative-pack-card-sdlc")).toBeDefined();
+      expect(screen.getByTestId("declarative-pack-card-orcia-docs")).toBeDefined();
+    });
 
     // Refresh MCP connector healthchecks
     fireEvent.click(screen.getByTestId("refresh-pack-connectors-health-btn"));
-    expect(screen.getByTestId("packs-registry-status-banner").textContent).toContain(
-      "Diagnostics de santé MCP",
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId("packs-registry-status-banner").textContent).toContain(
+        "Diagnostics de santé MCP",
+      );
+    });
 
     // Export workspace as .zip declarative pack
     fireEvent.click(screen.getByTestId("export-workspace-pack-zip-btn"));
-    expect(screen.getByTestId("exported-pack-zip-filename").textContent).toContain(
-      "sdlc-ws-mon-compte.zip",
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId("exported-pack-zip-filename").textContent).toContain(
+        "sdlc-ws-mon-compte.zip",
+      );
+    });
   });
 
   it("TASK-06 & TASK-07: navigates from ProcessesHubPage (/processes) to Interactive 11-Step VSM (/processes/vsm/$vsmId) and inspects the 6-tab StepDetailSheet", async () => {

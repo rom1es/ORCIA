@@ -1,10 +1,10 @@
-"""Durable DBOS Onboarding Wizards (`wizard_sessions`) & Zero Empty-State Demo (`Story 8.6`).
+"""Durable DBOS Onboarding Wizards (`wizard_sessions`) & Demo Workspace (`Story 8.6`, `22.5`).
 
-Implements (`FR-28`, `AD-2`, `AD-16`, `AD-19`, `AD-21`):
+Implements (`FR-28`, `AD-2`, `AD-16`, `AD-19`, `AD-21`, `REM-15`):
 - 3 profile-guided durable DBOS wizards (`sdlc_tech_lead`, `ops_manager`, `secops_admin`)
-- Exact step resumption (`current_step_index` 1..5) after browser closure/reconnection
+- Exact step resumption (`current_step_index` 1..5) and non-destructive `step_back`
 - Strict `SecretRef` storage via `SecretProviderPort` (`0` plaintext secrets in `wizard_sessions`)
-- Per-step fail-fast connectivity/model checks and final RAG reciprocity verification
+- Optional hexagonal `WizardSessionRepositoryPort` (PG18 persistence without SQLAlchemy imports)
 - 1-click Zero Empty-State Demo Workspace provisioning (`0` plaintext secrets)
 """
 
@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 
 from orcia_core.permissions.errors import (
     ObserverModeReadOnlyError,
@@ -133,18 +133,138 @@ class DemoWorkspaceProvisionResult:
     plaintext_secrets_count: int = 0
 
 
+class WizardSessionRepositoryPort(Protocol):
+    """Hexagonal persistence port for durable `wizard_sessions` (`AD-19`)."""
+
+    async def start_or_resume_wizard_async(
+        self,
+        *,
+        user_id: str,
+        wizard_type: WizardType,
+        scope_id: str,
+        total_steps: int,
+    ) -> WizardSessionRecord: ...
+
+    async def get_session_async(self, session_id: str) -> WizardSessionRecord | None: ...
+
+    async def list_sessions_for_user_async(self, user_id: str) -> list[WizardSessionRecord]: ...
+
+    async def save_step_and_advance_async(
+        self,
+        *,
+        session_id: str,
+        current_step_index: int,
+        state_jsonb: dict[str, Any],
+        status: WizardSessionStatus,
+        completed_steps: tuple[int, ...],
+        rag_reciprocity_verified: bool,
+    ) -> WizardSessionRecord | None: ...
+
+    async def update_session_state_async(
+        self,
+        *,
+        session_id: str,
+        state_jsonb: dict[str, Any],
+        status: WizardSessionStatus,
+    ) -> WizardSessionRecord | None: ...
+
+
 class DurableOnboardingWizardService:
     """Service managing durable 5-step DBOS onboarding wizards and Zero Empty-State Demo."""
 
-    def __init__(self, *, secret_provider: SecretProviderPort | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        secret_provider: SecretProviderPort | None = None,
+        repository: WizardSessionRepositoryPort | None = None,
+    ) -> None:
         self._secret_provider: SecretProviderPort = secret_provider or DefaultMemorySecretProvider()
+        self._repository: WizardSessionRepositoryPort | None = repository
         self._sessions_by_id: dict[str, WizardSessionRecord] = {}
         self._session_id_by_workflow_key: dict[str, str] = {}
+
+    def set_repository(self, repository: WizardSessionRepositoryPort | None) -> None:
+        """Attach or replace the PostgreSQL 18 `WizardSessionRepositoryPort`."""
+        self._repository = repository
 
     def get_steps_for_wizard(self, wizard_type: WizardType) -> tuple[WizardStepDescriptor, ...]:
         if wizard_type not in WIZARD_STEPS_BY_TYPE:
             raise ValidationDomainError(detail_override=f"Unknown wizard_type: {wizard_type!r}")
         return WIZARD_STEPS_BY_TYPE[wizard_type]
+
+    def _sanitize_and_store_step(
+        self,
+        user: UserIdentity,
+        session: WizardSessionRecord,
+        *,
+        step_index: int,
+        step_payload: dict[str, Any],
+        secret_input: SecretInputSpec | None,
+        step_back: bool,
+        instance: str | None,
+    ) -> WizardSessionRecord:
+        if step_index < 1 or step_index > session.total_steps:
+            raise ValidationDomainError(
+                detail_override=f"step_index must be between 1 and {session.total_steps}.",
+                instance=instance,
+            )
+
+        sanitized_payload: dict[str, Any] = {}
+        for k, v in step_payload.items():
+            low_k = k.lower()
+            if any(tok in low_k for tok in ("password", "secret", "api_key", "private_key")):
+                raise ValidationDomainError(
+                    detail_override=(
+                        f"Plaintext secret key '{k}' is forbidden in wizard state_jsonb; "
+                        "use secret_input (SecretProviderPort)."
+                    ),
+                    instance=instance,
+                )
+            sanitized_payload[k] = v
+
+        if secret_input is not None and secret_input.action == "set":
+            assert secret_input.plaintext_value is not None
+            sec_ref = SecretRef(
+                uri=f"secret://wizards/{session.id}/step-{step_index}",
+                workspace_id=session.scope_id,
+            )
+            self._secret_provider.store_secret(
+                sec_ref, secret_input.plaintext_value, actor_id=user.id
+            )
+            sanitized_payload["secret_ref_uri"] = sec_ref.uri
+
+        merged_state = dict(session.state_jsonb)
+        if step_back:
+            if sanitized_payload:
+                existing_step = merged_state.get(f"step_{step_index}")
+                base_step = dict(existing_step) if isinstance(existing_step, dict) else {}
+                merged_state[f"step_{step_index}"] = {**base_step, **sanitized_payload}
+            prev_step = max(1, step_index - 1)
+            return replace(
+                session,
+                current_step_index=prev_step,
+                state_jsonb=merged_state,
+                status="IN_PROGRESS",
+                updated_at_iso=_now_iso(),
+            )
+
+        merged_state[f"step_{step_index}"] = {
+            **sanitized_payload,
+            "fail_fast_verified": True,
+        }
+        completed = tuple(sorted({*session.completed_steps, step_index}))
+        is_final = step_index >= session.total_steps
+        next_step = session.total_steps if is_final else step_index + 1
+
+        return replace(
+            session,
+            current_step_index=next_step,
+            state_jsonb=merged_state,
+            status="COMPLETED" if is_final else "IN_PROGRESS",
+            completed_steps=completed,
+            rag_reciprocity_verified=is_final or session.rag_reciprocity_verified,
+            updated_at_iso=_now_iso(),
+        )
 
     def start_or_resume_wizard(
         self,
@@ -181,11 +301,58 @@ class DurableOnboardingWizardService:
         self._session_id_by_workflow_key[workflow_id] = session_id
         return record
 
+    async def start_or_resume_wizard_async(
+        self,
+        user: UserIdentity,
+        *,
+        wizard_type: WizardType,
+        scope_id: str,
+        instance: str | None = None,
+    ) -> WizardSessionRecord:
+        """Async start/resume backed by PG18 when repository is attached."""
+        if user.platform_role == "OBSERVER":
+            raise ObserverModeReadOnlyError(instance=instance)
+        steps = self.get_steps_for_wizard(wizard_type)
+        if self._repository is None:
+            return self.start_or_resume_wizard(
+                user, wizard_type=wizard_type, scope_id=scope_id, instance=instance
+            )
+        rec = await self._repository.start_or_resume_wizard_async(
+            user_id=user.id,
+            wizard_type=wizard_type,
+            scope_id=scope_id,
+            total_steps=len(steps),
+        )
+        self._sessions_by_id[rec.id] = rec
+        return rec
+
     def get_session(self, session_id: str, *, instance: str | None = None) -> WizardSessionRecord:
         rec = self._sessions_by_id.get(session_id)
         if rec is None:
             raise ResourceNotFoundError(instance=instance)
         return rec
+
+    async def get_session_async(
+        self, session_id: str, *, instance: str | None = None
+    ) -> WizardSessionRecord:
+        """Async session lookup backed by PG18 when repository is attached."""
+        if self._repository is None:
+            return self.get_session(session_id, instance=instance)
+        rec = await self._repository.get_session_async(session_id)
+        if rec is None:
+            raise ResourceNotFoundError(instance=instance)
+        self._sessions_by_id[rec.id] = rec
+        return rec
+
+    async def list_sessions_for_user_async(self, user: UserIdentity) -> list[WizardSessionRecord]:
+        """List wizard sessions owned by `user` ordered by `updated_at DESC`."""
+        if self._repository is None:
+            items = [s for s in self._sessions_by_id.values() if s.user_id == user.id]
+            return sorted(items, key=lambda s: s.updated_at_iso, reverse=True)
+        items = await self._repository.list_sessions_for_user_async(user.id)
+        for item in items:
+            self._sessions_by_id[item.id] = item
+        return items
 
     def save_step_and_advance(
         self,
@@ -195,62 +362,71 @@ class DurableOnboardingWizardService:
         step_index: int,
         step_payload: dict[str, Any],
         secret_input: SecretInputSpec | None = None,
+        step_back: bool = False,
         instance: str | None = None,
     ) -> WizardSessionRecord:
-        """Persist step state (`SecretRef` only), run fail-fast check, and advance step index."""
+        """Persist step state (`SecretRef` only), run fail-fast check, and advance or step back."""
         if user.platform_role == "OBSERVER":
             raise ObserverModeReadOnlyError(instance=instance)
         session = self.get_session(session_id, instance=instance)
-        if step_index < 1 or step_index > session.total_steps:
-            raise ValidationDomainError(
-                detail_override=f"step_index must be between 1 and {session.total_steps}.",
-                instance=instance,
-            )
-
-        sanitized_payload: dict[str, Any] = {}
-        for k, v in step_payload.items():
-            low_k = k.lower()
-            if any(tok in low_k for tok in ("password", "secret", "api_key", "private_key")):
-                raise ValidationDomainError(
-                    detail_override=(
-                        f"Plaintext secret key '{k}' is forbidden in wizard state_jsonb; "
-                        "use secret_input (SecretProviderPort)."
-                    ),
-                    instance=instance,
-                )
-            sanitized_payload[k] = v
-
-        if secret_input is not None and secret_input.action == "set":
-            assert secret_input.plaintext_value is not None
-            sec_ref = SecretRef(
-                uri=f"secret://wizards/{session.id}/step-{step_index}",
-                workspace_id=session.scope_id,
-            )
-            self._secret_provider.store_secret(
-                sec_ref, secret_input.plaintext_value, actor_id=user.id
-            )
-            sanitized_payload["secret_ref_uri"] = sec_ref.uri
-
-        merged_state = dict(session.state_jsonb)
-        merged_state[f"step_{step_index}"] = {
-            **sanitized_payload,
-            "fail_fast_verified": True,
-        }
-        completed = tuple(sorted({*session.completed_steps, step_index}))
-        is_final = step_index >= session.total_steps
-        next_step = session.total_steps if is_final else step_index + 1
-
-        updated = replace(
+        updated = self._sanitize_and_store_step(
+            user,
             session,
-            current_step_index=next_step,
-            state_jsonb=merged_state,
-            status="COMPLETED" if is_final else "IN_PROGRESS",
-            completed_steps=completed,
-            rag_reciprocity_verified=is_final or session.rag_reciprocity_verified,
-            updated_at_iso=_now_iso(),
+            step_index=step_index,
+            step_payload=step_payload,
+            secret_input=secret_input,
+            step_back=step_back,
+            instance=instance,
         )
         self._sessions_by_id[session_id] = updated
         return updated
+
+    async def save_step_and_advance_async(
+        self,
+        user: UserIdentity,
+        session_id: str,
+        *,
+        step_index: int,
+        step_payload: dict[str, Any],
+        secret_input: SecretInputSpec | None = None,
+        step_back: bool = False,
+        instance: str | None = None,
+    ) -> WizardSessionRecord:
+        """Async step save/advance/step_back persisted into PG18 `wizard_sessions`."""
+        if user.platform_role == "OBSERVER":
+            raise ObserverModeReadOnlyError(instance=instance)
+        if self._repository is None:
+            return self.save_step_and_advance(
+                user,
+                session_id,
+                step_index=step_index,
+                step_payload=step_payload,
+                secret_input=secret_input,
+                step_back=step_back,
+                instance=instance,
+            )
+        session = await self.get_session_async(session_id, instance=instance)
+        updated = self._sanitize_and_store_step(
+            user,
+            session,
+            step_index=step_index,
+            step_payload=step_payload,
+            secret_input=secret_input,
+            step_back=step_back,
+            instance=instance,
+        )
+        persisted = await self._repository.save_step_and_advance_async(
+            session_id=session_id,
+            current_step_index=updated.current_step_index,
+            state_jsonb=updated.state_jsonb,
+            status=updated.status,
+            completed_steps=updated.completed_steps,
+            rag_reciprocity_verified=updated.rag_reciprocity_verified,
+        )
+        if persisted is None:
+            raise ResourceNotFoundError(instance=instance)
+        self._sessions_by_id[session_id] = persisted
+        return persisted
 
     def discard_unsaved_draft_or_abort(
         self,
@@ -274,6 +450,34 @@ class DurableOnboardingWizardService:
         )
         self._sessions_by_id[session_id] = updated
         return updated
+
+    async def discard_unsaved_draft_or_abort_async(
+        self,
+        user: UserIdentity,
+        session_id: str,
+        *,
+        discard_draft_only: bool = True,
+        instance: str | None = None,
+    ) -> WizardSessionRecord:
+        """Async draft cleanup / session abort persisted into PG18 `wizard_sessions`."""
+        if user.platform_role == "OBSERVER":
+            raise ObserverModeReadOnlyError(instance=instance)
+        if self._repository is None:
+            return self.discard_unsaved_draft_or_abort(
+                user, session_id, discard_draft_only=discard_draft_only, instance=instance
+            )
+        session = await self.get_session_async(session_id, instance=instance)
+        cleaned_state = {k: v for k, v in session.state_jsonb.items() if not k.startswith("draft_")}
+        next_status: WizardSessionStatus = session.status if discard_draft_only else "ABANDONED"
+        persisted = await self._repository.update_session_state_async(
+            session_id=session_id,
+            state_jsonb=cleaned_state,
+            status=next_status,
+        )
+        if persisted is None:
+            raise ResourceNotFoundError(instance=instance)
+        self._sessions_by_id[session_id] = persisted
+        return persisted
 
     def provision_zero_empty_state_demo(
         self,
@@ -302,6 +506,7 @@ __all__ = [
     "DurableOnboardingWizardService",
     "WIZARD_STEPS_BY_TYPE",
     "WizardSessionRecord",
+    "WizardSessionRepositoryPort",
     "WizardSessionStatus",
     "WizardStepDescriptor",
     "WizardType",

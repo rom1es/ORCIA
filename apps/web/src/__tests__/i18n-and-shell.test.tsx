@@ -296,12 +296,22 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       </QueryClientProvider>,
     );
 
-    expect(screen.getByTestId("wizard-step-form-1")).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getByTestId("wizard-step-form-1")).toBeDefined();
+    });
+    const runnerTextBefore = screen.getByTestId("durable-wizard-runner").textContent ?? "";
+    expect(runnerTextBefore).toContain("Étape 1 sur 5");
+    expect(runnerTextBefore).toContain("Création d'un Espace de travail d'équipe");
+    expect(runnerTextBefore).not.toContain("sdlc_tech_lead");
+
     fireEvent.change(screen.getByTestId("wizard-input-org-unit"), {
       target: { value: "Équipe Plateforme" },
     });
     fireEvent.click(screen.getByTestId("wizard-complete-step-btn"));
-    expect(screen.getByTestId("wizard-step-form-2")).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getByTestId("wizard-step-form-2")).toBeDefined();
+    });
+    expect(screen.getByTestId("durable-wizard-runner").textContent).toContain("Étape 2 sur 5");
   });
 
   it("renders the 4-Zone Direction C Shell with 8 fixed menu entries, StreamlinedCockpitView, and Day 0 Accostage Banner (Story 12.1)", async () => {

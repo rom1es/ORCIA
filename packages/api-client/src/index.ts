@@ -8,7 +8,15 @@ import {
 import { createAuthAndShellDomainClient } from "./domains/authAndShell";
 import { createAutonomousSupervisionDomainClient } from "./domains/autonomousSupervision";
 import { createAutonomyContractsDomainClient } from "./domains/autonomyContracts";
-import { createBootstrapAndOntologyDomainClient } from "./domains/bootstrapAndOntology";
+import {
+  createBootstrapAndOntologyDomainClient,
+  type DemoWorkspaceProvisionResponse,
+  type WizardAdvanceStepRequest,
+  type WizardSessionRequest,
+  type WizardSessionResponse,
+  type WizardSessionsListResponse,
+  type WizardStepBackRequest,
+} from "./domains/bootstrapAndOntology";
 import { createCatalogAndPermissionsDomainClient } from "./domains/catalogAndPermissions";
 import { createCodegraphMcpDomainClient } from "./domains/codegraphMcp";
 import { createEpics1To7OperationsDomainClient } from "./domains/epics1To7Operations";
@@ -32,6 +40,8 @@ import {
   createWorkflowsV2DomainClient,
   type ApiImpactAssessmentResult,
   type ApiWorkflowDefinitionV2,
+  type DeclarativePacksListResponse,
+  type DeclarativePackSummaryResponse,
   type SaveWorkflowV2Options,
 } from "./domains/workflowsV2";
 import { createWorkflowTriggersDomainClient } from "./domains/workflowTriggers";
@@ -45,9 +55,11 @@ import type { paths } from "./generated/schema";
 import {
   buildKnownOrgUsersQuery,
   buildOrgUnitsQuery,
+  createRequestBinary,
   createRequestJson,
   OrciaProblemError,
   registerDefaultAccessTokenProvider,
+  type BinaryDownloadResult,
   type ListKnownOrgUsersParams,
   type ListOrgUnitsParams,
   type OrciaApiClientOptions,
@@ -78,6 +90,10 @@ export {
   registerDefaultAccessTokenProvider,
   type ApiImpactAssessmentResult,
   type ApiWorkflowDefinitionV2,
+  type BinaryDownloadResult,
+  type DeclarativePacksListResponse,
+  type DeclarativePackSummaryResponse,
+  type DemoWorkspaceProvisionResponse,
   type ExceptionWaiverResponseItem,
   type InspectSourceLinesParams,
   type ListAuditLedgerParams,
@@ -92,6 +108,11 @@ export {
   type OntologyPromotionsListResponse,
   type RegisterExceptionWaiverInput,
   type SaveWorkflowV2Options,
+  type WizardAdvanceStepRequest,
+  type WizardSessionRequest,
+  type WizardSessionResponse,
+  type WizardSessionsListResponse,
+  type WizardStepBackRequest,
   type WorkspaceFiveTabsStatePayload,
   type WritableScopeOptionItem,
   type OrciaApiClientOptions,
@@ -118,6 +139,7 @@ export function createOrciaOpenApiFetchClient(options: OrciaApiClientOptions) {
 
 export function createOrciaApiClient(options: OrciaApiClientOptions) {
   const requestJson = createRequestJson(options);
+  const requestBinary = createRequestBinary(options);
   const aiModelsHubClient = createAiModelsHubDomainClient(requestJson);
   const auditFinopsClient = createAuditFinopsDomainClient(requestJson);
   return {
@@ -132,7 +154,7 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
     ...createFinopsDomainClient(requestJson),
     ...createOntologyPromotionsDomainClient(requestJson),
     ...createReflexiveExecutionDomainClient(requestJson, options.baseUrl),
-    ...createWorkflowsV2DomainClient(requestJson),
+    ...createWorkflowsV2DomainClient(requestJson, requestBinary),
     ...createWorkflowTriggersDomainClient(requestJson),
     ...createWorkspaceGovernanceDomainClient(requestJson),
     ...auditFinopsClient,

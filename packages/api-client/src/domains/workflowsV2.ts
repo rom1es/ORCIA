@@ -1,4 +1,6 @@
 import type {
+  DeclarativePacksListResponse,
+  DeclarativePackSummaryResponse,
   HitlSignalRequest,
   SaveWorkflowV2Request,
   SaveWorkflowV2Response,
@@ -8,20 +10,45 @@ import type {
   WorkflowsV2ListResponse,
 } from "../generated/process_studio_v2";
 import type { components } from "../generated/schema";
-import { buildPersonaQuery, type createRequestJson } from "../helpers";
+import {
+  buildPersonaQuery,
+  type BinaryDownloadResult,
+  type createRequestBinary,
+  type createRequestJson,
+} from "../helpers";
 
 type RequestJsonFn = ReturnType<typeof createRequestJson>;
+type RequestBinaryFn = ReturnType<typeof createRequestBinary>;
 
 export type ApiWorkflowDefinitionV2 = components["schemas"]["WorkflowDefinitionV2-Output"];
 export type ApiImpactAssessmentResult = components["schemas"]["ImpactAssessmentResult"];
+export type { DeclarativePacksListResponse, DeclarativePackSummaryResponse };
 
 export interface SaveWorkflowV2Options {
   readonly workspaceId?: string;
   readonly personaKey?: string;
 }
 
-export function createWorkflowsV2DomainClient(requestJson: RequestJsonFn) {
+export function createWorkflowsV2DomainClient(
+  requestJson: RequestJsonFn,
+  requestBinary?: RequestBinaryFn,
+) {
   return {
+    listDeclarativePacks(): Promise<DeclarativePacksListResponse> {
+      return requestJson<DeclarativePacksListResponse>("/api/v1/packs");
+    },
+    exportWorkspacePackZip(
+      workspaceId: string,
+      packId = "orcia-pack-sdlc",
+    ): Promise<BinaryDownloadResult> {
+      const encodedWs = encodeURIComponent(workspaceId);
+      const qs = new URLSearchParams({ pack_id: packId }).toString();
+      const path = `/api/v1/packs/export/${encodedWs}?${qs}`;
+      if (!requestBinary) {
+        throw new Error("Binary download helper not configured on workflowsV2 client.");
+      }
+      return requestBinary(path, "POST");
+    },
     listWorkflowsV2(): Promise<WorkflowsV2ListResponse> {
       return requestJson<WorkflowsV2ListResponse>("/api/v1/workflows/v2");
     },

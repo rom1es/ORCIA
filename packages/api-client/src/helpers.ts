@@ -128,3 +128,66 @@ export function createRequestJson(options: OrciaApiClientOptions) {
     return (await response.json()) as T;
   };
 }
+
+export interface BinaryDownloadResult {
+  readonly blob: Blob;
+  readonly filename: string | null;
+}
+
+export function createRequestBinary(options: OrciaApiClientOptions) {
+  const fetcher = options.fetchImpl ?? globalThis.fetch;
+  const baseHeaders: Record<string, string> = {
+    Accept: "application/zip, application/octet-stream, application/problem+json",
+    "Accept-Language": options.locale ?? "fr",
+  };
+  if (options.traceId) {
+    baseHeaders["X-Trace-Id"] = options.traceId;
+  }
+
+  return async function requestBinary(
+    path: string,
+    method: "GET" | "POST" = "POST",
+    extraHeaders?: Record<string, string>,
+  ): Promise<BinaryDownloadResult> {
+    const headers: Record<string, string> = { ...baseHeaders, ...(extraHeaders ?? {}) };
+    const resolvedAccessToken =
+      options.accessToken !== undefined
+        ? options.accessToken
+        : (options.getAccessToken?.() ?? defaultAccessTokenProvider?.() ?? undefined);
+    if (resolvedAccessToken) {
+      headers.Authorization = `Bearer ${resolvedAccessToken}`;
+    }
+    const response = await fetcher(`${options.baseUrl}${path}`, {
+      method,
+      headers,
+      credentials: "include",
+    });
+    if (!response.ok) {
+      const fallbackTraceId =
+        response.headers?.get?.("x-trace-id") ??
+        options.traceId ??
+        "00000000000000000000000000000000";
+      const problem = (await Promise.resolve()
+        .then(() => response.json())
+        .catch(
+          (): ProblemDetails => ({
+            type: "about:blank",
+            title: response.statusText || "HTTP Error",
+            status: response.status || 500,
+            detail: response.statusText || "Unexpected non-JSON error response",
+            instance: path,
+            error_code: "ERR_INTERNAL_SERVER_ERROR",
+            trace_id: fallbackTraceId,
+          }),
+        )) as ProblemDetails;
+      throw new OrciaProblemError(problem);
+    }
+    const disposition = response.headers?.get?.("content-disposition") ?? "";
+    const match = /filename="?([^";]+)"?/i.exec(disposition);
+    const blob = await response.blob();
+    return {
+      blob,
+      filename: match?.[1] ?? null,
+    };
+  };
+}

@@ -143,6 +143,10 @@ import {
   handleVitestOntologyRoute,
   resetVitestOntologyMockState,
 } from "./vitestOntologyMockHandlers";
+import {
+  handleVitestPacksAndWizardsRoute,
+  resetVitestPacksAndWizardsMockState,
+} from "./vitestPacksAndWizardsMockHandlers";
 
 function hydrateMockOrgUnitsFromSetup(rawUnits: unknown): MockOrganizationalUnit[] {
   if (!Array.isArray(rawUnits)) return [];
@@ -301,6 +305,7 @@ export function resetVitestApiBackend(): void {
   resetVitestConnectorsMockState();
   resetVitestAutonomousSupervisionMockState();
   resetVitestOntologyMockState();
+  resetVitestPacksAndWizardsMockState();
   resetVitestAuthPolicyMockState();
   resetVitestReflexiveBackend();
   resetAuthSessionStore();
@@ -2921,6 +2926,19 @@ async function vitestFetchTransport(
   });
   if (ontologyResponse) {
     return ontologyResponse;
+  }
+
+  const packsAndWizardsResponse = handleVitestPacksAndWizardsRoute({
+    path,
+    method,
+    parsedUrl,
+    body,
+    reqHeaders,
+    jsonResponse,
+    problemResponse,
+  });
+  if (packsAndWizardsResponse) {
+    return packsAndWizardsResponse;
   }
 
   const supervisionResponse = handleVitestAutonomousSupervisionRoute(

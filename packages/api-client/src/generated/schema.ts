@@ -4580,6 +4580,7 @@ export interface components {
     WizardAdvanceStepRequest: {
       actor_persona?: string;
       secret_input?: components["schemas"]["SecretInputPayload"] | null;
+      step_back?: boolean;
       step_index?: number;
       step_payload?: Record<string, unknown>;
     };
@@ -4600,6 +4601,15 @@ export interface components {
       total_steps: number;
       user_id: string;
       wizard_type: "sdlc_tech_lead" | "ops_manager" | "secops_admin";
+    };
+    WizardSessionsListResponse: {
+      sessions: (components["schemas"]["WizardSessionResponse"])[];
+      trace_id: string;
+    };
+    WizardStepBackRequest: {
+      actor_persona?: string;
+      step_index?: number;
+      step_payload?: Record<string, unknown>;
     };
     WorkflowAsCodeDefinitionSchemaItem: {
       adaptive_gate_policy: "STRICT" | "STANDARD" | "FAST_TRACK";
@@ -6578,6 +6588,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/wizards": {
+    get: {
+      responses: {
+        200: components["schemas"]["WizardSessionsListResponse"];
+      };
+    };
+  };
   "/api/v1/wizards/demo-workspace": {
     post: {
       responses: {
@@ -6586,6 +6603,20 @@ export interface paths {
     };
   };
   "/api/v1/wizards/sessions": {
+    post: {
+      responses: {
+        200: components["schemas"]["WizardSessionResponse"];
+      };
+    };
+  };
+  "/api/v1/wizards/sessions/{session_id}": {
+    get: {
+      responses: {
+        200: components["schemas"]["WizardSessionResponse"];
+      };
+    };
+  };
+  "/api/v1/wizards/sessions/{session_id}/step-back": {
     post: {
       responses: {
         200: components["schemas"]["WizardSessionResponse"];
@@ -7355,6 +7386,8 @@ export type WhatIfWorkspaceImpactItemResponse = components["schemas"]["WhatIfWor
 export type WizardAdvanceStepRequest = components["schemas"]["WizardAdvanceStepRequest"];
 export type WizardSessionRequest = components["schemas"]["WizardSessionRequest"];
 export type WizardSessionResponse = components["schemas"]["WizardSessionResponse"];
+export type WizardSessionsListResponse = components["schemas"]["WizardSessionsListResponse"];
+export type WizardStepBackRequest = components["schemas"]["WizardStepBackRequest"];
 export type WorkflowAsCodeDefinitionSchemaItem = components["schemas"]["WorkflowAsCodeDefinitionSchemaItem"];
 export type WorkflowBaselineResponse = components["schemas"]["WorkflowBaselineResponse"];
 export type WorkflowCognitiveMetricsSchema = components["schemas"]["WorkflowCognitiveMetricsSchema"];

@@ -66,12 +66,21 @@ export interface AdminAndStudioDictionarySection {
     };
     readonly wizardLabels: {
       readonly title: string;
+      readonly subtitle: string;
       readonly resumeBannerText: string;
       readonly stepCounterPrefix: string;
+      readonly stepCounterConnector: string;
+      readonly stepBackButton: string;
       readonly validateAndContinueButton: string;
       readonly completedBadgeText: string;
       readonly demoWorkspaceButton: string;
       readonly citationLabel: string;
+      readonly disabledStepReason: string;
+      readonly profileLabels: {
+        readonly sdlc_tech_lead: string;
+        readonly ops_manager: string;
+        readonly secops_admin: string;
+      };
     };
     readonly organizationTab: OrganizationTabDictionarySection;
     readonly iamTab: IamTabDictionarySection;
@@ -138,12 +147,21 @@ export const ADMIN_AND_STUDIO_FR_LABELS: AdminAndStudioDictionarySection = {
     },
     wizardLabels: {
       title: "Assistants Guidés de Configuration",
+      subtitle: "Vous accompagne étape par étape pour configurer votre environnement.",
       resumeBannerText: "Votre progression a été restaurée là où vous vous étiez arrêté",
       stepCounterPrefix: "Étape",
+      stepCounterConnector: "sur",
+      stepBackButton: "← Étape précédente",
       validateAndContinueButton: "Valider et continuer",
       completedBadgeText: "Configuration terminée",
       demoWorkspaceButton: "Créer un espace d'exemple prêt à l'emploi",
       citationLabel: "Source documentaire vérifiée",
+      disabledStepReason: "Complétez la vérification de l'étape en cours pour continuer.",
+      profileLabels: {
+        sdlc_tech_lead: "Création d'un Espace de travail d'équipe",
+        ops_manager: "Connexion d'une source documentaire ou outil",
+        secops_admin: "Configuration initiale de l'organisation",
+      },
     },
     organizationTab: ORGANIZATION_TAB_FR_LABELS,
     iamTab: IAM_TAB_FR_LABELS,
@@ -210,12 +228,21 @@ export const ADMIN_AND_STUDIO_EN_LABELS: AdminAndStudioDictionarySection = {
     },
     wizardLabels: {
       title: "Guided Setup Assistants",
+      subtitle: "Guides you step by step to set up your environment.",
       resumeBannerText: "Your progress was restored from where you left off",
       stepCounterPrefix: "Step",
+      stepCounterConnector: "of",
+      stepBackButton: "← Previous step",
       validateAndContinueButton: "Validate and continue",
       completedBadgeText: "Setup completed",
       demoWorkspaceButton: "Create a ready-to-use sample workspace",
       citationLabel: "Verified document source",
+      disabledStepReason: "Complete the current step verification to continue.",
+      profileLabels: {
+        sdlc_tech_lead: "Team Workspace Setup",
+        ops_manager: "Connect a Document Source or Tool",
+        secops_admin: "Initial Organization Setup",
+      },
     },
     organizationTab: ORGANIZATION_TAB_EN_LABELS,
     iamTab: IAM_TAB_EN_LABELS,

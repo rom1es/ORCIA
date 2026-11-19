@@ -1,317 +1,324 @@
 import {
+  createOrciaApiClient,
+  OrciaProblemError,
+  type WizardSessionResponse,
+} from "@orcia/api-client";
+import {
   DurableWizardRunnerView,
+  OrciaAlertBanner,
   type DurableWizardProfileType,
-  type DurableWizardStepDescriptor,
 } from "@orcia/ui";
 import { createRoute } from "@tanstack/react-router";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { usePlatformSetup } from "../components/platformSetupStore";
+import {
+  extractWizardStepString,
+  formatWizardError,
+  WIZARD_STEPS_EN,
+  WIZARD_STEPS_FR,
+  WizardsStepForm,
+} from "../features/bootstrap/WizardsStepForm";
 import { useI18n } from "../i18n";
+import { useAuthSessionStore } from "../stores/authSessionStore";
 import { Route as rootRoute } from "./__root";
 import { validateOrciaRouteSearch } from "./searchSchema";
 
-const WIZARD_STEPS: readonly DurableWizardStepDescriptor[] = [
-  {
-    stepIndex: 1,
-    title: "1. Organisation & Équipe",
-    description: "Création de votre Direction (BU) ou Équipe et choix de votre rôle.",
-  },
-  {
-    stepIndex: 2,
-    title: "2. Création de l'Espace de Travail",
-    description: "Choix du nom, du niveau de confidentialité et de la phase actuelle.",
-  },
-  {
-    stepIndex: 3,
-    title: "3. Connexion d'une Source Documentaire",
-    description: "Ajout d'un dépôt de code, d'un espace documentaire ou d'un outil de suivi.",
-  },
-  {
-    stepIndex: 4,
-    title: "4. Choix du Modèle IA",
-    description: "Association d'un modèle IA principal pour vos questions et processus.",
-  },
-  {
-    stepIndex: 5,
-    title: "5. Vérification & Mise en Service",
-    description: "Récapitulatif de vos réglages et ouverture de votre Espace de travail.",
-  },
-];
+const DEFAULT_WIZARD_SCOPE_ID = "0195f000-0000-7000-8000-000000000301";
 
 function WizardsRouteComponent() {
   const { dictionary, locale } = useI18n();
   const labels = dictionary.settingsHub.wizardLabels;
   const isFr = locale === "fr";
-  const {
-    addOrgUnit,
-    createWorkspace,
-    registerDatasource,
-    upsertLlmTier,
-  } = usePlatformSetup();
+  const accessToken = useAuthSessionStore((s) => s.accessToken);
+  const isHydratingAuth = useAuthSessionStore((s) => s.isHydrating);
+  const { addOrgUnit, createWorkspace, registerDatasource, upsertLlmTier } = usePlatformSetup();
 
-  const [wizardProfile, setWizardProfile] =
+  const apiClient = useMemo(() => createOrciaApiClient({ baseUrl: "", locale }), [locale]);
+
+  const [sessions, setSessions] = useState<readonly WizardSessionResponse[]>([]);
+  const [selectedProfile, setSelectedProfile] =
     useState<DurableWizardProfileType>("sdlc_tech_lead");
-  const [currentStep, setCurrentStep] = useState<number>(1);
-  const [status, setStatus] = useState<"IN_PROGRESS" | "COMPLETED">("IN_PROGRESS");
+  const [activeSession, setActiveSession] = useState<WizardSessionResponse | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [demoNotice, setDemoNotice] = useState<string | null>(null);
 
-  // Step inputs (all start empty!)
   const [orgUnitName, setOrgUnitName] = useState("");
   const [workspaceName, setWorkspaceName] = useState("");
   const [connectorAlias, setConnectorAlias] = useState("");
   const [connectorUri, setConnectorUri] = useState("");
   const [primaryModelId, setPrimaryModelId] = useState("");
 
-  const handleCompleteStep = (stepNumber: number) => {
-    if (stepNumber === 1 && orgUnitName.trim()) {
-      addOrgUnit({
-        name: orgUnitName.trim(),
-        slug: orgUnitName.trim().toLowerCase().replace(/\s+/g, "-"),
-        level: "TEAM",
-        parentId: "scope-global",
-      });
-    } else if (stepNumber === 2 && workspaceName.trim()) {
-      void createWorkspace({
-        name: workspaceName.trim(),
-        slug: workspaceName.trim().toLowerCase().replace(/\s+/g, "-"),
-        visibilityMode: "STANDARD",
-        lifecyclePhase: "BUILD",
-      }).catch((err: unknown) => {
-        setStatus("IN_PROGRESS");
-        console.error(err);
-      });
-    } else if (stepNumber === 3 && connectorAlias.trim() && connectorUri.trim()) {
-      void registerDatasource({
-        workspaceName: workspaceName.trim() || "Plateforme Globale ORCIA",
-        alias: connectorAlias.trim(),
-        scheme: "git",
-        uri: connectorUri.trim(),
-        executionIdentity: "passthrough",
-        freshnessTtlDays: 30,
-      }).catch((err: unknown) => {
-        console.error(err);
-      });
-    } else if (stepNumber === 4 && primaryModelId.trim()) {
-      upsertLlmTier({
-        tier: "medium",
-        primaryModel: primaryModelId.trim(),
-        secondaryModel: primaryModelId.trim(),
-        modelFamily: "family-a",
-        defaultEffort: "balanced",
-      });
-    }
+  const applySessionToForm = useCallback((rec: WizardSessionResponse | null) => {
+    setActiveSession(rec);
+    if (!rec) return;
+    setSelectedProfile(rec.wizard_type);
+    const state = rec.state_jsonb;
+    setOrgUnitName(extractWizardStepString(state, "step_1", "org_unit_name"));
+    setWorkspaceName(extractWizardStepString(state, "step_2", "workspace_name"));
+    setConnectorAlias(extractWizardStepString(state, "step_3", "connector_alias"));
+    setConnectorUri(extractWizardStepString(state, "step_3", "connector_uri"));
+    setPrimaryModelId(extractWizardStepString(state, "step_4", "primary_model_id"));
+  }, []);
 
-    if (stepNumber >= 5) {
-      setStatus("COMPLETED");
-    } else {
-      setCurrentStep(stepNumber + 1);
+  const hydrateFromBackend = useCallback(async () => {
+    if (isHydratingAuth) return;
+    setErrorMessage(null);
+    try {
+      const res = await apiClient.listWizardSessions();
+      setSessions(res.sessions);
+      const preferred =
+        res.sessions.find((s) => s.wizard_type === selectedProfile) ?? res.sessions[0] ?? null;
+      if (preferred) {
+        applySessionToForm(preferred);
+      }
+    } catch (err: unknown) {
+      if (err instanceof OrciaProblemError && err.problem.status === 401) return;
+      setErrorMessage(
+        formatWizardError(
+          err,
+          isFr
+            ? "Impossible de charger vos parcours d'initialisation."
+            : "Unable to load your guided setup sessions.",
+        ),
+      );
+    }
+  }, [apiClient, applySessionToForm, isFr, isHydratingAuth, selectedProfile]);
+
+  useEffect(() => {
+    void hydrateFromBackend();
+  }, [accessToken, hydrateFromBackend, isHydratingAuth]);
+
+  const currentStep = activeSession?.current_step_index ?? 1;
+  const status = activeSession?.status ?? "IN_PROGRESS";
+
+  const buildStepPayload = (stepNumber: number): Record<string, unknown> => {
+    if (stepNumber === 1) return { org_unit_name: orgUnitName.trim() };
+    if (stepNumber === 2) return { workspace_name: workspaceName.trim() };
+    if (stepNumber === 3) {
+      return { connector_alias: connectorAlias.trim(), connector_uri: connectorUri.trim() };
+    }
+    if (stepNumber === 4) return { primary_model_id: primaryModelId.trim() };
+    return { verify_rag_reciprocity: true };
+  };
+
+  const ensureSession = async (
+    profile: DurableWizardProfileType,
+  ): Promise<WizardSessionResponse> => {
+    if (activeSession && activeSession.wizard_type === profile) return activeSession;
+    const created = await apiClient.startOrResumeWizard({
+      wizard_type: profile,
+      scope_id: DEFAULT_WIZARD_SCOPE_ID,
+    });
+    setSessions((prev) => [created, ...prev.filter((s) => s.id !== created.id)]);
+    applySessionToForm(created);
+    return created;
+  };
+
+  const handleProfileChange = async (nextProfile: DurableWizardProfileType) => {
+    setSelectedProfile(nextProfile);
+    setErrorMessage(null);
+    const matching = sessions.find((s) => s.wizard_type === nextProfile) ?? null;
+    if (matching) {
+      applySessionToForm(matching);
+      return;
+    }
+    setActiveSession(null);
+    setOrgUnitName("");
+    setWorkspaceName("");
+    setConnectorAlias("");
+    setConnectorUri("");
+    setPrimaryModelId("");
+    if (accessToken) {
+      try {
+        await ensureSession(nextProfile);
+      } catch (err: unknown) {
+        setErrorMessage(
+          formatWizardError(
+            err,
+            isFr ? "Impossible d'ouvrir ce parcours." : "Unable to start this wizard.",
+          ),
+        );
+      }
     }
   };
 
-  const inputStyle: React.CSSProperties = {
-    padding: "7px 10px",
-    borderRadius: "var(--radius-sm)",
-    border: "1px solid var(--color-border)",
-    backgroundColor: "var(--color-surface-card)",
-    color: "var(--color-foreground)",
-    width: "100%",
-    boxSizing: "border-box",
+  const handleCompleteStep = async (stepNumber: number) => {
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    try {
+      const targetSession = await ensureSession(selectedProfile);
+      const updated = await apiClient.saveWizardStep(targetSession.id, {
+        step_index: stepNumber,
+        step_payload: buildStepPayload(stepNumber),
+      });
+      setSessions((prev) => [updated, ...prev.filter((s) => s.id !== updated.id)]);
+      applySessionToForm(updated);
+
+      if (stepNumber === 1 && orgUnitName.trim()) {
+        addOrgUnit({
+          name: orgUnitName.trim(),
+          slug: orgUnitName.trim().toLowerCase().replace(/\s+/g, "-"),
+          level: "TEAM",
+          parentId: "scope-global",
+        });
+      } else if (stepNumber === 2 && workspaceName.trim()) {
+        await createWorkspace({
+          name: workspaceName.trim(),
+          slug: workspaceName.trim().toLowerCase().replace(/\s+/g, "-"),
+          visibilityMode: "STANDARD",
+          lifecyclePhase: "BUILD",
+        });
+      } else if (stepNumber === 3 && connectorAlias.trim() && connectorUri.trim()) {
+        await registerDatasource({
+          workspaceName: workspaceName.trim() || "Plateforme Globale ORCIA",
+          alias: connectorAlias.trim(),
+          scheme: "git",
+          uri: connectorUri.trim(),
+          executionIdentity: "passthrough",
+          freshnessTtlDays: 30,
+        });
+      } else if (stepNumber === 4 && primaryModelId.trim()) {
+        upsertLlmTier({
+          tier: "medium",
+          primaryModel: primaryModelId.trim(),
+          secondaryModel: primaryModelId.trim(),
+          modelFamily: "family-a",
+          defaultEffort: "balanced",
+        });
+      }
+    } catch (err: unknown) {
+      setErrorMessage(
+        formatWizardError(
+          err,
+          isFr ? "Erreur lors de l'enregistrement de l'étape." : "Failed to save wizard step.",
+        ),
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleStepBack = async () => {
+    if (!activeSession || currentStep <= 1) return;
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    try {
+      const updated = await apiClient.stepBackWizard(activeSession.id, {
+        step_index: currentStep,
+        step_payload: buildStepPayload(currentStep),
+      });
+      setSessions((prev) => [updated, ...prev.filter((s) => s.id !== updated.id)]);
+      applySessionToForm(updated);
+    } catch (err: unknown) {
+      setErrorMessage(
+        formatWizardError(
+          err,
+          isFr
+            ? "Impossible de revenir à l'étape précédente."
+            : "Unable to step back to the previous step.",
+        ),
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleProvisionDemoWorkspace = async () => {
+    setErrorMessage(null);
+    try {
+      const demo = await apiClient.provisionWizardDemoWorkspace();
+      setDemoNotice(`${demo.workspace_name} (${demo.published_workflow_uri})`);
+    } catch (err: unknown) {
+      setErrorMessage(
+        formatWizardError(
+          err,
+          isFr
+            ? "Impossible de provisionner l'espace de démonstration."
+            : "Unable to provision demo workspace.",
+        ),
+      );
+    }
   };
 
   return (
     <div
       data-testid="wizards-route-page"
-      style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+      style={{ display: "flex", flexDirection: "column", gap: "12px" }}
     >
-      <div
-        className="orcia-bento-card"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "10px",
-        }}
-      >
-        <div>
-          <strong style={{ fontSize: "15px" }}>
-            {isFr
-              ? "Choisir un Parcours de Configuration Guidé"
-              : "Choose a Guided Setup Journey"}
-          </strong>
-          <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "var(--color-muted-foreground)" }}>
-            {isFr
-              ? "Vous accompagne étape par étape pour configurer votre environnement."
-              : "Guides you step by step to set up your environment."}
-          </p>
-        </div>
+      {errorMessage ? (
+        <OrciaAlertBanner tone="crimson" role="alert" testId="wizards-error-banner">
+          {errorMessage}
+        </OrciaAlertBanner>
+      ) : null}
 
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+      {demoNotice ? (
+        <OrciaAlertBanner tone="emerald" role="status" testId="wizards-demo-banner">
+          {demoNotice}
+        </OrciaAlertBanner>
+      ) : null}
+
+      <DurableWizardRunnerView
+        sessionId={activeSession?.id ?? "wiz-session-pending"}
+        wizardType={selectedProfile}
+        currentStep={currentStep}
+        totalSteps={activeSession?.total_steps ?? 5}
+        status={status}
+        steps={isFr ? WIZARD_STEPS_FR : WIZARD_STEPS_EN}
+        resumedFromCheckpoint={Boolean(
+          activeSession &&
+            activeSession.status === "IN_PROGRESS" &&
+            activeSession.current_step_index > 1,
+        )}
+        isSubmitting={isSubmitting}
+        reciprocityCitationUri={
+          activeSession?.rag_reciprocity_verified
+            ? "orcia://catalog/workflows/architecture-review"
+            : null
+        }
+        onCompleteStep={(stepNumber) => void handleCompleteStep(stepNumber)}
+        onStepBack={() => void handleStepBack()}
+        onProvisionDemoWorkspace={() => void handleProvisionDemoWorkspace()}
+        headerActions={
           <select
+            aria-label={
+              isFr
+                ? "Choisir un Parcours de Configuration Guidé"
+                : "Choose a Guided Setup Journey"
+            }
             data-testid="wizard-profile-selector"
-            value={wizardProfile}
-            onChange={(e) => {
-              setWizardProfile(e.target.value as DurableWizardProfileType);
-              setCurrentStep(1);
-              setStatus("IN_PROGRESS");
-            }}
+            value={selectedProfile}
+            onChange={(e) => void handleProfileChange(e.target.value as DurableWizardProfileType)}
             style={{
               padding: "6px 10px",
               borderRadius: "var(--radius-sm)",
               border: "1px solid var(--color-border)",
+              fontSize: "12px",
             }}
           >
-            <option value="sdlc_tech_lead">
-              {isFr ? "Création d'un Espace de travail d'équipe" : "Team Workspace Setup"}
-            </option>
-            <option value="secops_admin">
-              {isFr ? "Configuration initiale de l'organisation" : "Initial Organization Setup"}
-            </option>
-            <option value="ops_manager">
-              {isFr ? "Connexion d'une source documentaire ou outil" : "Connect a Document Source or Tool"}
-            </option>
+            <option value="sdlc_tech_lead">{labels.profileLabels.sdlc_tech_lead}</option>
+            <option value="secops_admin">{labels.profileLabels.secops_admin}</option>
+            <option value="ops_manager">{labels.profileLabels.ops_manager}</option>
           </select>
-
-          {currentStep > 1 && status !== "COMPLETED" && (
-            <button
-              type="button"
-              data-testid="wizard-step-back-btn"
-              onClick={() => setCurrentStep((prev) => Math.max(1, prev - 1))}
-              style={{
-                padding: "6px 12px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid var(--color-border)",
-                backgroundColor: "var(--color-surface-card)",
-                cursor: "pointer",
-              }}
-            >
-              {isFr ? "← Étape précédente" : "← Previous step"}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {status !== "COMPLETED" && (
-        <div
-          data-testid={`wizard-step-form-${currentStep}`}
-          className="orcia-bento-card"
-          style={{ display: "flex", flexDirection: "column", gap: "10px" }}
-        >
-          {currentStep === 1 && (
-            <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <span style={{ fontWeight: 600, fontSize: "13px" }}>
-                {isFr ? "Nom de la Direction (BU) ou de l'Équipe" : "Division (BU) or Team Name"}
-              </span>
-              <input
-                type="text"
-                autoComplete="off"
-                data-lpignore="true"
-                data-1p-ignore="true"
-                data-bwignore="true"
-                data-form-type="other"
-                data-testid="wizard-input-org-unit"
-                value={orgUnitName}
-                onChange={(e) => setOrgUnitName(e.target.value)}
-                placeholder={isFr ? "Saisir le nom de l'équipe ou de la direction..." : "Enter Team or Division name..."}
-                style={inputStyle}
-              />
-            </label>
-          )}
-
-          {currentStep === 2 && (
-            <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <span style={{ fontWeight: 600, fontSize: "13px" }}>
-                {isFr ? "Nom de l'Espace de Travail" : "Workspace Name"}
-              </span>
-              <input
-                type="text"
-                autoComplete="off"
-                data-lpignore="true"
-                data-1p-ignore="true"
-                data-bwignore="true"
-                data-form-type="other"
-                data-testid="wizard-input-workspace-name"
-                value={workspaceName}
-                onChange={(e) => setWorkspaceName(e.target.value)}
-                placeholder={isFr ? "Saisir le nom de l'Espace..." : "Enter Workspace name..."}
-                style={inputStyle}
-              />
-            </label>
-          )}
-
-          {currentStep === 3 && (
-            <div style={{ display: "grid", gap: "8px" }}>
-              <input
-                type="text"
-                autoComplete="off"
-                data-lpignore="true"
-                data-1p-ignore="true"
-                data-bwignore="true"
-                data-form-type="other"
-                data-testid="wizard-input-connector-alias"
-                value={connectorAlias}
-                onChange={(e) => setConnectorAlias(e.target.value)}
-                placeholder={isFr ? "Nom donné à cette source..." : "Source display name..."}
-                style={inputStyle}
-              />
-              <input
-                type="text"
-                autoComplete="off"
-                data-lpignore="true"
-                data-1p-ignore="true"
-                data-bwignore="true"
-                data-form-type="other"
-                data-testid="wizard-input-connector-uri"
-                value={connectorUri}
-                onChange={(e) => setConnectorUri(e.target.value)}
-                placeholder={isFr ? "Adresse de la source (ex: https://...)" : "Source address (e.g. https://...)"}
-                style={inputStyle}
-              />
-            </div>
-          )}
-
-          {currentStep === 4 && (
-            <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <span style={{ fontWeight: 600, fontSize: "13px" }}>
-                {isFr ? "Nom du Modèle IA Principal (Niveau Standard)" : "Primary AI Model Name (Standard Level)"}
-              </span>
-              <input
-                type="text"
-                autoComplete="off"
-                data-lpignore="true"
-                data-1p-ignore="true"
-                data-bwignore="true"
-                data-form-type="other"
-                data-testid="wizard-input-primary-model"
-                value={primaryModelId}
-                onChange={(e) => setPrimaryModelId(e.target.value)}
-                placeholder={isFr ? "Saisir le nom du modèle IA..." : "Enter AI model name..."}
-                style={inputStyle}
-              />
-            </label>
-          )}
-
-          {currentStep === 5 && (
-            <p style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}>
-              {isFr
-                ? "Vérifiez vos paramètres puis cliquez sur « Valider et continuer » pour ouvrir votre Espace."
-                : "Review your settings and click 'Validate and continue' to open your Workspace."}
-            </p>
-          )}
-        </div>
-      )}
-
-      <DurableWizardRunnerView
-        sessionId="wiz-session-initial"
-        wizardType={wizardProfile}
-        currentStep={currentStep}
-        totalSteps={5}
-        status={status}
-        steps={WIZARD_STEPS}
-        resumedFromCheckpoint={false}
-        reciprocityCitationUri={null}
-        onCompleteStep={handleCompleteStep}
+        }
         labels={labels}
-      />
+      >
+        <WizardsStepForm
+          currentStep={currentStep}
+          status={status}
+          isFr={isFr}
+          orgUnitName={orgUnitName}
+          workspaceName={workspaceName}
+          connectorAlias={connectorAlias}
+          connectorUri={connectorUri}
+          primaryModelId={primaryModelId}
+          onOrgUnitNameChange={setOrgUnitName}
+          onWorkspaceNameChange={setWorkspaceName}
+          onConnectorAliasChange={setConnectorAlias}
+          onConnectorUriChange={setConnectorUri}
+          onPrimaryModelIdChange={setPrimaryModelId}
+        />
+      </DurableWizardRunnerView>
     </div>
   );
 }

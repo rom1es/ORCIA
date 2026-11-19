@@ -582,11 +582,11 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "summary": "Pré-implémentation : useResponsiveBreakpoint() + barre basse 3 onglets mobile + purge faux positifs overflow-x: hidden, scroll SSE /assistant mobile, catalogue docs/help/{fr,en}/*.md dynamique par route sans Chef1/aqwZSX, Sidebar 8 entrées + Double Sélecteur + Breadcrumb, et Accostage piloté par PG18 (<= 3 blocs sans LOCK TABLE..., CAP-068 + transverse)."
     },
     {
-      "date": "2026-11-18",
+      "date": "2026-11-19",
       "phaseOrStory": "Story 22.5",
       "reportFile": "22-5-persistance-pg18-packs-declaratifs-et-wizards-durables-tech-lead-report.md",
       "domain": "Vague 1 (REM-14, REM-15) — Persistance PG18 declarative_pack_bundles & Parcours Wizards Durables (wizard_sessions)",
-      "summary": "Pré-implémentation : upsert idempotent des packs déclaratifs dans declarative_pack_bundles, persistance wizard_sessions dans DurableOnboardingWizardService, câblage @orcia/api-client dans routes/wizards.tsx et suppression de la triple numérotation / sdlc_tech_lead (CAP-055, CAP-056, CAP-057, CAP-150)."
+      "summary": "Clôture : upsert idempotent des packs déclaratifs dans declarative_pack_bundles + correctif resolve_default_packs_root(), persistance PG18 wizard_sessions (SqlWizardSessionRepository + step-back non destructif), câblage @orcia/api-client sur /settings/packs et /wizards sans triple numérotation ni sdlc_tech_lead, couverture 90.07 %, 831 tests Python + 294 tests JS/TS + create_app() PG18 réel (CAP-055, CAP-056, CAP-057, CAP-150)."
     },
     {
       "date": "2026-11-19",

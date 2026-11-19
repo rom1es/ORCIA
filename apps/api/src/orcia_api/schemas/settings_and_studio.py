@@ -355,7 +355,7 @@ class WizardSessionRequest(BaseModel):
 
 
 class WizardAdvanceStepRequest(BaseModel):
-    """Save and advance a step in a durable DBOS wizard (`Story 8.6`)."""
+    """Save and advance (or step back) in a durable DBOS wizard (`Story 8.6`, `22.5`)."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -363,6 +363,17 @@ class WizardAdvanceStepRequest(BaseModel):
     step_index: int = Field(default=1, ge=1, le=5)
     step_payload: dict[str, Any] = Field(default_factory=lambda: {"configured": True})
     secret_input: SecretInputPayload | None = None
+    step_back: bool = False
+
+
+class WizardStepBackRequest(BaseModel):
+    """Non-destructive step-back in a durable DBOS wizard (`Story 22.5`, `REM-15`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    actor_persona: str = "marc"
+    step_index: int = Field(default=2, ge=1, le=5)
+    step_payload: dict[str, Any] = Field(default_factory=dict)
 
 
 class WizardSessionResponse(BaseModel):
@@ -381,6 +392,15 @@ class WizardSessionResponse(BaseModel):
     completed_steps: list[int]
     rag_reciprocity_verified: bool
     state_jsonb: dict[str, Any]
+
+
+class WizardSessionsListResponse(BaseModel):
+    """List of durable wizard sessions for the authenticated user (`Story 22.5`)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    sessions: list[WizardSessionResponse]
+    trace_id: str
 
 
 class DemoWorkspaceProvisionResponse(BaseModel):
