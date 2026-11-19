@@ -91,7 +91,7 @@ export function ShellContextualHelpColumn({
   useEffect(() => {
     setResolvedArticle(null);
     void refreshResolvedHelp();
-  }, [refreshResolvedHelp]);
+  }, [effectiveRoute, locale, refreshResolvedHelp]);
 
   const handleInvalidateAndRestoreAutonomousHelp = useCallback(
     async (runId: string, resourceId: string) => {

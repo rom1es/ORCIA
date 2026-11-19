@@ -1,5 +1,6 @@
 import type {
   EightFixedMenuKey,
+  ShellBreadcrumbItem,
   UiHumanProfileBadge,
   UiModuleKey,
   UiScopeLevel,
@@ -91,22 +92,34 @@ export function resolveModuleFromPathname(pathname: string | null): UiModuleKey 
 export function resolveEightMenuKeyFromModule(
   moduleKey: UiModuleKey,
   pathname: string | null,
-): EightFixedMenuKey {
-  if (pathname?.startsWith("/ontology")) return "glossary";
-  if (pathname?.startsWith("/help") || pathname?.startsWith("/showcase")) return "cockpit";
-  if (pathname?.startsWith("/agents")) return "agents";
-  if (pathname?.startsWith("/processes")) return "processes";
-  if (pathname?.startsWith("/assistant")) return "assistant";
-  if (
-    pathname?.startsWith("/spaces") ||
-    pathname?.startsWith("/workspaces") ||
-    pathname?.startsWith("/organization")
-  )
-    return "spaces";
-  if (pathname?.startsWith("/finops") || pathname?.startsWith("/activity")) return "finops";
-  if (pathname?.startsWith("/configuration") || pathname?.startsWith("/settings")) {
-    return "configuration";
+): EightFixedMenuKey | null {
+  if (pathname) {
+    if (pathname === "/" || pathname.startsWith("/cockpit")) return "cockpit";
+    if (pathname.startsWith("/assistant") || pathname.startsWith("/inbox")) return "assistant";
+    if (pathname.startsWith("/processes") || pathname.startsWith("/gates")) return "processes";
+    if (pathname.startsWith("/agents") || pathname.startsWith("/catalog")) return "agents";
+    if (
+      pathname.startsWith("/spaces") ||
+      pathname.startsWith("/workspaces") ||
+      pathname.startsWith("/ontology")
+    ) {
+      return "spaces";
+    }
+    if (pathname.startsWith("/finops") || pathname.startsWith("/activity")) return "finops";
+    if (
+      pathname.startsWith("/configuration") ||
+      pathname.startsWith("/settings") ||
+      pathname.startsWith("/organization") ||
+      pathname.startsWith("/wizards") ||
+      pathname.startsWith("/bootstrap")
+    ) {
+      return "configuration";
+    }
+    if (pathname.startsWith("/help")) return "help";
+    if (pathname.startsWith("/profile") || pathname.startsWith("/showcase")) return null;
+    return null;
   }
+
   switch (moduleKey) {
     case "cockpit":
       return "cockpit";
@@ -115,7 +128,7 @@ export function resolveEightMenuKeyFromModule(
     case "catalog":
       return "agents";
     case "ontology":
-      return "glossary";
+      return "help";
     case "gates":
       return "processes";
     case "finops":
@@ -141,12 +154,129 @@ export function mapEightMenuKeyToModule(key: EightFixedMenuKey): {
     case "agents":
       return { moduleKey: "catalog", route: "/agents" };
     case "spaces":
-      return { moduleKey: "admin", route: "/workspaces" };
+      return { moduleKey: "admin", route: "/spaces" };
     case "finops":
       return { moduleKey: "finops", route: "/finops" };
     case "configuration":
-      return { moduleKey: "bootstrap", route: "/settings" };
-    case "glossary":
-      return { moduleKey: "ontology", route: "/ontology" };
+      return { moduleKey: "bootstrap", route: "/configuration" };
+    case "help":
+      return { moduleKey: "ontology", route: "/help" };
   }
+}
+
+export function isDesktopOnlyMobileRoute(pathname: string | null | undefined): boolean {
+  if (!pathname) return false;
+  return (
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/configuration") ||
+    pathname.startsWith("/organization") ||
+    pathname.startsWith("/processes/studio") ||
+    pathname.startsWith("/processes/vsm")
+  );
+}
+
+export function buildShellBreadcrumbItems(params: {
+  readonly pathname: string | null | undefined;
+  readonly isFr: boolean;
+  readonly menuEntries: Record<EightFixedMenuKey, string>;
+}): readonly ShellBreadcrumbItem[] {
+  const { pathname, isFr, menuEntries } = params;
+  if (!pathname || pathname === "/" || pathname.startsWith("/cockpit")) {
+    return [{ label: menuEntries.cockpit, route: "/cockpit" }];
+  }
+  if (pathname.startsWith("/assistant")) {
+    return [{ label: menuEntries.assistant, route: "/assistant" }];
+  }
+  if (pathname.startsWith("/inbox")) {
+    return [
+      { label: menuEntries.assistant, route: "/assistant" },
+      { label: isFr ? "Décisions" : "Decisions", route: "/inbox" },
+    ];
+  }
+  if (pathname.startsWith("/processes/studio")) {
+    return [
+      { label: menuEntries.processes, route: "/processes" },
+      { label: "Studio" },
+    ];
+  }
+  if (pathname.startsWith("/processes/vsm")) {
+    return [
+      { label: menuEntries.processes, route: "/processes" },
+      { label: isFr ? "Chaîne de valeur" : "Value Stream" },
+    ];
+  }
+  if (pathname.startsWith("/processes")) {
+    return [{ label: menuEntries.processes, route: "/processes" }];
+  }
+  if (pathname.startsWith("/gates")) {
+    return [
+      { label: menuEntries.processes, route: "/processes" },
+      { label: isFr ? "Validations" : "Quality Gates", route: "/gates" },
+    ];
+  }
+  if (pathname.startsWith("/agents")) {
+    return [{ label: menuEntries.agents, route: "/agents" }];
+  }
+  if (pathname.startsWith("/catalog")) {
+    return [
+      { label: menuEntries.agents, route: "/agents" },
+      { label: isFr ? "Catalogue" : "Catalog", route: "/catalog" },
+    ];
+  }
+  if (pathname.startsWith("/ontology")) {
+    return [
+      { label: menuEntries.spaces, route: "/spaces" },
+      { label: isFr ? "Glossaire" : "Glossary", route: "/ontology" },
+    ];
+  }
+  if (pathname.includes("/sources") && pathname.startsWith("/workspaces")) {
+    return [
+      { label: menuEntries.spaces, route: "/spaces" },
+      { label: "Sources" },
+    ];
+  }
+  if (pathname.startsWith("/spaces") || pathname.startsWith("/workspaces")) {
+    return [{ label: menuEntries.spaces, route: "/spaces" }];
+  }
+  if (pathname.startsWith("/activity")) {
+    return [
+      { label: menuEntries.finops, route: "/finops" },
+      { label: isFr ? "Journal d'Activité" : "Activity Log", route: "/activity" },
+    ];
+  }
+  if (pathname.startsWith("/finops")) {
+    return [{ label: menuEntries.finops, route: "/finops" }];
+  }
+  if (pathname.startsWith("/organization")) {
+    return [
+      { label: menuEntries.configuration, route: "/configuration" },
+      { label: isFr ? "Mon Organisation" : "My Organization", route: "/organization" },
+    ];
+  }
+  if (pathname.startsWith("/wizards")) {
+    return [
+      { label: menuEntries.configuration, route: "/configuration" },
+      { label: isFr ? "Assistants Guidés" : "Guided Wizards", route: "/wizards" },
+    ];
+  }
+  if (
+    pathname.startsWith("/configuration") ||
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/bootstrap")
+  ) {
+    return [{ label: menuEntries.configuration, route: "/configuration" }];
+  }
+  if (pathname.startsWith("/profile")) {
+    return [{ label: isFr ? "Profil" : "Profile", route: "/profile" }];
+  }
+  if (pathname.startsWith("/showcase")) {
+    return [
+      { label: menuEntries.help, route: "/help" },
+      { label: isFr ? "Présentation ORCIA" : "ORCIA Showcase", route: "/showcase" },
+    ];
+  }
+  if (pathname.startsWith("/help")) {
+    return [{ label: menuEntries.help, route: "/help" }];
+  }
+  return [];
 }

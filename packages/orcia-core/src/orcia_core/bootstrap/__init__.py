@@ -13,6 +13,10 @@ from orcia_core.bootstrap._internal.smtp_otp_delivery import (
     OtpEmailSinkProtocol,
     send_login_email_otp,
 )
+from orcia_core.bootstrap._internal.sql_accostage_counts import (
+    AccostagePg18Counts,
+    get_accostage_pg18_counts,
+)
 from orcia_core.bootstrap._internal.sql_auth_policy import (
     ensure_platform_auth_policy_schema,
     load_decrypted_oidc_client_secret,
@@ -228,7 +232,9 @@ __all__ = [
     "VALID_ARCHETYPES",
     "WIZARD_STEPS_BY_TYPE",
     "AccostageMilestoneSpec",
+    "AccostagePg18Counts",
     "AccostageStatusReport",
+    "get_accostage_pg18_counts",
     "BootstrapRunStatus",
     "BootstrapScopeLevel",
     "DemoWorkspaceProvisionResult",

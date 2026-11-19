@@ -126,7 +126,12 @@ export function ContextualHelpColumnAndCenter({
     } else if (matchingSection?.category === "faq") {
       setOpenFaq(true);
     }
-    // Scroll ONLY the contextual help column container to top (never scroll window or main workspace)
+    // Scroll the contextual help column container so the active section is visible without scrolling window
+    const activeSectionEl = sectionRefs.current[activeSectionId];
+    if (activeSectionEl && typeof activeSectionEl.scrollIntoView === "function") {
+      activeSectionEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      return;
+    }
     const helpAside = panelRef.current?.closest(
       '[data-testid="four-zone-contextual-help-column"]',
     ) as HTMLElement | null;

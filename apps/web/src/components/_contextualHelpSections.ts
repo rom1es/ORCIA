@@ -61,6 +61,30 @@ const SHARED_WORKFLOW_FINOPS_FR: readonly UiContextualHelpSectionItem[] = [
     body: "Suivez séparément les coûts déclarés par les serveurs d'outils et agents distants, leurs unités métiers propres et l'état de leur coupe-circuit isolé. Chaque connecteur suspendu peut être réarmé indépendamment sans perturber vos modèles internes.",
     category: "terms",
   },
+  {
+    sectionId: "workflow-triggers",
+    title: "Déclencheurs automatiques et événements planifiés",
+    body: "Configurez les événements ou planifications qui lancent automatiquement un processus gouverné (arrivée d'une demande, mise à jour d'un document, revue périodique) dans le respect du budget autorisé.",
+    category: "steps",
+  },
+  {
+    sectionId: "orcia-doc-generation-process",
+    title: "Génération et synchronisation de la documentation d'aide",
+    body: "Ce processus met à jour les fiches d'aide de chaque écran et les publie dans votre Centre d'aide sans écraser les adaptations validées.",
+    category: "steps",
+  },
+  {
+    sectionId: "assistant-folders",
+    title: "Dossiers thématiques et notes permanentes de Mon Assistant",
+    body: "Regroupez vos échanges par sujet dans un dossier et épinglez vos consignes permanentes pour qu'elles soient automatiquement prises en compte à chaque question.",
+    category: "steps",
+  },
+  {
+    sectionId: "showcase-packs",
+    title: "Packs métiers installés sur la plateforme",
+    body: "Les packs métiers regroupent des processus prêts à l'emploi, des agents spécialisés et un glossaire adapté à un domaine d'activité.",
+    category: "terms",
+  },
 ];
 
 const SHARED_WORKFLOW_FINOPS_EN: readonly UiContextualHelpSectionItem[] = [
@@ -124,6 +148,30 @@ const SHARED_WORKFLOW_FINOPS_EN: readonly UiContextualHelpSectionItem[] = [
     body: "Track reported external tool and agent costs, distinct business units, and isolated connector circuit breaker states separately from internal models. Any suspended connector can be reset independently without impacting internal AI models.",
     category: "terms",
   },
+  {
+    sectionId: "workflow-triggers",
+    title: "Automated triggers and scheduled runs",
+    body: "Configure the events or schedules that automatically start a governed process (incoming request, document update, periodic review) within your approved budget limits.",
+    category: "steps",
+  },
+  {
+    sectionId: "orcia-doc-generation-process",
+    title: "Help documentation generation and sync",
+    body: "This process refreshes screen help guides and publishes them to your Help Center without overwriting validated customizations.",
+    category: "steps",
+  },
+  {
+    sectionId: "assistant-folders",
+    title: "Thematic folders and permanent notes in My Assistant",
+    body: "Organize discussions by topic in a folder and pin permanent instructions so they are automatically applied to every question you ask inside that folder.",
+    category: "steps",
+  },
+  {
+    sectionId: "showcase-packs",
+    title: "Installed business packs on the platform",
+    body: "Business packs bundle ready-to-use processes, specialized agents, and a domain glossary tailored to an operational area.",
+    category: "terms",
+  },
 ];
 
 export const CONFIGURATION_SECTIONS_FR: readonly UiContextualHelpSectionItem[] = [
@@ -136,7 +184,7 @@ export const CONFIGURATION_SECTIONS_FR: readonly UiContextualHelpSectionItem[] =
   {
     sectionId: "iam-role-grants",
     title: "Règles d'accès : Qui ? et Sur quoi ?",
-    body: "Chaque règle associe un bénéficiaire (Rôle ou Utilisateur, ex. Rôle : Chef1) à un périmètre cible (Plateforme entière, Direction / BU, Équipe ou Espace de travail, ex. aqwZSX) et précise les habilitations attribuées (Créer, Consulter les ressources, Modifier, Supprimer, Exécuter / Utiliser, Déléguer des droits). Aucun secret n'est jamais lisible après enregistrement.",
+    body: "Chaque règle associe un bénéficiaire (Rôle ou Utilisateur, ex. Rôle : Responsable Produit) à un périmètre cible (Plateforme entière, Direction / BU, Équipe ou Espace de travail, ex. Équipe Paiement) et précise les habilitations attribuées (Créer, Consulter les ressources, Modifier, Supprimer, Exécuter / Utiliser, Déléguer des droits). Aucun secret n'est jamais lisible après enregistrement.",
     category: "terms",
   },
   {
@@ -182,7 +230,7 @@ export const CONFIGURATION_SECTIONS_EN: readonly UiContextualHelpSectionItem[] =
   {
     sectionId: "iam-role-grants",
     title: "Access rules: Who? and On what?",
-    body: "Each rule links a beneficiary (Role or User, e.g. Role: Chef1) to a target scope (Entire platform, BU, Team, or Workspace, e.g. aqwZSX) and specifies granted permissions (Create, Read & view resources, Update, Delete, Execute / Use, Delegate rights). Secrets are strictly write-only and never readable.",
+    body: "Each rule links a beneficiary (Role or User, e.g. Role: Product Manager) to a target scope (Entire platform, BU, Team, or Workspace, e.g. Payments Team) and specifies granted permissions (Create, Read & view resources, Update, Delete, Execute / Use, Delegate rights). Secrets are strictly write-only and never readable.",
     category: "terms",
   },
   {

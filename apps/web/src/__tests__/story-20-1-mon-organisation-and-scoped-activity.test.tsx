@@ -120,7 +120,7 @@ describe("Story 20.1 — Menu Mon Organisation, Délégation BU/Team, Invitation
     resetAuthSessionStore();
   });
 
-  it("exposes Mon Organisation directly below Mes Espaces only for PLATFORM_ADMIN, BU_LEAD, TEAM_LEAD", async () => {
+  it("restricts /organization mutation access exclusively to PLATFORM_ADMIN, BU_LEAD, TEAM_LEAD and keeps sidebar strictly at 8 Direction C entries", async () => {
     for (const visibleRole of ["PLATFORM_ADMIN", "BU_LEAD", "TEAM_LEAD"] as const) {
       useAuthSessionStore.getState().setAuthSession({
         isAuthenticated: true,
@@ -129,11 +129,12 @@ describe("Story 20.1 — Menu Mon Organisation, Délégation BU/Team, Invitation
         roles: [visibleRole],
         activeHat: visibleRole,
       });
-      const { unmount } = await renderAppAtRoute("/");
-      const spacesBtn = await screen.findByTestId("eight-menu-item-spaces");
-      const orgBtn = await screen.findByTestId("eight-menu-item-organization");
-      expect(orgBtn.textContent).toContain("Mon Organisation");
-      expect(Boolean(spacesBtn.compareDocumentPosition(orgBtn) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+      const { unmount } = await renderAppAtRoute("/organization");
+      await screen.findByTestId("eight-menu-item-spaces");
+      expect(screen.queryByTestId("eight-menu-item-organization")).toBeNull();
+      expect(screen.getByTestId("eight-menu-item-help")).toBeDefined();
+      expect(await screen.findByTestId("settings-organization-section")).toBeDefined();
+      expect(screen.queryByTestId("organization-readonly-access-banner")).toBeNull();
       unmount();
     }
 
@@ -145,9 +146,10 @@ describe("Story 20.1 — Menu Mon Organisation, Délégation BU/Team, Invitation
         roles: [hiddenRole],
         activeHat: hiddenRole,
       });
-      const { unmount } = await renderAppAtRoute("/");
+      const { unmount } = await renderAppAtRoute("/organization");
       await screen.findByTestId("eight-menu-item-spaces");
       expect(screen.queryByTestId("eight-menu-item-organization")).toBeNull();
+      expect(await screen.findByTestId("organization-readonly-access-banner")).toBeDefined();
       unmount();
     }
   }, 15000);

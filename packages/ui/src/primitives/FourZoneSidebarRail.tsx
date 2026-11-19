@@ -3,26 +3,30 @@ import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertI
 import { OrciaIcon } from "../components/icons";
 import {
   DEFAULT_EIGHT_FIXED_MENU_ENTRIES,
+  type DoubleScopeSelectorLabels,
   type EightFixedMenuKey,
   type FourZoneDirectionCShellLabels,
-} from "./FourZoneDirectionCShell";
+  type ScopeOptionItem,
+} from "./FourZoneShellTypes";
 
 export interface FourZoneSidebarRailProps {
   readonly railCollapsed: boolean;
   readonly onToggleRailCollapsed: () => void;
-  readonly activeMenuKey: EightFixedMenuKey;
-  readonly showOrganizationMenu?: boolean;
-  readonly organizationMenuActive?: boolean;
-  readonly activityMenuActive: boolean;
+  readonly activeMenuKey: EightFixedMenuKey | null;
   readonly activePackKey: string;
   readonly availablePacks: readonly string[];
   readonly labels: FourZoneDirectionCShellLabels;
   readonly disabledMenuKeys?: Partial<Record<EightFixedMenuKey, string>>;
   readonly hiddenMenuKeys?: readonly EightFixedMenuKey[];
   readonly onSelectMenu: (key: EightFixedMenuKey, route: string) => void;
-  readonly onSelectOrganizationMenu?: (route: string) => void;
-  readonly onSelectActivityMenu?: (route: string) => void;
   readonly onSelectPack?: (packKey: string) => void;
+  readonly teamBuOptions?: readonly ScopeOptionItem[];
+  readonly activeTeamBuId?: string;
+  readonly onSelectTeamBu?: (scopeId: string) => void;
+  readonly workspaceSelectorOptions?: readonly ScopeOptionItem[];
+  readonly activeWorkspaceSelectorId?: string;
+  readonly onSelectWorkspaceFromSidebar?: (scopeId: string) => void;
+  readonly doubleSelectorLabels?: DoubleScopeSelectorLabels;
   readonly sidebarSecondarySlot?: React.ReactNode;
   readonly renderSidebarFooter?: (railCollapsed: boolean) => React.ReactNode;
 }
@@ -39,18 +43,20 @@ export function FourZoneSidebarRail({
   railCollapsed,
   onToggleRailCollapsed,
   activeMenuKey,
-  showOrganizationMenu = false,
-  organizationMenuActive = false,
-  activityMenuActive,
   activePackKey,
   availablePacks,
   labels,
   disabledMenuKeys,
   hiddenMenuKeys,
   onSelectMenu,
-  onSelectOrganizationMenu,
-  onSelectActivityMenu,
   onSelectPack,
+  teamBuOptions,
+  activeTeamBuId,
+  onSelectTeamBu,
+  workspaceSelectorOptions,
+  activeWorkspaceSelectorId,
+  onSelectWorkspaceFromSidebar,
+  doubleSelectorLabels,
   sidebarSecondarySlot,
   renderSidebarFooter,
 }: FourZoneSidebarRailProps): React.ReactElement {
@@ -58,8 +64,7 @@ export function FourZoneSidebarRail({
   const cleanCollapseLabel = sanitizeRailToggleLabel(labels.railCollapseLabel);
   const cleanExpandLabel = sanitizeRailToggleLabel(labels.railExpandLabel);
   const collapsedTooltip = `${cleanExpandLabel} ([)`;
-  const organizationLabel = labels.organizationMenuLabel ?? "Mon Organisation";
-  const activityLabel = labels.activityMenuLabel ?? "Journal d'Activité";
+  const selectorLabels = doubleSelectorLabels ?? labels.doubleSelector;
 
   return (
     <aside
@@ -104,85 +109,97 @@ export function FourZoneSidebarRail({
           </button>
         </div>
 
+        {!railCollapsed && teamBuOptions && teamBuOptions.length > 0 && (
+          <div
+            data-testid="sidebar-double-scope-selector"
+            className="mb-1.5 flex flex-col gap-1.5 border-b pb-2"
+            style={{ borderColor: "var(--color-border-subtle)" }}
+          >
+            <label className="flex flex-col gap-0.5 text-[11px] font-medium">
+              <span style={{ color: "var(--color-text-secondary)" }}>
+                {selectorLabels?.teamBuLabel ?? "Équipe / Direction"}
+              </span>
+              <select
+                data-testid="sidebar-team-bu-selector"
+                value={activeTeamBuId ?? teamBuOptions[0]?.id ?? ""}
+                onChange={(e) => onSelectTeamBu?.(e.target.value)}
+                className="w-full min-w-0 rounded border px-2 py-1 text-xs"
+                style={{
+                  backgroundColor: "var(--color-bg-elevated)",
+                  borderColor: "var(--color-border-subtle)",
+                  color: "var(--color-text-primary)",
+                }}
+              >
+                {teamBuOptions.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-0.5 text-[11px] font-medium">
+              <span style={{ color: "var(--color-text-secondary)" }}>
+                {selectorLabels?.workspaceLabel ?? "Espace"}
+              </span>
+              <select
+                data-testid="sidebar-workspace-selector"
+                value={activeWorkspaceSelectorId ?? ""}
+                onChange={(e) => onSelectWorkspaceFromSidebar?.(e.target.value)}
+                className="w-full min-w-0 rounded border px-2 py-1 text-xs"
+                style={{
+                  backgroundColor: "var(--color-bg-elevated)",
+                  borderColor: "var(--color-border-subtle)",
+                  color: "var(--color-text-primary)",
+                }}
+              >
+                <option value="">
+                  {selectorLabels?.allWorkspacesOption ?? "Tous les espaces"}
+                </option>
+                {(workspaceSelectorOptions ?? []).map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
+
         {DEFAULT_EIGHT_FIXED_MENU_ENTRIES.filter(
           (entry) => !hiddenMenuKeys?.includes(entry.key),
         ).map((entry) => {
-          const isActive = !activityMenuActive && !organizationMenuActive && entry.key === activeMenuKey;
+          const isActive = activeMenuKey !== null && entry.key === activeMenuKey;
           const entryLabel = labels.menuEntries[entry.key];
           const disabledReason = disabledMenuKeys?.[entry.key];
           const isDisabled = Boolean(disabledReason);
           return (
-            <React.Fragment key={entry.key}>
-              <button
-                type="button"
-                data-testid={`eight-menu-item-${entry.key}`}
-                data-active={isActive ? "true" : "false"}
+            <button
+              key={entry.key}
+              type="button"
+              data-testid={`eight-menu-item-${entry.key}`}
+              data-active={isActive ? "true" : "false"}
+              disabled={isDisabled}
+              aria-disabled={isDisabled ? "true" : undefined}
+              aria-label={railCollapsed ? entryLabel : undefined}
+              title={disabledReason ?? (railCollapsed ? entryLabel : undefined)}
+              data-disabled-reason={disabledReason}
+              aria-current={isActive ? "page" : undefined}
+              onClick={() => {
+                if (!isDisabled) {
+                  onSelectMenu(entry.key, entry.route);
+                }
+              }}
+              className={`orcia-sidebar-nav-btn ${railCollapsed ? "justify-center px-0 py-2" : "gap-2.5 px-2.5 py-2"}`}
+            >
+              <OrciaIcon name={entry.iconName} />
+              {!railCollapsed && <span className="flex-1">{entryLabel}</span>}
+              <DisabledButtonAlertIndicator
                 disabled={isDisabled}
-                aria-disabled={isDisabled ? "true" : undefined}
-                aria-label={railCollapsed ? entryLabel : undefined}
-                title={disabledReason ?? (railCollapsed ? entryLabel : undefined)}
-                data-disabled-reason={disabledReason}
-                aria-current={isActive ? "page" : undefined}
-                onClick={() => {
-                  if (!isDisabled) {
-                    onSelectMenu(entry.key, entry.route);
-                  }
-                }}
-                className={`orcia-sidebar-nav-btn ${railCollapsed ? "justify-center px-0 py-2" : "gap-2.5 px-2.5 py-2"}`}
-              >
-                <OrciaIcon name={entry.iconName} />
-                {!railCollapsed && <span className="flex-1">{entryLabel}</span>}
-                <DisabledButtonAlertIndicator
-                  disabled={isDisabled}
-                  reason={disabledReason}
-                  testIdSuffix={`eight-menu-item-${entry.key}`}
-                />
-              </button>
-
-              {entry.key === "spaces" && showOrganizationMenu && (
-                <button
-                  type="button"
-                  data-testid="eight-menu-item-organization"
-                  data-active={organizationMenuActive ? "true" : "false"}
-                  aria-label={railCollapsed ? organizationLabel : undefined}
-                  title={railCollapsed ? organizationLabel : undefined}
-                  aria-current={organizationMenuActive ? "page" : undefined}
-                  onClick={() => {
-                    if (onSelectOrganizationMenu) {
-                      onSelectOrganizationMenu("/organization");
-                    } else {
-                      onSelectMenu("spaces", "/organization");
-                    }
-                  }}
-                  className={`orcia-sidebar-nav-btn ${railCollapsed ? "justify-center px-0 py-2" : "gap-2.5 px-2.5 py-2"}`}
-                >
-                  <OrciaIcon name="organizationBu" />
-                  {!railCollapsed && <span className="flex-1">{organizationLabel}</span>}
-                </button>
-              )}
-
-              {entry.key === "finops" && (
-                <button
-                  type="button"
-                  data-testid="eight-menu-item-activity"
-                  data-active={activityMenuActive ? "true" : "false"}
-                  aria-label={railCollapsed ? activityLabel : undefined}
-                  title={railCollapsed ? activityLabel : undefined}
-                  aria-current={activityMenuActive ? "page" : undefined}
-                  onClick={() => {
-                    if (onSelectActivityMenu) {
-                      onSelectActivityMenu("/activity");
-                    } else {
-                      onSelectMenu("finops", "/activity");
-                    }
-                  }}
-                  className={`orcia-sidebar-nav-btn ${railCollapsed ? "justify-center px-0 py-2" : "gap-2.5 px-2.5 py-2"}`}
-                >
-                  <OrciaIcon name="activity" />
-                  {!railCollapsed && <span className="flex-1">{activityLabel}</span>}
-                </button>
-              )}
-            </React.Fragment>
+                reason={disabledReason}
+                testIdSuffix={`eight-menu-item-${entry.key}`}
+              />
+            </button>
           );
         })}
 

@@ -3,7 +3,7 @@ import type { EightFixedMenuKey, UiModuleKey } from "@orcia/ui";
 
 export interface ShellNavigationContextValue {
   readonly activeModuleKey: UiModuleKey;
-  readonly activeMenuKey: EightFixedMenuKey;
+  readonly activeMenuKey: EightFixedMenuKey | null;
   readonly activeScopeId: string;
   readonly helpColumnOpen: boolean;
   readonly activeHelpSectionId: string | null;

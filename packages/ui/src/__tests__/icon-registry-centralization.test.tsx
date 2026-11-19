@@ -126,7 +126,7 @@ describe("ORCIA Centralized Icon Registry (@orcia/ui) & Anti-Regression Audit", 
 
   it("Audit Gate 2: zero disconnected local icon dictionaries exist in shell or primitive components", () => {
     const fourZoneContent = fs.readFileSync(
-      path.join(UI_SRC_DIR, "primitives/FourZoneDirectionCShell.tsx"),
+      path.join(UI_SRC_DIR, "primitives/FourZoneShellTypes.ts"),
       "utf-8",
     );
     const globalSidebarContent = fs.readFileSync(
@@ -325,7 +325,7 @@ describe("ORCIA Centralized Icon Registry (@orcia/ui) & Anti-Regression Audit", 
                 spaces: "Mes Espaces",
                 finops: "Coûts & Activité",
                 configuration: "Configuration",
-                glossary: "Glossaire",
+                help: "Aide",
               },
             }}
             onSelectMenu={() => {}}

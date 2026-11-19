@@ -1,125 +1,45 @@
 import React, { useEffect, useState } from "react";
-import {
-  getOrciaIconGlyph,
-  ORCIA_EIGHT_MENU_ICON_NAMES,
-  OrciaIcon,
-  type OrciaIconName,
-} from "../components/icons";
+import { OrciaIcon } from "../components/icons";
+import { useResponsiveBreakpoint } from "../hooks/useResponsiveBreakpoint";
+import { FourZoneHelpAsideColumn } from "./FourZoneHelpAsideColumn";
 import { FourZoneNotificationsDrawer } from "./FourZoneNotificationsDrawer";
+import {
+  DEFAULT_EIGHT_FIXED_MENU_ENTRIES,
+  type DoubleScopeSelectorLabels,
+  type EightFixedMenuEntrySpec,
+  type EightFixedMenuKey,
+  type FourZoneDirectionCShellLabels,
+  type FourZoneDirectionCShellProps,
+  type MobileCompanionBottomTabKey,
+  type MobileCompanionTabLabels,
+  type ScopeOptionItem,
+  type ShellBreadcrumbItem,
+  type UiNotificationCenterItem,
+  type UiNotificationCenterItemKind,
+  type WorkspaceSwitcherOption,
+} from "./FourZoneShellTypes";
 import { FourZoneSidebarRail } from "./FourZoneSidebarRail";
 import { FourZoneTopHeaderSection } from "./FourZoneTopHeaderSection";
+import {
+  MobileCompanionBottomBar,
+  MobileShellNavigationDrawer,
+} from "./MobileCompanionBottomBar";
 
-export type EightFixedMenuKey =
-  | "cockpit"
-  | "assistant"
-  | "processes"
-  | "agents"
-  | "spaces"
-  | "finops"
-  | "configuration"
-  | "glossary";
-
-export interface EightFixedMenuEntrySpec {
-  readonly key: EightFixedMenuKey;
-  readonly iconName: OrciaIconName;
-  readonly icon: string;
-  readonly route: string;
-}
-
-export const DEFAULT_EIGHT_FIXED_MENU_ENTRIES: readonly EightFixedMenuEntrySpec[] = [
-  { key: "cockpit", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.cockpit, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.cockpit); }, route: "/cockpit" },
-  { key: "assistant", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.assistant, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.assistant); }, route: "/assistant" },
-  { key: "processes", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.processes, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.processes); }, route: "/processes" },
-  { key: "agents", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.agents, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.agents); }, route: "/agents" },
-  { key: "spaces", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.spaces, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.spaces); }, route: "/spaces" },
-  { key: "finops", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.finops, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.finops); }, route: "/finops" },
-  { key: "configuration", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.configuration, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.configuration); }, route: "/configuration" },
-  { key: "glossary", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.glossary, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.glossary); }, route: "/ontology" },
-] as const;
-
-export type UiNotificationCenterItemKind =
-  | "SETUP_PREREQUISITE"
-  | "ACTION_REQUIRED"
-  | "DECISION_WAITING"
-  | "INFO";
-
-export interface UiNotificationCenterItem {
-  readonly id: string;
-  readonly kind: UiNotificationCenterItemKind;
-  readonly badgeLabel: string;
-  readonly title: string;
-  readonly description: string;
-  readonly targetRoute?: string;
-  readonly ctaLabel?: string;
-  readonly triggerLabel?: string;
-  readonly isAutonomousNominal?: boolean;
-  readonly isAutonomousPriority?: boolean;
-}
-
-export interface FourZoneDirectionCShellLabels {
-  readonly workspacePrefix: string;
-  readonly searchTriggerPlaceholder: string;
-  readonly contextualHelpButtonLabel: string;
-  readonly notificationsButtonLabel: string;
-  readonly notificationsDrawerTitle: string;
-  readonly notificationsEmptyText: string;
-  readonly notificationsVsActivityHint?: string;
-  readonly notificationsOpenActivityCta?: string;
-  readonly autonomousNominalGroupTitle?: string;
-  readonly autonomousDefaultTriggerLabel?: string;
-  readonly sidebarAriaLabel: string;
-  readonly railCollapseLabel: string;
-  readonly railExpandLabel: string;
-  readonly packSelectorLabel: string;
-  readonly helpColumnTitle: string;
-  readonly helpColumnExpectedTitle: string;
-  readonly helpColumnExpectedBody: string;
-  readonly menuEntries: Record<EightFixedMenuKey, string>;
-  readonly organizationMenuLabel?: string;
-  readonly activityMenuLabel?: string;
-}
-
-export interface WorkspaceSwitcherOption {
-  readonly id: string;
-  readonly label: string;
-  readonly groupLabel?: string;
-}
-
-export interface FourZoneDirectionCShellProps {
-  readonly activeMenuKey: EightFixedMenuKey;
-  readonly showOrganizationMenu?: boolean;
-  readonly organizationMenuActive?: boolean;
-  readonly activityMenuActive?: boolean;
-  readonly activeWorkspaceName: string;
-  readonly activeScopeId?: string;
-  readonly workspaceOptions?: readonly WorkspaceSwitcherOption[];
-  readonly activePackKey: string;
-  readonly availablePacks: readonly string[];
-  readonly userDisplayName?: string;
-  readonly userHatLabel?: string;
-  readonly pendingDecisionsTotal: number;
-  readonly notifications?: readonly UiNotificationCenterItem[];
-  readonly onSelectNotification?: (item: UiNotificationCenterItem) => void;
-  readonly viewportWidth?: number;
-  readonly labels: FourZoneDirectionCShellLabels;
-  readonly disabledMenuKeys?: Partial<Record<EightFixedMenuKey, string>>;
-  readonly hiddenMenuKeys?: readonly EightFixedMenuKey[];
-  readonly onSelectMenu: (key: EightFixedMenuKey, route: string) => void;
-  readonly onSelectOrganizationMenu?: (route: string) => void;
-  readonly onSelectActivityMenu?: (route: string) => void;
-  readonly onOpenWorkspaceSwitcher?: () => void;
-  readonly onSelectWorkspace?: (scopeId: string) => void;
-  readonly onOpenSearchCommand?: () => void;
-  readonly onSelectPack?: (packKey: string) => void;
-  readonly onOpenUserDropdown?: () => void;
-  readonly headerUserControl?: React.ReactNode;
-  readonly sidebarSecondarySlot?: React.ReactNode;
-  readonly renderSidebarFooter?: (railCollapsed: boolean) => React.ReactNode;
-  readonly helpColumnContent?: React.ReactNode;
-  readonly helpColumnOpen?: boolean;
-  readonly onHelpColumnOpenChange?: (open: boolean) => void;
-  readonly children: React.ReactNode;
-}
+export {
+  DEFAULT_EIGHT_FIXED_MENU_ENTRIES,
+  type DoubleScopeSelectorLabels,
+  type EightFixedMenuEntrySpec,
+  type EightFixedMenuKey,
+  type FourZoneDirectionCShellLabels,
+  type FourZoneDirectionCShellProps,
+  type MobileCompanionBottomTabKey,
+  type MobileCompanionTabLabels,
+  type ScopeOptionItem,
+  type ShellBreadcrumbItem,
+  type UiNotificationCenterItem,
+  type UiNotificationCenterItemKind,
+  type WorkspaceSwitcherOption,
+};
 
 export function computeDefaultHelpColumnOpen(
   viewportWidth: number,
@@ -136,32 +56,37 @@ export function computeDefaultHelpColumnOpen(
 
 export function FourZoneDirectionCShell({
   activeMenuKey,
-  showOrganizationMenu = false,
-  organizationMenuActive = false,
-  activityMenuActive = false,
+  breadcrumbItems,
+  onNavigateBreadcrumb,
   activeWorkspaceName,
   activeScopeId,
   workspaceOptions,
+  teamBuOptions,
+  activeTeamBuId,
+  onSelectTeamBu,
+  workspaceSelectorOptions,
+  activeWorkspaceSelectorId,
+  onSelectWorkspaceFromSidebar,
+  doubleSelectorLabels,
   activePackKey,
   availablePacks,
-  userDisplayName,
-  userHatLabel,
   pendingDecisionsTotal,
   notifications = [],
   onSelectNotification,
-  viewportWidth = 1440,
+  viewportWidth,
+  isDesktopOnlyRoute = false,
+  mobileDesktopRecommendedText,
+  activeMobileBottomTab = null,
+  onSelectMobileBottomTab,
   labels,
   disabledMenuKeys,
   hiddenMenuKeys,
   onSelectMenu,
-  onSelectOrganizationMenu,
   onSelectActivityMenu,
   onOpenWorkspaceSwitcher,
   onSelectWorkspace,
   onOpenSearchCommand,
   onSelectPack,
-  onOpenUserDropdown,
-  headerUserControl,
   sidebarSecondarySlot,
   renderSidebarFooter,
   helpColumnContent,
@@ -169,11 +94,13 @@ export function FourZoneDirectionCShell({
   onHelpColumnOpenChange,
   children,
 }: FourZoneDirectionCShellProps): React.ReactElement {
-  const [railCollapsed, setRailCollapsed] = useState<boolean>(() => viewportWidth < 768);
+  const { viewportWidthPx, tier, isMobile } = useResponsiveBreakpoint(viewportWidth);
+  const [railCollapsed, setRailCollapsed] = useState<boolean>(() => isMobile);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [notificationsOpen, setNotificationsOpen] = useState<boolean>(false);
   const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = useState<boolean>(false);
   const [internalHelpColumnOpen, setInternalHelpColumnOpen] = useState<boolean>(() =>
-    computeDefaultHelpColumnOpen(viewportWidth, pendingDecisionsTotal),
+    computeDefaultHelpColumnOpen(viewportWidthPx, pendingDecisionsTotal),
   );
 
   const helpColumnOpen =
@@ -189,10 +116,16 @@ export function FourZoneDirectionCShell({
   useEffect(() => {
     if (controlledHelpColumnOpen === undefined) {
       setInternalHelpColumnOpen(
-        computeDefaultHelpColumnOpen(viewportWidth, pendingDecisionsTotal),
+        computeDefaultHelpColumnOpen(viewportWidthPx, pendingDecisionsTotal),
       );
     }
-  }, [viewportWidth, pendingDecisionsTotal, controlledHelpColumnOpen]);
+  }, [viewportWidthPx, pendingDecisionsTotal, controlledHelpColumnOpen]);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setMobileMenuOpen(false);
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -207,6 +140,7 @@ export function FourZoneDirectionCShell({
       } else if (event.key === "Escape") {
         setNotificationsOpen(false);
         setWorkspaceDropdownOpen(false);
+        setMobileMenuOpen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -216,19 +150,46 @@ export function FourZoneDirectionCShell({
   const effectiveNotificationCount =
     notifications.length > 0 ? notifications.length : pendingDecisionsTotal;
 
+  const mobileTabsLabels = labels.mobileTabs ?? {
+    navAriaLabel: "Navigation mobile",
+    cockpit: labels.menuEntries.cockpit,
+    assistant: labels.menuEntries.assistant,
+    decisions: "Décisions",
+    menuLabel: "Menu",
+  };
+
+  const resolvedMobileTab: MobileCompanionBottomTabKey | null =
+    activeMobileBottomTab ??
+    (activeMenuKey === "cockpit"
+      ? "cockpit"
+      : activeMenuKey === "assistant"
+        ? "assistant"
+        : null);
+
   return (
     <div
       data-testid="four-zone-direction-c-shell"
-      className="flex h-screen min-h-screen flex-col overflow-hidden"
+      data-breakpoint-tier={tier}
+      className={
+        isMobile
+          ? "flex min-h-screen flex-col"
+          : "flex h-screen min-h-screen flex-col overflow-hidden"
+      }
       style={{
-        height: "100vh",
-        overflow: "hidden",
+        height: isMobile ? "auto" : "100vh",
+        minHeight: "100vh",
+        overflow: isMobile ? "visible" : "hidden",
         backgroundColor: "var(--color-bg-canvas)",
         color: "var(--color-text-primary)",
         fontFamily: "var(--font-sans)",
       }}
     >
       <FourZoneTopHeaderSection
+        isMobile={isMobile}
+        mobileMenuOpen={mobileMenuOpen}
+        onToggleMobileMenu={() => setMobileMenuOpen((prev) => !prev)}
+        breadcrumbItems={breadcrumbItems}
+        onNavigateBreadcrumb={onNavigateBreadcrumb}
         activeWorkspaceName={activeWorkspaceName}
         activeScopeId={activeScopeId}
         workspaceOptions={workspaceOptions}
@@ -257,83 +218,118 @@ export function FourZoneDirectionCShell({
         />
       )}
 
-      <div
-        className="flex min-h-0 flex-1 overflow-hidden"
-        style={{ height: "calc(100vh - 52px)", overflow: "hidden" }}
-      >
-        <FourZoneSidebarRail
-          railCollapsed={railCollapsed}
-          onToggleRailCollapsed={() => setRailCollapsed((prev) => !prev)}
+      {isMobile && (
+        <MobileShellNavigationDrawer
+          open={mobileMenuOpen}
           activeMenuKey={activeMenuKey}
-          showOrganizationMenu={showOrganizationMenu}
-          organizationMenuActive={organizationMenuActive}
-          activityMenuActive={activityMenuActive}
-          activePackKey={activePackKey}
-          availablePacks={availablePacks}
           labels={labels}
           disabledMenuKeys={disabledMenuKeys}
           hiddenMenuKeys={hiddenMenuKeys}
-          onSelectMenu={onSelectMenu}
-          onSelectOrganizationMenu={onSelectOrganizationMenu}
-          onSelectActivityMenu={onSelectActivityMenu}
-          onSelectPack={onSelectPack}
-          sidebarSecondarySlot={sidebarSecondarySlot}
+          teamBuOptions={teamBuOptions}
+          activeTeamBuId={activeTeamBuId}
+          onSelectTeamBu={onSelectTeamBu}
+          workspaceSelectorOptions={workspaceSelectorOptions}
+          activeWorkspaceSelectorId={activeWorkspaceSelectorId}
+          onSelectWorkspaceFromSidebar={onSelectWorkspaceFromSidebar}
+          doubleSelectorLabels={doubleSelectorLabels}
           renderSidebarFooter={renderSidebarFooter}
+          onSelectMenu={onSelectMenu}
+          onClose={() => setMobileMenuOpen(false)}
         />
+      )}
+
+      <div
+        className={isMobile ? "flex min-h-0 flex-1" : "flex min-h-0 flex-1 overflow-hidden"}
+        style={isMobile ? undefined : { height: "calc(100vh - 52px)", overflow: "hidden" }}
+      >
+        {!isMobile && (
+          <FourZoneSidebarRail
+            railCollapsed={railCollapsed}
+            onToggleRailCollapsed={() => setRailCollapsed((prev) => !prev)}
+            activeMenuKey={activeMenuKey}
+            activePackKey={activePackKey}
+            availablePacks={availablePacks}
+            labels={labels}
+            disabledMenuKeys={disabledMenuKeys}
+            hiddenMenuKeys={hiddenMenuKeys}
+            onSelectMenu={onSelectMenu}
+            onSelectPack={onSelectPack}
+            teamBuOptions={teamBuOptions}
+            activeTeamBuId={activeTeamBuId}
+            onSelectTeamBu={onSelectTeamBu}
+            workspaceSelectorOptions={workspaceSelectorOptions}
+            activeWorkspaceSelectorId={activeWorkspaceSelectorId}
+            onSelectWorkspaceFromSidebar={onSelectWorkspaceFromSidebar}
+            doubleSelectorLabels={doubleSelectorLabels}
+            sidebarSecondarySlot={sidebarSecondarySlot}
+            renderSidebarFooter={renderSidebarFooter}
+          />
+        )}
 
         <main
           data-testid="four-zone-central-workspace"
-          className="min-h-0 min-w-0 flex-1 overflow-y-auto p-6"
+          className={
+            isMobile
+              ? "min-h-0 min-w-0 flex-1 p-3 pb-20"
+              : "min-h-0 min-w-0 flex-1 overflow-y-auto p-6"
+          }
           style={{
-            maxHeight: "calc(100vh - 52px)",
-            overflowY: "auto",
+            maxHeight: isMobile ? undefined : "calc(100vh - 52px)",
+            overflowY: isMobile ? undefined : "auto",
             backgroundColor: "var(--color-bg-canvas)",
           }}
         >
+          {isMobile && isDesktopOnlyRoute && (
+            <div
+              role="status"
+              data-testid="mobile-desktop-recommended-banner"
+              className="mb-3 flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium"
+              style={{
+                backgroundColor: "var(--color-bg-elevated)",
+                borderColor: "var(--color-state-warning, var(--color-border-subtle))",
+                color: "var(--color-text-primary)",
+              }}
+            >
+              <OrciaIcon name="desktop" size={14} />
+              <span>
+                {mobileDesktopRecommendedText ??
+                  labels.mobileDesktopRecommendedText ??
+                  "Écran optimisé pour ordinateur : les réglages restent accessibles ci-dessous."}
+              </span>
+            </div>
+          )}
           {children}
         </main>
 
         {helpColumnOpen && (
-          <aside
-            data-testid="four-zone-contextual-help-column"
-            className="min-h-0 shrink-0 overflow-y-auto border-l p-4"
-            style={{
-              width: "340px",
-              maxHeight: "calc(100vh - 52px)",
-              overflowY: "auto",
-              position: "sticky",
-              top: "52px",
-              backgroundColor: "var(--color-bg-surface)",
-              borderColor: "var(--color-border-subtle)",
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-xs font-semibold">{labels.helpColumnTitle}</h2>
-              <button
-                type="button"
-                data-testid="contextual-help-close-btn"
-                onClick={() => updateHelpColumnOpen(false)}
-                className="text-xs"
-              >
-                <OrciaIcon name="close" />
-              </button>
-            </div>
-            <div
-              className="mt-3 rounded border p-3"
-              style={{
-                backgroundColor: "var(--color-bg-elevated)",
-                borderColor: "var(--color-border-subtle)",
-              }}
-            >
-              <h3 className="text-xs font-semibold">{labels.helpColumnExpectedTitle}</h3>
-              <p className="mt-1 text-xs" style={{ color: "var(--color-text-secondary)" }}>
-                {labels.helpColumnExpectedBody}
-              </p>
-            </div>
-            {helpColumnContent && <div className="mt-3">{helpColumnContent}</div>}
-          </aside>
+          <FourZoneHelpAsideColumn
+            isMobile={isMobile}
+            labels={labels}
+            helpColumnContent={helpColumnContent}
+            onClose={() => updateHelpColumnOpen(false)}
+          />
         )}
       </div>
+
+      {isMobile && (
+        <MobileCompanionBottomBar
+          activeTab={resolvedMobileTab}
+          labels={mobileTabsLabels}
+          onSelectTab={(tab) => {
+            if (onSelectMobileBottomTab) {
+              onSelectMobileBottomTab(tab);
+              return;
+            }
+            if (tab === "cockpit") {
+              onSelectMenu("cockpit", "/cockpit");
+            } else if (tab === "assistant") {
+              onSelectMenu("assistant", "/assistant");
+            } else {
+              onSelectMenu("assistant", "/inbox");
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

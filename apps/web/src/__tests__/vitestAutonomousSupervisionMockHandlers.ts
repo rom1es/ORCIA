@@ -194,10 +194,75 @@ export function handleVitestAutonomousSupervisionRoute(
 
   if (path === "/api/v1/help/resolve" && method === "GET") {
     const route = searchParams?.get("route") ?? "/cockpit";
+    const lang = searchParams?.get("lang") === "en" ? "en" : "fr";
+    const pack = searchParams?.get("pack") ?? "core";
     const seeded = mockHelpByRoute.get(route);
     if (seeded) {
       return jsonResponse(seeded);
     }
+    const slug = route.replace(/^\/+|\/+$/g, "").replace(/[^a-z0-9]+/gi, "-") || "cockpit";
+    const isConfigRoute =
+      route.startsWith("/settings") ||
+      route.startsWith("/configuration") ||
+      route.startsWith("/organization");
+    const defaultKeyTerms =
+      isConfigRoute && lang === "fr"
+        ? [
+            "BU vs Équipe vs Espace de travail : Une Direction (BU) regroupe plusieurs Équipes.",
+            "Qui ? (Bénéficiaire) vs Sur quoi ? (Périmètre cible) : « Rôle : Responsable Produit → Équipe Paiement ».",
+            "Isoler ce périmètre (INHERITANCE_BLOCK) : Coupe l'héritage parent sur cette Équipe ou cet Espace.",
+          ]
+        : [
+            lang === "fr" ? "Périmètre : unité d'organisation active" : "Scope: active org unit",
+          ];
+    return jsonResponse({
+      route,
+      pack,
+      lang,
+      redis_cache_key: `help:route:${route}:${pack}:${lang}`,
+      cache_hit: false,
+      merged_layers: ["BASE"],
+      active_article: {
+        resource_id: `help-base-${slug}-${lang}`,
+        uri: `orcia://system/help/${slug}`,
+        title: lang === "fr" ? `Aide contextuelle — ${route}` : `Contextual Help — ${route}`,
+        version: "1.0.0",
+        lang,
+        layer: "BASE",
+        pack_name: pack,
+        bound_routes: [route],
+        summary_what_for:
+          lang === "fr"
+            ? `Présentation de l'écran ${route}.`
+            : `Overview for screen ${route}.`,
+        step_by_step_items: [
+          lang === "fr" ? `1. Consultez les éléments de ${route}` : `1. Review ${route} items`,
+        ],
+        key_terms_items: defaultKeyTerms,
+        faq_items: [
+          lang === "fr"
+            ? "Où trouver plus d'aide ? Ouvrez la colonne ❓ Aide."
+            : "Where to get more help? Open the ❓ Help column.",
+        ],
+        cas_key: `cas/${slug}`,
+        sha256: "b".repeat(64),
+        markdown_body: `# ${route}`,
+        item_type: "HELP_ARTICLE",
+        previous_version: null,
+        previous_cas_key: null,
+      },
+      rollback_available: false,
+      ask_assistant_prefill:
+        lang === "fr"
+          ? `Explique-moi comment utiliser l'écran ${route}`
+          : `Explain how to use screen ${route}`,
+      is_autonomous_generated: false,
+      run_id: null,
+      contract_label: null,
+      trigger_label: null,
+      previous_version_available: false,
+      trace_id: "0195f000000070008000000000007405",
+    });
   }
 
   if (path === "/api/v1/help/rollback" && method === "POST") {

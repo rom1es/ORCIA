@@ -259,7 +259,7 @@ export function AssistantFoldersAndCollaborativeThreadView({
               value={newFolderTitle}
               onChange={(e) => setNewFolderTitle(e.target.value)}
               placeholder={isFr ? "Titre du nouveau dossier thématique..." : "New thematic folder title..."}
-              className="flex-1 rounded border border-border-subtle bg-surface-primary px-3 py-1.5 text-xs"
+              className="min-w-0 flex-1 rounded border border-border-subtle bg-surface-primary px-3 py-1.5 text-xs"
             />
             <button
               type="button"

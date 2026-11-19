@@ -38,7 +38,7 @@ const SHELL_LABELS: FourZoneDirectionCShellLabels = {
     spaces: "Mes Espaces",
     finops: "Coûts & Budgets",
     configuration: "Configuration",
-    glossary: "Glossaire",
+    help: "Aide",
   },
   activityMenuLabel: "Journal d'Activité",
 };

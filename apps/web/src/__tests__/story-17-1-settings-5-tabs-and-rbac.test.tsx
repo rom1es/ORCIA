@@ -131,8 +131,8 @@ describe("Settings Tabs (5 Tabs), Exclusive PLATFORM_ADMIN Visibility & Mon Comp
     expect(screen.getByTestId("settings-iam-section")).toBeDefined();
     expect(screen.queryByTestId("settings-organization-section")).toBeNull();
 
-    // Navigate to dedicated Mon Organisation menu (/organization)
-    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    // Navigate to Mon Organisation (/organization) via Configuration link
+    fireEvent.click(screen.getByTestId("settings-open-organization-link"));
     expect(await screen.findByTestId("settings-organization-section")).toBeDefined();
 
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));

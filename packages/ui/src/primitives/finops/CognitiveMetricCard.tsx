@@ -47,7 +47,7 @@ export function CognitiveMetricCard({
         borderRadius: "8px",
         background: "var(--color-surface-card)",
         border: "1px solid var(--color-border-subtle)",
-        minWidth: "240px",
+        minWidth: "min(240px, 100%)",
         flex: "1 1 240px",
       }}
     >

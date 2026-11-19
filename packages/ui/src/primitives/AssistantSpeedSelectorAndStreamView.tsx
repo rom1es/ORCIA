@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useResponsiveBreakpoint } from "../hooks/useResponsiveBreakpoint";
 import { AssistantActiveStreamContent } from "./AssistantActiveStreamContent";
 import {
   ASSISTANT_EFFORT_OPTIONS,
@@ -54,6 +55,7 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
   const inputRef = useRef<HTMLInputElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const isUserPinnedToBottomRef = useRef<boolean>(true);
+  const { isMobile } = useResponsiveBreakpoint();
   const [isPinnedToBottom, setIsPinnedToBottom] = useState<boolean>(true);
   const [speed, setSpeed] = useState<UiAssistantSpeedMode>(initialDeepAudit ? "SPEED_3_DEEP_AUDIT" : initialSpeed);
   const [deepAuditActive, setDeepAuditActive] = useState<boolean>(initialDeepAudit);
@@ -106,12 +108,17 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
     const el = scrollContainerRef.current;
     if (
       isUserPinnedToBottomRef.current &&
-      (streamedText || stepProgress.length > 0 || isGenerating) &&
+      (streamedText || stepProgress.length > 0 || isGenerating || activeUserPrompt) &&
       el
     ) {
       el.scrollTop = el.scrollHeight;
+      if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+        window.requestAnimationFrame(() => {
+          el.scrollTop = el.scrollHeight;
+        });
+      }
     }
-  }, [streamedText, stepProgress, isGenerating]);
+  }, [streamedText, stepProgress, isGenerating, activeUserPrompt, previousTurnsSlot]);
 
   useEffect(() => {
     if (!prefillPrompt) return;
@@ -228,8 +235,14 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
   return (
     <section
       data-testid="assistant-speed-selector-and-stream"
-      style={{ display: "flex", flexDirection: "column", maxHeight: "calc(100vh - 155px)", minHeight: "340px" }}
-      className={hideTechnicalCacheHeader ? "pt-1 text-text-primary gap-2.5" : "rounded-xl border border-border-subtle bg-surface-elevated p-5 text-text-primary gap-3"}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        maxHeight: isMobile ? "calc(100dvh - 190px)" : "calc(100vh - 155px)",
+        minHeight: isMobile ? "260px" : "340px",
+        minWidth: 0,
+      }}
+      className={hideTechnicalCacheHeader ? "pt-1 text-text-primary gap-2.5 min-w-0" : "rounded-xl border border-border-subtle bg-surface-elevated p-5 text-text-primary gap-3 min-w-0"}
     >
       {!hideTechnicalCacheHeader && (
         <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border-subtle pb-2">

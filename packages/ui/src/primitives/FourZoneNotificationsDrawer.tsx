@@ -36,7 +36,7 @@ export function FourZoneNotificationsDrawer({
       aria-label={labels.notificationsDrawerTitle}
       className="fixed right-0 top-[52px] z-30 border-b border-l p-4 shadow-md"
       style={{
-        width: "420px",
+        width: "min(420px, 100vw)",
         maxHeight: "calc(100vh - 52px)",
         overflowY: "auto",
         backgroundColor: "var(--color-bg-surface)",

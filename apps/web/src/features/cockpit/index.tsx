@@ -43,13 +43,13 @@ export function CockpitFeaturePanel() {
     platformAdmin,
     llmTiers,
     orgUnits,
-    rbacGrants,
     workspaces,
     datasources,
     workflows,
     packs,
     runs,
     scopes,
+    accostageCounts,
     completedSetupStepsCount,
     launchRun,
   } = usePlatformSetup();
@@ -85,13 +85,25 @@ export function CockpitFeaturePanel() {
           )
         : runs;
 
+  const hasRealOrgUnits =
+    orgUnits.some((u) => u.level === "BU" || u.level === "TEAM") ||
+    (accostageCounts?.orgUnitsCount ?? 0) > 0;
+  const hasModels = llmTiers.length > 0 || (accostageCounts?.modelsCount ?? 0) > 0;
+  const hasWorkspaces =
+    workspaces.length > 0 || (accostageCounts?.workspacesCount ?? 0) > 0;
+  const hasSources =
+    datasources.length > 0 || (accostageCounts?.sourcesCount ?? 0) > 0;
+  const isAdminCreatedInPg = Boolean(
+    accostageCounts?.adminCreated || platformAdmin !== null,
+  );
+
   const milestones = [
     {
       index: 1,
       key: "step-llm",
       title: isFr ? "1. Modèles IA" : "1. AI Models",
-      completed: llmTiers.length > 0,
-      targetRoute: "/settings",
+      completed: hasModels,
+      targetRoute: "/configuration",
     },
     {
       index: 2,
@@ -99,22 +111,22 @@ export function CockpitFeaturePanel() {
       title: isFr
         ? "2. Structure Organisationnelle & Habilitations"
         : "2. Organization Structure & Permissions",
-      completed: orgUnits.length > 0 || rbacGrants.length > 0,
-      targetRoute: "/settings",
+      completed: hasRealOrgUnits,
+      targetRoute: "/organization",
     },
     {
       index: 3,
       key: "step-workspaces",
       title: isFr ? "3. Espaces de Travail" : "3. Workspaces",
-      completed: workspaces.length > 0,
-      targetRoute: "/workspaces",
+      completed: hasWorkspaces,
+      targetRoute: "/spaces",
     },
     {
       index: 4,
       key: "step-connectors",
       title: isFr ? "4. Sources Documentaires & Outils" : "4. Document Sources & Tools",
-      completed: datasources.length > 0,
-      targetRoute: "/settings",
+      completed: hasSources,
+      targetRoute: "/configuration",
     },
     {
       index: 5,
@@ -166,91 +178,118 @@ export function CockpitFeaturePanel() {
     platformAdmin?.displayName ||
     dictionary.humanAnchor.defaultAuthorName;
 
+  const accostageLabel = isFr
+    ? `Accostage ${completedSetupStepsCount}/5`
+    : `Onboarding ${completedSetupStepsCount}/5`;
+
   return (
     <div
       data-testid="cockpit-empty-first-panel"
-      style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+      style={{ display: "flex", flexDirection: "column", gap: "16px", minWidth: 0 }}
     >
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
+      {/* Bloc majeur 1 : Accostage & Contexte actif */}
+      <section
+        data-testid="cockpit-block-accostage"
+        className="flex flex-col gap-3 rounded-lg border p-3.5"
+        style={{
+          backgroundColor: "var(--color-bg-surface)",
+          borderColor: "var(--color-border-subtle)",
+        }}
+      >
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <span
+              data-testid="onboarding-progress-badge"
+              className="rounded px-2.5 py-0.5 font-mono text-xs font-semibold"
+              style={{
+                backgroundColor: "var(--color-action-primary-subtle)",
+                color: "var(--color-action-primary)",
+              }}
+            >
+              {accostageLabel}
+            </span>
+            <ContextualInfoTriggerButton
+              sectionId="cockpit-decisions"
+              label={
+                isFr
+                  ? "Comprendre le fonctionnement du Cockpit et des décisions"
+                  : "Understand how the Cockpit and decisions work"
+              }
+              onOpenHelpSection={openHelpSection}
+            />
+          </div>
           <span
-            data-testid="onboarding-progress-badge"
-            className="rounded px-2.5 py-0.5 font-mono text-xs font-semibold"
+            data-testid="cockpit-active-scope-badge"
+            className="max-w-full truncate rounded border px-2.5 py-0.5 text-xs font-medium"
             style={{
-              backgroundColor: "var(--color-action-primary-subtle)",
-              color: "var(--color-action-primary)",
+              backgroundColor: "var(--color-bg-elevated)",
+              borderColor: "var(--color-border-subtle)",
+              color: "var(--color-text-primary)",
             }}
           >
-            {completedSetupStepsCount}/5
+            {isFr ? `Contexte actif : ${activeScopeName}` : `Active context: ${activeScopeName}`}
           </span>
-          <ContextualInfoTriggerButton
-            sectionId="cockpit-decisions"
-            label={
-              isFr
-                ? "Comprendre le fonctionnement du Cockpit et des décisions"
-                : "Understand how the Cockpit and decisions work"
-            }
-            onOpenHelpSection={openHelpSection}
-          />
         </div>
-        <span
-          data-testid="cockpit-active-scope-badge"
-          className="rounded border px-2.5 py-0.5 text-xs font-medium"
-          style={{
-            backgroundColor: "var(--color-bg-elevated)",
-            borderColor: "var(--color-border-subtle)",
-            color: "var(--color-text-primary)",
-          }}
-        >
-          {isFr ? `Contexte actif : ${activeScopeName}` : `Active context: ${activeScopeName}`}
-        </span>
+
+        <ProgressiveDay0AccostageBanner
+          completedCount={completedSetupStepsCount}
+          totalCount={5}
+          adminCreated={isAdminCreatedInPg}
+          adminDisplayName={authDisplayName ?? platformAdmin?.displayName}
+          adminEmail={authEmail ?? platformAdmin?.email}
+          milestones={milestones}
+          labels={dictionary.progressiveAccostage}
+          onNavigateMilestone={(href) => navigateToRoute(href)}
+        />
+      </section>
+
+      {/* Bloc majeur 2 : Décisions & Lancement rapide de processus */}
+      <section
+        data-testid="cockpit-block-decisions"
+        className="flex flex-col gap-4"
+        style={{ minWidth: 0 }}
+      >
+        <StreamlinedCockpitView
+          decisions={scopedRuns.map((r) => ({
+            decisionId: `dec-${r.runId}`,
+            kind: "REVIEW_BRIEFING" as const,
+            runId: r.runId,
+            stepExecutionId: r.currentStepKey,
+            title: r.title,
+            summary: `${r.workspaceName} · ${r.currentStepKey}`,
+          }))}
+          currentUserId={currentUserId}
+          labels={dictionary.streamlinedCockpit}
+          onOpenAssistant={() => navigateToRoute("/assistant")}
+          onNavigateModule={(href) => navigateToRoute(href)}
+        />
+
+        <CockpitRunsSection
+          isFr={isFr}
+          workspaces={workspaces}
+          availableWorkspaces={availableWorkspaces}
+          workflows={workflows}
+          scopedRuns={scopedRuns}
+          selectedWsId={selectedWsId}
+          selectedWfKey={selectedWfKey}
+          runTitle={runTitle}
+          onSelectWsId={setSelectedWsId}
+          onSelectWfKey={setSelectedWfKey}
+          onChangeRunTitle={setRunTitle}
+          onLaunchRun={handleLaunchRun}
+          onNavigateToWorkspaces={() => navigateToRoute("/spaces")}
+        />
+      </section>
+
+      {/* Bloc majeur 3 : Gouvernance Human-Led & Arbitrage */}
+      <div data-testid="cockpit-block-governance" style={{ minWidth: 0 }}>
+        <CockpitHumanLedGovernanceSection
+          workspaceId={selectedWsId || availableWorkspaces[0]?.workspaceId}
+          authorName={resolvedAuthorName}
+          refreshSignal={runRefreshSignal}
+          activeRunId={latestRunId}
+        />
       </div>
-
-      <StreamlinedCockpitView
-        decisions={scopedRuns.map((r) => ({
-          decisionId: `dec-${r.runId}`,
-          kind: "REVIEW_BRIEFING" as const,
-          runId: r.runId,
-          stepExecutionId: r.currentStepKey,
-          title: r.title,
-          summary: `${r.workspaceName} · ${r.currentStepKey}`,
-        }))}
-        currentUserId={currentUserId}
-        labels={dictionary.streamlinedCockpit}
-        onOpenAssistant={() => navigateToRoute("/assistant")}
-        onNavigateModule={(href) => navigateToRoute(href)}
-      />
-
-      <ProgressiveDay0AccostageBanner
-        completedCount={completedSetupStepsCount}
-        totalCount={5}
-        milestones={milestones}
-        labels={dictionary.progressiveAccostage}
-        onNavigateMilestone={(href) => navigateToRoute(href)}
-      />
-
-      <CockpitRunsSection
-        isFr={isFr}
-        workspaces={workspaces}
-        availableWorkspaces={availableWorkspaces}
-        workflows={workflows}
-        scopedRuns={scopedRuns}
-        selectedWsId={selectedWsId}
-        selectedWfKey={selectedWfKey}
-        runTitle={runTitle}
-        onSelectWsId={setSelectedWsId}
-        onSelectWfKey={setSelectedWfKey}
-        onChangeRunTitle={setRunTitle}
-        onLaunchRun={handleLaunchRun}
-        onNavigateToWorkspaces={() => navigateToRoute("/workspaces")}
-      />
-
-      <CockpitHumanLedGovernanceSection
-        workspaceId={selectedWsId || availableWorkspaces[0]?.workspaceId}
-        authorName={resolvedAuthorName}
-        refreshSignal={runRefreshSignal}
-        activeRunId={latestRunId}
-      />
     </div>
   );
 }

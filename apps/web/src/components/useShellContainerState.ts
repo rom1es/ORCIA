@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   computeDefaultHelpColumnOpen,
+  useResponsiveBreakpoint,
   type EightFixedMenuKey,
   type UiModuleKey,
 } from "@orcia/ui";
@@ -21,26 +22,13 @@ export function useShellContainerState(
   const [selectedModuleOverride, setSelectedModuleOverride] = useState<UiModuleKey | null>(null);
   const [selectedMenuKeyOverride, setSelectedMenuKeyOverride] =
     useState<EightFixedMenuKey | null>(null);
-  const [viewportWidth, setViewportWidth] = useState<number>(() =>
-    typeof window !== "undefined" ? window.innerWidth : 1440,
-  );
+  const { viewportWidthPx: viewportWidth } = useResponsiveBreakpoint();
   const [searchModalOpen, setSearchModalOpen] = useState<boolean>(false);
   const [helpColumnOpen, setHelpColumnOpen] = useState<boolean>(() =>
-    computeDefaultHelpColumnOpen(
-      typeof window !== "undefined" ? window.innerWidth : 1440,
-      runsLength,
-    ),
+    computeDefaultHelpColumnOpen(viewportWidth, runsLength),
   );
   const [activeHelpSectionId, setActiveHelpSectionId] = useState<string | null>(null);
   const [adminModalDismissed, setAdminModalDismissed] = useState<boolean>(false);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setViewportWidth(window.innerWidth);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   useEffect(() => {
     setSelectedModuleOverride(null);

@@ -170,6 +170,26 @@ def initialize_app_services(app: FastAPI) -> None:
     else:
         catalog_service = app.state.catalog_service
 
+    if getattr(app.state, "contextual_help_service", None) is None:
+        from orcia_core.catalog.contextual_help import ContextualHelpResolutionService
+
+        app.state.contextual_help_service = ContextualHelpResolutionService(
+            redis_client=getattr(app.state, "redis_client", None),
+            engine=getattr(app.state, "db_engine", None),
+        )
+    else:
+        help_svc = app.state.contextual_help_service
+        if (
+            getattr(help_svc, "_engine", None) is None
+            and getattr(app.state, "db_engine", None) is not None
+        ):
+            help_svc._engine = app.state.db_engine
+        if (
+            getattr(help_svc, "_redis_client", None) is None
+            and getattr(app.state, "redis_client", None) is not None
+        ):
+            help_svc._redis_client = app.state.redis_client
+
     if getattr(app.state, "permission_broker_service", None) is None:
         permission_broker_service = build_default_permission_broker_service(
             evaluator=auth_service.evaluator,
@@ -230,6 +250,14 @@ def initialize_app_services(app: FastAPI) -> None:
         app.state.sse_broker, "set_redis_client"
     ):
         app.state.sse_broker.set_redis_client(app.state.redis_client)
+
+    help_svc_after_redis = getattr(app.state, "contextual_help_service", None)
+    if (
+        help_svc_after_redis is not None
+        and getattr(help_svc_after_redis, "_redis_client", None) is None
+        and getattr(app.state, "redis_client", None) is not None
+    ):
+        help_svc_after_redis._redis_client = app.state.redis_client
 
     if getattr(app.state, "notification_service", None) is None:
         notif_svc = UnifiedNotificationAndClaimService(
@@ -436,6 +464,9 @@ async def app_lifespan(app: FastAPI) -> AsyncIterator[None]:
             pack_bundles = DeclarativePackLoader(resolve_default_packs_root()).load_all_packs()
             app.state.declarative_pack_bundles = pack_bundles
             await upsert_declarative_pack_bundles_sql(db_engine, pack_bundles)
+            help_svc = getattr(app.state, "contextual_help_service", None)
+            if help_svc is not None and hasattr(help_svc, "ensure_seeded_in_postgres18_async"):
+                await help_svc.ensure_seeded_in_postgres18_async()
         except Exception as exc:
             from orcia_core.observability.logging import get_logger
 

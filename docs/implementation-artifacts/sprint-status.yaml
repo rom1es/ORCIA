@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 11-19-2026 07:55
+last_updated: 11-19-2026 08:42
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -230,7 +230,7 @@ development_status:
   22-3-persistance-pg18-assistant-notifications-sse-et-permission-broker: done
   22-4-persistance-pg18-orchestration-gates-et-garde-kill-switch: done
   22-5-persistance-pg18-packs-declaratifs-et-wizards-durables: done
-  22-6-coquille-direction-c-8-entrees-mobile-companion-aide-dynamique-et-cockpit: ready-for-dev
+  22-6-coquille-direction-c-8-entrees-mobile-companion-aide-dynamique-et-cockpit: done
   22-7-finitions-ux-ui-erreurs-rfc9457-grilles-devise-euro-et-purge-jargon: ready-for-dev
   22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime: ready-for-dev
   22-8a-assainissement-fail-closed-vitest-composition-root-sans-override-et-ci-complete: ready-for-dev

@@ -2,10 +2,16 @@ import React from "react";
 import { OrciaIcon } from "../components/icons";
 import type {
   FourZoneDirectionCShellLabels,
+  ShellBreadcrumbItem,
   WorkspaceSwitcherOption,
-} from "./FourZoneDirectionCShell";
+} from "./FourZoneShellTypes";
 
 export interface FourZoneTopHeaderSectionProps {
+  readonly isMobile?: boolean;
+  readonly mobileMenuOpen?: boolean;
+  readonly onToggleMobileMenu?: () => void;
+  readonly breadcrumbItems?: readonly ShellBreadcrumbItem[];
+  readonly onNavigateBreadcrumb?: (route: string) => void;
   readonly activeWorkspaceName: string;
   readonly activeScopeId?: string;
   readonly workspaceOptions?: readonly WorkspaceSwitcherOption[];
@@ -24,6 +30,11 @@ export interface FourZoneTopHeaderSectionProps {
 }
 
 export function FourZoneTopHeaderSection({
+  isMobile = false,
+  mobileMenuOpen = false,
+  onToggleMobileMenu,
+  breadcrumbItems = [],
+  onNavigateBreadcrumb,
   activeWorkspaceName,
   activeScopeId,
   workspaceOptions,
@@ -43,41 +54,105 @@ export function FourZoneTopHeaderSection({
   return (
     <header
       data-testid="four-zone-top-header-bar"
-      className="flex shrink-0 items-center justify-between border-b px-4"
+      className={`flex shrink-0 flex-nowrap items-center justify-between border-b min-w-0 ${isMobile ? "gap-1.5 px-2.5" : "gap-3 px-4"}`}
       style={{
         height: "52px",
         backgroundColor: "var(--color-bg-surface)",
         borderColor: "var(--color-border-subtle)",
       }}
     >
-      <div className="relative flex items-center gap-3">
-        <span className="text-sm font-bold tracking-tight">ORCIA</span>
-        <button
-          type="button"
-          data-testid="topbar-fixed-workspace-selector"
-          aria-haspopup="listbox"
-          aria-expanded={workspaceDropdownOpen}
-          onClick={() => {
-            onOpenWorkspaceSwitcher?.();
-            if (workspaceOptions && workspaceOptions.length > 0) {
-              onToggleWorkspaceDropdown();
-            }
-          }}
-          className="inline-flex items-center gap-1.5 rounded border px-2.5 py-1 text-xs font-semibold"
-          style={{
-            backgroundColor: "var(--color-bg-elevated)",
-            borderColor: "var(--color-border-subtle)",
-            color: "var(--color-text-primary)",
-            cursor: "pointer",
-          }}
-        >
-          <span>
-            {labels.workspacePrefix} : {activeWorkspaceName}
-          </span>
-          <OrciaIcon name="chevronDown" size={14} />
-        </button>
+      <div className="relative flex min-w-0 flex-1 items-center gap-2">
+        {isMobile && onToggleMobileMenu && (
+          <button
+            type="button"
+            data-testid="mobile-menu-drawer-toggle"
+            aria-label={labels.mobileTabs?.menuLabel ?? labels.sidebarAriaLabel}
+            aria-expanded={mobileMenuOpen}
+            onClick={onToggleMobileMenu}
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border text-xs font-semibold"
+            style={{
+              backgroundColor: mobileMenuOpen
+                ? "var(--color-action-primary-subtle)"
+                : "var(--color-bg-elevated)",
+              borderColor: "var(--color-border-subtle)",
+              color: "var(--color-text-primary)",
+            }}
+          >
+            <OrciaIcon name={mobileMenuOpen ? "close" : "nav.expand"} size={14} />
+          </button>
+        )}
 
-        {workspaceDropdownOpen && workspaceOptions && workspaceOptions.length > 0 && (
+        <span className="shrink-0 text-sm font-bold tracking-tight">ORCIA</span>
+
+        {breadcrumbItems.length > 0 && (
+          <nav
+            aria-label="Fil d'Ariane"
+            data-testid="topbar-breadcrumb"
+            className="flex min-w-0 items-center gap-1 overflow-hidden text-xs"
+            style={{ color: "var(--color-text-secondary)" }}
+          >
+            {breadcrumbItems.map((item, idx) => {
+              const isLast = idx === breadcrumbItems.length - 1;
+              return (
+                <React.Fragment key={`${item.label}-${idx}`}>
+                  <OrciaIcon name="chevronRight" size={12} />
+                  {item.route && !isLast && onNavigateBreadcrumb ? (
+                    <button
+                      type="button"
+                      data-testid={`topbar-breadcrumb-link-${idx}`}
+                      onClick={() => onNavigateBreadcrumb(item.route!)}
+                      className="truncate rounded px-1 py-0.5 hover:underline"
+                      style={{ color: "var(--color-text-secondary)", cursor: "pointer" }}
+                    >
+                      {item.label}
+                    </button>
+                  ) : (
+                    <span
+                      data-testid={`topbar-breadcrumb-item-${idx}`}
+                      className={`truncate ${isLast ? "font-semibold" : ""}`}
+                      style={{
+                        color: isLast
+                          ? "var(--color-text-primary)"
+                          : "var(--color-text-secondary)",
+                      }}
+                    >
+                      {item.label}
+                    </span>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </nav>
+        )}
+
+        {!isMobile && (
+          <button
+            type="button"
+            data-testid="topbar-fixed-workspace-selector"
+            aria-haspopup="listbox"
+            aria-expanded={workspaceDropdownOpen}
+            onClick={() => {
+              onOpenWorkspaceSwitcher?.();
+              if (workspaceOptions && workspaceOptions.length > 0) {
+                onToggleWorkspaceDropdown();
+              }
+            }}
+            className="inline-flex max-w-[240px] shrink-0 items-center gap-1.5 rounded border px-2.5 py-1 text-xs font-semibold"
+            style={{
+              backgroundColor: "var(--color-bg-elevated)",
+              borderColor: "var(--color-border-subtle)",
+              color: "var(--color-text-primary)",
+              cursor: "pointer",
+            }}
+          >
+            <span className="truncate">
+              {labels.workspacePrefix} : {activeWorkspaceName}
+            </span>
+            <OrciaIcon name="chevronDown" size={14} />
+          </button>
+        )}
+
+        {!isMobile && workspaceDropdownOpen && workspaceOptions && workspaceOptions.length > 0 && (
           <div
             role="listbox"
             aria-label={labels.workspacePrefix}
@@ -136,28 +211,34 @@ export function FourZoneTopHeaderSection({
       <button
         type="button"
         data-testid="topbar-federated-search-trigger"
+        aria-label={labels.searchTriggerPlaceholder}
         onClick={onOpenSearchCommand}
-        className="flex w-96 items-center justify-between rounded border px-3 py-1 text-xs"
+        className={`flex shrink-0 items-center justify-between rounded border py-1 text-xs ${
+          isMobile ? "px-2" : "w-64 lg:w-80 px-3"
+        }`}
         style={{
           backgroundColor: "var(--color-bg-canvas)",
           borderColor: "var(--color-border-subtle)",
           color: "var(--color-text-secondary)",
         }}
       >
-        <span className="inline-flex items-center gap-1.5">
+        <span className="inline-flex min-w-0 items-center gap-1.5">
           <OrciaIcon name="search" />
-          <span>{labels.searchTriggerPlaceholder}</span>
+          {!isMobile && <span className="truncate">{labels.searchTriggerPlaceholder}</span>}
         </span>
-        <kbd className="orcia-kbd-badge">⌘K</kbd>
+        {!isMobile && <kbd className="orcia-kbd-badge">⌘K</kbd>}
       </button>
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-1.5">
         <button
           type="button"
           data-testid="topbar-contextual-help-toggle"
+          aria-label={labels.contextualHelpButtonLabel}
           onClick={onToggleHelpColumn}
           aria-expanded={helpColumnOpen}
-          className="inline-flex items-center gap-1.5 rounded border px-2.5 py-1 text-xs font-medium"
+          className={`inline-flex items-center gap-1.5 rounded border py-1 text-xs font-medium ${
+            isMobile ? "px-2" : "px-2.5"
+          }`}
           style={{
             backgroundColor: helpColumnOpen
               ? "var(--color-action-primary-subtle)"
@@ -167,15 +248,18 @@ export function FourZoneTopHeaderSection({
           }}
         >
           <OrciaIcon name="help" size={14} />
-          <span>{labels.contextualHelpButtonLabel}</span>
+          {!isMobile && <span>{labels.contextualHelpButtonLabel}</span>}
         </button>
 
         <button
           type="button"
           data-testid="topbar-notifications-toggle"
+          aria-label={labels.notificationsButtonLabel}
           onClick={onToggleNotifications}
           aria-expanded={notificationsOpen}
-          className="inline-flex items-center gap-1.5 rounded border px-2.5 py-1 text-xs font-medium"
+          className={`inline-flex items-center gap-1.5 rounded border py-1 text-xs font-medium ${
+            isMobile ? "px-2" : "px-2.5"
+          }`}
           style={{
             backgroundColor: notificationsOpen
               ? "var(--color-action-primary-subtle)"
@@ -185,7 +269,7 @@ export function FourZoneTopHeaderSection({
           }}
         >
           <OrciaIcon name="notifications" size={14} />
-          <span>{labels.notificationsButtonLabel}</span>
+          {!isMobile && <span>{labels.notificationsButtonLabel}</span>}
           {effectiveNotificationCount > 0 && (
             <span
               data-testid="topbar-notifications-badge"

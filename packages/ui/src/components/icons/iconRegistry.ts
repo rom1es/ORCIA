@@ -266,7 +266,7 @@ export const ORCIA_EIGHT_MENU_ICON_NAMES: Record<EightFixedMenuKey, OrciaIconNam
   spaces: "spaces",
   finops: "finops",
   configuration: "configuration",
-  glossary: "bookOpen",
+  help: "help",
 };
 
 export const ORCIA_MODULE_ICON_NAMES: Record<UiModuleKey, OrciaIconName> = {

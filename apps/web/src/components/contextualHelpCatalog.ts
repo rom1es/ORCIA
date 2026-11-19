@@ -47,19 +47,19 @@ export function buildContextualHelpArticle({
       stepByStepItems: isFr
         ? [
             "1. Gérez vos comptes utilisateurs et comptes techniques dans l'annuaire, puis consultez la matrice des 7 rôles officiels de la plateforme.",
-            "2. Dans Exceptions & Isolation SecOps, indiquez Qui ? (Rôle ou Compte, ex: Rôle : Chef1) et choisissez Sur quoi ? (Périmètre cible : Plateforme entière, Direction / BU, Équipe ou Espace de travail, ex: aqwZSX).",
+            "2. Dans Exceptions & Isolation SecOps, indiquez Qui ? (Rôle ou Compte, ex: Rôle : Responsable Produit) et choisissez Sur quoi ? (Périmètre cible : Plateforme entière, Direction / BU, Équipe ou Espace de travail, ex: Équipe Paiement).",
             "3. Cochez les habilitations à attribuer et choisissez l'effet de la règle (Autoriser, Interdire ou Isoler ce périmètre). Utilisez les cases à cocher de la liste pour supprimer une ou plusieurs règles.",
           ]
         : [
             "1. Manage human and service accounts in the directory, then review the native 7-role matrix.",
-            "2. In SecOps Exceptions & Isolation, specify Who? (Role or Account, e.g. Role: Chef1) and select On what? (Target scope: Entire platform, BU, Team, or Workspace, e.g. aqwZSX).",
+            "2. In SecOps Exceptions & Isolation, specify Who? (Role or Account, e.g. Role: Product Manager) and select On what? (Target scope: Entire platform, BU, Team, or Workspace, e.g. Payments Team).",
             "3. Check the permissions to grant and choose the rule effect (Allow, Deny, or Isolate this scope). Use the list checkboxes to delete one or more rules.",
           ],
       keyTermsItems: isFr
         ? [
             "BU vs Équipe vs Espace de travail : Une Direction (BU) est un pôle métier qui regroupe plusieurs Équipes. Une Équipe est une unité d'organisation rattachée à une Direction, tandis qu'un Espace de travail (géré dans 📦 Mes Espaces) héberge les sources et exécutions d'un projet ou produit.",
             "Protection contre les suppressions accidentelles : Impossible de supprimer une Direction (BU) ou une Équipe tant que des Équipes rattachées ou des règles d'habilitation y font référence.",
-            "Qui ? (Bénéficiaire) vs Sur quoi ? (Périmètre cible) : Dans « Rôle : Chef1 → aqwZSX », Chef1 est le Bénéficiaire (le rôle ou l'utilisateur qui reçoit le droit) et aqwZSX est le Périmètre cible (la Direction, l'Équipe, l'Espace de travail ou toute la plateforme où s'applique ce droit).",
+            "Qui ? (Bénéficiaire) vs Sur quoi ? (Périmètre cible) : Dans « Rôle : Responsable Produit → Équipe Paiement », Responsable Produit est le Bénéficiaire (le rôle ou l'utilisateur qui reçoit le droit) et Équipe Paiement est le Périmètre cible (la Direction, l'Équipe, l'Espace de travail ou toute la plateforme où s'applique ce droit).",
             "Qu'est-ce que le Périmètre cible (« Sur quoi ? ») ? : Le périmètre cible désigne l'endroit précis de votre organisation où s'applique la règle d'habilitation : soit toute la plateforme, soit une Direction (BU) entière et ses équipes, soit une Équipe, soit un seul Espace de travail.",
             "Les 6 habilitations : Créer, Consulter les ressources (métadonnées et configuration hors secrets — aucun secret n'est jamais lisible après enregistrement), Modifier, Supprimer, Exécuter / Utiliser, Déléguer des droits.",
             "Autoriser : Accorde explicitement les actions cochées au bénéficiaire sur le périmètre cible.",
@@ -69,7 +69,7 @@ export function buildContextualHelpArticle({
         : [
             "BU vs Team vs Workspace: A BU is a business division grouping multiple Teams. A Team is an organizational unit linked to a parent BU, whereas a Workspace (managed in 📦 My Workspaces) hosts the sources and runs of a project or product.",
             "Accidental deletion protection: A BU or Team cannot be deleted while child Teams or permission rules still depend on it.",
-            "Who? (Beneficiary) vs On what? (Target scope): In 'Role: Chef1 → aqwZSX', Chef1 is the Beneficiary (the role or user receiving the right) and aqwZSX is the Target scope (the BU, Team, Workspace, or entire platform).",
+            "Who? (Beneficiary) vs On what? (Target scope): In 'Role: Product Manager → Payments Team', Product Manager is the Beneficiary (the role or user receiving the right) and Payments Team is the Target scope (the BU, Team, Workspace, or entire platform).",
             "What is Target scope ('On what?')?: The target scope identifies the exact level of your organization where the permission rule applies: the entire platform, a Division (BU), a Team, or a single Workspace.",
             "The 6 permissions: Create, Read & view resources (metadata and configuration without secrets — secret keys are write-only and never readable after saving), Update, Delete, Execute / Use, Delegate rights.",
             "Allow: Explicitly grants the checked actions to the beneficiary on the target scope.",

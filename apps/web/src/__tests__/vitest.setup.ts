@@ -452,19 +452,70 @@ async function vitestFetchTransport(
 
   // 1. Accostage & Platform Setup State
   if (path === "/api/v1/bootstrap/accostage-status" && method === "GET") {
+    const setupState = backendState.platformSetupState as Record<string, unknown> | null;
+    const rawOrgUnits = Array.isArray(setupState?.org_units)
+      ? setupState.org_units
+      : backendState.orgUnits;
+    const realOrgUnitsCount = rawOrgUnits.filter((u) => {
+      const rec = u as Record<string, unknown>;
+      const lvl = String(rec.level ?? rec.kind ?? "BU").toUpperCase();
+      return lvl === "BU" || lvl === "TEAM";
+    }).length;
+    const workspacesCount = Array.isArray(setupState?.workspaces)
+      ? setupState.workspaces.length
+      : backendState.workspaces.length;
+    const modelsCount = Array.isArray(setupState?.llm_tiers)
+      ? setupState.llm_tiers.length
+      : backendState.aiModelMappings.length;
+    const sourcesCount = Array.isArray(setupState?.datasources)
+      ? setupState.datasources.length
+      : 0;
+    const adminCreated = Boolean(backendState.firstAdmin);
     if (backendState.firstAdmin) {
       return jsonResponse({
+        completed_count: Math.min(6, 1 + (modelsCount > 0 ? 1 : 0) + (workspacesCount > 0 ? 1 : 0)),
+        total_count: 6,
+        badge_label: "Accostage",
+        llm_tier_mode: modelsCount >= 2 ? "FULL_ORTHOGONAL_AD10" : modelsCount === 1 ? "QUICK_TRIAL_SINGLE_FAMILY" : "UNCONFIGURED",
+        distinct_families: [],
+        assistant_trial_enabled: modelsCount >= 1,
+        agentic_gates_ad10_enabled: modelsCount >= 2,
+        amber_warning_badge: null,
+        completed_milestone_keys: [],
         first_admin_initialized: true,
         first_admin_email: backendState.firstAdmin.email,
         first_admin_display_name: backendState.firstAdmin.displayName,
+        admin_created: adminCreated,
+        users_count: 1,
+        org_units_count: realOrgUnitsCount,
+        workspaces_count: workspacesCount,
+        models_count: modelsCount,
+        sources_count: sourcesCount,
         boot_epoch: getVitestBootEpoch(),
+        trace_id: "0195f000000070008000000000009001",
       });
     }
     return jsonResponse({
+      completed_count: 1,
+      total_count: 6,
+      badge_label: "Accostage",
+      llm_tier_mode: "UNCONFIGURED",
+      distinct_families: [],
+      assistant_trial_enabled: false,
+      agentic_gates_ad10_enabled: false,
+      amber_warning_badge: null,
+      completed_milestone_keys: [],
       first_admin_initialized: false,
       first_admin_email: null,
       first_admin_display_name: null,
+      admin_created: false,
+      users_count: 0,
+      org_units_count: realOrgUnitsCount,
+      workspaces_count: workspacesCount,
+      models_count: modelsCount,
+      sources_count: sourcesCount,
       boot_epoch: getVitestBootEpoch(),
+      trace_id: "0195f000000070008000000000009002",
     });
   }
 

@@ -153,6 +153,15 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
                 </button>
               );
             })}
+            <button
+              type="button"
+              data-testid="settings-open-organization-link"
+              onClick={() => navigateToRoute("/organization")}
+              className="orcia-ds-tab"
+            >
+              <OrciaIcon name="organizationBu" size={15} />
+              <span>{dictionary.fourZoneShell.organizationMenuLabel ?? (isFr ? "Mon Organisation" : "My Organization")}</span>
+            </button>
           </nav>
         )}
       </header>

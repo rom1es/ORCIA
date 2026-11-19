@@ -29,15 +29,18 @@ import {
   type ShellNavigationContextValue,
 } from "./shellNavigationContext";
 import {
+  buildShellBreadcrumbItems,
   DEFAULT_HUMAN_PROFILE,
   DEFAULT_SHELL_MODULES,
   EMPTY_DEFAULT_SCOPES,
   evaluateScopeModuleVisibility,
+  isDesktopOnlyMobileRoute,
   mapEightMenuKeyToModule,
   resolveEightMenuKeyFromModule,
   resolveModuleFromPathname,
 } from "./shellPresets";
 import {
+  buildDoubleScopeSelectorState,
   buildShellDisabledMenuKeys,
   buildShellNotificationItems,
   buildWorkspaceSwitcherOptions,
@@ -120,7 +123,7 @@ function InnerShellContainer({
   const userHatLabel = resolveSessionHatLabel({ roles, readOnlyObserver }, locale);
 
   const safeModuleKey: UiModuleKey = activeModuleKey;
-  const activeMenuKey: EightFixedMenuKey =
+  const activeMenuKey: EightFixedMenuKey | null =
     state.selectedMenuKeyOverride ?? resolveEightMenuKeyFromModule(safeModuleKey, pathname);
   const openHelpSection = (sectionId: string) => {
     state.setHelpColumnOpen(true);
@@ -138,16 +141,33 @@ function InnerShellContainer({
   const workspaceOptions = buildWorkspaceSwitcherOptions({
     isFr, orgUnits, workspaces, scopes: effectiveScopes,
   });
+  const doubleScopeState = buildDoubleScopeSelectorState({
+    isFr,
+    orgUnits,
+    workspaces,
+    scopes: effectiveScopes,
+    activeScopeId: selectedScope.id,
+  });
+  const breadcrumbItems = buildShellBreadcrumbItems({
+    pathname,
+    isFr,
+    menuEntries: dictionary.fourZoneShell.menuEntries,
+  });
+  const isDesktopOnlyRoute = isDesktopOnlyMobileRoute(pathname);
   const disabledMenuKeys = buildShellDisabledMenuKeys({ isFr, llmTiers, workspaces });
   const notificationItems = buildShellNotificationItems({
     isFr, platformAdmin, orgUnits, workspaces, llmTiers, runs, autonomousRuns, inboxNotifications, lastClaimEvent, mustChangePassword,
   });
 
+  const helpTitleFallback = activeMenuKey
+    ? dictionary.fourZoneShell.menuEntries[activeMenuKey]
+    : dictionary.modulePages[safeModuleKey].subtitle;
+
   const contextualHelpArticle = buildContextualHelpArticle({
-    activeMenuKey,
+    activeMenuKey: activeMenuKey ?? "cockpit",
     pathname,
     locale,
-    title: dictionary.fourZoneShell.menuEntries[activeMenuKey],
+    title: helpTitleFallback,
     defaultSummary: dictionary.modulePages[safeModuleKey].description,
   });
 
@@ -180,10 +200,47 @@ function InnerShellContainer({
         showOrganizationMenu={showOrganizationMenu}
         organizationMenuActive={Boolean(pathname?.startsWith("/organization"))}
         activityMenuActive={Boolean(pathname?.startsWith("/activity"))}
+        breadcrumbItems={breadcrumbItems}
+        onNavigateBreadcrumb={(route) => dispatchNavigation(route)}
         activeWorkspaceName={activeWorkspaceName}
         activeScopeId={selectedScope.id}
         workspaceOptions={workspaceOptions}
+        teamBuOptions={doubleScopeState.teamBuOptions}
+        activeTeamBuId={doubleScopeState.activeTeamBuId}
+        onSelectTeamBu={(scopeId) => state.setActiveScopeId(scopeId)}
+        workspaceSelectorOptions={doubleScopeState.workspaceSelectorOptions}
+        activeWorkspaceSelectorId={doubleScopeState.activeWorkspaceSelectorId}
+        onSelectWorkspaceFromSidebar={(scopeId) =>
+          state.setActiveScopeId(scopeId || doubleScopeState.activeTeamBuId)
+        }
         onSelectWorkspace={(scopeId) => state.setActiveScopeId(scopeId)}
+        isDesktopOnlyRoute={isDesktopOnlyRoute}
+        activeMobileBottomTab={
+          pathname?.startsWith("/inbox")
+            ? "decisions"
+            : pathname?.startsWith("/assistant")
+              ? "assistant"
+              : pathname === "/" || pathname?.startsWith("/cockpit")
+                ? "cockpit"
+                : null
+        }
+        onSelectMobileBottomTab={(tab) => {
+          if (tab === "cockpit") {
+            state.setSelectedMenuKeyOverride("cockpit");
+            state.setSelectedModuleOverride("cockpit");
+            dispatchNavigation("/cockpit");
+          } else if (tab === "assistant") {
+            if (!disabledMenuKeys.assistant) {
+              state.setSelectedMenuKeyOverride("assistant");
+              state.setSelectedModuleOverride("inbox");
+              dispatchNavigation("/assistant");
+            }
+          } else {
+            state.setSelectedMenuKeyOverride("assistant");
+            state.setSelectedModuleOverride("inbox");
+            dispatchNavigation("/inbox");
+          }
+        }}
         activePackKey=""
         availablePacks={[]}
         userDisplayName={effectiveProfile.displayName}

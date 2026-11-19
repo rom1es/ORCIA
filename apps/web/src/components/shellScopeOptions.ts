@@ -23,6 +23,87 @@ export interface WorkspaceSwitcherOptionItem {
   readonly groupLabel: string;
 }
 
+export interface DoubleScopeSelectorState {
+  readonly teamBuOptions: readonly { readonly id: string; readonly label: string }[];
+  readonly activeTeamBuId: string;
+  readonly workspaceSelectorOptions: readonly { readonly id: string; readonly label: string }[];
+  readonly activeWorkspaceSelectorId: string;
+}
+
+export function buildDoubleScopeSelectorState(params: {
+  readonly isFr: boolean;
+  readonly orgUnits: readonly ConfiguredOrgUnit[];
+  readonly workspaces: readonly ControlCenterWorkspaceGovItem[];
+  readonly scopes: readonly UiScopeNode[];
+  readonly activeScopeId: string;
+}): DoubleScopeSelectorState {
+  const { isFr, orgUnits, workspaces, scopes, activeScopeId } = params;
+  const globalScopes = scopes.filter((s) => s.level === "GLOBAL");
+  const buUnits = orgUnits.filter((u) => u.level === "BU");
+  const teamUnits = orgUnits.filter((u) => u.level === "TEAM");
+
+  const teamBuOptions = [
+    ...globalScopes.map((s) => ({
+      id: s.id,
+      label: isFr ? `🌐 ${s.name}` : `🌐 ${s.name}`,
+    })),
+    ...buUnits.map((bu) => ({
+      id: bu.id,
+      label: `${getOrciaIconGlyph("organizationBu")} ${bu.name}`,
+    })),
+    ...teamUnits.map((team) => ({
+      id: team.id,
+      label: `${getOrciaIconGlyph("team")} ${team.name}`,
+    })),
+  ];
+
+  const matchedWorkspace = workspaces.find((ws) => ws.workspaceId === activeScopeId);
+  const activeTeamBuId = matchedWorkspace
+    ? (matchedWorkspace.ownerOrgUnitId &&
+        teamBuOptions.some((o) => o.id === matchedWorkspace.ownerOrgUnitId)
+        ? matchedWorkspace.ownerOrgUnitId
+        : teamBuOptions[0]?.id ?? "scope-global")
+    : teamBuOptions.some((o) => o.id === activeScopeId)
+      ? activeScopeId
+      : teamBuOptions[0]?.id ?? "scope-global";
+
+  const selectedBu = buUnits.find((bu) => bu.id === activeTeamBuId);
+  const childTeamIds = selectedBu
+    ? new Set([
+        selectedBu.id,
+        ...teamUnits.filter((t) => t.parentId === selectedBu.id).map((t) => t.id),
+      ])
+    : null;
+  const isTeamSelected = teamUnits.some((t) => t.id === activeTeamBuId);
+
+  const filteredWorkspaces = workspaces.filter((ws) => {
+    if (isTeamSelected) {
+      return !ws.ownerOrgUnitId || ws.ownerOrgUnitId === activeTeamBuId;
+    }
+    if (childTeamIds) {
+      return !ws.ownerOrgUnitId || childTeamIds.has(ws.ownerOrgUnitId);
+    }
+    return true;
+  });
+
+  const workspaceSelectorOptions = (
+    filteredWorkspaces.length > 0 ? filteredWorkspaces : workspaces
+  ).map((ws) => ({
+    id: ws.workspaceId,
+    label:
+      ws.visibilityMode === "PRIVATE_USER"
+        ? `🔒 ${ws.name}`
+        : `📦 ${ws.name}`,
+  }));
+
+  return {
+    teamBuOptions,
+    activeTeamBuId,
+    workspaceSelectorOptions,
+    activeWorkspaceSelectorId: matchedWorkspace ? matchedWorkspace.workspaceId : "",
+  };
+}
+
 export function buildWorkspaceSwitcherOptions(params: {
   readonly isFr: boolean;
   readonly orgUnits: readonly ConfiguredOrgUnit[];

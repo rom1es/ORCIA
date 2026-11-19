@@ -84,6 +84,26 @@ export function WorkspacesFeaturePanel({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <nav
+        aria-label={isFr ? "Navigation Mes Espaces" : "My Spaces navigation"}
+        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2"
+        style={{
+          backgroundColor: "var(--color-bg-surface)",
+          borderColor: "var(--color-border-subtle)",
+        }}
+      >
+        <span className="text-xs font-semibold">
+          {isFr ? "Espaces de travail & Sources" : "Workspaces & Sources"}
+        </span>
+        <button
+          type="button"
+          data-testid="spaces-open-glossary-link"
+          onClick={() => navigateToRoute("/ontology")}
+          className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
+        >
+          {isFr ? "📖 Glossaire métier →" : "📖 Business Glossary →"}
+        </button>
+      </nav>
       {actionFeedback ? (
         <div
           role="status"

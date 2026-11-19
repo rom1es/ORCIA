@@ -29,6 +29,11 @@ test.describe("TEST-04 · 05 — Mobile Companion (390x844) et sorties de secour
     for (const route of ["/cockpit", "/assistant", "/spaces", "/configuration"]) {
       await page.goto(route);
       await expect(page.getByTestId("four-zone-direction-c-shell")).toBeVisible({ timeout: 30000 });
+      await expect(page.getByTestId("four-zone-sidebar")).toHaveCount(0);
+      await expect(page.getByTestId("mobile-bottom-tab-bar")).toBeVisible();
+      if (route === "/configuration") {
+        await expect(page.getByTestId("mobile-desktop-recommended-banner")).toBeVisible();
+      }
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - window.innerWidth,
       );

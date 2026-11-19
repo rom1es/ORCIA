@@ -29,9 +29,10 @@ function isValidUuid(value: string | null | undefined): value is string {
 }
 
 export function FinopsFeaturePanel() {
-  const { dictionary } = useI18n();
-  const { activeScopeId, openHelpSection } = useShellNavigation();
+  const { dictionary, locale } = useI18n();
+  const { activeScopeId, openHelpSection, navigateToRoute } = useShellNavigation();
   const { scopes, workspaces, orgUnits } = usePlatformSetup();
+  const isFr = locale === "fr";
 
   const [selectedScope, setSelectedScope] = useState<"GLOBAL" | "BU" | "TEAM" | "WORKSPACE">("GLOBAL");
   const [dashboardData, setDashboardData] = useState<FinopsBreakdownResponse | null>(null);
@@ -298,8 +299,18 @@ export function FinopsFeaturePanel() {
   return (
     <div
       data-testid="finops-feature-panel"
-      style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}
+      style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%", minWidth: 0 }}
     >
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <button
+          type="button"
+          data-testid="finops-open-activity-link"
+          onClick={() => navigateToRoute("/activity")}
+          className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
+        >
+          {dictionary.fourZoneShell.activityMenuLabel ?? (isFr ? "Journal d'Activité" : "Activity Log")} →
+        </button>
+      </div>
       {errorMessage && (
         <OrciaAlertBanner tone="crimson" role="alert" testId="finops-error-banner">
           {errorMessage}

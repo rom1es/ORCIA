@@ -6,6 +6,7 @@
 export interface components {
   schemas: {
     AccostageStatusResponse: {
+      admin_created?: boolean;
       agentic_gates_ad10_enabled: boolean;
       amber_warning_badge?: string | null;
       assistant_trial_enabled: boolean;
@@ -18,8 +19,13 @@ export interface components {
       first_admin_email?: string | null;
       first_admin_initialized?: boolean;
       llm_tier_mode: "UNCONFIGURED" | "QUICK_TRIAL_SINGLE_FAMILY" | "FULL_ORTHOGONAL_AD10";
+      models_count?: number;
+      org_units_count?: number;
+      sources_count?: number;
       total_count: number;
       trace_id: string;
+      users_count?: number;
+      workspaces_count?: number;
     };
     AcquireResourceLeasesRequest: {
       ancestor_run_ids?: (string)[];

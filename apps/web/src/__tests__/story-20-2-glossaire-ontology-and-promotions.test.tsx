@@ -63,7 +63,7 @@ describe("Story 20.2 — Menu Glossaire (/ontology), Séparation /help, ONTOLOGY
     cleanup();
   });
 
-  it("navigates via left menu 'Glossaire' to /ontology (no /showcase banner) while /help keeps Showcase + Help Center", async () => {
+  it("navigates via Mes Espaces -> Glossaire to /ontology (no /showcase banner) while 8-item sidebar Aide opens /help (Showcase + Help Center)", async () => {
     const queryClient = createOrciaQueryClient();
     const history = createMemoryHistory({ initialEntries: ["/cockpit"] });
     const router = createOrciaRouter({ queryClient, history });
@@ -75,11 +75,17 @@ describe("Story 20.2 — Menu Glossaire (/ontology), Séparation /help, ONTOLOGY
       </QueryClientProvider>,
     );
 
-    const glossaryBtn = screen.getByTestId("eight-menu-item-glossary");
-    expect(glossaryBtn.textContent).toContain("Glossaire");
-    expect(screen.queryByTestId("eight-menu-item-help")).toBeNull();
+    const helpBtn = screen.getByTestId("eight-menu-item-help");
+    expect(helpBtn.textContent).toContain("Aide");
+    expect(screen.queryByTestId("eight-menu-item-glossary")).toBeNull();
 
-    fireEvent.click(glossaryBtn);
+    fireEvent.click(screen.getByTestId("eight-menu-item-spaces"));
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/spaces");
+    });
+    const glossaryLink = await screen.findByTestId("spaces-open-glossary-link");
+    fireEvent.click(glossaryLink);
+
     await waitFor(() => {
       expect(screen.getByTestId("ontology-create-concept-card")).toBeDefined();
       expect(screen.getByTestId("ontology-tab-proposals")).toBeDefined();
@@ -87,10 +93,10 @@ describe("Story 20.2 — Menu Glossaire (/ontology), Séparation /help, ONTOLOGY
     expect(screen.queryByTestId("help-showcase-site-banner")).toBeNull();
     expect(screen.queryByTestId("help-menu-center-view")).toBeNull();
 
-    await act(async () => {
-      await router.navigate({ to: "/help" });
+    fireEvent.click(helpBtn);
+    await waitFor(() => {
+      expect(screen.getByTestId("help-menu-center-view")).toBeDefined();
     });
-    expect(screen.getByTestId("help-menu-center-view")).toBeDefined();
     expect(screen.getByTestId("help-showcase-site-banner")).toBeDefined();
     expect(screen.getByTestId("open-orcia-showcase-site-btn")).toBeDefined();
     expect(screen.getAllByTestId("contextual-help-hybrid-panel").length).toBeGreaterThanOrEqual(1);

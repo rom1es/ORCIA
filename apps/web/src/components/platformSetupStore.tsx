@@ -15,6 +15,7 @@ import { createPlatformGovernanceActions } from "./platformSetupGovernanceAction
 import {
   fetchAndBuildHydrationOutcome,
   savePlatformSetupSnapshotToApi,
+  type AccostagePg18CountsView,
 } from "./platformSetupHydration";
 import {
   cleanAuditSummaryJargon,
@@ -87,6 +88,7 @@ export interface PlatformSetupContextValue {
   readonly workflowOverrides: readonly ControlCenterOverrideItem[];
   readonly auditEvents: readonly ConfiguredAuditEvent[];
   readonly scopes: readonly UiScopeNode[];
+  readonly accostageCounts: AccostagePg18CountsView | null;
   readonly isDay0Complete: boolean;
   readonly completedSetupStepsCount: number;
   readonly createPlatformAdmin: (input: {
@@ -189,6 +191,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   const [auditEvents, setAuditEvents] = useState<readonly ConfiguredAuditEvent[]>(
     initialCache.auditEvents,
   );
+  const [accostageCounts, setAccostageCounts] = useState<AccostagePg18CountsView | null>(null);
   const hasMutatedSinceMountRef = useRef(false);
 
   const applySnapshotToState = (next: CachedPlatformSetupState) => {
@@ -207,6 +210,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
 
   const resetAllSetupState = () => {
     setPlatformAdmin(null);
+    setAccostageCounts(null);
     applySnapshotToState({
       orgUnits: [],
       rbacGrants: [],
@@ -266,6 +270,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
           return;
         }
         if (outcome.kind === "HYDRATED") {
+          setAccostageCounts(outcome.accostageCounts);
           if (outcome.admin) setPlatformAdmin(outcome.admin);
           if (outcome.snapshot) applySnapshotToState(outcome.snapshot);
         }
@@ -440,11 +445,19 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   };
 
   const scopes = buildScopeNodes(orgUnits, workspaces);
+  const effectiveHasModels = llmTiers.length > 0 || (accostageCounts?.modelsCount ?? 0) > 0;
+  const effectiveHasOrgUnits =
+    orgUnits.some((u) => u.level === "BU" || u.level === "TEAM") ||
+    (accostageCounts?.orgUnitsCount ?? 0) > 0;
+  const effectiveHasWorkspaces =
+    workspaces.length > 0 || (accostageCounts?.workspacesCount ?? 0) > 0;
+  const effectiveHasSources =
+    datasources.length > 0 || (accostageCounts?.sourcesCount ?? 0) > 0;
   const completedSetupStepsCount = [
-    llmTiers.length > 0,
-    orgUnits.length > 0 || rbacGrants.length > 0,
-    workspaces.length > 0,
-    datasources.length > 0,
+    effectiveHasModels,
+    effectiveHasOrgUnits,
+    effectiveHasWorkspaces,
+    effectiveHasSources,
     workflows.length > 0 || packs.length > 0,
   ].filter(Boolean).length;
   const isDay0Complete = completedSetupStepsCount === 5;
@@ -477,6 +490,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         workflowOverrides,
         auditEvents,
         scopes,
+        accostageCounts,
         isDay0Complete,
         completedSetupStepsCount,
         ...governanceActions,

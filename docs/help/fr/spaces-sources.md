@@ -1,34 +1,32 @@
 ---
-id: spaces-sources
-title: Connecter et synchroniser vos sources documentaires et outils
-version: 1.1.0
+resource_id: help-base-spaces-sources-fr
+uri: orcia://system/help/spaces-sources/fr
+title: "Connecter et synchroniser vos sources documentaires"
+version: "1.1.0"
 lang: fr
 layer: BASE
 bound_routes:
   - /mes-espaces/$id/sources
   - /spaces/sources
-  - /workspaces
-  - /settings
+summary_what_for: "Cet écran vous permet de rattacher les sources de connaissances de votre équipe (dépôts de code, espaces documentaires ou suivis de projets) à votre Espace de travail et de choisir où vos livrables validés sont enregistrés."
 ---
 
-## À quoi sert cet écran ?
+## À quoi sert cet écran
 
-Cet écran vous permet de rattacher les sources de connaissances de votre équipe (dépôts de code, espaces documentaires, suivis de projets ou bases de données) à votre **Espace de travail** et de définir où vos livrables validés sont enregistrés par défaut.
+Cet écran relie votre **Espace de travail** aux outils où vivent les documents et les projets de votre équipe. Vous y choisissez les sources que Mon Assistant et vos processus peuvent consulter, ainsi que le mode de connexion adapté à la confidentialité des données.
 
-## Comment procéder pas à pas
+## En 3 gestes
 
-1. Choisissez le type de source à connecter (code, documentation, suivi de projets ou base de données) et donnez-lui un nom clair pour votre équipe.
-2. Indiquez le mode de connexion : **Compte personnel de chaque membre** (chaque utilisateur n'accède qu'aux documents auxquels il a droit) ou **Compte partagé d'équipe** (approuvé par un administrateur).
-3. Rédigez une courte justification métier, signez l'ajout et vérifiez la connexion en un clic.
+1. Choisissez la nature de la source à rattacher (documentation, suivi de projet, dépôt de code ou base de données) et donnez-lui un nom clair pour votre équipe.
+2. Indiquez si l'accès utilise le compte personnel de chaque membre (chacun ne voit que ses documents autorisés) ou un compte partagé approuvé par un administrateur.
+3. Saisissez une courte justification métier, signez l'ajout et vérifiez la connexion en un clic.
 
-## Repères & notions utiles
+## Un exemple réel
 
-- **Source de référence vs Document de travail** : Une source de référence sert de base officielle de lecture ; un document de travail accueille vos livrables en cours de préparation.
-- **Connexion sous votre compte personnel** : Garantit qu'aucun membre ne peut lire un document confidentiel auquel il n'a pas accès dans l'outil d'origine.
-- **Cloisonnement d'un espace confidentiel** : Empêche la remontée automatique des contenus d'un espace sensible vers les niveaux parents de l'organisation.
+L'équipe Paiement rattache son espace de documentation produit et son suivi de tickets à l'Espace « Refonte Checkout » avec connexion personnelle : chaque membre interroge les spécifications à jour sans jamais accéder aux dossiers confidentiels d'une autre direction.
 
-## Questions fréquentes
+## Ce qui coince souvent
 
-- **Quel est le lien entre une entité de l'organisation (Direction, Équipe) et un Espace de travail ?** L'organisation (Entreprise $\rightarrow$ Direction $\rightarrow$ Équipe) décrit *qui vous êtes* (l'organigramme auquel sont rattachés les membres), tandis que l'**Espace de travail** décrit *sur quoi vous travaillez* (un projet, un produit ou un chantier où sont connectées vos sources documentaires et exécutés vos processus). Chaque Espace de travail appartient à une Équipe ou une Direction propriétaire (une même équipe peut gérer plusieurs espaces), peut inviter d'autres équipes à collaborer, et hérite des règles de son équipe et de sa direction (sauf s'il est configuré en mode confidentiel isolé).
-- **Comment accéder à l'explication d'un réglage précis ?** Cliquez sur l'icône `ⓘ` située à côté de l'intitulé : cette colonne d'aide s'ouvre et met directement en évidence la section correspondante.
-- **Que se passe-t-il si un document est modifié directement dans notre outil externe ?** Vos modifications directes sont toujours préservées et ne sont jamais écrasées par un brouillon automatique.
+- **Quel est le lien entre une unité d'organisation et un Espace de travail ?** L'unité d'organisation (Direction, Équipe) regroupe les personnes et le budget, tandis que l'Espace de travail rassemble les sources documentaires et les livrables d'un projet précis.
+- **Une source indique un contenu à vérifier** : cliquez sur l'action de resynchronisation pour analyser les dernières modifications publiées dans l'outil externe.
+- **Vos modifications directes restent prioritaires** : un brouillon automatique n'écrase jamais ce que vous avez édité directement dans votre outil.

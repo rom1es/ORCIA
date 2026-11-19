@@ -1,34 +1,32 @@
 ---
-id: spaces-sources
-title: Connect and synchronize your document sources and tools
-version: 1.1.0
+resource_id: help-base-spaces-sources-en
+uri: orcia://system/help/spaces-sources/en
+title: "Connect and synchronize your document sources"
+version: "1.1.0"
 lang: en
 layer: BASE
 bound_routes:
   - /mes-espaces/$id/sources
   - /spaces/sources
-  - /workspaces
-  - /settings
+summary_what_for: "This screen lets you connect your team's knowledge sources (code repositories, documentation spaces, or project trackers) to your Workspace and choose where approved deliverables are saved."
 ---
 
-## What is this screen for?
+## What this screen is for
 
-This screen lets you connect your team's knowledge sources (code repositories, documentation spaces, project trackers, or databases) to your **Workspace** and choose where approved deliverables are saved by default.
+This screen connects your **Workspace** to the external tools where your team's documents and projects live. You decide which sources My Assistant and your processes can read, and which authentication mode fits your confidentiality rules.
 
-## How to proceed step by step
+## In 3 steps
 
-1. Select the type of source to connect (code, documentation, project tracking, or database) and give it a clear display name for your team.
-2. Choose the connection mode: **Each member's personal account** (every user only sees documents they are allowed to access) or **Shared team account** (approved by an administrator).
-3. Write a short business justification, sign the addition, and test the connection in one click.
+1. Pick the kind of source to connect (documentation, project tracker, code repository, or database) and give it a clear name for your team.
+2. Choose whether access uses each member's personal account (every user only sees documents they are allowed to read) or a shared team account approved by an administrator.
+3. Write a short business justification, sign the addition, and verify the connection in one click.
 
-## Key concepts & pointers
+## A real example
 
-- **Reference source vs Working document**: A reference source serves as an authoritative reading baseline; a working document hosts deliverables currently being drafted.
-- **Personal account connection**: Ensures no team member can view a confidential document they do not have permission to read in the source tool.
-- **Confidential workspace isolation**: Prevents sensitive workspace content from rolling up to parent levels of the organization.
+The Payments team connects its product documentation space and ticket tracker to the "Checkout Redesign" Workspace using personal credentials: every member queries up-to-date specifications without ever accessing confidential folders from another division.
 
-## Frequently asked questions
+## Common pitfalls
 
-- **What is the link between an organization entity (Business Unit, Team) and a Workspace?** The organization (Enterprise $\rightarrow$ Business Unit $\rightarrow$ Team) represents *who you are* (the organizational chart to which members belong), whereas a **Workspace** represents *what you are working on* (a project, product, or initiative where your document sources are connected and your processes run). Every Workspace is owned by a primary Team or Business Unit (a single team can manage multiple workspaces), can invite other teams to collaborate, and inherits governance rules from its parent team and business unit (unless configured in isolated confidential mode).
-- **How do I view the explanation for a specific setting?** Click the `ⓘ` icon next to any heading: this help column opens and highlights the matching explanation section.
-- **What happens if a document is edited directly in our external tool?** Your direct edits are always preserved and never overwritten by an automated draft.
+- **What is the link between an organization unit and a Workspace?** The organization unit (Division, Team) groups people and budgets, whereas a Workspace gathers document sources and deliverables for a specific project.
+- **A source shows a refresh warning**: click the resync action to review recent updates published in the external tool.
+- **Direct edits remain safe**: an automated draft never overwrites what you edited directly in your external tool.

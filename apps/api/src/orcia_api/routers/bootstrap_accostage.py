@@ -72,7 +72,16 @@ def _serialize_accostage_status(
     trace_id: str,
     *,
     boot_epoch: str | None = None,
+    counts: bm.AccostagePg18Counts | None = None,
 ) -> bs.AccostageStatusResponse:
+    admin_created = counts.admin_created if counts is not None else rep.first_admin_initialized
+    users_count = (
+        counts.users_count if counts is not None else (1 if rep.first_admin_initialized else 0)
+    )
+    org_units_count = counts.org_units_count if counts is not None else 0
+    workspaces_count = counts.workspaces_count if counts is not None else 0
+    models_count = counts.models_count if counts is not None else len(rep.distinct_families)
+    sources_count = counts.sources_count if counts is not None else 0
     return bs.AccostageStatusResponse(
         completed_count=rep.completed_count,
         total_count=rep.total_count,
@@ -86,9 +95,27 @@ def _serialize_accostage_status(
         first_admin_initialized=rep.first_admin_initialized,
         first_admin_email=rep.first_admin_email,
         first_admin_display_name=rep.first_admin_display_name,
+        admin_created=admin_created,
+        users_count=users_count,
+        org_units_count=org_units_count,
+        workspaces_count=workspaces_count,
+        models_count=models_count,
+        sources_count=sources_count,
         boot_epoch=boot_epoch,
         trace_id=trace_id,
     )
+
+
+async def _load_pg18_accostage_counts(request: Request) -> bm.AccostagePg18Counts | None:
+    engine = get_configured_db_engine(request)
+    if engine is None:
+        return None
+    try:
+        return await bm.get_accostage_pg18_counts(engine)
+    except Exception as exc:
+        logger.warning("bootstrap_accostage_pg_counts_skipped", error_type=type(exc).__name__)
+        _raise_if_non_test_pg_error(exc, path=str(request.url.path))
+        return None
 
 
 @router.get(
@@ -100,11 +127,13 @@ def _serialize_accostage_status(
 async def get_accostage_status(request: Request) -> bs.AccostageStatusResponse:
     svc = get_accostage_service(request)
     await _sync_first_admin_with_postgres18(request, svc)
+    counts = await _load_pg18_accostage_counts(request)
     policy_state, _, _ = await resolve_auth_policy_runtime(request)
     return _serialize_accostage_status(
         svc.get_accostage_status(),
         _trace(request),
         boot_epoch=policy_state.boot_epoch,
+        counts=counts,
     )
 
 

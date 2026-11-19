@@ -119,6 +119,9 @@ export function CockpitRunsSection({
               padding: "7px 10px",
               borderRadius: "var(--radius-sm)",
               border: "1px solid var(--color-border)",
+              maxWidth: "100%",
+              minWidth: 0,
+              boxSizing: "border-box",
             }}
           >
             {availableWorkspaces.map((ws) => (
@@ -136,6 +139,9 @@ export function CockpitRunsSection({
               padding: "7px 10px",
               borderRadius: "var(--radius-sm)",
               border: "1px solid var(--color-border)",
+              maxWidth: "100%",
+              minWidth: 0,
+              boxSizing: "border-box",
             }}
           >
             <option value="assistant-agent">
@@ -160,8 +166,10 @@ export function CockpitRunsSection({
             onChange={(e) => onChangeRunTitle(e.target.value)}
             placeholder={isFr ? "Intitulé de l'exécution..." : "Execution title..."}
             style={{
-              flex: 1,
-              minWidth: "200px",
+              flex: "1 1 200px",
+              minWidth: 0,
+              maxWidth: "100%",
+              boxSizing: "border-box",
               padding: "7px 10px",
               borderRadius: "var(--radius-sm)",
               border: "1px solid var(--color-border)",

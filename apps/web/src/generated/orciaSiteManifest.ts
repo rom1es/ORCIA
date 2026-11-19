@@ -575,11 +575,11 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "summary": "Pré-implémentation : masquage compteurs 0 & modales + Nouveau..., bannières RFC 9457 sur toutes erreurs HTTP, purge exhaustive i18n/SSE (SYNTHESIS_READY, TECH_LEAD, PAUSE_AND_ESCALATE, etc.), devise € & dates jj/mm/aaaa, grilles /finops//profile//ontology, Studio V2 & /agents MCP, ergonomie /assistant/⌘K, et retrait (!) dans boutons bleus."
     },
     {
-      "date": "2026-11-18",
+      "date": "2026-11-19",
       "phaseOrStory": "Story 22.6",
       "reportFile": "22-6-coquille-direction-c-8-entrees-mobile-companion-aide-dynamique-et-cockpit-tech-lead-report.md",
       "domain": "Vague 2 (REM-17..21) — Coquille Direction C 8 Entrées, Mobile Companion < 768px, Aide Dynamique docs/help/ & Cockpit <= 3 Blocs",
-      "summary": "Pré-implémentation : useResponsiveBreakpoint() + barre basse 3 onglets mobile + purge faux positifs overflow-x: hidden, scroll SSE /assistant mobile, catalogue docs/help/{fr,en}/*.md dynamique par route sans Chef1/aqwZSX, Sidebar 8 entrées + Double Sélecteur + Breadcrumb, et Accostage piloté par PG18 (<= 3 blocs sans LOCK TABLE..., CAP-068 + transverse)."
+      "summary": "Clôture : useResponsiveBreakpoint() + barre basse 3 onglets mobile + purge overflow-x: hidden tokens.css, scroll SSE /assistant, 17 fiches docs/help/{fr,en}/*.md dynamiques sans Chef1/aqwZSX, sidebar 8 entrées (help) + Double Sélecteur + Breadcrumb, Accostage X/5 piloté par PG18 (<= 3 blocs sans LOCK TABLE...), 93.44 % couv. combinée (unit + integration PG18), 878 tests unit/sécu/évals, 298 tests JS/TS et test_contextual_help_and_accostage_postgres18.py sans override."
     },
     {
       "date": "2026-11-19",

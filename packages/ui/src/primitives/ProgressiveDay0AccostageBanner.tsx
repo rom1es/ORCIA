@@ -29,12 +29,17 @@ export interface ProgressiveDay0AccostageLabels {
   readonly singleFamilyAmberWarning: string;
   readonly dualFamilyAd10UnlockedBadge: string;
   readonly assistantTrialReadyBadge: string;
+  readonly progressLabelPrefix?: string;
+  readonly adminInitializedBadge?: string;
 }
 
 export interface ProgressiveDay0AccostageBannerProps {
   readonly completedCount: number;
   readonly totalCount?: number;
   readonly orciaEnv?: "local" | "staging" | "production";
+  readonly adminCreated?: boolean;
+  readonly adminDisplayName?: string | null;
+  readonly adminEmail?: string | null;
   readonly initialFamilies?: readonly string[];
   readonly milestones: readonly UiAccostageMilestoneItem[];
   readonly labels: ProgressiveDay0AccostageLabels;
@@ -51,6 +56,9 @@ export function ProgressiveDay0AccostageBanner({
   completedCount,
   totalCount = 6,
   orciaEnv = "local",
+  adminCreated: serverAdminCreated = false,
+  adminDisplayName,
+  adminEmail: serverAdminEmail,
   initialFamilies = [],
   milestones,
   labels,
@@ -60,12 +68,15 @@ export function ProgressiveDay0AccostageBanner({
 }: ProgressiveDay0AccostageBannerProps): React.ReactElement {
   const [families, setFamilies] = useState<readonly string[]>(initialFamilies);
   const [adminEmail, setAdminEmail] = useState<string>("");
-  const [adminName, setAdminName] = useState<string>("");
+  const [adminName] = useState<string>("");
   const [bootstrapToken, setBootstrapToken] = useState<string>("");
   const [tokenDenied, setTokenDenied] = useState<boolean>(false);
-  const [adminCreated, setAdminCreated] = useState<boolean>(false);
+  const [localAdminCreated, setLocalAdminCreated] = useState<boolean>(false);
 
-  const distinctFamilies = Array.from(new Set(families.map((f) => f.trim().toLowerCase()).filter(Boolean)));
+  const effectiveAdminCreated = Boolean(serverAdminCreated || localAdminCreated);
+  const distinctFamilies = Array.from(
+    new Set(families.map((f) => f.trim().toLowerCase()).filter(Boolean)),
+  );
   const llmTierMode: UiProgressiveLlmTierMode =
     distinctFamilies.length === 0
       ? "UNCONFIGURED"
@@ -73,13 +84,17 @@ export function ProgressiveDay0AccostageBanner({
         ? "QUICK_TRIAL_SINGLE_FAMILY"
         : "FULL_ORTHOGONAL_AD10";
 
+  const localMilestoneDelta =
+    (localAdminCreated && !serverAdminCreated ? 1 : 0) +
+    (distinctFamilies.length >= 1 ? 1 : 0) +
+    (distinctFamilies.length >= 2 ? 1 : 0);
   const effectiveCompletedCount = Math.min(
     totalCount,
-    Math.max(
-      completedCount,
-      1 + (distinctFamilies.length >= 1 ? 1 : 0) + (distinctFamilies.length >= 2 ? 1 : 0),
-    ),
+    Math.max(completedCount, localMilestoneDelta),
   );
+  const progressPrefix = labels.progressLabelPrefix ?? "Accostage";
+  const adminInitializedLabel =
+    labels.adminInitializedBadge ?? "Administrateur de plateforme initialisé";
 
   const handleAddFamily = (family: string): void => {
     setFamilies((prev) => Array.from(new Set([...prev, family])));
@@ -102,21 +117,21 @@ export function ProgressiveDay0AccostageBanner({
       return;
     }
     setTokenDenied(false);
-    setAdminCreated(true);
+    setLocalAdminCreated(true);
   };
 
   return (
     <section
       data-testid="progressive-day0-accostage-banner"
-      className="flex flex-col gap-4 rounded border p-4"
+      className="flex flex-col gap-3 rounded border p-3.5"
       style={{
         backgroundColor: "var(--color-bg-surface)",
         borderColor: "var(--color-border-subtle)",
       }}
     >
-      {/* Top interactive Accostage k/6 header */}
+      {/* Top interactive Accostage X/5 header */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-xs font-semibold">{labels.bannerTitle}</h2>
           <span
             data-testid="accostage-progress-pill"
@@ -126,7 +141,7 @@ export function ProgressiveDay0AccostageBanner({
               color: "var(--color-action-primary)",
             }}
           >
-            Accostage {effectiveCompletedCount}/{totalCount}
+            {progressPrefix} {effectiveCompletedCount}/{totalCount}
           </span>
         </div>
 
@@ -159,93 +174,121 @@ export function ProgressiveDay0AccostageBanner({
         )}
       </div>
 
-      {/* 3-Step Welcome Setup Wizard (/welcome-setup) */}
+      {/* 3-Step Welcome Setup Wizard */}
       <div
         data-testid="welcome-setup-3step-wizard"
         className="grid grid-cols-1 gap-3 md:grid-cols-3"
       >
-        {/* Step 1: First Admin + Anti-First-User Takeover */}
+        {/* Step 1: First Admin (auto-checked & collapsed when PG18 admin exists) */}
         <div
+          data-testid="welcome-setup-step1-card"
+          data-completed={effectiveAdminCreated ? "true" : "false"}
           className="flex flex-col gap-2 rounded border p-3"
           style={{
             backgroundColor: "var(--color-bg-elevated)",
-            borderColor: "var(--color-border-subtle)",
+            borderColor: effectiveAdminCreated
+              ? "var(--color-state-verified)"
+              : "var(--color-border-subtle)",
           }}
         >
-          <div className="text-xs font-semibold">{labels.step1AdminTitle}</div>
-          <input
-            type="email"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid="welcome-setup-admin-email"
-            value={adminEmail}
-            onChange={(e) => setAdminEmail(e.target.value)}
-            className="rounded border px-2 py-1 text-xs"
-            style={{
-              backgroundColor: "var(--color-bg-canvas)",
-              borderColor: "var(--color-border-subtle)",
-            }}
-          />
-          {orciaEnv !== "local" && (
-            <input
-              type="text"
-              spellCheck={false}
-              autoComplete="off"
-              data-lpignore="true"
-              data-1p-ignore="true"
-              data-bwignore="true"
-              data-form-type="other"
-              data-testid="welcome-setup-bootstrap-token-input"
-              value={bootstrapToken}
-              onChange={(e) => setBootstrapToken(e.target.value)}
-              placeholder={labels.bootstrapTokenPlaceholder}
-              aria-label={labels.bootstrapTokenLabel}
-              className="rounded border px-2 py-1 font-mono text-xs orcia-masked-secret-input"
-              style={
-                {
-                  backgroundColor: "var(--color-bg-canvas)",
-                  borderColor: "var(--color-border-subtle)",
-                  WebkitTextSecurity: "disc",
-                } as React.CSSProperties
-              }
-            />
-          )}
-          <button
-            type="button"
-            data-testid="welcome-setup-submit-admin-btn"
-            onClick={handleFirstAdminSubmit}
-            className="rounded px-2.5 py-1 text-xs font-semibold"
-            style={{
-              backgroundColor: "var(--color-action-primary)",
-              color: "var(--color-bg-surface)",
-            }}
-          >
-            {labels.createFirstAdminCta}
-          </button>
-          {tokenDenied && (
-            <div
-              data-testid="welcome-setup-token-denied-banner"
-              className="text-xs font-semibold"
-              style={{ color: "var(--color-state-danger)" }}
-            >
-              {labels.bootstrapTokenDeniedBanner}
-            </div>
-          )}
-          {adminCreated && (
+          <div className="flex items-center justify-between gap-2 text-xs font-semibold">
+            <span>{labels.step1AdminTitle}</span>
+            {effectiveAdminCreated && (
+              <span
+                data-testid="welcome-setup-step1-checked-icon"
+                style={{ color: "var(--color-state-verified)" }}
+              >
+                <OrciaIcon name="check" />
+              </span>
+            )}
+          </div>
+
+          {effectiveAdminCreated ? (
             <div
               data-testid="welcome-setup-admin-created-badge"
-              className="font-mono text-[11px]"
+              className="flex flex-col gap-0.5 text-xs font-medium"
               style={{ color: "var(--color-state-verified)" }}
             >
-              LOCK TABLE users IN EXCLUSIVE MODE <OrciaIcon name="check" />
+              <span>
+                {adminInitializedLabel} <OrciaIcon name="check" />
+              </span>
+              {(adminDisplayName || serverAdminEmail || adminEmail) && (
+                <span
+                  className="truncate text-[11px]"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  {adminDisplayName || serverAdminEmail || adminEmail}
+                </span>
+              )}
             </div>
+          ) : (
+            <>
+              <input
+                type="email"
+                autoComplete="off"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
+                data-testid="welcome-setup-admin-email"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                className="w-full min-w-0 rounded border px-2 py-1 text-xs"
+                style={{
+                  backgroundColor: "var(--color-bg-canvas)",
+                  borderColor: "var(--color-border-subtle)",
+                }}
+              />
+              {orciaEnv !== "local" && (
+                <input
+                  type="text"
+                  spellCheck={false}
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
+                  data-testid="welcome-setup-bootstrap-token-input"
+                  value={bootstrapToken}
+                  onChange={(e) => setBootstrapToken(e.target.value)}
+                  placeholder={labels.bootstrapTokenPlaceholder}
+                  aria-label={labels.bootstrapTokenLabel}
+                  className="w-full min-w-0 rounded border px-2 py-1 font-mono text-xs orcia-masked-secret-input"
+                  style={
+                    {
+                      backgroundColor: "var(--color-bg-canvas)",
+                      borderColor: "var(--color-border-subtle)",
+                      WebkitTextSecurity: "disc",
+                    } as React.CSSProperties
+                  }
+                />
+              )}
+              <button
+                type="button"
+                data-testid="welcome-setup-submit-admin-btn"
+                onClick={handleFirstAdminSubmit}
+                className="rounded px-2.5 py-1 text-xs font-semibold"
+                style={{
+                  backgroundColor: "var(--color-action-primary)",
+                  color: "var(--color-bg-surface)",
+                }}
+              >
+                {labels.createFirstAdminCta}
+              </button>
+              {tokenDenied && (
+                <div
+                  data-testid="welcome-setup-token-denied-banner"
+                  className="text-xs font-semibold"
+                  style={{ color: "var(--color-state-danger)" }}
+                >
+                  {labels.bootstrapTokenDeniedBanner}
+                </div>
+              )}
+            </>
           )}
         </div>
 
-        {/* Step 2: Progressive LLM Tier (1 Model -> Quick Trial; >= 2 -> AD-10 Gates) */}
+        {/* Step 2: Progressive LLM Tier */}
         <div
           className="flex flex-col gap-2 rounded border p-3"
           style={{
@@ -291,7 +334,7 @@ export function ProgressiveDay0AccostageBanner({
           )}
         </div>
 
-        {/* Step 3: Milestones 1..6 Navigation */}
+        {/* Step 3: Milestones Navigation */}
         <div
           className="flex flex-col gap-1.5 rounded border p-3"
           style={{
@@ -305,16 +348,17 @@ export function ProgressiveDay0AccostageBanner({
               key={m.key}
               type="button"
               data-testid={`accostage-milestone-${m.key}`}
+              data-completed={m.completed ? "true" : "false"}
               onClick={() => onNavigateMilestone?.(m.targetRoute)}
-              className="flex items-center justify-between rounded px-2 py-1 text-left text-xs"
+              className="flex items-center justify-between gap-2 rounded px-2 py-1 text-left text-xs"
               style={{
                 backgroundColor: "var(--color-bg-surface)",
               }}
             >
-              <span>{m.title}</span>
+              <span className="min-w-0 truncate">{m.title}</span>
               <OrciaIcon
                 name={m.completed ? "check" : "arrowRight"}
-                className="font-mono text-[11px]"
+                className="shrink-0 font-mono text-[11px]"
               />
             </button>
           ))}

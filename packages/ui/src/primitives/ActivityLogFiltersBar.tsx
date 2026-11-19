@@ -34,6 +34,10 @@ const inputStyle: React.CSSProperties = {
   backgroundColor: "var(--color-surface-card)",
   color: "var(--color-foreground)",
   fontSize: "12px",
+  width: "100%",
+  maxWidth: "100%",
+  minWidth: 0,
+  boxSizing: "border-box",
 };
 
 export function ActivityLogFiltersBar({
@@ -62,13 +66,15 @@ export function ActivityLogFiltersBar({
         data-testid="activity-filters-bar"
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(200px, 100%), 1fr))",
           gap: "10px",
           marginTop: "4px",
+          width: "100%",
+          minWidth: 0,
         }}
       >
         {/* 1. Observation Scope Filter */}
-        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
+        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", minWidth: 0, maxWidth: "100%" }}>
           <span style={{ fontWeight: 600 }}>{labels.scopeFilterLabel}</span>
           <select
             data-testid="activity-scope-filter-select"
@@ -88,14 +94,14 @@ export function ActivityLogFiltersBar({
         </label>
 
         {/* 2. User / Author Filter + Search */}
-        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
+        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", minWidth: 0, maxWidth: "100%" }}>
           <span style={{ fontWeight: 600 }}>{labels.userFilterLabel}</span>
-          <div style={{ display: "flex", gap: "6px" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", minWidth: 0, maxWidth: "100%" }}>
             <select
               data-testid="activity-user-filter-select"
               value={selectedActor}
               onChange={(e) => onActorChange(e.target.value)}
-              style={{ ...inputStyle, flex: 1 }}
+              style={{ ...inputStyle, flex: "1 1 120px" }}
             >
               <option value="ALL">{labels.allUsersOptionLabel}</option>
               {distinctActors.map((actor) => (
@@ -116,13 +122,13 @@ export function ActivityLogFiltersBar({
               value={actorSearchQuery}
               onChange={(e) => onActorSearchChange(e.target.value)}
               placeholder={labels.userSearchPlaceholder}
-              style={{ ...inputStyle, flex: 1, minWidth: "110px" }}
+              style={{ ...inputStyle, flex: "1 1 110px" }}
             />
           </div>
         </label>
 
         {/* 3. Max Recent Limit Filter */}
-        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
+        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", minWidth: 0, maxWidth: "100%" }}>
           <span style={{ fontWeight: 600 }}>{labels.maxLimitFilterLabel}</span>
           <select
             data-testid="activity-max-limit-select"

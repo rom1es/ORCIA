@@ -57,7 +57,9 @@ export function ModuleWorkspaceView({
         gap: "20px",
       }}
     >
-      {currentModule === "catalog" || currentModule === "finops" ? null : (
+      {currentModule === "cockpit" ||
+      currentModule === "catalog" ||
+      currentModule === "finops" ? null : (
         <div
           className="orcia-bento-card"
           style={{

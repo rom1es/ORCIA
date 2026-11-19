@@ -67,6 +67,15 @@ export async function savePlatformSetupSnapshotToApi(
   return client.savePlatformSetupState(buildPlatformSetupPutPayload(next));
 }
 
+export interface AccostagePg18CountsView {
+  readonly adminCreated: boolean;
+  readonly usersCount: number;
+  readonly orgUnitsCount: number;
+  readonly workspacesCount: number;
+  readonly modelsCount: number;
+  readonly sourcesCount: number;
+}
+
 export type HydrationOutcome =
   | { readonly kind: "BOOT_EPOCH_RESET" }
   | { readonly kind: "DAY0_CLEAN_RESET" }
@@ -74,6 +83,7 @@ export type HydrationOutcome =
       readonly kind: "HYDRATED";
       readonly admin: ConfiguredPlatformAdmin | null;
       readonly snapshot: CachedPlatformSetupState | null;
+      readonly accostageCounts: AccostagePg18CountsView;
     }
   | { readonly kind: "NOOP" };
 
@@ -132,6 +142,15 @@ export async function fetchAndBuildHydrationOutcome(params: {
       }))
     : [];
 
+  const accostageCounts: AccostagePg18CountsView = {
+    adminCreated: Boolean(status.admin_created ?? status.first_admin_initialized),
+    usersCount: status.users_count ?? (status.first_admin_initialized ? 1 : 0),
+    orgUnitsCount: status.org_units_count ?? mappedApiOrgUnits.filter((u) => u.level === "BU" || u.level === "TEAM").length,
+    workspacesCount: status.workspaces_count ?? 0,
+    modelsCount: status.models_count ?? 0,
+    sourcesCount: status.sources_count ?? 0,
+  };
+
   if (
     status.first_admin_initialized === false &&
     mappedApiOrgUnits.length === 0 &&
@@ -158,7 +177,7 @@ export async function fetchAndBuildHydrationOutcome(params: {
   }
 
   if (!remoteState && mappedApiOrgUnits.length === 0 && mappedApiGrants.length === 0) {
-    return { kind: "HYDRATED", admin: syncedAdmin, snapshot: null };
+    return { kind: "HYDRATED", admin: syncedAdmin, snapshot: null, accostageCounts };
   }
 
   const rOrgUnits =
@@ -192,7 +211,7 @@ export async function fetchAndBuildHydrationOutcome(params: {
     rOntologyConcepts.length > 0;
 
   if (!hasRemoteEntities) {
-    return { kind: "HYDRATED", admin: syncedAdmin, snapshot: null };
+    return { kind: "HYDRATED", admin: syncedAdmin, snapshot: null, accostageCounts };
   }
 
   const hydrated: CachedPlatformSetupState = {
@@ -247,5 +266,5 @@ export async function fetchAndBuildHydrationOutcome(params: {
     }
   }
 
-  return { kind: "HYDRATED", admin: syncedAdmin, snapshot: hydrated };
+  return { kind: "HYDRATED", admin: syncedAdmin, snapshot: hydrated, accostageCounts };
 }

@@ -14,7 +14,7 @@ const PUBLIC_DAY0_MENU_KEYS = [
   "agents",
   "spaces",
   "finops",
-  "glossary",
+  "help",
 ] as const;
 
 test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, UX-DR8)", () => {
@@ -36,11 +36,20 @@ test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, 
 
   test("présente les 4 zones, masque Paramètres tant qu'aucun PLATFORM_ADMIN n'est connecté et l'affiche après création admin", async ({
     page,
-  }) => {
+  }, testInfo) => {
+    const isMobile = testInfo.project.name === "mobile-companion";
     await expect(page.getByTestId("four-zone-direction-c-shell")).toBeVisible();
     await expect(page.getByTestId("four-zone-top-header-bar")).toBeVisible();
-    await expect(page.getByTestId("four-zone-sidebar")).toBeVisible();
     await expect(page.getByTestId("four-zone-central-workspace")).toBeAttached();
+
+    if (isMobile) {
+      await expect(page.getByTestId("four-zone-sidebar")).toHaveCount(0);
+      await expect(page.getByTestId("mobile-bottom-tab-bar")).toBeVisible();
+      await page.getByTestId("mobile-menu-drawer-toggle").click();
+      await expect(page.getByTestId("mobile-navigation-drawer")).toBeVisible();
+    } else {
+      await expect(page.getByTestId("four-zone-sidebar")).toBeVisible();
+    }
 
     // Sans rôle PLATFORM_ADMIN actif, le menu Paramètres de la plateforme est absent du DOM.
     await expect(page.getByTestId("eight-menu-item-configuration")).toHaveCount(0);
@@ -56,14 +65,25 @@ test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, 
       expect(text, `préfixe numérique interdit pour ${key}`).not.toMatch(/^\d+[.)]?\s/);
     }
 
+    if (isMobile) {
+      await page.keyboard.press("Escape");
+    }
+
     // Une fois le premier PLATFORM_ADMIN créé et connecté, Paramètres devient visible.
     await createFirstAdminViaUi(page);
+    if (isMobile) {
+      await page.getByTestId("mobile-menu-drawer-toggle").click();
+    }
     await expect(page.getByTestId("eight-menu-item-configuration")).toBeVisible({ timeout: 20000 });
   });
 
   test("grise les entrées de menu tant que la plateforme n'est pas initialisée (Jour 0)", async ({
     page,
-  }) => {
+  }, testInfo) => {
+    if (testInfo.project.name === "mobile-companion") {
+      await page.getByTestId("mobile-menu-drawer-toggle").click();
+      await expect(page.getByTestId("mobile-navigation-drawer")).toBeVisible();
+    }
     const disabledReasons: string[] = [];
     for (const key of PUBLIC_DAY0_MENU_KEYS) {
       const entry = page.getByTestId(`eight-menu-item-${key}`);

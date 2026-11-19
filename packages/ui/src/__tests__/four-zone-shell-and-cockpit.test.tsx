@@ -45,7 +45,7 @@ const SHELL_LABELS: FourZoneDirectionCShellLabels = {
     spaces: "Mes Espaces",
     finops: "FinOps",
     configuration: "Configuration",
-    glossary: "Glossaire",
+    help: "Aide",
   },
 };
 
@@ -126,7 +126,7 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
     expect(screen.queryByTestId("topbar-notifications-drawer")).toBeNull();
     fireEvent.click(screen.getByTestId("topbar-notifications-toggle"));
     const notifDrawer = screen.getByTestId("topbar-notifications-drawer");
-    expect(notifDrawer.style.width).toBe("420px");
+    expect(notifDrawer.style.width).toBe("min(420px, 100vw)");
 
     // Zone 2: Sidebar (240px / 68px Rail via '[') with exactly 8 unnumbered entries
     const sidebar = screen.getByTestId("four-zone-sidebar");
@@ -307,13 +307,13 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
       "ERR_INVALID_BOOTSTRAP_TOKEN",
     );
 
-    // Provide token -> creates admin under LOCK TABLE users IN EXCLUSIVE MODE
+    // Provide token -> creates admin without LOCK TABLE jargon
     fireEvent.change(screen.getByTestId("welcome-setup-bootstrap-token-input"), {
       target: { value: "valid-boot-tok" },
     });
     fireEvent.click(screen.getByTestId("welcome-setup-submit-admin-btn"));
     expect(screen.getByTestId("welcome-setup-admin-created-badge").textContent).toContain(
-      "LOCK TABLE users IN EXCLUSIVE MODE",
+      "Administrateur de plateforme initialisé",
     );
 
     // Add 1st LLM model -> Quick Trial Mode with amber warning badge

@@ -191,13 +191,22 @@ export {
   type DurableWizardStepDescriptor,
 } from "./primitives/DurableWizardRunnerView";
 export {
+  useResponsiveBreakpoint,
+  type UseResponsiveBreakpointResult,
+} from "./hooks/useResponsiveBreakpoint";
+export {
   computeDefaultHelpColumnOpen,
   DEFAULT_EIGHT_FIXED_MENU_ENTRIES,
   FourZoneDirectionCShell,
+  type DoubleScopeSelectorLabels,
   type EightFixedMenuEntrySpec,
   type EightFixedMenuKey,
   type FourZoneDirectionCShellLabels,
   type FourZoneDirectionCShellProps,
+  type MobileCompanionBottomTabKey,
+  type MobileCompanionTabLabels,
+  type ScopeOptionItem,
+  type ShellBreadcrumbItem,
   type UiNotificationCenterItem,
   type UiNotificationCenterItemKind,
   type WorkspaceSwitcherOption,

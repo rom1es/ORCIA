@@ -173,7 +173,7 @@ export function StreamlinedCockpitView({
             }}
           >
             <h3 className="text-xs font-semibold">{labels.quickAssistantTitle}</h3>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <input
                 type="text"
                 autoComplete="off"
@@ -185,7 +185,7 @@ export function StreamlinedCockpitView({
                 value={quickPrompt}
                 onChange={(e) => setQuickPrompt(e.target.value)}
                 placeholder={labels.quickAssistantPlaceholder}
-                className="flex-1 rounded border px-3 py-1.5 text-xs"
+                className="min-w-0 flex-1 basis-48 rounded border px-3 py-1.5 text-xs"
                 style={{
                   backgroundColor: "var(--color-bg-canvas)",
                   borderColor: "var(--color-border-subtle)",
@@ -195,7 +195,7 @@ export function StreamlinedCockpitView({
                 type="button"
                 data-testid="cockpit-quick-assistant-submit"
                 onClick={() => onOpenAssistant?.(quickPrompt)}
-                className="rounded px-3 py-1.5 text-xs font-semibold"
+                className="max-w-full rounded px-3 py-1.5 text-xs font-semibold"
                 style={{
                   backgroundColor: "var(--color-action-primary)",
                   color: "var(--color-bg-surface)",

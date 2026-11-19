@@ -47,12 +47,26 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
       processes: "Mes Processus",
       agents: "Mes Agents",
       spaces: "Mes Espaces",
-      finops: "Coûts & Activité",
+      finops: "FinOps",
       configuration: "Configuration",
-      glossary: "Glossaire",
+      help: "Aide",
     },
     organizationMenuLabel: "Mon Organisation",
     activityMenuLabel: "Journal d'Activité",
+    doubleSelector: {
+      teamBuLabel: "Équipe / Direction",
+      workspaceLabel: "Espace",
+      allWorkspacesOption: "Tous les espaces",
+    },
+    mobileTabs: {
+      navAriaLabel: "Navigation mobile",
+      cockpit: "Cockpit",
+      assistant: "Mon Assistant",
+      decisions: "Décisions",
+      menuLabel: "Menu",
+    },
+    mobileDesktopRecommendedText:
+      "Affichage optimisé pour ordinateur : tous les réglages restent accessibles ci-dessous.",
   },
   sidebarFooter: {
     myAccountLabel: "Mon Compte",
@@ -106,6 +120,8 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
       "✅ Au moins 2 fournisseurs IA indépendants actifs — Revues croisées disponibles",
     assistantTrialReadyBadge:
       "🚀 Prêt à démarrer : Mon Assistant et le Cockpit sont disponibles",
+    progressLabelPrefix: "Accostage",
+    adminInitializedBadge: "Administrateur de plateforme initialisé",
   },
   topHeaderSearch: {
     modalTitle: "Recherche Globale (⌘K)",
@@ -295,12 +311,26 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
       processes: "My Processes",
       agents: "My Agents",
       spaces: "My Spaces",
-      finops: "Costs & Activity",
+      finops: "FinOps",
       configuration: "Configuration",
-      glossary: "Glossary",
+      help: "Help",
     },
     organizationMenuLabel: "My Organization",
     activityMenuLabel: "Activity Log",
+    doubleSelector: {
+      teamBuLabel: "Team / Division",
+      workspaceLabel: "Space",
+      allWorkspacesOption: "All spaces",
+    },
+    mobileTabs: {
+      navAriaLabel: "Mobile navigation",
+      cockpit: "Cockpit",
+      assistant: "My Assistant",
+      decisions: "Decisions",
+      menuLabel: "Menu",
+    },
+    mobileDesktopRecommendedText:
+      "Optimized for desktop view: all controls remain accessible below.",
   },
   sidebarFooter: {
     myAccountLabel: "My Account",
@@ -354,6 +384,8 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
       "✅ At least 2 independent AI providers active — Cross-checked reviews enabled",
     assistantTrialReadyBadge:
       "🚀 Ready to start: My Assistant and Cockpit are available",
+    progressLabelPrefix: "Onboarding",
+    adminInitializedBadge: "Platform administrator initialized",
   },
   topHeaderSearch: {
     modalTitle: "Global Search (⌘K)",

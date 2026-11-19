@@ -1,5 +1,6 @@
 import React from "react";
 import { OrciaIcon } from "../components/icons";
+import { useResponsiveBreakpoint } from "../hooks/useResponsiveBreakpoint";
 import {
   AssistantModelAndEffortPopover,
   type UiAssistantModelOption,
@@ -106,6 +107,75 @@ export function AssistantStickyPromptFooter({
   onToggleThinkingSubmenu,
   onSelectEffort,
 }: AssistantStickyPromptFooterProps): React.JSX.Element {
+  const { isMobile } = useResponsiveBreakpoint();
+  const plusBtnNode = (
+    <button
+      type="button"
+      data-testid="assistant-prompt-plus-btn"
+      aria-label="Actions rapides et dossiers"
+      onClick={onTogglePlusMenu}
+      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border-subtle bg-surface-secondary text-sm font-semibold text-text-primary hover:bg-surface-elevated"
+    >
+      <OrciaIcon name="plus" />
+    </button>
+  );
+  const inputNode = (
+    <input
+      ref={inputRef}
+      type="text"
+      disabled={disabled}
+      autoComplete="off"
+      data-lpignore="true"
+      data-1p-ignore="true"
+      data-bwignore="true"
+      data-form-type="other"
+      data-testid="assistant-three-speed-input"
+      value={promptText}
+      placeholder={inputPlaceholder}
+      onChange={(e) => onPromptChange(e.target.value)}
+      onKeyDown={onInputKeyDown}
+      className={`${
+        isMobile ? "w-full min-w-0 px-1" : "flex-1 min-w-[200px] px-2"
+      } border-0 bg-transparent py-1 text-xs text-text-primary focus:outline-none ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
+    />
+  );
+  const pickerBtnNode = (
+    <button
+      type="button"
+      data-testid="assistant-model-and-effort-picker-trigger"
+      aria-expanded={pickerOpen}
+      onClick={onTogglePicker}
+      className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-border-subtle bg-surface-secondary px-2.5 py-1 text-xs font-medium text-text-primary hover:bg-surface-elevated"
+    >
+      {visibleModelCount === 1 ? (
+        <span className="truncate">{activeEffortTitle}</span>
+      ) : (
+        <>
+          <span className="truncate">{displayModelBadge}</span>
+          <span className="shrink-0 text-text-secondary">· {activeEffortTitle}</span>
+        </>
+      )}
+      <OrciaIcon name="caretDown" />
+    </button>
+  );
+  const sendBtnNode = (
+    <button
+      type="button"
+      data-testid="assistant-three-speed-send-btn"
+      disabled={Boolean(disabled) && !isGenerating}
+      aria-label={actionAriaLabel}
+      title={isGenerating ? "Arrêter" : "Envoyer"}
+      onClick={onSendOrStopClick}
+      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-action-primary text-xs font-semibold text-white hover:opacity-95 ${Boolean(disabled) && !isGenerating ? "opacity-50 cursor-not-allowed" : ""}`}
+    >
+      {isGenerating ? (
+        <OrciaIcon name="stopSquare" testId="assistant-stop-square-icon" />
+      ) : (
+        <OrciaIcon name="play" testId="assistant-send-play-icon" />
+      )}
+    </button>
+  );
+
   return (
     <div
       data-testid="assistant-sticky-prompt-footer"
@@ -182,67 +252,25 @@ export function AssistantStickyPromptFooter({
           attachedFiles={attachedFiles}
           onRemoveAttachedFile={onRemoveAttachedFile}
         />
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            data-testid="assistant-prompt-plus-btn"
-            aria-label="Actions rapides et dossiers"
-            onClick={onTogglePlusMenu}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border-subtle bg-surface-secondary text-sm font-semibold text-text-primary hover:bg-surface-elevated"
-          >
-            <OrciaIcon name="plus" />
-          </button>
-          <input
-            ref={inputRef}
-            type="text"
-            disabled={disabled}
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid="assistant-three-speed-input"
-            value={promptText}
-            placeholder={inputPlaceholder}
-            onChange={(e) => onPromptChange(e.target.value)}
-            onKeyDown={onInputKeyDown}
-            className={`flex-1 min-w-[200px] border-0 bg-transparent px-2 py-1 text-xs text-text-primary focus:outline-none ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
-          />
-          <button
-            type="button"
-            data-testid="assistant-model-and-effort-picker-trigger"
-            aria-expanded={pickerOpen}
-            onClick={onTogglePicker}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border-subtle bg-surface-secondary px-3 py-1 text-xs font-medium text-text-primary hover:bg-surface-elevated"
-          >
-            {visibleModelCount === 1 ? (
-              <span>{activeEffortTitle}</span>
-            ) : (
-              <>
-                <span>{displayModelBadge}</span>
-                <span className="text-text-secondary">
-                  · {activeEffortTitle}
-                </span>
-              </>
-            )}
-            <OrciaIcon name="caretDown" />
-          </button>
-          <button
-            type="button"
-            data-testid="assistant-three-speed-send-btn"
-            disabled={Boolean(disabled) && !isGenerating}
-            aria-label={actionAriaLabel}
-            title={isGenerating ? "Arrêter" : "Envoyer"}
-            onClick={onSendOrStopClick}
-            className={`inline-flex h-8 w-8 items-center justify-center rounded-full bg-action-primary text-xs font-semibold text-white hover:opacity-95 ${Boolean(disabled) && !isGenerating ? "opacity-50 cursor-not-allowed" : ""}`}
-          >
-            {isGenerating ? (
-              <OrciaIcon name="stopSquare" testId="assistant-stop-square-icon" />
-            ) : (
-              <OrciaIcon name="play" testId="assistant-send-play-icon" />
-            )}
-          </button>
-        </div>
+        {isMobile ? (
+          <div data-testid="assistant-mobile-two-row-composer" className="flex flex-col gap-1.5 min-w-0">
+            {inputNode}
+            <div className="flex w-full min-w-0 items-center justify-between gap-2">
+              <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                {plusBtnNode}
+                {pickerBtnNode}
+              </div>
+              {sendBtnNode}
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2">
+            {plusBtnNode}
+            {inputNode}
+            {pickerBtnNode}
+            {sendBtnNode}
+          </div>
+        )}
       </div>
       {pickerOpen && (
         <AssistantModelAndEffortPopover

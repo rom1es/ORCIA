@@ -5,6 +5,11 @@
         "additionalProperties": false,
         "description": "Response for `GET /api/v1/bootstrap/accostage-status` & progressive LLM registration.",
         "properties": {
+          "admin_created": {
+            "default": false,
+            "title": "Admin Created",
+            "type": "boolean"
+          },
           "agentic_gates_ad10_enabled": {
             "title": "Agentic Gates Ad10 Enabled",
             "type": "boolean"
@@ -101,6 +106,24 @@
             "title": "Llm Tier Mode",
             "type": "string"
           },
+          "models_count": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Models Count",
+            "type": "integer"
+          },
+          "org_units_count": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Org Units Count",
+            "type": "integer"
+          },
+          "sources_count": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Sources Count",
+            "type": "integer"
+          },
           "total_count": {
             "maximum": 6.0,
             "minimum": 6.0,
@@ -112,6 +135,18 @@
             "minLength": 32,
             "title": "Trace Id",
             "type": "string"
+          },
+          "users_count": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Users Count",
+            "type": "integer"
+          },
+          "workspaces_count": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Workspaces Count",
+            "type": "integer"
           }
         },
         "required": [
