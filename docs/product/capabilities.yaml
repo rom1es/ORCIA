@@ -286,7 +286,7 @@ capabilities:
     tests: [apps/web/e2e/04-multi-actor-claim-sse.spec.ts, tests/unit/test_story_5_1_notifications_claim_and_resource_leases.py]
     verification: failed_e2e
     e2e_remediation_ref: "23-2-transport-sse-authentifie-createrequestsse-smoke-00-et-diagnostic-401"
-    surfaces: { route: /inbox, api: inbox_and_leases.py }
+    surfaces: { route: /inbox, api: "inbox_and_leases.py, workspace_leases.py" }
   - id: CAP-041
     title: Supervision multi-runs et sélecteur de périmètre / centre de pilotage
     fr: [FR-3]

@@ -20,6 +20,11 @@ export interface AssistantDictionarySection {
     readonly bannerDescription: string;
     readonly configureCta: string;
   };
+  readonly assistantStreamErrors: {
+    readonly sessionExpiredMessage: string;
+    readonly reconnectCta: string;
+    readonly aiUnavailableMessage: (detail?: string) => string;
+  };
 }
 
 export const ASSISTANT_FR_LABELS: AssistantDictionarySection = {
@@ -104,6 +109,15 @@ export const ASSISTANT_FR_LABELS: AssistantDictionarySection = {
       "Aucun modèle d'embedding sémantique actif n'est configuré sur la plateforme. L'Assistant et l'ingestion de documents sont suspendus jusqu'à la configuration d'un modèle.",
     configureCta: "Configurer un modèle d'embedding →",
   },
+  assistantStreamErrors: {
+    sessionExpiredMessage:
+      "Votre session a expiré ou doit être renouvelée pour continuer la conversation.",
+    reconnectCta: "Se reconnecter →",
+    aiUnavailableMessage: (detail?: string) =>
+      detail
+        ? `⚠️ Impossible d'obtenir une réponse de Mon Assistant (${detail}). Vérifiez que le modèle IA configuré est bien démarré.`
+        : "⚠️ Le service d'IA est temporairement indisponible. Vérifiez que le modèle IA configuré est bien démarré.",
+  },
 };
 
 export const ASSISTANT_EN_LABELS: AssistantDictionarySection = {
@@ -187,5 +201,14 @@ export const ASSISTANT_EN_LABELS: AssistantDictionarySection = {
     bannerDescription:
       "No active semantic embedding model is configured on the platform. The Assistant and document ingestion are paused until an embedding model is configured.",
     configureCta: "Configure an embedding model →",
+  },
+  assistantStreamErrors: {
+    sessionExpiredMessage:
+      "Your session has expired or needs to be renewed to continue the conversation.",
+    reconnectCta: "Log in again →",
+    aiUnavailableMessage: (detail?: string) =>
+      detail
+        ? `⚠️ Could not get a response from My Assistant (${detail}). Please check that your configured AI model is running.`
+        : "⚠️ The AI service is temporarily unavailable. Please check that your configured AI model is running.",
   },
 };

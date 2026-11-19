@@ -1,10 +1,33 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type APIRequestContext, type Page } from "@playwright/test";
+import { apiPost } from "./typedApiRequest";
 
 export const E2E_ADMIN = {
   name: "Alice Admin E2E",
   email: "alice.admin@e2e.orcia.test",
   password: "E2e-Passw0rd-Sup3r-Secret!", // pragma: allowlist secret
 } as const;
+
+/** Crée le premier administrateur via API (Jour 0) et retourne son jeton JWT Bearer. */
+export async function createFirstAdminAndGetBearerToken(
+  request: APIRequestContext,
+): Promise<string> {
+  const firstAdminRes = await apiPost<{ access_token?: string }>(
+    request,
+    "/api/v1/bootstrap/welcome-setup/first-admin",
+    {
+      data: {
+        email: E2E_ADMIN.email,
+        display_name: E2E_ADMIN.name,
+        password: E2E_ADMIN.password,
+        orcia_env: "local",
+      },
+    },
+  );
+  expect(firstAdminRes.status()).toBe(200);
+  const token = (await firstAdminRes.json()).access_token ?? "";
+  expect(token).toBeTruthy();
+  return token;
+}
 
 /** Crée le premier administrateur via la modale Jour 0 (parcours réel, sans simulation). */
 export async function createFirstAdminViaUi(page: Page): Promise<void> {

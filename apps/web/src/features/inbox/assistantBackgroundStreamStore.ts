@@ -1,5 +1,7 @@
+import { OrciaProblemError } from "@orcia/api-client";
 import type {
   UiAssistantAttachedFileItem,
+  UiAssistantErrorKind,
   UiAssistantSpeedMode,
   UiInferenceEffort,
   UiInferenceTier,
@@ -35,6 +37,7 @@ export interface BackgroundAssistantStreamSnapshot {
   thinkingStartedAtMs: number | null;
   generationStopped: boolean;
   errorMessage: string | null;
+  errorKind: UiAssistantErrorKind | null;
 }
 
 const bgListeners = new Set<() => void>();
@@ -54,6 +57,7 @@ export let bgSnapshot: BackgroundAssistantStreamSnapshot = {
   thinkingStartedAtMs: null,
   generationStopped: false,
   errorMessage: null,
+  errorKind: null,
 };
 
 export function subscribeBgStream(listener: () => void): () => void {
@@ -111,6 +115,7 @@ export function resetBackgroundAssistantStreamForTests(): void {
     thinkingStartedAtMs: null,
     generationStopped: false,
     errorMessage: null,
+    errorKind: null,
   };
 }
 
@@ -189,4 +194,62 @@ export function buildConversationHistoryPayload(
     }
   }
   return history;
+}
+
+export interface AssistantStreamErrorLabels {
+  readonly sessionExpiredMessage: string;
+  readonly aiUnavailableMessage: (detail?: string) => string;
+}
+
+export function extractHttpErrorStatus(err: unknown): number | null {
+  if (err instanceof OrciaProblemError) {
+    return err.problem.status ?? null;
+  }
+  if (err && typeof err === "object" && "problem" in err) {
+    const prob = (err as { problem?: { status?: unknown } }).problem;
+    if (prob && typeof prob.status === "number") {
+      return prob.status;
+    }
+  }
+  return null;
+}
+
+export function classifyAssistantStreamError(
+  err: unknown,
+  isFr: boolean,
+  labels?: AssistantStreamErrorLabels,
+): { readonly errorKind: UiAssistantErrorKind; readonly errorMessage: string } {
+  const status = extractHttpErrorStatus(err);
+  if (status === 401 || status === 403) {
+    return {
+      errorKind: "auth_expired",
+      errorMessage:
+        labels?.sessionExpiredMessage ??
+        (isFr
+          ? "Votre session a expiré ou doit être renouvelée pour continuer la conversation."
+          : "Your session has expired or needs to be renewed to continue the conversation."),
+    };
+  }
+  const detail =
+    err instanceof OrciaProblemError
+      ? err.problem.detail
+      : err instanceof Error
+        ? err.message
+        : isFr
+          ? "Erreur de communication avec le serveur"
+          : "Server communication error";
+  if (status === 502 || status === 503 || status === 504 || status === null) {
+    return {
+      errorKind: "ai_unavailable",
+      errorMessage: labels
+        ? labels.aiUnavailableMessage(detail)
+        : isFr
+          ? `⚠️ Impossible d'obtenir une réponse de Mon Assistant (${detail}). Vérifiez que le modèle IA configuré est bien démarré.`
+          : `⚠️ Could not get a response from My Assistant (${detail}). Please check that your configured AI model is running.`,
+    };
+  }
+  return {
+    errorKind: "stream_error",
+    errorMessage: `⚠️ ${detail}`,
+  };
 }

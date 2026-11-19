@@ -43604,6 +43604,24 @@
               "description": "Keep SSE connection open for real-time events (`AD-4`).",
               "title": "Live"
             }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
           }
         ],
         "responses": {
@@ -55294,6 +55312,7 @@
         },
         "summary": "Acquire shared resource leases in canonical order with fencing (`DEC-CONC-01`)",
         "tags": [
+          "inbox",
           "inbox"
         ]
       }
@@ -55422,6 +55441,7 @@
         },
         "summary": "Validate monotonic fencing token before shared resource write (`DEC-CONC-01`)",
         "tags": [
+          "inbox",
           "inbox"
         ]
       }

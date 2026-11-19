@@ -6,6 +6,7 @@ import {
 } from "@orcia/ui";
 import React from "react";
 import { useShellNavigation } from "../../components/ShellContainer";
+import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { AssistantNoEmbeddingBanner } from "./AssistantNoEmbeddingBanner";
 import { AssistantReindexingBanner } from "./AssistantReindexingBanner";
 import { InboxAuxiliaryPanels } from "./InboxAuxiliaryPanels";
@@ -296,6 +297,16 @@ function AssistantInboxFeatureContent() {
           initialElapsedSeconds={streaming.initialElapsedSeconds}
           generationStopped={streaming.generationStopped}
           errorMessage={streaming.errorMessage}
+          errorKind={streaming.errorKind}
+          reconnectCtaLabel={dictionary.assistantStreamErrors.reconnectCta}
+          onReconnect={() => {
+            useAuthSessionStore.getState().setAuthSession({
+              isAuthenticated: false,
+              isHydrating: false,
+              accessToken: null,
+            });
+            navigateToRoute("/login");
+          }}
           currentTurnFeedback={latestTurnInActiveConv?.userFeedback ?? null}
           onFeedbackLastTurn={(fb) => {
             if (latestTurnInActiveConv) {

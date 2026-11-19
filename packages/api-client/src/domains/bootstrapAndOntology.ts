@@ -35,9 +35,57 @@ import type {
   WhatIfSimulationResponse,
 } from "../generated/ontology_and_rag";
 import type { components } from "../generated/schema";
-import { buildPersonaQuery, type createRequestJson } from "../helpers";
+import { buildPersonaQuery, createRequestSse, type createRequestJson } from "../helpers";
+import {
+  createAssistantStreamingDomainClient,
+  streamAssistantTurnSse,
+  streamReflexiveExecutionTraceSse,
+  streamWorkspaceEventsSse,
+  type ActiveBackgroundTurnStatusResponse,
+  type AssistantFolderResponse,
+  type AssistantThreadResponse,
+  type AssistantTurnSseOptions,
+  type AssistantWorkspaceOverviewResponse,
+  type ConfigureAssistantFolderSharingRequest,
+  type ConfigureAssistantFolderSharingResponse,
+  type CreateAssistantFolderRequest,
+  type CreateAssistantThreadRequest,
+  type RecordAssistantTurnFeedbackRequest,
+  type ReflexiveTraceSseOptions,
+  type SendCollaborativeThreadTurnRequest,
+  type SendCollaborativeThreadTurnResponse,
+  type StopActiveBackgroundTurnRequest,
+  type ThreeSpeedTurnRequest,
+  type ThreeSpeedTurnResponse,
+  type WorkspaceEventsSseOptions,
+} from "./assistantStreaming";
 
 type RequestJsonFn = ReturnType<typeof createRequestJson>;
+type RequestSseFn = ReturnType<typeof createRequestSse>;
+
+export {
+  createAssistantStreamingDomainClient,
+  streamAssistantTurnSse,
+  streamReflexiveExecutionTraceSse,
+  streamWorkspaceEventsSse,
+  type ActiveBackgroundTurnStatusResponse,
+  type AssistantFolderResponse,
+  type AssistantThreadResponse,
+  type AssistantTurnSseOptions,
+  type AssistantWorkspaceOverviewResponse,
+  type ConfigureAssistantFolderSharingRequest,
+  type ConfigureAssistantFolderSharingResponse,
+  type CreateAssistantFolderRequest,
+  type CreateAssistantThreadRequest,
+  type RecordAssistantTurnFeedbackRequest,
+  type ReflexiveTraceSseOptions,
+  type SendCollaborativeThreadTurnRequest,
+  type SendCollaborativeThreadTurnResponse,
+  type StopActiveBackgroundTurnRequest,
+  type ThreeSpeedTurnRequest,
+  type ThreeSpeedTurnResponse,
+  type WorkspaceEventsSseOptions,
+};
 
 export type FederatedSearchResponse = components["schemas"]["TwoSpeedSearchResponse"];
 export type UserPreferencesResponse = components["schemas"]["UserPreferencesResponse"];
@@ -49,30 +97,6 @@ export type McpPersonalTokenItemResult = components["schemas"]["McpPersonalToken
 export type ContextualHelpResolveResponse = components["schemas"]["ContextualHelpResolveResponse"];
 export type ContextualHelpRollbackRequest = components["schemas"]["ContextualHelpRollbackRequest"];
 export type HelpArticleSchemaItem = components["schemas"]["HelpArticleSchemaItem"];
-export type ThreeSpeedTurnRequest = components["schemas"]["ThreeSpeedTurnRequest"];
-export type ThreeSpeedTurnResponse = components["schemas"]["ThreeSpeedTurnResponse"];
-export type ActiveBackgroundTurnStatusResponse =
-  components["schemas"]["ActiveBackgroundTurnStatusResponse"];
-export type StopActiveBackgroundTurnRequest =
-  components["schemas"]["StopActiveBackgroundTurnRequest"];
-export type RecordAssistantTurnFeedbackRequest =
-  components["schemas"]["RecordAssistantTurnFeedbackRequest"];
-export type AssistantWorkspaceOverviewResponse =
-  components["schemas"]["AssistantWorkspaceOverviewResponse"];
-export type CreateAssistantFolderRequest =
-  components["schemas"]["CreateOrUpdateAssistantFolderRequest"];
-export type AssistantFolderResponse = components["schemas"]["AssistantFolderSchemaItem"];
-export type ConfigureAssistantFolderSharingRequest =
-  components["schemas"]["ConfigureFolderSharingRequest"];
-export type ConfigureAssistantFolderSharingResponse =
-  components["schemas"]["ConfigureFolderSharingResponse"];
-export type CreateAssistantThreadRequest =
-  components["schemas"]["CreateAssistantThreadRequest"];
-export type AssistantThreadResponse = components["schemas"]["AssistantThreadSchemaItem"];
-export type SendCollaborativeThreadTurnRequest =
-  components["schemas"]["SendCollaborativeThreadTurnRequest"];
-export type SendCollaborativeThreadTurnResponse =
-  components["schemas"]["SendCollaborativeThreadTurnResponse"];
 export type CompileStarlarkMechanismRequest =
   components["schemas"]["CompileStarlarkMechanismRequest"];
 export type StarlarkMechanismResponse = components["schemas"]["GeneratedStarlarkMechanismResponse"];
@@ -95,167 +119,53 @@ export type WizardStepBackRequest = components["schemas"]["WizardStepBackRequest
 export type DemoWorkspaceProvisionResponse =
   components["schemas"]["DemoWorkspaceProvisionResponse"];
 
-export function createBootstrapAndOntologyDomainClient(requestJson: RequestJsonFn) {
+export function createBootstrapAndOntologyDomainClient(
+  requestJson: RequestJsonFn,
+  requestSse?: RequestSseFn,
+) {
+  const assistantStreamingClient = createAssistantStreamingDomainClient(
+    requestSse ?? createRequestSse({ baseUrl: "" }),
+    requestJson,
+  );
+  const fq = (fixture: boolean) => `?fixture=${fixture ? "true" : "false"}`;
   return {
-    getAccostageStatus(): Promise<AccostageStatusResponse> {
-      return requestJson<AccostageStatusResponse>("/api/v1/bootstrap/accostage-status");
-    },
-    getPlatformSetupState(): Promise<PlatformSetupStateResponse> {
-      return requestJson<PlatformSetupStateResponse>("/api/v1/bootstrap/platform-setup-state");
-    },
-    savePlatformSetupState(
-      payload: PlatformSetupStatePutRequest,
-    ): Promise<PlatformSetupStateResponse> {
-      return requestJson<PlatformSetupStateResponse>(
-        "/api/v1/bootstrap/platform-setup-state",
-        "PUT",
-        payload,
-      );
-    },
-    createWelcomeSetupFirstAdmin(
-      payload: WelcomeSetupFirstAdminRequest,
-    ): Promise<WelcomeSetupFirstAdminResponse> {
-      return requestJson<WelcomeSetupFirstAdminResponse>(
-        "/api/v1/bootstrap/welcome-setup/first-admin",
-        "POST",
-        payload,
-      );
-    },
-    registerProgressiveLlmEndpoint(
-      payload: ProgressiveLlmEndpointRequest,
-    ): Promise<AccostageStatusResponse> {
-      return requestJson<AccostageStatusResponse>(
-        "/api/v1/bootstrap/welcome-setup/progressive-llm",
-        "POST",
-        payload,
-      );
-    },
-    testLlmEndpointConnection(
-      payload: LlmConnectionTestRequest,
-    ): Promise<LlmConnectionTestResponse> {
-      return requestJson<LlmConnectionTestResponse>(
-        "/api/v1/bootstrap/welcome-setup/llm-test",
-        "POST",
-        payload,
-      );
-    },
-    getSystemBootstrapState(personaKey?: string): Promise<SystemBootstrapStateResponse> {
-      return requestJson<SystemBootstrapStateResponse>(
-        `/api/v1/bootstrap/state${buildPersonaQuery(personaKey)}`,
-      );
-    },
-    executeInitOrganization(
-      payload: InitOrganizationRequest,
-      personaKey?: string,
-    ): Promise<InitOrganizationResponse> {
-      return requestJson<InitOrganizationResponse>(
-        `/api/v1/bootstrap/init-organization${buildPersonaQuery(personaKey)}`,
-        "POST",
-        payload,
-      );
-    },
-    executeInitWorkspace(
-      payload: InitWorkspaceRequest,
-      personaKey?: string,
-    ): Promise<InitWorkspaceResponse> {
-      return requestJson<InitWorkspaceResponse>(
-        `/api/v1/bootstrap/init-workspace${buildPersonaQuery(personaKey)}`,
-        "POST",
-        payload,
-      );
-    },
-    executeInitDatasource(
-      payload: InitDatasourceRequest,
-      personaKey?: string,
-    ): Promise<InitDatasourceResponse> {
-      return requestJson<InitDatasourceResponse>(
-        `/api/v1/bootstrap/init-datasource${buildPersonaQuery(personaKey)}`,
-        "POST",
-        payload,
-      );
-    },
-    executeInitUser(payload: InitUserRequest, personaKey?: string): Promise<InitUserResponse> {
-      return requestJson<InitUserResponse>(
-        `/api/v1/bootstrap/init-user${buildPersonaQuery(personaKey)}`,
-        "POST",
-        payload,
-      );
-    },
-    getOntologyAndRagState(fixture = false): Promise<OntologyAndRagStateResponse> {
-      return requestJson<OntologyAndRagStateResponse>(
-        `/api/v1/ontology-rag/state?fixture=${fixture ? "true" : "false"}`,
-      );
-    },
-    resolveOntologyHierarchy(
-      payload: OntologyResolveRequest,
-      fixture = false,
-    ): Promise<OntologyResolveResponse> {
-      return requestJson<OntologyResolveResponse>(
-        `/api/v1/ontology-rag/ontology/resolve?fixture=${fixture ? "true" : "false"}`,
-        "POST",
-        payload,
-      );
-    },
-    upsertOntologyConcept(
-      payload: OntologyUpsertConceptRequest,
-      fixture = false,
-    ): Promise<OntologyConceptSchemaItem> {
-      return requestJson<OntologyConceptSchemaItem>(
-        `/api/v1/ontology-rag/ontology/concepts?fixture=${fixture ? "true" : "false"}`,
-        "POST",
-        payload,
-      );
-    },
-    simulateOntologyWhatIf(
-      payload: WhatIfSimulationRequest,
-      fixture = false,
-    ): Promise<WhatIfSimulationResponse> {
-      return requestJson<WhatIfSimulationResponse>(
-        `/api/v1/ontology-rag/ontology/what-if?fixture=${fixture ? "true" : "false"}`,
-        "POST",
-        payload,
-      );
-    },
-    promoteOntologyProposal(
-      payload: OntologyPromoteRequest,
-      fixture = false,
-    ): Promise<OntologyPromotionProposalSchemaItem> {
-      return requestJson<OntologyPromotionProposalSchemaItem>(
-        `/api/v1/ontology-rag/ontology/promote?fixture=${fixture ? "true" : "false"}`,
-        "POST",
-        payload,
-      );
-    },
-    searchHybridRag(
-      payload: HybridRagSearchRequest,
-      fixture = false,
-    ): Promise<HybridRagSearchResponse> {
-      return requestJson<HybridRagSearchResponse>(
-        `/api/v1/ontology-rag/rag/search?fixture=${fixture ? "true" : "false"}`,
-        "POST",
-        payload,
-      );
-    },
-    indexDbDdlSchema(
-      payload: DbDdlIndexRequest,
-      fixture = false,
-    ): Promise<KbDocumentSchemaItem> {
-      return requestJson<KbDocumentSchemaItem>(
-        `/api/v1/ontology-rag/rag/index-db-ddl?fixture=${fixture ? "true" : "false"}`,
-        "POST",
-        payload,
-      );
-    },
-    auditDocVsCode(
-      payload: DocVsCodeAuditRequest,
-      fixture = false,
-    ): Promise<DocVsCodeAuditResponse> {
-      return requestJson<DocVsCodeAuditResponse>(
-        `/api/v1/ontology-rag/tripartite/audit-doc-vs-code?fixture=${fixture ? "true" : "false"}`,
-        "POST",
-        payload,
-      );
-    },
+    ...assistantStreamingClient,
+    getAccostageStatus: () => requestJson<AccostageStatusResponse>("/api/v1/bootstrap/accostage-status"),
+    getPlatformSetupState: () => requestJson<PlatformSetupStateResponse>("/api/v1/bootstrap/platform-setup-state"),
+    savePlatformSetupState: (payload: PlatformSetupStatePutRequest) =>
+      requestJson<PlatformSetupStateResponse>("/api/v1/bootstrap/platform-setup-state", "PUT", payload),
+    createWelcomeSetupFirstAdmin: (payload: WelcomeSetupFirstAdminRequest) =>
+      requestJson<WelcomeSetupFirstAdminResponse>("/api/v1/bootstrap/welcome-setup/first-admin", "POST", payload),
+    registerProgressiveLlmEndpoint: (payload: ProgressiveLlmEndpointRequest) =>
+      requestJson<AccostageStatusResponse>("/api/v1/bootstrap/welcome-setup/progressive-llm", "POST", payload),
+    testLlmEndpointConnection: (payload: LlmConnectionTestRequest) =>
+      requestJson<LlmConnectionTestResponse>("/api/v1/bootstrap/welcome-setup/llm-test", "POST", payload),
+    getSystemBootstrapState: (personaKey?: string) =>
+      requestJson<SystemBootstrapStateResponse>(`/api/v1/bootstrap/state${buildPersonaQuery(personaKey)}`),
+    executeInitOrganization: (payload: InitOrganizationRequest, personaKey?: string) =>
+      requestJson<InitOrganizationResponse>(`/api/v1/bootstrap/init-organization${buildPersonaQuery(personaKey)}`, "POST", payload),
+    executeInitWorkspace: (payload: InitWorkspaceRequest, personaKey?: string) =>
+      requestJson<InitWorkspaceResponse>(`/api/v1/bootstrap/init-workspace${buildPersonaQuery(personaKey)}`, "POST", payload),
+    executeInitDatasource: (payload: InitDatasourceRequest, personaKey?: string) =>
+      requestJson<InitDatasourceResponse>(`/api/v1/bootstrap/init-datasource${buildPersonaQuery(personaKey)}`, "POST", payload),
+    executeInitUser: (payload: InitUserRequest, personaKey?: string) =>
+      requestJson<InitUserResponse>(`/api/v1/bootstrap/init-user${buildPersonaQuery(personaKey)}`, "POST", payload),
+    getOntologyAndRagState: (fixture = false) =>
+      requestJson<OntologyAndRagStateResponse>(`/api/v1/ontology-rag/state${fq(fixture)}`),
+    resolveOntologyHierarchy: (payload: OntologyResolveRequest, fixture = false) =>
+      requestJson<OntologyResolveResponse>(`/api/v1/ontology-rag/ontology/resolve${fq(fixture)}`, "POST", payload),
+    upsertOntologyConcept: (payload: OntologyUpsertConceptRequest, fixture = false) =>
+      requestJson<OntologyConceptSchemaItem>(`/api/v1/ontology-rag/ontology/concepts${fq(fixture)}`, "POST", payload),
+    simulateOntologyWhatIf: (payload: WhatIfSimulationRequest, fixture = false) =>
+      requestJson<WhatIfSimulationResponse>(`/api/v1/ontology-rag/ontology/what-if${fq(fixture)}`, "POST", payload),
+    promoteOntologyProposal: (payload: OntologyPromoteRequest, fixture = false) =>
+      requestJson<OntologyPromotionProposalSchemaItem>(`/api/v1/ontology-rag/ontology/promote${fq(fixture)}`, "POST", payload),
+    searchHybridRag: (payload: HybridRagSearchRequest, fixture = false) =>
+      requestJson<HybridRagSearchResponse>(`/api/v1/ontology-rag/rag/search${fq(fixture)}`, "POST", payload),
+    indexDbDdlSchema: (payload: DbDdlIndexRequest, fixture = false) =>
+      requestJson<KbDocumentSchemaItem>(`/api/v1/ontology-rag/rag/index-db-ddl${fq(fixture)}`, "POST", payload),
+    auditDocVsCode: (payload: DocVsCodeAuditRequest, fixture = false) =>
+      requestJson<DocVsCodeAuditResponse>(`/api/v1/ontology-rag/tripartite/audit-doc-vs-code${fq(fixture)}`, "POST", payload),
     searchFederated(
       query: string,
       scope: "SCREEN" | "WORKSPACE" | "ALL_WORKSPACES" | "CONTEXTUAL" | "GLOBAL" = "ALL_WORKSPACES",
@@ -281,45 +191,19 @@ export function createBootstrapAndOntologyDomainClient(requestJson: RequestJsonF
       }
       return requestJson<FederatedSearchResponse>(`/api/v1/search?${params.toString()}`);
     },
-    getUserPreferences(personaKey?: string): Promise<UserPreferencesResponse> {
-      return requestJson<UserPreferencesResponse>(
-        `/api/v1/users/me/preferences${buildPersonaQuery(personaKey)}`,
-      );
-    },
-    updateUserPreferences(
-      payload: UserPreferencesPatchRequest,
-      personaKey?: string,
-    ): Promise<UserPreferencesResponse> {
-      return requestJson<UserPreferencesResponse>(
-        `/api/v1/users/me/preferences${buildPersonaQuery(personaKey)}`,
-        "PATCH",
-        payload,
-      );
-    },
-    listMcpTokens(personaKey?: string): Promise<McpPersonalTokenListResult> {
-      return requestJson<McpPersonalTokenListResult>(
-        `/api/v1/users/me/mcp-tokens${buildPersonaQuery(personaKey)}`,
-      );
-    },
-    createMcpToken(
-      payload: McpPersonalTokenCreatePayload,
-      personaKey?: string,
-    ): Promise<McpPersonalTokenIssuedResult> {
-      return requestJson<McpPersonalTokenIssuedResult>(
-        `/api/v1/users/me/mcp-tokens${buildPersonaQuery(personaKey)}`,
-        "POST",
-        payload,
-      );
-    },
-    revokeMcpToken(
-      tokenId: string,
-      personaKey?: string,
-    ): Promise<McpPersonalTokenItemResult> {
-      return requestJson<McpPersonalTokenItemResult>(
+    getUserPreferences: (personaKey?: string) =>
+      requestJson<UserPreferencesResponse>(`/api/v1/users/me/preferences${buildPersonaQuery(personaKey)}`),
+    updateUserPreferences: (payload: UserPreferencesPatchRequest, personaKey?: string) =>
+      requestJson<UserPreferencesResponse>(`/api/v1/users/me/preferences${buildPersonaQuery(personaKey)}`, "PATCH", payload),
+    listMcpTokens: (personaKey?: string) =>
+      requestJson<McpPersonalTokenListResult>(`/api/v1/users/me/mcp-tokens${buildPersonaQuery(personaKey)}`),
+    createMcpToken: (payload: McpPersonalTokenCreatePayload, personaKey?: string) =>
+      requestJson<McpPersonalTokenIssuedResult>(`/api/v1/users/me/mcp-tokens${buildPersonaQuery(personaKey)}`, "POST", payload),
+    revokeMcpToken: (tokenId: string, personaKey?: string) =>
+      requestJson<McpPersonalTokenItemResult>(
         `/api/v1/users/me/mcp-tokens/${encodeURIComponent(tokenId)}${buildPersonaQuery(personaKey)}`,
         "DELETE",
-      );
-    },
+      ),
     resolveContextualHelp(
       route: string,
       lang: "fr" | "en" = "fr",
@@ -331,91 +215,8 @@ export function createBootstrapAndOntologyDomainClient(requestJson: RequestJsonF
         `/api/v1/help/resolve?${params.toString()}`,
       );
     },
-    rollbackContextualHelp(
-      payload: ContextualHelpRollbackRequest,
-      personaKey?: string,
-    ): Promise<HelpArticleSchemaItem> {
-      return requestJson<HelpArticleSchemaItem>(
-        `/api/v1/help/rollback${buildPersonaQuery(personaKey)}`,
-        "POST",
-        payload,
-      );
-    },
-    executeAssistantTurn(payload: ThreeSpeedTurnRequest): Promise<ThreeSpeedTurnResponse> {
-      return requestJson<ThreeSpeedTurnResponse>("/api/v1/assistant/three-speed/turn", "POST", payload);
-    },
-    getActiveAssistantTurnStatus(workspaceId: string): Promise<ActiveBackgroundTurnStatusResponse> {
-      return requestJson<ActiveBackgroundTurnStatusResponse>(
-        `/api/v1/assistant/three-speed/active-turn?workspace_id=${encodeURIComponent(workspaceId)}`,
-      );
-    },
-    stopActiveAssistantTurn(payload: StopActiveBackgroundTurnRequest): Promise<ActiveBackgroundTurnStatusResponse> {
-      return requestJson<ActiveBackgroundTurnStatusResponse>("/api/v1/assistant/three-speed/stop", "POST", payload);
-    },
-    recordAssistantTurnFeedback(payload: RecordAssistantTurnFeedbackRequest): Promise<Record<string, unknown>> {
-      return requestJson<Record<string, unknown>>("/api/v1/assistant/three-speed/feedback", "POST", payload);
-    },
-    async streamAssistantTurnSse(
-      payload: ThreeSpeedTurnRequest,
-      options?: { signal?: AbortSignal; onEvent?: (eventName: string, data: Record<string, unknown>) => void },
-    ): Promise<void> {
-      const response = await globalThis.fetch("/api/v1/assistant/three-speed/stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
-        body: JSON.stringify(payload),
-        ...(options?.signal ? { signal: options.signal } : {}),
-      });
-      if (!response.ok || !response.body) {
-        throw new Error(`HTTP ${response.status} ${response.statusText || "SSE stream error"}`);
-      }
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const blocks = buffer.split("\n\n");
-        buffer = blocks.pop() ?? "";
-        for (const block of blocks) {
-          let eventName = "message";
-          const dataLines: string[] = [];
-          for (const line of block.split("\n")) {
-            if (line.startsWith("event:")) eventName = line.slice(6).trim();
-            else if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
-          }
-          if (dataLines.length > 0) {
-            try {
-              options?.onEvent?.(eventName, JSON.parse(dataLines.join("\n")) as Record<string, unknown>);
-            } catch {
-              // Ignore non-JSON keepalive comments
-            }
-          }
-        }
-      }
-    },
-    listAssistantFolders(workspaceId: string): Promise<AssistantWorkspaceOverviewResponse> {
-      return requestJson<AssistantWorkspaceOverviewResponse>(`/api/v1/assistant/workspaces/${encodeURIComponent(workspaceId)}/overview`);
-    },
-    createAssistantFolder(payload: CreateAssistantFolderRequest): Promise<AssistantFolderResponse> {
-      return requestJson<AssistantFolderResponse>("/api/v1/assistant/folders", "POST", payload);
-    },
-    configureAssistantFolderSharing(
-      folderId: string,
-      payload: ConfigureAssistantFolderSharingRequest,
-    ): Promise<ConfigureAssistantFolderSharingResponse> {
-      return requestJson<ConfigureAssistantFolderSharingResponse>(
-        `/api/v1/assistant/folders/${encodeURIComponent(folderId)}/share`,
-        "POST",
-        payload,
-      );
-    },
-    createAssistantThread(payload: CreateAssistantThreadRequest): Promise<AssistantThreadResponse> {
-      return requestJson<AssistantThreadResponse>("/api/v1/assistant/threads", "POST", payload);
-    },
-    sendCollaborativeThreadTurn(threadId: string, payload: SendCollaborativeThreadTurnRequest): Promise<SendCollaborativeThreadTurnResponse> {
-      return requestJson<SendCollaborativeThreadTurnResponse>(`/api/v1/assistant/threads/${encodeURIComponent(threadId)}/turns`, "POST", payload);
-    },
+    rollbackContextualHelp: (payload: ContextualHelpRollbackRequest, personaKey?: string) =>
+      requestJson<HelpArticleSchemaItem>(`/api/v1/help/rollback${buildPersonaQuery(personaKey)}`, "POST", payload),
     compileDnaStarlark(workspaceId: string, payload: CompileStarlarkMechanismRequest): Promise<StarlarkMechanismResponse> {
       return requestJson<StarlarkMechanismResponse>(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/dna-mechanisms/compile`, "POST", payload);
     },

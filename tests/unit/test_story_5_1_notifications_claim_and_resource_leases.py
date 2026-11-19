@@ -292,6 +292,32 @@ def test_story_5_1_fastapi_endpoints_and_sse_stream() -> None:
         assert "text/event-stream" in res_sse.headers["content-type"]
         assert "event: task.claim.locked" in res_sse.text
 
+        # 6b. Live SSE stream (live=true) receives live claim frames & exits cleanly on close
+        import threading
+
+        def _trigger_live_claim() -> None:
+            time.sleep(0.30)
+            client.post(
+                "/api/v1/runs/run-live-1/steps/step-live-1/claim?persona_key=nadia",
+                json={"ttl_seconds": 900, "force": False, "step_key": "live-sse-step"},
+            )
+
+        trigger_thread = threading.Thread(target=_trigger_live_claim, daemon=True)
+        seen_live_event = False
+        with client.stream(
+            "GET",
+            "/api/v1/events/stream?workspace_id=0195f000-0000-7000-8000-000000000301&live=true",
+        ) as live_resp:
+            assert live_resp.status_code == 200
+            for line in live_resp.iter_lines():
+                if line == "event: connected":
+                    trigger_thread.start()
+                if "step-live-1" in line:
+                    seen_live_event = True
+                    break
+        trigger_thread.join(timeout=2.0)
+        assert seen_live_event is True
+
         # 7. Acquire resource lease & validate fenced write
         res_lease = client.post(
             "/api/v1/resource-leases/acquire",
@@ -403,3 +429,95 @@ def test_alembic_0021_story_5_1_migration_on_real_postgres18(
                 engine.dispose()
     finally:
         shutil.rmtree(sock_dir, ignore_errors=True)
+
+
+@pytest.mark.asyncio
+async def test_stream_workspace_events_live_and_sync_broker_branches(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Cover sync broker fallback (L302) and live=True SSE loop/dedup/timeout (L311-319)."""
+    from types import SimpleNamespace
+
+    from orcia_api.dependencies.core_and_lifespan import initialize_app_services
+    from orcia_api.routers.inbox_and_leases import stream_workspace_events
+    from orcia_core.orchestration.notifications_and_claims import SseEventEnvelope
+
+    monkeypatch.setenv("ORCIA_ENV", "local")
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
+    app = create_app()
+    initialize_app_services(app)
+    auth_svc = app.state.auth_service
+    recent_evt = SseEventEnvelope(
+        event_id="evt-recent-1",
+        event_name="task.claim.locked",
+        channel="channel:workspace:ws-unit-sse",
+        workspace_id="ws-unit-sse",
+        run_id="run-1",
+        step_execution_id="step-1",
+        payload={"ok": True},
+        published_at_iso="2026-11-19T22:00:00Z",
+        dispatch_latency_ms=5.0,
+    )
+    live_evt = SseEventEnvelope(
+        event_id="evt-live-2",
+        event_name="task.claim.released",
+        channel="channel:workspace:ws-unit-sse",
+        workspace_id="ws-unit-sse",
+        run_id="run-1",
+        step_execution_id="step-1",
+        payload={"released": True},
+        published_at_iso="2026-11-19T22:00:01Z",
+        dispatch_latency_ms=7.0,
+    )
+
+    subscribers: list[object] = []
+
+    class _SyncOnlyBroker:
+        def list_recent_events(self, *, workspace_id: str) -> list[SseEventEnvelope]:
+            assert workspace_id == "ws-unit-sse"
+            return [recent_evt]
+
+        def subscribe(self, callback: object, *, workspace_id: str) -> object:
+            subscribers.append(callback)
+            return lambda: None
+
+    disconnect_calls = 0
+
+    async def _is_disconnected() -> bool:
+        nonlocal disconnect_calls
+        disconnect_calls += 1
+        if disconnect_calls == 2 and subscribers:
+            cb = subscribers[0]
+            assert callable(cb)
+            cb(recent_evt)  # duplicate -> hits seen_ids skip (L316-317)
+            cb(live_evt)  # fresh live event -> hits L318-319
+        return disconnect_calls >= 4
+
+    fake_req = SimpleNamespace(
+        headers={},
+        query_params={},
+        url=SimpleNamespace(path="/api/v1/events/stream", hostname="localhost"),
+        state=SimpleNamespace(trace_id="0195f000000070008000000000000501"),
+        app=SimpleNamespace(
+            state=SimpleNamespace(
+                auth_service=auth_svc,
+                notification_service=SimpleNamespace(sse_broker=_SyncOnlyBroker()),
+            )
+        ),
+        is_disconnected=_is_disconnected,
+    )
+
+    resp = await stream_workspace_events(
+        fake_req,  # type: ignore[arg-type]
+        workspace_id="ws-unit-sse",
+        live=True,
+        persona_key="nadia",
+    )
+    frames: list[str] = []
+    async for chunk in resp.body_iterator:
+        frames.append(chunk if isinstance(chunk, str) else chunk.decode("utf-8"))
+
+    joined = "".join(frames)
+    assert "event: connected" in joined
+    assert joined.count("id: evt-recent-1") == 1
+    assert "id: evt-live-2" in joined

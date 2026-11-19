@@ -128,6 +128,13 @@ export function handleAssistantAndInboxRoute(params: {
     });
   }
 
+  if (path === "/api/v1/events/stream" && method === "GET") {
+    const wsId = parsedUrl.searchParams.get("workspace_id") ?? "0195f000-0000-7000-8000-000000000301";
+    return buildSseStreamResponse([
+      `event: connected\ndata: ${JSON.stringify({ channel: `channel:workspace:${wsId}` })}\n\n`,
+    ]);
+  }
+
   if (path === "/api/v1/inbox/notifications" && method === "GET") {
     const wsId = parsedUrl.searchParams.get("workspace_id");
     const scopeFilter = parsedUrl.searchParams.get("scope_filter") ?? "ALL";

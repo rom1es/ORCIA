@@ -122,40 +122,17 @@ export function useReflexiveExecutionController(
     const controller = new AbortController();
     streamAbortRef.current = controller;
     const client = createOrciaApiClient({ baseUrl: "", locale });
-    const streamUrl = client.buildReflexiveTraceStreamUrl(executionId);
 
-    void fetch(streamUrl, {
-      method: "GET",
-      headers: { Accept: "text/event-stream", "Accept-Language": locale },
-      signal: controller.signal,
-    })
-      .then(async (resp) => {
-        if (!resp.ok || !resp.body) return;
-        const reader = resp.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-        while (!controller.signal.aborted) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const blocks = buffer.split("\n\n");
-          buffer = blocks.pop() ?? "";
-          for (const block of blocks) {
-            const dataLine = block
-              .split("\n")
-              .find((ln) => ln.startsWith("data:"));
-            if (!dataLine) continue;
-            const rawJson = dataLine.slice(5).trim();
-            if (!rawJson) continue;
-            try {
-              const parsed = JSON.parse(rawJson) as ApiTraceEventItem;
-              const uiEv = mapApiTraceEventToUi(parsed, actorSlug);
-              setEvents((prev) => mergeEventBySequence(prev, uiEv));
-            } catch {
-              // Ignore malformed SSE comment/heartbeat
-            }
-          }
-        }
+    void client
+      .streamReflexiveExecutionTraceSse(executionId, {
+        signal: controller.signal,
+        onEvent: (_eventName, data) => {
+          if (controller.signal.aborted) return;
+          const uiEv = mapApiTraceEventToUi(data as unknown as ApiTraceEventItem, actorSlug);
+          setEvents((prev) => mergeEventBySequence(prev, uiEv));
+        },
+      })
+      .then(async () => {
         if (!controller.signal.aborted) {
           await refreshSnapshot(executionId);
         }

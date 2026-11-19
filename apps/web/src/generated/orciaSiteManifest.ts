@@ -579,7 +579,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "phaseOrStory": "Story 23.2",
       "reportFile": "23-2-transport-sse-authentifie-createrequestsse-smoke-00-et-diagnostic-401-tech-lead-report.md",
       "domain": "Vague 0 (REM23-02..04 / ARCH23-02..03, P0-UX-1) — Transport SSE Authentifié createRequestSse, Smoke 00 (#3/#4) & Diagnostic 401 Session Expirée",
-      "summary": "Pré-implémentation (ready-for-dev) : découpage bootstrapAndOntology.ts (472 L), factorisation createRequestSse (Bearer + RFC 9457 + refresh 401) pour /assistant/three-speed/stream, /trace-stream et /events/stream (protégé resolve_request_user), alerte critique 401 Se reconnecter → (sans accuser le LLM) et alignement *fail-closed* 00-stack-smoke #3/#4."
+      "summary": "Clôture (done) : extraction assistantStreaming.ts + workspace_leases.py + OrciaRootErrorBoundary.tsx, factorisation createRequestSse (Bearer + RFC 9457 + verrou *single-flight* /auth/refresh sur 401), migration /assistant/three-speed/stream, /trace-stream et /events/stream (protégé resolve_request_user + _enforce_inbox_workspace_guard, sans avortement sur refresh token), bandeau critique 401 Se reconnecter → sans accusation LLM, alignement 00-stack-smoke + 04-multi-actor-claim-sse, 9/9 Turbo (329/329), 100.00 % couv. (inbox_and_leases.py + workspace_leases.py), 21/21 traçabilité/sécurité, Chaîne Canari Playwright 23 passed / 2 skipped / 1 failed (00, 01, 02, 03, 04 + 12 desktop verts ; 1 timedOut pré-existant mobile-companion 12-epic16 FourZoneDirectionCShell.tsx:L254 !isMobile, reporté en Story 23.6), ruff/mypy/lint-imports/export_openapi 0 erreur."
     },
     {
       "date": "2026-11-19",

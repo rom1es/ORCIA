@@ -76,19 +76,48 @@
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
-> *[Pré-implémentation initialisée en Story 22.10 — à compléter après implémentation et validation de la Story 23.2]*
-
 ### 3.1 Fichiers Développés & Modifiés
 | Fichier | Nature (Création / Modification / Refactoring) | Description synthétique |
 | :--- | :--- | :--- |
-| `packages/api-client/src/helpers.ts` | Modification | *[À compléter après implémentation Story 23.2]* |
-| `packages/api-client/src/domains/bootstrapAndOntology.ts` + `assistantStreaming.ts` | Refactoring / Création | *[À compléter après implémentation Story 23.2]* |
-| `apps/api/src/orcia_api/routers/inbox_and_leases.py` | Modification | *[À compléter après implémentation Story 23.2]* |
-| `apps/web/src/features/shared/useReflexiveExecutionController.ts`, `components/useWorkspaceEventsSse.ts`, `features/inbox/useAssistantStreamingTurn.ts`, `e2e/00-stack-smoke.spec.ts` | Modification | *[À compléter après implémentation Story 23.2]* |
+| `packages/api-client/src/helpers.ts` | Modification | Ajout de `createRequestSse`, `registerDefaultAccessTokenRefreshedHandler` et d'un verrou *single-flight* partagé sur `POST /api/v1/auth/refresh` (`createRequestJson` / `createRequestBinary` / `createRequestSse`) : injection `Authorization: Bearer`, `Accept-Language`, `Accept: text/event-stream`, `credentials: "include"`, tentative unique de refresh session sur `401` sans boucle infinie ni tempête concurrente, parsing RFC 9457 (`OrciaProblemError`). |
+| `packages/api-client/src/domains/bootstrapAndOntology.ts` + `assistantStreaming.ts` + `index.ts` + `openapi.json` | Refactoring / Création | Extraction du domaine SSE/streaming dans `assistantStreaming.ts` (`streamAssistantTurnSse`, `streamReflexiveExecutionTraceSse`, `streamWorkspaceEventsSse`) ; export public via `index.ts` et resynchronisation OpenAPI. |
+| `apps/api/src/orcia_api/routers/inbox_and_leases.py` + `workspace_leases.py` | Refactoring / Modification | Extraction des endpoints `/resource-leases/*` dans `workspace_leases.py` ; protection de `GET /api/v1/events/stream` par `resolve_request_user`, `sync_evaluator_topology_from_pg` et `_enforce_inbox_workspace_guard` (`401` anonyme sous `ORCIA_ENV="e2e"`, `403` hors périmètre). |
+| `apps/web/src/components/{useWorkspaceEventsSse.ts,OrciaRootErrorBoundary.tsx,useShellAutonomousSupervision.ts,platformSetupGovernanceActions.ts}`, `main.tsx`, `stores/authSessionStore.ts` | Modification / Création | Remplacement de `EventSource` par `streamWorkspaceEventsSse` (`createRequestSse` + Bearer + backoff borné + arrêt sur `401`/`403`) sans avortement lors de la rotation `accessToken`, branchement `registerDefaultAccessTokenRefreshedHandler`, garde `platformSetupGovernanceActions`, et extraction de `OrciaRootErrorBoundary` (`role="alert"`, `data-testid="orcia-root-error-boundary"`). |
+| `apps/web/src/features/shared/useReflexiveExecutionController.ts` | Modification | Remplacement de `fetch(streamUrl)` brut par `streamReflexiveExecutionTraceSse` (`createRequestSse` + Bearer). |
+| `apps/web/src/features/inbox/{assistantBackgroundStreamStore.ts,useAssistantStreamingTurn.ts,useInboxPanelController.ts,index.tsx}` + `i18n/locales/assistant_labels.ts` | Modification | Classification `classifyAssistantStreamError` (`401`/`403` → `auth_expired` sans code HTTP brut ni accusation LLM ; `502`/`503`/`504`/réseau → `ai_unavailable`) et câblage `onReconnect` (reset session + navigation `/login`). |
+| `packages/ui/src/{index.ts,primitives/AssistantActiveStreamContent.tsx,AssistantSpeedSelectorAndStreamView.tsx,AssistantSpeedSelectorTypes.ts}` | Modification | Bandeau critique `role="alert"` (`data-testid="assistant-error-banner"`, `.orcia-ds-alert-error`) et bouton `assistant-error-reconnect-btn` (`Se reconnecter →`). |
+| `apps/web/e2e/{00-stack-smoke.spec.ts,04-multi-actor-claim-sse.spec.ts,support/firstAdmin.ts}` + `src/__tests__/setup/assistantAndInboxMockHandlers.ts` | Modification | Alignement *fail-closed* `00-stack-smoke` (`401` anonyme vérifié avant création admin + appels Bearer) et `04-multi-actor-claim-sse` (`openSseStream` authentifié Bearer + preuve `401` anonyme) + `docs/product/capabilities.yaml`. |
+| `packages/api-client/src/__tests__/request-sse.test.ts`, `packages/ui/src/__tests__/story-23-2-assistant-error-banner.test.tsx`, `apps/web/src/__tests__/{story-23-2-sse-auth-and-error-banner.test.tsx,i18n-and-shell.test.tsx}` | Création / Modification | Couche 1b : tests `createRequestSse` (Bearer, `Accept-Language`, verrou *single-flight* partagé `/auth/refresh` sur `401` + reset échec, `OrciaProblemError`), alerte UI `401`/`503`, survie `useWorkspaceEventsSse` au refresh token, `OrciaRootErrorBoundary`, `useReflexiveExecutionController` et navigation `/login`. |
+| `tests/integration/test_story_23_2_sse_auth_and_streams_pg18.py`, `tests/security/test_story_23_2_sse_e2e_fail_closed.py`, `tests/unit/test_story_5_1_notifications_claim_and_resource_leases.py` | Création / Modification | Couche 2 (`testcontainers` PG18 + Redis + vrai `create_app()` sans override sous `ORCIA_ENV="e2e"`) & Couche Sécurité & Couche 1a : `401`/`403`/`200 text/event-stream` sur `/events/stream` (y compris mode `live=True` et fallback sync) et `/assistant/three-speed/stream` (`DeterministicCassetteLLM`), gardes `READ_ONLY_OBSERVER` (`X-Orcia-Access-Mode` & `ROLLUP_PARENT`), `POST /tasks/{id}/release` + preuves SQL PG18. |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
-- **Couverture de tests** : *[À compléter — $\ge 90\%$ requis]*
-- **Qualité statique & Architecture** : `ruff`, `mypy --strict`, `pnpm turbo run lint typecheck test`, `openapi-typescript` `0-diff`, `gitnexus_detect_changes()` *[À compléter]*
+- **Pyramide TS (`pnpm turbo run lint typecheck test --concurrency=2`)** : **`9/9` tâches vertes** (`329` tests / `82` fichiers) :
+  - `@orcia/api-client` : **`20/20` passed** (`3` fichiers dont `request-sse.test.ts` `7/7`).
+  - `@orcia/ui` : **`112/112` passed** (`27` fichiers dont `story-23-2-assistant-error-banner.test.tsx` `2/2`).
+  - `@orcia/web` : **`197/197` passed** (`52` fichiers dont `story-23-2-sse-auth-and-error-banner.test.tsx` `7/7` et les 5 audits `zero-dead-buttons-and-silent-catches-audit`, `e2e-testids-sync-audit`, `anti-jargon-and-secrets-ui-audit`, `css-class-integrity-audit`, `vitest-transport-fail-closed-openapi`).
+- **Qualité statique & Architecture Python (`AD-19`)** :
+  - `.venv/bin/ruff check . && .venv/bin/ruff format --check .` : **`0` erreur**, `1257` fichiers formatés.
+  - `.venv/bin/mypy --strict packages/orcia-core packages/orcia-connectors apps/api apps/worker` : **`0` erreur** (`551` fichiers source).
+  - `.venv/bin/lint-imports` : **`5` contrats conservés, `0` brisé** (`597` fichiers, `4289` dépendances).
+  - `.venv/bin/python scripts/export_openapi.py --check` : **`0-diff`** (`openapi.json` synchronisé).
+- **Couverture ciblée (`COVERAGE_CORE=ctrace`, `test_story_5_1` `-k "not test_alembic_0021"` + `test_story_23_2_sse_auth_and_streams_pg18.py`)** :
+  - `apps/api/src/orcia_api/routers/inbox_and_leases.py` : **`100 %`** (`108` stmts, `0` miss, `20` branches, `0` partial).
+  - `apps/api/src/orcia_api/routers/workspace_leases.py` : **`100 %`** (`28` stmts, `0` miss).
+  - Total combiné : **`100.00 %`** (`136` stmts, `0` miss ; `--cov-fail-under=90` vert, `5 passed, 1 deselected` — `test_alembic_0021_story_5_1_migration_on_real_postgres18` pré-existant reste exclu sous instrumentation Python 3.12 / SQLAlchemy `2.1` `_cache_key_cy.py:196`).
+- **Traçabilité & Registre Python** :
+  - `tests/unit/test_epic22_to_epic23_traceability.py`, `tests/unit/test_capabilities_registry.py`, `tests/security/test_story_23_2_sse_e2e_fail_closed.py` : **`21/21` passed**.
 
 ### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17` + 5 Garde-Fous de Câblage Vertical)
-- *[À compléter après passage de `00-stack-smoke`, `02-assistant`, `04-multi-actor` et `12-epic16`]*
+- **Couche 1a & Audits AST Python** :
+  - `tests/unit/test_codebase_architectural_anti_patterns_audit.py` + `test_assistant_and_rag_routes_require_rag_guard_audit.py` : **`7/7` passed**.
+  - `tests/unit/test_integration_no_manual_app_state_audit.py` + `test_zero_orphan_sql_adapters_audit.py` + `test_e2e_sql_coverage_audit.py` : **`4/4` passed**.
+- **Couche 2 (Intégration PG18/Redis Composition Root sans override) & Couche Sécurité (`ORCIA_ENV="e2e"`)** :
+  - `tests/integration/test_story_23_2_sse_auth_and_streams_pg18.py` + `tests/security/test_story_23_2_sse_e2e_fail_closed.py` + `tests/unit/test_story_5_1_notifications_claim_and_resource_leases.py -k "not test_alembic_0021"` : **`5/5` passed** (`100.00 %` couv.) ; avec `tests/security/test_story_22_3_security_guards.py` : **`6/6` passed** sur le tir combiné.
+- **Couche 5 — Chaîne Canari E2E Obligatoire (`ORCIA_E2E_CAMPAIGN_DIR=/tmp/orcia-e2e-canary-23-2`, `--retries=0 --timeout=35000`, `0` fixture cachée)** :
+  - `00-stack-smoke.spec.ts` (`#1`–`#4`, `desktop-cockpit` + `mobile-companion`) : **`8/8` passed**.
+  - `01-day0-boot-and-f5-persistence.spec.ts` (`desktop-cockpit` + `mobile-companion`) : **`4/4` passed**.
+  - `02-assistant-streaming-and-folders.spec.ts` (`desktop-cockpit` + `mobile-companion`) : **`6/6` passed** (y compris le tour d'assistant SSE `DeterministicCassetteLLM` `#7`, zéro écran blanc après refresh token *single-flight*).
+  - `03-human-led-anchor-and-arbitration.spec.ts` (`desktop-cockpit` + `mobile-companion`) : **`2/2` passed**.
+  - `04-multi-actor-claim-sse.spec.ts` : **`2/2` passed** (`desktop-cockpit`), **`2` skipped** (`mobile-companion` skip attendu).
+  - `12-epic16-reflexive-trace-and-line-inspector.spec.ts` : **`1/1` passed** (`desktop-cockpit`) ; **`1` failed** pré-existant (`timedOut` sur budget `35s`, `36.1s`) en `mobile-companion` sur `L28-29` (`ensureCentralWorkspaceVisibleOnMobile` attend `getByTestId('four-zone-sidebar')` alors que `FourZoneSidebarRail` (`four-zone-sidebar`) n'est monté que sous `!isMobile` dans `FourZoneDirectionCShell.tsx:L254` — hors périmètre SSE `23.2`, reporté pour priorisation ultérieure en `Story 23.6`).
+  - Total Chaîne Canari (`26` cas) : **`23 passed`, `2 skipped`, `1 failed` (`mobile-companion` `12-epic16`)**, `26` captures PNG générées dans `/tmp/orcia-e2e-canary-23-2/screenshots/` (dont `23` `passed`, `2` `skipped`, `1` `timedOut`).

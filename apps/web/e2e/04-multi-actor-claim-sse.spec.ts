@@ -16,11 +16,18 @@ interface SseFrame {
 }
 
 /** Lecteur SSE minimal (fetch streaming Node) : accumule les trames jusqu'à `abort()`. */
-function openSseStream(url: string): { frames: SseFrame[]; ready: Promise<void>; abort: () => void } {
+function openSseStream(
+  url: string,
+  options?: { readonly token?: string },
+): { frames: SseFrame[]; ready: Promise<void>; abort: () => void } {
   const controller = new AbortController();
   const frames: SseFrame[] = [];
+  const headers = options?.token ? { Authorization: `Bearer ${options.token}` } : undefined;
   const ready = (async () => {
-    const res = await fetch(url, { signal: controller.signal });
+    const res = await fetch(url, {
+      signal: controller.signal,
+      ...(headers ? { headers } : {}),
+    });
     expect(res.status).toBe(200);
     const reader = res.body?.getReader();
     if (!reader) throw new Error("flux SSE sans corps");
@@ -208,9 +215,18 @@ test.describe("TEST-04 · 04 — Multi-acteurs : Claim exclusif et diffusion SSE
       expect(claimB.status()).toBe(409);
       expect((await claimB.json()).error_code).toBe("ERR_STEP_ALREADY_CLAIMED_BY_PEER");
 
-      // Un acteur qui (re)connecte son flux voit l'événement de prise en charge, latence de dispatch < 500 ms.
+      // L'endpoint SSE unifié rejette les appels anonymes sous ORCIA_ENV="e2e" (401 fail-closed).
+      const anonSse = await apiGet<{ error_code?: string }>(
+        actorA,
+        `/api/v1/events/stream?workspace_id=${encodeURIComponent(workspaceId)}&live=false`,
+      );
+      expect(anonSse.status()).toBe(401);
+      expect((await anonSse.json()).error_code).toBe("ERR_AUTH_REQUIRED");
+
+      // Un acteur qui (re)connecte son flux avec un jeton Bearer valide voit l'événement de prise en charge (< 500 ms).
       const stream = openSseStream(
         `${API}/api/v1/events/stream?workspace_id=${encodeURIComponent(workspaceId)}`,
+        { token: adminToken },
       );
       try {
         await stream.ready;
@@ -238,13 +254,14 @@ test.describe("TEST-04 · 04 — Multi-acteurs : Claim exclusif et diffusion SSE
   test("le flux SSE d'un acteur connecté reçoit en direct la prise en charge d'un pair (< 500 ms)", async () => {
     const actorA = await pwRequest.newContext({ baseURL: API });
     const actorB = await pwRequest.newContext({ baseURL: API });
-    const { adminToken, workspaceId, taskId } = await setupActorsAndOpenNotification(
+    const { adminToken, peerToken, workspaceId, taskId } = await setupActorsAndOpenNotification(
       actorA,
       actorB,
       "02",
     );
     const stream = openSseStream(
       `${API}/api/v1/events/stream?workspace_id=${encodeURIComponent(workspaceId)}`,
+      { token: peerToken },
     );
     try {
       await stream.ready;

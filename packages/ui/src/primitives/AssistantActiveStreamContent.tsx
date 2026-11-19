@@ -8,7 +8,10 @@ import {
   AssistantUserQuestionBubble,
   type UiAssistantRagCitationItem,
 } from "./AssistantResponseFooterActionsAndCitations";
-import type { UiThreeSpeedStepProgress } from "./AssistantSpeedSelectorAndStreamView";
+import type {
+  UiAssistantErrorKind,
+  UiThreeSpeedStepProgress,
+} from "./AssistantSpeedSelectorTypes";
 import { AssistantThinkingSubWindow } from "./AssistantThinkingSubWindow";
 
 export interface AssistantActiveStreamContentProps {
@@ -24,6 +27,9 @@ export interface AssistantActiveStreamContentProps {
   readonly stepProgress: readonly UiThreeSpeedStepProgress[];
   readonly initialElapsedSeconds: number;
   readonly errorMessage: string | null;
+  readonly errorKind?: UiAssistantErrorKind | null;
+  readonly reconnectCtaLabel?: string;
+  readonly onReconnect?: () => void;
   readonly isStoppedVisible: boolean;
   readonly mergedRagCitations: readonly UiAssistantRagCitationItem[];
   readonly currentTurnFeedback: "LIKE" | "DISLIKE" | null;
@@ -47,6 +53,9 @@ export function AssistantActiveStreamContent({
   stepProgress,
   initialElapsedSeconds,
   errorMessage,
+  errorKind = null,
+  reconnectCtaLabel,
+  onReconnect,
   isStoppedVisible,
   mergedRagCitations,
   currentTurnFeedback,
@@ -98,9 +107,26 @@ export function AssistantActiveStreamContent({
         <div
           role="alert"
           data-testid="assistant-error-banner"
-          className="rounded border border-status-warning/40 bg-status-warning/10 p-2.5 text-xs font-medium text-status-warning"
+          data-error-kind={errorKind ?? "stream_error"}
+          className={
+            errorKind === "auth_expired"
+              ? "orcia-ds-alert orcia-ds-alert-error items-center justify-between gap-3"
+              : "rounded border border-status-warning/40 bg-status-warning/10 p-2.5 text-xs font-medium text-status-warning"
+          }
         >
-          {errorMessage}
+          <div className={errorKind === "auth_expired" ? "orcia-ds-alert-content text-xs font-semibold" : undefined}>
+            {errorMessage}
+          </div>
+          {errorKind === "auth_expired" && onReconnect ? (
+            <button
+              type="button"
+              data-testid="assistant-error-reconnect-btn"
+              onClick={onReconnect}
+              className="orcia-ds-alert-action orcia-ds-btn orcia-ds-btn-primary orcia-ds-btn-sm"
+            >
+              {reconnectCtaLabel ?? "Se reconnecter →"}
+            </button>
+          ) : null}
         </div>
       )}
       {(cleanStreamedText || isStoppedVisible) && (

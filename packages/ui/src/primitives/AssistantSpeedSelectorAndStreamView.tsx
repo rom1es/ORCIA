@@ -32,6 +32,7 @@ export type {
   AssistantSpeedSelectorAndStreamViewLabels,
   AssistantSpeedSelectorAndStreamViewProps,
   UiAssistantAutocompleteSuggestion,
+  UiAssistantErrorKind,
   UiAssistantModelOption,
   UiAssistantSpeedMode,
   UiThreeSpeedStepProgress,
@@ -48,6 +49,7 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
     hideTechnicalCacheHeader = false, hideLegacySpeedPills = false, hideDuplicateCompletedStream = false, cacheHit = true,
     cacheLookupMs = 1.4, nodes1To4DeterministicMs = 18.2, ttftMs = 398.2, stepProgress, streamedText = "", activeUserPrompt,
     isGenerating = false, initialElapsedSeconds = 0, generationStopped = false, errorMessage = null,
+    errorKind = null, reconnectCtaLabel, onReconnect,
     disabled = false, disabledReasonBanner = null, labels,
     onOpenFoldersFromPlus, onStopGeneration, onRegenerateLastTurn, onSaveDraftFromResponse, onContinueInProcessFromResponse,
     onInspectCitation, currentTurnFeedback = null, onFeedbackLastTurn, onSendTurn,
@@ -271,6 +273,9 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
           stepProgress={stepProgress}
           initialElapsedSeconds={initialElapsedSeconds}
           errorMessage={errorMessage}
+          errorKind={errorKind}
+          reconnectCtaLabel={reconnectCtaLabel}
+          onReconnect={onReconnect}
           isStoppedVisible={isStoppedVisible}
           mergedRagCitations={mergedRagCitations}
           currentTurnFeedback={currentTurnFeedback}

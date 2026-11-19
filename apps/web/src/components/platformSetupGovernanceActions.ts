@@ -100,27 +100,12 @@ export function createPlatformGovernanceActions(deps: GovernanceActionsDeps) {
       role: "PLATFORM_ADMIN",
       memberTeamIds: [],
     };
-    writeCachedPlatformAdmin(admin);
-    setPlatformAdmin(admin);
-    const nextAudit = appendAudit(
-      "PlatformAdminInitialized",
-      `Compte Administrateur de la plateforme "${admin.displayName}" (${admin.email}) créé`,
-      {
-        actorName: admin.displayName,
-        actorEmail: admin.email,
-        scopeId: "scope-global",
-        scopePath: "GLOBAL",
-        scopeLabel: "Plateforme entière",
-      },
-    );
-    setAuditEvents(nextAudit);
-    persistSnapshot(buildSnapshot({ auditEvents: nextAudit }));
-
     const rawPassword =
       input.password && input.password.trim().length >= 8
         ? input.password.trim()
         : "OrciaInitialAdmin!2026";
     const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
+    markMutated();
     void client
       .createWelcomeSetupFirstAdmin({
         email: admin.email,
@@ -128,12 +113,13 @@ export function createPlatformGovernanceActions(deps: GovernanceActionsDeps) {
         password: rawPassword,
         orcia_env: "local",
       })
-      .then((res) => {
-        if (res && (res.access_token || (res as Record<string, unknown>).accessToken)) {
+      .then(async (res) => {
+        const token =
+          res?.access_token ??
+          ((res as Record<string, unknown> | undefined)?.accessToken as string | undefined);
+        if (token) {
           useAuthSessionStore.getState().loginWithSession({
-            access_token:
-              res.access_token ??
-              ((res as Record<string, unknown>).accessToken as string | undefined),
+            access_token: token,
             email: admin.email,
             display_name: admin.displayName,
             platform_role: "PLATFORM_ADMIN",
@@ -141,8 +127,23 @@ export function createPlatformGovernanceActions(deps: GovernanceActionsDeps) {
             must_change_password: Boolean(res.must_change_password),
           });
         } else {
-          void useAuthSessionStore.getState().hydrateSession({ force: true });
+          await useAuthSessionStore.getState().hydrateSession({ force: true });
         }
+        writeCachedPlatformAdmin(admin);
+        setPlatformAdmin(admin);
+        const nextAudit = appendAudit(
+          "PlatformAdminInitialized",
+          `Compte Administrateur de la plateforme "${admin.displayName}" (${admin.email}) créé`,
+          {
+            actorName: admin.displayName,
+            actorEmail: admin.email,
+            scopeId: "scope-global",
+            scopePath: "GLOBAL",
+            scopeLabel: "Plateforme entière",
+          },
+        );
+        setAuditEvents(nextAudit);
+        persistSnapshot(buildSnapshot({ auditEvents: nextAudit }));
       })
       .catch(async (err: unknown) => {
         setLastSyncError(

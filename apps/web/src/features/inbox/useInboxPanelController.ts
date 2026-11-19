@@ -165,6 +165,7 @@ export function useInboxPanelController() {
     activeConversation,
     activeFolder,
     governancePrefs,
+    streamErrorLabels: dictionary.assistantStreamErrors,
     onTurnCompleted: (completed) => {
       const res = persistCompletedInboxTurn({
         completed,

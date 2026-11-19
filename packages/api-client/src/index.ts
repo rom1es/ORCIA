@@ -9,6 +9,15 @@ import { createAuthAndShellDomainClient } from "./domains/authAndShell";
 import { createAutonomousSupervisionDomainClient } from "./domains/autonomousSupervision";
 import { createAutonomyContractsDomainClient } from "./domains/autonomyContracts";
 import {
+  createAssistantStreamingDomainClient,
+  streamAssistantTurnSse,
+  streamReflexiveExecutionTraceSse,
+  streamWorkspaceEventsSse,
+  type AssistantTurnSseOptions,
+  type ReflexiveTraceSseOptions,
+  type WorkspaceEventsSseOptions,
+} from "./domains/assistantStreaming";
+import {
   createBootstrapAndOntologyDomainClient,
   type DemoWorkspaceProvisionResponse,
   type WizardAdvanceStepRequest,
@@ -57,12 +66,16 @@ import {
   buildOrgUnitsQuery,
   createRequestBinary,
   createRequestJson,
+  createRequestSse,
   OrciaProblemError,
   registerDefaultAccessTokenProvider,
+  registerDefaultAccessTokenRefreshedHandler,
   type BinaryDownloadResult,
   type ListKnownOrgUsersParams,
   type ListOrgUnitsParams,
   type OrciaApiClientOptions,
+  type SseEventHandler,
+  type SseRequestParams,
 } from "./helpers";
 
 export type * from "./generated/schema";
@@ -72,6 +85,7 @@ export {
   buildOrgUnitsQuery,
   createAgentsAndSkillsDomainClient,
   createAiModelsHubDomainClient,
+  createAssistantStreamingDomainClient,
   createAuditFinopsDomainClient,
   createAuthAndShellDomainClient,
   createAutonomousSupervisionDomainClient,
@@ -83,13 +97,19 @@ export {
   createFinopsDomainClient,
   createOntologyPromotionsDomainClient,
   createReflexiveExecutionDomainClient,
+  createRequestSse,
   createWorkflowsV2DomainClient,
   createWorkflowTriggersDomainClient,
   createWorkspaceGovernanceDomainClient,
   OrciaProblemError,
   registerDefaultAccessTokenProvider,
+  registerDefaultAccessTokenRefreshedHandler,
+  streamAssistantTurnSse,
+  streamReflexiveExecutionTraceSse,
+  streamWorkspaceEventsSse,
   type ApiImpactAssessmentResult,
   type ApiWorkflowDefinitionV2,
+  type AssistantTurnSseOptions,
   type BinaryDownloadResult,
   type DeclarativePacksListResponse,
   type DeclarativePackSummaryResponse,
@@ -106,13 +126,17 @@ export {
   type OntologyPromotionDecideResponse,
   type OntologyPromotionProposalDetailItem,
   type OntologyPromotionsListResponse,
+  type ReflexiveTraceSseOptions,
   type RegisterExceptionWaiverInput,
   type SaveWorkflowV2Options,
+  type SseEventHandler,
+  type SseRequestParams,
   type WizardAdvanceStepRequest,
   type WizardSessionRequest,
   type WizardSessionResponse,
   type WizardSessionsListResponse,
   type WizardStepBackRequest,
+  type WorkspaceEventsSseOptions,
   type WorkspaceFiveTabsStatePayload,
   type WritableScopeOptionItem,
   type OrciaApiClientOptions,
@@ -140,6 +164,7 @@ export function createOrciaOpenApiFetchClient(options: OrciaApiClientOptions) {
 export function createOrciaApiClient(options: OrciaApiClientOptions) {
   const requestJson = createRequestJson(options);
   const requestBinary = createRequestBinary(options);
+  const requestSse = createRequestSse(options);
   const aiModelsHubClient = createAiModelsHubDomainClient(requestJson);
   const auditFinopsClient = createAuditFinopsDomainClient(requestJson);
   return {
@@ -148,7 +173,7 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
     ...createAutonomyContractsDomainClient(requestJson),
     ...createCatalogAndPermissionsDomainClient(requestJson),
     ...createCodegraphMcpDomainClient(requestJson),
-    ...createBootstrapAndOntologyDomainClient(requestJson),
+    ...createBootstrapAndOntologyDomainClient(requestJson, requestSse),
     ...createEpics1To7OperationsDomainClient(requestJson),
     ...createAgentsAndSkillsDomainClient(requestJson),
     ...createFinopsDomainClient(requestJson),

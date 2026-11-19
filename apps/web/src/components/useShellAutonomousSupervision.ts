@@ -23,11 +23,6 @@ export function useShellAutonomousSupervision({
   selectedScope: { id: string; level: string };
   workspaces: readonly { workspaceId: string }[];
 }) {
-  const { lastClaimEvent } = useWorkspaceEventsSse(workspaces[0]?.workspaceId);
-  const [autonomousRuns, setAutonomousRuns] = useState<AutonomousRunSupervisionItemSchema[]>([]);
-  const [inboxNotifications, setInboxNotifications] = useState<TaskNotificationItemResponse[]>([]);
-  const shellApiClient = useMemo(() => createOrciaApiClient({ baseUrl: "" }), []);
-
   const activeWsUuid = useMemo(() => {
     const scopeWs = selectedScope.id.startsWith("scope-ws-")
       ? selectedScope.id.slice("scope-ws-".length)
@@ -37,6 +32,13 @@ export function useShellAutonomousSupervision({
     }
     return workspaces.find((w) => isValidWorkspaceKey(w.workspaceId))?.workspaceId ?? null;
   }, [selectedScope, workspaces]);
+
+  const { lastClaimEvent } = useWorkspaceEventsSse(
+    isAuthenticated ? (activeWsUuid ?? workspaces[0]?.workspaceId) : undefined,
+  );
+  const [autonomousRuns, setAutonomousRuns] = useState<AutonomousRunSupervisionItemSchema[]>([]);
+  const [inboxNotifications, setInboxNotifications] = useState<TaskNotificationItemResponse[]>([]);
+  const shellApiClient = useMemo(() => createOrciaApiClient({ baseUrl: "" }), []);
 
   useEffect(() => {
     if (!isAuthenticated || !activeWsUuid) {

@@ -497,7 +497,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     );
   });
 
-  it("enforces Story 12.4 UX sobriety: First-Boot Platform Admin Modal, zero fictional data (PAY-142/PSD2), zero NFR latency strings, and human-readable Rôle selector", () => {
+  it("enforces Story 12.4 UX sobriety: First-Boot Platform Admin Modal, zero fictional data (PAY-142/PSD2), zero NFR latency strings, and human-readable Rôle selector", async () => {
     const serializedFr = JSON.stringify(frDictionary);
     const serializedEn = JSON.stringify(enDictionary);
 
@@ -556,7 +556,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
 
     // Modal closes, top-right login control is gone, and bottom-left account button shows Romain Admin · Administrateur de la plateforme
-    expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
+    });
     expect(screen.queryByTestId("topbar-user-account-trigger")).toBeNull();
     expect(screen.queryByTestId("dropdown-hat-selector")).toBeNull();
     const accountBtn = screen.getByTestId("sidebar-open-my-account-btn");
@@ -797,7 +799,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       target: { value: "Secret123456!" },
     });
     fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
-    expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
+    });
 
     // 2. Configure an AI model in /settings -> AI Models tab (unlocks Mon Assistant & Mes Agents)
     fireEvent.click(screen.getByTestId("settings-tab-models"));
@@ -1022,7 +1026,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     resetCachedAgentsAndSkillsForTest();
   });
 
-  it("enforces RGAA Escape, Annuler, Unsaved Changes Guard, and Enter submit on First-Boot Admin Setup Modal", () => {
+  it("enforces RGAA Escape, Annuler, Unsaved Changes Guard, and Enter submit on First-Boot Admin Setup Modal", async () => {
     const { unmount } = render(
       <I18nProvider initialLocale="fr">
         <ShellContainer onNavigate={mockPush}>
@@ -1067,7 +1071,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     submitBtn.focus();
     fireEvent.keyDown(submitBtn, { key: "Enter" });
 
-    expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
+    });
     expect(screen.getByTestId("sidebar-open-my-account-btn").textContent).toContain(
       "Hélène Admin",
     );

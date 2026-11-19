@@ -13,8 +13,10 @@ import {
   addBgTimer,
   bgSnapshot,
   buildConversationHistoryPayload,
+  classifyAssistantStreamError,
   clearBgTimers,
   detectAdaptiveThinkingStepsForQuestion,
+  extractHttpErrorStatus,
   getBgAbortController,
   invokeBgOnTurnCompleted,
   resetBackgroundAssistantStreamForTests,
@@ -23,6 +25,7 @@ import {
   shouldUseProgressiveStepThinking,
   subscribeBgStream,
   updateBgSnapshot,
+  type AssistantStreamErrorLabels,
   type CompletedAssistantTurnPayload,
 } from "./assistantBackgroundStreamStore";
 import type { SavedAssistantGovernancePrefs } from "./assistantFoldersAndPrefsStore";
@@ -43,6 +46,7 @@ export interface UseAssistantStreamingTurnOptions {
   readonly activeConversation?: SavedAssistantConversation | null;
   readonly activeFolder?: UiAssistantFolderItem | null;
   readonly governancePrefs?: SavedAssistantGovernancePrefs;
+  readonly streamErrorLabels?: AssistantStreamErrorLabels;
   readonly onTurnCompleted: (params: CompletedAssistantTurnPayload) => void;
 }
 
@@ -62,6 +66,7 @@ export function useAssistantStreamingTurn({
   activeConversation = null,
   activeFolder = null,
   governancePrefs,
+  streamErrorLabels,
   onTurnCompleted,
 }: UseAssistantStreamingTurnOptions) {
   setBgOnTurnCompletedCallback(onTurnCompleted);
@@ -91,7 +96,7 @@ export function useAssistantStreamingTurn({
       generationStopped: true,
       stepProgress: bgSnapshot.stepProgress.map((st) => (st.status === "RUNNING" ? { ...st, status: "COMPLETED" } : st)),
     });
-    const client = createOrciaApiClient({ baseUrl: "" });
+    const client = createOrciaApiClient({ baseUrl: "", locale: isFr ? "fr" : "en" });
     void client
       .stopActiveAssistantTurn({ workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301" })
       .catch((err: unknown) => {
@@ -113,6 +118,7 @@ export function useAssistantStreamingTurn({
       stepProgress: [],
       nodes1To4Ms: 0,
       errorMessage: null,
+      errorKind: null,
     });
   };
 
@@ -142,6 +148,7 @@ export function useAssistantStreamingTurn({
 
     updateBgSnapshot({
       errorMessage: null,
+      errorKind: null,
       generationStopped: false,
       isGenerating: true,
       thinkingStartedAtMs: tStart,
@@ -192,7 +199,7 @@ export function useAssistantStreamingTurn({
       locale: isFr ? "fr" : "en",
     };
 
-    const client = createOrciaApiClient({ baseUrl: "" });
+    const client = createOrciaApiClient({ baseUrl: "", locale: isFr ? "fr" : "en" });
     let latestThinking = "";
     let latestReply = "";
     let hasStreamError = false;
@@ -294,6 +301,7 @@ export function useAssistantStreamingTurn({
               isGenerating: false,
               thinkingStartedAtMs: null,
               stepProgress: bgSnapshot.stepProgress.map((st) => (st.status === "RUNNING" ? { ...st, status: "COMPLETED" } : st)),
+              errorKind: "ai_unavailable",
               errorMessage: `⚠️ ${String(data.message ?? "Erreur du fournisseur IA")}`,
             });
           } else if (eventName === "turn_completed") {
@@ -315,15 +323,17 @@ export function useAssistantStreamingTurn({
       .catch(async (err: unknown) => {
         clearBgTimers();
         if (controller.signal.aborted) return;
-        await pollActiveBackendTurnUntilDone();
+        const httpStatus = extractHttpErrorStatus(err);
+        if (httpStatus !== 401 && httpStatus !== 403) {
+          await pollActiveBackendTurnUntilDone();
+        }
         if (completedHandled || controller.signal.aborted) return;
-        const detail = err instanceof Error ? err.message : "Erreur de communication avec le serveur";
+        const classified = classifyAssistantStreamError(err, isFr, streamErrorLabels);
         updateBgSnapshot({
           isGenerating: false,
           thinkingStartedAtMs: null,
-          errorMessage: isFr
-            ? `⚠️ Impossible d'obtenir une réponse de Mon Assistant (${detail}). Vérifiez que le modèle IA configuré est bien démarré.`
-            : `⚠️ Could not get a response from My Assistant (${detail}). Please check that your configured AI model is running.`,
+          errorKind: classified.errorKind,
+          errorMessage: classified.errorMessage,
         });
       });
   };
@@ -346,6 +356,7 @@ export function useAssistantStreamingTurn({
     initialElapsedSeconds,
     generationStopped: bgSnapshot.generationStopped,
     errorMessage: bgSnapshot.errorMessage,
+    errorKind: bgSnapshot.errorKind,
     sendTurn,
     stopGeneration,
     resetStreamState,

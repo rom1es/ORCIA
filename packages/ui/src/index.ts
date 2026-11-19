@@ -427,6 +427,7 @@ export {
   type AssistantSpeedSelectorAndStreamViewLabels,
   type AssistantSpeedSelectorAndStreamViewProps,
   type UiAssistantAutocompleteSuggestion,
+  type UiAssistantErrorKind,
   type UiAssistantModelOption,
   type UiAssistantSpeedMode,
   type UiThreeSpeedStepProgress,

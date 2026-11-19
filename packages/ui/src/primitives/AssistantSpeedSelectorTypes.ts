@@ -20,6 +20,11 @@ export type UiAssistantSpeedMode =
   | "SPEED_2_AGENT_TOOLS"
   | "SPEED_3_DEEP_AUDIT";
 
+export type UiAssistantErrorKind =
+  | "auth_expired"
+  | "ai_unavailable"
+  | "stream_error";
+
 export interface UiThreeSpeedStepProgress {
   readonly stepCode: string;
   readonly label: string;
@@ -79,6 +84,9 @@ export interface AssistantSpeedSelectorAndStreamViewProps {
   readonly initialElapsedSeconds?: number;
   readonly generationStopped?: boolean;
   readonly errorMessage?: string | null;
+  readonly errorKind?: UiAssistantErrorKind | null;
+  readonly reconnectCtaLabel?: string;
+  readonly onReconnect?: () => void;
   readonly disabled?: boolean;
   readonly disabledReasonBanner?: React.ReactNode;
   readonly labels: AssistantSpeedSelectorAndStreamViewLabels;

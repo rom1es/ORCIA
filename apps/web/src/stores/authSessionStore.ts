@@ -1,4 +1,8 @@
-import { createOrciaApiClient, registerDefaultAccessTokenProvider } from "@orcia/api-client";
+import {
+  createOrciaApiClient,
+  registerDefaultAccessTokenProvider,
+  registerDefaultAccessTokenRefreshedHandler,
+} from "@orcia/api-client";
 import { create } from "zustand";
 import {
   ALL_SETTINGS_TABS,
@@ -285,6 +289,38 @@ export const useAuthSessionStore = create<AuthSessionStoreState>((set, get) => (
 }));
 
 registerDefaultAccessTokenProvider(() => useAuthSessionStore.getState().accessToken);
+registerDefaultAccessTokenRefreshedHandler((token) => {
+  const current = useAuthSessionStore.getState();
+  current.setAuthSession({
+    accessToken: token,
+    isAuthenticated: true,
+    isHydrating: false,
+    email: current.email,
+    displayName: current.displayName,
+    roles: current.roles,
+  });
+  if (!current.email || current.roles.length === 0) {
+    void createOrciaApiClient({
+      baseUrl: resolveWebApiBaseUrl(),
+      accessToken: token,
+    })
+      .getMe()
+      .then((me) => {
+        if (!me) return;
+        const latest = useAuthSessionStore.getState();
+        const nextRoles = me.roles && me.roles.length > 0 ? me.roles : latest.roles;
+        latest.setAuthSession({
+          email: me.email || latest.email,
+          displayName: me.display_name || latest.displayName,
+          roles: nextRoles,
+          mustChangePassword: Boolean(me.must_change_password),
+        });
+      })
+      .catch((err: unknown) => {
+        console.warn("[authSessionStore] Failed to enrich refreshed session via /me:", err);
+      });
+  }
+});
 
 export function resetAuthSessionStore(): void {
   activeHydrationPromise = null;

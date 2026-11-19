@@ -2,6 +2,7 @@
 import { expect, test } from "./support/e2eCaptureFixture";
 import { expectDbRowCount, expectDbRowExists, queryDbRows } from "./support/dbAssertions";
 import { resetDay0 } from "./support/day0";
+import { createFirstAdminAndGetBearerToken } from "./support/firstAdmin";
 import { apiGet, apiPost } from "./support/typedApiRequest";
 
 test.describe("Socle E2E bi-serveur (TEST-01 & Stories 16.1–16.2 Reflexive Harness)", () => {
@@ -34,6 +35,17 @@ test.describe("Socle E2E bi-serveur (TEST-01 & Stories 16.1–16.2 Reflexive Har
   test("Story 16.1 — l'inspection chirurgicale #L1-40 retourne 40 lignes badge Y et bloque ../ en RFC 9457", async ({
     request,
   }) => {
+    const anonResp = await apiGet<{ error_code?: string; trace_id?: string }>(
+      request,
+      "/api/v1/sources/inspect-lines?uri=docs/product/capabilities.yaml&start_line=1&end_line=40",
+    );
+    expect(anonResp.status()).toBe(401);
+    expect(anonResp.headers()["content-type"]).toContain("application/problem+json");
+    const anonProblem = await anonResp.json();
+    expect(anonProblem.error_code).toBe("ERR_AUTH_REQUIRED");
+
+    const token = await createFirstAdminAndGetBearerToken(request);
+
     const sliceResp = await apiGet<{
       file_badge_code: string;
       formatted_badge: string;
@@ -42,6 +54,7 @@ test.describe("Socle E2E bi-serveur (TEST-01 & Stories 16.1–16.2 Reflexive Har
     }>(
       request,
       "/api/v1/sources/inspect-lines?uri=docs/product/capabilities.yaml&start_line=1&end_line=40",
+      { token },
     );
     expect(sliceResp.status()).toBe(200);
     const sliceBody = await sliceResp.json();
@@ -55,6 +68,7 @@ test.describe("Socle E2E bi-serveur (TEST-01 & Stories 16.1–16.2 Reflexive Har
     const traversalResp = await apiGet<{ error_code?: string; trace_id?: string }>(
       request,
       "/api/v1/sources/inspect-lines?uri=../pyproject.toml&start_line=1&end_line=10",
+      { token },
     );
     expect([400, 422]).toContain(traversalResp.status());
     expect(traversalResp.headers()["content-type"]).toContain("application/problem+json");
@@ -72,6 +86,22 @@ test.describe("Socle E2E bi-serveur (TEST-01 & Stories 16.1–16.2 Reflexive Har
   test("Story 16.2 — moteur réflexif asyncio, survie F5 WAITING_WRITE_PREVIEW, approbation WritePreviewCard et flux SSE", async ({
     request,
   }) => {
+    const anonStartResp = await apiPost<{ error_code?: string }>(
+      request,
+      "/api/v1/executions/reflexive",
+      {
+        data: {
+          actor_slug: "assistant-agent",
+          objective: "Vérification fail-closed sans jeton",
+        },
+      },
+    );
+    expect(anonStartResp.status()).toBe(401);
+    expect(anonStartResp.headers()["content-type"]).toContain("application/problem+json");
+    expect((await anonStartResp.json()).error_code).toBe("ERR_AUTH_REQUIRED");
+
+    const token = await createFirstAdminAndGetBearerToken(request);
+
     const startResp = await apiPost<{
       execution_id: string;
       status: string;
@@ -79,6 +109,7 @@ test.describe("Socle E2E bi-serveur (TEST-01 & Stories 16.1–16.2 Reflexive Har
       max_budget_tokens: number;
       pending_write_preview: { preview_id: string; payload_sha256: string } | null;
     }>(request, "/api/v1/executions/reflexive", {
+      token,
       data: {
         actor_slug: "assistant-agent",
         objective: "Analyser capabilities.yaml et préparer une publication gouvernée",
@@ -105,7 +136,7 @@ test.describe("Socle E2E bi-serveur (TEST-01 & Stories 16.1–16.2 Reflexive Har
     const rehydratedResp = await apiGet<{
       status: string;
       pending_write_preview: { preview_id: string } | null;
-    }>(request, `/api/v1/executions/${paused.execution_id}`);
+    }>(request, `/api/v1/executions/${paused.execution_id}`, { token });
     expect(rehydratedResp.status()).toBe(200);
     const rehydrated = await rehydratedResp.json();
     expect(rehydrated.status).toBe("WAITING_WRITE_PREVIEW");
@@ -115,6 +146,7 @@ test.describe("Socle E2E bi-serveur (TEST-01 & Stories 16.1–16.2 Reflexive Har
       status: string;
       artifact_pointer: { sha256: string; s3_uri: string } | null;
     }>(request, `/api/v1/executions/${paused.execution_id}/approve-write`, {
+      token,
       data: {
         approved: true,
         preview_id: previewId,
@@ -130,7 +162,11 @@ test.describe("Socle E2E bi-serveur (TEST-01 & Stories 16.1–16.2 Reflexive Har
       "session réflexive persistée en base PostgreSQL 18",
     );
 
-    const sseResp = await apiGet(request, `/api/v1/executions/${paused.execution_id}/trace-stream`);
+    const sseResp = await apiGet(
+      request,
+      `/api/v1/executions/${paused.execution_id}/trace-stream`,
+      { token },
+    );
     expect(sseResp.status()).toBe(200);
     expect(sseResp.headers()["content-type"]).toContain("text/event-stream");
     const sseText = await sseResp.text();
