@@ -17,7 +17,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "techLeadReportsCount": 184,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
-    "verifiedCapabilitiesCount": 14,
+    "verifiedCapabilitiesCount": 3,
     "userJourneysCount": 20,
     "coveredUserJourneysCount": 20,
     "e2eCoveredCapabilitiesCount": 62
@@ -540,11 +540,11 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "summary": "Pré-implémentation : analyse d'impact GitNexus (repo: \"ORCIA\"), rapports Tech Lead pré-implémentation 23-1..23-N pour chaque lot couvrant les tests E2E en échec et points d'amélioration Sally × Winston, sprint-change-proposal-2026-11-18-epic-23-remediation-plan.md, initialisation Epic 23 dans epics.md/sprint-status.yaml/capabilities.yaml et suite test_epic22_to_epic23_traceability.py."
     },
     {
-      "date": "2026-11-18",
+      "date": "2026-11-19",
       "phaseOrStory": "Story 22.9",
       "reportFile": "22-9-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston-tech-lead-report.md",
       "domain": "Vague 4 — Campagne E2E Intégrale Vérité PostgreSQL 18 (e2e-campaign-epic-22), Captures PNG Finales, Bilan, Audit Croisé Sally × Winston & Vérité capabilities.yaml",
-      "summary": "Pré-implémentation : exécution sans retry (--retries=0 --max-failures=0 --timeout=35000) des 110 scénarios (24 specs) vers e2e-campaign-epic-22/, archivage manifest.jsonl/playwright-results.json/screenshots/, bilan factuel, audit croisé Sally × Winston (synthese-remediation-sally-winston-epic-22.md) et mise à jour honnête de capabilities.yaml (pnpm site:sync && pnpm site:check)."
+      "summary": "Clôture (done) : exécution sans retry (--retries=0 --max-failures=0 --timeout=35000) des 110 scénarios (24 specs) vers e2e-campaign-epic-22/ (7 passed, 90 failed — 3 401 directs + 87 cascade resetDay0() sur blackboard_snapshots_step_execution_id_fkey — 0 timedOut, 13 skipped, 110/110 PNG < 450 KB), bilan factuel, audit croisé Sally × Winston (synthese-remediation-sally-winston-epic-22.md, REM23-01..REM23-13 sur 3 vagues), bascule PLAYWRIGHT_RESULTS_PATH, mise à jour honnête capabilities.yaml (3 foundation runtime, 62 feature failed_e2e), 27/27 pytest et pnpm site:sync && pnpm site:check (0 erreur)."
     },
     {
       "date": "2026-11-18",

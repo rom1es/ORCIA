@@ -48,8 +48,8 @@ capabilities:
     db_tables: [users, iam_accounts, platform_auth_settings, auth_login_challenges]
     tests: [tests/unit/test_permissions_and_auth.py, tests/security/test_api_security_baseline.py, tests/unit/test_temp_password_and_local_iam_auth.py, tests/unit/test_platform_auth_policy_2fa_and_runtime_isolation.py, tests/unit/test_smtp_otp_and_sql_auth_adapters.py, tests/unit/test_auth_pg_rehydration_after_reload.py, tests/unit/test_change_password_current_check_and_pg_hydration.py, tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py, tests/integration/api/test_platform_auth_modes_2fa_and_local_isolation_postgres18.py, tests/integration/api/test_auth_pg_rehydration_postgres18.py, packages/api-client/src/__tests__/default-access-token-provider.test.ts, apps/web/src/__tests__/auth-logout-incognito-and-temp-password.test.tsx, apps/web/src/__tests__/platform-auth-modes-2fa-and-settings-f5.test.tsx, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts, apps/web/e2e/14-auth-2fa-account-and-profile.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /login, api: "/api/v1/auth (auth.py, _auth_session_routes.py, _auth_passthrough_routes.py, auth_settings.py)", ui: "BiModeLoginView + LoginTwoFactorStepPanel", migration: "20261114_1706, 20261115_1901" }
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
   - id: CAP-002
     title: Catalogue fédéré multi-sources (db/git/nexus/confluence/jira) et surcharges 4 niveaux
     fr: [FR-20]
@@ -61,8 +61,8 @@ capabilities:
     db_tables: [catalog_items, catalog_acl_entries, workspace_customization_overrides]
     tests: [apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts, apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/test_federated_catalog.py]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /catalog, api: /api/v1 (catalog.py), ui: CatalogExplorerPanel }
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
   - id: CAP-003
     title: Exécution passthrough / service principal et Permission Broker (lien Jira pré-rempli)
     fr: [FR-22]
@@ -74,8 +74,8 @@ capabilities:
     db_tables: [permission_broker_policies, permission_broker_tickets, user_passthrough_credentials, user_connector_passthrough_tokens]
     tests: [tests/unit/test_permission_broker.py, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx, apps/web/e2e/16-ai-models-reindex-connectors-and-broker.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { api: "/api/v1/permissions/broker (permission_broker.py) + enterprise_connectors.py", ui: UserSettingsProfileAndPassthroughTabs }
-    e2e_remediation_ref: "22-3-persistance-pg18-assistant-notifications-sse-et-permission-broker"
   - id: CAP-004
     title: Workflows système d'amorçage Jour 0 et onboarding d'équipe
     fr: [FR-28]
@@ -86,9 +86,9 @@ capabilities:
     uj: [UJ-13]
     db_tables: [system_bootstrap_runs, user_onboarding_states, org_units, workspaces, users]
     tests: [apps/web/e2e/01-day0-boot-and-f5-persistence.spec.ts, tests/unit/test_system_bootstrap.py]
-    verification: runtime
+    verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /bootstrap, api: /api/v1/bootstrap, ui: BootstrapOnboardingPanel }
-    verified_at: "2026-11-18"
   - id: CAP-005
     title: Persistance admin Jour 0 et réinitialisation BDD (pnpm db:reset)
     fr: [FR-28]
@@ -99,9 +99,9 @@ capabilities:
     uj: [UJ-13]
     db_tables: [users, org_units, workspaces, platform_settings, platform_auth_settings]
     tests: [apps/web/e2e/01-day0-boot-and-f5-persistence.spec.ts, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
-    verification: runtime
+    verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { api: /api/v1/bootstrap }
-    verified_at: "2026-11-18"
   - id: CAP-006
     title: Monolithe modulaire, persistance SQLAlchemy asyncio, bus Outbox, SPA Vite/TanStack, séparation pack SDLC
     fr: []   # Fondation d'architecture (AD-1, AD-19) — NFR §10.4
@@ -112,6 +112,7 @@ capabilities:
     e2e_exempt_reason: "Socle d'architecture transverse (AD-1, AD-19 : monolithe modulaire, SQLAlchemy asyncio, bus Outbox, SPA Vite/TanStack, séparation pack SDLC) sans parcours IHM métier propre ; couvert par AD-17 Couches 1a (unitaires noyau), 2 (test_story_3_2c_outbox_postgres18.py) et 3 (lint-imports & lint_spine.py)."
     tests: [tests/unit/test_story_3_2a_modular_monolith_kernel.py, tests/integration/test_story_3_2c_outbox_postgres18.py]
     verification: runtime
+    verified_at: "2026-11-19"
     surfaces: { migration: "0001+" }
 
   # ───────────── Ontologie & RAG (Epic 2) ─────────────
@@ -133,12 +134,12 @@ capabilities:
       - tests/integration/api/test_story_20_2_ontology_promotions_postgres18.py
       - apps/web/src/__tests__/story-20-2-glossaire-ontology-and-promotions.test.tsx
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces:
       route: /ontology
       api: "/api/v1/ontology-rag (ontology_and_rag.py + ontology_promotions.py)"
       ui: "OntologyFeatureView + OntologyPromotionProposalsTab + WorkspaceGlossaryAndOntologyTab"
       migration: "0006 + 0007 + 20261117_2002"
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
   - id: CAP-011
     title: Indexation différenciée incrémentale et graphe tripartite Confluence↔Jira↔Git
     fr: [FR-23]
@@ -150,8 +151,8 @@ capabilities:
     db_tables: [kb_documents, kb_chunks, code_graph_edges, tripartite_trace_edges, kb_stale_alerts]
     tests: [apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, tests/unit/test_hybrid_rag_and_tripartite.py, tests/integration/test_epics_1_7_vertical_sql_wiring_postgres18.py]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /ontology, api: /api/v1/ontology-rag }
-    e2e_remediation_ref: "22-1-socle-identite-uuid-workspaces-permissions-admin-et-fin-bypass-pg"
 
   # ───────────── Orchestration, assistant DAG, human-led (Epic 3) ─────────────
   - id: CAP-020
@@ -165,7 +166,7 @@ capabilities:
     db_tables: [workflow_definitions, catalog_items]
     tests: [tests/unit/test_workflow_as_code_and_run_lock.py, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
     verification: failed_e2e
-    e2e_remediation_ref: "22-4-persistance-pg18-orchestration-gates-et-garde-kill-switch"
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
   - id: CAP-021
     title: Moteur d'orchestration durable (DBOS), blackboard, checkpoints, version pinning, exécution réelle des étapes
     fr: [FR-14, FR-15]
@@ -177,8 +178,8 @@ capabilities:
     db_tables: [workflow_runs, step_executions, blackboard_snapshots, run_lock_manifests, domain_events_outbox]
     tests: [tests/unit/test_story_3_2f_step_executors_invoker_and_finance.py, tests/integration/test_story_3_2f_real_api_run_and_restart_postgres18.py, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { api: "/api/v1/orchestration + blackboard_and_engine.py" }
-    e2e_remediation_ref: "22-4-persistance-pg18-orchestration-gates-et-garde-kill-switch"
   - id: CAP-022
     title: Agent assistant DAG 5 nœuds (AssistantHarness 5 couches)
     fr: [FR-1, FR-13]
@@ -190,8 +191,8 @@ capabilities:
     db_tables: [workflow_runs, step_executions, blackboard_snapshots, assistant_threads]
     tests: [tests/unit/test_story_3_3_assistant_agent_5_nodes_and_context_ports.py, tests/evals/test_assistant_and_ontology_evals.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { api: /api/v1/assistant }
-    e2e_remediation_ref: "22-1-socle-identite-uuid-workspaces-permissions-admin-et-fin-bypass-pg"
   - id: CAP-023
     title: Ancrages humains obligatoires et arbitrage / tie-break
     fr: [FR-4, FR-5]
@@ -203,8 +204,8 @@ capabilities:
     db_tables: [human_anchor_signatures, human_arbitration_requests, workflow_runs]
     tests: [apps/web/e2e/03-human-led-anchor-and-arbitration.spec.ts, tests/unit/test_story_3_4_human_anchors_and_arbitration.py]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /cockpit, ui: HumanLedAnchorCard + ArbitrationTieBreakCard, migration: "0015" }
-    e2e_remediation_ref: "22-4-persistance-pg18-orchestration-gates-et-garde-kill-switch"
   - id: CAP-024
     title: Challenge amont What-If et replay ciblé step N
     fr: [FR-7, FR-16]
@@ -216,8 +217,8 @@ capabilities:
     db_tables: [upstream_challenges, workflow_runs, step_executions, blackboard_snapshots]
     tests: [tests/unit/test_story_3_5_challenge_and_replay.py, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { api: challenge_and_replay.py, ui: UpstreamChallengeRewindModal, migration: "0016" }
-    e2e_remediation_ref: "22-4-persistance-pg18-orchestration-gates-et-garde-kill-switch"
 
   # ───────────── Gates, sandbox, Jira (Epic 4) ─────────────
   - id: CAP-030
@@ -231,8 +232,8 @@ capabilities:
     db_tables: [gate_evaluations, step_executions]
     tests: [tests/unit/test_story_4_1_sandbox_tier1_and_pattern_drift.py, tests/unit/test_story_4_1a_bimodal_sandbox_and_roles.py, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /gates, api: gates.py, migration: "0017" }
-    e2e_remediation_ref: "22-4-persistance-pg18-orchestration-gates-et-garde-kill-switch"
   - id: CAP-031
     title: Gates agentiques (orthogonalité des modèles, scrub PII, SecretRef DEK/KEK)
     fr: [FR-18]
@@ -244,7 +245,7 @@ capabilities:
     db_tables: [gate_evaluations, inference_attempts]
     tests: [tests/unit/test_story_4_2_agentic_gates_and_secrets.py, tests/evals/test_assistant_and_ontology_evals.py, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
     verification: failed_e2e
-    e2e_remediation_ref: "22-4-persistance-pg18-orchestration-gates-et-garde-kill-switch"
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
   - id: CAP-032
     title: Gates humaines adaptatives, briefing 4 blocs, validation par découpage
     fr: [FR-6, FR-19]
@@ -256,8 +257,8 @@ capabilities:
     db_tables: [gate_evaluations, chunk_approvals]
     tests: [tests/unit/test_story_4_3_adaptive_human_gates.py, apps/web/e2e/06-gates-review-and-anti-rubber-stamping.spec.ts, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /gates, api: human_gates.py, ui: CognitiveReviewBriefingGrid + ChunkValidationCard, migration: "0018" }
-    e2e_remediation_ref: "22-4-persistance-pg18-orchestration-gates-et-garde-kill-switch"
   - id: CAP-033
     title: Actions et transitions Jira multi-projets (staged aux gates)
     fr: [FR-24]
@@ -269,8 +270,8 @@ capabilities:
     db_tables: [gate_evaluations, enterprise_connectors, audit_ledger]
     tests: [tests/unit/test_story_4_4_jira_staged_actions_and_mcp.py, apps/web/e2e/06-gates-review-and-anti-rubber-stamping.spec.ts, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { api: jira_and_mcp.py }
-    e2e_remediation_ref: "22-4-persistance-pg18-orchestration-gates-et-garde-kill-switch"
 
   # ───────────── Supervision & expérience (Epic 5) ─────────────
   - id: CAP-040
@@ -284,8 +285,8 @@ capabilities:
     db_tables: [task_notifications, resource_leases]
     tests: [apps/web/e2e/04-multi-actor-claim-sse.spec.ts, tests/unit/test_story_5_1_notifications_claim_and_resource_leases.py]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /inbox, api: inbox_and_leases.py }
-    e2e_remediation_ref: "22-3-persistance-pg18-assistant-notifications-sse-et-permission-broker"
   - id: CAP-041
     title: Supervision multi-runs et sélecteur de périmètre / centre de pilotage
     fr: [FR-3]
@@ -297,8 +298,8 @@ capabilities:
     db_tables: [workflow_runs, org_units, workspaces, workspace_memberships]
     tests: [tests/unit/test_story_5_2_control_center_and_run_access_guard.py, tests/security/test_api_security_baseline.py, apps/web/e2e/15-organization-iam-secops-inbox-and-observer.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: "/cockpit, /workspaces", api: "/api/v1/control-center (control_center.py)" }
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
   - id: CAP-042
     title: Responsive 3 breakpoints et compagnon mobile
     fr: [FR-1]
@@ -309,10 +310,10 @@ capabilities:
     uj: [UJ-20]
     read_only_surface: true
     tests: [apps/web/e2e/05-mobile-companion-and-rgaa.spec.ts]
-    verification: runtime
+    verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
 
   # ───────────── Settings & gouvernance (Epic 8 + ad-hoc) ─────────────
-    verified_at: "2026-11-18"
   - id: CAP-050
     title: Modèle d'habilitations RBAC/ABAC à 6 verbes, matrice native des 7 rôles (incluant ONTOLOGY_LEAD) et exceptions SecOps
     fr: [FR-31]
@@ -324,8 +325,8 @@ capabilities:
     db_tables: [role_permission_grants, iam_accounts, org_units]
     tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, tests/unit/test_story_17_3_iam_accounts_and_role_matrix.py, tests/unit/test_evaluator_multi_lead_rollup.py, tests/integration/api/test_story_17_3_iam_accounts_and_secops_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /settings, api: "/api/v1/settings/iam (iam_accounts.py, settings_and_studio.py) + orcia_core/permissions/hierarchical_rbac.py + orcia_core/permissions/org_topology.py", migration: "20261111_1703 + 20261115_1902" }
-    e2e_remediation_ref: "22-1-socle-identite-uuid-workspaces-permissions-admin-et-fin-bypass-pg"
   - id: CAP-051
     title: Annuaire des comptes (anti-lockout), mot de passe temporaire 12 car., matrice des 6 rôles en modale, exceptions SecOps et modale copier-coller
     fr: [FR-31]
@@ -337,8 +338,8 @@ capabilities:
     db_tables: [iam_accounts, users, role_permission_grants, org_units]
     tests: [apps/web/src/__tests__/story-17-3-iam-accounts-matrix-and-secops-drawer.test.tsx, apps/web/src/__tests__/story-17-3-iam-accounts-directory-and-bu-leads.test.tsx, tests/unit/test_story_17_3_iam_accounts_and_role_matrix.py, tests/integration/api/test_story_17_3_iam_accounts_and_secops_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py, tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py, packages/ui/src/__tests__/temporary-password-modal.test.tsx, packages/ui/src/__tests__/status-badge-and-anti-lastpass-inputs.test.tsx, packages/ui/src/__tests__/user-pills-select.test.tsx, apps/web/e2e/15-organization-iam-secops-inbox-and-observer.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /settings, api: "iam_accounts.py, _iam_accounts_routes_helpers.py, sql_org_iam_role_sync.py, _auth_pg_helpers.py, _auth_session_routes.py", ui: "SettingsIamOrganizationSection + IamAccountsDirectoryCard + IamRoleMatrixReferenceModal + IamAccountModal + IamAccountRoleScopesFieldset + OrciaUserPillsSelect + IamSecopsExceptionsDrawer + TemporaryPasswordInvitationModal", migration: "20261111_1703 + 20261114_1706 + 20261115_1902" }
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
   - id: CAP-052
     title: Abstraction LLM multi-fournisseurs et routage automatique par tiers
     fr: [FR-31]
@@ -365,8 +366,8 @@ capabilities:
       - tests/integration/api/test_story_19_5_ai_models_usage_postgres18.py
       - apps/web/e2e/16-ai-models-reindex-connectors-and-broker.spec.ts
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /settings/ai-models, api: ai_models_hub.py, ui: "SettingsAiModelsSection + AiModelsMasterTable + AiModelConfigModal + OrciaModelCombobox + AiModelDeleteDialog", migration: "20261114_1705, 20261115_2105" }
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
   - id: CAP-053
     title: Modèles IA — authentification, test de connexion, garde SSRF
     fr: [FR-31]
@@ -382,8 +383,8 @@ capabilities:
       - tests/integration/api/test_story_17_5_ai_models_hub_postgres18.py
       - apps/web/e2e/16-ai-models-reindex-connectors-and-broker.spec.ts
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /settings/ai-models, api: ai_models_hub.py, ui: "SettingsAiModelsSection + SecretField + AiModelsMasterTable", migration: "20261114_1705" }
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
   - id: CAP-054
     title: Hub Connecteurs (Git, Jira, Confluence, SMTP_MAIL) et gestion des secrets
     fr: [FR-31]
@@ -395,8 +396,8 @@ capabilities:
     db_tables: [enterprise_connectors, connector_schemes]
     tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/security/test_api_security_baseline.py, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/unit/test_platform_auth_policy_2fa_and_runtime_isolation.py, tests/unit/test_smtp_otp_and_sql_auth_adapters.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx, apps/web/e2e/16-ai-models-reindex-connectors-and-broker.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /settings, api: enterprise_connectors.py, ui: "EnterpriseConnectorsSettingsSection + EnterpriseConnectorModal", migration: "20261111_1704, 20261115_1901" }
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
   - id: CAP-055
     title: Studio workflows et registre des packs
     fr: [FR-31]
@@ -408,8 +409,8 @@ capabilities:
     db_tables: [workflow_definitions, declarative_pack_bundles]
     tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /settings, api: studio_and_wizards.py, ui: SettingsPacksSection }
-    e2e_remediation_ref: "22-5-persistance-pg18-packs-declaratifs-et-wizards-durables"
   - id: CAP-056
     title: Packs métiers — catalogue backend, écran simplifié, activation unique
     fr: [FR-31]
@@ -421,8 +422,8 @@ capabilities:
     db_tables: [declarative_pack_bundles, catalog_items, platform_settings]
     tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /settings }
-    e2e_remediation_ref: "22-5-persistance-pg18-packs-declaratifs-et-wizards-durables"
   - id: CAP-057
     title: Wizards d'initialisation durables
     fr: [FR-31]
@@ -434,8 +435,8 @@ capabilities:
     db_tables: [wizard_sessions]
     tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /wizards, api: studio_and_wizards.py }
-    e2e_remediation_ref: "22-5-persistance-pg18-packs-declaratifs-et-wizards-durables"
   - id: CAP-058
     title: Coquille Settings à 5 onglets réservée aux Administrateurs Plateforme (PLATFORM_ADMIN) & SecOps, délégation Mon Organisation (/organization) et gouvernance Authentification
     fr: [FR-31]
@@ -447,8 +448,8 @@ capabilities:
     db_tables: [platform_settings, platform_auth_settings, org_units, iam_accounts]
     tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/unit/test_auth_pg_rehydration_after_reload.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_platform_auth_modes_2fa_and_local_isolation_postgres18.py, tests/integration/api/test_auth_pg_rehydration_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx, packages/ui/src/__tests__/status-badge-and-anti-lastpass-inputs.test.tsx, apps/web/src/__tests__/story-17-1-settings-5-tabs-and-rbac.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx, apps/web/src/__tests__/platform-auth-modes-2fa-and-settings-f5.test.tsx, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, apps/web/e2e/14-auth-2fa-account-and-profile.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: "/settings, /configuration, /organization", api: "settings_and_studio.py, auth_settings.py, sql_local_auth.py, sql_org_iam_role_sync.py", ui: "SettingsHubView (iam, authentication, models, connectors, packs) + OrganizationPageView + SettingsOrganizationUnitRow + StatusBadge (cobalt pastel) + OrciaKnownUserCombobox (anti-LastPass) + SettingsAuthenticationSection + PlatformAuthSettingsCard + OrciaAlertBanner + authSessionStore", migration: "20261115_1901 + 20261115_1902 + 20261117_2001" }
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
 
   # ───────────── Shell, navigation, aide (Epic 9, 12, 17 + ad-hoc) ─────────────
   - id: CAP-060
@@ -461,9 +462,9 @@ capabilities:
     uj: [UJ-20]
     db_tables: [org_units, workspaces, user_preferences]
     tests: [apps/web/e2e/shell.spec.ts, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, packages/ui/src/__tests__/story-17-1-wireframe-icons-and-shell-rail.test.tsx, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx, apps/web/src/__tests__/story-20-3-sidebar-account-popover-and-settings-f5.test.tsx]
-    verification: runtime
+    verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { ui: "FourZoneDirectionCShell + FourZoneSidebarRail + OrciaIcon SVG + SidebarAccountPopover", api: "/api/v1/navigation (shell.py)" }
-    verified_at: "2026-11-18"
   - id: CAP-061
     title: Accostage progressif Jour 0 (1/6) et protections
     fr: [FR-32]
@@ -474,9 +475,9 @@ capabilities:
     uj: [UJ-13]
     db_tables: [platform_settings, users, org_units, workspaces, catalog_items]
     tests: [apps/web/e2e/01-day0-boot-and-f5-persistence.spec.ts, apps/web/e2e/shell.spec.ts]
-    verification: runtime
+    verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { api: bootstrap_accostage.py }
-    verified_at: "2026-11-18"
   - id: CAP-062
     title: Recherche fédérée contextuelle ⌘K à 2 vitesses
     fr: [FR-32]
@@ -487,9 +488,9 @@ capabilities:
     uj: [UJ-20]
     db_tables: [catalog_items, kb_chunks, ontology_concepts]
     tests: [apps/web/e2e/10-command-palette-search.spec.ts]
-    verification: runtime
+    verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { ui: CommandPaletteModal + TopHeaderSearchCommand }
-    verified_at: "2026-11-18"
   - id: CAP-063
     title: Popup Mon Compte bas-gauche style ChatGPT, modale Paramètres 5 onglets persistée PG18 (/profile, préférences, clés IDE/MCP SHA-256) et alerte mot de passe temporaire
     fr: [FR-32]
@@ -501,8 +502,8 @@ capabilities:
     db_tables: [user_preferences, user_mcp_tokens, users]
     tests: [tests/unit/test_epic_9_story_9_4_user_preferences_and_mcp_tokens.py, tests/unit/test_story_20_3_user_preferences_and_mcp_tokens.py, tests/security/test_story_20_3_mcp_tokens_isolation.py, tests/integration/api/test_story_20_3_user_preferences_and_mcp_postgres18.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/unit/test_change_password_current_check_and_pg_hydration.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py, packages/ui/src/__tests__/temporary-password-modal.test.tsx, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx, apps/web/src/__tests__/story-20-3-sidebar-account-popover-and-settings-f5.test.tsx, apps/web/src/__tests__/auth-logout-incognito-and-temp-password.test.tsx, apps/web/e2e/14-auth-2fa-account-and-profile.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /profile, api: "user_account_settings.py (/api/v1/users/me/preferences, /api/v1/users/me/mcp-tokens), /api/v1/users/me/account-profile, /api/v1/auth/change-password", ui: "ShellSidebarAccountControl + SidebarAccountPopover + UserSettingsModalDialog (5 onglets) + UserPasswordChangeCard + TemporaryPasswordWarningBanner + UserProfileOverviewPage", migration: "20261117_2003" }
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
   - id: CAP-064
     title: Aide contextuelle hybride (ⓘ, HelpArticle, catalogue d'aide & bannière Vitrine sur /help)
     fr: [FR-32]
@@ -514,8 +515,8 @@ capabilities:
     db_tables: [catalog_items, kb_chunks]
     tests: [apps/web/e2e/09-pack-builder-and-contextual-help.spec.ts, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts, apps/web/src/__tests__/story-20-2-glossaire-ontology-and-promotions.test.tsx]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /help, api: portal_and_help.py, ui: "HelpCenterRouteView (Centre d'Aide & Showcase)" }
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
   - id: CAP-065
     title: Registre de provenance auditable immuable (`audit_ledger` append-only) & journal d'activité scopé par rôle (/activity)
     fr: [FR-25, FR-32]
@@ -525,7 +526,8 @@ capabilities:
     kind: feature
     uj: [UJ-8, UJ-14]
     db_tables: [audit_ledger, run_lock_manifests]
-    verification: runtime
+    verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     tests:
       - tests/unit/test_story_6_1_audit_ledger_core.py
       - tests/unit/test_story_6_1_outbox_subscriber.py
@@ -545,7 +547,6 @@ capabilities:
       migration: "20261116_0601 + 20261117_2001"
       ui: "ActivityLogExplorerView + ActivityLogFiltersBar + ActivityProvenanceModal"
     notes: "Story 6.1 (réconciliation CAP-ACT-3) : table append-only PostgreSQL 18 protégée contre toute modification ou suppression, traçabilité des tests de connexion à chaud, contrôle anti-IDOR par périmètre et export JSON/Markdown certifié conforme au manifeste d'exécution et aux pièces SeaweedFS."
-    verified_at: "2026-11-18"
   - id: CAP-066
     title: Site de présentation /showcase et site statique autonome (sync auto)
     fr: []
@@ -557,8 +558,8 @@ capabilities:
     read_only_surface: true
     tests: [apps/web/src/__tests__/orcia-showcase-site.test.tsx, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /showcase }
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
   - id: CAP-069
     title: Page Profil utilisateur (/profile), 4 KPIs tokens/séries, éléments populaires et télémétrie tokens de Mon Assistant
     fr: [FR-25, FR-32]
@@ -569,6 +570,7 @@ capabilities:
     uj: [UJ-16]
     db_tables: [users, audit_ledger, step_executions, workflow_runs, iam_accounts, org_units]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     tests:
       - tests/unit/test_story_20_4_profile_streaks_and_assistant_usage.py
       - tests/security/test_story_20_4_profile_isolation.py
@@ -580,7 +582,6 @@ capabilities:
       route: /profile
       api: "user_profile.py (/api/v1/users/me/profile-summary), assistant_llm_providers.py, _assistant_usage_telemetry.py, assistant_background_turns.py, assistant_workspace.py"
       ui: "UserProfileOverviewPage + UserProfileRouteView"
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
 
   # ───────────── Mon Assistant (Epic 10 + ad-hoc) ─────────────
   - id: CAP-070
@@ -594,8 +595,8 @@ capabilities:
     db_tables: [workspace_customization_overrides, user_preferences]
     tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /assistant, api: assistant_workspace_governance.py, ui: AssistantGovernanceModalAndStudio }
-    e2e_remediation_ref: "22-3-persistance-pg18-assistant-notifications-sse-et-permission-broker"
   - id: CAP-071
     title: Routage 3 vitesses, TTFT < 1,2 s, cache Redis du prompt assemblé, tours en arrière-plan
     fr: [FR-33]
@@ -607,8 +608,8 @@ capabilities:
     db_tables: [assistant_threads, workspace_customization_overrides, inference_attempts]
     tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { api: assistant_workspace.py, ui: AssistantSpeedSelectorAndStreamView }
-    e2e_remediation_ref: "22-3-persistance-pg18-assistant-notifications-sse-et-permission-broker"
   - id: CAP-072
     title: Citations déterministes [S1]/[G1]/[O1] et cartes d'artefact
     fr: [FR-33]
@@ -620,8 +621,8 @@ capabilities:
     db_tables: [kb_chunks, ontology_concepts, assistant_threads]
     tests: [tests/evals/test_citations_golden_dataset.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { api: assistant_workspace_citations.py, ui: AssistantCitationPillsAndArtifactCard }
-    e2e_remediation_ref: "22-1-socle-identite-uuid-workspaces-permissions-admin-et-fin-bypass-pg"
   - id: CAP-073
     title: Dossiers thématiques, fils collaboratifs, partage et lancement de processus
     fr: [FR-33]
@@ -633,8 +634,8 @@ capabilities:
     db_tables: [assistant_folders, assistant_threads, assistant_folder_shares]
     tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/src/__tests__/assistant-folders-server-rehydration.test.tsx]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { api: assistant_workspace_folders.py, ui: AssistantFoldersAndCollaborativeThreadView, migration: "0025" }
-    e2e_remediation_ref: "22-3-persistance-pg18-assistant-notifications-sse-et-permission-broker"
   - id: CAP-074
     title: Câblage LLM réel et streaming SSE multi-fournisseurs (« Envoyer à Mon Assistant »)
     fr: [FR-33]
@@ -646,8 +647,8 @@ capabilities:
     db_tables: [llm_model_endpoints, workspace_llm_tier_mappings, assistant_threads, inference_attempts]
     tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { api: assistant_llm_bridge.py + assistant_llm_providers.py }
-    e2e_remediation_ref: "22-3-persistance-pg18-assistant-notifications-sse-et-permission-broker"
 
   # ───────────── Mes Espaces, MCP/A2A, pack-builder (Epic 11) ─────────────
   - id: CAP-080
@@ -661,8 +662,8 @@ capabilities:
     db_tables: [workspaces, workspace_datasources, workspace_exception_waivers, workspace_customization_overrides]
     tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx, tests/unit/test_story_18_2_freshness_sha256_probe_and_codegraph_worker.py, tests/integration/api/test_story_18_2_webhooks_outbox_and_freshness_postgres18.py]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: "/spaces, /workspaces, /workspaces/$wsId, /workspaces/$wsId/sources", api: "workspace_governance.py + workspace_datasources.py + datasource_webhooks.py", ui: "WorkspaceSourcesRagTab + WorkspaceSourcesMasterTable", migration: "0026 + 20261111_1704 + 20261114_1801 + 20261114_1802" }
-    e2e_remediation_ref: "22-1-socle-identite-uuid-workspaces-permissions-admin-et-fin-bypass-pg"
   - id: CAP-081
     title: Chaîne ADN et glossaire (règles métier « à valider », extraction)
     fr: [FR-34]
@@ -674,8 +675,8 @@ capabilities:
     db_tables: [ontology_concepts, ontology_promotion_proposals, ontology_rejected_candidates]
     tests: [apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, tests/unit/test_epic_11_story_11_2_dna_starlark_and_glossary.py, tests/integration/test_story_11_2_dna_and_glossary_postgres18_redis.py]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { api: dna_and_glossary.py, migration: "0027" }
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
   - id: CAP-082
     title: Services MCP, agents distants A2A et banc de test
     fr: [FR-35]
@@ -687,8 +688,8 @@ capabilities:
     db_tables: [catalog_items, enterprise_connectors, audit_ledger]
     tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/test_epic_11_story_11_3_test_bench_and_mcp_exposure.py, tests/integration/test_story_11_3_mcp_and_test_bench_postgres18_redis.py, tests/unit/connectors/test_story_18_3_codegraph_mcp_tools_and_providers.py]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { api: "mcp_and_test_bench.py + codegraph_mcp.py" }
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
   - id: CAP-083
     title: Atelier orcia-pack-builder (processus 1-5, generate-and-attach, validate_help)
     fr: [FR-35]
@@ -699,11 +700,11 @@ capabilities:
     uj: [UJ-10, UJ-19]
     db_tables: [catalog_items, declarative_pack_bundles, workflow_definitions]
     tests: [apps/web/e2e/09-pack-builder-and-contextual-help.spec.ts, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
-    verification: runtime
+    verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /processes, api: pack_builder.py }
 
   # ───────────── Agents, skills, MCP (ad-hoc) ─────────────
-    verified_at: "2026-11-18"
   - id: CAP-090
     title: Gestion, création et exécution des agents et compétences (skills)
     fr: [FR-24, FR-36]
@@ -714,9 +715,9 @@ capabilities:
     uj: [UJ-9, UJ-19]
     db_tables: [catalog_items, catalog_acl_entries]
     tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
-    verification: runtime
+    verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py)", ui: AgentsAndSkillsManagerView }
-    verified_at: "2026-11-18"
   - id: CAP-091
     title: Refonte complète écran Agents, Skills et MCP & Studio de Gouvernance en 6 Blocs (A..F) + Checklist 6/6 Mon Assistant
     fr: [FR-36]
@@ -727,11 +728,11 @@ capabilities:
     uj: [UJ-19]
     db_tables: [catalog_items, catalog_acl_entries, org_units]
     tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, packages/ui/src/__tests__/agents-and-skills.test.tsx, tests/unit/test_agents_and_skills_router_and_service.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
-    verification: runtime
+    verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py)", ui: "AgentsAndSkillsManagerView + AgentSixBlocksEditorBody + AgentSixBlocksKnowledgeToolsGuardrailsSections + AgentDetailAndSandboxModal + SkillDetailAndSandboxModal + WorkspaceAssistantPinnedCard" }
 
   # ───────────── Qualité transverse (hygiène — NFR, pas des fonctionnalités) ─────────────
-    verified_at: "2026-11-18"
   - id: CAP-100
     title: Garde-fous qualité UI/CI (zéro bouton muet, popups RGAA/Échap, zéro donnée fictive, anti-LastPass, séparation design system, socle Radix UI AD-22)
     fr: []
@@ -744,6 +745,7 @@ capabilities:
     surfaces:
       api: e2e_test_hooks
     verification: runtime
+    verified_at: "2026-11-19"
 
   # ───────────── Ajouts hors epic identifiés après audit complémentaire (rapports 06–08/11) ─────────────
   - id: CAP-043
@@ -757,8 +759,8 @@ capabilities:
     db_tables: [task_notifications, org_units]
     tests: [packages/ui/src/__tests__/inbox-and-cockpit-primitives.test.tsx, apps/web/e2e/15-organization-iam-secops-inbox-and-observer.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /inbox }
-    e2e_remediation_ref: "22-3-persistance-pg18-assistant-notifications-sse-et-permission-broker"
   - id: CAP-067
     title: Organigramme hiérarchique multi-niveaux (BU / Sous-BU / Équipe), délégation Mon Organisation (/organization), modales d'édition/membres/facturation, espaces privés et sélecteur de contexte
     fr: [FR-3, FR-21, FR-22, FR-23, FR-34]
@@ -770,8 +772,8 @@ capabilities:
     db_tables: [org_units, workspaces, workspace_memberships, workspace_invitations, iam_accounts]
     tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/src/__tests__/scope-switcher-and-org-sync.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx, tests/unit/test_story_17_2_org_hierarchy.py, tests/unit/test_story_17_2_pg_guard_and_reconcilers.py, tests/unit/test_evaluator_multi_lead_rollup.py, tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: "/spaces, /organization", api: "org_and_workspaces.py, org_units.py, org_unit_invitations.py, sql_org_iam_role_sync.py", ui: "OrganizationPageView + SettingsOrganizationUnitsBlock + OrgPedagogicalCallout + CreateOrgUnitModal + EditOrgUnitModal + ManageOrgUnitMembersModal + ConfirmDeleteOrgUnitModal + InviteOrganizationUserModal + OrciaUserPillsSelect", migration: "20261111_1702 + 20261115_1902 + 20261117_2001" }
-    e2e_remediation_ref: "22-1-socle-identite-uuid-workspaces-permissions-admin-et-fin-bypass-pg"
   - id: CAP-075
     title: Assistant — streaming réel, bouton Stop, réflexion progressive repliable, sauvegarde des conversations, pièces jointes, citations RAG, autosave/autocomplete
     fr: [FR-33]
@@ -783,8 +785,8 @@ capabilities:
     db_tables: [assistant_threads, assistant_folders, kb_chunks]
     tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, packages/ui/src/__tests__/assistant-workspace.test.tsx]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /assistant, api: assistant_background_turns.py }
-    e2e_remediation_ref: "22-3-persistance-pg18-assistant-notifications-sse-et-permission-broker"
   - id: CAP-076
     title: Refactorisation LLM agnostique/async et vrai streaming SSE ; intégration Gemini (Mode A/B)
     fr: [FR-33]
@@ -796,8 +798,8 @@ capabilities:
     db_tables: [llm_model_endpoints, workspace_llm_tier_mappings, inference_attempts]
     tests: [tests/unit/test_assistant_agnostic_async_llm_bridge.py, tests/unit/test_gemini_argon_provider_adapter.py, apps/web/src/__tests__/gemini-settings-and-assistant.test.tsx, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { api: assistant_llm_gemini_adapter.py + assistant_llm_providers.py }
-    e2e_remediation_ref: "22-1-socle-identite-uuid-workspaces-permissions-admin-et-fin-bypass-pg"
   - id: CAP-084
     title: Mes Espaces — intégration glossaire/ontologie (option A) et processus de génération de documentation pack-builder
     fr: [FR-34, FR-35]
@@ -809,8 +811,8 @@ capabilities:
     db_tables: [workspaces, ontology_concepts, catalog_items]
     tests: [apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, packages/ui/src/__tests__/workspace-governance-and-packs.test.tsx, tests/unit/test_epic_11_story_11_4_pack_builder_processes.py]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /spaces, api: pack_builder.py }
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
   - id: CAP-092
     title: Menu « Mes agents » — visibilité des packs et pont vers l'assistant
     fr: [FR-36]
@@ -822,8 +824,8 @@ capabilities:
     db_tables: [catalog_items, declarative_pack_bundles]
     tests: [packages/ui/src/__tests__/agents-and-skills.test.tsx, tests/unit/test_agents_and_skills_router_and_service.py, apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /agents }
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
   - id: CAP-068
     title: Documentation / FAQ — lien workspace ↔ org unit
     fr: [FR-32]
@@ -835,8 +837,8 @@ capabilities:
     read_only_surface: true
     tests: [tests/unit/test_epic_9_story_9_5_contextual_help.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /help }
-    e2e_remediation_ref: "22-6-coquille-direction-c-8-entrees-mobile-companion-aide-dynamique-et-cockpit"
 
   # ───────────── Epics 14 & 15 : ORCIA Process Studio v2, VSM Interactive & Packs 100 % Déclaratifs ─────────────
   - id: CAP-140
@@ -850,8 +852,8 @@ capabilities:
     db_tables: [vsm_definitions_v2, workflow_definitions_v2, declarative_pack_bundles, claim_check_artifacts, workflow_runs]
     tests: [tests/integration/api/test_dbos_return_loops_and_claim_check.py, tests/unit/core/test_generic_gate_runners_and_auto_heal.py, apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx, apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: "/processes + /processes/vsm/$vsmId + /processes/studio/$workflowId", api: "/api/v1/vsm + /api/v1/workflows/v2 + /api/v1/runs (workflows.py)", ui: "ProcessesHubPage + ValueStreamMapView + StepDetailSheet + ReturnLoopsSvgOverlay + WorkflowFiveBlocksCanvas + StudioCopilotSidebar + InteractiveRunDrawer", migration: 20261108_0910_declarative_packs_and_workflows_v2.py }
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
   - id: CAP-150
     title: Simplification Architecturale des Packs 100 % Déclaratifs (packs/sdlc & packs/orcia-docs), Fusion de orcia-kernel dans orcia-core.kernel & Package Unifié packages/orcia-connectors
     fr: [FR-11, FR-13, FR-14, FR-34, FR-35]
@@ -863,8 +865,8 @@ capabilities:
     db_tables: [declarative_pack_bundles, vsm_definitions_v2, workflow_definitions_v2]
     tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/connectors/test_connector_protocol_and_write_preview.py, tests/unit/core/test_core_domain_isolation.py, tests/unit/packs/test_declarative_packs_loading.py, apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces: { route: /settings/packs, api: "/api/v1/packs (packs.py)", ui: PacksRegistryPage }
-    e2e_remediation_ref: "22-5-persistance-pg18-packs-declaratifs-et-wizards-durables"
   - id: CAP-160
     title: Orchestration réflexive (Mon Assistant, Mes Agents & Processus pilotés par l'objectif), exploration chirurgicale #Lstart-end et dualité Objectif vs Jalons
     fr: [FR-1, FR-14, FR-20, FR-22, FR-24, FR-33, FR-36]
@@ -874,8 +876,8 @@ capabilities:
     kind: feature
     uj: [UJ-10, UJ-17]
     db_tables: [reflexive_execution_sessions, workflow_definitions_v2, workflow_runs]
-    verification: runtime
-    verified_at: "2026-11-18"
+    verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces:
       route: "/assistant + /agents + /processes + /processes/studio/$workflowId"
       api: "/api/v1/sources/inspect-lines + /api/v1/sources/surgical-explore (sources_surgical.py) + /api/v1/executions/reflexive + /api/v1/executions/{execution_id}/trace-stream (executions_trace.py) + /api/v1/workflows/v2 + /api/v1/workflows/v2/{workflow_id}/runs (workflows.py)"
@@ -918,12 +920,12 @@ capabilities:
       - tests/integration/api/test_story_18_2_webhooks_outbox_and_freshness_postgres18.py
       - apps/web/src/__tests__/story-18-1-workspace-sources-route-modal-and-f5.test.tsx
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces:
       route: "/workspaces/$wsId, /workspaces/$wsId/sources"
       api: "workspace_datasources.py, datasource_webhooks.py, codegraph_mcp.py"
       ui: "WorkspaceSourcesRagTab + WorkspaceSourcesMasterTable + WorkspaceSourceAttachModal + WorkspaceSourceAttachCodegraphFields"
       migration: "20261114_1801, 20261114_1802"
-    e2e_remediation_ref: "22-1-socle-identite-uuid-workspaces-permissions-admin-et-fin-bypass-pg"
 
   # ───────────── Epic 19 : Hub Modèles IA & Embeddings Sémantiques ─────────────
   - id: CAP-190
@@ -959,13 +961,13 @@ capabilities:
       - apps/web/src/__tests__/story-19-7-reindexing-banner-hub-and-f5.test.tsx
       - apps/web/e2e/16-ai-models-reindex-connectors-and-broker.spec.ts
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces:
       route: "/settings/ai-models, /assistant, /workspaces/$wsId/sources"
       api: "ai_models_hub.py, _ai_models_test_and_reindex_routes.py, _ai_models_reindex_helpers.py, rag.py, ontology_and_rag.py, assistant.py, _ai_models_discovery.py, _ai_models_helpers.py, bootstrap_accostage.py"
       ui: "AiModelModal + AiModelDiscoveryCombobox + AiModelConnectionTestButton + AssistantNoEmbeddingBanner + AssistantReindexingBanner + AiModelReindexPanel + SettingsAiModelsSection"
       migration: "20261115_2105, 20261115_2206, 20261115_2307, 20261115_2359"
     notes: "Formalisé dans AD-24 (ARCHITECTURE-SPINE.md) et livré dans l'Epic 19 (Stories 19.1..19.7). Élimine le hachage SHA-256 en prod, introduit le rôle embedding unique GLOBAL et la réindexation bloquante idempotente."
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
 
   # ───────────── Epic 6 : Provenance Immuable, FinOps Consolidé & Impact Cognitif ─────────────
   - id: CAP-200
@@ -978,6 +980,7 @@ capabilities:
     uj: [UJ-8]
     db_tables: [audit_ledger, finops_scope_budgets, finops_workflow_baselines, finops_budget_overrides, finops_connector_quotas]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces:
       route: /finops
       api: "finops.py, finops_remote.py, audit_ledger.py, finops_cognitive.py"
@@ -1007,7 +1010,6 @@ capabilities:
       - apps/web/e2e/12-finops-and-audit-provenance.spec.ts
       - apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts
     notes: "Story 6.1 (registre d'audit immuable et contrôle d'accès par périmètre), Story 6.2 (comptabilité FinOps consolidée, garde-fous mensuels hiérarchiques et reprise après rallonge budgétaire), Story 6.3 (tableau de bord de maîtrise humaine, alertes sur validations expéditives, indice de réversibilité d'architecture et mise à jour des politiques adaptatives) et Story 6.4 (télémétrie multi-métriques des services externes, plafonnement des anomalies, coupe-circuit isolé par connecteur et onglet Services externes)."
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"
   - id: CAP-201
     title: Exécution autonome sous contrat, déclencheurs événementiels idempotents et supervision post-hoc
     fr: [FR-29, FR-30]
@@ -1018,6 +1020,7 @@ capabilities:
     uj: [UJ-11, UJ-12]
     db_tables: [autonomy_contracts, workflow_triggers, trigger_webhook_deliveries, autonomous_post_hoc_audits, workflow_runs]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces:
       route: "/processes, /processes/studio/$workflowId, /finops"
       api: "autonomy_contracts.py (GET/POST/revoke autonomy-contract, POST runs/autonomous); workflow_triggers.py (CRUD/test triggers, webhooks/{trigger_id}, triggers/alerts); autonomous_supervision.py (GET autonomous-runs, POST emergency-stop, POST invalidate-and-restore, POST post-hoc-review); finops_cognitive.py (autonomous_governance); portal_and_help.py (autonomous metadata); workflows.py (WorkflowPublished)"
@@ -1042,7 +1045,6 @@ capabilities:
       - apps/web/e2e/13-epic-7-autonomous-governance-and-supervision.spec.ts
       - apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts
     notes: "Epic 7 complet (2026-11-17, AD-3, AD-6, AD-18) : Story 7.1 (autonomy_contracts, signature unique TEAM_LEAD/BU_LEAD/PLATFORM_ADMIN, SignedApprovalToken.issue_autonomous, AutonomyContractModal), Story 7.2 (déclencheurs idempotents WEBHOOK/LOG_SINK_ALERT/CRON/OUTBOX_EVENT opt-in/MANUAL_AUTONOMOUS, triple verrou Redis NX + UNIQUE SQL + DBOS SetWorkflowID, Self-Trigger Guard, coupe-circuit SSE < 500 ms, WorkflowTriggersModal), et Story 7.4 (supervision /processes, AutonomousExecutionBadge Cyan/Cobalt sans violet humain, arrêt d'urgence KILL_SWITCH_STOPPED au niveau @DBOS.step, invalidation & restauration @v(N-1) HELP_ARTICLE avec purge Redis < 10 ms, échantillonnage post-hoc déterministe 10-20%, métriques SM-A1..A3 isolées dans FinOps Maîtrise humaine & Qualité, 0 jargon technique)."
-    e2e_remediation_ref: "22-4-persistance-pg18-orchestration-gates-et-garde-kill-switch"
   - id: CAP-202
     title: Journalisation unifiée 12-factor JSON stdout, puits de logs paramétrable (Elasticsearch / Loki), traces distribuées OpenTelemetry OTLP et conformité OpenShift SCC restricted
     fr: [] # NFR-OBS-1, NFR-SEC-1, NFR-SEC-4, prérequis transverse Epic 7 (Stories 7.0a..7.0c) et conformité OpenShift
@@ -1061,6 +1063,7 @@ capabilities:
       - tests/unit/test_story_7_0c_openshift_scc_kustomize_and_ready.py
       - tests/unit/test_epic_7_review_fixes.py
     verification: runtime
+    verified_at: "2026-11-19"
     surfaces: { api: "observability (logging.py, _internal/ecs_formatter.py, tracing.py, fingerprint.py, log_sink_factory.py, _internal/elasticsearch_sink.py, ports/log_sink.py, dependencies, main.py, routers/health.py /ready & /api/v1/ready)", worker: "configure_logging() / configure_tracing() / instrument_runtime() + roles.py (--serve/--once) + sandbox_daemon.py (sidecar Tier 1 sous /tmp)", compose: "profiles logs-loki / logs-elastic + rotation json-file 50m/3 + services app-roles durcis (10001:0, read_only, tmpfs /tmp)", docker: "infra/docker/Dockerfile (python:3.12-slim non-root 10001:0) + infra/docker/Dockerfile.web (nginx-unprivileged 101:0 port 8080) + infra/docker/nginx.conf", k8s: "infra/k8s/base/ + infra/k8s/overlays/openshift/ (SCC restricted sans runAsUser figé, readOnlyRootFilesystem, emptyDir /tmp, NetworkPolicy sandbox-runner egress:[], Routes TLS edge)", operations: "docs/operations/openshift-clusterlogforwarder-contract.md (OPS-OPENSHIFT-LOGGING-01)" }
     notes: "Formalisé dans AD-23 (ARCHITECTURE-SPINE.md) et livré intégralement via Stories 7.0a, 7.0b et 7.0c (done). Socle complet débloqué pour les déclencheurs LOG_SINK_ALERT (Story 7.2) et POST_ACTION_VERIFICATION (AIOPS-INCIDENT-LOOP-01) de l'Epic 7."
   - id: CAP-203
@@ -1073,6 +1076,7 @@ capabilities:
     uj: [UJ-14]
     db_tables: [org_units, iam_accounts, users, audit_ledger]
     verification: failed_e2e
+    e2e_remediation_ref: "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23"
     surfaces:
       route: "/organization, /activity, /settings"
       api: "org_units.py (GET/POST/PATCH/DELETE avec can_* et périmètre), org_unit_invitations.py (POST /api/v1/org-units/invite-user), org_delegation.py, sql_org_ontology_lead_sync.py, iam_accounts.py (verrou PLATFORM_ADMIN + SECOPS), _auth_pg_helpers.py (hydrate platform_role), audit_ledger.py & _finops_auth_guards.py (filtrage org_unit_id + workspace_id)"
@@ -1085,4 +1089,3 @@ capabilities:
       - apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx
       - apps/web/e2e/15-organization-iam-secops-inbox-and-observer.spec.ts
     notes: "Story 20.1 (Epic 20) : séparation de Mon Organisation (/organization) sous Mes Espaces (visibilité PLATFORM_ADMIN, BU_LEAD, TEAM_LEAD ; /settings ramené à 5 onglets avec redirection ?tab=organization), délégation stricte par sous-arbre et booléens can_*, invitation scopée avec garde anti-escalade, 7e rôle ONTOLOGY_LEAD (B1 sync bidirectionnelle BU <-> IAM), journalisation org_unit_id et isolation de lecture /activity."
-    e2e_remediation_ref: "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats"

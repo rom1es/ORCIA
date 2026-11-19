@@ -15,7 +15,7 @@ PLAYWRIGHT_RESULTS_PATH = (
     REPO_ROOT
     / "docs"
     / "implementation-artifacts"
-    / "e2e-campaign-epic-21"
+    / "e2e-campaign-epic-22"
     / "playwright-results.json"
 )
 

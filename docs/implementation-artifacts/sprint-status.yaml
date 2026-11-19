@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 11-19-2026 12:05
+last_updated: 11-19-2026 12:30
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -234,7 +234,7 @@ development_status:
   22-7-finitions-ux-ui-erreurs-rfc9457-grilles-devise-euro-et-purge-jargon: done
   22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime: done
   22-8a-assainissement-fail-closed-vitest-composition-root-sans-override-et-ci-complete: done
-  22-9-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston: ready-for-dev
+  22-9-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston: done
   22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23: ready-for-dev
   epic-22-retrospective: optional
 action_items:
