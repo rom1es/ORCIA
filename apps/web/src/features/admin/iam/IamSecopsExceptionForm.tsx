@@ -1,6 +1,5 @@
 import type { IamAccountResponse } from "@orcia/api-client";
 import {
-  ContextualInfoTriggerButton,
   DisabledButtonAlertIndicator,
   OrciaAlertBanner,
   type ControlCenterWorkspaceGovItem,
@@ -10,26 +9,17 @@ import React, { useEffect, useRef, useState } from "react";
 import type { ConfiguredOrgUnit } from "../../../components/platformSetupStorageHelpers";
 import type { IamTabDictionarySection } from "../../../i18n/locales/iam_accounts_labels";
 import {
-  GRANT_RESOURCE_KINDS,
-  OFFICIAL_IAM_ROLES,
   type GrantResourceKindKey,
   type OfficialIamRoleKey,
 } from "./iamApiBridge";
+import { IamSecopsScopeAndTargetFields } from "./IamSecopsScopeAndTargetFields";
+import { IamSecopsVerbsCheckboxes } from "./IamSecopsVerbsCheckboxes";
 
 const IMPLIED_READ_VERBS: readonly UiPermissionVerb[] = [
   "create",
   "update",
   "delete",
   "execute",
-];
-
-const ALL_SIX_VERBS: readonly UiPermissionVerb[] = [
-  "create",
-  "read",
-  "update",
-  "delete",
-  "execute",
-  "grant",
 ];
 
 export interface CreateSecopsExceptionInput {
@@ -51,14 +41,6 @@ export interface IamSecopsExceptionFormProps {
   readonly openHelpSection: (sectionId: string) => void;
   readonly onCreateException: (input: CreateSecopsExceptionInput) => void;
 }
-
-const selectStyle: React.CSSProperties = {
-  padding: "7px 10px",
-  borderRadius: "var(--radius-sm)",
-  border: "1px solid var(--color-border)",
-  backgroundColor: "var(--color-surface-card)",
-  color: "var(--color-foreground)",
-};
 
 export function IamSecopsExceptionForm({
   isSecopsAuthorized,
@@ -116,12 +98,6 @@ export function IamSecopsExceptionForm({
       ? sec.verbsFieldsetLabel
       : sec.targetAccountLabel;
 
-  const buUnits = orgUnits.filter((u) => u.level === "BU");
-  const teamUnits = orgUnits.filter((u) => u.level === "TEAM");
-  const standaloneWorkspaces = workspaces.filter(
-    (ws) => !orgUnits.some((u) => u.name === ws.name || u.slug === ws.name),
-  );
-
   return (
     <form
       data-testid="create-rbac-grant-form"
@@ -157,162 +133,29 @@ export function IamSecopsExceptionForm({
         opacity: !isSecopsAuthorized ? 0.6 : 1,
       }}
     >
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "flex-end" }}>
-        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
-          <span style={{ fontWeight: 600 }}>{sec.beneficiaryTypeLabel}</span>
-          <select
-            data-testid="rbac-subject-type-select"
-            disabled={controlsLocked}
-            value={beneficiaryKind}
-            onChange={(e) => setBeneficiaryKind(e.target.value as "ROLE" | "USER")}
-            style={selectStyle}
-          >
-            <option value="ROLE">{sec.beneficiaryTypeRole}</option>
-            <option value="USER">{sec.beneficiaryTypeAccount}</option>
-          </select>
-        </label>
-
-        <label
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "4px",
-            fontSize: "12px",
-            flex: 1,
-            minWidth: "210px",
-          }}
-        >
-          <span data-testid="rbac-subject-dynamic-label" style={{ fontWeight: 600 }}>
-            {beneficiaryKind === "ROLE" ? sec.targetRoleLabel : sec.targetAccountLabel}
-          </span>
-          {beneficiaryKind === "ROLE" ? (
-            <select
-              data-testid="rbac-subject-select"
-              disabled={controlsLocked}
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value as OfficialIamRoleKey)}
-              style={selectStyle}
-            >
-              {OFFICIAL_IAM_ROLES.map((roleKey) => (
-                <option key={roleKey} value={roleKey}>
-                  {labels.roles[roleKey]}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <select
-              data-testid="rbac-subject-select"
-              disabled={controlsLocked || accounts.length === 0}
-              value={effectivePrincipal}
-              onChange={(e) => setSelectedAccountPrincipal(e.target.value)}
-              style={selectStyle}
-            >
-              {accounts.map((acc) => (
-                <option key={acc.id} value={acc.principal_id}>
-                  {`${acc.display_name} (${acc.principal_id})`}
-                </option>
-              ))}
-            </select>
-          )}
-        </label>
-
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "4px",
-            fontSize: "12px",
-            flex: 1,
-            minWidth: "220px",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <label htmlFor="rbac-scope-preset-select" style={{ fontWeight: 600 }}>
-              {sec.targetScopeLabel}
-            </label>
-            <ContextualInfoTriggerButton
-              sectionId="iam-target-scope"
-              label={sec.targetScopeLabel}
-              onOpenHelpSection={openHelpSection}
-            />
-          </div>
-          <select
-            id="rbac-scope-preset-select"
-            data-testid="rbac-scope-preset-select"
-            aria-label={sec.targetScopeLabel}
-            disabled={controlsLocked}
-            value={scopePath}
-            onChange={(e) => {
-              userPickedScopeRef.current = true;
-              setScopePath(e.target.value);
-            }}
-            style={selectStyle}
-          >
-            {buUnits.length > 0 ? (
-              <optgroup label={sec.buOptgroupLabel}>
-                {buUnits.map((u) => (
-                  <option key={u.id} value={u.slug}>
-                    {`${sec.buScopePrefix} ${u.name} (${u.slug})`}
-                  </option>
-                ))}
-              </optgroup>
-            ) : null}
-            {teamUnits.length > 0 ? (
-              <optgroup label={sec.teamOptgroupLabel}>
-                {teamUnits.map((u) => (
-                  <option key={u.id} value={u.slug}>
-                    {`${sec.teamScopePrefix} ${u.name} (${u.slug})`}
-                  </option>
-                ))}
-              </optgroup>
-            ) : null}
-            {standaloneWorkspaces.length > 0 ? (
-              <optgroup label={sec.workspaceOptgroupLabel}>
-                {standaloneWorkspaces.map((ws) => (
-                  <option key={ws.name} value={ws.name}>
-                    {`${sec.workspaceScopePrefix} ${ws.name}`}
-                  </option>
-                ))}
-              </optgroup>
-            ) : null}
-            <option value="GLOBAL">{sec.globalScopeOption}</option>
-          </select>
-        </div>
-
-        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
-          <span style={{ fontWeight: 600 }}>{sec.resourceKindLabel}</span>
-          <select
-            data-testid="rbac-resource-kind-select"
-            disabled={controlsLocked}
-            value={resourceKind}
-            onChange={(e) => setResourceKind(e.target.value as GrantResourceKindKey)}
-            style={selectStyle}
-          >
-            {GRANT_RESOURCE_KINDS.map((rk) => (
-              <option key={rk} value={rk}>
-                {sec.resourceKinds[rk]}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
-          <span style={{ fontWeight: 600 }}>{sec.effectLabel}</span>
-          <select
-            data-testid="rbac-effect-select"
-            disabled={controlsLocked}
-            value={effect}
-            onChange={(e) =>
-              setEffect(e.target.value as "ALLOW" | "DENY" | "INHERITANCE_BLOCK")
-            }
-            style={selectStyle}
-          >
-            <option value="ALLOW">{sec.effectAllow}</option>
-            <option value="DENY">{sec.effectDeny}</option>
-            <option value="INHERITANCE_BLOCK">{sec.effectIsolate}</option>
-          </select>
-        </label>
-      </div>
+      <IamSecopsScopeAndTargetFields
+        controlsLocked={controlsLocked}
+        beneficiaryKind={beneficiaryKind}
+        selectedRole={selectedRole}
+        effectivePrincipal={effectivePrincipal}
+        scopePath={scopePath}
+        resourceKind={resourceKind}
+        effect={effect}
+        accounts={accounts}
+        orgUnits={orgUnits}
+        workspaces={workspaces}
+        labels={labels}
+        openHelpSection={openHelpSection}
+        onChangeBeneficiaryKind={setBeneficiaryKind}
+        onChangeSelectedRole={setSelectedRole}
+        onChangeAccountPrincipal={setSelectedAccountPrincipal}
+        onChangeScopePath={(nextScope) => {
+          userPickedScopeRef.current = true;
+          setScopePath(nextScope);
+        }}
+        onChangeResourceKind={setResourceKind}
+        onChangeEffect={setEffect}
+      />
 
       {scopePath === "GLOBAL" ? (
         <OrciaAlertBanner tone="amber" testId="iam-global-scope-amber-warning">
@@ -320,64 +163,21 @@ export function IamSecopsExceptionForm({
         </OrciaAlertBanner>
       ) : null}
 
-      <div
-        data-testid="rbac-verbs-checkbox-group"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "6px",
-          padding: "10px 12px",
-          borderRadius: "var(--radius-sm)",
-          border: "1px solid var(--color-border)",
-          fontSize: "12px",
+      <IamSecopsVerbsCheckboxes
+        controlsLocked={controlsLocked}
+        hasImpliedRead={hasImpliedRead}
+        effectiveVerbs={effectiveVerbs}
+        labels={labels}
+        onToggleVerb={(v, checked) => {
+          setSelectedVerbs((prev) =>
+            checked
+              ? prev.includes(v)
+                ? prev
+                : [...prev, v]
+              : prev.filter((item) => item !== v),
+          );
         }}
-      >
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "14px", alignItems: "center" }}>
-          <span style={{ fontWeight: 600 }}>{sec.verbsFieldsetLabel} :</span>
-          {ALL_SIX_VERBS.map((v) => {
-            const isReadHeld = v === "read" && hasImpliedRead;
-            const checked = effectiveVerbs.includes(v);
-            const checkboxDisabled = controlsLocked || isReadHeld;
-            return (
-              <label
-                key={v}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  cursor: checkboxDisabled ? "not-allowed" : "pointer",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  autoComplete="off"
-                  data-lpignore="true"
-                  data-1p-ignore="true"
-                  data-bwignore="true"
-                  data-form-type="other"
-                  data-testid={`rbac-verb-checkbox-${v}`}
-                  disabled={checkboxDisabled}
-                  checked={checked}
-                  onChange={(e) => {
-                    if (isReadHeld) return;
-                    setSelectedVerbs((prev) =>
-                      e.target.checked
-                        ? prev.includes(v)
-                          ? prev
-                          : [...prev, v]
-                        : prev.filter((item) => item !== v),
-                    );
-                  }}
-                />
-                <span>{labels.verbs[v]}</span>
-              </label>
-            );
-          })}
-        </div>
-        <span style={{ fontSize: "11.5px", color: "var(--color-muted-foreground)" }}>
-          {sec.autoReadHint}
-        </span>
-      </div>
+      />
 
       <div
         data-testid="rbac-submit-footer"

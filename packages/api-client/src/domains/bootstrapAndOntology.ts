@@ -178,6 +178,7 @@ export function createBootstrapAndOntologyDomainClient(
       workspaceId?: string | null,
       screenRoute = "/spaces",
       forceSemantic = true,
+      locale?: "fr" | "en",
     ): Promise<FederatedSearchResponse> {
       const normalizedScope =
         scope === "GLOBAL"
@@ -192,6 +193,9 @@ export function createBootstrapAndOntologyDomainClient(
         include_speed2: "true",
         force_semantic: forceSemantic ? "true" : "false",
       });
+      if (locale) {
+        params.set("locale", locale);
+      }
       if (workspaceId && workspaceId.trim().length > 0) {
         params.set("workspace_id", workspaceId);
       }

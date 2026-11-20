@@ -94,7 +94,6 @@ export function ModuleWorkspaceView({
               testId={`module-uri-badge-${currentModule}`}
               label={pageCopy.uriBadgeExample}
               tone="cobalt"
-              monospace
             />
           </div>
           <p style={{ margin: 0, color: "var(--color-muted-foreground)" }}>{headerDescription}</p>

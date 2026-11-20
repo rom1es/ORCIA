@@ -97,6 +97,11 @@ export const frDictionary: TranslationDictionary = {
   arbitrationTieBreak: {
     badgeTitle: "⚖️ ARBITRAGE REQUIS",
     policyPrefixLabel: "Règle de départage",
+    policyLabels: {
+      pauseAndEscalate: "Pause et escalade humaine",
+      ontologyAxiomFirst: "Règle métier prioritaire",
+      deferWithAssumption: "Poursuivre sous hypothèse",
+    },
     recommendedBadgeLabel: "★ Recommandé",
     prosLabel: "Avantages",
     consLabel: "Inconvénients",
@@ -140,6 +145,15 @@ export const frDictionary: TranslationDictionary = {
     panelTitle: "Catalogue des Agents, Compétences et Modèles de Processus",
     panelSubtitle:
       "Explorez les ressources disponibles dans vos espaces et personnalisez-les selon vos besoins.",
+    emptyStateMessage: "Aucun élément disponible dans le catalogue pour ce filtre.",
+    scopeLabels: {
+      DRAFT: "Brouillon",
+      SHARED_WORKSPACE: "Partagé (Espace)",
+      SHARED_TEAM: "Partagé (Équipe)",
+      SHARED_BU: "Partagé (Direction)",
+      PENDING_APPROVAL: "Validation en attente",
+      PUBLISHED_ORG: "Publié (Organisation)",
+    },
     filterAllSchemesLabel: "Toutes les sources",
     maskedSourceBadgeLabel: "🔒 Source restreinte",
     openSourceBadgeLabel: "📖 Source accessible",
@@ -190,6 +204,7 @@ export const frDictionary: TranslationDictionary = {
       sampleAgentJsonSchema:
         '{"$schema":"https://json-schema.org/draft/2020-12/schema","x-bound-ontology-terms":["Actif Stratégique"]}',
       subWorkflowLocksTitle: "Sous-processus rattachés et versions associées",
+      depthPrefix: "Niveau",
     },
   },
   permissionBroker: {
@@ -204,6 +219,7 @@ export const frDictionary: TranslationDictionary = {
     jiraRequestButtonLabel: "Demander l'accès auprès de l'équipe responsable",
     pauseStepButtonLabel: "Mettre l'étape en attente",
     replayStepButtonLabel: "Relancer l'étape",
+    stepPrefix: "Étape",
     pausedStateBanner: "⏸️ Étape mise en attente jusqu'à l'obtention de l'accès",
     replayedStateBanner: "✅ Accès confirmé — Étape relancée avec succès",
     simulatorTitle:

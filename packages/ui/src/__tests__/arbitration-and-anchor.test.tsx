@@ -91,8 +91,8 @@ describe("Story 3.4 — HumanLedAnchorCard (>= 30 chars guard) & ArbitrationTieB
       "OPT_A",
       "Conformité stricte avec l'API partenaire v3.",
     );
-    expect(
-      screen.getByTestId("arbitration-resolved-banner-arb-test-01").textContent,
-    ).toContain("OPT_A");
+    const resolvedBanner = screen.getByTestId("arbitration-resolved-banner-arb-test-01");
+    expect(resolvedBanner.getAttribute("data-selected-option")).toBe("OPT_A");
+    expect(resolvedBanner.textContent).toContain("Option A — Taux Spot 15 min");
   });
 });

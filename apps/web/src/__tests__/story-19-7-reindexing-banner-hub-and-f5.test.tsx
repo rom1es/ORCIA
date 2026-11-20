@@ -221,7 +221,8 @@ describe("Story 19.7 — RAG Reindexing Banner, Input Lock, Hub Panel & F5 Survi
     });
 
     const panel = screen.getByTestId("ai-model-reindex-panel");
-    expect(panel.textContent).toContain("COMPLETED (100%)");
+    expect(panel.textContent).toContain("Terminée (100%)");
+    expect(screen.getByTestId("reindex-status-badge").getAttribute("data-status")).toBe("COMPLETED");
     expect(panel.textContent).toContain("text-embedding-3-small");
 
     const relaunchBtn = screen.getByTestId("relaunch-reindex-button");

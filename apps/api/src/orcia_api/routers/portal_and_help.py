@@ -80,6 +80,7 @@ async def execute_two_speed_federated_search(
     screen_route: str = Query(default="/cockpit", min_length=1, max_length=128),
     include_speed2: bool = Query(default=True),
     force_semantic: bool = Query(default=False),
+    locale: str | None = Query(default=None, max_length=16),
     persona_key: str | None = Query(default=None, min_length=1, max_length=64),
 ) -> TwoSpeedSearchResponse:
     user = resolve_request_user(request, persona_key=persona_key)
@@ -92,6 +93,13 @@ async def execute_two_speed_federated_search(
     else:
         normalized_scope = scope
     effective_ws = (workspace_id or "").strip() or "scope-global"
+
+    raw_locale = (
+        ((locale or "").strip() or (request.headers.get("accept-language") or "").strip() or "fr")
+        .lower()
+        .replace("_", "-")
+    )
+    req_locale = "en" if raw_locale.split(",", 1)[0].split("-", 1)[0].strip() == "en" else "fr"
 
     query_embedding: tuple[float, ...] | None = None
     if include_speed2 and q.strip() and (force_semantic or len(q.strip().split()) >= 3):
@@ -108,10 +116,9 @@ async def execute_two_speed_federated_search(
                 user_id=user.id,
                 user_role=user.platform_role,
                 primary_org_unit_id=user.primary_org_unit_id,
+                locale=req_locale,
             )
 
-    accept_lang = (request.headers.get("accept-language") or "fr").strip().lower()
-    req_locale = "en" if accept_lang.startswith("en") else "fr"
     report = await svc.execute_search_async(
         query=q,
         scope=normalized_scope,

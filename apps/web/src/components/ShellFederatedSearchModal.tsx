@@ -84,7 +84,14 @@ export function ShellFederatedSearchModal({
       activeWsId === null && requestedScope === "WORKSPACE" ? "ALL_WORKSPACES" : requestedScope;
     const client = createOrciaApiClient({ baseUrl: "" });
     void client
-      .searchFederated(trimmed, effectiveScope, activeWsId, pathname ?? "/cockpit", true)
+      .searchFederated(
+        trimmed,
+        effectiveScope,
+        activeWsId,
+        pathname ?? "/cockpit",
+        true,
+        isFr ? "fr" : "en",
+      )
       .then((res) => {
         setSpeed2Loading(false);
         setSpeed2Executed(Boolean(res.speed2_executed ?? true));

@@ -35,6 +35,9 @@ const FORBIDDEN_UI_TERMS: readonly string[] = [
   "[LAYER_5_",
   "[STALE_WARNING]",
   "ORCIA_BOOTSTRAP_TOKEN",
+  "docs/site-catalog/index.html",
+  "`@`",
+  "L4 → L1",
 ];
 
 function collectFiles(dir: string, extensions: readonly string[]): string[] {

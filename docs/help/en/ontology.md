@@ -1,7 +1,7 @@
 ---
 resource_id: help-base-ontology-en
 uri: orcia://system/help/ontology/en
-title: "Glossary & Rules: shared vocabulary and L4 → L1 promotions"
+title: "Glossary & Rules: shared vocabulary from Space to Enterprise"
 version: "1.0.0"
 lang: en
 layer: BASE

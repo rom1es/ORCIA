@@ -22,10 +22,10 @@ Create, configure, and dry-run test specialized agents for specific domains (pro
 
 ## A real example
 
-Yanis creates a "DORA Compliance Analyst" agent, grants read-only access to the Space's regulatory baseline while prohibiting unapproved external writes, and invokes it directly inside My Assistant via `@`.
+Yanis creates a "DORA Compliance Analyst" agent, grants read-only access to the Space's regulatory baseline while prohibiting unapproved external writes, and invokes it directly inside My Assistant via "@".
 
 ## Common pitfalls
 
-- **An agent is missing from `@` suggestions in My Assistant**: check that the agent is published to your active Workspace or a parent team scope.
+- **An agent is missing from "@" suggestions in My Assistant**: check that the agent is published to your active Workspace or a parent team scope.
 - **A skill cannot reach an external tool**: verify tool permissions on the agent and check your personal tool connections under My Account.
 - **Agent menus are locked at first boot**: configure at least one AI model in Configuration › AI Models to unlock agent execution.

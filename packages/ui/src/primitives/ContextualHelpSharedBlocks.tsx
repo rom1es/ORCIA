@@ -1,4 +1,5 @@
 import React from "react";
+import { renderInlineMarkdownNodes } from "../components/FormattedMarkdownContent";
 import { AutonomousExecutionBadge, type AutonomousExecutionBadgeLabels } from "./AutonomousExecutionBadge";
 import type {
   ContextualHelpColumnAndCenterLabels,
@@ -142,7 +143,9 @@ export function HelpCoreNarrativeBlocks({
         className="p-2.5 rounded-lg border border-surface-border bg-surface-primary space-y-1"
       >
         <div className="font-semibold text-text-primary">{labels.whatForSectionTitle}</div>
-        <p className="text-text-secondary leading-relaxed">{article.summaryWhatFor}</p>
+        <p className="text-text-secondary leading-relaxed">
+          {renderInlineMarkdownNodes(article.summaryWhatFor)}
+        </p>
       </div>
 
       {showStepsBlock && stepsCount > 0 && (
@@ -158,7 +161,7 @@ export function HelpCoreNarrativeBlocks({
             className="list-decimal space-y-1.5 pl-4 text-text-secondary leading-relaxed"
           >
             {article.stepByStepItems.map((item, idx) => (
-              <li key={idx}>{item}</li>
+              <li key={idx}>{renderInlineMarkdownNodes(item)}</li>
             ))}
           </ol>
         </div>
@@ -180,7 +183,7 @@ export function HelpCoreNarrativeBlocks({
             {labels.realExampleTitle ?? (isEn ? "A real example" : "Un exemple réel")}
           </div>
           <p className="leading-relaxed" style={{ color: "var(--color-help-example-text)" }}>
-            {article.realExampleText}
+            {renderInlineMarkdownNodes(article.realExampleText)}
           </p>
         </div>
       )}
@@ -195,7 +198,7 @@ export function HelpCoreNarrativeBlocks({
           </div>
           <ul className="list-disc space-y-1.5 pl-4 text-text-secondary leading-relaxed">
             {pitfalls.map((item, idx) => (
-              <li key={idx}>{item}</li>
+              <li key={idx}>{renderInlineMarkdownNodes(item)}</li>
             ))}
           </ul>
         </div>

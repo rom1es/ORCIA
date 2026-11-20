@@ -1,4 +1,5 @@
 import React from "react";
+import { OrciaIcon } from "../components/icons";
 import { handleRgaaSubmitKeyDown } from "../components/RgaaModalDialog.js";
 import type {
   TopHeaderSearchCommandLabels,
@@ -86,9 +87,16 @@ export function TopHeaderSearchResultsPane({
                           data-testid={`cmdk-open-btn-${hit.itemId}`}
                           onClick={() => onExecuteHit(hit)}
                           onKeyDown={(e) => handleRgaaSubmitKeyDown(e, () => onExecuteHit(hit))}
-                          className="px-2 py-0.5 rounded text-[11px] bg-brand-primary text-[var(--color-primary-foreground)] font-medium"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] bg-brand-primary text-[var(--color-primary-foreground)] font-medium"
                         >
-                          {hit.opensContextualHelpColumn ? labels.openHelpColumnActionLabel : labels.deepLinkActionLabel}
+                          {hit.opensContextualHelpColumn ? (
+                            <>
+                              <OrciaIcon name="help" size={12} className="shrink-0" />
+                              <span>{labels.openHelpColumnActionLabel.replace(/❓\s*/g, "").trim()}</span>
+                            </>
+                          ) : (
+                            labels.deepLinkActionLabel
+                          )}
                         </button>
                       </div>
                     </div>
@@ -135,9 +143,16 @@ export function TopHeaderSearchResultsPane({
                         data-testid={`cmdk-open-btn-${hit.itemId}`}
                         onClick={() => onExecuteHit(hit)}
                         onKeyDown={(e) => handleRgaaSubmitKeyDown(e, () => onExecuteHit(hit))}
-                        className="px-2 py-0.5 rounded text-[11px] bg-brand-primary text-[var(--color-primary-foreground)] font-medium shrink-0"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] bg-brand-primary text-[var(--color-primary-foreground)] font-medium shrink-0"
                       >
-                        {hit.opensContextualHelpColumn ? labels.openHelpColumnActionLabel : labels.deepLinkActionLabel}
+                        {hit.opensContextualHelpColumn ? (
+                          <>
+                            <OrciaIcon name="help" size={12} className="shrink-0" />
+                            <span>{labels.openHelpColumnActionLabel.replace(/❓\s*/g, "").trim()}</span>
+                          </>
+                        ) : (
+                          labels.deepLinkActionLabel
+                        )}
                       </button>
                     </div>
                   );

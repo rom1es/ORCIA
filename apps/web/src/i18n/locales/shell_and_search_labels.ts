@@ -179,7 +179,7 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
     emptyResultsLabel: "Aucun résultat trouvé dans ce périmètre.",
     previewPaneTitle: "Aperçu rapide (⌘+Entrée)",
     deepLinkActionLabel: "Ouvrir ↵",
-    openHelpColumnActionLabel: "Ouvrir ❓ Aide",
+    openHelpColumnActionLabel: "Ouvrir l'aide",
     askAssistantFooterPrefix: "💬 Poser la question",
     askAssistantFooterSuffix: "à Mon Assistant →",
     familyLabels: {
@@ -314,7 +314,7 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
     },
   },
   contextualHelpHybrid: {
-    columnHeaderTitle: "❓ Aide Contextuelle",
+    columnHeaderTitle: "Aide Contextuelle",
     centerHeaderTitle: "Centre d'Aide & Guides Pratiques",
     whatForSectionTitle: "À quoi sert cet écran ?",
     stepByStepAccordionTitle: "Comment procéder pas à pas",
@@ -473,7 +473,7 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
     emptyResultsLabel: "No results found in this scope.",
     previewPaneTitle: "Quick preview (⌘+Enter)",
     deepLinkActionLabel: "Open ↵",
-    openHelpColumnActionLabel: "Open ❓ Help",
+    openHelpColumnActionLabel: "Open Help",
     askAssistantFooterPrefix: "💬 Ask",
     askAssistantFooterSuffix: "to My Assistant →",
     familyLabels: {
@@ -607,7 +607,7 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
     },
   },
   contextualHelpHybrid: {
-    columnHeaderTitle: "❓ Contextual Help",
+    columnHeaderTitle: "Contextual Help",
     centerHeaderTitle: "Help Center & Practical Guides",
     whatForSectionTitle: "What is this screen for?",
     stepByStepAccordionTitle: "How to proceed step by step",

@@ -1,9 +1,22 @@
 import React from "react";
+import { FormattedMarkdownContent } from "../components/FormattedMarkdownContent";
 import { StatusBadge } from "../primitives/StatusBadge";
 import type {
   UiPermissionBrokerLabels,
   UiPermissionBrokerTicketView,
 } from "./types";
+
+function safeDecodeUri(raw: string): string {
+  if (!raw) return "";
+  try {
+    return decodeURIComponent(raw);
+  } catch (err: unknown) {
+    if (typeof console !== "undefined") {
+      console.debug("[orcia:uri-decode]", err instanceof Error ? err.message : String(err));
+    }
+    return raw;
+  }
+}
 
 export interface PermissionBrokerCardProps {
   ticket: UiPermissionBrokerTicketView;
@@ -32,6 +45,7 @@ export function PermissionBrokerCard({
       data-step-state={ticket.stepState}
       data-ticket-status={ticket.status}
       data-execution-identity={ticket.executionIdentity}
+      data-http-status={ticket.upstreamHttpStatus}
       aria-label={labels.cardBadgeTitle}
       style={{
         backgroundColor: "var(--color-arbitration-bg)",
@@ -55,7 +69,7 @@ export function PermissionBrokerCard({
       >
         <StatusBadge
           testId="permission-broker-card-badge"
-          label={`${labels.cardBadgeTitle} • HTTP ${ticket.upstreamHttpStatus}`}
+          label={labels.cardBadgeTitle}
           tone={isReplayed ? "emerald" : "amber"}
         />
         <StatusBadge
@@ -74,7 +88,7 @@ export function PermissionBrokerCard({
             fontFamily: "var(--font-mono)",
           }}
         >
-          {labels.targetUriLabel} (Step {ticket.stepNumber} • {ticket.stepKey})
+          {labels.targetUriLabel} ({labels.stepPrefix ?? "Étape"} {ticket.stepNumber})
         </span>
         <code
           data-testid="permission-broker-target-uri"
@@ -88,7 +102,7 @@ export function PermissionBrokerCard({
             wordBreak: "break-all",
           }}
         >
-          {ticket.targetUri}
+          {safeDecodeUri(ticket.targetUri)}
         </code>
       </div>
 
@@ -163,7 +177,7 @@ export function PermissionBrokerCard({
               wordBreak: "break-all",
             }}
           >
-            {ticket.permissionBrokerHint}
+            {safeDecodeUri(ticket.permissionBrokerHint)}
           </code>
         </div>
 
@@ -171,14 +185,15 @@ export function PermissionBrokerCard({
           <div
             data-testid="permission-broker-card-procedure"
             style={{
-              fontSize: "var(--font-size-mono)",
-              color: "var(--color-muted-foreground)",
               borderTop: "1px dashed var(--color-border)",
-              paddingTop: "6px",
-              whiteSpace: "pre-wrap",
+              paddingTop: "8px",
             }}
           >
-            {ticket.procedureMarkdown}
+            <FormattedMarkdownContent
+              content={safeDecodeUri(ticket.procedureMarkdown)}
+              testId="permission-broker-card-procedure-md"
+              className="text-text-secondary"
+            />
           </div>
         )}
       </div>
@@ -236,7 +251,7 @@ export function PermissionBrokerCard({
             cursor: "pointer",
           }}
         >
-          {labels.replayStepButtonLabel} (Step {ticket.stepNumber})
+          {labels.replayStepButtonLabel} ({labels.stepPrefix ?? "Étape"} {ticket.stepNumber})
         </button>
       </div>
 

@@ -33,8 +33,8 @@ export function GatesAdaptiveReviewHeaderCard({
       <div>
         <strong>
           {isFr
-            ? "Revue Humaine Adaptative (Briefing 4 Blocs, Découpage & Garde-fou < 15 s)"
-            : "Adaptive Human Review (4-Block Briefing, Chunked Approval & < 15s Guard)"}
+            ? "Revue Humaine Adaptative (Synthèse en 4 Points & Validation par Section)"
+            : "Adaptive Human Review (4-Point Summary & Section-by-Section Review)"}
         </strong>
         {evaluation || stagedJira ? (
           <div style={{ display: "flex", gap: "8px", marginTop: "6px", flexWrap: "wrap" }}>

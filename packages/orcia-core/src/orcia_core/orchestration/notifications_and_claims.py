@@ -503,6 +503,13 @@ class UnifiedNotificationAndClaimService:
             instance=instance,
         )
 
+    @staticmethod
+    def _format_step_claim_title(step_key: str) -> str:
+        if step_key == "inbox-review-step":
+            return "Prise en charge directe — Relecture en boîte de réception"
+        readable = step_key.replace("-", " ").replace("_", " ").strip().title()
+        return f"Prise en charge directe — {readable}"
+
     def claim_by_step_execution(
         self,
         user: UserIdentity,
@@ -531,7 +538,7 @@ class UnifiedNotificationAndClaimService:
                 step_key=step_key,
                 notification_type="HUMAN_ARBITRATION",
                 scope_kind="TEAM",
-                title=f"Prise en charge directe de l'étape '{step_key}'",
+                title=self._format_step_claim_title(step_key),
                 summary="Verrou de présence acquis depuis le Cockpit.",
             )
         return self._claim_notification_entity(
@@ -582,7 +589,7 @@ class UnifiedNotificationAndClaimService:
                 step_key=step_key,
                 notification_type="HUMAN_ARBITRATION",
                 scope_kind="TEAM",
-                title=f"Prise en charge directe de l'étape '{step_key}'",
+                title=self._format_step_claim_title(step_key),
                 summary="Verrou de présence acquis depuis le Cockpit.",
             )
         return await self._claim_notification_entity_async(

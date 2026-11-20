@@ -41,6 +41,15 @@ export interface CatalogExplorerPanelProps {
   labels: UiCatalogExplorerLabels;
 }
 
+const DEFAULT_SCOPE_LABELS: Record<UiCatalogVisibilityScope, string> = {
+  DRAFT: "Brouillon",
+  SHARED_WORKSPACE: "Partagé (Espace)",
+  SHARED_TEAM: "Partagé (Équipe)",
+  SHARED_BU: "Partagé (Direction)",
+  PENDING_APPROVAL: "Validation en attente",
+  PUBLISHED_ORG: "Publié (Organisation)",
+};
+
 function nextScopeFor(current: UiCatalogVisibilityScope): UiCatalogVisibilityScope | null {
   const idx = PROMOTION_ORDER.indexOf(current);
   return idx >= 0 && idx < PROMOTION_ORDER.length - 1 ? (PROMOTION_ORDER[idx + 1] ?? null) : null;
@@ -93,7 +102,7 @@ export function CatalogExplorerPanel({
   function handleResolveCas(item: UiCatalogExplorerItemView) {
     setCasBanner((p) => ({
       ...p,
-      [item.resourceId]: `${labels.casResolvedBannerPrefix} : ${item.casKey} (cache_hit=true, 0.4ms < 50ms)`,
+      [item.resourceId]: `${labels.casResolvedBannerPrefix} : ${item.casKey}`,
     }));
   }
 
@@ -146,7 +155,7 @@ export function CatalogExplorerPanel({
             fontSize: "var(--font-size-body)",
           }}
         >
-          0
+          {labels.emptyStateMessage ?? "Aucun élément disponible dans le catalogue pour ce filtre."}
         </div>
       )}
 
@@ -154,6 +163,8 @@ export function CatalogExplorerPanel({
         {visibleItems.map((item) => {
           const currentScope = promotedScopes[item.resourceId] ?? item.visibilityScope;
           const nextScope = nextScopeFor(currentScope);
+          const currentScopeLabel = labels.scopeLabels?.[currentScope] ?? DEFAULT_SCOPE_LABELS[currentScope] ?? currentScope;
+          const nextScopeLabel = nextScope ? (labels.scopeLabels?.[nextScope] ?? DEFAULT_SCOPE_LABELS[nextScope] ?? nextScope) : null;
           const canMutateScope = canPromoteItem(item);
           return (
             <div key={item.resourceId} data-testid={`catalog-item-card-${item.resourceId}`} style={itemCardStyle}>
@@ -162,11 +173,13 @@ export function CatalogExplorerPanel({
                 <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                   <StatusBadge
                     testId={`catalog-scope-badge-${item.resourceId}`}
-                    label={currentScope}
+                    label={currentScopeLabel}
                     tone={currentScope === "PUBLISHED_ORG" ? "emerald" : "cobalt"}
-                    monospace
                   />
-                  <StatusBadge label={item.sourceFormat} tone="neutral" monospace />
+                  <StatusBadge
+                    label={item.sourceFormat === "BMAD_PACK" ? "Pack Métier" : item.sourceFormat}
+                    tone="neutral"
+                  />
                 </div>
               </div>
 
@@ -215,7 +228,7 @@ export function CatalogExplorerPanel({
                       opacity: canMutateScope ? 1 : 0.6,
                     }}
                   >
-                    <span>{`${labels.promoteScopeButtonLabel} -> ${nextScope}`}</span>
+                    <span>{`${labels.promoteScopeButtonLabel} (${nextScopeLabel ?? nextScope})`}</span>
                     <DisabledButtonAlertIndicator
                       disabled={!canMutateScope}
                       reason="Action réservée aux contributeurs disposant des droits de promotion."

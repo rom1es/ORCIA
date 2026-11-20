@@ -60,9 +60,11 @@ describe("ORCIA Product & Architecture Showcase Site (/showcase) — 3 Strictly 
     fireEvent.click(screen.getByTestId("showcase-export-standalone-btn"));
     const exportBanner = screen.getByTestId("showcase-standalone-export-banner");
     expect(exportBanner.textContent).toContain(
-      "ouvrez directement `docs/site-catalog/index.html`.",
+      "Export HTML5 autonome prêt : fichier téléchargé pour consultation hors ligne.",
     );
+    expect(exportBanner.textContent).not.toContain("docs/site-catalog/index.html");
     expect(exportBanner.textContent).not.toContain("dist/orcia-site/index.html");
+    expect(screen.getByTestId("orcia-product-showcase-site-view").textContent).toContain("4");
   });
 
   it("enforces strict editorial separation (non-mixing gate): Space 1 (Macro) and Space 2 (Features) contain zero implementation terms, while Space 3 (Architecture) explains all of them", async () => {

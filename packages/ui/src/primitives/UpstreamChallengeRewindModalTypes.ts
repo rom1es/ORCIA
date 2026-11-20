@@ -32,6 +32,11 @@ export interface UpstreamChallengeModalLabels {
   readonly closeCta: string;
   readonly challengeSubmittedFeedback: string;
   readonly replayTriggeredFeedback: string;
+  readonly stepLabels?: Readonly<Record<string, string>>;
+  readonly sectionLabels?: Readonly<Record<string, string>>;
+  readonly axiomLabels?: Readonly<Record<string, string>>;
+  readonly profileLabels?: Readonly<Record<string, string>>;
+  readonly rootWorkflowLabel?: string;
 }
 
 export interface UpstreamChallengeRewindModalProps {

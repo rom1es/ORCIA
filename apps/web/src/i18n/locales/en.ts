@@ -97,6 +97,11 @@ export const enDictionary: TranslationDictionary = {
   arbitrationTieBreak: {
     badgeTitle: "⚖️ DECISION REQUIRED",
     policyPrefixLabel: "Decision rule",
+    policyLabels: {
+      pauseAndEscalate: "Pause and escalate to human",
+      ontologyAxiomFirst: "Business rule priority",
+      deferWithAssumption: "Proceed with assumption",
+    },
     recommendedBadgeLabel: "★ Recommended",
     prosLabel: "Pros",
     consLabel: "Cons",
@@ -140,6 +145,15 @@ export const enDictionary: TranslationDictionary = {
     panelTitle: "Catalog of Agents, Skills and Process Templates",
     panelSubtitle:
       "Browse available resources across your workspaces and tailor them to your needs.",
+    emptyStateMessage: "No catalog items match this filter.",
+    scopeLabels: {
+      DRAFT: "Draft",
+      SHARED_WORKSPACE: "Shared (Workspace)",
+      SHARED_TEAM: "Shared (Team)",
+      SHARED_BU: "Shared (Division)",
+      PENDING_APPROVAL: "Pending approval",
+      PUBLISHED_ORG: "Published (Organization)",
+    },
     filterAllSchemesLabel: "All sources",
     maskedSourceBadgeLabel: "🔒 Restricted source",
     openSourceBadgeLabel: "📖 Accessible source",
@@ -190,6 +204,7 @@ export const enDictionary: TranslationDictionary = {
       sampleAgentJsonSchema:
         '{"$schema":"https://json-schema.org/draft/2020-12/schema","x-bound-ontology-terms":["Strategic Asset"]}',
       subWorkflowLocksTitle: "Linked sub-processes and associated versions",
+      depthPrefix: "Level",
     },
   },
   permissionBroker: {
@@ -204,6 +219,7 @@ export const enDictionary: TranslationDictionary = {
     jiraRequestButtonLabel: "Request access from the responsible team",
     pauseStepButtonLabel: "Put step on hold",
     replayStepButtonLabel: "Restart step",
+    stepPrefix: "Step",
     pausedStateBanner: "⏸️ Step placed on hold until access is granted",
     replayedStateBanner: "✅ Access confirmed — Step restarted successfully",
     simulatorTitle:

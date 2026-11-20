@@ -1,5 +1,11 @@
 import type { DeclarativePackSummaryResponse } from "@orcia/api-client";
 import React from "react";
+import {
+  formatConnectorDisplayName,
+  formatConnectorScopes,
+  formatPackAgentDisplayName,
+  formatPackCounterLabel,
+} from "./packDisplayFormatters";
 
 export interface PackCardItemProps {
   readonly pack: DeclarativePackSummaryResponse;
@@ -8,6 +14,37 @@ export interface PackCardItemProps {
 }
 
 export function PackCardItem({ pack, isFr, onExportZip }: PackCardItemProps) {
+  const counters = [
+    {
+      key: "agents",
+      label: formatPackCounterLabel(pack.agents_count, "Agent", "Agents", "Agent", "Agents", isFr),
+      count: pack.agents_count,
+    },
+    {
+      key: "skills",
+      label: formatPackCounterLabel(pack.skills_count, "Compétence", "Compétences", "Skill", "Skills", isFr),
+      count: pack.skills_count,
+    },
+    {
+      key: "gates",
+      label: formatPackCounterLabel(pack.gates_count, "Validation", "Validations", "Gate", "Gates", isFr),
+      count: pack.gates_count,
+    },
+    {
+      key: "vsm",
+      label: formatPackCounterLabel(pack.vsm_count, "Chaîne", "Chaînes", "Stream", "Streams", isFr),
+      count: pack.vsm_count,
+    },
+    {
+      key: "workflows",
+      label: formatPackCounterLabel(pack.workflows_count, "Processus", "Processus", "Process", "Processes", isFr),
+      count: pack.workflows_count,
+    },
+  ];
+  const readableAgents = (pack.agents_slugs ?? []).map((slug) =>
+    formatPackAgentDisplayName(slug, isFr),
+  );
+
   return (
     <article
       data-testid={`declarative-pack-card-${pack.slug}`}
@@ -32,7 +69,7 @@ export function PackCardItem({ pack, isFr, onExportZip }: PackCardItemProps) {
               marginTop: "2px",
             }}
           >
-            packs/{pack.slug}/ · v{pack.version} · {pack.rbac_namespace}
+            v{pack.version} · {pack.rbac_namespace}
           </div>
         </div>
         <span
@@ -43,7 +80,7 @@ export function PackCardItem({ pack, isFr, onExportZip }: PackCardItemProps) {
             fontFamily: "var(--font-mono)",
           }}
         >
-          SHA256: {pack.bundle_sha256.slice(0, 10)}
+          {pack.bundle_sha256.slice(0, 10)}
         </span>
       </div>
 
@@ -55,20 +92,14 @@ export function PackCardItem({ pack, isFr, onExportZip }: PackCardItemProps) {
         data-testid={`pack-counters-${pack.slug}`}
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(105px, 1fr))",
           gap: "8px",
         }}
       >
-        {[
-          { label: isFr ? "Agents" : "Agents", count: pack.agents_count },
-          { label: isFr ? "Compétences" : "Skills", count: pack.skills_count },
-          { label: isFr ? "Validations" : "Gates", count: pack.gates_count },
-          { label: isFr ? "Chaînes" : "Streams", count: pack.vsm_count },
-          { label: isFr ? "Processus" : "Processes", count: pack.workflows_count },
-        ].map((stat) => (
+        {counters.map((stat) => (
           <div
-            key={stat.label}
-            className="rounded border p-2 text-center"
+            key={stat.key}
+            className="rounded border p-2 text-center min-w-0"
             style={{
               backgroundColor: "var(--color-bg-elevated)",
               borderColor: "var(--color-border-subtle)",
@@ -77,7 +108,9 @@ export function PackCardItem({ pack, isFr, onExportZip }: PackCardItemProps) {
             <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--color-primary-cobalt)" }}>
               {stat.count}
             </div>
-            <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>{stat.label}</div>
+            <div className="truncate" style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
+              {stat.label}
+            </div>
           </div>
         ))}
       </div>
@@ -86,44 +119,51 @@ export function PackCardItem({ pack, isFr, onExportZip }: PackCardItemProps) {
         <strong style={{ fontSize: "12px", color: "var(--color-text-primary)" }}>
           {isFr ? "Connecteurs requis :" : "Required Connectors:"}
         </strong>
-        {(pack.connector_health ?? []).map((conn) => (
-          <div
-            key={conn.connector_type}
-            data-testid={`pack-${pack.slug}-connector-${conn.connector_type}`}
-            className="flex flex-wrap items-center justify-between gap-2 rounded border px-2.5 py-1.5 text-xs"
-            style={{
-              backgroundColor: "var(--color-bg-elevated)",
-              borderColor: "var(--color-border-subtle)",
-            }}
-          >
-            <div>
-              <span style={{ fontFamily: "var(--font-mono)", fontWeight: 600 }}>
-                {conn.connector_type}
-              </span>
-              <span style={{ marginLeft: "6px", color: "var(--color-text-secondary)" }}>
-                ({(conn.required_scopes ?? []).join(", ")})
-              </span>
-              <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
-                {conn.used_for}
-              </div>
-            </div>
-            <span
-              className="rounded px-2 py-0.5 text-xs font-semibold"
+        {(pack.connector_health ?? []).map((conn) => {
+          const readableName = formatConnectorDisplayName(conn.connector_type, isFr);
+          const readableScopes = formatConnectorScopes(conn.required_scopes ?? [], isFr);
+          return (
+            <div
+              key={conn.connector_type}
+              data-testid={`pack-${pack.slug}-connector-${conn.connector_type}`}
+              data-connector-type={conn.connector_type}
+              className="flex flex-wrap items-center justify-between gap-2 rounded border px-2.5 py-1.5 text-xs"
               style={{
-                backgroundColor: conn.health.ok
-                  ? "var(--color-gate-emerald-bg)"
-                  : "var(--color-stale-bg)",
-                color: conn.health.ok
-                  ? "var(--color-gate-emerald)"
-                  : "var(--color-stale-crimson)",
+                backgroundColor: "var(--color-bg-elevated)",
+                borderColor: "var(--color-border-subtle)",
               }}
             >
-              {conn.health.ok
-                ? `✓ Connecté (${conn.health.latency_ms} ms)`
-                : conn.health.error_message || "✗ Déconnecté"}
-            </span>
-          </div>
-        ))}
+              <div>
+                <span style={{ fontWeight: 600 }}>{readableName}</span>
+                {readableScopes ? (
+                  <span style={{ marginLeft: "6px", color: "var(--color-text-secondary)" }}>
+                    ({readableScopes})
+                  </span>
+                ) : null}
+                <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
+                  {conn.used_for}
+                </div>
+              </div>
+              <span
+                className="rounded px-2 py-0.5 text-xs font-semibold"
+                style={{
+                  backgroundColor: conn.health.ok
+                    ? "var(--color-gate-emerald-bg)"
+                    : "var(--color-stale-bg)",
+                  color: conn.health.ok
+                    ? "var(--color-gate-emerald)"
+                    : "var(--color-stale-crimson)",
+                }}
+              >
+                {conn.health.ok
+                  ? isFr
+                    ? `✓ Connecté (${conn.health.latency_ms} ms)`
+                    : `✓ Connected (${conn.health.latency_ms} ms)`
+                  : conn.health.error_message || (isFr ? "✗ Déconnecté" : "✗ Disconnected")}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       <div
@@ -132,10 +172,11 @@ export function PackCardItem({ pack, isFr, onExportZip }: PackCardItemProps) {
           justifyContent: "space-between",
           alignItems: "center",
           gap: "8px",
+          flexWrap: "wrap",
         }}
       >
         <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
-          Agents : {(pack.agents_slugs ?? []).join(", ")}
+          {readableAgents.length <= 1 ? "Agent" : "Agents"} : {readableAgents.join(", ")}
         </div>
         <button
           type="button"
@@ -143,7 +184,7 @@ export function PackCardItem({ pack, isFr, onExportZip }: PackCardItemProps) {
           onClick={() => onExportZip(pack.id)}
           className="orcia-ds-btn-secondary"
         >
-          {isFr ? `Exporter ${pack.slug}.zip` : `Export ${pack.slug}.zip`}
+          {isFr ? `Exporter ${pack.name} (.zip)` : `Export ${pack.name} (.zip)`}
         </button>
       </div>
     </article>

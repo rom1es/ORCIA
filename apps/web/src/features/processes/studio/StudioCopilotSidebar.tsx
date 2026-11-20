@@ -190,11 +190,11 @@ export function StudioCopilotSidebar({
           onChange={(e) => setPrompt(e.target.value)}
           placeholder={
             isFr
-              ? "Ex : Ajouter un contrôle de priorisation..."
-              : "E.g., Add prioritization check..."
+              ? "Ex : Ajouter un contrôle…"
+              : "E.g., Add a check…"
           }
           className="orcia-ds-input min-w-0"
-          style={{ flex: "1 1 140px", minWidth: 0 }}
+          style={{ flex: "1 1 170px", minWidth: 0 }}
         />
         <button
           type="button"

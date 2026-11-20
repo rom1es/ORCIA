@@ -361,7 +361,7 @@ class AssistantThreeSpeedRouterService:
             response_text = llm_response_override or (
                 f"[⚡ Vitesse 1 · Casquette {active_hat}] Réponse directe générée avec "
                 f"prompt 5 couches ({'HIT' if cached_prompt.cache_hit else 'MISS'} Redis) : "
-                f"synthèse conforme pour « {user_prompt.strip()} » [S1] [G1]."
+                f"Synthèse conforme pour « {user_prompt.strip()} » [S1] [G1]."
             )
             return ThreeSpeedTurnResult(
                 turn_id=new_uuid7_str(),

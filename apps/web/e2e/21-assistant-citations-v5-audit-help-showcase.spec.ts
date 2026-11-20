@@ -179,17 +179,34 @@ test.describe("Assistant conversationnel, citations déterministes, centre d'aid
     await page.getByTestId("help-accordion-faq-btn").click();
     await expect(page.getByTestId("help-accordion-faq-content")).toBeVisible();
 
+    const helpCenterView = page.getByTestId("help-menu-center-view");
+    const helpCenterText = (await helpCenterView.textContent()) ?? "";
+    expect(helpCenterText, "USER24-BUG-3: zéro ** brut sur /help").not.toContain("**");
+    expect(helpCenterText, "USER24-BUG-3: zéro backtick brut sur /help").not.toContain("`");
+    const helpCenterFormattedCount = await helpCenterView.locator("strong, code").count();
+    expect(helpCenterFormattedCount, "USER24-BUG-3: HTML strong/code attendu sur /help").toBeGreaterThan(0);
+
     await page.goto("/spaces");
     await expect(page.getByTestId("contextual-info-trigger-workspace-sources")).toBeVisible({
       timeout: 20000,
     });
     await page.getByTestId("contextual-info-trigger-workspace-sources").click();
-    await expect(page.getByTestId("four-zone-contextual-help-column")).toBeVisible({
+    const zone4Help = page.getByTestId("four-zone-contextual-help-column");
+    await expect(zone4Help).toBeVisible({
       timeout: 15000,
     });
     await expect(page.getByTestId("contextual-help-hybrid-panel").first()).toContainText(
       /unité d'organisation/i,
     );
+    const zone4FaqBtn = zone4Help.getByTestId("help-accordion-faq-btn");
+    if ((await zone4FaqBtn.count()) > 0 && (await zone4FaqBtn.getAttribute("aria-expanded")) !== "true") {
+      await zone4FaqBtn.click();
+    }
+    const zone4Text = (await zone4Help.textContent()) ?? "";
+    expect(zone4Text, "USER24-BUG-3: zéro ** brut en Zone 4").not.toContain("**");
+    expect(zone4Text, "USER24-BUG-3: zéro backtick brut en Zone 4").not.toContain("`");
+    const zone4FormattedCount = await zone4Help.locator("strong, code").count();
+    expect(zone4FormattedCount, "USER24-BUG-3: HTML strong/code attendu en Zone 4").toBeGreaterThan(0);
 
     expectDbRowCount(
       "SELECT COUNT(*)::int AS count FROM catalog_items",

@@ -11,6 +11,7 @@ export interface PresenceClaimPillLabels {
   forceUnclaimActionLabel: string;
   readOnlyObserverNotice: string;
   sseLatencyPrefix: string;
+  sseSyncedStatusLabel?: string;
 }
 
 export interface PresenceClaimPillProps {
@@ -180,13 +181,14 @@ export function PresenceClaimPill({
       {typeof sseLatencyMs === "number" ? (
         <span
           data-testid={`sse-latency-badge-${taskId}`}
+          data-latency-ms={sseLatencyMs.toFixed(1)}
           style={{
-            fontFamily: "var(--font-mono)",
+            fontFamily: "var(--font-sans)",
             fontSize: "var(--font-size-mono)",
             color: "var(--color-muted-foreground)",
           }}
         >
-          {`${labels.sseLatencyPrefix} ${sseLatencyMs.toFixed(1)} ms`}
+          {`${labels.sseLatencyPrefix} ${labels.sseSyncedStatusLabel ?? "temps réel"}`}
         </span>
       ) : null}
     </div>

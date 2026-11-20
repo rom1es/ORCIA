@@ -27,6 +27,60 @@ export const DEFAULT_ARBITRATION_OPTIONS: ArbitrationTieBreakOptionView[] = [
   },
 ];
 
+export function formatStepStatusLabel(status: string, isFr: boolean): string {
+  switch (status.toUpperCase()) {
+    case "PENDING":
+      return isFr ? "En attente" : "Pending";
+    case "RUNNING":
+      return isFr ? "En cours" : "Running";
+    case "COMMITTED":
+    case "COMPLETED":
+      return isFr ? "Validé" : "Completed";
+    case "STALE_NEEDS_REVIEW":
+      return isFr ? "À revalider" : "Needs review";
+    case "PAUSED_ARBITRATION":
+      return isFr ? "Arbitrage requis" : "Arbitration required";
+    case "PAUSED_HUMAN_GATE":
+      return isFr ? "Validation humaine requise" : "Human review required";
+    default:
+      return status;
+  }
+}
+
+export function formatStepKeyLabel(stepKey: string, isFr: boolean): string {
+  const mapFr: Record<string, string> = {
+    "frame-architecture-intent": "Cadrage de l'intention d'architecture",
+    "delegate-remediation-subworkflow": "Sous-processus de correction",
+    "post-deploy-verification": "Vérification post-déploiement",
+    "step-architecture-gate": "Validation d'architecture",
+    "inbox-review-step": "Relecture en boîte de réception",
+  };
+  const mapEn: Record<string, string> = {
+    "frame-architecture-intent": "Architecture intent framing",
+    "delegate-remediation-subworkflow": "Remediation sub-process",
+    "post-deploy-verification": "Post-deployment verification",
+    "step-architecture-gate": "Architecture review gate",
+    "inbox-review-step": "Inbox review step",
+  };
+  const dict = isFr ? mapFr : mapEn;
+  if (dict[stepKey]) return dict[stepKey];
+  return stepKey
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (ch) => ch.toUpperCase());
+}
+
+export function formatOptionTitle(optionKey: string, isFr: boolean): string {
+  const matched = DEFAULT_ARBITRATION_OPTIONS.find((opt) => opt.optionKey === optionKey);
+  if (matched) return matched.title;
+  if (optionKey === "OPT_A_SPOT_15M") {
+    return isFr ? "Option A — Taux Spot 15 min" : "Option A — 15-min Spot Rate";
+  }
+  if (optionKey === "OPT_B_LOCK_48H") {
+    return isFr ? "Option B — Taux Bloqué 48h" : "Option B — 48h Locked Rate";
+  }
+  return optionKey;
+}
+
 export interface HydratedGovernanceState {
   readonly runId: string;
   readonly stepStatus: string;

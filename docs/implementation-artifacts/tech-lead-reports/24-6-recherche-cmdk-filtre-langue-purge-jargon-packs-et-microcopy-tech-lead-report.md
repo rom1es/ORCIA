@@ -2,7 +2,7 @@
 
 - **Story :** `24-6-recherche-cmdk-filtre-langue-purge-jargon-packs-et-microcopy` (Epic 24 — Vague 1 `P1–P3`)
 - **Date :** 2026-11-20
-- **Statut :** `En attente d'implémentation` (initialisé par `Story 23.8`)
+- **Statut :** `Terminé (`done`)`
 - **Plan directeur :** [`sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md`](../../planning-artifacts/sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md)
 - **Références remédiées :** `REM24-09`, `REM24-10`, **`USER24-BUG-3`** | Constats `UX23-05` (`P1`), `UX23-08` (`P1`), `UX23-10` (`P1`), `UX23-11` (`P2`), `UX23-12` (`P2`), `UX23-16` (`P3`) | Diagnostics `ARCH24-10`, `ARCH24-11`
 - **Capacité(s) (`capabilities.yaml`) :** `CAP-056`, `CAP-057` (`2` capacités Desktop `failed_e2e`)
@@ -76,13 +76,40 @@ La passe critique sur `58` captures révèle plusieurs défauts linguistiques, d
 
 ## 3. Bilan des Modifications & Résultats
 
-> **Statut :** `En attente d'implémentation` — Cette section sera complétée après implémentation, passage des 5 couches `AD-17`, ré-indexation GitNexus (`npx gitnexus analyze` + `gitnexus_detect_changes()`) et exécution de `pnpm site:sync`.
+> **Statut :** `Terminé (`done`)` — Validation 5 couches `AD-17` complète, couverture Python combinée `97 %`, `pnpm turbo run lint typecheck test` `9/9`, Playwright E2E `14 passed, 1 skipped (mobile), 0 failed`, ré-indexation GitNexus et `pnpm site:sync && pnpm site:check` validés.
 
-| Fichier / Composant | Action Prévue | Statut |
+### 3.1 Tableau synthétique des fichiers modifiés et créés
+
+| Fichier / Composant | Action Réalisée | Statut |
 |---|---|---|
-| `packages/orcia-core/.../rag/_internal/sql_federated_search.py` | Filtre SQL `ci.lang = :locale` sur `HELP_ARTICLE` | `En attente d'implémentation` |
-| `apps/api/src/orcia_api/routers/portal_and_help.py` | Propagation locale vers recherche fédérée | `En attente d'implémentation` |
-| `packages/ui/src/primitives/TopHeaderSearchCommand.tsx` | Remplacement émoji `❓` par `OrciaIcon` blanc | `En attente d'implémentation` |
-| `packages/ui/src/shell/CatalogExplorerPanel.tsx` & `PermissionBrokerCard` | Remplacement `0` nu (`L149`), `FormattedMarkdownContent`, URI | `En attente d'implémentation` |
-| `apps/web/src/i18n/locales/{fr,en}.ts` & `docs/help/fr/*.md` | Purge enums/jargon, singulier `n <= 1`, précision FinOps | `En attente d'implémentation` |
-| `PacksRegistryPage.tsx`, `IamSecopsExceptionForm.tsx`, `StudioCopilotSidebar.tsx` | Split `< 300` L, `5` compteurs packs & zéro troncature `1440×900` | `En attente d'implémentation` |
+| `packages/orcia-core/src/orcia_core/rag/_internal/sql_federated_search.py` & `two_speed_search.py` | Ajout de `normalize_search_locale` (`fr-FR` $\rightarrow$ `fr`, `en-US` $\rightarrow$ `en`), filtre SQL `:locale` sur `HELP_ARTICLE` isolé de `CATALOG_RESOURCE` et clé Redis Speed-2 par locale | `Terminé` |
+| `apps/api/src/orcia_api/routers/portal_and_help.py`, `packages/api-client/` & `ShellFederatedSearchModal.tsx` | Propagation `locale` (`query` / `Accept-Language` / locale SPA) dans `GET /api/v1/search` et régénération OpenAPI `0-diff` | `Terminé` |
+| `packages/orcia-core/src/orcia_core/orchestration/{assistant_three_speed_router.py,notifications_and_claims.py}` | Majuscule `"Synthèse conforme pour ..."` et humanisation `_format_step_claim_title("inbox-review-step")` | `Terminé` |
+| `packages/ui/src/primitives/{ContextualHelpSharedBlocks.tsx,ContextualHelpSectionsAndFooter.tsx}` & `docs/help/{fr,en}/*.md` | **`USER24-BUG-3`** : rendu HTML (`renderInlineMarkdownNodes`) sur tous les blocs/accordéons `/help` et Zone 4 (`0` `**` / backtick brut) ; purge `` `@` `` & `L4 → L1` | `Terminé` |
+| `packages/ui/src/primitives/{TopHeaderSearchResultsPane.tsx,ArbitrationTieBreakCard.tsx,PresenceClaimPill.tsx,UpstreamChallenge*.tsx,OrciaProductShowcaseSiteView.tsx,finops/*}` | Icône `OrciaIcon` (`help`) sans `❓` dans `Cmd+K`, traductions `tieBreakPolicy` / options / `temps réel`, `/showcase` en `4` espaces sans chemin interne, micro-montants `0,002 €` | `Terminé` |
+| `packages/ui/src/shell/{CatalogExplorerPanel.tsx,PermissionBrokerCard.tsx,WorkflowStudioSection.tsx,types.ts}` | Remplacement `0` nu & `0.4ms` / `NEXT_SCOPE`, `Niveau principal / 1 / 2`, `<FormattedMarkdownContent />` + `safeDecodeUri` (`catch (err: unknown)`), suppression `HTTP 403` / `Step` bruts | `Terminé` |
+| `apps/web/src/features/admin/iam/{IamSecopsExceptionForm.tsx,IamSecopsScopeAndTargetFields.tsx,IamSecopsVerbsCheckboxes.tsx}` | Découpage `IamSecopsExceptionForm.tsx` (`403` $\rightarrow$ `203` L) via `IamSecopsScopeAndTargetFields.tsx` (`228` L) & `IamSecopsVerbsCheckboxes.tsx` (`85` L), `Plateforme entière (Global)` (`minWidth: 240px`) | `Terminé` |
+| `apps/web/src/features/settings/packs/{PackCardItem.tsx,packDisplayFormatters.ts}` & `workspaces/WorkspaceStudioCardsAndDetailView.tsx` | Grille `5` compteurs packs (`105px` auto-fit), singulier `n <= 1` FR (`n === 1` EN), humanisation connecteurs/agents, anti-troncature `1440×900` (`StudioCopilotSidebar.tsx`, `/spaces`) | `Terminé` |
+| `apps/web/src/features/{cockpit/*,gates/*,admin/ai-models/AiModelReindexPanel.tsx,inbox/*,ontology/index.tsx}`, `ModuleWorkspaceView.tsx`, `lib/formatters.ts`, `i18n/locales/*` | Purge intégrale `PENDING`/`RUNNING`/`OPT_A_*`/`COMPLETED`/`PASS`/`< 15 s`/`PostgreSQL 18`, dédoublonnage `Organisation (Global)`, `paliers`, espacement `Mes Espaces`, précision `0,002 €` | `Terminé` |
+| Suites QA 5 couches (`tests/unit/test_story_24_6_cmdk_locale_and_microcopy.py`, `tests/integration/test_story_24_6_cmdk_locale_postgres18.py`, `packages/ui/src/__tests__/story-24-6-help-markdown-and-zero-jargon.test.tsx`, `apps/web/src/__tests__/story-24-6-packs-counters-microcopy-and-finops.test.tsx`, `apps/web/e2e/21-*.spec.ts` + 4 tests adaptés + `anti-jargon-and-secrets-ui-audit.test.ts`) | Vérification 5 couches `AD-17` : filtre SQL `:locale` PG18 + Redis Speed-2, rendu Markdown `/help` & Zone 4 (`USER24-BUG-3`), `0` jargon brut, `5` compteurs & singulier `n <= 1`, `0,002 €` | `Terminé` |
+
+### 3.2 Résultats chiffrés, couverture & validation 5 couches (`AD-17`)
+
+- **Couches 1a & 2 (Python unitaire + intégration PG18/Redis `testcontainers` sur `create_app()` sans `dependency_overrides`)** :
+  - `.venv/bin/pytest tests/unit/test_story_24_6_cmdk_locale_and_microcopy.py tests/integration/test_story_24_6_cmdk_locale_postgres18.py -v` $\rightarrow$ **`7 passed` (`6` unit + `1` PG18/Redis)**.
+  - Couverture combinée (`.venv/bin/coverage run` sur `test_story_24_6_*`, `test_story_23_5_search_coverage.py`, `test_epic_9_*`, `test_contextual_help_route_resolution.py`, `test_epic_10_story_10_2_*`, `test_story_5_*`, `test_story_22_3_*` unitaire + PG18) : **`97 %`** (`519` stmts, `--fail-under=90` **PASS**) — `sql_federated_search.py` `100 %`, `two_speed_search.py` `99 %`, `portal_and_help.py` `98 %`, `assistant_three_speed_router.py` `98 %`, `notifications_and_claims.py` `95 %`.
+- **Statique Python, Architecture & Sécurité** :
+  - `.venv/bin/ruff check .` : **PASS** (`All checks passed!`) ; `.venv/bin/ruff format --check .` : **PASS** (`1315 files already formatted`).
+  - `.venv/bin/mypy --strict packages/orcia-core packages/orcia-connectors apps/api apps/worker` : **PASS** (`Success: no issues found in 574 source files`).
+  - `.venv/bin/lint-imports` : **PASS** (`Contracts: 5 kept, 0 broken`, `617 files`).
+  - `.venv/bin/python scripts/export_openapi.py --check` : **PASS** (`0-diff`).
+  - `.venv/bin/pre-commit run detect-secrets --files ...` (tous les fichiers Story 24.6 modifiés et créés) : **Passed**.
+- **Couche 1b (Vitest & TypeScript Monorepo)** :
+  - `pnpm turbo run lint typecheck test` : **PASS (`9 successful, 9 total`)** — `@orcia/api-client`: `3 files / 20 tests` ; `@orcia/ui`: `34 files / 135 tests` ; `@orcia/web`: `61 files / 242 tests` (`0` erreur de typecheck/lint/test).
+- **Couche 5 (Playwright E2E réel `--project=desktop-cockpit --retries=0`, `ORCIA_E2E_CAMPAIGN_DIR=/tmp/orcia-e2e-story-24-6`)** :
+  - `e2e/03-human-led-anchor-and-arbitration.spec.ts e2e/04-multi-actor-claim-sse.spec.ts e2e/06-gates-review-and-anti-rubber-stamping.spec.ts e2e/09-pack-builder-and-contextual-help.spec.ts e2e/10-command-palette-search.spec.ts e2e/12-finops-and-audit-provenance.spec.ts e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts` $\rightarrow$ **`10 passed, 1 skipped (mobile), 0 failed` (`2.5m`)** — inclut la vérification **`USER24-BUG-3`** (`0` `**` / backtick brut, présence `<strong>`/`<code>` sur `/help` accordéons dépliés et Zone 4).
+  - `e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts --grep-invert "Explorateur du catalogue fédéré"` $\rightarrow$ **`4 passed, 0 failed` (`1.1m`)**.
+- **GitNexus & Documentation / Gouvernance** :
+  - `npx gitnexus analyze` : `41,330 nodes | 198,174 edges | 714 clusters | 1492 flows`.
+  - `gitnexus_detect_changes(repo: "/home/romain/Documents/Projects/ORCIA", scope: "all")` : `changed_count: 31`, `affected_count: 1485`, `changed_files: 56`, `risk_level: "critical"`.
+  - `scripts/check_implementation_docs.py`, `lint_spine.py`, `pnpm site:sync && pnpm site:check` et `tests/unit/test_epic23_to_epic24_traceability.py` validés.

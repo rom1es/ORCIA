@@ -62,6 +62,24 @@ export function AiModelReindexPanel({ isFr, canExecute }: AiModelReindexPanelPro
 
   const isJobActive = status === "PENDING" || status === "IN_PROGRESS";
   const isJobFailed = status === "FAILED";
+  const statusLabels: Record<string, string> = isFr
+    ? {
+        IDLE: "Prêt",
+        PENDING: "En attente",
+        IN_PROGRESS: "En cours",
+        COMPLETED: "Terminée",
+        FAILED: "Échec",
+        CANCELLED: "Annulée",
+      }
+    : {
+        IDLE: "Ready",
+        PENDING: "Pending",
+        IN_PROGRESS: "In progress",
+        COMPLETED: "Completed",
+        FAILED: "Failed",
+        CANCELLED: "Cancelled",
+      };
+  const localizedStatus = statusLabels[status] ?? status;
 
   return (
     <div
@@ -74,22 +92,23 @@ export function AiModelReindexPanel({ isFr, canExecute }: AiModelReindexPanelPro
             className="text-sm font-semibold text-text-primary"
             data-testid="reindex-panel-title"
           >
-            {isFr ? "Réindexation Sémantique & Corpus Vectoriel (AD-24.7)" : "Semantic Reindexing & Vector Corpus (AD-24.7)"}
+            {isFr ? "Réindexation Sémantique & Corpus Vectoriel" : "Semantic Reindexing & Vector Corpus"}
           </h4>
           <p className="text-xs text-text-secondary mt-1">
             {targetModelName
               ? isFr
-                ? `Modèle actif : ${targetModelName} (${processedChunks}/${totalChunks} chunks)`
+                ? `Modèle actif : ${targetModelName} (${processedChunks}/${totalChunks} extraits)`
                 : `Active model: ${targetModelName} (${processedChunks}/${totalChunks} chunks)`
               : isFr
-                ? "Aucun modèle d'embedding actif"
-                : "No active embedding model"}
+                ? "Aucun modèle de recherche sémantique actif"
+                : "No active semantic search model"}
           </p>
         </div>
 
         <div className="flex items-center gap-2.5">
           <span
             data-testid="reindex-status-badge"
+            data-status={status}
             className={`text-xs px-2 py-0.5 rounded font-medium ${
               isJobActive
                 ? "bg-blue-500/20 text-blue-400"
@@ -98,7 +117,7 @@ export function AiModelReindexPanel({ isFr, canExecute }: AiModelReindexPanelPro
                   : "bg-emerald-500/20 text-emerald-400"
             }`}
           >
-            {status} ({progressPercentage}%)
+            {localizedStatus} ({progressPercentage}%)
           </span>
 
           {canExecute && (

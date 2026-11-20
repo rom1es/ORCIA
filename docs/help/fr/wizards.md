@@ -18,7 +18,7 @@ Cet écran propose des parcours structurés en 5 étapes avec sauvegarde automat
 
 1. Sélectionnez le parcours correspondant à votre profil (Responsable Technique, Administrateur Sécurité ou Manager Opérationnel).
 2. Renseignez chaque étape dans l'ordre (Équipe, Espace de travail, Source documentaire, Modèle IA, Vérification) et cliquez sur « Valider et continuer ».
-3. Utilisez au besoin le bouton « Provisionner un espace de démonstration » pour découvrir un environnement prêt à tester.
+3. Utilisez au besoin le bouton « Créer un espace d'exemple prêt à l'emploi » pour découvrir un environnement prêt à tester.
 
 ## Un exemple réel
 

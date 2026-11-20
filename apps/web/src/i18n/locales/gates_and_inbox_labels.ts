@@ -23,6 +23,31 @@ export const GATES_AND_INBOX_FR_LABELS: Pick<
     closeCta: "Fermer",
     challengeSubmittedFeedback: "Demande de correction transmise au responsable de l'étape ✓",
     replayTriggeredFeedback: "Relance effectuée à partir de l'étape sélectionnée ✓",
+    rootWorkflowLabel: "Point de départ du processus (Étape 1)",
+    stepLabels: {
+      "frame-architecture-intent": "Cadrage de l'intention d'architecture",
+      "delegate-remediation-subworkflow": "Sous-processus de correction",
+      "post-deploy-verification": "Vérification post-déploiement",
+      "step-architecture-gate": "Validation d'architecture",
+      "inbox-review-step": "Relecture en boîte de réception",
+    },
+    sectionLabels: {
+      human_architecture_intent: "Intention d'architecture humaine",
+      "sec-architecture": "Section 1 — Architecture & Frontières",
+      "sec-security-jira": "Section 2 — Sécurité & Actions Jira",
+    },
+    axiomLabels: {
+      "axiom-l1-strategic-asset-immutable-schema": "Règle fondamentale de structure immuable",
+    },
+    profileLabels: {
+      PM_BUSINESS: "Chef de produit / Métier",
+      ARCHITECT: "Architecte",
+      TECH_LEAD: "Référent technique",
+      EXECUTIVE: "Direction",
+      DEVELOPER: "Développeur",
+      SECOPS: "Sécurité",
+      PM_PO: "Chef de produit",
+    },
   },
   humanGates: {
     briefing: {
@@ -70,6 +95,7 @@ export const GATES_AND_INBOX_FR_LABELS: Pick<
       forceUnclaimActionLabel: "Reprendre la main (après 15 min)",
       readOnlyObserverNotice: "Consultation seule",
       sseLatencyPrefix: "Synchronisation :",
+      sseSyncedStatusLabel: "temps réel",
     },
   },
 };
@@ -97,6 +123,31 @@ export const GATES_AND_INBOX_EN_LABELS: Pick<
     closeCta: "Close",
     challengeSubmittedFeedback: "Correction request sent to the step owner ✓",
     replayTriggeredFeedback: "Restart completed from the selected step ✓",
+    rootWorkflowLabel: "Process starting point (Step 1)",
+    stepLabels: {
+      "frame-architecture-intent": "Architecture intent framing",
+      "delegate-remediation-subworkflow": "Remediation sub-process",
+      "post-deploy-verification": "Post-deployment verification",
+      "step-architecture-gate": "Architecture review gate",
+      "inbox-review-step": "Inbox review step",
+    },
+    sectionLabels: {
+      human_architecture_intent: "Human architecture intent",
+      "sec-architecture": "Section 1 — Architecture & Boundaries",
+      "sec-security-jira": "Section 2 — Security & Jira Actions",
+    },
+    axiomLabels: {
+      "axiom-l1-strategic-asset-immutable-schema": "Core immutable structure rule",
+    },
+    profileLabels: {
+      PM_BUSINESS: "Product / Business Lead",
+      ARCHITECT: "Architect",
+      TECH_LEAD: "Tech Lead",
+      EXECUTIVE: "Executive",
+      DEVELOPER: "Developer",
+      SECOPS: "Security",
+      PM_PO: "Product Manager",
+    },
   },
   humanGates: {
     briefing: {
@@ -144,6 +195,7 @@ export const GATES_AND_INBOX_EN_LABELS: Pick<
       forceUnclaimActionLabel: "Take over (after 15 min)",
       readOnlyObserverNotice: "Read-only",
       sseLatencyPrefix: "Sync:",
+      sseSyncedStatusLabel: "real time",
     },
   },
 };

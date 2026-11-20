@@ -5,6 +5,7 @@ import {
 } from "@orcia/ui";
 import React from "react";
 import type { ConfiguredWorkflowItem } from "../../components/platformSetupStore";
+import { formatStepKeyLabel, formatStepStatusLabel } from "./cockpitGovernanceHelpers";
 
 export interface CockpitRunsSectionProps {
   readonly isFr: boolean;
@@ -222,10 +223,10 @@ export function CockpitRunsSection({
                     color: "var(--color-muted-foreground)",
                   }}
                 >
-                  ({run.workspaceName} · {run.currentStepKey})
+                  ({run.workspaceName} · {formatStepKeyLabel(run.currentStepKey, isFr)})
                 </span>
               </div>
-              <StatusBadge label={run.status} tone="emerald" monospace />
+              <StatusBadge label={formatStepStatusLabel(run.status, isFr)} tone="emerald" />
             </div>
           ))}
         </div>

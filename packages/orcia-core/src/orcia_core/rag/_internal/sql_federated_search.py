@@ -48,12 +48,20 @@ def _catalog_allowed_roles(visibility_scope: str) -> tuple[str, ...]:
     return _STANDARD_ROLES
 
 
+def normalize_search_locale(locale: str | None) -> str:
+    """Normalize a locale tag such as `fr-FR` or `en-US` into `fr` / `en`."""
+    clean = (locale or "fr").strip().lower().replace("_", "-")
+    base = clean.split("-", 1)[0].strip()
+    return "en" if base == "en" else "fr"
+
+
 async def load_federated_search_candidates_pg18(
     conn: AsyncConnection,
     *,
     user_id: str = "",
     user_role: str = "CONTRIBUTOR",
     primary_org_unit_id: str | None = None,
+    locale: str = "fr",
     limit_per_table: int = 50,
 ) -> tuple[FederatedSearchCandidate, ...]:
     """Load RBAC- and tenant-isolated entities from PG18 in bounded non-N+1 queries."""
@@ -64,6 +72,7 @@ async def load_federated_search_candidates_pg18(
     clean_uid = user_id.strip()
     clean_role = user_role.strip() or "CONTRIBUTOR"
     clean_org = (primary_org_unit_id or "").strip()
+    normalized_locale = normalize_search_locale(locale)
     is_admin = clean_role == "PLATFORM_ADMIN"
     has_memberships = "workspace_memberships" in existing_tables
     has_folder_shares = "assistant_folder_shares" in existing_tables
@@ -92,18 +101,41 @@ async def load_federated_search_candidates_pg18(
                     ci.visibility_scope
                 FROM catalog_items ci
                 WHERE (
-                    COALESCE(ci.item_type, 'CATALOG_RESOURCE') = 'HELP_ARTICLE'
-                    OR ci.visibility_scope IN ('PUBLISHED_ORG', 'SHARED_TEAM', 'SHARED_BU')
-                    OR (
-                        ci.visibility_scope = 'PENDING_APPROVAL'
-                        AND :role IN ('PLATFORM_ADMIN', 'BU_DIRECTOR', 'BU_LEAD')
+                    (
+                        COALESCE(ci.item_type, 'CATALOG_RESOURCE') = 'HELP_ARTICLE'
+                        AND LOWER(
+                            SPLIT_PART(
+                                COALESCE(
+                                    NULLIF(ci.metadata_jsonb->>'lang', ''),
+                                    CASE
+                                        WHEN ci.uri LIKE '%/en'
+                                          OR ci.uri LIKE '%/en/%'
+                                          OR ci.resource_id LIKE '%-en'
+                                        THEN 'en'
+                                        ELSE 'fr'
+                                    END
+                                ),
+                                '-',
+                                1
+                            )
+                        ) = :locale
                     )
                     OR (
-                        ci.visibility_scope IN ('SHARED_WORKSPACE', 'DRAFT')
+                        COALESCE(ci.item_type, 'CATALOG_RESOURCE') != 'HELP_ARTICLE'
                         AND (
-                            :is_admin
-                            OR ci.owner_workspace_id IS NULL
-                            {membership_filter}
+                            ci.visibility_scope IN ('PUBLISHED_ORG', 'SHARED_TEAM', 'SHARED_BU')
+                            OR (
+                                ci.visibility_scope = 'PENDING_APPROVAL'
+                                AND :role IN ('PLATFORM_ADMIN', 'BU_DIRECTOR', 'BU_LEAD')
+                            )
+                            OR (
+                                ci.visibility_scope IN ('SHARED_WORKSPACE', 'DRAFT')
+                                AND (
+                                    :is_admin
+                                    OR ci.owner_workspace_id IS NULL
+                                    {membership_filter}
+                                )
+                            )
                         )
                     )
                 )
@@ -117,6 +149,7 @@ async def load_federated_search_candidates_pg18(
                 "org_id": clean_org,
                 "role": clean_role,
                 "is_admin": is_admin,
+                "locale": normalized_locale,
             },
         )
         for row in cat_rows.fetchall():

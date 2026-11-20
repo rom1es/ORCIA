@@ -22,10 +22,10 @@ Cet écran vous permet de créer, paramétrer et tester des agents dédiés à u
 
 ## Un exemple réel
 
-Yanis crée l'agent « Analyste Conformité DORA », lui attribue uniquement la lecture du référentiel réglementaire de son Espace et l'interdiction d'écrire dans les outils externes sans accord humain, puis l'appelle directement depuis Mon Assistant via `@`.
+Yanis crée l'agent « Analyste Conformité DORA », lui attribue uniquement la lecture du référentiel réglementaire de son Espace et l'interdiction d'écrire dans les outils externes sans accord humain, puis l'appelle directement depuis Mon Assistant via « @ ».
 
 ## Ce qui coince souvent
 
-- **Un agent n'apparaît pas dans les suggestions `@` de Mon Assistant** : vérifiez que l'agent est bien publié sur votre Espace ou sur une portée englobant votre équipe.
+- **Un agent n'apparaît pas dans les suggestions « @ » de Mon Assistant** : vérifiez que l'agent est bien publié sur votre Espace ou sur une portée englobant votre équipe.
 - **Une compétence refuse d'accéder à un outil externe** : contrôlez les autorisations d'outils associées à l'agent et l'état de vos connexions personnelles dans Mon Compte.
 - **Les menus Agents sont grisés au premier démarrage** : configurez au moins un modèle IA dans Configuration › Modèles IA pour débloquer les essais.

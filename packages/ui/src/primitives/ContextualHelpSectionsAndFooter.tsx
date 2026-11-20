@@ -1,4 +1,5 @@
 import React from "react";
+import { renderInlineMarkdownNodes } from "../components/FormattedMarkdownContent";
 import { OrciaIcon } from "../components/icons";
 import type {
   ContextualHelpColumnAndCenterLabels,
@@ -42,7 +43,7 @@ export function HelpAccordionSection({
             className="list-decimal space-y-1.5 bg-surface-primary p-3 pl-5 text-text-secondary"
           >
             {items.map((item, idx) => (
-              <li key={idx}>{item}</li>
+              <li key={idx}>{renderInlineMarkdownNodes(item)}</li>
             ))}
           </ol>
         ) : (
@@ -51,7 +52,7 @@ export function HelpAccordionSection({
             className="list-disc space-y-1.5 bg-surface-primary p-3 pl-5 text-text-secondary"
           >
             {items.map((item, idx) => (
-              <li key={idx}>{item}</li>
+              <li key={idx}>{renderInlineMarkdownNodes(item)}</li>
             ))}
           </ul>
         ))}
@@ -108,7 +109,9 @@ export function HelpTargetedSectionsList({
                 </span>
               )}
             </div>
-            <p className="text-text-secondary leading-relaxed">{sec.body}</p>
+            <p className="text-text-secondary leading-relaxed">
+              {renderInlineMarkdownNodes(sec.body)}
+            </p>
           </div>
         );
       })}

@@ -43,7 +43,9 @@ function formatTokens(count: number): string {
 }
 
 function formatCurrency(amount: number): string {
-  return `${amount.toFixed(2).replace(".", ",")} €`;
+  const safeAmount = Number.isFinite(amount) ? amount : 0;
+  const isMicro = Math.abs(safeAmount) > 0 && Math.abs(safeAmount) < 0.01;
+  return `${safeAmount.toFixed(isMicro ? 3 : 2).replace(".", ",")} €`;
 }
 
 export function FinopsKpiStrip({

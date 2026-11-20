@@ -15,8 +15,9 @@ export function formatCurrency(
   const safeAmount = Number.isFinite(amount) ? amount : 0;
   const currency = options.currency ?? "EUR";
   const intlLocale = locale === "en" ? "en-US" : "fr-FR";
-  const minDigits = options.minimumFractionDigits ?? 2;
-  const maxDigits = options.maximumFractionDigits ?? Math.max(minDigits, 2);
+  const isMicroAmount = Math.abs(safeAmount) > 0 && Math.abs(safeAmount) < 0.01;
+  const minDigits = options.minimumFractionDigits ?? (isMicroAmount ? 3 : 2);
+  const maxDigits = options.maximumFractionDigits ?? (isMicroAmount ? Math.max(minDigits, 4) : Math.max(minDigits, 2));
   return new Intl.NumberFormat(intlLocale, {
     style: "currency",
     currency,

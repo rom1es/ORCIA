@@ -104,7 +104,7 @@ export const ONTOLOGY_GLOSSARY_FR: OntologyGlossaryCopy = {
   },
   helpCenterShowcaseTitle: "Site de Présentation & Documentation Vivante d'ORCIA",
   helpCenterShowcaseDesc:
-    "Découvrez la vision Human-Led, la double barrière anti-hallucination, le guide des écrans et les choix d'architecture en 3 espaces séparés.",
+    "Découvrez la vision Human-Led, la double barrière anti-hallucination, le guide des écrans et les choix d'architecture en 4 onglets structurés.",
   helpCenterShowcaseBtnLabel: "Documentation",
   helpCenterOverviewTitle: "Centre d'Aide Contextuelle & Guides Pratiques",
   helpCenterOverviewSummary:
@@ -184,7 +184,7 @@ export const ONTOLOGY_GLOSSARY_EN: OntologyGlossaryCopy = {
   },
   helpCenterShowcaseTitle: "ORCIA Living Product & Architecture Showcase Site",
   helpCenterShowcaseDesc:
-    "Explore the Human-Led vision, double anti-hallucination barrier, screen guide, and engineering architecture across 3 separated spaces.",
+    "Explore the Human-Led vision, double anti-hallucination barrier, screen guide, and engineering architecture across 4 structured tabs.",
   helpCenterShowcaseBtnLabel: "Documentation",
   helpCenterOverviewTitle: "Contextual Help Center & Practical Guides",
   helpCenterOverviewSummary:

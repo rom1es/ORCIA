@@ -14,6 +14,9 @@ export function UpstreamChallengeTargetMetaGrid({
   readonly preview: UpstreamChallengeWhatIfPreview;
   readonly subWorkflowStepKey?: string;
 }): React.ReactElement {
+  const resolveStep = (key: string): string => labels.stepLabels?.[key] ?? key;
+  const resolveSection = (key: string): string => labels.sectionLabels?.[key] ?? key;
+
   return (
     <div
       style={{
@@ -35,11 +38,11 @@ export function UpstreamChallengeTargetMetaGrid({
           {labels.targetStepLabel}:
         </strong>{" "}
         <code style={{ fontFamily: "var(--font-mono)", color: "var(--color-text-primary)" }}>
-          {preview.targetUpstreamStepKey}
+          {resolveStep(preview.targetUpstreamStepKey)}
           {subWorkflowStepKey ? (
             <>
               {" "}
-              <OrciaIcon name="arrowRight" /> {subWorkflowStepKey}
+              <OrciaIcon name="arrowRight" /> {resolveStep(subWorkflowStepKey)}
             </>
           ) : (
             ""
@@ -58,7 +61,7 @@ export function UpstreamChallengeTargetMetaGrid({
           {labels.sectionKeyLabel}:
         </strong>{" "}
         <code style={{ fontFamily: "var(--font-mono)", color: "var(--color-text-primary)" }}>
-          {preview.challengedSectionKey}
+          {resolveSection(preview.challengedSectionKey)}
         </code>
       </div>
     </div>

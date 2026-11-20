@@ -162,6 +162,7 @@ export interface UiPermissionBrokerLabels {
   jiraRequestButtonLabel: string;
   pauseStepButtonLabel: string;
   replayStepButtonLabel: string;
+  stepPrefix?: string;
   pausedStateBanner: string;
   replayedStateBanner: string;
   simulatorTitle: string;
@@ -191,11 +192,14 @@ export interface UiWorkflowStudioLabels {
   sampleHumanMarkdown: string;
   sampleAgentJsonSchema: string;
   subWorkflowLocksTitle: string;
+  depthPrefix?: string;
 }
 
 export interface UiCatalogExplorerLabels {
   panelTitle: string;
   panelSubtitle: string;
+  emptyStateMessage?: string;
+  scopeLabels?: Partial<Record<UiCatalogVisibilityScope, string>>;
   filterAllSchemesLabel: string;
   maskedSourceBadgeLabel: string;
   openSourceBadgeLabel: string;

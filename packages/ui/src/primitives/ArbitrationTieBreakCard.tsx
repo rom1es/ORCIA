@@ -15,9 +15,16 @@ export interface ArbitrationTieBreakOptionView {
   recommended?: boolean;
 }
 
+export interface ArbitrationTieBreakPolicyLabels {
+  pauseAndEscalate: string;
+  ontologyAxiomFirst: string;
+  deferWithAssumption: string;
+}
+
 export interface ArbitrationTieBreakCardLabels {
   badgeTitle: string;
   policyPrefixLabel: string;
+  policyLabels?: Partial<ArbitrationTieBreakPolicyLabels>;
   recommendedBadgeLabel: string;
   prosLabel: string;
   consLabel: string;
@@ -26,6 +33,22 @@ export interface ArbitrationTieBreakCardLabels {
   justificationPlaceholder: string;
   selectOptionButtonLabel: string;
   resolvedBannerPrefix: string;
+}
+
+function resolveTieBreakPolicyLabel(
+  policy: UiTieBreakPolicy,
+  policyLabels?: Partial<ArbitrationTieBreakPolicyLabels>,
+): string {
+  switch (policy) {
+    case "PAUSE_AND_ESCALATE":
+      return policyLabels?.pauseAndEscalate ?? "Pause et escalade humaine";
+    case "ONTOLOGY_AXIOM_FIRST":
+      return policyLabels?.ontologyAxiomFirst ?? "Règle métier prioritaire";
+    case "DEFER_AND_CONTINUE_WITH_ASSUMPTION":
+      return policyLabels?.deferWithAssumption ?? "Poursuivre sous hypothèse";
+    default:
+      return policy;
+  }
 }
 
 export interface ArbitrationTieBreakCardProps {
@@ -62,6 +85,8 @@ export function ArbitrationTieBreakCard({
   const [justification, setJustification] = useState("");
   const [chosenKey, setChosenKey] = useState<string | null>(selectedOptionKey);
   const activeChosenKey = chosenKey ?? selectedOptionKey;
+  const policyDisplayLabel = resolveTieBreakPolicyLabel(tieBreakPolicy, labels.policyLabels);
+  const activeChosenOption = options.find((opt) => opt.optionKey === activeChosenKey);
 
   const handleChoose = (optKey: string) => {
     if (readOnly) {
@@ -113,7 +138,7 @@ export function ArbitrationTieBreakCard({
             fontFamily: "var(--font-mono)",
           }}
         >
-          {labels.policyPrefixLabel}: {tieBreakPolicy}
+          {labels.policyPrefixLabel}: {policyDisplayLabel}
         </span>
       </header>
 
@@ -215,7 +240,7 @@ export function ArbitrationTieBreakCard({
                     cursor: "pointer",
                   }}
                 >
-                  {labels.selectOptionButtonLabel} ({opt.optionKey})
+                  {labels.selectOptionButtonLabel}
                 </button>
               )}
             </div>
@@ -252,6 +277,7 @@ export function ArbitrationTieBreakCard({
       {activeChosenKey && (
         <div
           data-testid={`arbitration-resolved-banner-${arbitrationId}`}
+          data-selected-option={activeChosenKey}
           role="status"
           aria-live="polite"
           style={{
@@ -264,7 +290,7 @@ export function ArbitrationTieBreakCard({
             fontWeight: 600,
           }}
         >
-          {labels.resolvedBannerPrefix}: {activeChosenKey}
+          {labels.resolvedBannerPrefix}: {activeChosenOption?.title ?? activeChosenKey}
         </div>
       )}
     </section>

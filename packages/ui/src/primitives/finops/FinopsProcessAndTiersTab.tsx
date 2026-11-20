@@ -67,7 +67,9 @@ export interface FinopsProcessAndTiersTabProps {
 }
 
 function formatEur(val: number): string {
-  return `${val.toFixed(2).replace(".", ",")} €`;
+  const safeVal = Number.isFinite(val) ? val : 0;
+  const isMicro = Math.abs(safeVal) > 0 && Math.abs(safeVal) < 0.01;
+  return `${safeVal.toFixed(isMicro ? 3 : 2).replace(".", ",")} €`;
 }
 
 export function FinopsProcessAndTiersTab({

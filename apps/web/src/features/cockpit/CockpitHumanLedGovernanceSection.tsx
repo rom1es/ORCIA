@@ -9,6 +9,8 @@ import {
   DEFAULT_ARBITRATION_OPTIONS,
   DEFAULT_SECTION_KEY,
   DEFAULT_STEP_KEY,
+  formatOptionTitle,
+  formatStepStatusLabel,
 } from "./cockpitGovernanceHelpers";
 import { CockpitUpstreamChallengePanel } from "./CockpitUpstreamChallengePanel";
 import { useCockpitGovernanceController } from "./useCockpitGovernanceController";
@@ -85,9 +87,9 @@ export function CockpitHumanLedGovernanceSection({
             {ctrl.isFr ? "Escalader en arbitrage humain" : "Escalate to human arbitration"}
           </button>
           <StatusBadge
-            label={ctrl.stepStatus}
+            testId="cockpit-step-status-badge"
+            label={formatStepStatusLabel(ctrl.stepStatus, ctrl.isFr)}
             tone={ctrl.stepStatus === "COMMITTED" ? "emerald" : "amber"}
-            monospace
           />
         </div>
       </div>
@@ -178,7 +180,7 @@ export function CockpitHumanLedGovernanceSection({
             fontSize: "13px",
           }}
         >
-          <strong>{ctrl.resolvedOptionKey}</strong>
+          <strong>{formatOptionTitle(ctrl.resolvedOptionKey, ctrl.isFr)}</strong>
           {ctrl.resolvedJustification ? ` — ${ctrl.resolvedJustification}` : ""}
         </div>
       )}

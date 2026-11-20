@@ -163,8 +163,8 @@ export function WorkspaceStudioCardsAndDetailView({
             data-testid="workspaces-search-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={isFr ? "Rechercher un espace ou une équipe..." : "Search a space or team..."}
-            style={{ ...inputStyle, minWidth: "210px", fontSize: "12px" }}
+            placeholder={isFr ? "Rechercher un espace…" : "Search a space…"}
+            style={{ ...inputStyle, minWidth: "230px", fontSize: "12px" }}
           />
           <button
             type="button"
@@ -279,13 +279,34 @@ export function WorkspaceStudioCardsAndDetailView({
                 {wsSourcesCount > 0 || ontologyConcepts.length > 0 || workflows.length > 0 || (ws.finopsCostUsd ?? 0) > 0 ? (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", fontSize: "11px", color: "var(--color-text-secondary)" }}>
                     {wsSourcesCount > 0 && (
-                      <span><OrciaIcon name="books" /> <strong>{wsSourcesCount}</strong> {isFr ? "Sources rattachées" : "Attached sources"}</span>
+                      <span>
+                        <OrciaIcon name="books" /> <strong>{wsSourcesCount}</strong>{" "}
+                        {isFr
+                          ? wsSourcesCount <= 1
+                            ? "Source rattachée"
+                            : "Sources rattachées"
+                          : wsSourcesCount === 1
+                            ? "Attached source"
+                            : "Attached sources"}
+                      </span>
                     )}
                     {ontologyConcepts.length > 0 && (
-                      <span><OrciaIcon name="bookOpen" /> <strong>{ontologyConcepts.length}</strong> {isFr ? "Termes & Règles actifs" : "Active terms & rules"}</span>
+                      <span>
+                        <OrciaIcon name="bookOpen" /> <strong>{ontologyConcepts.length}</strong>{" "}
+                        {isFr
+                          ? ontologyConcepts.length <= 1
+                            ? "Terme & Règle actif"
+                            : "Termes & Règles actifs"
+                          : ontologyConcepts.length === 1
+                            ? "Active term & rule"
+                            : "Active terms & rules"}
+                      </span>
                     )}
                     {workflows.length > 0 && (
-                      <span><OrciaIcon name="menuProcesses" /> <strong>{workflows.length}</strong> {isFr ? "Processus" : "Processes"}</span>
+                      <span>
+                        <OrciaIcon name="menuProcesses" /> <strong>{workflows.length}</strong>{" "}
+                        {isFr ? "Processus" : workflows.length === 1 ? "Process" : "Processes"}
+                      </span>
                     )}
                     {(ws.finopsCostUsd ?? 0) > 0 && (
                       <span><OrciaIcon name="moneyBag" /> <strong>{formatCurrency(ws.finopsCostUsd ?? 0, isFr ? "fr" : "en")}</strong></span>

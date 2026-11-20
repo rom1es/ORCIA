@@ -346,14 +346,14 @@ export function OrciaProductShowcaseSiteView({
         }
         subtitle={
           isFr
-            ? "Explorez ORCIA à travers 3 espaces strictement séparés (Vision & Pilotage Humain, Guide Fonctionnel des 9 Écrans, Architecture & Choix Techniques sous le capot) et son Historique des Évolutions synchronisé automatiquement."
-            : "Explore ORCIA across 3 strictly separated spaces (Macro Human-Led Vision, Functional Guide to the 9 Screens, Under-the-Hood Engineering Architecture) and its automatically synchronized Evolution Changelog."
+            ? "Explorez ORCIA à travers 4 espaces structurés : Vision & Pilotage Humain, Guide Fonctionnel des 9 Écrans, Architecture & Choix Techniques sous le capot et Historique des Évolutions synchronisé."
+            : "Explore ORCIA across 4 structured spaces: Macro Human-Led Vision, Functional Guide to the 9 Screens, Under-the-Hood Engineering Architecture, and the automatically synchronized Evolution Changelog."
         }
         helpSectionId="showcase-overview"
         helpLabel={
           isFr
-            ? "Comprendre l'organisation en 3 espaces étanches du site de présentation ORCIA"
-            : "Understand the 3 strictly separated spaces of the ORCIA showcase site"
+            ? "Comprendre l'organisation en 4 onglets du site de présentation ORCIA"
+            : "Understand the 4-tab layout of the ORCIA showcase site"
         }
         onOpenHelpSection={onOpenHelpSection}
         actions={
@@ -374,8 +374,8 @@ export function OrciaProductShowcaseSiteView({
               onClick={handleExportTrigger}
             >
               {isFr
-                ? "⬇ Exporter le site HTML autonome (docs/site-catalog/index.html)"
-                : "⬇ Export standalone HTML site (docs/site-catalog/index.html)"}
+                ? "⬇ Exporter le site HTML autonome"
+                : "⬇ Export standalone HTML site"}
             </OrciaButton>
           </div>
         }
@@ -386,8 +386,8 @@ export function OrciaProductShowcaseSiteView({
             className="orcia-ds-alert orcia-ds-alert-success"
           >
             {isFr
-              ? "Export HTML5 autonome prêt : ouvrez directement `docs/site-catalog/index.html`."
-              : "Standalone HTML5 export ready: open `docs/site-catalog/index.html` directly."}
+              ? "Export HTML5 autonome prêt : fichier téléchargé pour consultation hors ligne."
+              : "Standalone HTML5 export ready: file downloaded for offline browsing."}
           </div>
         )}
 

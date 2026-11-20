@@ -80,12 +80,12 @@ export function useGatesAdaptiveHumanReview({
           stale_warnings: 0,
           artifact_payload: {
             decisions: [
-              "Validation du contrat OpenAPI 3.1 et persistance PostgreSQL 18.",
-              "Exécution différée des transitions Jira après validation de la Gate.",
+              "Validation du contrat de service et enregistrement sécurisé.",
+              "Exécution différée des transitions Jira après validation humaine.",
             ],
             hypotheses: [
-              "H1 : Les transitions Jira PAYBUILD-101 restent en attente jusqu'au PASS de la Gate.",
-              "H2 : La signature SHA-256 couvre toute co-édition humaine de section.",
+              "H1 : Les transitions Jira PAYBUILD-101 restent en attente jusqu'à la validation finale.",
+              "H2 : L'empreinte de validation couvre toute modification humaine de section.",
             ],
             sections: [
               {
@@ -175,10 +175,15 @@ export function useGatesAdaptiveHumanReview({
         setChallengedSectionKey(chunkKey);
         setChallengeModalOpen(true);
       }
+      const chunkStatusLabels: Record<string, string> = isFr
+        ? { APPROVED: "Approuvée", CO_EDITED: "Co-éditée", CHALLENGED: "Contestée", PENDING: "En attente" }
+        : { APPROVED: "Approved", CO_EDITED: "Co-edited", CHALLENGED: "Challenged", PENDING: "Pending" };
+      const rawChunkStatus = res.chunk.status ?? "PENDING";
+      const localizedChunkStatus = chunkStatusLabels[rawChunkStatus] ?? rawChunkStatus;
       onFeedback(
         isFr
-          ? `✅ Section « ${chunkKey} » mise à jour (${res.chunk.status}).`
-          : `✅ Section "${chunkKey}" updated (${res.chunk.status}).`,
+          ? `✅ Section mise à jour (${localizedChunkStatus}).`
+          : `✅ Section updated (${localizedChunkStatus}).`,
       );
     } catch (err: unknown) {
       const msg =
@@ -209,8 +214,8 @@ export function useGatesAdaptiveHumanReview({
       }
       onFeedback(
         isFr
-          ? "✅ Gate humaine validée (PASS) et action Jira en attente exécutée."
-          : "✅ Human Gate approved (PASS) and staged Jira action executed.",
+          ? "✅ Validation humaine enregistrée et action Jira en attente exécutée."
+          : "✅ Human review approved and staged Jira action executed.",
       );
     } catch (err: unknown) {
       const msg =

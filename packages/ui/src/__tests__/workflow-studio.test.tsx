@@ -37,13 +37,13 @@ describe("WorkflowStudioSection (Story 3.1)", () => {
 
     expect(screen.getByTestId("workflow-studio-section")).toBeDefined();
     expect(screen.getByTestId("sub-lock-depth-0").textContent).toContain(
-      "depth=0 : orcia://workflows/claims-engineering-delivery (v2.0.0)",
+      "Niveau principal : orcia://workflows/claims-engineering-delivery (v2.0.0)",
     );
     expect(screen.getByTestId("sub-lock-depth-1").textContent).toContain(
-      "depth=1 : orcia://workflows/sub-remediate-and-verify (v1.2.0)",
+      "Niveau 1 : orcia://workflows/sub-remediate-and-verify (v1.2.0)",
     );
     expect(screen.getByTestId("sub-lock-depth-2").textContent).toContain(
-      "depth=2 : orcia://workflows/sub-verify-regression-suite (v1.1.0)",
+      "Niveau 2 : orcia://workflows/sub-verify-regression-suite (v1.1.0)",
     );
 
     // Click nominal validation button

@@ -207,19 +207,19 @@ export function WorkflowStudioSection({ labels }: WorkflowStudioSectionProps) {
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           <StatusBadge
             testId="sub-lock-depth-0"
-            label="depth=0 : orcia://workflows/claims-engineering-delivery (v2.0.0)"
+            label={`${labels.depthPrefix ?? "Niveau"} principal : orcia://workflows/claims-engineering-delivery (v2.0.0)`}
             tone="cobalt"
             monospace
           />
           <StatusBadge
             testId="sub-lock-depth-1"
-            label="depth=1 : orcia://workflows/sub-remediate-and-verify (v1.2.0)"
+            label={`${labels.depthPrefix ?? "Niveau"} 1 : orcia://workflows/sub-remediate-and-verify (v1.2.0)`}
             tone="emerald"
             monospace
           />
           <StatusBadge
             testId="sub-lock-depth-2"
-            label="depth=2 : orcia://workflows/sub-verify-regression-suite (v1.1.0)"
+            label={`${labels.depthPrefix ?? "Niveau"} 2 : orcia://workflows/sub-verify-regression-suite (v1.1.0)`}
             tone="amber"
             monospace
           />

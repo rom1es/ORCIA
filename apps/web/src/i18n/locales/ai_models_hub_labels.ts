@@ -91,13 +91,13 @@ export const AI_MODELS_HUB_FR: AiModelsHubDictionary = {
   emptyDescription:
     "Connectez un fournisseur (Anthropic, OpenAI, Mistral, Google Gemini ou local) pour activer l'inférence des assistants et workflows.",
   emptyCta: "Connecter un premier modèle",
-  coverageTitle: "Couverture des 4 tiers cognitifs",
-  coverageAllConfigured: "Tous les tiers cognitifs sont opérationnels",
-  coverageMissingTiers: "Tiers à compléter :",
+  coverageTitle: "Couverture des 4 paliers cognitifs",
+  coverageAllConfigured: "Tous les paliers cognitifs sont opérationnels",
+  coverageMissingTiers: "Paliers à compléter :",
   countLabel: "modèle configuré",
   countLabelPlural: "modèles configurés",
   colModel: "Modèle & Fournisseur",
-  colTier: "Tier Cognitif",
+  colTier: "Palier Cognitif",
   colEndpoint: "Endpoint API",
   colSecret: "Authentification", // pragma: allowlist secret
   colHealth: "Santé & Latence",

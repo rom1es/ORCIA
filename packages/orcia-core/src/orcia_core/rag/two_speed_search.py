@@ -71,7 +71,8 @@ def build_speed2_redis_cache_key(
     clean_ws = workspace_id.strip() or "global"
     clean_scope = scope.strip() or "WORKSPACE"
     clean_route = active_screen_route.strip() or "/spaces"
-    clean_locale = (locale or "fr").strip().lower() or "fr"
+    clean_locale_raw = (locale or "fr").strip().lower().replace("_", "-")
+    clean_locale = "en" if clean_locale_raw.split("-", 1)[0] == "en" else "fr"
     return (
         f"search:v2:{clean_uid}:{clean_role}:{clean_ws}:"
         f"{clean_scope}:{clean_route}:{clean_locale}:{digest}"

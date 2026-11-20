@@ -12,6 +12,21 @@ function errorDetail(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
+function formatNotificationTitle(rawTitle: string, isFr: boolean): string {
+  const prefix = "Prise en charge directe de l'étape '";
+  if (rawTitle.startsWith(prefix) && rawTitle.endsWith("'")) {
+    const slug = rawTitle.slice(prefix.length, -1);
+    const known: Record<string, string> = isFr
+      ? { "inbox-review-step": "Relecture en boîte de réception" }
+      : { "inbox-review-step": "Inbox review step" };
+    const clean =
+      known[slug] ??
+      slug.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    return isFr ? `Prise en charge directe — ${clean}` : `Direct claim — ${clean}`;
+  }
+  return rawTitle;
+}
+
 export function InboxNotificationsCenterView(): React.JSX.Element {
   const { dictionary, locale } = useI18n();
   const isFr = locale === "fr";
@@ -210,7 +225,9 @@ export function InboxNotificationsCenterView(): React.JSX.Element {
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <strong className="text-xs font-semibold">{item.title}</strong>
+                    <strong className="text-xs font-semibold">
+                      {formatNotificationTitle(item.title, isFr)}
+                    </strong>
                     <p className="text-xs mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
                       {item.summary}
                     </p>

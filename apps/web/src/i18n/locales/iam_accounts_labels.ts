@@ -145,7 +145,7 @@ export const IAM_TAB_FR_LABELS: IamTabDictionarySection = {
     targetRoleLabel: "Rôle bénéficiaire",
     targetAccountLabel: "Compte bénéficiaire",
     targetScopeLabel: "Périmètre cible (« Sur quoi ? »)",
-    globalScopeOption: "Plateforme entière (toutes les directions et espaces)",
+    globalScopeOption: "Plateforme entière (Global)",
     globalScopeAmberWarning:
       "Attention : cette exception s'appliquera à l'ensemble de la plateforme. Préférez une Direction, une Équipe ou un Espace précis lorsque c'est possible.",
     buOptgroupLabel: "Directions & Pôles (BU)",
@@ -238,7 +238,7 @@ export const IAM_TAB_EN_LABELS: IamTabDictionarySection = {
     targetRoleLabel: "Beneficiary role",
     targetAccountLabel: "Beneficiary account",
     targetScopeLabel: "Target scope ('On what?')",
-    globalScopeOption: "Entire platform (all divisions and workspaces)",
+    globalScopeOption: "Entire platform (Global)",
     globalScopeAmberWarning:
       "Warning: this exception applies to the entire platform. Prefer a specific Division, Team, or Workspace whenever possible.",
     buOptgroupLabel: "Divisions & Sub-BUs",

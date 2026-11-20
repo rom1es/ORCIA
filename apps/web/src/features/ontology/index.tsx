@@ -296,11 +296,18 @@ export function OntologyFeaturePanel() {
                     color: "var(--color-foreground)",
                   }}
                 >
-                  {writableScopes.map((opt, idx) => (
-                    <option key={`${opt.level}:${opt.scope_id}`} value={String(idx)}>
-                      {`${copy.levelLabels[opt.level as UiOntologyLevel] ?? opt.level} · ${opt.label}`}
-                    </option>
-                  ))}
+                  {writableScopes.map((opt, idx) => {
+                    const levelLabel = copy.levelLabels[opt.level as UiOntologyLevel] ?? opt.level;
+                    const displayLabel =
+                      opt.label.trim().toLowerCase() === levelLabel.trim().toLowerCase()
+                        ? levelLabel
+                        : `${levelLabel} · ${opt.label}`;
+                    return (
+                      <option key={`${opt.level}:${opt.scope_id}`} value={String(idx)}>
+                        {displayLabel}
+                      </option>
+                    );
+                  })}
                 </select>
                 <input
                   type="text"
