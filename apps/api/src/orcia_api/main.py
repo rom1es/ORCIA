@@ -86,6 +86,7 @@ from orcia_api.routers.workspace_governance import (
 from orcia_core import __version__
 from orcia_core.config import load_orcia_env
 from orcia_core.observability.logging import configure_logging
+from orcia_core.permissions.errors import ResourceNotFoundError
 
 
 def create_app() -> FastAPI:
@@ -126,13 +127,13 @@ def create_app() -> FastAPI:
         request: Request,
         call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
-        await rehydrate_bearer_subject_from_pg_if_missing(request)
+        hydrated_svc = await rehydrate_bearer_subject_from_pg_if_missing(request)
         if (
             request.method.upper() != "OPTIONS"
             and request.url.path.startswith("/api/")
             and not is_public_openapi_operation(request.url.path, request.method)
         ):
-            auth_svc = getattr(request.app.state, "auth_service", None)
+            auth_svc = getattr(request.app.state, "auth_service", None) or hydrated_svc
             auth_hdr = request.headers.get("Authorization")
             if auth_svc is not None and (
                 auth_hdr is not None or not auth_svc.allow_persona_impersonation
@@ -144,7 +145,21 @@ def create_app() -> FastAPI:
                             raw_token = raw_token[7:].strip()
                         else:
                             raw_token = ""
-                        auth_svc.authenticate_access_token(raw_token)
+                        try:
+                            resolved_user = auth_svc.authenticate_access_token(raw_token)
+                        except ResourceNotFoundError:
+                            # Concurrent cache eviction may swap `app.state.auth_service`
+                            # between initial rehydration and bearer verification.
+                            refreshed_svc = await rehydrate_bearer_subject_from_pg_if_missing(
+                                request
+                            )
+                            active_svc = (
+                                getattr(request.app.state, "auth_service", None)
+                                or refreshed_svc
+                                or auth_svc
+                            )
+                            resolved_user = active_svc.authenticate_access_token(raw_token)
+                        request.state.resolved_bearer_user = resolved_user
                     else:
                         auth_svc.resolve_user(bearer_token=None)
                 except OrciaDomainError as exc:

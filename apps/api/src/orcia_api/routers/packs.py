@@ -36,6 +36,7 @@ from orcia_core.packs.loader import (
     resolve_default_packs_root,
 )
 from orcia_core.permissions.errors import ObserverModeReadOnlyError
+from orcia_core.workflows import upsert_vsm_definitions_v2_sql
 
 logger = get_logger("orcia.api.packs")
 router = APIRouter(prefix="/api/v1/packs", tags=["Declarative Packs (Epic 15)"])
@@ -61,6 +62,7 @@ async def sync_declarative_pack_bundles_to_pg(
         return
     try:
         await upsert_declarative_pack_bundles_sql(engine, bundles)
+        await upsert_vsm_definitions_v2_sql(engine, bundles)
     except Exception as exc:
         logger.warning(
             "declarative_pack_bundles_pg_sync_failed",

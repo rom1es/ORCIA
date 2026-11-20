@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from orcia_core.workflows._internal.sql_vsm_v2 import (
+    SqlVsmDefinitionsV2Store,
+    upsert_vsm_definitions_v2_sql,
+)
 from orcia_core.workflows._internal.sql_workflows_v2 import SqlWorkflowDefinitionsV2Store
 from orcia_core.workflows.schemas_v2 import (
     ClaimCheckPointer,
@@ -39,6 +43,7 @@ __all__ = [
     "NonDeterministicControlSpec",
     "ProcessOrchestrationType",
     "ReturnLoopSpec",
+    "SqlVsmDefinitionsV2Store",
     "SqlWorkflowDefinitionsV2Store",
     "StepControlsPipeline",
     "ValueStreamMapSpec",
@@ -48,4 +53,5 @@ __all__ = [
     "WorkflowDefinitionV2",
     "WorkflowLifecycleStatus",
     "fork_workflow_as_draft",
+    "upsert_vsm_definitions_v2_sql",
 ]

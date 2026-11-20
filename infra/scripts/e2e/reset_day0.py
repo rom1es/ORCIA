@@ -44,6 +44,7 @@ from orcia_core.packs.loader import (  # noqa: E402
     DeclarativePackLoader,
     resolve_default_packs_root,
 )
+from orcia_core.workflows import upsert_vsm_definitions_v2_sql  # noqa: E402
 
 RESET_SCRIPT = REPO_ROOT / "infra" / "scripts" / "maintenance" / "09_reset_db_first_boot.py"
 
@@ -195,6 +196,8 @@ async def _reset_postgres_e2e(database_url: str) -> tuple[list[str], list[str], 
         if "declarative_pack_bundles" in all_public:
             pack_bundles = DeclarativePackLoader(resolve_default_packs_root()).load_all_packs()
             await upsert_declarative_pack_bundles_sql(engine, pack_bundles)
+            if "vsm_definitions_v2" in all_public:
+                await upsert_vsm_definitions_v2_sql(engine, pack_bundles)
 
         await _verify_post_reset_invariants(engine, all_public, dbos_to_truncate)
         return public_to_truncate, dbos_to_truncate, users_count

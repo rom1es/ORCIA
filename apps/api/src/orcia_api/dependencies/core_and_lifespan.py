@@ -72,6 +72,7 @@ from orcia_core.rag import (
     build_seeded_rag_service,
 )
 from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
+from orcia_core.workflows import upsert_vsm_definitions_v2_sql
 from orcia_kernel.ports import LLMPort
 from orcia_pack_sdlc import activate_sdlc_pack
 
@@ -414,6 +415,29 @@ def initialize_app_services(app: FastAPI) -> None:
         wiz_svc = getattr(app.state, "durable_wizard_service", None)
         if wiz_svc is not None and getattr(wiz_svc, "_repository", None) is None:
             wiz_svc.set_repository(SqlWizardSessionRepository(active_db_engine))
+        if getattr(app.state, "jira_staged_action_service", None) is None:
+            from orcia_connectors._internal.sql_jira_staged_actions import (
+                SqlJiraStagedActionsRepository,
+            )
+            from orcia_connectors.jira_actions import MultiProjectJiraStagedActionService
+
+            app.state.jira_staged_action_service = MultiProjectJiraStagedActionService(
+                repository=SqlJiraStagedActionsRepository(active_db_engine),
+                strict_sql=True,
+            )
+        if getattr(app.state, "mcp_server_service", None) is None:
+            from orcia_core.orchestration._internal.sql_mcp_proposals import (
+                SqlMcpProposalsRepository,
+            )
+            from orcia_core.orchestration.mcp_server import GovernedMcpServerService
+
+            app.state.mcp_server_service = GovernedMcpServerService(
+                proposals_repository=SqlMcpProposalsRepository(
+                    session_maker=getattr(app.state, "session_maker", None),
+                    engine=active_db_engine,
+                ),
+                strict_sql=True,
+            )
         for attr_name in (
             "audit_ledger_service",
             "connector_quota_guard_service",
@@ -449,6 +473,7 @@ async def app_lifespan(app: FastAPI) -> AsyncIterator[None]:
             pack_bundles = DeclarativePackLoader(resolve_default_packs_root()).load_all_packs()
             app.state.declarative_pack_bundles = pack_bundles
             await upsert_declarative_pack_bundles_sql(db_engine, pack_bundles)
+            await upsert_vsm_definitions_v2_sql(db_engine, pack_bundles)
             help_svc = getattr(app.state, "contextual_help_service", None)
             if help_svc is not None and hasattr(help_svc, "ensure_seeded_in_postgres18_async"):
                 await help_svc.ensure_seeded_in_postgres18_async()

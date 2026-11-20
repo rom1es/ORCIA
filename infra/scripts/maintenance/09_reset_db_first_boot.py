@@ -47,6 +47,7 @@ from orcia_core.packs.loader import (  # noqa: E402
     DeclarativePackLoader,
     resolve_default_packs_root,
 )
+from orcia_core.workflows import upsert_vsm_definitions_v2_sql  # noqa: E402
 from orcia_kernel.ids import new_uuid7_str  # noqa: E402
 
 _assert_no_append_only_restrict_refs = assert_no_append_only_restrict_refs
@@ -209,6 +210,8 @@ async def reset_database_to_first_boot(
         if "declarative_pack_bundles" in existing_tables:
             pack_bundles = DeclarativePackLoader(resolve_default_packs_root()).load_all_packs()
             await upsert_declarative_pack_bundles_sql(engine, pack_bundles)
+            if "vsm_definitions_v2" in existing_tables:
+                await upsert_vsm_definitions_v2_sql(engine, pack_bundles)
         _flush_redis_if_configured()
 
     return FirstBootResetReport(

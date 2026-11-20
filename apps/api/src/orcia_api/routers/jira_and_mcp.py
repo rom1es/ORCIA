@@ -1,9 +1,12 @@
-"""FastAPI Router for Story 4.4: Multi-Project Jira Staged Actions, Webhooks & `/api/v1/mcp`."""
+"""FastAPI Router for Multi-Project Jira Staged Actions, Webhooks & `/api/v1/mcp`."""
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Query, Request
+from typing import Annotated
 
+from fastapi import APIRouter, Depends, Query, Request
+
+from orcia_api.dependencies import get_jira_staged_action_service, get_mcp_server_service
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.jira_and_mcp import (
     CommitStagedJiraActionRequest,
@@ -21,34 +24,20 @@ from orcia_api.schemas.jira_and_mcp import (
     StageJiraActionRequest,
     StageJiraActionResponse,
 )
+from orcia_connectors.jira_actions import MultiProjectJiraStagedActionService, StagedJiraActionItem
 from orcia_core.observability.logging import get_current_trace_id
 from orcia_core.orchestration.errors import ObserverModeReadOnlyError
 from orcia_core.orchestration.mcp_server import GovernedMcpServerService
-from orcia_pack_sdlc.jira_actions import MultiProjectJiraStagedActionService, StagedJiraActionItem
 
 router = APIRouter(tags=["jira-and-mcp"])
+
+JiraSvcDep = Annotated[MultiProjectJiraStagedActionService, Depends(get_jira_staged_action_service)]
+McpSvcDep = Annotated[GovernedMcpServerService, Depends(get_mcp_server_service)]
+PersonaQuery = Annotated[str | None, Query(min_length=1, max_length=64)]
 
 
 def _trace(request: Request) -> str:
     return str(getattr(request.state, "trace_id", None) or get_current_trace_id())
-
-
-def _get_jira_service(request: Request) -> MultiProjectJiraStagedActionService:
-    svc: MultiProjectJiraStagedActionService | None = getattr(
-        request.app.state, "jira_staged_action_service", None
-    )
-    if svc is None:
-        svc = MultiProjectJiraStagedActionService()
-        request.app.state.jira_staged_action_service = svc
-    return svc
-
-
-def _get_mcp_service(request: Request) -> GovernedMcpServerService:
-    svc: GovernedMcpServerService | None = getattr(request.app.state, "mcp_server_service", None)
-    if svc is None:
-        svc = GovernedMcpServerService()
-        request.app.state.mcp_server_service = svc
-    return svc
 
 
 def _serialize_staged(item: StagedJiraActionItem) -> StagedJiraActionItemSchema:
@@ -82,11 +71,11 @@ def _serialize_staged(item: StagedJiraActionItem) -> StagedJiraActionItemSchema:
 async def search_workspace_jira_jql(
     payload: JiraJqlSearchRequest,
     request: Request,
-    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+    svc: JiraSvcDep,
+    persona_key: PersonaQuery = None,
 ) -> JiraJqlSearchResponse:
     """Query Jira issues on the selected workspace project alias (`jira:product`, `jira:secops`)."""
     resolve_request_user(request, persona_key=persona_key)
-    svc = _get_jira_service(request)
     project_key = svc.resolve_project_key(payload.project_alias)
     issues = svc.search_jql(
         workspace_id=payload.workspace_id,
@@ -110,13 +99,13 @@ async def search_workspace_jira_jql(
 )
 async def list_staged_jira_actions(
     request: Request,
-    workspace_id: str | None = Query(default=None, min_length=1, max_length=128),
-    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+    svc: JiraSvcDep,
+    workspace_id: Annotated[str | None, Query(min_length=1, max_length=128)] = None,
+    persona_key: PersonaQuery = None,
 ) -> StagedJiraActionListResponse:
-    """List staged or executed Jira actions for F5 state rehydration."""
+    """List staged or executed Jira actions from PostgreSQL 18 for F5 rehydration."""
     resolve_request_user(request, persona_key=persona_key)
-    svc = _get_jira_service(request)
-    items = svc.list_staged_actions(workspace_id=workspace_id)
+    items = await svc.list_staged_actions_async(workspace_id=workspace_id)
     return StagedJiraActionListResponse(
         actions=[_serialize_staged(item) for item in items],
         trace_id=_trace(request),
@@ -126,20 +115,20 @@ async def list_staged_jira_actions(
 @router.post(
     "/api/v1/jira/actions/stage",
     response_model=StageJiraActionResponse,
-    summary="Pre-validate Jira transitions and stage action in draft_artifact_jsonb (`AD-5`)",
+    summary="Pre-validate Jira transitions and stage action in PG18 (`AD-5`)",
     responses=PROBLEM_RESPONSES,
 )
 async def stage_jira_workflow_action(
     payload: StageJiraActionRequest,
     request: Request,
-    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+    svc: JiraSvcDep,
+    persona_key: PersonaQuery = None,
 ) -> StageJiraActionResponse:
-    """Validate `GET /rest/api/3/issue/{key}/transitions` and stage Jira action before Gate."""
+    """Validate `GET /rest/api/3/issue/{key}/transitions` and persist staged Jira action in PG18."""
     user = resolve_request_user(request, persona_key=persona_key)
     if user.platform_role in ("OBSERVER", "BU_DIRECTOR"):
         raise ObserverModeReadOnlyError(instance=str(request.url.path))
-    svc = _get_jira_service(request)
-    staged = svc.stage_action(
+    staged = await svc.stage_action_async(
         workspace_id=payload.workspace_id,
         run_id=payload.run_id,
         step_execution_id=payload.step_execution_id,
@@ -149,10 +138,11 @@ async def stage_jira_workflow_action(
         issue_key=payload.issue_key,
         target_transition=payload.target_transition,
         fields_payload=payload.fields_payload,
+        staged_by=user.id,
     )
     return StageJiraActionResponse(
         staged_action=_serialize_staged(staged),
-        draft_artifact_jsonb=svc.get_step_draft_artifact(payload.step_execution_id),
+        draft_artifact_jsonb=await svc.get_step_draft_artifact_async(payload.step_execution_id),
         trace_id=_trace(request),
     )
 
@@ -166,17 +156,18 @@ async def stage_jira_workflow_action(
 async def commit_staged_jira_action(
     payload: CommitStagedJiraActionRequest,
     request: Request,
-    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+    svc: JiraSvcDep,
+    persona_key: PersonaQuery = None,
 ) -> CommitStagedJiraActionResponse:
     """Execute staged Jira operation via `ConnectorPort.invoke` only when Gate status is `PASS`."""
     user = resolve_request_user(request, persona_key=persona_key)
     if user.platform_role in ("OBSERVER", "BU_DIRECTOR"):
         raise ObserverModeReadOnlyError(instance=str(request.url.path))
-    svc = _get_jira_service(request)
-    executed = svc.commit_staged_action_on_gate_pass(
+    executed = await svc.commit_staged_action_on_gate_pass_async(
         staged_action_id=payload.staged_action_id,
         gate_status=payload.gate_status,
         run_lock_sha256=payload.run_lock_sha256,
+        approved_by=user.id,
     )
     return CommitStagedJiraActionResponse(
         executed_action=_serialize_staged(executed),
@@ -193,10 +184,10 @@ async def commit_staged_jira_action(
 async def handle_jira_issue_updated_webhook_route(
     payload: JiraIssueUpdatedWebhookRequest,
     request: Request,
+    svc: JiraSvcDep,
 ) -> JiraIssueUpdatedWebhookResponse:
     """Process `jira:issue_updated` (`Done`) and publish Replay event to `domain_events_outbox`."""
-    svc = _get_jira_service(request)
-    notif = svc.handle_issue_updated_webhook(
+    notif = await svc.handle_issue_updated_webhook_async(
         webhook_event=payload.webhook_event,
         issue_key=payload.issue_key,
         new_status=payload.new_status,
@@ -228,11 +219,11 @@ async def handle_jira_issue_updated_webhook_route(
 )
 async def list_governed_mcp_tools(
     request: Request,
-    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+    svc: McpSvcDep,
+    persona_key: PersonaQuery = None,
 ) -> McpToolsListResponse:
     """Return MCP tools available in `passthrough` mode for VS Code / Cursor / Claude Code / AGY."""
     resolve_request_user(request, persona_key=persona_key)
-    svc = _get_mcp_service(request)
     return McpToolsListResponse(
         tools=[
             McpToolDescriptorSchema(
@@ -257,19 +248,20 @@ async def list_governed_mcp_tools(
 async def call_governed_mcp_tool(
     payload: McpToolCallRequest,
     request: Request,
-    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+    svc: McpSvcDep,
+    persona_key: PersonaQuery = None,
 ) -> McpToolCallResponse:
     """Execute an MCP tool call while materially blocking `human_authored_required: true` writes."""
     user = resolve_request_user(request, persona_key=persona_key)
     is_observer = user.platform_role in ("OBSERVER", "BU_DIRECTOR")
-    svc = _get_mcp_service(request)
-    res = svc.call_tool(
+    res = await svc.call_tool_async(
         tool_name=payload.tool_name,
         workspace_id=payload.workspace_id,
         arguments=payload.arguments,
         ide_client=payload.ide_client,
         execution_identity=payload.execution_identity,
         is_read_only_observer=is_observer,
+        proposed_by=user.id,
         instance=str(request.url.path),
     )
     return McpToolCallResponse(

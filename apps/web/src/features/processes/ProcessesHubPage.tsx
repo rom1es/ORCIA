@@ -54,17 +54,33 @@ export function ProcessesHubPage() {
     writePersistedReflexiveId(ACTIVE_PROCESS_RUN_WORKFLOW_STORAGE_KEY, nextId);
   };
   const [hubErrorBanner, setHubErrorBanner] = useState<string | null>(null);
+  const [vsmSummary, setVsmSummary] = useState<{
+    id: string;
+    title: string;
+    subtitle: string;
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    createProcessesApiClient(locale)
-      .listWorkflowsV2()
-      .then((res) => {
-        if (cancelled || !Array.isArray(res?.items) || res.items.length === 0) {
+    const apiClient = createProcessesApiClient(locale);
+    Promise.all([apiClient.listWorkflowsV2(), apiClient.listValueStreamMaps()])
+      .then(([wfRes, vsmRes]) => {
+        if (cancelled) {
+          return;
+        }
+        const firstVsm = Array.isArray(vsmRes?.items) ? vsmRes.items[0] : undefined;
+        if (firstVsm?.id) {
+          setVsmSummary({
+            id: firstVsm.id,
+            title: firstVsm.title,
+            subtitle: firstVsm.subtitle,
+          });
+        }
+        if (!Array.isArray(wfRes?.items) || wfRes.items.length === 0) {
           return;
         }
         setWorkflows((prev) => {
-          const mapped = res.items.map((apiWf) => {
+          const mapped = wfRes.items.map((apiWf) => {
             const existing = prev.find((p) => p.id === apiWf.id || p.slug === apiWf.slug);
             const uiItem = mapApiWorkflowV2ToUiItem(apiWf, existing);
             savePersistedWorkflowV2(uiItem);
@@ -285,6 +301,9 @@ export function ProcessesHubPage() {
       {/* ZONE 3 : VUE D'ENSEMBLE DE LA CHAÎNE DE VALEUR (4 PHASES · 11 ÉTAPES) */}
       <ProcessesValueStreamOverviewCard
         isFr={isFr}
+        vsmId={vsmSummary?.id}
+        vsmTitle={vsmSummary?.title}
+        vsmSubtitle={vsmSummary?.subtitle}
         onOpenInteractiveVsm={(vsmId) => navigateToRoute(`/processes/vsm/${vsmId}`)}
       />
     </section>

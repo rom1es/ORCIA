@@ -4,11 +4,17 @@ import { INITIAL_VSM_SPEC } from "./processStudioV2Data";
 export interface ProcessesValueStreamOverviewCardProps {
   readonly isFr: boolean;
   readonly onOpenInteractiveVsm: (vsmId: string) => void;
+  readonly vsmId?: string;
+  readonly vsmTitle?: string;
+  readonly vsmSubtitle?: string;
 }
 
 export function ProcessesValueStreamOverviewCard({
   isFr,
   onOpenInteractiveVsm,
+  vsmId,
+  vsmTitle,
+  vsmSubtitle,
 }: ProcessesValueStreamOverviewCardProps): React.ReactElement {
   return (
     <div
@@ -42,7 +48,7 @@ export function ProcessesValueStreamOverviewCard({
               : "END-TO-END VALUE STREAM (4 PHASES · 11 STEPS)"}
           </span>
           <h3 style={{ margin: 0, fontSize: "var(--font-size-h3)" }}>
-            {INITIAL_VSM_SPEC.title} — {INITIAL_VSM_SPEC.subtitle}
+            {vsmTitle ?? INITIAL_VSM_SPEC.title} — {vsmSubtitle ?? INITIAL_VSM_SPEC.subtitle}
           </h3>
           <p style={{ margin: 0, fontSize: "13px", color: "var(--color-text-secondary)" }}>
             {isFr
@@ -54,7 +60,7 @@ export function ProcessesValueStreamOverviewCard({
         <button
           type="button"
           data-testid="open-interactive-vsm-btn"
-          onClick={() => onOpenInteractiveVsm(INITIAL_VSM_SPEC.id)}
+          onClick={() => onOpenInteractiveVsm(vsmId ?? INITIAL_VSM_SPEC.id)}
           className="orcia-ds-btn-secondary"
         >
           {isFr

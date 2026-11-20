@@ -21,6 +21,10 @@ from orcia_api.dependencies.core_and_lifespan import (
     get_permission_broker_service,
     initialize_app_services,
 )
+from orcia_api.dependencies.jira_and_mcp import (
+    get_jira_staged_action_service,
+    get_mcp_server_service,
+)
 from orcia_api.dependencies.orchestration_and_settings import (
     get_ai_models_hub_service,
     get_audit_ledger_service,
@@ -62,6 +66,8 @@ from orcia_api.dependencies.reflexive_execution import (
     get_reflexive_event_stream_broker,
     get_reflexive_runtime_service,
     get_reflexive_write_gate_service,
+    get_vsm_v2_sql_store,
+    get_workflow_v2_runs_store,
     get_workflows_v2_sql_store,
 )
 from orcia_api.dependencies.workspace_and_packs import (
@@ -103,7 +109,9 @@ __all__ = [
     "get_help_generation_and_attachment_service",
     "get_hierarchical_rbac_service",
     "get_iam_accounts_service",
+    "get_jira_staged_action_service",
     "get_log_sink_port",
+    "get_mcp_server_service",
     "get_notification_service",
     "get_ontology_and_rag_services",
     "get_or_create_shared_db_engine",
@@ -125,6 +133,8 @@ __all__ = [
     "get_trigger_dispatcher_service",
     "get_two_speed_search_service",
     "get_user_preferences_and_mcp_token_service",
+    "get_vsm_v2_sql_store",
+    "get_workflow_v2_runs_store",
     "get_workflows_v2_sql_store",
     "get_workspace_governance_and_rebaser_service",
     "initialize_app_services",

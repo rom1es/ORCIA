@@ -226,5 +226,45 @@ export function handleAutonomyTriggersAndWorkflowsV2Route(params: {
     return jsonResponse({ workflow: saved, forked_as_draft: false });
   }
 
+  const hitlSignalMatch = /^\/api\/v1\/runs\/([^/]+)\/hitl-signal$/.exec(path);
+  if (hitlSignalMatch && method === "POST") {
+    const runId = decodeURIComponent(hitlSignalMatch[1] ?? "");
+    const action = String(body.action ?? "APPROVE");
+    const wfId = runId.replace(/^run-/, "").replace(/-\d+$/, "") || "wf-01-qualification-prd";
+    const existing = backendState.workflowsV2.get(wfId);
+    const nextStatus =
+      action === "APPROVE"
+        ? "COMPLETED_APPROVED"
+        : action === "REJECT_LOOP"
+          ? "RETURN_LOOP_TRIGGERED"
+          : action === "SUSPEND_SLA"
+            ? "SLA_SUSPENDED"
+            : "WAITING_FINAL_ANCHOR";
+    return jsonResponse({
+      run: {
+        run_id: runId,
+        workflow_id: wfId,
+        workflow_slug: existing?.slug ?? wfId,
+        workflow_version: existing?.version ?? "1.0.0",
+        orchestration_type: existing?.orchestration_type ?? "deterministic_dbos",
+        execution_mode: existing?.execution_mode ?? "native_orcia",
+        status: nextStatus,
+        iteration: 1,
+        reentry_mode: "initial",
+        current_sub_step_index: 0,
+        inputs: {},
+        mcp_context_bundle: null,
+        sub_step_records: [],
+        gate_report: null,
+        final_artifact_pointer: null,
+        reflexive_execution_id: `reflx-${wfId}-01`,
+        trace_events: [],
+        return_loop_target_step_num: null,
+        return_loop_remarks: null,
+        audit_trail: [],
+      },
+    });
+  }
+
   return null;
 }

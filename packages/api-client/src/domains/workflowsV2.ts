@@ -5,6 +5,7 @@ import type {
   SaveWorkflowV2Request,
   SaveWorkflowV2Response,
   StartWorkflowV2RunRequest,
+  VsmListResponse,
   WhatIfSimulationRequest,
   WorkflowV2RunResponse,
   WorkflowsV2ListResponse,
@@ -21,6 +22,7 @@ type RequestJsonFn = ReturnType<typeof createRequestJson>;
 type RequestBinaryFn = ReturnType<typeof createRequestBinary>;
 
 export type ApiWorkflowDefinitionV2 = components["schemas"]["WorkflowDefinitionV2-Output"];
+export type ApiValueStreamMapSpec = components["schemas"]["ValueStreamMapSpec"];
 export type ApiImpactAssessmentResult = components["schemas"]["ImpactAssessmentResult"];
 export type { DeclarativePacksListResponse, DeclarativePackSummaryResponse };
 
@@ -51,6 +53,13 @@ export function createWorkflowsV2DomainClient(
     },
     listWorkflowsV2(): Promise<WorkflowsV2ListResponse> {
       return requestJson<WorkflowsV2ListResponse>("/api/v1/workflows/v2");
+    },
+    listValueStreamMaps(): Promise<VsmListResponse> {
+      return requestJson<VsmListResponse>("/api/v1/vsm");
+    },
+    getValueStreamMap(vsmId: string): Promise<ApiValueStreamMapSpec> {
+      const encoded = encodeURIComponent(vsmId);
+      return requestJson<ApiValueStreamMapSpec>(`/api/v1/vsm/${encoded}`);
     },
     getWorkflowV2(workflowId: string): Promise<ApiWorkflowDefinitionV2> {
       const encoded = encodeURIComponent(workflowId);

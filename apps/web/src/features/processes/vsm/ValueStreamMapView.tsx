@@ -1,7 +1,11 @@
+import { OrciaAlertBanner } from "@orcia/ui";
 import React, { useEffect, useMemo, useState } from "react";
 import { useShellNavigation } from "../../../components/ShellContainer";
 import { useI18n } from "../../../i18n";
+import { formatRfc9457ErrorToBanner } from "../../../lib/formatRfc9457ErrorToBanner";
 import { INITIAL_VSM_SPEC } from "../processStudioV2Data";
+import { createProcessesApiClient } from "../studio/studioLabelsAndMappers";
+import { mapApiVsmToUiSpec, type UiVsmSpec } from "./mapApiVsmToUiSpec";
 import { ReturnLoopsSvgOverlay, type VsmReturnLoopItem } from "./ReturnLoopsSvgOverlay";
 import { StepDetailSheet } from "./StepDetailSheet";
 
@@ -12,7 +16,36 @@ export function ValueStreamMapView({ vsmId }: { vsmId?: string }) {
   const { navigateToRoute } = useShellNavigation();
   const isFr = locale === "fr";
 
-  const vsm = INITIAL_VSM_SPEC;
+  const targetVsmId = vsmId ?? INITIAL_VSM_SPEC.id;
+  const [vsm, setVsm] = useState<UiVsmSpec>(INITIAL_VSM_SPEC);
+  const [vsmErrorBanner, setVsmErrorBanner] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setVsmErrorBanner(null);
+    createProcessesApiClient(locale)
+      .getValueStreamMap(targetVsmId)
+      .then((apiVsm) => {
+        if (cancelled || !apiVsm?.id) {
+          return;
+        }
+        setVsm(mapApiVsmToUiSpec(apiVsm, INITIAL_VSM_SPEC));
+      })
+      .catch((err: unknown) => {
+        if (cancelled) {
+          return;
+        }
+        const formatted = formatRfc9457ErrorToBanner(
+          err,
+          isFr ? "fr" : "en",
+          isFr ? "Chaîne de valeur" : "Value Stream Map",
+        );
+        setVsmErrorBanner(formatted.fullText);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [targetVsmId, locale, isFr]);
   const allSteps = useMemo(
     () => vsm.phases.flatMap((phase) => phase.steps.map((step) => ({ ...step, phase }))),
     [vsm],
@@ -60,6 +93,11 @@ export function ValueStreamMapView({ vsmId }: { vsmId?: string }) {
       data-vsm-id={vsmId ?? vsm.id}
       style={{ display: "flex", flexDirection: "column", gap: "16px" }}
     >
+      {vsmErrorBanner ? (
+        <OrciaAlertBanner tone="crimson" role="alert" testId="vsm-error-banner">
+          {vsmErrorBanner}
+        </OrciaAlertBanner>
+      ) : null}
       {/* Top Bar: Title, 3-Mode Comparison Switcher, Opportunities Drawer Toggle & Presentation Mode */}
       <header
         className="orcia-bento-card"

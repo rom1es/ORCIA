@@ -16,6 +16,7 @@ from orcia_core.permissions import (
     SessionTokenPair,
     UserIdentity,
 )
+from orcia_core.permissions.errors import ResourceNotFoundError
 from orcia_core.permissions.models import AuthMode
 
 PROBLEM_RESPONSES: dict[int | str, dict[str, Any]] = {
@@ -29,9 +30,15 @@ PROBLEM_RESPONSES: dict[int | str, dict[str, Any]] = {
 def resolve_request_user(request: Request, persona_key: str | None = None) -> UserIdentity:
     """Resolve authenticated `UserIdentity` from `Authorization: Bearer ...` or `persona_key`."""
     svc = get_auth_service(request)
-    return svc.resolve_user(
-        persona_key=persona_key, bearer_token=request.headers.get("Authorization")
-    )
+    bearer_token = request.headers.get("Authorization")
+    try:
+        return svc.resolve_user(persona_key=persona_key, bearer_token=bearer_token)
+    except ResourceNotFoundError:
+        cached_user: UserIdentity | None = getattr(request.state, "resolved_bearer_user", None)
+        if persona_key is None and bearer_token and cached_user is not None:
+            svc.register_user(cached_user)
+            return svc.resolve_user(persona_key=persona_key, bearer_token=bearer_token)
+        raise
 
 
 def user_identity_from_candidate(

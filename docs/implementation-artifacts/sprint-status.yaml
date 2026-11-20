@@ -254,7 +254,7 @@ development_status:
   # Epic 24 — Remédiation Finale Case B post-23.7 : Persistance PG18 (Jira Staged, MCP, VSM v2), Triggers UUIDv7, Waivers & ADN, CSS Tailwind v4, Navigation Zone 4, Zéro Jargon & Preuve Desktop 52/52 (REM24-01..REM24-12, USER24-BUG-1..6)
   # Plan directeur : docs/planning-artifacts/sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md
   epic-24: in-progress
-  24-1-persistance-pg18-actions-jira-staged-mcp-et-vsm-v2: backlog
+  24-1-persistance-pg18-actions-jira-staged-mcp-et-vsm-v2: done
   24-2-triggers-uuidv7-sans-collision-waivers-await-adn-pg18-et-fin-default-ws: backlog
   24-3-banc-mcp-audit-ledger-fin-pass-optimiste-et-assainissement-composition-root: backlog
   24-4-refonte-css-tailwind-tokens-modales-rgaa-contraste-onglets-et-shell: backlog

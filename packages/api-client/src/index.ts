@@ -48,6 +48,7 @@ import {
 import {
   createWorkflowsV2DomainClient,
   type ApiImpactAssessmentResult,
+  type ApiValueStreamMapSpec,
   type ApiWorkflowDefinitionV2,
   type DeclarativePacksListResponse,
   type DeclarativePackSummaryResponse,
@@ -109,6 +110,7 @@ export {
   streamReflexiveExecutionTraceSse,
   streamWorkspaceEventsSse,
   type ApiImpactAssessmentResult,
+  type ApiValueStreamMapSpec,
   type ApiWorkflowDefinitionV2,
   type AssistantTurnSseOptions,
   type BinaryDownloadResult,

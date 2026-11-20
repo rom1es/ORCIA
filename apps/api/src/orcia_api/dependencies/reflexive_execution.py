@@ -14,13 +14,17 @@ import os
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from orcia_api.dependencies._core_providers import should_auto_init_infra
 from orcia_api.dependencies.core_and_lifespan import (
     get_or_create_shared_db_engine,
     initialize_app_services,
 )
 from orcia_api.dependencies.workspace_and_packs import get_surgical_explorer_service
 from orcia_connectors import ConnectorReflexiveWriteGateAdapter
-from orcia_connectors.bounded_workflow_v2 import BoundedWorkflowLauncherAdapter
+from orcia_connectors.bounded_workflow_v2 import (
+    BoundedWorkflowLauncherAdapter,
+    BoundedWorkflowRunState,
+)
 from orcia_core.agents import (
     GatewayReflexiveLlmAdapter,
     NonDeterministicReflexiveRuntime,
@@ -29,7 +33,7 @@ from orcia_core.agents import (
     SqlReflexiveSessionStore,
 )
 from orcia_core.storage.claim_check import get_claim_check_storage
-from orcia_core.workflows import SqlWorkflowDefinitionsV2Store
+from orcia_core.workflows import SqlVsmDefinitionsV2Store, SqlWorkflowDefinitionsV2Store
 
 
 def _resolve_reflexive_session_maker(
@@ -122,14 +126,37 @@ def get_workflows_v2_sql_store(request: Request) -> SqlWorkflowDefinitionsV2Stor
     )
     if store is None:
         session_maker = _resolve_reflexive_session_maker(request)
-        strict_sql = (session_maker is not None) or (
-            os.environ.get("ORCIA_ENABLE_PG_SESSION_MAKER") == "1"
-        )
+        strict_sql = (session_maker is not None) or should_auto_init_infra("DATABASE_URL")
         store = SqlWorkflowDefinitionsV2Store(
             session_maker=session_maker,
             strict_sql=strict_sql,
         )
         request.app.state.workflows_v2_sql_store = store
+    return store
+
+
+def get_vsm_v2_sql_store(request: Request) -> SqlVsmDefinitionsV2Store:
+    """FastAPI `Depends` provider returning `SqlVsmDefinitionsV2Store` (PostgreSQL 18)."""
+    store: SqlVsmDefinitionsV2Store | None = getattr(request.app.state, "vsm_v2_sql_store", None)
+    if store is None:
+        session_maker = _resolve_reflexive_session_maker(request)
+        strict_sql = (session_maker is not None) or should_auto_init_infra("DATABASE_URL")
+        store = SqlVsmDefinitionsV2Store(
+            session_maker=session_maker,
+            strict_sql=strict_sql,
+        )
+        request.app.state.vsm_v2_sql_store = store
+    return store
+
+
+def get_workflow_v2_runs_store(request: Request) -> dict[str, BoundedWorkflowRunState]:
+    """FastAPI `Depends` provider returning active `BoundedWorkflowRunState` inspection map."""
+    store: dict[str, BoundedWorkflowRunState] | None = getattr(
+        request.app.state, "workflow_v2_runs_store", None
+    )
+    if store is None:
+        store = {}
+        request.app.state.workflow_v2_runs_store = store
     return store
 
 

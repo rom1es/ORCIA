@@ -11,7 +11,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "activeRoutesCount": 28,
     "uiPrimitivesCount": 136,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 54,
+    "alembicMigrationsCount": 55,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
     "techLeadReportsCount": 200,
@@ -256,7 +256,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261117_1601_merge_epic7_and_epic16_heads",
     "20261117_2001_story_20_1_ontology_leads_and_platform_roles",
     "20261117_2002_story_20_2_ontology_pg18_and_promotions",
-    "20261117_2003_story_20_3_user_preferences_and_mcp_tokens_pg18"
+    "20261117_2003_story_20_3_user_preferences_and_mcp_tokens_pg18",
+    "20261120_2401_story_24_1_jira_staged_actions_and_mcp_proposals_pg18"
   ],
   "architectureDecisions": [
     {
@@ -539,29 +540,29 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "date": "2026-11-20",
       "phaseOrStory": "Story 24.7",
       "reportFile": "24-7-reconciliation-e2e-captures-jalons-campagne-52-sur-52-et-cloture-epic-24-tech-lead-report.md",
-      "domain": "Epic 24 Vague 2 — Réconciliation Sélecteurs E2E, Captures Jalons, Campagne Figée 52/52 & Clôture (REM24-11, REM24-12, 18#1 #41, 07 #16, UX23-17)",
+      "domain": "Epic 24 Vague 2 — Réconciliation Sélecteurs E2E, Captures Jalons, Campagne Figée 52/52 & Clôture (REM24-11, REM24-12, USER24-BUG-1..6, 18#1 #41, 07 #16, UX23-17)",
       "summary": "Pré-implémentation (backlog, initialisée par Story 23.8) : correction openCatalogOrAgentsPage (workspaceAndCatalogHelpers.ts:126-130) & 07-spaces L42, milestone-*.png < 450 KB, campagne figée 52/52 Desktop (e2e-campaign-epic-24/), contre-audit 0 P0 / 0 P1, promotion 25 CAP vers runtime & clôture conditionnelle sans Epic 25."
     },
     {
       "date": "2026-11-20",
       "phaseOrStory": "Story 24.6",
       "reportFile": "24-6-recherche-cmdk-filtre-langue-purge-jargon-packs-et-microcopy-tech-lead-report.md",
-      "domain": "Epic 24 Vague 1 — Recherche Cmd+K Filtrée Langue, Purge Jargon, Compteurs Packs & Microcopy (REM24-09, REM24-10, UX23-05, UX23-08, UX23-10..12, UX23-16)",
-      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8) : filtre ci.lang = locale (sql_federated_search.py), icône OrciaIcon dans TopHeaderSearchCommand, purge enums & 0 nu (CatalogExplorerPanel.tsx:149), Markdown permissions, 5 compteurs /settings/packs, singulier n <= 1, split PacksRegistryPage.tsx (381 L) & IamSecopsExceptionForm.tsx (403 L)."
+      "domain": "Epic 24 Vague 1 — Recherche Cmd+K Filtrée Langue, Rendu Markdown Aide (USER24-BUG-3), Purge Jargon, Compteurs Packs & Microcopy (REM24-09, REM24-10, UX23-05, UX23-08, UX23-10..12, UX23-16)",
+      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8 + USER24-BUG-3) : rendu Markdown HTML (renderInlineMarkdownNodes) dans ContextualHelpSharedBlocks.tsx & ContextualHelpSectionsAndFooter.tsx, filtre ci.lang = locale (sql_federated_search.py), icône OrciaIcon dans TopHeaderSearchCommand, purge enums & 0 nu (CatalogExplorerPanel.tsx:149), Markdown permissions, 5 compteurs /settings/packs, singulier n <= 1, split PacksRegistryPage.tsx (381 L) & IamSecopsExceptionForm.tsx (403 L)."
     },
     {
       "date": "2026-11-20",
       "phaseOrStory": "Story 24.5",
       "reportFile": "24-5-identite-accostage-cockpit-sync-navigation-zone4-et-coherence-jour0-tech-lead-report.md",
-      "domain": "Epic 24 Vague 1 — Identité Accostage Cockpit, Navigation Zone 4 & Cohérence Jour 0 (REM24-08, UX23-07, UX23-09, UX23-15)",
-      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8) : platformAdmin réel dans cockpit/index.tsx:207-209 + filtrage permissions Accostage, route Zone 4 /inbox, /showcase surbrillance help, breadcrumb /organization & [Espace], verrouillage Mes Espaces Jour 0, 6 onglets /settings & split ShellContainer.tsx (378 L)."
+      "domain": "Epic 24 Vague 1 — Identité Accostage Cockpit, Route « 1. Compte Admin » (USER24-BUG-2), Navigation Zone 4 & Cohérence Jour 0 (REM24-08, UX23-07, UX23-09, UX23-15)",
+      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8 + USER24-BUG-2) : route jalon 1. Compte Admin /welcome-setup → /profile / /cockpit et audit 6 jalons vs router.tsx, platformAdmin réel dans cockpit/index.tsx:207-209 + filtrage permissions Accostage, route Zone 4 /inbox, /showcase surbrillance help, breadcrumb /organization & [Espace], verrouillage Mes Espaces Jour 0, 6 onglets /settings & split ShellContainer.tsx (378 L)."
     },
     {
       "date": "2026-11-20",
       "phaseOrStory": "Story 24.4",
       "reportFile": "24-4-refonte-css-tailwind-tokens-modales-rgaa-contraste-onglets-et-shell-tech-lead-report.md",
-      "domain": "Epic 24 Vague 1 — CSS Tailwind v4 Layering, OrciaDialog, Contraste RGAA Sombre & Shell Direction C (REM24-07, UX23-02..04, UX23-13..14, UX23-16)",
-      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8) : ordre tokens.css → Tailwind (main.tsx:1-2), split/layering tokens.css (1 266 L), AgentDetailAndSandboxModal (318 L) sur OrciaDialog, onglets sans fade 150ms, contraste dark --color-sidebar-active-fg >= 4.5:1 & hauteur FourZoneDirectionCShell (348 L)."
+      "domain": "Epic 24 Vague 1 — CSS Tailwind v4 Layering, Verrouillage Scroll Shell (USER24-BUG-1), Modales Onglets & Clés MCP (USER24-BUG-4A/4B/5), OrciaDialog & Contraste RGAA (REM24-07, UX23-02..04, UX23-13..14, UX23-16)",
+      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8 + USER24-BUG-1/4A/4B/5) : ordre tokens.css → Tailwind (main.tsx:1-2), split/layering tokens.css (1 266 L), verrouillage scroll 100dvh Desktop + test systématique, onglets horizontaux .orcia-ds-tabs UserSettingsModalDialog, suppression doublon Paramètres SidebarAccountPopover, reset lastIssuedPlaintext à fermeture + libellés FR MCP, AgentDetailAndSandboxModal sur OrciaDialog, contraste dark --color-sidebar-active-fg >= 4.5:1."
     },
     {
       "date": "2026-11-20",
@@ -574,15 +575,15 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "date": "2026-11-20",
       "phaseOrStory": "Story 24.2",
       "reportFile": "24-2-triggers-uuidv7-sans-collision-waivers-await-adn-pg18-et-fin-default-ws-tech-lead-report.md",
-      "domain": "Epic 24 Vague 0 — Triggers UUIDv7 sans Collision, Waivers await, ADN Starlark PG18 & Purge default-ws (REM24-03, REM24-04, 20#2 #49, 17#3 #40, UX23-06)",
-      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8) : correction collision tid[:8] (_triggers_lifecycle_ops.py:46-47) + trigger_key optionnel, await waivers + ADN Starlark PG18 (dependencies/workspace_and_packs.py), purge \"default-ws\"/\"ws-claims-alpha\"/\"ws-mon-compte\", split dna_starlark_and_glossary_lifecycle.py (447 L)."
+      "domain": "Epic 24 Vague 0 — Triggers UUIDv7 sans Collision, Waivers await, ADN Starlark PG18 & Purge default-ws (REM24-03, REM24-04, USER24-BUG-6, 20#2 #49, 17#3 #40, UX23-06)",
+      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8 + USER24-BUG-6) : correction collision tid[:8] (_triggers_lifecycle_ops.py:46-47) + trigger_key optionnel, await waivers + ADN Starlark PG18 (dependencies/workspace_and_packs.py), purge \"default-ws\"/\"ws-claims-alpha\"/\"ws-mon-compte\", non-montage détail /spaces à 0 espace + commutation des 5 onglets WorkspaceFiveTabsAndExternalRebaseView, split dna_starlark_and_glossary_lifecycle.py (447 L)."
     },
     {
       "date": "2026-11-20",
       "phaseOrStory": "Story 24.1",
       "reportFile": "24-1-persistance-pg18-actions-jira-staged-mcp-et-vsm-v2-tech-lead-report.md",
       "domain": "Epic 24 Vague 0 — Persistance PG18 Actions Jira Staged, Propositions MCP & Workflow VSM v2 (REM24-01, REM24-02, 06 #15, 19#2 #47, 20#1 #48, UX23-01)",
-      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8) : migration Alembic jira_staged_actions + persistance PG18 GovernedMcpServerService, retrait _get_jira_service/_get_mcp_service, câblage strict SqlWorkflowDefinitionsV2Store (vsm_definitions_v2), split jira_actions.py (459 L) & GatesAdaptiveHumanReviewSection.tsx (378 L) < 300 L."
+      "summary": "Clôture (done) : migration Alembic 20261120_2401 (jira_staged_actions, mcp_governed_proposals, index vsm_definitions_v2), garde-fous 09_reset_db_first_boot.py/reset_day0.py, SqlJiraStagedActionsRepository + domain_events_outbox (jira_actions.py 202 L), SqlMcpProposalsRepository, SqlVsmDefinitionsV2Store + seed lifespan, DI dependencies/jira_and_mcp.py & reflexive_execution.py (retrait singletons lazy), retry réhydratation JWT (main.py / _auth_pg_helpers.py), split GatesAdaptiveHumanReviewSection.tsx (119 L) + ValueStreamMapView.tsx + garde isStartingRun, 90 % couv. combinée Story 24.1 (21 unit + 3 PG18 testcontainers), 9/9 Turbo (222 tests @orcia/web), 4/4 E2E Desktop sans retry (06 #15, 19#1, 19#2 #47, 20#1 #48)."
     },
     {
       "date": "2026-11-20",

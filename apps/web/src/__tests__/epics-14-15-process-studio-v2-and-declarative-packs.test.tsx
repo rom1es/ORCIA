@@ -212,6 +212,14 @@ describe("Epics 14 & 15 — ORCIA Process Studio v2, Interactive VSM & Declarati
     expect(screen.getByTestId("run-drawer-idempotency-key").textContent).toContain(
       ":qualification:iter-1",
     );
+    await waitFor(() => {
+      expect(
+        (screen.getByTestId("anchor-action-2-amend-diff-btn") as HTMLButtonElement).disabled,
+      ).toBe(false);
+      expect(
+        (screen.getByTestId("anchor-action-1-accept-btn") as HTMLButtonElement).disabled,
+      ).toBe(false);
+    });
     const initialSha = screen.getByTestId("claim-check-sha256").textContent;
 
     // Action 2: Amend Diff in S3 -> recomputes SHA-256
@@ -233,6 +241,8 @@ describe("Epics 14 & 15 — ORCIA Process Studio v2, Interactive VSM & Declarati
 
     // Action 1: Accept & Sign Final Anchor Card
     fireEvent.click(screen.getByTestId("anchor-action-1-accept-btn"));
-    expect(screen.getByTestId("run-drawer-status-badge").textContent).toBe("COMPLETED_APPROVED");
+    await waitFor(() => {
+      expect(screen.getByTestId("run-drawer-status-badge").textContent).toBe("COMPLETED_APPROVED");
+    });
   });
 });

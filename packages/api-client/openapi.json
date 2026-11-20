@@ -48251,7 +48251,7 @@
     },
     "/api/v1/jira/actions/stage": {
       "post": {
-        "description": "Validate `GET /rest/api/3/issue/{key}/transitions` and stage Jira action before Gate.",
+        "description": "Validate `GET /rest/api/3/issue/{key}/transitions` and persist staged Jira action in PG18.",
         "operationId": "stage_jira_workflow_action_api_v1_jira_actions_stage_post",
         "parameters": [
           {
@@ -48377,7 +48377,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Pre-validate Jira transitions and stage action in draft_artifact_jsonb (`AD-5`)",
+        "summary": "Pre-validate Jira transitions and stage action in PG18 (`AD-5`)",
         "tags": [
           "jira-and-mcp"
         ]
@@ -48385,7 +48385,7 @@
     },
     "/api/v1/jira/actions/staged": {
       "get": {
-        "description": "List staged or executed Jira actions for F5 state rehydration.",
+        "description": "List staged or executed Jira actions from PostgreSQL 18 for F5 rehydration.",
         "operationId": "list_staged_jira_actions_api_v1_jira_actions_staged_get",
         "parameters": [
           {
@@ -64264,7 +64264,7 @@
     },
     "/api/v1/vsm": {
       "get": {
-        "description": "List all declarative Value Stream Maps (`ValueStreamMapSpec`).",
+        "description": "List all declarative Value Stream Maps (`ValueStreamMapSpec`) from PG18.",
         "operationId": "list_value_stream_maps_api_v1_vsm_get",
         "responses": {
           "200": {
@@ -64368,7 +64368,7 @@
     },
     "/api/v1/vsm/{vsm_id}": {
       "get": {
-        "description": "Fetch a single `ValueStreamMapSpec` by ID or slug.",
+        "description": "Fetch a single `ValueStreamMapSpec` from PG18 by ID or slug.",
         "operationId": "get_value_stream_map_api_v1_vsm__vsm_id__get",
         "parameters": [
           {

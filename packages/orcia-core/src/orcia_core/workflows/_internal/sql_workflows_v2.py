@@ -40,6 +40,10 @@ class SqlWorkflowDefinitionsV2Store:
         if not self._strict_sql:
             self._memory_fallback[key] = spec_payload
         if self._session_maker is None:
+            if self._strict_sql:
+                raise RuntimeError(
+                    "SqlWorkflowDefinitionsV2Store requires session_maker when strict_sql=True."
+                )
             return workflow
 
         stmt = sa.text(
@@ -129,6 +133,10 @@ class SqlWorkflowDefinitionsV2Store:
                 if self._strict_sql:
                     raise
 
+        if self._session_maker is None and self._strict_sql:
+            raise RuntimeError(
+                "SqlWorkflowDefinitionsV2Store requires session_maker when strict_sql=True."
+            )
         return [
             WorkflowDefinitionV2.model_validate(item) for item in self._memory_fallback.values()
         ]

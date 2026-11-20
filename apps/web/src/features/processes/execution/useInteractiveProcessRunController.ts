@@ -1,5 +1,5 @@
 import type { UiAgentTraceEventItem } from "@orcia/ui";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../../../i18n";
 import type { WorkflowDefinitionV2Item } from "../processStudioV2Data";
 import { createProcessesApiClient } from "../studio/studioLabelsAndMappers";
@@ -9,53 +9,18 @@ import {
 } from "../../shared/reflexiveTraceMappers";
 import { useReflexiveExecutionController } from "../../shared/useReflexiveExecutionController";
 import { useSourceLineInspector } from "../../shared/useSourceLineInspector";
+import {
+  extractAgentSlugFromRef,
+  formatAgentHumanLabel,
+  simpleHashHex,
+  type InteractiveProcessDrawerStatus,
+} from "./interactiveRunFormatters";
 
-const AGENT_HUMAN_LABELS: Record<string, string> = {
-  "pack://sdlc/agents/orchestrateur-produit.md":
-    "Agent Product Owner (Qualification & PRD)",
-  "pack://sdlc/agents/crl-etude-archi.md":
-    "Agent Architecte (Dossier d'étude 14 points)",
-  "pack://sdlc/agents/agent-us.md":
-    "Agent Business Analyst (Découpe Epics & US)",
-  "pack://sdlc/agents/crl-socle-generateur.md": "Agent Socle de Connaissance",
-  "pack://orcia-docs/agents/redacteur-documentation-orcia.md":
-    "Agent Rédacteur Documentaire",
+export {
+  extractAgentSlugFromRef,
+  formatAgentHumanLabel,
+  type InteractiveProcessDrawerStatus,
 };
-
-export function formatAgentHumanLabel(agentRef: string): string {
-  return (
-    AGENT_HUMAN_LABELS[agentRef] ??
-    agentRef.replace(/^pack:\/\/[^/]+\/agents\//, "").replace(/\.md$/, "")
-  );
-}
-
-export function extractAgentSlugFromRef(agentRef: string): string {
-  return (
-    agentRef
-      .replace(/^pack:\/\/[^/]+\/agents\//, "")
-      .replace(/\.md$/, "")
-      .trim() || "assistant"
-  );
-}
-
-function simpleHashHex(text: string): string {
-  let h = 2166136261;
-  for (let i = 0; i < text.length; i += 1) {
-    h ^= text.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  const hex = (h >>> 0).toString(16).padStart(8, "0");
-  return `${hex}${hex}${hex}${hex}${hex}${hex}${hex}${hex}`;
-}
-
-export type InteractiveProcessDrawerStatus =
-  | "WAITING_EXTERNAL_GATE"
-  | "WAITING_SUBSTEP_HITL"
-  | "WAITING_WRITE_PREVIEW"
-  | "WAITING_FINAL_ANCHOR"
-  | "COMPLETED_APPROVED"
-  | "RETURN_LOOP_TRIGGERED"
-  | "SLA_SUSPENDED";
 
 export function useInteractiveProcessRunController(
   workflow: WorkflowDefinitionV2Item,
@@ -97,6 +62,14 @@ export function useInteractiveProcessRunController(
     null,
   );
   const [statusBanner, setStatusBanner] = useState<string | null>(null);
+  const [hasError, setHasError] = useState<boolean>(false);
+  const [isStartingRun, setIsStartingRun] = useState<boolean>(
+    () => !readPersistedReflexiveId(storageKey),
+  );
+  const [isSubmittingDecision, setIsSubmittingDecision] =
+    useState<boolean>(false);
+  const startRunPromiseRef = useRef<Promise<string | null> | null>(null);
+  const hasPersistedServerRunRef = useRef<boolean>(false);
   const [inlineRunTraceEvents, setInlineRunTraceEvents] = useState<
     readonly UiAgentTraceEventItem[]
   >([]);
@@ -131,20 +104,29 @@ export function useInteractiveProcessRunController(
   useEffect(() => {
     const existingExecId = readPersistedReflexiveId(storageKey);
     if (existingExecId) {
+      setIsStartingRun(false);
       return;
     }
     let cancelled = false;
-    createProcessesApiClient(locale)
-      .startWorkflowV2Run(workflow.id, {
-        inputs: { objective: workflow.title },
-        iteration: 1,
-        reentry_mode: "initial",
-      })
-      .then((res) => {
-        if (cancelled || !res?.run) return;
-        setRunId(res.run.run_id || `run-${workflow.id}-01`);
+    setIsStartingRun(true);
+    setHasError(false);
+
+    const startPromise = (async (): Promise<string | null> => {
+      try {
+        const res = await createProcessesApiClient(locale).startWorkflowV2Run(
+          workflow.id,
+          {
+            inputs: { objective: workflow.title },
+            iteration: 1,
+            reentry_mode: "initial",
+          },
+        );
+        if (cancelled || !res?.run) return null;
+        const resolvedRunId = res.run.run_id || `run-${workflow.id}-01`;
+        setRunId(resolvedRunId);
+        hasPersistedServerRunRef.current = Boolean(res.run.run_id);
         if (res.run.reflexive_execution_id) {
-          void reflexive.refreshSnapshot(res.run.reflexive_execution_id);
+          await reflexive.refreshSnapshot(res.run.reflexive_execution_id);
         } else if (
           Array.isArray(res.run.trace_events) &&
           res.run.trace_events.length > 0
@@ -155,7 +137,7 @@ export function useInteractiveProcessRunController(
             ),
           );
         } else if (isGoalDriven) {
-          void reflexive.startExecution({
+          await reflexive.startExecution({
             actor_slug: actorSlug,
             objective: workflow.reflexive_objective || workflow.title,
             effort_level: "high",
@@ -168,16 +150,26 @@ export function useInteractiveProcessRunController(
             ],
           });
         }
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        const detail = err instanceof Error ? err.message : String(err);
-        setStatusBanner(
-          isFr
-            ? `ℹ️ Mode dossier local actif (${detail}).`
-            : `ℹ️ Local dossier mode active (${detail}).`,
-        );
-      });
+        return resolvedRunId;
+      } catch (err: unknown) {
+        if (!cancelled) {
+          const detail = err instanceof Error ? err.message : String(err);
+          setHasError(true);
+          setStatusBanner(
+            isFr
+              ? `Échec du démarrage du run : ${detail}`
+              : `Failed to start run: ${detail}`,
+          );
+        }
+        return null;
+      } finally {
+        if (!cancelled) {
+          setIsStartingRun(false);
+        }
+      }
+    })();
+
+    startRunPromiseRef.current = startPromise;
     return () => {
       cancelled = true;
     };
@@ -265,6 +257,46 @@ export function useInteractiveProcessRunController(
     }
   };
 
+  const handleAction1AcceptAndSign = async (): Promise<void> => {
+    if (isStartingRun || isSubmittingDecision) return;
+    setIsSubmittingDecision(true);
+    setHasError(false);
+    try {
+      let resolvedRunId = runId;
+      if (startRunPromiseRef.current) {
+        const awaitedRunId = await startRunPromiseRef.current;
+        if (awaitedRunId) {
+          resolvedRunId = awaitedRunId;
+        }
+      }
+      if (hasPersistedServerRunRef.current) {
+        await createProcessesApiClient(locale).sendWorkflowV2HitlSignal(
+          resolvedRunId,
+          {
+            action: "APPROVE",
+            actor_id: actorSlug,
+          },
+        );
+      }
+      setStatus("COMPLETED_APPROVED");
+      setStatusBanner(
+        isFr
+          ? "Dossier validé et signé : le livrable final est enregistré et publié."
+          : "Deliverable approved, signed, and published.",
+      );
+    } catch (err: unknown) {
+      const detail = err instanceof Error ? err.message : String(err);
+      setHasError(true);
+      setStatusBanner(
+        isFr
+          ? `Échec de la validation du livrable : ${detail}`
+          : `Deliverable approval failed: ${detail}`,
+      );
+    } finally {
+      setIsSubmittingDecision(false);
+    }
+  };
+
   const handleAction2SaveAmendedDiff = () => {
     setArtifactSha256(simpleHashHex(artifactMarkdown));
     setIsEditingDiff(false);
@@ -319,6 +351,9 @@ export function useInteractiveProcessRunController(
     setReturnLoopRemarks,
     signedTokenPreview,
     statusBanner,
+    hasError,
+    isStartingRun,
+    isSubmittingDecision,
     setStatusBanner,
     inspector,
     reflexive,
@@ -327,6 +362,7 @@ export function useInteractiveProcessRunController(
     handleLaunchLiveInvestigation,
     handleStageExternalWritePreview,
     handleApproveCurrentSubStep,
+    handleAction1AcceptAndSign,
     handleAction2SaveAmendedDiff,
     handleAction3RejectAndLoop,
   };

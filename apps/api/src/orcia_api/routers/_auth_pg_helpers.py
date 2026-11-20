@@ -153,34 +153,38 @@ async def sync_auth_service_user_by_email_from_pg(
         )
 
 
-async def rehydrate_bearer_subject_from_pg_if_missing(request: Request) -> None:
+async def rehydrate_bearer_subject_from_pg_if_missing(
+    request: Request,
+) -> AuthAndOrganizationService | None:
     """ASGI/HTTP middleware hook rehydrating caller identity from PG 18 if RAM was cleared."""
     auth_hdr = request.headers.get("Authorization")
     if not auth_hdr:
-        return
+        return None
     clean_hdr = auth_hdr.strip()
     if not (clean_hdr.startswith("Bearer ") or clean_hdr.startswith("bearer ")):
-        return
+        return None
 
     auth_svc: AuthAndOrganizationService | None = getattr(request.app.state, "auth_service", None)
     if auth_svc is None:
-        return
+        return None
 
     try:
         claims = auth_svc.verify_access_token_claims(clean_hdr)
     except OrciaDomainError:
-        return
+        return auth_svc
     except Exception as exc:
         logger.debug("auth_claims_verification_skipped", error_type=type(exc).__name__)
-        return
+        return auth_svc
 
     if auth_svc.has_user_in_memory(claims.sub):
-        return
+        request.state.hydrated_auth_service = auth_svc
+        return auth_svc
 
     engine = resolve_app_db_engine(request)
+    hydrated_user: UserIdentity | None = None
     if engine is not None:
         try:
-            await rehydrate_user_from_pg_by_id(
+            hydrated_user = await rehydrate_user_from_pg_by_id(
                 engine, auth_svc, claims.sub, auth_mode=claims.auth_mode
             )
         except Exception as exc:
@@ -189,6 +193,17 @@ async def rehydrate_bearer_subject_from_pg_if_missing(request: Request) -> None:
                 sub=claims.sub,
                 error_type=type(exc).__name__,
             )
+
+    current_svc: AuthAndOrganizationService | None = getattr(
+        request.app.state, "auth_service", None
+    )
+    active_svc = current_svc or auth_svc
+    if hydrated_user is not None:
+        if current_svc is not None and current_svc is not auth_svc:
+            current_svc.register_user(hydrated_user)
+        request.state.resolved_bearer_user = hydrated_user
+    request.state.hydrated_auth_service = active_svc
+    return active_svc
 
 
 async def authenticate_via_postgres18(

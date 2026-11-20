@@ -46,6 +46,9 @@ export function InteractiveRunDrawer({
     setReturnLoopRemarks,
     signedTokenPreview,
     statusBanner,
+    hasError,
+    isStartingRun,
+    isSubmittingDecision,
     setStatusBanner,
     inspector,
     reflexive,
@@ -54,6 +57,7 @@ export function InteractiveRunDrawer({
     handleLaunchLiveInvestigation,
     handleStageExternalWritePreview,
     handleApproveCurrentSubStep,
+    handleAction1AcceptAndSign,
     handleAction2SaveAmendedDiff,
     handleAction3RejectAndLoop,
   } = ctrl;
@@ -174,12 +178,16 @@ export function InteractiveRunDrawer({
 
       {statusBanner ? (
         <div
-          role="status"
+          role={hasError ? "alert" : "status"}
           data-testid="run-drawer-feedback-banner"
           className="rounded border px-3 py-2 text-xs font-medium"
           style={{
-            backgroundColor: "var(--color-gate-emerald-bg)",
-            borderColor: "var(--color-gate-emerald)",
+            backgroundColor: hasError
+              ? "var(--color-arbitration-bg)"
+              : "var(--color-gate-emerald-bg)",
+            borderColor: hasError
+              ? "var(--color-status-error)"
+              : "var(--color-gate-emerald)",
             color: "var(--color-text-primary)",
           }}
         >
@@ -228,15 +236,10 @@ export function InteractiveRunDrawer({
               : "External work received: automated quality checks passed.",
           );
         }}
+        isStartingRun={isStartingRun}
+        isSubmittingDecision={isSubmittingDecision}
         onApproveCurrentSubStep={handleApproveCurrentSubStep}
-        onAction1AcceptAndSign={() => {
-          setStatus("COMPLETED_APPROVED");
-          setStatusBanner(
-            isFr
-              ? "Dossier validé et signé : le livrable final est enregistré et publié."
-              : "Deliverable approved, signed, and published.",
-          );
-        }}
+        onAction1AcceptAndSign={handleAction1AcceptAndSign}
         onAction2SaveAmendedDiff={handleAction2SaveAmendedDiff}
         onAction3RejectAndLoop={handleAction3RejectAndLoop}
         onAction4SuspendSla={() => {

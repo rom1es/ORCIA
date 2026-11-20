@@ -17,16 +17,18 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from orcia_api.dependencies import (
     get_process_execution_dispatcher,
+    get_vsm_v2_sql_store,
+    get_workflow_v2_runs_store,
     get_workflows_v2_sql_store,
 )
 from orcia_api.routers._workflows_helpers import (
     enforce_not_observer as _enforce_not_observer,
 )
 from orcia_api.routers._workflows_helpers import (
-    get_runs_store as _get_runs_store,
+    get_vsm_definition_from_pg18 as _get_vsm_definition_from_pg18,
 )
 from orcia_api.routers._workflows_helpers import (
-    get_vsm_store as _get_vsm_store,
+    load_vsm_definitions_from_pg18 as _load_vsm_definitions_from_pg18,
 )
 from orcia_api.routers._workflows_helpers import (
     load_workflows_store as _load_workflows_store,
@@ -52,7 +54,7 @@ from orcia_connectors.bounded_workflow_v2 import (
 from orcia_core.agents import ProcessExecutionDispatcher
 from orcia_core.kernel.errors import resolve_locale
 from orcia_core.kernel.ids import new_uuid7_str
-from orcia_core.workflows import SqlWorkflowDefinitionsV2Store
+from orcia_core.workflows import SqlVsmDefinitionsV2Store, SqlWorkflowDefinitionsV2Store
 from orcia_core.workflows.gates.pipeline import GatePipelineExecutor
 from orcia_core.workflows.schemas_v2 import (
     ImpactAssessmentResult,
@@ -69,6 +71,8 @@ router = APIRouter(
 )
 
 WorkflowSqlStoreDep = Annotated[SqlWorkflowDefinitionsV2Store, Depends(get_workflows_v2_sql_store)]
+VsmSqlStoreDep = Annotated[SqlVsmDefinitionsV2Store, Depends(get_vsm_v2_sql_store)]
+RunsStoreDep = Annotated[dict[str, BoundedWorkflowRunState], Depends(get_workflow_v2_runs_store)]
 ProcessDispatcherDep = Annotated[
     ProcessExecutionDispatcher, Depends(get_process_execution_dispatcher)
 ]
@@ -76,18 +80,23 @@ PersonaQuery = Annotated[str | None, Query(min_length=1, max_length=64)]
 
 
 @router.get("/api/v1/vsm", response_model=VsmListResponse)
-async def list_value_stream_maps(request: Request) -> VsmListResponse:
-    """List all declarative Value Stream Maps (`ValueStreamMapSpec`)."""
-    store = _get_vsm_store(request)
-    unique_by_id = {v.id: v for v in store.values()}
-    return VsmListResponse(items=list(unique_by_id.values()))
+async def list_value_stream_maps(
+    request: Request,
+    vsm_store: VsmSqlStoreDep,
+) -> VsmListResponse:
+    """List all declarative Value Stream Maps (`ValueStreamMapSpec`) from PG18."""
+    items = await _load_vsm_definitions_from_pg18(request, vsm_store)
+    return VsmListResponse(items=items)
 
 
 @router.get("/api/v1/vsm/{vsm_id}", response_model=ValueStreamMapSpec)
-async def get_value_stream_map(vsm_id: str, request: Request) -> ValueStreamMapSpec:
-    """Fetch a single `ValueStreamMapSpec` by ID or slug."""
-    store = _get_vsm_store(request)
-    vsm = store.get(vsm_id)
+async def get_value_stream_map(
+    vsm_id: str,
+    request: Request,
+    vsm_store: VsmSqlStoreDep,
+) -> ValueStreamMapSpec:
+    """Fetch a single `ValueStreamMapSpec` from PG18 by ID or slug."""
+    vsm = await _get_vsm_definition_from_pg18(request, vsm_store, vsm_id)
     if vsm is None:
         raise HTTPException(status_code=404, detail=f"Value Stream Map '{vsm_id}' not found")
     return vsm
@@ -241,6 +250,7 @@ async def start_workflow_v2_run(
     request: Request,
     sql_store: WorkflowSqlStoreDep,
     dispatcher: ProcessDispatcherDep,
+    runs_store: RunsStoreDep,
     persona_key: PersonaQuery = None,
 ) -> WorkflowV2RunResponse:
     """Start a dual-mode workflow run (`ProcessExecutionDispatcher`: Goal vs Milestone)."""
@@ -267,15 +277,16 @@ async def start_workflow_v2_run(
         locale=locale,
     )
     run_state = BoundedWorkflowRunState.from_unified_result(unified)
-    runs_store = _get_runs_store(request)
     runs_store[run_id] = run_state
     return WorkflowV2RunResponse(run=run_state)
 
 
 @router.get("/api/v1/runs/{run_id}", response_model=WorkflowV2RunResponse)
-async def get_workflow_v2_run(run_id: str, request: Request) -> WorkflowV2RunResponse:
+async def get_workflow_v2_run(
+    run_id: str,
+    runs_store: RunsStoreDep,
+) -> WorkflowV2RunResponse:
     """Fetch the live state of a workflow v2 run."""
-    runs_store = _get_runs_store(request)
     run_state = runs_store.get(run_id)
     if run_state is None:
         raise HTTPException(status_code=404, detail=f"Run '{run_id}' not found")
@@ -288,11 +299,11 @@ async def send_hitl_signal_to_workflow_v2_run(
     payload: HitlSignalRequest,
     request: Request,
     sql_store: WorkflowSqlStoreDep,
+    runs_store: RunsStoreDep,
     persona_key: PersonaQuery = None,
 ) -> WorkflowV2RunResponse:
     """Deliver a human checkpoint, WritePreview approval, or 4-action Anchor Card signal."""
     _enforce_not_observer(request, persona_key=persona_key)
-    runs_store = _get_runs_store(request)
     run_state = runs_store.get(run_id)
     if run_state is None:
         raise HTTPException(status_code=404, detail=f"Run '{run_id}' not found")

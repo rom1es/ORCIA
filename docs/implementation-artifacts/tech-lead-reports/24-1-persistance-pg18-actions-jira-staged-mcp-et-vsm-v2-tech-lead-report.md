@@ -2,7 +2,7 @@
 
 - **Story :** `24-1-persistance-pg18-actions-jira-staged-mcp-et-vsm-v2` (Epic 24 — Vague 0 `P0/P1`)
 - **Date :** 2026-11-20
-- **Statut :** `En attente d'implémentation` (initialisé par `Story 23.8`)
+- **Statut :** `Terminé (`done`)`
 - **Plan directeur :** [`sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md`](../../planning-artifacts/sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md)
 - **Références remédiées :** `REM24-01`, `REM24-02` | Échecs E2E `06 #15`, `19#2 #47`, `20#1 #48` | Constat `UX23-01` (`P0`) | Diagnostics `ARCH24-01`, `ARCH24-02`, `ARCH24-12`
 - **Capacité(s) (`capabilities.yaml`) :** `CAP-020`, `CAP-021`, `CAP-024`, `CAP-030`, `CAP-031`, `CAP-032`, `CAP-033`, `CAP-140` (`8` capacités Desktop `failed_e2e`)
@@ -71,14 +71,36 @@ La campagne `Story 23.7` révèle que trois flux critiques échouent en Desktop 
 
 ## 3. Bilan des Modifications & Résultats
 
-> **Statut :** `En attente d'implémentation` — Cette section sera complétée après implémentation, passage des 5 couches `AD-17`, ré-indexation GitNexus (`npx gitnexus analyze` + `gitnexus_detect_changes()`) et exécution de `pnpm site:sync`.
+> **Statut :** `Terminé (`done`)` — Validation 5 couches `AD-17` réussie sur le périmètre Story 24.1 (`06 #15`, `19#2 #47`, `20#1 #48` en `PASS` sans retry sur PostgreSQL 18 + Redis 7.4 réels), ré-indexation GitNexus (`npx gitnexus analyze` + `detect_changes`) et synchronisation `pnpm site:sync` effectuées. *(Note : le scénario `20#2` lié à la collision UUIDv7 `tid[:8]` dans `_triggers_lifecycle_ops.py:46-47` relève du périmètre explicite de la `Story 24.2`.)*
 
-| Fichier / Composant | Action Prévue | Statut |
+### 3.1 Fichiers créés & modifiés
+| Fichier / Composant | Action Réalisée | Statut |
 |---|---|---|
-| `infra/migrations/versions/*_jira_staged_and_mcp_pg18.py` | Migration Alembic `Expand` PG18 | `En attente d'implémentation` |
-| `infra/scripts/maintenance/_first_boot_reset_guards.py` | Ajout tables mutables Jour 0 | `En attente d'implémentation` |
-| `packages/orcia-connectors/.../jira_actions.py` + `_internal/sql_jira_staged_actions.py` | Persistance PG18 & split `< 300` L | `En attente d'implémentation` |
-| `packages/orcia-core/.../orchestration/mcp_server.py` | Persistance PG18 `_draft_proposals` | `En attente d'implémentation` |
-| `packages/orcia-core/.../workflows/_internal/sql_workflows_v2.py` | Câblage strict `vsm_definitions_v2` + seed | `En attente d'implémentation` |
-| `apps/api/src/orcia_api/{dependencies/,routers/jira_and_mcp.py,routers/_workflows_helpers.py}` | Suppression lazy singletons & DI | `En attente d'implémentation` |
-| `apps/web/src/features/gates/GatesAdaptiveHumanReviewSection.tsx` | Split `< 300` L & câblage PG18 | `En attente d'implémentation` |
+| `infra/migrations/versions/20261120_2401_story_24_1_jira_staged_actions_and_mcp_proposals_pg18.py` | Création révision Alembic `Expand` PG18 (`jira_staged_actions`, `mcp_governed_proposals`, index `ix_vsm_definitions_v2_pack_id`) | `Terminé` |
+| `infra/scripts/maintenance/_first_boot_reset_guards.py`, `09_reset_db_first_boot.py`, `infra/scripts/e2e/reset_day0.py` | Ajout de `jira_staged_actions` et `mcp_governed_proposals` à `ORDERED_MUTABLE_TABLES_TO_CLEAR` + ré-ensemencement `vsm_definitions_v2` | `Terminé` |
+| `packages/orcia-connectors/src/orcia_connectors/{jira_actions.py,_jira_models.py,_jira_validation.py,_jira_sync_mixin.py,_internal/sql_jira_staged_actions.py,_internal/_sql_jira_mappers.py}` | Persistance PG18 transactionnelle (`jira_staged_actions` + `domain_events_outbox`) & split `< 220` L (`jira_actions.py` `202` L) | `Terminé` |
+| `packages/orcia-core/src/orcia_core/orchestration/{mcp_server.py,_mcp_tools_helpers.py,_internal/sql_mcp_proposals.py}` | Suppression `_draft_proposals` RAM, port `McpProposalRepositoryPort` & `SqlMcpProposalsRepository` (`mcp_governed_proposals`) | `Terminé` |
+| `packages/orcia-core/src/orcia_core/workflows/{__init__.py,_internal/sql_vsm_v2.py,_internal/sql_workflows_v2.py}` | `SqlVsmDefinitionsV2Store` + `upsert_vsm_definitions_v2_sql` & garde `strict_sql=True` | `Terminé` |
+| `apps/api/src/orcia_api/dependencies/{__init__.py,core_and_lifespan.py,jira_and_mcp.py,reflexive_execution.py}` | Providers `Depends` (`get_jira_staged_action_service`, `get_mcp_server_service`, `get_vsm_v2_sql_store`, `get_workflow_v2_runs_store`), seed lifespan `vsm_definitions_v2` | `Terminé` |
+| `apps/api/src/orcia_api/routers/{jira_and_mcp.py,workflows.py,_workflows_helpers.py,packs.py,e2e_test_hooks.py}` | Suppression singletons lazy (`_get_jira_service`, `_get_mcp_service`, `get_vsm_store`, `get_runs_store`), éviction E2E alignée | `Terminé` |
+| `apps/api/src/orcia_api/{main.py,routers/_auth_pg_helpers.py,routers/_auth_token_issuer.py}` | Retry de réhydratation JWT dans `bearer_auth_rehydration_middleware` lors d'éviction concurrente `auth_service` | `Terminé` |
+| `packages/api-client/{openapi.json,src/domains/workflowsV2.ts,src/index.ts}` | Client typé `listValueStreamMaps()` & `getValueStreamMap(vsmId)` (`0-diff` OpenAPI) | `Terminé` |
+| `apps/web/src/features/gates/{GatesAdaptiveHumanReviewSection.tsx,GatesAdaptiveReviewHeaderCard.tsx,useGatesAdaptiveHumanReview.ts}` | Découpage `< 250` L (`GatesAdaptiveHumanReviewSection.tsx` `119` L), réhydratation `GET` & `[role="alert"]` | `Terminé` |
+| `apps/web/src/features/processes/{ProcessesHubPage.tsx,ProcessesValueStreamOverviewCard.tsx,vsm/ValueStreamMapView.tsx,vsm/mapApiVsmToUiSpec.ts,execution/useInteractiveProcessRunController.ts,execution/InteractiveRunDrawer.tsx,execution/InteractiveRunDeliverableAndHitlPanels.tsx,execution/interactiveRunFormatters.ts}` | Hydratation `GET /api/v1/vsm/{id}`, `vsm-error-banner` `[role="alert"]`, garde `isStartingRun` jusqu'à résolution `POST .../runs` + `sendWorkflowV2HitlSignal` | `Terminé` |
+| `tests/unit/test_story_24_1_jira_mcp_vsm_persistence.py`, `tests/integration/test_story_24_1_jira_mcp_vsm_postgres18.py`, `apps/web/src/__tests__/story-24-1-gates-jira-and-vsm-v2-hydration.test.tsx`, `apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx`, `apps/web/src/__tests__/setup/autonomyTriggersAndWorkflowsV2Handlers.ts` | Suite 5 couches `AD-17` (Couches 1a, 1b, 2 PG18+Redis + handler `hitl-signal`) | `Terminé` |
+
+### 3.2 Synthèse des Vérifications `AD-17` (5 Couches) & GitNexus
+- **Couche 1a (Unitaires Python & Audits) :**
+  - `tests/unit/test_story_24_1_jira_mcp_vsm_persistence.py` : **`6 passed`** (`strict_sql=True` fail-closed, transitions Jira + Outbox, MCP `blackboard.propose_draft`/`blackboard.read`, `SqlVsmDefinitionsV2Store`, retry réhydratation JWT, mappers & DI).
+  - `tests/unit/test_story_4_4_jira_staged_actions_and_mcp.py` : **`4 passed`** (incluant `test_alembic_0019_expand_backfill_and_0020_contract_on_postgres`).
+  - `tests/unit/test_zero_orphan_sql_adapters_audit.py`, `test_codebase_architectural_anti_patterns_audit.py`, `test_first_boot_reset_guards.py`, `test_epic23_to_epic24_traceability.py` : **`PASS`**.
+- **Couche 1b (Composants React Vitest sans `isJsdom`) :**
+  - `pnpm turbo run lint typecheck test` : **`9 successful, 9 total`** (`@orcia/web` : **`56` fichiers / `222` tests passed**, dont `story-24-1-gates-jira-and-vsm-v2-hydration.test.tsx` (`4/4`) et `epics-14-15-process-studio-v2-and-declarative-packs.test.tsx` (`3/3`) avec `RouterProvider` réel).
+- **Couche 2 (Intégration PG18 + Redis 7.4 `testcontainers` sur `create_app()`) :**
+  - `tests/integration/test_story_24_1_jira_mcp_vsm_postgres18.py` : **`2 passed`** (aller-retour Alembic `20261120_2401` → `20261117_2003` → `head`, parcours HTTP réels Jira Staged + `domain_events_outbox` / MCP `mcp_governed_proposals` / VSM `vsm_definitions_v2`, éviction `evict-memory-caches`, relecture à froid sur 2e instance `create_app()`, et exécution `09_reset_db_first_boot.py`).
+  - Couverture combinée ciblée Story 24.1 (`unit` `21 passed` + `integration PG18` `3 passed`, `coverage combine`) : **`90 %`** (`736` stmts, `218` branches — `jira_and_mcp.py` DI `100 %`, `jira_actions.py` `100 %`, `_mcp_tools_helpers.py` `100 %`, `_sql_jira_mappers.py` `96 %`, `sql_mcp_proposals.py` `94 %`, `mcp_server.py` `93 %`, `sql_workflows_v2.py` `93 %`, router `jira_and_mcp.py` `93 %`).
+- **Couche 3 (Statique, Contrats & Gouvernance) :**
+  - `.venv/bin/ruff check .` (`All checks passed!`), `.venv/bin/ruff format --check .`, `.venv/bin/lint-imports` (`Contracts: 5 kept, 0 broken.`), `.venv/bin/mypy --strict packages/orcia-kernel packages/orcia-core packages/orcia-connectors apps/api apps/worker` (`Success: no issues found`), `.venv/bin/python scripts/export_openapi.py --check` (`0-diff`), `.venv/bin/python scripts/check_implementation_docs.py`, `lint_spine.py`, `pnpm site:sync && pnpm site:check`.
+- **Couche 5 (Playwright E2E réel `--project=desktop-cockpit --retries=0`) :**
+  - `e2e/06-gates-review-and-anti-rubber-stamping.spec.ts` (`06 #15`), `e2e/19-orchestration-whatif-replay-and-gates.spec.ts` (`19#1` & `19#2 #47`) et `e2e/20-process-studio-v2-finops-and-log-sink.spec.ts` (`20#1 #48`, vérifiant `vsm_definitions_v2 >= 1` et `reflexive_execution_sessions >= 1`) : **`4 passed (2.0m)`**.
+- **GitNexus :** `npx gitnexus analyze` (`1351` fichiers indexés) & `gitnexus_detect_changes` (`repo: "/home/romain/Documents/Projects/ORCIA"`, `scope: "all"`) → `changed_count: 14`, `changed_files: 37`, `affected_count: 1476`, `risk_level: "critical"`.

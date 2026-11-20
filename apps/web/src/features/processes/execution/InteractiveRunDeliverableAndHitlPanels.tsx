@@ -16,6 +16,8 @@ export interface InteractiveRunDeliverableAndHitlPanelsProps {
   readonly signedTokenPreview: string | null;
   readonly returnLoopTargetStep: string;
   readonly returnLoopRemarks: string;
+  readonly isStartingRun?: boolean;
+  readonly isSubmittingDecision?: boolean;
   readonly onChangeArtifactMarkdown: (val: string) => void;
   readonly onSetIsEditingDiff: (editing: boolean) => void;
   readonly onSimulateExternalWebhook: () => void;
@@ -38,6 +40,8 @@ export function InteractiveRunDeliverableAndHitlPanels({
   signedTokenPreview,
   returnLoopTargetStep,
   returnLoopRemarks,
+  isStartingRun = false,
+  isSubmittingDecision = false,
   onChangeArtifactMarkdown,
   onSetIsEditingDiff,
   onSimulateExternalWebhook,
@@ -49,6 +53,7 @@ export function InteractiveRunDeliverableAndHitlPanels({
   onChangeReturnLoopTarget,
   onChangeReturnLoopRemarks,
 }: InteractiveRunDeliverableAndHitlPanelsProps): React.JSX.Element {
+  const isActionDisabled = Boolean(isStartingRun || isSubmittingDecision);
   return (
     <>
       {status === "WAITING_EXTERNAL_GATE" ? (
@@ -146,10 +151,10 @@ export function InteractiveRunDeliverableAndHitlPanels({
 
       {status === "WAITING_SUBSTEP_HITL" && currentSubStep ? (
         <div className="flex flex-wrap gap-2">
-          <button type="button" data-testid="approve-substep-checkpoint-btn" onClick={onApproveCurrentSubStep} className="orcia-ds-btn-primary">
+          <button type="button" data-testid="approve-substep-checkpoint-btn" disabled={isActionDisabled} onClick={onApproveCurrentSubStep} className="orcia-ds-btn-primary">
             {isFr ? `✓ Valider « ${currentSubStep.short_label} » et passer à la suite` : `✓ Approve "${currentSubStep.short_label}" and continue`}
           </button>
-          <button type="button" data-testid="open-amend-diff-editor-btn" onClick={() => onSetIsEditingDiff(true)} className="orcia-ds-btn-secondary">
+          <button type="button" data-testid="open-amend-diff-editor-btn" disabled={isActionDisabled} onClick={() => onSetIsEditingDiff(true)} className="orcia-ds-btn-secondary">
             {isFr ? "✎ Modifier le livrable avant validation" : "✎ Edit deliverable"}
           </button>
         </div>
@@ -164,22 +169,28 @@ export function InteractiveRunDeliverableAndHitlPanels({
           <strong style={{ fontSize: "14px" }}>
             {isFr ? "Décision & Validation du livrable" : "Deliverable Review & Decision"}
           </strong>
-          <span style={{ fontSize: "12px", color: "var(--color-gate-emerald)", fontWeight: 600 }}>
-            {isFr ? "✓ Contrôles automatiques de complétude : Conformes · Relecture contradictoire : Validée" : "✓ Automated checks: Passed · Peer review: Passed"}
-          </span>
+          {isStartingRun ? (
+            <span data-testid="run-drawer-starting-indicator" style={{ fontSize: "12px", color: "var(--color-text-secondary)", fontWeight: 600 }}>
+              {isFr ? "⏳ Démarrage du run sur le serveur…" : "⏳ Starting run on server…"}
+            </span>
+          ) : (
+            <span style={{ fontSize: "12px", color: "var(--color-gate-emerald)", fontWeight: 600 }}>
+              {isFr ? "✓ Contrôles automatiques de complétude : Conformes · Relecture contradictoire : Validée" : "✓ Automated checks: Passed · Peer review: Passed"}
+            </span>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <button type="button" data-testid="anchor-action-1-accept-btn" onClick={onAction1AcceptAndSign} className="orcia-ds-btn-primary">
-            {isFr ? "✓ Valider et publier le livrable" : "✓ Approve & publish"}
+          <button type="button" data-testid="anchor-action-1-accept-btn" disabled={isActionDisabled} aria-busy={isActionDisabled} onClick={() => { void onAction1AcceptAndSign(); }} className="orcia-ds-btn-primary">
+            {isSubmittingDecision ? (isFr ? "Validation en cours…" : "Submitting…") : isFr ? "✓ Valider et publier le livrable" : "✓ Approve & publish"}
           </button>
-          <button type="button" data-testid="anchor-action-2-amend-diff-btn" onClick={() => onSetIsEditingDiff(true)} className="orcia-ds-btn-secondary">
+          <button type="button" data-testid="anchor-action-2-amend-diff-btn" disabled={isActionDisabled} onClick={() => onSetIsEditingDiff(true)} className="orcia-ds-btn-secondary">
             {isFr ? "✎ Modifier le texte" : "✎ Edit text"}
           </button>
-          <button type="button" data-testid="anchor-action-3-reject-loop-btn" onClick={onAction3RejectAndLoop} className="orcia-ds-btn-secondary">
+          <button type="button" data-testid="anchor-action-3-reject-loop-btn" disabled={isActionDisabled} onClick={onAction3RejectAndLoop} className="orcia-ds-btn-secondary">
             {isFr ? `↩ Demander des corrections (→ Étape ${returnLoopTargetStep})` : `↩ Request corrections (→ Step ${returnLoopTargetStep})`}
           </button>
-          <button type="button" data-testid="anchor-action-4-suspend-sla-btn" onClick={onAction4SuspendSla} className="orcia-ds-btn-secondary">
+          <button type="button" data-testid="anchor-action-4-suspend-sla-btn" disabled={isActionDisabled} onClick={onAction4SuspendSla} className="orcia-ds-btn-secondary">
             {isFr ? "⏸ Mettre en pause" : "⏸ Pause"}
           </button>
         </div>
