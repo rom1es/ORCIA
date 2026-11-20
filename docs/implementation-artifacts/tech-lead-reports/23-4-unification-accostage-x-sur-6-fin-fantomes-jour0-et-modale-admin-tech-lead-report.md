@@ -1,10 +1,10 @@
 # Story 23.4 — Unification Accostage `X/6` PG18, Suppression des Fantômes Jour 0 (`AP`, `Notifications 4`) & Ergonomie Modale Premier Administrateur
 
-- **Date** : 2026-11-19
+- **Date** : 2026-11-20
 - **Story / Clé Sprint** : `23-4-unification-accostage-x-sur-6-fin-fantomes-jour0-et-modale-admin` (`Epic 23` — Vague 1 `P1`)
 - **Capacité(s)** : `CAP-005`, `CAP-060`, `CAP-061` — classification : `feature` + `ux` + `hygiène` (`REM23-06`, `REM23-07`, `REM23-08` / `ARCH23-05`, `P1-UX-4`, `P1-UX-6`, `P1-UX-7`, `P2-UX-8`, `P2-UX-9`, `P2-UX-11`)
-- **Auteur / Contexte** : `22.10-impl` (Sally × Winston — pré-implémentation Epic 23). Aligne le parcours d'accostage Jour 0 sur une source de vérité PostgreSQL 18 unique **`Accostage X/6`**, supprime l'identité fantôme `AP` et les `Notifications 4` avant la création du premier utilisateur, homogénéise la coquille sous modale Jour 0 et corrige les défauts ergonomiques de `FirstBootAdminSetupModal`.
-- **Commits associés** : `En attente d'implémentation (initialisé par Story 22.10)`
+- **Auteur / Contexte** : `22.10-impl` (cadrage) / `23.4-impl` + `23.4-test` + `23.4-validate` (`APPROVED` Round 2). Aligne le parcours d'accostage Jour 0 sur une source de vérité PostgreSQL 18 unique **`Accostage X/6`**, supprime l'identité fantôme `AP` et les `Notifications 4` avant la création du premier utilisateur, élimine les requêtes pré-auth `401` Cluster A, homogénéise la coquille sous modale Jour 0 et corrige les défauts ergonomiques de `FirstBootAdminSetupModal`.
+- **Commits associés** : `feat(epic-23): unify accostage 0-6/6, eliminate Day 0 phantoms & Cluster A 401s (story 23.4)` (sur `feat/epic-23-remediation-pg18-sse-direction-c`)
 
 ---
 
@@ -74,19 +74,32 @@
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
-> *[Pré-implémentation initialisée en Story 22.10 — à compléter après implémentation et validation de la Story 23.4]*
-
 ### 3.1 Fichiers Développés & Modifiés
 | Fichier | Nature (Création / Modification / Refactoring) | Description synthétique |
 | :--- | :--- | :--- |
-| `packages/orcia-core/src/orcia_core/bootstrap/progressive_accostage.py` | Modification | *[À compléter après implémentation Story 23.4]* |
-| `apps/web/src/components/platformSetupStore.tsx` + `platformSetupAccostage.ts` + `platformSetupHydration.ts` | Refactoring / Modification | *[À compléter après implémentation Story 23.4]* |
-| `apps/web/src/components/ShellContainer.tsx`, `shellScopeOptions.ts`, `FirstBootAdminSetupModal.tsx` | Refactoring / Modification | *[À compléter après implémentation Story 23.4]* |
-| `apps/web/src/features/cockpit/index.tsx` & `packages/ui/src/primitives/ProgressiveDay0AccostageBanner.tsx` | Modification | *[À compléter après implémentation Story 23.4]* |
+| `packages/orcia-core/src/orcia_core/bootstrap/progressive_accostage.py` | Modification | Suppression de l'initialisation en dur `{"first-admin"}` ; `0/6` par défaut et synchronisation PG18 dynamique `0/6..6/6` via `sync_from_pg18_counts`. |
+| `packages/orcia-core/src/orcia_core/bootstrap/_internal/sql_accostage_counts.py` & `sql_platform_setup_store.py` | Modification | Comptage PG18 complet des 6 jalons (`users`, `org_units`, `workspaces`, `workspace_llm_tier_mappings`/`llm_model_endpoints`, `workspace_datasources`, `workflow_definitions_v2`/`workflow_runs`) et hydratation de `llm_tiers` depuis `workspace_llm_tier_mappings WHERE is_active = TRUE` quand `platform_settings` est vide. |
+| `apps/api/src/orcia_api/routers/bootstrap_accostage.py` & `schemas/bootstrap.py` (+ SDK `packages/api-client/`) | Modification | Exposition des compteurs PG18 et `workflows_count` dans `AccostageStatusResponse` + régénération OpenAPI `0-diff`. |
+| `apps/web/src/components/platformSetupStore.tsx`, `platformSetupContextTypes.ts`, `platformSetupAccostage.ts`, `platformSetupHydration.ts` | Refactoring / Création | Extraction modulaire (`platformSetupStore.tsx` < 350 L) ; unification stricte `Accostage 0/6..6/6` sans requêtes pré-auth protégées (`401` Cluster A éliminés). |
+| `apps/web/src/components/ShellContainer.tsx`, `ShellAuthFallbackView.tsx`, `shellPresets.ts`, `shellScopeOptions.ts`, `shellNotificationBuilder.ts` | Refactoring / Création | Suppression de `DEFAULT_HUMAN_PROFILE` (`AP`), suppression des `Notifications 4` avant création d'admin, suppression des 5 props mortes Epic 21, verrouillage uniforme du menu Jour 0 (`spaces`, `help`, etc.) avec infobulles WCAG AA. |
+| `packages/ui/src/primitives/OrciaPasswordInput.tsx`, `RadixDesignSystemPrimitives.tsx`, `FourZoneDirectionCShell.tsx`, `ProgressiveDay0AccostageBanner.tsx`, `tokens.css` | Création / Modification | Composant réutilisable `<OrciaPasswordInput />` (`maskMode="masked-text" | "password"`, toggle œil i18n, zéro `placeholder="••••"`), `aria-modal="true"` explicite sur `OrciaDialog`, garde raccourci `[` quand un dialogue `aria-modal="true"` est ouvert, hiérarchie `#2563EB` + correction Étape 3 sans troncature. |
+| `apps/web/src/components/FirstBootAdminSetupModal.tsx`, `apps/web/src/features/cockpit/index.tsx`, `apps/web/src/i18n/locales/shell_and_search_labels.ts` | Modification | Suppression du double bouton `Annuler (Esc)`, champs mot de passe + confirmation via `OrciaPasswordInput` avec `autoFocus`, CTA primaire `#2563EB` net, suppression du badge doublon `/5` sur le Cockpit. |
+| `infra/scripts/e2e/reset_day0.py` | Modification | Re-synchronisation idempotente de `declarative_pack_bundles` après `TRUNCATE CASCADE` lors du reset Jour 0 E2E. |
+| `tests/unit/test_epic_9_story_9_2_accostage_and_first_user.py`, `tests/integration/test_contextual_help_and_accostage_postgres18.py`, `tests/integration/test_e2e_reset_day0_postgres18_and_redis.py`, `packages/ui/src/__tests__/orcia-password-input.test.tsx` + audits Vitest/E2E | Création / Modification | Couverture complète des 5 couches `AD-17`, progression PG18 `0/6 -> 6/6` avec éviction RAM `create_app()`, `declarative_pack_bundles >= 1`, `OrciaPasswordInput`, `OrciaDialog aria-modal="true"`, garde `[`, et stabilisation `createWorkspaceViaUi`. |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
-- **Couverture de tests** : *[À compléter — $\ge 90\%$ requis]*
-- **Qualité statique & Architecture** : `ruff`, `mypy --strict`, `pnpm turbo run lint typecheck test`, `gitnexus_detect_changes()` *[À compléter]*
+- **Couverture de tests (brique bootstrap Story 23.4)** : **`96.75 %`** (`progressive_accostage.py` `99 %`, `sql_platform_setup_store.py` `93 %`, `sql_accostage_counts.py` `91 %`) — exigence $\ge 90\%$ satisfaite.
+- **Suite unitaire Python complète** : `.venv/bin/pytest tests/unit/ -q` (`100 %` vert, exit code `0`).
+- **Intégration PostgreSQL 18 + Redis 7.4 (`testcontainers`, Composition Root réel `create_app()` sans override)** : `test_contextual_help_and_accostage_postgres18.py` + `test_e2e_reset_day0_postgres18_and_redis.py` — **`2 passed`** (`0` skip, `0` fail).
+- **Qualité statique, Contrats & Architecture** :
+  - `.venv/bin/ruff check` & `ruff format --check` : `0` erreur (`850` fichiers conformes).
+  - `.venv/bin/mypy --strict` : `0` erreur (`551` fichiers Python + `infra/scripts/e2e/reset_day0.py`).
+  - `.venv/bin/lint-imports` : **`Contracts: 5 kept, 0 broken`** (`597` fichiers).
+  - `.venv/bin/python scripts/export_openapi.py --check` : **`0-diff`**.
+  - `.venv/bin/python .agent/skills/bmad-architecture/scripts/lint_spine.py` : **`0` findings**.
+  - `pnpm turbo run lint typecheck test` : **`9/9` tâches réussies** (`@orcia/api-client`, `@orcia/ui` `29` suites / `97` tests, `@orcia/web` `53` suites / `203` tests, incluant tous les audits AST `no-hidden-legacy-panels`, `e2e-testids-sync`, `anti-jargon-and-secrets-ui`, `zero-dead-buttons-and-silent-catches`).
+- **Dette technique consignée** : ajout de `ACTION_ITEM-23.4` (`status: open`, `priority: P3`) dans `docs/implementation-artifacts/sprint-status.yaml` pour le découpage futur de `apps/web/src/components/platformSetupGovernanceActions.ts` (`502` L) et `apps/web/src/i18n/locales/shell_and_search_labels.ts` (`628` L) relevés par `23.4-validate`.
 
 ### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17` + 5 Garde-Fous de Câblage Vertical)
-- *[À compléter après passage de `01-day0-boot` et `shell.spec.ts`]*
+- **Chaîne Canari E2E Desktop (`--project=desktop-cockpit --retries=0 --timeout=35000`, sans `ORCIA_E2E_SEED_FIXTURES`)** : **`19 passed, 3 skipped (mobile-only), 0 failed`** sur les 9 specs (`00-stack-smoke`, `01-day0-boot-and-f5-persistence`, `02-assistant-streaming-and-folders`, `03-human-led-anchor-and-arbitration`, `05-mobile-companion-and-rgaa`, `11-screens-smoke-without-server-errors`, `12-finops-and-audit-provenance`, `13-epic-7-autonomous-governance-and-supervision`, `shell.spec.ts`), avec **`7/7` captures PNG Desktop validées visuellement** par `23.4-validate` (verdict **`APPROVED`**).
+- **Cohérence documentaire & catalogue** : `pnpm site:sync && pnpm site:check` (`0` erreur), `scripts/check_implementation_docs.py` et `test_epic22_to_epic23_traceability.py` validés avant commit.

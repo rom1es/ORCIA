@@ -26,12 +26,21 @@ export function handleAuthAndBootstrapRoute(params: {
       ? setupState.llm_tiers.length
       : backendState.aiModelMappings.length;
     const sourcesCount = Array.isArray(setupState?.datasources) ? setupState.datasources.length : 0;
+    const workflowsCount = Array.isArray(setupState?.workflows) ? setupState.workflows.length : 0;
     const adminCreated = Boolean(backendState.firstAdmin);
     if (backendState.firstAdmin) {
+      const completedCount = [
+        true,
+        modelsCount > 0,
+        realOrgUnitsCount > 0,
+        workspacesCount > 0,
+        sourcesCount > 0,
+        workflowsCount > 0,
+      ].filter(Boolean).length;
       return jsonResponse({
-        completed_count: Math.min(6, 1 + (modelsCount > 0 ? 1 : 0) + (workspacesCount > 0 ? 1 : 0)),
+        completed_count: completedCount,
         total_count: 6,
-        badge_label: "Accostage",
+        badge_label: `Accostage ${completedCount}/6`,
         llm_tier_mode: modelsCount >= 2 ? "FULL_ORTHOGONAL_AD10" : modelsCount === 1 ? "QUICK_TRIAL_SINGLE_FAMILY" : "UNCONFIGURED",
         distinct_families: [],
         assistant_trial_enabled: modelsCount >= 1,
@@ -47,14 +56,15 @@ export function handleAuthAndBootstrapRoute(params: {
         workspaces_count: workspacesCount,
         models_count: modelsCount,
         sources_count: sourcesCount,
+        workflows_count: workflowsCount,
         boot_epoch: getVitestBootEpoch(),
         trace_id: "0195f000000070008000000000009001",
       });
     }
     return jsonResponse({
-      completed_count: 1,
+      completed_count: 0,
       total_count: 6,
-      badge_label: "Accostage",
+      badge_label: "Accostage 0/6",
       llm_tier_mode: "UNCONFIGURED",
       distinct_families: [],
       assistant_trial_enabled: false,
@@ -70,6 +80,7 @@ export function handleAuthAndBootstrapRoute(params: {
       workspaces_count: workspacesCount,
       models_count: modelsCount,
       sources_count: sourcesCount,
+      workflows_count: workflowsCount,
       boot_epoch: getVitestBootEpoch(),
       trace_id: "0195f000000070008000000000009002",
     });

@@ -55,43 +55,43 @@ ACCOSTAGE_SIX_MILESTONES: tuple[AccostageMilestoneSpec, ...] = (
     AccostageMilestoneSpec(
         1,
         "first-admin",
-        "1. Compte Administrateur Initial",
-        "1. Initial Administrator Account",
+        "1. Compte Admin",
+        "1. Admin Account",
         "/welcome-setup",
     ),
     AccostageMilestoneSpec(
         2,
         "first-llm-model",
-        "2. Premier Modèle IA (Essai Mon Assistant)",
-        "2. First AI Model (My Assistant Trial)",
+        "2. Modèles IA",
+        "2. AI Models",
         "/configuration",
     ),
     AccostageMilestoneSpec(
         3,
-        "first-space",
-        "3. Premier Espace de Travail",
-        "3. First Solution Space",
-        "/spaces",
+        "first-org-unit",
+        "3. Organisation",
+        "3. Organization",
+        "/organization",
     ),
     AccostageMilestoneSpec(
         4,
-        "first-datasource",
-        "4. Première Source Documentaire ou Git",
-        "4. First Knowledge or Git Source",
+        "first-space",
+        "4. Premier Espace",
+        "4. First Space",
         "/spaces",
     ),
     AccostageMilestoneSpec(
         5,
-        "second-llm-family",
-        "5. Seconde Famille IA Orthogonale (Gates AD-10)",
-        "5. Second Orthogonal AI Family (AD-10 Gates)",
+        "first-datasource",
+        "5. Première Source",
+        "5. First Source",
         "/configuration",
     ),
     AccostageMilestoneSpec(
         6,
         "pilot-workflow-run",
-        "6. Premier Processus Pilote Exécuté",
-        "6. First Pilot Process Executed",
+        "6. Premier Processus",
+        "6. First Process",
         "/processes",
     ),
 )
@@ -143,7 +143,7 @@ class ProgressiveDay0AccostageService:
         self._sync_lock = threading.Lock()
         self._async_lock = asyncio.Lock()
         self._first_admin: FirstPlatformAdminRecord | None = None
-        self._completed_keys: set[str] = {"first-admin"}
+        self._completed_keys: set[str] = set()
 
     @property
     def orcia_env(self) -> str:
@@ -166,6 +166,8 @@ class ProgressiveDay0AccostageService:
             self._first_admin = record
             if record is not None:
                 self._completed_keys.add("first-admin")
+            else:
+                self._completed_keys.discard("first-admin")
 
     def _verify_bootstrap_token(
         self,
@@ -257,8 +259,6 @@ class ProgressiveDay0AccostageService:
         orth = self._model_router.evaluate_orthogonality()
         if len(orth.distinct_families) >= 1:
             self._completed_keys.add("first-llm-model")
-        if len(orth.distinct_families) >= 2:
-            self._completed_keys.add("second-llm-family")
         return self.get_accostage_status()
 
     def mark_milestone_completed(self, milestone_key: str) -> AccostageStatusReport:
@@ -268,10 +268,41 @@ class ProgressiveDay0AccostageService:
             self._completed_keys.add(milestone_key)
         return self.get_accostage_status()
 
+    def sync_from_pg18_counts(
+        self,
+        *,
+        users_count: int,
+        org_units_count: int,
+        workspaces_count: int,
+        models_count: int,
+        sources_count: int,
+        workflows_count: int = 0,
+        runs_count: int = 0,
+    ) -> AccostageStatusReport:
+        """Synchronize the 6 Day-0 Accostage milestones from authoritative PG18 counts."""
+        orth = self._model_router.evaluate_orthogonality()
+        with self._sync_lock:
+            keys: set[str] = set()
+            if users_count > 0 or self._first_admin is not None:
+                keys.add("first-admin")
+            if models_count > 0 or len(orth.distinct_families) >= 1:
+                keys.add("first-llm-model")
+            if org_units_count > 0:
+                keys.add("first-org-unit")
+            if workspaces_count > 0:
+                keys.add("first-space")
+            if sources_count > 0:
+                keys.add("first-datasource")
+            if workflows_count > 0 or runs_count > 0:
+                keys.add("pilot-workflow-run")
+            self._completed_keys = keys
+        return self.get_accostage_status()
+
     def sync_platform_setup_snapshot(
         self,
         *,
         llm_endpoints: tuple[LlmModelEndpoint, ...],
+        has_org_unit: bool = False,
         has_workspace: bool = False,
         has_datasource: bool = False,
         has_pilot_run: bool = False,
@@ -280,11 +311,11 @@ class ProgressiveDay0AccostageService:
         self._model_router.replace_endpoints(llm_endpoints)
         orth = self._model_router.evaluate_orthogonality()
         with self._sync_lock:
-            self._completed_keys = {"first-admin"}
+            self._completed_keys = {"first-admin"} if self._first_admin is not None else set()
             if len(orth.distinct_families) >= 1:
                 self._completed_keys.add("first-llm-model")
-            if len(orth.distinct_families) >= 2:
-                self._completed_keys.add("second-llm-family")
+            if has_org_unit:
+                self._completed_keys.add("first-org-unit")
             if has_workspace:
                 self._completed_keys.add("first-space")
             if has_datasource:
@@ -316,7 +347,7 @@ class ProgressiveDay0AccostageService:
         ordered_completed = tuple(
             m.key for m in ACCOSTAGE_SIX_MILESTONES if m.key in self._completed_keys
         )
-        completed_count = max(1, len(ordered_completed))
+        completed_count = len(ordered_completed)
         total_count = len(ACCOSTAGE_SIX_MILESTONES)
         admin = self._first_admin
         return AccostageStatusReport(

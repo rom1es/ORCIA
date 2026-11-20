@@ -74,6 +74,7 @@ export interface AccostagePg18CountsView {
   readonly workspacesCount: number;
   readonly modelsCount: number;
   readonly sourcesCount: number;
+  readonly workflowsCount: number;
 }
 
 export type HydrationOutcome =
@@ -90,13 +91,14 @@ export type HydrationOutcome =
 export async function fetchAndBuildHydrationOutcome(params: {
   readonly hasMutatedSinceMount: boolean;
   readonly currentAdmin: ConfiguredPlatformAdmin | null;
+  readonly isAuthenticated: boolean;
 }): Promise<HydrationOutcome> {
   const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
   const [status, remoteState, remoteOrgUnitsResp, remoteIamGrantsResp] = await Promise.all([
     client.getAccostageStatus(),
-    client.getPlatformSetupState().catch(() => null),
-    client.listOrgUnits().catch(() => null),
-    client.listIamGrants().catch(() => null),
+    params.isAuthenticated ? client.getPlatformSetupState().catch(() => null) : Promise.resolve(null),
+    params.isAuthenticated ? client.listOrgUnits().catch(() => null) : Promise.resolve(null),
+    params.isAuthenticated ? client.listIamGrants().catch(() => null) : Promise.resolve(null),
   ]);
 
   if (syncBrowserBootEpoch(status.boot_epoch)) {
@@ -145,10 +147,13 @@ export async function fetchAndBuildHydrationOutcome(params: {
   const accostageCounts: AccostagePg18CountsView = {
     adminCreated: Boolean(status.admin_created ?? status.first_admin_initialized),
     usersCount: status.users_count ?? (status.first_admin_initialized ? 1 : 0),
-    orgUnitsCount: status.org_units_count ?? mappedApiOrgUnits.filter((u) => u.level === "BU" || u.level === "TEAM").length,
+    orgUnitsCount:
+      status.org_units_count ??
+      mappedApiOrgUnits.filter((u) => u.level === "BU" || u.level === "TEAM").length,
     workspacesCount: status.workspaces_count ?? 0,
     modelsCount: status.models_count ?? 0,
     sourcesCount: status.sources_count ?? 0,
+    workflowsCount: status.workflows_count ?? 0,
   };
 
   if (

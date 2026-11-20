@@ -186,6 +186,37 @@ async def load_platform_setup_state_from_postgres18(
 
         llm_tiers = list(raw_value.get("llm_tiers") or [])
         if not llm_tiers:
+            mapping_rows = (
+                await conn.execute(
+                    sa.text(
+                        """
+                        SELECT inference_tier, effort, provider_slug, model_family, model_name,
+                               fallback_model_name, endpoint_uri, auth_mode,
+                               (
+                                   encrypted_api_key IS NOT NULL AND encrypted_api_key <> ''
+                               ) AS has_key
+                        FROM workspace_llm_tier_mappings
+                        WHERE is_active = TRUE
+                        ORDER BY created_at ASC
+                        """
+                    )
+                )
+            ).fetchall()
+            for mp in mapping_rows:
+                llm_tiers.append(
+                    {
+                        "tier": str(mp[0] or "medium"),
+                        "defaultEffort": str(mp[1] or "balanced"),
+                        "provider": str(mp[2] or mp[3] or ""),
+                        "modelFamily": str(mp[3] or mp[2] or ""),
+                        "primaryModel": str(mp[4] or ""),
+                        "secondaryModel": str(mp[5] or mp[4] or ""),
+                        "endpointUrl": str(mp[6] or ""),
+                        "authMode": str(mp[7] or "api_key"),
+                        "apiKeyConfigured": bool(mp[8]),
+                    }
+                )
+        if not llm_tiers:
             ep_rows = (
                 await conn.execute(
                     sa.text(

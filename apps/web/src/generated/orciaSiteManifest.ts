@@ -9,7 +9,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-19",
   "stats": {
     "activeRoutesCount": 28,
-    "uiPrimitivesCount": 135,
+    "uiPrimitivesCount": 136,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 54,
     "architectureDecisionsCount": 24,
@@ -135,6 +135,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "OrciaInput",
     "OrciaKnownUserCombobox",
     "OrciaModelCombobox",
+    "OrciaPasswordInput",
     "OrciaProductShowcaseSiteView",
     "OrciaRadixSelect",
     "OrciaSearchableSelect",
@@ -570,11 +571,11 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "summary": "Pré-implémentation (ready-for-dev) : réduction Cockpit à <= 3 blocs visuels (montage conditionnel CockpitHumanLedGovernanceSection), retrait topbar-fixed-workspace-selector Desktop, logo ORCIA Zone 1 + Breadcrumb complet, enrichissement Loader & /login (logo + œil), exclusion en-tête /assistant + retrait (0) + purge embedding, et captures intermédiaires HumanLedAnchorCard/ArbitrationTieBreakCard."
     },
     {
-      "date": "2026-11-19",
+      "date": "2026-11-20",
       "phaseOrStory": "Story 23.4",
       "reportFile": "23-4-unification-accostage-x-sur-6-fin-fantomes-jour0-et-modale-admin-tech-lead-report.md",
       "domain": "Vague 1 (REM23-06..08 / ARCH23-05, P1-UX-4,6,7) — Unification Accostage X/6 PG18, Suppression Fantômes Jour 0 (AP, Notifications 4) & Modale Admin",
-      "summary": "Pré-implémentation (ready-for-dev) : source unique PG18 Accostage X/6 (progressive_accostage.py sans hardcode {\"first-admin\"} + workspace_llm_tier_mappings), découpage platformSetupStore.tsx (521 L) & ShellContainer.tsx (403 L, 5 props mortes), suppression AP et Notifications 4 à 0 utilisateur, et épuration FirstBootAdminSetupModal (zéro double Annuler (Esc), champ vide + œil, CTA Cobalt)."
+      "summary": "Clôture (done, validé APPROVED Round 2 par 23.4-validate) : source unique PG18 Accostage 0/6..6/6 (progressive_accostage.py, sql_accostage_counts.py, sql_platform_setup_store.py hydratant llm_tiers), découpage platformSetupStore.tsx & ShellContainer.tsx (suppression AP, Notifications 4, 5 props mortes et appels 401 Cluster A pré-auth), verrouillage uniforme menu Jour 0 (spaces/help), OrciaPasswordInput + OrciaDialog (aria-modal=\"true\" + garde [) + hiérarchie CTA Cobalt dans FirstBootAdminSetupModal, re-sync declarative_pack_bundles dans reset_day0.py, 96.75 % couv. bootstrap, 2 passed PG18/Redis testcontainers, 9/9 Turbo (320 JS/TS), 5/5 lint-imports, 0-diff OpenAPI, 0 finding lint_spine et Chaîne Canari Desktop 19 passed, 3 skipped, 0 failed (7/7 captures PNG validées)."
     },
     {
       "date": "2026-11-19",

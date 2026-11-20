@@ -6,7 +6,15 @@ async function createOrgUnit(page: Page, level: "BU" | "TEAM", name: string, slu
   await page.getByTestId("org-unit-level-select").selectOption(level);
   await page.getByTestId("org-unit-name-input").fill(name);
   await page.getByTestId("org-unit-slug-input").fill(slug);
-  await page.getByTestId("create-org-unit-btn").click();
+  const [createRes] = await Promise.all([
+    page.waitForResponse(
+      (res) => res.url().includes("/api/v1/org-units") && res.request().method() === "POST",
+      { timeout: 15000 },
+    ),
+    page.getByTestId("create-org-unit-btn").click(),
+  ]);
+  expect(createRes.ok()).toBe(true);
+  await expect(page.getByTestId("create-org-unit-form")).toBeHidden({ timeout: 15000 });
 }
 
 /** Crée une Direction (BU) puis une Équipe rattachée, via /organization (parcours réel). */
@@ -30,5 +38,20 @@ export async function createWorkspaceViaUi(page: Page, name: string, slug: strin
   await expect(form).toBeVisible({ timeout: 15000 });
   await page.getByTestId("workspace-name-input").fill(name);
   await page.getByTestId("workspace-slug-input").fill(slug);
-  await page.getByTestId("create-workspace-submit-btn").click();
+  const [createRes, syncRes] = await Promise.all([
+    page.waitForResponse(
+      (res) => res.url().includes("/api/v1/workspaces") && res.request().method() === "POST",
+      { timeout: 15000 },
+    ),
+    page.waitForResponse(
+      (res) =>
+        res.url().includes("/api/v1/bootstrap/platform-setup-state") &&
+        res.request().method() === "PUT",
+      { timeout: 15000 },
+    ),
+    page.getByTestId("create-workspace-submit-btn").click(),
+  ]);
+  expect(createRes.ok()).toBe(true);
+  expect(syncRes.ok()).toBe(true);
+  await expect(page.locator("main").getByText(name).first()).toBeVisible({ timeout: 15000 });
 }

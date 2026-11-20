@@ -63,12 +63,32 @@ describe("AD-22 Radix UI + shadcn/ui Design System Primitives (@orcia/ui)", () =
       </OrciaDialog>,
     );
 
-    expect(screen.getByTestId("test-radix-dialog")).toBeInTheDocument();
+    const dialog = screen.getByTestId("test-radix-dialog");
+    expect(dialog).toBeInTheDocument();
+    expect(dialog).toHaveAttribute("role", "dialog");
+    expect(dialog).toHaveAttribute("aria-modal", "true");
     expect(screen.getByText("Configuration du Connecteur")).toBeInTheDocument();
     expect(screen.getByTestId("dialog-inner-body")).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId("test-radix-dialog-close-btn"));
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("OrciaDialog omits aria-modal when modal=false", () => {
+    render(
+      <OrciaDialog
+        open={true}
+        modal={false}
+        onOpenChange={() => {}}
+        title="Dialogue non modal"
+        testId="test-non-modal-dialog"
+      >
+        <div>Contenu</div>
+      </OrciaDialog>,
+    );
+    const nonModal = screen.getByTestId("test-non-modal-dialog");
+    expect(nonModal).toHaveAttribute("role", "dialog");
+    expect(nonModal).not.toHaveAttribute("aria-modal");
   });
 
   it("OrciaSwitch toggles checked state via Radix Switch primitive", () => {

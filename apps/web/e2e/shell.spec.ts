@@ -106,15 +106,19 @@ test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, 
 
   test("le raccourci « [ » replie et déplie la barre latérale", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop-cockpit", "raccourci clavier : bureau uniquement");
+    await createFirstAdminViaUi(page);
+    expectDbRowExists(
+      "SELECT id, email, platform_role FROM users WHERE email = :email AND platform_role = 'PLATFORM_ADMIN'",
+      { email: E2E_ADMIN.email },
+      "PLATFORM_ADMIN persisté dans users PG18",
+    );
     const sidebar = page.getByTestId("four-zone-sidebar");
     await expect(sidebar).toHaveAttribute("data-rail-collapsed", "false");
-    await page.getByTestId("four-zone-central-workspace").click({ position: { x: 5, y: 5 }, force: true });
+    await page.getByTestId("four-zone-central-workspace").click({ position: { x: 5, y: 5 } });
     await page.keyboard.press("[");
     await expect(sidebar).toHaveAttribute("data-rail-collapsed", "true");
     await page.keyboard.press("[");
     await expect(sidebar).toHaveAttribute("data-rail-collapsed", "false");
-    const countRows = queryDbRows<{ count: number }>("SELECT COUNT(*)::int AS count FROM users");
-    expect(countRows[0]?.count).toBe(0);
   });
 
   test("la modale Jour 0 est un dialogue accessible qui bloque le shell", async ({ page }) => {

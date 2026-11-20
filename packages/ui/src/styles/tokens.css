@@ -49,6 +49,7 @@
   --color-primary-foreground: #FFFFFF;
   --color-primary-dark: #6366F1;
   --color-action-primary: var(--color-primary-cobalt);
+  --color-action-primary-hover: #1D4ED8;
   --color-action-primary-subtle: #EFF6FF;
   --color-accent-primary: var(--color-primary-cobalt);
   --color-brand-primary: var(--color-primary-cobalt);
@@ -621,6 +622,11 @@ button {
   transition: all 150ms ease;
 }
 
+.orcia-ds-btn:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
 .orcia-ds-btn:disabled {
   opacity: 0.72;
   cursor: not-allowed;
@@ -630,19 +636,40 @@ button {
   border: 1px solid var(--color-primary-cobalt);
   background-color: var(--color-primary-cobalt);
   color: var(--color-primary-foreground);
+  box-shadow: var(--shadow-card);
+}
+
+.orcia-ds-btn-primary:hover:not(:disabled) {
+  background-color: var(--color-action-primary-hover);
+  border-color: var(--color-action-primary-hover);
 }
 
 .orcia-ds-btn-primary:disabled {
-  border: 1px solid var(--color-border-strong);
-  background-color: var(--color-surface-muted);
-  color: var(--color-text-secondary);
-  opacity: 1;
+  border: 1px solid var(--color-primary-cobalt);
+  background-color: var(--color-primary-cobalt);
+  color: var(--color-primary-foreground);
+  box-shadow: none;
+  opacity: 0.48;
 }
 
 .orcia-ds-btn-secondary {
   border: 1px solid var(--color-border);
   background-color: var(--color-surface-card);
   color: var(--color-foreground);
+}
+
+.orcia-ds-dialog-content .orcia-ds-header .orcia-ds-btn-secondary {
+  border: 1px solid var(--color-border-subtle);
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+}
+
+.orcia-ds-dialog-content .orcia-ds-header .orcia-ds-btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text-primary);
 }
 
 .orcia-ds-btn-danger {

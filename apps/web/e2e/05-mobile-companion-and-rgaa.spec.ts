@@ -30,11 +30,7 @@ test.describe("TEST-04 · 05 — Mobile Companion (390x844) et sorties de secour
 
     const countRows = queryDbRows<{ count: number }>("SELECT COUNT(*)::int AS count FROM users");
     expect(countRows[0]?.count).toBe(0);
-    alertProbe.assertNoUnexpectedHttpErrors([], [
-      "/api/v1/org-units",
-      "/api/v1/users/me/preferences",
-      "/api/v1/orchestration/state",
-    ]);
+    alertProbe.assertNoUnexpectedHttpErrors([]);
   });
 
   test("aucun débordement horizontal sur mobile une fois la plateforme initialisée", async ({
@@ -58,6 +54,6 @@ test.describe("TEST-04 · 05 — Mobile Companion (390x844) et sorties de secour
       }
       await assertNoHorizontalOverflow(page, `mobile ${route}`);
     }
-    alertProbe.assertNoUnexpectedHttpErrors([], ["/api/v1/org-units"]);
+    alertProbe.assertNoUnexpectedHttpErrors([]);
   });
 });

@@ -82,6 +82,7 @@ def _serialize_accostage_status(
     workspaces_count = counts.workspaces_count if counts is not None else 0
     models_count = counts.models_count if counts is not None else len(rep.distinct_families)
     sources_count = counts.sources_count if counts is not None else 0
+    workflows_count = counts.workflows_count if counts is not None else 0
     return bs.AccostageStatusResponse(
         completed_count=rep.completed_count,
         total_count=rep.total_count,
@@ -101,6 +102,7 @@ def _serialize_accostage_status(
         workspaces_count=workspaces_count,
         models_count=models_count,
         sources_count=sources_count,
+        workflows_count=workflows_count,
         boot_epoch=boot_epoch,
         trace_id=trace_id,
     )
@@ -121,13 +123,22 @@ async def _load_pg18_accostage_counts(request: Request) -> bm.AccostagePg18Count
 @router.get(
     "/accostage-status",
     response_model=bs.AccostageStatusResponse,
-    summary="Get progressive Day-0 Accostage (1/6) status and LLM tier unlock state (`Story 9.2`)",
+    summary="Get progressive Day-0 Accostage (0/6..6/6) status and LLM tier state (`Story 9.2`)",
     responses=PROBLEM_RESPONSES,
 )
 async def get_accostage_status(request: Request) -> bs.AccostageStatusResponse:
     svc = get_accostage_service(request)
     await _sync_first_admin_with_postgres18(request, svc)
     counts = await _load_pg18_accostage_counts(request)
+    if counts is not None:
+        svc.sync_from_pg18_counts(
+            users_count=counts.users_count,
+            org_units_count=counts.org_units_count,
+            workspaces_count=counts.workspaces_count,
+            models_count=counts.models_count,
+            sources_count=counts.sources_count,
+            workflows_count=counts.workflows_count,
+        )
     policy_state, _, _ = await resolve_auth_policy_runtime(request)
     return _serialize_accostage_status(
         svc.get_accostage_status(),
@@ -415,9 +426,10 @@ def _sync_accostage_from_snapshot(
         )
     svc.sync_platform_setup_snapshot(
         llm_endpoints=tuple(endpoints),
+        has_org_unit=len(snap.org_units) > 0,
         has_workspace=len(snap.workspaces) > 0,
         has_datasource=len(snap.datasources) > 0,
-        has_pilot_run=len(snap.runs) > 0,
+        has_pilot_run=len(snap.runs) > 0 or len(snap.workflows) > 0,
     )
 
 

@@ -139,6 +139,7 @@ def test_serialize_accostage_status_reflects_pg18_counts() -> None:
         workspaces_count=2,
         models_count=1,
         sources_count=3,
+        workflows_count=2,
     )
 
     serialized = _serialize_accostage_status(
@@ -153,6 +154,7 @@ def test_serialize_accostage_status_reflects_pg18_counts() -> None:
     assert serialized.workspaces_count == 2
     assert serialized.models_count == 1
     assert serialized.sources_count == 3
+    assert serialized.workflows_count == 2
     assert serialized.boot_epoch == "boot-epoch-1"
 
 

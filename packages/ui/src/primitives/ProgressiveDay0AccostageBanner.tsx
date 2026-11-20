@@ -84,14 +84,7 @@ export function ProgressiveDay0AccostageBanner({
         ? "QUICK_TRIAL_SINGLE_FAMILY"
         : "FULL_ORTHOGONAL_AD10";
 
-  const localMilestoneDelta =
-    (localAdminCreated && !serverAdminCreated ? 1 : 0) +
-    (distinctFamilies.length >= 1 ? 1 : 0) +
-    (distinctFamilies.length >= 2 ? 1 : 0);
-  const effectiveCompletedCount = Math.min(
-    totalCount,
-    Math.max(completedCount, localMilestoneDelta),
-  );
+  const effectiveCompletedCount = Math.max(0, Math.min(totalCount, completedCount));
   const progressPrefix = labels.progressLabelPrefix ?? "Accostage";
   const adminInitializedLabel =
     labels.adminInitializedBadge ?? "Administrateur de plateforme initialisé";
@@ -129,7 +122,7 @@ export function ProgressiveDay0AccostageBanner({
         borderColor: "var(--color-border-subtle)",
       }}
     >
-      {/* Top interactive Accostage X/5 header */}
+      {/* Top interactive Accostage X/6 header */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-xs font-semibold">{labels.bannerTitle}</h2>
@@ -177,7 +170,7 @@ export function ProgressiveDay0AccostageBanner({
       {/* 3-Step Welcome Setup Wizard */}
       <div
         data-testid="welcome-setup-3step-wizard"
-        className="grid grid-cols-1 gap-3 md:grid-cols-3"
+        className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(240px,1.35fr)]"
       >
         {/* Step 1: First Admin (auto-checked & collapsed when PG18 admin exists) */}
         <div
@@ -355,7 +348,7 @@ export function ProgressiveDay0AccostageBanner({
                 backgroundColor: "var(--color-bg-surface)",
               }}
             >
-              <span className="min-w-0 truncate">{m.title}</span>
+              <span className="min-w-0 whitespace-normal leading-snug">{m.title}</span>
               <OrciaIcon
                 name={m.completed ? "check" : "arrowRight"}
                 className="shrink-0 font-mono text-[11px]"

@@ -77,6 +77,7 @@ export type OrciaIconName =
   | "scale"
   | "pen"
   | "eye"
+  | "eyeOff"
   | "clock"
   | "locationPin"
   | "sun"
@@ -196,7 +197,8 @@ export const ORCIA_ICONS: Record<OrciaIconName, OrciaIconDefinition> = {
   shield: { glyph: "🛡️", category: "governance", description: "Gouvernance / Gate de sécurité" },
   scale: { glyph: "⚖️", category: "governance", description: "Arbitrage humain" },
   pen: { glyph: "✍️", category: "governance", description: "Ancrage humain / Co-édition" },
-  eye: { glyph: "👁️", category: "governance", description: "Mode Observateur (Lecture seule)" },
+  eye: { glyph: "👁️", category: "governance", description: "Mode Observateur / Afficher le secret" },
+  eyeOff: { glyph: "🙈", category: "governance", description: "Masquer le secret" },
   clock: { glyph: "🕒", category: "status", description: "Horodatage / Historique" },
   locationPin: { glyph: "📍", category: "scope", description: "Périmètre d'exécution" },
   sun: { glyph: "☀️", category: "action", description: "Thème clair" },

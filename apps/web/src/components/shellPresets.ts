@@ -1,7 +1,6 @@
 import type {
   EightFixedMenuKey,
   ShellBreadcrumbItem,
-  UiHumanProfileBadge,
   UiModuleKey,
   UiScopeLevel,
   UiScopeNode,
@@ -22,14 +21,6 @@ export const DEFAULT_SHELL_MODULES: UiShellModuleItem[] = [
 export const EMPTY_DEFAULT_SCOPES: UiScopeNode[] = [
   { id: "scope-global", level: "GLOBAL", name: "Plateforme Globale ORCIA", accessMode: "CONTRIBUTOR_ACTION_REQUIRED" },
 ];
-
-export const DEFAULT_HUMAN_PROFILE: UiHumanProfileBadge = {
-  archetypeKey: "PLATFORM_ADMIN",
-  displayName: "Administrateur de la plateforme",
-  accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
-  role: "PLATFORM_ADMIN",
-  orgUnitName: "",
-};
 
 export function evaluateScopeModuleVisibility(
   role: string,
@@ -162,6 +153,21 @@ export function mapEightMenuKeyToModule(key: EightFixedMenuKey): {
     case "help":
       return { moduleKey: "ontology", route: "/help" };
   }
+}
+
+export function resolveActiveMobileBottomTab(
+  pathname: string | null | undefined,
+): "cockpit" | "assistant" | "decisions" | null {
+  if (pathname?.startsWith("/inbox")) {
+    return "decisions";
+  }
+  if (pathname?.startsWith("/assistant")) {
+    return "assistant";
+  }
+  if (pathname === "/" || pathname?.startsWith("/cockpit")) {
+    return "cockpit";
+  }
+  return null;
 }
 
 export function isDesktopOnlyMobileRoute(pathname: string | null | undefined): boolean {

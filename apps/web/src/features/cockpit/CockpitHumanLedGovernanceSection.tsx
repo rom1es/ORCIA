@@ -36,6 +36,7 @@ export function CockpitHumanLedGovernanceSection({
   const apiClient = useMemo(() => createOrciaApiClient({ baseUrl: "" }), []);
 
   const isHydrating = useAuthSessionStore((s) => s.isHydrating);
+  const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
   const accessToken = useAuthSessionStore((s) => s.accessToken);
   const authDisplayName = useAuthSessionStore((s) => s.displayName);
   const authEmail = useAuthSessionStore((s) => s.email);
@@ -79,14 +80,14 @@ export function CockpitHumanLedGovernanceSection({
   );
 
   useEffect(() => {
-    if (activeRunId) {
+    if (activeRunId && isAuthenticated) {
       setServerRunId(activeRunId);
       void hydrateFromRun(activeRunId);
     }
-  }, [activeRunId, hydrateFromRun]);
+  }, [activeRunId, hydrateFromRun, isAuthenticated]);
 
   useEffect(() => {
-    if (isHydrating) {
+    if (isHydrating || !isAuthenticated) {
       return;
     }
     setErrorBanner(null);
@@ -126,6 +127,7 @@ export function CockpitHumanLedGovernanceSection({
     hydrateFromRun,
     refreshSignal,
     isHydrating,
+    isAuthenticated,
     accessToken,
   ]);
 

@@ -350,6 +350,13 @@ async def test_e2e_reset_day0_truncates_cascade_protects_schemes_flushes_redis_a
             )
             assert schemes_count >= 7
 
+            packs_count = int(
+                (
+                    await conn.execute(sa.text("SELECT COUNT(*) FROM declarative_pack_bundles"))
+                ).scalar_one()
+            )
+            assert packs_count >= 1
+
             trigger_rows = (
                 await conn.execute(
                     sa.text(

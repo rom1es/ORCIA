@@ -1,15 +1,12 @@
 import {
   FourZoneDirectionCShell,
-  OrciaAlertBanner,
   type EightFixedMenuKey,
-  type UiHumanProfileBadge,
   type UiModuleKey,
 } from "@orcia/ui";
 import React from "react";
 import { useI18n } from "../i18n";
 import {
   canAccessConfigurationSettings,
-  canAccessMyOrganization,
   canObserveGlobalAuditScope,
   resolveSessionHatLabel,
   useAuthSessionStore,
@@ -17,6 +14,7 @@ import {
 import { buildContextualHelpArticle } from "./contextualHelpCatalog";
 import { useShellAutonomousSupervision } from "./useShellAutonomousSupervision";
 import {
+  ShellCentralWorkspaceBody,
   ShellHydratingLoaderView,
   ShellUnauthenticatedView,
 } from "./ShellAuthFallbackView";
@@ -32,12 +30,12 @@ import {
 } from "./shellNavigationContext";
 import {
   buildShellBreadcrumbItems,
-  DEFAULT_HUMAN_PROFILE,
   DEFAULT_SHELL_MODULES,
   EMPTY_DEFAULT_SCOPES,
   evaluateScopeModuleVisibility,
   isDesktopOnlyMobileRoute,
   mapEightMenuKeyToModule,
+  resolveActiveMobileBottomTab,
   resolveEightMenuKeyFromModule,
   resolveModuleFromPathname,
 } from "./shellPresets";
@@ -48,11 +46,9 @@ import {
   buildWorkspaceSwitcherOptions,
 } from "./shellScopeOptions";
 import { ShellSidebarFooter } from "./ShellSidebarFooter";
-import { TemporaryPasswordWarningBanner } from "./TemporaryPasswordWarningBanner";
 import { useShellAuthRedirects, useShellContainerState } from "./useShellContainerState";
 
 export {
-  DEFAULT_HUMAN_PROFILE,
   DEFAULT_SHELL_MODULES,
   EMPTY_DEFAULT_SCOPES,
   evaluateScopeModuleVisibility,
@@ -75,7 +71,7 @@ function InnerShellContainer({
   const setup = usePlatformSetup();
   const {
     isInitialLoading, platformAdmin, scopes, orgUnits, workspaces,
-    catalogItems, ontologyConcepts, llmTiers, runs, createPlatformAdmin,
+    catalogItems, ontologyConcepts, llmTiers, runs, accostageSummary, createPlatformAdmin,
   } = setup;
 
   const {
@@ -85,7 +81,6 @@ function InnerShellContainer({
   } = useAuthSessionStore();
 
   const canObserveGlobal = canObserveGlobalAuditScope({ roles, readOnlyObserver });
-  const showOrganizationMenu = canAccessMyOrganization({ roles, readOnlyObserver });
   const firstScopedId =
     workspaces[0]?.workspaceId ?? scopes.find((s) => s.id !== "scope-global")?.id ?? orgUnits[0]?.id;
 
@@ -95,7 +90,6 @@ function InnerShellContainer({
   });
   const isFr = locale === "fr";
   const dispatchNavigation = (href: string) => (onNavigate ? onNavigate(href) : navigateTo(href));
-
   const isAdminModalOpen = platformAdmin === null && !state.adminModalDismissed;
   const isShowcaseStandalone = Boolean(pathname?.startsWith("/showcase"));
 
@@ -116,13 +110,18 @@ function InnerShellContainer({
   const selectedScope =
     scopes.find((s) => s.id === state.activeScopeId) ?? scopes[0] ?? EMPTY_DEFAULT_SCOPES[0]!;
 
-  const effectiveProfile: UiHumanProfileBadge = {
-    ...DEFAULT_HUMAN_PROFILE,
-    displayName: sessionDisplayName ?? (isAuthenticated ? platformAdmin?.displayName : DEFAULT_HUMAN_PROFILE.displayName) ?? DEFAULT_HUMAN_PROFILE.displayName,
-    role: roles[0] || "CONTRIBUTOR",
-    accessMode: selectedScope.accessMode,
-  };
-  const userHatLabel = resolveSessionHatLabel({ roles, readOnlyObserver }, locale);
+  const hasAuthenticatedIdentity =
+    isAuthenticated &&
+    (platformAdmin !== null || Boolean(sessionDisplayName?.trim() || sessionEmail?.trim()));
+  const effectiveDisplayName = hasAuthenticatedIdentity
+    ? (sessionDisplayName ?? platformAdmin?.displayName ?? "")
+    : "";
+  const effectiveEmail = hasAuthenticatedIdentity
+    ? (sessionEmail ?? platformAdmin?.email ?? "")
+    : "";
+  const userHatLabel = hasAuthenticatedIdentity
+    ? resolveSessionHatLabel({ roles, readOnlyObserver }, locale)
+    : "";
 
   const safeModuleKey: UiModuleKey = activeModuleKey;
   const activeMenuKey: EightFixedMenuKey | null =
@@ -156,9 +155,29 @@ function InnerShellContainer({
     menuEntries: dictionary.fourZoneShell.menuEntries,
   });
   const isDesktopOnlyRoute = isDesktopOnlyMobileRoute(pathname);
-  const disabledMenuKeys = buildShellDisabledMenuKeys({ isFr, llmTiers, workspaces });
+  const disabledMenuKeys = buildShellDisabledMenuKeys({
+    isFr,
+    adminCreated: accostageSummary.adminCreated,
+    day0AdminMissingReason: dictionary.firstBootAdminModal.day0DisabledAdminMissingReason,
+    llmTiers,
+    workspaces,
+    hasModels: accostageSummary.hasModels,
+    hasWorkspaces: accostageSummary.hasWorkspaces,
+  });
   const notificationItems = buildShellNotificationItems({
-    isFr, platformAdmin, orgUnits, workspaces, llmTiers, runs, autonomousRuns, inboxNotifications, lastClaimEvent, mustChangePassword,
+    isFr,
+    platformAdmin,
+    orgUnits,
+    workspaces,
+    llmTiers,
+    hasModels: accostageSummary.hasModels,
+    hasOrgUnits: accostageSummary.hasOrgUnits,
+    hasWorkspaces: accostageSummary.hasWorkspaces,
+    runs,
+    autonomousRuns,
+    inboxNotifications,
+    lastClaimEvent,
+    mustChangePassword,
   });
 
   const helpTitleFallback = activeMenuKey
@@ -174,15 +193,31 @@ function InnerShellContainer({
   });
 
   const isHelpCenterRoute = Boolean(pathname?.startsWith("/help"));
-  const hideSidebarShowcaseBtn =
-    isHelpCenterRoute || Boolean(pathname?.startsWith("/ontology"));
+  const hideSidebarShowcaseBtn = isHelpCenterRoute || Boolean(pathname?.startsWith("/ontology"));
+
+  const selectModuleAndNavigate = (
+    menuKey: EightFixedMenuKey | null,
+    moduleKey: UiModuleKey,
+    route: string,
+  ) => {
+    state.setSelectedMenuKeyOverride(menuKey);
+    state.setSelectedModuleOverride(moduleKey);
+    dispatchNavigation(route);
+  };
 
   if (!isShowcaseStandalone && (isHydrating || (isInitialLoading && !isAuthenticated))) {
     return <ShellHydratingLoaderView isFr={isFr} />;
   }
 
   if (!isShowcaseStandalone && !isAuthenticated && !isAdminModalOpen) {
-    return <ShellUnauthenticatedView />;
+    return (
+      <ShellUnauthenticatedView
+        onReopenDay0Setup={
+          platformAdmin === null ? () => state.setAdminModalDismissed(false) : undefined
+        }
+        reopenDay0SetupLabel={dictionary.firstBootAdminModal.reopenSetupCta}
+      />
+    );
   }
 
   return (
@@ -199,62 +234,38 @@ function InnerShellContainer({
     >
       <FourZoneDirectionCShell
         activeMenuKey={activeMenuKey}
-        showOrganizationMenu={showOrganizationMenu}
-        organizationMenuActive={Boolean(pathname?.startsWith("/organization"))}
-        activityMenuActive={Boolean(pathname?.startsWith("/activity"))}
         breadcrumbItems={breadcrumbItems}
-        onNavigateBreadcrumb={(route) => dispatchNavigation(route)}
+        onNavigateBreadcrumb={dispatchNavigation}
         activeWorkspaceName={activeWorkspaceName}
         activeScopeId={selectedScope.id}
         workspaceOptions={workspaceOptions}
         teamBuOptions={doubleScopeState.teamBuOptions}
         activeTeamBuId={doubleScopeState.activeTeamBuId}
-        onSelectTeamBu={(scopeId) => state.setActiveScopeId(scopeId)}
+        onSelectTeamBu={state.setActiveScopeId}
         workspaceSelectorOptions={doubleScopeState.workspaceSelectorOptions}
         activeWorkspaceSelectorId={doubleScopeState.activeWorkspaceSelectorId}
         onSelectWorkspaceFromSidebar={(scopeId) =>
           state.setActiveScopeId(scopeId || doubleScopeState.activeTeamBuId)
         }
-        onSelectWorkspace={(scopeId) => state.setActiveScopeId(scopeId)}
+        onSelectWorkspace={state.setActiveScopeId}
         isDesktopOnlyRoute={isDesktopOnlyRoute}
-        activeMobileBottomTab={
-          pathname?.startsWith("/inbox")
-            ? "decisions"
-            : pathname?.startsWith("/assistant")
-              ? "assistant"
-              : pathname === "/" || pathname?.startsWith("/cockpit")
-                ? "cockpit"
-                : null
-        }
+        activeMobileBottomTab={resolveActiveMobileBottomTab(pathname)}
         onSelectMobileBottomTab={(tab) => {
-          if (tab === "cockpit") {
-            state.setSelectedMenuKeyOverride("cockpit");
-            state.setSelectedModuleOverride("cockpit");
-            dispatchNavigation("/cockpit");
-          } else if (tab === "assistant") {
-            if (!disabledMenuKeys.assistant) {
-              state.setSelectedMenuKeyOverride("assistant");
-              state.setSelectedModuleOverride("inbox");
-              dispatchNavigation("/assistant");
-            }
-          } else {
-            state.setSelectedMenuKeyOverride("assistant");
-            state.setSelectedModuleOverride("inbox");
-            dispatchNavigation("/inbox");
-          }
+          if (tab === "cockpit") selectModuleAndNavigate("cockpit", "cockpit", "/cockpit");
+          else if (tab === "assistant" && !disabledMenuKeys.assistant)
+            selectModuleAndNavigate("assistant", "inbox", "/assistant");
+          else if (tab === "decisions") selectModuleAndNavigate("assistant", "inbox", "/inbox");
         }}
         activePackKey=""
         availablePacks={[]}
-        userDisplayName={effectiveProfile.displayName}
+        userDisplayName={effectiveDisplayName}
         userHatLabel={userHatLabel}
-        pendingDecisionsTotal={runs.length}
+        pendingDecisionsTotal={hasAuthenticatedIdentity ? runs.length : 0}
         notifications={notificationItems}
         onSelectNotification={(item) => {
           if (item.targetRoute === "#change-password") {
             openUserSettingsModalAtTab("ACCOUNT_SECURITY");
-            return;
-          }
-          if (item.targetRoute) {
+          } else if (item.targetRoute) {
             dispatchNavigation(item.targetRoute);
           }
         }}
@@ -264,53 +275,36 @@ function InnerShellContainer({
         hiddenMenuKeys={showConfigurationMenu ? [] : ["configuration"]}
         helpColumnOpen={isHelpCenterRoute ? false : state.helpColumnOpen}
         mobileDrawerCloseSignal={`${pathname ?? ""}:${String(userSettingsModalOpen)}`}
-        onHelpColumnOpenChange={(nextOpen) => {
-          if (!isHelpCenterRoute) {
-            state.setHelpColumnOpen(nextOpen);
-          }
-        }}
+        onHelpColumnOpenChange={(nextOpen) => !isHelpCenterRoute && state.setHelpColumnOpen(nextOpen)}
         onSelectMenu={(menuKey) => {
           const mapped = mapEightMenuKeyToModule(menuKey);
-          state.setSelectedMenuKeyOverride(menuKey);
-          state.setSelectedModuleOverride(mapped.moduleKey);
-          dispatchNavigation(mapped.route);
+          selectModuleAndNavigate(menuKey, mapped.moduleKey, mapped.route);
         }}
-        onSelectOrganizationMenu={(route) => {
-          state.setSelectedMenuKeyOverride("spaces");
-          state.setSelectedModuleOverride("admin");
-          dispatchNavigation(route);
-        }}
-        onSelectActivityMenu={(route) => {
-          state.setSelectedMenuKeyOverride("finops");
-          state.setSelectedModuleOverride("finops");
-          dispatchNavigation(route);
-        }}
+        onSelectActivityMenu={(route) => selectModuleAndNavigate("finops", "finops", route)}
         onOpenWorkspaceSwitcher={() => undefined}
         onOpenSearchCommand={() => state.setSearchModalOpen(true)}
-        renderSidebarFooter={(railCollapsed) => (
-          <ShellSidebarFooter
-            railCollapsed={railCollapsed}
-            hideSidebarShowcaseBtn={hideSidebarShowcaseBtn}
-            pathname={pathname}
-            userDisplayName={effectiveProfile.displayName}
-            userEmail={sessionEmail ?? (isAuthenticated ? platformAdmin?.email : "") ?? ""}
-            userRole={roles[0] ?? "CONTRIBUTOR"}
-            userRoleLabel={userHatLabel}
-            locale={locale}
-            footerLabels={dictionary.sidebarFooter}
-            accountLabels={dictionary.userAccountAndSettings}
-            onLocaleChange={(nextLocale) => setLocale(nextLocale)}
-            onNavigate={(href) => dispatchNavigation(href)}
-            onLogout={() => {
-              void logoutSession().then(() => dispatchNavigation("/login"));
-            }}
-            onOpenShowcase={() => {
-              state.setSelectedMenuKeyOverride(null);
-              state.setSelectedModuleOverride("ontology");
-              dispatchNavigation("/showcase");
-            }}
-          />
-        )}
+        renderSidebarFooter={
+          hasAuthenticatedIdentity
+            ? (railCollapsed) => (
+                <ShellSidebarFooter
+                  railCollapsed={railCollapsed}
+                  hideSidebarShowcaseBtn={hideSidebarShowcaseBtn}
+                  pathname={pathname}
+                  userDisplayName={effectiveDisplayName}
+                  userEmail={effectiveEmail}
+                  userRole={roles[0] ?? "CONTRIBUTOR"}
+                  userRoleLabel={userHatLabel}
+                  locale={locale}
+                  footerLabels={dictionary.sidebarFooter}
+                  accountLabels={dictionary.userAccountAndSettings}
+                  onLocaleChange={setLocale}
+                  onNavigate={dispatchNavigation}
+                  onLogout={() => void logoutSession().then(() => dispatchNavigation("/login"))}
+                  onOpenShowcase={() => selectModuleAndNavigate(null, "ontology", "/showcase")}
+                />
+              )
+            : undefined
+        }
         helpColumnContent={
           isHelpCenterRoute ? undefined : (
             <ShellContextualHelpColumn
@@ -320,81 +314,43 @@ function InnerShellContainer({
               activeHelpSectionId={state.activeHelpSectionId}
               labels={dictionary.contextualHelpHybrid}
               autonomousBadgeLabels={dictionary.autonomousSupervision.badge}
-              onAskAssistant={() => {
-                if (!disabledMenuKeys.assistant) {
-                  state.setSelectedMenuKeyOverride("assistant");
-                  state.setSelectedModuleOverride("inbox");
-                  dispatchNavigation("/assistant");
-                }
-              }}
+              onAskAssistant={() => !disabledMenuKeys.assistant && selectModuleAndNavigate("assistant", "inbox", "/assistant")}
             />
           )
         }
       >
-        <div className="flex h-full flex-col">
-          {setup.lastSyncError && (
-            <div className="px-4 pt-3">
-              <OrciaAlertBanner
-                tone="crimson"
-                role="alert"
-                testId="platform-sync-error-banner"
-              >
-                {setup.lastSyncError}
-              </OrciaAlertBanner>
-            </div>
-          )}
-          {mustChangePassword && (
-            <TemporaryPasswordWarningBanner
-              isFr={isFr}
-              onOpenSettings={() => {
-                openUserSettingsModalAtTab("ACCOUNT_SECURITY");
-              }}
-            />
-          )}
-          <div className="flex-1">{children}</div>
-        </div>
+        <ShellCentralWorkspaceBody
+          lastSyncError={setup.lastSyncError}
+          mustChangePassword={mustChangePassword}
+          isFr={isFr}
+          onOpenAccountSecurity={() => openUserSettingsModalAtTab("ACCOUNT_SECURITY")}
+        >
+          {children}
+        </ShellCentralWorkspaceBody>
       </FourZoneDirectionCShell>
 
       <ShellContainerModals
-        isFr={isFr}
-        isAdminModalOpen={isAdminModalOpen}
-        searchModalOpen={state.searchModalOpen}
-        pathname={pathname}
-        activeScopeId={selectedScope.id}
-        workspaces={workspaces}
-        catalogItems={catalogItems}
-        ontologyConcepts={ontologyConcepts}
-        labels={dictionary.topHeaderSearch}
-        disabledMenuKeys={disabledMenuKeys}
+        isFr={isFr} isAdminModalOpen={isAdminModalOpen} searchModalOpen={state.searchModalOpen}
+        pathname={pathname} activeScopeId={selectedScope.id} workspaces={workspaces}
+        catalogItems={catalogItems} ontologyConcepts={ontologyConcepts}
+        labels={dictionary.topHeaderSearch} disabledMenuKeys={disabledMenuKeys}
         onDismissAdminModal={() => state.setAdminModalDismissed(true)}
         onCreatePlatformAdmin={createPlatformAdmin}
         onCloseSearchModal={() => state.setSearchModalOpen(false)}
         onDispatchNavigation={dispatchNavigation}
-        onOpenAssistantFromSearch={() => {
-          state.setSelectedMenuKeyOverride("assistant");
-          state.setSelectedModuleOverride("inbox");
-          dispatchNavigation("/assistant");
-        }}
+        onOpenAssistantFromSearch={() => selectModuleAndNavigate("assistant", "inbox", "/assistant")}
       />
-      <ShellUserSettingsModal
-        userEmail={sessionEmail ?? (isAuthenticated ? platformAdmin?.email : "") ?? ""}
-        userRole={roles[0] ?? "CONTRIBUTOR"}
-        locale={locale}
-        labels={dictionary.userAccountAndSettings}
-        onLocaleChange={(nextLocale) => setLocale(nextLocale)}
-        onNavigate={dispatchNavigation}
-      />
+      {isAuthenticated && (
+        <ShellUserSettingsModal
+          userEmail={effectiveEmail} userRole={roles[0] ?? "CONTRIBUTOR"} locale={locale}
+          labels={dictionary.userAccountAndSettings} onLocaleChange={setLocale} onNavigate={dispatchNavigation}
+        />
+      )}
     </ShellNavigationContext.Provider>
   );
 }
 
-export function ShellContainer({
-  children,
-  onNavigate,
-}: {
-  children: React.ReactNode;
-  onNavigate?: (href: string) => void;
-}) {
+export function ShellContainer({ children, onNavigate }: { children: React.ReactNode; onNavigate?: (href: string) => void }) {
   return (
     <PlatformSetupProvider>
       <InnerShellContainer onNavigate={onNavigate}>{children}</InnerShellContainer>

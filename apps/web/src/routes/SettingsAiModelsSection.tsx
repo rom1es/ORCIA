@@ -99,14 +99,15 @@ export function SettingsAiModelsSection({
   };
 
   const isHydrating = useAuthSessionStore((s) => s.isHydrating);
+  const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
   const accessToken = useAuthSessionStore((s) => s.accessToken);
 
   useEffect(() => {
-    if (isHydrating) {
+    if (isHydrating || !isAuthenticated) {
       return;
     }
     void loadMappings();
-  }, [isFr, isHydrating, accessToken]);
+  }, [isFr, isHydrating, isAuthenticated, accessToken]);
 
   const activeMappings =
     Array.isArray(serverMappings) && serverMappings.length > 0

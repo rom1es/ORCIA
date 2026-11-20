@@ -340,6 +340,10 @@ export {
   type OrciaIconProps,
 } from "./components/icons";
 export {
+  OrciaPasswordInput,
+  type OrciaPasswordInputProps,
+} from "./primitives/OrciaPasswordInput";
+export {
   OrciaAlertBanner,
   OrciaButton,
   OrciaDialog,

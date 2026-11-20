@@ -144,7 +144,10 @@ export function FourZoneDirectionCShell({
         target instanceof HTMLTextAreaElement ||
         target instanceof HTMLSelectElement ||
         Boolean(target?.isContentEditable);
-      if (event.key === "[" && !isEditable) {
+      const hasOpenModalDialog = Array.from(
+        document.querySelectorAll('[aria-modal="true"]'),
+      ).some((el) => el.getAttribute("role") === "dialog");
+      if (event.key === "[" && !isEditable && !hasOpenModalDialog) {
         setRailCollapsed((prev) => !prev);
       } else if (event.key === "Escape") {
         setNotificationsOpen(false);

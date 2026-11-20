@@ -50,7 +50,7 @@
           },
           "completed_count": {
             "maximum": 6.0,
-            "minimum": 1.0,
+            "minimum": 0.0,
             "title": "Completed Count",
             "type": "integer"
           },
@@ -140,6 +140,12 @@
             "default": 0,
             "minimum": 0.0,
             "title": "Users Count",
+            "type": "integer"
+          },
+          "workflows_count": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Workflows Count",
             "type": "integer"
           },
           "workspaces_count": {
@@ -40480,7 +40486,7 @@
             "description": "Precondition Required"
           }
         },
-        "summary": "Get progressive Day-0 Accostage (1/6) status and LLM tier unlock state (`Story 9.2`)",
+        "summary": "Get progressive Day-0 Accostage (0/6..6/6) status and LLM tier state (`Story 9.2`)",
         "tags": [
           "bootstrap"
         ]

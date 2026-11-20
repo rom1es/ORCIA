@@ -37,6 +37,7 @@ export async function createFirstAdminViaUi(page: Page): Promise<void> {
   await page.getByTestId("first-boot-admin-name-input").fill(E2E_ADMIN.name);
   await page.getByTestId("first-boot-admin-email-input").fill(E2E_ADMIN.email);
   await page.getByTestId("first-boot-admin-password-input").fill(E2E_ADMIN.password);
+  await page.getByTestId("first-boot-admin-password-confirm-input").fill(E2E_ADMIN.password);
   const [firstAdminRes] = await Promise.all([
     page.waitForResponse(
       (res) =>

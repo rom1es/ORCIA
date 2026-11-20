@@ -17,6 +17,7 @@ class AccostagePg18Counts:
     workspaces_count: int
     models_count: int
     sources_count: int
+    workflows_count: int = 0
 
     @property
     def admin_created(self) -> bool:
@@ -25,7 +26,7 @@ class AccostagePg18Counts:
 
 
 async def get_accostage_pg18_counts(engine: AsyncEngine) -> AccostagePg18Counts:
-    """Query PostgreSQL 18 for real Accostage counts (users, org_units, workspaces, models)."""
+    """Query PostgreSQL 18 for real Accostage entity counts across all 6 milestones."""
     async with engine.connect() as conn:
         row = (
             await conn.execute(
@@ -51,17 +52,22 @@ async def get_accostage_pg18_counts(engine: AsyncEngine) -> AccostagePg18Counts:
                                 WHERE is_active = TRUE
                             )
                         ) AS models_count,
-                        (SELECT COUNT(*)::int FROM workspace_datasources) AS sources_count
+                        (SELECT COUNT(*)::int FROM workspace_datasources) AS sources_count,
+                        GREATEST(
+                            (SELECT COUNT(*)::int FROM workflow_definitions_v2),
+                            (SELECT COUNT(*)::int FROM workflow_runs)
+                        ) AS workflows_count
                     """
                 )
             )
         ).first()
         if row is None:
-            return AccostagePg18Counts(0, 0, 0, 0, 0)
+            return AccostagePg18Counts(0, 0, 0, 0, 0, 0)
         return AccostagePg18Counts(
             users_count=int(row[0] or 0),
             org_units_count=int(row[1] or 0),
             workspaces_count=int(row[2] or 0),
             models_count=int(row[3] or 0),
             sources_count=int(row[4] or 0),
+            workflows_count=int(row[5] or 0) if len(row) > 5 else 0,
         )

@@ -236,8 +236,9 @@ describe("Direction C 8-Item Shell, Mobile Companion (< 768px), Accostage & Dyna
     const step2OrgMilestone = screen.getByTestId("accostage-milestone-step-iam");
     expect(step2OrgMilestone.getAttribute("data-completed")).toBe("false");
 
-    const accostageBadge = screen.getByTestId("onboarding-progress-badge");
-    expect(accostageBadge.textContent).toMatch(/^Accostage \d+\/5$/);
+    const accostageBadge = screen.getByTestId("accostage-progress-pill");
+    expect(accostageBadge.textContent).toMatch(/^Accostage \d+\/6$/);
+    expect(screen.queryByTestId("onboarding-progress-badge")).toBeNull();
 
     const banner = screen.getByTestId("progressive-day0-accostage-banner");
     expect(banner.textContent).not.toContain("LOCK TABLE users IN EXCLUSIVE MODE");

@@ -41,6 +41,8 @@ export function UserProfileRouteView(): React.ReactElement {
   const displayName = useAuthSessionStore((s) => s.displayName) ?? "Utilisateur ORCIA";
   const email = useAuthSessionStore((s) => s.email) ?? "";
   const roles = useAuthSessionStore((s) => s.roles);
+  const isHydrating = useAuthSessionStore((s) => s.isHydrating);
+  const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
   const readOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
   const openUserSettingsModalAtTab = useAuthSessionStore(
     (s) => s.openUserSettingsModalAtTab,
@@ -104,8 +106,11 @@ export function UserProfileRouteView(): React.ReactElement {
   }, [client, genericErrorLabel]);
 
   useEffect(() => {
+    if (isHydrating || !isAuthenticated) {
+      return;
+    }
     void loadProfileSummary();
-  }, [loadProfileSummary]);
+  }, [isHydrating, isAuthenticated, loadProfileSummary]);
 
   return (
     <UserProfileOverviewPage

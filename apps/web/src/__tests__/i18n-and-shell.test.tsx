@@ -154,23 +154,24 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     // First-boot Platform Administrator creation modal is displayed on 1st startup
     expect(screen.getByTestId("first-boot-admin-setup-modal")).toBeDefined();
 
-    // Accostage 0/5 onboarding progress at blank start
-    expect(screen.getByTestId("onboarding-progress-badge").textContent).toBe("Accostage 0/5");
+    // Accostage 0/6 onboarding progress at blank start (zero duplicate badge)
+    expect(screen.queryByTestId("onboarding-progress-badge")).toBeNull();
+    expect(screen.getByTestId("accostage-progress-pill").textContent).toBe("Accostage 0/6");
     expect(screen.getByTestId("cockpit-no-workspace-empty-state")).toBeDefined();
 
-    // Unconfigured features are greyed out (disabled) in the 8-entry sidebar
+    // Unconfigured features (all navigable entries except Cockpit) are greyed out (disabled) at Day 0 without admin
     expect(
       (screen.getByTestId("eight-menu-item-cockpit") as HTMLButtonElement).disabled,
     ).toBe(false);
     expect(
       (screen.getByTestId("eight-menu-item-spaces") as HTMLButtonElement).disabled,
-    ).toBe(false);
+    ).toBe(true);
     expect(
       (screen.getByTestId("eight-menu-item-configuration") as HTMLButtonElement).disabled,
-    ).toBe(false);
+    ).toBe(true);
     expect(
       (screen.getByTestId("eight-menu-item-help") as HTMLButtonElement).disabled,
-    ).toBe(false);
+    ).toBe(true);
     expect(
       (screen.getByTestId("eight-menu-item-assistant") as HTMLButtonElement).disabled,
     ).toBe(true);
@@ -190,6 +191,10 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
   });
 
   it("guides workspace creation from /workspaces and dynamically unlocks workspace-scoped modules and runs", async () => {
+    seedVitestPlatformSetupState(
+      {},
+      { email: "admin@orcia.fr", displayName: "Admin", roles: ["PLATFORM_ADMIN"] },
+    );
     const queryClient = createOrciaQueryClient();
     const history = createMemoryHistory({ initialEntries: ["/workspaces"] });
     const router = createOrciaRouter({ queryClient, history });
@@ -221,15 +226,19 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       ).toBe(false);
     });
 
-    // Navigate to /cockpit -> Onboarding progress is Accostage 1/5 and Run launcher is unlocked
+    // Navigate to /cockpit -> Onboarding progress is Accostage 3/6 and Run launcher is unlocked
     await act(async () => {
       await router.navigate({ to: "/cockpit" });
     });
-    expect(screen.getByTestId("onboarding-progress-badge").textContent).toBe("Accostage 1/5");
+    expect(screen.getByTestId("accostage-progress-pill").textContent).toBe("Accostage 3/6");
     expect(screen.getByTestId("cockpit-launch-run-form")).toBeDefined();
   });
 
   it("initializes entities across the 5 dedicated /settings tabs and records Outbox audit events visible in the Activity Log (/activity via FinOps)", async () => {
+    seedVitestPlatformSetupState(
+      {},
+      { email: "admin@orcia.fr", displayName: "Admin", roles: ["PLATFORM_ADMIN"] },
+    );
     const queryClient = createOrciaQueryClient();
     const history = createMemoryHistory({ initialEntries: ["/settings"] });
     const router = createOrciaRouter({ queryClient, history });
@@ -553,6 +562,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.change(screen.getByTestId("first-boot-admin-password-input"), {
       target: { value: "Secret123456!" },
     });
+    fireEvent.change(screen.getByTestId("first-boot-admin-password-confirm-input"), {
+      target: { value: "Secret123456!" },
+    });
     fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
 
     // Modal closes, top-right login control is gone, and bottom-left account button shows Romain Admin · Administrateur de la plateforme
@@ -798,6 +810,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.change(screen.getByTestId("first-boot-admin-password-input"), {
       target: { value: "Secret123456!" },
     });
+    fireEvent.change(screen.getByTestId("first-boot-admin-password-confirm-input"), {
+      target: { value: "Secret123456!" },
+    });
     fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
     await waitFor(() => {
       expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
@@ -869,8 +884,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       (screen.getByTestId("eight-menu-item-finops") as HTMLButtonElement).disabled,
     ).toBe(false);
 
-    // Verify onboarding progress badge is Accostage 3/5 (AI model + Workspace + Workflow)
-    expect(screen.getByTestId("onboarding-progress-badge").textContent).toBe("Accostage 3/5");
+    // Verify onboarding progress badge is Accostage 4/6 (Admin + AI model + Org Unit + Workspace)
+    expect(screen.queryByTestId("onboarding-progress-badge")).toBeNull();
+    expect(screen.getByTestId("accostage-progress-pill").textContent).toBe("Accostage 4/6");
   });
 
   it("supports creating Skills, creating Agents via modals, configuring & executing both in sandbox modals, and surviving F5 reload on /agents", async () => {
@@ -1645,11 +1661,13 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(
       screen.getByTestId("disabled-button-alert-icon-eight-menu-item-assistant"),
     ).toBeDefined();
-    expect(
-      screen
-        .getByTestId("disabled-button-alert-tooltip-eight-menu-item-assistant")
-        .getAttribute("data-tooltip-text"),
-    ).toContain("Configurez au moins un modèle IA");
+    await waitFor(() => {
+      expect(
+        screen
+          .getByTestId("disabled-button-alert-tooltip-eight-menu-item-assistant")
+          .getAttribute("data-tooltip-text"),
+      ).toContain("Configurez au moins un modèle IA");
+    });
 
     // 3. In Mon Organisation (/organization) & Configuration > Comptes & Habilitations:
     // - Organization page uses "Structure de l'Organisation (Directions / BU & Équipes)" and "Équipe" (never "Espace (Équipe)")

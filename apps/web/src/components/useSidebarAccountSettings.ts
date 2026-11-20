@@ -143,18 +143,24 @@ export function useSidebarAccountSettings(options: {
     }
   }, [client, labels.passwordSecurity?.genericError]);
 
-  useEffect(() => {
-    void loadPreferences();
-  }, [loadPreferences]);
+  const isHydrating = useAuthSessionStore((s) => s.isHydrating);
+  const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
 
   useEffect(() => {
-    if (modalOpen) {
+    if (isHydrating || !isAuthenticated) {
+      return;
+    }
+    void loadPreferences();
+  }, [isHydrating, isAuthenticated, loadPreferences]);
+
+  useEffect(() => {
+    if (modalOpen && !isHydrating && isAuthenticated) {
       setPrefsError(null);
       setMcpError(null);
       void loadPreferences();
       void loadModalDetails();
     }
-  }, [modalOpen, loadPreferences, loadModalDetails]);
+  }, [modalOpen, isHydrating, isAuthenticated, loadPreferences, loadModalDetails]);
 
   const handleUpdatePreferences = async (patch: UserAccountPreferencesPatch): Promise<void> => {
     setIsSavingPrefs(true);

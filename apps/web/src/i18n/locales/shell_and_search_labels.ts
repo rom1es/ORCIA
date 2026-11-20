@@ -7,12 +7,33 @@ import type {
   UserAccountDropdownAndSettingsLabels,
 } from "@orcia/ui";
 
+export interface FirstBootAdminModalLabels {
+  readonly title: string;
+  readonly description: string;
+  readonly firstTimeBadge: string;
+  readonly fullNameLabel: string;
+  readonly fullNamePlaceholder: string;
+  readonly emailLabel: string;
+  readonly emailPlaceholder: string;
+  readonly passwordLabel: string; // pragma: allowlist secret
+  readonly confirmPasswordLabel: string; // pragma: allowlist secret
+  readonly showPasswordLabel: string; // pragma: allowlist secret
+  readonly hidePasswordLabel: string; // pragma: allowlist secret
+  readonly passwordMismatchError: string; // pragma: allowlist secret
+  readonly assignedRoleBadge: string;
+  readonly submitCta: string;
+  readonly missingFieldsHint: string;
+  readonly reopenSetupCta: string;
+  readonly day0DisabledAdminMissingReason: string;
+}
+
 export interface ShellAndSearchDictionarySection {
   readonly fourZoneShell: FourZoneDirectionCShellLabels;
   readonly sidebarFooter: {
     readonly myAccountLabel: string;
     readonly documentationLabel: string;
   };
+  readonly firstBootAdminModal: FirstBootAdminModalLabels;
   readonly streamlinedCockpit: StreamlinedCockpitLabels;
   readonly progressiveAccostage: ProgressiveDay0AccostageLabels;
   readonly topHeaderSearch: TopHeaderSearchCommandLabels;
@@ -73,6 +94,28 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
     myAccountLabel: "Mon Compte",
     documentationLabel: "Documentation",
   },
+  firstBootAdminModal: {
+    title: "Création du compte Administrateur de la plateforme",
+    description:
+      "Aucun compte administrateur n'est encore enregistré. Créez le premier compte Administrateur pour configurer votre organisation.",
+    firstTimeBadge: "Première mise en route",
+    fullNameLabel: "Nom complet",
+    fullNamePlaceholder: "Ex : Romain",
+    emailLabel: "Adresse e-mail",
+    emailPlaceholder: "admin@entreprise.fr",
+    passwordLabel: "Mot de passe", // pragma: allowlist secret
+    confirmPasswordLabel: "Confirmer le mot de passe", // pragma: allowlist secret
+    showPasswordLabel: "Afficher le mot de passe", // pragma: allowlist secret
+    hidePasswordLabel: "Masquer le mot de passe", // pragma: allowlist secret
+    passwordMismatchError: "Les deux mots de passe ne correspondent pas.", // pragma: allowlist secret
+    assignedRoleBadge: "Rôle attribué : Administrateur de la plateforme",
+    submitCta: "Créer le compte Administrateur",
+    missingFieldsHint:
+      "Renseignez le nom complet et l'adresse e-mail (avec mot de passe concordant) pour créer le compte Administrateur.",
+    reopenSetupCta: "Créer le compte Administrateur",
+    day0DisabledAdminMissingReason:
+      "Créez d'abord le premier compte Administrateur pour accéder à cette section.",
+  },
   streamlinedCockpit: {
     zeroDecisionsBanner: "✅ Aucune décision en attente",
     quickAssistantTitle: "Accès rapide à Mon Assistant",
@@ -107,7 +150,7 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
     welcomeWizardTitle: "Assistant de Bienvenue",
     step1AdminTitle: "Étape 1 : Compte Administrateur de la plateforme",
     step2LlmTitle: "Étape 2 : Connexion des Modèles IA (1 modèle pour démarrer, 2 pour les revues croisées)",
-    step3SpaceTitle: "Étape 3 : Création de votre premier Espace",
+    step3SpaceTitle: "Étape 3 : Parcours en 6 jalons",
     bootstrapTokenLabel: "Clé d'installation initiale",
     bootstrapTokenPlaceholder: "Saisissez la clé d'installation fournie au déploiement...",
     bootstrapTokenDeniedBanner:
@@ -345,6 +388,28 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
     myAccountLabel: "My Account",
     documentationLabel: "Documentation",
   },
+  firstBootAdminModal: {
+    title: "Create Platform Administrator Account",
+    description:
+      "No administrator account is registered yet. Create the first Administrator account to configure your organization.",
+    firstTimeBadge: "First-Time Setup",
+    fullNameLabel: "Full name",
+    fullNamePlaceholder: "e.g. Romain",
+    emailLabel: "Email address",
+    emailPlaceholder: "admin@company.com",
+    passwordLabel: "Password", // pragma: allowlist secret
+    confirmPasswordLabel: "Confirm password", // pragma: allowlist secret
+    showPasswordLabel: "Show password", // pragma: allowlist secret
+    hidePasswordLabel: "Hide password", // pragma: allowlist secret
+    passwordMismatchError: "Passwords do not match.", // pragma: allowlist secret
+    assignedRoleBadge: "Assigned role: Platform Administrator",
+    submitCta: "Create Administrator Account",
+    missingFieldsHint:
+      "Enter full name and email address (with matching password) to create the Administrator account.",
+    reopenSetupCta: "Create Administrator Account",
+    day0DisabledAdminMissingReason:
+      "Create the first Administrator account first to access this section.",
+  },
   streamlinedCockpit: {
     zeroDecisionsBanner: "✅ No pending decisions",
     quickAssistantTitle: "Quick access to My Assistant",
@@ -379,7 +444,7 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
     welcomeWizardTitle: "Welcome Setup Assistant",
     step1AdminTitle: "Step 1: Platform Administrator Account",
     step2LlmTitle: "Step 2: Connect AI Models (1 model to start, 2 for cross-checked reviews)",
-    step3SpaceTitle: "Step 3: Create your first Workspace",
+    step3SpaceTitle: "Step 3: 6-step setup path",
     bootstrapTokenLabel: "Initial installation key",
     bootstrapTokenPlaceholder: "Enter the installation key provided at deployment...",
     bootstrapTokenDeniedBanner:

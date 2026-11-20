@@ -244,7 +244,7 @@ development_status:
   23-1-reset-jour0-e2e-truncate-cascade-connector-schemes-et-redis: done
   23-2-transport-sse-authentifie-createrequestsse-smoke-00-et-diagnostic-401: done
   23-3-zone-4-aide-contextuelle-fidele-a-la-route-et-4-blocs-design-md: done
-  23-4-unification-accostage-x-sur-6-fin-fantomes-jour0-et-modale-admin: ready-for-dev
+  23-4-unification-accostage-x-sur-6-fin-fantomes-jour0-et-modale-admin: done
   23-5-sobriete-cockpit-topbar-sans-doublon-assistant-et-login: ready-for-dev
   23-6a-durcissement-anti-goodhart-gardes-openapi-ast-geometrie-et-reset-pg18: ready-for-dev
   23-7-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston: ready-for-dev
@@ -339,6 +339,17 @@ action_items:
       hors du chemin critique de l'Epic 23 pour priorisation ultérieure. Durant l'Epic 23,
       les exécutions Playwright ciblent `--project=desktop-cockpit` (1440×900, 24 specs /
       55 scénarios Desktop).
+  - id: ACTION_ITEM-23.4
+    title: "Découpage modulaire de platformSetupGovernanceActions.ts (502 L) et shell_and_search_labels.ts (628 L)"
+    action: "Découper apps/web/src/components/platformSetupGovernanceActions.ts (502 L) et apps/web/src/i18n/locales/shell_and_search_labels.ts (628 L) sous le seuil de 300-400 lignes sans changer les contrats publics."
+    status: open
+    epic: epic-23
+    story_ref: "23-4-unification-accostage-x-sur-6-fin-fantomes-jour0-et-modale-admin"
+    priority: P3
+    owner: "Amelia (Dev)"
+    description: >
+      Dette technique mineure relevée lors de la validation 23.4-validate (Round 2) :
+      ces deux fichiers dépassent le seuil indicatif de 400 lignes et seront scindés dans un lot d'hygiène dédié.
   - id: SPEC-01
     title: "Génération systématique des spécifications `spec-{story-key}.md` et enrichissement
       des rapports Tech Lead pour l'Epic 2"

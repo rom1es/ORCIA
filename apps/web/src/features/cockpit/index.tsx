@@ -6,6 +6,7 @@ import {
 } from "@orcia/ui";
 import type { Edge, Node } from "@xyflow/react";
 import React, { useState } from "react";
+import { buildUnifiedAccostageMilestones } from "../../components/platformSetupAccostage";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
@@ -41,15 +42,11 @@ export function CockpitFeaturePanel() {
   const authDisplayName = useAuthSessionStore((s) => s.displayName);
   const {
     platformAdmin,
-    llmTiers,
-    orgUnits,
     workspaces,
-    datasources,
     workflows,
-    packs,
     runs,
     scopes,
-    accostageCounts,
+    accostageSummary,
     completedSetupStepsCount,
     launchRun,
   } = usePlatformSetup();
@@ -85,59 +82,10 @@ export function CockpitFeaturePanel() {
           )
         : runs;
 
-  const hasRealOrgUnits =
-    orgUnits.some((u) => u.level === "BU" || u.level === "TEAM") ||
-    (accostageCounts?.orgUnitsCount ?? 0) > 0;
-  const hasModels = llmTiers.length > 0 || (accostageCounts?.modelsCount ?? 0) > 0;
-  const hasWorkspaces =
-    workspaces.length > 0 || (accostageCounts?.workspacesCount ?? 0) > 0;
-  const hasSources =
-    datasources.length > 0 || (accostageCounts?.sourcesCount ?? 0) > 0;
-  const isAdminCreatedInPg = Boolean(
-    accostageCounts?.adminCreated || platformAdmin !== null,
-  );
-
-  const milestones = [
-    {
-      index: 1,
-      key: "step-llm",
-      title: isFr ? "1. Modèles IA" : "1. AI Models",
-      completed: hasModels,
-      targetRoute: "/configuration",
-    },
-    {
-      index: 2,
-      key: "step-iam",
-      title: isFr
-        ? "2. Structure Organisationnelle & Habilitations"
-        : "2. Organization Structure & Permissions",
-      completed: hasRealOrgUnits,
-      targetRoute: "/organization",
-    },
-    {
-      index: 3,
-      key: "step-workspaces",
-      title: isFr ? "3. Espaces de Travail" : "3. Workspaces",
-      completed: hasWorkspaces,
-      targetRoute: "/spaces",
-    },
-    {
-      index: 4,
-      key: "step-connectors",
-      title: isFr ? "4. Sources Documentaires & Outils" : "4. Document Sources & Tools",
-      completed: hasSources,
-      targetRoute: "/configuration",
-    },
-    {
-      index: 5,
-      key: "step-workflows",
-      title: isFr
-        ? "5. Packs Métiers & Atelier de Processus"
-        : "5. Business Packs & Process Studio",
-      completed: workflows.length > 0 || packs.length > 0,
-      targetRoute: "/processes",
-    },
-  ];
+  const milestones = buildUnifiedAccostageMilestones({
+    isFr,
+    summary: accostageSummary,
+  });
 
   const handleLaunchRun = (event: React.FormEvent) => {
     event.preventDefault();
@@ -178,10 +126,6 @@ export function CockpitFeaturePanel() {
     platformAdmin?.displayName ||
     dictionary.humanAnchor.defaultAuthorName;
 
-  const accostageLabel = isFr
-    ? `Accostage ${completedSetupStepsCount}/5`
-    : `Onboarding ${completedSetupStepsCount}/5`;
-
   return (
     <div
       data-testid="cockpit-empty-first-panel"
@@ -198,16 +142,6 @@ export function CockpitFeaturePanel() {
       >
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
-            <span
-              data-testid="onboarding-progress-badge"
-              className="rounded px-2.5 py-0.5 font-mono text-xs font-semibold"
-              style={{
-                backgroundColor: "var(--color-action-primary-subtle)",
-                color: "var(--color-action-primary)",
-              }}
-            >
-              {accostageLabel}
-            </span>
             <ContextualInfoTriggerButton
               sectionId="cockpit-decisions"
               label={
@@ -233,8 +167,8 @@ export function CockpitFeaturePanel() {
 
         <ProgressiveDay0AccostageBanner
           completedCount={completedSetupStepsCount}
-          totalCount={5}
-          adminCreated={isAdminCreatedInPg}
+          totalCount={6}
+          adminCreated={accostageSummary.adminCreated}
           adminDisplayName={authDisplayName ?? platformAdmin?.displayName}
           adminEmail={authEmail ?? platformAdmin?.email}
           milestones={milestones}

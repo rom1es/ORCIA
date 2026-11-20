@@ -4,10 +4,15 @@ import {
   DisabledButtonAlertIndicator,
   handleRgaaSubmitKeyDown,
   OrciaDialog,
+  OrciaPasswordInput,
   RgaaUnsavedChangesAlert,
   useUnsavedChangesDialogGuard,
 } from "@orcia/ui";
 import React, { useState } from "react";
+import {
+  SHELL_AND_SEARCH_EN_LABELS,
+  SHELL_AND_SEARCH_FR_LABELS,
+} from "../i18n/locales/shell_and_search_labels";
 
 export interface FirstBootAdminSetupModalProps {
   readonly isOpen: boolean;
@@ -29,12 +34,24 @@ export function FirstBootAdminSetupModal({
   const [adminFullName, setAdminFullName] = useState<string>("");
   const [adminEmail, setAdminEmail] = useState<string>("");
   const [adminPassword, setAdminPassword] = useState<string>("");
+  const [adminPasswordConfirm, setAdminPasswordConfirm] = useState<string>("");
+
+  const copy = isFr
+    ? SHELL_AND_SEARCH_FR_LABELS.firstBootAdminModal
+    : SHELL_AND_SEARCH_EN_LABELS.firstBootAdminModal;
+  const rgaaLabels = isFr ? DEFAULT_RGAA_MODAL_LABELS_FR : DEFAULT_RGAA_MODAL_LABELS_EN;
 
   const isAdminModalDirty = Boolean(
-    adminFullName.trim() || adminEmail.trim() || adminPassword.trim(),
+    adminFullName.trim() ||
+      adminEmail.trim() ||
+      adminPassword.trim() ||
+      adminPasswordConfirm.trim(),
   );
-  const canCreateAdmin = Boolean(adminFullName.trim() && adminEmail.trim());
-  const rgaaLabels = isFr ? DEFAULT_RGAA_MODAL_LABELS_FR : DEFAULT_RGAA_MODAL_LABELS_EN;
+  const hasPasswordMismatch =
+    adminPassword.length > 0 && adminPasswordConfirm !== adminPassword;
+  const canCreateAdmin = Boolean(
+    adminFullName.trim() && adminEmail.trim() && !hasPasswordMismatch,
+  );
 
   const {
     showUnsavedConfirm: showAdminUnsavedConfirm,
@@ -50,6 +67,7 @@ export function FirstBootAdminSetupModal({
       setAdminFullName("");
       setAdminEmail("");
       setAdminPassword("");
+      setAdminPasswordConfirm("");
     },
   });
 
@@ -86,23 +104,12 @@ export function FirstBootAdminSetupModal({
         requestCloseAdminModal();
       }}
       onInteractOutside={(event) => {
-        if (isAdminModalDirty) {
-          event.preventDefault();
-          requestCloseAdminModal();
-        }
+        event.preventDefault();
       }}
-      title={
-        isFr
-          ? "Création du compte Administrateur de la plateforme"
-          : "Create Platform Administrator Account"
-      }
-      description={
-        isFr
-          ? "Aucun compte administrateur n'est encore enregistré. Créez le premier compte Administrateur pour configurer votre organisation."
-          : "No administrator account is registered yet. Create the first Administrator account to configure your organization."
-      }
+      title={copy.title}
+      description={copy.description}
       testId="first-boot-admin-setup-modal"
-      closeLabel={`${rgaaLabels.cancelCta} (Esc)`}
+      closeLabel={rgaaLabels.closeButtonLabel}
     >
       <div onKeyDown={handleAdminDialogKeyDown} className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="orcia-ds-dialog-body">
@@ -114,7 +121,7 @@ export function FirstBootAdminSetupModal({
                 color: "var(--color-action-primary)",
               }}
             >
-              {isFr ? "Première mise en route" : "First-Time Setup"}
+              {copy.firstTimeBadge}
             </span>
           </div>
 
@@ -136,9 +143,10 @@ export function FirstBootAdminSetupModal({
             className="space-y-3 text-xs"
           >
             <label className="flex flex-col gap-1">
-              <span className="font-medium">{isFr ? "Nom complet" : "Full name"}</span>
+              <span className="font-medium">{copy.fullNameLabel}</span>
               <input
                 type="text"
+                autoFocus
                 autoComplete="off"
                 data-lpignore="true"
                 data-1p-ignore="true"
@@ -147,7 +155,7 @@ export function FirstBootAdminSetupModal({
                 data-testid="first-boot-admin-name-input"
                 value={adminFullName}
                 onChange={(e) => setAdminFullName(e.target.value)}
-                placeholder={isFr ? "Ex : Romain" : "e.g. Romain"}
+                placeholder={copy.fullNamePlaceholder}
                 className="rounded border px-3 py-1.5"
                 style={{
                   backgroundColor: "var(--color-bg-canvas)",
@@ -157,7 +165,7 @@ export function FirstBootAdminSetupModal({
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="font-medium">{isFr ? "Adresse e-mail" : "Email address"}</span>
+              <span className="font-medium">{copy.emailLabel}</span>
               <input
                 type="email"
                 autoComplete="off"
@@ -168,7 +176,7 @@ export function FirstBootAdminSetupModal({
                 data-testid="first-boot-admin-email-input"
                 value={adminEmail}
                 onChange={(e) => setAdminEmail(e.target.value)}
-                placeholder={isFr ? "admin@entreprise.fr" : "admin@company.com"}
+                placeholder={copy.emailPlaceholder}
                 className="rounded border px-3 py-1.5"
                 style={{
                   backgroundColor: "var(--color-bg-canvas)",
@@ -178,29 +186,41 @@ export function FirstBootAdminSetupModal({
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="font-medium">{isFr ? "Mot de passe" : "Password"}</span>
-              <input
-                type="text"
-                spellCheck={false}
-                autoComplete="off"
-                data-lpignore="true"
-                data-1p-ignore="true"
-                data-bwignore="true"
-                data-form-type="other"
-                data-testid="first-boot-admin-password-input"
+              <span className="font-medium">{copy.passwordLabel}</span>
+              <OrciaPasswordInput
+                testId="first-boot-admin-password-input"
                 value={adminPassword}
-                onChange={(e) => setAdminPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="orcia-masked-secret-input rounded border px-3 py-1.5"
-                style={
-                  {
-                    backgroundColor: "var(--color-bg-canvas)",
-                    borderColor: "var(--color-border-subtle)",
-                    WebkitTextSecurity: "disc",
-                  } as React.CSSProperties
-                }
+                onChange={setAdminPassword}
+                maskMode="masked-text"
+                placeholder=""
+                showPasswordLabel={copy.showPasswordLabel}
+                hidePasswordLabel={copy.hidePasswordLabel}
               />
             </label>
+
+            <label className="flex flex-col gap-1">
+              <span className="font-medium">{copy.confirmPasswordLabel}</span>
+              <OrciaPasswordInput
+                testId="first-boot-admin-password-confirm-input"
+                value={adminPasswordConfirm}
+                onChange={setAdminPasswordConfirm}
+                maskMode="masked-text"
+                placeholder=""
+                showPasswordLabel={copy.showPasswordLabel}
+                hidePasswordLabel={copy.hidePasswordLabel}
+              />
+            </label>
+
+            {adminPasswordConfirm.length > 0 && hasPasswordMismatch ? (
+              <p
+                data-testid="first-boot-admin-password-mismatch"
+                role="status"
+                className="text-[11px] font-medium"
+                style={{ color: "var(--color-state-danger)" }}
+              >
+                {copy.passwordMismatchError}
+              </p>
+            ) : null}
           </form>
         </div>
 
@@ -213,48 +233,24 @@ export function FirstBootAdminSetupModal({
             className="text-[11px] font-medium"
             style={{ color: "var(--color-text-secondary)" }}
           >
-            {isFr
-              ? "Rôle attribué : Administrateur de la plateforme"
-              : "Assigned role: Platform Administrator"}
+            {copy.assignedRoleBadge}
           </span>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              data-testid="first-boot-admin-cancel-btn"
-              onClick={requestCloseAdminModal}
-              className="orcia-ds-btn orcia-ds-btn-secondary"
-            >
-              {rgaaLabels.cancelCta} (Esc)
-            </button>
             <button
               type="submit"
               form="first-boot-admin-setup-form"
               data-testid="first-boot-admin-submit-btn"
               disabled={!canCreateAdmin}
-              title={
-                !canCreateAdmin
-                  ? isFr
-                    ? "Renseignez le nom complet et l'adresse e-mail pour créer le compte Administrateur."
-                    : "Enter full name and email address to create the Administrator account."
-                  : undefined
-              }
+              title={!canCreateAdmin ? copy.missingFieldsHint : undefined}
               onKeyDown={(e) =>
                 handleRgaaSubmitKeyDown(e, submitFirstBootAdmin, !canCreateAdmin)
               }
               className="orcia-ds-btn orcia-ds-btn-primary inline-flex items-center gap-1.5"
             >
-              <span>
-                {isFr
-                  ? "Créer le compte Administrateur"
-                  : "Create Administrator Account"}
-              </span>
+              <span>{copy.submitCta}</span>
               <DisabledButtonAlertIndicator
                 disabled={!canCreateAdmin}
-                reason={
-                  isFr
-                    ? "Renseignez le nom complet et l'adresse e-mail pour créer le compte Administrateur."
-                    : "Enter full name and email address to create the Administrator account."
-                }
+                reason={copy.missingFieldsHint}
                 testIdSuffix="first-boot-admin-submit-btn"
               />
             </button>

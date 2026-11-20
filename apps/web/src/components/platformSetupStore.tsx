@@ -3,29 +3,29 @@ import type {
   ControlCenterOverrideItem,
   ControlCenterRunItem,
   ControlCenterWorkspaceGovItem,
-  ProductLifecyclePhaseType,
   UiCatalogExplorerItemView,
   UiOntologyConceptView,
-  UiOntologyLevel,
-  UiScopeNode,
 } from "@orcia/ui";
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { formatRfc9457ErrorToBanner } from "../lib/formatRfc9457ErrorToBanner";
 import { useAuthSessionStore } from "../stores/authSessionStore";
 import { createPlatformGovernanceActions } from "./platformSetupGovernanceActions";
 import {
+  buildWorkflowOverridesFromWorkflows,
+  computeAccostageProgressSummary,
+} from "./platformSetupAccostage";
+import {
+  appendPlatformSetupAuditEvent,
+  createPlatformWorkspaceActions,
+  EMPTY_CACHED_PLATFORM_SETUP_STATE,
+  type PlatformSetupContextValue,
+} from "./platformSetupContextTypes";
+import {
   fetchAndBuildHydrationOutcome,
   savePlatformSetupSnapshotToApi,
   type AccostagePg18CountsView,
 } from "./platformSetupHydration";
 import {
-  cleanAuditSummaryJargon,
-  clearPlatformSetupStorage,
-  deduplicateConfiguredPacks,
-  formatHumanReadableScopePath,
-  normalizeConfiguredAuditEvent,
-  PLATFORM_ADMIN_STORAGE_KEY,
-  PLATFORM_SETUP_STATE_STORAGE_KEY,
   readCachedPlatformAdmin,
   readCachedPlatformSetupState,
   writeCachedPlatformSetupState,
@@ -37,17 +37,8 @@ import {
   type ConfiguredPlatformAdmin,
   type ConfiguredRbacGrant,
   type ConfiguredWorkflowItem,
-  type LlmAuthMode,
 } from "./platformSetupStorageHelpers";
-import {
-  applyRegisterDatasource,
-  applyWorkspacePhaseUpdate,
-  applyWorkspaceVisibilityUpdate,
-  buildScopeNodes,
-  createWorkspaceViaServer,
-  type CreateWorkspaceInput,
-  type RegisterDatasourceInput,
-} from "./platformSetupWorkspaces";
+import { buildScopeNodes } from "./platformSetupWorkspaces";
 
 export {
   cleanAuditSummaryJargon,
@@ -66,95 +57,12 @@ export {
   type ConfiguredRbacGrant,
   type ConfiguredWorkflowItem,
   type LlmAuthMode,
-};
+} from "./platformSetupStorageHelpers";
+export type { PlatformSetupContextValue };
 
 const isVitest =
   typeof process !== "undefined" &&
   (process.env?.NODE_ENV === "test" || process.env?.VITEST === "true");
-
-export interface PlatformSetupContextValue {
-  readonly isInitialLoading: boolean;
-  readonly lastSyncError: string | null;
-  readonly platformAdmin: ConfiguredPlatformAdmin | null;
-  readonly orgUnits: readonly ConfiguredOrgUnit[];
-  readonly rbacGrants: readonly ConfiguredRbacGrant[];
-  readonly llmTiers: readonly ConfiguredLlmTierMapping[];
-  readonly workspaces: readonly ControlCenterWorkspaceGovItem[];
-  readonly datasources: readonly ControlCenterDatasourceItem[];
-  readonly packs: readonly ConfiguredPackItem[];
-  readonly workflows: readonly ConfiguredWorkflowItem[];
-  readonly runs: readonly ControlCenterRunItem[];
-  readonly catalogItems: readonly UiCatalogExplorerItemView[];
-  readonly ontologyConcepts: readonly UiOntologyConceptView[];
-  readonly workflowOverrides: readonly ControlCenterOverrideItem[];
-  readonly auditEvents: readonly ConfiguredAuditEvent[];
-  readonly scopes: readonly UiScopeNode[];
-  readonly accostageCounts: AccostagePg18CountsView | null;
-  readonly isDay0Complete: boolean;
-  readonly completedSetupStepsCount: number;
-  readonly createPlatformAdmin: (input: {
-    displayName: string;
-    email: string;
-    password?: string;
-  }) => void;
-  readonly toggleAdminTeamMembership: (teamId: string) => void;
-  readonly addOrgUnit: (
-    input: Omit<ConfiguredOrgUnit, "id"> & { readonly attachCurrentAdmin?: boolean },
-  ) => void;
-  readonly removeOrgUnit: (orgUnitId: string) => {
-    readonly deleted: boolean;
-    readonly blockedReason: string | null;
-  };
-  readonly syncOrgUnitsFromServer: (
-    units: readonly ConfiguredOrgUnit[],
-    auditMeta?: {
-      readonly eventType: string;
-      readonly summary: string;
-      readonly scopeId?: string;
-      readonly scopePath?: string;
-      readonly scopeLabel?: string;
-    },
-  ) => void;
-  readonly addRbacGrant: (input: Omit<ConfiguredRbacGrant, "id">) => void;
-  readonly removeRbacGrant: (grantId: string) => void;
-  readonly syncRbacGrantsFromServer: (
-    grants: readonly ConfiguredRbacGrant[],
-    auditMeta?: {
-      readonly eventType: string;
-      readonly summary: string;
-      readonly scopePath?: string;
-      readonly scopeLabel?: string;
-    },
-  ) => void;
-  readonly upsertLlmTier: (input: ConfiguredLlmTierMapping) => void;
-  readonly createWorkspace: (
-    input: CreateWorkspaceInput,
-  ) => Promise<ControlCenterWorkspaceGovItem>;
-  readonly updateWorkspacePhase: (
-    workspaceId: string,
-    phase: ProductLifecyclePhaseType,
-  ) => Promise<void>;
-  readonly updateWorkspaceVisibility: (
-    workspaceId: string,
-    visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER",
-  ) => Promise<void>;
-  readonly registerDatasource: (input: RegisterDatasourceInput) => Promise<void>;
-  readonly registerPack: (input: ConfiguredPackItem) => void;
-  readonly removePack: (packKey: string, scopePath?: string) => void;
-  readonly upsertWorkflow: (input: ConfiguredWorkflowItem) => void;
-  readonly launchRun: (input: {
-    workspaceId: string;
-    workspaceName: string;
-    title: string;
-    workflowKey: string;
-  }) => void;
-  readonly addOntologyConcept: (input: UiOntologyConceptView) => void;
-  readonly promoteOntologyConcept: (
-    conceptKey: string,
-    targetLevel: UiOntologyLevel,
-    targetScopeId?: string,
-  ) => void;
-}
 
 const PlatformSetupContext = createContext<PlatformSetupContextValue | null>(null);
 
@@ -194,6 +102,8 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   );
   const [accostageCounts, setAccostageCounts] = useState<AccostagePg18CountsView | null>(null);
   const hasMutatedSinceMountRef = useRef(false);
+  const isAuthHydrating = useAuthSessionStore((s) => s.isHydrating);
+  const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
 
   const applySnapshotToState = (next: CachedPlatformSetupState) => {
     setOrgUnits(next.orgUnits);
@@ -212,19 +122,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   const resetAllSetupState = () => {
     setPlatformAdmin(null);
     setAccostageCounts(null);
-    applySnapshotToState({
-      orgUnits: [],
-      rbacGrants: [],
-      llmTiers: [],
-      workspaces: [],
-      datasources: [],
-      packs: [],
-      workflows: [],
-      runs: [],
-      catalogItems: [],
-      ontologyConcepts: [],
-      auditEvents: [],
-    });
+    applySnapshotToState(EMPTY_CACHED_PLATFORM_SETUP_STATE);
   };
 
   const persistSnapshotStrict = async (next: CachedPlatformSetupState): Promise<void> => {
@@ -250,6 +148,9 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   };
 
   useEffect(() => {
+    if (isAuthHydrating) {
+      return;
+    }
     let cancelled = false;
     let safetyTimer: ReturnType<typeof setTimeout> | undefined = setTimeout(() => {
       if (!cancelled) setIsInitialLoading(false);
@@ -258,6 +159,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     void fetchAndBuildHydrationOutcome({
       hasMutatedSinceMount: hasMutatedSinceMountRef.current,
       currentAdmin: platformAdmin,
+      isAuthenticated,
     })
       .then((outcome) => {
         if (cancelled) return;
@@ -299,7 +201,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       cancelled = true;
       if (safetyTimer) clearTimeout(safetyTimer);
     };
-  }, []);
+  }, [isAuthHydrating, isAuthenticated]);
 
   const buildSnapshot = (
     overrides: Partial<CachedPlatformSetupState>,
@@ -327,24 +229,14 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       readonly scopePath?: string;
       readonly scopeLabel?: string;
     },
-  ): readonly ConfiguredAuditEvent[] => [
-    normalizeConfiguredAuditEvent(
-      {
-        id: `evt-${auditEvents.length + 1}`,
-        timestampIso: new Date().toISOString(),
-        eventType,
-        summary,
-        actorName:
-          meta?.actorName ?? platformAdmin?.displayName ?? "Administrateur de la plateforme",
-        actorEmail: meta?.actorEmail ?? platformAdmin?.email,
-        scopeId: meta?.scopeId,
-        scopePath: meta?.scopePath ?? "GLOBAL",
-        scopeLabel: meta?.scopeLabel ?? formatHumanReadableScopePath(meta?.scopePath ?? "GLOBAL"),
-      },
+  ): readonly ConfiguredAuditEvent[] =>
+    appendPlatformSetupAuditEvent({
+      auditEvents,
       platformAdmin,
-    ),
-    ...auditEvents,
-  ];
+      eventType,
+      summary,
+      meta,
+    });
 
   const governanceActions = createPlatformGovernanceActions({
     platformAdmin,
@@ -376,103 +268,38 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     persistSnapshot,
   });
 
-  const createWorkspace = async (
-    input: CreateWorkspaceInput,
-  ): Promise<ControlCenterWorkspaceGovItem> => {
-    hasMutatedSinceMountRef.current = true;
-    const { workspace, auditEvent } = await createWorkspaceViaServer({
-      input,
-      orgUnits,
-      workflows,
-      platformAdmin,
-    });
-    const nextWorkspaces = [...workspaces, workspace];
-    const nextAudit = appendAudit(auditEvent.eventType, auditEvent.summary, {
-      scopeId: auditEvent.scopeId,
-      scopePath: auditEvent.scopePath,
-      scopeLabel: auditEvent.scopeLabel,
-    });
-    setWorkspaces(nextWorkspaces);
-    setAuditEvents(nextAudit);
-    await persistSnapshotStrict(
-      buildSnapshot({ workspaces: nextWorkspaces, auditEvents: nextAudit }),
-    );
-    return workspace;
-  };
-
-  const updateWorkspacePhase = async (
-    workspaceId: string,
-    phase: ProductLifecyclePhaseType,
-  ): Promise<void> => {
-    const { nextWorkspaces, nextAudit } = applyWorkspacePhaseUpdate({
-      workspaces,
-      workspaceId,
-      phase,
-      appendAudit,
-    });
-    setWorkspaces(nextWorkspaces);
-    setAuditEvents(nextAudit);
-    await persistSnapshotStrict(
-      buildSnapshot({ workspaces: nextWorkspaces, auditEvents: nextAudit }),
-    );
-  };
-
-  const updateWorkspaceVisibility = async (
-    workspaceId: string,
-    visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER",
-  ): Promise<void> => {
-    const { nextWorkspaces, nextAudit } = applyWorkspaceVisibilityUpdate({
-      workspaces,
-      workspaceId,
-      visibilityMode,
-      appendAudit,
-    });
-    setWorkspaces(nextWorkspaces);
-    setAuditEvents(nextAudit);
-    await persistSnapshotStrict(
-      buildSnapshot({ workspaces: nextWorkspaces, auditEvents: nextAudit }),
-    );
-  };
-
-  const registerDatasource = async (input: RegisterDatasourceInput): Promise<void> => {
-    const { nextDatasources, nextAudit } = applyRegisterDatasource({
-      datasources,
-      input,
-      appendAudit,
-    });
-    setDatasources(nextDatasources);
-    setAuditEvents(nextAudit);
-    await persistSnapshotStrict(
-      buildSnapshot({ datasources: nextDatasources, auditEvents: nextAudit }),
-    );
-  };
+  const workspaceActions = createPlatformWorkspaceActions({
+    platformAdmin,
+    orgUnits,
+    workflows,
+    workspaces,
+    datasources,
+    setWorkspaces,
+    setDatasources,
+    setAuditEvents,
+    markMutated: () => {
+      hasMutatedSinceMountRef.current = true;
+    },
+    appendAudit,
+    buildSnapshot,
+    persistSnapshotStrict,
+  });
 
   const scopes = buildScopeNodes(orgUnits, workspaces);
-  const effectiveHasModels = llmTiers.length > 0 || (accostageCounts?.modelsCount ?? 0) > 0;
-  const effectiveHasOrgUnits =
-    orgUnits.some((u) => u.level === "BU" || u.level === "TEAM") ||
-    (accostageCounts?.orgUnitsCount ?? 0) > 0;
-  const effectiveHasWorkspaces =
-    workspaces.length > 0 || (accostageCounts?.workspacesCount ?? 0) > 0;
-  const effectiveHasSources =
-    datasources.length > 0 || (accostageCounts?.sourcesCount ?? 0) > 0;
-  const completedSetupStepsCount = [
-    effectiveHasModels,
-    effectiveHasOrgUnits,
-    effectiveHasWorkspaces,
-    effectiveHasSources,
-    workflows.length > 0 || packs.length > 0,
-  ].filter(Boolean).length;
-  const isDay0Complete = completedSetupStepsCount === 5;
-  const workflowOverrides: ControlCenterOverrideItem[] = workflows.map((wf) => ({
-    workflowKey: wf.workflowKey,
-    title: wf.title,
-    baseLayer: `v${wf.version}`,
-    teamOverride: "—",
-    workspaceOverride: `${wf.layers.filter((l) => l.enabled).length} couches actives`,
-    userOverride: "—",
-    spineContractRef: "—",
-  }));
+  const accostageSummary = computeAccostageProgressSummary({
+    accostageCounts,
+    platformAdmin,
+    orgUnits,
+    llmTiers,
+    workspaces,
+    datasources,
+    workflows,
+    packs,
+  });
+  const completedSetupStepsCount = accostageSummary.completedCount;
+  const isDay0Complete = accostageSummary.isDay0Complete;
+  const workflowOverrides: ControlCenterOverrideItem[] =
+    buildWorkflowOverridesFromWorkflows(workflows);
 
   return (
     <PlatformSetupContext.Provider
@@ -494,13 +321,11 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         auditEvents,
         scopes,
         accostageCounts,
+        accostageSummary,
         isDay0Complete,
         completedSetupStepsCount,
         ...governanceActions,
-        createWorkspace,
-        updateWorkspacePhase,
-        updateWorkspaceVisibility,
-        registerDatasource,
+        ...workspaceActions,
       }}
     >
       {children}

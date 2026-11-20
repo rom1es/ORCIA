@@ -25,6 +25,7 @@ export interface components {
       total_count: number;
       trace_id: string;
       users_count?: number;
+      workflows_count?: number;
       workspaces_count?: number;
     };
     AcquireResourceLeasesRequest: {

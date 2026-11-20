@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { FirstBootAdminSetupModal } from "../components/FirstBootAdminSetupModal";
 import { LoginScreenView } from "../components/LoginScreenView";
 import { PlatformSetupProvider } from "../components/platformSetupStore";
+import { ShellContainer } from "../components/ShellContainer";
+import { CockpitFeaturePanel } from "../features/cockpit";
 import { EnterpriseConnectorsSettingsSection } from "../features/admin/connectors/EnterpriseConnectorsSettingsSection";
 import { SettingsAuthenticationSection } from "../features/admin/auth/SettingsAuthenticationSection";
 import { SettingsOrganizationUnitsBlock } from "../routes/SettingsOrganizationUnitsBlock";
@@ -61,8 +63,10 @@ describe("Day-0 Modal Constraint, Login Screen Day-0 Isolation & Settings Bearer
     expect(modal).toBeDefined();
     expect(modal.parentElement).toBe(document.body);
     expect(modal.getAttribute("role")).toBe("dialog");
+    expect(modal.getAttribute("aria-modal")).toBe("true");
     expect(modal.className).toContain("orcia-ds-dialog-content");
     expect(modal.querySelector(".orcia-ds-dialog-body")).not.toBeNull();
+    expect(document.activeElement).toBe(screen.getByTestId("first-boot-admin-name-input"));
   });
 
   it("Point 2 — LoginScreenView on Day-0 (platformAdmin === null) renders discrete neutral state without duplicate login form", async () => {
@@ -201,5 +205,131 @@ describe("Day-0 Modal Constraint, Login Screen Day-0 Isolation & Settings Bearer
       expect(screen.queryByTestId("connectors-error-banner")).toBeNull();
     });
     connRemount.unmount();
+  });
+
+  it("Story 23.4 — FirstBootAdminSetupModal removes duplicate cancel button and dot placeholder, toggles password eye visibility, and enforces confirmation match", () => {
+    const onCreateAdmin = vi.fn();
+    render(
+      <FirstBootAdminSetupModal
+        isOpen={true}
+        isFr={true}
+        onClose={() => {}}
+        onCreatePlatformAdmin={onCreateAdmin}
+      />,
+    );
+
+    expect(screen.queryByTestId("first-boot-admin-cancel-btn")).toBeNull();
+    const closeBtn = screen.getByTestId("first-boot-admin-setup-modal-close-btn");
+    expect(closeBtn.textContent).toBe("Fermer (Échap)");
+
+    const pwInput = screen.getByTestId("first-boot-admin-password-input") as HTMLInputElement;
+    const confirmInput = screen.getByTestId(
+      "first-boot-admin-password-confirm-input",
+    ) as HTMLInputElement;
+    expect(pwInput.placeholder).toBe("");
+    expect(confirmInput.placeholder).toBe("");
+    expect(pwInput.className).toContain("orcia-masked-secret-input");
+
+    // Toggle eye visibility button
+    const eyeToggle = screen.getByTestId("first-boot-admin-password-input-toggle-visibility");
+    expect(eyeToggle.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(eyeToggle);
+    expect(eyeToggle.getAttribute("aria-pressed")).toBe("true");
+    expect(pwInput.className).not.toContain("orcia-masked-secret-input");
+
+    // Fill fields with mismatched confirmation -> submit disabled and mismatch alert shown
+    fireEvent.change(screen.getByTestId("first-boot-admin-name-input"), {
+      target: { value: "Alice Admin" },
+    });
+    fireEvent.change(screen.getByTestId("first-boot-admin-email-input"), {
+      target: { value: "alice@orcia.fr" },
+    });
+    fireEvent.change(pwInput, { target: { value: "StrongPass!2026" } });
+    fireEvent.change(confirmInput, { target: { value: "OtherPass!2026" } });
+
+    expect(screen.getByTestId("first-boot-admin-password-mismatch")).toBeDefined();
+    expect((screen.getByTestId("first-boot-admin-submit-btn") as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+
+    // Fix confirmation -> submit enabled
+    fireEvent.change(confirmInput, { target: { value: "StrongPass!2026" } });
+    expect(screen.queryByTestId("first-boot-admin-password-mismatch")).toBeNull();
+    expect((screen.getByTestId("first-boot-admin-submit-btn") as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+    fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
+    expect(onCreateAdmin).toHaveBeenCalledTimes(1);
+  });
+
+  it("Story 23.4 — Day-0 unauthenticated shell renders zero AP avatar, zero Notifications 4, single Accostage 0/6 pill, and zero pre-auth protected calls", async () => {
+    seedVitestPlatformSetupState({}, null);
+    useAuthSessionStore.getState().setAuthSession({
+      isAuthenticated: false,
+      isHydrating: false,
+      accessToken: null,
+      roles: [],
+      email: null,
+      displayName: null,
+    });
+
+    render(
+      <I18nProvider initialLocale="fr">
+        <ShellContainer>
+          <CockpitFeaturePanel />
+        </ShellContainer>
+      </I18nProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("first-boot-admin-setup-modal")).toBeDefined();
+    });
+
+    // Zero ghost AP avatar / popover, zero Notifications 4 badge, zero duplicate /5 badge
+    expect(screen.queryByTestId("sidebar-account-initials-avatar")).toBeNull();
+    expect(screen.queryByTestId("sidebar-open-my-account-btn")).toBeNull();
+    expect(screen.queryByText("AP")).toBeNull();
+    expect(screen.queryByTestId("onboarding-progress-badge")).toBeNull();
+    expect(screen.queryByText(/\/5\b/)).toBeNull();
+    expect(screen.getAllByTestId("accostage-progress-pill")).toHaveLength(1);
+    expect(screen.getByTestId("accostage-progress-pill").textContent).toBe("Accostage 0/6");
+
+    const notifToggle = screen.getByTestId("topbar-notifications-toggle");
+    expect(notifToggle.textContent).not.toContain("4");
+    expect(screen.queryByText(/Notifications\s*4/i)).toBeNull();
+    expect(screen.queryByTestId("topbar-notifications-badge")).toBeNull();
+
+    // All navigable entries outside Cockpit (including spaces & help) are uniformly disabled at Day 0
+    for (const key of ["assistant", "processes", "agents", "spaces", "finops", "help"] as const) {
+      const btn = screen.getByTestId(`eight-menu-item-${key}`) as HTMLButtonElement;
+      expect(btn.disabled).toBe(true);
+      expect(btn.getAttribute("data-disabled-reason")).toBeTruthy();
+    }
+
+    // '[' shortcut is ignored while aria-modal dialog is open
+    const sidebar = screen.getByTestId("four-zone-sidebar");
+    expect(sidebar.getAttribute("data-rail-collapsed")).toBe("false");
+    fireEvent.keyDown(window, { key: "[" });
+    expect(sidebar.getAttribute("data-rail-collapsed")).toBe("false");
+
+    // Closing Day-0 modal via Escape offers reopen button (no dead-end)
+    fireEvent.keyDown(window, { key: "Escape" });
+    await waitFor(() => {
+      expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
+    });
+    const reopenBtn = screen.getByTestId("reopen-first-boot-admin-modal-btn");
+    fireEvent.click(reopenBtn);
+    expect(screen.getByTestId("first-boot-admin-setup-modal")).toBeDefined();
+
+    // Zero protected pre-auth API calls (no /org-units, /iam, /platform-setup-state, /preferences, /orchestration/state)
+    const calls = getRecordedVitestApiCalls();
+    const forbiddenPaths = [
+      "/api/v1/org-units",
+      "/api/v1/iam",
+      "/api/v1/bootstrap/platform-setup-state",
+      "/api/v1/users/me/preferences",
+      "/api/v1/orchestration/state",
+    ];
+    expect(calls.filter((c) => forbiddenPaths.some((p) => c.path.includes(p)))).toEqual([]);
   });
 });

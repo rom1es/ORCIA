@@ -34,6 +34,17 @@ from e2e_stack_config import (  # noqa: E402
     read_state,
 )
 
+for _rel_pkg in ("packages/orcia-kernel/src", "packages/orcia-core/src"):
+    _pkg_path = str(REPO_ROOT / _rel_pkg)
+    if _pkg_path not in sys.path:
+        sys.path.insert(0, _pkg_path)
+
+from orcia_core.bootstrap import upsert_declarative_pack_bundles_sql  # noqa: E402
+from orcia_core.packs.loader import (  # noqa: E402
+    DeclarativePackLoader,
+    resolve_default_packs_root,
+)
+
 RESET_SCRIPT = REPO_ROOT / "infra" / "scripts" / "maintenance" / "09_reset_db_first_boot.py"
 
 PUBLIC_EXCLUDED_TABLES: frozenset[str] = frozenset({"alembic_version", "connector_schemes"})
@@ -72,6 +83,10 @@ async def _reset_postgres_e2e(database_url: str) -> tuple[list[str], list[str], 
     seed_reset_fn = _load_seed_reset_fn()
     engine = create_async_engine(_normalize_async_pg_url(database_url), pool_pre_ping=False)
     try:
+        all_public: list[str] = []
+        public_to_truncate: list[str] = []
+        dbos_to_truncate: list[str] = []
+        users_count = 0
         async with engine.begin() as conn:
             public_rows = await conn.execute(
                 sa.text(
@@ -102,12 +117,16 @@ async def _reset_postgres_e2e(database_url: str) -> tuple[list[str], list[str], 
 
             await seed_reset_fn(conn, existing_tables=set(all_public))
 
-            users_count = 0
             if "users" in all_public:
                 users_count = int(
                     (await conn.execute(sa.text("SELECT COUNT(*) FROM users"))).scalar() or 0
                 )
-            return public_to_truncate, dbos_to_truncate, users_count
+
+        if "declarative_pack_bundles" in all_public:
+            pack_bundles = DeclarativePackLoader(resolve_default_packs_root()).load_all_packs()
+            await upsert_declarative_pack_bundles_sql(engine, pack_bundles)
+
+        return public_to_truncate, dbos_to_truncate, users_count
     finally:
         await engine.dispose()
 

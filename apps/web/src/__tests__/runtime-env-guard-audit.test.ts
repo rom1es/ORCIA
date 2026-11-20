@@ -71,6 +71,9 @@ describe("garde jsdom supprimée & transport @orcia/api-client sous Vitest (TEST
     fireEvent.change(screen.getByTestId("first-boot-admin-password-input"), {
       target: { value: "OrciaSecure!2026" }, // pragma: allowlist secret
     });
+    fireEvent.change(screen.getByTestId("first-boot-admin-password-confirm-input"), {
+      target: { value: "OrciaSecure!2026" }, // pragma: allowlist secret
+    });
     fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
 
     // 2. Envoyer un tour à Mon Assistant -> déclenche POST /api/v1/assistant/three-speed/stream (SSE ReadableStream)

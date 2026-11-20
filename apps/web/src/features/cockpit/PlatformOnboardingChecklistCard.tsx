@@ -61,8 +61,8 @@ export function PlatformOnboardingChecklistCard({
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <StatusBadge
             testId="onboarding-progress-badge"
-            label={`${completedSetupStepsCount}/5`}
-            tone={completedSetupStepsCount === 5 ? "emerald" : "cobalt"}
+            label={`${completedSetupStepsCount}/6`}
+            tone={completedSetupStepsCount === 6 ? "emerald" : "cobalt"}
             monospace
           />
           <button

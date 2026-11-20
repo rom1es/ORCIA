@@ -335,7 +335,7 @@ class AccostageStatusResponse(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    completed_count: int = Field(..., ge=1, le=6)
+    completed_count: int = Field(..., ge=0, le=6)
     total_count: int = Field(..., ge=6, le=6)
     badge_label: str = Field(..., min_length=1, max_length=64)
     llm_tier_mode: Literal[
@@ -357,6 +357,7 @@ class AccostageStatusResponse(BaseModel):
     workspaces_count: int = Field(default=0, ge=0)
     models_count: int = Field(default=0, ge=0)
     sources_count: int = Field(default=0, ge=0)
+    workflows_count: int = Field(default=0, ge=0)
     boot_epoch: str | None = Field(default=None, max_length=64)
     trace_id: str = Field(..., min_length=32, max_length=32)
 

@@ -56,6 +56,7 @@ export function useOrgUnitsBlockActions({
   const [knownUsers, setKnownUsers] = useState<readonly KnownUserOption[]>([]);
 
   const isHydrating = useAuthSessionStore((s) => s.isHydrating);
+  const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
   const accessToken = useAuthSessionStore((s) => s.accessToken);
   const roles = useAuthSessionStore((s) => s.roles);
   const activeHat = useAuthSessionStore((s) => s.activeHat);
@@ -63,7 +64,7 @@ export function useOrgUnitsBlockActions({
   const isPlatformAdmin = isPlatformAdministratorSession({ roles, activeHat, readOnlyObserver });
 
   useEffect(() => {
-    if (isHydrating) {
+    if (isHydrating || !isAuthenticated) {
       return;
     }
     let cancelled = false;
@@ -85,7 +86,7 @@ export function useOrgUnitsBlockActions({
     return () => {
       cancelled = true;
     };
-  }, [locale, isHydrating, accessToken]);
+  }, [locale, isHydrating, isAuthenticated, accessToken]);
 
   const handleCreateSubmit = async (values: CreateOrgUnitFormValues) => {
     setIsSubmitting(true);

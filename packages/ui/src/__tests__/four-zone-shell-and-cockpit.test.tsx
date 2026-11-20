@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   computeDefaultHelpColumnOpen,
   ContextualHelpColumnAndCenter,
@@ -11,6 +11,7 @@ import {
   FourZoneDirectionCShell,
   type FourZoneDirectionCShellLabels,
   OrciaButton,
+  OrciaDialog,
   ProgressiveDay0AccostageBanner,
   type ProgressiveDay0AccostageLabels,
   StreamlinedCockpitView,
@@ -955,5 +956,80 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
     expect(
       render(<DisabledButtonAlertIndicator disabled={false} reason="Inactif" />).container.firstChild,
     ).toBeNull();
+  });
+
+  it("blocks the '[' sidebar rail shortcut while an aria-modal='true' OrciaDialog is open and restores it once closed", () => {
+    const { rerender } = render(
+      <>
+        <FourZoneDirectionCShell
+          activeMenuKey="cockpit"
+          activeWorkspaceName="Espace Test"
+          activePackKey=""
+          availablePacks={[]}
+          userDisplayName="Alice Admin"
+          userHatLabel="Administrateur"
+          pendingDecisionsTotal={0}
+          viewportWidth={1440}
+          labels={SHELL_LABELS}
+          onSelectMenu={() => {}}
+          onOpenWorkspaceSwitcher={() => {}}
+          onOpenSearchCommand={() => {}}
+          onSelectPack={() => {}}
+        >
+          <div>Contenu</div>
+        </FourZoneDirectionCShell>
+        <OrciaDialog
+          open={true}
+          onOpenChange={() => {}}
+          title="Modale modale ouverte"
+          testId="modal-blocking-bracket"
+        >
+          <div>Corps</div>
+        </OrciaDialog>
+      </>,
+    );
+
+    const sidebar = screen.getByTestId("four-zone-sidebar");
+    expect(screen.getByTestId("modal-blocking-bracket").getAttribute("aria-modal")).toBe("true");
+    expect(sidebar.getAttribute("data-rail-collapsed")).toBe("false");
+
+    fireEvent.keyDown(window, { key: "[" });
+    expect(sidebar.getAttribute("data-rail-collapsed")).toBe("false");
+
+    rerender(
+      <>
+        <FourZoneDirectionCShell
+          activeMenuKey="cockpit"
+          activeWorkspaceName="Espace Test"
+          activePackKey=""
+          availablePacks={[]}
+          userDisplayName="Alice Admin"
+          userHatLabel="Administrateur"
+          pendingDecisionsTotal={0}
+          viewportWidth={1440}
+          labels={SHELL_LABELS}
+          onSelectMenu={() => {}}
+          onOpenWorkspaceSwitcher={() => {}}
+          onOpenSearchCommand={() => {}}
+          onSelectPack={() => {}}
+        >
+          <div>Contenu</div>
+        </FourZoneDirectionCShell>
+        <OrciaDialog
+          open={false}
+          onOpenChange={() => {}}
+          title="Modale modale fermée"
+          testId="modal-blocking-bracket"
+        >
+          <div>Corps</div>
+        </OrciaDialog>
+      </>,
+    );
+
+    fireEvent.keyDown(window, { key: "[" });
+    expect(sidebar.getAttribute("data-rail-collapsed")).toBe("true");
+    fireEvent.keyDown(window, { key: "[" });
+    expect(sidebar.getAttribute("data-rail-collapsed")).toBe("false");
+    cleanup();
   });
 });

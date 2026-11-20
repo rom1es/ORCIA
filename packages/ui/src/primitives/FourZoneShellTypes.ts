@@ -113,9 +113,6 @@ export interface WorkspaceSwitcherOption {
 
 export interface FourZoneDirectionCShellProps {
   readonly activeMenuKey: EightFixedMenuKey | null;
-  readonly showOrganizationMenu?: boolean;
-  readonly organizationMenuActive?: boolean;
-  readonly activityMenuActive?: boolean;
   readonly breadcrumbItems?: readonly ShellBreadcrumbItem[];
   readonly onNavigateBreadcrumb?: (route: string) => void;
   readonly activeWorkspaceName: string;
@@ -144,7 +141,6 @@ export interface FourZoneDirectionCShellProps {
   readonly disabledMenuKeys?: Partial<Record<EightFixedMenuKey, string>>;
   readonly hiddenMenuKeys?: readonly EightFixedMenuKey[];
   readonly onSelectMenu: (key: EightFixedMenuKey, route: string) => void;
-  readonly onSelectOrganizationMenu?: (route: string) => void;
   readonly onSelectActivityMenu?: (route: string) => void;
   readonly onOpenWorkspaceSwitcher?: () => void;
   readonly onSelectWorkspace?: (scopeId: string) => void;
