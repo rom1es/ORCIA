@@ -9,13 +9,61 @@ export function handleOrchestrationRunsRoute(params: {
 
   if (path === "/api/v1/orchestration/state" && method === "GET") {
     return jsonResponse({
-      workflows: [],
+      workflows: [
+        {
+          id: "wf-claims",
+          workspace_id: null,
+          uri: "orcia://workflows/claims-engineering-delivery",
+          title: "Claims Engineering Delivery",
+          description: "Processus de livraison critique avec ancrage humain obligatoire.",
+          version: "1.0.0",
+          criticality: "HIGH_CRITICAL",
+          execution_regime: "INTERACTIVE_COACHING",
+          tie_break_policy: "PAUSE_AND_ESCALATE",
+          mode: "INTENTION_TO_CODE",
+          adaptive_gate_policy: "EXACT_ONCE",
+          max_cost_usd: 15,
+          scalars: {},
+          datasources: [],
+          rules: [],
+          facts: [],
+          steps: [
+            {
+              step_key: "frame-architecture-intent",
+              title: "Cadrage de l'intention d'architecture",
+              step_type: "HUMAN_TASK",
+              instructions: "Rédigez l'intention d'architecture obligatoire.",
+              depends_on: [],
+              feedback_target_step_key: null,
+              max_agent_retries: 2,
+              agent_uri: null,
+              skill_uri: null,
+              sub_workflow_uri: null,
+              input_mapping: {},
+              output_mapping: {},
+              template_key: "tpl-architecture-decision-record",
+              kb_uris: [],
+              human_authored_required: true,
+              requires_human_gate: false,
+              declares_intention: true,
+              writes_code: false,
+              reverse_doc_from_code: false,
+              tags: [],
+              policies: [],
+              verification_window_seconds: null,
+              line_number: 1,
+            },
+          ],
+          sha256: "a".repeat(64),
+          max_nesting_depth: 1,
+        },
+      ],
       runs: backendState.orchestrationRuns.map((r) => ({
         id: r.id,
         run_key: `run-${r.id}`,
         workspace_id: r.workspace_id,
         workflow_def_id: "wf-claims",
-        workflow_uri: "orcia://workflows/claims-engineering-delivery",
+        workflow_uri: r.workflow_uri ?? "orcia://workflows/claims-engineering-delivery",
         parent_run_id: null,
         parent_step_execution_id: null,
         root_run_id: r.id,
@@ -54,13 +102,22 @@ export function handleOrchestrationRunsRoute(params: {
   if (path === "/api/v1/orchestration/runs/instantiate" && method === "POST") {
     const runId = `0195f000-0000-7000-8000-00000000900${backendState.orchestrationRuns.length + 1}`;
     const wsId = String(body.workspace_id ?? "0192c4e0-0000-7000-8000-000000000201");
+    const rawUri = String(body.workflow_uri ?? "orcia://workflows/claims-engineering-delivery");
+    const resolvedUri =
+      rawUri === "orcia://system/workflows/assistant-agent" ||
+      rawUri === "orcia://workflows/assistant-agent"
+        ? "orcia://workflows/claims-engineering-delivery"
+        : rawUri;
     backendState.orchestrationRuns.push({
       id: runId,
       workspace_id: wsId,
+      workflow_uri: resolvedUri,
       status: "RUNNING",
-      step_status: "PENDING",
+      step_status: "WAITING_FOR_HUMAN_ANCHOR",
       draft_artifact: {},
       committed_snapshot_id: null,
+      human_anchors: [],
+      pending_arbitrations: [],
     });
     return jsonResponse({
       run: {
@@ -68,7 +125,7 @@ export function handleOrchestrationRunsRoute(params: {
         run_key: `run-${runId}`,
         workspace_id: wsId,
         workflow_def_id: "wf-claims",
-        workflow_uri: String(body.workflow_uri ?? "orcia://workflows/claims-engineering-delivery"),
+        workflow_uri: resolvedUri,
         parent_run_id: null,
         parent_step_execution_id: null,
         root_run_id: runId,
@@ -143,6 +200,10 @@ export function handleOrchestrationRunsRoute(params: {
             },
           ]
         : [],
+      pending_arbitrations: (run.pending_arbitrations ?? []).filter(
+        (arb) => arb.status === "PENDING",
+      ),
+      human_anchors: run.human_anchors ?? [],
       trace_id: "0195f000000070008000000000000999",
     });
   }
@@ -157,6 +218,22 @@ export function handleOrchestrationRunsRoute(params: {
     const run = backendState.orchestrationRuns.find((r) => r.id === runId);
     const sha = "b".repeat(64);
     const sectionKey = String(body.section_key ?? "human_architecture_intent");
+    const stepKey = String(body.step_key ?? "frame-architecture-intent");
+    const signatureItem = {
+      id: `sig-${runId}-${sectionKey}`,
+      signature_key: `anchor-${sectionKey}`,
+      workspace_id: run?.workspace_id ?? "0192c4e0-0000-7000-8000-000000000201",
+      run_id: runId,
+      step_execution_id: `step-${runId}`,
+      step_key: stepKey,
+      section_key: sectionKey,
+      content_text: contentText,
+      content_sha256: sha,
+      char_length: contentText.length,
+      authored_by_user_id: "0195f000-0000-7000-8000-000000000001",
+      author_display_name: String(body.signature_text ?? "Admin Test"),
+      signature_hash: "c".repeat(64),
+    };
     if (run) {
       const prevAnchors = (run.draft_artifact.human_anchors ?? {}) as Record<string, unknown>;
       run.draft_artifact = {
@@ -171,23 +248,18 @@ export function handleOrchestrationRunsRoute(params: {
           },
         },
       };
+      run.human_anchors = [
+        ...(run.human_anchors ?? []).filter(
+          (a) => !(a.step_key === stepKey && a.section_key === sectionKey),
+        ),
+        signatureItem,
+      ];
+      if (run.step_status === "WAITING_FOR_HUMAN_ANCHOR") {
+        run.step_status = "PENDING";
+      }
     }
     return jsonResponse({
-      signature: {
-        id: "sig-1",
-        signature_key: `anchor-${sectionKey}`,
-        workspace_id: run?.workspace_id ?? "0192c4e0-0000-7000-8000-000000000201",
-        run_id: runId,
-        step_execution_id: `step-${runId}`,
-        step_key: String(body.step_key ?? "frame-architecture-intent"),
-        section_key: sectionKey,
-        content_text: contentText,
-        content_sha256: sha,
-        char_length: contentText.length,
-        authored_by_user_id: "0195f000-0000-7000-8000-000000000001",
-        author_display_name: String(body.signature_text ?? "Admin Test"),
-        signature_hash: "c".repeat(64),
-      },
+      signature: signatureItem,
       step_execution: {
         id: `step-${runId}`,
         step_execution_key: `${runId}:frame-architecture-intent`,
@@ -217,30 +289,35 @@ export function handleOrchestrationRunsRoute(params: {
     const stepKey = decodeURIComponent(arbReqMatch[2] ?? "");
     const arbId = `arb-${runId}`;
     const run = backendState.orchestrationRuns.find((r) => r.id === runId);
+    const arbitrationItem = {
+      id: arbId,
+      arbitration_key: arbId,
+      workspace_id: run?.workspace_id ?? "0192c4e0-0000-7000-8000-000000000201",
+      run_id: runId,
+      step_execution_id: `step-${runId}`,
+      step_key: stepKey,
+      tie_break_policy: String(body.tie_break_policy ?? "PAUSE_AND_ESCALATE"),
+      status: "PENDING",
+      question_title: String(body.question_title ?? ""),
+      context_summary: String(body.context_summary ?? ""),
+      options_matrix: Array.isArray(body.options_matrix) ? body.options_matrix : [],
+      selected_option_key: null,
+      human_justification: null,
+      resolved_by_user_id: null,
+      resolved_by_axiom_key: null,
+      outbox_event_id: "evt-arb-1",
+    };
     if (run) {
       run.status = "WAITING_FOR_HUMAN_ARBITRATION";
       run.step_status = "WAITING_FOR_HUMAN_ARBITRATION";
       run.draft_artifact = { ...run.draft_artifact, pending_arbitration_id: arbId };
+      run.pending_arbitrations = [
+        ...(run.pending_arbitrations ?? []).filter((a) => a.id !== arbId),
+        arbitrationItem,
+      ];
     }
     return jsonResponse({
-      arbitration: {
-        id: arbId,
-        arbitration_key: arbId,
-        workspace_id: run?.workspace_id ?? "0192c4e0-0000-7000-8000-000000000201",
-        run_id: runId,
-        step_execution_id: `step-${runId}`,
-        step_key: stepKey,
-        tie_break_policy: String(body.tie_break_policy ?? "PAUSE_AND_ESCALATE"),
-        status: "PENDING",
-        question_title: String(body.question_title ?? ""),
-        context_summary: String(body.context_summary ?? ""),
-        options_matrix: Array.isArray(body.options_matrix) ? body.options_matrix : [],
-        selected_option_key: null,
-        human_justification: null,
-        resolved_by_user_id: null,
-        resolved_by_axiom_key: null,
-        outbox_event_id: "evt-arb-1",
-      },
+      arbitration: arbitrationItem,
       step_execution: {
         id: `step-${runId}`,
         step_execution_key: `${runId}:${stepKey}`,
@@ -276,6 +353,11 @@ export function handleOrchestrationRunsRoute(params: {
       run.status = "RUNNING";
       run.step_status = "COMMITTED";
       run.committed_snapshot_id = snapId;
+      run.pending_arbitrations = (run.pending_arbitrations ?? []).map((a) =>
+        a.id === String(body.arbitration_id ?? `arb-${runId}`)
+          ? { ...a, status: "RESOLVED_BY_HUMAN", selected_option_key: selectedOptionKey }
+          : a,
+      );
       run.draft_artifact = {
         ...run.draft_artifact,
         arbitration_resolution: {

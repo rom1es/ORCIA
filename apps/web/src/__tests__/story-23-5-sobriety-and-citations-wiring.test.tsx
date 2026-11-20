@@ -117,7 +117,7 @@ afterEach(() => {
 });
 
 describe("Story 23.5 — Cockpit sobriety, ModuleWorkspaceView inbox headerless, toolbar counts, help prefill & citations card wiring", () => {
-  it("hides cockpit-human-led-governance-section at 0 runs (<= 3 blocks) and mounts it once a run exists", async () => {
+  it("hides cockpit-human-led-governance-section and removed waiting blocks at 0 runs (<= 3 blocks) and mounts only required anchor card when a real run needs human anchor", async () => {
     seedAdminSession(false);
     const first = await mountAppAt("/cockpit");
 
@@ -125,16 +125,20 @@ describe("Story 23.5 — Cockpit sobriety, ModuleWorkspaceView inbox headerless,
     expect(screen.getByTestId("cockpit-block-decisions")).toBeTruthy();
     expect(screen.queryByTestId("cockpit-human-led-governance-section")).toBeNull();
     expect(screen.queryByTestId("cockpit-block-governance")).toBeNull();
+    expect(screen.queryByTestId("cockpit-zero-decisions-banner")).toBeNull();
+    expect(screen.queryByTestId("cockpit-quick-assistant-box")).toBeNull();
 
     first.unmount();
     cleanup();
 
-    // When a run exists, governance section mounts
+    // When a real run requires a mandatory human anchor, only HumanLedAnchorCard mounts (no ArbitrationTieBreakCard)
     seedAdminSession(true);
     await mountAppAt("/cockpit");
     expect(
       await screen.findByTestId("cockpit-human-led-governance-section"),
     ).toBeTruthy();
+    expect(screen.getByTestId("cockpit-human-led-anchor-card")).toBeTruthy();
+    expect(screen.queryByTestId("cockpit-arbitration-tiebreak-card")).toBeNull();
   });
 
   it("hides module header card on ModuleWorkspaceView('inbox') and renders it on ('ontology')", async () => {

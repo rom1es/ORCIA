@@ -197,15 +197,28 @@ capabilities:
     title: Ancrages humains obligatoires et arbitrage / tie-break
     fr: [FR-4, FR-5]
     origin: epic
-    origin_ref: 3-4
+    origin_ref: 3-4, 25-3
     status: live
     kind: feature
     uj: [UJ-5]
     db_tables: [human_anchor_signatures, human_arbitration_requests, workflow_runs]
-    tests: [apps/web/e2e/03-human-led-anchor-and-arbitration.spec.ts, tests/unit/test_story_3_4_human_anchors_and_arbitration.py]
+    tests:
+      [
+        apps/web/e2e/03-human-led-anchor-and-arbitration.spec.ts,
+        tests/unit/test_story_3_4_human_anchors_and_arbitration.py,
+        tests/unit/test_story_25_3_cockpit_zero_demo_run.py,
+        tests/integration/api/test_story_25_3_orchestration_zero_demo_postgres18.py,
+        apps/web/src/__tests__/story-25-3-cockpit-empty-vs-real-pending.test.tsx,
+      ]
     verification: runtime
     verified_at: "2026-11-20"
-    surfaces: { route: /cockpit, ui: HumanLedAnchorCard + ArbitrationTieBreakCard, migration: "0015" }
+    surfaces:
+      {
+        route: /cockpit,
+        api: _blackboard_arbitration_routes.py,
+        ui: HumanLedAnchorCard + ArbitrationTieBreakCard,
+        migration: "0015",
+      }
   - id: CAP-024
     title: Challenge amont What-If et replay ciblé step N
     fr: [FR-7, FR-16]

@@ -300,7 +300,18 @@ def test_recursive_run_lock_and_rest_endpoints() -> None:
     assert state_res.status_code == 200
     state_json = state_res.json()
     assert len(state_json["workflows"]) == 3
-    assert len(state_json["runs"]) >= 1
+    assert state_json["runs"] == []
+
+    inst_ok = client.post(
+        "/api/v1/orchestration/runs/instantiate?persona_key=marc",
+        json={
+            "workflow_uri": "orcia://workflows/claims-engineering-delivery",
+            "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
+        },
+    )
+    assert inst_ok.status_code == 200
+    state_after = client.get("/api/v1/orchestration/state?persona_key=marc")
+    assert len(state_after.json()["runs"]) == 1
 
     val_res = client.post(
         "/api/v1/orchestration/workflows/validate?persona_key=marc",

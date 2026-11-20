@@ -49,8 +49,13 @@ def test_jit_step_hydrator_zero_future_leakage_and_draft_vs_snapshot_separation(
     """Verify JitStepHydrator (AD-13) and draft vs committed snapshot separation (AD-2)."""
     register_default_step_executors(llm_gateway=DeterministicCassetteLLM())
     svc = build_default_orchestration_setup_service()
+    assert svc.runs == ()
     lead = _lead_user()
-    root_run = svc.runs[0]
+    root_run = svc.instantiate_workflow_run(
+        lead,
+        workflow_uri="orcia://workflows/claims-engineering-delivery",
+        workspace_id="0192c4e0-0000-7000-8000-000000000201",
+    )
     wf = svc.engine._get_workflow(root_run.workflow_uri)
 
     # 1. Step 1 hydration: 0 future step instructions leaked
@@ -100,8 +105,13 @@ def test_bounded_feedback_retries_and_isolated_sub_workflow_execution() -> None:
     """Verify bounded retries (max_agent_retries), SUB_WORKFLOW isolation, and shared budget."""
     register_default_step_executors(llm_gateway=DeterministicCassetteLLM())
     svc = build_default_orchestration_setup_service()
+    assert svc.runs == ()
     lead = _lead_user()
-    root_run = svc.runs[0]
+    root_run = svc.instantiate_workflow_run(
+        lead,
+        workflow_uri="orcia://workflows/claims-engineering-delivery",
+        workspace_id="0192c4e0-0000-7000-8000-000000000201",
+    )
 
     # Bounded retry loop up to max_agent_retries (3)
     for attempt in range(1, 4):
@@ -166,8 +176,13 @@ def test_background_fast_path_audit_worker_idempotency_and_rest_routes(
     register_default_step_executors(llm_gateway=DeterministicCassetteLLM())
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "1")
     svc = build_default_orchestration_setup_service()
+    lead = _lead_user()
     observer = _observer_user()
-    root_run = svc.runs[0]
+    root_run = svc.instantiate_workflow_run(
+        lead,
+        workflow_uri="orcia://workflows/claims-engineering-delivery",
+        workspace_id="0192c4e0-0000-7000-8000-000000000201",
+    )
 
     with pytest.raises(ObserverModeReadOnlyError):
         svc.engine.execute_step(
@@ -199,7 +214,17 @@ def test_background_fast_path_audit_worker_idempotency_and_rest_routes(
     client = TestClient(create_app())
     state_res = client.get("/api/v1/orchestration/state?persona_key=marc")
     assert state_res.status_code == 200
-    api_run_id = state_res.json()["runs"][0]["id"]
+    assert state_res.json()["runs"] == []
+
+    inst_res = client.post(
+        "/api/v1/orchestration/runs/instantiate?persona_key=marc",
+        json={
+            "workflow_uri": "orcia://workflows/claims-engineering-delivery",
+            "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
+        },
+    )
+    assert inst_res.status_code == 200
+    api_run_id = inst_res.json()["run"]["id"]
 
     hydrate_res = client.post(
         "/api/v1/orchestration/runs/steps/hydrate?persona_key=marc",

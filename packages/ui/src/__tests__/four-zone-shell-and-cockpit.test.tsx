@@ -52,10 +52,6 @@ const SHELL_LABELS: FourZoneDirectionCShellLabels = {
 };
 
 const COCKPIT_LABELS: StreamlinedCockpitLabels = {
-  zeroDecisionsBanner: "✅ Aucune décision en attente",
-  quickAssistantTitle: "Accès rapide à Mon Assistant",
-  quickAssistantPlaceholder: "Posez une question ou préparez un dossier...",
-  quickAssistantCta: "Ouvrir Mon Assistant →",
   orientationAssistantTitle: "💬 Mon Assistant",
   orientationAssistantDesc: "Interrogez vos sources avec citations [S1] en < 1,2 s.",
   orientationProcessesTitle: "☍ Mes Processus",
@@ -201,13 +197,13 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
       />,
     );
 
-    // When total == 0: KPI counters (0/0/0/0) and filter bar are hidden!
+    // When total == 0: KPI counters (0/0/0/0), filter bar, and Story 25.3 removed waiting blocks are hidden!
     expect(screen.queryByTestId("cockpit-kpi-counters-grid")).toBeNull();
     expect(screen.queryByTestId("cockpit-decisions-filter-bar")).toBeNull();
-    expect(screen.getByTestId("cockpit-zero-decisions-banner").textContent).toContain(
-      "✅ Aucune décision en attente",
-    );
-    expect(screen.getByTestId("cockpit-quick-assistant-box")).toBeDefined();
+    expect(screen.queryByTestId("cockpit-zero-decisions-banner")).toBeNull();
+    expect(screen.queryByTestId("cockpit-quick-assistant-box")).toBeNull();
+    expect(screen.queryByTestId("cockpit-quick-assistant-input")).toBeNull();
+    expect(screen.getByTestId("cockpit-calm-orientation-panel")).toBeDefined();
     expect(screen.getByTestId("cockpit-orientation-card-assistant")).toBeDefined();
     expect(screen.getByTestId("cockpit-orientation-card-processes")).toBeDefined();
     expect(screen.getByTestId("cockpit-orientation-card-spaces")).toBeDefined();

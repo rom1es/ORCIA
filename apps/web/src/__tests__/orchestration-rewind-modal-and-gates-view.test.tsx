@@ -245,7 +245,8 @@ describe("Upstream challenge rewind modal, dedicated Gates review view, and RFC 
     fireEvent.click(screen.getByTestId("human-anchor-submit-human_architecture_intent"));
 
     await waitFor(() => {
-      expect(screen.getByTestId("cockpit-human-anchor-signed-badge")).toBeDefined();
+      expect(screen.queryByTestId("cockpit-human-led-anchor-card")).toBeNull();
+      expect(screen.getByTestId("cockpit-open-upstream-challenge-modal-btn")).toBeDefined();
     });
 
     // Open Radix Portal mode of UpstreamChallengeRewindModal
@@ -281,7 +282,7 @@ describe("Upstream challenge rewind modal, dedicated Gates review view, and RFC 
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId("cockpit-human-anchor-signed-badge")).toBeDefined();
+      expect(screen.queryByTestId("cockpit-human-led-anchor-card")).toBeNull();
       expect(screen.getByTestId("upstream-replay-stale-warning-banner").textContent).toContain(
         "Alerte d'obsolescence :",
       );

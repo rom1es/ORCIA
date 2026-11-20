@@ -36,6 +36,7 @@ from orcia_core.orchestration._internal.dbos_engine import (
 from orcia_core.orchestration._internal.sql_repository import SqlOrchestrationRepository
 from orcia_core.orchestration.errors import ResourceNotFoundError
 from orcia_core.orchestration.step_executors import register_default_step_executors
+from orcia_core.permissions.models import UserIdentity
 from orcia_core.rag._internal.sql_repository import SqlHybridRagRepository
 from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
 from orcia_kernel.errors import ModelOrthogonalityViolationError
@@ -332,7 +333,20 @@ async def test_sql_repositories_and_dbos_engine_unit_paths() -> None:
     assert mapped_snap.id == snap.id
 
     svc = build_default_orchestration_setup_service()
-    run_id = svc.runs[0].id
+    lead_user = UserIdentity(
+        id="0192c4e0-0000-7000-8000-000000000603",
+        email="marc.lead@orcia.io",
+        display_name="Marc",
+        auth_mode="HYBRID",
+        human_profile_archetype="TECH_LEAD",
+        platform_role="TEAM_LEAD",
+        primary_org_unit_id="0192c4e0-0000-7000-8000-000000000104",
+    )
+    run_id = svc.instantiate_workflow_run(
+        lead_user,
+        workflow_uri="orcia://workflows/claims-engineering-delivery",
+        workspace_id="0192c4e0-0000-7000-8000-000000000201",
+    ).id
     res1 = execute_step_runner_job(
         run_id=run_id,
         step_key="frame-architecture-intent",

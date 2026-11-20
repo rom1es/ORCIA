@@ -3443,6 +3443,8 @@ export interface components {
     RunBlackboardStateResponse: {
       accumulated_root_cost_usd: number;
       active_snapshots: (components["schemas"]["BlackboardSnapshotSchemaItem"])[];
+      human_anchors?: (components["schemas"]["HumanAnchorSignatureSchemaItem"])[];
+      pending_arbitrations?: (components["schemas"]["HumanArbitrationRequestSchemaItem"])[];
       root_run_id: string;
       run_id: string;
       run_status?: string;

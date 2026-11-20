@@ -18,7 +18,6 @@ from orcia_core.orchestration.models import (
 from orcia_core.orchestration.run_lock_service import WorkflowOrchestrationSetupService
 from orcia_core.permissions import build_default_auth_and_org_service
 from orcia_core.permissions.evaluator import MatrixPermissionEvaluator
-from orcia_core.permissions.models import UserIdentity
 
 
 def _load_bootstrap_orchestration_seeds() -> Any:
@@ -91,21 +90,6 @@ def build_default_orchestration_setup_service(
         )
         assert rep.workflow is not None
         svc.register_validated_workflow(rep.workflow)
-
-    lead_user = UserIdentity(
-        id="0192c4e0-0000-7000-8000-000000000603",
-        email="marc.lead@orcia.io",
-        display_name="Marc (Chef d'Équipe / Tech Lead)",
-        auth_mode="HYBRID",
-        human_profile_archetype="TECH_LEAD",
-        platform_role="TEAM_LEAD",
-        primary_org_unit_id="0192c4e0-0000-7000-8000-000000000104",
-    )
-    svc.instantiate_workflow_run(
-        lead_user,
-        workflow_uri="orcia://workflows/claims-engineering-delivery",
-        workspace_id="0192c4e0-0000-7000-8000-000000000201",
-    )
     return svc
 
 

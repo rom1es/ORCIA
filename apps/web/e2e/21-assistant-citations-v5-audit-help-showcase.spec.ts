@@ -187,6 +187,8 @@ test.describe("Assistant conversationnel, citations déterministes, centre d'aid
     expect(helpCenterFormattedCount, "USER24-BUG-3: HTML strong/code attendu sur /help").toBeGreaterThan(0);
 
     await page.goto("/spaces");
+    await expect(page.getByTestId("four-zone-direction-c-shell")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId("topbar-contextual-help-toggle")).toBeVisible({ timeout: 15000 });
     await expect(page.getByTestId("contextual-info-trigger-workspace-sources")).toHaveCount(0);
     const zone4Help = page.getByTestId("four-zone-contextual-help-column");
     if (!(await zone4Help.isVisible())) {

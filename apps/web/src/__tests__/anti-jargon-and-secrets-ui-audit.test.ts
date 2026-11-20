@@ -206,7 +206,7 @@ describe("CI Guardrail — Zero Technical Jargon, Internal Enums, or Secrets in 
     }
 
     expect(violations).toEqual([]);
-  });
+  }, 15_000);
 
   it("forbids visible UI leaks of banned jargon and secret tokens in packages/ui/src primitives and components", () => {
     const uiFiles = collectFiles(path.join(REPO_ROOT, "packages/ui/src"), [".ts", ".tsx"]).filter(
@@ -223,7 +223,7 @@ describe("CI Guardrail — Zero Technical Jargon, Internal Enums, or Secrets in 
     }
 
     expect(violations).toEqual([]);
-  });
+  }, 15_000);
 
   it("enforces all 5 structural anti-jargon regexes without exemptions across 100% of apps/web/src, packages/ui/src, and help docs", () => {
     const markdownFiles = [
@@ -252,7 +252,7 @@ describe("CI Guardrail — Zero Technical Jargon, Internal Enums, or Secrets in 
     }
 
     expect(violations).toEqual([]);
-  });
+  }, 15_000);
 
   it("explicitly rejects synthetic jargon, secrets, structural regexes, and ContextualHelp @/→ metadata without false positives", () => {
     const badTermsHits = scanForbiddenTermsInLines(

@@ -62,10 +62,13 @@ export interface MockBackendState {
   orchestrationRuns: Array<{
     id: string;
     workspace_id: string;
+    workflow_uri?: string;
     status: string;
     step_status: string;
     draft_artifact: Record<string, unknown>;
     committed_snapshot_id: string | null;
+    human_anchors?: Array<Record<string, unknown>>;
+    pending_arbitrations?: Array<Record<string, unknown>>;
   }>;
   aiModelMappings: Array<Record<string, unknown>>;
   autonomyContracts: Array<Record<string, unknown>>;
@@ -259,6 +262,19 @@ export function seedVitestPlatformSetupState(
     ];
   } else {
     backendState.aiModelMappings = [];
+  }
+  if (Array.isArray(state.runs)) {
+    backendState.orchestrationRuns = (state.runs as Array<Record<string, unknown>>).map((r) => ({
+      id: String(r.runId ?? r.id ?? "0195f000-0000-7000-8000-000000000701"),
+      workspace_id: String(r.workspaceId ?? r.workspace_id ?? "0192c4e0-0000-7000-8000-000000000201"),
+      workflow_uri: "orcia://workflows/claims-engineering-delivery",
+      status: String(r.status ?? "RUNNING"),
+      step_status: "WAITING_FOR_HUMAN_ANCHOR",
+      draft_artifact: {},
+      committed_snapshot_id: null,
+      human_anchors: [],
+      pending_arbitrations: [],
+    }));
   }
 }
 

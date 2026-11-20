@@ -1,11 +1,15 @@
-import { createOrciaApiClient } from "@orcia/api-client";
 import {
+  createOrciaApiClient,
+  type RunBlackboardStateResponse,
+  type WorkflowAsCodeDefinitionSchemaItem,
+} from "@orcia/api-client";
+import {
+  OrciaAlertBanner,
   ProgressiveDay0AccostageBanner,
   StreamlinedCockpitView,
 } from "@orcia/ui";
 import type { Edge, Node } from "@xyflow/react";
-import React, { useEffect, useState } from "react";
-import { writeAssistantPrefillPrompt } from "../../components/agentsAndSkillsBridgeStore";
+import React, { useEffect, useMemo, useState } from "react";
 import { buildUnifiedAccostageMilestones } from "../../components/platformSetupAccostage";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
@@ -15,8 +19,28 @@ import {
   isPlatformAdministratorSession,
   useAuthSessionStore,
 } from "../../stores/authSessionStore";
+import { derivePendingGovernanceFromBlackboard } from "./cockpitGovernanceHelpers";
 import { CockpitHumanLedGovernanceSection } from "./CockpitHumanLedGovernanceSection";
 import { CockpitRunsSection } from "./CockpitRunsSection";
+import { CockpitUpstreamChallengePanel } from "./CockpitUpstreamChallengePanel";
+
+const TERMINAL_RUN_STATUSES = new Set([
+  "COMPLETED",
+  "FAILED",
+  "ROLLED_BACK",
+  "KILL_SWITCH_STOPPED",
+]);
+
+interface PendingGovernanceTarget {
+  readonly runId: string;
+  readonly workflow: WorkflowAsCodeDefinitionSchemaItem | null;
+  readonly initialBlackboard: RunBlackboardStateResponse;
+}
+
+interface ChallengeRunTarget {
+  readonly runId: string;
+  readonly hasStaleWarning: boolean;
+}
 
 export function buildCockpitWorkflowPreviewGraph(): {
   nodes: Node[];
@@ -69,22 +93,25 @@ export function CockpitFeaturePanel() {
   const [selectedWfKey, setSelectedWfKey] = useState<string>("");
   const [runTitle, setRunTitle] = useState<string>("");
   const [runRefreshSignal, setRunRefreshSignal] = useState<number>(0);
-  const [latestRunId, setLatestRunId] = useState<string | null>(null);
-  const [hasServerGovernance, setHasServerGovernance] = useState<boolean>(false);
+  const [pendingGovernance, setPendingGovernance] =
+    useState<PendingGovernanceTarget | null>(null);
+  const [challengeTarget, setChallengeTarget] = useState<ChallengeRunTarget | null>(null);
+  const [challengeError, setChallengeError] = useState<string | null>(null);
 
   const isFr = locale === "fr";
   const activeScopeNode = scopes.find((s) => s.id === activeScopeId);
 
-  const scopedWorkspaces =
-    activeScopeNode?.level === "WORKSPACE"
-      ? workspaces.filter((ws) => ws.workspaceId === activeScopeId)
-      : activeScopeNode?.level === "TEAM"
-        ? workspaces.filter(
-            (ws) => !ws.ownerOrgUnitId || ws.ownerOrgUnitId === activeScopeId,
-          )
-        : workspaces;
-  const availableWorkspaces =
-    scopedWorkspaces.length > 0 ? scopedWorkspaces : workspaces;
+  const availableWorkspaces = useMemo(() => {
+    const scoped =
+      activeScopeNode?.level === "WORKSPACE"
+        ? workspaces.filter((ws) => ws.workspaceId === activeScopeId)
+        : activeScopeNode?.level === "TEAM"
+          ? workspaces.filter(
+              (ws) => !ws.ownerOrgUnitId || ws.ownerOrgUnitId === activeScopeId,
+            )
+          : workspaces;
+    return scoped.length > 0 ? scoped : workspaces;
+  }, [activeScopeId, activeScopeNode?.level, workspaces]);
 
   const scopedRuns =
     activeScopeNode?.level === "WORKSPACE"
@@ -130,13 +157,10 @@ export function CockpitFeaturePanel() {
     setRunTitle("");
     void (async () => {
       try {
-        const res = await createOrciaApiClient({ baseUrl: "" }).instantiateWorkflowRun({
+        await createOrciaApiClient({ baseUrl: "" }).instantiateWorkflowRun({
           workflow_uri: workflowUri,
           workspace_id: targetWs.workspaceId,
         });
-        if (res?.run?.id) {
-          setLatestRunId(res.run.id);
-        }
         setRunRefreshSignal((n) => n + 1);
       } catch (err: unknown) {
         console.warn("[orcia/cockpit] failed to instantiate workflow run:", err);
@@ -144,40 +168,82 @@ export function CockpitFeaturePanel() {
     })();
   };
 
-  const governanceWorkspaceId =
-    (activeScopeNode?.level === "WORKSPACE" ? activeScopeId : selectedWsId) ||
-    scopedRuns[0]?.workspaceId ||
-    undefined;
-
   useEffect(() => {
     if (isHydrating || !isAuthenticated) {
-      setHasServerGovernance(false);
+      setPendingGovernance(null);
+      setChallengeTarget(null);
       return;
     }
     let cancelled = false;
-    void createOrciaApiClient({ baseUrl: "" })
+    const apiClient = createOrciaApiClient({ baseUrl: "" });
+    void apiClient
       .getOrchestrationState()
-      .then((state) => {
+      .then(async (state) => {
         if (cancelled) return;
         const serverRuns = state.runs ?? [];
-        const hasMatch = governanceWorkspaceId
-          ? serverRuns.some((r) => r.workspace_id === governanceWorkspaceId)
-          : serverRuns.length > 0;
-        setHasServerGovernance(hasMatch || serverRuns.length > 0);
+        const scopedServerRuns =
+          activeScopeNode?.level === "WORKSPACE"
+            ? serverRuns.filter((r) => r.workspace_id === activeScopeId)
+            : activeScopeNode?.level === "TEAM"
+              ? serverRuns.filter((r) =>
+                  availableWorkspaces.some((ws) => ws.workspaceId === r.workspace_id),
+                )
+              : serverRuns;
+        const activeRuns = scopedServerRuns.filter(
+          (r) => !TERMINAL_RUN_STATUSES.has(r.status),
+        );
+        if (activeRuns.length === 0) {
+          setPendingGovernance(null);
+          setChallengeTarget(null);
+          return;
+        }
+        const candidates = [...activeRuns].reverse();
+        const checked = await Promise.all(
+          candidates.map(async (run) => {
+            try {
+              const bb = await apiClient.getRunBlackboardState(run.id);
+              const wf = (state.workflows ?? []).find((w) => w.uri === run.workflow_uri) ?? null;
+              const derived = derivePendingGovernanceFromBlackboard(bb, wf);
+              const hasSignedAnchor = (bb.human_anchors?.length ?? 0) > 0;
+              return {
+                pending: derived.hasPendingAction
+                  ? { runId: run.id, workflow: wf, initialBlackboard: bb }
+                  : null,
+                challenge:
+                  hasSignedAnchor || derived.hasStaleWarning
+                    ? { runId: run.id, hasStaleWarning: derived.hasStaleWarning }
+                    : null,
+              };
+            } catch (err: unknown) {
+              console.warn("[orcia/cockpit] failed to inspect run blackboard:", err);
+              return { pending: null, challenge: null };
+            }
+          }),
+        );
+        if (cancelled) return;
+        setPendingGovernance(checked.find((item) => item.pending !== null)?.pending ?? null);
+        setChallengeTarget(checked.find((item) => item.challenge !== null)?.challenge ?? null);
       })
       .catch((err: unknown) => {
         console.warn("[orcia/cockpit] failed to check orchestration state:", err);
         if (!cancelled) {
-          setHasServerGovernance(false);
+          setPendingGovernance(null);
+          setChallengeTarget(null);
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [governanceWorkspaceId, isAuthenticated, isHydrating, runRefreshSignal]);
+  }, [
+    activeScopeId,
+    activeScopeNode?.level,
+    availableWorkspaces,
+    isAuthenticated,
+    isHydrating,
+    runRefreshSignal,
+  ]);
 
-  const showGovernanceSection =
-    scopedRuns.length > 0 || runs.length > 0 || latestRunId !== null || hasServerGovernance;
+  const showGovernanceSection = pendingGovernance !== null;
 
   const currentUserId = authEmail?.trim() || platformAdmin?.email || "";
   const resolvedAuthorName =
@@ -226,7 +292,7 @@ export function CockpitFeaturePanel() {
         />
       </section>
 
-      {/* Bloc majeur 2 : Décisions & Lancement rapide de processus */}
+      {/* Bloc majeur 2 : Orientation sobre & Lancement de processus */}
       <section
         data-testid="cockpit-block-decisions"
         className="flex flex-col gap-4"
@@ -244,12 +310,6 @@ export function CockpitFeaturePanel() {
           currentUserId={currentUserId}
           labels={dictionary.streamlinedCockpit}
           disabledMenuKeys={effectiveDisabledMenuKeys}
-          onOpenAssistant={(initialPrompt) => {
-            if (initialPrompt.trim()) {
-              writeAssistantPrefillPrompt(initialPrompt.trim());
-            }
-            navigateToRoute("/assistant");
-          }}
           onNavigateModule={(href) => navigateToRoute(href)}
         />
 
@@ -268,16 +328,34 @@ export function CockpitFeaturePanel() {
           onLaunchRun={handleLaunchRun}
           onNavigateToWorkspaces={() => navigateToRoute("/spaces")}
         />
+
+        {challengeError && (
+          <OrciaAlertBanner tone="crimson" role="alert" testId="cockpit-challenge-error-banner">
+            {challengeError}
+          </OrciaAlertBanner>
+        )}
+
+        {challengeTarget && (
+          <CockpitUpstreamChallengePanel
+            runId={challengeTarget.runId}
+            isOpen={true}
+            initialStaleWarning={challengeTarget.hasStaleWarning}
+            onError={setChallengeError}
+            onReplayCompleted={() => setRunRefreshSignal((n) => n + 1)}
+          />
+        )}
       </section>
 
-      {/* Bloc majeur 3 : Gouvernance Human-Led & Arbitrage (monté uniquement si run ou arbitrage actif) */}
-      {showGovernanceSection && (
+      {/* Bloc majeur 3 : Gouvernance Human-Led & Arbitrage (monté uniquement sur action réelle en attente en PG18) */}
+      {pendingGovernance && (
         <div data-testid="cockpit-block-governance" style={{ minWidth: 0 }}>
           <CockpitHumanLedGovernanceSection
-            workspaceId={governanceWorkspaceId}
+            runId={pendingGovernance.runId}
+            workflow={pendingGovernance.workflow}
+            initialBlackboard={pendingGovernance.initialBlackboard}
             authorName={resolvedAuthorName}
             refreshSignal={runRefreshSignal}
-            activeRunId={latestRunId}
+            onGovernanceStateChanged={() => setRunRefreshSignal((n) => n + 1)}
           />
         </div>
       )}

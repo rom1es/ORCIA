@@ -28,6 +28,15 @@ test.describe("Orchestration durable, contestation amont avec simulation d'impac
 
     await openCockpitPage(page);
     await expect(page.getByTestId("cockpit-launch-run-form")).toBeVisible({ timeout: 15000 });
+    const scopeSelect = page.getByTestId("sidebar-workspace-selector");
+    await expect(scopeSelect).toBeVisible({ timeout: 15000 });
+    const orchOptionValue = await scopeSelect
+      .locator("option")
+      .filter({ hasText: "Espace Orchestration Durable" })
+      .first()
+      .getAttribute("value");
+    expect(orchOptionValue).toBeTruthy();
+    await scopeSelect.selectOption(orchOptionValue!);
     await page.getByTestId("cockpit-select-workspace").selectOption(ws.uiWorkspaceId);
     await page.getByTestId("cockpit-select-workflow").selectOption("assistant-agent");
     await page.getByTestId("cockpit-run-title-input").fill("Exécution Gouvernance Architecture");
@@ -42,7 +51,7 @@ test.describe("Orchestration durable, contestation amont avec simulation d'impac
     const signBtn = page.getByTestId("human-anchor-submit-human_architecture_intent");
     await expect(signBtn).toBeEnabled();
     await signBtn.click();
-    await expect(page.getByTestId("cockpit-human-anchor-signed-badge")).toBeVisible({
+    await expect(anchorCard).toHaveCount(0, {
       timeout: 15000,
     });
 
@@ -59,7 +68,8 @@ test.describe("Orchestration durable, contestation amont avec simulation d'impac
 
     await reloadClearingStorage(page);
     await expect(page.getByTestId("cockpit-block-decisions")).toBeVisible({ timeout: 30000 });
-    await expect(page.getByTestId("cockpit-human-anchor-signed-badge")).toBeVisible({
+    await expect(page.getByTestId("cockpit-human-led-anchor-card")).toHaveCount(0);
+    await expect(page.getByTestId("cockpit-open-upstream-challenge-modal-btn")).toBeVisible({
       timeout: 15000,
     });
 

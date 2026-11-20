@@ -122,10 +122,6 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
       "Créez d'abord le premier compte Administrateur pour accéder à cette section.",
   },
   streamlinedCockpit: {
-    zeroDecisionsBanner: "✅ Aucune décision en attente",
-    quickAssistantTitle: "Accès rapide à Mon Assistant",
-    quickAssistantPlaceholder: "Posez une question ou préparez un dossier...",
-    quickAssistantCta: "Ouvrir Mon Assistant →",
     orientationAssistantTitle: "💬 Mon Assistant",
     orientationAssistantDesc:
       "Interrogez vos sources documentaires avec citations vérifiées.",
@@ -426,10 +422,6 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
       "Create the first Administrator account first to access this section.",
   },
   streamlinedCockpit: {
-    zeroDecisionsBanner: "✅ No pending decisions",
-    quickAssistantTitle: "Quick access to My Assistant",
-    quickAssistantPlaceholder: "Ask a question or prepare a briefing...",
-    quickAssistantCta: "Open My Assistant →",
     orientationAssistantTitle: "💬 My Assistant",
     orientationAssistantDesc:
       "Query your document sources with verified citations.",

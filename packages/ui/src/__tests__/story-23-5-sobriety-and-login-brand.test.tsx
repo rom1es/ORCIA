@@ -39,10 +39,6 @@ const SHELL_LABELS: FourZoneDirectionCShellLabels = {
 };
 
 const COCKPIT_LABELS: StreamlinedCockpitLabels = {
-  zeroDecisionsBanner: "✅ Aucune décision en attente",
-  quickAssistantTitle: "Accès rapide à Mon Assistant",
-  quickAssistantPlaceholder: "Posez une question ou préparez un dossier...",
-  quickAssistantCta: "Ouvrir Mon Assistant →",
   orientationAssistantTitle: "💬 Mon Assistant",
   orientationAssistantDesc: "Interrogez vos sources avec citations [S1] en < 1,2 s.",
   orientationProcessesTitle: "☍ Mes Processus",
@@ -185,8 +181,7 @@ describe("Story 23.5 — Brand ORCIA in Sidebar/Login, TopHeaderBar sobriety & C
     expect(screen.getByTestId("topbar-fixed-workspace-selector")).toBeTruthy();
   });
 
-  it("renders StreamlinedCockpitView orientation cards when 0 decisions and passes quick prompt to assistant", () => {
-    const onOpenAssistant = vi.fn();
+  it("renders sober StreamlinedCockpitView orientation cards when 0 decisions without waiting banners or quick assistant box", () => {
     const onNavigateModule = vi.fn();
 
     render(
@@ -206,7 +201,6 @@ describe("Story 23.5 — Brand ORCIA in Sidebar/Login, TopHeaderBar sobriety & C
           decisions={[]}
           currentUserId="admin@orcia.test"
           labels={COCKPIT_LABELS}
-          onOpenAssistant={onOpenAssistant}
           onNavigateModule={onNavigateModule}
         />
       </FourZoneDirectionCShell>,
@@ -214,10 +208,10 @@ describe("Story 23.5 — Brand ORCIA in Sidebar/Login, TopHeaderBar sobriety & C
 
     expect(screen.getByTestId("cockpit-calm-orientation-panel")).toBeTruthy();
     expect(screen.queryByTestId("cockpit-decisions-kpis")).toBeNull();
-    fireEvent.change(screen.getByTestId("cockpit-quick-assistant-input"), {
-      target: { value: "Analyser le workflow SEPA" },
-    });
-    fireEvent.click(screen.getByTestId("cockpit-quick-assistant-submit"));
-    expect(onOpenAssistant).toHaveBeenCalledWith("Analyser le workflow SEPA");
+    expect(screen.queryByTestId("cockpit-zero-decisions-banner")).toBeNull();
+    expect(screen.queryByTestId("cockpit-quick-assistant-box")).toBeNull();
+    expect(screen.queryByTestId("cockpit-quick-assistant-input")).toBeNull();
+    fireEvent.click(screen.getByTestId("cockpit-orientation-card-assistant"));
+    expect(onNavigateModule).toHaveBeenCalledWith("/assistant");
   });
 });

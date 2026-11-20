@@ -22715,6 +22715,20 @@
             "title": "Active Snapshots",
             "type": "array"
           },
+          "human_anchors": {
+            "items": {
+              "$ref": "#/components/schemas/HumanAnchorSignatureSchemaItem"
+            },
+            "title": "Human Anchors",
+            "type": "array"
+          },
+          "pending_arbitrations": {
+            "items": {
+              "$ref": "#/components/schemas/HumanArbitrationRequestSchemaItem"
+            },
+            "title": "Pending Arbitrations",
+            "type": "array"
+          },
           "root_run_id": {
             "title": "Root Run Id",
             "type": "string"
@@ -51980,7 +51994,7 @@
     },
     "/api/v1/orchestration/runs/{run_id}/blackboard": {
       "get": {
-        "description": "Return durable `step_executions` and active `blackboard_snapshots` for `run_id`.",
+        "description": "Return durable `step_executions`, active snapshots, pending arbitrations & anchors.",
         "operationId": "get_run_blackboard_state_api_v1_orchestration_runs__run_id__blackboard_get",
         "parameters": [
           {

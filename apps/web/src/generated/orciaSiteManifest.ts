@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 57,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 202,
+    "techLeadReportsCount": 203,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 64,
@@ -538,6 +538,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-20",
+      "phaseOrStory": "Story 25.3",
+      "reportFile": "25-3-sobriete-cockpit-jour0-purge-run-demo-ram-et-retrait-blocs-attente-tech-lead-report.md",
+      "domain": "Epic 25 — Sobriété Cockpit Jour 0, Purge Run Démo RAM (marc.lead@orcia.io), Sync PG18 _runs_by_id & Retrait Blocs d'Attente (CAP-005, CAP-023, CAP-060, CAP-100)",
+      "summary": "Clôture (done) : purge run démo RAM dans seeds.py (svc.runs == ()), synchronisation autoritative _runs_by_id sur PG18 (_orchestration_sql_hydration.py), exposition pending_arbitrations/human_anchors sur GET /runs/{run_id}/blackboard + split _blackboard_arbitration_routes.py (222 L), suppression DEFAULT_ARBITRATION_OPTIONS/DEFAULT_FALLBACK_WORKSPACE_ID et retrait cockpit-zero-decisions-banner/cockpit-quick-assistant-box (CockpitOrientationCards.tsx, StreamlinedCockpitView.tsx), montage strictement conditionnel Human-Led + câblage CockpitUpstreamChallengePanel (cockpit/index.tsx), 94.07 % couv. ciblée Story 25.3, 1044 passed (unit+security+evals), 1/1 PG18 create_app() sans override + 403 ERR_OBSERVER_MODE_READ_ONLY, 9/9 Turbo (136 UI + 251 Web), 15 passed Playwright Desktop (shell, 00, 01, 03, 19, 21), ruff/mypy --strict/lint-imports (5/5)/export_openapi (0-diff)/lint_spine (0) vert."
+    },
     {
       "date": "2026-11-20",
       "phaseOrStory": "Story 25.2",

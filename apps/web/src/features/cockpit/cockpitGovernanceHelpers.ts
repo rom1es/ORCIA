@@ -1,31 +1,36 @@
-import type { ArbitrationTieBreakOptionView } from "@orcia/ui";
-import { formatCurrency } from "../../lib/formatters";
+import type {
+  ArbitrationTieBreakOptionView,
+  UiTieBreakPolicy,
+} from "@orcia/ui";
+import type {
+  RunBlackboardStateResponse,
+  WorkflowAsCodeDefinitionSchemaItem,
+} from "@orcia/api-client";
 
-export const DEFAULT_WORKFLOW_URI = "orcia://workflows/claims-engineering-delivery";
-export const DEFAULT_STEP_KEY = "frame-architecture-intent";
-export const DEFAULT_SECTION_KEY = "human_architecture_intent";
-export const DEFAULT_FALLBACK_WORKSPACE_ID = "0192c4e0-0000-7000-8000-000000000201";
+export interface PendingAnchorRequirement {
+  readonly stepKey: string;
+  readonly sectionKey: string;
+  readonly sectionTitle: string;
+}
 
-export const DEFAULT_ARBITRATION_OPTIONS: ArbitrationTieBreakOptionView[] = [
-  {
-    optionKey: "OPT_A_SPOT_15M",
-    title: "Option A — Taux Spot 15 min",
-    pros: ["Compatible API partenaire v3", "Latence minimale"],
-    cons: ["Fenêtre client 15 min"],
-    siImpact: "1 microservice impacté",
-    finopsImpact: `${formatCurrency(0.02, "fr")} / exécution`,
-    recommended: true,
-  },
-  {
-    optionKey: "OPT_B_LOCK_48H",
-    title: "Option B — Taux Bloqué 48h",
-    pros: ["Confort client 48h"],
-    cons: ["Incompatible API v3"],
-    siImpact: "3 systèmes centraux impactés",
-    finopsImpact: `${formatCurrency(0.18, "fr")} / exécution`,
-    recommended: false,
-  },
-];
+export interface PendingArbitrationState {
+  readonly arbitrationId: string;
+  readonly stepKey: string;
+  readonly questionTitle: string;
+  readonly contextSummary: string;
+  readonly tieBreakPolicy: UiTieBreakPolicy;
+  readonly options: ArbitrationTieBreakOptionView[];
+}
+
+export interface DerivedGovernanceState {
+  readonly runId: string;
+  readonly stepStatus: string;
+  readonly pendingAnchor: PendingAnchorRequirement | null;
+  readonly pendingArbitration: PendingArbitrationState | null;
+  readonly hasPendingAction: boolean;
+  readonly committedSnapshotId: string | null;
+  readonly hasStaleWarning: boolean;
+}
 
 export function formatStepStatusLabel(status: string, isFr: boolean): string {
   switch (status.toUpperCase()) {
@@ -38,6 +43,9 @@ export function formatStepStatusLabel(status: string, isFr: boolean): string {
       return isFr ? "Validé" : "Completed";
     case "STALE_NEEDS_REVIEW":
       return isFr ? "À revalider" : "Needs review";
+    case "WAITING_FOR_HUMAN_ANCHOR":
+      return isFr ? "Ancrage humain requis" : "Human anchor required";
+    case "WAITING_FOR_HUMAN_ARBITRATION":
     case "PAUSED_ARBITRATION":
       return isFr ? "Arbitrage requis" : "Arbitration required";
     case "PAUSED_HUMAN_GATE":
@@ -69,71 +77,169 @@ export function formatStepKeyLabel(stepKey: string, isFr: boolean): string {
     .replace(/\b\w/g, (ch) => ch.toUpperCase());
 }
 
-export function formatOptionTitle(optionKey: string, isFr: boolean): string {
-  const matched = DEFAULT_ARBITRATION_OPTIONS.find((opt) => opt.optionKey === optionKey);
-  if (matched) return matched.title;
-  if (optionKey === "OPT_A_SPOT_15M") {
-    return isFr ? "Option A — Taux Spot 15 min" : "Option A — 15-min Spot Rate";
+function mapRawArbitrationOptions(rawOptions: unknown): ArbitrationTieBreakOptionView[] {
+  if (!Array.isArray(rawOptions)) {
+    return [];
   }
-  if (optionKey === "OPT_B_LOCK_48H") {
-    return isFr ? "Option B — Taux Bloqué 48h" : "Option B — 48h Locked Rate";
+  const out: ArbitrationTieBreakOptionView[] = [];
+  for (const item of rawOptions) {
+    if (!item || typeof item !== "object") continue;
+    const rec = item as Record<string, unknown>;
+    const optionKey = typeof rec.option_key === "string" ? rec.option_key.trim() : "";
+    const title = typeof rec.title === "string" ? rec.title.trim() : "";
+    if (!optionKey || !title) continue;
+    out.push({
+      optionKey,
+      title,
+      pros: Array.isArray(rec.pros) ? rec.pros.map(String) : [],
+      cons: Array.isArray(rec.cons) ? rec.cons.map(String) : [],
+      siImpact: typeof rec.si_impact === "string" ? rec.si_impact : "",
+      finopsImpact: typeof rec.finops_impact === "string" ? rec.finops_impact : "",
+      recommended: Boolean(rec.recommended),
+    });
   }
-  return optionKey;
+  return out;
 }
 
-export interface HydratedGovernanceState {
-  readonly runId: string;
-  readonly stepStatus: string;
-  readonly anchorText: string | null;
-  readonly signedSha256: string | null;
-  readonly pendingArbitrationId: string | null;
-  readonly resolvedOptionKey: string | null;
-  readonly resolvedJustification: string | null;
-  readonly committedSnapshotId: string | null;
-  readonly hasStaleWarning: boolean;
+function resolveTieBreakPolicy(raw: unknown): UiTieBreakPolicy {
+  if (
+    raw === "ONTOLOGY_AXIOM_FIRST" ||
+    raw === "DEFER_AND_CONTINUE_WITH_ASSUMPTION" ||
+    raw === "PAUSE_AND_ESCALATE"
+  ) {
+    return raw;
+  }
+  return "PAUSE_AND_ESCALATE";
 }
 
-export function extractGovernanceStateFromBlackboard(bb: {
-  readonly run_id: string;
-  readonly step_executions: ReadonlyArray<{
-    readonly step_key: string;
-    readonly status: string;
-    readonly committed_snapshot_id?: string | null;
-    readonly draft_artifact?: Record<string, unknown> | null;
-  }>;
-  readonly active_snapshots: ReadonlyArray<{
-    readonly id: string;
-    readonly superseded_snapshot_ids?: ReadonlyArray<string>;
-  }>;
-}): HydratedGovernanceState {
-  const step =
-    bb.step_executions.find((s) => s.step_key === DEFAULT_STEP_KEY) ??
-    bb.step_executions[0];
-  const draft = (step?.draft_artifact ?? {}) as Record<string, unknown>;
-  const anchors = (draft.human_anchors ?? {}) as Record<
-    string,
-    { content_text?: string; content_sha256?: string }
-  >;
-  const anchorEntry = anchors[DEFAULT_SECTION_KEY];
-  const resolution = draft.arbitration_resolution as
-    | { selected_option_key?: string; human_justification?: string | null }
-    | undefined;
-  const firstSnap = bb.active_snapshots[0];
+export function derivePendingGovernanceFromBlackboard(
+  bb: RunBlackboardStateResponse,
+  workflow?: WorkflowAsCodeDefinitionSchemaItem | null,
+): DerivedGovernanceState {
+  const stepExecs = bb.step_executions ?? [];
+  const humanAnchors = bb.human_anchors ?? [];
+
+  const anchorCandidates: Array<{
+    stepKey: string;
+    title: string;
+    templateKey: string | null;
+  }> = [];
+  const seenSteps = new Set<string>();
+
+  for (const wfStep of workflow?.steps ?? []) {
+    if (wfStep.human_authored_required && !seenSteps.has(wfStep.step_key)) {
+      seenSteps.add(wfStep.step_key);
+      anchorCandidates.push({
+        stepKey: wfStep.step_key,
+        title: wfStep.title,
+        templateKey: wfStep.template_key ?? null,
+      });
+    }
+  }
+  for (const exec of stepExecs) {
+    if (exec.status === "WAITING_FOR_HUMAN_ANCHOR" && !seenSteps.has(exec.step_key)) {
+      seenSteps.add(exec.step_key);
+      anchorCandidates.push({
+        stepKey: exec.step_key,
+        title: exec.step_key,
+        templateKey: null,
+      });
+    }
+  }
+
+  let pendingAnchor: PendingAnchorRequirement | null = null;
+  for (const candidate of anchorCandidates) {
+    const exec = stepExecs.find((s) => s.step_key === candidate.stepKey);
+    if (exec && exec.status === "COMMITTED") {
+      continue;
+    }
+    const signedInAnchors = humanAnchors.some(
+      (a) => a.step_key === candidate.stepKey && Boolean(a.content_sha256),
+    );
+    const draftAnchors = (exec?.draft_artifact?.human_anchors ?? {}) as Record<
+      string,
+      { content_sha256?: string }
+    >;
+    const signedInDraft = Object.values(draftAnchors).some((entry) =>
+      Boolean(entry?.content_sha256),
+    );
+    if (!signedInAnchors && !signedInDraft) {
+      const sectionKey =
+        candidate.templateKey === "tpl-architecture-decision-record" ||
+        candidate.stepKey === "frame-architecture-intent"
+          ? "human_architecture_intent"
+          : "primary-anchor";
+      pendingAnchor = {
+        stepKey: candidate.stepKey,
+        sectionKey,
+        sectionTitle: candidate.title,
+      };
+      break;
+    }
+  }
+
+  let pendingArbitration: PendingArbitrationState | null = null;
+  const serverArb = (bb.pending_arbitrations ?? []).find(
+    (a) => a.status === "PENDING" && (a.options_matrix?.length ?? 0) >= 2,
+  );
+  if (serverArb) {
+    const opts = mapRawArbitrationOptions(serverArb.options_matrix);
+    if (opts.length >= 2) {
+      pendingArbitration = {
+        arbitrationId: serverArb.id,
+        stepKey: serverArb.step_key,
+        questionTitle: serverArb.question_title,
+        contextSummary: serverArb.context_summary,
+        tieBreakPolicy: resolveTieBreakPolicy(serverArb.tie_break_policy),
+        options: opts,
+      };
+    }
+  } else {
+    const waitingStep = stepExecs.find((s) => s.status === "WAITING_FOR_HUMAN_ARBITRATION");
+    if (waitingStep) {
+      const draft = (waitingStep.draft_artifact ?? {}) as Record<string, unknown>;
+      const arbId =
+        typeof draft.pending_arbitration_id === "string" ? draft.pending_arbitration_id : "";
+      const opts = mapRawArbitrationOptions(draft.options_matrix);
+      if (arbId && opts.length >= 2 && !draft.arbitration_resolution) {
+        pendingArbitration = {
+          arbitrationId: arbId,
+          stepKey: waitingStep.step_key,
+          questionTitle:
+            typeof draft.arbitration_question_title === "string"
+              ? draft.arbitration_question_title
+              : waitingStep.step_key,
+          contextSummary:
+            typeof draft.arbitration_context_summary === "string"
+              ? draft.arbitration_context_summary
+              : "",
+          tieBreakPolicy: resolveTieBreakPolicy(draft.arbitration_tie_break_policy),
+          options: opts,
+        };
+      }
+    }
+  }
+
+  const firstSnap = (bb.active_snapshots ?? [])[0];
+  const anchorExec = pendingAnchor
+    ? stepExecs.find((s) => s.step_key === pendingAnchor.stepKey)
+    : undefined;
+  const stepStatus = pendingArbitration
+    ? "WAITING_FOR_HUMAN_ARBITRATION"
+    : pendingAnchor
+      ? (anchorExec?.status ?? "WAITING_FOR_HUMAN_ANCHOR")
+      : (stepExecs[0]?.status ?? bb.run_status ?? "PENDING");
   const hasStaleWarning =
-    bb.step_executions.some((s) => s.status === "STALE_NEEDS_REVIEW") ||
-    bb.active_snapshots.some((s) => (s.superseded_snapshot_ids?.length ?? 0) > 0);
+    stepExecs.some((s) => (s.status as string) === "STALE_NEEDS_REVIEW") ||
+    (bb.active_snapshots ?? []).some((s) => (s.superseded_snapshot_ids?.length ?? 0) > 0);
+
   return {
     runId: bb.run_id,
-    stepStatus: step?.status ?? "PENDING",
-    anchorText: anchorEntry?.content_text ?? null,
-    signedSha256: anchorEntry?.content_sha256 ?? null,
-    pendingArbitrationId:
-      typeof draft.pending_arbitration_id === "string"
-        ? draft.pending_arbitration_id
-        : null,
-    resolvedOptionKey: resolution?.selected_option_key ?? null,
-    resolvedJustification: resolution?.human_justification ?? null,
-    committedSnapshotId: firstSnap?.id ?? step?.committed_snapshot_id ?? null,
+    stepStatus,
+    pendingAnchor,
+    pendingArbitration,
+    hasPendingAction: pendingAnchor !== null || pendingArbitration !== null,
+    committedSnapshotId: firstSnap?.id ?? stepExecs[0]?.committed_snapshot_id ?? null,
     hasStaleWarning,
   };
 }

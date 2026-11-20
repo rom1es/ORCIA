@@ -10,6 +10,8 @@ from orcia_core.blackboard import BlackboardSnapshotEntity, StepExecutionEntity
 from orcia_core.observability.logging import get_logger
 from orcia_core.orchestration import (
     DbosSqlAlchemyUnitOfWork,
+    HumanAnchorSignatureEntity,
+    HumanArbitrationRequestEntity,
     SqlDomainEventsOutboxRepository,
     SqlOrchestrationRepository,
     WorkflowOrchestrationSetupService,
@@ -76,7 +78,7 @@ async def read_sql_blackboard_if_available(
 async def hydrate_orchestration_runs_from_sql(
     request: Request, svc: WorkflowOrchestrationSetupService
 ) -> None:
-    """Load `workflow_runs` & `run_lock_manifests` from PG18 into `svc` on state reads."""
+    """Synchronize `svc._runs_by_id` strictly with PostgreSQL 18 `workflow_runs` rows."""
     uow = resolve_optional_dbos_uow(request)
     if uow is None:
         return
@@ -85,8 +87,43 @@ async def hydrate_orchestration_runs_from_sql(
     except Exception as exc:
         logger.warning("hydrate_orchestration_runs_skipped", error_type=type(exc).__name__)
         return
+    sql_run_ids = {r.id for r in sql_runs}
+    for stale_id in [rid for rid in svc._runs_by_id if rid not in sql_run_ids]:
+        svc._runs_by_id.pop(stale_id, None)
+    for idemp_key, rid in list(svc._idempotency_index.items()):
+        if rid not in sql_run_ids:
+            svc._idempotency_index.pop(idemp_key, None)
     for r in sql_runs:
         svc._runs_by_id[r.id] = r
+
+
+async def read_sql_run_governance_if_available(
+    request: Request,
+    svc: WorkflowOrchestrationSetupService,
+    run_id: str,
+) -> tuple[tuple[HumanArbitrationRequestEntity, ...], tuple[HumanAnchorSignatureEntity, ...]]:
+    """Return pending arbitrations and signed human anchors for `run_id` from PG18 or service."""
+    uow = resolve_optional_dbos_uow(request)
+    if uow is not None:
+        try:
+            arbs = await list_human_arbitrations_sql(uow, run_id=run_id)
+            anchors = await list_human_anchor_signatures_sql(uow, run_id=run_id)
+            return tuple(a for a in arbs if a.status == "PENDING"), anchors
+        except Exception as exc:
+            logger.warning(
+                "sql_run_governance_read_fallback", run_id=run_id, error_type=type(exc).__name__
+            )
+    mem_arbs = tuple(
+        a
+        for a in svc.engine.anchors_and_arbitration.list_arbitrations(run_id)
+        if a.status == "PENDING"
+    )
+    mem_anchors = tuple(
+        sig
+        for (r_id, _, _), sig in svc.engine.anchors_and_arbitration._anchors_by_step_section.items()
+        if r_id == run_id
+    )
+    return mem_arbs, mem_anchors
 
 
 async def hydrate_run_from_sql_if_missing(

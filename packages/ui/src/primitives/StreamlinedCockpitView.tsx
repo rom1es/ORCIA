@@ -28,10 +28,6 @@ export interface FocusReviewWorkshopLeaseInfo {
 }
 
 export interface StreamlinedCockpitLabels {
-  readonly zeroDecisionsBanner: string;
-  readonly quickAssistantTitle: string;
-  readonly quickAssistantPlaceholder: string;
-  readonly quickAssistantCta: string;
   readonly orientationAssistantTitle: string;
   readonly orientationAssistantDesc: string;
   readonly orientationProcessesTitle: string;
@@ -61,7 +57,6 @@ export interface StreamlinedCockpitViewProps {
   readonly disabledMenuKeys?: Partial<Record<EightFixedMenuKey, string>>;
   readonly onResolveTieBreak?: (decisionId: string, selectedOption: string) => void;
   readonly onOpenFocusReview?: (lease: FocusReviewWorkshopLeaseInfo) => void;
-  readonly onOpenAssistant?: (initialPrompt: string) => void;
   readonly onNavigateModule?: (moduleRoute: string) => void;
 }
 
@@ -72,10 +67,8 @@ export function StreamlinedCockpitView({
   disabledMenuKeys,
   onResolveTieBreak,
   onOpenFocusReview,
-  onOpenAssistant,
   onNavigateModule,
 }: StreamlinedCockpitViewProps): React.ReactElement {
-  const [quickPrompt, setQuickPrompt] = useState<string>("");
   const [filterMode, setFilterMode] = useState<"ALL" | "SHORT" | "HEAVY">("ALL");
   const [resolvedTieBreaks, setResolvedTieBreaks] = useState<Record<string, string>>({});
   const [activeFocusWorkshop, setActiveFocusWorkshop] =
@@ -110,11 +103,8 @@ export function StreamlinedCockpitView({
     <section data-testid="streamlined-cockpit-view" className="flex flex-col gap-5">
       {totalDecisions === 0 ? (
         <CockpitOrientationCards
-          quickPrompt={quickPrompt}
-          onChangeQuickPrompt={setQuickPrompt}
           labels={labels}
           disabledMenuKeys={disabledMenuKeys}
-          onOpenAssistant={onOpenAssistant}
           onNavigateModule={onNavigateModule}
         />
       ) : (

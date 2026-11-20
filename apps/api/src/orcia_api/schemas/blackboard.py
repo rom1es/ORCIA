@@ -318,4 +318,6 @@ class RunBlackboardStateResponse(BaseModel):
     accumulated_root_cost_usd: float
     step_executions: list[StepExecutionSchemaItem]
     active_snapshots: list[BlackboardSnapshotSchemaItem]
+    pending_arbitrations: list[HumanArbitrationRequestSchemaItem] = Field(default_factory=list)
+    human_anchors: list[HumanAnchorSignatureSchemaItem] = Field(default_factory=list)
     trace_id: str = Field(..., min_length=32, max_length=32)
