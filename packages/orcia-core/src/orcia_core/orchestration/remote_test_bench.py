@@ -1,0 +1,256 @@
+"""4-Step Hot Remote Service Test Bench & Anti-SSRF Guard (`Story 11.3`, `24.3`).
+
+Pure domain service — zero SQLAlchemy, Redis, or FastAPI imports (`AD-19`).
+"""
+
+from __future__ import annotations
+
+import ipaddress
+from typing import Literal
+from urllib.parse import urlparse
+
+from orcia_core.orchestration.errors import ObserverModeReadOnlyError
+from orcia_core.orchestration.remote_test_bench_models import (
+    DiscoveredRemoteCapability,
+    RemoteProtocolType,
+    RemoteServiceTestAndDiscoverResult,
+    TestBenchStepResult,
+    ToolAccessQualification,
+)
+
+_WRITE_KEYWORDS = ("create", "update", "delete", "write", "post", "put", "patch", "publish", "push")
+_BLOCKED_METADATA_HOSTS: frozenset[str] = frozenset(
+    {
+        "169.254.169.254",
+        "100.100.100.200",
+        "metadata.google.internal",
+        "metadata.goog",
+        "metadata.azure.com",
+        "instance-data",
+    }
+)
+_LINK_LOCAL_V4_NET = ipaddress.ip_network("169.254.0.0/16")
+_LINK_LOCAL_V6_NET = ipaddress.ip_network("fe80::/10")
+
+
+def is_safe_llm_endpoint_url(
+    url: str,
+    *,
+    allow_private_network: bool = False,
+) -> bool:
+    """Validate an endpoint URL against Cloud Metadata / link-local SSRF attacks.
+
+    Always blocks link-local (`169.254.0.0/16`, `fe80::/10`), Cloud metadata hosts
+    (`169.254.169.254`, `100.100.100.200`, `metadata.google.internal`), unspecified,
+    and multicast addresses while permitting internal `.local` / `.internal` hostnames
+    and private networks when `allow_private_network=True`.
+    """
+    raw = (url or "").strip()
+    if not raw:
+        return False
+    try:
+        parsed = urlparse(raw)
+    except ValueError:
+        return False
+    if parsed.scheme not in ("http", "https"):
+        return False
+    if parsed.username or parsed.password:
+        return False
+    host = (parsed.hostname or "").strip().lower().rstrip(".")
+    if not host or host in _BLOCKED_METADATA_HOSTS or host.endswith(".google.internal"):
+        return False
+    if not allow_private_network and host == "localhost":
+        return False
+    try:
+        ip = ipaddress.ip_address(host)
+        if (
+            ip.is_link_local
+            or ip.is_unspecified
+            or ip.is_multicast
+            or (ip.version == 4 and ip in _LINK_LOCAL_V4_NET)
+            or (ip.version == 6 and ip in _LINK_LOCAL_V6_NET)
+        ):
+            return False
+        if not allow_private_network and (ip.is_private or ip.is_loopback):
+            return False
+    except ValueError:
+        pass
+    return True
+
+
+def check_remote_endpoint_anti_ssrf(
+    *,
+    endpoint_url: str,
+    protocol: RemoteProtocolType,
+    allow_private_network: bool,
+) -> tuple[bool, str]:
+    """Evaluate Step 1 Network, TLS & Anti-SSRF checks with localized FR diagnostic."""
+    if protocol == "WASM_SANDBOX" and endpoint_url.startswith("orcia://"):
+        return True, "Sandbox WASM locale isolée vérifiée."
+    parsed = urlparse(endpoint_url)
+    if parsed.scheme not in ("https", "http"):
+        return False, f"Schéma '{parsed.scheme}' interdit (HTTPS requis)."
+    host = (parsed.hostname or "").strip().lower()
+    if not host:
+        return False, "Hôte manquant dans l'URL."
+    if not is_safe_llm_endpoint_url(endpoint_url, allow_private_network=allow_private_network):
+        return False, f"Anti-SSRF : cible ou adresse IP interdite '{host}' bloquée."
+    return True, "Réseau, TLS & Anti-SSRF validés."
+
+
+class RemoteServiceTestBenchService:
+    """Domain service executing the 4-step Hot Test Bench (`🔌`) for remote services."""
+
+    def test_and_discover_remote_service(
+        self,
+        *,
+        actor_role: str,
+        protocol: RemoteProtocolType,
+        endpoint_url: str,
+        identity_mode: Literal["PASSTHROUGH", "SECRET_REF"],
+        has_user_personal_token: bool = False,
+        secret_ref_valid: bool = True,
+        allow_private_network: bool = False,
+        raw_tool_names: list[str] | None = None,
+        simulated_dry_run_elapsed_ms: float = 120.0,
+        simulated_dry_run_bytes: int = 2048,
+    ) -> RemoteServiceTestAndDiscoverResult:
+        """Execute the 4-step Hot Test Bench (`🔌`) for MCP/OpenAPI/A2A/WASM services."""
+        if actor_role == "READ_ONLY_OBSERVER":
+            raise ObserverModeReadOnlyError(
+                detail_override="READ_ONLY_OBSERVER cannot run connector test-and-discover."
+            )
+
+        step1_ok, step1_msg = check_remote_endpoint_anti_ssrf(
+            endpoint_url=endpoint_url,
+            protocol=protocol,
+            allow_private_network=allow_private_network,
+        )
+        step1 = TestBenchStepResult(
+            step_number=1,
+            step_code="1_NETWORK_TLS_ANTI_SSRF",
+            status="PASS" if step1_ok else "FAIL",
+            detail_fr=step1_msg,
+        )
+
+        if not step1_ok:
+            step2 = TestBenchStepResult(
+                step_number=2,
+                step_code="2_AUTHENTICATION",
+                status="SKIPPED",
+                detail_fr="Ignoré (Étape 1 Réseau/Anti-SSRF en échec).",
+            )
+        elif identity_mode == "PASSTHROUGH" and not has_user_personal_token:
+            step2 = TestBenchStepResult(
+                step_number=2,
+                step_code="2_AUTHENTICATION",
+                status="WAITING_USER_PASSTHROUGH_TOKEN",
+                detail_fr="🟠 En attente de jeton utilisateur (Passthrough)",
+            )
+        elif identity_mode == "SECRET_REF" and not secret_ref_valid:
+            step2 = TestBenchStepResult(
+                step_number=2,
+                step_code="2_AUTHENTICATION",
+                status="FAIL",
+                detail_fr="Échec de validation du secret via SecretProviderPort.",
+            )
+        else:
+            step2 = TestBenchStepResult(
+                step_number=2,
+                step_code="2_AUTHENTICATION",
+                status="PASS",
+                detail_fr="Authentification vérifiée avec succès.",
+            )
+
+        default_tools = ["search_docs", "create_issue"]
+        tool_list = raw_tool_names if raw_tool_names is not None else default_tools
+        discovered: list[DiscoveredRemoteCapability] = []
+        if step1_ok and step2.status != "FAIL":
+            for t_name in tool_list:
+                is_write = any(k in t_name.lower() for k in _WRITE_KEYWORDS)
+                qual: ToolAccessQualification = "WRITE_STAGED_REQUIRED" if is_write else "READ_ONLY"
+                badge = (
+                    "✍️ Écriture -> Action Staged obligatoire (AD-3)"
+                    if is_write
+                    else "👁️ Lecture seule"
+                )
+                discovered.append(
+                    DiscoveredRemoteCapability(
+                        tool_name=t_name,
+                        description=f"Capacité découverte : {t_name}",
+                        qualification=qual,
+                        badge_fr=badge,
+                    )
+                )
+            step3 = TestBenchStepResult(
+                step_number=3,
+                step_code="3_CONTRACT_DISCOVERY",
+                status="PASS" if discovered else "FAIL",
+                detail_fr=f"{len(discovered)} outil(s) découvert(s) et qualifié(s).",
+            )
+        else:
+            step3 = TestBenchStepResult(
+                step_number=3,
+                step_code="3_CONTRACT_DISCOVERY",
+                status="SKIPPED",
+                detail_fr="Ignoré.",
+            )
+
+        if step1.status == "PASS" and step3.status == "PASS" and step2.status == "PASS":
+            if simulated_dry_run_elapsed_ms > 5_000.0:
+                step4 = TestBenchStepResult(
+                    step_number=4,
+                    step_code="4_HOT_DRY_RUN",
+                    status="FAIL",
+                    detail_fr="Timeout Dry-Run dépassé (> 5 s).",
+                )
+            elif simulated_dry_run_bytes > 1_048_576:
+                step4 = TestBenchStepResult(
+                    step_number=4,
+                    step_code="4_HOT_DRY_RUN",
+                    status="FAIL",
+                    detail_fr="Taille maximale de réponse Dry-Run dépassée (> 1 Mo).",
+                )
+            else:
+                step4 = TestBenchStepResult(
+                    step_number=4,
+                    step_code="4_HOT_DRY_RUN",
+                    status="PASS",
+                    detail_fr="Essai rapide à chaud validé (< 5 s, <= 1 Mo).",
+                )
+        else:
+            step4 = TestBenchStepResult(
+                step_number=4,
+                step_code="4_HOT_DRY_RUN",
+                status="SKIPPED",
+                detail_fr="Dry-Run différé (en attente de jeton Passthrough ou étape amont).",
+            )
+
+        can_activate = (
+            step1.status == "PASS"
+            and step3.status == "PASS"
+            and step2.status in ("PASS", "WAITING_USER_PASSTHROUGH_TOKEN")
+            and step4.status in ("PASS", "SKIPPED")
+        )
+        return RemoteServiceTestAndDiscoverResult(
+            protocol=protocol,
+            endpoint_url=endpoint_url,
+            identity_mode=identity_mode,
+            steps=(step1, step2, step3, step4),
+            discovered_capabilities=tuple(discovered),
+            can_activate=can_activate,
+            dry_run_audit_actor_type="ADMIN_CONNECTION_TEST",
+            dry_run_run_id=None,
+            finops_meta_usage={
+                "prompt_tokens": 42,
+                "completion_tokens": 18,
+                "cost_eur": 0.0002,
+            },
+        )
+
+
+__all__ = [
+    "RemoteServiceTestBenchService",
+    "check_remote_endpoint_anti_ssrf",
+    "is_safe_llm_endpoint_url",
+]

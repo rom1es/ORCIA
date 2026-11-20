@@ -1,10 +1,11 @@
-"""Epic 11 Story 11.3 Router — 4-Step Test Bench (`🔌`) & Governed MCP Server (`/api/v1/mcp`)."""
+"""Epic 11 Story 11.3 / 24.3 Router — 4-Step Test Bench (`🔌`) & Governed MCP Server."""
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query, Request
 
 from orcia_api.dependencies import (
     get_audit_ledger_service,
@@ -19,6 +20,7 @@ from orcia_api.schemas.mcp_test_bench import (
     ExposedMcpAgentResponse,
     GovernedMcpInvokeRequest,
     GovernedMcpInvokeResponse,
+    McpExposureStateResponse,
     RemoteServiceTestAndDiscoverRequest,
     RemoteServiceTestAndDiscoverResponse,
     TestBenchStepResultSchema,
@@ -31,6 +33,7 @@ from orcia_core.audit_finops import (
     map_domain_event_to_ledger_entry,
 )
 from orcia_core.kernel.events import AdminConnectionTested
+from orcia_core.observability.logging import get_current_trace_id
 from orcia_core.orchestration.remote_test_bench_and_mcp_exposure import (
     RemoteServiceTestBenchAndGovernedMcpService,
 )
@@ -67,12 +70,13 @@ UsageSanitizerDep = Annotated[
     summary="Run the 4-Step Hot Test Bench & Contract Discovery (Story 11.3)",
 )
 async def test_and_discover_connector(
+    request: Request,
     body: RemoteServiceTestAndDiscoverRequest,
     user: CurrentUserDep,
     svc: TestBenchMcpServiceDep,
     audit_svc: AuditLedgerServiceDep,
 ) -> RemoteServiceTestAndDiscoverResponse:
-    """Execute the 4-step Hot Test Bench (`🔌`) for MCP/OpenAPI/A2A/WASM services."""
+    """Execute the 4-step Hot Test Bench (`🔌`) and record `ADMIN_CONNECTION_TEST` audit."""
     res = svc.test_and_discover_remote_service(
         actor_role=user.platform_role,
         protocol=body.protocol,
@@ -86,6 +90,7 @@ async def test_and_discover_connector(
         simulated_dry_run_bytes=body.simulated_dry_run_bytes,
     )
     status_str = "SUCCESS" if res.can_activate else "FAILURE"
+    trace_id = str(getattr(request.state, "trace_id", None) or get_current_trace_id())
     evt = AdminConnectionTested.create(
         actor_id=user.id,
         target_type="MCP_CONNECTOR",
@@ -96,6 +101,7 @@ async def test_and_discover_connector(
         detail=(
             f"Banc de test connecteur {body.protocol}: {'Activé' if res.can_activate else 'Refusé'}"
         ),
+        trace_id=trace_id,
         metadata={
             "actor_type": "ADMIN_CONNECTION_TEST",
             "actor_display_name": getattr(user, "display_name", None),
@@ -105,7 +111,7 @@ async def test_and_discover_connector(
             "tools_count": len(res.discovered_capabilities),
         },
     )
-    entry = map_domain_event_to_ledger_entry(evt)
+    entry = replace(map_domain_event_to_ledger_entry(evt), event_type="ADMIN_CONNECTION_TEST")
     await audit_svc.record_entry(entry)
 
     return RemoteServiceTestAndDiscoverResponse(
@@ -137,23 +143,62 @@ async def test_and_discover_connector(
     )
 
 
+@router.get(
+    "/mcp/exposure",
+    response_model=McpExposureStateResponse,
+    summary="Read persisted MCP exposure state for a workspace from PG18 (Story 24.3)",
+)
+async def get_mcp_exposure_state(
+    user: CurrentUserDep,
+    svc: TestBenchMcpServiceDep,
+    workspace_slug: str = Query(default="global", min_length=1, max_length=128),
+) -> McpExposureStateResponse:
+    """Return persisted governed MCP exposure entries and tools for `workspace_slug`."""
+    _ = user
+    specs = await svc.list_exposed_agents_async(workspace_slug=workspace_slug)
+    tools = list(
+        await svc.list_governed_mcp_tools_async(
+            workspace_slug=workspace_slug,
+            caller_verbs={"execute"},
+        )
+    )
+    agent_items = [
+        ExposedMcpAgentResponse(
+            agent_slug=s.agent_slug,
+            workspace_slug=s.workspace_slug,
+            display_name=s.display_name,
+            mcp_exposed=s.mcp_exposed,
+            regime=s.regime,
+            human_authored_required=s.human_authored_required,
+            exposed_tools=tools if s.mcp_exposed else [],
+        )
+        for s in specs
+    ]
+    return McpExposureStateResponse(
+        workspace_slug=workspace_slug,
+        agents=agent_items,
+        exposed_tools=tools,
+        any_exposed=any(s.mcp_exposed for s in specs),
+    )
+
+
 @router.put(
     "/mcp/exposure",
     response_model=ExposedMcpAgentResponse,
     summary="Configure MCP exposure on a local Agent or Workspace Assistant (Story 11.3)",
 )
-def configure_mcp_exposure(
+async def configure_mcp_exposure(
     body: ConfigureAgentMcpExposureRequest,
     user: CurrentUserDep,
     svc: TestBenchMcpServiceDep,
 ) -> ExposedMcpAgentResponse:
-    """Toggle `🔌 Exposer en MCP` and return the dynamic `tools/list`."""
+    """Toggle `🔌 Exposer en MCP`, persist in PG18, and return dynamic `tools/list`."""
     if body.pat_token_to_register:
-        svc.register_pat_mcp_token(
+        await svc.register_pat_mcp_token_async(
             raw_pat_token=body.pat_token_to_register,
             allowed_workspace_slugs={body.workspace_slug},
         )
-    spec = svc.configure_agent_mcp_exposure(
+    spec = await svc.configure_agent_mcp_exposure_async(
         actor_role=user.platform_role,
         workspace_slug=body.workspace_slug,
         agent_slug=body.agent_slug,
@@ -161,8 +206,9 @@ def configure_mcp_exposure(
         mcp_exposed=body.mcp_exposed,
         regime=body.regime,
         human_authored_required=body.human_authored_required,
+        updated_by=user.id,
     )
-    tools = svc.list_governed_mcp_tools(
+    tools = await svc.list_governed_mcp_tools_async(
         workspace_slug=body.workspace_slug,
         caller_verbs={"execute"},
     )
@@ -196,7 +242,7 @@ async def invoke_governed_mcp_agent(
     if not decision.is_allowed or decision.circuit_state == "CIRCUIT_OPEN":
         raise ConnectorCircuitOpenError(detail_override=decision.reason)
 
-    res = svc.invoke_governed_mcp_tool(
+    res = await svc.invoke_governed_mcp_tool_async(
         raw_pat_token=body.raw_pat_token,
         workspace_slug=workspace_slug,
         agent_slug=body.agent_slug,

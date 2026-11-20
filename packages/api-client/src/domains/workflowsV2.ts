@@ -2,6 +2,7 @@ import type {
   DeclarativePacksListResponse,
   DeclarativePackSummaryResponse,
   HitlSignalRequest,
+  PacksConnectorHealthResponse,
   SaveWorkflowV2Request,
   SaveWorkflowV2Response,
   StartWorkflowV2RunRequest,
@@ -24,7 +25,11 @@ type RequestBinaryFn = ReturnType<typeof createRequestBinary>;
 export type ApiWorkflowDefinitionV2 = components["schemas"]["WorkflowDefinitionV2-Output"];
 export type ApiValueStreamMapSpec = components["schemas"]["ValueStreamMapSpec"];
 export type ApiImpactAssessmentResult = components["schemas"]["ImpactAssessmentResult"];
-export type { DeclarativePacksListResponse, DeclarativePackSummaryResponse };
+export type {
+  DeclarativePacksListResponse,
+  DeclarativePackSummaryResponse,
+  PacksConnectorHealthResponse,
+};
 
 export interface SaveWorkflowV2Options {
   readonly workspaceId?: string;
@@ -38,6 +43,9 @@ export function createWorkflowsV2DomainClient(
   return {
     listDeclarativePacks(): Promise<DeclarativePacksListResponse> {
       return requestJson<DeclarativePacksListResponse>("/api/v1/packs");
+    },
+    getPacksHealth(): Promise<PacksConnectorHealthResponse> {
+      return requestJson<PacksConnectorHealthResponse>("/api/v1/packs/health");
     },
     exportWorkspacePackZip(
       workspaceId: string,

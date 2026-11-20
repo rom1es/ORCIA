@@ -15911,6 +15911,42 @@
         "title": "LogoutResponse",
         "type": "object"
       },
+      "McpExposureStateResponse": {
+        "additionalProperties": false,
+        "description": "Persisted MCP exposure state & dynamic tool list for a workspace.",
+        "properties": {
+          "agents": {
+            "items": {
+              "$ref": "#/components/schemas/ExposedMcpAgentResponse"
+            },
+            "title": "Agents",
+            "type": "array"
+          },
+          "any_exposed": {
+            "title": "Any Exposed",
+            "type": "boolean"
+          },
+          "exposed_tools": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exposed Tools",
+            "type": "array"
+          },
+          "workspace_slug": {
+            "title": "Workspace Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_slug",
+          "agents",
+          "exposed_tools",
+          "any_exposed"
+        ],
+        "title": "McpExposureStateResponse",
+        "type": "object"
+      },
       "McpPersonalTokenCreateRequest": {
         "additionalProperties": false,
         "description": "Story 9.4 — Request payload for `POST /api/v1/users/me/mcp-tokens` (`pat_mcp_*`, SHA-256).",
@@ -18437,6 +18473,43 @@
           "event_ids"
         ],
         "title": "OutboxReplayResponse",
+        "type": "object"
+      },
+      "PacksConnectorHealthResponse": {
+        "description": "Live connector healthcheck summary across all declarative packs.",
+        "properties": {
+          "all_healthy": {
+            "title": "All Healthy",
+            "type": "boolean"
+          },
+          "checked_at_iso": {
+            "title": "Checked At Iso",
+            "type": "string"
+          },
+          "connectors": {
+            "items": {
+              "$ref": "#/components/schemas/ConnectorRequirementHealthItemResponse"
+            },
+            "title": "Connectors",
+            "type": "array"
+          },
+          "healthy_count": {
+            "title": "Healthy Count",
+            "type": "integer"
+          },
+          "total_count": {
+            "title": "Total Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "connectors",
+          "healthy_count",
+          "total_count",
+          "all_healthy",
+          "checked_at_iso"
+        ],
+        "title": "PacksConnectorHealthResponse",
         "type": "object"
       },
       "PassthroughSecretMetadataResponse": {
@@ -48805,8 +48878,140 @@
       }
     },
     "/api/v1/mcp/exposure": {
+      "get": {
+        "description": "Return persisted governed MCP exposure entries and tools for `workspace_slug`.",
+        "operationId": "get_mcp_exposure_state_api_v1_mcp_exposure_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "workspace_slug",
+            "required": false,
+            "schema": {
+              "default": "global",
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Workspace Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpExposureStateResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Read persisted MCP exposure state for a workspace from PG18 (Story 24.3)",
+        "tags": [
+          "mcp-and-connectors"
+        ]
+      },
       "put": {
-        "description": "Toggle `🔌 Exposer en MCP` and return the dynamic `tools/list`.",
+        "description": "Toggle `🔌 Exposer en MCP`, persist in PG18, and return dynamic `tools/list`.",
         "operationId": "configure_mcp_exposure_api_v1_mcp_exposure_put",
         "parameters": [
           {
@@ -55294,6 +55499,110 @@
         ]
       }
     },
+    "/api/v1/packs/health": {
+      "get": {
+        "description": "Probe live connector health across all loaded declarative packs.",
+        "operationId": "check_packs_connectors_health_api_v1_packs_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PacksConnectorHealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Check Packs Connectors Health",
+        "tags": [
+          "Declarative Packs (Epic 15)"
+        ]
+      }
+    },
     "/api/v1/permissions/broker/check-access": {
       "post": {
         "description": "Execute governed connector access check with anti-Confused Deputy and Jira KB brokering.",
@@ -59875,7 +60184,7 @@
     },
     "/api/v1/settings/connectors/test-and-discover": {
       "post": {
-        "description": "Execute the 4-step Hot Test Bench (`🔌`) for MCP/OpenAPI/A2A/WASM services.",
+        "description": "Execute the 4-step Hot Test Bench (`🔌`) and record `ADMIN_CONNECTION_TEST` audit.",
         "operationId": "test_and_discover_connector_api_v1_settings_connectors_test_and_discover_post",
         "parameters": [
           {

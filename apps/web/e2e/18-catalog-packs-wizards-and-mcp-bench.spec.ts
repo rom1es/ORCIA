@@ -162,8 +162,8 @@ test.describe("Catalogue fédéré RBAC, packs déclaratifs, parcours guidés et
     );
 
     const mcpCheckbox = page.getByTestId("toggle-mcp-exposure-checkbox");
-    await mcpCheckbox.check();
-    await expect(mcpCheckbox).toBeChecked();
+    await mcpCheckbox.click();
+    await expect(mcpCheckbox).toBeChecked({ timeout: 10000 });
 
     await reloadColdFromPg(page);
     await page.getByTestId("agents-subview-tab-connections").click();

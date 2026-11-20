@@ -99,9 +99,7 @@ def get_reflexive_runtime_service(request: Request) -> NonDeterministicReflexive
         initialize_app_services(request.app)
 
     session_maker = _resolve_reflexive_session_maker(request)
-    strict_sql = (session_maker is not None) or (
-        os.environ.get("ORCIA_ENABLE_PG_SESSION_MAKER") == "1"
-    )
+    strict_sql = (session_maker is not None) or should_auto_init_infra("DATABASE_URL")
     session_store = SqlReflexiveSessionStore(
         session_maker=session_maker,
         strict_sql=strict_sql,
@@ -121,31 +119,37 @@ def get_reflexive_runtime_service(request: Request) -> NonDeterministicReflexive
 
 def get_workflows_v2_sql_store(request: Request) -> SqlWorkflowDefinitionsV2Store:
     """FastAPI `Depends` provider returning `SqlWorkflowDefinitionsV2Store` (PostgreSQL 18)."""
+    session_maker = _resolve_reflexive_session_maker(request)
+    strict_sql = (session_maker is not None) or should_auto_init_infra("DATABASE_URL")
     store: SqlWorkflowDefinitionsV2Store | None = getattr(
         request.app.state, "workflows_v2_sql_store", None
     )
     if store is None:
-        session_maker = _resolve_reflexive_session_maker(request)
-        strict_sql = (session_maker is not None) or should_auto_init_infra("DATABASE_URL")
         store = SqlWorkflowDefinitionsV2Store(
             session_maker=session_maker,
             strict_sql=strict_sql,
         )
         request.app.state.workflows_v2_sql_store = store
+    elif getattr(store, "_session_maker", None) is None and session_maker is not None:
+        store._session_maker = session_maker
+        store._strict_sql = True
     return store
 
 
 def get_vsm_v2_sql_store(request: Request) -> SqlVsmDefinitionsV2Store:
     """FastAPI `Depends` provider returning `SqlVsmDefinitionsV2Store` (PostgreSQL 18)."""
+    session_maker = _resolve_reflexive_session_maker(request)
+    strict_sql = (session_maker is not None) or should_auto_init_infra("DATABASE_URL")
     store: SqlVsmDefinitionsV2Store | None = getattr(request.app.state, "vsm_v2_sql_store", None)
     if store is None:
-        session_maker = _resolve_reflexive_session_maker(request)
-        strict_sql = (session_maker is not None) or should_auto_init_infra("DATABASE_URL")
         store = SqlVsmDefinitionsV2Store(
             session_maker=session_maker,
             strict_sql=strict_sql,
         )
         request.app.state.vsm_v2_sql_store = store
+    elif getattr(store, "_session_maker", None) is None and session_maker is not None:
+        store._session_maker = session_maker
+        store._strict_sql = True
     return store
 
 

@@ -2,7 +2,7 @@
 
 - **Story :** `24-3-banc-mcp-audit-ledger-fin-pass-optimiste-et-assainissement-composition-root` (Epic 24 — Vague 0 `P0/P1`)
 - **Date :** 2026-11-20
-- **Statut :** `En attente d'implémentation` (initialisé par `Story 23.8`)
+- **Statut :** `Terminé (`done`)` — Validé 5 couches `AD-17` (`92 %` couv. combinée, `9/9` Turbo, `7/7` E2E Desktop `03`/`19`/`18#2..18#5`)
 - **Plan directeur :** [`sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md`](../../planning-artifacts/sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md)
 - **Références remédiées :** `REM24-05`, `REM24-06` | Échec E2E `18#5 #45` | Constat `UX23-08` (étapes banc MCP) | Diagnostics `ARCH24-05`, `ARCH24-07`, `ARCH24-12`
 - **Capacité(s) (`capabilities.yaml`) :** `CAP-055`, `CAP-082`, `CAP-092`, `CAP-150`, `CAP-200` (`5` capacités Desktop `failed_e2e`)
@@ -67,13 +67,35 @@ Le scénario `18#5 #45` (`18-catalog-packs-wizards-and-mcp-bench.spec.ts`) écho
 
 ## 3. Bilan des Modifications & Résultats
 
-> **Statut :** `En attente d'implémentation` — Cette section sera complétée après implémentation, passage des 5 couches `AD-17`, ré-indexation GitNexus (`npx gitnexus analyze` + `gitnexus_detect_changes()`) et exécution de `pnpm site:sync`.
+> **Statut :** `Terminé (done)` — Validé sur les 5 couches `AD-17` (Unitaires Python, Vitest `@orcia/ui` & `@orcia/web`, Intégration `testcontainers` PG18 + Redis `7.4` sur `create_app()` sans override, Couverture combinée `92 %` & Statique, Playwright E2E réel sans retry), ré-indexation GitNexus (`npx gitnexus analyze` + `gitnexus_detect_changes`) et synchronisation vitrine (`pnpm site:sync && pnpm site:check`).
 
-| Fichier / Composant | Action Prévue | Statut |
+| Fichier / Composant | Action Réalisée | Statut |
 |---|---|---|
-| `packages/orcia-core/.../orchestration/remote_test_bench_and_mcp_exposure.py` | Split `< 350` L + PG18 MCP exposure/PAT | `En attente d'implémentation` |
-| `packages/orcia-core/.../audit_finops/outbox_subscriber.py` | Contrat `ADMIN_CONNECTION_TEST` `audit_ledger` | `En attente d'implémentation` |
-| `packages/orcia-core/.../rag/two_speed_search.py` | Migration `_speed2_cache` vers Redis `300s` | `En attente d'implémentation` |
-| `apps/api/src/orcia_api/{dependencies/,routers/mcp_and_test_bench.py}` | Assainissement Composition Root & DI | `En attente d'implémentation` |
-| `apps/web/src/features/catalog/useCatalogRemoteTestBench.ts` + `@orcia/ui` | Fin `PASS` optimiste & `PUT /api/v1/mcp/exposure` | `En attente d'implémentation` |
-| `apps/web/src/features/{settings/packs/PacksRegistryPage.tsx,cockpit/index.tsx}` | Healthchecks API réels & `wfKey` réel | `En attente d'implémentation` |
+| `packages/orcia-core/.../orchestration/{remote_test_bench_models.py,remote_test_bench.py,governed_mcp_exposure.py,_internal/sql_mcp_exposure.py,remote_test_bench_and_mcp_exposure.py}` | Découpage `< 355` L (`137`/`256`/`351`/`310`/`258` L), garde SSRF `is_safe_llm_endpoint_url`, mode `strict_sql=True` fail-closed, persistance PG18 `mcp_exposed_agents` & hash SHA-256 `mcp_governed_pat_tokens` + miroir `catalog_items` | `Terminé` |
+| `infra/migrations/versions/20261120_2403_story_24_3_mcp_exposures_and_audit_contract.py` + `infra/scripts/maintenance/_first_boot_reset_guards.py` | Révision `Expand` SQL pur `20261120_2403` (round-trip `upgrade`/`downgrade`/`upgrade` validé PG18) + purge Jour 0 dans `ORDERED_MUTABLE_TABLES_TO_CLEAR` | `Terminé` |
+| `packages/orcia-core/.../audit_finops/outbox_subscriber.py` + `apps/api/.../routers/mcp_and_test_bench.py` + `apps/web/src/routes/activityFormatters.ts` | Support `ADMIN_CONNECTION_TEST` dans `AUDITABLE_EVENT_TYPES`, écriture append-only `audit_ledger`, routes `GET`/`PUT /api/v1/mcp/exposure` & `POST /api/v1/mcp/spaces/{ws}/invoke`, libellés FR/EN | `Terminé` |
+| `packages/orcia-core/.../rag/{_speed2_redis_cache.py,two_speed_search.py}` + `apps/api/.../routers/portal_and_help.py` | Migration `_speed2_cache` vers Redis `7.4` (`TTL = 300s`), clé déterministe cloisonnée sur `(user_id, user_role, workspace_id, scope, active_screen_route, locale)` | `Terminé` |
+| `apps/api/.../{dependencies/,routers/packs.py,schemas/}` + `packages/api-client/` | Assainissement Composition Root (`strict_sql=True` sous PG18, zéro fallback RAM silencieux), `GET /api/v1/packs/health` et régénération OpenAPI `0-diff` | `Terminé` |
+| `apps/web/src/features/catalog/useCatalogRemoteTestBench.ts` + `packages/ui/.../RemoteServiceTestBenchAndMcpExposureView.tsx` + `governance_and_packs_labels.ts` | Fin du `PASS` optimiste synchrone (`isTesting`), bascule sur HTTP `200` uniquement, `[role="alert"]` sur `>= 400`, relecture `GET /api/v1/mcp/exposure` au montage (survie `F5`), libellés FR/EN | `Terminé` |
+| `apps/web/src/features/settings/packs/{PacksRegistryPage.tsx,PackCardItem.tsx,usePacksRegistryHealthchecks.ts}` + `cockpit/index.tsx` + `run_lock_service.py` | Découpage `< 200` L, healthchecks réels `/api/v1/packs/health`, `handleExportPackBundleZip` (`platform`), et transmission du `wfKey` réel (`assistant-agent` inclus) dans `cockpit/index.tsx` | `Terminé` |
+| `tests/{unit/test_story_24_3_mcp_bench_audit_and_redis.py,integration/test_story_24_3_mcp_audit_and_redis_postgres18.py}` + `packages/ui/src/__tests__/story-24-3-*` + `apps/web/src/__tests__/story-24-3-*` + `apps/web/e2e/18-*` | Suite complète `AD-17` 5 couches (couverture combinée `92 %`, `testcontainers` PG18 + Redis `7.4`, Vitest React sans `isJsdom`, Playwright `click()` + `toBeChecked()` sur case asynchrone) | `Terminé` |
+
+### 3.1 Résultats des Vérifications `AD-17` & Métriques Exactes
+
+- **Couche 1a (Unitaires Python)** : `.venv/bin/pytest tests/unit/test_story_24_3_mcp_bench_audit_and_redis.py` $\rightarrow$ **`25 passed in 10.72s`** (et `71 passed` sur l'ensemble unitaires Story 24.3 + `11_3` + `9_3` + `23_5` + `6_1` + `7_1/7_2` + `packs` + audit anti-patterns).
+- **Couche 1b (React Vitest & Workspaces JS/TS)** : `pnpm turbo run lint typecheck test` $\rightarrow$ **`9 successful, 9 total`** :
+  - `@orcia/api-client` : `3 passed (3)` fichiers, `20 passed (20)` tests
+  - `@orcia/ui` : `32 passed (32)` fichiers, `128 passed (128)` tests (dont `story-24-3-remote-test-bench-and-mcp-exposure.test.tsx` `2/2`)
+  - `@orcia/web` : `58 passed (58)` fichiers, `229 passed (229)` tests (dont `story-24-3-mcp-bench-packs-health-and-cockpit-wfkey.test.tsx` `4/4`)
+- **Couche 2 (`testcontainers` PostgreSQL 18 + Redis `7.4` sur `create_app()` réel)** : `.venv/bin/pytest tests/integration/test_story_24_3_mcp_audit_and_redis_postgres18.py` $\rightarrow$ **`2 passed in 28.43s`** (round-trip Alembic `20261120_2403` $\rightarrow$ `20261120_2402` $\rightarrow$ `head`, `SELECT` SQL `audit_ledger WHERE event_type = 'ADMIN_CONNECTION_TEST'`, relecture à froid `create_app()` #2 `mcp_exposed_agents` & `catalog_items`, SHA-256 `mcp_governed_pat_tokens` sans secret en clair, `TTL <= 300s` & isolation multi-utilisateur/rôle/locale sous Redis `7.4`, purge `09_reset_db_first_boot.py` conservant `audit_ledger`).
+- **Couche 3 (Couverture combinée & Statique / Sécurité)** :
+  - Couverture combinée (`coverage run` + `coverage combine` Couche 1a + Couche 2 sur les `11` modules Python Story 24.3) : **`92 %`** (`770 Stmts, 47 Miss, 170 Branch, 11 BrPart` — `governed_mcp_exposure.py` `100 %`, `remote_test_bench_and_mcp_exposure.py` `100 %`, `remote_test_bench_models.py` `100 %`, `_speed2_redis_cache.py` `100 %`, `mcp_test_bench.py` `100 %`, `two_speed_search.py` `99 %`, `remote_test_bench.py` `97 %`, `mcp_and_test_bench.py` `95 %`, `sql_mcp_exposure.py` `90 %`, `packs.py` `88 %`, `outbox_subscriber.py` `74 %`).
+  - `.venv/bin/ruff check .` : **`All checks passed!`**
+  - `.venv/bin/ruff format --check .` : **`1308 files already formatted`**
+  - `.venv/bin/mypy --strict packages/orcia-core packages/orcia-connectors apps/api apps/worker` : **`Success: no issues found in 574 source files`**
+  - `.venv/bin/lint-imports` : **`Contracts: 5 kept, 0 broken`** (`617 files, 4442 dependencies`)
+  - `.venv/bin/python scripts/export_openapi.py --check` : **`PASS` (`exit code 0`)**
+  - `.venv/bin/pre-commit run detect-secrets --files ...` : **`Passed`** (`0` secret exposé)
+- **Couche 5 (Playwright E2E réel `--project=desktop-cockpit --retries=0`)** :
+  - `ORCIA_E2E_CAMPAIGN_DIR=/tmp/orcia-e2e-story-24-3 pnpm --filter @orcia/web exec playwright test e2e/03-human-led-anchor-and-arbitration.spec.ts e2e/19-orchestration-whatif-replay-and-gates.spec.ts e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts --grep-invert "Explorateur du catalogue fédéré" --project=desktop-cockpit --retries=0` $\rightarrow$ **`7 passed (2.1m)`** (`0 failed` : `03`, `19#1`, `19#2`, `18#2`, `18#3`, `18#4`, **`18#5 #45`** avec `reloadColdFromPg` + SQL `audit_ledger` `ADMIN_CONNECTION_TEST` + `catalog_items` ; `18#1` isolé uniquement sur `openCatalogOrAgentsPage` planifié en Story `24.7`).
+- **GitNexus** : `npx gitnexus analyze` (`40,785 nodes | 167,662 edges | 697 clusters | 1492 flows`) + `gitnexus_detect_changes(repo="/home/romain/Documents/Projects/ORCIA", scope="all")` $\rightarrow$ `changed_count: 21`, `affected_count: 1492`, `changed_files: 32`, `risk_level: "critical"`.

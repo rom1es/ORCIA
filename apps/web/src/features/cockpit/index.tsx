@@ -100,6 +100,11 @@ export function CockpitFeaturePanel() {
       return;
     }
     const wfKey = selectedWfKey || workflows[0]?.workflowKey || "assistant-agent";
+    const workflowUri = wfKey.includes("://")
+      ? wfKey
+      : wfKey === "assistant-agent"
+        ? "orcia://system/workflows/assistant-agent"
+        : `orcia://workflows/${wfKey}`;
     launchRun({
       workspaceId: targetWs.workspaceId,
       workspaceName: targetWs.name,
@@ -110,7 +115,7 @@ export function CockpitFeaturePanel() {
     void (async () => {
       try {
         const res = await createOrciaApiClient({ baseUrl: "" }).instantiateWorkflowRun({
-          workflow_uri: "orcia://workflows/claims-engineering-delivery",
+          workflow_uri: workflowUri,
           workspace_id: targetWs.workspaceId,
         });
         if (res?.run?.id) {

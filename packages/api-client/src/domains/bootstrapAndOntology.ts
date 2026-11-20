@@ -104,6 +104,12 @@ export type TestAndDiscoverConnectorRequest =
   components["schemas"]["RemoteServiceTestAndDiscoverRequest"];
 export type ConnectorTestBenchReportResponse =
   components["schemas"]["RemoteServiceTestAndDiscoverResponse"];
+export type ConfigureAgentMcpExposureRequest =
+  components["schemas"]["ConfigureAgentMcpExposureRequest"];
+export type ExposedMcpAgentResponse =
+  components["schemas"]["ExposedMcpAgentResponse"];
+export type McpExposureStateResponse =
+  components["schemas"]["McpExposureStateResponse"];
 export type ValidateHelpArticleRequest = components["schemas"]["ValidateHelpArticleRequest"];
 export type HelpArticleValidationResponse = components["schemas"]["ValidateHelpArticleResponse"];
 export type { LlmConnectionTestRequest, LlmConnectionTestResponse };
@@ -234,6 +240,13 @@ export function createBootstrapAndOntologyDomainClient(
     },
     runRemoteServiceTestBench(payload: TestAndDiscoverConnectorRequest): Promise<ConnectorTestBenchReportResponse> {
       return requestJson<ConnectorTestBenchReportResponse>("/api/v1/settings/connectors/test-and-discover", "POST", payload);
+    },
+    getMcpExposureState(workspaceSlug = "global"): Promise<McpExposureStateResponse> {
+      const qs = new URLSearchParams({ workspace_slug: workspaceSlug }).toString();
+      return requestJson<McpExposureStateResponse>(`/api/v1/mcp/exposure?${qs}`);
+    },
+    configureAgentMcpExposure(payload: ConfigureAgentMcpExposureRequest): Promise<ExposedMcpAgentResponse> {
+      return requestJson<ExposedMcpAgentResponse>("/api/v1/mcp/exposure", "PUT", payload);
     },
     validateHelpArticle(payload: ValidateHelpArticleRequest): Promise<HelpArticleValidationResponse> {
       return requestJson<HelpArticleValidationResponse>("/api/v1/pack-builder/processes/validate-help-article", "POST", payload);

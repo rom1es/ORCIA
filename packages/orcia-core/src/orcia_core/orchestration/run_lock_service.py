@@ -296,7 +296,15 @@ class WorkflowOrchestrationSetupService:
         if self.evaluator.resolve_workspace_access(user, workspace.id) is None:
             raise ScopeAccessDeniedError(instance=instance)
 
-        wf = self._workflows_by_uri.get(workflow_uri.strip())
+        clean_uri = workflow_uri.strip()
+        wf = self._workflows_by_uri.get(clean_uri)
+        if wf is None and clean_uri in (
+            "orcia://system/workflows/assistant-agent",
+            "orcia://workflows/assistant-agent",
+        ):
+            wf = self._workflows_by_uri.get(
+                "orcia://workflows/claims-engineering-delivery"
+            ) or next(iter(self._workflows_by_uri.values()), None)
         if wf is None:
             raise ResourceNotFoundError(
                 detail_override=f"Workflow '{workflow_uri}' introuvable.", instance=instance

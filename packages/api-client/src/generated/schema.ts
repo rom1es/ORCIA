@@ -2436,6 +2436,12 @@ export interface components {
       revoked?: boolean;
       trace_id: string;
     };
+    McpExposureStateResponse: {
+      agents: (components["schemas"]["ExposedMcpAgentResponse"])[];
+      any_exposed: boolean;
+      exposed_tools: (string)[];
+      workspace_slug: string;
+    };
     McpPersonalTokenCreateRequest: {
       allowed_workspace_slugs?: (string)[];
       expires_in_days?: number;
@@ -2801,6 +2807,13 @@ export interface components {
       event_ids: (string)[];
       replayed_count: number;
       scanned_count: number;
+    };
+    PacksConnectorHealthResponse: {
+      all_healthy: boolean;
+      checked_at_iso: string;
+      connectors: (components["schemas"]["ConnectorRequirementHealthItemResponse"])[];
+      healthy_count: number;
+      total_count: number;
     };
     PassthroughSecretMetadataResponse: {
       connector_scheme: string;
@@ -5819,6 +5832,11 @@ export interface paths {
     };
   };
   "/api/v1/mcp/exposure": {
+    get: {
+      responses: {
+        200: components["schemas"]["McpExposureStateResponse"];
+      };
+    };
     put: {
       responses: {
         200: components["schemas"]["ExposedMcpAgentResponse"];
@@ -6143,6 +6161,13 @@ export interface paths {
     post: {
       responses: {
         200: unknown;
+      };
+    };
+  };
+  "/api/v1/packs/health": {
+    get: {
+      responses: {
+        200: components["schemas"]["PacksConnectorHealthResponse"];
       };
     };
   };
@@ -7184,6 +7209,7 @@ export type LlmConnectionTestResponse = components["schemas"]["LlmConnectionTest
 export type LlmModelEndpointItem = components["schemas"]["LlmModelEndpointItem"];
 export type LocalLoginRequest = components["schemas"]["LocalLoginRequest"];
 export type LogoutResponse = components["schemas"]["LogoutResponse"];
+export type McpExposureStateResponse = components["schemas"]["McpExposureStateResponse"];
 export type McpPersonalTokenCreateRequest = components["schemas"]["McpPersonalTokenCreateRequest"];
 export type McpPersonalTokenIssuedResponse = components["schemas"]["McpPersonalTokenIssuedResponse"];
 export type McpPersonalTokenListResponse = components["schemas"]["McpPersonalTokenListResponse"];
@@ -7228,6 +7254,7 @@ export type OrgUnitTreeItem = components["schemas"]["OrgUnitTreeItem"];
 export type OrgUnitsListResponse = components["schemas"]["OrgUnitsListResponse"];
 export type OutboxReplayRequest = components["schemas"]["OutboxReplayRequest"];
 export type OutboxReplayResponse = components["schemas"]["OutboxReplayResponse"];
+export type PacksConnectorHealthResponse = components["schemas"]["PacksConnectorHealthResponse"];
 export type PassthroughSecretMetadataResponse = components["schemas"]["PassthroughSecretMetadataResponse"];
 export type PassthroughSecretStoreRequest = components["schemas"]["PassthroughSecretStoreRequest"];
 export type PatchPlatformSettingRequest = components["schemas"]["PatchPlatformSettingRequest"];

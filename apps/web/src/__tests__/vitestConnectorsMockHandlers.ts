@@ -154,7 +154,10 @@ export function handleVitestConnectorsRoute(params: HandleConnectorsRouteParams)
   }
 
   // 1b. /api/v1/settings/connectors/{id}
-  if (path.startsWith("/api/v1/settings/connectors/")) {
+  if (
+    path.startsWith("/api/v1/settings/connectors/") &&
+    path !== "/api/v1/settings/connectors/test-and-discover"
+  ) {
     const connId = path.slice("/api/v1/settings/connectors/".length);
     const existing = connectors.find((c) => c.id === connId);
     if (!existing) {

@@ -287,6 +287,19 @@ def initialize_app_services(app: FastAPI) -> None:
     ):
         help_svc_after_redis._redis_client = app.state.redis_client
 
+    search_svc_after_redis = getattr(app.state, "two_speed_search_service", None)
+    if search_svc_after_redis is None:
+        from orcia_core.rag import TwoSpeedFederatedSearchService
+
+        app.state.two_speed_search_service = TwoSpeedFederatedSearchService(
+            redis_client=getattr(app.state, "redis_client", None)
+        )
+    elif (
+        getattr(search_svc_after_redis, "_redis_client", None) is None
+        and getattr(app.state, "redis_client", None) is not None
+    ):
+        search_svc_after_redis.set_redis_client(app.state.redis_client)
+
     if getattr(app.state, "notification_service", None) is None:
         notif_svc = UnifiedNotificationAndClaimService(
             sse_broker=app.state.sse_broker,
@@ -437,6 +450,23 @@ def initialize_app_services(app: FastAPI) -> None:
                     engine=active_db_engine,
                 ),
                 strict_sql=True,
+            )
+        if getattr(app.state, "remote_test_bench_and_mcp_service", None) is None:
+            from orcia_core.orchestration._internal.sql_mcp_exposure import (
+                SqlMcpExposureRepository,
+            )
+            from orcia_core.orchestration.remote_test_bench_and_mcp_exposure import (
+                RemoteServiceTestBenchAndGovernedMcpService,
+            )
+
+            app.state.remote_test_bench_and_mcp_service = (
+                RemoteServiceTestBenchAndGovernedMcpService(
+                    repository=SqlMcpExposureRepository(
+                        session_maker=getattr(app.state, "session_maker", None),
+                        engine=active_db_engine,
+                    ),
+                    strict_sql=True,
+                )
             )
         for attr_name in (
             "audit_ledger_service",

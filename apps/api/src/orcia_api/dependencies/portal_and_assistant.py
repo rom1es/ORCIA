@@ -85,13 +85,21 @@ def get_accostage_service(request: Request) -> ProgressiveDay0AccostageService:
 
 
 def get_two_speed_search_service(request: Request) -> TwoSpeedFederatedSearchService:
-    """FastAPI `Depends` provider returning `TwoSpeedFederatedSearchService`."""
+    """FastAPI `Depends` provider returning `TwoSpeedFederatedSearchService` wired to Redis."""
+    from orcia_api.dependencies._core_providers import should_auto_init_infra
+
+    redis_client = getattr(request.app.state, "redis_client", None)
+    if redis_client is None and should_auto_init_infra("REDIS_URL"):
+        initialize_app_services(request.app)
+        redis_client = getattr(request.app.state, "redis_client", None)
     svc: TwoSpeedFederatedSearchService | None = getattr(
         request.app.state, "two_speed_search_service", None
     )
     if svc is None:
-        svc = TwoSpeedFederatedSearchService()
+        svc = TwoSpeedFederatedSearchService(redis_client=redis_client)
         request.app.state.two_speed_search_service = svc
+    elif getattr(svc, "_redis_client", None) is None and redis_client is not None:
+        svc.set_redis_client(redis_client)
     return svc
 
 

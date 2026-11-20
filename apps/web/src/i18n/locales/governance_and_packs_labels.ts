@@ -65,6 +65,9 @@ export const GOVERNANCE_AND_PACKS_FR_LABELS: GovernanceAndPacksDictionarySection
   remoteServiceTestBench: {
     heading: "🔌 Connexion et Test d'Outils Externes & Accès depuis un Éditeur",
     testAndDiscoverCta: "🔌 Tester la connexion et détecter les actions",
+    testingInProgressCta: "⏳ Vérification en cours…",
+    testingInProgressNotice:
+      "⏳ Vérification en cours auprès du serveur et enregistrement dans le registre d'audit…",
     activateConnectorCta: "✓ Activer ce service dans l'Espace",
     testWithPersonalTokenCta: "🔑 Tester avec mon compte personnel",
     mcpExposureHeading: "Accès depuis un Éditeur de Code Externe",
@@ -72,6 +75,18 @@ export const GOVERNANCE_AND_PACKS_FR_LABELS: GovernanceAndPacksDictionarySection
     mcpIdeBadge: "🔌 Accès éditeur sécurisé · lecture et exécution distinctes",
     ipProtectionNotice:
       "🔒 Confidentialité : Les réglages internes et règles de vérification de vos processus restent protégés.",
+    stepLabels: {
+      "1_NETWORK_TLS_ANTI_SSRF": "Réseau, chiffrement et protection d'adresse",
+      "2_AUTHENTICATION": "Authentification et droits d'accès",
+      "3_CONTRACT_DISCOVERY": "Découverte des actions exposées",
+      "4_HOT_DRY_RUN": "Essai rapide à blanc",
+    },
+    statusLabels: {
+      PASS: "Validé",
+      FAIL: "Échec",
+      WAITING_USER_PASSTHROUGH_TOKEN: "En attente de jeton personnel",
+      SKIPPED: "Ignoré",
+    },
   },
   packBuilderStudio: {
     studioTitle: "🏗️ Création et Évolution de Packs Métiers",
@@ -209,6 +224,9 @@ export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection
   remoteServiceTestBench: {
     heading: "🔌 External Tool Connection Testing & Code Editor Access",
     testAndDiscoverCta: "🔌 Test connection and discover actions",
+    testingInProgressCta: "⏳ Checking connection…",
+    testingInProgressNotice:
+      "⏳ Checking remote service connectivity and recording audit trace…",
     activateConnectorCta: "✓ Enable this service in the Space",
     testWithPersonalTokenCta: "🔑 Test with my personal account",
     mcpExposureHeading: "External Code Editor Access",
@@ -216,6 +234,18 @@ export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection
     mcpIdeBadge: "🔌 Secure editor access · separate read and execute permissions",
     ipProtectionNotice:
       "🔒 Confidentiality: Internal process settings and verification rules remain protected.",
+    stepLabels: {
+      "1_NETWORK_TLS_ANTI_SSRF": "Network, TLS & Address Guard",
+      "2_AUTHENTICATION": "Authentication & Access Control",
+      "3_CONTRACT_DISCOVERY": "Actions & Contract Discovery",
+      "4_HOT_DRY_RUN": "Hot Dry-Run Verification",
+    },
+    statusLabels: {
+      PASS: "Passed",
+      FAIL: "Failed",
+      WAITING_USER_PASSTHROUGH_TOKEN: "Waiting for personal token",
+      SKIPPED: "Skipped",
+    },
   },
   packBuilderStudio: {
     studioTitle: "🏗️ Business Pack Creation and Evolution",

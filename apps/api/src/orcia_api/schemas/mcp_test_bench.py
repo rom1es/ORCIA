@@ -107,6 +107,17 @@ class ExposedMcpAgentResponse(BaseModel):
     exposed_tools: list[str]
 
 
+class McpExposureStateResponse(BaseModel):
+    """Persisted MCP exposure state & dynamic tool list for a workspace."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    workspace_slug: str
+    agents: list[ExposedMcpAgentResponse]
+    exposed_tools: list[str]
+    any_exposed: bool
+
+
 class GovernedMcpInvokeRequest(BaseModel):
     """Request to invoke an agent over `/api/v1/mcp/spaces/{ws_slug}/invoke`."""
 

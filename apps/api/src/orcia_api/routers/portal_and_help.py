@@ -110,13 +110,16 @@ async def execute_two_speed_federated_search(
                 primary_org_unit_id=user.primary_org_unit_id,
             )
 
-    report = svc.execute_search(
+    accept_lang = (request.headers.get("accept-language") or "fr").strip().lower()
+    req_locale = "en" if accept_lang.startswith("en") else "fr"
+    report = await svc.execute_search_async(
         query=q,
         scope=normalized_scope,
         active_workspace_id=effective_ws,
         active_screen_route=screen_route,
         user_id=user.id,
         user_role=user.platform_role,
+        locale=req_locale,
         include_speed2=include_speed2,
         force_semantic=force_semantic,
         query_embedding=query_embedding,

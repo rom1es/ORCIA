@@ -217,6 +217,18 @@ export function handleVitestPacksAndWizardsRoute(params: {
     return jsonResponse({ packs: MOCK_DECLARATIVE_PACKS });
   }
 
+  if (path === "/api/v1/packs/health" && method === "GET") {
+    const connectors = MOCK_DECLARATIVE_PACKS.flatMap((p) => p.connector_health ?? []);
+    const healthyCount = connectors.filter((c) => c.health?.ok).length;
+    return jsonResponse({
+      connectors,
+      healthy_count: healthyCount,
+      total_count: connectors.length,
+      all_healthy: healthyCount === connectors.length,
+      checked_at_iso: "2026-11-20T12:00:00Z",
+    });
+  }
+
   const exportPackMatch = /^\/api\/v1\/packs\/export\/([^/]+)$/.exec(path);
   if (exportPackMatch && method === "POST") {
     if (isObserverRequest(reqHeaders)) {

@@ -14,6 +14,9 @@ from orcia_core.kernel.errors import OrciaDomainError
 from orcia_core.orchestration._internal.sql_dna_mechanisms import (
     SqlStarlarkMechanismRepository,
 )
+from orcia_core.orchestration._internal.sql_mcp_exposure import (
+    SqlMcpExposureRepository,
+)
 from orcia_core.orchestration.agents_and_skills_manager import (
     AgentsAndSkillsManagementService,
 )
@@ -84,27 +87,51 @@ def get_dna_starlark_and_glossary_service(
 def get_remote_test_bench_and_mcp_service(
     request: Request,
 ) -> RemoteServiceTestBenchAndGovernedMcpService:
-    """Return `RemoteServiceTestBenchAndGovernedMcpService`."""
+    """Return `RemoteServiceTestBenchAndGovernedMcpService` wired to PG18."""
+    engine = get_configured_db_engine(request)
+    session_maker = getattr(request.app.state, "session_maker", None)
+    has_pg = (session_maker is not None) or (engine is not None)
+    strict_sql = has_pg or should_auto_init_infra("DATABASE_URL")
     svc: RemoteServiceTestBenchAndGovernedMcpService | None = getattr(
         request.app.state, "remote_test_bench_and_mcp_service", None
     )
     if svc is None:
-        svc = RemoteServiceTestBenchAndGovernedMcpService()
+        repo = (
+            SqlMcpExposureRepository(session_maker=session_maker, engine=engine) if has_pg else None
+        )
+        svc = RemoteServiceTestBenchAndGovernedMcpService(
+            repository=repo,
+            strict_sql=strict_sql,
+        )
         request.app.state.remote_test_bench_and_mcp_service = svc
+    elif svc.repository is None and has_pg:
+        svc.set_repository(
+            SqlMcpExposureRepository(session_maker=session_maker, engine=engine),
+            strict_sql=True,
+        )
     return svc
 
 
 def get_pack_builder_system_service(
     request: Request,
 ) -> PackBuilderSystemService:
-    """Return `PackBuilderSystemService` wired to `request.app.state.session_maker` when present."""
+    """Return `PackBuilderSystemService` wired to PG18 `session_maker` when present."""
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    session_maker = getattr(request.app.state, "session_maker", None)
+    if session_maker is None:
+        engine = get_configured_db_engine(request)
+        if engine is not None:
+            session_maker = async_sessionmaker(engine, expire_on_commit=False)
+            request.app.state.session_maker = session_maker
     svc: PackBuilderSystemService | None = getattr(
         request.app.state, "pack_builder_system_service", None
     )
     if svc is None:
-        session_maker = getattr(request.app.state, "session_maker", None)
         svc = PackBuilderSystemService(session_factory=session_maker)
         request.app.state.pack_builder_system_service = svc
+    elif getattr(svc, "_session_factory", None) is None and session_maker is not None:
+        svc._session_factory = session_maker
     return svc
 
 
@@ -112,7 +139,14 @@ def get_help_generation_and_attachment_service(
     request: Request,
 ) -> HelpGenerationAndHotAttachmentService:
     """Return `HelpGenerationAndHotAttachmentService` wired to `session_maker` & Redis."""
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
     session_maker = getattr(request.app.state, "session_maker", None)
+    if session_maker is None:
+        engine = get_configured_db_engine(request)
+        if engine is not None:
+            session_maker = async_sessionmaker(engine, expire_on_commit=False)
+            request.app.state.session_maker = session_maker
     redis_client = getattr(request.app.state, "redis_client", None)
     svc: HelpGenerationAndHotAttachmentService | None = getattr(
         request.app.state, "help_generation_and_attachment_service", None

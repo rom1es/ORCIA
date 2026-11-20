@@ -24,6 +24,7 @@ AUDITABLE_EVENT_TYPES: frozenset[str] = frozenset(
         "RunTerminated",
         "SettingsChanged",
         "AdminConnectionTested",
+        "ADMIN_CONNECTION_TEST",
         "BudgetCircuitTripped",
         "BudgetOverrideApproved",
         "RemoteUsageAnomalyCapped",
@@ -52,7 +53,7 @@ AUDITABLE_EVENT_TYPES: frozenset[str] = frozenset(
 def _build_event_summary(event: DomainEvent) -> str:
     payload = event.payload
     etype = event.event_type
-    if etype == "AdminConnectionTested":
+    if etype in ("AdminConnectionTested", "ADMIN_CONNECTION_TEST"):
         target = payload.get("target_type") or "service"
         target_id = payload.get("target_id") or ""
         status = payload.get("test_status") or "SUCCESS"
@@ -141,7 +142,11 @@ def map_domain_event_to_ledger_entry(event: DomainEvent) -> FinopsCostLedgerEntr
 
     actor_type = str(
         clean_payload.get("actor_type")
-        or ("ADMIN_CONNECTION_TEST" if etype == "AdminConnectionTested" else "USER")
+        or (
+            "ADMIN_CONNECTION_TEST"
+            if etype in ("AdminConnectionTested", "ADMIN_CONNECTION_TEST")
+            else "USER"
+        )
     )
     actor_id = str(clean_payload.get("actor_id") or clean_payload.get("user_id") or "system")
     actor_display = (

@@ -1,151 +1,28 @@
-import {
-  createOrciaApiClient,
-  OrciaProblemError,
-  type DeclarativePackSummaryResponse,
-} from "@orcia/api-client";
 import { OrciaAlertBanner } from "@orcia/ui";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { usePlatformSetup } from "../../../components/platformSetupStore";
+import React from "react";
 import { useI18n } from "../../../i18n";
-import { useAuthSessionStore } from "../../../stores/authSessionStore";
 import { ProcessStudioAndPackAuthoringSection } from "../../processes/ProcessStudioAndPackAuthoringSection";
-
-function formatPackApiError(err: unknown, fallback: string): string {
-  if (err instanceof OrciaProblemError) {
-    return `${err.problem.detail} (${err.problem.error_code})`;
-  }
-  if (err instanceof Error && err.message.trim()) {
-    return err.message;
-  }
-  return fallback;
-}
+import { PackCardItem } from "./PackCardItem";
+import { usePacksRegistryHealthchecks } from "./usePacksRegistryHealthchecks";
 
 export function PacksRegistryPage() {
   const { locale } = useI18n();
   const isFr = locale === "fr";
-  const accessToken = useAuthSessionStore((s) => s.accessToken);
-  const { workspaces } = usePlatformSetup();
-  const apiClient = useMemo(
-    () => createOrciaApiClient({ baseUrl: "", locale }),
-    [locale],
-  );
-
-  const [packs, setPacks] = useState<readonly DeclarativePackSummaryResponse[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
-  const [selectedPackId, setSelectedPackId] = useState<string>("orcia-pack-sdlc");
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [exportedArchiveName, setExportedArchiveName] = useState<string | null>(null);
-
-  const loadPacksFromServer = useCallback(
-    async (withHealthBanner = false) => {
-      setIsLoading(true);
-      setErrorMessage(null);
-      try {
-        const res = await apiClient.listDeclarativePacks();
-        setPacks(res.packs);
-        const firstPack = res.packs[0];
-        if (firstPack && !res.packs.some((p) => p.id === selectedPackId)) {
-          setSelectedPackId(firstPack.id);
-        }
-        if (withHealthBanner) {
-          setStatusMessage(
-            isFr
-              ? "Diagnostics de santé MCP (Jira, Confluence, Git) actualisés : 100 % des connecteurs requis sont opérationnels."
-              : "MCP connector healthchecks (Jira, Confluence, Git) refreshed: 100% of required connectors are healthy.",
-          );
-        }
-      } catch (err: unknown) {
-        setErrorMessage(
-          formatPackApiError(
-            err,
-            isFr
-              ? "Impossible de charger le registre des packs déclaratifs."
-              : "Unable to load the declarative packs registry.",
-          ),
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [apiClient, isFr, selectedPackId],
-  );
-
-  useEffect(() => {
-    void loadPacksFromServer(false);
-  }, [accessToken, loadPacksFromServer]);
-
-  useEffect(() => {
-    const firstWs = workspaces[0];
-    if (!firstWs) {
-      if (selectedWorkspaceId !== "") {
-        setSelectedWorkspaceId("");
-      }
-      return;
-    }
-    if (!workspaces.some((ws) => ws.workspaceId === selectedWorkspaceId)) {
-      setSelectedWorkspaceId(firstWs.workspaceId);
-    }
-  }, [workspaces, selectedWorkspaceId]);
-
-  const handleRefreshHealthchecks = () => {
-    void loadPacksFromServer(true);
-  };
-
-  const handleExportWorkspaceZip = async (packId?: string) => {
-    if (!selectedWorkspaceId) {
-      setErrorMessage(
-        isFr
-          ? "Créez d'abord un espace de travail dans « Mes Espaces » avant d'exporter son pack."
-          : "Create a workspace in 'My Spaces' before exporting its pack.",
-      );
-      return;
-    }
-    const targetPackId = packId ?? selectedPackId;
-    const pack = packs.find((p) => p.id === targetPackId) ?? packs[0];
-    setErrorMessage(null);
-    try {
-      const result = await apiClient.exportWorkspacePackZip(
-        selectedWorkspaceId,
-        targetPackId,
-      );
-      const archiveName =
-        result.filename ?? `${pack?.slug ?? "sdlc"}-${selectedWorkspaceId}.zip`;
-      setExportedArchiveName(archiveName);
-      setStatusMessage(
-        isFr
-          ? `Archive déclarative ${archiveName} générée (pack.yaml, glossary.yaml, agents/*.md, skills/*.md, gates/*, workflows/*.yaml — 0 code exécutable).`
-          : `Declarative archive ${archiveName} generated (pack.yaml, glossary.yaml, agents/*.md, skills/*.md, gates/*, workflows/*.yaml — 0 executable code).`,
-      );
-      if (typeof URL !== "undefined" && typeof URL.createObjectURL === "function") {
-        const objectUrl = URL.createObjectURL(result.blob);
-        const link = document.createElement("a");
-        link.href = objectUrl;
-        link.download = archiveName;
-        link.click();
-        URL.revokeObjectURL(objectUrl);
-      }
-    } catch (err: unknown) {
-      setErrorMessage(
-        formatPackApiError(
-          err,
-          isFr
-            ? "Échec de l'export ZIP du pack déclaratif."
-            : "Failed to export declarative pack ZIP.",
-        ),
-      );
-    }
-  };
-
-  const workspaceOptions = useMemo(
-    () =>
-      workspaces.map((ws) => ({
-        id: ws.workspaceId,
-        label: `Espace : ${ws.name}`,
-      })),
-    [workspaces],
-  );
+  const {
+    packs,
+    isLoading,
+    selectedWorkspaceId,
+    setSelectedWorkspaceId,
+    selectedPackId,
+    setSelectedPackId,
+    statusMessage,
+    errorMessage,
+    exportedArchiveName,
+    workspaceOptions,
+    handleRefreshHealthchecks,
+    handleExportWorkspaceZip,
+    handleExportPackBundleZip,
+  } = usePacksRegistryHealthchecks(locale);
 
   return (
     <section
@@ -266,136 +143,15 @@ export function PacksRegistryPage() {
         }}
       >
         {packs.map((pack) => (
-          <article
+          <PackCardItem
             key={pack.id}
-            data-testid={`declarative-pack-card-${pack.slug}`}
-            className="orcia-bento-card"
-            style={{ display: "flex", flexDirection: "column", gap: "12px" }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: "16px" }}>{pack.name}</h3>
-                <div
-                  style={{
-                    fontSize: "12px",
-                    fontFamily: "var(--font-mono)",
-                    color: "var(--color-text-secondary)",
-                    marginTop: "2px",
-                  }}
-                >
-                  packs/{pack.slug}/ · v{pack.version} · {pack.rbac_namespace}
-                </div>
-              </div>
-              <span
-                className="rounded px-2 py-0.5 text-xs font-semibold"
-                style={{
-                  backgroundColor: "var(--color-action-primary-subtle)",
-                  color: "var(--color-primary-cobalt)",
-                  fontFamily: "var(--font-mono)",
-                }}
-              >
-                SHA256: {pack.bundle_sha256.slice(0, 10)}
-              </span>
-            </div>
-
-            <p style={{ margin: 0, fontSize: "13px", color: "var(--color-text-secondary)" }}>
-              {pack.description}
-            </p>
-
-            <div
-              data-testid={`pack-counters-${pack.slug}`}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-                gap: "8px",
-              }}
-            >
-              {[
-                { label: isFr ? "Agents" : "Agents", count: pack.agents_count },
-                { label: isFr ? "Compétences" : "Skills", count: pack.skills_count },
-                { label: isFr ? "Validations" : "Gates", count: pack.gates_count },
-                { label: isFr ? "Chaînes" : "Streams", count: pack.vsm_count },
-                { label: isFr ? "Processus" : "Processes", count: pack.workflows_count },
-              ].map((stat) => (
-                <div
-                  key={stat.label}
-                  className="rounded border p-2 text-center"
-                  style={{
-                    backgroundColor: "var(--color-bg-elevated)",
-                    borderColor: "var(--color-border-subtle)",
-                  }}
-                >
-                  <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--color-primary-cobalt)" }}>
-                    {stat.count}
-                  </div>
-                  <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>{stat.label}</div>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <strong style={{ fontSize: "12px", color: "var(--color-text-primary)" }}>
-                {isFr
-                  ? "Connecteurs requis :"
-                  : "Required Connectors:"}
-              </strong>
-              {(pack.connector_health ?? []).map((conn) => (
-                <div
-                  key={conn.connector_type}
-                  data-testid={`pack-${pack.slug}-connector-${conn.connector_type}`}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded border px-2.5 py-1.5 text-xs"
-                  style={{
-                    backgroundColor: "var(--color-bg-elevated)",
-                    borderColor: "var(--color-border-subtle)",
-                  }}
-                >
-                  <div>
-                    <span style={{ fontFamily: "var(--font-mono)", fontWeight: 600 }}>
-                      {conn.connector_type}
-                    </span>
-                    <span style={{ marginLeft: "6px", color: "var(--color-text-secondary)" }}>
-                      ({(conn.required_scopes ?? []).join(", ")})
-                    </span>
-                    <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
-                      {conn.used_for}
-                    </div>
-                  </div>
-                  <span
-                    className="rounded px-2 py-0.5 text-xs font-semibold"
-                    style={{
-                      backgroundColor: conn.health.ok
-                        ? "var(--color-gate-emerald-bg)"
-                        : "var(--color-stale-bg)",
-                      color: conn.health.ok
-                        ? "var(--color-gate-emerald)"
-                        : "var(--color-stale-crimson)",
-                    }}
-                  >
-                    {conn.health.ok
-                      ? `✓ Connecté (${conn.health.latency_ms} ms)`
-                      : "✗ Déconnecté"}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
-              <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
-                Agents : {(pack.agents_slugs ?? []).join(", ")}
-              </div>
-              <button
-                type="button"
-                data-testid={`export-pack-${pack.slug}-zip-btn`}
-                onClick={() => {
-                  setSelectedPackId(pack.id);
-                  void handleExportWorkspaceZip(pack.id);
-                }}
-                className="orcia-ds-btn-secondary"
-              >
-                {isFr ? `Exporter ${pack.slug}.zip` : `Export ${pack.slug}.zip`}
-              </button>
-            </div>
-          </article>
+            pack={pack}
+            isFr={isFr}
+            onExportZip={(packId) => {
+              setSelectedPackId(packId);
+              void handleExportPackBundleZip(packId);
+            }}
+          />
         ))}
       </div>
 

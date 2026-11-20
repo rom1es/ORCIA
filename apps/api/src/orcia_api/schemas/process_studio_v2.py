@@ -54,6 +54,16 @@ class DeclarativePacksListResponse(BaseModel):
     packs: list[DeclarativePackSummaryResponse]
 
 
+class PacksConnectorHealthResponse(BaseModel):
+    """Live connector healthcheck summary across all declarative packs."""
+
+    connectors: list[ConnectorRequirementHealthItemResponse]
+    healthy_count: int
+    total_count: int
+    all_healthy: bool
+    checked_at_iso: str
+
+
 class VsmListResponse(BaseModel):
     items: list[ValueStreamMapSpec]
 
@@ -101,6 +111,7 @@ __all__ = [
     "DeclarativePackSummaryResponse",
     "DeclarativePacksListResponse",
     "HitlSignalRequest",
+    "PacksConnectorHealthResponse",
     "SaveWorkflowV2Request",
     "SaveWorkflowV2Response",
     "StartWorkflowV2RunRequest",

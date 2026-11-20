@@ -198,16 +198,19 @@ def get_ai_models_hub_service(request: Request) -> AiModelsHubService:
 
 def get_audit_ledger_service(request: Request) -> SqlAuditLedgerService:
     """FastAPI `Depends` provider returning `SqlAuditLedgerService` (`Story 6.1`)."""
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
     from orcia_core.audit_finops import SqlAuditLedgerService
 
+    engine = get_configured_db_engine(request)
     svc: SqlAuditLedgerService | None = getattr(request.app.state, "audit_ledger_service", None)
     if svc is None:
         initialize_app_services(request.app)
         svc = getattr(request.app.state, "audit_ledger_service", None)
         if svc is None:
-            engine = getattr(request.app.state, "db_engine", None)
             svc = SqlAuditLedgerService(engine=engine)
             request.app.state.audit_ledger_service = svc
+    if getattr(svc, "_engine", None) is None and engine is not None:
+        svc._engine = engine
     assert svc is not None
     return svc
 

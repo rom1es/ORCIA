@@ -1,9 +1,11 @@
-"""Declarative Packs Registry & Workspace Pack Export Router (`TASK-05`, `Story 22.5`).
+"""Declarative Packs Registry & Workspace Pack Export Router (`TASK-05`, `Story 22.5`, `24.3`).
 
 Exposes:
 - `GET /api/v1/packs`: Lists hot-loaded declarative packs (`packs/<domain>/`), synchronizes
   them idempotently into PostgreSQL 18 `declarative_pack_bundles`, and evaluates real-time
   healthchecks for `required_connectors` via `orcia_connectors`.
+- `GET /api/v1/packs/health`: Probes real-time health of all required pack connectors
+  (combining `enterprise_connectors` PG18 config state and `OrciaConnectorProtocol.healthcheck()`).
 - `POST /api/v1/packs/export/{workspace_id}`: Synchronizes packs into PostgreSQL 18 and
   exports a workspace / pack into a `.zip` archive.
 """
@@ -11,6 +13,7 @@ Exposes:
 from __future__ import annotations
 
 import re
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Query, Request, Response
 
@@ -24,17 +27,23 @@ from orcia_api.schemas.process_studio_v2 import (
     ConnectorRequirementHealthItemResponse,
     DeclarativePacksListResponse,
     DeclarativePackSummaryResponse,
+    PacksConnectorHealthResponse,
 )
 from orcia_connectors.adapters import get_default_enterprise_connectors
-from orcia_connectors.protocol import ConnectorHealthStatus
-from orcia_core.bootstrap import upsert_declarative_pack_bundles_sql
+from orcia_connectors.protocol import ConnectorHealthStatus, OrciaConnectorProtocol
+from orcia_core.bootstrap import (
+    list_enterprise_connectors_from_postgres18,
+    upsert_declarative_pack_bundles_sql,
+)
 from orcia_core.observability.logging import get_logger
 from orcia_core.packs.loader import (
     DeclarativePackLoader,
     LoadedPackBundle,
     PackExporter,
+    RequiredConnectorSpec,
     resolve_default_packs_root,
 )
+from orcia_core.permissions.enterprise_connectors import EnterpriseConnectorRecord
 from orcia_core.permissions.errors import ObserverModeReadOnlyError
 from orcia_core.workflows import upsert_vsm_definitions_v2_sql
 
@@ -71,37 +80,70 @@ async def sync_declarative_pack_bundles_to_pg(
         )
 
 
+async def _load_pg_connectors_by_kind(request: Request) -> dict[str, EnterpriseConnectorRecord]:
+    if not is_pg_runtime_active(request):
+        return {}
+    engine = get_configured_db_engine(request)
+    if engine is None:
+        return {}
+    try:
+        rows = await list_enterprise_connectors_from_postgres18(engine)
+        return {rec.connector_kind.lower(): rec for rec in rows}
+    except Exception as exc:
+        logger.warning(
+            "packs_pg_connectors_lookup_skipped",
+            error_type=type(exc).__name__,
+            error=str(exc),
+        )
+        return {}
+
+
+async def _evaluate_connector_requirement(
+    req_conn: RequiredConnectorSpec,
+    adapters: dict[str, OrciaConnectorProtocol],
+    pg_connectors: dict[str, EnterpriseConnectorRecord],
+) -> ConnectorRequirementHealthItemResponse:
+    kind_key = req_conn.connector_type.removeprefix("mcp:").removeprefix("atlassian-").lower()
+    pg_rec = pg_connectors.get(kind_key)
+    if pg_rec is not None and not pg_rec.enabled:
+        health = ConnectorHealthStatus(
+            connector_type=req_conn.connector_type,
+            ok=False,
+            latency_ms=0,
+            error_message=f"Connecteur '{pg_rec.name}' désactivé dans la configuration.",
+        )
+    elif (adapter := adapters.get(req_conn.connector_type)) is not None:
+        health = await adapter.healthcheck()
+    else:
+        health = ConnectorHealthStatus(
+            connector_type=req_conn.connector_type,
+            ok=False,
+            latency_ms=0,
+            error_message="Connector not registered",
+        )
+    return ConnectorRequirementHealthItemResponse(
+        connector_type=req_conn.connector_type,
+        required_scopes=req_conn.required_scopes,
+        used_for=req_conn.used_for,
+        health=health,
+    )
+
+
 @router.get("", response_model=DeclarativePacksListResponse, responses=PROBLEM_RESPONSES)
 async def list_declarative_packs(request: Request) -> DeclarativePacksListResponse:
     """Return all declarative packs from `packs/<domain>/` with PG18 sync & healthchecks."""
     bundles = load_declarative_pack_bundles(request)
     await sync_declarative_pack_bundles_to_pg(request, bundles)
     connectors = get_default_enterprise_connectors()
+    pg_connectors = await _load_pg_connectors_by_kind(request)
     summaries: list[DeclarativePackSummaryResponse] = []
 
     for bundle in bundles.values():
         m = bundle.manifest
-        health_items: list[ConnectorRequirementHealthItemResponse] = []
-        for req_conn in m.required_connectors:
-            adapter = connectors.get(req_conn.connector_type)
-            if adapter is not None:
-                health = await adapter.healthcheck()
-            else:
-                health = ConnectorHealthStatus(
-                    connector_type=req_conn.connector_type,
-                    ok=False,
-                    latency_ms=0,
-                    error_message="Connector not registered",
-                )
-            health_items.append(
-                ConnectorRequirementHealthItemResponse(
-                    connector_type=req_conn.connector_type,
-                    required_scopes=req_conn.required_scopes,
-                    used_for=req_conn.used_for,
-                    health=health,
-                )
-            )
-
+        health_items = [
+            await _evaluate_connector_requirement(req_conn, connectors, pg_connectors)
+            for req_conn in m.required_connectors
+        ]
         summaries.append(
             DeclarativePackSummaryResponse(
                 id=m.id,
@@ -126,6 +168,31 @@ async def list_declarative_packs(request: Request) -> DeclarativePacksListRespon
         )
 
     return DeclarativePacksListResponse(packs=summaries)
+
+
+@router.get("/health", response_model=PacksConnectorHealthResponse, responses=PROBLEM_RESPONSES)
+async def check_packs_connectors_health(request: Request) -> PacksConnectorHealthResponse:
+    """Probe live connector health across all loaded declarative packs."""
+    bundles = load_declarative_pack_bundles(request)
+    connectors = get_default_enterprise_connectors()
+    pg_connectors = await _load_pg_connectors_by_kind(request)
+    seen_types: set[str] = set()
+    items: list[ConnectorRequirementHealthItemResponse] = []
+    for bundle in bundles.values():
+        for req_conn in bundle.manifest.required_connectors:
+            if req_conn.connector_type in seen_types:
+                continue
+            seen_types.add(req_conn.connector_type)
+            items.append(await _evaluate_connector_requirement(req_conn, connectors, pg_connectors))
+    healthy_count = sum(1 for item in items if item.health.ok)
+    total_count = len(items)
+    return PacksConnectorHealthResponse(
+        connectors=items,
+        healthy_count=healthy_count,
+        total_count=total_count,
+        all_healthy=(healthy_count == total_count),
+        checked_at_iso=datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+    )
 
 
 @router.post(

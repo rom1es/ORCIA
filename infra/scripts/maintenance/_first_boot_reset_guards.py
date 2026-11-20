@@ -54,6 +54,7 @@ BASE_CONNECTOR_SCHEMES: tuple[tuple[str, str, str, str], ...] = (
 )
 
 ORDERED_MUTABLE_TABLES_TO_CLEAR: tuple[str, ...] = (
+    "mcp_exposed_agents", "mcp_governed_pat_tokens",
     "jira_staged_actions", "mcp_governed_proposals", "workspace_dna_mechanisms",
     "assistant_folder_shares", "assistant_threads", "assistant_folders",
     "workspace_exception_waivers", "vsm_definitions_v2", "claim_check_artifacts",

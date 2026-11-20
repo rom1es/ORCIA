@@ -177,6 +177,64 @@ export function handleAiModelsAndToolsRoute(params: {
     return jsonResponse({ steps: [], discovered_capabilities: [], can_activate: true });
   }
 
+  if (path === "/api/v1/settings/connectors/test-and-discover" && method === "POST") {
+    const tools = Array.isArray(body.raw_tool_names)
+      ? body.raw_tool_names.map((t) => ({
+          tool_name: String(t),
+          description: `Capacité découverte : ${String(t)}`,
+          qualification: String(t).toLowerCase().includes("update") || String(t).toLowerCase().includes("create")
+            ? "WRITE_STAGED_REQUIRED"
+            : "READ_ONLY",
+          badge_fr: String(t).toLowerCase().includes("update") || String(t).toLowerCase().includes("create")
+            ? "Validation humaine requise"
+            : "Lecture seule",
+        }))
+      : [];
+    return jsonResponse({
+      protocol: String(body.protocol ?? "MCP_STREAMABLE_HTTP_SSE"),
+      endpoint_url: String(body.endpoint_url ?? "https://mcp.entreprise.interne/api"),
+      identity_mode: String(body.identity_mode ?? "SECRET_REF"),
+      steps: [
+        { step_number: 1, step_code: "1_NETWORK_TLS_ANTI_SSRF", status: "PASS", detail_fr: "Réseau validé" },
+        { step_number: 2, step_code: "2_AUTHENTICATION", status: "PASS", detail_fr: "Authentification validée" },
+        { step_number: 3, step_code: "3_CONTRACT_DISCOVERY", status: "PASS", detail_fr: "Capacités découvertes" },
+        { step_number: 4, step_code: "4_HOT_DRY_RUN", status: "PASS", detail_fr: "Essai à blanc validé" },
+      ],
+      discovered_capabilities: tools,
+      can_activate: true,
+      dry_run_audit_actor_type: "ADMIN_CONNECTION_TEST",
+      dry_run_run_id: null,
+      finops_meta_usage: { prompt_tokens: 42, completion_tokens: 18, cost_eur: 0.0002 },
+    });
+  }
+
+  if (path === "/api/v1/mcp/exposure" && method === "GET") {
+    const wsSlug = parsedUrl.searchParams.get("workspace_slug") ?? "global";
+    return jsonResponse({
+      workspace_slug: wsSlug,
+      agents: [],
+      exposed_tools: ["assistant.ask", "agent.invoke", "agent.list_exposed"],
+      any_exposed: false,
+    });
+  }
+
+  if (path === "/api/v1/mcp/exposure" && method === "PUT") {
+    const wsSlug = String(body.workspace_slug ?? "global");
+    const agentSlug = String(body.agent_slug ?? "governed-mcp-connector");
+    const exposed = Boolean(body.mcp_exposed ?? true);
+    return jsonResponse({
+      agent_slug: agentSlug,
+      workspace_slug: wsSlug,
+      display_name: String(body.display_name ?? agentSlug),
+      mcp_exposed: exposed,
+      regime: String(body.regime ?? "GOVERNED_STAGED_COPILOT"),
+      human_authored_required: Boolean(body.human_authored_required ?? false),
+      exposed_tools: exposed
+        ? ["assistant.ask", "agent.invoke", "agent.list_exposed", `agent.${agentSlug}`]
+        : ["assistant.ask", "agent.invoke", "agent.list_exposed"],
+    });
+  }
+
   if (path === "/api/v1/help/validate" && method === "POST") {
     return jsonResponse({
       article_id: "help-processes-guide",

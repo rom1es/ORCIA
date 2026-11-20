@@ -11,7 +11,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "activeRoutesCount": 28,
     "uiPrimitivesCount": 136,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 56,
+    "alembicMigrationsCount": 57,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
     "techLeadReportsCount": 200,
@@ -258,7 +258,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261117_2002_story_20_2_ontology_pg18_and_promotions",
     "20261117_2003_story_20_3_user_preferences_and_mcp_tokens_pg18",
     "20261120_2401_story_24_1_jira_staged_actions_and_mcp_proposals_pg18",
-    "20261120_2402_story_24_2_workspace_dna_mechanisms_pg18"
+    "20261120_2402_story_24_2_workspace_dna_mechanisms_pg18",
+    "20261120_2403_story_24_3_mcp_exposures_and_audit_contract"
   ],
   "architectureDecisions": [
     {
@@ -570,7 +571,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "phaseOrStory": "Story 24.3",
       "reportFile": "24-3-banc-mcp-audit-ledger-fin-pass-optimiste-et-assainissement-composition-root-tech-lead-report.md",
       "domain": "Epic 24 Vague 0 — Banc MCP, audit_ledger, Fin PASS Optimiste & Assainissement Composition Root (REM24-05, REM24-06, 18#5 #45)",
-      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8) : suppression PASS optimiste (useCatalogRemoteTestBench.ts), contrat ADMIN_CONNECTION_TEST audit_ledger, persistance PG18 exposition MCP, migration _speed2_cache vers Redis 300s, healthchecks PacksRegistryPage, wfKey réel & split remote_test_bench_and_mcp_exposure.py (440 L)."
+      "summary": "Clôture (done) : découpage < 355 L (remote_test_bench.py, governed_mcp_exposure.py, sql_mcp_exposure.py), migration 20261120_2403 + persistance PG18 mcp_exposed_agents & hash SHA-256 mcp_governed_pat_tokens, alignement ADMIN_CONNECTION_TEST audit_ledger, migration _speed2_cache vers Redis 7.4 (TTL 300s, clé multi-contexte), fin du PASS optimiste + GET/PUT /api/v1/mcp/exposure (F5), GET /api/v1/packs/health + handleExportPackBundleZip, wfKey réel Cockpit, 92 % couv. combinée (71 unit + 2 PG18/Redis testcontainers), 9/9 Turbo (377 tests JS/TS), 7/7 Playwright Desktop sans retry (03, 19#1..2, 18#2..5)."
     },
     {
       "date": "2026-11-20",

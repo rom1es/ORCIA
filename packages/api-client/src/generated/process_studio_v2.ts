@@ -9,6 +9,7 @@ export type ConnectorRequirementHealthItemResponse = components["schemas"]["Conn
 export type DeclarativePackSummaryResponse = components["schemas"]["DeclarativePackSummaryResponse"];
 export type DeclarativePacksListResponse = components["schemas"]["DeclarativePacksListResponse"];
 export type HitlSignalRequest = components["schemas"]["HitlSignalRequest"];
+export type PacksConnectorHealthResponse = components["schemas"]["PacksConnectorHealthResponse"];
 export type SaveWorkflowV2Request = components["schemas"]["SaveWorkflowV2Request"];
 export type SaveWorkflowV2Response = components["schemas"]["SaveWorkflowV2Response"];
 export type StartWorkflowV2RunRequest = components["schemas"]["StartWorkflowV2RunRequest"];

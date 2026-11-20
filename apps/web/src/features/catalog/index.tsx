@@ -53,8 +53,11 @@ export function CatalogFeaturePanel({
     string | null
   >(null);
 
+  const activeWorkspaceSlug =
+    workspaces[0]?.slug || workspaces[0]?.workspaceId || "global";
   const remoteBench = useCatalogRemoteTestBench({
     datasources,
+    workspaceSlug: activeWorkspaceSlug,
     isFr,
     setFeedback: setCatalogActionFeedback,
   });
@@ -203,7 +206,14 @@ export function CatalogFeaturePanel({
                 remoteBench.canActivateConnector || datasources.length > 0
               }
               mcpExposed={remoteBench.mcpExposed}
-              exposedToolNames={catalogItems.map((item) => item.resourceId)}
+              isTesting={remoteBench.isTesting}
+              isSavingMcp={remoteBench.isSavingMcp}
+              exposedToolNames={Array.from(
+                new Set([
+                  ...remoteBench.exposedToolNames,
+                  ...catalogItems.map((item) => item.resourceId),
+                ]),
+              )}
               labels={dictionary.remoteServiceTestBench}
               onRunTestBench={remoteBench.handleRunRemoteTestBench}
               onActivateService={remoteBench.handleActivateRemoteService}
