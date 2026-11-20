@@ -9,12 +9,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-20",
   "stats": {
     "activeRoutesCount": 28,
-    "uiPrimitivesCount": 136,
+    "uiPrimitivesCount": 137,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 57,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 203,
+    "techLeadReportsCount": 204,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 64,
@@ -141,6 +141,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "OrciaSearchableSelect",
     "OrciaSectionCard",
     "OrciaSelect",
+    "OrciaSpinner",
     "OrciaSwitch",
     "OrciaTabBar",
     "OrciaTextarea",
@@ -538,6 +539,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-20",
+      "phaseOrStory": "Story 25.4",
+      "reportFile": "25-4-hub-modeles-ia-suppression-fiable-spinner-unifie-erreur-locale-et-masquage-reindexation-tech-lead-report.md",
+      "domain": "Epic 25 — Hub Modèles IA : Suppression PG18 Fiable sans Fallback RAM, <OrciaSpinner /> Unifié, Erreur Locale & Masquage Réindexation (CAP-052, CAP-053, CAP-190)",
+      "summary": "Clôture (done) : extraction _sql_ai_model_delete_guards.py (165 L) sans faux positif ILIKE sur workflow_definitions_v2, blocage 409 strict sur workflow_runs actifs/en pause + fallback_order auto-incrémenté pour tous usages (sql_ai_model_mutations.py), count_indexed_corpus_pg18 (sql_reindex_jobs.py, RagReindexStatusResponse), suppression settingsAiModelsFallback.ts, refreshAccostage() dans platformSetupStore.tsx, primitive <OrciaSpinner /> + OrciaSpinnerSvg.tsx unifiés sur 100 % des chargeurs (ShellAuthFallbackView, OrciaModelCombobox, AiModelMappingRowCard, AiModelDeleteDialog, AiModelConfigModal, PlatformAuthSettingsCard, RemoteServiceTestBenchAndMcpExposureView, SourceLineInspectorDrawer, SettingsAuthenticationSection), timeout 16 s + erreurs localisées par modèle (ai-model-test-error-${id}), masquage AiModelReindexPanel à 0 document/chunk, 98.06 % couv. ciblée (46 passed), 1051 passed (unit+security+evals), 9/9 Turbo (136 UI + 254 Web + 13 API-Client), 10 passed Playwright Desktop (16, 01, shell), ruff/mypy --strict/lint-imports (5/5)/export_openapi (0-diff)/lint_spine (0) vert."
+    },
     {
       "date": "2026-11-20",
       "phaseOrStory": "Story 25.3",

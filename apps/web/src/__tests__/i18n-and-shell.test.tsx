@@ -277,7 +277,10 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       target: { value: "model-primary-v1" },
     });
     fireEvent.click(screen.getByTestId("save-llm-tier-btn"));
-    expect(screen.getByTestId("llm-tier-row-medium").textContent).toContain("model-primary-v1");
+    await waitFor(() => {
+      const rows = Array.from(document.querySelectorAll('[data-testid^="llm-tier-row-"]'));
+      expect(rows.some((r) => r.textContent?.includes("model-primary-v1"))).toBe(true);
+    });
 
     // Tab 3: Connectors (Direction C deport banner towards /workspaces/$wsId/sources)
     fireEvent.click(screen.getByTestId("settings-tab-connectors"));
@@ -850,6 +853,11 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       target: { value: "claude-3-7-sonnet-persist" },
     });
     fireEvent.click(screen.getByTestId("save-llm-tier-btn"));
+    await waitFor(() => {
+      expect(
+        (screen.getByTestId("eight-menu-item-assistant") as HTMLButtonElement).disabled,
+      ).toBe(false);
+    });
 
     // 3. Configure an Organization Unit in /organization (satisfies milestone 2)
     fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
@@ -896,10 +904,12 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       "Romain Persistant",
     );
 
-    // Verify all unlocked sidebar items remain unlocked after F5
-    expect(
-      (screen.getByTestId("eight-menu-item-assistant") as HTMLButtonElement).disabled,
-    ).toBe(false);
+    // Verify all unlocked sidebar items remain unlocked after F5 (hydrated asynchronously from PG18/API)
+    await waitFor(() => {
+      expect(
+        (screen.getByTestId("eight-menu-item-assistant") as HTMLButtonElement).disabled,
+      ).toBe(false);
+    });
     expect(
       (screen.getByTestId("eight-menu-item-agents") as HTMLButtonElement).disabled,
     ).toBe(false);
@@ -1187,13 +1197,17 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
 
     // 4. Save the tier and verify human-readable French labels (no raw "medium", "balanced", "default", or "family-a")
     fireEvent.click(screen.getByTestId("save-llm-tier-btn"));
-    const savedRow = screen.getByTestId("llm-tier-row-medium");
-    expect(savedRow.textContent).toContain("Standard");
-    expect(savedRow.textContent).toContain("claude-3-7-sonnet");
-    expect(savedRow.textContent).toContain("Anthropic · Équilibré");
-    expect(savedRow.textContent).toContain("https://api.anthropic.com/v1");
-    expect(savedRow.textContent).toContain("Clé d'API enregistrée");
-    expect(savedRow.textContent).not.toContain("family-a");
+    await waitFor(() => {
+      const rows = document.querySelectorAll('[data-testid^="llm-tier-row-"][data-tier="medium"]');
+      expect(rows.length).toBeGreaterThan(0);
+      const savedRow = rows[0]!;
+      expect(savedRow.textContent).toContain("Standard");
+      expect(savedRow.textContent).toContain("claude-3-7-sonnet");
+      expect(savedRow.textContent).toContain("Anthropic · Équilibré");
+      expect(savedRow.textContent).toContain("https://api.anthropic.com/v1");
+      expect(savedRow.textContent).toContain("Clé d'API enregistrée");
+      expect(savedRow.textContent).not.toContain("family-a");
+    });
 
     // 5. Story 25.2 (Bug 5): floating ⓘ removed from AI Models main card; help-section-ai-models-overview remains in Zone 4
     expect(screen.queryByTestId("contextual-info-trigger-ai-models-overview")).toBeNull();
@@ -1466,9 +1480,13 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     });
     fireEvent.click(screen.getByTestId("save-llm-tier-btn"));
 
-    const mediumRow = screen.getByTestId("llm-tier-row-medium");
-    expect(mediumRow.textContent).toContain("Fournisseur principal");
-    expect(mediumRow.textContent).not.toContain("family-a");
+    await waitFor(() => {
+      const rows = document.querySelectorAll('[data-testid^="llm-tier-row-"][data-tier="medium"]');
+      expect(rows.length).toBeGreaterThan(0);
+      const mediumRow = rows[0]!;
+      expect(mediumRow.textContent).toContain("Fournisseur principal");
+      expect(mediumRow.textContent).not.toContain("family-a");
+    });
     unmount();
 
     // Runtime verification on /login (BiModeLoginView)
@@ -1804,7 +1822,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     });
     fireEvent.click(screen.getByTestId("save-llm-tier-btn"));
 
-    expect(assistantMenuBtn.disabled).toBe(false);
+    await waitFor(() => {
+      expect(assistantMenuBtn.disabled).toBe(false);
+    });
     expect(
       screen.queryByTestId("disabled-button-alert-icon-eight-menu-item-assistant"),
     ).toBeNull();

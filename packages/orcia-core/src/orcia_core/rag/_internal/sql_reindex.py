@@ -11,6 +11,7 @@ from orcia_core.rag._internal.sql_reindex_chunks import (
     update_chunks_embedding_batch_pg18,
 )
 from orcia_core.rag._internal.sql_reindex_jobs import (
+    count_indexed_corpus_pg18,
     create_or_replace_reindex_job_pg18,
     get_active_reindex_job_pg18,
     get_latest_reindex_job_pg18,
@@ -23,6 +24,7 @@ from orcia_core.rag._internal.sql_reindex_lifecycle import (
 
 __all__ = [
     "complete_reindex_job_pg18",
+    "count_indexed_corpus_pg18",
     "create_or_replace_reindex_job_pg18",
     "fail_reindex_job_pg18",
     "fetch_unindexed_chunks_batch_pg18",

@@ -11,6 +11,8 @@ import { AiModelsMasterTable } from "../features/admin/ai-models/AiModelsMasterT
 import { I18nProvider } from "../i18n";
 import { AI_MODELS_HUB_FR } from "../i18n/locales/ai_models_hub_labels";
 import { SettingsAiModelsSection } from "../routes/SettingsAiModelsSection";
+import { useAuthSessionStore } from "../stores/authSessionStore";
+import { seedVitestPlatformSetupState } from "./vitest.setup";
 
 afterEach(() => {
   cleanup();
@@ -225,24 +227,25 @@ describe("Story 17.5 — AI Models Hub UI Lifecycle, Modals & F5 Survival", () =
     });
   });
 
-  it("survives F5 unmount -> render lifecycle and preserves configured model list", () => {
+  it("survives F5 unmount -> render lifecycle and preserves configured model list", async () => {
+    seedVitestPlatformSetupState(
+      {
+        ai_model_mappings: [sampleMappings[0] as unknown as Record<string, unknown>],
+      },
+      { email: "admin@orcia.test", displayName: "Admin Test", roles: ["PLATFORM_ADMIN"] },
+    );
+    useAuthSessionStore.getState().loginWithSession({
+      email: "admin@orcia.test",
+      display_name: "Admin Test",
+      roles: ["PLATFORM_ADMIN"],
+      access_token: "mock-vitest-access-token",
+    });
+
     function Host(): React.ReactElement {
       return (
         <I18nProvider initialLocale="fr">
           <SettingsAiModelsSection
             isFr={true}
-            llmTiers={[
-              {
-                tier: "medium",
-                primaryModel: "claude-3-7-sonnet",
-                secondaryModel: "claude-3-5-haiku",
-                modelFamily: "Anthropic",
-                defaultEffort: "balanced",
-                endpointUrl: "https://api.anthropic.com/v1",
-                authMode: "api_key",
-                apiKeyConfigured: true,
-              },
-            ]}
             tierAndEffortLabels={sampleTierLabels}
           />
         </I18nProvider>
@@ -251,7 +254,8 @@ describe("Story 17.5 — AI Models Hub UI Lifecycle, Modals & F5 Survival", () =
 
     const { unmount } = render(<Host />);
     expect(screen.getByTestId("ai-models-master-table")).toBeDefined();
-    expect(screen.getByTestId("llm-tier-row-medium").textContent).toContain("claude-3-7-sonnet");
+    const rowBefore = await screen.findByTestId("llm-tier-row-01932900-0001-7000-8000-000000000001");
+    expect(rowBefore.textContent).toContain("claude-3-7-sonnet");
 
     // Simulate F5 page reload
     unmount();
@@ -259,7 +263,8 @@ describe("Story 17.5 — AI Models Hub UI Lifecycle, Modals & F5 Survival", () =
     // Re-mount
     render(<Host />);
     expect(screen.getByTestId("ai-models-master-table")).toBeDefined();
-    expect(screen.getByTestId("llm-tier-row-medium").textContent).toContain("claude-3-7-sonnet");
+    const rowAfter = await screen.findByTestId("llm-tier-row-01932900-0001-7000-8000-000000000001");
+    expect(rowAfter.textContent).toContain("claude-3-7-sonnet");
   });
 
   it("enforces PermissionGuard: hides create CTA when verb 'create' is absent", () => {

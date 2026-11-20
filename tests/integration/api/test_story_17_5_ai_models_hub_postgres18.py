@@ -319,3 +319,94 @@ async def test_ai_models_hub_postgres18_full_lifecycle(
                 )
             ).scalar()
             assert deleted_count == 0
+
+
+@pytest.mark.asyncio
+async def test_ai_models_hub_delete_without_false_positive_and_empty_reindex_status_pg18(
+    database_url: str,
+    app_client_factory,  # type: ignore[no-untyped-def]
+) -> None:
+    """Story 25.4: Static workflow_definitions_v2 never blocks delete; empty corpus reports 0/0."""
+    headers_admin = {"X-Orcia-Persona": "marc"}
+    engine = create_async_engine(database_url)
+    wf_v2_id = UUID(new_uuid7_str())
+
+    async with engine.begin() as conn:
+        await conn.execute(sa.text("DELETE FROM workspace_llm_tier_mappings"))
+        await conn.execute(sa.text("DELETE FROM kb_chunks"))
+        await conn.execute(sa.text("DELETE FROM kb_documents"))
+        await conn.execute(sa.text("DELETE FROM rag_reindexing_jobs"))
+        await conn.execute(sa.text("DELETE FROM workflow_definitions_v2"))
+        await conn.execute(
+            sa.text(
+                """
+                INSERT INTO workflow_definitions_v2 (
+                    id, workflow_id, slug, version, status, pack_id, execution_mode, spec_jsonb
+                ) VALUES (
+                    :id, 'wf-static-medium', 'wf-static-medium', '1.0.0', 'published',
+                    'core-pack', 'native_orcia', '{"default_tier": "medium"}'::jsonb
+                )
+                """
+            ),
+            {"id": wf_v2_id},
+        )
+
+    async with app_client_factory() as client:
+        create_res = await client.post(
+            "/api/v1/settings/ai-models/mappings",
+            headers=headers_admin,
+            json={
+                "scope_level": "GLOBAL",
+                "display_name": "Sole Medium Model",
+                "inference_tier": "medium",
+                "effort": "balanced",
+                "provider_slug": "openai",
+                "model_family": "OpenAI",
+                "model_name": "gpt-4o-mini",
+                "endpoint_uri": "https://api.openai.com/v1",
+                "auth_mode": "none_local",
+                "protocol_mode": "openai_compatible",
+            },
+        )
+        assert create_res.status_code == 201
+        mapping_id = create_res.json()["id"]
+
+        impact_res = await client.get(
+            f"/api/v1/settings/ai-models/mappings/{mapping_id}/delete-impact",
+            headers=headers_admin,
+        )
+        assert impact_res.status_code == 200
+        impact = impact_res.json()
+        assert impact["is_last_active_for_tier"] is True
+        assert impact["dependent_workflows_count"] == 0
+        assert impact["pinned_active_runs_count"] == 0
+
+        del_res = await client.delete(
+            f"/api/v1/settings/ai-models/mappings/{mapping_id}?mode=reject",
+            headers=headers_admin,
+        )
+        assert del_res.status_code == 200
+        assert del_res.json()["status"] == "DELETED"
+
+        async with engine.begin() as conn:
+            remaining = (
+                await conn.execute(sa.text("SELECT COUNT(*) FROM workspace_llm_tier_mappings"))
+            ).scalar()
+            assert remaining == 0
+
+        list_res = await client.get(
+            "/api/v1/settings/ai-models/mappings",
+            headers=headers_admin,
+        )
+        assert list_res.status_code == 200
+        assert list_res.json()["items"] == []
+
+        reindex_res = await client.get(
+            "/api/v1/settings/ai-models/reindex-status",
+            headers=headers_admin,
+        )
+        assert reindex_res.status_code == 200
+        reindex_json = reindex_res.json()
+        assert reindex_json["status"] == "IDLE"
+        assert reindex_json["indexed_chunks_count"] == 0
+        assert reindex_json["indexed_documents_count"] == 0

@@ -53,6 +53,7 @@ export interface PlatformSetupContextValue {
   readonly accostageSummary: AccostageProgressSummary;
   readonly isDay0Complete: boolean;
   readonly completedSetupStepsCount: number;
+  readonly refreshAccostage: () => Promise<void>;
   readonly createPlatformAdmin: (input: {
     displayName: string;
     email: string;

@@ -80,6 +80,25 @@ export interface AiModelsHubDictionary {
   readonly modelDiscoveryFreeformHint: string;
   readonly chatBadge: string;
   readonly embeddingBadge: string;
+  readonly deleteSummaryProvider: string;
+  readonly deleteSummaryModel: string;
+  readonly deleteSummaryTier: string;
+  readonly deleteImpactLoading: string;
+  readonly deleteImpactWorkflowsCount: string;
+  readonly deleteImpactRemainingModels: string;
+  readonly deleteImpactActiveRunsCount: string;
+  readonly deleteFailedError: string;
+  readonly menuEnable: string;
+  readonly menuDisable: string;
+  readonly drainingBadge: string;
+  readonly providerPrimaryLabel: string;
+  readonly providerSecondaryLabel: string;
+  readonly highPrecisionSuffix: string;
+  readonly backupPrefix: string;
+  readonly secretApiKeySaved: string;
+  readonly secretApiKey: string;
+  readonly closeErrorLabel: string;
+  readonly testTimeoutError: string;
 }
 
 export const AI_MODELS_HUB_FR: AiModelsHubDictionary = {
@@ -103,7 +122,7 @@ export const AI_MODELS_HUB_FR: AiModelsHubDictionary = {
   colHealth: "Santé & Latence",
   colActions: "Actions",
   testConnectionBtn: "Tester",
-  testingStatus: "Test en cours...",
+  testingStatus: "En cours",
   menuActions: "Menu d'actions",
   menuEdit: "Modifier la configuration",
   menuRotateKey: "Remplacer la clé d'API",
@@ -166,6 +185,25 @@ export const AI_MODELS_HUB_FR: AiModelsHubDictionary = {
   modelDiscoveryFreeformHint: "Vous pouvez saisir un identifiant librement",
   chatBadge: "Dialogue",
   embeddingBadge: "Indexation",
+  deleteSummaryProvider: "Fournisseur",
+  deleteSummaryModel: "Modèle",
+  deleteSummaryTier: "Palier",
+  deleteImpactLoading: "Analyse d'impact en cours",
+  deleteImpactWorkflowsCount: "Processus impactés",
+  deleteImpactRemainingModels: "Autres modèles actifs sur ce palier",
+  deleteImpactActiveRunsCount: "Exécutions actives épinglant ce modèle",
+  deleteFailedError: "La suppression du modèle a échoué.",
+  menuEnable: "Activer",
+  menuDisable: "Désactiver",
+  drainingBadge: "Drainage",
+  providerPrimaryLabel: "Fournisseur principal",
+  providerSecondaryLabel: "Fournisseur secondaire",
+  highPrecisionSuffix: "haute précision",
+  backupPrefix: "secours",
+  secretApiKeySaved: "Clé d'API enregistrée",
+  secretApiKey: "Clé d'API",
+  closeErrorLabel: "Fermer l'erreur",
+  testTimeoutError: "Délai d'attente dépassé (16 s) : le fournisseur IA n'a pas répondu à temps.",
 };
 
 export const AI_MODELS_HUB_EN: AiModelsHubDictionary = {
@@ -189,7 +227,7 @@ export const AI_MODELS_HUB_EN: AiModelsHubDictionary = {
   colHealth: "Health & Latency",
   colActions: "Actions",
   testConnectionBtn: "Test",
-  testingStatus: "Testing...",
+  testingStatus: "Testing",
   menuActions: "Actions menu",
   menuEdit: "Edit configuration",
   menuRotateKey: "Replace API key",
@@ -252,4 +290,23 @@ export const AI_MODELS_HUB_EN: AiModelsHubDictionary = {
   modelDiscoveryFreeformHint: "You can enter any model identifier freely",
   chatBadge: "Dialogue",
   embeddingBadge: "Indexing",
+  deleteSummaryProvider: "Provider",
+  deleteSummaryModel: "Model",
+  deleteSummaryTier: "Tier",
+  deleteImpactLoading: "Analyzing impact",
+  deleteImpactWorkflowsCount: "Impacted workflows",
+  deleteImpactRemainingModels: "Other active models on this tier",
+  deleteImpactActiveRunsCount: "Active runs pinning this model",
+  deleteFailedError: "Failed to delete AI model.",
+  menuEnable: "Enable",
+  menuDisable: "Disable",
+  drainingBadge: "Draining",
+  providerPrimaryLabel: "Primary provider",
+  providerSecondaryLabel: "Secondary provider",
+  highPrecisionSuffix: "high precision",
+  backupPrefix: "backup",
+  secretApiKeySaved: "API key saved", // pragma: allowlist secret
+  secretApiKey: "API key", // pragma: allowlist secret
+  closeErrorLabel: "Close error",
+  testTimeoutError: "Connection test timed out (16s): the AI provider did not respond in time.",
 };

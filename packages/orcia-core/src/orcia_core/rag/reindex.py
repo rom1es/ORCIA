@@ -15,6 +15,7 @@ from orcia_core.observability.logging import bind_trace_context, get_logger
 from orcia_core.ports.embedding import EmbeddingPort
 from orcia_core.rag._internal.sql_reindex import (
     complete_reindex_job_pg18,
+    count_indexed_corpus_pg18,
     create_or_replace_reindex_job_pg18,
     fail_reindex_job_pg18,
     fetch_unindexed_chunks_batch_pg18,
@@ -124,6 +125,7 @@ async def execute_rag_reindex_job(
 __all__ = [
     "check_rag_operational_on_conn",
     "complete_reindex_job_pg18",
+    "count_indexed_corpus_pg18",
     "create_or_replace_reindex_job_pg18",
     "execute_rag_reindex_job",
     "fail_reindex_job_pg18",

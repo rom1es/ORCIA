@@ -1,9 +1,10 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import React, { useState } from "react";
+import React from "react";
 import { afterEach, describe, expect, it } from "vitest";
-import type { ConfiguredLlmTierMapping } from "../components/platformSetupStore";
 import { buildAssistantModelOptions } from "../features/inbox/savedConversationsStore";
 import { SettingsAiModelsSection } from "../routes/SettingsAiModelsSection";
+import { useAuthSessionStore } from "../stores/authSessionStore";
+import { seedVitestPlatformSetupState } from "./vitest.setup";
 
 afterEach(() => {
   cleanup();
@@ -25,22 +26,27 @@ const defaultTierAndEffortLabels = {
 };
 
 function Harness(): React.ReactElement {
-  const [tiers, setTiers] = useState<readonly ConfiguredLlmTierMapping[]>([]);
   return (
     <SettingsAiModelsSection
       isFr={true}
-      llmTiers={tiers}
       tierAndEffortLabels={defaultTierAndEffortLabels}
       openHelpSection={() => undefined}
-      upsertLlmTier={(input) =>
-        setTiers((prev) => [...prev.filter((t) => t.tier !== input.tier), input])
-      }
     />
   );
 }
 
 describe("Google Gemini Configuration & Assistant Model Options", () => {
   it("selects Google Gemini preset with empty model and generic placeholder, toggles between Mode B (Native /v1beta) and Mode A (/v1beta/openai), and tests connection", async () => {
+    seedVitestPlatformSetupState(
+      { ai_model_mappings: [] },
+      { email: "admin@orcia.test", displayName: "Admin Test", roles: ["PLATFORM_ADMIN"] },
+    );
+    useAuthSessionStore.getState().loginWithSession({
+      email: "admin@orcia.test",
+      display_name: "Admin Test",
+      roles: ["PLATFORM_ADMIN"],
+      access_token: "mock-vitest-access-token",
+    });
     render(<Harness />);
 
     // Click Google Gemini preset
@@ -88,7 +94,11 @@ describe("Google Gemini Configuration & Assistant Model Options", () => {
 
     // Save the tier and verify it appears in the configured list
     fireEvent.click(screen.getByTestId("save-llm-tier-btn"));
-    expect(screen.getByTestId("llm-tier-row-medium").textContent).toContain("gemini-2.5-flash");
+    await waitFor(() => {
+      const rows = document.querySelectorAll('[data-testid^="llm-tier-row-"]');
+      expect(rows.length).toBeGreaterThan(0);
+      expect(rows[0]?.textContent).toContain("gemini-2.5-flash");
+    });
   });
 
   it("displays distinct configured models (e.g. gemma4:12b on medium and gemini-2.5-pro on complex) in buildAssistantModelOptions", () => {

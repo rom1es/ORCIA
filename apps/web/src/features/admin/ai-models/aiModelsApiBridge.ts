@@ -37,6 +37,20 @@ function extractAiModelsApiError(
       errorCode: err.problem.error_code,
     };
   }
+  if (
+    (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) ||
+    (typeof DOMException !== "undefined" &&
+      err instanceof DOMException &&
+      (err.name === "TimeoutError" || err.name === "AbortError"))
+  ) {
+    return {
+      errorMessage:
+        locale === "fr"
+          ? "Délai d'attente dépassé (16 s) : le fournisseur IA n'a pas répondu à temps."
+          : "Connection test timed out (16s): the AI provider did not respond in time.",
+      errorCode: "ERR_MODEL_CONNECTION_TIMEOUT",
+    };
+  }
   if (err instanceof Error && err.message.trim().length > 0) {
     return { errorMessage: err.message };
   }
@@ -94,9 +108,16 @@ export async function testAiModelConnectionViaApi(
   mappingId: string,
   locale: "fr" | "en",
 ): Promise<AiModelOperationResult<AiModelTestResponse>> {
+  const signal =
+    typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function"
+      ? AbortSignal.timeout(16_000)
+      : undefined;
   try {
     const client = buildAiModelsClient(locale);
-    const testRes = await client.aiModelsHub.testAiModelMapping(mappingId);
+    const testRes = await client.aiModelsHub.testAiModelMapping(
+      mappingId,
+      signal ? { signal } : undefined,
+    );
     return { ok: true, data: testRes };
   } catch (err: unknown) {
     return { ok: false, ...extractAiModelsApiError(err, locale) };

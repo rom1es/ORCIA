@@ -20555,6 +20555,16 @@
             ],
             "title": "Error Message"
           },
+          "indexed_chunks_count": {
+            "default": 0,
+            "title": "Indexed Chunks Count",
+            "type": "integer"
+          },
+          "indexed_documents_count": {
+            "default": 0,
+            "title": "Indexed Documents Count",
+            "type": "integer"
+          },
           "job_id": {
             "anyOf": [
               {

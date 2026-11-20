@@ -6,6 +6,7 @@ import type {
   UiFileBadgeCode,
 } from "./AgentExecutionTraceTypes";
 import { OrciaIcon } from "./icons";
+import { OrciaSpinner } from "../primitives/OrciaSpinner";
 
 export interface SourceLineInspectorDrawerProps {
   readonly open: boolean;
@@ -144,7 +145,7 @@ export function SourceLineInspectorDrawer({
                 data-testid="inspector-loading-state"
                 className="p-5 text-xs font-medium text-text-secondary flex items-center gap-2"
               >
-                <OrciaIcon name="hourglass" />
+                <OrciaSpinner size="xs" />
                 <span>{labels.loadingLabel}</span>
               </div>
             ) : errorMessage ? (

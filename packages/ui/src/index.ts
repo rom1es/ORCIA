@@ -345,6 +345,11 @@ export {
   type OrciaPasswordInputProps,
 } from "./primitives/OrciaPasswordInput";
 export {
+  OrciaSpinner,
+  type OrciaSpinnerProps,
+  type OrciaSpinnerSize,
+} from "./primitives/OrciaSpinner";
+export {
   OrciaAlertBanner,
   OrciaButton,
   OrciaDialog,

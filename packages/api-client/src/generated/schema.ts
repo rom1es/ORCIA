@@ -3112,6 +3112,8 @@ export interface components {
       completed_at?: string | null;
       created_at?: string | null;
       error_message?: string | null;
+      indexed_chunks_count?: number;
+      indexed_documents_count?: number;
       job_id?: string | null;
       processed_chunks?: number;
       progress_percentage?: number;

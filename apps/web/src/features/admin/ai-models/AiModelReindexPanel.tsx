@@ -1,18 +1,28 @@
 import { createOrciaApiClient } from "@orcia/api-client";
+import { OrciaSpinner } from "@orcia/ui";
 import React, { useCallback, useEffect, useState } from "react";
 
 export interface AiModelReindexPanelProps {
   readonly isFr: boolean;
   readonly canExecute: boolean;
+  readonly hasActiveEmbeddingModel?: boolean;
+  readonly refreshSignal?: number;
 }
 
-export function AiModelReindexPanel({ isFr, canExecute }: AiModelReindexPanelProps): React.JSX.Element {
+export function AiModelReindexPanel({
+  isFr,
+  canExecute,
+  hasActiveEmbeddingModel,
+  refreshSignal = 0,
+}: AiModelReindexPanelProps): React.JSX.Element | null {
   const [status, setStatus] = useState<string>("IDLE");
   const [progressPercentage, setProgressPercentage] = useState<number>(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [targetModelName, setTargetModelName] = useState<string | null>(null);
   const [totalChunks, setTotalChunks] = useState<number>(0);
   const [processedChunks, setProcessedChunks] = useState<number>(0);
+  const [indexedChunksCount, setIndexedChunksCount] = useState<number>(0);
+  const [indexedDocumentsCount, setIndexedDocumentsCount] = useState<number>(0);
   const [isRelaunching, setIsRelaunching] = useState<boolean>(false);
   const [feedback, setFeedback] = useState<string | null>(null);
 
@@ -26,6 +36,8 @@ export function AiModelReindexPanel({ isFr, canExecute }: AiModelReindexPanelPro
       setTargetModelName(res.target_model_name ?? null);
       setTotalChunks(res.total_chunks ?? 0);
       setProcessedChunks(res.processed_chunks ?? 0);
+      setIndexedChunksCount(res.indexed_chunks_count ?? 0);
+      setIndexedDocumentsCount(res.indexed_documents_count ?? 0);
     } catch (err: unknown) {
       console.warn("[ORCIA-UI] Failed to fetch reindex status:", err);
     }
@@ -38,7 +50,11 @@ export function AiModelReindexPanel({ isFr, canExecute }: AiModelReindexPanelPro
     try {
       const client = createOrciaApiClient({ baseUrl: "" });
       await client.aiModelsHub.reindexEmbeddings();
-      setFeedback(isFr ? "Réindexation globale lancée avec succès." : "Global reindexing triggered successfully.");
+      setFeedback(
+        isFr
+          ? "Réindexation globale lancée avec succès."
+          : "Global reindexing triggered successfully.",
+      );
       await fetchStatus();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -58,10 +74,17 @@ export function AiModelReindexPanel({ isFr, canExecute }: AiModelReindexPanelPro
       isMounted = false;
       clearInterval(interval);
     };
-  }, [fetchStatus]);
+  }, [fetchStatus, refreshSignal]);
 
   const isJobActive = status === "PENDING" || status === "IN_PROGRESS";
   const isJobFailed = status === "FAILED";
+  const hasCorpus = indexedChunksCount > 0 || indexedDocumentsCount > 0 || totalChunks > 0;
+
+  if (!isJobActive && !isJobFailed && !hasCorpus) {
+    return null;
+  }
+
+  const effectiveHasEmbedding = hasActiveEmbeddingModel ?? Boolean(targetModelName);
   const statusLabels: Record<string, string> = isFr
     ? {
         IDLE: "Prêt",
@@ -80,6 +103,12 @@ export function AiModelReindexPanel({ isFr, canExecute }: AiModelReindexPanelPro
         CANCELLED: "Cancelled",
       };
   const localizedStatus = statusLabels[status] ?? status;
+  const effectiveChunks = totalChunks > 0 ? totalChunks : indexedChunksCount;
+  const badgeText =
+    status === "IDLE"
+      ? `${localizedStatus} · ${effectiveChunks} ${isFr ? "extraits" : "chunks"}`
+      : `${localizedStatus} (${progressPercentage}%)`;
+  const disableRelaunch = isJobActive || isRelaunching || !effectiveHasEmbedding;
 
   return (
     <div
@@ -97,11 +126,15 @@ export function AiModelReindexPanel({ isFr, canExecute }: AiModelReindexPanelPro
           <p className="text-xs text-text-secondary mt-1">
             {targetModelName
               ? isFr
-                ? `Modèle actif : ${targetModelName} (${processedChunks}/${totalChunks} extraits)`
-                : `Active model: ${targetModelName} (${processedChunks}/${totalChunks} chunks)`
-              : isFr
-                ? "Aucun modèle de recherche sémantique actif"
-                : "No active semantic search model"}
+                ? `Modèle actif : ${targetModelName} (${totalChunks > 0 ? `${processedChunks}/${totalChunks}` : indexedChunksCount} extraits)`
+                : `Active model: ${targetModelName} (${totalChunks > 0 ? `${processedChunks}/${totalChunks}` : indexedChunksCount} chunks)`
+              : effectiveHasEmbedding
+                ? isFr
+                  ? `${indexedDocumentsCount} document(s) · ${indexedChunksCount} extraits indexés`
+                  : `${indexedDocumentsCount} document(s) · ${indexedChunksCount} indexed chunks`
+                : isFr
+                  ? "Aucun modèle de recherche sémantique actif"
+                  : "No active semantic search model"}
           </p>
         </div>
 
@@ -117,7 +150,7 @@ export function AiModelReindexPanel({ isFr, canExecute }: AiModelReindexPanelPro
                   : "bg-emerald-500/20 text-emerald-400"
             }`}
           >
-            {localizedStatus} ({progressPercentage}%)
+            {badgeText}
           </span>
 
           {canExecute && (
@@ -125,14 +158,15 @@ export function AiModelReindexPanel({ isFr, canExecute }: AiModelReindexPanelPro
               type="button"
               data-testid="relaunch-reindex-button"
               onClick={() => void handleRelaunch()}
-              disabled={isJobActive || isRelaunching}
-              className={`px-3 py-1.5 text-xs font-semibold rounded text-white ${
-                isJobActive || isRelaunching
+              disabled={disableRelaunch}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded text-white ${
+                disableRelaunch
                   ? "bg-surface-muted opacity-50 cursor-not-allowed"
                   : "bg-action-primary hover:bg-action-primary-hover cursor-pointer"
               }`}
             >
-              🔄 {isFr ? "Relancer la réindexation" : "Relaunch reindexing"}
+              {isRelaunching ? <OrciaSpinner size="xs" /> : "🔄"}
+              <span>{isFr ? "Relancer la réindexation" : "Relaunch reindexing"}</span>
             </button>
           )}
         </div>

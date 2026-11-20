@@ -43,6 +43,30 @@ def _row_to_job(row: Any) -> RagReindexJobRecord:
     )
 
 
+async def count_indexed_corpus_pg18(conn: AsyncConnection) -> tuple[int, int]:
+    """Return `(indexed_chunks_count, indexed_documents_count)` from PG18."""
+    row = (
+        await conn.execute(
+            sa.text(
+                """
+                SELECT
+                    (
+                        SELECT COUNT(*)::int FROM kb_chunks
+                        WHERE chunk_role != 'AST_SYMBOL'
+                    ) AS chunks_count,
+                    (
+                        SELECT COUNT(*)::int FROM kb_documents
+                        WHERE indexing_regime != 'CODE_AST_GRAPH'
+                    ) AS docs_count
+                """
+            )
+        )
+    ).first()
+    if row is None:
+        return 0, 0
+    return int(row[0] or 0), int(row[1] or 0)
+
+
 async def get_active_reindex_job_pg18(conn: AsyncConnection) -> RagReindexJobRecord | None:
     """Return the currently active (PENDING or IN_PROGRESS) reindex job, if any."""
     stmt = sa.text(

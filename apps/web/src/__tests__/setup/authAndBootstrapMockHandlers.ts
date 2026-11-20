@@ -22,9 +22,12 @@ export function handleAuthAndBootstrapRoute(params: {
     const workspacesCount = Array.isArray(setupState?.workspaces)
       ? setupState.workspaces.length
       : backendState.workspaces.length;
-    const modelsCount = Array.isArray(setupState?.llm_tiers)
-      ? setupState.llm_tiers.length
-      : backendState.aiModelMappings.length;
+    const modelsCount =
+      backendState.aiModelMappings.length > 0
+        ? backendState.aiModelMappings.filter((m) => m.is_active !== false && !m.draining).length
+        : Array.isArray(setupState?.llm_tiers)
+          ? setupState.llm_tiers.length
+          : 0;
     const sourcesCount = Array.isArray(setupState?.datasources) ? setupState.datasources.length : 0;
     const workflowsCount = Array.isArray(setupState?.workflows) ? setupState.workflows.length : 0;
     const adminCreated = Boolean(backendState.firstAdmin);

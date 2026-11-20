@@ -27,6 +27,7 @@ from orcia_core.permissions import AuthAndOrganizationService
 from orcia_core.rag.errors import NoActiveEmbeddingModelError
 from orcia_core.rag.models import RagReindexJobRecord
 from orcia_core.rag.reindex import (
+    count_indexed_corpus_pg18,
     create_or_replace_reindex_job_pg18,
     get_latest_reindex_job_pg18,
 )
@@ -34,9 +35,18 @@ from orcia_core.rag.reindex import (
 logger = get_logger("orcia.api.ai_models_reindex")
 
 
-def _row_to_status_response(job: RagReindexJobRecord | None) -> RagReindexStatusResponse:
+def _row_to_status_response(
+    job: RagReindexJobRecord | None,
+    *,
+    indexed_chunks_count: int = 0,
+    indexed_documents_count: int = 0,
+) -> RagReindexStatusResponse:
     if job is None:
-        return RagReindexStatusResponse(status="IDLE")
+        return RagReindexStatusResponse(
+            status="IDLE",
+            indexed_chunks_count=indexed_chunks_count,
+            indexed_documents_count=indexed_documents_count,
+        )
     return RagReindexStatusResponse(
         job_id=job.id,
         status=job.status,
@@ -44,6 +54,8 @@ def _row_to_status_response(job: RagReindexJobRecord | None) -> RagReindexStatus
         target_model_name=job.target_model_name,
         total_chunks=job.total_chunks,
         processed_chunks=job.processed_chunks,
+        indexed_chunks_count=indexed_chunks_count,
+        indexed_documents_count=indexed_documents_count,
         progress_percentage=job.progress_percentage,
         error_message=job.error_message,
         created_at=job.created_at,
@@ -115,7 +127,13 @@ async def fetch_reindex_status_response(request: Request) -> RagReindexStatusRes
     test_reindex_mgr = getattr(request.app.state, "reindex_manager", None)
     if test_reindex_mgr is not None:
         mem_job = test_reindex_mgr.get_latest_job()
-        return _row_to_status_response(mem_job)
+        mem_chunks = mem_job.total_chunks if mem_job is not None else 0
+        mem_docs = 1 if mem_chunks > 0 else 0
+        return _row_to_status_response(
+            mem_job,
+            indexed_chunks_count=mem_chunks,
+            indexed_documents_count=mem_docs,
+        )
 
     from orcia_api.dependencies.core_and_lifespan import get_or_create_shared_db_engine
 
@@ -125,8 +143,13 @@ async def fetch_reindex_status_response(request: Request) -> RagReindexStatusRes
     async with engine.begin() as conn:
         # Ensure schema if needed
         await ensure_ai_model_mappings_schema_on_postgres18(conn)
+        chunks_count, docs_count = await count_indexed_corpus_pg18(conn)
         job = await get_latest_reindex_job_pg18(conn)
-        return _row_to_status_response(job)
+        return _row_to_status_response(
+            job,
+            indexed_chunks_count=chunks_count,
+            indexed_documents_count=docs_count,
+        )
 
 
 async def trigger_manual_reindex_embeddings(

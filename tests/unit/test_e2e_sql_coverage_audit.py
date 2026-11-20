@@ -230,7 +230,7 @@ def test_all_e2e_specs_invoke_domain_postgresql_18_assertions_in_every_test_bloc
         trivial_sql_blocks.extend(trivial)
         out_of_domain_blocks.extend(out_domain)
 
-    assert total_blocks == 55
+    assert total_blocks == 56
     assert blocks_missing_sql == []
     assert trivial_sql_blocks == []
     assert out_of_domain_blocks == []

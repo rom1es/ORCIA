@@ -1,6 +1,7 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import { OrciaIcon } from "../components/icons";
 import { normalizeComboboxSearchToken } from "./comboboxSearchUtils";
+import { OrciaSpinner } from "./OrciaSpinner";
 
 export interface DiscoveredModelOption {
   readonly id: string;
@@ -215,12 +216,16 @@ export function OrciaModelCombobox({
             <span
               data-testid={`${testId}-loading-indicator`}
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
                 fontSize: "11px",
                 color: "var(--color-muted-foreground)",
                 marginRight: "4px",
               }}
             >
-              {labels.loadingLabel}
+              <OrciaSpinner size="xs" />
+              <span>{labels.loadingLabel}</span>
             </span>
           )}
 

@@ -100,6 +100,8 @@ export function handleAiModelsAndToolsRoute(params: {
 
   if (path === "/api/v1/settings/ai-models/mappings" && method === "POST") {
     const newId = `0195f000-0000-7000-8300-${String(backendState.aiModelMappings.length + 1).padStart(12, "0")}`;
+    const secInput = body.secret_input as { action?: string; plaintext_value?: string } | null | undefined;
+    const hasSecret = Boolean(secInput && secInput.action === "set" && secInput.plaintext_value);
     const created: Record<string, unknown> = {
       id: newId,
       scope_level: String(body.scope_level ?? "GLOBAL"),
@@ -118,6 +120,13 @@ export function handleAiModelsAndToolsRoute(params: {
       is_active: body.is_active !== undefined ? Boolean(body.is_active) : true,
       draining: false,
       health_status: "OPERATIONAL",
+      secret_status: {
+        configured: hasSecret,
+        fingerprint: hasSecret ? "sha256:mock" : null,
+        masked_hint: hasSecret ? "••••••••1234" : null,
+        updated_at: hasSecret ? new Date().toISOString() : null,
+        updated_by: hasSecret ? "admin" : null,
+      },
       created_at: "2026-11-18T10:00:00Z",
     };
     backendState.aiModelMappings = [...backendState.aiModelMappings, created];
@@ -141,20 +150,51 @@ export function handleAiModelsAndToolsRoute(params: {
   if (aiMappingItemMatch && method === "DELETE") {
     const mappingId = decodeURIComponent(aiMappingItemMatch[1] ?? "");
     backendState.aiModelMappings = backendState.aiModelMappings.filter((m) => m.id !== mappingId);
-    return jsonResponse({ deleted: true, mapping_id: mappingId });
+    return jsonResponse({
+      status: "DELETED",
+      mapping_id: mappingId,
+      message: "Modèle supprimé.",
+    });
   }
   const aiMappingActionMatch = /^\/api\/v1\/settings\/ai-models\/mappings\/([^/]+)\/(test|delete-impact)$/.exec(path);
   if (aiMappingActionMatch) {
     const mappingId = decodeURIComponent(aiMappingActionMatch[1] ?? "");
     const action = aiMappingActionMatch[2];
     if (action === "delete-impact") {
-      return jsonResponse({ mapping_id: mappingId, active_runs_count: 0, requires_drain: false });
+      const target = backendState.aiModelMappings.find((m) => m.id === mappingId);
+      const tier = String(target?.inference_tier ?? "medium");
+      const otherActive = backendState.aiModelMappings.filter(
+        (m) => m.id !== mappingId && m.inference_tier === tier && m.is_active !== false && !m.draining,
+      ).length;
+      return jsonResponse({
+        mapping_id: mappingId,
+        inference_tier: tier,
+        model_name: String(target?.model_name ?? "gpt-4o-mini"),
+        is_last_active_for_tier: otherActive === 0,
+        dependent_workflows_count: 0,
+        dependent_workflow_ids: [],
+        remaining_active_for_tier: otherActive,
+        pinned_active_runs_count: 0,
+        pinned_run_ids: [],
+      });
     }
-    return jsonResponse({ ok: true, mapping_id: mappingId, latency_ms: 21, status: "OPERATIONAL" });
+    return jsonResponse({
+      mapping_id: mappingId,
+      health_status: "OPERATIONAL",
+      latency_ms: 21,
+      tested_at: new Date().toISOString(),
+      message: "✅ Connexion réussie",
+    });
   }
 
   if (path === "/api/v1/settings/ai-models/reindex-status" && method === "GET") {
-    return jsonResponse(backendState.mockReindexStatus);
+    return jsonResponse({
+      status: "IDLE",
+      progress_percentage: 0,
+      indexed_chunks_count: 0,
+      indexed_documents_count: 0,
+      ...backendState.mockReindexStatus,
+    });
   }
 
   if (path === "/api/v1/settings/ai-models/reindex-embeddings" && method === "POST") {
@@ -163,6 +203,8 @@ export function handleAiModelsAndToolsRoute(params: {
       progress_percentage: 0,
       total_chunks: 50,
       processed_chunks: 0,
+      indexed_chunks_count: 50,
+      indexed_documents_count: 2,
     };
     return jsonResponse({
       job_id: "mock-reindex-job-1",

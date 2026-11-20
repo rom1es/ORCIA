@@ -153,13 +153,19 @@ export function createRequestJson(options: OrciaApiClientOptions) {
     method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" = "GET",
     body?: unknown,
     extraHeaders?: Record<string, string>,
+    signal?: AbortSignal,
   ): Promise<T> {
     const headers = buildBaseHeaders(
       options,
       "application/json, application/problem+json",
       extraHeaders,
     );
-    const init: RequestInit = { method, headers, credentials: "include" };
+    const init: RequestInit = {
+      method,
+      headers,
+      credentials: "include",
+      ...(signal ? { signal } : {}),
+    };
     if (body !== undefined) {
       headers["Content-Type"] = "application/json";
       init.body = JSON.stringify(body);

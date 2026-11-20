@@ -5,8 +5,11 @@ import type {
   AiModelPatchRequest,
 } from "@orcia/api-client";
 import type { UiInferenceEffort, UiInferenceTier } from "@orcia/ui";
-import { useEffect, useState } from "react";
-import type { ConfiguredLlmTierMapping, LlmAuthMode } from "../components/platformSetupStore";
+import { useCallback, useEffect, useState } from "react";
+import {
+  useOptionalPlatformSetup,
+  type LlmAuthMode,
+} from "../components/platformSetupStore";
 import {
   createAiModelMappingViaApi,
   deleteAiModelMappingViaApi,
@@ -16,8 +19,8 @@ import {
   testAiModelConnectionViaApi,
 } from "../features/admin/ai-models/aiModelsApiBridge";
 import type { AiModelModalMode } from "../features/admin/ai-models/AiModelConfigModal";
+import type { AiModelDeleteConfirmResult } from "../features/admin/ai-models/AiModelDeleteDialog";
 import { useAuthSessionStore } from "../stores/authSessionStore";
-import { buildFallbackMappingsFromProps } from "./settingsAiModelsFallback";
 import {
   detectGoogleGeminiProtocolMode,
   isGoogleGeminiFamily,
@@ -28,12 +31,13 @@ import {
 
 export function useAiModelsSectionController(params: {
   readonly isFr: boolean;
-  readonly llmTiers: readonly ConfiguredLlmTierMapping[];
-  readonly upsertLlmTier?: (input: ConfiguredLlmTierMapping) => void;
 }) {
-  const { isFr, llmTiers, upsertLlmTier } = params;
+  const { isFr } = params;
+  const platformSetup = useOptionalPlatformSetup();
   const [serverMappings, setServerMappings] = useState<readonly AiModelMappingItemResponse[]>([]);
+  const [mappingsRevision, setMappingsRevision] = useState<number>(0);
   const [testingId, setTestingId] = useState<string | null>(null);
+  const [testErrorsByModelId, setTestErrorsByModelId] = useState<Record<string, string>>({});
   const [operationError, setOperationError] = useState<string | null>(null);
   const [modalState, setModalState] = useState<{
     open: boolean;
@@ -47,8 +51,8 @@ export function useAiModelsSectionController(params: {
     isLoadingImpact: boolean;
   }>({ open: false, mapping: null, impact: null, isLoadingImpact: false });
 
-  const [selectedTier, setSelectedTier] = useState<UiInferenceTier>("medium");
-  const [selectedEffort, setSelectedEffort] = useState<UiInferenceEffort>("balanced");
+  const [selectedTier] = useState<UiInferenceTier>("medium");
+  const [selectedEffort] = useState<UiInferenceEffort>("balanced");
   const [modelFamily, setModelFamily] = useState<string>("Anthropic");
   const [primaryModel, setPrimaryModel] = useState<string>("");
   const [secondaryModel, setSecondaryModel] = useState<string>("");
@@ -57,10 +61,15 @@ export function useAiModelsSectionController(params: {
   const [apiKeyInput, setApiKeyInput] = useState<string>("");
   const [testResult, setTestResult] = useState<ConnectionTestFeedback | null>(null);
 
-  const loadMappings = async () => {
+  const loadMappings = useCallback(async () => {
     const res = await fetchAiModelMappings(isFr ? "fr" : "en");
-    if (res.ok && Array.isArray(res.data)) setServerMappings(res.data);
-  };
+    if (res.ok && Array.isArray(res.data)) {
+      setServerMappings(res.data);
+      setMappingsRevision((r) => r + 1);
+    } else if (!res.ok) {
+      setOperationError(res.errorMessage);
+    }
+  }, [isFr]);
 
   const isHydrating = useAuthSessionStore((s) => s.isHydrating);
   const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
@@ -69,33 +78,49 @@ export function useAiModelsSectionController(params: {
   useEffect(() => {
     if (isHydrating || !isAuthenticated) return;
     void loadMappings();
-  }, [isFr, isHydrating, isAuthenticated, accessToken]);
+  }, [isHydrating, isAuthenticated, accessToken, loadMappings]);
 
-  const activeMappings =
-    Array.isArray(serverMappings) && serverMappings.length > 0
-      ? serverMappings
-      : buildFallbackMappingsFromProps(llmTiers ?? []);
+  const activeMappings = serverMappings;
+
+  const clearModelTestError = (mappingId: string) => {
+    setTestErrorsByModelId((prev) => {
+      if (!(mappingId in prev)) return prev;
+      const next = { ...prev };
+      delete next[mappingId];
+      return next;
+    });
+  };
 
   const handleTestConnection = async (mappingId: string) => {
     setTestingId(mappingId);
-    setOperationError(null);
+    clearModelTestError(mappingId);
     try {
       const res = await testAiModelConnectionViaApi(mappingId, isFr ? "fr" : "en");
       if (res.ok) {
         setServerMappings((prev) =>
           prev.map((m) =>
             m.id === mappingId
-              ? { ...m, health_status: res.data.health_status, last_latency_ms: res.data.latency_ms, last_tested_at: res.data.tested_at }
+              ? {
+                  ...m,
+                  health_status: res.data.health_status,
+                  last_latency_ms: res.data.latency_ms,
+                  last_tested_at: res.data.tested_at,
+                }
               : m,
           ),
         );
       } else {
         setServerMappings((prev) =>
           prev.map((m) =>
-            m.id === mappingId ? { ...m, health_status: "ERROR", last_tested_at: new Date().toISOString() } : m,
+            m.id === mappingId
+              ? { ...m, health_status: "ERROR", last_tested_at: new Date().toISOString() }
+              : m,
           ),
         );
-        setOperationError(res.errorMessage);
+        setTestErrorsByModelId((prev) => ({
+          ...prev,
+          [mappingId]: res.errorMessage,
+        }));
       }
     } finally {
       setTestingId(null);
@@ -103,8 +128,17 @@ export function useAiModelsSectionController(params: {
   };
 
   const handleToggleActive = async (mapping: AiModelMappingItemResponse) => {
-    const res = await patchAiModelMappingViaApi(mapping.id, { is_active: !mapping.is_active }, isFr ? "fr" : "en");
-    if (res.ok) void loadMappings();
+    const res = await patchAiModelMappingViaApi(
+      mapping.id,
+      { is_active: !mapping.is_active },
+      isFr ? "fr" : "en",
+    );
+    if (res.ok) {
+      await loadMappings();
+      await platformSetup?.refreshAccostage?.();
+    } else {
+      setOperationError(res.errorMessage);
+    }
   };
 
   const handleOpenDelete = async (mapping: AiModelMappingItemResponse) => {
@@ -115,49 +149,61 @@ export function useAiModelsSectionController(params: {
     );
   };
 
-  const handleConfirmDelete = async (mappingId: string, mode: "reject" | "drain" | "force"): Promise<boolean> => {
+  const handleConfirmDelete = async (
+    mappingId: string,
+    mode: "reject" | "drain" | "force",
+  ): Promise<AiModelDeleteConfirmResult> => {
     const res = await deleteAiModelMappingViaApi(mappingId, mode, isFr ? "fr" : "en");
-    if (res.ok) {
-      void loadMappings();
-      return true;
+    if (!res.ok) {
+      return { ok: false, errorMessage: res.errorMessage };
     }
-    return false;
+    clearModelTestError(mappingId);
+    await loadMappings();
+    await platformSetup?.refreshAccostage?.();
+    return { ok: true };
   };
 
-  const handleSubmitCreate = async (payload: AiModelCreateRequest, andTest: boolean): Promise<boolean> => {
+  const handleSubmitCreate = async (
+    payload: AiModelCreateRequest,
+    andTest: boolean,
+  ): Promise<boolean> => {
     const res = await createAiModelMappingViaApi(payload, isFr ? "fr" : "en");
     if (!res.ok) throw new Error(res.errorMessage);
-    if (upsertLlmTier) {
-      upsertLlmTier({
-        tier: (payload.inference_tier ?? "medium") as UiInferenceTier,
-        primaryModel: payload.model_name,
-        secondaryModel: payload.fallback_model_name || payload.model_name,
-        modelFamily: payload.model_family,
-        defaultEffort: (payload.effort ?? "balanced") as UiInferenceEffort,
-        endpointUrl: payload.endpoint_uri,
-        authMode: (payload.auth_mode ?? "api_key") as LlmAuthMode,
-        apiKeyConfigured: Boolean(payload.secret_input?.plaintext_value || payload.auth_mode !== "api_key"),
-      });
-    }
+    setOperationError(null);
     if (andTest) {
       const testRes = await testAiModelConnectionViaApi(res.data.id, isFr ? "fr" : "en");
-      setOperationError(testRes.ok ? null : testRes.errorMessage);
-    } else {
-      setOperationError(null);
+      if (!testRes.ok) {
+        setTestErrorsByModelId((prev) => ({
+          ...prev,
+          [res.data.id]: testRes.errorMessage,
+        }));
+      }
     }
-    void loadMappings();
+    await loadMappings();
+    await platformSetup?.refreshAccostage?.();
     return true;
   };
 
-  const handleSubmitPatch = async (mappingId: string, payload: AiModelPatchRequest): Promise<boolean> => {
+  const handleSubmitPatch = async (
+    mappingId: string,
+    payload: AiModelPatchRequest,
+  ): Promise<boolean> => {
     const res = await patchAiModelMappingViaApi(mappingId, payload, isFr ? "fr" : "en");
     if (!res.ok) throw new Error(res.errorMessage);
-    void loadMappings();
+    await loadMappings();
+    await platformSetup?.refreshAccostage?.();
     return true;
   };
 
   const evaluateConnectionTest = async () => {
-    const p = { provider: modelFamily, model: primaryModel, uri: endpointUrl, mode: authMode, rawKey: apiKeyInput, keyAlreadyConfigured: false };
+    const p = {
+      provider: modelFamily,
+      model: primaryModel,
+      uri: endpointUrl,
+      mode: authMode,
+      rawKey: apiKeyInput,
+      keyAlreadyConfigured: false,
+    };
     const syncErr = validateLlmConnectionParameters({ isFr, ...p });
     if (syncErr !== null) {
       setTestResult(syncErr);
@@ -166,46 +212,43 @@ export function useAiModelsSectionController(params: {
     setTestResult(await runRemoteLlmConnectionTestEvaluation({ isFr, ...p }));
   };
 
-  const handleQuickSubmit = () => {
+  const handleQuickSubmit = async () => {
     if (!primaryModel.trim()) return;
-    if (upsertLlmTier) {
-      upsertLlmTier({
-        tier: selectedTier,
-        primaryModel: primaryModel.trim(),
-        secondaryModel: secondaryModel.trim() || primaryModel.trim(),
-        modelFamily: modelFamily.trim() || "Anthropic",
-        defaultEffort: selectedEffort,
-        endpointUrl: endpointUrl.trim() || "https://api.anthropic.com/v1",
-        authMode,
-        apiKeyConfigured: authMode === "api_key" ? Boolean(apiKeyInput.trim()) : true,
-      });
+    try {
+      await handleSubmitCreate(
+        {
+          scope_level: "GLOBAL",
+          display_name: primaryModel.trim(),
+          inference_tier: selectedTier,
+          effort: selectedEffort,
+          provider_slug: modelFamily.trim().toLowerCase(),
+          model_family: modelFamily.trim(),
+          model_name: primaryModel.trim(),
+          fallback_model_name: secondaryModel.trim() || null,
+          endpoint_uri: endpointUrl.trim(),
+          auth_mode: authMode,
+          protocol_mode: "openai_compatible",
+          secret_input:
+            authMode === "api_key" && apiKeyInput.trim()
+              ? { action: "set", plaintext_value: apiKeyInput.trim() }
+              : null,
+          fallback_order: 1,
+        },
+        false,
+      );
+      setPrimaryModel("");
+      setSecondaryModel("");
+      setApiKeyInput("");
+    } catch (err: unknown) {
+      setOperationError(err instanceof Error ? err.message : String(err));
     }
-    void handleSubmitCreate(
-      {
-        scope_level: "GLOBAL",
-        display_name: primaryModel.trim(),
-        inference_tier: selectedTier,
-        effort: selectedEffort,
-        provider_slug: modelFamily.trim().toLowerCase(),
-        model_family: modelFamily.trim(),
-        model_name: primaryModel.trim(),
-        fallback_model_name: secondaryModel.trim() || null,
-        endpoint_uri: endpointUrl.trim(),
-        auth_mode: authMode,
-        protocol_mode: "openai_compatible",
-        secret_input: authMode === "api_key" && apiKeyInput.trim() ? { action: "set", plaintext_value: apiKeyInput.trim() } : null,
-        fallback_order: 1,
-      },
-      false,
-    );
-    setPrimaryModel("");
-    setSecondaryModel("");
-    setApiKeyInput("");
   };
 
   return {
     activeMappings,
+    mappingsRevision,
     testingId,
+    testErrorsByModelId,
     operationError,
     setOperationError,
     modalState,
@@ -213,9 +256,7 @@ export function useAiModelsSectionController(params: {
     deleteState,
     setDeleteState,
     selectedTier,
-    setSelectedTier,
     selectedEffort,
-    setSelectedEffort,
     modelFamily,
     setModelFamily,
     primaryModel,
@@ -239,6 +280,6 @@ export function useAiModelsSectionController(params: {
     handleSubmitCreate,
     handleSubmitPatch,
     evaluateConnectionTest,
-    handleQuickSubmit,
+    handleQuickSubmit: () => void handleQuickSubmit(),
   };
 }

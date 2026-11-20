@@ -1,5 +1,6 @@
 import { createOrciaApiClient, OrciaProblemError } from "@orcia/api-client";
 import {
+  OrciaSpinner,
   PlatformAuthSettingsCard,
   type PlatformAuthOidcDiscoveryFeedback,
   type PlatformAuthSettingsDraft,
@@ -194,10 +195,11 @@ export function SettingsAuthenticationSection({
     return (
       <div
         data-testid="settings-authentication-loading"
-        className="orcia-bento-card text-xs"
+        className="orcia-bento-card inline-flex items-center gap-2 text-xs"
         style={{ color: "var(--color-muted-foreground)" }}
       >
-        {copy.card.testingOidcLabel}
+        <OrciaSpinner size="xs" />
+        <span>{copy.card.testingOidcLabel}</span>
       </div>
     );
   }

@@ -1,3 +1,4 @@
+import { createOrciaApiClient } from "@orcia/api-client";
 import type {
   ControlCenterDatasourceItem,
   ControlCenterOverrideItem,
@@ -8,7 +9,7 @@ import type {
 } from "@orcia/ui";
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { formatRfc9457ErrorToBanner } from "../lib/formatRfc9457ErrorToBanner";
-import { useAuthSessionStore } from "../stores/authSessionStore";
+import { resolveWebApiBaseUrl, useAuthSessionStore } from "../stores/authSessionStore";
 import { createPlatformGovernanceActions } from "./platformSetupGovernanceActions";
 import {
   buildWorkflowOverridesFromWorkflows,
@@ -21,6 +22,7 @@ import {
   type PlatformSetupContextValue,
 } from "./platformSetupContextTypes";
 import {
+  buildAccostageCountsFromStatus,
   fetchAndBuildHydrationOutcome,
   savePlatformSetupSnapshotToApi,
   type AccostagePg18CountsView,
@@ -145,6 +147,21 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         formatRfc9457ErrorToBanner(err, "fr", "Synchronisation plateforme").fullText,
       );
     });
+  };
+
+  const refreshAccostage = async (): Promise<void> => {
+    try {
+      const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
+      const status = await client.getAccostageStatus();
+      const nextCounts = buildAccostageCountsFromStatus(status, orgUnits);
+      setAccostageCounts(nextCounts);
+      if (nextCounts.modelsCount === 0 && llmTiers.length > 0) {
+        setLlmTiers([]);
+        writeCachedPlatformSetupState(buildSnapshot({ llmTiers: [] }));
+      }
+    } catch (err: unknown) {
+      console.warn("[orcia:platformSetup.refreshAccostage]", err);
+    }
   };
 
   useEffect(() => {
@@ -324,6 +341,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         accostageSummary,
         isDay0Complete,
         completedSetupStepsCount,
+        refreshAccostage,
         ...governanceActions,
         ...workspaceActions,
       }}

@@ -1,5 +1,6 @@
 import React from "react";
 import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
+import { OrciaSpinner } from "./OrciaSpinner";
 
 export interface UiTestBenchStepItem {
   readonly stepNumber: 1 | 2 | 3 | 4;
@@ -105,11 +106,14 @@ export const RemoteServiceTestBenchAndMcpExposureView: React.FC<
               disabled={isTesting}
               data-testid="run-test-bench-btn"
               onClick={onRunTestBench}
-              className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-1.5 text-xs font-medium disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-1.5 text-xs font-medium disabled:opacity-60"
             >
-              {isTesting
-                ? (labels.testingInProgressCta ?? "Vérification en cours…")
-                : labels.testAndDiscoverCta}
+              {isTesting && <OrciaSpinner size="xs" />}
+              <span>
+                {isTesting
+                  ? (labels.testingInProgressCta ?? "Vérification en cours…")
+                  : labels.testAndDiscoverCta}
+              </span>
             </button>
           )}
           <button
@@ -133,10 +137,13 @@ export const RemoteServiceTestBenchAndMcpExposureView: React.FC<
         <div
           role="status"
           data-testid="test-bench-loading-banner"
-          className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2 text-xs font-medium text-[var(--orcia-text-secondary)]"
+          className="flex items-center gap-2 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2 text-xs font-medium text-[var(--orcia-text-secondary)]"
         >
-          {labels.testingInProgressNotice ??
-            "⏳ Vérification en cours auprès du serveur et enregistrement de la trace d'audit…"}
+          <OrciaSpinner size="xs" />
+          <span>
+            {labels.testingInProgressNotice ??
+              "Vérification en cours auprès du serveur et enregistrement de la trace d'audit…"}
+          </span>
         </div>
       )}
 

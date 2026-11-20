@@ -1,18 +1,14 @@
 import type { AiModelMappingItemResponse } from "@orcia/api-client";
 import {
-  InferenceTierBadge,
-  OrciaDropdownMenu,
   PermissionGuard,
-  StatusBadge,
   type InferenceTierAndEffortLabels,
-  type StatusBadgeTone,
-  type UiInferenceEffort,
+  type PermissionGuardLabels,
   type UiInferenceTier,
   type UiPermissionVerb,
-  type PermissionGuardLabels,
 } from "@orcia/ui";
 import React from "react";
 import type { AiModelsHubDictionary } from "../../../i18n/locales/ai_models_hub_labels";
+import { AiModelMappingRowCard } from "./AiModelMappingRowCard";
 
 const DEFAULT_GUARD_LABELS: PermissionGuardLabels = {
   passiveLockBadge: "Lecture seule",
@@ -28,6 +24,7 @@ export interface AiModelsMasterTableProps {
   readonly mappings: readonly AiModelMappingItemResponse[];
   readonly allowedVerbs: readonly UiPermissionVerb[];
   readonly testingId: string | null;
+  readonly testErrorsByModelId?: Readonly<Record<string, string>>;
   readonly onOpenCreateModal: () => void;
   readonly onOpenEditModal: (mapping: AiModelMappingItemResponse) => void;
   readonly onOpenRotateKeyModal: (mapping: AiModelMappingItemResponse) => void;
@@ -38,29 +35,13 @@ export interface AiModelsMasterTableProps {
 
 const ALL_TIERS: readonly UiInferenceTier[] = ["simple", "medium", "complex", "auto"];
 
-function resolveHealthBadge(
-  status: string,
-  labels: AiModelsHubDictionary,
-): { label: string; tone: StatusBadgeTone } {
-  switch (status) {
-    case "OPERATIONAL":
-      return { label: labels.healthOperational, tone: "emerald" };
-    case "DEGRADED":
-      return { label: labels.healthDegraded, tone: "amber" };
-    case "ERROR":
-      return { label: labels.healthError, tone: "crimson" };
-    default:
-      return { label: labels.healthUntested, tone: "neutral" };
-  }
-}
-
 export function AiModelsMasterTable({
-  isFr,
   labels,
   tierLabels,
   mappings,
   allowedVerbs,
   testingId,
+  testErrorsByModelId = {},
   onOpenCreateModal,
   onOpenEditModal,
   onOpenRotateKeyModal,
@@ -216,194 +197,23 @@ export function AiModelsMasterTable({
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          {mappings.map((item) => {
-            const health = resolveHealthBadge(item.health_status, labels);
-            const isTesting = testingId === item.id;
-            const effortVal = (item.effort ?? "balanced") as UiInferenceEffort;
-            const tierVal = item.inference_tier as UiInferenceTier;
-
-            return (
-              <div
-                key={item.id}
-                data-testid={`llm-tier-row-${item.id}`}
-                data-tier={item.inference_tier}
-                data-usage={item.usage ?? "chat"}
-                style={{
-                  padding: "12px 16px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--color-border)",
-                  backgroundColor: "var(--color-surface-card)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: "12px",
-                  opacity: item.draining ? 0.7 : item.is_active ? 1 : 0.6,
-                }}
-              >
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "260px", flex: "1 1 300px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                    <span style={{ fontWeight: 600, fontSize: "14px" }}>
-                      {item.display_name || item.model_name}
-                    </span>
-                    {item.usage === "embedding" ? (
-                      <span
-                        data-testid={`usage-badge-embedding-${item.id}`}
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          padding: "2px 8px",
-                          borderRadius: "var(--radius-sm)",
-                          backgroundColor: "var(--color-action-primary-subtle)",
-                          color: "var(--color-primary-cobalt)",
-                          border: "1px solid var(--color-border)",
-                        }}
-                      >
-                        {labels.usageEmbedding}
-                      </span>
-                    ) : (
-                      <InferenceTierBadge tier={tierVal} effort={effortVal} labels={tierLabels} />
-                    )}
-                    {item.usage === "embedding" && item.is_active && !item.draining && item.scope_level === "GLOBAL" && (
-                      <span
-                        data-testid={`active-embedding-badge-${item.id}`}
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          padding: "2px 8px",
-                          borderRadius: "var(--radius-sm)",
-                          backgroundColor: "var(--color-gate-emerald-bg)",
-                          color: "var(--color-gate-emerald)",
-                          border: "1px solid var(--color-gate-emerald)",
-                        }}
-                      >
-                        ★ {labels.activeEmbeddingBadge}
-                      </span>
-                    )}
-                    {item.draining && (
-                      <span
-                        data-testid={`draining-badge-${item.id}`}
-                        style={{
-                          fontSize: "11px",
-                          padding: "1px 6px",
-                          borderRadius: "var(--radius-sm)",
-                          backgroundColor: "var(--color-bg-elevated)",
-                          border: "1px solid var(--color-border)",
-                          color: "var(--color-muted-foreground)",
-                        }}
-                      >
-                        Drainage
-                      </span>
-                    )}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      color: "var(--color-muted-foreground)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <span>
-                      {item.model_family === "family-a"
-                        ? isFr
-                          ? "Fournisseur principal"
-                          : "Primary provider"
-                        : item.model_family === "family-b"
-                          ? isFr
-                            ? "Fournisseur secondaire"
-                            : "Secondary provider"
-                          : (item.model_family || item.provider_slug)}
-                      {item.usage === "embedding"
-                        ? ` · ${labels.usageEmbedding} (${isFr ? "haute précision" : "high precision"})`
-                        : ` · ${tierLabels[`effort${effortVal.charAt(0).toUpperCase() + effortVal.slice(1)}` as keyof InferenceTierAndEffortLabels] ?? effortVal}`}
-                    </span>
-                    <span>•</span>
-                    <code>{item.model_name}</code>
-                    {item.fallback_model_name && (
-                      <>
-                        <span>({isFr ? "secours" : "backup"}:</span>
-                        <code>{item.fallback_model_name}</code>
-                        <span>)</span>
-                      </>
-                    )}
-                  </div>
-                  <div style={{ fontSize: "11px", color: "var(--color-muted-foreground)" }}>
-                    <code>{item.endpoint_uri}</code>
-                    <span style={{ margin: "0 6px" }}>•</span>
-                    {item.auth_mode === "api_key" ? (
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                        <span>
-                          {isFr
-                            ? item.secret_status?.configured
-                              ? "Clé d'API enregistrée"
-                              : "Clé d'API"
-                            : item.secret_status?.configured
-                              ? "API key saved"
-                              : "API key"}{" "}
-                          :
-                        </span>
-                        <code data-testid="ai-model-secret-hint">
-                          {item.secret_status?.masked_hint ?? "••••••••"}
-                        </code>
-                      </span>
-                    ) : item.auth_mode === "env_var" ? (
-                      <span>{labels.secretServerEnv} ({item.env_var_name || "ENV"})</span>
-                    ) : (
-                      <span>{labels.secretLocalNoAuth}</span>
-                    )}
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "2px" }}>
-                    <StatusBadge label={health.label} tone={health.tone} monospace />
-                    {item.last_latency_ms !== null && item.last_latency_ms !== undefined && (
-                      <span
-                        data-testid={`latency-ms-${item.id}`}
-                        style={{ fontSize: "10px", fontFamily: "var(--font-mono)", color: "var(--color-muted-foreground)" }}
-                      >
-                        {item.last_latency_ms} ms
-                      </span>
-                    )}
-                  </div>
-
-                  <PermissionGuard
-                    scopePath="GLOBAL"
-                    verb="execute"
-                    allowedVerbs={allowedVerbs}
-                    fallbackMode="disabled"
-                    labels={DEFAULT_GUARD_LABELS}
-                  >
-                    <button
-                      type="button"
-                      data-testid={`test-ai-model-btn-${item.id}`}
-                      disabled={isTesting || !allowedVerbs.includes("execute")}
-                      onClick={() => onTestConnection(item.id)}
-                      className="orcia-ds-btn orcia-ds-btn-secondary"
-                    >
-                      {isTesting ? labels.testingStatus : `🔌 ${labels.testConnectionBtn}`}
-                    </button>
-                  </PermissionGuard>
-
-                  <OrciaDropdownMenu
-                    triggerLabel="⋮"
-                    testId={`ai-model-row-actions-${item.id}`}
-                    items={[
-                      { key: "edit", label: labels.menuEdit, testId: `edit-ai-model-item-${item.id}`, onSelect: () => onOpenEditModal(item) },
-                      ...(item.auth_mode === "api_key"
-                        ? [{ key: "rotate-key", label: labels.menuRotateKey, testId: `rotate-key-ai-model-item-${item.id}`, onSelect: () => onOpenRotateKeyModal(item) }]
-                        : []),
-                      { key: "toggle-active", label: item.is_active ? "Désactiver" : "Activer", testId: `toggle-active-ai-model-item-${item.id}`, onSelect: () => onToggleActive(item) },
-                      { key: "delete", label: labels.menuDelete, testId: `delete-ai-model-item-${item.id}`, onSelect: () => onOpenDeleteDialog(item) },
-                    ]}
-                  />
-                </div>
-              </div>
-            );
-          })}
+          {mappings.map((item) => (
+            <AiModelMappingRowCard
+              key={item.id}
+              item={item}
+              labels={labels}
+              tierLabels={tierLabels}
+              guardLabels={DEFAULT_GUARD_LABELS}
+              allowedVerbs={allowedVerbs}
+              isTesting={testingId === item.id}
+              testError={testErrorsByModelId[item.id] ?? null}
+              onOpenEditModal={onOpenEditModal}
+              onOpenRotateKeyModal={onOpenRotateKeyModal}
+              onToggleActive={onToggleActive}
+              onOpenDeleteDialog={onOpenDeleteDialog}
+              onTestConnection={onTestConnection}
+            />
+          ))}
         </div>
       )}
     </div>

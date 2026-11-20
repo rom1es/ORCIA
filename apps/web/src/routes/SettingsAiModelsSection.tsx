@@ -27,14 +27,19 @@ export interface SettingsAiModelsSectionProps {
 
 export function SettingsAiModelsSection({
   isFr,
-  llmTiers = [],
   tierAndEffortLabels,
-  upsertLlmTier,
   allowedVerbs = ["read", "create", "update", "delete", "execute", "grant"],
 }: SettingsAiModelsSectionProps): React.ReactElement {
   const { dictionary } = useI18n();
   const hubLabels = dictionary?.aiModelsHub ?? (isFr ? AI_MODELS_HUB_FR : AI_MODELS_HUB_EN);
-  const ctrl = useAiModelsSectionController({ isFr, llmTiers, upsertLlmTier });
+  const ctrl = useAiModelsSectionController({ isFr });
+  const hasActiveEmbeddingModel = ctrl.activeMappings.some(
+    (m) =>
+      m.usage === "embedding" &&
+      m.is_active &&
+      !m.draining &&
+      (m.scope_level ?? "GLOBAL") === "GLOBAL",
+  );
 
   return (
     <section
@@ -70,7 +75,7 @@ export function SettingsAiModelsSection({
               fontSize: "14px",
               padding: "0 4px",
             }}
-            aria-label="Fermer l'erreur"
+            aria-label={hubLabels.closeErrorLabel}
           >
             ✕
           </button>
@@ -80,6 +85,8 @@ export function SettingsAiModelsSection({
       <AiModelReindexPanel
         isFr={isFr}
         canExecute={allowedVerbs.includes("execute")}
+        hasActiveEmbeddingModel={hasActiveEmbeddingModel}
+        refreshSignal={ctrl.mappingsRevision}
       />
 
       <AiModelsMasterTable
@@ -89,6 +96,7 @@ export function SettingsAiModelsSection({
         mappings={ctrl.activeMappings}
         allowedVerbs={allowedVerbs}
         testingId={ctrl.testingId}
+        testErrorsByModelId={ctrl.testErrorsByModelId}
         onOpenCreateModal={() =>
           ctrl.setModalState({ open: true, mode: "create", mapping: null })
         }

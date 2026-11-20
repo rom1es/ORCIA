@@ -3,7 +3,7 @@ import http from "node:http";
 import type { AddressInfo } from "node:net";
 import { expect, test } from "./support/e2eCaptureFixture";
 import { resetDay0 } from "./support/day0";
-import { expectDbRowExists } from "./support/dbAssertions";
+import { expectDbRowExists, queryDbRows } from "./support/dbAssertions";
 import {
   bootstrapAdminSession,
   getBearerTokenFromSession,
@@ -15,12 +15,24 @@ import {
   assertNoHorizontalOverflow,
   assertVisibleErrorBannerOnHttpError,
 } from "./support/layoutGeometryAssertions";
-import { apiPost, reloadColdFromPg } from "./support/typedApiRequest";
+import { apiGet, apiPost, reloadColdFromPg } from "./support/typedApiRequest";
 
-function startLocalLlmCassetteServer(): Promise<{ baseUrl: string; close: () => Promise<void> }> {
+function startLocalLlmCassetteServer(): Promise<{
+  baseUrl: string;
+  slowFailBaseUrl: string;
+  close: () => Promise<void>;
+}> {
   return new Promise((resolve) => {
     const server = http.createServer((req, res) => {
       const url = req.url ?? "";
+      if (url.startsWith("/slow-fail/")) {
+        setTimeout(() => {
+          res.statusCode = 500;
+          res.setHeader("Content-Type", "application/json");
+          res.end(JSON.stringify({ error: { message: "Simulated provider failure 500" } }));
+        }, 700);
+        return;
+      }
       res.setHeader("Content-Type", "application/json");
       if (url.endsWith("/models")) {
         res.end(JSON.stringify({ object: "list", data: [{ id: "qwen2.5:14b" }, { id: "bge-m3:latest" }] }));
@@ -48,6 +60,7 @@ function startLocalLlmCassetteServer(): Promise<{ baseUrl: string; close: () => 
       const addr = server.address() as AddressInfo;
       resolve({
         baseUrl: `http://127.0.0.1:${addr.port}/v1`,
+        slowFailBaseUrl: `http://127.0.0.1:${addr.port}/slow-fail/v1`,
         close: () => new Promise<void>((done) => server.close(() => done())),
       });
     });
@@ -108,8 +121,28 @@ test.describe("Hub modèles IA, réindexation sémantique, connecteurs et Permis
       await page.getByTestId("save-and-test-ai-model-btn").click();
       await expect(page.getByTestId("ai-model-display-name-input")).toBeHidden({ timeout: 15000 });
 
-      await page.getByTestId("relaunch-reindex-button").click();
-      await expect(page.getByTestId("reindex-feedback")).toBeVisible({ timeout: 15000 });
+      // Story 25.4: avec 0 document / 0 chunk en PG18, le panneau réindexation est masqué même avec un embedding actif.
+      await expect(page.getByTestId("ai-model-reindex-panel")).toHaveCount(0);
+      await expect(page.locator("body")).not.toContainText("Ready (0%)");
+      const adminToken = await getBearerTokenFromSession(page);
+      const statusRes = await apiGet<{
+        status: string;
+        indexed_chunks_count: number;
+        indexed_documents_count: number;
+      }>(page, "/api/v1/settings/ai-models/reindex-status", { token: adminToken });
+      expect(statusRes.status()).toBe(200);
+      const statusJson = await statusRes.json();
+      expect(statusJson.indexed_chunks_count).toBe(0);
+      expect(statusJson.indexed_documents_count).toBe(0);
+
+      // L'endpoint manuel reste fonctionnel côté API et passe à COMPLETED immédiatement sur corpus vide.
+      const reindexRes = await apiPost<{ status: string }>(
+        page,
+        "/api/v1/settings/ai-models/reindex-embeddings",
+        { token: adminToken },
+      );
+      expect(reindexRes.status()).toBe(200);
+      expect((await reindexRes.json()).status).toBe("COMPLETED");
 
       await page.goto("/assistant");
       await expect(page.getByTestId("assistant-no-embedding-banner")).toBeHidden({ timeout: 15000 });
@@ -256,5 +289,92 @@ test.describe("Hub modèles IA, réindexation sémantique, connecteurs et Permis
       { target_uri: restrictedUri },
       "ticket Permission Broker persisté dans permission_broker_tickets",
     );
+  });
+
+  test("Story 25.4 : spinner unifié OrciaSpinner, erreur localisée sous le modèle testé et suppression fiable sans résurrection F5", async ({
+    page,
+  }) => {
+    const mockLlm = await startLocalLlmCassetteServer();
+    try {
+      await bootstrapAdminSession(page);
+      await openSettingsTabViaUi(page, "models");
+      await expect(page.getByTestId("ai-models-empty-state")).toBeVisible({ timeout: 15000 });
+      await expect(page.getByTestId("ai-model-reindex-panel")).toHaveCount(0);
+
+      // 1. Créer un modèle sain et un modèle en erreur lente (700 ms -> 500)
+      await page.getByTestId("open-create-ai-model-modal-btn").click();
+      await page.getByTestId("ai-model-config-modal").getByTestId("llm-provider-preset-ollama").click();
+      await page.getByTestId("ai-model-display-name-input").fill("Healthy Model E2E");
+      await page.getByTestId("ai-model-primary-model-input").fill("qwen2.5:14b");
+      await page.getByTestId("ai-model-endpoint-uri-input").fill(mockLlm.baseUrl);
+      await page.getByTestId("ai-model-auth-mode-select").selectOption("none_local");
+      await page.getByTestId("save-ai-model-btn").click();
+      await expect(page.getByTestId("ai-model-display-name-input")).toBeHidden({ timeout: 15000 });
+
+      await page.getByTestId("open-create-ai-model-modal-btn").click();
+      await page.getByTestId("ai-model-config-modal").getByTestId("llm-provider-preset-ollama").click();
+      await page.getByTestId("ai-model-display-name-input").fill("Failing Model E2E");
+      await page.getByTestId("ai-model-primary-model-input").fill("qwen2.5:14b");
+      await page.getByTestId("ai-model-endpoint-uri-input").fill(mockLlm.slowFailBaseUrl);
+      await page.getByTestId("ai-model-auth-mode-select").selectOption("none_local");
+      await page.getByTestId("save-ai-model-btn").click();
+      await expect(page.getByTestId("ai-model-display-name-input")).toBeHidden({ timeout: 15000 });
+
+      const healthyRow = page.locator('[data-testid^="llm-tier-row-"]', { hasText: "Healthy Model E2E" });
+      const failingRow = page.locator('[data-testid^="llm-tier-row-"]', { hasText: "Failing Model E2E" });
+      await expect(healthyRow).toBeVisible({ timeout: 15000 });
+      await expect(failingRow).toBeVisible({ timeout: 15000 });
+
+      const healthyId = ((await healthyRow.getAttribute("data-testid")) ?? "").replace("llm-tier-row-", "");
+      const failingId = ((await failingRow.getAttribute("data-testid")) ?? "").replace("llm-tier-row-", "");
+
+      // 2. Tester Failing Model -> OrciaSpinner visible sans "...", puis erreur localisée sous Failing Model uniquement
+      const testFailingBtn = page.getByTestId(`test-ai-model-btn-${failingId}`);
+      await testFailingBtn.click();
+      await expect(testFailingBtn.getByTestId("orcia-spinner")).toBeVisible({ timeout: 5000 });
+      await expect(testFailingBtn).not.toContainText("...");
+
+      const localErr = page.getByTestId(`ai-model-test-error-${failingId}`);
+      await expect(localErr).toBeVisible({ timeout: 15000 });
+      await expect(localErr).toHaveAttribute("role", "alert");
+      await expect(page.getByTestId(`ai-model-test-error-${healthyId}`)).toHaveCount(0);
+      await expect(page.getByTestId("ai-model-operation-error")).toHaveCount(0);
+
+      // 3. Supprimer les 2 modèles (y compris le dernier du palier) -> 0 ligne en PG18 et aucune résurrection après F5
+      for (const id of [failingId, healthyId]) {
+        await page.getByTestId(`ai-model-row-actions-${id}-trigger`).click();
+        await page.getByTestId(`delete-ai-model-item-${id}`).click();
+        await expect(page.getByTestId("ai-model-delete-dialog")).toBeVisible({ timeout: 10000 });
+        const confirmBtn = page.getByTestId("confirm-delete-ai-model-btn");
+        await expect(confirmBtn).toBeEnabled({ timeout: 10000 });
+        await Promise.all([
+          page.waitForResponse(
+            (res) =>
+              res.url().includes(`/api/v1/settings/ai-models/mappings/${id}`) &&
+              res.request().method() === "DELETE",
+            { timeout: 15000 },
+          ),
+          confirmBtn.click(),
+        ]);
+        await expect(page.getByTestId(`llm-tier-row-${id}`)).toHaveCount(0);
+      }
+
+      await expect(page.getByTestId("ai-models-empty-state")).toBeVisible({ timeout: 15000 });
+      await expect(page.getByTestId("eight-menu-item-assistant")).toBeDisabled({ timeout: 15000 });
+
+      const countBeforeReload = queryDbRows<{ count: number }>(
+        "SELECT COUNT(*)::int AS count FROM workspace_llm_tier_mappings",
+      );
+      expect(countBeforeReload[0]?.count).toBe(0);
+
+      await page.goto("/settings?tab=models");
+      await page.reload();
+      await expect(page.getByTestId("ai-models-empty-state")).toBeVisible({ timeout: 20000 });
+      await reloadColdFromPg(page);
+      await expect(page.getByTestId("ai-models-empty-state")).toBeVisible({ timeout: 20000 });
+      await expect(page.getByTestId("eight-menu-item-assistant")).toBeDisabled({ timeout: 15000 });
+    } finally {
+      await mockLlm.close();
+    }
   });
 });

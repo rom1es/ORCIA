@@ -357,7 +357,7 @@ capabilities:
     title: Abstraction LLM multi-fournisseurs et routage automatique par tiers
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-2 + 17-5 + 19-1 + 19-2 + 19-4 + 19-5
+    origin_ref: 8-2 + 17-5 + 19-1 + 19-2 + 19-4 + 19-5 + 25-4
     status: live
     kind: feature
     uj: [UJ-15]
@@ -366,6 +366,7 @@ capabilities:
       - tests/security/test_api_security_baseline.py
       - tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py
       - tests/unit/test_story_17_5_ai_models_hub_secrets_and_lifecycle.py
+      - tests/unit/test_story_25_4_ai_model_delete_and_reindex_empty.py
       - tests/integration/api/test_story_17_5_ai_models_hub_postgres18.py
       - apps/web/src/__tests__/story-17-5-ai-models-hub-modal-lifecycle-and-f5.test.tsx
       - apps/web/src/__tests__/story-19-1-ai-models-empty-fields-and-placeholders-guard.test.tsx
@@ -377,15 +378,16 @@ capabilities:
       - tests/unit/test_story_19_5_embedding_port_and_adapters.py
       - tests/unit/test_story_19_5_ai_models_usage_and_uniqueness.py
       - tests/integration/api/test_story_19_5_ai_models_usage_postgres18.py
+      - apps/web/src/__tests__/story-25-4-spinner-localized-timeout-and-delete.test.tsx
       - apps/web/e2e/16-ai-models-reindex-connectors-and-broker.spec.ts
     verification: runtime
     verified_at: "2026-11-20"
-    surfaces: { route: /settings/ai-models, api: ai_models_hub.py, ui: "SettingsAiModelsSection + AiModelsMasterTable + AiModelConfigModal + OrciaModelCombobox + AiModelDeleteDialog", migration: "20261114_1705, 20261115_2105" }
+    surfaces: { route: /settings/ai-models, api: ai_models_hub.py, ui: "SettingsAiModelsSection + AiModelsMasterTable + AiModelMappingRowCard + AiModelConfigModal + OrciaModelCombobox + AiModelDeleteDialog + OrciaSpinner", migration: "20261114_1705, 20261115_2105" }
   - id: CAP-053
     title: Modèles IA — authentification, test de connexion, garde SSRF
     fr: [FR-31]
     origin: adhoc
-    origin_ref: 2026-11-05-modeles-ia-authentification-test-connexion-et-scroll-independant-aide + 17-5
+    origin_ref: 2026-11-05-modeles-ia-authentification-test-connexion-et-scroll-independant-aide + 17-5 + 25-4
     status: live
     kind: feature
     uj: [UJ-15]
@@ -393,11 +395,13 @@ capabilities:
     tests:
       - tests/security/test_api_security_baseline.py
       - tests/unit/test_story_17_5_ai_models_hub_secrets_and_lifecycle.py
+      - tests/unit/test_story_25_4_ai_model_delete_and_reindex_empty.py
       - tests/integration/api/test_story_17_5_ai_models_hub_postgres18.py
+      - apps/web/src/__tests__/story-25-4-spinner-localized-timeout-and-delete.test.tsx
       - apps/web/e2e/16-ai-models-reindex-connectors-and-broker.spec.ts
     verification: runtime
     verified_at: "2026-11-20"
-    surfaces: { route: /settings/ai-models, api: ai_models_hub.py, ui: "SettingsAiModelsSection + SecretField + AiModelsMasterTable", migration: "20261114_1705" }
+    surfaces: { route: /settings/ai-models, api: ai_models_hub.py, ui: "SettingsAiModelsSection + SecretField + AiModelsMasterTable + AiModelMappingRowCard + OrciaSpinner", migration: "20261114_1705" }
   - id: CAP-054
     title: Hub Connecteurs (Git, Jira, Confluence, SMTP_MAIL) et gestion des secrets
     fr: [FR-31]
@@ -945,7 +949,7 @@ capabilities:
     title: Hub Modèles IA Fiable, Découverte Dynamique 0 Token, Test Réel (Chat max_tokens=1 & Embedding dim 1024), EmbeddingPort Hexagonal, RAG Sans Hachage SHA-256 & Réindexation Bloquante Idempotente
     fr: [FR-14, FR-18, FR-23, FR-28, FR-31, FR-33]
     origin: epic
-    origin_ref: epic-19 (19-1..19-7)
+    origin_ref: epic-19 (19-1..19-7) + 25-4
     status: live
     kind: feature
     uj: [UJ-15]
@@ -960,6 +964,7 @@ capabilities:
       - tests/unit/test_migration_story_19_5_usage.py
       - tests/unit/test_story_19_6_rag_blocking_and_embedding_model.py
       - tests/unit/test_story_19_7_rag_reindexing_and_blocking.py
+      - tests/unit/test_story_25_4_ai_model_delete_and_reindex_empty.py
       - tests/unit/test_rag_reindexer_vault_cipher_and_http_closure.py
       - tests/unit/test_assistant_and_rag_routes_require_rag_guard_audit.py
       - tests/integration/api/test_story_19_3_ai_models_connection_test_postgres18.py
@@ -972,13 +977,14 @@ capabilities:
       - apps/web/src/__tests__/story-19-5-ai-models-usage-and-active-embedding.test.tsx
       - apps/web/src/__tests__/story-19-6-assistant-no-embedding-blocking-and-f5.test.tsx
       - apps/web/src/__tests__/story-19-7-reindexing-banner-hub-and-f5.test.tsx
+      - apps/web/src/__tests__/story-25-4-spinner-localized-timeout-and-delete.test.tsx
       - apps/web/e2e/16-ai-models-reindex-connectors-and-broker.spec.ts
     verification: runtime
     verified_at: "2026-11-20"
     surfaces:
       route: "/settings/ai-models, /assistant, /workspaces/$wsId/sources"
       api: "ai_models_hub.py, _ai_models_test_and_reindex_routes.py, _ai_models_reindex_helpers.py, rag.py, ontology_and_rag.py, assistant.py, _ai_models_discovery.py, _ai_models_helpers.py, bootstrap_accostage.py"
-      ui: "AiModelModal + AiModelDiscoveryCombobox + AiModelConnectionTestButton + AssistantNoEmbeddingBanner + AssistantReindexingBanner + AiModelReindexPanel + SettingsAiModelsSection"
+      ui: "AiModelModal + AiModelDiscoveryCombobox + AiModelConnectionTestButton + AssistantNoEmbeddingBanner + AssistantReindexingBanner + AiModelReindexPanel + SettingsAiModelsSection + AiModelMappingRowCard + OrciaSpinner"
       migration: "20261115_2105, 20261115_2206, 20261115_2307, 20261115_2359"
     notes: "Formalisé dans AD-24 (ARCHITECTURE-SPINE.md) et livré dans l'Epic 19 (Stories 19.1..19.7). Élimine le hachage SHA-256 en prod, introduit le rôle embedding unique GLOBAL et la réindexation bloquante idempotente."
 

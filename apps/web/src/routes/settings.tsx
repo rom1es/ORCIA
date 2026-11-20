@@ -60,8 +60,8 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
   const setUserSettingsModalOpen = useAuthSessionStore((s) => s.setUserSettingsModalOpen);
   const access = resolveSettingsAccess({ roles, activeHat, readOnlyObserver });
   const {
-    orgUnits, rbacGrants, llmTiers, workspaces, datasources, packs,
-    syncOrgUnitsFromServer, syncRbacGrantsFromServer, upsertLlmTier,
+    orgUnits, rbacGrants, workspaces, datasources, packs,
+    syncOrgUnitsFromServer, syncRbacGrantsFromServer,
     registerDatasource, registerPack, removePack,
   } = usePlatformSetup();
 
@@ -218,9 +218,7 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
               <SettingsAiModelsSection
                 isFr={isFr}
                 tierAndEffortLabels={tierAndEffortLabels}
-                llmTiers={llmTiers}
                 openHelpSection={openHelpSection}
-                upsertLlmTier={upsertLlmTier}
                 allowedVerbs={access.allowedVerbs}
               />
             ) : effectiveTab === "packs" ? (

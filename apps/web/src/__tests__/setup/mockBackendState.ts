@@ -108,7 +108,12 @@ export const backendState: MockBackendState = {
   aiModelMappings: [],
   autonomyContracts: [],
   workflowTriggers: [],
-  mockReindexStatus: { status: "IDLE", progress_percentage: 0 },
+  mockReindexStatus: {
+    status: "IDLE",
+    progress_percentage: 0,
+    indexed_chunks_count: 0,
+    indexed_documents_count: 0,
+  },
   workflowsV2: buildInitialWorkflowsV2Map(),
   recordedCalls: [],
 };
@@ -201,7 +206,12 @@ export function resetVitestApiBackend(): void {
   backendState.aiModelMappings = [];
   backendState.autonomyContracts = [];
   backendState.workflowTriggers = [];
-  backendState.mockReindexStatus = { status: "IDLE", progress_percentage: 0 };
+  backendState.mockReindexStatus = {
+    status: "IDLE",
+    progress_percentage: 0,
+    indexed_chunks_count: 0,
+    indexed_documents_count: 0,
+  };
   backendState.workflowsV2 = buildInitialWorkflowsV2Map();
   backendState.recordedCalls = [];
   resetVitestIamMockState();

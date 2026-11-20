@@ -1,4 +1,4 @@
-import { OrciaAlertBanner } from "@orcia/ui";
+import { OrciaAlertBanner, OrciaSpinner } from "@orcia/ui";
 import React from "react";
 import { LoginRouteComponent } from "./LoginScreenView";
 import { TemporaryPasswordWarningBanner } from "./TemporaryPasswordWarningBanner";
@@ -27,10 +27,7 @@ export function ShellHydratingLoaderView({ isFr }: { readonly isFr: boolean }) {
         </span>
       </div>
       <div className="inline-flex items-center gap-2 text-sm font-medium">
-        <span
-          aria-hidden="true"
-          className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
-        />
+        <OrciaSpinner size="sm" />
         <span>{isFr ? "Chargement de la session..." : "Loading session..."}</span>
       </div>
     </div>

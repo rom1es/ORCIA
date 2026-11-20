@@ -195,6 +195,8 @@ class RagReindexStatusResponse(BaseModel):
     target_model_name: str | None = None
     total_chunks: int = 0
     processed_chunks: int = 0
+    indexed_chunks_count: int = 0
+    indexed_documents_count: int = 0
     progress_percentage: int = 0
     error_message: str | None = None
     created_at: str | None = None

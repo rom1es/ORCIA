@@ -5,6 +5,7 @@ import type {
 } from "@orcia/api-client";
 import {
   OrciaDialog,
+  OrciaSpinner,
   SecretField,
   type InferenceTierAndEffortLabels,
   type SecretFieldLabels,
@@ -170,9 +171,10 @@ export function AiModelConfigModal({
             data-testid="save-and-test-ai-model-btn"
             disabled={s.isSubmitting}
             onClick={() => void s.handleFormSubmit(true)}
-            className="orcia-ds-btn orcia-ds-btn-secondary"
+            className="orcia-ds-btn orcia-ds-btn-secondary inline-flex items-center gap-1.5"
           >
-            {labels.saveAndTestBtn}
+            {s.isSubmitting && <OrciaSpinner size="xs" />}
+            <span>{labels.saveAndTestBtn}</span>
           </button>
         )}
 
@@ -181,9 +183,10 @@ export function AiModelConfigModal({
           data-testid="save-ai-model-btn"
           disabled={s.isSubmitting}
           onClick={() => void s.handleFormSubmit(false)}
-          className="orcia-ds-btn orcia-ds-btn-primary"
+          className="orcia-ds-btn orcia-ds-btn-primary inline-flex items-center gap-1.5"
         >
-          {mode === "create" ? labels.saveOnlyBtn : labels.updateBtn}
+          {s.isSubmitting && <OrciaSpinner size="xs" />}
+          <span>{mode === "create" ? labels.saveOnlyBtn : labels.updateBtn}</span>
         </button>
       </div>
     </OrciaDialog>

@@ -1,5 +1,6 @@
 import {
   createOrciaApiClient,
+  type AccostageStatusResponse,
   type PlatformSetupStatePutRequest,
   type PlatformSetupStateResponse,
 } from "@orcia/api-client";
@@ -79,6 +80,33 @@ export interface AccostagePg18CountsView {
   readonly workflowsCount: number;
   readonly platformAdminDisplayName?: string | null;
   readonly visibleMilestoneKeys?: readonly string[] | null;
+}
+
+export function buildAccostageCountsFromStatus(
+  status: AccostageStatusResponse,
+  orgUnits: readonly ConfiguredOrgUnit[] = [],
+): AccostagePg18CountsView {
+  const visibleMilestoneKeys = Array.isArray(status.visible_milestones)
+    ? status.visible_milestones
+        .filter((m) => m.is_accessible !== false)
+        .map((m) => m.key)
+    : null;
+  const platformAdminDisplayName =
+    status.platform_admin_display_name ?? status.first_admin_display_name ?? null;
+
+  return {
+    adminCreated: Boolean(status.admin_created ?? status.first_admin_initialized),
+    usersCount: status.users_count ?? (status.first_admin_initialized ? 1 : 0),
+    orgUnitsCount:
+      status.org_units_count ??
+      orgUnits.filter((u) => u.level === "BU" || u.level === "TEAM").length,
+    workspacesCount: status.workspaces_count ?? 0,
+    modelsCount: status.models_count ?? 0,
+    sourcesCount: status.sources_count ?? 0,
+    workflowsCount: status.workflows_count ?? 0,
+    platformAdminDisplayName,
+    visibleMilestoneKeys,
+  };
 }
 
 export type HydrationOutcome =
@@ -180,27 +208,7 @@ export async function fetchAndBuildHydrationOutcome(params: {
       }))
     : [];
 
-  const visibleMilestoneKeys = Array.isArray(status.visible_milestones)
-    ? status.visible_milestones
-        .filter((m) => m.is_accessible !== false)
-        .map((m) => m.key)
-    : null;
-  const platformAdminDisplayName =
-    status.platform_admin_display_name ?? status.first_admin_display_name ?? null;
-
-  const accostageCounts: AccostagePg18CountsView = {
-    adminCreated: Boolean(status.admin_created ?? status.first_admin_initialized),
-    usersCount: status.users_count ?? (status.first_admin_initialized ? 1 : 0),
-    orgUnitsCount:
-      status.org_units_count ??
-      mappedApiOrgUnits.filter((u) => u.level === "BU" || u.level === "TEAM").length,
-    workspacesCount: status.workspaces_count ?? 0,
-    modelsCount: status.models_count ?? 0,
-    sourcesCount: status.sources_count ?? 0,
-    workflowsCount: status.workflows_count ?? 0,
-    platformAdminDisplayName,
-    visibleMilestoneKeys,
-  };
+  const accostageCounts = buildAccostageCountsFromStatus(status, mappedApiOrgUnits);
 
   const snapWsList = (remoteState?.workspaces ??
     []) as unknown as ControlCenterWorkspaceGovItem[];

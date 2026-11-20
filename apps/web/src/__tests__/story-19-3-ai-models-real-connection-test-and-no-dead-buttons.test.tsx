@@ -153,11 +153,12 @@ describe("Story 19.3: Real Connection Tests in AI Models Hub & Zero Dead Buttons
     const testBtn = screen.getByTestId("test-ai-model-btn-mapping-test-002");
     fireEvent.click(testBtn);
 
-    // Explicit error banner must appear with no silent swallow
+    // Explicit localized error banner must appear under tested model row with no silent swallow
     await waitFor(() => {
-      const errorBanner = screen.getByTestId("ai-model-operation-error");
+      const errorBanner = screen.getByTestId("ai-model-test-error-mapping-test-002");
       expect(errorBanner).toBeDefined();
       expect(errorBanner.textContent).toContain("Modèle ou point de terminaison introuvable (HTTP 404)");
     });
+    expect(screen.queryByTestId("ai-model-operation-error")).toBeNull();
   });
 });

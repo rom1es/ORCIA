@@ -61,10 +61,16 @@ export function createAiModelsHubDomainClient(requestJson: RequestJsonFn) {
       );
     },
 
-    testAiModelMapping(mappingId: string): Promise<AiModelTestResponse> {
+    testAiModelMapping(
+      mappingId: string,
+      options?: { signal?: AbortSignal },
+    ): Promise<AiModelTestResponse> {
       return requestJson<AiModelTestResponse>(
         `/api/v1/settings/ai-models/mappings/${encodeURIComponent(mappingId)}/test`,
         "POST",
+        undefined,
+        undefined,
+        options?.signal,
       );
     },
 

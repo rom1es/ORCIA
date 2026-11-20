@@ -2,9 +2,13 @@ import type {
   AiModelDeleteImpactResponse,
   AiModelMappingItemResponse,
 } from "@orcia/api-client";
-import { OrciaDialog } from "@orcia/ui";
-import React, { useState } from "react";
+import { OrciaDialog, OrciaSpinner } from "@orcia/ui";
+import React, { useEffect, useState } from "react";
 import type { AiModelsHubDictionary } from "../../../i18n/locales/ai_models_hub_labels";
+
+export type AiModelDeleteConfirmResult =
+  | boolean
+  | { readonly ok: boolean; readonly errorMessage?: string };
 
 export interface AiModelDeleteDialogProps {
   readonly open: boolean;
@@ -16,7 +20,7 @@ export interface AiModelDeleteDialogProps {
   readonly onConfirmDelete: (
     mappingId: string,
     mode: "reject" | "drain" | "force",
-  ) => Promise<boolean>;
+  ) => Promise<AiModelDeleteConfirmResult>;
 }
 
 export function AiModelDeleteDialog({
@@ -30,6 +34,10 @@ export function AiModelDeleteDialog({
 }: AiModelDeleteDialogProps): React.ReactElement {
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    setErrorMsg(null);
+  }, [open, mapping?.id]);
 
   if (!mapping) {
     return <></>;
@@ -45,9 +53,16 @@ export function AiModelDeleteDialog({
     setIsDeleting(true);
     setErrorMsg(null);
     try {
-      const ok = await onConfirmDelete(mapping.id, mode);
+      const result = await onConfirmDelete(mapping.id, mode);
+      const ok = typeof result === "boolean" ? result : result.ok;
       if (ok) {
         onOpenChange(false);
+      } else {
+        const msg =
+          typeof result === "object" && result !== null && result.errorMessage
+            ? result.errorMessage
+            : labels.deleteFailedError;
+        setErrorMsg(msg);
       }
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : String(err));
@@ -75,8 +90,8 @@ export function AiModelDeleteDialog({
               padding: "8px 12px",
               borderRadius: "var(--radius-sm)",
               backgroundColor: "var(--color-bg-elevated)",
-              border: "1px solid var(--color-border)",
-              color: "var(--color-foreground)",
+              border: "1px solid var(--color-status-error)",
+              color: "var(--color-status-error)",
               fontSize: "12px",
             }}
           >
@@ -98,13 +113,25 @@ export function AiModelDeleteDialog({
         >
           <strong>{mapping.display_name || mapping.model_name}</strong>
           <span style={{ fontSize: "12px", color: "var(--color-muted-foreground)" }}>
-            Fournisseur : <code>{mapping.provider_slug}</code> • Modèle : <code>{mapping.model_name}</code> • Tier : <code>{mapping.inference_tier}</code>
+            {labels.deleteSummaryProvider} : <code>{mapping.provider_slug}</code> •{" "}
+            {labels.deleteSummaryModel} : <code>{mapping.model_name}</code> •{" "}
+            {labels.deleteSummaryTier} : <code>{mapping.inference_tier}</code>
           </span>
         </div>
 
         {isLoadingImpact ? (
-          <p style={{ margin: 0, fontSize: "12px", color: "var(--color-muted-foreground)" }}>
-            Analyse d'impact en cours...
+          <p
+            style={{
+              margin: 0,
+              fontSize: "12px",
+              color: "var(--color-muted-foreground)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            <OrciaSpinner size="xs" />
+            <span>{labels.deleteImpactLoading}</span>
           </p>
         ) : (
           <>
@@ -124,7 +151,8 @@ export function AiModelDeleteDialog({
               >
                 {labels.deleteDialogBlockedNotice}
                 <div style={{ marginTop: "4px", fontWeight: 400, fontSize: "11px" }}>
-                  Workflows impactés : {impact?.dependent_workflows_count} • Autres modèles actifs sur ce tier : {impact?.remaining_active_for_tier}
+                  {labels.deleteImpactWorkflowsCount} : {impact?.dependent_workflows_count} •{" "}
+                  {labels.deleteImpactRemainingModels} : {impact?.remaining_active_for_tier}
                 </div>
               </div>
             )}
@@ -145,7 +173,7 @@ export function AiModelDeleteDialog({
               >
                 {labels.deleteDialogActiveRunsNotice}
                 <div style={{ marginTop: "4px", fontWeight: 400, fontSize: "11px" }}>
-                  Runs actifs épinglant ce modèle : {impact?.pinned_active_runs_count}
+                  {labels.deleteImpactActiveRunsCount} : {impact?.pinned_active_runs_count}
                 </div>
               </div>
             )}
@@ -171,7 +199,7 @@ export function AiModelDeleteDialog({
             {labels.cancelBtn}
           </button>
 
-          {hasRunsOrImpact(hasPinnedRuns) && (
+          {hasPinnedRuns && (
             <button
               type="button"
               data-testid="drain-ai-model-btn"
@@ -188,16 +216,13 @@ export function AiModelDeleteDialog({
             data-testid="confirm-delete-ai-model-btn"
             disabled={isDeleting || isBlockedByWorkflows}
             onClick={() => void handleDelete("reject")}
-            className="orcia-ds-btn orcia-ds-btn-danger"
+            className="orcia-ds-btn orcia-ds-btn-danger inline-flex items-center gap-1.5"
           >
-            {labels.confirmDeleteBtn}
+            {isDeleting && <OrciaSpinner size="xs" />}
+            <span>{labels.confirmDeleteBtn}</span>
           </button>
         </div>
       </div>
     </OrciaDialog>
   );
-}
-
-function hasRunsOrImpact(hasPinnedRuns: boolean): boolean {
-  return hasPinnedRuns;
 }

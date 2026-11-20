@@ -1,6 +1,7 @@
 import React from "react";
 import { OrciaIcon } from "../components/icons";
 import { OrciaAlertBanner } from "./DesignSystemControls";
+import { OrciaSpinner } from "./OrciaSpinner";
 import {
   SecretField,
   type SecretFieldLabels,
@@ -326,9 +327,10 @@ export function PlatformAuthSettingsCard({
               disabled={readOnly || isTestingOidc}
               data-testid="auth-test-oidc-btn"
               onClick={() => void onTestOidc()}
-              className="orcia-ds-btn orcia-ds-btn-secondary px-3 py-1.5 text-xs"
+              className="orcia-ds-btn orcia-ds-btn-secondary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs"
             >
-              {isTestingOidc ? labels.testingOidcLabel : labels.testOidcCta}
+              {isTestingOidc && <OrciaSpinner size="xs" />}
+              <span>{isTestingOidc ? labels.testingOidcLabel : labels.testOidcCta}</span>
             </button>
             {oidcTestResult && (
               <div
@@ -366,9 +368,10 @@ export function PlatformAuthSettingsCard({
             disabled={isSaving}
             data-testid="auth-save-settings-btn"
             onClick={() => void onSave()}
-            className="orcia-ds-btn orcia-ds-btn-primary px-4 py-2 text-xs font-medium"
+            className="orcia-ds-btn orcia-ds-btn-primary inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium"
           >
-            {isSaving ? labels.savingLabel : labels.saveCta}
+            {isSaving && <OrciaSpinner size="xs" />}
+            <span>{isSaving ? labels.savingLabel : labels.saveCta}</span>
           </button>
         </div>
       )}
