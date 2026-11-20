@@ -48,7 +48,7 @@ describe("Story 19.6 — Assistant Blocking without Active Embedding Model & F5 
     });
 
     const banner = screen.getByTestId("assistant-no-embedding-banner");
-    expect(banner.textContent).toContain("Modèle d'embedding sémantique requis");
+    expect(banner.textContent).toContain("Modèle de recherche sémantique requis");
 
     // 2. Verify prompt input is disabled
     const promptInput = screen.getByTestId("assistant-three-speed-input") as HTMLInputElement;

@@ -145,7 +145,7 @@ export function CockpitRunsSection({
             }}
           >
             <option value="assistant-agent">
-              {isFr ? "Assistant ORCIA (Processus standard)" : "ORCIA Assistant (Standard process)"}
+              {isFr ? "Assistant ORCIA" : "ORCIA Assistant"}
             </option>
             {workflows.map((wf) => (
               <option key={wf.workflowKey} value={wf.workflowKey}>

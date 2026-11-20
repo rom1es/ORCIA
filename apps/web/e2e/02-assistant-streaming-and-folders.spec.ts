@@ -63,7 +63,7 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
     await createWorkspaceViaUi(page, "Espace E2E Dossiers", "espace-e2e-dossiers");
 
     await page.goto("/assistant");
-    await page.getByRole("button", { name: /^Dossiers \(\d+\)$/ }).click();
+    await page.getByTestId("assistant-folders-toggle-btn").click();
     await page.getByTestId("assistant-new-folder-title-input").fill("Dossier E2E persistant");
     const created = page.waitForResponse(
       (r) => r.url().includes("/folders") && r.request().method() === "POST",
@@ -78,7 +78,7 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
     );
     await reloadColdFromPg(page);
     expect((await overview).status()).toBeLessThan(400);
-    await page.getByRole("button", { name: /^Dossiers \(\d+\)$/ }).click();
+    await page.getByTestId("assistant-folders-toggle-btn").click();
     await expect(page.getByText("Dossier E2E persistant").first()).toBeVisible({ timeout: 20000 });
     expectDbRowExists(
       "SELECT folder_id, title FROM assistant_folders WHERE title = :title",
@@ -92,7 +92,7 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
     await createWorkspaceViaUi(page, "Espace E2E Dossiers PG", "espace-e2e-dossiers-pg");
 
     await page.goto("/assistant");
-    await page.getByRole("button", { name: /^Dossiers \(\d+\)$/ }).click();
+    await page.getByTestId("assistant-folders-toggle-btn").click();
     await page.getByTestId("assistant-new-folder-title-input").fill("Dossier E2E PostgreSQL");
     const created = page.waitForResponse(
       (r) => r.url().includes("/folders") && r.request().method() === "POST",
@@ -102,7 +102,7 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
     expect((await created).status()).toBeLessThan(400);
 
     await reloadColdFromPg(page);
-    await page.getByRole("button", { name: /^Dossiers \(\d+\)$/ }).click();
+    await page.getByTestId("assistant-folders-toggle-btn").click();
     await expect(page.getByText("Dossier E2E PostgreSQL").first()).toBeVisible({ timeout: 20000 });
 
     expectDbRowExists(

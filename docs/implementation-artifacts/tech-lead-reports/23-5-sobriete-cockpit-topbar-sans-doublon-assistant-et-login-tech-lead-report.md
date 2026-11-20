@@ -1,10 +1,10 @@
 # Story 23.5 — Sobriété Cockpit (`<= 3` Blocs), `TopHeaderBar` Sans Doublon/Troncature, Épuration `/assistant` & `/login` et Captures `#10`
 
-- **Date** : 2026-11-19
+- **Date** : 2026-11-19 (clôture 2026-11-20)
 - **Story / Clé Sprint** : `23-5-sobriete-cockpit-topbar-sans-doublon-assistant-et-login` (`Epic 23` — Vague 1 `P1`–`P3`)
 - **Capacité(s)** : `CAP-001`, `CAP-023`, `CAP-041`, `CAP-062`, `CAP-070`, `CAP-072`, `CAP-073`, `CAP-190` — classification : `feature` + `ux` (`REM23-09`, `REM23-10`, `REM23-11`, `REM23-12` / `ARCH23-06`..`ARCH23-09`, `P1-UX-3`, `P2-UX-8`..`P2-UX-11`, `P3-UX-12`)
-- **Auteur / Contexte** : `22.10-impl` (Sally × Winston — pré-implémentation Epic 23). Aligne la hiérarchie visuelle Direction C : ramène `/cockpit` à `<= 3` blocs visuels, supprime le sélecteur d'espace dupliqué dans `TopHeaderBar` (cause des troncatures à `1440px`), place le logo `ORCIA` en Zone 1 (`DESIGN.md` §2.1), épure `/assistant` et `/login`, et garantit les captures de preuve sur `HumanLedAnchorCard` (`#6D28D9`) et `ArbitrationTieBreakCard` (`#D97706`).
-- **Commits associés** : `En attente d'implémentation (initialisé par Story 22.10)`
+- **Auteur / Contexte** : `22.10-impl` (pré-implémentation) $\rightarrow$ `23.5-impl` / `23.5-test` / `23.5-validate` (`APPROVED` Round 2). Aligne la hiérarchie visuelle Direction C : ramène `/cockpit` à `<= 3` blocs visuels, supprime le sélecteur d'espace dupliqué dans `TopHeaderBar` (cause des troncatures à `1440px`), place le logo `ORCIA` en Zone 1 (`DESIGN.md` §2.1), sécurise la recherche fédérée multi-tenant + cache Speed 2, épure `/assistant` et `/login`, et garantit les captures jalons sur `/login`, `HumanLedAnchorCard` (`#6D28D9`) et `ArbitrationTieBreakCard` (`#D97706`).
+- **Commits associés** : `feat/epic-23-remediation-pg18-sse-direction-c` (commit atomique Story 23.5 — `done`, validé `APPROVED` par `23.5-validate`)
 
 ---
 
@@ -70,19 +70,39 @@
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
-> *[Pré-implémentation initialisée en Story 22.10 — à compléter après implémentation et validation de la Story 23.5]*
+> **Statut** : `done` — Validé **`APPROVED`** (Round 2) par `23.5-validate` (code, sécurité multi-tenant / cache Speed 2 et `10` captures PNG Desktop régénérées incluant les `3` jalons `/login`, `#6D28D9` et `#D97706`). Dette technique mineure non bloquante enregistrée sous `ACTION_ITEM-23.5` (`P3`) dans `docs/implementation-artifacts/sprint-status.yaml`.
 
-### 3.1 Fichiers Développés & Modifiés
+### 3.1 Fichiers Développés & Modifiés (Round 1 + Round 2)
 | Fichier | Nature (Création / Modification / Refactoring) | Description synthétique |
 | :--- | :--- | :--- |
-| `apps/web/src/features/cockpit/*` & `packages/ui/src/primitives/StreamlinedCockpitView.tsx` | Refactoring / Modification | *[À compléter après implémentation Story 23.5]* |
-| `packages/ui/src/primitives/{FourZoneTopHeaderSection,FourZoneSidebarRail,BiModeLoginView}.tsx` & `apps/web/src/components/{shellPresets,ShellAuthFallbackView}.ts*` | Modification | *[À compléter après implémentation Story 23.5]* |
-| `apps/web/src/components/ModuleWorkspaceView.tsx`, `features/inbox/*`, `i18n/locales/fr.ts` | Modification | *[À compléter après implémentation Story 23.5]* |
-| `apps/web/e2e/02-assistant-streaming-and-folders.spec.ts` & `03-human-led-anchor-and-arbitration.spec.ts` | Modification | *[À compléter après implémentation Story 23.5]* |
+| `packages/orcia-core/src/orcia_core/rag/_internal/sql_federated_search.py`, `two_speed_search.py`, `__init__.py` | Création / Modification | Chargeur SQL PG18 fédéré multi-sources (`catalog_items`, `workflow_definitions_v2`, `declarative_pack_bundles`, `workspaces`, `assistant_folders`) avec filtrage multi-tenant (`user_id`, `user_role`, `primary_org_unit_id`), mode *fail-closed* anonyme et isolation du cache Speed 2 (`_speed2_cache`) par `user_id`/`user_role`. |
+| `apps/api/src/orcia_api/routers/portal_and_help.py` | Modification | Propagation de `user.id`, `user.platform_role` et `user.primary_org_unit_id` vers `load_federated_search_candidates_pg18` et `TwoSpeedFederatedSearchService.execute_search` (`0-diff` OpenAPI). |
+| `packages/ui/src/primitives/{CockpitOrientationCards,CockpitDecisionsCard}.tsx` & `StreamlinedCockpitView.tsx` | Création / Refactoring | Découpage modulaire du Cockpit en `<= 3` blocs visuels stricts (`Accostage`, `Décisions`, `Accès rapides`). |
+| `packages/ui/src/primitives/{FourZoneSidebarRail,FourZoneTopHeaderSection,FourZoneDirectionCShell,SidebarAccountPopover,BiModeLoginView,UserProfileOverviewPage}.tsx` | Modification | Logo `ORCIA` (`sidebar-brand-logo`) en tête de Zone 1, masquage Desktop de `topbar-fixed-workspace-selector` lorsque la sidebar est ouverte (`isMobile \|\| railCollapsed`), `login-brand-header` + `OrciaPasswordInput` (`maskMode="password"`, bouton œil) sur `/login` et état `profile-kpis-loading` sur `/profile`. |
+| `apps/web/src/features/cockpit/{useCockpitGovernanceController.ts,index.tsx,CockpitHumanLedGovernanceSection.tsx,CockpitRunsSection.tsx}` | Création / Refactoring | Extraction de `useCockpitGovernanceController` et montage conditionnel de `cockpit-human-led-governance-section` (masquée à `0` run, affichée dès qu'un run/état de gouvernance existe). |
+| `apps/web/src/components/{ModuleWorkspaceView,ShellContainer,ShellContainerModals,ShellAuthFallbackView,ShellContextualHelpColumn,ShellFederatedSearchModal}.tsx`, `shellPresets.ts`, `agentsAndSkillsBridgeStore.ts` | Modification | Exclusion en-tête sur `"inbox"`, fil d'Ariane complet `ORCIA > [Équipe] > Module` (`buildShellBreadcrumbItems`), non-ouverture modale Jour 0 sur `/showcase`, loader enrichi `ShellHydratingLoaderView` et pont `orcia:assistant-prefill`. |
+| `apps/web/src/features/inbox/{InboxDisabledBanner.tsx,inboxCitationHelpers.ts,index.tsx,InboxAuxiliaryPanels.tsx,SavedConversationsAndThreadView.tsx,useInboxPanelController.ts}` | Création / Modification | Masquage compteurs `(0)`, pré-remplissage `orcia:assistant-prefill`, transmission `citationCardPreview`, masquage `@draft` redondant, boutons unifiés `orcia-ds-btn` et contraste WCAG AA du bouton d'envoi. |
+| `apps/web/src/i18n/locales/{assistant_labels,inbox_and_cockpit_labels,shell_and_search_labels}.ts` & `docs/help/{fr,en}/{assistant,showcase}.md` | Modification | Remplacement de `"embedding"` / `"Processus standard"`, placeholder court `Rechercher… (⌘K)` et mise à jour des fiches d'aide FR/EN. |
+| `tests/integration/api/test_story_23_5_federated_search_postgres18.py`, `tests/unit/test_story_23_5_search_coverage.py` | Création | Tests `testcontainers` `pgvector/pgvector:pg18` sur `create_app()` réel sans `dependency_overrides` (5 tables PG18, Speed 1/Speed 2, test négatif d'isolation multi-utilisateurs `PRIVATE` / `PRIVATE_USER` / `_speed2_cache`) et couverture unitaire des branches de visibilité. |
+| `packages/ui/src/__tests__/{story-23-5-sobriety-and-login-brand,four-zone-shell-and-cockpit}.test.tsx` & `apps/web/src/__tests__/{story-23-5-sobriety-and-citations-wiring,direction-c-shell-mobile-companion-and-dynamic-help,i18n-and-shell,orchestration-rewind-modal-and-gates-view,story-19-6-*,story-20-1-*,story-22-3-*}.test.tsx` | Création / Modification | Couverture Vitest complète (`BiModeLoginView`, `FourZoneSidebarRail`, `FourZoneTopHeaderSection`, `CockpitFeaturePanel`, `ModuleWorkspaceView`, `orcia:assistant-prefill`, fil d'Ariane `ORCIA > [Équipe] > Module`, non-régression `story-20-1`). |
+| `apps/web/e2e/{02-assistant-streaming-and-folders,03-human-led-anchor-and-arbitration,11-screens-smoke-without-server-errors,14-auth-2fa-account-and-profile}.spec.ts`, `apps/web/e2e/support/e2eCaptureFixture.ts` | Modification | Support `captureMilestoneScreenshot` et captures jalons `/login` (`milestone-login-screen-and-password-eye.png`), ancrage violet `#6D28D9` (`milestone-human-led-anchor-violet.png`) et arbitrage ambre `#D97706` (`milestone-arbitration-tiebreak-amber.png`), synchronisation KPIs profil et sélecteurs dossiers. |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
-- **Couverture de tests** : *[À compléter — $\ge 90\%$ requis]*
-- **Qualité statique & Architecture** : `pnpm turbo run lint typecheck test`, `vite build`, `gitnexus_detect_changes()` *[À compléter]*
+- **Pytest Unitaires (Couche 1)** : `.venv/bin/pytest tests/unit/ -q` $\rightarrow$ **`794 passed`** (`100 %`, exit 0).
+- **Couverture Recherche Fédérée & Intégration PG18 Réel (`test_story_23_5_federated_search_postgres18.py`, `test_contextual_help_and_accostage_postgres18.py` + unitaires RAG)** : **`14 passed`** sur Composition Root réel `create_app()` (`pgvector/pgvector:pg18`, sans `dependency_overrides`, incluant isolation multi-utilisateurs) :
+  - `packages/orcia-core/src/orcia_core/rag/_internal/sql_federated_search.py` : **`100 %`** (`14 stmts, 0 miss, 6 branches, 0 brpart`).
+  - `packages/orcia-core/src/orcia_core/rag/two_speed_search.py` : **`100 %`** (`59 stmts, 0 miss`).
+  - `apps/api/src/orcia_api/routers/portal_and_help.py` : **`98 %`** (`55 stmts, 0 miss, 6 branches, 1 brpart: 104->113`).
+- **Turbo JS/TS (Lint + Typecheck + Vitest)** : `pnpm turbo run lint typecheck test --force --concurrency=2` $\rightarrow$ **`9/9` tâches réussies** (`@orcia/api-client` **`20 passed`**, `@orcia/ui` **`124 passed`**, `@orcia/web` **`210 passed`**).
+- **Gates Statiques, Architecture & Catalogue** :
+  - `.venv/bin/ruff check` (`All checks passed!`) & `.venv/bin/ruff format --check` (`853 files already formatted`).
+  - `.venv/bin/mypy --strict packages/orcia-core packages/orcia-connectors apps/api apps/worker` (`Success: no issues found in 552 source files`).
+  - `.venv/bin/lint-imports` (`Contracts: 5 kept, 0 broken.` — `598` fichiers, `4295` dépendances).
+  - `.venv/bin/python scripts/export_openapi.py --check` (`0-diff`).
+  - `.venv/bin/python .agent/skills/bmad-architecture/scripts/lint_spine.py` (`0` finding).
+  - `pnpm site:sync && pnpm site:check` & `scripts/check_implementation_docs.py` verts (`docs/product/capabilities.yaml` conservé intact jusqu'à `Story 23.7`).
 
 ### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17` + 5 Garde-Fous de Câblage Vertical)
-- *[À compléter après validation `02-assistant`, `03-human-led`, `11-screens-smoke` et inspection visuelle des captures `#5`, `#8`, `#10`]*
+- **Chaîne Canari Desktop (`--project=desktop-cockpit --retries=0 --timeout=35000`, sans `ORCIA_E2E_SEED_FIXTURES`)** sur les `10` specs de la Story 23.5 (`00`, `01`, `02`, `03`, `09`, `10`, `11`, `14`, `21`, `shell`) : **`24 passed, 0 failed, 0 skipped`** (`4.8m`), avec `26` PNG vérifiés dont les `3` jalons `/login` (`milestone-login-screen-and-password-eye.png`), `#6D28D9` (`milestone-human-led-anchor-violet.png`) et `#D97706` (`milestone-arbitration-tiebreak-amber.png`).
+- **Revue `23.5-validate` (Round 2)** : verdict **`APPROVED`** (code, sécurité multi-tenant / cache Speed 2 et inspection visuelle des `10` PNG Desktop régénérés).
+- **Synchronisation GitNexus** : `npx gitnexus analyze` exécuté après commit atomique sur `feat/epic-23-remediation-pg18-sse-direction-c`.

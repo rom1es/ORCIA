@@ -58,12 +58,16 @@ export function AssistantTopToolbar({
           data-testid="assistant-saved-conversations-toggle-btn"
           aria-expanded={savedConversationsOpen}
           onClick={onToggleSavedConversations}
-          className="rounded-full border border-border-subtle bg-surface-secondary px-3 py-1 text-xs font-medium text-text-primary"
+          className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm rounded-full"
         >
           <OrciaIcon name="clock" />{" "}
           {isFr
-            ? `Conversations sauvegardées (${savedCount})`
-            : `Saved conversations (${savedCount})`}
+            ? savedCount > 0
+              ? `Conversations sauvegardées (${savedCount})`
+              : "Conversations sauvegardées"
+            : savedCount > 0
+              ? `Saved conversations (${savedCount})`
+              : "Saved conversations"}
         </button>
 
         <button
@@ -71,10 +75,16 @@ export function AssistantTopToolbar({
           data-testid="assistant-folders-toggle-btn"
           aria-expanded={foldersPanelOpen}
           onClick={onToggleFoldersPanel}
-          className="rounded-full border border-border-subtle bg-surface-secondary px-3 py-1 text-xs font-medium text-text-primary"
+          className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm rounded-full"
         >
           <OrciaIcon name="folder" />{" "}
-          {isFr ? `Dossiers (${foldersCount})` : `Folders (${foldersCount})`}
+          {isFr
+            ? foldersCount > 0
+              ? `Dossiers (${foldersCount})`
+              : "Dossiers"
+            : foldersCount > 0
+              ? `Folders (${foldersCount})`
+              : "Folders"}
         </button>
       </div>
 
@@ -92,7 +102,7 @@ export function AssistantTopToolbar({
           type="button"
           data-testid="assistant-open-governance-btn"
           onClick={onToggleGovernanceModal}
-          className="rounded-full border border-border-subtle bg-surface-elevated px-3 py-1 text-xs font-semibold text-text-primary"
+          className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm rounded-full font-semibold"
         >
           {governanceModalTitle}
         </button>
@@ -125,8 +135,12 @@ export function SavedConversationsPanel({
         <h3 className="text-xs font-semibold text-text-primary">
           <OrciaIcon name="clock" />{" "}
           {isFr
-            ? `Conversations sauvegardées (${conversations.length})`
-            : `Saved conversations (${conversations.length})`}
+            ? conversations.length > 0
+              ? `Conversations sauvegardées (${conversations.length})`
+              : "Conversations sauvegardées"
+            : conversations.length > 0
+              ? `Saved conversations (${conversations.length})`
+              : "Saved conversations"}
         </h3>
       </div>
 

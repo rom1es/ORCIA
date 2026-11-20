@@ -109,13 +109,19 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
       </FourZoneDirectionCShell>,
     );
 
-    // Zone 1: TopHeaderBar (52px) with fixed "Espace : [Nom] ⌄" selector, ⌘K, ? Aide, 🔔 Notifications (420px), 👤 Login + Hat
+    // Zone 2: TopHeaderBar (52px) hides duplicate workspace selector on Desktop while Sidebar is expanded
     const topbar = screen.getByTestId("four-zone-top-header-bar");
     expect(topbar.style.height).toBe("52px");
+    expect(screen.queryByTestId("topbar-fixed-workspace-selector")).toBeNull();
+    expect(screen.getByTestId("sidebar-brand-logo").textContent).toContain("ORCIA");
+
+    // Collapsing Sidebar rail reveals the compact TopHeaderBar workspace selector
+    fireEvent.click(screen.getByTestId("sidebar-rail-toggle-btn"));
     const wsBtn = screen.getByTestId("topbar-fixed-workspace-selector");
     expect(wsBtn.textContent).toContain("Espace : Portail Paiement");
     fireEvent.click(wsBtn);
     expect(onOpenWorkspaceSwitcher).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByTestId("sidebar-rail-toggle-btn"));
 
     fireEvent.click(screen.getByTestId("topbar-federated-search-trigger"));
     expect(onOpenSearchCommand).toHaveBeenCalledTimes(1);

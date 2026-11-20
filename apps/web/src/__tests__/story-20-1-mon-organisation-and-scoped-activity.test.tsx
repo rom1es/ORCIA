@@ -189,11 +189,11 @@ describe("Story 20.1 — Menu Mon Organisation, Délégation BU/Team, Invitation
     });
 
     const firstMount = await renderAppAtRoute("/organization");
-    await screen.findByTestId("organization-page");
+    const firstOrgPage = await screen.findByTestId("organization-page");
 
     await waitFor(() => {
-      expect(screen.getByText("Direction Opérations")).toBeTruthy();
-      expect(screen.getByText("Équipe Support N2")).toBeTruthy();
+      expect(within(firstOrgPage).getByText("Direction Opérations")).toBeTruthy();
+      expect(within(firstOrgPage).getByText("Équipe Support N2")).toBeTruthy();
     });
     expect(screen.queryByText("Direction Finance")).toBeNull();
     expect(screen.getByTestId("org-unit-ontology-lead-badge-bu-ops")).toBeTruthy();
@@ -225,12 +225,12 @@ describe("Story 20.1 — Menu Mon Organisation, Délégation BU/Team, Invitation
     // F5 persistence check: unmount and remount at /organization
     firstMount.unmount();
     await renderAppAtRoute("/organization");
-    await screen.findByTestId("organization-page");
+    const reloadedOrgPage = await screen.findByTestId("organization-page");
     await waitFor(() => {
-      expect(screen.getByText("Direction Opérations")).toBeTruthy();
-      expect(screen.getByTestId("org-unit-ontology-lead-badge-bu-ops").textContent).toContain(
-        "Lucie Glossaire",
-      );
+      expect(within(reloadedOrgPage).getByText("Direction Opérations")).toBeTruthy();
+      expect(
+        within(reloadedOrgPage).getByTestId("org-unit-ontology-lead-badge-bu-ops").textContent,
+      ).toContain("Lucie Glossaire");
     });
   });
 
@@ -244,12 +244,12 @@ describe("Story 20.1 — Menu Mon Organisation, Délégation BU/Team, Invitation
     });
 
     await renderAppAtRoute("/organization");
-    await screen.findByTestId("organization-page");
+    const teamOrgPage = await screen.findByTestId("organization-page");
 
     await waitFor(() => {
-      expect(screen.getByTestId("org-scoped-view-notice")).toBeTruthy();
-      expect(screen.getByTestId("org-unit-readonly-badge-bu-ops")).toBeTruthy();
-      expect(screen.getByText("Équipe Support N2")).toBeTruthy();
+      expect(within(teamOrgPage).getByTestId("org-scoped-view-notice")).toBeTruthy();
+      expect(within(teamOrgPage).getByTestId("org-unit-readonly-badge-bu-ops")).toBeTruthy();
+      expect(within(teamOrgPage).getByText("Équipe Support N2")).toBeTruthy();
     });
     expect((screen.getByTestId("open-invite-org-user-modal-btn") as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByTestId("open-create-org-unit-modal-btn") as HTMLButtonElement).disabled).toBe(true);

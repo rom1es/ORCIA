@@ -88,6 +88,8 @@ export const INBOX_AND_COCKPIT_FR_LABELS: InboxAndCockpitDictionarySection = {
     localAccordionToggle: "Connexion avec un compte local / Administrateur",
     emailLabel: "Adresse e-mail professionnelle",
     passwordLabel: "Mot de passe", // pragma: allowlist secret
+    showPasswordLabel: "Afficher le mot de passe", // pragma: allowlist secret
+    hidePasswordLabel: "Masquer le mot de passe", // pragma: allowlist secret
     totpLabel: "Code de vérification à 6 chiffres",
     submitLocalCta: "Se connecter",
     errorBannerTitle: "Impossible de vous connecter",
@@ -216,6 +218,8 @@ export const INBOX_AND_COCKPIT_EN_LABELS: InboxAndCockpitDictionarySection = {
     localAccordionToggle: "Sign in with a local / Administrator account",
     emailLabel: "Work email address",
     passwordLabel: "Password", // pragma: allowlist secret
+    showPasswordLabel: "Show password", // pragma: allowlist secret
+    hidePasswordLabel: "Hide password", // pragma: allowlist secret
     totpLabel: "6-digit verification code",
     submitLocalCta: "Sign in",
     errorBannerTitle: "Unable to sign in",

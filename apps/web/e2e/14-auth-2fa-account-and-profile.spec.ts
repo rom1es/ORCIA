@@ -226,6 +226,7 @@ test.describe("Auth, 2FA, compte utilisateur et profil personnel", () => {
     await expect(page.getByTestId("user-profile-overview-page")).toBeVisible({ timeout: 20000 });
     const kpiEmptyState = page.getByTestId("profile-kpis-empty-state");
     const kpiTotalTokens = page.getByTestId("profile-kpi-total-tokens");
+    await expect(kpiEmptyState.or(kpiTotalTokens)).toBeVisible({ timeout: 15000 });
     if (await kpiEmptyState.isVisible()) {
       await expect(kpiTotalTokens).toHaveCount(0);
     } else {

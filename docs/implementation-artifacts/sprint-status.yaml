@@ -245,7 +245,7 @@ development_status:
   23-2-transport-sse-authentifie-createrequestsse-smoke-00-et-diagnostic-401: done
   23-3-zone-4-aide-contextuelle-fidele-a-la-route-et-4-blocs-design-md: done
   23-4-unification-accostage-x-sur-6-fin-fantomes-jour0-et-modale-admin: done
-  23-5-sobriete-cockpit-topbar-sans-doublon-assistant-et-login: ready-for-dev
+  23-5-sobriete-cockpit-topbar-sans-doublon-assistant-et-login: done
   23-6a-durcissement-anti-goodhart-gardes-openapi-ast-geometrie-et-reset-pg18: ready-for-dev
   23-7-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston: ready-for-dev
   23-8-rapports-tech-lead-plan-correction-global-et-initialisation-epic-24: ready-for-dev
@@ -350,6 +350,20 @@ action_items:
     description: >
       Dette technique mineure relevée lors de la validation 23.4-validate (Round 2) :
       ces deux fichiers dépassent le seuil indicatif de 400 lignes et seront scindés dans un lot d'hygiène dédié.
+  - id: ACTION_ITEM-23.5
+    title: "Durcissement mineur recherche fédérée, découpage test_story_23_5_federated_search_postgres18.py (714 L) & placeholder 09-pack-builder"
+    action: >
+      (1) Compléter _STANDARD_ROLES dans sql_federated_search.py et inclure scope / active_screen_route dans la clé
+      de cache Speed 2 (_speed2_cache) de two_speed_search.py ;
+      (2) Scinder tests/integration/api/test_story_23_5_federated_search_postgres18.py (714 lignes) sous 400 lignes ;
+      (3) Aligner le placeholder tronqué résiduel dans 09-pack-builder.
+    status: open
+    epic: epic-23
+    story_ref: "23-5-sobriete-cockpit-topbar-sans-doublon-assistant-et-login"
+    priority: P3
+    owner: "Amelia (Dev)"
+    description: >
+      Mineurs non bloquants relevés lors de la validation 23.5-validate (Round 2, APPROVED) à traiter en lot d'hygiène ultérieur.
   - id: SPEC-01
     title: "Génération systématique des spécifications `spec-{story-key}.md` et enrichissement
       des rapports Tech Lead pour l'Epic 2"

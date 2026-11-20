@@ -181,7 +181,7 @@ export function isDesktopOnlyMobileRoute(pathname: string | null | undefined): b
   );
 }
 
-export function buildShellBreadcrumbItems(params: {
+function buildRouteModuleBreadcrumbItems(params: {
   readonly pathname: string | null | undefined;
   readonly isFr: boolean;
   readonly menuEntries: Record<EightFixedMenuKey, string>;
@@ -285,4 +285,26 @@ export function buildShellBreadcrumbItems(params: {
     return [{ label: menuEntries.help, route: "/help" }];
   }
   return [];
+}
+
+export function buildShellBreadcrumbItems(params: {
+  readonly pathname: string | null | undefined;
+  readonly isFr: boolean;
+  readonly menuEntries: Record<EightFixedMenuKey, string>;
+  readonly activeTeamLabel?: string | null;
+}): readonly ShellBreadcrumbItem[] {
+  const { pathname, isFr, menuEntries, activeTeamLabel } = params;
+  const cleanTeam = (activeTeamLabel ?? "").trim();
+  const isRedundantTeam =
+    !cleanTeam ||
+    cleanTeam === "ORCIA" ||
+    cleanTeam === "Plateforme Globale ORCIA" ||
+    cleanTeam === "Global Platform ORCIA";
+
+  const moduleItems = buildRouteModuleBreadcrumbItems({ pathname, isFr, menuEntries });
+  const prefix: ShellBreadcrumbItem[] = [{ label: "ORCIA", route: "/cockpit" }];
+  if (!isRedundantTeam && !moduleItems.some((item) => item.label === cleanTeam)) {
+    prefix.push({ label: cleanTeam });
+  }
+  return [...prefix, ...moduleItems];
 }

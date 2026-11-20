@@ -18,7 +18,7 @@ export interface ShellContextualHelpColumnProps {
   readonly activeHelpSectionId: string | null;
   readonly labels: TranslationDictionary["contextualHelpHybrid"];
   readonly autonomousBadgeLabels?: AutonomousExecutionBadgeLabels;
-  readonly onAskAssistant: () => void;
+  readonly onAskAssistant: (route?: string, prefillPrompt?: string) => void;
 }
 
 export function ShellContextualHelpColumn({

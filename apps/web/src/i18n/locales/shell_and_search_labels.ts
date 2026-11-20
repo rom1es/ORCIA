@@ -44,7 +44,7 @@ export interface ShellAndSearchDictionarySection {
 export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
   fourZoneShell: {
     workspacePrefix: "Espace",
-    searchTriggerPlaceholder: "Rechercher dans cet Espace ou partout (⌘K)...",
+    searchTriggerPlaceholder: "Rechercher… (⌘K)",
     contextualHelpButtonLabel: "Aide",
     notificationsButtonLabel: "Notifications",
     notificationsDrawerTitle: "Centre de Notifications",
@@ -338,7 +338,7 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
 export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
   fourZoneShell: {
     workspacePrefix: "Space",
-    searchTriggerPlaceholder: "Search in this Space or everywhere (⌘K)...",
+    searchTriggerPlaceholder: "Search… (⌘K)",
     contextualHelpButtonLabel: "Help",
     notificationsButtonLabel: "Notifications",
     notificationsDrawerTitle: "Notification Center",

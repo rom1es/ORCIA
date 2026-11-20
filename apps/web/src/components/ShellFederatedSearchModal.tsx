@@ -21,7 +21,7 @@ export interface ShellFederatedSearchModalProps {
   readonly ontologyConcepts: readonly UiOntologyConceptView[];
   readonly labels: TopHeaderSearchCommandLabels;
   readonly onSelectDeepLink: (deepLinkUri: string) => void;
-  readonly onAskAssistant: () => void;
+  readonly onAskAssistant: (query: string) => void;
   readonly onClose: () => void;
 }
 
@@ -195,7 +195,7 @@ export function ShellFederatedSearchModal({
         }}
         onTriggerSpeed2Now={(query, scope) => runFederatedSpeed2Search(query, scope)}
         onSelectDeepLink={(payload) => onSelectDeepLink(payload.deepLinkUri)}
-        onAskAssistant={onAskAssistant}
+        onAskAssistant={(query) => onAskAssistant(query)}
         onClose={onClose}
       />
     </div>

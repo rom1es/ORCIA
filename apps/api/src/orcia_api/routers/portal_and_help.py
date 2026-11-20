@@ -14,6 +14,7 @@ from orcia_api.dependencies import (
     get_two_speed_search_service,
     require_rag_available,
 )
+from orcia_api.dependencies._core_providers import get_configured_db_engine
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.catalog import (
     ContextualHelpPublishRequest,
@@ -28,6 +29,7 @@ from orcia_api.schemas.ontology_and_rag import (
 from orcia_core.catalog.contextual_help import HelpArticleCatalogItem
 from orcia_core.observability.logging import get_current_trace_id
 from orcia_core.ports.embedding import EmbeddingPort
+from orcia_core.rag import FederatedSearchCandidate, load_federated_search_candidates_pg18
 
 router = APIRouter(prefix="/api/v1", tags=["portal-and-help"])
 
@@ -97,15 +99,28 @@ async def execute_two_speed_federated_search(
         if vectors:
             query_embedding = tuple(vectors[0])
 
+    extra_candidates: tuple[FederatedSearchCandidate, ...] = ()
+    engine = get_configured_db_engine(request)
+    if engine is not None:
+        async with engine.connect() as conn:
+            extra_candidates = await load_federated_search_candidates_pg18(
+                conn,
+                user_id=user.id,
+                user_role=user.platform_role,
+                primary_org_unit_id=user.primary_org_unit_id,
+            )
+
     report = svc.execute_search(
         query=q,
         scope=normalized_scope,
         active_workspace_id=effective_ws,
         active_screen_route=screen_route,
+        user_id=user.id,
         user_role=user.platform_role,
         include_speed2=include_speed2,
         force_semantic=force_semantic,
         query_embedding=query_embedding,
+        extra_candidates=extra_candidates,
     )
     return TwoSpeedSearchResponse(
         query=report.query,

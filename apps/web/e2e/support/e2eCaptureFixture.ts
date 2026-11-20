@@ -131,6 +131,41 @@ async function captureFinalState(page: Page, testInfo: TestInfo): Promise<void> 
   fs.appendFileSync(manifestPath, `${JSON.stringify(manifestEntry)}\n`, "utf8");
 }
 
+export async function captureMilestoneScreenshot(
+  page: Page,
+  testInfo: TestInfo,
+  milestoneLabel: string,
+): Promise<string | null> {
+  if (page.isClosed()) return null;
+  const specBase = path.basename(testInfo.file).replace(/\.spec\.[tj]s$/, "");
+  const specSlug = slugify(specBase, 80);
+  const projectSlug = slugify(testInfo.project.name || "default", 40);
+  const testSlug = slugify(testInfo.title, 72);
+  const labelSlug = slugify(milestoneLabel, 48);
+
+  const specDir = path.join(screenshotsRoot, specSlug);
+  fs.mkdirSync(specDir, { recursive: true });
+  const screenshotAbs = path.join(
+    specDir,
+    `${projectSlug}--${testSlug}--milestone-${labelSlug}.png`,
+  );
+
+  try {
+    await page.screenshot({ path: screenshotAbs, fullPage: false, timeout: 8000 });
+    if (fs.existsSync(screenshotAbs) && fs.statSync(screenshotAbs).size > MAX_SCREENSHOT_BYTES) {
+      await page.screenshot({ path: screenshotAbs, fullPage: false, timeout: 8000 });
+    }
+    const screenshotRel = path.relative(repoRoot, screenshotAbs).replace(/\\/g, "/");
+    await testInfo.attach(labelSlug, {
+      path: screenshotAbs,
+      contentType: "image/png",
+    });
+    return screenshotRel;
+  } catch {
+    return null;
+  }
+}
+
 export const test = base.extend<{ _autoCaptureFinalState: void }>({
   _autoCaptureFinalState: [
     async ({ page }, use, testInfo) => {

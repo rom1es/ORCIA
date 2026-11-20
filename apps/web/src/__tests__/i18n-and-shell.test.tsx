@@ -660,7 +660,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("create-org-unit-btn"));
     await screen.findByTestId("org-unit-row-org-2");
 
-    // Verify TopHeader workspace selector opens a dropdown list instead of blindly cycling
+    // Verify TopHeader workspace selector (when rail is collapsed) opens a dropdown list instead of blindly cycling
+    fireEvent.click(screen.getByTestId("sidebar-rail-toggle-btn"));
     const wsTrigger = screen.getByTestId("topbar-fixed-workspace-selector");
     expect(wsTrigger.textContent).toContain("Plateforme Globale ORCIA");
     fireEvent.click(wsTrigger);
@@ -669,6 +670,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(dropdownMenu.textContent).toContain("Espace Comptabilité");
     fireEvent.click(screen.getByTestId("topbar-workspace-option-org-1"));
     expect(wsTrigger.textContent).toContain("BU Finance");
+    fireEvent.click(screen.getByTestId("sidebar-rail-toggle-btn"));
 
     // Attempt to delete parent BU while child Espace is attached -> blocked by orphan protection
     fireEvent.click(screen.getByTestId("delete-org-unit-btn-org-1"));
@@ -1309,8 +1311,10 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       const isLoginView = filePath.endsWith("BiModeLoginView.tsx");
 
       if (isLoginView) {
-        // /login MUST preserve type="password", autoComplete="current-password", autoComplete="username", and data-allow-password-manager="true"
-        expect(content).toContain('type="password"');
+        // /login MUST preserve password input mode, autoComplete="current-password", autoComplete="username", and data-allow-password-manager="true"
+        expect(
+          content.includes('type="password"') || content.includes('maskMode="password"'),
+        ).toBe(true);
         expect(content).toContain('autoComplete="current-password"');
         expect(content).toContain('autoComplete="username"');
         expect(content).toContain('data-allow-password-manager="true"');
@@ -1550,9 +1554,11 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       (screen.getByTestId("activity-scope-filter-select") as HTMLSelectElement).value,
     ).toBe("scope-global");
 
-    // Switch the connected user's observation level in the top header bar to "Direction Produit" (org-1)
+    // Switch the connected user's observation level in the top header bar (rail collapsed) to "Direction Produit" (org-1)
+    fireEvent.click(screen.getByTestId("sidebar-rail-toggle-btn"));
     fireEvent.click(screen.getByTestId("topbar-fixed-workspace-selector"));
     fireEvent.click(screen.getByTestId("topbar-workspace-option-org-1"));
+    fireEvent.click(screen.getByTestId("sidebar-rail-toggle-btn"));
 
     // The Activity Log automatically filters to the observed BU ("Direction · Direction Produit")!
     expect(
@@ -1915,6 +1921,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     // - 🔒 Mes Espaces Privés
     // - 👥 Mes Équipes & Espaces
     // - 🏢 Supervision Organisation
+    fireEvent.click(screen.getByTestId("sidebar-rail-toggle-btn"));
     fireEvent.click(screen.getByTestId("topbar-fixed-workspace-selector"));
     const dropdownMenu = screen.getByTestId("topbar-workspace-dropdown-menu");
     expect(dropdownMenu.textContent).toContain("🔒 Mes Espaces Privés");
@@ -1934,6 +1941,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(screen.getByTestId("topbar-fixed-workspace-selector").textContent).toContain(
       "Mon Bac à Sable R&D",
     );
+    fireEvent.click(screen.getByTestId("sidebar-rail-toggle-btn"));
     const filteredCards = screen.getAllByTestId(/^workspace-studio-card-/);
     expect(filteredCards).toHaveLength(1);
     expect(filteredCards[0]?.textContent).toContain("Mon Bac à Sable R&D");

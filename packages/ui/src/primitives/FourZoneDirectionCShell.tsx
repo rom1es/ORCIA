@@ -198,6 +198,7 @@ export function FourZoneDirectionCShell({
     >
       <FourZoneTopHeaderSection
         isMobile={isMobile}
+        railCollapsed={railCollapsed}
         mobileMenuOpen={mobileMenuOpen}
         onToggleMobileMenu={() => setMobileMenuOpen((prev) => !prev)}
         breadcrumbItems={breadcrumbItems}

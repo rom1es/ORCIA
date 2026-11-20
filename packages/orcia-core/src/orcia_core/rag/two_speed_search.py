@@ -56,11 +56,20 @@ def normalize_search_query(query: str) -> str:
     return " ".join(query.strip().lower().split())
 
 
-def build_speed2_redis_cache_key(workspace_id: str, query: str) -> str:
-    """Return deterministic Redis cache key `search:v2:{workspace_id}:{sha256(query_norm)}`."""
+def build_speed2_redis_cache_key(
+    workspace_id: str,
+    query: str,
+    *,
+    user_id: str = "anonymous",
+    user_role: str = "CONTRIBUTOR",
+) -> str:
+    """Return deterministic user/role/workspace-isolated Redis cache key."""
     norm = normalize_search_query(query)
     digest = hashlib.sha256(norm.encode("utf-8")).hexdigest()
-    return f"search:v2:{workspace_id.strip() or 'global'}:{digest}"
+    clean_uid = user_id.strip() or "anonymous"
+    clean_role = user_role.strip() or "CONTRIBUTOR"
+    clean_ws = workspace_id.strip() or "global"
+    return f"search:v2:{clean_uid}:{clean_role}:{clean_ws}:{digest}"
 
 
 @dataclass(frozen=True, slots=True)
@@ -182,28 +191,38 @@ class TwoSpeedFederatedSearchService:
         scope: SearchScopeMode = "WORKSPACE",
         active_workspace_id: str = "ws-claims-alpha",
         active_screen_route: str = "/cockpit",
+        user_id: str = "anonymous",
         user_role: str = "CONTRIBUTOR",
         include_speed2: bool = True,
         force_semantic: bool = False,
         query_embedding: tuple[float, ...] | None = None,
+        extra_candidates: Sequence[FederatedSearchCandidate] = (),
     ) -> TwoSpeedSearchReport:
         """Execute Speed 1 lexical search and optionally Speed 2 semantic search (`>= 3` words)."""
         norm_q = normalize_search_query(query)
         words = [w for w in norm_q.split(" ") if w]
 
+        merged_candidates: list[FederatedSearchCandidate] = list(self._candidates)
+        seen_ids = {c.item_id for c in merged_candidates}
+        for cand in extra_candidates:
+            if cand.item_id not in seen_ids:
+                merged_candidates.append(cand)
+                seen_ids.add(cand.item_id)
+
         # 1. Filter by PermissionGuard (AD-21) and Scope (SCREEN | WORKSPACE | ALL_WORKSPACES)
         clean_ws = active_workspace_id.strip()
         is_global_or_empty_ws = not clean_ws or clean_ws in ("scope-global", "GLOBAL")
         authorized: list[FederatedSearchCandidate] = []
-        for cand in self._candidates:
+        for cand in merged_candidates:
             if user_role not in cand.allowed_roles:
                 continue
+            cand_matches_ws = cand.workspace_id in (clean_ws, "GLOBAL")
             if scope == "SCREEN" and (
-                (not is_global_or_empty_ws and cand.workspace_id != clean_ws)
+                (not is_global_or_empty_ws and not cand_matches_ws)
                 or cand.screen_route != active_screen_route
             ):
                 continue
-            if scope == "WORKSPACE" and not is_global_or_empty_ws and cand.workspace_id != clean_ws:
+            if scope == "WORKSPACE" and not is_global_or_empty_ws and not cand_matches_ws:
                 continue
             authorized.append(cand)
 
@@ -248,7 +267,12 @@ class TwoSpeedFederatedSearchService:
                 speed2_cache_ttl_seconds=SPEED2_REDIS_TTL_SECONDS,
             )
 
-        redis_key = build_speed2_redis_cache_key(active_workspace_id, norm_q)
+        redis_key = build_speed2_redis_cache_key(
+            active_workspace_id,
+            norm_q,
+            user_id=user_id,
+            user_role=user_role,
+        )
         cached_speed2 = self._speed2_cache.get(redis_key)
         if cached_speed2 is not None:
             appended = [h for h in cached_speed2 if h.item_id not in speed1_ids]

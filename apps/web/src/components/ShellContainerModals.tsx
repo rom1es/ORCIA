@@ -27,7 +27,7 @@ export interface ShellContainerModalsProps {
   }) => void;
   readonly onCloseSearchModal: () => void;
   readonly onDispatchNavigation: (href: string) => void;
-  readonly onOpenAssistantFromSearch: () => void;
+  readonly onOpenAssistantFromSearch: (query: string) => void;
 }
 
 export function ShellContainerModals({
@@ -69,10 +69,10 @@ export function ShellContainerModals({
           onCloseSearchModal();
           onDispatchNavigation(deepLinkUri);
         }}
-        onAskAssistant={() => {
+        onAskAssistant={(query) => {
           onCloseSearchModal();
           if (!disabledMenuKeys.assistant) {
-            onOpenAssistantFromSearch();
+            onOpenAssistantFromSearch(query);
           }
         }}
         onClose={onCloseSearchModal}

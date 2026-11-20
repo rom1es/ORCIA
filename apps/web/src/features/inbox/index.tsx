@@ -7,9 +7,9 @@ import {
 import React from "react";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
-import { AssistantNoEmbeddingBanner } from "./AssistantNoEmbeddingBanner";
-import { AssistantReindexingBanner } from "./AssistantReindexingBanner";
 import { InboxAuxiliaryPanels } from "./InboxAuxiliaryPanels";
+import { buildAssistantCitationCardPreview } from "./inboxCitationHelpers";
+import { InboxDisabledBanner } from "./InboxDisabledBanner";
 import { InboxNotificationsCenterView } from "./InboxNotificationsCenterView";
 import {
   ActiveConversationMessagesView,
@@ -88,35 +88,33 @@ function AssistantInboxFeatureContent() {
     onFeedback: setGovernanceFeedback,
   });
 
-  const disabledReasonBannerNode = !hasActiveEmbeddingModel ? (
-    <AssistantNoEmbeddingBanner
-      title={dictionary.assistantNoEmbeddingModel.bannerTitle}
-      description={dictionary.assistantNoEmbeddingModel.bannerDescription}
-      configureCta={dictionary.assistantNoEmbeddingModel.configureCta}
-      onConfigure={() => navigateToRoute("/settings/ai-models")}
-    />
-  ) : ragReindex.isReindexing ? (
-    <AssistantReindexingBanner
-      status="IN_PROGRESS"
-      progressPercentage={ragReindex.progressPercentage}
-      isFr={isFr}
-      onConfigure={() => navigateToRoute("/settings/ai-models")}
-    />
-  ) : ragReindex.isReindexFailed ? (
-    <AssistantReindexingBanner
-      status="FAILED"
+  const disabledReasonBannerNode = (
+    <InboxDisabledBanner
+      hasActiveEmbeddingModel={hasActiveEmbeddingModel}
+      isReindexing={ragReindex.isReindexing}
+      isReindexFailed={ragReindex.isReindexFailed}
       progressPercentage={ragReindex.progressPercentage}
       errorMessage={ragReindex.errorMessage}
       isFr={isFr}
-      onRelaunch={() => {
+      labels={dictionary.assistantNoEmbeddingModel}
+      onRelaunchReindex={() => {
         void ragReindex.relaunchReindex();
       }}
-      onConfigure={() => navigateToRoute("/settings/ai-models")}
+      onNavigateAiModels={() => navigateToRoute("/settings/ai-models")}
     />
-  ) : null;
+  );
 
   const latestTurnInActiveConv =
     activeConversation?.turns[activeConversation.turns.length - 1] ?? null;
+
+  const citationCardPreview = buildAssistantCitationCardPreview({
+    isGenerating: streaming.isGenerating,
+    replyText: latestTurnInActiveConv?.assistantReply ?? streaming.streamedText ?? "",
+    activeSources: latestTurnInActiveConv?.usedSources ?? ragCitations,
+    activeFolderTitle: activeFolder?.title ?? null,
+    isFr,
+    onInspectCitationUri: inspector.openInspectCitationUri,
+  });
 
   const handleSaveDraftAction = (content: string) => {
     const excerpt = content.slice(0, 42).replace(/\s+/g, " ").trim();
@@ -143,15 +141,9 @@ function AssistantInboxFeatureContent() {
       labels={dictionary.executionTrace}
       defaultCollapsedWhenCompleted={false}
       onInspectLines={inspector.openInspectTarget}
-      onSynthesizeNow={() => {
-        void reflexive.synthesizeNow();
-      }}
-      onApproveWrite={(previewId) => {
-        void reflexive.approveWrite(previewId);
-      }}
-      onRejectWrite={(previewId) => {
-        void reflexive.rejectWrite(previewId);
-      }}
+      onSynthesizeNow={() => void reflexive.synthesizeNow()}
+      onApproveWrite={(previewId) => void reflexive.approveWrite(previewId)}
+      onRejectWrite={(previewId) => void reflexive.rejectWrite(previewId)}
     />
   ) : null;
 
@@ -164,18 +156,10 @@ function AssistantInboxFeatureContent() {
         ragCitations={ragCitations}
         traceLabels={dictionary.executionTrace}
         onInspectLines={inspector.openInspectTarget}
-        onInspectCitation={(src) =>
-          inspector.openInspectCitationUri(src.uri, src.title)
-        }
-        onSynthesizeNow={() => {
-          void reflexive.synthesizeNow();
-        }}
-        onApproveWrite={(id) => {
-          void reflexive.approveWrite(id);
-        }}
-        onRejectWrite={(id) => {
-          void reflexive.rejectWrite(id);
-        }}
+        onInspectCitation={(src) => inspector.openInspectCitationUri(src.uri, src.title)}
+        onSynthesizeNow={() => void reflexive.synthesizeNow()}
+        onApproveWrite={(id) => void reflexive.approveWrite(id)}
+        onRejectWrite={(id) => void reflexive.rejectWrite(id)}
         onRegenerateTurn={(userPrompt) =>
           handleSendTurnWithReflexive({
             userPrompt,
@@ -358,6 +342,7 @@ function AssistantInboxFeatureContent() {
         }
         onNavigateToProcesses={() => navigateToRoute("/processes")}
         onSaveDraftAction={handleSaveDraftAction}
+        citationCardPreview={citationCardPreview}
       />
 
       <SourceLineInspectorDrawer

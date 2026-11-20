@@ -1,5 +1,5 @@
 /** @uj UJ-5 | @cap CAP-023 */
-import { expect, test } from "./support/e2eCaptureFixture";
+import { captureMilestoneScreenshot, expect, test } from "./support/e2eCaptureFixture";
 import { expectDbRowExists } from "./support/dbAssertions";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
@@ -35,15 +35,30 @@ test.describe("TEST-04 · 03 — Human-Led : ancrage obligatoire et arbitrage", 
 
   test("signature de l'ancrage violet (≥ 30 car.), rejet agent 422, arbitrage motivé et survie au F5", async ({
     page,
-  }) => {
+  }, testInfo) => {
     await page.goto("/cockpit");
 
+    // Sobriété Cockpit (<= 3 blocs à vide) : la section gouvernance Human-Led se monte au démarrage d'un run
+    await expect(page.getByTestId("cockpit-launch-run-form")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId("cockpit-human-led-governance-section")).toHaveCount(0);
+
+    await page.getByTestId("cockpit-select-workflow").selectOption("assistant-agent");
+    await page.getByTestId("cockpit-run-title-input").fill("Revue Architecture Gouvernance E2E");
+    const instantiatePromise = page.waitForResponse(
+      (r) => r.url().includes("/api/v1/orchestration/runs") && r.request().method() === "POST",
+      { timeout: 20000 },
+    );
+    await page.getByTestId("cockpit-launch-run-submit-btn").click();
+    expect((await instantiatePromise).status()).toBeLessThan(400);
+
     const section = page.getByTestId("cockpit-human-led-governance-section");
-    await expect(section).toBeVisible();
+    await expect(section).toBeVisible({ timeout: 15000 });
 
     const anchorCard = page.getByTestId("cockpit-human-led-anchor-card");
+    await anchorCard.scrollIntoViewIfNeeded();
     await expect(anchorCard).toHaveAttribute("data-human-authored-required", "true");
     await expect(anchorCard).toHaveAttribute("data-ai-generation-forbidden", "true");
+    await captureMilestoneScreenshot(page, testInfo, "human-led-anchor-violet");
 
     const textarea = page.getByTestId("cockpit-human-anchor-textarea");
     const submitBtn = page.getByTestId("human-anchor-submit-human_architecture_intent");
@@ -103,7 +118,9 @@ test.describe("TEST-04 · 03 — Human-Led : ancrage obligatoire et arbitrage", 
     await expect(section).toHaveAttribute("data-step-status", "WAITING_FOR_HUMAN_ARBITRATION");
 
     const arbCard = page.getByTestId("cockpit-arbitration-tiebreak-card");
+    await arbCard.scrollIntoViewIfNeeded();
     await expect(arbCard).toBeVisible();
+    await captureMilestoneScreenshot(page, testInfo, "arbitration-tiebreak-amber");
     await arbCard
       .locator('input[type="text"]')
       .fill("Alignement immédiat avec le contrat OpenAPI v3 du partenaire.");

@@ -12,6 +12,7 @@ import {
   useAuthSessionStore,
 } from "../stores/authSessionStore";
 import { buildContextualHelpArticle } from "./contextualHelpCatalog";
+import { writeAssistantPrefillPrompt } from "./agentsAndSkillsBridgeStore";
 import { useShellAutonomousSupervision } from "./useShellAutonomousSupervision";
 import {
   ShellCentralWorkspaceBody,
@@ -90,8 +91,8 @@ function InnerShellContainer({
   });
   const isFr = locale === "fr";
   const dispatchNavigation = (href: string) => (onNavigate ? onNavigate(href) : navigateTo(href));
-  const isAdminModalOpen = platformAdmin === null && !state.adminModalDismissed;
   const isShowcaseStandalone = Boolean(pathname?.startsWith("/showcase"));
+  const isAdminModalOpen = !isShowcaseStandalone && platformAdmin === null && !state.adminModalDismissed;
 
   useShellAuthRedirects({
     isHydrating,
@@ -149,10 +150,13 @@ function InnerShellContainer({
     scopes: effectiveScopes,
     activeScopeId: selectedScope.id,
   });
+  const activeOrgUnitLabel =
+    orgUnits.find((u) => u.id === doubleScopeState.activeTeamBuId)?.name ?? null;
   const breadcrumbItems = buildShellBreadcrumbItems({
     pathname,
     isFr,
     menuEntries: dictionary.fourZoneShell.menuEntries,
+    activeTeamLabel: activeOrgUnitLabel,
   });
   const isDesktopOnlyRoute = isDesktopOnlyMobileRoute(pathname);
   const disabledMenuKeys = buildShellDisabledMenuKeys({
@@ -196,9 +200,7 @@ function InnerShellContainer({
   const hideSidebarShowcaseBtn = isHelpCenterRoute || Boolean(pathname?.startsWith("/ontology"));
 
   const selectModuleAndNavigate = (
-    menuKey: EightFixedMenuKey | null,
-    moduleKey: UiModuleKey,
-    route: string,
+    menuKey: EightFixedMenuKey | null, moduleKey: UiModuleKey, route: string,
   ) => {
     state.setSelectedMenuKeyOverride(menuKey);
     state.setSelectedModuleOverride(moduleKey);
@@ -212,9 +214,7 @@ function InnerShellContainer({
   if (!isShowcaseStandalone && !isAuthenticated && !isAdminModalOpen) {
     return (
       <ShellUnauthenticatedView
-        onReopenDay0Setup={
-          platformAdmin === null ? () => state.setAdminModalDismissed(false) : undefined
-        }
+        onReopenDay0Setup={platformAdmin === null ? () => state.setAdminModalDismissed(false) : undefined}
         reopenDay0SetupLabel={dictionary.firstBootAdminModal.reopenSetupCta}
       />
     );
@@ -314,7 +314,17 @@ function InnerShellContainer({
               activeHelpSectionId={state.activeHelpSectionId}
               labels={dictionary.contextualHelpHybrid}
               autonomousBadgeLabels={dictionary.autonomousSupervision.badge}
-              onAskAssistant={() => !disabledMenuKeys.assistant && selectModuleAndNavigate("assistant", "inbox", "/assistant")}
+              onAskAssistant={(_route, prefillPrompt) => {
+                if (disabledMenuKeys.assistant) return;
+                if (prefillPrompt?.trim()) {
+                  writeAssistantPrefillPrompt(prefillPrompt.trim());
+                }
+                if (onNavigate) {
+                  selectModuleAndNavigate("assistant", "inbox", "/assistant");
+                } else {
+                  dispatchNavigation("/assistant");
+                }
+              }}
             />
           )
         }
@@ -338,7 +348,16 @@ function InnerShellContainer({
         onCreatePlatformAdmin={createPlatformAdmin}
         onCloseSearchModal={() => state.setSearchModalOpen(false)}
         onDispatchNavigation={dispatchNavigation}
-        onOpenAssistantFromSearch={() => selectModuleAndNavigate("assistant", "inbox", "/assistant")}
+        onOpenAssistantFromSearch={(query) => {
+          if (query.trim()) {
+            writeAssistantPrefillPrompt(query.trim());
+          }
+          if (onNavigate) {
+            selectModuleAndNavigate("assistant", "inbox", "/assistant");
+          } else {
+            dispatchNavigation("/assistant");
+          }
+        }}
       />
       {isAuthenticated && (
         <ShellUserSettingsModal

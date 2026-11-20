@@ -6,6 +6,7 @@ import {
   type AssistantFolderVisibilityMode,
   type UiAssistantFolderItem,
   type UiAssistantPromptTelemetryRecord,
+  type UiEvidenceSourceItem,
 } from "@orcia/ui";
 import React from "react";
 import type { TranslationDictionary } from "../../i18n/types";
@@ -47,6 +48,10 @@ export interface InboxAuxiliaryPanelsProps {
   readonly citationCardPreview?: {
     readonly sanitizedResponseText: string;
     readonly footerSummaryLine: string;
+    readonly sources?: readonly UiEvidenceSourceItem[];
+    readonly artifactTitle?: string;
+    readonly artifactContent?: string;
+    readonly onInspectSource?: (source: UiEvidenceSourceItem) => void;
   } | null;
 }
 
@@ -204,11 +209,14 @@ export function InboxAuxiliaryPanels({
         <div data-testid="assistant-citations-card-wrapper">
           <AssistantCitationPillsAndArtifactCard
             sanitizedResponseText={citationCardPreview.sanitizedResponseText}
-            sources={[]}
+            sources={citationCardPreview.sources ?? []}
             glossaryItems={[]}
             toolOutputs={[]}
             footerSummaryLine={citationCardPreview.footerSummaryLine}
+            artifactTitle={citationCardPreview.artifactTitle}
+            artifactContent={citationCardPreview.artifactContent}
             labels={dictionary.assistantCitations}
+            onInspectSource={citationCardPreview.onInspectSource}
             onSaveDraft={(title) => onSaveDraftAction(title)}
             onContinueInProcess={onNavigateToProcesses}
           />

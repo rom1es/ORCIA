@@ -85,10 +85,31 @@ export function writeAssistantPrefillPrompt(prefill: string): void {
         ASSISTANT_PREFILL_PROMPT_STORAGE_KEY,
         prefill,
       );
+      window.dispatchEvent?.(
+        new CustomEvent("orcia:assistant-prefill", { detail: prefill }),
+      );
     } catch {
       // Ignore storage errors
     }
   }
+}
+
+export function readAssistantPrefillPrompt(): string | null {
+  if (typeof window !== "undefined") {
+    try {
+      const fromSession = window.sessionStorage?.getItem?.(
+        ASSISTANT_PREFILL_PROMPT_STORAGE_KEY,
+      );
+      if (fromSession) return fromSession;
+      const fromLocal = window.localStorage?.getItem?.(
+        ASSISTANT_PREFILL_PROMPT_STORAGE_KEY,
+      );
+      if (fromLocal) return fromLocal;
+    } catch {
+      // Ignore storage errors
+    }
+  }
+  return fallbackPrefillPrompt;
 }
 
 export function consumeAssistantPrefillPrompt(): string | null {

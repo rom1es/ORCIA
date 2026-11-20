@@ -59,7 +59,8 @@ export function ModuleWorkspaceView({
     >
       {currentModule === "cockpit" ||
       currentModule === "catalog" ||
-      currentModule === "finops" ? null : (
+      currentModule === "finops" ||
+      currentModule === "inbox" ? null : (
         <div
           className="orcia-bento-card"
           style={{

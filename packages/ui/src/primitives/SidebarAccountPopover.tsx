@@ -81,7 +81,7 @@ export function SidebarAccountPopover({
                 </span>
                 <span
                   data-testid="sidebar-account-role-label"
-                  className="truncate text-[11px]"
+                  className="whitespace-normal break-words text-[11px] leading-snug"
                   style={{ color: "var(--color-text-secondary)" }}
                 >
                   {userRoleLabel}

@@ -564,11 +564,11 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "summary": "Déplacée vers action_items: (ACTION_ITEM-23.6) dans sprint-status.yaml pour priorisation ultérieure (périmètre --project=mobile-companion 390×844 & CAP-042 hors chemin critique Epic 23). Le volet audit SQL PG18 effectif (55/55) est repris par Story 23.6a, et l'exécution E2E Desktop par Story 23.7."
     },
     {
-      "date": "2026-11-19",
+      "date": "2026-11-20",
       "phaseOrStory": "Story 23.5",
       "reportFile": "23-5-sobriete-cockpit-topbar-sans-doublon-assistant-et-login-tech-lead-report.md",
-      "domain": "Vague 1 (REM23-09..12 / ARCH23-06..09, P1-UX-3, P2-UX-8..11, P3-UX-12) — Cockpit <= 3 Blocs, TopHeaderBar Sans Doublon, /assistant, /login & Preuves #10",
-      "summary": "Pré-implémentation (ready-for-dev) : réduction Cockpit à <= 3 blocs visuels (montage conditionnel CockpitHumanLedGovernanceSection), retrait topbar-fixed-workspace-selector Desktop, logo ORCIA Zone 1 + Breadcrumb complet, enrichissement Loader & /login (logo + œil), exclusion en-tête /assistant + retrait (0) + purge embedding, et captures intermédiaires HumanLedAnchorCard/ArbitrationTieBreakCard."
+      "domain": "Vague 1 (REM23-09..12 / ARCH23-06..09, P1-UX-3, P2-UX-8..11, P3-UX-12) — Cockpit <= 3 Blocs, TopHeaderBar Sans Doublon, Recherche Multi-Tenant PG18, /assistant, /login & Jalons #10",
+      "summary": "Clôture (done, validé APPROVED par 23.5-validate) : réduction Cockpit à <= 3 blocs (CockpitOrientationCards, CockpitDecisionsCard, useCockpitGovernanceController, cockpit-human-led-governance-section masquée à 0 run), logo ORCIA Zone 1 + masquage topbar-fixed-workspace-selector Desktop + fil d'Ariane ORCIA > [Équipe] > Module, /login avec login-brand-header & OrciaPasswordInput, épuration /assistant (orcia:assistant-prefill, citationCardPreview, masquage (0)/@draft, purge jargon), recherche fédérée PG18 multi-tenant (100 % sql_federated_search.py & two_speed_search.py, 98 % portal_and_help.py, 14 passed PG18 réel avec isolation multi-utilisateurs _speed2_cache), 794 passed unitaires, 9/9 Turbo (20+124+210), 5/5 lint-imports, 0-diff OpenAPI, 0 finding lint_spine et Chaîne Canari Desktop 24 passed, 0 failed, 0 skipped dont les 3 jalons /login, Violet signature et Ambre arbitrage (ACTION_ITEM-23.5 ouvert)."
     },
     {
       "date": "2026-11-20",

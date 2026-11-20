@@ -9,6 +9,9 @@ from __future__ import annotations
 import importlib
 from typing import Any
 
+from orcia_core.rag._internal.sql_federated_search import (
+    load_federated_search_candidates_pg18,
+)
 from orcia_core.rag._internal.sql_repository import SqlHybridRagRepository
 from orcia_core.rag.connector_hub_and_ingestion import (
     ConnectorConnectionTestResult,
@@ -153,6 +156,7 @@ __all__ = [
     "detect_pii_categories",
     "evaluate_24h_freshness_probe",
     "extract_jira_issue_keys",
+    "load_federated_search_candidates_pg18",
     "reconcile_incoming_fingerprint",
     "scrub_pii_reversibly",
 ]

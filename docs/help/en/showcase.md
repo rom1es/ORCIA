@@ -22,7 +22,7 @@ This living showcase stays synchronized with the capabilities actually delivered
 
 ## A real example
 
-Ahead of onboarding a new business unit, Nadia opens `/showcase` to walk stakeholders through workspace isolation, human-led governance, and euro cost tracking, then filters the changelog on recent improvements.
+Ahead of onboarding a new business unit, Nadia opens the /showcase page to walk stakeholders through workspace isolation, human-led governance, and euro cost tracking, then filters the changelog on recent improvements.
 
 ## Common pitfalls
 

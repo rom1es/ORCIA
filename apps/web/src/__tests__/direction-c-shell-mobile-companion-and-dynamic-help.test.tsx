@@ -174,11 +174,13 @@ describe("Direction C 8-Item Shell, Mobile Companion (< 768px), Accostage & Dyna
     expect(screen.getByTestId("sidebar-team-bu-selector")).toBeDefined();
     expect(screen.getByTestId("sidebar-workspace-selector")).toBeDefined();
 
-    // Clickable breadcrumb on /organization navigates back to /configuration
+    // Clickable breadcrumb on /organization shows ORCIA > Configuration > Mon Organisation and navigates back to /configuration
     await act(async () => {
       await router.navigate({ to: "/organization" });
     });
-    const breadcrumbParent = await screen.findByTestId("topbar-breadcrumb-link-0");
+    const breadcrumb = await screen.findByTestId("topbar-breadcrumb");
+    expect(breadcrumb.textContent).toContain("ORCIA");
+    const breadcrumbParent = await screen.findByTestId("topbar-breadcrumb-link-1");
     expect(breadcrumbParent.textContent).toContain("Configuration");
     fireEvent.click(breadcrumbParent);
     await waitFor(() => {
@@ -243,10 +245,10 @@ describe("Direction C 8-Item Shell, Mobile Companion (< 768px), Accostage & Dyna
     const banner = screen.getByTestId("progressive-day0-accostage-banner");
     expect(banner.textContent).not.toContain("LOCK TABLE users IN EXCLUSIVE MODE");
 
-    // Cockpit renders at most 3 major blocks
+    // Cockpit renders at most 3 major blocks (and hides governance block when 0 runs/arbitrations exist)
     expect(screen.getByTestId("cockpit-block-accostage")).toBeDefined();
     expect(screen.getByTestId("cockpit-block-decisions")).toBeDefined();
-    expect(screen.getByTestId("cockpit-block-governance")).toBeDefined();
+    expect(screen.queryByTestId("cockpit-block-governance")).toBeNull();
   });
 
   it("passes active route to /api/v1/help/resolve, highlights help-section on ⓘ click, and purges Chef1/aqwZSX from _contextualHelpSections.ts", async () => {

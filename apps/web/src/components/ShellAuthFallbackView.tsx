@@ -7,11 +7,32 @@ export function ShellHydratingLoaderView({ isFr }: { readonly isFr: boolean }) {
   return (
     <div
       data-testid="auth-hydrating-loader"
-      className="flex min-h-screen items-center justify-center bg-[var(--color-bg-canvas)] text-[var(--color-text-secondary)]"
+      className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[var(--color-bg-canvas)] text-[var(--color-text-secondary)]"
     >
-      <span className="text-sm font-medium">
-        {isFr ? "Chargement de la session..." : "Loading session..."}
-      </span>
+      <div className="inline-flex items-center gap-2">
+        <span
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold"
+          style={{
+            backgroundColor: "var(--color-action-primary)",
+            color: "var(--color-bg-surface)",
+          }}
+        >
+          O
+        </span>
+        <span
+          className="text-base font-bold tracking-tight"
+          style={{ color: "var(--color-text-primary)" }}
+        >
+          ORCIA
+        </span>
+      </div>
+      <div className="inline-flex items-center gap-2 text-sm font-medium">
+        <span
+          aria-hidden="true"
+          className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+        />
+        <span>{isFr ? "Chargement de la session..." : "Loading session..."}</span>
+      </div>
     </div>
   );
 }

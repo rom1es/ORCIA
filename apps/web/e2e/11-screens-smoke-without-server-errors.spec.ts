@@ -1,5 +1,5 @@
 /** @uj UJ-13, UJ-14, UJ-18, UJ-20 | @cap CAP-001, CAP-002, CAP-010 */
-import { expect, test } from "./support/e2eCaptureFixture";
+import { captureMilestoneScreenshot, expect, test } from "./support/e2eCaptureFixture";
 import { expectDbRowCount, expectDbRowExists } from "./support/dbAssertions";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
@@ -65,12 +65,22 @@ test.describe("TEST-06 · 11 — Écrans Configuration, Ontologie, Catalogue, Ac
     try {
       await anonPage.goto("/login");
       await expect(anonPage.getByTestId("bi-mode-login-view")).toBeVisible({ timeout: 30000 });
+      await expect(anonPage.getByTestId("login-brand-header")).toBeVisible();
       await expect(anonPage.getByTestId("login-local-email")).toBeVisible();
-      await expect(anonPage.getByTestId("login-local-password")).toBeVisible();
+      const pwdInput = anonPage.getByTestId("login-local-password");
+      await expect(pwdInput).toBeVisible();
+      await expect(pwdInput).toHaveAttribute("type", "password");
+      const eyeBtn = anonPage.getByTestId("login-local-password-toggle-visibility");
+      await expect(eyeBtn).toBeVisible();
+      await eyeBtn.click();
+      await expect(pwdInput).toHaveAttribute("type", "text");
+      await eyeBtn.click();
+      await expect(pwdInput).toHaveAttribute("type", "password");
       await anonPage.waitForLoadState("load");
       await anonPage.waitForTimeout(250);
       await expectZeroVisibleErrorBanners(anonPage);
       expect(anonErrors, anonErrors.join("\n")).toEqual([]);
+      await captureMilestoneScreenshot(anonPage, testInfo, "login-screen-and-password-eye");
 
       await anonPage.getByTestId("login-local-email").fill(E2E_ADMIN.email);
       await anonPage.getByTestId("login-local-password").fill(E2E_ADMIN.password);

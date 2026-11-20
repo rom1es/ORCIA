@@ -5,7 +5,8 @@ import {
   StreamlinedCockpitView,
 } from "@orcia/ui";
 import type { Edge, Node } from "@xyflow/react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { writeAssistantPrefillPrompt } from "../../components/agentsAndSkillsBridgeStore";
 import { buildUnifiedAccostageMilestones } from "../../components/platformSetupAccostage";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
@@ -38,6 +39,8 @@ export function buildCockpitWorkflowPreviewGraph(): {
 export function CockpitFeaturePanel() {
   const { dictionary, locale } = useI18n();
   const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
+  const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
+  const isHydrating = useAuthSessionStore((s) => s.isHydrating);
   const authEmail = useAuthSessionStore((s) => s.email);
   const authDisplayName = useAuthSessionStore((s) => s.displayName);
   const {
@@ -56,6 +59,7 @@ export function CockpitFeaturePanel() {
   const [runTitle, setRunTitle] = useState<string>("");
   const [runRefreshSignal, setRunRefreshSignal] = useState<number>(0);
   const [latestRunId, setLatestRunId] = useState<string | null>(null);
+  const [hasServerGovernance, setHasServerGovernance] = useState<boolean>(false);
 
   const isFr = locale === "fr";
   const activeScopeNode = scopes.find((s) => s.id === activeScopeId);
@@ -118,6 +122,38 @@ export function CockpitFeaturePanel() {
       }
     })();
   };
+
+  const governanceWorkspaceId = selectedWsId || availableWorkspaces[0]?.workspaceId;
+
+  useEffect(() => {
+    if (isHydrating || !isAuthenticated) {
+      setHasServerGovernance(false);
+      return;
+    }
+    let cancelled = false;
+    void createOrciaApiClient({ baseUrl: "" })
+      .getOrchestrationState()
+      .then((state) => {
+        if (cancelled) return;
+        const serverRuns = state.runs ?? [];
+        const hasMatch = governanceWorkspaceId
+          ? serverRuns.some((r) => r.workspace_id === governanceWorkspaceId)
+          : serverRuns.length > 0;
+        setHasServerGovernance(hasMatch || serverRuns.length > 0);
+      })
+      .catch((err: unknown) => {
+        console.warn("[orcia/cockpit] failed to check orchestration state:", err);
+        if (!cancelled) {
+          setHasServerGovernance(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [governanceWorkspaceId, isAuthenticated, isHydrating, runRefreshSignal]);
+
+  const showGovernanceSection =
+    scopedRuns.length > 0 || runs.length > 0 || latestRunId !== null || hasServerGovernance;
 
   const currentUserId = authEmail?.trim() || platformAdmin?.email || "";
   const resolvedAuthorName =
@@ -194,7 +230,12 @@ export function CockpitFeaturePanel() {
           }))}
           currentUserId={currentUserId}
           labels={dictionary.streamlinedCockpit}
-          onOpenAssistant={() => navigateToRoute("/assistant")}
+          onOpenAssistant={(initialPrompt) => {
+            if (initialPrompt.trim()) {
+              writeAssistantPrefillPrompt(initialPrompt.trim());
+            }
+            navigateToRoute("/assistant");
+          }}
           onNavigateModule={(href) => navigateToRoute(href)}
         />
 
@@ -215,15 +256,17 @@ export function CockpitFeaturePanel() {
         />
       </section>
 
-      {/* Bloc majeur 3 : Gouvernance Human-Led & Arbitrage */}
-      <div data-testid="cockpit-block-governance" style={{ minWidth: 0 }}>
-        <CockpitHumanLedGovernanceSection
-          workspaceId={selectedWsId || availableWorkspaces[0]?.workspaceId}
-          authorName={resolvedAuthorName}
-          refreshSignal={runRefreshSignal}
-          activeRunId={latestRunId}
-        />
-      </div>
+      {/* Bloc majeur 3 : Gouvernance Human-Led & Arbitrage (monté uniquement si run ou arbitrage actif) */}
+      {showGovernanceSection && (
+        <div data-testid="cockpit-block-governance" style={{ minWidth: 0 }}>
+          <CockpitHumanLedGovernanceSection
+            workspaceId={governanceWorkspaceId}
+            authorName={resolvedAuthorName}
+            refreshSignal={runRefreshSignal}
+            activeRunId={latestRunId}
+          />
+        </div>
+      )}
     </div>
   );
 }

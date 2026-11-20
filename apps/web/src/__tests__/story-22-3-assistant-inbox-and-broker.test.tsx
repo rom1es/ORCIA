@@ -121,7 +121,7 @@ describe("Story 22.3 (Couche 1b) — Assistant Folders (REM-08), Inbox Claims (R
       ).toBe(true);
     });
 
-    const foldersToggle = await screen.findByRole("button", { name: /^Dossiers \(\d+\)$/ });
+    const foldersToggle = await screen.findByTestId("assistant-folders-toggle-btn");
     fireEvent.click(foldersToggle);
 
     const titleInput = await screen.findByTestId("assistant-new-folder-title-input");

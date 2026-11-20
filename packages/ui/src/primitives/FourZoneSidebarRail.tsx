@@ -82,9 +82,29 @@ export function FourZoneSidebarRail({
     >
       <nav className="flex flex-col gap-1">
         <div
-          className="mb-1 border-b pb-1.5"
+          className="mb-1 flex flex-col gap-1 border-b pb-1.5"
           style={{ borderColor: "var(--color-border-subtle)" }}
         >
+          {!railCollapsed && (
+            <button
+              type="button"
+              data-testid="sidebar-brand-logo"
+              onClick={() => onSelectMenu("cockpit", "/cockpit")}
+              className="inline-flex items-center gap-2 rounded px-2 py-1 text-sm font-bold tracking-tight"
+              style={{ color: "var(--color-text-primary)" }}
+            >
+              <span
+                className="inline-flex h-5 w-5 items-center justify-center rounded text-[11px] font-bold"
+                style={{
+                  backgroundColor: "var(--color-action-primary)",
+                  color: "var(--color-bg-surface)",
+                }}
+              >
+                O
+              </span>
+              <span>ORCIA</span>
+            </button>
+          )}
           <button
             type="button"
             data-testid="sidebar-rail-toggle-btn"

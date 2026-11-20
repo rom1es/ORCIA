@@ -1,5 +1,6 @@
 import type { UiAssistantPromptTelemetryRecord } from "@orcia/ui";
 import { useEffect, useState } from "react";
+import { readAssistantPrefillPrompt } from "../../components/agentsAndSkillsBridgeStore";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useI18n } from "../../i18n";
 import { useReflexiveExecutionController } from "../shared/useReflexiveExecutionController";
@@ -48,9 +49,16 @@ export function useInboxPanelController() {
   } = usePlatformSetup();
   const isFr = locale === "fr";
 
-  const [prefillPrompt, setPrefillPrompt] = useState<string | null>(() =>
-    consumeAssistantPrefillFromStorage(),
-  );
+  const [prefillPrompt, setPrefillPrompt] = useState<string | null>(null);
+  useEffect(() => {
+    const next = readAssistantPrefillPrompt();
+    if (!next) return;
+    setPrefillPrompt(next);
+    const timer = window.setTimeout(() => {
+      consumeAssistantPrefillFromStorage();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
   const [activeFolderId, setActiveFolderId] = useState<string>(() =>
     readSavedActiveFolderId(),
   );
@@ -131,6 +139,17 @@ export function useInboxPanelController() {
     setActiveConversationId(nextConvId);
     writeSavedActiveConversationId(nextConvId);
   };
+
+  useEffect(() => {
+    const onPrefill = () => {
+      const next = consumeAssistantPrefillFromStorage();
+      if (next) {
+        setPrefillPrompt(next);
+      }
+    };
+    window.addEventListener("orcia:assistant-prefill", onPrefill);
+    return () => window.removeEventListener("orcia:assistant-prefill", onPrefill);
+  }, []);
 
   useEffect(() => {
     return subscribeBgStream(() => {

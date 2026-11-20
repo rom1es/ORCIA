@@ -127,7 +127,18 @@ export function UserProfileOverviewPage({
         </div>
       </section>
 
-      {allKpisZero ? (
+      {isLoading ? (
+        <section
+          data-testid="profile-kpis-loading"
+          className="orcia-bento-card flex items-center gap-3 px-5 py-4 text-xs"
+          style={{
+            backgroundColor: "var(--color-bg-surface)",
+            color: "var(--color-text-secondary)",
+          }}
+        >
+          <span>{labels.loadingLabel}</span>
+        </section>
+      ) : allKpisZero ? (
         <section
           data-testid="profile-kpis-empty-state"
           className="orcia-bento-card flex items-center justify-between gap-3 px-5 py-4 text-xs"

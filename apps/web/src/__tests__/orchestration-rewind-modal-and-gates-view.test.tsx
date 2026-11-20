@@ -46,7 +46,18 @@ function seedAuthenticatedWorkspace() {
     datasources: [],
     packs: [],
     workflows: [],
-    runs: [],
+    runs: [
+      {
+        runId: "0195f000-0000-7000-8000-000000000701",
+        workspaceId: WS_ID,
+        workspaceName: "Espace Orchestration",
+        title: "Run Orchestration Test",
+        workflowKey: "assistant-agent",
+        status: "RUNNING",
+        currentStepKey: "frame-architecture-intent",
+        createdAtIso: "2026-11-20T01:00:00Z",
+      },
+    ],
     catalog_items: [],
     ontology_concepts: [],
     audit_events: [],
@@ -224,7 +235,7 @@ describe("Upstream challenge rewind modal, dedicated Gates review view, and RFC 
       </I18nProvider>,
     );
 
-    const anchorTextarea = screen.getByTestId("cockpit-human-anchor-textarea");
+    const anchorTextarea = await screen.findByTestId("cockpit-human-anchor-textarea");
     fireEvent.change(anchorTextarea, {
       target: {
         value:
@@ -360,7 +371,7 @@ describe("Upstream challenge rewind modal, dedicated Gates review view, and RFC 
       </I18nProvider>,
     );
 
-    fireEvent.change(screen.getByTestId("cockpit-human-anchor-textarea"), {
+    fireEvent.change(await screen.findByTestId("cockpit-human-anchor-textarea"), {
       target: {
         value: "Contrainte humaine valide dépassant trente caractères pour déclencher la mutation.",
       },

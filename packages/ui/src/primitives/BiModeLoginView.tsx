@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { OrciaIcon } from "../components/icons";
 import { OrciaAlertBanner } from "./DesignSystemControls";
+import { OrciaPasswordInput } from "./OrciaPasswordInput";
 import {
   LoginTwoFactorStepPanel,
   type LoginTwoFactorLabels,
@@ -25,6 +26,8 @@ export interface BiModeLoginLabels {
   readonly localAccordionToggle: string;
   readonly emailLabel: string;
   readonly passwordLabel: string;
+  readonly showPasswordLabel?: string;
+  readonly hidePasswordLabel?: string;
   readonly totpLabel: string;
   readonly submitLocalCta: string;
   readonly errorBannerTitle: string;
@@ -133,16 +136,19 @@ export function BiModeLoginView({
         >
           {labels.passwordLabel}
         </label>
-        <input
+        <OrciaPasswordInput
           id="login-local-password"
-          data-testid="login-local-password"
-          type="password"
-          required
+          testId="login-local-password"
+          toggleTestId="login-local-password-toggle-visibility"
+          maskMode="password"
           autoComplete="current-password"
+          required={true}
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-md border px-3 py-2 text-sm"
-          style={{
+          onChange={setPassword}
+          showPasswordLabel={labels.showPasswordLabel ?? labels.passwordLabel}
+          hidePasswordLabel={labels.hidePasswordLabel ?? labels.passwordLabel}
+          inputClassName="rounded-md py-2 text-sm"
+          inputStyle={{
             borderColor: "var(--color-border-strong)",
             backgroundColor: "var(--color-surface-card)",
             color: "var(--color-text-primary)",
@@ -200,7 +206,19 @@ export function BiModeLoginView({
         color: "var(--color-text-primary)",
       }}
     >
-      <header className="space-y-1">
+      <header className="space-y-2">
+        <div data-testid="login-brand-header" className="inline-flex items-center gap-2">
+          <span
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-xs font-bold"
+            style={{
+              backgroundColor: "var(--color-action-primary)",
+              color: "var(--color-bg-surface)",
+            }}
+          >
+            O
+          </span>
+          <span className="text-sm font-bold tracking-tight">ORCIA</span>
+        </div>
         <h1 className="text-xl font-bold tracking-tight">{labels.title}</h1>
         <p
           data-testid="login-mode-subtitle"

@@ -8,6 +8,7 @@ import type {
 
 export interface FourZoneTopHeaderSectionProps {
   readonly isMobile?: boolean;
+  readonly railCollapsed?: boolean;
   readonly mobileMenuOpen?: boolean;
   readonly onToggleMobileMenu?: () => void;
   readonly breadcrumbItems?: readonly ShellBreadcrumbItem[];
@@ -31,6 +32,7 @@ export interface FourZoneTopHeaderSectionProps {
 
 export function FourZoneTopHeaderSection({
   isMobile = false,
+  railCollapsed = false,
   mobileMenuOpen = false,
   onToggleMobileMenu,
   breadcrumbItems = [],
@@ -82,8 +84,6 @@ export function FourZoneTopHeaderSection({
           </button>
         )}
 
-        <span className="shrink-0 text-sm font-bold tracking-tight">ORCIA</span>
-
         {breadcrumbItems.length > 0 && (
           <nav
             aria-label="Fil d'Ariane"
@@ -95,7 +95,7 @@ export function FourZoneTopHeaderSection({
               const isLast = idx === breadcrumbItems.length - 1;
               return (
                 <React.Fragment key={`${item.label}-${idx}`}>
-                  <OrciaIcon name="chevronRight" size={12} />
+                  {idx > 0 && <OrciaIcon name="chevronRight" size={12} />}
                   {item.route && !isLast && onNavigateBreadcrumb ? (
                     <button
                       type="button"
@@ -125,7 +125,7 @@ export function FourZoneTopHeaderSection({
           </nav>
         )}
 
-        {!isMobile && (
+        {(isMobile || railCollapsed) && (
           <button
             type="button"
             data-testid="topbar-fixed-workspace-selector"
@@ -152,7 +152,7 @@ export function FourZoneTopHeaderSection({
           </button>
         )}
 
-        {!isMobile && workspaceDropdownOpen && workspaceOptions && workspaceOptions.length > 0 && (
+        {(isMobile || railCollapsed) && workspaceDropdownOpen && workspaceOptions && workspaceOptions.length > 0 && (
           <div
             role="listbox"
             aria-label={labels.workspacePrefix}

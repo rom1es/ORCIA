@@ -22,7 +22,7 @@ Cet écran est la vitrine vivante d'ORCIA, synchronisée directement avec les ca
 
 ## Un exemple réel
 
-Lors d'une présentation à une nouvelle direction métier, Nadia ouvre `/showcase` pour montrer la séparation entre espaces, gouvernance humaine et suivi des coûts en euros, puis filtre le journal des livraisons sur les dernières améliorations.
+Lors d'une présentation à une nouvelle direction métier, Nadia ouvre la vitrine /showcase pour montrer la séparation entre espaces, gouvernance humaine et suivi des coûts en euros, puis filtre le journal des livraisons sur les dernières améliorations.
 
 ## Ce qui coince souvent
 

@@ -13,12 +13,12 @@ summary_what_for: "Mon Assistant répond à vos questions à partir des document
 
 ## À quoi sert cet écran
 
-Cet écran vous offre un compagnon conversationnel ancré sur les connaissances de votre équipe. Vous pouvez poser une question directe, solliciter un agent spécialisé avec `@`, classer vos échanges par dossiers ou enregistrer une réponse comme point de départ d'un processus.
+Cet écran vous offre un compagnon conversationnel ancré sur les connaissances de votre équipe. Vous pouvez poser une question directe, solliciter un agent spécialisé avec @, classer vos échanges par dossiers ou enregistrer une réponse comme point de départ d'un processus.
 
 ## En 3 gestes
 
 1. Choisissez votre modèle (Rapide, Polyvalent ou Raisonnement avancé) et votre mode de réflexion (Standard ou Approfondi — ex. « Polyvalent · Standard ») via le sélecteur à côté du bouton d'envoi.
-2. Rédigez votre question (tapez `@` pour appeler un agent ou `/` pour déclencher une compétence) puis envoyez.
+2. Rédigez votre question (tapez @ pour appeler un agent ou / pour déclencher une compétence) puis envoyez.
 3. Ouvrez « Dossiers » si vous souhaitez attacher l'échange à un sujet précis et y épingler des consignes permanentes.
 
 ## Un exemple réel
