@@ -64,6 +64,7 @@ export function AiModelDeleteDialog({
       description={labels.deleteDialogDescription}
       testId="ai-model-delete-dialog"
       closeLabel={labels.cancelBtn}
+      hideHeaderCloseButton
     >
       <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginTop: "12px" }}>
         {errorMsg && (

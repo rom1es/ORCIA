@@ -625,7 +625,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(screen.queryByTestId("iam-native-role-matrix-card")).toBeNull();
     fireEvent.click(screen.getByTestId("iam-open-role-matrix-modal-btn"));
     expect(screen.getByTestId("iam-native-role-matrix-card")).toBeDefined();
-    fireEvent.click(screen.getByTestId("iam-close-role-matrix-modal-btn"));
+    fireEvent.click(screen.getByTestId("iam-role-matrix-modal-close-btn"));
     expect(screen.queryByTestId("iam-native-role-matrix-card")).toBeNull();
     expect(
       screen.getByTestId("iam-secops-drawer-toggle").getAttribute("aria-expanded"),
@@ -738,7 +738,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(
       screen.getByTestId("help-section-iam-org-tree").getAttribute("data-active"),
     ).toBe("false");
-    fireEvent.click(screen.getByTestId("iam-close-role-matrix-modal-btn"));
+    fireEvent.click(screen.getByTestId("iam-role-matrix-modal-close-btn"));
 
     fireEvent.click(screen.getByTestId("iam-secops-drawer-toggle"));
     fireEvent.click(screen.getByTestId("contextual-info-trigger-iam-target-scope"));

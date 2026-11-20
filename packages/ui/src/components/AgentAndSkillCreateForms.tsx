@@ -7,13 +7,13 @@ import { computeAgentReadinessChecklist } from "./AgentGovernanceTypesAndDefault
 import { AgentSixBlocksEditorBody } from "./AgentSixBlocksFormSections";
 import type {
   AgentsAndSkillsManagerLabels,
-  AgentsAndSkillsSubTab,
-  UiAgentSkillVisibilityFilter,
   UiAgentThinkingLevel,
   UiManagedSkillItem,
 } from "./AgentsAndSkillsManagerView";
+import { AgentsAndSkillsHeaderAndToolbar } from "./AgentsAndSkillsHeaderAndToolbar";
 import { DisabledButtonAlertIndicator } from "./DisabledButtonAlertIndicator";
-import { OrciaIcon } from "./icons";
+
+export { AgentsAndSkillsHeaderAndToolbar };
 
 export interface AgentCreateFormDrawerProps {
   readonly isOpen: boolean;
@@ -97,14 +97,6 @@ export const AgentCreateFormDrawer: React.FC<AgentCreateFormDrawerProps> = ({
               Configurez un rôle métier spécialisé (Persona) en 6 blocs gouvernés, cloisonné et subordonné à l&apos;humain.
             </p>
           </div>
-          <button
-            type="button"
-            data-testid="close-create-agent-modal-btn"
-            onClick={onClose}
-            className="orcia-ds-btn orcia-ds-btn-secondary text-xs"
-          >
-            Annuler
-          </button>
         </header>
 
         <form
@@ -166,6 +158,7 @@ export const AgentCreateFormDrawer: React.FC<AgentCreateFormDrawerProps> = ({
             <div className="flex items-center gap-2">
               <button
                 type="button"
+                data-testid="close-create-agent-modal-btn"
                 onClick={onClose}
                 className="orcia-ds-btn orcia-ds-btn-secondary text-xs"
               >
@@ -192,210 +185,3 @@ export const AgentCreateFormDrawer: React.FC<AgentCreateFormDrawerProps> = ({
     </div>
   );
 };
-
-export const AgentsAndSkillsHeaderAndToolbar: React.FC<{
-  readonly labels: AgentsAndSkillsManagerLabels;
-  readonly activeTab: AgentsAndSkillsSubTab;
-  readonly agentsCount: number;
-  readonly activeAgentsCount?: number;
-  readonly skillsCount: number;
-  readonly packOrTeamAgentsCount?: number;
-  readonly mcpExposedAgentsCount?: number;
-  readonly searchQuery: string;
-  readonly visibilityFilter: UiAgentSkillVisibilityFilter;
-  readonly onSelectTab: (tab: AgentsAndSkillsSubTab) => void;
-  readonly onToggleCreateAgent: () => void;
-  readonly onToggleCreateSkill: () => void;
-  readonly onOpenMcpTestBench?: () => void;
-  readonly onChangeSearchQuery: (q: string) => void;
-  readonly onChangeVisibilityFilter: (f: UiAgentSkillVisibilityFilter) => void;
-  readonly onLoadPackTemplates?: () => void;
-}> = ({
-  labels,
-  activeTab,
-  agentsCount,
-  activeAgentsCount,
-  skillsCount,
-  packOrTeamAgentsCount = 0,
-  mcpExposedAgentsCount = 0,
-  searchQuery,
-  visibilityFilter,
-  onSelectTab,
-  onToggleCreateAgent,
-  onToggleCreateSkill,
-  onOpenMcpTestBench,
-  onChangeSearchQuery,
-  onChangeVisibilityFilter,
-  onLoadPackTemplates,
-}) => (
-  <>
-    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--orcia-border-subtle)] pb-3">
-      <div>
-        <h2 className="text-base font-semibold">{labels.heading}</h2>
-        <p className="text-xs text-[var(--orcia-text-secondary)]">{labels.subtitle}</p>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <div role="tablist" className="orcia-ds-tabs">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "AGENTS"}
-            data-testid="agents-subview-tab-agents"
-            onClick={() => onSelectTab("AGENTS")}
-            className="orcia-ds-tab"
-          >
-            {agentsCount > 0 ? `${labels.tabAgents} (${agentsCount})` : labels.tabAgents}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "SKILLS"}
-            data-testid="agents-subview-tab-skills"
-            onClick={() => onSelectTab("SKILLS")}
-            className="orcia-ds-tab"
-          >
-            {skillsCount > 0 ? `${labels.tabSkills} (${skillsCount})` : labels.tabSkills}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "CONNECTIONS"}
-            data-testid="agents-subview-tab-connections"
-            onClick={() => onSelectTab("CONNECTIONS")}
-            className="orcia-ds-tab"
-          >
-            {labels.tabConnections}
-          </button>
-        </div>
-        {onLoadPackTemplates && (
-          <button
-            type="button"
-            data-testid="load-pack-agents-templates-btn"
-            onClick={onLoadPackTemplates}
-            className="orcia-ds-btn orcia-ds-btn-secondary text-xs"
-          >
-            <OrciaIcon name="spaces" /> Charger les Agents des Packs
-          </button>
-        )}
-        {activeTab === "AGENTS" ? (
-          <button
-            type="button"
-            data-testid="open-create-agent-drawer-btn"
-            onClick={onToggleCreateAgent}
-            className="orcia-ds-btn orcia-ds-btn-primary text-xs"
-          >
-            + Nouvel Agent
-          </button>
-        ) : activeTab === "SKILLS" ? (
-          <button
-            type="button"
-            data-testid="open-create-skill-drawer-btn"
-            onClick={onToggleCreateSkill}
-            className="orcia-ds-btn orcia-ds-btn-primary text-xs"
-          >
-            + Nouvelle Compétence
-          </button>
-        ) : (
-          <button
-            type="button"
-            data-testid="open-mcp-test-bench-btn"
-            onClick={() => {
-              onSelectTab("CONNECTIONS");
-              onOpenMcpTestBench?.();
-            }}
-            className="orcia-ds-btn orcia-ds-btn-primary text-xs"
-          >
-            <OrciaIcon name="plug" /> Tester &amp; Découvrir un serveur MCP
-          </button>
-        )}
-      </div>
-    </header>
-
-    {agentsCount + skillsCount > 0 && (
-      <div data-testid="agents-kpi-strip" className="grid grid-cols-1 gap-2 text-xs md:grid-cols-3">
-        {(activeAgentsCount ?? agentsCount) > 0 && (
-          <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2">
-            <span className="block text-[10px] font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
-              AGENTS SPÉCIALISÉS (@)
-            </span>
-            <strong className="text-sm text-[var(--orcia-text-primary)]">
-              {activeAgentsCount ?? agentsCount} actifs
-            </strong>
-          </div>
-        )}
-        {skillsCount > 0 && (
-          <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2">
-            <span className="block text-[10px] font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
-              COMPÉTENCES (/SKILLS)
-            </span>
-            <strong className="text-sm text-[var(--orcia-text-primary)]">
-              {skillsCount} réutilisables
-            </strong>
-          </div>
-        )}
-        {(packOrTeamAgentsCount > 0 || mcpExposedAgentsCount > 0) && (
-          <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2">
-            <span className="block text-[10px] font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
-              ORIGINE &amp; ACCÈS MCP
-            </span>
-            <strong className="text-sm text-[var(--orcia-text-primary)]">
-              {[
-                packOrTeamAgentsCount > 0 ? `${packOrTeamAgentsCount} Pack/Équipe` : null,
-                mcpExposedAgentsCount > 0 ? `${mcpExposedAgentsCount} MCP` : null,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </strong>
-          </div>
-        )}
-      </div>
-    )}
-
-    <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-      <input
-        type="text"
-        autoComplete="off"
-        data-lpignore="true"
-        data-1p-ignore="true"
-        data-bwignore="true"
-        data-form-type="other"
-        data-testid="agents-skills-search-input"
-        value={searchQuery}
-        onChange={(e) => onChangeSearchQuery(e.target.value)}
-        placeholder="Filtrer par nom, @agent, /compétence, posture ou mission…"
-        className="orcia-ds-input min-w-[240px] flex-1"
-      />
-      <div role="group" aria-label="Filtrer par visibilité" className="flex flex-wrap items-center gap-1.5">
-        {(
-          [
-            ["ALL", "visibility-filter-all", "Tous", null],
-            ["PACK", "visibility-filter-pack", "Packs Métiers", "spaces"],
-            ["TEAM", "visibility-filter-team", "Équipe / Espace", "team"],
-            ["PRIVATE", "visibility-filter-private", "Privés", "lock"],
-          ] as const
-        ).map(([filterKey, testId, filterLabel, iconName]) => (
-          <button
-            key={filterKey}
-            type="button"
-            data-testid={testId}
-            aria-pressed={visibilityFilter === filterKey}
-            onClick={() => onChangeVisibilityFilter(filterKey)}
-            className={`rounded-full border border-[var(--orcia-border-subtle)] px-2.5 py-1 text-[11px] font-medium ${
-              visibilityFilter === filterKey
-                ? "bg-[var(--orcia-action-primary)] text-[var(--orcia-text-on-action)]"
-                : "bg-[var(--orcia-surface-secondary)] text-[var(--orcia-text-primary)]"
-            }`}
-          >
-            {iconName ? (
-              <>
-                <OrciaIcon name={iconName} /> {filterLabel}
-              </>
-            ) : (
-              filterLabel
-            )}
-          </button>
-        ))}
-      </div>
-    </div>
-  </>
-);

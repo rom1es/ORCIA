@@ -57,7 +57,11 @@ export function useShellAutonomousSupervision({
           setAutonomousRuns(Array.isArray(autoRes?.runs) ? autoRes.runs : []);
           setInboxNotifications(Array.isArray(inboxRes?.items) ? inboxRes.items : []);
         }
-      } catch {
+      } catch (err: unknown) {
+        console.warn(
+          "[orcia:shell.autonomousSupervision]",
+          err instanceof Error ? err.message : String(err),
+        );
         if (!cancelled) {
           setAutonomousRuns([]);
           setInboxNotifications([]);

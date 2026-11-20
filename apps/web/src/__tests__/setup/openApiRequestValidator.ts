@@ -24,6 +24,7 @@ interface OpenApiParameter {
 }
 
 interface OpenApiOperation {
+  security?: Array<Record<string, string[]>>;
   parameters?: OpenApiParameter[];
   requestBody?: {
     required?: boolean;
@@ -32,6 +33,7 @@ interface OpenApiOperation {
 }
 
 interface OpenApiSpec {
+  security?: Array<Record<string, string[]>>;
   paths: Record<string, Record<string, unknown>>;
   components?: { schemas?: Record<string, OpenApiSchema> };
 }
@@ -226,7 +228,8 @@ export function validateRequestAgainstOpenApi(params: {
   body: unknown;
   hasRawBody: boolean;
   isMultipart: boolean;
-}): void {
+  headers?: Headers;
+}): Response | null {
   const { method, parsedUrl, body, hasRawBody, isMultipart } = params;
   const pathname = parsedUrl.pathname;
   const lowerMethod = method.toLowerCase();
@@ -315,4 +318,26 @@ export function validateRequestAgainstOpenApi(params: {
       if (err) throw formatError(`${method} ${pathname}`, err);
     }
   }
+
+  const effectiveSecurity = op.security ?? SPEC.security ?? [];
+  if (Array.isArray(effectiveSecurity) && effectiveSecurity.length > 0) {
+    const rawAuth = params.headers?.get("Authorization") ?? "";
+    const bearerMatch = /^Bearer\s+(\S+)$/i.exec(rawAuth.trim());
+    if (!bearerMatch?.[1]) {
+      return new Response(
+        JSON.stringify({
+          type: "https://orcia.ia/errors/ERR_AUTH_REQUIRED",
+          title: "Authentification requise",
+          status: 401,
+          detail: `Jeton Bearer requis pour ${method} ${pathname}.`,
+          instance: pathname,
+          error_code: "ERR_AUTH_REQUIRED",
+          trace_id: "00000000000000000000000000000000",
+        }),
+        { status: 401, headers: { "Content-Type": "application/problem+json" } },
+      );
+    }
+  }
+
+  return null;
 }

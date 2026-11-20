@@ -4,6 +4,7 @@ import type {
   UiAssistantResponseFormat,
   UiAssistantResponseTone,
 } from "@orcia/ui";
+import { ignoreBenignStorageError } from "../../utils/benignBrowserError";
 
 export const SAVED_ASSISTANT_FOLDERS_STORAGE_KEY =
   "orcia.assistant_saved_folders.v1";
@@ -47,8 +48,8 @@ function readRawKey(key: string): string | null {
     try {
       const val = window.localStorage.getItem(key);
       if (val !== null) return val;
-    } catch {
-      // Fall back to in-memory map
+    } catch (err: unknown) {
+      ignoreBenignStorageError("assistantPrefs.read", err);
     }
   }
   return fallbackStore.get(key) ?? null;
@@ -63,8 +64,8 @@ function writeRawKey(key: string, value: string): void {
   ) {
     try {
       window.localStorage.setItem(key, value);
-    } catch {
-      // Ignore quota errors
+    } catch (err: unknown) {
+      ignoreBenignStorageError("assistantPrefs.write", err);
     }
   }
 }
@@ -82,8 +83,8 @@ export function clearAssistantFoldersAndPrefsStorage(): void {
       window.localStorage.removeItem(SAVED_ASSISTANT_GOVERNANCE_PREFS_STORAGE_KEY);
       window.localStorage.removeItem(SAVED_ASSISTANT_ACTIVE_CONVERSATION_ID_STORAGE_KEY);
       window.localStorage.removeItem(SAVED_ASSISTANT_PROMPT_TELEMETRY_LOG_STORAGE_KEY);
-    } catch {
-      // Ignore storage errors
+    } catch (err: unknown) {
+      ignoreBenignStorageError("assistantPrefs.clear", err);
     }
   }
 }
@@ -101,7 +102,8 @@ export function readSavedAssistantFolders(): readonly UiAssistantFolderItem[] {
         typeof (item as UiAssistantFolderItem).folderId === "string" &&
         typeof (item as UiAssistantFolderItem).title === "string",
     );
-  } catch {
+  } catch (err: unknown) {
+    ignoreBenignStorageError("assistantPrefs.parseArray", err);
     return [];
   }
 }
@@ -142,7 +144,8 @@ export function readSavedPromptTelemetryLog(): readonly UiAssistantPromptTelemet
         typeof (item as UiAssistantPromptTelemetryRecord).turnId === "string" &&
         typeof (item as UiAssistantPromptTelemetryRecord).userPrompt === "string",
     );
-  } catch {
+  } catch (err: unknown) {
+    ignoreBenignStorageError("assistantPrefs.parseArray", err);
     return [];
   }
 }
@@ -213,7 +216,8 @@ export function readSavedAssistantGovernancePrefs(): SavedAssistantGovernancePre
           ? parsed.mcpExposeAssistant
           : DEFAULT_ASSISTANT_GOVERNANCE_PREFS.mcpExposeAssistant,
     };
-  } catch {
+  } catch (err: unknown) {
+    ignoreBenignStorageError("assistantPrefs.parseGovernance", err);
     return DEFAULT_ASSISTANT_GOVERNANCE_PREFS;
   }
 }

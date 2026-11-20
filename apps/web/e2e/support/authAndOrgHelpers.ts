@@ -174,7 +174,7 @@ export async function inviteUserViaOrganizationUi(
   await expect(tempValue).toBeVisible({ timeout: 15000 });
   const generatedCode = (await tempValue.innerText()).trim();
   if (params.closePasswordModal !== false) {
-    await page.getByTestId("temp-password-close-btn").click();
+    await page.getByTestId("temp-password-modal-close-btn").click();
     await expect(tempValue).toBeHidden({ timeout: 10000 });
   }
   return generatedCode;

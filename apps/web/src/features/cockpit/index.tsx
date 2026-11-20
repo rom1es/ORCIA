@@ -117,8 +117,8 @@ export function CockpitFeaturePanel() {
           setLatestRunId(res.run.id);
         }
         setRunRefreshSignal((n) => n + 1);
-      } catch {
-        // Handled in CockpitHumanLedGovernanceSection
+      } catch (err: unknown) {
+        console.warn("[orcia/cockpit] failed to instantiate workflow run:", err);
       }
     })();
   };

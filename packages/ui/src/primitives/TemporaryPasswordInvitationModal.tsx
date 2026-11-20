@@ -56,6 +56,7 @@ export function TemporaryPasswordInvitationModal({
 
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedMessage, setCopiedMessage] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
 
   const resolvedUrl =
@@ -73,27 +74,43 @@ export function TemporaryPasswordInvitationModal({
   });
 
   const handleCopyCode = async () => {
+    setCopyError(null);
     try {
       if (typeof navigator !== "undefined" && navigator.clipboard) {
         await navigator.clipboard.writeText(temporaryPassword);
       }
-    } catch {
-      // Fallback safe
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
+    } catch (err: unknown) {
+      setCopiedCode(false);
+      setCopyError(
+        err instanceof Error && err.message.trim()
+          ? err.message
+          : isFr
+            ? "Copie automatique bloquée par le navigateur."
+            : "Clipboard access blocked by browser.",
+      );
     }
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2000);
   };
 
   const handleCopyMessage = async () => {
+    setCopyError(null);
     try {
       if (typeof navigator !== "undefined" && navigator.clipboard) {
         await navigator.clipboard.writeText(invitationMessage);
       }
-    } catch {
-      // Fallback safe
+      setCopiedMessage(true);
+      setTimeout(() => setCopiedMessage(false), 2000);
+    } catch (err: unknown) {
+      setCopiedMessage(false);
+      setCopyError(
+        err instanceof Error && err.message.trim()
+          ? err.message
+          : isFr
+            ? "Copie automatique bloquée par le navigateur."
+            : "Clipboard access blocked by browser.",
+      );
     }
-    setCopiedMessage(true);
-    setTimeout(() => setCopiedMessage(false), 2000);
   };
 
   const handleRegenerate = async () => {
@@ -181,7 +198,13 @@ export function TemporaryPasswordInvitationModal({
           />
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-border-subtle">
+        {copyError && (
+          <p role="alert" className="text-[11px] text-status-error">
+            {copyError}
+          </p>
+        )}
+
+        <div className="flex items-center justify-start pt-2 border-t border-border-subtle">
           <button
             type="button"
             data-testid="temp-password-copy-message-btn"
@@ -190,14 +213,6 @@ export function TemporaryPasswordInvitationModal({
           >
             <OrciaIcon name={copiedMessage ? "checkFilled" : "copy"} size={14} />
             <span>{copiedMessage ? (isFr ? "Message copié !" : "Message copied!") : isFr ? "Copier le message d'invitation" : "Copy invitation message"}</span>
-          </button>
-          <button
-            type="button"
-            data-testid="temp-password-close-btn"
-            onClick={handleClose}
-            className="orcia-ds-btn orcia-ds-btn-primary px-4 py-1.5 text-xs"
-          >
-            {isFr ? "Terminer" : "Done"}
           </button>
         </div>
       </div>

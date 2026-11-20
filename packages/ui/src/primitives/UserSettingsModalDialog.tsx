@@ -288,17 +288,6 @@ export function UserSettingsModalDialog({
               )}
             </div>
           </div>
-
-          <div className="orcia-ds-dialog-footer px-4 py-2.5">
-            <button
-              type="button"
-              data-testid="user-settings-modal-footer-close-btn"
-              onClick={requestClose}
-              className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
-            >
-              {labels.closeButtonLabel}
-            </button>
-          </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>

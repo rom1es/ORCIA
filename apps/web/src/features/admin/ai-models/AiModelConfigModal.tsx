@@ -84,6 +84,7 @@ export function AiModelConfigModal({
       description={labels.modalDescription}
       testId="ai-model-config-modal"
       closeLabel={labels.cancelBtn}
+      hideHeaderCloseButton
     >
       <div className="orcia-ds-dialog-body" style={{ paddingTop: "4px" }}>
         {s.errorMessage && (

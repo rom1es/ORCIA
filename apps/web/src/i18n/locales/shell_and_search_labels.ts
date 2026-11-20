@@ -499,7 +499,7 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
       logoutLabel: "Sign out",
     },
     modalTitle: "Account Settings",
-    closeButtonLabel: "Close (Esc)",
+    closeButtonLabel: "Close",
     tabGeneralTitle: "General",
     tabPersonalizationTitle: "Personalization",
     tabAccountSecurityTitle: "Account & Security",

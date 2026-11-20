@@ -13,6 +13,7 @@ import {
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "../i18n";
 import { resolveWebApiBaseUrl, useAuthSessionStore } from "../stores/authSessionStore";
+import { ignoreBenignStorageError } from "../utils/benignBrowserError";
 import { useOrciaNavigation } from "./navigationAdapter";
 import { useOptionalPlatformSetup } from "./platformSetupStore";
 import {
@@ -152,8 +153,8 @@ export function LoginScreenView({ onAuthenticated }: LoginScreenViewProps = {}) 
           cleanedUrl.searchParams.delete("state");
           cleanedUrl.searchParams.delete("session_state");
           window.history.replaceState({}, "", cleanedUrl.toString());
-        } catch {
-          // Ignore URL history error
+        } catch (err: unknown) {
+          ignoreBenignStorageError("login.history_replace", err);
         }
         completeAuthenticatedSession(res);
       })

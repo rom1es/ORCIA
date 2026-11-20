@@ -157,6 +157,7 @@ export function CreateOrgUnitModal({
       description={labels.description}
       testId="create-org-unit-modal"
       closeLabel={labels.cancelButton}
+      hideHeaderCloseButton
     >
       <form
         data-testid="create-org-unit-form"

@@ -221,3 +221,12 @@ export async function assertVisibleErrorBannerOnHttpError(
   const text = (await alertLocator.innerText()).trim();
   expect(text.length, "La bannière [role='alert'] ne doit pas être vide").toBeGreaterThan(0);
 }
+
+export {
+  assertCockpitSobrietyMaxThreeBlocks,
+  assertMaxOneDialogCloseOrCancelButton,
+  assertNoZoneHorizontalTruncation,
+  assertSingleDesktopWorkspaceSelector,
+  assertZeroBulletPlaceholders,
+  assertZone4ContextualHelpRoutesFidelity,
+} from "./directionCSobrietyAssertions";

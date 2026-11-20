@@ -78,6 +78,7 @@ export function FinopsBudgetPolicyModal({
       description={labels.budgetDescription}
       testId="finops-budget-modal"
       closeLabel={labels.cancelButton}
+      hideHeaderCloseButton
     >
       <form
         onSubmit={handleSubmit}

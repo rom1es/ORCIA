@@ -126,22 +126,6 @@ export function CommandPaletteModal({
             <DialogPrimitive.Title style={{ margin: 0, fontSize: "0.9375rem", fontWeight: 700 }}>
               ⌘K — {labels.modalTitle}
             </DialogPrimitive.Title>
-            <button
-              type="button"
-              data-testid="command-palette-close"
-              onClick={requestClose}
-              style={{
-                padding: "4px 8px",
-                borderRadius: "6px",
-                fontSize: "0.75rem",
-                border: "1px solid var(--orcia-border-subtle)",
-                backgroundColor: "var(--orcia-surface-secondary)",
-                color: "var(--orcia-text-primary)",
-                cursor: "pointer",
-              }}
-            >
-              {labels.closeButton} (Esc)
-            </button>
           </div>
 
           <div className="orcia-ds-dialog-body">

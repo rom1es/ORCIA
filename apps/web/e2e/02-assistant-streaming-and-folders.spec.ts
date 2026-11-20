@@ -49,9 +49,9 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
       "modèle d'embedding actif persisté dans workspace_llm_tier_mappings PG18",
     );
     expectDbRowExists(
-      "SELECT id, email FROM users WHERE email = :email",
-      { email: E2E_ADMIN.email },
-      "utilisateur initiateur présent en PostgreSQL 18",
+      "SELECT id, event_type FROM audit_ledger WHERE event_type = :event_type",
+      { event_type: "ASSISTANT_TURN_COMPLETED" },
+      "trace ASSISTANT_TURN_COMPLETED enregistrée dans audit_ledger PG18",
     );
   });
 

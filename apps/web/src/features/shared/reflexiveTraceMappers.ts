@@ -6,6 +6,7 @@ import type {
   UiReflexiveSessionStatus,
   UiTraceEventKind,
 } from "@orcia/ui";
+import { ignoreBenignStorageError } from "../../utils/benignBrowserError";
 
 type ApiTraceEventLike =
   | components["schemas"]["AgentTraceEventItem"]
@@ -220,7 +221,8 @@ export function readPersistedReflexiveId(storageKey: string): string | null {
     try {
       const val = window.localStorage.getItem(storageKey);
       return val && val.trim().length > 0 ? val.trim() : null;
-    } catch {
+    } catch (err: unknown) {
+      ignoreBenignStorageError("reflexive.read", err);
       return fallbackReflexiveStorage.get(storageKey) ?? null;
     }
   }
@@ -240,8 +242,8 @@ export function writePersistedReflexiveId(
     ) {
       try {
         window.localStorage.removeItem(storageKey);
-      } catch {
-        // Ignore storage errors
+      } catch (err: unknown) {
+        ignoreBenignStorageError("reflexive.remove", err);
       }
     }
     return;
@@ -254,8 +256,8 @@ export function writePersistedReflexiveId(
   ) {
     try {
       window.localStorage.setItem(storageKey, executionId);
-    } catch {
-      // Ignore storage quota errors
+    } catch (err: unknown) {
+      ignoreBenignStorageError("reflexive.write", err);
     }
   }
 }

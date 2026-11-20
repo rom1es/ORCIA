@@ -3,6 +3,7 @@ import { expect, test } from "./support/e2eCaptureFixture";
 import { resetDay0 } from "./support/day0";
 import { expectDbRowCount, expectDbRowExists } from "./support/dbAssertions";
 import { bootstrapAdminSession, getBearerTokenFromSession } from "./support/authAndOrgHelpers";
+import { assertMaxOneDialogCloseOrCancelButton } from "./support/layoutGeometryAssertions";
 import { createOrgAndWorkspaceWithId } from "./support/workspaceAndCatalogHelpers";
 import {
   openCockpitPage,
@@ -164,6 +165,7 @@ test.describe("Orchestration durable, contestation amont avec simulation d'impac
     await expect(page.getByTestId("anti-rubber-stamping-guard-modal")).toBeVisible({
       timeout: 10000,
     });
+    await assertMaxOneDialogCloseOrCancelButton(page);
     await page.getByTestId("rubber-stamp-confirm-checkbox").check();
     await page.getByTestId("rubber-stamp-confirm-submit-btn").click();
 

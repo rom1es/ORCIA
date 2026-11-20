@@ -33970,6 +33970,13 @@
         "title": "WhatIfSimulationRequest",
         "type": "object"
       }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "bearerFormat": "JWT",
+        "scheme": "bearer",
+        "type": "http"
+      }
     }
   },
   "info": {
@@ -34192,6 +34199,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Replay Outbox Events",
         "tags": [
           "settings-and-studio"
@@ -34310,6 +34322,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Agents And Skills",
         "tags": [
           "agents-and-skills"
@@ -34438,6 +34455,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Upsert Agent Endpoint",
         "tags": [
           "agents-and-skills"
@@ -34567,6 +34589,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Delete Agent Endpoint",
         "tags": [
           "agents-and-skills"
@@ -34706,6 +34733,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Duplicate Agent Endpoint",
         "tags": [
           "agents-and-skills"
@@ -34845,6 +34877,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute Agent Endpoint",
         "tags": [
           "agents-and-skills"
@@ -34984,6 +35021,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Update Agent Governance Endpoint",
         "tags": [
           "agents-and-skills"
@@ -35123,6 +35165,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Update Agent Skills Endpoint",
         "tags": [
           "agents-and-skills"
@@ -35251,6 +35298,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Upsert Skill Endpoint",
         "tags": [
           "agents-and-skills"
@@ -35380,6 +35432,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Delete Skill Endpoint",
         "tags": [
           "agents-and-skills"
@@ -35519,6 +35576,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute Skill Endpoint",
         "tags": [
           "agents-and-skills"
@@ -35646,6 +35708,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute Artifact Card Action Endpoint",
         "tags": [
           "assistant-workspace"
@@ -35775,6 +35842,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute a 5-node conversational turn with `orcia://system/workflows/assistant-agent`",
         "tags": [
           "assistant-agent"
@@ -35907,6 +35979,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Stream a 5-node Assistant Agent conversational turn via SSE (`< 1.5 s` first token)",
         "tags": [
           "assistant-agent"
@@ -36034,6 +36111,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Verify And Filter Citations Endpoint",
         "tags": [
           "assistant-workspace"
@@ -36161,6 +36243,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Create Or Update Assistant Folder Endpoint",
         "tags": [
           "assistant-workspace"
@@ -36297,6 +36384,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Launch Process From Folder Endpoint",
         "tags": [
           "assistant-workspace"
@@ -36433,6 +36525,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Configure Folder Sharing Endpoint",
         "tags": [
           "assistant-workspace"
@@ -36570,6 +36667,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Assistant Governance Endpoint",
         "tags": [
           "assistant-workspace"
@@ -36697,6 +36799,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Update User Layer Preferences Endpoint",
         "tags": [
           "assistant-workspace"
@@ -36824,6 +36931,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Update Workspace Layer Settings Endpoint",
         "tags": [
           "assistant-workspace"
@@ -36951,6 +37063,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Reset Assistant Studio Graph Endpoint",
         "tags": [
           "assistant-workspace"
@@ -37078,6 +37195,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Save Assistant Studio Graph Endpoint",
         "tags": [
           "assistant-workspace"
@@ -37205,6 +37327,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Create Assistant Thread Endpoint",
         "tags": [
           "assistant-workspace"
@@ -37341,6 +37468,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Send Collaborative Thread Turn Endpoint",
         "tags": [
           "assistant-workspace"
@@ -37467,6 +37599,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Active Three Speed Turn Endpoint",
         "tags": [
           "assistant-workspace"
@@ -37596,6 +37733,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Record Assistant Turn Feedback Endpoint",
         "tags": [
           "assistant-workspace"
@@ -37723,6 +37865,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Invalidate Prompt Cache Endpoint",
         "tags": [
           "assistant-workspace"
@@ -37850,6 +37997,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Stop Active Three Speed Turn Endpoint",
         "tags": [
           "assistant-workspace"
@@ -37980,6 +38132,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Stream Three Speed Turn Endpoint",
         "tags": [
           "assistant-workspace"
@@ -38107,6 +38264,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute Three Speed Turn Endpoint",
         "tags": [
           "assistant-workspace"
@@ -38236,6 +38398,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Save a composed Workflow-as-Code manifest in the Workspace and launch its real run",
         "tags": [
           "assistant-agent"
@@ -38388,6 +38555,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Assistant Workspace Overview Endpoint",
         "tags": [
           "assistant-workspace"
@@ -38713,6 +38885,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List paginated immutable audit ledger entries (Story 6.1)",
         "tags": [
           "audit-ledger"
@@ -38859,6 +39036,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Export sealed provenance dossier in JSON or Markdown format (Story 6.1)",
         "tags": [
           "audit-ledger"
@@ -38989,6 +39171,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get consolidated provenance summary for a workflow run (Story 6.1)",
         "tags": [
           "audit-ledger"
@@ -39098,6 +39285,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Change authenticated user password, enforcing policy and clearing temporary flag",
         "tags": [
           "auth"
@@ -39754,6 +39946,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get authenticated Human Profile, OrgUnit tree, and accessible Multi-Source Workspaces",
         "tags": [
           "auth"
@@ -40091,6 +40288,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Encrypt and store a user Passthrough credential in AES-256-GCM (NFR-SEC-4)",
         "tags": [
           "auth"
@@ -40614,6 +40816,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute governed `orcia://system/bootstrap/init-datasource` with Human Anchor",
         "tags": [
           "bootstrap"
@@ -40742,6 +40949,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute governed `orcia://system/bootstrap/init-existing-project` (`FR-28`, `AD-16`)",
         "tags": [
           "gates"
@@ -40870,6 +41082,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute Day-0 governed `orcia://system/bootstrap/init-organization` (`AD-10`)",
         "tags": [
           "bootstrap"
@@ -40998,6 +41215,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute governed `orcia://system/bootstrap/init-skill` with Tier 1 Sandbox certification",
         "tags": [
           "gates"
@@ -41126,6 +41348,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute first-login `orcia://system/bootstrap/init-user` Passthrough Vault pairing",
         "tags": [
           "bootstrap"
@@ -41254,6 +41481,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute autonomous `TEAM_LEAD` `orcia://system/bootstrap/init-workspace` (`AD-14`)",
         "tags": [
           "bootstrap"
@@ -41352,6 +41584,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Load persisted Day-0 / Epics 8-12 Platform Setup state from PostgreSQL 18",
         "tags": [
           "bootstrap"
@@ -41458,6 +41695,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Persist Day-0 / Epics 8-12 Platform Setup state to PostgreSQL 18",
         "tags": [
           "bootstrap"
@@ -41576,6 +41818,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Day-0 System Bootstrap workflows, orthogonal LLM endpoints, runs & onboarding",
         "tags": [
           "bootstrap"
@@ -41792,6 +42039,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Test LLM endpoint connectivity, URL format, and authentication configuration",
         "tags": [
           "bootstrap"
@@ -41900,6 +42152,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Register progressive LLM endpoint (1 family -> Quick Trial; >= 2 -> AD-10 Gates)",
         "tags": [
           "bootstrap"
@@ -42031,6 +42288,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Fetch an immutable Content-Addressable Storage object by `cas/<sha256>` digest",
         "tags": [
           "federated-catalog"
@@ -42160,6 +42422,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Losslessly import a BMAD Skill Pack (SKILL.md + customize.toml) into ORCIA",
         "tags": [
           "federated-catalog"
@@ -42337,6 +42604,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Federated Catalog items filtered by RBAC, URI scheme, and publication scope",
         "tags": [
           "federated-catalog"
@@ -42477,6 +42749,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Promote a Catalog resource along the hierarchical publication lifecycle",
         "tags": [
           "federated-catalog"
@@ -42606,6 +42883,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Resolve a federated URI into immutable `cas/<sha256>` cache (< 50 ms)",
         "tags": [
           "federated-catalog"
@@ -42754,6 +43036,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Inspect a Catalog resource's 5 dissociated permissions (`source_masked`)",
         "tags": [
           "workspaces-and-catalog"
@@ -42902,6 +43189,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Read internal prompt/code of a Catalog resource (requires READ_SOURCE)",
         "tags": [
           "workspaces-and-catalog"
@@ -43031,6 +43323,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Merge 4 override layers (Base -> Team -> Workspace -> User) and generate run-lock",
         "tags": [
           "federated-catalog"
@@ -43160,6 +43457,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Universal `⌘K` Command Palette search across Runs, Workspaces & shortcuts (`< 1 s`)",
         "tags": [
           "control-center"
@@ -43306,6 +43608,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Consolidated 4-tab fractal Workspace Control Center overview (`Story 5.2`, `AD-14`)",
         "tags": [
           "control-center"
@@ -43452,6 +43759,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Enforce `RunAccessGuard` ($O(1)$ observer `403` + peer claim `409`) on step mutation",
         "tags": [
           "control-center"
@@ -43589,6 +43901,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Update product lifecycle phase (`RUN | BUILD | MIGRATION`) on a Workspace",
         "tags": [
           "control-center"
@@ -43740,6 +44057,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Unified Server-Sent Events stream (`channel:workspace:{ws_id}`, `< 500 ms`, `AD-4`)",
         "tags": [
           "inbox"
@@ -43869,6 +44191,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Start a pure `asyncio` reflexive execution (`Standard` or `Approfondi`)",
         "tags": [
           "executions-reflexive"
@@ -43999,6 +44326,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Rehydrate `ReflexiveSessionSnapshot` by `execution_id` (`F5` page reload survival)",
         "tags": [
           "executions-reflexive"
@@ -44139,6 +44471,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Approve (`SignedApprovalToken` verified) or reject `WritePreviewCard` and resume loop",
         "tags": [
           "executions-reflexive"
@@ -44269,6 +44606,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Immediately cancel `execution_id` (`■ Arrêter` — `0` extra LLM calls)",
         "tags": [
           "executions-reflexive"
@@ -44399,6 +44741,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Raise `force_final=True` (`Synthétiser maintenant`) for immediate synthesis",
         "tags": [
           "executions-reflexive"
@@ -44527,6 +44874,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Stream real-time `AgentTraceEvent` SSE events (`text/event-stream`, `\\n` preserved)",
         "tags": [
           "executions-reflexive"
@@ -44653,6 +45005,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Set or update pre-automation manual reference baseline",
         "tags": [
           "finops"
@@ -44779,6 +45136,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Configure scope budget ceiling and warning thresholds",
         "tags": [
           "finops"
@@ -44943,6 +45305,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get executive cognitive impact and gate recommendations",
         "tags": [
           "finops",
@@ -45081,6 +45448,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Configure valuation mode, safety cap and quota ceilings for a remote connector",
         "tags": [
           "finops",
@@ -45226,6 +45598,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Manually reset a suspended external connector circuit breaker",
         "tags": [
           "finops",
@@ -45379,6 +45756,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get consolidated FinOps dashboard metrics, processes, tiers, and baselines",
         "tags": [
           "finops"
@@ -45506,6 +45888,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Apply actionable gate policy adjustment under scope guard protection",
         "tags": [
           "finops",
@@ -45659,6 +46046,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List remote MCP and A2A services FinOps telemetry and circuit breaker states",
         "tags": [
           "finops",
@@ -45788,6 +46180,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Evaluate an Agentic Gate via the 5-Lens DAG with Model Orthogonality & PII Scrubbing",
         "tags": [
           "gates"
@@ -45916,6 +46313,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Evaluate a Deterministic Gate in the out-of-process Tier 1 Sandbox (`AD-9`, `FR-17`)",
         "tags": [
           "gates"
@@ -46052,6 +46454,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Deterministic, Agentic & Human Gate evaluations (`AD-9..11`)",
         "tags": [
           "gates"
@@ -46180,6 +46587,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Evaluate an Adaptive Human Gate (`mandatory_full`, `risk_or_exception_based`, `sampling`)",
         "tags": [
           "gates"
@@ -46316,6 +46728,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Adaptive Human Gate evaluations (`Story 4.3`, `AD-11`)",
         "tags": [
           "gates"
@@ -46462,6 +46879,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Approve, co-edit (with SHA-256 signature), or challenge a section chunk (`UX-DR5`)",
         "tags": [
           "gates"
@@ -46599,6 +47021,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Finalize Human Gate approval after checking chunks and <15s Anti-Rubber-Stamping Guard",
         "tags": [
           "gates"
@@ -46726,6 +47153,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Mark Block 4 (`Hypothèses Retenues`) of the 4-Block Review Briefing as inspected",
         "tags": [
           "gates"
@@ -46844,6 +47276,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List the 5 operational deployment roles isolating Docling (`Story 4.1a`, `M9`)",
         "tags": [
           "gates"
@@ -46972,6 +47409,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute a closed-loop TDD `Red -> Green` check in Tier 2 Sandbox (`Story 4.1a`)",
         "tags": [
           "gates"
@@ -47210,6 +47652,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Publish a hot `@v(N+1)` contextual help article in `cas/<sha256>` (`Story 9.5`)",
         "tags": [
           "portal-and-help"
@@ -47348,6 +47795,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Resolve Contextual Help (`< 10 ms` Redis + 4-layer merge, `Story 9.5`)",
         "tags": [
           "portal-and-help"
@@ -47476,6 +47928,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute 1-click `⏪ Rollback` to `@v(N-1)` for a `HELP_ARTICLE` (`Story 9.5`)",
         "tags": [
           "portal-and-help"
@@ -47647,6 +48104,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List unified personal & team notifications with presence lock state (`Story 5.1`)",
         "tags": [
           "inbox"
@@ -47776,6 +48238,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute a staged Jira action on Gate pass with `run-lock.json` provenance (`AD-5`)",
         "tags": [
           "jira-and-mcp"
@@ -47905,6 +48372,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Pre-validate Jira transitions and stage action in draft_artifact_jsonb (`AD-5`)",
         "tags": [
           "jira-and-mcp"
@@ -48042,6 +48514,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List staged and executed Jira workflow actions (`Story 4.4`, `AD-5`)",
         "tags": [
           "jira-and-mcp"
@@ -48171,6 +48648,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Search workspace Jira projects in real time via JQL (`FR-24`)",
         "tags": [
           "jira-and-mcp"
@@ -48300,6 +48782,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Invoke a governed MCP tool in `passthrough` mode (`/api/v1/mcp`, `FR-24`, `AD-3`)",
         "tags": [
           "jira-and-mcp"
@@ -48427,6 +48914,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Configure MCP exposure on a local Agent or Workspace Assistant (Story 11.3)",
         "tags": [
           "mcp-and-connectors"
@@ -48563,6 +49055,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Invoke an exposed MCP agent/assistant under the 7 Hardware Security Locks (M.4)",
         "tags": [
           "mcp-and-connectors"
@@ -48682,6 +49179,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List governed MCP tools exposed to external IDEs (`/api/v1/mcp`, `AR-7`)",
         "tags": [
           "jira-and-mcp"
@@ -48855,6 +49357,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Direction C 7-module Global Sidebar & Hierarchical Scope Switcher tree",
         "tags": [
           "navigation"
@@ -48982,6 +49489,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Ontology Concepts",
         "tags": [
           "ontology-rag"
@@ -49117,6 +49629,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Upsert Ontology Concept",
         "tags": [
           "ontology-rag"
@@ -49253,6 +49770,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Promote an Ontology concept proposal (L4 -> L3 or L3 -> L2 -> L1)",
         "tags": [
           "ontology-rag"
@@ -49396,6 +49918,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Ontology Promotions",
         "tags": [
           "ontology-rag"
@@ -49531,6 +50058,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Create Ontology Promotion",
         "tags": [
           "ontology-rag"
@@ -49679,6 +50211,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Decide Ontology Promotion",
         "tags": [
           "ontology-rag"
@@ -49799,6 +50336,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Resolve effective 4-Level Ontology and Human Profile semantic translations",
         "tags": [
           "ontology-rag"
@@ -49919,6 +50461,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute What-If impact simulation across concepts, templates, workflows & runs",
         "tags": [
           "ontology-rag"
@@ -50055,6 +50602,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Index DB DDL schema (`CREATE TABLE` only; rejects transactional SQL -> HTTP 422)",
         "tags": [
           "ontology-rag"
@@ -50175,6 +50727,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute Hybrid RAG search (`halfvec(1024)` + BM25 RRF) with Ontology query expansion",
         "tags": [
           "ontology-rag"
@@ -50319,6 +50876,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Inspect 4-Level Ontology, Promotions, Hybrid RAG Documents & Tripartite Graph",
         "tags": [
           "ontology-rag"
@@ -50439,6 +51001,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Qualify Doc vs Code divergence (`[DOC_OBSOLETE_SUSPECTED]` citing Done Jira ticket)",
         "tags": [
           "ontology-rag"
@@ -50568,6 +51135,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Sign a mandatory Human-Led Anchor section (human_authored_required: true, Story 3.4)",
         "tags": [
           "durable-orchestration-blackboard"
@@ -50697,6 +51269,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute a non-blocking BACKGROUND_FAST_PATH audit with structured markers (UJ-10)",
         "tags": [
           "durable-orchestration-blackboard"
@@ -50826,6 +51403,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Instantiate a Workflow Run and recursively pin run-lock.json (SUB_WORKFLOW <= 3)",
         "tags": [
           "orchestration-setup"
@@ -50955,6 +51537,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute a durable workflow step (AGENT, SKILL, SUB_WORKFLOW, HUMAN_TASK, HTTP_ACTION)",
         "tags": [
           "durable-orchestration-blackboard"
@@ -51084,6 +51671,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Hydrate Just-In-Time context for Step k (0 future step leakage, AD-13)",
         "tags": [
           "durable-orchestration-blackboard"
@@ -51214,6 +51806,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get durable step executions and append-only Blackboard snapshots for a Run",
         "tags": [
           "durable-orchestration-blackboard"
@@ -51365,6 +51962,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Invoke request_human_arbitration(options_matrix) with tie_break_policy (Story 3.4)",
         "tags": [
           "durable-orchestration-blackboard"
@@ -51516,6 +52118,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Resolve a pending human arbitration decision and resume step execution (Story 3.4)",
         "tags": [
           "durable-orchestration-blackboard"
@@ -51667,6 +52274,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Submit an Inter-Step Upstream Challenge with Outbox notification (Story 3.5, FR-7)",
         "tags": [
           "Blackboard & Durable Engine"
@@ -51818,6 +52430,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Compute What-If Impact Preview for an Inter-Step Upstream Challenge (Story 3.5)",
         "tags": [
           "Blackboard & Durable Engine"
@@ -51976,6 +52593,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Replay workflow from Step N or intra-sub-workflow Step k (Story 3.5, FR-16, FR-30)",
         "tags": [
           "Blackboard & Durable Engine"
@@ -52127,6 +52749,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Resume a paused HUMAN_TASK or WAITING_FOR_HUMAN_ARBITRATION step (Story 3.2f, AC-F1)",
         "tags": [
           "durable-orchestration-blackboard"
@@ -52246,6 +52873,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Story 3.1 Workflow-as-Code DAGs, compiled template, and recursive run-lock state",
         "tags": [
           "orchestration-setup"
@@ -52375,6 +53007,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Compile a Multi-Audience Artifact Template into Human Markdown + Ontology JSON Schema",
         "tags": [
           "orchestration-setup"
@@ -52504,6 +53141,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Validate and register a Workflow-as-Code YAML/JSON manifest",
         "tags": [
           "orchestration-setup"
@@ -52633,6 +53275,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Validate a Workflow-as-Code YAML/JSON manifest with exact line numbers",
         "tags": [
           "orchestration-setup"
@@ -52806,6 +53453,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List hierarchical organizational units (`BU -> Sous-BU -> TEAM`) with FinOps & counts",
         "tags": [
           "workspaces-and-catalog"
@@ -52932,6 +53584,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Create a Division (`BU`), Sub-Division (`BU` with parent), or Team (`TEAM`)",
         "tags": [
           "workspaces-and-catalog"
@@ -53060,6 +53717,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Invite a new human user scoped to a governed organizational unit (`BU_LEAD` / `PLATFORM_ADMIN`)",
         "tags": [
           "workspaces-and-catalog"
@@ -53207,6 +53869,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Search active known platform users with incremental query and pagination limit",
         "tags": [
           "workspaces-and-catalog"
@@ -53336,6 +54003,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Delete an empty organizational unit (`HTTP 409 ERR_ORG_UNIT_NOT_EMPTY` if non-empty)",
         "tags": [
           "workspaces-and-catalog"
@@ -53473,6 +54145,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Update an organizational unit's name, parent hierarchy, FinOps billing, or members",
         "tags": [
           "workspaces-and-catalog"
@@ -53572,6 +54249,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Installed Business Packs Endpoint",
         "tags": [
           "pack-builder"
@@ -53673,6 +54355,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get System Pack Builder Manifest Endpoint",
         "tags": [
           "pack-builder"
@@ -53782,6 +54469,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Certify Pack Tool Endpoint",
         "tags": [
           "pack-builder"
@@ -53891,6 +54583,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Create Business Pack Endpoint",
         "tags": [
           "pack-builder"
@@ -54000,6 +54697,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Evolve Business Pack What If Endpoint",
         "tags": [
           "pack-builder"
@@ -54109,6 +54811,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Export From Workspace To Pack Endpoint",
         "tags": [
           "pack-builder"
@@ -54218,6 +54925,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Generate And Attach Help Endpoint",
         "tags": [
           "pack-builder"
@@ -54327,6 +55039,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Validate Help Article Endpoint",
         "tags": [
           "pack-builder"
@@ -54426,6 +55143,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Declarative Packs",
         "tags": [
           "Declarative Packs (Epic 15)"
@@ -54550,6 +55272,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Export Workspace As Declarative Pack Zip",
         "tags": [
           "Declarative Packs (Epic 15)"
@@ -54679,6 +55406,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Check connector execution (`passthrough` vs `service_principal`) or intercept 401/403",
         "tags": [
           "permission-broker"
@@ -54808,6 +55540,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Import a Permission Knowledge Base Markdown policy with YAML frontmatter",
         "tags": [
           "permission-broker"
@@ -54945,6 +55682,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Permission Broker KB policies and blocked/paused/replayed step tickets",
         "tags": [
           "permission-broker"
@@ -55085,6 +55827,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Pause or replay a blocked Permission Broker step (`Replay Step N`, FR-22)",
         "tags": [
           "permission-broker"
@@ -55334,6 +56081,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Acquire shared resource leases in canonical order with fencing (`DEC-CONC-01`)",
         "tags": [
           "inbox",
@@ -55463,6 +56215,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Validate monotonic fencing token before shared resource write (`DEC-CONC-01`)",
         "tags": [
           "inbox",
@@ -55574,6 +56331,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Workflow V2 Run",
         "tags": [
           "Process Studio v2 & VSM (Epic 14)"
@@ -55711,6 +56473,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Approve budget extension for a paused run and awaken workflow",
         "tags": [
           "finops"
@@ -55854,6 +56621,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Trigger immediate emergency stop (`KILL_SWITCH_STOPPED`, `Story 7.4`)",
         "tags": [
           "autonomous-supervision"
@@ -55992,6 +56764,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Send Hitl Signal To Workflow V2 Run",
         "tags": [
           "Process Studio v2 & VSM (Epic 14)"
@@ -56135,6 +56912,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Invalidate autonomous artifact/help article and restore `@v(N-1)` (`Story 7.4`)",
         "tags": [
           "autonomous-supervision"
@@ -56271,6 +57053,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Validate or invalidate a sampled autonomous execution (`Story 7.4`)",
         "tags": [
           "autonomous-supervision"
@@ -56417,6 +57204,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Atomically claim a step execution (`SET lock:step:{step_id} NX EX 900`, `AD-4`)",
         "tags": [
           "inbox"
@@ -56613,6 +57405,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute 2-Speed Federated & Contextual Search (`⌘K`, Zero Layout Shift, `Story 9.3`)",
         "tags": [
           "portal-and-help"
@@ -56790,6 +57587,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Discover Ai Models Get",
         "tags": [
           "settings-ai-models"
@@ -56915,6 +57717,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Discover Ai Models Post",
         "tags": [
           "settings-ai-models"
@@ -57112,6 +57919,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Ai Model Mappings",
         "tags": [
           "settings-ai-models"
@@ -57237,6 +58049,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Create Ai Model Mapping",
         "tags": [
           "settings-ai-models"
@@ -57374,6 +58191,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Delete Ai Model Mapping",
         "tags": [
           "settings-ai-models"
@@ -57510,6 +58332,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Update Ai Model Mapping",
         "tags": [
           "settings-ai-models"
@@ -57622,6 +58449,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Ai Model Delete Impact",
         "tags": [
           "settings-ai-models"
@@ -57750,6 +58582,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Test Ai Model Connection",
         "tags": [
           "settings-ai-models"
@@ -57867,6 +58704,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Trigger Reindex Embeddings",
         "tags": [
           "settings-ai-models"
@@ -57966,6 +58808,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Reindex Status",
         "tags": [
           "settings-ai-models"
@@ -58075,6 +58922,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute Cognitive Tier Route",
         "tags": [
           "settings-ai-models"
@@ -58205,6 +59057,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Read platform authentication policy (PLATFORM_ADMIN only)",
         "tags": [
           "auth-settings"
@@ -58343,6 +59200,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Configure exclusive LOCAL vs SSO authentication mode and 2FA (PLATFORM_ADMIN only)",
         "tags": [
           "auth-settings"
@@ -58483,6 +59345,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Verify OIDC `.well-known/openid-configuration` discovery safely (PLATFORM_ADMIN only)",
         "tags": [
           "auth-settings"
@@ -58592,6 +59459,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List all platform-level Enterprise Connectors (Socle)",
         "tags": [
           "enterprise-connectors"
@@ -58727,6 +59599,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Register a new platform-level Enterprise Connector",
         "tags": [
           "enterprise-connectors"
@@ -58850,6 +59727,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Verify Rag Reciprocity Endpoint",
         "tags": [
           "settings-and-studio"
@@ -58970,6 +59852,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Ingest Document Endpoint",
         "tags": [
           "settings-and-studio"
@@ -59097,6 +59984,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Run the 4-Step Hot Test Bench & Contract Discovery (Story 11.3)",
         "tags": [
           "mcp-and-connectors"
@@ -59233,6 +60125,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Delete a platform Enterprise Connector and cascade tokens",
         "tags": [
           "enterprise-connectors"
@@ -59377,6 +60274,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Update a platform Enterprise Connector and manage its AES-256-GCM secret",
         "tags": [
           "enterprise-connectors"
@@ -59510,6 +60412,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Test Connector Connection Endpoint",
         "tags": [
           "settings-and-studio"
@@ -59624,6 +60531,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Platform Settings",
         "tags": [
           "settings-and-studio"
@@ -59760,6 +60672,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Patch Platform Setting",
         "tags": [
           "settings-and-studio"
@@ -59889,6 +60806,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List IAM human & service accounts with automatic Day-0 admin synchronization",
         "tags": [
           "iam-accounts"
@@ -60026,6 +60948,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Create a human user or technical `SERVICE_PRINCIPAL` in the IAM directory",
         "tags": [
           "iam-accounts"
@@ -60166,6 +61093,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Delete an IAM account with deterministic anti-lockout (`422` if last active admin)",
         "tags": [
           "iam-accounts"
@@ -60314,6 +61246,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Update roles, teams, display name or status with deterministic anti-lockout",
         "tags": [
           "iam-accounts"
@@ -60454,6 +61391,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Reset temporary password on a human IAM account and return invitation",
         "tags": [
           "iam-accounts"
@@ -60574,6 +61516,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Evaluate Rbac Resource",
         "tags": [
           "settings-and-studio"
@@ -60707,6 +61654,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Rbac Grants",
         "tags": [
           "settings-and-studio"
@@ -60829,6 +61781,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Delegate Rbac Grants",
         "tags": [
           "settings-and-studio"
@@ -60964,6 +61921,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Revoke Rbac Grant Endpoint",
         "tags": [
           "settings-and-studio"
@@ -61073,6 +62035,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Return the native 7-role permission matrix (`WRITE_ONLY_NEVER_READABLE`)",
         "tags": [
           "iam-accounts"
@@ -61245,6 +62212,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Inspect a governed `#Lstart-end` source slice (`<= 250` lines, `READ_SOURCE` checked)",
         "tags": [
           "sources-surgical"
@@ -61374,6 +62346,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute one of the 4 read-only surgical context exploration primitives",
         "tags": [
           "sources-surgical"
@@ -61507,6 +62484,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Studio What If Dry Run Endpoint",
         "tags": [
           "studio-and-wizards"
@@ -61644,6 +62626,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Atomically claim a notification (`SET lock:step:{step_id} NX EX 900`, `AD-4`)",
         "tags": [
           "inbox"
@@ -61781,6 +62768,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Release or Force-Unclaim (after 15m inactivity) a task notification (`UX-DR9`)",
         "tags": [
           "inbox"
@@ -62068,6 +63060,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Retrieve current user profile, active roles and FinOps team attachments",
         "tags": [
           "enterprise-connectors"
@@ -62187,6 +63184,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List personal IDE/MCP tokens (`pat_mcp_*` SHA-256 metadata, never plaintext)",
         "tags": [
           "user-account-settings"
@@ -62314,6 +63316,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Issue a scoped personal IDE/MCP token (`pat_mcp_*` hashed SHA-256 in PG18)",
         "tags": [
           "user-account-settings"
@@ -62442,6 +63449,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Revoke a personal IDE/MCP token owned by the authenticated user",
         "tags": [
           "user-account-settings"
@@ -62569,6 +63581,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List per-user passthrough connection status for all enabled tools",
         "tags": [
           "enterprise-connectors"
@@ -62705,6 +63722,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Revoke personal passthrough token for a connector",
         "tags": [
           "enterprise-connectors"
@@ -62849,6 +63871,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Set or update personal passthrough token (AES-256-GCM Write-Only)",
         "tags": [
           "enterprise-connectors"
@@ -62968,6 +63995,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get current user's display, assistant & notification preferences (PG18)",
         "tags": [
           "user-account-settings"
@@ -63095,6 +64127,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Persist user preferences (`0 ms` Anti-FOUC & Assistant personalization in PG18)",
         "tags": [
           "user-account-settings"
@@ -63214,6 +64251,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get authenticated user's profile summary, 4 token/streak KPIs & top 5 popular items",
         "tags": [
           "user-profile"
@@ -63313,6 +64355,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Value Stream Maps",
         "tags": [
           "Process Studio v2 & VSM (Epic 14)"
@@ -63423,6 +64470,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Value Stream Map",
         "tags": [
           "Process Studio v2 & VSM (Epic 14)"
@@ -64003,6 +65055,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Wizard Sessions Endpoint",
         "tags": [
           "studio-and-wizards"
@@ -64131,6 +65188,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Provision Demo Workspace Endpoint",
         "tags": [
           "studio-and-wizards"
@@ -64251,6 +65313,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Start Or Resume Wizard Endpoint",
         "tags": [
           "studio-and-wizards"
@@ -64392,6 +65459,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Wizard Session Endpoint",
         "tags": [
           "studio-and-wizards"
@@ -64525,6 +65597,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Step Back Wizard Endpoint",
         "tags": [
           "studio-and-wizards"
@@ -64658,6 +65735,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Save Wizard Step Endpoint",
         "tags": [
           "studio-and-wizards"
@@ -64757,6 +65839,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Workflows V2",
         "tags": [
           "Process Studio v2 & VSM (Epic 14)"
@@ -64867,6 +65954,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Workflow V2",
         "tags": [
           "Process Studio v2 & VSM (Epic 14)"
@@ -65003,6 +66095,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Save Or Fork Workflow V2",
         "tags": [
           "Process Studio v2 & VSM (Epic 14)"
@@ -65141,6 +66238,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Start Workflow V2 Run",
         "tags": [
           "Process Studio v2 & VSM (Epic 14)"
@@ -65261,6 +66363,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Run Workflow V2 What If Simulation",
         "tags": [
           "Process Studio v2 & VSM (Epic 14)"
@@ -65398,6 +66505,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List accessible Multi-Source Workspaces with Upward Roll-up and FinOps consolidation",
         "tags": [
           "workspaces-and-catalog"
@@ -65536,6 +66648,11 @@
             "description": "Service Unavailable"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Create a Workspace in PostgreSQL 18 returning canonical `UUIDv7` and exact `slug`",
         "tags": [
           "workspaces-and-catalog"
@@ -65673,6 +66790,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Detect external SHA-256 divergence and lock human-amended sections (Verrou V2)",
         "tags": [
           "workspaces"
@@ -65810,6 +66932,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Resolve 4-level artifact destination cascade with local:// path confinement",
         "tags": [
           "workspaces"
@@ -65936,6 +67063,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List supervised autonomous contract runs in a workspace (`Story 7.4`)",
         "tags": [
           "autonomous-supervision"
@@ -66066,6 +67198,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Invoke a normalized read-only Code Graph MCP tool",
         "tags": [
           "codegraph-mcp"
@@ -66186,6 +67323,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List normalized read-only Code Graph MCP tools and active repositories",
         "tags": [
           "codegraph-mcp"
@@ -66306,6 +67448,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List datasources attached to a workspace with evaluated sync health",
         "tags": [
           "workspace-datasources"
@@ -66450,6 +67597,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Attach a new datasource to a workspace with multi-nature and codegraph options",
         "tags": [
           "workspace-datasources"
@@ -66573,6 +67725,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Reconcile Workspace Staleness",
         "tags": [
           "datasource-webhooks"
@@ -66718,6 +67875,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Delete a datasource from a workspace",
         "tags": [
           "workspace-datasources"
@@ -66871,6 +68033,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Update datasource settings, sync mode or codegraph options",
         "tags": [
           "workspace-datasources"
@@ -67016,6 +68183,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Trigger manual synchronization of a datasource",
         "tags": [
           "workspace-datasources"
@@ -67153,6 +68325,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Compile a French norm into a self-tested Starlark mechanism (< 5 ms, Story 11.2)",
         "tags": [
           "workspaces"
@@ -67300,6 +68477,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Execute a compiled Starlark mechanism at Run-Time (< 2 ms, 0 LLM tokens)",
         "tags": [
           "workspaces"
@@ -67440,6 +68622,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List persisted exception waivers for a workspace (PG18 `workspace_exception_waivers`)",
         "tags": [
           "workspaces"
@@ -67574,6 +68761,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Register an exception waiver governed by the causal DNA chain (Verrou V1)",
         "tags": [
           "workspaces"
@@ -67722,6 +68914,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get the 5 sub-tabs state for Mes Espaces (Story 11.1)",
         "tags": [
           "workspaces"
@@ -67856,6 +69053,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Configure workspace 5 sub-tabs, sources, and default destination (Story 11.1)",
         "tags": [
           "workspaces"
@@ -67993,6 +69195,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Run 2-Pass OntologyExtractor (0 $ on git_push, <= 15 FIFO & Top-3 pre-checked V4)",
         "tags": [
           "workspaces"
@@ -68130,6 +69337,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Promote or reject L4 glossary candidates In-Flow and invalidate prompt cache (V4)",
         "tags": [
           "workspaces"
@@ -68260,6 +69472,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Enforce ScopeAccessGuard on Workspace mutation (rejects READ_ONLY_OBSERVER)",
         "tags": [
           "workspaces-and-catalog"
@@ -68397,6 +69614,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Run pilot workflow orcia://pack-sdlc/workflows/ticket-to-tech-spec (Verrou V3)",
         "tags": [
           "workspaces"
@@ -68533,6 +69755,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Get Autonomy Contract State",
         "tags": [
           "autonomy-contracts"
@@ -68677,6 +69904,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Sign Autonomy Contract",
         "tags": [
           "autonomy-contracts"
@@ -68830,6 +70062,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Revoke Autonomy Contract",
         "tags": [
           "autonomy-contracts"
@@ -68976,6 +70213,11 @@
             "description": "Precondition Required"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Start Autonomous Run",
         "tags": [
           "autonomy-contracts"
@@ -69123,6 +70365,11 @@
             "description": "Service Unavailable"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "List Workflow Triggers",
         "tags": [
           "workflow-triggers"
@@ -69278,6 +70525,11 @@
             "description": "Service Unavailable"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Create Workflow Trigger",
         "tags": [
           "workflow-triggers"
@@ -69435,6 +70687,11 @@
             "description": "Service Unavailable"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Delete Workflow Trigger",
         "tags": [
           "workflow-triggers"
@@ -69600,6 +70857,11 @@
             "description": "Service Unavailable"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Update Workflow Trigger",
         "tags": [
           "workflow-triggers"
@@ -69767,6 +71029,11 @@
             "description": "Service Unavailable"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Fire Manual Workflow Trigger",
         "tags": [
           "workflow-triggers"
@@ -69924,6 +71191,11 @@
             "description": "Service Unavailable"
           }
         },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "summary": "Reset Workflow Trigger Circuit",
         "tags": [
           "workflow-triggers"

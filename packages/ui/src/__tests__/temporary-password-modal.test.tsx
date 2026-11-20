@@ -43,7 +43,7 @@ describe("TemporaryPasswordInvitationModal & UserPasswordChangeCard (@orcia/ui)"
     fireEvent.click(screen.getByTestId("temp-password-regenerate-btn"));
     expect(handleRegenerate).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByTestId("temp-password-close-btn"));
+    fireEvent.click(screen.getByTestId("temp-password-modal-close-btn"));
     expect(handleClose).toHaveBeenCalledTimes(1);
   });
 

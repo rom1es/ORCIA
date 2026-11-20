@@ -75,11 +75,16 @@ test.describe("Socle E2E bi-serveur (TEST-01 & Stories 16.1–16.2 Reflexive Har
     const problem = await traversalResp.json();
     expect(problem.error_code).toBe("ERR_VALIDATION_FAILED");
     expect(Boolean(problem.trace_id)).toBe(true);
+    expectDbRowExists(
+      "SELECT singleton_key, auth_mode FROM platform_auth_settings WHERE singleton_key = :key",
+      { key: "GLOBAL" },
+      "politique d'authentification active pour le garde Bearer de /sources/inspect-lines",
+    );
     expectDbRowCount(
-      "SELECT COUNT(*)::int AS count FROM connector_schemes",
+      "SELECT COUNT(*)::int AS count FROM declarative_pack_bundles",
       undefined,
       1,
-      "schémas de connecteurs seedés dans connector_schemes PG18",
+      "packs déclaratifs de référence présents dans declarative_pack_bundles PG18",
     );
   });
 

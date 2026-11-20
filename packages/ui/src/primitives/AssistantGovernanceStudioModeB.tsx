@@ -14,6 +14,7 @@ export interface AssistantGovernanceStudioModeBProps {
   readonly dryRunOutput: string | null;
   readonly resetBanner: boolean;
   readonly cancelLabel: string;
+  readonly showCancelButton?: boolean;
   readonly labels: AssistantGovernanceModalAndStudioLabels;
   readonly onChangeStudioScope: (scope: "WORKSPACE" | "TEAM") => void;
   readonly onChangeStudioPrePrompt: (prePrompt: string) => void;
@@ -32,6 +33,7 @@ export function AssistantGovernanceStudioModeB({
   dryRunOutput,
   resetBanner,
   cancelLabel,
+  showCancelButton = true,
   labels,
   onChangeStudioScope,
   onChangeStudioPrePrompt,
@@ -168,14 +170,16 @@ export function AssistantGovernanceStudioModeB({
           >
             {labels.studioResetDefaultCta}
           </button>
-          <button
-            type="button"
-            data-testid="studio-cancel-btn"
-            onClick={onCancel}
-            className="px-3 py-1.5 rounded border border-surface-border bg-surface-secondary text-text-primary"
-          >
-            {cancelLabel}
-          </button>
+          {showCancelButton ? (
+            <button
+              type="button"
+              data-testid="studio-cancel-btn"
+              onClick={onCancel}
+              className="px-3 py-1.5 rounded border border-surface-border bg-surface-secondary text-text-primary"
+            >
+              {cancelLabel}
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

@@ -7,6 +7,12 @@ import {
   expectZeroVisibleErrorBanners,
   watchUnexpectedPageAndApiErrors,
 } from "./support/apiErrors";
+import {
+  assertMaxOneDialogCloseOrCancelButton,
+  assertNoZoneHorizontalTruncation,
+  assertSingleDesktopWorkspaceSelector,
+  assertZeroBulletPlaceholders,
+} from "./support/layoutGeometryAssertions";
 
 const PUBLIC_DAY0_MENU_KEYS = [
   "cockpit",
@@ -28,6 +34,8 @@ test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, 
     await expect(page.getByTestId("first-boot-admin-setup-modal")).toBeVisible({
       timeout: 30000,
     });
+    await assertMaxOneDialogCloseOrCancelButton(page);
+    await assertZeroBulletPlaceholders(page, "shell-day0-modal");
     await expectZeroVisibleErrorBanners(page);
   });
 
@@ -76,6 +84,11 @@ test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, 
       await page.getByTestId("mobile-menu-drawer-toggle").click();
     }
     await expect(page.getByTestId("eight-menu-item-configuration")).toBeVisible({ timeout: 20000 });
+    if (!isMobile) {
+      await assertNoZoneHorizontalTruncation(page, "shell-post-first-admin");
+      await assertSingleDesktopWorkspaceSelector(page);
+      await assertZeroBulletPlaceholders(page, "shell-post-first-admin");
+    }
     expectDbRowExists(
       "SELECT id, email, platform_role FROM users WHERE email = :email AND platform_role = 'PLATFORM_ADMIN'",
       { email: E2E_ADMIN.email },
@@ -125,6 +138,8 @@ test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, 
     const modal = page.getByTestId("first-boot-admin-setup-modal");
     await expect(modal).toHaveAttribute("role", "dialog");
     await expect(modal).toHaveAttribute("aria-modal", "true");
+    await assertMaxOneDialogCloseOrCancelButton(page);
+    await assertZeroBulletPlaceholders(page, "first-boot-admin-modal");
     await expect(
       page.getByTestId("sidebar-rail-toggle-btn").click({ timeout: 2000 }),
     ).rejects.toThrow(/intercepts pointer events/);

@@ -9,61 +9,19 @@ import {
   useUnsavedChangesDialogGuard,
   type RgaaModalDialogLabels,
 } from "../components/RgaaModalDialog.js";
+import type {
+  UpstreamChallengeModalLabels,
+  UpstreamChallengeRewindModalProps,
+  UpstreamChallengeWhatIfPreview,
+} from "./UpstreamChallengeRewindModalTypes";
+import { UpstreamChallengeTargetMetaGrid } from "./UpstreamChallengeTargetMetaGrid";
 import { UpstreamChallengeWhatIfPreviewCard } from "./UpstreamChallengeWhatIfPreviewCard";
 
-export interface UpstreamChallengeWhatIfPreview {
-  readonly runId: string;
-  readonly challengerStepKey: string;
-  readonly targetUpstreamStepKey: string;
-  readonly challengedSectionKey: string;
-  readonly targetProfileArchetype: string;
-  readonly translatedSummary: string;
-  readonly invalidatedDownstreamStepKeys: readonly string[];
-  readonly invalidatedArtifactSections: readonly string[];
-  readonly invalidatedOntologyAxiomKeys: readonly string[];
-  readonly preservedUpstreamStepKeys: readonly string[];
-  readonly upstreamTokensSaved: number;
-}
-
-export interface UpstreamChallengeModalLabels {
-  readonly modalTitle: string;
-  readonly modalSubtitle: string;
-  readonly targetStepLabel: string;
-  readonly sectionKeyLabel: string;
-  readonly reasonLabel: string;
-  readonly reasonPlaceholder: string;
-  readonly whatIfTitle: string;
-  readonly invalidatedStepsLabel: string;
-  readonly invalidatedSectionsLabel: string;
-  readonly invalidatedAxiomsLabel: string;
-  readonly preservedStepsLabel: string;
-  readonly translatedSummaryLabel: string;
-  readonly submitChallengeCta: string;
-  readonly replayStepCta: string;
-  readonly closeCta: string;
-  readonly challengeSubmittedFeedback: string;
-  readonly replayTriggeredFeedback: string;
-}
-
-export interface UpstreamChallengeRewindModalProps {
-  readonly isOpen: boolean;
-  readonly preview: UpstreamChallengeWhatIfPreview;
-  readonly labels: UpstreamChallengeModalLabels;
-  readonly subWorkflowStepKey?: string;
-  readonly inline?: boolean;
-  readonly rgaaLabels?: Partial<RgaaModalDialogLabels>;
-  readonly onReasonChange?: (reason: string) => void;
-  readonly onSubmitChallenge?: (payload: {
-    targetUpstreamStepKey: string;
-    challengedSectionKey: string;
-    challengeReason: string;
-  }) => void;
-  readonly onTriggerReplay?: (payload: {
-    stepKey: string;
-    subWorkflowStepKey?: string;
-  }) => void;
-  readonly onClose?: () => void;
-}
+export type {
+  UpstreamChallengeModalLabels,
+  UpstreamChallengeRewindModalProps,
+  UpstreamChallengeWhatIfPreview,
+};
 
 const DEFAULT_INITIAL_REASON =
   "La règle métier de garantie FX 48h du PRD contredit le contrat API partenaire v3 (fenêtre max 15 min).";
@@ -181,16 +139,6 @@ export function UpstreamChallengeRewindModal({
             </>
           )}
         </div>
-        {onClose ? (
-          <button
-            type="button"
-            onClick={requestClose}
-            data-testid="upstream-challenge-close-btn"
-            className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
-          >
-            {labels.closeCta} (Esc)
-          </button>
-        ) : null}
       </div>
 
       <div className="orcia-ds-dialog-body">
@@ -203,53 +151,11 @@ export function UpstreamChallengeRewindModal({
           />
         ) : null}
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: "8px",
-            fontSize: "0.75rem",
-          }}
-        >
-          <div
-            style={{
-              padding: "8px",
-              borderRadius: "var(--radius-sm)",
-              backgroundColor: "var(--color-surface-canvas)",
-              border: "1px solid var(--color-border-subtle)",
-            }}
-          >
-            <strong style={{ color: "var(--color-text-secondary)" }}>
-              {labels.targetStepLabel}:
-            </strong>{" "}
-            <code style={{ fontFamily: "var(--font-mono)", color: "var(--color-text-primary)" }}>
-              {preview.targetUpstreamStepKey}
-              {subWorkflowStepKey ? (
-                <>
-                  {" "}
-                  <OrciaIcon name="arrowRight" /> {subWorkflowStepKey}
-                </>
-              ) : (
-                ""
-              )}
-            </code>
-          </div>
-          <div
-            style={{
-              padding: "8px",
-              borderRadius: "var(--radius-sm)",
-              backgroundColor: "var(--color-surface-canvas)",
-              border: "1px solid var(--color-border-subtle)",
-            }}
-          >
-            <strong style={{ color: "var(--color-text-secondary)" }}>
-              {labels.sectionKeyLabel}:
-            </strong>{" "}
-            <code style={{ fontFamily: "var(--font-mono)", color: "var(--color-text-primary)" }}>
-              {preview.challengedSectionKey}
-            </code>
-          </div>
-        </div>
+        <UpstreamChallengeTargetMetaGrid
+          labels={labels}
+          preview={preview}
+          {...(subWorkflowStepKey ? { subWorkflowStepKey } : {})}
+        />
 
         <label
           style={{

@@ -1,5 +1,5 @@
 import type { RoleMatrixEntryResponse } from "@orcia/api-client";
-import { OrciaButton, OrciaDialog, OrciaIcon } from "@orcia/ui";
+import { OrciaDialog } from "@orcia/ui";
 import React, { useEffect } from "react";
 import type { IamTabDictionarySection } from "../../../i18n/locales/iam_accounts_labels";
 import { IamNativeRoleMatrixCard } from "./IamNativeRoleMatrixCard";
@@ -50,17 +50,6 @@ export function IamRoleMatrixReferenceModal({
       }}
     >
       <div className="orcia-ds-dialog-body">
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <OrciaButton
-            variant="secondary"
-            size="sm"
-            testId="iam-close-role-matrix-modal-btn"
-            onClick={onClose}
-          >
-            <OrciaIcon name="close" size={14} />
-            <span>{labels.matrix.closeRoleMatrixCta || "Fermer"}</span>
-          </OrciaButton>
-        </div>
         <IamNativeRoleMatrixCard
           roleMatrix={roleMatrix}
           labels={labels}

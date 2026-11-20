@@ -550,11 +550,11 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "summary": "Pré-implémentation (ready-for-dev, recadrée Step 2a) : prérequis 23.1..23.5 + 23.6a 100 % verts AD-17, exécution figée Desktop --project=desktop-cockpit (52 exécutés + 3 mobile-only skipped), archivage playwright-results.json, manifest.jsonl et 55/55 PNG Desktop, bilan bilan-execution-tests-e2e-epic-23.md, audit croisé Sally × Winston, bascule PLAYWRIGHT_RESULTS_PATH, mise à jour honnête capabilities.yaml (CAP-042 maintenue failed_e2e vers ACTION_ITEM-23.6) et pnpm site:sync && pnpm site:check."
     },
     {
-      "date": "2026-11-19",
+      "date": "2026-11-20",
       "phaseOrStory": "Story 23.6a",
       "reportFile": "23-6a-durcissement-anti-goodhart-gardes-openapi-ast-geometrie-et-reset-pg18-tech-lead-report.md",
       "domain": "CAP-100 (hygiène) — Durcissement Anti-Goodhart : Reset PG18 Dynamique, OpenAPI security, Audits AST (catch, SQL domaine, jargon) & Contrats Géométriques Desktop",
-      "summary": "Pré-implémentation (ready-for-dev, Step 2a Epic 23) : introspection dynamique information_schema.tables/pg_constraint dans reset_day0.py/09_reset_db_first_boot.py, enforcement operation.security + interdiction AST fetch/EventSource, détection AST catch muets & constantes fantômes, durcissement SQL domaine (55/55 blocs E2E), regex structurelles anti-jargon, contrats géométriques Direction C (layoutGeometryAssertions.ts + captureMilestoneScreenshot), Chaîne Canari Desktop & Tir de reconnaissance Desktop V0."
+      "summary": "Clôture (done, validé APPROVED Round 2 par 23.6a-validate) : introspection dynamique _first_boot_reset_guards.py (information_schema.tables/pg_constraint, dbos.* == 0, Redis DBSIZE == 0, 95–97 % couv.), openapi_security.py (100 % couv., BearerAuth sur 253 routes + middleware main.py & role-matrix), audit AST fetch/EventSource, catch silencieux & constantes fantômes, SQL domaine (55/55 blocs + auto-tests négatifs), 5 regex structurelles anti-jargon, contrats géométriques Direction C (layoutGeometryAssertions.ts, directionCSobrietyAssertions.ts, 18 modales dédupliquées, captureMilestoneScreenshot < 440 KB), 96 % couv. Python ciblée (PG18+Redis testcontainers), 953 tests Python (Schemathesis 0 fail), 9/9 Turbo (20+109+218), lint-imports 5/5, 0-diff OpenAPI, lint_spine 0, et Tir Desktop 24 specs / 55 scénarios (44 passed / 7 failed / 1 timedOut / 3 skipped sans régression 23.6a)."
     },
     {
       "date": "2026-11-19",

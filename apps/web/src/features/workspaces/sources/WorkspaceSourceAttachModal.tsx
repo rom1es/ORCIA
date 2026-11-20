@@ -144,6 +144,7 @@ export function WorkspaceSourceAttachModal({
       title={editingDatasource ? copy.editTitle : copy.createTitle}
       description={copy.description}
       testId="workspace-source-attach-modal"
+      hideHeaderCloseButton
     >
       <form
         autoComplete="off"

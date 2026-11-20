@@ -53,13 +53,9 @@ export function UserProfileRouteView(): React.ReactElement {
       createOrciaApiClient({
         baseUrl: "",
         locale,
-        fetchImpl: (input, init) => {
-          const headers = new Headers(init?.headers);
-          if (readOnlyObserver) {
-            headers.set("X-Orcia-Access-Mode", "READ_ONLY_OBSERVER");
-          }
-          return globalThis.fetch(input, { ...init, headers });
-        },
+        ...(readOnlyObserver
+          ? { extraHeaders: { "X-Orcia-Access-Mode": "READ_ONLY_OBSERVER" } }
+          : {}),
       }),
     [locale, readOnlyObserver],
   );

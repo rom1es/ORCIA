@@ -1696,8 +1696,10 @@ export function loadPersistedWorkflowsV2(): WorkflowDefinitionV2Item[] {
           return parsed;
         }
       }
-    } catch {
-      // Fallback to memory or initial
+    } catch (err: unknown) {
+      if (typeof console !== "undefined") {
+        console.debug("[orcia:workflowsV2.load]", err instanceof Error ? err.message : String(err));
+      }
     }
   }
   return memoryFallbackWorkflows ?? INITIAL_WORKFLOWS_V2;
@@ -1714,8 +1716,10 @@ export function savePersistedWorkflowV2(updated: WorkflowDefinitionV2Item): Work
   if (typeof window !== "undefined" && typeof window.localStorage?.setItem === "function") {
     try {
       window.localStorage.setItem(WORKFLOWS_STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      // Memory fallback already updated
+    } catch (err: unknown) {
+      if (typeof console !== "undefined") {
+        console.debug("[orcia:workflowsV2.save]", err instanceof Error ? err.message : String(err));
+      }
     }
   }
   return next;

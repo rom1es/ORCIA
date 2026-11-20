@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { openSettingsTabViaUi } from "./authAndOrgHelpers";
+import { getBearerTokenFromSession, openSettingsTabViaUi } from "./authAndOrgHelpers";
 import { queryDbRows } from "./dbAssertions";
 import { createBuAndTeamViaUi, createWorkspaceViaUi } from "./orgAndWorkspace";
 import { apiGet } from "./typedApiRequest";
@@ -28,13 +28,14 @@ export async function resolveWorkspaceIds(
   name: string,
   slug?: string,
 ): Promise<{ readonly uiWorkspaceId: string; readonly pgWorkspaceId: string }> {
+  const token = await getBearerTokenFromSession(page);
   let uiWorkspaceId = "";
   await expect
     .poll(
       async () => {
         const res = await apiGet<{
           workspaces?: Array<{ workspaceId?: string; id?: string; slug?: string; name?: string }>;
-        }>(page, "/api/v1/bootstrap/platform-setup-state");
+        }>(page, "/api/v1/bootstrap/platform-setup-state", { token });
         if (!res.ok()) return "";
         const body = await res.json();
         const found = (body.workspaces ?? []).find(

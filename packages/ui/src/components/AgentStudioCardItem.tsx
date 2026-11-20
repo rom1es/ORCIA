@@ -7,37 +7,14 @@ import {
   type UiAgentPosture,
 } from "./AgentGovernanceTypesAndDefaults";
 import type {
-  AgentsAndSkillsManagerLabels,
   UiAgentSkillVisibilityScope,
   UiAgentThinkingLevel,
-  UiManagedAgentItem,
-  UiManagedSkillItem,
 } from "./AgentsAndSkillsManagerView";
+import type { AgentStudioCardItemProps } from "./AgentStudioCardTypes";
 import { FormattedMarkdownContent } from "./FormattedMarkdownContent";
 import { OrciaIcon } from "./icons";
 
-export interface AgentStudioCardItemProps {
-  readonly agent: UiManagedAgentItem;
-  readonly skills: readonly UiManagedSkillItem[];
-  readonly labels: AgentsAndSkillsManagerLabels;
-  readonly testInputValue?: string;
-  readonly onChangeTestInput?: (agentId: string, nextValue: string) => void;
-  readonly onToggleAgentSkill?: (agentId: string, skillId: string, nextChecked: boolean) => void;
-  readonly onExecuteAgent?: (agentId: string, prompt: string) => void;
-  readonly onDeleteAgent: (agentId: string) => void;
-  readonly onDuplicateAgent?: (agent: UiManagedAgentItem) => void;
-  readonly onToggleAgentEnabled?: (agentId: string, nextEnabled: boolean) => void;
-  readonly onOpenDetailModal?: (agent: UiManagedAgentItem) => void;
-  readonly onUpdateAgentThinkingLevel?: (
-    agentId: string,
-    nextThinkingLevel: UiAgentThinkingLevel,
-  ) => void;
-  readonly onUpdateAgentVisibility?: (
-    agentId: string,
-    nextVisibility: UiAgentSkillVisibilityScope,
-  ) => void;
-  readonly onUseAgentInAssistant?: (agent: UiManagedAgentItem) => void;
-}
+export type { AgentStudioCardItemProps };
 
 export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
   agent,
@@ -89,7 +66,11 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
 
   const handleCopyHandle = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-      void navigator.clipboard.writeText(agent.handle).catch(() => undefined);
+      void navigator.clipboard.writeText(agent.handle).catch((err: unknown) => {
+        if (typeof console !== "undefined") {
+          console.debug("[orcia:clipboard]", err instanceof Error ? err.message : String(err));
+        }
+      });
     }
     setCopiedHandle(true);
   };

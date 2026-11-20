@@ -1,5 +1,6 @@
 /** @uj UJ-9, UJ-14, UJ-18 | @cap CAP-050, CAP-067, CAP-080 */
 import { expect, test } from "./support/e2eCaptureFixture";
+import { getBearerTokenFromSession } from "./support/authAndOrgHelpers";
 import { expectDbRowExists } from "./support/dbAssertions";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi } from "./support/firstAdmin";
@@ -20,12 +21,14 @@ test.describe("TEST-05 · 07 — Mes Espaces : organisation, espace de travail e
     await createWorkspaceViaUi(page, "Espace E2E Comptabilité", "espace-e2e-compta");
 
     // Persistance côté serveur (PostgreSQL) — et non seulement dans le navigateur.
+    const adminToken = await getBearerTokenFromSession(page);
     await expect
       .poll(
         async () => {
           const res = await apiGet<{ org_units: unknown[]; workspaces: unknown[] }>(
             page,
             "/api/v1/bootstrap/platform-setup-state",
+            { token: adminToken },
           );
           const body = await res.json();
           return { orgUnits: body.org_units.length, workspaces: body.workspaces.length };

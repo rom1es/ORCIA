@@ -118,6 +118,7 @@ export function IamAccountModal({
       description={dir.modalDescription}
       testId="iam-account-modal"
       closeLabel={dir.cancelButton}
+      hideHeaderCloseButton
     >
       <form
         data-testid="iam-account-modal-form"

@@ -45,14 +45,18 @@ export async function vitestFetchTransport(
     headers: capturedHeadersObj,
   });
 
-  // Fail-Closed OpenAPI 3.1 contract validation (path, method, UUID format, required, extra="forbid")
-  validateRequestAgainstOpenApi({
+  // Fail-Closed OpenAPI 3.1 contract validation (path, method, UUID, required, extra="forbid", security)
+  const securityFailureResponse = validateRequestAgainstOpenApi({
     method,
     parsedUrl,
     body,
     hasRawBody,
     isMultipart,
+    headers: reqHeaders,
   });
+  if (securityFailureResponse) {
+    return securityFailureResponse;
+  }
 
   const authResp = handleAuthAndBootstrapRoute({ path, method, body });
   if (authResp) return authResp;

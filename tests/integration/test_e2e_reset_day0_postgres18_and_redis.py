@@ -399,6 +399,110 @@ async def test_e2e_reset_day0_truncates_cascade_protects_schemes_flushes_redis_a
             assert auth_row[2] is None
             assert UUID(str(auth_row[3])) != UUID(old_boot_epoch)
 
+            # 5. Inspect pg_constraint ON DELETE RESTRICT refs & dbos.* runtime tables emptied
+            restrict_fk_rows = (
+                await conn.execute(
+                    sa.text(
+                        """
+                        SELECT cl.relname, c.conname
+                        FROM pg_constraint c
+                        JOIN pg_class cl ON cl.oid = c.conrelid
+                        WHERE c.contype = 'f' AND c.confdeltype = 'r'
+                          AND c.connamespace = 'public'::regnamespace
+                        """
+                    )
+                )
+            ).fetchall()
+            restrict_tables = {str(r[0]) for r in restrict_fk_rows}
+            assert "blackboard_snapshots" in restrict_tables
+
+            dbos_runtime_rows = (
+                await conn.execute(
+                    sa.text(
+                        """
+                        SELECT table_name
+                        FROM information_schema.tables
+                        WHERE table_schema = 'dbos'
+                          AND table_type = 'BASE TABLE'
+                          AND table_name NOT IN (
+                              'dbos_migrations',
+                              'dbos_datasource_migrations',
+                              'alembic_version'
+                          )
+                        ORDER BY table_name ASC
+                        """
+                    )
+                )
+            ).fetchall()
+            for (dbos_table,) in dbos_runtime_rows:
+                dbos_cnt = int(
+                    (
+                        await conn.execute(sa.text(f'SELECT COUNT(*) FROM "dbos"."{dbos_table}"'))
+                    ).scalar_one()
+                )
+                assert dbos_cnt == 0, (
+                    f"Expected dbos.{dbos_table} empty after reset, got {dbos_cnt}"
+                )
+
+        # 6. Dynamic PG18 orphan table detection via information_schema.tables -> RuntimeError
+        async with engine.begin() as conn:
+            await conn.execute(
+                sa.text("CREATE TABLE public.tmp_orphan_alembic_23_6a (id uuid PRIMARY KEY)")
+            )
+        try:
+            with pytest.raises(RuntimeError, match="Tables Alembic orphelines"):
+                await reset_first_boot_mod.reset_database_to_first_boot(engine, apply_changes=False)
+        finally:
+            async with engine.begin() as conn:
+                await conn.execute(sa.text("DROP TABLE IF EXISTS public.tmp_orphan_alembic_23_6a"))
+
+        clean_dry_run = await reset_first_boot_mod.reset_database_to_first_boot(
+            engine, apply_changes=False
+        )
+        assert clean_dry_run.dry_run is True
+        assert clean_dry_run.remaining_users_count == 0
+
+        # 7. `09_reset_db_first_boot.py --apply` commits on mutable state + flushes Redis
+        async with engine.begin() as conn:
+            tmp_org = new_uuid7_str()
+            tmp_usr = new_uuid7_str()
+            await conn.execute(
+                sa.text(
+                    """
+                    INSERT INTO org_units (
+                        id, slug, name, unit_type, lead_user_ids_jsonb, member_user_ids_jsonb
+                    )
+                    VALUES (
+                        CAST(:id AS uuid), 'org-apply-23-6a', 'Org Apply 23.6a',
+                        'ENTERPRISE', '[]'::jsonb, '[]'::jsonb
+                    )
+                    """
+                ),
+                {"id": tmp_org},
+            )
+            await conn.execute(
+                sa.text(
+                    """
+                    INSERT INTO users (
+                        id, email, display_name, auth_mode,
+                        human_profile_archetype, platform_role, primary_org_unit_id
+                    )
+                    VALUES (
+                        CAST(:id AS uuid), 'apply.23.6a@orcia.ia', 'Apply 23.6a',
+                        'LOCAL', 'TECH_LEAD', 'PLATFORM_ADMIN', CAST(:org_id AS uuid)
+                    )
+                    """
+                ),
+                {"id": tmp_usr, "org_id": tmp_org},
+            )
+        redis_client.set("ephemeral:apply:23-6a", "1")
+        committed_report = await reset_first_boot_mod.reset_database_to_first_boot(
+            engine, apply_changes=True
+        )
+        assert committed_report.committed is True
+        assert committed_report.dry_run is False
+        assert committed_report.remaining_users_count == 0
+        assert committed_report.deleted_rows_total >= 2
         assert int(redis_client.dbsize()) == 0
     finally:
         redis_client.close()

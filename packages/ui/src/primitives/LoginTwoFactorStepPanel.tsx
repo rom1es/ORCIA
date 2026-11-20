@@ -59,8 +59,11 @@ export function LoginTwoFactorStepPanel({
     try {
       await navigator.clipboard?.writeText(step.totpManualKey);
       setCopiedKey(true);
-    } catch {
+    } catch (err: unknown) {
       setCopiedKey(false);
+      if (typeof console !== "undefined") {
+        console.debug("[orcia:2fa-clipboard]", err instanceof Error ? err.message : String(err));
+      }
     }
   };
 

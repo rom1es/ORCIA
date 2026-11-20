@@ -10,6 +10,10 @@ import {
 } from "@orcia/ui";
 import { useEffect, useRef, useState } from "react";
 import {
+  buildThreeSpeedTurnRequestPayload,
+  pollActiveAssistantTurnUntilDone,
+} from "./assistantTurnPayloadHelper";
+import {
   addBgTimer,
   bgSnapshot,
   buildConversationHistoryPayload,
@@ -100,7 +104,8 @@ export function useAssistantStreamingTurn({
     void client
       .stopActiveAssistantTurn({ workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301" })
       .catch((err: unknown) => {
-        const detail = err instanceof Error ? err.message : "";
+        const detail = err instanceof Error ? err.message : String(err);
+        console.warn("[orcia:assistant.stopActiveTurn]", detail);
         if (detail) updateBgSnapshot({ generationStopped: true });
       });
   };
@@ -175,29 +180,21 @@ export function useAssistantStreamingTurn({
       addBgTimer(setTimeout(() => advanceStep(2), 2600));
     }
 
-    const attachmentContext =
-      attachedFiles && attachedFiles.length > 0
-        ? "\n\n[Pièces jointes fournies par l'utilisateur]\n" +
-          attachedFiles.map((f) => `- ${f.name}${f.uri ? ` (${f.uri})` : ""}${f.contentExcerpt ? ` : ${f.contentExcerpt}` : ""}`).join("\n")
-        : "";
     const workspaceIdValue = activeWorkspaceId || "0195f000-0000-7000-8000-000000000301";
-    const requestPayload = {
-      workspace_id: workspaceIdValue,
-      hat: activeHat,
-      user_prompt: `${userPrompt}${attachmentContext}`,
-      requested_speed: requestedSpeed,
-      deep_audit_pill_active: deepAuditPillActive,
-      requested_tier: effectiveTier,
-      thinking_effort: (effectiveEffort === "default" ? "balanced" : effectiveEffort) as "fast" | "balanced" | "deep",
-      conversation_history: historyPayload,
-      ...(activeFolder?.folderId ? { folder_id: activeFolder.folderId } : {}),
-      ...(pinnedNotes ? { folder_pinned_notes: pinnedNotes } : {}),
-      ...(governancePrefs?.responseTone ? { response_tone: governancePrefs.responseTone } : {}),
-      ...(governancePrefs?.favoriteFormat ? { response_format: governancePrefs.favoriteFormat } : {}),
-      ...(governancePrefs?.personalInstructions ? { personal_instructions: governancePrefs.personalInstructions } : {}),
-      ...(governancePrefs?.workspaceInstructions ? { workspace_instructions: governancePrefs.workspaceInstructions } : {}),
-      locale: isFr ? "fr" : "en",
-    };
+    const requestPayload = buildThreeSpeedTurnRequestPayload({
+      workspaceIdValue,
+      activeHat,
+      userPrompt,
+      ...(attachedFiles ? { attachedFiles } : {}),
+      requestedSpeed,
+      deepAuditPillActive,
+      effectiveTier,
+      effectiveEffort,
+      historyPayload,
+      activeFolder,
+      ...(governancePrefs ? { governancePrefs } : {}),
+      isFr,
+    });
 
     const client = createOrciaApiClient({ baseUrl: "", locale: isFr ? "fr" : "en" });
     let latestThinking = "";
@@ -240,33 +237,21 @@ export function useAssistantStreamingTurn({
       }
     };
 
-    const pollActiveBackendTurnUntilDone = async () => {
-      for (let attempt = 0; attempt < 150; attempt += 1) {
-        if (controller.signal.aborted || completedHandled) return;
-        try {
-          const snap = await client.getActiveAssistantTurnStatus(workspaceIdValue);
-          if (snap.thinking_text) latestThinking = snap.thinking_text;
-          if (snap.streamed_text) {
-            latestReply = sanitizeAssistantDisplayReply(snap.streamed_text);
-            updateBgSnapshot({ streamedText: latestReply });
-          }
-          if (snap.status === "COMPLETED" && snap.streamed_text) {
-            finalizeCompletedTurn({
-              ...(snap.turn_id ? { turnId: snap.turn_id } : {}),
-              replyText: snap.streamed_text,
-              thinkingText: snap.thinking_text || latestThinking,
-              assembledSystemPrompt: snap.assembled_system_prompt || "",
-              latencyMs: snap.elapsed_ms,
-            });
-            return;
-          }
-          if (snap.status === "STOPPED" || snap.status === "ERROR" || snap.status === "IDLE") return;
-        } catch {
-          break;
-        }
-        await new Promise((r) => setTimeout(r, 1000));
-      }
-    };
+    const runFallbackPolling = () =>
+      pollActiveAssistantTurnUntilDone({
+        signal: controller.signal,
+        isCompletedHandled: () => completedHandled,
+        fetchStatus: () => client.getActiveAssistantTurnStatus(workspaceIdValue),
+        onThinking: (txt) => {
+          latestThinking = txt;
+        },
+        onStreamedText: (reply) => {
+          latestReply = reply;
+          updateBgSnapshot({ streamedText: reply });
+        },
+        onCompleted: (done) => finalizeCompletedTurn(done),
+        getLatestThinking: () => latestThinking,
+      });
 
     void client
       .streamAssistantTurnSse(requestPayload, {
@@ -325,7 +310,7 @@ export function useAssistantStreamingTurn({
         if (controller.signal.aborted) return;
         const httpStatus = extractHttpErrorStatus(err);
         if (httpStatus !== 401 && httpStatus !== 403) {
-          await pollActiveBackendTurnUntilDone();
+          await runFallbackPolling();
         }
         if (completedHandled || controller.signal.aborted) return;
         const classified = classifyAssistantStreamError(err, isFr, streamErrorLabels);

@@ -178,5 +178,8 @@ def test_alembic_migration_6_4_and_reset_script_registration() -> None:
     assert "DROP TABLE IF EXISTS finops_connector_quotas" in src
 
     reset_path = REPO_ROOT / "infra" / "scripts" / "maintenance" / "09_reset_db_first_boot.py"
-    reset_src = reset_path.read_text(encoding="utf-8")
+    guards_path = REPO_ROOT / "infra" / "scripts" / "maintenance" / "_first_boot_reset_guards.py"
+    reset_src = (
+        reset_path.read_text(encoding="utf-8") + "\n" + guards_path.read_text(encoding="utf-8")
+    )
     assert '"finops_connector_quotas"' in reset_src

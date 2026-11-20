@@ -94,12 +94,34 @@ export async function fetchAndBuildHydrationOutcome(params: {
   readonly isAuthenticated: boolean;
 }): Promise<HydrationOutcome> {
   const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
-  const [status, remoteState, remoteOrgUnitsResp, remoteIamGrantsResp] = await Promise.all([
-    client.getAccostageStatus(),
-    params.isAuthenticated ? client.getPlatformSetupState().catch(() => null) : Promise.resolve(null),
-    params.isAuthenticated ? client.listOrgUnits().catch(() => null) : Promise.resolve(null),
-    params.isAuthenticated ? client.listIamGrants().catch(() => null) : Promise.resolve(null),
-  ]);
+  const status = await client.getAccostageStatus();
+  const [setupSettled, orgUnitsSettled, iamGrantsSettled] = params.isAuthenticated
+    ? await Promise.allSettled([
+        client.getPlatformSetupState(),
+        client.listOrgUnits(),
+        client.listIamGrants(),
+      ])
+    : ([
+        { status: "rejected", reason: null },
+        { status: "rejected", reason: null },
+        { status: "rejected", reason: null },
+      ] as const);
+  if (params.isAuthenticated) {
+    const queryNames = ["getPlatformSetupState", "listOrgUnits", "listIamGrants"] as const;
+    [setupSettled, orgUnitsSettled, iamGrantsSettled].forEach((settled, idx) => {
+      if (settled.status === "rejected") {
+        console.warn(`[orcia:hydration.${queryNames[idx]}]`, settled.reason);
+      }
+    });
+    if (setupSettled.status === "rejected") {
+      throw setupSettled.reason instanceof Error
+        ? setupSettled.reason
+        : new Error("Échec d'hydratation de l'état plateforme.");
+    }
+  }
+  const remoteState = setupSettled.status === "fulfilled" ? setupSettled.value : null;
+  const remoteOrgUnitsResp = orgUnitsSettled.status === "fulfilled" ? orgUnitsSettled.value : null;
+  const remoteIamGrantsResp = iamGrantsSettled.status === "fulfilled" ? iamGrantsSettled.value : null;
 
   if (syncBrowserBootEpoch(status.boot_epoch)) {
     return { kind: "BOOT_EPOCH_RESET" };

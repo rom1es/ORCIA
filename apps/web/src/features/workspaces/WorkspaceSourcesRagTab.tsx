@@ -17,6 +17,7 @@ import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { useI18n } from "../../i18n";
 import { WorkspaceSourcesMasterTable } from "./sources/WorkspaceSourcesMasterTable";
 import { WorkspaceSourceAttachModal } from "./sources/WorkspaceSourceAttachModal";
+import { mapFallbackWorkspaceDatasources } from "./sources/WorkspaceSourcesFallbackHelper";
 
 export interface WorkspaceSourcesRagTabProps {
   readonly isFr?: boolean;
@@ -40,41 +41,9 @@ export function WorkspaceSourcesRagTab({
   const openUserSettingsModalAtTab = useAuthSessionStore((s) => s.openUserSettingsModalAtTab);
 
   const wsId = activeWorkspace.workspaceId || "";
-  const [datasources, setDatasources] = useState<readonly WorkspaceDatasourceItemResponse[]>(() => {
-    if (fallbackDatasources.length > 0) {
-      return fallbackDatasources
-        .filter((d) => d.workspaceName === activeWorkspace.name)
-        .map((d) => ({
-          id: d.id,
-          workspace_id: wsId,
-          alias: d.alias,
-          scheme: d.scheme,
-          uri: d.uri,
-          connector_id: null,
-          sync_identity_mode: d.executionIdentity === "service_account" ? "SERVICE_ACCOUNT" : "TEAM_REFERENT_USER",
-          service_account_id: null,
-          referent_user_id: null,
-          sync_status: "ACTIVE",
-          sync_status_reason: null,
-          source_nature: "DOCUMENT_KB",
-          sync_mode: "POLLING_24H",
-          target_scope: null,
-          target_ref: null,
-          last_sync_at_iso: null,
-          last_probe_at_iso: null,
-          fingerprint_hash: null,
-          freshness_status: "PENDING_INITIAL_SYNC",
-          codegraph_enabled: false,
-          codegraph_auth_mode: "SERVICE_ACCOUNT",
-          codegraph_owner_user_id: null,
-          codegraph_status: "DISABLED",
-          codegraph_last_indexed_at_iso: null,
-          codegraph_head_sha: null,
-          created_at_iso: "",
-        }));
-    }
-    return [];
-  });
+  const [datasources, setDatasources] = useState<readonly WorkspaceDatasourceItemResponse[]>(() =>
+    mapFallbackWorkspaceDatasources(fallbackDatasources, activeWorkspace.name, wsId),
+  );
   const [connectors, setConnectors] = useState<readonly EnterpriseConnectorItemResponse[]>([]);
   const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
   const [editingDatasource, setEditingDatasource] = useState<WorkspaceDatasourceItemResponse | null>(null);
@@ -105,7 +74,11 @@ export function WorkspaceSourcesRagTab({
       ]);
       setDatasources(dsRes.items);
       setConnectors(connRes.items);
-    } catch {
+    } catch (err: unknown) {
+      console.warn(
+        "[orcia:workspaceSources.loadData]",
+        err instanceof Error ? err.message : String(err),
+      );
       if (fallbackDatasources.length > 0) {
         setDatasources(
           fallbackDatasources
@@ -227,8 +200,8 @@ export function WorkspaceSourcesRagTab({
       setNewReferentInput("");
       showFeedback(isFr ? "Référent renouvelé." : "Referent renewed.");
       await loadData();
-    } catch {
-      showFeedback(isFr ? "Erreur de renouvellement." : "Renewal error.");
+    } catch (err: unknown) {
+      showFeedback(`⚠️ ${err instanceof Error ? err.message : isFr ? "Erreur de renouvellement." : "Renewal error."}`);
     }
   };
 

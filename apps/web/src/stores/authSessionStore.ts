@@ -202,8 +202,8 @@ export const useAuthSessionStore = create<AuthSessionStoreState>((set, get) => (
     const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
     try {
       await client.logoutSession();
-    } catch {
-      // Best-effort
+    } catch (err: unknown) {
+      console.warn("[orcia:auth.logoutSession]", err instanceof Error ? err.message : String(err));
     }
     set({
       ...UNAUTHENTICATED_SESSION_STATE,
@@ -239,7 +239,15 @@ export const useAuthSessionStore = create<AuthSessionStoreState>((set, get) => (
               baseUrl: resolveWebApiBaseUrl(),
               accessToken: tokenRes.access_token,
             });
-            const me = await authedClient.getMe().catch(() => null);
+            let me: Awaited<ReturnType<typeof authedClient.getMe>> | null = null;
+            try {
+              me = await authedClient.getMe();
+            } catch (err: unknown) {
+              console.warn(
+                "[orcia:auth.hydrate_getMe]",
+                err instanceof Error ? err.message : String(err),
+              );
+            }
             const roles =
               tokenRes.roles && tokenRes.roles.length > 0
                 ? tokenRes.roles
@@ -265,7 +273,8 @@ export const useAuthSessionStore = create<AuthSessionStoreState>((set, get) => (
         })();
 
         await Promise.race([hydrationWork, timeoutPromise]);
-      } catch {
+      } catch (err: unknown) {
+        console.warn("[orcia:auth.hydrateSession]", err instanceof Error ? err.message : String(err));
         set({
           ...UNAUTHENTICATED_SESSION_STATE,
           isHydrating: false,

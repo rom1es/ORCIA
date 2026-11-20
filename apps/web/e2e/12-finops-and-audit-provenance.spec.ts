@@ -2,7 +2,7 @@
 import { expect, test } from "./support/e2eCaptureFixture";
 import { expectDbRowExists } from "./support/dbAssertions";
 import { resetDay0 } from "./support/day0";
-import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
+import { createFirstAdminViaUi } from "./support/firstAdmin";
 import {
   expectZeroVisibleErrorBanners,
   watchUnexpectedPageAndApiErrors,
@@ -88,6 +88,12 @@ test.describe("TEST-06 · 12 — FinOps Gouvernance, Services externes & Journal
     await expectZeroVisibleErrorBanners(page);
     await assertNoHorizontalOverflow(page, "mobile /finops");
 
+    await page.getByTestId("finops-configure-budget-btn").click();
+    await expect(page.getByTestId("finops-budget-modal")).toBeVisible();
+    await page.getByTestId("finops-budget-monthly-limit").fill("250");
+    await page.getByTestId("finops-budget-save-btn").click();
+    await expect(page.getByTestId("finops-success-banner")).toBeVisible({ timeout: 15000 });
+
     await page.goto("/activity");
     await expect(page.getByTestId("four-zone-central-workspace")).toBeVisible({ timeout: 30000 });
     await expect(page.getByTestId("activity-log-explorer-page")).toBeVisible({ timeout: 15000 });
@@ -96,9 +102,9 @@ test.describe("TEST-06 · 12 — FinOps Gouvernance, Services externes & Journal
     await assertNoHorizontalOverflow(page, "mobile /activity");
 
     expectDbRowExists(
-      "SELECT id, email, platform_role FROM users WHERE email = :email AND platform_role = 'PLATFORM_ADMIN'",
-      { email: E2E_ADMIN.email },
-      "admin Jour 0 présent dans users PG18 lors du parcours FinOps/Activity mobile",
+      "SELECT id, scope_type, monthly_budget_usd FROM finops_scope_budgets WHERE scope_type = :scope_type AND monthly_budget_usd > 0",
+      { scope_type: "GLOBAL" },
+      "plafond budgétaire GLOBAL persisté sur mobile dans finops_scope_budgets PG18",
     );
     alertProbe.assertNoUnexpectedHttpErrors();
     expect(errors, errors.join("\n")).toEqual([]);

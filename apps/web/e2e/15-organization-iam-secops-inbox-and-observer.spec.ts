@@ -106,7 +106,7 @@ test.describe("Organisation, annuaire IAM, exceptions SecOps, notifications et m
 
     await page.getByTestId("iam-open-role-matrix-modal-btn").click();
     await expect(page.getByTestId("iam-role-matrix-modal")).toBeVisible({ timeout: 10000 });
-    await page.getByTestId("iam-close-role-matrix-modal-btn").click();
+    await page.getByTestId("iam-role-matrix-modal-close-btn").click();
     await expect(page.getByTestId("iam-role-matrix-modal")).toBeHidden();
 
     await page.getByTestId("iam-secops-drawer-toggle").click();

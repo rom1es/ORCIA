@@ -43,6 +43,7 @@ describe("Auth, Incognito Navigation, Logout & Temporary Password Warning Banner
       email: "nouveau.collaborateur@orcia.fr",
       display_name: "Nouveau Collaborateur",
       roles: ["CONTRIBUTOR"],
+      access_token: "mock-vitest-access-token",
       mustChangePassword: true,
     });
 
@@ -134,6 +135,7 @@ describe("Auth, Incognito Navigation, Logout & Temporary Password Warning Banner
       email: "romain@orcia.fr",
       display_name: "Romain Admin",
       roles: ["PLATFORM_ADMIN"],
+      access_token: "mock-vitest-access-token",
       mustChangePassword: false,
     });
 
@@ -262,6 +264,7 @@ describe("Auth, Incognito Navigation, Logout & Temporary Password Warning Banner
       email: "admin@orcia.test",
       display_name: "Admin Test",
       roles: ["PLATFORM_ADMIN"],
+      access_token: "mock-vitest-access-token",
       mustChangePassword: false,
     });
 

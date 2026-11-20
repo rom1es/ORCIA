@@ -39,8 +39,8 @@ export const INBOX_AND_COCKPIT_FR_LABELS: InboxAndCockpitDictionarySection = {
     observerBannerDefault:
       "👁️ Mode Consultation Seule — Vous suivez cette exécution sans pouvoir la modifier",
     guidanceDrawer: {
-      drawerTitle: "Guide de Mise en Route en 5 Étapes",
-      toggleExpand: "Afficher les 5 étapes",
+      drawerTitle: "Guide de Mise en Route (Accostage 6 Étapes)",
+      toggleExpand: "Afficher le guide d'accostage",
       toggleCollapse: "Replier le guide",
       commandPrefix: "Étape",
     },
@@ -169,8 +169,8 @@ export const INBOX_AND_COCKPIT_EN_LABELS: InboxAndCockpitDictionarySection = {
     observerBannerDefault:
       "👁️ Read-Only Mode — You are following this execution without edit permissions",
     guidanceDrawer: {
-      drawerTitle: "5-Step Getting Started Guide",
-      toggleExpand: "Show 5 steps",
+      drawerTitle: "6-Step Getting Started Guide",
+      toggleExpand: "Show onboarding guide",
       toggleCollapse: "Hide guide",
       commandPrefix: "Step",
     },

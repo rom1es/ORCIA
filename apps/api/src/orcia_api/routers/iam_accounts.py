@@ -21,6 +21,7 @@ from orcia_api.dependencies import (
     get_iam_accounts_service,
     get_or_create_shared_db_engine,
 )
+from orcia_api.routers._auth_token_issuer import resolve_request_user
 from orcia_api.routers._iam_accounts_passwords import (
     enforce_iam_accounts_mutation_access,
     enforce_iam_accounts_read_access,
@@ -85,6 +86,7 @@ router = APIRouter(
     summary="Return the native 7-role permission matrix (`WRITE_ONLY_NEVER_READABLE`)",
 )
 async def get_iam_role_matrix(request: Request) -> RoleMatrixResponse:
+    resolve_request_user(request)
     entries = [
         RoleMatrixEntryResponse(
             role=d.role,

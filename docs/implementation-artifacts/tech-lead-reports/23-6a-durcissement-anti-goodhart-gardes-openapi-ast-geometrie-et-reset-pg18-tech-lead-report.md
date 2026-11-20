@@ -3,11 +3,11 @@
 > **Convention de nommage du fichier (Obligatoire — à créer AVANT toute modification de code)** :
 > - User Story du sprint : `docs/implementation-artifacts/tech-lead-reports/{story-key}-tech-lead-report.md`
 
-- **Date** : 2026-11-19
+- **Date** : 2026-11-20
 - **Story / Clé Sprint** : `23-6a-durcissement-anti-goodhart-gardes-openapi-ast-geometrie-et-reset-pg18` (`Epic 23` — Story intercalaire de durcissement Anti-Goodhart, prérequis bloquant `Story 23.7`)
 - **Capacité(s)** : `CAP-100` (hygiène — fermeture structurelle des contournements de gardes CI/E2E, transport OpenAPI `security`, introspection SQL dynamique et contrats géométriques Direction C) — classification : `hygiène`
-- **Auteur / Contexte** : `23.6a-doc-init` (Tech Lead `Amelia` × Architecte `Winston` × UX `Sally`, cadrage RCA Epic 22 — `AD-17`, `AD-19`, `NFR-TEST-1`, `DESIGN.md`, `GEMINI.md` §3). Story intercalaire insérée entre `23.5` et `23.7` suite au report de `Story 23.6` et du périmètre Mobile Companion (`--project=mobile-companion`, `390×844`, `CAP-042`) vers `action_items:` (`ACTION_ITEM-23.6`).
-- **Commits associés** : `En attente d'implémentation (initialisé en Step 2a Epic 23)`
+- **Auteur / Contexte** : `23.6a-impl` × `23.6a-test` × `23.6a-validate` (`da1450fc`, `pro` — verdict **`APPROVED`** Round 2), cadrage RCA Epic 22 (`AD-17`, `AD-19`, `NFR-TEST-1`, `DESIGN.md`, `GEMINI.md` §3). Story intercalaire insérée entre `23.5` et `23.7` suite au report de `Story 23.6` et du périmètre Mobile Companion (`--project=mobile-companion`, `390×844`, `CAP-042`) vers `action_items:` (`ACTION_ITEM-23.6`).
+- **Commits associés** : `feat/epic-23-remediation-pg18-sse-direction-c` (commit atomique Story `23.6a`)
 
 ---
 
@@ -90,18 +90,33 @@
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
-> *[En attente d'implémentation — Sections 1 & 2 initialisées en Step 2a Epic 23]*
-
 ### 3.1 Fichiers Développés & Modifiés
-| Fichier | Nature (Création / Modification / Refactoring) | Description synthétique |
+| Fichier | Nature | Description synthétique |
 | :--- | :--- | :--- |
-| `infra/scripts/{e2e/reset_day0.py,maintenance/09_reset_db_first_boot.py}` | Modification | *[À compléter : verrou Couche 2 introspection dynamique `information_schema.tables` & `pg_constraint`]* |
-| `apps/web/src/__tests__/{setup/*,vitest-transport-fail-closed-openapi.test.ts,zero-dead-buttons-and-silent-catches-audit.test.tsx,anti-jargon-and-secrets-ui-audit.test.ts}` | Modification / Création | *[À compléter : verrous Couche 1b `operation.security`, AST `fetch`/`EventSource`, `catch` muets, constantes fantômes, regex jargon]* |
-| `tests/unit/test_e2e_sql_coverage_audit.py` & `apps/web/e2e/**` | Modification | *[À compléter : verrou Couche 1a SQL domaine + verrou Couche 5 `layoutGeometryAssertions.ts` & `captureMilestoneScreenshot`]* |
+| `infra/scripts/maintenance/_first_boot_reset_guards.py` | Création | Socle DRY des tables protégées/mutables (`ORDERED_MUTABLE_TABLES_TO_CLEAR`), `quote_sql_ident`, `assert_no_append_only_restrict_refs` et `inspect_append_only_guards` (`tgenabled == 'O'`, `pg_constraint`). |
+| `infra/scripts/maintenance/09_reset_db_first_boot.py` & `infra/scripts/e2e/reset_day0.py` | Modification | Introspection dynamique `information_schema.tables` (rejet tables Alembic orphelines -> `RuntimeError`), `pg_constraint`, `dbos.* == 0`, Redis `DBSIZE == 0`, seeds `connector_schemes >= 7` & `declarative_pack_bundles >= 1`. |
+| `apps/api/src/orcia_api/openapi_security.py`, `apps/api/src/orcia_api/main.py` & `apps/api/src/orcia_api/routers/iam_accounts.py` | Création / Modification | Schéma `BearerAuth` sur `253` routes protégées vs `20` opérations publiques explicites, middleware Bearer fail-closed (`401 application/problem+json` sur routes `/api/*` protégées), `resolve_request_user` sur `GET /settings/iam/role-matrix` et régénération `packages/api-client/openapi.json` (`0-diff`). |
+| `packages/api-client/src/helpers.ts`, `packages/api-client/src/sseAndQueryHelpers.ts` & `packages/api-client/src/index.ts` | Création / Modification | Découpage modulaire `< 350` L et encapsulation unique `fetch` / SSE dans `@orcia/api-client`. |
+| `apps/web/src/__tests__/setup/{openApiRequestValidator.ts,transportAndOpenApiValidator.ts,astSilentCatchAndPhantomAudit.ts}` | Création / Modification | Validation `operation.security` (`401 application/problem+json` sans Bearer), parseur AST `catch {}`/`.catch(() => ...)` (dont `ParenthesizedExpression`) & constantes fantômes. |
+| `apps/web/src/__tests__/{no-direct-fetch-or-eventsource-audit.test.ts,vitest-transport-fail-closed-openapi.test.ts,zero-dead-buttons-and-silent-catches-audit.test.tsx,anti-jargon-and-secrets-ui-audit.test.ts}` | Création / Modification | Verrous AST anti-`fetch`/`EventSource`, anti-`catch` muets, anti-constantes fantômes, `5` regex structurelles anti-jargon (`HTTP_4XX_5XX`, `AT_SEMVER`, `UPPER_ARROW_CHAIN`, `ESC_SHORTCUT`, `SCREAMING_SNAKE_3SEG`), et auto-tests négatifs explicites. |
+| `apps/web/src/**` & `packages/ui/src/**` (`benignBrowserError.ts`, `RgaaModalDialog.tsx`, `18` modales dédupliquées, découpages `< 350` L) | Création / Modification | Suppression des `catch` silencieux, déduplication des boutons `Fermer`/`Annuler` sur `18` modales (dont `UserSettingsModalDialog`, `CommandPaletteModal`, `AutonomyContractModal`, `WorkflowTriggersModal`), découpages modulaires `< 350` L (`AgentAndSkillCreateForms`, `FormattedMarkdownContent`, `TopHeaderSearchCommand`, `UpstreamChallengeRewindModal`, `AssistantGovernanceModalAndStudio`, `CreateProcessFormDialogHelpers`). |
+| `apps/web/e2e/support/{directionCSobrietyAssertions.ts,layoutGeometryAssertions.ts,e2eCaptureFixture.ts,authAndOrgHelpers.ts,workspaceAndCatalogHelpers.ts}` & specs E2E (`00`, `02`, `05`, `07`, `10`–`15`, `19`, `shell`) | Création / Modification | Contrats géométriques Direction C (`<= 3` blocs cockpit, zéro troncature Zone 1/2/Accostage hors `.sr-only`, `<= 1` sélecteur espace Desktop, `<= 1` bouton fermer/annuler par modale, `0` placeholder `•`, fidélité Zone 4 `4` blocs), `captureMilestoneScreenshot` (`< 440 KB`), mise à niveau SQL domaine & tokens Bearer sur `07`/`workspaceAndCatalogHelpers`. |
+| `tests/unit/{test_openapi_security.py,test_first_boot_reset_guards.py,test_e2e_reset_day0_guard.py,test_e2e_sql_coverage_audit.py,test_story_6_4_connector_quota_isolation.py}` & `tests/integration/test_e2e_reset_day0_postgres18_and_redis.py` | Création / Modification | Tests unitaires OpenAPI `BearerAuth` + middleware `401`, auto-tests négatifs SQL domaine (`SELECT 1`, table alibi `users`, bloc sans SQL), et test PG18 + Redis `testcontainers` sur `create_app()` réel sans override (table orpheline dynamique -> `RuntimeError`, triggers `'O'`, `pg_constraint`, `dbos.* == 0`, Redis `DBSIZE == 0`, `--apply`). |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
-- **Couverture de tests** : *[À compléter après exécution de `Story 23.6a` ($\ge 90\%$ requis)]*
-- **Qualité statique & Architecture** : *[À compléter : `ruff`, `mypy --strict`, `lint-imports`, `pnpm turbo run lint typecheck test`, `pnpm site:check`]*
+- **Couverture Python `--branch` (`>= 90 %`, `57` tests unitaires + PG18/Redis `testcontainers`)** : **96 % global** (`openapi_security.py` : **100 %**, `reset_day0.py` : **96 %**, `09_reset_db_first_boot.py` : **95 %**, `_first_boot_reset_guards.py` : **97 %**).
+- **Pyramide Python (`unit + security + conformance + contract`)** : **`953` tests passed** (`0` échec, dont `Schemathesis` fuzzing `0` erreur `IgnoredAuth` / `0` 5xx).
+- **Qualité statique & Architecture** :
+  - `ruff check` & `ruff format --check` : **`0` erreur** (`857` fichiers formatés) ;
+  - `mypy --strict` : **`0` erreur** (`553` fichiers `packages/`+`apps/` & `3` scripts `infra/scripts/`) ;
+  - TypeScript E2E (`tsc --noEmit --strict --noUncheckedIndexedAccess` sur `e2e/*.spec.ts` & `e2e/support/*.ts`) : **`0` erreur** ;
+  - `lint-imports` : **`5/5` contrats KEPT** (`599` fichiers, `4 302` dépendances) ;
+  - `scripts/export_openapi.py --check` : **`0-diff`** ; `lint_spine.py` : **`0` finding** ; `pnpm site:sync && pnpm site:check` : **OK** (`65/65` capacités, `62/62` E2E, `20/20` UJ) ; `scripts/check_implementation_docs.py` : **OK**.
+- **Suite JS/TS Turborepo (`pnpm turbo run lint typecheck test --force --concurrency=2`)** : **`9/9` tâches vertes** (`@orcia/api-client` : `20` tests ; `@orcia/ui` : `30` fichiers / `109` tests ; `@orcia/web` : `55` fichiers / `218` tests).
 
-### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17` + 5 Garde-Fous de Câblage Vertical)
-- *[À compléter après validation complète des 4 verrous structurels, de la Chaîne Canari Desktop et du Tir de reconnaissance Desktop V0 avant lancement de `Story 23.7`]*
+### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17` + Round 2 `23.6a-validate`)
+- **Campagne Desktop Playwright (`24` specs / `55` scénarios, `--project=desktop-cockpit --retries=0 --max-failures=0 --timeout=35000`, sans `ORCIA_E2E_SEED_FIXTURES`)** :
+  - Décompte exact : **`44 passed / 7 failed / 1 timedOut / 3 skipped`** (`flaky: 0`, `13.0m`, `58` captures PNG `< 450 KB` vérifiées).
+  - **Chaîne Canari Desktop (`shell`, `00`, `01`, `02`, `03`, `04`, `05` desktop, `10`, `11`, `12-epic16`, `12-finops` desktop, `13` desktop, `14`)** : **100 % PASS** (`0` régression suite aux correctifs `[B1]`–`[B5]`, assertions géométriques Direction C & `four-zone-sidebar` incluses) ; `08`, `09`, `15`, `16`, `17` (`2/3`), `19` (`1/2`), `21` (`2/2`) également verts.
+  - Les `8` échecs (`06:23`, `07:16`, `17:181`, `18:19 timedOut`, `18:146`, `19:103`, `20:22`, `20:102`) correspondent exclusivement à des écarts Cluster B/C pré-existants hors périmètre `23.6a`, traités en `Story 23.7` / `Epic 24`.
+- **Verdict Architecte (`23.6a-validate`, `da1450fc`, `pro`)** : **`APPROVED`** en Round 2 après audit des correctifs `[B1]`–`[B5]`, de `playwright-results.json`, de `manifest.jsonl` et inspection visuelle des captures PNG Desktop.

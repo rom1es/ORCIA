@@ -73,6 +73,7 @@ import {
   type BinaryDownloadResult,
   type ListKnownOrgUsersParams,
   type ListOrgUnitsParams,
+  type OrciaApiClientConfig,
   type OrciaApiClientOptions,
   type SseEventHandler,
   type SseRequestParams,
@@ -139,6 +140,7 @@ export {
   type WorkspaceEventsSseOptions,
   type WorkspaceFiveTabsStatePayload,
   type WritableScopeOptionItem,
+  type OrciaApiClientConfig,
   type OrciaApiClientOptions,
 };
 

@@ -4,7 +4,8 @@ import { watchApiServerErrors } from "./support/apiErrors";
 import { resetDay0 } from "./support/day0";
 import { expectDbRowCount, expectDbRowExists } from "./support/dbAssertions";
 import { configureActiveEmbeddingModelViaApi } from "./support/embeddingModel";
-import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
+import { createFirstAdminViaUi } from "./support/firstAdmin";
+import { assertMaxOneDialogCloseOrCancelButton } from "./support/layoutGeometryAssertions";
 
 test.describe("TEST-06 · 10 — Recherche ⌘K à 2 vitesses", () => {
   test.beforeEach(async ({ page }, testInfo) => {
@@ -20,7 +21,10 @@ test.describe("TEST-06 · 10 — Recherche ⌘K à 2 vitesses", () => {
     await page.keyboard.press("Control+k");
     const palette = page.getByTestId("top-header-search-command");
     await expect(palette).toBeVisible();
+    await assertMaxOneDialogCloseOrCancelButton(page);
     await page.getByTestId("cmdk-search-input").fill("agents");
+    await expect(page.getByTestId("cmdk-results-list")).toBeVisible();
+    await expect(page.getByTestId("cmdk-scope-pills")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(palette).toBeHidden();
     expect(serverErrors, serverErrors.join("\n")).toEqual([]);
@@ -29,11 +33,6 @@ test.describe("TEST-06 · 10 — Recherche ⌘K à 2 vitesses", () => {
       undefined,
       1,
       "entrées catalogue indexables présentes dans catalog_items PG18",
-    );
-    expectDbRowExists(
-      "SELECT id, email FROM users WHERE email = :email",
-      { email: E2E_ADMIN.email },
-      "session admin présente dans users PG18",
     );
   });
 

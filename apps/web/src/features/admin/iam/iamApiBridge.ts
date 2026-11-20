@@ -99,18 +99,13 @@ export function mapGrantDtoToConfigured(dto: RolePermissionGrantResponse): Confi
 
 function buildIamClient(locale: "fr" | "en") {
   const { readOnlyObserver, activeHat } = useAuthSessionStore.getState();
-  const customFetch: typeof fetch = (input, init) => {
-    const headers = new Headers(init?.headers);
-    if (readOnlyObserver) {
-      headers.set("X-Orcia-Access-Mode", "READ_ONLY_OBSERVER");
-    }
-    headers.set("X-Orcia-Active-Hat", activeHat);
-    return globalThis.fetch(input, { ...init, headers });
-  };
   return createOrciaApiClient({
     baseUrl: "",
     locale,
-    fetchImpl: customFetch,
+    extraHeaders: () => ({
+      ...(readOnlyObserver ? { "X-Orcia-Access-Mode": "READ_ONLY_OBSERVER" } : {}),
+      "X-Orcia-Active-Hat": activeHat,
+    }),
   });
 }
 

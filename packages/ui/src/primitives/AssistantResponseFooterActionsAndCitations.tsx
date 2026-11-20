@@ -222,7 +222,11 @@ export function AssistantResponseFooterActionsAndCitations({
   const handleCopy = () => {
     setCopied(true);
     if (typeof navigator !== "undefined" && typeof navigator.clipboard?.writeText === "function") {
-      void navigator.clipboard.writeText(responseText).catch(() => {});
+      void navigator.clipboard.writeText(responseText).catch((err: unknown) => {
+        if (typeof console !== "undefined") {
+          console.debug("[orcia:clipboard]", err instanceof Error ? err.message : String(err));
+        }
+      });
     }
   };
 

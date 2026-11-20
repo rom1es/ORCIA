@@ -13,6 +13,7 @@ import {
   openUserSettingsTab,
 } from "./support/authAndOrgHelpers";
 import {
+  assertMaxOneDialogCloseOrCancelButton,
   assertModalActionClickableViaElementFromPoint,
   assertNoHorizontalOverflow,
   attachErrorAlertProbe,
@@ -191,6 +192,7 @@ test.describe("Auth, 2FA, compte utilisateur et profil personnel", () => {
     await expect(page.getByTestId("account-popover-identity-header")).toBeVisible();
     await page.getByTestId("account-popover-settings-btn").click();
     await expect(page.getByTestId("user-settings-modal")).toBeVisible({ timeout: 15000 });
+    await assertMaxOneDialogCloseOrCancelButton(page);
     for (const tabKey of [
       "GENERAL",
       "PERSONALIZATION",
@@ -241,6 +243,7 @@ test.describe("Auth, 2FA, compte utilisateur et profil personnel", () => {
     }
     await page.getByTestId("profile-open-account-settings-btn").click();
     await expect(page.getByTestId("user-settings-modal")).toBeVisible({ timeout: 15000 });
+    await assertMaxOneDialogCloseOrCancelButton(page);
     await page.getByTestId("user-settings-modal-close-btn").click();
 
     await page.goto("/profile");

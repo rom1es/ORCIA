@@ -83,6 +83,7 @@ export function FinopsConnectorQuotaModal({
       description={modalLabels.description}
       testId="finops-connector-quota-modal"
       closeLabel={modalLabels.cancelButton}
+      hideHeaderCloseButton
     >
       <form
         onSubmit={handleSubmit}

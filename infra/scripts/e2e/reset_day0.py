@@ -24,7 +24,7 @@ from typing import Any, cast
 import httpx
 import redis
 import sqlalchemy as sa
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -79,6 +79,81 @@ def _load_seed_reset_fn() -> Callable[..., Awaitable[None]]:
     return cast(Callable[..., Awaitable[None]], fn)
 
 
+async def _verify_post_reset_invariants(
+    engine: AsyncEngine,
+    all_public: list[str],
+    dbos_to_truncate: list[str],
+) -> None:
+    """Verify triggers `'O'`, `pg_constraint`, `dbos.* == 0`, and Day-0 seeds after reset."""
+    async with engine.connect() as conn:
+        # 1. Verify append-only triggers on audit_ledger / blackboard_snapshots stay enabled ('O')
+        append_only = [t for t in ("audit_ledger", "blackboard_snapshots") if t in all_public]
+        if append_only:
+            trig_rows = (
+                await conn.execute(
+                    sa.text(
+                        """
+                        SELECT c.relname, t.tgname, t.tgenabled::text
+                        FROM pg_trigger t
+                        JOIN pg_class c ON c.oid = t.tgrelid
+                        JOIN pg_namespace n ON n.oid = c.relnamespace
+                        WHERE n.nspname = 'public' AND NOT t.tgisinternal
+                          AND c.relname = ANY(:tables)
+                        """
+                    ),
+                    {"tables": append_only},
+                )
+            ).fetchall()
+            if not trig_rows or any(str(r[2]) != "O" for r in trig_rows):
+                raise RuntimeError(f"Triggers append-only invalides après reset : {trig_rows!r}")
+
+            # 2. Inspect ON DELETE RESTRICT constraints via pg_constraint (append-only & seeds)
+            restrict_rows = (
+                await conn.execute(
+                    sa.text(
+                        """
+                        SELECT conname
+                        FROM pg_constraint
+                        WHERE contype = 'f' AND confdeltype = 'r'
+                          AND connamespace = 'public'::regnamespace
+                        """
+                    )
+                )
+            ).fetchall()
+            restrict_names = {str(r[0]) for r in restrict_rows}
+            expected_restrict = (
+                {"blackboard_snapshots_step_execution_id_fkey"}
+                if "blackboard_snapshots" in all_public
+                else set()
+            )
+            if not restrict_names or not expected_restrict.issubset(restrict_names):
+                raise RuntimeError(
+                    "Contraintes ON DELETE RESTRICT attendues manquantes dans pg_constraint : "
+                    f"attendu={sorted(expected_restrict)}, trouve={sorted(restrict_names)}"
+                )
+
+        # 3. Verify runtime dbos.* tables are empty
+        for dbos_tbl in dbos_to_truncate:
+            dbos_q = _quote_table("dbos", dbos_tbl)
+            cnt = int((await conn.execute(sa.text(f"SELECT COUNT(*) FROM {dbos_q}"))).scalar() or 0)
+            if cnt != 0:
+                raise RuntimeError(f"Table runtime dbos.{dbos_tbl} non vide après reset ({cnt}).")
+
+        # 4. Verify Day-0 seeds: connector_schemes >= 7 & declarative_pack_bundles >= 1.
+        # Note: `catalog_items` (`HELP_ARTICLE`) porte une FK `ON DELETE RESTRICT` vers `org_units`
+        # vide au Jour 0 ; il s'amorce paresseusement dès qu'une organisation existe.
+        if "connector_schemes" in all_public:
+            schemes_q = await conn.execute(sa.text("SELECT COUNT(*) FROM connector_schemes"))
+            schemes_cnt = int(schemes_q.scalar() or 0)
+            if schemes_cnt < 7:
+                raise RuntimeError(f"Seed connector_schemes incomplet ({schemes_cnt} < 7).")
+        if "declarative_pack_bundles" in all_public:
+            packs_q = await conn.execute(sa.text("SELECT COUNT(*) FROM declarative_pack_bundles"))
+            packs_cnt = int(packs_q.scalar() or 0)
+            if packs_cnt < 1:
+                raise RuntimeError(f"Seed declarative_pack_bundles absent ({packs_cnt} < 1).")
+
+
 async def _reset_postgres_e2e(database_url: str) -> tuple[list[str], list[str], int]:
     seed_reset_fn = _load_seed_reset_fn()
     engine = create_async_engine(_normalize_async_pg_url(database_url), pool_pre_ping=False)
@@ -88,23 +163,18 @@ async def _reset_postgres_e2e(database_url: str) -> tuple[list[str], list[str], 
         dbos_to_truncate: list[str] = []
         users_count = 0
         async with engine.begin() as conn:
-            public_rows = await conn.execute(
+            schema_rows = await conn.execute(
                 sa.text(
-                    "SELECT tablename FROM pg_tables "
-                    "WHERE schemaname = 'public' ORDER BY tablename ASC"
+                    "SELECT table_schema, table_name FROM information_schema.tables "
+                    "WHERE table_type = 'BASE TABLE' AND table_schema IN ('public', 'dbos') "
+                    "ORDER BY table_schema ASC, table_name ASC"
                 )
             )
-            all_public = [str(r[0]) for r in public_rows.fetchall()]
+            discovered = [(str(r[0]), str(r[1])) for r in schema_rows.fetchall()]
+            all_public = [t for s, t in discovered if s == "public"]
             public_to_truncate = [t for t in all_public if t not in PUBLIC_EXCLUDED_TABLES]
-
-            dbos_rows = await conn.execute(
-                sa.text(
-                    "SELECT tablename FROM pg_tables "
-                    "WHERE schemaname = 'dbos' ORDER BY tablename ASC"
-                )
-            )
             dbos_to_truncate = [
-                str(r[0]) for r in dbos_rows.fetchall() if str(r[0]) not in DBOS_EXCLUDED_TABLES
+                t for s, t in discovered if s == "dbos" and t not in DBOS_EXCLUDED_TABLES
             ]
 
             qualified = [_quote_table("public", t) for t in public_to_truncate] + [
@@ -126,6 +196,7 @@ async def _reset_postgres_e2e(database_url: str) -> tuple[list[str], list[str], 
             pack_bundles = DeclarativePackLoader(resolve_default_packs_root()).load_all_packs()
             await upsert_declarative_pack_bundles_sql(engine, pack_bundles)
 
+        await _verify_post_reset_invariants(engine, all_public, dbos_to_truncate)
         return public_to_truncate, dbos_to_truncate, users_count
     finally:
         await engine.dispose()
@@ -149,6 +220,8 @@ def _flush_redis(redis_url: str) -> None:
     client = redis.Redis.from_url(redis_url)
     try:
         client.flushdb()
+        if int(client.dbsize()) != 0:
+            raise RuntimeError("Redis DBSIZE != 0 après FLUSHDB.")
     finally:
         client.close()
 

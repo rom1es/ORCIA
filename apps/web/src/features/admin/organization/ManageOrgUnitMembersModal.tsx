@@ -138,6 +138,7 @@ export function ManageOrgUnitMembersModal({
         description={labels.description}
         testId="manage-org-unit-members-modal"
         closeLabel={labels.cancelButton}
+        hideHeaderCloseButton
       >
         <form
           data-testid="manage-org-unit-members-form"

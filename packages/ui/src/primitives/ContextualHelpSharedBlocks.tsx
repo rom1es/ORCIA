@@ -6,6 +6,20 @@ import type {
   UiHelpArticleLayer,
 } from "./ContextualHelpTypes";
 
+const HELP_LAYER_LABELS_FR: Record<UiHelpArticleLayer, string> = {
+  BASE: "Base",
+  PACK: "Pack",
+  WORKSPACE: "Espace",
+  USER: "Utilisateur",
+};
+
+const HELP_LAYER_LABELS_EN: Record<UiHelpArticleLayer, string> = {
+  BASE: "Base",
+  PACK: "Pack",
+  WORKSPACE: "Workspace",
+  USER: "User",
+};
+
 export function HelpArticleHeaderBlock({
   article,
   pack,
@@ -81,13 +95,17 @@ export function HelpArticleHeaderBlock({
                   data-testid="contextual-help-version-pill"
                   className="px-2 py-0.5 rounded-full font-mono text-[11px] bg-surface-primary border border-surface-border"
                 >
-                  @{displayVersion}
+                  v{displayVersion}
                 </span>
               </div>
             )}
             {mergedLayers.length > 0 && (
               <div data-testid="contextual-help-merged-layers">
-                {labels.mergedLayersPrefix} {mergedLayers.join(" → ")} ({pack})
+                {labels.mergedLayersPrefix}{" "}
+                {mergedLayers
+                  .map((layer) => (isEn ? HELP_LAYER_LABELS_EN[layer] : HELP_LAYER_LABELS_FR[layer]) ?? layer)
+                  .join(" / ")}{" "}
+                ({pack})
               </div>
             )}
             <div className="hidden" aria-hidden="true">

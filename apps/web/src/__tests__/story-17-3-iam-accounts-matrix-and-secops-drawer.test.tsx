@@ -76,7 +76,7 @@ describe("Story 17.3 — Accounts Directory, Native 7-Role Matrix, SecOps Drawer
     );
 
     // Close via close button
-    fireEvent.click(screen.getByTestId("iam-close-role-matrix-modal-btn"));
+    fireEvent.click(screen.getByTestId("iam-role-matrix-modal-close-btn"));
     expect(screen.queryByTestId("iam-role-matrix-modal")).toBeNull();
 
     // Re-open and close via Escape

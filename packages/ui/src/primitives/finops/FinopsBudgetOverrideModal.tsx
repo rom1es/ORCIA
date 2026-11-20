@@ -51,6 +51,7 @@ export function FinopsBudgetOverrideModal({
       description={workflowTitle ? `${labels.overrideDescription} — ${workflowTitle}` : labels.overrideDescription}
       testId="finops-override-modal"
       closeLabel={labels.cancelButton}
+      hideHeaderCloseButton
     >
       <form
         onSubmit={handleSubmit}

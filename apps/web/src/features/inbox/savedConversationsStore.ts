@@ -8,6 +8,7 @@ import {
   type UiInferenceTier,
   type UiThreeSpeedStepProgress,
 } from "@orcia/ui";
+import { ignoreBenignStorageError } from "../../utils/benignBrowserError";
 
 export {
   buildAssistantAutocompleteAndRagOptions,
@@ -63,8 +64,8 @@ export function clearSavedAssistantConversationsStorage(): void {
   ) {
     try {
       window.localStorage.removeItem(SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY);
-    } catch {
-      // Ignore storage errors
+    } catch (err: unknown) {
+      ignoreBenignStorageError("savedConversations.clear", err);
     }
   }
 }
@@ -80,8 +81,8 @@ export function readSavedAssistantConversations(): readonly SavedAssistantConver
       raw = window.localStorage.getItem(
         SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY,
       );
-    } catch {
-      // Fall back to in-memory map
+    } catch (err: unknown) {
+      ignoreBenignStorageError("savedConversations.read", err);
     }
   }
   if (!raw) {
@@ -102,7 +103,8 @@ export function readSavedAssistantConversations(): readonly SavedAssistantConver
         typeof (item as SavedAssistantConversation).title === "string" &&
         Array.isArray((item as SavedAssistantConversation).turns),
     );
-  } catch {
+  } catch (err: unknown) {
+    ignoreBenignStorageError("savedConversations.parse", err);
     return [];
   }
 }
@@ -125,8 +127,8 @@ export function writeSavedAssistantConversations(
         SAVED_ASSISTANT_CONVERSATIONS_STORAGE_KEY,
         serialized,
       );
-    } catch {
-      // Ignore storage quota errors
+    } catch (err: unknown) {
+      ignoreBenignStorageError("savedConversations.write", err);
     }
   }
 }

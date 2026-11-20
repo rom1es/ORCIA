@@ -145,6 +145,7 @@ export function EditOrgUnitModal({
       description={labels.description}
       testId="edit-org-unit-modal"
       closeLabel={labels.cancelButton}
+      hideHeaderCloseButton
     >
       <form
         data-testid="edit-org-unit-form"

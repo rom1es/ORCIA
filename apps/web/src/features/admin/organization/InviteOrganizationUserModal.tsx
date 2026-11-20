@@ -105,6 +105,7 @@ export function InviteOrganizationUserModal({
       description={labels.description}
       testId="invite-org-user-modal"
       closeLabel={labels.cancelButton}
+      hideHeaderCloseButton
     >
       <form
         data-testid="invite-org-user-form"

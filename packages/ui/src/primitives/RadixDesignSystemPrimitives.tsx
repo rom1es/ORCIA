@@ -85,6 +85,7 @@ export interface OrciaDialogProps {
   readonly description?: string;
   readonly testId?: string;
   readonly closeLabel?: string;
+  readonly hideHeaderCloseButton?: boolean;
   readonly contentClassName?: string;
   readonly modal?: boolean;
   readonly onEscapeKeyDown?: (event: KeyboardEvent) => void;
@@ -99,6 +100,7 @@ export function OrciaDialog({
   description,
   testId = "orcia-radix-dialog",
   closeLabel = "Fermer",
+  hideHeaderCloseButton = false,
   contentClassName,
   modal = true,
   onEscapeKeyDown,
@@ -126,13 +128,15 @@ export function OrciaDialog({
             <DialogPrimitive.Title className="orcia-ds-dialog-title">
               {title}
             </DialogPrimitive.Title>
-            <DialogPrimitive.Close
-              type="button"
-              data-testid={`${testId}-close-btn`}
-              className="orcia-ds-btn orcia-ds-btn-secondary"
-            >
-              {closeLabel}
-            </DialogPrimitive.Close>
+            {!hideHeaderCloseButton ? (
+              <DialogPrimitive.Close
+                type="button"
+                data-testid={`${testId}-close-btn`}
+                className="orcia-ds-btn orcia-ds-btn-secondary"
+              >
+                {closeLabel}
+              </DialogPrimitive.Close>
+            ) : null}
           </div>
           {description ? (
             <DialogPrimitive.Description

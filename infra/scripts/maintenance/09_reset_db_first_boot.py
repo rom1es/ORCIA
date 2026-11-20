@@ -5,79 +5,51 @@ workspaces, `0` org_units, `0` runs) so the Day-0 Initial Platform Administrator
 (`first-boot-admin-setup-modal` / `/welcome-setup`) is presented again as on first launch.
 
 Conventions (GEMINI.md):
-- Operational data transformations or maintenance scripts live in
-  `infra/scripts/maintenance/XX_*.py`.
 - Mandatory `--dry-run` mode by default (rolls back unless `--apply` is explicitly passed).
-- Never disables append-only triggers (`trg_blackboard_snapshots_append_only`, etc.) — deletes
-  only from mutable tables (`blackboard_snapshots` is only truncated if `COUNT(*) == 0` or skipped).
-- Uses batched idempotent transactions.
+- Never disables append-only triggers (`trg_blackboard_snapshots_append_only`, etc.).
+- Uses `information_schema.tables` + `pg_constraint` / `pg_trigger` dynamic introspection.
 """
 
 from __future__ import annotations
 
 import argparse
 import asyncio
+import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
 
+import redis
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 
+_HERE = str(Path(__file__).resolve().parent)
 _CORE_SRC = str(Path(__file__).resolve().parents[3] / "packages" / "orcia-core" / "src")
 _KERNEL_SRC = str(Path(__file__).resolve().parents[3] / "packages" / "orcia-kernel" / "src")
-for _src_path in (_KERNEL_SRC, _CORE_SRC):
+for _src_path in (_HERE, _KERNEL_SRC, _CORE_SRC):
     if _src_path not in sys.path:
         sys.path.insert(0, _src_path)
 
-from orcia_core.config import resolve_database_url  # noqa: E402
-from orcia_kernel.ids import new_uuid7_str  # noqa: E402
-
-PROTECTED_TABLES: frozenset[str] = frozenset(
-    {
-        "alembic_version",
-        "blackboard_snapshots",
-        "audit_ledger",
-        "connector_schemes",
-    }
+from _first_boot_reset_guards import (  # noqa: E402
+    BASE_CONNECTOR_SCHEMES,
+    DBOS_EXCLUDED_TABLES,
+    ORDERED_MUTABLE_TABLES_TO_CLEAR,
+    PROTECTED_TABLES,
+    assert_no_append_only_restrict_refs,
+    inspect_append_only_guards,
+    quote_sql_ident,
 )
 
-BASE_CONNECTOR_SCHEMES: tuple[tuple[str, str, str, str], ...] = (
-    ("0192c4e0-0000-7000-8000-00000000c001", "orcia", "ORCIA Native URI", "orcia-core"),
-    ("0192c4e0-0000-7000-8000-00000000c002", "db", "Relational Database Connector", "orcia-core"),
-    ("0192c4e0-0000-7000-8000-00000000c003", "mcp",
-     "Model Context Protocol Connector", "orcia-core"),
-    ("0192c4e0-0000-7000-8000-00000000c004", "git", "Git Repository Connector", "orcia-pack-sdlc"),
-    ("0192c4e0-0000-7000-8000-00000000c005", "jira",
-     "Jira Issue Tracker Connector", "orcia-pack-sdlc"),
-    ("0192c4e0-0000-7000-8000-00000000c006", "confluence",
-     "Confluence Wiki Connector", "orcia-pack-sdlc"),
-    ("0192c4e0-0000-7000-8000-00000000c007", "nexus",
-     "Nexus Artifact Repository Connector", "orcia-pack-sdlc"),
-)  # fmt: skip
+from orcia_core.bootstrap import upsert_declarative_pack_bundles_sql  # noqa: E402
+from orcia_core.config import resolve_database_url  # noqa: E402
+from orcia_core.packs.loader import (  # noqa: E402
+    DeclarativePackLoader,
+    resolve_default_packs_root,
+)
+from orcia_kernel.ids import new_uuid7_str  # noqa: E402
 
-ORDERED_MUTABLE_TABLES_TO_CLEAR: tuple[str, ...] = (
-    "finops_connector_quotas", "finops_budget_overrides", "finops_workflow_baselines",
-    "finops_scope_budgets", "domain_events_outbox", "reflexive_execution_sessions",
-    "upstream_challenges", "human_arbitration_requests", "human_anchor_signatures",
-    "gate_evaluations", "chunk_approvals", "inference_attempts", "step_executions",
-    "run_lock_manifests", "autonomous_post_hoc_audits", "workflow_runs",
-    "trigger_webhook_deliveries", "workflow_triggers", "task_notifications",
-    "resource_leases", "tripartite_trace_edges", "kb_stale_alerts", "kb_chunks",
-    "kb_documents", "code_graph_edges", "ontology_rejected_candidates",
-    "ontology_promotion_proposals", "ontology_axioms", "ontology_relations",
-    "ontology_concepts", "permission_broker_tickets", "permission_broker_policies",
-    "catalog_acl_entries", "catalog_items", "workspace_customization_overrides",
-    "workspace_datasources", "workspace_invitations", "workspace_memberships",
-    "workspace_llm_tier_mappings", "role_permission_grants", "auth_login_challenges",
-    "autonomy_contracts", "iam_accounts", "platform_auth_settings", "platform_settings",
-    "user_connector_passthrough_tokens", "enterprise_connectors", "wizard_sessions",
-    "system_bootstrap_runs", "user_onboarding_states", "user_mcp_tokens",
-    "user_preferences", "user_passthrough_credentials", "user_transverse_groups",
-    "transverse_groups", "workflow_definitions_v2", "workflow_definitions",
-    "llm_model_endpoints", "workspaces", "users", "org_units",
-)  # fmt: skip
+_assert_no_append_only_restrict_refs = assert_no_append_only_restrict_refs
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,56 +65,6 @@ class FirstBootResetReport:
     committed: bool
 
 
-_APPEND_ONLY_GUARDED_TABLES: frozenset[str] = frozenset({"step_executions", "workflow_runs"})
-
-
-async def _assert_no_append_only_restrict_refs(
-    conn: AsyncConnection,
-    table_name: str,
-    existing_tables: set[str],
-) -> None:
-    """Fail explicitly if append-only tables hold ON DELETE RESTRICT refs to `table_name`."""
-    if table_name not in _APPEND_ONLY_GUARDED_TABLES:
-        return
-    has_target_rows = bool(
-        (await conn.execute(sa.text(f"SELECT EXISTS (SELECT 1 FROM {table_name})"))).scalar()
-    )
-    if not has_target_rows:
-        return
-
-    fk_rows = await conn.execute(
-        sa.text(
-            """
-            SELECT conrelid::regclass::text AS ref_table
-            FROM pg_constraint
-            WHERE contype = 'f'
-              AND confdeltype = 'r'
-              AND confrelid = to_regclass(:target_table)
-            """
-        ),
-        {"target_table": f"public.{table_name}"},
-    )
-    restrict_refs = {str(r[0]).split(".")[-1].strip('"') for r in fk_rows.fetchall()}
-    if "blackboard_snapshots" in existing_tables:
-        restrict_refs.add("blackboard_snapshots")
-
-    append_only_protected = PROTECTED_TABLES - {"alembic_version", "connector_schemes"}
-    for ref_table in sorted(restrict_refs & append_only_protected):
-        if ref_table not in existing_tables:
-            continue
-        has_ref_rows = bool(
-            (await conn.execute(sa.text(f"SELECT EXISTS (SELECT 1 FROM {ref_table})"))).scalar()
-        )
-        if has_ref_rows:
-            raise RuntimeError(
-                f"Impossible de supprimer '{table_name}' : des lignes append-only dans "
-                f"'{ref_table}' référencent cette table via ON DELETE RESTRICT. "
-                "`09_reset_db_first_boot.py` préserve strictement les tables append-only "
-                "sans `DISABLE TRIGGER` ni `TRUNCATE`. Pour réinitialiser une base E2E "
-                "isolée `orcia_e2e`, utilisez `infra/scripts/e2e/reset_day0.py`."
-            )
-
-
 async def reset_platform_auth_settings_and_system_seed(
     conn: AsyncConnection,
     *,
@@ -151,7 +73,10 @@ async def reset_platform_auth_settings_and_system_seed(
     """Reset `platform_auth_settings` to Day-0 LOCAL defaults and ensure base connector schemes."""
     if existing_tables is None:
         existing_rows = await conn.execute(
-            sa.text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
+            sa.text(
+                "SELECT table_name FROM information_schema.tables "
+                "WHERE table_schema = 'public' AND table_type = 'BASE TABLE'"
+            )
         )
         existing_tables = {str(r[0]) for r in existing_rows.fetchall()}
 
@@ -194,48 +119,71 @@ async def reset_platform_auth_settings_and_system_seed(
             )
 
 
+def _flush_redis_if_configured() -> None:
+    redis_url = (os.environ.get("REDIS_URL") or "").strip()
+    if not redis_url:
+        return
+    client = redis.Redis.from_url(redis_url, socket_connect_timeout=1.5)
+    try:
+        client.flushdb()
+    except redis.RedisError as exc:
+        print(f"[09_reset_db_first_boot] Redis flush skipped ({exc})", file=sys.stderr)
+    finally:
+        client.close()
+
+
 async def reset_database_to_first_boot(
     engine: AsyncEngine,
     *,
     apply_changes: bool = False,
 ) -> FirstBootResetReport:
-    """Reset mutable tables to the clean Day-0 First-Boot state (`COUNT(*) FROM users == 0`).
-
-    Rolls back by default unless `apply_changes=True` is explicitly passed.
-    Never disables append-only triggers on `blackboard_snapshots` or `audit_ledger`.
-    """
+    """Reset mutable tables to the clean Day-0 First-Boot state (`COUNT(*) FROM users == 0`)."""
     deleted_total = 0
     cleared_tables = 0
+    existing_tables: set[str] = set()
 
     async with engine.connect() as conn:
         trans = await conn.begin()
         try:
-            existing_rows = await conn.execute(
-                sa.text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
+            schema_rows = await conn.execute(
+                sa.text(
+                    "SELECT table_schema, table_name FROM information_schema.tables "
+                    "WHERE table_type = 'BASE TABLE' AND table_schema IN ('public', 'dbos') "
+                    "ORDER BY table_schema ASC, table_name ASC"
+                )
             )
-            existing_tables = {str(r[0]) for r in existing_rows.fetchall()}
+            all_rows = [(str(r[0]), str(r[1])) for r in schema_rows.fetchall()]
+            existing_tables = {t for s, t in all_rows if s == "public"}
+            dbos_tables = [t for s, t in all_rows if s == "dbos" and t not in DBOS_EXCLUDED_TABLES]
 
+            unclassified = existing_tables - PROTECTED_TABLES - set(ORDERED_MUTABLE_TABLES_TO_CLEAR)
+            if unclassified:
+                raise RuntimeError(
+                    "Tables Alembic orphelines non classées dans PROTECTED_TABLES ou "
+                    f"ORDERED_MUTABLE_TABLES_TO_CLEAR : {sorted(unclassified)}"
+                )
+
+            extra_guarded = await inspect_append_only_guards(conn, existing_tables)
             for table_name in ORDERED_MUTABLE_TABLES_TO_CLEAR:
                 if table_name in PROTECTED_TABLES or table_name not in existing_tables:
                     continue
-                await _assert_no_append_only_restrict_refs(conn, table_name, existing_tables)
+                await _assert_no_append_only_restrict_refs(
+                    conn, table_name, existing_tables, extra_guarded_tables=extra_guarded
+                )
                 res = await conn.execute(sa.text(f"DELETE FROM {table_name}"))
                 deleted_total += int(res.rowcount or 0)
                 cleared_tables += 1
 
-            # Also clear any remaining mutable public tables discovered dynamically
-            for table_name in sorted(existing_tables):
-                if table_name in PROTECTED_TABLES or table_name in ORDERED_MUTABLE_TABLES_TO_CLEAR:
-                    continue
-                await _assert_no_append_only_restrict_refs(conn, table_name, existing_tables)
-                res = await conn.execute(sa.text(f"DELETE FROM {table_name}"))
-                deleted_total += int(res.rowcount or 0)
-                cleared_tables += 1
+            if dbos_tables:
+                qualified_dbos = ", ".join(quote_sql_ident("dbos", t) for t in dbos_tables)
+                await conn.execute(
+                    sa.text(f"TRUNCATE TABLE {qualified_dbos} RESTART IDENTITY CASCADE")
+                )
+                cleared_tables += len(dbos_tables)
 
             await reset_platform_auth_settings_and_system_seed(
                 conn, existing_tables=existing_tables
             )
-
             users_cnt = int(
                 (await conn.execute(sa.text("SELECT COUNT(*) FROM users"))).scalar() or 0
             )
@@ -256,6 +204,12 @@ async def reset_database_to_first_boot(
             if trans.is_active:
                 await trans.rollback()
             raise
+
+    if committed:
+        if "declarative_pack_bundles" in existing_tables:
+            pack_bundles = DeclarativePackLoader(resolve_default_packs_root()).load_all_packs()
+            await upsert_declarative_pack_bundles_sql(engine, pack_bundles)
+        _flush_redis_if_configured()
 
     return FirstBootResetReport(
         cleared_tables_count=cleared_tables,
@@ -283,16 +237,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument(
-        "--dry-run",
-        action="store_true",
-        default=True,
-        help="Simulate the reset and roll back the transaction (default).",
+        "--dry-run", action="store_true", default=True, help="Simulate and roll back (default)."
     )
     mode_group.add_argument(
-        "--apply",
-        action="store_true",
-        default=False,
-        help="Commit the database reset to Day-0 First-Boot state.",
+        "--apply", action="store_true", default=False, help="Commit the database reset."
     )
     return parser
 
@@ -302,10 +250,7 @@ async def _async_main(argv: list[str] | None = None) -> int:
     db_url = args.database_url.strip() or resolve_database_url()
     engine = create_async_engine(db_url)
     try:
-        report = await reset_database_to_first_boot(
-            engine,
-            apply_changes=bool(args.apply),
-        )
+        report = await reset_database_to_first_boot(engine, apply_changes=bool(args.apply))
         mode_str = "APPLY (COMMITTED)" if report.committed else "DRY-RUN (ROLLED BACK)"
         print(
             f"[09_reset_db_first_boot] {mode_str} — "

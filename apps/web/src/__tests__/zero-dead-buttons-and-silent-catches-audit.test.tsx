@@ -1,44 +1,25 @@
-import fs from "node:fs";
-import path from "node:path";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import path from "node:path";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { clearPlatformSetupStorage } from "../components/platformSetupStorageHelpers";
 import { createOrciaQueryClient, createOrciaRouter } from "../router";
 import { useAuthSessionStore } from "../stores/authSessionStore";
+import {
+  scanMisplacedStorageErrorHelper,
+  scanMisplacedStorageErrorHelperInSource,
+  scanPhantomConstantsAndLabels,
+  scanPhantomConstantsInSource,
+  scanSilentCatchesAst,
+  scanSilentCatchesInSource,
+} from "./setup/astSilentCatchAndPhantomAudit";
 import { resetVitestApiBackend, seedVitestPlatformSetupState } from "./vitest.setup";
 
 const REPO_ROOT = path.resolve(__dirname, "../../../..");
 const WEB_SRC_DIR = path.join(REPO_ROOT, "apps/web/src");
 const UI_SRC_DIR = path.join(REPO_ROOT, "packages/ui/src");
-
-function collectTsFiles(dir: string): string[] {
-  if (!fs.existsSync(dir)) return [];
-  const results: string[] = [];
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (
-      entry.name === "node_modules" ||
-      entry.name === "dist" ||
-      entry.name === "__tests__" ||
-      entry.name === "generated"
-    ) {
-      continue;
-    }
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      results.push(...collectTsFiles(full));
-    } else if (
-      entry.isFile() &&
-      !entry.name.includes(".test.") &&
-      (entry.name.endsWith(".ts") || entry.name.endsWith(".tsx"))
-    ) {
-      results.push(full);
-    }
-  }
-  return results;
-}
 
 function seedAuthenticatedAdminState() {
   seedVitestPlatformSetupState(
@@ -111,25 +92,63 @@ afterEach(() => {
   cleanup();
 });
 
-describe("Anti-False-Positive Lock 4 — RouterProvider Real Mount Audit, Zero Silent Catches & Error Alerts", () => {
-  it("forbids silent .catch(() => undefined) on user actions in apps/web/src/features and apps/web/src/routes (and non-clipboard UI)", () => {
-    const silentCatchRegex = /\.catch\(\s*\(\s*\)\s*=>\s*(?:undefined|null|\{\s*\})\s*\)/;
-    const violations: string[] = [];
+describe("Anti-False-Positive Lock 4 — RouterProvider Real Mount Audit, AST Silent Catches, Phantom Constants & Error Alerts", () => {
+  it("forbids bare/empty catch {}, silent .catch(() => null|undefined|{}|[]), and phantom /5 or profile constants across 100% of apps/web/src and packages/ui/src", () => {
+    const catchViolations = scanSilentCatchesAst(REPO_ROOT, [WEB_SRC_DIR, UI_SRC_DIR]);
+    expect(catchViolations).toEqual([]);
 
-    for (const dir of [path.join(WEB_SRC_DIR, "features"), path.join(WEB_SRC_DIR, "routes"), UI_SRC_DIR]) {
-      for (const filePath of collectTsFiles(dir)) {
-        const content = fs.readFileSync(filePath, "utf8");
-        const lines = content.split("\n");
-        const rel = path.relative(REPO_ROOT, filePath);
-        lines.forEach((line, idx) => {
-          if (silentCatchRegex.test(line) && !line.includes("navigator.clipboard")) {
-            violations.push(`${rel}:${idx + 1} -> ${line.trim()}`);
-          }
-        });
+    const phantomViolations = scanPhantomConstantsAndLabels(REPO_ROOT, [WEB_SRC_DIR]);
+    expect(phantomViolations).toEqual([]);
+
+    const storageHelperViolations = scanMisplacedStorageErrorHelper(REPO_ROOT, [WEB_SRC_DIR, UI_SRC_DIR]);
+    expect(storageHelperViolations).toEqual([]);
+  }, 15_000);
+
+  it("explicitly rejects synthetic bare/empty catches, silent .catch(() => null|undefined|{}|[]), and phantom constants", () => {
+    const badCatches = `
+      async function broken(p: Promise<unknown>) {
+        try { await p; } catch {}
+        try { await p; } catch (err) {}
+        await p.catch(() => {});
+        await p.catch(() => null);
+        await p.catch(() => undefined);
+        await p.catch(() => ({}));
+        await p.catch(() => []);
+        await p.catch(() => { return null; });
       }
-    }
+    `;
+    const catchHits = scanSilentCatchesInSource("synthetic/badCatches.ts", badCatches);
+    expect(catchHits).toHaveLength(8);
 
-    expect(violations).toEqual([]);
+    const safeCatch = `
+      async function handled(p: Promise<unknown>, setErr: (m: string) => void) {
+        try {
+          await p;
+        } catch (err) {
+          setErr(err instanceof Error ? err.message : "Erreur");
+        }
+      }
+    `;
+    expect(scanSilentCatchesInSource("synthetic/safeCatch.ts", safeCatch)).toEqual([]);
+
+    const badPhantoms = `
+      const x = DEFAULT_HUMAN_PROFILE;
+      const y = GENERAL_SECTIONS_LEGACY;
+      const label = "Afficher les 5 étapes";
+    `;
+    const phantomHits = scanPhantomConstantsInSource("synthetic/badPhantoms.ts", badPhantoms);
+    expect(phantomHits).toHaveLength(3);
+
+    const misplacedApiCatch = `
+      async function loadSetup(client: { getState: () => Promise<void> }) {
+        try { await client.getState(); } catch (err) { ignoreBenignStorageError("hydration", err); }
+      }
+    `;
+    const misplacedHits = scanMisplacedStorageErrorHelperInSource(
+      "apps/web/src/components/platformSetupHydration.ts",
+      misplacedApiCatch,
+    );
+    expect(misplacedHits.length).toBeGreaterThanOrEqual(2);
   });
 
   it("mounts all 10 key SPA routes under a real RouterProvider with single visible primary panels and active interactive actions", async () => {

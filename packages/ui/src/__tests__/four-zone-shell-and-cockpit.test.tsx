@@ -652,7 +652,7 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
     expect(panel.getAttribute("data-mode")).toBe("COLUMN_340PX");
     expect(
       screen.getByTestId("contextual-help-merged-layers").textContent,
-    ).toContain("BASE → PACK → WORKSPACE");
+    ).toContain("Base / Pack / Espace");
     expect(
       screen.getByTestId("contextual-help-what-for-box").textContent,
     ).toContain("À quoi sert cet écran ?");
@@ -671,10 +671,10 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
     );
     expect(
       screen.getByTestId("contextual-help-version-pill").textContent,
-    ).toBe("@1.1.0");
+    ).toBe("v1.1.0");
     expect(
       screen.getByTestId("contextual-help-rollback-banner").textContent,
-    ).toContain("@1.1.0");
+    ).toContain("v1.1.0");
 
     // Ask Assistant about current screen
     fireEvent.click(screen.getByTestId("contextual-help-ask-assistant-btn"));

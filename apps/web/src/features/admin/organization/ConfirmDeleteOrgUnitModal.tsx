@@ -51,6 +51,7 @@ export function ConfirmDeleteOrgUnitModal({
       description={labels.description}
       testId="confirm-delete-org-unit-modal"
       closeLabel={labels.cancelButton}
+      hideHeaderCloseButton
     >
       <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "8px" }}>
         {billingEnabled ? (

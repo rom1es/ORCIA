@@ -77,6 +77,34 @@ async function ensureNonBlankPage(page: Page): Promise<void> {
   }
 }
 
+async function captureBoundedScreenshot(
+  page: Page,
+  screenshotAbs: string,
+  tryFullPageFirst: boolean,
+): Promise<void> {
+  await page.screenshot({ path: screenshotAbs, fullPage: tryFullPageFirst, timeout: 8000 });
+  if (fs.existsSync(screenshotAbs) && fs.statSync(screenshotAbs).size > MAX_SCREENSHOT_BYTES) {
+    await page.screenshot({ path: screenshotAbs, fullPage: false, timeout: 8000 });
+  }
+  const viewport = page.viewportSize() ?? { width: 1280, height: 720 };
+  for (const factor of [1, 0.75, 0.5]) {
+    if (!fs.existsSync(screenshotAbs) || fs.statSync(screenshotAbs).size <= MAX_SCREENSHOT_BYTES) {
+      break;
+    }
+    await page.screenshot({
+      path: screenshotAbs,
+      fullPage: false,
+      clip: {
+        x: 0,
+        y: 0,
+        width: Math.max(320, Math.floor(viewport.width * factor)),
+        height: Math.max(240, Math.floor(viewport.height * factor)),
+      },
+      timeout: 8000,
+    });
+  }
+}
+
 async function captureFinalState(page: Page, testInfo: TestInfo): Promise<void> {
   const status = testInfo.status ?? "unknown";
   const specBase = path.basename(testInfo.file).replace(/\.spec\.[tj]s$/, "");
@@ -97,10 +125,7 @@ async function captureFinalState(page: Page, testInfo: TestInfo): Promise<void> 
     await ensureNonBlankPage(page);
     if (!page.isClosed()) {
       capturedUrl = page.url();
-      await page.screenshot({ path: screenshotAbs, fullPage: true, timeout: 8000 });
-      if (fs.existsSync(screenshotAbs) && fs.statSync(screenshotAbs).size > MAX_SCREENSHOT_BYTES) {
-        await page.screenshot({ path: screenshotAbs, fullPage: false, timeout: 8000 });
-      }
+      await captureBoundedScreenshot(page, screenshotAbs, true);
       screenshotRel = path.relative(repoRoot, screenshotAbs).replace(/\\/g, "/");
       await testInfo.attach(`final-state-${status}`, {
         path: screenshotAbs,
@@ -150,20 +175,28 @@ export async function captureMilestoneScreenshot(
     `${projectSlug}--${testSlug}--milestone-${labelSlug}.png`,
   );
 
+  let captured = false;
   try {
-    await page.screenshot({ path: screenshotAbs, fullPage: false, timeout: 8000 });
-    if (fs.existsSync(screenshotAbs) && fs.statSync(screenshotAbs).size > MAX_SCREENSHOT_BYTES) {
-      await page.screenshot({ path: screenshotAbs, fullPage: false, timeout: 8000 });
-    }
+    await captureBoundedScreenshot(page, screenshotAbs, false);
+    captured = fs.existsSync(screenshotAbs);
+  } catch {
+    return null;
+  }
+
+  if (captured) {
+    const fileSize = fs.statSync(screenshotAbs).size;
+    expect(
+      fileSize,
+      `Milestone screenshot ${milestoneLabel} dépasse ${MAX_SCREENSHOT_BYTES} octets (${fileSize})`,
+    ).toBeLessThanOrEqual(MAX_SCREENSHOT_BYTES);
     const screenshotRel = path.relative(repoRoot, screenshotAbs).replace(/\\/g, "/");
     await testInfo.attach(labelSlug, {
       path: screenshotAbs,
       contentType: "image/png",
     });
     return screenshotRel;
-  } catch {
-    return null;
   }
+  return null;
 }
 
 export const test = base.extend<{ _autoCaptureFinalState: void }>({

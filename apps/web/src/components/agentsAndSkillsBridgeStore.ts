@@ -1,4 +1,5 @@
 import type { UiManagedAgentItem, UiManagedSkillItem } from "@orcia/ui";
+import { ignoreBenignStorageError } from "../utils/benignBrowserError";
 
 export const AGENTS_AND_SKILLS_STORAGE_KEY = "orcia.agents_and_skills.v1";
 export const ASSISTANT_PREFILL_PROMPT_STORAGE_KEY =
@@ -23,8 +24,8 @@ export function resetCachedAgentsAndSkillsForTest(): void {
       window.localStorage?.removeItem?.(AGENTS_AND_SKILLS_STORAGE_KEY);
       window.localStorage?.removeItem?.(ASSISTANT_PREFILL_PROMPT_STORAGE_KEY);
       window.sessionStorage?.removeItem?.(ASSISTANT_PREFILL_PROMPT_STORAGE_KEY);
-    } catch {
-      // Ignore storage errors
+    } catch (err: unknown) {
+      ignoreBenignStorageError("agentsStore.storage", err);
     }
   }
 }
@@ -47,7 +48,8 @@ export function readCachedAgentsAndSkills(): CachedAgentsAndSkillsState {
     };
     fallbackMemoryState = hydrated;
     return hydrated;
-  } catch {
+  } catch (err: unknown) {
+    ignoreBenignStorageError("agentsStore.parse", err);
     return fallbackMemoryState;
   }
 }
@@ -68,8 +70,8 @@ export function writeCachedAgentsAndSkills(
       AGENTS_AND_SKILLS_STORAGE_KEY,
       JSON.stringify(state),
     );
-  } catch {
-    // Ignore storage errors
+  } catch (err: unknown) {
+    ignoreBenignStorageError("agentsStore.write", err);
   }
 }
 
@@ -88,8 +90,8 @@ export function writeAssistantPrefillPrompt(prefill: string): void {
       window.dispatchEvent?.(
         new CustomEvent("orcia:assistant-prefill", { detail: prefill }),
       );
-    } catch {
-      // Ignore storage errors
+    } catch (err: unknown) {
+      ignoreBenignStorageError("agentsStore.storage", err);
     }
   }
 }
@@ -105,8 +107,8 @@ export function readAssistantPrefillPrompt(): string | null {
         ASSISTANT_PREFILL_PROMPT_STORAGE_KEY,
       );
       if (fromLocal) return fromLocal;
-    } catch {
-      // Ignore storage errors
+    } catch (err: unknown) {
+      ignoreBenignStorageError("agentsStore.storage", err);
     }
   }
   return fallbackPrefillPrompt;
@@ -130,8 +132,8 @@ export function consumeAssistantPrefillPrompt(): string | null {
       }
       window.sessionStorage?.removeItem?.(ASSISTANT_PREFILL_PROMPT_STORAGE_KEY);
       window.localStorage?.removeItem?.(ASSISTANT_PREFILL_PROMPT_STORAGE_KEY);
-    } catch {
-      // Ignore storage errors
+    } catch (err: unknown) {
+      ignoreBenignStorageError("agentsStore.storage", err);
     }
   }
   return found;

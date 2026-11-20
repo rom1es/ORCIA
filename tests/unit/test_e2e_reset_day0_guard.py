@@ -30,9 +30,24 @@ def _load_module(name: str, path: Path) -> Any:
 def test_09_reset_db_first_boot_protects_connector_schemes_and_append_only_tables() -> None:
     mod = _load_module("test_mod_09_reset", RESET_FIRST_BOOT_PATH)
     assert "connector_schemes" in mod.PROTECTED_TABLES
-    assert {"alembic_version", "blackboard_snapshots", "audit_ledger", "connector_schemes"} <= set(
-        mod.PROTECTED_TABLES
-    )
+    assert {
+        "alembic_version",
+        "blackboard_snapshots",
+        "audit_ledger",
+        "connector_schemes",
+        "declarative_pack_bundles",
+    } <= set(mod.PROTECTED_TABLES)
+    assert {
+        "assistant_folder_shares",
+        "assistant_threads",
+        "assistant_folders",
+        "workspace_exception_waivers",
+        "vsm_definitions_v2",
+        "claim_check_artifacts",
+        "datasource_webhook_deliveries",
+        "rag_reindexing_pending_ingestions",
+        "rag_reindexing_jobs",
+    } <= set(mod.ORDERED_MUTABLE_TABLES_TO_CLEAR)
     assert len(mod.BASE_CONNECTOR_SCHEMES) >= 7
     args = mod.build_arg_parser().parse_args([])
     assert args.dry_run is True
@@ -240,6 +255,7 @@ def test_reset_day0_environment_reads_state_when_omitted(
     monkeypatch.setattr(mod, "_reset_postgres_e2e", _fake_reset_pg)
     res = mod.reset_day0_environment()
     assert res["remaining_users_count"] == 0
+    assert res["api_caches_evicted"] is False
 
 
 @pytest.mark.asyncio

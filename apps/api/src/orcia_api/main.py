@@ -8,9 +8,15 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from orcia_api.dependencies import app_lifespan, initialize_app_services
+from orcia_api.errors.registry import OrciaDomainError, resolve_domain_error_mapping
 from orcia_api.middleware.trace_and_error import (
     TraceContextMiddleware,
+    build_problem_response,
     register_exception_handlers,
+)
+from orcia_api.openapi_security import (
+    install_openapi_bearer_security,
+    is_public_openapi_operation,
 )
 from orcia_api.routers._auth_pg_helpers import (
     rehydrate_bearer_subject_from_pg_if_missing,
@@ -121,6 +127,36 @@ def create_app() -> FastAPI:
         call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
         await rehydrate_bearer_subject_from_pg_if_missing(request)
+        if (
+            request.method.upper() != "OPTIONS"
+            and request.url.path.startswith("/api/")
+            and not is_public_openapi_operation(request.url.path, request.method)
+        ):
+            auth_svc = getattr(request.app.state, "auth_service", None)
+            auth_hdr = request.headers.get("Authorization")
+            if auth_svc is not None and (
+                auth_hdr is not None or not auth_svc.allow_persona_impersonation
+            ):
+                try:
+                    if auth_hdr is not None:
+                        raw_token = auth_hdr.strip()
+                        if raw_token.lower().startswith("bearer "):
+                            raw_token = raw_token[7:].strip()
+                        else:
+                            raw_token = ""
+                        auth_svc.authenticate_access_token(raw_token)
+                    else:
+                        auth_svc.resolve_user(bearer_token=None)
+                except OrciaDomainError as exc:
+                    mapping = resolve_domain_error_mapping(exc)
+                    return build_problem_response(
+                        request,
+                        status_code=mapping.http_status,
+                        error_code=mapping.error_code,
+                        type_uri=mapping.type_uri,
+                        detail_override=exc.detail_override,
+                        instance_override=exc.instance or str(request.url.path),
+                    )
         return await call_next(request)
 
     application.add_middleware(TraceContextMiddleware)
@@ -172,6 +208,7 @@ def create_app() -> FastAPI:
     application.include_router(sources_surgical_router)
     application.include_router(executions_trace_router)
     application.include_router(e2e_test_hooks_router)
+    install_openapi_bearer_security(application)
     return application
 
 

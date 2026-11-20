@@ -100,7 +100,7 @@ export function GuidanceDrawer({
                 cursor: "pointer",
               }}
             >
-              {resolvedRgaaLabels.cancelCta} (Esc)
+              {resolvedRgaaLabels.cancelCta}
             </button>
           ) : null}
           <button

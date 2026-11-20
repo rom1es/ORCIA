@@ -312,14 +312,6 @@ export function WorkflowTriggersModal({
 
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "6px" }}>
             <OrciaButton
-              type="button"
-              variant="secondary"
-              testId="workflow-triggers-close-btn"
-              onClick={() => onOpenChange(false)}
-            >
-              {labels.closeButton}
-            </OrciaButton>
-            <OrciaButton
               type="submit"
               variant="primary"
               testId="trigger-create-submit-btn"

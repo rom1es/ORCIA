@@ -146,8 +146,8 @@ describe("Story 23.3 — Zone 4 Route Fidelity, No Unauthenticated Resolve & Rol
     )) as HTMLDetailsElement;
     expect(details.tagName).toBe("DETAILS");
     expect(details.open).toBe(false);
-    expect(screen.getByTestId("contextual-help-version-pill").textContent).toContain("@");
-    expect(screen.getByTestId("contextual-help-merged-layers").textContent).toContain("BASE");
+    expect(screen.getByTestId("contextual-help-version-pill").textContent).toContain("v");
+    expect(screen.getByTestId("contextual-help-merged-layers").textContent).toContain("Base");
   });
 
   it("never calls /api/v1/help/resolve when unauthenticated (Day-0 or /login) and logs cleanly without silent catch on error", async () => {

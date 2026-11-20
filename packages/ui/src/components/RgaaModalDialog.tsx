@@ -1,75 +1,32 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { DisabledButtonAlertIndicator } from "./DisabledButtonAlertIndicator";
-import { OrciaIcon } from "./icons";
+import {
+  DEFAULT_RGAA_MODAL_GUARD_LABELS_EN,
+  DEFAULT_RGAA_MODAL_GUARD_LABELS_FR,
+  DEFAULT_RGAA_MODAL_LABELS_EN,
+  DEFAULT_RGAA_MODAL_LABELS_FR,
+  resolveRgaaModalGuardLabels,
+  type RgaaModalDialogLabels,
+  type RgaaModalGuardLabels,
+} from "./RgaaModalGuardLabels";
+import {
+  handleRgaaSubmitKeyDown,
+  RgaaUnsavedChangesAlert,
+  type RgaaUnsavedChangesAlertProps,
+} from "./RgaaUnsavedChangesAlert";
 
-export interface RgaaModalGuardLabels {
-  readonly cancelButtonLabel?: string;
-  readonly submitButtonLabel?: string;
-  readonly closeButtonLabel?: string;
-  readonly cancelCta?: string;
-  readonly submitCta?: string;
-  readonly unsavedAlertTitle?: string;
-  readonly unsavedAlertMessage?: string;
-  readonly unsavedStayCta?: string;
-  readonly unsavedDiscardCta?: string;
-}
-
-export type RgaaModalDialogLabels = Required<RgaaModalGuardLabels>;
-
-export const DEFAULT_RGAA_MODAL_GUARD_LABELS_FR: Required<RgaaModalGuardLabels> = {
-  cancelButtonLabel: "Annuler",
-  submitButtonLabel: "Valider",
-  closeButtonLabel: "Fermer (Échap)",
-  cancelCta: "Annuler",
-  submitCta: "Valider",
-  unsavedAlertTitle: "Modifications non enregistrées",
-  unsavedAlertMessage:
-    "Vous avez des modifications non enregistrées. Confirmer la sortie entraînera la perte de vos modifications.",
-  unsavedStayCta: "Continuer l'édition",
-  unsavedDiscardCta: "Quitter sans enregistrer",
+export {
+  DEFAULT_RGAA_MODAL_GUARD_LABELS_EN,
+  DEFAULT_RGAA_MODAL_GUARD_LABELS_FR,
+  DEFAULT_RGAA_MODAL_LABELS_EN,
+  DEFAULT_RGAA_MODAL_LABELS_FR,
+  handleRgaaSubmitKeyDown,
+  resolveRgaaModalGuardLabels,
+  RgaaUnsavedChangesAlert,
+  type RgaaModalDialogLabels,
+  type RgaaModalGuardLabels,
+  type RgaaUnsavedChangesAlertProps,
 };
-
-export const DEFAULT_RGAA_MODAL_GUARD_LABELS_EN: Required<RgaaModalGuardLabels> = {
-  cancelButtonLabel: "Cancel",
-  submitButtonLabel: "Validate",
-  closeButtonLabel: "Close (Esc)",
-  cancelCta: "Cancel",
-  submitCta: "Validate",
-  unsavedAlertTitle: "Unsaved changes",
-  unsavedAlertMessage:
-    "You have unsaved changes. Leaving now will discard your modifications.",
-  unsavedStayCta: "Keep editing",
-  unsavedDiscardCta: "Discard changes and leave",
-};
-
-export const DEFAULT_RGAA_MODAL_LABELS_FR = DEFAULT_RGAA_MODAL_GUARD_LABELS_FR;
-export const DEFAULT_RGAA_MODAL_LABELS_EN = DEFAULT_RGAA_MODAL_GUARD_LABELS_EN;
-
-export function resolveRgaaModalGuardLabels(
-  labels?: RgaaModalGuardLabels,
-  locale: "fr" | "en" = "fr",
-): Required<RgaaModalGuardLabels> {
-  const defaults =
-    locale === "en"
-      ? DEFAULT_RGAA_MODAL_GUARD_LABELS_EN
-      : DEFAULT_RGAA_MODAL_GUARD_LABELS_FR;
-  const cancelText =
-    labels?.cancelButtonLabel ?? labels?.cancelCta ?? defaults.cancelButtonLabel;
-  const submitText =
-    labels?.submitButtonLabel ?? labels?.submitCta ?? defaults.submitButtonLabel;
-  return {
-    cancelButtonLabel: cancelText,
-    submitButtonLabel: submitText,
-    closeButtonLabel: labels?.closeButtonLabel ?? defaults.closeButtonLabel,
-    cancelCta: cancelText,
-    submitCta: submitText,
-    unsavedAlertTitle: labels?.unsavedAlertTitle ?? defaults.unsavedAlertTitle,
-    unsavedAlertMessage:
-      labels?.unsavedAlertMessage ?? defaults.unsavedAlertMessage,
-    unsavedStayCta: labels?.unsavedStayCta ?? defaults.unsavedStayCta,
-    unsavedDiscardCta: labels?.unsavedDiscardCta ?? defaults.unsavedDiscardCta,
-  };
-}
 
 export interface UseUnsavedChangesDialogGuardOptions {
   readonly isOpen: boolean;
@@ -179,100 +136,6 @@ export function useUnsavedChangesDialogGuard({
  * When keyboard focus is on the `Valider` button, pressing `<Enter>` (`Entrée`)
  * deterministically acts as a click on that button across all DOM / JSDOM environments.
  */
-export function handleRgaaSubmitKeyDown(
-  event: React.KeyboardEvent<HTMLButtonElement>,
-  onSubmitAction: () => void,
-  disabled = false,
-): void {
-  if (event.key === "Enter" && !disabled) {
-    event.preventDefault();
-    event.stopPropagation();
-    onSubmitAction();
-  }
-}
-
-export interface RgaaUnsavedChangesAlertProps {
-  readonly testIdPrefix: string;
-  readonly isOpen?: boolean;
-  readonly labels?: RgaaModalGuardLabels;
-  readonly locale?: "fr" | "en";
-  readonly onStay: () => void;
-  readonly onConfirmDiscard?: () => void;
-  readonly onDiscard?: () => void;
-}
-
-export function RgaaUnsavedChangesAlert({
-  testIdPrefix,
-  isOpen = true,
-  labels,
-  locale = "fr",
-  onStay,
-  onConfirmDiscard,
-  onDiscard,
-}: RgaaUnsavedChangesAlertProps): React.ReactElement | null {
-  if (!isOpen) {
-    return null;
-  }
-  const resolved = resolveRgaaModalGuardLabels(labels, locale);
-  const handleDiscard = (): void => {
-    onConfirmDiscard?.();
-    onDiscard?.();
-  };
-
-  return (
-    <div
-      role="alertdialog"
-      aria-modal="true"
-      aria-label={resolved.unsavedAlertTitle}
-      data-testid={`${testIdPrefix}-unsaved-changes-alert`}
-      className="rounded-lg border p-3 text-xs space-y-2"
-      style={{
-        backgroundColor: "var(--color-arbitration-bg)",
-        borderColor: "var(--color-arbitration-amber)",
-        color: "var(--color-text-primary)",
-      }}
-    >
-      <div className="font-semibold" style={{ color: "var(--color-arbitration-amber)" }}>
-        <OrciaIcon name="warning" /> {resolved.unsavedAlertTitle}
-      </div>
-      <p className="m-0 text-xs" style={{ color: "var(--color-text-primary)" }}>
-        {resolved.unsavedAlertMessage}
-      </p>
-      <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
-        <button
-          type="button"
-          data-testid={`${testIdPrefix}-unsaved-stay-btn`}
-          onClick={onStay}
-          className="rounded border px-2.5 py-1 text-xs font-medium"
-          style={{
-            backgroundColor: "var(--color-surface-card)",
-            borderColor: "var(--color-border-subtle)",
-            color: "var(--color-text-primary)",
-            cursor: "pointer",
-          }}
-        >
-          {resolved.unsavedStayCta}
-        </button>
-        <button
-          type="button"
-          data-testid={`${testIdPrefix}-unsaved-discard-btn`}
-          onClick={handleDiscard}
-          onKeyDown={(e) => handleRgaaSubmitKeyDown(e, handleDiscard, false)}
-          className="rounded border px-2.5 py-1 text-xs font-semibold"
-          style={{
-            backgroundColor: "var(--color-stale-crimson)",
-            borderColor: "var(--color-stale-crimson)",
-            color: "var(--color-primary-foreground)",
-            cursor: "pointer",
-          }}
-        >
-          {resolved.unsavedDiscardCta}
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export interface RgaaDialogFooterActionsProps {
   readonly testIdPrefix: string;
   readonly cancelLabel?: string;
@@ -401,14 +264,6 @@ export function RgaaModalDialog({
       >
         <div className="px-4 py-3 border-b border-surface-border flex items-center justify-between">
           <h2 className="text-sm font-semibold">{title}</h2>
-          <button
-            type="button"
-            data-testid={`${prefix}-close-btn`}
-            onClick={requestClose}
-            className="px-2 py-1 rounded text-xs border border-surface-border text-text-secondary"
-          >
-            {resolved.closeButtonLabel}
-          </button>
         </div>
 
         <RgaaUnsavedChangesAlert

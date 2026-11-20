@@ -59,6 +59,7 @@ export function SettingsIamOrganizationSection({
   const roles = useAuthSessionStore((s) => s.roles);
   const userEmail = useAuthSessionStore((s) => s.email);
   const readOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
+  const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
   const isHydrating = useAuthSessionStore((s) => s.isHydrating);
   const accessToken = useAuthSessionStore((s) => s.accessToken);
 
@@ -127,10 +128,10 @@ export function SettingsIamOrganizationSection({
   }, [locale, syncRbacGrantsFromServer]);
 
   useEffect(() => {
-    if (isHydrating) return;
+    if (isHydrating || !isAuthenticated) return;
     setAccountsError(null);
     void refreshAccountsAndGrants();
-  }, [refreshAccountsAndGrants, isHydrating, accessToken]);
+  }, [refreshAccountsAndGrants, isHydrating, isAuthenticated, accessToken]);
 
   const syncOrgUnitsAfterAccountTeamChange = async () => {
     const orgRes = await fetchOrgUnitsFromApi(locale);

@@ -163,14 +163,14 @@ export function HelpFooterActions({
             className="px-2.5 py-1 rounded border border-surface-border bg-surface-secondary font-medium text-text-primary"
           >
             {labels.rollbackButtonLabel}
-            {article.previousVersion ? ` (@${article.previousVersion})` : ""}
+            {article.previousVersion ? ` (v${article.previousVersion})` : ""}
           </button>
           {rolledBackToVersion !== null && (
             <span
               data-testid="contextual-help-rollback-banner"
               className="font-mono text-[11px] text-status-success"
             >
-              {labels.rollbackCompletedPrefix} @{rolledBackToVersion}
+              {labels.rollbackCompletedPrefix} v{rolledBackToVersion}
             </span>
           )}
         </div>

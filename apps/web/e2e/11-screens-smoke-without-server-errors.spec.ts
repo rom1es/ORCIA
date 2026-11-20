@@ -7,6 +7,15 @@ import {
   expectZeroVisibleErrorBanners,
   watchUnexpectedPageAndApiErrors,
 } from "./support/apiErrors";
+import {
+  assertCockpitSobrietyMaxThreeBlocks,
+  assertMaxOneDialogCloseOrCancelButton,
+  assertNoHorizontalOverflow,
+  assertNoZoneHorizontalTruncation,
+  assertSingleDesktopWorkspaceSelector,
+  assertZeroBulletPlaceholders,
+  assertZone4ContextualHelpRoutesFidelity,
+} from "./support/layoutGeometryAssertions";
 
 const SCREENS: ReadonlyArray<{ route: string; testId: string }> = [
   { route: "/cockpit", testId: "four-zone-central-workspace" },
@@ -36,7 +45,16 @@ test.describe("TEST-06 · 11 — Écrans Configuration, Ontologie, Catalogue, Ac
       await page.waitForLoadState("load");
       await page.waitForTimeout(250);
       await expectZeroVisibleErrorBanners(page);
+      await assertNoHorizontalOverflow(page, route);
+      await assertNoZoneHorizontalTruncation(page, route);
+      await assertSingleDesktopWorkspaceSelector(page);
+      await assertZeroBulletPlaceholders(page, route);
+      await assertMaxOneDialogCloseOrCancelButton(page);
+      if (route === "/cockpit") {
+        await assertCockpitSobrietyMaxThreeBlocks(page);
+      }
     }
+    await assertZone4ContextualHelpRoutesFidelity(page);
     expect(errors, errors.join("\n")).toEqual([]);
     expectDbRowExists(
       "SELECT id, email, platform_role FROM users WHERE email = :email AND platform_role = 'PLATFORM_ADMIN'",
@@ -79,6 +97,8 @@ test.describe("TEST-06 · 11 — Écrans Configuration, Ontologie, Catalogue, Ac
       await anonPage.waitForLoadState("load");
       await anonPage.waitForTimeout(250);
       await expectZeroVisibleErrorBanners(anonPage);
+      await assertNoHorizontalOverflow(anonPage, "/login");
+      await assertZeroBulletPlaceholders(anonPage, "/login");
       expect(anonErrors, anonErrors.join("\n")).toEqual([]);
       await captureMilestoneScreenshot(anonPage, testInfo, "login-screen-and-password-eye");
 

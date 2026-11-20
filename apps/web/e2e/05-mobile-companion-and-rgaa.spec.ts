@@ -1,8 +1,8 @@
 /** @uj UJ-20 | @cap CAP-042 */
 import { expect, test } from "./support/e2eCaptureFixture";
 import { resetDay0 } from "./support/day0";
-import { expectDbRowExists, queryDbRows } from "./support/dbAssertions";
-import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
+import { expectDbRowCount, expectDbRowExists, queryDbRows } from "./support/dbAssertions";
+import { createFirstAdminViaUi } from "./support/firstAdmin";
 import {
   assertModalActionClickableViaElementFromPoint,
   assertNoHorizontalOverflow,
@@ -40,9 +40,15 @@ test.describe("TEST-04 · 05 — Mobile Companion (390x844) et sorties de secour
     await createFirstAdminViaUi(page);
     const alertProbe = attachErrorAlertProbe(page);
     expectDbRowExists(
-      "SELECT id, email, platform_role FROM users WHERE email = :email AND platform_role = 'PLATFORM_ADMIN'",
-      { email: E2E_ADMIN.email },
-      "admin Jour 0 persisté dans users PG18 avant parcours mobile",
+      "SELECT singleton_key, auth_mode FROM platform_auth_settings WHERE singleton_key = :key",
+      { key: "GLOBAL" },
+      "politique platform_auth_settings persistée en PG18 avant parcours mobile",
+    );
+    expectDbRowCount(
+      "SELECT COUNT(*)::int AS count FROM declarative_pack_bundles",
+      undefined,
+      1,
+      "packs déclaratifs actifs dans declarative_pack_bundles PG18",
     );
     for (const route of ["/cockpit", "/assistant", "/spaces", "/configuration"]) {
       await page.goto(route);

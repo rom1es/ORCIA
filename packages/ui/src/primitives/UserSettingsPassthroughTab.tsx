@@ -41,7 +41,10 @@ export function UserSettingsPassthroughTab({
       setEditingConnectorId(null);
       setDraftToken("");
       setStatusMessage(labels.passthroughTokenSavedMessage);
-    } catch {
+    } catch (err: unknown) {
+      if (typeof console !== "undefined") {
+        console.debug("[orcia:passthrough.save]", err instanceof Error ? err.message : String(err));
+      }
       setStatusMessage(labels.passthroughTokenSaveError);
     }
   };
@@ -50,7 +53,10 @@ export function UserSettingsPassthroughTab({
     try {
       await onRevokePassthroughToken?.(connectorId);
       setStatusMessage(labels.passthroughTokenRevokedMessage);
-    } catch {
+    } catch (err: unknown) {
+      if (typeof console !== "undefined") {
+        console.debug("[orcia:passthrough.revoke]", err instanceof Error ? err.message : String(err));
+      }
       setStatusMessage(labels.passthroughTokenRevokeError);
     }
   };

@@ -6,6 +6,7 @@ import {
 import { createRoute, useNavigate } from "@tanstack/react-router";
 import React, { useEffect, useState } from "react";
 import { usePlatformSetup } from "../components/platformSetupStore";
+import { ignoreBenignStorageError } from "../utils/benignBrowserError";
 import { useShellNavigation } from "../components/ShellContainer";
 import { useI18n } from "../i18n";
 import {
@@ -66,8 +67,8 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
       if (sp.get("tab") === "organization") {
         navigateToRoute("/organization");
       }
-    } catch {
-      // ignore
+    } catch (err: unknown) {
+      ignoreBenignStorageError("settings.url_redirect", err);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -83,8 +84,8 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
       ) {
         return tabParam;
       }
-    } catch {
-      // ignore
+    } catch (err: unknown) {
+      ignoreBenignStorageError("settings.url_redirect", err);
     }
     return "iam";
   });

@@ -4,46 +4,18 @@ import {
   type SubWorkflowLayerViewItem,
 } from "@orcia/ui";
 import React, { useEffect, useState } from "react";
-import type { ConfiguredWorkflowItem } from "./platformSetupStore";
+import {
+  buildDefaultProcessLayers,
+  processDialogInputStyle,
+  processDialogSecondaryBtnStyle,
+  slugifyProcessTitle,
+  type CreateProcessFormDialogProps,
+} from "./CreateProcessFormDialogHelpers";
 
-export interface CreateProcessFormDialogProps {
-  readonly open: boolean;
-  readonly onOpenChange: (open: boolean) => void;
-  readonly isFr: boolean;
-  readonly openHelpSection: (sectionId: string) => void;
-  readonly upsertWorkflow: (input: ConfiguredWorkflowItem) => void;
-  readonly presetDraft?: ConfiguredWorkflowItem | null;
-}
+export type { CreateProcessFormDialogProps };
 
-const inputStyle: React.CSSProperties = {
-  padding: "7px 10px",
-  borderRadius: "var(--radius-sm)",
-  border: "1px solid var(--color-border)",
-  backgroundColor: "var(--color-surface-card)",
-  color: "var(--color-foreground)",
-  width: "100%",
-  boxSizing: "border-box",
-};
-
-const secondaryBtnStyle: React.CSSProperties = {
-  padding: "6px 12px",
-  borderRadius: "var(--radius-sm)",
-  border: "1px solid var(--color-border)",
-  backgroundColor: "var(--color-surface-card)",
-  color: "var(--color-foreground)",
-  fontWeight: 600,
-  fontSize: "12px",
-  cursor: "pointer",
-};
-
-function slugifyProcessTitle(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
+const inputStyle = processDialogInputStyle;
+const secondaryBtnStyle = processDialogSecondaryBtnStyle;
 
 export function CreateProcessFormDialog({
   open,
@@ -60,35 +32,9 @@ export function CreateProcessFormDialog({
   const [wfPrePrompt, setWfPrePrompt] = useState("");
   const [wfParamsCsv, setWfParamsCsv] = useState("");
   const [wfSectionsCsv, setWfSectionsCsv] = useState("");
-  const [layers, setLayers] = useState<readonly SubWorkflowLayerViewItem[]>([
-    {
-      layerId: "layer-ctx",
-      label: isFr
-        ? "Collecte des documents et du contexte"
-        : "Gather documents and context",
-      zone: "inputs",
-      orderIndex: 1,
-      enabled: true,
-    },
-    {
-      layerId: "layer-agent",
-      label: isFr
-        ? "Analyse par les agents et vérification croisée"
-        : "Agent analysis and cross-checking",
-      zone: "capabilities",
-      orderIndex: 1,
-      enabled: true,
-    },
-    {
-      layerId: "layer-out",
-      label: isFr
-        ? "Validation humaine finale du livrable"
-        : "Final human approval of deliverable",
-      zone: "deliverables",
-      orderIndex: 1,
-      enabled: true,
-    },
-  ]);
+  const [layers, setLayers] = useState<readonly SubWorkflowLayerViewItem[]>(() =>
+    buildDefaultProcessLayers(isFr),
+  );
 
   useEffect(() => {
     if (!presetDraft) return;
@@ -111,6 +57,7 @@ export function CreateProcessFormDialog({
       title={isFr ? "Créer un Processus Métier" : "Create a Business Process"}
       testId="create-process-modal"
       closeLabel={isFr ? "Fermer" : "Close"}
+      hideHeaderCloseButton
       contentClassName="orcia-ds-dialog-content-wide"
     >
       <form

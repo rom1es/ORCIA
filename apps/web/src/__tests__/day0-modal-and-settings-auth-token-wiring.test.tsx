@@ -220,7 +220,7 @@ describe("Day-0 Modal Constraint, Login Screen Day-0 Isolation & Settings Bearer
 
     expect(screen.queryByTestId("first-boot-admin-cancel-btn")).toBeNull();
     const closeBtn = screen.getByTestId("first-boot-admin-setup-modal-close-btn");
-    expect(closeBtn.textContent).toBe("Fermer (Échap)");
+    expect(closeBtn.textContent).toBe("Fermer");
 
     const pwInput = screen.getByTestId("first-boot-admin-password-input") as HTMLInputElement;
     const confirmInput = screen.getByTestId(

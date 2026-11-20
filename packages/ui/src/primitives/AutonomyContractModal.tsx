@@ -327,14 +327,6 @@ export function AutonomyContractModal({
           <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "8px" }}>
             <OrciaButton
               type="button"
-              variant="secondary"
-              testId="autonomy-contract-close-btn"
-              onClick={() => onOpenChange(false)}
-            >
-              {labels.closeButton}
-            </OrciaButton>
-            <OrciaButton
-              type="button"
               variant="primary"
               testId="autonomy-contract-sign-btn"
               disabled={submitting || !selectedSpId}

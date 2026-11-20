@@ -119,9 +119,9 @@ describe("Story 23.3 — Zone 4 DESIGN.md 4 Blocks, Admin Technical Details & Sc
     expect(details.tagName).toBe("DETAILS");
     expect(details.open).toBe(false);
     expect(details.textContent).toContain("Détails techniques");
-    expect(screen.getByTestId("contextual-help-version-pill").textContent).toBe("@1.0.0");
+    expect(screen.getByTestId("contextual-help-version-pill").textContent).toBe("v1.0.0");
     expect(screen.getByTestId("contextual-help-merged-layers").textContent).toContain(
-      "BASE → PACK → WORKSPACE (core)",
+      "Base / Pack / Espace (core)",
     );
   });
 
@@ -290,7 +290,7 @@ describe("Story 23.3 — Zone 4 DESIGN.md 4 Blocks, Admin Technical Details & Sc
     );
 
     expect(screen.getByTestId("contextual-help-technical-details")).toBeDefined();
-    expect(screen.getByTestId("contextual-help-version-pill").textContent).toBe("@1.0.0");
+    expect(screen.getByTestId("contextual-help-version-pill").textContent).toBe("v1.0.0");
     expect(screen.queryByTestId("contextual-help-merged-layers")).toBeNull();
   });
 });

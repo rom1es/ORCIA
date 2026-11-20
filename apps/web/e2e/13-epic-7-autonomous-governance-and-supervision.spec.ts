@@ -226,9 +226,9 @@ test.describe("TEST-07 · 13 — Story 7.4 Gouvernance & Supervision des Exécut
     expect(finopsOverflow.scrollWidth).toBeLessThanOrEqual(finopsOverflow.innerWidth);
 
     expectDbRowExists(
-      "SELECT id, slug FROM workspaces WHERE slug = :slug",
-      { slug: "ws-mobile-e2e" },
-      "espace mobile persisté dans workspaces PG18",
+      "SELECT id, event_type FROM audit_ledger WHERE event_type = 'ORG_UNIT_CREATED'",
+      undefined,
+      "événement ORG_UNIT_CREATED persisté dans audit_ledger PG18",
     );
     expect(errors, errors.join("\n")).toEqual([]);
   });

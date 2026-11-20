@@ -52,7 +52,11 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
 
   const handleCopyCommand = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-      void navigator.clipboard.writeText(skill.commandHandle).catch(() => undefined);
+      void navigator.clipboard.writeText(skill.commandHandle).catch((err: unknown) => {
+        if (typeof console !== "undefined") {
+          console.debug("[orcia:clipboard]", err instanceof Error ? err.message : String(err));
+        }
+      });
     }
     setCopiedCommand(true);
   };
