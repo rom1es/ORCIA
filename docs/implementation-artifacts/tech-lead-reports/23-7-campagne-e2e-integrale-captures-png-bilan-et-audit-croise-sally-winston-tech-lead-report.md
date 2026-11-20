@@ -3,11 +3,11 @@
 > **Convention de nommage du fichier (Obligatoire — à créer AVANT toute modification de code)** :
 > - User Story du sprint : `docs/implementation-artifacts/tech-lead-reports/{story-key}-tech-lead-report.md`
 
-- **Date** : 2026-11-19
+- **Date** : 2026-11-20 (initialisé le 2026-11-19)
 - **Story / Clé Sprint** : `23-7-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston` (`Epic 23` — Vague 3 / Campagne Intégrale Figée Desktop & Audit Croisé)
-- **Capacité(s)** : Vérification runtime réelle sur Desktop de `61 / 62` capacités `feature` + `3 / 3` `foundation` (`CAP-001`..`CAP-203`, hors `CAP-042` Mobile Companion maintenue `failed_e2e` vers `ACTION_ITEM-23.6`) dans `docs/product/capabilities.yaml` — classification : `hygiène`
-- **Auteur / Contexte** : `23.0-impl` (initialisation Step 0 Epic 23), mis à jour `23.6a-doc-init` (2026-11-19 — recadrage Desktop RCA Epic 22). Exécution sans retouche de code applicatif de la campagne Playwright E2E intégrale **`--project=desktop-cockpit`** (`1440×900`, `24` specs / `55` scénarios Desktop dont `52` exécutés et `3` `mobile-only` skipped) post-`23.1`..`23.5` + `23.6a` (`--retries=0 --max-failures=0 --timeout=35000`, `0` `ORCIA_E2E_SEED_FIXTURES`, prérequis `100 %` vert sur les 5 couches `AD-17` et Tir de reconnaissance Desktop V0), archivage des `55/55` captures PNG d'état final dans `docs/implementation-artifacts/e2e-campaign-epic-23/`, rédaction du bilan exhaustif `bilan-execution-tests-e2e-epic-23.md`, audit croisé **Sally (UX) × Winston (Architecture)**, bascule de `PLAYWRIGHT_RESULTS_PATH` dans `infra/scripts/uj_e2e_coverage.py` et mise à jour honnête de `docs/product/capabilities.yaml` (`CAP-042` maintenue `failed_e2e` vers `ACTION_ITEM-23.6`, `AD-17`, `NFR-TEST-1`, `GEMINI.md` §5).
-- **Commits associés** : `En attente d'implémentation (initialisé en Step 0 Epic 23, recadré Step 2a)`
+- **Capacité(s)** : Vérification runtime réelle sur Desktop de `36 / 62` capacités `feature` (+ `3 / 3` `foundation` = `39` `runtime`) et maintien honnête en `failed_e2e` de `26` capacités (`25` rattachées aux `6` specs Desktop en échec + `CAP-042` Mobile Companion maintenue `failed_e2e` vers `ACTION_ITEM-23.6`) dans `docs/product/capabilities.yaml` — classification : `hygiène`
+- **Auteur / Contexte** : `23.0-impl` (initialisation Step 0 Epic 23), mis à jour `23.6a-doc-init` (2026-11-19 — recadrage Desktop RCA Epic 22), clôturé `23.7-impl` (2026-11-20). Exécution sans retouche de code applicatif de la campagne Playwright E2E intégrale **`--project=desktop-cockpit`** (`1440×900`, `24` specs / `55` scénarios Desktop dont `52` exécutés et `3` `mobile-only` skipped) sur l'état figé `dd2d382` post-`23.1`..`23.5` + `23.6a` (`--retries=0 --max-failures=0 --timeout=35000`, `0` `ORCIA_E2E_SEED_FIXTURES`), archivage des `58` captures PNG (`55` états finaux + `3` jalons) dans `docs/implementation-artifacts/e2e-campaign-epic-23/`, rédaction du bilan exhaustif `bilan-execution-tests-e2e-epic-23.md`, audit croisé **Sally (UX) × Winston (Architecture)** (`Case B -> Epic 24`), bascule de `PLAYWRIGHT_RESULTS_PATH` dans `infra/scripts/uj_e2e_coverage.py` et mise à jour honnête de `docs/product/capabilities.yaml` (`CAP-042` maintenue `failed_e2e` vers `ACTION_ITEM-23.6`, `AD-17`, `NFR-TEST-1`, `GEMINI.md` §5).
+- **Commits associés** : `dd2d382` (état figé post-`Story 23.6a` exécuté en campagne) + commit atomique de clôture `Story 23.7` sur `feat/epic-23-remediation-pg18-sse-direction-c`
 
 ---
 
@@ -71,17 +71,33 @@
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
-> *[Pré-implémentation initialisée en Step 0 Epic 23, recadrée Desktop Step 2a — à compléter après exécution de la Story 23.7]*
-
 ### 3.1 Fichiers Développés & Modifiés
 | Fichier | Nature (Création / Modification / Refactoring) | Description synthétique |
 | :--- | :--- | :--- |
-| `docs/implementation-artifacts/e2e-campaign-epic-23/*` | Création | *[À compléter après exécution Story 23.7 : `playwright-results.json`, `manifest.jsonl` (`55` Desktop), `screenshots/**/*.png`, `bilan-execution-tests-e2e-epic-23.md`, `notes-audit-*.md`, `synthese-remediation-sally-winston-epic-23.md`]* |
-| `infra/scripts/uj_e2e_coverage.py` & `docs/product/capabilities.yaml` | Modification | *[À compléter après exécution Story 23.7 ; `CAP-042` maintenue `failed_e2e` vers `ACTION_ITEM-23.6`]* |
+| `docs/implementation-artifacts/e2e-campaign-epic-23/playwright-results.json`, `manifest.jsonl`, `screenshots/**/*.png` | Création | Artefacts bruts de la campagne figée `--project=desktop-cockpit` sur `dd2d382` (`55` entrées `manifest.jsonl`, `58` captures PNG dont `55` états finaux et `3` jalons `milestone-*.png`, `64` fichiers totaux tous `< 450 KB`). |
+| `docs/implementation-artifacts/e2e-campaign-epic-23/{bilan-execution-tests-e2e-epic-23,notes-audit-sally-ux,notes-audit-winston-architecture,synthese-remediation-sally-winston-epic-23}.md` | Création | Bilan factuel des `55` scénarios (`18` specs `100 % PASS`, `6` specs en échec/timeout), audit visuel Sally (`58/58` PNG, `17` constats `UX23-*`), diagnostic Winston (`12` `ARCH24-*`) et synthèse croisée (`12` `REM24-*` en `3` vagues, verdict `Case B -> Epic 24`). |
+| `infra/scripts/uj_e2e_coverage.py` | Modification | Bascule de `PLAYWRIGHT_RESULTS_PATH` vers `docs/implementation-artifacts/e2e-campaign-epic-23/playwright-results.json`. |
+| `docs/product/capabilities.yaml` | Modification | Promotion honnête à `verification: runtime` (`verified_at: "2026-11-20"`) des `36` capacités `feature` Desktop `100 % PASS` (+ `3` `foundation` = `39` `runtime`) ; maintien en `verification: failed_e2e` des `25` capacités liées aux `6` specs en échec (`06`, `07`, `17`, `18`, `19`, `20`) vers `23-8-rapports-tech-lead-plan-correction-global-et-initialisation-epic-24` et de `CAP-042` vers `ACTION_ITEM-23.6` (`26` `failed_e2e`). |
+| `tests/unit/test_epic22_to_epic23_traceability.py` | Modification | Renforcement des assertions post-`23.7` (`done`) : présence et intégrité `< 450 KB` de `e2e-campaign-epic-23/`, `CAP-042 -> ACTION_ITEM-23.6`, interdiction de promotion des capacités en échec, et décompte exact `39 runtime / 26 failed_e2e`. |
+| `docs/implementation-artifacts/sprint-status.yaml`, `docs/implementation-artifacts/tech-lead-reports/{23-7-...,README}.md` | Modification | Passage `23-7-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston: done`, rédaction de la Section 3 et mise à jour de l'index Tech Lead. |
+| `apps/web/src/generated/orciaSiteManifest.ts`, `docs/site-catalog/index.html`, `dist/orcia-site/index.html` | Régénération (`pnpm site:sync`) | Synchronisation de la vitrine produit (`65` capacités, `39` vérifiées `runtime`, `193` rapports Tech Lead, `0` hex brut). |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
-- **Campagne E2E Desktop Epic 23 (`--project=desktop-cockpit`)** : *[Objectif : `52 / 52` exécutés PASS, `0` failed, `0` timedOut, `3` skipped `mobile-only`, `55/55` PNG Desktop `< 450 KB` ; `CAP-042` maintenue `failed_e2e` vers `ACTION_ITEM-23.6`]*
-- **Qualité statique & Pyramide `AD-17`** : *[À compléter]*
+- **Campagne E2E Desktop figée (`--project=desktop-cockpit`, `dd2d382`, sans `ORCIA_E2E_SEED_FIXTURES`, `--retries=0 --max-failures=0 --timeout=35000`, durée `771 175,85 ms` = `12,85 min`)** :
+  - **`44 passed / 7 failed / 1 timedOut / 3 skipped / 0 flaky`** sur `55` scénarios planifiés (`24` specs : **`18` `100 % PASS`**, **`6` avec ≥ 1 échec/timeout** `06`, `07`, `17`, `18`, `19`, `20` ; taux de succès **`84,6 %`** `44 / 52`, progression **`+37` scénarios PASS** vs `7 / 53` en Epic 22).
+  - **`58` PNG `< 450 KB`** (`55` états finaux `manifest.jsonl` + `3` captures jalons `milestone-*.png`, plus grosse capture `276 950` octets ; `64` fichiers sous `e2e-campaign-epic-23/` tous `< 450 KB`).
+- **Audit croisé Sally × Winston (`e2e-campaign-epic-23/`)** :
+  - **`17` constats `UX23-*`** (`UX23-01`..`UX23-17` : `1 P0`, `9 P1`, `5 P2`, `2 P3`) ;
+  - **`12` diagnostics `ARCH24-*`** (`ARCH24-01`..`ARCH24-12`) ;
+  - **`12` chantiers consolidés `REM24-*`** (`REM24-01`..`REM24-12` répartis en `3` vagues) ;
+  - **Verdict porte de sortie Epic 23** : **`Case B -> Epic 24`** (`Stories 24.1`..`24.7` à initialiser et planifier en `Story 23.8`).
+- **Registre `docs/product/capabilities.yaml` (`65` capacités `live`)** :
+  - **`39` `verification: runtime`** (`36` `feature` Desktop `100 % PASS` vérifiées au `2026-11-20` + `3` `foundation` `CAP-006`, `CAP-100`, `CAP-202`) ;
+  - **`26` `verification: failed_e2e`** (`25` `feature` rattachées aux `6` specs en échec vers `23-8-rapports-tech-lead-plan-correction-global-et-initialisation-epic-24` + `CAP-042` Mobile Companion maintenue vers `ACTION_ITEM-23.6`).
 
 ### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17` + 5 Garde-Fous de Câblage Vertical)
-- *[À compléter après clôture de la campagne figée Desktop `e2e-campaign-epic-23`, de l'audit croisé Sally × Winston et de `pnpm site:sync && pnpm site:check`]*
+- `pnpm site:sync && pnpm site:check` : **OK** (`0` erreur ; `65/65` capacités live avec test, `62/62` E2E fonctionnels, `20/20` UJ, `39` `runtime`, `193` rapports, `28` routes, `136` primitives UI).
+- `.venv/bin/python scripts/check_implementation_docs.py` : **OK** (`193/193` rapports Tech Lead conformes et indexés dans `README.md`).
+- `.venv/bin/ruff check infra/scripts tests/unit/` & `.venv/bin/ruff format --check infra/scripts tests/unit/` : **OK** (`0` erreur, `156` fichiers conformes).
+- `.venv/bin/pytest tests/unit/test_uj_e2e_coverage_gate.py tests/unit/test_capabilities_registry.py tests/unit/test_e2e_sql_coverage_audit.py tests/unit/test_epic22_to_epic23_traceability.py tests/unit/test_site_catalog_sync.py -q` : **`34 passed`** (`0` échec, `0` skip).
+- Contrôle `pre-commit` taille fichiers `docs/implementation-artifacts/e2e-campaign-epic-23/` : `64 / 64` fichiers strictement `< 450 KB` (`0` dépassement) ; `docs/implementation-artifacts/e2e-campaign-epic-21/` et `e2e-campaign-epic-22/` intouchés.

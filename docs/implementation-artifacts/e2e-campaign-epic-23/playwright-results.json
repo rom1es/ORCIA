@@ -1,0 +1,3048 @@
+{
+  "config": {
+    "argv": [
+      "/home/romain/.nvm/versions/node/v25.9.0/bin/node",
+      "/home/romain/Documents/Projects/ORCIA/apps/web/node_modules/@playwright/test/cli.js",
+      "test",
+      "--project=desktop-cockpit",
+      "--retries=0",
+      "--max-failures=0",
+      "--timeout=35000",
+      "--reporter=list,json"
+    ],
+    "configFile": "/home/romain/Documents/Projects/ORCIA/apps/web/playwright.config.ts",
+    "rootDir": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop-cockpit",
+        "name": "desktop-cockpit",
+        "testDir": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 35000
+      },
+      {
+        "outputDir": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-companion",
+        "name": "mobile-companion",
+        "testDir": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 35000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "desktop-cockpit",
+        "testDir": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e",
+        "snapshotDir": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 35000,
+        "use": {
+          "baseURL": "http://127.0.0.1:3101",
+          "trace": "on-first-retry",
+          "launchOptions": {
+            "executablePath": "/home/romain/.cache/ms-playwright/chromium_headless_shell-1223/chrome-headless-shell-linux64/chrome-headless-shell",
+            "args": [
+              "--no-sandbox",
+              "--disable-setuid-sandbox"
+            ]
+          },
+          "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.8078.4 Safari/537.36",
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          },
+          "screen": {
+            "width": 1920,
+            "height": 1080
+          },
+          "deviceScaleFactor": 1,
+          "isMobile": false,
+          "hasTouch": false,
+          "defaultBrowserType": "chromium"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": "desktop-cockpit"
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "00-stack-smoke.spec.ts",
+      "file": "00-stack-smoke.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Socle E2E bi-serveur (TEST-01 & Stories 16.1–16.2 Reflexive Harness)",
+          "file": "00-stack-smoke.spec.ts",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "l'API FastAPI répond via le proxy Vite (Navigateur → Vite → FastAPI)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8549,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:27:03.631Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/00-stack-smoke-Socle-E2E-b-c1826-avigateur-→-Vite-→-FastAPI--desktop-cockpit/attachments/final-state-passed-53d4892189950c6e6277b0bbf37311e3b306e3a9.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7773e8ce1e560a7d8c25-0f38d1edd602f5655cac",
+              "file": "00-stack-smoke.spec.ts",
+              "line": 13,
+              "column": 3
+            },
+            {
+              "title": "après reset Jour 0 la modale de premier administrateur est présentée",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6524,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:27:12.381Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/00-stack-smoke-Socle-E2E-b-70c71-dministrateur-est-présentée-desktop-cockpit/attachments/final-state-passed-03a1298a2032d2a55b1e66dfe893085876c99ef0.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7773e8ce1e560a7d8c25-18d65fe8dc32f640829c",
+              "file": "00-stack-smoke.spec.ts",
+              "line": 24,
+              "column": 3
+            },
+            {
+              "title": "Story 16.1 — l'inspection chirurgicale #L1-40 retourne 40 lignes badge Y et bloque ../ en RFC 9457",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7257,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:27:18.930Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/00-stack-smoke-Socle-E2E-b-92200-dge-Y-et-bloque-en-RFC-9457-desktop-cockpit/attachments/final-state-passed-97bb48cdb1196df63bcf05434d56f413632e9cfa.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7773e8ce1e560a7d8c25-5445e82881818aa8ece2",
+              "file": "00-stack-smoke.spec.ts",
+              "line": 35,
+              "column": 3
+            },
+            {
+              "title": "Story 16.2 — moteur réflexif asyncio, survie F5 WAITING_WRITE_PREVIEW, approbation WritePreviewCard et flux SSE",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6536,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:27:26.211Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/00-stack-smoke-Socle-E2E-b-3ea79-ritePreviewCard-et-flux-SSE-desktop-cockpit/attachments/final-state-passed-bdfbc9965219bd579acf47e8f07d895c49dde30f.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "7773e8ce1e560a7d8c25-c87c867d4ad6dc25eb69",
+              "file": "00-stack-smoke.spec.ts",
+              "line": 91,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "01-day0-boot-and-f5-persistence.spec.ts",
+      "file": "01-day0-boot-and-f5-persistence.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "TEST-04 · 01 — Boot Jour 0, premier administrateur et vrai F5 (BDD)",
+          "file": "01-day0-boot-and-f5-persistence.spec.ts",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "le premier administrateur créé survit à un F5 sans localStorage (réhydratation PostgreSQL)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8741,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:27:32.805Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/01-day0-boot-and-f5-persis-3cf50-e-réhydratation-PostgreSQL--desktop-cockpit/attachments/final-state-passed-52a91cb8c12dd9dcc89c9f33c9eda71457d595d5.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "6f919dd244cdf66ab62e-f9897ea6d1afe13875fa",
+              "file": "01-day0-boot-and-f5-persistence.spec.ts",
+              "line": 13,
+              "column": 3
+            },
+            {
+              "title": "après reset Jour 0, la modale revient (0 utilisateur en base)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11780,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:27:41.572Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/01-day0-boot-and-f5-persis-c2391-ient-0-utilisateur-en-base--desktop-cockpit/attachments/final-state-passed-7058bee34d67a4404bb2436d870063da00998b0c.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "6f919dd244cdf66ab62e-4546dbe363808fab29be",
+              "file": "01-day0-boot-and-f5-persistence.spec.ts",
+              "line": 51,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "02-assistant-streaming-and-folders.spec.ts",
+      "file": "02-assistant-streaming-and-folders.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et dossiers",
+          "file": "02-assistant-streaming-and-folders.spec.ts",
+          "line": 10,
+          "column": 6,
+          "specs": [
+            {
+              "title": "un tour d'assistant traverse le navigateur, l'API et la cassette LLM (0 $) et affiche une réponse",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9918,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:27:53.404Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/02-assistant-streaming-and-17dd3-LM-0-et-affiche-une-réponse-desktop-cockpit/attachments/final-state-passed-c6739fa27b4ee614939126e2bf3b54793a997301.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f55d1ed9a6b9d5542381-97c008490e9f5efa58c2",
+              "file": "02-assistant-streaming-and-folders.spec.ts",
+              "line": 25,
+              "column": 3
+            },
+            {
+              "title": "un dossier créé dans un espace est réhydraté depuis l'API après un vrai F5 (cache navigateur vidé)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 15464,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:28:03.343Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/02-assistant-streaming-and-b2da1-i-F5-cache-navigateur-vidé--desktop-cockpit/attachments/final-state-passed-c05720f3d824ce477c965f85f6fac1f9724552b5.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f55d1ed9a6b9d5542381-f87b46f1f570267754b8",
+              "file": "02-assistant-streaming-and-folders.spec.ts",
+              "line": 58,
+              "column": 3
+            },
+            {
+              "title": "un dossier survit au redémarrage de l'API (persistance PostgreSQL)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 14424,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:28:18.827Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/02-assistant-streaming-and-603ad-API-persistance-PostgreSQL--desktop-cockpit/attachments/final-state-passed-2c4eb2e3be5d57ba66f2dbd70d7c0c9b08d26bec.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "f55d1ed9a6b9d5542381-3299974dd770beedf0ab",
+              "file": "02-assistant-streaming-and-folders.spec.ts",
+              "line": 90,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "03-human-led-anchor-and-arbitration.spec.ts",
+      "file": "03-human-led-anchor-and-arbitration.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "TEST-04 · 03 — Human-Led : ancrage obligatoire et arbitrage",
+          "file": "03-human-led-anchor-and-arbitration.spec.ts",
+          "line": 19,
+          "column": 6,
+          "specs": [
+            {
+              "title": "signature de l'ancrage violet (≥ 30 car.), rejet agent 422, arbitrage motivé et survie au F5",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 16444,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:28:33.290Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "human-led-anchor-violet",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/03-human-led-anchor-and-ar-b4a07-rage-motivé-et-survie-au-F5-desktop-cockpit/attachments/human-led-anchor-violet-463818ad17c7fa382962a96d5d0b2678aa235f2b.png"
+                        },
+                        {
+                          "name": "arbitration-tiebreak-amber",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/03-human-led-anchor-and-ar-b4a07-rage-motivé-et-survie-au-F5-desktop-cockpit/attachments/arbitration-tiebreak-amber-db342e4db375cc9fc6b76325dd6d0089be410cba.png"
+                        },
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/03-human-led-anchor-and-ar-b4a07-rage-motivé-et-survie-au-F5-desktop-cockpit/attachments/final-state-passed-38e64b952f0350c742f74e83b1335d749cc28fa8.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "0628eb2540fca364ef32-25c36fddf55b44948300",
+              "file": "03-human-led-anchor-and-arbitration.spec.ts",
+              "line": 36,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "04-multi-actor-claim-sse.spec.ts",
+      "file": "04-multi-actor-claim-sse.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "TEST-04 · 04 — Multi-acteurs : Claim exclusif et diffusion SSE (AD-4, AD-17 couche 5)",
+          "file": "04-multi-actor-claim-sse.spec.ts",
+          "line": 176,
+          "column": 6,
+          "specs": [
+            {
+              "title": "A prend en charge une tâche, B est refusé (409) et un nouveau flux SSE rejoue l'événement (< 500 ms)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7303,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:28:49.775Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/04-multi-actor-claim-sse-T-062bd--rejoue-l-événement-500-ms--desktop-cockpit/attachments/final-state-passed-efa4619aafacd4087b799cac3c02bb24869c9c59.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "564022da50d83b8787ba-2f231593c7097405cf5a",
+              "file": "04-multi-actor-claim-sse.spec.ts",
+              "line": 182,
+              "column": 3
+            },
+            {
+              "title": "le flux SSE d'un acteur connecté reçoit en direct la prise en charge d'un pair (< 500 ms)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7097,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:28:57.101Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/04-multi-actor-claim-sse-T-bfa2e-en-charge-d-un-pair-500-ms--desktop-cockpit/attachments/final-state-passed-cbd4e8cae0f6180f4312227081247d839bb5b7e9.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "564022da50d83b8787ba-57d597110cbb7ceb4c6d",
+              "file": "04-multi-actor-claim-sse.spec.ts",
+              "line": 254,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "05-mobile-companion-and-rgaa.spec.ts",
+      "file": "05-mobile-companion-and-rgaa.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "TEST-04 · 05 — Mobile Companion (390x844) et sorties de secours RGAA",
+          "file": "05-mobile-companion-and-rgaa.spec.ts",
+          "line": 12,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Escape sur un formulaire modifié demande confirmation avant d'abandonner (garde isDirty)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6861,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:29:04.236Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/05-mobile-companion-and-rg-071b0-d-abandonner-garde-isDirty--desktop-cockpit/attachments/final-state-passed-d36a02c194947326c772f37fa16b7612f80114c8.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "76b53643d21baf668e86-3c6a0bfcb63e65916350",
+              "file": "05-mobile-companion-and-rgaa.spec.ts",
+              "line": 17,
+              "column": 3
+            },
+            {
+              "title": "aucun débordement horizontal sur mobile une fois la plateforme initialisée",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "viewport mobile uniquement",
+                      "location": {
+                        "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/05-mobile-companion-and-rgaa.spec.ts",
+                        "line": 39,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 5689,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:29:11.118Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "viewport mobile uniquement",
+                          "location": {
+                            "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/05-mobile-companion-and-rgaa.spec.ts",
+                            "line": 39,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": [
+                        {
+                          "name": "final-state-skipped",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/05-mobile-companion-and-rg-e38bd-s-la-plateforme-initialisée-desktop-cockpit/attachments/final-state-skipped-ec66604ba26d355b5ac878491ceeda15dd3ffae4.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "76b53643d21baf668e86-18c466fa6c92414b1fc1",
+              "file": "05-mobile-companion-and-rgaa.spec.ts",
+              "line": 36,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "06-gates-review-and-anti-rubber-stamping.spec.ts",
+      "file": "06-gates-review-and-anti-rubber-stamping.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "TEST-05 · 06 — Gates : briefing de revue et anti-rubber-stamping",
+          "file": "06-gates-review-and-anti-rubber-stamping.spec.ts",
+          "line": 22,
+          "column": 6,
+          "specs": [
+            {
+              "title": "inspection du Bloc 4, approbation par découpage, garde-fou < 15 s, action Jira et survie F5",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 19552,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('gates-staged-jira-status-badge')\nExpected: \u001b[32m\"EXECUTED\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" getByTestId('gates-staged-jira-status-badge') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('gates-staged-jira-status-badge')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('gates-staged-jira-status-badge')\nExpected: \u001b[32m\"EXECUTED\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" getByTestId('gates-staged-jira-status-badge') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('gates-staged-jira-status-badge')\u001b[22m\n\n    at /home/romain/Documents/Projects/ORCIA/apps/web/e2e/06-gates-review-and-anti-rubber-stamping.spec.ts:145:70",
+                        "location": {
+                          "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/06-gates-review-and-anti-rubber-stamping.spec.ts",
+                          "column": 70,
+                          "line": 145
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 143 |\u001b[39m     )\u001b[33m;\u001b[39m\n \u001b[90m 144 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m\"gates-human-evaluation-status-badge\"\u001b[39m))\u001b[33m.\u001b[39mtoContainText(\u001b[32m\"Validé\"\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 145 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m\"gates-staged-jira-status-badge\"\u001b[39m))\u001b[33m.\u001b[39mtoHaveAttribute(\n \u001b[90m     |\u001b[39m                                                                      \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 146 |\u001b[39m       \u001b[32m\"data-status\"\u001b[39m\u001b[33m,\u001b[39m\n \u001b[90m 147 |\u001b[39m       \u001b[32m\"EXECUTED\"\u001b[39m\u001b[33m,\u001b[39m\n \u001b[90m 148 |\u001b[39m     )\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/06-gates-review-and-anti-rubber-stamping.spec.ts",
+                            "column": 70,
+                            "line": 145
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('gates-staged-jira-status-badge')\nExpected: \u001b[32m\"EXECUTED\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" getByTestId('gates-staged-jira-status-badge') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('gates-staged-jira-status-badge')\u001b[22m\n\n\n  143 |     );\n  144 |     await expect(page.getByTestId(\"gates-human-evaluation-status-badge\")).toContainText(\"Validé\");\n> 145 |     await expect(page.getByTestId(\"gates-staged-jira-status-badge\")).toHaveAttribute(\n      |                                                                      ^\n  146 |       \"data-status\",\n  147 |       \"EXECUTED\",\n  148 |     );\n    at /home/romain/Documents/Projects/ORCIA/apps/web/e2e/06-gates-review-and-anti-rubber-stamping.spec.ts:145:70"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:29:16.856Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-failed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/06-gates-review-and-anti-r-70d5a--s-action-Jira-et-survie-F5-desktop-cockpit/attachments/final-state-failed-5d0ab0e24fba4bd68fc0efa5cf8decb1bdd47afc.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/06-gates-review-and-anti-r-70d5a--s-action-Jira-et-survie-F5-desktop-cockpit/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/06-gates-review-and-anti-rubber-stamping.spec.ts",
+                        "column": 70,
+                        "line": 145
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "659b9d3cebf44de0df67-779ce467d932dc19a478",
+              "file": "06-gates-review-and-anti-rubber-stamping.spec.ts",
+              "line": 23,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "07-spaces-org-and-workspace-persistence.spec.ts",
+      "file": "07-spaces-org-and-workspace-persistence.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "TEST-05 · 07 — Mes Espaces : organisation, espace de travail et vrai F5",
+          "file": "07-spaces-org-and-workspace-persistence.spec.ts",
+          "line": 10,
+          "column": 6,
+          "specs": [
+            {
+              "title": "BU + équipe + espace créés par l'UI sont persistés côté API et survivent à un F5",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 32440,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByText('Espace E2E Comptabilité').first()\nExpected: visible\nReceived: hidden\nTimeout:  20000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByText('Espace E2E Comptabilité').first() with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByText('Espace E2E Comptabilité').first()\u001b[22m\n\u001b[2m    38 × locator resolved to <option value=\"01a1f7a5-9ace-72e8-817d-6a0e28e5a900\">📦 Espace E2E Comptabilité</option>\u001b[22m\n\u001b[2m       - unexpected value \"hidden\"\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByText('Espace E2E Comptabilité').first()\nExpected: visible\nReceived: hidden\nTimeout:  20000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByText('Espace E2E Comptabilité').first() with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByText('Espace E2E Comptabilité').first()\u001b[22m\n\u001b[2m    38 × locator resolved to <option value=\"01a1f7a5-9ace-72e8-817d-6a0e28e5a900\">📦 Espace E2E Comptabilité</option>\u001b[22m\n\u001b[2m       - unexpected value \"hidden\"\u001b[22m\n\n    at /home/romain/Documents/Projects/ORCIA/apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts:42:69",
+                        "location": {
+                          "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts",
+                          "column": 69,
+                          "line": 42
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 40 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m\"/spaces\"\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 41 |\u001b[39m     \u001b[36mawait\u001b[39m reloadColdFromPg(page)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 42 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(\u001b[32m\"Espace E2E Comptabilité\"\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m20000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 43 |\u001b[39m     expectDbRowExists(\n \u001b[90m 44 |\u001b[39m       \u001b[32m\"SELECT id, slug, unit_type FROM org_units WHERE slug = :slug AND unit_type = 'BU'\"\u001b[39m\u001b[33m,\u001b[39m\n \u001b[90m 45 |\u001b[39m       { slug\u001b[33m:\u001b[39m \u001b[32m\"bu-e2e\"\u001b[39m }\u001b[33m,\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts",
+                            "column": 69,
+                            "line": 42
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByText('Espace E2E Comptabilité').first()\nExpected: visible\nReceived: hidden\nTimeout:  20000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByText('Espace E2E Comptabilité').first() with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByText('Espace E2E Comptabilité').first()\u001b[22m\n\u001b[2m    38 × locator resolved to <option value=\"01a1f7a5-9ace-72e8-817d-6a0e28e5a900\">📦 Espace E2E Comptabilité</option>\u001b[22m\n\u001b[2m       - unexpected value \"hidden\"\u001b[22m\n\n\n  40 |     await page.goto(\"/spaces\");\n  41 |     await reloadColdFromPg(page);\n> 42 |     await expect(page.getByText(\"Espace E2E Comptabilité\").first()).toBeVisible({ timeout: 20000 });\n     |                                                                     ^\n  43 |     expectDbRowExists(\n  44 |       \"SELECT id, slug, unit_type FROM org_units WHERE slug = :slug AND unit_type = 'BU'\",\n  45 |       { slug: \"bu-e2e\" },\n    at /home/romain/Documents/Projects/ORCIA/apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts:42:69"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:29:37.400Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-failed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/07-spaces-org-and-workspac-87ee9-té-API-et-survivent-à-un-F5-desktop-cockpit/attachments/final-state-failed-001e0e90acb989376553de7196f53be786e465c9.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/07-spaces-org-and-workspac-87ee9-té-API-et-survivent-à-un-F5-desktop-cockpit/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts",
+                        "column": 69,
+                        "line": 42
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "868b2db32884051953f4-4911c8324bb3edddc31a",
+              "file": "07-spaces-org-and-workspace-persistence.spec.ts",
+              "line": 16,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "08-agents-skills-persistence.spec.ts",
+      "file": "08-agents-skills-persistence.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "TEST-05 · 08 — Mes Agents : Studio 6 Blocs Gouvernés, Banc de Test et Survie au F5 (BDD)",
+          "file": "08-agents-skills-persistence.spec.ts",
+          "line": 9,
+          "column": 6,
+          "specs": [
+            {
+              "title": "un agent configuré sur les 6 blocs (Identité/Posture, Moteur cognitif, Instructions, Périmètre RAG/Ontologie, Toolbox MCP Write-Preview, Garde-fous & Contrat) est persisté en base, validé au Banc de Test et réaffiché après un vrai F5",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 15160,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:30:10.973Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/08-agents-skills-persisten-30f69--réaffiché-après-un-vrai-F5-desktop-cockpit/attachments/final-state-passed-1ccc6130dabd7058cd5854c7a60be316e833fb95.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c2a37634c60b5ef31b25-b4c156ed78b47c872cb6",
+              "file": "08-agents-skills-persistence.spec.ts",
+              "line": 10,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "09-pack-builder-and-contextual-help.spec.ts",
+      "file": "09-pack-builder-and-contextual-help.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "TEST-06 · 09 — Mes Processus (Objectif vs Jalons), Studio 5 blocs & aide contextuelle ⓘ",
+          "file": "09-pack-builder-and-contextual-help.spec.ts",
+          "line": 12,
+          "column": 6,
+          "specs": [
+            {
+              "title": "affiche les badges Objectif/Jalons sans jargon, persiste le basculement Studio en PostgreSQL 18 après F5 et ouvre l'aide ⓘ",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10725,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:30:26.332Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/09-pack-builder-and-contex-b9528--après-F5-et-ouvre-l-aide-ⓘ-desktop-cockpit/attachments/final-state-passed-5a56736d75ce8af6f1a86fc22a8ad2f22d9fa225.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "aed2e43b23a5283d5f91-0494f941d0c48e4daff5",
+              "file": "09-pack-builder-and-contextual-help.spec.ts",
+              "line": 19,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "10-command-palette-search.spec.ts",
+      "file": "10-command-palette-search.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "TEST-06 · 10 — Recherche ⌘K à 2 vitesses",
+          "file": "10-command-palette-search.spec.ts",
+          "line": 10,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Ctrl+K ouvre la palette, accepte une saisie et Escape la ferme",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8587,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:30:37.109Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/10-command-palette-search--c8aee-e-saisie-et-Escape-la-ferme-desktop-cockpit/attachments/final-state-passed-bc67181e7ed5dc039cc12033be9e387a1981fe72.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e0c25635289b9b734cea-e682165f628c81c89dc9",
+              "file": "10-command-palette-search.spec.ts",
+              "line": 19,
+              "column": 3
+            },
+            {
+              "title": "la recherche fédérée (vitesse 2) aboutit côté API",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8837,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:30:45.722Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/10-command-palette-search--e3d62--vitesse-2-aboutit-côté-API-desktop-cockpit/attachments/final-state-passed-58491fd61c5ef185ae0f247a6d0a00eba243549f.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "e0c25635289b9b734cea-97778b23ed3bf751e38b",
+              "file": "10-command-palette-search.spec.ts",
+              "line": 39,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "11-screens-smoke-without-server-errors.spec.ts",
+      "file": "11-screens-smoke-without-server-errors.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "TEST-06 · 11 — Écrans Configuration, Ontologie, Catalogue, Activité, Coûts & /login : zéro 4xx/5xx",
+          "file": "11-screens-smoke-without-server-errors.spec.ts",
+          "line": 32,
+          "column": 6,
+          "specs": [
+            {
+              "title": "chaque écran authentifié se charge au Jour 0 sans erreur HTTP 4xx/5xx ni bannière d'erreur",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 22540,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:30:54.597Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/11-screens-smoke-without-s-6b409-xx-5xx-ni-bannière-d-erreur-desktop-cockpit/attachments/final-state-passed-26c5f89942401556500cde287b72481de3be9128.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "fba4bd9754a65ca71e76-68f50a8a2aae1df77604",
+              "file": "11-screens-smoke-without-server-errors.spec.ts",
+              "line": 33,
+              "column": 3
+            },
+            {
+              "title": "la mire /login s'ouvre sans erreur 404/401 ni bannière d'alerte après création admin et permet la reconnexion",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10114,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:31:17.154Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "login-screen-and-password-eye",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/11-screens-smoke-without-s-50fac-in-et-permet-la-reconnexion-desktop-cockpit/attachments/login-screen-and-password-eye-479b350d460059a6d4fcd9719b89b724c566adfc.png"
+                        },
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/11-screens-smoke-without-s-50fac-in-et-permet-la-reconnexion-desktop-cockpit/attachments/final-state-passed-00fee2aa5a1c22bca3f014d2739a93d10cbbfa48.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "fba4bd9754a65ca71e76-3395b7e01be2fc945b0e",
+              "file": "11-screens-smoke-without-server-errors.spec.ts",
+              "line": 72,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "12-epic16-reflexive-trace-and-line-inspector.spec.ts",
+      "file": "12-epic16-reflexive-trace-and-line-inspector.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Story 16.4 — Trace d'exécution réflexive, Inspecteur chirurgical #L & survie F5 (desktop + mobile)",
+          "file": "12-epic16-reflexive-trace-and-line-inspector.spec.ts",
+          "line": 34,
+          "column": 6,
+          "specs": [
+            {
+              "title": "affiche la trace réflexive sans jargon (@Agent + #Lstart-end), ouvre l'inspecteur chirurgical + garde READ_SOURCE, et survit au F5 sur WAITING_WRITE_PREVIEW",
+              "ok": true,
+              "tags": [
+                "Agent"
+              ],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 12965,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:31:27.315Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/12-epic16-reflexive-trace--50cd8-5-sur-WAITING-WRITE-PREVIEW-desktop-cockpit/attachments/final-state-passed-c6e761667a6af6e8d8c2317af506bb3e6f9520ef.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27b1eb5df77005bcca0b-3eb8391b5d27dae1e0f4",
+              "file": "12-epic16-reflexive-trace-and-line-inspector.spec.ts",
+              "line": 41,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "12-finops-and-audit-provenance.spec.ts",
+      "file": "12-finops-and-audit-provenance.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "TEST-06 · 12 — FinOps Gouvernance, Services externes & Journal de Provenance",
+          "file": "12-finops-and-audit-provenance.spec.ts",
+          "line": 17,
+          "column": 6,
+          "specs": [
+            {
+              "title": "bureau : /activity et /finops (état vide, modale plafond, 4 onglets dont Services externes) sans erreur 4xx/5xx",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 12210,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:31:40.322Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/12-finops-and-audit-proven-09bef-xternes-sans-erreur-4xx-5xx-desktop-cockpit/attachments/final-state-passed-dcb4ac5c5faebd4cde81185a1700063510e0ebfc.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "918c24db8664dafa49c2-07927745d75bf9069cb5",
+              "file": "12-finops-and-audit-provenance.spec.ts",
+              "line": 18,
+              "column": 3
+            },
+            {
+              "title": "mobile : /finops et /activity s'affichent sans débordement horizontal ni erreur serveur",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "parcours mobile",
+                      "location": {
+                        "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/12-finops-and-audit-provenance.spec.ts",
+                        "line": 78,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 1777,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:31:52.551Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "parcours mobile",
+                          "location": {
+                            "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/12-finops-and-audit-provenance.spec.ts",
+                            "line": 78,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": [
+                        {
+                          "name": "final-state-skipped",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/12-finops-and-audit-proven-2877a-orizontal-ni-erreur-serveur-desktop-cockpit/attachments/final-state-skipped-b5b5794c633ba6c1364dd21a177c161468a928b2.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "918c24db8664dafa49c2-c9d78b4a3dcac7e1318c",
+              "file": "12-finops-and-audit-provenance.spec.ts",
+              "line": 75,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "13-epic-7-autonomous-governance-and-supervision.spec.ts",
+      "file": "13-epic-7-autonomous-governance-and-supervision.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "TEST-07 · 13 — Story 7.4 Gouvernance & Supervision des Exécutions Autonomes",
+          "file": "13-epic-7-autonomous-governance-and-supervision.spec.ts",
+          "line": 13,
+          "column": 6,
+          "specs": [
+            {
+              "title": "bureau : Publication V2 + contrat + déclencheur + supervision /processes + arrêt d'urgence F5 + /finops échantillon & rollback F5",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 28661,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:31:54.368Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/13-epic-7-autonomous-gover-1bd5d-ops-échantillon-rollback-F5-desktop-cockpit/attachments/final-state-passed-85fc5ec93822e1e9992f70584c6a72b3c28af83b.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a62ab4559a3234379c10-eb8cf8cf569e2d1d3dab",
+              "file": "13-epic-7-autonomous-governance-and-supervision.spec.ts",
+              "line": 14,
+              "column": 3
+            },
+            {
+              "title": "mobile : /processes et /finops s'affichent sans débordement horizontal ni erreur serveur",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "parcours mobile",
+                      "location": {
+                        "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/13-epic-7-autonomous-governance-and-supervision.spec.ts",
+                        "line": 198,
+                        "column": 10
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "skipped",
+                      "duration": 1745,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:32:23.045Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "parcours mobile",
+                          "location": {
+                            "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/13-epic-7-autonomous-governance-and-supervision.spec.ts",
+                            "line": 198,
+                            "column": 10
+                          }
+                        }
+                      ],
+                      "attachments": [
+                        {
+                          "name": "final-state-skipped",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/13-epic-7-autonomous-gover-858e6-orizontal-ni-erreur-serveur-desktop-cockpit/attachments/final-state-skipped-e27ef3273533854c8471a4920b9734e00ab39aaf.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "a62ab4559a3234379c10-7d84c33fe8ad9d77bdd6",
+              "file": "13-epic-7-autonomous-governance-and-supervision.spec.ts",
+              "line": 195,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "14-auth-2fa-account-and-profile.spec.ts",
+      "file": "14-auth-2fa-account-and-profile.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Auth, 2FA, compte utilisateur et profil personnel",
+          "file": "14-auth-2fa-account-and-profile.spec.ts",
+          "line": 52,
+          "column": 6,
+          "specs": [
+            {
+              "title": "politique d'authentification et bascule 2FA persistent après F5 en base PostgreSQL",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 15934,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:32:24.857Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/14-auth-2fa-account-and-pr-442eb-après-F5-en-base-PostgreSQL-desktop-cockpit/attachments/final-state-passed-26de44c96dd5ddb5120c140f72072002dd4748ff.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "494bc3236bcb752f40de-1179b53157faac0bc57d",
+              "file": "14-auth-2fa-account-and-profile.spec.ts",
+              "line": 57,
+              "column": 3
+            },
+            {
+              "title": "mot de passe temporaire d'un compte invité force le renouvellement et persiste dans users",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 14757,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:32:40.811Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/14-auth-2fa-account-and-pr-b37e5-ment-et-persiste-dans-users-desktop-cockpit/attachments/final-state-passed-7336e7c97b7be7216aee75fe50cee97f6405abaf.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "494bc3236bcb752f40de-9094cc1ce71ade3cb023",
+              "file": "14-auth-2fa-account-and-profile.spec.ts",
+              "line": 114,
+              "column": 3
+            },
+            {
+              "title": "popup Mon Compte, paramètres 5 onglets, clé IDE/MCP et page profil survivent à un F5",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13833,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:32:55.588Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/14-auth-2fa-account-and-pr-ac758-ge-profil-survivent-à-un-F5-desktop-cockpit/attachments/final-state-passed-6487bc383128d4d75808923564fadcab13288f30.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "494bc3236bcb752f40de-573ac58024a7b66f4316",
+              "file": "14-auth-2fa-account-and-profile.spec.ts",
+              "line": 186,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "15-organization-iam-secops-inbox-and-observer.spec.ts",
+      "file": "15-organization-iam-secops-inbox-and-observer.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Organisation, annuaire IAM, exceptions SecOps, notifications et mode observateur",
+          "file": "15-organization-iam-secops-inbox-and-observer.spec.ts",
+          "line": 17,
+          "column": 6,
+          "specs": [
+            {
+              "title": "BU, équipe, invitation scopée, délégation BU_LEAD, garde 403 et journal audit_ledger persistent après F5",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 20661,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:33:09.457Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/15-organization-iam-secops-c4fcb--ledger-persistent-après-F5-desktop-cockpit/attachments/final-state-passed-a3eebaa057691f481724a94e715586415c8c1dec.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "99907c73f80f1880b92e-2cf911a14468132ff11c",
+              "file": "15-organization-iam-secops-inbox-and-observer.spec.ts",
+              "line": 22,
+              "column": 3
+            },
+            {
+              "title": "annuaire IAM, matrice des rôles et règle RBAC SecOps persistent dans role_permission_grants après F5",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 12901,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:33:30.137Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/15-organization-iam-secops-c3575--permission-grants-après-F5-desktop-cockpit/attachments/final-state-passed-a386be4c117b7068099786ad24adab93934b9321.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "99907c73f80f1880b92e-1198bf47bf6898ed00a9",
+              "file": "15-organization-iam-secops-inbox-and-observer.spec.ts",
+              "line": 100,
+              "column": 3
+            },
+            {
+              "title": "mode observateur en lecture seule rejette toute mutation en HTTP 403 ERR_OBSERVER_MODE_READ_ONLY",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 12386,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:33:43.056Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/15-organization-iam-secops-e957e-ERR-OBSERVER-MODE-READ-ONLY-desktop-cockpit/attachments/final-state-passed-8236ec27fd145bbabb849a7051ca73e96a78b8a1.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "99907c73f80f1880b92e-312158dccb2f9f3b2167",
+              "file": "15-organization-iam-secops-inbox-and-observer.spec.ts",
+              "line": 140,
+              "column": 3
+            },
+            {
+              "title": "centre de notifications et boîte de réception reflètent task_notifications en base PostgreSQL",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9606,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:33:55.461Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/15-organization-iam-secops-5520e-ications-en-base-PostgreSQL-desktop-cockpit/attachments/final-state-passed-05791e005b372539eb54cf5ca5f3524ba7bcbcaa.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "99907c73f80f1880b92e-917cdd7aadbb9d0f4db9",
+              "file": "15-organization-iam-secops-inbox-and-observer.spec.ts",
+              "line": 180,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "16-ai-models-reindex-connectors-and-broker.spec.ts",
+      "file": "16-ai-models-reindex-connectors-and-broker.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Hub modèles IA, réindexation sémantique, connecteurs et Permission Broker",
+          "file": "16-ai-models-reindex-connectors-and-broker.spec.ts",
+          "line": 57,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Jour 0 sans embedding, garde SSRF, modèles Chat/Embedding 1024 et réindexation survivent à F5",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 16793,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:34:05.100Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/16-ai-models-reindex-conne-81bbe-réindexation-survivent-à-F5-desktop-cockpit/attachments/final-state-passed-ac587c651c56f1d6282d2a0cc822df3883cfbbca.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22a32a886849fd468619-579fa750813787ba0008",
+              "file": "16-ai-models-reindex-connectors-and-broker.spec.ts",
+              "line": 62,
+              "column": 3
+            },
+            {
+              "title": "connecteur socle (secret write-only) et jeton Passthrough personnel persistent après F5",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 14324,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:34:21.911Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/16-ai-models-reindex-conne-30929-rsonnel-persistent-après-F5-desktop-cockpit/attachments/final-state-passed-bb804c1904bb59e29d77dfc446fb2dea321ac51b.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22a32a886849fd468619-7deed69d089f93a9260f",
+              "file": "16-ai-models-reindex-connectors-and-broker.spec.ts",
+              "line": 144,
+              "column": 3
+            },
+            {
+              "title": "interception Permission Broker affiche la carte de procédure et persiste permission_broker_tickets",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8875,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:34:36.275Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/16-ai-models-reindex-conne-5197a-e-permission-broker-tickets-desktop-cockpit/attachments/final-state-passed-1525ec8fb1def07f5f67bea9c3125971f222b543.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "22a32a886849fd468619-3580c158a632471bbf7a",
+              "file": "16-ai-models-reindex-connectors-and-broker.spec.ts",
+              "line": 223,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "17-workspace-sources-codegraph-dna-and-ontology.spec.ts",
+      "file": "17-workspace-sources-codegraph-dna-and-ontology.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Sources d'espace multi-nature, graphe de code, glossaire, ontologie et RAG tripartite",
+          "file": "17-workspace-sources-codegraph-dna-and-ontology.spec.ts",
+          "line": 14,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Rattachement source code, fraîcheur SHA-256, webhook, outils codegraph lecture seule et survie F5",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 19304,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:34:45.201Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/17-workspace-sources-codeg-f836a--lecture-seule-et-survie-F5-desktop-cockpit/attachments/final-state-passed-14b3bce6da7000e79ccab43093d341c27e36be2a.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8d3cd22209fcf03f841b-6293821d67ece90f69fb",
+              "file": "17-workspace-sources-codegraph-dna-and-ontology.spec.ts",
+              "line": 19,
+              "column": 3
+            },
+            {
+              "title": "Glossaire d'espace, promotion gouvernée L4 vers L3 et approbation dans Ontologie persistent après F5",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 21165,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:35:04.526Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/17-workspace-sources-codeg-c0cde-tologie-persistent-après-F5-desktop-cockpit/attachments/final-state-passed-f86cfb888fa04e1ec07814c7fc1b8dccd800110d.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8d3cd22209fcf03f841b-dcfec8f80b97fe20e46f",
+              "file": "17-workspace-sources-codegraph-dna-and-ontology.spec.ts",
+              "line": 103,
+              "column": 3
+            },
+            {
+              "title": "Chaîne ADN Starlark, dérogations d'espace et graphe tripartite RAG persistent en base après F5",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 14958,
+                      "error": {
+                        "message": "Error: Dérogation persistée dans workspace_exception_waivers — Aucune ligne persistée trouvée en base PostgreSQL 18 (orcia_e2e). SQL: SELECT waiver_id::text AS waiver_id, workspace_id::text AS workspace_id, source_uri, status FROM workspace_exception_waivers WHERE workspace_id = :ws_id | params: {\"ws_id\":\"01a1f7aa-eb2a-71d2-bb2e-14e8aa2bb3f2\"}\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m0\u001b[39m",
+                        "stack": "Error: Dérogation persistée dans workspace_exception_waivers — Aucune ligne persistée trouvée en base PostgreSQL 18 (orcia_e2e). SQL: SELECT waiver_id::text AS waiver_id, workspace_id::text AS workspace_id, source_uri, status FROM workspace_exception_waivers WHERE workspace_id = :ws_id | params: {\"ws_id\":\"01a1f7aa-eb2a-71d2-bb2e-14e8aa2bb3f2\"}\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m0\u001b[39m\n    at expectDbRowExists (/home/romain/Documents/Projects/ORCIA/apps/web/e2e/support/dbAssertions.ts:72:5)\n    at /home/romain/Documents/Projects/ORCIA/apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts:200:5",
+                        "location": {
+                          "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/support/dbAssertions.ts",
+                          "column": 5,
+                          "line": 72
+                        },
+                        "snippet": "   at support/dbAssertions.ts:72\n\n\u001b[0m \u001b[90m 70 |\u001b[39m     rows\u001b[33m.\u001b[39mlength\u001b[33m,\u001b[39m\n \u001b[90m 71 |\u001b[39m     \u001b[32m`${label}Aucune ligne persistée trouvée en base PostgreSQL 18 (orcia_e2e). SQL: ${sql} | params: ${formatParams(params)}`\u001b[39m\u001b[33m,\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 72 |\u001b[39m   )\u001b[33m.\u001b[39mtoBeGreaterThanOrEqual(\u001b[35m1\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 73 |\u001b[39m   \u001b[36mreturn\u001b[39m rows[\u001b[35m0\u001b[39m] \u001b[33m?\u001b[39m\u001b[33m?\u001b[39m {}\u001b[33m;\u001b[39m\n \u001b[90m 74 |\u001b[39m }\n \u001b[90m 75 |\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/support/dbAssertions.ts",
+                            "column": 5,
+                            "line": 72
+                          },
+                          "message": "Error: Dérogation persistée dans workspace_exception_waivers — Aucune ligne persistée trouvée en base PostgreSQL 18 (orcia_e2e). SQL: SELECT waiver_id::text AS waiver_id, workspace_id::text AS workspace_id, source_uri, status FROM workspace_exception_waivers WHERE workspace_id = :ws_id | params: {\"ws_id\":\"01a1f7aa-eb2a-71d2-bb2e-14e8aa2bb3f2\"}\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m0\u001b[39m\n\n   at support/dbAssertions.ts:72\n\n  70 |     rows.length,\n  71 |     `${label}Aucune ligne persistée trouvée en base PostgreSQL 18 (orcia_e2e). SQL: ${sql} | params: ${formatParams(params)}`,\n> 72 |   ).toBeGreaterThanOrEqual(1);\n     |     ^\n  73 |   return rows[0] ?? {};\n  74 | }\n  75 |\n    at expectDbRowExists (/home/romain/Documents/Projects/ORCIA/apps/web/e2e/support/dbAssertions.ts:72:5)\n    at /home/romain/Documents/Projects/ORCIA/apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts:200:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:35:25.717Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-failed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/17-workspace-sources-codeg-9b2c0-persistent-en-base-après-F5-desktop-cockpit/attachments/final-state-failed-2356e78f7fa95318dfc223fb70f1f1e7fd5b67f3.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/17-workspace-sources-codeg-9b2c0-persistent-en-base-après-F5-desktop-cockpit/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/support/dbAssertions.ts",
+                        "column": 5,
+                        "line": 72
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "8d3cd22209fcf03f841b-bce03ce019577cfb19e8",
+              "file": "17-workspace-sources-codegraph-dna-and-ontology.spec.ts",
+              "line": 181,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "18-catalog-packs-wizards-and-mcp-bench.spec.ts",
+      "file": "18-catalog-packs-wizards-and-mcp-bench.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Catalogue fédéré RBAC, packs déclaratifs, parcours guidés et banc MCP-A2A",
+          "file": "18-catalog-packs-wizards-and-mcp-bench.spec.ts",
+          "line": 14,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Explorateur du catalogue fédéré, droits granulaires et définitions persistent en base après F5",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 35275,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 35000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 35000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 35000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/support/workspaceAndCatalogHelpers.ts",
+                            "column": 68,
+                            "line": 128
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('agents-and-skills-manager-view')\nExpected: visible\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('agents-and-skills-manager-view') with timeout 30000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('agents-and-skills-manager-view')\u001b[22m\n\u001b[2m  - Test timeout of 35000ms exceeded.\u001b[22m\n\n\n   at support/workspaceAndCatalogHelpers.ts:128\n\n  126 |   const route = options.route ?? \"/catalog\";\n  127 |   await page.goto(route);\n> 128 |   await expect(page.getByTestId(\"agents-and-skills-manager-view\")).toBeVisible({\n      |                                                                    ^\n  129 |     timeout: 30000,\n  130 |   });\n  131 |   if (options.tab) {\n    at openCatalogOrAgentsPage (/home/romain/Documents/Projects/ORCIA/apps/web/e2e/support/workspaceAndCatalogHelpers.ts:128:68)\n    at /home/romain/Documents/Projects/ORCIA/apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts:23:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:35:41.724Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-timedOut",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/18-catalog-packs-wizards-a-0c81a-persistent-en-base-après-F5-desktop-cockpit/attachments/final-state-timedOut-ca2d45f9d3b9d2c55819e4ebec4809db9b9e3421.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/18-catalog-packs-wizards-a-0c81a-persistent-en-base-après-F5-desktop-cockpit/error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "284a9f9fd82f337e506e-51c7f5914d74cc9dcfd7",
+              "file": "18-catalog-packs-wizards-and-mcp-bench.spec.ts",
+              "line": 19,
+              "column": 3
+            },
+            {
+              "title": "Activation de pack par périmètre dans Paramètres survit à F5 et persiste dans platform_settings",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10842,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:36:18.154Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/18-catalog-packs-wizards-a-e9b33-iste-dans-platform-settings-desktop-cockpit/attachments/final-state-passed-30c5242741f15741d04a12030382abf598353e04.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "284a9f9fd82f337e506e-22e08a13491785ff8c62",
+              "file": "18-catalog-packs-wizards-and-mcp-bench.spec.ts",
+              "line": 51,
+              "column": 3
+            },
+            {
+              "title": "Registre des packs déclaratifs et export ZIP persistent dans declarative_pack_bundles après F5",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 12004,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:36:29.188Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/18-catalog-packs-wizards-a-15970-ative-pack-bundles-après-F5-desktop-cockpit/attachments/final-state-passed-99e263579d4b49b9937255c5b465e9a62273ca2f.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "284a9f9fd82f337e506e-b1c3c162522ff977b3c0",
+              "file": "18-catalog-packs-wizards-and-mcp-bench.spec.ts",
+              "line": 77,
+              "column": 3
+            },
+            {
+              "title": "Parcours guidé d'initialisation avec retour arrière survit à F5 et persiste dans wizard_sessions",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11429,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:36:41.216Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/18-catalog-packs-wizards-a-ff2b0-rsiste-dans-wizard-sessions-desktop-cockpit/attachments/final-state-passed-389361da633c66f1ce4b018111f3e99f5d8a8041.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "284a9f9fd82f337e506e-bf9f6b5eb2c986269bfe",
+              "file": "18-catalog-packs-wizards-and-mcp-bench.spec.ts",
+              "line": 103,
+              "column": 3
+            },
+            {
+              "title": "Banc de test connecteur distant, trace audit_ledger et exposition gouvernée MCP survivent à F5",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 8652,
+                      "error": {
+                        "message": "Error: Exécution banc de test auditée dans audit_ledger — Aucune ligne persistée trouvée en base PostgreSQL 18 (orcia_e2e). SQL: SELECT id::text AS id, event_type FROM audit_ledger WHERE event_type = 'ADMIN_CONNECTION_TEST' | params: {}\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m0\u001b[39m",
+                        "stack": "Error: Exécution banc de test auditée dans audit_ledger — Aucune ligne persistée trouvée en base PostgreSQL 18 (orcia_e2e). SQL: SELECT id::text AS id, event_type FROM audit_ledger WHERE event_type = 'ADMIN_CONNECTION_TEST' | params: {}\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m0\u001b[39m\n    at expectDbRowExists (/home/romain/Documents/Projects/ORCIA/apps/web/e2e/support/dbAssertions.ts:72:5)\n    at /home/romain/Documents/Projects/ORCIA/apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts:158:5",
+                        "location": {
+                          "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/support/dbAssertions.ts",
+                          "column": 5,
+                          "line": 72
+                        },
+                        "snippet": "   at support/dbAssertions.ts:72\n\n\u001b[0m \u001b[90m 70 |\u001b[39m     rows\u001b[33m.\u001b[39mlength\u001b[33m,\u001b[39m\n \u001b[90m 71 |\u001b[39m     \u001b[32m`${label}Aucune ligne persistée trouvée en base PostgreSQL 18 (orcia_e2e). SQL: ${sql} | params: ${formatParams(params)}`\u001b[39m\u001b[33m,\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 72 |\u001b[39m   )\u001b[33m.\u001b[39mtoBeGreaterThanOrEqual(\u001b[35m1\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 73 |\u001b[39m   \u001b[36mreturn\u001b[39m rows[\u001b[35m0\u001b[39m] \u001b[33m?\u001b[39m\u001b[33m?\u001b[39m {}\u001b[33m;\u001b[39m\n \u001b[90m 74 |\u001b[39m }\n \u001b[90m 75 |\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/support/dbAssertions.ts",
+                            "column": 5,
+                            "line": 72
+                          },
+                          "message": "Error: Exécution banc de test auditée dans audit_ledger — Aucune ligne persistée trouvée en base PostgreSQL 18 (orcia_e2e). SQL: SELECT id::text AS id, event_type FROM audit_ledger WHERE event_type = 'ADMIN_CONNECTION_TEST' | params: {}\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m0\u001b[39m\n\n   at support/dbAssertions.ts:72\n\n  70 |     rows.length,\n  71 |     `${label}Aucune ligne persistée trouvée en base PostgreSQL 18 (orcia_e2e). SQL: ${sql} | params: ${formatParams(params)}`,\n> 72 |   ).toBeGreaterThanOrEqual(1);\n     |     ^\n  73 |   return rows[0] ?? {};\n  74 | }\n  75 |\n    at expectDbRowExists (/home/romain/Documents/Projects/ORCIA/apps/web/e2e/support/dbAssertions.ts:72:5)\n    at /home/romain/Documents/Projects/ORCIA/apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts:158:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:36:52.665Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-failed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/18-catalog-packs-wizards-a-edfdb-ouvernée-MCP-survivent-à-F5-desktop-cockpit/attachments/final-state-failed-4f88467c2f7b734ae019cb3a6dab1c6250a9b0be.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/18-catalog-packs-wizards-a-edfdb-ouvernée-MCP-survivent-à-F5-desktop-cockpit/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/support/dbAssertions.ts",
+                        "column": 5,
+                        "line": 72
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "284a9f9fd82f337e506e-16df97d6ef4fbc8e7a22",
+              "file": "18-catalog-packs-wizards-and-mcp-bench.spec.ts",
+              "line": 146,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "19-orchestration-whatif-replay-and-gates.spec.ts",
+      "file": "19-orchestration-whatif-replay-and-gates.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Orchestration durable, contestation amont avec simulation d'impact, reprise et validations croisées",
+          "file": "19-orchestration-whatif-replay-and-gates.spec.ts",
+          "line": 15,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Instanciation depuis le cockpit, ancrage humain, contestation amont avec reprise et survie F5",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 21872,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:37:02.328Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/19-orchestration-whatif-re-4ce12-t-avec-reprise-et-survie-F5-desktop-cockpit/attachments/final-state-passed-ebf0553fbf281b19607f069f3f9d90ad97e67473.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "c6aed853ee4d55d5b858-107e9ac3e52e89cc78f4",
+              "file": "19-orchestration-whatif-replay-and-gates.spec.ts",
+              "line": 20,
+              "column": 3
+            },
+            {
+              "title": "Validation déterministe sandbox, validation agentique orthogonale, revue humaine par découpage et survie F5",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 21557,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('gates-staged-jira-status-badge')\nExpected: \u001b[32m\"EXECUTED\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" getByTestId('gates-staged-jira-status-badge') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('gates-staged-jira-status-badge')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('gates-staged-jira-status-badge')\nExpected: \u001b[32m\"EXECUTED\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" getByTestId('gates-staged-jira-status-badge') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('gates-staged-jira-status-badge')\u001b[22m\n\n    at /home/romain/Documents/Projects/ORCIA/apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts:191:70",
+                        "location": {
+                          "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts",
+                          "column": 70,
+                          "line": 191
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 189 |\u001b[39m     )\u001b[33m;\u001b[39m\n \u001b[90m 190 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m\"gates-human-evaluation-status-badge\"\u001b[39m))\u001b[33m.\u001b[39mtoContainText(\u001b[32m\"Validé\"\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 191 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByTestId(\u001b[32m\"gates-staged-jira-status-badge\"\u001b[39m))\u001b[33m.\u001b[39mtoHaveAttribute(\n \u001b[90m     |\u001b[39m                                                                      \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 192 |\u001b[39m       \u001b[32m\"data-status\"\u001b[39m\u001b[33m,\u001b[39m\n \u001b[90m 193 |\u001b[39m       \u001b[32m\"EXECUTED\"\u001b[39m\u001b[33m,\u001b[39m\n \u001b[90m 194 |\u001b[39m     )\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts",
+                            "column": 70,
+                            "line": 191
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('gates-staged-jira-status-badge')\nExpected: \u001b[32m\"EXECUTED\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" getByTestId('gates-staged-jira-status-badge') with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('gates-staged-jira-status-badge')\u001b[22m\n\n\n  189 |     );\n  190 |     await expect(page.getByTestId(\"gates-human-evaluation-status-badge\")).toContainText(\"Validé\");\n> 191 |     await expect(page.getByTestId(\"gates-staged-jira-status-badge\")).toHaveAttribute(\n      |                                                                      ^\n  192 |       \"data-status\",\n  193 |       \"EXECUTED\",\n  194 |     );\n    at /home/romain/Documents/Projects/ORCIA/apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts:191:70"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:37:24.388Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-failed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/19-orchestration-whatif-re-6b9c3--par-découpage-et-survie-F5-desktop-cockpit/attachments/final-state-failed-8b89db78496d969bbb4b054699c9cbd98d59f162.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/19-orchestration-whatif-re-6b9c3--par-découpage-et-survie-F5-desktop-cockpit/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts",
+                        "column": 70,
+                        "line": 191
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "c6aed853ee4d55d5b858-139936024d00cb3c900d",
+              "file": "19-orchestration-whatif-replay-and-gates.spec.ts",
+              "line": 103,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "20-process-studio-v2-finops-and-log-sink.spec.ts",
+      "file": "20-process-studio-v2-finops-and-log-sink.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Catalogue agents, chaîne de valeur, studio cinq blocs, autonomie, alertes applicatives et FinOps",
+          "file": "20-process-studio-v2-finops-and-log-sink.spec.ts",
+          "line": 17,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Catalogue agents avec pont assistant, chaîne de valeur, studio cinq blocs, tiroir HITL et survie F5",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 21315,
+                      "error": {
+                        "message": "Error: Chaîne de valeur persistée dans vsm_definitions_v2 PG18 — Nombre de lignes persistées insuffisant en base PostgreSQL 18 (0 < 1). SQL: SELECT COUNT(*)::int AS count FROM vsm_definitions_v2 | params: {}\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m0\u001b[39m",
+                        "stack": "Error: Chaîne de valeur persistée dans vsm_definitions_v2 PG18 — Nombre de lignes persistées insuffisant en base PostgreSQL 18 (0 < 1). SQL: SELECT COUNT(*)::int AS count FROM vsm_definitions_v2 | params: {}\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m0\u001b[39m\n    at expectDbRowCount (/home/romain/Documents/Projects/ORCIA/apps/web/e2e/support/dbAssertions.ts:98:5)\n    at /home/romain/Documents/Projects/ORCIA/apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts:88:5",
+                        "location": {
+                          "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/support/dbAssertions.ts",
+                          "column": 5,
+                          "line": 98
+                        },
+                        "snippet": "   at support/dbAssertions.ts:98\n\n\u001b[0m \u001b[90m  96 |\u001b[39m     singleCount\u001b[33m,\u001b[39m\n \u001b[90m  97 |\u001b[39m     \u001b[32m`${label}Nombre de lignes persistées insuffisant en base PostgreSQL 18 (${singleCount} < ${minCount}). SQL: ${sql} | params: ${formatParams(params)}`\u001b[39m\u001b[33m,\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m  98 |\u001b[39m   )\u001b[33m.\u001b[39mtoBeGreaterThanOrEqual(minCount)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m  99 |\u001b[39m   \u001b[36mreturn\u001b[39m singleCount\u001b[33m;\u001b[39m\n \u001b[90m 100 |\u001b[39m }\n \u001b[90m 101 |\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/support/dbAssertions.ts",
+                            "column": 5,
+                            "line": 98
+                          },
+                          "message": "Error: Chaîne de valeur persistée dans vsm_definitions_v2 PG18 — Nombre de lignes persistées insuffisant en base PostgreSQL 18 (0 < 1). SQL: SELECT COUNT(*)::int AS count FROM vsm_definitions_v2 | params: {}\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m0\u001b[39m\n\n   at support/dbAssertions.ts:98\n\n   96 |     singleCount,\n   97 |     `${label}Nombre de lignes persistées insuffisant en base PostgreSQL 18 (${singleCount} < ${minCount}). SQL: ${sql} | params: ${formatParams(params)}`,\n>  98 |   ).toBeGreaterThanOrEqual(minCount);\n      |     ^\n   99 |   return singleCount;\n  100 | }\n  101 |\n    at expectDbRowCount (/home/romain/Documents/Projects/ORCIA/apps/web/e2e/support/dbAssertions.ts:98:5)\n    at /home/romain/Documents/Projects/ORCIA/apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts:88:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:37:46.957Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-failed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/20-process-studio-v2-finop-e14f5-cs-tiroir-HITL-et-survie-F5-desktop-cockpit/attachments/final-state-failed-601b09931d61792ebff22c6af5a177f2ff799879.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/20-process-studio-v2-finop-e14f5-cs-tiroir-HITL-et-survie-F5-desktop-cockpit/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/support/dbAssertions.ts",
+                        "column": 5,
+                        "line": 98
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "83a06e95068d0e52d818-afc6279a20c6c8f7e6fd",
+              "file": "20-process-studio-v2-finops-and-log-sink.spec.ts",
+              "line": 22,
+              "column": 3
+            },
+            {
+              "title": "Contrat d'autonomie, alerte applicative dédupliquée, arrêt d'urgence et gouvernance FinOps survivent à F5",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 15668,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m201\u001b[39m\nReceived: \u001b[31m409\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m201\u001b[39m\nReceived: \u001b[31m409\u001b[39m\n    at /home/romain/Documents/Projects/ORCIA/apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts:158:36",
+                        "location": {
+                          "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts",
+                          "column": 36,
+                          "line": 158
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 156 |\u001b[39m       }\u001b[33m,\u001b[39m\n \u001b[90m 157 |\u001b[39m     )\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 158 |\u001b[39m     expect(apiTriggerRes\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBe(\u001b[35m201\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 159 |\u001b[39m     \u001b[36mconst\u001b[39m createdTrigger \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m apiTriggerRes\u001b[33m.\u001b[39mjson()\u001b[33m;\u001b[39m\n \u001b[90m 160 |\u001b[39m\n \u001b[90m 161 |\u001b[39m     \u001b[36mconst\u001b[39m alertPayload \u001b[33m=\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts",
+                            "column": 36,
+                            "line": 158
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m201\u001b[39m\nReceived: \u001b[31m409\u001b[39m\n\n  156 |       },\n  157 |     );\n> 158 |     expect(apiTriggerRes.status()).toBe(201);\n      |                                    ^\n  159 |     const createdTrigger = await apiTriggerRes.json();\n  160 |\n  161 |     const alertPayload = {\n    at /home/romain/Documents/Projects/ORCIA/apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts:158:36"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:38:09.451Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-failed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/20-process-studio-v2-finop-32bee-nance-FinOps-survivent-à-F5-desktop-cockpit/attachments/final-state-failed-e8b098e20fcc1aec4b43bc11138dd6cbb72071ee.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/20-process-studio-v2-finop-32bee-nance-FinOps-survivent-à-F5-desktop-cockpit/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/home/romain/Documents/Projects/ORCIA/apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts",
+                        "column": 36,
+                        "line": 158
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "83a06e95068d0e52d818-79e5d917b7ba233f98fe",
+              "file": "20-process-studio-v2-finops-and-log-sink.spec.ts",
+              "line": 102,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "21-assistant-citations-v5-audit-help-showcase.spec.ts",
+      "file": "21-assistant-citations-v5-audit-help-showcase.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Assistant conversationnel, citations déterministes, centre d'aide et vitrine produit",
+          "file": "21-assistant-citations-v5-audit-help-showcase.spec.ts",
+          "line": 17,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Création de dossier, réponse avec citations vérifiées, verrouillage d'écriture directe et audit en tâche de fond survivent à F5",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 19982,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:38:26.311Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/21-assistant-citations-v5--5a5d1-âche-de-fond-survivent-à-F5-desktop-cockpit/attachments/final-state-passed-cf7cae9d42a2ac7ad094782e9a8a7cbf8d836407.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5aeaae5d1da7c7ad3578-1e915d5f1b6cb7fffa10",
+              "file": "21-assistant-citations-v5-audit-help-showcase.spec.ts",
+              "line": 22,
+              "column": 3
+            },
+            {
+              "title": "Centre d'aide contextuelle, lien organisationnel, colonne latérale et vitrine produit survivent à F5 sans erreur serveur",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13597,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:38:46.479Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/21-assistant-citations-v5--c1116-nt-à-F5-sans-erreur-serveur-desktop-cockpit/attachments/final-state-passed-d090f6bbcb14d60e06acc24ca2b12163e670bf73.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "5aeaae5d1da7c7ad3578-9f70fa9f77858121d527",
+              "file": "21-assistant-citations-v5-audit-help-showcase.spec.ts",
+              "line": 166,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "shell.spec.ts",
+      "file": "shell.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, UX-DR8)",
+          "file": "shell.spec.ts",
+          "line": 27,
+          "column": 6,
+          "specs": [
+            {
+              "title": "présente les 4 zones, masque Paramètres tant qu'aucun PLATFORM_ADMIN n'est connecté et l'affiche après création admin",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8590,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:39:00.119Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/shell-Shell-4-zones-Direct-c50aa-ffiche-après-création-admin-desktop-cockpit/attachments/final-state-passed-f8669e561444a25fea5478baa244b814d5d9ec9d.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3420664513cb0bae123e-c972f240b7ef226c82ab",
+              "file": "shell.spec.ts",
+              "line": 46,
+              "column": 3
+            },
+            {
+              "title": "grise les entrées de menu tant que la plateforme n'est pas initialisée (Jour 0)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6833,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:39:08.734Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/shell-Shell-4-zones-Direct-d7432-est-pas-initialisée-Jour-0--desktop-cockpit/attachments/final-state-passed-64a26724911453725468aff4c83ddc76d49bdac5.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3420664513cb0bae123e-4a2ad4655faae7a5be13",
+              "file": "shell.spec.ts",
+              "line": 99,
+              "column": 3
+            },
+            {
+              "title": "le raccourci « [ » replie et déplie la barre latérale",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8333,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:39:15.591Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/shell-Shell-4-zones-Direct-85ad9-et-déplie-la-barre-latérale-desktop-cockpit/attachments/final-state-passed-165e38c155dd6914a1696f65ca1810bccab7c936.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3420664513cb0bae123e-5a24acb7987ff5b3751e",
+              "file": "shell.spec.ts",
+              "line": 120,
+              "column": 3
+            },
+            {
+              "title": "la modale Jour 0 est un dialogue accessible qui bloque le shell",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 35000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "desktop-cockpit",
+                  "projectName": "desktop-cockpit",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8785,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-11-20T06:39:23.946Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "final-state-passed",
+                          "contentType": "image/png",
+                          "path": "/home/romain/Documents/Projects/ORCIA/apps/web/test-results/shell-Shell-4-zones-Direct-d7e1b-essible-qui-bloque-le-shell-desktop-cockpit/attachments/final-state-passed-6a991b0e3785e7c9b17e7f315b146dfd120de28a.png"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "3420664513cb0bae123e-ced281d44854e147f39a",
+              "file": "shell.spec.ts",
+              "line": 137,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-20T06:26:44.585Z",
+    "duration": 771175.8470000001,
+    "expected": 44,
+    "skipped": 3,
+    "unexpected": 8,
+    "flaky": 0
+  }
+}

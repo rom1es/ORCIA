@@ -11,6 +11,7 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CAMPAIGN_DIR = REPO_ROOT / "docs" / "implementation-artifacts" / "e2e-campaign-epic-22"
+CAMPAIGN_23_DIR = REPO_ROOT / "docs" / "implementation-artifacts" / "e2e-campaign-epic-23"
 SCREENSHOTS_DIR = CAMPAIGN_DIR / "screenshots"
 MASTER_PLAN_PATH = (
     REPO_ROOT
@@ -295,6 +296,24 @@ def test_every_failed_capability_points_to_epic23_key_master_plan_and_report() -
                     f"Capability {cap_id} points to missing report {report_path.name}"
                 )
 
+    cap_042 = next((c for c in live_caps if c.get("id") == "CAP-042"), None)
+    assert cap_042 is not None
+    assert cap_042.get("verification") == "failed_e2e"
+    assert cap_042.get("e2e_remediation_ref") == ACTION_ITEM_23_6_ID
+
+    results_23_path = CAMPAIGN_23_DIR / "playwright-results.json"
+    results_23 = json.loads(results_23_path.read_text(encoding="utf-8"))
+    failing_23_basenames = _collect_failing_spec_files(results_23.get("suites", []))
+    failing_23_paths = {f"apps/web/e2e/{Path(f).name}" for f in failing_23_basenames}
+    for cap in live_caps:
+        cap_id = str(cap.get("id", "")).strip()
+        cap_tests = {str(t) for t in (cap.get("tests") or [])}
+        if cap_tests & failing_23_paths:
+            assert cap.get("verification") == "failed_e2e", (
+                f"Fraudulent promotion: {cap_id} references failing spec(s) "
+                f"{sorted(cap_tests & failing_23_paths)}"
+            )
+
 
 def test_every_epic23_sprint_key_has_story_report_and_index_entry() -> None:
     sprint_data = _load_yaml_mapping(SPRINT_STATUS_PATH)
@@ -340,3 +359,47 @@ def test_story_23_6_and_mobile_companion_are_deferred_to_action_item_23_6() -> N
     assert (REPORTS_DIR / archived_report).is_file()
     assert archived_report in REPORTS_INDEX_PATH.read_text(encoding="utf-8")
     assert "### Story 23.6:" in EPICS_PATH.read_text(encoding="utf-8")
+
+
+def test_epic23_desktop_campaign_deliverables_and_registry_counts_when_23_7_done() -> None:
+    sprint_data = _load_yaml_mapping(SPRINT_STATUS_PATH)
+    dev_status = sprint_data.get("development_status", {})
+    assert isinstance(dev_status, dict)
+    if dev_status.get(STORY_23_7_KEY) != "done":
+        return
+
+    for artifact_name in (
+        "playwright-results.json",
+        "manifest.jsonl",
+        "bilan-execution-tests-e2e-epic-23.md",
+        "notes-audit-sally-ux.md",
+        "notes-audit-winston-architecture.md",
+        "synthese-remediation-sally-winston-epic-23.md",
+    ):
+        artifact = CAMPAIGN_23_DIR / artifact_name
+        assert artifact.is_file(), f"Missing Epic 23 campaign deliverable: {artifact}"
+        assert 0 < artifact.stat().st_size < MAX_PNG_BYTES
+
+    manifest_lines = [
+        line
+        for line in (CAMPAIGN_23_DIR / "manifest.jsonl").read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    assert len(manifest_lines) == 55
+    for line in manifest_lines:
+        entry = json.loads(line)
+        rel_shot = str(entry.get("screenshot_path", "")).strip()
+        assert rel_shot.startswith(
+            "docs/implementation-artifacts/e2e-campaign-epic-23/screenshots/"
+        )
+        assert (REPO_ROOT / rel_shot).is_file()
+
+    disk_pngs = list((CAMPAIGN_23_DIR / "screenshots").rglob("*.png"))
+    assert len(disk_pngs) == 58
+    assert all(0 < p.stat().st_size < MAX_PNG_BYTES for p in disk_pngs)
+
+    capabilities = _load_yaml_mapping(CAPABILITIES_PATH).get("capabilities", [])
+    runtime_caps = [c for c in capabilities if c.get("verification") == "runtime"]
+    failed_caps = [c for c in capabilities if c.get("verification") == "failed_e2e"]
+    assert len(runtime_caps) == 39
+    assert len(failed_caps) == 26

@@ -17,7 +17,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "techLeadReportsCount": 193,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
-    "verifiedCapabilitiesCount": 3,
+    "verifiedCapabilitiesCount": 39,
     "userJourneysCount": 20,
     "coveredUserJourneysCount": 20,
     "e2eCoveredCapabilitiesCount": 62
@@ -543,11 +543,11 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "summary": "Pré-implémentation (ready-for-dev, recadrée Step 2a) : si 52/52 PASS Desktop et 0 écart P0/P1, clôture directe epic-23: done sans Epic 24 artificiel vide (CAP-042 sous ACTION_ITEM-23.6) ; sinon rédaction des rapports Tech Lead 24-1..24-K, plan directeur, initialisation Epic 24 et test_epic23_to_epic24_traceability.py."
     },
     {
-      "date": "2026-11-19",
+      "date": "2026-11-20",
       "phaseOrStory": "Story 23.7",
       "reportFile": "23-7-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston-tech-lead-report.md",
-      "domain": "Vague 3 — Campagne Playwright E2E Intégrale Desktop (--project=desktop-cockpit, 55 scénarios / 24 specs), Captures PNG (< 450 KB), Bilan, Audit Croisé Sally × Winston & capabilities.yaml",
-      "summary": "Pré-implémentation (ready-for-dev, recadrée Step 2a) : prérequis 23.1..23.5 + 23.6a 100 % verts AD-17, exécution figée Desktop --project=desktop-cockpit (52 exécutés + 3 mobile-only skipped), archivage playwright-results.json, manifest.jsonl et 55/55 PNG Desktop, bilan bilan-execution-tests-e2e-epic-23.md, audit croisé Sally × Winston, bascule PLAYWRIGHT_RESULTS_PATH, mise à jour honnête capabilities.yaml (CAP-042 maintenue failed_e2e vers ACTION_ITEM-23.6) et pnpm site:sync && pnpm site:check."
+      "domain": "Vague 3 — Campagne Playwright E2E Intégrale Desktop (--project=desktop-cockpit, 55 scénarios / 24 specs), Captures PNG (58 < 450 KB), Bilan, Audit Croisé Sally × Winston (Case B -> Epic 24) & Vérité capabilities.yaml (39 runtime / 26 failed_e2e)",
+      "summary": "Clôture (done) : exécution sans retry ni ORCIA_E2E_SEED_FIXTURES sur dd2d382 vers e2e-campaign-epic-23/ (44 passed / 7 failed / 1 timedOut / 3 skipped / 0 flaky, 84,6 % Desktop, +37 PASS vs Epic 22), archivage playwright-results.json, manifest.jsonl (55) et 58 PNG < 450 KB, bilan bilan-execution-tests-e2e-epic-23.md, audit croisé Sally × Winston (17 UX23-*, 12 ARCH24-*, 12 REM24-*, verdict Case B -> Epic 24), bascule PLAYWRIGHT_RESULTS_PATH, mise à jour honnête capabilities.yaml (39 runtime = 36 feature + 3 foundation ; 26 failed_e2e = 25 → 23-8 + CAP-042 → ACTION_ITEM-23.6), test_epic22_to_epic23_traceability.py, 34 passed (pytest), check_implementation_docs.py (193/193), ruff OK et pnpm site:sync && pnpm site:check (0 erreur)."
     },
     {
       "date": "2026-11-20",
