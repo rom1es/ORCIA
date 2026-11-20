@@ -10,6 +10,7 @@ import { writeAssistantPrefillPrompt } from "../../components/agentsAndSkillsBri
 import { buildUnifiedAccostageMilestones } from "../../components/platformSetupAccostage";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
+import { buildShellDisabledMenuKeys } from "../../components/shellScopeOptions";
 import { useI18n } from "../../i18n";
 import {
   isPlatformAdministratorSession,
@@ -41,7 +42,12 @@ export function buildCockpitWorkflowPreviewGraph(): {
 
 export function CockpitFeaturePanel() {
   const { dictionary, locale } = useI18n();
-  const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
+  const {
+    activeScopeId,
+    navigateToRoute,
+    openHelpSection,
+    disabledMenuKeys: shellDisabledMenuKeys,
+  } = useShellNavigation();
   const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
   const isHydrating = useAuthSessionStore((s) => s.isHydrating);
   const authEmail = useAuthSessionStore((s) => s.email);
@@ -50,6 +56,7 @@ export function CockpitFeaturePanel() {
   const readOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
   const {
     platformAdmin,
+    llmTiers,
     workspaces,
     workflows,
     runs,
@@ -141,7 +148,10 @@ export function CockpitFeaturePanel() {
     })();
   };
 
-  const governanceWorkspaceId = selectedWsId || availableWorkspaces[0]?.workspaceId;
+  const governanceWorkspaceId =
+    (activeScopeNode?.level === "WORKSPACE" ? activeScopeId : selectedWsId) ||
+    scopedRuns[0]?.workspaceId ||
+    undefined;
 
   useEffect(() => {
     if (isHydrating || !isAuthenticated) {
@@ -179,6 +189,18 @@ export function CockpitFeaturePanel() {
     authEmail?.trim() ||
     platformAdmin?.displayName ||
     dictionary.humanAnchor.defaultAuthorName;
+
+  const effectiveDisabledMenuKeys =
+    shellDisabledMenuKeys ??
+    buildShellDisabledMenuKeys({
+      isFr,
+      adminCreated: accostageSummary.adminCreated,
+      day0AdminMissingReason: dictionary.firstBootAdminModal.day0DisabledAdminMissingReason,
+      llmTiers,
+      workspaces,
+      hasModels: accostageSummary.hasModels,
+      hasWorkspaces: workspaces.length > 0 || accostageSummary.hasWorkspaces,
+    });
 
   return (
     <div
@@ -250,6 +272,7 @@ export function CockpitFeaturePanel() {
           }))}
           currentUserId={currentUserId}
           labels={dictionary.streamlinedCockpit}
+          disabledMenuKeys={effectiveDisabledMenuKeys}
           onOpenAssistant={(initialPrompt) => {
             if (initialPrompt.trim()) {
               writeAssistantPrefillPrompt(initialPrompt.trim());

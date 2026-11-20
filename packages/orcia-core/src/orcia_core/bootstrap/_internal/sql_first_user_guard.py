@@ -8,6 +8,9 @@ from uuid import UUID
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from orcia_core.bootstrap._internal.sql_personal_workspace import (
+    ensure_personal_workspace_on_postgres18,
+)
 from orcia_core.bootstrap.errors import (
     FirstUserAlreadyInitializedError,
     InvalidBootstrapTokenError,
@@ -87,6 +90,13 @@ async def create_first_platform_admin_on_postgres18(
                 "org_id": root_org_id,
             },
         )
+        ws_reg = (await conn.execute(sa.text("SELECT to_regclass('public.workspaces')"))).scalar()
+        if ws_reg is not None:
+            await ensure_personal_workspace_on_postgres18(
+                conn,
+                user_id=user_id_str,
+                display_name=display_name.strip(),
+            )
 
     return FirstPlatformAdminRecord(
         user_id=user_id_str,

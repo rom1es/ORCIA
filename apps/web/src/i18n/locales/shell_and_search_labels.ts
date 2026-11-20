@@ -165,6 +165,11 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
     assistantTrialReadyBadge:
       "🚀 Prêt à démarrer : Mon Assistant et le Cockpit sont disponibles",
     progressLabelPrefix: "Accostage",
+    progressFormatTemplate: "{completed} / {total} complétées",
+    collapseGuideLabel: "Réduire",
+    expandGuideLabel: "Déplier le guide",
+    milestoneDoneLabel: "Terminé",
+    milestoneOpenLabel: "Configurer",
     adminInitializedBadge: "Administrateur de plateforme initialisé",
   },
   topHeaderSearch: {
@@ -459,6 +464,11 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
     assistantTrialReadyBadge:
       "🚀 Ready to start: My Assistant and Cockpit are available",
     progressLabelPrefix: "Onboarding",
+    progressFormatTemplate: "{completed} of {total} completed",
+    collapseGuideLabel: "Collapse",
+    expandGuideLabel: "Expand guide",
+    milestoneDoneLabel: "Completed",
+    milestoneOpenLabel: "Configure",
     adminInitializedBadge: "Platform administrator initialized",
   },
   topHeaderSearch: {

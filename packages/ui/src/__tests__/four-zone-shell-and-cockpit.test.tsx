@@ -267,75 +267,149 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
     );
   });
 
-  it("Story 9.2 — enforces ORCIA_BOOTSTRAP_TOKEN when ORCIA_ENV != local and unlocks Quick Trial Mode (1 model) then AD-10 Gates (>= 2 families)", () => {
+  it("Story 25.1 — renders unified 6-milestone ProgressiveDay0AccostageBanner without Step 1/2/3 sub-cards, locks uncollapsible < 6/6, and switches Quick Trial -> AD-10 badges", () => {
     const accostageLabels: ProgressiveDay0AccostageLabels = {
-      bannerTitle: "Parcours d'Accostage Progressif Jour 0",
-      welcomeWizardTitle: "Assistant de Bienvenue (/welcome-setup)",
-      step1AdminTitle: "Étape 1 : Premier Administrateur (LOCK TABLE users)",
-      step2LlmTitle: "Étape 2 : Modèles IA Progressifs",
-      step3SpaceTitle: "Étape 3 : Jalons d'Accostage 1/6",
-      bootstrapTokenLabel: "Jeton d'amorçage ORCIA_BOOTSTRAP_TOKEN",
-      bootstrapTokenPlaceholder: "Saisissez ORCIA_BOOTSTRAP_TOKEN...",
-      bootstrapTokenDeniedBanner:
-        "HTTP 403 ERR_INVALID_BOOTSTRAP_TOKEN — Jeton d'amorçage invalide",
-      createFirstAdminCta: "Créer le compte PLATFORM_ADMIN",
-      addFirstModelCta: "+ Configurer 1er modèle",
-      addSecondModelFamilyCta: "+ Ajouter 2e famille orthogonale",
+      bannerTitle: "Guide de Démarrage de la Plateforme",
       singleFamilyAmberWarning:
-        "⚠️ 1 seule famille de modèles configurée — Ajoutez une 2e famille dans Configuration › Modèles IA pour activer les Gates Agentiques AD-10",
+        "⚠️ Un seul fournisseur IA configuré — Ajoutez un 2e fournisseur indépendant dans Configuration › Modèles IA pour activer les revues croisées",
       dualFamilyAd10UnlockedBadge:
         "✅ ≥ 2 familles orthogonales actives — Gates Agentiques AD-10 débloquées",
-      assistantTrialReadyBadge:
-        "🚀 Mode Essai Rapide actif : Mon Assistant & Cockpit débloqués",
+      progressFormatTemplate: "{completed} / {total} complétées",
+      collapseGuideLabel: "Réduire",
+      expandGuideLabel: "Déplier le guide",
+      milestoneDoneLabel: "Terminé",
+      milestoneOpenLabel: "Configurer",
+      adminInitializedBadge: "Administrateur de plateforme initialisé",
     };
+    const onNavigateMilestone = vi.fn();
 
-    render(
+    const sixMilestones = (completedKeys: readonly string[]) => [
+      { index: 1, key: "first-admin", title: "1. Compte Admin", completed: completedKeys.includes("first-admin"), targetRoute: "/profile" },
+      { index: 2, key: "step-llm", title: "2. Modèles IA", completed: completedKeys.includes("step-llm"), targetRoute: "/configuration" },
+      { index: 3, key: "step-iam", title: "3. Organisation", completed: completedKeys.includes("step-iam"), targetRoute: "/organization" },
+      { index: 4, key: "step-workspaces", title: "4. Premier Espace d'équipe", completed: completedKeys.includes("step-workspaces"), targetRoute: "/spaces" },
+      { index: 5, key: "step-connectors", title: "5. Première Source", completed: completedKeys.includes("step-connectors"), targetRoute: "/configuration" },
+      { index: 6, key: "step-workflows", title: "6. Premier Processus", completed: completedKeys.includes("step-workflows"), targetRoute: "/processes" },
+    ];
+
+    const { rerender } = render(
       <ProgressiveDay0AccostageBanner
         completedCount={1}
-        orciaEnv="staging"
-        milestones={[
-          {
-            index: 1,
-            key: "first-admin",
-            title: "1. Compte Administrateur Initial",
-            completed: true,
-            targetRoute: "/profile",
-          },
-        ]}
+        totalCount={6}
+        defaultCompact={true}
+        adminCreated={true}
+        adminDisplayName="Alice Admin"
+        initialFamilies={[]}
+        milestones={sixMilestones(["first-admin"])}
         labels={accostageLabels}
+        onNavigateMilestone={onNavigateMilestone}
       />,
     );
 
-    expect(screen.getByTestId("accostage-progress-pill").textContent).toBe("Accostage 1/6");
+    // No redundant Step 1 / Step 2 / Step 3 wizard sub-blocks
+    expect(screen.queryByTestId("welcome-setup-3step-wizard")).toBeNull();
+    expect(screen.queryByTestId("welcome-setup-step1-card")).toBeNull();
+    expect(screen.queryByTestId("welcome-setup-step2-card")).toBeNull();
+    expect(screen.queryByTestId("welcome-setup-step3-card")).toBeNull();
+    expect(screen.queryByTestId("welcome-setup-submit-admin-btn")).toBeNull();
 
-    // Submitting without bootstrap token on staging -> 403 ERR_INVALID_BOOTSTRAP_TOKEN
-    fireEvent.click(screen.getByTestId("welcome-setup-submit-admin-btn"));
-    expect(screen.getByTestId("welcome-setup-token-denied-banner").textContent).toContain(
-      "ERR_INVALID_BOOTSTRAP_TOKEN",
+    // Progress pill + uncollapsible lock when completedCount < 6 (even if defaultCompact=true)
+    expect(screen.getByTestId("accostage-progress-pill").textContent).toBe("1 / 6 complétées");
+    expect(screen.queryByTestId("accostage-compact-toggle-btn")).toBeNull();
+    expect(screen.getByTestId("progressive-day0-accostage-banner").getAttribute("data-compact")).toBe("false");
+
+    const wsMilestone = screen.getByTestId("accostage-milestone-step-workspaces");
+    expect(wsMilestone.textContent).toContain("4. Premier Espace d'équipe");
+    expect(wsMilestone.getAttribute("data-completed")).toBe("false");
+    fireEvent.click(wsMilestone);
+    expect(onNavigateMilestone).toHaveBeenCalledWith("/spaces");
+
+    // Completed milestone uses green --color-gate-pass tokens and aligned grid
+    const adminMilestone = screen.getByTestId("accostage-milestone-first-admin");
+    expect(adminMilestone.getAttribute("data-completed")).toBe("true");
+    expect(adminMilestone.className).toContain("bg-[var(--color-gate-pass-bg)]");
+    expect(adminMilestone.className).toContain("text-[var(--color-gate-pass)]");
+    expect(adminMilestone.className).toContain("grid-cols-");
+    expect(adminMilestone.querySelector('[data-orcia-icon="check"]')).not.toBeNull();
+    expect(wsMilestone.querySelector('[data-orcia-icon="arrowRight"]')).not.toBeNull();
+
+    // 1 model family -> Quick Trial amber warning
+    rerender(
+      <ProgressiveDay0AccostageBanner
+        completedCount={2}
+        totalCount={6}
+        adminCreated={true}
+        adminDisplayName="Alice Admin"
+        initialFamilies={["qwen-2.5"]}
+        milestones={sixMilestones(["first-admin", "step-llm"])}
+        labels={accostageLabels}
+        onNavigateMilestone={onNavigateMilestone}
+      />,
     );
-
-    // Provide token -> creates admin without LOCK TABLE jargon
-    fireEvent.change(screen.getByTestId("welcome-setup-bootstrap-token-input"), {
-      target: { value: "valid-boot-tok" },
-    });
-    fireEvent.click(screen.getByTestId("welcome-setup-submit-admin-btn"));
-    expect(screen.getByTestId("welcome-setup-admin-created-badge").textContent).toContain(
-      "Administrateur de plateforme initialisé",
-    );
-
-    // Add 1st LLM model -> Quick Trial Mode with amber warning badge
-    fireEvent.click(screen.getByTestId("welcome-setup-add-first-llm-btn"));
+    expect(screen.getByTestId("accostage-progress-pill").textContent).toBe("2 / 6 complétées");
     expect(screen.getByTestId("accostage-single-family-amber-badge").textContent).toContain(
-      "⚠️ 1 seule famille de modèles configurée",
+      "⚠️ Un seul fournisseur IA configuré",
     );
-    expect(screen.getByTestId("welcome-setup-assistant-trial-ready")).toBeDefined();
 
-    // Add 2nd distinct LLM family -> AD-10 Agentic Gates unlocked!
-    fireEvent.click(screen.getByTestId("welcome-setup-add-second-llm-btn"));
-    expect(screen.queryByTestId("accostage-single-family-amber-badge")).toBeNull();
-    expect(screen.getByTestId("accostage-dual-family-ad10-badge").textContent).toContain(
-      "AD-10",
+    // 2 orthogonal families + 6/6 completed -> AD-10 badge + collapsible toggle unlocked!
+    rerender(
+      <ProgressiveDay0AccostageBanner
+        completedCount={6}
+        totalCount={6}
+        defaultCompact={false}
+        adminCreated={true}
+        adminDisplayName="Alice Admin"
+        initialFamilies={["qwen-2.5", "anthropic-claude"]}
+        milestones={sixMilestones(["first-admin", "step-llm", "step-iam", "step-workspaces", "step-connectors", "step-workflows"])}
+        labels={accostageLabels}
+        onNavigateMilestone={onNavigateMilestone}
+      />,
     );
+    expect(screen.getByTestId("accostage-progress-pill").textContent).toBe("6 / 6 complétées");
+    expect(screen.queryByTestId("accostage-single-family-amber-badge")).toBeNull();
+    expect(screen.getByTestId("accostage-dual-family-ad10-badge").textContent).toContain("AD-10");
+    const toggleBtn = screen.getByTestId("accostage-compact-toggle-btn");
+    expect(toggleBtn.textContent).toContain("Réduire");
+    fireEvent.click(toggleBtn);
+    expect(screen.getByTestId("progressive-day0-accostage-banner").getAttribute("data-compact")).toBe("true");
+    expect(screen.getByTestId("accostage-compact-toggle-btn").textContent).toContain("Déplier le guide");
+  });
+
+  it("Story 25.1 — CockpitOrientationCards mirrors disabledMenuKeys on assistant and processes cards", () => {
+    const onNavigateModule = vi.fn();
+    const { rerender } = render(
+      <StreamlinedCockpitView
+        decisions={[]}
+        currentUserId="user-1"
+        labels={COCKPIT_LABELS}
+        disabledMenuKeys={{
+          assistant: "Configurez un modèle IA",
+          processes: "Configurez un modèle IA",
+        }}
+        onNavigateModule={onNavigateModule}
+      />,
+    );
+
+    const processesCard = screen.getByTestId("cockpit-orientation-card-processes") as HTMLButtonElement;
+    expect(processesCard.disabled).toBe(true);
+    expect(processesCard.getAttribute("aria-disabled")).toBe("true");
+    fireEvent.click(processesCard);
+    expect(onNavigateModule).not.toHaveBeenCalled();
+
+    rerender(
+      <StreamlinedCockpitView
+        decisions={[]}
+        currentUserId="user-1"
+        labels={COCKPIT_LABELS}
+        disabledMenuKeys={{}}
+        onNavigateModule={onNavigateModule}
+      />,
+    );
+
+    const unlockedProcesses = screen.getByTestId("cockpit-orientation-card-processes") as HTMLButtonElement;
+    expect(unlockedProcesses.disabled).toBe(false);
+    fireEvent.click(unlockedProcesses);
+    expect(onNavigateModule).toHaveBeenCalledWith("/processes");
   });
 
   it("Story 9.3 — executes Two-Speed Federated Search (⌘K) with Zero Layout Shift, 3 scopes, 7 families, and 2s Deep-Linking", () => {

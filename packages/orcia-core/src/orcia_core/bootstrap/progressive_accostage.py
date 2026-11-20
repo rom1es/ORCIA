@@ -89,8 +89,8 @@ ACCOSTAGE_SIX_MILESTONES: tuple[AccostageMilestoneSpec, ...] = (
     AccostageMilestoneSpec(
         4,
         "first-space",
-        "4. Premier Espace",
-        "4. First Space",
+        "4. Premier Espace d'équipe",
+        "4. First Team Space",
         "/spaces",
     ),
     AccostageMilestoneSpec(

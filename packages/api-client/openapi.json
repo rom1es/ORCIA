@@ -33879,6 +33879,11 @@
             "title": "Id",
             "type": "string"
           },
+          "is_personal": {
+            "default": false,
+            "title": "Is Personal",
+            "type": "boolean"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -33894,7 +33899,8 @@
           "visibility_mode": {
             "enum": [
               "STANDARD",
-              "CONFIDENTIAL_RESTRICTED"
+              "CONFIDENTIAL_RESTRICTED",
+              "PRIVATE_USER"
             ],
             "title": "Visibility Mode",
             "type": "string"

@@ -214,7 +214,7 @@ export function buildShellDisabledMenuKeys(params: {
     };
   }
   const effectiveHasModels = hasModels ?? llmTiers.length > 0;
-  const effectiveHasWorkspaces = hasWorkspaces ?? workspaces.length > 0;
+  const effectiveHasWorkspaces = workspaces.length > 0 || Boolean(hasWorkspaces);
   return {
     ...(!effectiveHasModels
       ? {

@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 57,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 200,
+    "techLeadReportsCount": 201,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 64,
@@ -538,6 +538,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-20",
+      "phaseOrStory": "Story 25.1",
+      "reportFile": "25-1-espace-personnel-auto-pg18-accostage-unifie-et-degrisage-processus-tech-lead-report.md",
+      "domain": "Epic 25 — Espace Personnel Automatique PG18 Isolé par Utilisateur, Accostage Unifié 6 Jalons & Dégrisage Mes Processus",
+      "summary": "Clôture (done) : provisionnement SQL idempotent sql_personal_workspace.py (PRIVATE_USER / CONFIDENTIAL_RESTRICTED, personal_owner_user_id), verrou propriétaire MatrixPermissionEvaluator même entre PLATFORM_ADMIN, exclusion PRIVATE_USER de 4. Premier Espace d'équipe, liste unifiée 6 jalons sans Step 1..3 ni bouton repli avant 6/6, propagation disabledMenuKeys vers CockpitOrientationCards, correctif await hydrateSession dans useOrgUnitsBlockActions.ts ; 92.41 % couv. ciblée Story 25.1, 1036 passed (unit+security+evals), 1/1 PG18 réel create_app(), 9/9 Turbo (400 tests JS/TS), 12 passed Playwright (shell, 00, 01, 03, 07), ruff/mypy --strict/lint-imports (5/5)/export_openapi (0-diff)/lint_spine (0) vert."
+    },
     {
       "date": "2026-11-20",
       "phaseOrStory": "Story 24.7",

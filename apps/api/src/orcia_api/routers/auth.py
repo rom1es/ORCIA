@@ -36,6 +36,7 @@ from orcia_api.routers._auth_token_issuer import (
 from orcia_api.routers._auth_token_issuer import (
     resolve_request_user as resolve_request_user,
 )
+from orcia_api.routers._personal_workspace_sync import ensure_user_personal_workspace_from_pg
 from orcia_api.schemas.auth_and_org import (
     AuthTokenResponse,
     LocalLoginRequest,
@@ -248,6 +249,7 @@ async def login_oidc(
                 ):
                     raise InvalidCredentialsError(instance=str(request.url.path))
                 user = user_identity_from_candidate(candidate, auth_mode="OIDC")
+                await ensure_user_personal_workspace_from_pg(engine, user, evaluator=svc.evaluator)
                 return issue_completed_auth_response(
                     response=response,
                     request=request,

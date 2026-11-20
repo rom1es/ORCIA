@@ -54,9 +54,10 @@ test.describe("TEST-04 · 03 — Human-Led : ancrage obligatoire et arbitrage", 
 
     const section = page.getByTestId("cockpit-human-led-governance-section");
     await expect(section).toBeVisible({ timeout: 15000 });
+    // Story 25.1: tant que l'accostage est < 6/6, la bannière reste dépliée et non compactable
     await expect(page.getByTestId("progressive-day0-accostage-banner")).toHaveAttribute(
       "data-compact",
-      "true",
+      "false",
     );
     if (testInfo.project.name === "desktop-cockpit") {
       await assertNoDesktopVerticalPageOverflow(page, "cockpit-with-active-run-and-anchor");

@@ -86,6 +86,10 @@ from orcia_core.bootstrap._internal.sql_org_units import (
     list_org_units_from_postgres18,
     update_org_unit_on_postgres18,
 )
+from orcia_core.bootstrap._internal.sql_personal_workspace import (
+    build_personal_workspace_name,
+    ensure_personal_workspace_on_postgres18,
+)
 from orcia_core.bootstrap._internal.sql_platform_setup_store import (
     PlatformSetupSnapshotRecord,
     load_platform_setup_state_from_postgres18,
@@ -294,7 +298,9 @@ __all__ = [
     "persist_autonomous_run_outcome_on_postgres18",
     "build_default_system_bootstrap_service",
     "build_litellm_gateway_plugin",
+    "build_personal_workspace_name",
     "build_postgres_upsert_sql",
+    "ensure_personal_workspace_on_postgres18",
     "create_enterprise_connector_on_postgres18",
     "create_first_platform_admin_on_postgres18",
     "create_iam_account_on_postgres18",

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import type { EightFixedMenuKey } from "./FourZoneShellTypes";
 import {
   CockpitDecisionsCard,
   CockpitFocusWorkshopPanel,
@@ -57,6 +58,7 @@ export interface StreamlinedCockpitViewProps {
   readonly decisions: readonly CockpitPendingDecisionItem[];
   readonly currentUserId: string;
   readonly labels: StreamlinedCockpitLabels;
+  readonly disabledMenuKeys?: Partial<Record<EightFixedMenuKey, string>>;
   readonly onResolveTieBreak?: (decisionId: string, selectedOption: string) => void;
   readonly onOpenFocusReview?: (lease: FocusReviewWorkshopLeaseInfo) => void;
   readonly onOpenAssistant?: (initialPrompt: string) => void;
@@ -67,6 +69,7 @@ export function StreamlinedCockpitView({
   decisions,
   currentUserId,
   labels,
+  disabledMenuKeys,
   onResolveTieBreak,
   onOpenFocusReview,
   onOpenAssistant,
@@ -110,6 +113,7 @@ export function StreamlinedCockpitView({
           quickPrompt={quickPrompt}
           onChangeQuickPrompt={setQuickPrompt}
           labels={labels}
+          disabledMenuKeys={disabledMenuKeys}
           onOpenAssistant={onOpenAssistant}
           onNavigateModule={onNavigateModule}
         />

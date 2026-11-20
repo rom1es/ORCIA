@@ -88,7 +88,10 @@ export function useCockpitGovernanceController({
       .getOrchestrationState()
       .then(async (state) => {
         if (cancelled) return;
-        const scopedRuns = (state.runs ?? []).filter((r) => r.workspace_id === effectiveWorkspaceId);
+        const allServerRuns = state.runs ?? [];
+        const scopedRuns = workspaceId
+          ? allServerRuns.filter((r) => r.workspace_id === effectiveWorkspaceId)
+          : allServerRuns;
         const latestRun = scopedRuns[scopedRuns.length - 1];
         if (latestRun?.id) {
           await hydrateFromRun(latestRun.id);

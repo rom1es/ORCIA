@@ -101,6 +101,9 @@ class MatrixPermissionEvaluator:
         self._workspaces_by_id[workspace.id] = workspace
         return workspace
 
+    def replace_workspaces(self, workspaces: tuple[WorkspaceEntity, ...]) -> None:
+        self._workspaces_by_id = {w.id: w for w in workspaces}
+
     def get_primary_catalog_acl(self, resource_id: str) -> CatalogAclEntry | None:
         return next((e for e in self._catalog_acls if e.resource_id == resource_id), None)
 
@@ -152,6 +155,18 @@ class MatrixPermissionEvaluator:
         workspace = self.get_workspace(workspace_id)
         if workspace is None:
             return None
+
+        if workspace.personal_owner_user_id is not None:
+            if str(workspace.personal_owner_user_id) != str(user.id):
+                return None
+            personal_mode: AccessMode = (
+                "READ_ONLY_OBSERVER"
+                if user.platform_role == "OBSERVER"
+                else "CONTRIBUTOR_ACTION_REQUIRED"
+            )
+            return WorkspaceAccessSummary(
+                workspace, user.platform_role, personal_mode, "DIRECT_TEAM", True
+            )
 
         for mem in self._memberships:
             if mem.workspace_id == workspace.id and mem.user_id == user.id:

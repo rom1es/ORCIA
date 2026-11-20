@@ -144,6 +144,7 @@ function InnerShellContainer({
         activeScopeId: derived.selectedScope.id,
         helpColumnOpen: state.helpColumnOpen,
         activeHelpSectionId: state.activeHelpSectionId,
+        disabledMenuKeys: derived.disabledMenuKeys,
         navigateToRoute: dispatchNavigation,
         openHelpSection: (sectionId) => {
           state.setHelpColumnOpen(true);

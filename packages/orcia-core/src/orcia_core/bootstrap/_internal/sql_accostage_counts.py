@@ -39,7 +39,15 @@ async def get_accostage_pg18_counts(engine: AsyncEngine) -> AccostagePg18Counts:
                             FROM org_units
                             WHERE unit_type <> 'ENTERPRISE'
                         ) AS org_units_count,
-                        (SELECT COUNT(*)::int FROM workspaces) AS workspaces_count,
+                        (
+                            SELECT COUNT(*)::int
+                            FROM workspaces
+                            WHERE COALESCE(settings_jsonb->>'ui_visibility_mode', 'STANDARD')
+                                  <> 'PRIVATE_USER'
+                              AND COALESCE(settings_jsonb->>'is_personal_workspace', 'false')
+                                  <> 'true'
+                              AND settings_jsonb->>'personal_owner_user_id' IS NULL
+                        ) AS workspaces_count,
                         GREATEST(
                             (
                                 SELECT COUNT(*)::int

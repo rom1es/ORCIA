@@ -49,7 +49,9 @@ export function buildPlatformSetupPutPayload(
       authMode: t.authMode ?? "api_key",
       apiKeyConfigured: Boolean(t.apiKeyConfigured),
     })),
-    workspaces: next.workspaces as unknown as Record<string, unknown>[],
+    workspaces: next.workspaces.filter(
+      (ws) => !ws.slug?.startsWith("personal-"),
+    ) as unknown as Record<string, unknown>[],
     datasources: next.datasources as unknown as Record<string, unknown>[],
     packs: next.packs as unknown as Record<string, unknown>[],
     workflows: next.workflows as unknown as Record<string, unknown>[],
@@ -97,20 +99,28 @@ export async function fetchAndBuildHydrationOutcome(params: {
 }): Promise<HydrationOutcome> {
   const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
   const status = await client.getAccostageStatus();
-  const [setupSettled, orgUnitsSettled, iamGrantsSettled] = params.isAuthenticated
-    ? await Promise.allSettled([
-        client.getPlatformSetupState(),
-        client.listOrgUnits(),
-        client.listIamGrants(),
-      ])
-    : ([
-        { status: "rejected", reason: null },
-        { status: "rejected", reason: null },
-        { status: "rejected", reason: null },
-      ] as const);
+  const [setupSettled, orgUnitsSettled, iamGrantsSettled, workspacesSettled] =
+    params.isAuthenticated
+      ? await Promise.allSettled([
+          client.getPlatformSetupState(),
+          client.listOrgUnits(),
+          client.listIamGrants(),
+          client.listWorkspaces(),
+        ])
+      : ([
+          { status: "rejected", reason: null },
+          { status: "rejected", reason: null },
+          { status: "rejected", reason: null },
+          { status: "rejected", reason: null },
+        ] as const);
   if (params.isAuthenticated) {
-    const queryNames = ["getPlatformSetupState", "listOrgUnits", "listIamGrants"] as const;
-    [setupSettled, orgUnitsSettled, iamGrantsSettled].forEach((settled, idx) => {
+    const queryNames = [
+      "getPlatformSetupState",
+      "listOrgUnits",
+      "listIamGrants",
+      "listWorkspaces",
+    ] as const;
+    [setupSettled, orgUnitsSettled, iamGrantsSettled, workspacesSettled].forEach((settled, idx) => {
       if (settled.status === "rejected") {
         console.warn(`[orcia:hydration.${queryNames[idx]}]`, settled.reason);
       }
@@ -124,6 +134,8 @@ export async function fetchAndBuildHydrationOutcome(params: {
   const remoteState = setupSettled.status === "fulfilled" ? setupSettled.value : null;
   const remoteOrgUnitsResp = orgUnitsSettled.status === "fulfilled" ? orgUnitsSettled.value : null;
   const remoteIamGrantsResp = iamGrantsSettled.status === "fulfilled" ? iamGrantsSettled.value : null;
+  const remoteWorkspacesResp =
+    workspacesSettled.status === "fulfilled" ? workspacesSettled.value : null;
 
   if (syncBrowserBootEpoch(status.boot_epoch)) {
     return { kind: "BOOT_EPOCH_RESET" };
@@ -190,10 +202,41 @@ export async function fetchAndBuildHydrationOutcome(params: {
     visibleMilestoneKeys,
   };
 
+  const snapWsList = (remoteState?.workspaces ??
+    []) as unknown as ControlCenterWorkspaceGovItem[];
+  const mappedApiWorkspaces: ControlCenterWorkspaceGovItem[] = (
+    remoteWorkspacesResp?.workspaces ?? []
+  ).map((wsDto) => {
+    const matchedOrg = mappedApiOrgUnits.find((u) => u.id === wsDto.owner_org_unit_id);
+    const snapMatch = snapWsList.find(
+      (s) => s.workspaceId === wsDto.id || (wsDto.slug && s.slug === wsDto.slug),
+    );
+    return {
+      workspaceId: wsDto.id,
+      slug: wsDto.slug,
+      name: wsDto.name,
+      visibilityMode: wsDto.visibility_mode,
+      ownerOrgUnitId: wsDto.owner_org_unit_id,
+      ...(matchedOrg
+        ? { ownerOrgUnitName: matchedOrg.name }
+        : snapMatch?.ownerOrgUnitName
+          ? { ownerOrgUnitName: snapMatch.ownerOrgUnitName }
+          : {}),
+      ...(wsDto.is_personal
+        ? { ownerUserId: status.first_admin_email ?? "session-user" }
+        : {}),
+      lifecyclePhase: snapMatch?.lifecyclePhase ?? "BUILD",
+      suggestedWorkflows: snapMatch?.suggestedWorkflows ?? [],
+      accessMode: wsDto.access_mode,
+      finopsCostUsd: wsDto.finops_cost_usd ?? 0,
+    };
+  });
+
   if (
     status.first_admin_initialized === false &&
     mappedApiOrgUnits.length === 0 &&
-    mappedApiGrants.length === 0
+    mappedApiGrants.length === 0 &&
+    mappedApiWorkspaces.length === 0
   ) {
     if (params.hasMutatedSinceMount || readCachedPlatformAdmin() !== null) {
       return { kind: "NOOP" };
@@ -215,7 +258,12 @@ export async function fetchAndBuildHydrationOutcome(params: {
     writeCachedPlatformAdmin(syncedAdmin);
   }
 
-  if (!remoteState && mappedApiOrgUnits.length === 0 && mappedApiGrants.length === 0) {
+  if (
+    !remoteState &&
+    mappedApiOrgUnits.length === 0 &&
+    mappedApiGrants.length === 0 &&
+    mappedApiWorkspaces.length === 0
+  ) {
     return { kind: "HYDRATED", admin: syncedAdmin, snapshot: null, accostageCounts };
   }
 
@@ -228,7 +276,10 @@ export async function fetchAndBuildHydrationOutcome(params: {
       ? mappedApiGrants
       : ((remoteState?.rbac_grants ?? []) as unknown as ConfiguredRbacGrant[]);
   const rLlmTiers = remoteState?.llm_tiers ?? [];
-  const rWorkspaces = remoteState?.workspaces ?? [];
+  const rWorkspaces =
+    mappedApiWorkspaces.length > 0
+      ? mappedApiWorkspaces
+      : (remoteState?.workspaces ?? []);
   const rDatasources = remoteState?.datasources ?? [];
   const rPacks = remoteState?.packs ?? [];
   const rWorkflows = remoteState?.workflows ?? [];

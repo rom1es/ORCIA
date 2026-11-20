@@ -293,7 +293,7 @@ describe("Day-0 Modal Constraint, Login Screen Day-0 Isolation & Settings Bearer
     expect(screen.queryByTestId("onboarding-progress-badge")).toBeNull();
     expect(screen.queryByText(/\/5\b/)).toBeNull();
     expect(screen.getAllByTestId("accostage-progress-pill")).toHaveLength(1);
-    expect(screen.getByTestId("accostage-progress-pill").textContent).toBe("Accostage 0/6");
+    expect(screen.getByTestId("accostage-progress-pill").textContent).toBe("0 / 6 complétées");
 
     const notifToggle = screen.getByTestId("topbar-notifications-toggle");
     expect(notifToggle.textContent).not.toContain("4");

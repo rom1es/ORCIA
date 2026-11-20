@@ -52,6 +52,9 @@ async def sync_evaluator_topology_from_pg(
         return
     try:
         async with engine.connect() as conn:
+            from orcia_api.dependencies.core_and_lifespan import should_seed_test_personas_in_memory
+
+            authoritative_pg_only = not should_seed_test_personas_in_memory()
             ou_rows = (
                 (
                     await conn.execute(
@@ -67,6 +70,7 @@ async def sync_evaluator_topology_from_pg(
                 .mappings()
                 .all()
             )
+            pg_org_units: list[OrgUnitNode] = []
             for r in ou_rows:
                 ou_id = str(r["id"])
                 raw_leads = r.get("lead_user_ids_jsonb") or []
@@ -75,47 +79,85 @@ async def sync_evaluator_topology_from_pg(
                 raw_members = r.get("member_user_ids_jsonb") or []
                 if isinstance(raw_members, str):
                     raw_members = json.loads(raw_members)
-                auth_svc.evaluator.upsert_org_unit(
-                    OrgUnitNode(
-                        id=ou_id,
-                        slug=str(r["slug"]),
-                        name=str(r["name"]),
-                        unit_type=cast(OrgUnitType, str(r["unit_type"])),
-                        parent_id=str(r["parent_id"]) if r["parent_id"] else None,
-                        lead_user_id=str(r["lead_user_id"]) if r["lead_user_id"] else None,
-                        lead_user_ids=tuple(str(x) for x in raw_leads),
-                        member_user_ids=tuple(str(x) for x in raw_members),
-                    )
+                node = OrgUnitNode(
+                    id=ou_id,
+                    slug=str(r["slug"]),
+                    name=str(r["name"]),
+                    unit_type=cast(OrgUnitType, str(r["unit_type"])),
+                    parent_id=str(r["parent_id"]) if r["parent_id"] else None,
+                    lead_user_id=str(r["lead_user_id"]) if r["lead_user_id"] else None,
+                    lead_user_ids=tuple(str(x) for x in raw_leads),
+                    member_user_ids=tuple(str(x) for x in raw_members),
                 )
+                pg_org_units.append(node)
+                if not authoritative_pg_only:
+                    auth_svc.evaluator.upsert_org_unit(node)
+            if authoritative_pg_only:
+                auth_svc.evaluator.replace_org_units(tuple(pg_org_units))
 
             ws_rows = (
                 (
                     await conn.execute(
                         sa.text(
-                            "SELECT id, slug, name, owner_org_unit_id, visibility_mode "
-                            "FROM workspaces;"
+                            "SELECT id, slug, name, owner_org_unit_id, visibility_mode, "
+                            "settings_jsonb FROM workspaces "
+                            "ORDER BY CASE WHEN COALESCE(settings_jsonb->>'ui_visibility_mode', "
+                            "'STANDARD') = 'PRIVATE_USER' THEN 1 ELSE 0 END, "
+                            "created_at ASC, slug ASC;"
                         )
                     )
                 )
                 .mappings()
                 .all()
             )
+            pg_workspaces: list[WorkspaceEntity] = []
             for w in ws_rows:
                 ws_id = str(w["id"])
+                raw_st = w.get("settings_jsonb")
+                st_dict: dict[str, object] = {}
+                if isinstance(raw_st, dict):
+                    st_dict = raw_st
+                elif isinstance(raw_st, str):
+                    try:
+                        decoded = json.loads(raw_st)
+                        if isinstance(decoded, dict):
+                            st_dict = decoded
+                    except ValueError:
+                        st_dict = {}
+                ui_vis = (
+                    str(st_dict["ui_visibility_mode"]).strip()
+                    if st_dict.get("ui_visibility_mode")
+                    else None
+                )
+                personal_owner = (
+                    str(st_dict["personal_owner_user_id"]).strip()
+                    if st_dict.get("personal_owner_user_id")
+                    else None
+                )
+                db_vis = cast(WorkspaceVisibilityMode, str(w["visibility_mode"]))
                 existing = auth_svc.evaluator.get_workspace(ws_id)
-                if existing is None or existing.owner_org_unit_id != str(w["owner_org_unit_id"]):
-                    auth_svc.evaluator.upsert_workspace(
-                        WorkspaceEntity(
-                            id=ws_id,
-                            slug=str(w["slug"]),
-                            name=str(w["name"]),
-                            owner_org_unit_id=str(w["owner_org_unit_id"]),
-                            visibility_mode=cast(
-                                WorkspaceVisibilityMode, str(w["visibility_mode"])
-                            ),
-                            datasources=existing.datasources if existing else (),
-                        )
-                    )
+                ws_entity = WorkspaceEntity(
+                    id=ws_id,
+                    slug=str(w["slug"]),
+                    name=str(w["name"]),
+                    owner_org_unit_id=str(w["owner_org_unit_id"]),
+                    visibility_mode=db_vis,
+                    datasources=existing.datasources if existing else (),
+                    personal_owner_user_id=personal_owner,
+                    ui_visibility_mode=ui_vis,
+                )
+                pg_workspaces.append(ws_entity)
+                if not authoritative_pg_only and (
+                    existing is None
+                    or existing.owner_org_unit_id != str(w["owner_org_unit_id"])
+                    or existing.name != str(w["name"])
+                    or existing.visibility_mode != db_vis
+                    or existing.personal_owner_user_id != personal_owner
+                    or existing.ui_visibility_mode != ui_vis
+                ):
+                    auth_svc.evaluator.upsert_workspace(ws_entity)
+            if authoritative_pg_only:
+                auth_svc.evaluator.replace_workspaces(tuple(pg_workspaces))
 
             mem_rows = (
                 (

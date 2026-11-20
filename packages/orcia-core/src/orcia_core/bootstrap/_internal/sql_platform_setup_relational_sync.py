@@ -116,7 +116,17 @@ async def _purge_removed_workspaces(
     active_ws_uuids: list[UUID],
 ) -> None:
     """Delete `workspaces` rows removed from the setup snapshot when not locked by snapshots."""
-    existing_rows = (await conn.execute(sa.text("SELECT id FROM workspaces"))).fetchall()
+    existing_rows = (
+        await conn.execute(
+            sa.text(
+                """
+                SELECT id FROM workspaces
+                WHERE COALESCE(settings_jsonb->>'is_personal_workspace', 'false') <> 'true'
+                  AND settings_jsonb->>'personal_owner_user_id' IS NULL
+                """
+            )
+        )
+    ).fetchall()
     active_set = set(active_ws_uuids)
     stale_ids = [UUID(str(r[0])) for r in existing_rows if UUID(str(r[0])) not in active_set]
     for stale_ws_id in stale_ids:
@@ -255,6 +265,13 @@ async def sync_relational_tables_on_postgres18(
     # 2. Synchronize workspaces
     active_ws_uuids: list[UUID] = []
     for idx, ws in enumerate(workspaces):
+        if (
+            ws.get("isPersonal")
+            or ws.get("is_personal")
+            or ws.get("personalOwnerUserId")
+            or str(ws.get("slug") or "").startswith("personal-")
+        ):
+            continue
         ws_key = str(ws.get("workspaceId") or ws.get("id") or "").strip() or f"ws-{idx + 1}"
         try:
             ws_uuid = UUID(ws_key)

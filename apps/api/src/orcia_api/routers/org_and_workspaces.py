@@ -11,6 +11,7 @@ from orcia_api.dependencies import get_auth_service
 from orcia_api.dependencies._core_providers import get_configured_db_engine
 from orcia_api.routers._finops_auth_guards import enforce_observer_headers_guard
 from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
+from orcia_api.routers._personal_workspace_sync import ensure_user_personal_workspace_from_pg
 from orcia_api.routers.auth import (
     PROBLEM_RESPONSES,
     resolve_request_user,
@@ -56,8 +57,11 @@ async def list_workspaces(
     """Return accessible Workspaces (excluding CONFIDENTIAL_RESTRICTED from roll-up) and FinOps."""
     trace_id: str = getattr(request.state, "trace_id", None) or get_current_trace_id()
     svc = get_auth_service(request)
-    await sync_evaluator_topology_from_pg(request, svc)
     user = resolve_request_user(request, persona_key=persona_key)
+    engine = get_configured_db_engine(request)
+    if engine is not None:
+        await ensure_user_personal_workspace_from_pg(engine, user)
+    await sync_evaluator_topology_from_pg(request, svc)
     accessible = svc.evaluator.resolve_accessible_workspaces(user)
     if org_unit_id is not None:
         if not svc.evaluator.has_org_unit(org_unit_id):
@@ -148,6 +152,7 @@ async def create_workspace_endpoint(
             name=ws_name,
             owner_org_unit_id=owner_ou_id,
             visibility_mode=db_vis,
+            ui_visibility_mode=ui_vis,
         )
     )
     if user.platform_role != "OBSERVER":

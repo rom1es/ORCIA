@@ -118,7 +118,7 @@ def test_story_9_2_progressive_llm_tier_and_accostage_1_to_6_progression() -> No
         "1. Compte Admin",
         "2. Modèles IA",
         "3. Organisation",
-        "4. Premier Espace",
+        "4. Premier Espace d'équipe",
         "5. Première Source",
         "6. Premier Processus",
     ]

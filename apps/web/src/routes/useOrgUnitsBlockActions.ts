@@ -132,7 +132,7 @@ export function useOrgUnitsBlockActions({
       scopePath: res.unit.slug,
       scopeLabel: `${levelLabel} · ${res.unit.name}`,
     });
-    void useAuthSessionStore.getState().hydrateSession({ force: true });
+    await useAuthSessionStore.getState().hydrateSession({ force: true });
     setCreateModalOpen(false);
   };
 
@@ -184,7 +184,7 @@ export function useOrgUnitsBlockActions({
       scopePath: res.unit.slug,
       scopeLabel: `${levelLabel} · ${res.unit.name}`,
     });
-    void useAuthSessionStore.getState().hydrateSession({ force: true });
+    await useAuthSessionStore.getState().hydrateSession({ force: true });
     setEditingUnit(null);
   };
 
@@ -214,6 +214,7 @@ export function useOrgUnitsBlockActions({
     } else {
       syncOrgUnitsFromServer(orgUnits.map((u) => (u.id === res.unit.id ? res.unit : u)));
     }
+    await useAuthSessionStore.getState().hydrateSession({ force: true });
     setInviteModalOpen(false);
     if (res.invitation.temporary_password) {
       setInviteTempPasswordData({
@@ -222,7 +223,6 @@ export function useOrgUnitsBlockActions({
         temporaryPassword: res.invitation.temporary_password,
       });
     }
-    void useAuthSessionStore.getState().hydrateSession({ force: true });
   };
 
   const handleMembersSave = async (
@@ -264,7 +264,7 @@ export function useOrgUnitsBlockActions({
       scopePath: res.unit.slug,
       scopeLabel: `${levelLabel} · ${res.unit.name}`,
     });
-    void useAuthSessionStore.getState().hydrateSession({ force: true });
+    await useAuthSessionStore.getState().hydrateSession({ force: true });
     setManagingMembersUnit(null);
   };
 
@@ -293,7 +293,7 @@ export function useOrgUnitsBlockActions({
           }
         : undefined,
     );
-    void useAuthSessionStore.getState().hydrateSession({ force: true });
+    await useAuthSessionStore.getState().hydrateSession({ force: true });
     setOrgDeleteFeedback(null);
     setDeletingRowItem(null);
   };

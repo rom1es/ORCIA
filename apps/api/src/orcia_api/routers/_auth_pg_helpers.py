@@ -9,6 +9,7 @@ import asyncio
 import inspect
 import os
 from dataclasses import replace
+from typing import Literal
 
 from fastapi import Request, Response
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -235,6 +236,11 @@ async def authenticate_via_postgres18(
 
     user = user_identity_from_candidate(candidate, auth_mode="LOCAL")
     svc.register_user(user)
+    from orcia_api.routers._personal_workspace_sync import (
+        ensure_user_personal_workspace_from_pg,
+    )
+
+    await ensure_user_personal_workspace_from_pg(engine, user, evaluator=svc.evaluator)
     tokens = svc.jwt_manager.issue_token_pair(
         user_id=user.id,
         email=user.email,
@@ -311,12 +317,19 @@ async def execute_change_password(
 def serialize_workspace_summary(item: WorkspaceAccessSummary) -> WorkspaceSummaryItem:
     """Convert domain `WorkspaceAccessSummary` into Pydantic `WorkspaceSummaryItem`."""
     ws = item.workspace
+    is_personal = bool(ws.personal_owner_user_id is not None)
+    effective_visibility: Literal["STANDARD", "CONFIDENTIAL_RESTRICTED", "PRIVATE_USER"] = (
+        "PRIVATE_USER"
+        if ws.ui_visibility_mode == "PRIVATE_USER" or is_personal
+        else ws.visibility_mode
+    )
     return WorkspaceSummaryItem(
         id=ws.id,
         slug=ws.slug,
         name=ws.name,
         owner_org_unit_id=ws.owner_org_unit_id,
-        visibility_mode=ws.visibility_mode,
+        visibility_mode=effective_visibility,
+        is_personal=is_personal,
         effective_role=item.effective_role,
         access_mode=item.access_mode,
         access_origin=item.access_origin,

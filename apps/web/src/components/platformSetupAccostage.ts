@@ -55,8 +55,9 @@ export function computeAccostageProgressSummary(params: {
   const hasOrgUnits =
     orgUnits.some((u) => u.level === "BU" || u.level === "TEAM") ||
     (accostageCounts?.orgUnitsCount ?? 0) > 0;
+  const sharedWorkspaces = workspaces.filter((ws) => ws.visibilityMode !== "PRIVATE_USER");
   const hasWorkspaces =
-    workspaces.length > 0 || (accostageCounts?.workspacesCount ?? 0) > 0;
+    sharedWorkspaces.length > 0 || (accostageCounts?.workspacesCount ?? 0) > 0;
   const hasSources =
     datasources.length > 0 || (accostageCounts?.sourcesCount ?? 0) > 0;
   const hasWorkflows =
@@ -166,7 +167,7 @@ export function buildUnifiedAccostageMilestones(params: {
     {
       index: 4,
       key: "step-workspaces",
-      title: isFr ? "4. Premier Espace" : "4. First Space",
+      title: isFr ? "4. Premier Espace d'équipe" : "4. First Team Space",
       completed: summary.hasWorkspaces,
       targetRoute: "/spaces",
     },

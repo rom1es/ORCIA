@@ -12,6 +12,7 @@ from orcia_api.routers._auth_token_issuer import (
     issue_completed_auth_response,
     user_identity_from_candidate,
 )
+from orcia_api.routers._personal_workspace_sync import ensure_user_personal_workspace_from_pg
 from orcia_api.schemas.auth_and_org import AuthTokenResponse
 from orcia_api.schemas.auth_policy import ResendLoginTwoFactorResponse
 from orcia_core.bootstrap import (
@@ -127,6 +128,7 @@ async def authenticate_pg_local_with_policy(
 
     user = user_identity_from_candidate(candidate, auth_mode="LOCAL")
     if policy.two_factor_mode == "NONE":
+        await ensure_user_personal_workspace_from_pg(engine, user, evaluator=svc.evaluator)
         return issue_completed_auth_response(
             response=response, request=request, svc=svc, user=user, trace_id=trace_id
         )
@@ -165,6 +167,7 @@ async def authenticate_pg_local_with_policy(
         if totp_code and totp_code.strip():
             if not TotpManager.verify_code(plain_secret, totp_code.strip(), valid_window=1):
                 raise InvalidMfaCodeError(instance=str(request.url.path))
+            await ensure_user_personal_workspace_from_pg(engine, user, evaluator=svc.evaluator)
             return issue_completed_auth_response(
                 response=response, request=request, svc=svc, user=user, trace_id=trace_id
             )
@@ -284,6 +287,7 @@ async def execute_verify_login_2fa(
                 final_candidate = refreshed
 
     user = user_identity_from_candidate(final_candidate, auth_mode="LOCAL")
+    await ensure_user_personal_workspace_from_pg(engine, user, evaluator=svc.evaluator)
     return issue_completed_auth_response(
         response=response, request=request, svc=svc, user=user, trace_id=trace_id
     )

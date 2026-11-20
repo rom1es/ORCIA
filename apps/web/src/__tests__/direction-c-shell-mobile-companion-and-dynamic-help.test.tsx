@@ -207,7 +207,7 @@ describe("Direction C 8-Item Shell, Mobile Companion (< 768px), Accostage & Dyna
     }
   });
 
-  it("checks/collapses Step 1 when adminCreated=true, keeps Step 2 unchecked with 0 org_units, renders Accostage X/5, and omits LOCK TABLE jargon", async () => {
+  it("checks first-admin milestone when adminCreated=true, keeps step-iam unchecked with 0 org_units, renders X / 6 complétées, and omits LOCK TABLE jargon", async () => {
     resetVitestApiBackend();
     seedVitestPlatformSetupState(
       {
@@ -228,19 +228,22 @@ describe("Direction C 8-Item Shell, Mobile Companion (< 768px), Accostage & Dyna
 
     await renderAppAtRoute("/cockpit");
 
-    const step1Card = await screen.findByTestId("welcome-setup-step1-card");
+    const firstAdminMilestone = await screen.findByTestId("accostage-milestone-first-admin");
     await waitFor(() => {
-      expect(step1Card.getAttribute("data-completed")).toBe("true");
+      expect(firstAdminMilestone.getAttribute("data-completed")).toBe("true");
     });
-    expect(screen.getByTestId("welcome-setup-step1-checked-icon")).toBeDefined();
-    expect(screen.getByTestId("welcome-setup-admin-created-badge")).toBeDefined();
+    expect(screen.queryByTestId("welcome-setup-step1-card")).toBeNull();
+    expect(screen.getByTestId("welcome-setup-admin-identity-name").textContent).toBe(
+      "Claire Admin",
+    );
 
     const step2OrgMilestone = screen.getByTestId("accostage-milestone-step-iam");
     expect(step2OrgMilestone.getAttribute("data-completed")).toBe("false");
 
     const accostageBadge = screen.getByTestId("accostage-progress-pill");
-    expect(accostageBadge.textContent).toMatch(/^Accostage \d+\/6$/);
+    expect(accostageBadge.textContent).toMatch(/^\d+ \/ 6 complétées$/);
     expect(screen.queryByTestId("onboarding-progress-badge")).toBeNull();
+    expect(screen.queryByTestId("accostage-compact-toggle-btn")).toBeNull();
 
     const banner = screen.getByTestId("progressive-day0-accostage-banner");
     expect(banner.textContent).not.toContain("LOCK TABLE users IN EXCLUSIVE MODE");

@@ -27,7 +27,6 @@ from orcia_core.permissions.models import (
     DatasourceScheme,
     ExecutionIdentityMode,
     PlatformRole,
-    WorkspaceVisibilityMode,
 )
 
 
@@ -108,7 +107,8 @@ class WorkspaceSummaryItem(BaseModel):
     slug: str
     name: str
     owner_org_unit_id: str
-    visibility_mode: WorkspaceVisibilityMode
+    visibility_mode: Literal["STANDARD", "CONFIDENTIAL_RESTRICTED", "PRIVATE_USER"]
+    is_personal: bool = False
     effective_role: PlatformRole
     access_mode: AccessMode
     access_origin: Literal["DIRECT_TEAM", "ROLLUP_PARENT", "PARTNER_INVITE", "GLOBAL_ADMIN"]

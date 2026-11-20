@@ -110,6 +110,8 @@ class WorkspaceEntity:
     visibility_mode: WorkspaceVisibilityMode = "STANDARD"
     finops_cost_usd: float = 0.0
     datasources: tuple[WorkspaceDatasourceEntity, ...] = field(default_factory=tuple)
+    personal_owner_user_id: str | None = None
+    ui_visibility_mode: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

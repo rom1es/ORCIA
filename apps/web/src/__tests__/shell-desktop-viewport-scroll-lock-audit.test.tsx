@@ -176,9 +176,37 @@ describe("Story 24.4 — Audit verrouillage scroll Desktop, CSS Tailwind v4 laye
     expect(mobileShell.className).not.toContain("h-dvh");
   });
 
-  it("compacte automatiquement ProgressiveDay0AccostageBanner sur /cockpit dès qu'un run ou arbitrage est présent (USER24-BUG-1)", async () => {
+  it("compacte automatiquement ProgressiveDay0AccostageBanner sur /cockpit à 6/6 dès qu'un run est présent (USER24-BUG-1 / Story 25.1)", async () => {
     seedVitestPlatformSetupState(
       {
+        org_units: [
+          {
+            id: "0192c4e0-0000-7000-8000-000000000101",
+            name: "Direction Produit",
+            slug: "direction-produit",
+            level: "BU",
+            parentId: "scope-global",
+          },
+        ],
+        llm_tiers: [
+          {
+            tier: "medium",
+            primaryModel: "claude-3-7-sonnet",
+            secondaryModel: "",
+            modelFamily: "anthropic",
+            defaultEffort: "balanced",
+          },
+        ],
+        datasources: [
+          {
+            datasourceId: "ds-1",
+            workspaceId: "0195f000-0000-7000-8000-000000000244",
+            sourceKey: "src-git",
+            title: "Git Repo",
+            connectorType: "GIT",
+            status: "INDEXED",
+          },
+        ],
         workspaces: [
           {
             workspaceId: "0195f000-0000-7000-8000-000000000244",
@@ -232,9 +260,9 @@ describe("Story 24.4 — Audit verrouillage scroll Desktop, CSS Tailwind v4 laye
 
     const banner = await screen.findByTestId("progressive-day0-accostage-banner");
     expect(banner.getAttribute("data-compact")).toBe("false");
-    expect(screen.getByTestId("welcome-setup-3step-wizard")).toBeDefined();
+    expect(screen.getByTestId("accostage-milestones-list")).toBeDefined();
 
-    // Launch a run from Cockpit -> banner auto-compacts to keep decisions & governance above the fold
+    // Launch a run from Cockpit -> banner auto-compacts at 6/6 to keep decisions & governance above the fold
     fireEvent.change(await screen.findByTestId("cockpit-run-title-input"), {
       target: { value: "Analyse Conformité Q4" },
     });
@@ -244,15 +272,15 @@ describe("Story 24.4 — Audit verrouillage scroll Desktop, CSS Tailwind v4 laye
       expect(screen.getByTestId("progressive-day0-accostage-banner").getAttribute("data-compact")).toBe(
         "true",
       );
-      expect(screen.queryByTestId("welcome-setup-3step-wizard")).toBeNull();
+      expect(screen.queryByTestId("accostage-milestones-list")).toBeNull();
     });
 
-    // User can still manually expand via toggle button
+    // User can still manually expand via toggle button when 6/6
     fireEvent.click(screen.getByTestId("accostage-compact-toggle-btn"));
     expect(screen.getByTestId("progressive-day0-accostage-banner").getAttribute("data-compact")).toBe(
       "false",
     );
-    expect(screen.getByTestId("welcome-setup-3step-wizard")).toBeDefined();
+    expect(screen.getByTestId("accostage-milestones-list")).toBeDefined();
   });
 
   it("efface lastIssuedPlaintext au changement d'onglet et à la fermeture de UserSettingsModal (USER24-BUG-5)", async () => {

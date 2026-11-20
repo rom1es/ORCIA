@@ -1,6 +1,7 @@
 /** @uj UJ-13 | @cap CAP-004, CAP-005, CAP-061 */
 import { expect, test } from "./support/e2eCaptureFixture";
 import { expectDbRowExists, queryDbRows } from "./support/dbAssertions";
+import { configureActiveEmbeddingModelViaApi } from "./support/embeddingModel";
 import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
 import { resetDay0 } from "./support/day0";
 import { apiGet, reloadColdFromPg } from "./support/typedApiRequest";
@@ -47,12 +48,49 @@ test.describe("TEST-04 · 01 — Boot Jour 0, premier administrateur et vrai F5 
       "premier administrateur persisté dans users",
     );
 
-    // USER24-BUG-2: déplier le guide si compacté, vérifier le vrai nom d'admin et cliquer sur '1. Compte Admin' -> /profile sans 'Not Found'
-    const compactToggle = page.getByTestId("accostage-compact-toggle-btn");
-    await expect(compactToggle).toBeVisible({ timeout: 15000 });
-    if ((await compactToggle.getAttribute("aria-expanded")) === "false") {
-      await compactToggle.click();
-    }
+    // Story 25.1: espace personnel PRIVATE_USER créé automatiquement en PG18 sans valider le jalon 4 d'équipe
+    expectDbRowExists(
+      "SELECT id, slug, visibility_mode FROM workspaces WHERE slug LIKE 'personal-%' AND visibility_mode = 'CONFIDENTIAL_RESTRICTED'",
+      undefined,
+      "espace personnel privé provisionné automatiquement pour le premier admin",
+    );
+
+    // Story 25.1: guide unifié 6 jalons non repliable tant que < 6/6, sans sous-blocs Step 1/2/3
+    await expect(page.getByTestId("accostage-milestones-list")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId("accostage-milestones-list").locator("button")).toHaveCount(6);
+    await expect(page.getByTestId("progressive-day0-accostage-banner")).not.toContainText(
+      /Step [123]:|6-step setup path/i,
+    );
+    await expect(page.getByTestId("accostage-compact-toggle-btn")).toHaveCount(0);
+    await expect(page.getByTestId("progressive-day0-accostage-banner")).toHaveAttribute(
+      "data-compact",
+      "false",
+    );
+    await expect(page.getByTestId("accostage-progress-pill")).toHaveText("1 / 6 complétées");
+    const teamSpaceMilestone = page.getByTestId("accostage-milestone-step-workspaces");
+    await expect(teamSpaceMilestone).toContainText("4. Premier Espace d'équipe");
+    await expect(teamSpaceMilestone).toHaveAttribute("data-completed", "false");
+
+    // 0 modèle IA -> Mes Processus grisé dans la barre latérale ET dans les cartes Cockpit
+    await expect(page.getByTestId("eight-menu-item-processes")).toBeDisabled();
+    await expect(page.getByTestId("cockpit-orientation-card-processes")).toBeDisabled();
+
+    // Story 25.1: 1 modèle IA actif + Espace Personnel -> 2/6 et dégrisage immédiat de Mes Processus (sidebar + Cockpit)
+    await configureActiveEmbeddingModelViaApi(page);
+    await reloadColdFromPg(page);
+    await expect(page.getByTestId("accostage-progress-pill")).toHaveText("2 / 6 complétées", {
+      timeout: 20000,
+    });
+    await expect(page.getByTestId("accostage-milestone-step-workspaces")).toHaveAttribute(
+      "data-completed",
+      "false",
+    );
+    await expect(page.getByTestId("eight-menu-item-processes")).toBeEnabled({ timeout: 15000 });
+    await expect(page.getByTestId("cockpit-orientation-card-processes")).toBeEnabled({
+      timeout: 15000,
+    });
+
+    // USER24-BUG-2: vérifier le vrai nom d'admin et cliquer sur '1. Compte Admin' -> /profile sans 'Not Found'
     await expect(page.getByTestId("welcome-setup-admin-identity-name")).toContainText(
       E2E_ADMIN.name,
     );

@@ -5025,10 +5025,11 @@ export interface components {
       effective_role: "PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "BU_DIRECTOR" | "TEAM_LEAD" | "ONTOLOGY_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
       finops_cost_usd?: number | null;
       id: string;
+      is_personal?: boolean;
       name: string;
       owner_org_unit_id: string;
       slug: string;
-      visibility_mode: "STANDARD" | "CONFIDENTIAL_RESTRICTED";
+      visibility_mode: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER";
     };
     WorkspacesListResponse: {
       consolidated_finops_usd: number;

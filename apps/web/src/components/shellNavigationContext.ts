@@ -7,6 +7,7 @@ export interface ShellNavigationContextValue {
   readonly activeScopeId: string;
   readonly helpColumnOpen: boolean;
   readonly activeHelpSectionId: string | null;
+  readonly disabledMenuKeys?: Partial<Record<EightFixedMenuKey, string>>;
   readonly navigateToRoute: (href: string) => void;
   readonly openHelpSection: (sectionId: string) => void;
 }

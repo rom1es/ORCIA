@@ -35,6 +35,7 @@ from orcia_api.routers._org_units_delegation_helpers import (
     resolve_org_caller,
     serialize_org_unit_with_capabilities,
 )
+from orcia_api.routers._personal_workspace_sync import ensure_email_personal_workspace_from_pg
 from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.schemas.auth_and_org import (
     OrgUnitInviteUserRequest,
@@ -242,6 +243,11 @@ async def invite_org_unit_user(
             auth_svc=auth_svc,
             engine=shared_engine,
             primary_org_unit_id=None if is_enterprise_root else target_node.id,
+        )
+    elif _pg_enabled():
+        shared_engine = get_or_create_shared_db_engine(request)
+        await ensure_email_personal_workspace_from_pg(
+            shared_engine, email=cleaned_email, display_name=cleaned_name
         )
 
     await sync_auth_service_user_by_email_from_pg(request, auth_svc, cleaned_email)

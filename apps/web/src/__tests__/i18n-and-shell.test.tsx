@@ -154,9 +154,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     // First-boot Platform Administrator creation modal is displayed on 1st startup
     expect(screen.getByTestId("first-boot-admin-setup-modal")).toBeDefined();
 
-    // Accostage 0/6 onboarding progress at blank start (zero duplicate badge)
+    // 0 / 6 complétées onboarding progress at blank start (zero duplicate badge)
     expect(screen.queryByTestId("onboarding-progress-badge")).toBeNull();
-    expect(screen.getByTestId("accostage-progress-pill").textContent).toBe("Accostage 0/6");
+    expect(screen.getByTestId("accostage-progress-pill").textContent).toBe("0 / 6 complétées");
     expect(screen.getByTestId("cockpit-no-workspace-empty-state")).toBeDefined();
 
     // Unconfigured features (all navigable entries except Cockpit) are greyed out (disabled) at Day 0 without admin
@@ -226,11 +226,11 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       ).toBe(false);
     });
 
-    // Navigate to /cockpit -> Onboarding progress is Accostage 3/6 and Run launcher is unlocked
+    // Navigate to /cockpit -> Onboarding progress is 3 / 6 complétées and Run launcher is unlocked
     await act(async () => {
       await router.navigate({ to: "/cockpit" });
     });
-    expect(screen.getByTestId("accostage-progress-pill").textContent).toBe("Accostage 3/6");
+    expect(screen.getByTestId("accostage-progress-pill").textContent).toBe("3 / 6 complétées");
     expect(screen.getByTestId("cockpit-launch-run-form")).toBeDefined();
   });
 
@@ -908,9 +908,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       (screen.getByTestId("eight-menu-item-finops") as HTMLButtonElement).disabled,
     ).toBe(false);
 
-    // Verify onboarding progress badge is Accostage 4/6 (Admin + AI model + Org Unit + Workspace)
+    // Verify onboarding progress badge is 4 / 6 complétées (Admin + AI model + Org Unit + Workspace)
     expect(screen.queryByTestId("onboarding-progress-badge")).toBeNull();
-    expect(screen.getByTestId("accostage-progress-pill").textContent).toBe("Accostage 4/6");
+    expect(screen.getByTestId("accostage-progress-pill").textContent).toBe("4 / 6 complétées");
   });
 
   it("supports creating Skills, creating Agents via modals, configuring & executing both in sandbox modals, and surviving F5 reload on /agents", async () => {

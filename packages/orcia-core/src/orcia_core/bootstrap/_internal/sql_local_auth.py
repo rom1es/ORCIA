@@ -13,6 +13,9 @@ from uuid import UUID
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from orcia_core.bootstrap._internal.sql_personal_workspace import (
+    ensure_personal_workspace_on_postgres18,
+)
 from orcia_kernel.ids import new_uuid7_str
 
 _DEFAULT_HUMAN_ROLES: tuple[str, ...] = ("CONTRIBUTOR",)
@@ -161,7 +164,15 @@ async def upsert_human_user_credentials_on_postgres18(
         },
     )
     row = res.first()
-    return str(row[0]) if row and row[0] else new_user_id
+    persisted_user_id = str(row[0]) if row and row[0] else new_user_id
+    ws_reg = (await conn.execute(sa.text("SELECT to_regclass('public.workspaces')"))).scalar()
+    if ws_reg is not None:
+        await ensure_personal_workspace_on_postgres18(
+            conn,
+            user_id=persisted_user_id,
+            display_name=display_name,
+        )
+    return persisted_user_id
 
 
 _USER_AUTH_SELECT_SQL = """

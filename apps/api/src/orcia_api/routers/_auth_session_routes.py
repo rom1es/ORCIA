@@ -18,6 +18,8 @@ from orcia_api.routers._auth_token_issuer import (
     resolve_request_user,
     serialize_auth_token_response,
 )
+from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
+from orcia_api.routers._personal_workspace_sync import ensure_user_personal_workspace_from_pg
 from orcia_api.schemas.auth_and_org import (
     AuthTokenResponse,
     LogoutResponse,
@@ -70,6 +72,7 @@ async def _rotate_refresh_and_hydrate(
             engine = get_or_create_shared_db_engine(request)
             user = await hydrate_user_identity_from_pg(engine, user, svc=svc)
             svc.register_user(user)
+            await ensure_user_personal_workspace_from_pg(engine, user, evaluator=svc.evaluator)
         except ResourceNotFoundError:
             raise
         except Exception as exc:
@@ -207,6 +210,8 @@ async def get_current_user_me(
         try:
             engine = get_or_create_shared_db_engine(request)
             user = await hydrate_user_identity_from_pg(engine, user)
+            await ensure_user_personal_workspace_from_pg(engine, user)
+            await sync_evaluator_topology_from_pg(request, svc)
         except Exception as exc:
             logger.warning("auth_refresh_pg_hydration_failed", error_type=type(exc).__name__)
     accessible = svc.evaluator.resolve_accessible_workspaces(user)

@@ -190,6 +190,9 @@ async def reconcile_workspaces_on_load(
             except ValueError:
                 st_dict = {}
 
+        if st_dict.get("is_personal_workspace") is True or st_dict.get("personal_owner_user_id"):
+            continue
+
         ui_ws_id = str(st_dict.get("ui_workspace_id") or sql_id)
 
         # Check if already present in JSONB snapshot
