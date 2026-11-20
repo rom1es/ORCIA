@@ -173,6 +173,7 @@ button {
 
 .orcia-sidebar-nav-btn:disabled {
   opacity: 0.45;
+  color: var(--color-text-muted);
   cursor: not-allowed;
 }
 

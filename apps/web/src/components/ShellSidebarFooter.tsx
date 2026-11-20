@@ -20,6 +20,45 @@ export interface ShellSidebarFooterProps {
   readonly onOpenShowcase?: () => void;
 }
 
+export function renderShellSidebarFooter(params: {
+  readonly hasAuthenticatedIdentity: boolean;
+  readonly hideSidebarShowcaseBtn: boolean;
+  readonly pathname: string | undefined;
+  readonly effectiveDisplayName: string;
+  readonly effectiveEmail: string;
+  readonly userRole: string;
+  readonly userHatLabel: string;
+  readonly locale: UiLocalePreference;
+  readonly dictionary: {
+    readonly sidebarFooter: TranslationDictionary["sidebarFooter"];
+    readonly userAccountAndSettings: TranslationDictionary["userAccountAndSettings"];
+  };
+  readonly onLocaleChange: (locale: UiLocalePreference) => void;
+  readonly onDispatchNavigation: (href: string) => void;
+  readonly onLogout: () => void;
+  readonly onOpenShowcase: () => void;
+}): ((railCollapsed: boolean) => React.ReactNode) | undefined {
+  if (!params.hasAuthenticatedIdentity) return undefined;
+  return (railCollapsed: boolean) => (
+    <ShellSidebarFooter
+      railCollapsed={railCollapsed}
+      hideSidebarShowcaseBtn={params.hideSidebarShowcaseBtn}
+      pathname={params.pathname}
+      userDisplayName={params.effectiveDisplayName}
+      userEmail={params.effectiveEmail}
+      userRole={params.userRole}
+      userRoleLabel={params.userHatLabel}
+      locale={params.locale}
+      footerLabels={params.dictionary.sidebarFooter}
+      accountLabels={params.dictionary.userAccountAndSettings}
+      onLocaleChange={params.onLocaleChange}
+      onNavigate={params.onDispatchNavigation}
+      onLogout={params.onLogout}
+      onOpenShowcase={params.onOpenShowcase}
+    />
+  );
+}
+
 export function ShellSidebarFooter({
   railCollapsed,
   userDisplayName,

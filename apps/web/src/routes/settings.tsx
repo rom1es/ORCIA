@@ -135,7 +135,12 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
             data-testid="settings-domain-tabs"
             aria-label="Settings hub navigation"
             className="orcia-ds-tabs"
-            style={{ marginTop: "8px" }}
+            style={{
+              marginTop: "8px",
+              flexWrap: "nowrap",
+              gap: "6px",
+              overflowX: "auto",
+            }}
           >
             {access.visibleTabs.map((tabKey) => {
               const isSelected = effectiveTab === tabKey;
@@ -148,8 +153,17 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
                   data-testid={`settings-tab-${tabKey}`}
                   onClick={() => setActiveTab(tabKey)}
                   className="orcia-ds-tab"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    padding: "5px 8px",
+                    fontSize: "12px",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                  }}
                 >
-                  <OrciaIcon name={SETTINGS_TAB_ICON_NAMES[tabKey]} size={15} />
+                  <OrciaIcon name={SETTINGS_TAB_ICON_NAMES[tabKey]} size={13} />
                   <span>{copy.tabs[tabKey]}</span>
                 </button>
               );
@@ -159,8 +173,17 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
               data-testid="settings-open-organization-link"
               onClick={() => navigateToRoute("/organization")}
               className="orcia-ds-tab"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+                padding: "5px 8px",
+                fontSize: "12px",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+              }}
             >
-              <OrciaIcon name="organizationBu" size={15} />
+              <OrciaIcon name="organizationBu" size={13} />
               <span>{dictionary.fourZoneShell.organizationMenuLabel ?? (isFr ? "Mon Organisation" : "My Organization")}</span>
             </button>
           </nav>

@@ -4,6 +4,10 @@ import type {
   ControlCenterWorkspaceGovItem,
   UiAccostageMilestoneItem,
 } from "@orcia/ui";
+import {
+  canAccessMyOrganization,
+  isPlatformAdministratorSession,
+} from "../stores/authSessionStore";
 import type { AccostagePg18CountsView } from "./platformSetupHydration";
 import type {
   ConfiguredLlmTierMapping,
@@ -82,18 +86,68 @@ export function computeAccostageProgressSummary(params: {
   };
 }
 
+const SERVER_TO_UI_MILESTONE_KEY: Readonly<Record<string, string>> = {
+  "first-admin": "first-admin",
+  "first-llm-model": "step-llm",
+  "first-org-unit": "step-iam",
+  "first-space": "step-workspaces",
+  "first-datasource": "step-connectors",
+  "pilot-workflow-run": "step-workflows",
+};
+
+function isUiMilestoneAccessible(params: {
+  readonly uiKey: string;
+  readonly roles?: readonly string[];
+  readonly readOnlyObserver?: boolean;
+  readonly allowedServerKeys?: ReadonlySet<string> | null;
+}): boolean {
+  const { uiKey, roles, readOnlyObserver, allowedServerKeys } = params;
+  if (readOnlyObserver) {
+    return false;
+  }
+  if (roles && roles.length > 0) {
+    const normalizedRoles = roles.map((r) => r.trim().toUpperCase());
+    if (
+      normalizedRoles.includes("OBSERVER") ||
+      normalizedRoles.includes("READ_ONLY_OBSERVER")
+    ) {
+      return false;
+    }
+    const isAdmin = isPlatformAdministratorSession({ roles, readOnlyObserver });
+    const canOrg = canAccessMyOrganization({ roles, readOnlyObserver });
+    if (!isAdmin) {
+      if (uiKey === "first-admin" || uiKey === "step-llm" || uiKey === "step-connectors") {
+        return false;
+      }
+      if (uiKey === "step-iam" && !canOrg) {
+        return false;
+      }
+    }
+  }
+  if (allowedServerKeys && allowedServerKeys.size > 0) {
+    const allowedUiKeys = new Set(
+      Array.from(allowedServerKeys).map((k) => SERVER_TO_UI_MILESTONE_KEY[k] ?? k),
+    );
+    return allowedUiKeys.has(uiKey);
+  }
+  return true;
+}
+
 export function buildUnifiedAccostageMilestones(params: {
   readonly isFr: boolean;
   readonly summary: AccostageProgressSummary;
+  readonly roles?: readonly string[];
+  readonly readOnlyObserver?: boolean;
+  readonly visibleMilestoneKeys?: readonly string[] | null;
 }): readonly UiAccostageMilestoneItem[] {
-  const { isFr, summary } = params;
-  return [
+  const { isFr, summary, roles, readOnlyObserver, visibleMilestoneKeys } = params;
+  const allMilestones: readonly UiAccostageMilestoneItem[] = [
     {
       index: 1,
       key: "first-admin",
       title: isFr ? "1. Compte Admin" : "1. Admin Account",
       completed: summary.adminCreated,
-      targetRoute: "/welcome-setup",
+      targetRoute: summary.adminCreated ? "/profile" : "/cockpit",
     },
     {
       index: 2,
@@ -131,6 +185,20 @@ export function buildUnifiedAccostageMilestones(params: {
       targetRoute: "/processes",
     },
   ];
+
+  const allowedServerKeys =
+    visibleMilestoneKeys && visibleMilestoneKeys.length > 0
+      ? new Set(visibleMilestoneKeys)
+      : null;
+
+  return allMilestones.filter((m) =>
+    isUiMilestoneAccessible({
+      uiKey: m.key,
+      roles,
+      readOnlyObserver,
+      allowedServerKeys,
+    }),
+  );
 }
 
 export function buildWorkflowOverridesFromWorkflows(

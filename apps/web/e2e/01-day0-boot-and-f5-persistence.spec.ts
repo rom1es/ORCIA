@@ -46,6 +46,21 @@ test.describe("TEST-04 · 01 — Boot Jour 0, premier administrateur et vrai F5 
       { email: E2E_ADMIN.email },
       "premier administrateur persisté dans users",
     );
+
+    // USER24-BUG-2: déplier le guide si compacté, vérifier le vrai nom d'admin et cliquer sur '1. Compte Admin' -> /profile sans 'Not Found'
+    const compactToggle = page.getByTestId("accostage-compact-toggle-btn");
+    await expect(compactToggle).toBeVisible({ timeout: 15000 });
+    if ((await compactToggle.getAttribute("aria-expanded")) === "false") {
+      await compactToggle.click();
+    }
+    await expect(page.getByTestId("welcome-setup-admin-identity-name")).toContainText(
+      E2E_ADMIN.name,
+    );
+    const firstAdminMilestone = page.getByTestId("accostage-milestone-first-admin");
+    await expect(firstAdminMilestone).toBeVisible({ timeout: 15000 });
+    await firstAdminMilestone.click();
+    await expect(page).toHaveURL(/\/profile(?:\?|$)/, { timeout: 15000 });
+    await expect(page.locator("body")).not.toContainText("Not Found");
   });
 
   test("après reset Jour 0, la modale revient (0 utilisateur en base)", async ({ page }) => {

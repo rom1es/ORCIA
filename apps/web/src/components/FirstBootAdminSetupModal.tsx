@@ -110,6 +110,19 @@ export function FirstBootAdminSetupModal({
       description={copy.description}
       testId="first-boot-admin-setup-modal"
       closeLabel={rgaaLabels.closeButtonLabel}
+      hideHeaderCloseButton={true}
+      headerExtra={
+        <span
+          data-testid="first-boot-admin-mandatory-badge"
+          className="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-semibold"
+          style={{
+            backgroundColor: "var(--color-action-primary-subtle)",
+            color: "var(--color-action-primary)",
+          }}
+        >
+          {isFr ? "Étape obligatoire · Non ignorable" : "Required step · Cannot be skipped"}
+        </span>
+      }
     >
       <div onKeyDown={handleAdminDialogKeyDown} className="flex min-h-0 flex-1 flex-col gap-3">
         <div className="orcia-ds-dialog-body">

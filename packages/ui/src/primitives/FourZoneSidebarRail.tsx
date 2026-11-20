@@ -194,10 +194,11 @@ export function FourZoneSidebarRail({
         {DEFAULT_EIGHT_FIXED_MENU_ENTRIES.filter(
           (entry) => !hiddenMenuKeys?.includes(entry.key),
         ).map((entry) => {
-          const isActive = activeMenuKey !== null && entry.key === activeMenuKey;
-          const entryLabel = labels.menuEntries[entry.key];
-          const disabledReason = isActive ? undefined : disabledMenuKeys?.[entry.key];
+          const disabledReason =
+            entry.key === "cockpit" ? undefined : disabledMenuKeys?.[entry.key];
           const isDisabled = Boolean(disabledReason);
+          const isActive = !isDisabled && activeMenuKey !== null && entry.key === activeMenuKey;
+          const entryLabel = labels.menuEntries[entry.key];
           return (
             <button
               key={entry.key}

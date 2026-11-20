@@ -7,7 +7,6 @@ lang: fr
 layer: BASE
 bound_routes:
   - /assistant
-  - /inbox
 summary_what_for: "Mon Assistant répond à vos questions à partir des documents de votre Espace actif, cite chaque source vérifiée et organise vos échanges en dossiers thématiques avec notes permanentes."
 ---
 

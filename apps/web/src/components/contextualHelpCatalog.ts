@@ -53,6 +53,21 @@ const ROUTE_FALLBACKS_FR: Readonly<Record<string, RouteFallbackNarrative>> = {
       "Les notes du dossier ne semblent pas prises en compte : cliquez sur « Enregistrer les notes » dans le tiroir du dossier actif avant de poser votre question.",
     ],
   },
+  "/inbox": {
+    summaryWhatFor:
+      "La Boîte de Réception rassemble les tâches prises en charge, les demandes de relecture et les alertes d'équipe de votre Espace actif pour coordonner le travail sans doublon.",
+    steps: [
+      "Vérifiez votre Espace actif dans la barre latérale gauche pour filtrer les notifications affichées.",
+      "Prenez en charge une tâche disponible afin de prévenir le reste de l'équipe que vous vous en occupez.",
+      "Libérez la tâche si vous devez la réassigner ou ouvrez directement le Cockpit pour finaliser la décision.",
+    ],
+    realExampleText:
+      "Lorsqu'une analyse de conformité arrive en attente de relecture dans l'Espace « Produit Paiement », Nadia clique sur « Prendre en charge » depuis la Boîte de Réception : ses collègues voient aussitôt que la revue est en cours, évitant tout double traitement.",
+    commonPitfallsItems: [
+      "Aucune tâche affichée dans la liste : vérifiez qu'un Espace de travail est bien sélectionné ou qu'un processus a généré une attente d'équipe.",
+      "Vous cherchez l'historique complet des opérations passées : ouvrez le Journal d'Activité pour consulter l'historique détaillé.",
+    ],
+  },
   "/spaces": {
     summaryWhatFor:
       "Mes Espaces regroupe vos Espaces de travail collectifs, privés ou confidentiels, leurs sources documentaires, les règles héritées de votre unité d'organisation et l'accès au Glossaire métier.",
@@ -99,6 +114,21 @@ const ROUTE_FALLBACKS_EN: Readonly<Record<string, RouteFallbackNarrative>> = {
     commonPitfallsItems: [
       "The prompt input is locked: verify that both a document indexing model and a chat model are configured in Configuration › AI Models.",
       "Folder notes do not seem applied: click \"Save notes\" inside the active folder drawer before sending your next question.",
+    ],
+  },
+  "/inbox": {
+    summaryWhatFor:
+      "The Inbox gathers claimed tasks, review requests, and team alerts for your active Space so your team coordinates work without duplication.",
+    steps: [
+      "Check your active Space in the left sidebar to filter the displayed notifications.",
+      "Claim an available task so teammates immediately know you are handling it.",
+      "Release the task if you need to hand it off, or open the Cockpit directly to finalize the decision.",
+    ],
+    realExampleText:
+      "When a compliance review arrives in the \"Payments Product\" Space, Nadia clicks \"Claim\" in the Inbox: her teammates instantly see the review is in progress, preventing duplicate work.",
+    commonPitfallsItems: [
+      "No tasks appear in the list: verify that a Space is selected or that a process has emitted a team notification.",
+      "Looking for the full historical audit trail: open the Activity Log to inspect past operations.",
     ],
   },
   "/spaces": {

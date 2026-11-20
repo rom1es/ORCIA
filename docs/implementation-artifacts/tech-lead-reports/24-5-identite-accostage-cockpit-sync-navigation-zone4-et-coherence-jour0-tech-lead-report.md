@@ -2,7 +2,7 @@
 
 - **Story :** `24-5-identite-accostage-cockpit-sync-navigation-zone4-et-coherence-jour0` (Epic 24 — Vague 1 `P1/P2`)
 - **Date :** 2026-11-20
-- **Statut :** `En attente d'implémentation` (initialisé par `Story 23.8`)
+- **Statut :** `Terminé (`done`)`
 - **Plan directeur :** [`sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md`](../../planning-artifacts/sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md)
 - **Références remédiées :** `REM24-08`, **`USER24-BUG-2`** | Constats `UX23-07` (`P1`), `UX23-09` (`P1`), `UX23-15` (`P2`) | Diagnostic `ARCH24-09`
 - **Capacité(s) (`capabilities.yaml`) :** `CAP-050`, `CAP-067` (`2` capacités Desktop `failed_e2e` — plus protection de non-régression sur `CAP-005`, `CAP-060`, `CAP-061`, `CAP-064`, `CAP-068` déjà `runtime`)
@@ -66,12 +66,37 @@ Plusieurs défauts d'orientation utilisateur et d'incohérence Jour 0 (`P1`/`P2`
 
 ## 3. Bilan des Modifications & Résultats
 
-> **Statut :** `En attente d'implémentation` — Cette section sera complétée après implémentation, passage des 5 couches `AD-17`, ré-indexation GitNexus (`npx gitnexus analyze` + `gitnexus_detect_changes()`) et exécution de `pnpm site:sync`.
+> **Statut :** `Terminé (`done`)` — Validée sur les 5 couches `AD-17` avec re-indexation GitNexus (`npx gitnexus analyze` + `gitnexus_detect_changes`), suite Vitest complète, intégration PG18/Redis `testcontainers`, Playwright Desktop (`--retries=0`) et synchronisation `pnpm site:sync && pnpm site:check`.
 
-| Fichier / Composant | Action Prévue | Statut |
+### 3.1 Tableau synthétique des fichiers développés et modifiés
+
+| Fichier / Composant | Modification réalisée | Statut |
 |---|---|---|
-| `packages/orcia-core/.../bootstrap/progressive_accostage.py` | Identité `platform_admin` réelle & filtrage permissions | `En attente d'implémentation` |
-| `packages/orcia-core/.../catalog/contextual_help.py` & `docs/help/{fr,en}/inbox.md` | Aide dédiée `/inbox` Zone 4 | `En attente d'implémentation` |
-| `apps/web/src/features/cockpit/index.tsx` | Suppression `authDisplayName` comme `platformAdmin` (`L207-209`) | `En attente d'implémentation` |
-| `apps/web/src/components/{shellPresets.ts,_contextualHelpSections.ts,ShellContainer.tsx}` | Split `< 280` L, `/showcase`, `/organization`, `/spaces`, `[Espace]`, `/settings` | `En attente d'implémentation` |
-| `FirstBootAdminSetupModal.tsx` & garde `Mes Espaces` | Clarté modale admin & verrouillage uniforme Jour 0 | `En attente d'implémentation` |
+| `packages/orcia-core/src/orcia_core/bootstrap/{progressive_accostage.py,__init__.py,_internal/sql_first_user_guard.py}` | Remplacement `"/welcome-setup"` $\rightarrow$ `"/profile"` sur `first-admin` (`ACCOSTAGE_SIX_MILESTONES`, `USER24-BUG-2`), ajout `AccostageVisibleMilestone` & `is_accostage_milestone_accessible`, exposition `platform_admin_display_name` & `visible_milestones` filtrés par rôle, filtre strict `AND platform_role = 'PLATFORM_ADMIN'` dans `get_first_platform_admin_from_postgres18` | `Terminé` |
+| `apps/api/src/orcia_api/{schemas/bootstrap.py,routers/bootstrap_accostage.py}` & `packages/api-client/` | Ajout `AccostageMilestoneItem`, `platform_admin_display_name` et `visible_milestones` sur `AccostageStatusResponse`, résolution optionnelle `_resolve_optional_caller_role`, régénération OpenAPI (`0-diff`) & client TypeScript | `Terminé` |
+| `packages/orcia-core/src/orcia_core/catalog/{contextual_help.py,contextual_help_resolver.py}` & `docs/help/{fr,en}/{inbox,assistant}.md` | Fiches dédiées `/inbox` (`help-base-inbox-{fr,en}` conformes 4 blocs `DESIGN.md`), retrait de `- /inbox` dans `docs/help/{fr,en}/assistant.md`, priorité stricte `/inbox` $\rightarrow$ `help-base-inbox-*` (exclusion `help-base-assistant-*`) | `Terminé` |
+| `apps/web/src/components/{_contextualHelpSections.ts,_contextualHelpSectionsEn.ts,contextualHelpCatalog.ts}` | Mapping autonome `/inbox` FR/EN dans `SECTIONS_BY_ROUTE_{FR,EN}`, `normalizeCanonicalHelpRoute` et `contextualHelpCatalog.ts` | `Terminé` |
+| `apps/web/src/components/{platformSetupHydration.ts,platformSetupAccostage.ts}`, `packages/ui/src/primitives/ProgressiveDay0AccostageBanner.tsx` & `apps/web/src/features/cockpit/index.tsx` | Route cible `first-admin` $\rightarrow$ `summary.adminCreated ? "/profile" : "/cockpit"`, filtrage UI des jalons selon `roles`, `readOnlyObserver` et `visibleMilestoneKeys`, ajout `canConfigurePlatform` (masque Étape 2 pour non-admins), transmission stricte du `platformAdmin` réel (`accostageCounts?.platformAdminDisplayName ?? platformAdmin?.displayName ?? null`, jamais `authDisplayName`) | `Terminé` |
+| `apps/web/src/components/{ShellContainer.tsx,shellPresets.ts,shellBreadcrumbBuilders.ts,shellBreadcrumbAndScope.ts,ShellSidebarFooter.tsx,shellZone4HelpWiring.tsx}` | Découpage `ShellContainer.tsx` (`378` L $\rightarrow$ `269` L) via `shellBreadcrumbBuilders.ts` (`179` L), `shellBreadcrumbAndScope.ts` (`199` L), `shellZone4HelpWiring.tsx` (`106` L) et `ShellSidebarFooter.tsx` (`89` L) ; `/showcase` active `help`, `/organization` détaché si `Configuration` masquée, injection `[Espace]` sur routes scopées, Zone 4 `/inbox` dédiée | `Terminé` |
+| `apps/web/src/features/workspaces/WorkspaceStudioCardsAndDetailView.tsx`, `apps/web/src/routes/{SettingsPacksSection.tsx,settings.tsx}`, `FirstBootAdminSetupModal.tsx`, `FourZoneSidebarRail.tsx`, `tokens-shell.css` | Suppression breadcrumb dupliqué `workspace-sources-breadcrumb` et pied `pack-row-*` ; `6` boutons `/settings` en `flexWrap: "nowrap"` sur `1` ligne ; `FirstBootAdminSetupModal` sans bouton `Fermer` (`hideHeaderCloseButton={true}`) + `first-boot-admin-mandatory-badge` ; verrouillage uniforme `Mes Espaces` & entrées désactivées au Jour 0 | `Terminé` |
+| Suites QA 5 couches (`tests/unit/test_story_24_5_accostage_and_inbox_help.py`, `tests/integration/test_story_24_5_accostage_and_inbox_help_postgres18.py`, `apps/web/src/__tests__/story-24-5-accostage-routes-navigation-and-day0.test.tsx`, `day0-modal-*`, `story-18-1-*`, `i18n-and-shell.test.tsx`, `four-zone-shell-and-cockpit.test.tsx`, `apps/web/e2e/{01,15,21,shell}.spec.ts`) | Vérification contrat 6 jalons vs `router.tsx` (`USER24-BUG-2`), identité `platformAdmin` & filtrage permissions par rôle (`PLATFORM_ADMIN`, `BU_LEAD`, `TEAM_LEAD`, `CONTRIBUTOR`, `SECOPS`, `READ_ONLY_OBSERVER`), résolution `/inbox` PG18, navigation `/showcase`, `/organization`, `[Espace]`, `/settings` 1 ligne, et verrouillage Jour 0 | `Terminé` |
+
+### 3.2 Résultats chiffrés, couverture & validation 5 couches (`AD-17`)
+
+- **Couches 1a & 2 (Python unitaire + intégration PG18/Redis `testcontainers` sur `create_app()` sans `dependency_overrides`)** :
+  - `.venv/bin/pytest -o addopts="" --import-mode=importlib tests/unit/test_story_24_5_accostage_and_inbox_help.py tests/unit/test_epic_9_story_9_2_accostage_and_first_user.py tests/unit/test_contextual_help_route_resolution.py tests/unit/test_epic_9_story_9_5_contextual_help.py tests/unit/test_gemini_argon_provider_adapter.py tests/integration/test_story_24_5_accostage_and_inbox_help_postgres18.py tests/integration/test_contextual_help_and_accostage_postgres18.py --cov=orcia_core.bootstrap.progressive_accostage --cov=orcia_core.bootstrap._internal.sql_first_user_guard --cov=orcia_core.catalog.contextual_help --cov=orcia_core.catalog.contextual_help_resolver --cov=orcia_api.routers.bootstrap_accostage --cov-report=term-missing --cov-fail-under=90` $\rightarrow$ **`82 passed`**, couverture combinée **`91.17 %`** (`progressive_accostage.py` `99 %`, `sql_first_user_guard.py` `98 %`, `contextual_help_resolver.py` `98 %`, `contextual_help.py` `95 %`, `bootstrap_accostage.py` `78 %`).
+  - Relance unitaire post-annotations secrets : `.venv/bin/pytest tests/unit/test_story_24_5_accostage_and_inbox_help.py -q` $\rightarrow$ **`14 passed`**.
+- **Statique Python, Architecture & Sécurité** :
+  - `.venv/bin/ruff check .` : **PASS** (`All checks passed!`) ; `.venv/bin/ruff format --check .` : **PASS** (`1313 files already formatted`).
+  - `.venv/bin/mypy --strict packages/orcia-core packages/orcia-connectors apps/api apps/worker` : **PASS** (`Success: no issues found in 574 source files`).
+  - `.venv/bin/lint-imports` : **PASS** (`Contracts: 5 kept, 0 broken`, `617 files`).
+  - `.venv/bin/python scripts/export_openapi.py --check` : **PASS** (`0-diff`).
+  - `.venv/bin/pre-commit run detect-secrets --files ...` (tous les fichiers Story 24.5) : **Passed**.
+- **Couche 1b (Vitest & TypeScript Monorepo)** :
+  - `pnpm turbo run lint typecheck test` : **PASS (`9 successful, 9 total`)** — `@orcia/api-client`: `3 files / 20 tests` ; `@orcia/ui`: `33 files / 131 tests` ; `@orcia/web`: `60 files / 237 tests` (dont `story-24-5-accostage-routes-navigation-and-day0.test.tsx`, `e2e-testids-sync-audit.test.ts` et les 4 suites ajustées).
+- **Couche 5 (Playwright E2E réel `--project=desktop-cockpit --retries=0`, `ORCIA_E2E_CAMPAIGN_DIR=/tmp/orcia-e2e-story-24-5`)** :
+  - `pnpm --filter @orcia/web exec playwright test shell.spec.ts 00-stack-smoke.spec.ts 01-day0-boot-and-f5-persistence.spec.ts 02-assistant-streaming-and-folders.spec.ts 04-multi-actor-claim-sse.spec.ts 15-organization-iam-secops-inbox-and-observer.spec.ts 21-assistant-citations-v5-audit-help-showcase.spec.ts --project=desktop-cockpit --retries=0` $\rightarrow$ **`21 passed` (`0 failed`, `4.0m`)** — inclut clic réel sur `accostage-milestone-first-admin` vers `/profile` (`USER24-BUG-2`), `Mes Espaces` verrouillé au Jour 0, modale admin non fermable, `/inbox` Zone 4 dédiée, `/showcase` $\rightarrow$ `eight-menu-item-help` actif et 6 onglets `/settings` sur 1 ligne.
+- **GitNexus & Documentation / Gouvernance** :
+  - `npx gitnexus analyze` : `41,172 nodes | 186,753 edges | 704 clusters | 1492 flows`.
+  - `gitnexus_detect_changes(repo: "/home/romain/Documents/Projects/ORCIA", scope: "all")` : `changed_count: 20`, `changed_files: 37`, `affected_count: 1492`, `risk_level: "critical"`.
+  - `scripts/check_implementation_docs.py`, `lint_spine.py`, `pnpm site:sync && pnpm site:check` et `tests/unit/test_epic23_to_epic24_traceability.py` validés.

@@ -131,6 +131,20 @@ export const SECTIONS_BY_ROUTE_FR: Readonly<Record<string, readonly UiContextual
       category: "steps",
     },
   ],
+  "/inbox": [
+    {
+      sectionId: "inbox-claims",
+      title: "Prise en charge et coordination des tâches d'équipe",
+      body: "Prenez en charge une demande disponible pour indiquer à votre équipe que vous la traitez, puis libérez-la si un collègue doit reprendre la main.",
+      category: "steps",
+    },
+    {
+      sectionId: "inbox-vs-activity",
+      title: "Différence entre Boîte de Réception et Journal d'Activité",
+      body: "La Boîte de Réception présente uniquement les notifications opérationnelles et tâches en attente de votre Espace actif ; le Journal d'Activité conserve l'historique complet des opérations passées.",
+      category: "terms",
+    },
+  ],
   "/spaces": [
     {
       sectionId: "workspace-sources",
@@ -239,7 +253,8 @@ export const SECTIONS_BY_ROUTE_FR: Readonly<Record<string, readonly UiContextual
 export function normalizeCanonicalHelpRoute(pathname: string | undefined): string {
   const clean = (pathname ?? "/cockpit").split("?")[0]?.split("#")[0]?.trim() || "/cockpit";
   if (clean === "/" || clean.startsWith("/cockpit")) return "/cockpit";
-  if (clean.startsWith("/assistant") || clean.startsWith("/inbox")) return "/assistant";
+  if (clean.startsWith("/inbox")) return "/inbox";
+  if (clean.startsWith("/assistant")) return "/assistant";
   if (clean.startsWith("/spaces") || clean.startsWith("/workspaces")) return "/spaces";
   if (clean.startsWith("/processes")) return "/processes";
   if (clean.startsWith("/gates")) return "/gates";

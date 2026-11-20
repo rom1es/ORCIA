@@ -16,7 +16,7 @@ from orcia_api.dependencies._core_providers import get_configured_db_engine
 from orcia_api.routers._auth_pg_helpers import set_auth_refresh_cookie
 from orcia_api.routers._auth_policy_runtime import resolve_auth_policy_runtime
 from orcia_api.routers._bootstrap_evaluator_sync import sync_setup_snapshot_to_evaluator
-from orcia_api.routers.auth import PROBLEM_RESPONSES
+from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas import bootstrap as bs
 from orcia_core import bootstrap as bm
 from orcia_core.bootstrap import (
@@ -67,6 +67,24 @@ async def _sync_first_admin_with_postgres18(
         _raise_if_non_test_pg_error(exc, path=str(request.url.path))
 
 
+def _resolve_optional_caller_role(request: Request) -> tuple[str | None, bool]:
+    """Return `(platform_role, read_only_observer)` when caller carries a valid session."""
+    if not (
+        request.headers.get("Authorization")
+        or getattr(request.state, "resolved_bearer_user", None) is not None
+    ):
+        return None, False
+    try:
+        user = resolve_request_user(request)
+    except Exception as exc:
+        logger.debug("bootstrap_accostage_optional_user_skipped", error_type=type(exc).__name__)
+        return None, False
+    role_set = {str(r).strip().upper() for r in user.roles}
+    role_set.add(str(user.platform_role).strip().upper())
+    is_observer = "READ_ONLY_OBSERVER" in role_set or "OBSERVER" in role_set
+    return str(user.platform_role), is_observer
+
+
 def _serialize_accostage_status(
     rep: bm.AccostageStatusReport,
     trace_id: str,
@@ -96,6 +114,19 @@ def _serialize_accostage_status(
         first_admin_initialized=rep.first_admin_initialized,
         first_admin_email=rep.first_admin_email,
         first_admin_display_name=rep.first_admin_display_name,
+        platform_admin_display_name=rep.platform_admin_display_name,
+        visible_milestones=[
+            bs.AccostageMilestoneItem(
+                index=m.index,
+                key=m.key,
+                title_fr=m.title_fr,
+                title_en=m.title_en,
+                target_route=m.target_route,
+                completed=m.completed,
+                is_accessible=m.is_accessible,
+            )
+            for m in rep.visible_milestones
+        ],
         admin_created=admin_created,
         users_count=users_count,
         org_units_count=org_units_count,
@@ -140,8 +171,9 @@ async def get_accostage_status(request: Request) -> bs.AccostageStatusResponse:
             workflows_count=counts.workflows_count,
         )
     policy_state, _, _ = await resolve_auth_policy_runtime(request)
+    user_role, is_observer = _resolve_optional_caller_role(request)
     return _serialize_accostage_status(
-        svc.get_accostage_status(),
+        svc.get_accostage_status(user_role=user_role, read_only_observer=is_observer),
         _trace(request),
         boot_epoch=policy_state.boot_epoch,
         counts=counts,
@@ -269,8 +301,14 @@ async def register_welcome_setup_progressive_llm(
             )
             _raise_if_non_test_pg_error(exc, path=str(request.url.path))
     policy_state, _, _ = await resolve_auth_policy_runtime(request)
+    user_role, is_observer = _resolve_optional_caller_role(request)
+    scoped_rep = (
+        svc.get_accostage_status(user_role=user_role, read_only_observer=is_observer)
+        if user_role is not None or is_observer
+        else rep
+    )
     return _serialize_accostage_status(
-        rep,
+        scoped_rep,
         _trace(request),
         boot_epoch=policy_state.boot_epoch,
     )

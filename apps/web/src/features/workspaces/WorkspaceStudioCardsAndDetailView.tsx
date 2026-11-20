@@ -450,41 +450,19 @@ export function WorkspaceStudioCardsAndDetailView({
       )}
 
       {activeWorkspace && (
-        <>
-          <nav
-            data-testid="workspace-sources-breadcrumb"
-            aria-label="Fil d'Ariane Sources"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              fontSize: "12px",
-              color: "var(--color-muted-foreground)",
-              padding: "2px 4px",
-            }}
-          >
-            <span>{isFr ? "Mes Espaces" : "My Workspaces"}</span>
-            <span>›</span>
-            <strong>{activeWorkspace.name}</strong>
-            <span>›</span>
-            <span style={{ color: "var(--color-text-primary)", fontWeight: 600 }}>
-              {isFr ? "Sources" : "Sources"}
-            </span>
-          </nav>
-          <WorkspaceDetailTabsPanel
-            isFr={isFr}
-            initialTab={initialTab}
-            activeWorkspace={activeWorkspace}
-            datasources={datasources}
-            ontologyConcepts={ontologyConcepts}
-            orgUnits={orgUnits}
-            openHelpSection={openHelpSection}
-            onRegisterDatasource={onRegisterDatasource}
-            onAddOntologyConcept={onAddOntologyConcept}
-            onPromoteOntologyConcept={onPromoteOntologyConcept}
-            onFeedback={onFeedback}
-          />
-        </>
+        <WorkspaceDetailTabsPanel
+          isFr={isFr}
+          initialTab={initialTab}
+          activeWorkspace={activeWorkspace}
+          datasources={datasources}
+          ontologyConcepts={ontologyConcepts}
+          orgUnits={orgUnits}
+          openHelpSection={openHelpSection}
+          onRegisterDatasource={onRegisterDatasource}
+          onAddOntologyConcept={onAddOntologyConcept}
+          onPromoteOntologyConcept={onPromoteOntologyConcept}
+          onFeedback={onFeedback}
+        />
       )}
     </div>
   );

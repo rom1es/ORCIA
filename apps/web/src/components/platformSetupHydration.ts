@@ -75,6 +75,8 @@ export interface AccostagePg18CountsView {
   readonly modelsCount: number;
   readonly sourcesCount: number;
   readonly workflowsCount: number;
+  readonly platformAdminDisplayName?: string | null;
+  readonly visibleMilestoneKeys?: readonly string[] | null;
 }
 
 export type HydrationOutcome =
@@ -166,6 +168,14 @@ export async function fetchAndBuildHydrationOutcome(params: {
       }))
     : [];
 
+  const visibleMilestoneKeys = Array.isArray(status.visible_milestones)
+    ? status.visible_milestones
+        .filter((m) => m.is_accessible !== false)
+        .map((m) => m.key)
+    : null;
+  const platformAdminDisplayName =
+    status.platform_admin_display_name ?? status.first_admin_display_name ?? null;
+
   const accostageCounts: AccostagePg18CountsView = {
     adminCreated: Boolean(status.admin_created ?? status.first_admin_initialized),
     usersCount: status.users_count ?? (status.first_admin_initialized ? 1 : 0),
@@ -176,6 +186,8 @@ export async function fetchAndBuildHydrationOutcome(params: {
     modelsCount: status.models_count ?? 0,
     sourcesCount: status.sources_count ?? 0,
     workflowsCount: status.workflows_count ?? 0,
+    platformAdminDisplayName,
+    visibleMilestoneKeys,
   };
 
   if (

@@ -5,6 +5,7 @@
 
 import type { components } from "./schema";
 
+export type AccostageMilestoneItem = components["schemas"]["AccostageMilestoneItem"];
 export type AccostageStatusResponse = components["schemas"]["AccostageStatusResponse"];
 export type InitDatasourceRequest = components["schemas"]["InitDatasourceRequest"];
 export type InitDatasourceResponse = components["schemas"]["InitDatasourceResponse"];

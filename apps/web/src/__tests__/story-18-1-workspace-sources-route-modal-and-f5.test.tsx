@@ -140,9 +140,10 @@ describe("Story 18.1 — Déport des Sources dans /workspaces/$wsId/sources, Mod
     await renderAppAtRoute(`/workspaces/${testWsId}/sources`);
     dismissFirstBootAdminIfOpen();
 
-    // 1. Breadcrumb validation
+    // 1. Breadcrumb validation (unique topbar breadcrumb, no duplicate internal breadcrumb)
     await waitFor(() => {
-      const breadcrumb = screen.getByTestId("workspace-sources-breadcrumb");
+      expect(screen.queryByTestId("workspace-sources-breadcrumb")).toBeNull();
+      const breadcrumb = screen.getByTestId("topbar-breadcrumb");
       expect(breadcrumb).toBeDefined();
       expect(breadcrumb.textContent).toContain("Mes Espaces");
       expect(breadcrumb.textContent).toContain("Sources");
@@ -252,7 +253,8 @@ describe("Story 18.1 — Déport des Sources dans /workspaces/$wsId/sources, Mod
 
     // Verify navigation landed on /workspaces/$wsId/sources
     await waitFor(() => {
-      expect(screen.getByTestId("workspace-sources-breadcrumb")).toBeDefined();
+      expect(screen.queryByTestId("workspace-sources-breadcrumb")).toBeNull();
+      expect(screen.getByTestId("topbar-breadcrumb").textContent).toContain("Sources");
       expect(screen.getByTestId("workspace-sources-master-table-root")).toBeDefined();
     });
   });

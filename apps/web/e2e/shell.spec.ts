@@ -96,6 +96,22 @@ test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, 
       { email: E2E_ADMIN.email },
       "PLATFORM_ADMIN persisté dans users PG18",
     );
+
+    if (!isMobile) {
+      await page.getByTestId("eight-menu-item-configuration").click();
+      const tabsNav = page.getByTestId("settings-domain-tabs");
+      await expect(tabsNav).toBeVisible({ timeout: 15000 });
+      const tabs = tabsNav.locator("button");
+      await expect(tabs).toHaveCount(6);
+      const boxes = await Promise.all(
+        [0, 1, 2, 3, 4, 5].map((i) => tabs.nth(i).boundingBox()),
+      );
+      const yCoords = boxes.map((b) => b?.y ?? -1);
+      expect(yCoords.every((y) => y > 0)).toBe(true);
+      const minY = Math.min(...yCoords);
+      const maxY = Math.max(...yCoords);
+      expect(maxY - minY, `les 6 onglets /settings doivent tenir sur 1 ligne (${yCoords.join(",")})`).toBeLessThanOrEqual(2);
+    }
   });
 
   test("grise les entrées de menu tant que la plateforme n'est pas initialisée (Jour 0)", async ({
@@ -115,6 +131,8 @@ test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, 
       }
     }
     expect(disabledReasons.length, "au moins une entrée grisée au Jour 0").toBeGreaterThan(0);
+    await expect(page.getByTestId("eight-menu-item-spaces")).toBeDisabled();
+    await expect(page.getByTestId("eight-menu-item-spaces")).toHaveAttribute("aria-disabled", "true");
     const countRows = queryDbRows<{ count: number }>("SELECT COUNT(*)::int AS count FROM users");
     expect(countRows[0]?.count).toBe(0);
   });
@@ -140,6 +158,8 @@ test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, 
     const modal = page.getByTestId("first-boot-admin-setup-modal");
     await expect(modal).toHaveAttribute("role", "dialog");
     await expect(modal).toHaveAttribute("aria-modal", "true");
+    await expect(page.getByTestId("first-boot-admin-mandatory-badge")).toBeVisible();
+    await expect(modal.getByRole("button", { name: /fermer|close/i })).toHaveCount(0);
     await assertMaxOneDialogCloseOrCancelButton(page);
     await assertZeroBulletPlaceholders(page, "first-boot-admin-modal");
     await expect(

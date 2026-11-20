@@ -125,6 +125,20 @@ export const SECTIONS_BY_ROUTE_EN: Readonly<Record<string, readonly UiContextual
       category: "steps",
     },
   ],
+  "/inbox": [
+    {
+      sectionId: "inbox-claims",
+      title: "Task claims and team coordination",
+      body: "Claim an available request to signal to your team that you are handling it, and release it anytime if a teammate needs to take over.",
+      category: "steps",
+    },
+    {
+      sectionId: "inbox-vs-activity",
+      title: "Inbox vs Activity Log",
+      body: "The Inbox displays only operational notifications and pending tasks for your active Space; the Activity Log keeps the full history of past actions.",
+      category: "terms",
+    },
+  ],
   "/spaces": [
     {
       sectionId: "workspace-sources",

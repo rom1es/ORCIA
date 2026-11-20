@@ -7,7 +7,6 @@ lang: en
 layer: BASE
 bound_routes:
   - /assistant
-  - /inbox
 summary_what_for: "My Assistant answers questions grounded in your active Workspace documents, cites every verified source, and organizes discussions into folders with permanent notes."
 ---
 

@@ -55,7 +55,29 @@ from orcia_kernel.errors import ResourceNotFoundError
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncEngine
 
+BASE_CONTEXTUAL_HELP_ROUTES: tuple[str, ...] = (
+    "/cockpit",
+    "/assistant",
+    "/inbox",
+    "/spaces",
+    "/workspaces",
+    "/processes",
+    "/gates",
+    "/agents",
+    "/catalog",
+    "/finops",
+    "/activity",
+    "/ontology",
+    "/organization",
+    "/profile",
+    "/settings",
+    "/showcase",
+    "/wizards",
+    "/help",
+)
+
 __all__ = [
+    "BASE_CONTEXTUAL_HELP_ROUTES",
     "HELP_ITEM_TYPE",
     "LAYER_PRECEDENCE",
     "ContextualHelpResolutionResult",

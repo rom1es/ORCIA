@@ -11,7 +11,10 @@ import { buildUnifiedAccostageMilestones } from "../../components/platformSetupA
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
-import { useAuthSessionStore } from "../../stores/authSessionStore";
+import {
+  isPlatformAdministratorSession,
+  useAuthSessionStore,
+} from "../../stores/authSessionStore";
 import { CockpitHumanLedGovernanceSection } from "./CockpitHumanLedGovernanceSection";
 import { CockpitRunsSection } from "./CockpitRunsSection";
 
@@ -43,12 +46,15 @@ export function CockpitFeaturePanel() {
   const isHydrating = useAuthSessionStore((s) => s.isHydrating);
   const authEmail = useAuthSessionStore((s) => s.email);
   const authDisplayName = useAuthSessionStore((s) => s.displayName);
+  const roles = useAuthSessionStore((s) => s.roles);
+  const readOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
   const {
     platformAdmin,
     workspaces,
     workflows,
     runs,
     scopes,
+    accostageCounts,
     accostageSummary,
     completedSetupStepsCount,
     launchRun,
@@ -86,10 +92,17 @@ export function CockpitFeaturePanel() {
           )
         : runs;
 
+  const canConfigurePlatform = isPlatformAdministratorSession({ roles, readOnlyObserver });
   const milestones = buildUnifiedAccostageMilestones({
     isFr,
     summary: accostageSummary,
+    roles,
+    readOnlyObserver,
+    visibleMilestoneKeys: accostageCounts?.visibleMilestoneKeys,
   });
+  const realPlatformAdminDisplayName =
+    accostageCounts?.platformAdminDisplayName ?? platformAdmin?.displayName ?? null;
+  const realPlatformAdminEmail = platformAdmin?.email ?? null;
 
   const handleLaunchRun = (event: React.FormEvent) => {
     event.preventDefault();
@@ -210,9 +223,10 @@ export function CockpitFeaturePanel() {
           completedCount={completedSetupStepsCount}
           totalCount={6}
           defaultCompact={showGovernanceSection}
+          canConfigurePlatform={canConfigurePlatform}
           adminCreated={accostageSummary.adminCreated}
-          adminDisplayName={authDisplayName ?? platformAdmin?.displayName}
-          adminEmail={authEmail ?? platformAdmin?.email}
+          adminDisplayName={realPlatformAdminDisplayName}
+          adminEmail={realPlatformAdminEmail}
           milestones={milestones}
           labels={dictionary.progressiveAccostage}
           onNavigateMilestone={(href) => navigateToRoute(href)}

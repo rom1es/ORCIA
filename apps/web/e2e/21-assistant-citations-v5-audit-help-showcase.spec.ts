@@ -199,6 +199,7 @@ test.describe("Assistant conversationnel, citations déterministes, centre d'aid
     );
 
     await openShowcasePage(page, "macro");
+    await expect(page.getByTestId("eight-menu-item-help")).toHaveAttribute("data-active", "true");
     await expect(page.getByTestId("showcase-pillar-macro")).toBeVisible();
     await page.getByTestId("showcase-tab-features").click();
     await expect(page.getByTestId("showcase-pillar-features")).toBeVisible();

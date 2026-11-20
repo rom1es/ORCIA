@@ -22,7 +22,7 @@ def collect_matching_articles(
 ) -> list[HelpArticleCatalogItem]:
     """Collect matching help articles ordered by 4-layer precedence (`AD-14`)."""
     norm_pack = normalize_help_pack(pack)
-    _, candidate_routes = normalize_help_route(route)
+    cleaned, candidate_routes = normalize_help_route(route)
     matched: list[HelpArticleCatalogItem] = []
     for candidate in candidate_routes:
         for art in articles.values():
@@ -32,6 +32,8 @@ def collect_matching_articles(
             if art.layer == "PACK" and art_pack not in (None, norm_pack):
                 continue
             if candidate in art.bound_routes:
+                if cleaned == "/inbox" and art.resource_id.startswith("help-base-assistant-"):
+                    continue
                 matched.append(art)
         if matched:
             break

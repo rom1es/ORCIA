@@ -556,8 +556,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "date": "2026-11-20",
       "phaseOrStory": "Story 24.5",
       "reportFile": "24-5-identite-accostage-cockpit-sync-navigation-zone4-et-coherence-jour0-tech-lead-report.md",
-      "domain": "Epic 24 Vague 1 — Identité Accostage Cockpit, Route « 1. Compte Admin » (USER24-BUG-2), Navigation Zone 4 & Cohérence Jour 0 (REM24-08, UX23-07, UX23-09, UX23-15)",
-      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8 + USER24-BUG-2) : route jalon 1. Compte Admin /welcome-setup → /profile / /cockpit et audit 6 jalons vs router.tsx, platformAdmin réel dans cockpit/index.tsx:207-209 + filtrage permissions Accostage, route Zone 4 /inbox, /showcase surbrillance help, breadcrumb /organization & [Espace], verrouillage Mes Espaces Jour 0, 6 onglets /settings & split ShellContainer.tsx (378 L)."
+      "domain": "Epic 24 Vague 1 — Identité Accostage Cockpit, Route « 1. Compte Admin » (USER24-BUG-2), Navigation Zone 4 & Cohérence Jour 0 (REM24-08, UX23-07, UX23-09, UX23-15, ARCH24-09)",
+      "summary": "Clôture (done) : first-admin → /profile (USER24-BUG-2, 0 /welcome-setup), platform_admin_display_name & visible_milestones filtrés par rôle (ProgressiveDay0AccostageService, sql_first_user_guard.py, cockpit/index.tsx), fiches dédiées /inbox Zone 4 (docs/help/{fr,en}/inbox.md, contextual_help_resolver.py), /showcase surbrillance help, /organization sans Configuration pour non-admins, injection [Espace], suppression doublons /spaces & pack-row-*, 6 boutons /settings nowrap sur 1 ligne, FirstBootAdminSetupModal non fermable (first-boot-admin-mandatory-badge), verrouillage uniforme Mes Espaces Jour 0, split ShellContainer.tsx (378 → 269 L), 91.17 % couv. Python combinée (82 passed unit + PG18 testcontainers), 9/9 Turbo (388 tests JS/TS), 21 passed, 0 failed Playwright Desktop (shell, 00, 01, 02, 04, 15, 21), ruff/mypy --strict/lint-imports (5/5)/export_openapi (0-diff)/detect-secrets 0 erreur."
     },
     {
       "date": "2026-11-20",

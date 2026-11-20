@@ -38,6 +38,7 @@ export interface ProgressiveDay0AccostageBannerProps {
   readonly totalCount?: number;
   readonly defaultCompact?: boolean;
   readonly orciaEnv?: "local" | "staging" | "production";
+  readonly canConfigurePlatform?: boolean;
   readonly adminCreated?: boolean;
   readonly adminDisplayName?: string | null;
   readonly adminEmail?: string | null;
@@ -58,6 +59,7 @@ export function ProgressiveDay0AccostageBanner({
   totalCount = 6,
   defaultCompact = false,
   orciaEnv = "local",
+  canConfigurePlatform = true,
   adminCreated: serverAdminCreated = false,
   adminDisplayName,
   adminEmail: serverAdminEmail,
@@ -192,7 +194,13 @@ export function ProgressiveDay0AccostageBanner({
       {!isCompact && (
       <div
         data-testid="welcome-setup-3step-wizard"
-        className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(240px,1.35fr)]"
+        className={
+          canConfigurePlatform
+            ? "grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(240px,1.35fr)]"
+            : milestones.length > 0
+              ? "grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(240px,1.35fr)]"
+              : "grid grid-cols-1 gap-3"
+        }
       >
         {/* Step 1: First Admin (auto-checked & collapsed when PG18 admin exists) */}
         <div
@@ -229,6 +237,7 @@ export function ProgressiveDay0AccostageBanner({
               </span>
               {(adminDisplayName || serverAdminEmail || adminEmail) && (
                 <span
+                  data-testid="welcome-setup-admin-identity-name"
                   className="truncate text-[11px]"
                   style={{ color: "var(--color-text-secondary)" }}
                 >
@@ -236,7 +245,7 @@ export function ProgressiveDay0AccostageBanner({
                 </span>
               )}
             </div>
-          ) : (
+          ) : canConfigurePlatform ? (
             <>
               <input
                 type="email"
@@ -300,11 +309,13 @@ export function ProgressiveDay0AccostageBanner({
                 </div>
               )}
             </>
-          )}
+          ) : null}
         </div>
 
-        {/* Step 2: Progressive LLM Tier */}
+        {/* Step 2: Progressive LLM Tier (visible only for Platform Administrators) */}
+        {canConfigurePlatform && (
         <div
+          data-testid="welcome-setup-step2-card"
           className="flex flex-col gap-2 rounded border p-3"
           style={{
             backgroundColor: "var(--color-bg-elevated)",
@@ -348,9 +359,12 @@ export function ProgressiveDay0AccostageBanner({
             </div>
           )}
         </div>
+        )}
 
-        {/* Step 3: Milestones Navigation */}
+        {/* Step 3: Milestones Navigation (filtered by caller permissions) */}
+        {milestones.length > 0 && (
         <div
+          data-testid="welcome-setup-step3-card"
           className="flex flex-col gap-1.5 rounded border p-3"
           style={{
             backgroundColor: "var(--color-bg-elevated)",
@@ -378,6 +392,7 @@ export function ProgressiveDay0AccostageBanner({
             </button>
           ))}
         </div>
+        )}
       </div>
       )}
     </section>

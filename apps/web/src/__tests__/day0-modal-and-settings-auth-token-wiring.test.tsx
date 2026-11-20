@@ -219,8 +219,9 @@ describe("Day-0 Modal Constraint, Login Screen Day-0 Isolation & Settings Bearer
     );
 
     expect(screen.queryByTestId("first-boot-admin-cancel-btn")).toBeNull();
-    const closeBtn = screen.getByTestId("first-boot-admin-setup-modal-close-btn");
-    expect(closeBtn.textContent).toBe("Fermer");
+    expect(screen.queryByTestId("first-boot-admin-setup-modal-close-btn")).toBeNull();
+    const mandatoryBadge = screen.getByTestId("first-boot-admin-mandatory-badge");
+    expect(mandatoryBadge.textContent).toContain("Étape obligatoire · Non ignorable");
 
     const pwInput = screen.getByTestId("first-boot-admin-password-input") as HTMLInputElement;
     const confirmInput = screen.getByTestId(

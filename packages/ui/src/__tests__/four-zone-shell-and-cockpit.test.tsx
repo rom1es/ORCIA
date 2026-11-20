@@ -299,7 +299,7 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
             key: "first-admin",
             title: "1. Compte Administrateur Initial",
             completed: true,
-            targetRoute: "/welcome-setup",
+            targetRoute: "/profile",
           },
         ]}
         labels={accostageLabels}

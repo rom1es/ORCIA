@@ -597,6 +597,10 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
   });
 
   it("supports TopHeader workspace dropdown, BU/Espace linkage with orphan-safe deletion, greyed-out section 2 until org exists, single scope selector, zero English parenthetical terms in FR, and contextual help on /settings", async () => {
+    seedVitestPlatformSetupState(
+      {},
+      { email: "admin@orcia.fr", displayName: "Admin", roles: ["PLATFORM_ADMIN", "SECOPS"] },
+    );
     const queryClient = createOrciaQueryClient();
     const history = createMemoryHistory({ initialEntries: ["/settings"] });
     const router = createOrciaRouter({ queryClient, history });
@@ -1199,6 +1203,10 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
   });
 
   it("presents the backend-known Business Packs catalog in /settings (Packs Métiers tab) without free-text SemVer or raw 'GLOBAL' input, and supports 1-click activation and deactivation across scopes", async () => {
+    seedVitestPlatformSetupState(
+      {},
+      { email: "admin@orcia.fr", displayName: "Admin", roles: ["PLATFORM_ADMIN"] },
+    );
     const queryClient = createOrciaQueryClient();
     const history = createMemoryHistory({ initialEntries: ["/settings"] });
     const router = createOrciaRouter({ queryClient, history });
@@ -1250,18 +1258,19 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(screen.getByTestId("packs-empty-state")).toBeDefined();
     fireEvent.change(scopeSelect, { target: { value: "direction-produit" } });
     fireEvent.click(screen.getByTestId("activate-pack-btn-orcia-pack-sdlc"));
-    expect(screen.getAllByTestId("pack-row-orcia-pack-sdlc").length).toBe(1);
-    expect(screen.getByTestId("pack-row-orcia-pack-sdlc").textContent).toContain(
+    expect(screen.queryByTestId("pack-row-orcia-pack-sdlc")).toBeNull();
+    expect(screen.getAllByTestId("pack-card-active-scopes-orcia-pack-sdlc").length).toBe(1);
+    expect(screen.getByTestId("pack-card-active-scopes-orcia-pack-sdlc").textContent).toContain(
       "Direction · Direction Produit",
     );
 
     // 2. Switch scope to "Plateforme entière" (GLOBAL) and activate -> automatically deduplicates the sub-scope activation
     fireEvent.change(scopeSelect, { target: { value: "GLOBAL" } });
     fireEvent.click(screen.getByTestId("activate-pack-btn-orcia-pack-sdlc"));
-    const rowsAfterGlobal = screen.getAllByTestId("pack-row-orcia-pack-sdlc");
-    expect(rowsAfterGlobal.length).toBe(1);
-    expect(rowsAfterGlobal[0]?.textContent).toContain("Plateforme entière");
-    expect(rowsAfterGlobal[0]?.textContent).not.toContain("Direction · Direction Produit");
+    const scopesAfterGlobal = screen.getAllByTestId("pack-card-active-scopes-orcia-pack-sdlc");
+    expect(scopesAfterGlobal.length).toBe(1);
+    expect(scopesAfterGlobal[0]?.textContent).toContain("Plateforme entière");
+    expect(scopesAfterGlobal[0]?.textContent).not.toContain("Direction · Direction Produit");
 
     // 1-click deactivation from the card button
     fireEvent.click(screen.getByTestId("deactivate-pack-btn-orcia-pack-sdlc"));
@@ -1504,7 +1513,16 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.change(screen.getByTestId("first-boot-admin-email-input"), {
       target: { value: "romain@orcia.fr" },
     });
+    fireEvent.change(screen.getByTestId("first-boot-admin-password-input"), {
+      target: { value: "Secret123456!" },
+    });
+    fireEvent.change(screen.getByTestId("first-boot-admin-password-confirm-input"), {
+      target: { value: "Secret123456!" },
+    });
     fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
+    await waitFor(() => {
+      expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
+    });
 
     // 2. Verify Journal d'Activité is removed from /settings tabs and primary sidebar, and accessible via FinOps / Notifications
     expect(screen.queryByTestId("settings-tab-audit")).toBeNull();
@@ -1538,7 +1556,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
 
     const activityPage = screen.getByTestId("activity-log-explorer-page");
     expect(activityPage).toBeDefined();
-    expect(screen.getByTestId("eight-menu-item-finops").getAttribute("aria-current")).toBe("page");
+    expect(screen.getByTestId("topbar-breadcrumb").textContent).toContain("Journal d'Activité");
+    expect((screen.getByTestId("eight-menu-item-finops") as HTMLButtonElement).disabled).toBe(true);
 
     // Wait for the async API ledger fetch to populate the table
     const latestEvtTimestamp = await screen.findByTestId("activity-event-timestamp-evt-4");

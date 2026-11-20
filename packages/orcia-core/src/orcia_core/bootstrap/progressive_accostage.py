@@ -51,13 +51,26 @@ class AccostageMilestoneSpec:
     target_route: str
 
 
+@dataclass(frozen=True, slots=True)
+class AccostageVisibleMilestone:
+    """Role-filtered progressive Accostage milestone exposed to the active session."""
+
+    index: int
+    key: str
+    title_fr: str
+    title_en: str
+    target_route: str
+    completed: bool
+    is_accessible: bool
+
+
 ACCOSTAGE_SIX_MILESTONES: tuple[AccostageMilestoneSpec, ...] = (
     AccostageMilestoneSpec(
         1,
         "first-admin",
         "1. Compte Admin",
         "1. Admin Account",
-        "/welcome-setup",
+        "/profile",
     ),
     AccostageMilestoneSpec(
         2,
@@ -96,6 +109,37 @@ ACCOSTAGE_SIX_MILESTONES: tuple[AccostageMilestoneSpec, ...] = (
     ),
 )
 
+_ADMIN_ONLY_MILESTONE_KEYS: frozenset[str] = frozenset(
+    {"first-admin", "first-llm-model", "first-datasource"}
+)
+_ORG_MILESTONE_ROLES: frozenset[str] = frozenset(
+    {"PLATFORM_ADMIN", "BU_LEAD", "BU_DIRECTOR", "TEAM_LEAD"}
+)
+
+
+def is_accostage_milestone_accessible(
+    milestone_key: str,
+    *,
+    user_role: str | None = None,
+    read_only_observer: bool = False,
+    first_admin_initialized: bool = False,
+) -> bool:
+    """Return True if the active role is allowed to see and open the milestone."""
+    if read_only_observer:
+        return False
+    if user_role is None:
+        return not first_admin_initialized
+    normalized_role = user_role.strip().upper()
+    if normalized_role in ("OBSERVER", "READ_ONLY_OBSERVER"):
+        return False
+    if normalized_role == "PLATFORM_ADMIN":
+        return True
+    if milestone_key in _ADMIN_ONLY_MILESTONE_KEYS:
+        return False
+    if milestone_key == "first-org-unit":
+        return normalized_role in _ORG_MILESTONE_ROLES
+    return True
+
 
 @dataclass(frozen=True, slots=True)
 class FirstPlatformAdminRecord:
@@ -125,6 +169,8 @@ class AccostageStatusReport:
     first_admin_initialized: bool = False
     first_admin_email: str | None = None
     first_admin_display_name: str | None = None
+    platform_admin_display_name: str | None = None
+    visible_milestones: tuple[AccostageVisibleMilestone, ...] = ()
 
 
 class ProgressiveDay0AccostageService:
@@ -324,8 +370,13 @@ class ProgressiveDay0AccostageService:
                 self._completed_keys.add("pilot-workflow-run")
         return self.get_accostage_status()
 
-    def get_accostage_status(self) -> AccostageStatusReport:
-        """Compute current `Accostage k/6` badge and LLM progressive tier state."""
+    def get_accostage_status(
+        self,
+        *,
+        user_role: str | None = None,
+        read_only_observer: bool = False,
+    ) -> AccostageStatusReport:
+        """Compute current `Accostage k/6` badge, role-scoped milestones, and LLM tier state."""
         orth = self._model_router.evaluate_orthogonality()
         fam_count = len(orth.distinct_families)
         if fam_count == 0:
@@ -350,6 +401,35 @@ class ProgressiveDay0AccostageService:
         completed_count = len(ordered_completed)
         total_count = len(ACCOSTAGE_SIX_MILESTONES)
         admin = self._first_admin
+        admin_initialized = admin is not None
+        admin_display_name = admin.display_name if admin is not None else None
+        completed_set = set(ordered_completed)
+        visible_milestones: list[AccostageVisibleMilestone] = []
+        for spec in ACCOSTAGE_SIX_MILESTONES:
+            target_route = (
+                ("/profile" if admin_initialized else "/cockpit")
+                if spec.key == "first-admin"
+                else spec.target_route
+            )
+            accessible = is_accostage_milestone_accessible(
+                spec.key,
+                user_role=user_role,
+                read_only_observer=read_only_observer,
+                first_admin_initialized=admin_initialized,
+            )
+            if accessible:
+                visible_milestones.append(
+                    AccostageVisibleMilestone(
+                        index=spec.index,
+                        key=spec.key,
+                        title_fr=spec.title_fr,
+                        title_en=spec.title_en,
+                        target_route=target_route,
+                        completed=spec.key in completed_set,
+                        is_accessible=True,
+                    )
+                )
+
         return AccostageStatusReport(
             completed_count=completed_count,
             total_count=total_count,
@@ -360,7 +440,9 @@ class ProgressiveDay0AccostageService:
             agentic_gates_ad10_enabled=ad10_ok,
             amber_warning_badge=amber_badge,
             completed_milestone_keys=ordered_completed,
-            first_admin_initialized=admin is not None,
+            first_admin_initialized=admin_initialized,
             first_admin_email=admin.email if admin is not None else None,
-            first_admin_display_name=admin.display_name if admin is not None else None,
+            first_admin_display_name=admin_display_name,
+            platform_admin_display_name=admin_display_name,
+            visible_milestones=tuple(visible_milestones),
         )

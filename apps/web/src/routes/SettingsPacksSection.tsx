@@ -370,7 +370,7 @@ export function SettingsPacksSection({
         })}
       </div>
 
-      {packs.length === 0 ? (
+      {packs.length === 0 && (
         <p
           data-testid="packs-empty-state"
           style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}
@@ -379,52 +379,6 @@ export function SettingsPacksSection({
             ? "Aucun Pack métier activé pour le moment. Choisissez un périmètre cible et cliquez sur le bouton d'activation d'une carte."
             : "No Business Pack enabled yet. Select a target scope and click a card's activation button."}
         </p>
-      ) : (
-        <div style={{ display: "grid", gap: "8px" }}>
-          {packs.map((p) => {
-            const matchedMeta = installedPacks.find((item) => item.pack_key === p.packKey);
-            const displayTitle = matchedMeta
-              ? isFr
-                ? matchedMeta.title
-                : matchedMeta.title_en
-              : p.packKey;
-            return (
-              <div
-                key={`${p.packKey}@${p.version}:${p.scopePath}`}
-                data-testid={`pack-row-${p.packKey}`}
-                style={{
-                  padding: "8px 12px",
-                  borderRadius: "var(--radius-sm)",
-                  border: "1px solid var(--color-border)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: "8px",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <strong>{displayTitle}</strong>
-                  <StatusBadge label={`v${p.version}`} tone="cobalt" monospace />
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <StatusBadge
-                    label={`${isFr ? "Actif" : "Active"} · ${formatScopeLabel(p.scopePath)}`}
-                    tone="emerald"
-                  />
-                  <button
-                    type="button"
-                    data-testid={`remove-active-pack-btn-${p.packKey}-${p.scopePath}`}
-                    onClick={() => removePack(p.packKey, p.scopePath)}
-                    style={secondaryBtnStyle}
-                  >
-                    {isFr ? "Désactiver" : "Disable"}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
       )}
     </section>
   );

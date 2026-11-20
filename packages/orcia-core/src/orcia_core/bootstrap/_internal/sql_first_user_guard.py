@@ -113,7 +113,8 @@ async def get_first_platform_admin_from_postgres18(
                     SELECT id, email, display_name
                     FROM users
                     WHERE is_active = TRUE
-                    ORDER BY (CASE WHEN platform_role = 'PLATFORM_ADMIN' THEN 0 ELSE 1 END), id ASC
+                      AND platform_role = 'PLATFORM_ADMIN'
+                    ORDER BY id ASC
                     LIMIT 1
                     """
                 )

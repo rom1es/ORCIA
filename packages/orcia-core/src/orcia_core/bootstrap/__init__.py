@@ -160,9 +160,11 @@ from orcia_core.bootstrap.progressive_accostage import (
     SINGLE_FAMILY_AMBER_WARNING_FR,
     AccostageMilestoneSpec,
     AccostageStatusReport,
+    AccostageVisibleMilestone,
     FirstPlatformAdminRecord,
     LlmProgressiveTierMode,
     ProgressiveDay0AccostageService,
+    is_accostage_milestone_accessible,
 )
 from orcia_core.bootstrap.seeder import (
     ASSISTANT_WORKFLOW_URI,
@@ -234,6 +236,8 @@ __all__ = [
     "AccostageMilestoneSpec",
     "AccostagePg18Counts",
     "AccostageStatusReport",
+    "AccostageVisibleMilestone",
+    "is_accostage_milestone_accessible",
     "get_accostage_pg18_counts",
     "BootstrapRunStatus",
     "BootstrapScopeLevel",

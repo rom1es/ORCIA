@@ -156,6 +156,7 @@ test.describe("Organisation, annuaire IAM, exceptions SecOps, notifications et m
     await expect(page.getByTestId("organization-readonly-access-banner")).toBeVisible({
       timeout: 15000,
     });
+    await expect(page.getByTestId("topbar-breadcrumb")).not.toContainText("Configuration");
 
     const observerToken = await getBearerTokenFromSession(page);
     const mutationRes = await apiPost<{ error_code?: string }>(page, "/api/v1/org-units", {
@@ -230,6 +231,15 @@ test.describe("Organisation, annuaire IAM, exceptions SecOps, notifications et m
 
     await page.goto("/inbox");
     await expect(page.getByTestId("inbox-feature-panel")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId("four-zone-contextual-help-column")).toBeVisible({
+      timeout: 15000,
+    });
+    const inboxHelpPanel = page.getByTestId("contextual-help-hybrid-panel").first();
+    await expect(inboxHelpPanel).toContainText(
+      /Boîte de Réception : notifications, prises en charge et décisions d'équipe/i,
+      { timeout: 15000 },
+    );
+    await expect(inboxHelpPanel).not.toContainText(/Mon Assistant : conversation/i);
 
     expectDbRowCount(
       "SELECT COUNT(*)::int AS count FROM task_notifications",

@@ -5,6 +5,15 @@
 
 export interface components {
   schemas: {
+    AccostageMilestoneItem: {
+      completed: boolean;
+      index: number;
+      is_accessible: boolean;
+      key: string;
+      target_route: string;
+      title_en: string;
+      title_fr: string;
+    };
     AccostageStatusResponse: {
       admin_created?: boolean;
       agentic_gates_ad10_enabled: boolean;
@@ -21,10 +30,12 @@ export interface components {
       llm_tier_mode: "UNCONFIGURED" | "QUICK_TRIAL_SINGLE_FAMILY" | "FULL_ORTHOGONAL_AD10";
       models_count?: number;
       org_units_count?: number;
+      platform_admin_display_name?: string | null;
       sources_count?: number;
       total_count: number;
       trace_id: string;
       users_count?: number;
+      visible_milestones?: (components["schemas"]["AccostageMilestoneItem"])[];
       workflows_count?: number;
       workspaces_count?: number;
     };
@@ -6948,6 +6959,7 @@ export interface paths {
   };
 }
 
+export type AccostageMilestoneItem = components["schemas"]["AccostageMilestoneItem"];
 export type AccostageStatusResponse = components["schemas"]["AccostageStatusResponse"];
 export type AcquireResourceLeasesRequest = components["schemas"]["AcquireResourceLeasesRequest"];
 export type AcquireResourceLeasesResponse = components["schemas"]["AcquireResourceLeasesResponse"];

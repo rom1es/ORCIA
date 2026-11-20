@@ -330,6 +330,20 @@ class LlmConnectionTestResponse(BaseModel):
     trace_id: str = Field(..., min_length=32, max_length=32)
 
 
+class AccostageMilestoneItem(BaseModel):
+    """Role-filtered Day-0 Accostage milestone exposed by `/accostage-status` (`Story 24.5`)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    index: int = Field(..., ge=1, le=6)
+    key: str = Field(..., min_length=1, max_length=64)
+    title_fr: str = Field(..., min_length=1, max_length=128)
+    title_en: str = Field(..., min_length=1, max_length=128)
+    target_route: str = Field(..., min_length=1, max_length=128)
+    completed: bool
+    is_accessible: bool
+
+
 class AccostageStatusResponse(BaseModel):
     """Response for `GET /api/v1/bootstrap/accostage-status` & progressive LLM registration."""
 
@@ -351,6 +365,8 @@ class AccostageStatusResponse(BaseModel):
     first_admin_initialized: bool = Field(default=False)
     first_admin_email: str | None = Field(default=None, max_length=255)
     first_admin_display_name: str | None = Field(default=None, max_length=128)
+    platform_admin_display_name: str | None = Field(default=None, max_length=128)
+    visible_milestones: list[AccostageMilestoneItem] = Field(default_factory=list)
     admin_created: bool = Field(default=False)
     users_count: int = Field(default=0, ge=0)
     org_units_count: int = Field(default=0, ge=0)
