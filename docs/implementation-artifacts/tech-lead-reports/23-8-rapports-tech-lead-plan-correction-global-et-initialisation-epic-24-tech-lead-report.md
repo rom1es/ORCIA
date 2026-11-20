@@ -3,13 +3,11 @@
 > **Convention de nommage du fichier (Obligatoire — à créer AVANT toute modification de code)** :
 > - User Story du sprint : `docs/implementation-artifacts/tech-lead-reports/{story-key}-tech-lead-report.md`
 
-- **Date** : 2026-11-19
-- **Story / Clé Sprint** : `23-8-rapports-tech-lead-plan-correction-global-et-initialisation-epic-24` (`Epic 23` — Clôture Conditionnelle & Initialisation `Epic 24` uniquement si écart `P0`/`P1` ou échec Desktop)
-- **Capacité(s)** : `none (gouvernance documentaire & clôture Epic 23 — rattache CAP-042 à ACTION_ITEM-23.6 et, uniquement si échec Desktop ou écart P0/P1 résiduel en 23.7, initialise Epic 24)` — classification : `doc`
-- **Auteur / Contexte** : `23.0-impl` (initialisation Step 0 Epic 23), mis à jour `23.6a-doc-init` (2026-11-19 — recadrage RCA Epic 22). Consolide les résultats de la campagne Desktop `23.7` (`--project=desktop-cockpit`, `24` specs / `55` scénarios Desktop dont `52` exécutés et `3` `mobile-only` skipped) :
-  - **Cas A (nominal visé) — `52/52` PASS Desktop (`0` échec, `0` timeout) ET `0` écart `P0`/`P1` dans l'audit Sally × Winston** : clôture directe de l'Epic 23 (`epic-23: done`, `23-8-...: done`), maintien de `CAP-042` sous `ACTION_ITEM-23.6`, **sans créer d'Epic 24 artificiel vide** ;
-  - **Cas B (si échec Desktop ou écart `P0`/`P1` résiduel en `23.7`)** : analyse d'impact MCP GitNexus (`repo: "/home/romain/Documents/Projects/ORCIA"`), rédaction des rapports Tech Lead individuels (`24-1-...` à `24-K-...`), plan directeur global (`sprint-change-proposal-2026-11-19-epic-24-remediation-plan.md`), initialisation complète de l'**Epic 24** dans `epics.md`, `sprint-status.yaml` et `capabilities.yaml`, création de `tests/unit/test_epic23_to_epic24_traceability.py`, validation de la pyramide `AD-17` et clôture `epic-23: done`.
-- **Commits associés** : `En attente d'implémentation (initialisé en Step 0 Epic 23, recadré Step 2a)`
+- **Date** : 2026-11-20 *(initialisé 2026-11-19)*
+- **Story / Clé Sprint** : `23-8-rapports-tech-lead-plan-correction-global-et-initialisation-epic-24` (`Epic 23` — Clôture Conditionnelle `Case B` & Initialisation `Epic 24`)
+- **Capacité(s)** : `none (gouvernance documentaire & clôture Epic 23 — rattache CAP-042 à ACTION_ITEM-23.6 et transfère les 25 capacités Desktop failed_e2e vers Epic 24)` — classification : `doc`
+- **Auteur / Contexte** : `23.0-impl` (Step 0), `23.6a-doc-init` (recadrage RCA), **`23.8-impl` / Winston & `23.8-test`** (2026-11-20 — déclenchement **`Case B`** sur `a1cca38` / `dd2d382` : `44 passed / 7 failed / 1 timedOut / 3 skipped` = `8` échecs/timeouts Desktop, `1 P0` + `9 P1` Sally).
+- **Commits associés** : `feat/epic-23-remediation-pg18-sse-direction-c` (clôture `Story 23.8` après `a1cca38`)
 
 ---
 
@@ -62,17 +60,40 @@
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
-> *[Pré-implémentation initialisée en Step 0 Epic 23, recadrée Step 2a — à compléter après exécution de la Story 23.8]*
-
 ### 3.1 Fichiers Développés & Modifiés
-| Fichier | Nature (Création / Modification / Refactoring) | Description synthétique |
+| Fichier | Nature | Description synthétique |
 | :--- | :--- | :--- |
-| `docs/implementation-artifacts/sprint-status.yaml`, `docs/product/capabilities.yaml` | Modification | *[À compléter : passage `epic-23: done`, `CAP-042` sous `ACTION_ITEM-23.6`]* |
-| `docs/implementation-artifacts/tech-lead-reports/24-*.md` & `tests/unit/test_epic23_to_epic24_traceability.py` *(conditionnels)* | Création *(si échec Desktop ou écart P0/P1 > 0)* | *[Non créés si `52/52` PASS Desktop et `0` écart `P0`/`P1`]* |
+| `docs/planning-artifacts/sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md` | Création (`23.8-impl`) | Plan directeur `Case B` post-`23.7` (`3` vagues, diagramme Mermaid, matrices `8/8` échecs/timeouts, `12/12` `REM24-*`, `17/17` `UX23-*`, `12/12` `ARCH24-*`, `25` `CAP-*` Desktop + `CAP-042` sous `ACTION_ITEM-23.6`) |
+| `docs/implementation-artifacts/tech-lead-reports/24-{1..7}-*-tech-lead-report.md` | Création (`23.8-impl`) | `7` rapports Tech Lead pré-implémentation individuels (`24-1`..`24-7`, Sections 1 & 2, analyse d'impact GitNexus & découpage `< 350` L) |
+| `docs/planning-artifacts/epics.md` | Modification (`23.8-impl`) | Ajout `Epic 24` (`Stories 24.1`..`24.7` `Given/When/Then`) et mise à jour de l'`Epic List` / couverture `CAP-*` |
+| `docs/implementation-artifacts/sprint-status.yaml` | Modification (`23.8-impl`) | Clôture `epic-23: done` + `23-8-...: done` et initialisation `epic-24: backlog` + `24-1..24-7: backlog` (`epic-24-retrospective: optional`) |
+| `docs/product/capabilities.yaml` | Modification (`23.8-impl`) | Réaffectation des `25` capacités Desktop `failed_e2e` vers `24-1..24-7` (`0` reliquat `23-*`), maintien `CAP-042 -> ACTION_ITEM-23.6` (`39 runtime + 26 failed_e2e = 65`) |
+| `tests/unit/test_epic23_to_epic24_traceability.py` | Création (`23.8-test`) | Suite automatisée (`252` L, `4/4` tests) vérifiant `e2e-campaign-epic-23/`, `8/8` échecs, `17/17` `UX23-*`, `12/12` `ARCH24-*`, `12/12` `REM24-*`, `25/25` `CAP-* -> 24-*`, `CAP-042 -> ACTION_ITEM-23.6`, `24-1..24-7`, `epics.md` & `README.md` |
+| `tests/unit/test_epic22_to_epic23_traceability.py`, `tests/unit/test_epic21_to_epic22_traceability.py` | Modification (`23.8-test`) | Verrouillage post-clôture `epic-23: done` / `23-8: done` (zéro reliquat `23-*`, acceptation des clés `24-*` dans `capabilities.yaml`) |
+| `docs/implementation-artifacts/tech-lead-reports/{23-8-...,README}.md` | Modification (`23.8-test`) | Rédaction Section 3 de clôture (`23.8`) et indexation des `7` rapports `24-1..24-7` + mise à jour `Story 23.8` (`Clôture (done)`) dans `README.md` (`200` rapports) |
+| `apps/web/src/generated/orciaSiteManifest.ts`, `docs/site-catalog/index.html`, `dist/orcia-site/index.html` | Régénération (`pnpm site:sync`) | Synchronisation de la vitrine produit (`200` rapports, `28` routes, `136` primitives UI, `65/65` capacités, `39` `runtime`, `20/20` UJ) |
 
 ### 3.2 Résultats Chiffrés, Métriques & Qualité
-- **Critère de clôture (`52/52` PASS Desktop & `0` écart `P0`/`P1`)** : *[À compléter]*
-- **Qualité statique & Pyramide `AD-17`** : *[À compléter]*
+- **Verdict de sortie Epic 23 (`Case B -> Epic 24`) & Traçabilité (`100 %`)** :
+  - Campagne `e2e-campaign-epic-23/` (`dd2d382`) : `44 passed / 7 failed / 1 timedOut / 3 skipped / 0 flaky` (`55` entrées `manifest.jsonl`, `58` PNG `< 450 KB`).
+  - Couverture `100 %` vers Epic 24 : `8/8` échecs/timeouts (`06 #15`, `07 #16`, `17#3 #40`, `18#1 #41`, `18#5 #45`, `19#2 #47`, `20#1 #48`, `20#2 #49`), `17/17` `UX23-01..UX23-17`, `12/12` `ARCH24-01..ARCH24-12`, `12/12` `REM24-01..REM24-12`, `25/25` `CAP-*` Desktop `failed_e2e` vers `24-1..24-7` (`0` reliquat `23-*`), `CAP-042` maintenue sur `ACTION_ITEM-23.6`.
+- **Qualité Statique, Architecture & TypeScript (`0` erreur)** :
+  - `pnpm site:sync && pnpm site:check` : **OK** (`200` rapports, `28` routes, `136` primitives UI, `65/65` capacités live, `62/62` E2E fonctionnels, `20/20` UJ, `39` `runtime`).
+  - `.venv/bin/python scripts/check_implementation_docs.py` : **OK** (`200 / 200` rapports conformes et indexés).
+  - `.venv/bin/ruff check packages/ apps/ tests/ infra/ scripts/` & `ruff format --check` : **`0` erreur** (`865` fichiers formatés).
+  - `.venv/bin/mypy --strict packages/orcia-core packages/orcia-connectors apps/api apps/worker` (`553` fichiers) & `MYPYPATH=infra/scripts/e2e:infra/scripts/maintenance .venv/bin/mypy --strict` (`3` fichiers reset Jour 0) : **`0` erreur**.
+  - `.venv/bin/lint-imports` : **`5 contracts kept, 0 broken`** (`599` files, `4 302` dependencies).
+  - `.venv/bin/python scripts/export_openapi.py --check` : **`0-diff`**.
+  - `.venv/bin/python .agent/skills/bmad-architecture/scripts/lint_spine.py` : **`0 findings`**.
+  - `pnpm turbo run lint typecheck test --force --concurrency=2` : **`9 / 9` tâches vertes** (`@orcia/api-client`: `20/20` sur `3` fichiers, `@orcia/ui`: `124/124` sur `30` fichiers, `@orcia/web`: `218/218` sur `55` fichiers = **`362 / 362` tests JS/TS**).
+  - Contrôle taille fichiers créés/modifiés : tous les nouveaux fichiers (`24-1..24-7`, plan directeur, `test_epic23_to_epic24_traceability.py`, `orciaSiteManifest.ts`, `docs/site-catalog/index.html` `362.4 KB`) sont `< 450 KB` (`epics.md` existant `510.6 KB` sur disque depuis `487.2 KB` sur `HEAD`).
 
 ### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17` + 5 Garde-Fous de Câblage Vertical)
-- *[À compléter après clôture de `check_implementation_docs.py`, `pnpm site:sync && pnpm site:check`, `test_epic22_to_epic23_traceability.py` et passage de `epic-23: done`]*
+- **Pyramide Python (`AD-17`)** :
+  - `.venv/bin/pytest tests/unit/ tests/security/ tests/conformance/ tests/contract/ -q` : **`961 passed`** (`0` fail, `0` skip).
+  - `.venv/bin/pytest tests/integration/test_e2e_reset_day0_postgres18_and_redis.py tests/integration/test_contextual_help_and_accostage_postgres18.py tests/integration/api/test_story_23_5_federated_search_postgres18.py -q` : **`4 passed`** sur conteneurs réels PostgreSQL 18 + Redis 7.4.
+  - Mesure de couverture unitaires `.venv/bin/pytest tests/unit/ --cov=packages/orcia-core/src/orcia_core -q` : **`843 passed`** sans exclusion de `test_alembic_0021`, couverture unitaires seuls sur `packages/orcia-core/src/orcia_core` = **`84 %`** (`23 467` instructions, `3 135` manquées principalement dans `_internal/sql_*.py` exercés par `tests/integration/`).
+  - `.venv/bin/pytest tests/unit/test_epic21_to_epic22_traceability.py tests/unit/test_epic22_to_epic23_traceability.py tests/unit/test_epic23_to_epic24_traceability.py -v` : **`16 passed`** (`0` fail).
+- **Intégrité campagnes & GitNexus** :
+  - `docs/implementation-artifacts/e2e-campaign-epic-21/`, `e2e-campaign-epic-22/` et `e2e-campaign-epic-23/` strictement intouchés ; zéro modification de code applicatif (`packages/`, `apps/` hors régénération `site:sync`).
+  - Index GitNexus rafraîchi (`npx gitnexus analyze`) et état Git propre après commit atomique `Story 23.8`.

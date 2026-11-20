@@ -276,18 +276,33 @@ def test_every_failed_capability_points_to_epic23_key_master_plan_and_report() -
             )
         else:
             post_ref = cap.get("e2e_remediation_ref")
-            is_valid_epic24_ref = (
-                isinstance(post_ref, str)
-                and (post_ref.startswith("23-8-") or post_ref.startswith("24-"))
-                and post_ref in dev_status
-            )
-            is_valid_deferred_ref = isinstance(post_ref, str) and post_ref in {
-                DEFERRED_STORY_23_6_KEY,
-                ACTION_ITEM_23_6_ID,
-            }
-            assert is_valid_epic24_ref or is_valid_deferred_ref, (
-                f"Capability {cap_id} has invalid post-23.7 e2e_remediation_ref={post_ref!r}"
-            )
+            is_23_8_done = dev_status.get(STORY_23_8_KEY) == "done"
+            if is_23_8_done:
+                assert dev_status.get("epic-23") == "done"
+                if cap_id == "CAP-042":
+                    assert post_ref == ACTION_ITEM_23_6_ID
+                else:
+                    assert (
+                        isinstance(post_ref, str)
+                        and post_ref.startswith("24-")
+                        and post_ref in dev_status
+                    ), (
+                        f"Capability {cap_id} must transfer from 23-* to 24-* after Story 23.8 "
+                        f"(got {post_ref!r})"
+                    )
+            else:
+                is_valid_epic24_ref = (
+                    isinstance(post_ref, str)
+                    and (post_ref.startswith("23-8-") or post_ref.startswith("24-"))
+                    and post_ref in dev_status
+                )
+                is_valid_deferred_ref = isinstance(post_ref, str) and post_ref in {
+                    DEFERRED_STORY_23_6_KEY,
+                    ACTION_ITEM_23_6_ID,
+                }
+                assert is_valid_epic24_ref or is_valid_deferred_ref, (
+                    f"Capability {cap_id} has invalid post-23.7 e2e_remediation_ref={post_ref!r}"
+                )
             if post_ref == ACTION_ITEM_23_6_ID:
                 assert ACTION_ITEM_23_6_ID in action_item_ids
             elif isinstance(post_ref, str):
@@ -325,6 +340,9 @@ def test_every_epic23_sprint_key_has_story_report_and_index_entry() -> None:
     )
     assert (set(EPIC_23_KEYS) | {STORY_23_7_KEY, STORY_23_8_KEY}).issubset(set(remediation_keys))
     assert DEFERRED_STORY_23_6_KEY not in remediation_keys
+    if dev_status.get(STORY_23_8_KEY) == "done":
+        assert dev_status.get("epic-23") == "done"
+        assert all(dev_status.get(key) == "done" for key in remediation_keys)
 
     epics_text = EPICS_PATH.read_text(encoding="utf-8")
     index_text = REPORTS_INDEX_PATH.read_text(encoding="utf-8")

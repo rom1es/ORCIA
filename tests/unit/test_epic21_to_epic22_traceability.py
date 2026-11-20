@@ -135,7 +135,7 @@ def test_every_failed_capability_points_to_valid_sprint_key_and_report() -> None
     assert isinstance(dev_status, dict)
 
     valid_keys = {
-        k for k in dev_status if isinstance(k, str) and (k.startswith("22-") or k.startswith("23-"))
+        k for k in dev_status if isinstance(k, str) and k.startswith(("22-", "23-", "24-"))
     }
     action_items = [item for item in sprint_data.get("action_items", []) if isinstance(item, dict)]
     deferred_story_refs = {

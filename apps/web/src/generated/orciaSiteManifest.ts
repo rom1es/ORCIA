@@ -6,7 +6,7 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-19",
+  "lastSyncedDate": "2026-11-20",
   "stats": {
     "activeRoutesCount": 28,
     "uiPrimitivesCount": 136,
@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 54,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 193,
+    "techLeadReportsCount": 200,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 39,
@@ -536,11 +536,60 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   ],
   "techLeadReports": [
     {
-      "date": "2026-11-19",
+      "date": "2026-11-20",
+      "phaseOrStory": "Story 24.7",
+      "reportFile": "24-7-reconciliation-e2e-captures-jalons-campagne-52-sur-52-et-cloture-epic-24-tech-lead-report.md",
+      "domain": "Epic 24 Vague 2 — Réconciliation Sélecteurs E2E, Captures Jalons, Campagne Figée 52/52 & Clôture (REM24-11, REM24-12, 18#1 #41, 07 #16, UX23-17)",
+      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8) : correction openCatalogOrAgentsPage (workspaceAndCatalogHelpers.ts:126-130) & 07-spaces L42, milestone-*.png < 450 KB, campagne figée 52/52 Desktop (e2e-campaign-epic-24/), contre-audit 0 P0 / 0 P1, promotion 25 CAP vers runtime & clôture conditionnelle sans Epic 25."
+    },
+    {
+      "date": "2026-11-20",
+      "phaseOrStory": "Story 24.6",
+      "reportFile": "24-6-recherche-cmdk-filtre-langue-purge-jargon-packs-et-microcopy-tech-lead-report.md",
+      "domain": "Epic 24 Vague 1 — Recherche Cmd+K Filtrée Langue, Purge Jargon, Compteurs Packs & Microcopy (REM24-09, REM24-10, UX23-05, UX23-08, UX23-10..12, UX23-16)",
+      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8) : filtre ci.lang = locale (sql_federated_search.py), icône OrciaIcon dans TopHeaderSearchCommand, purge enums & 0 nu (CatalogExplorerPanel.tsx:149), Markdown permissions, 5 compteurs /settings/packs, singulier n <= 1, split PacksRegistryPage.tsx (381 L) & IamSecopsExceptionForm.tsx (403 L)."
+    },
+    {
+      "date": "2026-11-20",
+      "phaseOrStory": "Story 24.5",
+      "reportFile": "24-5-identite-accostage-cockpit-sync-navigation-zone4-et-coherence-jour0-tech-lead-report.md",
+      "domain": "Epic 24 Vague 1 — Identité Accostage Cockpit, Navigation Zone 4 & Cohérence Jour 0 (REM24-08, UX23-07, UX23-09, UX23-15)",
+      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8) : platformAdmin réel dans cockpit/index.tsx:207-209 + filtrage permissions Accostage, route Zone 4 /inbox, /showcase surbrillance help, breadcrumb /organization & [Espace], verrouillage Mes Espaces Jour 0, 6 onglets /settings & split ShellContainer.tsx (378 L)."
+    },
+    {
+      "date": "2026-11-20",
+      "phaseOrStory": "Story 24.4",
+      "reportFile": "24-4-refonte-css-tailwind-tokens-modales-rgaa-contraste-onglets-et-shell-tech-lead-report.md",
+      "domain": "Epic 24 Vague 1 — CSS Tailwind v4 Layering, OrciaDialog, Contraste RGAA Sombre & Shell Direction C (REM24-07, UX23-02..04, UX23-13..14, UX23-16)",
+      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8) : ordre tokens.css → Tailwind (main.tsx:1-2), split/layering tokens.css (1 266 L), AgentDetailAndSandboxModal (318 L) sur OrciaDialog, onglets sans fade 150ms, contraste dark --color-sidebar-active-fg >= 4.5:1 & hauteur FourZoneDirectionCShell (348 L)."
+    },
+    {
+      "date": "2026-11-20",
+      "phaseOrStory": "Story 24.3",
+      "reportFile": "24-3-banc-mcp-audit-ledger-fin-pass-optimiste-et-assainissement-composition-root-tech-lead-report.md",
+      "domain": "Epic 24 Vague 0 — Banc MCP, audit_ledger, Fin PASS Optimiste & Assainissement Composition Root (REM24-05, REM24-06, 18#5 #45)",
+      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8) : suppression PASS optimiste (useCatalogRemoteTestBench.ts), contrat ADMIN_CONNECTION_TEST audit_ledger, persistance PG18 exposition MCP, migration _speed2_cache vers Redis 300s, healthchecks PacksRegistryPage, wfKey réel & split remote_test_bench_and_mcp_exposure.py (440 L)."
+    },
+    {
+      "date": "2026-11-20",
+      "phaseOrStory": "Story 24.2",
+      "reportFile": "24-2-triggers-uuidv7-sans-collision-waivers-await-adn-pg18-et-fin-default-ws-tech-lead-report.md",
+      "domain": "Epic 24 Vague 0 — Triggers UUIDv7 sans Collision, Waivers await, ADN Starlark PG18 & Purge default-ws (REM24-03, REM24-04, 20#2 #49, 17#3 #40, UX23-06)",
+      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8) : correction collision tid[:8] (_triggers_lifecycle_ops.py:46-47) + trigger_key optionnel, await waivers + ADN Starlark PG18 (dependencies/workspace_and_packs.py), purge \"default-ws\"/\"ws-claims-alpha\"/\"ws-mon-compte\", split dna_starlark_and_glossary_lifecycle.py (447 L)."
+    },
+    {
+      "date": "2026-11-20",
+      "phaseOrStory": "Story 24.1",
+      "reportFile": "24-1-persistance-pg18-actions-jira-staged-mcp-et-vsm-v2-tech-lead-report.md",
+      "domain": "Epic 24 Vague 0 — Persistance PG18 Actions Jira Staged, Propositions MCP & Workflow VSM v2 (REM24-01, REM24-02, 06 #15, 19#2 #47, 20#1 #48, UX23-01)",
+      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8) : migration Alembic jira_staged_actions + persistance PG18 GovernedMcpServerService, retrait _get_jira_service/_get_mcp_service, câblage strict SqlWorkflowDefinitionsV2Store (vsm_definitions_v2), split jira_actions.py (459 L) & GatesAdaptiveHumanReviewSection.tsx (378 L) < 300 L."
+    },
+    {
+      "date": "2026-11-20",
       "phaseOrStory": "Story 23.8",
       "reportFile": "23-8-rapports-tech-lead-plan-correction-global-et-initialisation-epic-24-tech-lead-report.md",
-      "domain": "Clôture Epic 23 — Bilan Conditionnel (52/52 PASS Desktop & 0 P0/P1 → Sans Epic 24 Vide) & Éventuelle Initialisation Epic 24",
-      "summary": "Pré-implémentation (ready-for-dev, recadrée Step 2a) : si 52/52 PASS Desktop et 0 écart P0/P1, clôture directe epic-23: done sans Epic 24 artificiel vide (CAP-042 sous ACTION_ITEM-23.6) ; sinon rédaction des rapports Tech Lead 24-1..24-K, plan directeur, initialisation Epic 24 et test_epic23_to_epic24_traceability.py."
+      "domain": "Clôture Epic 23 (Case B -> Epic 24) — Rapports Tech Lead 24-1..24-7, Plan Directeur Global & Suite de Traçabilité 23 -> 24",
+      "summary": "Clôture (done, epic-23: done) : verdict Case B sur dd2d382 (8 échecs/timeouts Desktop, 17 UX23-*, 12 ARCH24-*, 12 REM24-*), rédaction des 7 rapports 24-1..24-7 et du plan sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md, initialisation Epic 24 (24-1..24-7: backlog dans epics.md/sprint-status.yaml), réaffectation des 25 CAP-* Desktop failed_e2e vers 24-1..24-7 (0 reliquat 23-*, CAP-042 -> ACTION_ITEM-23.6), test_epic23_to_epic24_traceability.py (4/4, 16/16 traçabilité), 961 unit/sécu/conformité/contrat, 4/4 PG18+Redis, 9/9 Turbo (362/362 JS/TS), ruff/mypy --strict/lint-imports (5/5)/export_openapi (0-diff)/lint_spine (0), check_implementation_docs.py (200/200) et pnpm site:sync && pnpm site:check (0 erreur)."
     },
     {
       "date": "2026-11-20",
