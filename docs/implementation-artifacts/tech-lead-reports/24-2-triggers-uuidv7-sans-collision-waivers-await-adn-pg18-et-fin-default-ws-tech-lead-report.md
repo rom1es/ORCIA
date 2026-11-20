@@ -4,7 +4,7 @@
 - **Date :** 2026-11-20
 - **Statut :** `En attente d'implémentation` (initialisé par `Story 23.8`)
 - **Plan directeur :** [`sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md`](../../planning-artifacts/sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md)
-- **Références remédiées :** `REM24-03`, `REM24-04` | Échecs E2E `20#2 #49`, `17#3 #40` | Constat `UX23-06` (`P1`) | Diagnostics `ARCH24-03`, `ARCH24-04`
+- **Références remédiées :** `REM24-03`, `REM24-04`, **`USER24-BUG-6`** | Échecs E2E `20#2 #49`, `17#3 #40` | Constat `UX23-06` (`P1`) | Diagnostics `ARCH24-03`, `ARCH24-04`
 - **Capacité(s) (`capabilities.yaml`) :** `CAP-010`, `CAP-011`, `CAP-081`, `CAP-084`, `CAP-180`, `CAP-201` (`6` capacités Desktop `failed_e2e`)
 - **Classification :** `feature` (intégrité UUIDv7, persistance PG18 & hygiène Jour 0)
 
@@ -18,9 +18,10 @@ Deux échecs structurants bloquent la création séquentielle d'automatisations 
 2. **Waivers non attendus, ADN Starlark volatil & résidus `"default-ws"` (`17#3 #40` / `ARCH24-04` / `UX23-06`)** :
    - Dans `WorkspaceDnaAndWaiversSection.tsx` (`277` L), les appels `registerWorkspaceExceptionWaiver` et `compileDnaStarlark` ne sont pas `await` correctement avec état `submitting` et rafraîchissement depuis PG18 ; lorsque `0` espace existe, la section ne doit jamais être montée avec des identifiants factices.
    - `DnaStarlarkAndGlossaryLifecycleService` garde en RAM les mécanismes Starlark signés sans les persister durablement en PG18 (`dependencies/workspace_and_packs.py`).
-   - Des fallbacks factices `"default-ws"`, `"ws-claims-alpha"`, `"ws-mon-compte"` subsistent dans le code applicatif/UI en contradiction avec la vérité terrain Jour 0.
+   - Des fallbacks factices `"default-ws"`, `"ws-claims-alpha"`, `"ws-mon-compte"` subsistent dans le code applicatif/UI en contradiction avec la vérité terrain Jour 0 (`workspaces/index.tsx:176-184` monte `<WorkspaceDnaAndWaiversSection>` même si `targetWorkspace === null`, affichant `default-ws` à `0` espace — **`USER24-BUG-6`**).
+   - De plus, `packages/ui/src/primitives/WorkspaceFiveTabsAndExternalRebaseView.tsx:148-276` ne branche jamais son panneau principal sur `activeTab`, affichant en permanence `2. DOCUMENTS & SOURCES` même lorsque l'onglet `5. Membres & Équipe` est sélectionné (`USER24-BUG-6`).
 
-**Critères d'acceptation :** zéro collision `trigger_key` sur créations en rafale (`< 1 s`), `await` + `submitting` + rechargement PG18 sur waivers et ADN Starlark, persistance PG18 des mécanismes signés, `0` occurrence runtime de `"default-ws"` / `"ws-claims-alpha"` / `"ws-mon-compte"`, et succès E2E `20#2 #49` + `17#3 #40`.
+**Critères d'acceptation :** zéro collision `trigger_key` sur créations en rafale (`< 1 s`), `await` + `submitting` + rechargement PG18 sur waivers et ADN Starlark, persistance PG18 des mécanismes signés, `0` occurrence runtime de `"default-ws"` / `"ws-claims-alpha"` / `"ws-mon-compte"`, non-montage complet du panneau détail/ADN dans `/spaces` lorsque `0` espace existe, commutation réelle du contenu dans `WorkspaceFiveTabsAndExternalRebaseView` selon les 5 onglets (`activeTab`), et succès E2E `20#2 #49` + `17#3 #40`.
 
 ### 1.2 Analyse d'Impact GitNexus (`repo: "/home/romain/Documents/Projects/ORCIA"`)
 - `TriggerDispatcherService` (`packages/orcia-core/src/orcia_core/orchestration/triggers_dispatcher.py`) : `impactedCount: 261`, `risk: "CRITICAL"`, `epistemic: "exact"` (`direct: 242`, `d=2: 19`, `processes_affected: 32`, `modules_affected: 20`). Inspection directe `_triggers_lifecycle_ops.py:36-67` (`261` L) confirmant `tid[:8]` aux lignes `46-47`.
@@ -53,9 +54,10 @@ Deux échecs structurants bloquent la création séquentielle d'automatisations 
 
 ### 2.4 Interface SPA Vite + TanStack Router & Design System (`@orcia/ui` / `apps/web`)
 1. Exposer le champ optionnel `trigger_key` dans `WorkflowTriggersModal` avec validation et gestion d'erreur visible (`[role="alert"]`, `UX23-06`).
-2. Dans `apps/web/src/features/workspaces/WorkspaceDnaAndWaiversSection.tsx` (`277` L) et `workspaces/index.tsx` (`224` L) :
+2. Dans `apps/web/src/features/workspaces/WorkspaceDnaAndWaiversSection.tsx` (`277` L), `workspaces/index.tsx` (`224` L) et `packages/ui/src/primitives/WorkspaceFiveTabsAndExternalRebaseView.tsx` (`278` L) :
    - Ajouter `await` + état `submitting` + rechargement PG18 immédiat sur `registerWorkspaceExceptionWaiver` et `compileDnaStarlark`.
-   - Supprimer tout fallback `"default-ws"` / `"ws-claims-alpha"` / `"ws-mon-compte"` ; ne pas monter `WorkspaceDnaAndWaiversSection` lorsqu'aucun espace n'existe (afficher un état vide explicite guidant vers la création d'espace).
+   - Supprimer tout fallback `"default-ws"` (`L45`, UUID hardcodé `L194`) / `"ws-claims-alpha"` / `"ws-mon-compte"` ; ne jamais monter `WorkspaceDnaAndWaiversSection` dans `workspaces/index.tsx` lorsque `targetWorkspace === null` (`0` espace, afficher uniquement l'état vide guidant vers la création d'espace, **`USER24-BUG-6`**).
+   - Brancher le rendu du panneau principal de `WorkspaceFiveTabsAndExternalRebaseView.tsx` sur `activeTab` (`OVERVIEW`, `DOCUMENTS_SOURCES`, `DELIVERABLES_ARTIFACTS`, `GLOSSARY_RULES`, `MEMBERS_TEAM`) afin que chaque onglet affiche son contenu propre (et non plus `2. DOCUMENTS & SOURCES` en permanence sous l'onglet 5).
 
 ### 2.5 Stratégie de Vérification & 5 Couches de Tests (`AD-17`)
 - **Couche 1 (Unitaire >= 90 %)** : test de non-collision sur `1 000` créations de triggers dans la même milliseconde ; tests unitaires split `dna_starlark_and_glossary_lifecycle` et interdiction AST/grep `"default-ws"` en prod.

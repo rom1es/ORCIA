@@ -4,7 +4,7 @@
 - **Date :** 2026-11-20
 - **Statut :** `En attente d'implémentation` (initialisé par `Story 23.8`)
 - **Plan directeur :** [`sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md`](../../planning-artifacts/sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md)
-- **Références remédiées :** `REM24-09`, `REM24-10` | Constats `UX23-05` (`P1`), `UX23-08` (`P1`), `UX23-10` (`P1`), `UX23-11` (`P2`), `UX23-12` (`P2`), `UX23-16` (`P3`) | Diagnostics `ARCH24-10`, `ARCH24-11`
+- **Références remédiées :** `REM24-09`, `REM24-10`, **`USER24-BUG-3`** | Constats `UX23-05` (`P1`), `UX23-08` (`P1`), `UX23-10` (`P1`), `UX23-11` (`P2`), `UX23-12` (`P2`), `UX23-16` (`P3`) | Diagnostics `ARCH24-10`, `ARCH24-11`
 - **Capacité(s) (`capabilities.yaml`) :** `CAP-056`, `CAP-057` (`2` capacités Desktop `failed_e2e`)
 - **Classification :** `ux` (filtrage multilingue SQL, zéro jargon i18n, accessibilité & troncatures `1440×900`)
 
@@ -19,12 +19,13 @@ La passe critique sur `58` captures révèle plusieurs défauts linguistiques, d
    - Des valeurs techniques brutes fuient directement à l'écran : `PENDING`, `RUNNING`, `PAUSE_AND_ESCALATE`, `OPT_A_*`, `1_NETWORK_TLS_ANTI_SSRF..4_HOT_DRY_RUN`, `COMPLETED`, `PASS`, `HTTP 403`, `(AD-24.7)`, `PostgreSQL 18`, `< 15 s`, `0.5 ms`, `depth=0/1`, ainsi qu'un `0` nu dans `CatalogExplorerPanel.tsx:149`.
    - `PermissionBrokerCard` affiche du Markdown brut et des URIs encodés sans décodage ni composant `FormattedMarkdownContent`.
    - Les articles `docs/help/fr/` contiennent des scories `` `@` `` et des notations internes `L4 → L1` au lieu de termes métier clairs.
+   - **Markdown brut affiché dans `/help` et Zone 4 (`USER24-BUG-3`)** : `packages/ui/src/primitives/ContextualHelpSharedBlocks.tsx:145,160-162,182-184,197-199` (« À quoi sert cet écran », « En N gestes », « Un exemple réel », « Ce qui coince souvent ») et `ContextualHelpSectionsAndFooter.tsx:45,54,111` (« Comment procéder pas à pas », « Repères & notions utiles », « Questions fréquentes », sections ciblées) affichent les chaînes Markdown brutes (`**gras**`, `` `ⓘ` ``) sans invoquer `renderInlineMarkdownNodes` / `FormattedMarkdownContent`.
 3. **Compteurs `/settings/packs`, pluriels, troncatures `1440×900` & microcopy (`UX23-10`, `UX23-12`, `UX23-16`)** :
    - Sur `/settings/packs`, la grille `5` compteurs affiche des valeurs incohérentes (ex. `4 Compétences` mal alignées), et la pluralisation applique le pluriel à `n = 0` ou `n = 1` (`n <= 1` doit rester au singulier).
    - Des libellés connecteurs/agents restent bruts ; `StudioCopilotSidebar` (`291` L), `/spaces` et `IamSecopsExceptionForm.tsx` (`403` L) présentent des troncatures sur viewport `1440×900`.
    - Finitions microcopy `UX23-16` : dédoublonnage `/ontology`, `/showcase` en `4` onglets sans fuite de chemin fichier interne, `/wizards`, suppression du double espace `Mes  Espaces`, orthographe `paliers`, casse homogène `Cassette`, précision FinOps `0.002 €`.
 
-**Critères d'acceptation :** filtre `ci.lang = locale` garanti en SQL PG18, icône `OrciaIcon` dans `Cmd+K`, `0` enum technique ou URI brut exposé sans traduction i18n `fr`/`en`, grille `5` compteurs `/settings/packs` juste et singulier `n <= 1`, `0` troncature à `1440×900` sur les vues ciblées.
+**Critères d'acceptation :** filtre `ci.lang = locale` garanti en SQL PG18, icône `OrciaIcon` dans `Cmd+K`, rendu HTML propre (zéro `**` ou backtick brut visible) dans tous les blocs de `/help` et Zone 4 (`USER24-BUG-3`), `0` enum technique ou URI brut exposé sans traduction i18n `fr`/`en`, grille `5` compteurs `/settings/packs` juste et singulier `n <= 1`, `0` troncature à `1440×900` sur les vues ciblées.
 
 ### 1.2 Analyse d'Impact GitNexus (`repo: "/home/romain/Documents/Projects/ORCIA"`)
 - `CatalogExplorerPanel` (`packages/ui/src/shell/CatalogExplorerPanel.tsx:49`, `310` L) : `impactedCount: 261`, `risk: "CRITICAL"`, `epistemic: "exact"` (`direct: 242`, `d=2: 19`, `processes_affected: 32`, `modules_affected: 20`).
@@ -57,6 +58,7 @@ La passe critique sur `58` captures révèle plusieurs défauts linguistiques, d
 2. **Zéro jargon & Markdown (`apps/web/src/i18n/locales/{fr,en}.ts`, `@orcia/ui`)** :
    - Traduire intégralement `PENDING`, `RUNNING`, `PAUSE_AND_ESCALATE`, `OPT_A_*`, `1_NETWORK_TLS_ANTI_SSRF..4_HOT_DRY_RUN`, `COMPLETED`, `PASS`, `HTTP 403`, `(AD-24.7)`, `PostgreSQL 18`, `< 15 s`, `0.5 ms`, `depth=0/1` via les dictionnaires i18n (tout en conservant les `data-status` techniques nécessaires aux assertions).
    - Rendre les conseils de `PermissionBrokerCard` via `FormattedMarkdownContent` et décoder proprement les URIs (`decodeURIComponent` sécurisé).
+   - Dans `ContextualHelpSharedBlocks.tsx` (`summaryWhatFor`, `stepByStepItems`, `realExampleText`, `pitfalls` / « Ce qui coince souvent ») et `ContextualHelpSectionsAndFooter.tsx` (`HelpAccordionSection` pour « Comment procéder pas à pas », « Repères & notions utiles », « Questions fréquentes », et `HelpTargetedSectionsList`), appliquer `renderInlineMarkdownNodes` / `FormattedMarkdownContent` pour formater `**gras**`, `*italique*` et `` `code` `` en HTML (`USER24-BUG-3`).
    - Remplacer le `0` nu dans `CatalogExplorerPanel.tsx:149` par un badge/mention lisible (« Aucun … »).
 3. **Packs, troncatures `1440×900` & microcopy** :
    - Corriger la grille `5` compteurs de `/settings/packs` (`PacksRegistryPage.tsx` découpé `< 280` L), appliquer la règle française de pluralisation (`n <= 1` $\rightarrow$ singulier) et humaniser les noms de connecteurs/agents.
@@ -66,8 +68,8 @@ La passe critique sur `58` captures révèle plusieurs défauts linguistiques, d
 ### 2.5 Stratégie de Vérification & 5 Couches de Tests (`AD-17`)
 - **Couche 1 (Unitaire >= 90 %)** : tests SQL/domaine vérifiant l'exclusion stricte des `HELP_ARTICLE` d'une autre langue dans `sql_federated_search.py` et validation de la règle singulier `n <= 1` + mappers i18n `fr`/`en` complets.
 - **Couche 2 (Intégration `testcontainers` PG18 réel)** : requête `GET` recherche fédérée `Cmd+K` avec `locale=fr` vs `locale=en` sur articles réels en PG18 (`0` fuite linguistique) et contrôle `portal_and_help.py`.
-- **Couche 3 (Composants React / Vitest)** : tests sur `TopHeaderSearchCommand` (`OrciaIcon` sans émoji `❓`), `PermissionBrokerCard` (rendu Markdown + URI décodé), `CatalogExplorerPanel` (absence de `0` nu), `PacksRegistryPage` (`5` compteurs justes, singulier `0`/`1`), `IamSecopsExceptionForm` et détection de jargon brut résiduel.
-- **Couche 4 (E2E Playwright ciblé)** : vérification `1440×900` sur `/settings/packs`, `/catalog`, `/ontology`, `/showcase`, `/wizards`, `/spaces`, `/finops` (`18-catalog-packs-wizards-and-mcp-bench.spec.ts` hors `18#1` résolu en `24-7`).
+- **Couche 3 (Composants React / Vitest)** : tests sur `ContextualHelpSharedBlocks` & `ContextualHelpSectionsAndFooter` vérifiant le rendu HTML Markdown (`<strong>`, `<code>`, zéro `**` ou backtick brut visible dans « Ce qui coince souvent » et « Questions fréquentes », `USER24-BUG-3`), `TopHeaderSearchCommand` (`OrciaIcon` sans émoji `❓`), `PermissionBrokerCard` (rendu Markdown + URI décodé), `CatalogExplorerPanel` (absence de `0` nu), `PacksRegistryPage` (`5` compteurs justes, singulier `0`/`1`), `IamSecopsExceptionForm` et détection de jargon brut résiduel.
+- **Couche 4 (E2E Playwright ciblé)** : vérification `/help` + Zone 4 (accordéons « Ce qui coince souvent » et « Questions fréquentes » dépliés sans `**` brut `USER24-BUG-3`) et `1440×900` sur `/settings/packs`, `/catalog`, `/ontology`, `/showcase`, `/wizards`, `/spaces`, `/finops` (`18-catalog-packs-wizards-and-mcp-bench.spec.ts` hors `18#1` résolu en `24-7`).
 - **Couche 5 (Statique & Sécurité)** : `ruff`, `mypy --strict`, `lint-imports`, `pnpm turbo run lint typecheck test`, `pnpm site:check`.
 
 ---

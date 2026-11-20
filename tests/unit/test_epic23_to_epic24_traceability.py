@@ -48,6 +48,40 @@ EXPECTED_FAILING_SCENARIOS: dict[str, tuple[str, ...]] = {
     "#49": ("20-process-studio-v2-finops-and-log-sink.spec.ts", "20#2"),
 }
 
+USER_BUG_TARGETS: dict[str, tuple[str, str]] = {
+    "USER24-BUG-1": (
+        "24-4",
+        "24-4-refonte-css-tailwind-tokens-modales-rgaa-contraste-onglets-et-shell",
+    ),
+    "USER24-BUG-2": (
+        "24-5",
+        "24-5-identite-accostage-cockpit-sync-navigation-zone4-et-coherence-jour0",
+    ),
+    "USER24-BUG-3": (
+        "24-6",
+        "24-6-recherche-cmdk-filtre-langue-purge-jargon-packs-et-microcopy",
+    ),
+    "USER24-BUG-4A": (
+        "24-4",
+        "24-4-refonte-css-tailwind-tokens-modales-rgaa-contraste-onglets-et-shell",
+    ),
+    "USER24-BUG-4B": (
+        "24-4",
+        "24-4-refonte-css-tailwind-tokens-modales-rgaa-contraste-onglets-et-shell",
+    ),
+    "USER24-BUG-5": (
+        "24-4",
+        "24-4-refonte-css-tailwind-tokens-modales-rgaa-contraste-onglets-et-shell",
+    ),
+    "USER24-BUG-6": (
+        "24-2",
+        "24-2-triggers-uuidv7-sans-collision-waivers-await-adn-pg18-et-fin-default-ws",
+    ),
+}
+
+ALLOWED_EPIC_24_STATUSES = frozenset({"backlog", "in-progress", "done"})
+ALLOWED_STORY_24_STATUSES = frozenset({"backlog", "ready-for-dev", "in-progress", "review", "done"})
+
 
 def _load_yaml_mapping(path: Path) -> dict[str, Any]:
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -77,6 +111,13 @@ def _expand_ux_ids_in_text(text: str) -> set[str]:
     for start_str, end_str in re.findall(r"\bUX23-(\d{2})\.\.(\d{2})\b", text):
         for idx in range(int(start_str), int(end_str) + 1):
             ids.add(f"UX23-{idx:02d}")
+    return ids
+
+
+def _expand_user_bug_ids_in_text(text: str) -> set[str]:
+    ids = set(re.findall(r"\bUSER24-BUG-(?:4A|4B|[1-6])\b", text))
+    if re.search(r"\bUSER24-BUG-1\.\.6\b", text):
+        ids.update(USER_BUG_TARGETS.keys())
     return ids
 
 
@@ -187,6 +228,34 @@ def test_all_8_failures_ux23_arch24_and_rem24_are_mapped_to_epic24() -> None:
         assert rem_id in all_reports_text, f"{rem_id} missing from 24-* tech-lead reports"
 
 
+def test_user24_bugs_are_mapped_to_epic24_plan_epics_and_reports() -> None:
+    plan_text = MASTER_PLAN_PATH.read_text(encoding="utf-8")
+    epic24_epics_section = EPICS_PATH.read_text(encoding="utf-8").split("## Epic 24:", maxsplit=1)[
+        1
+    ]
+    reports_by_name = _load_epic24_reports()
+    report_24_7_key = EPIC_24_KEYS[-1]
+    assert report_24_7_key.startswith("24-7-")
+    report_24_7_ids = _expand_user_bug_ids_in_text(
+        reports_by_name[f"{report_24_7_key}-tech-lead-report.md"]
+    )
+    epics_user_bug_ids = _expand_user_bug_ids_in_text(epic24_epics_section)
+
+    for bug_id, (story_prefix, target_key) in USER_BUG_TARGETS.items():
+        rows = _extract_table_rows_containing(plan_text, f"`{bug_id}`")
+        assert rows, f"{bug_id} missing from Epic 24 master plan"
+        assert any(story_prefix in row and "24-7" in row for row in rows), (
+            f"{bug_id} not linked to {story_prefix} and 24-7 in master plan"
+        )
+        assert bug_id in epics_user_bug_ids, f"{bug_id} missing from Epic 24 section of epics.md"
+        assert bug_id in reports_by_name[f"{target_key}-tech-lead-report.md"], (
+            f"{bug_id} missing from {target_key}-tech-lead-report.md"
+        )
+        assert bug_id in report_24_7_ids, (
+            f"{bug_id} missing from {report_24_7_key}-tech-lead-report.md"
+        )
+
+
 def test_desktop_failed_capabilities_transfer_to_epic24_and_cap042_stays_deferred() -> None:
     capabilities = _load_yaml_mapping(CAPABILITIES_PATH).get("capabilities", [])
     assert isinstance(capabilities, list)
@@ -196,8 +265,8 @@ def test_desktop_failed_capabilities_transfer_to_epic24_and_cap042_stays_deferre
 
     runtime_caps = [c for c in capabilities if c.get("verification") == "runtime"]
     failed_caps = [c for c in capabilities if c.get("verification") == "failed_e2e"]
-    assert len(runtime_caps) == 39
-    assert len(failed_caps) == 26
+    assert 39 <= len(runtime_caps) <= 64
+    assert len(failed_caps) + len(runtime_caps) == 65
     assert all(not c.get("e2e_remediation_ref") for c in runtime_caps)
 
     plan_text = MASTER_PLAN_PATH.read_text(encoding="utf-8")
@@ -205,7 +274,8 @@ def test_desktop_failed_capabilities_transfer_to_epic24_and_cap042_stays_deferre
     reports_by_name = _load_epic24_reports()
 
     desktop_failed = [c for c in failed_caps if c.get("id") != "CAP-042"]
-    assert len(desktop_failed) == 25
+    assert len(desktop_failed) == len(failed_caps) - 1
+    assert 0 <= len(desktop_failed) <= 25
     for cap in desktop_failed:
         cap_id = str(cap.get("id", ""))
         ref = str(cap.get("e2e_remediation_ref", ""))
@@ -221,6 +291,17 @@ def test_desktop_failed_capabilities_transfer_to_epic24_and_cap042_stays_deferre
     cap_042 = next((c for c in failed_caps if c.get("id") == "CAP-042"), None)
     assert cap_042 is not None
     assert cap_042.get("e2e_remediation_ref") == ACTION_ITEM_23_6_ID
+    assert all(
+        c.get("e2e_remediation_ref") != ACTION_ITEM_23_6_ID
+        for c in capabilities
+        if c.get("id") != "CAP-042"
+    )
+
+    if dev_status.get("epic-24") == "done":
+        assert all(dev_status.get(key) == "done" for key in EPIC_24_KEYS)
+        assert len(runtime_caps) == 64
+        assert len(failed_caps) == 1
+        assert [c.get("id") for c in failed_caps] == ["CAP-042"]
 
 
 def test_sprint_status_epics_and_reports_index_for_epic23_closure_and_epic24_init() -> None:
@@ -230,11 +311,13 @@ def test_sprint_status_epics_and_reports_index_for_epic23_closure_and_epic24_ini
 
     assert dev_status.get("epic-23") == "done"
     assert dev_status.get(STORY_23_8_KEY) == "done"
-    assert dev_status.get("epic-24") == "backlog"
+    assert dev_status.get("epic-24") in ALLOWED_EPIC_24_STATUSES
 
     epic24_keys = sorted(k for k in dev_status if isinstance(k, str) and k.startswith("24-"))
     assert epic24_keys == sorted(EPIC_24_KEYS)
-    assert all(dev_status.get(key) == "backlog" for key in EPIC_24_KEYS)
+    assert all(dev_status.get(key) in ALLOWED_STORY_24_STATUSES for key in EPIC_24_KEYS)
+    if dev_status.get("epic-24") == "done":
+        assert all(dev_status.get(key) == "done" for key in EPIC_24_KEYS)
 
     epics_text = EPICS_PATH.read_text(encoding="utf-8")
     index_text = REPORTS_INDEX_PATH.read_text(encoding="utf-8")
