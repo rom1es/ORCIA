@@ -228,6 +228,7 @@ class KbStaleAlertSchemaItem(BaseModel):
 class DocVsCodeAuditRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    workspace_id: str | None = None
     confluence_uri: str
     git_repo_uri: str
     git_symbol: str

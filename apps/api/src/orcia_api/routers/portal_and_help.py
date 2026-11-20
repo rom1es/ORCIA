@@ -76,7 +76,7 @@ async def execute_two_speed_federated_search(
     scope: Literal["SCREEN", "WORKSPACE", "ALL_WORKSPACES", "GLOBAL", "CONTEXTUAL"] = Query(
         default="WORKSPACE"
     ),
-    workspace_id: str | None = Query(default="ws-claims-alpha", max_length=128),
+    workspace_id: str | None = Query(default=None, max_length=128),
     screen_route: str = Query(default="/cockpit", min_length=1, max_length=128),
     include_speed2: bool = Query(default=True),
     force_semantic: bool = Query(default=False),
@@ -91,7 +91,7 @@ async def execute_two_speed_federated_search(
         normalized_scope = "WORKSPACE"
     else:
         normalized_scope = scope
-    effective_ws = (workspace_id or "").strip() or "ws-claims-alpha"
+    effective_ws = (workspace_id or "").strip() or "scope-global"
 
     query_embedding: tuple[float, ...] | None = None
     if include_speed2 and q.strip() and (force_semantic or len(q.strip().split()) >= 3):

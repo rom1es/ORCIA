@@ -105,7 +105,7 @@ def _to_studio_graph_schema(st: AssistantStudioGraphState) -> AssistantStudioGra
 def get_assistant_governance_endpoint(
     user: CurrentUserDep,
     svc: GovernanceServiceDep,
-    workspace_id: Annotated[str, Query()] = "ws-claims-alpha",
+    workspace_id: Annotated[str, Query()] = "scope-global",
     pack_key: Annotated[str, Query()] = "orcia-pack-sdlc",
 ) -> AssistantGovernanceViewResponse:
     """Return Mode A (3 tabs) & Mode B (Studio graph) governance state (`Story 10.1`)."""

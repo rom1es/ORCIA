@@ -5,12 +5,16 @@ import {
   OrciaIcon,
   type UiOntologyConceptView,
   type UiOntologyLevel,
+  type UiStaleAlertView,
+  type UiTripartiteEdgeView,
 } from "@orcia/ui";
 import React, { useCallback, useEffect, useState } from "react";
 import {
+  auditDocVsCodeToApi,
   decideOntologyPromotionToApi,
   fetchOntologyConceptsFromApi,
   fetchOntologyPromotionsFromApi,
+  fetchOntologyRagStateFromApi,
   proposeOntologyPromotionToApi,
   slugifyScopedConceptKey,
   upsertOntologyConceptToApi,
@@ -33,25 +37,31 @@ export function OntologyFeaturePanel() {
   const [writableScopes, setWritableScopes] = useState<WritableScopeOptionItem[]>([]);
   const [proposals, setProposals] = useState<OntologyPromotionProposalDetailItem[]>([]);
   const [pendingCount, setPendingCount] = useState<number>(0);
+  const [tripartiteEdges, setTripartiteEdges] = useState<UiTripartiteEdgeView[]>([]);
+  const [staleAlerts, setStaleAlerts] = useState<UiStaleAlertView[]>([]);
 
   const [conceptName, setConceptName] = useState("");
   const [conceptDef, setConceptDef] = useState("");
   const [selectedScopeIdx, setSelectedScopeIdx] = useState<number>(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [isAuditingTripartite, setIsAuditingTripartite] = useState(false);
   const [busyProposalId, setBusyProposalId] = useState<string | null>(null);
   const [feedbackBanner, setFeedbackBanner] = useState<string | null>(null);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
 
   const loadOntologyData = useCallback(async () => {
     try {
-      const [conceptsRes, promosRes] = await Promise.all([
+      const [conceptsRes, promosRes, ragStateRes] = await Promise.all([
         fetchOntologyConceptsFromApi(typedLocale),
         fetchOntologyPromotionsFromApi(typedLocale),
+        fetchOntologyRagStateFromApi(typedLocale),
       ]);
       setConcepts(conceptsRes.concepts);
       setWritableScopes(conceptsRes.writableScopes);
       setProposals(promosRes.proposals);
       setPendingCount(promosRes.pendingCount);
+      setTripartiteEdges(ragStateRes.tripartiteEdges);
+      setStaleAlerts(ragStateRes.staleAlerts);
       setSelectedScopeIdx(0);
     } catch (err: unknown) {
       setErrorBanner(
@@ -109,6 +119,45 @@ export function OntologyFeaturePanel() {
       );
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleAuditDocVsCode = async (draft: {
+    confluenceUri: string;
+    gitRepoUri: string;
+    gitSymbol: string;
+    jiraKey: string;
+  }) => {
+    setIsAuditingTripartite(true);
+    setErrorBanner(null);
+    setFeedbackBanner(null);
+    try {
+      const wsScope =
+        activeScopeOption &&
+        (activeScopeOption.level === "3_WORKSPACE" || activeScopeOption.level === "4_WORKSPACE")
+          ? activeScopeOption
+          : writableScopes.find((s) => s.level === "3_WORKSPACE" || s.level === "4_WORKSPACE");
+      const res = await auditDocVsCodeToApi(typedLocale, {
+        workspace_id: wsScope?.scope_id ?? null,
+        confluence_uri: draft.confluenceUri,
+        git_repo_uri: draft.gitRepoUri,
+        git_symbol: draft.gitSymbol || "main",
+        doc_rule_summary: draft.confluenceUri,
+        code_rule_summary: draft.gitRepoUri,
+        newer_done_jira_key: draft.jiraKey || null,
+      });
+      setFeedbackBanner(res.explanation);
+      await loadOntologyData();
+    } catch (err: unknown) {
+      setErrorBanner(
+        formatRfc9457ErrorToBanner(
+          err,
+          typedLocale,
+          typedLocale === "fr" ? "Graphe tripartite" : "Tripartite graph",
+        ).fullText,
+      );
+    } finally {
+      setIsAuditingTripartite(false);
     }
   };
 
@@ -306,10 +355,12 @@ export function OntologyFeaturePanel() {
           <div className="orcia-bento-card">
             <OntologyAndKbExplorerPanel
               concepts={concepts}
-              tripartiteEdges={[]}
-              staleAlerts={[]}
+              tripartiteEdges={tripartiteEdges}
+              staleAlerts={staleAlerts}
               labels={dictionary.ontologyExplorer}
+              auditing={isAuditingTripartite}
               onProposePromotion={(c) => void handleProposePromotion(c)}
+              onAuditDocVsCode={handleAuditDocVsCode}
             />
           </div>
         </>

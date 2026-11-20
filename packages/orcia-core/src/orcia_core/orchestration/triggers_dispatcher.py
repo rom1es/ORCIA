@@ -238,6 +238,17 @@ class TriggerDispatcherService:
             deliveries_mem=self._deliveries,
         )
 
+    async def record_alert_delivery_async(self, *, trigger_id: str, delivery_key: str) -> bool:
+        """Persist idempotent alert delivery key in `trigger_webhook_deliveries` (or memory)."""
+        if self._repo is not None:
+            return await self._repo.record_webhook_delivery(
+                trigger_id=trigger_id, delivery_key=delivery_key
+            )
+        key = (trigger_id, delivery_key)
+        is_new = key not in self._deliveries
+        self._deliveries.add(key)
+        return is_new
+
     async def reset_circuit(self, *, workspace_id: str, trigger_id: str) -> WorkflowTriggerEntity:
         existing, _ = await self.get_trigger(trigger_id)
         if existing.workspace_id != workspace_id:

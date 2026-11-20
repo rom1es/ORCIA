@@ -59,6 +59,16 @@ export function WorkflowTriggerCard({
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <OrciaIcon name={trig.triggerType === "CRON" ? "clock" : "lightning"} size={14} />
           <strong style={{ fontSize: "13px" }}>{labels.typeOptions[trig.triggerType]}</strong>
+          <code
+            data-testid={`trigger-key-badge-${trig.id}`}
+            style={{
+              fontSize: "11px",
+              fontFamily: "var(--font-mono)",
+              color: "var(--color-text-secondary)",
+            }}
+          >
+            {trig.triggerKey}
+          </code>
           <span
             data-testid={`trigger-status-badge-${trig.id}`}
             className="rounded px-2 py-0.5 text-xs font-semibold"

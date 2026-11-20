@@ -12,11 +12,12 @@ export function createWorkspaceGovernanceDomainClient(requestJson: RequestJsonFn
   return {
     getWorkspaceFiveTabsState(
       workspaceId: string,
-      workspaceSlug = "default-ws",
+      workspaceSlug?: string,
     ): Promise<WorkspaceFiveTabsStatePayload> {
-      const q = new URLSearchParams({ workspace_slug: workspaceSlug }).toString();
+      const slug = workspaceSlug?.trim();
+      const q = slug ? `?${new URLSearchParams({ workspace_slug: slug }).toString()}` : "";
       return requestJson<WorkspaceFiveTabsStatePayload>(
-        `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/five-tabs?${q}`,
+        `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/five-tabs${q}`,
       );
     },
     listWorkspaceExceptionWaivers(

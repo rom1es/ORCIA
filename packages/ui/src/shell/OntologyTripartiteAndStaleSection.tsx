@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { OrciaIcon } from "../components/icons";
 import { StatusBadge } from "../primitives/StatusBadge";
 import type {
@@ -7,12 +7,21 @@ import type {
   UiTripartiteEdgeView,
 } from "./types";
 
+export interface TripartiteAuditDraft {
+  readonly confluenceUri: string;
+  readonly gitRepoUri: string;
+  readonly gitSymbol: string;
+  readonly jiraKey: string;
+}
+
 export interface OntologyTripartiteAndStaleSectionProps {
   readonly ragQuery: string;
   readonly onRagQueryChange: (val: string) => void;
   readonly filteredEdges: readonly UiTripartiteEdgeView[];
   readonly staleAlerts: readonly UiStaleAlertView[];
   readonly labels: UiOntologyExplorerLabels;
+  readonly auditing?: boolean;
+  readonly onAuditDocVsCode?: (draft: TripartiteAuditDraft) => Promise<void> | void;
   readonly onReplayAlert: (alert: UiStaleAlertView) => void;
 }
 
@@ -22,8 +31,33 @@ export function OntologyTripartiteAndStaleSection({
   filteredEdges,
   staleAlerts,
   labels,
+  auditing = false,
+  onAuditDocVsCode,
   onReplayAlert,
 }: OntologyTripartiteAndStaleSectionProps): React.ReactElement {
+  const [confluenceUri, setConfluenceUri] = useState("");
+  const [gitRepoUri, setGitRepoUri] = useState("");
+  const [jiraKey, setJiraKey] = useState("");
+
+  const handleAuditSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!onAuditDocVsCode || auditing) return;
+    const cleanConf = confluenceUri.trim();
+    const cleanGit = gitRepoUri.trim();
+    if (!cleanConf || !cleanGit) return;
+    void Promise.resolve(
+      onAuditDocVsCode({
+        confluenceUri: cleanConf,
+        gitRepoUri: cleanGit,
+        gitSymbol: "main",
+        jiraKey: jiraKey.trim(),
+      }),
+    ).then(() => {
+      setConfluenceUri("");
+      setGitRepoUri("");
+      setJiraKey("");
+    });
+  };
   return (
     <div
       style={{
@@ -78,6 +112,94 @@ export function OntologyTripartiteAndStaleSection({
             {edge.sourceUri} —[{edge.relationType}]→ {edge.targetUri}
           </div>
         ))}
+        {onAuditDocVsCode ? (
+          <form
+            data-testid="tripartite-audit-form"
+            autoComplete="off"
+            data-lpignore="true"
+            data-form-type="other"
+            onSubmit={handleAuditSubmit}
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "6px",
+              paddingTop: "6px",
+              borderTop: "1px solid var(--color-border-subtle)",
+            }}
+          >
+            <input
+              type="text"
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
+              data-testid="tripartite-confluence-uri-input"
+              value={confluenceUri}
+              onChange={(e) => setConfluenceUri(e.target.value)}
+              placeholder={labels.auditConfluencePlaceholder ?? ""}
+              style={{
+                flex: "1 1 160px",
+                padding: "5px 8px",
+                borderRadius: "var(--radius-sm)",
+                border: "1px solid var(--color-border)",
+                backgroundColor: "var(--color-surface-card)",
+                color: "var(--color-foreground)",
+                fontSize: "12px",
+              }}
+            />
+            <input
+              type="text"
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
+              data-testid="tripartite-git-uri-input"
+              value={gitRepoUri}
+              onChange={(e) => setGitRepoUri(e.target.value)}
+              placeholder={labels.auditGitPlaceholder ?? ""}
+              style={{
+                flex: "1 1 160px",
+                padding: "5px 8px",
+                borderRadius: "var(--radius-sm)",
+                border: "1px solid var(--color-border)",
+                backgroundColor: "var(--color-surface-card)",
+                color: "var(--color-foreground)",
+                fontSize: "12px",
+              }}
+            />
+            <input
+              type="text"
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
+              data-testid="tripartite-jira-key-input"
+              value={jiraKey}
+              onChange={(e) => setJiraKey(e.target.value)}
+              placeholder={labels.auditJiraPlaceholder ?? ""}
+              style={{
+                flex: "0 1 110px",
+                padding: "5px 8px",
+                borderRadius: "var(--radius-sm)",
+                border: "1px solid var(--color-border)",
+                backgroundColor: "var(--color-surface-card)",
+                color: "var(--color-foreground)",
+                fontSize: "12px",
+              }}
+            />
+            <button
+              type="submit"
+              data-testid="tripartite-audit-submit-btn"
+              disabled={auditing || !confluenceUri.trim() || !gitRepoUri.trim()}
+              className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
+            >
+              {labels.auditSubmitLabel ?? labels.tripartiteTitle}
+            </button>
+          </form>
+        ) : null}
       </div>
 
       <div

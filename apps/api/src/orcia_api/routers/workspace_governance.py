@@ -126,14 +126,19 @@ async def get_workspace_five_tabs(
     request: Request,
     user: CurrentUserDep,
     svc: GovernanceServiceDep,
-    workspace_slug: str = Query(default="default-ws"),
+    workspace_slug: str | None = Query(default=None),
     pending_glossary_candidates_count: int = Query(default=0, ge=0, le=100),
 ) -> WorkspaceFiveTabsStateResponse:
     """Return the consolidated state for the 5 sub-tabs of `Mes Espaces`."""
     ws_uuid = await _validate_workspace_access(request, user, workspace_id, require_write=False)
+    resolved_slug = (workspace_slug or "").strip()
+    if not resolved_slug:
+        auth_svc = get_auth_service(request)
+        ws = auth_svc.evaluator.get_workspace(str(ws_uuid))
+        resolved_slug = ws.slug if ws is not None else str(ws_uuid)
     state = await svc.get_workspace_five_tabs_state_async(
         workspace_id=ws_uuid,
-        workspace_slug=workspace_slug,
+        workspace_slug=resolved_slug,
         pending_glossary_candidates_count=pending_glossary_candidates_count,
     )
     return WorkspaceFiveTabsStateResponse(

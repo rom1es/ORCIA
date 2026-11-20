@@ -32,7 +32,7 @@ export function PacksRegistryPage() {
 
   const [packs, setPacks] = useState<readonly DeclarativePackSummaryResponse[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("ws-mon-compte");
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
   const [selectedPackId, setSelectedPackId] = useState<string>("orcia-pack-sdlc");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -76,11 +76,32 @@ export function PacksRegistryPage() {
     void loadPacksFromServer(false);
   }, [accessToken, loadPacksFromServer]);
 
+  useEffect(() => {
+    const firstWs = workspaces[0];
+    if (!firstWs) {
+      if (selectedWorkspaceId !== "") {
+        setSelectedWorkspaceId("");
+      }
+      return;
+    }
+    if (!workspaces.some((ws) => ws.workspaceId === selectedWorkspaceId)) {
+      setSelectedWorkspaceId(firstWs.workspaceId);
+    }
+  }, [workspaces, selectedWorkspaceId]);
+
   const handleRefreshHealthchecks = () => {
     void loadPacksFromServer(true);
   };
 
   const handleExportWorkspaceZip = async (packId?: string) => {
+    if (!selectedWorkspaceId) {
+      setErrorMessage(
+        isFr
+          ? "Créez d'abord un espace de travail dans « Mes Espaces » avant d'exporter son pack."
+          : "Create a workspace in 'My Spaces' before exporting its pack.",
+      );
+      return;
+    }
     const targetPackId = packId ?? selectedPackId;
     const pack = packs.find((p) => p.id === targetPackId) ?? packs[0];
     setErrorMessage(null);
@@ -117,18 +138,14 @@ export function PacksRegistryPage() {
     }
   };
 
-  const workspaceOptions = useMemo(() => {
-    const defaults = [
-      { id: "ws-mon-compte", label: "Espace : Mon Compte (SDLC)" },
-      { id: "ws-orcia-platform", label: "Espace : Plateforme ORCIA" },
-    ];
-    const fromSetup = workspaces.map((ws) => ({
-      id: ws.workspaceId,
-      label: `Espace : ${ws.name}`,
-    }));
-    const seen = new Set(fromSetup.map((item) => item.id));
-    return [...fromSetup, ...defaults.filter((item) => !seen.has(item.id))];
-  }, [workspaces]);
+  const workspaceOptions = useMemo(
+    () =>
+      workspaces.map((ws) => ({
+        id: ws.workspaceId,
+        label: `Espace : ${ws.name}`,
+      })),
+    [workspaces],
+  );
 
   return (
     <section
@@ -185,13 +202,20 @@ export function PacksRegistryPage() {
             data-testid="pack-export-workspace-select"
             value={selectedWorkspaceId}
             onChange={(e) => setSelectedWorkspaceId(e.target.value)}
+            disabled={workspaceOptions.length === 0}
             className="orcia-ds-select"
           >
-            {workspaceOptions.map((opt) => (
-              <option key={opt.id} value={opt.id}>
-                {opt.label}
+            {workspaceOptions.length === 0 ? (
+              <option value="">
+                {isFr ? "Aucun espace disponible" : "No workspace available"}
               </option>
-            ))}
+            ) : (
+              workspaceOptions.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.label}
+                </option>
+              ))
+            )}
           </select>
 
           <button

@@ -190,22 +190,6 @@ export function handleAiModelsAndToolsRoute(params: {
     });
   }
 
-  if (path.includes("/dna-mechanisms/compile") && method === "POST") {
-    const ruleId = String(body.rule_id ?? "RULE-01");
-    return jsonResponse({
-      mechanism_id: `mech-${ruleId.toLowerCase()}`,
-      rule_id: ruleId,
-      script_name: `${ruleId.toLowerCase().replace(/[^a-z0-9_]/g, "_")}.star`,
-      starlark_code: `def check(ctx):\n    val = ctx.payload.get("reference_code", "")\n    if not val:\n        orcia_sys.emit_verdict("${ruleId}", "FAIL", "Champ reference_code obligatoire")\n        return False\n    orcia_sys.emit_verdict("${ruleId}", "PASS", "Conforme")\n    return True`,
-      sha256: `sha256:${ruleId.toLowerCase()}`,
-      explanation_fr: `Vérifie automatiquement la conformité de la règle « ${ruleId} » avant chaque validation.`,
-      verified_badge_fr: "✓ Vérifié automatiquement (cas valide + cas rejeté)",
-      causal_breadcrumb: `Orientation ➔ Règle (${ruleId}) ➔ Contrôle automatique`,
-      self_corrected: false,
-      signed_and_active: false,
-    });
-  }
-
   if (path === "/api/v1/search" && method === "GET") {
     return jsonResponse({ hits: [] });
   }

@@ -17,6 +17,7 @@ from orcia_api.routers._ontology_promotions_helpers import (
 )
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.routers.ontology_rag_helpers import (
+    build_sql_rag_repo_from_request,
     get_trace_id,
     serialize_concept,
     serialize_doc,
@@ -45,11 +46,8 @@ router = APIRouter(prefix="/api/v1/ontology-rag", tags=["ontology-rag"])
 
 
 def _get_optional_sql_rag_repo(request: Request) -> SqlHybridRagRepository | None:
-    """Return `SqlHybridRagRepository` when `session_maker` is attached on `request.app.state`."""
-    session_maker: Any = getattr(request.app.state, "session_maker", None)
-    if session_maker is None:
-        return None
-    return SqlHybridRagRepository(session_maker)
+    """Return `SqlHybridRagRepository` when PG18 `session_maker` or `engine` is active."""
+    return build_sql_rag_repo_from_request(request)
 
 
 @router.get(
@@ -67,22 +65,44 @@ async def get_ontology_and_rag_state(
     user = resolve_ontology_caller(request, None)
     gov, rag, trip = get_ontology_and_rag_services(request, fixture=fixture)
     edges = list(trip.list_edges())
+    documents = list(rag.list_documents())
+    alerts = list(trip.list_alerts())
     sql_rag_repo = _get_optional_sql_rag_repo(request)
-    if not fixture and sql_rag_repo is not None and workspace_id and seed_uri:
-        sql_edges = await sql_rag_repo.traverse_tripartite_neighborhood(
-            workspace_id=workspace_id,
-            seed_uri=seed_uri,
-            max_depth=2,
-        )
-        existing_keys = {e.edge_key for e in edges}
+    if not fixture and sql_rag_repo is not None:
+        if workspace_id and seed_uri:
+            sql_edges = await sql_rag_repo.traverse_tripartite_neighborhood(
+                workspace_id=workspace_id,
+                seed_uri=seed_uri,
+                max_depth=2,
+            )
+        else:
+            sql_edges = await sql_rag_repo.list_tripartite_edges_pg(workspace_id=workspace_id)
+        existing_edge_keys = {e.edge_key for e in edges}
         for sql_edge in sql_edges:
-            if sql_edge.edge_key not in existing_keys:
+            if sql_edge.edge_key not in existing_edge_keys:
                 edges.append(sql_edge)
+                existing_edge_keys.add(sql_edge.edge_key)
+
+        sql_docs = await sql_rag_repo.list_documents_pg(workspace_id=workspace_id)
+        existing_doc_keys = {d.doc_key for d in documents}
+        for sql_doc in sql_docs:
+            if sql_doc.doc_key not in existing_doc_keys:
+                documents.append(sql_doc)
+                existing_doc_keys.add(sql_doc.doc_key)
+
+        sql_alerts = await sql_rag_repo.list_stale_alerts_pg(workspace_id=workspace_id)
+        existing_alert_keys = {a.alert_key for a in alerts}
+        for sql_alert in sql_alerts:
+            if sql_alert.alert_key not in existing_alert_keys:
+                alerts.append(sql_alert)
+                existing_alert_keys.add(sql_alert.alert_key)
+
     concepts = list(gov.concepts)
     proposals = list(gov.proposals)
     if not fixture:
         engine, org_units, workspaces = await load_ontology_topology(request, fixture=False)
-        memberships = get_auth_service(request).evaluator.list_memberships()
+        auth_svc = get_auth_service(request)
+        memberships = auth_svc.evaluator.list_memberships()
         if not concepts and engine is not None:
             concepts = await list_concepts_pg(engine)
             proposals = await list_proposals_pg(engine)
@@ -91,13 +111,35 @@ async def get_ontology_and_rag_state(
             for c in concepts
             if can_read_ontology_item(user, c.level, c.scope_id, org_units, workspaces, memberships)
         ]
+        if user.platform_role != "PLATFORM_ADMIN":
+            known_ws_ids = {ws.id for ws in workspaces}
+            allowed_ws = {
+                ws_id
+                for ws_id in known_ws_ids
+                if auth_svc.evaluator.resolve_workspace_access(user, ws_id) is not None
+            }
+            edges = [
+                e
+                for e in edges
+                if e.workspace_id not in known_ws_ids or e.workspace_id in allowed_ws
+            ]
+            documents = [
+                d
+                for d in documents
+                if d.workspace_id not in known_ws_ids or d.workspace_id in allowed_ws
+            ]
+            alerts = [
+                a
+                for a in alerts
+                if a.workspace_id not in known_ws_ids or a.workspace_id in allowed_ws
+            ]
     return s.OntologyAndRagStateResponse(
         concepts=[serialize_concept(c) for c in concepts],
         relations=[serialize_relation(r) for r in gov.relations],
         promotions=[serialize_promotion(p) for p in proposals],
-        documents=[serialize_doc(d) for d in rag.list_documents()],
+        documents=[serialize_doc(d) for d in documents],
         tripartite_edges=[serialize_trace_edge(e) for e in edges],
-        stale_alerts=[serialize_stale_alert(a) for a in trip.list_alerts()],
+        stale_alerts=[serialize_stale_alert(a) for a in alerts],
         trace_id=get_trace_id(request),
     )
 
@@ -277,6 +319,12 @@ async def index_db_ddl_schema(
         ontology_concepts=tuple(body.ontology_concepts),
     )
     rag.upsert_indexed_bundle(document=doc, chunks=chunks)
+    if not fixture:
+        sql_rag_repo = build_sql_rag_repo_from_request(request)
+        if sql_rag_repo is not None:
+            persisted = await sql_rag_repo.upsert_document_bundle_pg(document=doc, chunks=chunks)
+            if persisted is not None:
+                doc = persisted
     return serialize_doc(doc)
 
 
@@ -300,6 +348,25 @@ async def audit_doc_vs_code(
         code_rule_summary=body.code_rule_summary,
         newer_done_jira_key=body.newer_done_jira_key,
     )
+    target_ws = (body.workspace_id or "").strip() or None
+    if not fixture:
+        if target_ws is None:
+            _, _, workspaces = await load_ontology_topology(request, fixture=False)
+            if workspaces:
+                target_ws = workspaces[0].id
+        if target_ws is not None:
+            jira_hint = body.newer_done_jira_key or ""
+            edges = trip.register_cross_source_traceability(
+                workspace_id=target_ws,
+                confluence_uri=body.confluence_uri,
+                confluence_text=f"{body.doc_rule_summary} {jira_hint}".strip(),
+                git_repo_uri=body.git_repo_uri,
+                git_symbol=body.git_symbol,
+                commit_message=f"{body.code_rule_summary} {jira_hint}".strip(),
+            )
+            sql_rag_repo = build_sql_rag_repo_from_request(request)
+            if sql_rag_repo is not None and edges:
+                await sql_rag_repo.upsert_tripartite_edges_pg(edges=edges)
     return s.DocVsCodeAuditResponse(
         confluence_uri=finding.confluence_uri,
         git_repo_uri=finding.git_repo_uri,

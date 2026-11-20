@@ -30,6 +30,8 @@ export const WORKFLOW_TRIGGERS_FR_LABELS: WorkflowTriggersStudioCopy = {
       "Signez d'abord un contrat d'autonomie actif pour activer un déclencheur automatique sur ce processus.",
     emptyListHint: "Aucun déclencheur configuré pour le moment sur ce processus.",
     typeLabel: "Mode de déclenchement",
+    triggerKeyLabel: "Identifiant unique du déclencheur (optionnel)",
+    triggerKeyPlaceholder: "Ex : alerte-paiement-prod (généré automatiquement si vide)",
     typeOptions: {
       MANUAL_AUTONOMOUS: "Déclenchement manuel",
       WEBHOOK: "Événement externe (Webhook)",
@@ -90,6 +92,8 @@ export const WORKFLOW_TRIGGERS_EN_LABELS: WorkflowTriggersStudioCopy = {
       "Sign an active autonomy contract first before enabling automated triggers on this process.",
     emptyListHint: "No triggers configured on this process yet.",
     typeLabel: "Trigger mode",
+    triggerKeyLabel: "Unique trigger identifier (optional)",
+    triggerKeyPlaceholder: "e.g., prod-payment-alert (auto-generated if empty)",
     typeOptions: {
       MANUAL_AUTONOMOUS: "Manual launch",
       WEBHOOK: "External event (Webhook)",

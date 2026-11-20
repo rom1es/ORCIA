@@ -92,7 +92,7 @@ def build_empty_rag_service(
 
 def build_seeded_rag_service(
     *,
-    workspace_id: str = "ws-claims-alpha",
+    workspace_id: str = "scope-global",
     embedding_port: Any = None,
 ) -> tuple[HybridRagService, TripartiteGraphAndFreshnessService]:
     """Delegate test dataset seeding to `orcia_core.bootstrap.rag_seeds` (`DEC-SEED-01`)."""

@@ -44,7 +44,8 @@ async def execute_create_trigger(
 ) -> WorkflowTriggerEntity:
     """Persist or store in-memory a validated `WorkflowTriggerEntity`."""
     tid = new_uuid7_str()
-    tkey = (cmd.trigger_key or "").strip() or f"trg-{cmd.trigger_type.lower()}-{tid[:8]}"
+    entropy_suffix = tid.replace("-", "")[-12:]
+    tkey = (cmd.trigger_key or "").strip() or f"trg-{cmd.trigger_type.lower()}-{entropy_suffix}"
     enc, fp, hint, clear_flag, changed = prepare_webhook_secret(cipher, tid, cmd.webhook_secret)
     entity = build_new_trigger_entity(
         tid=tid,

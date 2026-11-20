@@ -148,6 +148,18 @@ const RFC9457_ACTIONABLE_CATALOG: Record<string, ErrorCopyPair> = {
       remediation: "Provide a valid HTTPS endpoint or an authorized internal AI service.",
     },
   },
+  ERR_TRIGGER_DUPLICATE_KEY: {
+    fr: {
+      title: "Identifiant de déclencheur déjà utilisé",
+      message: "Un déclencheur portant cet identifiant existe déjà dans ce périmètre.",
+      remediation: "Saisissez un autre identifiant unique ou laissez le champ vide pour en générer un automatiquement.",
+    },
+    en: {
+      title: "Trigger identifier already in use",
+      message: "A trigger with this identifier already exists.",
+      remediation: "Enter a different unique identifier or leave the field blank to auto-generate one.",
+    },
+  },
 };
 
 function resolveStatusFallback(

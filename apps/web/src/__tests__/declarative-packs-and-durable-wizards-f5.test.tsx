@@ -23,6 +23,22 @@ describe("Declarative Packs Registry & Durable Onboarding Wizards F5 Persistence
   });
 
   it("loads declarative packs from API, exports workspace ZIP, and renders alert banner on HTTP errors", async () => {
+    const seededWorkspaceId = "0195f000-0000-7000-8000-000000000311";
+    seedVitestPlatformSetupState({
+      workspaces: [
+        {
+          workspaceId: seededWorkspaceId,
+          slug: "ws-equipe-alpha",
+          name: "Espace Équipe Alpha",
+          ownerOrgUnitId: "0192c4e0-0000-7000-8000-000000000101",
+          ownerOrgUnitName: "Direction Technique",
+          visibilityMode: "STANDARD",
+          lifecyclePhase: "BUILD",
+          accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
+          finopsCostUsd: 0,
+        },
+      ],
+    });
     const queryClient = createOrciaQueryClient();
     const history = createMemoryHistory({ initialEntries: ["/settings/packs"] });
     const router = createOrciaRouter({ queryClient, history });
@@ -39,13 +55,19 @@ describe("Declarative Packs Registry & Durable Onboarding Wizards F5 Persistence
     await waitFor(() => {
       expect(screen.getByTestId("declarative-pack-card-sdlc")).toBeDefined();
       expect(screen.getByTestId("declarative-pack-card-orcia-docs")).toBeDefined();
+      const sel = screen.getByTestId("pack-export-workspace-select") as HTMLSelectElement;
+      expect(sel.disabled).toBe(false);
+      expect(sel.value).toBe(seededWorkspaceId);
     });
 
+    fireEvent.change(screen.getByTestId("pack-export-workspace-select"), {
+      target: { value: seededWorkspaceId },
+    });
     fireEvent.click(screen.getByTestId("export-pack-sdlc-zip-btn"));
     await waitFor(() => {
       expect(screen.getByTestId("packs-registry-status-banner")).toBeDefined();
       expect(screen.getByTestId("exported-pack-zip-filename").textContent).toContain(
-        "sdlc-ws-mon-compte.zip",
+        `sdlc-${seededWorkspaceId}.zip`,
       );
     });
 

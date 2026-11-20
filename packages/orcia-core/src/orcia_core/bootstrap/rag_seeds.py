@@ -21,7 +21,7 @@ def populate_rag_test_dataset(
     rag: HybridRagService,
     tripartite: TripartiteGraphAndFreshnessService,
     *,
-    workspace_id: str = "ws-claims-alpha",
+    workspace_id: str = "scope-global",
     embedding_port: EmbeddingPort | None = None,
 ) -> tuple[HybridRagService, TripartiteGraphAndFreshnessService]:
     """Populate `rag` and `tripartite` with deterministic test fixtures (`DEC-SEED-01`)."""

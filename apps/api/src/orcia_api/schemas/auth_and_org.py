@@ -282,12 +282,12 @@ class McpPersonalTokenCreateRequest(BaseModel):
     label: str = Field(default="Clé IDE MCP", min_length=1, max_length=120)
     expires_in_days: int = Field(default=30)
     rpm_limit: int = Field(default=60, ge=1, le=600)
-    allowed_workspace_slugs: list[str] = Field(default_factory=lambda: ["ws-claims-alpha"])
+    allowed_workspace_slugs: list[str] = Field(default_factory=list)
     exposed_capabilities: list[
         Literal["ASSISTANT", "PUBLISHED_AGENTS", "KB_GLOSSARY_SEARCH", "STAGED_DRAFTS"]
     ] = ["ASSISTANT", "KB_GLOSSARY_SEARCH"]
     target_kind: Literal["SPACE", "AGENT"] = "SPACE"
-    target_slug: str = Field(default="ws-claims-alpha", min_length=1, max_length=120)
+    target_slug: str = Field(default="scope-global", min_length=1, max_length=120)
 
 
 class McpPersonalTokenMetadataItem(BaseModel):

@@ -8991,6 +8991,17 @@
               }
             ],
             "title": "Newer Done Jira Key"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
           }
         },
         "required": [
@@ -15957,7 +15968,7 @@
             "type": "string"
           },
           "target_slug": {
-            "default": "ws-claims-alpha",
+            "default": "scope-global",
             "maxLength": 120,
             "minLength": 1,
             "title": "Target Slug",
@@ -36546,7 +36557,7 @@
             "name": "workspace_id",
             "required": false,
             "schema": {
-              "default": "ws-claims-alpha",
+              "default": "scope-global",
               "title": "Workspace Id",
               "type": "string"
             }
@@ -57261,7 +57272,6 @@
                   "type": "null"
                 }
               ],
-              "default": "ws-claims-alpha",
               "title": "Workspace Id"
             }
           },
@@ -68194,9 +68204,145 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}/dna-mechanisms": {
+      "get": {
+        "description": "Return persisted Starlark DNA mechanisms for the workspace from PostgreSQL 18.",
+        "operationId": "list_dna_starlark_mechanisms_api_v1_workspaces__workspace_id__dna_mechanisms_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GeneratedStarlarkMechanismResponse"
+                  },
+                  "title": "Response List Dna Starlark Mechanisms Api V1 Workspaces  Workspace Id  Dna Mechanisms Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List persisted Starlark DNA mechanisms for a workspace (PG18)",
+        "tags": [
+          "workspaces"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/dna-mechanisms/compile": {
       "post": {
-        "description": "Compile a French norm into a `.star` mechanism and prove PASS/FAIL on test payloads.",
+        "description": "Compile a French norm into a `.star` mechanism, test PASS/FAIL, and persist to PG18.",
         "operationId": "compile_dna_starlark_mechanism_api_v1_workspaces__workspace_id__dna_mechanisms_compile_post",
         "parameters": [
           {
@@ -68331,6 +68477,148 @@
           }
         ],
         "summary": "Compile a French norm into a self-tested Starlark mechanism (< 5 ms, Story 11.2)",
+        "tags": [
+          "workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/dna-mechanisms/{mechanism_id}/activate": {
+      "post": {
+        "description": "Sign and activate a Starlark mechanism in PostgreSQL 18.",
+        "operationId": "activate_dna_starlark_mechanism_api_v1_workspaces__workspace_id__dna_mechanisms__mechanism_id__activate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "mechanism_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Mechanism Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneratedStarlarkMechanismResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Sign and activate a persisted Starlark DNA mechanism in PG18",
         "tags": [
           "workspaces"
         ]
@@ -68791,9 +69079,15 @@
             "name": "workspace_slug",
             "required": false,
             "schema": {
-              "default": "default-ws",
-              "title": "Workspace Slug",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace Slug"
             }
           },
           {

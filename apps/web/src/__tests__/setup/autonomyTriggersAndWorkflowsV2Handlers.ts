@@ -1,5 +1,5 @@
 import type { ApiWorkflowDefinitionV2 } from "@orcia/api-client";
-import { backendState, jsonResponse } from "./mockBackendState";
+import { backendState, jsonResponse, problemResponse } from "./mockBackendState";
 
 export function handleAutonomyTriggersAndWorkflowsV2Route(params: {
   path: string;
@@ -88,12 +88,33 @@ export function handleAutonomyTriggersAndWorkflowsV2Route(params: {
       const activeContract = backendState.autonomyContracts.find((c) => c.workspace_id === wsId && c.workflow_id === wfId && c.status === "ACTIVE");
       if (!activeContract) return jsonResponse({ error_code: "ERR_AUTONOMY_CONTRACT_REQUIRED" }, 422);
       const nextIdx = backendState.workflowTriggers.length + 1;
-      const newId = `0195f000-0000-7000-8000-00000000730${nextIdx}`;
+      const newId = `0195f000-0000-7000-8000-${String(7300 + nextIdx).padStart(12, "0")}`;
+      const explicitKey =
+        typeof body.trigger_key === "string" ? body.trigger_key.trim() : "";
+      const triggerKey =
+        explicitKey ||
+        `trg-${String(body.trigger_type ?? "MANUAL_AUTONOMOUS").toLowerCase()}-${String(nextIdx).padStart(12, "0")}`;
+      if (
+        backendState.workflowTriggers.some(
+          (t) =>
+            t.workspace_id === wsId &&
+            t.workflow_id === wfId &&
+            t.trigger_key === triggerKey,
+        )
+      ) {
+        return problemResponse(
+          409,
+          "ERR_TRIGGER_DUPLICATE_KEY",
+          "Clé de déclencheur déjà utilisée",
+          `La clé de déclencheur '${triggerKey}' existe déjà sur ce processus.`,
+          path,
+        );
+      }
       const secInput = (body.webhook_secret ?? null) as { action?: string; plaintext_value?: string } | null;
       const hasSecret = Boolean(secInput?.action === "set" && secInput.plaintext_value);
       const created = {
         id: newId,
-        trigger_key: `trg-${nextIdx}`,
+        trigger_key: triggerKey,
         workspace_id: wsId,
         workflow_id: wfId,
         trigger_type: String(body.trigger_type ?? "MANUAL_AUTONOMOUS"),

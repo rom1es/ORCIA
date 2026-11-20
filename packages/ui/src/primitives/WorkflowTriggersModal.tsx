@@ -55,6 +55,7 @@ export function WorkflowTriggersModal({
   onOpenHelpSection,
 }: WorkflowTriggersModalProps): React.ReactElement {
   const [triggerType, setTriggerType] = useState<UiWorkflowTriggerType>("MANUAL_AUTONOMOUS");
+  const [triggerKey, setTriggerKey] = useState<string>("");
   const [cronExpr, setCronExpr] = useState<string>("0 * * * *");
   const [logSinkService, setLogSinkService] = useState<string>("api");
   const [logSinkQueryText, setLogSinkQueryText] = useState<string>("");
@@ -69,6 +70,7 @@ export function WorkflowTriggersModal({
   useEffect(() => {
     if (!open) return;
     setTriggerType("MANUAL_AUTONOMOUS");
+    setTriggerKey("");
     setCronExpr("0 * * * *");
     setLogSinkService("api");
     setLogSinkQueryText("");
@@ -96,6 +98,7 @@ export function WorkflowTriggersModal({
     if (!hasActiveContract || submitting) return;
     void onCreateTrigger({
       triggerType,
+      triggerKey: triggerKey.trim() || undefined,
       cronExpr: cronExpr.trim(),
       cooldownWindowSeconds: Math.max(0, Number.parseInt(cooldownSeconds, 10) || 300),
       maxRunsPerHour: Math.max(1, Number.parseInt(maxRunsPerHour, 10) || 10),
@@ -218,6 +221,20 @@ export function WorkflowTriggersModal({
                 onChange={(e) => setCooldownSeconds(e.target.value)}
               />
             </div>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <label htmlFor="trigger-key-input" style={{ fontSize: "12px", fontWeight: 600 }}>
+              {labels.triggerKeyLabel ?? "Identifiant unique (optionnel)"}
+            </label>
+            <OrciaInput
+              id="trigger-key-input"
+              testId="trigger-create-key-input"
+              value={triggerKey}
+              placeholder={labels.triggerKeyPlaceholder ?? "Ex : alerte-paiement-prod"}
+              maxLength={128}
+              onChange={(e) => setTriggerKey(e.target.value)}
+            />
           </div>
 
           {triggerType === "CRON" ? (

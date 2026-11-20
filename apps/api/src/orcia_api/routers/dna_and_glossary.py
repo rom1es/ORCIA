@@ -5,10 +5,12 @@ from __future__ import annotations
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
-from orcia_api.dependencies import get_dna_starlark_and_glossary_service
-from orcia_api.routers.auth import resolve_request_user
+from orcia_api.dependencies import get_auth_service, get_dna_starlark_and_glossary_service
+from orcia_api.routers._finops_auth_guards import enforce_observer_headers_guard
+from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
+from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.dna_glossary import (
     CompileStarlarkMechanismRequest,
     EvaluateStarlarkMechanismRequest,
@@ -24,13 +26,16 @@ from orcia_api.schemas.dna_glossary import (
 )
 from orcia_core.orchestration.dna_starlark_and_glossary_lifecycle import (
     DnaStarlarkAndGlossaryLifecycleService,
+    GeneratedStarlarkMechanism,
     GlossaryCandidateItem,
 )
+from orcia_core.permissions.errors import ObserverModeReadOnlyError, ScopeAccessDeniedError
 from orcia_core.permissions.models import UserIdentity
 
 router = APIRouter(
     prefix="/api/v1/workspaces",
     tags=["workspaces"],
+    responses=PROBLEM_RESPONSES,
 )
 
 CurrentUserDep = Annotated[UserIdentity, Depends(resolve_request_user)]
@@ -38,6 +43,27 @@ DnaGlossaryServiceDep = Annotated[
     DnaStarlarkAndGlossaryLifecycleService,
     Depends(get_dna_starlark_and_glossary_service),
 ]
+
+
+async def _validate_dna_workspace_access(
+    request: Request,
+    user: UserIdentity,
+    workspace_id: UUID,
+    *,
+    require_write: bool,
+) -> None:
+    if require_write:
+        enforce_observer_headers_guard(request, user)
+    auth_svc = get_auth_service(request)
+    await sync_evaluator_topology_from_pg(request, auth_svc)
+    if user.platform_role != "PLATFORM_ADMIN":
+        ws = auth_svc.evaluator.get_workspace(str(workspace_id))
+        if ws is not None:
+            access = auth_svc.evaluator.resolve_workspace_access(user, ws.id)
+            if access is None:
+                raise ScopeAccessDeniedError(instance=str(request.url.path))
+            if require_write and access.access_mode == "READ_ONLY_OBSERVER":
+                raise ObserverModeReadOnlyError(instance=str(request.url.path))
 
 
 def _to_candidate_schema(item: GlossaryCandidateItem) -> GlossaryCandidateSchema:
@@ -56,32 +82,9 @@ def _to_candidate_schema(item: GlossaryCandidateItem) -> GlossaryCandidateSchema
     )
 
 
-@router.post(
-    "/{workspace_id}/dna-mechanisms/compile",
-    response_model=GeneratedStarlarkMechanismResponse,
-    summary="Compile a French norm into a self-tested Starlark mechanism (< 5 ms, Story 11.2)",
-)
-def compile_dna_starlark_mechanism(
-    workspace_id: UUID,
-    body: CompileStarlarkMechanismRequest,
-    user: CurrentUserDep,
-    svc: DnaGlossaryServiceDep,
+def _to_mechanism_response(
+    mech: GeneratedStarlarkMechanism,
 ) -> GeneratedStarlarkMechanismResponse:
-    """Compile a French norm into a `.star` mechanism and prove PASS/FAIL on test payloads."""
-    _ = workspace_id
-    mech = svc.compile_from_natural_language(
-        actor_role=user.platform_role,
-        rule_id=body.rule_id,
-        directive_title=body.directive_title,
-        norm_title=body.norm_title,
-        natural_language_rule_fr=body.natural_language_rule_fr,
-        target_json_schema=body.target_json_schema,
-        required_field=body.required_field,
-        regex_pattern=body.regex_pattern,
-        passing_test_payload=body.passing_test_payload,
-        failing_test_payload=body.failing_test_payload,
-        simulate_initial_bad_regex=body.simulate_initial_bad_regex,
-    )
     return GeneratedStarlarkMechanismResponse(
         mechanism_id=mech.mechanism_id,
         rule_id=mech.rule_id,
@@ -101,21 +104,95 @@ def compile_dna_starlark_mechanism(
     )
 
 
+@router.get(
+    "/{workspace_id}/dna-mechanisms",
+    response_model=list[GeneratedStarlarkMechanismResponse],
+    summary="List persisted Starlark DNA mechanisms for a workspace (PG18)",
+)
+async def list_dna_starlark_mechanisms(
+    workspace_id: UUID,
+    request: Request,
+    user: CurrentUserDep,
+    svc: DnaGlossaryServiceDep,
+) -> list[GeneratedStarlarkMechanismResponse]:
+    """Return persisted Starlark DNA mechanisms for the workspace from PostgreSQL 18."""
+    await _validate_dna_workspace_access(request, user, workspace_id, require_write=False)
+    items = await svc.list_mechanisms_for_workspace_async(workspace_id=workspace_id)
+    return [_to_mechanism_response(item) for item in items]
+
+
+@router.post(
+    "/{workspace_id}/dna-mechanisms/compile",
+    response_model=GeneratedStarlarkMechanismResponse,
+    summary="Compile a French norm into a self-tested Starlark mechanism (< 5 ms, Story 11.2)",
+)
+async def compile_dna_starlark_mechanism(
+    workspace_id: UUID,
+    body: CompileStarlarkMechanismRequest,
+    request: Request,
+    user: CurrentUserDep,
+    svc: DnaGlossaryServiceDep,
+) -> GeneratedStarlarkMechanismResponse:
+    """Compile a French norm into a `.star` mechanism, test PASS/FAIL, and persist to PG18."""
+    await _validate_dna_workspace_access(request, user, workspace_id, require_write=True)
+    mech = await svc.compile_from_natural_language_async(
+        workspace_id=workspace_id,
+        actor_role=user.platform_role,
+        rule_id=body.rule_id,
+        directive_title=body.directive_title,
+        norm_title=body.norm_title,
+        natural_language_rule_fr=body.natural_language_rule_fr,
+        target_json_schema=body.target_json_schema,
+        required_field=body.required_field,
+        regex_pattern=body.regex_pattern,
+        passing_test_payload=body.passing_test_payload,
+        failing_test_payload=body.failing_test_payload,
+        simulate_initial_bad_regex=body.simulate_initial_bad_regex,
+        signed_by_user_id=UUID(user.id),
+    )
+    return _to_mechanism_response(mech)
+
+
+@router.post(
+    "/{workspace_id}/dna-mechanisms/{mechanism_id}/activate",
+    response_model=GeneratedStarlarkMechanismResponse,
+    summary="Sign and activate a persisted Starlark DNA mechanism in PG18",
+)
+async def activate_dna_starlark_mechanism(
+    workspace_id: UUID,
+    mechanism_id: UUID,
+    request: Request,
+    user: CurrentUserDep,
+    svc: DnaGlossaryServiceDep,
+) -> GeneratedStarlarkMechanismResponse:
+    """Sign and activate a Starlark mechanism in PostgreSQL 18."""
+    await _validate_dna_workspace_access(request, user, workspace_id, require_write=True)
+    mech = await svc.activate_mechanism_async(
+        workspace_id=workspace_id,
+        mechanism_id=mechanism_id,
+        actor_role=user.platform_role,
+        signed_by_user_id=UUID(user.id),
+    )
+    return _to_mechanism_response(mech)
+
+
 @router.post(
     "/{workspace_id}/dna-mechanisms/{mechanism_id}/evaluate",
     response_model=StarlarkEvaluationResponse,
     summary="Execute a compiled Starlark mechanism at Run-Time (< 2 ms, 0 LLM tokens)",
 )
-def evaluate_dna_starlark_mechanism(
+async def evaluate_dna_starlark_mechanism(
     workspace_id: UUID,
     mechanism_id: UUID,
     body: EvaluateStarlarkMechanismRequest,
-    _user: CurrentUserDep,
+    request: Request,
+    user: CurrentUserDep,
     svc: DnaGlossaryServiceDep,
 ) -> StarlarkEvaluationResponse:
     """Evaluate a compiled `.star` mechanism in `< 2 ms` with `0` LLM tokens."""
-    _ = workspace_id
-    res = svc.evaluate_runtime_mechanism(
+    await _validate_dna_workspace_access(request, user, workspace_id, require_write=False)
+    res = await svc.evaluate_runtime_mechanism_async(
+        workspace_id=workspace_id,
         mechanism_id=mechanism_id,
         payload=body.payload,
     )
@@ -149,13 +226,15 @@ def evaluate_dna_starlark_mechanism(
     response_model=TwoPassExtractionResponse,
     summary="Run 2-Pass OntologyExtractor (0 $ on git_push, <= 15 FIFO & Top-3 pre-checked V4)",
 )
-def extract_workspace_glossary_two_pass(
+async def extract_workspace_glossary_two_pass(
     workspace_id: UUID,
     body: TwoPassExtractionRequest,
-    _user: CurrentUserDep,
+    request: Request,
+    user: CurrentUserDep,
     svc: DnaGlossaryServiceDep,
 ) -> TwoPassExtractionResponse:
     """Execute 2-Pass extraction (`0 $` on `git_push`, FIFO `<= 15` & `Top-3` `Verrou V4`)."""
+    await _validate_dna_workspace_access(request, user, workspace_id, require_write=True)
     res = svc.extract_glossary_candidates_two_pass(
         workspace_id=workspace_id,
         trigger_type=body.trigger_type,
@@ -180,13 +259,15 @@ def extract_workspace_glossary_two_pass(
     response_model=InFlowPromotionResponse,
     summary="Promote or reject L4 glossary candidates In-Flow and invalidate prompt cache (V4)",
 )
-def promote_workspace_glossary_in_flow(
+async def promote_workspace_glossary_in_flow(
     workspace_id: UUID,
     body: InFlowPromotionRequest,
+    request: Request,
     user: CurrentUserDep,
     svc: DnaGlossaryServiceDep,
 ) -> InFlowPromotionResponse:
     """Promote checked L4 terms to `3_WORKSPACE` `ACTIVE` and invalidate Redis prompt cache."""
+    await _validate_dna_workspace_access(request, user, workspace_id, require_write=True)
     res = svc.promote_or_reject_in_flow(
         workspace_id=workspace_id,
         actor_role=user.platform_role,

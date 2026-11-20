@@ -12,8 +12,22 @@ from typing import cast
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from orcia_core.rag._internal.sql_rag_writes import upsert_kb_document_bundle_pg
+from orcia_core.rag._internal.sql_state_queries import (
+    query_kb_documents_pg,
+    query_kb_stale_alerts_pg,
+    query_tripartite_edges_pg,
+)
+from orcia_core.rag._internal.sql_tripartite_writes import (
+    upsert_kb_stale_alert_pg,
+    upsert_tripartite_edges_pg,
+)
 from orcia_core.rag.models import (
+    CodeGraphEdgeEntity,
     HybridRagHit,
+    KbChunkEntity,
+    KbDocumentEntity,
+    KbStaleAlertEntity,
     TripartiteNodeType,
     TripartiteRelationType,
     TripartiteTraceEdgeEntity,
@@ -243,6 +257,59 @@ class SqlHybridRagRepository:
                 )
                 for r in rows
             )
+
+    async def list_documents_pg(
+        self, *, workspace_id: str | None = None, limit: int = 200
+    ) -> tuple[KbDocumentEntity, ...]:
+        """List persisted `kb_documents` from PostgreSQL 18."""
+        return await query_kb_documents_pg(
+            self._session_factory, workspace_id=workspace_id, limit=limit
+        )
+
+    async def list_tripartite_edges_pg(
+        self, *, workspace_id: str | None = None, limit: int = 200
+    ) -> tuple[TripartiteTraceEdgeEntity, ...]:
+        """List persisted `tripartite_trace_edges` from PostgreSQL 18."""
+        return await query_tripartite_edges_pg(
+            self._session_factory, workspace_id=workspace_id, limit=limit
+        )
+
+    async def list_stale_alerts_pg(
+        self, *, workspace_id: str | None = None, limit: int = 200
+    ) -> tuple[KbStaleAlertEntity, ...]:
+        """List persisted `kb_stale_alerts` from PostgreSQL 18."""
+        return await query_kb_stale_alerts_pg(
+            self._session_factory, workspace_id=workspace_id, limit=limit
+        )
+
+    async def upsert_document_bundle_pg(
+        self,
+        *,
+        document: KbDocumentEntity,
+        chunks: tuple[KbChunkEntity, ...] = (),
+        code_edges: tuple[CodeGraphEdgeEntity, ...] = (),
+        embedding_model_id: str | None = None,
+    ) -> KbDocumentEntity | None:
+        """Persist `kb_documents`, `kb_chunks` (AD-24.7), and `code_graph_edges` in PG18."""
+        return await upsert_kb_document_bundle_pg(
+            self._session_factory,
+            document=document,
+            chunks=chunks,
+            code_edges=code_edges,
+            embedding_model_id=embedding_model_id,
+        )
+
+    async def upsert_tripartite_edges_pg(
+        self, *, edges: tuple[TripartiteTraceEdgeEntity, ...]
+    ) -> tuple[TripartiteTraceEdgeEntity, ...]:
+        """Persist `tripartite_trace_edges` in PostgreSQL 18."""
+        return await upsert_tripartite_edges_pg(self._session_factory, edges=edges)
+
+    async def upsert_stale_alert_pg(
+        self, *, alert: KbStaleAlertEntity
+    ) -> KbStaleAlertEntity | None:
+        """Persist a `kb_stale_alerts` entry in PostgreSQL 18."""
+        return await upsert_kb_stale_alert_pg(self._session_factory, alert=alert)
 
 
 __all__ = ["SqlHybridRagRepository"]

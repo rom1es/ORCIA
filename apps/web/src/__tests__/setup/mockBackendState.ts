@@ -51,6 +51,8 @@ export interface MockBackendState {
   workspaceSeq: number;
   workspaceWaivers: Array<Record<string, unknown>>;
   waiverSeq: number;
+  dnaMechanisms: Array<Record<string, unknown>>;
+  dnaMechanismSeq: number;
   agents: Array<Record<string, unknown>>;
   skills: Array<Record<string, unknown>>;
   assistantFolders: Array<Record<string, unknown>>;
@@ -91,6 +93,8 @@ export const backendState: MockBackendState = {
   workspaceSeq: 0,
   workspaceWaivers: [],
   waiverSeq: 0,
+  dnaMechanisms: [],
+  dnaMechanismSeq: 0,
   agents: [],
   skills: [],
   assistantFolders: [],
@@ -182,6 +186,8 @@ export function resetVitestApiBackend(): void {
   backendState.workspaceSeq = 0;
   backendState.workspaceWaivers = [];
   backendState.waiverSeq = 0;
+  backendState.dnaMechanisms = [];
+  backendState.dnaMechanismSeq = 0;
   backendState.agents = [];
   backendState.skills = [];
   backendState.assistantFolders = [];

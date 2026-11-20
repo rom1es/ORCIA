@@ -113,6 +113,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
   } = useWorkflowTriggers({
     workspaceId: resolvedWorkspaceId,
     workflowId: workflow.id,
+    locale,
     triggersLabels,
     onBanner: (msg) =>
       setStatusBanner(msg ? { tone: "success", message: msg } : null),

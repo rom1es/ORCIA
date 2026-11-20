@@ -11,7 +11,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "activeRoutesCount": 28,
     "uiPrimitivesCount": 136,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 55,
+    "alembicMigrationsCount": 56,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
     "techLeadReportsCount": 200,
@@ -257,7 +257,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261117_2001_story_20_1_ontology_leads_and_platform_roles",
     "20261117_2002_story_20_2_ontology_pg18_and_promotions",
     "20261117_2003_story_20_3_user_preferences_and_mcp_tokens_pg18",
-    "20261120_2401_story_24_1_jira_staged_actions_and_mcp_proposals_pg18"
+    "20261120_2401_story_24_1_jira_staged_actions_and_mcp_proposals_pg18",
+    "20261120_2402_story_24_2_workspace_dna_mechanisms_pg18"
   ],
   "architectureDecisions": [
     {
@@ -575,8 +576,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "date": "2026-11-20",
       "phaseOrStory": "Story 24.2",
       "reportFile": "24-2-triggers-uuidv7-sans-collision-waivers-await-adn-pg18-et-fin-default-ws-tech-lead-report.md",
-      "domain": "Epic 24 Vague 0 — Triggers UUIDv7 sans Collision, Waivers await, ADN Starlark PG18 & Purge default-ws (REM24-03, REM24-04, USER24-BUG-6, 20#2 #49, 17#3 #40, UX23-06)",
-      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8 + USER24-BUG-6) : correction collision tid[:8] (_triggers_lifecycle_ops.py:46-47) + trigger_key optionnel, await waivers + ADN Starlark PG18 (dependencies/workspace_and_packs.py), purge \"default-ws\"/\"ws-claims-alpha\"/\"ws-mon-compte\", non-montage détail /spaces à 0 espace + commutation des 5 onglets WorkspaceFiveTabsAndExternalRebaseView, split dna_starlark_and_glossary_lifecycle.py (447 L)."
+      "domain": "Epic 24 Vague 0 — Triggers UUIDv7 sans Collision, Waivers await, ADN Starlark PG18, RAG/Tripartite PG18 & Purge default-ws (REM24-03, REM24-04, USER24-BUG-6, 20#2 #49, 17#3 #40, UX23-06)",
+      "summary": "Clôture (done) : migration Alembic 20261120_2402 (workspace_dna_mechanisms + 09_reset_db_first_boot.py), tid.replace(\"-\", \"\")[-12:] dans _triggers_lifecycle_ops.py + trigger_key optionnel (409 ERR_TRIGGER_DUPLICATE_KEY) + record_alert_delivery_async (trigger_webhook_deliveries), split < 300 L de dna_starlark_and_glossary_lifecycle.py (5 modules) + strict_sql, persistance PG18 kb_documents/kb_chunks (AD-24.7 vecteurs NULL) & tripartite_trace_edges + purge workspaces fantômes load_ontology_topology, purge \"default-ws\"/\"ws-claims-alpha\"/\"ws-mon-compte\" & \"PAY-142\", non-montage détail /spaces à 0 espace + commutation réelle 5 onglets WorkspaceFiveTabsAndExternalRebaseView, 90 % couv. combinée (28 unit + 2 PG18 testcontainers), 9/9 Turbo (57/57 @orcia/web, 225 tests) et 5/5 Playwright Desktop sans retry (17#1..3, 20#1..2)."
     },
     {
       "date": "2026-11-20",

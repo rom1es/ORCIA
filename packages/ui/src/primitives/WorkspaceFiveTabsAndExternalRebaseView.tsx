@@ -1,4 +1,10 @@
 import React from "react";
+import {
+  DeliverablesTabPanel,
+  MembersTeamTabPanel,
+  SourcesTabListPanel,
+  WaiversAndRebasePanel,
+} from "./WorkspaceFiveTabsPanels";
 
 export type WorkspaceSubTabKey =
   | "OVERVIEW"
@@ -51,6 +57,14 @@ export interface WorkspaceFiveTabsLabels {
   readonly humanAmendedBadge: string;
   readonly supersededMemlogNotice: string;
   readonly registerWaiverCta: string;
+  readonly overviewSummaryText?: string;
+  readonly teamBillingLabel?: string;
+  readonly visibilityLabel?: string;
+  readonly roleLabel?: string;
+  readonly phaseLabel?: string;
+  readonly emptyDeliverablesText?: string;
+  readonly emptyGlossaryRulesText?: string;
+  readonly membersAccessHint?: string;
 }
 
 export interface WorkspaceFiveTabsAndExternalRebaseViewProps {
@@ -62,6 +76,12 @@ export interface WorkspaceFiveTabsAndExternalRebaseViewProps {
   readonly activeWaivers: readonly ExceptionWaiverItem[];
   readonly rebasedChunks: readonly RebasedChunkItem[];
   readonly labels: WorkspaceFiveTabsLabels;
+  readonly workspaceName?: string;
+  readonly ownerOrgUnitName?: string | null;
+  readonly visibilityLabel?: string;
+  readonly effectiveRoleLabel?: string;
+  readonly lifecyclePhaseLabel?: string;
+  readonly submitting?: boolean;
   readonly onSelectTab?: (tab: WorkspaceSubTabKey) => void;
   readonly onRegisterWaiver?: (sourceUri: string, conflictRuleId: string) => void;
 }
@@ -77,6 +97,12 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
   activeWaivers,
   rebasedChunks,
   labels,
+  workspaceName,
+  ownerOrgUnitName,
+  visibilityLabel,
+  effectiveRoleLabel,
+  lifecyclePhaseLabel,
+  submitting = false,
   onSelectTab,
   onRegisterWaiver,
 }) => {
@@ -91,6 +117,151 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
     },
     { key: "MEMBERS_TEAM", label: labels.tabMembersTeam },
   ];
+
+  const renderTabPanel = (): React.ReactNode => {
+    switch (activeTab) {
+      case "OVERVIEW":
+        return (
+          <div
+            role="tabpanel"
+            aria-labelledby="workspace-tab-OVERVIEW"
+            className="grid grid-cols-1 gap-4 md:grid-cols-2"
+          >
+            <div
+              data-testid="workspace-overview-panel"
+              className="space-y-3 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3"
+            >
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
+                {labels.tabOverview}
+              </h3>
+              <p className="text-xs text-[var(--orcia-text-secondary)]">
+                {labels.overviewSummaryText ?? workspaceName ?? workspaceSlug}
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2">
+                  <div className="text-[11px] text-[var(--orcia-text-secondary)]">
+                    {labels.tabDocumentsSources}
+                  </div>
+                  <strong className="text-sm">{sources.length}</strong>
+                </div>
+                <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2">
+                  <div className="text-[11px] text-[var(--orcia-text-secondary)]">
+                    {labels.tabGlossaryRules}
+                  </div>
+                  <strong className="text-sm">{pendingGlossaryCandidatesCount}</strong>
+                </div>
+                <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2">
+                  <div className="text-[11px] text-[var(--orcia-text-secondary)]">
+                    {labels.waiverSectionTitle}
+                  </div>
+                  <strong className="text-sm">{activeWaivers.length}</strong>
+                </div>
+                <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2">
+                  <div className="text-[11px] text-[var(--orcia-text-secondary)]">
+                    {labels.phaseLabel ?? labels.tabDeliverablesArtifacts}
+                  </div>
+                  <strong className="text-xs">{lifecyclePhaseLabel ?? "—"}</strong>
+                </div>
+              </div>
+            </div>
+            <WaiversAndRebasePanel
+              workspaceSlug={workspaceSlug}
+              defaultArtifactDestinationUri={defaultArtifactDestinationUri}
+              sources={sources}
+              activeWaivers={activeWaivers}
+              rebasedChunks={rebasedChunks}
+              labels={labels}
+              submitting={submitting}
+              onRegisterWaiver={onRegisterWaiver}
+            />
+          </div>
+        );
+
+      case "DOCUMENTS_SOURCES":
+        return (
+          <div
+            role="tabpanel"
+            aria-labelledby="workspace-tab-DOCUMENTS_SOURCES"
+            className="grid grid-cols-1 gap-4 md:grid-cols-2"
+          >
+            <SourcesTabListPanel
+              sources={sources}
+              labels={labels}
+              submitting={submitting}
+              onRegisterWaiver={onRegisterWaiver}
+            />
+            <WaiversAndRebasePanel
+              workspaceSlug={workspaceSlug}
+              defaultArtifactDestinationUri={defaultArtifactDestinationUri}
+              sources={sources}
+              activeWaivers={activeWaivers}
+              rebasedChunks={rebasedChunks}
+              labels={labels}
+              submitting={submitting}
+              onRegisterWaiver={onRegisterWaiver}
+            />
+          </div>
+        );
+
+      case "DELIVERABLES_ARTIFACTS":
+        return (
+          <DeliverablesTabPanel
+            defaultArtifactDestinationUri={defaultArtifactDestinationUri}
+            rebasedChunks={rebasedChunks}
+            labels={labels}
+          />
+        );
+
+      case "GLOSSARY_RULES":
+        return (
+          <div
+            role="tabpanel"
+            aria-labelledby="workspace-tab-GLOSSARY_RULES"
+            data-testid="workspace-glossary-rules-panel"
+            className="space-y-3 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
+                {labels.tabGlossaryRules}
+              </h3>
+              <span className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 font-mono text-[11px]">
+                {pendingGlossaryCandidatesCount}
+              </span>
+            </div>
+            <p className="text-xs text-[var(--orcia-text-secondary)]">
+              {labels.inviolableEnterpriseLockNotice}
+            </p>
+            {activeWaivers.length === 0 && (
+              <p className="text-xs text-[var(--orcia-text-secondary)]">
+                {labels.emptyGlossaryRulesText ?? labels.waiverSectionTitle}
+              </p>
+            )}
+            <WaiversAndRebasePanel
+              workspaceSlug={workspaceSlug}
+              defaultArtifactDestinationUri={defaultArtifactDestinationUri}
+              sources={sources}
+              activeWaivers={activeWaivers}
+              rebasedChunks={rebasedChunks}
+              labels={labels}
+              submitting={submitting}
+              onRegisterWaiver={onRegisterWaiver}
+            />
+          </div>
+        );
+
+      case "MEMBERS_TEAM":
+        return (
+          <MembersTeamTabPanel
+            workspaceSlug={workspaceSlug}
+            workspaceName={workspaceName}
+            ownerOrgUnitName={ownerOrgUnitName}
+            visibilityLabel={visibilityLabel}
+            effectiveRoleLabel={effectiveRoleLabel}
+            labels={labels}
+          />
+        );
+    }
+  };
 
   return (
     <section
@@ -124,6 +295,7 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
           return (
             <button
               key={tab.key}
+              id={`workspace-tab-${tab.key}`}
               type="button"
               role="tab"
               aria-selected={isSelected}
@@ -145,135 +317,7 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
         })}
       </nav>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div
-          data-testid="workspace-sources-panel"
-          className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3"
-        >
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
-            {labels.tabDocumentsSources}
-          </h3>
-          <ul className="space-y-2">
-            {sources.map((src) => (
-              <li
-                key={src.sourceId}
-                data-testid={`workspace-source-${src.sourceId}`}
-                className="flex flex-wrap items-center justify-between gap-2 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2 text-xs"
-              >
-                <div>
-                  <div className="font-medium">{src.title}</div>
-                  <code className="font-mono text-[11px] text-[var(--orcia-text-secondary)]">
-                    {src.uri}
-                  </code>
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="rounded border border-[var(--orcia-border-subtle)] px-2 py-0.5 text-[11px]">
-                    {src.authorityRole === "REFERENCE"
-                      ? labels.roleReferenceBadge
-                      : labels.roleActiveBadge}
-                  </span>
-                  <span className="rounded border border-[var(--orcia-border-subtle)] px-2 py-0.5 text-[11px]">
-                    {src.accessMode === "READ_ONLY"
-                      ? labels.modeReadOnlyBadge
-                      : labels.modeReadWriteBadge}
-                  </span>
-                  {src.freshnessStatus === "STALE_WARNING" && onRegisterWaiver && (
-                    <button
-                      type="button"
-                      data-testid={`register-waiver-btn-${src.sourceId}`}
-                      onClick={() => onRegisterWaiver(src.uri, "RULE_FRESHNESS_DRIFT")}
-                      className="rounded bg-[var(--orcia-action-primary)] px-2 py-0.5 text-[11px] text-[var(--orcia-text-on-action)]"
-                    >
-                      {labels.registerWaiverCta}
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div
-          data-testid="workspace-waivers-and-rebase-panel"
-          className="space-y-3 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3"
-        >
-          <div>
-            <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
-              {labels.waiverSectionTitle}
-            </h3>
-            <p
-              data-testid="inviolable-enterprise-lock-notice"
-              className="mb-2 text-xs text-[var(--orcia-status-warning)]"
-            >
-              {labels.inviolableEnterpriseLockNotice}
-            </p>
-            {onRegisterWaiver &&
-              !sources.some((s) => s.freshnessStatus === "STALE_WARNING") && (
-                <div className="mb-2">
-                  <button
-                    type="button"
-                    data-testid="register-waiver-btn-workspace-default"
-                    onClick={() =>
-                      onRegisterWaiver(
-                        defaultArtifactDestinationUri ||
-                          `orcia://workspaces/${workspaceSlug}/sources/default`,
-                        "RULE_FRESHNESS_DRIFT",
-                      )
-                    }
-                    className="rounded bg-[var(--orcia-action-primary)] px-2.5 py-1 text-[11px] font-medium text-[var(--orcia-text-on-action)]"
-                  >
-                    {labels.registerWaiverCta}
-                  </button>
-                </div>
-              )}
-            <ul className="space-y-1.5">
-              {activeWaivers.map((w) => (
-                <li
-                  key={w.waiverId}
-                  data-testid={`waiver-item-${w.waiverId}`}
-                  className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2 text-xs"
-                >
-                  <div className="flex items-center justify-between">
-                    <code className="font-mono">{w.conflictRuleId}</code>
-                    <span className="font-mono text-[11px]">{w.normLevel}</span>
-                  </div>
-                  <div className="text-[11px] text-[var(--orcia-text-secondary)]">
-                    {w.reason}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="border-t border-[var(--orcia-border-subtle)] pt-2">
-            <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
-              {labels.externalRebaseTitle}
-            </h3>
-            <p className="mb-2 font-mono text-[11px] text-[var(--orcia-text-secondary)]">
-              {labels.supersededMemlogNotice}
-            </p>
-            <ul className="space-y-1.5">
-              {rebasedChunks.map((chunk) => (
-                <li
-                  key={chunk.chunkKey}
-                  data-testid={`rebased-chunk-${chunk.chunkKey}`}
-                  className="flex items-center justify-between rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2 text-xs"
-                >
-                  <span className="font-medium">{chunk.sectionTitle}</span>
-                  {chunk.status === "HUMAN_AMENDED_EXTERNAL" && (
-                    <span
-                      data-testid={`human-amended-badge-${chunk.chunkKey}`}
-                      className="rounded bg-[var(--orcia-surface-secondary)] px-2 py-0.5 font-mono text-[11px]"
-                    >
-                      {labels.humanAmendedBadge}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
+      {renderTabPanel()}
     </section>
   );
 };

@@ -39,6 +39,7 @@ export interface DnaStarlarkCompilerAndGlossaryLifecycleViewProps {
   readonly pendingQueueCandidates: readonly UiGlossaryCandidateItem[];
   readonly top3PrecheckedCandidates: readonly UiGlossaryCandidateItem[];
   readonly labels: DnaStarlarkAndGlossaryLabels;
+  readonly submitting?: boolean;
   readonly onCompileFromNorm?: (ruleId: string) => void;
   readonly onSignAndActivate?: (mechanismId: string) => void;
   readonly onPromoteInFlow?: (candidateIds: readonly string[]) => void;
@@ -52,6 +53,7 @@ export const DnaStarlarkCompilerAndGlossaryLifecycleView: React.FC<
   pendingQueueCandidates,
   top3PrecheckedCandidates,
   labels,
+  submitting = false,
   onCompileFromNorm,
   onSignAndActivate,
   onPromoteInFlow,
@@ -121,8 +123,10 @@ export const DnaStarlarkCompilerAndGlossaryLifecycleView: React.FC<
                 <button
                   type="button"
                   data-testid="compile-starlark-btn"
+                  disabled={submitting}
+                  aria-busy={submitting}
                   onClick={() => onCompileFromNorm(mechanism.ruleId)}
-                  className="rounded bg-[var(--orcia-surface-primary)] px-3 py-1.5 text-xs font-medium"
+                  className="rounded bg-[var(--orcia-surface-primary)] px-3 py-1.5 text-xs font-medium disabled:opacity-60"
                 >
                   {labels.generateStarlarkCta}
                 </button>
@@ -131,8 +135,10 @@ export const DnaStarlarkCompilerAndGlossaryLifecycleView: React.FC<
                 <button
                   type="button"
                   data-testid="sign-activate-starlark-btn"
+                  disabled={submitting}
+                  aria-busy={submitting}
                   onClick={() => onSignAndActivate(mechanism.mechanismId)}
-                  className="rounded bg-[var(--orcia-action-primary)] px-3 py-1.5 text-xs font-medium text-[var(--orcia-text-on-action)]"
+                  className="rounded bg-[var(--orcia-action-primary)] px-3 py-1.5 text-xs font-medium text-[var(--orcia-text-on-action)] disabled:opacity-60"
                 >
                   {labels.signAndActivateCta}
                 </button>
@@ -152,8 +158,10 @@ export const DnaStarlarkCompilerAndGlossaryLifecycleView: React.FC<
                 <button
                   type="button"
                   data-testid="compile-starlark-btn"
+                  disabled={submitting}
+                  aria-busy={submitting}
                   onClick={() => onCompileFromNorm("RULE-WORKSPACE-DEFAULT")}
-                  className="rounded bg-[var(--orcia-action-primary)] px-3 py-1.5 text-xs font-medium text-[var(--orcia-text-on-action)]"
+                  className="rounded bg-[var(--orcia-action-primary)] px-3 py-1.5 text-xs font-medium text-[var(--orcia-text-on-action)] disabled:opacity-60"
                 >
                   {labels.generateStarlarkCta}
                 </button>

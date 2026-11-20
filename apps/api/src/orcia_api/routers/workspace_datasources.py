@@ -16,6 +16,7 @@ from fastapi import APIRouter, Path, Query, Request
 
 from orcia_api.dependencies import get_or_create_shared_db_engine
 from orcia_api.routers.auth import resolve_request_user
+from orcia_api.routers.ontology_rag_helpers import persist_ingested_document_pg
 from orcia_api.schemas.enterprise_connectors import (
     CreateWorkspaceDatasourceRequest,
     TriggerWorkspaceDatasourceSyncResponse,
@@ -305,6 +306,34 @@ async def trigger_workspace_datasource_sync(
             datasource_id=datasource_id,
             instance=str(request.url.path),
         )
+        if rec.freshness_status != "SYNC_ERROR":
+            regime = (
+                "CODE_AST_GRAPH"
+                if rec.source_nature == "SOURCE_CODE"
+                else "DB_DDL_ONLY"
+                if rec.scheme == "db"
+                else "DOC_PARENT_CHILD"
+            )
+            chunk_role = (
+                "AST_SYMBOL"
+                if regime == "CODE_AST_GRAPH"
+                else "DDL_SCHEMA"
+                if regime == "DB_DDL_ONLY"
+                else "PARENT"
+            )
+            await persist_ingested_document_pg(
+                request,
+                document_id=rec.id,
+                workspace_id=rec.workspace_id,
+                datasource_id=rec.id,
+                datasource_alias=rec.alias,
+                uri=rec.uri,
+                title=rec.alias,
+                content_text=f"{rec.alias} ({rec.uri})",
+                indexing_regime=regime,
+                chunk_role=chunk_role,
+                is_stale=rec.freshness_status == "STALE",
+            )
     else:
         raise ResourceNotFoundError(instance=str(request.url.path))
 

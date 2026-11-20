@@ -38,6 +38,18 @@ export const GOVERNANCE_AND_PACKS_FR_LABELS: GovernanceAndPacksDictionarySection
     supersededMemlogNotice:
       "Les brouillons précédents ont été archivés au profit de la dernière modification validée.",
     registerWaiverCta: "+ Demander une adaptation pour cet espace",
+    overviewSummaryText:
+      "Synthèse des sources rattachées, règles métier, livrables et adaptations locales actives pour cet espace.",
+    teamBillingLabel: "Équipe de rattachement",
+    visibilityLabel: "Visibilité",
+    roleLabel: "Rôle effectif",
+    phaseLabel: "Phase active",
+    emptyDeliverablesText:
+      "Aucun document livrable modifié manuellement pour le moment. Les productions suivent l'emplacement d'enregistrement par défaut.",
+    emptyGlossaryRulesText:
+      "Aucune adaptation locale active pour le moment sur les règles du glossaire.",
+    membersAccessHint:
+      "Les invitations et droits d'accès par équipe sont gérés depuis Mon Organisation et le sélecteur d'espace.",
   },
   dnaStarlarkGlossary: {
     heading: "🧬 Règles Métiers Automatiques & Termes du Glossaire à Valider",
@@ -170,6 +182,18 @@ export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection
     supersededMemlogNotice:
       "Previous drafts have been archived in favor of the latest validated edit.",
     registerWaiverCta: "+ Request a local adaptation for this space",
+    overviewSummaryText:
+      "Overview of connected sources, business rules, deliverables, and active local adaptations for this space.",
+    teamBillingLabel: "Billing team",
+    visibilityLabel: "Visibility",
+    roleLabel: "Effective role",
+    phaseLabel: "Active phase",
+    emptyDeliverablesText:
+      "No deliverable edited directly yet. Outputs are saved to the default target location.",
+    emptyGlossaryRulesText:
+      "No local adaptation active yet on glossary rules.",
+    membersAccessHint:
+      "Team invitations and workspace access permissions are managed from My Organization and workspace settings.",
   },
   dnaStarlarkGlossary: {
     heading: "🧬 Automated Business Rules & Glossary Terms to Review",

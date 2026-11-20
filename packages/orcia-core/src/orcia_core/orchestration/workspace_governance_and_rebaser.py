@@ -43,6 +43,7 @@ class WorkspaceGovernanceAndArtifactRoutingService:
     """Domain service for Story 11.1 (5 Sub-Tabs, Cascade, DNA Waivers, External Rebaser)."""
 
     session_factory: async_sessionmaker[AsyncSession] | None = None
+    strict_sql: bool = False
     _waivers: dict[UUID, ExceptionWaiverRecord] = field(default_factory=dict)
     _workspace_defaults: dict[UUID, tuple[str, str, str | None]] = field(default_factory=dict)
     _workspace_sources: dict[UUID, list[WorkspaceSourceSummary]] = field(default_factory=dict)
@@ -80,16 +81,17 @@ class WorkspaceGovernanceAndArtifactRoutingService:
         self,
         *,
         workspace_id: UUID,
-        workspace_slug: str = "default-ws",
+        workspace_slug: str = "",
         pending_glossary_candidates_count: int = 0,
         waivers_override: tuple[ExceptionWaiverRecord, ...] | None = None,
     ) -> WorkspaceFiveTabsState:
         """Return the 5 sub-tabs state for `Mes Espaces`."""
+        resolved_slug = workspace_slug.strip() or str(workspace_id)
         slug, default_dest, local_root = self._workspace_defaults.get(
             workspace_id,
             (
-                workspace_slug,
-                f"orcia://workspaces/{workspace_slug}/artifacts",
+                resolved_slug,
+                f"orcia://workspaces/{resolved_slug}/artifacts",
                 None,
             ),
         )
@@ -123,7 +125,7 @@ class WorkspaceGovernanceAndArtifactRoutingService:
         self,
         *,
         workspace_id: UUID,
-        workspace_slug: str = "default-ws",
+        workspace_slug: str = "",
         pending_glossary_candidates_count: int = 0,
     ) -> WorkspaceFiveTabsState:
         """Return the 5 sub-tabs state hydrated with PG18 `workspace_exception_waivers`."""
@@ -154,6 +156,11 @@ class WorkspaceGovernanceAndArtifactRoutingService:
             for item in rows:
                 self._waivers[item.waiver_id] = item
             return rows
+        if self.strict_sql:
+            raise RuntimeError(
+                "WorkspaceGovernanceAndArtifactRoutingService requires session_factory "
+                "when strict_sql=True."
+            )
         return [
             w
             for w in self._waivers.values()
@@ -271,6 +278,11 @@ class WorkspaceGovernanceAndArtifactRoutingService:
                 self.session_factory,
                 waiver,
                 approved_by_email=approved_by_email,
+            )
+        elif self.strict_sql:
+            raise RuntimeError(
+                "WorkspaceGovernanceAndArtifactRoutingService requires session_factory "
+                "when strict_sql=True."
             )
         self._waivers[waiver.waiver_id] = waiver
         return waiver

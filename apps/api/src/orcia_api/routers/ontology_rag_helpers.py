@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
-from fastapi import Request
+import hashlib
+from typing import Any
+from urllib.parse import urlparse
 
+from fastapi import Request
+from sqlalchemy.ext.asyncio import async_sessionmaker
+
+from orcia_api.dependencies._core_providers import get_configured_db_engine
 from orcia_api.schemas import ontology_and_rag as s
+from orcia_core.kernel.ids import new_uuid7_str
 from orcia_core.observability.logging import get_current_trace_id
 from orcia_core.ontology import (
     OntologyConceptEntity,
@@ -13,8 +20,10 @@ from orcia_core.ontology import (
     WhatIfImpactReport,
 )
 from orcia_core.rag import (
+    KbChunkEntity,
     KbDocumentEntity,
     KbStaleAlertEntity,
+    SqlHybridRagRepository,
     TripartiteTraceEdgeEntity,
 )
 
@@ -22,6 +31,84 @@ from orcia_core.rag import (
 def get_trace_id(request: Request) -> str:
     """Return active W3C OpenTelemetry trace_id from request state or contextvar."""
     return str(getattr(request.state, "trace_id", None) or get_current_trace_id())
+
+
+def build_sql_rag_repo_from_request(request: Request) -> SqlHybridRagRepository | None:
+    """Return `SqlHybridRagRepository` when PG18 `session_maker` or `engine` is active."""
+    session_maker: Any = getattr(request.app.state, "session_maker", None)
+    if session_maker is not None:
+        return SqlHybridRagRepository(session_maker)
+    engine = get_configured_db_engine(request)
+    if engine is not None:
+        return SqlHybridRagRepository(async_sessionmaker(engine, expire_on_commit=False))
+    return None
+
+
+def _infer_doc_scheme(uri: str) -> str:
+    parsed = (urlparse(uri).scheme or "").lower()
+    if parsed in {"confluence", "jira", "git", "db"}:
+        return parsed
+    lowered = uri.lower()
+    if "git" in lowered:
+        return "git"
+    if "jira" in lowered:
+        return "jira"
+    if "db" in lowered or "postgres" in lowered:
+        return "db"
+    return "confluence"
+
+
+async def persist_ingested_document_pg(
+    request: Request,
+    *,
+    document_id: str,
+    workspace_id: str,
+    datasource_id: str | None,
+    datasource_alias: str,
+    uri: str,
+    title: str,
+    content_text: str,
+    indexing_regime: str = "DOC_PARENT_CHILD",
+    chunk_role: str = "PARENT",
+    is_stale: bool = False,
+) -> None:
+    """Persist an ingested or synced document in PG18 `kb_documents` + `kb_chunks` (`AD-24.7`)."""
+    sql_rag_repo = build_sql_rag_repo_from_request(request)
+    if sql_rag_repo is None:
+        return
+    clean_text = content_text.strip() or title.strip() or uri.strip()
+    sha256_hex = hashlib.sha256(clean_text.encode("utf-8")).hexdigest()
+    scheme = _infer_doc_scheme(uri)
+    doc_key = f"doc-{workspace_id[:8]}-{sha256_hex[:16]}"
+    doc = KbDocumentEntity(
+        id=document_id,
+        doc_key=doc_key,
+        workspace_id=workspace_id,
+        datasource_id=datasource_id or new_uuid7_str(),
+        datasource_alias=datasource_alias[:120] or scheme,
+        source_uri=uri,
+        source_scheme=scheme,
+        indexing_regime=indexing_regime,
+        title=title[:255] or datasource_alias,
+        revision_tag="v1",
+        content_sha256=sha256_hex,
+        freshness_ttl_days=90,
+        is_stale=is_stale,
+    )
+    chunk = KbChunkEntity(
+        id=new_uuid7_str(),
+        chunk_key=f"{doc_key}-chunk-01",
+        document_id=document_id,
+        workspace_id=workspace_id,
+        datasource_alias=doc.datasource_alias,
+        parent_chunk_id=None,
+        chunk_role=chunk_role,
+        contextual_header=f"[{doc.datasource_alias} | {doc.title}]",
+        content_text=clean_text,
+        token_count=max(1, len(clean_text.split())),
+        embedding=None,
+    )
+    await sql_rag_repo.upsert_document_bundle_pg(document=doc, chunks=(chunk,))
 
 
 def serialize_concept(c: OntologyConceptEntity) -> s.OntologyConceptSchemaItem:

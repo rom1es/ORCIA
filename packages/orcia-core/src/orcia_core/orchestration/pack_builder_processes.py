@@ -389,7 +389,11 @@ class PackBuilderSystemService:
         workspace_impacts: list[WhatIfWorkspaceImpactItem] = []
         total_workflows = 0
         for ws in subscribed_workspaces:
-            ws_key = str(ws.get("workspace_key", "default-ws"))
+            ws_key = (
+                str(ws.get("workspace_key", "")).strip()
+                or str(ws.get("workspace_id", "")).strip()
+                or "workspace"
+            )
             ws_workflows = tuple(
                 wf
                 for wf in ws.get("workflows", [])

@@ -173,15 +173,17 @@ export function WorkspacesFeaturePanel({
         onFeedback={setActionFeedback}
       />
 
-      <WorkspaceDnaAndWaiversSection
-        isFr={isFr}
-        targetWorkspace={targetWorkspace}
-        datasources={datasources}
-        ontologyConcepts={ontologyConcepts}
-        dictionary={dictionary}
-        onAddOntologyConcept={addOntologyConcept}
-        onFeedback={setActionFeedback}
-      />
+      {targetWorkspace !== null ? (
+        <WorkspaceDnaAndWaiversSection
+          isFr={isFr}
+          targetWorkspace={targetWorkspace}
+          datasources={datasources}
+          ontologyConcepts={ontologyConcepts}
+          dictionary={dictionary}
+          onAddOntologyConcept={addOntologyConcept}
+          onFeedback={setActionFeedback}
+        />
+      ) : null}
 
       <CommandPaletteModal
         isOpen={paletteOpen}

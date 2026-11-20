@@ -373,6 +373,24 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
   });
 
   it("mounts Mes Espaces 5-tabs, DNA Starlark compiler, MCP/A2A Test Bench, Pack Builder Studio, and Help Generator across /spaces, /agents, /processes, and /help (Story 12.3)", async () => {
+    seedVitestPlatformSetupState(
+      {
+        workspaces: [
+          {
+            workspaceId: "0195f000-0000-7000-8000-000000000311",
+            slug: "ws-equipe-alpha",
+            name: "Espace Équipe Alpha",
+            ownerOrgUnitId: "0192c4e0-0000-7000-8000-000000000101",
+            ownerOrgUnitName: "Direction Technique",
+            visibilityMode: "STANDARD",
+            lifecyclePhase: "BUILD",
+            accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
+            finopsCostUsd: 0,
+          },
+        ],
+      },
+      { email: "admin@orcia.fr", displayName: "Admin", roles: ["PLATFORM_ADMIN"] },
+    );
     const queryClient = createOrciaQueryClient();
     const history = createMemoryHistory({ initialEntries: ["/spaces"] });
     const router = createOrciaRouter({ queryClient, history });
@@ -385,7 +403,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     );
 
     // /spaces -> WorkspaceFiveTabsAndExternalRebaseView + DnaStarlarkCompilerAndGlossaryLifecycleView
-    expect(screen.getByTestId("workspace-five-tabs-view")).toBeDefined();
+    expect(await screen.findByTestId("workspace-five-tabs-view")).toBeDefined();
     expect(screen.getByTestId("dna-starlark-glossary-view")).toBeDefined();
 
     // Navigate to /agents -> RemoteServiceTestBenchAndMcpExposureView inside connections tab

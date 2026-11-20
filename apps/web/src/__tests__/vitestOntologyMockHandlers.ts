@@ -48,12 +48,14 @@ export interface MockOntologyPromotion {
 
 let mockConcepts: MockOntologyConcept[] = [];
 let mockPromotions: MockOntologyPromotion[] = [];
+let mockTripartiteEdges: Array<Record<string, unknown>> = [];
 let seq = 0;
 let propSeq = 0;
 
 export function resetVitestOntologyMockState(): void {
   mockConcepts = [];
   mockPromotions = [];
+  mockTripartiteEdges = [];
   seq = 0;
   propSeq = 0;
 }
@@ -185,6 +187,54 @@ export function handleVitestOntologyRoute(params: {
 }): Response | null {
   const { path, method, body, orgUnits, workspaces, jsonResponse, problemResponse } = params;
   const actor = resolveMockOntologyActor();
+
+  if (path === "/api/v1/ontology-rag/state" && method === "GET") {
+    return jsonResponse({
+      concepts: mockConcepts,
+      relations: [],
+      promotions: mockPromotions,
+      documents: [],
+      tripartite_edges: mockTripartiteEdges,
+      stale_alerts: [],
+      trace_id: "trace-vitest",
+    });
+  }
+
+  if (path === "/api/v1/ontology-rag/tripartite/audit-doc-vs-code" && method === "POST") {
+    if (actor.isObserver) {
+      return problemResponse(403, "ERR_OBSERVER_MODE_READ_ONLY", "Forbidden", "Read-only observer mode", path);
+    }
+    const confluenceUri = String(body.confluence_uri ?? "");
+    const gitRepoUri = String(body.git_repo_uri ?? "");
+    const gitSymbol = String(body.git_symbol ?? "main");
+    const jiraKey = body.newer_done_jira_key ? String(body.newer_done_jira_key) : null;
+    const edgeKey = `edge-${mockTripartiteEdges.length + 1}`;
+    const wsId = String(
+      body.workspace_id ?? workspaces[0]?.workspaceId ?? workspaces[0]?.id ?? "0195f000-0000-7000-8000-000000000301",
+    );
+    mockTripartiteEdges.push({
+      id: `0195f000-0000-7000-8400-${String(mockTripartiteEdges.length + 1).padStart(12, "0")}`,
+      edge_key: edgeKey,
+      workspace_id: wsId,
+      source_uri: confluenceUri,
+      source_node_type: "CONFLUENCE_DOC",
+      target_uri: gitRepoUri,
+      target_node_type: "GIT_REPO",
+      relation_type: "SPECIFIED_IN",
+      jira_issue_key: jiraKey,
+    });
+    return jsonResponse({
+      confluence_uri: confluenceUri,
+      git_repo_uri: gitRepoUri,
+      git_symbol: gitSymbol,
+      qualification_marker: jiraKey ? "[DOC_OBSOLETE_SUSPECTED]" : "[ALIGNED]",
+      justifying_jira_key: jiraKey,
+      explanation: jiraKey
+        ? `Divergence qualifiée via ${jiraKey}.`
+        : "Documentation alignée avec le code.",
+      trace_id: "trace-vitest",
+    });
+  }
 
   if (path === "/api/v1/ontology-rag/ontology/concepts" && method === "GET") {
     const writableScopes: Array<{ level: string; scope_id: string; label: string }> = [];

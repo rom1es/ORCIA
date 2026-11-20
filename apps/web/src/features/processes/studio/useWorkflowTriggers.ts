@@ -9,10 +9,13 @@ import type {
 } from "@orcia/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { WorkflowTriggersStudioCopy } from "../../../i18n/locales/workflow_triggers_labels";
+import { formatRfc9457ErrorToBanner } from "../../../lib/formatRfc9457ErrorToBanner";
+import type { SupportedUiLocale } from "../../../lib/formatters";
 
 interface UseWorkflowTriggersParams {
   readonly workspaceId: string;
   readonly workflowId: string;
+  readonly locale?: SupportedUiLocale;
   readonly triggersLabels: WorkflowTriggersStudioCopy;
   readonly onBanner: (banner: string) => void;
 }
@@ -46,6 +49,7 @@ function mapTriggerResponse(item: WorkflowTriggerResponse): UiWorkflowTriggerIte
 export function useWorkflowTriggers({
   workspaceId,
   workflowId,
+  locale = "fr",
   triggersLabels,
   onBanner,
 }: UseWorkflowTriggersParams) {
@@ -54,7 +58,13 @@ export function useWorkflowTriggers({
   const [triggersError, setTriggersError] = useState<string | null>(null);
   const [triggersSubmitting, setTriggersSubmitting] = useState<boolean>(false);
 
-  const apiClient = useMemo(() => createOrciaApiClient({ baseUrl: "" }), []);
+  const apiClient = useMemo(() => createOrciaApiClient({ baseUrl: "", locale }), [locale]);
+
+  const formatTriggerError = useCallback(
+    (err: unknown) =>
+      formatRfc9457ErrorToBanner(err, locale, triggersLabels.modal.title).fullText,
+    [locale, triggersLabels.modal.title],
+  );
 
   const refreshTriggers = useCallback(async () => {
     try {
@@ -62,9 +72,9 @@ export function useWorkflowTriggers({
       setTriggers((resp.items ?? []).map(mapTriggerResponse));
       setTriggersError(null);
     } catch (err) {
-      setTriggersError(err instanceof Error ? err.message : triggersLabels.loadErrorBanner);
+      setTriggersError(formatTriggerError(err));
     }
-  }, [apiClient, workspaceId, workflowId, triggersLabels.loadErrorBanner]);
+  }, [apiClient, workspaceId, workflowId, formatTriggerError]);
 
   useEffect(() => {
     void refreshTriggers();
@@ -76,6 +86,7 @@ export function useWorkflowTriggers({
     try {
       await apiClient.createWorkflowTrigger(workspaceId, workflowId, {
         trigger_type: draft.triggerType,
+        trigger_key: draft.triggerKey?.trim() || undefined,
         cron_expr: draft.triggerType === "CRON" ? draft.cronExpr : undefined,
         cooldown_window_seconds: draft.cooldownWindowSeconds,
         max_runs_per_hour: draft.maxRunsPerHour,
@@ -96,7 +107,7 @@ export function useWorkflowTriggers({
       await refreshTriggers();
       onBanner(triggersLabels.createdSuccessBanner);
     } catch (err) {
-      setTriggersError(err instanceof Error ? err.message : triggersLabels.loadErrorBanner);
+      setTriggersError(formatTriggerError(err));
     } finally {
       setTriggersSubmitting(false);
     }
@@ -119,7 +130,7 @@ export function useWorkflowTriggers({
       await refreshTriggers();
       onBanner(triggersLabels.updatedSuccessBanner);
     } catch (err) {
-      setTriggersError(err instanceof Error ? err.message : triggersLabels.loadErrorBanner);
+      setTriggersError(formatTriggerError(err));
     } finally {
       setTriggersSubmitting(false);
     }
@@ -133,7 +144,7 @@ export function useWorkflowTriggers({
       await refreshTriggers();
       onBanner(triggersLabels.deletedSuccessBanner);
     } catch (err) {
-      setTriggersError(err instanceof Error ? err.message : triggersLabels.loadErrorBanner);
+      setTriggersError(formatTriggerError(err));
     } finally {
       setTriggersSubmitting(false);
     }
@@ -147,7 +158,7 @@ export function useWorkflowTriggers({
       await refreshTriggers();
       onBanner(triggersLabels.firedSuccessBanner);
     } catch (err) {
-      setTriggersError(err instanceof Error ? err.message : triggersLabels.loadErrorBanner);
+      setTriggersError(formatTriggerError(err));
     } finally {
       setTriggersSubmitting(false);
     }
@@ -161,7 +172,7 @@ export function useWorkflowTriggers({
       await refreshTriggers();
       onBanner(triggersLabels.resetSuccessBanner);
     } catch (err) {
-      setTriggersError(err instanceof Error ? err.message : triggersLabels.loadErrorBanner);
+      setTriggersError(formatTriggerError(err));
     } finally {
       setTriggersSubmitting(false);
     }

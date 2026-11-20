@@ -365,4 +365,8 @@ export interface UiOntologyExplorerLabels {
   tripartiteTitle: string;
   staleAlertsTitle: string;
   docObsoleteBadgeLabel: string;
+  auditSubmitLabel?: string;
+  auditConfluencePlaceholder?: string;
+  auditGitPlaceholder?: string;
+  auditJiraPlaceholder?: string;
 }

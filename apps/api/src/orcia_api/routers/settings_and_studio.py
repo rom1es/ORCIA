@@ -26,6 +26,7 @@ from orcia_api.routers._settings_helpers import (
     to_setting_response,
 )
 from orcia_api.routers.auth import resolve_request_user
+from orcia_api.routers.ontology_rag_helpers import persist_ingested_document_pg
 from orcia_api.schemas.settings_and_studio import (
     ConnectorTestConnectionResponse,
     DelegateGrantRequest,
@@ -290,7 +291,7 @@ def test_connector_connection_endpoint(
 
 
 @router.post("/settings/connectors/ingest", response_model=DocumentIngestionResponse)
-def ingest_document_endpoint(
+async def ingest_document_endpoint(
     payload: DocumentIngestionRequest,
     request: Request,
     auth: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
@@ -308,6 +309,17 @@ def ingest_document_endpoint(
         pii_decision=payload.pii_decision,
         instance=str(request.url.path),
     )
+    if rep.status == "INDEXED":
+        await persist_ingested_document_pg(
+            request,
+            document_id=rep.document_id,
+            workspace_id=rep.workspace_id,
+            datasource_id=None,
+            datasource_alias=rep.title,
+            uri=rep.uri,
+            title=rep.title,
+            content_text=payload.raw_extracted_text,
+        )
     return DocumentIngestionResponse(
         document_id=rep.document_id,
         workspace_id=rep.workspace_id,

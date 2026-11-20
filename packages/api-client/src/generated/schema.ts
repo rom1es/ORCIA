@@ -1352,6 +1352,7 @@ export interface components {
       git_repo_uri: string;
       git_symbol: string;
       newer_done_jira_key?: string | null;
+      workspace_id?: string | null;
     };
     DocVsCodeAuditResponse: {
       confluence_uri: string;
@@ -6769,7 +6770,21 @@ export interface paths {
       };
     };
   };
+  "/api/v1/workspaces/{workspace_id}/dna-mechanisms": {
+    get: {
+      responses: {
+        200: (components["schemas"]["GeneratedStarlarkMechanismResponse"])[];
+      };
+    };
+  };
   "/api/v1/workspaces/{workspace_id}/dna-mechanisms/compile": {
+    post: {
+      responses: {
+        200: components["schemas"]["GeneratedStarlarkMechanismResponse"];
+      };
+    };
+  };
+  "/api/v1/workspaces/{workspace_id}/dna-mechanisms/{mechanism_id}/activate": {
     post: {
       responses: {
         200: components["schemas"]["GeneratedStarlarkMechanismResponse"];

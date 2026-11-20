@@ -296,6 +296,20 @@ async def ingest_platform_log_alert_fallback(
         body.service, body.exception_type, extract_top_frame(body.traceback or body.message)
     )
     idem_key = (body.delivery_key or "").strip() or f"alert:{fp}"
+    is_new = await svc.record_alert_delivery_async(
+        trigger_id=entity.id,
+        delivery_key=idem_key,
+    )
+    if not is_new:
+        return TriggerDispatchResponse(
+            dispatched=False,
+            outcome="DUPLICATE_SUPPRESSED",
+            trigger_id=entity.id,
+            idempotency_key=idem_key,
+            dbos_workflow_id=f"{entity.id}:{idem_key}",
+            reason="Duplicate alert delivery suppressed",
+            trace_id=trace_id,
+        )
     outcome = await svc.dispatch_trigger(
         trigger_id=entity.id,
         idempotency_key=idem_key,

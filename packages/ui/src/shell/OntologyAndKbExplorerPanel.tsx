@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { StatusBadge } from "../primitives/StatusBadge";
-import { OntologyTripartiteAndStaleSection } from "./OntologyTripartiteAndStaleSection";
+import {
+  OntologyTripartiteAndStaleSection,
+  type TripartiteAuditDraft,
+} from "./OntologyTripartiteAndStaleSection";
 import type {
   UiOntologyConceptView,
   UiOntologyExplorerLabels,
@@ -14,7 +17,9 @@ export interface OntologyAndKbExplorerPanelProps {
   tripartiteEdges: UiTripartiteEdgeView[];
   staleAlerts: UiStaleAlertView[];
   labels: UiOntologyExplorerLabels;
+  auditing?: boolean;
   onProposePromotion?: (concept: UiOntologyConceptView) => void;
+  onAuditDocVsCode?: (draft: TripartiteAuditDraft) => Promise<void> | void;
 }
 
 const ONTOLOGY_COLUMNS: Exclude<UiOntologyLevel, "4_WORKSPACE">[] = [
@@ -48,7 +53,9 @@ export function OntologyAndKbExplorerPanel({
   tripartiteEdges,
   staleAlerts,
   labels,
+  auditing = false,
   onProposePromotion,
+  onAuditDocVsCode,
 }: OntologyAndKbExplorerPanelProps) {
   const [selectedProfile, setSelectedProfile] = useState<string>("TECH_LEAD");
   const [selectedConcept, setSelectedConcept] = useState<UiOntologyConceptView | null>(
@@ -296,19 +303,21 @@ export function OntologyAndKbExplorerPanel({
               {statusBanner}
             </div>
           )}
-
-          <OntologyTripartiteAndStaleSection
-            ragQuery={ragQuery}
-            onRagQueryChange={setRagQuery}
-            filteredEdges={filteredEdges}
-            staleAlerts={staleAlerts}
-            labels={labels}
-            onReplayAlert={(alert) =>
-              setStatusBanner(`${labels.docObsoleteBadgeLabel} -> ${alert.sourceUri}`)
-            }
-          />
         </>
       )}
+
+      <OntologyTripartiteAndStaleSection
+        ragQuery={ragQuery}
+        onRagQueryChange={setRagQuery}
+        filteredEdges={filteredEdges}
+        staleAlerts={staleAlerts}
+        labels={labels}
+        auditing={auditing}
+        onAuditDocVsCode={onAuditDocVsCode}
+        onReplayAlert={(alert) =>
+          setStatusBanner(`${labels.docObsoleteBadgeLabel} -> ${alert.sourceUri}`)
+        }
+      />
     </section>
   );
 }

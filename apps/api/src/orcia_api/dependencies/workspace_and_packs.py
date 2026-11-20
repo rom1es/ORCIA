@@ -4,9 +4,16 @@ from __future__ import annotations
 
 from fastapi import Request
 
+from orcia_api.dependencies._core_providers import (
+    get_configured_db_engine,
+    should_auto_init_infra,
+)
 from orcia_api.dependencies.core_and_lifespan import get_auth_service
 from orcia_connectors.surgical import SurgicalContextExplorer
 from orcia_core.kernel.errors import OrciaDomainError
+from orcia_core.orchestration._internal.sql_dna_mechanisms import (
+    SqlStarlarkMechanismRepository,
+)
 from orcia_core.orchestration.agents_and_skills_manager import (
     AgentsAndSkillsManagementService,
 )
@@ -33,27 +40,44 @@ def get_workspace_governance_and_rebaser_service(
 ) -> WorkspaceGovernanceAndArtifactRoutingService:
     """Return `WorkspaceGovernanceAndArtifactRoutingService` wired to PG18 `session_maker`."""
     session_maker = getattr(request.app.state, "session_maker", None)
+    strict_sql = (session_maker is not None) or should_auto_init_infra("DATABASE_URL")
     svc: WorkspaceGovernanceAndArtifactRoutingService | None = getattr(
         request.app.state, "workspace_governance_and_rebaser_service", None
     )
     if svc is None:
-        svc = WorkspaceGovernanceAndArtifactRoutingService(session_factory=session_maker)
+        svc = WorkspaceGovernanceAndArtifactRoutingService(
+            session_factory=session_maker,
+            strict_sql=strict_sql,
+        )
         request.app.state.workspace_governance_and_rebaser_service = svc
     elif svc.session_factory is None and session_maker is not None:
         svc.session_factory = session_maker
+        svc.strict_sql = True
     return svc
 
 
 def get_dna_starlark_and_glossary_service(
     request: Request,
 ) -> DnaStarlarkAndGlossaryLifecycleService:
-    """Return `DnaStarlarkAndGlossaryLifecycleService`."""
+    """Return `DnaStarlarkAndGlossaryLifecycleService` wired to PG18 `workspace_dna_mechanisms`."""
+    engine = get_configured_db_engine(request)
+    session_maker = getattr(request.app.state, "session_maker", None)
+    has_pg = (session_maker is not None) or (engine is not None)
+    strict_sql = has_pg or should_auto_init_infra("DATABASE_URL")
     svc: DnaStarlarkAndGlossaryLifecycleService | None = getattr(
         request.app.state, "dna_starlark_and_glossary_service", None
     )
     if svc is None:
-        svc = DnaStarlarkAndGlossaryLifecycleService()
+        repo = (
+            SqlStarlarkMechanismRepository(session_maker=session_maker, engine=engine)
+            if has_pg
+            else None
+        )
+        svc = DnaStarlarkAndGlossaryLifecycleService(repository=repo, strict_sql=strict_sql)
         request.app.state.dna_starlark_and_glossary_service = svc
+    elif svc.repository is None and has_pg:
+        svc.repository = SqlStarlarkMechanismRepository(session_maker=session_maker, engine=engine)
+        svc.strict_sql = True
     return svc
 
 

@@ -187,6 +187,40 @@ test.describe("Sources d'espace multi-nature, graphe de code, glossaire, ontolog
       slug: "ws-dna-tripartite",
     });
 
+    // 1. Rattachement et synchronisation réelle d'une source code -> `kb_documents` PG18 (`AD-24.7`)
+    await openWorkspaceSourcesPage(page, ws.uiWorkspaceId);
+    await page.getByTestId("open-attach-source-modal-btn").click();
+    await expect(page.getByTestId("workspace-source-attach-modal")).toBeVisible({ timeout: 10000 });
+    await page.getByTestId("modal-source-nature-select").selectOption("SOURCE_CODE");
+    await page.getByTestId("modal-source-alias-input").fill("core-dna-repo");
+    await page.getByTestId("modal-source-scheme-input").fill("git");
+    await page
+      .getByTestId("modal-source-uri-input")
+      .fill("https://git.internal.orcia/claims/core.git");
+    await page.getByTestId("modal-source-target-scope-input").fill("main");
+    await page.getByTestId("modal-source-target-ref-input").fill("refs/heads/main");
+    await page.getByTestId("modal-source-save-btn").click();
+    await expect(page.getByTestId("workspace-source-attach-modal")).toBeHidden({ timeout: 15000 });
+
+    const kbDsRow = expectDbRowExists(
+      "SELECT id::text AS id FROM workspace_datasources WHERE workspace_id = :ws_id AND alias = :alias",
+      { ws_id: ws.pgWorkspaceId, alias: "core-dna-repo" },
+      "Source SOURCE_CODE persistée dans workspace_datasources",
+    );
+    const kbDsId = String(kbDsRow.id);
+    await expect(page.getByTestId(`workspace-detail-source-row-${kbDsId}`)).toBeVisible({
+      timeout: 15000,
+    });
+    const [syncRes] = await Promise.all([
+      page.waitForResponse(
+        (res) =>
+          res.url().includes(`/datasources/${kbDsId}/sync`) && res.request().method() === "POST",
+      ),
+      page.getByTestId(`sync-datasource-btn-${kbDsId}`).click(),
+    ]);
+    expect(syncRes.status()).toBe(200);
+
+    // 2. Chaîne ADN Starlark + dérogation d'espace + survie F5 PG18
     await page.goto(`/workspaces/${ws.uiWorkspaceId}`);
     await expect(page.getByTestId("dna-starlark-glossary-view")).toBeVisible({ timeout: 10000 });
     await page.getByTestId("compile-starlark-btn").click();
@@ -194,17 +228,50 @@ test.describe("Sources d'espace multi-nature, graphe de code, glossaire, ontolog
 
     await expect(page.getByTestId("workspace-five-tabs-view")).toBeVisible({ timeout: 10000 });
     await page.locator('[data-testid^="register-waiver-btn-"]').first().click();
+    await expect(page.locator('[data-testid^="waiver-item-"]').first()).toBeVisible({
+      timeout: 15000,
+    });
 
     await reloadColdFromPg(page);
+    await expect(page.getByTestId("starlark-compiler-panel")).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('[data-testid^="waiver-item-"]').first()).toBeVisible({
+      timeout: 15000,
+    });
 
     expectDbRowExists(
       "SELECT waiver_id::text AS waiver_id, workspace_id::text AS workspace_id, source_uri, status FROM workspace_exception_waivers WHERE workspace_id = :ws_id",
       { ws_id: ws.pgWorkspaceId },
       "Dérogation persistée dans workspace_exception_waivers",
     );
+    expectDbRowCount(
+      "SELECT COUNT(*)::int AS count FROM workspace_dna_mechanisms WHERE workspace_id = :ws_id",
+      { ws_id: ws.pgWorkspaceId },
+      1,
+      "Mécanisme ADN Starlark persisté dans workspace_dna_mechanisms",
+    );
 
+    // 3. Audit tripartite Doc vs Code depuis /ontology -> `tripartite_trace_edges` + survie F5
     await openOntologyPage(page, "EXPLORER");
     await expect(page.getByTestId("tripartite-graph-section")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId("tripartite-audit-form")).toBeVisible({ timeout: 10000 });
+    await page
+      .getByTestId("tripartite-confluence-uri-input")
+      .fill("confluence://CLAIMS/SPEC-24-2");
+    await page
+      .getByTestId("tripartite-git-uri-input")
+      .fill("https://git.internal.orcia/claims/core.git");
+    await page.getByTestId("tripartite-jira-key-input").fill("PAY-242");
+    await page.getByTestId("tripartite-audit-submit-btn").click();
+    await expect(page.locator('[data-testid^="tripartite-edge-"]').first()).toBeVisible({
+      timeout: 15000,
+    });
+
+    await reloadColdFromPg(page);
+    await expect(page.getByTestId("tripartite-graph-section")).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('[data-testid^="tripartite-edge-"]').first()).toBeVisible({
+      timeout: 15000,
+    });
+
     expectDbRowCount(
       "SELECT COUNT(*)::int AS count FROM kb_documents WHERE workspace_id = :ws_id",
       { ws_id: ws.pgWorkspaceId },
@@ -212,8 +279,8 @@ test.describe("Sources d'espace multi-nature, graphe de code, glossaire, ontolog
       "Documents indexés présents dans kb_documents",
     );
     expectDbRowCount(
-      "SELECT COUNT(*)::int AS count FROM tripartite_trace_edges",
-      undefined,
+      "SELECT COUNT(*)::int AS count FROM tripartite_trace_edges WHERE workspace_id = :ws_id",
+      { ws_id: ws.pgWorkspaceId },
       1,
       "Arêtes tripartites présentes dans tripartite_trace_edges",
     );

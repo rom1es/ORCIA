@@ -57,22 +57,17 @@ async def load_ontology_topology(
     *,
     fixture: bool,
 ) -> tuple[AsyncEngine | None, tuple[OrgUnitNode, ...], tuple[WorkspaceEntity, ...]]:
-    """Return `(engine_or_none, org_units, workspaces)` merged from PG18 and evaluator."""
+    """Return `(engine_or_none, org_units, workspaces)` from PG18 when active, else evaluator."""
     svc = get_auth_service(request)
-    org_by_id: dict[str, OrgUnitNode] = {u.id: u for u in svc.evaluator.org_units}
-    ws_by_id: dict[str, WorkspaceEntity] = {w.id: w for w in svc.evaluator.workspaces}
     engine = None if fixture else get_configured_db_engine(request)
     if engine is not None:
         try:
             pg_units, pg_ws = await load_org_and_workspaces_context(engine)
-            for u in pg_units:
-                org_by_id[u.id] = u
-            for w in pg_ws:
-                ws_by_id[w.id] = w
+            return engine, pg_units, pg_ws
         except Exception as exc:
             logger.warning("ontology_topology_pg_fallback", error_type=type(exc).__name__)
             engine = None
-    return engine, tuple(org_by_id.values()), tuple(ws_by_id.values())
+    return engine, tuple(svc.evaluator.org_units), tuple(svc.evaluator.workspaces)
 
 
 def serialize_proposal_detail(

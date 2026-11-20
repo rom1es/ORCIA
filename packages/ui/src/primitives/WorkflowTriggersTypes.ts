@@ -29,6 +29,7 @@ export interface UiWorkflowTriggerItem {
 
 export interface CreateWorkflowTriggerDraft {
   readonly triggerType: UiWorkflowTriggerType;
+  readonly triggerKey?: string;
   readonly cronExpr: string;
   readonly cooldownWindowSeconds: number;
   readonly maxRunsPerHour: number;
@@ -52,6 +53,8 @@ export interface WorkflowTriggersModalLabels {
   readonly missingContractNotice: string;
   readonly emptyListHint: string;
   readonly typeLabel: string;
+  readonly triggerKeyLabel?: string;
+  readonly triggerKeyPlaceholder?: string;
   readonly typeOptions: Readonly<Record<UiWorkflowTriggerType, string>>;
   readonly statusLabels: Readonly<Record<UiWorkflowTriggerStatus, string>>;
   readonly cronLabel: string;

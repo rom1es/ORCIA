@@ -1,5 +1,7 @@
 import {
   createOrciaApiClient,
+  type DocVsCodeAuditRequest,
+  type DocVsCodeAuditResponse,
   type OntologyConceptWithPermissionsItem,
   type OntologyPromotionCreateRequest,
   type OntologyPromotionDecideRequest,
@@ -7,7 +9,12 @@ import {
   type OntologyPromotionProposalDetailItem,
   type WritableScopeOptionItem,
 } from "@orcia/api-client";
-import type { UiOntologyConceptView, UiOntologyLevel } from "@orcia/ui";
+import type {
+  UiOntologyConceptView,
+  UiOntologyLevel,
+  UiStaleAlertView,
+  UiTripartiteEdgeView,
+} from "@orcia/ui";
 import { resolveWebApiBaseUrl } from "../stores/authSessionStore";
 
 export type {
@@ -104,6 +111,39 @@ export async function decideOntologyPromotionToApi(
 ): Promise<OntologyPromotionDecideResponse> {
   const client = createGlossaryClient(locale);
   return client.decideOntologyPromotion(proposalId, payload, false);
+}
+
+export async function fetchOntologyRagStateFromApi(locale: "fr" | "en"): Promise<{
+  tripartiteEdges: UiTripartiteEdgeView[];
+  staleAlerts: UiStaleAlertView[];
+}> {
+  const client = createGlossaryClient(locale);
+  const res = await client.getOntologyAndRagState(false);
+  return {
+    tripartiteEdges: (res.tripartite_edges ?? []).map((e) => ({
+      edgeKey: e.edge_key,
+      sourceUri: e.source_uri,
+      targetUri: e.target_uri,
+      relationType: e.relation_type,
+      jiraIssueKey: e.jira_issue_key ?? null,
+    })),
+    staleAlerts: (res.stale_alerts ?? []).map((a) => ({
+      alertKey: a.alert_key,
+      documentKey: a.document_key,
+      sourceUri: a.source_uri,
+      diagnosticMarker: a.diagnostic_marker,
+      justifyingJiraKey: a.justifying_jira_key ?? null,
+      impactedRunIds: a.impacted_run_ids ?? [],
+    })),
+  };
+}
+
+export async function auditDocVsCodeToApi(
+  locale: "fr" | "en",
+  payload: DocVsCodeAuditRequest,
+): Promise<DocVsCodeAuditResponse> {
+  const client = createGlossaryClient(locale);
+  return client.auditDocVsCode(payload, false);
 }
 
 export function slugifyScopedConceptKey(

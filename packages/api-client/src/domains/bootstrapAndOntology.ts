@@ -217,8 +217,20 @@ export function createBootstrapAndOntologyDomainClient(
     },
     rollbackContextualHelp: (payload: ContextualHelpRollbackRequest, personaKey?: string) =>
       requestJson<HelpArticleSchemaItem>(`/api/v1/help/rollback${buildPersonaQuery(personaKey)}`, "POST", payload),
+    listDnaMechanisms(workspaceId: string): Promise<StarlarkMechanismResponse[]> {
+      return requestJson<StarlarkMechanismResponse[]>(
+        `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/dna-mechanisms`,
+      );
+    },
     compileDnaStarlark(workspaceId: string, payload: CompileStarlarkMechanismRequest): Promise<StarlarkMechanismResponse> {
       return requestJson<StarlarkMechanismResponse>(`/api/v1/workspaces/${encodeURIComponent(workspaceId)}/dna-mechanisms/compile`, "POST", payload);
+    },
+    activateDnaMechanism(workspaceId: string, mechanismId: string): Promise<StarlarkMechanismResponse> {
+      return requestJson<StarlarkMechanismResponse>(
+        `/api/v1/workspaces/${encodeURIComponent(workspaceId)}/dna-mechanisms/${encodeURIComponent(mechanismId)}/activate`,
+        "POST",
+        {},
+      );
     },
     runRemoteServiceTestBench(payload: TestAndDiscoverConnectorRequest): Promise<ConnectorTestBenchReportResponse> {
       return requestJson<ConnectorTestBenchReportResponse>("/api/v1/settings/connectors/test-and-discover", "POST", payload);
