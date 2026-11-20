@@ -302,7 +302,7 @@ def test_fastapi_rag_search_ddl_guard_and_tripartite_audit_endpoints() -> None:
     res_search = client.post(
         "/api/v1/ontology-rag/rag/search?fixture=true",
         json={
-            "workspace_id": "ws-claims-alpha",
+            "workspace_id": "scope-global",
             "query_text": "PAY-142 calculate_reserve",
             "top_k": 3,
         },

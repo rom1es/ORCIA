@@ -1,5 +1,5 @@
 /** @uj UJ-6 | @cap CAP-032, CAP-033 */
-import { expect, test } from "./support/e2eCaptureFixture";
+import { captureMilestoneScreenshot, expect, test } from "./support/e2eCaptureFixture";
 import { expectDbRowCount, expectDbRowExists } from "./support/dbAssertions";
 import { watchApiServerErrors } from "./support/apiErrors";
 import { resetDay0 } from "./support/day0";
@@ -147,6 +147,7 @@ test.describe("TEST-05 · 06 — Gates : briefing de revue et anti-rubber-stampi
       "EXECUTED",
     );
     await expect(page.getByTestId("gates-staged-jira-status-badge")).toContainText("Exécutée");
+    await captureMilestoneScreenshot(page, testInfo, "gates-hitl-drawer");
     expectDbRowExists(
       "SELECT id, gate_type, status FROM gate_evaluations WHERE id::text = :eval_id AND gate_type = 'HUMAN' AND status = 'PASS'",
       { eval_id: evalId },

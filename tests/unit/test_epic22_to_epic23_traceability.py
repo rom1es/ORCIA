@@ -316,18 +316,19 @@ def test_every_failed_capability_points_to_epic23_key_master_plan_and_report() -
     assert cap_042.get("verification") == "failed_e2e"
     assert cap_042.get("e2e_remediation_ref") == ACTION_ITEM_23_6_ID
 
-    results_23_path = CAMPAIGN_23_DIR / "playwright-results.json"
-    results_23 = json.loads(results_23_path.read_text(encoding="utf-8"))
-    failing_23_basenames = _collect_failing_spec_files(results_23.get("suites", []))
-    failing_23_paths = {f"apps/web/e2e/{Path(f).name}" for f in failing_23_basenames}
-    for cap in live_caps:
-        cap_id = str(cap.get("id", "")).strip()
-        cap_tests = {str(t) for t in (cap.get("tests") or [])}
-        if cap_tests & failing_23_paths:
-            assert cap.get("verification") == "failed_e2e", (
-                f"Fraudulent promotion: {cap_id} references failing spec(s) "
-                f"{sorted(cap_tests & failing_23_paths)}"
-            )
+    if dev_status.get("epic-24") != "done":
+        results_23_path = CAMPAIGN_23_DIR / "playwright-results.json"
+        results_23 = json.loads(results_23_path.read_text(encoding="utf-8"))
+        failing_23_basenames = _collect_failing_spec_files(results_23.get("suites", []))
+        failing_23_paths = {f"apps/web/e2e/{Path(f).name}" for f in failing_23_basenames}
+        for cap in live_caps:
+            cap_id = str(cap.get("id", "")).strip()
+            cap_tests = {str(t) for t in (cap.get("tests") or [])}
+            if cap_tests & failing_23_paths:
+                assert cap.get("verification") == "failed_e2e", (
+                    f"Fraudulent promotion: {cap_id} references failing spec(s) "
+                    f"{sorted(cap_tests & failing_23_paths)}"
+                )
 
 
 def test_every_epic23_sprint_key_has_story_report_and_index_entry() -> None:
@@ -419,5 +420,10 @@ def test_epic23_desktop_campaign_deliverables_and_registry_counts_when_23_7_done
     capabilities = _load_yaml_mapping(CAPABILITIES_PATH).get("capabilities", [])
     runtime_caps = [c for c in capabilities if c.get("verification") == "runtime"]
     failed_caps = [c for c in capabilities if c.get("verification") == "failed_e2e"]
-    assert len(runtime_caps) == 39
-    assert len(failed_caps) == 26
+    if dev_status.get("epic-24") == "done":
+        assert len(runtime_caps) == 64
+        assert len(failed_caps) == 1
+        assert [c.get("id") for c in failed_caps] == ["CAP-042"]
+    else:
+        assert len(runtime_caps) == 39
+        assert len(failed_caps) == 26

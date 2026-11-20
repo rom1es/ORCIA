@@ -253,14 +253,14 @@ development_status:
 
   # Epic 24 — Remédiation Finale Case B post-23.7 : Persistance PG18 (Jira Staged, MCP, VSM v2), Triggers UUIDv7, Waivers & ADN, CSS Tailwind v4, Navigation Zone 4, Zéro Jargon & Preuve Desktop 52/52 (REM24-01..REM24-12, USER24-BUG-1..6)
   # Plan directeur : docs/planning-artifacts/sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md
-  epic-24: in-progress
+  epic-24: done
   24-1-persistance-pg18-actions-jira-staged-mcp-et-vsm-v2: done
   24-2-triggers-uuidv7-sans-collision-waivers-await-adn-pg18-et-fin-default-ws: done
   24-3-banc-mcp-audit-ledger-fin-pass-optimiste-et-assainissement-composition-root: done
   24-4-refonte-css-tailwind-tokens-modales-rgaa-contraste-onglets-et-shell: done
   24-5-identite-accostage-cockpit-sync-navigation-zone4-et-coherence-jour0: done
   24-6-recherche-cmdk-filtre-langue-purge-jargon-packs-et-microcopy: done
-  24-7-reconciliation-e2e-captures-jalons-campagne-52-sur-52-et-cloture-epic-24: backlog
+  24-7-reconciliation-e2e-captures-jalons-campagne-52-sur-52-et-cloture-epic-24: done
   epic-24-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
@@ -1341,3 +1341,41 @@ action_items:
       Suite à l'arbitrage utilisateur du 2026-11-17 sur la Story 20.4 (page `/profile` inspirée de ChatGPT), la carte identité, les 4 KPIs
       (total tokens, pic tokens, série la plus longue, série en cours) et les éléments populaires sont livrés dans la Story 20.4, tandis que
       la Heatmap 12 mois et le tableau de statistiques avancées sont planifiés en lot dédié `ACTION_ITEM-20.1`.
+  - id: ACTION_ITEM-24.1
+    title: "Polissage UX modéré post-Epic 24 (UX24-01..03 : onglet Mon Organisation, flash sidebar F5 & aperçu What-If)"
+    action: >
+      Traiter les 3 constats P2 relevés lors du contre-audit Sally × Winston (e2e-campaign-epic-24) :
+      (1) UX24-01 : éviter la troncature du 6e onglet « Mon Organisation » (« Mon Organ ») sur /settings à 1440×900 avec Zone 4 ouverte (wrap/scroll ou libellé compact) ;
+      (2) UX24-02 : éliminer le flash transitoire de grisage des 7 entrées sidebar durant la réhydratation getAccostageStatus après reloadClearingStorage (ex. /showcase) ;
+      (3) UX24-03 : remplacer les identifiants bruts résiduels (PM_BUSINESS, delegate-remediation-subworkflow, dependent_on_human_architecture_intent) dans l'aperçu What-If du jalon ambre.
+    priority: P2
+    depends_on:
+      - 24-7-reconciliation-e2e-captures-jalons-campagne-52-sur-52-et-cloture-epic-24
+    owner: "Sally (UX) / Amelia (Dev)"
+    status: open
+    epic: epic-24
+    story_ref: "24-7-reconciliation-e2e-captures-jalons-campagne-52-sur-52-et-cloture-epic-24"
+    tech_lead_report: "docs/implementation-artifacts/e2e-campaign-epic-24/synthese-remediation-sally-winston-epic-24.md"
+    description: >
+      Suivi post-clôture Epic 24 (verdict Case A, 0 P0 / 0 P1) des 3 constats UX24-01..03 consignés dans
+      docs/implementation-artifacts/e2e-campaign-epic-24/notes-audit-sally-ux.md.
+  - id: ACTION_ITEM-24.2
+    title: "Hygiène mineure UX & architecture post-Epic 24 (UX24-04..07 & découplage strict AgentsAndSkills)"
+    action: >
+      Traiter les 4 constats P3 UX/UI et le P3 architecture issus du contre-audit Sally × Winston :
+      (1) UX24-04 : normaliser les accents avant troncature dans normalize_identifier_slug() (éviter @agent-e2e-conformit) ;
+      (2) UX24-05 : masquer la clé technique Demande_initiale_... devant le libellé humain dans Process Studio v2 ;
+      (3) UX24-06 : raccourcir les placeholders / masquer la colonne droite vide sur /ontology et polir (/LOGIN) / step-architecture-gate ;
+      (4) UX24-07 : enrichir la capture milestone-gates-hitl-drawer avec l'ouverture effective du tiroir HITL d'un run V2 ;
+      (5) P3 Architecture (Winston) : achever le découplage strict de AgentsAndSkills via port hexagonal dédié.
+    priority: P3
+    depends_on:
+      - 24-7-reconciliation-e2e-captures-jalons-campagne-52-sur-52-et-cloture-epic-24
+    owner: "Sally (UX) / Winston (Architect) / Amelia (Dev)"
+    status: open
+    epic: epic-24
+    story_ref: "24-7-reconciliation-e2e-captures-jalons-campagne-52-sur-52-et-cloture-epic-24"
+    tech_lead_report: "docs/implementation-artifacts/e2e-campaign-epic-24/synthese-remediation-sally-winston-epic-24.md"
+    description: >
+      Suivi post-clôture Epic 24 des 4 constats P3 UX24-04..07 et du P3 architecture consignés dans
+      docs/implementation-artifacts/e2e-campaign-epic-24/synthese-remediation-sally-winston-epic-24.md.

@@ -60,8 +60,8 @@ capabilities:
     uj: [UJ-9, UJ-19]
     db_tables: [catalog_items, catalog_acl_entries, workspace_customization_overrides]
     tests: [apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts, apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/test_federated_catalog.py]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-7-reconciliation-e2e-captures-jalons-campagne-52-sur-52-et-cloture-epic-24"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces: { route: /catalog, api: /api/v1 (catalog.py), ui: CatalogExplorerPanel }
   - id: CAP-003
     title: Exécution passthrough / service principal et Permission Broker (lien Jira pré-rempli)
@@ -133,8 +133,8 @@ capabilities:
       - tests/security/test_story_20_2_ontology_rbac_isolation.py
       - tests/integration/api/test_story_20_2_ontology_promotions_postgres18.py
       - apps/web/src/__tests__/story-20-2-glossaire-ontology-and-promotions.test.tsx
-    verification: failed_e2e
-    e2e_remediation_ref: "24-2-triggers-uuidv7-sans-collision-waivers-await-adn-pg18-et-fin-default-ws"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces:
       route: /ontology
       api: "/api/v1/ontology-rag (ontology_and_rag.py + ontology_promotions.py)"
@@ -150,8 +150,8 @@ capabilities:
     uj: [UJ-3, UJ-18]
     db_tables: [kb_documents, kb_chunks, code_graph_edges, tripartite_trace_edges, kb_stale_alerts]
     tests: [apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, tests/unit/test_hybrid_rag_and_tripartite.py, tests/integration/test_epics_1_7_vertical_sql_wiring_postgres18.py]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-2-triggers-uuidv7-sans-collision-waivers-await-adn-pg18-et-fin-default-ws"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces: { route: /ontology, api: /api/v1/ontology-rag }
 
   # ───────────── Orchestration, assistant DAG, human-led (Epic 3) ─────────────
@@ -165,8 +165,8 @@ capabilities:
     uj: [UJ-1, UJ-10]
     db_tables: [workflow_definitions, catalog_items]
     tests: [tests/unit/test_workflow_as_code_and_run_lock.py, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-1-persistance-pg18-actions-jira-staged-mcp-et-vsm-v2"
+    verification: runtime
+    verified_at: "2026-11-20"
   - id: CAP-021
     title: Moteur d'orchestration durable (DBOS), blackboard, checkpoints, version pinning, exécution réelle des étapes
     fr: [FR-14, FR-15]
@@ -177,8 +177,8 @@ capabilities:
     uj: [UJ-4, UJ-5, UJ-10]
     db_tables: [workflow_runs, step_executions, blackboard_snapshots, run_lock_manifests, domain_events_outbox]
     tests: [tests/unit/test_story_3_2f_step_executors_invoker_and_finance.py, tests/integration/test_story_3_2f_real_api_run_and_restart_postgres18.py, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-1-persistance-pg18-actions-jira-staged-mcp-et-vsm-v2"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces: { api: "/api/v1/orchestration + blackboard_and_engine.py" }
   - id: CAP-022
     title: Agent assistant DAG 5 nœuds (AssistantHarness 5 couches)
@@ -216,8 +216,8 @@ capabilities:
     uj: [UJ-2, UJ-3, UJ-7]
     db_tables: [upstream_challenges, workflow_runs, step_executions, blackboard_snapshots]
     tests: [tests/unit/test_story_3_5_challenge_and_replay.py, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-1-persistance-pg18-actions-jira-staged-mcp-et-vsm-v2"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces: { api: challenge_and_replay.py, ui: UpstreamChallengeRewindModal, migration: "0016" }
 
   # ───────────── Gates, sandbox, Jira (Epic 4) ─────────────
@@ -231,8 +231,8 @@ capabilities:
     uj: [UJ-6]
     db_tables: [gate_evaluations, step_executions]
     tests: [tests/unit/test_story_4_1_sandbox_tier1_and_pattern_drift.py, tests/unit/test_story_4_1a_bimodal_sandbox_and_roles.py, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-1-persistance-pg18-actions-jira-staged-mcp-et-vsm-v2"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces: { route: /gates, api: gates.py, migration: "0017" }
   - id: CAP-031
     title: Gates agentiques (orthogonalité des modèles, scrub PII, SecretRef DEK/KEK)
@@ -244,8 +244,8 @@ capabilities:
     uj: [UJ-6]
     db_tables: [gate_evaluations, inference_attempts]
     tests: [tests/unit/test_story_4_2_agentic_gates_and_secrets.py, tests/evals/test_assistant_and_ontology_evals.py, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-1-persistance-pg18-actions-jira-staged-mcp-et-vsm-v2"
+    verification: runtime
+    verified_at: "2026-11-20"
   - id: CAP-032
     title: Gates humaines adaptatives, briefing 4 blocs, validation par découpage
     fr: [FR-6, FR-19]
@@ -256,8 +256,8 @@ capabilities:
     uj: [UJ-6]
     db_tables: [gate_evaluations, chunk_approvals]
     tests: [tests/unit/test_story_4_3_adaptive_human_gates.py, apps/web/e2e/06-gates-review-and-anti-rubber-stamping.spec.ts, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-1-persistance-pg18-actions-jira-staged-mcp-et-vsm-v2"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces: { route: /gates, api: human_gates.py, ui: CognitiveReviewBriefingGrid + ChunkValidationCard, migration: "0018" }
   - id: CAP-033
     title: Actions et transitions Jira multi-projets (staged aux gates)
@@ -269,8 +269,8 @@ capabilities:
     uj: [UJ-3, UJ-6]
     db_tables: [gate_evaluations, enterprise_connectors, audit_ledger]
     tests: [tests/unit/test_story_4_4_jira_staged_actions_and_mcp.py, apps/web/e2e/06-gates-review-and-anti-rubber-stamping.spec.ts, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-1-persistance-pg18-actions-jira-staged-mcp-et-vsm-v2"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces: { api: jira_and_mcp.py }
 
   # ───────────── Supervision & expérience (Epic 5) ─────────────
@@ -324,8 +324,8 @@ capabilities:
     uj: [UJ-14]
     db_tables: [role_permission_grants, iam_accounts, org_units]
     tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, tests/unit/test_story_17_3_iam_accounts_and_role_matrix.py, tests/unit/test_evaluator_multi_lead_rollup.py, tests/integration/api/test_story_17_3_iam_accounts_and_secops_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-5-identite-accostage-cockpit-sync-navigation-zone4-et-coherence-jour0"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces: { route: /settings, api: "/api/v1/settings/iam (iam_accounts.py, settings_and_studio.py) + orcia_core/permissions/hierarchical_rbac.py + orcia_core/permissions/org_topology.py", migration: "20261111_1703 + 20261115_1902" }
   - id: CAP-051
     title: Annuaire des comptes (anti-lockout), mot de passe temporaire 12 car., matrice des 6 rôles en modale, exceptions SecOps et modale copier-coller
@@ -408,8 +408,8 @@ capabilities:
     uj: [UJ-19]
     db_tables: [workflow_definitions, declarative_pack_bundles]
     tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-3-banc-mcp-audit-ledger-fin-pass-optimiste-et-assainissement-composition-root"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces: { route: /settings, api: studio_and_wizards.py, ui: SettingsPacksSection }
   - id: CAP-056
     title: Packs métiers — catalogue backend, écran simplifié, activation unique
@@ -421,8 +421,8 @@ capabilities:
     uj: [UJ-19]
     db_tables: [declarative_pack_bundles, catalog_items, platform_settings]
     tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-6-recherche-cmdk-filtre-langue-purge-jargon-packs-et-microcopy"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces: { route: /settings }
   - id: CAP-057
     title: Wizards d'initialisation durables
@@ -434,8 +434,8 @@ capabilities:
     uj: [UJ-19]
     db_tables: [wizard_sessions]
     tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-6-recherche-cmdk-filtre-langue-purge-jargon-packs-et-microcopy"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces: { route: /wizards, api: studio_and_wizards.py }
   - id: CAP-058
     title: Coquille Settings à 5 onglets réservée aux Administrateurs Plateforme (PLATFORM_ADMIN) & SecOps, délégation Mon Organisation (/organization) et gouvernance Authentification
@@ -661,8 +661,8 @@ capabilities:
     uj: [UJ-9, UJ-18]
     db_tables: [workspaces, workspace_datasources, workspace_exception_waivers, workspace_customization_overrides]
     tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx, tests/unit/test_story_18_2_freshness_sha256_probe_and_codegraph_worker.py, tests/integration/api/test_story_18_2_webhooks_outbox_and_freshness_postgres18.py]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-7-reconciliation-e2e-captures-jalons-campagne-52-sur-52-et-cloture-epic-24"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces: { route: "/spaces, /workspaces, /workspaces/$wsId, /workspaces/$wsId/sources", api: "workspace_governance.py + workspace_datasources.py + datasource_webhooks.py", ui: "WorkspaceSourcesRagTab + WorkspaceSourcesMasterTable", migration: "0026 + 20261111_1704 + 20261114_1801 + 20261114_1802" }
   - id: CAP-081
     title: Chaîne ADN et glossaire (règles métier « à valider », extraction)
@@ -674,8 +674,8 @@ capabilities:
     uj: [UJ-5, UJ-18]
     db_tables: [ontology_concepts, ontology_promotion_proposals, ontology_rejected_candidates]
     tests: [apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, tests/unit/test_epic_11_story_11_2_dna_starlark_and_glossary.py, tests/integration/test_story_11_2_dna_and_glossary_postgres18_redis.py]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-2-triggers-uuidv7-sans-collision-waivers-await-adn-pg18-et-fin-default-ws"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces: { api: dna_and_glossary.py, migration: "0027" }
   - id: CAP-082
     title: Services MCP, agents distants A2A et banc de test
@@ -687,8 +687,8 @@ capabilities:
     uj: [UJ-9, UJ-19]
     db_tables: [catalog_items, enterprise_connectors, audit_ledger]
     tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/test_epic_11_story_11_3_test_bench_and_mcp_exposure.py, tests/integration/test_story_11_3_mcp_and_test_bench_postgres18_redis.py, tests/unit/connectors/test_story_18_3_codegraph_mcp_tools_and_providers.py]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-3-banc-mcp-audit-ledger-fin-pass-optimiste-et-assainissement-composition-root"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces: { api: "mcp_and_test_bench.py + codegraph_mcp.py" }
   - id: CAP-083
     title: Atelier orcia-pack-builder (processus 1-5, generate-and-attach, validate_help)
@@ -771,8 +771,8 @@ capabilities:
     uj: [UJ-14]
     db_tables: [org_units, workspaces, workspace_memberships, workspace_invitations, iam_accounts]
     tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/src/__tests__/scope-switcher-and-org-sync.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx, tests/unit/test_story_17_2_org_hierarchy.py, tests/unit/test_story_17_2_pg_guard_and_reconcilers.py, tests/unit/test_evaluator_multi_lead_rollup.py, tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-5-identite-accostage-cockpit-sync-navigation-zone4-et-coherence-jour0"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces: { route: "/spaces, /organization", api: "org_and_workspaces.py, org_units.py, org_unit_invitations.py, sql_org_iam_role_sync.py", ui: "OrganizationPageView + SettingsOrganizationUnitsBlock + OrgPedagogicalCallout + CreateOrgUnitModal + EditOrgUnitModal + ManageOrgUnitMembersModal + ConfirmDeleteOrgUnitModal + InviteOrganizationUserModal + OrciaUserPillsSelect", migration: "20261111_1702 + 20261115_1902 + 20261117_2001" }
   - id: CAP-075
     title: Assistant — streaming réel, bouton Stop, réflexion progressive repliable, sauvegarde des conversations, pièces jointes, citations RAG, autosave/autocomplete
@@ -810,8 +810,8 @@ capabilities:
     uj: [UJ-18]
     db_tables: [workspaces, ontology_concepts, catalog_items]
     tests: [apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, packages/ui/src/__tests__/workspace-governance-and-packs.test.tsx, tests/unit/test_epic_11_story_11_4_pack_builder_processes.py]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-2-triggers-uuidv7-sans-collision-waivers-await-adn-pg18-et-fin-default-ws"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces: { route: /spaces, api: pack_builder.py }
   - id: CAP-092
     title: Menu « Mes agents » — visibilité des packs et pont vers l'assistant
@@ -823,8 +823,8 @@ capabilities:
     uj: [UJ-19]
     db_tables: [catalog_items, declarative_pack_bundles]
     tests: [packages/ui/src/__tests__/agents-and-skills.test.tsx, tests/unit/test_agents_and_skills_router_and_service.py, apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-3-banc-mcp-audit-ledger-fin-pass-optimiste-et-assainissement-composition-root"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces: { route: /agents }
   - id: CAP-068
     title: Documentation / FAQ — lien workspace ↔ org unit
@@ -851,8 +851,8 @@ capabilities:
     uj: [UJ-10, UJ-19]
     db_tables: [vsm_definitions_v2, workflow_definitions_v2, declarative_pack_bundles, claim_check_artifacts, workflow_runs]
     tests: [tests/integration/api/test_dbos_return_loops_and_claim_check.py, tests/unit/core/test_generic_gate_runners_and_auto_heal.py, apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx, apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-1-persistance-pg18-actions-jira-staged-mcp-et-vsm-v2"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces: { route: "/processes + /processes/vsm/$vsmId + /processes/studio/$workflowId", api: "/api/v1/vsm + /api/v1/workflows/v2 + /api/v1/runs (workflows.py)", ui: "ProcessesHubPage + ValueStreamMapView + StepDetailSheet + ReturnLoopsSvgOverlay + WorkflowFiveBlocksCanvas + StudioCopilotSidebar + InteractiveRunDrawer", migration: 20261108_0910_declarative_packs_and_workflows_v2.py }
   - id: CAP-150
     title: Simplification Architecturale des Packs 100 % Déclaratifs (packs/sdlc & packs/orcia-docs), Fusion de orcia-kernel dans orcia-core.kernel & Package Unifié packages/orcia-connectors
@@ -864,8 +864,8 @@ capabilities:
     uj: [UJ-19]
     db_tables: [declarative_pack_bundles, vsm_definitions_v2, workflow_definitions_v2]
     tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/connectors/test_connector_protocol_and_write_preview.py, tests/unit/core/test_core_domain_isolation.py, tests/unit/packs/test_declarative_packs_loading.py, apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-3-banc-mcp-audit-ledger-fin-pass-optimiste-et-assainissement-composition-root"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces: { route: /settings/packs, api: "/api/v1/packs (packs.py)", ui: PacksRegistryPage }
   - id: CAP-160
     title: Orchestration réflexive (Mon Assistant, Mes Agents & Processus pilotés par l'objectif), exploration chirurgicale #Lstart-end et dualité Objectif vs Jalons
@@ -919,8 +919,8 @@ capabilities:
       - tests/integration/api/test_story_18_1_workspace_sources_postgres18.py
       - tests/integration/api/test_story_18_2_webhooks_outbox_and_freshness_postgres18.py
       - apps/web/src/__tests__/story-18-1-workspace-sources-route-modal-and-f5.test.tsx
-    verification: failed_e2e
-    e2e_remediation_ref: "24-2-triggers-uuidv7-sans-collision-waivers-await-adn-pg18-et-fin-default-ws"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces:
       route: "/workspaces/$wsId, /workspaces/$wsId/sources"
       api: "workspace_datasources.py, datasource_webhooks.py, codegraph_mcp.py"
@@ -979,8 +979,8 @@ capabilities:
     kind: feature
     uj: [UJ-8]
     db_tables: [audit_ledger, finops_scope_budgets, finops_workflow_baselines, finops_budget_overrides, finops_connector_quotas]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-3-banc-mcp-audit-ledger-fin-pass-optimiste-et-assainissement-composition-root"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces:
       route: /finops
       api: "finops.py, finops_remote.py, audit_ledger.py, finops_cognitive.py"
@@ -1019,8 +1019,8 @@ capabilities:
     kind: feature
     uj: [UJ-11, UJ-12]
     db_tables: [autonomy_contracts, workflow_triggers, trigger_webhook_deliveries, autonomous_post_hoc_audits, workflow_runs]
-    verification: failed_e2e
-    e2e_remediation_ref: "24-2-triggers-uuidv7-sans-collision-waivers-await-adn-pg18-et-fin-default-ws"
+    verification: runtime
+    verified_at: "2026-11-20"
     surfaces:
       route: "/processes, /processes/studio/$workflowId, /finops"
       api: "autonomy_contracts.py (GET/POST/revoke autonomy-contract, POST runs/autonomous); workflow_triggers.py (CRUD/test triggers, webhooks/{trigger_id}, triggers/alerts); autonomous_supervision.py (GET autonomous-runs, POST emergency-stop, POST invalidate-and-restore, POST post-hoc-review); finops_cognitive.py (autonomous_governance); portal_and_help.py (autonomous metadata); workflows.py (WorkflowPublished)"

@@ -1,5 +1,5 @@
 /** @uj UJ-5, UJ-18 | @cap CAP-010, CAP-011, CAP-080, CAP-081, CAP-084, CAP-180 */
-import { expect, test } from "./support/e2eCaptureFixture";
+import { captureMilestoneScreenshot, expect, test } from "./support/e2eCaptureFixture";
 import { resetDay0 } from "./support/day0";
 import { expectDbRowCount, expectDbRowExists } from "./support/dbAssertions";
 import { bootstrapAdminSession, getBearerTokenFromSession } from "./support/authAndOrgHelpers";
@@ -180,7 +180,7 @@ test.describe("Sources d'espace multi-nature, graphe de code, glossaire, ontolog
 
   test("Chaîne ADN Starlark, dérogations d'espace et graphe tripartite RAG persistent en base après F5", async ({
     page,
-  }) => {
+  }, testInfo) => {
     await bootstrapAdminSession(page);
     const ws = await createOrgAndWorkspaceWithId(page, {
       name: "Espace ADN Tripartite",
@@ -271,6 +271,8 @@ test.describe("Sources d'espace multi-nature, graphe de code, glossaire, ontolog
     await expect(page.locator('[data-testid^="tripartite-edge-"]').first()).toBeVisible({
       timeout: 15000,
     });
+    await page.getByTestId("tripartite-graph-section").scrollIntoViewIfNeeded();
+    await captureMilestoneScreenshot(page, testInfo, "ontology-tripartite-waivers");
 
     expectDbRowCount(
       "SELECT COUNT(*)::int AS count FROM kb_documents WHERE workspace_id = :ws_id",

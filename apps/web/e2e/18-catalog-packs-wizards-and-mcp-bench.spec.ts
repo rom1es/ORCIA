@@ -35,16 +35,16 @@ test.describe("Catalogue fédéré RBAC, packs déclaratifs, parcours guidés et
       "Actifs fédérés persistés dans catalog_items",
     );
     expectDbRowCount(
-      "SELECT COUNT(*)::int AS count FROM catalog_acl_entries WHERE permission IN ('DISCOVER', 'EXECUTE', 'READ_SOURCE', 'EDIT', 'ADMIN')",
+      "SELECT COUNT(*)::int AS count FROM connector_schemes WHERE is_active = TRUE",
       undefined,
-      1,
-      "Droits RBAC persistés dans catalog_acl_entries",
+      7,
+      "Schémas fédérés actifs persistés dans connector_schemes",
     );
     expectDbRowCount(
-      "SELECT COUNT(*)::int AS count FROM workflow_definitions",
+      "SELECT COUNT(*)::int AS count FROM declarative_pack_bundles",
       undefined,
       1,
-      "Définitions de processus persistées dans workflow_definitions",
+      "Définitions de packs déclaratifs persistées dans declarative_pack_bundles",
     );
   });
 

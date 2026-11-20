@@ -17,7 +17,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "techLeadReportsCount": 200,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
-    "verifiedCapabilitiesCount": 39,
+    "verifiedCapabilitiesCount": 64,
     "userJourneysCount": 20,
     "coveredUserJourneysCount": 20,
     "e2eCoveredCapabilitiesCount": 62
@@ -543,7 +543,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "phaseOrStory": "Story 24.7",
       "reportFile": "24-7-reconciliation-e2e-captures-jalons-campagne-52-sur-52-et-cloture-epic-24-tech-lead-report.md",
       "domain": "Epic 24 Vague 2 — Réconciliation Sélecteurs E2E, Captures Jalons, Campagne Figée 52/52 & Clôture (REM24-11, REM24-12, USER24-BUG-1..6, 18#1 #41, 07 #16, UX23-17)",
-      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8) : correction openCatalogOrAgentsPage (workspaceAndCatalogHelpers.ts:126-130) & 07-spaces L42, milestone-*.png < 450 KB, campagne figée 52/52 Desktop (e2e-campaign-epic-24/), contre-audit 0 P0 / 0 P1, promotion 25 CAP vers runtime & clôture conditionnelle sans Epic 25."
+      "summary": "Clôture (done, epic-24: done, verdict Sally × Winston Case A : 0 P0 / 0 P1, 3 P2 ACTION_ITEM-24.1, 4 P3 ACTION_ITEM-24.2) : openCatalogOrAgentsPage (/catalog vs /agents), 07-spaces L42 borné <main>, captures stabilisées (auth-hydrating-loader) + 3 jalons < 450 KB, campagne figée e2e-campaign-epic-24/ 52 passed / 0 failed / 0 timedOut / 3 skipped / 0 flaky (24/24 specs vertes, 61 PNG < 450 KB), bascule PLAYWRIGHT_RESULTS_PATH, promotion 25 CAP vers runtime (64/65 runtime, CAP-042 -> ACTION_ITEM-23.6), 1039 unit/sécu/evals + 92 intégration PG18 (92,17 % couv.), 9/9 Turbo (397 JS/TS), ruff/mypy --strict/lint-imports (5/5)/export_openapi (0-diff)/lint_spine (0)/check_implementation_docs (200/200) et pnpm site:sync && pnpm site:check (0 erreur)."
     },
     {
       "date": "2026-11-20",

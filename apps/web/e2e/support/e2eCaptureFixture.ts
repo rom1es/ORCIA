@@ -65,7 +65,13 @@ function removePriorStatusCaptures(specDir: string, prefix: string): void {
 async function ensureNonBlankPage(page: Page): Promise<void> {
   if (page.isClosed()) return;
   const currentUrl = page.url();
-  if (currentUrl && currentUrl !== "about:blank") return;
+  if (currentUrl && currentUrl !== "about:blank") {
+    await page
+      .getByTestId("auth-hydrating-loader")
+      .waitFor({ state: "hidden", timeout: 5000 })
+      .catch(() => undefined);
+    return;
+  }
   try {
     await page.goto("/cockpit", { waitUntil: "domcontentloaded", timeout: 8000 });
   } catch {
@@ -73,8 +79,13 @@ async function ensureNonBlankPage(page: Page): Promise<void> {
       await page.goto("/", { waitUntil: "domcontentloaded", timeout: 8000 });
     } catch {
       // Ne jamais masquer le résultat métier du test si le serveur est injoignable
+      return;
     }
   }
+  await page
+    .getByTestId("auth-hydrating-loader")
+    .waitFor({ state: "hidden", timeout: 8000 })
+    .catch(() => undefined);
 }
 
 async function captureBoundedScreenshot(

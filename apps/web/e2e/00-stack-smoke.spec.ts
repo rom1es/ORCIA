@@ -1,8 +1,9 @@
 /** @uj UJ-10, UJ-13, UJ-17 | @cap CAP-004, CAP-160 */
 import { expect, test } from "./support/e2eCaptureFixture";
+import { loginLocalViaUi } from "./support/authAndOrgHelpers";
 import { expectDbRowCount, expectDbRowExists, queryDbRows } from "./support/dbAssertions";
 import { resetDay0 } from "./support/day0";
-import { createFirstAdminAndGetBearerToken } from "./support/firstAdmin";
+import { createFirstAdminAndGetBearerToken, E2E_ADMIN } from "./support/firstAdmin";
 import { apiGet, apiPost } from "./support/typedApiRequest";
 
 test.describe("Socle E2E bi-serveur (TEST-01 & Stories 16.1–16.2 Reflexive Harness)", () => {
@@ -33,6 +34,7 @@ test.describe("Socle E2E bi-serveur (TEST-01 & Stories 16.1–16.2 Reflexive Har
   });
 
   test("Story 16.1 — l'inspection chirurgicale #L1-40 retourne 40 lignes badge Y et bloque ../ en RFC 9457", async ({
+    page,
     request,
   }) => {
     const anonResp = await apiGet<{ error_code?: string; trace_id?: string }>(
@@ -86,9 +88,13 @@ test.describe("Socle E2E bi-serveur (TEST-01 & Stories 16.1–16.2 Reflexive Har
       1,
       "packs déclaratifs de référence présents dans declarative_pack_bundles PG18",
     );
+    await loginLocalViaUi(page, { email: E2E_ADMIN.email, password: E2E_ADMIN.password });
+    await expect(page.getByTestId("four-zone-central-workspace")).toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId("auth-hydrating-loader")).toBeHidden({ timeout: 10000 });
   });
 
   test("Story 16.2 — moteur réflexif asyncio, survie F5 WAITING_WRITE_PREVIEW, approbation WritePreviewCard et flux SSE", async ({
+    page,
     request,
   }) => {
     const anonStartResp = await apiPost<{ error_code?: string }>(
@@ -179,5 +185,10 @@ test.describe("Socle E2E bi-serveur (TEST-01 & Stories 16.1–16.2 Reflexive Har
     expect(sseText).toContain("event: write_preview_requested");
     expect(sseText).toContain("event: answer_token_delta");
     expect(sseText).toContain("event: loop_completed");
+    await loginLocalViaUi(page, { email: E2E_ADMIN.email, password: E2E_ADMIN.password });
+    await expect(page.getByTestId("four-zone-central-workspace")).toBeVisible({ timeout: 20000 });
+    await page.goto("/processes");
+    await expect(page.getByTestId("four-zone-central-workspace")).toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId("auth-hydrating-loader")).toBeHidden({ timeout: 10000 });
   });
 });

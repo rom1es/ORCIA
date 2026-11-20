@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import pytest
 from fastapi.testclient import TestClient
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from orcia_api.main import create_app
@@ -97,7 +97,7 @@ def test_parse_permission_kb_markdown_valid_and_invalid_cases() -> None:
     ),
     email=st.emails(),
 )
-@settings(max_examples=20)
+@settings(max_examples=20, suppress_health_check=[HealthCheck.too_slow])
 def test_hypothesis_jira_request_url_never_contains_raw_spaces_or_unencoded_injections(
     role: str, team: str, email: str
 ) -> None:

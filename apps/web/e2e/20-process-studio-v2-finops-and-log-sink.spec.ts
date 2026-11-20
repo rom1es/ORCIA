@@ -1,5 +1,5 @@
 /** @uj UJ-8, UJ-11, UJ-12, UJ-19 | @cap CAP-092, CAP-140, CAP-200, CAP-201 */
-import { expect, test } from "./support/e2eCaptureFixture";
+import { captureMilestoneScreenshot, expect, test } from "./support/e2eCaptureFixture";
 import { resetDay0 } from "./support/day0";
 import { expectDbRowCount, expectDbRowExists } from "./support/dbAssertions";
 import { bootstrapAdminSession, getBearerTokenFromSession } from "./support/authAndOrgHelpers";
@@ -21,7 +21,7 @@ test.describe("Catalogue agents, chaîne de valeur, studio cinq blocs, autonomie
 
   test("Catalogue agents avec pont assistant, chaîne de valeur, studio cinq blocs, tiroir HITL et survie F5", async ({
     page,
-  }) => {
+  }, testInfo) => {
     await bootstrapAdminSession(page);
     await createOrgAndWorkspaceWithId(page, {
       name: "Espace Studio V2",
@@ -41,6 +41,7 @@ test.describe("Catalogue agents, chaîne de valeur, studio cinq blocs, autonomie
     await expect(page.getByTestId("vsm-interactive-view")).toBeVisible({ timeout: 30000 });
     await openVsmPage(page, "vsm-mon-compte-idea-to-prod");
     await expect(page.getByTestId("vsm-step-detail-sheet-01")).toBeVisible({ timeout: 15000 });
+    await captureMilestoneScreenshot(page, testInfo, "vsm-11-steps");
 
     await openWorkflowStudioPage(page, "wf-01-qualification-prd", "design");
     await expect(page.getByTestId("studio-five-blocks-canvas")).toBeVisible({ timeout: 15000 });

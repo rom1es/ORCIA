@@ -2,6 +2,7 @@
 import { type APIRequestContext, request as pwRequest } from "@playwright/test";
 import { resetDay0 } from "./support/day0";
 import { expectDbRowExists } from "./support/dbAssertions";
+import { loginLocalViaUi } from "./support/authAndOrgHelpers";
 import { expect, test } from "./support/e2eCaptureFixture";
 import { E2E_ADMIN } from "./support/firstAdmin";
 import { apiGet, apiPost } from "./support/typedApiRequest";
@@ -251,7 +252,9 @@ test.describe("TEST-04 · 04 — Multi-acteurs : Claim exclusif et diffusion SSE
     }
   });
 
-  test("le flux SSE d'un acteur connecté reçoit en direct la prise en charge d'un pair (< 500 ms)", async () => {
+  test("le flux SSE d'un acteur connecté reçoit en direct la prise en charge d'un pair (< 500 ms)", async ({
+    page,
+  }) => {
     const actorA = await pwRequest.newContext({ baseURL: API });
     const actorB = await pwRequest.newContext({ baseURL: API });
     const { adminToken, peerToken, workspaceId, taskId } = await setupActorsAndOpenNotification(
@@ -288,6 +291,11 @@ test.describe("TEST-04 · 04 — Multi-acteurs : Claim exclusif et diffusion SSE
         { task_id: taskId },
         "prise en charge temps réel persistée dans task_notifications PG18",
       );
+      await loginLocalViaUi(page, { email: E2E_ADMIN.email, password: E2E_ADMIN.password });
+      await expect(page.getByTestId("four-zone-central-workspace")).toBeVisible({ timeout: 20000 });
+      await page.goto("/inbox");
+      await expect(page.getByTestId("inbox-notifications-center")).toBeVisible({ timeout: 20000 });
+      await expect(page.getByTestId("auth-hydrating-loader")).toBeHidden({ timeout: 10000 });
     } finally {
       stream.abort();
       await actorA.dispose();

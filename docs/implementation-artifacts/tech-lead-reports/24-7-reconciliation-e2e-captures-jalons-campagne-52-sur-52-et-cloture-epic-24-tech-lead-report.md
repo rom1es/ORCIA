@@ -2,7 +2,7 @@
 
 - **Story :** `24-7-reconciliation-e2e-captures-jalons-campagne-52-sur-52-et-cloture-epic-24` (Epic 24 — Vague 2 `P0` Validation & Clôture)
 - **Date :** 2026-11-20
-- **Statut :** `En attente d'implémentation` (initialisé par `Story 23.8`)
+- **Statut :** `Terminé (done)` (initialisé par `Story 23.8`, validé `Case A — Clôture Epic 24 sans Epic 25` par contre-audit Sally × Winston)
 - **Plan directeur :** [`sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md`](../../planning-artifacts/sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md)
 - **Références remédiées :** `REM24-11`, `REM24-12`, **`USER24-BUG-1..6`** | Échecs E2E `18#1 #41`, `07 #16` + revalidation globale `52/52` Desktop | Constat `UX23-17` (`P3`) + contre-audit `0 P0 / 0 P1` | Diagnostics `ARCH24-06`, `ARCH24-12`
 - **Capacité(s) (`capabilities.yaml`) :** `CAP-002`, `CAP-080` (`2` capacités assignées directement + promotion finale des `25` capacités Desktop vers `runtime` ; `CAP-042` maintenue sur `ACTION_ITEM-23.6`)
@@ -61,11 +61,29 @@ Une fois les vagues `0` (`Stories 24.1..24.3`) et `1` (`Stories 24.4..24.6`) liv
 
 ## 3. Bilan des Modifications & Résultats
 
-> **Statut :** `En attente d'implémentation` — Cette section sera complétée après implémentation, campagne finale `e2e-campaign-epic-24/`, contre-audit Sally × Winston, ré-indexation GitNexus et exécution de `pnpm site:sync && pnpm site:check`.
-
-| Fichier / Composant | Action Prévue | Statut |
+### 3.1 Fichiers Développés & Modifiés
+| Fichier / Composant | Action Réalisée | Statut |
 |---|---|---|
-| `apps/web/e2e/support/workspaceAndCatalogHelpers.ts` | Distinction `/catalog` vs `/agents` (`L126-130`) | `En attente d'implémentation` |
-| `apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts` | Bornage sélecteur `L42` sur `page.getByRole("main")` | `En attente d'implémentation` |
-| Specs `00`, `04`, `06`, `17`, `20` & `e2e-campaign-epic-24/` | Attente surface établie, `milestone-*.png` `< 450 KB` & campagne `52/52` | `En attente d'implémentation` |
-| `docs/product/capabilities.yaml` & `sprint-status.yaml` | Promotion `25` CAP vers `runtime` (`64/65`) & clôture conditionnelle | `En attente d'implémentation` |
+| `apps/web/e2e/support/workspaceAndCatalogHelpers.ts` | Distinction `/catalog` (`catalog-explorer-panel`) vs `/agents` (`agents-and-skills-manager-view`) dans `openCatalogOrAgentsPage` (`L126-130`, `18#1 #41`, `ARCH24-06`) | `Terminé` |
+| `apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts` | Bornage sélecteur `L42` sur `page.getByRole("main").getByText("Espace E2E Comptabilité").first()` (`07 #16`) | `Terminé` |
+| `apps/web/e2e/support/e2eCaptureFixture.ts`, `00-stack-smoke.spec.ts`, `04-multi-actor-claim-sse.spec.ts` | Attente disparition `auth-hydrating-loader` et authentification UI préalable sur `00 #3/#4` et `04 #12` (`UX23-17`) | `Terminé` |
+| `apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts` | Alignement des assertions SQL PG18 `/catalog` sur `catalog_items`, `connector_schemes` et `declarative_pack_bundles` | `Terminé` |
+| `apps/web/e2e/06-gates-review-and-anti-rubber-stamping.spec.ts`, `17-workspace-...`, `20-process-studio-...` | Ajout des `3` captures jalons `milestone-gates-hitl-drawer.png`, `milestone-ontology-tripartite-waivers.png`, `milestone-vsm-11-steps.png` (`< 450 KB`) | `Terminé` |
+| `docs/implementation-artifacts/e2e-campaign-epic-24/` | Campagne figée `--project=desktop-cockpit --retries=0 --max-failures=0` sans `ORCIA_E2E_SEED_FIXTURES` : `playwright-results.json`, `manifest.jsonl` (`55`), `61` PNG `< 450 KB`, `bilan-execution-tests-e2e-epic-24.md`, `notes-audit-sally-ux.md`, `notes-audit-winston-architecture.md`, `synthese-remediation-sally-winston-epic-24.md` | `Terminé` |
+| `tests/unit/test_hybrid_rag_and_tripartite.py` & `tests/unit/test_epic22_to_epic23_traceability.py` | Alignement `L305` (`"ws-claims-alpha"` $\rightarrow$ `"scope-global"`, suite `484f90c` `Story 24.2`) et garde post-clôture `epic-24 == "done"` (`64 runtime / 1 failed_e2e`) | `Terminé` |
+| `infra/scripts/uj_e2e_coverage.py`, `docs/product/capabilities.yaml`, `docs/implementation-artifacts/sprint-status.yaml`, `README.md` | Bascule `PLAYWRIGHT_RESULTS_PATH` vers `e2e-campaign-epic-24/`, promotion des `25` capacités Desktop vers `runtime` (`64/65` `runtime`, `CAP-042` maintenue `ACTION_ITEM-23.6`), ouverture `ACTION_ITEM-24.1` (`P2`) & `ACTION_ITEM-24.2` (`P3`), passage `24-7` et `epic-24` à `done` | `Terminé` |
+| `apps/web/src/generated/orciaSiteManifest.ts`, `docs/site-catalog/index.html`, `dist/orcia-site/index.html` | Régénération via `pnpm site:sync` (`65` capacités, `64` `runtime`) | `Terminé` |
+
+### 3.2 Résultats Chiffrés, Métriques & Qualité
+- **Campagne E2E Desktop figée (`--project=desktop-cockpit`, `e2e-campaign-epic-24/`, `pnpm db:reset` Jour 0, `0` `ORCIA_E2E_SEED_FIXTURES`, `--retries=0 --max-failures=0`, durée `719 690,61 ms` = `11,99 min`)** :
+  - **`52 passed / 0 failed / 0 timedOut / 3 skipped (mobile-only) / 0 flaky`** sur `55` scénarios (`24/24` specs `100 % PASS`, progression **`+8`** vs Epic 23 `44/52`).
+  - **`61 / 61` captures PNG `< 450 KB`** (`55` états finaux + `6` jalons dont `milestone-gates-hitl-drawer.png` `265 728` B, `milestone-ontology-tripartite-waivers.png` `238 251` B, `milestone-vsm-11-steps.png` `253 262` B ; max `274 576` B).
+- **Contre-audit croisé Sally × Winston (`bmad-architect-worker`)** :
+  - Verdict **`Case A — Clôture Epic 24 autorisée sans Epic 25`** : **`0 P0`, `0 P1`, `3 P2` (`UX24-01..03` $\rightarrow$ `ACTION_ITEM-24.1`), `4 P3` (`UX24-04..07` + P3 Architecture $\rightarrow$ `ACTION_ITEM-24.2`)** ; `6/6` `USER24-BUG-1..6`, `17/17` `UX23-*` et `12/12` `ARCH24-*` vérifiés.
+- **Registre `docs/product/capabilities.yaml` (`65` capacités `live`)** :
+  - **`64 / 65` `verification: runtime`** (`61` `feature` + `3` `foundation` vérifiées au `2026-11-20`) ; **`1` `verification: failed_e2e`** (`CAP-042` Mobile Companion maintenue explicitement sur `ACTION_ITEM-23.6`).
+
+### 3.3 Validation Complète `AD-17` & Gates de Clôture (Post-Édition Finale)
+- **Pyramide Python (`AD-17`)** : `1039 passed, 0 failed` (`tests/unit`, `contract`, `conformance`, `evals`, `security`) + `92 passed, 0 failed` (`tests/integration` PG18 + Redis `testcontainers` sans override) ; couverture combinée **`packages/orcia-core` >= 90 % (`92,17 %`, `orcia_kernel/*` à `100,00 %`)**.
+- **Suite JS/TS (`pnpm turbo run lint typecheck test`)** : `9/9` tâches vertes (`@orcia/api-client` `20` + `@orcia/ui` `135` + `@orcia/web` `242` = **`397` tests Vitest PASS**, incluant `e2e-testids-sync-audit.test.ts` & `zero-dead-buttons-and-silent-catches-audit.test.tsx`).
+- **Garde-fous statiques, contrats & documentation** : `ruff check .` & `ruff format --check .` (`1315` fichiers), `mypy --strict packages/orcia-core packages/orcia-connectors apps/api apps/worker` (`574` fichiers, `0` erreur), `lint-imports` (`5/5` contrats sur `617` fichiers), `scripts/export_openapi.py --check` (`0-diff`), `lint_spine.py` (`0` finding), `scripts/check_implementation_docs.py` (`200/200` rapports), `pnpm site:sync && pnpm site:check` (`0` erreur, `65/65` capacités, `20/20` UJ) et `pre-commit run detect-secrets` (`0` alerte).

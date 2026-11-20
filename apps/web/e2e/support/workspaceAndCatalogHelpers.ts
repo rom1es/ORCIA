@@ -125,6 +125,12 @@ export async function openCatalogOrAgentsPage(
 ): Promise<void> {
   const route = options.route ?? "/catalog";
   await page.goto(route);
+  if (route === "/catalog") {
+    await expect(page.getByTestId("catalog-explorer-panel")).toBeVisible({
+      timeout: 30000,
+    });
+    return;
+  }
   await expect(page.getByTestId("agents-and-skills-manager-view")).toBeVisible({
     timeout: 30000,
   });
