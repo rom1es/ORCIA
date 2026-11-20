@@ -2,7 +2,7 @@
 
 - **Story :** `24-4-refonte-css-tailwind-tokens-modales-rgaa-contraste-onglets-et-shell` (Epic 24 — Vague 1 `P1–P3` UX / CSS)
 - **Date :** 2026-11-20
-- **Statut :** `En attente d'implémentation` (initialisé par `Story 23.8`)
+- **Statut :** `Terminé (`done`)`
 - **Plan directeur :** [`sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md`](../../planning-artifacts/sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md)
 - **Références remédiées :** `REM24-07`, **`USER24-BUG-1`**, **`USER24-BUG-4A`**, **`USER24-BUG-4B`**, **`USER24-BUG-5`** | Constats `UX23-02` (`P1`), `UX23-03` (`P1`), `UX23-04` (`P1`), `UX23-13` (`P2`), `UX23-14` (`P2`), `UX23-16` (double scroll) | Diagnostics `ARCH24-08`, `ARCH24-11`
 - **Capacité(s) (`capabilities.yaml`) :** `none (hygiène/ux transverse Direction C — protège les capacités runtime et failed_e2e sur les vues CAP-060, CAP-063, CAP-090, CAP-200 avant la campagne 24.7)`
@@ -76,12 +76,38 @@ L'audit visuel de Sally sur `58` captures (`notes-audit-sally-ux.md`) couplé à
 
 ## 3. Bilan des Modifications & Résultats
 
-> **Statut :** `En attente d'implémentation` — Cette section sera complétée après implémentation, passage des 5 couches `AD-17`, ré-indexation GitNexus (`npx gitnexus analyze` + `gitnexus_detect_changes()`) et exécution de `pnpm site:sync`.
+> **Statut :** `Terminé (`done`)` — Validée sur les 5 couches `AD-17` avec re-indexation GitNexus (`npx gitnexus analyze` + `gitnexus_detect_changes`), audits CSS/DOM/Chromium réel et synchronisation `pnpm site:sync && pnpm site:check`.
 
-| Fichier / Composant | Action Prévue | Statut |
+### 3.1 Tableau synthétique des fichiers développés et modifiés
+
+| Fichier / Composant | Modification réalisée | Statut |
 |---|---|---|
-| `apps/web/src/main.tsx` | Ordre import `tokens.css` avant `virtual:orcia-tailwind.css` | `En attente d'implémentation` |
-| `packages/ui/src/styles/tokens*.css` | Split `< 350` L, `@layer utilities`, contraste dark `--color-sidebar-active-fg` | `En attente d'implémentation` |
-| `packages/ui/src/components/AgentDetailAndSandboxModal.tsx` | Migration sur `OrciaDialog` (`max-h-[82vh]`, slug complet) | `En attente d'implémentation` |
-| `packages/ui/src/primitives/FourZoneDirectionCShell.tsx` | Suppression bande `#EAF2FB` & double scroll `< 900px` | `En attente d'implémentation` |
-| `packages/ui/src/primitives/finops/*` & `apps/web/src/features/finops/index.tsx` | Onglets sans fade `150ms`, `[aria-selected="true"]`, alignement en-tête | `En attente d'implémentation` |
+| `apps/web/src/main.tsx` & `apps/web/viteTailwindV4Plugin.ts` | Import `@orcia/ui/styles/tokens.css` avant `virtual:orcia-tailwind.css` et bascule `@import "tailwindcss/theme" reference;` + `@theme inline reference` (0 cycle `:root`, `--color-surface-card` préservé à `#FFFFFF`/`#111827`) | `Terminé` |
+| `packages/ui/src/styles/tokens*.css` | Split modulaire `< 280` L (`tokens.css` 11 L, `tokens-palette.css` 163 L, `tokens-dark.css` 59 L, `tokens-shell.css` 278 L, `tokens-trace.css` 118 L, `tokens-components.css` 276 L, `tokens-overlays.css` 198 L), suppression `.flex-col`/`.grid-cols-1` non-layerés & `transition` sur `.orcia-ds-tab`, contraste dark `--color-sidebar-active-fg: #93C5FD` sur `#1E293B` (`8.45:1`), verrou `@media (min-width: 768px)` (`position: relative; height: 100dvh; max-height: 100dvh; overflow: hidden;`) | `Terminé` |
+| `packages/ui/src/primitives/FourZoneDirectionCShell.tsx`, `FourZoneSidebarRail.tsx`, `FourZoneHelpAsideColumn.tsx`, `LoginScreenView.tsx`, `ShellAuthFallbackView.tsx` | Verrouillage Desktop `relative h-dvh max-h-dvh overflow-hidden`, colonnes internes `relative h-full min-h-0 overflow-y-auto` sans `calc(100vh - 52px)` ni `sticky`, mobile `min-h-screen` conservé | `Terminé` |
+| `packages/ui/src/primitives/ProgressiveDay0AccostageBanner.tsx` & `apps/web/src/features/cockpit/index.tsx` | Prop `defaultCompact`, `data-compact="true"\|"false"`, bouton `accostage-compact-toggle-btn`, compaction automatique sur `/cockpit` dès qu'un run ou arbitrage est actif | `Terminé` |
+| `packages/ui/src/primitives/UserSettingsModalDialog.tsx`, `SidebarAccountPopover.tsx`, `UserAccountDropdownTypes.ts` | Onglets horizontaux `.orcia-ds-tabs` / `.orcia-ds-tab` (`aria-orientation="horizontal"`, `USER24-BUG-4A`) et suppression du doublon `account-popover-settings-btn` (« Paramètres », `USER24-BUG-4B`) | `Terminé` |
+| `apps/web/src/components/ShellUserSettingsModal.tsx`, `useSidebarAccountSettings.ts`, `packages/ui/src/primitives/UserSettingsMcpTokensTab.tsx`, `packages/orcia-core/src/orcia_core/permissions/_mcp_token_helpers.py` | Reset `lastIssuedPlaintext` et `copiedPlaintext` à la fermeture ou changement d'onglet, libellés FR clairs (`Clé personnelle d'éditeur` / `Clé d'accès éditeur — <slug>`, repli `scope-global`) sans `IDE MCP (SPACE · default)` ni `· 60 RPM` (`USER24-BUG-5`) | `Terminé` |
+| `packages/ui/src/primitives/RadixDesignSystemPrimitives.tsx`, `AgentDetailAndSandboxModal.tsx`, `AgentTestBenchSection.tsx`, `AgentIdentityAndSkillsFields.tsx` *(nouveau, 159 L)* | Migration `AgentDetailAndSandboxModal` (`204` L) sur `OrciaDialog` (`max-h-[82vh]`, `.orcia-ds-dialog-body`, `.orcia-ds-dialog-footer` sticky, handle complet `whitespace-nowrap`) | `Terminé` |
+| `packages/ui/src/primitives/finops/FinopsGovernanceDashboardView.tsx`, `apps/web/src/features/finops/index.tsx` & `useFinopsDashboardController.ts` *(nouveau, 271 L)*, `AssistantGovernanceStudioModeB.tsx`, `ContextualHelpSectionsAndFooter.tsx`, `TopHeaderSearchCommand.tsx`, `TopHeaderSearchResultsPane.tsx`, `UserSettingsPassthroughTab.tsx` | `FinopsScopePills` unifié sur `role="tab"` + `[aria-selected="true"]` (0 `.active`), alignement `headerActions`, remplacement `text-surface-elevated` sur `bg-brand-primary` par `text-[var(--color-primary-foreground)]` | `Terminé` |
+| Suites & gardes QA (`tests/unit/test_story_24_4_mcp_token_labels.py`, `apps/web/src/__tests__/shell-desktop-viewport-scroll-lock-audit.test.tsx`, `packages/ui/src/__tests__/story-24-4-css-modals-contrast-and-tabs.test.tsx`, `css-class-integrity-audit.test.ts`, `e2e-testids-sync-audit.test.ts`, `e2e/support/layoutGeometryAssertions.ts`, `directionCSobrietyAssertions.ts`, `shell.spec.ts`, `03`, `14-auth`) | Verrouillage anti-scroll Desktop (`assertNoDesktopVerticalPageOverflow`), garde anti-cycle CSS Tailwind v4, opacité modales E2E, alignement `account-popover-personalization-btn` & audits `tokens*.css` | `Terminé` |
+
+### 3.2 Résultats chiffrés, couverture & validation 5 couches (`AD-17`)
+
+- **Couche 1a (Python unitaire & audits)** : `.venv/bin/pytest tests/unit/test_story_20_3_user_preferences_and_mcp_tokens.py tests/unit/test_story_24_4_mcp_token_labels.py tests/unit/test_codebase_architectural_anti_patterns_audit.py --cov=orcia_core.permissions._mcp_token_helpers --cov-report=term-missing --cov-fail-under=90` $\rightarrow$ **`10 passed`**, couverture **`100.00 %`** (`31 stmts, 0 miss, 4 branch, 0 brpart`).
+- **Statique Python, Architecture & Sécurité** :
+  - `.venv/bin/ruff check .` : **PASS** (`All checks passed!`) ; `.venv/bin/ruff format --check .` : **PASS** (`1309 files already formatted`).
+  - `.venv/bin/mypy --strict packages/orcia-core packages/orcia-connectors apps/api apps/worker` : **PASS** (`Success: no issues found in 574 source files`).
+  - `.venv/bin/lint-imports` : **PASS** (`Contracts: 5 kept, 0 broken`, `617 files`).
+  - `.venv/bin/python scripts/export_openapi.py --check` : **PASS** (`0-diff`).
+  - `.venv/bin/pre-commit run detect-secrets --files ...` (fichiers Story 24.4) : **Passed**.
+- **Couches 1b & 5 (Vitest, TypeScript & Build Vite)** :
+  - `pnpm turbo run lint typecheck test` : **PASS (`9 successful, 9 total`)** — `@orcia/api-client`: `3 files / 20 tests` ; `@orcia/ui`: `33 files / 131 tests` ; `@orcia/web`: `59 files / 233 tests`.
+  - `pnpm --filter @orcia/web build` : **PASS** (`dist/assets/index-CPXVz6Q7.css 58.07 kB`, `cycles_count: 0`).
+- **Couche 4/5 (Playwright E2E réel `--project=desktop-cockpit --retries=0`, `ORCIA_E2E_CAMPAIGN_DIR=/tmp/orcia-e2e-story-24-4`)** :
+  - `e2e/shell.spec.ts`, `e2e/03-human-led-anchor-and-arbitration.spec.ts`, `e2e/08-agents-skills-persistence.spec.ts`, `e2e/12-finops-and-audit-provenance.spec.ts`, `e2e/12-epic16-reflexive-trace-and-line-inspector.spec.ts`, `e2e/13-epic-7-autonomous-governance-and-supervision.spec.ts`, `e2e/14-auth-2fa-account-and-profile.spec.ts`, `e2e/16-ai-models-reindex-connectors-and-broker.spec.ts` $\rightarrow$ **`15 passed, 2 skipped, 0 failed`** (`3.8m`).
+  - Contrôle visuel des captures PNG `shell` (`FirstBootAdminSetupModal` + shell `1440×900` sans bande `#EAF2FB`), `08-agents` (`AgentDetailAndSandboxModal` opaque sur `OrciaDialog`) et `14-auth` (`UserSettingsModalDialog` onglets horizontaux opaques) validé.
+- **GitNexus & Documentation / Gouvernance** :
+  - `npx gitnexus analyze` : `40,918 nodes | 175,644 edges | 703 clusters | 1492 flows`.
+  - `gitnexus_detect_changes(repo: "/home/romain/Documents/Projects/ORCIA", scope: "all")` : `changed_count: 6`, `changed_files: 42`, `affected_count: 1492`, `risk_level: "critical"` (couche CSS/Shell transverse).
+  - `scripts/check_implementation_docs.py`, `lint_spine.py`, `pnpm site:sync && pnpm site:check` et `tests/unit/test_epic23_to_epic24_traceability.py` validés.

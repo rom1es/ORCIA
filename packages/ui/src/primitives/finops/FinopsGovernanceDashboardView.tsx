@@ -41,6 +41,7 @@ export interface FinopsGovernanceDashboardViewProps {
   readonly tiers: readonly FinopsTierRowData[];
   readonly remoteServices?: readonly RemoteServiceRowData[];
   readonly labels: FinopsDashboardLabels;
+  readonly headerActions?: React.ReactNode;
   readonly onOpenHelpSection?: (sectionId: string) => void;
   readonly onSaveBudget?: (
     scopeType: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE",
@@ -81,6 +82,7 @@ export function FinopsGovernanceDashboardView({
   tiers,
   remoteServices = [],
   labels,
+  headerActions,
   onOpenHelpSection,
   onSaveBudget,
   onSubmitOverride,
@@ -145,9 +147,11 @@ export function FinopsGovernanceDashboardView({
 
         <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
           <div
-            className="finops-scope-pills"
+            className="finops-scope-pills orcia-ds-tabs"
+            role="tablist"
+            aria-orientation="horizontal"
+            aria-label={labels.scopeSelector.currentWorkspace}
             data-testid="finops-scope-pills"
-            style={{ display: "inline-flex", borderRadius: "6px", background: "var(--color-surface-muted)", padding: "2px" }}
           >
             {(
               [
@@ -155,23 +159,22 @@ export function FinopsGovernanceDashboardView({
                 ["TEAM", "finops-scope-team", labels.scopeSelector.currentTeam],
                 ["GLOBAL", "finops-scope-global", labels.scopeSelector.entirePlatform],
               ] as const
-            ).map(([sKey, testId, label]) => (
-              <button
-                key={sKey}
-                type="button"
-                data-testid={testId}
-                className={`orcia-ds-tab ${scopeType === sKey ? "active" : ""}`}
-                style={{
-                  fontSize: "12px",
-                  padding: "4px 10px",
-                  borderRadius: "4px",
-                  background: scopeType === sKey ? "var(--color-surface-card)" : "transparent",
-                }}
-                onClick={() => onScopeChange?.(sKey)}
-              >
-                {label}
-              </button>
-            ))}
+            ).map(([sKey, testId, label]) => {
+              const selected = scopeType === sKey;
+              return (
+                <button
+                  key={sKey}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  data-testid={testId}
+                  className="orcia-ds-tab"
+                  onClick={() => onScopeChange?.(sKey)}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
 
           <button
@@ -182,6 +185,8 @@ export function FinopsGovernanceDashboardView({
           >
             {labels.configureBudgetButton}
           </button>
+
+          {headerActions}
         </div>
       </div>
 

@@ -220,7 +220,7 @@ describe("Settings Tabs (5 Tabs), Exclusive PLATFORM_ADMIN Visibility & Mon Comp
     expect(sidebarAccountBtn.textContent).not.toContain("Administrateur de la plateforme");
 
     fireEvent.keyDown(sidebarAccountBtn, { key: "Enter" });
-    fireEvent.click(screen.getByTestId("account-popover-settings-btn"));
+    fireEvent.click(screen.getByTestId("account-popover-personalization-btn"));
     expect(screen.getByTestId("user-settings-modal")).toBeDefined();
   });
 });

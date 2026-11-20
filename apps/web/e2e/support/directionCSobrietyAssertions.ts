@@ -114,6 +114,11 @@ export async function assertMaxOneDialogCloseOrCancelButton(page: Page): Promise
     );
     const errors: string[] = [];
     for (const dialog of dialogs) {
+      const dialogId = dialog.getAttribute("data-testid") ?? dialog.id ?? "dialog";
+      const bg = window.getComputedStyle(dialog).backgroundColor;
+      if (!bg || bg === "transparent" || bg === "rgba(0, 0, 0, 0)") {
+        errors.push(`${dialogId} has transparent backgroundColor (${bg})`);
+      }
       const buttons = Array.from(dialog.querySelectorAll("button")).filter((btn) => {
         const rect = btn.getBoundingClientRect();
         if (rect.width <= 0 || rect.height <= 0) return false;
@@ -126,7 +131,6 @@ export async function assertMaxOneDialogCloseOrCancelButton(page: Page): Promise
         );
       });
       if (buttons.length > 1) {
-        const dialogId = dialog.getAttribute("data-testid") ?? dialog.id ?? "dialog";
         const names = buttons.map(
           (b) => b.getAttribute("data-testid") ?? (b.textContent ?? "").trim(),
         );

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { OrciaIcon } from "../components/icons";
 
 export type UiProgressiveLlmTierMode =
@@ -36,6 +36,7 @@ export interface ProgressiveDay0AccostageLabels {
 export interface ProgressiveDay0AccostageBannerProps {
   readonly completedCount: number;
   readonly totalCount?: number;
+  readonly defaultCompact?: boolean;
   readonly orciaEnv?: "local" | "staging" | "production";
   readonly adminCreated?: boolean;
   readonly adminDisplayName?: string | null;
@@ -55,6 +56,7 @@ export interface ProgressiveDay0AccostageBannerProps {
 export function ProgressiveDay0AccostageBanner({
   completedCount,
   totalCount = 6,
+  defaultCompact = false,
   orciaEnv = "local",
   adminCreated: serverAdminCreated = false,
   adminDisplayName,
@@ -72,6 +74,11 @@ export function ProgressiveDay0AccostageBanner({
   const [bootstrapToken, setBootstrapToken] = useState<string>("");
   const [tokenDenied, setTokenDenied] = useState<boolean>(false);
   const [localAdminCreated, setLocalAdminCreated] = useState<boolean>(false);
+  const [isCompact, setIsCompact] = useState<boolean>(defaultCompact);
+
+  useEffect(() => {
+    setIsCompact(defaultCompact);
+  }, [defaultCompact]);
 
   const effectiveAdminCreated = Boolean(serverAdminCreated || localAdminCreated);
   const distinctFamilies = Array.from(
@@ -116,6 +123,7 @@ export function ProgressiveDay0AccostageBanner({
   return (
     <section
       data-testid="progressive-day0-accostage-banner"
+      data-compact={isCompact ? "true" : "false"}
       className="flex flex-col gap-3 rounded border p-3.5"
       style={{
         backgroundColor: "var(--color-bg-surface)",
@@ -131,43 +139,57 @@ export function ProgressiveDay0AccostageBanner({
             className="rounded px-2 py-0.5 font-mono text-xs font-bold"
             style={{
               backgroundColor: "var(--color-action-primary-subtle)",
-              color: "var(--color-action-primary)",
+              color: "var(--color-sidebar-active-fg)",
             }}
           >
             {progressPrefix} {effectiveCompletedCount}/{totalCount}
           </span>
         </div>
 
-        {llmTierMode === "QUICK_TRIAL_SINGLE_FAMILY" && (
-          <span
-            data-testid="accostage-single-family-amber-badge"
-            className="rounded border px-2.5 py-1 text-xs font-medium"
-            style={{
-              backgroundColor: "var(--color-bg-elevated)",
-              borderColor: "var(--color-state-warning)",
-              color: "var(--color-state-warning)",
-            }}
-          >
-            {labels.singleFamilyAmberWarning}
-          </span>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {llmTierMode === "QUICK_TRIAL_SINGLE_FAMILY" && (
+            <span
+              data-testid="accostage-single-family-amber-badge"
+              className="rounded border px-2.5 py-1 text-xs font-medium"
+              style={{
+                backgroundColor: "var(--color-bg-elevated)",
+                borderColor: "var(--color-state-warning)",
+                color: "var(--color-state-warning)",
+              }}
+            >
+              {labels.singleFamilyAmberWarning}
+            </span>
+          )}
 
-        {llmTierMode === "FULL_ORTHOGONAL_AD10" && (
-          <span
-            data-testid="accostage-dual-family-ad10-badge"
-            className="rounded border px-2.5 py-1 text-xs font-semibold"
-            style={{
-              backgroundColor: "var(--color-bg-elevated)",
-              borderColor: "var(--color-state-verified)",
-              color: "var(--color-state-verified)",
-            }}
+          {llmTierMode === "FULL_ORTHOGONAL_AD10" && (
+            <span
+              data-testid="accostage-dual-family-ad10-badge"
+              className="rounded border px-2.5 py-1 text-xs font-semibold"
+              style={{
+                backgroundColor: "var(--color-bg-elevated)",
+                borderColor: "var(--color-state-verified)",
+                color: "var(--color-state-verified)",
+              }}
+            >
+              {labels.dualFamilyAd10UnlockedBadge}
+            </span>
+          )}
+
+          <button
+            type="button"
+            data-testid="accostage-compact-toggle-btn"
+            aria-expanded={!isCompact}
+            onClick={() => setIsCompact((prev) => !prev)}
+            className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
           >
-            {labels.dualFamilyAd10UnlockedBadge}
-          </span>
-        )}
+            <OrciaIcon name={isCompact ? "chevronRight" : "chevronDown"} size={13} />
+            <span>{isCompact ? "Déplier le guide" : "Réduire"}</span>
+          </button>
+        </div>
       </div>
 
-      {/* 3-Step Welcome Setup Wizard */}
+      {/* 3-Step Welcome Setup Wizard (hidden when compacted on active Cockpit) */}
+      {!isCompact && (
       <div
         data-testid="welcome-setup-3step-wizard"
         className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(240px,1.35fr)]"
@@ -357,6 +379,7 @@ export function ProgressiveDay0AccostageBanner({
           ))}
         </div>
       </div>
+      )}
     </section>
   );
 }

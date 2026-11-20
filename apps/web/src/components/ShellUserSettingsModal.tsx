@@ -42,6 +42,7 @@ export function ShellUserSettingsModal({
   const settings = useSidebarAccountSettings({
     locale,
     modalOpen,
+    activeTab,
     labels,
     onLocaleChange,
   });

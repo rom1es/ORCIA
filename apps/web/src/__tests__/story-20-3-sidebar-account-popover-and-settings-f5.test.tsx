@@ -85,12 +85,12 @@ describe("Story 20.3 — Clean Top-Right, ChatGPT-Style Sidebar Popover, 5-Tab S
     expect(accountBtn.textContent).toContain("Martin Pecheur");
     expect(accountBtn.textContent).toContain("Responsable de Direction (BU)");
 
-    // 3. Open ChatGPT-style popover above sidebar footer
+    // 3. Open ChatGPT-style popover above sidebar footer (no duplicate "Paramètres" entry)
     fireEvent.keyDown(accountBtn, { key: "Enter" });
     const popover = await screen.findByTestId("sidebar-account-popover-menu");
     expect(popover.textContent).toContain("Personnalisation");
     expect(popover.textContent).toContain("Profil");
-    expect(popover.textContent).toContain("Paramètres");
+    expect(popover.textContent).not.toContain("Paramètres");
     expect(popover.textContent).toContain("Aide");
     expect(popover.textContent).toContain("Se déconnecter");
     // Zero emoji prefixes (UX-AUTH-DOUBLE-ICON-01)
@@ -103,9 +103,12 @@ describe("Story 20.3 — Clean Top-Right, ChatGPT-Style Sidebar Popover, 5-Tab S
     expect(screen.getByTestId("account-popover-help-center-btn")).toBeDefined();
     expect(screen.getByTestId("account-popover-showcase-btn")).toBeDefined();
 
-    // 4. Open Settings modal via Paramètres -> 5 vertical tabs
-    fireEvent.click(screen.getByTestId("account-popover-settings-btn"));
+    // 4. Open Settings modal via Personnalisation -> 5 horizontal tabs
+    fireEvent.click(screen.getByTestId("account-popover-personalization-btn"));
     expect(await screen.findByTestId("user-settings-modal")).toBeDefined();
+    expect(screen.getByTestId("user-settings-tabs").getAttribute("aria-orientation")).toBe(
+      "horizontal",
+    );
     for (const tabKey of [
       "GENERAL",
       "PERSONALIZATION",
@@ -116,7 +119,8 @@ describe("Story 20.3 — Clean Top-Right, ChatGPT-Style Sidebar Popover, 5-Tab S
       expect(screen.getByTestId(`user-settings-tab-${tabKey}`)).toBeDefined();
     }
 
-    // 5. Update theme in General tab -> persisted via PATCH /api/v1/users/me/preferences
+    // 5. Switch to General tab & update theme -> persisted via PATCH /api/v1/users/me/preferences
+    fireEvent.click(screen.getByTestId("user-settings-tab-GENERAL"));
     fireEvent.click(screen.getByTestId("settings-theme-dark"));
     await waitFor(() => {
       expect(document.documentElement.dataset.theme).toBe("dark");
@@ -151,13 +155,26 @@ describe("Story 20.3 — Clean Top-Right, ChatGPT-Style Sidebar Popover, 5-Tab S
     const plaintextVal = await screen.findByTestId("mcp-issued-plaintext-value");
     expect(plaintextVal.textContent).toContain("pat_mcp_");
     expect(plaintextVal.textContent).not.toBe("pat_mcp_9a8b7c6d5e4f3a2b1c0d");
+    expect(screen.getByTestId("mcp-tokens-list").textContent).not.toContain("IDE MCP (SPACE · default)");
+    expect(screen.getByTestId("mcp-tokens-list").textContent).not.toContain("· 60 RPM");
+
+    // Closing & reopening the modal resets the one-time plaintext secret banner (USER24-BUG-5)
+    fireEvent.click(screen.getByTestId("user-settings-modal-close-btn"));
+    await waitFor(() => {
+      expect(screen.queryByTestId("user-settings-modal")).toBeNull();
+    });
+    fireEvent.keyDown(accountBtn, { key: "Enter" });
+    fireEvent.click(await screen.findByTestId("account-popover-personalization-btn"));
+    fireEvent.click(await screen.findByTestId("user-settings-tab-IDE_MCP_KEYS"));
+    expect(screen.queryByTestId("mcp-issued-plaintext-banner")).toBeNull();
 
     // 8. Simulate full browser F5 reload (unmount + remount fresh tree)
     first.unmount();
     await renderAppAtRoute("/");
     const accountBtnReloaded = await screen.findByTestId("sidebar-open-my-account-btn");
     fireEvent.keyDown(accountBtnReloaded, { key: "Enter" });
-    fireEvent.click(await screen.findByTestId("account-popover-settings-btn"));
+    fireEvent.click(await screen.findByTestId("account-popover-personalization-btn"));
+    fireEvent.click(await screen.findByTestId("user-settings-tab-GENERAL"));
 
     // Verify theme, personalization & MCP token survived F5!
     await waitFor(() => {

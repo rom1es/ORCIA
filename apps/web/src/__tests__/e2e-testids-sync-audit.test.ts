@@ -57,6 +57,15 @@ describe("Anti-False-Positive Lock 1 — 100% E2E data-testid Selectors Synced W
       prefixMatch = prefixTplRegex.exec(uiCorpus);
     }
 
+    const suffixTplRegex = /`(\$\{[^}]+\}-[a-z0-9-]+)`/g;
+    let suffixMatch: RegExpExecArray | null = suffixTplRegex.exec(uiCorpus);
+    while (suffixMatch !== null) {
+      const rawTpl = suffixMatch[1] ?? "";
+      const parts = rawTpl.split(/\$\{[^}]+\}/g).map(escapeRegExp);
+      dynamicMatchers.push(new RegExp(`^${parts.join(".*")}$`));
+      suffixMatch = suffixTplRegex.exec(uiCorpus);
+    }
+
     const e2eFiles = collectFiles(E2E_DIR, [".ts"], new Set(["node_modules"]));
     expect(e2eFiles.length).toBeGreaterThanOrEqual(24);
 

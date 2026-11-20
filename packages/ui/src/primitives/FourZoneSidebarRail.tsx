@@ -71,10 +71,9 @@ export function FourZoneSidebarRail({
       data-testid="four-zone-sidebar"
       data-rail-collapsed={railCollapsed ? "true" : "false"}
       aria-label={labels.sidebarAriaLabel}
-      className="flex shrink-0 flex-col justify-between overflow-y-auto border-r p-2 transition-all"
+      className="relative flex h-full min-h-0 shrink-0 flex-col justify-between overflow-y-auto border-r p-2 transition-all"
       style={{
         width: sidebarWidth,
-        maxHeight: "calc(100vh - 52px)",
         overflowY: "auto",
         backgroundColor: "var(--color-bg-surface)",
         borderColor: "var(--color-border-subtle)",

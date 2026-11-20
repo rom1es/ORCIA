@@ -7,7 +7,16 @@ const REPO_ROOT = path.resolve(__dirname, "../../../..");
 const WEB_DIR = path.join(REPO_ROOT, "apps/web");
 const WEB_SRC_DIR = path.join(WEB_DIR, "src");
 const UI_SRC_DIR = path.join(REPO_ROOT, "packages/ui/src");
-const TOKENS_CSS_PATH = path.join(UI_SRC_DIR, "styles/tokens.css");
+const STYLES_DIR = path.join(UI_SRC_DIR, "styles");
+
+function readAllTokensCss(): string {
+  return fs
+    .readdirSync(STYLES_DIR)
+    .filter((name) => name.endsWith(".css"))
+    .sort()
+    .map((name) => fs.readFileSync(path.join(STYLES_DIR, name), "utf8"))
+    .join("\n");
+}
 
 function collectTsFiles(dir: string): string[] {
   if (!fs.existsSync(dir)) return [];
@@ -51,6 +60,9 @@ describe("CI Guardrail — Tailwind v4 Plugin Compilation, Direction C Tokens & 
     expect(compiledCss).toContain(".grid-cols-1");
     expect(compiledCss).toContain(".w-\\[680px\\]");
     expect(compiledCss).toContain(".max-h-\\[480px\\]");
+    // Guard against Tailwind v4 @theme inline emitting cyclic :root self-references
+    // (--color-surface-card: var(--color-surface-card)) that overwrite tokens-palette.css
+    expect(compiledCss).not.toMatch(/(--[a-z0-9-]+):\s*var\(\s*\1\s*\)/);
   });
 
   it("compiles critical arbitrary Tailwind v4 sizing & layout classes (.z-50, .h-[580px], .max-w-[820px], .pl-5, .grid-cols-1)", async () => {
@@ -91,8 +103,8 @@ describe("CI Guardrail — Tailwind v4 Plugin Compilation, Direction C Tokens & 
     expect(css).toContain(".grid-cols-1");
   });
 
-  it("defines Direction C stacking tokens (--z-overlay, --z-dialog) in tokens.css and keeps #hex colors + #6D28D9 strictly isolated", () => {
-    const tokensCss = fs.readFileSync(TOKENS_CSS_PATH, "utf8");
+  it("defines Direction C stacking tokens (--z-overlay, --z-dialog) in tokens*.css and keeps #hex colors + #6D28D9 strictly isolated", () => {
+    const tokensCss = readAllTokensCss();
     expect(tokensCss).toContain("--z-overlay:");
     expect(tokensCss).toContain("--z-dialog:");
     expect(tokensCss).toContain("--z-popover:");

@@ -1,0 +1,59 @@
+/**
+ * ORCIA Design System — Dark Theme Tokens (`[data-theme="dark"]`).
+ * Enforces WCAG 2.2 AA contrast >= 4.5:1 on active sidebar items, tabs, and badges.
+ */
+
+[data-theme="dark"] {
+  --color-sidebar-bg: #0F172A;
+  --color-sidebar-foreground: #F8FAFC;
+  --color-sidebar-muted: #94A3B8;
+  --color-sidebar-border: #1E293B;
+  --color-sidebar-active-bg: #1E293B;
+  /* #93C5FD on #1E293B => 8.45:1 WCAG AAA contrast */
+  --color-sidebar-active-fg: #93C5FD;
+  --color-sidebar-search-bg: #1E293B;
+
+  --color-surface-bg: #0B0F17;
+  --color-surface-hero: #0F172A;
+  --color-surface-card: #111827;
+  --color-surface-hover: #1E293B;
+  --color-dock-bg: #0F172A;
+  --color-foreground: #F8FAFC;
+  --color-muted-foreground: #94A3B8;
+  --color-border: #1E293B;
+  --color-border-strong: #334155;
+  --color-border-focus: #60A5FA;
+  --color-primary-cobalt: #2563EB;
+  --color-modal-backdrop: rgba(2, 6, 23, 0.72);
+
+  --color-bg-elevated: #1E293B;
+  --color-surface-base: #0F172A;
+  --color-surface-muted: #1E293B;
+  --color-surface-secondary: #1E293B;
+  --color-action-primary-subtle: #1E293B;
+  --color-gate-emerald-bg: rgba(5, 150, 105, 0.16);
+  --color-arbitration-bg: rgba(217, 119, 6, 0.16);
+  --color-help-example-bg: rgba(217, 119, 6, 0.16);
+  --color-help-example-border: #D97706;
+  --color-help-example-title: #FCD34D;
+  --color-help-example-text: #FEF3C7;
+  --color-stale-bg: rgba(220, 38, 38, 0.16);
+
+  --color-tab-active-bg: #2563EB;
+  --color-tab-active-fg: #FFFFFF;
+  --color-tab-active-border: #3B82F6;
+  --color-tab-inactive-bg: #1E3A8A;
+  --color-tab-inactive-hover-bg: #1D4ED8;
+  --color-tab-inactive-fg: #DBEAFE;
+  --color-tab-inactive-border: #3B82F6;
+
+  /* StatusBadge Cobalt Tokens (Dark mode) */
+  --color-badge-cobalt-bg: rgba(37, 99, 235, 0.18);
+  --color-badge-cobalt-fg: #93C5FD;
+  --color-badge-cobalt-border: rgba(96, 165, 250, 0.35);
+
+  /* AutonomousExecutionBadge Cyan/Cobalt Tokens (Dark mode) */
+  --color-autonomous-badge-bg: rgba(2, 132, 199, 0.18);
+  --color-autonomous-badge-fg: #38BDF8;
+  --color-autonomous-badge-border: rgba(56, 189, 248, 0.38);
+}

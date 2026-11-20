@@ -3,6 +3,7 @@ import { captureMilestoneScreenshot, expect, test } from "./support/e2eCaptureFi
 import { expectDbRowExists } from "./support/dbAssertions";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
+import { assertNoDesktopVerticalPageOverflow } from "./support/layoutGeometryAssertions";
 import { createBuAndTeamViaUi, createWorkspaceViaUi } from "./support/orgAndWorkspace";
 import { apiGet, apiPost, reloadColdFromPg } from "./support/typedApiRequest";
 
@@ -53,6 +54,13 @@ test.describe("TEST-04 · 03 — Human-Led : ancrage obligatoire et arbitrage", 
 
     const section = page.getByTestId("cockpit-human-led-governance-section");
     await expect(section).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId("progressive-day0-accostage-banner")).toHaveAttribute(
+      "data-compact",
+      "true",
+    );
+    if (testInfo.project.name === "desktop-cockpit") {
+      await assertNoDesktopVerticalPageOverflow(page, "cockpit-with-active-run-and-anchor");
+    }
 
     const anchorCard = page.getByTestId("cockpit-human-led-anchor-card");
     await anchorCard.scrollIntoViewIfNeeded();

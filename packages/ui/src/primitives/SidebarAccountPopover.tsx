@@ -166,18 +166,6 @@ export function SidebarAccountPopover({
             <span className="flex-1">{labels.profileLabel}</span>
           </DropdownMenuPrimitive.Item>
 
-          <DropdownMenuPrimitive.Item
-            data-testid="account-popover-settings-btn"
-            onSelect={() => {
-              setOpen(false);
-              onOpenSettingsTab("GENERAL");
-            }}
-            className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 outline-none hover:bg-surface-hover focus:bg-surface-hover"
-          >
-            <OrciaIcon name="configuration" size={15} />
-            <span className="flex-1">{labels.settingsLabel}</span>
-          </DropdownMenuPrimitive.Item>
-
           <DropdownMenuPrimitive.Separator
             className="my-1 h-px"
             style={{ backgroundColor: "var(--color-border-subtle)" }}

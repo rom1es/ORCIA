@@ -190,8 +190,14 @@ test.describe("Auth, 2FA, compte utilisateur et profil personnel", () => {
 
     await openAccountPopover(page);
     await expect(page.getByTestId("account-popover-identity-header")).toBeVisible();
-    await page.getByTestId("account-popover-settings-btn").click();
+    const popoverMenu = page.getByTestId("sidebar-account-popover-menu");
+    await expect(popoverMenu.getByRole("menuitem", { name: /^Paramètres$/i })).toHaveCount(0);
+    await page.getByTestId("account-popover-personalization-btn").click();
     await expect(page.getByTestId("user-settings-modal")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId("user-settings-tabs")).toHaveAttribute(
+      "aria-orientation",
+      "horizontal",
+    );
     await assertMaxOneDialogCloseOrCancelButton(page);
     for (const tabKey of [
       "GENERAL",
@@ -257,6 +263,7 @@ test.describe("Auth, 2FA, compte utilisateur et profil personnel", () => {
     await expect(page.getByTestId("settings-assistant-hat-select")).toHaveValue("ARCHITECT");
     await expect(page.getByTestId("settings-assistant-tone-select")).toHaveValue("concise");
     await openUserSettingsTab(page, "IDE_MCP_KEYS");
+    await expect(page.getByTestId("mcp-issued-plaintext-banner")).toHaveCount(0);
     await expect(page.getByTestId("mcp-tokens-list")).toContainText("VSCode E2E");
 
     expectDbRowExists(

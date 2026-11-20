@@ -44,9 +44,14 @@ const SHELL_LABELS: FourZoneDirectionCShellLabels = {
 };
 
 describe("Story 17.1 — Wireframe SVG Icons, CSS Button Reset & Sidebar Collapse Rail", () => {
-  it("CA-17.1.1: defines @layer base button reset, .orcia-ds-btn-danger states, and borderless .orcia-sidebar-nav-btn in tokens.css", () => {
-    const tokensPath = path.resolve(__dirname, "../styles/tokens.css");
-    const css = fs.readFileSync(tokensPath, "utf8");
+  it("CA-17.1.1: defines @layer base button reset, .orcia-ds-btn-danger states, and borderless .orcia-sidebar-nav-btn in tokens*.css", () => {
+    const stylesDir = path.resolve(__dirname, "../styles");
+    const css = fs
+      .readdirSync(stylesDir)
+      .filter((name) => name.endsWith(".css"))
+      .sort()
+      .map((name) => fs.readFileSync(path.join(stylesDir, name), "utf8"))
+      .join("\n");
 
     expect(css).toMatch(/@layer\s+base\s*\{[\s\S]*?button\s*\{[\s\S]*?border:\s*0;/);
     expect(css).toContain(".orcia-ds-btn-danger:hover:not(:disabled)");

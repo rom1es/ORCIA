@@ -64,7 +64,8 @@ export interface SidebarAccountPopoverLabels {
   readonly triggerAriaLabel: string;
   readonly personalizationLabel: string;
   readonly profileLabel: string;
-  readonly settingsLabel: string;
+  /** @deprecated Unified under personalizationLabel (`USER24-BUG-4B`). */
+  readonly settingsLabel?: string;
   readonly helpMenuLabel: string;
   readonly helpCenterLabel: string;
   readonly showcaseLabel: string;

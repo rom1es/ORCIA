@@ -112,7 +112,7 @@ export async function openUserSettingsTab(page: Page, tab: UserSettingsTab): Pro
   const modal = page.getByTestId("user-settings-modal");
   if ((await modal.count()) === 0 || !(await modal.isVisible())) {
     await openAccountPopover(page);
-    await page.getByTestId("account-popover-settings-btn").click();
+    await page.getByTestId("account-popover-personalization-btn").click();
     await expect(modal).toBeVisible({ timeout: 15000 });
   }
   await page.getByTestId(`user-settings-tab-${tab}`).click();

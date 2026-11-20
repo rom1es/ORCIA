@@ -86,7 +86,7 @@ export function TopHeaderSearchResultsPane({
                           data-testid={`cmdk-open-btn-${hit.itemId}`}
                           onClick={() => onExecuteHit(hit)}
                           onKeyDown={(e) => handleRgaaSubmitKeyDown(e, () => onExecuteHit(hit))}
-                          className="px-2 py-0.5 rounded text-[11px] bg-brand-primary text-surface-elevated font-medium"
+                          className="px-2 py-0.5 rounded text-[11px] bg-brand-primary text-[var(--color-primary-foreground)] font-medium"
                         >
                           {hit.opensContextualHelpColumn ? labels.openHelpColumnActionLabel : labels.deepLinkActionLabel}
                         </button>
@@ -135,7 +135,7 @@ export function TopHeaderSearchResultsPane({
                         data-testid={`cmdk-open-btn-${hit.itemId}`}
                         onClick={() => onExecuteHit(hit)}
                         onKeyDown={(e) => handleRgaaSubmitKeyDown(e, () => onExecuteHit(hit))}
-                        className="px-2 py-0.5 rounded text-[11px] bg-brand-primary text-surface-elevated font-medium shrink-0"
+                        className="px-2 py-0.5 rounded text-[11px] bg-brand-primary text-[var(--color-primary-foreground)] font-medium shrink-0"
                       >
                         {hit.opensContextualHelpColumn ? labels.openHelpColumnActionLabel : labels.deepLinkActionLabel}
                       </button>
@@ -161,7 +161,7 @@ export function TopHeaderSearchResultsPane({
             data-testid="cmdk-preview-navigate-btn"
             onClick={() => onExecuteHit(previewHit)}
             onKeyDown={(e) => handleRgaaSubmitKeyDown(e, () => onExecuteHit(previewHit))}
-            className="w-full py-1 rounded text-xs bg-brand-primary text-surface-elevated font-medium"
+            className="w-full py-1 rounded text-xs bg-brand-primary text-[var(--color-primary-foreground)] font-medium"
           >
             {labels.deepLinkActionLabel}
           </button>

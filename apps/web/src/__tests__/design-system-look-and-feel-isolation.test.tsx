@@ -17,7 +17,16 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const REPO_ROOT = path.resolve(__dirname, "../../../..");
 const UI_SRC_DIR = path.join(REPO_ROOT, "packages/ui/src");
 const WEB_SRC_DIR = path.join(REPO_ROOT, "apps/web/src");
-const TOKENS_CSS_PATH = path.join(UI_SRC_DIR, "styles/tokens.css");
+const STYLES_DIR = path.join(UI_SRC_DIR, "styles");
+
+function readAllTokensCss(): string {
+  return fs
+    .readdirSync(STYLES_DIR)
+    .filter((name) => name.endsWith(".css"))
+    .sort()
+    .map((name) => fs.readFileSync(path.join(STYLES_DIR, name), "utf-8"))
+    .join("\n");
+}
 
 function walkCodeFiles(dir: string): string[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -44,7 +53,7 @@ describe("Sally & Winston Audit — 4 Golden Invariants of Look & Feel Separatio
   const uiTsFiles = uiFiles.filter((f) => /\.(ts|tsx)$/.test(f));
   const webFiles = walkCodeFiles(WEB_SRC_DIR);
   const webTsFiles = webFiles.filter((f) => /\.(ts|tsx)$/.test(f));
-  const tokensCssContent = fs.readFileSync(TOKENS_CSS_PATH, "utf-8");
+  const tokensCssContent = readAllTokensCss();
 
   it("Invariant 1 (Purity of @orcia/ui): packages/ui/src/** never imports routers, API clients, fetch, or apps/web stores", () => {
     for (const filePath of uiTsFiles) {

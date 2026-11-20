@@ -6,8 +6,8 @@ const VIRTUAL_MODULE_ID = "virtual:orcia-tailwind.css";
 const RESOLVED_VIRTUAL_MODULE_ID = `\0${VIRTUAL_MODULE_ID}`;
 
 const TAILWIND_INPUT_CSS = `
-@import "tailwindcss/theme";
-@theme inline {
+@import "tailwindcss/theme" reference;
+@theme inline reference {
   --color-surface: var(--color-surface);
   --color-surface-card: var(--color-surface-card);
   --color-surface-elevated: var(--color-surface-elevated);

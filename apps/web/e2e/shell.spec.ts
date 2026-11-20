@@ -9,6 +9,7 @@ import {
 } from "./support/apiErrors";
 import {
   assertMaxOneDialogCloseOrCancelButton,
+  assertNoDesktopVerticalPageOverflow,
   assertNoZoneHorizontalTruncation,
   assertSingleDesktopWorkspaceSelector,
   assertZeroBulletPlaceholders,
@@ -86,6 +87,7 @@ test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, 
     await expect(page.getByTestId("eight-menu-item-configuration")).toBeVisible({ timeout: 20000 });
     if (!isMobile) {
       await assertNoZoneHorizontalTruncation(page, "shell-post-first-admin");
+      await assertNoDesktopVerticalPageOverflow(page, "shell-post-first-admin");
       await assertSingleDesktopWorkspaceSelector(page);
       await assertZeroBulletPlaceholders(page, "shell-post-first-admin");
     }

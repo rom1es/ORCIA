@@ -8,7 +8,7 @@ export interface AgentDetailModalHeaderProps {
   readonly testBenchValidated: boolean;
   readonly savedFeedback: boolean;
   readonly onToggleMcpExposure: (checked: boolean) => void;
-  readonly onClose: () => void;
+  readonly onClose?: () => void;
 }
 
 export function AgentDetailModalHeader({
@@ -16,61 +16,48 @@ export function AgentDetailModalHeader({
   testBenchValidated,
   savedFeedback,
   onToggleMcpExposure,
-  onClose,
 }: AgentDetailModalHeaderProps): React.JSX.Element {
   return (
-    <header className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--orcia-border-subtle)] px-4 py-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-sm font-semibold">
-          <OrciaIcon name="configuration" /> {agent.name}
-        </h3>
-        <code className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-1.5 py-0.5 font-mono text-[11px]">
-          {agent.handle}
-        </code>
+    <div className="flex flex-wrap items-center gap-2">
+      <code
+        data-testid={`agent-modal-handle-${agent.agentId}`}
+        className="whitespace-nowrap rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-1.5 py-0.5 font-mono text-[11px]"
+      >
+        {agent.handle}
+      </code>
+      <span
+        data-testid={`agent-bench-status-badge-${agent.agentId}`}
+        className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2 py-0.5 text-[11px] font-semibold"
+      >
+        {testBenchValidated || Boolean(agent.lastExecutionOutput)
+          ? "🧪 Validé au Banc de Test"
+          : "📝 À tester au Banc de Test"}
+      </span>
+      {savedFeedback && (
         <span
-          data-testid={`agent-bench-status-badge-${agent.agentId}`}
           className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2 py-0.5 text-[11px] font-semibold"
+          style={{ color: "var(--color-status-success)" }}
         >
-          {testBenchValidated || Boolean(agent.lastExecutionOutput)
-            ? "🧪 Validé au Banc de Test"
-            : "📝 À tester au Banc de Test"}
+          <OrciaIcon name="check" /> Enregistré
         </span>
-        {savedFeedback && (
-          <span
-            className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2 py-0.5 text-[11px] font-semibold"
-            style={{ color: "var(--color-status-success)" }}
-          >
-            <OrciaIcon name="check" /> Enregistré
-          </span>
-        )}
-      </div>
-      <div className="flex items-center gap-2">
-        <label className="inline-flex items-center gap-1.5 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2.5 py-1 font-medium">
-          <input
-            type="checkbox"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid={`agent-mcp-expose-checkbox-${agent.agentId}`}
-            checked={Boolean(agent.mcpExposed)}
-            onChange={(e) => onToggleMcpExposure(e.target.checked)}
-          />
-          <span>
-            <OrciaIcon name="plug" /> Exposer en MCP
-          </span>
-        </label>
-        <button
-          type="button"
-          data-testid={`close-agent-detail-modal-btn-${agent.agentId}`}
-          onClick={onClose}
-          className="orcia-ds-btn orcia-ds-btn-secondary text-xs"
-        >
-          Fermer (Échap)
-        </button>
-      </div>
-    </header>
+      )}
+      <label className="inline-flex items-center gap-1.5 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2.5 py-1 text-xs font-medium">
+        <input
+          type="checkbox"
+          autoComplete="off"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          data-form-type="other"
+          data-testid={`agent-mcp-expose-checkbox-${agent.agentId}`}
+          checked={Boolean(agent.mcpExposed)}
+          onChange={(e) => onToggleMcpExposure(e.target.checked)}
+        />
+        <span>
+          <OrciaIcon name="plug" /> Exposer en MCP
+        </span>
+      </label>
+    </div>
   );
 }
 

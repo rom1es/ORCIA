@@ -7,6 +7,7 @@ import type {
   UiThemePreference,
   UiUserAccountProfileView,
   UiUserPassthroughConnectorView,
+  UiUserSettingsTabKey,
   UserAccountPreferencesPatch,
 } from "@orcia/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -27,10 +28,11 @@ import {
 export function useSidebarAccountSettings(options: {
   readonly locale: UiLocalePreference;
   readonly modalOpen: boolean;
+  readonly activeTab?: UiUserSettingsTabKey;
   readonly labels: TranslationDictionary["userAccountAndSettings"];
   readonly onLocaleChange: (locale: UiLocalePreference) => void;
 }) {
-  const { locale, modalOpen, labels, onLocaleChange } = options;
+  const { locale, modalOpen, activeTab = "GENERAL", labels, onLocaleChange } = options;
   const clearMustChangePassword = useAuthSessionStore((s) => s.clearMustChangePassword);
   const readOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
 
@@ -150,6 +152,12 @@ export function useSidebarAccountSettings(options: {
   }, [isHydrating, isAuthenticated, loadPreferences]);
 
   useEffect(() => {
+    if (!modalOpen || activeTab !== "IDE_MCP_KEYS") {
+      setLastIssuedPlaintext(null);
+    }
+  }, [modalOpen, activeTab]);
+
+  useEffect(() => {
     if (modalOpen && !isHydrating && isAuthenticated) {
       setPrefsError(null);
       setMcpError(null);
@@ -203,14 +211,15 @@ export function useSidebarAccountSettings(options: {
     setIsSubmittingMcp(true);
     setMcpError(null);
     try {
+      const effectiveSlug = input.targetSlug.trim() || "scope-global";
       const issued = await client.createMcpToken({
         label: input.label,
         expires_in_days: input.expiresInDays,
         rpm_limit: input.rpmLimit,
-        allowed_workspace_slugs: [input.targetSlug],
+        allowed_workspace_slugs: [effectiveSlug],
         exposed_capabilities: ["ASSISTANT", "KB_GLOSSARY_SEARCH"],
         target_kind: input.targetKind,
-        target_slug: input.targetSlug,
+        target_slug: effectiveSlug,
       });
       setLastIssuedPlaintext(issued.plaintext_token);
       await loadModalDetails();

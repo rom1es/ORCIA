@@ -152,7 +152,7 @@ export function UserSettingsModalDialog({
           }}
           className="orcia-ds-dialog-content orcia-ds-dialog-content-wide p-0"
           style={{
-            height: "min(580px, 90vh)",
+            height: "min(620px, 85vh)",
             padding: 0,
             gap: 0,
             backgroundColor: "var(--color-bg-surface)",
@@ -194,12 +194,12 @@ export function UserSettingsModalDialog({
             )}
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+          <div className="flex min-h-0 flex-1 flex-col">
             <nav
               role="tablist"
-              aria-orientation="vertical"
+              aria-orientation="horizontal"
               data-testid="user-settings-tabs"
-              className="flex shrink-0 flex-row gap-1 overflow-x-auto border-b p-2 md:w-52 md:flex-col md:border-r md:border-b-0 md:p-3"
+              className="orcia-ds-tabs shrink-0 flex-nowrap overflow-x-auto border-b px-4 py-2.5"
               style={{
                 borderColor: "var(--color-border-subtle)",
                 backgroundColor: "var(--color-bg-elevated)",
@@ -210,22 +210,26 @@ export function UserSettingsModalDialog({
                 return (
                   <button
                     key={tab.key}
+                    id={`user-settings-tab-${tab.key}`}
                     type="button"
                     role="tab"
                     aria-selected={selected}
                     data-testid={`user-settings-tab-${tab.key}`}
-                    data-active={selected ? "true" : "false"}
                     onClick={() => onSelectTab(tab.key)}
-                    className="orcia-sidebar-nav-btn shrink-0 gap-2 px-2.5 py-2 text-left text-xs md:shrink"
+                    className="orcia-ds-tab inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
                   >
-                    <OrciaIcon name={tab.icon} size={15} />
-                    <span className="truncate">{tab.label}</span>
+                    <OrciaIcon name={tab.icon} size={14} />
+                    <span>{tab.label}</span>
                   </button>
                 );
               })}
             </nav>
 
-            <div className="orcia-ds-dialog-body p-4 text-xs">
+            <div
+              role="tabpanel"
+              aria-labelledby={`user-settings-tab-${activeTab}`}
+              className="orcia-ds-dialog-body min-h-0 flex-1 overflow-y-auto p-6 text-xs"
+            >
               {activeTab === "GENERAL" && (
                 <UserSettingsGeneralTab
                   theme={theme}

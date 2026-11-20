@@ -161,7 +161,7 @@ export function UserSettingsPassthroughTab({
                         type="submit"
                         data-testid={`passthrough-save-btn-${conn.connectorId}`}
                         disabled={!draftToken.trim()}
-                        className="px-2.5 py-1 rounded text-xs bg-brand-primary text-surface-elevated font-medium disabled:opacity-50"
+                        className="px-2.5 py-1 rounded text-xs bg-brand-primary text-[var(--color-primary-foreground)] font-medium disabled:opacity-50"
                       >
                         {labels.passthroughSaveTokenCta}
                       </button>
@@ -219,7 +219,7 @@ export function UserSettingsPassthroughTab({
             type="button"
             data-testid="passthrough-test-token-btn"
             disabled
-            className="px-2.5 py-1 rounded bg-brand-primary text-surface-elevated font-medium text-xs opacity-50 cursor-not-allowed"
+            className="px-2.5 py-1 rounded bg-brand-primary text-[var(--color-primary-foreground)] font-medium text-xs opacity-50 cursor-not-allowed"
           >
             {labels.testPassthroughTokenCta}
           </button>

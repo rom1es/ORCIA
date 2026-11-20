@@ -217,13 +217,13 @@ describe("Story 22.2 — Portals OrciaDialog, Tailwind v4 Compilation, Display:N
     expect(screen.getByTestId("save-ai-model-btn")).toBeDefined();
   });
 
-  it("compiles Tailwind v4 utility classes (.z-50, .w-52, .overflow-y-auto, .pl-5) via viteTailwindV4Plugin", async () => {
+  it("compiles Tailwind v4 utility classes (.z-50, .h-dvh, .overflow-y-auto, .pl-5) via viteTailwindV4Plugin", async () => {
     const plugin = orciaTailwindV4Plugin();
     const loadHook = plugin.load as (id: string) => Promise<string | null>;
     const css = await loadHook("\0virtual:orcia-tailwind.css");
     expect(css).not.toBeNull();
     expect(css).toContain(".z-50");
-    expect(css).toContain("w-52");
+    expect(css).toContain(".h-dvh");
     expect(css).toContain(".overflow-y-auto");
     expect(css).toContain(".pl-5");
   });

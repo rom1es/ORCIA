@@ -185,11 +185,12 @@ export function FourZoneDirectionCShell({
       className={
         isMobile
           ? "flex min-h-screen flex-col"
-          : "flex h-screen min-h-screen flex-col overflow-hidden"
+          : "relative flex h-dvh max-h-dvh flex-col overflow-hidden"
       }
       style={{
-        height: isMobile ? "auto" : "100vh",
-        minHeight: "100vh",
+        height: isMobile ? "auto" : "100dvh",
+        maxHeight: isMobile ? undefined : "100dvh",
+        minHeight: isMobile ? "100vh" : undefined,
         overflow: isMobile ? "visible" : "hidden",
         backgroundColor: "var(--color-bg-canvas)",
         color: "var(--color-text-primary)",
@@ -253,7 +254,6 @@ export function FourZoneDirectionCShell({
 
       <div
         className={isMobile ? "flex min-h-0 flex-1" : "flex min-h-0 flex-1 overflow-hidden"}
-        style={isMobile ? undefined : { height: "calc(100vh - 52px)", overflow: "hidden" }}
       >
         {!isMobile && (
           <FourZoneSidebarRail
@@ -284,10 +284,9 @@ export function FourZoneDirectionCShell({
           className={
             isMobile
               ? "min-h-0 min-w-0 flex-1 p-3 pb-20"
-              : "min-h-0 min-w-0 flex-1 overflow-y-auto p-6"
+              : "relative h-full min-h-0 min-w-0 flex-1 overflow-y-auto p-6"
           }
           style={{
-            maxHeight: isMobile ? undefined : "calc(100vh - 52px)",
             overflowY: isMobile ? undefined : "auto",
             backgroundColor: "var(--color-bg-canvas)",
           }}

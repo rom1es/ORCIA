@@ -7,7 +7,7 @@ export function ShellHydratingLoaderView({ isFr }: { readonly isFr: boolean }) {
   return (
     <div
       data-testid="auth-hydrating-loader"
-      className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[var(--color-bg-canvas)] text-[var(--color-text-secondary)]"
+      className="flex h-full min-h-screen md:min-h-0 flex-col items-center justify-center gap-3 bg-[var(--color-bg-canvas)] text-[var(--color-text-secondary)]"
     >
       <div className="inline-flex items-center gap-2">
         <span
@@ -47,7 +47,7 @@ export function ShellUnauthenticatedView({
   return (
     <div
       data-testid="unauthenticated-shell-fallback"
-      className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--color-bg-canvas)] p-6"
+      className="flex h-full min-h-screen md:min-h-0 flex-col items-center justify-center gap-4 overflow-y-auto bg-[var(--color-bg-canvas)] p-6"
     >
       <LoginRouteComponent />
       {onReopenDay0Setup && reopenDay0SetupLabel ? (

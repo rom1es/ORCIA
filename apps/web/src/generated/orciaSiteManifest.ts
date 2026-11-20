@@ -564,7 +564,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "phaseOrStory": "Story 24.4",
       "reportFile": "24-4-refonte-css-tailwind-tokens-modales-rgaa-contraste-onglets-et-shell-tech-lead-report.md",
       "domain": "Epic 24 Vague 1 — CSS Tailwind v4 Layering, Verrouillage Scroll Shell (USER24-BUG-1), Modales Onglets & Clés MCP (USER24-BUG-4A/4B/5), OrciaDialog & Contraste RGAA (REM24-07, UX23-02..04, UX23-13..14, UX23-16)",
-      "summary": "Pré-implémentation (backlog, initialisée par Story 23.8 + USER24-BUG-1/4A/4B/5) : ordre tokens.css → Tailwind (main.tsx:1-2), split/layering tokens.css (1 266 L), verrouillage scroll 100dvh Desktop + test systématique, onglets horizontaux .orcia-ds-tabs UserSettingsModalDialog, suppression doublon Paramètres SidebarAccountPopover, reset lastIssuedPlaintext à fermeture + libellés FR MCP, AgentDetailAndSandboxModal sur OrciaDialog, contraste dark --color-sidebar-active-fg >= 4.5:1."
+      "summary": "Clôture (done) : ordre tokens.css → virtual:orcia-tailwind.css (@import \"tailwindcss/theme\" reference; + @theme inline reference, 0 cycle :root), split tokens*.css (< 280 L), verrouillage 100dvh + position: relative (0 bande teinte-EAF2FB + compaction Accostage), onglets horizontaux .orcia-ds-tabs UserSettingsModalDialog, suppression account-popover-settings-btn, reset lastIssuedPlaintext & libellés FR MCP (100.00 % couv. _mcp_token_helpers.py), AgentDetailAndSandboxModal sur OrciaDialog, contraste dark 8.45:1 (teinte-93C5FD/teinte-1E293B), 9/9 Turbo (384 tests JS/TS), 15 passed, 2 skipped, 0 failed Playwright Desktop (shell, 03, 08, 12, 13, 14, 16), ruff/mypy --strict/lint-imports (5/5)/export_openapi/detect-secrets 0 erreur."
     },
     {
       "date": "2026-11-20",

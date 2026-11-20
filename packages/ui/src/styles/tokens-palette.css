@@ -1,0 +1,163 @@
+/**
+ * ORCIA Design System — Direction C Palette & Semantic Tokens (`DESIGN.md`).
+ * Single source of truth for light-mode colors, elevations, typography, and radii.
+ * Raw hex colors are strictly forbidden outside `packages/ui/src/styles/`.
+ */
+
+:root {
+  /* Surface & Layout Tokens (InsideBox Light Sidebar + Soft Sky Bento Canvas + Crisp White Cards) */
+  --color-sidebar-bg: #FFFFFF;
+  --color-sidebar-foreground: #0F172A;
+  --color-sidebar-muted: #64748B;
+  --color-sidebar-border: #E2E8F0;
+  --color-sidebar-active-bg: #EFF6FF;
+  --color-sidebar-active-fg: #1D4ED8;
+  --color-sidebar-search-bg: #F8FAFC;
+
+  --color-surface-bg: #EAF2FB;
+  --color-surface-hero: #FFFFFF;
+  --color-surface-card: #FFFFFF;
+  --color-surface-hover: #F8FAFC;
+  --color-dock-bg: #FFFFFF;
+  --color-foreground: #0F172A;
+  --color-muted-foreground: #475569;
+  --color-border: #E2E8F0;
+
+  /* Direction C Unified Aliases (Epics 9, 10, 11 & 12) */
+  --color-bg-canvas: var(--color-surface-bg);
+  --color-bg-surface: var(--color-surface-card);
+  --color-bg-elevated: #F8FAFC;
+  --color-surface: var(--color-surface-card);
+  --color-surface-canvas: var(--color-surface-bg);
+  --color-surface-elevated: var(--color-surface-card);
+  --color-surface-base: #F8FAFC;
+  --color-surface-muted: #F1F5F9;
+  --color-surface-primary: var(--color-surface-card);
+  --color-surface-secondary: #F8FAFC;
+  --color-surface-border: var(--color-border);
+  --color-border-subtle: var(--color-border);
+  --color-border-strong: #CBD5E1;
+  --color-border-focus: #2563EB;
+  --color-text-primary: var(--color-foreground);
+  --color-text-secondary: var(--color-muted-foreground);
+  --color-text-muted: var(--color-muted-foreground);
+  --color-text-inverse: #FFFFFF;
+  --color-modal-backdrop: rgba(15, 23, 42, 0.45);
+
+  /* Governance & Semantic Accent Tokens */
+  --color-primary-cobalt: #2563EB;
+  --color-primary-foreground: #FFFFFF;
+  --color-primary-dark: #6366F1;
+  --color-action-primary: var(--color-primary-cobalt);
+  --color-action-primary-hover: #1D4ED8;
+  --color-action-primary-subtle: #EFF6FF;
+  --color-accent-primary: var(--color-primary-cobalt);
+  --color-brand-primary: var(--color-primary-cobalt);
+
+  /* AutonomousExecutionBadge Cyan/Cobalt Tokens (UX-DR17 — never Violet) */
+  --color-autonomous-badge-bg: #F0F9FF;
+  --color-autonomous-badge-fg: #0284C7;
+  --color-autonomous-badge-border: #BAE6FD;
+
+  /* StatusBadge Cobalt Tokens (Direction C: pastel blue badge) */
+  --color-badge-cobalt-bg: #EFF6FF;
+  --color-badge-cobalt-fg: #1D4ED8;
+  --color-badge-cobalt-border: #BFDBFE;
+
+  /* Unified Tab Tokens: Intense Blue on Focus/Active + Pale Blue on Inactive */
+  --color-tab-active-bg: var(--color-primary-cobalt);
+  --color-tab-active-fg: #FFFFFF;
+  --color-tab-active-border: #1D4ED8;
+  --color-tab-inactive-bg: #DBEAFE;
+  --color-tab-inactive-hover-bg: #BFDBFE;
+  --color-tab-inactive-fg: #1E3A8A;
+  --color-tab-inactive-border: #93C5FD;
+
+  /* Reserved exclusively for HumanLedAnchorCard (human_authored_required: true) */
+  --color-human-led-violet: #6D28D9;
+  --color-human-led-bg: #F5F3FF;
+
+  --color-arbitration-amber: #D97706;
+  --color-arbitration-bg: #FFFBEB;
+  --color-help-example-bg: #FFFBEB;
+  --color-help-example-border: #F59E0B;
+  --color-help-example-title: #92400E;
+  --color-help-example-text: #78350F;
+
+  --color-gate-emerald: #059669;
+  --color-gate-emerald-bg: #ECFDF5;
+  --color-gate-pass: var(--color-gate-emerald);
+  --color-gate-pass-bg: var(--color-gate-emerald-bg);
+  --color-verified-emerald: var(--color-gate-emerald);
+  --color-verified-bg: var(--color-gate-emerald-bg);
+
+  --color-ontology-cyan: #0284C7;
+  --color-ontology-bg: #F0F9FF;
+
+  --color-stale-crimson: #DC2626;
+  --color-stale-bg: #FEF2F2;
+
+  /* State & Status Aliases */
+  --color-state-verified: var(--color-gate-emerald);
+  --color-state-warning: var(--color-arbitration-amber);
+  --color-state-danger: var(--color-stale-crimson);
+  --color-status-success: var(--color-gate-emerald);
+  --color-status-success-subtle: var(--color-gate-emerald-bg);
+  --color-status-completed: var(--color-gate-emerald);
+  --color-status-warning: var(--color-arbitration-amber);
+  --color-status-danger: var(--color-stale-crimson);
+  --color-status-error: var(--color-stale-crimson);
+  --color-status-failed: var(--color-stale-crimson);
+
+  /* Legacy @orcia/ui Primitives Token Aliases (--orcia-*) */
+  --orcia-surface-primary: var(--color-surface-primary);
+  --orcia-surface-secondary: var(--color-surface-secondary);
+  --orcia-surface-elevated: var(--color-surface-elevated);
+  --orcia-border-subtle: var(--color-border-subtle);
+  --orcia-text-primary: var(--color-text-primary);
+  --orcia-text-secondary: var(--color-text-secondary);
+  --orcia-text-muted: var(--color-text-muted);
+  --orcia-action-primary: var(--color-action-primary);
+  --orcia-text-on-action: var(--color-primary-foreground);
+  --orcia-status-warning: var(--color-status-warning);
+  --orcia-font-mono: var(--font-mono);
+
+  /* Elevations & Z-Index Stacking Scale (`REM-03`) */
+  --shadow-card: 0 4px 16px rgba(15, 23, 42, 0.04);
+  --shadow-dropdown: 0 14px 36px rgba(15, 23, 42, 0.14);
+  --z-overlay: 1000;
+  --z-dialog: 1010;
+  --z-popover: 1020;
+  --z-tooltip: 1030;
+
+  /* Typography (Strict max 2 font families: Primary Sans + Secondary Mono) */
+  --font-sans: "Inter", "Geist Sans", system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-sans);
+  --font-serif: var(--font-sans);
+  --font-mono: "JetBrains Mono", "Geist Mono", monospace;
+
+  --font-size-body: 13.5px;
+  --font-size-h3: 15px;
+  --font-size-h2: 18px;
+  --font-size-display: 22px;
+  --font-size-hero: 26px;
+  --font-size-mono: 12px;
+
+  /* Spatial Architecture Dimensions (UX-DR1) */
+  --sidebar-expanded-width: 240px;
+  --sidebar-collapsed-width: 68px;
+  --dock-width: 340px;
+  --canvas-min-width: 640px;
+
+  /* Radii & Control Geometry (Centralized Look & Feel Dials) */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 9999px;
+  --control-padding-y: 7px;
+  --control-padding-x: 10px;
+  --control-font-size: 13px;
+  --btn-padding-y: 7px;
+  --btn-padding-x: 14px;
+  --card-padding: 20px;
+}

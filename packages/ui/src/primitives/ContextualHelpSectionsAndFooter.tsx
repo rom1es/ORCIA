@@ -182,7 +182,7 @@ export function HelpFooterActions({
             type="button"
             data-testid="contextual-help-ask-assistant-btn"
             onClick={() => onAskAssistantOnScreen?.(route, prefillPrompt)}
-            className="w-full py-1.5 px-3 rounded-lg bg-brand-primary text-surface-elevated font-medium text-center"
+            className="w-full py-1.5 px-3 rounded-lg bg-brand-primary text-[var(--color-primary-foreground)] font-medium text-center"
           >
             {labels.askAssistantOnScreenCta}
           </button>

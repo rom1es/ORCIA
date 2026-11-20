@@ -222,6 +222,85 @@ export async function assertVisibleErrorBannerOnHttpError(
   expect(text.length, "La bannière [role='alert'] ne doit pas être vide").toBeGreaterThan(0);
 }
 
+/**
+ * Vérifie sur Desktop (>= 768px) le verrouillage strict du viewport sans scroll vertical externe
+ * ni bande vide `#EAF2FB` sous le shell (`USER24-BUG-1`, `UX23-14`, `UX23-16`).
+ */
+export async function assertNoDesktopVerticalPageOverflow(
+  page: Page,
+  contextLabel = "desktop shell",
+): Promise<void> {
+  const viewport = page.viewportSize();
+  if (viewport && viewport.width < 768) {
+    return;
+  }
+
+  const report = await page.evaluate(() => {
+    window.scrollTo(0, 99999);
+    const scrollYAfterAttempt = window.scrollY;
+    window.scrollTo(0, 0);
+
+    const innerHeight = window.innerHeight;
+    const docScrollHeight = document.documentElement.scrollHeight;
+    const bodyScrollHeight = document.body.scrollHeight;
+    const rootEl = document.getElementById("root");
+    const rootScrollHeight = rootEl ? rootEl.scrollHeight : null;
+
+    const rectOf = (testId: string) => {
+      const el = document.querySelector(`[data-testid="${testId}"]`);
+      if (!(el instanceof HTMLElement)) return null;
+      const r = el.getBoundingClientRect();
+      return {
+        top: Math.round(r.top),
+        bottom: Math.round(r.bottom),
+        height: Math.round(r.height),
+      };
+    };
+
+    return {
+      innerHeight,
+      docScrollHeight,
+      bodyScrollHeight,
+      rootScrollHeight,
+      scrollYAfterAttempt,
+      shell: rectOf("four-zone-direction-c-shell"),
+      topHeader: rectOf("four-zone-top-header-bar"),
+      sidebar: rectOf("four-zone-sidebar"),
+      workspace: rectOf("four-zone-central-workspace"),
+      helpColumn: rectOf("four-zone-contextual-help-column"),
+    };
+  });
+
+  expect(
+    report.docScrollHeight,
+    `Scroll vertical externe détecté sur ${contextLabel} (scrollHeight=${report.docScrollHeight} > innerHeight=${report.innerHeight}, body=${report.bodyScrollHeight}, root=${report.rootScrollHeight})`,
+  ).toBeLessThanOrEqual(report.innerHeight + 1);
+  expect(
+    report.scrollYAfterAttempt,
+    `window.scrollTo(0, 99999) a défilé la page sur ${contextLabel} (scrollY=${report.scrollYAfterAttempt})`,
+  ).toBe(0);
+
+  expect(report.topHeader, `four-zone-top-header-bar manquant sur ${contextLabel}`).not.toBeNull();
+  expect(report.topHeader!.top, `top-header-bar top !== 0 sur ${contextLabel}`).toBe(0);
+
+  expect(report.shell, `four-zone-direction-c-shell manquant sur ${contextLabel}`).not.toBeNull();
+  expect(report.shell!.bottom).toBeLessThanOrEqual(report.innerHeight + 1);
+  expect(
+    Math.abs(report.shell!.bottom - report.innerHeight),
+    `Bande vide sous four-zone-direction-c-shell sur ${contextLabel} (shell.bottom=${report.shell!.bottom}, innerHeight=${report.innerHeight})`,
+  ).toBeLessThanOrEqual(1);
+
+  if (report.sidebar) {
+    expect(report.sidebar.bottom).toBeLessThanOrEqual(report.innerHeight + 1);
+  }
+  if (report.workspace) {
+    expect(report.workspace.bottom).toBeLessThanOrEqual(report.innerHeight + 1);
+  }
+  if (report.helpColumn) {
+    expect(report.helpColumn.bottom).toBeLessThanOrEqual(report.innerHeight + 1);
+  }
+}
+
 export {
   assertCockpitSobrietyMaxThreeBlocks,
   assertMaxOneDialogCloseOrCancelButton,

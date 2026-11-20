@@ -156,7 +156,7 @@ export function AssistantGovernanceStudioModeB({
             data-testid="studio-save-override-btn"
             onClick={onSaveOverride}
             onKeyDown={(e) => handleRgaaSubmitKeyDown(e, onSaveOverride, false)}
-            className="px-3 py-1.5 rounded bg-brand-primary text-surface-elevated font-medium"
+            className="px-3 py-1.5 rounded bg-brand-primary text-[var(--color-primary-foreground)] font-medium"
           >
             {labels.studioSaveOverrideCta}
           </button>

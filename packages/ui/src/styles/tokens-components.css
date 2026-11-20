@@ -1,0 +1,276 @@
+/**
+ * ORCIA Design System — Control Primitives (.orcia-ds-page, cards, tabs, inputs, buttons, alerts).
+ */
+
+.orcia-ds-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.orcia-ds-card {
+  background-color: var(--color-surface-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--card-padding);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.orcia-ds-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.orcia-ds-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Zero fade transition on tabs to prevent intermediate low-contrast states */
+.orcia-ds-tab,
+[role="tab"] {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-tab-inactive-border);
+  background-color: var(--color-tab-inactive-bg);
+  color: var(--color-tab-inactive-fg);
+  font-family: var(--font-sans);
+  font-size: var(--control-font-size);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.orcia-ds-tab:hover:not([aria-selected="true"]),
+[role="tab"]:hover:not([aria-selected="true"]) {
+  background-color: var(--color-tab-inactive-hover-bg);
+  border-color: var(--color-tab-active-border);
+  color: var(--color-tab-inactive-fg);
+}
+
+.orcia-ds-tab[aria-selected="true"],
+.orcia-ds-tab:focus-visible,
+[role="tab"][aria-selected="true"],
+[role="tab"]:focus-visible {
+  border-color: var(--color-tab-active-border);
+  background-color: var(--color-tab-active-bg);
+  color: var(--color-tab-active-fg);
+  outline: none;
+}
+
+.orcia-ds-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.orcia-ds-input,
+.orcia-ds-select,
+.orcia-ds-textarea {
+  padding: var(--control-padding-y) var(--control-padding-x);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-card);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-size: var(--control-font-size);
+  box-sizing: border-box;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.orcia-ds-input:focus-visible,
+.orcia-ds-select:focus-visible,
+.orcia-ds-textarea:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 1px;
+  border-color: var(--color-border-focus);
+}
+
+.orcia-ds-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: var(--btn-padding-y) var(--btn-padding-x);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: var(--control-font-size);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.orcia-ds-btn:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+.orcia-ds-btn:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.orcia-ds-btn-primary {
+  border: 1px solid var(--color-primary-cobalt);
+  background-color: var(--color-primary-cobalt);
+  color: var(--color-primary-foreground);
+  box-shadow: var(--shadow-card);
+}
+
+.orcia-ds-btn-primary:hover:not(:disabled) {
+  background-color: var(--color-action-primary-hover);
+  border-color: var(--color-action-primary-hover);
+}
+
+.orcia-ds-btn-primary:disabled {
+  border: 1px solid var(--color-primary-cobalt);
+  background-color: var(--color-primary-cobalt);
+  color: var(--color-primary-foreground);
+  box-shadow: none;
+  opacity: 0.48;
+}
+
+.orcia-ds-btn-secondary {
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-card);
+  color: var(--color-foreground);
+}
+
+.orcia-ds-dialog-content .orcia-ds-header .orcia-ds-btn-secondary {
+  border: 1px solid var(--color-border-subtle);
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+}
+
+.orcia-ds-dialog-content .orcia-ds-header .orcia-ds-btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+}
+
+.orcia-ds-btn-danger {
+  border: 1px solid var(--color-stale-crimson);
+  background-color: var(--color-stale-bg);
+  color: var(--color-stale-crimson);
+}
+
+.orcia-ds-btn-danger:hover:not(:disabled) {
+  background-color: var(--color-stale-crimson);
+  border-color: var(--color-stale-crimson);
+  color: var(--color-text-inverse);
+}
+
+.orcia-ds-btn-danger:focus-visible {
+  outline: 2px solid var(--color-stale-crimson);
+  outline-offset: 2px;
+}
+
+.orcia-ds-btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.orcia-ds-btn-ghost {
+  border: 1px solid transparent;
+  background-color: transparent;
+  color: var(--color-muted-foreground);
+}
+
+.orcia-ds-btn-sm {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.orcia-ds-row {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-card);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.orcia-ds-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.6875rem 0.9rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  border-left-width: 3px;
+  border-left-style: solid;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--color-foreground);
+  box-sizing: border-box;
+}
+
+.orcia-ds-alert-icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.125rem;
+}
+
+.orcia-ds-alert-content {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+
+.orcia-ds-alert-action {
+  flex-shrink: 0;
+  margin-left: auto;
+  align-self: center;
+}
+
+.orcia-ds-alert-success,
+.orcia-ds-alert-emerald {
+  border-color: var(--color-gate-emerald);
+  border-left-color: var(--color-gate-emerald);
+  background-color: var(--color-gate-emerald-bg);
+  color: var(--color-foreground);
+}
+
+.orcia-ds-alert-warning,
+.orcia-ds-alert-amber {
+  border-color: var(--color-arbitration-amber);
+  border-left-color: var(--color-arbitration-amber);
+  background-color: var(--color-arbitration-bg);
+  color: var(--color-foreground);
+}
+
+.orcia-ds-alert-error,
+.orcia-ds-alert-crimson {
+  border-color: var(--color-stale-crimson);
+  border-left-color: var(--color-stale-crimson);
+  background-color: var(--color-stale-bg);
+  color: var(--color-foreground);
+}
+
+.orcia-ds-alert-info,
+.orcia-ds-alert-cobalt {
+  border-color: var(--color-primary-cobalt);
+  border-left-color: var(--color-primary-cobalt);
+  background-color: var(--color-action-primary-subtle);
+  color: var(--color-foreground);
+}
+
+.orcia-ds-tab-panel {
+  margin-top: 8px;
+}

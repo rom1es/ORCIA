@@ -209,6 +209,7 @@ export function CockpitFeaturePanel() {
         <ProgressiveDay0AccostageBanner
           completedCount={completedSetupStepsCount}
           totalCount={6}
+          defaultCompact={showGovernanceSection}
           adminCreated={accostageSummary.adminCreated}
           adminDisplayName={authDisplayName ?? platformAdmin?.displayName}
           adminEmail={authEmail ?? platformAdmin?.email}

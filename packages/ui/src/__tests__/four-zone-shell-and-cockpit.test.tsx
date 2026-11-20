@@ -560,10 +560,11 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
 
     // Open popover via keyboard Enter or pointerDown
     fireEvent.keyDown(screen.getByTestId("sidebar-open-my-account-btn"), { key: "Enter" });
-    fireEvent.click(screen.getByTestId("account-popover-settings-btn"));
+    fireEvent.click(screen.getByTestId("account-popover-personalization-btn"));
     expect(screen.getByTestId("user-settings-modal")).toBeDefined();
 
-    // Switch theme in General tab
+    // Switch to General tab & update theme
+    fireEvent.click(screen.getByTestId("user-settings-tab-GENERAL"));
     fireEvent.click(screen.getByTestId("settings-theme-dark"));
     expect(onUpdatePreferences).toHaveBeenCalledWith({ theme: "dark" });
 

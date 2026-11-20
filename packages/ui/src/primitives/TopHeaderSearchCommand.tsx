@@ -319,7 +319,7 @@ export function TopHeaderSearchCommand({
                 !activeHit,
               )
             }
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs bg-brand-primary text-surface-elevated font-medium disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs bg-brand-primary text-[var(--color-primary-foreground)] font-medium disabled:opacity-50"
           >
             <span>{resolvedRgaaLabels.submitCta}</span>
             <DisabledButtonAlertIndicator

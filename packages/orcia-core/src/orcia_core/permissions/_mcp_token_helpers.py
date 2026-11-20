@@ -93,7 +93,7 @@ def decode_mcp_scopes_list(
         for item in scopes
         if item.startswith("cap:") and item[4:] in valid_caps
     )
-    return (ws_slugs or ("default",), caps or ("ASSISTANT",))
+    return (ws_slugs or ("scope-global",), caps or ("ASSISTANT",))
 
 
 def mint_mcp_token_fields(
@@ -131,7 +131,7 @@ def mint_mcp_token_fields(
     exp_days: McpExpirationDays = 30 if expires_in_days == 30 else 90
     return raw_secret, {
         "token_id": new_uuid7_str(),
-        "label": label.strip() or "Clé IDE MCP",
+        "label": label.strip() or "Clé personnelle d'éditeur",
         "token_prefix": f"{raw_secret[:14]}...",
         "token_sha256": token_sha256,
         "expires_in_days": exp_days,

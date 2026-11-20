@@ -62,14 +62,13 @@ export function FourZoneHelpAsideColumn({
       className={
         isMobile
           ? "fixed inset-x-0 top-[52px] bottom-[58px] z-40 overflow-y-auto border-t p-4"
-          : "min-h-0 shrink-0 overflow-y-auto border-l p-4"
+          : "relative h-full min-h-0 shrink-0 overflow-y-auto border-l p-4"
       }
       style={{
         width: isMobile ? "100%" : "340px",
-        maxHeight: isMobile ? undefined : "calc(100vh - 52px)",
         overflowY: "auto",
-        position: isMobile ? "fixed" : "sticky",
-        top: "52px",
+        position: isMobile ? "fixed" : undefined,
+        top: isMobile ? "52px" : undefined,
         backgroundColor: "var(--color-bg-surface)",
         borderColor: "var(--color-border-subtle)",
       }}

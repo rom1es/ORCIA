@@ -85,7 +85,9 @@ export interface OrciaDialogProps {
   readonly description?: string;
   readonly testId?: string;
   readonly closeLabel?: string;
+  readonly closeButtonTestId?: string;
   readonly hideHeaderCloseButton?: boolean;
+  readonly headerExtra?: React.ReactNode;
   readonly contentClassName?: string;
   readonly modal?: boolean;
   readonly onEscapeKeyDown?: (event: KeyboardEvent) => void;
@@ -100,7 +102,9 @@ export function OrciaDialog({
   description,
   testId = "orcia-radix-dialog",
   closeLabel = "Fermer",
+  closeButtonTestId,
   hideHeaderCloseButton = false,
+  headerExtra,
   contentClassName,
   modal = true,
   onEscapeKeyDown,
@@ -125,13 +129,16 @@ export function OrciaDialog({
           }
         >
           <div className="orcia-ds-header" style={{ flexShrink: 0 }}>
-            <DialogPrimitive.Title className="orcia-ds-dialog-title">
-              {title}
-            </DialogPrimitive.Title>
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <DialogPrimitive.Title className="orcia-ds-dialog-title">
+                {title}
+              </DialogPrimitive.Title>
+              {headerExtra}
+            </div>
             {!hideHeaderCloseButton ? (
               <DialogPrimitive.Close
                 type="button"
-                data-testid={`${testId}-close-btn`}
+                data-testid={closeButtonTestId ?? `${testId}-close-btn`}
                 className="orcia-ds-btn orcia-ds-btn-secondary"
               >
                 {closeLabel}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { OrciaIcon } from "../components/icons";
 import { OrciaAlertBanner } from "./DesignSystemControls";
 import type {
@@ -36,10 +36,19 @@ export function UserSettingsMcpTokensTab({
   const [rpmLimit, setRpmLimit] = useState<number>(60);
   const [copiedPlaintext, setCopiedPlaintext] = useState<boolean>(false);
 
+  useEffect(() => {
+    if (lastIssuedPlaintext === null) {
+      setCopiedPlaintext(false);
+    }
+  }, [lastIssuedPlaintext]);
+
   const handleSubmit = async (): Promise<void> => {
-    const cleanSlug = targetSlug.trim() || "default";
+    const cleanSlug = targetSlug.trim();
     const cleanLabel =
-      label.trim() || `IDE MCP (${targetKind} · ${cleanSlug})`;
+      label.trim() ||
+      (cleanSlug
+        ? `Clé d'accès éditeur — ${cleanSlug}`
+        : "Clé personnelle d'éditeur");
     await onCreateMcpToken({
       label: cleanLabel,
       targetKind,
@@ -232,12 +241,15 @@ export function UserSettingsMcpTokensTab({
               }}
             >
               <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
+                <div className="min-w-0 space-y-0.5">
                   <div className="truncate font-semibold text-xs">
-                    {tok.label} · <span className="font-mono">{tok.tokenPrefix}</span>
+                    {tok.label}
                   </div>
-                  <div className="text-[11px] font-mono" style={{ color: "var(--color-text-secondary)" }}>
-                    {tok.mcpEndpointUri} · {tok.rpmLimit} RPM
+                  <div className="text-[11px]" style={{ color: "var(--color-text-secondary)" }}>
+                    Identifiant : <span className="font-mono">{tok.tokenPrefix}</span>
+                  </div>
+                  <div className="truncate text-[11px] font-mono" style={{ color: "var(--color-text-secondary)" }}>
+                    {tok.mcpEndpointUri}
                   </div>
                 </div>
                 {tok.revoked ? (

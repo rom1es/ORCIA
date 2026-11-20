@@ -207,6 +207,7 @@ export function LoginScreenView({ onAuthenticated }: LoginScreenViewProps = {}) 
       data-allow-password-manager="true"
       data-auth-mode={authMode}
       data-authenticated-user={authenticatedEmail ?? ""}
+      className="flex h-full min-h-0 w-full items-center justify-center overflow-y-auto p-6"
     >
       <BiModeLoginView
         labels={dictionary.biModeLogin}
