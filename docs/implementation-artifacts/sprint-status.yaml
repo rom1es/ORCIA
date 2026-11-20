@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 11-20-2026 08:20
+last_updated: 11-20-2026 19:15
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -262,6 +262,15 @@ development_status:
   24-6-recherche-cmdk-filtre-langue-purge-jargon-packs-et-microcopy: done
   24-7-reconciliation-e2e-captures-jalons-campagne-52-sur-52-et-cloture-epic-24: done
   epic-24-retrospective: optional
+
+  # Epic 25 — Sobriété Cockpit Jour 0, Coquille 9 Entrées (Mon Organisation & Administration), Espace Personnel Automatique PG18, Hub Modèles IA Fiable & Découplage Mon Assistant / RAG (AD-8, AD-16, AD-24)
+  epic-25: in-progress
+  25-1-espace-personnel-auto-pg18-accostage-unifie-et-degrisage-processus: ready-for-dev
+  25-2-coquille-9-entrees-mon-organisation-administration-topbar-orcia-et-selecteur-espace: ready-for-dev
+  25-3-sobriete-cockpit-jour0-purge-run-demo-ram-et-retrait-blocs-attente: ready-for-dev
+  25-4-hub-modeles-ia-suppression-fiable-spinner-unifie-erreur-locale-et-masquage-reindexation: ready-for-dev
+  25-5-decouplage-assistant-sans-modele-semantique-blocage-sources-rag-et-cloture-epic-25: ready-for-dev
+  epic-25-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
     title: "Politiques de restriction explicite (DENY prioritaire, INHERITANCE_BLOCK) sur sous-entités sensibles"
