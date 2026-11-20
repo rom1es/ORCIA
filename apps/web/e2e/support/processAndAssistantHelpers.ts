@@ -22,7 +22,8 @@ export async function reloadClearingStorage(page: Page): Promise<void> {
 /** Navigue vers `/cockpit` et attend l'affichage du Cockpit ou de l'état d'accostage. */
 export async function openCockpitPage(page: Page): Promise<void> {
   await page.goto("/cockpit");
-  await expect(page.getByTestId("cockpit-active-scope-badge")).toBeVisible({ timeout: 30000 });
+  await expect(page.getByTestId("cockpit-block-decisions")).toBeVisible({ timeout: 30000 });
+  await expect(page.getByTestId("four-zone-central-workspace")).not.toContainText("Contexte actif :");
 }
 
 /** Navigue vers `/gates` et attend la section de revue humaine adaptative. */

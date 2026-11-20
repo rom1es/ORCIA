@@ -266,6 +266,7 @@ export const ORCIA_EIGHT_MENU_ICON_NAMES: Record<EightFixedMenuKey, OrciaIconNam
   processes: "processes",
   agents: "agents",
   spaces: "spaces",
+  organization: "organizationBu",
   finops: "finops",
   configuration: "configuration",
   help: "help",

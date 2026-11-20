@@ -86,7 +86,7 @@ export async function assertSingleDesktopWorkspaceSelector(page: Page): Promise<
   if (viewport && viewport.width < 1024) return;
 
   const sidebarVisible = await page
-    .getByTestId("sidebar-double-scope-selector")
+    .getByTestId("sidebar-unified-scope-selector")
     .first()
     .isVisible()
     .catch(() => false);

@@ -18,7 +18,7 @@ const SHELL_LABELS: FourZoneDirectionCShellLabels = {
   notificationsButtonLabel: "🔔 Notifications",
   notificationsDrawerTitle: "Centre de Notifications (420px)",
   notificationsEmptyText: "Aucune notification non lue.",
-  sidebarAriaLabel: "Navigation principale à 8 entrées sans numéro",
+  sidebarAriaLabel: "Navigation principale à 9 entrées sans numéro",
   railCollapseLabel: "Replier le rail ([)",
   railExpandLabel: "Déplier le rail ([)",
   packSelectorLabel: "Pack Métier actif",
@@ -31,8 +31,9 @@ const SHELL_LABELS: FourZoneDirectionCShellLabels = {
     processes: "Mes Processus",
     agents: "Mes Agents",
     spaces: "Mes Espaces",
+    organization: "Mon Organisation",
     finops: "FinOps",
-    configuration: "Configuration",
+    configuration: "Administration",
     help: "Aide",
   },
 };
@@ -107,8 +108,9 @@ describe("Story 23.5 — Brand ORCIA in Sidebar/Login, TopHeaderBar sobriety & C
     expect(pwInput.type).toBe("password");
   });
 
-  it("places ORCIA brand logo in FourZoneSidebarRail and hides workspace selector + brand marker in desktop FourZoneTopHeaderSection when rail is open", () => {
+  it("places clickable [O] ORCIA home link in FourZoneTopHeaderSection and removes sidebar-brand-logo from FourZoneSidebarRail (Story 25.2)", () => {
     const onSelectMenu = vi.fn();
+    const onNavigateHome = vi.fn();
     const { rerender } = render(
       <>
         <FourZoneTopHeaderSection
@@ -118,6 +120,7 @@ describe("Story 23.5 — Brand ORCIA in Sidebar/Login, TopHeaderBar sobriety & C
           workspaceDropdownOpen={false}
           onToggleWorkspaceDropdown={() => {}}
           onCloseWorkspaceDropdown={() => {}}
+          onNavigateHome={onNavigateHome}
           helpColumnOpen={false}
           onToggleHelpColumn={() => {}}
           notificationsOpen={false}
@@ -139,15 +142,15 @@ describe("Story 23.5 — Brand ORCIA in Sidebar/Login, TopHeaderBar sobriety & C
     );
 
     const topbar = screen.getByTestId("four-zone-top-header-bar");
-    expect(topbar.textContent).not.toContain("ORCIA");
+    const homeLink = screen.getByTestId("topbar-orcia-home-link");
+    expect(topbar.contains(homeLink)).toBe(true);
+    expect(homeLink.textContent).toContain("ORCIA");
+    fireEvent.click(homeLink);
+    expect(onNavigateHome).toHaveBeenCalledTimes(1);
     expect(screen.queryByTestId("topbar-fixed-workspace-selector")).toBeNull();
+    expect(screen.queryByTestId("sidebar-brand-logo")).toBeNull();
 
-    const sidebarLogo = screen.getByTestId("sidebar-brand-logo");
-    expect(sidebarLogo.textContent).toContain("ORCIA");
-    fireEvent.click(sidebarLogo);
-    expect(onSelectMenu).toHaveBeenCalledWith("cockpit", "/cockpit");
-
-    // When rail collapses, sidebar logo disappears and topbar selector becomes visible on desktop
+    // When rail collapses, sidebar logo remains absent and topbar selector becomes visible on desktop
     rerender(
       <>
         <FourZoneTopHeaderSection
@@ -157,6 +160,7 @@ describe("Story 23.5 — Brand ORCIA in Sidebar/Login, TopHeaderBar sobriety & C
           workspaceDropdownOpen={false}
           onToggleWorkspaceDropdown={() => {}}
           onCloseWorkspaceDropdown={() => {}}
+          onNavigateHome={onNavigateHome}
           helpColumnOpen={false}
           onToggleHelpColumn={() => {}}
           notificationsOpen={false}

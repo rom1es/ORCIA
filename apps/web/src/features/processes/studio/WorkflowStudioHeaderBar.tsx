@@ -1,4 +1,4 @@
-import { ContextualInfoTriggerButton, OrciaAlertBanner, OrciaIcon } from "@orcia/ui";
+import { OrciaAlertBanner, OrciaIcon } from "@orcia/ui";
 import React from "react";
 import type { WorkflowDefinitionV2Item } from "../processStudioV2Data";
 
@@ -46,7 +46,6 @@ export function WorkflowStudioHeaderBar({
   onSaveAsDraft,
   onPublishWorkflow,
   onOpenRunDrawer,
-  onOpenHelpSection,
   onOpenAutonomyContract,
   onOpenTriggers,
 }: WorkflowStudioHeaderBarProps) {
@@ -123,15 +122,6 @@ export function WorkflowStudioHeaderBar({
                 <span>{autonomyActiveBadgeLabel}</span>
               </span>
             ) : null}
-            <ContextualInfoTriggerButton
-              sectionId="workflows-overview"
-              label={
-                isFr
-                  ? "Comprendre l'Atelier de Processus"
-                  : "Understand the Process Studio"
-              }
-              onOpenHelpSection={onOpenHelpSection}
-            />
           </div>
           <h1 style={{ margin: "6px 0 0 0", fontSize: "var(--font-size-h2)" }}>
             {isFr

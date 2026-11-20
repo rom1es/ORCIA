@@ -147,44 +147,45 @@ describe("Direction C 8-Item Shell, Mobile Companion (< 768px), Accostage & Dyna
     }
   }, 15000);
 
-  it("enforces strictly 8 Direction C sidebar entries, stacked double scope selector, clickable breadcrumb, and no Cockpit active state on /profile, /help, /showcase", async () => {
+  it("enforces strictly 9 Direction C sidebar entries, unified grouped scope selector, topbar [O] ORCIA home link, and no Cockpit active state on /profile, /help, /showcase", async () => {
     const { router } = await renderAppAtRoute("/cockpit");
 
     const sidebar = await screen.findByTestId("four-zone-sidebar");
     const menuItems = sidebar.querySelectorAll('[data-testid^="eight-menu-item-"]');
-    expect(menuItems).toHaveLength(8);
+    expect(menuItems).toHaveLength(9);
     for (const expectedKey of [
       "cockpit",
       "assistant",
       "processes",
       "agents",
       "spaces",
+      "organization",
       "finops",
       "configuration",
       "help",
     ]) {
       expect(screen.getByTestId(`eight-menu-item-${expectedKey}`)).toBeDefined();
     }
-    expect(screen.queryByTestId("eight-menu-item-organization")).toBeNull();
+    expect(screen.queryByTestId("sidebar-brand-logo")).toBeNull();
     expect(screen.queryByTestId("eight-menu-item-activity")).toBeNull();
     expect(screen.queryByTestId("eight-menu-item-glossary")).toBeNull();
 
-    // Stacked double scope selector (Équipe / Direction + Espace)
-    expect(screen.getByTestId("sidebar-double-scope-selector")).toBeDefined();
-    expect(screen.getByTestId("sidebar-team-bu-selector")).toBeDefined();
+    // Unified single workspace selector (Bug 7) — no stacked sidebar-team-bu-selector
+    expect(screen.getByTestId("sidebar-unified-scope-selector")).toBeDefined();
+    expect(screen.queryByTestId("sidebar-team-bu-selector")).toBeNull();
     expect(screen.getByTestId("sidebar-workspace-selector")).toBeDefined();
 
-    // Clickable breadcrumb on /organization shows ORCIA > Configuration > Mon Organisation and navigates back to /configuration
+    // Clickable [O] ORCIA home link + breadcrumb on /organization (no Configuration parent)
     await act(async () => {
       await router.navigate({ to: "/organization" });
     });
     const breadcrumb = await screen.findByTestId("topbar-breadcrumb");
     expect(breadcrumb.textContent).toContain("ORCIA");
-    const breadcrumbParent = await screen.findByTestId("topbar-breadcrumb-link-1");
-    expect(breadcrumbParent.textContent).toContain("Configuration");
-    fireEvent.click(breadcrumbParent);
+    expect(breadcrumb.textContent).toContain("Mon Organisation");
+    expect(breadcrumb.textContent).not.toContain("Configuration");
+    fireEvent.click(screen.getByTestId("topbar-orcia-home-link"));
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/configuration");
+      expect(router.state.location.pathname).toBe("/cockpit");
     });
 
     // Cockpit must NOT be active on /profile, /help, or /showcase
@@ -279,18 +280,16 @@ describe("Direction C 8-Item Shell, Mobile Companion (< 768px), Accostage & Dyna
       );
     });
 
-    // Click ⓘ trigger on /cockpit -> opens help column & activates target section
+    // Story 25.2 (Bug 5): no floating ⓘ trigger on /cockpit cards; ? Aide button toggles Zone 4
     await act(async () => {
       await router.navigate({ to: "/cockpit" });
     });
+    expect(screen.queryByTestId("contextual-info-trigger-cockpit-decisions")).toBeNull();
     fireEvent.click(screen.getByTestId("topbar-contextual-help-toggle"));
     expect(screen.queryByTestId("four-zone-contextual-help-column")).toBeNull();
 
-    fireEvent.click(screen.getByTestId("contextual-info-trigger-cockpit-decisions"));
+    fireEvent.click(screen.getByTestId("topbar-contextual-help-toggle"));
     expect(screen.getByTestId("four-zone-contextual-help-column")).toBeDefined();
-    expect(
-      screen.getByTestId("help-section-cockpit-decisions").getAttribute("data-active"),
-    ).toBe("true");
 
     // Static hygiene guard on _contextualHelpSections.ts
     const sectionsSource = fs.readFileSync(

@@ -1,5 +1,4 @@
 import {
-  ContextualInfoTriggerButton,
   OrciaIcon,
   type ControlCenterDatasourceItem,
   type ControlCenterWorkspaceGovItem,
@@ -259,7 +258,6 @@ export function WorkspaceSourcesRagTab({
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <strong style={{ fontSize: "14px" }}>{isFr ? `Sources de « ${activeWorkspace.name} »` : `Sources for "${activeWorkspace.name}"`}</strong>
-          <ContextualInfoTriggerButton sectionId="workspace-sources" label={isFr ? "Aide sources" : "Help sources"} onOpenHelpSection={openHelpSection} />
         </div>
       </div>
 

@@ -1,5 +1,4 @@
 import {
-  ContextualInfoTriggerButton,
   DisabledButtonAlertIndicator,
   getOrciaIconGlyph,
   OrciaAlertBanner,
@@ -253,7 +252,6 @@ export function WorkspaceGlossaryAndOntologyTab({
           <strong style={{ fontSize: "14px" }}>
             <OrciaIcon name="bookOpen" /> {`${copy.workspaceGlossaryTitlePrefix} « ${wsName} »`}
           </strong>
-          <ContextualInfoTriggerButton sectionId="glossary-rules" label={copy.workspaceGlossaryHelpLabel} onOpenHelpSection={openHelpSection} />
         </div>
         <span data-testid="workspace-glossary-cascade-summary" style={{ fontSize: "11px", padding: "3px 8px", borderRadius: "var(--radius-sm)", backgroundColor: "var(--color-bg-elevated)", border: "1px solid var(--color-border-subtle)", color: "var(--color-text-secondary)" }}>
           {`${enterpriseIcon} ${copy.workspaceGlossaryEnterpriseTitle} ➔ ${divisionIcon} Direction (${buLabel}) ➔ ${teamIcon} Équipe (${teamLabel}) ➔ ${workspaceIcon} Cet Espace (${wsName})`}

@@ -120,7 +120,7 @@ describe("Story 20.1 — Menu Mon Organisation, Délégation BU/Team, Invitation
     resetAuthSessionStore();
   });
 
-  it("restricts /organization mutation access exclusively to PLATFORM_ADMIN, BU_LEAD, TEAM_LEAD and keeps sidebar strictly at 8 Direction C entries", async () => {
+  it("shows Mon Organisation in Sidebar for all roles (read-only banner when non-delegated) and limits mutation access to PLATFORM_ADMIN, BU_LEAD, TEAM_LEAD", async () => {
     for (const visibleRole of ["PLATFORM_ADMIN", "BU_LEAD", "TEAM_LEAD"] as const) {
       useAuthSessionStore.getState().setAuthSession({
         isAuthenticated: true,
@@ -131,24 +131,24 @@ describe("Story 20.1 — Menu Mon Organisation, Délégation BU/Team, Invitation
       });
       const { unmount } = await renderAppAtRoute("/organization");
       await screen.findByTestId("eight-menu-item-spaces");
-      expect(screen.queryByTestId("eight-menu-item-organization")).toBeNull();
+      expect(screen.getByTestId("eight-menu-item-organization")).toBeDefined();
       expect(screen.getByTestId("eight-menu-item-help")).toBeDefined();
       expect(await screen.findByTestId("settings-organization-section")).toBeDefined();
       expect(screen.queryByTestId("organization-readonly-access-banner")).toBeNull();
       unmount();
     }
 
-    for (const hiddenRole of ["SECOPS", "ONTOLOGY_LEAD", "CONTRIBUTOR", "OBSERVER"] as const) {
+    for (const readonlyRole of ["SECOPS", "ONTOLOGY_LEAD", "CONTRIBUTOR", "OBSERVER"] as const) {
       useAuthSessionStore.getState().setAuthSession({
         isAuthenticated: true,
-        email: `${hiddenRole.toLowerCase()}@orcia.ia`,
-        displayName: hiddenRole,
-        roles: [hiddenRole],
-        activeHat: hiddenRole,
+        email: `${readonlyRole.toLowerCase()}@orcia.ia`,
+        displayName: readonlyRole,
+        roles: [readonlyRole],
+        activeHat: readonlyRole,
       });
       const { unmount } = await renderAppAtRoute("/organization");
       await screen.findByTestId("eight-menu-item-spaces");
-      expect(screen.queryByTestId("eight-menu-item-organization")).toBeNull();
+      expect(screen.getByTestId("eight-menu-item-organization")).toBeDefined();
       expect(await screen.findByTestId("organization-readonly-access-banner")).toBeDefined();
       unmount();
     }
@@ -194,8 +194,13 @@ describe("Story 20.1 — Menu Mon Organisation, Délégation BU/Team, Invitation
     await waitFor(() => {
       expect(within(firstOrgPage).getByText("Direction Opérations")).toBeTruthy();
       expect(within(firstOrgPage).getByText("Équipe Support N2")).toBeTruthy();
+      expect(within(firstOrgPage).getByText("Direction Finance")).toBeTruthy();
     });
-    expect(screen.queryByText("Direction Finance")).toBeNull();
+    // Direction Finance is outside Martin's delegation -> strictly read-only
+    expect(within(firstOrgPage).getByTestId("org-unit-readonly-badge-bu-finance")).toBeTruthy();
+    expect(
+      (within(firstOrgPage).getByTestId("edit-org-unit-btn-bu-finance") as HTMLButtonElement).disabled,
+    ).toBe(true);
     expect(screen.getByTestId("org-unit-ontology-lead-badge-bu-ops")).toBeTruthy();
 
     const rootDeleteBtn = screen.queryByTestId("delete-org-unit-btn-bu-ops") as HTMLButtonElement | null;

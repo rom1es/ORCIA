@@ -98,11 +98,15 @@ export function canAccessConfigurationSettings(session: AuthSessionSnapshot): bo
   return isPlatformAdministratorSession(session) || isSecopsSession(session);
 }
 
-export function canAccessMyOrganization(session: AuthSessionSnapshot): boolean {
+export function canMutateMyOrganization(session: AuthSessionSnapshot): boolean {
   if (session.readOnlyObserver === true) {
     return false;
   }
   return hasAnyRole(session.roles, ORG_MENU_ALLOWED_ROLES);
+}
+
+export function canAccessMyOrganization(session: AuthSessionSnapshot): boolean {
+  return session.roles.length > 0 || session.readOnlyObserver === true;
 }
 
 export function canObserveGlobalAuditScope(session: AuthSessionSnapshot): boolean {

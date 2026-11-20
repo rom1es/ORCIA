@@ -1,4 +1,5 @@
-import type { EightFixedMenuKey, ShellBreadcrumbItem } from "@orcia/ui";
+import type { FourZoneDirectionCShellLabels, ShellBreadcrumbItem } from "@orcia/ui";
+import { resolveGlobalScopeLabel } from "./platformSetupWorkspaces";
 
 function isWorkspaceScopedBreadcrumbRoute(pathname: string | null | undefined): boolean {
   if (!pathname || pathname === "/") return true;
@@ -21,10 +22,9 @@ function isWorkspaceScopedBreadcrumbRoute(pathname: string | null | undefined): 
 function buildRouteModuleBreadcrumbItems(params: {
   readonly pathname: string | null | undefined;
   readonly isFr: boolean;
-  readonly menuEntries: Record<EightFixedMenuKey, string>;
-  readonly canAccessConfiguration?: boolean;
+  readonly menuEntries: FourZoneDirectionCShellLabels["menuEntries"];
 }): readonly ShellBreadcrumbItem[] {
-  const { pathname, isFr, menuEntries, canAccessConfiguration = true } = params;
+  const { pathname, isFr, menuEntries } = params;
   if (!pathname || pathname === "/" || pathname.startsWith("/cockpit")) {
     return [{ label: menuEntries.cockpit, route: "/cockpit" }];
   }
@@ -89,13 +89,7 @@ function buildRouteModuleBreadcrumbItems(params: {
     return [{ label: menuEntries.finops, route: "/finops" }];
   }
   if (pathname.startsWith("/organization")) {
-    if (!canAccessConfiguration) {
-      return [{ label: isFr ? "Mon Organisation" : "My Organization", route: "/organization" }];
-    }
-    return [
-      { label: menuEntries.configuration, route: "/configuration" },
-      { label: isFr ? "Mon Organisation" : "My Organization", route: "/organization" },
-    ];
+    return [{ label: menuEntries.organization ?? (isFr ? "Mon Organisation" : "My Organization"), route: "/organization" }];
   }
   if (pathname.startsWith("/wizards")) {
     return [
@@ -128,7 +122,7 @@ function buildRouteModuleBreadcrumbItems(params: {
 export function buildShellBreadcrumbItems(params: {
   readonly pathname: string | null | undefined;
   readonly isFr: boolean;
-  readonly menuEntries: Record<EightFixedMenuKey, string>;
+  readonly menuEntries: FourZoneDirectionCShellLabels["menuEntries"];
   readonly activeTeamLabel?: string | null;
   readonly activeWorkspaceLabel?: string | null;
   readonly canAccessConfiguration?: boolean;
@@ -139,32 +133,34 @@ export function buildShellBreadcrumbItems(params: {
     menuEntries,
     activeTeamLabel,
     activeWorkspaceLabel,
-    canAccessConfiguration = true,
   } = params;
+  const globalLabelFr = resolveGlobalScopeLabel(true);
+  const globalLabelEn = resolveGlobalScopeLabel(false);
   const cleanTeam = (activeTeamLabel ?? "").trim();
   const isRedundantTeam =
     !cleanTeam ||
     cleanTeam === "ORCIA" ||
-    cleanTeam === "Plateforme Globale ORCIA" ||
-    cleanTeam === "Global Platform ORCIA";
+    cleanTeam === globalLabelFr ||
+    cleanTeam === globalLabelEn;
 
   const cleanWorkspace = (activeWorkspaceLabel ?? "").trim();
   const isRedundantWorkspace =
     !cleanWorkspace ||
     cleanWorkspace === "ORCIA" ||
     cleanWorkspace === cleanTeam ||
-    cleanWorkspace === "Plateforme Globale ORCIA" ||
-    cleanWorkspace === "Global Platform ORCIA" ||
+    cleanWorkspace === globalLabelFr ||
+    cleanWorkspace === globalLabelEn ||
     cleanWorkspace === "Tous les espaces" ||
-    cleanWorkspace === "All spaces";
+    cleanWorkspace === "All spaces" ||
+    cleanWorkspace === "Tous mes espaces" ||
+    cleanWorkspace === "All my spaces";
 
   const moduleItems = buildRouteModuleBreadcrumbItems({
     pathname,
     isFr,
     menuEntries,
-    canAccessConfiguration,
   });
-  const prefix: ShellBreadcrumbItem[] = [{ label: "ORCIA", route: "/cockpit" }];
+  const prefix: ShellBreadcrumbItem[] = [];
   if (!isRedundantTeam && !moduleItems.some((item) => item.label === cleanTeam)) {
     prefix.push({ label: cleanTeam });
   }

@@ -209,13 +209,15 @@ describe("Story 23.3 — Zone 4 Route Fidelity, No Unauthenticated Resolve & Rol
     expect(screen.getByTestId("contextual-help-common-pitfalls-box")).toBeDefined();
   });
 
-  it("exposes contextual-info-trigger-workspace-sources on /spaces even with 0 workspaces and opens Zone 4", async () => {
+  it("exposes Zone 4 contextual help toggle on /spaces even with 0 workspaces and removes floating ⓘ trigger (Story 25.2)", async () => {
     seedSession(["PLATFORM_ADMIN"]);
     await renderAppAtRoute("/spaces");
 
-    const trigger = await screen.findByTestId("contextual-info-trigger-workspace-sources");
-    expect(trigger).toBeDefined();
-    fireEvent.click(trigger);
+    expect(screen.queryByTestId("contextual-info-trigger-workspace-sources")).toBeNull();
+    const toggle = await screen.findByTestId("topbar-contextual-help-toggle");
+    if (toggle.getAttribute("aria-expanded") !== "true") {
+      fireEvent.click(toggle);
+    }
 
     await waitFor(() => {
       const col = screen.getByTestId("four-zone-contextual-help-column");

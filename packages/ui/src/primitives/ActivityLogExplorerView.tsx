@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { ContextualInfoTriggerButton } from "../components/ContextualInfoTriggerButton";
 import { OrciaIcon } from "../components/icons";
 import { ActivityLogFiltersBar } from "./ActivityLogFiltersBar";
 import {
@@ -52,7 +51,6 @@ export function ActivityLogExplorerView({
   nowTimestampMs,
   labels,
   provenanceLabels,
-  onOpenHelpSection,
   selectedRunId,
   onSelectRunId,
   onInspectProvenance,
@@ -196,14 +194,6 @@ export function ActivityLogExplorerView({
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <h1 style={{ margin: 0, fontSize: "18px", fontWeight: 700 }}>{labels.pageTitle}</h1>
-            {onOpenHelpSection && (
-              <ContextualInfoTriggerButton
-                testId="contextual-info-trigger-audit-overview"
-                sectionId="audit-overview"
-                label={labels.infoButtonLabel}
-                onOpenHelpSection={onOpenHelpSection}
-              />
-            )}
           </div>
         </div>
 

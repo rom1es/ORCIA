@@ -27,7 +27,9 @@ function resolveHelpTitleFallback(params: {
     );
   }
   return activeMenuKey
-    ? dictionary.fourZoneShell.menuEntries[activeMenuKey]
+    ? (dictionary.fourZoneShell.menuEntries[activeMenuKey] ??
+      dictionary.fourZoneShell.organizationMenuLabel ??
+      dictionary.modulePages[safeModuleKey].subtitle)
     : dictionary.modulePages[safeModuleKey].subtitle;
 }
 

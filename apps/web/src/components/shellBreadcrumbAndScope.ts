@@ -23,8 +23,10 @@ import {
   buildDoubleScopeSelectorState,
   buildShellDisabledMenuKeys,
   buildShellNotificationItems,
+  buildUnifiedScopeSelectorState,
   buildWorkspaceSwitcherOptions,
   type DoubleScopeSelectorState,
+  type UnifiedScopeSelectorState,
   type WorkspaceSwitcherOptionItem,
 } from "./shellScopeOptions";
 
@@ -39,6 +41,7 @@ export interface DerivedShellScopeAndBreadcrumbs {
   readonly userHatLabel: string;
   readonly workspaceOptions: readonly WorkspaceSwitcherOptionItem[];
   readonly doubleScopeState: DoubleScopeSelectorState;
+  readonly unifiedScopeState: UnifiedScopeSelectorState;
   readonly activeWorkspaceName: string;
   readonly breadcrumbItems: readonly ShellBreadcrumbItem[];
   readonly disabledMenuKeys: Partial<Record<EightFixedMenuKey, string>>;
@@ -134,6 +137,13 @@ export function deriveShellScopeAndBreadcrumbs(params: {
     scopes: effectiveScopes,
     activeScopeId: selectedScope.id,
   });
+  const unifiedScopeState = buildUnifiedScopeSelectorState({
+    isFr,
+    orgUnits,
+    workspaces,
+    activeScopeId: selectedScope.id,
+    labels: dictionary.fourZoneShell.doubleSelector,
+  });
 
   const activeOrgUnitLabel =
     orgUnits.find((u) => u.id === doubleScopeState.activeTeamBuId)?.name ?? null;
@@ -152,7 +162,10 @@ export function deriveShellScopeAndBreadcrumbs(params: {
   });
 
   const activeWorkspaceName =
-    selectedScope.name ?? workspaces[0]?.name ?? "Plateforme Globale ORCIA";
+    selectedScope.name ??
+    workspaces[0]?.name ??
+    dictionary.fourZoneShell.doubleSelector?.globalPlatformLabel ??
+    "ORCIA";
 
   const disabledMenuKeys = buildShellDisabledMenuKeys({
     isFr,
@@ -191,6 +204,7 @@ export function deriveShellScopeAndBreadcrumbs(params: {
     userHatLabel,
     workspaceOptions,
     doubleScopeState,
+    unifiedScopeState,
     activeWorkspaceName,
     breadcrumbItems,
     disabledMenuKeys,

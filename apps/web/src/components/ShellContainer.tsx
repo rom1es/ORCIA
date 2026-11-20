@@ -72,10 +72,17 @@ function InnerShellContainer({
   });
   const firstScopedId =
     workspaces[0]?.workspaceId ?? scopes.find((s) => s.id !== "scope-global")?.id ?? orgUnits[0]?.id;
+  const validScopeIds = [
+    ...workspaces.map((w) => w.workspaceId),
+    ...orgUnits.map((u) => u.id),
+    ...scopes.map((s) => s.id),
+  ];
 
   const state = useShellContainerState(runs.length, pathname, {
     canObserveGlobalScope: canObserveGlobal,
     defaultScopedId: firstScopedId,
+    isInitialLoading,
+    validScopeIds,
   });
   const isFr = locale === "fr";
   const dispatchNavigation = (href: string) => (onNavigate ? onNavigate(href) : navigateTo(href));
@@ -159,14 +166,12 @@ function InnerShellContainer({
         activeWorkspaceName={derived.activeWorkspaceName}
         activeScopeId={derived.selectedScope.id}
         workspaceOptions={derived.workspaceOptions}
-        teamBuOptions={derived.doubleScopeState.teamBuOptions}
-        activeTeamBuId={derived.doubleScopeState.activeTeamBuId}
-        onSelectTeamBu={state.setActiveScopeId}
-        workspaceSelectorOptions={derived.doubleScopeState.workspaceSelectorOptions}
-        activeWorkspaceSelectorId={derived.doubleScopeState.activeWorkspaceSelectorId}
-        onSelectWorkspaceFromSidebar={(scopeId) =>
-          state.setActiveScopeId(scopeId || derived.doubleScopeState.activeTeamBuId)
-        }
+        unifiedScopeGroups={derived.unifiedScopeState.groups}
+        unifiedAllSpacesOption={derived.unifiedScopeState.allSpacesOption}
+        unifiedScopeLabel={derived.unifiedScopeState.scopeLabel}
+        activeUnifiedScopeId={derived.unifiedScopeState.activeScopeValue}
+        onSelectUnifiedScope={state.setActiveScopeId}
+        onNavigateHome={() => selectModuleAndNavigate("cockpit", "cockpit", "/cockpit")}
         onSelectWorkspace={state.setActiveScopeId}
         isDesktopOnlyRoute={isDesktopOnlyMobileRoute(pathname)}
         activeMobileBottomTab={resolveActiveMobileBottomTab(pathname)}

@@ -13,16 +13,18 @@ export { formatAgentHumanLabel };
 
 export interface InteractiveRunDrawerProps {
   workflow: WorkflowDefinitionV2Item;
+  workspaceId?: string;
   onClose: () => void;
   isFr: boolean;
 }
 
 export function InteractiveRunDrawer({
   workflow,
+  workspaceId,
   onClose,
   isFr,
 }: InteractiveRunDrawerProps) {
-  const ctrl = useInteractiveProcessRunController(workflow, isFr);
+  const ctrl = useInteractiveProcessRunController(workflow, isFr, workspaceId);
   const {
     dictionary,
     enabledSubSteps,

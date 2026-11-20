@@ -1,4 +1,4 @@
-import { ContextualInfoTriggerButton, StatusBadge } from "@orcia/ui";
+import { StatusBadge } from "@orcia/ui";
 import React, { useEffect, useState } from "react";
 import { CreateProcessFormDialog } from "./CreateProcessFormDialog";
 import type { ConfiguredWorkflowItem } from "./platformSetupStore";
@@ -64,15 +64,6 @@ export function SimplifiedProcessBuilderSection({
                 ? "Créer et Gérer mes Processus Métiers"
                 : "Create and Manage Business Processes"}
             </h2>
-            <ContextualInfoTriggerButton
-              sectionId="workflows-overview"
-              label={
-                isFr
-                  ? "Comprendre à quoi sert un processus métier et comment le construire"
-                  : "Understand what a business process is for and how to build it"
-              }
-              onOpenHelpSection={openHelpSection}
-            />
           </div>
           <p style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}>
             {isFr

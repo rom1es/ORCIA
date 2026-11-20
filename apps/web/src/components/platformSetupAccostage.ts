@@ -5,7 +5,7 @@ import type {
   UiAccostageMilestoneItem,
 } from "@orcia/ui";
 import {
-  canAccessMyOrganization,
+  canMutateMyOrganization,
   isPlatformAdministratorSession,
 } from "../stores/authSessionStore";
 import type { AccostagePg18CountsView } from "./platformSetupHydration";
@@ -115,7 +115,7 @@ function isUiMilestoneAccessible(params: {
       return false;
     }
     const isAdmin = isPlatformAdministratorSession({ roles, readOnlyObserver });
-    const canOrg = canAccessMyOrganization({ roles, readOnlyObserver });
+    const canOrg = canMutateMyOrganization({ roles, readOnlyObserver });
     if (!isAdmin) {
       if (uiKey === "first-admin" || uiKey === "step-llm" || uiKey === "step-connectors") {
         return false;

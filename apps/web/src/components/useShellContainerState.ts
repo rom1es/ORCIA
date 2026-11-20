@@ -5,6 +5,33 @@ import {
   type EightFixedMenuKey,
   type UiModuleKey,
 } from "@orcia/ui";
+import { ignoreBenignStorageError } from "../utils/benignBrowserError";
+
+export const ORCIA_ACTIVE_SCOPE_STORAGE_KEY = "orcia.shell.active_scope_id.v1";
+
+function readSavedActiveScopeId(): string | null {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return null;
+    const raw = window.localStorage.getItem(ORCIA_ACTIVE_SCOPE_STORAGE_KEY);
+    return raw && raw.trim().length > 0 ? raw.trim() : null;
+  } catch (err: unknown) {
+    ignoreBenignStorageError("shell.read_active_scope", err);
+    return null;
+  }
+}
+
+function writeSavedActiveScopeId(scopeId: string | null): void {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return;
+    if (!scopeId) {
+      window.localStorage.removeItem(ORCIA_ACTIVE_SCOPE_STORAGE_KEY);
+    } else {
+      window.localStorage.setItem(ORCIA_ACTIVE_SCOPE_STORAGE_KEY, scopeId);
+    }
+  } catch (err: unknown) {
+    ignoreBenignStorageError("shell.write_active_scope", err);
+  }
+}
 
 export function useShellContainerState(
   runsLength: number,
@@ -12,13 +39,23 @@ export function useShellContainerState(
   options?: {
     readonly canObserveGlobalScope?: boolean;
     readonly defaultScopedId?: string;
+    readonly isInitialLoading?: boolean;
+    readonly validScopeIds?: readonly string[];
   },
 ) {
   const canObserveGlobalScope = options?.canObserveGlobalScope ?? true;
   const defaultScopedId = options?.defaultScopedId;
-  const [activeScopeId, setActiveScopeId] = useState(() =>
-    !canObserveGlobalScope && defaultScopedId ? defaultScopedId : "scope-global",
-  );
+  const isInitialLoading = options?.isInitialLoading ?? false;
+  const validScopeIds = options?.validScopeIds;
+  const [activeScopeId, setActiveScopeIdState] = useState(() => {
+    const saved = readSavedActiveScopeId();
+    if (saved) return saved;
+    return !canObserveGlobalScope && defaultScopedId ? defaultScopedId : "scope-global";
+  });
+  const setActiveScopeId = (nextScopeId: string) => {
+    setActiveScopeIdState(nextScopeId);
+    writeSavedActiveScopeId(nextScopeId);
+  };
   const [selectedModuleOverride, setSelectedModuleOverride] = useState<UiModuleKey | null>(null);
   const [selectedMenuKeyOverride, setSelectedMenuKeyOverride] =
     useState<EightFixedMenuKey | null>(null);
@@ -36,8 +73,23 @@ export function useShellContainerState(
   }, [pathname]);
 
   useEffect(() => {
-    if (!canObserveGlobalScope && activeScopeId === "scope-global" && defaultScopedId) {
-      setActiveScopeId(defaultScopedId);
+    if (isInitialLoading || !validScopeIds) return;
+    if (activeScopeId !== "scope-global" && !validScopeIds.includes(activeScopeId)) {
+      const fallback =
+        !canObserveGlobalScope && defaultScopedId ? defaultScopedId : "scope-global";
+      setActiveScopeIdState(fallback);
+      writeSavedActiveScopeId(fallback === "scope-global" ? null : fallback);
+    }
+  }, [isInitialLoading, validScopeIds, activeScopeId, canObserveGlobalScope, defaultScopedId]);
+
+  useEffect(() => {
+    if (
+      !canObserveGlobalScope &&
+      activeScopeId === "scope-global" &&
+      defaultScopedId &&
+      readSavedActiveScopeId() === null
+    ) {
+      setActiveScopeIdState(defaultScopedId);
     }
   }, [canObserveGlobalScope, activeScopeId, defaultScopedId]);
 

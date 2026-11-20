@@ -8,7 +8,9 @@ import {
 import type { UpdateConnectorQuotaInput } from "@orcia/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
+import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions";
 import { useI18n } from "../../i18n";
+import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import {
   mapCognitiveTabProps,
@@ -24,11 +26,28 @@ function isValidUuid(value: string | null | undefined): value is string {
   return Boolean(value && UUID_REGEX.test(value));
 }
 
+function deriveFinopsScopeLevel(
+  level: string | undefined,
+): "GLOBAL" | "BU" | "TEAM" | "WORKSPACE" {
+  if (level === "WORKSPACE" || level === "TEAM" || level === "BU") {
+    return level;
+  }
+  return "GLOBAL";
+}
+
 export function useFinopsDashboardController(activeScopeId: string) {
   const { dictionary, locale } = useI18n();
   const { scopes, workspaces, orgUnits } = usePlatformSetup();
+  const authEmail = useAuthSessionStore((s) => s.email);
 
-  const [selectedScope, setSelectedScope] = useState<"GLOBAL" | "BU" | "TEAM" | "WORKSPACE">("GLOBAL");
+  const activeScopeNode = useMemo(
+    () => scopes.find((s) => s.id === activeScopeId),
+    [scopes, activeScopeId],
+  );
+
+  const [selectedScope, setSelectedScope] = useState<"GLOBAL" | "BU" | "TEAM" | "WORKSPACE">(
+    () => deriveFinopsScopeLevel(scopes.find((s) => s.id === activeScopeId)?.level),
+  );
   const [dashboardData, setDashboardData] = useState<FinopsBreakdownResponse | null>(null);
   const [cognitiveData, setCognitiveData] = useState<CognitiveImpactDashboardResponse | null>(null);
   const [remoteData, setRemoteData] = useState<RemoteServicesListResponse | null>(null);
@@ -36,10 +55,9 @@ export function useFinopsDashboardController(activeScopeId: string) {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [reloadTrigger, setReloadTrigger] = useState<number>(0);
 
-  const activeScopeNode = useMemo(
-    () => scopes.find((s) => s.id === activeScopeId),
-    [scopes, activeScopeId],
-  );
+  useEffect(() => {
+    setSelectedScope(deriveFinopsScopeLevel(activeScopeNode?.level));
+  }, [activeScopeId, activeScopeNode?.level]);
 
   const resolveValidScopeIdForLevel = useCallback(
     (level: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE"): string | null => {
@@ -48,11 +66,19 @@ export function useFinopsDashboardController(activeScopeId: string) {
         return activeScopeNode.id;
       }
       if (level === "WORKSPACE") {
+        const effectiveWsId = resolveEffectiveWorkspaceId(activeScopeId, workspaces, authEmail);
+        if (isValidUuid(effectiveWsId)) return effectiveWsId;
         return (
           scopes.find((s) => s.level === "WORKSPACE" && isValidUuid(s.id))?.id ??
           workspaces.find((w) => isValidUuid(w.workspaceId))?.workspaceId ??
           null
         );
+      }
+      if (level === "TEAM" && activeScopeNode?.level === "WORKSPACE") {
+        const ws = workspaces.find((w) => w.workspaceId === activeScopeNode.id);
+        if (ws?.ownerOrgUnitId && isValidUuid(ws.ownerOrgUnitId)) {
+          return ws.ownerOrgUnitId;
+        }
       }
       return (
         scopes.find((s) => s.level === level && isValidUuid(s.id))?.id ??
@@ -60,7 +86,7 @@ export function useFinopsDashboardController(activeScopeId: string) {
         null
       );
     },
-    [activeScopeNode, scopes, workspaces, orgUnits],
+    [activeScopeId, activeScopeNode, authEmail, scopes, workspaces, orgUnits],
   );
 
   const resolvedScopeIdsByLevel = useMemo(

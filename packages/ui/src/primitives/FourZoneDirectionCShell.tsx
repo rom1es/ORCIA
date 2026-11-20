@@ -16,6 +16,7 @@ import {
   type ShellBreadcrumbItem,
   type UiNotificationCenterItem,
   type UiNotificationCenterItemKind,
+  type UnifiedScopeOptionGroup,
   type WorkspaceSwitcherOption,
 } from "./FourZoneShellTypes";
 import { FourZoneSidebarRail } from "./FourZoneSidebarRail";
@@ -24,6 +25,7 @@ import {
   MobileCompanionBottomBar,
   MobileShellNavigationDrawer,
 } from "./MobileCompanionBottomBar";
+import { useFourZoneShellHotkeys } from "./useFourZoneShellHotkeys";
 
 export {
   DEFAULT_EIGHT_FIXED_MENU_ENTRIES,
@@ -38,6 +40,7 @@ export {
   type ShellBreadcrumbItem,
   type UiNotificationCenterItem,
   type UiNotificationCenterItemKind,
+  type UnifiedScopeOptionGroup,
   type WorkspaceSwitcherOption,
 };
 
@@ -45,12 +48,8 @@ export function computeDefaultHelpColumnOpen(
   viewportWidth: number,
   pendingDecisionsTotal: number,
 ): boolean {
-  if (viewportWidth < 1024) {
-    return false;
-  }
-  if (viewportWidth < 1440 && pendingDecisionsTotal >= 1) {
-    return false;
-  }
+  if (viewportWidth < 1024) return false;
+  if (viewportWidth < 1440 && pendingDecisionsTotal >= 1) return false;
   return true;
 }
 
@@ -61,12 +60,15 @@ export function FourZoneDirectionCShell({
   activeWorkspaceName,
   activeScopeId,
   workspaceOptions,
-  teamBuOptions,
-  activeTeamBuId,
-  onSelectTeamBu,
   workspaceSelectorOptions,
   activeWorkspaceSelectorId,
   onSelectWorkspaceFromSidebar,
+  unifiedScopeGroups,
+  unifiedAllSpacesOption,
+  unifiedScopeLabel,
+  activeUnifiedScopeId,
+  onSelectUnifiedScope,
+  onNavigateHome,
   doubleSelectorLabels,
   activePackKey,
   availablePacks,
@@ -127,37 +129,21 @@ export function FourZoneDirectionCShell({
     .join("|");
 
   useEffect(() => {
-    if (!isMobile) {
-      setMobileMenuOpen(false);
-    }
+    if (!isMobile) setMobileMenuOpen(false);
   }, [isMobile]);
 
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [breadcrumbSig, mobileDrawerCloseSignal]);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent): void => {
-      const target = event.target as HTMLElement | null;
-      const isEditable =
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement ||
-        target instanceof HTMLSelectElement ||
-        Boolean(target?.isContentEditable);
-      const hasOpenModalDialog = Array.from(
-        document.querySelectorAll('[aria-modal="true"]'),
-      ).some((el) => el.getAttribute("role") === "dialog");
-      if (event.key === "[" && !isEditable && !hasOpenModalDialog) {
-        setRailCollapsed((prev) => !prev);
-      } else if (event.key === "Escape") {
-        setNotificationsOpen(false);
-        setWorkspaceDropdownOpen(false);
-        setMobileMenuOpen(false);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  useFourZoneShellHotkeys({
+    onToggleRailCollapsed: () => setRailCollapsed((prev) => !prev),
+    onEscapeClose: () => {
+      setNotificationsOpen(false);
+      setWorkspaceDropdownOpen(false);
+      setMobileMenuOpen(false);
+    },
+  });
 
   const effectiveNotificationCount =
     notifications.length > 0 ? notifications.length : pendingDecisionsTotal;
@@ -204,6 +190,13 @@ export function FourZoneDirectionCShell({
         onToggleMobileMenu={() => setMobileMenuOpen((prev) => !prev)}
         breadcrumbItems={breadcrumbItems}
         onNavigateBreadcrumb={onNavigateBreadcrumb}
+        onNavigateHome={
+          onNavigateHome ??
+          (() => {
+            if (onNavigateBreadcrumb) onNavigateBreadcrumb("/cockpit");
+            else onSelectMenu("cockpit", "/cockpit");
+          })
+        }
         activeWorkspaceName={activeWorkspaceName}
         activeScopeId={activeScopeId}
         workspaceOptions={workspaceOptions}
@@ -239,12 +232,14 @@ export function FourZoneDirectionCShell({
           labels={labels}
           disabledMenuKeys={disabledMenuKeys}
           hiddenMenuKeys={hiddenMenuKeys}
-          teamBuOptions={teamBuOptions}
-          activeTeamBuId={activeTeamBuId}
-          onSelectTeamBu={onSelectTeamBu}
           workspaceSelectorOptions={workspaceSelectorOptions}
           activeWorkspaceSelectorId={activeWorkspaceSelectorId}
           onSelectWorkspaceFromSidebar={onSelectWorkspaceFromSidebar}
+          unifiedScopeGroups={unifiedScopeGroups}
+          unifiedAllSpacesOption={unifiedAllSpacesOption}
+          unifiedScopeLabel={unifiedScopeLabel}
+          activeUnifiedScopeId={activeUnifiedScopeId}
+          onSelectUnifiedScope={onSelectUnifiedScope}
           doubleSelectorLabels={doubleSelectorLabels}
           renderSidebarFooter={renderSidebarFooter}
           onSelectMenu={onSelectMenu}
@@ -267,12 +262,14 @@ export function FourZoneDirectionCShell({
             hiddenMenuKeys={hiddenMenuKeys}
             onSelectMenu={onSelectMenu}
             onSelectPack={onSelectPack}
-            teamBuOptions={teamBuOptions}
-            activeTeamBuId={activeTeamBuId}
-            onSelectTeamBu={onSelectTeamBu}
             workspaceSelectorOptions={workspaceSelectorOptions}
             activeWorkspaceSelectorId={activeWorkspaceSelectorId}
             onSelectWorkspaceFromSidebar={onSelectWorkspaceFromSidebar}
+            unifiedScopeGroups={unifiedScopeGroups}
+            unifiedAllSpacesOption={unifiedAllSpacesOption}
+            unifiedScopeLabel={unifiedScopeLabel}
+            activeUnifiedScopeId={activeUnifiedScopeId}
+            onSelectUnifiedScope={onSelectUnifiedScope}
             doubleSelectorLabels={doubleSelectorLabels}
             sidebarSecondarySlot={sidebarSecondarySlot}
             renderSidebarFooter={renderSidebarFooter}

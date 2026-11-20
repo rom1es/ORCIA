@@ -3,7 +3,7 @@ import {
   OrciaButton,
   OrciaDialog,
 } from "@orcia/ui";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { ConfiguredOrgUnit } from "../../../components/platformSetupStorageHelpers";
 import type { OrganizationInviteModalLabels } from "../../../i18n/locales/organization_modals_labels";
 
@@ -47,18 +47,31 @@ export function InviteOrganizationUserModal({
   const [email, setEmail] = useState<string>("");
   const [displayName, setDisplayName] = useState<string>("");
   const [assignmentRole, setAssignmentRole] = useState<OrgInviteAssignmentRole>("CONTRIBUTOR");
+  const wasOpenRef = useRef(false);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      wasOpenRef.current = false;
+      return;
+    }
     const defaultUnit =
       (initialTargetUnitId && invitableUnits.find((u) => u.id === initialTargetUnitId)) ||
       invitableUnits[0];
     const nextUnitId = defaultUnit?.id ?? "";
-    setTargetOrgUnitId(nextUnitId);
-    setEmail("");
-    setDisplayName("");
-    setAssignmentRole(defaultUnit?.level === "BU" ? "BU_LEAD" : "CONTRIBUTOR");
-  }, [open, initialTargetUnitId, invitableUnits]);
+    if (!wasOpenRef.current) {
+      wasOpenRef.current = true;
+      setTargetOrgUnitId(nextUnitId);
+      setEmail("");
+      setDisplayName("");
+      setAssignmentRole(defaultUnit?.level === "BU" ? "BU_LEAD" : "CONTRIBUTOR");
+      return;
+    }
+    // Si la liste des unités arrive après l'ouverture, ne pas effacer les champs déjà saisis.
+    if (!targetOrgUnitId && nextUnitId) {
+      setTargetOrgUnitId(nextUnitId);
+      setAssignmentRole(defaultUnit?.level === "BU" ? "BU_LEAD" : "CONTRIBUTOR");
+    }
+  }, [open, initialTargetUnitId, invitableUnits, targetOrgUnitId]);
 
   const selectedUnit = invitableUnits.find((u) => u.id === targetOrgUnitId) ?? invitableUnits[0];
   const isBu = selectedUnit?.level === "BU";

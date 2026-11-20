@@ -229,11 +229,10 @@ describe("Sally & Winston Audit — 4 Golden Invariants of Look & Feel Separatio
     expect(card.className).toContain("orcia-bento-card");
     expect(card.className).toContain("orcia-ds-card");
 
-    const infoBtn = screen.getByTestId(
-      "contextual-info-trigger-ai-models-overview",
-    );
-    fireEvent.click(infoBtn);
-    expect(onOpenHelp).toHaveBeenCalledWith("ai-models-overview");
+    // Story 25.2 (Bug 5): OrciaSectionCard no longer renders floating ⓘ triggers in card headers
+    expect(
+      screen.queryByTestId("contextual-info-trigger-ai-models-overview"),
+    ).toBeNull();
 
     const advTab = screen.getByTestId("ds-tab-advanced");
     expect(advTab.className).toContain("orcia-ds-tab");

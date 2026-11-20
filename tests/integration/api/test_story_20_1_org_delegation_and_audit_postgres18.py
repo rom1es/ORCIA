@@ -280,5 +280,90 @@ async def test_story_20_1_delegation_invitation_b1_sync_and_audit_scope_postgres
             assert team_ventes_id in pascal_ou_ids
             assert bu_comm_id not in pascal_ou_ids
             assert bu_fin_id not in pascal_ou_ids
+
+            # 6. Story 25.2 — Non-delegated CONTRIBUTOR/OBSERVER reads full org tree read-only
+            #    (can_* == False) and receives 403 on all mutations against real PG18.
+            r_contrib = await client.post(
+                "/api/v1/settings/iam/accounts",
+                headers=admin_headers,
+                json={
+                    "principal_id": "claire.contrib@orcia.ia",
+                    "display_name": "Claire Contrib",
+                    "email": "claire.contrib@orcia.ia",
+                    "account_kind": "HUMAN",
+                    "roles": ["CONTRIBUTOR"],
+                },
+            )
+            assert r_contrib.status_code == 200, r_contrib.text
+            login_contrib = await client.post(
+                "/api/v1/auth/login/local",
+                json={
+                    "email": "claire.contrib@orcia.ia",
+                    "password": r_contrib.json()["temporary_password"],
+                },
+            )
+            assert login_contrib.status_code == 200, login_contrib.text
+            contrib_headers = {"Authorization": f"Bearer {login_contrib.json()['access_token']}"}
+
+            ro_tree = await client.get("/api/v1/org-units", headers=contrib_headers)
+            assert ro_tree.status_code == 200, ro_tree.text
+            ro_units = {u["id"]: u for u in ro_tree.json()["org_units"]}
+            assert {bu_comm_id, bu_fin_id, team_ventes_id}.issubset(ro_units.keys())
+            for unit in ro_units.values():
+                assert unit["can_edit"] is False
+                assert unit["can_create_child"] is False
+                assert unit["can_delete"] is False
+                assert unit["can_manage_members"] is False
+                assert unit["can_manage_ontology_leads"] is False
+                assert unit["can_invite_users"] is False
+
+            assert (
+                await client.post(
+                    "/api/v1/org-units",
+                    headers=contrib_headers,
+                    json={"name": "Unauthorized PG BU", "kind": "BU"},
+                )
+            ).status_code == 403
+            assert (
+                await client.patch(
+                    f"/api/v1/org-units/{team_ventes_id}",
+                    headers=contrib_headers,
+                    json={"name": "Unauthorized Rename"},
+                )
+            ).status_code == 403
+            assert (
+                await client.delete(
+                    f"/api/v1/org-units/{team_ventes_id}",
+                    headers=contrib_headers,
+                )
+            ).status_code == 403
+            assert (
+                await client.post(
+                    "/api/v1/org-units/invite-user",
+                    headers=contrib_headers,
+                    json={
+                        "target_org_unit_id": team_ventes_id,
+                        "email": "blocked.pg@orcia.ia",
+                        "display_name": "Blocked PG",
+                        "assignment_role": "TEAM_MEMBER",
+                    },
+                )
+            ).status_code == 403
+            # Also verify OBSERVER read-only header blocks mutations
+            obs_ro = await client.get(
+                "/api/v1/org-units",
+                headers={**martin_headers, "X-Orcia-Access-Mode": "READ_ONLY_OBSERVER"},
+            )
+            assert obs_ro.status_code == 200
+            for unit in obs_ro.json()["org_units"]:
+                assert unit["can_edit"] is False
+                assert unit["can_delete"] is False
+            assert (
+                await client.patch(
+                    f"/api/v1/org-units/{bu_comm_id}",
+                    headers={**martin_headers, "X-Orcia-Access-Mode": "READ_ONLY_OBSERVER"},
+                    json={"name": "Blocked Observer Rename"},
+                )
+            ).status_code == 403
     finally:
         await engine.dispose()

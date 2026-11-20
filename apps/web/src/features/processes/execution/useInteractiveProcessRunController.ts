@@ -10,6 +10,9 @@ import {
 import { useReflexiveExecutionController } from "../../shared/useReflexiveExecutionController";
 import { useSourceLineInspector } from "../../shared/useSourceLineInspector";
 import {
+  buildInitialArtifactMarkdown,
+  buildSubStepAdvanceMarkdown,
+  buildWritePreviewExecutionPayload,
   extractAgentSlugFromRef,
   formatAgentHumanLabel,
   simpleHashHex,
@@ -25,6 +28,7 @@ export {
 export function useInteractiveProcessRunController(
   workflow: WorkflowDefinitionV2Item,
   isFr: boolean,
+  workspaceId?: string,
 ) {
   const { locale, dictionary } = useI18n();
   const enabledSubSteps = workflow.sub_steps.filter((s) => s.enabled);
@@ -46,28 +50,24 @@ export function useInteractiveProcessRunController(
   const currentSubStep = enabledSubSteps[currentSubIndex] ?? enabledSubSteps[0];
   const agentLabel = formatAgentHumanLabel(workflow.agent_ref);
 
-  const [artifactMarkdown, setArtifactMarkdown] = useState<string>(
-    `# ${workflow.title}\n\n## Étape en cours : ${currentSubStep?.name ?? "Exécution"}\n\nProposition préparée par ${agentLabel}.\n\n## Synthèse & Critères de valeur\n- Objectif métier clarifié et aligné avec le socle de connaissance.\n- Score de priorité (WSJF) estimé : 8.4 — Prêt pour relecture.`,
+  const [artifactMarkdown, setArtifactMarkdown] = useState<string>(() =>
+    buildInitialArtifactMarkdown(workflow.title, currentSubStep?.name ?? "Exécution", agentLabel),
   );
   const [artifactSha256, setArtifactSha256] = useState<string>(() =>
     simpleHashHex(artifactMarkdown),
   );
   const [isEditingDiff, setIsEditingDiff] = useState<boolean>(false);
-  const [returnLoopTargetStep, setReturnLoopTargetStep] =
-    useState<string>("02");
+  const [returnLoopTargetStep, setReturnLoopTargetStep] = useState<string>("02");
   const [returnLoopRemarks, setReturnLoopRemarks] = useState<string>(
     "Préciser les hypothèses de gain métier sur le segment professionnel.",
   );
-  const [signedTokenPreview, setSignedTokenPreview] = useState<string | null>(
-    null,
-  );
+  const [signedTokenPreview, setSignedTokenPreview] = useState<string | null>(null);
   const [statusBanner, setStatusBanner] = useState<string | null>(null);
   const [hasError, setHasError] = useState<boolean>(false);
   const [isStartingRun, setIsStartingRun] = useState<boolean>(
     () => !readPersistedReflexiveId(storageKey),
   );
-  const [isSubmittingDecision, setIsSubmittingDecision] =
-    useState<boolean>(false);
+  const [isSubmittingDecision, setIsSubmittingDecision] = useState<boolean>(false);
   const startRunPromiseRef = useRef<Promise<string | null> | null>(null);
   const hasPersistedServerRunRef = useRef<boolean>(false);
   const [inlineRunTraceEvents, setInlineRunTraceEvents] = useState<
@@ -76,6 +76,7 @@ export function useInteractiveProcessRunController(
 
   const inspector = useSourceLineInspector({
     locale,
+    workspaceId,
     onFeedback: setStatusBanner,
   });
 
@@ -148,6 +149,7 @@ export function useInteractiveProcessRunController(
               "docs/product/capabilities.yaml",
               "packs/orcia-docs/workflows/wf-generate-orcia-documentation.yaml",
             ],
+            ...(workspaceId ? { workspace_id: workspaceId } : {}),
           });
         }
         return resolvedRunId;
@@ -194,24 +196,15 @@ export function useInteractiveProcessRunController(
   };
 
   const handleStageExternalWritePreview = () => {
-    void reflexive.startExecution({
-      actor_slug: actorSlug,
-      objective: workflow.reflexive_objective || workflow.title,
-      effort_level: "high",
-      effort_mode: "approfondi",
-      allow_sub_agent_delegation: true,
-      available_delegate_agents: ["analyste-metier"],
-      initial_resources: ["docs/product/capabilities.yaml"],
-      requested_write_preview: {
-        connector_type: "confluence",
-        action: "publish_page",
-        target_resource_uri: "confluence://Architecture/Documentation-ORCIA",
-        action_summary: isFr
-          ? `Publier le livrable « ${workflow.title} »`
-          : `Publish deliverable "${workflow.title}"`,
-        payload: { workflow_id: workflow.id, title: workflow.title },
-      },
-    });
+    void reflexive.startExecution(
+      buildWritePreviewExecutionPayload(
+        actorSlug,
+        workflow.id,
+        workflow.title,
+        workflow.reflexive_objective,
+        isFr,
+      ),
+    );
   };
 
   const handleApproveCurrentSubStep = () => {
@@ -234,14 +227,14 @@ export function useInteractiveProcessRunController(
       const nextIdx = currentSubIndex + 1;
       const nextSub = enabledSubSteps[nextIdx];
       setCurrentSubIndex(nextIdx);
-      const nextMd = `# ${workflow.title}\n\n## Étape en cours : ${nextSub?.name ?? ""}\n\nLivrable préparé : ${nextSub?.output_description ?? ""}`;
+      const nextMd = buildSubStepAdvanceMarkdown(
+        workflow.title,
+        nextSub?.name ?? "",
+        nextSub?.output_description ?? "",
+      );
       setArtifactMarkdown(nextMd);
       setArtifactSha256(simpleHashHex(nextMd));
-      setStatus(
-        nextSub?.write_preview_required
-          ? "WAITING_WRITE_PREVIEW"
-          : "WAITING_SUBSTEP_HITL",
-      );
+      setStatus(nextSub?.write_preview_required ? "WAITING_WRITE_PREVIEW" : "WAITING_SUBSTEP_HITL");
       setStatusBanner(
         isFr
           ? `Étape « ${currentSubStep?.short_label} » validée. Passage à « ${nextSub?.short_label} ».`
@@ -265,18 +258,13 @@ export function useInteractiveProcessRunController(
       let resolvedRunId = runId;
       if (startRunPromiseRef.current) {
         const awaitedRunId = await startRunPromiseRef.current;
-        if (awaitedRunId) {
-          resolvedRunId = awaitedRunId;
-        }
+        if (awaitedRunId) resolvedRunId = awaitedRunId;
       }
       if (hasPersistedServerRunRef.current) {
-        await createProcessesApiClient(locale).sendWorkflowV2HitlSignal(
-          resolvedRunId,
-          {
-            action: "APPROVE",
-            actor_id: actorSlug,
-          },
-        );
+        await createProcessesApiClient(locale).sendWorkflowV2HitlSignal(resolvedRunId, {
+          action: "APPROVE",
+          actor_id: actorSlug,
+        });
       }
       setStatus("COMPLETED_APPROVED");
       setStatusBanner(
@@ -287,11 +275,7 @@ export function useInteractiveProcessRunController(
     } catch (err: unknown) {
       const detail = err instanceof Error ? err.message : String(err);
       setHasError(true);
-      setStatusBanner(
-        isFr
-          ? `Échec de la validation du livrable : ${detail}`
-          : `Deliverable approval failed: ${detail}`,
-      );
+      setStatusBanner(isFr ? `Échec de la validation du livrable : ${detail}` : `Deliverable approval failed: ${detail}`);
     } finally {
       setIsSubmittingDecision(false);
     }
@@ -300,11 +284,7 @@ export function useInteractiveProcessRunController(
   const handleAction2SaveAmendedDiff = () => {
     setArtifactSha256(simpleHashHex(artifactMarkdown));
     setIsEditingDiff(false);
-    setStatusBanner(
-      isFr
-        ? "Modifications enregistrées sur le livrable."
-        : "Deliverable changes saved.",
-    );
+    setStatusBanner(isFr ? "Modifications enregistrées sur le livrable." : "Deliverable changes saved.");
   };
 
   const handleAction3RejectAndLoop = () => {

@@ -27,14 +27,15 @@ export function useShellAutonomousSupervision({
     const scopeWs = selectedScope.id.startsWith("scope-ws-")
       ? selectedScope.id.slice("scope-ws-".length)
       : selectedScope.id;
-    if (selectedScope.level === "WORKSPACE" && isValidWorkspaceKey(scopeWs)) {
-      return scopeWs;
-    }
+    const effectiveWsId = workspaces.find(
+      (w) => isValidWorkspaceKey(w.workspaceId) && w.workspaceId === scopeWs,
+    )?.workspaceId;
+    if (effectiveWsId) return effectiveWsId;
     return workspaces.find((w) => isValidWorkspaceKey(w.workspaceId))?.workspaceId ?? null;
   }, [selectedScope, workspaces]);
 
   const { lastClaimEvent } = useWorkspaceEventsSse(
-    isAuthenticated ? (activeWsUuid ?? workspaces[0]?.workspaceId) : undefined,
+    isAuthenticated ? (activeWsUuid ?? undefined) : undefined,
   );
   const [autonomousRuns, setAutonomousRuns] = useState<AutonomousRunSupervisionItemSchema[]>([]);
   const [inboxNotifications, setInboxNotifications] = useState<TaskNotificationItemResponse[]>([]);

@@ -1,4 +1,4 @@
-import { ContextualInfoTriggerButton, OrciaIcon } from "@orcia/ui";
+import { OrciaIcon } from "@orcia/ui";
 import React from "react";
 import type { ProcessOrchestrationModesCopy } from "../../../i18n/locales/process_orchestration_modes_labels";
 
@@ -17,7 +17,6 @@ export function WorkflowOrchestrationModeSelector({
   copy,
   isFr,
   onSelectOrchestrationType,
-  onOpenHelpSection,
 }: WorkflowOrchestrationModeSelectorProps) {
   const isGoalDriven = orchestrationType === "non_deterministic";
   const isMilestoneDriven = orchestrationType === "deterministic_dbos";
@@ -42,15 +41,6 @@ export function WorkflowOrchestrationModeSelector({
             <strong style={{ fontSize: "14px", color: "var(--color-primary-cobalt)" }}>
               {copy.selectorSectionTitle}
             </strong>
-            <ContextualInfoTriggerButton
-              sectionId="workflows-instructions"
-              label={
-                isFr
-                  ? "Comprendre la différence entre objectif adaptatif et jalons"
-                  : "Understand goal-driven vs milestone-driven modes"
-              }
-              onOpenHelpSection={onOpenHelpSection}
-            />
           </div>
           <div style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
             {copy.selectorSectionHint}

@@ -58,7 +58,7 @@ test.describe("Orchestration durable, contestation amont avec simulation d'impac
     );
 
     await reloadClearingStorage(page);
-    await expect(page.getByTestId("cockpit-active-scope-badge")).toBeVisible({ timeout: 30000 });
+    await expect(page.getByTestId("cockpit-block-decisions")).toBeVisible({ timeout: 30000 });
     await expect(page.getByTestId("cockpit-human-anchor-signed-badge")).toBeVisible({
       timeout: 15000,
     });

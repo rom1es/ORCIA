@@ -5,6 +5,10 @@ import type {
   UiScopeNode,
   UiShellModuleItem,
 } from "@orcia/ui";
+import {
+  SHELL_AND_SEARCH_EN_LABELS,
+  SHELL_AND_SEARCH_FR_LABELS,
+} from "../i18n/locales/shell_and_search_labels";
 export { buildShellBreadcrumbItems } from "./shellBreadcrumbBuilders";
 
 export const DEFAULT_SHELL_MODULES: UiShellModuleItem[] = [
@@ -19,7 +23,15 @@ export const DEFAULT_SHELL_MODULES: UiShellModuleItem[] = [
 ];
 
 export const EMPTY_DEFAULT_SCOPES: UiScopeNode[] = [
-  { id: "scope-global", level: "GLOBAL", name: "Plateforme Globale ORCIA", accessMode: "CONTRIBUTOR_ACTION_REQUIRED" },
+  {
+    id: "scope-global",
+    level: "GLOBAL",
+    name:
+      SHELL_AND_SEARCH_FR_LABELS.fourZoneShell.doubleSelector?.globalPlatformLabel ??
+      SHELL_AND_SEARCH_EN_LABELS.fourZoneShell.doubleSelector?.globalPlatformLabel ??
+      "ORCIA",
+    accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
+  },
 ];
 
 export function evaluateScopeModuleVisibility(
@@ -83,9 +95,8 @@ export function resolveModuleFromPathname(pathname: string | null): UiModuleKey 
 export function resolveEightMenuKeyFromModule(
   moduleKey: UiModuleKey,
   pathname: string | null,
-  options?: { readonly canAccessConfiguration?: boolean },
+  _options?: { readonly canAccessConfiguration?: boolean },
 ): EightFixedMenuKey | null {
-  const canAccessConfig = options?.canAccessConfiguration ?? true;
   if (pathname) {
     if (pathname === "/" || pathname.startsWith("/cockpit")) return "cockpit";
     if (pathname.startsWith("/assistant") || pathname.startsWith("/inbox")) return "assistant";
@@ -98,10 +109,10 @@ export function resolveEightMenuKeyFromModule(
     ) {
       return "spaces";
     }
-    if (pathname.startsWith("/finops") || pathname.startsWith("/activity")) return "finops";
     if (pathname.startsWith("/organization")) {
-      return canAccessConfig ? "configuration" : null;
+      return "organization";
     }
+    if (pathname.startsWith("/finops") || pathname.startsWith("/activity")) return "finops";
     if (
       pathname.startsWith("/configuration") ||
       pathname.startsWith("/settings") ||
@@ -150,6 +161,8 @@ export function mapEightMenuKeyToModule(key: EightFixedMenuKey): {
       return { moduleKey: "catalog", route: "/agents" };
     case "spaces":
       return { moduleKey: "admin", route: "/spaces" };
+    case "organization":
+      return { moduleKey: "admin", route: "/organization" };
     case "finops":
       return { moduleKey: "finops", route: "/finops" };
     case "configuration":

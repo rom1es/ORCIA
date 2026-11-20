@@ -194,7 +194,7 @@ export const EPIC18_SOURCES_LABELS_FR: Epic18SourcesLabels = {
   settingsDeportBanner: {
     title: "Gestion des Sources par Espace d'Équipe",
     description:
-      "L'administration générale des connecteurs d'entreprise reste centralisée dans Configuration. Les sources documentaires et dépôts sont désormais gérés directement par chaque équipe dans l'onglet Sources de son Espace.",
+      "L'administration générale des connecteurs d'entreprise reste centralisée dans Administration. Les sources documentaires et dépôts sont désormais gérés directement par chaque équipe dans l'onglet Sources de son Espace.",
     buttonLabel: "Accéder aux Sources de l'Espace",
   },
 };
@@ -294,7 +294,7 @@ export const EPIC18_SOURCES_LABELS_EN: Epic18SourcesLabels = {
   settingsDeportBanner: {
     title: "Team Workspace Source Governance",
     description:
-      "Enterprise connector platform administration remains centralized in Settings. Document sources and code repositories are now directly governed by teams inside each Workspace's Sources tab.",
+      "Enterprise connector platform administration remains centralized in Administration. Document sources and code repositories are now directly governed by teams inside each Workspace's Sources tab.",
     buttonLabel: "Go to Workspace Sources",
   },
 };

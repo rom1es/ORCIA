@@ -163,7 +163,7 @@ def filter_and_annotate_org_units(
     summaries: Sequence[OrgUnitSummary],
     evaluator: MatrixPermissionEvaluator,
 ) -> list[OrgUnitResponse]:
-    """Filter units to caller's visible scope and attach server-computed `can_*` booleans."""
+    """Return full org tree for all authenticated callers with server-computed `can_*` booleans."""
     tree_nodes = [n for n in evaluator.org_units if n.unit_type != "ENTERPRISE"]
     summary_nodes = [_summary_to_node(s) for s in summaries]
     nodes = tree_nodes if len(tree_nodes) >= len(summary_nodes) else summary_nodes
@@ -173,12 +173,6 @@ def filter_and_annotate_org_units(
     is_obs = is_observer_request(request, user)
     out: list[OrgUnitResponse] = []
     for s in summaries:
-        if (
-            not scope.is_platform_admin
-            and not scope.is_global_reader
-            and s.id not in scope.visible_unit_ids
-        ):
-            continue
         node = nodes_by_id.get(s.id) or _summary_to_node(s)
         caps = compute_org_unit_capabilities(user, node, scope, is_observer=is_obs)
         out.append(serialize_org_unit_summary(s, capabilities=caps))

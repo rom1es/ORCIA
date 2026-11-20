@@ -349,7 +349,7 @@ export const frDictionary: TranslationDictionary = {
       subtitle: "Parcours guidés de configuration initiale",
       description:
         "Configurez pas à pas votre organisation, vos premiers espaces de travail et vos connexions aux outils.",
-      uriBadgeExample: "Configuration",
+      uriBadgeExample: "Administration",
     },
   },
 };

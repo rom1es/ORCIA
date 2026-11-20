@@ -1,5 +1,4 @@
 import {
-  ContextualInfoTriggerButton,
   OrciaAlertBanner,
   OrciaButton,
   TemporaryPasswordInvitationModal,
@@ -7,6 +6,7 @@ import {
 } from "@orcia/ui";
 import React from "react";
 import type { ConfiguredOrgUnit } from "../components/platformSetupStore";
+import { resolveGlobalScopeLabel } from "../components/platformSetupWorkspaces";
 import { useShellNavigation } from "../components/ShellContainer";
 import { OrgPedagogicalCallout } from "../features/admin/organization/OrgPedagogicalCallout";
 import { buildIndentedOrgTree } from "../features/admin/organization/orgTreeHelpers";
@@ -32,7 +32,6 @@ export function SettingsOrganizationUnitsBlock({
   canMutate = true,
   orgUnits,
   workspaces = [],
-  openHelpSection,
   syncOrgUnitsFromServer,
 }: SettingsOrganizationUnitsBlockProps): React.ReactElement {
   const { dictionary, locale } = useI18n();
@@ -58,7 +57,7 @@ export function SettingsOrganizationUnitsBlock({
   );
   const rootEnterpriseFallbackUnit: ConfiguredOrgUnit = {
     id: "0192c4e0-0000-7000-8000-000000000001",
-    name: isFr ? "Plateforme Globale ORCIA (Racine)" : "ORCIA Global Platform (Root)",
+    name: `${resolveGlobalScopeLabel(isFr)} (${isFr ? "Racine" : "Root"})`,
     slug: "orcia-root",
     level: "TEAM",
     parentId: "",
@@ -70,7 +69,8 @@ export function SettingsOrganizationUnitsBlock({
       : s.isPlatformAdmin
         ? [rootEnterpriseFallbackUnit]
         : [];
-  const hasReadOnlyAncestor = orgUnits.some((u) => s.capabilitiesById[u.id]?.canEdit === false);
+  const hasReadOnlyAncestor =
+    canMutate && orgUnits.some((u) => s.capabilitiesById[u.id]?.canEdit === false);
 
   return (
     <section
@@ -89,11 +89,6 @@ export function SettingsOrganizationUnitsBlock({
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <h2 style={{ margin: 0, fontSize: "15px" }}>{labels.sectionTitle}</h2>
-          <ContextualInfoTriggerButton
-            sectionId="iam-org-tree"
-            label={labels.helpTriggerLabel}
-            onOpenHelpSection={openHelpSection}
-          />
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>

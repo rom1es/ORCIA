@@ -1,4 +1,4 @@
-import { ContextualInfoTriggerButton, StatusBadge, type UiModuleKey } from "@orcia/ui";
+import { StatusBadge, type UiModuleKey } from "@orcia/ui";
 import React from "react";
 import { AdminFeaturePanel } from "../features/admin";
 import { CatalogFeaturePanel } from "../features/catalog";
@@ -29,7 +29,7 @@ export function ModuleWorkspaceView({
 }: ModuleWorkspaceViewProps) {
   const { dictionary, locale } = useI18n();
   const { pathname } = useOrciaNavigation();
-  const { activeModuleKey, openHelpSection } = useShellNavigation();
+  const { activeModuleKey } = useShellNavigation();
 
   const currentModule = activeModuleKey ?? moduleKey;
   const isInboxNotifications =
@@ -80,15 +80,6 @@ export function ModuleWorkspaceView({
           >
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <strong style={{ fontSize: "16px" }}>{headerSubtitle}</strong>
-              <ContextualInfoTriggerButton
-                sectionId="module-overview"
-                label={
-                  isFr
-                    ? `Afficher l'aide sur ${headerSubtitle}`
-                    : `Show help for ${headerSubtitle}`
-                }
-                onOpenHelpSection={openHelpSection}
-              />
             </div>
             <StatusBadge
               testId={`module-uri-badge-${currentModule}`}

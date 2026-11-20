@@ -160,12 +160,18 @@ def test_bu_lead_delegation_capabilities_anti_eviction_and_root_delete(
     client, ids = _setup_delegated_client(monkeypatch)
     martin_headers = {"X-Orcia-Persona": "martin"}
 
-    # 1. GET /org-units shows ONLY Martin's subtree (never bu-finance), with computed can_* flags
+    # 1. GET /org-units returns the full org tree to all authenticated users (Story 25.2)
+    #    with computed can_* flags (False on bu-finance outside Martin's subtree)
     res_list = client.get("/api/v1/org-units", headers=martin_headers)
     assert res_list.status_code == 200
     units = {u["id"]: u for u in res_list.json()["org_units"]}
-    assert set(units.keys()) == {"bu-commerce", "sub-bu-emea", "team-ventes"}
-    assert "bu-finance" not in units
+    assert set(units.keys()) == {"bu-commerce", "sub-bu-emea", "team-ventes", "bu-finance"}
+    assert units["bu-finance"]["can_edit"] is False
+    assert units["bu-finance"]["can_create_child"] is False
+    assert units["bu-finance"]["can_delete"] is False
+    assert units["bu-finance"]["can_manage_members"] is False
+    assert units["bu-finance"]["can_manage_ontology_leads"] is False
+    assert units["bu-finance"]["can_invite_users"] is False
 
     assert units["bu-commerce"]["can_edit"] is True
     assert units["bu-commerce"]["can_create_child"] is True
@@ -239,16 +245,19 @@ def test_team_lead_pascal_lacdap_delegation_and_field_restrictions(
     client, ids = _setup_delegated_client(monkeypatch)
     pascal_headers = {"X-Orcia-Persona": "pascal"}
 
-    # 1. GET /org-units shows parent BU read-only + own team editable
-    #    (not sibling sub-BU or other BU)
+    # 1. GET /org-units shows full org tree with parent BU & non-delegated units read-only
+    #    and own team editable
     res_list = client.get("/api/v1/org-units", headers=pascal_headers)
     assert res_list.status_code == 200
     units = {u["id"]: u for u in res_list.json()["org_units"]}
-    assert set(units.keys()) == {"bu-commerce", "team-ventes"}
-    assert units["bu-commerce"]["can_edit"] is False
-    assert units["bu-commerce"]["can_create_child"] is False
-    assert units["bu-commerce"]["can_delete"] is False
-    assert units["bu-commerce"]["can_invite_users"] is False
+    assert set(units.keys()) == {"bu-commerce", "sub-bu-emea", "team-ventes", "bu-finance"}
+    for readonly_id in ("bu-commerce", "sub-bu-emea", "bu-finance"):
+        assert units[readonly_id]["can_edit"] is False
+        assert units[readonly_id]["can_create_child"] is False
+        assert units[readonly_id]["can_delete"] is False
+        assert units[readonly_id]["can_manage_members"] is False
+        assert units[readonly_id]["can_manage_ontology_leads"] is False
+        assert units[readonly_id]["can_invite_users"] is False
 
     assert units["team-ventes"]["can_edit"] is True
     assert units["team-ventes"]["can_manage_members"] is True

@@ -25,6 +25,26 @@ import { SettingsSecondaryTabsSection } from "./SettingsSecondaryTabsSection";
 
 export type SettingsSectionTab = SettingsTabKey;
 
+const VALID_SETTINGS_TABS: readonly string[] = [
+  "iam",
+  "authentication",
+  "models",
+  "packs",
+  "connectors",
+];
+
+function resolveInitialSettingsTab(initialTab?: SettingsSectionTab): SettingsSectionTab {
+  if (initialTab) return initialTab;
+  try {
+    const sp = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+    const tabParam = sp.get("tab") as SettingsSectionTab | null;
+    if (tabParam && VALID_SETTINGS_TABS.includes(tabParam)) return tabParam;
+  } catch (err: unknown) {
+    ignoreBenignStorageError("settings.url_redirect", err);
+  }
+  return "iam";
+}
+
 export interface SettingsHubViewProps {
   readonly initialTab?: SettingsSectionTab;
 }
@@ -34,61 +54,30 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
   const { openHelpSection, navigateToRoute } = useShellNavigation();
   const copy = dictionary.settingsHub;
   const isFr = locale === "fr";
-
   const roles = useAuthSessionStore((s) => s.roles);
   const activeHat = useAuthSessionStore((s) => s.activeHat);
   const readOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
   const setUserSettingsModalOpen = useAuthSessionStore((s) => s.setUserSettingsModalOpen);
-
-  const access = resolveSettingsAccess({
-    roles,
-    activeHat,
-    readOnlyObserver,
-  });
-
+  const access = resolveSettingsAccess({ roles, activeHat, readOnlyObserver });
   const {
-    orgUnits,
-    rbacGrants,
-    llmTiers,
-    workspaces,
-    datasources,
-    packs,
-    syncOrgUnitsFromServer,
-    syncRbacGrantsFromServer,
-    upsertLlmTier,
-    registerDatasource,
-    registerPack,
-    removePack,
+    orgUnits, rbacGrants, llmTiers, workspaces, datasources, packs,
+    syncOrgUnitsFromServer, syncRbacGrantsFromServer, upsertLlmTier,
+    registerDatasource, registerPack, removePack,
   } = usePlatformSetup();
 
   useEffect(() => {
     try {
       const sp = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
-      if (sp.get("tab") === "organization") {
-        navigateToRoute("/organization");
-      }
+      if (sp.get("tab") === "organization") navigateToRoute("/organization");
     } catch (err: unknown) {
       ignoreBenignStorageError("settings.url_redirect", err);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const [activeTab, setActiveTab] = useState<SettingsSectionTab>(() => {
-    if (initialTab) return initialTab;
-    try {
-      const sp = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
-      const tabParam = sp.get("tab") as SettingsSectionTab | null;
-      if (
-        tabParam &&
-        ["iam", "authentication", "models", "packs", "connectors"].includes(tabParam)
-      ) {
-        return tabParam;
-      }
-    } catch (err: unknown) {
-      ignoreBenignStorageError("settings.url_redirect", err);
-    }
-    return "iam";
-  });
+  const [activeTab, setActiveTab] = useState<SettingsSectionTab>(() =>
+    resolveInitialSettingsTab(initialTab),
+  );
   const effectiveTab: SettingsSectionTab | null =
     access.visibleTabs.length === 0
       ? null
@@ -119,13 +108,7 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
         style={{ display: "flex", flexDirection: "column", gap: "6px" }}
       >
         <h1 style={{ margin: 0, fontSize: "var(--font-size-h2)" }}>{copy.hubTitle}</h1>
-        <p
-          style={{
-            margin: 0,
-            fontSize: "var(--font-size-body)",
-            color: "var(--color-muted-foreground)",
-          }}
-        >
+        <p style={{ margin: 0, fontSize: "var(--font-size-body)", color: "var(--color-muted-foreground)" }}>
           {copy.hubSubtitle}
         </p>
 
@@ -135,12 +118,7 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
             data-testid="settings-domain-tabs"
             aria-label="Settings hub navigation"
             className="orcia-ds-tabs"
-            style={{
-              marginTop: "8px",
-              flexWrap: "nowrap",
-              gap: "6px",
-              overflowX: "auto",
-            }}
+            style={{ marginTop: "8px", flexWrap: "nowrap", gap: "6px", overflowX: "auto" }}
           >
             {access.visibleTabs.map((tabKey) => {
               const isSelected = effectiveTab === tabKey;
@@ -168,24 +146,6 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
                 </button>
               );
             })}
-            <button
-              type="button"
-              data-testid="settings-open-organization-link"
-              onClick={() => navigateToRoute("/organization")}
-              className="orcia-ds-tab"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-                padding: "5px 8px",
-                fontSize: "12px",
-                whiteSpace: "nowrap",
-                flexShrink: 0,
-              }}
-            >
-              <OrciaIcon name="organizationBu" size={13} />
-              <span>{dictionary.fourZoneShell.organizationMenuLabel ?? (isFr ? "Mon Organisation" : "My Organization")}</span>
-            </button>
           </nav>
         )}
       </header>
@@ -304,7 +264,7 @@ function SettingsRouteComponent(): React.ReactElement {
     return <div data-testid="settings-org-redirect-placeholder" />;
   }
   const initialTab: SettingsSectionTab | undefined =
-    search.tab && ["iam", "authentication", "models", "packs", "connectors"].includes(search.tab)
+    search.tab && VALID_SETTINGS_TABS.includes(search.tab)
       ? (search.tab as SettingsSectionTab)
       : undefined;
   return <SettingsHubView initialTab={initialTab} />;

@@ -184,7 +184,7 @@ describe("Story 24.5 — Accostage Identity, Route Targets (USER24-BUG-2), Zone 
       resolveEightMenuKeyFromModule("admin", "/organization", {
         canAccessConfiguration: false,
       }),
-    ).toBeNull();
+    ).toBe("organization");
 
     const orgBreadcrumbWithoutConfig = buildShellBreadcrumbItems({
       pathname: "/organization",
@@ -193,7 +193,6 @@ describe("Story 24.5 — Accostage Identity, Route Targets (USER24-BUG-2), Zone 
       canAccessConfiguration: false,
     });
     expect(orgBreadcrumbWithoutConfig.map((b) => b.label)).toEqual([
-      "ORCIA",
       "Mon Organisation",
     ]);
 
@@ -205,7 +204,6 @@ describe("Story 24.5 — Accostage Identity, Route Targets (USER24-BUG-2), Zone 
       activeWorkspaceLabel: "Espace Paiement Core",
     });
     expect(scopedInboxBreadcrumb.map((b) => b.label)).toEqual([
-      "ORCIA",
       "Équipe Paiement",
       "Espace Paiement Core",
       "Boîte de Réception",
@@ -217,7 +215,6 @@ describe("Story 24.5 — Accostage Identity, Route Targets (USER24-BUG-2), Zone 
       menuEntries: enDictionary.fourZoneShell.menuEntries,
     });
     expect(enShowcaseBreadcrumb.map((b) => b.label)).toEqual([
-      "ORCIA",
       enDictionary.fourZoneShell.menuEntries.help,
       "ORCIA Showcase",
     ]);
@@ -246,12 +243,12 @@ describe("Story 24.5 — Accostage Identity, Route Targets (USER24-BUG-2), Zone 
     expect(screen.queryByTestId("help-section-assistant-folders")).toBeNull();
     inboxView.unmount();
 
-    // Render /settings -> 6 tabs (5 settings tabs + Mon Organisation link) with flexWrap: "nowrap"
+    // Render /settings -> strictly 5 tabs with flexWrap: "nowrap" (Story 25.2)
     const settingsView = await renderAppAtRoute("/settings");
     await waitFor(() => {
       const tabsNav = screen.getByTestId("settings-domain-tabs");
       expect(tabsNav.style.flexWrap).toBe("nowrap");
-      expect(tabsNav.querySelectorAll("button").length).toBe(6);
+      expect(tabsNav.querySelectorAll("button").length).toBe(5);
     });
     settingsView.unmount();
   });

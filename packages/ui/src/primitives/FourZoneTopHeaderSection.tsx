@@ -13,6 +13,7 @@ export interface FourZoneTopHeaderSectionProps {
   readonly onToggleMobileMenu?: () => void;
   readonly breadcrumbItems?: readonly ShellBreadcrumbItem[];
   readonly onNavigateBreadcrumb?: (route: string) => void;
+  readonly onNavigateHome?: () => void;
   readonly activeWorkspaceName: string;
   readonly activeScopeId?: string;
   readonly workspaceOptions?: readonly WorkspaceSwitcherOption[];
@@ -37,6 +38,7 @@ export function FourZoneTopHeaderSection({
   onToggleMobileMenu,
   breadcrumbItems = [],
   onNavigateBreadcrumb,
+  onNavigateHome,
   activeWorkspaceName,
   activeScopeId,
   workspaceOptions,
@@ -53,6 +55,10 @@ export function FourZoneTopHeaderSection({
   effectiveNotificationCount,
   labels,
 }: FourZoneTopHeaderSectionProps): React.ReactElement {
+  const trailingBreadcrumbItems = breadcrumbItems.filter(
+    (item, idx) => !(idx === 0 && item.label.trim().toUpperCase() === "ORCIA"),
+  );
+
   return (
     <header
       data-testid="four-zone-top-header-bar"
@@ -84,46 +90,66 @@ export function FourZoneTopHeaderSection({
           </button>
         )}
 
-        {breadcrumbItems.length > 0 && (
-          <nav
-            aria-label="Fil d'Ariane"
-            data-testid="topbar-breadcrumb"
-            className="flex min-w-0 items-center gap-1 overflow-hidden text-xs"
-            style={{ color: "var(--color-text-secondary)" }}
+        <nav
+          aria-label="Fil d'Ariane"
+          data-testid="topbar-breadcrumb"
+          className="flex min-w-0 items-center gap-1 overflow-hidden text-xs"
+          style={{ color: "var(--color-text-secondary)" }}
+        >
+          <button
+            type="button"
+            data-testid="topbar-orcia-home-link"
+            onClick={() => {
+              if (onNavigateHome) onNavigateHome();
+              else onNavigateBreadcrumb?.("/cockpit");
+            }}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded px-1.5 py-1 text-sm font-bold tracking-tight hover:opacity-90"
+            style={{ color: "var(--color-text-primary)", cursor: "pointer" }}
           >
-            {breadcrumbItems.map((item, idx) => {
-              const isLast = idx === breadcrumbItems.length - 1;
-              return (
-                <React.Fragment key={`${item.label}-${idx}`}>
-                  {idx > 0 && <OrciaIcon name="chevronRight" size={12} />}
-                  {item.route && !isLast && onNavigateBreadcrumb ? (
-                    <button
-                      type="button"
-                      data-testid={`topbar-breadcrumb-link-${idx}`}
-                      onClick={() => onNavigateBreadcrumb(item.route!)}
-                      className="truncate rounded px-1 py-0.5 hover:underline"
-                      style={{ color: "var(--color-text-secondary)", cursor: "pointer" }}
-                    >
-                      {item.label}
-                    </button>
-                  ) : (
-                    <span
-                      data-testid={`topbar-breadcrumb-item-${idx}`}
-                      className={`truncate ${isLast ? "font-semibold" : ""}`}
-                      style={{
-                        color: isLast
-                          ? "var(--color-text-primary)"
-                          : "var(--color-text-secondary)",
-                      }}
-                    >
-                      {item.label}
-                    </span>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </nav>
-        )}
+            <span
+              className="inline-flex h-5 w-5 items-center justify-center rounded text-[11px] font-bold"
+              style={{
+                backgroundColor: "var(--color-action-primary)",
+                color: "var(--color-bg-surface)",
+              }}
+            >
+              O
+            </span>
+            <span>ORCIA</span>
+          </button>
+
+          {trailingBreadcrumbItems.map((item, idx) => {
+            const isLast = idx === trailingBreadcrumbItems.length - 1;
+            return (
+              <React.Fragment key={`${item.label}-${idx}`}>
+                <OrciaIcon name="chevronRight" size={12} />
+                {item.route && !isLast && onNavigateBreadcrumb ? (
+                  <button
+                    type="button"
+                    data-testid={`topbar-breadcrumb-link-${idx}`}
+                    onClick={() => onNavigateBreadcrumb(item.route!)}
+                    className="truncate rounded px-1 py-0.5 hover:underline"
+                    style={{ color: "var(--color-text-secondary)", cursor: "pointer" }}
+                  >
+                    {item.label}
+                  </button>
+                ) : (
+                  <span
+                    data-testid={`topbar-breadcrumb-item-${idx}`}
+                    className={`truncate ${isLast ? "font-semibold" : ""}`}
+                    style={{
+                      color: isLast
+                        ? "var(--color-text-primary)"
+                        : "var(--color-text-secondary)",
+                    }}
+                  >
+                    {item.label}
+                  </span>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </nav>
 
         {(isMobile || railCollapsed) && (
           <button

@@ -69,16 +69,21 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
       processes: "Mes Processus",
       agents: "Mes Agents",
       spaces: "Mes Espaces",
+      organization: "Mon Organisation",
       finops: "FinOps",
-      configuration: "Configuration",
+      configuration: "Administration",
       help: "Aide",
     },
     organizationMenuLabel: "Mon Organisation",
     activityMenuLabel: "Journal d'Activité",
     doubleSelector: {
       teamBuLabel: "Équipe / Direction",
-      workspaceLabel: "Espace",
-      allWorkspacesOption: "Tous les espaces",
+      workspaceLabel: "Espace actif",
+      allWorkspacesOption: "Tous mes espaces",
+      personalGroupLabel: "Personnel",
+      otherSpacesGroupLabel: "Autres espaces",
+      allMySpacesOption: "Tous mes espaces",
+      globalPlatformLabel: "Plateforme Globale ORCIA",
     },
     mobileTabs: {
       navAriaLabel: "Navigation mobile",
@@ -159,7 +164,7 @@ export const SHELL_AND_SEARCH_FR_LABELS: ShellAndSearchDictionarySection = {
     addFirstModelCta: "+ Configurer un 1er modèle IA",
     addSecondModelFamilyCta: "+ Ajouter un 2e fournisseur IA indépendant",
     singleFamilyAmberWarning:
-      "⚠️ Un seul fournisseur IA configuré — Ajoutez un 2e fournisseur indépendant dans Configuration › Modèles IA pour activer les revues croisées",
+      "⚠️ Un seul fournisseur IA configuré — Ajoutez un 2e fournisseur indépendant dans Administration › Modèles IA pour activer les revues croisées",
     dualFamilyAd10UnlockedBadge:
       "✅ Au moins 2 fournisseurs IA indépendants actifs — Revues croisées disponibles",
     assistantTrialReadyBadge:
@@ -368,16 +373,21 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
       processes: "My Processes",
       agents: "My Agents",
       spaces: "My Spaces",
+      organization: "My Organization",
       finops: "FinOps",
-      configuration: "Configuration",
+      configuration: "Administration",
       help: "Help",
     },
     organizationMenuLabel: "My Organization",
     activityMenuLabel: "Activity Log",
     doubleSelector: {
       teamBuLabel: "Team / Division",
-      workspaceLabel: "Space",
-      allWorkspacesOption: "All spaces",
+      workspaceLabel: "Active space",
+      allWorkspacesOption: "All my spaces",
+      personalGroupLabel: "Personal",
+      otherSpacesGroupLabel: "Other spaces",
+      allMySpacesOption: "All my spaces",
+      globalPlatformLabel: "ORCIA Global Platform",
     },
     mobileTabs: {
       navAriaLabel: "Mobile navigation",
@@ -458,7 +468,7 @@ export const SHELL_AND_SEARCH_EN_LABELS: ShellAndSearchDictionarySection = {
     addFirstModelCta: "+ Configure 1st AI model",
     addSecondModelFamilyCta: "+ Add 2nd independent AI provider",
     singleFamilyAmberWarning:
-      "⚠️ Only one AI provider configured — Add a 2nd independent provider in Configuration › AI Models to enable cross-checked reviews",
+      "⚠️ Only one AI provider configured — Add a 2nd independent provider in Administration › AI Models to enable cross-checked reviews",
     dualFamilyAd10UnlockedBadge:
       "✅ At least 2 independent AI providers active — Cross-checked reviews enabled",
     assistantTrialReadyBadge:

@@ -132,11 +132,8 @@ export function ShellContextualHelpColumn({
 
   const displayedArticle = resolvedArticle ?? contextualHelpArticle;
   const routeTargetedSections = useMemo(
-    () =>
-      activeHelpSectionId
-        ? getContextualHelpSectionsForRoute(effectiveRoute, locale)
-        : undefined,
-    [activeHelpSectionId, effectiveRoute, locale],
+    () => getContextualHelpSectionsForRoute(effectiveRoute, locale),
+    [effectiveRoute, locale],
   );
 
   return (

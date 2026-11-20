@@ -16,9 +16,12 @@ import {
   useAuthSessionStore,
 } from "../stores/authSessionStore";
 
+import { resetVitestApiBackend, seedVitestPlatformSetupState } from "./vitest.setup";
+
 afterEach(() => {
   cleanup();
   resetAuthSessionStore();
+  resetVitestApiBackend();
 });
 
 describe("Settings Tabs (5 Tabs), Exclusive PLATFORM_ADMIN Visibility & Mon Compte Sidebar", () => {
@@ -95,6 +98,10 @@ describe("Settings Tabs (5 Tabs), Exclusive PLATFORM_ADMIN Visibility & Mon Comp
   });
 
   it("renders all 5 wireframe-icon tabs including Authentification & Connecteurs for PLATFORM_ADMIN, separates Mon Organisation into /organization, and applies .orcia-ds-btn-danger", async () => {
+    seedVitestPlatformSetupState(
+      {},
+      { email: "admin@orcia.fr", displayName: "Admin", roles: ["PLATFORM_ADMIN"] },
+    );
     useAuthSessionStore.getState().setAuthSession({
       roles: ["PLATFORM_ADMIN"],
       activeHat: "PLATFORM_ADMIN",
@@ -131,8 +138,9 @@ describe("Settings Tabs (5 Tabs), Exclusive PLATFORM_ADMIN Visibility & Mon Comp
     expect(screen.getByTestId("settings-iam-section")).toBeDefined();
     expect(screen.queryByTestId("settings-organization-section")).toBeNull();
 
-    // Navigate to Mon Organisation (/organization) via Configuration link
-    fireEvent.click(screen.getByTestId("settings-open-organization-link"));
+    // Navigate to Mon Organisation (/organization) via dedicated Sidebar entry (5 tabs only in Administration)
+    expect(screen.queryByTestId("settings-open-organization-link")).toBeNull();
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
     expect(await screen.findByTestId("settings-organization-section")).toBeDefined();
 
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));

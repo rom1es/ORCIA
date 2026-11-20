@@ -1,9 +1,12 @@
 import { CommandPaletteModal, OrciaAlertBanner, OrciaDialog } from "@orcia/ui";
 import React, { useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
+import { resolveGlobalScopeLabel } from "../../components/platformSetupWorkspaces";
 import { useShellNavigation } from "../../components/ShellContainer";
+import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions";
 import { useI18n } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
+import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { CreateWorkspaceCard } from "./CreateWorkspaceCard";
 import { WorkspaceDnaAndWaiversSection } from "./WorkspaceDnaAndWaiversSection";
 import { WorkspaceStudioCardsAndDetailView } from "./WorkspaceStudioCardsAndDetailView";
@@ -40,9 +43,9 @@ export function WorkspacesFeaturePanel({
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
+  const authEmail = useAuthSessionStore((s) => s.email);
   const activeScopeNode = scopes.find((s) => s.id === activeScopeId);
-  const activeScopeName =
-    activeScopeNode?.name ?? (isFr ? "Plateforme Globale ORCIA" : "Global Platform ORCIA");
+  const activeScopeName = activeScopeNode?.name ?? resolveGlobalScopeLabel(isFr);
 
   const selectedPrivateOrTeamWs = workspaces.find((w) => w.workspaceId === activeScopeId);
   const activeScopeCategoryLabel = selectedPrivateOrTeamWs
@@ -73,10 +76,12 @@ export function WorkspacesFeaturePanel({
   const displayedWorkspaces =
     scopedWorkspaces.length > 0 ? scopedWorkspaces : workspaces;
 
+  const resolvedActiveWsId = resolveEffectiveWorkspaceId(activeScopeId, workspaces, authEmail);
   const targetWorkspace =
     (initialWorkspaceId
       ? workspaces.find((w) => w.workspaceId === initialWorkspaceId)
       : undefined) ??
+    displayedWorkspaces.find((w) => w.workspaceId === resolvedActiveWsId) ??
     displayedWorkspaces[0] ??
     workspaces[0] ??
     null;
@@ -154,7 +159,7 @@ export function WorkspacesFeaturePanel({
 
       <WorkspaceStudioCardsAndDetailView
         isFr={isFr}
-        initialWorkspaceId={initialWorkspaceId}
+        initialWorkspaceId={initialWorkspaceId || resolvedActiveWsId || undefined}
         initialTab={initialTab}
         workspaces={displayedWorkspaces}
         datasources={datasources}
@@ -199,8 +204,10 @@ export function WorkspacesFeaturePanel({
           {
             entryId: "nav-settings",
             category: "NAVIGATION",
-            label: "Ouvrir la Configuration",
-            subtitle: "Organisation, Modèles IA, Sources, Packs, Atelier",
+            label: isFr ? "Ouvrir l'Administration" : "Open Administration",
+            subtitle: isFr
+              ? "Comptes, Authentification, Modèles IA, Connecteurs, Packs"
+              : "Accounts, Authentication, AI Models, Connectors, Packs",
             shortcut: "g s",
             targetRoute: "/settings",
           },

@@ -349,7 +349,7 @@ export const enDictionary: TranslationDictionary = {
       subtitle: "Guided initial setup workflows",
       description:
         "Configure your organization, initial workspaces, and tool connections step by step.",
-      uriBadgeExample: "Setup",
+      uriBadgeExample: "Administration",
     },
   },
 };

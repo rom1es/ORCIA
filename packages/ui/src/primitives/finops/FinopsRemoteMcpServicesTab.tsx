@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { ContextualInfoTriggerButton } from "../../components/ContextualInfoTriggerButton";
 import { StatusBadge } from "../StatusBadge";
 import { FinopsConnectorQuotaModal } from "./FinopsConnectorQuotaModal";
 import type {
@@ -35,7 +34,6 @@ export function FinopsRemoteMcpServicesTab({
   labels,
   onUpdateConnectorQuota,
   onResetConnectorCircuit,
-  onOpenHelpSection,
 }: FinopsRemoteMcpServicesTabProps): React.ReactElement {
   const [editingService, setEditingService] = useState<RemoteServiceRowData | null>(null);
 
@@ -54,11 +52,6 @@ export function FinopsRemoteMcpServicesTab({
             >
               {labels.tabTitle}
             </h2>
-            <ContextualInfoTriggerButton
-              sectionId="finops-remote-services"
-              label={labels.infoButtonAriaLabel}
-              onOpenHelpSection={onOpenHelpSection}
-            />
           </div>
           <p style={{ fontSize: "13px", color: "var(--color-text-muted)", margin: "4px 0 0 0" }}>
             {labels.tabSubtitle}

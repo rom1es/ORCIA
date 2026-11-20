@@ -1,6 +1,5 @@
 import { createOrciaApiClient } from "@orcia/api-client";
 import {
-  ContextualInfoTriggerButton,
   ProgressiveDay0AccostageBanner,
   StreamlinedCockpitView,
 } from "@orcia/ui";
@@ -45,7 +44,6 @@ export function CockpitFeaturePanel() {
   const {
     activeScopeId,
     navigateToRoute,
-    openHelpSection,
     disabledMenuKeys: shellDisabledMenuKeys,
   } = useShellNavigation();
   const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
@@ -76,8 +74,6 @@ export function CockpitFeaturePanel() {
 
   const isFr = locale === "fr";
   const activeScopeNode = scopes.find((s) => s.id === activeScopeId);
-  const activeScopeName =
-    activeScopeNode?.name ?? (isFr ? "Plateforme Globale ORCIA" : "Global Platform ORCIA");
 
   const scopedWorkspaces =
     activeScopeNode?.level === "WORKSPACE"
@@ -207,7 +203,7 @@ export function CockpitFeaturePanel() {
       data-testid="cockpit-empty-first-panel"
       style={{ display: "flex", flexDirection: "column", gap: "16px", minWidth: 0 }}
     >
-      {/* Bloc majeur 1 : Accostage & Contexte actif */}
+      {/* Bloc majeur 1 : Accostage */}
       <section
         data-testid="cockpit-block-accostage"
         className="flex flex-col gap-3 rounded-lg border p-3.5"
@@ -216,31 +212,6 @@ export function CockpitFeaturePanel() {
           borderColor: "var(--color-border-subtle)",
         }}
       >
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            <ContextualInfoTriggerButton
-              sectionId="cockpit-decisions"
-              label={
-                isFr
-                  ? "Comprendre le fonctionnement du Cockpit et des décisions"
-                  : "Understand how the Cockpit and decisions work"
-              }
-              onOpenHelpSection={openHelpSection}
-            />
-          </div>
-          <span
-            data-testid="cockpit-active-scope-badge"
-            className="max-w-full truncate rounded border px-2.5 py-0.5 text-xs font-medium"
-            style={{
-              backgroundColor: "var(--color-bg-elevated)",
-              borderColor: "var(--color-border-subtle)",
-              color: "var(--color-text-primary)",
-            }}
-          >
-            {isFr ? `Contexte actif : ${activeScopeName}` : `Active context: ${activeScopeName}`}
-          </span>
-        </div>
-
         <ProgressiveDay0AccostageBanner
           completedCount={completedSetupStepsCount}
           totalCount={6}

@@ -1,6 +1,4 @@
 import {
-  ContextualInfoTriggerButton,
-  getOrciaIconGlyph,
   OrciaIcon,
   type ControlCenterDatasourceItem,
   type ControlCenterWorkspaceGovItem,
@@ -10,14 +8,13 @@ import {
   type WorkspaceVisibilityMode,
 } from "@orcia/ui";
 import React, { useState } from "react";
-import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
-import { formatCurrency } from "../../lib/formatters";
 import type {
   ConfiguredOrgUnit,
   ConfiguredWorkflowItem,
   PlatformSetupContextValue,
 } from "../../components/platformSetupStore";
 import { WorkspaceDetailTabsPanel } from "./WorkspaceDetailTabsPanel";
+import { WorkspaceStudioSummaryCard } from "./WorkspaceStudioSummaryCard";
 
 export type WorkspaceQuickFilterKey = "ALL" | "TEAM" | "PRIVATE";
 
@@ -196,277 +193,31 @@ export function WorkspaceStudioCardsAndDetailView({
               ? "Aucun Espace de Travail ne correspond à ce filtre. Créez votre premier espace ci-dessus pour connecter vos sources et définir votre glossaire métier."
               : "No Workspace matches this filter. Create your first workspace above to connect sources and define your business glossary."}
           </span>
-          <ContextualInfoTriggerButton
-            sectionId="workspace-sources"
-            label={isFr ? "Aide sources et espaces" : "Spaces & sources help"}
-            onOpenHelpSection={openHelpSection}
-          />
         </section>
       ) : (
         <section
           data-testid="workspaces-summary-cards-grid"
           style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(310px, 1fr))", gap: "12px" }}
         >
-          {filteredWorkspaces.map((ws) => {
-            const wsSourcesCount = datasources.filter((d) => d.workspaceName === ws.name).length;
-            const isSelected = activeWorkspace?.workspaceId === ws.workspaceId;
-            const isAutosaved = autosavedWsIds.includes(ws.workspaceId);
-            const visibilityIconName =
-              ws.visibilityMode === "PRIVATE_USER"
-                ? "lock"
-                : ws.visibilityMode === "CONFIDENTIAL_RESTRICTED"
-                  ? "shield"
-                  : "team";
-            const visibilityLabelText =
-              ws.visibilityMode === "PRIVATE_USER"
-                ? isFr ? "Privé personnel" : "Private personal"
-                : ws.visibilityMode === "CONFIDENTIAL_RESTRICTED"
-                  ? isFr ? "Confidentiel isolé" : "Confidential isolated"
-                  : isFr ? "Collectif d'équipe" : "Team shared";
-
-            return (
-              <div
-                key={ws.workspaceId}
-                data-testid={`workspace-studio-card-${ws.workspaceId}`}
-                className="orcia-bento-card"
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                  border: isSelected ? "2px solid var(--color-action-primary)" : "1px solid var(--color-border)",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
-                  <div>
-                    <strong style={{ fontSize: "15px" }}>{ws.name}</strong>
-                    <div style={{ fontSize: "11px", color: "var(--color-muted-foreground)", marginTop: "2px" }}>
-                      {isFr ? "Équipe de facturation :" : "Billing Team :"}{" "}
-                      <strong>{ws.ownerOrgUnitName ?? "Plateforme Globale ORCIA"}</strong>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    {isAutosaved && (
-                      <span
-                        data-testid={`workspace-autosaved-badge-${ws.workspaceId}`}
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          padding: "2px 8px",
-                          borderRadius: "var(--radius-sm)",
-                          backgroundColor: "var(--color-action-primary-subtle)",
-                          color: "var(--color-status-success)",
-                        }}
-                      >
-                        <OrciaIcon name="check" /> {isFr ? "Enregistré" : "Saved"}
-                      </span>
-                    )}
-                    <span
-                      data-testid={`workspace-visibility-badge-${ws.workspaceId}`}
-                      style={{
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        padding: "3px 8px",
-                        borderRadius: "var(--radius-sm)",
-                        backgroundColor: "var(--color-bg-elevated)",
-                        border: "1px solid var(--color-border-subtle)",
-                      }}
-                    >
-                      <OrciaIcon name={visibilityIconName} /> {visibilityLabelText}
-                    </span>
-                  </div>
-                </div>
-
-                {wsSourcesCount > 0 || ontologyConcepts.length > 0 || workflows.length > 0 || (ws.finopsCostUsd ?? 0) > 0 ? (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", fontSize: "11px", color: "var(--color-text-secondary)" }}>
-                    {wsSourcesCount > 0 && (
-                      <span>
-                        <OrciaIcon name="books" /> <strong>{wsSourcesCount}</strong>{" "}
-                        {isFr
-                          ? wsSourcesCount <= 1
-                            ? "Source rattachée"
-                            : "Sources rattachées"
-                          : wsSourcesCount === 1
-                            ? "Attached source"
-                            : "Attached sources"}
-                      </span>
-                    )}
-                    {ontologyConcepts.length > 0 && (
-                      <span>
-                        <OrciaIcon name="bookOpen" /> <strong>{ontologyConcepts.length}</strong>{" "}
-                        {isFr
-                          ? ontologyConcepts.length <= 1
-                            ? "Terme & Règle actif"
-                            : "Termes & Règles actifs"
-                          : ontologyConcepts.length === 1
-                            ? "Active term & rule"
-                            : "Active terms & rules"}
-                      </span>
-                    )}
-                    {workflows.length > 0 && (
-                      <span>
-                        <OrciaIcon name="menuProcesses" /> <strong>{workflows.length}</strong>{" "}
-                        {isFr ? "Processus" : workflows.length === 1 ? "Process" : "Processes"}
-                      </span>
-                    )}
-                    {(ws.finopsCostUsd ?? 0) > 0 && (
-                      <span><OrciaIcon name="moneyBag" /> <strong>{formatCurrency(ws.finopsCostUsd ?? 0, isFr ? "fr" : "en")}</strong></span>
-                    )}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: "11px", color: "var(--color-muted-foreground)" }}>
-                    {isFr ? "Aucune source ni consommation enregistrée pour le moment." : "No sources or usage recorded yet."}
-                  </div>
-                )}
-
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center", paddingTop: "4px" }}>
-                  <select
-                    data-testid={`workspace-card-phase-select-${ws.workspaceId}`}
-                    aria-label={isFr ? "Phase de l'espace" : "Workspace phase"}
-                    value={ws.lifecyclePhase}
-                    onChange={(e) => {
-                      const nextPhase = e.target.value as ProductLifecyclePhaseType;
-                      void Promise.resolve(onUpdateWorkspacePhase(ws.workspaceId, nextPhase))
-                        .then(() => markAutosaved(ws.workspaceId))
-                        .catch((err: unknown) => {
-                          onFeedback(
-                            `⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Phase de l'espace" : "Workspace phase").fullText}`,
-                          );
-                        });
-                    }}
-                    style={{ ...inputStyle, fontSize: "11px", padding: "4px 8px" }}
-                  >
-                    <option value="BUILD">{isFr ? "Phase : Construction" : "Phase: Build"}</option>
-                    <option value="RUN">{isFr ? "Phase : Exploitation" : "Phase: Operations"}</option>
-                    <option value="MIGRATION">{isFr ? "Phase : Évolution" : "Phase: Evolution"}</option>
-                  </select>
-
-                  <select
-                    data-testid={`workspace-card-visibility-select-${ws.workspaceId}`}
-                    aria-label={isFr ? "Visibilité de l'espace" : "Workspace visibility"}
-                    value={ws.visibilityMode}
-                    onChange={(e) => {
-                      const nextVis = e.target.value as WorkspaceVisibilityMode;
-                      void Promise.resolve(onUpdateWorkspaceVisibility(ws.workspaceId, nextVis))
-                        .then(() => markAutosaved(ws.workspaceId))
-                        .catch((err: unknown) => {
-                          onFeedback(
-                            `⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Visibilité de l'espace" : "Workspace visibility").fullText}`,
-                          );
-                        });
-                    }}
-                    style={{ ...inputStyle, fontSize: "11px", padding: "4px 8px" }}
-                  >
-                    <option value="STANDARD">
-                      {`${getOrciaIconGlyph("team")} ${isFr ? "Collectif d'équipe" : "Team shared"}`}
-                    </option>
-                    <option value="PRIVATE_USER">
-                      {`${getOrciaIconGlyph("lock")} ${isFr ? "Privé personnel" : "Private personal"}`}
-                    </option>
-                    <option value="CONFIDENTIAL_RESTRICTED">
-                      {`${getOrciaIconGlyph("shield")} ${isFr ? "Confidentiel isolé" : "Confidential isolated"}`}
-                    </option>
-                  </select>
-
-                  {ws.visibilityMode === "PRIVATE_USER" && (
-                    <button
-                      type="button"
-                      data-testid={`share-private-workspace-btn-${ws.workspaceId}`}
-                      onClick={() => {
-                        void Promise.resolve(onUpdateWorkspaceVisibility(ws.workspaceId, "STANDARD"))
-                          .then(() => {
-                            markAutosaved(ws.workspaceId);
-                            onFeedback(
-                              isFr
-                                ? `✅ L'espace « ${ws.name} » est désormais partagé avec l'équipe.`
-                                : `✅ Workspace "${ws.name}" is now shared with the team.`,
-                            );
-                          })
-                          .catch((err: unknown) => {
-                            onFeedback(
-                              `⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Partage d'espace" : "Workspace sharing").fullText}`,
-                            );
-                          });
-                      }}
-                      style={{
-                        padding: "4px 8px",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        borderRadius: "var(--radius-sm)",
-                        border: "1px solid var(--color-border)",
-                        backgroundColor: "var(--color-action-primary-subtle)",
-                        color: "var(--color-action-primary)",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <OrciaIcon name="team" /> {isFr ? "Partager avec l'Équipe" : "Share with Team"}
-                    </button>
-                  )}
-                </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: "8px",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    borderTop: "1px solid var(--color-border-subtle)",
-                    paddingTop: "8px",
-                  }}
-                >
-                  <button
-                    type="button"
-                    data-testid={`select-active-workspace-btn-${ws.workspaceId}`}
-                    onClick={() => setSelectedWsId(ws.workspaceId)}
-                    style={{
-                      padding: "5px 10px",
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      borderRadius: "var(--radius-sm)",
-                      border: "none",
-                      backgroundColor: isSelected ? "var(--color-action-primary)" : "var(--color-bg-elevated)",
-                      color: isSelected ? "var(--color-primary-foreground)" : "var(--color-text-primary)",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <OrciaIcon name="target" /> {isFr ? "Travailler dans cet Espace" : "Work in this Space"}
-                  </button>
-                  <div style={{ display: "flex", gap: "6px" }}>
-                    <button
-                      type="button"
-                      data-testid={`workspace-open-assistant-btn-${ws.workspaceId}`}
-                      onClick={() => onNavigateToRoute("/assistant")}
-                      style={{
-                        padding: "4px 8px",
-                        fontSize: "11px",
-                        borderRadius: "var(--radius-sm)",
-                        border: "1px solid var(--color-border)",
-                        backgroundColor: "var(--color-surface-card)",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <OrciaIcon name="menuAssistant" /> {isFr ? "Ouvrir Mon Assistant" : "Open My Assistant"}
-                    </button>
-                    <button
-                      type="button"
-                      data-testid={`workspace-open-processes-btn-${ws.workspaceId}`}
-                      onClick={() => onNavigateToRoute("/processes")}
-                      style={{
-                        padding: "4px 8px",
-                        fontSize: "11px",
-                        borderRadius: "var(--radius-sm)",
-                        border: "1px solid var(--color-border)",
-                        backgroundColor: "var(--color-surface-card)",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <OrciaIcon name="menuProcesses" /> {isFr ? "Lancer un Processus" : "Launch a Process"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {filteredWorkspaces.map((ws) => (
+            <WorkspaceStudioSummaryCard
+              key={ws.workspaceId}
+              ws={ws}
+              isFr={isFr}
+              isSelected={activeWorkspace?.workspaceId === ws.workspaceId}
+              isAutosaved={autosavedWsIds.includes(ws.workspaceId)}
+              wsSourcesCount={datasources.filter((d) => d.workspaceName === ws.name).length}
+              ontologyConceptsCount={ontologyConcepts.length}
+              workflowsCount={workflows.length}
+              inputStyle={inputStyle}
+              onSelectWorkspace={setSelectedWsId}
+              onUpdateWorkspacePhase={onUpdateWorkspacePhase}
+              onUpdateWorkspaceVisibility={onUpdateWorkspaceVisibility}
+              onMarkAutosaved={markAutosaved}
+              onFeedback={onFeedback}
+              onNavigateToRoute={onNavigateToRoute}
+            />
+          ))}
         </section>
       )}
 

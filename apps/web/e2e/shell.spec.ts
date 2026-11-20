@@ -21,6 +21,7 @@ const PUBLIC_DAY0_MENU_KEYS = [
   "processes",
   "agents",
   "spaces",
+  "organization",
   "finops",
   "help",
 ] as const;
@@ -98,19 +99,30 @@ test.describe("Shell 4 zones Direction C — structure et état Jour 0 (UX-DR1, 
     );
 
     if (!isMobile) {
+      await expect(page.getByTestId("sidebar-unified-scope-selector").locator("select")).toHaveCount(1);
+      await expect(page.getByTestId("sidebar-workspace-selector")).toBeVisible();
+      await expect(page.getByTestId("topbar-orcia-home-link")).toBeVisible();
+      await expect(page.getByTestId("eight-menu-item-configuration")).toContainText("Administration");
+      await expect(page.locator('[data-testid^="eight-menu-item-"]')).toHaveCount(9);
+
       await page.getByTestId("eight-menu-item-configuration").click();
       const tabsNav = page.getByTestId("settings-domain-tabs");
       await expect(tabsNav).toBeVisible({ timeout: 15000 });
       const tabs = tabsNav.locator("button");
-      await expect(tabs).toHaveCount(6);
+      await expect(tabs).toHaveCount(5);
       const boxes = await Promise.all(
-        [0, 1, 2, 3, 4, 5].map((i) => tabs.nth(i).boundingBox()),
+        [0, 1, 2, 3, 4].map((i) => tabs.nth(i).boundingBox()),
       );
       const yCoords = boxes.map((b) => b?.y ?? -1);
       expect(yCoords.every((y) => y > 0)).toBe(true);
       const minY = Math.min(...yCoords);
       const maxY = Math.max(...yCoords);
-      expect(maxY - minY, `les 6 onglets /settings doivent tenir sur 1 ligne (${yCoords.join(",")})`).toBeLessThanOrEqual(2);
+      expect(maxY - minY, `les 5 onglets /settings doivent tenir sur 1 ligne (${yCoords.join(",")})`).toBeLessThanOrEqual(2);
+
+      // Clic sur [O] ORCIA tout en haut à gauche ramène à /cockpit
+      await page.getByTestId("topbar-orcia-home-link").click();
+      await expect(page).toHaveURL(/\/cockpit$/);
+      await assertNoDesktopVerticalPageOverflow(page, "shell-return-cockpit-via-orcia-logo");
     }
   });
 

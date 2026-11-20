@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 57,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 201,
+    "techLeadReportsCount": 202,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 64,
@@ -538,6 +538,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-20",
+      "phaseOrStory": "Story 25.2",
+      "reportFile": "25-2-coquille-9-entrees-mon-organisation-administration-topbar-orcia-et-selecteur-espace-tech-lead-report.md",
+      "domain": "Epic 25 — Coquille 9 Entrées (Mon Organisation & Administration 5 Onglets), Topbar [O] ORCIA & Sélecteur Unifié d'Espace (CAP-058, CAP-060, CAP-203)",
+      "summary": "Clôture (done) : 9 entrées fixes dans FourZoneSidebarRail (Mon Organisation lecture seule pour tous rôles authentifiés hors délégation via GET /api/v1/org-units + organization-readonly-access-banner, Administration 5 onglets réservé Admin/SecOps sans settings-open-organization-link), bouton [O] ORCIA (topbar-orcia-home-link) → /cockpit avec retrait de sidebar-brand-logo, sélecteur unique groupé sidebar-workspace-selector (resolveEffectiveWorkspaceId, persistance F5, propagation multi-écrans), retrait des ⓘ flottants et cockpit-active-scope-badge, correctifs QA (ShellContextualHelpColumn.tsx Zone 4 et InviteOrganizationUserModal.tsx wasOpenRef) ; 95.63 % couv. ciblée Story 25.2 (17 tests unit/sécu/PG18), 1041 passed (unit+security+evals), 1/1 PG18 réel create_app(), 9/9 Turbo (20+136+248 = 404 tests JS/TS), 17 passed, 1 skipped (mobile-only), 0 failed Playwright Desktop (shell, 00, 01, 07, 09, 12, 15), ruff/mypy --strict/lint-imports (5/5)/export_openapi (0-diff)/lint_spine (0) vert."
+    },
     {
       "date": "2026-11-20",
       "phaseOrStory": "Story 25.1",

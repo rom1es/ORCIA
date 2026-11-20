@@ -1,8 +1,10 @@
 import { AutonomyContractModal, WorkflowTriggersModal } from "@orcia/ui";
 import React, { useMemo, useState } from "react";
 import { useShellNavigation } from "../../../components/ShellContainer";
+import { resolveEffectiveWorkspaceId } from "../../../components/shellScopeOptions";
 import { usePlatformSetup } from "../../../components/platformSetupStore";
 import { useI18n } from "../../../i18n";
+import { useAuthSessionStore } from "../../../stores/authSessionStore";
 import { InteractiveRunDrawer } from "../execution/InteractiveRunDrawer";
 import { StudioCopilotSidebar } from "./StudioCopilotSidebar";
 import {
@@ -37,6 +39,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
   const { locale, dictionary } = useI18n();
   const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
   const { workspaces } = usePlatformSetup();
+  const authEmail = useAuthSessionStore((s) => s.email);
   const isFr = locale === "fr";
   const modesCopy = dictionary.processOrchestrationModes;
   const contractLabels = dictionary.autonomyContract;
@@ -44,15 +47,12 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
   const targetId = workflowId ?? "wf-01-qualification-prd";
   const [showRunDrawer, setShowRunDrawer] = useState<boolean>(false);
 
-  const resolvedWorkspaceId = useMemo(() => {
-    const scopeWsId = activeScopeId.startsWith("scope-ws-")
-      ? activeScopeId.slice("scope-ws-".length)
-      : null;
-    if (scopeWsId && workspaces.some((w) => w.workspaceId === scopeWsId)) {
-      return scopeWsId;
-    }
-    return workspaces[0]?.workspaceId ?? DEFAULT_FALLBACK_WORKSPACE_ID;
-  }, [activeScopeId, workspaces]);
+  const resolvedWorkspaceId = useMemo(
+    () =>
+      resolveEffectiveWorkspaceId(activeScopeId, workspaces, authEmail) ||
+      DEFAULT_FALLBACK_WORKSPACE_ID,
+    [activeScopeId, workspaces, authEmail],
+  );
 
   const {
     workflow,

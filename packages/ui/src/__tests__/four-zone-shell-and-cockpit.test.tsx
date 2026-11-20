@@ -31,7 +31,7 @@ const SHELL_LABELS: FourZoneDirectionCShellLabels = {
   notificationsButtonLabel: "🔔 Notifications",
   notificationsDrawerTitle: "Centre de Notifications (420px)",
   notificationsEmptyText: "Aucune notification non lue.",
-  sidebarAriaLabel: "Navigation principale à 8 entrées sans numéro",
+  sidebarAriaLabel: "Navigation principale à 9 entrées sans numéro",
   railCollapseLabel: "Replier le rail ([)",
   railExpandLabel: "Déplier le rail ([)",
   packSelectorLabel: "Pack Métier actif",
@@ -44,8 +44,9 @@ const SHELL_LABELS: FourZoneDirectionCShellLabels = {
     processes: "Mes Processus",
     agents: "Mes Agents",
     spaces: "Mes Espaces",
+    organization: "Mon Organisation",
     finops: "FinOps",
-    configuration: "Configuration",
+    configuration: "Administration",
     help: "Aide",
   },
 };
@@ -109,11 +110,12 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
       </FourZoneDirectionCShell>,
     );
 
-    // Zone 2: TopHeaderBar (52px) hides duplicate workspace selector on Desktop while Sidebar is expanded
+    // Zone 2: TopHeaderBar (52px) places [O] ORCIA home link top-left & hides duplicate workspace selector on Desktop while Sidebar is expanded
     const topbar = screen.getByTestId("four-zone-top-header-bar");
     expect(topbar.style.height).toBe("52px");
     expect(screen.queryByTestId("topbar-fixed-workspace-selector")).toBeNull();
-    expect(screen.getByTestId("sidebar-brand-logo").textContent).toContain("ORCIA");
+    expect(screen.queryByTestId("sidebar-brand-logo")).toBeNull();
+    expect(screen.getByTestId("topbar-orcia-home-link").textContent).toContain("ORCIA");
 
     // Collapsing Sidebar rail reveals the compact TopHeaderBar workspace selector
     fireEvent.click(screen.getByTestId("sidebar-rail-toggle-btn"));
@@ -135,10 +137,10 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
     const notifDrawer = screen.getByTestId("topbar-notifications-drawer");
     expect(notifDrawer.style.width).toBe("min(420px, 100vw)");
 
-    // Zone 2: Sidebar (240px / 68px Rail via '[') with exactly 8 unnumbered entries
+    // Zone 2: Sidebar (240px / 68px Rail via '[') with exactly 9 unnumbered entries (Story 25.2)
     const sidebar = screen.getByTestId("four-zone-sidebar");
     expect(sidebar.style.width).toBe("240px");
-    expect(DEFAULT_EIGHT_FIXED_MENU_ENTRIES).toHaveLength(8);
+    expect(DEFAULT_EIGHT_FIXED_MENU_ENTRIES).toHaveLength(9);
     for (const entry of DEFAULT_EIGHT_FIXED_MENU_ENTRIES) {
       const btn = screen.getByTestId(`eight-menu-item-${entry.key}`);
       expect(btn.textContent).not.toMatch(/^\d+\./);

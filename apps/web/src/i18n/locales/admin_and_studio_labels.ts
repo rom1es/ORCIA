@@ -89,9 +89,9 @@ export interface AdminAndStudioDictionarySection {
 
 export const ADMIN_AND_STUDIO_FR_LABELS: AdminAndStudioDictionarySection = {
   settingsHub: {
-    hubTitle: "Configuration de la Plateforme & Organisation",
+    hubTitle: "Administration de la plateforme",
     hubSubtitle:
-      "Gérez l'organigramme de vos directions et équipes, les comptes et habilitations, les modèles IA, les connecteurs externes et les packs métiers.",
+      "Gérez les comptes et habilitations, l'authentification, les modèles IA, les connecteurs externes et les packs métiers.",
     tabs: {
       organization: "Organisation",
       iam: "Comptes & Habilitations",
@@ -103,7 +103,7 @@ export const ADMIN_AND_STUDIO_FR_LABELS: AdminAndStudioDictionarySection = {
     lockedSectionNotice:
       "Cette section est affichée en lecture seule — un droit d'administration est nécessaire pour la modifier.",
     requestAccessLabel: "Demander l'accès à un administrateur",
-    readOnlyRestrictedTitle: "Accès en lecture seule sur la configuration de la plateforme",
+    readOnlyRestrictedTitle: "Accès en lecture seule sur l'administration de la plateforme",
     readOnlyRestrictedBody:
       "Votre rôle actuel ne permet pas de modifier les paramètres globaux ou organisationnels. Pour gérer vos préférences personnelles (apparence, langue, rôle par défaut, clés d'accès personnelles), ouvrez Mon Compte.",
     openMyAccountCta: "Ouvrir Mon Compte",
@@ -170,9 +170,9 @@ export const ADMIN_AND_STUDIO_FR_LABELS: AdminAndStudioDictionarySection = {
 
 export const ADMIN_AND_STUDIO_EN_LABELS: AdminAndStudioDictionarySection = {
   settingsHub: {
-    hubTitle: "Platform Configuration & Organization",
+    hubTitle: "Platform Administration",
     hubSubtitle:
-      "Manage your organization units and teams, user accounts and permissions, AI models, external connectors, and business packs.",
+      "Manage user accounts and permissions, authentication, AI models, external connectors, and business packs.",
     tabs: {
       organization: "Organization",
       iam: "Accounts & Permissions",
@@ -184,7 +184,7 @@ export const ADMIN_AND_STUDIO_EN_LABELS: AdminAndStudioDictionarySection = {
     lockedSectionNotice:
       "This section is displayed in read-only mode — administrator permissions are required to edit it.",
     requestAccessLabel: "Request access from an administrator",
-    readOnlyRestrictedTitle: "Read-only access on platform configuration",
+    readOnlyRestrictedTitle: "Read-only access on platform administration",
     readOnlyRestrictedBody:
       "Your current role does not allow modifying global or organizational settings. To manage your personal preferences (theme, language, default role, personal access keys), open My Account.",
     openMyAccountCta: "Open My Account",

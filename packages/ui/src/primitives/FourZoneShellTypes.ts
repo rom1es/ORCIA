@@ -11,6 +11,7 @@ export type EightFixedMenuKey =
   | "processes"
   | "agents"
   | "spaces"
+  | "organization"
   | "finops"
   | "configuration"
   | "help";
@@ -28,6 +29,7 @@ export const DEFAULT_EIGHT_FIXED_MENU_ENTRIES: readonly EightFixedMenuEntrySpec[
   { key: "processes", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.processes, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.processes); }, route: "/processes" },
   { key: "agents", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.agents, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.agents); }, route: "/agents" },
   { key: "spaces", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.spaces, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.spaces); }, route: "/spaces" },
+  { key: "organization", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.organization, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.organization); }, route: "/organization" },
   { key: "finops", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.finops, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.finops); }, route: "/finops" },
   { key: "configuration", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.configuration, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.configuration); }, route: "/configuration" },
   { key: "help", iconName: ORCIA_EIGHT_MENU_ICON_NAMES.help, get icon() { return getOrciaIconGlyph(ORCIA_EIGHT_MENU_ICON_NAMES.help); }, route: "/help" },
@@ -62,10 +64,19 @@ export interface ScopeOptionItem {
   readonly label: string;
 }
 
+export interface UnifiedScopeOptionGroup {
+  readonly label: string;
+  readonly options: readonly ScopeOptionItem[];
+}
+
 export interface DoubleScopeSelectorLabels {
   readonly teamBuLabel: string;
   readonly workspaceLabel: string;
   readonly allWorkspacesOption: string;
+  readonly personalGroupLabel?: string;
+  readonly otherSpacesGroupLabel?: string;
+  readonly allMySpacesOption?: string;
+  readonly globalPlatformLabel?: string;
 }
 
 export type MobileCompanionBottomTabKey = "cockpit" | "assistant" | "decisions";
@@ -97,7 +108,9 @@ export interface FourZoneDirectionCShellLabels {
   readonly helpColumnExpectedTitle: string;
   readonly helpColumnExpectedBody: string;
   readonly helpColumnScrollMoreLabel?: string;
-  readonly menuEntries: Record<EightFixedMenuKey, string>;
+  readonly menuEntries: Record<Exclude<EightFixedMenuKey, "organization">, string> & {
+    readonly organization?: string;
+  };
   readonly organizationMenuLabel?: string;
   readonly activityMenuLabel?: string;
   readonly doubleSelector?: DoubleScopeSelectorLabels;
@@ -124,6 +137,12 @@ export interface FourZoneDirectionCShellProps {
   readonly workspaceSelectorOptions?: readonly ScopeOptionItem[];
   readonly activeWorkspaceSelectorId?: string;
   readonly onSelectWorkspaceFromSidebar?: (scopeId: string) => void;
+  readonly unifiedScopeGroups?: readonly UnifiedScopeOptionGroup[];
+  readonly unifiedAllSpacesOption?: ScopeOptionItem;
+  readonly unifiedScopeLabel?: string;
+  readonly activeUnifiedScopeId?: string;
+  readonly onSelectUnifiedScope?: (scopeId: string) => void;
+  readonly onNavigateHome?: () => void;
   readonly doubleSelectorLabels?: DoubleScopeSelectorLabels;
   readonly activePackKey: string;
   readonly availablePacks: readonly string[];

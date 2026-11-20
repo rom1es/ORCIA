@@ -42,6 +42,29 @@ test.describe("TEST-05 · 07 — Mes Espaces : organisation, espace de travail e
     await expect(
       page.getByRole("main").getByText("Espace E2E Comptabilité").first(),
     ).toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId("sidebar-unified-scope-selector").locator("select")).toHaveCount(1);
+    const scopeSelect = page.getByTestId("sidebar-workspace-selector");
+    await expect(scopeSelect).toBeVisible();
+    await expect(scopeSelect).toContainText("Espace E2E Comptabilité");
+    const comptaOptionValue = await scopeSelect
+      .locator("option")
+      .filter({ hasText: "Espace E2E Comptabilité" })
+      .first()
+      .getAttribute("value");
+    expect(comptaOptionValue).toBeTruthy();
+    await scopeSelect.selectOption(comptaOptionValue!);
+    await expect(scopeSelect).toHaveValue(comptaOptionValue!);
+    await page.getByTestId("eight-menu-item-finops").click();
+    await expect(page).toHaveURL(/\/finops$/);
+    await expect(page.getByTestId("sidebar-workspace-selector")).toHaveValue(comptaOptionValue!);
+    // Vrai F5 utilisateur (eviction RAM serveur tout en conservant l'espace actif en localStorage)
+    await reloadColdFromPg(page, { clearBrowserStorage: false });
+    await expect(page.getByTestId("sidebar-workspace-selector")).toHaveValue(comptaOptionValue!, {
+      timeout: 20000,
+    });
+    await page.getByTestId("eight-menu-item-spaces").click();
+    await expect(page).toHaveURL(/\/spaces$/);
+    await expect(page.getByTestId("sidebar-workspace-selector")).toHaveValue(comptaOptionValue!);
     expectDbRowExists(
       "SELECT id, slug, unit_type FROM org_units WHERE slug = :slug AND unit_type = 'BU'",
       { slug: "bu-e2e" },

@@ -1,7 +1,9 @@
 import { OrciaAlertBanner } from "@orcia/ui";
 import React, { useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
+import { resolveGlobalScopeLabel } from "../../components/platformSetupWorkspaces";
 import { useShellNavigation } from "../../components/ShellContainer";
+import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions";
 import { useI18n } from "../../i18n";
 import { GatesAdaptiveHumanReviewSection } from "./GatesAdaptiveHumanReviewSection";
 
@@ -11,12 +13,8 @@ export function GatesFeaturePanel() {
   const { activeScopeId, navigateToRoute } = useShellNavigation();
   const isFr = locale === "fr";
   const activeScopeNode = scopes.find((s) => s.id === activeScopeId);
-  const activeWorkspace =
-    activeScopeNode?.level === "WORKSPACE"
-      ? workspaces.find((w) => w.workspaceId === activeScopeId) ?? workspaces[0]
-      : activeScopeNode?.level === "TEAM"
-        ? workspaces.find((w) => w.ownerOrgUnitId === activeScopeId) ?? workspaces[0]
-        : workspaces[0];
+  const resolvedWsId = resolveEffectiveWorkspaceId(activeScopeId, workspaces);
+  const activeWorkspace = workspaces.find((w) => w.workspaceId === resolvedWsId) ?? workspaces[0];
 
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
@@ -47,7 +45,7 @@ export function GatesFeaturePanel() {
         <span>
           {isFr ? "Périmètre de validation actif :" : "Active review scope:"}{" "}
           <strong style={{ color: "var(--color-text-primary)" }}>
-            {activeScopeNode?.name ?? (isFr ? "Plateforme Globale ORCIA" : "Global Platform")}
+            {activeScopeNode?.name ?? resolveGlobalScopeLabel(isFr)}
           </strong>
         </span>
       </div>

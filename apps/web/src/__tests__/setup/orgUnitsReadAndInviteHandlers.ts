@@ -43,10 +43,6 @@ export function handleOrgUnitsReadAndInviteRoute(params: {
     const scopeInfo = hasSessionUser ? computeOrgSubtreeAndAncestors(candidates, activeHat) : null;
 
     let units = backendState.orgUnits
-      .filter((u) => {
-        if (!scopeInfo || activeHat === "PLATFORM_ADMIN" || activeHat === "SECOPS") return true;
-        return scopeInfo.visible.has(u.id);
-      })
       .map((u) => {
         const isBu = u.kind === "BU";
         let canEdit = true;

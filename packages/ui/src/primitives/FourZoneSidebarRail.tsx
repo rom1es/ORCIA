@@ -7,6 +7,7 @@ import {
   type EightFixedMenuKey,
   type FourZoneDirectionCShellLabels,
   type ScopeOptionItem,
+  type UnifiedScopeOptionGroup,
 } from "./FourZoneShellTypes";
 
 export interface FourZoneSidebarRailProps {
@@ -26,6 +27,11 @@ export interface FourZoneSidebarRailProps {
   readonly workspaceSelectorOptions?: readonly ScopeOptionItem[];
   readonly activeWorkspaceSelectorId?: string;
   readonly onSelectWorkspaceFromSidebar?: (scopeId: string) => void;
+  readonly unifiedScopeGroups?: readonly UnifiedScopeOptionGroup[];
+  readonly unifiedAllSpacesOption?: ScopeOptionItem;
+  readonly unifiedScopeLabel?: string;
+  readonly activeUnifiedScopeId?: string;
+  readonly onSelectUnifiedScope?: (scopeId: string) => void;
   readonly doubleSelectorLabels?: DoubleScopeSelectorLabels;
   readonly sidebarSecondarySlot?: React.ReactNode;
   readonly renderSidebarFooter?: (railCollapsed: boolean) => React.ReactNode;
@@ -50,12 +56,14 @@ export function FourZoneSidebarRail({
   hiddenMenuKeys,
   onSelectMenu,
   onSelectPack,
-  teamBuOptions,
-  activeTeamBuId,
-  onSelectTeamBu,
   workspaceSelectorOptions,
   activeWorkspaceSelectorId,
   onSelectWorkspaceFromSidebar,
+  unifiedScopeGroups,
+  unifiedAllSpacesOption,
+  unifiedScopeLabel,
+  activeUnifiedScopeId,
+  onSelectUnifiedScope,
   doubleSelectorLabels,
   sidebarSecondarySlot,
   renderSidebarFooter,
@@ -65,6 +73,14 @@ export function FourZoneSidebarRail({
   const cleanExpandLabel = sanitizeRailToggleLabel(labels.railExpandLabel);
   const collapsedTooltip = `${cleanExpandLabel} ([)`;
   const selectorLabels = doubleSelectorLabels ?? labels.doubleSelector;
+  const usesUnifiedGroups = Boolean(unifiedScopeGroups || unifiedAllSpacesOption);
+  const hasScopeSelector =
+    usesUnifiedGroups || Boolean(workspaceSelectorOptions && workspaceSelectorOptions.length > 0);
+  const unifiedFlatOptions = (unifiedScopeGroups ?? []).flatMap((g) => g.options);
+  const effectiveUnifiedValue = activeUnifiedScopeId ?? unifiedAllSpacesOption?.id ?? "";
+  const effectiveUnifiedTitle =
+    unifiedFlatOptions.find((o) => o.id === effectiveUnifiedValue)?.label ??
+    (unifiedAllSpacesOption?.id === effectiveUnifiedValue ? unifiedAllSpacesOption.label : undefined);
 
   return (
     <aside
@@ -84,26 +100,6 @@ export function FourZoneSidebarRail({
           className="mb-1 flex flex-col gap-1 border-b pb-1.5"
           style={{ borderColor: "var(--color-border-subtle)" }}
         >
-          {!railCollapsed && (
-            <button
-              type="button"
-              data-testid="sidebar-brand-logo"
-              onClick={() => onSelectMenu("cockpit", "/cockpit")}
-              className="inline-flex items-center gap-2 rounded px-2 py-1 text-sm font-bold tracking-tight"
-              style={{ color: "var(--color-text-primary)" }}
-            >
-              <span
-                className="inline-flex h-5 w-5 items-center justify-center rounded text-[11px] font-bold"
-                style={{
-                  backgroundColor: "var(--color-action-primary)",
-                  color: "var(--color-bg-surface)",
-                }}
-              >
-                O
-              </span>
-              <span>ORCIA</span>
-            </button>
-          )}
           <button
             type="button"
             data-testid="sidebar-rail-toggle-btn"
@@ -128,65 +124,73 @@ export function FourZoneSidebarRail({
           </button>
         </div>
 
-        {!railCollapsed && teamBuOptions && teamBuOptions.length > 0 && (
+        {!railCollapsed && hasScopeSelector && (
           <div
-            data-testid="sidebar-double-scope-selector"
-            className="mb-1.5 flex flex-col gap-1.5 border-b pb-2"
+            data-testid="sidebar-unified-scope-selector"
+            className="mb-1.5 flex flex-col gap-1 border-b pb-2"
             style={{ borderColor: "var(--color-border-subtle)" }}
           >
             <label className="flex flex-col gap-0.5 text-[11px] font-medium">
               <span style={{ color: "var(--color-text-secondary)" }}>
-                {selectorLabels?.teamBuLabel ?? "Équipe / Direction"}
+                {unifiedScopeLabel ?? selectorLabels?.workspaceLabel ?? "Espace"}
               </span>
-              <select
-                data-testid="sidebar-team-bu-selector"
-                value={activeTeamBuId ?? teamBuOptions[0]?.id ?? ""}
-                title={teamBuOptions.find((o) => o.id === (activeTeamBuId ?? teamBuOptions[0]?.id))?.label}
-                onChange={(e) => onSelectTeamBu?.(e.target.value)}
-                className="w-full min-w-0 rounded border px-2 py-1 text-xs"
-                style={{
-                  backgroundColor: "var(--color-bg-elevated)",
-                  borderColor: "var(--color-border-subtle)",
-                  color: "var(--color-text-primary)",
-                }}
-              >
-                {teamBuOptions.map((opt) => (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.label}
+              {usesUnifiedGroups ? (
+                <select
+                  data-testid="sidebar-workspace-selector"
+                  value={effectiveUnifiedValue}
+                  title={effectiveUnifiedTitle}
+                  onChange={(e) => onSelectUnifiedScope?.(e.target.value)}
+                  className="w-full min-w-0 rounded border px-2 py-1 text-xs"
+                  style={{
+                    backgroundColor: "var(--color-bg-elevated)",
+                    borderColor: "var(--color-border-subtle)",
+                    color: "var(--color-text-primary)",
+                  }}
+                >
+                  {(unifiedScopeGroups ?? []).map((group) => (
+                    <optgroup key={group.label} label={group.label}>
+                      {group.options.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                  {unifiedAllSpacesOption && (
+                    <option value={unifiedAllSpacesOption.id}>
+                      {unifiedAllSpacesOption.label}
+                    </option>
+                  )}
+                </select>
+              ) : (
+                <select
+                  data-testid="sidebar-workspace-selector"
+                  value={activeWorkspaceSelectorId ?? ""}
+                  title={
+                    (workspaceSelectorOptions ?? []).find(
+                      (o) => o.id === activeWorkspaceSelectorId,
+                    )?.label ??
+                    selectorLabels?.allWorkspacesOption ??
+                    "Tous les espaces"
+                  }
+                  onChange={(e) => onSelectWorkspaceFromSidebar?.(e.target.value)}
+                  className="w-full min-w-0 rounded border px-2 py-1 text-xs"
+                  style={{
+                    backgroundColor: "var(--color-bg-elevated)",
+                    borderColor: "var(--color-border-subtle)",
+                    color: "var(--color-text-primary)",
+                  }}
+                >
+                  <option value="">
+                    {selectorLabels?.allWorkspacesOption ?? "Tous les espaces"}
                   </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="flex flex-col gap-0.5 text-[11px] font-medium">
-              <span style={{ color: "var(--color-text-secondary)" }}>
-                {selectorLabels?.workspaceLabel ?? "Espace"}
-              </span>
-              <select
-                data-testid="sidebar-workspace-selector"
-                value={activeWorkspaceSelectorId ?? ""}
-                title={
-                  (workspaceSelectorOptions ?? []).find((o) => o.id === activeWorkspaceSelectorId)?.label ??
-                  selectorLabels?.allWorkspacesOption ??
-                  "Tous les espaces"
-                }
-                onChange={(e) => onSelectWorkspaceFromSidebar?.(e.target.value)}
-                className="w-full min-w-0 rounded border px-2 py-1 text-xs"
-                style={{
-                  backgroundColor: "var(--color-bg-elevated)",
-                  borderColor: "var(--color-border-subtle)",
-                  color: "var(--color-text-primary)",
-                }}
-              >
-                <option value="">
-                  {selectorLabels?.allWorkspacesOption ?? "Tous les espaces"}
-                </option>
-                {(workspaceSelectorOptions ?? []).map((opt) => (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                  {(workspaceSelectorOptions ?? []).map((opt) => (
+                    <option key={opt.id} value={opt.id}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              )}
             </label>
           </div>
         )}
@@ -198,7 +202,8 @@ export function FourZoneSidebarRail({
             entry.key === "cockpit" ? undefined : disabledMenuKeys?.[entry.key];
           const isDisabled = Boolean(disabledReason);
           const isActive = !isDisabled && activeMenuKey !== null && entry.key === activeMenuKey;
-          const entryLabel = labels.menuEntries[entry.key];
+          const entryLabel =
+            labels.menuEntries[entry.key] ?? labels.organizationMenuLabel ?? entry.key;
           return (
             <button
               key={entry.key}
@@ -216,7 +221,7 @@ export function FourZoneSidebarRail({
                   onSelectMenu(entry.key, entry.route);
                 }
               }}
-              className={`orcia-sidebar-nav-btn ${railCollapsed ? "justify-center px-0 py-2" : "gap-2.5 px-2.5 py-2"}`}
+              className={`orcia-sidebar-nav-btn ${railCollapsed ? "justify-center px-0 py-1.5" : "gap-2.5 px-2.5 py-1.5"}`}
             >
               <OrciaIcon name={entry.iconName} />
               {!railCollapsed && <span className="flex-1">{entryLabel}</span>}

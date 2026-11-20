@@ -32,13 +32,13 @@ export function AdminFeaturePanel() {
         <div>
           <strong style={{ fontSize: "15px" }}>
             {isFr
-              ? "Configuration de la Plateforme & Assistants Guidés"
-              : "Platform Configuration & Guided Assistants"}
+              ? "Administration de la Plateforme & Assistants Guidés"
+              : "Platform Administration & Guided Assistants"}
           </strong>
           <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "var(--color-muted-foreground)" }}>
             {isFr
-              ? "Accédez aux 6 rubriques de paramétrage (Organisation, Modèles IA, Sources, Packs, Atelier de Processus, Journal d'Activité) ou lancez un assistant pas à pas."
-              : "Access the 6 configuration sections (Organization, AI Models, Sources, Packs, Process Studio, Activity Log) or launch a step-by-step assistant."}
+              ? "Accédez aux 5 rubriques d'administration (Comptes & Habilitations, Authentification, Modèles IA, Connecteurs, Packs Métiers) ou lancez un assistant pas à pas."
+              : "Access the 5 administration sections (Accounts & Permissions, Authentication, AI Models, Connectors, Business Packs) or launch a step-by-step assistant."}
           </p>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
@@ -56,7 +56,7 @@ export function AdminFeaturePanel() {
               cursor: "pointer",
             }}
           >
-            {isFr ? "Ouvrir la Configuration" : "Open Configuration"}
+            {isFr ? "Ouvrir l'Administration" : "Open Administration"}
           </button>
           <button
             type="button"

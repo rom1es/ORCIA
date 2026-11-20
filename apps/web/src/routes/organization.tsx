@@ -1,12 +1,11 @@
-import { OrciaIcon, PermissionGuard } from "@orcia/ui";
+import { OrciaAlertBanner, OrciaIcon } from "@orcia/ui";
 import { createRoute } from "@tanstack/react-router";
 import React from "react";
 import { usePlatformSetup } from "../components/platformSetupStore";
 import { useShellNavigation } from "../components/ShellContainer";
 import { useI18n } from "../i18n";
 import {
-  canAccessMyOrganization,
-  READ_ONLY_PERMISSION_VERBS,
+  canMutateMyOrganization,
   useAuthSessionStore,
 } from "../stores/authSessionStore";
 import { Route as rootRoute } from "./__root";
@@ -15,7 +14,7 @@ import { SettingsOrganizationUnitsBlock } from "./SettingsOrganizationUnitsBlock
 
 export function OrganizationPageView(): React.ReactElement {
   const { dictionary, locale } = useI18n();
-  const { openHelpSection, navigateToRoute } = useShellNavigation();
+  const { openHelpSection } = useShellNavigation();
   const isFr = locale === "fr";
   const orgLabels = dictionary.settingsHub.organizationTab;
   const copy = dictionary.settingsHub;
@@ -23,7 +22,7 @@ export function OrganizationPageView(): React.ReactElement {
   const roles = useAuthSessionStore((s) => s.roles);
   const activeHat = useAuthSessionStore((s) => s.activeHat);
   const readOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
-  const canAccessOrg = canAccessMyOrganization({ roles, activeHat, readOnlyObserver });
+  const canMutateOrg = canMutateMyOrganization({ roles, activeHat, readOnlyObserver });
 
   const { orgUnits, workspaces, syncOrgUnitsFromServer } = usePlatformSetup();
 
@@ -51,48 +50,27 @@ export function OrganizationPageView(): React.ReactElement {
         </p>
       </header>
 
-      {!canAccessOrg ? (
-        <PermissionGuard
-          scopePath="GLOBAL"
-          verb="read"
-          allowedVerbs={READ_ONLY_PERMISSION_VERBS}
-          labels={{
-            passiveLockBadge: isFr ? "Accès restreint" : "Restricted access",
-            passiveLockDescription: copy.readOnlyRestrictedBody,
-            requestAccessCta: copy.requestAccessLabel,
-            disabledHint: copy.lockedSectionNotice,
-          }}
+      {!canMutateOrg && (
+        <OrciaAlertBanner
+          tone="cobalt"
+          role="status"
+          testId="organization-readonly-access-banner"
+          title={copy.readOnlyRestrictedTitle}
         >
-          <section
-            data-testid="organization-readonly-access-banner"
-            className="orcia-bento-card"
-            style={{ display: "flex", flexDirection: "column", gap: "10px" }}
-          >
-            <h2 style={{ margin: 0, fontSize: "15px" }}>{copy.readOnlyRestrictedTitle}</h2>
-            <p style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}>
-              {copy.readOnlyRestrictedBody}
-            </p>
-            <div>
-              <button
-                type="button"
-                className="orcia-ds-btn orcia-ds-btn-secondary"
-                onClick={() => navigateToRoute("/spaces")}
-              >
-                {orgLabels.openWorkspacesCta}
-              </button>
-            </div>
-          </section>
-        </PermissionGuard>
-      ) : (
-        <SettingsOrganizationUnitsBlock
-          isFr={isFr}
-          canMutate={canAccessOrg}
-          orgUnits={orgUnits}
-          workspaces={workspaces}
-          openHelpSection={openHelpSection}
-          syncOrgUnitsFromServer={syncOrgUnitsFromServer}
-        />
+          {isFr
+            ? "Consultation de l'organigramme en lecture seule. Seuls les Responsables de Direction (BU), Chefs d'équipe et Administrateurs peuvent modifier les unités ou inviter des membres."
+            : "Read-only organization chart view. Only Division Leads, Team Leads, and Administrators can edit units or invite members."}
+        </OrciaAlertBanner>
       )}
+
+      <SettingsOrganizationUnitsBlock
+        isFr={isFr}
+        canMutate={canMutateOrg}
+        orgUnits={orgUnits}
+        workspaces={workspaces}
+        openHelpSection={openHelpSection}
+        syncOrgUnitsFromServer={syncOrgUnitsFromServer}
+      />
     </div>
   );
 }

@@ -9,6 +9,11 @@ import type {
   ConfiguredOrgUnit,
 } from "./platformSetupStore";
 export { buildShellNotificationItems } from "./shellNotificationBuilder";
+export {
+  buildUnifiedScopeSelectorState,
+  resolveEffectiveWorkspaceId,
+  type UnifiedScopeSelectorState,
+} from "./shellUnifiedScope";
 
 export interface WorkspaceSwitcherOptionItem {
   readonly id: string;
@@ -208,6 +213,7 @@ export function buildShellDisabledMenuKeys(params: {
       processes: adminReason,
       agents: adminReason,
       spaces: adminReason,
+      organization: adminReason,
       finops: adminReason,
       configuration: adminReason,
       help: adminReason,
@@ -219,11 +225,11 @@ export function buildShellDisabledMenuKeys(params: {
     ...(!effectiveHasModels
       ? {
           assistant: isFr
-            ? "Configurez au moins un modèle IA et rattachez une Équipe de facturation dans Configuration pour activer Mon Assistant."
-            : "Configure at least one AI model and attach a billing Team in Configuration to enable My Assistant.",
+            ? "Configurez au moins un modèle IA et rattachez une Équipe de facturation dans Administration pour activer Mon Assistant."
+            : "Configure at least one AI model and attach a billing Team in Administration to enable My Assistant.",
           agents: isFr
-            ? "Configurez un modèle IA ou activez un Pack et rattachez une Équipe de facturation dans Configuration pour déverrouiller Mes Agents."
-            : "Configure an AI model or enable a Pack and attach a billing Team in Configuration to unlock My Agents.",
+            ? "Configurez un modèle IA ou activez un Pack et rattachez une Équipe de facturation dans Administration pour déverrouiller Mes Agents."
+            : "Configure an AI model or enable a Pack and attach a billing Team in Administration to unlock My Agents.",
         }
       : {}),
     ...(!effectiveHasWorkspaces || !effectiveHasModels

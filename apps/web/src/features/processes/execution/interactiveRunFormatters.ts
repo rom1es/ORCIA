@@ -44,3 +44,46 @@ export type InteractiveProcessDrawerStatus =
   | "COMPLETED_APPROVED"
   | "RETURN_LOOP_TRIGGERED"
   | "SLA_SUSPENDED";
+
+export function buildInitialArtifactMarkdown(
+  workflowTitle: string,
+  stepName: string,
+  agentLabel: string,
+): string {
+  return `# ${workflowTitle}\n\n## Étape en cours : ${stepName}\n\nProposition préparée par ${agentLabel}.\n\n## Synthèse & Critères de valeur\n- Objectif métier clarifié et aligné avec le socle de connaissance.\n- Score de priorité (WSJF) estimé : 8.4 — Prêt pour relecture.`;
+}
+
+export function buildSubStepAdvanceMarkdown(
+  workflowTitle: string,
+  stepName: string,
+  outputDescription: string,
+): string {
+  return `# ${workflowTitle}\n\n## Étape en cours : ${stepName}\n\nLivrable préparé : ${outputDescription}`;
+}
+
+export function buildWritePreviewExecutionPayload(
+  actorSlug: string,
+  workflowId: string,
+  workflowTitle: string,
+  reflexiveObjective: string | null | undefined,
+  isFr: boolean,
+) {
+  return {
+    actor_slug: actorSlug,
+    objective: reflexiveObjective || workflowTitle,
+    effort_level: "high" as const,
+    effort_mode: "approfondi" as const,
+    allow_sub_agent_delegation: true,
+    available_delegate_agents: ["analyste-metier"],
+    initial_resources: ["docs/product/capabilities.yaml"],
+    requested_write_preview: {
+      connector_type: "confluence",
+      action: "publish_page",
+      target_resource_uri: "confluence://Architecture/Documentation-ORCIA",
+      action_summary: isFr
+        ? `Publier le livrable « ${workflowTitle} »`
+        : `Publish deliverable "${workflowTitle}"`,
+      payload: { workflow_id: workflowId, title: workflowTitle },
+    },
+  };
+}

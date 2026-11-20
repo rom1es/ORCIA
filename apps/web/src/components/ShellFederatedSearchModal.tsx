@@ -1,4 +1,5 @@
 import { createOrciaApiClient } from "@orcia/api-client";
+import { resolveEffectiveWorkspaceId } from "./shellScopeOptions";
 import {
   TopHeaderSearchCommand,
   type ControlCenterWorkspaceGovItem,
@@ -79,7 +80,7 @@ export function ShellFederatedSearchModal({
     setSpeed2Loading(true);
     setSpeed2Executed(false);
     setSpeed2Error(null);
-    const activeWsId = workspaces[0]?.workspaceId ?? null;
+    const activeWsId = resolveEffectiveWorkspaceId(activeScopeId, workspaces) || null;
     const effectiveScope: TopSearchScopeMode =
       activeWsId === null && requestedScope === "WORKSPACE" ? "ALL_WORKSPACES" : requestedScope;
     const client = createOrciaApiClient({ baseUrl: "" });

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { ContextualInfoTriggerButton } from "../components/ContextualInfoTriggerButton";
 import { OrciaIcon, getOrciaIconGlyph } from "../components/icons";
 
 export type AssistantMainTabCode = "ACTIVE_DISCUSSION" | "FOLDERS" | "HISTORY_SEARCH";
@@ -86,7 +85,6 @@ export function AssistantFoldersAndCollaborativeThreadView({
   onChangeVisibility,
   onSendCollaborativeMessage,
   onCreateFolder,
-  onOpenHelpSection,
 }: AssistantFoldersAndCollaborativeThreadViewProps): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<AssistantMainTabCode>("ACTIVE_DISCUSSION");
   const [notesOpen, setNotesOpen] = useState<boolean>(defaultNotesOpen);
@@ -142,13 +140,6 @@ export function AssistantFoldersAndCollaborativeThreadView({
             <span className="text-xs text-text-secondary">
               {isFr ? "Aucun dossier actif sélectionné. Créez ou cliquez sur un dossier ci-dessous pour activer ses notes." : "No active folder selected. Create or click a folder below to activate its notes."}
             </span>
-          )}
-          {onOpenHelpSection && (
-            <ContextualInfoTriggerButton
-              sectionId="assistant-folders"
-              label={isFr ? "Comprendre comment les dossiers et les notes enrichissent automatiquement vos questions" : "Understand how folders and notes automatically enrich your questions"}
-              onOpenHelpSection={onOpenHelpSection}
-            />
           )}
         </div>
       </header>

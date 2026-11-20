@@ -12,8 +12,10 @@ import {
   type ConfiguredWorkflowItem,
 } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
+import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions";
 import { SimplifiedProcessBuilderSection } from "../../components/SimplifiedProcessBuilderSection";
 import { useI18n } from "../../i18n";
+import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { OrciaDocumentationProcessCard } from "../gates/OrciaDocumentationProcessCard";
 
 export function ProcessStudioAndPackAuthoringSection() {
@@ -22,20 +24,16 @@ export function ProcessStudioAndPackAuthoringSection() {
     packs,
     workflows,
     workspaces,
-    scopes,
     registerPack,
     upsertWorkflow,
     launchRun,
   } = usePlatformSetup();
   const { activeScopeId, openHelpSection } = useShellNavigation();
+  const authEmail = useAuthSessionStore((s) => s.email);
   const isFr = locale === "fr";
-  const activeScopeNode = scopes.find((s) => s.id === activeScopeId);
+  const resolvedWsId = resolveEffectiveWorkspaceId(activeScopeId, workspaces, authEmail);
   const activeWorkspace =
-    activeScopeNode?.level === "WORKSPACE"
-      ? workspaces.find((w) => w.workspaceId === activeScopeId) ?? workspaces[0]
-      : activeScopeNode?.level === "TEAM"
-        ? workspaces.find((w) => w.ownerOrgUnitId === activeScopeId) ?? workspaces[0]
-        : workspaces[0];
+    workspaces.find((w) => w.workspaceId === resolvedWsId) ?? workspaces[0];
 
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const [builderPresetDraft, setBuilderPresetDraft] =

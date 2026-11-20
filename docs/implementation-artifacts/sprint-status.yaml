@@ -266,7 +266,7 @@ development_status:
   # Epic 25 — Sobriété Cockpit Jour 0, Coquille 9 Entrées (Mon Organisation & Administration), Espace Personnel Automatique PG18, Hub Modèles IA Fiable & Découplage Mon Assistant / RAG (AD-8, AD-16, AD-24)
   epic-25: in-progress
   25-1-espace-personnel-auto-pg18-accostage-unifie-et-degrisage-processus: done
-  25-2-coquille-9-entrees-mon-organisation-administration-topbar-orcia-et-selecteur-espace: ready-for-dev
+  25-2-coquille-9-entrees-mon-organisation-administration-topbar-orcia-et-selecteur-espace: done
   25-3-sobriete-cockpit-jour0-purge-run-demo-ram-et-retrait-blocs-attente: ready-for-dev
   25-4-hub-modeles-ia-suppression-fiable-spinner-unifie-erreur-locale-et-masquage-reindexation: ready-for-dev
   25-5-decouplage-assistant-sans-modele-semantique-blocage-sources-rag-et-cloture-epic-25: ready-for-dev

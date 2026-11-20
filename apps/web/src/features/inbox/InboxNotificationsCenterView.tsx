@@ -2,6 +2,8 @@ import { createOrciaApiClient, type TaskNotificationItemResponse } from "@orcia/
 import { PresenceClaimPill } from "@orcia/ui";
 import React, { useCallback, useEffect, useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
+import { useShellNavigation } from "../../components/ShellContainer";
+import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions";
 import { useWorkspaceEventsSse } from "../../components/useWorkspaceEventsSse";
 import { useI18n } from "../../i18n";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
@@ -31,9 +33,12 @@ export function InboxNotificationsCenterView(): React.JSX.Element {
   const { dictionary, locale } = useI18n();
   const isFr = locale === "fr";
   const { workspaces } = usePlatformSetup();
-  const { readOnlyObserver } = useAuthSessionStore();
+  const { activeScopeId } = useShellNavigation();
+  const { readOnlyObserver, email: authEmail } = useAuthSessionStore();
 
-  const activeWorkspaceId = workspaces[0]?.workspaceId ?? DEFAULT_INBOX_WORKSPACE_ID;
+  const activeWorkspaceId =
+    resolveEffectiveWorkspaceId(activeScopeId, workspaces, authEmail) ||
+    DEFAULT_INBOX_WORKSPACE_ID;
   const [scopeFilter, setScopeFilter] = useState<"ALL" | "PERSONAL" | "TEAM">("ALL");
   const [items, setItems] = useState<readonly TaskNotificationItemResponse[]>([]);
   const [amberBadgeCount, setAmberBadgeCount] = useState<number>(0);

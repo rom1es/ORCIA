@@ -1,5 +1,4 @@
 import React from "react";
-import { ContextualInfoTriggerButton } from "../../components/ContextualInfoTriggerButton";
 import { CognitiveMetricCard } from "./CognitiveMetricCard";
 import {
   FinopsAutonomousGovernanceSection,
@@ -135,11 +134,6 @@ export function FinopsHumanMasteryTab({
             >
               {labels.tabTitle}
             </h2>
-            <ContextualInfoTriggerButton
-              sectionId="finops-human-mastery"
-              label={labels.infoButtonAriaLabel}
-              onOpenHelpSection={onOpenHelpSection}
-            />
           </div>
           <p style={{ fontSize: "13px", color: "var(--color-text-muted)", margin: "4px 0 0 0" }}>
             {labels.tabSubtitle}

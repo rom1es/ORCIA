@@ -438,30 +438,30 @@ capabilities:
     verified_at: "2026-11-20"
     surfaces: { route: /wizards, api: studio_and_wizards.py }
   - id: CAP-058
-    title: Coquille Settings à 5 onglets réservée aux Administrateurs Plateforme (PLATFORM_ADMIN) & SecOps, délégation Mon Organisation (/organization) et gouvernance Authentification
+    title: Coquille Administration (/settings) à 5 onglets réservée aux Administrateurs Plateforme (PLATFORM_ADMIN) & SecOps, délégation Mon Organisation (/organization) et gouvernance Authentification
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-3, 17-1, 20-1 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa + 2026-11-15-anti-lastpass-matrice-roles-modale-sync-secops-et-hierarchie-bu + 2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu
+    origin_ref: 8-3, 17-1, 20-1, 25-2 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa + 2026-11-15-anti-lastpass-matrice-roles-modale-sync-secops-et-hierarchie-bu + 2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu
     status: live
     kind: feature
     uj: [UJ-13, UJ-14]
     db_tables: [platform_settings, platform_auth_settings, org_units, iam_accounts]
-    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/unit/test_auth_pg_rehydration_after_reload.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_platform_auth_modes_2fa_and_local_isolation_postgres18.py, tests/integration/api/test_auth_pg_rehydration_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx, packages/ui/src/__tests__/status-badge-and-anti-lastpass-inputs.test.tsx, apps/web/src/__tests__/story-17-1-settings-5-tabs-and-rbac.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx, apps/web/src/__tests__/platform-auth-modes-2fa-and-settings-f5.test.tsx, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, apps/web/e2e/14-auth-2fa-account-and-profile.spec.ts]
+    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/unit/test_auth_pg_rehydration_after_reload.py, tests/unit/test_story_25_2_org_units_read_access.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_platform_auth_modes_2fa_and_local_isolation_postgres18.py, tests/integration/api/test_auth_pg_rehydration_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx, packages/ui/src/__tests__/status-badge-and-anti-lastpass-inputs.test.tsx, apps/web/src/__tests__/story-17-1-settings-5-tabs-and-rbac.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx, apps/web/src/__tests__/story-25-2-shell-9-items-org-admin-and-unified-scope.test.tsx, apps/web/src/__tests__/platform-auth-modes-2fa-and-settings-f5.test.tsx, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, apps/web/e2e/14-auth-2fa-account-and-profile.spec.ts]
     verification: runtime
     verified_at: "2026-11-20"
     surfaces: { route: "/settings, /configuration, /organization", api: "settings_and_studio.py, auth_settings.py, sql_local_auth.py, sql_org_iam_role_sync.py", ui: "SettingsHubView (iam, authentication, models, connectors, packs) + OrganizationPageView + SettingsOrganizationUnitRow + StatusBadge (cobalt pastel) + OrciaKnownUserCombobox (anti-LastPass) + SettingsAuthenticationSection + PlatformAuthSettingsCard + OrciaAlertBanner + authSessionStore", migration: "20261115_1901 + 20261115_1902 + 20261117_2001" }
 
   # ───────────── Shell, navigation, aide (Epic 9, 12, 17 + ad-hoc) ─────────────
   - id: CAP-060
-    title: Shell 4 zones Direction C (8 entrées dont Glossaire -> /ontology, icônes SVG filaires 16px, barre de repli, Top-Right épuré & popup Mon Compte bas-gauche) et cockpit épuré
+    title: Shell 4 zones Direction C (9 entrées dont Mon Organisation & Administration, logo [O] ORCIA top-left, sélecteur unifié d'espace groupé, popup Mon Compte bas-gauche) et cockpit épuré
     fr: [FR-32]
     origin: epic
-    origin_ref: 9-1, 12-1, 17-1, 20-2, 20-3 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa
+    origin_ref: 9-1, 12-1, 17-1, 20-2, 20-3, 25-2 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa
     status: live
     kind: feature
     uj: [UJ-20]
     db_tables: [org_units, workspaces, user_preferences]
-    tests: [apps/web/e2e/shell.spec.ts, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, packages/ui/src/__tests__/story-17-1-wireframe-icons-and-shell-rail.test.tsx, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx, apps/web/src/__tests__/story-20-3-sidebar-account-popover-and-settings-f5.test.tsx]
+    tests: [apps/web/e2e/shell.spec.ts, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, packages/ui/src/__tests__/story-17-1-wireframe-icons-and-shell-rail.test.tsx, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx, apps/web/src/__tests__/story-20-3-sidebar-account-popover-and-settings-f5.test.tsx, apps/web/src/__tests__/story-25-2-shell-9-items-org-admin-and-unified-scope.test.tsx]
     verification: runtime
     verified_at: "2026-11-20"
     surfaces: { ui: "FourZoneDirectionCShell + FourZoneSidebarRail + OrciaIcon SVG + SidebarAccountPopover", api: "/api/v1/navigation (shell.py)" }
@@ -1067,10 +1067,10 @@ capabilities:
     surfaces: { api: "observability (logging.py, _internal/ecs_formatter.py, tracing.py, fingerprint.py, log_sink_factory.py, _internal/elasticsearch_sink.py, ports/log_sink.py, dependencies, main.py, routers/health.py /ready & /api/v1/ready)", worker: "configure_logging() / configure_tracing() / instrument_runtime() + roles.py (--serve/--once) + sandbox_daemon.py (sidecar Tier 1 sous /tmp)", compose: "profiles logs-loki / logs-elastic + rotation json-file 50m/3 + services app-roles durcis (10001:0, read_only, tmpfs /tmp)", docker: "infra/docker/Dockerfile (python:3.12-slim non-root 10001:0) + infra/docker/Dockerfile.web (nginx-unprivileged 101:0 port 8080) + infra/docker/nginx.conf", k8s: "infra/k8s/base/ + infra/k8s/overlays/openshift/ (SCC restricted sans runAsUser figé, readOnlyRootFilesystem, emptyDir /tmp, NetworkPolicy sandbox-runner egress:[], Routes TLS edge)", operations: "docs/operations/openshift-clusterlogforwarder-contract.md (OPS-OPENSHIFT-LOGGING-01)" }
     notes: "Formalisé dans AD-23 (ARCHITECTURE-SPINE.md) et livré intégralement via Stories 7.0a, 7.0b et 7.0c (done). Socle complet débloqué pour les déclencheurs LOG_SINK_ALERT (Story 7.2) et POST_ACTION_VERIFICATION (AIOPS-INCIDENT-LOOP-01) de l'Epic 7."
   - id: CAP-203
-    title: Menu dédié Mon Organisation, délégation stricte par sous-arbre BU/Équipe, invitation scopée, rôle Référent Glossaire (ONTOLOGY_LEAD) et filtrage de périmètre /activity
+    title: Menu dédié Mon Organisation (lecture seule pour tous, délégation stricte par sous-arbre BU/Équipe), invitation scopée, rôle Référent Glossaire (ONTOLOGY_LEAD) et filtrage de périmètre /activity
     fr: [FR-3, FR-17, FR-21, FR-22, FR-23, FR-24, FR-34]
     origin: epic
-    origin_ref: 20-1
+    origin_ref: 20-1, 25-2
     status: live
     kind: feature
     uj: [UJ-14]
@@ -1084,8 +1084,10 @@ capabilities:
       migration: "20261117_2001"
     tests:
       - tests/unit/test_story_20_1_org_delegation_and_audit_scope.py
+      - tests/unit/test_story_25_2_org_units_read_access.py
       - tests/security/test_story_20_1_delegation_and_audit_isolation.py
       - tests/integration/api/test_story_20_1_org_delegation_and_audit_postgres18.py
       - apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx
+      - apps/web/src/__tests__/story-25-2-shell-9-items-org-admin-and-unified-scope.test.tsx
       - apps/web/e2e/15-organization-iam-secops-inbox-and-observer.spec.ts
     notes: "Story 20.1 (Epic 20) : séparation de Mon Organisation (/organization) sous Mes Espaces (visibilité PLATFORM_ADMIN, BU_LEAD, TEAM_LEAD ; /settings ramené à 5 onglets avec redirection ?tab=organization), délégation stricte par sous-arbre et booléens can_*, invitation scopée avec garde anti-escalade, 7e rôle ONTOLOGY_LEAD (B1 sync bidirectionnelle BU <-> IAM), journalisation org_unit_id et isolation de lecture /activity."

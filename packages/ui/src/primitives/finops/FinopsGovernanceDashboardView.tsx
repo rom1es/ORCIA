@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { ContextualInfoTriggerButton } from "../../components/ContextualInfoTriggerButton";
 import { OrciaTabBar, type OrciaTabItem } from "../RadixDesignSystemPrimitives";
 import { FinopsBudgetOverrideModal } from "./FinopsBudgetOverrideModal";
 import { FinopsBudgetPolicyModal } from "./FinopsBudgetPolicyModal";
@@ -127,11 +126,6 @@ export function FinopsGovernanceDashboardView({
             >
               {labels.pageTitle}
             </h1>
-            <ContextualInfoTriggerButton
-              sectionId="finops-overview"
-              label={labels.infoButtonAriaLabel}
-              onOpenHelpSection={onOpenHelpSection}
-            />
           </div>
           <p
             style={{

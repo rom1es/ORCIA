@@ -152,10 +152,15 @@ test.describe("Organisation, annuaire IAM, exceptions SecOps, notifications et m
     await loginLocalViaUi(page, { email: observerEmail, password: tempPass });
     await expect(page.getByTestId("four-zone-direction-c-shell")).toBeVisible({ timeout: 20000 });
 
-    await page.goto("/organization");
+    // Story 25.2: Mon Organisation est visible dans la barre latérale même pour OBSERVER, Administration est masqué
+    await expect(page.getByTestId("eight-menu-item-organization")).toBeVisible();
+    await expect(page.getByTestId("eight-menu-item-configuration")).toHaveCount(0);
+    await page.getByTestId("eight-menu-item-organization").click();
     await expect(page.getByTestId("organization-readonly-access-banner")).toBeVisible({
       timeout: 15000,
     });
+    await expect(page.getByTestId("open-create-org-unit-modal-btn")).toBeDisabled();
+    await expect(page.getByTestId("open-invite-org-user-modal-btn")).toBeDisabled();
     await expect(page.getByTestId("topbar-breadcrumb")).not.toContainText("Configuration");
 
     const observerToken = await getBearerTokenFromSession(page);

@@ -3,7 +3,6 @@ import {
   AssistantResponseFooterActionsAndCitations,
   AssistantThinkingSubWindow,
   AssistantUserQuestionBubble,
-  ContextualInfoTriggerButton,
   FormattedMarkdownContent,
   OrciaIcon,
   sanitizeAssistantDisplayReply,
@@ -39,7 +38,6 @@ export function AssistantTopToolbar({
   onToggleSavedConversations,
   onToggleFoldersPanel,
   onToggleGovernanceModal,
-  onOpenHelpSection,
 }: AssistantTopToolbarProps): React.JSX.Element {
   return (
     <div className="orcia-bento-card flex flex-wrap items-center justify-between gap-2 py-2.5 px-3.5">
@@ -89,15 +87,6 @@ export function AssistantTopToolbar({
       </div>
 
       <div className="flex items-center gap-2">
-        <ContextualInfoTriggerButton
-          sectionId="assistant-modes"
-          label={
-            isFr
-              ? "Comprendre les modes de réponse et niveaux de réflexion de Mon Assistant"
-              : "Understand My Assistant's response modes and thinking levels"
-          }
-          onOpenHelpSection={onOpenHelpSection}
-        />
         <button
           type="button"
           data-testid="assistant-open-governance-btn"

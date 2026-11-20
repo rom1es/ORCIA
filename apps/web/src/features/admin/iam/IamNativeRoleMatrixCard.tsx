@@ -1,6 +1,5 @@
 import type { RoleMatrixEntryResponse } from "@orcia/api-client";
 import {
-  ContextualInfoTriggerButton,
   OrciaAlertBanner,
   StatusBadge,
   type UiPermissionVerb,
@@ -122,11 +121,6 @@ export function IamNativeRoleMatrixCard({
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <h2 style={{ margin: 0, fontSize: "15px" }}>{mat.sectionTitle}</h2>
-            <ContextualInfoTriggerButton
-              sectionId="iam-role-grants"
-              label={labels.secopsDrawer.helpTriggerLabel}
-              onOpenHelpSection={openHelpSection}
-            />
           </div>
           <p style={{ margin: 0, fontSize: "12.5px", color: "var(--color-muted-foreground)" }}>
             {mat.sectionSubtitle}

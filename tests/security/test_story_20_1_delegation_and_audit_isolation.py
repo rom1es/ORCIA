@@ -219,3 +219,65 @@ def test_iam_accounts_mutations_locked_from_bu_team_leads_and_secops_anti_escala
         },
     )
     assert secops_ok.status_code == 200
+
+
+def test_non_delegated_roles_read_org_units_readonly_and_mutations_return_403(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _build_security_client(monkeypatch)
+    for persona in ("nadia", "rssi"):
+        headers = {"X-Orcia-Persona": persona}
+        res = client.get("/api/v1/org-units", headers=headers)
+        assert res.status_code == 200
+        for unit in res.json()["org_units"]:
+            assert unit["can_edit"] is False
+            assert unit["can_create_child"] is False
+            assert unit["can_delete"] is False
+            assert unit["can_manage_members"] is False
+            assert unit["can_manage_ontology_leads"] is False
+            assert unit["can_invite_users"] is False
+        assert (
+            client.post(
+                "/api/v1/org-units",
+                headers=headers,
+                json={"name": "Rogue BU", "kind": "BU"},
+            ).status_code
+            == 403
+        )
+        assert (
+            client.patch(
+                "/api/v1/org-units/team-ventes",
+                headers=headers,
+                json={"member_user_ids": ["nadia.dev@orcia.io"]},
+            ).status_code
+            == 403
+        )
+        assert client.delete("/api/v1/org-units/team-ventes", headers=headers).status_code == 403
+        assert (
+            client.post(
+                "/api/v1/org-units/invite-user",
+                headers=headers,
+                json={
+                    "target_org_unit_id": "team-ventes",
+                    "email": "blocked.invite@orcia.ia",
+                    "display_name": "Blocked",
+                    "assignment_role": "TEAM_MEMBER",
+                },
+            ).status_code
+            == 403
+        )
+    # READ_ONLY_OBSERVER header blocks mutations even for BU_LEAD Martin
+    obs_headers = {"X-Orcia-Persona": "martin", "X-Orcia-Access-Mode": "READ_ONLY_OBSERVER"}
+    obs_get = client.get("/api/v1/org-units", headers=obs_headers)
+    assert obs_get.status_code == 200
+    for unit in obs_get.json()["org_units"]:
+        assert unit["can_edit"] is False
+        assert unit["can_delete"] is False
+    assert (
+        client.patch(
+            "/api/v1/org-units/bu-commerce",
+            headers=obs_headers,
+            json={"name": "Observer Edit"},
+        ).status_code
+        == 403
+    )

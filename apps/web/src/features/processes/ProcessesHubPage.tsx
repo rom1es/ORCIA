@@ -1,10 +1,12 @@
-import { ContextualInfoTriggerButton, OrciaAlertBanner, OrciaIcon } from "@orcia/ui";
+import { OrciaAlertBanner, OrciaIcon } from "@orcia/ui";
 import React, { useEffect, useState } from "react";
 import { CreateProcessFormDialog } from "../../components/CreateProcessFormDialog";
 import { useOptionalPlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
+import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions";
 import { useI18n } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
+import { useAuthSessionStore } from "../../stores/authSessionStore";
 import {
   formatAgentHumanLabel,
   InteractiveRunDrawer,
@@ -36,8 +38,14 @@ export const ACTIVE_PROCESS_RUN_WORKFLOW_STORAGE_KEY =
 
 export function ProcessesHubPage() {
   const { locale, dictionary } = useI18n();
-  const { navigateToRoute, openHelpSection } = useShellNavigation();
+  const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
   const setupCtx = useOptionalPlatformSetup();
+  const authEmail = useAuthSessionStore((s) => s.email);
+  const activeWorkspaceId = resolveEffectiveWorkspaceId(
+    activeScopeId,
+    setupCtx?.workspaces ?? [],
+    authEmail,
+  );
   const isFr = locale === "fr";
   const modesCopy = dictionary.processOrchestrationModes;
   const [isCreateProcessOpen, setIsCreateProcessOpen] = useState(false);
@@ -149,11 +157,6 @@ export function ProcessesHubPage() {
               >
                 {isFr ? "1 validation en attente de votre décision" : "1 review awaiting your decision"}
               </span>
-              <ContextualInfoTriggerButton
-                sectionId="workflows-overview"
-                label={isFr ? "Comprendre Mes Processus" : "Understand My Processes"}
-                onOpenHelpSection={openHelpSection}
-              />
             </div>
             <h2 style={{ margin: "6px 0 0 0", fontSize: "var(--font-size-h2)" }}>
               {isFr
@@ -233,8 +236,9 @@ export function ProcessesHubPage() {
 
         {activeRunWorkflow ? (
           <InteractiveRunDrawer
-            key={activeRunWorkflow.id}
+            key={`${activeRunWorkflow.id}-${activeWorkspaceId || "default"}`}
             workflow={activeRunWorkflow}
+            workspaceId={activeWorkspaceId || undefined}
             onClose={() => setActiveRunWorkflowId(null)}
             isFr={isFr}
           />

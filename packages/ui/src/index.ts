@@ -209,6 +209,7 @@ export {
   type ShellBreadcrumbItem,
   type UiNotificationCenterItem,
   type UiNotificationCenterItemKind,
+  type UnifiedScopeOptionGroup,
   type WorkspaceSwitcherOption,
 } from "./primitives/FourZoneDirectionCShell";
 export {

@@ -9,7 +9,9 @@ import {
 import React, { useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
+import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions";
 import { useI18n } from "../../i18n";
+import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { useReflexiveExecutionController } from "../shared/useReflexiveExecutionController";
 import { useSourceLineInspector } from "../shared/useSourceLineInspector";
 import {
@@ -44,9 +46,12 @@ export function CatalogFeaturePanel({
 }: CatalogFeaturePanelProps = {}) {
   const { dictionary, locale } = useI18n();
   const { catalogItems, datasources, packs, workspaces } = usePlatformSetup();
-  const { navigateToRoute } = useShellNavigation();
+  const { activeScopeId, navigateToRoute } = useShellNavigation();
+  const authEmail = useAuthSessionStore((s) => s.email);
   const isFr = locale === "fr";
-  const activeWorkspaceId = workspaces[0]?.workspaceId ?? "";
+  const activeWorkspaceId = resolveEffectiveWorkspaceId(activeScopeId, workspaces, authEmail);
+  const activeWorkspaceObj =
+    workspaces.find((w) => w.workspaceId === activeWorkspaceId) ?? workspaces[0];
   const [pinnedAssistantMcpExposed, setPinnedAssistantMcpExposed] =
     useState<boolean>(false);
   const [catalogActionFeedback, setCatalogActionFeedback] = useState<
@@ -54,7 +59,7 @@ export function CatalogFeaturePanel({
   >(null);
 
   const activeWorkspaceSlug =
-    workspaces[0]?.slug || workspaces[0]?.workspaceId || "global";
+    activeWorkspaceObj?.slug || activeWorkspaceObj?.workspaceId || "global";
   const remoteBench = useCatalogRemoteTestBench({
     datasources,
     workspaceSlug: activeWorkspaceSlug,
@@ -129,7 +134,7 @@ export function CatalogFeaturePanel({
                 onClick={() => navigateToRoute("/settings")}
                 className="orcia-ds-btn orcia-ds-btn-secondary"
               >
-                {isFr ? "Ouvrir la Configuration" : "Open Configuration"}
+                {isFr ? "Ouvrir l'Administration" : "Open Administration"}
               </button>
             </div>
           )}

@@ -9,6 +9,7 @@ import {
   type MobileCompanionBottomTabKey,
   type MobileCompanionTabLabels,
   type ScopeOptionItem,
+  type UnifiedScopeOptionGroup,
 } from "./FourZoneShellTypes";
 
 export interface MobileCompanionBottomBarProps {
@@ -85,6 +86,11 @@ export interface MobileShellNavigationDrawerProps {
   readonly workspaceSelectorOptions?: readonly ScopeOptionItem[];
   readonly activeWorkspaceSelectorId?: string;
   readonly onSelectWorkspaceFromSidebar?: (scopeId: string) => void;
+  readonly unifiedScopeGroups?: readonly UnifiedScopeOptionGroup[];
+  readonly unifiedAllSpacesOption?: ScopeOptionItem;
+  readonly unifiedScopeLabel?: string;
+  readonly activeUnifiedScopeId?: string;
+  readonly onSelectUnifiedScope?: (scopeId: string) => void;
   readonly doubleSelectorLabels?: DoubleScopeSelectorLabels;
   readonly renderSidebarFooter?: (railCollapsed: boolean) => React.ReactNode;
   readonly onSelectMenu: (key: EightFixedMenuKey, route: string) => void;
@@ -97,12 +103,14 @@ export function MobileShellNavigationDrawer({
   labels,
   disabledMenuKeys,
   hiddenMenuKeys,
-  teamBuOptions,
-  activeTeamBuId,
-  onSelectTeamBu,
   workspaceSelectorOptions,
   activeWorkspaceSelectorId,
   onSelectWorkspaceFromSidebar,
+  unifiedScopeGroups,
+  unifiedAllSpacesOption,
+  unifiedScopeLabel,
+  activeUnifiedScopeId,
+  onSelectUnifiedScope,
   doubleSelectorLabels,
   renderSidebarFooter,
   onSelectMenu,
@@ -111,6 +119,9 @@ export function MobileShellNavigationDrawer({
   if (!open) {
     return null;
   }
+  const usesUnifiedGroups = Boolean(unifiedScopeGroups || unifiedAllSpacesOption);
+  const hasScopeSelector =
+    usesUnifiedGroups || Boolean(workspaceSelectorOptions && workspaceSelectorOptions.length > 0);
 
   return (
     <DialogPrimitive.Root
@@ -156,34 +167,39 @@ export function MobileShellNavigationDrawer({
         </button>
       </div>
 
-      {teamBuOptions && teamBuOptions.length > 0 && (
+      {hasScopeSelector && (
         <div className="flex flex-col gap-2 rounded border p-2" style={{ borderColor: "var(--color-border-subtle)" }}>
           <label className="flex flex-col gap-1 text-[11px] font-medium">
             <span style={{ color: "var(--color-text-secondary)" }}>
-              {doubleSelectorLabels?.teamBuLabel ?? "Équipe / Direction"}
+              {unifiedScopeLabel ?? doubleSelectorLabels?.workspaceLabel ?? "Espace"}
             </span>
-            <select
-              value={activeTeamBuId ?? teamBuOptions[0]?.id ?? ""}
-              onChange={(e) => onSelectTeamBu?.(e.target.value)}
-              className="w-full rounded border px-2 py-1 text-xs"
-              style={{
-                backgroundColor: "var(--color-bg-elevated)",
-                borderColor: "var(--color-border-subtle)",
-                color: "var(--color-text-primary)",
-              }}
-            >
-              {teamBuOptions.map((opt) => (
-                <option key={opt.id} value={opt.id}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          {workspaceSelectorOptions && (
-            <label className="flex flex-col gap-1 text-[11px] font-medium">
-              <span style={{ color: "var(--color-text-secondary)" }}>
-                {doubleSelectorLabels?.workspaceLabel ?? "Espace"}
-              </span>
+            {usesUnifiedGroups ? (
+              <select
+                value={activeUnifiedScopeId ?? unifiedAllSpacesOption?.id ?? ""}
+                onChange={(e) => onSelectUnifiedScope?.(e.target.value)}
+                className="w-full rounded border px-2 py-1 text-xs"
+                style={{
+                  backgroundColor: "var(--color-bg-elevated)",
+                  borderColor: "var(--color-border-subtle)",
+                  color: "var(--color-text-primary)",
+                }}
+              >
+                {(unifiedScopeGroups ?? []).map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.options.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+                {unifiedAllSpacesOption && (
+                  <option value={unifiedAllSpacesOption.id}>
+                    {unifiedAllSpacesOption.label}
+                  </option>
+                )}
+              </select>
+            ) : (
               <select
                 value={activeWorkspaceSelectorId ?? ""}
                 onChange={(e) => onSelectWorkspaceFromSidebar?.(e.target.value)}
@@ -197,14 +213,14 @@ export function MobileShellNavigationDrawer({
                 <option value="">
                   {doubleSelectorLabels?.allWorkspacesOption ?? "Tous les espaces du périmètre"}
                 </option>
-                {workspaceSelectorOptions.map((opt) => (
+                {(workspaceSelectorOptions ?? []).map((opt) => (
                   <option key={opt.id} value={opt.id}>
                     {opt.label}
                   </option>
                 ))}
               </select>
-            </label>
-          )}
+            )}
+          </label>
         </div>
       )}
 
@@ -232,7 +248,9 @@ export function MobileShellNavigationDrawer({
               data-active={isActive ? "true" : "false"}
             >
               <OrciaIcon name={entry.iconName} />
-              <span className="flex-1 text-left">{labels.menuEntries[entry.key]}</span>
+              <span className="flex-1 text-left">
+                {labels.menuEntries[entry.key] ?? labels.organizationMenuLabel ?? entry.key}
+              </span>
             </button>
           );
         })}

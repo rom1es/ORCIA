@@ -5,6 +5,10 @@ import type {
   ProductLifecyclePhaseType,
   UiScopeNode,
 } from "@orcia/ui";
+import {
+  SHELL_AND_SEARCH_EN_LABELS,
+  SHELL_AND_SEARCH_FR_LABELS,
+} from "../i18n/locales/shell_and_search_labels";
 import { resolveWebApiBaseUrl } from "../stores/authSessionStore";
 import {
   formatHumanReadableScopePath,
@@ -31,10 +35,15 @@ export interface RegisterDatasourceInput {
   readonly freshnessTtlDays: number;
 }
 
+export function resolveGlobalScopeLabel(isFr = true): string {
+  const section = isFr ? SHELL_AND_SEARCH_FR_LABELS : SHELL_AND_SEARCH_EN_LABELS;
+  return section.fourZoneShell.doubleSelector?.globalPlatformLabel ?? "ORCIA";
+}
+
 export const BASE_GLOBAL_SCOPE: UiScopeNode = {
   id: "scope-global",
   level: "GLOBAL",
-  name: "Plateforme Globale ORCIA",
+  name: resolveGlobalScopeLabel(true),
   accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
 };
 
@@ -60,7 +69,7 @@ export async function createWorkspaceViaServer(params: {
     teamUnits[0] ??
     orgUnits[orgUnits.length - 1];
   const ownerOrgUnitId = resolvedOwnerUnit?.id;
-  const fallbackOwnerName = resolvedOwnerUnit?.name ?? "Plateforme Globale ORCIA";
+  const fallbackOwnerName = resolvedOwnerUnit?.name ?? resolveGlobalScopeLabel(true);
 
   const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
   const created = await client.createWorkspace({

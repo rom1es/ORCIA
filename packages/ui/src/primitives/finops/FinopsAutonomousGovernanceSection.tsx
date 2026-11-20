@@ -1,5 +1,4 @@
 import React from "react";
-import { ContextualInfoTriggerButton } from "../../components/ContextualInfoTriggerButton";
 import { OrciaIcon } from "../../components/icons";
 import { CognitiveMetricCard } from "./CognitiveMetricCard";
 
@@ -81,7 +80,6 @@ export function FinopsAutonomousGovernanceSection({
   data,
   labels,
   onReviewSample,
-  onOpenHelpSection,
 }: FinopsAutonomousGovernanceSectionProps): React.ReactElement | null {
   if (data.totalAutonomousRuns === 0) {
     return null;
@@ -116,11 +114,6 @@ export function FinopsAutonomousGovernanceSection({
             >
               {labels.sectionTitle}
             </h3>
-            <ContextualInfoTriggerButton
-              sectionId="autonomous-supervision"
-              label={labels.infoButtonAriaLabel}
-              onOpenHelpSection={onOpenHelpSection}
-            />
           </div>
           <p style={{ fontSize: "12.5px", color: "var(--color-text-muted)", margin: "4px 0 0 0" }}>
             {labels.sectionSubtitle}

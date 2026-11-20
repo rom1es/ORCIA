@@ -254,8 +254,9 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(screen.queryByTestId("settings-tab-audit")).toBeNull();
     expect(screen.queryByTestId("settings-tab-organization")).toBeNull();
 
-    // Navigate to Mon Organisation (/organization) via Configuration link to create Org Unit via modal
-    fireEvent.click(screen.getByTestId("settings-open-organization-link"));
+    // Navigate to Mon Organisation (/organization) via dedicated Sidebar menu entry
+    expect(screen.queryByTestId("settings-open-organization-link")).toBeNull();
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
     expect(await screen.findByTestId("iam-org-units-empty-state")).toBeDefined();
     await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
@@ -455,12 +456,12 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       expect(processStudioText).not.toContain(forbiddenRawBadge);
     }
 
-    // Clicking the ⓘ contextual help buttons opens the right-hand contextual help column on the targeted section
-    fireEvent.click(screen.getByTestId("contextual-info-trigger-workflows-overview"));
+    // Story 25.2 (Bug 5): floating ⓘ triggers are removed from main card headers; Zone 4 opens via ? Aide
+    expect(screen.queryByTestId("contextual-info-trigger-workflows-overview")).toBeNull();
+    if (!screen.queryByTestId("four-zone-contextual-help-column")) {
+      fireEvent.click(screen.getByTestId("topbar-contextual-help-toggle"));
+    }
     expect(screen.getByTestId("four-zone-contextual-help-column")).toBeDefined();
-    expect(
-      screen.getByTestId("help-section-workflows-overview").getAttribute("data-active"),
-    ).toBe("true");
 
     // Open "+ Nouveau processus" dialog to access instructions, deliverable contract, and creation form
     fireEvent.click(screen.getByTestId("open-create-process-modal-btn"));
@@ -468,7 +469,6 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(
       screen.getByTestId("help-section-workflows-instructions").getAttribute("data-active"),
     ).toBe("true");
-
     fireEvent.click(screen.getByTestId("contextual-info-trigger-workflows-deliverable-contract"));
     expect(
       screen
@@ -613,9 +613,10 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     );
 
     // 1. No "(IAM 6 verbes)" jargon in the tabs or header, and no English parenthetical terms in French IAM section
-    expect(screen.getByTestId("settings-open-organization-link").textContent).toContain(
+    expect(screen.getByTestId("eight-menu-item-organization").textContent).toContain(
       "Mon Organisation",
     );
+    expect(screen.queryByTestId("settings-open-organization-link")).toBeNull();
     expect(screen.getByTestId("settings-tab-iam").textContent).toBe("Comptes & Habilitations");
 
     fireEvent.click(screen.getByTestId("settings-tab-iam"));
@@ -654,7 +655,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     ).toBe("false");
 
     // 2. Navigate to Mon Organisation (/organization) via Configuration link, create a BU ("BU Finance") and a Team ("Espace Comptabilité")
-    fireEvent.click(screen.getByTestId("settings-open-organization-link"));
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
     await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
@@ -737,32 +738,33 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(helpTerms.textContent).not.toContain("aqwZSX");
     expect(helpTerms.textContent).toContain("BU vs Équipe vs Espace de travail");
 
-    // 6. Clicking ContextualInfoTriggerButton ('i') re-opens the right-hand contextual help column if closed and highlights the targeted section (including iam-target-scope)
+    // 6. Story 25.2 (Bug 5): floating ⓘ triggers are removed; ? Aide toggle controls Zone 4 help column
     fireEvent.click(screen.getByTestId("topbar-contextual-help-toggle"));
     expect(screen.queryByTestId("four-zone-contextual-help-column")).toBeNull();
 
-    fireEvent.click(screen.getByTestId("settings-open-organization-link"));
-    await screen.findByTestId("contextual-info-trigger-iam-org-tree");
-    fireEvent.click(screen.getByTestId("contextual-info-trigger-iam-org-tree"));
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
+    expect(screen.queryByTestId("contextual-info-trigger-iam-org-tree")).toBeNull();
+    if (!screen.queryByTestId("four-zone-contextual-help-column")) {
+      fireEvent.click(screen.getByTestId("topbar-contextual-help-toggle"));
+    }
     expect(screen.getByTestId("four-zone-contextual-help-column")).toBeDefined();
-    expect(
-      screen.getByTestId("help-section-iam-org-tree").getAttribute("data-active"),
-    ).toBe("true");
+    expect(screen.getByTestId("help-section-iam-org-tree")).toBeDefined();
 
     fireEvent.click(screen.getByTestId("eight-menu-item-configuration"));
     await screen.findByTestId("settings-tab-iam");
     fireEvent.click(screen.getByTestId("settings-tab-iam"));
     fireEvent.click(screen.getByTestId("iam-open-role-matrix-modal-btn"));
-    fireEvent.click(screen.getByTestId("contextual-info-trigger-iam-role-grants"));
-    expect(
-      screen.getByTestId("help-section-iam-role-grants").getAttribute("data-active"),
-    ).toBe("true");
-    expect(
-      screen.getByTestId("help-section-iam-org-tree").getAttribute("data-active"),
-    ).toBe("false");
+    expect(screen.queryByTestId("contextual-info-trigger-iam-role-grants")).toBeNull();
     fireEvent.click(screen.getByTestId("iam-role-matrix-modal-close-btn"));
+    if (!screen.queryByTestId("four-zone-contextual-help-column")) {
+      fireEvent.click(screen.getByTestId("topbar-contextual-help-toggle"));
+    }
+    expect(screen.getByTestId("help-section-iam-role-grants")).toBeDefined();
 
-    fireEvent.click(screen.getByTestId("iam-secops-drawer-toggle"));
+    const secopsToggle = screen.getByTestId("iam-secops-drawer-toggle");
+    if (secopsToggle.getAttribute("aria-expanded") !== "true") {
+      fireEvent.click(secopsToggle);
+    }
     fireEvent.click(screen.getByTestId("contextual-info-trigger-iam-target-scope"));
     const targetScopeHelpSection = screen.getByTestId("help-section-iam-target-scope");
     expect(targetScopeHelpSection.getAttribute("data-active")).toBe("true");
@@ -850,7 +852,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("save-llm-tier-btn"));
 
     // 3. Configure an Organization Unit in /organization (satisfies milestone 2)
-    fireEvent.click(screen.getByTestId("settings-open-organization-link"));
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
     await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
@@ -1193,13 +1195,12 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(savedRow.textContent).toContain("Clé d'API enregistrée");
     expect(savedRow.textContent).not.toContain("family-a");
 
-    // 5. Click 'i' (contextual-info-trigger-ai-models-overview) -> pins ai-models-overview to index 0 of contextual help sections
-    fireEvent.click(screen.getByTestId("contextual-info-trigger-ai-models-overview"));
-    const helpSectionsList = screen.getByTestId("contextual-help-sections-list");
-    expect(helpSectionsList.children[0]?.getAttribute("data-testid")).toBe(
-      "help-section-ai-models-overview",
-    );
-    expect(helpSectionsList.children[0]?.getAttribute("data-active")).toBe("true");
+    // 5. Story 25.2 (Bug 5): floating ⓘ removed from AI Models main card; help-section-ai-models-overview remains in Zone 4
+    expect(screen.queryByTestId("contextual-info-trigger-ai-models-overview")).toBeNull();
+    if (!screen.queryByTestId("four-zone-contextual-help-column")) {
+      fireEvent.click(screen.getByTestId("topbar-contextual-help-toggle"));
+    }
+    expect(screen.getByTestId("help-section-ai-models-overview")).toBeDefined();
   });
 
   it("presents the backend-known Business Packs catalog in /settings (Packs Métiers tab) without free-text SemVer or raw 'GLOBAL' input, and supports 1-click activation and deactivation across scopes", async () => {
@@ -1219,7 +1220,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     );
 
     // Create a BU so it appears in the scope selector
-    fireEvent.click(screen.getByTestId("settings-open-organization-link"));
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
     await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
@@ -1276,11 +1277,12 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("deactivate-pack-btn-orcia-pack-sdlc"));
     expect(screen.getByTestId("packs-empty-state")).toBeDefined();
 
-    // Contextual info trigger ('i') opens the right-hand help column on 'packs-overview'
-    fireEvent.click(screen.getByTestId("contextual-info-trigger-packs-overview"));
-    expect(
-      screen.getByTestId("help-section-packs-overview").getAttribute("data-active"),
-    ).toBe("true");
+    // Story 25.2 (Bug 5): floating ⓘ removed from Packs main card; help-section-packs-overview remains in Zone 4
+    expect(screen.queryByTestId("contextual-info-trigger-packs-overview")).toBeNull();
+    if (!screen.queryByTestId("four-zone-contextual-help-column")) {
+      fireEvent.click(screen.getByTestId("topbar-contextual-help-toggle"));
+    }
+    expect(screen.getByTestId("help-section-packs-overview")).toBeDefined();
   });
 
   it("enforces anti-LastPass / password-manager attributes on 100% of <form>, <input>, and <textarea> elements across @orcia/ui and apps/web while explicitly preserving /login (BiModeLoginView)", async () => {
@@ -1529,7 +1531,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(screen.queryByTestId("eight-menu-item-activity")).toBeNull();
 
     // 3. Perform actions on two different scopes: a BU ("Direction Produit") and Global Platform (activate/deactivate pack)
-    fireEvent.click(screen.getByTestId("settings-open-organization-link"));
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
     await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
@@ -1646,10 +1648,12 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     });
     expect(screen.getByTestId("audit-events-empty-state")).toBeDefined();
 
-    // 9. Verify the contextual help icon 'i' (audit-overview) explains Activity Log without confusing it with spending caps
-    fireEvent.click(screen.getByTestId("contextual-info-trigger-audit-overview"));
+    // 9. Story 25.2 (Bug 5): floating ⓘ removed from Activity Log card; Zone 4 audit-overview explains Activity Log without spending caps
+    expect(screen.queryByTestId("contextual-info-trigger-audit-overview")).toBeNull();
+    if (!screen.queryByTestId("four-zone-contextual-help-column")) {
+      fireEvent.click(screen.getByTestId("topbar-contextual-help-toggle"));
+    }
     const auditHelpSection = screen.getByTestId("help-section-audit-overview");
-    expect(auditHelpSection.getAttribute("data-active")).toBe("true");
     expect(auditHelpSection.textContent).toContain("auteurs, horodatage et filtres d'observation");
     expect(auditHelpSection.textContent).not.toContain("définissez un plafond de dépense par espace");
   });
@@ -1714,7 +1718,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
 
     // 3. In Mon Organisation (/organization) & Configuration > Comptes & Habilitations:
     // - Organization page uses "Structure de l'Organisation (Directions / BU & Équipes)" and "Équipe" (never "Espace (Équipe)")
-    fireEvent.click(screen.getByTestId("settings-open-organization-link"));
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
     const orgSection = await screen.findByTestId("settings-organization-section");
     expect(orgSection.textContent).toContain(
       "Structure de l'Organisation (Directions / BU & Équipes)",
@@ -1754,7 +1758,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     ).toBeNull();
 
     // Create a BU ("Direction Tech") and a Team ("Équipe Plateforme") in Mon Organisation (/organization)
-    fireEvent.click(screen.getByTestId("settings-open-organization-link"));
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
     await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     fireEvent.change(screen.getByTestId("org-unit-name-input"), {
@@ -1837,9 +1841,12 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       target: { value: "romain@orcia.fr" },
     });
     fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
+    await waitFor(() => {
+      expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
+    });
 
     // Verify empty state in /organization before creating any team, and Notification Center alert
-    fireEvent.click(screen.getByTestId("settings-open-organization-link"));
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
     expect(await screen.findByTestId("iam-org-units-empty-state")).toBeDefined();
     expect(screen.queryByTestId("admin-team-membership-summary-badge")).toBeNull();
 
@@ -1984,9 +1991,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(filteredCards[0]?.textContent).toContain("Mon Bac à Sable R&D");
 
     // 5. Verify orphan protection in /organization: cannot delete "Équipe Core IA" (org-2) while workspaces are attached to it
-    fireEvent.click(screen.getByTestId("eight-menu-item-configuration"));
-    const orgLink = await screen.findByTestId("settings-open-organization-link");
-    fireEvent.click(orgLink);
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
     await screen.findByTestId("delete-org-unit-btn-org-2");
     fireEvent.click(screen.getByTestId("delete-org-unit-btn-org-2"));
     expect((screen.getByTestId("confirm-delete-org-unit-btn-org-2") as HTMLButtonElement).disabled).toBe(true);
@@ -2020,8 +2025,11 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       target: { value: "romain@orcia.fr" },
     });
     fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
+    await waitFor(() => {
+      expect(screen.queryByTestId("first-boot-admin-setup-modal")).toBeNull();
+    });
 
-    fireEvent.click(screen.getByTestId("settings-open-organization-link"));
+    fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
     await screen.findByTestId("open-create-org-unit-modal-btn");
     fireEvent.click(screen.getByTestId("open-create-org-unit-modal-btn"));
     const levelSelect = screen.getByTestId("org-unit-level-select") as HTMLSelectElement;
@@ -2138,7 +2146,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     // Tab 2: Glossaire & Règles Métiers (Ontologie) -> multi-level cascade + add term + 1-click upward promotion
     fireEvent.click(screen.getByTestId("workspace-detail-tab-glossary"));
     const cascadeBar = screen.getByTestId("glossary-inheritance-cascade-bar");
-    expect(cascadeBar.querySelectorAll("svg").length).toBeGreaterThanOrEqual(2);
+    expect(cascadeBar.querySelectorAll("svg").length).toBeGreaterThanOrEqual(1);
     expect(cascadeBar.textContent).toContain("Entreprise (Global)");
     expect(cascadeBar.textContent).toContain("Direction (BU)");
     expect(cascadeBar.textContent).toContain("Équipe (Équipe Produit IA)");

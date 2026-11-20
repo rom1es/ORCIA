@@ -2,7 +2,10 @@ import type { UiAssistantPromptTelemetryRecord } from "@orcia/ui";
 import { useEffect, useState } from "react";
 import { readAssistantPrefillPrompt } from "../../components/agentsAndSkillsBridgeStore";
 import { usePlatformSetup } from "../../components/platformSetupStore";
+import { useShellNavigation } from "../../components/ShellContainer";
+import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions";
 import { useI18n } from "../../i18n";
+import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { useReflexiveExecutionController } from "../shared/useReflexiveExecutionController";
 import { useSourceLineInspector } from "../shared/useSourceLineInspector";
 import { subscribeBgStream } from "./assistantBackgroundStreamStore";
@@ -39,6 +42,8 @@ export const ASSISTANT_REFLEXIVE_STORAGE_KEY =
 
 export function useInboxPanelController() {
   const { dictionary, locale } = useI18n();
+  const { activeScopeId } = useShellNavigation();
+  const authEmail = useAuthSessionStore((s) => s.email);
   const {
     platformAdmin,
     workspaces,
@@ -89,7 +94,11 @@ export function useInboxPanelController() {
     null,
   );
 
-  const activeWorkspaceId = workspaces[0]?.workspaceId ?? "";
+  const activeWorkspaceId = resolveEffectiveWorkspaceId(
+    activeScopeId,
+    workspaces,
+    authEmail ?? platformAdmin?.email,
+  );
   const { hasActiveEmbeddingModel } = useActiveEmbeddingModelStatus();
   const ragReindex = useRagReindexStatus();
   const assistantInputBlocked =
