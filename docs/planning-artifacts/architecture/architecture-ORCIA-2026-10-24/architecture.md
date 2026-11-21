@@ -259,6 +259,51 @@ L'*Agent Assistant* est conçu comme un **Workflow Système de Nœuds orientés 
      4. **Couche 4 — Profil Humain (`FR-15`) & Ontologie Active (`AD-7`)**.
      5. **Couche 5 — Contexte Éphémère du Cockpit & Résultats des Nœuds Amont**.
 
+#### 3.6.3. Unified Assistant Turn Engine, Canonical REST v2 & SSE v2 Contract (`AD-25`, Epic 26)
+
+Per `AD-25`, the three historical assistant execution paths converge into a single `AssistantTurnEngine` in `packages/orcia-core` executing fixed, non-overridable constitutional phases (`N1 IntentGuard -> N2 Planner & Ontology -> N3 Pre-fetch / Tool Loop -> N4 Server EvidenceTable -> N5 Synthesis (AssistantPromptBuilder) -> CitationGuard`):
+
+- **Dual Execution Speeds & "Deepen" Flow (`D1`, `R3`):**
+  - **Speed 1 (`SPEED_1_FAST`):** Single-shot fast-path with bounded `< 50 ms` hybrid RAG pre-fetch (preserving `AD-24.6` optional embedding decoupling when `0` active `embedding` models are configured), direct SSE streaming, and post-first-byte PG18 session persistence (`TTFT p95 < 1.2 s`). Emits deterministic `low_evidence: bool` on `turn_completed` when the server `EvidenceTable` is empty; zero pre-LLM auto-escalation. The UI exposes a **"Deepen"** action after Speed 1 (when `supports_tools=true`, highlighted on `low_evidence=true`) that launches a linked Speed 2 turn carrying `parent_turn_id`.
+  - **Speed 2 / Speed 3 (`SPEED_2_AGENT_TOOLS`, `SPEED_3_DEEP_AUDIT`):** Run on the `ASSISTANT` profile of `NonDeterministicReflexiveRuntime` with bounded iteration/token/wall-clock budgets, tool invocations routed exclusively through `GovernedAssistantToolRouter` (`PermissionBroker -> V5/human-anchor guard -> sandboxed executor (asyncio.wait_for) -> secret scrubber -> audit_ledger + domain_events_outbox`), `ConnectorReflexiveWriteGateAdapter` barred, and `PROCESS` profile defaults left unchanged.
+- **Single-Process Hosting & Redis Streams Reattachment (`D2`, `R1`):**
+  - All speeds (`1`, `2`, `3`) execute inside `apps/api` in bounded, tracked `asyncio.Task` handles (`add_done_callback`) with `SIGTERM` graceful drain capped by the profile wall-clock budget; **no Dramatiq worker** handles assistant turns.
+  - Redis backs the `(workspace_id, user_id, turn_id)` registry, cursor-reattachable Redis Streams event buffer, `stop` coordination signals, thread turn locks (`SET lock:thread:{thread_id} NX EX ...`), sliding-window rate limits & per-user concurrency semaphores, and a refreshed task liveness key (`TTL`). On reattach after a brutal pod crash, expired liveness emits terminal `stream_error` with `ERR_ASSISTANT_TURN_INTERRUPTED` (RFC 9457 + `trace_id`, no automatic retry).
+- **3 Preserved Text Adapters & 2 Native Tool Dialects (`D5`, `R7`) + SSRF (`D3`, `R8`):**
+  - `LlmStreamingPort` (`orcia_core/ports/`) preserves all 3 `httpx` text/reasoning streaming adapters (`openai_compatible`, `anthropic`, `gemini_native` `CAP-076` with strict `thinking`/`content` separation). Native `tool_calls` streaming/non-streaming parsing and re-injection is scoped strictly to `openai_compatible` (`delta.tool_calls`) and `anthropic` (`tool_use` / `input_json_delta`); `gemini_native` REST and non-`/v1` Ollama default to `supports_tools=false` (`HTTP 422 ERR_MODEL_TOOLS_UNSUPPORTED` on Speed 2/3, UI disabled, `ACTION_ITEM-26.4`).
+  - Ops env var `ORCIA_LLM_ALLOWED_PRIVATE_HOSTS` (`localhost` allowed only in `local`/`test`) + connection-time `getaddrinfo` DNS pinning protect all Hub save/discovery/test/runtime calls (`AD-21` Rule 7). Public Day-0 `GET /api/v1/bootstrap/platform-setup-state` returns only `{is_initialized, step}`.
+- **Direct Cutover & Deferred Scope (`R2`, `R4`, `R5`, `R6`):**
+  - Mode B graphical studio is deferred (`ACTION_ITEM-26.1`); only Mode A 3-level overrides (`TEAM -> WORKSPACE -> USER` in `workspace_customization_overrides`) are active. No Redis assembled-prompt cache is built upfront (`R6`, measure-first under `ACTION_ITEM-26.3`). Atomic cutover in `26.7` switches backend, `apps/web`, and E2E specs directly to `/api/v1/assistant/turns*` with zero `/three-speed/*` facade (`ACTION_ITEM-26.2`, `R4`).
+
+1. **Canonical REST v2 Contract (`/api/v1/assistant/*` & MCP `assistant.ask`):**
+
+   | Method & Path | Pre-Stream Guards & Status | Request / Response Semantics |
+   | :--- | :--- | :--- |
+   | `POST /api/v1/assistant/turns` | `ScopeAccessGuard` (UUID + slug), `403 ERR_OBSERVER_MODE_READ_ONLY`, `422 ERR_MODEL_TOOLS_UNSUPPORTED` (when `supports_tools=false` on Speed 2/3), `429` Redis rate-limit/concurrency, `409` Redis thread turn lock (`ERR_THREAD_TURN_LOCK_HELD`) | Returns `202 Accepted` `{turn_id, thread_id, workspace_id, parent_turn_id, speed, status, stream_url}`. Server resolves `READ_SOURCE` & `CONFIDENTIAL_RESTRICTED` masking (`reader_allowed_source_uris` removed), enforces immutable Layer 1, accepts optional `parent_turn_id` for **"Deepen"** (Speed 1 -> Speed 2), and starts bounded `asyncio.Task` writing to Redis Streams. |
+   | `GET /api/v1/assistant/turns/{turn_id}/stream?after=<cursor>` | Authenticated user + `ScopeAccessGuard` matching turn owner/workspace | Returns `200 OK` `text/event-stream`. Replays and live-tails Redis Streams entries strictly after `<cursor>` (`F5` & multi-worker safe). Checks Redis liveness key; emits `stream_error` `ERR_ASSISTANT_TURN_INTERRUPTED` if pod died mid-turn. |
+   | `GET /api/v1/assistant/turns/active` | Authenticated user + `ScopeAccessGuard` | Returns `200 OK` list of active turns for `(workspace_id, user_id)` from the Redis turn registry for `F5` stream reattachment. |
+   | `POST /api/v1/assistant/turns/{turn_id}/stop` | `ScopeAccessGuard` + `403 ERR_OBSERVER_MODE_READ_ONLY` | Publishes Redis `stop` signal across workers, drains bounded cancellation, flushes partial FinOps usage to `audit_ledger` / `domain_events_outbox` in `finally`, releases thread lock, and emits `turn_stopped`. |
+   | `POST /api/v1/assistant/turns/{turn_id}/approve` | `ScopeAccessGuard` + `403 ERR_OBSERVER_MODE_READ_ONLY` | Approves an `approval_required` proposal via `CONTINUE_IN_PROCESS` into durable DBOS + PG18 (`AD-2`), enforcing `WAITING_FOR_HUMAN_ANCHOR` (`AD-3`, `HTTP 422 ERR_HUMAN_ANCHOR_REQUIRED`). |
+   | `POST /api/v1/assistant/turns/{turn_id}/synthesize-now` | `ScopeAccessGuard` + `403 ERR_OBSERVER_MODE_READ_ONLY` | Signals Speed 2/3 `NonDeterministicReflexiveRuntime` (`ASSISTANT` profile) to halt `N3` tool iterations and transition immediately to `N4 Server EvidenceTable -> N5 Synthesis -> CitationGuard` (`202 Accepted`). |
+   | `POST /api/v1/assistant/turns/{turn_id}/feedback` | `ScopeAccessGuard` + `403 ERR_OBSERVER_MODE_READ_ONLY` | Idempotent `UNIQUE (turn_id, user_id)` upsert into `assistant_turn_feedback` (`rating IN ('up', 'down')`, optional `reason_code`, `comment`). |
+   | `GET /api/v1/assistant/threads/{thread_id}/messages` | `ScopeAccessGuard` + `READ_SOURCE` membership | Returns `200 OK` ordered `assistant_thread_messages` (`role IN ('user', 'assistant')`, `citation_map`, `turn_id`, `parent_turn_id`, `token_count`, `created_at`). Zero `role: "tool"` messages exposed or re-injected. |
+   | `POST /api/v1/mcp/spaces/{workspace_slug}/invoke` (`assistant.ask`) | 7 MCP hardware locks, `QuotaGuard`, `ScopeAccessGuard`, server-side `READ_SOURCE` / `CONFIDENTIAL_RESTRICTED` | Executes synchronously via `AssistantTurnEngine` Speed 1 read-only governed mode (`AssistantPromptBuilder` + `CitationGuard`; zero SI writes, zero recursive tool loop). |
+
+2. **Canonical SSE v2 Wire Format & 9 Event Types:**
+   Every SSE frame emits `id: <redis_stream_id>`, `event: <type>`, and `data: <JSON>` where `data` always includes `turn_id`, `seq` (monotonically increasing per turn), `timestamp` (UTC ISO-8601), and `trace_id` (W3C OpenTelemetry):
+
+   | Event Type | Phase | Required Payload Fields & Semantics |
+   | :--- | :---: | :--- |
+   | `thinking_delta` | `N3` / `N5` | `delta_text` — Incremental reasoning tokens from separated thinking channel (`thinking` / `reasoning_content` / `<think>`), never merged into `content`. |
+   | `tool_call` | `N3` | `tool_call_id`, `tool_name`, `sanitized_args`, `iteration` — Emitted when `GovernedAssistantToolRouter` begins a governed tool call (`OpenAI-compatible` or `Anthropic` native dialect). |
+   | `tool_result` | `N3` | `tool_call_id`, `tool_name`, `status` (`ok \| denied \| error`), `summary`, `evidence_refs`, `audit_event_id` — Secret-scrubbed result summary recorded after `audit_ledger` persistence. |
+   | `approval_required` | `N1` / `N3` | `proposal_id`, `action_kind`, `target_uri`, `workflow_ref`, `requires_human_anchor: true` — Emitted when an action requires `CONTINUE_IN_PROCESS` via DBOS + PG18 Gate instead of direct SI write (`V5` / `AD-3`). |
+   | `token_delta` | `N5` | `delta_text` — Incremental answer markdown tokens emitted verbatim from real `aiter_lines()` streaming (newlines and code indentation preserved). |
+   | `citation_map` | `CitationGuard` | `citations` (`[S1]/[G1]/[O1]` -> `{label, source_uri, authority_tier, freshness, stale_warning, excerpt_verified}`), `purged_phantom_count` — Emitted by server `CitationGuard` strictly **before** `turn_completed`; purged phantom labels are logged to `audit_ledger` (`ASSISTANT_PHANTOM_CITATION_PURGED`). |
+   | `turn_completed` | Terminal | `message_id`, `low_evidence` (`bool`, true when server `EvidenceTable` is empty), `supports_tools` (`bool`), `usage` (`{input_tokens, output_tokens, cost_usd, usage_source}`) — Signals clean completion and drives UI **"Deepen"** highlight. |
+   | `turn_stopped` | Terminal | `stopped_by_user_id`, `partial_usage` (`{input_tokens, output_tokens, cost_usd}`) — Signals graceful cancellation after partial FinOps ledger write. |
+   | `stream_error` | Terminal | RFC 9457 Problem Details envelope (`type`, `title`, `status`, `detail`, `instance`, `error_code`, `trace_id`) plus `turn_id`, `seq`, `timestamp` — Explicitly covers `ERR_ASSISTANT_TURN_INTERRUPTED` (expired pod liveness key) and `HTTP 422 ERR_MODEL_TOOLS_UNSUPPORTED` (`supports_tools=false` on Speed 2/3). |
+
 ---
 
 ### 3.7. Processus d'Initialisation & Auto-Amorçage Gouverné (`orcia://system/bootstrap/*` — `AD-16`, `FR-28`)
@@ -366,6 +411,10 @@ Pour éliminer le problème du démarrage à froid (*Cold-Start* au Jour 0) et e
 | `audit_ledger` | Journal d'audit et de télémétrie FinOps append-only (`AD-12`) | `id`, `run_id`, `step_execution_id`, `actor_type`, `actor_id`, `event_type`, `model_id`, `input_tokens`, `output_tokens`, `cost_usd`, `created_at` (Trigger `BEFORE UPDATE OR DELETE RAISE EXCEPTION`) |
 | `connector_schemes` | Source de vérité unique des types de source (Avenant A2, `AD-5`, `AD-20`) — remplace les 4 contraintes `CHECK` (migrations `0013` Expand / `0014` Contract) | `id (uuid PK UUIDv7)`, `scheme (varchar UNIQUE)`, `provided_by_package`, `capabilities_jsonb`, `enabled`, `registered_at` ; FK vers `connector_schemes(scheme)` depuis `workspace_datasources.scheme`, `user_passthrough_credentials.connector_scheme`, `permission_broker_policies.connector_scheme`, `permission_broker_tickets.connector_scheme` |
 | `resource_leases` | Baux de ressources partagées avec fencing (Avenant A2, `AD-4`, `DEC-CONC-01`) | `id (uuid PK UUIDv7)`, `resource_uri (UNIQUE)`, `holder_run_id`, `holder_step_execution_id`, `fencing_token (bigint monotone)`, `expires_at` |
+| `assistant_thread_messages` | Persistent `"Mon Assistant"` conversational turn history separated from reflexive tool execution traces (`AD-25`, `D4`) | `id (uuid PK UUIDv7)`, `thread_id (uuid FK -> assistant_threads.thread_id ON DELETE CASCADE)`, `workspace_id (uuid FK -> workspaces.id ON DELETE CASCADE)`, `turn_id (uuid NOT NULL)`, `parent_turn_id (uuid NULL)`, `role VARCHAR(16) CHECK (role IN ('user', 'assistant'))`, `content TEXT`, `citation_map JSONB`, `token_count INTEGER`, `created_at TIMESTAMPTZ`, index `(thread_id, created_at)` (detailed tool traces remain isolated in `reflexive_execution_sessions` keyed by `turn_id`, never re-injected as `role: 'tool'`) |
+| `assistant_turn_feedback` | Idempotent per-user conversational turn feedback persistence (`AD-25`, `R5`) | `id (uuid PK UUIDv7)`, `turn_id (uuid NOT NULL)`, `workspace_id (uuid FK -> workspaces.id ON DELETE CASCADE)`, `user_id (uuid FK -> users.id ON DELETE CASCADE)`, `rating VARCHAR(8) CHECK (rating IN ('up', 'down'))`, `reason_code VARCHAR(64) NULL`, `comment TEXT NULL`, `created_at TIMESTAMPTZ`, `updated_at TIMESTAMPTZ`, `UNIQUE (turn_id, user_id)` upsert constraint |
+
+> **Architectural Scope Note (`AD-25`, `R2`, `R5`):** Neither `assistant_studio_graphs` (Mode B graphical studio deferred to `ACTION_ITEM-26.1`) nor `assistant_citation_drafts` (draft card actions deleted in `26.7` alongside `_saved_drafts`) exists in the PostgreSQL 18 schema. Phantom citations stripped by server `CitationGuard` and per-tool execution records are persisted directly in append-only `audit_ledger` (`ASSISTANT_PHANTOM_CITATION_PURGED`, `ASSISTANT_TOOL_INVOKED`, `ASSISTANT_TOOL_DENIED`).
 
 ---
 
@@ -538,6 +587,11 @@ erDiagram
     WORKSPACES ||--o{ WORKSPACE_MEMBERSHIPS : "workspace_id (Habilitations & Rôles sur l'Espace)"
     WORKSPACES ||--o{ WORKSPACE_DATASOURCES : "workspace_id (Sources Git, Jira, Confluence, DB)"
     WORKSPACES ||--o{ WORKFLOW_RUNS : "workspace_id (Exécutions de processus & Coûts IA)"
+    WORKSPACES ||--o{ ASSISTANT_THREADS : "workspace_id (Conversational threads)"
+    ASSISTANT_THREADS ||--o{ ASSISTANT_THREAD_MESSAGES : "thread_id (ON DELETE CASCADE, user|assistant)"
+    WORKSPACES ||--o{ ASSISTANT_TURN_FEEDBACK : "workspace_id (Scoped feedback)"
+    USERS ||--o{ ASSISTANT_TURN_FEEDBACK : "user_id (UNIQUE turn_id, user_id)"
+    ASSISTANT_THREAD_MESSAGES ||--o| REFLEXIVE_EXECUTION_SESSIONS : "turn_id (Isolated Speed 2/3 tool traces)"
 
     ORG_UNITS {
         uuid id PK
@@ -582,6 +636,47 @@ erDiagram
         varchar status
         numeric budget_max_usd
     }
+    ASSISTANT_THREADS {
+        uuid thread_id PK
+        uuid workspace_id FK
+        uuid folder_id FK
+        uuid creator_user_id FK
+        varchar title
+        int turn_count
+    }
+    ASSISTANT_THREAD_MESSAGES {
+        uuid id PK
+        uuid thread_id FK "ON DELETE CASCADE"
+        uuid workspace_id FK
+        uuid turn_id
+        uuid parent_turn_id "Nullable (Deepen link)"
+        varchar role "user | assistant"
+        text content
+        jsonb citation_map
+        int token_count
+        timestamptz created_at
+    }
+    ASSISTANT_TURN_FEEDBACK {
+        uuid id PK
+        uuid turn_id
+        uuid workspace_id FK
+        uuid user_id FK "UNIQUE (turn_id, user_id)"
+        varchar rating "up | down"
+        varchar reason_code "Nullable"
+        text comment "Nullable"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    REFLEXIVE_EXECUTION_SESSIONS {
+        uuid id PK
+        varchar execution_id UK "Linked by turn_id"
+        varchar workspace_id
+        varchar actor_slug
+        varchar effort_level
+        varchar status
+        jsonb snapshot_jsonb
+        timestamptz expires_at
+    }
 ```
 
 #### 4. Cascade d'héritage de gouvernance à 4 niveaux (`GLOBAL ➔ BU ➔ TEAM ➔ WORKSPACE`), Modèle Multi-Équipes / Espaces Privés & Chaîne de Verrouillage FinOps
@@ -600,3 +695,8 @@ $$\text{GLOBAL (Plateforme)} \longrightarrow \text{BU (Direction)} \longrightarr
    - **Invariant FinOps strict** : *Zéro appel LLM sans Équipe de facturation (`TEAM`) + Espace de Travail (`WORKSPACE`) + Modèle IA configuré*.
 4. **Sélecteur de Contexte (`TopHeaderBar`) en 3 groupes** :
    - La barre supérieure regroupe les périmètres dans 3 sections explicites : **`🔒 Mes Espaces Privés`** (`PRIVATE_USER`), **`👥 Mes Équipes & Espaces`** (`TEAM` + espaces `STANDARD`/`CONFIDENTIAL_RESTRICTED`) et **`🏢 Supervision Organisation`** (`BU` + `Plateforme Globale ORCIA`), filtrant dynamiquement `/cockpit`, `/workspaces`, `/processes` et `/activity`.
+
+#### 5. Assistant Turn Persistence & Trace Isolation Model (`AD-25`, `D4`, `R2`, `R5`)
+
+- **Strict Turn History vs Trace Separation (`D4`):** `assistant_thread_messages` stores only human-facing `user` and `assistant` turns (`ON DELETE CASCADE` from `assistant_threads(thread_id)`) indexed by `(thread_id, created_at)`, along with server-verified `citation_map JSONB`, `turn_id`, optional `parent_turn_id` (linking **"Deepen"** Speed 2 turns back to their parent Speed 1 turn), and `token_count`. Speed 2/3 tool-call and tool-result traces reside strictly in `reflexive_execution_sessions` keyed by `turn_id` and are never injected into prompt history as `role: "tool"`.
+- **Feedback & Append-Only Audit (`R5`):** `assistant_turn_feedback` stores one row per `(turn_id, user_id)` (`UNIQUE (turn_id, user_id)` upsert with `rating IN ('up', 'down')`, optional `reason_code` and `comment`). No `assistant_studio_graphs` (`R2`) or `assistant_citation_drafts` (`R5`) tables exist; phantom citations purged by `CitationGuard` (`ASSISTANT_PHANTOM_CITATION_PURGED`) and per-tool execution records (`ASSISTANT_TOOL_INVOKED`, `ASSISTANT_TOOL_DENIED`) write directly to append-only `audit_ledger`.

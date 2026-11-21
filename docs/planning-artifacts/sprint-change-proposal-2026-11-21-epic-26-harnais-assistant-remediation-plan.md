@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-21
 - **Author:** Tech Lead (multi-agent audit + `VALIDATE` review by `bmad-architect-worker`)
-- **Status:** `approved` (`/grill-me` `55b4642` + simplification `R1–R4` `fdc7cb7` + Recommended Set `R5–R9`). Epic registered (`epic-26: backlog`), 13 stories `ready-for-dev`. **Not launched.**
+- **Status:** `in-progress` (`/grill-me` `55b4642` + simplification `R1–R4` `fdc7cb7` + Recommended Set `R5–R9`). Epic active (`epic-26: in-progress`); Lot 0 (`26.0`) is ratified (`AD-25`, `AD-15`/`AD-21`/`AD-24` amendments, ERD, and canonical REST v2 / SSE v2 contracts in `ARCHITECTURE-SPINE.md` and `architecture.md`) and verified (`26-0: done`), awaiting user GO for Lot 1 (`26.1`). Stories `26.1`–`26.10` remain `ready-for-dev`.
 - **Trigger:** Deep audit of the "Mon Assistant" harness showing that the path actually served to the UI bypasses ORCIA's core governance, security, persistence, and citation guarantees.
 - **Evidence & linked documents:**
   - Decisions record: [`epic-26-decisions-grill-2026-11-21.md`](../implementation-artifacts/epic-26-decisions-grill-2026-11-21.md) (active decisions `D1–D11` as amended by `R1–R9`)

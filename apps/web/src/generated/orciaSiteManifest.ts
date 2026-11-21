@@ -12,9 +12,9 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "uiPrimitivesCount": 137,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 57,
-    "architectureDecisionsCount": 24,
+    "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 206,
+    "techLeadReportsCount": 207,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 64,
@@ -358,6 +358,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     {
       "code": "AD-24",
       "title": "Hub des Modèles IA Fiable, Découverte Dynamique 0 Token, Test de Connexion Réel, Port Hexagonal d'Embeddings (EmbeddingPort) et Réindexation Sémantique Bloquante"
+    },
+    {
+      "code": "AD-25",
+      "title": "Unified Assistant Turn Engine, Single-Process Redis Turn Streaming, Fixed N1–N5 Constitutional Phases & Governed Tool Loop"
     }
   ],
   "stackComponents": [
@@ -539,6 +543,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-21",
+      "phaseOrStory": "Story 26.0",
+      "reportFile": "26-0-adr-unified-turn-engine-sse-v2-and-ssrf-policy-tech-lead-report.md",
+      "domain": "Epic 26 Lot 0 — AD-25 Unified Assistant Turn Engine, AD-15/AD-21/AD-24 Amendments, ERD (assistant_thread_messages, assistant_turn_feedback), REST/SSE v2 Contract & Env-Var SSRF Policy",
+      "summary": "Framing ADR & contracts (done): authored AD-25 (AssistantTurnEngine, Speed 1 fast-path + \"Deepen\" parent_turn_id, Speed 2/3 ASSISTANT profile, single-process apps/api asyncio.Task + Redis Streams/liveness ERR_ASSISTANT_TURN_INTERRUPTED, fixed N1–N5 phases, Mode A only, forbidden direct SI writes / CONTINUE_IN_PROCESS DBOS, MCP assistant.ask, 3 text adapters + 2 native tool dialects, measure-first no prompt cache, direct cutover), amended AD-15, AD-21 (ORCIA_LLM_ALLOWED_PRIVATE_HOSTS + getaddrinfo DNS pinning + minimal public platform-setup-state), and AD-24 (supports_tools), and froze architecture.md §3.6.3 (8 REST v2 routes + 9 SSE v2 events) and §4/§8 ERD; verified lint_spine.py (0 findings), check_implementation_docs.py (207/207), pnpm site:check (65/65), pytest (19/19), ruff (0 errors), turbo (9/9), and GitNexus refreshed to c546732."
+    },
     {
       "date": "2026-11-21",
       "phaseOrStory": "Audit",
