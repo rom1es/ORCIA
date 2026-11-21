@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 11-21-2026 09:10
+last_updated: 11-21-2026 09:55
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -272,26 +272,25 @@ development_status:
   25-5-decouplage-assistant-sans-modele-semantique-blocage-sources-rag-et-cloture-epic-25: done
   epic-25-retrospective: optional
 
-  # Epic 26 — Harnais « Mon Assistant » Unifié, Gouverné & Persistant (moteur de tour unique, boucle d'outils gouvernée, contexte réel, sécurité de portée, état zéro RAM) (AD-3, AD-15, AD-19, AD-24, AD-25 proposé)
-  # Plan directeur   : docs/planning-artifacts/sprint-change-proposal-2026-11-21-epic-26-harnais-assistant-remediation-plan.md
-  # Audit source     : docs/implementation-artifacts/tech-lead-reports/2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md
-  # Arbitrages grill-me : docs/implementation-artifacts/epic-26-decisions-grill-2026-11-21.md
-  # Lots : L0 26-0 | L1 26-1 | L2 26-2 | L3 (26-3 ∥ 26-4a ∥ 26-4b en worktrees share -> merge séquentiel linéaire) | L4 26-5 | L5 26-6a → 26-6b | L6 26-7 → 26-8 | L7 26-9 → 26-10 — NON LANCÉE
-  # Révision R1–R4 : hébergement unique apps/api (pas de Dramatiq), Studio Mode B reporté (ACTION_ITEM-26.1), bouton « Approfondir », pas d'étrangleur (ACTION_ITEM-26.2)
+  # Epic 26 — Unified, Governed & Persistent "Mon Assistant" Harness (Single Turn Engine, Governed Tool Loop, Real Context, Scope Security, Zero RAM State) (AD-3, AD-15, AD-19, AD-24, proposed AD-25)
+  # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-21-epic-26-harnais-assistant-remediation-plan.md
+  # Source audit: docs/implementation-artifacts/tech-lead-reports/2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md
+  # Decisions   : docs/implementation-artifacts/epic-26-decisions-grill-2026-11-21.md (D1-D11 amended by R1-R9)
+  # Lots        : L0 26-0 | L1 26-1 | L2 26-2 | L3 26-3 -> 26-4a -> 26-4b (sequential, workspace: inherit) | L4 26-5 | L5 26-6a -> 26-6b | L6 26-7 -> 26-8 | L7 26-9 -> 26-10 — NOT LAUNCHED
   epic-26: backlog
-  26-0-adr-moteur-de-tour-unique-contrat-sse-v2-et-politique-ssrf: ready-for-dev
-  26-1-durcissement-securite-immediat-gardes-portee-observateur-et-ssrf: ready-for-dev
-  26-2-extraction-noyau-llm-streaming-et-prompt-builder-unique: ready-for-dev
-  26-3-fiabilite-des-tours-redis-event-loop-async-et-limite-de-debit: ready-for-dev
-  26-4a-redis-cache-de-prompt-verrous-de-fil-outbox-et-ddl-alembic: ready-for-dev
-  26-4b-persistance-pg18-gouvernance-4-niveaux-citations-et-feedback: ready-for-dev
-  26-5-contexte-reel-ontologie-rag-hybride-blackboard-et-budget-tokens: ready-for-dev
-  26-6a-llm-streaming-port-tool-calls-4-dialectes-et-budgets: ready-for-dev
-  26-6b-routeur-d-outils-gouverne-broker-v5-ancres-et-audit: ready-for-dev
-  26-7-convergence-moteur-de-tour-unique-et-citations-serveur: ready-for-dev
-  26-8-continue-in-process-dbos-pg18-et-ancres-humaines: ready-for-dev
-  26-9-cablage-ui-sdk-gouvernance-citations-fils-et-trace-outils: ready-for-dev
-  26-10-evals-red-team-multi-worker-et-cloture-epic-26: ready-for-dev
+  26-0-adr-unified-turn-engine-sse-v2-and-ssrf-policy: ready-for-dev
+  26-1-immediate-security-hardening-scope-observer-and-ssrf: ready-for-dev
+  26-2-core-llm-streaming-extraction-and-unified-prompt-builder: ready-for-dev
+  26-3-turn-reliability-redis-registry-async-loop-and-rate-limit: ready-for-dev
+  26-4a-redis-thread-locks-outbox-hub-invalidation-and-alembic-ddl: ready-for-dev
+  26-4b-pg18-persistence-mode-a-governance-feedback-and-folders: ready-for-dev
+  26-5-real-context-ontology-hybrid-rag-blackboard-and-context-budget: ready-for-dev
+  26-6a-llm-streaming-port-tool-calls-and-loop-budgets: ready-for-dev
+  26-6b-governed-assistant-tool-router-broker-v5-anchors-and-audit: ready-for-dev
+  26-7-unified-turn-engine-convergence-direct-cutover-and-citations: ready-for-dev
+  26-8-continue-in-process-dbos-pg18-and-human-anchors: ready-for-dev
+  26-9-ui-and-sdk-wiring-mode-a-citations-history-and-deepen: ready-for-dev
+  26-10-golden-evals-red-team-multi-worker-and-epic-26-closure: ready-for-dev
   epic-26-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
@@ -1441,37 +1440,80 @@ action_items:
       Issu du constat [MINOR-8] de la revue VALIDATE Epic 25 (docs/implementation-artifacts/epic-25-validate-report-2026-11-21.md).
       Les nouveaux modules créés en 25.3-25.5 respectent déjà < 350 L ; ce ticket planifie le découpage du reliquat historique sans modifier les contrats publics.
   - id: ACTION_ITEM-26.1
-    title: "Studio Mode B graphique de Mon Assistant (paramétrage déclaratif des phases N2–N5) — reporté hors Epic 26"
+    title: "Graphical Mode B Studio for Mon Assistant (declarative N2-N5 tuning) - deferred outside Epic 26"
     action: >
-      Réintroduire, si un besoin utilisateur est confirmé, un Studio Mode B (@xyflow/react) qui paramètre de façon
-      déclarative les phases N2–N5 du profil ASSISTANT (pondération ontologique, top-k RAG, sous-ensemble d'outils
-      pré-validés, règles de fraîcheur, budgets), avec topologie N1–N5 fixe, verrous scellés (Couche 1, N1, V5,
-      CitationGuard), persistance PG18 dédiée (assistant_studio_graphs) et invalidation de cache associée.
+      Reintroduce, if user demand is confirmed, a graphical Mode B Studio (@xyflow/react) that declaratively configures
+      phases N2-N5 of the ASSISTANT profile (ontology weights, RAG top-k, pre-approved tool subset, freshness rules,
+      budgets) with fixed N1-N5 topology, sealed guards (Layer 1, N1, V5, CitationGuard), and dedicated PG18 persistence.
     priority: P3
-    depends_on: ["26-10-evals-red-team-multi-worker-et-cloture-epic-26"]
+    depends_on: ["26-10-golden-evals-red-team-multi-worker-and-epic-26-closure"]
     owner: "John (PM) / Winston (Architect)"
     status: open
     epic: epic-26
-    story_ref: "26-4b-persistance-pg18-gouvernance-4-niveaux-citations-et-feedback"
+    story_ref: "26-4b-pg18-persistence-mode-a-governance-feedback-and-folders"
     ad_ref: "AD-15, AD-25"
     description: >
-      Révision de simplification R2 (docs/implementation-artifacts/epic-26-decisions-grill-2026-11-21.md). L'Epic 26
-      ne livre que la gouvernance Mode A (consignes texte sur 3 niveaux) et supprime en 26.4b les routes
-      governance/mode-b/{save,reset} (état RAM, aucun appelant UI). Amender FR-33 / UJ-17 (Mode B) via
-      bmad-correct-course au moment de la reprise.
+      Simplification R2 (docs/implementation-artifacts/epic-26-decisions-grill-2026-11-21.md). Epic 26 delivers only
+      3-level text Mode A governance and deletes RAM-only governance/mode-b/{save,reset} routes in 26.4b.
+      Amend FR-33 / UJ-17 (Mode B) via bmad-correct-course if resumed.
   - id: ACTION_ITEM-26.2
-    title: "Façade de compatibilité v1 /three-speed/* (étrangleur) — non construite, à réévaluer seulement si un consommateur externe apparaît"
+    title: "Legacy v1 /three-speed/* compatibility facade (strangler) - deferred unless an external consumer appears"
     action: >
-      Ne construire une façade relayant AssistantTurnEngine sous l'ancienne surface /three-speed/* que si un consommateur
-      autre que la SPA apps/web est identifié (client externe, intégration, script). Sinon clore ce ticket sans action.
+      Build a facade relaying AssistantTurnEngine behind the legacy /three-speed/* surface only if a non-SPA external
+      consumer (script, integration, client) is identified. Otherwise close without action.
     priority: P3
     depends_on: []
     owner: "Winston (Architect)"
     status: open
     epic: epic-26
-    story_ref: "26-7-convergence-moteur-de-tour-unique-et-citations-serveur"
+    story_ref: "26-7-unified-turn-engine-convergence-direct-cutover-and-citations"
     ad_ref: "AD-25"
     description: >
-      Révision de simplification R4 (docs/implementation-artifacts/epic-26-decisions-grill-2026-11-21.md). La SPA est
-      l'unique consommateur et est livrée avec l'API : bascule directe backend + UI + E2E dans un seul commit de 26.7,
-      routes v1 supprimées dans la story qui livre leur remplaçant (26.4b, 26.7, 26.8, 26.9).
+      Simplification R4 (docs/implementation-artifacts/epic-26-decisions-grill-2026-11-21.md). apps/web is the sole
+      consumer and switches atomically with the API in 26.7; replaced routes are deleted immediately.
+  - id: ACTION_ITEM-26.3
+    title: "Redis assembled-prompt cache & Outbox invalidation - deferred under measure-first policy (R6)"
+    action: >
+      Implement a Redis assembled-prompt cache and Outbox invalidation consumer (GLOSSARY_PROMOTED, SETTINGS_CHANGED)
+      ONLY if measured SQL prompt-assembly p95 exceeds 50 ms in 26.5/26.7 or threatens Speed 1 TTFT p95 < 1.2 s.
+    priority: P3
+    depends_on: ["26-7-unified-turn-engine-convergence-direct-cutover-and-citations"]
+    owner: "Amelia (Dev) / Winston (Architect)"
+    status: open
+    epic: epic-26
+    story_ref: "26-4a-redis-thread-locks-outbox-hub-invalidation-and-alembic-ddl"
+    ad_ref: "AD-15, AD-25"
+    description: >
+      Simplification R6 (Recommended Set). 26.4a removes InMemoryPromptCacheStore and forged outbox_event_id;
+      26.5/26.7 measure real assembly latency first. Amend FR-33 / Story 10.2 if cache remains unneeded.
+  - id: ACTION_ITEM-26.4
+    title: "Native Gemini REST functionCall & native Ollama /api/chat tool-calling parsers - deferred (R7)"
+    action: >
+      Add native tool-call delta parsing and tool-result formatting for native Gemini REST (functionCall /
+      functionResponse) and non-/v1 native Ollama (/api/chat message.tool_calls) if required beyond OpenAI-compatible
+      /v1 and Anthropic endpoints.
+    priority: P3
+    depends_on: ["26-6a-llm-streaming-port-tool-calls-and-loop-budgets"]
+    owner: "Amelia (Dev)"
+    status: open
+    epic: epic-26
+    story_ref: "26-6a-llm-streaming-port-tool-calls-and-loop-budgets"
+    ad_ref: "AD-24, AD-25"
+    description: >
+      Simplification R7 (Recommended Set). Epic 26 keeps all 3 native text/reasoning streaming adapters (including
+      Gemini CAP-076) and scopes native tool calling to OpenAI-compatible (/v1) and Anthropic.
+  - id: ACTION_ITEM-26.5
+    title: "PG18 & Admin UI dynamic SSRF allowlist for private LLM endpoints - deferred (R8)"
+    action: >
+      Add PG18 persistence and PLATFORM_ADMIN UI management for private/on-prem LLM host allowlists if ops-managed
+      environment variable ORCIA_LLM_ALLOWED_PRIVATE_HOSTS proves insufficient for runtime onboarding.
+    priority: P3
+    depends_on: ["26-1-immediate-security-hardening-scope-observer-and-ssrf"]
+    owner: "Sophie (SecOps) / Winston (Architect)"
+    status: open
+    epic: epic-26
+    story_ref: "26-1-immediate-security-hardening-scope-observer-and-ssrf"
+    ad_ref: "AD-21, AD-23, AD-24"
+    description: >
+      Simplification R8 (Recommended Set). Epic 26 secures SSRF via ORCIA_LLM_ALLOWED_PRIVATE_HOSTS, permanent
+      metadata/link-local/internal-port blocks, and connection-time DNS resolution pinning.
