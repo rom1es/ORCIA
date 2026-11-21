@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 11-21-2026 07:40
+last_updated: 11-21-2026 09:10
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -277,6 +277,7 @@ development_status:
   # Audit source     : docs/implementation-artifacts/tech-lead-reports/2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md
   # Arbitrages grill-me : docs/implementation-artifacts/epic-26-decisions-grill-2026-11-21.md
   # Lots : L0 26-0 | L1 26-1 | L2 26-2 | L3 (26-3 ∥ 26-4a ∥ 26-4b en worktrees share -> merge séquentiel linéaire) | L4 26-5 | L5 26-6a → 26-6b | L6 26-7 → 26-8 | L7 26-9 → 26-10 — NON LANCÉE
+  # Révision R1–R4 : hébergement unique apps/api (pas de Dramatiq), Studio Mode B reporté (ACTION_ITEM-26.1), bouton « Approfondir », pas d'étrangleur (ACTION_ITEM-26.2)
   epic-26: backlog
   26-0-adr-moteur-de-tour-unique-contrat-sse-v2-et-politique-ssrf: ready-for-dev
   26-1-durcissement-securite-immediat-gardes-portee-observateur-et-ssrf: ready-for-dev
@@ -1439,3 +1440,38 @@ action_items:
     description: >
       Issu du constat [MINOR-8] de la revue VALIDATE Epic 25 (docs/implementation-artifacts/epic-25-validate-report-2026-11-21.md).
       Les nouveaux modules créés en 25.3-25.5 respectent déjà < 350 L ; ce ticket planifie le découpage du reliquat historique sans modifier les contrats publics.
+  - id: ACTION_ITEM-26.1
+    title: "Studio Mode B graphique de Mon Assistant (paramétrage déclaratif des phases N2–N5) — reporté hors Epic 26"
+    action: >
+      Réintroduire, si un besoin utilisateur est confirmé, un Studio Mode B (@xyflow/react) qui paramètre de façon
+      déclarative les phases N2–N5 du profil ASSISTANT (pondération ontologique, top-k RAG, sous-ensemble d'outils
+      pré-validés, règles de fraîcheur, budgets), avec topologie N1–N5 fixe, verrous scellés (Couche 1, N1, V5,
+      CitationGuard), persistance PG18 dédiée (assistant_studio_graphs) et invalidation de cache associée.
+    priority: P3
+    depends_on: ["26-10-evals-red-team-multi-worker-et-cloture-epic-26"]
+    owner: "John (PM) / Winston (Architect)"
+    status: open
+    epic: epic-26
+    story_ref: "26-4b-persistance-pg18-gouvernance-4-niveaux-citations-et-feedback"
+    ad_ref: "AD-15, AD-25"
+    description: >
+      Révision de simplification R2 (docs/implementation-artifacts/epic-26-decisions-grill-2026-11-21.md). L'Epic 26
+      ne livre que la gouvernance Mode A (consignes texte sur 3 niveaux) et supprime en 26.4b les routes
+      governance/mode-b/{save,reset} (état RAM, aucun appelant UI). Amender FR-33 / UJ-17 (Mode B) via
+      bmad-correct-course au moment de la reprise.
+  - id: ACTION_ITEM-26.2
+    title: "Façade de compatibilité v1 /three-speed/* (étrangleur) — non construite, à réévaluer seulement si un consommateur externe apparaît"
+    action: >
+      Ne construire une façade relayant AssistantTurnEngine sous l'ancienne surface /three-speed/* que si un consommateur
+      autre que la SPA apps/web est identifié (client externe, intégration, script). Sinon clore ce ticket sans action.
+    priority: P3
+    depends_on: []
+    owner: "Winston (Architect)"
+    status: open
+    epic: epic-26
+    story_ref: "26-7-convergence-moteur-de-tour-unique-et-citations-serveur"
+    ad_ref: "AD-25"
+    description: >
+      Révision de simplification R4 (docs/implementation-artifacts/epic-26-decisions-grill-2026-11-21.md). La SPA est
+      l'unique consommateur et est livrée avec l'API : bascule directe backend + UI + E2E dans un seul commit de 26.7,
+      routes v1 supprimées dans la story qui livre leur remplaçant (26.4b, 26.7, 26.8, 26.9).

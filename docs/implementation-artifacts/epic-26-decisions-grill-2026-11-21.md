@@ -12,7 +12,10 @@
 
 ---
 
-## Synthèse des 14 arbitrages ratifiés
+> [!IMPORTANT]
+> **Révision de simplification `R1–R4` (2026-11-21 09:00, validée par l'utilisateur après analyse critique du plan).** Elle **remplace** `D1.a` (→ `R3`), `D1.b` (→ `R2`), l'hébergement Dramatiq de `D2` et `D2.a` (→ `R1`), ainsi que le calendrier d'étrangleur de `D8` et la phase de dépréciation de `D6` (→ `R4`). Voir la section finale « Révision R ». Les autres décisions (`D1` cœur, `D2` protocole, `D3` à `D7`, `D9` à `D11`) restent inchangées.
+
+## Synthèse des 14 arbitrages ratifiés (état avant révision R)
 
 | # | Sujet | Option retenue | Écart vs défaut initial | Stories & AD impactés |
 | :---: | :--- | :--- | :--- | :--- |
@@ -238,3 +241,29 @@
   1. *Un unique `bmad-dev-worker` couvrant implémentation et vérification finale* : expose au biais de confirmation entre l'auteur du code et le vérificateur des 5 couches `AD-17`.
   2. *Commit groupé par lot ou en fin d'Epic* : complique le `bisect` et l'auditabilité story par story.
 - **Justification technique & impact :** Renforce l'indépendance de la vérification `AD-17` et la traçabilité Git par story. Artefacts mis à jour : plan directeur §4. Risque : **Très faible**. Coût : **S** (orchestration).
+
+---
+
+## Révision R — Simplification de la cible (2026-11-21 09:00)
+
+- **Déclencheur :** analyse critique du plan directeur (complexité induite par 4 voies d'exécution, 2 hébergements, une escalade avec passage de témoin en cours de tour, un Studio graphique sans usage et une façade v1 jetable).
+- **Arbitrages utilisateur :**
+  1. survie au crash d'un pod pour les tours longs : **non requise** ;
+  2. Studio Mode B : **reporté** en `action_item` ;
+  3. escalade automatique : remplacée par un **bouton « Approfondir »** ;
+  4. étrangleur : **superflu**, consigné en `action_item`.
+
+| # | Remplace | Décision révisée | Stories rebasées |
+| :---: | :--- | :--- | :--- |
+| **`R1`** | `D2` (hébergement Dramatiq) + `D2.a` | **Hébergement unique** : tous les tours (Speed 1, 2, 3) s'exécutent en `asyncio.Task` bornée dans `apps/api`. Le registre des tours, le flux d'événements (Redis Streams, curseur) et le signal `stop` vivent dans Redis, ce qui garantit le rattachement après F5 et le fonctionnement multi-worker. Arrêt gracieux sur `SIGTERM`, borné par le budget mural du profil. Une clé de vie par tour (TTL rafraîchi par la tâche) détecte un tour orphelin après crash : au rattachement, le client reçoit `stream_error` `ERR_ASSISTANT_TURN_INTERRUPTED` (RFC 9457), **sans reprise automatique**. Aucun acteur Dramatiq ni heartbeat de worker ; l'erreur `503 ERR_ASSISTANT_WORKER_UNAVAILABLE` disparaît. Le **protocole** de `D2` (`POST /turns` 202 + `GET …/stream?after=`) est conservé. | `26.0`, `26.3`, `26.7`, `26.10` |
+| **`R2`** | `D1.b` | **Studio Mode B reporté** (`ACTION_ITEM-26.1`). Topologie `N1–N5` fixe, **aucun paramétrage graphique** dans l'Epic 26, pas de table `assistant_studio_graphs`. La gouvernance **Mode A** (consignes texte Utilisateur / Équipe / Espace sur `workspace_customization_overrides`) est maintenue. Les routes `governance/mode-b/{save,reset}` (RAM, sans appelant) sont **supprimées** en `26.4b`. | `26.0`, `26.4b`, `26.7`, `26.9` |
+| **`R3`** | `D1.a` | **Pas d'escalade automatique.** Après un tour Speed 1, l'UI propose un bouton **« Approfondir »** (visible si `supports_tools=true`), qui crée un **nouveau tour** Speed 2 dans le même fil (`parent_turn_id`, même question). Le moteur ajoute à `turn_completed` un indicateur déterministe `low_evidence` (`EvidenceTable` vide) pour mettre le bouton en avant, sans heuristique ni appel LLM supplémentaire. Plus d'événement `speed_escalated` ni de passage de témoin en cours de tour. | `26.0`, `26.7`, `26.9` |
+| **`R4`** | `D8` (calendrier) + `D6` (dépréciation) | **Pas d'étrangleur** (`ACTION_ITEM-26.2`) : la SPA est l'unique consommateur et elle est livrée avec l'API. **Bascule directe** du transport de tour (backend + UI + specs E2E `02`/`12`/`16`/`21`) dans **un seul commit de `26.7`**. Chaque route remplacée ou sans appelant est **supprimée dans la story qui livre son remplaçant**, sans phase `deprecated` : `/three-speed/*`, `/chat*`, `/citations/verify-turn`, `/artifacts/action` en `26.7` ; `/workflows/save-and-launch` en `26.8` ; doublon `POST /threads/{id}/turns` en `26.9`. `26.10` vérifie seulement qu'il reste 0 endpoint sans appelant. La surface canonique cible de `D8` est inchangée. | `26.7`, `26.8`, `26.9`, `26.10` |
+
+**Effets attendus :**
+- une seule voie d'exécution asynchrone (fast-path + profil `ASSISTANT` dans le même processus), plus `assistant.ask` (`D7`, inchangé) ;
+- aucune dépendance à `apps/worker` pour l'assistant ;
+- 1 table et 2 routes en moins (Mode B) ;
+- plus aucun seuil heuristique d'escalade ni code de façade jetable.
+
+**Risque accepté :** perte d'un tour long en cas de crash brutal d'un pod (hors déploiement). Le tour est signalé comme interrompu et l'utilisateur le relance.
