@@ -23,6 +23,7 @@ from orcia_core.orchestration.assistant_citations_models import (
     RawToolOutputCandidate,
     SourceAuthorityTier,
     SourceFreshnessStatus,
+    build_artifact_card_outcome,
 )
 from orcia_core.orchestration.errors import (
     DirectSiWriteRequiresProcessGateError,
@@ -54,6 +55,7 @@ class AssistantCitationAndV5GuardService:
         tool_outputs: tuple[RawToolOutputCandidate, ...] = (),
     ) -> EvidenceTable:
         """Build numbered Evidence Table where `REFERENCE` strictly outranks `ACTIVE`."""
+        t0 = time.perf_counter()
         sorted_sources = sorted(
             sources,
             key=lambda s: (
@@ -113,7 +115,7 @@ class AssistantCitationAndV5GuardService:
             glossary_items=numbered_glossary,
             tool_outputs=numbered_tools,
             footer_summary_line=footer_line,
-            citation_map_emitted_at_ms=80.0,
+            citation_map_emitted_at_ms=round((time.perf_counter() - t0) * 1000.0, 3),
         )
 
     def filter_citation_map_for_reader(
@@ -183,7 +185,7 @@ class AssistantCitationAndV5GuardService:
             return UNVERIFIED_CITATION_BADGE
 
         sanitized = _CITATION_TAG_RE.sub(_replace_match, response_text)
-        elapsed_ms = round(min((time.perf_counter() - t0) * 1000.0, 4.1), 3)
+        elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 3)
 
         audit_entry: PhantomCitationAuditEntry | None = None
         if stripped_found:
@@ -219,6 +221,7 @@ class AssistantCitationAndV5GuardService:
         artifact_content: str,
         cited_tags: tuple[str, ...] = (),
         target_uri: str | None = None,
+        target_workflow_uri: str | None = None,
     ) -> ArtifactCardActionOutcome:
         """Execute a Structured Artifact Card action while enforcing Verrou V5 (`AD-15`)."""
         if user.platform_role == "OBSERVER":
@@ -240,45 +243,17 @@ class AssistantCitationAndV5GuardService:
                 )
             )
 
-        action_id = new_uuid7_str()
-        if action_type == "SAVE_DRAFT":
-            slug = re.sub(r"[^a-z0-9-]+", "-", artifact_title.lower()).strip("-") or "artefact"
-            draft_uri = f"orcia://workspaces/{workspace_id}/artifacts/{slug}@draft"
-            outcome = ArtifactCardActionOutcome(
-                action_id=action_id,
-                workspace_id=workspace_id,
-                action_type="SAVE_DRAFT",
-                artifact_title=artifact_title,
-                artifact_version_tag="@draft",
-                draft_uri=draft_uri,
-                process_launch_prefill={},
-            )
-            self._saved_drafts[draft_uri] = outcome
-            return outcome
-
-        if action_type == "CONTINUE_IN_PROCESS":
-            return ArtifactCardActionOutcome(
-                action_id=action_id,
-                workspace_id=workspace_id,
-                action_type="CONTINUE_IN_PROCESS",
-                artifact_title=artifact_title,
-                artifact_version_tag="@draft",
-                draft_uri=None,
-                process_launch_prefill={
-                    "target_workflow_uri": "orcia://pack-sdlc/workflows/ticket-to-tech-spec",
-                    "prefilled_artifact_title": artifact_title,
-                    "prefilled_artifact_content": artifact_content,
-                    "preserved_evidence_tags": list(cited_tags),
-                },
-            )
-
-        return ArtifactCardActionOutcome(
-            action_id=action_id,
+        outcome = build_artifact_card_outcome(
             workspace_id=workspace_id,
             action_type=action_type,
             artifact_title=artifact_title,
-            artifact_version_tag="@draft",
+            artifact_content=artifact_content,
+            cited_tags=cited_tags,
+            target_workflow_uri=target_workflow_uri,
         )
+        if action_type == "SAVE_DRAFT" and outcome.draft_uri is not None:
+            self._saved_drafts[outcome.draft_uri] = outcome
+        return outcome
 
 
 __all__ = [

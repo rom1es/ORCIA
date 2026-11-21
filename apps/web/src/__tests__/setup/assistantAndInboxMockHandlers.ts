@@ -25,7 +25,7 @@ export function handleAssistantAndInboxRoute(params: {
     const thinkingEffort = String(body.thinking_effort ?? "balanced") as UiInferenceEffort;
     const isFr = String(body.locale ?? "fr") !== "en";
     const fullUserPrompt = String(body.user_prompt ?? "");
-    const cleanPrompt = fullUserPrompt.split("\n\n[Pièces jointes")[0] ?? fullUserPrompt;
+    const cleanPrompt = fullUserPrompt.split(/\n\n\[(?:Pièces jointes|User-supplied attachments)/)[0] ?? fullUserPrompt;
     const replyText = `[${requestedSpeed}] ${cleanPrompt}`;
     const personalInstructions = body.personal_instructions ? String(body.personal_instructions) : "";
     const folderPinnedNotes = body.folder_pinned_notes ? String(body.folder_pinned_notes) : "";

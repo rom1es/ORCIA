@@ -34,7 +34,7 @@ orcia = "orcia_core.bootstrap.plugin_registry:resolve_orcia_scheme_plugin"
 
 [project.entry-points."orcia.llm_gateways"]
 litellm = "orcia_core.bootstrap.plugin_registry:build_litellm_gateway_plugin"
-cassette = "orcia_core.bootstrap.plugin_registry:build_cassette_gateway_plugin"
+cassette = "orcia_core.testing.cassette_llm:build_cassette_gateway_plugin"
 
 [project.entry-points."orcia.step_executors"]
 AGENT = "orcia_core.orchestration.step_executors:build_agent_step_executor_plugin"

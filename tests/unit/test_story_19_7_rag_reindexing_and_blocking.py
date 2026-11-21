@@ -168,8 +168,12 @@ def test_fastapi_reindex_status_and_trigger_endpoints() -> None:
     assert res_status.json()["status"] == "COMPLETED"
 
 
-def test_fastapi_rag_blocked_503_while_assistant_and_search_stay_unlocked_during_reindex() -> None:
+def test_fastapi_rag_blocked_503_while_assistant_and_search_stay_unlocked_during_reindex(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Verify pure RAG returns 503 during reindexing while Assistant & GET /search stay 200."""
+    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
     app = create_app()
     app.state.reindex_manager = default_in_memory_reindex_manager
     fake_adapter = FakeDeterministicEmbeddingAdapter()

@@ -17,8 +17,6 @@ from orcia_core.observability.logging import get_current_trace_id, get_logger
 from orcia_core.orchestration import (
     AiModelMappingRecord,
     AiModelsHubService,
-)
-from orcia_core.orchestration._internal.sql_ai_model_mappings import (
     ensure_ai_model_mappings_schema_on_postgres18,
     get_active_global_embedding_model_pg18,
 )

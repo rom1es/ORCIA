@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import sys
 from typing import TYPE_CHECKING, Any
 
 from fastapi import Request
@@ -34,7 +33,7 @@ def should_auto_init_infra(env_var: str) -> bool:
     """Return True when PG18 or Redis should auto-initialize in Composition Root."""
     if os.environ.get("ORCIA_ENABLE_PG_SESSION_MAKER") == "1":
         return True
-    if "pytest" in sys.modules:
+    if os.environ.get("PYTEST_CURRENT_TEST") or os.environ.get("PYTEST_VERSION"):
         return bool(os.environ.get(env_var, "").strip())
     return True
 

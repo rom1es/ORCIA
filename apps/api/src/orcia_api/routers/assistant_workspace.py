@@ -11,6 +11,7 @@ from fastapi.responses import StreamingResponse
 
 from orcia_api.dependencies import (
     get_assistant_three_speed_router_service,
+    get_llm_streaming_port,
     get_optional_embedding_port,
 )
 from orcia_api.dependencies._assistant_guards import enforce_assistant_workspace_guard
@@ -37,9 +38,11 @@ from orcia_api.schemas.assistant import (
     ThreeSpeedTurnRequest,
     ThreeSpeedTurnResponse,
 )
+from orcia_core.orchestration.assistant_prompt_builder import resolve_default_hat
 from orcia_core.orchestration.assistant_three_speed_router import AssistantThreeSpeedRouterService
 from orcia_core.permissions.models import UserIdentity
 from orcia_core.ports.embedding import EmbeddingPort
+from orcia_core.ports.llm_streaming_port import LlmStreamingPort
 
 router = APIRouter(
     prefix="/api/v1/assistant",
@@ -51,6 +54,7 @@ CurrentUserDep = Annotated[UserIdentity, Depends(resolve_request_user)]
 ThreeSpeedRouterDep = Annotated[
     AssistantThreeSpeedRouterService, Depends(get_assistant_three_speed_router_service)
 ]
+LlmStreamingPortDep = Annotated[LlmStreamingPort, Depends(get_llm_streaming_port)]
 
 
 @router.post("/three-speed/turn", response_model=ThreeSpeedTurnResponse)
@@ -60,6 +64,7 @@ async def execute_three_speed_turn_endpoint(
     user: CurrentUserDep,
     router_svc: ThreeSpeedRouterDep,
     _embedding_port: Annotated[EmbeddingPort | None, Depends(get_optional_embedding_port)],
+    llm_port: LlmStreamingPortDep,
 ) -> ThreeSpeedTurnResponse:
     """Execute a 3-Speed conversational turn (`Rapide`, `@Agent / /Skill`, `Approfondi`)."""
     await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
@@ -68,7 +73,7 @@ async def execute_three_speed_turn_endpoint(
     )
     effective_deep_audit, effective_speed, resolved_speed = resolve_effective_speed(payload)
     resolved_notes = await resolve_folder_notes(request, payload, user=user)
-    active_hat = payload.hat or user.human_profile_archetype or "PLATFORM_ADMIN"
+    active_hat = resolve_default_hat(explicit_hat=payload.hat, user=user)
     history = await resolve_turn_history(request, payload, user=user)
     live_outcome = await invoke_configured_llm_for_assistant_turn(
         request,
@@ -86,6 +91,7 @@ async def execute_three_speed_turn_endpoint(
         workspace_instructions=payload.workspace_instructions,
         folder_pinned_notes=resolved_notes,
         locale=payload.locale,
+        llm_port=llm_port,
     )
     assembled_sys_prompt = (
         live_outcome.assembled_system_prompt
@@ -174,6 +180,7 @@ async def stream_three_speed_turn_endpoint(
     user: CurrentUserDep,
     router_svc: ThreeSpeedRouterDep,
     _embedding_port: Annotated[EmbeddingPort | None, Depends(get_optional_embedding_port)],
+    llm_port: LlmStreamingPortDep,
 ) -> StreamingResponse:
     """Stream SSE events (`cache_status`, `step_progress`, `thinking_delta`, `token_delta`)."""
     await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
@@ -181,10 +188,9 @@ async def stream_three_speed_turn_endpoint(
         request, requested_tier=payload.requested_tier, workspace_id=payload.workspace_id
     )
     effective_deep_audit, effective_speed, resolved_speed = resolve_effective_speed(payload)
-    active_hat = payload.hat or user.human_profile_archetype or "PLATFORM_ADMIN"
+    active_hat = resolve_default_hat(explicit_hat=payload.hat, user=user)
     history = await resolve_turn_history(request, payload, user=user)
     resolved_notes = await resolve_folder_notes(request, payload, user=user)
-    client_host = getattr(getattr(request, "client", None), "host", "") or ""
 
     async def _event_generator() -> AsyncIterator[str]:
         for evt in router_svc.stream_three_speed_turn_sse(
@@ -197,18 +203,7 @@ async def stream_three_speed_turn_endpoint(
         ):
             event_name = evt["event"]
             yield f"event: {event_name}\ndata: {json.dumps(evt['data'], ensure_ascii=False)}\n\n"
-            if event_name == "step_progress" and client_host == "testclient":
-                step_data = evt["data"]
-                if isinstance(step_data, dict) and step_data.get("intermediate_output"):
-                    think_json = json.dumps(
-                        {
-                            "step_code": step_data.get("step_code"),
-                            "thinking_text": step_data.get("intermediate_output"),
-                        },
-                        ensure_ascii=False,
-                    )
-                    yield f"event: thinking_delta\ndata: {think_json}\n\n"
-            elif event_name == "token":
+            if event_name == "token":
                 token_data = evt["data"]
                 full_txt = str(token_data.get("text") or "") if isinstance(token_data, dict) else ""
                 async for stream_evt in stream_configured_llm_for_assistant_turn(
@@ -230,6 +225,7 @@ async def stream_three_speed_turn_endpoint(
                     fallback_response_text=full_txt,
                     user_email=user.email,
                     user_display_name=user.display_name,
+                    llm_port=llm_port,
                 ):
                     if stream_evt["event"] in (
                         "thinking_delta",

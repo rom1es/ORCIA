@@ -36,7 +36,6 @@ from orcia_core.orchestration.agents_and_skills_models import (
     normalize_identifier_slug,
     rebuild_agent_with_skills,
 )
-from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
 from orcia_kernel.ports import LLMPort, LlmPromptRequest
 
 _PACK_IMMUTABILITY_ERROR_MSG = (
@@ -73,7 +72,7 @@ class AgentsAndSkillsManagementService:
         llm_gateway: LLMPort | None = None,
         cognitive_router: Any | None = None,
     ) -> None:
-        self._llm: LLMPort = llm_gateway or DeterministicCassetteLLM()
+        self._llm: LLMPort | None = llm_gateway
         self._router = cognitive_router
         self._skills: dict[str, ManagedSkillRecord] = {}
         self._agents: dict[str, ManagedAgentRecord] = {}
@@ -416,22 +415,28 @@ class AgentsAndSkillsManagementService:
             except Exception:
                 pass
 
-        if not model_family or not model_id:
-            if isinstance(self._llm, DeterministicCassetteLLM):
-                model_family = "cassette"
-                model_id = f"cassette/{agent.slug}"
-            else:
+        if llm_response_override and llm_response_override.strip():
+            llm_text = llm_response_override.strip()
+        else:
+            if not model_family or not model_id:
+                if bool(getattr(self._llm, "is_cassette_adapter", False)):
+                    model_family = "cassette"
+                    model_id = f"cassette/{agent.slug}"
+                else:
+                    from orcia_core.orchestration.errors import TierModelNotConfiguredError
+
+                    raise TierModelNotConfiguredError(
+                        inference_tier=tier,
+                        instance=f"agent_manager:{agent.slug}",
+                    )
+            if self._llm is None:
                 from orcia_core.orchestration.errors import TierModelNotConfiguredError
 
                 raise TierModelNotConfiguredError(
                     inference_tier=tier,
                     instance=f"agent_manager:{agent.slug}",
                 )
-
-        llm_text = (
-            llm_response_override.strip()
-            if llm_response_override and llm_response_override.strip()
-            else _run_llm_sync(
+            llm_text = _run_llm_sync(
                 self._llm,
                 LlmPromptRequest(
                     system_prompt=(
@@ -445,7 +450,6 @@ class AgentsAndSkillsManagementService:
                     metadata={"agent_id": agent.agent_id, "thinking_level": agent.thinking_level},
                 ),
             )
-        )
         validated_agent = rebuild_agent_with_skills(
             replace(agent, test_bench_validated=True), agent.skill_ids
         )

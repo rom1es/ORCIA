@@ -18,7 +18,9 @@ from orcia_core.orchestration import (
 
 def test_agents_and_skills_service_lifecycle_and_detachment() -> None:
     """Verify creating, attaching, executing, and deleting Skills & Agents in the domain service."""
-    svc = AgentsAndSkillsManagementService()
+    from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
+
+    svc = AgentsAndSkillsManagementService(llm_gateway=DeterministicCassetteLLM())
     assert svc.skills == ()
     assert svc.agents == ()
 

@@ -1,14 +1,18 @@
-"""Live Async LLM Streaming Bridge for `Mon Assistant` (`AD-15`, `Story 26.1`)."""
+"""Live Async LLM Streaming Bridge for `Mon Assistant` (`AD-15`, `Story 26.2`)."""
 
 from __future__ import annotations
 
-import os
 from collections.abc import AsyncIterator
 from typing import Any
 
-import httpx
 from fastapi import Request
 
+from orcia_api.dependencies._llm_streaming_providers import (
+    get_llm_streaming_port,
+)
+from orcia_api.dependencies._llm_streaming_providers import (
+    get_or_create_async_http_client as get_or_create_async_http_client,
+)
 from orcia_api.routers._assistant_usage_telemetry import resolve_audit_ledger_sink
 from orcia_api.routers.assistant_background_turns import run_and_consume_decoupled_turn_stream
 from orcia_api.routers.assistant_llm_prompts import (
@@ -18,19 +22,7 @@ from orcia_api.routers.assistant_llm_prompts import (
     resolve_request_locale,
 )
 from orcia_api.routers.assistant_llm_resolver import resolve_configured_llm_endpoint
-
-
-def get_or_create_async_http_client(request: Request) -> httpx.AsyncClient:
-    """Return shared `httpx.AsyncClient` from `request.app.state.http_client`."""
-    shared: httpx.AsyncClient | None = getattr(request.app.state, "http_client", None)
-    if shared is not None and not getattr(shared, "is_closed", False):
-        return shared
-    client = httpx.AsyncClient(
-        timeout=httpx.Timeout(300.0, connect=10.0),
-        limits=httpx.Limits(max_connections=100, max_keepalive_connections=20),
-    )
-    request.app.state.http_client = client
-    return client
+from orcia_core.ports.llm_streaming_port import LlmStreamingPort
 
 
 async def stream_configured_llm_for_assistant_turn(
@@ -54,6 +46,7 @@ async def stream_configured_llm_for_assistant_turn(
     user_email: str | None = None,
     user_display_name: str | None = None,
     audit_ledger_sink: Any | None = None,
+    llm_port: LlmStreamingPort | None = None,
 ) -> AsyncIterator[dict[str, Any]]:
     """True async SSE token streamer decoupled via `ACTIVE_WORKSPACE_TURNS`."""
     from orcia_api.routers.assistant_llm_bridge import (
@@ -65,17 +58,10 @@ async def stream_configured_llm_for_assistant_turn(
         f"{t}: {s}"
         for t, s in detect_adaptive_thinking_steps_for_question(user_prompt, locale=resolved_locale)
     )
-    client_host = getattr(getattr(request, "client", None), "host", "") or ""
-    can_call_live = (
-        client_host != "testclient" or os.environ.get("ORCIA_FORCE_LIVE_LLM_IN_TESTS") == "1"
+    ep = await resolve_configured_llm_endpoint(
+        request, requested_tier=requested_tier, workspace_id=workspace_id
     )
-    ep = (
-        await resolve_configured_llm_endpoint(
-            request, requested_tier=requested_tier, workspace_id=workspace_id
-        )
-        if can_call_live
-        else None
-    )
+    active_port = llm_port or get_llm_streaming_port(request)
     system_msg = resolve_assembled_system_instructions_for_turn(
         request,
         hat=hat,
@@ -97,8 +83,8 @@ async def stream_configured_llm_for_assistant_turn(
         system_msg=system_msg,
         default_thinking=default_thinking,
         fallback_response_text=fallback_response_text,
-        client_host=client_host,
         ep=ep,
+        llm_port=active_port,
         http_client_getter=lambda: get_or_create_async_http_client(request),
         messages_builder=lambda: build_multi_turn_messages(
             system_msg=system_msg,

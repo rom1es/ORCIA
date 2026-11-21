@@ -11,12 +11,7 @@ from orcia_api.dependencies._core_providers import (
 from orcia_api.dependencies.core_and_lifespan import get_auth_service
 from orcia_connectors.surgical import SurgicalContextExplorer
 from orcia_core.kernel.errors import OrciaDomainError
-from orcia_core.orchestration._internal.sql_dna_mechanisms import (
-    SqlStarlarkMechanismRepository,
-)
-from orcia_core.orchestration._internal.sql_mcp_exposure import (
-    SqlMcpExposureRepository,
-)
+from orcia_core.orchestration import SqlMcpExposureRepository, SqlStarlarkMechanismRepository
 from orcia_core.orchestration.agents_and_skills_manager import (
     AgentsAndSkillsManagementService,
 )

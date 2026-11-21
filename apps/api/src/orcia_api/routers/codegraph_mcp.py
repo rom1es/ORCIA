@@ -25,9 +25,7 @@ from orcia_connectors.adapters.codegraph_mcp import (
     CodegraphMcpConnector,
 )
 from orcia_connectors.codegraph.providers import build_codegraph_provider
-from orcia_core.bootstrap._internal.sql_workspace_datasources_queries import (
-    list_workspace_datasources_from_postgres18,
-)
+from orcia_core.bootstrap import list_workspace_datasources_from_postgres18
 from orcia_core.kernel.errors import ValidationDomainError
 from orcia_core.observability.logging import get_current_trace_id, get_logger
 

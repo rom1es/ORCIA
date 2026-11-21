@@ -18,7 +18,6 @@ from typing import Any
 from orcia_core.gates.deterministic import DeterministicGateService
 from orcia_core.gates.models import DeterministicGateInput, OntologyAxiomCheckRule
 from orcia_core.orchestration.connector_invoker import ConnectorInvoker, scrub_connector_secrets
-from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
 from orcia_kernel.ports import (
     ExecutionMode,
     LLMPort,
@@ -36,12 +35,6 @@ def _run_llm_sync(llm: LLMPort, request: LlmPromptRequest) -> Any:
         asyncio.get_running_loop()
     except RuntimeError:
         return asyncio.run(llm.complete(request))
-    if isinstance(llm, DeterministicCassetteLLM):
-        # DeterministicCassetteLLM is pure in-memory; run in a dedicated thread if loop is active
-        import concurrent.futures
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-            return pool.submit(lambda: asyncio.run(llm.complete(request))).result()
     import concurrent.futures
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
@@ -49,7 +42,7 @@ def _run_llm_sync(llm: LLMPort, request: LlmPromptRequest) -> Any:
 
 
 class AgentStepExecutor:
-    """Real `AGENT` step executor invoking `LLMPort` (`DeterministicCassetteLLM` in CI, `AC-F1`)."""
+    """Real `AGENT` step executor invoking `LLMPort` (`AC-F1`)."""
 
     def __init__(
         self,
@@ -57,7 +50,7 @@ class AgentStepExecutor:
         *,
         cognitive_router: Any | None = None,
     ) -> None:
-        self._llm: LLMPort = llm_gateway or DeterministicCassetteLLM()
+        self._llm: LLMPort | None = llm_gateway
         self._router = cognitive_router
 
     @property
@@ -65,7 +58,7 @@ class AgentStepExecutor:
         return "AGENT"
 
     @property
-    def llm_gateway(self) -> LLMPort:
+    def llm_gateway(self) -> LLMPort | None:
         return self._llm
 
     def set_llm_gateway(self, llm_gateway: LLMPort) -> None:
@@ -97,7 +90,7 @@ class AgentStepExecutor:
                     pass
 
             if not model_family or not model_id:
-                if isinstance(self._llm, DeterministicCassetteLLM):
+                if bool(getattr(self._llm, "is_cassette_adapter", False)):
                     model_family = "cassette"
                     model_id = f"cassette/{context.step_key}"
                 else:
@@ -107,6 +100,14 @@ class AgentStepExecutor:
                         inference_tier=str(context.metadata.get("inference_tier") or "complex"),
                         instance=f"agent_step_executor:{context.step_key}",
                     )
+
+        if self._llm is None:
+            from orcia_core.orchestration.errors import TierModelNotConfiguredError
+
+            raise TierModelNotConfiguredError(
+                inference_tier=str(context.metadata.get("inference_tier") or "complex"),
+                instance=f"agent_step_executor:{context.step_key}",
+            )
 
         prompt_req = LlmPromptRequest(
             system_prompt=(

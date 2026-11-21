@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-import sys
 from typing import Literal
 
 import httpx
 from fastapi import APIRouter, Request
 
 from orcia_api.dependencies import get_accostage_service
-from orcia_api.dependencies._core_providers import get_configured_db_engine
+from orcia_api.dependencies._core_providers import (
+    get_configured_db_engine,
+    should_auto_init_infra,
+)
 from orcia_api.routers._auth_policy_runtime import resolve_auth_policy_runtime
 from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.schemas import bootstrap as bs
@@ -35,8 +37,8 @@ def trace_id_for_bootstrap(request: Request) -> str:
 
 
 def raise_if_non_test_pg_error(exc: Exception, *, path: str) -> None:
-    """Propagate PostgreSQL infra errors outside isolated pytest unit runs."""
-    if "pytest" not in sys.modules:
+    """Propagate PostgreSQL infra errors when auto-infra initialization is enabled."""
+    if should_auto_init_infra("DATABASE_URL"):
         raise TransientInfraError(
             detail_override="PostgreSQL 18 unavailable during platform bootstrap.",
             instance=path,

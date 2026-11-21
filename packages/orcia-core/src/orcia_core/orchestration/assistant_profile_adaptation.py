@@ -1,10 +1,15 @@
-"""Profile Adaptation & Constitutional Prompt Layer Sanitizers (`Story 3.3`, `Story 26.1`)."""
+"""Profile Adaptation & Constitutional Prompt Layer Sanitizers (`Story 3.3`, `Story 26.2`)."""
 
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass
 from typing import Literal
+
+from orcia_core.orchestration.assistant_prompt_locales import (
+    CONSTITUTIONAL_LAYER_1_TEXT_EN,
+    CONSTITUTIONAL_LAYER_1_TEXT_FR,
+)
 
 AssistantLayerId = Literal[
     "1_CONSTITUTIONAL_IMMUTABLE",
@@ -22,17 +27,7 @@ AssistantIntentKind = Literal[
     "HUMAN_ANCHOR_WRITE_REFUSAL",
 ]
 
-CONSTITUTIONAL_LAYER_1_TEXT: str = (
-    "[CONSTITUTIONAL_IMMUTABLE_LAYER_1]\n"
-    "1. [NO_HUMAN_ANCHOR_WRITE]: Interdiction absolue de rédiger, pré-remplir ou modifier toute "
-    "section marquée `human_authored_required: true` (Human-Led Anchor Card). En cas de demande "
-    "de rédaction à la place de l'humain, refuser poliment et engager un questionnement "
-    "socratique.\n"
-    "2. [NO_GATE_SELF_APPROVAL]: Interdiction absolue d'approuver ou de contourner une Gate "
-    "Déterministe, Agentique ou Humaine.\n"
-    "3. [EXPLICIT_PROVENANCE_URI]: Toute affirmation factuelle doit citer son URI canonique "
-    "`orcia://` et son condensat `sha256:`."
-)
+CONSTITUTIONAL_LAYER_1_TEXT: str = CONSTITUTIONAL_LAYER_1_TEXT_FR
 
 _LAYER_OR_CONSTITUTIONAL_TAG_RE = re.compile(
     r"\[((?:LAYER|CONSTITUTIONAL|ONTOLOGY|HUMAN_PROFILE|ADAPTATION)(?:[_\s]+[^\]]*)?)\]",
@@ -61,6 +56,9 @@ class ProfileAdaptationSpec:
     ]
     highlighted_indicators: tuple[str, ...]
     response_prefix_fr: str
+    register_label_en: str = ""
+    highlighted_indicators_en: tuple[str, ...] = ()
+    response_prefix_en: str = ""
 
 
 PROFILE_ADAPTATION_MAP: dict[str, ProfileAdaptationSpec] = {
@@ -70,6 +68,9 @@ PROFILE_ADAPTATION_MAP: dict[str, ProfileAdaptationSpec] = {
         vocabulary_tier="N1_N2_EXECUTIVE",
         highlighted_indicators=("Coût FinOps ($)", "Gain TTM (%)", "Indice de Risque BU", "ROI"),
         response_prefix_fr="[Synthèse Direction N1/N2 — KPIs FinOps & TTM]",
+        register_label_en="Executive / BU — FinOps KPIs, ROI, TTM & N1/N2 Risks",
+        highlighted_indicators_en=("FinOps Cost ($)", "TTM Gain (%)", "BU Risk Index", "ROI"),
+        response_prefix_en="[Executive Summary N1/N2 — FinOps KPIs & TTM]",
     ),
     "PM": ProfileAdaptationSpec(
         archetype="PM",
@@ -82,6 +83,14 @@ PROFILE_ADAPTATION_MAP: dict[str, ProfileAdaptationSpec] = {
             "Ancres Humaines",
         ),
         response_prefix_fr="[Synthèse Produit & Règles de Gestion Métier]",
+        register_label_en="Product / Business — Domain Rules & Functional Invariants",
+        highlighted_indicators_en=(
+            "Business Rules",
+            "User Journeys",
+            "Acceptance Criteria",
+            "Human Anchors",
+        ),
+        response_prefix_en="[Product & Business Rules Summary]",
     ),
     "ARCHITECT": ProfileAdaptationSpec(
         archetype="ARCHITECT",
@@ -94,6 +103,14 @@ PROFILE_ADAPTATION_MAP: dict[str, ProfileAdaptationSpec] = {
             "Axiomes Ontologiques L1..L4",
         ),
         response_prefix_fr="[Synthèse Architecture N3 — URIs, Contrats & SHA-256]",
+        register_label_en="Architect — Canonical URIs, OpenAPI Contracts & SHA-256 Digests N3",
+        highlighted_indicators_en=(
+            "Canonical orcia:// URIs",
+            "OpenAPI 3.1 Contracts",
+            "CAS SHA-256 Digests",
+            "Ontology Axioms L1..L4",
+        ),
+        response_prefix_en="[Architecture Summary N3 — URIs, Contracts & SHA-256]",
     ),
     "TECH_LEAD": ProfileAdaptationSpec(
         archetype="TECH_LEAD",
@@ -106,6 +123,14 @@ PROFILE_ADAPTATION_MAP: dict[str, ProfileAdaptationSpec] = {
             "URIs orcia://",
         ),
         response_prefix_fr="[Synthèse Tech Lead N3 — Topologie DAG & Hashes SHA-256]",
+        register_label_en="Tech Lead — DAG Topology, Dependencies, SHA-256 & Execution N3",
+        highlighted_indicators_en=(
+            "DAG Steps & run-lock.json",
+            "CAS SHA-256 Digests",
+            "Coverage & Technical Debt",
+            "orcia:// URIs",
+        ),
+        response_prefix_en="[Tech Lead Summary N3 — DAG Topology & SHA-256]",
     ),
     "DEVELOPER": ProfileAdaptationSpec(
         archetype="DEVELOPER",
@@ -118,6 +143,14 @@ PROFILE_ADAPTATION_MAP: dict[str, ProfileAdaptationSpec] = {
             "URIs orcia://",
         ),
         response_prefix_fr="[Synthèse Technique N3 — Contrats & Pointeurs d'Étape]",
+        register_label_en="Developer — Step Specifications, Input/Output Schemas & Contracts N3",
+        highlighted_indicators_en=(
+            "JIT Artifact Pointers",
+            "Input/Output Schemas",
+            "CAS SHA-256 Digests",
+            "orcia:// URIs",
+        ),
+        response_prefix_en="[Technical Summary N3 — Contracts & Step Pointers]",
     ),
     "SECOPS": ProfileAdaptationSpec(
         archetype="SECOPS",
@@ -130,11 +163,46 @@ PROFILE_ADAPTATION_MAP: dict[str, ProfileAdaptationSpec] = {
             "Intégrité Audit Ledger",
         ),
         response_prefix_fr="[Synthèse SecOps — Preuves de Gates & Isolation Passthrough]",
+        register_label_en="SecOps — Gate Evidence, Passthrough Isolation & Compliance",
+        highlighted_indicators_en=(
+            "Gate Evidence",
+            "Passthrough / Service Principal Isolation",
+            "Permission Broker Policies",
+            "Audit Ledger Integrity",
+        ),
+        response_prefix_en="[SecOps Summary — Gate Evidence & Passthrough Isolation]",
     ),
 }
 
 
 def resolve_profile_adaptation(archetype: str) -> ProfileAdaptationSpec:
     """Resolve `ProfileAdaptationSpec` for a user's `human_profile_archetype` (`UX-DR12`)."""
-    norm = archetype.strip().upper()
+    norm = (archetype or "").strip().upper()
     return PROFILE_ADAPTATION_MAP.get(norm, PROFILE_ADAPTATION_MAP["ARCHITECT"])
+
+
+def resolve_profile_copy_for_locale(
+    spec: ProfileAdaptationSpec, *, locale: str = "fr"
+) -> tuple[str, tuple[str, ...], str]:
+    """Return `(register_label, highlighted_indicators, response_prefix)` in `locale`."""
+    if (locale or "fr").strip().lower().startswith("en"):
+        return (
+            spec.register_label_en or spec.register_label,
+            spec.highlighted_indicators_en or spec.highlighted_indicators,
+            spec.response_prefix_en or spec.response_prefix_fr,
+        )
+    return spec.register_label, spec.highlighted_indicators, spec.response_prefix_fr
+
+
+__all__ = [
+    "CONSTITUTIONAL_LAYER_1_TEXT",
+    "CONSTITUTIONAL_LAYER_1_TEXT_EN",
+    "CONSTITUTIONAL_LAYER_1_TEXT_FR",
+    "PROFILE_ADAPTATION_MAP",
+    "AssistantIntentKind",
+    "AssistantLayerId",
+    "ProfileAdaptationSpec",
+    "resolve_profile_adaptation",
+    "resolve_profile_copy_for_locale",
+    "sanitize_layer_marker_tags",
+]

@@ -6,6 +6,12 @@ import os
 
 from fastapi import Request
 
+from orcia_api.dependencies._llm_streaming_providers import (
+    get_llm_streaming_port as get_llm_streaming_port,
+)
+from orcia_api.dependencies._llm_streaming_providers import (
+    get_or_create_async_http_client as get_or_create_async_http_client,
+)
 from orcia_api.dependencies._rag_availability_guards import (
     get_embedding_port as get_embedding_port,
 )
@@ -16,8 +22,8 @@ from orcia_api.dependencies._rag_availability_guards import (
     require_rag_available as require_rag_available,
 )
 from orcia_api.dependencies.core_and_lifespan import initialize_app_services
-from orcia_core.bootstrap import ProgressiveDay0AccostageService
-from orcia_core.bootstrap._internal.sql_user_preferences import (
+from orcia_core.bootstrap import (
+    ProgressiveDay0AccostageService,
     SqlUserPreferencesAndMcpService,
 )
 from orcia_core.catalog.contextual_help import ContextualHelpResolutionService

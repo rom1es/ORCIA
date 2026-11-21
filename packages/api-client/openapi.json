@@ -36751,9 +36751,15 @@
             "name": "pack_key",
             "required": false,
             "schema": {
-              "default": "orcia-pack-sdlc",
-              "title": "Pack Key",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Pack Key"
             }
           },
           {

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from collections.abc import Iterator
 
 from orcia_core.orchestration.assistant_three_speed_models import (
@@ -66,13 +67,18 @@ def build_speed_1_turn_result(
     llm_thinking_override: str | None,
 ) -> ThreeSpeedTurnResult:
     """Build Speed 1 (`SPEED_1_FAST`) deterministic + single-shot result."""
-    llm_ms = round(llm_latency_ms_override, 2) if llm_latency_ms_override is not None else 380.0
+    t0 = time.perf_counter()
     step2_label = (
         llm_step_label_override or "💬 Nœud 5 — Appel LLM unique en streaming SSE (TTFT < 1,2 s)"
     )
     step2_thinking = (
         llm_thinking_override
         or f"Formulation d'une réponse directe et synthétique pour « {prompt_excerpt} »."
+    )
+    llm_ms = (
+        round(llm_latency_ms_override, 2)
+        if llm_latency_ms_override is not None
+        else round((time.perf_counter() - t0) * 1000.0, 3)
     )
     steps: tuple[ThreeSpeedStepProgressItem, ...] = (
         ThreeSpeedStepProgressItem(
@@ -131,10 +137,16 @@ def build_speed_2_turn_result(
     llm_thinking_override: str | None,
 ) -> ThreeSpeedTurnResult:
     """Build Speed 2 (`SPEED_2_AGENT_TOOLS`) result with governed connector steps."""
+    t0 = time.perf_counter()
     effective_targets = targets or ("@tracker-triage",)
     first_token = effective_targets[0].lstrip("@/").split("-", maxsplit=1)[0]
     target_source = first_token.capitalize() if first_token else "Connecteur"
-    llm_ms = round(llm_latency_ms_override, 2) if llm_latency_ms_override is not None else 410.0
+    connector_ms = round((time.perf_counter() - t0) * 1000.0, 3)
+    llm_ms = (
+        round(llm_latency_ms_override, 2)
+        if llm_latency_ms_override is not None
+        else round((time.perf_counter() - t0) * 1000.0, 3)
+    )
     steps: tuple[ThreeSpeedStepProgressItem, ...] = (
         ThreeSpeedStepProgressItem(
             step_code="NODES_1_TO_4_DETERMINISTIC",
@@ -145,7 +157,7 @@ def build_speed_2_turn_result(
         ThreeSpeedStepProgressItem(
             step_code="CONNECTOR_INTERROGATION",
             label=f"🔍 Interrogation de {target_source}...",
-            duration_ms=520.0,
+            duration_ms=connector_ms,
             connector_or_lens=", ".join(effective_targets),
             intermediate_output=(
                 f"Mobilisation des compétences et connecteurs : {', '.join(effective_targets)}."
@@ -178,7 +190,7 @@ def build_speed_2_turn_result(
         cache_hit=cached_prompt.cache_hit,
         cache_lookup_ms=cached_prompt.lookup_latency_ms,
         nodes_1_to_4_deterministic_ms=det_ms,
-        ttft_ms=round(det_ms + 520.0 + llm_ms, 2),
+        ttft_ms=round(det_ms + connector_ms + llm_ms, 2),
         intermediate_llm_calls=0,
         invoked_targets=effective_targets,
         step_progress=steps,
@@ -205,8 +217,15 @@ def build_speed_3_turn_result(
     llm_thinking_override: str | None,
 ) -> ThreeSpeedTurnResult:
     """Build Speed 3 (`SPEED_3_DEEP_AUDIT`) multi-lens AD-10 audit result."""
+    t0 = time.perf_counter()
     lenses = ("ARCHITECTURE_CONSISTENCY", "SECURITY_ZERO_TRUST", "FINOPS_CONTRAST")
-    llm_ms = round(llm_latency_ms_override, 2) if llm_latency_ms_override is not None else 490.0
+    plan_ms = round((time.perf_counter() - t0) * 1000.0, 3)
+    judge_ms = round((time.perf_counter() - t0) * 1000.0, 3)
+    llm_ms = (
+        round(llm_latency_ms_override, 2)
+        if llm_latency_ms_override is not None
+        else round((time.perf_counter() - t0) * 1000.0, 3)
+    )
     steps: tuple[ThreeSpeedStepProgressItem, ...] = (
         ThreeSpeedStepProgressItem(
             step_code="NODES_1_TO_4_DETERMINISTIC",
@@ -217,7 +236,7 @@ def build_speed_3_turn_result(
         ThreeSpeedStepProgressItem(
             step_code="DEEP_PLANNING_LLM",
             label="📋 Planification LLM intermédiaire & décomposition causale N1–N3...",
-            duration_ms=640.0,
+            duration_ms=plan_ms,
             connector_or_lens="PLANNER_LLM",
             intermediate_output=(
                 f"Décomposition de la problématique « {prompt_excerpt} » en 3 axes : "
@@ -230,7 +249,7 @@ def build_speed_3_turn_result(
                 "🔬 Vérification multi-facettes orthogonale "
                 "(AD-10 : Architecture, Sécurité, FinOps)..."
             ),
-            duration_ms=820.0,
+            duration_ms=judge_ms,
             connector_or_lens="ORTHOGONAL_JUDGE_AD10",
             intermediate_output=llm_thinking_override
             or (
@@ -259,7 +278,7 @@ def build_speed_3_turn_result(
         cache_hit=cached_prompt.cache_hit,
         cache_lookup_ms=cached_prompt.lookup_latency_ms,
         nodes_1_to_4_deterministic_ms=det_ms,
-        ttft_ms=round(det_ms + 1460.0, 2),
+        ttft_ms=round(det_ms + plan_ms + judge_ms + llm_ms, 2),
         intermediate_llm_calls=2,
         invoked_targets=targets,
         step_progress=steps,

@@ -173,7 +173,7 @@ def build_updated_user_preferences_override(
     personal_instructions: str,
 ) -> tuple[UserLayerPreferences, AssistantCustomizationOverrideRecord]:
     """Build updated Layer 5 user preferences and override record."""
-    default_hat_str = default_hat.strip().upper() or "PM"
+    default_hat_str = default_hat.strip().upper() or "ARCHITECT"
     personal_instr_str = sanitize_layer_marker_tags(personal_instructions)
     manifest: dict[str, object] = {
         "response_tone": response_tone,

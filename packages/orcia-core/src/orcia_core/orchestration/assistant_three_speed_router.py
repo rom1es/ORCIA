@@ -62,15 +62,16 @@ class AssistantThreeSpeedRouterService:
         *,
         workspace_id: str,
         user_id: str,
-        hat: str = "PM",
-        pack_key: str = "orcia-pack-sdlc",
+        hat: str = "ARCHITECT",
+        pack_key: str | None = None,
+        locale: str = "fr",
     ) -> CachedAssembledPromptResult:
         """Read assembled 5-layer prompt from cache (`< 5 ms`) or populate with `TTL = 300s`."""
-        norm_hat = hat.strip().upper() or "PM"
+        norm_hat = hat.strip().upper() or "ARCHITECT"
         key = build_assistant_prompt_cache_key(workspace_id, user_id, norm_hat)
         t0 = time.perf_counter()
         cached_raw = self._cache.get(key)
-        elapsed_ms = round(min((time.perf_counter() - t0) * 1000.0, 4.2), 3)
+        elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 3)
 
         if cached_raw is not None:
             data = json.loads(cached_raw)
@@ -97,7 +98,7 @@ class AssistantThreeSpeedRouterService:
             )
 
         layers = self._governance.assemble_five_layers_preview(
-            workspace_id=workspace_id, user_id=user_id, pack_key=pack_key
+            workspace_id=workspace_id, user_id=user_id, pack_key=pack_key, locale=locale
         )
         assembled_text = "\n\n".join(f"### {layer.label}\n{layer.content}" for layer in layers)
         digest = hashlib.sha256(assembled_text.encode("utf-8")).hexdigest()
@@ -172,7 +173,8 @@ class AssistantThreeSpeedRouterService:
         if user.platform_role == "OBSERVER":
             raise ObserverModeReadOnlyError()
 
-        active_hat = (hat or user.human_profile_archetype or "PM").strip().upper()
+        det_t0 = time.perf_counter()
+        active_hat = (hat or user.human_profile_archetype or "ARCHITECT").strip().upper()
         speed_mode, targets = detect_conversational_speed_mode(
             user_prompt,
             requested_speed=requested_speed,
@@ -181,7 +183,7 @@ class AssistantThreeSpeedRouterService:
         cached_prompt = self.get_or_assemble_cached_prompt(
             workspace_id=workspace_id, user_id=user.id, hat=active_hat
         )
-        det_ms = round(14.5 + cached_prompt.lookup_latency_ms, 2)
+        det_ms = round((time.perf_counter() - det_t0) * 1000.0, 3)
         if det_ms >= MAX_NODES_1_TO_4_DETERMINISTIC_MS:
             logger.warning(
                 "assistant_nodes_1_to_4_latency_exceeded",

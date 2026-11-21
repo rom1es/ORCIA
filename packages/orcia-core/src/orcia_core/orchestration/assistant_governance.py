@@ -202,7 +202,12 @@ class AssistantFourLevelGovernanceService:
         return updated
 
     def assemble_five_layers_preview(
-        self, *, workspace_id: str, user_id: str, pack_key: str = "orcia-pack-sdlc"
+        self,
+        *,
+        workspace_id: str,
+        user_id: str,
+        pack_key: str | None = None,
+        locale: str = "fr",
     ) -> tuple[AssembledLayerPreviewItem, ...]:
         """Build Tab 3 (`Assemblage complet`) showing the 5 active prompt layers (`AD-15`)."""
         return build_five_layers_preview_items(
@@ -213,8 +218,14 @@ class AssistantFourLevelGovernanceService:
             ws_settings=self.get_workspace_settings(workspace_id),
             team_instr=self._team_instructions.get(
                 workspace_id,
-                "Standards d'équipe : traçabilité systématique des décisions et revues croisées.",
+                "Team standards: decision traceability and peer review."
+                if locale.startswith("en")
+                else (
+                    "Standards d'équipe : traçabilité systématique des décisions "
+                    "et revues croisées."
+                ),
             ),
+            locale=locale,
         )
 
     def get_studio_graph(
@@ -260,7 +271,12 @@ class AssistantFourLevelGovernanceService:
         return self.get_studio_graph(workspace_id=scope_id)
 
     def get_governance_view(
-        self, user: UserIdentity, *, workspace_id: str, pack_key: str = "orcia-pack-sdlc"
+        self,
+        user: UserIdentity,
+        *,
+        workspace_id: str,
+        pack_key: str | None = None,
+        locale: str = "fr",
     ) -> AssistantGovernanceView:
         """Assemble full Mode A & Mode B governance view for `user` and `workspace_id`."""
         can_edit = can_manage_workspace_or_team(user)
@@ -271,7 +287,7 @@ class AssistantFourLevelGovernanceService:
             user_preferences=self.get_user_preferences(workspace_id=workspace_id, user_id=user.id),
             workspace_settings=self.get_workspace_settings(workspace_id),
             assembled_layers=self.assemble_five_layers_preview(
-                workspace_id=workspace_id, user_id=user.id, pack_key=pack_key
+                workspace_id=workspace_id, user_id=user.id, pack_key=pack_key, locale=locale
             ),
             studio_graph=self.get_studio_graph(workspace_id=workspace_id),
             override_records=tuple(self._overrides.values()),

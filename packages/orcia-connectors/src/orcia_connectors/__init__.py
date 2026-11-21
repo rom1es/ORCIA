@@ -6,6 +6,7 @@ Unified enterprise connectors library (`OrciaConnectorProtocol`: `healthcheck`, 
 
 from __future__ import annotations
 
+from orcia_connectors._internal.sql_jira_staged_actions import SqlJiraStagedActionsRepository
 from orcia_connectors.adapters import (
     AtlassianConfluenceConnector,
     AtlassianJiraConnector,
@@ -93,6 +94,7 @@ __all__ = [
     "SdlcFr13WorkflowPolicyPlugin",
     "SdlcMemlogMarkerPlugin",
     "SignedApprovalToken",
+    "SqlJiraStagedActionsRepository",
     "SqlReadonlyConnector",
     "StagedJiraActionItem",
     "SurgicalContextExplorer",

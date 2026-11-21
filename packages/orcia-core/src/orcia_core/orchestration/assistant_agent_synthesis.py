@@ -19,7 +19,6 @@ from orcia_core.orchestration.assistant_harness import AssembledAssistantPrompt,
 from orcia_core.orchestration.errors import TierModelNotConfiguredError
 from orcia_core.orchestration.step_executors import _run_llm_sync
 from orcia_core.permissions.models import UserIdentity
-from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
 from orcia_kernel.context_ports import AssistantWorkflowBlueprint
 from orcia_kernel.ports import LLMPort, LlmPromptRequest
 
@@ -101,7 +100,7 @@ def execute_saved_and_launched_workflow(
 
 def synthesize_assistant_turn_response(
     *,
-    llm_gateway: LLMPort,
+    llm_gateway: LLMPort | None,
     cognitive_router: Any | None,
     assembled: AssembledAssistantPrompt,
     intent: AssistantIntentKind,
@@ -134,12 +133,16 @@ def synthesize_assistant_turn_response(
                 error=str(exc),
             )
     if not model_family or not model_id:
-        if isinstance(llm_gateway, DeterministicCassetteLLM):
+        if bool(getattr(llm_gateway, "is_cassette_adapter", False)):
             model_family, model_id = "cassette", "cassette/assistant-agent"
         else:
             raise TierModelNotConfiguredError(
                 inference_tier="complex", instance=f"assistant_agent:{workspace_id}"
             )
+    if llm_gateway is None:
+        raise TierModelNotConfiguredError(
+            inference_tier="complex", instance=f"assistant_agent:{workspace_id}"
+        )
     llm_out = _run_llm_sync(
         llm_gateway,
         LlmPromptRequest(

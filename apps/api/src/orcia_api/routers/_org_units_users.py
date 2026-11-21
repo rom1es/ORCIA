@@ -18,7 +18,7 @@ from orcia_api.routers._org_units_helpers import (
     pg_sync_enabled,
 )
 from orcia_api.schemas.org_unit_models import KnownOrgUserResponse
-from orcia_core.bootstrap._internal.sql_org_known_users import (
+from orcia_core.bootstrap import (
     load_known_org_users_from_postgres18,
     search_known_org_users_from_postgres18,
 )

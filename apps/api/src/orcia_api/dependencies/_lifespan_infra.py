@@ -1,0 +1,181 @@
+"""Composition Root infrastructure, PG18 adapters & lifespan shutdown helpers (`AD-19`)."""
+
+from __future__ import annotations
+
+import os
+from contextlib import suppress
+from typing import Any
+
+from fastapi import FastAPI
+
+from orcia_api.dependencies._core_providers import should_auto_init_infra
+from orcia_connectors import (
+    MultiProjectJiraStagedActionService,
+    SqlJiraStagedActionsRepository,
+)
+from orcia_core.gates import SqlGateEvaluationRepository
+from orcia_core.observability.logging import get_logger
+from orcia_core.orchestration import (
+    DbosSqlAlchemyUnitOfWork,
+    GovernedMcpServerService,
+    SqlMcpExposureRepository,
+    SqlMcpProposalsRepository,
+)
+from orcia_core.orchestration.remote_test_bench_and_mcp_exposure import (
+    RemoteServiceTestBenchAndGovernedMcpService,
+)
+from orcia_core.workflows import upsert_vsm_definitions_v2_sql
+
+
+def init_pg_engine_and_uow(app: FastAPI) -> None:
+    """Initialize SQLAlchemy AsyncEngine, sessionmaker, and DBOS UnitOfWork on `app.state`."""
+    if getattr(app.state, "session_maker", None) is not None or not should_auto_init_infra(
+        "DATABASE_URL"
+    ):
+        return
+    try:
+        from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+        from sqlalchemy.pool import NullPool
+
+        from orcia_core.config import resolve_database_url
+
+        engine_kwargs: dict[str, object] = {"connect_args": {"timeout": 1.5}}
+        is_test_runtime = bool(
+            os.environ.get("ORCIA_ENV", "").strip().lower() == "test"
+            or os.environ.get("PYTEST_CURRENT_TEST", "").strip()
+            or os.environ.get("PYTEST_VERSION", "").strip()
+        )
+        if is_test_runtime:
+            engine_kwargs["poolclass"] = NullPool
+        db_engine = getattr(app.state, "db_engine", None)
+        if db_engine is None:
+            db_engine = create_async_engine(resolve_database_url(), **engine_kwargs)
+            app.state.db_engine = db_engine
+        app.state.session_maker = async_sessionmaker(db_engine, expire_on_commit=False)
+        if getattr(app.state, "dbos_uow", None) is None:
+            app.state.dbos_uow = DbosSqlAlchemyUnitOfWork.from_engine(
+                db_engine, session_factory=app.state.session_maker
+            )
+    except Exception as exc:
+        get_logger("orcia.api.lifespan").warning(
+            "lifespan_pg_session_maker_init_skipped", error_type=type(exc).__name__
+        )
+
+
+def attach_pg18_repositories(app: FastAPI) -> None:
+    """Attach PG18 SQL repositories to `app.state` domain services when `db_engine` exists."""
+    active_db_engine = getattr(app.state, "db_engine", None)
+    if active_db_engine is None:
+        return
+    if getattr(app.state, "gate_repository", None) is None:
+        gate_repo = SqlGateEvaluationRepository(active_db_engine)
+        app.state.gate_repository = gate_repo
+        if getattr(app.state, "bootstrap_service", None) is not None:
+            app.state.bootstrap_service.gate_service.set_repository(gate_repo)
+    wiz_svc = getattr(app.state, "durable_wizard_service", None)
+    if wiz_svc is not None and getattr(wiz_svc, "_repository", None) is None:
+        from orcia_core.bootstrap import SqlWizardSessionRepository
+
+        wiz_svc.set_repository(SqlWizardSessionRepository(active_db_engine))
+    if getattr(app.state, "jira_staged_action_service", None) is None:
+        app.state.jira_staged_action_service = MultiProjectJiraStagedActionService(
+            repository=SqlJiraStagedActionsRepository(active_db_engine),
+            strict_sql=True,
+        )
+    if getattr(app.state, "mcp_server_service", None) is None:
+        app.state.mcp_server_service = GovernedMcpServerService(
+            proposals_repository=SqlMcpProposalsRepository(
+                session_maker=getattr(app.state, "session_maker", None),
+                engine=active_db_engine,
+            ),
+            strict_sql=True,
+        )
+    if getattr(app.state, "remote_test_bench_and_mcp_service", None) is None:
+        app.state.remote_test_bench_and_mcp_service = RemoteServiceTestBenchAndGovernedMcpService(
+            repository=SqlMcpExposureRepository(
+                session_maker=getattr(app.state, "session_maker", None),
+                engine=active_db_engine,
+            ),
+            strict_sql=True,
+        )
+    for attr_name in (
+        "audit_ledger_service",
+        "connector_quota_guard_service",
+        "finops_accounting_service",
+        "cognitive_impact_service",
+        "post_hoc_audit_service",
+        "autonomous_supervision_service",
+        "contextual_help_service",
+        "notification_service",
+        "resource_lease_service",
+        "permission_broker_service",
+        "assistant_folders_and_sharing_service",
+    ):
+        svc_inst = getattr(app.state, attr_name, None)
+        if svc_inst is not None and getattr(svc_inst, "_engine", None) is None:
+            if hasattr(svc_inst, "set_engine"):
+                svc_inst.set_engine(active_db_engine)
+            else:
+                svc_inst._engine = active_db_engine
+
+
+async def startup_declarative_packs_and_dbos(app: FastAPI) -> None:
+    """Sync declarative packs, contextual help seeds, and DBOS datasource on startup."""
+    from orcia_core.bootstrap import upsert_declarative_pack_bundles_sql
+    from orcia_core.config import resolve_database_url
+
+    db_engine = getattr(app.state, "db_engine", None)
+    if db_engine is None:
+        return
+    try:
+        from orcia_core.packs.loader import DeclarativePackLoader, resolve_default_packs_root
+
+        pack_bundles = DeclarativePackLoader(resolve_default_packs_root()).load_all_packs()
+        app.state.declarative_pack_bundles = pack_bundles
+        await upsert_declarative_pack_bundles_sql(db_engine, pack_bundles)
+        await upsert_vsm_definitions_v2_sql(db_engine, pack_bundles)
+        help_svc = getattr(app.state, "contextual_help_service", None)
+        if help_svc is not None and hasattr(help_svc, "ensure_seeded_in_postgres18_async"):
+            await help_svc.ensure_seeded_in_postgres18_async()
+    except Exception as exc:
+        get_logger("orcia.api.lifespan").warning(
+            "lifespan_declarative_packs_pg_sync_skipped",
+            error_type=type(exc).__name__,
+        )
+    if getattr(app.state, "dbos_datasource", None) is None:
+        try:
+            uow = await DbosSqlAlchemyUnitOfWork.create(
+                resolve_database_url(),
+                engine=db_engine,
+                schema="dbos",
+                run_migrations=True,
+            )
+            app.state.dbos_datasource = uow.datasource
+            app.state.dbos_uow = uow
+        except Exception as exc:
+            get_logger("orcia.api.lifespan").warning(
+                "lifespan_dbos_datasource_fallback_engine", error_type=type(exc).__name__
+            )
+
+
+async def shutdown_app_resources(app: FastAPI, tracer_provider: Any) -> None:
+    """Close SSE broker, tracing, HTTPX client, Redis client, and SQLAlchemy engine."""
+    from orcia_core.observability import shutdown_tracing
+
+    sse_broker = getattr(app.state, "sse_broker", None)
+    if sse_broker is not None and hasattr(sse_broker, "stop_pubsub_listener"):
+        with suppress(Exception):
+            await sse_broker.stop_pubsub_listener()
+    shutdown_tracing(tracer_provider)
+    http_client = getattr(app.state, "http_client", None)
+    if http_client is not None:
+        with suppress(Exception):
+            await http_client.aclose()
+    redis_client = getattr(app.state, "redis_client", None)
+    if redis_client is not None:
+        with suppress(Exception):
+            await redis_client.aclose()
+    db_engine = getattr(app.state, "db_engine", None)
+    if db_engine is not None:
+        with suppress(Exception):
+            await db_engine.dispose()

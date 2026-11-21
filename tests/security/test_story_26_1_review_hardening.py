@@ -20,7 +20,6 @@ def _make_local_app(monkeypatch: pytest.MonkeyPatch) -> object:
     monkeypatch.delenv("ORCIA_ENABLE_PG_SESSION_MAKER", raising=False)
     monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
-    monkeypatch.delenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", raising=False)
     monkeypatch.setenv("ORCIA_ENV", "local")
     return create_app()
 

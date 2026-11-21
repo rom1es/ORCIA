@@ -14,6 +14,7 @@ from orcia_api.dependencies._assistant_guards import (
     can_user_manage_workspace_governance,
     enforce_assistant_workspace_guard,
 )
+from orcia_api.routers._assistant_prompt_sanitization import resolve_request_locale
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.assistant import (
     AssembledLayerPreviewSchemaItem,
@@ -109,7 +110,7 @@ async def get_assistant_governance_endpoint(
     user: CurrentUserDep,
     svc: GovernanceServiceDep,
     workspace_id: Annotated[str, Query()] = "scope-global",
-    pack_key: Annotated[str, Query()] = "orcia-pack-sdlc",
+    pack_key: Annotated[str | None, Query()] = None,
 ) -> AssistantGovernanceViewResponse:
     """Return Mode A (3 tabs) & Mode B (Studio graph) governance state (`Story 10.1`)."""
     await enforce_assistant_workspace_guard(
@@ -120,7 +121,12 @@ async def get_assistant_governance_endpoint(
         scope_level="GLOBAL" if workspace_id == "scope-global" else "WORKSPACE",
     )
     can_manage = await can_user_manage_workspace_governance(request, user, workspace_id)
-    view = svc.get_governance_view(user, workspace_id=workspace_id, pack_key=pack_key)
+    view = svc.get_governance_view(
+        user,
+        workspace_id=workspace_id,
+        pack_key=pack_key,
+        locale=resolve_request_locale(request),
+    )
     return AssistantGovernanceViewResponse(
         workspace_id=view.workspace_id,
         can_edit_workspace_layer=can_manage,

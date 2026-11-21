@@ -7,6 +7,9 @@ from typing import cast
 
 from orcia_core.bootstrap import workflow_bootstrap_seeds as wbs
 from orcia_core.bootstrap._internal.litellm_adapter import LiteLLMAdapter
+from orcia_core.bootstrap._internal.setup_snapshot_sanitizer import (
+    strip_snapshot_credentials,
+)
 from orcia_core.bootstrap._internal.smtp_otp_delivery import (
     DispatchedEmailOtpMessage,
     InMemoryOtpEmailSink,
@@ -26,6 +29,11 @@ from orcia_core.bootstrap._internal.sql_auth_policy import (
 from orcia_core.bootstrap._internal.sql_autonomy_contracts import (
     SqlAutonomyContractRepository,
     persist_autonomous_run_outcome_on_postgres18,
+)
+from orcia_core.bootstrap._internal.sql_datasource_freshness import (
+    get_datasource_webhook_context_from_postgres18,
+    record_webhook_delivery_and_outbox,
+    update_datasource_freshness_state,
 )
 from orcia_core.bootstrap._internal.sql_declarative_packs import (
     DeclarativePackBundleRecord,
@@ -95,6 +103,9 @@ from orcia_core.bootstrap._internal.sql_platform_setup_store import (
     load_platform_setup_state_from_postgres18,
     persist_progressive_llm_endpoint_to_postgres18,
     save_platform_setup_state_to_postgres18,
+)
+from orcia_core.bootstrap._internal.sql_user_preferences import (
+    SqlUserPreferencesAndMcpService,
 )
 from orcia_core.bootstrap._internal.sql_wizard_sessions import (
     SqlWizardSessionRepository,
@@ -293,7 +304,12 @@ __all__ = [
     "list_declarative_pack_bundles_sql",
     "resolve_exact_workspace_slug",
     "SqlAutonomyContractRepository",
+    "SqlUserPreferencesAndMcpService",
     "SqlWizardSessionRepository",
+    "get_datasource_webhook_context_from_postgres18",
+    "record_webhook_delivery_and_outbox",
+    "strip_snapshot_credentials",
+    "update_datasource_freshness_state",
     "upsert_declarative_pack_bundles_sql",
     "persist_autonomous_run_outcome_on_postgres18",
     "build_default_system_bootstrap_service",

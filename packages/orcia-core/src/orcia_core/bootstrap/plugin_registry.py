@@ -11,7 +11,6 @@ from importlib.metadata import EntryPoint, entry_points
 from typing import Any
 
 from orcia_core.bootstrap._internal.litellm_adapter import LiteLLMAdapter
-from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
 from orcia_kernel.ports import LLMPort
 
 URI_RESOLVER_ENTRYPOINT_GROUP = "orcia.uri_resolvers"
@@ -68,11 +67,6 @@ def build_litellm_gateway_plugin(**kwargs: Any) -> LLMPort:
     return LiteLLMAdapter(**kwargs)
 
 
-def build_cassette_gateway_plugin(**kwargs: Any) -> LLMPort:
-    """Entry point target for `cassette` deterministic CI LLM gateway."""
-    return DeterministicCassetteLLM(**kwargs)
-
-
 DEFAULT_URI_RESOLVER_ENTRY_POINTS: tuple[EntryPoint, ...] = (
     EntryPoint(
         name="git",
@@ -112,11 +106,6 @@ DEFAULT_LLM_GATEWAY_ENTRY_POINTS: tuple[EntryPoint, ...] = (
         value="orcia_core.bootstrap.plugin_registry:build_litellm_gateway_plugin",
         group=LLM_GATEWAY_ENTRYPOINT_GROUP,
     ),
-    EntryPoint(
-        name="cassette",
-        value="orcia_core.bootstrap.plugin_registry:build_cassette_gateway_plugin",
-        group=LLM_GATEWAY_ENTRYPOINT_GROUP,
-    ),
 )
 
 
@@ -153,7 +142,6 @@ __all__ = [
     "URI_RESOLVER_ENTRYPOINT_GROUP",
     "PluginRegistryService",
     "UriSchemePluginDescriptor",
-    "build_cassette_gateway_plugin",
     "build_litellm_gateway_plugin",
     "resolve_confluence_scheme_plugin",
     "resolve_db_scheme_plugin",

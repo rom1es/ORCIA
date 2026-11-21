@@ -581,15 +581,16 @@ capabilities:
     title: Page Profil utilisateur (/profile), 4 KPIs tokens/séries, éléments populaires et télémétrie tokens de Mon Assistant
     fr: [FR-25, FR-32]
     origin: epic
-    origin_ref: 20-4
+    origin_ref: 20-4 + 26-2
     status: live
     kind: feature
     uj: [UJ-16]
     db_tables: [users, audit_ledger, step_executions, workflow_runs, iam_accounts, org_units]
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-21"
     tests:
       - tests/unit/test_story_20_4_profile_streaks_and_assistant_usage.py
+      - tests/unit/test_story_26_2_core_llm_streaming_and_prompt_builder.py
       - tests/security/test_story_20_4_profile_isolation.py
       - tests/integration/api/test_story_20_4_profile_summary_postgres18.py
       - apps/web/src/__tests__/story-20-4-profile-overview-and-f5.test.tsx
@@ -597,7 +598,7 @@ capabilities:
       - apps/web/e2e/14-auth-2fa-account-and-profile.spec.ts
     surfaces:
       route: /profile
-      api: "user_profile.py (/api/v1/users/me/profile-summary), assistant_llm_providers.py, _assistant_usage_telemetry.py, assistant_background_turns.py, assistant_workspace.py"
+      api: "user_profile.py (/api/v1/users/me/profile-summary), llm_usage_telemetry.py, assistant_llm_providers.py, _assistant_usage_telemetry.py, assistant_background_turns.py, assistant_workspace.py"
       ui: "UserProfileOverviewPage + UserProfileRouteView"
 
   # ───────────── Mon Assistant (Epic 10 + ad-hoc) ─────────────
@@ -657,15 +658,15 @@ capabilities:
     title: Câblage LLM réel et streaming SSE multi-fournisseurs (« Envoyer à Mon Assistant »)
     fr: [FR-33]
     origin: adhoc
-    origin_ref: 2026-11-05-cablage-reel-llm-envoyer-a-mon-assistant-et-feedback-ui + 25-5
+    origin_ref: 2026-11-05-cablage-reel-llm-envoyer-a-mon-assistant-et-feedback-ui + 25-5 + 26-2
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [llm_model_endpoints, workspace_llm_tier_mappings, assistant_threads, inference_attempts]
-    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py, tests/integration/api/test_story_25_5_assistant_chat_only_and_rag_guard_postgres18.py]
+    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py, tests/unit/test_story_26_2_core_llm_streaming_and_prompt_builder.py, tests/integration/api/test_story_25_5_assistant_chat_only_and_rag_guard_postgres18.py]
     verification: runtime
     verified_at: "2026-11-21"
-    surfaces: { api: assistant_llm_bridge.py + assistant_llm_providers.py + assistant_llm_resolver.py }
+    surfaces: { api: llm_streaming_port.py + llm_streaming_httpx.py + assistant_prompt_builder.py + assistant_llm_bridge.py + assistant_llm_providers.py + assistant_llm_resolver.py }
 
   # ───────────── Mes Espaces, MCP/A2A, pack-builder (Epic 11) ─────────────
   - id: CAP-080
@@ -808,15 +809,15 @@ capabilities:
     title: Refactorisation LLM agnostique/async et vrai streaming SSE ; intégration Gemini (Mode A/B)
     fr: [FR-33]
     origin: adhoc
-    origin_ref: 2026-11-07-refactorisation-agnostique-async-llm-ontologie-et-vrai-streaming-sse + 2026-11-08-integration-gemini-argon-configuration-et-assistant + 25-5
+    origin_ref: 2026-11-07-refactorisation-agnostique-async-llm-ontologie-et-vrai-streaming-sse + 2026-11-08-integration-gemini-argon-configuration-et-assistant + 25-5 + 26-2
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [llm_model_endpoints, workspace_llm_tier_mappings, inference_attempts]
-    tests: [tests/unit/test_assistant_agnostic_async_llm_bridge.py, tests/unit/test_gemini_argon_provider_adapter.py, tests/integration/api/test_story_25_5_assistant_chat_only_and_rag_guard_postgres18.py, apps/web/src/__tests__/gemini-settings-and-assistant.test.tsx, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
+    tests: [tests/unit/test_assistant_agnostic_async_llm_bridge.py, tests/unit/test_gemini_argon_provider_adapter.py, tests/unit/test_story_26_2_core_llm_streaming_and_prompt_builder.py, tests/integration/api/test_story_25_5_assistant_chat_only_and_rag_guard_postgres18.py, apps/web/src/__tests__/gemini-settings-and-assistant.test.tsx, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
     verification: runtime
     verified_at: "2026-11-21"
-    surfaces: { api: assistant_llm_gemini_adapter.py + assistant_llm_providers.py + assistant_llm_resolver.py }
+    surfaces: { api: llm_gemini_dialect.py + llm_streaming_httpx.py + assistant_llm_gemini_adapter.py + assistant_llm_providers.py + assistant_llm_resolver.py }
   - id: CAP-084
     title: Mes Espaces — intégration glossaire/ontologie (option A) et processus de génération de documentation pack-builder
     fr: [FR-34, FR-35]

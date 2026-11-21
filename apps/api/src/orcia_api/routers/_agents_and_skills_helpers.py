@@ -8,6 +8,7 @@ from dataclasses import asdict
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from orcia_api.routers.assistant_llm_resolver import resolve_configured_llm_endpoint
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.agents_and_skills import AgentItemResponse, SkillItemResponse
 from orcia_core.catalog.errors import ObserverModeReadOnlyError
@@ -17,6 +18,11 @@ from orcia_core.orchestration import (
     ManagedAgentRecord,
     ManagedSkillRecord,
     load_agents_and_skills_from_postgres18,
+)
+from orcia_core.ports.llm_streaming_port import (
+    LlmEndpointConfig,
+    LlmStreamingPort,
+    LlmStreamRequest,
 )
 
 logger = get_logger("orcia.api.agents_skills")
@@ -81,3 +87,37 @@ async def sync_from_postgres18_if_enabled(
         svc.sync_from_records(skills=skills, agents=agents)
 
     await run_pg_persistence(request, _load)
+
+
+async def complete_optional_live_turn(
+    request: Request,
+    llm_port: LlmStreamingPort,
+    *,
+    system_prompt: str,
+    user_prompt: str,
+) -> str | None:
+    """Optionally invoke injected `LlmStreamingPort` when a live chat endpoint is active."""
+    ep = await resolve_configured_llm_endpoint(request)
+    if ep is None:
+        if getattr(request.app.state, "llm_streaming_port", None) is not None and not getattr(
+            llm_port, "is_cassette_adapter", False
+        ):
+            ep = LlmEndpointConfig(
+                provider="injected",
+                model_name="injected",
+                endpoint_uri="http://localhost",
+                auth_mode="none",
+            )
+        else:
+            return None
+    outcome = await llm_port.complete_chat(
+        LlmStreamRequest(
+            endpoint=ep,
+            messages=(
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ),
+            include_thoughts=True,
+        )
+    )
+    return outcome.content if outcome is not None and outcome.content else None

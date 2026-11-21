@@ -1,4 +1,4 @@
-"""Background Turn Producer (`asyncio.Task`) & Stream Consumer (`AD-15`, `Story 26.1`)."""
+"""Background Turn Producer (`asyncio.Task`) & Stream Consumer (`AD-15`, `Story 26.2`)."""
 
 from __future__ import annotations
 
@@ -38,11 +38,14 @@ from orcia_api.routers._assistant_usage_telemetry import (
     persist_assistant_turn_ledger_entry,
     resolve_usage_with_fallback,
 )
-from orcia_api.routers.assistant_llm_providers import (
-    ResolvedLiveLlmEndpoint,
-    stream_provider_chat_sse_async,
-)
 from orcia_core.observability.logging import get_logger, scrub_sensitive_text
+from orcia_core.orchestration.llm_streaming_httpx import HttpxMultiProviderLlmStreamingAdapter
+from orcia_core.orchestration.llm_streaming_sse_utils import delta_to_sse_dict
+from orcia_core.ports.llm_streaming_port import (
+    LlmEndpointConfig,
+    LlmStreamingPort,
+    LlmStreamRequest,
+)
 
 logger = get_logger("orcia.assistant.llm")
 
@@ -54,14 +57,14 @@ async def run_and_consume_decoupled_turn_stream(
     system_msg: str,
     default_thinking: str,
     fallback_response_text: str | None,
-    client_host: str,
-    ep: ResolvedLiveLlmEndpoint | None,
+    ep: LlmEndpointConfig | None,
     http_client_getter: Callable[[], httpx.AsyncClient],
     messages_builder: Callable[[], list[dict[str, Any]]],
     tools_builder: Callable[[], list[dict[str, Any]]],
     conversation_history_count: int,
     folder_pinned_notes: str | None,
     thinking_effort: str | None,
+    llm_port: LlmStreamingPort | None = None,
     user_id: str | None = None,
     user_email: str | None = None,
     user_display_name: str | None = None,
@@ -70,7 +73,7 @@ async def run_and_consume_decoupled_turn_stream(
     trace_id: str | None = None,
     speed_mode: str | None = None,
 ) -> AsyncIterator[dict[str, Any]]:
-    """Spawn a decoupled `asyncio.Task` producer and yield SSE events."""
+    """Spawn a decoupled `asyncio.Task` producer via `LlmStreamingPort` and yield SSE events."""
     t0 = time.perf_counter()
     turn_id = f"turn-{uuid.uuid4().hex[:10]}"
     bg_state = ActiveBackgroundTurnState(
@@ -124,15 +127,32 @@ async def run_and_consume_decoupled_turn_stream(
 
     async def _producer() -> None:
         try:
-            if ep is not None:
-                http_client = http_client_getter()
-                messages = messages_builder()
-                tools = tools_builder()
+            active_port = llm_port
+            if ep is not None or (
+                active_port is not None
+                and getattr(active_port, "is_cassette_adapter", False)
+                and not fallback_response_text
+            ):
+                stream_ep = ep or LlmEndpointConfig(
+                    provider="cassette",
+                    model_name="cassette-deterministic",
+                    endpoint_uri="http://localhost",
+                    auth_mode="none",
+                )
+                if active_port is None:
+                    active_port = HttpxMultiProviderLlmStreamingAdapter(
+                        http_client=http_client_getter()
+                    )
+                req = LlmStreamRequest(
+                    endpoint=stream_ep,
+                    messages=tuple(messages_builder()),
+                    tools=tuple(tools_builder()),
+                    include_thoughts=True,
+                )
                 emitted_tokens = False
                 obs_in, obs_out, obs_src, obs_lat = 0, 0, "estimated", 0.0
-                async for evt in stream_provider_chat_sse_async(
-                    http_client, ep=ep, messages=messages, tools=tools or None
-                ):
+                async for delta in active_port.stream_chat_sse(req):
+                    evt = delta_to_sse_dict(delta)
                     raw_data = evt.get("data")
                     data_dict: dict[str, Any] = raw_data if isinstance(raw_data, dict) else {}
                     if evt["event"] == "thinking_delta":
@@ -165,17 +185,16 @@ async def run_and_consume_decoupled_turn_stream(
                         obs_lat or (time.perf_counter() - t0) * 1000.0,
                     )
                     return
-                if client_host != "testclient":
-                    err_msg = scrub_sensitive_text(
-                        f"AI model {ep.model_name} ({ep.endpoint_uri}) returned zero tokens. "
-                        "Verify provider availability."
-                    )
-                    bg_state.status = "ERROR"
-                    bg_state.error_message = err_msg
-                    await notify_background_turn_event(
-                        bg_state, {"event": "stream_error", "data": {"message": err_msg}}
-                    )
-                    return
+                err_msg = scrub_sensitive_text(
+                    f"AI model {stream_ep.model_name} ({stream_ep.endpoint_uri}) "
+                    "returned zero tokens. Verify provider availability."
+                )
+                bg_state.status = "ERROR"
+                bg_state.error_message = err_msg
+                await notify_background_turn_event(
+                    bg_state, {"event": "stream_error", "data": {"message": err_msg}}
+                )
+                return
 
             bg_state.thinking_text = default_thinking
             await notify_background_turn_event(

@@ -5,8 +5,10 @@ from __future__ import annotations
 import hashlib
 import math
 import struct
-from collections.abc import Sequence
+import time
+from collections.abc import AsyncIterator, Sequence
 from dataclasses import dataclass
+from typing import Any
 
 from orcia_core.ports.embedding import EMBEDDING_FIXED_DIMENSION, EmbeddingPort
 from orcia_core.ports.llm_port import (
@@ -15,6 +17,12 @@ from orcia_core.ports.llm_port import (
     LlmPromptRequest,
     assert_model_orthogonality,
     compute_prompt_sha256,
+)
+from orcia_core.ports.llm_streaming_port import (
+    LlmChatTurnOutcome,
+    LlmStreamDelta,
+    LlmStreamingPort,
+    LlmStreamRequest,
 )
 
 
@@ -36,6 +44,8 @@ class DeterministicCassetteLLM(LlmGatewayPort):
     - Substring / scenario trigger matching (`WAITING_FOR_HUMAN_ARBITRATION`, `[ASSUMPTION]`)
     - AD-10 model family orthogonality verification when `executor_model_family` is set
     """
+
+    is_cassette_adapter: bool = True
 
     def __init__(self, entries: dict[str, CassetteEntry] | None = None) -> None:
         self._entries: dict[str, CassetteEntry] = dict(entries or {})
@@ -126,3 +136,72 @@ class DeterministicCassetteEmbedding(EmbeddingPort):
 
     def embed_query_sync(self, query: str) -> list[float]:
         return _cassette_vector_1024(query)
+
+
+class DeterministicCassetteLlmStreamingAdapter(LlmStreamingPort):
+    """Deterministic `LlmStreamingPort` adapter for CI/E2E cassette mode (`0 $` network calls)."""
+
+    is_cassette_adapter: bool = True
+
+    def __init__(self, *, canned_reply: str | None = None) -> None:
+        self._canned_reply = canned_reply
+
+    def _build_reply(self, request: LlmStreamRequest) -> tuple[str, str, int, int]:
+        user_msg = next(
+            (
+                str(m.get("content") or "")
+                for m in reversed(request.messages)
+                if m.get("role") == "user"
+            ),
+            "",
+        )
+        digest = hashlib.sha256(user_msg.encode("utf-8")).hexdigest()
+        reply = self._canned_reply or f"DETERMINISTIC_ACK:sha256:{digest[:12]}"
+        thinking = "Cassette deterministic reasoning."
+        in_tok = max(1, sum(len(str(m.get("content") or "")) for m in request.messages) // 4)
+        out_tok = max(1, (len(reply) + len(thinking)) // 4)
+        return reply, thinking, in_tok, out_tok
+
+    async def complete_chat(self, request: LlmStreamRequest) -> LlmChatTurnOutcome | None:
+        t0 = time.perf_counter()
+        reply, thinking, in_tok, out_tok = self._build_reply(request)
+        return LlmChatTurnOutcome(
+            content=reply,
+            thinking_text=thinking,
+            latency_ms=round((time.perf_counter() - t0) * 1000.0, 2),
+            input_tokens=in_tok,
+            output_tokens=out_tok,
+            usage_source="estimated",
+        )
+
+    async def stream_chat_sse(self, request: LlmStreamRequest) -> AsyncIterator[LlmStreamDelta]:
+        t0 = time.perf_counter()
+        reply, thinking, in_tok, out_tok = self._build_reply(request)
+        yield LlmStreamDelta(
+            event="thinking_delta",
+            delta=thinking,
+            thinking_text=thinking,
+            elapsed_ms=round((time.perf_counter() - t0) * 1000.0, 2),
+        )
+        acc: list[str] = []
+        for chunk in reply.splitlines(keepends=True) or [reply]:
+            acc.append(chunk)
+            yield LlmStreamDelta(
+                event="token_delta",
+                delta=chunk,
+                accumulated_text="".join(acc),
+            )
+        yield LlmStreamDelta(
+            event="turn_completed",
+            accumulated_text=reply,
+            thinking_text=thinking,
+            latency_ms=round((time.perf_counter() - t0) * 1000.0, 2),
+            input_tokens=in_tok,
+            output_tokens=out_tok,
+            usage_source="estimated",
+        )
+
+
+def build_cassette_gateway_plugin(**kwargs: Any) -> LlmGatewayPort:
+    """Entry point target for `cassette` deterministic CI LLM gateway."""
+    return DeterministicCassetteLLM(**kwargs)

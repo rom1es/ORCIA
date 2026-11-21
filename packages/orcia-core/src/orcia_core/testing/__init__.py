@@ -4,6 +4,14 @@ from orcia_core.testing.cassette_llm import (
     CassetteEntry,
     DeterministicCassetteEmbedding,
     DeterministicCassetteLLM,
+    DeterministicCassetteLlmStreamingAdapter,
+    build_cassette_gateway_plugin,
 )
 
-__all__ = ["CassetteEntry", "DeterministicCassetteEmbedding", "DeterministicCassetteLLM"]
+__all__ = [
+    "CassetteEntry",
+    "DeterministicCassetteEmbedding",
+    "DeterministicCassetteLLM",
+    "DeterministicCassetteLlmStreamingAdapter",
+    "build_cassette_gateway_plugin",
+]

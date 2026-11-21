@@ -59,7 +59,8 @@ def _build_assistant_fixture() -> tuple[AssistantAgentService, str]:
     from orcia_core.orchestration.step_executors import _DEFAULT_AGENT_EXECUTOR
     from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
 
-    _DEFAULT_AGENT_EXECUTOR.set_llm_gateway(DeterministicCassetteLLM())
+    cassette = DeterministicCassetteLLM()
+    _DEFAULT_AGENT_EXECUTOR.set_llm_gateway(cassette)
     fake_emb = FakeDeterministicEmbeddingAdapter()
     seeded_rag, _ = build_seeded_rag_service(embedding_port=fake_emb)
     workspace_id = _WS_PAY
@@ -90,6 +91,7 @@ def _build_assistant_fixture() -> tuple[AssistantAgentService, str]:
     service = AssistantAgentService(
         context_source=context_source,
         vector_store=vector_store,
+        llm_gateway=cassette,
         orchestration_setup=setup_svc,
         workflow_engine=setup_svc.engine,
     )

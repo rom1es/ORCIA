@@ -23,12 +23,10 @@ from orcia_core.orchestration import (
     AiModelMappingRecord,
     AiModelsHubService,
     discover_models_from_provider,
-    test_ai_model_endpoint_connection,
-    validate_safe_llm_endpoint_url,
-)
-from orcia_core.orchestration._internal.sql_ai_model_mappings import (
     ensure_ai_model_mappings_schema_on_postgres18,
     get_ai_model_mapping_pg18,
+    test_ai_model_endpoint_connection,
+    validate_safe_llm_endpoint_url,
 )
 from orcia_core.permissions import AuthAndOrganizationService, UserIdentity
 from orcia_core.permissions.errors import ObserverModeReadOnlyError, ScopeAccessDeniedError

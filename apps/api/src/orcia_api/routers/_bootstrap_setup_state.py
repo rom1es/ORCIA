@@ -19,8 +19,8 @@ from orcia_core import bootstrap as bm
 from orcia_core.bootstrap import (
     load_platform_setup_state_from_postgres18,
     save_platform_setup_state_to_postgres18,
+    strip_snapshot_credentials,
 )
-from orcia_core.bootstrap._internal.setup_snapshot_sanitizer import strip_snapshot_credentials
 from orcia_core.kernel.errors import ScopeAccessDeniedError
 from orcia_core.observability.logging import get_logger
 from orcia_kernel.ids import new_uuid7_str

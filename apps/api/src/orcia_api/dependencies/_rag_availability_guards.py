@@ -3,18 +3,20 @@
 from __future__ import annotations
 
 import inspect
-import os
 from typing import cast
 from urllib.parse import urlparse
 
-import httpx
 from fastapi import Request
 
-from orcia_core.orchestration._internal.sql_ai_model_mappings import (
+from orcia_api.dependencies._llm_streaming_providers import (
+    get_or_create_async_http_client,
+    is_cassette_llm_enabled,
+)
+from orcia_core.orchestration import (
     ensure_ai_model_mappings_schema_on_postgres18,
     get_active_global_embedding_model_pg18,
+    unpack_encrypted_api_key,
 )
-from orcia_core.orchestration.ai_models_crypto import unpack_encrypted_api_key
 from orcia_core.ports.embedding import EmbeddingPort
 from orcia_core.rag.adapters.embedding_httpx import (
     HttpxGeminiNativeEmbeddingAdapter,
@@ -71,9 +73,7 @@ async def get_embedding_port(request: Request) -> EmbeddingPort:
     if explicit_port is not None:
         return cast(EmbeddingPort, explicit_port)
 
-    http_client: httpx.AsyncClient | None = getattr(request.app.state, "http_client", None)
-    if http_client is None:
-        http_client = httpx.AsyncClient()
+    http_client = get_or_create_async_http_client(request)
 
     auth_svc = getattr(request.app.state, "auth_service", None)
     if auth_svc is None:
@@ -119,10 +119,7 @@ async def get_embedding_port(request: Request) -> EmbeddingPort:
                 target_host=host,
             )
 
-    if (
-        os.environ.get("ORCIA_USE_CASSETTE_LLM", "").strip().lower() in ("1", "true", "yes")
-        and os.environ.get("ORCIA_FORCE_LIVE_LLM_IN_TESTS") != "1"
-    ):
+    if is_cassette_llm_enabled():
         from orcia_core.testing.cassette_llm import DeterministicCassetteEmbedding
 
         return DeterministicCassetteEmbedding()

@@ -36,9 +36,12 @@ export function buildThreeSpeedTurnRequestPayload(params: {
     governancePrefs,
     isFr,
   } = params;
+  const attachmentHeader = isFr
+    ? "\n\n[Pièces jointes fournies par l'utilisateur]\n"
+    : "\n\n[User-supplied attachments]\n";
   const attachmentContext =
     attachedFiles && attachedFiles.length > 0
-      ? "\n\n[Pièces jointes fournies par l'utilisateur]\n" +
+      ? attachmentHeader +
         attachedFiles
           .map(
             (f) =>

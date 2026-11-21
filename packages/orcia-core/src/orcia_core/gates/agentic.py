@@ -38,7 +38,6 @@ from orcia_core.gates.pii_scrubber import (
     purge_executor_chain_of_thought,
 )
 from orcia_core.observability.logging import get_logger, scrub_sensitive_dict
-from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
 from orcia_kernel.events import GateEvaluated
 from orcia_kernel.ids import new_uuid7_str
 from orcia_kernel.ports import (
@@ -102,7 +101,7 @@ class AgenticGateService:
         pii_scrubber: PiiReversibleScrubber | None = None,
         outbox_relay: OutboxRelayPort | None = None,
     ) -> None:
-        self.llm_port: LLMPort = llm_port or DeterministicCassetteLLM()
+        self.llm_port: LLMPort | None = llm_port
         self.pii_scrubber: PiiReversibleScrubber = pii_scrubber or PiiReversibleScrubber()
         self._outbox_relay = outbox_relay
         self._evaluations: dict[str, GateEvaluationEntity] = {}
@@ -121,6 +120,8 @@ class AgenticGateService:
         self, gate_input: AgenticGateInput
     ) -> AgenticGateEvaluationResult:
         """Execute the 4 parallel lenses + 1 synthesis lens asynchronously (`AD-10`)."""
+        if self.llm_port is None:
+            raise RuntimeError("AgenticGateService requires an LLMPort instance.")
         routed_family, routed_model_id, is_local = _resolve_sovereign_evaluator_route(
             gate_input.executor_model_family,
             gate_input.evaluator_model_family,
@@ -288,6 +289,7 @@ class AgenticGateService:
             f"PRD_INVARIANTS={list(gate_input.step1_prd_invariants)}\n"
             f"ARCH_INVARIANTS={list(gate_input.step2_arch_invariants)}"
         )
+        assert self.llm_port is not None
         llm_res = await self.llm_port.complete(
             LlmPromptRequest(
                 system_prompt=sys_prompt,
@@ -349,6 +351,7 @@ class AgenticGateService:
             f"LENS=synthesis_and_structure\nSUMMARY={summary_candidate}\n"
             f"LENS_SCORES={[f.score for f in independent_findings]}"
         )
+        assert self.llm_port is not None
         llm_res = await self.llm_port.complete(
             LlmPromptRequest(
                 system_prompt="ORCIA Agentic Gate — Lens 5 Synthesis & 4-Block Review Briefing.",

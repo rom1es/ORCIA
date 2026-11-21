@@ -36,6 +36,11 @@ def _require_bound_runtime() -> DbosDurableWorkflowEngine:
     return _RUNTIME_BINDINGS[-1]
 
 
+def has_active_dbos_runtime_bindings() -> bool:
+    """Return True when a `DbosDurableWorkflowEngine` is currently bound."""
+    return bool(_RUNTIME_BINDINGS)
+
+
 @dataclass(frozen=True, slots=True)
 class DurableWorkflowRunSummary:
     """Result summary of a DBOS durable workflow run persisted in PostgreSQL 18."""

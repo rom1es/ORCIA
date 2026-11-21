@@ -22,13 +22,11 @@ from orcia_api.schemas.datasource_webhooks import (
     ReconcileWorkspaceStalenessResponse,
 )
 from orcia_api.schemas.problem_details import ProblemDetails
-from orcia_core.bootstrap._internal.sql_datasource_freshness import (
+from orcia_core.bootstrap import (
     get_datasource_webhook_context_from_postgres18,
+    list_workspace_datasources_from_postgres18,
     record_webhook_delivery_and_outbox,
     update_datasource_freshness_state,
-)
-from orcia_core.bootstrap._internal.sql_workspace_datasources_queries import (
-    list_workspace_datasources_from_postgres18,
 )
 from orcia_core.kernel.events import (
     DatasourceSyncRequested,

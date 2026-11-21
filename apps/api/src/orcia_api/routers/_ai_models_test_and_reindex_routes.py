@@ -41,8 +41,6 @@ from orcia_core.orchestration import (
     AiModelsHubService,
     CognitiveModelRouterService,
     ResolvedInferenceTier,
-)
-from orcia_core.orchestration._internal.sql_ai_model_mappings import (
     delete_or_drain_ai_model_mapping_pg18,
     ensure_ai_model_mappings_schema_on_postgres18,
     evaluate_ai_model_delete_impact_pg18,

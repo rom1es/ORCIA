@@ -68,7 +68,6 @@ async def test_pg18_vertical_assistant_scope_guard_resolver_and_setup_state(
     monkeypatch.setenv("ORCIA_ENV_FILE", str(REPO_ROOT / ".orcia-run" / "does-not-exist.env"))
     monkeypatch.setenv("ORCIA_ENV", "e2e")
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "false")
-    monkeypatch.setenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", "1")
     monkeypatch.setenv("ORCIA_JWT_SIGNING_SECRET", "orcia-26-1-jwt-secret-00000001")
     monkeypatch.setenv("ORCIA_PASSTHROUGH_MASTER_KEY", "orcia-26-1-vault-key-00000001")
     monkeypatch.setenv("ORCIA_ENABLE_PG_SESSION_MAKER", "1")

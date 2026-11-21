@@ -33,7 +33,6 @@ from orcia_core.orchestration.engine import DurableOrchestrationEngine
 from orcia_core.orchestration.run_lock_service import WorkflowOrchestrationSetupService
 from orcia_core.permissions.models import UserIdentity
 from orcia_core.rag.errors import NoActiveEmbeddingModelError, RagReindexInProgressError
-from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
 from orcia_kernel.context_ports import (
     ContextSliceRecord,
     ContextSourcePort,
@@ -73,7 +72,7 @@ class AssistantAgentService:
     ) -> None:
         self._context_source = context_source
         self._vector_store = vector_store
-        self._llm = llm_gateway or DeterministicCassetteLLM()
+        self._llm: LLMPort | None = llm_gateway
         self._harness = harness or AssistantHarness()
         self._setup = orchestration_setup
         self._engine = workflow_engine or (

@@ -7,7 +7,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Query, Request
 
-from orcia_api.dependencies import get_agents_and_skills_service
+from orcia_api.dependencies import get_agents_and_skills_service, get_llm_streaming_port
+from orcia_api.routers._agents_and_skills_helpers import (
+    complete_optional_live_turn as _complete_optional_live_turn,
+)
 from orcia_api.routers._agents_and_skills_helpers import (
     enforce_not_observer as _enforce_not_observer,
 )
@@ -27,7 +30,6 @@ from orcia_api.routers._agents_and_skills_helpers import (
     trace_id_for as _trace,
 )
 from orcia_api.routers._agents_and_skills_skills_routes import skills_router
-from orcia_api.routers.assistant_llm_bridge import invoke_configured_llm_for_assistant_turn
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.agents_and_skills import (
     AgentItemResponse,
@@ -46,6 +48,7 @@ from orcia_core.orchestration import (
     delete_agent_from_postgres18,
     persist_agent_to_postgres18,
 )
+from orcia_core.ports.llm_streaming_port import LlmStreamingPort
 
 router = APIRouter(prefix="/api/v1/agents-and-skills", tags=["agents-and-skills"])
 router.include_router(skills_router)
@@ -189,32 +192,30 @@ async def execute_agent_endpoint(
     payload: ExecuteAgentRequest,
     request: Request,
     svc: AgentsAndSkillsSvcDep,
+    llm_port: Annotated[LlmStreamingPort, Depends(get_llm_streaming_port)],
     agent_id: IdPath,
     persona_key: PersonaQuery = None,
 ) -> ExecuteAgentResponse:
     _enforce_not_observer(request, persona_key)
     await _sync_from_postgres18_if_enabled(request, svc)
     agent = svc.get_agent(agent_id, instance=str(request.url.path))
-    live_llm = await invoke_configured_llm_for_assistant_turn(
+    live_reply = await _complete_optional_live_turn(
         request,
-        user_prompt=payload.prompt,
-        hat="PLATFORM_ADMIN",
-        speed_mode="SPEED_1_FAST",
-        system_instructions_override=(
-            f"Tu es l'agent ORCIA « {agent.name} » ({agent.handle}). "
-            f"Posture : {agent.posture} | Binôme : {agent.human_partner_role}. "
-            f"Rôle et mission : {agent.role_mission}. "
-            f"Instructions : {agent.instructions}. "
+        llm_port,
+        system_prompt=(
+            f"You are ORCIA agent « {agent.name} » ({agent.handle}). "
+            f"Posture: {agent.posture} | Partner: {agent.human_partner_role}. "
+            f"Mission: {agent.role_mission}. Instructions: {agent.instructions}. "
             "Respond in the exact same language as the user's message "
             "(unless the user explicitly asks for another language)."
         ),
-        allow_system_override=True,
+        user_prompt=payload.prompt,
     )
     outcome = svc.execute_agent(
         agent_id,
         prompt=payload.prompt,
         instance=str(request.url.path),
-        llm_response_override=live_llm.response_text if live_llm is not None else None,
+        llm_response_override=live_reply,
     )
     validated_agent = svc.get_agent(agent_id, instance=str(request.url.path))
     await _run_pg_persistence(

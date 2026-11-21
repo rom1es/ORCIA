@@ -18,6 +18,14 @@ from orcia_core.ports.llm_port import (
     assert_model_orthogonality,
     compute_prompt_sha256,
 )
+from orcia_core.ports.llm_streaming_port import (
+    LlmChatTurnOutcome,
+    LlmEndpointConfig,
+    LlmStreamDelta,
+    LlmStreamEventType,
+    LlmStreamingPort,
+    LlmStreamRequest,
+)
 from orcia_core.ports.log_sink import (
     MAX_LOG_QUERY_LIMIT,
     LogEntry,
@@ -61,9 +69,15 @@ __all__ = [
     "BoundedWorkflowLauncherPort",
     "BoundedWorkflowSubStepDto",
     "EmbeddingPort",
+    "LlmChatTurnOutcome",
     "LlmCompletionResponse",
+    "LlmEndpointConfig",
     "LlmGatewayPort",
     "LlmPromptRequest",
+    "LlmStreamDelta",
+    "LlmStreamEventType",
+    "LlmStreamRequest",
+    "LlmStreamingPort",
     "LogEntry",
     "LogQuery",
     "LogSinkQueryPort",

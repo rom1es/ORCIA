@@ -207,8 +207,12 @@ def test_api_rag_search_returns_422_when_no_active_embedding_model() -> None:
     assert resp.headers.get("content-type") == "application/problem+json"
 
 
-def test_api_assistant_and_federated_search_succeed_when_no_active_embedding_model() -> None:
+def test_api_assistant_and_federated_search_succeed_when_no_active_embedding_model(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """AD-24 Epic 25: Assistant and GET /search stay unlocked (200) without embedding model."""
+    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
     app = create_app()
 
     def _raise_no_model() -> EmbeddingPort:

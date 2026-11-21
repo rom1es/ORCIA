@@ -63,6 +63,7 @@ def _build_assistant_service() -> AssistantAgentService:
     return AssistantAgentService(
         context_source=context_source,
         vector_store=vector_store,
+        llm_gateway=DeterministicCassetteLLM(),
         orchestration_setup=setup_svc,
         workflow_engine=setup_svc.engine,
     )

@@ -7,15 +7,15 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Query, Request
 
-from orcia_api.dependencies import get_agents_and_skills_service
+from orcia_api.dependencies import get_agents_and_skills_service, get_llm_streaming_port
 from orcia_api.routers._agents_and_skills_helpers import (
+    complete_optional_live_turn,
     enforce_not_observer,
     run_pg_persistence,
     serialize_skill,
     sync_from_postgres18_if_enabled,
     trace_id_for,
 )
-from orcia_api.routers.assistant_llm_bridge import invoke_configured_llm_for_assistant_turn
 from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.schemas.agents_and_skills import (
     DeleteSkillOrAgentResponse,
@@ -29,6 +29,7 @@ from orcia_core.orchestration import (
     delete_skill_from_postgres18,
     persist_skill_to_postgres18,
 )
+from orcia_core.ports.llm_streaming_port import LlmStreamingPort
 
 skills_router = APIRouter()
 AgentsAndSkillsSvcDep = Annotated[
@@ -80,31 +81,30 @@ async def execute_skill_endpoint(
     payload: ExecuteSkillRequest,
     request: Request,
     svc: AgentsAndSkillsSvcDep,
+    llm_port: Annotated[LlmStreamingPort, Depends(get_llm_streaming_port)],
     skill_id: IdPath,
     persona_key: PersonaQuery = None,
 ) -> ExecuteSkillResponse:
     enforce_not_observer(request, persona_key)
     await sync_from_postgres18_if_enabled(request, svc)
     skill = svc.get_skill(skill_id, instance=str(request.url.path))
-    live_llm = await invoke_configured_llm_for_assistant_turn(
+    live_reply = await complete_optional_live_turn(
         request,
-        user_prompt=payload.input_text,
-        hat="PLATFORM_ADMIN",
-        speed_mode="SPEED_1_FAST",
-        system_instructions_override=(
-            f"Tu exécutes la compétence ORCIA « {skill.name} » ({skill.command_handle}). "
-            f"Objectif : {skill.objective}. Instructions : {skill.instructions}. "
-            f"Format attendu : {skill.expected_output_format}. "
+        llm_port,
+        system_prompt=(
+            f"You are executing ORCIA skill « {skill.name} » ({skill.command_handle}). "
+            f"Objective: {skill.objective}. Instructions: {skill.instructions}. "
+            f"Expected output format: {skill.expected_output_format}. "
             "Respond in the exact same language as the user's message "
             "(unless the user explicitly asks for another language)."
         ),
-        allow_system_override=True,
+        user_prompt=payload.input_text,
     )
     outcome = svc.execute_skill(
         skill_id,
         input_text=payload.input_text,
         parameters=payload.parameters,
         instance=str(request.url.path),
-        llm_response_override=live_llm.response_text if live_llm is not None else None,
+        llm_response_override=live_reply,
     )
     return ExecuteSkillResponse(**asdict(outcome), trace_id=trace_id_for(request))

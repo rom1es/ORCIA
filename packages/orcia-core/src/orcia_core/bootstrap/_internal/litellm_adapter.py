@@ -8,7 +8,7 @@ deterministic cassette fallback (`0 $` external LLM calls in CI).
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import httpx
 
@@ -23,7 +23,6 @@ from orcia_core.permissions.connector_invoker import (
 )
 from orcia_core.permissions.pinned_http import prepare_pinned_http_request
 from orcia_core.permissions.secret_manager import EnvelopeVaultSecretProvider
-from orcia_core.testing.cassette_llm import CassetteEntry, DeterministicCassetteLLM
 from orcia_kernel.errors import (
     FunctionalConnectorError,
     OrciaDomainError,
@@ -125,7 +124,7 @@ class LiteLLMAdapter(LLMPort):
         cost_per_1k_input_usd: float = 0.003,
         cost_per_1k_output_usd: float = 0.015,
         http_client: httpx.AsyncClient | None = None,
-        fallback_cassette: DeterministicCassetteLLM | None = None,
+        fallback_cassette: LLMPort | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._secret_provider: SecretProviderPort = secret_provider or EnvelopeVaultSecretProvider()
@@ -145,7 +144,7 @@ class LiteLLMAdapter(LLMPort):
         self._cost_in = cost_per_1k_input_usd
         self._cost_out = cost_per_1k_output_usd
         self._client = http_client
-        self._fallback = fallback_cassette
+        self._fallback: Any = fallback_cassette
         self._last_invocation_outcome: ConnectorInvocationOutcome | None = None
 
     @property
@@ -158,10 +157,15 @@ class LiteLLMAdapter(LLMPort):
         """Return the latest `ConnectorInvocationOutcome` when `connector_invoker` is used."""
         return self._last_invocation_outcome
 
-    def register(self, key_or_sha256: str, entry: CassetteEntry) -> None:
+    def register(self, key_or_sha256: str, entry: Any) -> None:
         """Register or override a deterministic cassette entry on the offline fallback cassette."""
         if self._fallback is None:
-            self._fallback = DeterministicCassetteLLM()
+            from importlib.metadata import entry_points
+
+            eps = list(entry_points(group="orcia.llm_gateways").select(name="cassette"))
+            if not eps:
+                raise RuntimeError("No fallback_cassette injected or cassette plugin registered.")
+            self._fallback = eps[0].load()()
         self._fallback.register(key_or_sha256, entry)
 
     @property
@@ -169,7 +173,7 @@ class LiteLLMAdapter(LLMPort):
         """Return immutable tuple of all recorded requests on the fallback cassette."""
         if self._fallback is None:
             return ()
-        return self._fallback.call_history
+        return cast(tuple[LlmPromptRequest, ...], self._fallback.call_history)
 
     def _resolve_api_key(self) -> str:
         """Resolve API key on-the-fly from `SecretProviderPort` (`DEC-SEC-01`, `NFR-SEC-4`)."""
@@ -189,15 +193,12 @@ class LiteLLMAdapter(LLMPort):
         import asyncio
         import concurrent.futures
 
-        async def _do_post() -> dict[str, Any]:
-            return await self._post_chat_completions(payload)
-
         try:
             asyncio.get_running_loop()
         except RuntimeError:
-            return asyncio.run(_do_post())
+            return asyncio.run(self._post_chat_completions(payload))
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-            return pool.submit(lambda: asyncio.run(_do_post())).result()
+            return pool.submit(lambda: asyncio.run(self._post_chat_completions(payload))).result()
 
     async def _post_chat_completions(self, payload: dict[str, Any]) -> dict[str, Any]:
         resolved_key = self._resolve_api_key()
@@ -208,18 +209,15 @@ class LiteLLMAdapter(LLMPort):
             "X-Trace-Id": trace_id,
         }
         get_logger("orcia.litellm").info(
-            "litellm.gateway.call",
-            model=payload.get("model"),
-            secret_ref=str(self._api_key_ref),
+            "litellm.gateway.call", model=payload.get("model"), secret_ref=str(self._api_key_ref)
         )
         target_url = f"{self._base_url}/chat/completions"
 
         async def _send(client: httpx.AsyncClient) -> dict[str, Any]:
             p_url, p_hdrs, p_ext = await prepare_pinned_http_request(client, target_url, headers)
-            post_kw: dict[str, Any] = {"json": payload, "headers": p_hdrs}
-            if p_ext:
-                post_kw["extensions"] = p_ext
-            response = await client.post(p_url, **post_kw)
+            response = await client.post(
+                p_url, json=payload, headers=p_hdrs, extensions=p_ext or None
+            )
             response.raise_for_status()
             body: dict[str, Any] = response.json()
             return body
@@ -238,7 +236,7 @@ class LiteLLMAdapter(LLMPort):
             )
 
         if self._fallback is not None and self._client is None and self._invoker is None:
-            return await self._fallback.complete(request)
+            return cast(LlmCompletionResponse, await self._fallback.complete(request))
 
         prompt_sha256 = compute_prompt_sha256(request)
         trace_id = get_current_trace_id()

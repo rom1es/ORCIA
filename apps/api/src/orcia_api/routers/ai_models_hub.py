@@ -13,10 +13,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Query, Request
 
-from orcia_api.dependencies import (
-    get_ai_models_hub_service,
-    get_auth_service,
-)
+from orcia_api.dependencies import get_ai_models_hub_service, get_auth_service
 from orcia_api.routers._ai_models_helpers import (
     compute_tiers_coverage,
     execute_models_discovery,
@@ -24,9 +21,7 @@ from orcia_api.routers._ai_models_helpers import (
     resolve_mapping_decrypted_key,
     to_item_response,
 )
-from orcia_api.routers._ai_models_reindex_helpers import (
-    trigger_global_reindexing_job,
-)
+from orcia_api.routers._ai_models_reindex_helpers import trigger_global_reindexing_job
 from orcia_api.routers._ai_models_test_and_reindex_routes import (
     router as test_and_reindex_router,
 )
@@ -47,8 +42,6 @@ from orcia_api.schemas.ai_models_hub import (
 )
 from orcia_core.orchestration import (
     AiModelsHubService,
-)
-from orcia_core.orchestration._internal.sql_ai_model_mappings import (
     create_ai_model_mapping_pg18,
     ensure_ai_model_mappings_schema_on_postgres18,
     list_ai_model_mappings_pg18,
@@ -168,11 +161,7 @@ async def create_ai_model_mapping(
         )
 
     if rec.usage == "embedding" and rec.scope_level == "GLOBAL" and rec.is_active:
-        await trigger_global_reindexing_job(
-            request,
-            rec,
-            actor_id=user.id,
-        )
+        await trigger_global_reindexing_job(request, rec, actor_id=user.id)
     return to_item_response(rec)
 
 
@@ -231,11 +220,7 @@ async def update_ai_model_mapping(
         )
 
     if rec.usage == "embedding" and rec.scope_level == "GLOBAL" and rec.is_active:
-        await trigger_global_reindexing_job(
-            request,
-            rec,
-            actor_id=user.id,
-        )
+        await trigger_global_reindexing_job(request, rec, actor_id=user.id)
     return to_item_response(rec)
 
 
@@ -305,5 +290,4 @@ async def discover_ai_models_get(
 
 
 router.include_router(test_and_reindex_router)
-
 __all__ = ["router", "test_ai_model_connection"]

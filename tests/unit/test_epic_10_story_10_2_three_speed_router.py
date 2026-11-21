@@ -160,8 +160,12 @@ def test_story_10_2_three_speeds_routing_and_slos() -> None:
     assert len(turn_s3.step_progress) == 4
 
 
-def test_story_10_2_api_endpoints_turn_stream_and_invalidation() -> None:
+def test_story_10_2_api_endpoints_turn_stream_and_invalidation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Verify `/api/v1/assistant/three-speed/*` endpoints (`Story 10.2`)."""
+    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
     app.state.embedding_port = FakeDeterministicEmbeddingAdapter()
     ws_id = "0192c4e0-0000-7000-8000-000000000201"
     with TestClient(app) as client:
@@ -285,7 +289,9 @@ def test_story_10_2_live_llm_bridge_agnostic_provider_and_url_normalization(
             },
         )
 
-    monkeypatch.setenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", "1")
+    monkeypatch.delenv("ORCIA_USE_CASSETTE_LLM", raising=False)
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
 
     with TestClient(app) as client:
         app.state.embedding_port = FakeDeterministicEmbeddingAdapter()
@@ -418,7 +424,9 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
             },
         )
 
-    monkeypatch.setenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", "1")
+    monkeypatch.delenv("ORCIA_USE_CASSETTE_LLM", raising=False)
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
 
     with TestClient(app) as client:
         app.state.embedding_port = FakeDeterministicEmbeddingAdapter()

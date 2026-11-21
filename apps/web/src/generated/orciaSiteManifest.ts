@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 57,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 208,
+    "techLeadReportsCount": 209,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 61,
@@ -543,6 +543,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-21",
+      "phaseOrStory": "Story 26.2",
+      "reportFile": "26-2-core-llm-streaming-extraction-and-unified-prompt-builder-tech-lead-report.md",
+      "domain": "Epic 26 Lot 2 — Hexagonal LlmStreamingPort & HTTPX Multi-Provider Extraction (openai_compatible, anthropic, gemini_native), Unified Localized AssistantPromptBuilder, Prod Test/Cassette Branch Purge & <= 300 L Harness Splits (CAP-069, CAP-074, CAP-076)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): extracted LlmStreamingPort (orcia_core/ports/llm_streaming_port.py, zero SDK imports) and httpx multi-provider streaming + usage telemetry + endpoint resolver (llm_* modules in orcia_core/orchestration) with DNS-pinned SSRF + strict thinking/content separation; unified the 3 prompt builders into AssistantPromptBuilder + assistant_prompt_locales.py (fr/en strict separation, 0 French in en) + resolve_default_hat from human_profile_archetype; purged synthetic latencies (perf_counter() timings), hardcoded pack_key/URIs, _internal imports in apps/api/src, testing.cassette_llm imports in orcia_core domains (orcia.llm_gateways entry point + DeterministicCassetteLlmStreamingAdapter), agents_and_skills -> assistant_llm_bridge coupling, and testclient/pytest/ORCIA_FORCE_LIVE_LLM_IN_TESTS prod branches; all Story 26.2 harness modules <= 298 L (step_executors.py 524 L deferred to Story 26.3 split); verified 92.64% independent targeted Story 26.2 coverage (92.95% dev run), 1094 passed (unit+security+evals+contract), 2/2 passed PG18 create_app() testcontainers, 15 passed / 1 skipped / 0 failed Playwright Desktop E2E (00, 02, 12-finops, 12-epic16, 16, 21), 9/9 Turbo (20+136+261 JS/TS), lint-imports (5/5, 679 files), ruff/mypy --strict (635 files), export_openapi (0-diff), lint_spine (0), detect-secrets (exit 0)."
+    },
     {
       "date": "2026-11-21",
       "phaseOrStory": "Story 26.1",

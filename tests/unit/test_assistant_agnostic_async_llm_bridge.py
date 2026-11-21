@@ -220,7 +220,9 @@ def test_pillar_6_true_async_sse_streaming_preserves_multiline_markdown_indentat
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Verify true async SSE streaming (`aiter_lines()`) preserves `\n` and 4-space code blocks."""
-    monkeypatch.setenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", "1")
+    monkeypatch.delenv("ORCIA_USE_CASSETTE_LLM", raising=False)
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
 
     sse_lines = [
         'data: {"choices": [{"delta": {"reasoning_content": "Analyzing factorial recursion..."}}]}',
@@ -301,7 +303,9 @@ def test_pillar_5_and_8_multi_turn_history_tools_and_structured_error_logging(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Verify multi-turn `conversation_history`, `tools` in Speed 2, and structured HTTP logs."""
-    monkeypatch.setenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", "1")
+    monkeypatch.delenv("ORCIA_USE_CASSETTE_LLM", raising=False)
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
 
     msgs = build_multi_turn_messages(
         system_msg="Sys",
@@ -501,7 +505,9 @@ def test_background_turn_continuity_stop_and_feedback_endpoints(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Verify GET /active-turn, POST /stop, POST /feedback, and `assembled_system_prompt`."""
-    monkeypatch.setenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", "1")
+    monkeypatch.delenv("ORCIA_USE_CASSETTE_LLM", raising=False)
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
 
     sse_lines = [
         'data: {"choices": [{"delta": {"reasoning_content": "Analyse DORA art 28"}}]}',

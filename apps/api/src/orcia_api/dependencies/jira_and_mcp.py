@@ -8,9 +8,8 @@ from orcia_api.dependencies._core_providers import (
     get_configured_db_engine,
     should_auto_init_infra,
 )
-from orcia_connectors._internal.sql_jira_staged_actions import SqlJiraStagedActionsRepository
-from orcia_connectors.jira_actions import MultiProjectJiraStagedActionService
-from orcia_core.orchestration._internal.sql_mcp_proposals import SqlMcpProposalsRepository
+from orcia_connectors import MultiProjectJiraStagedActionService, SqlJiraStagedActionsRepository
+from orcia_core.orchestration import SqlMcpProposalsRepository
 from orcia_core.orchestration.mcp_server import GovernedMcpServerService
 
 

@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from typing import Any
 
 from fastapi import Request
 
+from orcia_api.dependencies._llm_streaming_providers import get_llm_streaming_port
 from orcia_api.routers._assistant_llm_stream_bridge import (
     get_or_create_async_http_client as _get_or_create_async_http_client,
 )
@@ -53,9 +53,6 @@ from orcia_api.routers.assistant_llm_providers import (
     extract_thinking_and_clean_content as extract_thinking_and_clean_content,
 )
 from orcia_api.routers.assistant_llm_providers import (
-    invoke_provider_chat_async,
-)
-from orcia_api.routers.assistant_llm_providers import (
     is_anthropic_provider as is_anthropic_provider,
 )
 from orcia_api.routers.assistant_llm_providers import (
@@ -79,6 +76,7 @@ from orcia_api.routers.assistant_llm_resolver import (
 from orcia_api.routers.assistant_llm_resolver import (
     select_endpoint_from_tiers as _select_endpoint_from_tiers,
 )
+from orcia_core.ports.llm_streaming_port import LlmStreamingPort, LlmStreamRequest
 
 
 @dataclass(frozen=True, slots=True)
@@ -119,7 +117,7 @@ def resolve_assembled_system_instructions_for_turn(
 ) -> str:
     """Build the complete 5-layer + ontology + preferences system prompt for a turn."""
     assembled_5_layers, ontology_summary = resolve_5_layers_and_ontology_from_request(
-        request, workspace_id=workspace_id, user_id=user_id, hat=hat
+        request, workspace_id=workspace_id, user_id=user_id, hat=hat, locale=locale
     )
     return build_assistant_system_instructions(
         hat=hat,
@@ -158,18 +156,16 @@ async def invoke_configured_llm_for_assistant_turn(
     workspace_instructions: str | None = None,
     folder_pinned_notes: str | None = None,
     locale: str | None = None,
+    llm_port: LlmStreamingPort | None = None,
 ) -> LiveLlmTurnOutcome | None:
-    """Asynchronously invoke the configured LLM endpoint with 5-layer prompt, history & tools."""
-    client_host = getattr(getattr(request, "client", None), "host", "") or ""
-    if client_host == "testclient" and os.environ.get("ORCIA_FORCE_LIVE_LLM_IN_TESTS") != "1":
-        return None
-
+    """Invoke the configured LLM endpoint via `LlmStreamingPort` with 5-layer prompt & tools."""
     ep = await resolve_configured_llm_endpoint(
         request, requested_tier=requested_tier, workspace_id=workspace_id
     )
     if ep is None:
         return None
 
+    active_port = llm_port or get_llm_streaming_port(request)
     resolved_locale = resolve_request_locale(request, locale)
     effort = (thinking_effort or "").strip().lower() or (
         "deep"
@@ -204,15 +200,23 @@ async def invoke_configured_llm_for_assistant_turn(
         f"{t}: {s}"
         for t, s in detect_adaptive_thinking_steps_for_question(user_prompt, locale=resolved_locale)
     )
-    step_label = f"💬 Modèle IA {ep.model_name} ({ep.provider} · {effort_label}) — réponse générée"
+    step_label = (
+        f"💬 AI Model {ep.model_name} ({ep.provider} · {effort_label}) — reply generated"
+        if resolved_locale == "en"
+        else f"💬 Modèle IA {ep.model_name} ({ep.provider} · {effort_label}) — réponse générée"
+    )
     messages = build_multi_turn_messages(
         system_msg=system_msg, user_prompt=user_prompt, conversation_history=conversation_history
     )
     tools = build_workspace_tools_schema(request, speed_mode)
-    http_client = _get_or_create_async_http_client(request)
 
-    outcome = await invoke_provider_chat_async(
-        http_client, ep=ep, messages=messages, tools=tools or None
+    outcome = await active_port.complete_chat(
+        LlmStreamRequest(
+            endpoint=ep,
+            messages=tuple(messages),
+            tools=tuple(tools),
+            include_thoughts=True,
+        )
     )
     if outcome is None:
         return None
@@ -233,7 +237,9 @@ async def invoke_configured_llm_for_assistant_turn(
                 ),
             },
         ]
-        second = await invoke_provider_chat_async(http_client, ep=ep, messages=followup_msgs)
+        second = await active_port.complete_chat(
+            LlmStreamRequest(endpoint=ep, messages=tuple(followup_msgs), include_thoughts=True)
+        )
         if second is not None and second.content:
             content = second.content
             total_in_tokens += second.input_tokens
@@ -264,6 +270,7 @@ __all__ = [
     "LiveLlmTurnOutcome",
     "ResolvedLiveLlmEndpoint",
     "_extract_tier_endpoint_from_dict",
+    "_get_or_create_async_http_client",
     "_select_endpoint_from_tiers",
     "build_assistant_system_instructions",
     "build_legacy_local_chat_url",

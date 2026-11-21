@@ -22,6 +22,7 @@ from orcia_core.orchestration._internal._sql_orchestration_governance import (
 from orcia_core.orchestration._internal.dbos_engine import (
     DbosDurableWorkflowEngine,
     DurableWorkflowRunSummary,
+    has_active_dbos_runtime_bindings,
 )
 from orcia_core.orchestration._internal.outbox_repository import (
     AsyncSubscriberCallback,
@@ -33,6 +34,27 @@ from orcia_core.orchestration._internal.sql_agents_and_skills import (
     load_agents_and_skills_from_postgres18,
     persist_agent_to_postgres18,
     persist_skill_to_postgres18,
+)
+from orcia_core.orchestration._internal.sql_ai_model_mappings import (
+    create_ai_model_mapping_pg18,
+    delete_or_drain_ai_model_mapping_pg18,
+    ensure_ai_model_mappings_schema_on_postgres18,
+    evaluate_ai_model_delete_impact_pg18,
+    get_active_global_embedding_model_pg18,
+    get_ai_model_mapping_pg18,
+    list_ai_model_mappings_pg18,
+    record_ai_model_test_result_pg18,
+    resolve_decrypted_ai_model_for_tier_pg18,
+    update_ai_model_mapping_pg18,
+)
+from orcia_core.orchestration._internal.sql_dna_mechanisms import (
+    SqlStarlarkMechanismRepository,
+)
+from orcia_core.orchestration._internal.sql_mcp_exposure import (
+    SqlMcpExposureRepository,
+)
+from orcia_core.orchestration._internal.sql_mcp_proposals import (
+    SqlMcpProposalsRepository,
 )
 from orcia_core.orchestration._internal.sql_repository import SqlOrchestrationRepository
 from orcia_core.orchestration._internal.sql_workflow_triggers import (
@@ -462,10 +484,18 @@ __all__ = [
     "build_default_orchestration_setup_service",
     "build_default_tier_mappings",
     "compute_text_sha256",
+    "create_ai_model_mapping_pg18",
     "delete_agent_from_postgres18",
+    "delete_or_drain_ai_model_mapping_pg18",
     "delete_skill_from_postgres18",
+    "ensure_ai_model_mappings_schema_on_postgres18",
     "ensure_run_row_exists_in_session",
     "ensure_workflow_definition_sql",
+    "evaluate_ai_model_delete_impact_pg18",
+    "get_active_global_embedding_model_pg18",
+    "get_ai_model_mapping_pg18",
+    "has_active_dbos_runtime_bindings",
+    "list_ai_model_mappings_pg18",
     "list_human_anchor_signatures_sql",
     "list_human_arbitrations_sql",
     "list_upstream_challenges_sql",
@@ -474,12 +504,18 @@ __all__ = [
     "mark_upstream_challenges_replayed_sql",
     "persist_agent_to_postgres18",
     "persist_skill_to_postgres18",
+    "record_ai_model_test_result_pg18",
     "register_default_step_executors",
     "register_memlog_marker_plugin",
     "register_workflow_policy_plugin",
+    "resolve_decrypted_ai_model_for_tier_pg18",
     "resolve_existing_user_id_sql",
     "resolve_profile_adaptation",
     "scrub_connector_secrets",
+    "SqlMcpExposureRepository",
+    "SqlMcpProposalsRepository",
+    "SqlStarlarkMechanismRepository",
+    "update_ai_model_mapping_pg18",
     "upsert_human_anchor_signature_sql",
     "upsert_human_arbitration_sql",
     "upsert_run_lock_manifest_sql",

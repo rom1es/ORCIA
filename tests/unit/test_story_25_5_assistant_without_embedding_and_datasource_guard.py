@@ -7,7 +7,7 @@ Proves:
    `/three-speed/stream`, `/threads/{thread_id}/turns`) and `GET /api/v1/search` succeed (`200`)
    even when `get_embedding_port` raises `NoActiveEmbeddingModelError` or
    `RagReindexInProgressError`.
-3. In live LLM mode (`ORCIA_FORCE_LIVE_LLM_IN_TESTS=1`), `0` active `chat` model (including when
+3. In live LLM mode (non-cassette), `0` active `chat` model (including when
    only an `embedding` model exists) raises HTTP `422 ERR_TIER_MODEL_NOT_CONFIGURED`.
 4. `create_workspace_datasource_on_postgres18` and
    `assert_active_global_embedding_model_for_rag_source` reject `DOCUMENT_KB`, `WORK_TRACKER`,
@@ -57,9 +57,12 @@ def test_assistant_agent_service_responds_without_embedding_and_skips_rag_citati
         blackboard_snapshots_provider=lambda _ws: (),
         permission_policies_provider=lambda _ws: (),
     )
+    from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
+
     service = AssistantAgentService(
         context_source=context_source,
         vector_store=vector_store,
+        llm_gateway=DeterministicCassetteLLM(),
         orchestration_setup=setup_svc,
         workflow_engine=setup_svc.engine,
     )
@@ -93,7 +96,6 @@ def test_all_assistant_routes_and_federated_search_succeed_without_embedding(
 ) -> None:
     """All 5 Assistant routes and GET /search stay 200 when embedding is missing or reindexing."""
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
-    monkeypatch.delenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", raising=False)
     monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
     monkeypatch.setenv("ORCIA_ENV_FILE", "/tmp/orcia-unit-none.env")
     monkeypatch.delenv("DATABASE_URL", raising=False)
@@ -178,7 +180,7 @@ def test_live_assistant_rejects_422_when_zero_active_chat_model_even_if_embeddin
     from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
     from tests.unit.fakes.in_memory_reindex import InMemoryReindexManager
 
-    monkeypatch.setenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", "1")
+    monkeypatch.delenv("ORCIA_USE_CASSETTE_LLM", raising=False)
     monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
     monkeypatch.setenv("ORCIA_ENV_FILE", "/tmp/orcia-unit-none.env")
     monkeypatch.delenv("DATABASE_URL", raising=False)
@@ -425,7 +427,6 @@ async def test_rag_guards_and_llm_resolver_branches_without_pg(
         secret_input=SecretInputSpec(action="set", plaintext_value="sk-emb-secret"),
     )
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "0")
-    monkeypatch.setenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", "1")
     port_oai = await get_embedding_port(fake_request)  # type: ignore[arg-type]
     assert isinstance(port_oai, HttpxOpenAiCompatibleEmbeddingAdapter)
 
@@ -461,11 +462,9 @@ async def test_rag_guards_and_llm_resolver_branches_without_pg(
     assert select_endpoint_from_tiers(tiers, "nonexistent") is not None
 
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "1")
-    monkeypatch.delenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", raising=False)
     assert await resolve_configured_llm_endpoint(fake_request) is None  # type: ignore[arg-type]
 
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "0")
-    monkeypatch.setenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", "1")
     app.state.platform_setup_snapshot = None
     app.state.ai_models_hub_service = hub_svc
     hub_svc.create_mapping(
@@ -611,7 +610,6 @@ async def test_datasource_mutations_validation_and_llm_resolver_pg_paths(
     app.state.db_engine = engine
     app.state.platform_setup_snapshot = None
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "0")
-    monkeypatch.setenv("ORCIA_FORCE_LIVE_LLM_IN_TESTS", "1")
 
     async def _noop_schema(_conn: Any) -> None:
         return None

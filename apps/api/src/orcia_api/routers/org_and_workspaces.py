@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-import sys
 from typing import Literal, cast
 
 from fastapi import APIRouter, Path, Query, Request
 
 from orcia_api.dependencies import get_auth_service
-from orcia_api.dependencies._core_providers import get_configured_db_engine
+from orcia_api.dependencies._core_providers import (
+    get_configured_db_engine,
+    should_auto_init_infra,
+)
 from orcia_api.routers._finops_auth_guards import enforce_observer_headers_guard
 from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
 from orcia_api.routers._personal_workspace_sync import ensure_user_personal_workspace_from_pg
@@ -98,7 +100,7 @@ async def create_workspace_endpoint(
     await sync_evaluator_topology_from_pg(request, svc)
 
     engine = get_configured_db_engine(request)
-    if engine is None and "pytest" not in sys.modules:
+    if engine is None and should_auto_init_infra("DATABASE_URL"):
         raise TransientInfraError(
             detail_override="PostgreSQL 18 indisponible pour la création d'espace.",
             instance=str(request.url.path),
