@@ -1,5 +1,5 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { OrciaIcon, type OrciaIconName } from "../components/icons";
 import {
   RgaaUnsavedChangesAlert,
@@ -104,6 +104,7 @@ export function UserSettingsModalDialog({
   onRevokeMcpToken,
 }: UserSettingsModalDialogProps): React.ReactElement | null {
   const [isDirty, setIsDirty] = useState(false);
+  useEffect(() => { if (!open) setIsDirty(false); }, [open]);
   const guardLabels = resolveRgaaModalGuardLabels(labels, locale);
 
   const { showUnsavedAlert, requestClose, cancelDiscard, confirmDiscard } =

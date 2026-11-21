@@ -1,22 +1,5 @@
 """Story 10.3 — Deterministic Citations (`[S1]`, `[G1]`, `[O1]`), Per-Reader Filtering & V5 Guard.
 
-Implements:
-- Numbered Evidence Table (`EvidenceTable`) built at Node 3 (`3_PARALLEL_FAN_OUT`) and injected
-  into Node 4 (`4_PROMPT_LAYER_ASSEMBLY`):
-  - `[S1..Sn]`: Document sources where `REFERENCE` strictly outranks `ACTIVE`, with freshness
-    status (`FRESH` or `STALE_WARNING`).
-  - `[G1..Gn]`: Glossary terms and `N1–N3` Ontology axioms.
-  - `[O1..On]`: MCP tool / connector outputs.
-- Dynamic per-reader `READ_SOURCE` filtering (`AD-21`): if a reader of a shared thread lacks
-  `READ_SOURCE` on `[S1]`, purges `snippet = None` server-side and returns
-  `[S1 · 🔒 Source restreinte — Demander l'accès]`.
-- `< 5 ms` deterministic post-stream phantom citation verifier replacing out-of-bounds tags
-  (`[S99]`, `[G42]`, `[O9]`) with `[Citation non vérifiée]` and recording an append-only
-  audit entry.
-- **Verrou V5 (`AD-15`)**: blocks any direct write to external enterprise SI connectors (`mcp://`,
-  `db://`, `catalog://`) or `@v1` Vault officialization from `Mon Assistant` with
-  `HTTP 422 ERR_DIRECT_SI_WRITE_REQUIRES_PROCESS_GATE` (`DirectSiWriteRequiresProcessGateError`).
-
 Zero framework/SDK imports (`fastapi`, `sqlalchemy`, `redis`, `litellm`, `dramatiq`).
 """
 
@@ -25,9 +8,22 @@ from __future__ import annotations
 import hashlib
 import re
 import time
-from dataclasses import dataclass, field
-from typing import Literal
 
+from orcia_core.orchestration.assistant_citations_models import (
+    ArtifactCardActionOutcome,
+    ArtifactCardActionType,
+    CitationVerificationResult,
+    EvidenceGlossaryCitation,
+    EvidenceSourceCitation,
+    EvidenceTable,
+    EvidenceToolCitation,
+    PhantomCitationAuditEntry,
+    RawGlossaryCandidate,
+    RawSourceCandidate,
+    RawToolOutputCandidate,
+    SourceAuthorityTier,
+    SourceFreshnessStatus,
+)
 from orcia_core.orchestration.errors import (
     DirectSiWriteRequiresProcessGateError,
     ObserverModeReadOnlyError,
@@ -35,142 +31,8 @@ from orcia_core.orchestration.errors import (
 from orcia_core.permissions.models import UserIdentity
 from orcia_kernel.ids import new_uuid7_str
 
-SourceAuthorityTier = Literal["REFERENCE", "ACTIVE"]
-SourceFreshnessStatus = Literal["FRESH", "STALE_WARNING"]
-ArtifactCardActionType = Literal[
-    "COPY",
-    "EXPORT_MD",
-    "EXPORT_JSON",
-    "SAVE_DRAFT",
-    "CONTINUE_IN_PROCESS",
-    "DIRECT_SI_WRITE",
-    "PUBLISH_V1_VAULT",
-]
-
 UNVERIFIED_CITATION_BADGE: str = "[Citation non vérifiée]"
 _CITATION_TAG_RE = re.compile(r"\[([SGO]\d+)\]")
-
-
-@dataclass(frozen=True, slots=True)
-class RawSourceCandidate:
-    """Candidate document source retrieved at Node 3 (`3_PARALLEL_FAN_OUT`)."""
-
-    uri: str
-    title: str
-    authority_tier: SourceAuthorityTier
-    freshness: SourceFreshnessStatus
-    snippet: str
-    line_start: int = 1
-    line_end: int = 25
-    relevance_score: float = 0.9
-
-
-@dataclass(frozen=True, slots=True)
-class RawGlossaryCandidate:
-    """Candidate Glossary term or `N1–N3` Ontology axiom retrieved at Node 3."""
-
-    term_or_axiom_id: str
-    label: str
-    ontology_level: Literal["N1_DIRECTIVE", "N2_NORME", "N3_MECANISME", "L4_GLOSSARY"]
-    definition: str
-
-
-@dataclass(frozen=True, slots=True)
-class RawToolOutputCandidate:
-    """Candidate MCP tool or governed connector output retrieved at Node 3."""
-
-    tool_name: str
-    connector_uri: str
-    summary: str
-
-
-@dataclass(frozen=True, slots=True)
-class EvidenceSourceCitation:
-    """Numbered `[S1..Sn]` source entry in the Evidence Table (`Story 10.3`)."""
-
-    tag: str
-    index: int
-    uri: str
-    title: str
-    authority_tier: SourceAuthorityTier
-    freshness: SourceFreshnessStatus
-    snippet: str | None
-    line_start: int
-    line_end: int
-    restricted_access: bool = False
-    display_pill: str = ""
-    request_access_uri: str | None = None
-
-
-@dataclass(frozen=True, slots=True)
-class EvidenceGlossaryCitation:
-    """Numbered `[G1..Gn]` Glossary / Ontology axiom entry in the Evidence Table."""
-
-    tag: str
-    index: int
-    term_or_axiom_id: str
-    label: str
-    ontology_level: Literal["N1_DIRECTIVE", "N2_NORME", "N3_MECANISME", "L4_GLOSSARY"]
-    definition: str
-
-
-@dataclass(frozen=True, slots=True)
-class EvidenceToolCitation:
-    """Numbered `[O1..On]` MCP tool / connector entry in the Evidence Table."""
-
-    tag: str
-    index: int
-    tool_name: str
-    connector_uri: str
-    summary: str
-
-
-@dataclass(frozen=True, slots=True)
-class EvidenceTable:
-    """Complete numbered Evidence Table (`[S1..Sn]`, `[G1..Gn]`, `[O1..On]`) (`Story 10.3`)."""
-
-    sources: tuple[EvidenceSourceCitation, ...]
-    glossary_items: tuple[EvidenceGlossaryCitation, ...]
-    tool_outputs: tuple[EvidenceToolCitation, ...]
-    footer_summary_line: str
-    citation_map_emitted_at_ms: float = 80.0
-
-
-@dataclass(frozen=True, slots=True)
-class PhantomCitationAuditEntry:
-    """Append-only audit record emitted when an out-of-bounds citation tag is stripped."""
-
-    audit_id: str
-    workspace_id: str
-    user_id: str
-    stripped_tags: tuple[str, ...]
-    verification_duration_ms: float
-    payload_sha256: str
-
-
-@dataclass(frozen=True, slots=True)
-class CitationVerificationResult:
-    """Result of `< 5 ms` post-stream citation verification (`Story 10.3`)."""
-
-    sanitized_text: str
-    valid_tags: tuple[str, ...]
-    stripped_phantom_tags: tuple[str, ...]
-    verification_duration_ms: float
-    audit_entry: PhantomCitationAuditEntry | None
-    evidence_table: EvidenceTable
-
-
-@dataclass(frozen=True, slots=True)
-class ArtifactCardActionOutcome:
-    """Outcome of an action on a Structured Artifact Card in `Mon Assistant` (`Story 10.3`)."""
-
-    action_id: str
-    workspace_id: str
-    action_type: ArtifactCardActionType
-    artifact_title: str
-    artifact_version_tag: str
-    draft_uri: str | None = None
-    process_launch_prefill: dict[str, object] = field(default_factory=dict)
 
 
 class AssistantCitationAndV5GuardService:
@@ -264,9 +126,7 @@ class AssistantCitationAndV5GuardService:
         """Purge `snippet` server-side when `reader` lacks `READ_SOURCE` on `[S1..Sn]` (`AD-21`)."""
         filtered_sources: list[EvidenceSourceCitation] = []
         for src in evidence_table.sources:
-            has_read_source = (
-                reader.platform_role == "PLATFORM_ADMIN" or src.uri in reader_allowed_source_uris
-            )
+            has_read_source = src.uri in reader_allowed_source_uris
             if has_read_source:
                 filtered_sources.append(src)
             else:
@@ -419,3 +279,22 @@ class AssistantCitationAndV5GuardService:
             artifact_title=artifact_title,
             artifact_version_tag="@draft",
         )
+
+
+__all__ = [
+    "UNVERIFIED_CITATION_BADGE",
+    "ArtifactCardActionOutcome",
+    "ArtifactCardActionType",
+    "AssistantCitationAndV5GuardService",
+    "CitationVerificationResult",
+    "EvidenceGlossaryCitation",
+    "EvidenceSourceCitation",
+    "EvidenceTable",
+    "EvidenceToolCitation",
+    "PhantomCitationAuditEntry",
+    "RawGlossaryCandidate",
+    "RawSourceCandidate",
+    "RawToolOutputCandidate",
+    "SourceAuthorityTier",
+    "SourceFreshnessStatus",
+]

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from fastapi import Request
@@ -20,16 +21,43 @@ from orcia_api.schemas.assistant import (
     ActiveBackgroundTurnStatusResponse,
     ThreeSpeedTurnRequest,
 )
+from orcia_core.kernel.errors import OrciaDomainError
 from orcia_core.observability.logging import get_logger
+from orcia_core.orchestration._assistant_folders_helpers import enforce_folder_turn_access
+from orcia_core.orchestration.assistant_three_speed_router import AssistantSpeedMode
 from orcia_core.permissions.models import UserIdentity
 
 logger = get_logger("orcia.assistant.llm")
+_SPEED2_MENTION_OR_SLASH_RE = re.compile(r"(?:^|\s)(?:@[a-zA-Z0-9_-]{2,}|/[a-zA-Z0-9_-]{2,})")
+
+
+def resolve_effective_speed(
+    payload: ThreeSpeedTurnRequest,
+) -> tuple[bool, AssistantSpeedMode | None, AssistantSpeedMode]:
+    """Determine effective deep audit flag, requested speed, and resolved runtime speed."""
+    effective_deep_audit = payload.deep_audit_pill_active or payload.thinking_effort == "deep"
+    effective_speed: AssistantSpeedMode | None = payload.requested_speed or (
+        "SPEED_3_DEEP_AUDIT"
+        if effective_deep_audit
+        else "SPEED_2_AGENT_TOOLS"
+        if payload.thinking_effort == "balanced"
+        else None
+    )
+    resolved_for_llm: AssistantSpeedMode = effective_speed or (
+        "SPEED_2_AGENT_TOOLS"
+        if _SPEED2_MENTION_OR_SLASH_RE.search(payload.user_prompt or "")
+        else "SPEED_1_FAST"
+    )
+    return effective_deep_audit, effective_speed, resolved_for_llm
 
 
 async def resolve_turn_history(
-    request: Request, payload: ThreeSpeedTurnRequest
+    request: Request,
+    payload: ThreeSpeedTurnRequest,
+    *,
+    user: UserIdentity | None = None,
 ) -> list[dict[str, Any]]:
-    """Build multi-turn conversation history, hydrating from thread summary if empty."""
+    """Build multi-turn conversation history, checking folder ACLs before loading thread summary."""
     history: list[dict[str, Any]] = [
         {"role": m.role, "content": m.content, "name": m.name, "tool_call_id": m.tool_call_id}
         for m in payload.conversation_history
@@ -40,11 +68,26 @@ async def resolve_turn_history(
             overview = await folders_svc.get_workspace_overview_async(
                 workspace_id=payload.workspace_id
             )
-            for t in overview.threads:
-                if t.thread_id == payload.thread_id and t.thread_summary:
-                    for part in t.thread_summary.split(" | "):
+            folders_by_id = {f.folder_id: f for f in overview.folders}
+            threads_by_id = {t.thread_id: t for t in overview.threads}
+            target_thread = threads_by_id.get(payload.thread_id)
+            if target_thread is None:
+                mem_threads = getattr(folders_svc, "_threads", {})
+                target_thread = mem_threads.get(payload.thread_id)
+            if target_thread is not None:
+                folder = None
+                if target_thread.folder_id:
+                    folder = folders_by_id.get(target_thread.folder_id) or getattr(
+                        folders_svc, "_folders", {}
+                    ).get(target_thread.folder_id)
+                if user is not None and folder is not None:
+                    enforce_folder_turn_access(folder, user)
+                if target_thread.thread_summary:
+                    for part in target_thread.thread_summary.split(" | "):
                         if part.strip():
                             history.append({"role": "user", "content": part.strip()})
+        except OrciaDomainError:
+            raise
         except Exception as exc:
             logger.warning(
                 "assistant_thread_history_resolution_fallback",
@@ -53,24 +96,38 @@ async def resolve_turn_history(
     return history
 
 
-async def resolve_folder_notes(request: Request, payload: ThreeSpeedTurnRequest) -> str | None:
-    """Resolve pinned folder notes from payload or persisted folder state."""
-    if payload.folder_pinned_notes and payload.folder_pinned_notes.strip():
-        return payload.folder_pinned_notes.strip()
+async def resolve_folder_notes(
+    request: Request,
+    payload: ThreeSpeedTurnRequest,
+    *,
+    user: UserIdentity | None = None,
+) -> str | None:
+    """Resolve pinned folder notes after enforcing `enforce_folder_turn_access` ACLs."""
     if payload.folder_id:
         try:
             folders_svc = get_assistant_folders_and_sharing_service(request)
             overview = await folders_svc.get_workspace_overview_async(
                 workspace_id=payload.workspace_id
             )
-            for f in overview.folders:
-                if f.folder_id == payload.folder_id and f.pinned_notes_markdown.strip():
-                    return f.pinned_notes_markdown.strip()
+            folder = next((f for f in overview.folders if f.folder_id == payload.folder_id), None)
+            if folder is None:
+                folder = getattr(folders_svc, "_folders", {}).get(payload.folder_id)
+            if folder is not None:
+                if user is not None:
+                    enforce_folder_turn_access(folder, user)
+                if payload.folder_pinned_notes and payload.folder_pinned_notes.strip():
+                    return payload.folder_pinned_notes.strip()
+                if folder.pinned_notes_markdown.strip():
+                    return folder.pinned_notes_markdown.strip()
+        except OrciaDomainError:
+            raise
         except Exception as exc:
             logger.warning(
                 "assistant_folder_notes_resolution_fallback",
                 error_type=type(exc).__name__,
             )
+    if payload.folder_pinned_notes and payload.folder_pinned_notes.strip():
+        return payload.folder_pinned_notes.strip()
     return None
 
 

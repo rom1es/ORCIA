@@ -1,14 +1,18 @@
-"""Epic 10 Sub-Router — `Mon Assistant` 4-Level Governance (`Mode A` & `Mode B`, `Story 10.1`)."""
+"""Epic 10 Sub-Router — `Mon Assistant` 4-Level Governance (`Mode A` & `Mode B`, `Story 26.1`)."""
 
 from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 
 from orcia_api.dependencies import (
     get_assistant_governance_service,
     get_assistant_three_speed_router_service,
+)
+from orcia_api.dependencies._assistant_guards import (
+    can_user_manage_workspace_governance,
+    enforce_assistant_workspace_guard,
 )
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.assistant import (
@@ -30,9 +34,7 @@ from orcia_core.orchestration.assistant_governance import (
     UserLayerPreferences,
     WorkspaceLayerSettings,
 )
-from orcia_core.orchestration.assistant_three_speed_router import (
-    AssistantThreeSpeedRouterService,
-)
+from orcia_core.orchestration.assistant_three_speed_router import AssistantThreeSpeedRouterService
 from orcia_core.permissions.models import UserIdentity
 
 router = APIRouter()
@@ -102,18 +104,27 @@ def _to_studio_graph_schema(st: AssistantStudioGraphState) -> AssistantStudioGra
 
 
 @router.get("/governance", response_model=AssistantGovernanceViewResponse)
-def get_assistant_governance_endpoint(
+async def get_assistant_governance_endpoint(
+    request: Request,
     user: CurrentUserDep,
     svc: GovernanceServiceDep,
     workspace_id: Annotated[str, Query()] = "scope-global",
     pack_key: Annotated[str, Query()] = "orcia-pack-sdlc",
 ) -> AssistantGovernanceViewResponse:
     """Return Mode A (3 tabs) & Mode B (Studio graph) governance state (`Story 10.1`)."""
+    await enforce_assistant_workspace_guard(
+        request,
+        user,
+        workspace_id,
+        require_write=False,
+        scope_level="GLOBAL" if workspace_id == "scope-global" else "WORKSPACE",
+    )
+    can_manage = await can_user_manage_workspace_governance(request, user, workspace_id)
     view = svc.get_governance_view(user, workspace_id=workspace_id, pack_key=pack_key)
     return AssistantGovernanceViewResponse(
         workspace_id=view.workspace_id,
-        can_edit_workspace_layer=view.can_edit_workspace_layer,
-        can_open_studio_mode_b=view.can_open_studio_mode_b,
+        can_edit_workspace_layer=can_manage,
+        can_open_studio_mode_b=can_manage,
         user_preferences=_to_user_prefs_schema(view.user_preferences),
         workspace_settings=_to_workspace_settings_schema(view.workspace_settings),
         assembled_layers=[
@@ -133,13 +144,15 @@ def get_assistant_governance_endpoint(
 
 
 @router.put("/governance/mode-a/user", response_model=UserLayerPreferencesSchemaItem)
-def update_user_layer_preferences_endpoint(
+async def update_user_layer_preferences_endpoint(
     payload: UpdateUserLayerPreferencesRequest,
+    request: Request,
     user: CurrentUserDep,
     svc: GovernanceServiceDep,
     router_svc: ThreeSpeedRouterDep,
 ) -> UserLayerPreferencesSchemaItem:
-    """Update Tab 1 (`👤 Mes préférences — Couche 5 USER`) (`Story 10.1`)."""
+    """Update Tab 1 (`Mes préférences — Couche 5 USER`) (`Story 10.1`)."""
+    await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
     updated = svc.update_user_preferences(
         user,
         workspace_id=payload.workspace_id,
@@ -155,13 +168,17 @@ def update_user_layer_preferences_endpoint(
 
 
 @router.put("/governance/mode-a/workspace", response_model=WorkspaceLayerSettingsSchemaItem)
-def update_workspace_layer_settings_endpoint(
+async def update_workspace_layer_settings_endpoint(
     payload: UpdateWorkspaceLayerSettingsRequest,
+    request: Request,
     user: CurrentUserDep,
     svc: GovernanceServiceDep,
     router_svc: ThreeSpeedRouterDep,
 ) -> WorkspaceLayerSettingsSchemaItem:
-    """Update Tab 2 (`📦 Réglages de l'Espace — Couche 4 WORKSPACE`) (`Story 10.1`)."""
+    """Update Tab 2 (`Réglages de l'Espace — Couche 4 WORKSPACE`) (`Story 10.1`)."""
+    await enforce_assistant_workspace_guard(
+        request, user, payload.workspace_id, require_write=True, require_manage=True
+    )
     updated = svc.update_workspace_settings(
         user,
         workspace_id=payload.workspace_id,
@@ -179,13 +196,22 @@ def update_workspace_layer_settings_endpoint(
 
 
 @router.post("/governance/mode-b/save", response_model=AssistantStudioGraphStateSchemaItem)
-def save_assistant_studio_graph_endpoint(
+async def save_assistant_studio_graph_endpoint(
     payload: SaveAssistantStudioGraphRequest,
+    request: Request,
     user: CurrentUserDep,
     svc: GovernanceServiceDep,
     router_svc: ThreeSpeedRouterDep,
 ) -> AssistantStudioGraphStateSchemaItem:
-    """Save Mode B Studio graph override (`TEAM` or `WORKSPACE`) (`🔒 AssistantHarness`)."""
+    """Save Mode B Studio graph override (`TEAM` or `WORKSPACE`)."""
+    await enforce_assistant_workspace_guard(
+        request,
+        user,
+        payload.scope_id,
+        require_write=True,
+        require_manage=True,
+        scope_level=payload.scope_level,
+    )
     saved = svc.save_studio_graph_override(
         user,
         scope_level=payload.scope_level,
@@ -211,13 +237,22 @@ def save_assistant_studio_graph_endpoint(
 
 
 @router.post("/governance/mode-b/reset", response_model=AssistantStudioGraphStateSchemaItem)
-def reset_assistant_studio_graph_endpoint(
+async def reset_assistant_studio_graph_endpoint(
     payload: ResetAssistantStudioGraphRequest,
+    request: Request,
     user: CurrentUserDep,
     svc: GovernanceServiceDep,
     router_svc: ThreeSpeedRouterDep,
 ) -> AssistantStudioGraphStateSchemaItem:
-    """Reset Mode B Studio override in 1 click (`↺ Réinitialiser`) (`Story 10.1`)."""
+    """Reset Mode B Studio override in 1 click (`Story 10.1`)."""
+    await enforce_assistant_workspace_guard(
+        request,
+        user,
+        payload.scope_id,
+        require_write=True,
+        require_manage=True,
+        scope_level=payload.scope_level,
+    )
     restored = svc.reset_studio_graph_override(
         user, scope_level=payload.scope_level, scope_id=payload.scope_id
     )

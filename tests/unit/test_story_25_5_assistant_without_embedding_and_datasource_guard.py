@@ -105,23 +105,27 @@ def test_all_assistant_routes_and_federated_search_succeed_without_embedding(
 
     app.dependency_overrides[get_embedding_port] = _raise_rag_unavailable
     with TestClient(app) as client:
+        ws_seeded = "0192c4e0-0000-7000-8000-000000000201"
         r_chat = client.post(
             "/api/v1/assistant/chat",
-            json={"workspace_id": _WS_TEST, "user_prompt": "Bonjour"},
+            params={"persona_key": "marc"},
+            json={"workspace_id": ws_seeded, "user_prompt": "Bonjour"},
         )
         assert r_chat.status_code == 200, r_chat.text
         assert r_chat.json()["response_text"]
 
         r_chat_stream = client.post(
             "/api/v1/assistant/chat/stream",
-            json={"workspace_id": _WS_TEST, "user_prompt": "Bonjour"},
+            params={"persona_key": "marc"},
+            json={"workspace_id": ws_seeded, "user_prompt": "Bonjour"},
         )
         assert r_chat_stream.status_code == 200
 
         r_3s_turn = client.post(
             "/api/v1/assistant/three-speed/turn",
+            params={"persona_key": "marc"},
             json={
-                "workspace_id": _WS_TEST,
+                "workspace_id": ws_seeded,
                 "user_prompt": "Bonjour",
                 "requested_speed": "SPEED_1_FAST",
             },
@@ -130,34 +134,38 @@ def test_all_assistant_routes_and_federated_search_succeed_without_embedding(
 
         r_3s_stream = client.post(
             "/api/v1/assistant/three-speed/stream",
-            json={"workspace_id": _WS_TEST, "user_prompt": "Bonjour"},
+            params={"persona_key": "marc"},
+            json={"workspace_id": ws_seeded, "user_prompt": "Bonjour"},
         )
         assert r_3s_stream.status_code == 200
 
         # Create folder + thread, then post turn without embedding model
         r_folder = client.post(
             "/api/v1/assistant/folders",
-            json={"workspace_id": _WS_TEST, "title": "Dossier Sans Embedding"},
+            params={"persona_key": "marc"},
+            json={"workspace_id": ws_seeded, "title": "Dossier Sans Embedding"},
         )
         assert r_folder.status_code == 200
         folder_id = r_folder.json()["folder_id"]
 
         r_thread = client.post(
             "/api/v1/assistant/threads",
-            json={"workspace_id": _WS_TEST, "folder_id": folder_id, "title": "Fil Test"},
+            params={"persona_key": "marc"},
+            json={"workspace_id": ws_seeded, "folder_id": folder_id, "title": "Fil Test"},
         )
         assert r_thread.status_code == 200
         thread_id = r_thread.json()["thread_id"]
 
         r_thread_turn = client.post(
             f"/api/v1/assistant/threads/{thread_id}/turns",
-            json={"workspace_id": _WS_TEST, "message_text": "Synthèse du dossier"},
+            params={"persona_key": "marc"},
+            json={"workspace_id": ws_seeded, "message_text": "Synthèse du dossier"},
         )
         assert r_thread_turn.status_code == 200
 
         r_search = client.get(
             "/api/v1/search",
-            params={"q": "dossier sans embedding", "workspace_id": _WS_TEST},
+            params={"q": "dossier sans embedding", "workspace_id": ws_seeded},
         )
         assert r_search.status_code == 200
         assert r_search.json()["speed2_executed"] is False
@@ -203,7 +211,8 @@ def test_live_assistant_rejects_422_when_zero_active_chat_model_even_if_embeddin
 
         resp_turn = client.post(
             "/api/v1/assistant/three-speed/turn",
-            json={"workspace_id": _WS_TEST, "user_prompt": "Bonjour"},
+            params={"persona_key": "marc"},
+            json={"workspace_id": "0192c4e0-0000-7000-8000-000000000201", "user_prompt": "Bonjour"},
         )
         assert resp_turn.status_code == 422
         assert resp_turn.json()["error_code"] == "ERR_TIER_MODEL_NOT_CONFIGURED"
@@ -211,7 +220,8 @@ def test_live_assistant_rejects_422_when_zero_active_chat_model_even_if_embeddin
 
         resp_stream = client.post(
             "/api/v1/assistant/three-speed/stream",
-            json={"workspace_id": _WS_TEST, "user_prompt": "Bonjour"},
+            params={"persona_key": "marc"},
+            json={"workspace_id": "0192c4e0-0000-7000-8000-000000000201", "user_prompt": "Bonjour"},
         )
         assert resp_stream.status_code == 422
         assert resp_stream.json()["error_code"] == "ERR_TIER_MODEL_NOT_CONFIGURED"

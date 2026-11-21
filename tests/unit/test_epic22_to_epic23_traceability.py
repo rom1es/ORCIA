@@ -262,17 +262,23 @@ def test_every_failed_capability_points_to_epic23_key_master_plan_and_report() -
 
     live_caps = [cap for cap in capabilities if cap.get("status") == "live"]
     assert len(live_caps) == 65
+    epic26_api_downgraded = {"CAP-022", "CAP-070", "CAP-072"}
     for cap in live_caps:
         cap_id = str(cap.get("id", "")).strip()
         verification = cap.get("verification")
-        assert verification in {"runtime", "failed_e2e"}, (
+        allowed_verifs = (
+            {"runtime", "failed_e2e", "api"}
+            if cap_id in epic26_api_downgraded
+            else {"runtime", "failed_e2e"}
+        )
+        assert verification in allowed_verifs, (
             f"Capability {cap_id} has unexpected verification={verification!r} after Story 23.7"
         )
-        if verification == "runtime":
+        if verification in {"runtime", "api"}:
             verified_at = str(cap.get("verified_at") or "").strip()
-            assert verified_at, f"Runtime capability {cap_id} missing verified_at"
+            assert verified_at, f"Verified capability {cap_id} missing verified_at"
             assert not cap.get("e2e_remediation_ref"), (
-                f"Runtime capability {cap_id} must not retain e2e_remediation_ref"
+                f"Verified capability {cap_id} must not retain e2e_remediation_ref"
             )
         else:
             post_ref = cap.get("e2e_remediation_ref")
@@ -419,9 +425,14 @@ def test_epic23_desktop_campaign_deliverables_and_registry_counts_when_23_7_done
 
     capabilities = _load_yaml_mapping(CAPABILITIES_PATH).get("capabilities", [])
     runtime_caps = [c for c in capabilities if c.get("verification") == "runtime"]
+    epic26_api_caps = [
+        c
+        for c in capabilities
+        if c.get("verification") == "api" and c.get("id") in {"CAP-022", "CAP-070", "CAP-072"}
+    ]
     failed_caps = [c for c in capabilities if c.get("verification") == "failed_e2e"]
     if dev_status.get("epic-24") == "done":
-        assert len(runtime_caps) == 64
+        assert len(runtime_caps) + len(epic26_api_caps) == 64
         assert len(failed_caps) == 1
         assert [c.get("id") for c in failed_caps] == ["CAP-042"]
     else:

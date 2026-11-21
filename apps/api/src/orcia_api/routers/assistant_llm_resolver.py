@@ -63,6 +63,7 @@ async def resolve_configured_llm_endpoint(
     request: Request,
     *,
     requested_tier: str | None = None,
+    workspace_id: str | None = None,
 ) -> ResolvedLiveLlmEndpoint | None:
     """Resolve active LLM endpoint asynchronously from PG18 table or Day-0 snapshot."""
     if (
@@ -71,15 +72,11 @@ async def resolve_configured_llm_endpoint(
     ):
         return None
 
-    snap = getattr(request.app.state, "platform_setup_snapshot", None)
-    if snap is not None and getattr(snap, "llm_tiers", None):
-        chosen = select_endpoint_from_tiers(list(snap.llm_tiers), requested_tier)
-        if chosen is not None:
-            return chosen
-
+    from orcia_api.dependencies._assistant_guards import resolve_assistant_workspace_uuid
     from orcia_api.dependencies._core_providers import get_configured_db_engine
 
     engine = get_configured_db_engine(request)
+    snap = getattr(request.app.state, "platform_setup_snapshot", None)
     if engine is not None:
         t0 = time.perf_counter()
         try:
@@ -88,17 +85,25 @@ async def resolve_configured_llm_endpoint(
 
             auth = getattr(request.app.state, "auth_service", None)
             tier = requested_tier or "medium"
+            resolved_scope_id = await resolve_assistant_workspace_uuid(request, workspace_id)
             if auth is not None and getattr(auth, "vault_cipher", None) is not None:
                 async with engine.begin() as conn:
                     await bm.ensure_ai_model_mappings_schema_on_postgres18(conn)
                     m = await bm.resolve_decrypted_ai_model_for_tier_pg18(
                         conn,
                         cipher=auth.vault_cipher,
-                        scope_id="0195f000-0000-7000-8000-000000000301",
+                        scope_id=resolved_scope_id,
                         inference_tier=tier,
                     )
                     if m is not None:
                         rec, key = m
+                        if not is_safe_llm_endpoint_url(rec.endpoint_uri):
+                            logger.warning(
+                                "llm_endpoint_blocked_by_ssrf_policy",
+                                endpoint=rec.endpoint_uri,
+                                scope_id=resolved_scope_id,
+                            )
+                            return None
                         return ResolvedLiveLlmEndpoint(
                             provider=rec.provider_slug,
                             model_name=rec.model_name,
@@ -107,8 +112,18 @@ async def resolve_configured_llm_endpoint(
                             tier=rec.inference_tier,
                             api_key=key,
                         )
+            if snap is not None and getattr(snap, "llm_tiers", None):
+                chosen = select_endpoint_from_tiers(list(snap.llm_tiers), requested_tier)
+                if chosen is not None:
+                    return chosen
+            accostage_svc = getattr(request.app.state, "accostage_service", None)
+            resolved_env = (
+                getattr(accostage_svc, "orcia_env", None)
+                or os.environ.get("ORCIA_ENV", "").strip()
+                or "local"
+            )
             db_snap = await bstrap.load_platform_setup_state_from_postgres18(
-                engine, orcia_env="local"
+                engine, orcia_env=resolved_env
             )
             if db_snap is not None:
                 request.app.state.platform_setup_snapshot = db_snap
@@ -120,6 +135,10 @@ async def resolve_configured_llm_endpoint(
                 error_type=type(exc).__name__,
             )
     else:
+        if snap is not None and getattr(snap, "llm_tiers", None):
+            chosen = select_endpoint_from_tiers(list(snap.llm_tiers), requested_tier)
+            if chosen is not None:
+                return chosen
         hub_svc = getattr(request.app.state, "ai_models_hub_service", None)
         if hub_svc is not None:
             active_chat = hub_svc.list_mappings(is_active=True, usage="chat")
@@ -144,6 +163,7 @@ async def ensure_active_chat_model_if_live(
     request: Request,
     *,
     requested_tier: str | None = None,
+    workspace_id: str | None = None,
 ) -> ResolvedLiveLlmEndpoint | None:
     """Assert an active `chat` model exists when calling live LLM (outside cassette/testclient)."""
     client_host = getattr(getattr(request, "client", None), "host", "") or ""
@@ -156,7 +176,9 @@ async def ensure_active_chat_model_if_live(
     )
     if not can_call_live or use_cassette:
         return None
-    ep = await resolve_configured_llm_endpoint(request, requested_tier=requested_tier)
+    ep = await resolve_configured_llm_endpoint(
+        request, requested_tier=requested_tier, workspace_id=workspace_id
+    )
     if ep is None:
         from orcia_core.orchestration.errors import TierModelNotConfiguredError
 

@@ -343,6 +343,7 @@ def test_story_9_2_api_endpoints_welcome_setup_and_accostage(
     # 5. PUT & GET /api/v1/bootstrap/platform-setup-state persists 11 collections & syncs Accostage
     put_resp = client.put(
         "/api/v1/bootstrap/platform-setup-state",
+        params={"persona_key": "karim"},
         json={
             "org_units": [
                 {"id": "org-1", "name": "BU Finance", "slug": "bu-finance", "level": "BU"}
@@ -393,13 +394,20 @@ def test_story_9_2_api_endpoints_welcome_setup_and_accostage(
     assert put_data["workspaces"][0]["name"] == "Espace Paiements"
     assert len(put_data["llm_tiers"]) == 2
 
-    get_resp = client.get("/api/v1/bootstrap/platform-setup-state")
+    get_resp = client.get(
+        "/api/v1/bootstrap/platform-setup-state",
+        params={"persona_key": "karim"},
+    )
     assert get_resp.status_code == 200
     get_data = get_resp.json()
     assert len(get_data["org_units"]) == 1
     assert len(get_data["workspaces"]) == 1
     assert len(get_data["datasources"]) == 1
     assert len(get_data["workflows"]) == 1
+
+    anon_get = client.get("/api/v1/bootstrap/platform-setup-state")
+    assert anon_get.status_code == 200
+    assert set(anon_get.json().keys()) == {"is_initialized", "step"}
 
     # Accostage status now reflects all 6 milestones completed!
     resp_acc6 = client.get("/api/v1/bootstrap/accostage-status")

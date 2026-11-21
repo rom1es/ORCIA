@@ -282,7 +282,7 @@ def test_ai_models_hub_pinned_rejection_and_observer_guard() -> None:
         provider_slug="test",
         model_family="Test",
         model_name="test-model",
-        endpoint_uri="https://example.com/v1",
+        endpoint_uri="https://api.openai.com/v1",
         auth_mode="none_local",
     )
     service.register_active_run_pin(m.id, "run-101")

@@ -184,15 +184,15 @@ capabilities:
     title: Agent assistant DAG 5 nœuds (AssistantHarness 5 couches)
     fr: [FR-1, FR-13]
     origin: epic
-    origin_ref: 3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc + 25-5
+    origin_ref: 3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc + 25-5 + 26-1
     status: live
     kind: feature
     uj: [UJ-1, UJ-17]
     db_tables: [workflow_runs, step_executions, blackboard_snapshots, assistant_threads]
-    tests: [tests/unit/test_story_3_3_assistant_agent_5_nodes_and_context_ports.py, tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py, tests/evals/test_assistant_and_ontology_evals.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
-    verification: runtime
+    tests: [tests/unit/test_story_3_3_assistant_agent_5_nodes_and_context_ports.py, tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py, tests/security/test_story_26_1_assistant_security_hardening.py, tests/integration/api/test_story_26_1_assistant_security_postgres18.py, tests/evals/test_assistant_and_ontology_evals.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
+    verification: api
     verified_at: "2026-11-21"
-    surfaces: { api: /api/v1/assistant }
+    surfaces: { api: "/api/v1/assistant + _assistant_guards.py" }
   - id: CAP-023
     title: Ancrages humains obligatoires et arbitrage / tie-break
     fr: [FR-4, FR-5]
@@ -494,7 +494,7 @@ capabilities:
     tests: [apps/web/e2e/01-day0-boot-and-f5-persistence.spec.ts, apps/web/e2e/shell.spec.ts, tests/unit/test_story_25_1_personal_workspace_and_accostage.py, tests/integration/api/test_story_25_1_personal_workspace_postgres18.py, apps/web/src/__tests__/story-25-1-personal-workspace-accostage-and-processes.test.tsx]
     verification: runtime
     verified_at: "2026-11-21"
-    surfaces: { api: bootstrap_accostage.py }
+    surfaces: { api: "bootstrap_accostage.py, _bootstrap_llm_routes.py, _bootstrap_setup_state.py" }
   - id: CAP-062
     title: Recherche fédérée contextuelle ⌘K à 2 vitesses
     fr: [FR-32]
@@ -605,14 +605,14 @@ capabilities:
     title: Gouvernance de personnalisation 4 niveaux (Mode A / Mode B studio)
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-1
+    origin_ref: 10-1 + 26-1
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [workspace_customization_overrides, user_preferences]
-    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts]
-    verification: runtime
-    verified_at: "2026-11-20"
+    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts]
+    verification: api
+    verified_at: "2026-11-21"
     surfaces: { route: /assistant, api: assistant_workspace_governance.py, ui: AssistantGovernanceModalAndStudio }
   - id: CAP-071
     title: Routage 3 vitesses, TTFT < 1,2 s, cache Redis du prompt assemblé, tours en arrière-plan
@@ -626,19 +626,19 @@ capabilities:
     tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts]
     verification: runtime
     verified_at: "2026-11-20"
-    surfaces: { api: assistant_workspace.py, ui: AssistantSpeedSelectorAndStreamView }
+    surfaces: { api: "assistant_workspace.py, _assistant_workspace_controls.py", ui: AssistantSpeedSelectorAndStreamView }
   - id: CAP-072
     title: Citations déterministes [S1]/[G1]/[O1] et cartes d'artefact
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-3
+    origin_ref: 10-3 + 26-1
     status: live
     kind: feature
     uj: [UJ-1, UJ-17]
     db_tables: [kb_chunks, ontology_concepts, assistant_threads]
-    tests: [tests/evals/test_citations_golden_dataset.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
-    verification: runtime
-    verified_at: "2026-11-20"
+    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, tests/evals/test_citations_golden_dataset.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
+    verification: api
+    verified_at: "2026-11-21"
     surfaces: { api: assistant_workspace_citations.py, ui: AssistantCitationPillsAndArtifactCard }
   - id: CAP-073
     title: Dossiers thématiques, fils collaboratifs, partage et lancement de processus
@@ -734,7 +734,7 @@ capabilities:
     tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
     verification: runtime
     verified_at: "2026-11-20"
-    surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py)", ui: AgentsAndSkillsManagerView }
+    surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py, _agents_and_skills_skills_routes.py)", ui: AgentsAndSkillsManagerView }
   - id: CAP-091
     title: Refonte complète écran Agents, Skills et MCP & Studio de Gouvernance en 6 Blocs (A..F) + Checklist 6/6 Mon Assistant
     fr: [FR-36]

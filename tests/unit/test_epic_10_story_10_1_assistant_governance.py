@@ -202,10 +202,11 @@ def test_story_10_1_mode_b_studio_immutable_harness_boundary_and_reset() -> None
 
 def test_story_10_1_api_endpoints_mode_a_and_mode_b() -> None:
     """Verify FastAPI endpoints `/api/v1/assistant/governance/*` (`Story 10.1`)."""
+    ws_id = "0192c4e0-0000-7000-8000-000000000201"
     with TestClient(app) as client:
         get_resp = client.get(
             "/api/v1/assistant/governance",
-            params={"workspace_id": "ws-claims-alpha", "persona_key": "marc"},
+            params={"workspace_id": ws_id, "persona_key": "marc"},
         )
         assert get_resp.status_code == 200
         data = get_resp.json()
@@ -215,9 +216,9 @@ def test_story_10_1_api_endpoints_mode_a_and_mode_b() -> None:
         # Update user preferences (Mode A Tab 1)
         u_resp = client.put(
             "/api/v1/assistant/governance/mode-a/user",
-            params={"persona_key": "claire"},
+            params={"persona_key": "marc"},
             json={
-                "workspace_id": "ws-claims-alpha",
+                "workspace_id": ws_id,
                 "response_tone": "DETAILED_CODE",
                 "favorite_format": "STEP_BY_STEP",
                 "default_hat": "ARCHITECT",
@@ -234,7 +235,7 @@ def test_story_10_1_api_endpoints_mode_a_and_mode_b() -> None:
             params={"persona_key": "marc"},
             json={
                 "scope_level": "WORKSPACE",
-                "scope_id": "ws-claims-alpha",
+                "scope_id": ws_id,
                 "ai_pre_prompt": "Tentative de suppression de borne",
                 "nodes": bad_nodes,
             },
@@ -248,7 +249,7 @@ def test_story_10_1_api_endpoints_mode_a_and_mode_b() -> None:
             params={"persona_key": "marc"},
             json={
                 "scope_level": "WORKSPACE",
-                "scope_id": "ws-claims-alpha",
+                "scope_id": ws_id,
                 "ai_pre_prompt": "Surcharge Studio valide",
                 "nodes": data["studio_graph"]["nodes"],
             },
@@ -259,7 +260,7 @@ def test_story_10_1_api_endpoints_mode_a_and_mode_b() -> None:
         rst_resp = client.post(
             "/api/v1/assistant/governance/mode-b/reset",
             params={"persona_key": "marc"},
-            json={"scope_level": "WORKSPACE", "scope_id": "ws-claims-alpha"},
+            json={"scope_level": "WORKSPACE", "scope_id": ws_id},
         )
         assert rst_resp.status_code == 200
         assert rst_resp.json()["scope_level"] == "DEFAULT"

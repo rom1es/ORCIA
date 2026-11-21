@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import ipaddress
-from urllib.parse import urlparse
-
 from orcia_core.observability.logging import register_sensitive_secret_value
-from orcia_core.orchestration.ai_models_errors import UnsafeLlmEndpointUrlError
 from orcia_core.orchestration.errors import ValidationDomainError
+from orcia_core.orchestration.ssrf_guard import validate_safe_llm_endpoint_url
 from orcia_core.permissions.crypto import PassthroughVaultCipher
 from orcia_core.permissions.platform_settings import compute_salted_secret_fingerprint
 from orcia_core.permissions.secret_hint import (
@@ -15,52 +12,6 @@ from orcia_core.permissions.secret_hint import (
     SecretStatusView,
     compute_secret_masked_hint,
 )
-
-_BLOCKED_HOSTS: frozenset[str] = frozenset(
-    {"169.254.169.254", "metadata.google.internal", "100.100.100.200"}
-)
-_LINK_LOCAL_NETWORK = ipaddress.ip_network("169.254.0.0/16")
-
-
-def validate_safe_llm_endpoint_url(url: str, *, instance: str | None = None) -> str:
-    """Validate `url` against Cloud Metadata SSRF while permitting `.local`/`.internal`."""
-    raw = (url or "").strip()
-    if not raw:
-        raise UnsafeLlmEndpointUrlError(
-            detail_override="LLM endpoint URL cannot be empty.", instance=instance
-        )
-    try:
-        parsed = urlparse(raw)
-    except ValueError as exc:
-        raise UnsafeLlmEndpointUrlError(
-            detail_override=f"Malformed endpoint URL: {raw}", instance=instance
-        ) from exc
-    if parsed.scheme not in ("http", "https"):
-        raise UnsafeLlmEndpointUrlError(
-            detail_override=f"Invalid endpoint scheme '{parsed.scheme}'. Must be http or https.",
-            instance=instance,
-        )
-    if parsed.username or parsed.password:
-        raise UnsafeLlmEndpointUrlError(
-            detail_override="Credentials embedded in endpoint authority are forbidden.",
-            instance=instance,
-        )
-    host = (parsed.hostname or "").strip().lower().rstrip(".")
-    if not host or host in _BLOCKED_HOSTS or host.endswith((".example.com", ".google.internal")):
-        raise UnsafeLlmEndpointUrlError(
-            detail_override=f"Target host '{host}' is prohibited by SSRF policy.",
-            instance=instance,
-        )
-    try:
-        ip = ipaddress.ip_address(host)
-        if ip.is_link_local or ip.is_unspecified or ip.is_multicast or ip in _LINK_LOCAL_NETWORK:
-            raise UnsafeLlmEndpointUrlError(
-                detail_override=f"Target IP '{ip}' is blocked by link-local SSRF policy.",
-                instance=instance,
-            )
-    except ValueError:
-        pass
-    return raw
 
 
 def pack_encrypted_api_key(

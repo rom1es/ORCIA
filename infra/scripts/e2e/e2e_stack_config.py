@@ -74,6 +74,9 @@ def build_api_env(
             "ORCIA_PASSTHROUGH_MASTER_KEY": E2E_VAULT_KEY,
             "ORCIA_WORKER_STUB_BROKER": "1",
             "ORCIA_ENV": "e2e",
+            "ORCIA_LLM_ALLOWED_PRIVATE_HOSTS": (
+                env.get("ORCIA_LLM_ALLOWED_PRIVATE_HOSTS") or "127.0.0.1,localhost"
+            ),
         }
     )
     return env

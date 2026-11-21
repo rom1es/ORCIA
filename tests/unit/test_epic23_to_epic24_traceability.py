@@ -264,9 +264,14 @@ def test_desktop_failed_capabilities_transfer_to_epic24_and_cap042_stays_deferre
     assert isinstance(dev_status, dict)
 
     runtime_caps = [c for c in capabilities if c.get("verification") == "runtime"]
+    epic26_api_caps = [
+        c
+        for c in capabilities
+        if c.get("verification") == "api" and c.get("id") in {"CAP-022", "CAP-070", "CAP-072"}
+    ]
     failed_caps = [c for c in capabilities if c.get("verification") == "failed_e2e"]
-    assert 39 <= len(runtime_caps) <= 64
-    assert len(failed_caps) + len(runtime_caps) == 65
+    assert 39 <= len(runtime_caps) + len(epic26_api_caps) <= 64
+    assert len(failed_caps) + len(runtime_caps) + len(epic26_api_caps) == 65
     assert all(not c.get("e2e_remediation_ref") for c in runtime_caps)
 
     plan_text = MASTER_PLAN_PATH.read_text(encoding="utf-8")
@@ -299,7 +304,7 @@ def test_desktop_failed_capabilities_transfer_to_epic24_and_cap042_stays_deferre
 
     if dev_status.get("epic-24") == "done":
         assert all(dev_status.get(key) == "done" for key in EPIC_24_KEYS)
-        assert len(runtime_caps) == 64
+        assert len(runtime_caps) + len(epic26_api_caps) == 64
         assert len(failed_caps) == 1
         assert [c.get("id") for c in failed_caps] == ["CAP-042"]
 

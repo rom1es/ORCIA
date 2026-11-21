@@ -14,10 +14,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 57,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 207,
+    "techLeadReportsCount": 208,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
-    "verifiedCapabilitiesCount": 64,
+    "verifiedCapabilitiesCount": 61,
     "userJourneysCount": 20,
     "coveredUserJourneysCount": 20,
     "e2eCoveredCapabilitiesCount": 62
@@ -543,6 +543,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-21",
+      "phaseOrStory": "Story 26.1",
+      "reportFile": "26-1-immediate-security-hardening-scope-observer-and-ssrf-tech-lead-report.md",
+      "domain": "Epic 26 Lot 1 — Immediate Security Hardening: Pre-Stream Scope & Observer Guards, Server-Side READ_SOURCE / CONFIDENTIAL_RESTRICTED, Layer 1 Immutability, Env-Var SSRF + DNS Pinning & Credential Hygiene",
+      "summary": "Hardening, review fixes, E2E stabilization & module splits (done, pro review APPROVED): enforced pre-stream 403 ERR_OBSERVER_MODE_READ_ONLY and UUID/slug IDOR guards via MatrixPermissionEvaluator across /api/v1/assistant/*, real workspace scope_id LLM resolution (PG18 tier priority before snapshot fallback + Story 25.5 fallback), post-fetch source_uri_authorizer READ_SOURCE & CONFIDENTIAL_RESTRICTED masking (no PLATFORM_ADMIN bypass, removed reader_allowed_source_uris, folder/thread ACL), strict org-leadership governance writes, Layer 1 immutability + expanded tag escaping + user\\"
+    },
     {
       "date": "2026-11-21",
       "phaseOrStory": "Story 26.0",

@@ -1,4 +1,3 @@
-import { createOrciaApiClient } from "@orcia/api-client";
 import type {
   ControlCenterDatasourceItem,
   ControlCenterOverrideItem,
@@ -7,9 +6,8 @@ import type {
   UiCatalogExplorerItemView,
   UiOntologyConceptView,
 } from "@orcia/ui";
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
-import { formatRfc9457ErrorToBanner } from "../lib/formatRfc9457ErrorToBanner";
-import { resolveWebApiBaseUrl, useAuthSessionStore } from "../stores/authSessionStore";
+import React, { createContext, useContext, useRef, useState } from "react";
+import { useAuthSessionStore } from "../stores/authSessionStore";
 import { createPlatformGovernanceActions } from "./platformSetupGovernanceActions";
 import {
   buildWorkflowOverridesFromWorkflows,
@@ -21,16 +19,16 @@ import {
   EMPTY_CACHED_PLATFORM_SETUP_STATE,
   type PlatformSetupContextValue,
 } from "./platformSetupContextTypes";
+import { type AccostagePg18CountsView } from "./platformSetupHydration";
 import {
-  buildAccostageCountsFromStatus,
-  fetchAndBuildHydrationOutcome,
-  savePlatformSetupSnapshotToApi,
-  type AccostagePg18CountsView,
-} from "./platformSetupHydration";
+  executeRefreshAccostage,
+  mergeCachedPlatformSetupSnapshot,
+  persistSetupSnapshotStrict,
+  usePlatformSetupHydrationEffect,
+} from "./usePlatformSetupHydrationEffect";
 import {
   readCachedPlatformAdmin,
   readCachedPlatformSetupState,
-  writeCachedPlatformSetupState,
   type CachedPlatformSetupState,
   type ConfiguredAuditEvent,
   type ConfiguredLlmTierMapping,
@@ -128,115 +126,51 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     applySnapshotToState(EMPTY_CACHED_PLATFORM_SETUP_STATE);
   };
 
-  const persistSnapshotStrict = async (next: CachedPlatformSetupState): Promise<void> => {
-    hasMutatedSinceMountRef.current = true;
-    writeCachedPlatformSetupState(next);
-    try {
-      await savePlatformSetupSnapshotToApi(next);
-      setLastSyncError(null);
-    } catch (err: unknown) {
-      setLastSyncError(
-        formatRfc9457ErrorToBanner(err, "fr", "Synchronisation plateforme").fullText,
-      );
-      throw err;
-    }
-  };
+  const persistSnapshotStrict = async (next: CachedPlatformSetupState): Promise<void> =>
+    persistSetupSnapshotStrict({ next, hasMutatedSinceMountRef, setLastSyncError });
 
   const persistSnapshot = (next: CachedPlatformSetupState) => {
     void persistSnapshotStrict(next).catch((err: unknown) => {
-      setLastSyncError(
-        formatRfc9457ErrorToBanner(err, "fr", "Synchronisation plateforme").fullText,
-      );
+      console.warn("[orcia:platformSetup.persistSnapshot]", err instanceof Error ? err.message : String(err));
     });
   };
 
-  const refreshAccostage = async (): Promise<void> => {
-    try {
-      const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
-      const status = await client.getAccostageStatus();
-      const nextCounts = buildAccostageCountsFromStatus(status, orgUnits);
-      setAccostageCounts(nextCounts);
-      if (nextCounts.modelsCount === 0 && llmTiers.length > 0) {
-        setLlmTiers([]);
-        writeCachedPlatformSetupState(buildSnapshot({ llmTiers: [] }));
-      }
-    } catch (err: unknown) {
-      console.warn("[orcia:platformSetup.refreshAccostage]", err);
-    }
-  };
+  const refreshAccostage = async (): Promise<void> =>
+    executeRefreshAccostage({ orgUnits, llmTiers, setAccostageCounts, setLlmTiers, buildSnapshot });
 
-  useEffect(() => {
-    if (isAuthHydrating) {
-      return;
-    }
-    let cancelled = false;
-    let safetyTimer: ReturnType<typeof setTimeout> | undefined = setTimeout(() => {
-      if (!cancelled) setIsInitialLoading(false);
-    }, 5000);
-
-    void fetchAndBuildHydrationOutcome({
-      hasMutatedSinceMount: hasMutatedSinceMountRef.current,
-      currentAdmin: platformAdmin,
-      isAuthenticated,
-      currentUserEmail,
-    })
-      .then((outcome) => {
-        if (cancelled) return;
-        if (outcome.kind === "BOOT_EPOCH_RESET") {
-          hasMutatedSinceMountRef.current = false;
-          useAuthSessionStore.getState().resetAuthSession();
-          resetAllSetupState();
-          return;
-        }
-        if (outcome.kind === "DAY0_CLEAN_RESET") {
-          if (hasMutatedSinceMountRef.current) return;
-          resetAllSetupState();
-          return;
-        }
-        if (outcome.kind === "HYDRATED") {
-          setAccostageCounts(outcome.accostageCounts);
-          if (outcome.admin) setPlatformAdmin(outcome.admin);
-          if (outcome.snapshot) applySnapshotToState(outcome.snapshot);
-        }
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setLastSyncError(
-            formatRfc9457ErrorToBanner(err, "fr", "Chargement initial plateforme").fullText,
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          if (safetyTimer) {
-            clearTimeout(safetyTimer);
-            safetyTimer = undefined;
-          }
-          setIsInitialLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-      if (safetyTimer) clearTimeout(safetyTimer);
-    };
-  }, [isAuthHydrating, isAuthenticated, currentUserEmail]);
+  usePlatformSetupHydrationEffect({
+    isAuthHydrating,
+    isAuthenticated,
+    currentUserEmail,
+    platformAdmin,
+    hasMutatedSinceMountRef,
+    applySnapshotToState,
+    resetAllSetupState,
+    setIsInitialLoading,
+    setPlatformAdmin,
+    setAccostageCounts,
+    setLastSyncError,
+  });
 
   const buildSnapshot = (
     overrides: Partial<CachedPlatformSetupState>,
-  ): CachedPlatformSetupState => ({
-    orgUnits: overrides.orgUnits ?? orgUnits,
-    rbacGrants: overrides.rbacGrants ?? rbacGrants,
-    llmTiers: overrides.llmTiers ?? llmTiers,
-    workspaces: overrides.workspaces ?? workspaces,
-    datasources: overrides.datasources ?? datasources,
-    packs: overrides.packs ?? packs,
-    workflows: overrides.workflows ?? workflows,
-    runs: overrides.runs ?? runs,
-    catalogItems: overrides.catalogItems ?? catalogItems,
-    ontologyConcepts: overrides.ontologyConcepts ?? ontologyConcepts,
-    auditEvents: overrides.auditEvents ?? auditEvents,
-  });
+  ): CachedPlatformSetupState =>
+    mergeCachedPlatformSetupSnapshot(
+      {
+        orgUnits,
+        rbacGrants,
+        llmTiers,
+        workspaces,
+        datasources,
+        packs,
+        workflows,
+        runs,
+        catalogItems,
+        ontologyConcepts,
+        auditEvents,
+      },
+      overrides,
+    );
 
   const appendAudit = (
     eventType: string,

@@ -262,9 +262,9 @@ def test_pillar_6_true_async_sse_streaming_preserves_multiline_markdown_indentat
         )
         resp = client.post(
             "/api/v1/assistant/three-speed/stream",
-            params={"persona_key": "claire"},
+            params={"persona_key": "marc"},
             json={
-                "workspace_id": "ws-claims-alpha",
+                "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
                 "user_prompt": "Write a recursive factorial function in Python",
                 "locale": "en",
             },
@@ -386,9 +386,9 @@ def test_pillar_5_and_8_multi_turn_history_tools_and_structured_error_logging(
         # 1st call returns HTTP 429 -> logged with status_code=429 and falls back gracefully
         r_err = client.post(
             "/api/v1/assistant/three-speed/turn",
-            params={"persona_key": "claire"},
+            params={"persona_key": "marc"},
             json={
-                "workspace_id": "ws-claims-alpha",
+                "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
                 "user_prompt": "Vérifie avec @jira-triage le point B",
                 "conversation_history": [
                     {"role": "user", "content": "Question initiale A et B"},
@@ -407,9 +407,9 @@ def test_pillar_5_and_8_multi_turn_history_tools_and_structured_error_logging(
         # 2nd call succeeds with live LLM
         r_ok = client.post(
             "/api/v1/assistant/three-speed/turn",
-            params={"persona_key": "claire"},
+            params={"persona_key": "marc"},
             json={
-                "workspace_id": "ws-claims-alpha",
+                "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
                 "user_prompt": "Vérifie avec @jira-triage le point B",
                 "conversation_history": [
                     {"role": "user", "content": "Question initiale A et B"},
@@ -536,12 +536,13 @@ def test_background_turn_continuity_stop_and_feedback_endpoints(
                 }
             ],
         )
+        ws_id = "0192c4e0-0000-7000-8000-000000000201"
         # 1. Stream a turn -> registers background turn state and telemetry entry
         r_stream = client.post(
             "/api/v1/assistant/three-speed/stream",
-            params={"persona_key": "claire"},
+            params={"persona_key": "marc"},
             json={
-                "workspace_id": "ws-bg-continuity-01",
+                "workspace_id": ws_id,
                 "user_prompt": "Vérifie la conformité DORA article 28",
                 "folder_pinned_notes": "Priorité absolue aux prestataires TIC critiques.",
                 "locale": "fr",
@@ -554,7 +555,7 @@ def test_background_turn_continuity_stop_and_feedback_endpoints(
         # 2. Query GET /api/v1/assistant/three-speed/active-turn -> returns COMPLETED turn
         r_active = client.get(
             "/api/v1/assistant/three-speed/active-turn",
-            params={"workspace_id": "ws-bg-continuity-01", "persona_key": "claire"},
+            params={"workspace_id": ws_id, "persona_key": "marc"},
         )
         assert r_active.status_code == 200
         snap = r_active.json()
@@ -568,9 +569,9 @@ def test_background_turn_continuity_stop_and_feedback_endpoints(
         # 3. Record user feedback 👍 (LIKE) via POST /api/v1/assistant/three-speed/feedback
         r_fb = client.post(
             "/api/v1/assistant/three-speed/feedback",
-            params={"persona_key": "claire"},
+            params={"persona_key": "marc"},
             json={
-                "workspace_id": "ws-bg-continuity-01",
+                "workspace_id": ws_id,
                 "turn_id": turn_id,
                 "user_feedback": "LIKE",
             },
@@ -582,8 +583,8 @@ def test_background_turn_continuity_stop_and_feedback_endpoints(
         # 4. Call POST /api/v1/assistant/three-speed/stop
         r_stop = client.post(
             "/api/v1/assistant/three-speed/stop",
-            params={"persona_key": "claire"},
-            json={"workspace_id": "ws-bg-continuity-01"},
+            params={"persona_key": "marc"},
+            json={"workspace_id": ws_id},
         )
         assert r_stop.status_code == 200
-        assert r_stop.json()["workspace_id"] == "ws-bg-continuity-01"
+        assert r_stop.json()["workspace_id"] == ws_id

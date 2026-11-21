@@ -49,6 +49,7 @@ export function UserSettingsMcpTokensTab({
       (cleanSlug
         ? `Clé d'accès éditeur — ${cleanSlug}`
         : "Clé personnelle d'éditeur");
+    onDirtyChange?.(false);
     await onCreateMcpToken({
       label: cleanLabel,
       targetKind,

@@ -198,12 +198,13 @@ def test_story_10_3_phantom_citation_verifier_and_v5_lock() -> None:
 
 def test_story_10_3_api_endpoints_verify_citations_and_v5_guard() -> None:
     """Verify `/api/v1/assistant/citations/verify-turn` and `/artifacts/action` (`Story 10.3`)."""
+    ws_id = "0192c4e0-0000-7000-8000-000000000201"
     with TestClient(app) as client:
         v_resp = client.post(
             "/api/v1/assistant/citations/verify-turn",
-            params={"persona_key": "claire"},
+            params={"persona_key": "nadia"},
             json={
-                "workspace_id": "ws-claims-alpha",
+                "workspace_id": ws_id,
                 "response_text": "Conformément à [S1] et [S99].",
                 "sources": [
                     {
@@ -214,7 +215,6 @@ def test_story_10_3_api_endpoints_verify_citations_and_v5_guard() -> None:
                         "snippet": "Extrait confidentiel ADR-015",
                     }
                 ],
-                "reader_allowed_source_uris": [],
             },
         )
         assert v_resp.status_code == 200
@@ -230,9 +230,9 @@ def test_story_10_3_api_endpoints_verify_citations_and_v5_guard() -> None:
         # Verrou V5 via API -> HTTP 422 ERR_DIRECT_SI_WRITE_REQUIRES_PROCESS_GATE
         bad_act = client.post(
             "/api/v1/assistant/artifacts/action",
-            params={"persona_key": "claire"},
+            params={"persona_key": "nadia"},
             json={
-                "workspace_id": "ws-claims-alpha",
+                "workspace_id": ws_id,
                 "action_type": "DIRECT_SI_WRITE",
                 "artifact_title": "Spec directe",
                 "artifact_content": "# Spec",

@@ -15,6 +15,7 @@ from orcia_api.routers._auth_pg_helpers import (
 from orcia_api.routers._auth_policy_runtime import trace_id_for
 from orcia_api.routers._auth_token_issuer import (
     PROBLEM_RESPONSES,
+    build_auth_token_response,
     resolve_request_user,
     serialize_auth_token_response,
 )
@@ -80,6 +81,37 @@ async def _rotate_refresh_and_hydrate(
     return serialize_auth_token_response(response, user, tokens, trace_id, request)
 
 
+async def _bootstrap_session_and_hydrate(
+    request: Request,
+    *,
+    raw_refresh: str,
+    trace_id: str,
+    svc: AuthAndOrganizationService,
+) -> AuthTokenResponse:
+    """Idempotent session bootstrap: verify refresh cookie and hydrate PG18 without rotation."""
+    claims = svc.verify_refresh_token_claims(raw_refresh)
+    if not svc.has_user_in_memory(claims.sub) and _pg_enabled():
+        try:
+            engine = get_or_create_shared_db_engine(request)
+            await rehydrate_user_from_pg_by_id(engine, svc, claims.sub, auth_mode=claims.auth_mode)
+        except Exception as exc:
+            logger.warning("auth_session_pg_pre_hydration_failed", error_type=type(exc).__name__)
+
+    user, tokens = svc.bootstrap_access_from_refresh(raw_refresh)
+    if _pg_enabled():
+        try:
+            engine = get_or_create_shared_db_engine(request)
+            user = await hydrate_user_identity_from_pg(engine, user, svc=svc)
+            svc.register_user(user)
+            await ensure_user_personal_workspace_from_pg(engine, user, evaluator=svc.evaluator)
+            user, tokens = svc.bootstrap_access_from_refresh(raw_refresh)
+        except ResourceNotFoundError:
+            raise
+        except Exception as exc:
+            logger.warning("auth_session_pg_hydration_failed", error_type=type(exc).__name__)
+    return build_auth_token_response(user, tokens, trace_id)
+
+
 @router.get(
     "/session",
     response_model=AuthSessionBootstrapResponse,
@@ -97,8 +129,8 @@ async def get_session_bootstrap(
 
     svc = get_auth_service(request)
     try:
-        token_response = await _rotate_refresh_and_hydrate(
-            request, response, raw_refresh=raw_refresh, trace_id=trace_id, svc=svc
+        token_response = await _bootstrap_session_and_hydrate(
+            request, raw_refresh=raw_refresh, trace_id=trace_id, svc=svc
         )
         return AuthSessionBootstrapResponse(
             authenticated=True,

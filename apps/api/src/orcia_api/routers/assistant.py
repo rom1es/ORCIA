@@ -1,4 +1,4 @@
-"""FastAPI Router for Story 3.3: 5-Node Assistant Agent DAG, 5-Layer Harness & Workflow Composer."""
+"""FastAPI Router for Story 3.3: 5-Node Assistant Agent DAG & Workflow Composer."""
 
 from __future__ import annotations
 
@@ -9,10 +9,10 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import StreamingResponse
 
-from orcia_api.dependencies import (
-    get_assistant_service,
-    get_auth_service,
-    get_optional_embedding_port,
+from orcia_api.dependencies import get_assistant_service, get_optional_embedding_port
+from orcia_api.dependencies._assistant_guards import (
+    enforce_assistant_workspace_guard,
+    prepare_server_source_uri_authorizer,
 )
 from orcia_api.routers.assistant_llm_bridge import ensure_active_chat_model_if_live
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
@@ -134,17 +134,21 @@ async def assistant_chat_turn(
 ) -> AssistantChatResponse:
     """Execute the 5-node Assistant Agent DAG and 5-layer `AssistantHarness` (`Story 3.3`)."""
     user = resolve_request_user(request, persona_key=persona_key)
-    get_auth_service(request).evaluator.resolve_workspace_access(user, payload.workspace_id)
-    await ensure_active_chat_model_if_live(request)
+    await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
+    await ensure_active_chat_model_if_live(request, workspace_id=payload.workspace_id)
     profile = payload.human_profile_archetype or user.human_profile_archetype
     svc = get_assistant_service(request)
     _attach_embedding_port(svc, _embedding_port)
+    uri_authorizer = await prepare_server_source_uri_authorizer(
+        request, user, workspace_id=payload.workspace_id
+    )
     turn = svc.run_conversation_turn(
         workspace_id=payload.workspace_id,
         user_prompt=payload.user_prompt,
         human_profile_archetype=profile,
         allowed_datasource_aliases=frozenset(payload.allowed_datasource_aliases),
         embedding_available=_embedding_port is not None,
+        source_uri_authorizer=uri_authorizer,
     )
     return _serialize_turn(turn)
 
@@ -165,11 +169,14 @@ async def assistant_chat_stream(
 ) -> StreamingResponse:
     """Stream SSE events (`node_trace`, `token`, `workflow_proposal`, `done`) (`NFR-PERF-1`)."""
     user = resolve_request_user(request, persona_key=persona_key)
-    get_auth_service(request).evaluator.resolve_workspace_access(user, payload.workspace_id)
-    await ensure_active_chat_model_if_live(request)
+    await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
+    await ensure_active_chat_model_if_live(request, workspace_id=payload.workspace_id)
     profile = payload.human_profile_archetype or user.human_profile_archetype
     service = get_assistant_service(request)
     _attach_embedding_port(service, _embedding_port)
+    uri_authorizer = await prepare_server_source_uri_authorizer(
+        request, user, workspace_id=payload.workspace_id
+    )
 
     def _event_generator() -> Iterator[str]:
         for evt in service.stream_conversation_turn_sse(
@@ -178,6 +185,7 @@ async def assistant_chat_stream(
             human_profile_archetype=profile,
             allowed_datasource_aliases=frozenset(payload.allowed_datasource_aliases),
             embedding_available=_embedding_port is not None,
+            source_uri_authorizer=uri_authorizer,
         ):
             event_name = evt["event"]
             data_json = json.dumps(evt["data"], ensure_ascii=False)
@@ -199,6 +207,7 @@ async def assistant_save_and_launch_workflow(
 ) -> AssistantSaveAndLaunchResponse:
     """Register and execute a composed workflow via `orcia.step_executors` (`FR-11`, `UJ-10`)."""
     user = resolve_request_user(request, persona_key=persona_key)
+    await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
     result = get_assistant_service(request).save_and_launch_workflow(
         user,
         workspace_id=payload.workspace_id,

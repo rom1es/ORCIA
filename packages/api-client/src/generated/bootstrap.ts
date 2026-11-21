@@ -21,6 +21,7 @@ export type LlmConnectionTestResponse = components["schemas"]["LlmConnectionTest
 export type LlmModelEndpointItem = components["schemas"]["LlmModelEndpointItem"];
 export type MemberInvitationInputItem = components["schemas"]["MemberInvitationInputItem"];
 export type OntologyTermInputItem = components["schemas"]["OntologyTermInputItem"];
+export type PlatformSetupStatePublicResponse = components["schemas"]["PlatformSetupStatePublicResponse"];
 export type PlatformSetupStatePutRequest = components["schemas"]["PlatformSetupStatePutRequest"];
 export type PlatformSetupStateResponse = components["schemas"]["PlatformSetupStateResponse"];
 export type ProgressiveLlmEndpointRequest = components["schemas"]["ProgressiveLlmEndpointRequest"];

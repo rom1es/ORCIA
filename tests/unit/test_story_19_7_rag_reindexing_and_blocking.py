@@ -198,10 +198,14 @@ def test_fastapi_rag_blocked_503_while_assistant_and_search_stay_unlocked_during
 
     # 3. Assistant turn & GET /search remain unlocked (HTTP 200, AD-24 Epic 25)
     assistant_payload = {
-        "workspace_id": "0195f000-0000-7000-8000-000000000301",
+        "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
         "user_prompt": "Bonjour assistant",
     }
-    res_assistant = client.post("/api/v1/assistant/three-speed/turn", json=assistant_payload)
+    res_assistant = client.post(
+        "/api/v1/assistant/three-speed/turn",
+        params={"persona_key": "marc"},
+        json=assistant_payload,
+    )
     assert res_assistant.status_code == 200
 
     res_fed_search = client.get(

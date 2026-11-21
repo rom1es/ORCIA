@@ -29,6 +29,7 @@ _PUBLIC_EXACT_OPERATIONS: frozenset[tuple[str, str]] = frozenset(
         ("GET", "/api/v1/auth/oidc/authorize"),
         ("POST", "/api/v1/auth/oidc/callback"),
         ("GET", "/api/v1/bootstrap/accostage-status"),
+        ("GET", "/api/v1/bootstrap/platform-setup-state"),
         ("POST", "/api/v1/bootstrap/welcome-setup/first-admin"),
         ("POST", "/api/v1/triggers/alerts"),
         ("POST", "/api/v1/webhooks/jira/issue-updated"),

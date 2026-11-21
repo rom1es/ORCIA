@@ -5,13 +5,14 @@ Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`)
 
 from __future__ import annotations
 
-import threading
-import time
-from typing import Literal, Protocol
+from typing import Literal
 
 from orcia_core.config import get_env
+from orcia_core.permissions._passthrough_helpers import (
+    decrypt_passthrough_record,
+    encrypt_passthrough_record,
+)
 from orcia_core.permissions.crypto import (
-    REFRESH_TOKEN_TTL_SECONDS,
     Argon2idPasswordHasher,
     JwtSessionManager,
     PassthroughVaultCipher,
@@ -23,7 +24,6 @@ from orcia_core.permissions.errors import (
     AuthenticationRequiredError,
     InvalidCredentialsError,
     InvalidMfaCodeError,
-    ObserverModeReadOnlyError,
     ResourceNotFoundError,
     RevokedTokenError,
 )
@@ -33,80 +33,26 @@ from orcia_core.permissions.models import (
     PassthroughCredentialRecord,
     UserIdentity,
 )
-from orcia_kernel.ids import new_uuid7_str
+from orcia_core.permissions.revocation import (
+    PERSONA_IMPERSONATION_ENVIRONMENTS as PERSONA_IMPERSONATION_ENVIRONMENTS,
+)
+from orcia_core.permissions.revocation import (
+    InMemoryRevocationStore as InMemoryRevocationStore,
+)
+from orcia_core.permissions.revocation import (
+    KeyValueRevocationStore as KeyValueRevocationStore,
+)
+from orcia_core.permissions.revocation import (
+    RedisSyncClientProtocol as RedisSyncClientProtocol,
+)
+from orcia_core.permissions.revocation import (
+    RevocationStoreProtocol as RevocationStoreProtocol,
+)
+from orcia_core.permissions.revocation import (
+    persona_impersonation_allowed as persona_impersonation_allowed,
+)
 
 DEFAULT_TOTP_SECRET_KARIM: str = "JBSWY3DPEHPK3PXP"
-
-
-class RevocationStoreProtocol(Protocol):
-    """Port protocol for JWT/Refresh `jti` revocation (in-memory or Redis 7.4 adapter)."""
-
-    def revoke_jti(self, jti: str, ttl_seconds: int = REFRESH_TOKEN_TTL_SECONDS) -> None:
-        """Mark a token `jti` as revoked for `ttl_seconds`."""
-
-    def is_revoked(self, jti: str) -> bool:
-        """Return True if `jti` has been revoked."""
-
-
-class RedisSyncClientProtocol(Protocol):
-    """Minimal structural protocol matching `redis.Redis` without importing `redis`."""
-
-    def set(self, name: str, value: str, *, ex: int | None = None) -> object:
-        """Set key with expiration."""
-
-    def exists(self, *names: str) -> int:
-        """Return count of existing keys."""
-
-
-class InMemoryRevocationStore:
-    """Thread-safe in-memory token revocation store with monotonic TTL expiration."""
-
-    def __init__(self) -> None:
-        self._lock = threading.Lock()
-        self._revoked: dict[str, float] = {}
-
-    def revoke_jti(self, jti: str, ttl_seconds: int = REFRESH_TOKEN_TTL_SECONDS) -> None:
-        if ttl_seconds > 0 and jti:
-            with self._lock:
-                self._revoked[jti] = time.monotonic() + ttl_seconds
-
-    def is_revoked(self, jti: str) -> bool:
-        with self._lock:
-            expires_at = self._revoked.get(jti)
-            if expires_at is None:
-                return False
-            if time.monotonic() < expires_at:
-                return True
-            del self._revoked[jti]
-            return False
-
-
-class KeyValueRevocationStore:
-    """Adapter backing `RevocationStoreProtocol` with any Redis-compatible key-value client."""
-
-    def __init__(
-        self, kv_client: RedisSyncClientProtocol, key_prefix: str = "auth:revoked:"
-    ) -> None:
-        self._kv = kv_client
-        self._prefix = key_prefix
-
-    def revoke_jti(self, jti: str, ttl_seconds: int = REFRESH_TOKEN_TTL_SECONDS) -> None:
-        self._kv.set(f"{self._prefix}{jti}", "1", ex=max(1, ttl_seconds))
-
-    def is_revoked(self, jti: str) -> bool:
-        return bool(self._kv.exists(f"{self._prefix}{jti}"))
-
-
-PERSONA_IMPERSONATION_ENVIRONMENTS: frozenset[str] = frozenset({"local", "test"})
-
-
-def persona_impersonation_allowed(orcia_env: str) -> bool:
-    """Return `True` only for `ORCIA_ENV` local / test (empty means local) — BUG-E2E-04.
-
-    Outside these environments, identity must come from a verified Bearer JWT: the
-    reference personas (`karim`, `claire`, `marc`, `nadia`) can never be selected by a caller.
-    """
-    return (orcia_env.strip().lower() or "local") in PERSONA_IMPERSONATION_ENVIRONMENTS
 
 
 class AuthAndOrganizationService:
@@ -287,6 +233,21 @@ class AuthAndOrganizationService:
         claims = self.verify_access_token_claims(access_token, now_ts=now_ts)
         return self.get_user_by_id(claims.sub)
 
+    def bootstrap_access_from_refresh(
+        self, refresh_token: str, *, now_ts: int | None = None
+    ) -> tuple[UserIdentity, SessionTokenPair]:
+        """Verify refresh JWT without rotating/revoking it and issue a fresh 15-min access JWT."""
+        claims = self.verify_refresh_token_claims(refresh_token, now_ts=now_ts)
+        user = self.get_user_by_id(claims.sub)
+        issued = self._issue_for_user(user, claims.auth_mode, now_ts)
+        return user, SessionTokenPair(
+            access_token=issued.access_token,
+            refresh_token=refresh_token,
+            refresh_jti=claims.jti,
+            access_jti=issued.access_jti,
+            expires_in_seconds=issued.expires_in_seconds,
+        )
+
     def refresh_session(
         self, refresh_token: str, *, now_ts: int | None = None
     ) -> tuple[UserIdentity, SessionTokenPair]:
@@ -317,36 +278,19 @@ class AuthAndOrganizationService:
         instance: str | None = None,
     ) -> PassthroughCredentialRecord:
         """Encrypt and store a Passthrough credential in AES-256-GCM (never exposing plaintext)."""
-        if user.platform_role in ("OBSERVER", "BU_DIRECTOR"):
-            raise ObserverModeReadOnlyError(instance=instance)
-        ciphertext_b64, nonce_b64 = self.vault_cipher.encrypt(
-            user_id=user.id,
+        record = encrypt_passthrough_record(
+            self.vault_cipher,
+            user,
+            connector_scheme=connector_scheme,
+            target_host=target_host,
             plaintext_secret=plaintext_secret,
-            connector_scheme=connector_scheme,
-            target_host=target_host,
-        )
-        record = PassthroughCredentialRecord(
-            id=new_uuid7_str(),
-            user_id=user.id,
-            connector_scheme=connector_scheme,
-            target_host=target_host,
-            ciphertext_b64=ciphertext_b64,
-            nonce_b64=nonce_b64,
-            key_version=1,
+            instance=instance,
         )
         self._passthrough_records[record.id] = record
         return record
 
     def decrypt_passthrough_credential(self, user: UserIdentity, record_id: str) -> str:
         """Decrypt a stored Passthrough credential exclusively for its owning `user`."""
-        record = self._passthrough_records.get(record_id)
-        if record is None:
-            raise ResourceNotFoundError()
-        return self.vault_cipher.decrypt(
-            user_id=user.id,
-            ciphertext_b64=record.ciphertext_b64,
-            nonce_b64=record.nonce_b64,
-            connector_scheme=record.connector_scheme,
-            target_host=record.target_host,
-            key_version=record.key_version,
+        return decrypt_passthrough_record(
+            self.vault_cipher, user, self._passthrough_records.get(record_id)
         )

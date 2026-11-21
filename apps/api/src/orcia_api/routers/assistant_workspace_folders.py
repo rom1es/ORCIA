@@ -1,13 +1,4 @@
-"""Epic 10 Sub-Router — Thematic Folders, Layer 5 Memory & Shared Threads (`Story 10.4`).
-
-Exposes:
-- `POST /api/v1/assistant/folders`
-- `POST /api/v1/assistant/threads`
-- `POST /api/v1/assistant/folders/{folder_id}/share`
-- `POST /api/v1/assistant/folders/{folder_id}/launch-process`
-- `POST /api/v1/assistant/threads/{thread_id}/turns`
-- `GET /api/v1/assistant/workspaces/{workspace_id}/overview`
-"""
+"""Epic 10 Sub-Router — Thematic Folders, Layer 5 Memory & Shared Threads (`Story 26.1`)."""
 
 from __future__ import annotations
 
@@ -17,9 +8,9 @@ from fastapi import APIRouter, Depends, Query, Request
 
 from orcia_api.dependencies import (
     get_assistant_folders_and_sharing_service,
-    get_auth_service,
     get_optional_embedding_port,
 )
+from orcia_api.dependencies._assistant_guards import enforce_assistant_workspace_guard
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.assistant_citations_and_folders import (
     AssistantFolderSchemaItem,
@@ -42,7 +33,6 @@ from orcia_core.orchestration.assistant_folders_and_sharing import (
     FolderShareGrant,
     sanitize_user_pinned_notes,
 )
-from orcia_core.orchestration.errors import ObserverModeReadOnlyError, ScopeAccessDeniedError
 from orcia_core.permissions.models import UserIdentity
 from orcia_core.ports.embedding import EmbeddingPort
 
@@ -52,6 +42,16 @@ CurrentUserDep = Annotated[UserIdentity, Depends(resolve_request_user)]
 FoldersSharingDep = Annotated[
     AssistantFoldersAndSharingService, Depends(get_assistant_folders_and_sharing_service)
 ]
+
+
+def _can_user_read_folder(folder: AssistantFolderRecord, user: UserIdentity) -> bool:
+    if folder.owner_user_id == user.id:
+        return True
+    if folder.visibility_mode == "PRIVATE":
+        return False
+    if folder.visibility_mode == "SHARED_SELECTED":
+        return any(s.grantee_user_id == user.id for s in folder.shares)
+    return True
 
 
 def _serialize_folder(record: AssistantFolderRecord) -> AssistantFolderSchemaItem:
@@ -67,35 +67,11 @@ def _serialize_folder(record: AssistantFolderRecord) -> AssistantFolderSchemaIte
         has_restricted_sources=record.has_restricted_sources,
         visibility_mode=record.visibility_mode,
         shares=[
-            FolderShareGrantSchemaItem(
-                grantee_user_id=g.grantee_user_id,
-                access_role=g.access_role,
-            )
+            FolderShareGrantSchemaItem(grantee_user_id=g.grantee_user_id, access_role=g.access_role)
             for g in record.shares
         ],
         assembled_layer5_prompt_block="",
     )
-
-
-def _enforce_workspace_guard(
-    request: Request,
-    user: UserIdentity,
-    workspace_id: str,
-    *,
-    require_write: bool,
-) -> None:
-    if require_write and (
-        request.headers.get("x-orcia-access-mode", "").strip().upper() == "READ_ONLY_OBSERVER"
-        or user.platform_role == "OBSERVER"
-    ):
-        raise ObserverModeReadOnlyError(instance=str(request.url.path))
-    evaluator = get_auth_service(request).evaluator
-    if any(w.id == workspace_id for w in evaluator.workspaces):
-        access = evaluator.resolve_workspace_access(user, workspace_id)
-        if access is None:
-            raise ScopeAccessDeniedError(instance=str(request.url.path))
-        if require_write and access.access_mode == "READ_ONLY_OBSERVER":
-            raise ObserverModeReadOnlyError(instance=str(request.url.path))
 
 
 @router.post("/folders", response_model=AssistantFolderSchemaItem)
@@ -105,8 +81,8 @@ async def create_or_update_assistant_folder_endpoint(
     user: CurrentUserDep,
     folders_svc: FoldersSharingDep,
 ) -> AssistantFolderSchemaItem:
-    """Create or update a thematic `📁 Dossier` (`📌 Notes du dossier`) persisted in PG18."""
-    _enforce_workspace_guard(request, user, payload.workspace_id, require_write=True)
+    """Create or update a thematic folder persisted in PG18."""
+    await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
     record = await folders_svc.create_or_update_folder_async(
         workspace_id=payload.workspace_id,
         user=user,
@@ -124,10 +100,12 @@ async def create_or_update_assistant_folder_endpoint(
 @router.post("/threads", response_model=AssistantThreadSchemaItem)
 async def create_assistant_thread_endpoint(
     payload: CreateAssistantThreadRequest,
+    request: Request,
     user: CurrentUserDep,
     folders_svc: FoldersSharingDep,
 ) -> AssistantThreadSchemaItem:
-    """Create a discussion thread inside a `📁 Dossier` (`Story 10.4`) persisted in PG18."""
+    """Create a discussion thread inside a thematic folder persisted in PG18."""
+    await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
     thread = await folders_svc.create_thread_in_folder_async(
         workspace_id=payload.workspace_id,
         user=user,
@@ -152,20 +130,19 @@ async def create_assistant_thread_endpoint(
 async def configure_folder_sharing_endpoint(
     folder_id: str,
     payload: ConfigureFolderSharingRequest,
+    request: Request,
     user: CurrentUserDep,
     folders_svc: FoldersSharingDep,
 ) -> ConfigureFolderSharingResponse:
-    """Configure folder visibility (`🔒 Privé | 👥 Partagé | 📦 Espace`) confined to Workspace."""
+    """Configure folder visibility confined to Workspace."""
+    await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
     outcome = await folders_svc.configure_folder_sharing_async(
         workspace_id=payload.workspace_id,
         folder_id=folder_id,
         owner_user=user,
         visibility_mode=payload.visibility_mode,
         shares=[
-            FolderShareGrant(
-                grantee_user_id=s.grantee_user_id,
-                access_role=s.access_role,
-            )
+            FolderShareGrant(grantee_user_id=s.grantee_user_id, access_role=s.access_role)
             for s in payload.shares
         ],
         outside_workspace_user_ids=payload.outside_workspace_user_ids,
@@ -175,10 +152,7 @@ async def configure_folder_sharing_endpoint(
         workspace_id=outcome.workspace_id,
         visibility_mode=outcome.visibility_mode,
         shares=[
-            FolderShareGrantSchemaItem(
-                grantee_user_id=s.grantee_user_id,
-                access_role=s.access_role,
-            )
+            FolderShareGrantSchemaItem(grantee_user_id=s.grantee_user_id, access_role=s.access_role)
             for s in outcome.shares
         ],
         has_restricted_sources=outcome.has_restricted_sources,
@@ -190,10 +164,12 @@ async def configure_folder_sharing_endpoint(
 async def launch_process_from_folder_endpoint(
     folder_id: str,
     payload: LaunchProcessFromFolderRequest,
+    request: Request,
     user: CurrentUserDep,
     folders_svc: FoldersSharingDep,
 ) -> LaunchProcessFromFolderResponse:
-    """Pre-fill a Process contract in 1 click (`☍ Lancer un Processus à partir de ce dossier →`)."""
+    """Pre-fill a Process contract in 1 click from a thematic folder."""
+    await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
     prep = await folders_svc.prepare_workflow_launch_from_folder_async(
         workspace_id=payload.workspace_id,
         folder_id=folder_id,
@@ -214,11 +190,13 @@ async def launch_process_from_folder_endpoint(
 async def send_collaborative_thread_turn_endpoint(
     thread_id: str,
     payload: SendCollaborativeThreadTurnRequest,
+    request: Request,
     user: CurrentUserDep,
     folders_svc: FoldersSharingDep,
     _embedding_port: Annotated[EmbeddingPort | None, Depends(get_optional_embedding_port)],
 ) -> SendCollaborativeThreadTurnResponse:
     """Execute a turn in a shared thread under Redis turn lock (`NX EX 60`)."""
+    await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
     outcome = await folders_svc.send_collaborative_thread_turn_async(
         workspace_id=payload.workspace_id,
         thread_id=thread_id,
@@ -255,18 +233,26 @@ async def get_assistant_workspace_overview_endpoint(
     search_query: str = Query(default=""),
 ) -> AssistantWorkspaceOverviewResponse:
     """Return the 3-tab `Mon Assistant` workspace overview hydrated from PG18."""
-    _enforce_workspace_guard(request, user, workspace_id, require_write=False)
+    await enforce_assistant_workspace_guard(request, user, workspace_id, require_write=False)
     overview = await folders_svc.get_workspace_overview_async(
         workspace_id=workspace_id,
         active_folder_id=active_folder_id,
         search_query=search_query,
     )
+    visible_folders = [f for f in overview.folders if _can_user_read_folder(f, user)]
+    visible_folder_ids = {f.folder_id for f in visible_folders}
+    visible_threads = [
+        t for t in overview.threads if not t.folder_id or t.folder_id in visible_folder_ids
+    ]
+    visible_hits = [
+        h for h in overview.history_hits if not h.folder_id or h.folder_id in visible_folder_ids
+    ]
     return AssistantWorkspaceOverviewResponse(
         workspace_id=overview.workspace_id,
         tabs=list(overview.tabs),
         active_folder_pill_label=overview.active_folder_pill_label,
-        folders_count=overview.folders_count,
-        folders=[_serialize_folder(f) for f in overview.folders],
+        folders_count=len(visible_folders),
+        folders=[_serialize_folder(f) for f in visible_folders],
         threads=[
             AssistantThreadSchemaItem(
                 thread_id=t.thread_id,
@@ -279,7 +265,7 @@ async def get_assistant_workspace_overview_endpoint(
                 last_author_user_id=t.last_author_user_id,
                 last_author_passthrough_identity=t.last_author_passthrough_identity,
             )
-            for t in overview.threads
+            for t in visible_threads
         ],
         history_hits=[
             AssistantHistorySearchHitSchemaItem(
@@ -289,6 +275,6 @@ async def get_assistant_workspace_overview_endpoint(
                 snippet=h.snippet,
                 folder_id=h.folder_id,
             )
-            for h in overview.history_hits
+            for h in visible_hits
         ],
     )

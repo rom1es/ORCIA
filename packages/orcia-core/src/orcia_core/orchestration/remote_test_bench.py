@@ -5,7 +5,6 @@ Pure domain service — zero SQLAlchemy, Redis, or FastAPI imports (`AD-19`).
 
 from __future__ import annotations
 
-import ipaddress
 from typing import Literal
 from urllib.parse import urlparse
 
@@ -17,20 +16,11 @@ from orcia_core.orchestration.remote_test_bench_models import (
     TestBenchStepResult,
     ToolAccessQualification,
 )
+from orcia_core.orchestration.ssrf_guard import (
+    is_safe_llm_endpoint_url as _shared_is_safe_endpoint_url,
+)
 
 _WRITE_KEYWORDS = ("create", "update", "delete", "write", "post", "put", "patch", "publish", "push")
-_BLOCKED_METADATA_HOSTS: frozenset[str] = frozenset(
-    {
-        "169.254.169.254",
-        "100.100.100.200",
-        "metadata.google.internal",
-        "metadata.goog",
-        "metadata.azure.com",
-        "instance-data",
-    }
-)
-_LINK_LOCAL_V4_NET = ipaddress.ip_network("169.254.0.0/16")
-_LINK_LOCAL_V6_NET = ipaddress.ip_network("fe80::/10")
 
 
 def is_safe_llm_endpoint_url(
@@ -38,44 +28,12 @@ def is_safe_llm_endpoint_url(
     *,
     allow_private_network: bool = False,
 ) -> bool:
-    """Validate an endpoint URL against Cloud Metadata / link-local SSRF attacks.
-
-    Always blocks link-local (`169.254.0.0/16`, `fe80::/10`), Cloud metadata hosts
-    (`169.254.169.254`, `100.100.100.200`, `metadata.google.internal`), unspecified,
-    and multicast addresses while permitting internal `.local` / `.internal` hostnames
-    and private networks when `allow_private_network=True`.
-    """
-    raw = (url or "").strip()
-    if not raw:
-        return False
-    try:
-        parsed = urlparse(raw)
-    except ValueError:
-        return False
-    if parsed.scheme not in ("http", "https"):
-        return False
-    if parsed.username or parsed.password:
-        return False
-    host = (parsed.hostname or "").strip().lower().rstrip(".")
-    if not host or host in _BLOCKED_METADATA_HOSTS or host.endswith(".google.internal"):
-        return False
-    if not allow_private_network and host == "localhost":
-        return False
-    try:
-        ip = ipaddress.ip_address(host)
-        if (
-            ip.is_link_local
-            or ip.is_unspecified
-            or ip.is_multicast
-            or (ip.version == 4 and ip in _LINK_LOCAL_V4_NET)
-            or (ip.version == 6 and ip in _LINK_LOCAL_V6_NET)
-        ):
-            return False
-        if not allow_private_network and (ip.is_private or ip.is_loopback):
-            return False
-    except ValueError:
-        pass
-    return True
+    """Validate an endpoint URL against Cloud Metadata / link-local / port SSRF attacks."""
+    return _shared_is_safe_endpoint_url(
+        url,
+        allow_private_network=allow_private_network,
+        enforce_placeholder_block=False,
+    )
 
 
 def check_remote_endpoint_anti_ssrf(

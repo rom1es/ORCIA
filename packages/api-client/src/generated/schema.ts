@@ -1097,7 +1097,7 @@ export interface components {
     ConversationTurnMessageItem: {
       content: string;
       name?: string | null;
-      role: "user" | "assistant" | "tool";
+      role: "user" | "assistant";
       tool_call_id?: string | null;
     };
     CreateAssistantThreadRequest: {
@@ -2989,6 +2989,10 @@ export interface components {
       value_jsonb: Record<string, unknown>;
       version: number;
     };
+    PlatformSetupStatePublicResponse: {
+      is_initialized?: boolean;
+      step: string;
+    };
     PlatformSetupStatePutRequest: {
       audit_events?: (Record<string, unknown>)[];
       catalog_items?: (Record<string, unknown>)[];
@@ -4510,7 +4514,6 @@ export interface components {
     };
     VerifyAndFilterCitationsRequest: {
       glossary_items?: (components["schemas"]["RawGlossaryCandidateSchemaItem"])[];
-      reader_allowed_source_uris?: (string)[] | null;
       response_text: string;
       sources?: (components["schemas"]["RawSourceCandidateSchemaItem"])[];
       tool_outputs?: (components["schemas"]["RawToolOutputCandidateSchemaItem"])[];
@@ -5481,7 +5484,7 @@ export interface paths {
   "/api/v1/bootstrap/platform-setup-state": {
     get: {
       responses: {
-        200: components["schemas"]["PlatformSetupStateResponse"];
+        200: components["schemas"]["PlatformSetupStateResponse"] | components["schemas"]["PlatformSetupStatePublicResponse"];
       };
     };
     put: {
@@ -7289,6 +7292,7 @@ export type PermissionTicketActionResponse = components["schemas"]["PermissionTi
 export type PilotWorkflowRunResponse = components["schemas"]["PilotWorkflowRunResponse"];
 export type PlatformAuthSettingsResponse = components["schemas"]["PlatformAuthSettingsResponse"];
 export type PlatformSettingResponse = components["schemas"]["PlatformSettingResponse"];
+export type PlatformSetupStatePublicResponse = components["schemas"]["PlatformSetupStatePublicResponse"];
 export type PlatformSetupStatePutRequest = components["schemas"]["PlatformSetupStatePutRequest"];
 export type PlatformSetupStateResponse = components["schemas"]["PlatformSetupStateResponse"];
 export type PopularUsageItemResponse = components["schemas"]["PopularUsageItemResponse"];

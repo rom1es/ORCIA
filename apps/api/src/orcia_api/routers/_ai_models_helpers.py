@@ -129,19 +129,29 @@ async def execute_model_connection_test(
         effective_key = os.environ.get(rec.env_var_name)
 
     http_client: httpx.AsyncClient | None = getattr(request.app.state, "http_client", None)
-    if http_client is None or getattr(http_client, "is_closed", False):
-        http_client = httpx.AsyncClient(timeout=15.0)
-
-    outcome = await test_ai_model_endpoint_connection(
-        http_client=http_client,
-        endpoint_uri=rec.endpoint_uri,
-        protocol_mode=rec.protocol_mode,
-        model_name=rec.model_name,
-        usage=rec.usage,
-        api_key=effective_key,
-        provider_slug=rec.provider_slug,
-        instance=path,
-    )
+    if http_client is not None and not getattr(http_client, "is_closed", False):
+        outcome = await test_ai_model_endpoint_connection(
+            http_client=http_client,
+            endpoint_uri=rec.endpoint_uri,
+            protocol_mode=rec.protocol_mode,
+            model_name=rec.model_name,
+            usage=rec.usage,
+            api_key=effective_key,
+            provider_slug=rec.provider_slug,
+            instance=path,
+        )
+    else:
+        async with httpx.AsyncClient(timeout=15.0) as local_client:
+            outcome = await test_ai_model_endpoint_connection(
+                http_client=local_client,
+                endpoint_uri=rec.endpoint_uri,
+                protocol_mode=rec.protocol_mode,
+                model_name=rec.model_name,
+                usage=rec.usage,
+                api_key=effective_key,
+                provider_slug=rec.provider_slug,
+                instance=path,
+            )
 
     is_fr = "fr" in request.headers.get("accept-language", "").lower()
     msg = outcome.message_fr if is_fr else outcome.message_en

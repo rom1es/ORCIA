@@ -163,13 +163,14 @@ def test_story_10_2_three_speeds_routing_and_slos() -> None:
 def test_story_10_2_api_endpoints_turn_stream_and_invalidation() -> None:
     """Verify `/api/v1/assistant/three-speed/*` endpoints (`Story 10.2`)."""
     app.state.embedding_port = FakeDeterministicEmbeddingAdapter()
+    ws_id = "0192c4e0-0000-7000-8000-000000000201"
     with TestClient(app) as client:
         # 1st turn (MISS -> populates cache)
         r1 = client.post(
             "/api/v1/assistant/three-speed/turn",
-            params={"persona_key": "claire"},
+            params={"persona_key": "marc"},
             json={
-                "workspace_id": "ws-claims-alpha",
+                "workspace_id": ws_id,
                 "user_prompt": "Synthèse rapide des règles de gestion",
             },
         )
@@ -182,9 +183,9 @@ def test_story_10_2_api_endpoints_turn_stream_and_invalidation() -> None:
         # 2nd turn (HIT)
         r2 = client.post(
             "/api/v1/assistant/three-speed/turn",
-            params={"persona_key": "claire"},
+            params={"persona_key": "marc"},
             json={
-                "workspace_id": "ws-claims-alpha",
+                "workspace_id": ws_id,
                 "user_prompt": "Interroge @jira-triage sur l'épic 10",
             },
         )
@@ -197,9 +198,9 @@ def test_story_10_2_api_endpoints_turn_stream_and_invalidation() -> None:
         # SSE stream endpoint
         stream_resp = client.post(
             "/api/v1/assistant/three-speed/stream",
-            params={"persona_key": "claire"},
+            params={"persona_key": "marc"},
             json={
-                "workspace_id": "ws-claims-alpha",
+                "workspace_id": ws_id,
                 "user_prompt": "Audit approfondi",
                 "deep_audit_pill_active": True,
             },
@@ -217,7 +218,7 @@ def test_story_10_2_api_endpoints_turn_stream_and_invalidation() -> None:
             "/api/v1/assistant/three-speed/invalidate-cache",
             params={"persona_key": "marc"},
             json={
-                "workspace_id": "ws-claims-alpha",
+                "workspace_id": ws_id,
                 "reason": "GLOSSARY_PROMOTED",
             },
         )
@@ -305,9 +306,9 @@ def test_story_10_2_live_llm_bridge_agnostic_provider_and_url_normalization(
         )
         r_live = client.post(
             "/api/v1/assistant/three-speed/turn",
-            params={"persona_key": "claire"},
+            params={"persona_key": "marc"},
             json={
-                "workspace_id": "ws-claims-alpha",
+                "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
                 "user_prompt": "Bonjour",
             },
         )
@@ -430,9 +431,9 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
         )
         r_complex_deep = client.post(
             "/api/v1/assistant/three-speed/turn",
-            params={"persona_key": "claire"},
+            params={"persona_key": "marc"},
             json={
-                "workspace_id": "ws-claims-alpha",
+                "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
                 "user_prompt": "Analyse critique complète du dossier",
                 "requested_tier": "complex",
                 "thinking_effort": "deep",

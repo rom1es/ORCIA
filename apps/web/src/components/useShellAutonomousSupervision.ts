@@ -18,21 +18,27 @@ export function useShellAutonomousSupervision({
   isAuthenticated,
   selectedScope,
   workspaces,
+  currentUserEmail,
 }: {
   isAuthenticated: boolean;
   selectedScope: { id: string; level: string };
-  workspaces: readonly { workspaceId: string }[];
+  workspaces: readonly { workspaceId: string; ownerUserId?: string }[];
+  currentUserEmail?: string | null;
 }) {
   const activeWsUuid = useMemo(() => {
+    const callerEmail = currentUserEmail?.trim().toLowerCase() ?? "";
+    const eligibleWorkspaces = workspaces.filter(
+      (w) =>
+        isValidWorkspaceKey(w.workspaceId) &&
+        (!w.ownerUserId || !callerEmail || w.ownerUserId.toLowerCase() === callerEmail),
+    );
     const scopeWs = selectedScope.id.startsWith("scope-ws-")
       ? selectedScope.id.slice("scope-ws-".length)
       : selectedScope.id;
-    const effectiveWsId = workspaces.find(
-      (w) => isValidWorkspaceKey(w.workspaceId) && w.workspaceId === scopeWs,
-    )?.workspaceId;
+    const effectiveWsId = eligibleWorkspaces.find((w) => w.workspaceId === scopeWs)?.workspaceId;
     if (effectiveWsId) return effectiveWsId;
-    return workspaces.find((w) => isValidWorkspaceKey(w.workspaceId))?.workspaceId ?? null;
-  }, [selectedScope, workspaces]);
+    return eligibleWorkspaces[0]?.workspaceId ?? null;
+  }, [selectedScope, workspaces, currentUserEmail]);
 
   const { lastClaimEvent } = useWorkspaceEventsSse(
     isAuthenticated ? (activeWsUuid ?? undefined) : undefined,

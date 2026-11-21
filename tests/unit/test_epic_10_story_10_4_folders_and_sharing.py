@@ -209,13 +209,14 @@ def _run_story_10_4_fastapi_endpoints_assertions(isolated_app: object) -> None:
     from fastapi import FastAPI
 
     assert isinstance(isolated_app, FastAPI)
+    ws_id = "0192c4e0-0000-7000-8000-000000000201"
     with TestClient(isolated_app) as client:
         # 1. Create folder as karim
         folder_resp = client.post(
             "/api/v1/assistant/folders",
             params={"persona_key": "karim"},
             json={
-                "workspace_id": "ws-claims-alpha",
+                "workspace_id": ws_id,
                 "title": "Refonte Tunnel Checkout",
                 "pinned_notes_markdown": "Décision #1 : 3DS2 obligatoire.",
                 "working_attachments_uris": ["orcia://drafts/spec-01@draft"],
@@ -235,7 +236,7 @@ def _run_story_10_4_fastapi_endpoints_assertions(isolated_app: object) -> None:
         # Internal Layer 5 block remains assembled internally for AssistantHarness
         folders_svc = isolated_app.state.assistant_folders_and_sharing_service
         internal_l5 = folders_svc.build_layer5_folder_memory_injection(
-            workspace_id="ws-claims-alpha",
+            workspace_id=ws_id,
             folder_id=folder_id,
         )
         assert "LAYER_5_FOLDER_CONTINUITY" in internal_l5.assembled_layer5_prompt_block
@@ -244,7 +245,7 @@ def _run_story_10_4_fastapi_endpoints_assertions(isolated_app: object) -> None:
         launch_resp = client.post(
             f"/api/v1/assistant/folders/{folder_id}/launch-process",
             params={"persona_key": "karim"},
-            json={"workspace_id": "ws-claims-alpha"},
+            json={"workspace_id": ws_id},
         )
         assert launch_resp.status_code == 200
         assert (
@@ -256,7 +257,7 @@ def _run_story_10_4_fastapi_endpoints_assertions(isolated_app: object) -> None:
             "/api/v1/assistant/threads",
             params={"persona_key": "karim"},
             json={
-                "workspace_id": "ws-claims-alpha",
+                "workspace_id": ws_id,
                 "folder_id": folder_id,
                 "title": "Discussion partagée Checkout",
             },
@@ -268,32 +269,32 @@ def _run_story_10_4_fastapi_endpoints_assertions(isolated_app: object) -> None:
             f"/api/v1/assistant/folders/{folder_id}/share",
             params={"persona_key": "karim"},
             json={
-                "workspace_id": "ws-claims-alpha",
+                "workspace_id": ws_id,
                 "visibility_mode": "WORKSPACE_OPEN",
             },
         )
         assert share_resp.status_code == 200
         assert share_resp.json()["restricted_sources_warning"] is not None
 
-        # 4. Claire sends a turn holding the lock (`release_lock_after_turn=False`)
+        # 4. Marc sends a turn holding the lock (`release_lock_after_turn=False`)
         turn1 = client.post(
             f"/api/v1/assistant/threads/{thread_id}/turns",
-            params={"persona_key": "claire"},
+            params={"persona_key": "marc"},
             json={
-                "workspace_id": "ws-claims-alpha",
+                "workspace_id": ws_id,
                 "message_text": "Synthèse des risques PSP",
                 "release_lock_after_turn": False,
             },
         )
         assert turn1.status_code == 200
-        assert "claire" in turn1.json()["author_passthrough_identity"]
+        assert "marc" in turn1.json()["author_passthrough_identity"]
 
-        # 5. Karim sends a turn while Claire's lock is active -> 409 ERR_THREAD_TURN_LOCK_HELD
+        # 5. Karim sends a turn while Marc's lock is active -> 409 ERR_THREAD_TURN_LOCK_HELD
         turn2_conflict = client.post(
             f"/api/v1/assistant/threads/{thread_id}/turns",
             params={"persona_key": "karim"},
             json={
-                "workspace_id": "ws-claims-alpha",
+                "workspace_id": ws_id,
                 "message_text": "Conflit de tour",
             },
         )
@@ -302,7 +303,7 @@ def _run_story_10_4_fastapi_endpoints_assertions(isolated_app: object) -> None:
 
         # 6. Overview 3 tabs (`💬`, `📁`, `🕘`)
         overview_resp = client.get(
-            "/api/v1/assistant/workspaces/ws-claims-alpha/overview",
+            f"/api/v1/assistant/workspaces/{ws_id}/overview",
             params={"persona_key": "karim"},
         )
         assert overview_resp.status_code == 200

@@ -39,7 +39,7 @@ REQUIRED_FIELDS = ("id", "title", "origin", "origin_ref", "status")
 ORIGINS = {"epic", "adhoc"}
 STATUSES = {"live", "partial", "planned"}
 KINDS = {"feature", "foundation"}
-VERIFICATIONS = {"docs", "runtime", "failed_e2e"}
+VERIFICATIONS = {"docs", "api", "runtime", "failed_e2e"}
 UJ_PATTERN = re.compile(r"UJ-[1-9]\d?")
 
 

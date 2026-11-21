@@ -1,17 +1,16 @@
-"""Epic 10 Sub-Router — Deterministic Citations & Verrou V5 Guard (`Story 10.3`).
-
-Exposes:
-- `POST /api/v1/assistant/citations/verify-turn`
-- `POST /api/v1/assistant/artifacts/action`
-"""
+"""Epic 10 Sub-Router — Deterministic Citations & Verrou V5 Guard (`Story 10.3`, `Story 26.1`)."""
 
 from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from orcia_api.dependencies import get_assistant_citation_and_v5_guard_service
+from orcia_api.dependencies._assistant_guards import (
+    enforce_assistant_workspace_guard,
+    resolve_server_allowed_source_uris,
+)
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.assistant_citations_and_folders import (
     ArtifactCardActionRequest,
@@ -39,12 +38,14 @@ CitationGuardDep = Annotated[
 
 
 @router.post("/citations/verify-turn", response_model=VerifyAndFilterCitationsResponse)
-def verify_and_filter_citations_endpoint(
+async def verify_and_filter_citations_endpoint(
     payload: VerifyAndFilterCitationsRequest,
+    request: Request,
     user: CurrentUserDep,
     citation_svc: CitationGuardDep,
 ) -> VerifyAndFilterCitationsResponse:
-    """Build Evidence Table (`REFERENCE > ACTIVE`), filter `READ_SOURCE` & strip phantom tags."""
+    """Build Evidence Table (`REFERENCE > ACTIVE`), enforce `READ_SOURCE` & strip phantom tags."""
+    await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
     table = citation_svc.build_evidence_table(
         sources=tuple(
             RawSourceCandidate(
@@ -77,12 +78,17 @@ def verify_and_filter_citations_endpoint(
             for t in payload.tool_outputs
         ),
     )
-    if payload.reader_allowed_source_uris is not None:
-        table = citation_svc.filter_citation_map_for_reader(
-            user,
-            evidence_table=table,
-            reader_allowed_source_uris=frozenset(payload.reader_allowed_source_uris),
-        )
+    allowed_uris = await resolve_server_allowed_source_uris(
+        request,
+        user,
+        workspace_id=payload.workspace_id,
+        candidate_uris=tuple(s.uri for s in table.sources),
+    )
+    table = citation_svc.filter_citation_map_for_reader(
+        user,
+        evidence_table=table,
+        reader_allowed_source_uris=allowed_uris,
+    )
     verified = citation_svc.verify_and_sanitize_citations(
         response_text=payload.response_text,
         evidence_table=table,
@@ -139,12 +145,14 @@ def verify_and_filter_citations_endpoint(
 
 
 @router.post("/artifacts/action", response_model=ArtifactCardActionResponse)
-def execute_artifact_card_action_endpoint(
+async def execute_artifact_card_action_endpoint(
     payload: ArtifactCardActionRequest,
+    request: Request,
     user: CurrentUserDep,
     citation_svc: CitationGuardDep,
 ) -> ArtifactCardActionResponse:
-    """Execute a Structured Artifact Card action, enforcing Verrou V5 (`AD-15`)."""
+    """Execute a Structured Artifact Card action, enforcing scope & Verrou V5 (`AD-15`)."""
+    await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
     outcome = citation_svc.execute_artifact_card_action(
         user,
         workspace_id=payload.workspace_id,

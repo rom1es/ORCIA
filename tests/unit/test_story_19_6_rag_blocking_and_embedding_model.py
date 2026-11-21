@@ -221,8 +221,9 @@ def test_api_assistant_and_federated_search_succeed_when_no_active_embedding_mod
 
     resp_turn = client.post(
         "/api/v1/assistant/three-speed/turn",
+        params={"persona_key": "marc"},
         json={
-            "workspace_id": "ws-test",
+            "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
             "user_prompt": "Hello assistant without embedding",
             "requested_speed": "SPEED_1_FAST",
         },

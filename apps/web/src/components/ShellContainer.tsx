@@ -38,7 +38,11 @@ import { renderShellSidebarFooter } from "./ShellSidebarFooter";
 import { ShellUserSettingsModal } from "./ShellUserSettingsModal";
 import { renderShellZone4HelpColumn } from "./shellZone4HelpWiring";
 import { useShellAutonomousSupervision } from "./useShellAutonomousSupervision";
-import { useShellAuthRedirects, useShellContainerState } from "./useShellContainerState";
+import {
+  clearSavedActiveScopeId,
+  useShellAuthRedirects,
+  useShellContainerState,
+} from "./useShellContainerState";
 
 export {
   DEFAULT_SHELL_MODULES,
@@ -83,6 +87,8 @@ function InnerShellContainer({
     defaultScopedId: firstScopedId,
     isAuthHydrating: auth.isHydrating,
     isInitialLoading,
+    isAuthenticated: auth.isAuthenticated,
+    currentUserEmail: auth.email,
     validScopeIds,
   });
   const isFr = locale === "fr";
@@ -107,6 +113,7 @@ function InnerShellContainer({
     isAuthenticated: auth.isAuthenticated,
     selectedScope: preliminaryScope,
     workspaces,
+    currentUserEmail: auth.email,
   });
   const derived = deriveShellScopeAndBreadcrumbs({
     pathname,
@@ -218,7 +225,10 @@ function InnerShellContainer({
           dictionary,
           onLocaleChange: setLocale,
           onDispatchNavigation: dispatchNavigation,
-          onLogout: () => void auth.logoutSession().then(() => dispatchNavigation("/login")),
+          onLogout: () => {
+            clearSavedActiveScopeId();
+            void auth.logoutSession().then(() => dispatchNavigation("/login"));
+          },
           onOpenShowcase: () => selectModuleAndNavigate("help", "ontology", "/showcase"),
         })}
         helpColumnContent={renderShellZone4HelpColumn({

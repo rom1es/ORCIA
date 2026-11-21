@@ -1,9 +1,8 @@
-"""Epic 10 Router — `Mon Assistant` All-in-One (`Stories 10.1..10.4`)."""
+"""Epic 10 Router — `Mon Assistant` All-in-One (`Stories 10.1..10.4`, `Story 26.1`)."""
 
 from __future__ import annotations
 
 import json
-import re
 from collections.abc import AsyncIterator
 from typing import Annotated
 
@@ -14,20 +13,19 @@ from orcia_api.dependencies import (
     get_assistant_three_speed_router_service,
     get_optional_embedding_port,
 )
+from orcia_api.dependencies._assistant_guards import enforce_assistant_workspace_guard
 from orcia_api.routers._assistant_workspace_context import (
     record_non_stream_turn_telemetry,
+    resolve_effective_speed,
     resolve_folder_notes,
     resolve_turn_history,
-    to_active_turn_response,
 )
+from orcia_api.routers._assistant_workspace_controls import controls_router
 from orcia_api.routers.assistant_llm_bridge import (
     ensure_active_chat_model_if_live,
-    get_active_turn_for_workspace,
     invoke_configured_llm_for_assistant_turn,
-    record_prompt_telemetry_entry,
     resolve_assembled_system_instructions_for_turn,
     resolve_request_locale,
-    stop_active_turn_for_workspace,
     stream_configured_llm_for_assistant_turn,
 )
 from orcia_api.routers.assistant_workspace_citations import router as citations_router
@@ -35,19 +33,11 @@ from orcia_api.routers.assistant_workspace_folders import router as folders_rout
 from orcia_api.routers.assistant_workspace_governance import router as governance_router
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.assistant import (
-    ActiveBackgroundTurnStatusResponse,
-    InvalidatePromptCacheRequest,
-    InvalidatePromptCacheResponse,
-    RecordAssistantTurnFeedbackRequest,
-    StopActiveBackgroundTurnRequest,
     ThreeSpeedStepProgressSchemaItem,
     ThreeSpeedTurnRequest,
     ThreeSpeedTurnResponse,
 )
-from orcia_core.orchestration.assistant_three_speed_router import (
-    AssistantSpeedMode,
-    AssistantThreeSpeedRouterService,
-)
+from orcia_core.orchestration.assistant_three_speed_router import AssistantThreeSpeedRouterService
 from orcia_core.permissions.models import UserIdentity
 from orcia_core.ports.embedding import EmbeddingPort
 
@@ -61,26 +51,6 @@ CurrentUserDep = Annotated[UserIdentity, Depends(resolve_request_user)]
 ThreeSpeedRouterDep = Annotated[
     AssistantThreeSpeedRouterService, Depends(get_assistant_three_speed_router_service)
 ]
-_SPEED2_MENTION_OR_SLASH_RE = re.compile(r"(?:^|\s)(?:@[a-zA-Z0-9_-]{2,}|/[a-zA-Z0-9_-]{2,})")
-
-
-def _resolve_effective_speed(
-    payload: ThreeSpeedTurnRequest,
-) -> tuple[bool, AssistantSpeedMode | None, AssistantSpeedMode]:
-    effective_deep_audit = payload.deep_audit_pill_active or payload.thinking_effort == "deep"
-    effective_speed: AssistantSpeedMode | None = payload.requested_speed or (
-        "SPEED_3_DEEP_AUDIT"
-        if effective_deep_audit
-        else "SPEED_2_AGENT_TOOLS"
-        if payload.thinking_effort == "balanced"
-        else None
-    )
-    resolved_for_llm: AssistantSpeedMode = effective_speed or (
-        "SPEED_2_AGENT_TOOLS"
-        if _SPEED2_MENTION_OR_SLASH_RE.search(payload.user_prompt or "")
-        else "SPEED_1_FAST"
-    )
-    return effective_deep_audit, effective_speed, resolved_for_llm
 
 
 @router.post("/three-speed/turn", response_model=ThreeSpeedTurnResponse)
@@ -91,12 +61,15 @@ async def execute_three_speed_turn_endpoint(
     router_svc: ThreeSpeedRouterDep,
     _embedding_port: Annotated[EmbeddingPort | None, Depends(get_optional_embedding_port)],
 ) -> ThreeSpeedTurnResponse:
-    """Execute a 3-Speed conversational turn (`⚡ Rapide`, `@Agent / /Skill`, `🧠 Approfondi`)."""
-    await ensure_active_chat_model_if_live(request, requested_tier=payload.requested_tier)
-    effective_deep_audit, effective_speed, resolved_speed = _resolve_effective_speed(payload)
-    resolved_notes = await resolve_folder_notes(request, payload)
+    """Execute a 3-Speed conversational turn (`Rapide`, `@Agent / /Skill`, `Approfondi`)."""
+    await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
+    await ensure_active_chat_model_if_live(
+        request, requested_tier=payload.requested_tier, workspace_id=payload.workspace_id
+    )
+    effective_deep_audit, effective_speed, resolved_speed = resolve_effective_speed(payload)
+    resolved_notes = await resolve_folder_notes(request, payload, user=user)
     active_hat = payload.hat or user.human_profile_archetype or "PLATFORM_ADMIN"
-    history = await resolve_turn_history(request, payload)
+    history = await resolve_turn_history(request, payload, user=user)
     live_outcome = await invoke_configured_llm_for_assistant_turn(
         request,
         user_prompt=payload.user_prompt,
@@ -186,49 +159,6 @@ async def execute_three_speed_turn_endpoint(
     )
 
 
-@router.get("/three-speed/active-turn", response_model=ActiveBackgroundTurnStatusResponse)
-def get_active_three_speed_turn_endpoint(
-    workspace_id: str,
-    user: CurrentUserDep,
-) -> ActiveBackgroundTurnStatusResponse:
-    """Return the active or recently completed background turn for `workspace_id`."""
-    state = get_active_turn_for_workspace(workspace_id)
-    if state is None:
-        return ActiveBackgroundTurnStatusResponse(workspace_id=workspace_id, status="IDLE")
-    return to_active_turn_response(state)
-
-
-@router.post("/three-speed/stop", response_model=ActiveBackgroundTurnStatusResponse)
-async def stop_active_three_speed_turn_endpoint(
-    payload: StopActiveBackgroundTurnRequest,
-    user: CurrentUserDep,
-) -> ActiveBackgroundTurnStatusResponse:
-    """Explicitly cancel the active background LLM task when the user clicks Stop `■`."""
-    state = await stop_active_turn_for_workspace(payload.workspace_id)
-    if state is None:
-        return ActiveBackgroundTurnStatusResponse(
-            workspace_id=payload.workspace_id, status="STOPPED"
-        )
-    return to_active_turn_response(state)
-
-
-@router.post("/three-speed/feedback")
-def record_assistant_turn_feedback_endpoint(
-    payload: RecordAssistantTurnFeedbackRequest,
-    user: CurrentUserDep,
-) -> dict[str, object]:
-    """Record user `👍` (`LIKE`) or `👎` (`DISLIKE`) feedback on a prompt telemetry entry."""
-    return record_prompt_telemetry_entry(
-        workspace_id=payload.workspace_id,
-        turn_id=payload.turn_id,
-        user_prompt=payload.user_prompt,
-        assembled_system_prompt=payload.assembled_system_prompt,
-        assistant_reply=payload.assistant_reply,
-        thinking_text=payload.thinking_text,
-        user_feedback=payload.user_feedback,
-    )
-
-
 @router.post(
     "/three-speed/stream",
     responses={
@@ -246,11 +176,14 @@ async def stream_three_speed_turn_endpoint(
     _embedding_port: Annotated[EmbeddingPort | None, Depends(get_optional_embedding_port)],
 ) -> StreamingResponse:
     """Stream SSE events (`cache_status`, `step_progress`, `thinking_delta`, `token_delta`)."""
-    await ensure_active_chat_model_if_live(request, requested_tier=payload.requested_tier)
-    effective_deep_audit, effective_speed, resolved_speed = _resolve_effective_speed(payload)
+    await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
+    await ensure_active_chat_model_if_live(
+        request, requested_tier=payload.requested_tier, workspace_id=payload.workspace_id
+    )
+    effective_deep_audit, effective_speed, resolved_speed = resolve_effective_speed(payload)
     active_hat = payload.hat or user.human_profile_archetype or "PLATFORM_ADMIN"
-    history = await resolve_turn_history(request, payload)
-    resolved_notes = await resolve_folder_notes(request, payload)
+    history = await resolve_turn_history(request, payload, user=user)
+    resolved_notes = await resolve_folder_notes(request, payload, user=user)
     client_host = getattr(getattr(request, "client", None), "host", "") or ""
 
     async def _event_generator() -> AsyncIterator[str]:
@@ -311,24 +244,7 @@ async def stream_three_speed_turn_endpoint(
     return StreamingResponse(_event_generator(), media_type="text/event-stream")
 
 
-@router.post("/three-speed/invalidate-cache", response_model=InvalidatePromptCacheResponse)
-def invalidate_prompt_cache_endpoint(
-    payload: InvalidatePromptCacheRequest,
-    user: CurrentUserDep,
-    router_svc: ThreeSpeedRouterDep,
-) -> InvalidatePromptCacheResponse:
-    """Invalidate Redis 5-layer prompt cache (`SETTINGS_CHANGED` / `OVERRIDE_UPDATED`)."""
-    outcome = router_svc.invalidate_prompt_cache(
-        workspace_id=payload.workspace_id, reason=payload.reason, user_id=payload.user_id
-    )
-    return InvalidatePromptCacheResponse(
-        workspace_id=outcome.workspace_id,
-        reason=outcome.reason,
-        invalidated_keys_count=outcome.invalidated_keys_count,
-        outbox_event_id=outcome.outbox_event_id,
-    )
-
-
+router.include_router(controls_router)
 router.include_router(governance_router)
 router.include_router(citations_router)
 router.include_router(folders_router)

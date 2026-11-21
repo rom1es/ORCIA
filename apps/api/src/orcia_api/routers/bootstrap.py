@@ -19,6 +19,7 @@ from orcia_api.schemas.catalog import CatalogItemResponse
 from orcia_api.schemas.permission_broker import PermissionBrokerPolicyItem
 from orcia_core import bootstrap as bm
 from orcia_core.observability.logging import get_current_trace_id
+from orcia_core.permissions.ssrf_guard import validate_safe_llm_endpoint_url
 
 router = APIRouter(prefix="/api/v1/bootstrap", tags=["bootstrap"])
 
@@ -97,6 +98,9 @@ async def execute_init_organization(
     persona_key: str | None = Query(default=None, min_length=1, max_length=64),
 ) -> bs.InitOrganizationResponse:
     user = resolve_request_user(request, persona_key=persona_key)
+    path = str(request.url.path)
+    for ep in payload.llm_endpoints:
+        validate_safe_llm_endpoint_url(ep.endpoint_uri, instance=path)
     svc = get_bootstrap_service(request)
     run = svc.execute_init_organization(
         user,

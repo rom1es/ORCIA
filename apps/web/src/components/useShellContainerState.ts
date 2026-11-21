@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   computeDefaultHelpColumnOpen,
   useResponsiveBreakpoint,
@@ -33,6 +33,10 @@ function writeSavedActiveScopeId(scopeId: string | null): void {
   }
 }
 
+export function clearSavedActiveScopeId(): void {
+  writeSavedActiveScopeId(null);
+}
+
 export function useShellContainerState(
   runsLength: number,
   pathname?: string,
@@ -41,6 +45,8 @@ export function useShellContainerState(
     readonly defaultScopedId?: string;
     readonly isAuthHydrating?: boolean;
     readonly isInitialLoading?: boolean;
+    readonly isAuthenticated?: boolean;
+    readonly currentUserEmail?: string | null;
     readonly validScopeIds?: readonly string[];
   },
 ) {
@@ -60,6 +66,33 @@ export function useShellContainerState(
     setActiveScopeIdState(nextScopeId);
     writeSavedActiveScopeId(nextScopeId);
   };
+  const prevAuthSessionRef = useRef<{
+    isAuthenticated: boolean | undefined;
+    email: string | null | undefined;
+  }>({
+    isAuthenticated: options?.isAuthenticated,
+    email: options?.currentUserEmail,
+  });
+
+  useEffect(() => {
+    const prev = prevAuthSessionRef.current;
+    const prevEmail = prev.email?.trim().toLowerCase() ?? null;
+    const nextEmail = options?.currentUserEmail?.trim().toLowerCase() ?? null;
+    const loggedOut = prev.isAuthenticated === true && options?.isAuthenticated === false;
+    const switchedUser =
+      options?.isAuthenticated === true &&
+      prevEmail !== null &&
+      nextEmail !== null &&
+      prevEmail !== nextEmail;
+    prevAuthSessionRef.current = {
+      isAuthenticated: options?.isAuthenticated,
+      email: options?.currentUserEmail,
+    };
+    if (loggedOut || switchedUser) {
+      writeSavedActiveScopeId(null);
+      setActiveScopeIdState("scope-global");
+    }
+  }, [options?.isAuthenticated, options?.currentUserEmail]);
   const [selectedModuleOverride, setSelectedModuleOverride] = useState<UiModuleKey | null>(null);
   const [selectedMenuKeyOverride, setSelectedMenuKeyOverride] =
     useState<EightFixedMenuKey | null>(null);

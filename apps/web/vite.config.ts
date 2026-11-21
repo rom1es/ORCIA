@@ -29,5 +29,12 @@ export default defineConfig({
   preview: {
     host: webHost,
     port: webPort,
+    strictPort: true,
+    proxy: {
+      "/api": {
+        target: `http://${apiHost}:${apiPort}`,
+        changeOrigin: true,
+      },
+    },
   },
 });

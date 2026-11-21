@@ -136,6 +136,15 @@ export async function reloadColdFromPg(
   page: Page,
   options: { readonly clearBrowserStorage?: boolean } = {},
 ): Promise<void> {
+  // Wait for initial shell/login/Day-0 mount so any in-flight GET /api/v1/auth/session
+  // commits its rotated Set-Cookie before evicting backend RAM and reloading.
+  await page
+    .locator(
+      '[data-testid="four-zone-direction-c-shell"], [data-testid="login-page-container"], [data-testid="first-boot-admin-setup-modal"]',
+    )
+    .first()
+    .waitFor({ state: "visible", timeout: 10000 })
+    .catch(() => undefined);
   if (options.clearBrowserStorage !== false) {
     await page.evaluate(() => {
       window.localStorage.clear();

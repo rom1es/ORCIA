@@ -145,16 +145,12 @@ export function useSidebarAccountSettings(options: {
   const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
 
   useEffect(() => {
-    if (isHydrating || !isAuthenticated) {
-      return;
-    }
+    if (isHydrating || !isAuthenticated) return;
     void loadPreferences();
   }, [isHydrating, isAuthenticated, loadPreferences]);
 
   useEffect(() => {
-    if (!modalOpen || activeTab !== "IDE_MCP_KEYS") {
-      setLastIssuedPlaintext(null);
-    }
+    if (!modalOpen || activeTab !== "IDE_MCP_KEYS") setLastIssuedPlaintext(null);
   }, [modalOpen, activeTab]);
 
   useEffect(() => {
@@ -221,8 +217,9 @@ export function useSidebarAccountSettings(options: {
         target_kind: input.targetKind,
         target_slug: effectiveSlug,
       });
-      setLastIssuedPlaintext(issued.plaintext_token);
+      // Refresh token list before revealing plaintext so form dirty state resets atomically.
       await loadModalDetails();
+      setLastIssuedPlaintext(issued.plaintext_token);
     } catch (err: unknown) {
       setMcpError(extractUiErrorMessage(err, labels.passwordSecurity?.genericError ?? "Error"));
     } finally {

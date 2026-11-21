@@ -1,134 +1,26 @@
-"""Prompt Assembly, Multilingual Thinking Steps & Tool Schema Helpers (`AD-15`, `AD-19`)."""
+"""Prompt Assembly & Tool Schema Helpers (`AD-15`, `Story 26.1`)."""
 
 from __future__ import annotations
 
-import re
 from typing import Any
 
 from fastapi import Request
 
+from orcia_api.routers._assistant_prompt_sanitization import (
+    ALLOWED_CLIENT_HISTORY_ROLES,
+    sanitize_prompt_layer_markers,
+)
+from orcia_api.routers._assistant_prompt_sanitization import (
+    detect_adaptive_thinking_steps_for_question as detect_adaptive_thinking_steps_for_question,
+)
+from orcia_api.routers._assistant_prompt_sanitization import (
+    resolve_request_locale as resolve_request_locale,
+)
 from orcia_core.orchestration.assistant_harness import (
     CONSTITUTIONAL_LAYER_1_TEXT,
     resolve_profile_adaptation,
 )
-
-_STEP_TEMPLATES_BY_LOCALE: dict[str, dict[str, tuple[tuple[str, str], ...]]] = {
-    "fr": {
-        "code": (
-            ("Spécification et cas limites", "Cadrage des entrées/sorties et cas particuliers."),
-            ("Conception de l'implémentation", "Structuration du code et choix techniques."),
-            ("Vérification et exemple d'usage", "Contrôle de validité et cas de test."),
-        ),
-        "doc": (
-            ("Extraction des points clés", "Repérage des idées principales et de la structure."),
-            ("Croisement avec le contexte de l'espace", "Mise en regard avec le glossaire métier."),
-            ("Structuration pédagogique", "Organisation claire de l'explication."),
-        ),
-        "decision": (
-            ("Critères d'évaluation", "Définition des axes de comparaison pertinents."),
-            ("Analyse des options et points de vigilance", "Pesée des avantages et limites."),
-            ("Recommandation argumentée", "Synthèse décisionnelle."),
-        ),
-        "default": (
-            ("Cadrage de la demande", "Identification des objectifs et du périmètre."),
-            ("Analyse approfondie et sources", "Exploration détaillée des éléments de réponse."),
-            ("Consolidation de la réponse", "Mise en forme structurée et synthétique."),
-        ),
-    },
-    "en": {
-        "code": (
-            ("Specification & edge cases", "Framing inputs, outputs, and boundary conditions."),
-            ("Implementation design", "Structuring clean code and technical choices."),
-            ("Verification & usage example", "Validating correctness and test cases."),
-        ),
-        "doc": (
-            ("Key points extraction", "Identifying core ideas and document structure."),
-            ("Workspace context cross-check", "Aligning with domain glossary and rules."),
-            ("Clear synthesis", "Organizing a pedagogical and structured explanation."),
-        ),
-        "decision": (
-            ("Evaluation criteria", "Defining relevant comparison axes."),
-            ("Trade-off & risk analysis", "Weighing pros, cons, and watchpoints."),
-            ("Grounded recommendation", "Formulating an actionable decision synthesis."),
-        ),
-        "default": (
-            ("Request framing", "Identifying objectives and scope of the question."),
-            ("In-depth source analysis", "Exploring relevant context and evidence."),
-            ("Response consolidation", "Structuring a clear and concise answer."),
-        ),
-    },
-    "es": {
-        "code": (
-            ("Especificación y casos límite", "Definición de entradas, salidas y bordes."),
-            ("Diseño de la implementación", "Estructuración del código y decisiones técnicas."),
-            ("Verificación y ejemplo de uso", "Control de validez y casos de prueba."),
-        ),
-        "doc": (
-            ("Extracción de puntos clave", "Identificación de ideas principales y estructura."),
-            ("Cruce con el contexto del espacio", "Alineación con el glosario de negocio."),
-            ("Síntesis estructurada", "Organización clara de la explicación."),
-        ),
-        "decision": (
-            ("Criterios de evaluación", "Definición de ejes de comparación."),
-            ("Análisis de opciones y riesgos", "Evaluación de ventajas y límites."),
-            ("Recomendación fundamentada", "Síntesis para la toma de decisiones."),
-        ),
-        "default": (
-            ("Encuadre de la solicitud", "Identificación de objetivos y alcance."),
-            ("Análisis profundo y fuentes", "Exploración detallada de elementos."),
-            ("Consolidación de la respuesta", "Formato estructurado y sintético."),
-        ),
-    },
-}
-
-_CODE_INTENT_RE = re.compile(
-    r"\b(code|fonction|function|python|sql|bug|script|algorithme|algorithm|api|test|react|"
-    r"typescript|class|implement|implémenter|refactor|código|función)\b",
-    re.IGNORECASE,
-)
-_DOC_INTENT_RE = re.compile(
-    r"\b(explique|explain|résume|summarize|summary|document|contrat|contract|texte|text|"
-    r"synthèse|rapport|report|dossier|explica|resumen)\b",
-    re.IGNORECASE,
-)
-_DECISION_INTENT_RE = re.compile(
-    r"\b(choisir|choose|comparer|compare|option|avantage|advantage|risque|risk|pourquoi|why|"
-    r"quel|which|arbitrage|trade-off|tradeoff|versus|vs|elegir|comparar)\b",
-    re.IGNORECASE,
-)
-
-
-def resolve_request_locale(request: Request | None, explicit_locale: str | None = None) -> str:
-    """Resolve UI locale (`fr`, `en`, `es`) from explicit parameter or HTTP `Accept-Language`."""
-    raw = (explicit_locale or "").strip().lower()
-    if not raw and request is not None:
-        raw = str(request.headers.get("accept-language") or "").strip().lower()
-    if raw.startswith("en") or ",en" in raw:
-        return "en"
-    if raw.startswith("es") or ",es" in raw:
-        return "es"
-    return "fr"
-
-
-def detect_adaptive_thinking_steps_for_question(
-    user_prompt: str,
-    *,
-    locale: str = "fr",
-) -> tuple[tuple[str, str], ...]:
-    """Return 3 adaptive thinking step `(title, intermediate_summary)` pairs in `locale`."""
-    lang = (
-        locale
-        if locale in _STEP_TEMPLATES_BY_LOCALE
-        else ("en" if locale.startswith("en") else "fr")
-    )
-    templates = _STEP_TEMPLATES_BY_LOCALE[lang]
-    if _CODE_INTENT_RE.search(user_prompt):
-        return templates["code"]
-    if _DOC_INTENT_RE.search(user_prompt):
-        return templates["doc"]
-    if _DECISION_INTENT_RE.search(user_prompt):
-        return templates["decision"]
-    return templates["default"]
+from orcia_core.orchestration.errors import ImmutableHarnessBoundaryError
 
 
 def _format_user_governance_and_folder_block(
@@ -140,11 +32,12 @@ def _format_user_governance_and_folder_block(
     folder_pinned_notes: str | None = None,
     locale: str = "fr",
 ) -> str:
-    """Build explicit prompt sections for Layer 4 Workspace, Layer 5 User prefs & Folder Notes."""
+    """Build sanitized prompt sections for Layer 4 Workspace, Layer 5 User prefs & Folder Notes."""
     sections: list[str] = []
     is_en = locale.startswith("en")
-    if workspace_instructions and workspace_instructions.strip():
-        sections.append(f"[LAYER_4_WORKSPACE_INSTRUCTIONS]\n{workspace_instructions.strip()}")
+    safe_ws = sanitize_prompt_layer_markers(workspace_instructions)
+    if safe_ws:
+        sections.append(f"[LAYER_4_WORKSPACE_INSTRUCTIONS]\n{safe_ws}")
     tone_map = {
         "SYNTHETIC": "Concise & Direct" if is_en else "Synthétique & Direct (Aller à l'essentiel)",
         "BALANCED": "Balanced & Structured" if is_en else "Équilibré & Structuré",
@@ -157,15 +50,20 @@ def _format_user_governance_and_folder_block(
     }
     user_lines: list[str] = []
     if response_tone and response_tone.upper() in tone_map:
-        user_lines.append(f"- Ton attendu : {tone_map[response_tone.upper()]}")
+        tone_lbl = "Expected tone" if is_en else "Ton attendu"
+        user_lines.append(f"- {tone_lbl} : {tone_map[response_tone.upper()]}")
     if response_format and response_format.upper() in fmt_map:
-        user_lines.append(f"- Format attendu : {fmt_map[response_format.upper()]}")
-    if personal_instructions and personal_instructions.strip():
-        user_lines.append(f"- Instructions personnelles : {personal_instructions.strip()}")
+        fmt_lbl = "Expected format" if is_en else "Format attendu"
+        user_lines.append(f"- {fmt_lbl} : {fmt_map[response_format.upper()]}")
+    safe_personal = sanitize_prompt_layer_markers(personal_instructions)
+    if safe_personal:
+        instr_lbl = "Personal instructions" if is_en else "Instructions personnelles"
+        user_lines.append(f"- {instr_lbl} : {safe_personal}")
     if user_lines:
         sections.append("[LAYER_5_USER_PREFERENCES]\n" + "\n".join(user_lines))
-    if folder_pinned_notes and folder_pinned_notes.strip():
-        sections.append(f"[LAYER_5_ACTIVE_FOLDER_PINNED_NOTES]\n{folder_pinned_notes.strip()}")
+    safe_notes = sanitize_prompt_layer_markers(folder_pinned_notes)
+    if safe_notes:
+        sections.append(f"[LAYER_5_ACTIVE_FOLDER_PINNED_NOTES]\n{safe_notes}")
     return ("\n\n" + "\n\n".join(sections)) if sections else ""
 
 
@@ -176,6 +74,7 @@ def build_assistant_system_instructions(
     requested_tier: str | None = None,
     thinking_effort: str | None = None,
     system_instructions_override: str | None = None,
+    allow_system_override: bool = False,
     assembled_5_layers_prompt: str | None = None,
     ontology_concepts_summary: str | None = None,
     response_tone: str | None = None,
@@ -185,8 +84,12 @@ def build_assistant_system_instructions(
     folder_pinned_notes: str | None = None,
     locale: str = "fr",
 ) -> str:
-    """Assemble the 5-layer `AssistantHarness` + Ontology `L1–L4` + Folder Notes system prompt."""
+    """Assemble immutable Layer 1 + 5-layer `AssistantHarness` + Ontology + Folder Notes prompt."""
     if system_instructions_override and system_instructions_override.strip():
+        if not allow_system_override:
+            raise ImmutableHarnessBoundaryError(
+                detail_override="Layer 1 constitutional harness cannot be overridden."
+            )
         return system_instructions_override.strip()
 
     profile_spec = resolve_profile_adaptation(hat)
@@ -246,7 +149,7 @@ def build_assistant_system_instructions(
         )
     )
     ontology_block = (
-        f"\n[ONTOLOGY_L1_L4_CONTEXT]\n{ontology_concepts_summary.strip()}"
+        f"\n[ONTOLOGY_L1_L4_CONTEXT]\n{sanitize_prompt_layer_markers(ontology_concepts_summary)}"
         if ontology_concepts_summary and ontology_concepts_summary.strip()
         else ""
     )
@@ -260,32 +163,32 @@ def build_assistant_system_instructions(
     )
     return (
         f"{layers_block}{ontology_block}{custom_block}\n\n"
-        f"[COGNITIVE_ROUTING_DIRECTIVES]\n"
-        f"Profil adaptatif : {profile_spec.register_label}. {tier_guidance} {effort_guidance}\n"
-        "Ne mentionne jamais d'identifiant technique interne dans ta réponse. "
-        "Respond in the exact same language as the user's message "
-        "(unless the user explicitly asks for another language)."
+        f"[ADAPTATION_RUNTIME_METADATA]\n"
+        f"- Active Hat (Casquette): {hat} | Speed Mode: {speed_mode}\n"
+        f"- {tier_guidance}\n"
+        f"- {effort_guidance}\n"
+        "- Format your answer in clean Markdown (headings, bullet points, fenced code blocks with "
+        "language tags when showing code).\n"
+        "- CRITICAL LANGUAGE RULE: Respond in the exact same language as the "
+        "user's message (unless the user explicitly asks to translate or answer in another "
+        "language). Do NOT translate technical identifiers or user-supplied terms arbitrarily."
     )
 
 
 def resolve_5_layers_and_ontology_from_request(
-    request: Request | None,
+    request: Request,
     *,
     workspace_id: str,
     user_id: str,
     hat: str,
 ) -> tuple[str | None, str | None]:
-    """Fetch cached 5-layer prompt (`AssistantThreeSpeedRouterService`) and Ontology `L1–L4`."""
-    if request is None or not hasattr(request, "app"):
-        return None, None
+    """Read assembled 5-layer prompt and active L1-L4 Ontology concepts from domain services."""
     assembled_text: str | None = None
     ontology_summary: str | None = None
     try:
-        router_svc = getattr(request.app.state, "assistant_three_speed_router_service", None)
-        if router_svc is None:
-            from orcia_api.dependencies import get_assistant_three_speed_router_service
+        from orcia_api.dependencies import get_assistant_three_speed_router_service
 
-            router_svc = get_assistant_three_speed_router_service(request)
+        router_svc = get_assistant_three_speed_router_service(request)
         cached = router_svc.get_or_assemble_cached_prompt(
             workspace_id=workspace_id, user_id=user_id, hat=hat
         )
@@ -362,18 +265,16 @@ def build_multi_turn_messages(
     user_prompt: str,
     conversation_history: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Build `[system, *conversation_history, user]` message array."""
+    """Build sanitized `[system, *history, user]` restricting roles to `user|assistant`."""
     messages: list[dict[str, Any]] = [{"role": "system", "content": system_msg}]
     for item in conversation_history or ():
         if isinstance(item, dict):
             role = str(item.get("role") or "user").strip().lower()
-            content = str(item.get("content") or "").strip()
-            if role in ("user", "assistant", "tool") and content:
+            content = sanitize_prompt_layer_markers(str(item.get("content") or ""))
+            if role in ALLOWED_CLIENT_HISTORY_ROLES and content:
                 msg: dict[str, Any] = {"role": role, "content": content}
                 if item.get("name"):
                     msg["name"] = str(item["name"])
-                if item.get("tool_call_id"):
-                    msg["tool_call_id"] = str(item["tool_call_id"])
                 messages.append(msg)
-    messages.append({"role": "user", "content": user_prompt.strip()})
+    messages.append({"role": "user", "content": sanitize_prompt_layer_markers(user_prompt)})
     return messages

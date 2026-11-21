@@ -242,7 +242,10 @@ async def test_contextual_help_routes_and_accostage_counts_persist_in_postgres18
                 assert "first-llm-model" in acc4_json["completed_milestone_keys"]
 
                 # `platform_settings` is empty: `llm_tiers` must hydrate from active mappings only
-                r_setup = await cold_client_4.get("/api/v1/bootstrap/platform-setup-state")
+                r_setup = await cold_client_4.get(
+                    "/api/v1/bootstrap/platform-setup-state",
+                    headers=auth_headers,
+                )
                 assert r_setup.status_code == 200, r_setup.text
                 setup_json = r_setup.json()
                 assert len(setup_json["llm_tiers"]) == 1

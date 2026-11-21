@@ -21,6 +21,7 @@ from orcia_core.permissions.connector_invoker import (
     ConnectorInvocationOutcome,
     ConnectorInvoker,
 )
+from orcia_core.permissions.pinned_http import prepare_pinned_http_request
 from orcia_core.permissions.secret_manager import EnvelopeVaultSecretProvider
 from orcia_core.testing.cassette_llm import CassetteEntry, DeterministicCassetteLLM
 from orcia_kernel.errors import (
@@ -210,26 +211,23 @@ class LiteLLMAdapter(LLMPort):
             "litellm.gateway.call",
             model=payload.get("model"),
             secret_ref=str(self._api_key_ref),
-            authorization_preview=f"Bearer {resolved_key}",
         )
-        if self._client is not None:
-            response = await self._client.post(
-                f"{self._base_url}/chat/completions",
-                json=payload,
-                headers=headers,
-            )
+        target_url = f"{self._base_url}/chat/completions"
+
+        async def _send(client: httpx.AsyncClient) -> dict[str, Any]:
+            p_url, p_hdrs, p_ext = await prepare_pinned_http_request(client, target_url, headers)
+            post_kw: dict[str, Any] = {"json": payload, "headers": p_hdrs}
+            if p_ext:
+                post_kw["extensions"] = p_ext
+            response = await client.post(p_url, **post_kw)
             response.raise_for_status()
             body: dict[str, Any] = response.json()
             return body
+
+        if self._client is not None:
+            return await _send(self._client)
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                f"{self._base_url}/chat/completions",
-                json=payload,
-                headers=headers,
-            )
-            response.raise_for_status()
-            body = response.json()
-            return body
+            return await _send(client)
 
     async def complete(self, request: LlmPromptRequest) -> LlmCompletionResponse:
         """Execute a completion request while enforcing AD-10 model family orthogonality."""

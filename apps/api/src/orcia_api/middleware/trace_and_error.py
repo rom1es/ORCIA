@@ -22,6 +22,7 @@ from orcia_core.observability.logging import (
     clear_trace_context,
     get_logger,
     resolve_or_create_trace_id,
+    scrub_sensitive_text,
 )
 
 PROBLEM_JSON_MEDIA_TYPE = "application/problem+json"
@@ -72,7 +73,8 @@ def build_problem_response(
     """Construct a localized RFC 9457 `application/problem+json` response."""
     trace_id = _extract_request_trace_id(request)
     locale = resolve_locale(request.headers.get("accept-language"))
-    copy = get_localized_error_text(error_code, locale=locale, detail_override=detail_override)
+    safe_detail = scrub_sensitive_text(detail_override) if detail_override is not None else None
+    copy = get_localized_error_text(error_code, locale=locale, detail_override=safe_detail)
     problem = ProblemDetails(
         type=type_uri,
         title=copy.title,

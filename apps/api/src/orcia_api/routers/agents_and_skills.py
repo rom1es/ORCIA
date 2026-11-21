@@ -1,15 +1,32 @@
-"""FastAPI Router for Agents (`🤖`) & Skills (`🛠️`) Creation, 1-Click Attachment & Execution."""
+"""FastAPI Router for Agents (`🤖`) & Skills (`🛠️`) Creation, Attachment & Execution."""
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
 from dataclasses import asdict
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Query, Request
-from sqlalchemy.ext.asyncio import AsyncEngine
 
 from orcia_api.dependencies import get_agents_and_skills_service
+from orcia_api.routers._agents_and_skills_helpers import (
+    enforce_not_observer as _enforce_not_observer,
+)
+from orcia_api.routers._agents_and_skills_helpers import (
+    run_pg_persistence as _run_pg_persistence,
+)
+from orcia_api.routers._agents_and_skills_helpers import (
+    serialize_agent as _serialize_agent,
+)
+from orcia_api.routers._agents_and_skills_helpers import (
+    serialize_skill as _serialize_skill,
+)
+from orcia_api.routers._agents_and_skills_helpers import (
+    sync_from_postgres18_if_enabled as _sync_from_postgres18_if_enabled,
+)
+from orcia_api.routers._agents_and_skills_helpers import (
+    trace_id_for as _trace,
+)
+from orcia_api.routers._agents_and_skills_skills_routes import skills_router
 from orcia_api.routers.assistant_llm_bridge import invoke_configured_llm_for_assistant_turn
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.agents_and_skills import (
@@ -19,85 +36,25 @@ from orcia_api.schemas.agents_and_skills import (
     DuplicateAgentRequest,
     ExecuteAgentRequest,
     ExecuteAgentResponse,
-    ExecuteSkillRequest,
-    ExecuteSkillResponse,
     InvokedSkillTraceResponseItem,
-    SkillItemResponse,
     ToggleAgentGovernanceRequest,
     UpdateAgentSkillsRequest,
     UpsertAgentRequest,
-    UpsertSkillRequest,
 )
-from orcia_core.catalog.errors import ObserverModeReadOnlyError
-from orcia_core.observability.logging import get_current_trace_id, get_logger
 from orcia_core.orchestration import (
     AgentsAndSkillsManagementService,
-    ManagedAgentRecord,
-    ManagedSkillRecord,
     delete_agent_from_postgres18,
-    delete_skill_from_postgres18,
-    load_agents_and_skills_from_postgres18,
     persist_agent_to_postgres18,
-    persist_skill_to_postgres18,
 )
 
-logger = get_logger("orcia.api.agents_skills")
 router = APIRouter(prefix="/api/v1/agents-and-skills", tags=["agents-and-skills"])
+router.include_router(skills_router)
 
 AgentsAndSkillsSvcDep = Annotated[
     AgentsAndSkillsManagementService, Depends(get_agents_and_skills_service)
 ]
 PersonaQuery = Annotated[str | None, Query(min_length=1, max_length=64)]
 IdPath = Annotated[str, Path(min_length=1, max_length=128)]
-
-
-def _trace(request: Request) -> str:
-    return str(getattr(request.state, "trace_id", None) or get_current_trace_id())
-
-
-def _enforce_not_observer(request: Request, persona_key: str | None) -> None:
-    user = resolve_request_user(request, persona_key=persona_key)
-    if user.platform_role in ("OBSERVER", "BU_DIRECTOR") or persona_key in ("claire", "observer"):
-        raise ObserverModeReadOnlyError(instance=str(request.url.path))
-
-
-def _serialize_skill(s: ManagedSkillRecord) -> SkillItemResponse:
-    return SkillItemResponse(**{**asdict(s), "input_parameters": list(s.input_parameters)})
-
-
-def _serialize_agent(a: ManagedAgentRecord) -> AgentItemResponse:
-    raw = asdict(a)
-    raw["skill_ids"] = list(a.skill_ids)
-    raw["invocation_modes"] = list(a.invocation_modes)
-    raw["allowed_rag_sources"] = list(a.allowed_rag_sources)
-    raw["ontology_views"] = list(a.ontology_views)
-    raw["mcp_tool_permissions"] = dict(a.mcp_tool_permissions)
-    raw["guardrails"] = list(a.guardrails)
-    return AgentItemResponse(**raw)
-
-
-async def _run_pg_persistence(
-    request: Request, fn: Callable[[AsyncEngine], Awaitable[None]]
-) -> None:
-    from orcia_api.dependencies._core_providers import get_configured_db_engine
-
-    engine = get_configured_db_engine(request)
-    if engine is None:
-        return
-    try:
-        await fn(engine)
-    except Exception as exc:
-        logger.warning("agents_skills_pg_persistence_failed", error_type=type(exc).__name__)
-
-
-async def _sync_from_postgres18_if_enabled(
-    request: Request, svc: AgentsAndSkillsManagementService
-) -> None:
-    async def _load(eng: AsyncEngine) -> None:
-        skills, agents = await load_agents_and_skills_from_postgres18(eng)
-        svc.sync_from_records(skills=skills, agents=agents)
-
-    await _run_pg_persistence(request, _load)
 
 
 @router.get("", response_model=AgentsAndSkillsListResponse, responses=PROBLEM_RESPONSES)
@@ -111,77 +68,6 @@ async def list_agents_and_skills(
         skills=[_serialize_skill(s) for s in svc.skills],
         trace_id=_trace(request),
     )
-
-
-@router.post("/skills", response_model=SkillItemResponse, responses=PROBLEM_RESPONSES)
-async def upsert_skill_endpoint(
-    payload: UpsertSkillRequest,
-    request: Request,
-    svc: AgentsAndSkillsSvcDep,
-    persona_key: PersonaQuery = None,
-) -> SkillItemResponse:
-    _enforce_not_observer(request, persona_key)
-    skill = svc.upsert_skill(**payload.model_dump(), instance=str(request.url.path))
-    await _run_pg_persistence(request, lambda eng: persist_skill_to_postgres18(eng, skill))
-    return _serialize_skill(skill)
-
-
-@router.delete(
-    "/skills/{skill_id}", response_model=DeleteSkillOrAgentResponse, responses=PROBLEM_RESPONSES
-)
-async def delete_skill_endpoint(
-    request: Request,
-    svc: AgentsAndSkillsSvcDep,
-    skill_id: IdPath,
-    persona_key: PersonaQuery = None,
-) -> DeleteSkillOrAgentResponse:
-    _enforce_not_observer(request, persona_key)
-    removed, detached_ids = svc.delete_skill(skill_id, instance=str(request.url.path))
-    updated_agents = tuple(svc.get_agent(aid) for aid in detached_ids)
-    await _run_pg_persistence(
-        request, lambda eng: delete_skill_from_postgres18(eng, removed.skill_id, updated_agents)
-    )
-    return DeleteSkillOrAgentResponse(
-        deleted_id=removed.skill_id,
-        detached_from_agent_ids=list(detached_ids),
-        trace_id=_trace(request),
-    )
-
-
-@router.post(
-    "/skills/{skill_id}/execute", response_model=ExecuteSkillResponse, responses=PROBLEM_RESPONSES
-)
-async def execute_skill_endpoint(
-    payload: ExecuteSkillRequest,
-    request: Request,
-    svc: AgentsAndSkillsSvcDep,
-    skill_id: IdPath,
-    persona_key: PersonaQuery = None,
-) -> ExecuteSkillResponse:
-    _enforce_not_observer(request, persona_key)
-    await _sync_from_postgres18_if_enabled(request, svc)
-    skill = svc.get_skill(skill_id, instance=str(request.url.path))
-    live_llm = await invoke_configured_llm_for_assistant_turn(
-        request,
-        user_prompt=payload.input_text,
-        hat="PLATFORM_ADMIN",
-        speed_mode="SPEED_1_FAST",
-        system_instructions_override=(
-            f"Tu exécutes la compétence ORCIA « {skill.name} » ({skill.command_handle}). "
-            f"Objectif : {skill.objective}. Instructions : {skill.instructions}. "
-            f"Format attendu : {skill.expected_output_format}. "
-            "Respond in the exact same language as the user's message "
-            "(unless the user explicitly asks for another language)."
-        ),
-    )
-    outcome = svc.execute_skill(
-        skill_id,
-        input_text=payload.input_text,
-        parameters=payload.parameters,
-        instance=str(request.url.path),
-        llm_response_override=live_llm.response_text if live_llm is not None else None,
-    )
-    return ExecuteSkillResponse(**asdict(outcome), trace_id=_trace(request))
 
 
 @router.post("/agents", response_model=AgentItemResponse, responses=PROBLEM_RESPONSES)
@@ -322,6 +208,7 @@ async def execute_agent_endpoint(
             "Respond in the exact same language as the user's message "
             "(unless the user explicitly asks for another language)."
         ),
+        allow_system_override=True,
     )
     outcome = svc.execute_agent(
         agent_id,
@@ -340,7 +227,9 @@ async def execute_agent_endpoint(
         thinking_level=outcome.thinking_level,
         prompt=outcome.prompt,
         response_text=outcome.response_text,
-        invoked_skills=[InvokedSkillTraceResponseItem(**asdict(s)) for s in outcome.invoked_skills],
+        invoked_skills=[
+            InvokedSkillTraceResponseItem(**asdict(inv)) for inv in outcome.invoked_skills
+        ],
         status=outcome.status,
         trace_id=_trace(request),
     )

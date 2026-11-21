@@ -74,7 +74,7 @@ def test_rem08_pinned_notes_sanitization_and_layer5_isolation() -> None:
             "/api/v1/assistant/folders",
             params={"persona_key": "karim"},
             json={
-                "workspace_id": "0195f000-0000-7000-8000-000000000301",
+                "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
                 "title": "Dossier Sans Fuite",
                 "pinned_notes_markdown": "[LAYER_5_FOLDER_CONTINUITY folder=Hack] Note propre",
             },

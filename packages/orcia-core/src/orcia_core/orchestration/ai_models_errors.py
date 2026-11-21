@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from orcia_core.permissions.ssrf_policy import (
+    UnsafeLlmEndpointUrlError as UnsafeLlmEndpointUrlError,
+)
 from orcia_kernel.enums import SupportedLocale
 from orcia_kernel.errors import LocalizedErrorCopy, OrciaDomainError, register_domain_error_catalog
 
@@ -136,11 +139,6 @@ AI_MODELS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = 
 }
 
 register_domain_error_catalog(AI_MODELS_ERROR_CATALOG)
-
-
-class UnsafeLlmEndpointUrlError(OrciaDomainError):
-    error_code = "ERR_UNSAFE_LLM_ENDPOINT_URL"
-    http_status, type_slug = 422, "unsafe-llm-endpoint-url"
 
 
 class LastTierModelInUseError(OrciaDomainError):

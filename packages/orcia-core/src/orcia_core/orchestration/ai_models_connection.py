@@ -1,22 +1,18 @@
-"""Pure asynchronous connection tester for chat and embedding AI models (`AD-24.3`, `Story 19.3`).
-
-Executes minimal non-blocking HTTP requests:
-- Chat: `max_tokens=1` inference call according to protocol mode (`openai_compatible`,
-  `anthropic_messages`, `gemini_native`), validating API key and model existence.
-- Embedding: short test text via `EmbeddingPort` HTTPX adapter with strict 1024-dimension check.
-Measures real roundtrip latency (`time.perf_counter()`) with zero hardcoded/mock latencies.
-Translates provider errors to domain errors inheriting from `OrciaDomainError`.
-"""
+"""Asynchronous connection tester for chat and embedding AI models (`AD-24.3`, `Story 26.1`)."""
 
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Literal
 
 import httpx
 
 from orcia_core.observability.logging import get_logger
+from orcia_core.orchestration.ai_models_connection_helpers import (
+    AiModelConnectionTestSuccess,
+    build_chat_connection_probe,
+    raise_for_chat_http_status,
+)
 from orcia_core.orchestration.ai_models_crypto import validate_safe_llm_endpoint_url
 from orcia_core.orchestration.ai_models_errors import (
     ModelConnectionAuthFailedError,
@@ -26,19 +22,13 @@ from orcia_core.orchestration.ai_models_errors import (
     ModelConnectionTimeoutError,
     ModelConnectionUpstreamError,
 )
+from orcia_core.orchestration.ai_models_pinned_http import prepare_pinned_http_request
 from orcia_core.orchestration.ai_models_records import LlmProtocolMode
 from orcia_core.orchestration.ai_models_urls import (
     build_legacy_local_chat_url as _build_legacy_local_chat_url,
 )
-from orcia_core.orchestration.ai_models_urls import (
-    is_anthropic_provider as _is_anthropic,
-)
-from orcia_core.orchestration.ai_models_urls import (
-    is_gemini_native_provider as _is_gemini_native,
-)
-from orcia_core.orchestration.ai_models_urls import (
-    normalize_chat_completions_url,
-)
+from orcia_core.orchestration.ai_models_urls import is_anthropic_provider as _is_anthropic
+from orcia_core.orchestration.ai_models_urls import is_gemini_native_provider as _is_gemini_native
 from orcia_core.ports.embedding import EmbeddingPort
 from orcia_core.rag.adapters.embedding_httpx import (
     HttpxGeminiNativeEmbeddingAdapter,
@@ -52,38 +42,7 @@ from orcia_core.rag.errors import (
 )
 
 logger = get_logger(__name__)
-
 DEFAULT_TEST_TIMEOUT_SECONDS: float = 15.0
-
-
-@dataclass(frozen=True, slots=True)
-class AiModelConnectionTestSuccess:
-    """Successful outcome of a real connectivity test."""
-
-    latency_ms: int
-    message_fr: str
-    message_en: str
-
-
-def _clean_error_snippet(text: str, secret_key: str | None) -> str:
-    snippet = text[:250].strip()
-    if secret_key:
-        snippet = snippet.replace(secret_key, "[REDACTED]")
-    return snippet
-
-
-def _normalize_chat_url(
-    endpoint_uri: str,
-    protocol_mode: LlmProtocolMode,
-    model_name: str,
-    provider_slug: str | None = None,
-) -> str:
-    return normalize_chat_completions_url(
-        endpoint_uri,
-        provider_slug=provider_slug or "",
-        protocol_mode=protocol_mode,
-        model_name=model_name,
-    )
 
 
 async def _test_chat_connection(
@@ -97,43 +56,20 @@ async def _test_chat_connection(
     timeout_seconds: float,
     instance: str,
 ) -> AiModelConnectionTestSuccess:
-    target_url = _normalize_chat_url(endpoint_uri, protocol_mode, model_name, provider_slug)
-    headers: dict[str, str] = {"Content-Type": "application/json", "Accept": "application/json"}
-    body: dict[str, Any]
-
-    if protocol_mode == "anthropic_messages" or _is_anthropic(endpoint_uri, provider_slug):
-        headers["anthropic-version"] = "2023-06-01"
-        if api_key:
-            headers["x-api-key"] = api_key
-        body = {
-            "model": model_name,
-            "max_tokens": 1,
-            "messages": [{"role": "user", "content": "ping"}],
-        }
-    elif protocol_mode == "gemini_native" or _is_gemini_native(endpoint_uri, provider_slug):
-        if api_key:
-            headers["x-goog-api-key"] = api_key
-        body = {
-            "contents": [{"parts": [{"text": "ping"}]}],
-            "generationConfig": {"maxOutputTokens": 1},
-        }
-    else:
-        if api_key:
-            headers["Authorization"] = f"Bearer {api_key}"
-        body = {
-            "model": model_name,
-            "messages": [{"role": "user", "content": "ping"}],
-            "max_tokens": 1,
-            "stream": False,
-        }
-
+    target_url, headers, body = build_chat_connection_probe(
+        endpoint_uri=endpoint_uri,
+        protocol_mode=protocol_mode,
+        model_name=model_name,
+        api_key=api_key,
+        provider_slug=provider_slug,
+    )
     t0 = time.perf_counter()
     try:
+        p_url, p_headers, ext = await prepare_pinned_http_request(
+            http_client, target_url, headers, instance=instance
+        )
         resp = await http_client.post(
-            target_url,
-            json=body,
-            headers=headers,
-            timeout=timeout_seconds,
+            p_url, json=body, headers=p_headers, timeout=timeout_seconds, extensions=ext
         )
         if (
             resp.status_code == 404
@@ -143,23 +79,25 @@ async def _test_chat_connection(
         ):
             fallback_url = _build_legacy_local_chat_url(endpoint_uri)
             if fallback_url != target_url:
+                fb_url, fb_headers, fb_ext = await prepare_pinned_http_request(
+                    http_client, fallback_url, headers, instance=instance
+                )
                 resp = await http_client.post(
-                    fallback_url,
+                    fb_url,
                     json={
                         "model": model_name,
                         "messages": [{"role": "user", "content": "ping"}],
                         "stream": False,
                     },
-                    headers=headers,
+                    headers=fb_headers,
                     timeout=timeout_seconds,
+                    extensions=fb_ext,
                 )
         latency_ms = max(1, int(round((time.perf_counter() - t0) * 1000.0)))
     except httpx.TimeoutException as exc:
         logger.warning("llm_connection_test_timeout", endpoint=target_url, model=model_name)
         raise ModelConnectionTimeoutError(
-            detail_override=(
-                f"Délai d'attente dépassé lors de la connexion à '{target_url}' (timeout)."
-            ),
+            detail_override=f"Timeout while connecting to '{target_url}'.",
             instance=instance,
         ) from exc
     except httpx.NetworkError as exc:
@@ -170,68 +108,21 @@ async def _test_chat_connection(
             error_type=type(exc).__name__,
         )
         raise ModelConnectionNetworkError(
-            detail_override=f"Erreur réseau lors de la tentative de connexion à '{target_url}'.",
+            detail_override=f"Network error while connecting to '{target_url}'.",
             instance=instance,
         ) from exc
 
-    if resp.status_code in (401, 403):
-        snippet = _clean_error_snippet(resp.text, api_key)
-        logger.warning(
-            "llm_connection_test_auth_failed",
-            endpoint=target_url,
-            status_code=resp.status_code,
-            latency_ms=latency_ms,
-        )
-        raise ModelConnectionAuthFailedError(
-            detail_override=(
-                f"Authentification refusée par le fournisseur ({resp.status_code}): {snippet}"
-            ),
-            instance=instance,
-            latency_ms=latency_ms,
-        )
-
-    if resp.status_code == 404:
-        snippet = _clean_error_snippet(resp.text, api_key)
-        logger.warning("llm_connection_test_not_found", endpoint=target_url, latency_ms=latency_ms)
-        raise ModelConnectionNotFoundError(
-            detail_override=(
-                f"Modèle '{model_name}' ou endpoint introuvable sur {target_url} "
-                f"(HTTP 404): {snippet}"
-            ),
-            instance=instance,
-            latency_ms=latency_ms,
-        )
-
-    if resp.status_code == 429:
-        snippet = _clean_error_snippet(resp.text, api_key)
-        logger.warning(
-            "llm_connection_test_rate_limited", endpoint=target_url, latency_ms=latency_ms
-        )
-        raise ModelConnectionRateLimitedError(
-            detail_override=(
-                f"Quota ou limite de débit dépassée sur {target_url} (HTTP 429): {snippet}"
-            ),
-            instance=instance,
-            latency_ms=latency_ms,
-        )
-
     if resp.status_code != 200:
-        snippet = _clean_error_snippet(resp.text, api_key)
-        logger.warning(
-            "llm_connection_test_upstream_error",
-            endpoint=target_url,
+        raise_for_chat_http_status(
             status_code=resp.status_code,
+            response_text=resp.text,
+            api_key=api_key,
+            target_url=target_url,
+            model_name=model_name,
             latency_ms=latency_ms,
-        )
-        raise ModelConnectionUpstreamError(
-            detail_override=(
-                f"Le fournisseur a retourné une erreur HTTP {resp.status_code}: {snippet}"
-            ),
             instance=instance,
-            latency_ms=latency_ms,
         )
-
-    p_label = provider_slug or "fournisseur"
+    p_label = provider_slug or "provider"
     return AiModelConnectionTestSuccess(
         latency_ms=latency_ms,
         message_fr=(
@@ -256,11 +147,8 @@ async def _test_embedding_connection(
     timeout_seconds: float,
     instance: str,
 ) -> AiModelConnectionTestSuccess:
-    assert_embedding_usage_supported(
-        provider_slug=provider_slug or "",
-        protocol_mode=protocol_mode,
-    )
-
+    assert_embedding_usage_supported(provider_slug=provider_slug or "", protocol_mode=protocol_mode)
+    validate_safe_llm_endpoint_url(endpoint_uri, instance=instance)
     adapter: EmbeddingPort
     if protocol_mode == "gemini_native" or _is_gemini_native(endpoint_uri, provider_slug):
         adapter = HttpxGeminiNativeEmbeddingAdapter(
@@ -302,9 +190,7 @@ async def _test_embedding_connection(
             ) from exc
         if isinstance(exc.__cause__, httpx.TimeoutException) or "Timeout" in err_msg:
             raise ModelConnectionTimeoutError(
-                detail_override=(
-                    f"Délai d'attente dépassé (timeout) sur l'endpoint d'embeddings : {err_msg}"
-                ),
+                detail_override=f"Timeout on embedding endpoint: {err_msg}",
                 instance=instance,
                 latency_ms=latency_ms,
             ) from exc
@@ -315,13 +201,11 @@ async def _test_embedding_connection(
         ) from exc
     except httpx.TimeoutException as exc:
         raise ModelConnectionTimeoutError(
-            detail_override="Délai d'attente dépassé (timeout) sur l'endpoint d'embeddings.",
-            instance=instance,
+            detail_override="Timeout on embedding endpoint.", instance=instance
         ) from exc
     except httpx.NetworkError as exc:
         raise ModelConnectionNetworkError(
-            detail_override="Erreur réseau lors de l'appel à l'endpoint d'embeddings.",
-            instance=instance,
+            detail_override="Network error on embedding endpoint.", instance=instance
         ) from exc
 
     return AiModelConnectionTestSuccess(
@@ -352,7 +236,6 @@ async def test_ai_model_endpoint_connection(
     """Execute real minimal non-blocking connection test for chat or embedding models."""
     cleaned_uri = endpoint_uri.strip().rstrip("/")
     validate_safe_llm_endpoint_url(cleaned_uri, instance=instance)
-
     if usage == "embedding":
         return await _test_embedding_connection(
             http_client=http_client,
@@ -364,7 +247,6 @@ async def test_ai_model_endpoint_connection(
             timeout_seconds=timeout_seconds,
             instance=instance,
         )
-
     return await _test_chat_connection(
         http_client=http_client,
         endpoint_uri=cleaned_uri,
@@ -377,11 +259,6 @@ async def test_ai_model_endpoint_connection(
     )
 
 
-# Prevent pytest from collecting this function as a test
 test_ai_model_endpoint_connection.__test__ = False  # type: ignore[attr-defined]
 
-
-__all__ = [
-    "AiModelConnectionTestSuccess",
-    "test_ai_model_endpoint_connection",
-]
+__all__ = ["AiModelConnectionTestSuccess", "test_ai_model_endpoint_connection"]

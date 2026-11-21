@@ -175,6 +175,7 @@ async def test_platform_setup_state_http_put_persists_settings_org_workspaces_an
         async with app_client_factory() as client:
             put_res = await client.put(
                 "/api/v1/bootstrap/platform-setup-state",
+                params={"persona_key": "karim"},
                 json={
                     "org_units": [
                         {
@@ -222,7 +223,10 @@ async def test_platform_setup_state_http_put_persists_settings_org_workspaces_an
             assert put_res.status_code == 200, put_res.text
             assert len(put_res.json()["workspaces"]) == 1
 
-            get_res = await client.get("/api/v1/bootstrap/platform-setup-state")
+            get_res = await client.get(
+                "/api/v1/bootstrap/platform-setup-state",
+                params={"persona_key": "karim"},
+            )
             assert get_res.status_code == 200, get_res.text
             assert get_res.json()["org_units"][0]["slug"] == "bu-vertical-claims"
             assert get_res.json()["org_units"][1]["slug"] == "team-vertical-rts"
@@ -269,7 +273,10 @@ async def test_platform_setup_state_http_put_persists_settings_org_workspaces_an
                 sa.text("DELETE FROM platform_settings WHERE key = 'platform_setup_state_v1'")
             )
         async with app_client_factory() as client:
-            reconciled_res = await client.get("/api/v1/bootstrap/platform-setup-state")
+            reconciled_res = await client.get(
+                "/api/v1/bootstrap/platform-setup-state",
+                params={"persona_key": "karim"},
+            )
             assert reconciled_res.status_code == 200
             reconciled_body = reconciled_res.json()
             reconciled_slugs = [u["slug"] for u in reconciled_body["org_units"]]
@@ -281,6 +288,7 @@ async def test_platform_setup_state_http_put_persists_settings_org_workspaces_an
             # Verify relational purge on deletion (no ghost workspace or org_unit)
             purge_res = await client.put(
                 "/api/v1/bootstrap/platform-setup-state",
+                params={"persona_key": "karim"},
                 json={
                     "org_units": [
                         {
@@ -303,7 +311,10 @@ async def test_platform_setup_state_http_put_persists_settings_org_workspaces_an
                 },
             )
             assert purge_res.status_code == 200
-            after_purge_get = await client.get("/api/v1/bootstrap/platform-setup-state")
+            after_purge_get = await client.get(
+                "/api/v1/bootstrap/platform-setup-state",
+                params={"persona_key": "karim"},
+            )
             assert after_purge_get.status_code == 200
             assert len(after_purge_get.json()["org_units"]) == 1
             assert after_purge_get.json()["workspaces"] == []

@@ -8,7 +8,6 @@ Strict validation of 1024 finite floats. Zero third-party SDK dependencies.
 
 from __future__ import annotations
 
-import math
 from collections.abc import Sequence
 from typing import Any
 from urllib.parse import urlparse
@@ -16,52 +15,23 @@ from urllib.parse import urlparse
 import httpx
 
 from orcia_core.ports.embedding import EMBEDDING_FIXED_DIMENSION, EmbeddingPort
+from orcia_core.rag.adapters.embedding_httpx_helpers import (
+    _BATCH_SIZE_MAX,
+    assert_embedding_usage_supported,
+    post_pinned_embedding_json,
+    validate_embedding_vectors_dimension,
+)
 from orcia_core.rag.errors import (
-    EmbeddingDimensionMismatchError,
+    EmbeddingDimensionMismatchError as EmbeddingDimensionMismatchError,
+)
+from orcia_core.rag.errors import (
     EmbeddingGenerationFailedError,
-    EmbeddingProviderUnsupportedError,
+)
+from orcia_core.rag.errors import (
+    EmbeddingProviderUnsupportedError as EmbeddingProviderUnsupportedError,
 )
 
-_BATCH_SIZE_MAX: int = 64
-
-
-def validate_embedding_vectors_dimension(
-    vectors: Sequence[Sequence[float]],
-    expected_dim: int = EMBEDDING_FIXED_DIMENSION,
-) -> None:
-    """Validate that every vector has exactly `expected_dim` finite floating-point numbers."""
-    for idx, vec in enumerate(vectors):
-        if len(vec) != expected_dim:
-            raise EmbeddingDimensionMismatchError(
-                detail_override=(
-                    f"Embedding dimension mismatch at index {idx}: expected {expected_dim}, "
-                    f"received {len(vec)}."
-                )
-            )
-        for val_idx, val in enumerate(vec):
-            if not isinstance(val, (int, float)) or not math.isfinite(val):
-                raise EmbeddingGenerationFailedError(
-                    detail_override=(
-                        f"Non-finite float detected at vector[{idx}][{val_idx}]: {val!r}."
-                    )
-                )
-
-
-def assert_embedding_usage_supported(
-    *,
-    provider_slug: str,
-    protocol_mode: str,
-) -> None:
-    """Refuse providers that do not have native embedding endpoints (e.g. Anthropic)."""
-    p_slug = provider_slug.strip().lower()
-    p_mode = protocol_mode.strip().lower()
-    if p_slug == "anthropic" or p_mode == "anthropic_messages":
-        raise EmbeddingProviderUnsupportedError(
-            detail_override=(
-                "Le fournisseur Anthropic ne propose aucune API native d'embeddings sémantiques. "
-                "Sélectionnez un fournisseur compatible (OpenAI, Mistral, Gemini, Ollama, vLLM)."
-            )
-        )
+_post_pinned_embedding_json = post_pinned_embedding_json
 
 
 class HttpxOpenAiCompatibleEmbeddingAdapter(EmbeddingPort):
@@ -119,11 +89,8 @@ class HttpxOpenAiCompatibleEmbeddingAdapter(EmbeddingPort):
             }
 
         try:
-            resp = await self._client.post(
-                url,
-                json=payload,
-                headers=headers,
-                timeout=self._timeout,
+            resp = await _post_pinned_embedding_json(
+                self._client, url, payload=payload, headers=headers, timeout=self._timeout
             )
         except httpx.RequestError as exc:
             raise EmbeddingGenerationFailedError(
@@ -135,9 +102,10 @@ class HttpxOpenAiCompatibleEmbeddingAdapter(EmbeddingPort):
         if resp.status_code == 400 and "dimensions" in payload:
             fallback_payload = {"model": self._model_name, "input": batch}
             try:
-                fallback_resp = await self._client.post(
+                fallback_resp = await _post_pinned_embedding_json(
+                    self._client,
                     url,
-                    json=fallback_payload,
+                    payload=fallback_payload,
                     headers=headers,
                     timeout=self._timeout,
                 )
@@ -246,11 +214,8 @@ class HttpxGeminiNativeEmbeddingAdapter(EmbeddingPort):
         payload = {"requests": requests_payload}
 
         try:
-            resp = await self._client.post(
-                url,
-                json=payload,
-                headers=headers,
-                timeout=self._timeout,
+            resp = await _post_pinned_embedding_json(
+                self._client, url, payload=payload, headers=headers, timeout=self._timeout
             )
         except httpx.RequestError as exc:
             raise EmbeddingGenerationFailedError(

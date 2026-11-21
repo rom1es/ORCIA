@@ -82,8 +82,8 @@ export default defineConfig({
       stderr: "pipe",
     },
     {
-      // SPA Vite dont le proxy `/api` vise l'API E2E (et non l'API de développement).
-      command: `node scripts/run-next.mjs dev --host ${webHost} --port ${webPort}`,
+      // Bundled Vite SPA (`vite build` + `vite preview`) avoids 420+ unbundled dev module fetches aborting on host ERR_NETWORK_CHANGED.
+      command: `pnpm run build && node scripts/run-next.mjs start --host ${webHost} --port ${webPort}`,
       url: webBaseUrl,
       reuseExistingServer: false,
       timeout: 60000,

@@ -7364,7 +7364,7 @@
       },
       "ConversationTurnMessageItem": {
         "additionalProperties": false,
-        "description": "Single message item in multi-turn `conversation_history` (`Story 10.2`, `AD-15`).",
+        "description": "Single message item in multi-turn `conversation_history` (`Story 10.2`, `Story 26.1`).",
         "properties": {
           "content": {
             "minLength": 1,
@@ -7385,8 +7385,7 @@
           "role": {
             "enum": [
               "user",
-              "assistant",
-              "tool"
+              "assistant"
             ],
             "title": "Role",
             "type": "string"
@@ -19704,6 +19703,28 @@
         "title": "PlatformSettingResponse",
         "type": "object"
       },
+      "PlatformSetupStatePublicResponse": {
+        "additionalProperties": false,
+        "description": "Minimal unauthenticated Day-0 projection (`Story 26.1`, `AD-21`).",
+        "properties": {
+          "is_initialized": {
+            "default": false,
+            "title": "Is Initialized",
+            "type": "boolean"
+          },
+          "step": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Step",
+            "type": "string"
+          }
+        },
+        "required": [
+          "step"
+        ],
+        "title": "PlatformSetupStatePublicResponse",
+        "type": "object"
+      },
       "PlatformSetupStatePutRequest": {
         "additionalProperties": false,
         "description": "Request payload for `PUT /api/v1/bootstrap/platform-setup-state` (`Epics 8..12`).",
@@ -30286,7 +30307,7 @@
       },
       "VerifyAndFilterCitationsRequest": {
         "additionalProperties": false,
-        "description": "Request payload for `POST /api/v1/assistant/citations/verify-turn` (`Story 10.3`).",
+        "description": "Request payload for `POST /api/v1/assistant/citations/verify-turn` (`Story 26.1`).",
         "properties": {
           "glossary_items": {
             "items": {
@@ -30294,20 +30315,6 @@
             },
             "title": "Glossary Items",
             "type": "array"
-          },
-          "reader_allowed_source_uris": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reader Allowed Source Uris"
           },
           "response_text": {
             "minLength": 1,
@@ -35777,7 +35784,7 @@
     },
     "/api/v1/assistant/artifacts/action": {
       "post": {
-        "description": "Execute a Structured Artifact Card action, enforcing Verrou V5 (`AD-15`).",
+        "description": "Execute a Structured Artifact Card action, enforcing scope & Verrou V5 (`AD-15`).",
         "operationId": "execute_artifact_card_action_endpoint_api_v1_assistant_artifacts_action_post",
         "parameters": [
           {
@@ -36180,7 +36187,7 @@
     },
     "/api/v1/assistant/citations/verify-turn": {
       "post": {
-        "description": "Build Evidence Table (`REFERENCE > ACTIVE`), filter `READ_SOURCE` & strip phantom tags.",
+        "description": "Build Evidence Table (`REFERENCE > ACTIVE`), enforce `READ_SOURCE` & strip phantom tags.",
         "operationId": "verify_and_filter_citations_endpoint_api_v1_assistant_citations_verify_turn_post",
         "parameters": [
           {
@@ -36312,7 +36319,7 @@
     },
     "/api/v1/assistant/folders": {
       "post": {
-        "description": "Create or update a thematic `📁 Dossier` (`📌 Notes du dossier`) persisted in PG18.",
+        "description": "Create or update a thematic folder persisted in PG18.",
         "operationId": "create_or_update_assistant_folder_endpoint_api_v1_assistant_folders_post",
         "parameters": [
           {
@@ -36444,7 +36451,7 @@
     },
     "/api/v1/assistant/folders/{folder_id}/launch-process": {
       "post": {
-        "description": "Pre-fill a Process contract in 1 click (`☍ Lancer un Processus à partir de ce dossier →`).",
+        "description": "Pre-fill a Process contract in 1 click from a thematic folder.",
         "operationId": "launch_process_from_folder_endpoint_api_v1_assistant_folders__folder_id__launch_process_post",
         "parameters": [
           {
@@ -36585,7 +36592,7 @@
     },
     "/api/v1/assistant/folders/{folder_id}/share": {
       "post": {
-        "description": "Configure folder visibility (`🔒 Privé | 👥 Partagé | 📦 Espace`) confined to Workspace.",
+        "description": "Configure folder visibility confined to Workspace.",
         "operationId": "configure_folder_sharing_endpoint_api_v1_assistant_folders__folder_id__share_post",
         "parameters": [
           {
@@ -36868,7 +36875,7 @@
     },
     "/api/v1/assistant/governance/mode-a/user": {
       "put": {
-        "description": "Update Tab 1 (`👤 Mes préférences — Couche 5 USER`) (`Story 10.1`).",
+        "description": "Update Tab 1 (`Mes préférences — Couche 5 USER`) (`Story 10.1`).",
         "operationId": "update_user_layer_preferences_endpoint_api_v1_assistant_governance_mode_a_user_put",
         "parameters": [
           {
@@ -37000,7 +37007,7 @@
     },
     "/api/v1/assistant/governance/mode-a/workspace": {
       "put": {
-        "description": "Update Tab 2 (`📦 Réglages de l'Espace — Couche 4 WORKSPACE`) (`Story 10.1`).",
+        "description": "Update Tab 2 (`Réglages de l'Espace — Couche 4 WORKSPACE`) (`Story 10.1`).",
         "operationId": "update_workspace_layer_settings_endpoint_api_v1_assistant_governance_mode_a_workspace_put",
         "parameters": [
           {
@@ -37132,7 +37139,7 @@
     },
     "/api/v1/assistant/governance/mode-b/reset": {
       "post": {
-        "description": "Reset Mode B Studio override in 1 click (`↺ Réinitialiser`) (`Story 10.1`).",
+        "description": "Reset Mode B Studio override in 1 click (`Story 10.1`).",
         "operationId": "reset_assistant_studio_graph_endpoint_api_v1_assistant_governance_mode_b_reset_post",
         "parameters": [
           {
@@ -37264,7 +37271,7 @@
     },
     "/api/v1/assistant/governance/mode-b/save": {
       "post": {
-        "description": "Save Mode B Studio graph override (`TEAM` or `WORKSPACE`) (`🔒 AssistantHarness`).",
+        "description": "Save Mode B Studio graph override (`TEAM` or `WORKSPACE`).",
         "operationId": "save_assistant_studio_graph_endpoint_api_v1_assistant_governance_mode_b_save_post",
         "parameters": [
           {
@@ -37396,7 +37403,7 @@
     },
     "/api/v1/assistant/threads": {
       "post": {
-        "description": "Create a discussion thread inside a `📁 Dossier` (`Story 10.4`) persisted in PG18.",
+        "description": "Create a discussion thread inside a thematic folder persisted in PG18.",
         "operationId": "create_assistant_thread_endpoint_api_v1_assistant_threads_post",
         "parameters": [
           {
@@ -37800,7 +37807,7 @@
     },
     "/api/v1/assistant/three-speed/feedback": {
       "post": {
-        "description": "Record user `👍` (`LIKE`) or `👎` (`DISLIKE`) feedback on a prompt telemetry entry.",
+        "description": "Record user `LIKE` or `DISLIKE` feedback on a prompt telemetry entry.",
         "operationId": "record_assistant_turn_feedback_endpoint_api_v1_assistant_three_speed_feedback_post",
         "parameters": [
           {
@@ -37934,7 +37941,7 @@
     },
     "/api/v1/assistant/three-speed/invalidate-cache": {
       "post": {
-        "description": "Invalidate Redis 5-layer prompt cache (`SETTINGS_CHANGED` / `OVERRIDE_UPDATED`).",
+        "description": "Invalidate 5-layer prompt cache (`SETTINGS_CHANGED` / `OVERRIDE_UPDATED`).",
         "operationId": "invalidate_prompt_cache_endpoint_api_v1_assistant_three_speed_invalidate_cache_post",
         "parameters": [
           {
@@ -38066,7 +38073,7 @@
     },
     "/api/v1/assistant/three-speed/stop": {
       "post": {
-        "description": "Explicitly cancel the active background LLM task when the user clicks Stop `■`.",
+        "description": "Explicitly cancel the active background LLM task when the user clicks Stop.",
         "operationId": "stop_active_three_speed_turn_endpoint_api_v1_assistant_three_speed_stop_post",
         "parameters": [
           {
@@ -38333,7 +38340,7 @@
     },
     "/api/v1/assistant/three-speed/turn": {
       "post": {
-        "description": "Execute a 3-Speed conversational turn (`⚡ Rapide`, `@Agent / /Skill`, `🧠 Approfondi`).",
+        "description": "Execute a 3-Speed conversational turn (`Rapide`, `@Agent / /Skill`, `Approfondi`).",
         "operationId": "execute_three_speed_turn_endpoint_api_v1_assistant_three_speed_turn_post",
         "parameters": [
           {
@@ -41683,12 +41690,34 @@
     "/api/v1/bootstrap/platform-setup-state": {
       "get": {
         "operationId": "get_platform_setup_state_api_v1_bootstrap_platform_setup_state_get",
+        "parameters": [
+          {
+            "description": "When true, require PLATFORM_ADMIN role to return full setup snapshot.",
+            "in": "query",
+            "name": "detail",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "When true, require PLATFORM_ADMIN role to return full setup snapshot.",
+              "title": "Detail",
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PlatformSetupStateResponse"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/PlatformSetupStateResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/PlatformSetupStatePublicResponse"
+                    }
+                  ],
+                  "title": "Response Get Platform Setup State Api V1 Bootstrap Platform Setup State Get"
                 }
               }
             },
@@ -41772,12 +41801,7 @@
             "description": "Precondition Required"
           }
         },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Load persisted Day-0 / Epics 8-12 Platform Setup state from PostgreSQL 18",
+        "summary": "Load minimal setup state (public/non-admin) or full snapshot (PLATFORM_ADMIN)",
         "tags": [
           "bootstrap"
         ]
@@ -41888,7 +41912,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Persist Day-0 / Epics 8-12 Platform Setup state to PostgreSQL 18",
+        "summary": "Persist Day-0 / Epics 8-12 Platform Setup state to PostgreSQL 18 (PLATFORM_ADMIN)",
         "tags": [
           "bootstrap"
         ]

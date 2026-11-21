@@ -64,15 +64,12 @@ def user_identity_from_candidate(
     )
 
 
-def serialize_auth_token_response(
-    response: Response,
+def build_auth_token_response(
     user: UserIdentity,
     tokens: SessionTokenPair,
     trace_id: str,
-    request: Request,
 ) -> AuthTokenResponse:
-    """Attach HttpOnly refresh cookie and serialize `AuthTokenResponse`."""
-    set_auth_refresh_cookie(response, tokens.refresh_token, request)
+    """Serialize `AuthTokenResponse` without mutating response cookies."""
     return AuthTokenResponse(
         access_token=tokens.access_token,
         expires_in_seconds=tokens.expires_in_seconds,
@@ -87,6 +84,18 @@ def serialize_auth_token_response(
         requires_two_factor=False,
         trace_id=trace_id,
     )
+
+
+def serialize_auth_token_response(
+    response: Response,
+    user: UserIdentity,
+    tokens: SessionTokenPair,
+    trace_id: str,
+    request: Request,
+) -> AuthTokenResponse:
+    """Attach HttpOnly refresh cookie and serialize `AuthTokenResponse`."""
+    set_auth_refresh_cookie(response, tokens.refresh_token, request)
+    return build_auth_token_response(user, tokens, trace_id)
 
 
 def issue_completed_auth_response(
