@@ -5,6 +5,7 @@ Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`)
 
 from __future__ import annotations
 
+import asyncio
 import math
 import re
 from typing import Any
@@ -117,6 +118,30 @@ class HybridRagService:
         self._doc_by_key[updated.doc_key] = updated
         return updated
 
+    async def search_hybrid_rrf_async(
+        self,
+        *,
+        workspace_id: str,
+        query_text: str,
+        query_embedding: tuple[float, ...] | None = None,
+        allowed_datasource_aliases: frozenset[str] | None = None,
+        top_k: int = 5,
+    ) -> tuple[HybridRagHit, ...]:
+        """Async hybrid RRF search awaiting `EmbeddingPort.embed_query` without blocking."""
+        resolved_emb = query_embedding
+        if resolved_emb is None and self._embedding_port is not None:
+            if hasattr(self._embedding_port, "embed_query"):
+                resolved_emb = tuple(await self._embedding_port.embed_query(query_text))
+            elif hasattr(self._embedding_port, "embed_query_sync"):
+                resolved_emb = tuple(self._embedding_port.embed_query_sync(query_text))
+        return self._execute_hybrid_rrf(
+            workspace_id=workspace_id,
+            query_text=query_text,
+            query_embedding=resolved_emb,
+            allowed_datasource_aliases=allowed_datasource_aliases,
+            top_k=top_k,
+        )
+
     def search_hybrid_rrf(
         self,
         *,
@@ -135,21 +160,34 @@ class HybridRagService:
             if hasattr(self._embedding_port, "embed_query_sync"):
                 query_embedding = tuple(self._embedding_port.embed_query_sync(query_text))
             elif hasattr(self._embedding_port, "embed_query"):
-                import asyncio
-
                 try:
-                    loop = asyncio.get_event_loop()
-                    if loop.is_running():
-                        pass
-                    else:
-                        query_embedding = tuple(
-                            loop.run_until_complete(self._embedding_port.embed_query(query_text))
-                        )
+                    asyncio.get_running_loop()
                 except RuntimeError:
                     query_embedding = tuple(
                         asyncio.run(self._embedding_port.embed_query(query_text))
                     )
+                else:
+                    raise RuntimeError(
+                        "HybridRagService.search_hybrid_rrf() cannot run inside an active "
+                        "event loop; await search_hybrid_rrf_async() instead."
+                    ) from None
+        return self._execute_hybrid_rrf(
+            workspace_id=workspace_id,
+            query_text=query_text,
+            query_embedding=query_embedding,
+            allowed_datasource_aliases=allowed_datasource_aliases,
+            top_k=top_k,
+        )
 
+    def _execute_hybrid_rrf(
+        self,
+        *,
+        workspace_id: str,
+        query_text: str,
+        query_embedding: tuple[float, ...] | None,
+        allowed_datasource_aliases: frozenset[str] | None,
+        top_k: int,
+    ) -> tuple[HybridRagHit, ...]:
         if query_embedding is None:
             raise NoActiveEmbeddingModelError(
                 detail_override=(

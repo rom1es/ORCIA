@@ -9,7 +9,6 @@ Zero private DBOS recovery calls and zero global singleton engine state (`AC-F2`
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
 from dbos import DBOS, DBOSConfig, SetWorkflowID, WorkflowHandleAsync
@@ -19,37 +18,24 @@ from orcia_core.blackboard.models import (
     StepExecutionEntity,
     StepMemlogEntry,
 )
+from orcia_core.orchestration._internal._dbos_workflow_defs import (
+    ARBITRATION_TOPIC,
+    DurableWorkflowRunSummary,
+    _execute_durable_step,
+    _orcia_durable_run_workflow,
+    _require_bound_runtime,
+    bind_dbos_runtime,
+    has_active_dbos_runtime_bindings,
+    unbind_dbos_runtime,
+)
 from orcia_core.orchestration._internal.sql_repository import SqlOrchestrationRepository
 from orcia_core.orchestration._internal.uow import DbosSqlAlchemyUnitOfWork
-from orcia_core.orchestration.step_executors import register_default_step_executors
+from orcia_core.orchestration.step_executors import (
+    execute_step_port_async,
+    register_default_step_executors,
+)
 from orcia_kernel.ids import new_uuid7_str
 from orcia_kernel.ports import StepExecutorContext, get_registered_step_executor
-
-ARBITRATION_TOPIC = "orcia.human.arbitration"
-
-_RUNTIME_BINDINGS: list[DbosDurableWorkflowEngine] = []
-
-
-def _require_bound_runtime() -> DbosDurableWorkflowEngine:
-    if not _RUNTIME_BINDINGS:
-        raise RuntimeError("DbosDurableWorkflowEngine is not launched.")
-    return _RUNTIME_BINDINGS[-1]
-
-
-def has_active_dbos_runtime_bindings() -> bool:
-    """Return True when a `DbosDurableWorkflowEngine` is currently bound."""
-    return bool(_RUNTIME_BINDINGS)
-
-
-@dataclass(frozen=True, slots=True)
-class DurableWorkflowRunSummary:
-    """Result summary of a DBOS durable workflow run persisted in PostgreSQL 18."""
-
-    workflow_id: str
-    run_id: str
-    final_status: str
-    committed_snapshot_ids: tuple[str, ...]
-    arbitration_decision: str | None = None
 
 
 class DbosDurableWorkflowEngine:
@@ -108,7 +94,7 @@ class DbosDurableWorkflowEngine:
             run_migrations=True,
         )
         self._repository = SqlOrchestrationRepository(self._uow)
-        _RUNTIME_BINDINGS.append(self)
+        bind_dbos_runtime(self)
         # DBOS.launch() automatically spawns startup recovery of pending workflows (public API)
         DBOS.launch()
         self._launched = True
@@ -119,8 +105,7 @@ class DbosDurableWorkflowEngine:
             await self._uow.close()
             self._uow = None
             self._repository = None
-        if self in _RUNTIME_BINDINGS:
-            _RUNTIME_BINDINGS.remove(self)
+        unbind_dbos_runtime(self)
         if self._launched:
             DBOS.destroy(destroy_registry=False)
             self._launched = False
@@ -157,7 +142,7 @@ class DbosDurableWorkflowEngine:
                 declared_input_uris=(),
                 resolved_inputs={"step_index": step_index},
             )
-            exec_res = executor.execute_step(ctx)
+            exec_res = await execute_step_port_async(executor, ctx)
             resolved_payload = dict(exec_res.artifact_payload)
             memlog_summary = exec_res.summary
             memlog_details = exec_res.details
@@ -265,81 +250,12 @@ class DbosDurableWorkflowEngine:
         return await DBOS.fork_workflow_async(workflow_id, start_step)
 
 
-@DBOS.step()
-async def _execute_durable_step(
-    run_id: str,
-    step_key: str,
-    step_index: int,
-    parent_snapshot_id: str | None,
-) -> str:
-    engine = _require_bound_runtime()
-    if await engine.repository.get_run_status(run_id) == "KILL_SWITCH_STOPPED":
-        raise RuntimeError(f"KILL_SWITCH_STOPPED:{run_id}")
-    snap = await engine.persist_step_and_commit_snapshot(
-        run_id=run_id,
-        step_key=step_key,
-        step_index=step_index,
-        artifact_payload=None,
-        parent_snapshot_id=parent_snapshot_id,
-    )
-    return snap.id
-
-
-@DBOS.workflow()
-async def _orcia_durable_run_workflow(
-    run_id: str,
-    steps: tuple[str, ...],
-    pause_for_arbitration_after_step: str | None = None,
-    timeout_seconds: float = 30.0,
-) -> DurableWorkflowRunSummary:
-    engine = _require_bound_runtime()
-    workflow_id = DBOS.workflow_id or f"wf-{run_id}"
-    await engine.repository.update_run_status(run_id, "RUNNING")
-    committed_ids: list[str] = []
-    parent_snap_id: str | None = None
-    arbitration_decision: str | None = None
-
-    for idx, step_key in enumerate(steps):
-        current_status = await engine.repository.get_run_status(run_id)
-        if current_status == "KILL_SWITCH_STOPPED":
-            return DurableWorkflowRunSummary(
-                workflow_id=workflow_id,
-                run_id=run_id,
-                final_status="KILL_SWITCH_STOPPED",
-                committed_snapshot_ids=tuple(committed_ids),
-                arbitration_decision=arbitration_decision,
-            )
-
-        snap_id = await _execute_durable_step(
-            run_id,
-            step_key,
-            idx,
-            parent_snap_id,
-        )
-        committed_ids.append(snap_id)
-        parent_snap_id = snap_id
-
-        if pause_for_arbitration_after_step == step_key:
-            await engine.repository.update_run_status(run_id, "WAITING_FOR_HUMAN_ARBITRATION")
-            raw_decision = await DBOS.recv_async(
-                topic=ARBITRATION_TOPIC, timeout_seconds=timeout_seconds
-            )
-            arbitration_decision = str(raw_decision) if raw_decision is not None else "TIMEOUT"
-            await engine.repository.update_run_status(run_id, "RUNNING")
-
-    await engine.repository.update_run_status(run_id, "COMPLETED")
-    return DurableWorkflowRunSummary(
-        workflow_id=workflow_id,
-        run_id=run_id,
-        final_status="COMPLETED",
-        committed_snapshot_ids=tuple(committed_ids),
-        arbitration_decision=arbitration_decision,
-    )
-
-
 __all__ = [
     "ARBITRATION_TOPIC",
     "DbosDurableWorkflowEngine",
     "DurableWorkflowRunSummary",
+    "_execute_durable_step",
+    "_orcia_durable_run_workflow",
     "_require_bound_runtime",
+    "has_active_dbos_runtime_bindings",
 ]

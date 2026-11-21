@@ -31,6 +31,7 @@ class LlmStreamRequest:
     tools: Sequence[dict[str, Any]] = ()
     stream: bool = True
     include_thoughts: bool = True
+    inter_chunk_timeout_s: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,6 +48,8 @@ class LlmStreamDelta:
     output_tokens: int = 0
     usage_source: str = "estimated"
     error_message: str = ""
+    error_code: str = ""
+    http_status: int = 0
     step_code: str = "NODE_5_SINGLE_STREAM_LLM"
 
 

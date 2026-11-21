@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 57,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 209,
+    "techLeadReportsCount": 210,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 61,
@@ -543,6 +543,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-21",
+      "phaseOrStory": "Story 26.3",
+      "reportFile": "26-3-turn-reliability-redis-registry-async-loop-and-rate-limit-tech-lead-report.md",
+      "domain": "Epic 26 Lot 3 — Turn Reliability: Redis Registry (workspace, user, turn_id), Tracked asyncio.Task Drain & Liveness Key, Cursor Redis Streams Replay (?after=<cursor>), 100% Non-Blocking Async Loop, Stream Resilience & Redis Rate Limiting (CAP-069, CAP-075)",
+      "summary": "Closed (done, Testing Sub-Agent verified): replaced global ACTIVE_WORKSPACE_TURNS with AssistantTurnRegistryPort / AssistantRateLimiterPort + RedisAssistantTurnRegistry & RedisAssistantRateLimiter, tracked app.state.assistant_turn_tasks (add_done_callback) + bounded SIGTERM graceful drain, cross-worker stop + finally idempotent audit_ledger FinOps flush, liveness key crash detection (503 ERR_ASSISTANT_TURN_INTERRUPTED), cursor-reattachable POST /turns / GET /turns/active / GET /turns/{id}/stream?after= / POST /turns/{id}/stop (preserving /three-speed/* compatibility), native async step executors (step_executors.py 524 -> 265 L), RAG search, and SSE generators (0 ThreadPoolExecutor.result(), 0 if loop.is_running(): pass), max_retries=2 pre-first-byte retry + idle timeout + RFC 9457 stream_error & HTTP 429 rate/concurrency guards; all 53 touched source files <= 294 L; verified 94% (93.88%) 11-module Story 26.3 branch coverage (9 unit + 1 2-instance create_app() PG18/Redis 7.4 integration test), 1103 Layer 1/3/4/Security tests passed, 2/2 PG18 26.1/25.5 non-regression, 15 passed, 1 skipped, 0 failed Playwright Desktop E2E, 9/9 Turbo, ruff/mypy --strict (657 files)/lint-imports (5/5)/export_openapi (0-diff)/detect-secrets clean."
+    },
     {
       "date": "2026-11-21",
       "phaseOrStory": "Story 26.2",

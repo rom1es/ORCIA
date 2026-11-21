@@ -581,7 +581,7 @@ capabilities:
     title: Page Profil utilisateur (/profile), 4 KPIs tokens/séries, éléments populaires et télémétrie tokens de Mon Assistant
     fr: [FR-25, FR-32]
     origin: epic
-    origin_ref: 20-4 + 26-2
+    origin_ref: 20-4 + 26-2 + 26-3
     status: live
     kind: feature
     uj: [UJ-16]
@@ -591,6 +591,7 @@ capabilities:
     tests:
       - tests/unit/test_story_20_4_profile_streaks_and_assistant_usage.py
       - tests/unit/test_story_26_2_core_llm_streaming_and_prompt_builder.py
+      - tests/unit/test_story_26_3_turn_reliability_and_async_loop.py
       - tests/security/test_story_20_4_profile_isolation.py
       - tests/integration/api/test_story_20_4_profile_summary_postgres18.py
       - apps/web/src/__tests__/story-20-4-profile-overview-and-f5.test.tsx
@@ -796,15 +797,20 @@ capabilities:
     title: Assistant — streaming réel, bouton Stop, réflexion progressive repliable, sauvegarde des conversations, pièces jointes, citations RAG, autosave/autocomplete
     fr: [FR-33]
     origin: adhoc
-    origin_ref: "2026-11-06-refonte-assistant-minimaliste-routage-llm-et-sauvegarde-conversations + 2026-11-06-streaming-assistant-bouton-stop-et-sous-fenetre-reflexion + 2026-11-07-assistant-* (5 rapports) + 2026-11-07-correction-triplon-reponse-markdown-et-boutons-redondants-assistant + 25-5"
+    origin_ref: "2026-11-06-refonte-assistant-minimaliste-routage-llm-et-sauvegarde-conversations + 2026-11-06-streaming-assistant-bouton-stop-et-sous-fenetre-reflexion + 2026-11-07-assistant-* (5 rapports) + 2026-11-07-correction-triplon-reponse-markdown-et-boutons-redondants-assistant + 25-5 + 26-3"
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [assistant_threads, assistant_folders, kb_chunks]
-    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/src/__tests__/story-25-5-assistant-unlocked-and-rag-source-blocked.test.tsx, packages/ui/src/__tests__/assistant-workspace.test.tsx]
+    tests:
+      - apps/web/e2e/02-assistant-streaming-and-folders.spec.ts
+      - apps/web/src/__tests__/story-25-5-assistant-unlocked-and-rag-source-blocked.test.tsx
+      - packages/ui/src/__tests__/assistant-workspace.test.tsx
+      - tests/unit/test_story_26_3_turn_reliability_and_async_loop.py
+      - tests/integration/api/test_story_26_3_redis_multi_worker_turns_postgres18.py
     verification: runtime
     verified_at: "2026-11-21"
-    surfaces: { route: /assistant, api: assistant_background_turns.py }
+    surfaces: { route: /assistant, api: "assistant_background_turns.py + _assistant_turns_v2_routes.py" }
   - id: CAP-076
     title: Refactorisation LLM agnostique/async et vrai streaming SSE ; intégration Gemini (Mode A/B)
     fr: [FR-33]

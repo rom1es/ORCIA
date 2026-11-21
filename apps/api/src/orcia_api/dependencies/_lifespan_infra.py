@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
 from contextlib import suppress
 from typing import Any
@@ -158,10 +159,43 @@ async def startup_declarative_packs_and_dbos(app: FastAPI) -> None:
             )
 
 
+def _resolve_assistant_drain_timeout_seconds() -> float:
+    try:
+        drain_s = max(
+            0.05, float(os.environ.get("ORCIA_ASSISTANT_DRAIN_TIMEOUT_S", "10.0").strip())
+        )
+    except ValueError:
+        drain_s = 10.0
+    try:
+        wall_cap_s = max(
+            0.05, float(os.environ.get("ORCIA_ASSISTANT_WALL_CLOCK_BUDGET_S", "120.0").strip())
+        )
+    except ValueError:
+        wall_cap_s = 120.0
+    return min(drain_s, wall_cap_s)
+
+
+async def drain_assistant_turn_tasks(app: FastAPI) -> None:
+    """Gracefully wait for active assistant tasks up to bounded drain timeout, then cancel."""
+    tasks: set[asyncio.Task[Any]] | None = getattr(app.state, "assistant_turn_tasks", None)
+    if not tasks:
+        return
+    pending = [t for t in list(tasks) if not t.done()]
+    if not pending:
+        return
+    drain_budget_s = _resolve_assistant_drain_timeout_seconds()
+    _done, still_pending = await asyncio.wait(pending, timeout=drain_budget_s)
+    if still_pending:
+        for t in still_pending:
+            t.cancel()
+        await asyncio.gather(*still_pending, return_exceptions=True)
+
+
 async def shutdown_app_resources(app: FastAPI, tracer_provider: Any) -> None:
-    """Close SSE broker, tracing, HTTPX client, Redis client, and SQLAlchemy engine."""
+    """Drain active assistant turns, then close SSE broker, tracing, HTTPX, Redis & SQL pool."""
     from orcia_core.observability import shutdown_tracing
 
+    await drain_assistant_turn_tasks(app)
     sse_broker = getattr(app.state, "sse_broker", None)
     if sse_broker is not None and hasattr(sse_broker, "stop_pubsub_listener"):
         with suppress(Exception):

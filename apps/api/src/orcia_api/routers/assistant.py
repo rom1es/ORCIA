@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Iterator
+from collections.abc import AsyncIterator
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -142,7 +142,7 @@ async def assistant_chat_turn(
     uri_authorizer = await prepare_server_source_uri_authorizer(
         request, user, workspace_id=payload.workspace_id
     )
-    turn = svc.run_conversation_turn(
+    turn = await svc.run_conversation_turn_async(
         workspace_id=payload.workspace_id,
         user_prompt=payload.user_prompt,
         human_profile_archetype=profile,
@@ -178,8 +178,8 @@ async def assistant_chat_stream(
         request, user, workspace_id=payload.workspace_id
     )
 
-    def _event_generator() -> Iterator[str]:
-        for evt in service.stream_conversation_turn_sse(
+    async def _event_generator() -> AsyncIterator[str]:
+        async for evt in service.stream_conversation_turn_sse_async(
             workspace_id=payload.workspace_id,
             user_prompt=payload.user_prompt,
             human_profile_archetype=profile,
@@ -208,7 +208,7 @@ async def assistant_save_and_launch_workflow(
     """Register and execute a composed workflow via `orcia.step_executors` (`FR-11`, `UJ-10`)."""
     user = resolve_request_user(request, persona_key=persona_key)
     await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
-    result = get_assistant_service(request).save_and_launch_workflow(
+    result = await get_assistant_service(request).save_and_launch_workflow_async(
         user,
         workspace_id=payload.workspace_id,
         manifest_yaml=payload.manifest_yaml,

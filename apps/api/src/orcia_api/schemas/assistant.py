@@ -13,6 +13,9 @@ from orcia_api.schemas.assistant_governance_and_three_speed import (
     AssembledLayerPreviewSchemaItem as AssembledLayerPreviewSchemaItem,
 )
 from orcia_api.schemas.assistant_governance_and_three_speed import (
+    AssistantActiveTurnsListResponse as AssistantActiveTurnsListResponse,
+)
+from orcia_api.schemas.assistant_governance_and_three_speed import (
     AssistantGovernanceViewResponse as AssistantGovernanceViewResponse,
 )
 from orcia_api.schemas.assistant_governance_and_three_speed import (
@@ -20,6 +23,9 @@ from orcia_api.schemas.assistant_governance_and_three_speed import (
 )
 from orcia_api.schemas.assistant_governance_and_three_speed import (
     AssistantStudioNodeSchemaItem as AssistantStudioNodeSchemaItem,
+)
+from orcia_api.schemas.assistant_governance_and_three_speed import (
+    AssistantTurnAcceptedResponse as AssistantTurnAcceptedResponse,
 )
 from orcia_api.schemas.assistant_governance_and_three_speed import (
     ConversationTurnMessageItem as ConversationTurnMessageItem,

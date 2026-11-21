@@ -107,6 +107,57 @@ def execute_step_runner_job(
     )
 
 
+async def execute_step_runner_job_async(
+    *,
+    run_id: str,
+    step_key: str,
+    trace_id: str,
+    commit_immediately: bool = True,
+    simulated_divergence: str | None = None,
+    orchestration_service: WorkflowOrchestrationSetupService | None = None,
+) -> StepRunnerExecutionResult:
+    """Async durable step runner job without blocking an active asyncio event loop."""
+    ctx = bind_trace_context(trace_id)
+    svc = (
+        orchestration_service
+        if orchestration_service is not None
+        else build_default_orchestration_setup_service()
+    )
+    existing_snap = svc.engine.blackboard.get_active_step_snapshot(run_id, step_key)
+    if existing_snap is not None and commit_immediately:
+        return StepRunnerExecutionResult(
+            run_id=run_id,
+            step_key=step_key,
+            snapshot_id=existing_snap.id,
+            already_committed=True,
+            trace_id=ctx.trace_id,
+        )
+
+    worker_user = UserIdentity(
+        id="0192c4e0-0000-7000-8000-000000000603",
+        email="marc.lead@orcia.io",
+        display_name="Marc (DBOS Durable Runner)",
+        auth_mode="HYBRID",
+        human_profile_archetype="TECH_LEAD",
+        platform_role="TEAM_LEAD",
+        primary_org_unit_id="0192c4e0-0000-7000-8000-000000000104",
+    )
+    _, snap = await svc.engine.execute_step_async(
+        worker_user,
+        run_id=run_id,
+        step_key=step_key,
+        commit_immediately=commit_immediately,
+        simulated_divergence=simulated_divergence,
+    )
+    return StepRunnerExecutionResult(
+        run_id=run_id,
+        step_key=step_key,
+        snapshot_id=snap.id if snap is not None else None,
+        already_committed=False,
+        trace_id=ctx.trace_id,
+    )
+
+
 async def execute_durable_sql_workflow(
     uow: DbosSqlAlchemyUnitOfWork,
     *,

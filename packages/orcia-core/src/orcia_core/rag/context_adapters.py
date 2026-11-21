@@ -10,10 +10,16 @@ Provides:
 
 from __future__ import annotations
 
-import hashlib
+import asyncio
 import json
 from typing import Any
 
+from orcia_core.rag._context_adapters_helpers import (
+    build_blackboard_slices,
+    build_permission_slices,
+    sha256_text,
+    to_vector_hits,
+)
 from orcia_core.rag.hybrid_rag_service import HybridRagService
 from orcia_kernel.context_ports import (
     ContextSliceKind,
@@ -22,10 +28,6 @@ from orcia_kernel.context_ports import (
     VectorSearchHitRecord,
     VectorStorePort,
 )
-
-
-def _sha256_text(text: str) -> str:
-    return f"sha256:{hashlib.sha256(text.encode('utf-8')).hexdigest()}"
 
 
 class HybridRagVectorStoreAdapter(VectorStorePort):
@@ -38,6 +40,33 @@ class HybridRagVectorStoreAdapter(VectorStorePort):
     ) -> None:
         self._rag = rag_service
         self._embedding_port = embedding_port or getattr(rag_service, "_embedding_port", None)
+
+    async def hybrid_search_async(
+        self,
+        *,
+        workspace_id: str,
+        query_text: str,
+        allowed_datasource_aliases: frozenset[str],
+        top_k: int = 5,
+        query_embedding: tuple[float, ...] | None = None,
+    ) -> tuple[VectorSearchHitRecord, ...]:
+        """Async hybrid search awaiting `EmbeddingPort.embed_query` natively."""
+        effective_embedding = query_embedding
+        if effective_embedding is None and self._embedding_port is not None:
+            if hasattr(self._embedding_port, "embed_query"):
+                effective_embedding = tuple(await self._embedding_port.embed_query(query_text))
+            elif hasattr(self._embedding_port, "embed_query_sync"):
+                effective_embedding = tuple(self._embedding_port.embed_query_sync(query_text))
+        hits = await self._rag.search_hybrid_rrf_async(
+            workspace_id=workspace_id,
+            query_text=query_text,
+            query_embedding=effective_embedding,
+            allowed_datasource_aliases=(
+                allowed_datasource_aliases if allowed_datasource_aliases else None
+            ),
+            top_k=top_k,
+        )
+        return to_vector_hits(hits)
 
     def hybrid_search(
         self,
@@ -53,20 +82,17 @@ class HybridRagVectorStoreAdapter(VectorStorePort):
             if hasattr(self._embedding_port, "embed_query_sync"):
                 effective_embedding = tuple(self._embedding_port.embed_query_sync(query_text))
             elif hasattr(self._embedding_port, "embed_query"):
-                import asyncio
-
                 try:
-                    loop = asyncio.get_event_loop()
-                    if loop.is_running():
-                        pass
-                    else:
-                        effective_embedding = tuple(
-                            loop.run_until_complete(self._embedding_port.embed_query(query_text))
-                        )
+                    asyncio.get_running_loop()
                 except RuntimeError:
                     effective_embedding = tuple(
                         asyncio.run(self._embedding_port.embed_query(query_text))
                     )
+                else:
+                    raise RuntimeError(
+                        "HybridRagVectorStoreAdapter.hybrid_search() cannot run inside an active "
+                        "event loop; await hybrid_search_async() instead."
+                    ) from None
 
         hits = self._rag.search_hybrid_rrf(
             workspace_id=workspace_id,
@@ -77,19 +103,7 @@ class HybridRagVectorStoreAdapter(VectorStorePort):
             ),
             top_k=top_k,
         )
-        return tuple(
-            VectorSearchHitRecord(
-                chunk_key=h.chunk_key,
-                document_key=h.document_key,
-                source_uri=h.source_uri,
-                contextual_header=h.contextual_header,
-                injected_content=h.injected_content,
-                rrf_score=h.rrf_score,
-                is_stale=h.is_stale,
-                stale_warning_marker=h.stale_warning_marker,
-            )
-            for h in hits
-        )
+        return to_vector_hits(hits)
 
 
 class CatalogAndBlackboardContextSourceAdapter(ContextSourcePort):
@@ -127,7 +141,7 @@ class CatalogAndBlackboardContextSourceAdapter(ContextSourcePort):
             slice_id=slice_id,
             source_uri=source_uri,
             source_kind=source_kind,
-            content_sha256=_sha256_text(f"{serialized}:{text_excerpt}"),
+            content_sha256=sha256_text(f"{serialized}:{text_excerpt}"),
             title=title,
             structured_payload=dict(structured_payload),
             text_excerpt=text_excerpt or serialized,
@@ -197,7 +211,7 @@ class CatalogAndBlackboardContextSourceAdapter(ContextSourcePort):
                 if isinstance(item, dict):
                     uri = str(item.get("canonical_uri") or item.get("uri") or "")
                     title = str(item.get("display_name") or item.get("title") or uri)
-                    sha = str(item.get("content_sha256") or item.get("sha256") or _sha256_text(uri))
+                    sha = str(item.get("content_sha256") or item.get("sha256") or sha256_text(uri))
                     kind_val = str(item.get("item_kind") or "WORKFLOW")
                 else:
                     uri = str(
@@ -209,7 +223,7 @@ class CatalogAndBlackboardContextSourceAdapter(ContextSourcePort):
                     sha = str(
                         getattr(item, "content_sha256", None)
                         or getattr(item, "sha256", None)
-                        or _sha256_text(uri)
+                        or sha256_text(uri)
                     )
                     kind_val = str(getattr(item, "item_kind", None) or "WORKFLOW")
                 if not uri or (uri_filter and uri not in uri_filter):
@@ -227,48 +241,18 @@ class CatalogAndBlackboardContextSourceAdapter(ContextSourcePort):
                 )
 
         if "blackboard" in include_sources and callable(self._blackboard_provider):
-            for snap in self._blackboard_provider(workspace_id):
-                step_key = getattr(snap, "step_key", "step")
-                snap_id = getattr(snap, "id", "snap")
-                sha = getattr(snap, "artifact_sha256", _sha256_text(snap_id))
-                payload = getattr(snap, "artifact_payload", {})
-                uri = f"orcia://blackboard/{workspace_id}/{step_key}@{sha[:12]}"
-                if uri_filter and uri not in uri_filter:
-                    continue
-                results.append(
-                    ContextSliceRecord(
-                        slice_id=f"bb-{snap_id}",
-                        source_uri=uri,
-                        source_kind="BLACKBOARD_SNAPSHOT",
-                        content_sha256=sha,
-                        title=f"Snapshot Blackboard ({step_key})",
-                        structured_payload=dict(payload) if isinstance(payload, dict) else {},
-                        text_excerpt=json.dumps(payload, sort_keys=True)[:240],
-                    )
+            results.extend(
+                build_blackboard_slices(
+                    self._blackboard_provider(workspace_id),
+                    workspace_id=workspace_id,
+                    uri_filter=uri_filter,
                 )
-
+            )
         if "permissions" in include_sources and callable(self._permission_provider):
-            for pol in self._permission_provider(workspace_id):
-                pol_key = getattr(pol, "policy_key", "policy")
-                uri_pat = getattr(pol, "uri_pattern", "orcia://*")
-                req_role = getattr(pol, "required_role", "TEAM_MEMBER")
-                uri = f"orcia://permissions/policies/{pol_key}"
-                if uri_filter and uri not in uri_filter:
-                    continue
-                results.append(
-                    ContextSliceRecord(
-                        slice_id=f"perm-{pol_key}",
-                        source_uri=uri,
-                        source_kind="PERMISSION_POLICY",
-                        content_sha256=_sha256_text(f"{pol_key}:{uri_pat}:{req_role}"),
-                        title=f"Politique Permission Broker ({pol_key})",
-                        structured_payload={
-                            "policy_key": pol_key,
-                            "uri_pattern": uri_pat,
-                            "required_role": req_role,
-                        },
-                        text_excerpt=f"Policy {pol_key}: {uri_pat} requires {req_role}",
-                    )
+            results.extend(
+                build_permission_slices(
+                    self._permission_provider(workspace_id), uri_filter=uri_filter
                 )
+            )
 
         return tuple(results)

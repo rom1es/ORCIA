@@ -36,6 +36,11 @@ from orcia_core.orchestration.ai_models_errors import (
     ModelDiscoveryNetworkError,
     UnsafeLlmEndpointUrlError,
 )
+from orcia_core.orchestration.assistant_turn_errors import (
+    AssistantConcurrencyLimitError,
+    AssistantRateLimitExceededError,
+    AssistantTurnInterruptedError,
+)
 from orcia_core.orchestration.errors import (
     CriticalWorkflowRequiresHumanGateError,
     HumanAnchorRequiredError,
@@ -186,6 +191,9 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     ServicePrincipalInvalidForContractError,
     ReflexiveInvalidStateError,
     ReflexiveSessionExpiredError,
+    AssistantTurnInterruptedError,
+    AssistantRateLimitExceededError,
+    AssistantConcurrencyLimitError,
 )
 
 ERROR_CLASS_REGISTRY: dict[type[OrciaDomainError], ErrorHttpMapping] = {

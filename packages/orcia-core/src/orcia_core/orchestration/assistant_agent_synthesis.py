@@ -2,24 +2,17 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+import asyncio
+from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
 from orcia_core.observability.logging import get_logger
 from orcia_core.orchestration.assistant_agent_models import (
     AssistantTurnResult,
     AssistantWorkflowProposal,
-    SavedAndLaunchedWorkflowResult,
-)
-from orcia_core.orchestration.assistant_composer import (
-    blueprint_to_proposal,
-    resolve_assistant_blueprint,
 )
 from orcia_core.orchestration.assistant_harness import AssembledAssistantPrompt, AssistantIntentKind
 from orcia_core.orchestration.errors import TierModelNotConfiguredError
-from orcia_core.orchestration.step_executors import _run_llm_sync
-from orcia_core.permissions.models import UserIdentity
-from orcia_kernel.context_ports import AssistantWorkflowBlueprint
 from orcia_kernel.ports import LLMPort, LlmPromptRequest
 
 logger = get_logger("orcia.core.orchestration.assistant_agent")
@@ -63,61 +56,25 @@ def classify_assistant_intent(
     return "QA_COACHING"
 
 
-def execute_saved_and_launched_workflow(
-    setup: Any,
-    engine: Any,
-    user: UserIdentity,
-    *,
-    workspace_id: str,
-    manifest_yaml: str,
-) -> SavedAndLaunchedWorkflowResult:
-    """Register composed YAML workflow in Workspace and run it through DBOS/Durable engine."""
-    if setup is None or engine is None:
-        raise RuntimeError(
-            "WorkflowOrchestrationSetupService and DurableOrchestrationEngine are required."
-        )
-    definition = setup.register_workflow_manifest(user, manifest_yaml, workspace_id=workspace_id)
-    run = setup.instantiate_workflow_run(
-        user, workflow_uri=definition.uri, workspace_id=workspace_id
-    )
-    engine.initialize_run_steps(run, definition)
-    executed_keys: list[str] = []
-    for step in definition.steps:
-        engine.execute_step(user, run_id=run.id, step_key=step.step_key, commit_immediately=True)
-        executed_keys.append(step.step_key)
-    active_snaps = engine.blackboard.get_active_snapshots(run.id)
-    updated_run = next((r for r in setup.runs if r.id == run.id), None)
-    return SavedAndLaunchedWorkflowResult(
-        workflow_uri=definition.uri,
-        version=definition.version,
-        run_id=run.id,
-        execution_regime=definition.execution_regime,
-        run_status=str(updated_run.status if updated_run is not None else "COMPLETED"),
-        executed_step_keys=tuple(executed_keys),
-        snapshot_count=len(active_snaps),
-    )
-
-
-def synthesize_assistant_turn_response(
+def _prepare_synthesis_request(
     *,
     llm_gateway: LLMPort | None,
     cognitive_router: Any | None,
     assembled: AssembledAssistantPrompt,
     intent: AssistantIntentKind,
-    proposal: AssistantWorkflowProposal | None,
     workspace_id: str,
-) -> str:
-    """Synthesize Node 5 text reply via CognitiveRouter / Cassette LLM."""
+) -> tuple[str, str, LlmPromptRequest | None]:
     prefix = assembled.profile_adaptation.response_prefix_fr
     indicators = ", ".join(assembled.profile_adaptation.highlighted_indicators)
     if intent == "HUMAN_ANCHOR_WRITE_REFUSAL":
-        return (
+        refusal = (
             f"{prefix} Refus constitutionnel (`human_authored_required: true`, `FR-4`, `AD-3`) : "
             "Je ne peux pas rédiger ni pré-remplir une Ancre Humaine à votre place afin de "
             "préserver votre maîtrise intellectuelle (*Think*). Question socratique : "
             "quels sont les 2 invariants métier non négociables que vous souhaitez fixer "
             f"pour le périmètre `{workspace_id}` ?"
         )
+        return prefix, indicators, None if refusal else None
     model_family, model_id = "", ""
     if cognitive_router is not None:
         try:
@@ -132,28 +89,38 @@ def synthesize_assistant_turn_response(
                 error_type=type(exc).__name__,
                 error=str(exc),
             )
-    if not model_family or not model_id:
-        if bool(getattr(llm_gateway, "is_cassette_adapter", False)):
-            model_family, model_id = "cassette", "cassette/assistant-agent"
-        else:
-            raise TierModelNotConfiguredError(
-                inference_tier="complex", instance=f"assistant_agent:{workspace_id}"
-            )
+    if (not model_family or not model_id) and bool(
+        getattr(llm_gateway, "is_cassette_adapter", False)
+    ):
+        model_family, model_id = "cassette", "cassette/assistant-agent"
+    elif not model_family or not model_id:
+        raise TierModelNotConfiguredError(
+            inference_tier="complex", instance=f"assistant_agent:{workspace_id}"
+        )
     if llm_gateway is None:
         raise TierModelNotConfiguredError(
             inference_tier="complex", instance=f"assistant_agent:{workspace_id}"
         )
-    llm_out = _run_llm_sync(
-        llm_gateway,
-        LlmPromptRequest(
-            system_prompt=assembled.system_prompt,
-            user_prompt=assembled.user_prompt,
-            model_family=model_family,
-            model_id=model_id,
-            execution_mode="COACHING",
-            metadata={"workspace_id": workspace_id, "intent": intent},
-        ),
+    req = LlmPromptRequest(
+        system_prompt=assembled.system_prompt,
+        user_prompt=assembled.user_prompt,
+        model_family=model_family,
+        model_id=model_id,
+        execution_mode="COACHING",
+        metadata={"workspace_id": workspace_id, "intent": intent},
     )
+    return prefix, indicators, req
+
+
+def _format_synthesis_text(
+    *,
+    prefix: str,
+    indicators: str,
+    assembled: AssembledAssistantPrompt,
+    proposal: AssistantWorkflowProposal | None,
+    workspace_id: str,
+    llm_out: Any,
+) -> str:
     uris_note = (
         f" Sources citées : {', '.join(assembled.cited_uris[:3])}."
         if assembled.cited_uris
@@ -166,6 +133,80 @@ def synthesize_assistant_turn_response(
             f"le Canvas `@xyflow/react`.{uris_note} [{llm_out.prompt_sha256[:16]}]"
         )
     return f"{prefix} ({indicators}) — {llm_out.content}.{uris_note} [{llm_out.prompt_sha256[:16]}]"
+
+
+async def synthesize_assistant_turn_response_async(
+    *,
+    llm_gateway: LLMPort | None,
+    cognitive_router: Any | None,
+    assembled: AssembledAssistantPrompt,
+    intent: AssistantIntentKind,
+    proposal: AssistantWorkflowProposal | None,
+    workspace_id: str,
+) -> str:
+    """Async Node 5 text synthesis via CognitiveRouter / `LLMPort` (`H-11`)."""
+    prefix, indicators, req = _prepare_synthesis_request(
+        llm_gateway=llm_gateway,
+        cognitive_router=cognitive_router,
+        assembled=assembled,
+        intent=intent,
+        workspace_id=workspace_id,
+    )
+    if req is None:
+        return (
+            f"{prefix} Refus constitutionnel (`human_authored_required: true`, `FR-4`, `AD-3`) : "
+            "Je ne peux pas rédiger ni pré-remplir une Ancre Humaine à votre place afin de "
+            "préserver votre maîtrise intellectuelle (*Think*). Question socratique : "
+            "quels sont les 2 invariants métier non négociables que vous souhaitez fixer "
+            f"pour le périmètre `{workspace_id}` ?"
+        )
+    assert llm_gateway is not None
+    llm_out = await llm_gateway.complete(req)
+    return _format_synthesis_text(
+        prefix=prefix,
+        indicators=indicators,
+        assembled=assembled,
+        proposal=proposal,
+        workspace_id=workspace_id,
+        llm_out=llm_out,
+    )
+
+
+def synthesize_assistant_turn_response(
+    *,
+    llm_gateway: LLMPort | None,
+    cognitive_router: Any | None,
+    assembled: AssembledAssistantPrompt,
+    intent: AssistantIntentKind,
+    proposal: AssistantWorkflowProposal | None,
+    workspace_id: str,
+) -> str:
+    """Sync Node 5 text synthesis (for non-async tests; forbids blocking an active loop)."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(
+            synthesize_assistant_turn_response_async(
+                llm_gateway=llm_gateway,
+                cognitive_router=cognitive_router,
+                assembled=assembled,
+                intent=intent,
+                proposal=proposal,
+                workspace_id=workspace_id,
+            )
+        )
+    raise RuntimeError(
+        "synthesize_assistant_turn_response() cannot run inside an active event loop; "
+        "await synthesize_assistant_turn_response_async() instead."
+    )
+
+
+async def iter_assistant_turn_sse_events_async(
+    turn: AssistantTurnResult,
+) -> AsyncIterator[dict[str, Any]]:
+    """Async SSE event generator (`node_trace`, `token`, `workflow_proposal`, `done`)."""
+    for item in iter_assistant_turn_sse_events(turn):
+        yield item
 
 
 def iter_assistant_turn_sse_events(turn: AssistantTurnResult) -> Iterator[dict[str, Any]]:
@@ -210,35 +251,3 @@ def iter_assistant_turn_sse_events(turn: AssistantTurnResult) -> Iterator[dict[s
             "first_token_latency_ms": turn.first_token_latency_ms,
         },
     }
-
-
-def resolve_intent_workflow_proposal(
-    *,
-    intent: AssistantIntentKind,
-    user_prompt: str,
-    workspace_id: str,
-    active_proposals: dict[str, AssistantWorkflowProposal],
-    has_active: bool,
-) -> tuple[AssistantWorkflowBlueprint | None, AssistantWorkflowProposal | None]:
-    """Resolve workflow blueprint & proposal for compose/modify intents."""
-    if intent == "WORKFLOW_COMPOSE":
-        bp = resolve_assistant_blueprint(
-            user_prompt=user_prompt, workspace_id=workspace_id, modification_instruction=None
-        )
-        prop = blueprint_to_proposal(bp)
-        active_proposals[workspace_id] = prop
-        return bp, prop
-    if intent == "WORKFLOW_MODIFY":
-        active_prop = active_proposals.get(workspace_id)
-        combined = (
-            f"{active_prop.title} {active_prop.workflow_uri} {user_prompt}"
-            if active_prop is not None
-            else user_prompt
-        )
-        bp = resolve_assistant_blueprint(
-            user_prompt=combined, workspace_id=workspace_id, modification_instruction=user_prompt
-        )
-        prop = blueprint_to_proposal(bp)
-        active_proposals[workspace_id] = prop
-        return bp, prop
-    return None, (active_proposals.get(workspace_id) if has_active else None)

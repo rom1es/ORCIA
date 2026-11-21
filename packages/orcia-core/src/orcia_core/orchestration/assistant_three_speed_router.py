@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
 import time
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 
 from orcia_core.observability.logging import get_logger
+from orcia_core.orchestration._assistant_three_speed_cache import (
+    decode_cached_prompt,
+    encode_assembled_prompt,
+)
 from orcia_core.orchestration.assistant_governance import (
-    AssembledLayerPreviewItem,
     AssistantFourLevelGovernanceService,
 )
 from orcia_core.orchestration.assistant_three_speed_models import (
@@ -74,53 +75,12 @@ class AssistantThreeSpeedRouterService:
         elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 3)
 
         if cached_raw is not None:
-            data = json.loads(cached_raw)
-            layers = tuple(
-                AssembledLayerPreviewItem(
-                    layer_number=int(item["layer_number"]),
-                    layer_code=item["layer_code"],
-                    label=str(item["label"]),
-                    immutable=bool(item["immutable"]),
-                    origin_badge=item["origin_badge"],
-                    content=str(item["content"]),
-                    sha256=str(item["sha256"]),
-                )
-                for item in data["layers"]
-            )
-            return CachedAssembledPromptResult(
-                cache_key=key,
-                cache_hit=True,
-                ttl_seconds=PROMPT_CACHE_TTL_SECONDS,
-                lookup_latency_ms=elapsed_ms,
-                assembled_prompt_text=str(data["assembled_prompt_text"]),
-                layers_sha256=str(data["layers_sha256"]),
-                layers=layers,
-            )
+            return decode_cached_prompt(cache_key=key, cached_raw=cached_raw, elapsed_ms=elapsed_ms)
 
         layers = self._governance.assemble_five_layers_preview(
             workspace_id=workspace_id, user_id=user_id, pack_key=pack_key, locale=locale
         )
-        assembled_text = "\n\n".join(f"### {layer.label}\n{layer.content}" for layer in layers)
-        digest = hashlib.sha256(assembled_text.encode("utf-8")).hexdigest()
-        payload = json.dumps(
-            {
-                "assembled_prompt_text": assembled_text,
-                "layers_sha256": digest,
-                "layers": [
-                    {
-                        "layer_number": lyr.layer_number,
-                        "layer_code": lyr.layer_code,
-                        "label": lyr.label,
-                        "immutable": lyr.immutable,
-                        "origin_badge": lyr.origin_badge,
-                        "content": lyr.content,
-                        "sha256": lyr.sha256,
-                    }
-                    for lyr in layers
-                ],
-            },
-            ensure_ascii=False,
-        )
+        assembled_text, digest, payload = encode_assembled_prompt(layers)
         self._cache.set_with_ttl(key, payload, ttl_seconds=PROMPT_CACHE_TTL_SECONDS)
         return CachedAssembledPromptResult(
             cache_key=key,
@@ -244,6 +204,27 @@ class AssistantThreeSpeedRouterService:
             llm_latency_ms_override=llm_latency_ms_override,
             llm_thinking_override=llm_thinking_override,
         )
+
+    async def stream_three_speed_turn_sse_async(
+        self,
+        user: UserIdentity,
+        *,
+        workspace_id: str,
+        user_prompt: str,
+        hat: str | None = None,
+        requested_speed: AssistantSpeedMode | None = None,
+        deep_audit_pill_active: bool = False,
+    ) -> AsyncIterator[dict[str, object]]:
+        """Async SSE generator for 3-speed routing events (`H-11`)."""
+        for evt in self.stream_three_speed_turn_sse(
+            user,
+            workspace_id=workspace_id,
+            user_prompt=user_prompt,
+            hat=hat,
+            requested_speed=requested_speed,
+            deep_audit_pill_active=deep_audit_pill_active,
+        ):
+            yield evt
 
     def stream_three_speed_turn_sse(
         self,

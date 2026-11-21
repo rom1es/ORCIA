@@ -38,9 +38,9 @@ async def get_active_three_speed_turn_endpoint(
     request: Request,
     user: CurrentUserDep,
 ) -> ActiveBackgroundTurnStatusResponse:
-    """Return the active or recently completed background turn for `workspace_id`."""
+    """Return the active or recently completed background turn for `(workspace_id, user_id)`."""
     await enforce_assistant_workspace_guard(request, user, workspace_id, require_write=False)
-    state = get_active_turn_for_workspace(workspace_id)
+    state = await get_active_turn_for_workspace(workspace_id, request=request, user_id=user.id)
     if state is None:
         return ActiveBackgroundTurnStatusResponse(workspace_id=workspace_id, status="IDLE")
     return to_active_turn_response(state)
@@ -52,9 +52,11 @@ async def stop_active_three_speed_turn_endpoint(
     request: Request,
     user: CurrentUserDep,
 ) -> ActiveBackgroundTurnStatusResponse:
-    """Explicitly cancel the active background LLM task when the user clicks Stop."""
+    """Explicitly cancel the active background LLM task via Redis stop propagation."""
     await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
-    state = await stop_active_turn_for_workspace(payload.workspace_id)
+    state = await stop_active_turn_for_workspace(
+        payload.workspace_id, request=request, user_id=user.id, turn_id=payload.turn_id
+    )
     if state is None:
         return ActiveBackgroundTurnStatusResponse(
             workspace_id=payload.workspace_id, status="STOPPED"

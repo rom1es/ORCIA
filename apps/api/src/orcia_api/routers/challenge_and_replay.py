@@ -205,7 +205,7 @@ async def replay_workflow_from_step(
     await sync_evaluator_topology_from_pg(request, get_auth_service(request))
     await hydrate_run_from_sql_if_missing(request, svc, run_id)
     eff = payload or StepReplayRequest()
-    res = svc.engine.challenge_and_replay.replay_from_step(
+    res = await svc.engine.challenge_and_replay.replay_from_step_async(
         user,
         run_id=run_id,
         step_key=step_key,

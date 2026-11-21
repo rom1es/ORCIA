@@ -15,6 +15,8 @@ from orcia_api.dependencies import (
     get_optional_embedding_port,
 )
 from orcia_api.dependencies._assistant_guards import enforce_assistant_workspace_guard
+from orcia_api.routers._assistant_background_registry import get_rate_limiter_from_request
+from orcia_api.routers._assistant_turns_v2_routes import turns_v2_router
 from orcia_api.routers._assistant_workspace_context import (
     record_non_stream_turn_telemetry,
     resolve_effective_speed,
@@ -22,6 +24,7 @@ from orcia_api.routers._assistant_workspace_context import (
     resolve_turn_history,
 )
 from orcia_api.routers._assistant_workspace_controls import controls_router
+from orcia_api.routers.assistant_background_turns import enforce_assistant_rate_and_concurrency
 from orcia_api.routers.assistant_llm_bridge import (
     ensure_active_chat_model_if_live,
     invoke_configured_llm_for_assistant_turn,
@@ -187,13 +190,19 @@ async def stream_three_speed_turn_endpoint(
     await ensure_active_chat_model_if_live(
         request, requested_tier=payload.requested_tier, workspace_id=payload.workspace_id
     )
+    pre_lease = await enforce_assistant_rate_and_concurrency(
+        get_rate_limiter_from_request(request),
+        user_id=user.id,
+        workspace_id=payload.workspace_id,
+        instance=str(request.url.path),
+    )
     effective_deep_audit, effective_speed, resolved_speed = resolve_effective_speed(payload)
     active_hat = resolve_default_hat(explicit_hat=payload.hat, user=user)
     history = await resolve_turn_history(request, payload, user=user)
     resolved_notes = await resolve_folder_notes(request, payload, user=user)
 
     async def _event_generator() -> AsyncIterator[str]:
-        for evt in router_svc.stream_three_speed_turn_sse(
+        async for evt in router_svc.stream_three_speed_turn_sse_async(
             user,
             workspace_id=payload.workspace_id,
             user_prompt=payload.user_prompt,
@@ -226,20 +235,25 @@ async def stream_three_speed_turn_endpoint(
                     user_email=user.email,
                     user_display_name=user.display_name,
                     llm_port=llm_port,
+                    pre_acquired_lease=pre_lease,
                 ):
                     if stream_evt["event"] in (
                         "thinking_delta",
                         "token_delta",
                         "turn_completed",
+                        "turn_stopped",
                         "stream_error",
                     ):
                         s_name = stream_evt["event"]
                         s_json = json.dumps(stream_evt["data"], ensure_ascii=False)
-                        yield f"event: {s_name}\ndata: {s_json}\n\n"
+                        cursor_id = stream_evt.get("cursor")
+                        prefix = f"id: {cursor_id}\n" if cursor_id else ""
+                        yield f"{prefix}event: {s_name}\ndata: {s_json}\n\n"
 
     return StreamingResponse(_event_generator(), media_type="text/event-stream")
 
 
+router.include_router(turns_v2_router)
 router.include_router(controls_router)
 router.include_router(governance_router)
 router.include_router(citations_router)

@@ -1,12 +1,8 @@
-"""Real Step Executors Registry (`orcia.step_executors`, `Story 3.2f`, `AC-F1`, `AC-F2`).
+"""Real Step Executors Registry (`orcia.step_executors`, `Story 3.2f`, `Story 26.3`).
 
-Provides concrete `StepExecutorPort` implementations for:
-- `AGENT` (backed by `LLMPort` / `DeterministicCassetteLLM`, zero stub/placeholder strings)
-- `SKILL` (deterministic skill execution over hydrated inputs)
-- `SUB_WORKFLOW` (delegated isolated sub-workflow execution metadata)
-- `HUMAN_TASK` (pauses on `WAITING_FOR_HUMAN_ARBITRATION` until explicit human resolution)
-- `HTTP_ACTION` (governed external connector invocation via `ConnectorInvoker`)
-- `POST_ACTION_VERIFICATION` (deterministic verification of upstream outputs)
+Provides concrete `StepExecutorPort` implementations (`AGENT` with native async
+`execute_step_async`, `SKILL`, `SUB_WORKFLOW`, `HUMAN_TASK`, `HTTP_ACTION`,
+`POST_ACTION_VERIFICATION`) with strictly non-blocking async execution.
 """
 
 from __future__ import annotations
@@ -15,9 +11,16 @@ import asyncio
 import json
 from typing import Any
 
-from orcia_core.gates.deterministic import DeterministicGateService
-from orcia_core.gates.models import DeterministicGateInput, OntologyAxiomCheckRule
+from orcia_core.observability.logging import get_logger
+from orcia_core.orchestration._step_executors_actions import (
+    HttpActionStepExecutor,
+    HumanTaskStepExecutor,
+    PostActionVerificationStepExecutor,
+    SubWorkflowStepExecutor,
+)
+from orcia_core.orchestration._step_executors_skill import SkillStepExecutor
 from orcia_core.orchestration.connector_invoker import ConnectorInvoker, scrub_connector_secrets
+from orcia_core.orchestration.errors import TierModelNotConfiguredError
 from orcia_kernel.ports import (
     ExecutionMode,
     LLMPort,
@@ -28,21 +31,22 @@ from orcia_kernel.ports import (
     register_step_executor,
 )
 
+logger = get_logger("orcia.core.orchestration.step_executors")
 
-def _run_llm_sync(llm: LLMPort, request: LlmPromptRequest) -> Any:
-    """Execute `llm.complete(request)` safely from both sync and async calling contexts."""
-    try:
-        asyncio.get_running_loop()
-    except RuntimeError:
-        return asyncio.run(llm.complete(request))
-    import concurrent.futures
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-        return pool.submit(lambda: asyncio.run(llm.complete(request))).result()
+async def execute_step_port_async(
+    executor: StepExecutorPort, context: StepExecutorContext
+) -> StepExecutorResult:
+    """Execute a `StepExecutorPort` asynchronously when `execute_step_async` is available."""
+    async_fn = getattr(executor, "execute_step_async", None)
+    if callable(async_fn):
+        res: StepExecutorResult = await async_fn(context)
+        return res
+    return executor.execute_step(context)
 
 
 class AgentStepExecutor:
-    """Real `AGENT` step executor invoking `LLMPort` (`AC-F1`)."""
+    """Real `AGENT` step executor invoking `LLMPort` asynchronously (`AC-F1`, `H-11`)."""
 
     def __init__(
         self,
@@ -64,7 +68,7 @@ class AgentStepExecutor:
     def set_llm_gateway(self, llm_gateway: LLMPort) -> None:
         self._llm = llm_gateway
 
-    def execute_step(self, context: StepExecutorContext) -> StepExecutorResult:
+    def _build_prompt_request(self, context: StepExecutorContext) -> LlmPromptRequest:
         mode: ExecutionMode = (
             "FAST_PATH" if context.execution_regime == "BACKGROUND_FAST_PATH" else "COACHING"
         )
@@ -86,30 +90,31 @@ class AgentStepExecutor:
                     )
                     model_family = resolved.model_family
                     model_id = resolved.model_name
-                except Exception:
-                    pass
-
-            if not model_family or not model_id:
-                if bool(getattr(self._llm, "is_cassette_adapter", False)):
-                    model_family = "cassette"
-                    model_id = f"cassette/{context.step_key}"
-                else:
-                    from orcia_core.orchestration.errors import TierModelNotConfiguredError
-
-                    raise TierModelNotConfiguredError(
-                        inference_tier=str(context.metadata.get("inference_tier") or "complex"),
-                        instance=f"agent_step_executor:{context.step_key}",
+                except Exception as exc:
+                    logger.warning(
+                        "step_executor.cognitive_router_resolve_failed",
+                        workspace_id=context.workspace_id,
+                        step_key=context.step_key,
+                        error_type=type(exc).__name__,
+                        error=str(exc),
                     )
+            if (not model_family or not model_id) and bool(
+                getattr(self._llm, "is_cassette_adapter", False)
+            ):
+                model_family = "cassette"
+                model_id = f"cassette/{context.step_key}"
+            elif not model_family or not model_id:
+                raise TierModelNotConfiguredError(
+                    inference_tier=str(context.metadata.get("inference_tier") or "complex"),
+                    instance=f"agent_step_executor:{context.step_key}",
+                )
 
         if self._llm is None:
-            from orcia_core.orchestration.errors import TierModelNotConfiguredError
-
             raise TierModelNotConfiguredError(
                 inference_tier=str(context.metadata.get("inference_tier") or "complex"),
                 instance=f"agent_step_executor:{context.step_key}",
             )
-
-        prompt_req = LlmPromptRequest(
+        return LlmPromptRequest(
             system_prompt=(
                 f"ORCIA Agent Executor | workflow={context.workflow_uri} | step={context.step_key}"
             ),
@@ -127,7 +132,11 @@ class AgentStepExecutor:
                 "workspace_id": context.workspace_id,
             },
         )
-        completion = _run_llm_sync(self._llm, prompt_req)
+
+    @staticmethod
+    def _format_completion_result(
+        context: StepExecutorContext, completion: Any
+    ) -> StepExecutorResult:
         status = (
             "WAITING_FOR_HUMAN_ARBITRATION"
             if completion.scenario_tag == "WAITING_FOR_HUMAN_ARBITRATION"
@@ -157,290 +166,22 @@ class AgentStepExecutor:
             cost_usd=completion.estimated_cost_usd,
         )
 
-
-class SkillStepExecutor:
-    """Real `SKILL` step executor delegating `TIER_1_WASM` & Deterministic Gates to Sandbox."""
-
-    def __init__(self, gate_service: DeterministicGateService | None = None) -> None:
-        self._gate_service = gate_service or DeterministicGateService()
-
-    @property
-    def step_type(self) -> str:
-        return "SKILL"
-
-    @property
-    def gate_service(self) -> DeterministicGateService:
-        return self._gate_service
+    async def execute_step_async(self, context: StepExecutorContext) -> StepExecutorResult:
+        """Execute an `AGENT` step asynchronously without blocking the event loop."""
+        prompt_req = self._build_prompt_request(context)
+        assert self._llm is not None
+        completion = await self._llm.complete(prompt_req)
+        return self._format_completion_result(context, completion)
 
     def execute_step(self, context: StepExecutorContext) -> StepExecutorResult:
-        sanitized = scrub_connector_secrets(context.resolved_inputs)
-        skill_uri = context.skill_uri or f"orcia://skills/{context.step_key}"
-        sandbox_tier = str(context.metadata.get("sandbox_tier", "")).strip().upper()
-        if sandbox_tier == "TIER_1_WASM" or skill_uri.startswith("orcia://gates/deterministic"):
-            raw_axioms = list(context.metadata.get("ontology_axioms") or [])
-            axioms = tuple(
-                OntologyAxiomCheckRule(
-                    axiom_key=str(ax.get("axiom_key", "axiom")),
-                    forbidden_term=str(ax.get("forbidden_term", "")),
-                    required_term=str(ax.get("required_term", "")),
-                )
-                for ax in raw_axioms
-                if isinstance(ax, dict)
-            )
-            req_sections = tuple(
-                str(s) for s in (context.metadata.get("required_sections") or ("artifact",))
-            )
-            gate_eval = self._gate_service.evaluate_deterministic_gate(
-                DeterministicGateInput(
-                    workspace_id=context.workspace_id,
-                    run_id=context.run_id,
-                    step_execution_id=str(
-                        context.metadata.get("step_execution_id", context.step_key)
-                    ),
-                    step_key=context.step_key,
-                    artifact_payload=(
-                        dict(sanitized) if sanitized else {"artifact": context.directive}
-                    ),
-                    required_sections=req_sections,
-                    ontology_axioms=axioms,
-                    timeout_ms=int(context.metadata.get("timeout_ms", 5000)),
-                    max_memory_mb=int(context.metadata.get("max_memory_mb", 256)),
-                    simulate_timeout_sleep_ms=int(
-                        context.metadata.get("simulate_timeout_sleep_ms", 0)
-                    ),
-                    simulate_network_escape=bool(
-                        context.metadata.get("simulate_network_escape", False)
-                    ),
-                    simulate_fs_escape_path=(
-                        str(context.metadata["simulate_fs_escape_path"])
-                        if context.metadata.get("simulate_fs_escape_path")
-                        else None
-                    ),
-                    simulate_memory_alloc_mb=int(
-                        context.metadata.get("simulate_memory_alloc_mb", 0)
-                    ),
-                ),
-                raise_on_failure=bool(context.metadata.get("raise_on_gate_failure", True)),
-            )
-            payload_gate: dict[str, Any] = {
-                "step_key": context.step_key,
-                "step_type": "SKILL",
-                "skill_uri": skill_uri,
-                "sandbox_tier": "TIER_1_WASM",
-                "gate_evaluation_id": gate_eval.id,
-                "gate_status": gate_eval.status,
-                "gate_score": gate_eval.score,
-                "schema_validation_passed": gate_eval.schema_validation_passed,
-                "ontology_axioms_passed": gate_eval.ontology_axioms_passed,
-                "pattern_drift_passed": gate_eval.pattern_drift_passed,
-                "duration_ms": gate_eval.duration_ms,
-                "artifact": f"Gate Déterministe {skill_uri} : {gate_eval.status}",
-                "report": f"Rapport Gate {context.step_key} : {gate_eval.status}",
-            }
-            return StepExecutorResult(
-                step_key=context.step_key,
-                step_type="SKILL",
-                status="EXECUTED" if gate_eval.status == "PASS" else "FAILED",
-                artifact_payload=payload_gate,
-                summary=f"Gate Déterministe '{skill_uri}' ({gate_eval.status})",
-                details=f"Sandbox TIER_1_WASM ({gate_eval.duration_ms} ms) score={gate_eval.score}",
-                cost_usd=0.01,
-            )
-
-        payload: dict[str, Any] = {
-            "step_key": context.step_key,
-            "step_type": "SKILL",
-            "skill_uri": skill_uri,
-            "directive_applied": context.directive,
-            "inputs_received": list(sanitized.keys()),
-            "computed_digest": json.dumps(sanitized, sort_keys=True),
-            "artifact": f"Exécution déterministe Skill {skill_uri} pour {context.step_key}",
-            "adr": f"Validation technique Skill {context.step_key}",
-            "report": f"Rapport Skill {context.step_key} : PASS",
-        }
-        return StepExecutorResult(
-            step_key=context.step_key,
-            step_type="SKILL",
-            status="EXECUTED",
-            artifact_payload=payload,
-            summary=f"Skill '{skill_uri}' exécuté sur '{context.step_key}'",
-            details=f"Directive exécutée: {context.directive}",
-            cost_usd=0.05,
-        )
-
-
-class SubWorkflowStepExecutor:
-    """Step executor registration for `SUB_WORKFLOW` steps (`AC-F1`)."""
-
-    @property
-    def step_type(self) -> str:
-        return "SUB_WORKFLOW"
-
-    def execute_step(self, context: StepExecutorContext) -> StepExecutorResult:
-        payload: dict[str, Any] = {
-            "step_key": context.step_key,
-            "step_type": "SUB_WORKFLOW",
-            "sub_workflow_uri": context.sub_workflow_uri or "",
-            "inputs_received": list(context.resolved_inputs.keys()),
-        }
-        return StepExecutorResult(
-            step_key=context.step_key,
-            step_type="SUB_WORKFLOW",
-            status="EXECUTED",
-            artifact_payload=payload,
-            summary=f"Sous-workflow '{context.sub_workflow_uri}' préparé pour '{context.step_key}'",
-            details=f"Entrées hydratées: {sorted(context.resolved_inputs.keys())}",
-            cost_usd=0.0,
-        )
-
-
-class HumanTaskStepExecutor:
-    """Real `HUMAN_TASK` step executor pausing on `WAITING_FOR_HUMAN_ARBITRATION` (`AC-F1`)."""
-
-    @property
-    def step_type(self) -> str:
-        return "HUMAN_TASK"
-
-    def execute_step(self, context: StepExecutorContext) -> StepExecutorResult:
-        human_decision = context.metadata.get("human_decision")
-        if isinstance(human_decision, str) and human_decision.strip():
-            payload: dict[str, Any] = {
-                "step_key": context.step_key,
-                "step_type": "HUMAN_TASK",
-                "directive_applied": context.directive,
-                "human_decision": human_decision.strip(),
-                "inputs_received": list(context.resolved_inputs.keys()),
-                "artifact": f"Décision humaine enregistrée: {human_decision.strip()}",
-                "report": f"Tâche humaine {context.step_key} : VALIDÉE ({human_decision.strip()})",
-            }
-            return StepExecutorResult(
-                step_key=context.step_key,
-                step_type="HUMAN_TASK",
-                status="EXECUTED",
-                artifact_payload=payload,
-                summary=f"Tâche humaine '{context.step_key}' résolue ({human_decision.strip()})",
-                details=f"Décision appliquée: {human_decision.strip()}",
-                cost_usd=0.0,
-            )
-
-        pending_payload: dict[str, Any] = {
-            "step_key": context.step_key,
-            "step_type": "HUMAN_TASK",
-            "directive_applied": context.directive,
-            "inputs_received": list(context.resolved_inputs.keys()),
-            "awaiting_human_action": True,
-            "artifact": f"En attente de validation humaine sur {context.step_key}",
-        }
-        return StepExecutorResult(
-            step_key=context.step_key,
-            step_type="HUMAN_TASK",
-            status="WAITING_FOR_HUMAN_ARBITRATION",
-            artifact_payload=pending_payload,
-            summary=f"Tâche humaine '{context.step_key}' mise en pause (attente arbitrage)",
-            details=f"Directive soumise à validation humaine: {context.directive}",
-            cost_usd=0.0,
-        )
-
-
-class HttpActionStepExecutor:
-    """Real `HTTP_ACTION` step executor invoking a governed `ConnectorPort`."""
-
-    def __init__(self, invoker: ConnectorInvoker | None = None) -> None:
-        self._invoker = invoker or ConnectorInvoker()
-
-    @property
-    def step_type(self) -> str:
-        return "HTTP_ACTION"
-
-    @property
-    def invoker(self) -> ConnectorInvoker:
-        return self._invoker
-
-    def execute_step(self, context: StepExecutorContext) -> StepExecutorResult:
-        scheme = str(context.metadata.get("connector_scheme", "")).strip().lower()
-        action = str(context.metadata.get("connector_action", context.step_key)).strip()
-        if not scheme and context.skill_uri and "://" in context.skill_uri:
-            scheme, rest = context.skill_uri.split("://", 1)
-            scheme = scheme.strip().lower()
-            action = rest.strip("/") or context.step_key
-        if not scheme and context.datasources:
-            first_ds = context.datasources[0]
-            if "://" in first_ds:
-                scheme = first_ds.split("://", 1)[0].strip().lower()
-        if not scheme:
-            scheme = "orcia"
-
-        idem_key = context.idempotency_key or f"idem:{context.run_id}:{context.step_key}"
-        outcome = self._invoker.invoke(
-            scheme=scheme,
-            action=action,
-            payload=dict(context.resolved_inputs),
-            idempotency_key=idem_key,
-            max_agent_retries=context.max_agent_retries,
-            max_cost_usd=max(0.05, context.budget_remaining_usd),
-        )
-        exec_status = (
-            "EXECUTED" if outcome.status == "SUCCEEDED" else "WAITING_FOR_HUMAN_ARBITRATION"
-        )
-        payload: dict[str, Any] = {
-            "step_key": context.step_key,
-            "step_type": "HTTP_ACTION",
-            "connector_scheme": outcome.scheme,
-            "connector_action": outcome.action,
-            "idempotency_key": outcome.idempotency_key,
-            "attempts_used": outcome.attempts_used,
-            "total_wait_seconds": outcome.total_wait_seconds,
-            "circuit_state": outcome.circuit_state,
-            "connector_output": outcome.sanitized_output,
-            "error_code": outcome.error_code,
-            "artifact": f"Action connecteur {outcome.scheme}.{outcome.action} : {outcome.status}",
-            "report": f"Rapport HTTP_ACTION {context.step_key} : {outcome.status}",
-        }
-        return StepExecutorResult(
-            step_key=context.step_key,
-            step_type="HTTP_ACTION",
-            status=exec_status,  # type: ignore[arg-type]
-            artifact_payload=payload,
-            summary=(
-                f"Connecteur '{outcome.scheme}.{outcome.action}' -> {outcome.status} "
-                f"({outcome.attempts_used} tentative(s))"
-            ),
-            details=(
-                outcome.error_detail
-                or f"Sortie connecteur ({outcome.idempotency_key}): {outcome.sanitized_output}"
-            ),
-            cost_usd=outcome.total_cost_usd,
-        )
-
-
-class PostActionVerificationStepExecutor:
-    """Real `POST_ACTION_VERIFICATION` step executor verifying upstream artifacts."""
-
-    @property
-    def step_type(self) -> str:
-        return "POST_ACTION_VERIFICATION"
-
-    def execute_step(self, context: StepExecutorContext) -> StepExecutorResult:
-        verified_keys = sorted(context.resolved_inputs.keys())
-        payload: dict[str, Any] = {
-            "step_key": context.step_key,
-            "step_type": "POST_ACTION_VERIFICATION",
-            "directive_applied": context.directive,
-            "inputs_received": verified_keys,
-            "verification_verdict": "PASS",
-            "artifact": f"Vérification post-action validée pour {context.step_key}",
-            "report": (
-                f"Rapport de vérification {context.step_key} : PASS ({len(verified_keys)} entrées)"
-            ),
-        }
-        return StepExecutorResult(
-            step_key=context.step_key,
-            step_type="POST_ACTION_VERIFICATION",
-            status="EXECUTED",
-            artifact_payload=payload,
-            summary=f"Vérification post-action '{context.step_key}' : PASS",
-            details=f"Entrées vérifiées: {verified_keys} | Directive: {context.directive}",
-            cost_usd=0.05,
+        """Synchronous entrypoint for non-async callers; forbids running inside an active loop."""
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(self.execute_step_async(context))
+        raise RuntimeError(
+            "AgentStepExecutor.execute_step() cannot block an active asyncio event loop; "
+            "await execute_step_async() instead."
         )
 
 
@@ -504,7 +245,6 @@ def register_default_step_executors(
     return registry_map
 
 
-# Ensure default executors are registered on import
 register_default_step_executors()
 
 __all__ = [
@@ -520,5 +260,6 @@ __all__ = [
     "build_post_action_step_executor_plugin",
     "build_skill_step_executor_plugin",
     "build_sub_workflow_step_executor_plugin",
+    "execute_step_port_async",
     "register_default_step_executors",
 ]

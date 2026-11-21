@@ -15,9 +15,6 @@ from orcia_api.routers._assistant_llm_stream_bridge import (
     stream_configured_llm_for_assistant_turn as stream_configured_llm_for_assistant_turn,
 )
 from orcia_api.routers.assistant_background_turns import (
-    ACTIVE_WORKSPACE_TURNS as ACTIVE_WORKSPACE_TURNS,
-)
-from orcia_api.routers.assistant_background_turns import (
     ActiveBackgroundTurnState as ActiveBackgroundTurnState,
 )
 from orcia_api.routers.assistant_background_turns import (
@@ -265,7 +262,6 @@ async def invoke_configured_llm_for_assistant_turn(
 
 
 __all__ = [
-    "ACTIVE_WORKSPACE_TURNS",
     "ActiveBackgroundTurnState",
     "LiveLlmTurnOutcome",
     "ResolvedLiveLlmEndpoint",

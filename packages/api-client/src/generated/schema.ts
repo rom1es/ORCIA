@@ -341,6 +341,10 @@ export interface components {
       origin_badge: "SOCLE" | "PACK" | "EQUIPE" | "ESPACE" | "UTILISATEUR";
       sha256: string;
     };
+    AssistantActiveTurnsListResponse: {
+      turns?: (components["schemas"]["ActiveBackgroundTurnStatusResponse"])[];
+      workspace_id: string;
+    };
     AssistantChatRequest: {
       allowed_datasource_aliases?: (string)[];
       human_profile_archetype?: string | null;
@@ -445,6 +449,16 @@ export interface components {
       thread_summary: string;
       title: string;
       turn_count: number;
+      workspace_id: string;
+    };
+    AssistantTurnAcceptedResponse: {
+      parent_turn_id?: string | null;
+      speed_mode: "SPEED_1_FAST" | "SPEED_2_AGENT_TOOLS" | "SPEED_3_DEEP_AUDIT";
+      status?: "RUNNING" | "COMPLETED" | "STOPPED" | "ERROR";
+      stream_url: string;
+      thread_id?: string | null;
+      trace_id: string;
+      turn_id: string;
       workspace_id: string;
     };
     AssistantWorkflowProposalSchemaItem: {
@@ -3822,6 +3836,7 @@ export interface components {
       upstream_tokens_consumed: number;
     };
     StopActiveBackgroundTurnRequest: {
+      turn_id?: string | null;
       workspace_id: string;
     };
     StudioDryRunRequest: {
@@ -5303,6 +5318,34 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["ThreeSpeedTurnResponse"];
+      };
+    };
+  };
+  "/api/v1/assistant/turns": {
+    post: {
+      responses: {
+        200: unknown;
+      };
+    };
+  };
+  "/api/v1/assistant/turns/active": {
+    get: {
+      responses: {
+        200: components["schemas"]["AssistantActiveTurnsListResponse"];
+      };
+    };
+  };
+  "/api/v1/assistant/turns/{turn_id}/stop": {
+    post: {
+      responses: {
+        200: components["schemas"]["ActiveBackgroundTurnStatusResponse"];
+      };
+    };
+  };
+  "/api/v1/assistant/turns/{turn_id}/stream": {
+    get: {
+      responses: {
+        200: unknown;
       };
     };
   };
@@ -6995,6 +7038,7 @@ export type ArtifactCardActionResponse = components["schemas"]["ArtifactCardActi
 export type ArtifactTemplateCompileRequest = components["schemas"]["ArtifactTemplateCompileRequest"];
 export type ArtifactTemplateCompileResponse = components["schemas"]["ArtifactTemplateCompileResponse"];
 export type AssembledLayerPreviewSchemaItem = components["schemas"]["AssembledLayerPreviewSchemaItem"];
+export type AssistantActiveTurnsListResponse = components["schemas"]["AssistantActiveTurnsListResponse"];
 export type AssistantChatRequest = components["schemas"]["AssistantChatRequest"];
 export type AssistantChatResponse = components["schemas"]["AssistantChatResponse"];
 export type AssistantFolderSchemaItem = components["schemas"]["AssistantFolderSchemaItem"];
@@ -7006,6 +7050,7 @@ export type AssistantSaveAndLaunchResponse = components["schemas"]["AssistantSav
 export type AssistantStudioGraphStateSchemaItem = components["schemas"]["AssistantStudioGraphStateSchemaItem"];
 export type AssistantStudioNodeSchemaItem = components["schemas"]["AssistantStudioNodeSchemaItem"];
 export type AssistantThreadSchemaItem = components["schemas"]["AssistantThreadSchemaItem"];
+export type AssistantTurnAcceptedResponse = components["schemas"]["AssistantTurnAcceptedResponse"];
 export type AssistantWorkflowProposalSchemaItem = components["schemas"]["AssistantWorkflowProposalSchemaItem"];
 export type AssistantWorkspaceOverviewResponse = components["schemas"]["AssistantWorkspaceOverviewResponse"];
 export type AttachedWorkspaceRefResponse = components["schemas"]["AttachedWorkspaceRefResponse"];

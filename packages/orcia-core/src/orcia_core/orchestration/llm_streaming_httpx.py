@@ -31,10 +31,19 @@ class HttpxOpenAiCompatibleLlmAdapter(BaseHttpxLlmAdapter):
     """OpenAI-compatible / Azure / vLLM / Ollama `/v1` + `/api/chat` fallback adapter."""
 
     def __init__(
-        self, *, http_client: httpx.AsyncClient, log_error_fn: LogErrorFn = log_provider_error
+        self,
+        *,
+        http_client: httpx.AsyncClient,
+        log_error_fn: LogErrorFn = log_provider_error,
+        inter_chunk_timeout_s: float | None = None,
+        max_stream_retries: int = 2,
     ) -> None:
         super().__init__(
-            http_client=http_client, allow_legacy_fallback=True, log_error_fn=log_error_fn
+            http_client=http_client,
+            allow_legacy_fallback=True,
+            log_error_fn=log_error_fn,
+            inter_chunk_timeout_s=inter_chunk_timeout_s,
+            max_stream_retries=max_stream_retries,
         )
 
 
@@ -42,10 +51,19 @@ class HttpxAnthropicLlmAdapter(BaseHttpxLlmAdapter):
     """Anthropic `/v1/messages` streaming & non-streaming adapter."""
 
     def __init__(
-        self, *, http_client: httpx.AsyncClient, log_error_fn: LogErrorFn = log_provider_error
+        self,
+        *,
+        http_client: httpx.AsyncClient,
+        log_error_fn: LogErrorFn = log_provider_error,
+        inter_chunk_timeout_s: float | None = None,
+        max_stream_retries: int = 2,
     ) -> None:
         super().__init__(
-            http_client=http_client, allow_legacy_fallback=False, log_error_fn=log_error_fn
+            http_client=http_client,
+            allow_legacy_fallback=False,
+            log_error_fn=log_error_fn,
+            inter_chunk_timeout_s=inter_chunk_timeout_s,
+            max_stream_retries=max_stream_retries,
         )
 
 
@@ -53,10 +71,19 @@ class HttpxGeminiNativeLlmAdapter(BaseHttpxLlmAdapter):
     """Google Gemini Native `/v1beta` (`CAP-076`) streaming & non-streaming adapter."""
 
     def __init__(
-        self, *, http_client: httpx.AsyncClient, log_error_fn: LogErrorFn = log_provider_error
+        self,
+        *,
+        http_client: httpx.AsyncClient,
+        log_error_fn: LogErrorFn = log_provider_error,
+        inter_chunk_timeout_s: float | None = None,
+        max_stream_retries: int = 2,
     ) -> None:
         super().__init__(
-            http_client=http_client, allow_legacy_fallback=False, log_error_fn=log_error_fn
+            http_client=http_client,
+            allow_legacy_fallback=False,
+            log_error_fn=log_error_fn,
+            inter_chunk_timeout_s=inter_chunk_timeout_s,
+            max_stream_retries=max_stream_retries,
         )
 
 
@@ -64,16 +91,30 @@ class HttpxMultiProviderLlmStreamingAdapter(LlmStreamingPort):
     """Multi-dialect `LlmStreamingPort` dispatcher across all 3 HTTPX adapters."""
 
     def __init__(
-        self, *, http_client: httpx.AsyncClient, log_error_fn: LogErrorFn = log_provider_error
+        self,
+        *,
+        http_client: httpx.AsyncClient,
+        log_error_fn: LogErrorFn = log_provider_error,
+        inter_chunk_timeout_s: float | None = None,
+        max_stream_retries: int = 2,
     ) -> None:
         self._openai = HttpxOpenAiCompatibleLlmAdapter(
-            http_client=http_client, log_error_fn=log_error_fn
+            http_client=http_client,
+            log_error_fn=log_error_fn,
+            inter_chunk_timeout_s=inter_chunk_timeout_s,
+            max_stream_retries=max_stream_retries,
         )
         self._anthropic = HttpxAnthropicLlmAdapter(
-            http_client=http_client, log_error_fn=log_error_fn
+            http_client=http_client,
+            log_error_fn=log_error_fn,
+            inter_chunk_timeout_s=inter_chunk_timeout_s,
+            max_stream_retries=max_stream_retries,
         )
         self._gemini = HttpxGeminiNativeLlmAdapter(
-            http_client=http_client, log_error_fn=log_error_fn
+            http_client=http_client,
+            log_error_fn=log_error_fn,
+            inter_chunk_timeout_s=inter_chunk_timeout_s,
+            max_stream_retries=max_stream_retries,
         )
 
     def _select(self, ep: LlmEndpointConfig) -> LlmStreamingPort:

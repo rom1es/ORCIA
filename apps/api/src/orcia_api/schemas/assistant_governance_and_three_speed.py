@@ -229,6 +229,29 @@ class StopActiveBackgroundTurnRequest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
     workspace_id: str = Field(..., min_length=1)
+    turn_id: str | None = None
+
+
+class AssistantTurnAcceptedResponse(BaseModel):
+    """202 Accepted payload for `POST /api/v1/assistant/turns` (`AD-25`, `Story 26.3`)."""
+
+    model_config = ConfigDict(extra="forbid")
+    turn_id: str
+    workspace_id: str
+    thread_id: str | None = None
+    parent_turn_id: str | None = None
+    speed_mode: Literal["SPEED_1_FAST", "SPEED_2_AGENT_TOOLS", "SPEED_3_DEEP_AUDIT"]
+    status: Literal["RUNNING", "COMPLETED", "STOPPED", "ERROR"] = "RUNNING"
+    stream_url: str
+    trace_id: str
+
+
+class AssistantActiveTurnsListResponse(BaseModel):
+    """Active/recent turns for `(workspace_id, user_id)` from Redis (`Story 26.3`)."""
+
+    model_config = ConfigDict(extra="forbid")
+    workspace_id: str
+    turns: list[ActiveBackgroundTurnStatusResponse] = Field(default_factory=list)
 
 
 class RecordAssistantTurnFeedbackRequest(BaseModel):

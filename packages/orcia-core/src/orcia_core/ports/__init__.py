@@ -1,5 +1,13 @@
 """Hexagonal ports for ORCIA Core (pure Python Protocols, zero adapter dependencies)."""
 
+from orcia_core.ports.assistant_turn_stream_port import (
+    AssistantRateLimiterPort,
+    AssistantTurnRecord,
+    AssistantTurnRegistryPort,
+    AssistantTurnStatus,
+    AssistantTurnStreamEvent,
+    AssistantTurnStreamPort,
+)
 from orcia_core.ports.bounded_workflow_port import (
     BoundedSubStepAgentCallback,
     BoundedWorkflowLauncherPort,
@@ -64,6 +72,12 @@ __all__ = [
     "MAX_LOG_QUERY_LIMIT",
     "MAX_SURGICAL_LINES",
     "AgentTraceEvent",
+    "AssistantRateLimiterPort",
+    "AssistantTurnRecord",
+    "AssistantTurnRegistryPort",
+    "AssistantTurnStatus",
+    "AssistantTurnStreamEvent",
+    "AssistantTurnStreamPort",
     "BoundedSubStepAgentCallback",
     "BoundedWorkflowLaunchOutcome",
     "BoundedWorkflowLauncherPort",

@@ -116,7 +116,7 @@ async def resolve_human_arbitration(
     await sync_evaluator_topology_from_pg(request, get_auth_service(request))
     await hydrate_run_from_sql_if_missing(request, svc, run_id)
     trace_id = _trace(request)
-    arb, step_exec, snap = svc.engine.anchors_and_arbitration.resolve_human_arbitration(
+    arb, step_exec, snap = await svc.engine.anchors_and_arbitration.resolve_human_arbitration_async(
         user,
         run_id=run_id,
         step_key=step_key,
@@ -161,7 +161,7 @@ async def resume_human_workflow_step(
     await sync_evaluator_topology_from_pg(request, get_auth_service(request))
     await hydrate_run_from_sql_if_missing(request, svc, run_id)
     trace_id = _trace(request)
-    step_exec, snap = svc.engine.resume_human_task(
+    step_exec, snap = await svc.engine.resume_human_task_async(
         user,
         run_id=run_id,
         step_key=step_key,
@@ -200,7 +200,7 @@ async def execute_background_fast_path_audit(
     await sync_evaluator_topology_from_pg(request, get_auth_service(request))
     await hydrate_run_from_sql_if_missing(request, svc, payload.run_id)
     trace_id = _trace(request)
-    report = svc.engine.run_background_fast_path_audit(
+    report = await svc.engine.run_background_fast_path_audit_async(
         user,
         run_id=payload.run_id,
         divergence_note=payload.divergence_note,

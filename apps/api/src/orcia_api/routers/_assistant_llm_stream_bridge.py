@@ -47,8 +47,9 @@ async def stream_configured_llm_for_assistant_turn(
     user_display_name: str | None = None,
     audit_ledger_sink: Any | None = None,
     llm_port: LlmStreamingPort | None = None,
+    pre_acquired_lease: str | None = None,
 ) -> AsyncIterator[dict[str, Any]]:
-    """True async SSE token streamer decoupled via `ACTIVE_WORKSPACE_TURNS`."""
+    """True async SSE token streamer decoupled via Redis Streams (`Story 26.3`)."""
     from orcia_api.routers.assistant_llm_bridge import (
         resolve_assembled_system_instructions_for_turn,
     )
@@ -78,6 +79,7 @@ async def stream_configured_llm_for_assistant_turn(
         locale=resolved_locale,
     )
     async for evt in run_and_consume_decoupled_turn_stream(
+        request=request,
         workspace_id=workspace_id,
         user_prompt=user_prompt,
         system_msg=system_msg,
@@ -102,6 +104,7 @@ async def stream_configured_llm_for_assistant_turn(
         audit_ledger_sink=audit_ledger_sink or resolve_audit_ledger_sink(request),
         trace_id=getattr(getattr(request, "state", None), "trace_id", None),
         speed_mode=speed_mode,
+        pre_acquired_lease=pre_acquired_lease,
     ):
         yield evt
 

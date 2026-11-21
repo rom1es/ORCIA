@@ -15,6 +15,8 @@ from orcia_core.orchestration import (
     UnifiedNotificationAndClaimService,
     WorkflowStudioAndPackService,
 )
+from orcia_core.orchestration.redis_rate_limiter import RedisAssistantRateLimiter
+from orcia_core.orchestration.redis_turn_registry import RedisAssistantTurnRegistry
 from orcia_core.permissions import (
     AuthAndOrganizationService,
     HierarchicalRbacService,
@@ -128,6 +130,13 @@ def init_runtime_secondary_services(
             timeout=httpx.Timeout(300.0, connect=10.0),
             limits=httpx.Limits(max_connections=100, max_keepalive_connections=20),
         )
+    if getattr(app.state, "assistant_turn_tasks", None) is None:
+        app.state.assistant_turn_tasks = set()
+    redis_cli = getattr(app.state, "redis_client", None)
+    if getattr(app.state, "assistant_turn_registry", None) is None:
+        app.state.assistant_turn_registry = RedisAssistantTurnRegistry(redis_client=redis_cli)
+    if getattr(app.state, "assistant_rate_limiter", None) is None:
+        app.state.assistant_rate_limiter = RedisAssistantRateLimiter(redis_client=redis_cli)
     if getattr(app.state, "log_sink", None) is None:
         from orcia_core.observability import build_log_sink_from_env
 

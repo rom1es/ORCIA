@@ -44,7 +44,7 @@ from orcia_kernel.ports import LlmPromptRequest
 from orcia_worker.dbos_workflow_runner import (
     _dbos_step_execution,
     dbos_step_runner_workflow,
-    execute_step_runner_job,
+    execute_step_runner_job_async,
 )
 
 
@@ -347,14 +347,14 @@ async def test_sql_repositories_and_dbos_engine_unit_paths() -> None:
         workflow_uri="orcia://workflows/claims-engineering-delivery",
         workspace_id="0192c4e0-0000-7000-8000-000000000201",
     ).id
-    res1 = execute_step_runner_job(
+    res1 = await execute_step_runner_job_async(
         run_id=run_id,
         step_key="frame-architecture-intent",
         trace_id="4bf92f3577b34da6a3ce929d0e0e4736",
         orchestration_service=svc,
     )
     assert res1.already_committed is False
-    res2 = execute_step_runner_job(
+    res2 = await execute_step_runner_job_async(
         run_id=run_id,
         step_key="frame-architecture-intent",
         trace_id="4bf92f3577b34da6a3ce929d0e0e4736",

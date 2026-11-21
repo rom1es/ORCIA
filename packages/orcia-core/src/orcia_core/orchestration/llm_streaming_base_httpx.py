@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 from collections.abc import AsyncIterator, Callable
 
 import httpx
 
+from orcia_core.observability.logging import get_logger, scrub_sensitive_text
 from orcia_core.orchestration.ai_models_errors import UnsafeLlmEndpointUrlError
 from orcia_core.orchestration.ai_models_pinned_http import prepare_pinned_http_request
 from orcia_core.orchestration.ai_models_urls import (
@@ -22,7 +24,14 @@ from orcia_core.orchestration.llm_provider_parsing import (
     extract_stream_chunk_deltas,
     parse_non_stream_json,
 )
-from orcia_core.orchestration.llm_streaming_sse_utils import log_provider_error
+from orcia_core.orchestration.llm_streaming_sse_utils import (
+    emit_chunk_deltas,
+    iter_lines_with_idle_timeout,
+    log_provider_error,
+    resolve_inter_chunk_timeout_s,
+    resolve_stream_retry_base_delay_s,
+    stream_error_code_for_status,
+)
 from orcia_core.orchestration.llm_usage_telemetry import (
     extract_usage_tokens_from_payload,
     resolve_usage_with_fallback,
@@ -36,6 +45,8 @@ from orcia_core.ports.llm_streaming_port import (
 )
 
 LogErrorFn = Callable[[str, Exception, LlmEndpointConfig, str, float], None]
+_RETRYABLE_STREAM_STATUSES = frozenset({429, 502, 503})
+_logger = get_logger("orcia.assistant.llm")
 
 
 class BaseHttpxLlmAdapter(LlmStreamingPort):
@@ -47,10 +58,14 @@ class BaseHttpxLlmAdapter(LlmStreamingPort):
         http_client: httpx.AsyncClient,
         allow_legacy_fallback: bool,
         log_error_fn: LogErrorFn = log_provider_error,
+        inter_chunk_timeout_s: float | None = None,
+        max_stream_retries: int = 2,
     ) -> None:
         self._client = http_client
         self._allow_legacy_fallback = allow_legacy_fallback
         self._log_error = log_error_fn
+        self._inter_chunk_timeout_s = inter_chunk_timeout_s
+        self._max_stream_retries = max(0, max_stream_retries)
 
     async def complete_chat(self, request: LlmStreamRequest) -> LlmChatTurnOutcome | None:
         """Execute async non-streaming chat completion with DNS pinning."""
@@ -156,85 +171,124 @@ class BaseHttpxLlmAdapter(LlmStreamingPort):
         acc_thinking: list[str] = []
         in_think = False
         saw_usage, obs_in_tok, obs_out_tok = False, 0, 0
-        try:
-            p_url, p_headers, ext = await prepare_pinned_http_request(
-                self._client, target_url, headers
-            )
-            async with self._client.stream(
-                "POST", p_url, json=body, headers=p_headers, extensions=ext
-            ) as resp:
-                resp.raise_for_status()
-                async for raw_line in resp.aiter_lines():
-                    line = raw_line.strip()
-                    if not line or line.startswith((":", "event:")):
-                        continue
-                    payload_str = line[5:].strip() if line.startswith("data:") else line
-                    if payload_str == "[DONE]":
-                        break
-                    try:
-                        chunk = json.loads(payload_str)
-                    except json.JSONDecodeError:
-                        continue
-                    if not isinstance(chunk, dict):
-                        continue
-                    if (u_tok := extract_usage_tokens_from_payload(chunk)) is not None:
-                        saw_usage = True
-                        obs_in_tok = u_tok[0] if u_tok[0] > 0 else obs_in_tok
-                        obs_out_tok = u_tok[1] if u_tok[1] > 0 else obs_out_tok
-                    c_delta, r_delta = extract_stream_chunk_deltas(chunk)
-                    if r_delta:
-                        acc_thinking.append(r_delta)
-                        yield LlmStreamDelta(
-                            event="thinking_delta",
-                            delta=r_delta,
-                            thinking_text="".join(acc_thinking),
-                            elapsed_ms=round((time.perf_counter() - t0) * 1000.0, 2),
+        idle_timeout_s = resolve_inter_chunk_timeout_s(
+            request.inter_chunk_timeout_s or self._inter_chunk_timeout_s
+        )
+        base_delay_s = resolve_stream_retry_base_delay_s()
+        emitted_any_byte = False
+        for attempt in range(self._max_stream_retries + 1):
+            try:
+                p_url, p_headers, ext = await prepare_pinned_http_request(
+                    self._client, target_url, headers
+                )
+                async with self._client.stream(
+                    "POST", p_url, json=body, headers=p_headers, extensions=ext
+                ) as resp:
+                    resp.raise_for_status()
+                    async for raw_line in iter_lines_with_idle_timeout(
+                        resp.aiter_lines(), idle_timeout_s=idle_timeout_s
+                    ):
+                        emitted_any_byte = True
+                        line = raw_line.strip()
+                        if not line or line.startswith((":", "event:")):
+                            continue
+                        payload_str = line[5:].strip() if line.startswith("data:") else line
+                        if payload_str == "[DONE]":
+                            break
+                        try:
+                            chunk = json.loads(payload_str)
+                        except json.JSONDecodeError:
+                            continue
+                        if not isinstance(chunk, dict):
+                            continue
+                        if (u_tok := extract_usage_tokens_from_payload(chunk)) is not None:
+                            saw_usage = True
+                            obs_in_tok = u_tok[0] if u_tok[0] > 0 else obs_in_tok
+                            obs_out_tok = u_tok[1] if u_tok[1] > 0 else obs_out_tok
+                        c_delta, r_delta = extract_stream_chunk_deltas(chunk)
+                        in_think, out_deltas = emit_chunk_deltas(
+                            c_delta,
+                            r_delta,
+                            acc_content=acc_content,
+                            acc_thinking=acc_thinking,
+                            in_think=in_think,
+                            t0=t0,
                         )
-                    if c_delta:
-                        if "<think>" in c_delta:
-                            in_think, c_delta = True, c_delta.replace("<think>", "")
-                        if in_think:
-                            if "</think>" in c_delta:
-                                t_part, _, rest = c_delta.partition("</think>")
-                                if t_part:
-                                    acc_thinking.append(t_part)
-                                in_think, c_delta = False, rest
-                            else:
-                                acc_thinking.append(c_delta)
-                                yield LlmStreamDelta(
-                                    event="thinking_delta",
-                                    delta=c_delta,
-                                    thinking_text="".join(acc_thinking),
-                                    elapsed_ms=round((time.perf_counter() - t0) * 1000.0, 2),
-                                )
-                                continue
-                        if c_delta:
-                            acc_content.append(c_delta)
-                            yield LlmStreamDelta(
-                                event="token_delta",
-                                delta=c_delta,
-                                accumulated_text="".join(acc_content),
-                            )
-            resp_txt, think_txt = "".join(acc_content), "".join(acc_thinking)
-            in_tok, out_tok, u_src = resolve_usage_with_fallback(
-                messages=msgs,
-                reply_text=f"{resp_txt}\n{think_txt}",
-                observed_input_tokens=obs_in_tok,
-                observed_output_tokens=obs_out_tok,
-                saw_provider_usage=saw_usage,
-            )
-            yield LlmStreamDelta(
-                event="turn_completed",
-                accumulated_text=resp_txt,
-                thinking_text=think_txt,
-                latency_ms=round((time.perf_counter() - t0) * 1000.0, 2),
-                input_tokens=in_tok,
-                output_tokens=out_tok,
-                usage_source=u_src,
-            )
-        except UnsafeLlmEndpointUrlError:
-            raise
-        except httpx.HTTPStatusError as exc:
-            self._log_error("llm_provider_stream_http_status_error", exc, ep, target_url, t0)
-        except Exception as exc:
-            self._log_error("llm_provider_stream_failed", exc, ep, target_url, t0)
+                        for delta_item in out_deltas:
+                            yield delta_item
+                resp_txt, think_txt = "".join(acc_content), "".join(acc_thinking)
+                in_tok, out_tok, u_src = resolve_usage_with_fallback(
+                    messages=msgs,
+                    reply_text=f"{resp_txt}\n{think_txt}",
+                    observed_input_tokens=obs_in_tok,
+                    observed_output_tokens=obs_out_tok,
+                    saw_provider_usage=saw_usage,
+                )
+                yield LlmStreamDelta(
+                    event="turn_completed",
+                    accumulated_text=resp_txt,
+                    thinking_text=think_txt,
+                    latency_ms=round((time.perf_counter() - t0) * 1000.0, 2),
+                    input_tokens=in_tok,
+                    output_tokens=out_tok,
+                    usage_source=u_src,
+                )
+                return
+            except UnsafeLlmEndpointUrlError:
+                raise
+            except TimeoutError as exc:
+                self._log_error("llm_provider_stream_idle_timeout", exc, ep, target_url, t0)
+                yield LlmStreamDelta(
+                    event="stream_error",
+                    error_message=scrub_sensitive_text(
+                        f"Stream idle timeout after {idle_timeout_s:.1f}s ({ep.model_name})."
+                    ),
+                    error_code="ERR_UPSTREAM_TIMEOUT",
+                    http_status=504,
+                )
+                return
+            except httpx.HTTPStatusError as exc:
+                status = exc.response.status_code
+                if (
+                    not emitted_any_byte
+                    and status in _RETRYABLE_STREAM_STATUSES
+                    and attempt < self._max_stream_retries
+                ):
+                    delay = base_delay_s * (2**attempt)
+                    _logger.warning(
+                        "llm_provider_stream_retry",
+                        attempt=attempt + 1,
+                        status_code=status,
+                        delay_s=delay,
+                        model=ep.model_name,
+                    )
+                    await asyncio.sleep(delay)
+                    continue
+                self._log_error("llm_provider_stream_http_status_error", exc, ep, target_url, t0)
+                yield LlmStreamDelta(
+                    event="stream_error",
+                    error_message=scrub_sensitive_text(
+                        f"Provider HTTP {status} ({ep.model_name})."
+                    ),
+                    error_code=stream_error_code_for_status(status),
+                    http_status=status,
+                )
+                return
+            except Exception as exc:
+                if (
+                    not emitted_any_byte
+                    and isinstance(exc, (httpx.ConnectError, httpx.ConnectTimeout))
+                    and attempt < self._max_stream_retries
+                ):
+                    await asyncio.sleep(base_delay_s * (2**attempt))
+                    continue
+                self._log_error("llm_provider_stream_failed", exc, ep, target_url, t0)
+                yield LlmStreamDelta(
+                    event="stream_error",
+                    error_message=scrub_sensitive_text(
+                        f"Provider stream failed ({type(exc).__name__}): {exc}"
+                    ),
+                    error_code="ERR_INTERNAL_SERVER_ERROR",
+                    http_status=502,
+                )
+                return

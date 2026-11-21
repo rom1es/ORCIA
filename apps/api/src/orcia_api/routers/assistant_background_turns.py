@@ -1,4 +1,4 @@
-"""Background Turn Producer (`asyncio.Task`) & Stream Consumer (`AD-15`, `Story 26.2`)."""
+"""Background Turn Lifecycle, Rate-Limiting & Cross-Worker Stop (`Story 26.3`, `R1`)."""
 
 from __future__ import annotations
 
@@ -6,13 +6,11 @@ import asyncio
 import time
 import uuid
 from collections.abc import AsyncIterator, Callable
+from dataclasses import replace
 from typing import Any
 
 import httpx
 
-from orcia_api.routers._assistant_background_registry import (
-    ACTIVE_WORKSPACE_TURNS as ACTIVE_WORKSPACE_TURNS,
-)
 from orcia_api.routers._assistant_background_registry import (
     PROMPT_TELEMETRY_LOG as PROMPT_TELEMETRY_LOG,
 )
@@ -23,35 +21,138 @@ from orcia_api.routers._assistant_background_registry import (
     TurnStatus as TurnStatus,
 )
 from orcia_api.routers._assistant_background_registry import (
-    get_active_turn_for_workspace as get_active_turn_for_workspace,
-)
-from orcia_api.routers._assistant_background_registry import (
-    notify_background_turn_event,
+    get_rate_limiter_from_request,
+    get_tracked_turn_tasks_from_request,
+    get_turn_registry_from_request,
+    turn_record_to_background_state,
 )
 from orcia_api.routers._assistant_background_registry import (
     record_prompt_telemetry_entry as record_prompt_telemetry_entry,
 )
-from orcia_api.routers._assistant_background_registry import (
-    stop_active_turn_for_workspace as stop_active_turn_for_workspace,
+from orcia_api.routers._assistant_turn_consumer import stream_assistant_turn_events
+from orcia_api.routers._assistant_turn_producer import execute_turn_producer_task
+from orcia_core.orchestration.assistant_turn_errors import (
+    AssistantConcurrencyLimitError,
+    AssistantRateLimitExceededError,
 )
-from orcia_api.routers._assistant_usage_telemetry import (
-    persist_assistant_turn_ledger_entry,
-    resolve_usage_with_fallback,
+from orcia_core.orchestration.redis_rate_limiter import (
+    RedisAssistantRateLimiter,
+    resolve_rate_limit_settings,
 )
-from orcia_core.observability.logging import get_logger, scrub_sensitive_text
-from orcia_core.orchestration.llm_streaming_httpx import HttpxMultiProviderLlmStreamingAdapter
-from orcia_core.orchestration.llm_streaming_sse_utils import delta_to_sse_dict
-from orcia_core.ports.llm_streaming_port import (
-    LlmEndpointConfig,
-    LlmStreamingPort,
-    LlmStreamRequest,
+from orcia_core.orchestration.redis_turn_registry import (
+    RedisAssistantTurnRegistry,
+    resolve_liveness_ttl_seconds,
 )
+from orcia_core.ports.assistant_turn_stream_port import AssistantTurnRecord
+from orcia_core.ports.llm_streaming_port import LlmEndpointConfig, LlmStreamingPort
 
-logger = get_logger("orcia.assistant.llm")
+
+async def enforce_assistant_rate_and_concurrency(
+    rate_limiter: RedisAssistantRateLimiter,
+    *,
+    user_id: str,
+    workspace_id: str,
+    instance: str,
+) -> str:
+    """Enforce Redis sliding-window rate limit + per-user concurrency semaphore (`HTTP 429`)."""
+    max_req, window_s, max_conc = resolve_rate_limit_settings()
+    allowed, retry_after = await rate_limiter.check_and_record_turn_rate(
+        user_id, workspace_id, window_seconds=window_s, max_requests=max_req
+    )
+    if not allowed:
+        raise AssistantRateLimitExceededError(retry_after_s=retry_after, instance=instance)
+    lease = await rate_limiter.acquire_concurrency_slot(user_id, limit=max_conc, ttl_seconds=180)
+    if lease is None:
+        raise AssistantConcurrencyLimitError(instance=instance)
+    return lease
+
+
+async def start_background_assistant_turn(
+    *,
+    registry: RedisAssistantTurnRegistry,
+    rate_limiter: RedisAssistantRateLimiter,
+    task_set: set[asyncio.Task[Any]],
+    workspace_id: str,
+    user_id: str,
+    user_prompt: str,
+    system_msg: str,
+    default_thinking: str,
+    fallback_response_text: str | None,
+    ep: LlmEndpointConfig | None,
+    http_client_getter: Callable[[], httpx.AsyncClient],
+    messages_builder: Callable[[], list[dict[str, Any]]],
+    tools_builder: Callable[[], list[dict[str, Any]]],
+    conversation_history_count: int = 0,
+    folder_pinned_notes: str | None = None,
+    thinking_effort: str | None = None,
+    llm_port: LlmStreamingPort | None = None,
+    user_email: str | None = None,
+    user_display_name: str | None = None,
+    model_tier: str | None = None,
+    audit_ledger_sink: Any | None = None,
+    trace_id: str | None = None,
+    speed_mode: str | None = None,
+    locale: str = "fr",
+    instance: str = "/api/v1/assistant/turns",
+    pre_acquired_lease: str | None = None,
+) -> str:
+    """Register a Redis-tracked turn and launch its bounded `asyncio.Task` producer."""
+    resolved_trace = trace_id or "00000000000000000000000000000000"
+    lease_token = pre_acquired_lease or await enforce_assistant_rate_and_concurrency(
+        rate_limiter, user_id=user_id, workspace_id=workspace_id, instance=instance
+    )
+    t0 = time.perf_counter()
+    turn_id = f"turn-{uuid.uuid4().hex[:10]}"
+    liveness_ttl_s = resolve_liveness_ttl_seconds()
+    record = AssistantTurnRecord(
+        turn_id=turn_id,
+        workspace_id=workspace_id,
+        user_id=user_id,
+        status="RUNNING",
+        user_prompt=user_prompt,
+        assembled_system_prompt=system_msg,
+        started_at_ms=round(time.time() * 1000.0, 2),
+        trace_id=resolved_trace,
+        speed_mode=speed_mode or "SPEED_1_FAST",
+        model_id=ep.model_name if ep is not None else "assistant-router",
+        inference_tier=model_tier or (ep.tier if ep is not None else None),
+        effort=thinking_effort or "balanced",
+    )
+    await registry.register_turn(record)
+    await registry.refresh_liveness(turn_id, ttl_seconds=liveness_ttl_s)
+
+    task = asyncio.create_task(
+        execute_turn_producer_task(
+            registry=registry,
+            rate_limiter=rate_limiter,
+            initial_record=record,
+            lease_token=lease_token,
+            liveness_ttl_s=liveness_ttl_s,
+            t0=t0,
+            default_thinking=default_thinking,
+            fallback_response_text=fallback_response_text,
+            ep=ep,
+            http_client_getter=http_client_getter,
+            messages_builder=messages_builder,
+            tools_builder=tools_builder,
+            conversation_history_count=conversation_history_count,
+            folder_pinned_notes=folder_pinned_notes,
+            llm_port=llm_port,
+            user_email=user_email,
+            user_display_name=user_display_name,
+            audit_ledger_sink=audit_ledger_sink,
+            locale=locale,
+            instance=instance,
+        )
+    )
+    task_set.add(task)
+    task.add_done_callback(task_set.discard)
+    return turn_id
 
 
 async def run_and_consume_decoupled_turn_stream(
     *,
+    request: Any | None = None,
     workspace_id: str,
     user_prompt: str,
     system_msg: str,
@@ -72,215 +173,86 @@ async def run_and_consume_decoupled_turn_stream(
     audit_ledger_sink: Any | None = None,
     trace_id: str | None = None,
     speed_mode: str | None = None,
+    pre_acquired_lease: str | None = None,
 ) -> AsyncIterator[dict[str, Any]]:
-    """Spawn a decoupled `asyncio.Task` producer via `LlmStreamingPort` and yield SSE events."""
-    t0 = time.perf_counter()
-    turn_id = f"turn-{uuid.uuid4().hex[:10]}"
-    bg_state = ActiveBackgroundTurnState(
-        turn_id=turn_id,
+    """Launch tracked background turn on Redis and stream ordered events."""
+    reg = get_turn_registry_from_request(request)
+    lim = get_rate_limiter_from_request(request)
+    tasks = get_tracked_turn_tasks_from_request(request)
+    turn_id = await start_background_assistant_turn(
+        registry=reg,
+        rate_limiter=lim,
+        task_set=tasks,
         workspace_id=workspace_id,
+        user_id=user_id or "u-anonymous",
         user_prompt=user_prompt,
-        assembled_system_prompt=system_msg,
+        system_msg=system_msg,
+        default_thinking=default_thinking,
+        fallback_response_text=fallback_response_text,
+        ep=ep,
+        http_client_getter=http_client_getter,
+        messages_builder=messages_builder,
+        tools_builder=tools_builder,
+        conversation_history_count=conversation_history_count,
+        folder_pinned_notes=folder_pinned_notes,
+        thinking_effort=thinking_effort,
+        llm_port=llm_port,
+        user_email=user_email,
+        user_display_name=user_display_name,
+        model_tier=model_tier,
+        audit_ledger_sink=audit_ledger_sink,
+        trace_id=trace_id,
+        speed_mode=speed_mode,
+        pre_acquired_lease=pre_acquired_lease,
     )
-    ACTIVE_WORKSPACE_TURNS[workspace_id] = bg_state
+    async for evt in stream_assistant_turn_events(reg, turn_id=turn_id, trace_id=trace_id or ""):
+        yield evt
 
-    async def _finalize(
-        reply: str, thinking: str, obs_in_tok: int, obs_out_tok: int, saw_usage: bool, lat_ms: float
-    ) -> None:
-        record_prompt_telemetry_entry(
-            workspace_id=workspace_id,
-            turn_id=turn_id,
-            user_prompt=user_prompt,
-            assembled_system_prompt=system_msg,
-            conversation_history_count=conversation_history_count,
-            folder_pinned_notes=folder_pinned_notes,
-            thinking_text=thinking,
-            assistant_reply=reply,
-            model_label=ep.model_name if ep is not None else "Polyvalent",
-            thinking_effort=thinking_effort or "balanced",
-            thinking_elapsed_seconds=max(1, round(time.perf_counter() - t0)),
-        )
-        in_tok, out_tok, u_src = resolve_usage_with_fallback(
-            prompt_text=f"{system_msg}\n{user_prompt}",
-            reply_text=f"{reply}\n{thinking}",
-            observed_input_tokens=obs_in_tok,
-            observed_output_tokens=obs_out_tok,
-            saw_provider_usage=saw_usage,
-        )
-        await persist_assistant_turn_ledger_entry(
-            audit_ledger_sink=audit_ledger_sink,
-            user_id=user_id,
-            user_email=user_email,
-            user_display_name=user_display_name,
-            workspace_id=workspace_id,
-            turn_id=turn_id,
-            model_id=ep.model_name if ep is not None else "assistant-router",
-            inference_tier=model_tier or (ep.tier if ep is not None else None),
-            effort=thinking_effort or "balanced",
-            input_tokens=in_tok,
-            output_tokens=out_tok,
-            latency_ms=lat_ms,
-            usage_source=u_src,
-            trace_id=trace_id,
-            speed_mode=speed_mode,
-        )
 
-    async def _producer() -> None:
-        try:
-            active_port = llm_port
-            if ep is not None or (
-                active_port is not None
-                and getattr(active_port, "is_cassette_adapter", False)
-                and not fallback_response_text
-            ):
-                stream_ep = ep or LlmEndpointConfig(
-                    provider="cassette",
-                    model_name="cassette-deterministic",
-                    endpoint_uri="http://localhost",
-                    auth_mode="none",
-                )
-                if active_port is None:
-                    active_port = HttpxMultiProviderLlmStreamingAdapter(
-                        http_client=http_client_getter()
-                    )
-                req = LlmStreamRequest(
-                    endpoint=stream_ep,
-                    messages=tuple(messages_builder()),
-                    tools=tuple(tools_builder()),
-                    include_thoughts=True,
-                )
-                emitted_tokens = False
-                obs_in, obs_out, obs_src, obs_lat = 0, 0, "estimated", 0.0
-                async for delta in active_port.stream_chat_sse(req):
-                    evt = delta_to_sse_dict(delta)
-                    raw_data = evt.get("data")
-                    data_dict: dict[str, Any] = raw_data if isinstance(raw_data, dict) else {}
-                    if evt["event"] == "thinking_delta":
-                        bg_state.thinking_text = str(data_dict.get("thinking_text") or "")
-                    elif evt["event"] == "token_delta":
-                        emitted_tokens = True
-                        bg_state.streamed_text = str(data_dict.get("accumulated_text") or "")
-                    elif evt["event"] == "turn_completed":
-                        data_dict["turn_id"] = turn_id
-                        data_dict["assembled_system_prompt"] = system_msg
-                        obs_in = int(data_dict.get("input_tokens") or 0)
-                        obs_out = int(data_dict.get("output_tokens") or 0)
-                        obs_src = str(data_dict.get("usage_source") or "estimated")
-                        obs_lat = float(data_dict.get("latency_ms") or 0.0)
-                        bg_state.streamed_text = str(
-                            data_dict.get("response_text") or bg_state.streamed_text
-                        )
-                        bg_state.thinking_text = str(
-                            data_dict.get("thinking_text") or bg_state.thinking_text
-                        )
-                    await notify_background_turn_event(bg_state, evt)
-                if emitted_tokens:
-                    bg_state.status = "COMPLETED"
-                    await _finalize(
-                        bg_state.streamed_text,
-                        bg_state.thinking_text,
-                        obs_in,
-                        obs_out,
-                        obs_src == "provider",
-                        obs_lat or (time.perf_counter() - t0) * 1000.0,
-                    )
-                    return
-                err_msg = scrub_sensitive_text(
-                    f"AI model {stream_ep.model_name} ({stream_ep.endpoint_uri}) "
-                    "returned zero tokens. Verify provider availability."
-                )
-                bg_state.status = "ERROR"
-                bg_state.error_message = err_msg
-                await notify_background_turn_event(
-                    bg_state, {"event": "stream_error", "data": {"message": err_msg}}
-                )
-                return
+async def get_active_turn_for_workspace(
+    workspace_id: str, *, request: Any | None = None, user_id: str = "u-anonymous"
+) -> ActiveBackgroundTurnState | None:
+    """Return latest turn state for `(workspace_id, user_id)` from Redis."""
+    reg = get_turn_registry_from_request(request)
+    rec = await reg.get_latest_turn(workspace_id, user_id)
+    return turn_record_to_background_state(rec) if rec is not None else None
 
-            bg_state.thinking_text = default_thinking
-            await notify_background_turn_event(
-                bg_state,
-                {
-                    "event": "thinking_delta",
-                    "data": {
-                        "step_code": "NODE_5_SINGLE_STREAM_LLM",
-                        "thinking_text": default_thinking,
-                        "elapsed_ms": round((time.perf_counter() - t0) * 1000.0, 2),
-                    },
-                },
-            )
-            full_text = fallback_response_text or ""
-            accumulated: list[str] = []
-            for line_chunk in full_text.splitlines(keepends=True) or (
-                [full_text] if full_text else []
-            ):
-                accumulated.append(line_chunk)
-                bg_state.streamed_text = "".join(accumulated)
-                await notify_background_turn_event(
-                    bg_state,
-                    {
-                        "event": "token_delta",
-                        "data": {"delta": line_chunk, "accumulated_text": bg_state.streamed_text},
-                    },
-                )
-            bg_state.status = "COMPLETED"
-            fb_in, fb_out, fb_src = resolve_usage_with_fallback(
-                prompt_text=f"{system_msg}\n{user_prompt}",
-                reply_text=f"{full_text}\n{default_thinking}",
-            )
-            fb_lat = round((time.perf_counter() - t0) * 1000.0, 2)
-            await notify_background_turn_event(
-                bg_state,
-                {
-                    "event": "turn_completed",
-                    "data": {
-                        "turn_id": turn_id,
-                        "response_text": full_text,
-                        "thinking_text": default_thinking,
-                        "assembled_system_prompt": system_msg,
-                        "latency_ms": fb_lat,
-                        "input_tokens": fb_in,
-                        "output_tokens": fb_out,
-                        "usage_source": fb_src,
-                    },
-                },
-            )
-            await _finalize(full_text, default_thinking, 0, 0, False, fb_lat)
-        except asyncio.CancelledError:
-            bg_state.status = "STOPPED"
-            raise
-        except Exception as exc:
-            safe_err = scrub_sensitive_text(str(exc))
-            logger.warning(
-                "background_turn_producer_failed",
-                error_type=type(exc).__name__,
-                error=safe_err,
-            )
-            bg_state.status = "ERROR"
-            bg_state.error_message = safe_err
-        finally:
-            async with bg_state.notify_cond:
-                bg_state.notify_cond.notify_all()
 
-    bg_state.task = asyncio.create_task(_producer())
-    cursor = 0
-    while True:
-        while cursor < len(bg_state.events):
-            evt = bg_state.events[cursor]
-            cursor += 1
-            yield evt
-        if bg_state.status in ("COMPLETED", "STOPPED", "ERROR") or (
-            bg_state.task is not None and bg_state.task.done()
-        ):
-            while cursor < len(bg_state.events):
-                evt = bg_state.events[cursor]
-                cursor += 1
-                yield evt
-            break
-        async with bg_state.notify_cond:
-            if cursor < len(bg_state.events) or bg_state.status in (
-                "COMPLETED",
-                "STOPPED",
-                "ERROR",
-            ):
-                continue
-            await bg_state.notify_cond.wait()
+async def stop_assistant_turn_by_id(
+    turn_id: str, *, request: Any | None = None, stopped_by_user_id: str
+) -> ActiveBackgroundTurnState | None:
+    """Propagate stop via Redis and wait briefly for producer `finally` flush."""
+    reg = get_turn_registry_from_request(request)
+    rec = await reg.get_turn_by_id(turn_id)
+    if rec is None:
+        return None
+    await reg.request_stop(turn_id, stopped_by_user_id=stopped_by_user_id)
+    for _ in range(30):
+        latest = await reg.get_turn_by_id(turn_id)
+        if latest is not None and latest.status in ("STOPPED", "COMPLETED", "ERROR"):
+            return turn_record_to_background_state(latest)
+        await asyncio.sleep(0.05)
+    latest = await reg.get_turn_by_id(turn_id)
+    if latest is not None and latest.status == "RUNNING":
+        forced = replace(latest, status="STOPPED", stopped_by_user_id=stopped_by_user_id)
+        await reg.update_turn(forced, ttl_seconds=1800)
+        return turn_record_to_background_state(forced)
+    return turn_record_to_background_state(latest) if latest is not None else None
+
+
+async def stop_active_turn_for_workspace(
+    workspace_id: str,
+    *,
+    request: Any | None = None,
+    user_id: str = "u-anonymous",
+    turn_id: str | None = None,
+) -> ActiveBackgroundTurnState | None:
+    """Stop either explicit `turn_id` or the latest active turn for `(workspace_id, user_id)`."""
+    reg = get_turn_registry_from_request(request)
+    target_id = turn_id
+    if not target_id:
+        latest = await reg.get_latest_turn(workspace_id, user_id)
+        if latest is None:
+            return None
+        target_id = latest.turn_id
+    return await stop_assistant_turn_by_id(target_id, request=request, stopped_by_user_id=user_id)

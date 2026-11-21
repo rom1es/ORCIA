@@ -132,7 +132,7 @@ async def execute_workflow_step(
     await sync_evaluator_topology_from_pg(request, get_auth_service(request))
     await hydrate_run_from_sql_if_missing(request, svc, payload.run_id)
     trace_id = _trace(request)
-    step_exec, snap = svc.engine.execute_step(
+    step_exec, snap = await svc.engine.execute_step_async(
         user,
         run_id=payload.run_id,
         step_key=payload.step_key,
