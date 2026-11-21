@@ -273,9 +273,10 @@ development_status:
   epic-25-retrospective: optional
 
   # Epic 26 — Harnais « Mon Assistant » Unifié, Gouverné & Persistant (moteur de tour unique, boucle d'outils gouvernée, contexte réel, sécurité de portée, état zéro RAM) (AD-3, AD-15, AD-19, AD-24, AD-25 proposé)
-  # Plan directeur : docs/planning-artifacts/sprint-change-proposal-2026-11-21-epic-26-harnais-assistant-remediation-plan.md
-  # Audit source   : docs/implementation-artifacts/tech-lead-reports/2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md
-  # Lots : L0 26-0 | L1 26-1 | L2 26-2 | L3 26-3 ∥ 26-4a ∥ 26-4b | L4 26-5 | L5 26-6a → 26-6b | L6 26-7 → 26-8 | L7 26-9 → 26-10 — NON LANCÉE
+  # Plan directeur   : docs/planning-artifacts/sprint-change-proposal-2026-11-21-epic-26-harnais-assistant-remediation-plan.md
+  # Audit source     : docs/implementation-artifacts/tech-lead-reports/2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md
+  # Arbitrages grill-me : docs/implementation-artifacts/epic-26-decisions-grill-2026-11-21.md
+  # Lots : L0 26-0 | L1 26-1 | L2 26-2 | L3 (26-3 ∥ 26-4a ∥ 26-4b en worktrees share -> merge séquentiel linéaire) | L4 26-5 | L5 26-6a → 26-6b | L6 26-7 → 26-8 | L7 26-9 → 26-10 — NON LANCÉE
   epic-26: backlog
   26-0-adr-moteur-de-tour-unique-contrat-sse-v2-et-politique-ssrf: ready-for-dev
   26-1-durcissement-securite-immediat-gardes-portee-observateur-et-ssrf: ready-for-dev

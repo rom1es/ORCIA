@@ -3065,13 +3065,13 @@ Le tout sans écriture SI directe depuis l'Assistant (Verrou V5 → `CONTINUE_IN
 - Lot 0 : `26.0`
 - Lot 1 : `26.1`
 - Lot 2 : `26.2`
-- Lot 3 : `26.3` ∥ `26.4a` ∥ `26.4b`
+- Lot 3 : `26.3` ∥ `26.4a` ∥ `26.4b` *(en worktrees isolés `workspace: "share"` puis fusion séquentielle `26.3 → 26.4a → 26.4b` avec rechaînage linéaire du `down_revision` Alembic, cf. `D10`)*
 - Lot 4 : `26.5`
 - Lot 5 : `26.6a` → `26.6b`
 - Lot 6 : `26.7` → `26.8`
 - Lot 7 : `26.9` → `26.10`
 
-Aucune story ne démarre avant que ses dépendances soient `done`. Si `26.0` tranche autrement que les défauts D1–D6 du plan directeur, les stories aval sont rebasées via `bmad-correct-course` avant lancement.
+Aucune story ne démarre avant que ses dépendances soient `done`. Les décisions arbitrées **`D1–D11`** sont consignées dans [`epic-26-decisions-grill-2026-11-21.md`](../implementation-artifacts/epic-26-decisions-grill-2026-11-21.md). Si `26.0` révèle un nouvel écart par rapport aux décisions `D1–D11`, les stories aval sont rebasées via `bmad-correct-course` avant lancement. Chaque story de développement (`26.1..26.10`) est exécutée par deux `bmad-dev-worker` (`flash`) distincts (Implémentation puis Tests `AD-17`) suivis d'une revue `bmad-architect-worker` (`pro`) et d'un commit local atomique (`D11`).
 
 ---
 
@@ -3084,18 +3084,18 @@ So that les 12 stories suivantes s'exécutent sur un socle architectural ratifi�
 **Lot :** 0 — Cadrage. **Dépendances :** clôture Epic 25 (`epic-25: done`). **Agent :** `bmad-architect-worker` (`pro`).
 **Constats couverts :** `H-38` + prérequis D1–D6.
 **CAP couvertes :** `none (doc)`.
-**Fichiers impactés :** `docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/ARCHITECTURE-SPINE.md`, `docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/architecture.md` (ERD), `docs/planning-artifacts/sprint-change-proposal-2026-11-21-epic-26-harnais-assistant-remediation-plan.md`.
+**Fichiers impactés :** `docs/implementation-artifacts/epic-26-decisions-grill-2026-11-21.md` (entrée), `docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/ARCHITECTURE-SPINE.md`, `docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/architecture.md` (ERD), `docs/planning-artifacts/sprint-change-proposal-2026-11-21-epic-26-harnais-assistant-remediation-plan.md`.
 **Rapport Tech Lead :** `docs/implementation-artifacts/tech-lead-reports/26-0-adr-moteur-de-tour-unique-contrat-sse-v2-et-politique-ssrf-tech-lead-report.md`.
 
 **Acceptance Criteria:**
 
-**Given** le plan directeur Epic 26 et l'audit `H-01..H-38`
+**Given** le plan directeur Epic 26, les arbitrages ratifiés `D1–D11` (`epic-26-decisions-grill-2026-11-21.md`) et l'audit `H-01..H-38`
 **When** l'ADR est rédigé
-**Then** `ARCHITECTURE-SPINE.md` contient un nouvel `AD-25` « Moteur de Tour Assistant Unifié » (fast-path Speed 1, profil `ASSISTANT` du runtime réflexif pour Speed 2/3, 5 nœuds `AD-15` devenus phases N1–N5, paramétrage par le Studio Mode B, interdiction de `ConnectorReflexiveWriteGateAdapter` dans le profil `ASSISTANT`), `AD-15` est amendé en référence, `AD-21` / `AD-24` intègrent la politique SSRF (liste d'autorisation administrée, blocage métadonnées / link-local, validation DNS à la connexion) et le drapeau `supports_tools`, et chaque décision D1–D6 est tracée avec sa justification et ses alternatives rejetées.
+**Then** `ARCHITECTURE-SPINE.md` contient un nouvel `AD-25` « Moteur de Tour Assistant Unifié » (fast-path Speed 1, profil `ASSISTANT` du runtime réflexif pour Speed 2/3, escalade auto **100 % pré-LLM** `Speed 1 → Speed 2` en `N1`/post-préfetch `N3 < 50 ms` si `supports_tools=true`, 5 nœuds `AD-15` devenus phases `N1–N5` à topologie fixe et verrous scellés Couche 1/`N1`/V5/`CitationGuard` avec paramétrage déclaratif Mode B sur `N2–N5` uniquement, interdiction de `ConnectorReflexiveWriteGateAdapter` dans le profil `ASSISTANT`), `AD-15` est amendé en référence, `AD-21` / `AD-24` intègrent la politique SSRF (liste d'autorisation administrée, `localhost` uniquement en `local`/`test`, blocage métadonnées / link-local / ports internes, validation DNS à la connexion, projection publique Jour 0 `{is_initialized, step}` sans secret sur `GET /bootstrap/platform-setup-state`) et le drapeau `supports_tools` (+ override `PLATFORM_ADMIN`), et chaque décision `D1–D10` (`D1.a`, `D1.b`, `D2.a` incluses) est tracée avec sa justification et ses alternatives rejetées (notamment `D6` dépréciation/suppression de `/workflows/save-and-launch`, `D7` raccordement Speed 1 lecture seule de `assistant.ask` MCP, `D8` purge v2 complète en `26.10`).
 
-**Given** le contrat d'événements du tour
+**Given** le contrat d'événements du tour et les routes canoniques v2
 **When** le contrat SSE v2 est figé
-**Then** les événements `thinking_delta`, `tool_call`, `tool_result`, `approval_required`, `token_delta`, `citation_map`, `turn_completed`, `turn_stopped` et `stream_error` (enveloppe RFC 9457 + `trace_id`) sont spécifiés (champs, ordre, curseur de reprise), ainsi que les routes `POST /api/v1/assistant/turns`, `GET /api/v1/assistant/turns/{turn_id}/stream?after=` et `POST /api/v1/assistant/turns/{turn_id}/{stop,approve,synthesize-now}`.
+**Then** les événements `speed_escalated` (`from_speed`, `to_speed`, `reason_code`), `thinking_delta`, `tool_call`, `tool_result`, `approval_required`, `token_delta`, `citation_map`, `turn_completed`, `turn_stopped` et `stream_error` (enveloppe RFC 9457 + `trace_id`, y compris `503 ERR_ASSISTANT_WORKER_UNAVAILABLE` après timeout `<= 3 s` sans worker Dramatiq ni repli caché, `422 ERR_MODEL_TOOLS_UNSUPPORTED`) sont spécifiés (champs, ordre, curseur de reprise), ainsi que les routes canoniques `POST /api/v1/assistant/turns`, `GET /api/v1/assistant/turns/{turn_id}/stream?after=`, `POST /api/v1/assistant/turns/{turn_id}/{stop,approve,synthesize-now,feedback}` et `GET /api/v1/assistant/threads/{thread_id}/messages` (`D4`, `D8`).
 
 **Given** l'ADR rédigé
 **When** les contrôles sont exécutés
@@ -3109,9 +3109,9 @@ As a Responsable SecOps (`Sophie`) et Utilisateur d'Espace,
 I want que toute route `/api/v1/assistant/*` vérifie ma portée d'espace et rejette le mode Observateur **avant** l'ouverture du moindre flux, que le contexte envoyé au LLM soit filtré côté serveur selon mes droits `READ_SOURCE` et la confidentialité, que la Couche 1 constitutionnelle ne puisse pas être surchargée et que les endpoints LLM et secrets soient protégés,
 So that aucun utilisateur ne puisse lire ou modifier l'assistant, la gouvernance ou les dossiers d'un autre espace (IDOR), ni exfiltrer des sources confidentielles ou des clés API.
 
-**Lot :** 1 — Sécurité. **Dépendances :** `26.0` (D3). **Agent :** `bmad-dev-worker` (`flash`).
+**Lot :** 1 — Sécurité. **Dépendances :** `26.0` (D3). **Agent :** `bmad-dev-worker` (`flash`, Implémentation + Tests distincts `D11`).
 **Constats couverts :** `H-06`, `H-07`, `H-08`, `H-15`, `H-16`, `H-17`, `H-30` (`assert` prod).
-**CAP couvertes :** `CAP-071`, `CAP-072`, `CAP-073`, `CAP-074`.
+**CAP couvertes :** `CAP-022`, `CAP-070`, `CAP-071`, `CAP-072`, `CAP-073`, `CAP-074` (requalification `D9` de `CAP-022`, `CAP-070` et `CAP-072` en `verification: api` dans `docs/product/capabilities.yaml`).
 **Fichiers impactés :** `apps/api/src/orcia_api/routers/assistant_workspace.py`, `assistant_workspace_governance.py`, `assistant_workspace_citations.py`, `assistant_workspace_folders.py`, `assistant.py`, `assistant_llm_prompts.py`, `assistant_llm_providers.py`, `assistant_llm_resolver.py`, `assistant_background_turns.py`, `bootstrap_accostage.py`, `apps/api/src/orcia_api/schemas/assistant_citations_and_folders.py`, `packages/orcia-core/src/orcia_core/orchestration/assistant_governance.py`, `assistant_three_speed_router.py`, `packages/orcia-core/src/orcia_core/observability/_internal/ecs_formatter.py`, `tests/security/`.
 **Rapport Tech Lead :** `docs/implementation-artifacts/tech-lead-reports/26-1-durcissement-securite-immediat-gardes-portee-observateur-et-ssrf-tech-lead-report.md`.
 
@@ -3129,9 +3129,9 @@ So that aucun utilisateur ne puisse lire ou modifier l'assistant, la gouvernance
 **When** le prompt est construit
 **Then** la Couche 1 reste inchangée, l'historique est restreint à `user|assistant`, les blocs utilisateur sont délimités et assainis, et le consommateur `agents_and_skills.py` conserve son comportement (tests de non-régression verts).
 
-**Given** un endpoint LLM configuré en PG18 pointant vers une adresse de métadonnées, link-local ou un nom DNS résolu vers `169.254.169.254`
+**Given** un endpoint LLM configuré en PG18 pointant vers une adresse de métadonnées, link-local ou un nom DNS résolu vers `169.254.169.254`, ou vers un port interne protégé
 **When** le resolver ou le provider s'y connecte
-**Then** la connexion est refusée (validation à la configuration **et** à la connexion, avec *pinning* DNS), les hôtes on-prem de la liste d'autorisation administrée restent joignables, `GET /bootstrap/platform-setup-state` ne renvoie aucun secret (authentification exigée si nécessaire), `apiKey` n'est plus conservée en clair dans `platform_setup_snapshot`, les messages d'erreur passent par le scrubber, `_REGISTERED_SECRET_VALUES` est borné, et l'`assert det_ms < 80.0` de production est supprimé.
+**Then** la connexion est refusée (validation à la configuration **et** à la connexion, avec *pinning* DNS), les hôtes on-prem de la liste d'autorisation administrée (`localhost` autorisé uniquement en `ORCIA_ENV in ("local", "test")`) restent joignables, `GET /bootstrap/platform-setup-state` ne renvoie sans auth que la projection minimale Jour 0 `{is_initialized, step}` (`0` secret, `0` URI interne, préserve `pnpm db:reset`), le détail complet exige `PLATFORM_ADMIN`, `apiKey` n'est plus conservée en clair dans `platform_setup_snapshot`, les messages d'erreur passent par le scrubber, `_REGISTERED_SECRET_VALUES` est borné, et l'`assert det_ms < 80.0` de production est supprimé. En parallèle (`D9`), `CAP-022`, `CAP-070` et `CAP-072` sont rétrogradées en `verification: api` dans `docs/product/capabilities.yaml` avec `pnpm site:sync && pnpm site:check` vert.
 
 ---
 
@@ -3141,7 +3141,7 @@ As a Tech Lead (`Amelia`),
 I want déplacer la logique LLM, prompt, providers et télémétrie de `apps/api/routers/` vers `orcia_core` derrière des ports, fusionner les trois constructeurs de prompt en un `AssistantPromptBuilder` unique localisé `fr`/`en`, résoudre la casquette depuis le profil utilisateur et supprimer toute branche conditionnée aux tests dans le code de production,
 So that le harnais respecte `AD-1` / `AD-19`, soit testable par injection au Composition Root et serve de socle unique aux stories de convergence.
 
-**Lot :** 2 — Fondations noyau. **Dépendances :** `26.1`. **Agent :** `bmad-dev-worker` (`flash`).
+**Lot :** 2 — Fondations noyau. **Dépendances :** `26.1`. **Agent :** `bmad-dev-worker` (`flash`, Implémentation + Tests distincts `D11`).
 **Constats couverts :** `H-24`, `H-25`, `H-30` (P2), `H-31`, `H-34`.
 **CAP couvertes :** `CAP-069`, `CAP-074`, `CAP-076`.
 **Fichiers impactés :** `apps/api/src/orcia_api/routers/assistant_llm_{bridge,prompts,providers,resolver,gemini_adapter}.py`, `assistant_background_turns.py`, `_assistant_usage_telemetry.py`, `_assistant_workspace_context.py`, `agents_and_skills.py`, `apps/api/src/orcia_api/dependencies/portal_and_assistant.py`, `core_and_lifespan.py`, `packages/orcia-core/src/orcia_core/ports/`, `packages/orcia-core/src/orcia_core/orchestration/assistant_harness.py`, `assistant_governance.py`, `assistant_three_speed_router.py`, `assistant_agent.py`, `assistant_citations_and_v5_guard.py`, `assistant_folders_and_sharing.py`, `apps/api/src/orcia_api/schemas/assistant.py`.
@@ -3169,7 +3169,7 @@ As a Utilisateur de `Mon Assistant` sur plusieurs onglets, et Exploitant de la p
 I want que chaque tour soit identifié, borné, arrêtable proprement, rattachable après coupure ou F5 et partagé entre workers via Redis, sans jamais bloquer l'event loop,
 So that deux onglets ou utilisateurs ne s'écrasent plus, que les tokens consommés soient toujours comptés et que l'API supporte `--workers > 1` et les redémarrages.
 
-**Lot :** 3 — Fiabilité & persistance (parallélisable avec `26.4a` / `26.4b`). **Dépendances :** `26.2`. **Agent :** `bmad-dev-worker` (`flash`).
+**Lot :** 3 — Fiabilité & persistance (worktree isolé `workspace: "share"` en parallèle de `26.4a` / `26.4b`, fusionné en premier dans la séquence `26.3 → 26.4a → 26.4b`, `D10`). **Dépendances :** `26.2`. **Agent :** `bmad-dev-worker` (`flash`, Implémentation + Tests distincts `D11`).
 **Constats couverts :** `H-10`, `H-11`, `H-20`, `H-21`, `H-23`, `H-33`.
 **CAP couvertes :** `CAP-069`, `CAP-075`.
 **Fichiers impactés :** orchestration des tours issue de `26.2` (`orcia_core`), `apps/api/src/orcia_api/routers/assistant_workspace.py`, `assistant.py`, `packages/orcia-core/src/orcia_core/orchestration/step_executors.py`, `assistant_agent.py`, `packages/orcia-core/src/orcia_core/rag/context_adapters.py`, `hybrid_rag_service.py`, `apps/worker/` (selon D2), `tests/integration/`.
@@ -3185,9 +3185,9 @@ So that deux onglets ou utilisateurs ne s'écrasent plus, que les tokens consomm
 **When** l'utilisateur appelle `stop`, ou que la connexion SSE est coupée puis rouverte (F5) éventuellement sur un autre worker
 **Then** `stop` émet l'événement terminal `turn_stopped` et persiste en `finally` les tokens partiels dans `audit_ledger` (idempotence `turn_id` préservée). Le client se rattache via `GET …/stream?after=<cursor>` et reçoit les événements manquants sans duplication. Un test d'intégration à 2 instances d'application sur le même Redis le prouve.
 
-**Given** les chemins d'exécution du harnais
+**Given** les chemins d'exécution du harnais et le routage vers `apps/worker` (`D2`, `D2.a`)
 **When** un tour s'exécute
-**Then** aucun appel bloquant n'a lieu dans l'event loop (fin de `ThreadPoolExecutor(...).result()`, générateurs SSE et recherche hybride en `async`, fin du `if loop.is_running(): pass`). Les erreurs provider (HTTP, timeout, aucun jeton) émettent un `stream_error` RFC 9457 + `trace_id` au lieu d'être masquées. Un retry borné (2, avec backoff) s'applique avant le premier octet sur `429/502/503`, ainsi qu'un timeout d'inactivité entre chunks. Une limite de débit Redis en fenêtre glissante et un sémaphore de tours concurrents par utilisateur renvoient `429` RFC 9457 au-delà du quota.
+**Then** aucun appel bloquant n'a lieu dans l'event loop (fin de `ThreadPoolExecutor(...).result()`, générateurs SSE et recherche hybride en `async`, fin du `if loop.is_running(): pass`). Les tours Speed 2/3 s'exécutent dans un acteur Dramatiq idempotent (`turn_id`) avec heartbeat worker Redis ; si aucun worker ne dépile sous `<= 3 s`, le tour échoue en *fail-fast* (`stream_error` RFC 9457 `503 ERR_ASSISTANT_WORKER_UNAVAILABLE` + `trace_id`, zéro repli caché en `asyncio.Task`) et la suite Couche 2 démarre un vrai consommateur Dramatiq sur le Redis `testcontainers`. Les erreurs provider (HTTP, timeout, aucun jeton) émettent un `stream_error` RFC 9457 + `trace_id` au lieu d'être masquées. Un retry borné (2, avec backoff) s'applique avant le premier octet sur `429/502/503`, ainsi qu'un timeout d'inactivité entre chunks. Une limite de débit Redis en fenêtre glissante et un sémaphore de tours concurrents par utilisateur renvoient `429` RFC 9457 au-delà du quota.
 
 ---
 
@@ -3197,7 +3197,7 @@ As a Exploitant de la plateforme,
 I want que le cache de prompt, les verrous de tour par fil et le snapshot de configuration LLM soient partagés via Redis et invalidés par événements de domaine, et que plus aucun DDL ne soit exécuté à la volée par requête,
 So that le harnais soit cohérent entre workers, réagisse immédiatement aux changements de glossaire ou de paramètres et ne dégrade plus PostgreSQL à chaque tour.
 
-**Lot :** 3 — Fiabilité & persistance (parallélisable). **Dépendances :** `26.2`. **Agent :** `bmad-dev-worker` (`flash`).
+**Lot :** 3 — Fiabilité & persistance (worktree isolé `workspace: "share"`, fusionné après `26.3` et avant `26.4b` dans la séquence `26.3 → 26.4a → 26.4b`, `D10`). **Dépendances :** `26.2`. **Agent :** `bmad-dev-worker` (`flash`, Implémentation + Tests distincts `D11`).
 **Constats couverts :** `H-09` (cache, verrous), `H-19`, `H-22` (Outbox), `H-32`, `H-35`.
 **CAP couvertes :** `CAP-071`, `CAP-073`.
 **Fichiers impactés :** `packages/orcia-core/src/orcia_core/orchestration/assistant_three_speed_router.py`, `_assistant_folders_sync.py`, `assistant_folders_and_sharing.py`, `apps/api/src/orcia_api/dependencies/portal_and_assistant.py`, `_rag_availability_guards.py`, `apps/api/src/orcia_api/routers/assistant_llm_resolver.py` (ou son successeur noyau), `infra/migrations/versions/`.
@@ -3225,7 +3225,7 @@ As a Administrateur d'Espace (`Claire`) et Utilisateur,
 I want que mes préférences et réglages Mode A (Utilisateur / Équipe / Espace), mes graphes Studio Mode B, les brouillons d'artefacts, l'audit des citations fantômes, mes retours sur les tours et les pièces jointes / tags de mes dossiers soient persistés en PostgreSQL 18,
 So that rien ne soit perdu au redémarrage, au F5 ou entre workers, et que la gouvernance de l'assistant soit réellement opposable.
 
-**Lot :** 3 — Fiabilité & persistance (parallélisable). **Dépendances :** `26.2`. **Agent :** `bmad-dev-worker` (`flash`).
+**Lot :** 3 — Fiabilité & persistance (worktree isolé `workspace: "share"`, fusionné en dernier dans la séquence `26.3 → 26.4a → 26.4b` avec rechaînage linéaire obligatoire du `down_revision` Alembic sur `26.4a`, `D10`). **Dépendances :** `26.2`. **Agent :** `bmad-dev-worker` (`flash`, Implémentation + Tests distincts `D11`).
 **Constats couverts :** `H-09` (solde), `H-37` (partiel : `BUG-E2E-01b`).
 **CAP couvertes :** `CAP-070`, `CAP-072`, `CAP-073`.
 **Fichiers impactés :** `infra/migrations/versions/`, `packages/orcia-core/src/orcia_core/orchestration/assistant_governance.py`, `assistant_citations_and_v5_guard.py`, `assistant_folders_and_sharing.py`, `_internal/_sql_assistant_folders_queries.py`, nouveaux `_internal/sql_assistant_*.py`, `apps/api/src/orcia_api/dependencies/portal_and_assistant.py`, `apps/api/src/orcia_api/routers/assistant_workspace.py` (feedback).
@@ -3235,7 +3235,7 @@ So that rien ne soit perdu au redémarrage, au F5 ou entre workers, et que la go
 
 **Given** une base réinitialisée (`pnpm db:reset`) puis migrée
 **When** les révisions Alembic de la story sont appliquées et annulées
-**Then** la gouvernance Mode A s'appuie sur `workspace_customization_overrides` (migration `0003`) et les nouvelles tables `assistant_studio_graphs`, `assistant_citation_drafts` et `assistant_turn_feedback`, ainsi que les colonnes `working_attachments_uris` / `evidence_tags` d'`assistant_folders`, existent en `UUIDv7`, en SQL brut, avec `upgrade()` / `downgrade()` testés.
+**Then** la gouvernance Mode A s'appuie sur `workspace_customization_overrides` (migration `0003`) et les nouvelles tables `assistant_studio_graphs` (schéma contraint à la topologie fixe `N1–N5` avec verrous Couche 1/`N1`/V5/`CitationGuard` non désactivables, `D1.b`), `assistant_citation_drafts` et `assistant_turn_feedback`, ainsi que les colonnes `working_attachments_uris` / `evidence_tags` d'`assistant_folders`, existent en `UUIDv7`, en SQL brut, avec un seul `alembic heads` linéaire après fusion de `26.4a` et `upgrade()` / `downgrade()` testés.
 
 **Given** un utilisateur qui modifie la gouvernance Mode A/B, sauvegarde un brouillon, envoie un feedback de tour ou attache des pièces jointes et tags à un dossier
 **When** l'application est redémarrée, puis relue à froid après éviction des caches
@@ -3249,7 +3249,7 @@ As a Utilisateur métier (`Thomas`, `Lucas`),
 I want que l'assistant raisonne sur l'ontologie réelle de mon espace (concepts pertinents, axiomes, traduction selon ma casquette), les sources indexées de mon espace (RAG hybride PG18) et l'état actif du Blackboard, dans un budget de contexte maîtrisé,
 So that les réponses soient fondées sur la vérité de l'organisation, avec des preuves traçables, et non sur un seed de test ou les huit premiers concepts venus.
 
-**Lot :** 4 — Contexte réel. **Dépendances :** `26.3`, `26.4a`, `26.4b`. **Agent :** `bmad-dev-worker` (`flash`).
+**Lot :** 4 — Contexte réel. **Dépendances :** `26.3`, `26.4a`, `26.4b`. **Agent :** `bmad-dev-worker` (`flash`, Implémentation + Tests distincts `D11`).
 **Constats couverts :** `H-12`, `H-13`, `H-18` (serveur).
 **CAP couvertes :** `CAP-022`, `CAP-190`.
 **Fichiers impactés :** `AssistantPromptBuilder` (issu de `26.2`), `packages/orcia-core/src/orcia_core/ontology/`, `packages/orcia-core/src/orcia_core/rag/`, `apps/api/src/orcia_api/dependencies/core_and_lifespan.py`, `_core_providers.py`, `apps/api/src/orcia_api/routers/_assistant_workspace_context.py` (ou son successeur), `infra/migrations/versions/` (`assistant_thread_messages`, D4).
@@ -3277,7 +3277,7 @@ As a Développeur de la boucle agentique,
 I want que le port de streaming expose de façon unifiée les deltas d'appels d'outils de chaque dialecte, détecte la fin de tour pour appel d'outil, connaisse la capacité `supports_tools` du modèle et impose des budgets d'itérations, de tokens et de durée,
 So that la boucle d'outils puisse être construite sur un transport fiable et borné au lieu de jeter les `tool_calls` et de finir en `stream_error`.
 
-**Lot :** 5 — Boucle d'outils. **Dépendances :** `26.5`. **Agent :** `bmad-dev-worker` (`flash`).
+**Lot :** 5 — Boucle d'outils. **Dépendances :** `26.5`. **Agent :** `bmad-dev-worker` (`flash`, Implémentation + Tests distincts `D11`).
 **Constats couverts :** `H-03` (transport), `H-04`, `H-27` (dialectes).
 **CAP couvertes :** `CAP-074`, `CAP-076`, `CAP-190` (découverte `supports_tools`).
 **Fichiers impactés :** `LlmStreamingPort` et adaptateurs (issus de `26.2`), Hub Modèles IA (`packages/orcia-core/src/orcia_core/orchestration/_internal/sql_ai_model_*.py`, `apps/api/src/orcia_api/routers/ai_models_hub.py`), `packages/orcia-core/src/orcia_core/testing/` (cassettes), `infra/migrations/versions/` (si colonne `supports_tools`).
@@ -3291,7 +3291,7 @@ So that la boucle d'outils puisse être construite sur un transport fiable et bo
 
 **Given** un modèle déclaré dans le Hub Modèles IA
 **When** la découverte (0 token) ou le test de connexion est exécuté
-**Then** la capacité `supports_tools` est déterminée et persistée en PG18. Un modèle `supports_tools=false` ne reçoit jamais de `tools`, et les vitesses 2/3 lui sont signalées comme indisponibles.
+**Then** la capacité `supports_tools` est déterminée et persistée en PG18, avec possibilité d'override manuel par `PLATFORM_ADMIN` (proxies opaques). Un modèle `supports_tools=false` ne reçoit jamais de `tools` (aucune émulation XML/ReAct), ne déclenche pas d'escalade automatique `D1.a`, et tout appel API forçant Speed 2/3 est rejeté en `422 ERR_MODEL_TOOLS_UNSUPPORTED` (RFC 9457). Les vitesses 2/3 lui sont signalées comme indisponibles dans l'API et l'UI.
 
 **Given** une séquence d'appels d'outils
 **When** les budgets du profil (itérations, tokens, durée murale) sont atteints
@@ -3305,9 +3305,9 @@ As a Responsable SecOps (`Sophie`) et Utilisateur outillé,
 I want que chaque outil proposé à l'assistant soit issu d'un catalogue réel et autorisé pour moi, et que chaque appel passe par le Permission Broker, le Verrou V5 et la garde d'ancre humaine, s'exécute de façon bornée et isolée, et soit audité,
 So that l'assistant puisse réellement agir (lecture chirurgicale, recherche, ontologie, skills) sans jamais écrire dans le SI hors d'une Gate de processus ni rédiger un livrable réservé à un humain.
 
-**Lot :** 5 — Boucle d'outils. **Dépendances :** `26.6a`. **Agent :** `bmad-dev-worker` (`flash`).
+**Lot :** 5 — Boucle d'outils. **Dépendances :** `26.6a`. **Agent :** `bmad-dev-worker` (`flash`, Implémentation + Tests distincts `D11`).
 **Constats couverts :** `H-03` (exécution), `H-22` (audit outils), `H-27` (catalogue), `H-28`, `H-29`.
-**CAP couvertes :** `CAP-160`, `CAP-022` ; nouvelle capacité **`CAP-260`** « Boucle d'outils gouvernée de Mon Assistant » à créer.
+**CAP couvertes :** `CAP-160`, `CAP-022` ; nouvelle capacité **`CAP-260`** « Boucle d'outils gouvernée de Mon Assistant » créée dès cette story en `verification: api` (`D9`).
 **Fichiers impactés :** `packages/orcia-core/src/orcia_core/ports/` (`AssistantToolExecutorPort`), `packages/orcia-core/src/orcia_core/agents/` (`GovernedAssistantToolRouter`, profil `ASSISTANT`), `packages/orcia-core/src/orcia_core/permissions/broker.py`, `orchestration/assistant_citations_and_v5_guard.py`, `orchestration/human_anchors_and_arbitration.py`, `orchestration/agents_and_skills_manager.py`, `packages/orcia-connectors/src/orcia_connectors/surgical.py`, `reflexive_write_gate.py`, `docs/product/capabilities.yaml`.
 **Rapport Tech Lead :** `docs/implementation-artifacts/tech-lead-reports/26-6b-routeur-d-outils-gouverne-broker-v5-ancres-et-audit-tech-lead-report.md`.
 
@@ -3333,7 +3333,7 @@ As a Utilisateur de `Mon Assistant`,
 I want que chaque message déclenche une seule exécution, gouvernée de bout en bout (5 couches, contexte réel, outils gouvernés, citations vérifiées),
 So that la réponse que je lis soit celle qu'ORCIA garantit, sans coût double ni citation fantôme.
 
-**Lot :** 6 — Convergence. **Dépendances :** `26.6b`. **Agent :** `bmad-dev-worker` (`flash`) ; revue `bmad-architect-worker` (`pro`) obligatoire.
+**Lot :** 6 — Convergence. **Dépendances :** `26.6b`. **Agent :** `bmad-dev-worker` (`flash`, Implémentation + Tests distincts `D11`) ; revue `bmad-architect-worker` (`pro`) obligatoire.
 **Constats couverts :** `H-01`, `H-02`, `H-14` (serveur).
 **CAP couvertes :** `CAP-022`, `CAP-071`, `CAP-072`, `CAP-160`, `CAP-260`.
 **Fichiers impactés :** `packages/orcia-core/src/orcia_core/orchestration/` (`AssistantTurnEngine`, `assistant_three_speed_router.py`, `assistant_agent.py`, `assistant_citations_and_v5_guard.py`), `packages/orcia-core/src/orcia_core/agents/reflexive_runtime.py`, `apps/api/src/orcia_api/routers/assistant_turns.py` (nouveau), `assistant_workspace.py`, `assistant.py`, `mcp_and_test_bench.py` / `governed_mcp_exposure.py` (`assistant.ask`), `apps/api/src/orcia_api/schemas/assistant_turns.py`, `packages/api-client/`, `infra/migrations/versions/` (`reflexive_execution_sessions.execution_profile`).
@@ -3343,15 +3343,15 @@ So that la réponse que je lis soit celle qu'ORCIA garantit, sans coût double n
 
 **Given** un tour Speed 1, Speed 2 ou Speed 3
 **When** il est soumis via `POST /api/v1/assistant/turns` ou via la façade `/three-speed/stream`
-**Then** un seul `AssistantTurnEngine` l'exécute : fast-path single-shot pour Speed 1 (TTFT p95 `< 1,2 s` mesuré en Couche 2, persistance après le premier octet) ; profil `ASSISTANT` du runtime réflexif pour Speed 2/3 (`reflexive_execution_sessions.execution_profile = 'ASSISTANT'`, comportement `PROCESS` inchangé et tests `16-2` / `process_dispatcher` verts). Une seule exécution LLM a lieu par tour (fin du déclenchement parallèle `three-speed` + `reflexive`), et la façade relaie le flux Redis sans casser les specs `02`, `12`, `16` et `21`.
+**Then** un seul `AssistantTurnEngine` l'exécute : fast-path single-shot pour Speed 1 (TTFT p95 `< 1,2 s` mesuré en Couche 2, persistance après le premier octet) ; ou **escalade automatique 100 % pré-LLM `Speed 1 → Speed 2` (`D1.a`)** avant tout appel LLM (si `N1 IntentGuard` détecte un besoin d'outil ou si la preuve RAG post-préfetch `N3 < 50 ms` est insuffisante, uniquement quand `supports_tools=true`), avec émission SSE `speed_escalated` (`from_speed`, `to_speed`, `reason_code`) et bascule vers l'acteur Dramatiq sur le même flux Redis ; et profil `ASSISTANT` du runtime réflexif pour Speed 2/3 (`reflexive_execution_sessions.execution_profile = 'ASSISTANT'`, topologie `N1–N5` fixe avec paramètres Mode B sur `N2–N5` uniquement `D1.b`, comportement `PROCESS` inchangé et tests `16-2` / `process_dispatcher` verts). Une seule exécution LLM a lieu par tour (fin du déclenchement parallèle `three-speed` + `reflexive`), et la façade relaie le flux Redis sans casser les specs `02`, `12`, `16` et `21`.
 
 **Given** une réponse en cours de synthèse
 **When** elle se termine
 **Then** `AssistantCitationAndV5GuardService.verify_and_sanitize_citations` est exécuté **avant** `turn_completed` contre l'`EvidenceTable` serveur. Toute balise `[Sn]` / `[Gn]` / `[On]` sans preuve est purgée et journalisée, et un événement `citation_map` (identifiant, URI, niveau d'autorité, fraîcheur, extrait autorisé) est émis. Un eval golden prouve « 0 citation fantôme » sur le chemin réel.
 
-**Given** les routes historiques sans appelant
+**Given** les routes historiques sans appelant et l'outil MCP `assistant.ask`
 **When** la convergence est livrée
-**Then** `POST /assistant/chat`, `/chat/stream`, `/three-speed/turn` et `/three-speed/invalidate-cache` sont marquées `deprecated` dans l'OpenAPI (suppression en `26.10`). `assistant.ask` (MCP `POST /mcp/spaces/{ws}/invoke`) est raccordé au moteur unique ou explicitement déprécié, et le SDK est régénéré (`0-diff`).
+**Then** `POST /assistant/chat`, `/chat/stream`, `/three-speed/turn`, `/three-speed/invalidate-cache`, `/citations/verify-turn` et `/artifacts/action` sont marquées `deprecated` dans l'OpenAPI (`D8`, suppression en `26.10` avec la façade `/three-speed/*`). `assistant.ask` (MCP `POST /mcp/spaces/{ws}/invoke`) est **raccordé** à `AssistantTurnEngine` en Speed 1 synchrone lecture seule gouvernée sous les 7 verrous MCP + `QuotaGuard` + `ScopeAccessGuard` + `CitationGuard` (`D7`), et le SDK est régénéré (`0-diff`).
 
 ---
 
@@ -3361,7 +3361,7 @@ As a Contributeur Human-Led,
 I want que lorsqu'une action proposée par l'assistant nécessite une écriture SI ou un livrable réservé à un humain, elle soit transformée en exécution de processus durable (DBOS + PG18) qui s'arrête aux ancres humaines et aux Gates,
 So that l'assistant ne puisse jamais contourner `AD-2` / `AD-3` / V5, et que la continuité entre conversation et processus soit traçable.
 
-**Lot :** 6 — Convergence. **Dépendances :** `26.7`. **Agent :** `bmad-dev-worker` (`flash`).
+**Lot :** 6 — Convergence. **Dépendances :** `26.7`. **Agent :** `bmad-dev-worker` (`flash`, Implémentation + Tests distincts `D11`).
 **Constats couverts :** `H-05`.
 **CAP couvertes :** `CAP-022`, `CAP-160`, `CAP-260`.
 **Fichiers impactés :** `packages/orcia-core/src/orcia_core/orchestration/assistant_agent.py` (`save_and_launch_workflow`), `engine.py`, `human_anchors_and_arbitration.py`, `orchestration_sql_wiring.py`, `apps/api/src/orcia_api/routers/assistant.py`, `assistant_turns.py`.
@@ -3373,9 +3373,9 @@ So that l'assistant ne puisse jamais contourner `AD-2` / `AD-3` / V5, et que la 
 **When** le processus est lancé
 **Then** il s'exécute sur le moteur durable DBOS + PG18 (`workflow_runs`, `step_executions`, `blackboard_snapshots`, `domain_events_outbox` persistés et vérifiés par `SELECT`). L'étape ancrée est créée en `WAITING_FOR_HUMAN_ANCHOR` et l'exécution s'arrête au premier statut `WAITING_*`. Toute tentative de commit sans signature est rejetée en `422 ERR_HUMAN_ANCHOR_REQUIRED`.
 
-**Given** la décision D6 ratifiée par `26.0`
-**When** `/assistant/workflows/save-and-launch` est traité
-**Then** soit il délègue au même chemin durable (aucune exécution en mémoire via `WorkflowEngineService`), soit il est déprécié et retiré du SDK. Un test d'intégration sur le Composition Root réel couvre le parcours conversation → approbation → processus en attente d'ancre → reprise après signature.
+**Given** la décision `D6` ratifiée par `epic-26-decisions-grill-2026-11-21.md` et `26.0`
+**When** `/assistant/workflows/save-and-launch` et `POST /folders/{id}/launch-process` sont traités
+**Then** `POST /turns/{id}/approve` et `POST /folders/{id}/launch-process` délèguent au chemin durable DBOS + PG18 (`WAITING_FOR_HUMAN_ANCHOR`), tandis que `POST /assistant/workflows/save-and-launch` et son exécution en mémoire (`WorkflowEngineService`) sont marqués `deprecated` dans OpenAPI (pour suppression complète avec le SDK en `26.10`). Un test d'intégration sur le Composition Root réel couvre le parcours conversation → approbation → processus en attente d'ancre → reprise après signature.
 
 ---
 
@@ -3385,7 +3385,7 @@ As a Utilisateur de `Mon Assistant`,
 I want que l'écran utilise exclusivement les API du moteur unique (tour rattachable, gouvernance, citations serveur, fils PG18, trace d'outils, cartes d'approbation) sans état métier local,
 So that ce que je vois soit fidèle à ce qui est persisté et gouverné, et survive au rechargement.
 
-**Lot :** 7 — UI & clôture. **Dépendances :** `26.7`, `26.8`. **Agent :** `bmad-dev-worker` (`flash`).
+**Lot :** 7 — UI & clôture. **Dépendances :** `26.7`, `26.8`. **Agent :** `bmad-dev-worker` (`flash`, Implémentation + Tests distincts `D11`).
 **Constats couverts :** `H-14` (UI), `H-18` (UI), `H-26`.
 **CAP couvertes :** `CAP-070`, `CAP-071`, `CAP-072`, `CAP-073`, `CAP-260`.
 **Fichiers impactés :** `apps/web/src/features/inbox/` (`useInboxPanelController.ts`, `useAssistantStreamingTurn.ts`, `assistantBackgroundStreamStore.ts`, `assistantTurnPayloadHelper.ts`, `assistantAutocompleteHelpers.ts`, `inboxCitationHelpers.ts`, `InboxAuxiliaryPanels.tsx`, `index.tsx`), `packages/ui/src/` (`AssistantToolCallTrace`, `AssistantApprovalRequiredCard`, état « outils indisponibles »), `apps/web/src/i18n/locales/`, `packages/api-client/`, `apps/web/e2e/`.
@@ -3395,15 +3395,15 @@ So that ce que je vois soit fidèle à ce qui est persisté et gouverné, et sur
 
 **Given** un utilisateur sur `/assistant`
 **When** il envoie un message, recharge la page (F5) pendant le tour puis consulte ses fils
-**Then** l'UI déclenche un seul tour (`POST /assistant/turns`), se rattache au flux via le curseur après F5, réhydrate l'historique et le `thread_id` depuis PG18 (aucun historique envoyé depuis le `localStorage`) et affiche la trace `tool_call` / `tool_result` sans jargon. Le test Vitest `RouterProvider` réel et la spec Playwright `22-assistant-tool-loop-approval-and-reattach.spec.ts` (avec `reloadColdFromPg`) le prouvent.
+**Then** l'UI déclenche un seul tour (`POST /assistant/turns`), se rattache au flux via le curseur après F5, réhydrate l'historique via `GET /assistant/threads/{id}/messages` et le `thread_id` depuis PG18 (aucun historique envoyé depuis le `localStorage`, aucun appel à un doublon `POST /threads/{id}/turns` ni à `/three-speed/*`), affiche la trace `tool_call` / `tool_result` sans jargon et affiche un badge/indicateur localisé lorsque l'événement `speed_escalated` (`D1.a`) bascule Speed 1 → Speed 2. Le test Vitest `RouterProvider` réel et la spec Playwright `22-assistant-tool-loop-approval-and-reattach.spec.ts` (avec `reloadColdFromPg`) le prouvent.
 
 **Given** une réponse comportant des citations, une proposition d'action d'écriture, ou un modèle `supports_tools=false`
 **When** elle est rendue
 **Then** les pastilles de citation proviennent exclusivement de `citation_map` (suppression de `filterUsedRagSourcesForTurn` et de la fabrication client `[Sn]` / `REFERENCE` / `FRESH`). Une `AssistantApprovalRequiredCard` route vers la Gate de processus, et Speed 2/3 sont désactivées avec un message localisé. Tous les libellés passent par `i18n/locales/{fr,en}.ts`, et l'audit « zéro bouton muet » ainsi que la synchronisation des `data-testid` sont verts.
 
-**Given** le panneau de gouvernance Mode A/B, `threads/{id}/turns` et `launch-process`
+**Given** le panneau de gouvernance Mode A/B, le feedback de tour et `launch-process`
 **When** l'utilisateur les manipule
-**Then** ils lisent et écrivent via `@orcia/api-client` (fin du `localStorage` métier, `assembledLayers` et `studioNodes` alimentés par l'API), l'état survit au F5 et à la relecture à froid PG18, et le SDK est régénéré `0-diff`.
+**Then** ils lisent et écrivent via `@orcia/api-client` (`POST /assistant/turns/{id}/feedback`, `POST /folders/{id}/launch-process`, endpoints Mode A/B ; fin du `localStorage` métier, `assembledLayers` et `studioNodes` alimentés par l'API avec nœuds de garde Couche 1/`N1`/V5/`CitationGuard` verrouillés en UI selon `D1.b`), les specs E2E `02`, `12`, `16` et `21` migrent sur la surface canonique `/assistant/turns*` (`D8`), l'état survit au F5 et à la relecture à froid PG18, et le SDK est régénéré `0-diff`.
 
 ---
 
@@ -3413,7 +3413,7 @@ As a Tech Lead et Responsable Qualité,
 I want verrouiller par des evals, des tests de sécurité, un test multi-worker et des audits AST les garanties obtenues, supprimer les routes dépréciées, solder les tickets liés et requalifier honnêtement les capacités,
 So that la dette du harnais ne puisse pas réapparaître et que le registre des capacités reflète le comportement réel.
 
-**Lot :** 7 — UI & clôture. **Dépendances :** `26.9`. **Agent :** `bmad-dev-worker` (`flash`) ; revue finale `bmad-architect-worker` (`pro`).
+**Lot :** 7 — UI & clôture. **Dépendances :** `26.9`. **Agent :** `bmad-dev-worker` (`flash`, Implémentation + Tests distincts `D11`) ; revue finale `bmad-architect-worker` (`pro`).
 **Constats couverts :** `H-36`, `H-37`.
 **CAP couvertes :** `CAP-022`, `CAP-069` à `CAP-076`, `CAP-160`, `CAP-190`, `CAP-260`.
 **Fichiers impactés :** `tests/evals/golden/` (`assistant_tool_loop.jsonl`, `assistant_anchor_and_v5.jsonl`, `assistant_tool_output_injection.jsonl`), `tests/security/`, `tests/integration/`, `tests/unit/` (audits AST), `apps/api/src/orcia_api/routers/assistant*.py`, `packages/api-client/`, `docs/product/capabilities.yaml`, `docs/implementation-artifacts/sprint-status.yaml`.
@@ -3423,12 +3423,12 @@ So that la dette du harnais ne puisse pas réapparaître et que le registre des 
 
 **Given** les garanties livrées par `26.1` à `26.9`
 **When** la suite de vérification est exécutée
-**Then** les evals golden (boucle d'outils, ancres et V5, injection via résultat d'outil, 0 citation fantôme) passent à 0 \$ via `DeterministicCassetteLLM`. Les tests de sécurité (IDOR slug + UUID, `403` Observateur avant le premier octet, SSRF par rebinding DNS, non-fuite de `apiKey`, masquage `CONFIDENTIAL_RESTRICTED` dans le prompt) et le test multi-worker (2 instances, `stop` et rattachement croisés) sont verts. De nouveaux audits AST interdisent tout état métier mutable module-level dans le harnais, toute route `/assistant/*` mutante sans garde de portée et Observateur, et toute branche `testclient` dans `src/`.
+**Then** les evals golden (boucle d'outils, ancres et V5, injection via résultat d'outil, 0 citation fantôme) passent à 0 \$ via `DeterministicCassetteLLM`. Les tests de sécurité (IDOR slug + UUID, `403` Observateur avant le premier octet, SSRF par rebinding DNS, non-fuite de `apiKey` dont `GET /bootstrap/platform-setup-state`, masquage `CONFIDENTIAL_RESTRICTED` dans le prompt) et le test multi-worker (2 instances API + vrai consommateur Dramatiq sur le même Redis : `stop`, rattachement croisé et fail-fast `503` sans worker, `D2.a`) ainsi que la suite E2E (avec worker Dramatiq actif) sont verts. De nouveaux audits AST interdisent tout état métier mutable module-level dans le harnais, toute route `/assistant/*` mutante sans garde de portée et Observateur, et toute branche `testclient` dans `src/`.
 
-**Given** les routes marquées `deprecated` en `26.7`
+**Given** les routes marquées `deprecated` en `26.7`/`26.8`, la façade `/three-speed/*` et le doublon `POST /threads/{id}/turns` (`D8`)
 **When** la clôture est réalisée
-**Then** elles sont supprimées avec leurs fonctions SDK (`0-diff`) et leurs tests obsolètes. `require_rag_available` et `dependency_overrides` ne figurent plus dans les tests de l'assistant, `BUG-E2E-01b` et `AUTH-01` sont soldés (ou leur reliquat est explicitement rattaché à un `action_item`), et le rapport d'audit `2026-11-21` est complété en Section 3 avec l'état final de chaque constat `H-xx`.
+**Then** toutes les routes v1 et sans appelant (`/three-speed/*`, `/chat*`, `/citations/verify-turn`, `/artifacts/action`, `/workflows/save-and-launch`, `POST /threads/{id}/turns`) sont définitivement supprimées avec leurs fonctions SDK (`0-diff`) et leurs tests obsolètes, laissant `0` endpoint assistant sans appelant ni consommateur documenté. `require_rag_available` et `dependency_overrides` ne figurent plus dans les tests de l'assistant, `BUG-E2E-01b` et `AUTH-01` sont soldés (ou leur reliquat est explicitement rattaché à un `action_item`), et le rapport d'audit `2026-11-21` est complété en Section 3 avec l'état final de chaque constat `H-xx`.
 
 **Given** l'ensemble des stories `26.0` à `26.9` à `done`
 **When** la clôture de l'Epic 26 met à jour `capabilities.yaml` et `sprint-status.yaml` et exécute `pnpm site:sync && pnpm site:check`
-**Then** `CAP-022`, `CAP-070`, `CAP-072` et `CAP-260` ne sont en `verification: runtime` qu'après preuve E2E sur le chemin réel. Les critères de sortie du plan directeur sont atteints (1 chemin LLM par tour, 1 constructeur de prompt, 0 état RAM métier, 0 fichier du harnais `> 300 L`, couverture `>= 90 %`). `ruff`, `mypy --strict`, `lint-imports`, `pytest --cov-fail-under=90`, `pnpm turbo run lint typecheck test`, `lint_spine.py` et `pnpm site:check` passent sans erreur, et `epic-26` passe à `done`.
+**Then** `CAP-022`, `CAP-070`, `CAP-072` et `CAP-260` (tenues en `verification: api` depuis `26.1`/`26.6b`, `D9`) ne sont promues en `verification: runtime` qu'après preuve E2E (`spec 22`) sur le chemin réel. Les critères de sortie du plan directeur sont atteints (1 chemin LLM par tour, 1 constructeur de prompt, 0 état RAM métier, 0 fichier du harnais `> 300 L`, couverture `>= 90 %`). `ruff`, `mypy --strict`, `lint-imports`, `pytest --cov-fail-under=90`, `pnpm turbo run lint typecheck test`, `lint_spine.py` et `pnpm site:check` passent sans erreur, et `epic-26` passe à `done`.

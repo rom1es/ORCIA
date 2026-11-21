@@ -2,9 +2,10 @@
 
 **Date :** 2026-11-21
 **Auteur :** Tech Lead (audit multi-agents + revue `VALIDATE` `bmad-architect-worker`)
-**Statut :** `proposed`. Epic enregistrée (`epic-26: backlog`) et stories `ready-for-dev`. **Non lancée.**
+**Statut :** `approved` (arbitré en session `/grill-me` le 2026-11-21 ; rebasé via `bmad-correct-course`). Epic enregistrée (`epic-26: backlog`) et stories `ready-for-dev`. **Non lancée.**
 **Déclencheur :** audit approfondi du harnais de Mon Assistant, qui conclut à une non-adéquation du chemin réellement servi à l'UI avec les garanties ORCIA (gouvernance, sécurité, persistance, citations).
 **Sources probantes :**
+- [`epic-26-decisions-grill-2026-11-21.md`](../implementation-artifacts/epic-26-decisions-grill-2026-11-21.md) : **14 arbitrages ratifiés (`D1–D11`)** issus de la session `/grill-me` (branche `feat/epic-26-assistant-harness-debt-remediation`, base `bc4bff0`).
 - [`2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md`](../implementation-artifacts/tech-lead-reports/2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md) : 38 constats `H-01..H-38` (14 P0, dont 13 confirmés et 1 partiel ; 16 P1 ; 6 P2 ; 2 P3), 13 endpoints assistant sur 22 sans appelant UI, ~2 100 L de logique métier dans `apps/api/routers/`.
 - [`epics.md` — Epic 26](./epics.md) : 13 stories avec critères d'acceptation.
 - [`sprint-status.yaml`](../implementation-artifacts/sprint-status.yaml) : `epic-26` et ses stories.
@@ -23,29 +24,33 @@ Le modèle conceptuel du harnais (prompt constitutionnel à 5 couches, casquette
 
 Les briques nécessaires existent déjà : `NonDeterministicReflexiveRuntime`, `PermissionBrokerService`, `SurgicalContextExplorer`, Verrou V5, `SqlHybridRagRepository`, sandbox Tier 1/2, MCP gouverné. L'Epic 26 est donc un travail de **convergence et de câblage**, pas de réinvention.
 
-## 2. Architecture cible (à ratifier par la Story 26.0)
+## 2. Architecture cible (arbitrée en `/grill-me`, à ratifier en spine par la Story 26.0)
 
 - **Un seul moteur de tour** (`AssistantTurnEngine`, `orcia_core`) :
-  - **Speed 1** = fast-path single-shot sans outil : pré-fetch RAG borné, stream direct, persistance après le premier octet, TTFT `< 1,2 s`.
-  - **Speed 2/3** = profil `ASSISTANT` du `NonDeterministicReflexiveRuntime` : boucle d'outils bornée et gouvernée.
-- **Les 5 nœuds `AD-15` deviennent des phases** : N1 IntentGuard déterministe → N2 Planner + ontologie → N3 pré-fetch ou boucle d'outils → N4 `EvidenceTable` serveur → N5 synthèse via un `AssistantPromptBuilder` unique, puis `CitationGuard` avant `turn_completed`.
+  - **Speed 1** = fast-path single-shot sans outil : pré-fetch RAG borné (`< 50 ms`), stream direct, persistance après le premier octet, TTFT `< 1,2 s`. **Escalade automatique pré-LLM `Speed 1 → Speed 2` (`D1.a`)** si `N1 IntentGuard` détecte un besoin d'outil ou si la preuve RAG post-préfetch `N3` est insuffisante (uniquement si `supports_tools=true`), avec événement SSE `speed_escalated` et badge localisé UI.
+  - **Speed 2/3** (et tours Speed 1 escaladés par `D1.a`) = profil `ASSISTANT` du `NonDeterministicReflexiveRuntime` : boucle d'outils bornée et gouvernée.
+- **Les 5 nœuds `AD-15` deviennent des phases** : N1 IntentGuard déterministe → N2 Planner + ontologie → N3 pré-fetch ou boucle d'outils → N4 `EvidenceTable` serveur → N5 synthèse via un `AssistantPromptBuilder` unique, puis `CitationGuard` avant `turn_completed`. **Topologie `N1–N5` fixe et verrous scellés (`D1.b`)** : Couche 1, `N1`, V5 et `CitationGuard` non désactivables ; le Studio Mode B paramètre uniquement les réglages déclaratifs `N2–N5`.
 - **Chaîne d'exécution des outils** : `PermissionBroker` → V5/ancre → exécuteur (sandbox pour les skills) → timeout → scrub → `audit_ledger` + Outbox. **Aucune écriture SI depuis l'Assistant** : toute mutation passe par `approval_required` → `CONTINUE_IN_PROCESS` (DBOS + Gate humaine).
 - **État zéro RAM** : PG18 pour le durable (sessions, messages, gouvernance, brouillons, feedback, audit) ; Redis pour l'éphémère partagé (flux d'événements rattachable, cache de prompt, verrous, limite de débit).
-- **Migration en étrangleur (*strangler fig*)** : `/three-speed/stream` devient une façade du nouveau moteur jusqu'au basculement UI, puis les routes mortes sont supprimées.
+- **Migration en étrangleur (*strangler fig*) (`D8`)** : `/three-speed/*` reste une façade du nouveau moteur jusqu'au basculement UI (`26.9`), puis **toutes** les routes dépréciées (`/chat*`, `/three-speed/*`, `/verify-turn`, `/artifacts/action`, `/workflows/save-and-launch`, doublon `POST /threads/{id}/turns`) sont supprimées en `26.10` vers la seule surface canonique `/assistant/turns*`.
 
-### 2.1 Décisions D1–D6 : défauts recommandés (ratifiés ou amendés par `26-0`)
+### 2.1 Décisions arbitrées (`D1–D10`, consignées dans `epic-26-decisions-grill-2026-11-21.md`)
 
-| # | Décision | Défaut recommandé, retenu pour la rédaction des stories |
+| # | Décision | Arbitrage ratifié (`/grill-me` 2026-11-21) |
 | :---: | :--- | :--- |
-| D1 | Moteur unique | Runtime réflexif à profils pour Speed 2/3 + fast-path Speed 1. Nouvel **`AD-25`** (moteur de tour unifié) + amendement `AD-15`. Le Studio Mode B paramètre les phases du profil `ASSISTANT`. |
-| D2 | Protocole et hébergement du tour | `POST /assistant/turns` (202 + `turn_id`) + `GET …/stream?after=cursor` (Redis Streams). Speed 1 en tâche bornée dans l'API avec arrêt gracieux ; Speed 2/3 en **acteur Dramatiq idempotent** (`turn_id`). |
-| D3 | Politique SSRF | Liste d'autorisation administrée (hôtes / CIDR) + blocage permanent métadonnées / link-local + `.local` / `.internal` autorisés + validation DNS à la connexion (*pinning*). |
-| D4 | Messages de fil | Nouvelle table `assistant_thread_messages`. |
-| D5 | Modèles sans function calling | Drapeau `supports_tools` découvert par le Hub IA (0 token) + repli UI (Speed 2/3 désactivées avec message localisé). |
-| D6 | `save_and_launch_workflow` | Raccordement à DBOS + PG18 (`AD-2`) avec `WAITING_FOR_HUMAN_ANCHOR` (`AD-3`), ou dépréciation si aucun parcours produit ne l'exige. |
+| D1 / D1.a / D1.b | Moteur unique, escalade & Studio Mode B | Runtime réflexif à profils (`ASSISTANT`) pour Speed 2/3 + fast-path Speed 1. Escalade auto **100 % pré-LLM** `Speed 1 → Speed 2` (`N1` + post-préfetch `N3 < 50 ms` si `supports_tools=true`, SSE `speed_escalated` + badge UI). Topologie `N1–N5` fixe et verrous scellés (Couche 1, `N1`, V5, `CitationGuard`) ; paramétrage déclaratif `N2–N5` seul. Nouvel **`AD-25`** + amendement `AD-15`. |
+| D2 / D2.a | Protocole, hébergement & résilience worker | `POST /assistant/turns` (202 + `turn_id`) + `GET …/stream?after=cursor` (Redis Streams). Speed 1 en `asyncio.Task` bornée (`apps/api`, drain `SIGTERM`) ; Speed 2/3 (+ escalades `D1.a`) en **acteur Dramatiq idempotent** (`turn_id`, `apps/worker`). En cas d'indisponibilité worker : heartbeat Redis + timeout `<= 3 s` → `503 ERR_ASSISTANT_WORKER_UNAVAILABLE` RFC 9457 (zéro repli silencieux) + vrai worker Dramatiq en Couche 2 / E2E. |
+| D3 | Politique SSRF & `platform-setup-state` | Liste d'autorisation administrée (hôtes / CIDR, `localhost` uniquement en `local`/`test`) + blocage permanent métadonnées / link-local / ports internes + validation DNS à la connexion (*pinning*). `GET /bootstrap/platform-setup-state` limité sans auth à `{is_initialized, step}` (`0` secret, Jour 0 `pnpm db:reset`), détail complet réservé à `PLATFORM_ADMIN`. Amendements `AD-21` / `AD-24`. |
+| D4 | Messages de fil & trace | Nouvelle table `assistant_thread_messages` (`UUIDv7`, `role IN ('user','assistant')`, `citation_map`, `token_count`) + trace d'outils liée par `turn_id` dans `reflexive_execution_sessions`. |
+| D5 | Modèles sans function calling | Drapeau `supports_tools` découvert par le Hub IA (0 token + override `PLATFORM_ADMIN`) + Speed 2/3 désactivées en UI + refus serveur `422 ERR_MODEL_TOOLS_UNSUPPORTED` (zéro émulation XML/ReAct). |
+| D6 | `save_and_launch_workflow` vs `CONTINUE_IN_PROCESS` | Raccordement de `POST /turns/{id}/approve` et `POST /folders/{id}/launch-process` à DBOS + PG18 (`AD-2`) avec `WAITING_FOR_HUMAN_ANCHOR` (`AD-3`) ; **dépréciation (`26.8`) puis suppression (`26.10`)** de `/assistant/workflows/save-and-launch`. |
+| D7 | Outil MCP `assistant.ask` | Raccordement à `AssistantTurnEngine` en **Speed 1 synchrone lecture seule** (7 verrous MCP + `QuotaGuard` + `ScopeAccessGuard` + `CitationGuard`, zéro écriture SI). |
+| D8 | Cycle de vie routes v1 & surface v2 | Étrangleur `/three-speed/*` jusqu'en `26.9`, migration UI + E2E (`feedback` inclus) vers `/assistant/turns*` + `GET /threads/{id}/messages` en `26.9`, puis **purge complète en `26.10`** (`/three-speed/*`, `/chat*`, `/verify-turn`, `/artifacts/action`, `/save-and-launch`, doublon `POST /threads/{id}/turns`). |
+| D9 | Registre `capabilities.yaml` & `CAP-260` | Rétrogradation de `CAP-022`, `CAP-070`, `CAP-072` en `verification: api` dès `26.1` ; création de `CAP-260` (`api`) en `26.6b` ; promotion des 4 en `verification: runtime` uniquement en `26.10` après preuve E2E. |
+| D10 | Lot 3 parallèle isolé | Exécution de `26.3`, `26.4a`, `26.4b` en **3 worktrees `share`**, suivie d'une fusion séquentielle `26.3 → 26.4a → 26.4b` avec rechaînage linéaire Alembic. |
 
 > [!IMPORTANT]
-> Si la Story `26.0` tranche autrement qu'un défaut ci-dessus, les stories impactées doivent être **rebasées via `bmad-correct-course` avant leur lancement**. Aucune story aval ne démarre tant que `26.0` n'est pas `done`.
+> Les décisions `D1–D11` ci-dessus font foi pour `26.0` (`bmad-architect-worker`) et les stories aval rebasées dans `epics.md`. Aucune story aval ne démarre tant que `26.0` n'est pas `done`.
 
 ## 3. Lotissement (8 lots, 13 stories)
 
@@ -54,7 +59,7 @@ Les briques nécessaires existent déjà : `NonDeterministicReflexiveRuntime`, `
 | **Lot 0 — Cadrage** | `26.0` | ADR D1–D6, `AD-25`, contrat SSE v2, rafraîchissement GitNexus | — | S |
 | **Lot 1 — Sécurité immédiate** | `26.1` | Gardes avant stream, portée / IDOR, Observateur, `READ_SOURCE` serveur, Couche 1, SSRF, secrets | — | M |
 | **Lot 2 — Fondations noyau** | `26.2` | Extraction LLM / prompt vers `orcia_core`, prompt builder unique, suppression des branches de test, découpage `> 300 L` | — | L |
-| **Lot 3 — Fiabilité & persistance** | `26.3`, `26.4a`, `26.4b` | Registre de tours Redis, event loop async, limite de débit ; cache, verrous et Outbox Redis ; persistance PG18 de la gouvernance, des citations et du feedback | **3 en parallèle** (fichiers disjoints) | M ×3 |
+| **Lot 3 — Fiabilité & persistance** | `26.3`, `26.4a`, `26.4b` | Registre de tours Redis, event loop async, limite de débit ; cache, verrous et Outbox Redis ; persistance PG18 de la gouvernance, des citations et du feedback | **3 en parallèle en worktrees isolés (`workspace: "share"`) → fusion séquentielle `26.3 → 26.4a → 26.4b` (rechaînage linéaire Alembic)** | M ×3 |
 | **Lot 4 — Contexte réel** | `26.5` | Ontologie PG18, RAG hybride, Blackboard, `EvidenceTable`, budget de tokens | — | L |
 | **Lot 5 — Boucle d'outils** | `26.6a` → `26.6b` | Tool calls 4 dialectes + budgets → routeur d'outils gouverné et audité | séquentiel | M ×2 |
 | **Lot 6 — Convergence** | `26.7` → `26.8` | Moteur de tour unique + citations serveur → `CONTINUE_IN_PROCESS` DBOS + ancres | séquentiel | L + M |
@@ -103,12 +108,13 @@ Chaque story est `ready-for-dev` : ses critères d'acceptation, dépendances, co
 
 1. Vérifier que les dépendances sont `done` dans `sprint-status.yaml`.
 2. Créer le rapport `docs/implementation-artifacts/tech-lead-reports/26-<n>-<slug>-tech-lead-report.md` (Sections 1 et 2) **avant toute modification de code**, après `npx gitnexus analyze` et `gitnexus_impact` sur les symboles cités.
-3. Router selon `bmad-model-routing.md` :
-   - `26.0` et les revues de fin de story → `bmad-architect-worker` (`pro`) ;
-   - chaque autre story → **un** `bmad-dev-worker` (`flash`) dédié ;
-   - escalade en `pro` après 2 échecs consécutifs sur la même cause.
+3. Router selon `bmad-model-routing.md` et la décision **`D11`** :
+   - `26.0` → `bmad-architect-worker` (`pro`), suivi d'un STOP de validation utilisateur (`lint_spine.py`) ;
+   - chaque story dev (`26.1` à `26.10`) → **2 `bmad-dev-worker` (`flash`) distincts** : **#1 Implémentation** (Sections 1 & 2 du rapport Tech Lead + code `< 300 L`) puis **#2 Tests & Vérifications** (5 couches `AD-17` `>= 90 %`, Section 3 du rapport Tech Lead, `README.md`, `capabilities.yaml`) ;
+   - escalade en `pro` après 2 échecs consécutifs sur la même cause ;
+   - pour le Lot 3 (`D10`), exécution en worktrees isolés `workspace: "share"` puis fusion séquentielle `26.3 → 26.4a → 26.4b` avec rechaînage linéaire du `down_revision` Alembic de `26.4b`.
 4. Appliquer TDD strict, 5 couches `AD-17`, couverture `>= 90 %`, `lint-imports` 5/5, OpenAPI `0-diff`, `lint_spine` à 0.
-5. Faire passer la story en `review`, lancer `bmad-code-review`, puis la passer en `done`, mettre à jour `capabilities.yaml` et lancer `pnpm site:sync && pnpm site:check`.
+5. Faire passer la story en `review`, lancer `bmad-code-review` (`bmad-architect-worker` `pro`), puis la passer en `done`, mettre à jour `capabilities.yaml`, lancer `pnpm site:sync && pnpm site:check`, et produire **1 commit Git local atomique par story** (avec STOP et demande de **GO** utilisateur en fin de chaque lot).
 
 `epic-26` passe à `in-progress` automatiquement au démarrage de `26.0`.
 
@@ -144,6 +150,6 @@ Chaque story est `ready-for-dev` : ses critères d'acceptation, dépendances, co
 | Régression Processus (runtime partagé) | Composition par profil, défaut `PROCESS` inchangé, tests en garde. |
 | TTFT Speed 1 | Fast-path hors runtime, pré-fetch `< 50 ms`, persistance après le premier octet, p95 mesuré en Couche 2. |
 | Hétérogénéité du function calling | `supports_tools` (D5) + cassettes par dialecte. |
-| Big-bang | Étrangleur ; suppressions de routes en `26.10` seulement. |
-| Décision `26.0` divergente | Rebasage `bmad-correct-course` des stories aval avant leur lancement. |
-| Registre surévalué (`CAP-022`, `CAP-070`, `CAP-072`) | Requalification honnête en `26.10`. |
+| Big-bang | Étrangleur (`/three-speed/*` maintenu jusqu'à `26.9`) ; suppressions complètes (`D8`) en `26.10` seulement. |
+| Décision `26.0` divergente | Arbitrages `D1–D11` déjà rebasés via `bmad-correct-course` avant lancement de `26.0` ; tout nouvel écart en `26.0` rebasé avant `26.1`. |
+| Registre surévalué (`CAP-022`, `CAP-070`, `CAP-072`) | Requalification en `verification: api` dès `26.1` puis promotion en `verification: runtime` en `26.10` après preuve E2E (`D9`). |
