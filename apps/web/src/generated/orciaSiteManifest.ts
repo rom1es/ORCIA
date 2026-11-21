@@ -544,7 +544,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "phaseOrStory": "Audit",
       "reportFile": "2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md",
       "domain": "Audit approfondi du harnais « Mon Assistant » (topologie, boucle d'outils, contexte, runtime, sécurité, tests) & plan de remédiation Epic 26 proposé",
-      "summary": "Plan (proposed) : 38 constats H-xx (14 P0), 13/22 endpoints assistant sans appelant UI, cible = moteur de tour unique (runtime réflexif à profils) gouverné et persistant, 13 stories 26-0..26-10 (P0 re-vérifiés en revue VALIDATE) à enregistrer après arbitrage ADR (AD-15)."
+      "summary": "Plan (proposed) : 38 constats H-xx (14 P0), 13/22 endpoints assistant sans appelant UI, cible = moteur de tour unique (runtime réflexif à profils) gouverné et persistant, 13 stories 26-0..26-10 (P0 re-vérifiés en revue VALIDATE) enregistrées (epic-26: backlog, stories ready-for-dev, non lancée, plan directeur sprint-change-proposal-2026-11-21-epic-26-harnais-assistant-remediation-plan.md, 8 lots)."
     },
     {
       "date": "2026-11-21",
