@@ -14,12 +14,15 @@ const TAILWIND_INPUT_CSS = `
   --color-surface-hover: var(--color-surface-hover);
   --color-surface-primary: var(--color-surface-primary);
   --color-surface-secondary: var(--color-surface-secondary);
+  --color-surface-muted: var(--color-surface-muted);
   --color-surface-border: var(--color-surface-border);
+  --color-border-subtle: var(--color-border-subtle);
   --color-text-primary: var(--color-text-primary);
   --color-text-secondary: var(--color-text-secondary);
   --color-action-primary: var(--color-action-primary);
   --color-brand-primary: var(--color-brand-primary);
   --color-primary: var(--color-primary-cobalt);
+  --color-status-info: var(--color-status-info);
   --color-status-success: var(--color-status-success);
   --color-status-warning: var(--color-status-warning);
   --color-status-danger: var(--color-status-danger);

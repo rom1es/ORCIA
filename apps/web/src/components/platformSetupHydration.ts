@@ -124,6 +124,7 @@ export async function fetchAndBuildHydrationOutcome(params: {
   readonly hasMutatedSinceMount: boolean;
   readonly currentAdmin: ConfiguredPlatformAdmin | null;
   readonly isAuthenticated: boolean;
+  readonly currentUserEmail?: string | null;
 }): Promise<HydrationOutcome> {
   const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
   const status = await client.getAccostageStatus();
@@ -231,7 +232,12 @@ export async function fetchAndBuildHydrationOutcome(params: {
           ? { ownerOrgUnitName: snapMatch.ownerOrgUnitName }
           : {}),
       ...(wsDto.is_personal
-        ? { ownerUserId: status.first_admin_email ?? "session-user" }
+        ? {
+            ownerUserId:
+              (params.currentUserEmail ?? "").trim() ||
+              status.first_admin_email ||
+              "session-user",
+          }
         : {}),
       lifecyclePhase: snapMatch?.lifecyclePhase ?? "BUILD",
       suggestedWorkflows: snapMatch?.suggestedWorkflows ?? [],

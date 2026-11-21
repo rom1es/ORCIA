@@ -2,7 +2,7 @@
 import { expect, test } from "./support/e2eCaptureFixture";
 import { expectDbRowExists } from "./support/dbAssertions";
 import { resetDay0 } from "./support/day0";
-import { configureActiveEmbeddingModelViaApi } from "./support/embeddingModel";
+import { configureActiveChatModelViaApi } from "./support/embeddingModel";
 import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
 import { createBuAndTeamViaUi, createWorkspaceViaUi } from "./support/orgAndWorkspace";
 import { apiGet, reloadColdFromPg } from "./support/typedApiRequest";
@@ -22,13 +22,16 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
       .toBe(E2E_ADMIN.email);
   });
 
-  test("un tour d'assistant traverse le navigateur, l'API et la cassette LLM (0 $) et affiche une réponse", async ({
+  test("un tour d'assistant traverse le navigateur, l'API et la cassette LLM (0 $) sans modèle d'embedding et affiche une réponse", async ({
     page,
   }) => {
-    await configureActiveEmbeddingModelViaApi(page);
+    await configureActiveChatModelViaApi(page);
     await page.goto("/assistant");
+    await expect(page.getByTestId("assistant-rag-inactive-notice")).toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId("assistant-no-chat-model-banner")).toHaveCount(0);
     const input = page.getByRole("textbox", { name: /Tapez @ pour les agents/ });
     await expect(input).toBeVisible({ timeout: 30000 });
+    await expect(input).toBeEnabled();
     await input.fill("Bonjour, présente-toi en une phrase.");
 
     const apiTurn = page.waitForResponse(
@@ -44,9 +47,9 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
       timeout: 30000,
     });
     expectDbRowExists(
-      "SELECT id, usage, is_active FROM workspace_llm_tier_mappings WHERE usage = 'embedding' AND is_active = TRUE",
+      "SELECT id, usage, is_active FROM workspace_llm_tier_mappings WHERE usage = 'chat' AND is_active = TRUE",
       undefined,
-      "modèle d'embedding actif persisté dans workspace_llm_tier_mappings PG18",
+      "modèle chat actif persisté dans workspace_llm_tier_mappings PG18",
     );
     expectDbRowExists(
       "SELECT id, event_type FROM audit_ledger WHERE event_type = :event_type",

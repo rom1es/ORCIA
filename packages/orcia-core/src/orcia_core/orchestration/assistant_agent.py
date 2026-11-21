@@ -18,6 +18,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any, Literal
 
+from orcia_core.observability.logging import get_logger
 from orcia_core.orchestration.assistant_composer import (
     AssistantWorkflowProposal,
     SavedAndLaunchedWorkflowResult,
@@ -36,6 +37,7 @@ from orcia_core.orchestration.engine import DurableOrchestrationEngine
 from orcia_core.orchestration.run_lock_service import WorkflowOrchestrationSetupService
 from orcia_core.orchestration.step_executors import _run_llm_sync
 from orcia_core.permissions.models import UserIdentity
+from orcia_core.rag.errors import NoActiveEmbeddingModelError, RagReindexInProgressError
 from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
 from orcia_kernel.context_ports import (
     AssistantWorkflowBlueprint,
@@ -46,6 +48,8 @@ from orcia_kernel.context_ports import (
 )
 from orcia_kernel.ids import new_uuid7_str
 from orcia_kernel.ports import LLMPort, LlmPromptRequest
+
+logger = get_logger("orcia.core.orchestration.assistant_agent")
 
 ASSISTANT_WORKFLOW_URI: str = "orcia://system/workflows/assistant-agent"
 
@@ -175,6 +179,7 @@ class AssistantAgentService:
         allowed_datasource_aliases: frozenset[str] = frozenset(),
         ontology_concepts: tuple[dict[str, Any], ...] = (),
         ontology_axioms: tuple[dict[str, Any], ...] = (),
+        embedding_available: bool | None = None,
     ) -> AssistantTurnResult:
         """Execute all 5 nodes of `orcia://system/workflows/assistant-agent` (`< 1.5 s`)."""
         t_start = time.perf_counter()
@@ -214,16 +219,33 @@ class AssistantAgentService:
 
         # Node 3: 3_PARALLEL_FAN_OUT (RAG VectorStorePort + ContextSourcePort)
         t3 = time.perf_counter()
-        vector_hits: tuple[VectorSearchHitRecord, ...] = self._vector_store.hybrid_search(
-            workspace_id=workspace_id,
-            query_text=expanded_query,
-            allowed_datasource_aliases=allowed_datasource_aliases,
-            top_k=5,
+        vector_hits: tuple[VectorSearchHitRecord, ...] = ()
+        rag_active = embedding_available is not False
+        if rag_active:
+            try:
+                vector_hits = self._vector_store.hybrid_search(
+                    workspace_id=workspace_id,
+                    query_text=expanded_query,
+                    allowed_datasource_aliases=allowed_datasource_aliases,
+                    top_k=5,
+                )
+            except (NoActiveEmbeddingModelError, RagReindexInProgressError):
+                rag_active = False
+                vector_hits = ()
+        ctx_sources: tuple[str, ...] = (
+            ("catalog", "blackboard", "permissions", "cas", "kb")
+            if rag_active
+            else ("catalog", "blackboard", "permissions", "cas")
         )
         context_slices: tuple[ContextSliceRecord, ...] = self._context_source.fetch_context_slices(
             workspace_id=workspace_id,
             query=expanded_query,
-            include_sources=("catalog", "blackboard", "permissions", "cas", "kb"),
+            include_sources=ctx_sources,
+        )
+        sources_queried = (
+            ["RAG", "Catalog", "Blackboard", "PermissionBroker"]
+            if rag_active
+            else ["Catalog", "Blackboard", "PermissionBroker"]
         )
         trace_3 = AssistantNodeTrace(
             node_id="3_PARALLEL_FAN_OUT",
@@ -237,7 +259,8 @@ class AssistantAgentService:
             output_metadata={
                 "vector_hit_count": len(vector_hits),
                 "context_slice_count": len(context_slices),
-                "sources_queried": ["RAG", "Catalog", "Blackboard", "PermissionBroker"],
+                "sources_queried": sources_queried,
+                "rag_active": rag_active,
             },
         )
 
@@ -366,8 +389,13 @@ class AssistantAgentService:
                 )
                 model_family = resolved.model_family
                 model_id = resolved.model_name
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning(
+                    "assistant_agent.cognitive_router_resolve_failed",
+                    workspace_id=workspace_id,
+                    error_type=type(exc).__name__,
+                    error=str(exc),
+                )
 
         if not model_family or not model_id:
             if isinstance(self._llm, DeterministicCassetteLLM):
@@ -413,6 +441,7 @@ class AssistantAgentService:
         user_prompt: str,
         human_profile_archetype: str = "ARCHITECT",
         allowed_datasource_aliases: frozenset[str] = frozenset(),
+        embedding_available: bool | None = None,
     ) -> Iterator[dict[str, Any]]:
         """Yield SSE events (`node_trace`, `token`, `workflow_proposal`, `done`) in `< 1.5 s`."""
         turn = self.run_conversation_turn(
@@ -420,6 +449,7 @@ class AssistantAgentService:
             user_prompt=user_prompt,
             human_profile_archetype=human_profile_archetype,
             allowed_datasource_aliases=allowed_datasource_aliases,
+            embedding_available=embedding_available,
         )
         for tr in turn.node_traces:
             yield {

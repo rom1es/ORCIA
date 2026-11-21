@@ -314,4 +314,58 @@ describe("Story 25.4 — Unified OrciaSpinner, Localized Test Errors/Timeout, Re
     const panel = await screen.findByTestId("ai-model-reindex-panel");
     expect(panel.textContent).toContain("12");
   });
+
+  it("handles real DOMException('The operation timed out.', 'TimeoutError') from fetch and displays localized alert under tested model card", async () => {
+    const model1 = {
+      id: "0195f000-0000-7000-8300-000000000088",
+      scope_level: "GLOBAL",
+      scope_id: null,
+      display_name: "Timeout Real Model",
+      inference_tier: "medium",
+      effort: "balanced",
+      provider_slug: "openai",
+      model_family: "OpenAI",
+      model_name: "gpt-4o-mini",
+      fallback_model_name: null,
+      endpoint_uri: "https://api.openai.com/v1",
+      auth_mode: "none_local",
+      protocol_mode: "openai_compatible",
+      usage: "chat",
+      is_active: true,
+      draining: false,
+      health_status: "UNTESTED",
+      created_at: "2026-11-20T10:00:00Z",
+      secret_status: { configured: false, fingerprint: null, masked_hint: null },
+    };
+    seedAdminWithModels([model1]);
+    setVitestMockReindexStatus({
+      status: "IDLE",
+      progress_percentage: 0,
+      indexed_chunks_count: 0,
+      indexed_documents_count: 0,
+    });
+
+    await mountSettingsAiModelsRoute();
+    await screen.findByTestId(`llm-tier-row-${model1.id}`);
+
+    const origFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes(`/api/v1/settings/ai-models/mappings/${model1.id}/test`) && init?.method === "POST") {
+        throw new DOMException("The operation timed out.", "TimeoutError");
+      }
+      return origFetch(input, init);
+    }) as typeof globalThis.fetch;
+
+    try {
+      fireEvent.click(screen.getByTestId(`test-ai-model-btn-${model1.id}`));
+      await waitFor(() => {
+        const localErr = screen.getByTestId(`ai-model-test-error-${model1.id}`);
+        expect(localErr.getAttribute("role")).toBe("alert");
+        expect(localErr.textContent).toContain("16 s");
+      });
+    } finally {
+      globalThis.fetch = origFetch;
+    }
+  });
 });

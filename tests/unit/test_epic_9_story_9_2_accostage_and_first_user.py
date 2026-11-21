@@ -159,7 +159,8 @@ def test_story_9_2_progressive_llm_tier_and_accostage_1_to_6_progression() -> No
     assert status1.assistant_trial_enabled is True
     assert status1.agentic_gates_ad10_enabled is False
     assert "⚠️ 1 seule famille de modèles configurée" in (status1.amber_warning_badge or "")
-    assert "AD-10" in (status1.amber_warning_badge or "")
+    assert "Administration › Modèles IA" in (status1.amber_warning_badge or "")
+    assert "AD-10" not in (status1.amber_warning_badge or "")
     assert status1.completed_count == 2
     assert status1.badge_label == "Accostage 2/6"
 

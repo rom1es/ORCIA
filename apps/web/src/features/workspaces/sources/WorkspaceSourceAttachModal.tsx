@@ -7,6 +7,7 @@ import type {
   WorkspaceDatasourceItemResponse,
 } from "@orcia/api-client";
 import { useI18n } from "../../../i18n";
+import { formatRfc9457ErrorToBanner } from "../../../lib/formatRfc9457ErrorToBanner";
 import {
   FormInput,
   modalInputStyle,
@@ -19,6 +20,8 @@ export interface WorkspaceSourceAttachModalProps {
   readonly editingDatasource: WorkspaceDatasourceItemResponse | null;
   readonly connectors: readonly EnterpriseConnectorItemResponse[];
   readonly isWorkspaceLead: boolean;
+  readonly hasActiveEmbeddingModel?: boolean;
+  readonly onNavigateToAiModels?: () => void;
   readonly onClose: () => void;
   readonly onSubmit: (
     payload: CreateWorkspaceDatasourceRequest | UpdateWorkspaceDatasourceRequest,
@@ -48,23 +51,28 @@ export function WorkspaceSourceAttachModal({
   editingDatasource,
   connectors,
   isWorkspaceLead,
+  hasActiveEmbeddingModel = true,
+  onNavigateToAiModels,
   onClose,
   onSubmit,
 }: WorkspaceSourceAttachModalProps): React.ReactElement {
-  const { dictionary } = useI18n();
+  const { dictionary, locale } = useI18n();
   const copy = dictionary.epic18Sources.modal;
 
   const [form, setForm] = useState(DEFAULT_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const updateField = <K extends keyof typeof DEFAULT_FORM>(
     key: K,
     value: (typeof DEFAULT_FORM)[K],
   ) => {
+    setSubmitError(null);
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   useEffect(() => {
+    setSubmitError(null);
     if (editingDatasource) {
       setForm({
         alias: editingDatasource.alias,
@@ -82,10 +90,17 @@ export function WorkspaceSourceAttachModal({
         cgAuthMode: editingDatasource.codegraph_auth_mode || "SERVICE_ACCOUNT",
         cgOwnerUserId: editingDatasource.codegraph_owner_user_id || "",
       });
+    } else if (!hasActiveEmbeddingModel) {
+      setForm({
+        ...DEFAULT_FORM,
+        nature: "SOURCE_CODE",
+        scheme: "git",
+        cgEnabled: false,
+      });
     } else {
       setForm(DEFAULT_FORM);
     }
-  }, [editingDatasource, isOpen]);
+  }, [editingDatasource, isOpen, hasActiveEmbeddingModel]);
 
   const handleNatureChange = (newNature: typeof DEFAULT_FORM.nature) => {
     const schemeMap: Record<string, string> = {
@@ -111,6 +126,7 @@ export function WorkspaceSourceAttachModal({
     if (!form.alias.trim() || !form.uri.trim()) return;
 
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
       const payload: CreateWorkspaceDatasourceRequest = {
         alias: form.alias.trim(),
@@ -130,6 +146,8 @@ export function WorkspaceSourceAttachModal({
       };
       await onSubmit(payload, Boolean(editingDatasource));
       onClose();
+    } catch (err: unknown) {
+      setSubmitError(formatRfc9457ErrorToBanner(err, locale).fullText);
     } finally {
       setIsSubmitting(false);
     }
@@ -153,6 +171,42 @@ export function WorkspaceSourceAttachModal({
         onSubmit={handleSave}
         style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "8px" }}
       >
+        {!hasActiveEmbeddingModel ? (
+          <div
+            role="status"
+            data-testid="datasource-rag-embedding-required-notice"
+            className="rounded-lg border border-status-warning/40 bg-status-warning/10 p-2.5 text-xs text-text-primary"
+            style={{ display: "flex", flexDirection: "column", gap: "4px" }}
+          >
+            <strong className="text-status-warning">⚠️ {copy.ragEmbeddingRequiredTitle}</strong>
+            <span className="text-text-secondary">{copy.ragEmbeddingRequiredDescription}</span>
+            {onNavigateToAiModels ? (
+              <a
+                href="/settings/ai-models"
+                data-testid="datasource-configure-embedding-link"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onClose();
+                  onNavigateToAiModels();
+                }}
+                className="font-medium text-action-primary underline hover:opacity-80"
+              >
+                {copy.ragEmbeddingRequiredCta}
+              </a>
+            ) : null}
+          </div>
+        ) : null}
+
+        {submitError ? (
+          <div
+            role="alert"
+            data-testid="modal-source-error-alert"
+            className="rounded-lg border border-status-danger/40 bg-status-danger/10 p-2.5 text-xs text-status-danger"
+          >
+            {submitError}
+          </div>
+        ) : null}
+
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
           <div>
             <label style={{ fontSize: "11px", fontWeight: 600 }}>{copy.natureLabel}</label>
@@ -162,10 +216,19 @@ export function WorkspaceSourceAttachModal({
               onChange={(e) => handleNatureChange(e.target.value as typeof form.nature)}
               style={modalInputStyle}
             >
-              <option value="DOCUMENT_KB">{copy.natureDoc}</option>
-              <option value="WORK_TRACKER">{copy.natureTracker}</option>
+              <option value="DOCUMENT_KB" disabled={!hasActiveEmbeddingModel}>
+                {copy.natureDoc}
+                {!hasActiveEmbeddingModel ? copy.ragOptionDisabledSuffix : ""}
+              </option>
+              <option value="WORK_TRACKER" disabled={!hasActiveEmbeddingModel}>
+                {copy.natureTracker}
+                {!hasActiveEmbeddingModel ? copy.ragOptionDisabledSuffix : ""}
+              </option>
               <option value="SOURCE_CODE">{copy.natureCode}</option>
-              <option value="RELATIONAL_SCHEMA">{copy.natureSchema}</option>
+              <option value="RELATIONAL_SCHEMA" disabled={!hasActiveEmbeddingModel}>
+                {copy.natureSchema}
+                {!hasActiveEmbeddingModel ? copy.ragOptionDisabledSuffix : ""}
+              </option>
             </select>
           </div>
           <div>
@@ -200,7 +263,7 @@ export function WorkspaceSourceAttachModal({
           </div>
           <div>
             <label style={{ fontSize: "11px", fontWeight: 600 }}>
-              Schéma (git, jira, confluence, sql)
+              {copy.schemeLabel}
             </label>
             <FormInput
               testId="modal-source-scheme-input"
@@ -263,15 +326,20 @@ export function WorkspaceSourceAttachModal({
             className="orcia-ds-btn orcia-ds-btn-secondary"
             onClick={onClose}
           >
-            Annuler
+            {copy.cancelBtn}
           </button>
           <button
             type="submit"
             data-testid="modal-source-save-btn"
-            disabled={isSubmitting || !form.alias.trim() || !form.uri.trim()}
+            disabled={
+              isSubmitting ||
+              !form.alias.trim() ||
+              !form.uri.trim() ||
+              (!hasActiveEmbeddingModel && form.nature !== "SOURCE_CODE")
+            }
             className="orcia-ds-btn orcia-ds-btn-primary"
           >
-            {editingDatasource ? "Mettre à jour" : "Rattacher la source"}
+            {editingDatasource ? copy.updateBtn : copy.attachBtn}
           </button>
         </div>
       </form>

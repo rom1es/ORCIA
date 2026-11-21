@@ -88,7 +88,7 @@ async def test_ai_models_usage_and_uniqueness_postgres18(
     database_url: str,
     app_client_factory,  # type: ignore[no-untyped-def]
 ) -> None:
-    headers_admin = {"X-Orcia-Persona": "marc"}
+    headers_admin = {"X-Orcia-Persona": "karim"}
     engine = create_async_engine(database_url)
 
     async with engine.begin() as conn:

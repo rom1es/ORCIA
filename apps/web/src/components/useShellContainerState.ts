@@ -39,18 +39,22 @@ export function useShellContainerState(
   options?: {
     readonly canObserveGlobalScope?: boolean;
     readonly defaultScopedId?: string;
+    readonly isAuthHydrating?: boolean;
     readonly isInitialLoading?: boolean;
     readonly validScopeIds?: readonly string[];
   },
 ) {
   const canObserveGlobalScope = options?.canObserveGlobalScope ?? true;
   const defaultScopedId = options?.defaultScopedId;
+  const isAuthHydrating = options?.isAuthHydrating ?? false;
   const isInitialLoading = options?.isInitialLoading ?? false;
   const validScopeIds = options?.validScopeIds;
   const [activeScopeId, setActiveScopeIdState] = useState(() => {
     const saved = readSavedActiveScopeId();
     if (saved) return saved;
-    return !canObserveGlobalScope && defaultScopedId ? defaultScopedId : "scope-global";
+    return !isAuthHydrating && !canObserveGlobalScope && defaultScopedId
+      ? defaultScopedId
+      : "scope-global";
   });
   const setActiveScopeId = (nextScopeId: string) => {
     setActiveScopeIdState(nextScopeId);
@@ -84,6 +88,8 @@ export function useShellContainerState(
 
   useEffect(() => {
     if (
+      !isAuthHydrating &&
+      !isInitialLoading &&
       !canObserveGlobalScope &&
       activeScopeId === "scope-global" &&
       defaultScopedId &&
@@ -91,7 +97,7 @@ export function useShellContainerState(
     ) {
       setActiveScopeIdState(defaultScopedId);
     }
-  }, [canObserveGlobalScope, activeScopeId, defaultScopedId]);
+  }, [isAuthHydrating, isInitialLoading, canObserveGlobalScope, activeScopeId, defaultScopedId]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

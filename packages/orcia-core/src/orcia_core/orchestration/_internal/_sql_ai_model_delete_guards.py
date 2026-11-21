@@ -22,6 +22,21 @@ from orcia_core.orchestration.errors import (
 
 logger = get_logger("orcia.core.orchestration.ai_model_delete_guards")
 
+
+def _is_legacy_missing_table_error(exc: Exception) -> bool:
+    """Return True only when `workflow_runs`/`inference_attempts` table is absent (`42P01`)."""
+    candidates = (exc, getattr(exc, "orig", None), getattr(exc, "__cause__", None))
+    for item in candidates:
+        if item is None:
+            continue
+        if type(item).__name__ == "UndefinedTableError":
+            return True
+        sqlstate = getattr(item, "sqlstate", None) or getattr(item, "pgcode", None)
+        if str(sqlstate or "").upper() == "42P01":
+            return True
+    return False
+
+
 ACTIVE_WORKFLOW_RUN_STATUSES: tuple[str, ...] = (
     "INITIALIZED",
     "RUNNING",
@@ -97,8 +112,16 @@ async def evaluate_ai_model_delete_impact_pg18(
                     seen_wfs.add(wf_def_id)
                     dependent_wf_ids.append(wf_def_id)
     except Exception as exc:
+        if not _is_legacy_missing_table_error(exc):
+            logger.error(
+                "ai_model_delete_impact.active_runs_lookup_failed",
+                mapping_id=mapping_id,
+                error_type=type(exc).__name__,
+                error=str(exc),
+            )
+            raise
         logger.warning(
-            "ai_model_delete_impact.active_runs_lookup_failed",
+            "ai_model_delete_impact.active_runs_lookup_skipped_legacy_schema",
             mapping_id=mapping_id,
             error_type=type(exc).__name__,
             error=str(exc),

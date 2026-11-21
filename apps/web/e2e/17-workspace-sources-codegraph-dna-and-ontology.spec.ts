@@ -26,8 +26,36 @@ test.describe("Sources d'espace multi-nature, graphe de code, glossaire, ontolog
     });
 
     await openWorkspaceSourcesPage(page, ws.uiWorkspaceId);
+    const tokenForGuard = await getBearerTokenFromSession(page);
+    const blockedRagRes = await apiPost<{ error_code?: string }>(
+      page,
+      `/api/v1/workspaces/${ws.pgWorkspaceId}/datasources`,
+      {
+        token: tokenForGuard,
+        data: {
+          alias: "confluence-interdite-jour0",
+          scheme: "confluence",
+          uri: "https://confluence.internal.orcia/spaces/ARCH",
+          source_nature: "DOCUMENT_KB",
+        },
+      },
+    );
+    expect(blockedRagRes.status()).toBe(422);
+    expect((await blockedRagRes.json()).error_code).toBe("ERR_NO_ACTIVE_EMBEDDING_MODEL");
+    expectDbRowCount(
+      "SELECT COUNT(*)::int AS count FROM workspace_datasources WHERE workspace_id = :ws_id",
+      { ws_id: ws.pgWorkspaceId },
+      0,
+      "Aucune source RAG insérée sans modèle d'embedding",
+    );
+
     await page.getByTestId("open-attach-source-modal-btn").click();
     await expect(page.getByTestId("workspace-source-attach-modal")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("datasource-rag-embedding-required-notice")).toBeVisible();
+    await expect(page.getByTestId("modal-source-nature-select")).toHaveValue("SOURCE_CODE");
+    await expect(
+      page.locator('[data-testid="modal-source-nature-select"] option[value="DOCUMENT_KB"]'),
+    ).toBeDisabled();
 
     await page.getByTestId("modal-source-nature-select").selectOption("SOURCE_CODE");
     await page.getByTestId("modal-source-alias-input").fill("core-repo");

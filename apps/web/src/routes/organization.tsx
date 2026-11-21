@@ -57,9 +57,7 @@ export function OrganizationPageView(): React.ReactElement {
           testId="organization-readonly-access-banner"
           title={copy.readOnlyRestrictedTitle}
         >
-          {isFr
-            ? "Consultation de l'organigramme en lecture seule. Seuls les Responsables de Direction (BU), Chefs d'équipe et Administrateurs peuvent modifier les unités ou inviter des membres."
-            : "Read-only organization chart view. Only Division Leads, Team Leads, and Administrators can edit units or invite members."}
+          {orgLabels.readOnlyChartNotice}
         </OrciaAlertBanner>
       )}
 

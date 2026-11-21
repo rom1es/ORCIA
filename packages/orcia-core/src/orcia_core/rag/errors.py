@@ -91,12 +91,12 @@ RAG_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
         "fr": LocalizedErrorCopy(
             "Réindexation sémantique en cours",
             "Une réindexation globale du corpus vectoriel est actuellement en cours. "
-            "La recherche documentaire et Mon Assistant sont temporairement indisponibles.",
+            "La recherche documentaire et l'ingestion RAG sont temporairement indisponibles.",
         ),
         "en": LocalizedErrorCopy(
             "Semantic reindexing in progress",
             "A global reindexing of the vector corpus is currently in progress. "
-            "Document search and My Assistant are temporarily unavailable.",
+            "Document search and RAG ingestion are temporarily unavailable.",
         ),
     },
 }

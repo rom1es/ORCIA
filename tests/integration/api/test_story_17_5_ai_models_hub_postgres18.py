@@ -98,7 +98,7 @@ async def test_ai_models_hub_postgres18_full_lifecycle(
     database_url: str,
     app_client_factory,  # type: ignore[no-untyped-def]
 ) -> None:
-    headers_admin = {"X-Orcia-Persona": "marc"}
+    headers_admin = {"X-Orcia-Persona": "karim"}
     headers_observer = {
         "X-Orcia-Persona": "sarah",
         "X-Orcia-Access-Mode": "READ_ONLY_OBSERVER",
@@ -327,7 +327,7 @@ async def test_ai_models_hub_delete_without_false_positive_and_empty_reindex_sta
     app_client_factory,  # type: ignore[no-untyped-def]
 ) -> None:
     """Story 25.4: Static workflow_definitions_v2 never blocks delete; empty corpus reports 0/0."""
-    headers_admin = {"X-Orcia-Persona": "marc"}
+    headers_admin = {"X-Orcia-Persona": "karim"}
     engine = create_async_engine(database_url)
     wf_v2_id = UUID(new_uuid7_str())
 
@@ -410,3 +410,177 @@ async def test_ai_models_hub_delete_without_false_positive_and_empty_reindex_sta
         assert reindex_json["status"] == "IDLE"
         assert reindex_json["indexed_chunks_count"] == 0
         assert reindex_json["indexed_documents_count"] == 0
+
+
+@pytest.mark.asyncio
+async def test_ai_models_delete_pinned_by_active_workflow_run_returns_409_pg18(
+    database_url: str,
+    app_client_factory,  # type: ignore[no-untyped-def]
+) -> None:
+    """MAJOR-1 proof: PG18 workflow_runs (RUNNING) + inference_attempts blocks delete with 409."""
+    headers_admin = {"X-Orcia-Persona": "karim"}
+    engine = create_async_engine(database_url)
+    ws_id = UUID(new_uuid7_str())
+    wf_def_id = UUID(new_uuid7_str())
+    run_id = UUID(new_uuid7_str())
+    step_id = UUID(new_uuid7_str())
+    attempt_id = UUID(new_uuid7_str())
+
+    try:
+        async with engine.begin() as conn:
+            await conn.execute(sa.text("DELETE FROM inference_attempts"))
+            await conn.execute(sa.text("DELETE FROM step_executions"))
+            await conn.execute(sa.text("DELETE FROM workflow_runs"))
+            await conn.execute(sa.text("DELETE FROM workflow_definitions"))
+            await conn.execute(sa.text("DELETE FROM workspace_llm_tier_mappings"))
+
+            root_ou = (
+                await conn.execute(
+                    sa.text("SELECT id FROM org_units WHERE unit_type = 'ENTERPRISE' LIMIT 1")
+                )
+            ).scalar()
+            if root_ou is None:
+                root_ou = UUID(new_uuid7_str())
+                await conn.execute(
+                    sa.text(
+                        "INSERT INTO org_units (id, slug, name, unit_type, parent_id) "
+                        "VALUES (:id, 'orcia-root', 'ORCIA Enterprise', 'ENTERPRISE', NULL)"
+                    ),
+                    {"id": root_ou},
+                )
+
+            await conn.execute(
+                sa.text(
+                    "INSERT INTO workspaces (id, slug, name, owner_org_unit_id, visibility_mode) "
+                    "VALUES (:id, :slug, 'Active Run WS', :ou_id, 'STANDARD')"
+                ),
+                {"id": ws_id, "slug": f"active-run-ws-{str(ws_id)[:8]}", "ou_id": root_ou},
+            )
+            await conn.execute(
+                sa.text(
+                    "INSERT INTO workflow_definitions (id, workspace_id, uri, version, sha256) "
+                    "VALUES (:id, :wid, :uri, '1.0.0', :sha)"
+                ),
+                {
+                    "id": wf_def_id,
+                    "wid": ws_id,
+                    "uri": f"orcia://wf/pinned/{wf_def_id}",
+                    "sha": "a" * 64,
+                },
+            )
+            await conn.execute(
+                sa.text(
+                    "INSERT INTO workflow_runs ("
+                    "  id, run_key, workspace_id, workflow_def_id, root_run_id, status"
+                    ") VALUES (:id, :rkey, :wid, :wf_id, :id, 'RUNNING')"
+                ),
+                {
+                    "id": run_id,
+                    "rkey": f"run-pinned-{str(run_id)[:8]}",
+                    "wid": ws_id,
+                    "wf_id": wf_def_id,
+                },
+            )
+            await conn.execute(
+                sa.text(
+                    "INSERT INTO step_executions ("
+                    "  id, step_execution_key, run_id, step_key, step_index"
+                    ") VALUES (:id, :skey, :run_id, 'step-1', 0)"
+                ),
+                {"id": step_id, "skey": f"step-pinned-{str(step_id)[:8]}", "run_id": run_id},
+            )
+            await conn.execute(
+                sa.text(
+                    "INSERT INTO inference_attempts ("
+                    "  id, run_id, step_execution_id, attempt_index, requested_tier, "
+                    "  resolved_tier, effort, model_family, model_name, idempotency_key"
+                    ") VALUES ("
+                    "  :id, :run_id, :step_id, 1, 'medium', 'medium', 'balanced', "
+                    "  'OpenAI', 'gpt-4o-pinned', :ikey"
+                    ")"
+                ),
+                {
+                    "id": attempt_id,
+                    "run_id": run_id,
+                    "step_id": step_id,
+                    "ikey": f"attempt-{attempt_id}",
+                },
+            )
+
+        async with app_client_factory() as client:
+            # Create two active models for tier 'medium' so pinned guard triggers 409
+            r1 = await client.post(
+                "/api/v1/settings/ai-models/mappings",
+                headers=headers_admin,
+                json={
+                    "scope_level": "GLOBAL",
+                    "display_name": "Pinned Medium Model",
+                    "inference_tier": "medium",
+                    "effort": "balanced",
+                    "provider_slug": "openai",
+                    "model_family": "OpenAI",
+                    "model_name": "gpt-4o-pinned",
+                    "endpoint_uri": "https://api.openai.com/v1",
+                    "auth_mode": "none_local",
+                    "protocol_mode": "openai_compatible",
+                },
+            )
+            assert r1.status_code == 201, r1.text
+            pinned_id = r1.json()["id"]
+
+            r2 = await client.post(
+                "/api/v1/settings/ai-models/mappings",
+                headers=headers_admin,
+                json={
+                    "scope_level": "GLOBAL",
+                    "display_name": "Backup Medium Model",
+                    "inference_tier": "medium",
+                    "effort": "deep",
+                    "provider_slug": "openai",
+                    "model_family": "OpenAI",
+                    "model_name": "gpt-4o-backup",
+                    "endpoint_uri": "https://api.openai.com/v1",
+                    "auth_mode": "none_local",
+                    "protocol_mode": "openai_compatible",
+                },
+            )
+            assert r2.status_code == 201, r2.text
+
+            impact_res = await client.get(
+                f"/api/v1/settings/ai-models/mappings/{pinned_id}/delete-impact",
+                headers=headers_admin,
+            )
+            assert impact_res.status_code == 200, impact_res.text
+            impact = impact_res.json()
+            assert impact["pinned_active_runs_count"] >= 1
+            assert str(run_id) in impact["pinned_run_ids"]
+            assert impact["is_last_active_for_tier"] is False
+
+            del_reject = await client.delete(
+                f"/api/v1/settings/ai-models/mappings/{pinned_id}?mode=reject",
+                headers=headers_admin,
+            )
+            assert del_reject.status_code == 409, del_reject.text
+            assert del_reject.json()["error_code"] == "ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS"
+
+            del_drain = await client.delete(
+                f"/api/v1/settings/ai-models/mappings/{pinned_id}?mode=drain",
+                headers=headers_admin,
+            )
+            assert del_drain.status_code == 200, del_drain.text
+            assert del_drain.json()["status"] == "DRAINING"
+
+            async with engine.begin() as conn:
+                row = (
+                    await conn.execute(
+                        sa.text(
+                            "SELECT draining, is_active FROM workspace_llm_tier_mappings "
+                            "WHERE id = :id"
+                        ),
+                        {"id": UUID(pinned_id)},
+                    )
+                ).one()
+                assert row[0] is True
+                assert row[1] is False
+    finally:
+        await engine.dispose()

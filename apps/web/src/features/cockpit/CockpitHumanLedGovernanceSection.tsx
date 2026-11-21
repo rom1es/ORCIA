@@ -61,9 +61,7 @@ export function CockpitHumanLedGovernanceSection({
       >
         <div>
           <h2 style={{ margin: 0, fontSize: "16px", fontWeight: 700 }}>
-            {ctrl.isFr
-              ? "Gouvernance Human-Led : Action requise"
-              : "Human-Led Governance: Action Required"}
+            {ctrl.dictionary.humanLedGovernance.sectionTitle}
           </h2>
           <p
             style={{
@@ -73,16 +71,10 @@ export function CockpitHumanLedGovernanceSection({
             }}
           >
             {ctrl.pendingAnchor && ctrl.pendingArbitration
-              ? ctrl.isFr
-                ? "Signez l'intention obligatoire (≥ 30 caractères) et départagez les options en attente."
-                : "Sign the mandatory intent (≥ 30 characters) and resolve pending option tie-breaks."
+              ? ctrl.dictionary.humanLedGovernance.anchorAndArbitrationDesc
               : ctrl.pendingAnchor
-                ? ctrl.isFr
-                  ? "Rédigez et signez l'ancrage humain obligatoire (≥ 30 caractères) pour débloquer la suite du processus."
-                  : "Author and sign the mandatory human anchor (≥ 30 characters) to unblock process execution."
-                : ctrl.isFr
-                  ? "Départagez les options en attente pour reprendre l'exécution du processus."
-                  : "Resolve the pending option tie-break to resume process execution."}
+                ? ctrl.dictionary.humanLedGovernance.anchorOnlyDesc
+                : ctrl.dictionary.humanLedGovernance.arbitrationOnlyDesc}
           </p>
         </div>
         <StatusBadge
@@ -113,7 +105,7 @@ export function CockpitHumanLedGovernanceSection({
           }
           authorName={ctrl.resolvedAuthorName}
           value={ctrl.anchorText}
-          signatureLabel={ctrl.isFr ? "Signature de l'auteur" : "Author signature"}
+          signatureLabel={ctrl.dictionary.humanLedGovernance.signatureLabel}
           signatureValue={ctrl.signatureText}
           signaturePlaceholder={ctrl.resolvedAuthorName}
           labels={ctrl.dictionary.humanAnchor}

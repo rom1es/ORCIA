@@ -141,7 +141,11 @@ async def test_fastapi_ai_models_hub_usage_endpoints() -> None:
             "protocol_mode": "openai_compatible",
             "usage": "embedding",
         }
-        res = await client.post("/api/v1/settings/ai-models/mappings", json=payload)
+        res = await client.post(
+            "/api/v1/settings/ai-models/mappings",
+            headers={"X-Orcia-Persona": "karim"},
+            json=payload,
+        )
         assert res.status_code == 201
         data = res.json()
         assert data["usage"] == "embedding"
@@ -168,6 +172,10 @@ async def test_fastapi_ai_models_hub_usage_endpoints() -> None:
             "protocol_mode": "anthropic_messages",
             "usage": "embedding",
         }
-        bad_res = await client.post("/api/v1/settings/ai-models/mappings", json=bad_payload)
+        bad_res = await client.post(
+            "/api/v1/settings/ai-models/mappings",
+            headers={"X-Orcia-Persona": "karim"},
+            json=bad_payload,
+        )
         assert bad_res.status_code == 422
         assert bad_res.json()["error_code"] == "ERR_EMBEDDING_PROVIDER_UNSUPPORTED"

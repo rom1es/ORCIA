@@ -1,42 +1,43 @@
+import { OrciaIcon, OrciaSpinner } from "@orcia/ui";
 import React from "react";
+import type { TranslationDictionary } from "../../i18n/types";
 
 export interface AssistantReindexingBannerProps {
   readonly status: "PENDING" | "IN_PROGRESS" | "FAILED";
   readonly progressPercentage: number;
   readonly errorMessage?: string | null;
-  readonly isFr?: boolean;
+  readonly labels: TranslationDictionary["assistantRagNotice"];
   readonly onRelaunch?: () => void;
   readonly onConfigure?: () => void;
 }
 
-export function AssistantReindexingBanner(props: AssistantReindexingBannerProps): React.JSX.Element {
-  const { status, progressPercentage, errorMessage, isFr = true, onRelaunch, onConfigure } = props;
+export function AssistantReindexingBanner(
+  props: AssistantReindexingBannerProps,
+): React.JSX.Element {
+  const { status, progressPercentage, errorMessage, labels, onRelaunch, onConfigure } = props;
 
   if (status === "FAILED") {
     return (
       <div
-        role="alert"
-        data-testid="assistant-reindex-failed-banner"
-        className="mb-2 flex flex-col gap-2 rounded-lg border border-status-danger/40 bg-status-danger/10 p-3 text-xs text-text-primary"
+        role="status"
+        data-testid="assistant-rag-inactive-notice"
+        className="mb-2 flex flex-col gap-1.5 rounded-lg border border-status-warning/40 bg-status-warning/10 px-3 py-2 text-xs text-text-primary"
       >
-        <div className="flex items-center gap-2 font-semibold text-status-danger">
-          <span>❌ {isFr ? "Échec de la réindexation sémantique" : "Semantic reindexing failed"}</span>
+        <div className="flex items-center gap-2 font-medium text-status-warning">
+          <OrciaIcon name="warning" size={14} />
+          <span>{labels.reindexFailedTitle}</span>
         </div>
-        <p className="text-text-secondary">
-          {errorMessage ||
-            (isFr
-              ? "Le recalcul vectoriel a échoué. Mon Assistant reste bloqué pour éviter tout résultat incohérent."
-              : "Vector recalculation failed. My Assistant remains locked to prevent inconsistent results.")}
-        </p>
-        <div className="flex items-center gap-3">
+        <p className="text-text-secondary">{errorMessage || labels.reindexFailedDescription}</p>
+        <div className="flex flex-wrap items-center gap-3">
           {onRelaunch && (
             <button
               type="button"
               data-testid="assistant-relaunch-reindex-btn"
               onClick={onRelaunch}
-              className="inline-flex items-center gap-1 rounded bg-status-danger/20 px-2.5 py-1 font-medium text-status-danger hover:bg-status-danger/30"
+              className="inline-flex items-center gap-1 rounded bg-surface-elevated px-2.5 py-1 font-medium text-text-primary hover:opacity-90"
             >
-              🔄 {isFr ? "Relancer la réindexation" : "Relaunch reindexing"}
+              <OrciaIcon name="regenerate" size={13} />
+              <span>{labels.relaunchReindexCta}</span>
             </button>
           )}
           {onConfigure && (
@@ -49,7 +50,7 @@ export function AssistantReindexingBanner(props: AssistantReindexingBannerProps)
               }}
               className="inline-flex items-center gap-1 font-medium text-action-primary underline hover:opacity-80"
             >
-              {isFr ? "Vérifier le modèle d'embedding" : "Check embedding model"}
+              {labels.checkEmbeddingCta}
             </a>
           )}
         </div>
@@ -59,25 +60,24 @@ export function AssistantReindexingBanner(props: AssistantReindexingBannerProps)
 
   return (
     <div
-      role="alert"
-      data-testid="assistant-reindexing-banner"
-      className="mb-2 flex flex-col gap-2 rounded-lg border border-accent-brand/40 bg-accent-brand/10 p-3 text-xs text-text-primary"
+      role="status"
+      data-testid="assistant-rag-inactive-notice"
+      className="mb-2 flex flex-col gap-1.5 rounded-lg border border-border-subtle bg-surface-secondary px-3 py-2 text-xs text-text-primary"
     >
-      <div className="flex items-center justify-between font-semibold text-accent-brand">
-        <span className="flex items-center gap-2">
-          ⏳ {isFr ? "Réindexation sémantique en cours" : "Semantic reindexing in progress"} : {progressPercentage}%
+      <div className="flex items-center justify-between font-medium text-text-primary">
+        <span className="inline-flex items-center gap-1.5">
+          <OrciaSpinner size="xs" />
+          <span>
+            {labels.reindexingTitle} ({progressPercentage}%)
+          </span>
         </span>
-        <span className="text-xs font-mono">{progressPercentage}%</span>
+        <span className="font-mono text-xs text-text-secondary">{progressPercentage}%</span>
       </div>
-      <p className="text-text-secondary">
-        {isFr
-          ? "Un nouveau modèle d'embedding est activé. Le corpus vectoriel est en cours de réindexation complète. Mon Assistant et la recherche sont temporairement indisponibles."
-          : "A new embedding model is active. The vector corpus is currently undergoing complete reindexing. My Assistant and search are temporarily unavailable."}
-      </p>
+      <p className="text-text-secondary">{labels.reindexingDescription}</p>
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">
         <div
           data-testid="assistant-reindexing-progress-bar"
-          className="h-full bg-accent-brand transition-all duration-300"
+          className="h-full bg-action-primary transition-all duration-300"
           style={{ width: `${Math.max(5, Math.min(100, progressPercentage))}%` }}
         />
       </div>

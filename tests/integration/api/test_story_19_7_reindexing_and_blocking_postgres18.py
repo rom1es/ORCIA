@@ -479,11 +479,11 @@ async def test_reindex_empty_corpus_immediately_completed_postgres18(
 
 
 @pytest.mark.asyncio
-async def test_get_search_endpoint_blocked_without_model_and_during_reindex_postgres18(
+async def test_get_search_unlocked_and_pure_rag_blocked_without_model_and_during_reindex_postgres18(
     database_url: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Verify GET /api/v1/search returns 422 without active model and 503 during reindexing."""
+    """Verify AD-24 Epic 25: GET /search stays 200 (Speed-1), pure /rag/search returns 422/503."""
     monkeypatch.setenv("DATABASE_URL", database_url)
     engine = create_async_engine(database_url)
 
@@ -494,11 +494,21 @@ async def test_get_search_endpoint_blocked_without_model_and_during_reindex_post
         await conn.execute(sa.text("DELETE FROM rag_reindexing_jobs;"))
         await conn.execute(sa.text("DELETE FROM workspace_llm_tier_mappings;"))
 
+    rag_payload = {
+        "workspace_id": "0195f000-0000-7000-8000-000000000301",
+        "query_text": "contrat responsabilite civile",
+        "top_k": 5,
+    }
+
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        # 1. Without active model -> 422 ERR_NO_ACTIVE_EMBEDDING_MODEL
-        res_no_model = await client.get("/api/v1/search?q=contrat+responsabilite+civile")
-        assert res_no_model.status_code == 422
-        assert res_no_model.json()["error_code"] == "ERR_NO_ACTIVE_EMBEDDING_MODEL"
+        # 1. Without active model -> GET /search returns 200 (Speed-1 only), /rag/search returns 422
+        res_search_no_model = await client.get("/api/v1/search?q=contrat+responsabilite+civile")
+        assert res_search_no_model.status_code == 200
+        assert res_search_no_model.json()["speed2_executed"] is False
+
+        res_rag_no_model = await client.post("/api/v1/ontology-rag/rag/search", json=rag_payload)
+        assert res_rag_no_model.status_code == 422
+        assert res_rag_no_model.json()["error_code"] == "ERR_NO_ACTIVE_EMBEDDING_MODEL"
 
         # 2. Configure active global embedding model and active reindexing job (35%)
         model_id = new_uuid7_str()
@@ -536,10 +546,14 @@ async def test_get_search_endpoint_blocked_without_model_and_during_reindex_post
                 {"jid": UUID(job_id), "mid": UUID(model_id)},
             )
 
-        # Search during active job -> 503 ERR_RAG_REINDEX_IN_PROGRESS (zero lexical fallback)
-        res_in_progress = await client.get("/api/v1/search?q=contrat+responsabilite+civile")
-        assert res_in_progress.status_code == 503
-        problem = res_in_progress.json()
+        # GET /search remains 200 (Speed-1), pure /rag/search -> 503 ERR_RAG_REINDEX_IN_PROGRESS
+        res_search_in_progress = await client.get("/api/v1/search?q=contrat+responsabilite+civile")
+        assert res_search_in_progress.status_code == 200
+        assert res_search_in_progress.json()["speed2_executed"] is False
+
+        res_rag_in_progress = await client.post("/api/v1/ontology-rag/rag/search", json=rag_payload)
+        assert res_rag_in_progress.status_code == 503
+        problem = res_rag_in_progress.json()
         assert problem["error_code"] == "ERR_RAG_REINDEX_IN_PROGRESS"
         assert problem["progress_percentage"] == 35
 

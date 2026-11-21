@@ -242,6 +242,10 @@ async def resolve_finops_read_scope(
         ws = auth_svc.evaluator.get_workspace(scope_id)
         if ws is None:
             raise ResourceNotFoundError(instance=path)
+        if ws.ui_visibility_mode == "PRIVATE_USER" and (
+            ws.personal_owner_user_id is None or str(ws.personal_owner_user_id) != str(user.id)
+        ):
+            raise ScopeAccessDeniedError(instance=path)
         if auth_svc.evaluator.resolve_workspace_access(user, ws.id) is None:
             raise ScopeAccessDeniedError(instance=path)
         return (ws.id,)

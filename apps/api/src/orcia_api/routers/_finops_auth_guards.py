@@ -73,7 +73,16 @@ async def enforce_scope_level_mutation(
         ws = auth_svc.evaluator.get_workspace(scope_id)
         if ws is None:
             raise ResourceNotFoundError(instance=path)
-        if is_platform_admin and ws.visibility_mode != "CONFIDENTIAL_RESTRICTED":
+        if ws.ui_visibility_mode == "PRIVATE_USER" and (
+            ws.personal_owner_user_id is None or str(ws.personal_owner_user_id) != str(user.id)
+        ):
+            raise ScopeAccessDeniedError(instance=path)
+        if (
+            is_platform_admin
+            and ws.visibility_mode != "CONFIDENTIAL_RESTRICTED"
+            and ws.ui_visibility_mode != "PRIVATE_USER"
+            and ws.personal_owner_user_id is None
+        ):
             return
         auth_svc.evaluator.enforce_scope_mutation_guard(user, scope_id, instance=path)
         return
@@ -258,6 +267,8 @@ async def enforce_audit_read_access(
         if (
             ws.owner_org_unit_id in allowed_ou_set
             and ws.visibility_mode != "CONFIDENTIAL_RESTRICTED"
+            and ws.ui_visibility_mode != "PRIVATE_USER"
+            and ws.personal_owner_user_id is None
         ):
             accessible_ws_set.add(ws.id)
 

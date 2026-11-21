@@ -207,8 +207,8 @@ def test_api_rag_search_returns_422_when_no_active_embedding_model() -> None:
     assert resp.headers.get("content-type") == "application/problem+json"
 
 
-def test_api_assistant_three_speed_turn_returns_422_when_no_active_embedding_model() -> None:
-    """POST /api/v1/assistant/three-speed/turn returns HTTP 422 ERR_NO_ACTIVE_EMBEDDING_MODEL."""
+def test_api_assistant_and_federated_search_succeed_when_no_active_embedding_model() -> None:
+    """AD-24 Epic 25: Assistant and GET /search stay unlocked (200) without embedding model."""
     app = create_app()
 
     def _raise_no_model() -> EmbeddingPort:
@@ -219,16 +219,20 @@ def test_api_assistant_three_speed_turn_returns_422_when_no_active_embedding_mod
     app.dependency_overrides[get_embedding_port] = _raise_no_model
     client = TestClient(app)
 
-    resp = client.post(
+    resp_turn = client.post(
         "/api/v1/assistant/three-speed/turn",
         json={
             "workspace_id": "ws-test",
-            "user_id": "usr-test",
-            "user_message": "Hello assistant",
-            "speed": "BALANCED",
+            "user_prompt": "Hello assistant without embedding",
+            "requested_speed": "SPEED_1_FAST",
         },
     )
-    assert resp.status_code == 422
-    data = resp.json()
-    assert data["error_code"] == "ERR_NO_ACTIVE_EMBEDDING_MODEL"
-    assert resp.headers.get("content-type") == "application/problem+json"
+    assert resp_turn.status_code == 200
+    assert resp_turn.json()["response_text"]
+
+    resp_search = client.get(
+        "/api/v1/search",
+        params={"q": "claims validation rule", "workspace_id": "ws-test"},
+    )
+    assert resp_search.status_code == 200
+    assert resp_search.json()["speed2_executed"] is False

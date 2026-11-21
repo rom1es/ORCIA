@@ -57936,6 +57936,22 @@
               ],
               "title": "Actor Persona"
             }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
           }
         ],
         "responses": {
@@ -58055,6 +58071,22 @@
                 }
               ],
               "title": "Actor Persona"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
             }
           }
         ],
@@ -58388,6 +58420,22 @@
               ],
               "title": "Actor Persona"
             }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
           }
         ],
         "requestBody": {
@@ -58533,12 +58581,34 @@
           },
           {
             "in": "query",
-            "name": "actor_role",
+            "name": "actor_persona",
             "required": false,
             "schema": {
-              "default": "PLATFORM_ADMIN",
-              "title": "Actor Role",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor Persona"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
             }
           }
         ],
@@ -58670,6 +58740,22 @@
                 }
               ],
               "title": "Actor Persona"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
             }
           }
         ],
@@ -58918,6 +59004,22 @@
           },
           {
             "in": "query",
+            "name": "actor_persona",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor Persona"
+            }
+          },
+          {
+            "in": "query",
             "name": "persona_key",
             "required": false,
             "schema": {
@@ -59052,6 +59154,22 @@
                 }
               ],
               "title": "Actor Persona"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
             }
           }
         ],
@@ -67785,6 +67903,22 @@
             "schema": {
               "title": "Workspace Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona"
             }
           }
         ],

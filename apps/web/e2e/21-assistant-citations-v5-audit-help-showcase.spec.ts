@@ -4,7 +4,10 @@ import { watchUnexpectedPageAndApiErrors } from "./support/apiErrors";
 import { resetDay0 } from "./support/day0";
 import { expectDbRowCount, expectDbRowExists } from "./support/dbAssertions";
 import { bootstrapAdminSession, getBearerTokenFromSession } from "./support/authAndOrgHelpers";
-import { configureActiveEmbeddingModelViaApi } from "./support/embeddingModel";
+import {
+  configureActiveChatModelViaApi,
+  configureActiveEmbeddingModelViaApi,
+} from "./support/embeddingModel";
 import { createOrgAndWorkspaceWithId } from "./support/workspaceAndCatalogHelpers";
 import {
   openAssistantPage,
@@ -27,6 +30,7 @@ test.describe("Assistant conversationnel, citations déterministes, centre d'aid
       name: "Espace Assistant Citations",
       slug: "ws-assistant-citations",
     });
+    await configureActiveChatModelViaApi(page);
     await configureActiveEmbeddingModelViaApi(page);
     const token = await getBearerTokenFromSession(page);
     const authHeaders = { Authorization: `Bearer ${token}` };

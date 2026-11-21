@@ -3,6 +3,10 @@ import type {
   ScopeOptionItem,
   UnifiedScopeOptionGroup,
 } from "@orcia/ui";
+import {
+  SHELL_SCOPE_OPTIONS_EN,
+  SHELL_SCOPE_OPTIONS_FR,
+} from "../i18n/locales/shell_scope_labels";
 import type { ConfiguredOrgUnit } from "./platformSetupStore";
 
 export interface UnifiedScopeSelectorState {
@@ -53,12 +57,12 @@ export function buildUnifiedScopeSelectorState(params: {
   };
 }): UnifiedScopeSelectorState {
   const { isFr, orgUnits, workspaces, activeScopeId, labels } = params;
-  const personalGroupLabel = labels?.personalGroupLabel ?? (isFr ? "Personnel" : "Personal");
+  const fallbackLabels = isFr ? SHELL_SCOPE_OPTIONS_FR : SHELL_SCOPE_OPTIONS_EN;
+  const personalGroupLabel = labels?.personalGroupLabel ?? fallbackLabels.personalGroupLabel;
   const otherSpacesGroupLabel =
-    labels?.otherSpacesGroupLabel ?? (isFr ? "Autres espaces" : "Other spaces");
-  const allMySpacesLabel =
-    labels?.allMySpacesOption ?? (isFr ? "Tous mes espaces" : "All my spaces");
-  const scopeLabel = labels?.workspaceLabel ?? (isFr ? "Espace actif" : "Active space");
+    labels?.otherSpacesGroupLabel ?? fallbackLabels.otherSpacesGroupLabel;
+  const allMySpacesLabel = labels?.allMySpacesOption ?? fallbackLabels.allMySpacesOption;
+  const scopeLabel = labels?.workspaceLabel ?? fallbackLabels.workspaceLabel;
 
   const groups: UnifiedScopeOptionGroup[] = [];
   const privateWorkspaces = workspaces.filter((ws) => ws.visibilityMode === "PRIVATE_USER");

@@ -280,6 +280,26 @@ async def test_connectors_passthrough_and_rag_referent_postgres18(
         assert active_tokens[0]["external_author_login"] == "karim_jira"
 
         # 5. Workspace Datasources & Dynamic RAG Health Cycle
+        # Seed active GLOBAL embedding model required by AD-24 (Story 25.5) for WORK_TRACKER sources
+        emb_res = await client.post(
+            "/api/v1/settings/ai-models/mappings",
+            headers=headers_admin,
+            json={
+                "scope_level": "GLOBAL",
+                "display_name": "Story 17.4 Embeddings",
+                "inference_tier": "simple",
+                "effort": "balanced",
+                "provider_slug": "openai",
+                "model_family": "OpenAI",
+                "model_name": "text-embedding-3-small",
+                "endpoint_uri": "https://api.openai.com/v1",
+                "auth_mode": "none_local",
+                "protocol_mode": "openai_compatible",
+                "usage": "embedding",
+            },
+        )
+        assert emb_res.status_code in (200, 201), emb_res.text
+
         # 5a. Service Account Mode -> ACTIVE
         ds_sa_res = await client.post(
             f"/api/v1/workspaces/{ws_id}/datasources",

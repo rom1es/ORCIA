@@ -40,10 +40,11 @@ from orcia_api.routers.assistant_llm_providers import (
     stream_provider_chat_sse_async,
 )
 from orcia_api.routers.assistant_llm_resolver import (
-    extract_tier_endpoint_from_dict as _extract_tier_endpoint_from_dict,
+    ensure_active_chat_model_if_live,
+    resolve_configured_llm_endpoint,
 )
 from orcia_api.routers.assistant_llm_resolver import (
-    resolve_configured_llm_endpoint,
+    extract_tier_endpoint_from_dict as _extract_tier_endpoint_from_dict,
 )
 from orcia_api.routers.assistant_llm_resolver import (
     select_endpoint_from_tiers as _select_endpoint_from_tiers,
@@ -209,15 +210,12 @@ async def invoke_configured_llm_for_assistant_turn(
                 ),
             },
         ]
-        second = await invoke_provider_chat_async(
-            http_client, ep=ep, messages=followup_msgs, tools=None
-        )
+        second = await invoke_provider_chat_async(http_client, ep=ep, messages=followup_msgs)
         if second is not None and second.content:
             content = second.content
             total_in_tokens += second.input_tokens
             total_out_tokens += second.output_tokens
-            if second.usage_source == "provider":
-                usage_source = "provider"
+            usage_source = "provider" if second.usage_source == "provider" else usage_source
 
     if not content:
         return None
@@ -332,6 +330,7 @@ __all__ = [
     "build_provider_request_body",
     "build_workspace_tools_schema",
     "detect_adaptive_thinking_steps_for_question",
+    "ensure_active_chat_model_if_live",
     "extract_thinking_and_clean_content",
     "get_active_turn_for_workspace",
     "invoke_configured_llm_for_assistant_turn",

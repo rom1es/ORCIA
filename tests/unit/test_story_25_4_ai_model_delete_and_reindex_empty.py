@@ -99,7 +99,7 @@ def _make_fake_conn(
     *,
     other_active_count: int = 0,
     active_run_rows: list[tuple[Any, ...]] | None = None,
-    raise_on_runs_query: bool = False,
+    runs_query_exc: Exception | None = None,
 ) -> tuple[MagicMock, list[str]]:
     executed_sql: list[str] = []
 
@@ -113,8 +113,8 @@ def _make_fake_conn(
         if "FROM workspace_llm_tier_mappings" in sql_text and "COUNT(*)" in sql_text:
             return _FakeResult(scalar_value=other_active_count)
         if "FROM workflow_runs wr" in sql_text:
-            if raise_on_runs_query:
-                raise RuntimeError("transient sql error")
+            if runs_query_exc is not None:
+                raise runs_query_exc
             return _FakeResult(rows=active_run_rows or [])
         return _FakeResult()
 
@@ -218,16 +218,30 @@ async def test_delete_guard_blocks_with_409_only_when_active_or_paused_run_pins_
 async def test_delete_impact_handles_runs_query_failure_gracefully(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Only missing-table (42P01 / UndefinedTableError) is tolerated; SQL errors propagate."""
     mapping = _sample_mapping(inference_tier="simple")
     monkeypatch.setattr(
         "orcia_core.orchestration._internal._sql_ai_model_delete_guards.get_ai_model_mapping_pg18",
         AsyncMock(return_value=mapping),
     )
-    conn, _ = _make_fake_conn(other_active_count=0, raise_on_runs_query=True)
 
-    impact = await evaluate_ai_model_delete_impact_pg18(conn, mapping.id)
+    class UndefinedTableError(Exception):
+        sqlstate = "42P01"
+
+    conn_legacy, _ = _make_fake_conn(
+        other_active_count=0,
+        runs_query_exc=UndefinedTableError('relation "inference_attempts" does not exist'),
+    )
+    impact = await evaluate_ai_model_delete_impact_pg18(conn_legacy, mapping.id)
     assert impact.pinned_active_runs_count == 0
     assert impact.dependent_workflows_count == 0
+
+    conn_real_err, _ = _make_fake_conn(
+        other_active_count=0,
+        runs_query_exc=RuntimeError("transient sql error"),
+    )
+    with pytest.raises(RuntimeError, match="transient sql error"):
+        await evaluate_ai_model_delete_impact_pg18(conn_real_err, mapping.id)
 
 
 @pytest.mark.asyncio

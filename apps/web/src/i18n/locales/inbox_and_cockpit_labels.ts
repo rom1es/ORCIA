@@ -18,6 +18,13 @@ export interface InboxAndCockpitDictionarySection {
   readonly topHeader: TopHeaderBarLabels;
   readonly sprintWidget: SprintContextWidgetLabels;
   readonly scopedPrompt: ScopedPromptBoxLabels;
+  readonly humanLedGovernance: {
+    readonly sectionTitle: string;
+    readonly anchorAndArbitrationDesc: string;
+    readonly anchorOnlyDesc: string;
+    readonly arbitrationOnlyDesc: string;
+    readonly signatureLabel: string;
+  };
 }
 
 export const INBOX_AND_COCKPIT_FR_LABELS: InboxAndCockpitDictionarySection = {
@@ -148,6 +155,16 @@ export const INBOX_AND_COCKPIT_FR_LABELS: InboxAndCockpitDictionarySection = {
     tier3Label: "Analyse Approfondie",
     submitCta: "Demander à Mon Assistant",
   },
+  humanLedGovernance: {
+    sectionTitle: "Gouvernance Human-Led : Action requise",
+    anchorAndArbitrationDesc:
+      "Signez l'intention obligatoire (≥ 30 caractères) et départagez les options en attente.",
+    anchorOnlyDesc:
+      "Rédigez et signez l'ancrage humain obligatoire (≥ 30 caractères) pour débloquer la suite du processus.",
+    arbitrationOnlyDesc:
+      "Départagez les options en attente pour reprendre l'exécution du processus.",
+    signatureLabel: "Signature de l'auteur",
+  },
 };
 
 export const INBOX_AND_COCKPIT_EN_LABELS: InboxAndCockpitDictionarySection = {
@@ -276,5 +293,15 @@ export const INBOX_AND_COCKPIT_EN_LABELS: InboxAndCockpitDictionarySection = {
     tier2Label: "Balanced Standard",
     tier3Label: "In-Depth Analysis",
     submitCta: "Ask My Assistant",
+  },
+  humanLedGovernance: {
+    sectionTitle: "Human-Led Governance: Action Required",
+    anchorAndArbitrationDesc:
+      "Sign the mandatory intent (≥ 30 characters) and resolve pending option tie-breaks.",
+    anchorOnlyDesc:
+      "Author and sign the mandatory human anchor (≥ 30 characters) to unblock process execution.",
+    arbitrationOnlyDesc:
+      "Resolve the pending option tie-break to resume process execution.",
+    signatureLabel: "Author signature",
   },
 };

@@ -51,6 +51,10 @@ def test_accostage_six_milestones_never_target_welcome_setup() -> None:
     assert first_admin_spec.key == "first-admin"
     assert first_admin_spec.target_route == "/profile"
 
+    first_datasource_spec = ACCOSTAGE_SIX_MILESTONES[4]
+    assert first_datasource_spec.key == "first-datasource"
+    assert first_datasource_spec.target_route == "/spaces"
+
 
 def test_accostage_status_pre_admin_day0_vs_post_admin_targets_and_identity() -> None:
     svc = ProgressiveDay0AccostageService(orcia_env="local")

@@ -34,7 +34,7 @@ LlmProgressiveTierMode = Literal[
 
 SINGLE_FAMILY_AMBER_WARNING_FR: str = (
     "⚠️ 1 seule famille de modèles configurée — Ajoutez une 2e famille dans "
-    "Configuration › Modèles IA pour activer les Gates Agentiques AD-10"
+    "Administration › Modèles IA pour activer les contrôles croisés de qualité"
 )
 
 EXCLUSIVE_USERS_LOCK_SQL: str = "LOCK TABLE users IN EXCLUSIVE MODE"
@@ -77,7 +77,7 @@ ACCOSTAGE_SIX_MILESTONES: tuple[AccostageMilestoneSpec, ...] = (
         "first-llm-model",
         "2. Modèles IA",
         "2. AI Models",
-        "/configuration",
+        "/settings/ai-models",
     ),
     AccostageMilestoneSpec(
         3,
@@ -98,7 +98,7 @@ ACCOSTAGE_SIX_MILESTONES: tuple[AccostageMilestoneSpec, ...] = (
         "first-datasource",
         "5. Première Source",
         "5. First Source",
-        "/configuration",
+        "/spaces",
     ),
     AccostageMilestoneSpec(
         6,

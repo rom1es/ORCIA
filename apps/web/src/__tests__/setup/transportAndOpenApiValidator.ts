@@ -94,6 +94,10 @@ export async function vitestFetchTransport(
   });
   if (iamResp !== null) return iamResp;
 
+  const hasActiveEmbeddingModel = backendState.aiModelMappings.some(
+    (m) => m.usage === "embedding" && m.is_active !== false && (m.scope_level ?? "GLOBAL") === "GLOBAL",
+  );
+
   const connResp = handleVitestConnectorsRoute({
     method,
     path,
@@ -102,6 +106,7 @@ export async function vitestFetchTransport(
     reqHeaders,
     firstAdmin: backendState.firstAdmin,
     orgUnits: backendState.orgUnits,
+    hasActiveEmbeddingModel,
     jsonResponse,
     problemResponse: (status, title, detail, errorCode) =>
       problemResponse(status, errorCode, title, detail, path),

@@ -1,20 +1,15 @@
-"""Story 17.4 & 18.1 — Workspace RAG & Multi-Nature Datasources Router.
-
-Exposes:
-- `GET    /api/v1/workspaces/{workspace_id}/datasources`
-- `POST   /api/v1/workspaces/{workspace_id}/datasources`
-- `PATCH  /api/v1/workspaces/{workspace_id}/datasources/{datasource_id}`
-- `DELETE /api/v1/workspaces/{workspace_id}/datasources/{datasource_id}`
-- `POST   /api/v1/workspaces/{workspace_id}/datasources/{datasource_id}/sync`
-"""
+"""Story 17.4, 18.1 & 25.5 — Workspace RAG & Multi-Nature Datasources Router."""
 
 from __future__ import annotations
 
+import json
 from typing import Annotated, Any
+from uuid import UUID
 
+import sqlalchemy as sa
 from fastapi import APIRouter, Path, Query, Request
 
-from orcia_api.dependencies import get_or_create_shared_db_engine
+from orcia_api.dependencies import get_auth_service, get_or_create_shared_db_engine
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.routers.ontology_rag_helpers import persist_ingested_document_pg
 from orcia_api.schemas.enterprise_connectors import (
@@ -34,10 +29,12 @@ from orcia_core.bootstrap import (
     update_workspace_datasource_on_postgres18,
 )
 from orcia_core.observability.logging import get_current_trace_id, get_logger
+from orcia_core.permissions import UserIdentity
 from orcia_core.permissions.errors import (
     CodegraphWorkspaceLeadRequiredError,
     ObserverModeReadOnlyError,
     ResourceNotFoundError,
+    ScopeAccessDeniedError,
 )
 from orcia_core.permissions.workspace_sources_governance import (
     WorkspaceDatasourceRecord,
@@ -72,7 +69,17 @@ def _pg_enabled() -> bool:
     return is_pg_runtime_active()
 
 
-def _enforce_mutation_access(request: Request, persona_key: str | None = None) -> Any:
+def _resolve_datasources_user(request: Request, persona_key: str | None = None) -> UserIdentity:
+    has_bearer = bool(request.headers.get("Authorization"))
+    effective_persona = (
+        None
+        if has_bearer
+        else (persona_key or request.headers.get("x-orcia-persona", "").strip() or None)
+    )
+    return resolve_request_user(request, persona_key=effective_persona)
+
+
+def _enforce_mutation_access(request: Request, persona_key: str | None = None) -> UserIdentity:
     access_mode_hdr = request.headers.get("x-orcia-access-mode", "").strip().upper()
     observer_hdr = request.headers.get("x-orcia-observer-mode", "").strip().lower()
     active_hat = request.headers.get("x-orcia-active-hat", "").strip().upper()
@@ -83,11 +90,69 @@ def _enforce_mutation_access(request: Request, persona_key: str | None = None) -
     ):
         raise ObserverModeReadOnlyError(instance=str(request.url.path))
 
-    effective_persona = persona_key or request.headers.get("x-orcia-persona", "").strip() or None
-    user = resolve_request_user(request, persona_key=effective_persona)
+    user = _resolve_datasources_user(request, persona_key=persona_key)
     if user.platform_role == "OBSERVER":
         raise ObserverModeReadOnlyError(instance=str(request.url.path))
     return user
+
+
+async def _enforce_personal_workspace_isolation(
+    request: Request,
+    user: UserIdentity,
+    workspace_id: str,
+) -> None:
+    """Reject any caller (even `PLATFORM_ADMIN`) accessing another user's `PRIVATE_USER` space."""
+    path = str(request.url.path)
+    auth_svc = get_auth_service(request)
+    ws_ent = auth_svc.evaluator.get_workspace(workspace_id)
+    if (
+        ws_ent is not None
+        and (
+            ws_ent.ui_visibility_mode == "PRIVATE_USER" or ws_ent.personal_owner_user_id is not None
+        )
+        and (
+            not ws_ent.personal_owner_user_id or str(ws_ent.personal_owner_user_id) != str(user.id)
+        )
+    ):
+        raise ScopeAccessDeniedError(instance=path)
+
+    if _pg_enabled() or getattr(request.app.state, "db_engine", None) is not None:
+        try:
+            UUID(workspace_id)
+        except (ValueError, TypeError):
+            return
+        engine = get_or_create_shared_db_engine(request)
+        async with engine.connect() as conn:
+            row = (
+                (
+                    await conn.execute(
+                        sa.text(
+                            "SELECT settings_jsonb FROM workspaces WHERE id = CAST(:ws_id AS uuid)"
+                        ),
+                        {"ws_id": workspace_id},
+                    )
+                )
+                .mappings()
+                .first()
+            )
+        if row is not None:
+            raw_st = row.get("settings_jsonb")
+            st_dict: dict[str, object] = {}
+            if isinstance(raw_st, dict):
+                st_dict = raw_st
+            elif isinstance(raw_st, str):
+                try:
+                    decoded = json.loads(raw_st)
+                    if isinstance(decoded, dict):
+                        st_dict = decoded
+                except ValueError:
+                    st_dict = {}
+            ui_vis = str(st_dict.get("ui_visibility_mode") or "").strip()
+            personal_owner = str(st_dict.get("personal_owner_user_id") or "").strip() or None
+            if (ui_vis == "PRIVATE_USER" or personal_owner is not None) and (
+                not personal_owner or personal_owner != str(user.id)
+            ):
+                raise ScopeAccessDeniedError(instance=path)
 
 
 def _enforce_codegraph_access(request: Request, user: Any) -> None:
@@ -143,7 +208,11 @@ def _serialize_datasource(rec: WorkspaceDatasourceRecord) -> WorkspaceDatasource
 async def list_workspace_datasources(
     request: Request,
     workspace_id: Annotated[str, Path()],
+    persona: Annotated[str | None, Query(alias="persona")] = None,
 ) -> WorkspaceDatasourcesListResponse:
+    user = _resolve_datasources_user(request, persona_key=persona)
+    await _enforce_personal_workspace_isolation(request, user, workspace_id)
+
     if _pg_enabled():
         engine = get_or_create_shared_db_engine(request)
         datasources = await list_workspace_datasources_from_postgres18(
@@ -171,6 +240,7 @@ async def create_workspace_datasource(
     persona: Annotated[str | None, Query(alias="persona")] = None,
 ) -> WorkspaceDatasourceItemResponse:
     user = _enforce_mutation_access(request, persona_key=persona)
+    await _enforce_personal_workspace_isolation(request, user, workspace_id)
 
     if payload.codegraph_enabled:
         _enforce_codegraph_access(request, user)
@@ -218,6 +288,7 @@ async def update_workspace_datasource(
     persona: Annotated[str | None, Query(alias="persona")] = None,
 ) -> WorkspaceDatasourceItemResponse:
     user = _enforce_mutation_access(request, persona_key=persona)
+    await _enforce_personal_workspace_isolation(request, user, workspace_id)
 
     if (
         payload.codegraph_enabled is not None
@@ -264,7 +335,8 @@ async def delete_workspace_datasource(
     datasource_id: Annotated[str, Path()],
     persona: Annotated[str | None, Query(alias="persona")] = None,
 ) -> WorkspaceDatasourceDeleteResponse:
-    _enforce_mutation_access(request, persona_key=persona)
+    user = _enforce_mutation_access(request, persona_key=persona)
+    await _enforce_personal_workspace_isolation(request, user, workspace_id)
 
     if _pg_enabled():
         engine = get_or_create_shared_db_engine(request)
@@ -296,7 +368,8 @@ async def trigger_workspace_datasource_sync(
     datasource_id: Annotated[str, Path()],
     persona: Annotated[str | None, Query(alias="persona")] = None,
 ) -> TriggerWorkspaceDatasourceSyncResponse:
-    _enforce_mutation_access(request, persona_key=persona)
+    user = _enforce_mutation_access(request, persona_key=persona)
+    await _enforce_personal_workspace_isolation(request, user, workspace_id)
 
     if _pg_enabled():
         engine = get_or_create_shared_db_engine(request)

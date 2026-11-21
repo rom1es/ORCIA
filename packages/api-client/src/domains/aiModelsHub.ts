@@ -94,9 +94,10 @@ export function createAiModelsHubDomainClient(requestJson: RequestJsonFn) {
     deleteAiModelMapping(
       mappingId: string,
       mode: "reject" | "drain" | "force" = "reject",
-      actorRole = "PLATFORM_ADMIN",
+      actorPersona?: string,
     ): Promise<AiModelDeleteResponse> {
-      const q = new URLSearchParams({ mode, actor_role: actorRole });
+      const q = new URLSearchParams({ mode });
+      if (actorPersona) q.set("actor_persona", actorPersona);
       return requestJson<AiModelDeleteResponse>(
         `/api/v1/settings/ai-models/mappings/${encodeURIComponent(mappingId)}?${q.toString()}`,
         "DELETE",

@@ -27,39 +27,54 @@ const dummyTierLabels = {
   effortDeep: "Approfondi",
 };
 
-describe("Story 19.7 — RAG Reindexing Banner, Input Lock, Hub Panel & F5 Survival", () => {
-  it("displays reindexing banner with percentage, disables input and send button, and survives F5 refresh", async () => {
-    // Platform setup with an active embedding model and reindexing IN_PROGRESS at 55%
+const ACTIVE_CHAT_AND_EMBED_MAPPINGS = [
+  {
+    id: "mod-chat-1",
+    display_name: "GPT-4o Mini",
+    inference_tier: "medium",
+    effort: "balanced",
+    provider_slug: "openai",
+    model_family: "OpenAI",
+    model_name: "gpt-4o-mini",
+    endpoint_uri: "https://api.openai.com/v1",
+    auth_mode: "none_local",
+    protocol_mode: "openai_compatible",
+    usage: "chat",
+    is_active: true,
+  },
+  {
+    id: "mod-emb-1",
+    display_name: "Text Embedding 3 Small",
+    inference_tier: "simple",
+    effort: "balanced",
+    provider_slug: "openai",
+    model_family: "OpenAI",
+    model_name: "text-embedding-3-small",
+    endpoint_uri: "https://api.openai.com/v1",
+    auth_mode: "none_local",
+    protocol_mode: "openai_compatible",
+    usage: "embedding",
+    is_active: true,
+  },
+];
+
+const TEST_WORKSPACE = {
+  workspaceId: "ws-claims-alpha",
+  name: "Claims Alpha",
+  visibilityMode: "STANDARD" as const,
+  ownerOrgUnitName: "Claims Team",
+  lifecyclePhase: "BUILD" as const,
+  suggestedWorkflows: [],
+  accessMode: "CONTRIBUTOR_ACTION_REQUIRED" as const,
+  finopsCostUsd: 0,
+};
+
+describe("Story 19.7 / AD-24 Epic 25 — Non-Blocking RAG Reindexing Notice, Hub Panel & F5 Survival", () => {
+  it("displays non-blocking reindexing notice with percentage, keeps Assistant input active, and survives F5 refresh", async () => {
     seedVitestPlatformSetupState(
       {
-        workspaces: [
-          {
-            workspaceId: "ws-claims-alpha",
-            name: "Claims Alpha",
-            visibilityMode: "STANDARD",
-            ownerOrgUnitName: "Claims Team",
-            lifecyclePhase: "BUILD",
-            suggestedWorkflows: [],
-            accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
-            finopsCostUsd: 0,
-          },
-        ],
-        ai_model_mappings: [
-          {
-            id: "mod-emb-1",
-            display_name: "Text Embedding 3 Small",
-            inference_tier: "simple",
-            effort: "balanced",
-            provider_slug: "openai",
-            model_family: "OpenAI",
-            model_name: "text-embedding-3-small",
-            endpoint_uri: "https://api.openai.com/v1",
-            auth_mode: "none_local",
-            protocol_mode: "openai_compatible",
-            usage: "embedding",
-            is_active: true,
-          },
-        ],
+        workspaces: [TEST_WORKSPACE],
+        ai_model_mappings: ACTIVE_CHAT_AND_EMBED_MAPPINGS,
       },
       { email: "admin@orcia.test", displayName: "Admin Test" },
     );
@@ -82,23 +97,23 @@ describe("Story 19.7 — RAG Reindexing Banner, Input Lock, Hub Panel & F5 Survi
       </I18nProvider>,
     );
 
-    // 1. Verify reindexing banner is displayed with 55%
+    // 1. Verify non-blocking reindexing notice is displayed with 55%
     await waitFor(() => {
-      expect(screen.getByTestId("assistant-reindexing-banner")).toBeDefined();
+      expect(screen.getByTestId("assistant-rag-inactive-notice")).toBeDefined();
     });
 
-    const banner = screen.getByTestId("assistant-reindexing-banner");
-    expect(banner.textContent).toContain("55%");
-    expect(banner.textContent).toContain("Réindexation sémantique en cours");
+    const notice = screen.getByTestId("assistant-rag-inactive-notice");
+    expect(notice.getAttribute("role")).toBe("status");
+    expect(notice.textContent).toContain("55%");
 
-    // 2. Verify input and send button are disabled
+    // 2. Verify input and send button remain enabled when an active chat model exists
     const promptInput = screen.getByTestId("assistant-three-speed-input") as HTMLInputElement;
-    expect(promptInput.disabled).toBe(true);
+    expect(promptInput.disabled).toBe(false);
 
     const sendBtn = screen.getByTestId("assistant-three-speed-send-btn") as HTMLButtonElement;
-    expect(sendBtn.disabled).toBe(true);
+    expect(sendBtn.disabled).toBe(false);
 
-    // 3. F5 Survival: unmount and remount (simulates page refresh)
+    // 3. F5 Survival: unmount and remount
     unmount();
 
     render(
@@ -110,43 +125,17 @@ describe("Story 19.7 — RAG Reindexing Banner, Input Lock, Hub Panel & F5 Survi
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId("assistant-reindexing-banner")).toBeDefined();
+      expect(screen.getByTestId("assistant-rag-inactive-notice")).toBeDefined();
     });
-    expect((screen.getByTestId("assistant-three-speed-input") as HTMLInputElement).disabled).toBe(true);
-    expect((screen.getByTestId("assistant-three-speed-send-btn") as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByTestId("assistant-three-speed-input") as HTMLInputElement).disabled).toBe(false);
+    expect((screen.getByTestId("assistant-three-speed-send-btn") as HTMLButtonElement).disabled).toBe(false);
   });
 
-  it("displays failure banner with relaunch action when reindexing failed", async () => {
+  it("displays non-blocking failure notice with relaunch action when reindexing failed while keeping Assistant unlocked", async () => {
     seedVitestPlatformSetupState(
       {
-        workspaces: [
-          {
-            workspaceId: "ws-claims-alpha",
-            name: "Claims Alpha",
-            visibilityMode: "STANDARD",
-            ownerOrgUnitName: "Claims Team",
-            lifecyclePhase: "BUILD",
-            suggestedWorkflows: [],
-            accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
-            finopsCostUsd: 0,
-          },
-        ],
-        ai_model_mappings: [
-          {
-            id: "mod-emb-1",
-            display_name: "Text Embedding 3 Small",
-            inference_tier: "simple",
-            effort: "balanced",
-            provider_slug: "openai",
-            model_family: "OpenAI",
-            model_name: "text-embedding-3-small",
-            endpoint_uri: "https://api.openai.com/v1",
-            auth_mode: "none_local",
-            protocol_mode: "openai_compatible",
-            usage: "embedding",
-            is_active: true,
-          },
-        ],
+        workspaces: [TEST_WORKSPACE],
+        ai_model_mappings: ACTIVE_CHAT_AND_EMBED_MAPPINGS,
       },
       { email: "admin@orcia.test", displayName: "Admin Test" },
     );
@@ -167,11 +156,12 @@ describe("Story 19.7 — RAG Reindexing Banner, Input Lock, Hub Panel & F5 Survi
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId("assistant-reindex-failed-banner")).toBeDefined();
+      expect(screen.getByTestId("assistant-rag-inactive-notice")).toBeDefined();
     });
 
-    const failedBanner = screen.getByTestId("assistant-reindex-failed-banner");
-    expect(failedBanner.textContent).toContain("Quota provider dépassé");
+    const failedNotice = screen.getByTestId("assistant-rag-inactive-notice");
+    expect(failedNotice.textContent).toContain("Quota provider dépassé");
+    expect((screen.getByTestId("assistant-three-speed-input") as HTMLInputElement).disabled).toBe(false);
 
     const relaunchBtn = screen.getByTestId("assistant-relaunch-reindex-btn");
     expect(relaunchBtn).toBeDefined();
@@ -180,22 +170,7 @@ describe("Story 19.7 — RAG Reindexing Banner, Input Lock, Hub Panel & F5 Survi
 
   it("renders reindex panel and handles manual trigger in SettingsAiModelsSection", async () => {
     seedVitestPlatformSetupState({
-      ai_model_mappings: [
-        {
-          id: "mod-emb-1",
-          display_name: "Text Embedding 3 Small",
-          inference_tier: "simple",
-          effort: "balanced",
-          provider_slug: "openai",
-          model_family: "OpenAI",
-          model_name: "text-embedding-3-small",
-          endpoint_uri: "https://api.openai.com/v1",
-          auth_mode: "none_local",
-          protocol_mode: "openai_compatible",
-          usage: "embedding",
-          is_active: true,
-        },
-      ],
+      ai_model_mappings: ACTIVE_CHAT_AND_EMBED_MAPPINGS,
     });
 
     setVitestMockReindexStatus({
@@ -230,42 +205,15 @@ describe("Story 19.7 — RAG Reindexing Banner, Input Lock, Hub Panel & F5 Survi
     fireEvent.click(relaunchBtn);
   });
 
-  it("when corpus has 0 chunks (Day-0 state), reindexing is immediately COMPLETED without blocking banner or disabled input", async () => {
+  it("when corpus has 0 chunks (Day-0 state), reindexing is immediately COMPLETED without notice or disabled input", async () => {
     seedVitestPlatformSetupState(
       {
-        workspaces: [
-          {
-            workspaceId: "ws-claims-alpha",
-            name: "Claims Alpha",
-            visibilityMode: "STANDARD",
-            ownerOrgUnitName: "Claims Team",
-            lifecyclePhase: "BUILD",
-            suggestedWorkflows: [],
-            accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
-            finopsCostUsd: 0,
-          },
-        ],
-        ai_model_mappings: [
-          {
-            id: "model-active-embed",
-            scope_level: "GLOBAL",
-            scope_id: "global",
-            display_name: "Active OpenAI Embedding",
-            inference_tier: "auto",
-            effort: "default",
-            provider_slug: "openai",
-            model_family: "OpenAI",
-            model_name: "text-embedding-3-small",
-            endpoint_uri: "https://api.openai.com/v1",
-            is_active: true,
-            usage: "embedding",
-          },
-        ],
+        workspaces: [TEST_WORKSPACE],
+        ai_model_mappings: ACTIVE_CHAT_AND_EMBED_MAPPINGS,
       },
       { email: "admin@orcia.test", displayName: "Admin Test" },
     );
 
-    // Day-0 state: COMPLETED directly with 0 chunks and 100%
     setVitestMockReindexStatus({
       status: "COMPLETED",
       progress_percentage: 100,
@@ -282,13 +230,15 @@ describe("Story 19.7 — RAG Reindexing Banner, Input Lock, Hub Panel & F5 Survi
       </I18nProvider>,
     );
 
-    const promptInput = (await screen.findByTestId("assistant-three-speed-input")) as HTMLInputElement;
-    expect(promptInput).toBeDefined();
-    expect(promptInput.disabled).toBe(false);
+    await waitFor(() => {
+      const input = screen.getByTestId("assistant-three-speed-input") as HTMLInputElement;
+      expect(input.disabled).toBe(false);
+    });
+
+    expect(screen.queryByTestId("assistant-rag-inactive-notice")).toBeNull();
+    expect(screen.queryByTestId("assistant-no-chat-model-banner")).toBeNull();
 
     const sendBtn = screen.getByTestId("assistant-three-speed-send-btn") as HTMLButtonElement;
     expect(sendBtn.disabled).toBe(false);
-
-    expect(screen.queryByTestId("assistant-reindexing-banner")).toBeNull();
   });
 });

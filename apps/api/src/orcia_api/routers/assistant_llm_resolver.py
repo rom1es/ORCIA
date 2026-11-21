@@ -17,6 +17,8 @@ from orcia_api.routers.assistant_llm_providers import (
 
 def extract_tier_endpoint_from_dict(item: dict[str, Any]) -> ResolvedLiveLlmEndpoint | None:
     """Extract and validate endpoint from legacy snapshot dictionary."""
+    if str(item.get("usage") or "chat").strip().lower() == "embedding":
+        return None
     model_name = str(item.get("primaryModel") or item.get("model") or "").strip()
     endpoint_uri = str(item.get("endpointUrl") or item.get("endpoint_uri") or "").strip()
     if not model_name or not is_safe_llm_endpoint_url(endpoint_uri):
@@ -117,10 +119,60 @@ async def resolve_configured_llm_endpoint(
                 elapsed_ms=round((time.perf_counter() - t0) * 1000.0, 2),
                 error_type=type(exc).__name__,
             )
+    else:
+        hub_svc = getattr(request.app.state, "ai_models_hub_service", None)
+        if hub_svc is not None:
+            active_chat = hub_svc.list_mappings(is_active=True, usage="chat")
+            target = (requested_tier or "medium").strip().lower()
+            chosen_rec = next(
+                (m for m in active_chat if m.inference_tier == target and not m.draining),
+                next((m for m in active_chat if not m.draining), None),
+            )
+            if chosen_rec is not None and is_safe_llm_endpoint_url(chosen_rec.endpoint_uri):
+                return ResolvedLiveLlmEndpoint(
+                    provider=chosen_rec.provider_slug,
+                    model_name=chosen_rec.model_name,
+                    endpoint_uri=chosen_rec.endpoint_uri,
+                    auth_mode=chosen_rec.auth_mode,
+                    tier=chosen_rec.inference_tier,
+                    api_key=None,
+                )
     return None
 
 
+async def ensure_active_chat_model_if_live(
+    request: Request,
+    *,
+    requested_tier: str | None = None,
+) -> ResolvedLiveLlmEndpoint | None:
+    """Assert an active `chat` model exists when calling live LLM (outside cassette/testclient)."""
+    client_host = getattr(getattr(request, "client", None), "host", "") or ""
+    can_call_live = (
+        client_host != "testclient" or os.environ.get("ORCIA_FORCE_LIVE_LLM_IN_TESTS") == "1"
+    )
+    use_cassette = (
+        os.environ.get("ORCIA_USE_CASSETTE_LLM", "").strip().lower() in ("1", "true", "yes")
+        and os.environ.get("ORCIA_FORCE_LIVE_LLM_IN_TESTS") != "1"
+    )
+    if not can_call_live or use_cassette:
+        return None
+    ep = await resolve_configured_llm_endpoint(request, requested_tier=requested_tier)
+    if ep is None:
+        from orcia_core.orchestration.errors import TierModelNotConfiguredError
+
+        raise TierModelNotConfiguredError(
+            inference_tier=requested_tier or "medium",
+            detail_override=(
+                "Aucun modèle IA de dialogue (chat) actif n'est configuré. "
+                "Veuillez configurer un modèle chat dans /settings/ai-models."
+            ),
+            instance=str(request.url.path),
+        )
+    return ep
+
+
 __all__ = [
+    "ensure_active_chat_model_if_live",
     "extract_tier_endpoint_from_dict",
     "resolve_configured_llm_endpoint",
     "select_endpoint_from_tiers",

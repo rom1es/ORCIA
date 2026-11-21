@@ -127,7 +127,10 @@ def test_fastapi_reindex_status_and_trigger_endpoints() -> None:
     assert body_idle["status"] == "IDLE"
 
     # Trigger reindex without active model -> 422 ERR_NO_ACTIVE_EMBEDDING_MODEL
-    res_trigger_no_model = client.post("/api/v1/settings/ai-models/reindex-embeddings")
+    res_trigger_no_model = client.post(
+        "/api/v1/settings/ai-models/reindex-embeddings",
+        headers={"X-Orcia-Persona": "karim"},
+    )
     assert res_trigger_no_model.status_code == 422
     assert res_trigger_no_model.json()["error_code"] == "ERR_NO_ACTIVE_EMBEDDING_MODEL"
 
@@ -150,7 +153,10 @@ def test_fastapi_reindex_status_and_trigger_endpoints() -> None:
     assert rec.is_active is True
 
     # Trigger reindex with active model -> 200 OK (in-memory with 0 chunks: immediately COMPLETED)
-    res_trigger = client.post("/api/v1/settings/ai-models/reindex-embeddings")
+    res_trigger = client.post(
+        "/api/v1/settings/ai-models/reindex-embeddings",
+        headers={"X-Orcia-Persona": "karim"},
+    )
     assert res_trigger.status_code == 200
     trigger_data = res_trigger.json()
     assert trigger_data["status"] == "COMPLETED"
@@ -162,11 +168,10 @@ def test_fastapi_reindex_status_and_trigger_endpoints() -> None:
     assert res_status.json()["status"] == "COMPLETED"
 
 
-def test_fastapi_search_and_assistant_blocked_with_503_during_reindex() -> None:
-    """Verify RAG search and Assistant are blocked with 503 RFC 9457 during reindexing."""
+def test_fastapi_rag_blocked_503_while_assistant_and_search_stay_unlocked_during_reindex() -> None:
+    """Verify pure RAG returns 503 during reindexing while Assistant & GET /search stay 200."""
     app = create_app()
     app.state.reindex_manager = default_in_memory_reindex_manager
-    # Configure an active fake embedding adapter in app.state
     fake_adapter = FakeDeterministicEmbeddingAdapter()
     app.state.embedding_port = fake_adapter
 
@@ -178,7 +183,7 @@ def test_fastapi_search_and_assistant_blocked_with_503_during_reindex() -> None:
     )
     default_in_memory_reindex_manager.advance_progress(42)
 
-    # 2. RAG search -> HTTP 503 ERR_RAG_REINDEX_IN_PROGRESS
+    # 2. Pure RAG search -> HTTP 503 ERR_RAG_REINDEX_IN_PROGRESS
     rag_payload = {
         "workspace_id": "0195f000-0000-7000-8000-000000000301",
         "query_text": "Comment fonctionne l'orchestration ?",
@@ -191,18 +196,22 @@ def test_fastapi_search_and_assistant_blocked_with_503_during_reindex() -> None:
     assert problem_search["progress_percentage"] == 42
     assert "42%" in problem_search["detail"]
 
-    # 3. Assistant turn -> HTTP 503 ERR_RAG_REINDEX_IN_PROGRESS
+    # 3. Assistant turn & GET /search remain unlocked (HTTP 200, AD-24 Epic 25)
     assistant_payload = {
         "workspace_id": "0195f000-0000-7000-8000-000000000301",
         "user_prompt": "Bonjour assistant",
     }
     res_assistant = client.post("/api/v1/assistant/three-speed/turn", json=assistant_payload)
-    assert res_assistant.status_code == 503
-    problem_assistant = res_assistant.json()
-    assert problem_assistant["error_code"] == "ERR_RAG_REINDEX_IN_PROGRESS"
-    assert problem_assistant["progress_percentage"] == 42
+    assert res_assistant.status_code == 200
 
-    # 4. Complete reindexing -> 503 unlocked
+    res_fed_search = client.get(
+        "/api/v1/search",
+        params={"q": "orchestration", "workspace_id": "0195f000-0000-7000-8000-000000000301"},
+    )
+    assert res_fed_search.status_code == 200
+    assert res_fed_search.json()["speed2_executed"] is False
+
+    # 4. Complete reindexing -> 503 unlocked on pure RAG search
     default_in_memory_reindex_manager.complete_job()
     res_search_unlocked = client.post("/api/v1/ontology-rag/rag/search", json=rag_payload)
     assert res_search_unlocked.status_code == 200

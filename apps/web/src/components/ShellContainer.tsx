@@ -81,6 +81,7 @@ function InnerShellContainer({
   const state = useShellContainerState(runs.length, pathname, {
     canObserveGlobalScope: canObserveGlobal,
     defaultScopedId: firstScopedId,
+    isAuthHydrating: auth.isHydrating,
     isInitialLoading,
     validScopeIds,
   });
@@ -179,7 +180,7 @@ function InnerShellContainer({
           if (tab === "cockpit") selectModuleAndNavigate("cockpit", "cockpit", "/cockpit");
           else if (tab === "assistant" && !derived.disabledMenuKeys.assistant)
             selectModuleAndNavigate("assistant", "inbox", "/assistant");
-          else if (tab === "decisions") selectModuleAndNavigate("assistant", "inbox", "/inbox");
+          else if (tab === "decisions") selectModuleAndNavigate("cockpit", "inbox", "/inbox");
         }}
         activePackKey=""
         availablePacks={[]}

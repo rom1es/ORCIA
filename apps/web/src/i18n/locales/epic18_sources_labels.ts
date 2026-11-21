@@ -73,6 +73,7 @@ export interface Epic18SourcesLabels {
     natureSchema: string;
     aliasLabel: string;
     aliasPlaceholder: string;
+    schemeLabel: string;
     uriLabel: string;
     uriPlaceholder: string;
     targetScopeLabel: string;
@@ -91,6 +92,13 @@ export interface Epic18SourcesLabels {
     gitnexusOwnerUserLabel: string;
     observerBlockedError: string;
     leadRequiredError: string;
+    ragEmbeddingRequiredTitle: string;
+    ragEmbeddingRequiredDescription: string;
+    ragEmbeddingRequiredCta: string;
+    ragOptionDisabledSuffix: string;
+    cancelBtn: string;
+    updateBtn: string;
+    attachBtn: string;
   };
   settingsDeportBanner: {
     title: string;
@@ -171,6 +179,7 @@ export const EPIC18_SOURCES_LABELS_FR: Epic18SourcesLabels = {
     natureSchema: "Schéma relationnel DDL (PostgreSQL, SQL)",
     aliasLabel: "Nom / Alias de la source",
     aliasPlaceholder: "ex: repo-paiements, spec-checkout",
+    schemeLabel: "Schéma (git, jira, confluence, sql)",
     uriLabel: "Adresse ou URI",
     uriPlaceholder: "ex: git://gitlab.entreprise.io/pay/core.git",
     targetScopeLabel: "Périmètre / Projet cible (optionnel)",
@@ -190,6 +199,14 @@ export const EPIC18_SOURCES_LABELS_FR: Epic18SourcesLabels = {
     observerBlockedError: "Action refusée : espace en mode observateur (lecture seule).",
     leadRequiredError:
       "Action réservée aux responsables d'espace ou administrateurs habilités.",
+    ragEmbeddingRequiredTitle: "Modèle d'indexation sémantique requis pour les sources RAG",
+    ragEmbeddingRequiredDescription:
+      "L'ajout de sources documentaires (Confluence, Jira, Base de données) nécessite un modèle d'embedding actif. Seules les sources Code source (GitNexus) sont disponibles sans modèle sémantique.",
+    ragEmbeddingRequiredCta: "Configurer dans Administration › Modèles IA →",
+    ragOptionDisabledSuffix: " (modèle d'embedding requis)",
+    cancelBtn: "Annuler",
+    updateBtn: "Mettre à jour",
+    attachBtn: "Rattacher la source",
   },
   settingsDeportBanner: {
     title: "Gestion des Sources par Espace d'Équipe",
@@ -271,6 +288,7 @@ export const EPIC18_SOURCES_LABELS_EN: Epic18SourcesLabels = {
     natureSchema: "Relational schema DDL (PostgreSQL, SQL)",
     aliasLabel: "Source Name / Alias",
     aliasPlaceholder: "e.g. payments-repo, checkout-spec",
+    schemeLabel: "Scheme (git, jira, confluence, sql)",
     uriLabel: "Address or URI",
     uriPlaceholder: "e.g. git://gitlab.enterprise.io/pay/core.git",
     targetScopeLabel: "Target scope / project (optional)",
@@ -290,6 +308,14 @@ export const EPIC18_SOURCES_LABELS_EN: Epic18SourcesLabels = {
     observerBlockedError: "Action denied: workspace is in read-only observer mode.",
     leadRequiredError:
       "Action restricted to authorized Workspace Leads or Administrators.",
+    ragEmbeddingRequiredTitle: "Semantic indexing model required for RAG sources",
+    ragEmbeddingRequiredDescription:
+      "Adding document sources (Confluence, Jira, Database) requires an active embedding model. Only Source Code repositories (GitNexus) can be attached without a semantic model.",
+    ragEmbeddingRequiredCta: "Configure in Administration › AI Models →",
+    ragOptionDisabledSuffix: " (embedding model required)",
+    cancelBtn: "Cancel",
+    updateBtn: "Update",
+    attachBtn: "Attach source",
   },
   settingsDeportBanner: {
     title: "Team Workspace Source Governance",

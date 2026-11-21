@@ -9,7 +9,6 @@ from typing import cast
 
 from fastapi import Request
 
-from orcia_api.routers._ai_models_helpers import assert_ai_models_write_allowed
 from orcia_api.schemas.ai_models_hub import (
     RagReindexStatusResponse,
     RagReindexTriggerResponse,
@@ -156,12 +155,9 @@ async def trigger_manual_reindex_embeddings(
     request: Request,
     auth_svc: AuthAndOrganizationService,
     hub_svc: AiModelsHubService,
-    actor_persona: str | None,
+    actor_id: str,
 ) -> RagReindexTriggerResponse:
     """Admin-triggered reindexing of the vector corpus on active global embedding model."""
-    assert_ai_models_write_allowed(request, actor_persona)
-    actor_id = actor_persona or "system"
-
     test_reindex_mgr = getattr(request.app.state, "reindex_manager", None)
     active_mapping: AiModelMappingRecord | None = None
     if test_reindex_mgr is not None:

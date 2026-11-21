@@ -39,6 +39,7 @@ function seedAssistantReadyState(accessToken = "jwt-story-23-2-token"): void {
       llm_tiers: [
         {
           tier: "medium",
+          primaryModel: "qwen3-32b",
           model_name: "qwen3-32b",
           endpoint_url: "http://127.0.0.1:11434",
           usage: "chat",
@@ -46,10 +47,37 @@ function seedAssistantReadyState(accessToken = "jwt-story-23-2-token"): void {
         },
         {
           tier: "fast",
+          primaryModel: "nomic-embed-text",
           model_name: "nomic-embed-text",
           endpoint_url: "http://127.0.0.1:11434",
           usage: "embedding",
           is_active: true,
+        },
+      ],
+      ai_model_mappings: [
+        {
+          id: "chat-23-2",
+          scope_level: "GLOBAL",
+          scope_id: null,
+          inference_tier: "medium",
+          usage: "chat",
+          is_active: true,
+          provider_slug: "ollama",
+          model_family: "Ollama",
+          model_name: "qwen3-32b",
+          endpoint_uri: "http://127.0.0.1:11434/v1",
+        },
+        {
+          id: "emb-23-2",
+          scope_level: "GLOBAL",
+          scope_id: null,
+          inference_tier: "simple",
+          usage: "embedding",
+          is_active: true,
+          provider_slug: "ollama",
+          model_family: "Ollama",
+          model_name: "nomic-embed-text",
+          endpoint_uri: "http://127.0.0.1:11434/v1",
         },
       ],
       workspaces: [

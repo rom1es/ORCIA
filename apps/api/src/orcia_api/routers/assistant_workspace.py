@@ -12,7 +12,7 @@ from fastapi.responses import StreamingResponse
 
 from orcia_api.dependencies import (
     get_assistant_three_speed_router_service,
-    require_rag_available,
+    get_optional_embedding_port,
 )
 from orcia_api.routers._assistant_workspace_context import (
     record_non_stream_turn_telemetry,
@@ -21,6 +21,7 @@ from orcia_api.routers._assistant_workspace_context import (
     to_active_turn_response,
 )
 from orcia_api.routers.assistant_llm_bridge import (
+    ensure_active_chat_model_if_live,
     get_active_turn_for_workspace,
     invoke_configured_llm_for_assistant_turn,
     record_prompt_telemetry_entry,
@@ -88,9 +89,10 @@ async def execute_three_speed_turn_endpoint(
     request: Request,
     user: CurrentUserDep,
     router_svc: ThreeSpeedRouterDep,
-    _embedding_port: Annotated[EmbeddingPort, Depends(require_rag_available)],
+    _embedding_port: Annotated[EmbeddingPort | None, Depends(get_optional_embedding_port)],
 ) -> ThreeSpeedTurnResponse:
     """Execute a 3-Speed conversational turn (`⚡ Rapide`, `@Agent / /Skill`, `🧠 Approfondi`)."""
+    await ensure_active_chat_model_if_live(request, requested_tier=payload.requested_tier)
     effective_deep_audit, effective_speed, resolved_speed = _resolve_effective_speed(payload)
     resolved_notes = await resolve_folder_notes(request, payload)
     active_hat = payload.hat or user.human_profile_archetype or "PLATFORM_ADMIN"
@@ -241,9 +243,10 @@ async def stream_three_speed_turn_endpoint(
     request: Request,
     user: CurrentUserDep,
     router_svc: ThreeSpeedRouterDep,
-    _embedding_port: Annotated[EmbeddingPort, Depends(require_rag_available)],
+    _embedding_port: Annotated[EmbeddingPort | None, Depends(get_optional_embedding_port)],
 ) -> StreamingResponse:
     """Stream SSE events (`cache_status`, `step_progress`, `thinking_delta`, `token_delta`)."""
+    await ensure_active_chat_model_if_live(request, requested_tier=payload.requested_tier)
     effective_deep_audit, effective_speed, resolved_speed = _resolve_effective_speed(payload)
     active_hat = payload.hat or user.human_profile_archetype or "PLATFORM_ADMIN"
     history = await resolve_turn_history(request, payload)

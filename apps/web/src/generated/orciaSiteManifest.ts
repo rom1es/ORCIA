@@ -6,7 +6,7 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-20",
+  "lastSyncedDate": "2026-11-21",
   "stats": {
     "activeRoutesCount": 28,
     "uiPrimitivesCount": 137,
@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 57,
     "architectureDecisionsCount": 24,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 204,
+    "techLeadReportsCount": 206,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 64,
@@ -539,6 +539,20 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-21",
+      "phaseOrStory": "Audit",
+      "reportFile": "2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md",
+      "domain": "Audit approfondi du harnais « Mon Assistant » (topologie, boucle d'outils, contexte, runtime, sécurité, tests) & plan de remédiation Epic 26 proposé",
+      "summary": "Plan (proposed) : 38 constats H-xx (14 P0), 13/22 endpoints assistant sans appelant UI, cible = moteur de tour unique (runtime réflexif à profils) gouverné et persistant, 13 stories 26-0..26-10 (P0 re-vérifiés en revue VALIDATE) à enregistrer après arbitrage ADR (AD-15)."
+    },
+    {
+      "date": "2026-11-21",
+      "phaseOrStory": "Story 25.5",
+      "reportFile": "25-5-decouplage-assistant-sans-modele-semantique-blocage-sources-rag-et-cloture-epic-25-tech-lead-report.md",
+      "domain": "Epic 25 — Découplage Mon Assistant / Search Speed-1 sans Modèle Sémantique, Blocage Sources RAG (422 ERR_NO_ACTIVE_EMBEDDING_MODEL) & Clôture Technique Epic 25 (CAP-011, CAP-022, CAP-074, CAP-075, CAP-076, CAP-180, CAP-190)",
+      "summary": "Clôture (done, epic-25: done, QA post-revue VALIDATE complète) : get_optional_embedding_port sur les 5 routes Assistant et /search, require_rag_available strict sur /rag/search et /rag/index-db-ddl, blocage 422 ERR_NO_ACTIVE_EMBEDDING_MODEL hors SOURCE_CODE (POST/PATCH /datasources), hook DRY useActiveEmbeddingModelStatus (GLOBAL && !draining), assistant-rag-inactive-notice non-bloquant vs assistant-no-chat-model-banner, blocage UX modale WorkspaceSourceAttachModal, correctifs MAJOR-1/MAJOR-2/MINOR-1..7 (42P01 vs RuntimeError, RBAC PLATFORM_ADMIN AI Models, isolation PRIVATE_USER, DOMException TimeoutError) ; 96 % couv. ciblée (9 modules, --fail-under=90), 1066 passed (unit+security+evals), 14 passed PG18 testcontainers, 9/9 Turbo (20+136+260 Vitest), 14 passed, 1 skipped (mobile-only) Playwright Desktop (6 specs post-revue), ruff/mypy --strict/lint-imports (5/5)/export_openapi (0-diff)/lint_spine (0) vert."
+    },
     {
       "date": "2026-11-20",
       "phaseOrStory": "Story 25.4",

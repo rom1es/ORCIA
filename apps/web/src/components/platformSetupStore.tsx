@@ -106,6 +106,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   const hasMutatedSinceMountRef = useRef(false);
   const isAuthHydrating = useAuthSessionStore((s) => s.isHydrating);
   const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
+  const currentUserEmail = useAuthSessionStore((s) => s.email);
 
   const applySnapshotToState = (next: CachedPlatformSetupState) => {
     setOrgUnits(next.orgUnits);
@@ -177,6 +178,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       hasMutatedSinceMount: hasMutatedSinceMountRef.current,
       currentAdmin: platformAdmin,
       isAuthenticated,
+      currentUserEmail,
     })
       .then((outcome) => {
         if (cancelled) return;
@@ -218,7 +220,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       cancelled = true;
       if (safetyTimer) clearTimeout(safetyTimer);
     };
-  }, [isAuthHydrating, isAuthenticated]);
+  }, [isAuthHydrating, isAuthenticated, currentUserEmail]);
 
   const buildSnapshot = (
     overrides: Partial<CachedPlatformSetupState>,

@@ -44,8 +44,13 @@ def _load_script_04() -> Any:
     return mod
 
 
-def test_two_speed_federated_search_service_has_zero_fictional_results_by_default() -> None:
+def test_two_speed_federated_search_service_has_zero_fictional_results_by_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Verify `TwoSpeedFederatedSearchService()` has 0 pre-populated candidates by default."""
+    monkeypatch.setenv("DATABASE_URL", "")
+    monkeypatch.setenv("REDIS_URL", "")
+    monkeypatch.setenv("ORCIA_ENABLE_PG_SESSION_MAKER", "0")
     svc = TwoSpeedFederatedSearchService()
     report = svc.execute_search(
         query="architecture paiement sepa",
@@ -60,12 +65,16 @@ def test_two_speed_federated_search_service_has_zero_fictional_results_by_defaul
 
     from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
 
-    from orcia_api.dependencies.portal_and_assistant import require_rag_available
+    from orcia_api.dependencies.portal_and_assistant import (
+        get_embedding_port,
+        get_optional_embedding_port,
+    )
 
     app = create_app()
     fake_emb = FakeDeterministicEmbeddingAdapter()
     app.state.embedding_port = fake_emb
-    app.dependency_overrides[require_rag_available] = lambda: fake_emb
+    app.dependency_overrides[get_embedding_port] = lambda: fake_emb
+    app.dependency_overrides[get_optional_embedding_port] = lambda: fake_emb
     client = TestClient(app)
     resp = client.get(
         "/api/v1/search",

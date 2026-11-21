@@ -12,8 +12,9 @@ from fastapi.responses import StreamingResponse
 from orcia_api.dependencies import (
     get_assistant_service,
     get_auth_service,
-    require_rag_available,
+    get_optional_embedding_port,
 )
+from orcia_api.routers.assistant_llm_bridge import ensure_active_chat_model_if_live
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.assistant import (
     AssistantChatRequest,
@@ -67,7 +68,9 @@ def _serialize_proposal(
     )
 
 
-def _attach_embedding_port(service: Any, port: EmbeddingPort) -> None:
+def _attach_embedding_port(service: Any, port: EmbeddingPort | None) -> None:
+    if port is None:
+        return
     vstore = getattr(service, "_vector_store", None)
     if vstore is not None:
         if getattr(vstore, "_embedding_port", None) is None:
@@ -126,12 +129,13 @@ def _serialize_turn(turn: AssistantTurnResult) -> AssistantChatResponse:
 async def assistant_chat_turn(
     payload: AssistantChatRequest,
     request: Request,
-    _embedding_port: Annotated[EmbeddingPort, Depends(require_rag_available)],
+    _embedding_port: Annotated[EmbeddingPort | None, Depends(get_optional_embedding_port)],
     persona_key: str | None = Query(default=None, min_length=1, max_length=64),
 ) -> AssistantChatResponse:
     """Execute the 5-node Assistant Agent DAG and 5-layer `AssistantHarness` (`Story 3.3`)."""
     user = resolve_request_user(request, persona_key=persona_key)
     get_auth_service(request).evaluator.resolve_workspace_access(user, payload.workspace_id)
+    await ensure_active_chat_model_if_live(request)
     profile = payload.human_profile_archetype or user.human_profile_archetype
     svc = get_assistant_service(request)
     _attach_embedding_port(svc, _embedding_port)
@@ -140,6 +144,7 @@ async def assistant_chat_turn(
         user_prompt=payload.user_prompt,
         human_profile_archetype=profile,
         allowed_datasource_aliases=frozenset(payload.allowed_datasource_aliases),
+        embedding_available=_embedding_port is not None,
     )
     return _serialize_turn(turn)
 
@@ -155,12 +160,13 @@ async def assistant_chat_turn(
 async def assistant_chat_stream(
     payload: AssistantChatRequest,
     request: Request,
-    _embedding_port: Annotated[EmbeddingPort, Depends(require_rag_available)],
+    _embedding_port: Annotated[EmbeddingPort | None, Depends(get_optional_embedding_port)],
     persona_key: str | None = Query(default=None, min_length=1, max_length=64),
 ) -> StreamingResponse:
     """Stream SSE events (`node_trace`, `token`, `workflow_proposal`, `done`) (`NFR-PERF-1`)."""
     user = resolve_request_user(request, persona_key=persona_key)
     get_auth_service(request).evaluator.resolve_workspace_access(user, payload.workspace_id)
+    await ensure_active_chat_model_if_live(request)
     profile = payload.human_profile_archetype or user.human_profile_archetype
     service = get_assistant_service(request)
     _attach_embedding_port(service, _embedding_port)
@@ -171,6 +177,7 @@ async def assistant_chat_stream(
             user_prompt=payload.user_prompt,
             human_profile_archetype=profile,
             allowed_datasource_aliases=frozenset(payload.allowed_datasource_aliases),
+            embedding_available=_embedding_port is not None,
         ):
             event_name = evt["event"]
             data_json = json.dumps(evt["data"], ensure_ascii=False)

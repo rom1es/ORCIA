@@ -104,6 +104,7 @@
   --color-status-success: var(--color-gate-emerald);
   --color-status-success-subtle: var(--color-gate-emerald-bg);
   --color-status-completed: var(--color-gate-emerald);
+  --color-status-info: var(--color-primary-cobalt);
   --color-status-warning: var(--color-arbitration-amber);
   --color-status-danger: var(--color-stale-crimson);
   --color-status-error: var(--color-stale-crimson);

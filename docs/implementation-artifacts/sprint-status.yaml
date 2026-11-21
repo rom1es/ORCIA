@@ -264,12 +264,12 @@ development_status:
   epic-24-retrospective: optional
 
   # Epic 25 — Sobriété Cockpit Jour 0, Coquille 9 Entrées (Mon Organisation & Administration), Espace Personnel Automatique PG18, Hub Modèles IA Fiable & Découplage Mon Assistant / RAG (AD-8, AD-16, AD-24)
-  epic-25: in-progress
+  epic-25: done
   25-1-espace-personnel-auto-pg18-accostage-unifie-et-degrisage-processus: done
   25-2-coquille-9-entrees-mon-organisation-administration-topbar-orcia-et-selecteur-espace: done
   25-3-sobriete-cockpit-jour0-purge-run-demo-ram-et-retrait-blocs-attente: done
   25-4-hub-modeles-ia-suppression-fiable-spinner-unifie-erreur-locale-et-masquage-reindexation: done
-  25-5-decouplage-assistant-sans-modele-semantique-blocage-sources-rag-et-cloture-epic-25: ready-for-dev
+  25-5-decouplage-assistant-sans-modele-semantique-blocage-sources-rag-et-cloture-epic-25: done
   epic-25-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
@@ -1255,8 +1255,9 @@ action_items:
     priority: P1
     depends_on: []
     owner: "Sally (UX) / Winston (Architect) / Amelia (Dev)"
-    status: open
-    epic: epic-9
+    status: done
+    epic: epic-25
+    story_ref: "25-1, 25-3"
     reference_screenshot: "docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/screenshots/2026-11-15-cockpit-jour0-revue-ux-reference.jpg"
     description: >
       Constat utilisateur du 2026-11-15 (capture archivée) : 1) empilement > 6 bandeaux/cartes violant la règle <= 3 blocs majeurs de DESIGN.md ; 2) Accostage 1/6 affiche encore « Créer le compte Administrateur » après connexion admin ; 3) affichage prématuré des cartes HumanLedAnchorCard et ArbitrationTieBreakCard Option A/B à vide (0 run, 0 arbitrage) ; 4) redondance entre barre d'accès rapide Mon Assistant, 3 cartes raccourcis et état vide Espaces/Processus. Ne pas implémenter avant arbitrage dédié.
@@ -1401,3 +1402,19 @@ action_items:
     tech_lead_report: "docs/implementation-artifacts/tech-lead-reports/2026-11-20-audit-i18n-chaines-codees-en-dur-tech-lead-report.md"
     description: >
       Inventaire brut (3809 hits heuristiques / 461 fichiers, à confirmer) : docs/implementation-artifacts/tech-lead-reports/_i18n-audit-inventory-raw.md.
+  - id: TECH-DEBT-EPIC25-SPLIT-01
+    title: "Découpage modulaire des fichiers historiques > 350 lignes touchés en Epic 25"
+    action: >
+      Ramener sous le seuil des 300-350 lignes par extraction de modules internes dédiés :
+      assistant_agent.py (531 L), progressive_accostage.py (448 L), ontology_and_rag.py (378 L),
+      evaluator.py (384 L), org_units.py (365 L), cockpit/index.tsx (364 L),
+      platformSetupHydration.ts (368 L), platformSetupStore.tsx (364 L) et workspace_datasources.py (> 350 L).
+    priority: P2
+    depends_on: []
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: open
+    epic: epic-25
+    story_ref: "25-5"
+    description: >
+      Issu du constat [MINOR-8] de la revue VALIDATE Epic 25 (docs/implementation-artifacts/epic-25-validate-report-2026-11-21.md).
+      Les nouveaux modules créés en 25.3-25.5 respectent déjà < 350 L ; ce ticket planifie le découpage du reliquat historique sans modifier les contrats publics.

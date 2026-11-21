@@ -99,6 +99,25 @@ export interface AiModelsHubDictionary {
   readonly secretApiKey: string;
   readonly closeErrorLabel: string;
   readonly testTimeoutError: string;
+  readonly reindexPanel: {
+    readonly title: string;
+    readonly activeModelPrefix: string;
+    readonly chunksUnit: string;
+    readonly documentsUnit: string;
+    readonly indexedChunksLabel: string;
+    readonly noActiveModel: string;
+    readonly relaunchBtn: string;
+    readonly launchSuccess: string;
+    readonly launchFailedPrefix: string;
+    readonly statuses: {
+      readonly IDLE: string;
+      readonly PENDING: string;
+      readonly IN_PROGRESS: string;
+      readonly COMPLETED: string;
+      readonly FAILED: string;
+      readonly CANCELLED: string;
+    };
+  };
 }
 
 export const AI_MODELS_HUB_FR: AiModelsHubDictionary = {
@@ -204,6 +223,25 @@ export const AI_MODELS_HUB_FR: AiModelsHubDictionary = {
   secretApiKey: "Clé d'API",
   closeErrorLabel: "Fermer l'erreur",
   testTimeoutError: "Délai d'attente dépassé (16 s) : le fournisseur IA n'a pas répondu à temps.",
+  reindexPanel: {
+    title: "Réindexation Sémantique & Corpus Vectoriel",
+    activeModelPrefix: "Modèle actif :",
+    chunksUnit: "extraits",
+    documentsUnit: "document(s)",
+    indexedChunksLabel: "extraits indexés",
+    noActiveModel: "Aucun modèle de recherche sémantique actif",
+    relaunchBtn: "Relancer la réindexation",
+    launchSuccess: "Réindexation globale lancée avec succès.",
+    launchFailedPrefix: "Échec du lancement :",
+    statuses: {
+      IDLE: "Prêt",
+      PENDING: "En attente",
+      IN_PROGRESS: "En cours",
+      COMPLETED: "Terminée",
+      FAILED: "Échec",
+      CANCELLED: "Annulée",
+    },
+  },
 };
 
 export const AI_MODELS_HUB_EN: AiModelsHubDictionary = {
@@ -309,4 +347,23 @@ export const AI_MODELS_HUB_EN: AiModelsHubDictionary = {
   secretApiKey: "API key", // pragma: allowlist secret
   closeErrorLabel: "Close error",
   testTimeoutError: "Connection test timed out (16s): the AI provider did not respond in time.",
+  reindexPanel: {
+    title: "Semantic Reindexing & Vector Corpus",
+    activeModelPrefix: "Active model:",
+    chunksUnit: "chunks",
+    documentsUnit: "document(s)",
+    indexedChunksLabel: "indexed chunks",
+    noActiveModel: "No active semantic search model",
+    relaunchBtn: "Relaunch reindexing",
+    launchSuccess: "Global reindexing triggered successfully.",
+    launchFailedPrefix: "Trigger failed:",
+    statuses: {
+      IDLE: "Ready",
+      PENDING: "Pending",
+      IN_PROGRESS: "In progress",
+      COMPLETED: "Completed",
+      FAILED: "Failed",
+      CANCELLED: "Cancelled",
+    },
+  },
 };

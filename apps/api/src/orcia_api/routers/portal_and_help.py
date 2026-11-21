@@ -11,8 +11,8 @@ from fastapi import APIRouter, Depends, Query, Request
 
 from orcia_api.dependencies import (
     get_contextual_help_service,
+    get_optional_embedding_port,
     get_two_speed_search_service,
-    require_rag_available,
 )
 from orcia_api.dependencies._core_providers import get_configured_db_engine
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
@@ -71,7 +71,7 @@ def _serialize_help_article(art: HelpArticleCatalogItem) -> HelpArticleSchemaIte
 )
 async def execute_two_speed_federated_search(
     request: Request,
-    _embedding_port: Annotated[EmbeddingPort, Depends(require_rag_available)],
+    _embedding_port: Annotated[EmbeddingPort | None, Depends(get_optional_embedding_port)],
     q: str = Query(default="", max_length=256),
     scope: Literal["SCREEN", "WORKSPACE", "ALL_WORKSPACES", "GLOBAL", "CONTEXTUAL"] = Query(
         default="WORKSPACE"
@@ -101,8 +101,14 @@ async def execute_two_speed_federated_search(
     )
     req_locale = "en" if raw_locale.split(",", 1)[0].split("-", 1)[0].strip() == "en" else "fr"
 
+    effective_include_speed2 = include_speed2 and (_embedding_port is not None)
     query_embedding: tuple[float, ...] | None = None
-    if include_speed2 and q.strip() and (force_semantic or len(q.strip().split()) >= 3):
+    if (
+        _embedding_port is not None
+        and effective_include_speed2
+        and q.strip()
+        and (force_semantic or len(q.strip().split()) >= 3)
+    ):
         vectors = await _embedding_port.embed([q])
         if vectors:
             query_embedding = tuple(vectors[0])
@@ -127,7 +133,7 @@ async def execute_two_speed_federated_search(
         user_id=user.id,
         user_role=user.platform_role,
         locale=req_locale,
-        include_speed2=include_speed2,
+        include_speed2=effective_include_speed2,
         force_semantic=force_semantic,
         query_embedding=query_embedding,
         extra_candidates=extra_candidates,

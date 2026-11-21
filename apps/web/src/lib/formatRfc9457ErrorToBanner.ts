@@ -127,13 +127,25 @@ const RFC9457_ACTIONABLE_CATALOG: Record<string, ErrorCopyPair> = {
   ERR_NO_ACTIVE_EMBEDDING_MODEL: {
     fr: {
       title: "Aucun modèle d'indexation sémantique actif",
-      message: "L'assistant ne dispose pas encore d'un modèle actif pour rechercher dans vos sources.",
-      remediation: "Configurez et activez un modèle d'indexation dans Configuration > Modèles IA.",
+      message: "L'ajout ou l'indexation de sources documentaires RAG nécessite un modèle d'embedding actif.",
+      remediation: "Configurez et activez un modèle d'embedding dans Administration > Modèles IA.",
     },
     en: {
       title: "No active semantic indexing model",
-      message: "The assistant does not yet have an active model to search your sources.",
-      remediation: "Configure and activate an indexing model in Settings > AI Models.",
+      message: "Adding or indexing RAG document sources requires an active embedding model.",
+      remediation: "Configure and activate an embedding model in Administration > AI Models.",
+    },
+  },
+  ERR_TIER_MODEL_NOT_CONFIGURED: {
+    fr: {
+      title: "Aucun modèle de dialogue IA configuré",
+      message: "Aucun modèle chat actif n'est configuré pour répondre dans Mon Assistant.",
+      remediation: "Configurez et activez un modèle IA de dialogue dans Administration > Modèles IA.",
+    },
+    en: {
+      title: "No chat AI model configured",
+      message: "No active chat model is configured to answer in My Assistant.",
+      remediation: "Configure and activate a chat AI model in Administration > AI Models.",
     },
   },
   ERR_UNSAFE_LLM_ENDPOINT_URL: {

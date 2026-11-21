@@ -3,9 +3,11 @@ import { expect, test } from "./support/e2eCaptureFixture";
 import { watchApiServerErrors } from "./support/apiErrors";
 import { resetDay0 } from "./support/day0";
 import { expectDbRowCount, expectDbRowExists } from "./support/dbAssertions";
+import { getBearerTokenFromSession } from "./support/authAndOrgHelpers";
 import { configureActiveEmbeddingModelViaApi } from "./support/embeddingModel";
 import { createFirstAdminViaUi } from "./support/firstAdmin";
 import { assertMaxOneDialogCloseOrCancelButton } from "./support/layoutGeometryAssertions";
+import { apiGet } from "./support/typedApiRequest";
 
 test.describe("TEST-06 · 10 — Recherche ⌘K à 2 vitesses", () => {
   test.beforeEach(async ({ page }, testInfo) => {
@@ -27,6 +29,13 @@ test.describe("TEST-06 · 10 — Recherche ⌘K à 2 vitesses", () => {
     await expect(page.getByTestId("cmdk-scope-pills")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(palette).toBeHidden();
+    const token = await getBearerTokenFromSession(page);
+    const speed1Res = await apiGet<{ speed2_executed: boolean }>(page, "/api/v1/search?q=agents", {
+      token,
+    });
+    expect(speed1Res.status()).toBe(200);
+    const speed1Json = await speed1Res.json();
+    expect(speed1Json.speed2_executed).toBe(false);
     expect(serverErrors, serverErrors.join("\n")).toEqual([]);
     expectDbRowCount(
       "SELECT COUNT(*)::int AS count FROM catalog_items",

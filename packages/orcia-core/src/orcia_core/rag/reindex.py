@@ -42,7 +42,7 @@ async def check_rag_operational_on_conn(conn: AsyncConnection) -> None:
             job_id=active_job.id,
             detail_override=(
                 f"Réindexation sémantique en cours ({active_job.progress_percentage}%). "
-                "La recherche documentaire et Mon Assistant sont temporairement indisponibles."
+                "La recherche documentaire et l'ingestion RAG sont temporairement indisponibles."
             ),
         )
     latest_job = await get_latest_reindex_job_pg18(conn)

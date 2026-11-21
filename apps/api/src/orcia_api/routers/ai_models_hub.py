@@ -18,9 +18,9 @@ from orcia_api.dependencies import (
     get_auth_service,
 )
 from orcia_api.routers._ai_models_helpers import (
-    assert_ai_models_write_allowed,
     compute_tiers_coverage,
     execute_models_discovery,
+    require_ai_models_platform_admin,
     resolve_mapping_decrypted_key,
     to_item_response,
 )
@@ -54,7 +54,7 @@ from orcia_core.orchestration._internal.sql_ai_model_mappings import (
     list_ai_model_mappings_pg18,
     update_ai_model_mapping_pg18,
 )
-from orcia_core.permissions import AuthAndOrganizationService, SecretInputSpec
+from orcia_core.permissions import AuthAndOrganizationService, SecretInputSpec, UserIdentity
 
 router = APIRouter(prefix="/api/v1/settings/ai-models", tags=["settings-ai-models"])
 
@@ -102,12 +102,11 @@ async def list_ai_model_mappings(
 async def create_ai_model_mapping(
     payload: AiModelCreateRequest,
     request: Request,
+    user: Annotated[UserIdentity, Depends(require_ai_models_platform_admin)],
     auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
     hub_svc: Annotated[AiModelsHubService, Depends(get_ai_models_hub_service)],
-    actor_persona: Annotated[str | None, Query()] = None,
 ) -> AiModelMappingItemResponse:
     """Connect a new AI model mapping with AES-256-GCM encrypted API key."""
-    assert_ai_models_write_allowed(request, actor_persona)
     sec_input = (
         SecretInputSpec(
             action=payload.secret_input.action,
@@ -141,7 +140,7 @@ async def create_ai_model_mapping(
                 max_tokens_budget=payload.max_tokens_budget,
                 max_cost_usd=payload.max_cost_usd,
                 secret_input=sec_input,
-                actor_id=actor_persona or "system",
+                actor_id=user.id,
                 instance=str(request.url.path),
             )
     else:
@@ -164,7 +163,7 @@ async def create_ai_model_mapping(
             max_tokens_budget=payload.max_tokens_budget,
             max_cost_usd=payload.max_cost_usd,
             secret_input=sec_input,
-            actor_id=actor_persona or "system",
+            actor_id=user.id,
             instance=str(request.url.path),
         )
 
@@ -172,7 +171,7 @@ async def create_ai_model_mapping(
         await trigger_global_reindexing_job(
             request,
             rec,
-            actor_id=actor_persona or "system",
+            actor_id=user.id,
         )
     return to_item_response(rec)
 
@@ -182,12 +181,11 @@ async def update_ai_model_mapping(
     mapping_id: Annotated[str, Path(min_length=1, max_length=128)],
     payload: AiModelPatchRequest,
     request: Request,
+    user: Annotated[UserIdentity, Depends(require_ai_models_platform_admin)],
     auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
     hub_svc: Annotated[AiModelsHubService, Depends(get_ai_models_hub_service)],
-    actor_persona: Annotated[str | None, Query()] = None,
 ) -> AiModelMappingItemResponse:
     """Update model settings or rotate/clear its API key."""
-    assert_ai_models_write_allowed(request, actor_persona)
     sec_input = (
         SecretInputSpec(
             action=payload.secret_input.action,
@@ -213,7 +211,7 @@ async def update_ai_model_mapping(
                 env_var_name=payload.env_var_name,
                 is_active=payload.is_active,
                 secret_input=sec_input,
-                actor_id=actor_persona or "system",
+                actor_id=user.id,
                 instance=str(request.url.path),
             )
     else:
@@ -228,7 +226,7 @@ async def update_ai_model_mapping(
             env_var_name=payload.env_var_name,
             is_active=payload.is_active,
             secret_input=sec_input,
-            actor_id=actor_persona or "system",
+            actor_id=user.id,
             instance=str(request.url.path),
         )
 
@@ -236,7 +234,7 @@ async def update_ai_model_mapping(
         await trigger_global_reindexing_job(
             request,
             rec,
-            actor_id=actor_persona or "system",
+            actor_id=user.id,
         )
     return to_item_response(rec)
 
@@ -245,12 +243,11 @@ async def update_ai_model_mapping(
 async def discover_ai_models_post(
     payload: AiModelDiscoverRequest,
     request: Request,
+    _user: Annotated[UserIdentity, Depends(require_ai_models_platform_admin)],
     auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
     hub_svc: Annotated[AiModelsHubService, Depends(get_ai_models_hub_service)],
-    actor_persona: Annotated[str | None, Query()] = None,
 ) -> AiModelDiscoveryResponse:
     """Discover available models on provider endpoint without consuming inference tokens (`0 $`)."""
-    assert_ai_models_write_allowed(request, actor_persona)
     effective_key = payload.api_key
     endpoint_uri = payload.endpoint_uri
     protocol_mode = payload.protocol_mode
@@ -280,16 +277,15 @@ async def discover_ai_models_post(
 @router.get("/discover", response_model=AiModelDiscoveryResponse)
 async def discover_ai_models_get(
     request: Request,
+    _user: Annotated[UserIdentity, Depends(require_ai_models_platform_admin)],
     auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
     hub_svc: Annotated[AiModelsHubService, Depends(get_ai_models_hub_service)],
     base_url: Annotated[str, Query(alias="base_url", min_length=1, max_length=1024)],
     provider: Annotated[str | None, Query(alias="provider", max_length=64)] = None,
     protocol_mode: Annotated[LlmProtocolModeLiteral, Query()] = "openai_compatible",
     mapping_id: Annotated[str | None, Query(max_length=128)] = None,
-    actor_persona: Annotated[str | None, Query()] = None,
 ) -> AiModelDiscoveryResponse:
     """GET discovery endpoint for local or existing models without sending secrets in URL."""
-    assert_ai_models_write_allowed(request, actor_persona)
     effective_key: str | None = None
     if mapping_id:
         rec, decrypted_key = await resolve_mapping_decrypted_key(

@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import os
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Annotated, Literal
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import Request
+from fastapi import Query, Request
 
+from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.ai_models_hub import (
     AiModelDiscoveryResponse,
     AiModelMappingItemResponse,
@@ -29,8 +30,8 @@ from orcia_core.orchestration._internal.sql_ai_model_mappings import (
     ensure_ai_model_mappings_schema_on_postgres18,
     get_ai_model_mapping_pg18,
 )
-from orcia_core.permissions import AuthAndOrganizationService
-from orcia_core.permissions.errors import ObserverModeReadOnlyError
+from orcia_core.permissions import AuthAndOrganizationService, UserIdentity
+from orcia_core.permissions.errors import ObserverModeReadOnlyError, ScopeAccessDeniedError
 
 
 def assert_ai_models_write_allowed(request: Request, persona_key: str | None = None) -> None:
@@ -39,10 +40,41 @@ def assert_ai_models_write_allowed(request: Request, persona_key: str | None = N
     if (
         request.headers.get("x-orcia-access-mode", "").strip().upper() == "READ_ONLY_OBSERVER"
         or request.headers.get("x-orcia-observer", "").strip().lower() in ("1", "true", "yes")
-        or request.headers.get("x-orcia-active-hat", "").strip().upper() == "OBSERVER"
+        or request.headers.get("x-orcia-observer-mode", "").strip().lower() in ("1", "true", "yes")
+        or request.headers.get("x-orcia-active-hat", "").strip().upper()
+        in ("OBSERVER", "READ_ONLY_OBSERVER")
         or persona_key == "observer"
     ):
         raise ObserverModeReadOnlyError(instance=path)
+
+
+def require_ai_models_platform_admin(
+    request: Request,
+    actor_persona: Annotated[str | None, Query()] = None,
+    persona_key: Annotated[str | None, Query()] = None,
+) -> UserIdentity:
+    """Resolve authenticated identity via `resolve_request_user` and enforce `PLATFORM_ADMIN`."""
+    path = str(request.url.path)
+    assert_ai_models_write_allowed(request, actor_persona or persona_key)
+    has_bearer = bool(request.headers.get("Authorization"))
+    effective_persona = (
+        None
+        if has_bearer
+        else (
+            actor_persona
+            or persona_key
+            or request.headers.get("x-orcia-persona", "").strip()
+            or None
+        )
+    )
+    user = resolve_request_user(request, persona_key=effective_persona)
+    if user.platform_role in ("OBSERVER", "READ_ONLY_OBSERVER"):
+        raise ObserverModeReadOnlyError(instance=path)
+    active_hat = request.headers.get("x-orcia-active-hat", "").strip().upper()
+    is_platform_admin = user.platform_role == "PLATFORM_ADMIN" or "PLATFORM_ADMIN" in user.roles
+    if not is_platform_admin or (active_hat and active_hat != "PLATFORM_ADMIN"):
+        raise ScopeAccessDeniedError(instance=path)
+    return user
 
 
 def to_item_response(m: AiModelMappingRecord) -> AiModelMappingItemResponse:
@@ -218,6 +250,7 @@ __all__ = [
     "compute_tiers_coverage",
     "execute_model_connection_test",
     "execute_models_discovery",
+    "require_ai_models_platform_admin",
     "resolve_mapping_decrypted_key",
     "to_item_response",
 ]

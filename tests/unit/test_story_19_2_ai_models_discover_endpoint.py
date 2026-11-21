@@ -69,10 +69,14 @@ def test_app(monkeypatch: pytest.MonkeyPatch, mock_provider_transport: httpx.Moc
     return app
 
 
+ADMIN_HEADERS = {"X-Orcia-Persona": "karim"}
+
+
 def test_discover_models_post_success(test_app) -> None:
     client = TestClient(test_app)
     resp = client.post(
         "/api/v1/settings/ai-models/discover",
+        headers=ADMIN_HEADERS,
         json={
             "endpoint_uri": "https://api.openai.com/v1",
             "protocol_mode": "openai_compatible",
@@ -91,6 +95,7 @@ def test_discover_models_post_anthropic_success(test_app) -> None:
     client = TestClient(test_app)
     resp = client.post(
         "/api/v1/settings/ai-models/discover",
+        headers=ADMIN_HEADERS,
         json={
             "endpoint_uri": "https://api.anthropic.com/v1",
             "protocol_mode": "anthropic_messages",
@@ -108,7 +113,8 @@ def test_discover_models_post_anthropic_success(test_app) -> None:
 def test_discover_models_get_success(test_app) -> None:
     client = TestClient(test_app)
     resp = client.get(
-        "/api/v1/settings/ai-models/discover?base_url=http://localhost:11434&provider=ollama"
+        "/api/v1/settings/ai-models/discover?base_url=http://localhost:11434&provider=ollama",
+        headers=ADMIN_HEADERS,
     )
     assert resp.status_code == 200, resp.text
     data = resp.json()
@@ -142,6 +148,7 @@ def test_discover_models_with_existing_mapping_id(test_app) -> None:
     client = TestClient(test_app)
     resp = client.post(
         "/api/v1/settings/ai-models/discover",
+        headers=ADMIN_HEADERS,
         json={
             "endpoint_uri": "https://api.openai.com/v1",
             "protocol_mode": "openai_compatible",
@@ -179,6 +186,7 @@ def test_discover_models_rejects_ssrf_url(test_app) -> None:
     client = TestClient(test_app)
     resp = client.post(
         "/api/v1/settings/ai-models/discover",
+        headers=ADMIN_HEADERS,
         json={
             "endpoint_uri": "http://169.254.169.254/latest",
             "protocol_mode": "openai_compatible",
@@ -192,6 +200,7 @@ def test_discover_models_auth_failure_rfc9457(test_app) -> None:
     client = TestClient(test_app)
     resp = client.post(
         "/api/v1/settings/ai-models/discover",
+        headers=ADMIN_HEADERS,
         json={
             "endpoint_uri": "https://api.openai.com/v1",
             "protocol_mode": "openai_compatible",
@@ -208,6 +217,7 @@ def test_discover_models_404_not_supported_rfc9457(test_app) -> None:
     client = TestClient(test_app)
     resp = client.post(
         "/api/v1/settings/ai-models/discover",
+        headers=ADMIN_HEADERS,
         json={
             "endpoint_uri": "https://nonexistent.example.org/v1",
             "protocol_mode": "openai_compatible",
@@ -223,6 +233,7 @@ def test_discover_models_network_timeout_rfc9457(test_app) -> None:
     client = TestClient(test_app)
     resp = client.post(
         "/api/v1/settings/ai-models/discover",
+        headers=ADMIN_HEADERS,
         json={
             "endpoint_uri": "https://timeout.example.org/v1",
             "protocol_mode": "openai_compatible",

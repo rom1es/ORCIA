@@ -89,12 +89,23 @@ interface HandleConnectorsRouteParams {
   reqHeaders: Headers;
   firstAdmin: { email: string; displayName: string } | null;
   orgUnits: Array<{ id: string; name: string; slug: string; kind: "BU" | "TEAM"; billing_enabled: boolean }>;
+  hasActiveEmbeddingModel?: boolean;
   jsonResponse: (data: unknown, status?: number) => Response;
   problemResponse: (status: number, title: string, detail: string, errorCode: string) => Response;
 }
 
 export function handleVitestConnectorsRoute(params: HandleConnectorsRouteParams): Response | null {
-  const { method, path, body, reqHeaders, firstAdmin, orgUnits, jsonResponse, problemResponse } = params;
+  const {
+    method,
+    path,
+    body,
+    reqHeaders,
+    firstAdmin,
+    orgUnits,
+    hasActiveEmbeddingModel = true,
+    jsonResponse,
+    problemResponse,
+  } = params;
 
   const accessMode = reqHeaders.get("x-orcia-access-mode")?.toUpperCase();
   const isObserver = accessMode === "READ_ONLY_OBSERVER";
@@ -358,6 +369,15 @@ export function handleVitestConnectorsRoute(params: HandleConnectorsRouteParams)
     if (!dsId && method === "POST") {
       if (isObserver) {
         return problemResponse(403, "Mode observateur lecture seule", "Mutation interdite", "ERR_OBSERVER_MODE_READ_ONLY");
+      }
+      const requestedNature = String(body.source_nature ?? "DOCUMENT_KB");
+      if (requestedNature !== "SOURCE_CODE" && !hasActiveEmbeddingModel) {
+        return problemResponse(
+          422,
+          "Modèle d'embedding requis",
+          "Aucun modèle d'embedding actif configuré au niveau GLOBAL.",
+          "ERR_NO_ACTIVE_EMBEDDING_MODEL",
+        );
       }
       datasourceSeq += 1;
       const cgEnabled = Boolean(body.codegraph_enabled);

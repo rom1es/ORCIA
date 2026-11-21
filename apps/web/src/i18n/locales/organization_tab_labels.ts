@@ -27,6 +27,7 @@ export interface OrganizationTabDictionarySection extends OrganizationModalsSect
   readonly openInviteModalCta: string;
   readonly emptyStateText: string;
   readonly scopedViewNotice: string;
+  readonly readOnlyChartNotice: string;
   readonly pedagogyTitle: string;
   readonly pedagogyBuSummary: string;
   readonly pedagogyTeamSummary: string;
@@ -78,6 +79,8 @@ export const ORGANIZATION_TAB_FR_LABELS: OrganizationTabDictionarySection = {
   emptyStateText: "Aucune unité d'organisation (Direction / BU ou Équipe) configurée.",
   scopedViewNotice:
     "Vue déléguée à votre périmètre : les unités parentes sont affichées à titre contextuel en lecture seule.",
+  readOnlyChartNotice:
+    "Consultation de l'organigramme en lecture seule. Seuls les Responsables de Direction (BU), Chefs d'équipe et Administrateurs peuvent modifier les unités ou inviter des membres.",
   pedagogyTitle: "Repères : Direction / Pôle, Équipe et Espace de travail",
   pedagogyBuSummary:
     "Direction / BU & Pôle (Sous-BU) : structure managériale et périmètre d'héritage des règles.",
@@ -134,6 +137,8 @@ export const ORGANIZATION_TAB_EN_LABELS: OrganizationTabDictionarySection = {
   emptyStateText: "No organization unit (Division / BU or Team) configured yet.",
   scopedViewNotice:
     "Delegated scope view: ancestor units are displayed for context in read-only mode.",
+  readOnlyChartNotice:
+    "Read-only organization chart view. Only Division Leads, Team Leads, and Administrators can edit units or invite members.",
   pedagogyTitle: "Reference: Division / Sub-BU, Team, and Workspace",
   pedagogyBuSummary:
     "Division / BU & Sub-BU: management hierarchy and rule inheritance scope.",

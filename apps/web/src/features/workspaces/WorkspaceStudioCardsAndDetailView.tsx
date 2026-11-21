@@ -7,7 +7,7 @@ import {
   type UiOntologyLevel,
   type WorkspaceVisibilityMode,
 } from "@orcia/ui";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import type {
   ConfiguredOrgUnit,
   ConfiguredWorkflowItem,
@@ -70,6 +70,11 @@ export function WorkspaceStudioCardsAndDetailView({
   const [filterMode, setFilterMode] = useState<WorkspaceQuickFilterKey>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedWsId, setSelectedWsId] = useState<string>(initialWorkspaceId || "");
+  useEffect(() => {
+    if (initialWorkspaceId) {
+      setSelectedWsId(initialWorkspaceId);
+    }
+  }, [initialWorkspaceId]);
   const [autosavedWsIds, setAutosavedWsIds] = useState<readonly string[]>([]);
 
   const teamWorkspacesCount = workspaces.filter((w) => w.visibilityMode !== "PRIVATE_USER").length;

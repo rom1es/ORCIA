@@ -80,7 +80,8 @@ test.describe("Hub modèles IA, réindexation sémantique, connecteurs et Permis
       await bootstrapAdminSession(page);
 
       await page.goto("/assistant");
-      await expect(page.getByTestId("assistant-no-embedding-banner")).toBeVisible({ timeout: 20000 });
+      await expect(page.getByTestId("assistant-no-chat-model-banner")).toBeVisible({ timeout: 20000 });
+      await expect(page.getByTestId("assistant-three-speed-input")).toBeDisabled();
 
       await openSettingsTabViaUi(page, "models");
       await expect(page.getByTestId("ai-models-empty-state")).toBeVisible({ timeout: 15000 });
@@ -110,6 +111,13 @@ test.describe("Hub modèles IA, réindexation sémantique, connecteurs et Permis
       await page.getByTestId("ai-model-endpoint-uri-input").fill(mockLlm.baseUrl);
       await page.getByTestId("save-and-test-ai-model-btn").click();
       await expect(page.getByTestId("ai-model-display-name-input")).toBeHidden({ timeout: 15000 });
+
+      // Story 25.5: avec 1 modèle chat actif et 0 embedding, Mon Assistant est déverrouillé avec notice sobre.
+      await page.goto("/assistant");
+      await expect(page.getByTestId("assistant-no-chat-model-banner")).toHaveCount(0);
+      await expect(page.getByTestId("assistant-rag-inactive-notice")).toBeVisible({ timeout: 15000 });
+      await expect(page.getByTestId("assistant-three-speed-input")).toBeEnabled();
+      await openSettingsTabViaUi(page, "models");
 
       await page.getByTestId("open-create-ai-model-modal-btn").click();
       await page.getByTestId("ai-model-config-modal").getByTestId("llm-provider-preset-ollama").click();
@@ -145,7 +153,8 @@ test.describe("Hub modèles IA, réindexation sémantique, connecteurs et Permis
       expect((await reindexRes.json()).status).toBe("COMPLETED");
 
       await page.goto("/assistant");
-      await expect(page.getByTestId("assistant-no-embedding-banner")).toBeHidden({ timeout: 15000 });
+      await expect(page.getByTestId("assistant-no-chat-model-banner")).toHaveCount(0);
+      await expect(page.getByTestId("assistant-rag-inactive-notice")).toHaveCount(0);
 
       await page.goto("/settings?tab=models");
       await reloadColdFromPg(page);

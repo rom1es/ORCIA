@@ -10,23 +10,22 @@ afterEach(() => {
   cleanup();
 });
 
-describe("Story 19.6 — Assistant Blocking without Active Embedding Model & F5 Survival", () => {
-  it("displays explicit banner, disables prompt input and send button, and offers a link to /settings/ai-models when no embedding model exists", async () => {
-    // Day-0 initial state: platform admin exists, but zero active embedding model mappings
+const TEST_WORKSPACE = {
+  workspaceId: "ws-test-1",
+  name: "Espace Test",
+  visibilityMode: "STANDARD" as const,
+  ownerOrgUnitName: "Equipe Test",
+  lifecyclePhase: "BUILD" as const,
+  suggestedWorkflows: [],
+  accessMode: "CONTRIBUTOR_ACTION_REQUIRED" as const,
+  finopsCostUsd: 0,
+};
+
+describe("Story 19.6 / AD-24 Epic 25 — Assistant Chat Gate, Non-Blocking RAG Notice & F5 Survival", () => {
+  it("blocks input with assistant-no-chat-model-banner when 0 chat model is configured and survives F5", async () => {
     seedVitestPlatformSetupState(
       {
-        workspaces: [
-          {
-            workspaceId: "ws-test-1",
-            name: "Espace Test",
-            visibilityMode: "STANDARD",
-            ownerOrgUnitName: "Equipe Test",
-            lifecyclePhase: "BUILD",
-            suggestedWorkflows: [],
-            accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
-            finopsCostUsd: 0,
-          },
-        ],
+        workspaces: [TEST_WORKSPACE],
         ai_model_mappings: [],
       },
       { email: "admin@orcia.test", displayName: "Admin Test" },
@@ -42,29 +41,24 @@ describe("Story 19.6 — Assistant Blocking without Active Embedding Model & F5 
       </I18nProvider>,
     );
 
-    // 1. Verify banner is displayed with warning text
     await waitFor(() => {
-      expect(screen.getByTestId("assistant-no-embedding-banner")).toBeDefined();
+      expect(screen.getByTestId("assistant-no-chat-model-banner")).toBeDefined();
     });
 
-    const banner = screen.getByTestId("assistant-no-embedding-banner");
-    expect(banner.textContent).toContain("Modèle de recherche sémantique requis");
+    const banner = screen.getByTestId("assistant-no-chat-model-banner");
+    expect(banner.getAttribute("role")).toBe("alert");
 
-    // 2. Verify prompt input is disabled
     const promptInput = screen.getByTestId("assistant-three-speed-input") as HTMLInputElement;
     expect(promptInput.disabled).toBe(true);
-
-    // 3. Verify send button is disabled
     const sendBtn = screen.getByTestId("assistant-three-speed-send-btn") as HTMLButtonElement;
     expect(sendBtn.disabled).toBe(true);
 
-    // 4. Verify configure link points to /settings/ai-models and triggers navigation
-    const link = screen.getByTestId("assistant-configure-embedding-link");
+    const link = screen.getByTestId("assistant-configure-chat-model-link");
     expect(link.getAttribute("href")).toBe("/settings/ai-models");
     fireEvent.click(link);
     expect(onNavigateMock).toHaveBeenCalledWith("/settings/ai-models");
 
-    // 5. Test F5 survival: unmount and remount (simulates page refresh)
+    // F5 survival
     unmount();
 
     render(
@@ -76,33 +70,78 @@ describe("Story 19.6 — Assistant Blocking without Active Embedding Model & F5 
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId("assistant-no-embedding-banner")).toBeDefined();
+      expect(screen.getByTestId("assistant-no-chat-model-banner")).toBeDefined();
     });
     expect((screen.getByTestId("assistant-three-speed-input") as HTMLInputElement).disabled).toBe(true);
     expect((screen.getByTestId("assistant-three-speed-send-btn") as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it("unlocks Assistant input and removes banner when an active embedding model is configured", async () => {
+  it("keeps Assistant input unlocked with non-blocking assistant-rag-inactive-notice when 1 chat model exists and 0 embedding model exists", async () => {
     seedVitestPlatformSetupState(
       {
-        workspaces: [
+        workspaces: [TEST_WORKSPACE],
+        ai_model_mappings: [
           {
-            workspaceId: "ws-test-1",
-            name: "Espace Test",
-            visibilityMode: "STANDARD",
-            ownerOrgUnitName: "Equipe Test",
-            lifecyclePhase: "BUILD",
-            suggestedWorkflows: [],
-            accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
-            finopsCostUsd: 0,
+            id: "chat-model-1",
+            scope_level: "GLOBAL",
+            scope_id: null,
+            inference_tier: "medium",
+            usage: "chat",
+            is_active: true,
+            provider: "openai",
+            model_name: "gpt-4o-mini",
           },
         ],
+      },
+      { email: "admin@orcia.test", displayName: "Admin Test" },
+    );
+
+    const onNavigateMock = vi.fn();
+
+    render(
+      <I18nProvider initialLocale="fr">
+        <ShellContainer onNavigate={onNavigateMock}>
+          <InboxFeaturePanel />
+        </ShellContainer>
+      </I18nProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("assistant-rag-inactive-notice")).toBeDefined();
+    });
+    expect(screen.queryByTestId("assistant-no-chat-model-banner")).toBeNull();
+
+    const promptInput = screen.getByTestId("assistant-three-speed-input") as HTMLInputElement;
+    expect(promptInput.disabled).toBe(false);
+    const sendBtn = screen.getByTestId("assistant-three-speed-send-btn") as HTMLButtonElement;
+    expect(sendBtn.disabled).toBe(false);
+
+    const link = screen.getByTestId("assistant-configure-embedding-link");
+    expect(link.getAttribute("href")).toBe("/settings/ai-models");
+    fireEvent.click(link);
+    expect(onNavigateMock).toHaveBeenCalledWith("/settings/ai-models");
+  });
+
+  it("hides both banner and notice when active chat and embedding models are configured", async () => {
+    seedVitestPlatformSetupState(
+      {
+        workspaces: [TEST_WORKSPACE],
         ai_model_mappings: [
+          {
+            id: "chat-model-1",
+            scope_level: "GLOBAL",
+            scope_id: null,
+            inference_tier: "medium",
+            usage: "chat",
+            is_active: true,
+            provider: "openai",
+            model_name: "gpt-4o-mini",
+          },
           {
             id: "emb-model-1",
             scope_level: "GLOBAL",
             scope_id: null,
-            inference_tier: "light",
+            inference_tier: "simple",
             usage: "embedding",
             is_active: true,
             provider: "ollama",
@@ -121,13 +160,10 @@ describe("Story 19.6 — Assistant Blocking without Active Embedding Model & F5 
       </I18nProvider>,
     );
 
-    // Banner should NOT be present
-    expect(screen.queryByTestId("assistant-no-embedding-banner")).toBeNull();
-
-    // Input and send button should NOT be disabled
-    const promptInput = screen.getByTestId("assistant-three-speed-input") as HTMLInputElement;
-    expect(promptInput.disabled).toBe(false);
-    const sendBtn = screen.getByTestId("assistant-three-speed-send-btn") as HTMLButtonElement;
-    expect(sendBtn.disabled).toBe(false);
+    await waitFor(() => {
+      expect((screen.getByTestId("assistant-three-speed-input") as HTMLInputElement).disabled).toBe(false);
+    });
+    expect(screen.queryByTestId("assistant-no-chat-model-banner")).toBeNull();
+    expect(screen.queryByTestId("assistant-rag-inactive-notice")).toBeNull();
   });
 });

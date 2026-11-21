@@ -18,7 +18,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from orcia_api.dependencies import (
     get_assistant_folders_and_sharing_service,
     get_auth_service,
-    require_rag_available,
+    get_optional_embedding_port,
 )
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.assistant_citations_and_folders import (
@@ -216,7 +216,7 @@ async def send_collaborative_thread_turn_endpoint(
     payload: SendCollaborativeThreadTurnRequest,
     user: CurrentUserDep,
     folders_svc: FoldersSharingDep,
-    _embedding_port: Annotated[EmbeddingPort, Depends(require_rag_available)],
+    _embedding_port: Annotated[EmbeddingPort | None, Depends(get_optional_embedding_port)],
 ) -> SendCollaborativeThreadTurnResponse:
     """Execute a turn in a shared thread under Redis turn lock (`NX EX 60`)."""
     outcome = await folders_svc.send_collaborative_thread_turn_async(

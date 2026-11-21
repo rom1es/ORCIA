@@ -11,8 +11,8 @@ from orcia_api.dependencies import (
     get_cognitive_router_service,
 )
 from orcia_api.routers._ai_models_helpers import (
-    assert_ai_models_write_allowed,
     execute_model_connection_test,
+    require_ai_models_platform_admin,
     resolve_mapping_decrypted_key,
 )
 from orcia_api.routers._ai_models_reindex_helpers import (
@@ -20,7 +20,6 @@ from orcia_api.routers._ai_models_reindex_helpers import (
     trigger_manual_reindex_embeddings,
 )
 from orcia_api.routers._settings_helpers import to_routing_outcome_response
-from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.ai_models_hub import (
     AiModelDeleteImpactResponse,
     AiModelDeleteResponse,
@@ -59,7 +58,7 @@ router = APIRouter()
 async def test_ai_model_connection(
     mapping_id: Annotated[str, Path(min_length=1, max_length=128)],
     request: Request,
-    user: Annotated[UserIdentity, Depends(resolve_request_user)],
+    user: Annotated[UserIdentity, Depends(require_ai_models_platform_admin)],
     auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
     hub_svc: Annotated[AiModelsHubService, Depends(get_ai_models_hub_service)],
     audit_svc: Annotated[SqlAuditLedgerService, Depends(get_audit_ledger_service)],
@@ -173,22 +172,29 @@ async def get_ai_model_delete_impact(
 async def delete_ai_model_mapping(
     mapping_id: Annotated[str, Path(min_length=1, max_length=128)],
     request: Request,
+    _user: Annotated[UserIdentity, Depends(require_ai_models_platform_admin)],
     hub_svc: Annotated[AiModelsHubService, Depends(get_ai_models_hub_service)],
     mode: Annotated[PinRemovalModeLiteral, Query()] = "reject",
-    actor_role: Annotated[str, Query()] = "PLATFORM_ADMIN",
 ) -> AiModelDeleteResponse:
     """Delete or drain a mapping enforcing dependency & active run guards."""
-    assert_ai_models_write_allowed(request)
+    server_actor_role = "PLATFORM_ADMIN"
     engine = getattr(request.app.state, "db_engine", None)
     if engine is not None:
         async with engine.begin() as conn:
             await ensure_ai_model_mappings_schema_on_postgres18(conn)
             res = await delete_or_drain_ai_model_mapping_pg18(
-                conn, mapping_id, mode=mode, actor_role=actor_role, instance=str(request.url.path)
+                conn,
+                mapping_id,
+                mode=mode,
+                actor_role=server_actor_role,
+                instance=str(request.url.path),
             )
     else:
         res = hub_svc.delete_or_drain_mapping(
-            mapping_id, mode=mode, actor_role=actor_role, instance=str(request.url.path)
+            mapping_id,
+            mode=mode,
+            actor_role=server_actor_role,
+            instance=str(request.url.path),
         )
     st: Literal["DELETED", "DRAINING"] = "DRAINING" if res and res.draining else "DELETED"
     return AiModelDeleteResponse(mapping_id=mapping_id, status=st)
@@ -229,12 +235,12 @@ async def get_reindex_status(request: Request) -> RagReindexStatusResponse:
 @router.post("/reindex-embeddings", response_model=RagReindexTriggerResponse)
 async def trigger_reindex_embeddings(
     request: Request,
+    user: Annotated[UserIdentity, Depends(require_ai_models_platform_admin)],
     auth_svc: Annotated[AuthAndOrganizationService, Depends(get_auth_service)],
     hub_svc: Annotated[AiModelsHubService, Depends(get_ai_models_hub_service)],
-    actor_persona: Annotated[str | None, Query()] = None,
 ) -> RagReindexTriggerResponse:
     """Trigger a global reindexing of all document chunks on active embedding model."""
-    return await trigger_manual_reindex_embeddings(request, auth_svc, hub_svc, actor_persona)
+    return await trigger_manual_reindex_embeddings(request, auth_svc, hub_svc, actor_id=user.id)
 
 
 __all__ = ["router", "test_ai_model_connection"]

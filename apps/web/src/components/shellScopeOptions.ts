@@ -8,6 +8,10 @@ import type {
   ConfiguredLlmTierMapping,
   ConfiguredOrgUnit,
 } from "./platformSetupStore";
+import {
+  SHELL_SCOPE_OPTIONS_EN,
+  SHELL_SCOPE_OPTIONS_FR,
+} from "../i18n/locales/shell_scope_labels";
 export { buildShellNotificationItems } from "./shellNotificationBuilder";
 export {
   buildUnifiedScopeSelectorState,
@@ -128,50 +132,42 @@ export function buildWorkspaceSwitcherOptions(params: {
     return ws.ownerOrgUnitName ?? "";
   };
 
-  const groupPrivateLabel = isFr
-    ? `${getOrciaIconGlyph("lock")} Mes Espaces Privés`
-    : `${getOrciaIconGlyph("lock")} My Private Spaces`;
-  const groupTeamUnitLabel = isFr
-    ? `${getOrciaIconGlyph("team")} Mes Équipes & Espaces · Équipe`
-    : `${getOrciaIconGlyph("team")} My Teams & Spaces · Team`;
-  const groupSharedWorkspaceLabel = isFr
-    ? `📦 Espace · ${getOrciaIconGlyph("team")} Mes Équipes & Espaces`
-    : `📦 Workspace · ${getOrciaIconGlyph("team")} My Teams & Spaces`;
-  const groupSupervisionLabel = isFr
-    ? `${getOrciaIconGlyph("organizationBu")} Supervision Organisation`
-    : `${getOrciaIconGlyph("organizationBu")} Organization Supervision`;
+  const scopeLabels = isFr ? SHELL_SCOPE_OPTIONS_FR : SHELL_SCOPE_OPTIONS_EN;
+
+  const groupPrivateLabel = `${getOrciaIconGlyph("lock")} ${scopeLabels.groupPrivateSuffix}`;
+  const groupTeamUnitLabel = `${getOrciaIconGlyph("team")} ${scopeLabels.groupTeamUnitSuffix}`;
+  const groupSharedWorkspaceLabel = `${scopeLabels.groupSharedWorkspacePrefix} ${getOrciaIconGlyph("team")} ${scopeLabels.groupSharedWorkspaceSuffix}`;
+  const groupSupervisionLabel = `${getOrciaIconGlyph("organizationBu")} ${scopeLabels.groupSupervisionSuffix}`;
 
   return [
     ...privateWorkspaces.map((ws) => {
       const ownerName = resolveOwnerName(ws);
-      const prefix = isFr ? "🔒 Espace · " : "🔒 Workspace · ";
       return {
         id: ws.workspaceId,
-        label: ownerName ? `${prefix}${ws.name} · ${ownerName}` : `${prefix}${ws.name}`,
+        label: ownerName
+          ? `${scopeLabels.privateSpacePrefix}${ws.name} · ${ownerName}`
+          : `${scopeLabels.privateSpacePrefix}${ws.name}`,
         groupLabel: groupPrivateLabel,
       };
     }),
     ...teamUnits.map((team) => ({
       id: team.id,
-      label: isFr
-        ? `${getOrciaIconGlyph("team")} Équipe · ${team.name}`
-        : `${getOrciaIconGlyph("team")} Team · ${team.name}`,
+      label: `${getOrciaIconGlyph("team")} ${scopeLabels.teamPrefix}${team.name}`,
       groupLabel: groupTeamUnitLabel,
     })),
     ...sharedOrConfidentialWorkspaces.map((ws) => {
       const ownerName = resolveOwnerName(ws);
-      const prefix = isFr ? "📦 Espace · " : "📦 Workspace · ";
       return {
         id: ws.workspaceId,
-        label: ownerName ? `${prefix}${ws.name} · ${ownerName}` : `${prefix}${ws.name}`,
+        label: ownerName
+          ? `${scopeLabels.sharedSpacePrefix}${ws.name} · ${ownerName}`
+          : `${scopeLabels.sharedSpacePrefix}${ws.name}`,
         groupLabel: groupSharedWorkspaceLabel,
       };
     }),
     ...buUnits.map((bu) => ({
       id: bu.id,
-      label: isFr
-        ? `${getOrciaIconGlyph("organizationBu")} Direction (BU) · ${bu.name}`
-        : `${getOrciaIconGlyph("organizationBu")} Division (BU) · ${bu.name}`,
+      label: `${getOrciaIconGlyph("organizationBu")} ${scopeLabels.buPrefix}${bu.name}`,
       groupLabel: groupSupervisionLabel,
     })),
     ...scopes
@@ -202,12 +198,9 @@ export function buildShellDisabledMenuKeys(params: {
     hasModels,
     hasWorkspaces,
   } = params;
+  const scopeLabels = isFr ? SHELL_SCOPE_OPTIONS_FR : SHELL_SCOPE_OPTIONS_EN;
   if (!adminCreated) {
-    const adminReason =
-      day0AdminMissingReason ??
-      (isFr
-        ? "Créez d'abord le premier compte Administrateur pour accéder à cette section."
-        : "Create the first Administrator account first to access this section.");
+    const adminReason = day0AdminMissingReason ?? scopeLabels.disabledReasons.adminMissing;
     return {
       assistant: adminReason,
       processes: adminReason,
@@ -224,26 +217,18 @@ export function buildShellDisabledMenuKeys(params: {
   return {
     ...(!effectiveHasModels
       ? {
-          assistant: isFr
-            ? "Configurez au moins un modèle IA et rattachez une Équipe de facturation dans Administration pour activer Mon Assistant."
-            : "Configure at least one AI model and attach a billing Team in Administration to enable My Assistant.",
-          agents: isFr
-            ? "Configurez un modèle IA ou activez un Pack et rattachez une Équipe de facturation dans Administration pour déverrouiller Mes Agents."
-            : "Configure an AI model or enable a Pack and attach a billing Team in Administration to unlock My Agents.",
+          assistant: scopeLabels.disabledReasons.assistant,
+          agents: scopeLabels.disabledReasons.agents,
         }
       : {}),
     ...(!effectiveHasWorkspaces || !effectiveHasModels
       ? {
-          processes: isFr
-            ? "Créez un Espace de Travail rattaché à une Équipe de facturation et configurez un modèle IA pour activer Mes Processus."
-            : "Create a Workspace attached to a billing Team and configure an AI model to enable My Processes.",
+          processes: scopeLabels.disabledReasons.processes,
         }
       : {}),
     ...(!effectiveHasWorkspaces && !effectiveHasModels
       ? {
-          finops: isFr
-            ? "Configurez un modèle IA ou créez un Espace de Travail rattaché à une Équipe pour consulter le suivi des coûts."
-            : "Configure an AI model or create a Workspace attached to a Team to view cost tracking.",
+          finops: scopeLabels.disabledReasons.finops,
         }
       : {}),
   };

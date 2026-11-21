@@ -20,6 +20,22 @@ export interface AssistantDictionarySection {
     readonly bannerDescription: string;
     readonly configureCta: string;
   };
+  readonly assistantNoChatModel: {
+    readonly bannerTitle: string;
+    readonly bannerDescription: string;
+    readonly configureCta: string;
+  };
+  readonly assistantRagNotice: {
+    readonly noEmbeddingTitle: string;
+    readonly noEmbeddingDescription: string;
+    readonly configureEmbeddingCta: string;
+    readonly reindexingTitle: string;
+    readonly reindexingDescription: string;
+    readonly reindexFailedTitle: string;
+    readonly reindexFailedDescription: string;
+    readonly relaunchReindexCta: string;
+    readonly checkEmbeddingCta: string;
+  };
   readonly assistantStreamErrors: {
     readonly sessionExpiredMessage: string;
     readonly reconnectCta: string;
@@ -104,10 +120,30 @@ export const ASSISTANT_FR_LABELS: AssistantDictionarySection = {
     searchPlaceholder: "Rechercher dans vos discussions, dossiers et brouillons...",
   },
   assistantNoEmbeddingModel: {
-    bannerTitle: "Modèle de recherche sémantique requis",
+    bannerTitle: "Dialogue direct actif · Recherche documentaire inactive",
     bannerDescription:
-      "Aucun modèle de recherche sémantique actif n'est configuré sur la plateforme. Mon Assistant et l'indexation de documents sont suspendus jusqu'à la configuration d'un modèle.",
-    configureCta: "Configurer la recherche sémantique →",
+      "Le dialogue direct et le glossaire sont actifs. La recherche documentaire nécessite un modèle d'indexation sémantique.",
+    configureCta: "Configurer dans Modèles IA →",
+  },
+  assistantNoChatModel: {
+    bannerTitle: "Modèle de dialogue IA requis",
+    bannerDescription:
+      "Aucun modèle de dialogue (chat) actif n'est configuré sur la plateforme. Configurez au moins un modèle chat pour utiliser Mon Assistant.",
+    configureCta: "Configurer un modèle IA →",
+  },
+  assistantRagNotice: {
+    noEmbeddingTitle: "Dialogue direct & glossaire actifs · Recherche documentaire inactive",
+    noEmbeddingDescription:
+      "Aucun modèle d'indexation sémantique n'est configuré. Vous pouvez échanger normalement avec Mon Assistant ; la recherche dans les documents nécessite un modèle d'embedding.",
+    configureEmbeddingCta: "Configurer dans Administration › Modèles IA →",
+    reindexingTitle: "Dialogue direct & glossaire actifs · Réindexation documentaire en cours",
+    reindexingDescription:
+      "Le corpus documentaire est en cours de réindexation sémantique. Le dialogue direct reste actif ; la recherche documentaire reprendra automatiquement à la fin.",
+    reindexFailedTitle: "Dialogue direct actif · Réindexation documentaire interrompue",
+    reindexFailedDescription:
+      "La réindexation sémantique du corpus documentaire a échoué. Le dialogue direct avec Mon Assistant reste disponible.",
+    relaunchReindexCta: "Relancer la réindexation",
+    checkEmbeddingCta: "Vérifier le modèle d'embedding →",
   },
   assistantStreamErrors: {
     sessionExpiredMessage:
@@ -197,10 +233,30 @@ export const ASSISTANT_EN_LABELS: AssistantDictionarySection = {
     searchPlaceholder: "Search across your discussions, folders, and drafts...",
   },
   assistantNoEmbeddingModel: {
-    bannerTitle: "Semantic search model required",
+    bannerTitle: "Direct dialogue active · Document search inactive",
     bannerDescription:
-      "No active semantic search model is configured on the platform. My Assistant and document indexing are paused until a model is configured.",
-    configureCta: "Configure semantic search →",
+      "Direct dialogue and glossary are active. Document semantic search requires an active indexing model.",
+    configureCta: "Configure in AI Models →",
+  },
+  assistantNoChatModel: {
+    bannerTitle: "Chat AI model required",
+    bannerDescription:
+      "No active chat AI model is configured on the platform. Configure at least one chat model to use My Assistant.",
+    configureCta: "Configure an AI model →",
+  },
+  assistantRagNotice: {
+    noEmbeddingTitle: "Direct dialogue & glossary active · Document search inactive",
+    noEmbeddingDescription:
+      "No semantic indexing model is configured. You can chat normally with My Assistant; searching workspace documents requires an embedding model.",
+    configureEmbeddingCta: "Configure in Administration › AI Models →",
+    reindexingTitle: "Direct dialogue & glossary active · Document reindexing in progress",
+    reindexingDescription:
+      "The document corpus is undergoing semantic reindexing. Direct chat remains active; document search will resume automatically once finished.",
+    reindexFailedTitle: "Direct dialogue active · Document reindexing interrupted",
+    reindexFailedDescription:
+      "Semantic reindexing of the document corpus failed. Direct dialogue with My Assistant remains available.",
+    relaunchReindexCta: "Relaunch reindexing",
+    checkEmbeddingCta: "Check embedding model →",
   },
   assistantStreamErrors: {
     sessionExpiredMessage:

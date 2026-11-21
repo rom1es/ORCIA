@@ -64,23 +64,27 @@ export function WorkspacesFeaturePanel({
         ? "🏢 Supervision Organisation"
         : "🏢 Organization Supervision";
 
+  const explicitTargetWs = initialWorkspaceId
+    ? workspaces.find((w) => w.workspaceId === initialWorkspaceId)
+    : undefined;
+
   const scopedWorkspaces =
-    activeScopeNode?.level === "WORKSPACE"
-      ? workspaces.filter((ws) => ws.workspaceId === activeScopeId)
-      : activeScopeNode?.level === "TEAM"
-        ? workspaces.filter(
-            (ws) => !ws.ownerOrgUnitId || ws.ownerOrgUnitId === activeScopeId,
-          )
-        : workspaces;
+    explicitTargetWs
+      ? workspaces
+      : activeScopeNode?.level === "WORKSPACE"
+        ? workspaces.filter((ws) => ws.workspaceId === activeScopeId)
+        : activeScopeNode?.level === "TEAM"
+          ? workspaces.filter(
+              (ws) => !ws.ownerOrgUnitId || ws.ownerOrgUnitId === activeScopeId,
+            )
+          : workspaces;
 
   const displayedWorkspaces =
     scopedWorkspaces.length > 0 ? scopedWorkspaces : workspaces;
 
   const resolvedActiveWsId = resolveEffectiveWorkspaceId(activeScopeId, workspaces, authEmail);
   const targetWorkspace =
-    (initialWorkspaceId
-      ? workspaces.find((w) => w.workspaceId === initialWorkspaceId)
-      : undefined) ??
+    explicitTargetWs ??
     displayedWorkspaces.find((w) => w.workspaceId === resolvedActiveWsId) ??
     displayedWorkspaces[0] ??
     workspaces[0] ??

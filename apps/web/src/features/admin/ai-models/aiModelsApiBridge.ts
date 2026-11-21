@@ -23,7 +23,7 @@ function buildAiModelsClient(locale: "fr" | "en") {
 
 function resolveActorPersona(): string {
   const { roles } = useAuthSessionStore.getState();
-  if (roles.includes("SECOPS")) return "karim";
+  if (roles.includes("PLATFORM_ADMIN") || roles.includes("SECOPS")) return "karim";
   return "marc";
 }
 
@@ -144,9 +144,8 @@ export async function deleteAiModelMappingViaApi(
 ): Promise<AiModelOperationResult<AiModelDeleteResponse>> {
   try {
     const client = buildAiModelsClient(locale);
-    const { roles } = useAuthSessionStore.getState();
-    const actorRole = roles[0] ?? "PLATFORM_ADMIN";
-    const res = await client.aiModelsHub.deleteAiModelMapping(mappingId, mode, actorRole);
+    const persona = resolveActorPersona();
+    const res = await client.aiModelsHub.deleteAiModelMapping(mappingId, mode, persona);
     return { ok: true, data: res };
   } catch (err: unknown) {
     return { ok: false, ...extractAiModelsApiError(err, locale) };

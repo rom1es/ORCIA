@@ -93,7 +93,7 @@ async def test_vertical_chat_and_embedding_connection_tests_postgres18(
     database_url: str,
     app_client_factory,  # type: ignore[no-untyped-def]
 ) -> None:
-    headers_admin = {"X-Orcia-Persona": "marc"}
+    headers_admin = {"X-Orcia-Persona": "karim"}
     engine = create_async_engine(database_url)
     user_admin_id = UUID(new_uuid7_str())
 

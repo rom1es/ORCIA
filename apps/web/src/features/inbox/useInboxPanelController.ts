@@ -99,10 +99,12 @@ export function useInboxPanelController() {
     workspaces,
     authEmail ?? platformAdmin?.email,
   );
-  const { hasActiveEmbeddingModel } = useActiveEmbeddingModelStatus();
+  const { hasActiveEmbeddingModel, hasActiveChatModel: hasHubChatModel } =
+    useActiveEmbeddingModelStatus();
+  const hasActiveChatModel =
+    hasHubChatModel || llmTiers.some((t) => Boolean(t.primaryModel?.trim()));
   const ragReindex = useRagReindexStatus();
-  const assistantInputBlocked =
-    !hasActiveEmbeddingModel || ragReindex.isReindexing || ragReindex.isReindexFailed;
+  const assistantInputBlocked = !hasActiveChatModel;
   const foldersController = useServerAssistantFolders({
     workspaceId: activeWorkspaceId,
     messages: dictionary.assistantFoldersSync,
@@ -288,6 +290,7 @@ export function useInboxPanelController() {
     authorEmail: platformAdmin?.email ?? "",
     activeWorkspaceId,
     hasActiveEmbeddingModel,
+    hasActiveChatModel,
     ragReindex,
     assistantInputBlocked,
     prefillPrompt,

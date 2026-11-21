@@ -144,14 +144,14 @@ capabilities:
     title: Indexation différenciée incrémentale et graphe tripartite Confluence↔Jira↔Git
     fr: [FR-23]
     origin: epic
-    origin_ref: 2-3, 2-4
+    origin_ref: 2-3, 2-4, 25-5
     status: live
     kind: feature
     uj: [UJ-3, UJ-18]
     db_tables: [kb_documents, kb_chunks, code_graph_edges, tripartite_trace_edges, kb_stale_alerts]
-    tests: [apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, tests/unit/test_hybrid_rag_and_tripartite.py, tests/integration/test_epics_1_7_vertical_sql_wiring_postgres18.py]
+    tests: [apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, tests/unit/test_hybrid_rag_and_tripartite.py, tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py, tests/integration/test_epics_1_7_vertical_sql_wiring_postgres18.py]
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-21"
     surfaces: { route: /ontology, api: /api/v1/ontology-rag }
 
   # ───────────── Orchestration, assistant DAG, human-led (Epic 3) ─────────────
@@ -184,14 +184,14 @@ capabilities:
     title: Agent assistant DAG 5 nœuds (AssistantHarness 5 couches)
     fr: [FR-1, FR-13]
     origin: epic
-    origin_ref: 3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc
+    origin_ref: 3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc + 25-5
     status: live
     kind: feature
     uj: [UJ-1, UJ-17]
     db_tables: [workflow_runs, step_executions, blackboard_snapshots, assistant_threads]
-    tests: [tests/unit/test_story_3_3_assistant_agent_5_nodes_and_context_ports.py, tests/evals/test_assistant_and_ontology_evals.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
+    tests: [tests/unit/test_story_3_3_assistant_agent_5_nodes_and_context_ports.py, tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py, tests/evals/test_assistant_and_ontology_evals.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-21"
     surfaces: { api: /api/v1/assistant }
   - id: CAP-023
     title: Ancrages humains obligatoires et arbitrage / tie-break
@@ -486,14 +486,14 @@ capabilities:
     title: Accostage progressif Jour 0 (1/6) et protections
     fr: [FR-32]
     origin: epic
-    origin_ref: 9-2
+    origin_ref: 9-2, 25-1
     status: live
     kind: feature
     uj: [UJ-13]
     db_tables: [platform_settings, users, org_units, workspaces, catalog_items]
-    tests: [apps/web/e2e/01-day0-boot-and-f5-persistence.spec.ts, apps/web/e2e/shell.spec.ts]
+    tests: [apps/web/e2e/01-day0-boot-and-f5-persistence.spec.ts, apps/web/e2e/shell.spec.ts, tests/unit/test_story_25_1_personal_workspace_and_accostage.py, tests/integration/api/test_story_25_1_personal_workspace_postgres18.py, apps/web/src/__tests__/story-25-1-personal-workspace-accostage-and-processes.test.tsx]
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-21"
     surfaces: { api: bootstrap_accostage.py }
   - id: CAP-062
     title: Recherche fédérée contextuelle ⌘K à 2 vitesses
@@ -657,15 +657,15 @@ capabilities:
     title: Câblage LLM réel et streaming SSE multi-fournisseurs (« Envoyer à Mon Assistant »)
     fr: [FR-33]
     origin: adhoc
-    origin_ref: 2026-11-05-cablage-reel-llm-envoyer-a-mon-assistant-et-feedback-ui
+    origin_ref: 2026-11-05-cablage-reel-llm-envoyer-a-mon-assistant-et-feedback-ui + 25-5
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [llm_model_endpoints, workspace_llm_tier_mappings, assistant_threads, inference_attempts]
-    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts]
+    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py, tests/integration/api/test_story_25_5_assistant_chat_only_and_rag_guard_postgres18.py]
     verification: runtime
-    verified_at: "2026-11-20"
-    surfaces: { api: assistant_llm_bridge.py + assistant_llm_providers.py }
+    verified_at: "2026-11-21"
+    surfaces: { api: assistant_llm_bridge.py + assistant_llm_providers.py + assistant_llm_resolver.py }
 
   # ───────────── Mes Espaces, MCP/A2A, pack-builder (Epic 11) ─────────────
   - id: CAP-080
@@ -782,41 +782,41 @@ capabilities:
     title: Organigramme hiérarchique multi-niveaux (BU / Sous-BU / Équipe), délégation Mon Organisation (/organization), modales d'édition/membres/facturation, espaces privés et sélecteur de contexte
     fr: [FR-3, FR-21, FR-22, FR-23, FR-34]
     origin: epic
-    origin_ref: 17-2, 20-1 + 2026-11-06-rattachement-equipe-facturation-espaces-privés-et-selecteur-contexte + 2026-11-08-distinction-equipes-espaces-et-sync-sql-org-units + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances + 2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu
+    origin_ref: 17-2, 20-1, 25-1 + 2026-11-06-rattachement-equipe-facturation-espaces-privés-et-selecteur-contexte + 2026-11-08-distinction-equipes-espaces-et-sync-sql-org-units + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances + 2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu
     status: live
     kind: feature
     uj: [UJ-14]
     db_tables: [org_units, workspaces, workspace_memberships, workspace_invitations, iam_accounts]
-    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/src/__tests__/scope-switcher-and-org-sync.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx, tests/unit/test_story_17_2_org_hierarchy.py, tests/unit/test_story_17_2_pg_guard_and_reconcilers.py, tests/unit/test_evaluator_multi_lead_rollup.py, tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
+    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/src/__tests__/scope-switcher-and-org-sync.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx, apps/web/src/__tests__/story-25-1-personal-workspace-accostage-and-processes.test.tsx, tests/unit/test_story_17_2_org_hierarchy.py, tests/unit/test_story_17_2_pg_guard_and_reconcilers.py, tests/unit/test_evaluator_multi_lead_rollup.py, tests/unit/test_story_25_1_personal_workspace_and_accostage.py, tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py, tests/integration/api/test_story_25_1_personal_workspace_postgres18.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/security/test_story_25_1_personal_workspace_isolation.py]
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-21"
     surfaces: { route: "/spaces, /organization", api: "org_and_workspaces.py, org_units.py, org_unit_invitations.py, sql_org_iam_role_sync.py", ui: "OrganizationPageView + SettingsOrganizationUnitsBlock + OrgPedagogicalCallout + CreateOrgUnitModal + EditOrgUnitModal + ManageOrgUnitMembersModal + ConfirmDeleteOrgUnitModal + InviteOrganizationUserModal + OrciaUserPillsSelect", migration: "20261111_1702 + 20261115_1902 + 20261117_2001" }
   - id: CAP-075
     title: Assistant — streaming réel, bouton Stop, réflexion progressive repliable, sauvegarde des conversations, pièces jointes, citations RAG, autosave/autocomplete
     fr: [FR-33]
     origin: adhoc
-    origin_ref: "2026-11-06-refonte-assistant-minimaliste-routage-llm-et-sauvegarde-conversations + 2026-11-06-streaming-assistant-bouton-stop-et-sous-fenetre-reflexion + 2026-11-07-assistant-* (5 rapports) + 2026-11-07-correction-triplon-reponse-markdown-et-boutons-redondants-assistant"
+    origin_ref: "2026-11-06-refonte-assistant-minimaliste-routage-llm-et-sauvegarde-conversations + 2026-11-06-streaming-assistant-bouton-stop-et-sous-fenetre-reflexion + 2026-11-07-assistant-* (5 rapports) + 2026-11-07-correction-triplon-reponse-markdown-et-boutons-redondants-assistant + 25-5"
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [assistant_threads, assistant_folders, kb_chunks]
-    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, packages/ui/src/__tests__/assistant-workspace.test.tsx]
+    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/src/__tests__/story-25-5-assistant-unlocked-and-rag-source-blocked.test.tsx, packages/ui/src/__tests__/assistant-workspace.test.tsx]
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-21"
     surfaces: { route: /assistant, api: assistant_background_turns.py }
   - id: CAP-076
     title: Refactorisation LLM agnostique/async et vrai streaming SSE ; intégration Gemini (Mode A/B)
     fr: [FR-33]
     origin: adhoc
-    origin_ref: 2026-11-07-refactorisation-agnostique-async-llm-ontologie-et-vrai-streaming-sse + 2026-11-08-integration-gemini-argon-configuration-et-assistant
+    origin_ref: 2026-11-07-refactorisation-agnostique-async-llm-ontologie-et-vrai-streaming-sse + 2026-11-08-integration-gemini-argon-configuration-et-assistant + 25-5
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [llm_model_endpoints, workspace_llm_tier_mappings, inference_attempts]
-    tests: [tests/unit/test_assistant_agnostic_async_llm_bridge.py, tests/unit/test_gemini_argon_provider_adapter.py, apps/web/src/__tests__/gemini-settings-and-assistant.test.tsx, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
+    tests: [tests/unit/test_assistant_agnostic_async_llm_bridge.py, tests/unit/test_gemini_argon_provider_adapter.py, tests/integration/api/test_story_25_5_assistant_chat_only_and_rag_guard_postgres18.py, apps/web/src/__tests__/gemini-settings-and-assistant.test.tsx, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
     verification: runtime
-    verified_at: "2026-11-20"
-    surfaces: { api: assistant_llm_gemini_adapter.py + assistant_llm_providers.py }
+    verified_at: "2026-11-21"
+    surfaces: { api: assistant_llm_gemini_adapter.py + assistant_llm_providers.py + assistant_llm_resolver.py }
   - id: CAP-084
     title: Mes Espaces — intégration glossaire/ontologie (option A) et processus de génération de documentation pack-builder
     fr: [FR-34, FR-35]
@@ -921,7 +921,7 @@ capabilities:
     title: Refonte Multi-Nature des Sources d'Espace (/workspaces/$wsId/sources), Moteur de Fraîcheur Différentiel (SHA-256 & Sonde 24h), Contrat Normalisé codegraph-mcp & Sidecar GitNexus Isolé
     fr: [FR-17, FR-23, FR-24, FR-34, FR-35]
     origin: epic
-    origin_ref: epic-18 (18-1..18-4)
+    origin_ref: epic-18 (18-1..18-4) + 25-5
     status: live
     kind: feature
     uj: [UJ-18]
@@ -930,14 +930,17 @@ capabilities:
       - apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts
       - tests/unit/test_story_18_1_workspace_sources_multi_nature_and_codegraph.py
       - tests/unit/test_story_18_2_freshness_sha256_probe_and_codegraph_worker.py
+      - tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py
       - tests/unit/connectors/test_story_18_3_codegraph_mcp_tools_and_providers.py
       - tests/unit/infra/test_story_18_4_docker_compose_gitnexus_isolation.py
       - tests/security/test_epic_18_sources_and_codegraph_security.py
       - tests/integration/api/test_story_18_1_workspace_sources_postgres18.py
       - tests/integration/api/test_story_18_2_webhooks_outbox_and_freshness_postgres18.py
+      - tests/integration/api/test_story_25_5_assistant_chat_only_and_rag_guard_postgres18.py
       - apps/web/src/__tests__/story-18-1-workspace-sources-route-modal-and-f5.test.tsx
+      - apps/web/src/__tests__/story-25-5-assistant-unlocked-and-rag-source-blocked.test.tsx
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-21"
     surfaces:
       route: "/workspaces/$wsId, /workspaces/$wsId/sources"
       api: "workspace_datasources.py, datasource_webhooks.py, codegraph_mcp.py"
@@ -946,10 +949,10 @@ capabilities:
 
   # ───────────── Epic 19 : Hub Modèles IA & Embeddings Sémantiques ─────────────
   - id: CAP-190
-    title: Hub Modèles IA Fiable, Découverte Dynamique 0 Token, Test Réel (Chat max_tokens=1 & Embedding dim 1024), EmbeddingPort Hexagonal, RAG Sans Hachage SHA-256 & Réindexation Bloquante Idempotente
+    title: Hub Modèles IA Fiable, Découverte Dynamique 0 Token, Test Réel (Chat max_tokens=1 & Embedding dim 1024), EmbeddingPort Hexagonal, RAG Sans Hachage SHA-256 & Réindexation Bloquante Idempotente (AD-24 Découplé Epic 25)
     fr: [FR-14, FR-18, FR-23, FR-28, FR-31, FR-33]
     origin: epic
-    origin_ref: epic-19 (19-1..19-7) + 25-4
+    origin_ref: epic-19 (19-1..19-7) + 25-4 + 25-5
     status: live
     kind: feature
     uj: [UJ-15]
@@ -965,12 +968,15 @@ capabilities:
       - tests/unit/test_story_19_6_rag_blocking_and_embedding_model.py
       - tests/unit/test_story_19_7_rag_reindexing_and_blocking.py
       - tests/unit/test_story_25_4_ai_model_delete_and_reindex_empty.py
+      - tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py
       - tests/unit/test_rag_reindexer_vault_cipher_and_http_closure.py
       - tests/unit/test_assistant_and_rag_routes_require_rag_guard_audit.py
+      - tests/security/test_story_25_4_ai_models_rbac_isolation.py
       - tests/integration/api/test_story_19_3_ai_models_connection_test_postgres18.py
       - tests/integration/api/test_story_19_5_ai_models_usage_postgres18.py
       - tests/integration/api/test_story_19_6_alembic_and_rag_blocking_postgres18.py
       - tests/integration/api/test_story_19_7_reindexing_and_blocking_postgres18.py
+      - tests/integration/api/test_story_25_5_assistant_chat_only_and_rag_guard_postgres18.py
       - apps/web/src/__tests__/story-19-1-ai-models-empty-fields-and-placeholders-guard.test.tsx
       - apps/web/src/__tests__/story-19-2-ai-models-combobox-discovery-and-freeform.test.tsx
       - apps/web/src/__tests__/story-19-3-ai-models-real-connection-test-and-no-dead-buttons.test.tsx
@@ -978,15 +984,16 @@ capabilities:
       - apps/web/src/__tests__/story-19-6-assistant-no-embedding-blocking-and-f5.test.tsx
       - apps/web/src/__tests__/story-19-7-reindexing-banner-hub-and-f5.test.tsx
       - apps/web/src/__tests__/story-25-4-spinner-localized-timeout-and-delete.test.tsx
+      - apps/web/src/__tests__/story-25-5-assistant-unlocked-and-rag-source-blocked.test.tsx
       - apps/web/e2e/16-ai-models-reindex-connectors-and-broker.spec.ts
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-21"
     surfaces:
       route: "/settings/ai-models, /assistant, /workspaces/$wsId/sources"
-      api: "ai_models_hub.py, _ai_models_test_and_reindex_routes.py, _ai_models_reindex_helpers.py, rag.py, ontology_and_rag.py, assistant.py, _ai_models_discovery.py, _ai_models_helpers.py, bootstrap_accostage.py"
+      api: "ai_models_hub.py, _ai_models_test_and_reindex_routes.py, _ai_models_reindex_helpers.py, _rag_availability_guards.py, rag.py, ontology_and_rag.py, assistant.py, _ai_models_discovery.py, _ai_models_helpers.py, bootstrap_accostage.py"
       ui: "AiModelModal + AiModelDiscoveryCombobox + AiModelConnectionTestButton + AssistantNoEmbeddingBanner + AssistantReindexingBanner + AiModelReindexPanel + SettingsAiModelsSection + AiModelMappingRowCard + OrciaSpinner"
       migration: "20261115_2105, 20261115_2206, 20261115_2307, 20261115_2359"
-    notes: "Formalisé dans AD-24 (ARCHITECTURE-SPINE.md) et livré dans l'Epic 19 (Stories 19.1..19.7). Élimine le hachage SHA-256 en prod, introduit le rôle embedding unique GLOBAL et la réindexation bloquante idempotente."
+    notes: "Formalisé dans AD-24 (ARCHITECTURE-SPINE.md) et livré dans l'Epic 19 (Stories 19.1..19.7), puis amendé en Story 25.5 (découplage Mon Assistant / GET /search sans modèle sémantique ; blocage ciblé POST /datasources RAG != SOURCE_CODE et routes RAG pures)."
 
   # ───────────── Epic 6 : Provenance Immuable, FinOps Consolidé & Impact Cognitif ─────────────
   - id: CAP-200

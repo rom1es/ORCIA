@@ -3,7 +3,7 @@ import {
   type ControlCenterDatasourceItem,
   type ControlCenterWorkspaceGovItem,
 } from "@orcia/ui";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   createOrciaApiClient,
   type CreateWorkspaceDatasourceRequest,
@@ -12,8 +12,11 @@ import {
   type WorkspaceDatasourceItemResponse,
 } from "@orcia/api-client";
 import type { PlatformSetupContextValue } from "../../components/platformSetupStore";
+import { useShellNavigation } from "../../components/ShellContainer";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { useI18n } from "../../i18n";
+import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
+import { useActiveEmbeddingModelStatus } from "../shared/useActiveEmbeddingModelStatus";
 import { WorkspaceSourcesMasterTable } from "./sources/WorkspaceSourcesMasterTable";
 import { WorkspaceSourceAttachModal } from "./sources/WorkspaceSourceAttachModal";
 import { mapFallbackWorkspaceDatasources } from "./sources/WorkspaceSourcesFallbackHelper";
@@ -35,9 +38,11 @@ export function WorkspaceSourcesRagTab({
   onRegisterDatasource,
   onFeedback = () => {},
 }: WorkspaceSourcesRagTabProps): React.ReactElement {
-  const { dictionary } = useI18n();
+  const { dictionary, locale } = useI18n();
   const copy = dictionary.epic18Sources;
   const openUserSettingsModalAtTab = useAuthSessionStore((s) => s.openUserSettingsModalAtTab);
+  const { navigateToRoute } = useShellNavigation();
+  const { hasActiveEmbeddingModel } = useActiveEmbeddingModelStatus();
 
   const wsId = activeWorkspace.workspaceId || "";
   const [datasources, setDatasources] = useState<readonly WorkspaceDatasourceItemResponse[]>(() =>
@@ -49,8 +54,9 @@ export function WorkspaceSourcesRagTab({
   const [renewingDsId, setRenewingDsId] = useState<string | null>(null);
   const [newReferentInput, setNewReferentInput] = useState<string>("");
   const [feedbackBanner, setFeedbackBanner] = useState<string | null>(null);
+  const [errorBanner, setErrorBanner] = useState<string | null>(null);
 
-  const client = createOrciaApiClient({ baseUrl: "" });
+  const client = useMemo(() => createOrciaApiClient({ baseUrl: "" }), []);
   const effectiveRole =
     (activeWorkspace as unknown as { effectiveRole?: string }).effectiveRole || "PLATFORM_ADMIN";
   const isWorkspaceLead = ["TEAM_LEAD", "BU_LEAD", "PLATFORM_ADMIN", "SECOPS"].includes(effectiveRole);
@@ -60,8 +66,16 @@ export function WorkspaceSourcesRagTab({
     effectiveRole === "READ_ONLY_OBSERVER";
 
   const showFeedback = (msg: string) => {
+    setErrorBanner(null);
     setFeedbackBanner(msg);
     onFeedback(msg);
+  };
+
+  const showApiError = (err: unknown) => {
+    const formatted = formatRfc9457ErrorToBanner(err, locale);
+    setFeedbackBanner(null);
+    setErrorBanner(formatted.fullText);
+    onFeedback(formatted.fullText);
   };
 
   const loadData = useCallback(async () => {
@@ -145,7 +159,8 @@ export function WorkspaceSourcesRagTab({
       setEditingDatasource(null);
       await loadData();
     } catch (err: unknown) {
-      showFeedback(`⚠️ ${err instanceof Error ? err.message : "Erreur"}`);
+      showApiError(err);
+      throw err;
     }
   };
 
@@ -160,7 +175,7 @@ export function WorkspaceSourcesRagTab({
       );
       await loadData();
     } catch (err: unknown) {
-      showFeedback(`⚠️ ${err instanceof Error ? err.message : "Erreur"}`);
+      showApiError(err);
     }
   };
 
@@ -249,6 +264,16 @@ export function WorkspaceSourcesRagTab({
         </button>
       </div>
 
+      {errorBanner ? (
+        <div
+          role="alert"
+          data-testid="sources-error-alert"
+          className="rounded-lg border border-status-danger/40 bg-status-danger/10 px-3 py-2 text-xs text-status-danger"
+        >
+          {errorBanner}
+        </div>
+      ) : null}
+
       {feedbackBanner ? (
         <div data-testid="sources-feedback-banner" style={{ padding: "8px 12px", borderRadius: "var(--radius-sm)", backgroundColor: "var(--color-bg-elevated)", border: "1px solid var(--color-border)", fontSize: "12px" }}>
           {feedbackBanner}
@@ -311,6 +336,8 @@ export function WorkspaceSourcesRagTab({
         editingDatasource={editingDatasource}
         connectors={connectors}
         isWorkspaceLead={isWorkspaceLead}
+        hasActiveEmbeddingModel={hasActiveEmbeddingModel}
+        onNavigateToAiModels={() => navigateToRoute("/settings/ai-models")}
         onClose={() => { setIsAttachModalOpen(false); setEditingDatasource(null); }}
         onSubmit={handleAttachOrUpdate}
       />

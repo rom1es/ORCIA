@@ -228,10 +228,12 @@ async def resolve_decrypted_ai_model_for_tier_pg18(
             f"""
             SELECT {COLUMNS_SELECT} FROM workspace_llm_tier_mappings
             WHERE (scope_id = :scope_id OR scope_level = 'GLOBAL')
-              AND inference_tier = :tier
+              AND usage = 'chat'
               AND is_active = TRUE
               AND draining = FALSE
-            ORDER BY fallback_order ASC, created_at ASC
+            ORDER BY CASE WHEN inference_tier = :tier THEN 0 ELSE 1 END,
+                     fallback_order ASC,
+                     created_at ASC
             LIMIT 1
             """
         ),

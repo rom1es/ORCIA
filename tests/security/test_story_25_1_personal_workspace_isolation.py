@@ -152,3 +152,43 @@ def test_platform_admin_and_secops_cannot_access_other_users_personal_workspace(
             headers=auth_headers[persona],
         )
         assert r_overview.status_code in (403, 404), r_overview.text
+
+        r_ds_list = client.get(
+            f"/api/v1/workspaces/{WS_PERSONAL_A_ID}/datasources",
+            headers=auth_headers[persona],
+        )
+        assert r_ds_list.status_code == 403, r_ds_list.text
+
+        r_ds_create = client.post(
+            f"/api/v1/workspaces/{WS_PERSONAL_A_ID}/datasources",
+            headers=auth_headers[persona],
+            json={
+                "alias": "idor-probe",
+                "scheme": "git",
+                "uri": "https://gitlab.corp.local/idor/repo.git",
+                "source_nature": "SOURCE_CODE",
+            },
+        )
+        assert r_ds_create.status_code == 403, r_ds_create.text
+
+        r_finops = client.get(
+            f"/api/v1/finops/dashboard?scope_type=WORKSPACE&scope_id={WS_PERSONAL_A_ID}",
+            headers=auth_headers[persona],
+        )
+        assert r_finops.status_code == 403, r_finops.text
+
+    # Owner Alice can access her own personal datasources and FinOps dashboard
+    assert (
+        client.get(
+            f"/api/v1/workspaces/{WS_PERSONAL_A_ID}/datasources",
+            headers=auth_headers["alice"],
+        ).status_code
+        == 200
+    )
+    assert (
+        client.get(
+            f"/api/v1/finops/dashboard?scope_type=WORKSPACE&scope_id={WS_PERSONAL_A_ID}",
+            headers=auth_headers["alice"],
+        ).status_code
+        == 200
+    )
