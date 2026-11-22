@@ -64,6 +64,10 @@ class AssistantOutboxEmitter:
             )
         return None
 
+    async def emit_domain_event(self, event: DomainEvent) -> str | None:
+        """Persist an arbitrary `DomainEvent` (e.g. `HumanArbitrationRequested`) into Outbox."""
+        return await self._enqueue(event)
+
     async def _enqueue(self, event: DomainEvent) -> str | None:
         if self._outbox_repo is None:
             return None

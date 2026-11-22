@@ -117,6 +117,39 @@ def get_reflexive_runtime_service(request: Request) -> NonDeterministicReflexive
     return runtime
 
 
+def get_assistant_reflexive_runtime_service(
+    request: Request,
+) -> NonDeterministicReflexiveRuntime:
+    """FastAPI `Depends` provider for read-only `ASSISTANT` runtime (`write_gate=None`)."""
+    runtime: NonDeterministicReflexiveRuntime | None = getattr(
+        request.app.state, "assistant_reflexive_runtime_service", None
+    )
+    if runtime is not None:
+        return runtime
+
+    if getattr(request.app.state, "llm_gateway", None) is None:
+        initialize_app_services(request.app)
+
+    session_maker = _resolve_reflexive_session_maker(request)
+    strict_sql = (session_maker is not None) or should_auto_init_infra("DATABASE_URL")
+    session_store = SqlReflexiveSessionStore(
+        session_maker=session_maker,
+        strict_sql=strict_sql,
+    )
+    llm_adapter = GatewayReflexiveLlmAdapter(llm_gateway=request.app.state.llm_gateway)
+    runtime = NonDeterministicReflexiveRuntime(
+        llm_port=llm_adapter,
+        surgical_explorer=get_surgical_explorer_service(request),
+        session_store=session_store,
+        event_stream=get_reflexive_event_stream_broker(request),
+        write_gate=None,
+        claim_check_storage=get_claim_check_storage(),
+        execution_profile="ASSISTANT",
+    )
+    request.app.state.assistant_reflexive_runtime_service = runtime
+    return runtime
+
+
 def get_workflows_v2_sql_store(request: Request) -> SqlWorkflowDefinitionsV2Store:
     """FastAPI `Depends` provider returning `SqlWorkflowDefinitionsV2Store` (PostgreSQL 18)."""
     session_maker = _resolve_reflexive_session_maker(request)

@@ -125,9 +125,9 @@ def test_real_registry_classifies_features_and_foundations_without_errors() -> N
     capabilities = data["capabilities"]
     foundations = [c for c in capabilities if c.get("kind") == "foundation"]
     features = [c for c in capabilities if c.get("kind") == "feature"]
-    assert len(capabilities) == 65
+    assert len(capabilities) == 66
     assert len(foundations) == 3
-    assert len(features) == 62
+    assert len(features) == 63
 
 
 def test_missing_or_invalid_capability_kind_is_rejected() -> None:

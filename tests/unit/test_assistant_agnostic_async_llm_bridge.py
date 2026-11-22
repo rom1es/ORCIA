@@ -320,11 +320,31 @@ def test_pillar_5_and_8_multi_turn_history_tools_and_structured_error_logging(
     assert msgs[2]["role"] == "assistant"
     assert msgs[3]["content"] == "Et pour le second point ?"
 
+    from orcia_core.permissions.models import UserIdentity
+
     tools_s1 = build_workspace_tools_schema(None, "SPEED_1_FAST")
-    tools_s2 = build_workspace_tools_schema(None, "SPEED_2_AGENT_TOOLS")
+    tools_s2_anon = build_workspace_tools_schema(None, "SPEED_2_AGENT_TOOLS")
     assert tools_s1 == []
-    assert len(tools_s2) >= 1
-    assert tools_s2[0]["function"]["name"] == "query_workspace_knowledge_and_glossary"
+    assert tools_s2_anon == []
+    auth_user = UserIdentity(
+        id="u-bridge-contrib",
+        email="contrib@orcia.local",
+        display_name="Bridge Contributor",
+        auth_mode="LOCAL",
+        human_profile_archetype="ARCHITECT",
+        platform_role="CONTRIBUTOR",
+        primary_org_unit_id="org-root",
+    )
+    tools_s2 = build_workspace_tools_schema(None, "SPEED_2_AGENT_TOOLS", user=auth_user)
+    tool_names_s2 = {t["function"]["name"] for t in tools_s2}
+    assert {
+        "check_resource_state",
+        "outline_resource_structure",
+        "search_workspace_snippets",
+        "inspect_resource_lines",
+        "ontology.lookup",
+    }.issubset(tool_names_s2)
+    assert "query_workspace_knowledge_and_glossary" not in tool_names_s2
 
     captured_payloads: list[dict[str, Any]] = []
     logged_warnings: list[tuple[str, dict[str, Any]]] = []

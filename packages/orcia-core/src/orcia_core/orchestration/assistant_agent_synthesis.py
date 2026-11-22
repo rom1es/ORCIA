@@ -21,7 +21,13 @@ logger = get_logger("orcia.core.orchestration.assistant_agent")
 def classify_assistant_intent(
     user_prompt: str, *, has_active_proposal: bool = False
 ) -> AssistantIntentKind:
-    """Node 1 (`1_INTENT_ROUTER`): classify user intent and enforce Constitutional Rule 1."""
+    """Node 1 (`1_INTENT_ROUTER`): classify legacy `AssistantAgentService` intent.
+
+    Note (`Story 26.6b`): lexical `HUMAN_ANCHOR_WRITE_REFUSAL` phrase matching is deprecated
+    for live tool loops, which enforce deterministic per-tool Lock V5 and Human-Anchor
+    gating via `GovernedAssistantToolRouter`; kept solely for legacy `3.3`/`3.4` callers
+    until `Story 26.7` deletes the legacy path.
+    """
     lower = user_prompt.strip().lower()
     if any(
         phrase in lower

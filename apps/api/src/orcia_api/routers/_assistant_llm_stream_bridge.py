@@ -18,10 +18,10 @@ from orcia_api.routers._assistant_usage_telemetry import resolve_audit_ledger_si
 from orcia_api.routers.assistant_background_turns import run_and_consume_decoupled_turn_stream
 from orcia_api.routers.assistant_llm_prompts import (
     build_multi_turn_messages,
-    build_workspace_tools_schema,
     detect_adaptive_thinking_steps_for_question,
     resolve_assembled_turn_context_and_instructions_async,
     resolve_request_locale,
+    resolve_turn_tools_and_router_async,
 )
 from orcia_api.routers.assistant_llm_resolver import resolve_configured_llm_endpoint
 from orcia_core.permissions.models import UserIdentity
@@ -86,6 +86,15 @@ async def stream_configured_llm_for_assistant_turn(
         locale=resolved_locale,
     )
     max_budget = ep.max_tokens_budget if ep is not None else 8192
+    tools_schema, tool_catalog, tool_router = await resolve_turn_tools_and_router_async(
+        request,
+        speed_mode=speed_mode,
+        tools_enabled=(ep is None or ep.supports_tools),
+        user=user,
+        workspace_id=workspace_id,
+        active_hat=hat,
+        embedding_port=embedding_port,
+    )
     async for evt in run_and_consume_decoupled_turn_stream(
         request=request,
         workspace_id=workspace_id,
@@ -102,11 +111,7 @@ async def stream_configured_llm_for_assistant_turn(
             conversation_history=conversation_history,
             max_tokens_budget=max_budget,
         ),
-        tools_builder=lambda: (
-            build_workspace_tools_schema(request, speed_mode)
-            if (ep is None or ep.supports_tools)
-            else []
-        ),
+        tools_builder=lambda: list(tools_schema),
         conversation_history_count=len(conversation_history or []),
         folder_pinned_notes=folder_pinned_notes,
         thinking_effort=thinking_effort,
@@ -123,6 +128,10 @@ async def stream_configured_llm_for_assistant_turn(
         citation_map=turn_ctx.citation_map_dict,
         prompt_assembly_latency_ms=turn_ctx.assembly_latency_ms,
         thread_messages_repo=get_assistant_thread_messages_repository(request),
+        tool_router=tool_router,
+        tool_catalog=tool_catalog,
+        user_identity=user,
+        active_hat=hat,
     ):
         yield evt
 

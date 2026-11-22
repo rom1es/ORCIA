@@ -1124,3 +1124,23 @@ capabilities:
       - apps/web/src/__tests__/story-25-2-shell-9-items-org-admin-and-unified-scope.test.tsx
       - apps/web/e2e/15-organization-iam-secops-inbox-and-observer.spec.ts
     notes: "Story 20.1 (Epic 20) : séparation de Mon Organisation (/organization) sous Mes Espaces (visibilité PLATFORM_ADMIN, BU_LEAD, TEAM_LEAD ; /settings ramené à 5 onglets avec redirection ?tab=organization), délégation stricte par sous-arbre et booléens can_*, invitation scopée avec garde anti-escalade, 7e rôle ONTOLOGY_LEAD (B1 sync bidirectionnelle BU <-> IAM), journalisation org_unit_id et isolation de lecture /activity."
+  - id: CAP-260
+    title: Governed Assistant Tool Router, dynamic workspace catalog (surgical, RAG, ontology, PG18 skills, MCP), Lock V5 / Human-Anchor arbitration outbox, idempotency, sandboxing, and anti-injection delimiters
+    fr: [FR-4, FR-13, FR-21, FR-22, FR-33]
+    origin: epic
+    origin_ref: 26-6b-governed-assistant-tool-router-broker-v5-anchors-and-audit
+    status: live
+    kind: feature
+    uj: [UJ-17]
+    db_tables: [catalog_items, audit_ledger, domain_events_outbox, workspace_llm_tier_mappings]
+    verification: api
+    verified_at: "2026-11-22"
+    tests:
+      - tests/unit/test_story_26_6b_governed_tool_router_and_catalog.py
+      - tests/unit/test_story_26_6b_execution_profile_and_loop.py
+      - tests/evals/test_assistant_tool_output_injection.py
+      - tests/integration/api/test_story_26_6b_tool_router_audit_outbox_postgres18.py
+      - apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts
+    surfaces:
+      api: "assistant_tool_executor_port.py, governed_tool_router.py, _assistant_tool_catalog.py, _assistant_tool_guards.py, _assistant_tool_sanitization.py, _assistant_tool_execution.py, _assistant_tool_audit.py, _assistant_tool_idempotency.py, _assistant_profile_guard.py, reflexive_runtime.py, governed_mcp_exposure.py, remote_test_bench_and_mcp_exposure.py, dependencies/assistant_tools.py, dependencies/_assistant_tools_helpers.py, dependencies/reflexive_execution.py, dependencies/workspace_and_packs.py, _assistant_turn_producer.py, _assistant_turn_producer_tool_loop.py, _assistant_tool_loop_rounds.py, _assistant_llm_tools_and_budget.py, assistant_workspace.py"
+    notes: "Story 26.6b (Lot 5.2, AD-25 Rule 5; runtime E2E promotion in Story 26.10 E2E spec 22 per D9): Dynamic per-turn authorized tool catalog removing single-tool stub and 10-item cap; sequential PermissionBrokerService passthrough/READ_SOURCE -> Lock V5 & deterministic Human-Anchor guard with HumanArbitrationRequested outbox -> Redis idem:{ws}:{user}:{turn_id}:{iter}:{call_id} -> timeout-capped sandbox -> scrub_connector_secrets + <untrusted_tool_output> + immutable audit_ledger; ExecutionProfile='ASSISTANT' makes ConnectorReflexiveWriteGateAdapter unreachable."

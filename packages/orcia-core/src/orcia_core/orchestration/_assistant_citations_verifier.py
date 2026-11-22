@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import re
 import time
+from typing import Any
 
 from orcia_core.orchestration.assistant_citations_models import (
     CitationVerificationResult,
@@ -144,3 +145,41 @@ def verify_and_sanitize_citations_impl(
         audit_entry=audit_entry,
         evidence_table=evidence_table,
     )
+
+
+def evaluate_tool_v5_and_human_anchor_guard_impl(
+    *,
+    tool_name: str,
+    is_si_write: bool = False,
+    human_authored_required: bool = False,
+    target_uri: str | None = None,
+    section_key: str | None = None,
+) -> dict[str, Any] | None:
+    """Deterministic tool-level Lock V5 & Human-Anchor check replacing lexical heuristics."""
+    clean_section = (section_key or "").strip().lower()
+    protected = {
+        "intention-metier",
+        "business-intent",
+        "architecture-decision-rationale",
+        "human-anchor",
+        "primary-anchor",
+    }
+    anchor_hit = human_authored_required or clean_section in protected
+    external_target = bool(
+        target_uri
+        and "://" in target_uri
+        and not target_uri.startswith(("orcia://", "local://", "pack://"))
+    )
+    if not anchor_hit and not (is_si_write or external_target):
+        return None
+    code = (
+        "ERR_HUMAN_ANCHOR_REQUIRED" if anchor_hit else "ERR_DIRECT_SI_WRITE_REQUIRES_PROCESS_GATE"
+    )
+    return {
+        "transition_action": "CONTINUE_IN_PROCESS",
+        "reason_code": code,
+        "tool_name": tool_name,
+        "target_uri": target_uri or "",
+        "human_authored_required": anchor_hit,
+        "is_si_write": bool(is_si_write or external_target),
+    }

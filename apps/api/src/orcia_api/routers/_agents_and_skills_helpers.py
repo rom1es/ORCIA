@@ -47,7 +47,9 @@ def enforce_not_observer(request: Request, persona_key: str | None) -> None:
 
 def serialize_skill(s: ManagedSkillRecord) -> SkillItemResponse:
     """Serialize `ManagedSkillRecord`."""
-    return SkillItemResponse(**{**asdict(s), "input_parameters": list(s.input_parameters)})
+    raw = {**asdict(s), "input_parameters": list(s.input_parameters)}
+    filtered = {k: v for k, v in raw.items() if k in SkillItemResponse.model_fields}
+    return SkillItemResponse(**filtered)
 
 
 def serialize_agent(a: ManagedAgentRecord) -> AgentItemResponse:
@@ -59,7 +61,8 @@ def serialize_agent(a: ManagedAgentRecord) -> AgentItemResponse:
     raw["ontology_views"] = list(a.ontology_views)
     raw["mcp_tool_permissions"] = dict(a.mcp_tool_permissions)
     raw["guardrails"] = list(a.guardrails)
-    return AgentItemResponse(**raw)
+    filtered = {k: v for k, v in raw.items() if k in AgentItemResponse.model_fields}
+    return AgentItemResponse(**filtered)
 
 
 async def run_pg_persistence(

@@ -312,7 +312,7 @@ async def test_finops_auth_and_scope_guards_edge_branches(
         validate_uuid("invalid-uuid", "scope_id")
 
     monkeypatch.setattr(
-        "orcia_api.routers._finops_topology_sync.get_configured_db_engine",
+        "orcia_api.dependencies._topology_sync.get_configured_db_engine",
         lambda _r: None,
     )
     auth_svc = build_default_auth_and_org_service()
@@ -511,7 +511,7 @@ async def test_finops_auth_and_scope_guards_edge_branches(
     eng_str.connect = _conn_json_str
     req_str = _make_request(auth_svc=auth_svc, db_engine=eng_str)
     monkeypatch.setattr(
-        "orcia_api.routers._finops_topology_sync.get_configured_db_engine",
+        "orcia_api.dependencies._topology_sync.get_configured_db_engine",
         lambda _r: eng_str,
     )
     await sync_evaluator_topology_from_pg(req_str, auth_svc)
@@ -522,7 +522,7 @@ async def test_finops_auth_and_scope_guards_edge_branches(
     eng_broken = MagicMock()
     eng_broken.connect = _broken_conn
     monkeypatch.setattr(
-        "orcia_api.routers._finops_topology_sync.get_configured_db_engine",
+        "orcia_api.dependencies._topology_sync.get_configured_db_engine",
         lambda _r: eng_broken,
     )
     await sync_evaluator_topology_from_pg(req_str, auth_svc)

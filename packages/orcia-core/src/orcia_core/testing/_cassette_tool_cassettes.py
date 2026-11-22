@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from orcia_core.ports.llm_streaming_port import LlmStreamRequest
+
+_FORCED_TOOL_NAME_RE = re.compile(r"\[CASSETTE_TOOL_NAME:([A-Za-z0-9_.-]+)\]")
 
 
 def _extract_first_tool_name(request: LlmStreamRequest) -> str:
@@ -55,7 +58,8 @@ def resolve_cassette_tool_scenario(
             finish_reason,
         )
 
-    tool_name = _extract_first_tool_name(request)
+    forced = _FORCED_TOOL_NAME_RE.search(all_text)
+    tool_name = forced.group(1) if forced else _extract_first_tool_name(request)
     last_user = next(
         (
             str(m.get("content") or "")
@@ -66,10 +70,20 @@ def resolve_cassette_tool_scenario(
     )
     tc_id = "toolu_ant_cassette_1" if is_ant else "call_oai_cassette_1"
     finish_reason = "tool_use" if is_ant else "tool_calls"
+    query_text = last_user.replace("[CASSETTE_TOOL_LOOP]", "").strip() or "context"
+    args: dict[str, Any] = {"query": query_text}
+    if tool_name in (
+        "check_resource_state",
+        "outline_resource_structure",
+        "inspect_resource_lines",
+    ):
+        args = {"resource_uri": "docs/testing-strategy.md"}
+        if tool_name == "inspect_resource_lines":
+            args.update({"start_line": 1, "end_line": 20})
     tc = {
         "id": tc_id,
         "name": tool_name,
-        "arguments": {"query": last_user.replace("[CASSETTE_TOOL_LOOP]", "").strip() or "context"},
+        "arguments": args,
     }
     return "", (tc,), finish_reason
 

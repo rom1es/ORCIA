@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Literal
 
 from orcia_core.orchestration.redis_rate_limiter import RedisAssistantRateLimiter
@@ -136,3 +136,52 @@ def record_prompt_telemetry_entry(
     bucket.insert(0, entry)
     del bucket[100:]
     return entry
+
+
+async def get_active_turn_for_workspace(
+    workspace_id: str, *, request: Any | None = None, user_id: str = "u-anonymous"
+) -> ActiveBackgroundTurnState | None:
+    """Return latest turn state for `(workspace_id, user_id)` from Redis."""
+    reg = get_turn_registry_from_request(request)
+    rec = await reg.get_latest_turn(workspace_id, user_id)
+    return turn_record_to_background_state(rec) if rec is not None else None
+
+
+async def stop_assistant_turn_by_id(
+    turn_id: str, *, request: Any | None = None, stopped_by_user_id: str
+) -> ActiveBackgroundTurnState | None:
+    """Propagate stop via Redis and wait briefly for producer `finally` flush."""
+    reg = get_turn_registry_from_request(request)
+    rec = await reg.get_turn_by_id(turn_id)
+    if rec is None:
+        return None
+    await reg.request_stop(turn_id, stopped_by_user_id=stopped_by_user_id)
+    for _ in range(30):
+        latest = await reg.get_turn_by_id(turn_id)
+        if latest is not None and latest.status in ("STOPPED", "COMPLETED", "ERROR"):
+            return turn_record_to_background_state(latest)
+        await asyncio.sleep(0.05)
+    latest = await reg.get_turn_by_id(turn_id)
+    if latest is not None and latest.status == "RUNNING":
+        forced = replace(latest, status="STOPPED", stopped_by_user_id=stopped_by_user_id)
+        await reg.update_turn(forced, ttl_seconds=1800)
+        return turn_record_to_background_state(forced)
+    return turn_record_to_background_state(latest) if latest is not None else None
+
+
+async def stop_active_turn_for_workspace(
+    workspace_id: str,
+    *,
+    request: Any | None = None,
+    user_id: str = "u-anonymous",
+    turn_id: str | None = None,
+) -> ActiveBackgroundTurnState | None:
+    """Stop either explicit `turn_id` or the latest active turn for `(workspace_id, user_id)`."""
+    reg = get_turn_registry_from_request(request)
+    target_id = turn_id
+    if not target_id:
+        latest = await reg.get_latest_turn(workspace_id, user_id)
+        if latest is None:
+            return None
+        target_id = latest.turn_id
+    return await stop_assistant_turn_by_id(target_id, request=request, stopped_by_user_id=user_id)

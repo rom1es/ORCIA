@@ -45,6 +45,7 @@ def build_initial_reflexive_snapshot(
         orchestration_type=ProcessOrchestrationType.NON_DETERMINISTIC,
         effort_level=config.effort_level,
         effort_mode=config.effort_mode,
+        execution_profile=config.execution_profile,
         status="RUNNING",
         allow_sub_agent_delegation=(
             config.allow_sub_agent_delegation
@@ -70,6 +71,7 @@ def build_child_delegation_config(snapshot: ReflexiveSessionSnapshot) -> Reflexi
     return ReflexiveRuntimeConfig(
         effort_level=snapshot.effort_level,
         effort_mode=snapshot.effort_mode,
+        execution_profile=snapshot.execution_profile,
         max_turns=min(4, snapshot.max_turns),
         max_budget_tokens=remaining_budget,
         allow_sub_agent_delegation=False,

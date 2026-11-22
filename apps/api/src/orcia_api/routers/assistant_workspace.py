@@ -277,13 +277,10 @@ async def stream_three_speed_turn_endpoint(
                     thread_id=payload.thread_id,
                     parent_turn_id=payload.parent_turn_id,
                 ):
-                    if stream_evt["event"] in (
-                        "thinking_delta",
-                        "token_delta",
-                        "turn_completed",
-                        "turn_stopped",
-                        "stream_error",
-                    ):
+                    if stream_evt["event"] in {
+                        "thinking_delta", "token_delta", "tool_call", "tool_result",
+                        "approval_required", "turn_completed", "turn_stopped", "stream_error",
+                    }:  # fmt: skip
                         s_json = json.dumps(stream_evt["data"], ensure_ascii=False)
                         cursor_id = stream_evt.get("cursor")
                         prefix = f"id: {cursor_id}\n" if cursor_id else ""

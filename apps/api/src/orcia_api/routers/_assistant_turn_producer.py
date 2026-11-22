@@ -18,17 +18,20 @@ from orcia_api.routers._assistant_turn_producer_helpers import (
     handle_turn_failure,
     watch_liveness_and_stop,
 )
+from orcia_api.routers._assistant_turn_producer_tool_loop import run_streaming_tool_loop
 from orcia_api.routers._assistant_usage_telemetry import resolve_usage_with_fallback
 from orcia_core.observability.logging import get_logger, scrub_sensitive_text
 from orcia_core.orchestration.llm_streaming_httpx import HttpxMultiProviderLlmStreamingAdapter
-from orcia_core.orchestration.llm_streaming_sse_utils import delta_to_sse_dict
 from orcia_core.orchestration.redis_rate_limiter import RedisAssistantRateLimiter
 from orcia_core.orchestration.redis_turn_registry import RedisAssistantTurnRegistry
+from orcia_core.ports.assistant_tool_executor_port import (
+    AssistantToolExecutorPort,
+    AuthorizedToolDescriptor,
+)
 from orcia_core.ports.assistant_turn_stream_port import AssistantTurnRecord
 from orcia_core.ports.llm_streaming_port import (
     LlmEndpointConfig,
     LlmStreamingPort,
-    LlmStreamRequest,
 )
 
 logger = get_logger("orcia.assistant.llm")
@@ -58,6 +61,10 @@ async def execute_turn_producer_task(
     instance: str,
     outbox_emitter: Any | None = None,
     thread_messages_repo: Any | None = None,
+    tool_router: AssistantToolExecutorPort | None = None,
+    tool_catalog: tuple[AuthorizedToolDescriptor, ...] = (),
+    user_identity: Any | None = None,
+    active_hat: str = "ARCHITECT",
 ) -> None:
     """Execute background LLM turn, push events to Redis Stream, and flush FinOps in `finally`."""
     record = initial_record
@@ -117,51 +124,47 @@ async def execute_turn_producer_task(
                 active_port = HttpxMultiProviderLlmStreamingAdapter(
                     http_client=http_client_getter()
                 )
-            req = LlmStreamRequest(
-                endpoint=stream_ep,
-                messages=tuple(messages_builder()),
+            loop_out = await run_streaming_tool_loop(
+                active_port=active_port,
+                stream_ep=stream_ep,
+                initial_messages=messages_builder(),
                 tools=tuple(tools_builder()),
-                include_thoughts=True,
+                tool_catalog=tool_catalog,
+                tool_router=tool_router,
+                registry=registry,
+                record=record,
+                user_email=user_email,
+                user_display_name=user_display_name,
+                locale=locale,
+                t0=t0,
+                user_identity=user_identity,
+                active_hat=active_hat,
             )
-            pending_completed_data: dict[str, Any] | None = None
-            async for delta in active_port.stream_chat_sse(req):
-                evt = delta_to_sse_dict(delta)
-                raw_data = evt.get("data")
-                data_dict: dict[str, Any] = raw_data if isinstance(raw_data, dict) else {}
-                data_dict["trace_id"] = record.trace_id
-                if evt["event"] == "thinking_delta":
-                    thinking_text = str(data_dict.get("thinking_text") or "")
-                elif evt["event"] == "token_delta":
-                    emitted_tokens = True
-                    streamed_text = str(data_dict.get("accumulated_text") or "")
-                elif evt["event"] == "stream_error":
-                    await emit_stream_error_and_outbox(
-                        registry=registry,
-                        record=record,
-                        t0=t0,
-                        error_code=str(data_dict.get("error_code") or "ERR_INTERNAL_SERVER_ERROR"),
-                        status=int(data_dict.get("status") or 502),
-                        detail_override=str(data_dict.get("message") or ""),
-                        thinking_text=thinking_text,
-                        streamed_text=streamed_text,
-                        instance=instance,
-                        locale=locale,
-                        outbox_emitter=outbox_emitter,
-                    )
-                    return
-                elif evt["event"] == "turn_completed":
-                    data_dict["turn_id"] = turn_id
-                    data_dict["assembled_system_prompt"] = record.assembled_system_prompt
-                    obs_in = int(data_dict.get("input_tokens") or 0)
-                    obs_out = int(data_dict.get("output_tokens") or 0)
-                    saw_usage = str(data_dict.get("usage_source") or "") == "provider"
-                    obs_lat = float(data_dict.get("latency_ms") or 0.0)
-                    streamed_text = str(data_dict.get("response_text") or streamed_text)
-                    thinking_text = str(data_dict.get("thinking_text") or thinking_text)
-                    pending_completed_data = data_dict
-                    continue
-                await registry.append_event(turn_id, event=evt["event"], data=data_dict)
-            if emitted_tokens:
+            if "stream_error" in loop_out:
+                err_data = loop_out["stream_error"]
+                await emit_stream_error_and_outbox(
+                    registry=registry,
+                    record=record,
+                    t0=t0,
+                    error_code=str(err_data.get("error_code") or "ERR_INTERNAL_SERVER_ERROR"),
+                    status=int(err_data.get("status") or 502),
+                    detail_override=str(err_data.get("message") or ""),
+                    thinking_text=str(loop_out.get("thinking_text") or ""),
+                    streamed_text=str(loop_out.get("streamed_text") or ""),
+                    instance=instance,
+                    locale=locale,
+                    outbox_emitter=outbox_emitter,
+                )
+                return
+            emitted_tokens = bool(loop_out["emitted_tokens"])
+            thinking_text = str(loop_out["thinking_text"])
+            streamed_text = str(loop_out["streamed_text"])
+            obs_in = int(loop_out["obs_in"])
+            obs_out = int(loop_out["obs_out"])
+            saw_usage = bool(loop_out["saw_usage"])
+            obs_lat = float(loop_out["obs_lat"])
+            pending_completed_data = loop_out["pending_completed_data"]
+            if emitted_tokens or bool(loop_out.get("has_approval_required")):
                 record = replace(
                     record,
                     status="COMPLETED",

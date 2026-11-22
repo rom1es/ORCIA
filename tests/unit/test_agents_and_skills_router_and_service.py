@@ -361,6 +361,7 @@ async def test_agents_and_skills_postgres18_sql_adapter_queries() -> None:
                     p["sha256"],
                     item_type,
                     json.loads(p["metadata_jsonb"]),
+                    p.get("owner_workspace_id"),
                 )
                 return _FakeResult([])
             if "SELECT resource_id, uri, title" in sql:

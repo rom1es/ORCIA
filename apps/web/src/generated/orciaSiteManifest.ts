@@ -14,13 +14,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 61,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 214,
-    "capabilitiesCount": 65,
-    "liveCapabilitiesCount": 65,
+    "techLeadReportsCount": 215,
+    "capabilitiesCount": 66,
+    "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 61,
     "userJourneysCount": 20,
     "coveredUserJourneysCount": 20,
-    "e2eCoveredCapabilitiesCount": 62
+    "e2eCoveredCapabilitiesCount": 63
   },
   "activeRoutes": [
     "/",
@@ -547,6 +547,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-22",
+      "phaseOrStory": "Story 26.6b",
+      "reportFile": "26-6b-governed-assistant-tool-router-broker-v5-anchors-and-audit-tech-lead-report.md",
+      "domain": "Epic 26 Lot 5.2 — Governed Assistant Tool Router (Dynamic PG18/RBAC/MCP Catalog, PermissionBrokerService, Lock V5, Deterministic Human Anchors, Sandboxed Execution, Idempotency, Anti-Injection & audit_ledger/Outbox) (CAP-022, CAP-160, CAP-260)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): pure AssistantToolExecutorPort & GovernedAssistantToolRouter (<= 300 L modular split across 56 backend files), unbounded dynamic catalog (4 surgical primitives, conditional kb.search, ontology.lookup, PG18 skills, MCP RBAC tools), sequential Steps A–E (PermissionBrokerService passthrough/READ_SOURCE, Lock V5 & deterministic Human-Anchor HumanArbitrationRequested outbox, Redis idempotency, asyncio.wait_for sandbox, scrub_connector_secrets, <untrusted_tool_output> neutralization, audit_ledger), ExecutionProfile=\"ASSISTANT\" structural isolation of ConnectorReflexiveWriteGateAdapter, 93% 21-module branch coverage (>= 90%), 1114 Layer 1/3/4/Security Python tests, 15 PG18+Redis integration tests, 9/9 Turbo, 15 passed / 1 skipped / 0 failed Playwright Desktop E2E, ruff/mypy --strict (714 files)/lint-imports (5/5)/export_openapi (0-diff)/lint_spine (0)/detect-secrets clean."
+    },
     {
       "date": "2026-11-22",
       "phaseOrStory": "Story 26.6a",

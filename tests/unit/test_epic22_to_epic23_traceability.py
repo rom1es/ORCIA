@@ -261,8 +261,8 @@ def test_every_failed_capability_points_to_epic23_key_master_plan_and_report() -
         return
 
     live_caps = [cap for cap in capabilities if cap.get("status") == "live"]
-    assert len(live_caps) == 65
-    epic26_api_downgraded = {"CAP-022", "CAP-070", "CAP-072"}
+    assert len(live_caps) == 66
+    epic26_api_downgraded = {"CAP-022", "CAP-070", "CAP-072", "CAP-260"}
     for cap in live_caps:
         cap_id = str(cap.get("id", "")).strip()
         verification = cap.get("verification")

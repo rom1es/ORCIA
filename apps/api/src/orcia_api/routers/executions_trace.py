@@ -20,11 +20,21 @@ from fastapi import APIRouter, Depends, Path, Query, Request
 from fastapi.responses import StreamingResponse
 
 from orcia_api.dependencies import (
-    get_auth_service,
     get_reflexive_event_stream_broker,
     get_reflexive_runtime_service,
 )
-from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
+from orcia_api.routers._executions_trace_helpers import (
+    enforce_not_observer as _enforce_not_observer,
+)
+from orcia_api.routers._executions_trace_helpers import (
+    resolve_has_read_source as _resolve_has_read_source,
+)
+from orcia_api.routers._executions_trace_helpers import (
+    serialize_snapshot as _serialize_snapshot,
+)
+from orcia_api.routers._executions_trace_helpers import (
+    trace_id_or_current as _trace,
+)
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.reflexive_execution import (
     ApproveReflexiveWriteRequest,
@@ -36,18 +46,14 @@ from orcia_core.agents import (
     NonDeterministicReflexiveRuntime,
     ReflexiveEventStreamBroker,
     ReflexiveRuntimeConfig,
-    ReflexiveSessionSnapshot,
     ReflexiveWriteApprovalInput,
 )
 from orcia_core.agents.errors import (
-    ObserverModeReadOnlyError,
     PolicyDeniedError,
     ReflexiveInvalidStateError,
     ResourceNotFoundError,
 )
 from orcia_core.kernel.errors import resolve_locale
-from orcia_core.observability.logging import get_current_trace_id
-from orcia_core.permissions import UserIdentity
 
 router = APIRouter(
     prefix="/api/v1/executions",
@@ -66,53 +72,6 @@ EventStreamBrokerDep = Annotated[
 ]
 ExecutionIdPath = Annotated[str, Path(min_length=1, max_length=128)]
 PersonaQuery = Annotated[str | None, Query(min_length=1, max_length=64)]
-
-_DENIED_HEADER_VALUES: frozenset[str] = frozenset({"0", "false", "denied", "restricted", "no"})
-_OBSERVER_PERSONAS: frozenset[str] = frozenset({"claire", "observer"})
-
-
-def _trace(request: Request) -> str:
-    return str(getattr(request.state, "trace_id", None) or get_current_trace_id())
-
-
-def _resolve_has_read_source(request: Request) -> bool:
-    raw = (request.headers.get("x-orcia-read-source") or "").strip().lower()
-    return raw not in _DENIED_HEADER_VALUES
-
-
-async def _enforce_not_observer(
-    request: Request,
-    *,
-    persona_key: str | None,
-    workspace_id: str | None = None,
-) -> UserIdentity:
-    """Reject `READ_ONLY_OBSERVER` actors on all mutation routes with `HTTP 403`."""
-    user = resolve_request_user(request, persona_key=persona_key)
-    access_hdr = (request.headers.get("x-orcia-access-mode") or "").strip().upper()
-    if (
-        user.platform_role in ("OBSERVER", "BU_DIRECTOR")
-        or (persona_key or "").strip().lower() in _OBSERVER_PERSONAS
-        or access_hdr == "READ_ONLY_OBSERVER"
-    ):
-        raise ObserverModeReadOnlyError(instance=str(request.url.path))
-    if workspace_id:
-        auth_svc = get_auth_service(request)
-        await sync_evaluator_topology_from_pg(request, auth_svc)
-        ws_access = auth_svc.evaluator.resolve_workspace_access(user, workspace_id)
-        if ws_access is not None and ws_access.access_mode == "READ_ONLY_OBSERVER":
-            raise ObserverModeReadOnlyError(instance=str(request.url.path))
-    return user
-
-
-def _serialize_snapshot(
-    snap: ReflexiveSessionSnapshot,
-    trace_id: str,
-) -> ReflexiveExecutionSnapshotResponse:
-    data = snap.model_dump(
-        mode="json",
-        exclude={"has_read_source", "locale", "initial_resources", "requested_write_preview"},
-    )
-    return ReflexiveExecutionSnapshotResponse.model_validate({**data, "trace_id": trace_id})
 
 
 @router.post(

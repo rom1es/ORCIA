@@ -8,24 +8,25 @@ from typing import Any
 from fastapi import Request
 
 from orcia_api.dependencies._llm_streaming_providers import get_llm_streaming_port
+from orcia_api.routers._assistant_background_registry import (
+    ActiveBackgroundTurnState as ActiveBackgroundTurnState,
+)
+from orcia_api.routers._assistant_background_registry import (
+    get_active_turn_for_workspace as get_active_turn_for_workspace,
+)
+from orcia_api.routers._assistant_background_registry import (
+    record_prompt_telemetry_entry as record_prompt_telemetry_entry,
+)
+from orcia_api.routers._assistant_background_registry import (
+    stop_active_turn_for_workspace as stop_active_turn_for_workspace,
+)
 from orcia_api.routers._assistant_llm_stream_bridge import (
     get_or_create_async_http_client as _get_or_create_async_http_client,
 )
 from orcia_api.routers._assistant_llm_stream_bridge import (
     stream_configured_llm_for_assistant_turn as stream_configured_llm_for_assistant_turn,
 )
-from orcia_api.routers.assistant_background_turns import (
-    ActiveBackgroundTurnState as ActiveBackgroundTurnState,
-)
-from orcia_api.routers.assistant_background_turns import (
-    get_active_turn_for_workspace as get_active_turn_for_workspace,
-)
-from orcia_api.routers.assistant_background_turns import (
-    record_prompt_telemetry_entry as record_prompt_telemetry_entry,
-)
-from orcia_api.routers.assistant_background_turns import (
-    stop_active_turn_for_workspace as stop_active_turn_for_workspace,
-)
+from orcia_api.routers._assistant_turn_producer_tool_loop import execute_sync_tool_followup
 from orcia_api.routers.assistant_llm_prompts import (
     build_assistant_system_instructions,
     build_multi_turn_messages,
@@ -33,9 +34,11 @@ from orcia_api.routers.assistant_llm_prompts import (
     detect_adaptive_thinking_steps_for_question,
     resolve_5_layers_and_ontology_from_request,
     resolve_5_layers_and_ontology_from_request_async,
+    resolve_assembled_system_instructions_for_turn,
     resolve_assembled_system_instructions_for_turn_async,
     resolve_assembled_turn_context_and_instructions_async,
     resolve_request_locale,
+    resolve_turn_tools_and_router_async,
 )
 from orcia_api.routers.assistant_llm_providers import (
     ResolvedLiveLlmEndpoint,
@@ -60,7 +63,6 @@ from orcia_api.routers.assistant_llm_resolver import (
 from orcia_api.routers.assistant_llm_resolver import (
     select_endpoint_from_tiers as _select_endpoint_from_tiers,
 )
-from orcia_core.orchestration.llm_tool_dialects import format_tool_result_message
 from orcia_core.ports.llm_streaming_port import LlmStreamingPort, LlmStreamRequest
 
 
@@ -81,46 +83,6 @@ class LiveLlmTurnOutcome:
     inference_tier: str | None = None
     effort: str | None = None
     citation_map: dict[str, Any] | None = None
-
-
-def resolve_assembled_system_instructions_for_turn(
-    request: Request,
-    *,
-    hat: str,
-    speed_mode: str,
-    workspace_id: str,
-    user_id: str,
-    requested_tier: str | None = None,
-    thinking_effort: str | None = None,
-    system_instructions_override: str | None = None,
-    allow_system_override: bool = False,
-    response_tone: str | None = None,
-    response_format: str | None = None,
-    personal_instructions: str | None = None,
-    workspace_instructions: str | None = None,
-    folder_pinned_notes: str | None = None,
-    locale: str = "fr",
-) -> str:
-    """Build the complete 5-layer + ontology + preferences system prompt for a turn."""
-    assembled_5_layers, ontology_summary = resolve_5_layers_and_ontology_from_request(
-        request, workspace_id=workspace_id, user_id=user_id, hat=hat, locale=locale
-    )
-    return build_assistant_system_instructions(
-        hat=hat,
-        speed_mode=speed_mode,
-        requested_tier=requested_tier,
-        thinking_effort=thinking_effort,
-        system_instructions_override=system_instructions_override,
-        allow_system_override=allow_system_override,
-        assembled_5_layers_prompt=assembled_5_layers,
-        ontology_concepts_summary=ontology_summary,
-        response_tone=response_tone,
-        response_format=response_format,
-        personal_instructions=personal_instructions,
-        workspace_instructions=workspace_instructions,
-        folder_pinned_notes=folder_pinned_notes,
-        locale=locale,
-    )
 
 
 async def invoke_configured_llm_for_assistant_turn(
@@ -155,13 +117,12 @@ async def invoke_configured_llm_for_assistant_turn(
 
     active_port = llm_port or get_llm_streaming_port(request)
     resolved_locale = resolve_request_locale(request, locale)
-    effort = (thinking_effort or "").strip().lower() or (
+    default_effort = (
         "deep"
         if speed_mode == "SPEED_3_DEEP_AUDIT"
-        else "balanced"
-        if speed_mode == "SPEED_2_AGENT_TOOLS"
-        else "fast"
+        else ("balanced" if speed_mode == "SPEED_2_AGENT_TOOLS" else "fast")
     )
+    effort = (thinking_effort or "").strip().lower() or default_effort
     effort_label = (
         ("High Thinking" if effort == "deep" else "Standard Thinking")
         if resolved_locale == "en"
@@ -202,7 +163,15 @@ async def invoke_configured_llm_for_assistant_turn(
         conversation_history=conversation_history,
         max_tokens_budget=ep.max_tokens_budget,
     )
-    tools = build_workspace_tools_schema(request, speed_mode) if ep.supports_tools else []
+    tools, tool_catalog, tool_router = await resolve_turn_tools_and_router_async(
+        request,
+        speed_mode=speed_mode,
+        tools_enabled=ep.supports_tools,
+        user=user,
+        workspace_id=workspace_id,
+        active_hat=hat,
+        embedding_port=embedding_port,
+    )
 
     outcome = await active_port.complete_chat(
         LlmStreamRequest(
@@ -220,30 +189,26 @@ async def invoke_configured_llm_for_assistant_turn(
     total_in_tokens = outcome.input_tokens
     total_out_tokens = outcome.output_tokens
     usage_source = outcome.usage_source
-    if not content and outcome.tool_calls:
-        followup_msgs: list[dict[str, Any]] = [
-            *messages,
-            {"role": "assistant", "content": "", "tool_calls": list(outcome.tool_calls)},
-            *[
-                format_tool_result_message(
-                    tool_call_id=str(tc.get("id") or f"call_{idx + 1}"),
-                    name=str(tc.get("name") or "tool"),
-                    content=(
-                        f"Workspace context verified for '{user_prompt.strip()}' "
-                        f"({tc.get('name') or 'tool'}). Synthesize answer."
-                    ),
-                )
-                for idx, tc in enumerate(outcome.tool_calls)
-            ],
-        ]
-        second = await active_port.complete_chat(
-            LlmStreamRequest(endpoint=ep, messages=tuple(followup_msgs), include_thoughts=True)
+    if not content and outcome.tool_calls and tool_router is not None:
+        sec_txt, sec_in, sec_out, sec_src = await execute_sync_tool_followup(
+            tool_router=tool_router,
+            catalog=tool_catalog,
+            active_port=active_port,
+            ep=ep,
+            messages=messages,
+            tool_calls=outcome.tool_calls,
+            workspace_id=workspace_id,
+            user_id=user_id,
+            user=user,
+            active_hat=hat,
+            trace_id=str(getattr(getattr(request, "state", None), "trace_id", "") or ""),
+            locale=resolved_locale,
         )
-        if second is not None and second.content:
-            content = second.content
-            total_in_tokens += second.input_tokens
-            total_out_tokens += second.output_tokens
-            usage_source = "provider" if second.usage_source == "provider" else usage_source
+        if sec_txt:
+            content = sec_txt
+            total_in_tokens += sec_in
+            total_out_tokens += sec_out
+            usage_source = "provider" if sec_src == "provider" else usage_source
 
     if not content:
         return None

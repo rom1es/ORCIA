@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import AsyncIterator
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.responses import StreamingResponse
@@ -21,9 +21,13 @@ from orcia_api.routers._assistant_background_registry import (
     get_rate_limiter_from_request,
     get_tracked_turn_tasks_from_request,
     get_turn_registry_from_request,
+    stop_assistant_turn_by_id,
     turn_record_to_background_state,
 )
-from orcia_api.routers._assistant_turn_consumer import stream_assistant_turn_events
+from orcia_api.routers._assistant_turn_consumer import (
+    SSE_STREAM_RESPONSES,
+    stream_assistant_turn_events,
+)
 from orcia_api.routers._assistant_usage_telemetry import (
     resolve_assistant_outbox_emitter,
     resolve_audit_ledger_sink,
@@ -34,10 +38,7 @@ from orcia_api.routers._assistant_workspace_context import (
     resolve_turn_history,
     to_active_turn_response,
 )
-from orcia_api.routers.assistant_background_turns import (
-    start_background_assistant_turn,
-    stop_assistant_turn_by_id,
-)
+from orcia_api.routers.assistant_background_turns import start_background_assistant_turn
 from orcia_api.routers.assistant_llm_bridge import (
     ensure_active_chat_model_if_live,
     resolve_configured_llm_endpoint,
@@ -45,9 +46,9 @@ from orcia_api.routers.assistant_llm_bridge import (
 )
 from orcia_api.routers.assistant_llm_prompts import (
     build_multi_turn_messages,
-    build_workspace_tools_schema,
     detect_adaptive_thinking_steps_for_question,
     resolve_assembled_turn_context_and_instructions_async,
+    resolve_turn_tools_and_router_async,
 )
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.assistant import (
@@ -127,6 +128,15 @@ async def create_assistant_turn_v2_endpoint(
     )
     trace_id = str(getattr(getattr(request, "state", None), "trace_id", "") or "")
     max_budget = ep.max_tokens_budget if ep is not None else 8192
+    tools_schema, tool_catalog, tool_router = await resolve_turn_tools_and_router_async(
+        request,
+        speed_mode=resolved_speed,
+        tools_enabled=(ep is None or ep.supports_tools),
+        user=user,
+        workspace_id=payload.workspace_id,
+        active_hat=active_hat,
+        embedding_port=_embedding_port,
+    )
     turn_id = await start_background_assistant_turn(
         registry=get_turn_registry_from_request(request),
         rate_limiter=get_rate_limiter_from_request(request),
@@ -146,11 +156,7 @@ async def create_assistant_turn_v2_endpoint(
             conversation_history=history,
             max_tokens_budget=max_budget,
         ),
-        tools_builder=lambda: (
-            build_workspace_tools_schema(request, resolved_speed)
-            if (ep is None or ep.supports_tools)
-            else []
-        ),
+        tools_builder=lambda: list(tools_schema),
         conversation_history_count=len(history),
         folder_pinned_notes=resolved_notes,
         thinking_effort=payload.thinking_effort,
@@ -168,6 +174,10 @@ async def create_assistant_turn_v2_endpoint(
         citation_map=turn_ctx.citation_map_dict,
         prompt_assembly_latency_ms=turn_ctx.assembly_latency_ms,
         thread_messages_repo=get_assistant_thread_messages_repository(request),
+        tool_router=tool_router,
+        tool_catalog=tool_catalog,
+        user_identity=user,
+        active_hat=active_hat,
     )
     return AssistantTurnAcceptedResponse(
         turn_id=turn_id,
@@ -197,15 +207,24 @@ async def list_active_assistant_turns_v2_endpoint(
     )
 
 
-@turns_v2_router.get(
-    "/turns/{turn_id}/stream",
-    responses={
-        200: {
-            "description": "Cursor-reattachable Redis Streams SSE stream (`text/event-stream`).",
-            "content": {"text/event-stream": {"schema": {"type": "object"}}},
-        }
-    },
-)
+async def _require_owned_turn(
+    turn_id: str, request: Request, user: CurrentUserDep, *, require_write: bool
+) -> tuple[Any, Any]:
+    reg = get_turn_registry_from_request(request)
+    rec = await reg.get_turn_by_id(turn_id)
+    if rec is None:
+        raise ResourceNotFoundError(
+            detail_override=f"Turn '{turn_id}' not found.", instance=str(request.url.path)
+        )
+    await enforce_assistant_workspace_guard(
+        request, user, rec.workspace_id, require_write=require_write
+    )
+    if rec.user_id != user.id:
+        raise ScopeAccessDeniedError(instance=str(request.url.path))
+    return reg, rec
+
+
+@turns_v2_router.get("/turns/{turn_id}/stream", responses=SSE_STREAM_RESPONSES)
 async def stream_assistant_turn_v2_endpoint(
     turn_id: str,
     request: Request,
@@ -214,15 +233,7 @@ async def stream_assistant_turn_v2_endpoint(
     last_event_id: str | None = Header(default=None, alias="Last-Event-ID"),
 ) -> StreamingResponse:
     """Replay and live-tail Redis Streams entries strictly after `after` cursor."""
-    reg = get_turn_registry_from_request(request)
-    rec = await reg.get_turn_by_id(turn_id)
-    if rec is None:
-        raise ResourceNotFoundError(
-            detail_override=f"Turn '{turn_id}' not found.", instance=str(request.url.path)
-        )
-    await enforce_assistant_workspace_guard(request, user, rec.workspace_id, require_write=False)
-    if rec.user_id != user.id:
-        raise ScopeAccessDeniedError(instance=str(request.url.path))
+    reg, rec = await _require_owned_turn(turn_id, request, user, require_write=False)
     cursor = (after or last_event_id or "0-0").strip() or "0-0"
     trace_id = str(getattr(getattr(request, "state", None), "trace_id", "") or rec.trace_id)
     locale = resolve_request_locale(request, None)
@@ -236,10 +247,8 @@ async def stream_assistant_turn_v2_endpoint(
             instance=str(request.url.path),
             locale=locale,
         ):
-            c_id = evt.get("cursor") or ""
-            ev_name = evt["event"]
             data_json = json.dumps(evt["data"], ensure_ascii=False)
-            yield f"id: {c_id}\nevent: {ev_name}\ndata: {data_json}\n\n"
+            yield f"id: {evt.get('cursor') or ''}\nevent: {evt['event']}\ndata: {data_json}\n\n"
 
     return StreamingResponse(_sse(), media_type="text/event-stream")
 
@@ -251,15 +260,7 @@ async def stop_assistant_turn_v2_endpoint(
     user: CurrentUserDep,
 ) -> ActiveBackgroundTurnStatusResponse:
     """Propagate cross-worker `stop` via Redis and flush partial FinOps in `finally`."""
-    reg = get_turn_registry_from_request(request)
-    rec = await reg.get_turn_by_id(turn_id)
-    if rec is None:
-        raise ResourceNotFoundError(
-            detail_override=f"Turn '{turn_id}' not found.", instance=str(request.url.path)
-        )
-    await enforce_assistant_workspace_guard(request, user, rec.workspace_id, require_write=True)
-    if rec.user_id != user.id:
-        raise ScopeAccessDeniedError(instance=str(request.url.path))
+    await _require_owned_turn(turn_id, request, user, require_write=True)
     state = await stop_assistant_turn_by_id(turn_id, request=request, stopped_by_user_id=user.id)
     assert state is not None
     return to_active_turn_response(state)
@@ -275,7 +276,7 @@ async def upsert_assistant_turn_feedback_v2_endpoint(
 ) -> AssistantTurnFeedbackResponse:
     """Idempotently upsert user feedback for `(turn_id, user_id)` in `assistant_turn_feedback`."""
     await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
-    record = await feedback_repo.upsert_feedback(
+    rec = await feedback_repo.upsert_feedback(
         turn_id=turn_id,
         workspace_id=payload.workspace_id,
         user=user,
@@ -284,11 +285,11 @@ async def upsert_assistant_turn_feedback_v2_endpoint(
         comment=payload.comment,
     )
     return AssistantTurnFeedbackResponse(
-        feedback_id=record.feedback_id,
-        turn_id=record.turn_id,
-        workspace_id=record.workspace_id,
-        user_id=record.user_id,
-        rating=record.rating,
-        reason_code=record.reason_code,
-        comment=record.comment,
+        feedback_id=rec.feedback_id,
+        turn_id=rec.turn_id,
+        workspace_id=rec.workspace_id,
+        user_id=rec.user_id,
+        rating=rec.rating,
+        reason_code=rec.reason_code,
+        comment=rec.comment,
     )

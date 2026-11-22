@@ -1,33 +1,19 @@
-"""PostgreSQL 18 SQL Adapter for User-Created Agents & Skills (`catalog_items`).
-
-Persists user-created Skills (`resource_type='skill'`, `item_type='USER_SKILL'`) and Agents
-(`resource_type='agent'`, `item_type='USER_AGENT'`) in `catalog_items` with full `metadata_jsonb`
-including the 6 ORCIA Agent Governance Blocks.
-"""
+"""PostgreSQL 18 SQL Adapter for User-Created Agents & Skills (`catalog_items`, `<= 300 L`)."""
 
 from __future__ import annotations
 
 import json
-from typing import cast
 from uuid import UUID
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
+from orcia_core.orchestration._internal._sql_agents_hydration import (
+    hydrate_agent_record,
+    hydrate_skill_record,
+    parse_visibility_scope,
+)
 from orcia_core.orchestration.agents_and_skills_models import (
-    DEFAULT_ALLOWED_RAG_SOURCES,
-    DEFAULT_GUARDRAILS,
-    DEFAULT_INVOCATION_MODES,
-    DEFAULT_MCP_TOOL_PERMISSIONS,
-    DEFAULT_ONTOLOGY_VIEWS,
-    AgentDialogueMechanism,
-    AgentHumanPartnerRole,
-    AgentKindType,
-    AgentLlmModelTier,
-    AgentOutputContractFormat,
-    AgentPostureType,
-    AgentSkillVisibilityScope,
-    AgentThinkingLevel,
     ManagedAgentRecord,
     ManagedSkillRecord,
 )
@@ -36,17 +22,11 @@ from orcia_kernel.ids import new_uuid7_str
 
 async def _ensure_root_org_unit_id(conn: AsyncConnection) -> UUID:
     """Return an existing root `org_units.id` or create `orcia-root` idempotently."""
-    existing = (
-        await conn.execute(
-            sa.text(
-                """
-                SELECT id FROM org_units
-                ORDER BY (CASE WHEN slug = 'orcia-root' THEN 0 ELSE 1 END), created_at ASC
-                LIMIT 1
-                """
-            )
-        )
-    ).first()
+    sql = (
+        "SELECT id FROM org_units "
+        "ORDER BY (CASE WHEN slug = 'orcia-root' THEN 0 ELSE 1 END), created_at ASC LIMIT 1"
+    )
+    existing = (await conn.execute(sa.text(sql))).first()
     if existing is not None:
         return UUID(str(existing[0]))
 
@@ -64,132 +44,13 @@ async def _ensure_root_org_unit_id(conn: AsyncConnection) -> UUID:
     return UUID(str(row.scalar_one()))
 
 
-def _parse_visibility_scope(raw_val: object) -> AgentSkillVisibilityScope:
-    val = str(raw_val or "TEAM").upper()
-    if val in ("PRIVATE", "TEAM", "PACK"):
-        return cast(AgentSkillVisibilityScope, val)
-    return "TEAM"
-
-
-def _parse_agent_kind(raw_val: object) -> AgentKindType:
-    val = str(raw_val or "LOCAL").upper()
-    if val in ("LOCAL", "REMOTE_MCP_A2A"):
-        return cast(AgentKindType, val)
-    return "LOCAL"
-
-
-def _parse_str_tuple(raw_val: object, default: tuple[str, ...]) -> tuple[str, ...]:
-    if not isinstance(raw_val, list):
-        return default
-    cleaned = tuple(str(item).strip() for item in raw_val if str(item).strip())
-    return cleaned or default
-
-
-def _parse_mcp_perms(raw_val: object) -> tuple[tuple[str, str], ...]:
-    if isinstance(raw_val, dict):
-        return tuple((str(k).strip(), str(v).strip()) for k, v in raw_val.items() if str(k).strip())
-    return DEFAULT_MCP_TOOL_PERMISSIONS
-
-
-def _hydrate_agent_record(
-    *,
-    resource_id: str,
-    uri: str,
-    title: str,
-    description: str,
-    version: str,
-    sha256: str,
-    meta: dict[str, object],
-    slug: str,
-    vis_scope: AgentSkillVisibilityScope,
-    source_pack_key: str | None,
-    enabled_in_workspace: bool,
-) -> ManagedAgentRecord:
-    raw_skills = meta.get("skill_ids") or []
-    skill_ids = (
-        tuple(str(s) for s in raw_skills if str(s).strip()) if isinstance(raw_skills, list) else ()
-    )
-    raw_level = str(meta.get("thinking_level") or "medium")
-    thinking_level: AgentThinkingLevel = (
-        cast(AgentThinkingLevel, raw_level)
-        if raw_level in ("simple", "medium", "complex", "auto")
-        else "medium"
-    )
-    raw_remote = meta.get("remote_endpoint_url")
-    remote_endpoint_url = str(raw_remote).strip() if raw_remote else None
-    raw_posture = str(meta.get("posture") or "PRODUCER").upper()
-    posture: AgentPostureType = (
-        cast(AgentPostureType, raw_posture)
-        if raw_posture in ("PRODUCER", "EVALUATOR_GATE")
-        else "PRODUCER"
-    )
-    raw_partner = str(meta.get("human_partner_role") or "PO_PM").upper()
-    human_partner_role: AgentHumanPartnerRole = (
-        cast(AgentHumanPartnerRole, raw_partner)
-        if raw_partner in ("PO_PM", "ARCHITECT", "TECH_LEAD", "SECURITY_QA", "ALL")
-        else "PO_PM"
-    )
-    raw_tier = str(meta.get("llm_model_tier") or "team_default")
-    llm_model_tier: AgentLlmModelTier = (
-        cast(AgentLlmModelTier, raw_tier)
-        if raw_tier in ("team_default", "fast", "deep", "discovery")
-        else "team_default"
-    )
-    raw_dialogue = str(meta.get("dialogue_mechanism") or "questionnaire_prealable")
-    dialogue_mechanism: AgentDialogueMechanism = (
-        cast(AgentDialogueMechanism, raw_dialogue)
-        if raw_dialogue in ("questionnaire_prealable", "pause_par_bloc", "direct")
-        else "questionnaire_prealable"
-    )
-    raw_fmt = str(meta.get("output_contract_format") or "markdown_structure")
-    output_contract_format: AgentOutputContractFormat = (
-        cast(AgentOutputContractFormat, raw_fmt)
-        if raw_fmt in ("markdown_structure", "confluence_draft", "jira_draft", "gate_risk_json")
-        else "markdown_structure"
-    )
-    raw_prompt_ref = meta.get("prompt_ref")
-    default_temp = 0.0 if posture == "EVALUATOR_GATE" else 0.2
-    raw_temp = meta.get("temperature")
-    temperature = float(str(raw_temp)) if raw_temp is not None else default_temp
-    raw_tokens = meta.get("max_tokens")
-    max_tokens = int(str(raw_tokens)) if raw_tokens is not None else 4096
-
-    return ManagedAgentRecord(
-        agent_id=resource_id,
-        slug=slug,
-        handle=str(meta.get("handle") or f"@{slug}"),
-        uri=uri,
-        name=title,
-        role_mission=description,
-        instructions=str(meta.get("instructions") or ""),
-        thinking_level=thinking_level,
-        skill_ids=skill_ids,
-        version=version,
-        sha256=sha256,
-        visibility_scope=vis_scope,
-        source_pack_key=source_pack_key,
-        enabled_in_workspace=enabled_in_workspace,
-        mcp_exposed=bool(meta.get("mcp_exposed", False)),
-        agent_kind=_parse_agent_kind(meta.get("agent_kind")),
-        remote_endpoint_url=remote_endpoint_url,
-        posture=posture,
-        human_partner_role=human_partner_role,
-        llm_model_tier=llm_model_tier,
-        temperature=temperature,
-        max_tokens=max_tokens,
-        prompt_ref=str(raw_prompt_ref).strip() if raw_prompt_ref else None,
-        invocation_modes=_parse_str_tuple(meta.get("invocation_modes"), DEFAULT_INVOCATION_MODES),
-        dialogue_mechanism=dialogue_mechanism,
-        allowed_rag_sources=_parse_str_tuple(
-            meta.get("allowed_rag_sources"), DEFAULT_ALLOWED_RAG_SOURCES
-        ),
-        ontology_views=_parse_str_tuple(meta.get("ontology_views"), DEFAULT_ONTOLOGY_VIEWS),
-        mcp_tool_permissions=_parse_mcp_perms(meta.get("mcp_tool_permissions")),
-        guardrails=_parse_str_tuple(meta.get("guardrails"), DEFAULT_GUARDRAILS),
-        output_contract_format=output_contract_format,
-        write_preview_required=bool(meta.get("write_preview_required", True)),
-        test_bench_validated=bool(meta.get("test_bench_validated", False)),
-    )
+def _optional_uuid(raw_id: str | None) -> UUID | None:
+    if not raw_id:
+        return None
+    try:
+        return UUID(str(raw_id).strip())
+    except (ValueError, TypeError):
+        return None
 
 
 async def load_agents_and_skills_from_postgres18(
@@ -204,7 +65,7 @@ async def load_agents_and_skills_from_postgres18(
                 sa.text(
                     """
                     SELECT resource_id, uri, title, description, resource_type, version,
-                           sha256, item_type, metadata_jsonb
+                           sha256, item_type, metadata_jsonb, owner_workspace_id
                     FROM catalog_items
                     WHERE item_type IN ('USER_SKILL', 'USER_AGENT')
                     ORDER BY created_at ASC, resource_id ASC
@@ -216,39 +77,17 @@ async def load_agents_and_skills_from_postgres18(
     for row in rows:
         resource_id, uri, title, description = str(row[0]), str(row[1]), str(row[2]), str(row[3])
         version, sha256, item_type, raw_meta = str(row[5]), str(row[6]), str(row[7]), row[8]
+        col_ws = str(row[9]) if len(row) > 9 and row[9] is not None else None
         meta = raw_meta if isinstance(raw_meta, dict) else json.loads(str(raw_meta or "{}"))
         slug = str(meta.get("slug") or resource_id)
-        vis_scope = _parse_visibility_scope(meta.get("visibility_scope"))
+        vis_scope = parse_visibility_scope(meta.get("visibility_scope"))
         raw_pack = meta.get("source_pack_key")
         source_pack_key = str(raw_pack).strip() if raw_pack else None
         enabled_in_workspace = bool(meta.get("enabled_in_workspace", True))
 
         if item_type == "USER_SKILL":
-            raw_params = meta.get("input_parameters") or []
-            params = tuple(str(p) for p in raw_params if str(p).strip())
             skills.append(
-                ManagedSkillRecord(
-                    skill_id=resource_id,
-                    slug=slug,
-                    command_handle=str(meta.get("command_handle") or f"/{slug}"),
-                    uri=uri,
-                    name=title,
-                    objective=description,
-                    input_parameters=params,
-                    instructions=str(meta.get("instructions") or ""),
-                    expected_output_format=str(
-                        meta.get("expected_output_format") or "Synthèse structurée"
-                    ),
-                    version=version,
-                    sha256=sha256,
-                    visibility_scope=vis_scope,
-                    source_pack_key=source_pack_key,
-                    enabled_in_workspace=enabled_in_workspace,
-                )
-            )
-        elif item_type == "USER_AGENT":
-            agents.append(
-                _hydrate_agent_record(
+                hydrate_skill_record(
                     resource_id=resource_id,
                     uri=uri,
                     title=title,
@@ -260,6 +99,24 @@ async def load_agents_and_skills_from_postgres18(
                     vis_scope=vis_scope,
                     source_pack_key=source_pack_key,
                     enabled_in_workspace=enabled_in_workspace,
+                    column_workspace_id=col_ws,
+                )
+            )
+        elif item_type == "USER_AGENT":
+            agents.append(
+                hydrate_agent_record(
+                    resource_id=resource_id,
+                    uri=uri,
+                    title=title,
+                    description=description,
+                    version=version,
+                    sha256=sha256,
+                    meta=meta,
+                    slug=slug,
+                    vis_scope=vis_scope,
+                    source_pack_key=source_pack_key,
+                    enabled_in_workspace=enabled_in_workspace,
+                    column_workspace_id=col_ws,
                 )
             )
 
@@ -280,6 +137,10 @@ async def persist_skill_to_postgres18(
         "visibility_scope": skill.visibility_scope,
         "source_pack_key": skill.source_pack_key,
         "enabled_in_workspace": skill.enabled_in_workspace,
+        "is_si_write": skill.is_si_write,
+        "human_authored_required": skill.human_authored_required,
+        "owner_workspace_id": skill.owner_workspace_id,
+        "owner_user_id": skill.owner_user_id,
     }
     async with engine.begin() as conn:
         org_id = await _ensure_root_org_unit_id(conn)
@@ -289,12 +150,13 @@ async def persist_skill_to_postgres18(
                 INSERT INTO catalog_items (
                     id, resource_id, uri, title, description, resource_type,
                     source_format, version, sha256, cas_key, visibility_scope,
-                    owner_org_unit_id, item_type, metadata_jsonb
+                    owner_org_unit_id, owner_workspace_id, item_type, metadata_jsonb
                 )
                 VALUES (
                     :id, :resource_id, :uri, :title, :description, 'skill',
                     'ORCIA', :version, :sha256, :cas_key, 'SHARED_WORKSPACE',
-                    :owner_org_unit_id, 'USER_SKILL', CAST(:metadata_jsonb AS jsonb)
+                    :owner_org_unit_id, :owner_workspace_id, 'USER_SKILL',
+                    CAST(:metadata_jsonb AS jsonb)
                 )
                 ON CONFLICT (resource_id) DO UPDATE SET
                     uri = EXCLUDED.uri,
@@ -303,6 +165,9 @@ async def persist_skill_to_postgres18(
                     version = EXCLUDED.version,
                     sha256 = EXCLUDED.sha256,
                     cas_key = EXCLUDED.cas_key,
+                    owner_workspace_id = COALESCE(
+                        EXCLUDED.owner_workspace_id, catalog_items.owner_workspace_id
+                    ),
                     item_type = EXCLUDED.item_type,
                     metadata_jsonb = EXCLUDED.metadata_jsonb
                 """
@@ -317,6 +182,7 @@ async def persist_skill_to_postgres18(
                 "sha256": skill.sha256,
                 "cas_key": f"cas/{skill.sha256}",
                 "owner_org_unit_id": org_id,
+                "owner_workspace_id": _optional_uuid(skill.owner_workspace_id),
                 "metadata_jsonb": json.dumps(meta, ensure_ascii=False),
             },
         )
@@ -354,6 +220,8 @@ async def persist_agent_to_postgres18(
         "output_contract_format": agent.output_contract_format,
         "write_preview_required": agent.write_preview_required,
         "test_bench_validated": agent.test_bench_validated,
+        "owner_workspace_id": agent.owner_workspace_id,
+        "owner_user_id": agent.owner_user_id,
     }
     async with engine.begin() as conn:
         org_id = await _ensure_root_org_unit_id(conn)
@@ -363,12 +231,13 @@ async def persist_agent_to_postgres18(
                 INSERT INTO catalog_items (
                     id, resource_id, uri, title, description, resource_type,
                     source_format, version, sha256, cas_key, visibility_scope,
-                    owner_org_unit_id, item_type, metadata_jsonb
+                    owner_org_unit_id, owner_workspace_id, item_type, metadata_jsonb
                 )
                 VALUES (
                     :id, :resource_id, :uri, :title, :description, 'agent',
                     'ORCIA', :version, :sha256, :cas_key, 'SHARED_WORKSPACE',
-                    :owner_org_unit_id, 'USER_AGENT', CAST(:metadata_jsonb AS jsonb)
+                    :owner_org_unit_id, :owner_workspace_id, 'USER_AGENT',
+                    CAST(:metadata_jsonb AS jsonb)
                 )
                 ON CONFLICT (resource_id) DO UPDATE SET
                     uri = EXCLUDED.uri,
@@ -377,6 +246,9 @@ async def persist_agent_to_postgres18(
                     version = EXCLUDED.version,
                     sha256 = EXCLUDED.sha256,
                     cas_key = EXCLUDED.cas_key,
+                    owner_workspace_id = COALESCE(
+                        EXCLUDED.owner_workspace_id, catalog_items.owner_workspace_id
+                    ),
                     item_type = EXCLUDED.item_type,
                     metadata_jsonb = EXCLUDED.metadata_jsonb
                 """
@@ -391,8 +263,20 @@ async def persist_agent_to_postgres18(
                 "sha256": agent.sha256,
                 "cas_key": f"cas/{agent.sha256}",
                 "owner_org_unit_id": org_id,
+                "owner_workspace_id": _optional_uuid(agent.owner_workspace_id),
                 "metadata_jsonb": json.dumps(meta, ensure_ascii=False),
             },
+        )
+
+
+async def _delete_catalog_item(engine: AsyncEngine, resource_id: str, item_type: str) -> None:
+    async with engine.begin() as conn:
+        await conn.execute(
+            sa.text(
+                "DELETE FROM catalog_items "
+                "WHERE resource_id = :resource_id AND item_type = :item_type"
+            ),
+            {"resource_id": resource_id, "item_type": item_type},
         )
 
 
@@ -402,32 +286,11 @@ async def delete_skill_from_postgres18(
     updated_agents: tuple[ManagedAgentRecord, ...],
 ) -> None:
     """Delete a Skill from PostgreSQL 18 `catalog_items` and update detached Agents."""
-    async with engine.begin() as conn:
-        await conn.execute(
-            sa.text(
-                """
-                DELETE FROM catalog_items
-                WHERE resource_id = :resource_id AND item_type = 'USER_SKILL'
-                """
-            ),
-            {"resource_id": skill_id},
-        )
+    await _delete_catalog_item(engine, skill_id, "USER_SKILL")
     for agent in updated_agents:
         await persist_agent_to_postgres18(engine, agent)
 
 
-async def delete_agent_from_postgres18(
-    engine: AsyncEngine,
-    agent_id: str,
-) -> None:
+async def delete_agent_from_postgres18(engine: AsyncEngine, agent_id: str) -> None:
     """Delete an Agent from PostgreSQL 18 `catalog_items`."""
-    async with engine.begin() as conn:
-        await conn.execute(
-            sa.text(
-                """
-                DELETE FROM catalog_items
-                WHERE resource_id = :resource_id AND item_type = 'USER_AGENT'
-                """
-            ),
-            {"resource_id": agent_id},
-        )
+    await _delete_catalog_item(engine, agent_id, "USER_AGENT")

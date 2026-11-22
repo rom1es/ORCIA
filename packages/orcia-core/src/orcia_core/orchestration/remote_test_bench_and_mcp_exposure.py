@@ -239,6 +239,24 @@ class RemoteServiceTestBenchAndGovernedMcpService:
             requested_write_target_uri=requested_write_target_uri,
         )
 
+    async def invoke_governed_mcp_read_only_for_assistant_async(
+        self,
+        *,
+        workspace_slug: str,
+        agent_slug: str,
+        caller_role: str,
+        passthrough_identity: str,
+        prompt_text: str,
+    ) -> GovernedMcpInvocationResult:
+        """Invoke a read-only `CONSULTATION_ANALYSIS` MCP agent for an authorized assistant."""
+        return await self._exposure.invoke_governed_mcp_read_only_for_assistant_async(
+            workspace_slug=workspace_slug,
+            agent_slug=agent_slug,
+            caller_role=caller_role,
+            passthrough_identity=passthrough_identity,
+            prompt_text=prompt_text,
+        )
+
 
 __all__ = [
     "DiscoveredRemoteCapability",

@@ -6,7 +6,6 @@ import asyncio
 import time
 import uuid
 from collections.abc import AsyncIterator, Callable
-from dataclasses import replace
 from typing import Any
 
 import httpx
@@ -21,13 +20,21 @@ from orcia_api.routers._assistant_background_registry import (
     TurnStatus as TurnStatus,
 )
 from orcia_api.routers._assistant_background_registry import (
+    get_active_turn_for_workspace as get_active_turn_for_workspace,
+)
+from orcia_api.routers._assistant_background_registry import (
     get_rate_limiter_from_request,
     get_tracked_turn_tasks_from_request,
     get_turn_registry_from_request,
-    turn_record_to_background_state,
 )
 from orcia_api.routers._assistant_background_registry import (
     record_prompt_telemetry_entry as record_prompt_telemetry_entry,
+)
+from orcia_api.routers._assistant_background_registry import (
+    stop_active_turn_for_workspace as stop_active_turn_for_workspace,
+)
+from orcia_api.routers._assistant_background_registry import (
+    stop_assistant_turn_by_id as stop_assistant_turn_by_id,
 )
 from orcia_api.routers._assistant_turn_consumer import stream_assistant_turn_events
 from orcia_api.routers._assistant_turn_producer import execute_turn_producer_task
@@ -43,6 +50,10 @@ from orcia_core.orchestration.redis_rate_limiter import (
 from orcia_core.orchestration.redis_turn_registry import (
     RedisAssistantTurnRegistry,
     resolve_liveness_ttl_seconds,
+)
+from orcia_core.ports.assistant_tool_executor_port import (
+    AssistantToolExecutorPort,
+    AuthorizedToolDescriptor,
 )
 from orcia_core.ports.assistant_turn_stream_port import AssistantTurnRecord
 from orcia_core.ports.llm_streaming_port import LlmEndpointConfig, LlmStreamingPort
@@ -102,6 +113,10 @@ async def start_background_assistant_turn(
     citation_map: dict[str, Any] | None = None,
     prompt_assembly_latency_ms: float = 0.0,
     thread_messages_repo: Any | None = None,
+    tool_router: AssistantToolExecutorPort | None = None,
+    tool_catalog: tuple[AuthorizedToolDescriptor, ...] = (),
+    user_identity: Any | None = None,
+    active_hat: str = "ARCHITECT",
 ) -> str:
     """Register a Redis-tracked turn and launch its bounded `asyncio.Task` producer."""
     resolved_trace = trace_id or "00000000000000000000000000000000"
@@ -164,6 +179,10 @@ async def start_background_assistant_turn(
             instance=instance,
             outbox_emitter=outbox_emitter,
             thread_messages_repo=thread_messages_repo,
+            tool_router=tool_router,
+            tool_catalog=tool_catalog,
+            user_identity=user_identity,
+            active_hat=active_hat,
         )
     )
     task_set.add(task)
@@ -200,6 +219,10 @@ async def run_and_consume_decoupled_turn_stream(
     citation_map: dict[str, Any] | None = None,
     prompt_assembly_latency_ms: float = 0.0,
     thread_messages_repo: Any | None = None,
+    tool_router: AssistantToolExecutorPort | None = None,
+    tool_catalog: tuple[AuthorizedToolDescriptor, ...] = (),
+    user_identity: Any | None = None,
+    active_hat: str = "ARCHITECT",
 ) -> AsyncIterator[dict[str, Any]]:
     """Launch tracked background turn on Redis and stream ordered events."""
     reg = get_turn_registry_from_request(request)
@@ -236,55 +259,10 @@ async def run_and_consume_decoupled_turn_stream(
         citation_map=citation_map,
         prompt_assembly_latency_ms=prompt_assembly_latency_ms,
         thread_messages_repo=thread_messages_repo,
+        tool_router=tool_router,
+        tool_catalog=tool_catalog,
+        user_identity=user_identity,
+        active_hat=active_hat,
     )
     async for evt in stream_assistant_turn_events(reg, turn_id=turn_id, trace_id=trace_id or ""):
         yield evt
-
-
-async def get_active_turn_for_workspace(
-    workspace_id: str, *, request: Any | None = None, user_id: str = "u-anonymous"
-) -> ActiveBackgroundTurnState | None:
-    """Return latest turn state for `(workspace_id, user_id)` from Redis."""
-    reg = get_turn_registry_from_request(request)
-    rec = await reg.get_latest_turn(workspace_id, user_id)
-    return turn_record_to_background_state(rec) if rec is not None else None
-
-
-async def stop_assistant_turn_by_id(
-    turn_id: str, *, request: Any | None = None, stopped_by_user_id: str
-) -> ActiveBackgroundTurnState | None:
-    """Propagate stop via Redis and wait briefly for producer `finally` flush."""
-    reg = get_turn_registry_from_request(request)
-    rec = await reg.get_turn_by_id(turn_id)
-    if rec is None:
-        return None
-    await reg.request_stop(turn_id, stopped_by_user_id=stopped_by_user_id)
-    for _ in range(30):
-        latest = await reg.get_turn_by_id(turn_id)
-        if latest is not None and latest.status in ("STOPPED", "COMPLETED", "ERROR"):
-            return turn_record_to_background_state(latest)
-        await asyncio.sleep(0.05)
-    latest = await reg.get_turn_by_id(turn_id)
-    if latest is not None and latest.status == "RUNNING":
-        forced = replace(latest, status="STOPPED", stopped_by_user_id=stopped_by_user_id)
-        await reg.update_turn(forced, ttl_seconds=1800)
-        return turn_record_to_background_state(forced)
-    return turn_record_to_background_state(latest) if latest is not None else None
-
-
-async def stop_active_turn_for_workspace(
-    workspace_id: str,
-    *,
-    request: Any | None = None,
-    user_id: str = "u-anonymous",
-    turn_id: str | None = None,
-) -> ActiveBackgroundTurnState | None:
-    """Stop either explicit `turn_id` or the latest active turn for `(workspace_id, user_id)`."""
-    reg = get_turn_registry_from_request(request)
-    target_id = turn_id
-    if not target_id:
-        latest = await reg.get_latest_turn(workspace_id, user_id)
-        if latest is None:
-            return None
-        target_id = latest.turn_id
-    return await stop_assistant_turn_by_id(target_id, request=request, stopped_by_user_id=user_id)

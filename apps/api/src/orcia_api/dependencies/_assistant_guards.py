@@ -11,7 +11,7 @@ from orcia_api.dependencies._core_providers import (
     get_auth_service,
     get_permission_broker_service,
 )
-from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
+from orcia_api.dependencies._topology_sync import sync_evaluator_topology_from_pg
 from orcia_core.kernel.errors import OrciaDomainError
 from orcia_core.orchestration.errors import ObserverModeReadOnlyError, ScopeAccessDeniedError
 from orcia_core.permissions.evaluator import _user_leads_node

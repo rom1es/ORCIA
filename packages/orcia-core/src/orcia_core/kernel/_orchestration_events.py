@@ -176,12 +176,19 @@ class HumanArbitrationRequested(DomainEvent):
         cls,
         *,
         arbitration_id: str,
-        run_id: str,
+        run_id: str | None,
         workspace_id: str | None,
         step_key: str,
         options_count: int = 2,
         trace_id: str = "00000000000000000000000000000000",
+        extra_payload: dict[str, Any] | None = None,
     ) -> HumanArbitrationRequested:
+        payload_data: dict[str, Any] = {
+            "step_key": step_key,
+            "options_count": options_count,
+        }
+        if extra_payload:
+            payload_data.update(extra_payload)
         return cls(
             event_id=new_uuid7_str(),
             event_type="HumanArbitrationRequested",
@@ -189,10 +196,7 @@ class HumanArbitrationRequested(DomainEvent):
             aggregate_id=arbitration_id,
             run_id=run_id,
             workspace_id=workspace_id,
-            payload={
-                "step_key": step_key,
-                "options_count": options_count,
-            },
+            payload=payload_data,
             trace_id=trace_id,
             step_key=step_key,
             options_count=options_count,

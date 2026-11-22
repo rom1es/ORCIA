@@ -74,3 +74,11 @@ async def stream_assistant_turn_events(
             await registry.update_turn(updated, ttl_seconds=1800)
             yield {"cursor": err_cursor, "event": "stream_error", "data": err_payload}
             return
+
+
+SSE_STREAM_RESPONSES: dict[int | str, dict[str, Any]] = {
+    200: {
+        "description": "Cursor-reattachable Redis Streams SSE stream (`text/event-stream`).",
+        "content": {"text/event-stream": {"schema": {"type": "object"}}},
+    }
+}

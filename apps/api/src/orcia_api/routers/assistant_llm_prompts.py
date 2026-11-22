@@ -12,7 +12,13 @@ from orcia_api.routers._assistant_llm_tools_and_budget import (
     build_multi_turn_messages as build_multi_turn_messages,
 )
 from orcia_api.routers._assistant_llm_tools_and_budget import (
+    build_workspace_tools_and_catalog_async as build_workspace_tools_and_catalog_async,
+)
+from orcia_api.routers._assistant_llm_tools_and_budget import (
     build_workspace_tools_schema as build_workspace_tools_schema,
+)
+from orcia_api.routers._assistant_llm_tools_and_budget import (
+    resolve_turn_tools_and_router_async as resolve_turn_tools_and_router_async,
 )
 from orcia_api.routers._assistant_prompt_sanitization import (
     detect_adaptive_thinking_steps_for_question as detect_adaptive_thinking_steps_for_question,
@@ -249,3 +255,43 @@ async def resolve_assembled_system_instructions_for_turn_async(
         locale=locale,
     )
     return sys_msg
+
+
+def resolve_assembled_system_instructions_for_turn(
+    request: Request,
+    *,
+    hat: str,
+    speed_mode: str,
+    workspace_id: str,
+    user_id: str,
+    requested_tier: str | None = None,
+    thinking_effort: str | None = None,
+    system_instructions_override: str | None = None,
+    allow_system_override: bool = False,
+    response_tone: str | None = None,
+    response_format: str | None = None,
+    personal_instructions: str | None = None,
+    workspace_instructions: str | None = None,
+    folder_pinned_notes: str | None = None,
+    locale: str = "fr",
+) -> str:
+    """Build the complete 5-layer + ontology + preferences system prompt for a turn."""
+    assembled_5_layers, ontology_summary = resolve_5_layers_and_ontology_from_request(
+        request, workspace_id=workspace_id, user_id=user_id, hat=hat, locale=locale
+    )
+    return build_assistant_system_instructions(
+        hat=hat,
+        speed_mode=speed_mode,
+        requested_tier=requested_tier,
+        thinking_effort=thinking_effort,
+        system_instructions_override=system_instructions_override,
+        allow_system_override=allow_system_override,
+        assembled_5_layers_prompt=assembled_5_layers,
+        ontology_concepts_summary=ontology_summary,
+        response_tone=response_tone,
+        response_format=response_format,
+        personal_instructions=personal_instructions,
+        workspace_instructions=workspace_instructions,
+        folder_pinned_notes=folder_pinned_notes,
+        locale=locale,
+    )

@@ -5,12 +5,14 @@ Zero framework/SDK imports (`fastapi`, `sqlalchemy`, `redis`, `litellm`, `dramat
 
 from __future__ import annotations
 
+from typing import Any
 from uuid import NAMESPACE_URL, UUID, uuid5
 
 from orcia_core.observability.logging import get_current_trace_id, get_logger
 from orcia_core.orchestration._assistant_citations_verifier import (
     UNVERIFIED_CITATION_BADGE,
     build_evidence_table_impl,
+    evaluate_tool_v5_and_human_anchor_guard_impl,
     verify_and_sanitize_citations_impl,
 )
 from orcia_core.orchestration.assistant_citations_models import (
@@ -242,6 +244,24 @@ class AssistantCitationAndV5GuardService:
         if action_type == "SAVE_DRAFT" and outcome.draft_uri is not None:
             self._saved_drafts[outcome.draft_uri] = outcome
         return outcome
+
+    def evaluate_tool_v5_and_human_anchor_guard(
+        self,
+        *,
+        tool_name: str,
+        is_si_write: bool = False,
+        human_authored_required: bool = False,
+        target_uri: str | None = None,
+        section_key: str | None = None,
+    ) -> dict[str, Any] | None:
+        """Deterministic tool-level Lock V5 & Human-Anchor check replacing lexical heuristics."""
+        return evaluate_tool_v5_and_human_anchor_guard_impl(
+            tool_name=tool_name,
+            is_si_write=is_si_write,
+            human_authored_required=human_authored_required,
+            target_uri=target_uri,
+            section_key=section_key,
+        )
 
 
 __all__ = [

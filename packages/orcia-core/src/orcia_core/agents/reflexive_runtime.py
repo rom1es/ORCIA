@@ -1,10 +1,6 @@
 """Pure `asyncio` Non-Deterministic Reflexive Runtime (`Story 16.2`, `CAP-160`).
 
-Executes `Mon Assistant`, `Mes Agents`, and Goal-Driven Processes via a `Think -> Act -> Observe`
-loop with real-time SSE streaming, strict separation between `cancel_execution` (`■ Arrêter`) and
-`request_synthesize_now` (`Synthétiser maintenant`), bounded sub-agent delegation (`depth <= 1`),
-stateless Suspend/Resume on `WritePreviewCard` (`F5` survival, 24h TTL), and `ClaimCheckPointer`
-archival — with ZERO DBOS workflow or step overhead.
+Executes `Think -> Act -> Observe` with SSE streaming and `ASSISTANT`/`PROCESS` profiles.
 """
 
 from __future__ import annotations
@@ -13,6 +9,10 @@ import asyncio
 import time
 from datetime import UTC, datetime
 
+from orcia_core.agents._assistant_profile_guard import (
+    assert_assistant_profile_write_gate_unreachable,
+    resolve_effective_write_gate,
+)
 from orcia_core.agents._runtime_delegation import (
     execute_delegation_turn,
     persist_reflexive_snapshot,
@@ -32,9 +32,9 @@ from orcia_core.agents._runtime_turn_actions import (
 from orcia_core.agents.errors import ResourceNotFoundError
 from orcia_core.agents.reflexive_schemas import (
     AgentTraceEvent,
+    ExecutionProfile,
     ReflexiveRuntimeConfig,
     ReflexiveSessionSnapshot,
-    ReflexiveTurnDecision,
     ReflexiveWriteApprovalInput,
 )
 from orcia_core.kernel.ids import new_uuid7_str
@@ -60,12 +60,15 @@ class NonDeterministicReflexiveRuntime:
         event_stream: ReflexiveEventStreamPort,
         write_gate: ReflexiveWriteGatePort | None = None,
         claim_check_storage: ClaimCheckStorageService | None = None,
+        execution_profile: ExecutionProfile = "PROCESS",
     ) -> None:
+        assert_assistant_profile_write_gate_unreachable(execution_profile, write_gate)
+        self._execution_profile: ExecutionProfile = execution_profile
         self._llm = llm_port
         self._explorer = surgical_explorer
         self._session_store = session_store
         self._event_stream = event_stream
-        self._write_gate = write_gate
+        self._write_gate = None if execution_profile == "ASSISTANT" else write_gate
         self._claim_check = claim_check_storage or get_claim_check_storage()
         self._cancel_flags: set[str] = set()
         self._force_final_flags: set[str] = set()
@@ -95,11 +98,10 @@ class NonDeterministicReflexiveRuntime:
     ) -> tuple[str, asyncio.Task[ReflexiveSessionSnapshot]]:
         """Launch `run_execution` as a tracked background `asyncio.Task` for live SSE streaming."""
         exec_id = execution_id or new_uuid7_str()
-        task = asyncio.create_task(
-            self.run_execution(
-                execution_id=exec_id, actor_slug=actor_slug, objective=objective, config=config
-            )
+        coro = self.run_execution(
+            execution_id=exec_id, actor_slug=actor_slug, objective=objective, config=config
         )
+        task = asyncio.create_task(coro)
         self._running_tasks[exec_id] = task
         return exec_id, task
 
@@ -112,6 +114,8 @@ class NonDeterministicReflexiveRuntime:
         execution_id: str | None = None,
     ) -> ReflexiveSessionSnapshot:
         """Run the reflexive `Think -> Act -> Observe` loop until completion, cancel, or pause."""
+        if self._execution_profile == "ASSISTANT" and config.execution_profile != "ASSISTANT":
+            config = config.model_copy(update={"execution_profile": "ASSISTANT"})
         snapshot = build_initial_reflexive_snapshot(
             execution_id=execution_id or new_uuid7_str(),
             actor_slug=actor_slug,
@@ -170,7 +174,7 @@ class NonDeterministicReflexiveRuntime:
         if snapshot is None:
             raise ResourceNotFoundError(detail_override=f"Execution '{execution_id}' introuvable.")
         await apply_write_gate_decision(
-            write_gate=self._write_gate,
+            write_gate=self._effective_write_gate(snapshot),
             snapshot=snapshot,
             approved=approved,
             approval=approval,
@@ -178,6 +182,11 @@ class NonDeterministicReflexiveRuntime:
             persist_fn=self._persist_snapshot,
         )
         return await self._execute_loop(snapshot)
+
+    def _effective_write_gate(
+        self, snapshot: ReflexiveSessionSnapshot
+    ) -> ReflexiveWriteGatePort | None:
+        return resolve_effective_write_gate(self._execution_profile, snapshot, self._write_gate)
 
     async def _execute_loop(
         self,
@@ -238,7 +247,7 @@ class NonDeterministicReflexiveRuntime:
                     )
                 if decision.action_kind == "propose_external_write_preview":
                     return await suspend_for_write_preview(
-                        write_gate=self._write_gate,
+                        write_gate=self._effective_write_gate(snapshot),
                         snapshot=snapshot,
                         decision=decision,
                         turn_idx=turn_idx,
@@ -246,7 +255,13 @@ class NonDeterministicReflexiveRuntime:
                         persist_fn=self._persist_snapshot,
                     )
                 if decision.action_kind == "delegate_sub_agent":
-                    await self._handle_delegation_turn(snapshot, decision, turn_idx)
+                    await execute_delegation_turn(
+                        snapshot=snapshot,
+                        decision=decision,
+                        turn_idx=turn_idx,
+                        publish_fn=self._append_and_publish,
+                        run_child_fn=self.run_execution,
+                    )
                 else:
                     await execute_surgical_turn(
                         explorer=self._explorer,
@@ -270,20 +285,6 @@ class NonDeterministicReflexiveRuntime:
             self._running_tasks.pop(exec_id, None)
             self._cancel_flags.discard(exec_id)
             self._force_final_flags.discard(exec_id)
-
-    async def _handle_delegation_turn(
-        self,
-        snapshot: ReflexiveSessionSnapshot,
-        decision: ReflexiveTurnDecision,
-        turn_idx: int,
-    ) -> None:
-        await execute_delegation_turn(
-            snapshot=snapshot,
-            decision=decision,
-            turn_idx=turn_idx,
-            publish_fn=self._append_and_publish,
-            run_child_fn=self.run_execution,
-        )
 
     def _is_cancelled(self, exec_id: str, snapshot: ReflexiveSessionSnapshot) -> bool:
         return exec_id in self._cancel_flags or str(snapshot.status) == "CANCELLED"

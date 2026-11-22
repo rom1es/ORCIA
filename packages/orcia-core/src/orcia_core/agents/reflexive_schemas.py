@@ -40,6 +40,7 @@ APPROFONDI_MAX_TOKENS: Final[int] = 48_000
 SESSION_SNAPSHOT_TTL_HOURS: Final[int] = 24
 MAX_DELEGATION_DEPTH_CAP: Final[int] = 1
 
+ExecutionProfile = Literal["PROCESS", "ASSISTANT"]
 ReflexiveEffortMode = Literal["standard", "approfondi"]
 ReflexiveExecutionStatus = Literal[
     "RUNNING",
@@ -64,6 +65,7 @@ class ReflexiveRuntimeConfig(BaseModel):
 
     effort_level: EffortLevel = EffortLevel.DEFAULT
     effort_mode: ReflexiveEffortMode = "standard"
+    execution_profile: ExecutionProfile = "PROCESS"
     max_turns: int = Field(default=STANDARD_MAX_TURNS, ge=1, le=APPROFONDI_MAX_TURNS)
     max_budget_tokens: int = Field(default=STANDARD_MAX_TOKENS, ge=256, le=APPROFONDI_MAX_TOKENS)
     allow_sub_agent_delegation: bool = False
@@ -102,6 +104,11 @@ class ReflexiveRuntimeConfig(BaseModel):
             data["max_turns"] = turns
         if "max_budget_tokens" not in data:
             data["max_budget_tokens"] = tokens
+        if data.get("execution_profile") == "ASSISTANT" and data.get("requested_write_preview"):
+            raise ValueError(
+                "ERR_ASSISTANT_WRITE_GATE_FORBIDDEN: Write previews are forbidden under "
+                "ASSISTANT execution_profile."
+            )
         return data
 
     @classmethod
@@ -118,12 +125,14 @@ class ReflexiveRuntimeConfig(BaseModel):
         initial_resources: tuple[str, ...] = (),
         requested_write_preview: dict[str, Any] | None = None,
         step_delay_ms: int = 0,
+        execution_profile: ExecutionProfile = "PROCESS",
     ) -> ReflexiveRuntimeConfig:
         """Construct a `ReflexiveRuntimeConfig` strictly aligned on `Standard` or `Approfondi`."""
         mode, turns, tokens = resolve_effort_budget(effort)
         return cls(
             effort_level=effort,
             effort_mode=mode,
+            execution_profile=execution_profile,
             max_turns=turns,
             max_budget_tokens=tokens,
             allow_sub_agent_delegation=allow_sub_agent_delegation,
@@ -173,6 +182,7 @@ class ReflexiveSessionSnapshot(BaseModel):
     orchestration_type: ProcessOrchestrationType = ProcessOrchestrationType.NON_DETERMINISTIC
     effort_level: EffortLevel = EffortLevel.DEFAULT
     effort_mode: ReflexiveEffortMode = "standard"
+    execution_profile: ExecutionProfile = "PROCESS"
     status: ReflexiveExecutionStatus = "RUNNING"
     allow_sub_agent_delegation: bool = False
     delegation_depth: int = Field(default=0, ge=0, le=MAX_DELEGATION_DEPTH_CAP)
@@ -200,6 +210,7 @@ __all__ = [
     "APPROFONDI_MAX_TOKENS",
     "APPROFONDI_MAX_TURNS",
     "AgentTraceEvent",
+    "ExecutionProfile",
     "MAX_DELEGATION_DEPTH_CAP",
     "PendingWritePreviewSpec",
     "ProcessOrchestrationType",

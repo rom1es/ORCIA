@@ -186,14 +186,15 @@ def get_surgical_explorer_service(request: Request) -> SurgicalExplorerPort:
     def _authorize_read_source(
         uri: str, workspace_id: str | None, actor_id: str | None
     ) -> tuple[bool, str | None]:
-        if not actor_id:
-            return True, None
+        cleaned_actor = (actor_id or "").strip()
+        if not cleaned_actor or cleaned_actor == "u-anonymous":
+            return False, "orcia://permissions/request-read-source?reason=unauthenticated"
         try:
-            user = auth_service.get_user_by_id(actor_id)
+            user = auth_service.get_user_by_id(cleaned_actor)
         except OrciaDomainError:
-            return True, None
+            return False, "orcia://permissions/request-read-source?reason=unknown-actor"
 
-        if user.platform_role == "OBSERVER":
+        if user.platform_role in ("OBSERVER", "READ_ONLY_OBSERVER", "BU_DIRECTOR"):
             return False, "orcia://permissions/request-read-source?reason=observer-role"
 
         acl = evaluator.get_catalog_acl_by_uri(uri)
@@ -207,22 +208,23 @@ def get_surgical_explorer_service(request: Request) -> SurgicalExplorerPort:
                     user,
                     acl.resource_id,
                     workspace_id=workspace_id,
-                    require_read_source=False,
+                    require_read_source=True,
                 )
             except OrciaDomainError:
                 return False, f"jira://IAM/PERM-READ-SOURCE-{acl.resource_id}"
             if effective.source_masked:
                 return False, f"jira://IAM/PERM-READ-SOURCE-{acl.resource_id}"
 
-        if workspace_id is not None:
+        if workspace_id is not None and workspace_id != "scope-global":
             ws = evaluator.get_workspace(workspace_id)
-            if ws is not None:
-                ws_access = evaluator.resolve_workspace_access(user, ws.id)
-                if ws_access is None or ws_access.access_mode == "READ_ONLY_OBSERVER":
-                    return (
-                        False,
-                        f"orcia://permissions/request-read-source?workspace={workspace_id}",
-                    )
+            if ws is None:
+                return False, f"orcia://permissions/request-read-source?workspace={workspace_id}"
+            ws_access = evaluator.resolve_workspace_access(user, ws.id)
+            if ws_access is None or ws_access.access_mode == "READ_ONLY_OBSERVER":
+                return (
+                    False,
+                    f"orcia://permissions/request-read-source?workspace={workspace_id}",
+                )
         return True, None
 
     def _resolve_virtual_resource(uri: str, _workspace_id: str | None) -> str | None:

@@ -7,6 +7,10 @@ from `orcia_api.dependencies` as the unified public façade.
 
 from __future__ import annotations
 
+from orcia_api.dependencies.assistant_tools import (
+    build_assistant_tool_catalog_context_async,
+    get_governed_assistant_tool_router,
+)
 from orcia_api.dependencies.autonomous_supervision import (
     get_autonomous_supervision_service,
     get_post_hoc_audit_service,
@@ -67,6 +71,7 @@ from orcia_api.dependencies.portal_and_assistant import (
     require_rag_available,
 )
 from orcia_api.dependencies.reflexive_execution import (
+    get_assistant_reflexive_runtime_service,
     get_process_execution_dispatcher,
     get_reflexive_event_stream_broker,
     get_reflexive_runtime_service,
@@ -87,6 +92,7 @@ from orcia_api.dependencies.workspace_and_packs import (
 
 __all__ = [
     "app_lifespan",
+    "build_assistant_tool_catalog_context_async",
     "get_accostage_service",
     "get_agents_and_skills_service",
     "get_ai_models_hub_service",
@@ -94,6 +100,7 @@ __all__ = [
     "get_assistant_feedback_repository",
     "get_assistant_folders_and_sharing_service",
     "get_assistant_governance_service",
+    "get_assistant_reflexive_runtime_service",
     "get_assistant_service",
     "get_assistant_thread_messages_repository",
     "get_assistant_three_speed_router_service",
@@ -113,6 +120,7 @@ __all__ = [
     "get_durable_wizard_service",
     "get_embedding_port",
     "get_finops_accounting_service",
+    "get_governed_assistant_tool_router",
     "get_help_generation_and_attachment_service",
     "get_hierarchical_rbac_service",
     "get_iam_accounts_service",
