@@ -19,6 +19,12 @@ from orcia_api.schemas.assistant_governance_and_three_speed import (
     AssistantGovernanceViewResponse as AssistantGovernanceViewResponse,
 )
 from orcia_api.schemas.assistant_governance_and_three_speed import (
+    AssistantThreadMessageSchemaItem as AssistantThreadMessageSchemaItem,
+)
+from orcia_api.schemas.assistant_governance_and_three_speed import (
+    AssistantThreadMessagesListResponse as AssistantThreadMessagesListResponse,
+)
+from orcia_api.schemas.assistant_governance_and_three_speed import (
     AssistantTurnAcceptedResponse as AssistantTurnAcceptedResponse,
 )
 from orcia_api.schemas.assistant_governance_and_three_speed import (

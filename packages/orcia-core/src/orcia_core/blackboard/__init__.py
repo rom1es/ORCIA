@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from orcia_core.blackboard._internal.sql_blackboard_queries import (
+    list_active_workspace_blackboard_snapshots_pg,
+)
 from orcia_core.blackboard.models import (
     BackgroundAuditConsolidatedReport,
     BlackboardSnapshotEntity,
@@ -27,4 +30,5 @@ __all__ = [
     "StepExecutionEntity",
     "StepExecutionStatus",
     "StepMemlogEntry",
+    "list_active_workspace_blackboard_snapshots_pg",
 ]

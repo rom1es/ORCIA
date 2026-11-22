@@ -178,6 +178,12 @@ def filter_allowed_source_uris_with_evaluator(
                 pass
             continue
 
+        if uri.startswith(f"orcia://blackboard/{resolved_ws_id}/") or uri.startswith(
+            f"orcia://blackboard/{workspace_id}/"
+        ):
+            allowed.add(uri)
+            continue
+
         if broker is not None:
             try:
                 policy = broker.resolve_matching_policy(uri)
@@ -206,6 +212,8 @@ async def prepare_server_source_uri_authorizer(
             broker = get_permission_broker_service(request)
         except RuntimeError:
             broker = None
+    if broker is not None and hasattr(broker, "list_policies_async"):
+        await broker.list_policies_async()
     return lambda uris: filter_allowed_source_uris_with_evaluator(
         evaluator, broker, user, workspace_id=workspace_id, candidate_uris=uris
     )

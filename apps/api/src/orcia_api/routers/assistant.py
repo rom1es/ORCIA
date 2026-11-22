@@ -14,6 +14,7 @@ from orcia_api.dependencies._assistant_guards import (
     enforce_assistant_workspace_guard,
     prepare_server_source_uri_authorizer,
 )
+from orcia_api.routers._assistant_context_assembly import resolve_ranked_pg18_ontology_for_turn
 from orcia_api.routers.assistant_llm_bridge import ensure_active_chat_model_if_live
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.assistant import (
@@ -142,11 +143,20 @@ async def assistant_chat_turn(
     uri_authorizer = await prepare_server_source_uri_authorizer(
         request, user, workspace_id=payload.workspace_id
     )
+    _, _, concepts_dicts, axioms_dicts, _ = await resolve_ranked_pg18_ontology_for_turn(
+        request,
+        workspace_id=payload.workspace_id,
+        user_prompt=payload.user_prompt,
+        hat=profile,
+        embedding_port=_embedding_port,
+    )
     turn = await svc.run_conversation_turn_async(
         workspace_id=payload.workspace_id,
         user_prompt=payload.user_prompt,
         human_profile_archetype=profile,
         allowed_datasource_aliases=frozenset(payload.allowed_datasource_aliases),
+        ontology_concepts=concepts_dicts,
+        ontology_axioms=axioms_dicts,
         embedding_available=_embedding_port is not None,
         source_uri_authorizer=uri_authorizer,
     )
@@ -177,6 +187,13 @@ async def assistant_chat_stream(
     uri_authorizer = await prepare_server_source_uri_authorizer(
         request, user, workspace_id=payload.workspace_id
     )
+    _, _, concepts_dicts, axioms_dicts, _ = await resolve_ranked_pg18_ontology_for_turn(
+        request,
+        workspace_id=payload.workspace_id,
+        user_prompt=payload.user_prompt,
+        hat=profile,
+        embedding_port=_embedding_port,
+    )
 
     async def _event_generator() -> AsyncIterator[str]:
         async for evt in service.stream_conversation_turn_sse_async(
@@ -184,6 +201,8 @@ async def assistant_chat_stream(
             user_prompt=payload.user_prompt,
             human_profile_archetype=profile,
             allowed_datasource_aliases=frozenset(payload.allowed_datasource_aliases),
+            ontology_concepts=concepts_dicts,
+            ontology_axioms=axioms_dicts,
             embedding_available=_embedding_port is not None,
             source_uri_authorizer=uri_authorizer,
         ):

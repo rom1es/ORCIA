@@ -97,6 +97,11 @@ async def start_background_assistant_turn(
     locale: str = "fr",
     instance: str = "/api/v1/assistant/turns",
     pre_acquired_lease: str | None = None,
+    thread_id: str | None = None,
+    parent_turn_id: str | None = None,
+    citation_map: dict[str, Any] | None = None,
+    prompt_assembly_latency_ms: float = 0.0,
+    thread_messages_repo: Any | None = None,
 ) -> str:
     """Register a Redis-tracked turn and launch its bounded `asyncio.Task` producer."""
     resolved_trace = trace_id or "00000000000000000000000000000000"
@@ -119,6 +124,10 @@ async def start_background_assistant_turn(
         model_id=ep.model_name if ep is not None else "assistant-router",
         inference_tier=model_tier or (ep.tier if ep is not None else None),
         effort=thinking_effort or "balanced",
+        thread_id=thread_id,
+        parent_turn_id=parent_turn_id,
+        citation_map=dict(citation_map or {}),
+        prompt_assembly_latency_ms=prompt_assembly_latency_ms,
     )
     await registry.register_turn(record)
     await registry.refresh_liveness(turn_id, ttl_seconds=liveness_ttl_s)
@@ -154,6 +163,7 @@ async def start_background_assistant_turn(
             locale=locale,
             instance=instance,
             outbox_emitter=outbox_emitter,
+            thread_messages_repo=thread_messages_repo,
         )
     )
     task_set.add(task)
@@ -185,6 +195,11 @@ async def run_and_consume_decoupled_turn_stream(
     trace_id: str | None = None,
     speed_mode: str | None = None,
     pre_acquired_lease: str | None = None,
+    thread_id: str | None = None,
+    parent_turn_id: str | None = None,
+    citation_map: dict[str, Any] | None = None,
+    prompt_assembly_latency_ms: float = 0.0,
+    thread_messages_repo: Any | None = None,
 ) -> AsyncIterator[dict[str, Any]]:
     """Launch tracked background turn on Redis and stream ordered events."""
     reg = get_turn_registry_from_request(request)
@@ -216,6 +231,11 @@ async def run_and_consume_decoupled_turn_stream(
         trace_id=trace_id,
         speed_mode=speed_mode,
         pre_acquired_lease=pre_acquired_lease,
+        thread_id=thread_id,
+        parent_turn_id=parent_turn_id,
+        citation_map=citation_map,
+        prompt_assembly_latency_ms=prompt_assembly_latency_ms,
+        thread_messages_repo=thread_messages_repo,
     )
     async for evt in stream_assistant_turn_events(reg, turn_id=turn_id, trace_id=trace_id or ""):
         yield evt

@@ -41,13 +41,17 @@ def init_pg_engine_and_uow(app: FastAPI) -> None:
         from orcia_core.config import resolve_database_url
 
         engine_kwargs: dict[str, object] = {"connect_args": {"timeout": 1.5}}
-        is_test_runtime = bool(
+        force_real = os.environ.get("ORCIA_FORCE_REAL_RUNTIME", "").strip() == "1"
+        is_test_runtime = not force_real and bool(
             os.environ.get("ORCIA_ENV", "").strip().lower() == "test"
             or os.environ.get("PYTEST_CURRENT_TEST", "").strip()
             or os.environ.get("PYTEST_VERSION", "").strip()
         )
         if is_test_runtime:
             engine_kwargs["poolclass"] = NullPool
+        else:
+            engine_kwargs["pool_size"] = 10
+            engine_kwargs["max_overflow"] = 10
         db_engine = getattr(app.state, "db_engine", None)
         if db_engine is None:
             db_engine = create_async_engine(resolve_database_url(), **engine_kwargs)
@@ -111,6 +115,7 @@ def attach_pg18_repositories(app: FastAPI) -> None:
         "resource_lease_service",
         "permission_broker_service",
         "assistant_folders_and_sharing_service",
+        "assistant_thread_messages_repository",
     ):
         svc_inst = getattr(app.state, attr_name, None)
         if svc_inst is not None and getattr(svc_inst, "_engine", None) is None:

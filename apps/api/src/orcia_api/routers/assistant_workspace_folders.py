@@ -8,9 +8,11 @@ from fastapi import APIRouter, Depends, Query, Request
 
 from orcia_api.dependencies import (
     get_assistant_folders_and_sharing_service,
+    get_assistant_thread_messages_repository,
     get_optional_embedding_port,
 )
 from orcia_api.dependencies._assistant_guards import enforce_assistant_workspace_guard
+from orcia_api.routers._assistant_thread_messages_routes import persist_thread_turn_messages
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.assistant_citations_and_folders import (
     AssistantFolderSchemaItem,
@@ -203,6 +205,17 @@ async def send_collaborative_thread_turn_endpoint(
         sender_user=user,
         message_text=payload.message_text,
         release_lock_after_turn=payload.release_lock_after_turn,
+    )
+    from orcia_core.kernel.ids import new_uuid7_str
+
+    await persist_thread_turn_messages(
+        get_assistant_thread_messages_repository(request),
+        thread_id=thread_id,
+        workspace_id=payload.workspace_id,
+        turn_id=new_uuid7_str(),
+        parent_turn_id=None,
+        user_prompt=payload.message_text,
+        assistant_reply=outcome.assistant_reply_markdown,
     )
     return SendCollaborativeThreadTurnResponse(
         thread_id=outcome.thread_id,

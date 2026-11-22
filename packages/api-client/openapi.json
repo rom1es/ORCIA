@@ -2920,6 +2920,103 @@
         "title": "AssistantSaveAndLaunchResponse",
         "type": "object"
       },
+      "AssistantThreadMessageSchemaItem": {
+        "additionalProperties": false,
+        "description": "Persisted conversational turn message (`D4`, `Story 26.5`).",
+        "properties": {
+          "citation_map": {
+            "additionalProperties": true,
+            "title": "Citation Map",
+            "type": "object"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "created_at": {
+            "default": "",
+            "title": "Created At",
+            "type": "string"
+          },
+          "message_id": {
+            "title": "Message Id",
+            "type": "string"
+          },
+          "parent_turn_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Turn Id"
+          },
+          "role": {
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "thread_id": {
+            "title": "Thread Id",
+            "type": "string"
+          },
+          "token_count": {
+            "default": 0,
+            "title": "Token Count",
+            "type": "integer"
+          },
+          "turn_id": {
+            "title": "Turn Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id",
+          "thread_id",
+          "workspace_id",
+          "turn_id",
+          "role",
+          "content"
+        ],
+        "title": "AssistantThreadMessageSchemaItem",
+        "type": "object"
+      },
+      "AssistantThreadMessagesListResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `GET /api/v1/assistant/threads/{thread_id}/messages` (`Story 26.5`).",
+        "properties": {
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/AssistantThreadMessageSchemaItem"
+            },
+            "title": "Messages",
+            "type": "array"
+          },
+          "thread_id": {
+            "title": "Thread Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "thread_id"
+        ],
+        "title": "AssistantThreadMessagesListResponse",
+        "type": "object"
+      },
       "AssistantThreadSchemaItem": {
         "additionalProperties": false,
         "description": "Thread representation inside a `📁 Dossier` (`Story 10.4`).",
@@ -26758,6 +26855,17 @@
             ],
             "title": "Locale"
           },
+          "parent_turn_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Turn Id"
+          },
           "personal_instructions": {
             "anyOf": [
               {
@@ -37286,6 +37394,159 @@
           }
         ],
         "summary": "Create Assistant Thread Endpoint",
+        "tags": [
+          "assistant-workspace"
+        ]
+      }
+    },
+    "/api/v1/assistant/threads/{thread_id}/messages": {
+      "get": {
+        "description": "List persisted `user` and `assistant` messages for `thread_id` (`D4`, `H-18`).",
+        "operationId": "list_assistant_thread_messages_endpoint_api_v1_assistant_threads__thread_id__messages_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "thread_id",
+            "required": true,
+            "schema": {
+              "title": "Thread Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantThreadMessagesListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List Assistant Thread Messages Endpoint",
         "tags": [
           "assistant-workspace"
         ]

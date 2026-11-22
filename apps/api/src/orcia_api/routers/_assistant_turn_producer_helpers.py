@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-import asyncio
-import contextlib
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import replace
 from typing import Any
 
 from orcia_api.routers._assistant_background_registry import record_prompt_telemetry_entry
+from orcia_api.routers._assistant_thread_messages_routes import persist_thread_turn_messages
+from orcia_api.routers._assistant_turn_liveness_watchdog import (
+    watch_liveness_and_stop as watch_liveness_and_stop,
+)
 from orcia_api.routers._assistant_usage_telemetry import (
     persist_assistant_turn_ledger_entry,
     resolve_usage_with_fallback,
@@ -22,44 +24,6 @@ from orcia_core.orchestration.redis_turn_registry import (
 from orcia_core.ports.assistant_turn_stream_port import AssistantTurnRecord
 
 logger = get_logger("orcia.assistant.llm")
-
-
-async def watch_liveness_and_stop(
-    registry: RedisAssistantTurnRegistry,
-    *,
-    turn_id: str,
-    liveness_ttl_s: int,
-    producer_task: asyncio.Task[None],
-) -> None:
-    """Refresh turn liveness TTL and cancel `producer_task` on cross-worker Redis stop."""
-    beat_s = min(1.0, max(0.2, liveness_ttl_s / 3.0))
-    pubsub = None
-    redis_cli = getattr(registry, "_redis", None)
-    if redis_cli is not None:
-        with contextlib.suppress(Exception):
-            pubsub = redis_cli.pubsub()
-            await pubsub.subscribe(registry.stop_channel(turn_id))
-    try:
-        while not producer_task.done():
-            await registry.refresh_liveness(turn_id, ttl_seconds=liveness_ttl_s)
-            if await registry.is_stop_requested(turn_id) is not None:
-                producer_task.cancel()
-                return
-            if pubsub is not None:
-                with contextlib.suppress(Exception):
-                    msg = await pubsub.get_message(ignore_subscribe_messages=True, timeout=beat_s)
-                    if msg is not None:
-                        producer_task.cancel()
-                        return
-                    continue
-            await asyncio.sleep(beat_s)
-    except asyncio.CancelledError:
-        return
-    finally:
-        if pubsub is not None:
-            with contextlib.suppress(Exception):
-                await pubsub.unsubscribe(registry.stop_channel(turn_id))
-                await pubsub.aclose()
 
 
 async def handle_turn_cancelled(
@@ -194,6 +158,7 @@ async def flush_turn_telemetry_and_finops(
     user_email: str | None,
     user_display_name: str | None,
     outbox_emitter: Any | None = None,
+    thread_messages_repo: Any | None = None,
 ) -> None:
     """Record prompt telemetry and idempotent `audit_ledger` FinOps row inside `finally`."""
     in_tok, out_tok, u_src = resolve_usage_with_fallback(
@@ -242,6 +207,19 @@ async def flush_turn_telemetry_and_finops(
             input_tokens=in_tok,
             output_tokens=out_tok,
             trace_id=record.trace_id,
+        )
+    if record.thread_id and record.status in ("COMPLETED", "STOPPED"):
+        await persist_thread_turn_messages(
+            thread_messages_repo,
+            thread_id=record.thread_id,
+            workspace_id=record.workspace_id,
+            turn_id=record.turn_id,
+            parent_turn_id=record.parent_turn_id,
+            user_prompt=record.user_prompt,
+            assistant_reply=streamed_text,
+            citation_map=record.citation_map,
+            input_tokens=in_tok,
+            output_tokens=out_tok,
         )
 
 

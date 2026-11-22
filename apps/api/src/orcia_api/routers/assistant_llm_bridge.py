@@ -34,34 +34,19 @@ from orcia_api.routers.assistant_llm_prompts import (
     resolve_5_layers_and_ontology_from_request,
     resolve_5_layers_and_ontology_from_request_async,
     resolve_assembled_system_instructions_for_turn_async,
+    resolve_assembled_turn_context_and_instructions_async,
     resolve_request_locale,
 )
 from orcia_api.routers.assistant_llm_providers import (
-    ResolvedLiveLlmEndpoint as ResolvedLiveLlmEndpoint,
-)
-from orcia_api.routers.assistant_llm_providers import (
-    build_legacy_local_chat_url as build_legacy_local_chat_url,
-)
-from orcia_api.routers.assistant_llm_providers import (
-    build_provider_headers as build_provider_headers,
-)
-from orcia_api.routers.assistant_llm_providers import (
-    build_provider_request_body as build_provider_request_body,
-)
-from orcia_api.routers.assistant_llm_providers import (
-    extract_thinking_and_clean_content as extract_thinking_and_clean_content,
-)
-from orcia_api.routers.assistant_llm_providers import (
-    is_anthropic_provider as is_anthropic_provider,
-)
-from orcia_api.routers.assistant_llm_providers import (
-    is_safe_llm_endpoint_url as is_safe_llm_endpoint_url,
-)
-from orcia_api.routers.assistant_llm_providers import (
-    normalize_chat_completions_url as normalize_chat_completions_url,
-)
-from orcia_api.routers.assistant_llm_providers import (
-    stream_provider_chat_sse_async as stream_provider_chat_sse_async,
+    ResolvedLiveLlmEndpoint,
+    build_legacy_local_chat_url,
+    build_provider_headers,
+    build_provider_request_body,
+    extract_thinking_and_clean_content,
+    is_anthropic_provider,
+    is_safe_llm_endpoint_url,
+    normalize_chat_completions_url,
+    stream_provider_chat_sse_async,
 )
 from orcia_api.routers.assistant_llm_resolver import (
     ensure_active_chat_model_if_live as ensure_active_chat_model_if_live,
@@ -94,6 +79,7 @@ class LiveLlmTurnOutcome:
     model_id: str = ""
     inference_tier: str | None = None
     effort: str | None = None
+    citation_map: dict[str, Any] | None = None
 
 
 def resolve_assembled_system_instructions_for_turn(
@@ -156,6 +142,8 @@ async def invoke_configured_llm_for_assistant_turn(
     folder_pinned_notes: str | None = None,
     locale: str | None = None,
     llm_port: LlmStreamingPort | None = None,
+    user: Any | None = None,
+    embedding_port: Any | None = None,
 ) -> LiveLlmTurnOutcome | None:
     """Invoke the configured LLM endpoint via `LlmStreamingPort` with 5-layer prompt & tools."""
     ep = await resolve_configured_llm_endpoint(
@@ -178,12 +166,15 @@ async def invoke_configured_llm_for_assistant_turn(
         if resolved_locale == "en"
         else ("Réflexion Élevée" if effort == "deep" else "Réflexion Standard")
     )
-    system_msg = await resolve_assembled_system_instructions_for_turn_async(
+    system_msg, turn_ctx = await resolve_assembled_turn_context_and_instructions_async(
         request,
         hat=hat,
         speed_mode=speed_mode,
         workspace_id=workspace_id,
         user_id=user_id,
+        user_prompt=user_prompt,
+        user=user,
+        embedding_port=embedding_port,
         requested_tier=requested_tier or ep.tier,
         thinking_effort=effort,
         system_instructions_override=system_instructions_override,
@@ -205,7 +196,10 @@ async def invoke_configured_llm_for_assistant_turn(
         else f"💬 Modèle IA {ep.model_name} ({ep.provider} · {effort_label}) — réponse générée"
     )
     messages = build_multi_turn_messages(
-        system_msg=system_msg, user_prompt=user_prompt, conversation_history=conversation_history
+        system_msg=system_msg,
+        user_prompt=user_prompt,
+        conversation_history=conversation_history,
+        max_tokens_budget=ep.max_tokens_budget,
     )
     tools = build_workspace_tools_schema(request, speed_mode)
 
@@ -260,6 +254,7 @@ async def invoke_configured_llm_for_assistant_turn(
         model_id=ep.model_name,
         inference_tier=requested_tier or ep.tier,
         effort=effort,
+        citation_map=turn_ctx.citation_map_dict,
     )
 
 

@@ -21,6 +21,23 @@ SQL_LIST_ACTIVE_CONCEPTS = sa.text(
     "ORDER BY level ASC, created_at ASC"
 )
 
+SQL_LIST_RELATIONS = sa.text(
+    "SELECT r.id, r.relation_key, src.concept_key, tgt.concept_key, "
+    "r.relation_type, r.cardinality "
+    "FROM ontology_relations r "
+    "JOIN ontology_concepts src ON src.id = r.source_concept_id "
+    "JOIN ontology_concepts tgt ON tgt.id = r.target_concept_id "
+    "ORDER BY r.created_at ASC"
+)
+
+SQL_LIST_AXIOMS = sa.text(
+    "SELECT a.id, a.axiom_key, c.concept_key, a.level, a.scope_id, "
+    "a.rule_expression, a.immutable "
+    "FROM ontology_axioms a "
+    "JOIN ontology_concepts c ON c.id = a.concept_id "
+    "ORDER BY a.immutable DESC, a.created_at ASC"
+)
+
 SQL_FIND_CONCEPT_FOR_UPSERT = sa.text(
     "SELECT id, concept_key, level, scope_id FROM ontology_concepts "
     "WHERE concept_key = :concept_key "

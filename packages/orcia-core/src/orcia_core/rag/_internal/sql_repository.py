@@ -7,11 +7,15 @@ bounded recursive CTE (`WITH RECURSIVE ... WHERE depth <= 2`) on `tripartite_tra
 
 from __future__ import annotations
 
-from typing import cast
-
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from orcia_core.rag._internal.sql_hybrid_search_helpers import (
+    execute_lexical_only_bm25_search,
+    execute_tripartite_traversal,
+    format_halfvec_literal,
+    rows_to_hybrid_hits,
+)
 from orcia_core.rag._internal.sql_rag_writes import upsert_kb_document_bundle_pg
 from orcia_core.rag._internal.sql_state_queries import (
     query_kb_documents_pg,
@@ -28,8 +32,6 @@ from orcia_core.rag.models import (
     KbChunkEntity,
     KbDocumentEntity,
     KbStaleAlertEntity,
-    TripartiteNodeType,
-    TripartiteRelationType,
     TripartiteTraceEdgeEntity,
 )
 
@@ -43,20 +45,28 @@ class SqlHybridRagRepository:
     @staticmethod
     def format_halfvec_literal(embedding: tuple[float, ...], dim: int = 1024) -> str:
         """Format a float vector as a `pgvector` `halfvec(dim)` literal string."""
-        padded = list(embedding[:dim]) + [0.0] * max(0, dim - len(embedding))
-        return "[" + ",".join(f"{v:.6f}" for v in padded) + "]"
+        return format_halfvec_literal(embedding, dim=dim)
 
     async def search_hybrid_rrf(
         self,
         *,
         workspace_id: str,
         query_text: str,
-        query_embedding: tuple[float, ...],
+        query_embedding: tuple[float, ...] | None = None,
         embedding_model_id: str | None = None,
         rrf_k: int = 60,
         limit: int = 5,
     ) -> tuple[HybridRagHit, ...]:
-        """Execute native SQL hybrid search (`halfvec(1024) <=>` + `ts_rank_cd` RRF `k=60`)."""
+        """Execute native SQL hybrid search (`halfvec(1024)` + `ts_rank_cd`) or lexical BM25."""
+        if query_embedding is None:
+            async with self._session_factory() as session:
+                return await execute_lexical_only_bm25_search(
+                    session,
+                    workspace_id=workspace_id,
+                    query_text=query_text,
+                    rrf_k=rrf_k,
+                    limit=limit,
+                )
         vec_literal = self.format_halfvec_literal(query_embedding, dim=1024)
         async with self._session_factory() as session:
             rows = (
@@ -76,6 +86,7 @@ class SqlHybridRagRepository:
                                     c.contextual_header,
                                     COALESCE(p.content_text, c.content_text) AS injected_content,
                                     d.is_stale,
+                                    COALESCE(ds.role, 'ACTIVE') AS datasource_role,
                                     ROW_NUMBER() OVER (
                                         ORDER BY (
                                             CASE
@@ -101,6 +112,7 @@ class SqlHybridRagRepository:
                                     ) AS bm25_rank
                                 FROM kb_chunks c
                                 JOIN kb_documents d ON d.id = c.document_id
+                                LEFT JOIN workspace_datasources ds ON ds.id = d.datasource_id
                                 LEFT JOIN kb_chunks p ON p.id = c.parent_chunk_id
                                 WHERE c.workspace_id = CAST(:workspace_id AS uuid)
                                   AND c.chunk_role != 'PARENT'
@@ -120,6 +132,7 @@ class SqlHybridRagRepository:
                                 contextual_header,
                                 injected_content,
                                 is_stale,
+                                datasource_role,
                                 vector_rank::int AS vector_rank,
                                 bm25_rank::int AS bm25_rank,
                                 ROUND(
@@ -147,31 +160,7 @@ class SqlHybridRagRepository:
                 .mappings()
                 .all()
             )
-            hits: list[HybridRagHit] = []
-            for r in rows:
-                is_stale = bool(r["is_stale"])
-                hits.append(
-                    HybridRagHit(
-                        chunk_key=str(r["chunk_key"]),
-                        parent_chunk_key=str(r["parent_chunk_key"]),
-                        document_key=str(r["document_key"]),
-                        datasource_alias=str(r["datasource_alias"]),
-                        source_uri=str(r["source_uri"]),
-                        revision_tag=str(r["revision_tag"]),
-                        contextual_header=str(r["contextual_header"]),
-                        injected_content=str(r["injected_content"]),
-                        rrf_score=float(r["rrf_score"]),
-                        vector_rank=int(r["vector_rank"]),
-                        bm25_rank=int(r["bm25_rank"]),
-                        is_stale=is_stale,
-                        stale_warning_marker=(
-                            f"[STALE_WARNING: {r['document_key']} @ {r['revision_tag']}]"
-                            if is_stale
-                            else None
-                        ),
-                    )
-                )
-            return tuple(hits)
+            return rows_to_hybrid_hits(rows)
 
     async def traverse_tripartite_neighborhood(
         self,
@@ -181,81 +170,9 @@ class SqlHybridRagRepository:
         max_depth: int = 2,
     ) -> tuple[TripartiteTraceEdgeEntity, ...]:
         """Traverse `tripartite_trace_edges` with a bounded recursive CTE (`depth <= 2`, `AD-8`)."""
-        bounded_depth = min(max(1, max_depth), 2)
         async with self._session_factory() as session:
-            rows = (
-                (
-                    await session.execute(
-                        sa.text(
-                            """
-                            WITH RECURSIVE tripartite_walk AS (
-                                SELECT
-                                    e.id::text AS id,
-                                    e.edge_key,
-                                    e.workspace_id::text AS workspace_id,
-                                    e.source_uri,
-                                    e.source_node_type,
-                                    e.target_uri,
-                                    e.target_node_type,
-                                    e.relation_type,
-                                    e.jira_issue_key,
-                                    1 AS depth
-                                FROM tripartite_trace_edges e
-                                WHERE e.workspace_id = CAST(:workspace_id AS uuid)
-                                  AND (e.source_uri = :seed_uri OR e.target_uri = :seed_uri)
-                                UNION
-                                SELECT
-                                    n.id::text AS id,
-                                    n.edge_key,
-                                    n.workspace_id::text AS workspace_id,
-                                    n.source_uri,
-                                    n.source_node_type,
-                                    n.target_uri,
-                                    n.target_node_type,
-                                    n.relation_type,
-                                    n.jira_issue_key,
-                                    w.depth + 1 AS depth
-                                FROM tripartite_trace_edges n
-                                JOIN tripartite_walk w
-                                  ON n.workspace_id = CAST(:workspace_id AS uuid)
-                                 AND (
-                                     n.source_uri = w.target_uri
-                                     OR n.target_uri = w.source_uri
-                                     OR n.source_uri = w.source_uri
-                                     OR n.target_uri = w.target_uri
-                                 )
-                                WHERE w.depth < :bounded_depth
-                            )
-                            SELECT DISTINCT
-                                id, edge_key, workspace_id, source_uri, source_node_type,
-                                target_uri, target_node_type, relation_type, jira_issue_key
-                            FROM tripartite_walk
-                            ORDER BY edge_key ASC;
-                            """
-                        ),
-                        {
-                            "workspace_id": workspace_id,
-                            "seed_uri": seed_uri,
-                            "bounded_depth": bounded_depth,
-                        },
-                    )
-                )
-                .mappings()
-                .all()
-            )
-            return tuple(
-                TripartiteTraceEdgeEntity(
-                    id=str(r["id"]),
-                    edge_key=str(r["edge_key"]),
-                    workspace_id=str(r["workspace_id"]),
-                    source_uri=str(r["source_uri"]),
-                    source_node_type=cast(TripartiteNodeType, str(r["source_node_type"])),
-                    target_uri=str(r["target_uri"]),
-                    target_node_type=cast(TripartiteNodeType, str(r["target_node_type"])),
-                    relation_type=cast(TripartiteRelationType, str(r["relation_type"])),
-                    jira_issue_key=str(r["jira_issue_key"]) if r["jira_issue_key"] else None,
-                )
-                for r in rows
+            return await execute_tripartite_traversal(
+                session, workspace_id=workspace_id, seed_uri=seed_uri, max_depth=max_depth
             )
 
     async def list_documents_pg(

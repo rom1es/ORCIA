@@ -418,6 +418,23 @@ export interface components {
       version: string;
       workflow_uri: string;
     };
+    AssistantThreadMessageSchemaItem: {
+      citation_map?: Record<string, unknown>;
+      content: string;
+      created_at?: string;
+      message_id: string;
+      parent_turn_id?: string | null;
+      role: "user" | "assistant";
+      thread_id: string;
+      token_count?: number;
+      turn_id: string;
+      workspace_id: string;
+    };
+    AssistantThreadMessagesListResponse: {
+      messages?: (components["schemas"]["AssistantThreadMessageSchemaItem"])[];
+      thread_id: string;
+      workspace_id: string;
+    };
     AssistantThreadSchemaItem: {
       creator_user_id: string;
       folder_id?: string | null;
@@ -4044,6 +4061,7 @@ export interface components {
       folder_pinned_notes?: string | null;
       hat?: string | null;
       locale?: string | null;
+      parent_turn_id?: string | null;
       personal_instructions?: string | null;
       requested_speed?: "SPEED_1_FAST" | "SPEED_2_AGENT_TOOLS" | "SPEED_3_DEEP_AUDIT" | null;
       requested_tier?: "simple" | "medium" | "complex" | "auto" | null;
@@ -5238,6 +5256,13 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["AssistantThreadSchemaItem"];
+      };
+    };
+  };
+  "/api/v1/assistant/threads/{thread_id}/messages": {
+    get: {
+      responses: {
+        200: components["schemas"]["AssistantThreadMessagesListResponse"];
       };
     };
   };
@@ -7023,6 +7048,8 @@ export type AssistantHistorySearchHitSchemaItem = components["schemas"]["Assista
 export type AssistantNodeTraceSchemaItem = components["schemas"]["AssistantNodeTraceSchemaItem"];
 export type AssistantSaveAndLaunchRequest = components["schemas"]["AssistantSaveAndLaunchRequest"];
 export type AssistantSaveAndLaunchResponse = components["schemas"]["AssistantSaveAndLaunchResponse"];
+export type AssistantThreadMessageSchemaItem = components["schemas"]["AssistantThreadMessageSchemaItem"];
+export type AssistantThreadMessagesListResponse = components["schemas"]["AssistantThreadMessagesListResponse"];
 export type AssistantThreadSchemaItem = components["schemas"]["AssistantThreadSchemaItem"];
 export type AssistantTurnAcceptedResponse = components["schemas"]["AssistantTurnAcceptedResponse"];
 export type AssistantTurnFeedbackRequest = components["schemas"]["AssistantTurnFeedbackRequest"];

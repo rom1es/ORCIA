@@ -40,6 +40,9 @@ from orcia_core.orchestration.assistant_folders_and_sharing import (
 from orcia_core.orchestration.assistant_governance import (
     AssistantFourLevelGovernanceService,
 )
+from orcia_core.orchestration.assistant_thread_messages import (
+    SqlAssistantThreadMessagesRepository,
+)
 from orcia_core.orchestration.assistant_three_speed_router import (
     AssistantThreeSpeedRouterService,
 )
@@ -209,6 +212,24 @@ def get_assistant_feedback_repository(
     if repo is None:
         repo = SqlAssistantFeedbackRepository(engine=engine)
         request.app.state.assistant_feedback_repository = repo
+    elif getattr(repo, "_engine", None) is None and engine is not None:
+        repo.set_engine(engine)
+    return repo
+
+
+def get_assistant_thread_messages_repository(
+    request: Request,
+) -> SqlAssistantThreadMessagesRepository:
+    """FastAPI `Depends` provider returning `SqlAssistantThreadMessagesRepository` (PG18)."""
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
+
+    engine = get_configured_db_engine(request)
+    repo: SqlAssistantThreadMessagesRepository | None = getattr(
+        request.app.state, "assistant_thread_messages_repository", None
+    )
+    if repo is None:
+        repo = SqlAssistantThreadMessagesRepository(engine=engine)
+        request.app.state.assistant_thread_messages_repository = repo
     elif getattr(repo, "_engine", None) is None and engine is not None:
         repo.set_engine(engine)
     return repo

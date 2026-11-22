@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from fastapi import FastAPI
 
+from orcia_core.blackboard import list_active_workspace_blackboard_snapshots_pg
 from orcia_core.bootstrap import SqlWizardSessionRepository
 from orcia_core.orchestration import (
     AssistantAgentService,
@@ -14,6 +15,9 @@ from orcia_core.orchestration import (
     ResourceLeaseService,
     UnifiedNotificationAndClaimService,
     WorkflowStudioAndPackService,
+)
+from orcia_core.orchestration.assistant_thread_messages import (
+    SqlAssistantThreadMessagesRepository,
 )
 from orcia_core.orchestration.redis_rate_limiter import RedisAssistantRateLimiter
 from orcia_core.orchestration.redis_turn_registry import RedisAssistantTurnRegistry
@@ -27,8 +31,9 @@ from orcia_core.permissions import (
 from orcia_core.rag import (
     CatalogAndBlackboardContextSourceAdapter,
     ConnectorHubAndIngestionService,
+    HybridRagService,
     HybridRagVectorStoreAdapter,
-    build_seeded_rag_service,
+    SqlHybridRagRepository,
 )
 
 
@@ -106,16 +111,36 @@ def init_runtime_secondary_services(
         )
     if getattr(app.state, "audit_ledger_service", None) is None:
         app.state.audit_ledger_service = SqlAuditLedgerService(engine=db_engine)
+    if getattr(app.state, "assistant_thread_messages_repository", None) is None:
+        app.state.assistant_thread_messages_repository = SqlAssistantThreadMessagesRepository(
+            engine=db_engine
+        )
     if getattr(app.state, "assistant_service", None) is None:
-        seeded_rag, _ = build_seeded_rag_service()
+        session_maker = getattr(app.state, "session_maker", None)
+        if session_maker is None and db_engine is not None:
+            from sqlalchemy.ext.asyncio import async_sessionmaker
+
+            session_maker = async_sessionmaker(db_engine, expire_on_commit=False)
+        sql_rag_repo = SqlHybridRagRepository(session_maker) if session_maker is not None else None
+        runtime_rag = HybridRagService(embedding_port=None)
+
+        async def _load_workspace_blackboard_snapshots(ws_id: str) -> tuple[Any, ...]:
+            if db_engine is None:
+                return ()
+            return await list_active_workspace_blackboard_snapshots_pg(
+                db_engine, workspace_id=ws_id
+            )
+
         app.state.assistant_service = AssistantAgentService(
             context_source=CatalogAndBlackboardContextSourceAdapter(
-                rag_service=seeded_rag,
+                rag_service=runtime_rag,
+                sql_rag_repo=sql_rag_repo,
                 catalog_items_provider=lambda _ws: cat_svc.workflows,
                 blackboard_snapshots_provider=lambda _ws: (),
+                blackboard_snapshots_async_provider=_load_workspace_blackboard_snapshots,
                 permission_policies_provider=lambda _ws: perm_svc.list_policies(),
             ),
-            vector_store=HybridRagVectorStoreAdapter(seeded_rag),
+            vector_store=HybridRagVectorStoreAdapter(runtime_rag, sql_rag_repo=sql_rag_repo),
             llm_gateway=app.state.llm_gateway,
             orchestration_setup=app.state.orchestration_service,
             workflow_engine=app.state.orchestration_service.engine,

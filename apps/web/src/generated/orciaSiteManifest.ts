@@ -11,10 +11,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "activeRoutesCount": 28,
     "uiPrimitivesCount": 137,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 59,
+    "alembicMigrationsCount": 60,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 212,
+    "techLeadReportsCount": 213,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 61,
@@ -262,7 +262,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261120_2402_story_24_2_workspace_dna_mechanisms_pg18",
     "20261120_2403_story_24_3_mcp_exposures_and_audit_contract",
     "20261122_264a_story_26_4a_ai_models_schema_and_assistant_outbox",
-    "20261122_264b_story_26_4b_assistant_feedback_and_folder_meta"
+    "20261122_264b_story_26_4b_assistant_feedback_and_folder_meta",
+    "20261122_265_story_26_5_assistant_thread_messages"
   ],
   "architectureDecisions": [
     {
@@ -545,6 +546,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-22",
+      "phaseOrStory": "Story 26.5",
+      "reportFile": "26-5-real-context-ontology-hybrid-rag-blackboard-and-context-budget-tech-lead-report.md",
+      "domain": "Epic 26 Lot 4 — Real PG18 Ontology Relevance (ProfileSemanticTranslator & Axioms), Async SqlHybridRagRepository, Active Blackboard Snapshots, Server EvidenceTable, assistant_thread_messages & Token Budget Trimmer (CAP-022, CAP-190)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): shipped raw-SQL Alembic revision 20261122_265 (assistant_thread_messages + Day-0 reset guard), PG18 ontology/RAG/Blackboard context pipeline preserving 25.5 optional-embedding invariant, server EvidenceTable (READ_SOURCE/CONFIDENTIAL_RESTRICTED/[STALE_WARNING]), GET /api/v1/assistant/threads/{thread_id}/messages + 0-diff SDK, max_tokens_budget trimmer, and R6 assembly benchmark (cold 160.321 ms, warm p50=62.759 ms / p95=68.447 ms <= 100 ms; ACTION_ITEM-26.3 deferred to 26.7); verified 91% 11-module branch coverage, all 138 unit files + 148 evals/security + 2 contract tests passed, 3/3 26.4b/26.5 PG18 + 7/7 non-regression PG18/Redis tests passed, 9/9 Turbo, 15 passed / 1 skipped / 0 failed Playwright Desktop E2E, all touched source files <= 300 L, ruff/mypy --strict (641 files)/lint-imports (5/5)/export_openapi (0-diff)/detect-secrets clean."
+    },
     {
       "date": "2026-11-22",
       "phaseOrStory": "Story 26.4b",

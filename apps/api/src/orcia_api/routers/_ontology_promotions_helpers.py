@@ -61,6 +61,8 @@ async def load_ontology_topology(
     svc = get_auth_service(request)
     engine = None if fixture else get_configured_db_engine(request)
     if engine is not None:
+        if getattr(getattr(request, "state", None), "_orcia_topology_synced", False):
+            return engine, tuple(svc.evaluator.org_units), tuple(svc.evaluator.workspaces)
         try:
             pg_units, pg_ws = await load_org_and_workspaces_context(engine)
             return engine, pg_units, pg_ws

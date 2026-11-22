@@ -36,6 +36,10 @@ class AssistantTurnRecord:
     output_tokens: int = 0
     usage_source: str = "estimated"
     stopped_by_user_id: str | None = None
+    thread_id: str | None = None
+    parent_turn_id: str | None = None
+    citation_map: dict[str, Any] = field(default_factory=dict)
+    prompt_assembly_latency_ms: float = 0.0
 
 
 @dataclass(frozen=True, slots=True)

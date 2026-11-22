@@ -30,7 +30,15 @@ async def test_alembic_26_4b_reversibility_and_no_mode_b_or_draft_tables(pg18_db
         check=True,
     ).stdout.strip()
     assert len([line for line in heads_out.splitlines() if line.strip()]) == 1
-    assert "20261122_264b" in heads_out
+    history_out = subprocess.run(
+        [alembic_bin, "-c", "infra/migrations/alembic.ini", "history"],
+        cwd=REPO_ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    assert "20261122_264b" in history_out
 
     subprocess.run(
         [alembic_bin, "-c", "infra/migrations/alembic.ini", "downgrade", "20261122_264a"],

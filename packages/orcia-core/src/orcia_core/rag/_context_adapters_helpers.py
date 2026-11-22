@@ -4,9 +4,56 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Iterable
 from typing import Any
 
 from orcia_kernel.context_ports import ContextSliceRecord, VectorSearchHitRecord
+
+
+def build_kb_document_slices(
+    docs: Iterable[Any],
+    *,
+    query_terms: list[str],
+    uri_filter: set[str],
+    current_count: int = 0,
+) -> list[ContextSliceRecord]:
+    """Convert `KbDocumentEntity` records into `ContextSliceRecord` entries."""
+    out: list[ContextSliceRecord] = []
+    for doc in docs:
+        if uri_filter and doc.source_uri not in uri_filter:
+            continue
+        if (
+            query_terms
+            and not any(
+                term in doc.title.lower() or term in doc.source_uri.lower() for term in query_terms
+            )
+            and (current_count + len(out)) >= 4
+        ):
+            continue
+        warn = (
+            f"[STALE_WARNING: age={doc.age_days}d > ttl={doc.freshness_ttl_days}d]"
+            if doc.is_stale
+            else None
+        )
+        out.append(
+            ContextSliceRecord(
+                slice_id=f"kb-{doc.doc_key}",
+                source_uri=doc.source_uri,
+                source_kind="KB_DOCUMENT",
+                content_sha256=doc.content_sha256,
+                title=doc.title,
+                structured_payload={
+                    "doc_key": doc.doc_key,
+                    "indexing_regime": doc.indexing_regime,
+                    "revision_tag": doc.revision_tag,
+                    "datasource_alias": doc.datasource_alias,
+                },
+                text_excerpt=f"{doc.title} ({doc.source_uri}@{doc.revision_tag})",
+                is_stale=doc.is_stale,
+                stale_warning_marker=warn,
+            )
+        )
+    return out
 
 
 def sha256_text(text: str) -> str:
@@ -29,6 +76,48 @@ def to_vector_hits(hits: tuple[Any, ...]) -> tuple[VectorSearchHitRecord, ...]:
         )
         for h in hits
     )
+
+
+def build_catalog_slices(items: Any, *, uri_filter: set[str]) -> list[ContextSliceRecord]:
+    """Convert catalog items into `ContextSliceRecord` entries."""
+    out: list[ContextSliceRecord] = []
+    for item in items:
+        uri = str(
+            item.get("canonical_uri") or item.get("uri") or ""
+            if isinstance(item, dict)
+            else getattr(item, "canonical_uri", None) or getattr(item, "uri", None) or ""
+        )
+        if not uri or (uri_filter and uri not in uri_filter):
+            continue
+        title = str(
+            item.get("display_name") or item.get("title") or uri
+            if isinstance(item, dict)
+            else getattr(item, "display_name", None) or getattr(item, "title", None) or uri
+        )
+        sha = str(
+            item.get("content_sha256") or item.get("sha256") or sha256_text(uri)
+            if isinstance(item, dict)
+            else getattr(item, "content_sha256", None)
+            or getattr(item, "sha256", None)
+            or sha256_text(uri)
+        )
+        kind_val = str(
+            item.get("item_kind") or "WORKFLOW"
+            if isinstance(item, dict)
+            else getattr(item, "item_kind", None) or "WORKFLOW"
+        )
+        out.append(
+            ContextSliceRecord(
+                slice_id=f"cat-{sha[:16]}",
+                source_uri=uri,
+                source_kind="CATALOG_ITEM",
+                content_sha256=sha,
+                title=title,
+                structured_payload={"canonical_uri": uri, "item_kind": kind_val},
+                text_excerpt=f"{title} [{kind_val}] ({uri})",
+            )
+        )
+    return out
 
 
 def build_blackboard_slices(

@@ -123,6 +123,7 @@ class HybridRagHit:
     bm25_rank: int
     is_stale: bool
     stale_warning_marker: str | None = None
+    datasource_role: str = "ACTIVE"
 
 
 @dataclass(frozen=True, slots=True)

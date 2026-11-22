@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from orcia_core.ontology._internal.sql_ontology_context import (
+    list_axioms_pg,
+    list_relations_pg,
+    load_ontology_governance_service_pg,
+)
 from orcia_core.ontology._internal.sql_ontology_mappers import load_org_and_workspaces_context
 from orcia_core.ontology._internal.sql_ontology_repository import (
     create_proposal_pg,
@@ -269,8 +274,11 @@ __all__ = [
     "find_workspace",
     "get_proposal_pg",
     "is_observer_user",
+    "list_axioms_pg",
     "list_concepts_pg",
     "list_proposals_pg",
+    "list_relations_pg",
+    "load_ontology_governance_service_pg",
     "load_org_and_workspaces_context",
     "record_ontology_audit_event_pg",
     "resolve_next_promotion_target",

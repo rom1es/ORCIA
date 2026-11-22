@@ -4,18 +4,23 @@ from __future__ import annotations
 
 import json
 from collections.abc import AsyncIterator
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 
 from orcia_api.dependencies import (
+    get_assistant_thread_messages_repository,
     get_assistant_three_speed_router_service,
     get_llm_streaming_port,
     get_optional_embedding_port,
 )
 from orcia_api.dependencies._assistant_guards import enforce_assistant_workspace_guard
 from orcia_api.routers._assistant_background_registry import get_rate_limiter_from_request
+from orcia_api.routers._assistant_thread_messages_routes import (
+    persist_thread_turn_messages,
+    thread_messages_router,
+)
 from orcia_api.routers._assistant_turns_v2_routes import turns_v2_router
 from orcia_api.routers._assistant_workspace_context import (
     record_non_stream_turn_telemetry,
@@ -28,9 +33,11 @@ from orcia_api.routers.assistant_background_turns import enforce_assistant_rate_
 from orcia_api.routers.assistant_llm_bridge import (
     ensure_active_chat_model_if_live,
     invoke_configured_llm_for_assistant_turn,
-    resolve_assembled_system_instructions_for_turn_async,
     resolve_request_locale,
     stream_configured_llm_for_assistant_turn,
+)
+from orcia_api.routers.assistant_llm_prompts import (
+    resolve_assembled_turn_context_and_instructions_async,
 )
 from orcia_api.routers.assistant_workspace_citations import router as citations_router
 from orcia_api.routers.assistant_workspace_folders import router as folders_router
@@ -95,16 +102,26 @@ async def execute_three_speed_turn_endpoint(
         folder_pinned_notes=resolved_notes,
         locale=payload.locale,
         llm_port=llm_port,
+        user=user,
+        embedding_port=_embedding_port,
     )
-    assembled_sys_prompt = (
-        live_outcome.assembled_system_prompt
-        if live_outcome is not None and live_outcome.assembled_system_prompt
-        else await resolve_assembled_system_instructions_for_turn_async(
+    turn_ctx_citation_map: dict[str, Any] = {}
+    if live_outcome is not None and live_outcome.assembled_system_prompt:
+        assembled_sys_prompt = live_outcome.assembled_system_prompt
+        turn_ctx_citation_map = dict(live_outcome.citation_map or {})
+    else:
+        (
+            assembled_sys_prompt,
+            turn_ctx,
+        ) = await resolve_assembled_turn_context_and_instructions_async(
             request,
             hat=active_hat,
             speed_mode=resolved_speed,
             workspace_id=payload.workspace_id,
             user_id=user.id,
+            user_prompt=payload.user_prompt,
+            user=user,
+            embedding_port=_embedding_port,
             requested_tier=payload.requested_tier,
             thinking_effort=payload.thinking_effort,
             response_tone=payload.response_tone,
@@ -114,7 +131,7 @@ async def execute_three_speed_turn_endpoint(
             folder_pinned_notes=resolved_notes,
             locale=resolve_request_locale(request, payload.locale),
         )
-    )
+        turn_ctx_citation_map = turn_ctx.citation_map_dict
     turn = router_svc.execute_three_speed_turn(
         user,
         workspace_id=payload.workspace_id,
@@ -137,6 +154,19 @@ async def execute_three_speed_turn_endpoint(
         history_count=len(history),
         resolved_notes=resolved_notes,
     )
+    if payload.thread_id:
+        await persist_thread_turn_messages(
+            get_assistant_thread_messages_repository(request),
+            thread_id=payload.thread_id,
+            workspace_id=payload.workspace_id,
+            turn_id=turn.turn_id,
+            parent_turn_id=payload.parent_turn_id,
+            user_prompt=payload.user_prompt,
+            assistant_reply=turn.response_text,
+            citation_map=turn_ctx_citation_map,
+            input_tokens=live_outcome.input_tokens if live_outcome else 0,
+            output_tokens=live_outcome.output_tokens if live_outcome else 0,
+        )
     return ThreeSpeedTurnResponse(
         turn_id=turn.turn_id,
         workspace_id=turn.workspace_id,
@@ -236,6 +266,10 @@ async def stream_three_speed_turn_endpoint(
                     user_display_name=user.display_name,
                     llm_port=llm_port,
                     pre_acquired_lease=pre_lease,
+                    user=user,
+                    embedding_port=_embedding_port,
+                    thread_id=payload.thread_id,
+                    parent_turn_id=payload.parent_turn_id,
                 ):
                     if stream_evt["event"] in (
                         "thinking_delta",
@@ -254,6 +288,7 @@ async def stream_three_speed_turn_endpoint(
 
 
 router.include_router(turns_v2_router)
+router.include_router(thread_messages_router)
 router.include_router(controls_router)
 router.include_router(governance_router)
 router.include_router(citations_router)

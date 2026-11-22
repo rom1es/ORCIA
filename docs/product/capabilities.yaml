@@ -184,15 +184,15 @@ capabilities:
     title: Agent assistant DAG 5 nœuds (AssistantHarness 5 couches)
     fr: [FR-1, FR-13]
     origin: epic
-    origin_ref: 3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc + 25-5 + 26-1
+    origin_ref: 3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc + 25-5 + 26-1 + 26-5
     status: live
     kind: feature
     uj: [UJ-1, UJ-17]
-    db_tables: [workflow_runs, step_executions, blackboard_snapshots, assistant_threads]
-    tests: [tests/unit/test_story_3_3_assistant_agent_5_nodes_and_context_ports.py, tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py, tests/security/test_story_26_1_assistant_security_hardening.py, tests/integration/api/test_story_26_1_assistant_security_postgres18.py, tests/evals/test_assistant_and_ontology_evals.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
+    db_tables: [workflow_runs, step_executions, blackboard_snapshots, assistant_threads, assistant_thread_messages]
+    tests: [tests/unit/test_story_3_3_assistant_agent_5_nodes_and_context_ports.py, tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py, tests/security/test_story_26_1_assistant_security_hardening.py, tests/integration/api/test_story_26_1_assistant_security_postgres18.py, tests/unit/test_story_26_5_real_context_and_budget.py, tests/unit/test_story_26_5_routes_and_adapters.py, tests/evals/test_story_26_5_ontology_relevance_evals.py, tests/integration/api/test_story_26_5_real_context_and_history_postgres18.py, tests/evals/test_assistant_and_ontology_evals.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
     verification: api
-    verified_at: "2026-11-21"
-    surfaces: { api: "/api/v1/assistant + _assistant_guards.py" }
+    verified_at: "2026-11-22"
+    surfaces: { api: "/api/v1/assistant + _assistant_guards.py + _assistant_thread_messages_routes.py" }
   - id: CAP-023
     title: Ancrages humains obligatoires et arbitrage / tie-break
     fr: [FR-4, FR-5]

@@ -36,16 +36,23 @@ class SqlPermissionBrokerRepository:
 
     def __init__(self, engine: object) -> None:
         self._engine: AsyncEngine = cast(AsyncEngine, engine)
+        self._tables_ready_verified = False
+        self._policies_seeded = False
 
     async def pg_tables_ready(self) -> bool:
         """Return `True` when `permission_broker_tickets` exists in PG18."""
+        if self._tables_ready_verified:
+            return True
         async with self._engine.connect() as conn:
             reg = (
                 await conn.execute(
                     sa.text("SELECT to_regclass('public.permission_broker_tickets')")
                 )
             ).scalar()
-            return reg is not None
+            ready = reg is not None
+            if ready:
+                self._tables_ready_verified = True
+            return ready
 
     async def _upsert_policy_on_conn(
         self, conn: AsyncConnection, policy: PermissionBrokerPolicy, *, update_existing: bool
@@ -105,6 +112,8 @@ class SqlPermissionBrokerRepository:
         self, policies: tuple[PermissionBrokerPolicy, ...]
     ) -> list[PermissionBrokerPolicy]:
         """Idempotently seed default/fallback policies into `permission_broker_policies`."""
+        if self._policies_seeded:
+            return await self.list_policies()
         async with self._engine.begin() as conn:
             for pol in policies:
                 await self._upsert_policy_on_conn(conn, pol, update_existing=False)
@@ -117,7 +126,8 @@ class SqlPermissionBrokerRepository:
                 .mappings()
                 .all()
             )
-            return [row_to_policy(r) for r in rows]
+        self._policies_seeded = True
+        return [row_to_policy(r) for r in rows]
 
     async def upsert_policy(self, policy: PermissionBrokerPolicy) -> PermissionBrokerPolicy:
         """Persist or update a KB policy in `permission_broker_policies`."""
@@ -250,20 +260,11 @@ class SqlPermissionBrokerRepository:
     async def get_ticket(self, ticket_id_or_key: str) -> PermissionBrokerTicket | None:
         """Fetch a ticket by UUID `id` or `ticket_key`."""
         cleaned = ticket_id_or_key.strip()
+        sql = sa.text(
+            "SELECT * FROM permission_broker_tickets WHERE id::text = :k OR ticket_key = :k LIMIT 1"
+        )
         async with self._engine.connect() as conn:
-            row = (
-                (
-                    await conn.execute(
-                        sa.text(
-                            "SELECT * FROM permission_broker_tickets "
-                            "WHERE id::text = :k OR ticket_key = :k LIMIT 1"
-                        ),
-                        {"k": cleaned},
-                    )
-                )
-                .mappings()
-                .first()
-            )
+            row = (await conn.execute(sql, {"k": cleaned})).mappings().first()
             return row_to_ticket(row) if row is not None else None
 
     async def update_ticket_state(
@@ -275,21 +276,16 @@ class SqlPermissionBrokerRepository:
     ) -> PermissionBrokerTicket | None:
         """Transition ticket `step_state` and `status` in PG18."""
         cleaned = ticket_id_or_key.strip()
+        sql = sa.text(
+            "UPDATE permission_broker_tickets "
+            "SET step_state = :step_state, status = :status, updated_at = NOW() "
+            "WHERE id::text = :k OR ticket_key = :k RETURNING *"
+        )
         async with self._engine.begin() as conn:
-            row = (
-                (
-                    await conn.execute(
-                        sa.text(
-                            "UPDATE permission_broker_tickets "
-                            "SET step_state = :step_state, status = :status, updated_at = NOW() "
-                            "WHERE id::text = :k OR ticket_key = :k RETURNING *"
-                        ),
-                        {"k": cleaned, "step_state": step_state, "status": status},
-                    )
-                )
-                .mappings()
-                .first()
+            res = await conn.execute(
+                sql, {"k": cleaned, "step_state": step_state, "status": status}
             )
+            row = res.mappings().first()
             return row_to_ticket(row) if row is not None else None
 
 

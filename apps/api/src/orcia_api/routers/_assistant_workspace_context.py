@@ -7,7 +7,10 @@ from typing import Any
 
 from fastapi import Request
 
-from orcia_api.dependencies import get_assistant_folders_and_sharing_service
+from orcia_api.dependencies import (
+    get_assistant_folders_and_sharing_service,
+    get_assistant_thread_messages_repository,
+)
 from orcia_api.routers._assistant_usage_telemetry import (
     persist_assistant_turn_ledger_entry,
     resolve_audit_ledger_sink,
@@ -57,7 +60,7 @@ async def resolve_turn_history(
     *,
     user: UserIdentity | None = None,
 ) -> list[dict[str, Any]]:
-    """Build multi-turn conversation history, checking folder ACLs before loading thread summary."""
+    """Build multi-turn conversation history from PG18 `assistant_thread_messages` with ACLs."""
     history: list[dict[str, Any]] = [
         {"role": m.role, "content": m.content, "name": m.name, "tool_call_id": m.tool_call_id}
         for m in payload.conversation_history
@@ -82,10 +85,14 @@ async def resolve_turn_history(
                     ).get(target_thread.folder_id)
                 if user is not None and folder is not None:
                     enforce_folder_turn_access(folder, user)
-                if target_thread.thread_summary:
-                    for part in target_thread.thread_summary.split(" | "):
-                        if part.strip():
-                            history.append({"role": "user", "content": part.strip()})
+            messages_repo = get_assistant_thread_messages_repository(request)
+            persisted = await messages_repo.list_messages_for_thread(
+                workspace_id=payload.workspace_id,
+                thread_id=payload.thread_id,
+            )
+            for msg in persisted:
+                if msg.content.strip():
+                    history.append({"role": msg.role, "content": msg.content})
         except OrciaDomainError:
             raise
         except Exception as exc:

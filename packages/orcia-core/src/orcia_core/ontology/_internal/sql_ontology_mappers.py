@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from typing import Any, cast
 from uuid import UUID
@@ -10,9 +11,11 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from orcia_core.ontology.models import (
+    OntologyAxiomEntity,
     OntologyConceptEntity,
     OntologyLevel,
     OntologyPromotionProposal,
+    OntologyRelationEntity,
     PromotionStatus,
     SnapshotBranchStatus,
     WhatIfImpactReport,
@@ -90,6 +93,29 @@ def row_to_concept(row: Any) -> OntologyConceptEntity:
     )
 
 
+def row_to_relation(row: Any) -> OntologyRelationEntity:
+    return OntologyRelationEntity(
+        id=str(row[0]),
+        relation_key=str(row[1]),
+        source_concept_key=str(row[2]),
+        target_concept_key=str(row[3]),
+        relation_type=str(row[4]),
+        cardinality=str(row[5] or "1..N"),
+    )
+
+
+def row_to_axiom(row: Any) -> OntologyAxiomEntity:
+    return OntologyAxiomEntity(
+        id=str(row[0]),
+        axiom_key=str(row[1]),
+        concept_key=str(row[2]),
+        level=cast(OntologyLevel, str(row[3])),
+        scope_id=str(row[4]),
+        rule_expression=str(row[5]),
+        immutable=bool(row[6]),
+    )
+
+
 def row_to_proposal(row: Any) -> OntologyPromotionProposal:
     rep = parse_json_dict(row[8])
     impact = WhatIfImpactReport(
@@ -136,25 +162,40 @@ def row_to_proposal(row: Any) -> OntologyPromotionProposal:
     )
 
 
+_TOPOLOGY_TABLES_READY_ENGINES: set[int] = set()
+
+
 async def load_org_and_workspaces_context(
     engine: AsyncEngine,
 ) -> tuple[tuple[OrgUnitNode, ...], tuple[WorkspaceEntity, ...]]:
-    """Load `org_units` and `workspaces` from PG18 in two flat queries (zero N+1)."""
-    async with engine.connect() as conn:
-        org_reg = (await conn.execute(sa.text("SELECT to_regclass('public.org_units')"))).scalar()
-        ws_reg = (await conn.execute(sa.text("SELECT to_regclass('public.workspaces')"))).scalar()
-        if org_reg is None:
-            return (), ()
-        org_rows = (
-            await conn.execute(
-                sa.text(
-                    "SELECT id, slug, name, unit_type, parent_id, billing_enabled, "
-                    "lead_user_id, member_user_ids_jsonb, "
-                    "lead_user_ids_jsonb, ontology_lead_user_ids_jsonb FROM org_units"
-                )
+    """Load `org_units` and `workspaces` from PG18 concurrently across two connections."""
+    eng_key = id(engine)
+    if eng_key not in _TOPOLOGY_TABLES_READY_ENGINES:
+        async with engine.connect() as conn:
+            res = await conn.execute(
+                sa.text("SELECT to_regclass('public.org_units'), to_regclass('public.workspaces')")
             )
-        ).fetchall()
-        units = tuple(
+            row = res.first()
+            if row is not None:
+                if row[0] is None or row[1] is None:
+                    return (), ()
+            elif res.scalar() is None:
+                return (), ()
+            if isinstance(engine, AsyncEngine):
+                _TOPOLOGY_TABLES_READY_ENGINES.add(eng_key)
+
+    async def _fetch_org_units() -> tuple[OrgUnitNode, ...]:
+        async with engine.connect() as conn:
+            org_rows = (
+                await conn.execute(
+                    sa.text(
+                        "SELECT id, slug, name, unit_type, parent_id, billing_enabled, "
+                        "lead_user_id, member_user_ids_jsonb, "
+                        "lead_user_ids_jsonb, ontology_lead_user_ids_jsonb FROM org_units"
+                    )
+                )
+            ).fetchall()
+        return tuple(
             OrgUnitNode(
                 id=str(r[0]),
                 slug=str(r[1]),
@@ -169,17 +210,18 @@ async def load_org_and_workspaces_context(
             )
             for r in org_rows
         )
-        if ws_reg is None:
-            return units, ()
-        ws_rows = (
-            await conn.execute(
-                sa.text(
-                    "SELECT id, slug, name, owner_org_unit_id, visibility_mode, finops_cost_usd "
-                    "FROM workspaces"
+
+    async def _fetch_workspaces() -> tuple[WorkspaceEntity, ...]:
+        async with engine.connect() as conn:
+            ws_rows = (
+                await conn.execute(
+                    sa.text(
+                        "SELECT id, slug, name, owner_org_unit_id, "
+                        "visibility_mode, finops_cost_usd FROM workspaces"
+                    )
                 )
-            )
-        ).fetchall()
-        workspaces = tuple(
+            ).fetchall()
+        return tuple(
             WorkspaceEntity(
                 id=str(r[0]),
                 slug=str(r[1]),
@@ -190,4 +232,6 @@ async def load_org_and_workspaces_context(
             )
             for r in ws_rows
         )
-        return units, workspaces
+
+    units, workspaces = await asyncio.gather(_fetch_org_units(), _fetch_workspaces())
+    return units, workspaces

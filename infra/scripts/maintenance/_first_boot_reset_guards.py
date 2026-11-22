@@ -56,7 +56,8 @@ BASE_CONNECTOR_SCHEMES: tuple[tuple[str, str, str, str], ...] = (
 ORDERED_MUTABLE_TABLES_TO_CLEAR: tuple[str, ...] = (
     "mcp_exposed_agents", "mcp_governed_pat_tokens",
     "jira_staged_actions", "mcp_governed_proposals", "workspace_dna_mechanisms",
-    "assistant_turn_feedback", "assistant_folder_shares", "assistant_threads", "assistant_folders",
+    "assistant_thread_messages", "assistant_turn_feedback", "assistant_folder_shares",
+    "assistant_threads", "assistant_folders",
     "workspace_exception_waivers", "vsm_definitions_v2", "claim_check_artifacts",
     "datasource_webhook_deliveries", "rag_reindexing_pending_ingestions", "rag_reindexing_jobs",
     "finops_connector_quotas", "finops_budget_overrides", "finops_workflow_baselines",

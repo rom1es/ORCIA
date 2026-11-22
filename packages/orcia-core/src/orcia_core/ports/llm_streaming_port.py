@@ -20,6 +20,7 @@ class LlmEndpointConfig:
     tier: str = "medium"
     api_key: str | None = None
     protocol_mode: str = ""
+    max_tokens_budget: int = 8192
 
 
 @dataclass(frozen=True, slots=True)

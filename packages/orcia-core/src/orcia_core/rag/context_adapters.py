@@ -1,25 +1,29 @@
-"""Concrete Adapters for `ContextSourcePort` and `VectorStorePort` (`DEC-CTX-01`, `Story 3.3`).
+"""Concrete Adapters for `ContextSourcePort` and `VectorStorePort` (`DEC-CTX-01`, `Story 26.5`).
 
 Provides:
-- `HybridRagVectorStoreAdapter`: implements `VectorStorePort` on top of `HybridRagIndexingService`
-  (`halfvec(1024)` + BM25 Reciprocal Rank Fusion).
+- `HybridRagVectorStoreAdapter`: implements `VectorStorePort` on top of `SqlHybridRagRepository`
+  (PG18 `halfvec(1024)` + BM25 RRF) and/or `HybridRagService`.
 - `CatalogAndBlackboardContextSourceAdapter`: implements `ContextSourcePort` across JSON payloads,
-  CAS blobs (`sha256:`), KB documents, Federated Catalog items, Blackboard snapshots, and
-  Permission Broker policies without ever reading local Markdown files from disk.
+  CAS blobs (`sha256:`), PG18 KB documents, Federated Catalog items, active PG18 Blackboard
+  snapshots, and Permission Broker policies.
 """
 
 from __future__ import annotations
 
 import asyncio
+import inspect
 import json
 from typing import Any
 
 from orcia_core.rag._context_adapters_helpers import (
     build_blackboard_slices,
+    build_catalog_slices,
+    build_kb_document_slices,
     build_permission_slices,
     sha256_text,
     to_vector_hits,
 )
+from orcia_core.rag._internal.sql_repository import SqlHybridRagRepository
 from orcia_core.rag.hybrid_rag_service import HybridRagService
 from orcia_kernel.context_ports import (
     ContextSliceKind,
@@ -31,15 +35,33 @@ from orcia_kernel.context_ports import (
 
 
 class HybridRagVectorStoreAdapter(VectorStorePort):
-    """`VectorStorePort` adapter backed by `HybridRagService` (`DEC-CTX-01`)."""
+    """`VectorStorePort` adapter backed by PG18 `SqlHybridRagRepository` and `HybridRagService`."""
 
     def __init__(
         self,
         rag_service: HybridRagService,
         embedding_port: Any = None,
+        *,
+        sql_rag_repo: SqlHybridRagRepository | None = None,
+        embedding_model_id: str | None = None,
     ) -> None:
         self._rag = rag_service
         self._embedding_port = embedding_port or getattr(rag_service, "_embedding_port", None)
+        self._sql_rag_repo = sql_rag_repo
+        self._embedding_model_id = embedding_model_id
+
+    async def _resolve_query_embedding_async(
+        self, query_text: str, query_embedding: tuple[float, ...] | None
+    ) -> tuple[float, ...] | None:
+        if query_embedding is not None:
+            return query_embedding
+        if self._embedding_port is None:
+            return None
+        if hasattr(self._embedding_port, "embed_query"):
+            return tuple(await self._embedding_port.embed_query(query_text))
+        if hasattr(self._embedding_port, "embed_query_sync"):
+            return tuple(self._embedding_port.embed_query_sync(query_text))
+        return None
 
     async def hybrid_search_async(
         self,
@@ -50,13 +72,25 @@ class HybridRagVectorStoreAdapter(VectorStorePort):
         top_k: int = 5,
         query_embedding: tuple[float, ...] | None = None,
     ) -> tuple[VectorSearchHitRecord, ...]:
-        """Async hybrid search awaiting `EmbeddingPort.embed_query` natively."""
-        effective_embedding = query_embedding
-        if effective_embedding is None and self._embedding_port is not None:
-            if hasattr(self._embedding_port, "embed_query"):
-                effective_embedding = tuple(await self._embedding_port.embed_query(query_text))
-            elif hasattr(self._embedding_port, "embed_query_sync"):
-                effective_embedding = tuple(self._embedding_port.embed_query_sync(query_text))
+        """Async hybrid search via PG18 `SqlHybridRagRepository` (or in-memory fallback)."""
+        effective_embedding = await self._resolve_query_embedding_async(query_text, query_embedding)
+        if self._sql_rag_repo is not None:
+            fetch_limit = max(top_k, 15) if allowed_datasource_aliases else top_k
+            sql_hits = await self._sql_rag_repo.search_hybrid_rrf(
+                workspace_id=workspace_id,
+                query_text=query_text,
+                query_embedding=effective_embedding,
+                embedding_model_id=self._embedding_model_id,
+                limit=fetch_limit,
+            )
+            if allowed_datasource_aliases:
+                sql_hits = tuple(
+                    h for h in sql_hits if h.datasource_alias in allowed_datasource_aliases
+                )
+            if sql_hits or effective_embedding is None:
+                return to_vector_hits(sql_hits[:top_k])
+        if effective_embedding is None:
+            return ()
         hits = await self._rag.search_hybrid_rrf_async(
             workspace_id=workspace_id,
             query_text=query_text,
@@ -93,7 +127,8 @@ class HybridRagVectorStoreAdapter(VectorStorePort):
                         "HybridRagVectorStoreAdapter.hybrid_search() cannot run inside an active "
                         "event loop; await hybrid_search_async() instead."
                     ) from None
-
+        if effective_embedding is None:
+            return ()
         hits = self._rag.search_hybrid_rrf(
             workspace_id=workspace_id,
             query_text=query_text,
@@ -113,13 +148,17 @@ class CatalogAndBlackboardContextSourceAdapter(ContextSourcePort):
         self,
         *,
         rag_service: HybridRagService | None = None,
+        sql_rag_repo: SqlHybridRagRepository | None = None,
         catalog_items_provider: Any = None,
         blackboard_snapshots_provider: Any = None,
+        blackboard_snapshots_async_provider: Any = None,
         permission_policies_provider: Any = None,
     ) -> None:
         self._rag = rag_service
+        self._sql_rag_repo = sql_rag_repo
         self._catalog_provider = catalog_items_provider
         self._blackboard_provider = blackboard_snapshots_provider
+        self._blackboard_async_provider = blackboard_snapshots_async_provider
         self._permission_provider = permission_policies_provider
         self._custom_slices: list[ContextSliceRecord] = []
 
@@ -151,101 +190,39 @@ class CatalogAndBlackboardContextSourceAdapter(ContextSourcePort):
         self._custom_slices.append(record)
         return record
 
-    def fetch_context_slices(
+    def _collect_static_slices(
         self,
         *,
         workspace_id: str,
         query: str,
-        uris: tuple[str, ...] = (),
-        include_sources: tuple[str, ...] = ("catalog", "blackboard", "permissions", "cas", "kb"),
-    ) -> tuple[ContextSliceRecord, ...]:
-        """Retrieve matching context slices without reading local Markdown files."""
+        uris: tuple[str, ...],
+        include_sources: tuple[str, ...],
+        extra_kb_docs: tuple[Any, ...] = (),
+        bb_snapshots: Any = None,
+    ) -> list[ContextSliceRecord]:
         results: list[ContextSliceRecord] = []
         uri_filter = set(uris)
         query_terms = [t.lower() for t in query.split() if len(t) >= 3]
-
         for custom in self._custom_slices:
-            if uri_filter and custom.source_uri not in uri_filter:
-                continue
-            results.append(custom)
-
-        if "kb" in include_sources and self._rag is not None:
-            for doc in self._rag.list_documents(workspace_id=workspace_id):
-                if uri_filter and doc.source_uri not in uri_filter:
-                    continue
-                if (
-                    query_terms
-                    and not any(
-                        term in doc.title.lower() or term in doc.source_uri.lower()
-                        for term in query_terms
-                    )
-                    and len(results) >= 4
-                ):
-                    continue
-                warn = (
-                    f"[STALE_WARNING: age={doc.age_days}d > ttl={doc.freshness_ttl_days}d]"
-                    if doc.is_stale
-                    else None
+            if not uri_filter or custom.source_uri in uri_filter:
+                results.append(custom)
+        if "kb" in include_sources:
+            docs = extra_kb_docs or (
+                self._rag.list_documents(workspace_id=workspace_id) if self._rag is not None else ()
+            )
+            results.extend(
+                build_kb_document_slices(
+                    docs, query_terms=query_terms, uri_filter=uri_filter, current_count=len(results)
                 )
-                results.append(
-                    ContextSliceRecord(
-                        slice_id=f"kb-{doc.doc_key}",
-                        source_uri=doc.source_uri,
-                        source_kind="KB_DOCUMENT",
-                        content_sha256=doc.content_sha256,
-                        title=doc.title,
-                        structured_payload={
-                            "doc_key": doc.doc_key,
-                            "indexing_regime": doc.indexing_regime,
-                            "revision_tag": doc.revision_tag,
-                            "datasource_alias": doc.datasource_alias,
-                        },
-                        text_excerpt=f"{doc.title} ({doc.source_uri}@{doc.revision_tag})",
-                        is_stale=doc.is_stale,
-                        stale_warning_marker=warn,
-                    )
-                )
-
+            )
         if "catalog" in include_sources and callable(self._catalog_provider):
-            for item in self._catalog_provider(workspace_id):
-                if isinstance(item, dict):
-                    uri = str(item.get("canonical_uri") or item.get("uri") or "")
-                    title = str(item.get("display_name") or item.get("title") or uri)
-                    sha = str(item.get("content_sha256") or item.get("sha256") or sha256_text(uri))
-                    kind_val = str(item.get("item_kind") or "WORKFLOW")
-                else:
-                    uri = str(
-                        getattr(item, "canonical_uri", None) or getattr(item, "uri", None) or ""
-                    )
-                    title = str(
-                        getattr(item, "display_name", None) or getattr(item, "title", None) or uri
-                    )
-                    sha = str(
-                        getattr(item, "content_sha256", None)
-                        or getattr(item, "sha256", None)
-                        or sha256_text(uri)
-                    )
-                    kind_val = str(getattr(item, "item_kind", None) or "WORKFLOW")
-                if not uri or (uri_filter and uri not in uri_filter):
-                    continue
-                results.append(
-                    ContextSliceRecord(
-                        slice_id=f"cat-{sha[:16]}",
-                        source_uri=uri,
-                        source_kind="CATALOG_ITEM",
-                        content_sha256=sha,
-                        title=title,
-                        structured_payload={"canonical_uri": uri, "item_kind": kind_val},
-                        text_excerpt=f"{title} [{kind_val}] ({uri})",
-                    )
-                )
-
-        if "blackboard" in include_sources and callable(self._blackboard_provider):
+            results.extend(
+                build_catalog_slices(self._catalog_provider(workspace_id), uri_filter=uri_filter)
+            )
+        if "blackboard" in include_sources and bb_snapshots is not None:
             results.extend(
                 build_blackboard_slices(
-                    self._blackboard_provider(workspace_id),
-                    workspace_id=workspace_id,
-                    uri_filter=uri_filter,
+                    bb_snapshots, workspace_id=workspace_id, uri_filter=uri_filter
                 )
             )
         if "permissions" in include_sources and callable(self._permission_provider):
@@ -254,5 +231,60 @@ class CatalogAndBlackboardContextSourceAdapter(ContextSourcePort):
                     self._permission_provider(workspace_id), uri_filter=uri_filter
                 )
             )
+        return results
 
-        return tuple(results)
+    def fetch_context_slices(
+        self,
+        *,
+        workspace_id: str,
+        query: str,
+        uris: tuple[str, ...] = (),
+        include_sources: tuple[str, ...] = ("catalog", "blackboard", "permissions", "cas", "kb"),
+    ) -> tuple[ContextSliceRecord, ...]:
+        """Retrieve matching context slices synchronously (in-memory/non-async providers)."""
+        bb_snaps = (
+            self._blackboard_provider(workspace_id)
+            if ("blackboard" in include_sources and callable(self._blackboard_provider))
+            else None
+        )
+        if inspect.isawaitable(bb_snaps):
+            bb_snaps = ()
+        return tuple(
+            self._collect_static_slices(
+                workspace_id=workspace_id,
+                query=query,
+                uris=uris,
+                include_sources=include_sources,
+                bb_snapshots=bb_snaps,
+            )
+        )
+
+    async def fetch_context_slices_async(
+        self,
+        *,
+        workspace_id: str,
+        query: str,
+        uris: tuple[str, ...] = (),
+        include_sources: tuple[str, ...] = ("catalog", "blackboard", "permissions", "cas", "kb"),
+    ) -> tuple[ContextSliceRecord, ...]:
+        """Async context slice loader querying PG18 `blackboard_snapshots` and `kb_documents`."""
+        kb_docs: tuple[Any, ...] = ()
+        if "kb" in include_sources and self._sql_rag_repo is not None:
+            kb_docs = await self._sql_rag_repo.list_documents_pg(workspace_id=workspace_id)
+        bb_snaps: Any = None
+        if "blackboard" in include_sources:
+            if callable(self._blackboard_async_provider):
+                bb_snaps = await self._blackboard_async_provider(workspace_id)
+            elif callable(self._blackboard_provider):
+                maybe = self._blackboard_provider(workspace_id)
+                bb_snaps = await maybe if inspect.isawaitable(maybe) else maybe
+        return tuple(
+            self._collect_static_slices(
+                workspace_id=workspace_id,
+                query=query,
+                uris=uris,
+                include_sources=include_sources,
+                extra_kb_docs=kb_docs,
+                bb_snapshots=bb_snaps,
+            )
+        )

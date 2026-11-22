@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from collections.abc import AsyncIterator
 from typing import Annotated
@@ -11,6 +12,7 @@ from fastapi.responses import StreamingResponse
 
 from orcia_api.dependencies import (
     get_assistant_feedback_repository,
+    get_assistant_thread_messages_repository,
     get_llm_streaming_port,
     get_optional_embedding_port,
 )
@@ -38,7 +40,6 @@ from orcia_api.routers.assistant_background_turns import (
 )
 from orcia_api.routers.assistant_llm_bridge import (
     ensure_active_chat_model_if_live,
-    resolve_assembled_system_instructions_for_turn_async,
     resolve_configured_llm_endpoint,
     resolve_request_locale,
 )
@@ -46,6 +47,7 @@ from orcia_api.routers.assistant_llm_prompts import (
     build_multi_turn_messages,
     build_workspace_tools_schema,
     detect_adaptive_thinking_steps_for_question,
+    resolve_assembled_turn_context_and_instructions_async,
 )
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.assistant import (
@@ -88,18 +90,23 @@ async def create_assistant_turn_v2_endpoint(
     )
     _, _, resolved_speed = resolve_effective_speed(payload)
     active_hat = resolve_default_hat(explicit_hat=payload.hat, user=user)
-    history = await resolve_turn_history(request, payload, user=user)
-    resolved_notes = await resolve_folder_notes(request, payload, user=user)
     resolved_locale = resolve_request_locale(request, payload.locale)
-    ep = await resolve_configured_llm_endpoint(
-        request, requested_tier=payload.requested_tier, workspace_id=payload.workspace_id
+    history, resolved_notes, ep = await asyncio.gather(
+        resolve_turn_history(request, payload, user=user),
+        resolve_folder_notes(request, payload, user=user),
+        resolve_configured_llm_endpoint(
+            request, requested_tier=payload.requested_tier, workspace_id=payload.workspace_id
+        ),
     )
-    system_msg = await resolve_assembled_system_instructions_for_turn_async(
+    system_msg, turn_ctx = await resolve_assembled_turn_context_and_instructions_async(
         request,
         hat=active_hat,
         speed_mode=resolved_speed,
         workspace_id=payload.workspace_id,
         user_id=user.id,
+        user_prompt=payload.user_prompt,
+        user=user,
+        embedding_port=_embedding_port,
         requested_tier=payload.requested_tier or (ep.tier if ep is not None else "medium"),
         thinking_effort=payload.thinking_effort,
         response_tone=payload.response_tone,
@@ -116,6 +123,7 @@ async def create_assistant_turn_v2_endpoint(
         )
     )
     trace_id = str(getattr(getattr(request, "state", None), "trace_id", "") or "")
+    max_budget = ep.max_tokens_budget if ep is not None else 8192
     turn_id = await start_background_assistant_turn(
         registry=get_turn_registry_from_request(request),
         rate_limiter=get_rate_limiter_from_request(request),
@@ -130,7 +138,10 @@ async def create_assistant_turn_v2_endpoint(
         llm_port=llm_port,
         http_client_getter=lambda: request.app.state.http_client,
         messages_builder=lambda: build_multi_turn_messages(
-            system_msg=system_msg, user_prompt=payload.user_prompt, conversation_history=history
+            system_msg=system_msg,
+            user_prompt=payload.user_prompt,
+            conversation_history=history,
+            max_tokens_budget=max_budget,
         ),
         tools_builder=lambda: build_workspace_tools_schema(request, resolved_speed),
         conversation_history_count=len(history),
@@ -145,11 +156,17 @@ async def create_assistant_turn_v2_endpoint(
         speed_mode=resolved_speed,
         locale=resolved_locale,
         instance=str(request.url.path),
+        thread_id=payload.thread_id,
+        parent_turn_id=payload.parent_turn_id,
+        citation_map=turn_ctx.citation_map_dict,
+        prompt_assembly_latency_ms=turn_ctx.assembly_latency_ms,
+        thread_messages_repo=get_assistant_thread_messages_repository(request),
     )
     return AssistantTurnAcceptedResponse(
         turn_id=turn_id,
         workspace_id=payload.workspace_id,
         thread_id=payload.thread_id,
+        parent_turn_id=payload.parent_turn_id,
         speed_mode=resolved_speed,
         status="RUNNING",
         stream_url=f"/api/v1/assistant/turns/{turn_id}/stream",

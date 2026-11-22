@@ -31,6 +31,11 @@ def extract_tier_endpoint_from_dict(item: dict[str, Any]) -> LlmEndpointConfig |
     raw_key = item.get("apiKey")
     api_key = str(raw_key).strip() if isinstance(raw_key, str) and raw_key.strip() else None
     protocol_mode = str(item.get("protocolMode") or item.get("protocol_mode") or "").strip()
+    raw_budget = item.get("maxTokensBudget") or item.get("max_tokens_budget") or 8192
+    try:
+        budget = max(128, int(raw_budget))
+    except (TypeError, ValueError):
+        budget = 8192
     return LlmEndpointConfig(
         provider=provider,
         model_name=model_name,
@@ -39,6 +44,7 @@ def extract_tier_endpoint_from_dict(item: dict[str, Any]) -> LlmEndpointConfig |
         tier=tier_key or "medium",
         api_key=api_key,
         protocol_mode=protocol_mode,
+        max_tokens_budget=budget,
     )
 
 
@@ -114,6 +120,9 @@ async def resolve_configured_llm_endpoint_from_sources(
                                 tier=rec.inference_tier,
                                 api_key=key,
                                 protocol_mode=getattr(rec, "protocol_mode", ""),
+                                max_tokens_budget=max(
+                                    128, int(getattr(rec, "max_tokens_budget", 8192))
+                                ),
                             ),
                             None,
                         )
@@ -158,6 +167,7 @@ async def resolve_configured_llm_endpoint_from_sources(
                     tier=chosen_rec.inference_tier,
                     api_key=None,
                     protocol_mode=getattr(chosen_rec, "protocol_mode", ""),
+                    max_tokens_budget=max(128, int(getattr(chosen_rec, "max_tokens_budget", 8192))),
                 ),
                 None,
             )

@@ -146,3 +146,66 @@ def build_five_layers_preview_items(
             sha256=_compute_sha256_hex(l5_content),
         ),
     )
+
+
+def format_system_instructions_text(
+    *,
+    hat: str,
+    speed_mode: str,
+    requested_tier: str | None,
+    thinking_effort: str | None,
+    assembled_5_layers_prompt: str | None,
+    ontology_concepts_summary: str | None,
+    federated_evidence_summary: str | None,
+    custom_block: str,
+    locale: str,
+) -> str:
+    """Assemble system instructions from layers, evidence, governance, and runtime metadata."""
+    bundle = get_prompt_locale_bundle(locale)
+    profile_spec = resolve_profile_adaptation(hat)
+    reg_label, indicators, _ = resolve_profile_copy_for_locale(profile_spec, locale=locale)
+    effort = (thinking_effort or "").strip().lower() or (
+        "deep"
+        if speed_mode == "SPEED_3_DEEP_AUDIT"
+        else "balanced"
+        if speed_mode == "SPEED_2_AGENT_TOOLS"
+        else "fast"
+    )
+    tier_key = (requested_tier or "medium").strip().lower()
+    tier_guidance = bundle.tier_map.get(tier_key, bundle.tier_default)
+    effort_guidance = (
+        bundle.effort_deep
+        if effort == "deep"
+        else bundle.effort_balanced
+        if effort == "balanced"
+        else bundle.effort_fast
+    )
+    layers_block = (
+        assembled_5_layers_prompt.strip()
+        if assembled_5_layers_prompt and assembled_5_layers_prompt.strip()
+        else (
+            f"{bundle.constitutional_layer_1}\n\n"
+            f"[HUMAN_PROFILE_ADAPTATION_LAYER_3]\n"
+            f"{bundle.register_label}: {reg_label}\n"
+            f"{bundle.indicators_label}: {', '.join(indicators)}"
+        )
+    )
+    ontology_block = (
+        f"\n[ONTOLOGY_L1_L4_CONTEXT]\n{sanitize_layer_marker_tags(ontology_concepts_summary)}"
+        if ontology_concepts_summary and ontology_concepts_summary.strip()
+        else ""
+    )
+    evidence_block = (
+        f"\n\n{federated_evidence_summary.strip()}"
+        if federated_evidence_summary and federated_evidence_summary.strip()
+        else ""
+    )
+    return (
+        f"{layers_block}{ontology_block}{evidence_block}{custom_block}\n\n"
+        f"[ADAPTATION_RUNTIME_METADATA]\n"
+        f"{bundle.active_hat_tpl.format(hat=hat, speed_mode=speed_mode)}\n"
+        f"- {tier_guidance}\n"
+        f"- {effort_guidance}\n"
+        f"{bundle.markdown_rule}\n"
+        f"{bundle.language_rule}"
+    )

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -128,6 +128,7 @@ class ThreeSpeedTurnRequest(BaseModel):
     thinking_effort: Literal["fast", "balanced", "deep"] | None = None
     conversation_history: list[ConversationTurnMessageItem] = Field(default_factory=list)
     thread_id: str | None = None
+    parent_turn_id: str | None = None
     folder_id: str | None = None
     folder_pinned_notes: str | None = None
     response_tone: Literal["SYNTHETIC", "BALANCED", "DETAILED_CODE"] | None = None
@@ -240,6 +241,31 @@ class AssistantTurnFeedbackResponse(BaseModel):
     rating: Literal["up", "down"]
     reason_code: str | None = None
     comment: str | None = None
+
+
+class AssistantThreadMessageSchemaItem(BaseModel):
+    """Persisted conversational turn message (`D4`, `Story 26.5`)."""
+
+    model_config = ConfigDict(extra="forbid")
+    message_id: str
+    thread_id: str
+    workspace_id: str
+    turn_id: str
+    parent_turn_id: str | None = None
+    role: Literal["user", "assistant"]
+    content: str
+    citation_map: dict[str, Any] = Field(default_factory=dict)
+    token_count: int = 0
+    created_at: str = ""
+
+
+class AssistantThreadMessagesListResponse(BaseModel):
+    """Response payload for `GET /api/v1/assistant/threads/{thread_id}/messages` (`Story 26.5`)."""
+
+    model_config = ConfigDict(extra="forbid")
+    workspace_id: str
+    thread_id: str
+    messages: list[AssistantThreadMessageSchemaItem] = Field(default_factory=list)
 
 
 class InvalidatePromptCacheRequest(BaseModel):

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, cast
+from typing import Any, Literal, cast
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -153,3 +153,115 @@ def manifest_to_workspace_settings(
         mcp_ide_config_json=base.mcp_ide_config_json,
         sha256=sha256,
     )
+
+
+SQL_SELECT_MODE_A_BUNDLE = sa.text(
+    """
+    WITH target_ws AS (
+        SELECT id, owner_org_unit_id
+        FROM workspaces
+        WHERE id::text = :ws OR slug = :ws
+        LIMIT 1
+    ),
+    target_user AS (
+        SELECT id
+        FROM users
+        WHERE id::text = :uid OR (:email <> '' AND lower(email) = lower(:email))
+        LIMIT 1
+    )
+    SELECT o.override_layer, o.override_key, o.override_manifest_jsonb, o.sha256
+    FROM workspace_customization_overrides o
+    LEFT JOIN target_ws w ON TRUE
+    LEFT JOIN target_user u ON TRUE
+    WHERE o.target_uri = :uri
+      AND o.override_layer IN ('TEAM', 'WORKSPACE', 'USER')
+      AND (
+          (o.override_layer = 'USER' AND (
+              o.override_key = (
+                  'assistant-user-' || COALESCE(w.id::text, :ws)
+                  || '-' || COALESCE(u.id::text, :uid)
+              )
+              OR o.override_key = ('assistant-user-' || :ws || '-' || :uid)
+              OR (w.id IS NOT NULL AND o.workspace_id = w.id
+                  AND u.id IS NOT NULL AND o.user_id = u.id)
+          ))
+          OR (o.override_layer = 'WORKSPACE' AND (
+              o.override_key = ('assistant-workspace-' || COALESCE(w.id::text, :ws))
+              OR o.override_key = ('assistant-workspace-' || :ws)
+              OR (w.id IS NOT NULL AND o.workspace_id = w.id)
+          ))
+          OR (o.override_layer = 'TEAM' AND (
+              o.override_key = ('assistant-team-' || COALESCE(w.id::text, :ws))
+              OR o.override_key = ('assistant-team-mcp-freeze-' || COALESCE(w.id::text, :ws))
+              OR (w.id IS NOT NULL AND o.workspace_id = w.id)
+              OR (w.owner_org_unit_id IS NOT NULL
+                  AND o.org_unit_id = w.owner_org_unit_id AND o.workspace_id IS NULL)
+          ))
+      )
+    ORDER BY o.created_at DESC
+    """
+)
+
+
+def parse_team_rows(
+    rows: Any,
+) -> tuple[str | None, tuple[bool, Literal["PLATFORM", "TEAM"]] | None]:
+    """Extract `TEAM` instructions and upper-layer MCP freeze flag from override rows."""
+    team_instr: str | None = None
+    frozen_entry: tuple[bool, Literal["PLATFORM", "TEAM"]] | None = None
+    for row in rows:
+        m = decode_manifest(row["override_manifest_jsonb"])
+        if team_instr is None and isinstance(m.get("team_instructions"), str):
+            team_instr = str(m["team_instructions"])
+        if frozen_entry is None and m.get("mcp_frozen") is True:
+            origin = str(m.get("origin", "TEAM"))
+            frozen_entry = (True, "PLATFORM" if origin == "PLATFORM" else "TEAM")
+    return team_instr, frozen_entry
+
+
+def rows_to_mode_a_bundle(
+    rows: Any,
+    *,
+    workspace_id: str,
+    user_id: str,
+    default_user_prefs: UserLayerPreferences,
+    default_ws_settings: WorkspaceLayerSettings,
+) -> tuple[
+    UserLayerPreferences,
+    WorkspaceLayerSettings,
+    str | None,
+    tuple[bool, Literal["PLATFORM", "TEAM"]] | None,
+]:
+    """Decode consolidated Mode A SQL query rows into USER, WORKSPACE, and TEAM state."""
+    user_row: Any = None
+    ws_row: Any = None
+    team_rows: list[Any] = []
+    for row in rows:
+        layer = str(row["override_layer"])
+        if layer == "USER" and user_row is None:
+            user_row = row
+        elif layer == "WORKSPACE" and ws_row is None:
+            ws_row = row
+        elif layer == "TEAM":
+            team_rows.append(row)
+    user_prefs = (
+        manifest_to_user_prefs(
+            workspace_id=workspace_id,
+            user_id=user_id,
+            manifest=decode_manifest(user_row["override_manifest_jsonb"]),
+            sha256=str(user_row["sha256"]),
+        )
+        if user_row is not None
+        else default_user_prefs
+    )
+    ws_settings = (
+        manifest_to_workspace_settings(
+            base=default_ws_settings,
+            manifest=decode_manifest(ws_row["override_manifest_jsonb"]),
+            sha256=str(ws_row["sha256"]),
+        )
+        if ws_row is not None
+        else default_ws_settings
+    )
+    team_instr, frozen_entry = parse_team_rows(team_rows)
+    return user_prefs, ws_settings, team_instr, frozen_entry

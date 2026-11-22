@@ -196,17 +196,17 @@ class AssistantFourLevelGovernanceService(_AssistantGovernanceSyncMixin):
         locale: str = "fr",
         user_email: str | None = None,
     ) -> tuple[AssembledLayerPreviewItem, ...]:
-        """Assemble Tab 3 5-layer preview hydrated from PG18 overrides."""
+        """Assemble Tab 3 5-layer preview hydrated from PG18 overrides in 1 SQL roundtrip."""
         if await self._pg_ready() and self._sql_repo is not None:
-            team_instr, _ = await self._sql_repo.get_team_layer_state(workspace_id)
+            user_prefs, ws_settings, team_instr = await self._sql_repo.get_mode_a_layers_bundle(
+                workspace_id=workspace_id, user_id=user_id, user_email=user_email
+            )
             return build_five_layers_preview_items(
                 workspace_id=workspace_id,
                 user_id=user_id,
                 pack_key=pack_key,
-                user_prefs=await self._sql_repo.get_user_preferences(
-                    workspace_id=workspace_id, user_id=user_id, user_email=user_email
-                ),
-                ws_settings=await self._sql_repo.get_workspace_settings(workspace_id),
+                user_prefs=user_prefs,
+                ws_settings=ws_settings,
                 team_instr=team_instr or self._default_team_instructions(locale),
                 locale=locale,
             )

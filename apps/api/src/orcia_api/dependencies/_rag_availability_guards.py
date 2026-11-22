@@ -65,7 +65,7 @@ async def get_embedding_port(request: Request) -> EmbeddingPort:
         engine = get_or_create_shared_db_engine(request)
 
     if engine is not None:
-        async with engine.begin() as conn:
+        async with engine.connect() as conn:
             await check_rag_operational_on_conn(conn)
 
     explicit_port = getattr(request.app.state, "embedding_port", None)
@@ -80,7 +80,7 @@ async def get_embedding_port(request: Request) -> EmbeddingPort:
         auth_svc = request.app.state.auth_service
 
     if engine is not None:
-        async with engine.begin() as conn:
+        async with engine.connect() as conn:
             resolved = await get_active_global_embedding_model_pg18(
                 conn, cipher=auth_svc.vault_cipher
             )

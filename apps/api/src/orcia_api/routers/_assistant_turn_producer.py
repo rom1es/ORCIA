@@ -57,6 +57,7 @@ async def execute_turn_producer_task(
     locale: str,
     instance: str,
     outbox_emitter: Any | None = None,
+    thread_messages_repo: Any | None = None,
 ) -> None:
     """Execute background LLM turn, push events to Redis Stream, and flush FinOps in `finally`."""
     record = initial_record
@@ -94,6 +95,7 @@ async def execute_turn_producer_task(
             user_email=user_email,
             user_display_name=user_display_name,
             outbox_emitter=outbox_emitter,
+            thread_messages_repo=thread_messages_repo,
         )
 
     try:

@@ -25,7 +25,6 @@ from orcia_core.orchestration.assistant_harness import AssistantHarness, Assista
 from orcia_core.rag.errors import NoActiveEmbeddingModelError, RagReindexInProgressError
 from orcia_kernel.context_ports import (
     AssistantWorkflowBlueprint,
-    ContextSliceRecord,
     ContextSourcePort,
     VectorSearchHitRecord,
     VectorStorePort,
@@ -147,9 +146,15 @@ async def execute_assistant_nodes_async(
         if rag_active
         else ("catalog", "blackboard", "permissions", "cas")
     )
-    raw_slices: tuple[ContextSliceRecord, ...] = context_source.fetch_context_slices(
-        workspace_id=workspace_id, query=expanded_query, include_sources=ctx_sources
-    )
+    async_fetch = getattr(context_source, "fetch_context_slices_async", None)
+    if callable(async_fetch):
+        raw_slices = await async_fetch(
+            workspace_id=workspace_id, query=expanded_query, include_sources=ctx_sources
+        )
+    else:
+        raw_slices = context_source.fetch_context_slices(
+            workspace_id=workspace_id, query=expanded_query, include_sources=ctx_sources
+        )
     effective_allowed = allowed_source_uris
     if source_uri_authorizer is not None:
         raw_uris = [*(h.source_uri for h in raw_hits), *(s.source_uri for s in raw_slices)]

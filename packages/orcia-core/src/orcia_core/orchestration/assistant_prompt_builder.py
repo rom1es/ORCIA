@@ -24,6 +24,7 @@ from orcia_core.orchestration.assistant_prompt_locales import get_prompt_locale_
 from orcia_core.orchestration.assistant_prompt_preview import (
     build_five_layers_preview_items,
     format_governance_and_folder_sections,
+    format_system_instructions_text,
 )
 from orcia_core.orchestration.assistant_prompt_preview import (
     resolve_default_hat as resolve_default_hat,
@@ -206,6 +207,7 @@ class AssistantPromptBuilder:
         allow_system_override: bool = False,
         assembled_5_layers_prompt: str | None = None,
         ontology_concepts_summary: str | None = None,
+        federated_evidence_summary: str | None = None,
         response_tone: str | None = None,
         response_format: str | None = None,
         personal_instructions: str | None = None,
@@ -213,7 +215,7 @@ class AssistantPromptBuilder:
         folder_pinned_notes: str | None = None,
         locale: str = "fr",
     ) -> str:
-        """Build complete 5-layer + ontology + preferences system prompt (`AD-15`)."""
+        """Build complete 5-layer + ontology + evidence + preferences system prompt (`AD-15`)."""
         if system_instructions_override and system_instructions_override.strip():
             if not allow_system_override:
                 raise ImmutableHarnessBoundaryError(
@@ -221,40 +223,6 @@ class AssistantPromptBuilder:
                 )
             return system_instructions_override.strip()
 
-        bundle = get_prompt_locale_bundle(locale)
-        profile_spec = resolve_profile_adaptation(hat)
-        reg_label, indicators, _ = resolve_profile_copy_for_locale(profile_spec, locale=locale)
-        effort = (thinking_effort or "").strip().lower() or (
-            "deep"
-            if speed_mode == "SPEED_3_DEEP_AUDIT"
-            else "balanced"
-            if speed_mode == "SPEED_2_AGENT_TOOLS"
-            else "fast"
-        )
-        tier_key = (requested_tier or "medium").strip().lower()
-        tier_guidance = bundle.tier_map.get(tier_key, bundle.tier_default)
-        effort_guidance = (
-            bundle.effort_deep
-            if effort == "deep"
-            else bundle.effort_balanced
-            if effort == "balanced"
-            else bundle.effort_fast
-        )
-        layers_block = (
-            assembled_5_layers_prompt.strip()
-            if assembled_5_layers_prompt and assembled_5_layers_prompt.strip()
-            else (
-                f"{bundle.constitutional_layer_1}\n\n"
-                f"[HUMAN_PROFILE_ADAPTATION_LAYER_3]\n"
-                f"{bundle.register_label}: {reg_label}\n"
-                f"{bundle.indicators_label}: {', '.join(indicators)}"
-            )
-        )
-        ontology_block = (
-            f"\n[ONTOLOGY_L1_L4_CONTEXT]\n{sanitize_layer_marker_tags(ontology_concepts_summary)}"
-            if ontology_concepts_summary and ontology_concepts_summary.strip()
-            else ""
-        )
         custom_block = self.format_governance_and_folder_block(
             response_tone=response_tone,
             response_format=response_format,
@@ -263,14 +231,16 @@ class AssistantPromptBuilder:
             folder_pinned_notes=folder_pinned_notes,
             locale=locale,
         )
-        return (
-            f"{layers_block}{ontology_block}{custom_block}\n\n"
-            f"[ADAPTATION_RUNTIME_METADATA]\n"
-            f"{bundle.active_hat_tpl.format(hat=hat, speed_mode=speed_mode)}\n"
-            f"- {tier_guidance}\n"
-            f"- {effort_guidance}\n"
-            f"{bundle.markdown_rule}\n"
-            f"{bundle.language_rule}"
+        return format_system_instructions_text(
+            hat=hat,
+            speed_mode=speed_mode,
+            requested_tier=requested_tier,
+            thinking_effort=thinking_effort,
+            assembled_5_layers_prompt=assembled_5_layers_prompt,
+            ontology_concepts_summary=ontology_concepts_summary,
+            federated_evidence_summary=federated_evidence_summary,
+            custom_block=custom_block,
+            locale=locale,
         )
 
     def build_five_layers_preview(

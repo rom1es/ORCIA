@@ -9,13 +9,13 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from orcia_core.orchestration._internal._sql_assistant_governance_queries import (
+    SQL_SELECT_MODE_A_BUNDLE,
     SQL_UPSERT_OVERRIDE,
-    decode_manifest,
-    manifest_to_user_prefs,
-    manifest_to_workspace_settings,
+    parse_team_rows,
     resolve_optional_user_uuid,
     resolve_ws_context,
     row_to_override_record,
+    rows_to_mode_a_bundle,
 )
 from orcia_core.orchestration.assistant_agent import ASSISTANT_WORKFLOW_URI
 from orcia_core.orchestration.assistant_governance_models import (
@@ -37,59 +37,68 @@ class SqlAssistantGovernanceRepository:
 
     def __init__(self, engine: AsyncEngine) -> None:
         self._engine = engine
+        self._tables_ready_verified = False
 
     async def pg_tables_ready(self) -> bool:
         """Return `True` when `workspace_customization_overrides` exists in PG18."""
+        if self._tables_ready_verified:
+            return True
         async with self._engine.connect() as conn:
             reg = (
                 await conn.execute(
                     sa.text("SELECT to_regclass('public.workspace_customization_overrides')")
                 )
             ).scalar()
-            return reg is not None
+            ready = reg is not None
+            if ready:
+                self._tables_ready_verified = True
+            return ready
 
-    async def get_user_preferences(
-        self, *, workspace_id: str, user_id: str, user_email: str | None = None
-    ) -> UserLayerPreferences:
-        """Load `USER` layer override from PG18 or return deterministic defaults."""
+    async def get_mode_a_layers_bundle(
+        self,
+        *,
+        workspace_id: str,
+        user_id: str,
+        user_email: str | None = None,
+    ) -> tuple[UserLayerPreferences, WorkspaceLayerSettings, str | None]:
+        """Load `USER`, `WORKSPACE`, and `TEAM` Mode A overrides in 1 consolidated SQL query."""
         async with self._engine.connect() as conn:
-            ws_key, ws_uuid, _ = await resolve_ws_context(conn, workspace_id)
-            u_uuid = await resolve_optional_user_uuid(conn, user_id=user_id, email=user_email)
-            u_key = str(u_uuid) if u_uuid is not None else user_id.strip()
-            row = (
+            rows = (
                 (
                     await conn.execute(
-                        sa.text(
-                            "SELECT override_manifest_jsonb, sha256 "
-                            "FROM workspace_customization_overrides "
-                            "WHERE target_uri = :uri AND override_layer = 'USER' "
-                            "AND (override_key = :ov_key OR override_key = :raw_key "
-                            "OR (CAST(:ws_uuid AS uuid) IS NOT NULL "
-                            "AND workspace_id = CAST(:ws_uuid AS uuid) "
-                            "AND CAST(:u_uuid AS uuid) IS NOT NULL "
-                            "AND user_id = CAST(:u_uuid AS uuid))) "
-                            "ORDER BY created_at DESC LIMIT 1"
-                        ),
+                        SQL_SELECT_MODE_A_BUNDLE,
                         {
+                            "ws": workspace_id.strip(),
+                            "uid": user_id.strip(),
+                            "email": (user_email or "").strip(),
                             "uri": ASSISTANT_WORKFLOW_URI,
-                            "ov_key": f"assistant-user-{ws_key}-{u_key}",
-                            "raw_key": f"assistant-user-{workspace_id}-{user_id}",
-                            "ws_uuid": str(ws_uuid) if ws_uuid is not None else None,
-                            "u_uuid": str(u_uuid) if u_uuid is not None else None,
                         },
                     )
                 )
                 .mappings()
-                .first()
+                .all()
             )
-        if row is None:
-            return build_default_user_preferences(workspace_id=workspace_id, user_id=user_id)
-        return manifest_to_user_prefs(
+        user_prefs, ws_settings, team_instr, frozen_entry = rows_to_mode_a_bundle(
+            rows,
             workspace_id=workspace_id,
             user_id=user_id,
-            manifest=decode_manifest(row["override_manifest_jsonb"]),
-            sha256=str(row["sha256"]),
+            default_user_prefs=build_default_user_preferences(
+                workspace_id=workspace_id, user_id=user_id
+            ),
+            default_ws_settings=build_default_workspace_layer_settings(workspace_id),
         )
+        if frozen_entry is not None and frozen_entry[0]:
+            ws_settings = build_frozen_workspace_settings(ws_settings, origin=frozen_entry[1])
+        return user_prefs, ws_settings, team_instr
+
+    async def get_user_preferences(
+        self, *, workspace_id: str, user_id: str, user_email: str | None = None
+    ) -> UserLayerPreferences:
+        """Load `USER` layer override from PG18 via consolidated bundle query."""
+        user_prefs, _, _ = await self.get_mode_a_layers_bundle(
+            workspace_id=workspace_id, user_id=user_id, user_email=user_email
+        )
+        return user_prefs
 
     async def upsert_user_preferences(
         self,
@@ -153,16 +162,7 @@ class SqlAssistantGovernanceRepository:
                 .mappings()
                 .all()
             )
-        team_instr: str | None = None
-        frozen_entry: tuple[bool, Literal["PLATFORM", "TEAM"]] | None = None
-        for row in rows:
-            m = decode_manifest(row["override_manifest_jsonb"])
-            if team_instr is None and isinstance(m.get("team_instructions"), str):
-                team_instr = str(m["team_instructions"])
-            if frozen_entry is None and m.get("mcp_frozen") is True:
-                origin = str(m.get("origin", "TEAM"))
-                frozen_entry = (True, "PLATFORM" if origin == "PLATFORM" else "TEAM")
-        return team_instr, frozen_entry
+        return parse_team_rows(rows)
 
     async def set_team_mcp_frozen(
         self,
@@ -200,43 +200,11 @@ class SqlAssistantGovernanceRepository:
             )
 
     async def get_workspace_settings(self, workspace_id: str) -> WorkspaceLayerSettings:
-        """Load `WORKSPACE` layer settings from PG18, merging any upper `TEAM` MCP freeze."""
-        _, frozen_entry = await self.get_team_layer_state(workspace_id)
-        async with self._engine.connect() as conn:
-            ws_key, ws_uuid, _ = await resolve_ws_context(conn, workspace_id)
-            row = (
-                (
-                    await conn.execute(
-                        sa.text(
-                            "SELECT override_manifest_jsonb, sha256 "
-                            "FROM workspace_customization_overrides "
-                            "WHERE target_uri = :uri AND override_layer = 'WORKSPACE' "
-                            "AND (override_key = :ov_key OR override_key = :raw_key "
-                            "OR (CAST(:ws_uuid AS uuid) IS NOT NULL "
-                            "AND workspace_id = CAST(:ws_uuid AS uuid))) "
-                            "ORDER BY created_at DESC LIMIT 1"
-                        ),
-                        {
-                            "uri": ASSISTANT_WORKFLOW_URI,
-                            "ov_key": f"assistant-workspace-{ws_key}",
-                            "raw_key": f"assistant-workspace-{workspace_id}",
-                            "ws_uuid": str(ws_uuid) if ws_uuid is not None else None,
-                        },
-                    )
-                )
-                .mappings()
-                .first()
-            )
-        base = build_default_workspace_layer_settings(workspace_id)
-        if row is not None:
-            base = manifest_to_workspace_settings(
-                base=base,
-                manifest=decode_manifest(row["override_manifest_jsonb"]),
-                sha256=str(row["sha256"]),
-            )
-        if frozen_entry is not None and frozen_entry[0]:
-            return build_frozen_workspace_settings(base, origin=frozen_entry[1])
-        return base
+        """Load `WORKSPACE` layer settings from PG18 via consolidated bundle query."""
+        _, ws_settings, _ = await self.get_mode_a_layers_bundle(
+            workspace_id=workspace_id, user_id="__ws_probe__"
+        )
+        return ws_settings
 
     async def upsert_workspace_settings(
         self,

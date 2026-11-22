@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 import os
 from typing import TYPE_CHECKING, Any
 
@@ -9,11 +10,7 @@ from fastapi import Request
 
 from orcia_core.bootstrap import SystemBootstrapWorkflowService
 from orcia_core.catalog import FederatedCatalogService
-from orcia_core.ontology import (
-    OntologyGovernanceService,
-    build_empty_ontology_service,
-    build_seeded_ontology_service,
-)
+from orcia_core.ontology import OntologyGovernanceService
 from orcia_core.permissions import (
     AuthAndOrganizationService,
     PermissionBrokerService,
@@ -22,7 +19,6 @@ from orcia_core.rag import (
     HybridRagService,
     TripartiteGraphAndFreshnessService,
     build_empty_rag_service,
-    build_seeded_rag_service,
 )
 
 if TYPE_CHECKING:
@@ -141,23 +137,40 @@ _OntologyRagBundle = tuple[
 ]
 
 
+def _resolve_override_embedding_port_safe(request: Request, embedding_port: Any) -> Any:
+    if embedding_port is not None:
+        return embedding_port
+    from orcia_api.dependencies.portal_and_assistant import get_embedding_port
+    from orcia_core.rag.errors import NoActiveEmbeddingModelError, RagReindexInProgressError
+
+    override = request.app.dependency_overrides.get(get_embedding_port)
+    if override is None:
+        return None
+    try:
+        res = override()
+    except (NoActiveEmbeddingModelError, RagReindexInProgressError):
+        return None
+    if inspect.isawaitable(res):
+        if hasattr(res, "close"):
+            res.close()
+        return None
+    return res
+
+
 def get_ontology_and_rag_services(
     request: Request, *, fixture: bool = False, embedding_port: Any = None
 ) -> _OntologyRagBundle:
-    """Return either the empty runtime Ontology/RAG bundle or the deterministic test fixture."""
+    """Return either the runtime Ontology/RAG bundle or the deterministic test fixture."""
     if fixture:
         seeded: _OntologyRagBundle | None = getattr(
             request.app.state, "ontology_rag_seeded_bundle", None
         )
         if seeded is None:
-            gov = build_seeded_ontology_service()
-            emb_port = embedding_port
-            if emb_port is None:
-                from orcia_api.dependencies.portal_and_assistant import get_embedding_port
+            from orcia_core.ontology import build_seeded_ontology_service
+            from orcia_core.rag import build_seeded_rag_service
 
-                override = request.app.dependency_overrides.get(get_embedding_port)
-                if override is not None:
-                    emb_port = override()
+            gov = build_seeded_ontology_service()
+            emb_port = _resolve_override_embedding_port_safe(request, embedding_port)
             rag, trip = build_seeded_rag_service(embedding_port=emb_port)
             seeded = (gov, rag, trip)
             request.app.state.ontology_rag_seeded_bundle = seeded
@@ -167,14 +180,8 @@ def get_ontology_and_rag_services(
         request.app.state, "ontology_rag_runtime_bundle", None
     )
     if runtime is None:
-        gov = build_empty_ontology_service()
-        emb_port = embedding_port
-        if emb_port is None:
-            from orcia_api.dependencies.portal_and_assistant import get_embedding_port
-
-            override = request.app.dependency_overrides.get(get_embedding_port)
-            if override is not None:
-                emb_port = override()
+        gov = OntologyGovernanceService()
+        emb_port = _resolve_override_embedding_port_safe(request, embedding_port)
         rag, trip = build_empty_rag_service(embedding_port=emb_port)
         runtime = (gov, rag, trip)
         request.app.state.ontology_rag_runtime_bundle = runtime
