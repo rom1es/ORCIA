@@ -1,15 +1,14 @@
-"""3-Speed Conversational Models & Prompt Cache Contracts (`Story 10.2`, `Story 26.1`)."""
+"""3-Speed Conversational Models (`Story 10.2`, `Story 26.1`, `Story 26.4a`)."""
 
 from __future__ import annotations
 
 import re
-import time
 from dataclasses import dataclass, field
-from typing import Literal, Protocol
+from typing import Literal
 
 from orcia_core.orchestration.assistant_governance_models import AssembledLayerPreviewItem
 
-PROMPT_CACHE_TTL_SECONDS: int = 300
+PROMPT_CACHE_TTL_SECONDS: int = 0
 MAX_NODES_1_TO_4_DETERMINISTIC_MS: float = 80.0
 SPEED_1_TTFT_SLO_MS: float = 1200.0
 SPEED_2_TTFT_SLO_MS: float = 2500.0
@@ -25,57 +24,14 @@ _AGENT_OR_SKILL_PATTERN = re.compile(r"(?:^|\s)(@[a-zA-Z0-9_-]+|/[a-zA-Z0-9_-]+)
 
 
 def build_assistant_prompt_cache_key(workspace_id: str, user_id: str, hat: str) -> str:
-    """Build canonical Redis key `assistant:prompt:<workspace_id>:<user_id>:<hat>`."""
+    """Build canonical prompt context key `assistant:prompt:<workspace_id>:<user_id>:<hat>`."""
     norm_hat = hat.strip().upper() or "PM"
     return f"assistant:prompt:{workspace_id}:{user_id}:{norm_hat}"
 
 
-class AssembledPromptCachePort(Protocol):
-    """Hexagonal port for `assistant:prompt:<workspace_id>:<user_id>:<hat>` caching."""
-
-    def get(self, key: str) -> str | None:
-        """Read cached JSON payload in `< 5 ms`."""
-
-    def set_with_ttl(
-        self, key: str, value: str, ttl_seconds: int = PROMPT_CACHE_TTL_SECONDS
-    ) -> None:
-        """Store JSON payload with `TTL = 300s`."""
-
-    def delete_by_prefix(self, prefix: str) -> int:
-        """Delete all keys matching `prefix` and return the number of evicted keys."""
-
-
-class InMemoryPromptCacheStore:
-    """Default deterministic in-memory implementation of `AssembledPromptCachePort`."""
-
-    def __init__(self) -> None:
-        self._entries: dict[str, tuple[str, float]] = {}
-
-    def get(self, key: str) -> str | None:
-        entry = self._entries.get(key)
-        if entry is None:
-            return None
-        val, expires_at = entry
-        if time.monotonic() >= expires_at:
-            self._entries.pop(key, None)
-            return None
-        return val
-
-    def set_with_ttl(
-        self, key: str, value: str, ttl_seconds: int = PROMPT_CACHE_TTL_SECONDS
-    ) -> None:
-        self._entries[key] = (value, time.monotonic() + float(ttl_seconds))
-
-    def delete_by_prefix(self, prefix: str) -> int:
-        matching = [k for k in self._entries if k.startswith(prefix)]
-        for k in matching:
-            self._entries.pop(k, None)
-        return len(matching)
-
-
 @dataclass(frozen=True, slots=True)
 class CachedAssembledPromptResult:
-    """5-layer prompt resolved from cache (`< 5 ms`) or freshly assembled (`Story 10.2`)."""
+    """5-layer prompt assembled directly without caching under `R6` (`Story 26.4a`)."""
 
     cache_key: str
     cache_hit: bool
@@ -88,12 +44,11 @@ class CachedAssembledPromptResult:
 
 @dataclass(frozen=True, slots=True)
 class PromptCacheInvalidationOutcome:
-    """Result of invalidating `assistant:prompt:<workspace_id>:*` on Outbox / Override."""
+    """No-op outcome returned by legacy invalidation compatibility path (`R6`)."""
 
     workspace_id: str
     reason: PromptCacheInvalidationReason
     invalidated_keys_count: int
-    outbox_event_id: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -148,10 +103,8 @@ def detect_conversational_speed_mode(
 
 
 __all__ = [
-    "AssembledPromptCachePort",
     "AssistantSpeedMode",
     "CachedAssembledPromptResult",
-    "InMemoryPromptCacheStore",
     "MAX_NODES_1_TO_4_DETERMINISTIC_MS",
     "PROMPT_CACHE_TTL_SECONDS",
     "PromptCacheInvalidationOutcome",

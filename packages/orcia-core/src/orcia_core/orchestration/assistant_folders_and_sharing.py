@@ -4,7 +4,7 @@ Collaborative Sharing (`🔒 | 👥 | 📦`, `AD-21`) & Redis Turn Lock (`AD-4`,
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from orcia_core.orchestration._assistant_folders_async_ops import _AssistantFoldersAsyncOpsMixin
 from orcia_core.orchestration._assistant_folders_helpers import (
@@ -28,12 +28,13 @@ from orcia_core.orchestration._assistant_folders_models import (
     FolderVisibilityMode,
     FolderWorkflowLaunchPreparation,
     Layer5FolderMemoryInjection,
-    _ActiveTurnLockEntry,
 )
 from orcia_core.orchestration._assistant_folders_sync import _AssistantFoldersSyncMixin
 from orcia_core.orchestration._internal.sql_assistant_folders import SqlAssistantFoldersRepository
 from orcia_core.orchestration.errors import ResourceNotFoundError, ValidationDomainError
+from orcia_core.orchestration.redis_thread_lock import RedisThreadTurnLock
 from orcia_core.permissions.models import UserIdentity
+from orcia_core.ports.assistant_turn_stream_port import ThreadTurnLockPort
 from orcia_kernel.ids import new_uuid7_str
 
 if TYPE_CHECKING:
@@ -43,8 +44,18 @@ if TYPE_CHECKING:
 class AssistantFoldersAndSharingService(_AssistantFoldersAsyncOpsMixin, _AssistantFoldersSyncMixin):
     """Domain service for Story 10.4 (`📁 Dossiers`, Layer 5 Memory, Sharing & Redis Turn Lock)."""
 
-    def __init__(self, *, engine: AsyncEngine | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        engine: AsyncEngine | None = None,
+        redis_client: Any | None = None,
+        thread_lock: ThreadTurnLockPort | None = None,
+    ) -> None:
         self._engine: AsyncEngine | None = engine
+        self._redis_client: Any | None = redis_client
+        self._thread_lock: ThreadTurnLockPort = thread_lock or RedisThreadTurnLock(
+            redis_client=redis_client
+        )
         self._sql_repo: SqlAssistantFoldersRepository | None = (
             SqlAssistantFoldersRepository(engine) if engine is not None else None
         )
@@ -52,12 +63,17 @@ class AssistantFoldersAndSharingService(_AssistantFoldersAsyncOpsMixin, _Assista
         self._threads: dict[str, AssistantThreadSummary] = {}
         self._folder_meta: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {}
         self._workspace_members: dict[str, set[str]] = {}
-        self._turn_locks: dict[str, _ActiveTurnLockEntry] = {}
 
     def set_engine(self, engine: AsyncEngine | None) -> None:
         """Bind or refresh the SQLAlchemy `AsyncEngine` from the Composition Root."""
         self._engine = engine
         self._sql_repo = SqlAssistantFoldersRepository(engine) if engine is not None else None
+
+    def set_redis_client(self, redis_client: Any | None) -> None:
+        """Bind or refresh the async Redis client for distributed thread turn locks."""
+        self._redis_client = redis_client
+        if isinstance(self._thread_lock, RedisThreadTurnLock):
+            self._thread_lock.set_redis_client(redis_client)
 
     async def _pg_ready(self) -> bool:
         return self._sql_repo is not None and await self._sql_repo.pg_tables_ready()
@@ -187,9 +203,9 @@ class AssistantFoldersAndSharingService(_AssistantFoldersAsyncOpsMixin, _Assista
         message_text: str,
         release_lock_after_turn: bool = False,
     ) -> CollaborativeThreadTurnResult:
-        """Execute and persist a collaborative thread turn in PG18."""
+        """Execute and persist a collaborative thread turn in PG18 under Redis `SET NX EX`."""
         if not await self._pg_ready():
-            return self.send_collaborative_thread_turn(
+            return await self._send_collaborative_turn_fallback_async(
                 workspace_id=workspace_id,
                 thread_id=thread_id,
                 sender_user=sender_user,
@@ -207,7 +223,7 @@ class AssistantFoldersAndSharingService(_AssistantFoldersAsyncOpsMixin, _Assista
             else None
         )
         enforce_folder_turn_access(folder, sender_user)
-        lock_key = self.acquire_thread_turn_lock(
+        lock_key, lock_token = await self._thread_lock.acquire_async(
             thread_id=thread_id, user_id=sender_user.id, ttl_seconds=THREAD_TURN_LOCK_TTL_SECONDS
         )
         personal_passthrough = f"passthrough:oidc:{sender_user.id}:{sender_user.email}"
@@ -222,7 +238,9 @@ class AssistantFoldersAndSharingService(_AssistantFoldersAsyncOpsMixin, _Assista
         )
         self._threads[thread_id] = updated
         if release_lock_after_turn:
-            self.release_thread_turn_lock(thread_id=thread_id, user_id=sender_user.id)
+            await self._thread_lock.release_async(
+                thread_id=thread_id, user_id=sender_user.id, token=lock_token
+            )
         return build_turn_result(
             thread=updated,
             folder=folder,

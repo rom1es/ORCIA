@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from orcia_core.orchestration.assistant_outbox_emitter import AssistantOutboxEmitter
 from orcia_core.orchestration.llm_usage_telemetry import (
     estimate_tokens_deterministic as estimate_tokens_deterministic,
 )
@@ -35,10 +36,28 @@ def resolve_audit_ledger_sink(request: Any | None) -> AuditLedgerSinkPort | None
     return None
 
 
+def resolve_assistant_outbox_emitter(request: Any | None) -> AssistantOutboxEmitter | None:
+    """Resolve `AssistantOutboxEmitter` backed by `SqlDomainEventsOutboxRepository`."""
+    state = getattr(getattr(request, "app", None), "state", None)
+    if state is None:
+        return None
+    cached = getattr(state, "assistant_outbox_emitter", None)
+    if isinstance(cached, AssistantOutboxEmitter):
+        return cached
+    emitter = AssistantOutboxEmitter.from_uow_or_engine(
+        uow=getattr(state, "dbos_uow", None),
+        engine=getattr(state, "db_engine", None),
+    )
+    if emitter is not None:
+        state.assistant_outbox_emitter = emitter
+    return emitter
+
+
 __all__ = [
     "estimate_tokens_deterministic",
     "extract_usage_tokens_from_payload",
     "persist_assistant_turn_ledger_entry",
+    "resolve_assistant_outbox_emitter",
     "resolve_audit_ledger_sink",
     "resolve_usage_with_fallback",
 ]

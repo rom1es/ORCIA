@@ -28,7 +28,6 @@ from testcontainers.postgres import PostgresContainer
 
 from orcia_core.orchestration._internal.sql_ai_model_mappings import (
     create_ai_model_mapping_pg18,
-    ensure_ai_model_mappings_schema_on_postgres18,
 )
 from orcia_core.permissions import UserIdentity
 from orcia_core.permissions.crypto import PassthroughVaultCipher
@@ -306,7 +305,6 @@ async def test_story_20_4_profile_summary_and_assistant_telemetry_postgres18(
                     },
                 )
 
-            await ensure_ai_model_mappings_schema_on_postgres18(conn)
             await create_ai_model_mapping_pg18(
                 conn,
                 cipher=PassthroughVaultCipher("orcia-story-20-4-vault-key-0001"),

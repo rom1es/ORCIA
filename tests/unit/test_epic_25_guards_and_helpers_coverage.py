@@ -131,10 +131,6 @@ async def test_ai_models_helpers_env_var_observer_and_ephemeral_http(
         "orcia_api.routers._ai_models_helpers.get_ai_model_mapping_pg18",
         AsyncMock(return_value=mapping),
     )
-    monkeypatch.setattr(
-        "orcia_api.routers._ai_models_helpers.ensure_ai_model_mappings_schema_on_postgres18",
-        AsyncMock(),
-    )
 
     @asynccontextmanager
     async def _begin():

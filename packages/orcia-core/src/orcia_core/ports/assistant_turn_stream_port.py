@@ -165,6 +165,31 @@ class AssistantRateLimiterPort(Protocol):
         ...
 
 
+@runtime_checkable
+class ThreadTurnLockPort(Protocol):
+    """Port for distributed thread turn mutex (`SET lock:thread:<thread_id> NX EX`, `AD-4`)."""
+
+    async def acquire_async(
+        self,
+        *,
+        thread_id: str,
+        user_id: str,
+        ttl_seconds: int = 60,
+    ) -> tuple[str, str]:
+        """Acquire atomic thread turn lock returning `(lock_key, lock_token)` or raising."""
+        ...
+
+    async def release_async(
+        self,
+        *,
+        thread_id: str,
+        user_id: str,
+        token: str | None = None,
+    ) -> bool:
+        """Atomically release thread turn lock only if held by `(user_id, token)`."""
+        ...
+
+
 __all__ = [
     "AssistantRateLimiterPort",
     "AssistantTurnRecord",
@@ -172,4 +197,5 @@ __all__ = [
     "AssistantTurnStatus",
     "AssistantTurnStreamEvent",
     "AssistantTurnStreamPort",
+    "ThreadTurnLockPort",
 ]

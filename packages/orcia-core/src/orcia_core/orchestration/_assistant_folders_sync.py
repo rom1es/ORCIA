@@ -1,9 +1,8 @@
-"""Synchronous in-memory & Redis-lock operations mixin for `AssistantFoldersAndSharingService`."""
+"""Synchronous & Redis-lock operations mixin for `AssistantFoldersAndSharingService`."""
 
 from __future__ import annotations
 
-import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from orcia_core.orchestration._assistant_folders_helpers import (
     assemble_layer5_injection,
@@ -27,9 +26,9 @@ from orcia_core.orchestration._assistant_folders_models import (
     FolderVisibilityMode,
     FolderWorkflowLaunchPreparation,
     Layer5FolderMemoryInjection,
-    _ActiveTurnLockEntry,
 )
-from orcia_core.orchestration.errors import ResourceNotFoundError, ThreadTurnLockHeldError
+from orcia_core.orchestration.errors import ResourceNotFoundError
+from orcia_core.orchestration.redis_thread_lock import RedisThreadTurnLock
 from orcia_core.permissions.models import UserIdentity
 from orcia_kernel.ids import new_uuid7_str
 
@@ -40,14 +39,14 @@ if TYPE_CHECKING:
 
 
 class _AssistantFoldersSyncMixin:
-    """In-memory fallback & Redis turn lock primitives for unit tests and local state."""
+    """In-memory test fallback & Redis turn lock primitives."""
 
     _sql_repo: SqlAssistantFoldersRepository | None
     _folders: dict[str, AssistantFolderRecord]
     _threads: dict[str, AssistantThreadSummary]
     _folder_meta: dict[str, tuple[tuple[str, ...], tuple[str, ...]]]
     _workspace_members: dict[str, set[str]]
-    _turn_locks: dict[str, _ActiveTurnLockEntry]
+    _thread_lock: Any
 
     @staticmethod
     def build_thread_lock_key(thread_id: str) -> str:
@@ -209,29 +208,16 @@ class _AssistantFoldersSyncMixin:
         self, *, thread_id: str, user_id: str, ttl_seconds: int = THREAD_TURN_LOCK_TTL_SECONDS
     ) -> str:
         """Acquire atomic turn lock `SET lock:thread:<thread_id> <user_id> NX EX 60` (`AD-4`)."""
-        now = time.monotonic()
-        existing = self._turn_locks.get(thread_id)
-        if (
-            existing is not None
-            and existing.expires_at_monotonic > now
-            and existing.holder_user_id != user_id
-        ):
-            raise ThreadTurnLockHeldError(
-                detail_override=(
-                    f"Verrou de tour Redis actif sur {self.build_thread_lock_key(thread_id)} "
-                    f"(détenu par '{existing.holder_user_id}')."
-                )
-            )
-        self._turn_locks[thread_id] = _ActiveTurnLockEntry(
-            holder_user_id=user_id, expires_at_monotonic=now + ttl_seconds
+        lock_impl = getattr(self, "_thread_lock", None) or RedisThreadTurnLock()
+        lock_key, _ = lock_impl.acquire_sync(
+            thread_id=thread_id, user_id=user_id, ttl_seconds=ttl_seconds
         )
-        return self.build_thread_lock_key(thread_id)
+        return str(lock_key)
 
     def release_thread_turn_lock(self, *, thread_id: str, user_id: str) -> None:
         """Release the turn lock if held by `user_id`."""
-        existing = self._turn_locks.get(thread_id)
-        if existing is not None and existing.holder_user_id == user_id:
-            del self._turn_locks[thread_id]
+        lock_impl = getattr(self, "_thread_lock", None) or RedisThreadTurnLock()
+        lock_impl.release_sync(thread_id=thread_id, user_id=user_id)
 
     def send_collaborative_thread_turn(
         self,

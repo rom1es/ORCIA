@@ -12,6 +12,7 @@ from typing import Any
 import httpx
 
 from orcia_api.routers._assistant_turn_producer_helpers import (
+    emit_stream_error_and_outbox,
     flush_turn_telemetry_and_finops,
     handle_turn_cancelled,
     handle_turn_failure,
@@ -22,10 +23,7 @@ from orcia_core.observability.logging import get_logger, scrub_sensitive_text
 from orcia_core.orchestration.llm_streaming_httpx import HttpxMultiProviderLlmStreamingAdapter
 from orcia_core.orchestration.llm_streaming_sse_utils import delta_to_sse_dict
 from orcia_core.orchestration.redis_rate_limiter import RedisAssistantRateLimiter
-from orcia_core.orchestration.redis_turn_registry import (
-    RedisAssistantTurnRegistry,
-    build_rfc9457_stream_error_payload,
-)
+from orcia_core.orchestration.redis_turn_registry import RedisAssistantTurnRegistry
 from orcia_core.ports.assistant_turn_stream_port import AssistantTurnRecord
 from orcia_core.ports.llm_streaming_port import (
     LlmEndpointConfig,
@@ -58,6 +56,7 @@ async def execute_turn_producer_task(
     audit_ledger_sink: Any | None,
     locale: str,
     instance: str,
+    outbox_emitter: Any | None = None,
 ) -> None:
     """Execute background LLM turn, push events to Redis Stream, and flush FinOps in `finally`."""
     record = initial_record
@@ -71,6 +70,32 @@ async def execute_turn_producer_task(
     )
     obs_in, obs_out, saw_usage, obs_lat = 0, 0, False, 0.0
     streamed_text, thinking_text, emitted_tokens = "", "", False
+    flushed = False
+    model_label = ep.model_name if ep is not None else "Polyvalent"
+
+    async def _flush_once(rec: AssistantTurnRecord) -> None:
+        nonlocal flushed
+        if flushed:
+            return
+        flushed = True
+        await flush_turn_telemetry_and_finops(
+            record=rec,
+            t0=t0,
+            streamed_text=streamed_text,
+            thinking_text=thinking_text,
+            obs_in=obs_in,
+            obs_out=obs_out,
+            saw_usage=saw_usage,
+            obs_lat=obs_lat,
+            model_label=model_label,
+            conversation_history_count=conversation_history_count,
+            folder_pinned_notes=folder_pinned_notes,
+            audit_ledger_sink=audit_ledger_sink,
+            user_email=user_email,
+            user_display_name=user_display_name,
+            outbox_emitter=outbox_emitter,
+        )
+
     try:
         active_port = llm_port
         use_streaming_port = ep is not None or (
@@ -95,6 +120,7 @@ async def execute_turn_producer_task(
                 tools=tuple(tools_builder()),
                 include_thoughts=True,
             )
+            pending_completed_data: dict[str, Any] | None = None
             async for delta in active_port.stream_chat_sse(req):
                 evt = delta_to_sse_dict(delta)
                 raw_data = evt.get("data")
@@ -106,30 +132,18 @@ async def execute_turn_producer_task(
                     emitted_tokens = True
                     streamed_text = str(data_dict.get("accumulated_text") or "")
                 elif evt["event"] == "stream_error":
-                    err_code = str(data_dict.get("error_code") or "ERR_INTERNAL_SERVER_ERROR")
-                    err_status = int(data_dict.get("status") or 502)
-                    err_payload = build_rfc9457_stream_error_payload(
-                        turn_id=turn_id,
-                        seq=0,
-                        trace_id=record.trace_id,
-                        error_code=err_code,
-                        status=err_status,
+                    await emit_stream_error_and_outbox(
+                        registry=registry,
+                        record=record,
+                        t0=t0,
+                        error_code=str(data_dict.get("error_code") or "ERR_INTERNAL_SERVER_ERROR"),
+                        status=int(data_dict.get("status") or 502),
                         detail_override=str(data_dict.get("message") or ""),
-                        instance=instance,
-                        locale=locale,
-                    )
-                    record = replace(
-                        record,
-                        status="ERROR",
-                        error_code=err_code,
-                        error_message=str(err_payload["detail"]),
                         thinking_text=thinking_text,
                         streamed_text=streamed_text,
-                        elapsed_ms=round((time.perf_counter() - t0) * 1000.0, 2),
-                    )
-                    await registry.update_turn(record)
-                    await registry.append_event(
-                        turn_id, event="stream_error", data=err_payload, ttl_seconds=1800
+                        instance=instance,
+                        locale=locale,
+                        outbox_emitter=outbox_emitter,
                     )
                     return
                 elif evt["event"] == "turn_completed":
@@ -141,6 +155,8 @@ async def execute_turn_producer_task(
                     obs_lat = float(data_dict.get("latency_ms") or 0.0)
                     streamed_text = str(data_dict.get("response_text") or streamed_text)
                     thinking_text = str(data_dict.get("thinking_text") or thinking_text)
+                    pending_completed_data = data_dict
+                    continue
                 await registry.append_event(turn_id, event=evt["event"], data=data_dict)
             if emitted_tokens:
                 record = replace(
@@ -150,31 +166,32 @@ async def execute_turn_producer_task(
                     streamed_text=streamed_text,
                     elapsed_ms=round((time.perf_counter() - t0) * 1000.0, 2),
                 )
+                await _flush_once(record)
+                await registry.set_stream_ttl(turn_id, ttl_seconds=1800)
+                if pending_completed_data is not None:
+                    await registry.append_event(
+                        turn_id,
+                        event="turn_completed",
+                        data=pending_completed_data,
+                        ttl_seconds=1800,
+                    )
                 await registry.update_turn(record)
                 return
-            err_payload = build_rfc9457_stream_error_payload(
-                turn_id=turn_id,
-                seq=0,
-                trace_id=record.trace_id,
+            await emit_stream_error_and_outbox(
+                registry=registry,
+                record=record,
+                t0=t0,
                 error_code="ERR_INTERNAL_SERVER_ERROR",
                 status=502,
                 detail_override=(
                     f"AI model {stream_ep.model_name} ({stream_ep.endpoint_uri}) "
                     "returned zero tokens. Verify provider availability."
                 ),
+                thinking_text=thinking_text,
+                streamed_text=streamed_text,
                 instance=instance,
                 locale=locale,
-            )
-            record = replace(
-                record,
-                status="ERROR",
-                error_code="ERR_INTERNAL_SERVER_ERROR",
-                error_message=str(err_payload["detail"]),
-                elapsed_ms=round((time.perf_counter() - t0) * 1000.0, 2),
-            )
-            await registry.update_turn(record)
-            await registry.append_event(
-                turn_id, event="stream_error", data=err_payload, ttl_seconds=1800
+                outbox_emitter=outbox_emitter,
             )
             return
 
@@ -217,7 +234,8 @@ async def execute_turn_producer_task(
             streamed_text=streamed_text,
             elapsed_ms=obs_lat,
         )
-        await registry.update_turn(record)
+        await _flush_once(record)
+        await registry.set_stream_ttl(turn_id, ttl_seconds=1800)
         await registry.append_event(
             turn_id,
             event="turn_completed",
@@ -233,6 +251,7 @@ async def execute_turn_producer_task(
                 "trace_id": record.trace_id,
             },
         )
+        await registry.update_turn(record)
     except asyncio.CancelledError:
         record = await handle_turn_cancelled(
             registry=registry,
@@ -243,6 +262,8 @@ async def execute_turn_producer_task(
             obs_in=obs_in,
             obs_out=obs_out,
             saw_usage=saw_usage,
+            outbox_emitter=outbox_emitter,
+            flush_before_emit=_flush_once,
         )
     except Exception as exc:
         logger.warning(
@@ -260,28 +281,14 @@ async def execute_turn_producer_task(
             streamed_text=streamed_text,
             instance=instance,
             locale=locale,
+            outbox_emitter=outbox_emitter,
         )
     finally:
         watcher.cancel()
         with contextlib.suppress(asyncio.CancelledError, Exception):
             await watcher
-        if record.status in ("COMPLETED", "STOPPED") or emitted_tokens:
-            await flush_turn_telemetry_and_finops(
-                record=record,
-                t0=t0,
-                streamed_text=streamed_text,
-                thinking_text=thinking_text,
-                obs_in=obs_in,
-                obs_out=obs_out,
-                saw_usage=saw_usage,
-                obs_lat=obs_lat,
-                model_label=ep.model_name if ep is not None else "Polyvalent",
-                conversation_history_count=conversation_history_count,
-                folder_pinned_notes=folder_pinned_notes,
-                audit_ledger_sink=audit_ledger_sink,
-                user_email=user_email,
-                user_display_name=user_display_name,
-            )
+        if not flushed and (record.status in ("COMPLETED", "STOPPED") or emitted_tokens):
+            await _flush_once(record)
         await registry.clear_liveness(turn_id)
         await registry.set_stream_ttl(turn_id, ttl_seconds=1800)
         await rate_limiter.release_concurrency_slot(record.user_id, lease_token)

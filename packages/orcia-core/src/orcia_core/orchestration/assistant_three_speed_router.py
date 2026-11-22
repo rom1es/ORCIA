@@ -1,15 +1,12 @@
-"""Story 10.2 — TTFT < 1.2s Guarantee, 5-Layer Prompt Cache & 3-Speed Conversational Router."""
+"""Story 10.2 / 26.4a — TTFT < 1.2s, Direct 5-Layer Prompt Assembly (`R6`) & 3-Speed Router."""
 
 from __future__ import annotations
 
+import hashlib
 import time
 from collections.abc import AsyncIterator, Iterator
 
 from orcia_core.observability.logging import get_logger
-from orcia_core.orchestration._assistant_three_speed_cache import (
-    decode_cached_prompt,
-    encode_assembled_prompt,
-)
 from orcia_core.orchestration.assistant_governance import (
     AssistantFourLevelGovernanceService,
 )
@@ -18,10 +15,8 @@ from orcia_core.orchestration.assistant_three_speed_models import (
     PROMPT_CACHE_TTL_SECONDS,
     SPEED_1_TTFT_SLO_MS,
     SPEED_2_TTFT_SLO_MS,
-    AssembledPromptCachePort,
     AssistantSpeedMode,
     CachedAssembledPromptResult,
-    InMemoryPromptCacheStore,
     PromptCacheInvalidationOutcome,
     PromptCacheInvalidationReason,
     ThreeSpeedStepProgressItem,
@@ -37,22 +32,18 @@ from orcia_core.orchestration.assistant_three_speed_steps import (
 )
 from orcia_core.orchestration.errors import ObserverModeReadOnlyError
 from orcia_core.permissions.models import UserIdentity
-from orcia_kernel.ids import new_uuid7_str
 
 logger = get_logger(__name__)
 
 
 class AssistantThreeSpeedRouterService:
-    """Domain service for 5-layer prompt caching (`TTL 300s`) and 3-Speed routing."""
+    """Domain service for direct 5-layer prompt assembly (`R6`) and 3-Speed routing."""
 
     def __init__(
         self,
         governance_service: AssistantFourLevelGovernanceService | None = None,
-        cache_store: AssembledPromptCachePort | None = None,
     ) -> None:
         self._governance = governance_service or AssistantFourLevelGovernanceService()
-        self._cache = cache_store or InMemoryPromptCacheStore()
-        self._invalidation_log: list[PromptCacheInvalidationOutcome] = []
 
     @property
     def governance_service(self) -> AssistantFourLevelGovernanceService:
@@ -67,21 +58,16 @@ class AssistantThreeSpeedRouterService:
         pack_key: str | None = None,
         locale: str = "fr",
     ) -> CachedAssembledPromptResult:
-        """Read assembled 5-layer prompt from cache (`< 5 ms`) or populate with `TTL = 300s`."""
+        """Assemble 5-layer prompt directly with latency measurement (no cache under `R6`)."""
         norm_hat = hat.strip().upper() or "ARCHITECT"
         key = build_assistant_prompt_cache_key(workspace_id, user_id, norm_hat)
         t0 = time.perf_counter()
-        cached_raw = self._cache.get(key)
-        elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 3)
-
-        if cached_raw is not None:
-            return decode_cached_prompt(cache_key=key, cached_raw=cached_raw, elapsed_ms=elapsed_ms)
-
         layers = self._governance.assemble_five_layers_preview(
             workspace_id=workspace_id, user_id=user_id, pack_key=pack_key, locale=locale
         )
-        assembled_text, digest, payload = encode_assembled_prompt(layers)
-        self._cache.set_with_ttl(key, payload, ttl_seconds=PROMPT_CACHE_TTL_SECONDS)
+        assembled_text = "\n\n".join(f"### {layer.label}\n{layer.content}" for layer in layers)
+        digest = hashlib.sha256(assembled_text.encode("utf-8")).hexdigest()
+        elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 3)
         return CachedAssembledPromptResult(
             cache_key=key,
             cache_hit=False,
@@ -99,21 +85,13 @@ class AssistantThreeSpeedRouterService:
         reason: PromptCacheInvalidationReason,
         user_id: str | None = None,
     ) -> PromptCacheInvalidationOutcome:
-        """Invalidate cached 5-layer prompts on `SettingsChanged`, override update, or Glossary."""
-        prefix = (
-            f"assistant:prompt:{workspace_id}:{user_id}:"
-            if user_id is not None
-            else f"assistant:prompt:{workspace_id}:"
-        )
-        evicted = self._cache.delete_by_prefix(prefix)
-        outcome = PromptCacheInvalidationOutcome(
+        """No-op prompt cache invalidation under `R6` measure-first policy (zero forged IDs)."""
+        _ = user_id
+        return PromptCacheInvalidationOutcome(
             workspace_id=workspace_id,
             reason=reason,
-            invalidated_keys_count=evicted,
-            outbox_event_id=new_uuid7_str(),
+            invalidated_keys_count=0,
         )
-        self._invalidation_log.append(outcome)
-        return outcome
 
     def execute_three_speed_turn(
         self,
@@ -257,11 +235,9 @@ class AssistantThreeSpeedRouterService:
 
 
 __all__ = [
-    "AssembledPromptCachePort",
     "AssistantSpeedMode",
     "AssistantThreeSpeedRouterService",
     "CachedAssembledPromptResult",
-    "InMemoryPromptCacheStore",
     "MAX_NODES_1_TO_4_DETERMINISTIC_MS",
     "PROMPT_CACHE_TTL_SECONDS",
     "PromptCacheInvalidationOutcome",

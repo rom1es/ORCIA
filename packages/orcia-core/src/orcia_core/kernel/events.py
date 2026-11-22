@@ -6,6 +6,12 @@ All event classes are re-exported here for public backward-compatible use.
 
 from __future__ import annotations
 
+from orcia_core.kernel._assistant_events import (
+    AssistantTurnCompleted,
+    AssistantTurnFailed,
+    AssistantTurnStarted,
+    AssistantTurnStopped,
+)
 from orcia_core.kernel._autonomous_supervision_events import (
     AutonomousArtifactRolledBack,
     KillSwitchActivated,
@@ -51,6 +57,10 @@ __all__ = [
     "AccessRequested",
     "AdminConnectionTested",
     "ArtifactProduced",
+    "AssistantTurnCompleted",
+    "AssistantTurnFailed",
+    "AssistantTurnStarted",
+    "AssistantTurnStopped",
     "AutonomousArtifactRolledBack",
     "AutonomousContractRevoked",
     "AutonomousContractSigned",

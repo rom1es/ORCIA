@@ -38,7 +38,6 @@ from orcia_core.orchestration._internal.sql_agents_and_skills import (
 from orcia_core.orchestration._internal.sql_ai_model_mappings import (
     create_ai_model_mapping_pg18,
     delete_or_drain_ai_model_mapping_pg18,
-    ensure_ai_model_mappings_schema_on_postgres18,
     evaluate_ai_model_delete_impact_pg18,
     get_active_global_embedding_model_pg18,
     get_ai_model_mapping_pg18,
@@ -488,7 +487,6 @@ __all__ = [
     "delete_agent_from_postgres18",
     "delete_or_drain_ai_model_mapping_pg18",
     "delete_skill_from_postgres18",
-    "ensure_ai_model_mappings_schema_on_postgres18",
     "ensure_run_row_exists_in_session",
     "ensure_workflow_definition_sql",
     "evaluate_ai_model_delete_impact_pg18",

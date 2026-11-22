@@ -14,6 +14,7 @@ from tests.unit.fakes.in_memory_stores import (
     InMemoryRevocationStore,
     InMemorySandboxFake,
 )
+from tests.unit.fakes.in_memory_thread_lock import InMemoryThreadTurnLock
 
 __all__ = [
     "DeterministicClockFake",
@@ -23,5 +24,6 @@ __all__ = [
     "InMemoryReindexManager",
     "InMemoryRevocationStore",
     "InMemorySandboxFake",
+    "InMemoryThreadTurnLock",
     "default_in_memory_reindex_manager",
 ]

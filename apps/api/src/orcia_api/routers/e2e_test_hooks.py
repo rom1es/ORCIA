@@ -63,6 +63,8 @@ _E2E_EVICTABLE_STATE_ATTRS: tuple[str, ...] = (
     "workflows_v2_sql_store",
     "process_execution_dispatcher",
     "platform_setup_snapshot",
+    "platform_setup_snapshot_cached_at",
+    "platform_setup_snapshot_version",
     "declarative_pack_bundles",
     "auth_policy_explicitly_set",
     "enterprise_connectors_service",

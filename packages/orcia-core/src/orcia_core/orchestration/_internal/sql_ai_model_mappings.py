@@ -11,7 +11,6 @@ from orcia_core.orchestration._internal.sql_ai_model_mutations import (
 )
 from orcia_core.orchestration._internal.sql_ai_model_queries import (
     COLUMNS_SELECT,
-    ensure_ai_model_mappings_schema_on_postgres18,
     get_active_global_embedding_model_pg18,
     get_ai_model_mapping_pg18,
     list_ai_model_mappings_pg18,
@@ -23,7 +22,6 @@ __all__ = [
     "COLUMNS_SELECT",
     "create_ai_model_mapping_pg18",
     "delete_or_drain_ai_model_mapping_pg18",
-    "ensure_ai_model_mappings_schema_on_postgres18",
     "evaluate_ai_model_delete_impact_pg18",
     "get_active_global_embedding_model_pg18",
     "get_ai_model_mapping_pg18",

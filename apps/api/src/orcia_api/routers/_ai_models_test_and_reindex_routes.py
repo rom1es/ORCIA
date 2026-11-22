@@ -36,13 +36,13 @@ from orcia_core.audit_finops import (
     SqlAuditLedgerService,
     map_domain_event_to_ledger_entry,
 )
+from orcia_core.bootstrap.setup_snapshot_cache import invalidate_platform_setup_snapshot_async
 from orcia_core.kernel.events import AdminConnectionTested
 from orcia_core.orchestration import (
     AiModelsHubService,
     CognitiveModelRouterService,
     ResolvedInferenceTier,
     delete_or_drain_ai_model_mapping_pg18,
-    ensure_ai_model_mappings_schema_on_postgres18,
     evaluate_ai_model_delete_impact_pg18,
     record_ai_model_test_result_pg18,
 )
@@ -146,7 +146,6 @@ async def get_ai_model_delete_impact(
     engine = getattr(request.app.state, "db_engine", None)
     if engine is not None:
         async with engine.begin() as conn:
-            await ensure_ai_model_mappings_schema_on_postgres18(conn)
             impact = await evaluate_ai_model_delete_impact_pg18(
                 conn, mapping_id, instance=str(request.url.path)
             )
@@ -179,7 +178,6 @@ async def delete_ai_model_mapping(
     engine = getattr(request.app.state, "db_engine", None)
     if engine is not None:
         async with engine.begin() as conn:
-            await ensure_ai_model_mappings_schema_on_postgres18(conn)
             res = await delete_or_drain_ai_model_mapping_pg18(
                 conn,
                 mapping_id,
@@ -194,6 +192,9 @@ async def delete_ai_model_mapping(
             actor_role=server_actor_role,
             instance=str(request.url.path),
         )
+    await invalidate_platform_setup_snapshot_async(
+        request.app.state, redis_client=getattr(request.app.state, "redis_client", None)
+    )
     st: Literal["DELETED", "DRAINING"] = "DRAINING" if res and res.draining else "DELETED"
     return AiModelDeleteResponse(mapping_id=mapping_id, status=st)
 

@@ -18,7 +18,10 @@ from orcia_api.routers._assistant_background_registry import (
     turn_record_to_background_state,
 )
 from orcia_api.routers._assistant_turn_consumer import stream_assistant_turn_events
-from orcia_api.routers._assistant_usage_telemetry import resolve_audit_ledger_sink
+from orcia_api.routers._assistant_usage_telemetry import (
+    resolve_assistant_outbox_emitter,
+    resolve_audit_ledger_sink,
+)
 from orcia_api.routers._assistant_workspace_context import (
     resolve_effective_speed,
     resolve_folder_notes,
@@ -125,6 +128,7 @@ async def create_assistant_turn_v2_endpoint(
         user_display_name=user.display_name,
         model_tier=payload.requested_tier or (ep.tier if ep is not None else "medium"),
         audit_ledger_sink=resolve_audit_ledger_sink(request),
+        outbox_emitter=resolve_assistant_outbox_emitter(request),
         trace_id=trace_id,
         speed_mode=resolved_speed,
         locale=resolved_locale,

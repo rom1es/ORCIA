@@ -13,7 +13,6 @@ from orcia_api.dependencies._llm_streaming_providers import (
     is_cassette_llm_enabled,
 )
 from orcia_core.orchestration import (
-    ensure_ai_model_mappings_schema_on_postgres18,
     get_active_global_embedding_model_pg18,
     unpack_encrypted_api_key,
 )
@@ -82,7 +81,6 @@ async def get_embedding_port(request: Request) -> EmbeddingPort:
 
     if engine is not None:
         async with engine.begin() as conn:
-            await ensure_ai_model_mappings_schema_on_postgres18(conn)
             resolved = await get_active_global_embedding_model_pg18(
                 conn, cipher=auth_svc.vault_cipher
             )

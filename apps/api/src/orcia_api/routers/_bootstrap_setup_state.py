@@ -21,6 +21,11 @@ from orcia_core.bootstrap import (
     save_platform_setup_state_to_postgres18,
     strip_snapshot_credentials,
 )
+from orcia_core.bootstrap.setup_snapshot_cache import (
+    get_valid_platform_setup_snapshot_async,
+    invalidate_platform_setup_snapshot_async,
+    set_cached_platform_setup_snapshot_async,
+)
 from orcia_core.kernel.errors import ScopeAccessDeniedError
 from orcia_core.observability.logging import get_logger
 from orcia_kernel.ids import new_uuid7_str
@@ -195,9 +200,10 @@ async def get_platform_setup_state(
             raise_if_non_test_pg_error(exc, path=str(request.url.path))
             snap = None
 
+    redis_client = getattr(request.app.state, "redis_client", None)
     if snap is None:
-        cached: bm.PlatformSetupSnapshotRecord | None = getattr(
-            request.app.state, "platform_setup_snapshot", None
+        cached = await get_valid_platform_setup_snapshot_async(
+            request.app.state, redis_client=redis_client
         )
         admin = svc.first_admin
         snap = cached or bm.PlatformSetupSnapshotRecord(
@@ -205,7 +211,9 @@ async def get_platform_setup_state(
             first_admin_email=admin.email if admin else None,
             first_admin_display_name=admin.display_name if admin else None,
         )
-    request.app.state.platform_setup_snapshot = snap
+    await set_cached_platform_setup_snapshot_async(
+        request.app.state, snap, redis_client=redis_client
+    )
     _sync_accostage_from_snapshot(svc, snap)
     sync_setup_snapshot_to_evaluator(request, snap, svc.first_admin)
     return _serialize_setup_snapshot(snap, trace_id_for_bootstrap(request))
@@ -258,7 +266,13 @@ async def put_platform_setup_state(
             saved = None
 
     final_snap = saved or candidate
-    request.app.state.platform_setup_snapshot = final_snap
+    redis_client = getattr(request.app.state, "redis_client", None)
+    next_ver = await invalidate_platform_setup_snapshot_async(
+        request.app.state, redis_client=redis_client
+    )
+    await set_cached_platform_setup_snapshot_async(
+        request.app.state, final_snap, redis_client=redis_client, version=next_ver
+    )
     _sync_accostage_from_snapshot(svc, final_snap)
     sync_setup_snapshot_to_evaluator(request, final_snap, svc.first_admin)
     return _serialize_setup_snapshot(final_snap, trace_id_for_bootstrap(request))

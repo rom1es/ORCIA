@@ -285,4 +285,4 @@ class InvalidatePromptCacheResponse(BaseModel):
     workspace_id: str
     reason: Literal["SETTINGS_CHANGED", "OVERRIDE_UPDATED", "GLOSSARY_PROMOTED"]
     invalidated_keys_count: int
-    outbox_event_id: str
+    outbox_event_id: str | None = None

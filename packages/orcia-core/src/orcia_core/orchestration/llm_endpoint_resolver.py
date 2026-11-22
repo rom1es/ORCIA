@@ -90,7 +90,6 @@ async def resolve_configured_llm_endpoint_from_sources(
             tier = requested_tier or "medium"
             if vault_cipher is not None:
                 async with engine.begin() as conn:
-                    await bm.ensure_ai_model_mappings_schema_on_postgres18(conn)
                     m = await bm.resolve_decrypted_ai_model_for_tier_pg18(
                         conn,
                         cipher=vault_cipher,

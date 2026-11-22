@@ -40,10 +40,10 @@ from orcia_api.schemas.ai_models_hub import (
     LlmProtocolModeLiteral,
     ScopeLevelLiteral,
 )
+from orcia_core.bootstrap.setup_snapshot_cache import invalidate_platform_setup_snapshot_async
 from orcia_core.orchestration import (
     AiModelsHubService,
     create_ai_model_mapping_pg18,
-    ensure_ai_model_mappings_schema_on_postgres18,
     list_ai_model_mappings_pg18,
     update_ai_model_mapping_pg18,
 )
@@ -66,7 +66,6 @@ async def list_ai_model_mappings(
     engine = getattr(request.app.state, "db_engine", None)
     if engine is not None:
         async with engine.begin() as conn:
-            await ensure_ai_model_mappings_schema_on_postgres18(conn)
             records = await list_ai_model_mappings_pg18(
                 conn,
                 scope_level=scope_level,
@@ -111,7 +110,6 @@ async def create_ai_model_mapping(
     engine = getattr(request.app.state, "db_engine", None)
     if engine is not None:
         async with engine.begin() as conn:
-            await ensure_ai_model_mappings_schema_on_postgres18(conn)
             rec = await create_ai_model_mapping_pg18(
                 conn,
                 cipher=auth_svc.vault_cipher,
@@ -160,6 +158,9 @@ async def create_ai_model_mapping(
             instance=str(request.url.path),
         )
 
+    await invalidate_platform_setup_snapshot_async(
+        request.app.state, redis_client=getattr(request.app.state, "redis_client", None)
+    )
     if rec.usage == "embedding" and rec.scope_level == "GLOBAL" and rec.is_active:
         await trigger_global_reindexing_job(request, rec, actor_id=user.id)
     return to_item_response(rec)
@@ -186,7 +187,6 @@ async def update_ai_model_mapping(
     engine = getattr(request.app.state, "db_engine", None)
     if engine is not None:
         async with engine.begin() as conn:
-            await ensure_ai_model_mappings_schema_on_postgres18(conn)
             rec = await update_ai_model_mapping_pg18(
                 conn,
                 mapping_id,
@@ -219,6 +219,9 @@ async def update_ai_model_mapping(
             instance=str(request.url.path),
         )
 
+    await invalidate_platform_setup_snapshot_async(
+        request.app.state, redis_client=getattr(request.app.state, "redis_client", None)
+    )
     if rec.usage == "embedding" and rec.scope_level == "GLOBAL" and rec.is_active:
         await trigger_global_reindexing_job(request, rec, actor_id=user.id)
     return to_item_response(rec)

@@ -2318,7 +2318,7 @@ export interface components {
     };
     InvalidatePromptCacheResponse: {
       invalidated_keys_count: number;
-      outbox_event_id: string;
+      outbox_event_id?: string | null;
       reason: "SETTINGS_CHANGED" | "OVERRIDE_UPDATED" | "GLOSSARY_PROMOTED";
       workspace_id: string;
     };

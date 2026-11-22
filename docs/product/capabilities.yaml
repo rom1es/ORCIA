@@ -617,18 +617,18 @@ capabilities:
     verified_at: "2026-11-21"
     surfaces: { route: /assistant, api: assistant_workspace_governance.py, ui: AssistantGovernanceModalAndStudio }
   - id: CAP-071
-    title: Routage 3 vitesses, TTFT < 1,2 s, cache Redis du prompt assemblé, tours en arrière-plan
+    title: Routage 3 vitesses, assemblage direct 5 couches (R6) et tours assistant avec Outbox PG18
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-2
+    origin_ref: 10-2 + 26-4a
     status: live
     kind: feature
     uj: [UJ-17]
-    db_tables: [assistant_threads, workspace_customization_overrides, inference_attempts]
-    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts]
+    db_tables: [assistant_threads, workspace_customization_overrides, inference_attempts, domain_events_outbox]
+    tests: [tests/unit/test_story_26_4a_locks_outbox_cache_removal_and_ddl_audit.py, tests/integration/api/test_story_26_4a_redis_locks_outbox_ddl_postgres18.py, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts]
     verification: runtime
-    verified_at: "2026-11-20"
-    surfaces: { api: "assistant_workspace.py, _assistant_workspace_controls.py", ui: AssistantSpeedSelectorAndStreamView }
+    verified_at: "2026-11-22"
+    surfaces: { api: "assistant_workspace.py, _assistant_workspace_controls.py", ui: AssistantSpeedSelectorAndStreamView, migration: "20261122_264a" }
   - id: CAP-072
     title: Citations déterministes [S1]/[G1]/[O1] et cartes d'artefact
     fr: [FR-33]
@@ -643,17 +643,17 @@ capabilities:
     verified_at: "2026-11-21"
     surfaces: { api: assistant_workspace_citations.py, ui: AssistantCitationPillsAndArtifactCard }
   - id: CAP-073
-    title: Dossiers thématiques, fils collaboratifs, partage et lancement de processus
+    title: Dossiers thématiques, fils collaboratifs, verrous de tour Redis (SET NX EX), partage et processus
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-4
+    origin_ref: 10-4 + 26-4a
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [assistant_folders, assistant_threads, assistant_folder_shares]
-    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/src/__tests__/assistant-folders-server-rehydration.test.tsx]
+    tests: [tests/integration/api/test_story_26_4a_redis_locks_outbox_ddl_postgres18.py, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/src/__tests__/assistant-folders-server-rehydration.test.tsx]
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-22"
     surfaces: { api: assistant_workspace_folders.py, ui: AssistantFoldersAndCollaborativeThreadView, migration: "0025" }
   - id: CAP-074
     title: Câblage LLM réel et streaming SSE multi-fournisseurs (« Envoyer à Mon Assistant »)

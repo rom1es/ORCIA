@@ -33,7 +33,6 @@ from testcontainers.core.waiting_utils import wait_for_logs
 from orcia_api.main import create_app
 from orcia_core.orchestration._internal.sql_ai_model_mappings import (
     create_ai_model_mapping_pg18,
-    ensure_ai_model_mappings_schema_on_postgres18,
 )
 from orcia_core.permissions.crypto import PassthroughVaultCipher
 from orcia_worker.outbox_relay import DramatiqOutboxRelay
@@ -129,7 +128,6 @@ async def test_epics_1_7_vertical_http_to_postgres18_persistence_and_outbox_rela
                     await getattr(mod, fn_name)(setup_engine, apply_changes=True)
 
                 async with setup_engine.begin() as conn:
-                    await ensure_ai_model_mappings_schema_on_postgres18(conn)
                     await create_ai_model_mapping_pg18(
                         conn,
                         cipher=PassthroughVaultCipher("orcia-epics-1-7-vault-key-0001"),

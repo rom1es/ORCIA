@@ -99,5 +99,5 @@ async def invalidate_prompt_cache_endpoint(
         workspace_id=outcome.workspace_id,
         reason=outcome.reason,
         invalidated_keys_count=outcome.invalidated_keys_count,
-        outbox_event_id=outcome.outbox_event_id,
+        outbox_event_id=None,
     )

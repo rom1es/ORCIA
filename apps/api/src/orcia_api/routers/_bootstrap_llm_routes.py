@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Literal
 
-import httpx
 from fastapi import APIRouter, Request
 
 from orcia_api.dependencies import get_accostage_service
@@ -12,11 +11,13 @@ from orcia_api.dependencies._core_providers import (
     get_configured_db_engine,
     should_auto_init_infra,
 )
+from orcia_api.dependencies._llm_streaming_providers import get_or_create_async_http_client
 from orcia_api.routers._auth_policy_runtime import resolve_auth_policy_runtime
 from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.schemas import bootstrap as bs
 from orcia_core import bootstrap as bm
 from orcia_core.bootstrap.errors import OrciaDomainError
+from orcia_core.bootstrap.setup_snapshot_cache import invalidate_platform_setup_snapshot_async
 from orcia_core.kernel.errors import TransientInfraError
 from orcia_core.observability.logging import (
     get_current_trace_id,
@@ -124,6 +125,9 @@ async def register_welcome_setup_progressive_llm(
                 "bootstrap_progressive_llm_pg_sync_skipped", error_type=type(exc).__name__
             )
             raise_if_non_test_pg_error(exc, path=str(request.url.path))
+    await invalidate_platform_setup_snapshot_async(
+        request.app.state, redis_client=getattr(request.app.state, "redis_client", None)
+    )
     from orcia_api.routers.bootstrap_accostage import _resolve_optional_caller_role
 
     policy_state, _, _ = await resolve_auth_policy_runtime(request)
@@ -212,33 +216,19 @@ async def test_welcome_setup_llm_connection(
     else:
         protocol_mode = "openai_compatible"
 
-    http_client: httpx.AsyncClient | None = getattr(request.app.state, "http_client", None)
-    use_existing = http_client is not None and not getattr(http_client, "is_closed", False)
+    http_client = get_or_create_async_http_client(request)
 
     try:
-        if use_existing:
-            res = await test_ai_model_endpoint_connection(
-                http_client=http_client,  # type: ignore[arg-type]
-                endpoint_uri=uri,
-                protocol_mode=protocol_mode,
-                model_name=model,
-                usage="chat",
-                api_key=payload.api_key if payload.auth_mode == "api_key" else None,
-                provider_slug=provider,
-                instance=str(request.url.path),
-            )
-        else:
-            async with httpx.AsyncClient(timeout=15.0) as local_client:
-                res = await test_ai_model_endpoint_connection(
-                    http_client=local_client,
-                    endpoint_uri=uri,
-                    protocol_mode=protocol_mode,
-                    model_name=model,
-                    usage="chat",
-                    api_key=payload.api_key if payload.auth_mode == "api_key" else None,
-                    provider_slug=provider,
-                    instance=str(request.url.path),
-                )
+        res = await test_ai_model_endpoint_connection(
+            http_client=http_client,
+            endpoint_uri=uri,
+            protocol_mode=protocol_mode,
+            model_name=model,
+            usage="chat",
+            api_key=payload.api_key if payload.auth_mode == "api_key" else None,
+            provider_slug=provider,
+            instance=str(request.url.path),
+        )
         return _resp(True, "CONNECTED", res.latency_ms, res.message_fr, res.message_en)
     except OrciaDomainError as exc:
         lat = getattr(exc, "latency_ms", 0) or 0

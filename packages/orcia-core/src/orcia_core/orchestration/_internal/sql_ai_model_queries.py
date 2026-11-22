@@ -76,91 +76,6 @@ def row_to_mapping(row: Any) -> AiModelMappingRecord:
     )
 
 
-async def ensure_ai_model_mappings_schema_on_postgres18(conn: AsyncConnection) -> None:
-    """Ensure table and additive columns exist on PostgreSQL 18."""
-    await conn.execute(
-        sa.text(
-            """
-            CREATE TABLE IF NOT EXISTS workspace_llm_tier_mappings (
-                id UUID PRIMARY KEY,
-                scope_level VARCHAR(32) NOT NULL DEFAULT 'WORKSPACE',
-                scope_id UUID NOT NULL,
-                inference_tier VARCHAR(32) NOT NULL,
-                effort VARCHAR(32) NOT NULL DEFAULT 'default',
-                provider_slug VARCHAR(64) NOT NULL,
-                model_family VARCHAR(64) NOT NULL,
-                model_name VARCHAR(128) NOT NULL,
-                secret_ref UUID NULL,
-                inference_params_jsonb JSONB NOT NULL DEFAULT '{}'::jsonb,
-                max_tokens_budget INTEGER NOT NULL DEFAULT 8192,
-                max_cost_usd NUMERIC(12, 6) NOT NULL DEFAULT 10.000000,
-                fallback_order INTEGER NOT NULL DEFAULT 1,
-                is_active BOOLEAN NOT NULL DEFAULT TRUE,
-                draining BOOLEAN NOT NULL DEFAULT FALSE,
-                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                display_name VARCHAR(160) NOT NULL DEFAULT '',
-                fallback_model_name VARCHAR(128) NULL,
-                endpoint_uri TEXT NOT NULL DEFAULT '',
-                auth_mode VARCHAR(32) NOT NULL DEFAULT 'api_key',
-                protocol_mode VARCHAR(32) NOT NULL DEFAULT 'openai_compatible',
-                env_var_name VARCHAR(128) NULL,
-                encrypted_api_key TEXT NULL,
-                secret_fingerprint VARCHAR(64) NULL,
-                secret_masked_hint VARCHAR(32) NULL,
-                secret_updated_at TIMESTAMPTZ NULL,
-                secret_updated_by VARCHAR(128) NULL,
-                health_status VARCHAR(32) NOT NULL DEFAULT 'UNTESTED',
-                last_tested_at TIMESTAMPTZ NULL,
-                last_latency_ms INTEGER NULL,
-                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                usage VARCHAR(32) NOT NULL DEFAULT 'chat'
-            )
-            """
-        )
-    )
-    await conn.execute(
-        sa.text(
-            """
-            ALTER TABLE workspace_llm_tier_mappings
-                ADD COLUMN IF NOT EXISTS display_name VARCHAR(160) NOT NULL DEFAULT '',
-                ADD COLUMN IF NOT EXISTS fallback_model_name VARCHAR(128) NULL,
-                ADD COLUMN IF NOT EXISTS endpoint_uri TEXT NOT NULL DEFAULT '',
-                ADD COLUMN IF NOT EXISTS auth_mode VARCHAR(32) NOT NULL DEFAULT 'api_key',
-                ADD COLUMN IF NOT EXISTS protocol_mode VARCHAR(32)
-                    NOT NULL DEFAULT 'openai_compatible',
-                ADD COLUMN IF NOT EXISTS env_var_name VARCHAR(128) NULL,
-                ADD COLUMN IF NOT EXISTS encrypted_api_key TEXT NULL,
-                ADD COLUMN IF NOT EXISTS secret_fingerprint VARCHAR(64) NULL,
-                ADD COLUMN IF NOT EXISTS secret_masked_hint VARCHAR(32) NULL,
-                ADD COLUMN IF NOT EXISTS secret_updated_at TIMESTAMPTZ NULL,
-                ADD COLUMN IF NOT EXISTS secret_updated_by VARCHAR(128) NULL,
-                ADD COLUMN IF NOT EXISTS health_status VARCHAR(32) NOT NULL DEFAULT 'UNTESTED',
-                ADD COLUMN IF NOT EXISTS last_tested_at TIMESTAMPTZ NULL,
-                ADD COLUMN IF NOT EXISTS last_latency_ms INTEGER NULL,
-                ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                ADD COLUMN IF NOT EXISTS usage VARCHAR(32) NOT NULL DEFAULT 'chat'
-            """
-        )
-    )
-    await conn.execute(
-        sa.text(
-            """
-            CREATE INDEX IF NOT EXISTS idx_llm_tier_mappings_scope_tier_active
-                ON workspace_llm_tier_mappings (scope_level, inference_tier, is_active)
-            """
-        )
-    )
-    await conn.execute(
-        sa.text(
-            """
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_llm_tier_mappings_single_active_global_embedding
-                ON workspace_llm_tier_mappings (scope_level, usage)
-                WHERE (usage = 'embedding' AND is_active = TRUE AND scope_level = 'GLOBAL')
-            """
-        )
-    )
-
-
 async def list_ai_model_mappings_pg18(
     conn: AsyncConnection,
     *,
@@ -287,7 +202,6 @@ async def get_active_global_embedding_model_pg18(
 
 __all__ = [
     "COLUMNS_SELECT",
-    "ensure_ai_model_mappings_schema_on_postgres18",
     "get_active_global_embedding_model_pg18",
     "get_ai_model_mapping_pg18",
     "list_ai_model_mappings_pg18",

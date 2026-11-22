@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import time
+from collections.abc import Awaitable, Callable
 from dataclasses import replace
 from typing import Any
 
@@ -71,8 +72,10 @@ async def handle_turn_cancelled(
     obs_in: int,
     obs_out: int,
     saw_usage: bool,
+    outbox_emitter: Any | None = None,
+    flush_before_emit: Callable[[AssistantTurnRecord], Awaitable[None]] | None = None,
 ) -> AssistantTurnRecord:
-    """Mark a stopped turn in Redis and append terminal `turn_stopped` stream event."""
+    """Persist stopped turn, FinOps ledger, and Outbox before emitting `turn_stopped`."""
     turn_id = record.turn_id
     stopped_by = await registry.is_stop_requested(turn_id) or record.user_id
     in_tok, out_tok, u_src = resolve_usage_with_fallback(
@@ -93,7 +96,17 @@ async def handle_turn_cancelled(
         usage_source=u_src,
         elapsed_ms=round((time.perf_counter() - t0) * 1000.0, 2),
     )
-    await registry.update_turn(updated, ttl_seconds=1800)
+    if flush_before_emit is not None:
+        await flush_before_emit(updated)
+    if outbox_emitter is not None:
+        await outbox_emitter.emit_turn_stopped(
+            turn_id=turn_id,
+            workspace_id=record.workspace_id,
+            user_id=record.user_id,
+            stopped_by_user_id=stopped_by,
+            trace_id=record.trace_id,
+        )
+    await registry.set_stream_ttl(turn_id, ttl_seconds=1800)
     await registry.append_event(
         turn_id,
         event="turn_stopped",
@@ -105,6 +118,7 @@ async def handle_turn_cancelled(
         },
         ttl_seconds=1800,
     )
+    await registry.update_turn(updated, ttl_seconds=1800)
     return updated
 
 
@@ -118,6 +132,7 @@ async def handle_turn_failure(
     streamed_text: str,
     instance: str,
     locale: str,
+    outbox_emitter: Any | None = None,
 ) -> AssistantTurnRecord:
     """Log failure safely, record ERROR state, and append RFC 9457 `stream_error` event."""
     safe_err = scrub_sensitive_text(str(exc))
@@ -146,10 +161,19 @@ async def handle_turn_failure(
         streamed_text=streamed_text,
         elapsed_ms=round((time.perf_counter() - t0) * 1000.0, 2),
     )
-    await registry.update_turn(updated, ttl_seconds=1800)
+    if outbox_emitter is not None:
+        await outbox_emitter.emit_turn_failed(
+            turn_id=record.turn_id,
+            workspace_id=record.workspace_id,
+            user_id=record.user_id,
+            error_code="ERR_INTERNAL_SERVER_ERROR",
+            trace_id=record.trace_id,
+        )
+    await registry.set_stream_ttl(record.turn_id, ttl_seconds=1800)
     await registry.append_event(
         record.turn_id, event="stream_error", data=err_payload, ttl_seconds=1800
     )
+    await registry.update_turn(updated, ttl_seconds=1800)
     return updated
 
 
@@ -169,6 +193,7 @@ async def flush_turn_telemetry_and_finops(
     audit_ledger_sink: Any | None,
     user_email: str | None,
     user_display_name: str | None,
+    outbox_emitter: Any | None = None,
 ) -> None:
     """Record prompt telemetry and idempotent `audit_ledger` FinOps row inside `finally`."""
     in_tok, out_tok, u_src = resolve_usage_with_fallback(
@@ -208,3 +233,62 @@ async def flush_turn_telemetry_and_finops(
         trace_id=record.trace_id,
         speed_mode=record.speed_mode,
     )
+    if outbox_emitter is not None and record.status == "COMPLETED":
+        await outbox_emitter.emit_turn_completed(
+            turn_id=record.turn_id,
+            workspace_id=record.workspace_id,
+            user_id=record.user_id,
+            speed_mode=record.speed_mode,
+            input_tokens=in_tok,
+            output_tokens=out_tok,
+            trace_id=record.trace_id,
+        )
+
+
+async def emit_stream_error_and_outbox(
+    *,
+    registry: RedisAssistantTurnRegistry,
+    record: AssistantTurnRecord,
+    t0: float,
+    error_code: str,
+    status: int,
+    detail_override: str,
+    thinking_text: str,
+    streamed_text: str,
+    instance: str,
+    locale: str,
+    outbox_emitter: Any | None = None,
+) -> None:
+    """Persist ERROR state, append RFC 9457 `stream_error` frame, and emit Outbox failure."""
+    err_payload = build_rfc9457_stream_error_payload(
+        turn_id=record.turn_id,
+        seq=0,
+        trace_id=record.trace_id,
+        error_code=error_code,
+        status=status,
+        detail_override=detail_override,
+        instance=instance,
+        locale=locale,
+    )
+    updated = replace(
+        record,
+        status="ERROR",
+        error_code=error_code,
+        error_message=str(err_payload["detail"]),
+        thinking_text=thinking_text,
+        streamed_text=streamed_text,
+        elapsed_ms=round((time.perf_counter() - t0) * 1000.0, 2),
+    )
+    if outbox_emitter is not None:
+        await outbox_emitter.emit_turn_failed(
+            turn_id=record.turn_id,
+            workspace_id=record.workspace_id,
+            user_id=record.user_id,
+            error_code=error_code,
+            trace_id=record.trace_id,
+        )
+    await registry.set_stream_ttl(record.turn_id, ttl_seconds=1800)
+    await registry.append_event(
+        record.turn_id, event="stream_error", data=err_payload, ttl_seconds=1800
+    )
+    await registry.update_turn(updated)

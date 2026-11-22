@@ -15252,8 +15252,15 @@
             "type": "integer"
           },
           "outbox_event_id": {
-            "title": "Outbox Event Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outbox Event Id"
           },
           "reason": {
             "enum": [
@@ -15272,8 +15279,7 @@
         "required": [
           "workspace_id",
           "reason",
-          "invalidated_keys_count",
-          "outbox_event_id"
+          "invalidated_keys_count"
         ],
         "title": "InvalidatePromptCacheResponse",
         "type": "object"

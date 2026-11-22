@@ -31,6 +31,7 @@ from orcia_api.routers._assistant_background_registry import (
 )
 from orcia_api.routers._assistant_turn_consumer import stream_assistant_turn_events
 from orcia_api.routers._assistant_turn_producer import execute_turn_producer_task
+from orcia_api.routers._assistant_usage_telemetry import resolve_assistant_outbox_emitter
 from orcia_core.orchestration.assistant_turn_errors import (
     AssistantConcurrencyLimitError,
     AssistantRateLimitExceededError,
@@ -90,6 +91,7 @@ async def start_background_assistant_turn(
     user_display_name: str | None = None,
     model_tier: str | None = None,
     audit_ledger_sink: Any | None = None,
+    outbox_emitter: Any | None = None,
     trace_id: str | None = None,
     speed_mode: str | None = None,
     locale: str = "fr",
@@ -120,6 +122,14 @@ async def start_background_assistant_turn(
     )
     await registry.register_turn(record)
     await registry.refresh_liveness(turn_id, ttl_seconds=liveness_ttl_s)
+    if outbox_emitter is not None:
+        await outbox_emitter.emit_turn_started(
+            turn_id=turn_id,
+            workspace_id=workspace_id,
+            user_id=user_id,
+            speed_mode=record.speed_mode,
+            trace_id=resolved_trace,
+        )
 
     task = asyncio.create_task(
         execute_turn_producer_task(
@@ -143,6 +153,7 @@ async def start_background_assistant_turn(
             audit_ledger_sink=audit_ledger_sink,
             locale=locale,
             instance=instance,
+            outbox_emitter=outbox_emitter,
         )
     )
     task_set.add(task)
@@ -201,6 +212,7 @@ async def run_and_consume_decoupled_turn_stream(
         user_display_name=user_display_name,
         model_tier=model_tier,
         audit_ledger_sink=audit_ledger_sink,
+        outbox_emitter=resolve_assistant_outbox_emitter(request),
         trace_id=trace_id,
         speed_mode=speed_mode,
         pre_acquired_lease=pre_acquired_lease,

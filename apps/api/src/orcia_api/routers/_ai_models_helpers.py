@@ -7,9 +7,9 @@ from datetime import UTC, datetime
 from typing import Annotated, Literal
 from urllib.parse import urlparse
 
-import httpx
 from fastapi import Query, Request
 
+from orcia_api.dependencies._llm_streaming_providers import get_or_create_async_http_client
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.ai_models_hub import (
     AiModelDiscoveryResponse,
@@ -23,7 +23,6 @@ from orcia_core.orchestration import (
     AiModelMappingRecord,
     AiModelsHubService,
     discover_models_from_provider,
-    ensure_ai_model_mappings_schema_on_postgres18,
     get_ai_model_mapping_pg18,
     test_ai_model_endpoint_connection,
     validate_safe_llm_endpoint_url,
@@ -126,30 +125,17 @@ async def execute_model_connection_test(
     if rec.auth_mode == "env_var" and rec.env_var_name:
         effective_key = os.environ.get(rec.env_var_name)
 
-    http_client: httpx.AsyncClient | None = getattr(request.app.state, "http_client", None)
-    if http_client is not None and not getattr(http_client, "is_closed", False):
-        outcome = await test_ai_model_endpoint_connection(
-            http_client=http_client,
-            endpoint_uri=rec.endpoint_uri,
-            protocol_mode=rec.protocol_mode,
-            model_name=rec.model_name,
-            usage=rec.usage,
-            api_key=effective_key,
-            provider_slug=rec.provider_slug,
-            instance=path,
-        )
-    else:
-        async with httpx.AsyncClient(timeout=15.0) as local_client:
-            outcome = await test_ai_model_endpoint_connection(
-                http_client=local_client,
-                endpoint_uri=rec.endpoint_uri,
-                protocol_mode=rec.protocol_mode,
-                model_name=rec.model_name,
-                usage=rec.usage,
-                api_key=effective_key,
-                provider_slug=rec.provider_slug,
-                instance=path,
-            )
+    http_client = get_or_create_async_http_client(request)
+    outcome = await test_ai_model_endpoint_connection(
+        http_client=http_client,
+        endpoint_uri=rec.endpoint_uri,
+        protocol_mode=rec.protocol_mode,
+        model_name=rec.model_name,
+        usage=rec.usage,
+        api_key=effective_key,
+        provider_slug=rec.provider_slug,
+        instance=path,
+    )
 
     is_fr = "fr" in request.headers.get("accept-language", "").lower()
     msg = outcome.message_fr if is_fr else outcome.message_en
@@ -182,7 +168,6 @@ async def resolve_mapping_decrypted_key(
     engine = getattr(request.app.state, "db_engine", None)
     if engine is not None:
         async with engine.begin() as conn:
-            await ensure_ai_model_mappings_schema_on_postgres18(conn)
             rec = await get_ai_model_mapping_pg18(conn, mapping_id, instance=path)
             decrypted_key: str | None = None
             if rec.encrypted_api_key:
@@ -211,28 +196,16 @@ async def execute_models_discovery(
     api_key: str | None,
 ) -> AiModelDiscoveryResponse:
     """Execute dynamic model discovery over shared httpx client with 0 tokens consumed."""
-    client = getattr(request.app.state, "http_client", None)
+    client = get_or_create_async_http_client(request)
     path = str(request.url.path)
-
-    if client is not None:
-        raw_models = await discover_models_from_provider(
-            http_client=client,
-            endpoint_uri=endpoint_uri,
-            protocol_mode=protocol_mode,
-            provider_slug=provider_slug,
-            api_key=api_key,
-            instance=path,
-        )
-    else:
-        async with httpx.AsyncClient() as ephemeral_client:
-            raw_models = await discover_models_from_provider(
-                http_client=ephemeral_client,
-                endpoint_uri=endpoint_uri,
-                protocol_mode=protocol_mode,
-                provider_slug=provider_slug,
-                api_key=api_key,
-                instance=path,
-            )
+    raw_models = await discover_models_from_provider(
+        http_client=client,
+        endpoint_uri=endpoint_uri,
+        protocol_mode=protocol_mode,
+        provider_slug=provider_slug,
+        api_key=api_key,
+        instance=path,
+    )
 
     items = [
         DiscoveredModelItem(

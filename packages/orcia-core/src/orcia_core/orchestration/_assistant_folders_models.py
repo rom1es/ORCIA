@@ -137,12 +137,6 @@ class AssistantWorkspaceOverview:
     history_hits: tuple[AssistantHistorySearchHit, ...]
 
 
-@dataclass
-class _ActiveTurnLockEntry:
-    holder_user_id: str
-    expires_at_monotonic: float
-
-
 __all__ = [
     "AssistantFolderRecord",
     "AssistantHistorySearchHit",
@@ -158,5 +152,4 @@ __all__ = [
     "Layer5FolderMemoryInjection",
     "PILOT_WORKFLOW_TICKET_TO_TECH_SPEC_URI",
     "THREAD_TURN_LOCK_TTL_SECONDS",
-    "_ActiveTurnLockEntry",
 ]

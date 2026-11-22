@@ -611,9 +611,6 @@ async def test_datasource_mutations_validation_and_llm_resolver_pg_paths(
     app.state.platform_setup_snapshot = None
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "0")
 
-    async def _noop_schema(_conn: Any) -> None:
-        return None
-
     async def _resolve_mapping(_conn: Any, **_kwargs: Any) -> Any:
         return (
             SimpleNamespace(
@@ -626,7 +623,6 @@ async def test_datasource_mutations_validation_and_llm_resolver_pg_paths(
             "sk-pg-secret",
         )
 
-    monkeypatch.setattr(bm, "ensure_ai_model_mappings_schema_on_postgres18", _noop_schema)
     monkeypatch.setattr(bm, "resolve_decrypted_ai_model_for_tier_pg18", _resolve_mapping)
     pg_ep = await resolve_configured_llm_endpoint(fake_request, requested_tier="medium")  # type: ignore[arg-type]
     assert pg_ep is not None and pg_ep.api_key == "sk-pg-secret"  # pragma: allowlist secret
@@ -648,8 +644,8 @@ async def test_datasource_mutations_validation_and_llm_resolver_pg_paths(
 
     app.state.platform_setup_snapshot = None
 
-    async def _boom(_conn: Any) -> None:
+    async def _boom(_conn: Any, **_kwargs: Any) -> Any:
         raise RuntimeError("pg boom")
 
-    monkeypatch.setattr(bm, "ensure_ai_model_mappings_schema_on_postgres18", _boom)
+    monkeypatch.setattr(bm, "resolve_decrypted_ai_model_for_tier_pg18", _boom)
     assert await resolve_configured_llm_endpoint(fake_request, requested_tier="small") is None  # type: ignore[arg-type]

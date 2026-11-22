@@ -15,6 +15,7 @@ from orcia_api.dependencies._assistant_guards import (
     enforce_assistant_workspace_guard,
 )
 from orcia_api.routers._assistant_prompt_sanitization import resolve_request_locale
+from orcia_api.routers._assistant_usage_telemetry import resolve_assistant_outbox_emitter
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.assistant import (
     AssembledLayerPreviewSchemaItem,
@@ -170,6 +171,16 @@ async def update_user_layer_preferences_endpoint(
     router_svc.invalidate_prompt_cache(
         workspace_id=payload.workspace_id, reason="OVERRIDE_UPDATED", user_id=user.id
     )
+    outbox = resolve_assistant_outbox_emitter(request)
+    if outbox is not None:
+        await outbox.emit_settings_changed(
+            workspace_id=payload.workspace_id,
+            setting_key="assistant.mode_a.user",
+            actor_id=user.id,
+            trace_id=str(getattr(getattr(request, "state", None), "trace_id", "") or ""),
+            scope_level="USER",
+            after_sha256=updated.sha256,
+        )
     return _to_user_prefs_schema(updated)
 
 
@@ -198,6 +209,16 @@ async def update_workspace_layer_settings_endpoint(
         mcp_expose_assistant=payload.mcp_expose_assistant,
     )
     router_svc.invalidate_prompt_cache(workspace_id=payload.workspace_id, reason="SETTINGS_CHANGED")
+    outbox = resolve_assistant_outbox_emitter(request)
+    if outbox is not None:
+        await outbox.emit_settings_changed(
+            workspace_id=payload.workspace_id,
+            setting_key="assistant.mode_a.workspace",
+            actor_id=user.id,
+            trace_id=str(getattr(getattr(request, "state", None), "trace_id", "") or ""),
+            scope_level="WORKSPACE",
+            after_sha256=updated.sha256,
+        )
     return _to_workspace_settings_schema(updated)
 
 

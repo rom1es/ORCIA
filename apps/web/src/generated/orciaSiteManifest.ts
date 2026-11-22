@@ -6,15 +6,15 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-21",
+  "lastSyncedDate": "2026-11-22",
   "stats": {
     "activeRoutesCount": 28,
     "uiPrimitivesCount": 137,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 57,
+    "alembicMigrationsCount": 58,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 210,
+    "techLeadReportsCount": 211,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 61,
@@ -260,7 +260,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261117_2003_story_20_3_user_preferences_and_mcp_tokens_pg18",
     "20261120_2401_story_24_1_jira_staged_actions_and_mcp_proposals_pg18",
     "20261120_2402_story_24_2_workspace_dna_mechanisms_pg18",
-    "20261120_2403_story_24_3_mcp_exposures_and_audit_contract"
+    "20261120_2403_story_24_3_mcp_exposures_and_audit_contract",
+    "20261122_264a_story_26_4a_ai_models_schema_and_assistant_outbox"
   ],
   "architectureDecisions": [
     {
@@ -543,6 +544,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-22",
+      "phaseOrStory": "Story 26.4a",
+      "reportFile": "26-4a-redis-thread-locks-outbox-hub-invalidation-and-alembic-ddl-tech-lead-report.md",
+      "domain": "Epic 26 Lot 3 — Redis Thread Turn Locks (SET NX EX), domain_events_outbox Emission, Prompt-Cache & Forged Outbox ID Deletion (R6), AI Hub Snapshot TTL/Invalidation, Alembic DDL Consolidation & Shared http_client (CAP-071, CAP-073)",
+      "summary": "Closed (done): implemented ThreadTurnLockPort + RedisThreadTurnLock (SET NX EX + Lua token release) wired to app.state.redis_client and moved InMemoryThreadTurnLock exclusively to tests/unit/fakes/; deleted _assistant_three_speed_cache.py, InMemoryPromptCacheStore, AssembledPromptCachePort, and forged outbox_event_id generation (R6); added AssistantTurn* events (_assistant_events.py) and AssistantOutboxEmitter persisting real domain_events_outbox rows via SqlDomainEventsOutboxRepository; fixed _assistant_turn_producer.py/_assistant_turn_producer_helpers.py terminal ordering (_flush_once PG18 FinOps + Outbox + TTL committed before append_event and update_turn); added bounded TTL (ORCIA_PLATFORM_SETUP_SNAPSHOT_TTL_S) + Redis version marker invalidation in setup_snapshot_cache.py across AI Hub mutations; shipped raw-SQL Alembic revision 20261122_264a (upgrade -> downgrade -> upgrade verified) eliminating runtime ensure_ai_model_mappings_schema_on_postgres18 DDL and ephemeral httpx.AsyncClient() instances; verified 98.97% standalone Story 26.4a coverage (11 passed), 50 passed combined 26.4a/26.3/26.1/25.5 suite, 1112 passed unit/security/evals/contract tests, 9/9 Turbo, ruff (1445 files)/mypy --strict (619 files)/lint-imports (5/5)/export_openapi (0-diff)/lint_spine (0)/detect-secrets clean."
+    },
     {
       "date": "2026-11-21",
       "phaseOrStory": "Story 26.3",

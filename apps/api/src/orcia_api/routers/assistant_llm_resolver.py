@@ -33,10 +33,17 @@ async def resolve_configured_llm_endpoint(
     from orcia_api.dependencies._assistant_guards import resolve_assistant_workspace_uuid
     from orcia_api.dependencies._core_providers import get_configured_db_engine
     from orcia_core.bootstrap import load_platform_setup_state_from_postgres18
+    from orcia_core.bootstrap.setup_snapshot_cache import (
+        get_valid_platform_setup_snapshot_async,
+        set_cached_platform_setup_snapshot_async,
+    )
 
     engine = get_configured_db_engine(request)
     auth = getattr(request.app.state, "auth_service", None)
-    snap = getattr(request.app.state, "platform_setup_snapshot", None)
+    redis_client = getattr(request.app.state, "redis_client", None)
+    snap = await get_valid_platform_setup_snapshot_async(
+        request.app.state, redis_client=redis_client
+    )
     hub_svc = getattr(request.app.state, "ai_models_hub_service", None)
     accostage_svc = getattr(request.app.state, "accostage_service", None)
     resolved_env = (
@@ -63,7 +70,9 @@ async def resolve_configured_llm_endpoint(
         ),
     )
     if refreshed_snap is not None:
-        request.app.state.platform_setup_snapshot = refreshed_snap
+        await set_cached_platform_setup_snapshot_async(
+            request.app.state, refreshed_snap, redis_client=redis_client
+        )
     return ep
 
 

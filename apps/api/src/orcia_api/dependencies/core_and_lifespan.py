@@ -235,7 +235,11 @@ def initialize_app_services(app: FastAPI) -> None:
         catalog_service=catalog_service,
         permission_broker_service=permission_broker_service,
     )
-    for attr_name in ("assistant_turn_registry", "assistant_rate_limiter"):
+    for attr_name in (
+        "assistant_turn_registry",
+        "assistant_rate_limiter",
+        "assistant_folders_and_sharing_service",
+    ):
         svc_r = getattr(app.state, attr_name, None)
         if svc_r is not None and getattr(app.state, "redis_client", None) is not None:
             svc_r.set_redis_client(app.state.redis_client)

@@ -276,13 +276,13 @@ development_status:
   # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-21-epic-26-harnais-assistant-remediation-plan.md
   # Source audit: docs/implementation-artifacts/tech-lead-reports/2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md
   # Decisions   : docs/implementation-artifacts/epic-26-decisions-grill-2026-11-21.md (D1-D11 amended by R1-R9)
-  # Lots        : L0 26-0 (done) | L1 26-1 (done) | L2 26-2 (done) | L3 26-3 (done) | 26-4a -> 26-4b (sequential, workspace: inherit) | L4 26-5 | L5 26-6a -> 26-6b | L6 26-7 -> 26-8 | L7 26-9 -> 26-10 — IN PROGRESS
+  # Lots        : L0 26-0 (done) | L1 26-1 (done) | L2 26-2 (done) | L3 26-3 (done) -> 26-4a (done) -> 26-4b (sequential, workspace: inherit) | L4 26-5 | L5 26-6a -> 26-6b | L6 26-7 -> 26-8 | L7 26-9 -> 26-10 — IN PROGRESS
   epic-26: in-progress
   26-0-adr-unified-turn-engine-sse-v2-and-ssrf-policy: done
   26-1-immediate-security-hardening-scope-observer-and-ssrf: done
   26-2-core-llm-streaming-extraction-and-unified-prompt-builder: done
   26-3-turn-reliability-redis-registry-async-loop-and-rate-limit: done
-  26-4a-redis-thread-locks-outbox-hub-invalidation-and-alembic-ddl: ready-for-dev
+  26-4a-redis-thread-locks-outbox-hub-invalidation-and-alembic-ddl: done
   26-4b-pg18-persistence-mode-a-governance-feedback-and-folders: ready-for-dev
   26-5-real-context-ontology-hybrid-rag-blackboard-and-context-budget: ready-for-dev
   26-6a-llm-streaming-port-tool-calls-and-loop-budgets: ready-for-dev

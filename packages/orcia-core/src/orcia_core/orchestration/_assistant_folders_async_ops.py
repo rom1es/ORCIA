@@ -8,14 +8,19 @@ from orcia_core.orchestration._assistant_folders_helpers import (
     assemble_layer5_injection,
     assemble_overview,
     build_sharing_result,
+    build_turn_result,
+    enforce_folder_turn_access,
     ensure_not_observer,
     make_launch_prep,
     validate_sharing_request,
 )
 from orcia_core.orchestration._assistant_folders_models import (
     PILOT_WORKFLOW_TICKET_TO_TECH_SPEC_URI,
+    THREAD_TURN_LOCK_TTL_SECONDS,
     AssistantFolderRecord,
+    AssistantThreadSummary,
     AssistantWorkspaceOverview,
+    CollaborativeThreadTurnResult,
     FolderShareGrant,
     FolderSharingUpdateResult,
     FolderVisibilityMode,
@@ -24,6 +29,7 @@ from orcia_core.orchestration._assistant_folders_models import (
 )
 from orcia_core.orchestration.errors import ResourceNotFoundError
 from orcia_core.permissions.models import UserIdentity
+from orcia_core.ports.assistant_turn_stream_port import ThreadTurnLockPort
 
 if TYPE_CHECKING:
     from orcia_core.orchestration._internal.sql_assistant_folders import (
@@ -36,8 +42,10 @@ class _AssistantFoldersAsyncOpsMixin:
 
     _sql_repo: SqlAssistantFoldersRepository | None
     _folders: dict[str, AssistantFolderRecord]
+    _threads: dict[str, AssistantThreadSummary]
     _folder_meta: dict[str, tuple[tuple[str, ...], tuple[str, ...]]]
     _workspace_members: dict[str, set[str]]
+    _thread_lock: ThreadTurnLockPort
 
     if TYPE_CHECKING:
 
@@ -168,4 +176,50 @@ class _AssistantFoldersAsyncOpsMixin:
             ws_threads=ws_threads,
             active_folder_id=active_folder_id,
             search_query=search_query,
+        )
+
+    async def _send_collaborative_turn_fallback_async(
+        self,
+        *,
+        workspace_id: str,
+        thread_id: str,
+        sender_user: UserIdentity,
+        message_text: str,
+        release_lock_after_turn: bool,
+    ) -> CollaborativeThreadTurnResult:
+        ensure_not_observer(sender_user)
+        thread_mem = self._threads.get(thread_id)
+        if thread_mem is None or thread_mem.workspace_id != workspace_id:
+            raise ResourceNotFoundError(detail_override=f"Discussion introuvable : {thread_id}")
+        folder_mem = self._folders.get(thread_mem.folder_id) if thread_mem.folder_id else None
+        enforce_folder_turn_access(folder_mem, sender_user)
+        lock_key, lock_token = await self._thread_lock.acquire_async(
+            thread_id=thread_id,
+            user_id=sender_user.id,
+            ttl_seconds=THREAD_TURN_LOCK_TTL_SECONDS,
+        )
+        personal_passthrough = f"passthrough:oidc:{sender_user.id}:{sender_user.email}"
+        updated_mem = AssistantThreadSummary(
+            thread_id=thread_mem.thread_id,
+            workspace_id=thread_mem.workspace_id,
+            folder_id=thread_mem.folder_id,
+            creator_user_id=thread_mem.creator_user_id,
+            title=thread_mem.title,
+            thread_summary=f"{thread_mem.thread_summary} | {message_text.strip()}".strip(" |"),
+            turn_count=thread_mem.turn_count + 1,
+            last_author_user_id=sender_user.id,
+            last_author_passthrough_identity=personal_passthrough,
+        )
+        self._threads[thread_id] = updated_mem
+        if release_lock_after_turn:
+            await self._thread_lock.release_async(
+                thread_id=thread_id, user_id=sender_user.id, token=lock_token
+            )
+        return build_turn_result(
+            thread=updated_mem,
+            folder=folder_mem,
+            workspace_id=workspace_id,
+            sender_user=sender_user,
+            lock_key=lock_key,
+            personal_passthrough=personal_passthrough,
         )

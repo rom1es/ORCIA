@@ -23,7 +23,6 @@ from testcontainers.postgres import PostgresContainer
 from orcia_api.main import create_app
 from orcia_core.orchestration._internal.sql_ai_model_mappings import (
     create_ai_model_mapping_pg18,
-    ensure_ai_model_mappings_schema_on_postgres18,
 )
 from orcia_core.permissions import SecretInputSpec
 from orcia_kernel.ids import new_uuid7_str
@@ -149,7 +148,6 @@ async def test_pg18_vertical_assistant_scope_guard_resolver_and_setup_state(
                     {"id": ws_b_id, "ou": bu_id},
                 )
                 # Register a workspace-scoped chat model mapping for ws_a_id
-                await ensure_ai_model_mappings_schema_on_postgres18(conn)
                 await create_ai_model_mapping_pg18(
                     conn,
                     cipher=app.state.auth_service.vault_cipher,

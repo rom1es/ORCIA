@@ -17,7 +17,6 @@ from orcia_core.observability.logging import get_current_trace_id, get_logger
 from orcia_core.orchestration import (
     AiModelMappingRecord,
     AiModelsHubService,
-    ensure_ai_model_mappings_schema_on_postgres18,
     get_active_global_embedding_model_pg18,
 )
 from orcia_core.permissions import AuthAndOrganizationService
@@ -138,8 +137,6 @@ async def fetch_reindex_status_response(request: Request) -> RagReindexStatusRes
     if engine is None:
         engine = get_or_create_shared_db_engine(request)
     async with engine.begin() as conn:
-        # Ensure schema if needed
-        await ensure_ai_model_mappings_schema_on_postgres18(conn)
         chunks_count, docs_count = await count_indexed_corpus_pg18(conn)
         job = await get_latest_reindex_job_pg18(conn)
         return _row_to_status_response(
@@ -167,7 +164,6 @@ async def trigger_manual_reindex_embeddings(
             request
         )
         async with engine.begin() as conn:
-            await ensure_ai_model_mappings_schema_on_postgres18(conn)
             resolved = await get_active_global_embedding_model_pg18(
                 conn, cipher=auth_svc.vault_cipher
             )
