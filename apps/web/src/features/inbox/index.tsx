@@ -10,6 +10,7 @@ import {
 } from "./InboxActiveTraceAndTurns";
 import { InboxDisabledBanner } from "./InboxDisabledBanner";
 import { InboxNotificationsCenterView } from "./InboxNotificationsCenterView";
+import { citationMapToRagItems } from "./inboxCitationHelpers";
 import {
   ASSISTANT_REFLEXIVE_STORAGE_KEY,
   useInboxPanelController,
@@ -34,16 +35,16 @@ function AssistantInboxFeatureContent() {
   const ctrl = useInboxPanelController();
   const {
     dictionary, isFr, authorEmail, activeWorkspaceId,
-    hasActiveEmbeddingModel, hasActiveChatModel, ragReindex, assistantInputBlocked,
+    hasActiveEmbeddingModel, hasActiveChatModel, supportsTools, ragReindex, assistantInputBlocked,
     prefillPrompt, setPrefillPrompt, activeFolderId, activeFolder,
-    governancePrefs, setGovernancePrefs, foldersPanelOpen, setFoldersPanelOpen,
+    governancePrefs, governance, foldersPanelOpen, setFoldersPanelOpen,
     savedConversationsOpen, setSavedConversationsOpen, savedConversations,
     activeConversationId, activeConversation, promptTelemetryLog,
     governanceOpen, setGovernanceOpen, governanceFeedback, setGovernanceFeedback,
-    foldersController, inspector, streaming,
-    modelOptions, agentOptions, skillOptions, orciaDocuments, ragCitations, autocompleteSuggestions,
+    foldersController, threads, inspector, streaming,
+    modelOptions, agentOptions, skillOptions, orciaDocuments, autocompleteSuggestions,
     selectActiveConversationAndPersist, selectActiveFolderAndPersist,
-    handleFeedbackTurn, handleSendTurnWithReflexive, handleStopAll, handleDeleteConversation,
+    handleFeedbackTurn, handleSendTurnWithReflexive, handleDeepenTurn, handleStopAll, handleDeleteConversation,
   } = ctrl;
 
   const broker = usePermissionBrokerTickets({
@@ -72,13 +73,18 @@ function AssistantInboxFeatureContent() {
   const latestTurnInActiveConv =
     activeConversation?.turns[activeConversation.turns.length - 1] ?? null;
 
+  const activeCitationMap = streaming.citationMap ?? latestTurnInActiveConv?.citationMap ?? null;
+  const activeRagCitations =
+    latestTurnInActiveConv?.usedSources ?? citationMapToRagItems(activeCitationMap);
+
   const citationCardPreview = buildAssistantCitationCardPreview({
     isGenerating: streaming.isGenerating,
     replyText: latestTurnInActiveConv?.assistantReply ?? streaming.streamedText ?? "",
-    activeSources: latestTurnInActiveConv?.usedSources ?? ragCitations,
+    citationMap: activeCitationMap,
     activeFolderTitle: activeFolder?.title ?? null,
     isFr,
     onInspectCitationUri: inspector.openInspectCitationUri,
+    onRequestRestrictedAccess: () => navigateToRoute("/permissions"),
   });
 
   const showActiveReflexiveSlot = Boolean(
@@ -93,21 +99,42 @@ function AssistantInboxFeatureContent() {
     showActiveReflexiveSlot,
     reflexiveStatus: streaming.activeTraceStatus,
     reflexiveEvents: streaming.traceEvents,
+    toolCallSteps: streaming.toolCallSteps,
+    approvalProposal: streaming.approvalProposal,
+    approvalBusy: streaming.approvalBusy,
     pendingWritePreview: streaming.pendingWritePreview,
     activeConversation,
     isFr,
     isGenerating: streaming.isGenerating,
-    ragCitations,
-    traceLabels: dictionary.executionTrace,
+    supportsTools,
+    dictionary,
     onInspectLines: inspector.openInspectTarget,
     onInspectCitationUri: inspector.openInspectCitationUri,
     onSynthesizeNow: () => void streaming.synthesizeNow(),
-    onApproveWrite: (id) => void streaming.approveProposal(id),
-    onRejectWrite: (id) => void streaming.rejectProposal(id),
+    onApproveProposal: (id, anchor) => void streaming.approveProposal(id, anchor),
+    onRejectProposal: (id, rationale) => void streaming.rejectProposal(id, rationale),
+    onOpenProcess: () => navigateToRoute("/processes"),
     onSendTurn: handleSendTurnWithReflexive,
+    onDeepenTurn: handleDeepenTurn,
     onContinueInProcess: () => navigateToRoute("/processes"),
     onFeedbackTurn: handleFeedbackTurn,
   });
+
+  const handleDeepenActive =
+    supportsTools && !streaming.isGenerating && (latestTurnInActiveConv || streaming.activeTurnId)
+      ? () => {
+          if (latestTurnInActiveConv) {
+            handleDeepenTurn(latestTurnInActiveConv);
+          } else if (streaming.activeTurnId) {
+            handleSendTurnWithReflexive({
+              userPrompt: streaming.activeUserPrompt,
+              requestedSpeed: "SPEED_2_AGENT_TOOLS",
+              deepAuditPillActive: false,
+              parentTurnId: streaming.activeTurnId,
+            });
+          }
+        }
+      : undefined;
 
   return (
     <div className="space-y-4" data-testid="inbox-feature-panel">
@@ -122,17 +149,24 @@ function AssistantInboxFeatureContent() {
         dictionary={dictionary}
         broker={broker}
         onNewConversation={() => {
-          selectActiveConversationAndPersist(null);
+          threads.startNewThread();
           streaming.resetStreamState("");
         }}
         onToggleSavedConversations={() => setSavedConversationsOpen((prev) => !prev)}
         onToggleFoldersPanel={() => setFoldersPanelOpen((prev) => !prev)}
-        onToggleGovernanceModal={() => setGovernanceOpen((prev) => !prev)}
+        onToggleGovernanceModal={() => {
+          setGovernanceOpen((prev) => {
+            const next = !prev;
+            if (next) void governance.refreshGovernance();
+            return next;
+          });
+        }}
         onOpenHelpSection={openHelpSection}
         onResumeConversation={(convId) => {
           const target = savedConversations.find((c) => c.id === convId);
           if (!target) return;
           selectActiveConversationAndPersist(target.id);
+          void threads.loadThreadMessages(target.id);
           const latestTurn = target.turns[target.turns.length - 1];
           streaming.resetStreamState(latestTurn?.assistantReply ?? "");
           setSavedConversationsOpen(false);
@@ -145,11 +179,13 @@ function AssistantInboxFeatureContent() {
           workspaceId={activeWorkspaceId}
           userId={authorEmail}
           hat={governancePrefs.defaultHat}
+          supportsTools={supportsTools}
+          lowEvidence={Boolean(streaming.lowEvidence || latestTurnInActiveConv?.lowEvidence)}
           modelOptions={modelOptions}
           agentOptions={agentOptions}
           skillOptions={skillOptions}
           orciaDocuments={orciaDocuments}
-          ragCitations={ragCitations}
+          ragCitations={activeRagCitations}
           autocompleteSuggestions={autocompleteSuggestions}
           prefillPrompt={prefillPrompt}
           onPrefillConsumed={() => setPrefillPrompt(null)}
@@ -193,10 +229,9 @@ function AssistantInboxFeatureContent() {
           }}
           currentTurnFeedback={latestTurnInActiveConv?.userFeedback ?? null}
           onFeedbackLastTurn={(fb) => {
-            if (latestTurnInActiveConv) {
-              handleFeedbackTurn(latestTurnInActiveConv.turnId, fb);
-            }
+            if (latestTurnInActiveConv) handleFeedbackTurn(latestTurnInActiveConv.turnId, fb);
           }}
+          onDeepenLastTurn={handleDeepenActive}
           labels={dictionary.assistantSpeedStream}
           disabled={assistantInputBlocked}
           disabledReasonBanner={disabledReasonBannerNode}
@@ -221,13 +256,18 @@ function AssistantInboxFeatureContent() {
           foldersPanelOpen,
           governanceOpen,
           governancePrefs,
+          canEditWorkspaceLayer: governance.canEditWorkspaceLayer,
+          mcpFrozenByUpperLayer: governance.mcpFrozenByUpperLayer,
+          mcpIdeConfigJson: governance.mcpIdeConfigJson,
+          assembledLayers: governance.assembledLayers,
           promptTelemetryLog,
           folders: foldersController.folders,
           authorIdentity: authorEmail,
           dictionary,
-          setGovernancePrefs,
           setGovernanceOpen,
           setGovernanceFeedback,
+          onSaveUserPreferences: governance.saveUserPreferences,
+          onSaveWorkspaceSettings: governance.saveWorkspaceSettings,
           selectActiveFolderAndPersist,
           createFolder: foldersController.createFolder,
           savePinnedNotes: foldersController.savePinnedNotes,
@@ -241,9 +281,7 @@ function AssistantInboxFeatureContent() {
             ),
           onLaunchProcessFromFolder: (folderId, targetWorkflowUri) => {
             void foldersController.launchProcess(folderId, targetWorkflowUri).then((launchedRunId) => {
-              if (launchedRunId) {
-                navigateToRoute("/processes");
-              }
+              if (launchedRunId) navigateToRoute("/processes");
             });
           },
           onNavigateToProcesses: () => navigateToRoute("/processes"),

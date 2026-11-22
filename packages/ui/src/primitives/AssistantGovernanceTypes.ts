@@ -64,19 +64,19 @@ export interface AssistantGovernanceModalAndStudioLabels extends RgaaModalGuardL
   readonly mcpFrozenByUpperBadge: string;
   readonly copyMcpConfigCta: string;
   readonly saveWorkspaceSettingsCta: string;
-  readonly openStudioModeBCta: string;
-  readonly studioHeaderTitle: string;
-  readonly studioPrePromptLabel: string;
-  readonly studioHarnessImmutableBadge: string;
-  readonly studioTestDryRunCta: string;
-  readonly studioSaveOverrideCta: string;
-  readonly studioResetDefaultCta: string;
+  readonly openStudioModeBCta?: string;
+  readonly studioHeaderTitle?: string;
+  readonly studioPrePromptLabel?: string;
+  readonly studioHarnessImmutableBadge?: string;
+  readonly studioTestDryRunCta?: string;
+  readonly studioSaveOverrideCta?: string;
+  readonly studioResetDefaultCta?: string;
 }
 
 export interface AssistantGovernanceModalAndStudioProps {
   readonly workspaceId: string;
   readonly canEditWorkspaceLayer: boolean;
-  readonly canOpenStudioModeB: boolean;
+  readonly canOpenStudioModeB?: boolean;
   readonly isOpen?: boolean;
   readonly initialUserTone?: UiAssistantResponseTone;
   readonly initialUserFormat?: UiAssistantResponseFormat;
@@ -88,7 +88,7 @@ export interface AssistantGovernanceModalAndStudioProps {
   readonly mcpIdeConfigJson?: string;
   readonly assembledLayers: readonly UiAssembledLayerItem[];
   readonly promptTelemetryLog?: readonly UiAssistantPromptTelemetryRecord[];
-  readonly studioNodes: readonly UiAssistantStudioNode[];
+  readonly studioNodes?: readonly UiAssistantStudioNode[];
   readonly initialStudioPrePrompt?: string;
   readonly labels: AssistantGovernanceModalAndStudioLabels;
   readonly onSaveUserPreferences?: (payload: {

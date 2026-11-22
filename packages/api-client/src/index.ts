@@ -2,6 +2,17 @@ import createClient from "openapi-fetch";
 import { createAgentsAndSkillsDomainClient } from "./domains/agentsAndSkills";
 import { createAiModelsHubDomainClient } from "./domains/aiModelsHub";
 import {
+  createAssistantGovernanceAndThreadsDomainClient,
+  type AssembledLayerPreviewSchemaItem,
+  type AssistantGovernanceViewResponse,
+  type AssistantThreadMessageSchemaItem,
+  type AssistantThreadMessagesListResponse,
+  type UpdateUserLayerPreferencesRequest,
+  type UpdateWorkspaceLayerSettingsRequest,
+  type UserLayerPreferencesSchemaItem,
+  type WorkspaceLayerSettingsSchemaItem,
+} from "./domains/assistantGovernanceAndThreads";
+import {
   createAuditFinopsDomainClient,
   type ListAuditLedgerParams,
 } from "./domains/auditFinops";
@@ -87,6 +98,7 @@ export {
   buildOrgUnitsQuery,
   createAgentsAndSkillsDomainClient,
   createAiModelsHubDomainClient,
+  createAssistantGovernanceAndThreadsDomainClient,
   createAssistantStreamingDomainClient,
   createAuditFinopsDomainClient,
   createAuthAndShellDomainClient,
@@ -112,7 +124,15 @@ export {
   type ApiImpactAssessmentResult,
   type ApiValueStreamMapSpec,
   type ApiWorkflowDefinitionV2,
+  type AssembledLayerPreviewSchemaItem,
+  type AssistantGovernanceViewResponse,
+  type AssistantThreadMessageSchemaItem,
+  type AssistantThreadMessagesListResponse,
   type AssistantTurnSseOptions,
+  type UpdateUserLayerPreferencesRequest,
+  type UpdateWorkspaceLayerSettingsRequest,
+  type UserLayerPreferencesSchemaItem,
+  type WorkspaceLayerSettingsSchemaItem,
   type BinaryDownloadResult,
   type DeclarativePacksListResponse,
   type DeclarativePackSummaryResponse,
@@ -180,6 +200,7 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
     ...createBootstrapAndOntologyDomainClient(requestJson, requestSse),
     ...createEpics1To7OperationsDomainClient(requestJson),
     ...createAgentsAndSkillsDomainClient(requestJson),
+    ...createAssistantGovernanceAndThreadsDomainClient(requestJson),
     ...createFinopsDomainClient(requestJson),
     ...createOntologyPromotionsDomainClient(requestJson),
     ...createReflexiveExecutionDomainClient(requestJson, options.baseUrl),

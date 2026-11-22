@@ -1,9 +1,7 @@
 import {
   DEFAULT_ASSISTANT_AGENT_OPTIONS,
   DEFAULT_ASSISTANT_SKILL_OPTIONS,
-  DEFAULT_ORCIA_DOCUMENT_OPTIONS,
   type ControlCenterDatasourceItem,
-  type UiAssistantAttachedFileItem,
   type UiAssistantAutocompleteOption,
   type UiAssistantAutocompleteSuggestion,
   type UiAssistantModelOption,
@@ -16,42 +14,6 @@ import {
   consumeAssistantPrefillPrompt,
   readCachedAgentsAndSkills,
 } from "../../components/agentsAndSkillsBridgeStore";
-
-export function filterUsedRagSourcesForTurn(params: {
-  readonly userPrompt: string;
-  readonly assistantReply: string;
-  readonly datasources: readonly ControlCenterDatasourceItem[];
-  readonly attachedFiles?: readonly UiAssistantAttachedFileItem[];
-}): readonly UiAssistantRagCitationItem[] {
-  const results: UiAssistantRagCitationItem[] = [];
-  const seenUris = new Set<string>();
-
-  for (const file of params.attachedFiles ?? []) {
-    const uri = file.uri ?? `#local-file-${encodeURIComponent(file.name)}`;
-    if (!seenUris.has(uri)) {
-      seenUris.add(uri);
-      results.push({ title: file.name, uri });
-    }
-  }
-
-  const combinedLower =
-    `${params.userPrompt} ${params.assistantReply}`.toLowerCase();
-  for (const ds of params.datasources) {
-    if (seenUris.has(ds.uri)) continue;
-    const aliasLower = ds.alias.toLowerCase();
-    const significantTokens = aliasLower
-      .split(/[^a-zA-Z0-9àâäéèêëîïôöùûüç]+/)
-      .filter((tok) => tok.length > 4);
-    if (
-      combinedLower.includes(aliasLower) ||
-      significantTokens.some((tok) => combinedLower.includes(tok))
-    ) {
-      seenUris.add(ds.uri);
-      results.push({ title: ds.alias, uri: ds.uri });
-    }
-  }
-  return results;
-}
 
 export function buildAssistantAutocompleteAndRagOptions(params: {
   readonly catalogItems: readonly UiCatalogExplorerItemView[];
@@ -93,13 +55,11 @@ export function buildAssistantAutocompleteAndRagOptions(params: {
     ),
   ];
   const orciaDocuments: readonly UiAssistantOrciaDocumentOption[] =
-    params.datasources.length > 0
-      ? params.datasources.map((ds) => ({
-          id: ds.id,
-          title: ds.alias,
-          uri: ds.uri,
-        }))
-      : DEFAULT_ORCIA_DOCUMENT_OPTIONS;
+    params.datasources.map((ds) => ({
+      id: ds.id,
+      title: ds.alias,
+      uri: ds.uri,
+    }));
   return { agentOptions, skillOptions, orciaDocuments, ragCitations: [] };
 }
 

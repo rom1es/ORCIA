@@ -1,19 +1,22 @@
 import { OrciaProblemError } from "@orcia/api-client";
 import type {
   UiAgentTraceEventItem,
+  UiAssistantApprovalProposal,
   UiAssistantAttachedFileItem,
   UiAssistantErrorKind,
   UiAssistantSpeedMode,
+  UiAssistantToolCallStepItem,
   UiInferenceEffort,
   UiInferenceTier,
   UiReflexivePendingWritePreview,
   UiReflexiveSessionStatus,
   UiThreeSpeedStepProgress,
 } from "@orcia/ui";
-import type { SavedAssistantConversation } from "./savedConversationsStore";
 
 export interface CompletedAssistantTurnPayload {
   readonly turnId?: string;
+  readonly threadId?: string | null;
+  readonly parentTurnId?: string | null;
   readonly userPrompt: string;
   readonly assistantReply: string;
   readonly assembledSystemPrompt?: string;
@@ -27,6 +30,8 @@ export interface CompletedAssistantTurnPayload {
   readonly stepProgress?: readonly UiThreeSpeedStepProgress[];
   readonly thinkingElapsedSeconds?: number;
   readonly traceEvents?: readonly UiAgentTraceEventItem[];
+  readonly toolCallSteps?: readonly UiAssistantToolCallStepItem[];
+  readonly approvalProposal?: UiAssistantApprovalProposal | null;
   readonly citationMap?: Readonly<Record<string, unknown>> | null;
   readonly lowEvidence?: boolean;
   readonly supportsTools?: boolean;
@@ -34,11 +39,16 @@ export interface CompletedAssistantTurnPayload {
 
 export interface BackgroundAssistantStreamSnapshot {
   activeTurnId: string | null;
+  activeThreadId: string | null;
+  lastEventCursor: string | null;
   streamedText: string;
   activeUserPrompt: string;
   stepProgress: readonly UiThreeSpeedStepProgress[];
   activeTraceStatus: UiReflexiveSessionStatus | null;
   traceEvents: readonly UiAgentTraceEventItem[];
+  toolCallSteps: readonly UiAssistantToolCallStepItem[];
+  approvalProposal: UiAssistantApprovalProposal | null;
+  approvalBusy: boolean;
   pendingWritePreview: UiReflexivePendingWritePreview | null;
   citationMap: Readonly<Record<string, unknown>> | null;
   lowEvidence: boolean;
@@ -62,11 +72,16 @@ let bgOnTurnCompletedCallback: ((params: CompletedAssistantTurnPayload) => void)
 
 export let bgSnapshot: BackgroundAssistantStreamSnapshot = {
   activeTurnId: null,
+  activeThreadId: null,
+  lastEventCursor: null,
   streamedText: "",
   activeUserPrompt: "",
   stepProgress: [],
   activeTraceStatus: null,
   traceEvents: [],
+  toolCallSteps: [],
+  approvalProposal: null,
+  approvalBusy: false,
   pendingWritePreview: null,
   citationMap: null,
   lowEvidence: false,
@@ -128,11 +143,16 @@ export function resetBackgroundAssistantStreamForTests(): void {
   clearBgTimers();
   bgSnapshot = {
     activeTurnId: null,
+    activeThreadId: null,
+    lastEventCursor: null,
     streamedText: "",
     activeUserPrompt: "",
     stepProgress: [],
     activeTraceStatus: null,
     traceEvents: [],
+    toolCallSteps: [],
+    approvalProposal: null,
+    approvalBusy: false,
     pendingWritePreview: null,
     citationMap: null,
     lowEvidence: false,
@@ -211,20 +231,6 @@ export function shouldUseProgressiveStepThinking(params: {
     return true;
   }
   return /(?:^|\s)(@[a-zA-Z0-9_-]+|\/[a-zA-Z0-9_-]+)/.test(params.userPrompt);
-}
-
-export function buildConversationHistoryPayload(
-  conversation?: SavedAssistantConversation | null,
-): Array<{ role: "user" | "assistant"; content: string }> {
-  if (!conversation || !conversation.turns.length) return [];
-  const history: Array<{ role: "user" | "assistant"; content: string }> = [];
-  for (const turn of conversation.turns) {
-    if (turn.userPrompt.trim()) history.push({ role: "user", content: turn.userPrompt.trim() });
-    if (turn.assistantReply.trim()) {
-      history.push({ role: "assistant", content: turn.assistantReply.trim() });
-    }
-  }
-  return history;
 }
 
 export interface AssistantStreamErrorLabels {

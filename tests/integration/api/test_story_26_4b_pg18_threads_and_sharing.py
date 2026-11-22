@@ -93,26 +93,43 @@ async def test_pg18_threads_turns_sharing_and_launch_process_cold_restart(
             assert r_thr.json()["turn_count"] == 1
 
             r_turn1 = await c1.post(
-                f"/api/v1/assistant/threads/{thread_id}/turns",
+                "/api/v1/assistant/turns",
                 headers=hdrs,
                 json={
                     "workspace_id": ws_id,
-                    "message_text": "Validate PG18 persistence invariant.",
-                    "release_lock_after_turn": False,
+                    "thread_id": thread_id,
+                    "folder_id": folder_id,
+                    "user_prompt": "Validate PG18 persistence invariant.",
                 },
             )
-            assert r_turn1.status_code == 200, r_turn1.text
+            assert r_turn1.status_code == 202, r_turn1.text
+            r_stream1 = await c1.get(r_turn1.json()["stream_url"], headers=hdrs)
+            assert r_stream1.status_code == 200
+
             r_turn2 = await c1.post(
-                f"/api/v1/assistant/threads/{thread_id}/turns",
+                "/api/v1/assistant/turns",
                 headers=hdrs,
                 json={
                     "workspace_id": ws_id,
-                    "message_text": "Confirm release on exit.",
-                    "release_lock_after_turn": True,
+                    "thread_id": thread_id,
+                    "folder_id": folder_id,
+                    "user_prompt": "Confirm release on exit.",
                 },
             )
-            assert r_turn2.status_code == 200, r_turn2.text
-            assert r_turn2.json()["layer5_memory_injected"] is True
+            assert r_turn2.status_code == 202, r_turn2.text
+            r_stream2 = await c1.get(r_turn2.json()["stream_url"], headers=hdrs)
+            assert r_stream2.status_code == 200
+
+            r_msgs = await c1.get(
+                f"/api/v1/assistant/threads/{thread_id}/messages",
+                headers=hdrs,
+                params={"workspace_id": ws_id},
+            )
+            assert r_msgs.status_code == 200, r_msgs.text
+            assert any(
+                "Validate PG18 persistence invariant." in m["content"]
+                for m in r_msgs.json()["messages"]
+            )
 
             r_launch = await c1.post(
                 f"/api/v1/assistant/folders/{folder_id}/launch-process",
@@ -123,9 +140,7 @@ async def test_pg18_threads_turns_sharing_and_launch_process_cold_restart(
                 },
             )
             assert r_launch.status_code == 200, r_launch.text
-            assert "Validate PG18 persistence invariant." in str(
-                r_launch.json()["prefilled_contract_inputs"]
-            )
+            assert "Initial context summary." in str(r_launch.json()["prefilled_contract_inputs"])
 
         app2 = create_app()
         async with (

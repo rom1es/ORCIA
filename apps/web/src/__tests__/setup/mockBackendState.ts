@@ -56,6 +56,13 @@ export interface MockBackendState {
   agents: Array<Record<string, unknown>>;
   skills: Array<Record<string, unknown>>;
   assistantFolders: Array<Record<string, unknown>>;
+  assistantThreads: Array<Record<string, unknown>>;
+  assistantThreadMessages: Array<Record<string, unknown>>;
+  assistantGovernance: {
+    userPreferences: Record<string, unknown>;
+    workspaceSettings: Record<string, unknown>;
+    canEditWorkspaceLayer: boolean;
+  };
   inboxNotifications: Array<Record<string, unknown>>;
   permissionBrokerPolicies: Array<Record<string, unknown>>;
   permissionBrokerTickets: Array<Record<string, unknown>>;
@@ -101,6 +108,32 @@ export const backendState: MockBackendState = {
   agents: [],
   skills: [],
   assistantFolders: [],
+  assistantThreads: [],
+  assistantThreadMessages: [],
+  assistantGovernance: {
+    userPreferences: {
+      response_tone: "BALANCED",
+      favorite_format: "STRUCTURED_SECTIONS",
+      default_hat: "PM",
+      personal_instructions: "Privilégier des réponses claires.",
+      sha256: "sha-user-default",
+    },
+    workspaceSettings: {
+      workspace_instructions: "S'appuyer sur les documents de référence de l'espace.",
+      mcp_expose_assistant: true,
+      mcp_frozen_by_upper_layer: false,
+      mcp_frozen_origin: null,
+      mcp_ide_config_json: "{\"mcpServers\":{\"orcia\":{}}}",
+      mcp_endpoint_url: "https://orcia.local/mcp",
+      mcp_tool_name: "orcia_assistant",
+      arbitration_policy: "PAUSE_AND_ESCALATE",
+      default_checked_sources: [],
+      recommended_agents: [],
+      welcome_suggestions: [],
+      sha256: "sha-ws-default",
+    },
+    canEditWorkspaceLayer: true,
+  },
   inboxNotifications: [],
   permissionBrokerPolicies: [],
   permissionBrokerTickets: [],
@@ -199,6 +232,32 @@ export function resetVitestApiBackend(): void {
   backendState.agents = [];
   backendState.skills = [];
   backendState.assistantFolders = [];
+  backendState.assistantThreads = [];
+  backendState.assistantThreadMessages = [];
+  backendState.assistantGovernance = {
+    userPreferences: {
+      response_tone: "BALANCED",
+      favorite_format: "STRUCTURED_SECTIONS",
+      default_hat: "PM",
+      personal_instructions: "Privilégier des réponses claires.",
+      sha256: "sha-user-default",
+    },
+    workspaceSettings: {
+      workspace_instructions: "S'appuyer sur les documents de référence de l'espace.",
+      mcp_expose_assistant: true,
+      mcp_frozen_by_upper_layer: false,
+      mcp_frozen_origin: null,
+      mcp_ide_config_json: "{\"mcpServers\":{\"orcia\":{}}}",
+      mcp_endpoint_url: "https://orcia.local/mcp",
+      mcp_tool_name: "orcia_assistant",
+      arbitration_policy: "PAUSE_AND_ESCALATE",
+      default_checked_sources: [],
+      recommended_agents: [],
+      welcome_suggestions: [],
+      sha256: "sha-ws-default",
+    },
+    canEditWorkspaceLayer: true,
+  };
   backendState.inboxNotifications = [];
   backendState.permissionBrokerPolicies = [];
   backendState.permissionBrokerTickets = [];

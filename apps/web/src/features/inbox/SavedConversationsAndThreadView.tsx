@@ -2,103 +2,20 @@ import {
   AgentExecutionTrace,
   AssistantResponseFooterActionsAndCitations,
   AssistantThinkingSubWindow,
+  AssistantToolCallTrace,
   AssistantUserQuestionBubble,
   FormattedMarkdownContent,
   OrciaIcon,
   sanitizeAssistantDisplayReply,
   type AgentExecutionTraceLabels,
+  type AssistantToolCallTraceLabels,
   type UiAssistantRagCitationItem,
   type UiSourceLineInspectTarget,
 } from "@orcia/ui";
 import React from "react";
-import type { SavedAssistantConversation } from "./savedConversationsStore";
+import type { SavedAssistantConversation, SavedConversationTurnItem } from "./savedConversationsStore";
 
-export interface AssistantTopToolbarProps {
-  readonly isFr: boolean;
-  readonly savedCount: number;
-  readonly foldersCount: number;
-  readonly savedConversationsOpen: boolean;
-  readonly foldersPanelOpen: boolean;
-  readonly governanceModalTitle: string;
-  readonly onNewConversation: () => void;
-  readonly onToggleSavedConversations: () => void;
-  readonly onToggleFoldersPanel: () => void;
-  readonly onToggleGovernanceModal: () => void;
-  readonly onOpenHelpSection: (sectionId: string) => void;
-}
-
-export function AssistantTopToolbar({
-  isFr,
-  savedCount,
-  foldersCount,
-  savedConversationsOpen,
-  foldersPanelOpen,
-  governanceModalTitle,
-  onNewConversation,
-  onToggleSavedConversations,
-  onToggleFoldersPanel,
-  onToggleGovernanceModal,
-}: AssistantTopToolbarProps): React.JSX.Element {
-  return (
-    <div className="orcia-bento-card flex flex-wrap items-center justify-between gap-2 py-2.5 px-3.5">
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          data-testid="assistant-new-conversation-btn"
-          onClick={onNewConversation}
-          className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm rounded-full"
-        >
-          {isFr ? "+ Nouvelle conversation" : "+ New conversation"}
-        </button>
-
-        <button
-          type="button"
-          data-testid="assistant-saved-conversations-toggle-btn"
-          aria-expanded={savedConversationsOpen}
-          onClick={onToggleSavedConversations}
-          className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm rounded-full"
-        >
-          <OrciaIcon name="clock" />{" "}
-          {isFr
-            ? savedCount > 0
-              ? `Conversations sauvegardées (${savedCount})`
-              : "Conversations sauvegardées"
-            : savedCount > 0
-              ? `Saved conversations (${savedCount})`
-              : "Saved conversations"}
-        </button>
-
-        <button
-          type="button"
-          data-testid="assistant-folders-toggle-btn"
-          aria-expanded={foldersPanelOpen}
-          onClick={onToggleFoldersPanel}
-          className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm rounded-full"
-        >
-          <OrciaIcon name="folder" />{" "}
-          {isFr
-            ? foldersCount > 0
-              ? `Dossiers (${foldersCount})`
-              : "Dossiers"
-            : foldersCount > 0
-              ? `Folders (${foldersCount})`
-              : "Folders"}
-        </button>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          data-testid="assistant-open-governance-btn"
-          onClick={onToggleGovernanceModal}
-          className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm rounded-full font-semibold"
-        >
-          {governanceModalTitle}
-        </button>
-      </div>
-    </div>
-  );
-}
+export { AssistantTopToolbar, type AssistantTopToolbarProps } from "./AssistantTopToolbar";
 
 export interface SavedConversationsPanelProps {
   readonly conversations: readonly SavedAssistantConversation[];
@@ -134,19 +51,13 @@ export function SavedConversationsPanel({
       </div>
 
       {conversations.length === 0 ? (
-        <p
-          data-testid="assistant-saved-conversations-empty"
-          className="text-xs text-text-secondary"
-        >
+        <p data-testid="assistant-saved-conversations-empty" className="text-xs text-text-secondary">
           {isFr
             ? "Aucune conversation sauvegardée pour le moment. Posez une question ci-dessous pour démarrer et enregistrer automatiquement votre premier échange."
             : "No saved conversation yet. Ask a question below to start and automatically save your first thread."}
         </p>
       ) : (
-        <ul
-          className="space-y-1.5"
-          data-testid="assistant-saved-conversations-list"
-        >
+        <ul className="space-y-1.5" data-testid="assistant-saved-conversations-list">
           {conversations.map((conv) => {
             const isCurrent = conv.id === activeConversationId;
             return (
@@ -165,9 +76,7 @@ export function SavedConversationsPanel({
                   onClick={() => onResumeConversation(conv.id)}
                   className="flex-1 text-left"
                 >
-                  <div className="font-semibold text-text-primary">
-                    {conv.title}
-                  </div>
+                  <div className="font-semibold text-text-primary">{conv.title}</div>
                   <div className="text-[11px] text-text-secondary">
                     {conv.turns.length}{" "}
                     {isFr
@@ -201,37 +110,39 @@ export interface ActiveConversationMessagesViewProps {
   readonly conversation: SavedAssistantConversation;
   readonly isFr: boolean;
   readonly isGenerating?: boolean;
-  readonly ragCitations?: readonly UiAssistantRagCitationItem[];
+  readonly supportsTools?: boolean;
+  readonly deepenLabel?: string;
+  readonly deepenLowEvidenceLabel?: string;
   readonly traceLabels: AgentExecutionTraceLabels;
+  readonly toolTraceLabels?: AssistantToolCallTraceLabels;
   readonly onInspectLines: (target: UiSourceLineInspectTarget) => void;
-  readonly onInspectCitation: (
-    source: UiAssistantRagCitationItem,
-    index: number,
-  ) => void;
+  readonly onInspectCitation: (source: UiAssistantRagCitationItem, index: number) => void;
   readonly onSynthesizeNow: () => void;
   readonly onApproveWrite: (previewId: string) => void;
   readonly onRejectWrite: (previewId: string) => void;
   readonly onRegenerateTurn?: (userPrompt: string) => void;
+  readonly onDeepenTurn?: (turn: SavedConversationTurnItem) => void;
   readonly onSaveDraft?: (content: string) => void;
   readonly onContinueInProcess?: (content: string) => void;
-  readonly onFeedbackTurn?: (
-    turnId: string,
-    feedback: "LIKE" | "DISLIKE" | null,
-  ) => void;
+  readonly onFeedbackTurn?: (turnId: string, feedback: "LIKE" | "DISLIKE" | null) => void;
 }
 
 export function ActiveConversationMessagesView({
   conversation,
   isFr,
   isGenerating = false,
-  ragCitations = [],
+  supportsTools = true,
+  deepenLabel,
+  deepenLowEvidenceLabel,
   traceLabels,
+  toolTraceLabels,
   onInspectLines,
   onInspectCitation,
   onSynthesizeNow,
   onApproveWrite,
   onRejectWrite,
   onRegenerateTurn,
+  onDeepenTurn,
   onSaveDraft,
   onContinueInProcess,
   onFeedbackTurn,
@@ -241,24 +152,20 @@ export function ActiveConversationMessagesView({
   }
 
   return (
-    <section
-      data-testid="assistant-conversation-messages-list"
-      className="space-y-4"
-    >
+    <section data-testid="assistant-conversation-messages-list" className="space-y-4">
       {conversation.turns.map((turn, idx) => {
         const cleanReply = sanitizeAssistantDisplayReply(turn.assistantReply);
-        const turnCitations = turn.usedSources ?? ragCitations;
+        const turnCitations = turn.usedSources ?? [];
         const turnSteps = turn.stepProgress ?? [];
-        const turnSeconds =
-          turn.thinkingElapsedSeconds ?? (turnSteps.length > 0 ? 3 : 1);
+        const turnSeconds = turn.thinkingElapsedSeconds ?? (turnSteps.length > 0 ? 3 : 1);
         const isLastSavedTurn = idx === conversation.turns.length - 1;
-        const hasReflexiveTrace = Boolean(
-          turn.reflexiveTraceEvents && turn.reflexiveTraceEvents.length > 0,
-        );
+        const hasReflexiveTrace = Boolean(turn.reflexiveTraceEvents && turn.reflexiveTraceEvents.length > 0);
+        const hasToolTrace = Boolean(turn.toolCallSteps && turn.toolCallSteps.length > 0 && toolTraceLabels);
         return (
           <div
             key={turn.turnId}
             data-testid={`assistant-conversation-turn-${idx + 1}`}
+            data-parent-turn-id={turn.parentTurnId ?? undefined}
             className="space-y-2.5 text-xs"
           >
             <AssistantUserQuestionBubble
@@ -266,9 +173,7 @@ export function ActiveConversationMessagesView({
               isFr={isFr}
               modelLabel={turn.modelLabel}
               effortLabel={turn.effortLabel}
-              {...(turn.attachedFiles
-                ? { attachedFiles: turn.attachedFiles }
-                : {})}
+              {...(turn.attachedFiles ? { attachedFiles: turn.attachedFiles } : {})}
               testId={
                 isLastSavedTurn && !isGenerating
                   ? "assistant-user-question-bubble"
@@ -277,6 +182,13 @@ export function ActiveConversationMessagesView({
             />
 
             <div className="pt-1 space-y-2">
+              {hasToolTrace && toolTraceLabels && (
+                <AssistantToolCallTrace
+                  steps={turn.toolCallSteps!}
+                  labels={toolTraceLabels}
+                  onInspectLines={onInspectLines}
+                />
+              )}
               {hasReflexiveTrace ? (
                 <AgentExecutionTrace
                   status="COMPLETED"
@@ -297,10 +209,7 @@ export function ActiveConversationMessagesView({
                   elapsedSecondsOverride={turnSeconds}
                 />
               )}
-              <FormattedMarkdownContent
-                content={cleanReply}
-                testId={`assistant-turn-markdown-${idx + 1}`}
-              />
+              <FormattedMarkdownContent content={cleanReply} testId={`assistant-turn-markdown-${idx + 1}`} />
               {isLastSavedTurn && !isGenerating && (
                 <AssistantResponseFooterActionsAndCitations
                   responseText={cleanReply}
@@ -309,6 +218,11 @@ export function ActiveConversationMessagesView({
                   effortLabel={turn.effortLabel}
                   ragCitations={turnCitations}
                   initialFeedback={turn.userFeedback ?? null}
+                  canDeepen={Boolean(supportsTools && onDeepenTurn)}
+                  lowEvidence={Boolean(turn.lowEvidence)}
+                  {...(deepenLabel ? { deepenLabel } : {})}
+                  {...(deepenLowEvidenceLabel ? { deepenLowEvidenceLabel } : {})}
+                  onDeepen={onDeepenTurn ? () => onDeepenTurn(turn) : undefined}
                   onFeedbackChange={(fb) => onFeedbackTurn?.(turn.turnId, fb)}
                   onRegenerate={() => onRegenerateTurn?.(turn.userPrompt)}
                   onSaveDraft={onSaveDraft}

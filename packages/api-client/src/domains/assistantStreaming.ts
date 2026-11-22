@@ -34,10 +34,6 @@ export type ConfigureAssistantFolderSharingResponse =
 export type CreateAssistantThreadRequest =
   components["schemas"]["CreateAssistantThreadRequest"];
 export type AssistantThreadResponse = components["schemas"]["AssistantThreadSchemaItem"];
-export type SendCollaborativeThreadTurnRequest =
-  components["schemas"]["SendCollaborativeThreadTurnRequest"];
-export type SendCollaborativeThreadTurnResponse =
-  components["schemas"]["SendCollaborativeThreadTurnResponse"];
 export type LaunchProcessFromFolderRequest =
   components["schemas"]["LaunchProcessFromFolderRequest"];
 export type LaunchProcessFromFolderResponse =
@@ -221,16 +217,6 @@ export function createAssistantStreamingDomainClient(
     },
     createAssistantThread(payload: CreateAssistantThreadRequest): Promise<AssistantThreadResponse> {
       return requestJson<AssistantThreadResponse>("/api/v1/assistant/threads", "POST", payload);
-    },
-    sendCollaborativeThreadTurn(
-      threadId: string,
-      payload: SendCollaborativeThreadTurnRequest,
-    ): Promise<SendCollaborativeThreadTurnResponse> {
-      return requestJson<SendCollaborativeThreadTurnResponse>(
-        `/api/v1/assistant/threads/${encodeURIComponent(threadId)}/turns`,
-        "POST",
-        payload,
-      );
     },
     launchProcessFromFolder(
       folderId: string,

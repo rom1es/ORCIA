@@ -12,6 +12,10 @@ import {
   type UiAssistantAutocompleteOption,
   type UiAssistantOrciaDocumentOption,
 } from "./AssistantPromptPlusAndAutocomplete";
+import {
+  AssistantActiveFolderPromptBadge,
+  AssistantToolsUnsupportedNotice,
+} from "./AssistantStickyFooterBadges";
 import type {
   UiInferenceEffort,
   UiInferenceTier,
@@ -44,6 +48,9 @@ export interface AssistantStickyPromptFooterProps {
   readonly activeFolderTitle: string | null;
   readonly activeFolderNotes: string | null;
   readonly disabled?: boolean;
+  readonly supportsTools?: boolean;
+  readonly toolsUnsupportedNotice?: string;
+  readonly toolsUnsupportedBadge?: string;
   readonly disabledReasonBanner?: React.ReactNode;
   readonly onScrollToStreamBottom: () => void;
   readonly onSelectAutocompleteOption: (
@@ -89,6 +96,9 @@ export function AssistantStickyPromptFooter({
   activeFolderTitle,
   activeFolderNotes,
   disabled = false,
+  supportsTools = true,
+  toolsUnsupportedNotice,
+  toolsUnsupportedBadge,
   disabledReasonBanner = null,
   onScrollToStreamBottom,
   onSelectAutocompleteOption,
@@ -215,38 +225,16 @@ export function AssistantStickyPromptFooter({
         onRemoveAttachedFile={onRemoveAttachedFile}
         onOpenFoldersAndCloseMenus={onOpenFoldersAndCloseMenus}
       />
-      {activeFolderTitle ? (
-        <div
-          data-testid="assistant-prompt-active-folder-badge"
-          className="mb-1.5 inline-flex flex-wrap items-center gap-1.5 rounded-full border border-action-primary/30 bg-action-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-action-primary"
-        >
-          <span>
-            <OrciaIcon name="folder" /> Dossier actif :{" "}
-            <strong>{activeFolderTitle}</strong>
-          </span>
-          {activeFolderNotes && activeFolderNotes.trim() ? (
-            <span
-              data-testid="assistant-prompt-active-folder-note-indicator"
-              className="text-text-secondary"
-            >
-              · <OrciaIcon name="pin" /> Note active prise en compte par
-              l&apos;Assistant
-            </span>
-          ) : null}
-          {onClearActiveFolder ? (
-            <button
-              type="button"
-              data-testid="assistant-prompt-clear-active-folder-btn"
-              onClick={onClearActiveFolder}
-              aria-label="Détacher le dossier actif"
-              className="ml-1 font-bold hover:opacity-80"
-            >
-              <OrciaIcon name="times" />
-            </button>
-          ) : null}
-        </div>
-      ) : null}
+      <AssistantActiveFolderPromptBadge
+        activeFolderTitle={activeFolderTitle}
+        activeFolderNotes={activeFolderNotes}
+        onClearActiveFolder={onClearActiveFolder}
+      />
       {disabledReasonBanner}
+      <AssistantToolsUnsupportedNotice
+        supportsTools={supportsTools}
+        toolsUnsupportedNotice={toolsUnsupportedNotice}
+      />
       <div className="rounded-2xl border border-border-subtle bg-surface-primary px-3 py-2 shadow-sm space-y-1.5">
         <AssistantAttachedFilesInlineBar
           attachedFiles={attachedFiles}
@@ -278,6 +266,8 @@ export function AssistantStickyPromptFooter({
           selectedTier={tier}
           selectedEffort={effort}
           thinkingSubmenuOpen={thinkingSubmenuOpen}
+          supportsTools={supportsTools}
+          {...(toolsUnsupportedBadge ? { toolsUnsupportedBadge } : {})}
           onSelectTier={onSelectTier}
           onToggleThinkingSubmenu={onToggleThinkingSubmenu}
           onSelectEffort={onSelectEffort}

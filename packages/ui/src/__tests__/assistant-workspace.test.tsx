@@ -166,37 +166,9 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
       "5. Utilisateur",
     );
 
-    // Switch to Mode B Studio
-    fireEvent.click(screen.getByTestId("assistant-open-studio-mode-b-btn"));
-    expect(screen.getByTestId("assistant-governance-mode-b-studio")).toBeDefined();
-
-    // Entry/Exit 🔒 AssistantHarness boundaries are locked and have no edit button
-    expect(
-      screen.getByTestId("studio-node-locked-ENTRY_BOUNDARY_HARNESS").textContent, // pragma: allowlist secret
-    ).toContain("HARNESS");
-    expect(
-      screen.getByTestId("studio-node-locked-EXIT_BOUNDARY_HARNESS").textContent, // pragma: allowlist secret
-    ).toContain("HARNESS");
-
-    // Add sub-agent to Node 3, run Dry-Run (▷ Tester), Save, and 1-click Reset
-    fireEvent.click(
-      screen.getByTestId("studio-node-add-subagent-3_PARALLEL_FAN_OUT"), // pragma: allowlist secret
-    );
-    fireEvent.click(screen.getByTestId("studio-test-dryrun-btn"));
-    expect(screen.getByTestId("studio-dry-run-banner").textContent).toContain(
-      "Simulation vérifiée",
-    );
-
-    fireEvent.click(screen.getByTestId("studio-save-override-btn"));
-    expect(onSaveStudioOverride).toHaveBeenCalledWith(
-      expect.objectContaining({
-        scopeLevel: "WORKSPACE",
-      }),
-    );
-
-    fireEvent.click(screen.getByTestId("studio-reset-default-btn"));
-    expect(onResetStudioOverride).toHaveBeenCalledWith("WORKSPACE");
-    expect(screen.getByTestId("studio-reset-restored-banner")).toBeDefined();
+    // Mode B Studio UI is deferred (R2 / Story 26.9)
+    expect(screen.queryByTestId("assistant-open-studio-mode-b-btn")).toBeNull();
+    expect(screen.queryByTestId("assistant-governance-mode-b-studio")).toBeNull();
   });
 
   it("Story 10.2 — renders 3-Speed Conversational Selector (⚡ Rapide, @Agent / /Skill, 🧠 Approfondi), Redis cache badge, and real-time step progress", () => {
@@ -763,10 +735,10 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     expect(responseBox.querySelectorAll("strong").length).toBeGreaterThanOrEqual(1);
     expect(responseBox.querySelectorAll("ul li").length).toBe(2);
 
-    // 2. Legacy speed pills row is hidden via sr-only when hideLegacySpeedPills=true
+    // 2. Legacy speed pills row is omitted from DOM when hideLegacySpeedPills=true
     expect(
-      screen.getByTestId("assistant-legacy-speed-pills-row").className,
-    ).toContain("sr-only");
+      screen.queryByTestId("assistant-legacy-speed-pills-row"),
+    ).toBeNull();
 
     // 3. Thinking sub-window strips internal jargon (pgvector, RBAC, PLATFORM_ADMIN, ws-1) and shows single duration in seconds
     const stepListText =
@@ -856,10 +828,10 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     const pulsingDots = screen.getByTestId("assistant-thinking-pulsing-dots");
     expect(pulsingDots.querySelectorAll(".animate-bounce").length).toBe(3);
 
-    // Legacy speed pills have display: none
+    // Legacy speed pills are omitted when hideLegacySpeedPills=true
     expect(
-      screen.getByTestId("assistant-legacy-speed-pills-row").style.display,
-    ).toBe("none");
+      screen.queryByTestId("assistant-legacy-speed-pills-row"),
+    ).toBeNull();
 
     // 2. When response finishes streaming, response actions bar and clickable RAG citation links appear
     rerender(

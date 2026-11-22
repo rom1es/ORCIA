@@ -65,6 +65,8 @@ export interface AssistantModelAndEffortPopoverProps {
   readonly selectedTier: UiInferenceTier;
   readonly selectedEffort: UiInferenceEffort;
   readonly thinkingSubmenuOpen: boolean;
+  readonly supportsTools?: boolean;
+  readonly toolsUnsupportedBadge?: string;
   readonly onSelectTier: (tier: UiInferenceTier) => void;
   readonly onToggleThinkingSubmenu: () => void;
   readonly onSelectEffort: (effort: UiInferenceEffort) => void;
@@ -75,12 +77,17 @@ export function AssistantModelAndEffortPopover({
   selectedTier,
   selectedEffort,
   thinkingSubmenuOpen,
+  supportsTools = true,
+  toolsUnsupportedBadge,
   onSelectTier,
   onToggleThinkingSubmenu,
   onSelectEffort,
 }: AssistantModelAndEffortPopoverProps): React.JSX.Element {
-  const normalizedSelectedEffort: UiInferenceEffort =
-    selectedEffort === "deep" ? "deep" : "balanced";
+  const normalizedSelectedEffort: UiInferenceEffort = !supportsTools
+    ? "fast"
+    : selectedEffort === "deep"
+      ? "deep"
+      : "balanced";
   const activeEffortOption =
     ASSISTANT_EFFORT_OPTIONS.find((e) => e.effort === normalizedSelectedEffort) ??
     ASSISTANT_EFFORT_OPTIONS[1]!;
@@ -182,27 +189,40 @@ export function AssistantModelAndEffortPopover({
             Mode de réflexion
           </div>
           {ASSISTANT_EFFORT_OPTIONS.map((eff) => {
-            const isSelected =
-              !eff.hiddenLegacyFast && eff.effort === normalizedSelectedEffort;
+            const isHidden = supportsTools ? Boolean(eff.hiddenLegacyFast) : false;
+            const isDisabledByTools = !supportsTools && eff.effort !== "fast";
+            const isSelected = !isHidden && eff.effort === normalizedSelectedEffort;
             return (
               <button
                 key={eff.effort}
                 type="button"
+                disabled={isDisabledByTools}
                 data-testid={`assistant-effort-option-${eff.effort}`}
-                style={eff.hiddenLegacyFast ? { display: "none" } : undefined}
-                onClick={() => onSelectEffort(eff.effort)}
+                style={isHidden ? { display: "none" } : undefined}
+                onClick={() => {
+                  if (!isDisabledByTools) onSelectEffort(eff.effort);
+                }}
                 className={
-                  eff.hiddenLegacyFast
+                  isHidden
                     ? "sr-only"
                     : `flex w-full items-start justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors ${
-                        isSelected
-                          ? "bg-action-primary/10 font-semibold text-text-primary"
-                          : "hover:bg-surface-secondary text-text-primary"
+                        isDisabledByTools
+                          ? "opacity-50 cursor-not-allowed text-text-secondary"
+                          : isSelected
+                            ? "bg-action-primary/10 font-semibold text-text-primary"
+                            : "hover:bg-surface-secondary text-text-primary"
                       }`
                 }
               >
                 <div>
-                  <div className="text-xs font-semibold">{eff.title}</div>
+                  <div className="text-xs font-semibold">
+                    {eff.title}
+                    {isDisabledByTools && toolsUnsupportedBadge ? (
+                      <span className="ml-1.5 text-[10px] font-normal text-text-secondary">
+                        ({toolsUnsupportedBadge})
+                      </span>
+                    ) : null}
+                  </div>
                   <div className="text-[11px] text-text-secondary">
                     {eff.subtitle}
                   </div>
@@ -223,78 +243,9 @@ export function AssistantModelAndEffortPopover({
   );
 }
 
-export interface UiAssistantAutocompleteSuggestion {
-  readonly id: string;
-  readonly kind: "agent" | "skill";
-  readonly token: string;
-  readonly name: string;
-  readonly description: string;
-  readonly badge?: string;
-}
-
-export function extractAutocompleteTrigger(promptText: string): {
-  readonly kind: "agent" | "skill";
-  readonly query: string;
-} | null {
-  const match = /(?:^|\s)(@|\/)([a-zA-Z0-9_-]*)$/.exec(promptText);
-  if (!match) return null;
-  const prefix = match[1];
-  const query = (match[2] ?? "").toLowerCase();
-  return {
-    kind: prefix === "@" ? "agent" : "skill",
-    query,
-  };
-}
-
-export function applyAutocompleteSuggestionToPrompt(
-  promptText: string,
-  token: string,
-): string {
-  return promptText.replace(/(?:^|\s)(?:@|\/)[a-zA-Z0-9_-]*$/, (m) => {
-    const leadingSpace = m.startsWith(" ") ? " " : "";
-    return `${leadingSpace}${token} `;
-  });
-}
-
-export function AssistantAutocompleteDropdown({
-  suggestions,
-  onSelectSuggestion,
-}: {
-  readonly suggestions: readonly UiAssistantAutocompleteSuggestion[];
-  readonly onSelectSuggestion: (item: UiAssistantAutocompleteSuggestion) => void;
-}): React.JSX.Element | null {
-  if (suggestions.length === 0) return null;
-  return (
-    <div
-      data-testid="assistant-autocomplete-dropdown"
-      role="listbox"
-      aria-label="Suggestions d'agents et compétences"
-      className="mt-2 max-h-52 overflow-y-auto rounded-lg border border-border-subtle bg-surface-primary p-1.5 text-xs shadow-md space-y-1"
-    >
-      {suggestions.map((item) => (
-        <button
-          key={item.id}
-          type="button"
-          role="option"
-          aria-selected={false}
-          data-testid={`assistant-autocomplete-option-${item.token.slice(1)}`}
-          onClick={() => onSelectSuggestion(item)}
-          className="flex w-full items-center justify-between gap-2 rounded px-2.5 py-1.5 text-left hover:bg-surface-secondary"
-        >
-          <div className="flex flex-wrap items-center gap-2">
-            <code className="rounded border border-border-subtle bg-surface-secondary px-1.5 py-0.5 font-mono text-[11px] font-semibold">
-              {item.token}
-            </code>
-            <span className="font-semibold text-text-primary">{item.name}</span>
-            <span className="text-[11px] text-text-secondary">{item.description}</span>
-          </div>
-          {item.badge && (
-            <span className="rounded-full border border-border-subtle bg-surface-secondary px-2 py-0.5 text-[10px]">
-              {item.badge}
-            </span>
-          )}
-        </button>
-      ))}
-    </div>
-  );
-}
+export {
+  applyAutocompleteSuggestionToPrompt,
+  AssistantAutocompleteDropdown,
+  extractAutocompleteTrigger,
+  type UiAssistantAutocompleteSuggestion,
+} from "./AssistantAutocompleteDropdown";

@@ -3,16 +3,29 @@ import {
   detectAdaptiveThinkingStepsForQuestion,
   shouldUseProgressiveStepThinking,
 } from "../../features/inbox/assistantBackgroundStreamStore";
-import { backendState, buildSseStreamResponse, jsonResponse } from "./mockBackendState";
+import { handleAssistantGovernanceAndThreadsRoute } from "./assistantGovernanceMockHandlers";
 import { handleInboxAndBrokerRoute } from "./inboxAndBrokerMockHandlers";
+import { backendState, buildSseStreamResponse, jsonResponse } from "./mockBackendState";
 
 const vitestPendingTurns = new Map<
   string,
-  {
-    body: Record<string, unknown>;
-    createdAt: number;
-  }
+  { body: Record<string, unknown>; createdAt: number }
 >();
+
+function inferSupportsToolsFromMockModels(): boolean {
+  const activeChat = backendState.aiModelMappings.filter(
+    (m) => m.is_active !== false && !m.draining && m.usage !== "embedding",
+  );
+  if (activeChat.length === 0) return true;
+  return activeChat.some((m) => {
+    const eff = m.supports_tools_override ?? m.supports_tools;
+    return eff === undefined || eff === null ? true : Boolean(eff);
+  });
+}
+
+function buildSseFrame(idSeq: number, eventName: string, data: Record<string, unknown>): string {
+  return `id: ${idSeq}-0\nevent: ${eventName}\ndata: ${JSON.stringify(data)}\n\n`;
+}
 
 export function handleAssistantAndInboxRoute(params: {
   path: string;
@@ -54,9 +67,7 @@ export function handleAssistantAndInboxRoute(params: {
     const turnId = decodeURIComponent(streamMatch[1] ?? "");
     const stored = vitestPendingTurns.get(turnId)?.body ?? {};
     const hat = String(stored.hat ?? "PM");
-    const requestedSpeed = String(
-      stored.requested_speed ?? "SPEED_1_FAST",
-    ) as UiAssistantSpeedMode;
+    const requestedSpeed = String(stored.requested_speed ?? "SPEED_1_FAST") as UiAssistantSpeedMode;
     const thinkingEffort = String(stored.thinking_effort ?? "balanced") as UiInferenceEffort;
     const isFr = String(stored.locale ?? "fr") !== "en";
     const fullUserPrompt = String(stored.user_prompt ?? "");
@@ -64,19 +75,7 @@ export function handleAssistantAndInboxRoute(params: {
       fullUserPrompt.split(/\n\n\[(?:Pièces jointes|User-supplied attachments)/)[0] ??
       fullUserPrompt;
     const replyText = `[${requestedSpeed}] ${cleanPrompt}`;
-    const personalInstructions = stored.personal_instructions
-      ? String(stored.personal_instructions)
-      : "";
-    const folderPinnedNotes = stored.folder_pinned_notes
-      ? String(stored.folder_pinned_notes)
-      : "";
-    const assembledSystemPrompt = [
-      `[ROLE=${hat}] [SPEED=${requestedSpeed}] [EFFORT=${thinkingEffort}]`,
-      personalInstructions ? `[LAYER_5_USER_PREFERENCES] ${personalInstructions}` : "",
-      folderPinnedNotes ? `[LAYER_5_ACTIVE_FOLDER_PINNED_NOTES] ${folderPinnedNotes}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
+    const assembledSystemPrompt = `[ROLE=${hat}] [SPEED=${requestedSpeed}] [EFFORT=${thinkingEffort}]`;
 
     const useSteps = shouldUseProgressiveStepThinking({
       userPrompt: cleanPrompt,
@@ -84,72 +83,107 @@ export function handleAssistantAndInboxRoute(params: {
       deepAuditPillActive: Boolean(stored.deep_audit_pill_active),
       thinkingEffort,
     });
-    const plannedSteps = useSteps
-      ? detectAdaptiveThinkingStepsForQuestion(cleanPrompt, isFr)
-      : [];
-    const thinkingText = plannedSteps
-      .map((s) => `${s.label}: ${s.intermediateOutput ?? ""}`)
-      .join(" · ");
+    const plannedSteps = useSteps ? detectAdaptiveThinkingStepsForQuestion(cleanPrompt, isFr) : [];
+    const thinkingText = plannedSteps.map((s) => `${s.label}: ${s.intermediateOutput ?? ""}`).join(" · ");
 
-    const frames: string[] = [];
+    const mockCitationMap =
+      ((globalThis as Record<string, unknown>).__ORCIA_TEST_CITATION_MAP__ as Record<string, unknown> | undefined) ??
+      {};
+    const emitApproval = Boolean((globalThis as Record<string, unknown>).__ORCIA_TEST_EMIT_APPROVAL__);
+    const supportsTools = inferSupportsToolsFromMockModels();
+
+    const numberedFrames: Array<{ seq: number; frame: string }> = [];
     if (useSteps) {
-      frames.push(
-        `event: thinking_delta\ndata: ${JSON.stringify({ turn_id: turnId, seq: 1, thinking_text: thinkingText || "Analyse..." })}\n\n`,
-        `event: tool_call\ndata: ${JSON.stringify({ turn_id: turnId, seq: 2, tool_name: "surgical_read_lines", sanitized_args: { uri: "docs/product/capabilities.yaml", start_line: 1, end_line: 25 } })}\n\n`,
-        `event: tool_result\ndata: ${JSON.stringify({ turn_id: turnId, seq: 3, tool_name: "surgical_read_lines", status: "EXECUTED", evidence_refs: ["docs/product/capabilities.yaml"], uri: "docs/product/capabilities.yaml", start_line: 1, end_line: 25 })}\n\n`,
+      numberedFrames.push(
+        { seq: 1, frame: buildSseFrame(1, "thinking_delta", { turn_id: turnId, seq: 1, thinking_text: thinkingText || "Analyse..." }) },
+        { seq: 2, frame: buildSseFrame(2, "tool_call", { turn_id: turnId, tool_call_id: "tc-1", seq: 2, tool_name: "surgical_read_lines", status: "RUNNING", sanitized_args: { uri: "docs/product/capabilities.yaml", start_line: 1, end_line: 25 } }) },
+        { seq: 3, frame: buildSseFrame(3, "tool_result", { turn_id: turnId, tool_call_id: "tc-1", seq: 3, tool_name: "surgical_read_lines", status: "EXECUTED", duration_ms: 14, evidence_refs: ["docs/product/capabilities.yaml"], uri: "docs/product/capabilities.yaml", start_line: 1, end_line: 25, summary: "25 lines read" }) },
       );
     }
-    frames.push(
-      `event: token_delta\ndata: ${JSON.stringify({ turn_id: turnId, seq: 4, accumulated_text: replyText })}\n\n`,
-      `event: citation_map\ndata: ${JSON.stringify({ turn_id: turnId, seq: 5, citations: {}, purged_phantom_count: 0 })}\n\n`,
-      `event: turn_completed\ndata: ${JSON.stringify({
-        turn_id: turnId,
-        seq: 6,
-        response_text: replyText,
-        thinking_text: thinkingText,
-        assembled_system_prompt: assembledSystemPrompt,
-        latency_ms: plannedSteps.length > 0 ? 3000 : 1000,
-        low_evidence: true,
-        supports_tools: true,
-        citation_map: {},
-      })}\n\n`,
+    if (emitApproval) {
+      numberedFrames.push({
+        seq: 4,
+        frame: buildSseFrame(4, "approval_required", {
+          turn_id: turnId,
+          proposal_id: "prop-e2e-1",
+          action_kind: "PROPOSE_OR_CONTINUE",
+          target_uri: "docs/spec.md",
+          workflow_ref: "orcia://pack-sdlc/workflows/ticket-to-tech-spec",
+          requires_human_anchor: true,
+          summary: "Update technical specification after audit.",
+        }),
+      });
+    }
+    numberedFrames.push(
+      { seq: 5, frame: buildSseFrame(5, "token_delta", { turn_id: turnId, seq: 5, accumulated_text: replyText }) },
+      { seq: 6, frame: buildSseFrame(6, "citation_map", { turn_id: turnId, seq: 6, ...mockCitationMap, purged_phantom_count: 0 }) },
+      {
+        seq: 7,
+        frame: buildSseFrame(7, "turn_completed", {
+          turn_id: turnId,
+          seq: 7,
+          response_text: replyText,
+          thinking_text: thinkingText,
+          assembled_system_prompt: assembledSystemPrompt,
+          latency_ms: plannedSteps.length > 0 ? 3000 : 1000,
+          low_evidence: !Array.isArray(mockCitationMap.sources) || mockCitationMap.sources.length === 0,
+          supports_tools: supportsTools,
+          citation_map: mockCitationMap,
+        }),
+      },
     );
-    return buildSseStreamResponse(frames);
+
+    const afterRaw = parsedUrl.searchParams.get("after");
+    const afterSeq = afterRaw ? Number.parseInt(afterRaw.split("-")[0] ?? "0", 10) || 0 : 0;
+    const slicedFrames = numberedFrames.filter((f) => f.seq > afterSeq).map((f) => f.frame);
+
+    const threadId = typeof stored.thread_id === "string" ? stored.thread_id : null;
+    if (threadId && afterSeq === 0) {
+      const wsId = String(stored.workspace_id ?? "0195f000-0000-7000-8000-000000000301");
+      const nowIso = new Date().toISOString();
+      backendState.assistantThreadMessages = [
+        ...backendState.assistantThreadMessages,
+        {
+          message_id: `msg-u-${turnId}`,
+          thread_id: threadId,
+          workspace_id: wsId,
+          turn_id: turnId,
+          parent_turn_id: stored.parent_turn_id ?? null,
+          role: "user",
+          content: cleanPrompt,
+          created_at: nowIso,
+        },
+        {
+          message_id: `msg-a-${turnId}`,
+          thread_id: threadId,
+          workspace_id: wsId,
+          turn_id: turnId,
+          parent_turn_id: stored.parent_turn_id ?? null,
+          role: "assistant",
+          content: replyText,
+          citation_map: mockCitationMap,
+          created_at: nowIso,
+        },
+      ];
+    }
+
+    return buildSseStreamResponse(slicedFrames);
   }
 
   if (path === "/api/v1/assistant/turns/active" && method === "GET") {
-    return jsonResponse({
-      workspace_id: parsedUrl.searchParams.get("workspace_id") ?? "",
-      turns: [],
-    });
+    return jsonResponse({ workspace_id: parsedUrl.searchParams.get("workspace_id") ?? "", turns: [] });
   }
 
   const turnActionMatch =
-    /^\/api\/v1\/assistant\/turns\/([^/]+)\/(stop|synthesize-now|approve|feedback)$/.exec(
-      path,
-    );
+    /^\/api\/v1\/assistant\/turns\/([^/]+)\/(stop|synthesize-now|approve|feedback)$/.exec(path);
   if (turnActionMatch && method === "POST") {
     const turnId = decodeURIComponent(turnActionMatch[1] ?? "");
     const action = turnActionMatch[2];
     if (action === "stop") {
-      return jsonResponse({
-        workspace_id: String(body.workspace_id ?? ""),
-        turn_id: turnId,
-        status: "STOPPED",
-        streamed_text: "",
-        thinking_text: "",
-      });
+      return jsonResponse({ workspace_id: String(body.workspace_id ?? ""), turn_id: turnId, status: "STOPPED", streamed_text: "", thinking_text: "" });
     }
     if (action === "synthesize-now") {
-      return jsonResponse(
-        {
-          turn_id: turnId,
-          workspace_id: String(body.workspace_id ?? ""),
-          status: "SYNTHESIZING",
-          message: "Early synthesis requested.",
-        },
-        202,
-      );
+      return jsonResponse({ turn_id: turnId, workspace_id: String(body.workspace_id ?? ""), status: "SYNTHESIZING", message: "Early synthesis requested." }, 202);
     }
     if (action === "approve") {
       return jsonResponse({
@@ -158,6 +192,8 @@ export function handleAssistantAndInboxRoute(params: {
         workspace_id: String(body.workspace_id ?? ""),
         approved: Boolean(body.approved ?? true),
         status: body.approved === false ? "REJECTED" : "APPROVED",
+        run_id: "0195f000-0000-7000-8000-000000000909",
+        run_status: "RUNNING",
       });
     }
     return jsonResponse({
@@ -203,13 +239,7 @@ export function handleAssistantAndInboxRoute(params: {
     const folder = backendState.assistantFolders.find((f) => f.folder_id === folderId);
     if (!folder) return jsonResponse({ error_code: "ERR_RESOURCE_NOT_FOUND" }, 404);
     folder.visibility_mode = body.visibility_mode;
-    return jsonResponse({
-      folder_id: folderId,
-      workspace_id: folder.workspace_id,
-      visibility_mode: body.visibility_mode,
-      shares: [],
-      has_restricted_sources: folder.has_restricted_sources,
-    });
+    return jsonResponse({ folder_id: folderId, workspace_id: folder.workspace_id, visibility_mode: body.visibility_mode, shares: [], has_restricted_sources: folder.has_restricted_sources });
   }
 
   const launchMatch = /^\/api\/v1\/assistant\/folders\/([^/]+)\/launch-process$/.exec(path);
@@ -231,28 +261,8 @@ export function handleAssistantAndInboxRoute(params: {
     });
   }
 
-  const overviewMatch = /^\/api\/v1\/assistant\/workspaces\/([^/]+)\/overview$/.exec(path);
-  if (overviewMatch && method === "GET") {
-    const workspaceId = decodeURIComponent(overviewMatch[1] ?? "");
-    const wsFolders = backendState.assistantFolders.filter((f) => f.workspace_id === workspaceId);
-    return jsonResponse({
-      workspace_id: workspaceId,
-      tabs: ["ACTIVE_DISCUSSION", "FOLDERS", "HISTORY_SEARCH"],
-      active_folder_pill_label: null,
-      folders_count: wsFolders.length,
-      folders: wsFolders,
-      threads: [],
-      history_hits: [],
-    });
-  }
-
-  if (path === "/api/v1/assistant/threads" && method === "POST") {
-    return jsonResponse({
-      thread_id: `thread-${backendState.recordedCalls.length}`,
-      workspace_id: String(body.workspace_id ?? "0195f000-0000-7000-8000-000000000301"),
-      title: String(body.title ?? "Discussion"),
-    });
-  }
+  const govOrThreadResp = handleAssistantGovernanceAndThreadsRoute({ path, method, parsedUrl, body });
+  if (govOrThreadResp) return govOrThreadResp;
 
   return handleInboxAndBrokerRoute({ path, method, parsedUrl, body });
 }

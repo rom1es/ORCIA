@@ -3476,26 +3476,6 @@ export interface components {
       updated_at: string;
       updated_by: string;
     };
-    SendCollaborativeThreadTurnRequest: {
-      message_text: string;
-      release_lock_after_turn?: boolean;
-      workspace_id: string;
-    };
-    SendCollaborativeThreadTurnResponse: {
-      assembled_layer5_preview: string;
-      assistant_reply_markdown: string;
-      author_passthrough_identity: string;
-      author_user_id: string;
-      folder_creator_user_id: string;
-      folder_id?: string | null;
-      layer5_memory_injected: boolean;
-      lock_holder_user_id: string;
-      lock_ttl_seconds: number;
-      redis_lock_key: string;
-      sse_presence_banner: string;
-      thread_id: string;
-      workspace_id: string;
-    };
     SetWorkflowBaselineRequest: {
       manual_cost_usd: number;
       manual_time_minutes: number;
@@ -5070,13 +5050,6 @@ export interface paths {
     get: {
       responses: {
         200: components["schemas"]["AssistantThreadMessagesListResponse"];
-      };
-    };
-  };
-  "/api/v1/assistant/threads/{thread_id}/turns": {
-    post: {
-      responses: {
-        200: components["schemas"]["SendCollaborativeThreadTurnResponse"];
       };
     };
   };
@@ -7163,8 +7136,6 @@ export type ScopeMutationCheckResponse = components["schemas"]["ScopeMutationChe
 export type ScopeNode = components["schemas"]["ScopeNode"];
 export type SecretInputPayload = components["schemas"]["SecretInputPayload"];
 export type SecretStatusResponse = components["schemas"]["SecretStatusResponse"];
-export type SendCollaborativeThreadTurnRequest = components["schemas"]["SendCollaborativeThreadTurnRequest"];
-export type SendCollaborativeThreadTurnResponse = components["schemas"]["SendCollaborativeThreadTurnResponse"];
 export type SetWorkflowBaselineRequest = components["schemas"]["SetWorkflowBaselineRequest"];
 export type ShellModuleItem = components["schemas"]["ShellModuleItem"];
 export type ShellNavigationResponse = components["schemas"]["ShellNavigationResponse"];

@@ -129,36 +129,6 @@ class LaunchProcessFromFolderResponse(BaseModel):
     snapshot_count: int = 0
 
 
-class SendCollaborativeThreadTurnRequest(BaseModel):
-    """Request payload for `POST /api/v1/assistant/threads/{thread_id}/turns` (`Story 10.4`)."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    workspace_id: str = Field(..., min_length=1)
-    message_text: str = Field(..., min_length=1)
-    release_lock_after_turn: bool = False
-
-
-class SendCollaborativeThreadTurnResponse(BaseModel):
-    """Response payload for `POST /api/v1/assistant/threads/{thread_id}/turns` (`Story 10.4`)."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    thread_id: str
-    folder_id: str | None = None
-    workspace_id: str
-    redis_lock_key: str
-    lock_holder_user_id: str
-    lock_ttl_seconds: int
-    sse_presence_banner: str
-    author_user_id: str
-    author_passthrough_identity: str
-    folder_creator_user_id: str
-    layer5_memory_injected: bool
-    assembled_layer5_preview: str
-    assistant_reply_markdown: str
-
-
 class AssistantHistorySearchHitSchemaItem(BaseModel):
     """Search hit in `🕘 Historique & Recherche` (`Story 10.4`)."""
 

@@ -6,14 +6,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request
 
-from orcia_api.dependencies import (
-    get_assistant_folders_and_sharing_service,
-    get_assistant_thread_messages_repository,
-    get_optional_embedding_port,
-)
+from orcia_api.dependencies import get_assistant_folders_and_sharing_service
 from orcia_api.dependencies._assistant_guards import enforce_assistant_workspace_guard
 from orcia_api.routers._assistant_process_wiring import launch_folder_process_response
-from orcia_api.routers._assistant_thread_messages_routes import persist_thread_turn_messages
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.assistant_citations_and_folders import (
     AssistantFolderSchemaItem,
@@ -27,8 +22,6 @@ from orcia_api.schemas.assistant_citations_and_folders import (
     FolderShareGrantSchemaItem,
     LaunchProcessFromFolderRequest,
     LaunchProcessFromFolderResponse,
-    SendCollaborativeThreadTurnRequest,
-    SendCollaborativeThreadTurnResponse,
 )
 from orcia_core.orchestration.assistant_folders_and_sharing import (
     AssistantFolderRecord,
@@ -37,7 +30,6 @@ from orcia_core.orchestration.assistant_folders_and_sharing import (
     sanitize_user_pinned_notes,
 )
 from orcia_core.permissions.models import UserIdentity
-from orcia_core.ports.embedding import EmbeddingPort
 
 router = APIRouter()
 
@@ -180,52 +172,6 @@ async def launch_process_from_folder_endpoint(
         target_workflow_uri=payload.target_workflow_uri,
     )
     return await launch_folder_process_response(request, user=user, prep=prep)
-
-
-@router.post("/threads/{thread_id}/turns", response_model=SendCollaborativeThreadTurnResponse)
-async def send_collaborative_thread_turn_endpoint(
-    thread_id: str,
-    payload: SendCollaborativeThreadTurnRequest,
-    request: Request,
-    user: CurrentUserDep,
-    folders_svc: FoldersSharingDep,
-    _embedding_port: Annotated[EmbeddingPort | None, Depends(get_optional_embedding_port)],
-) -> SendCollaborativeThreadTurnResponse:
-    """Execute a turn in a shared thread under Redis turn lock (`NX EX 60`)."""
-    await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
-    outcome = await folders_svc.send_collaborative_thread_turn_async(
-        workspace_id=payload.workspace_id,
-        thread_id=thread_id,
-        sender_user=user,
-        message_text=payload.message_text,
-        release_lock_after_turn=payload.release_lock_after_turn,
-    )
-    from orcia_core.kernel.ids import new_uuid7_str
-
-    await persist_thread_turn_messages(
-        get_assistant_thread_messages_repository(request),
-        thread_id=thread_id,
-        workspace_id=payload.workspace_id,
-        turn_id=new_uuid7_str(),
-        parent_turn_id=None,
-        user_prompt=payload.message_text,
-        assistant_reply=outcome.assistant_reply_markdown,
-    )
-    return SendCollaborativeThreadTurnResponse(
-        thread_id=outcome.thread_id,
-        folder_id=outcome.folder_id,
-        workspace_id=outcome.workspace_id,
-        redis_lock_key=outcome.redis_lock_key,
-        lock_holder_user_id=outcome.lock_holder_user_id,
-        lock_ttl_seconds=outcome.lock_ttl_seconds,
-        sse_presence_banner=outcome.sse_presence_banner,
-        author_user_id=outcome.author_user_id,
-        author_passthrough_identity=outcome.author_passthrough_identity,
-        folder_creator_user_id=outcome.folder_creator_user_id,
-        layer5_memory_injected=outcome.layer5_memory_injected,
-        assembled_layer5_preview="",
-        assistant_reply_markdown=outcome.assistant_reply_markdown,
-    )
 
 
 @router.get(

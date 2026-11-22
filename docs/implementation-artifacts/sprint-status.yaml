@@ -276,7 +276,7 @@ development_status:
   # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-21-epic-26-harnais-assistant-remediation-plan.md
   # Source audit: docs/implementation-artifacts/tech-lead-reports/2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md
   # Decisions   : docs/implementation-artifacts/epic-26-decisions-grill-2026-11-21.md (D1-D11 amended by R1-R9)
-  # Lots        : L0 26-0 (done) | L1 26-1 (done) | L2 26-2 (done) | L3 26-3 (done) -> 26-4a (done) -> 26-4b (done) | L4 26-5 (done) | L5 26-6a (done) -> 26-6b (done) | L6 26-7 (done) -> 26-8 | L7 26-9 -> 26-10 — IN PROGRESS
+  # Lots        : L0 26-0 (done) | L1 26-1 (done) | L2 26-2 (done) | L3 26-3 (done) -> 26-4a (done) -> 26-4b (done) | L4 26-5 (done) | L5 26-6a (done) -> 26-6b (done) | L6 26-7 (done) -> 26-8 (done) | L7 26-9 (done) -> 26-10 — IN PROGRESS
   epic-26: in-progress
   26-0-adr-unified-turn-engine-sse-v2-and-ssrf-policy: done
   26-1-immediate-security-hardening-scope-observer-and-ssrf: done
@@ -289,7 +289,7 @@ development_status:
   26-6b-governed-assistant-tool-router-broker-v5-anchors-and-audit: done
   26-7-unified-turn-engine-convergence-direct-cutover-and-citations: done
   26-8-continue-in-process-dbos-pg18-and-human-anchors: done
-  26-9-ui-and-sdk-wiring-mode-a-citations-history-and-deepen: ready-for-dev
+  26-9-ui-and-sdk-wiring-mode-a-citations-history-and-deepen: done
   26-10-golden-evals-red-team-multi-worker-and-epic-26-closure: ready-for-dev
   epic-26-retrospective: optional
 action_items:

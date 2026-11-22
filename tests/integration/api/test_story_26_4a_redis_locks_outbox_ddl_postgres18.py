@@ -226,17 +226,20 @@ async def test_two_workers_redis_lock_outbox_events_and_hub_snapshot_invalidatio
             assert thr_res.status_code == 200, thr_res.text
             thr_id = thr_res.json()["thread_id"]
 
-            # Admin acquires lock on Worker 1 (release_lock_after_turn=False)
-            turn1 = await c1.post(
-                f"/api/v1/assistant/threads/{thr_id}/turns",
-                headers=hdrs_admin,
-                json={
-                    "workspace_id": ws_id,
-                    "message_text": "Turn 1 holding Redis lock",
-                    "release_lock_after_turn": False,
-                },
+            # Admin acquires Redis thread lock on Worker 1 (simulating active turn across workers)
+            from orcia_api.routers._assistant_background_registry import (
+                get_thread_turn_lock_from_request,
             )
-            assert turn1.status_code == 200, turn1.text
+
+            class _ReqStub:
+                def __init__(self, app_obj: object) -> None:
+                    self.app = app_obj
+
+            lock1 = get_thread_turn_lock_from_request(_ReqStub(app_w1))
+            lock_key, lock_token = await lock1.acquire_async(
+                thread_id=thr_id, user_id="admin-26-4a", ttl_seconds=60
+            )
+            assert lock_key == f"lock:thread:{thr_id}" and lock_token
             lock_val = await redis_probe.get(f"lock:thread:{thr_id}")
             assert lock_val is not None
             ttl_val = await redis_probe.ttl(f"lock:thread:{thr_id}")
@@ -244,40 +247,39 @@ async def test_two_workers_redis_lock_outbox_events_and_hub_snapshot_invalidatio
 
             # Peer on Worker 2 is blocked by Redis SET NX EX lock -> HTTP 409
             blocked = await c2.post(
-                f"/api/v1/assistant/threads/{thr_id}/turns",
+                "/api/v1/assistant/turns",
                 headers=hdrs_peer,
                 json={
                     "workspace_id": ws_id,
-                    "message_text": "Concurrent peer attempt",
-                    "release_lock_after_turn": True,
+                    "thread_id": thr_id,
+                    "folder_id": fld_id,
+                    "user_prompt": "Concurrent peer attempt",
                 },
             )
             assert blocked.status_code == 409, blocked.text
             assert blocked.json()["error_code"] == "ERR_THREAD_TURN_LOCK_HELD"
 
             # Admin releases lock on Worker 1 -> Peer succeeds on Worker 2
-            release_turn = await c1.post(
-                f"/api/v1/assistant/threads/{thr_id}/turns",
-                headers=hdrs_admin,
-                json={
-                    "workspace_id": ws_id,
-                    "message_text": "Turn 2 releasing lock",
-                    "release_lock_after_turn": True,
-                },
+            released = await lock1.release_async(
+                thread_id=thr_id, user_id="admin-26-4a", token=lock_token
             )
-            assert release_turn.status_code == 200, release_turn.text
+            assert released is True
             assert await redis_probe.get(f"lock:thread:{thr_id}") is None
 
             peer_turn = await c2.post(
-                f"/api/v1/assistant/threads/{thr_id}/turns",
+                "/api/v1/assistant/turns",
                 headers=hdrs_peer,
                 json={
                     "workspace_id": ws_id,
-                    "message_text": "Peer turn succeeds after Lua release",
-                    "release_lock_after_turn": True,
+                    "thread_id": thr_id,
+                    "folder_id": fld_id,
+                    "user_prompt": "Peer turn succeeds after Lua release",
                 },
             )
-            assert peer_turn.status_code == 200, peer_turn.text
+            assert peer_turn.status_code == 202, peer_turn.text
+            peer_stream = await c2.get(peer_turn.json()["stream_url"], headers=hdrs_peer)
+            assert peer_stream.status_code == 200
+            assert "event: turn_completed" in peer_stream.text
 
             # 2. Outbox emission via Assistant turn + governance update -> SELECT PG18
             v2_turn = await c1.post(

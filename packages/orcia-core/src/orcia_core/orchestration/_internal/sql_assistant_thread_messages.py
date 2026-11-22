@@ -49,6 +49,22 @@ _SQL_LIST_MESSAGES = sa.text(
     """
 )
 
+_SQL_SYNC_THREAD_TURN_COUNT = sa.text(
+    """
+    UPDATE assistant_threads
+    SET turn_count = GREATEST(
+            turn_count,
+            1 + (
+                SELECT COUNT(DISTINCT turn_id)::int
+                FROM assistant_thread_messages
+                WHERE thread_id = CAST(:thread_id AS uuid)
+            )
+        ),
+        updated_at = NOW()
+    WHERE thread_id = CAST(:thread_id AS uuid);
+    """
+)
+
 
 @dataclass(frozen=True, slots=True)
 class AssistantThreadMessageRecord:
@@ -163,6 +179,7 @@ class SqlAssistantThreadMessagesRepository:
                 .mappings()
                 .one()
             )
+            await conn.execute(_SQL_SYNC_THREAD_TURN_COUNT, {"thread_id": str(thread_uuid)})
         return self._row_to_record(row)
 
     async def list_messages_for_thread(

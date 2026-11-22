@@ -7,15 +7,10 @@ import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions"
 import { useI18n } from "../../i18n";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { useSourceLineInspector } from "../shared/useSourceLineInspector";
-import { subscribeBgStream } from "./assistantBackgroundStreamStore";
 import {
-  readSavedActiveConversationId,
   readSavedActiveFolderId,
-  readSavedAssistantGovernancePrefs,
   readSavedPromptTelemetryLog,
-  writeSavedActiveConversationId,
   writeSavedActiveFolderId,
-  type SavedAssistantGovernancePrefs,
 } from "./assistantFoldersAndPrefsStore";
 import {
   persistCompletedInboxTurn,
@@ -26,14 +21,14 @@ import {
   buildAssistantAutocompleteSuggestions,
   buildAssistantModelOptions,
   consumeAssistantPrefillFromStorage,
-  readSavedAssistantConversations,
-  writeSavedAssistantConversations,
-  type SavedAssistantConversation,
+  type SavedConversationTurnItem,
 } from "./savedConversationsStore";
 import { useActiveEmbeddingModelStatus } from "./useActiveEmbeddingModelStatus";
 import { useAssistantStreamingTurn } from "./useAssistantStreamingTurn";
 import { useRagReindexStatus } from "./useRagReindexStatus";
 import { useServerAssistantFolders } from "./useServerAssistantFolders";
+import { useServerAssistantGovernance } from "./useServerAssistantGovernance";
+import { useServerAssistantThreads } from "./useServerAssistantThreads";
 
 export const ASSISTANT_REFLEXIVE_STORAGE_KEY =
   "orcia.reflexive_exec.assistant.v1";
@@ -62,47 +57,46 @@ export function useInboxPanelController() {
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
+
   const [activeFolderId, setActiveFolderId] = useState<string>(() =>
     readSavedActiveFolderId(),
   );
-  const [governancePrefs, setGovernancePrefs] =
-    useState<SavedAssistantGovernancePrefs>(() =>
-      readSavedAssistantGovernancePrefs(),
-    );
   const [foldersPanelOpen, setFoldersPanelOpen] = useState<boolean>(false);
   const [savedConversationsOpen, setSavedConversationsOpen] =
     useState<boolean>(false);
-  const [savedConversations, setSavedConversations] = useState<
-    readonly SavedAssistantConversation[]
-  >(() => readSavedAssistantConversations());
-  const [activeConversationId, setActiveConversationId] = useState<
-    string | null
-  >(() => {
-    const savedId = readSavedActiveConversationId();
-    const convs = readSavedAssistantConversations();
-    return savedId && convs.some((c) => c.id === savedId)
-      ? savedId
-      : (convs[0]?.id ?? null);
-  });
   const [promptTelemetryLog, setPromptTelemetryLog] = useState<
     readonly UiAssistantPromptTelemetryRecord[]
   >(() => readSavedPromptTelemetryLog());
   const [governanceOpen, setGovernanceOpen] = useState<boolean>(false);
-  const [governanceFeedback, setGovernanceFeedback] = useState<string | null>(
-    null,
-  );
+  const [governanceFeedback, setGovernanceFeedback] = useState<string | null>(null);
 
   const activeWorkspaceId = resolveEffectiveWorkspaceId(
     activeScopeId,
     workspaces,
     authEmail ?? platformAdmin?.email,
   );
-  const { hasActiveEmbeddingModel, hasActiveChatModel: hasHubChatModel } =
-    useActiveEmbeddingModelStatus();
+  const {
+    hasActiveEmbeddingModel,
+    hasActiveChatModel: hasHubChatModel,
+    hasSupportsTools: hasHubSupportsTools,
+  } = useActiveEmbeddingModelStatus();
   const hasActiveChatModel =
     hasHubChatModel || llmTiers.some((t) => Boolean(t.primaryModel?.trim()));
   const ragReindex = useRagReindexStatus();
   const assistantInputBlocked = !hasActiveChatModel;
+
+  const modelOptions = buildAssistantModelOptions(llmTiers, isFr);
+  const threads = useServerAssistantThreads({
+    workspaceId: activeWorkspaceId,
+    locale,
+    modelOptions,
+    onFeedback: setGovernanceFeedback,
+  });
+  const governance = useServerAssistantGovernance({
+    workspaceId: activeWorkspaceId,
+    locale,
+    onFeedback: setGovernanceFeedback,
+  });
   const foldersController = useServerAssistantFolders({
     workspaceId: activeWorkspaceId,
     messages: dictionary.assistantFoldersSync,
@@ -114,99 +108,86 @@ export function useInboxPanelController() {
     onFeedback: setGovernanceFeedback,
   });
 
-  const modelOptions = buildAssistantModelOptions(llmTiers, isFr);
+  useEffect(() => {
+    if (governance.governanceSaveMessage) {
+      setGovernanceFeedback(governance.governanceSaveMessage);
+    }
+  }, [governance.governanceSaveMessage]);
+
+  const savedConversations = threads.conversations;
+  const activeConversationId = threads.activeConversationId;
   const activeConversation =
     savedConversations.find((c) => c.id === activeConversationId) ?? null;
   const activeFolder =
-    foldersController.folders.find((f) => f.folderId === activeFolderId) ??
-    null;
+    foldersController.folders.find((f) => f.folderId === activeFolderId) ?? null;
   const { agentOptions, skillOptions, orciaDocuments, ragCitations } =
     buildAssistantAutocompleteAndRagOptions({ catalogItems, datasources });
   const autocompleteSuggestions = buildAssistantAutocompleteSuggestions(packs);
 
   const selectActiveConversationAndPersist = (nextConvId: string | null) => {
-    setActiveConversationId(nextConvId);
-    writeSavedActiveConversationId(nextConvId);
+    threads.setActiveConversationId(nextConvId);
   };
 
   useEffect(() => {
     const onPrefill = () => {
       const next = consumeAssistantPrefillFromStorage();
-      if (next) {
-        setPrefillPrompt(next);
-      }
+      if (next) setPrefillPrompt(next);
     };
     window.addEventListener("orcia:assistant-prefill", onPrefill);
     return () => window.removeEventListener("orcia:assistant-prefill", onPrefill);
   }, []);
-
-  useEffect(() => {
-    return subscribeBgStream(() => {
-      const latestConvs = readSavedAssistantConversations();
-      if (latestConvs.length !== savedConversations.length) {
-        setSavedConversations(latestConvs);
-      }
-      const latestActiveId = readSavedActiveConversationId();
-      if (
-        latestActiveId &&
-        latestActiveId !== activeConversationId &&
-        latestConvs.some((c) => c.id === latestActiveId)
-      ) {
-        setActiveConversationId(latestActiveId);
-      }
-      setPromptTelemetryLog(readSavedPromptTelemetryLog());
-    });
-  }, [savedConversations.length, activeConversationId]);
 
   const selectActiveFolderAndPersist = (nextFolderId: string) => {
     setActiveFolderId(nextFolderId);
     writeSavedActiveFolderId(nextFolderId);
   };
 
-  const firstConv = savedConversations[0];
   const initialLastReply =
-    firstConv?.turns[firstConv.turns.length - 1]?.assistantReply ?? "";
+    activeConversation?.turns[activeConversation.turns.length - 1]?.assistantReply ?? "";
   const streaming = useAssistantStreamingTurn({
     activeWorkspaceId,
     isFr,
     initialStreamedText: initialLastReply,
-    activeConversation,
+    activeThreadId: activeConversationId,
+    ensureThreadForTurn: (promptSeed) =>
+      threads.ensureThreadForTurn(promptSeed, activeFolderId || null),
     activeFolder,
-    governancePrefs,
+    governancePrefs: governance.governancePrefs,
     streamErrorLabels: dictionary.assistantStreamErrors,
     onTurnCompleted: (completed) => {
       const res = persistCompletedInboxTurn({
         completed,
-        savedConversations,
-        activeConversationId,
+        savedConversations: threads.conversations,
+        activeConversationId: threads.activeConversationId,
         activeWorkspaceId,
         activeFolderId,
         activeFolder,
         modelOptions,
-        datasources,
         isFr,
         reflexiveExecutionId: completed.turnId ?? null,
         reflexiveEvents: completed.traceEvents ?? [],
-        onFeedbackBanner: setGovernanceFeedback,
       });
-      setSavedConversations(res.nextConversations);
-      selectActiveConversationAndPersist(res.resolvedConversationId);
+      threads.setConversations(res.nextConversations);
+      threads.setActiveConversationId(res.resolvedConversationId);
       setPromptTelemetryLog(res.nextTelemetryLog);
     },
   });
+
+  const supportsTools = hasHubSupportsTools && streaming.supportsTools;
 
   const handleFeedbackTurn = (
     turnId: string,
     feedback: "LIKE" | "DISLIKE" | null,
   ) => {
     const res = persistInboxTurnFeedback({
+      conversations: threads.conversations,
       turnId,
       feedback,
       activeWorkspaceId,
       isFr,
       onFeedbackBanner: setGovernanceFeedback,
     });
-    setSavedConversations(res.nextConversations);
+    threads.setConversations(res.nextConversations);
     setPromptTelemetryLog(res.nextTelemetryLog);
   };
 
@@ -217,16 +198,24 @@ export function useInboxPanelController() {
     streaming.sendTurn(payload);
   };
 
+  const handleDeepenTurn = (turn: SavedConversationTurnItem) => {
+    if (assistantInputBlocked || !supportsTools) return;
+    streaming.sendTurn({
+      userPrompt: turn.userPrompt,
+      requestedSpeed: "SPEED_2_AGENT_TOOLS",
+      deepAuditPillActive: false,
+      parentTurnId: turn.turnId,
+    });
+  };
+
   const handleStopAll = () => {
     streaming.stopGeneration();
   };
 
   const handleDeleteConversation = (convId: string) => {
-    const next = savedConversations.filter((c) => c.id !== convId);
-    setSavedConversations(next);
-    writeSavedAssistantConversations(next);
+    threads.setConversations((prev) => prev.filter((c) => c.id !== convId));
     if (activeConversationId === convId) {
-      selectActiveConversationAndPersist(null);
+      threads.startNewThread();
       streaming.resetStreamState("");
     }
   };
@@ -238,14 +227,15 @@ export function useInboxPanelController() {
     activeWorkspaceId,
     hasActiveEmbeddingModel,
     hasActiveChatModel,
+    supportsTools,
     ragReindex,
     assistantInputBlocked,
     prefillPrompt,
     setPrefillPrompt,
     activeFolderId,
     activeFolder,
-    governancePrefs,
-    setGovernancePrefs,
+    governancePrefs: governance.governancePrefs,
+    governance,
     foldersPanelOpen,
     setFoldersPanelOpen,
     savedConversationsOpen,
@@ -259,6 +249,7 @@ export function useInboxPanelController() {
     governanceFeedback,
     setGovernanceFeedback,
     foldersController,
+    threads,
     inspector,
     streaming,
     modelOptions,
@@ -271,6 +262,7 @@ export function useInboxPanelController() {
     selectActiveFolderAndPersist,
     handleFeedbackTurn,
     handleSendTurnWithReflexive,
+    handleDeepenTurn,
     handleStopAll,
     handleDeleteConversation,
   };

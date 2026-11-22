@@ -45,6 +45,10 @@ export interface AssistantSpeedSelectorAndStreamViewLabels {
   readonly ttftBadgePrefix: string;
   readonly inputPlaceholder: string;
   readonly sendPromptCta: string;
+  readonly toolsUnsupportedNotice?: string;
+  readonly toolsUnsupportedBadge?: string;
+  readonly deepenCta?: string;
+  readonly deepenLowEvidenceCta?: string;
 }
 
 export interface AssistantSpeedSelectorAndStreamViewProps {
@@ -53,6 +57,8 @@ export interface AssistantSpeedSelectorAndStreamViewProps {
   readonly hat: string;
   readonly activeSpeed?: UiAssistantSpeedMode;
   readonly deepAuditPillActive?: boolean;
+  readonly supportsTools?: boolean;
+  readonly lowEvidence?: boolean;
   readonly selectedTier?: UiInferenceTier;
   readonly selectedEffort?: UiInferenceEffort;
   readonly modelOptions?: readonly UiAssistantModelOption[];
@@ -101,6 +107,7 @@ export interface AssistantSpeedSelectorAndStreamViewProps {
   ) => void;
   readonly currentTurnFeedback?: "LIKE" | "DISLIKE" | null;
   readonly onFeedbackLastTurn?: (feedback: "LIKE" | "DISLIKE" | null) => void;
+  readonly onDeepenLastTurn?: () => void;
   readonly onSendTurn?: (payload: {
     userPrompt: string;
     requestedSpeed: UiAssistantSpeedMode;

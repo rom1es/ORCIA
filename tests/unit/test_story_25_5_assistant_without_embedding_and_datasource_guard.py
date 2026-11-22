@@ -140,11 +140,21 @@ def test_all_assistant_routes_and_federated_search_succeed_without_embedding(
         thread_id = r_thread.json()["thread_id"]
 
         r_thread_turn = client.post(
-            f"/api/v1/assistant/threads/{thread_id}/turns",
+            "/api/v1/assistant/turns",
             params={"persona_key": "marc"},
-            json={"workspace_id": ws_seeded, "message_text": "Synthèse du dossier"},
+            json={
+                "workspace_id": ws_seeded,
+                "thread_id": thread_id,
+                "folder_id": folder_id,
+                "user_prompt": "Synthèse du dossier",
+            },
         )
-        assert r_thread_turn.status_code == 200
+        assert r_thread_turn.status_code == 202
+        r_thread_stream = client.get(
+            r_thread_turn.json()["stream_url"], params={"persona_key": "marc"}
+        )
+        assert r_thread_stream.status_code == 200
+        assert "event: turn_completed" in r_thread_stream.text
 
         r_search = client.get(
             "/api/v1/search",

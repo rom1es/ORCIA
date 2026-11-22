@@ -99,8 +99,12 @@ def test_observer_and_header_rejected_403_pre_stream_across_all_assistant_mutati
             ),
             (
                 "POST",
-                f"/api/v1/assistant/threads/{thread_id}/turns",
-                {"workspace_id": _WS_PAY_ID, "message_text": "Blocked turn"},
+                "/api/v1/assistant/turns",
+                {
+                    "workspace_id": _WS_PAY_ID,
+                    "thread_id": thread_id,
+                    "user_prompt": "Blocked turn",
+                },
             ),
         ]
 

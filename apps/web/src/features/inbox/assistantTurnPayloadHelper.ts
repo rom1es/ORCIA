@@ -1,9 +1,12 @@
 import {
   sanitizeAssistantDisplayReply,
   type UiAgentTraceEventItem,
+  type UiAssistantApprovalProposal,
   type UiAssistantAttachedFileItem,
   type UiAssistantFolderItem,
   type UiAssistantSpeedMode,
+  type UiAssistantToolCallStatus,
+  type UiAssistantToolCallStepItem,
   type UiFileBadgeCode,
   type UiInferenceEffort,
   type UiInferenceTier,
@@ -19,7 +22,7 @@ export function buildAssistantTurnRequestPayload(params: {
   readonly deepAuditPillActive: boolean;
   readonly effectiveTier: UiInferenceTier;
   readonly effectiveEffort: UiInferenceEffort;
-  readonly historyPayload: Array<{ role: "user" | "assistant"; content: string }>;
+  readonly threadId?: string | null;
   readonly activeFolder?: UiAssistantFolderItem | null;
   readonly governancePrefs?: SavedAssistantGovernancePrefs;
   readonly parentTurnId?: string;
@@ -34,7 +37,7 @@ export function buildAssistantTurnRequestPayload(params: {
     deepAuditPillActive,
     effectiveTier,
     effectiveEffort,
-    historyPayload,
+    threadId,
     activeFolder,
     governancePrefs,
     parentTurnId,
@@ -65,7 +68,7 @@ export function buildAssistantTurnRequestPayload(params: {
       | "fast"
       | "balanced"
       | "deep",
-    conversation_history: historyPayload,
+    ...(threadId ? { thread_id: threadId } : {}),
     ...(parentTurnId ? { parent_turn_id: parentTurnId } : {}),
     ...(activeFolder?.folderId ? { folder_id: activeFolder.folderId } : {}),
     ...(pinnedNotes ? { folder_pinned_notes: pinnedNotes } : {}),
@@ -78,6 +81,70 @@ export function buildAssistantTurnRequestPayload(params: {
       ? { workspace_instructions: governancePrefs.workspaceInstructions }
       : {}),
     locale: isFr ? "fr" : "en",
+  };
+}
+
+export function upsertToolCallStepFromSse(
+  prev: readonly UiAssistantToolCallStepItem[],
+  eventName: "tool_call" | "tool_result",
+  data: Readonly<Record<string, unknown>>,
+): readonly UiAssistantToolCallStepItem[] {
+  const toolCallId = String(data.tool_call_id ?? data.call_id ?? `${data.tool_name ?? "tool"}-${prev.length + 1}`);
+  const toolName = String(data.tool_name ?? "tool");
+  const rawStatus = String(data.status ?? (eventName === "tool_call" ? "RUNNING" : "EXECUTED"));
+  const status: UiAssistantToolCallStatus =
+    rawStatus === "RUNNING" ||
+    rawStatus === "EXECUTED" ||
+    rawStatus === "DENIED" ||
+    rawStatus === "ERROR" ||
+    rawStatus === "DEDUPLICATED" ||
+    rawStatus === "APPROVAL_REQUIRED"
+      ? rawStatus
+      : eventName === "tool_call"
+        ? "RUNNING"
+        : "EXECUTED";
+  const args = (data.sanitized_args ?? {}) as Readonly<Record<string, unknown>>;
+  const targetUri =
+    String(
+      data.uri ??
+        args.uri ??
+        args.resource_uri ??
+        (Array.isArray(data.evidence_refs) ? (data.evidence_refs[0] ?? "") : ""),
+    ) || null;
+  const startLine = Number(data.start_line ?? args.start_line ?? 0) || null;
+  const endLine = Number(data.end_line ?? args.end_line ?? 0) || null;
+  const durationMs = typeof data.duration_ms === "number" ? data.duration_ms : null;
+  const summary = typeof data.summary === "string" ? data.summary : null;
+
+  const entry: UiAssistantToolCallStepItem = {
+    toolCallId,
+    toolName,
+    status,
+    ...(summary ? { summary } : {}),
+    ...(durationMs !== null ? { durationMs } : {}),
+    ...(targetUri ? { targetUri } : {}),
+    ...(startLine ? { startLine } : {}),
+    ...(endLine ? { endLine } : {}),
+  };
+  const existingIdx = prev.findIndex((item) => item.toolCallId === toolCallId);
+  if (existingIdx >= 0) {
+    return prev.map((item, idx) => (idx === existingIdx ? { ...item, ...entry } : item));
+  }
+  return [...prev, entry];
+}
+
+export function buildApprovalProposalFromSse(
+  data: Readonly<Record<string, unknown>>,
+): UiAssistantApprovalProposal {
+  return {
+    proposalId: String(data.proposal_id ?? "prop-1"),
+    actionKind: String(data.action_kind ?? data.tool_name ?? "PROPOSE_OR_CONTINUE"),
+    targetUri: String(data.target_uri ?? ""),
+    workflowRef: data.workflow_ref ? String(data.workflow_ref) : null,
+    rationale: String(data.rationale ?? data.summary ?? ""),
+    requiresHumanAnchor: data.requires_human_anchor === undefined ? true : Boolean(data.requires_human_anchor),
+    status: "PENDING",
+    runId: data.run_id ? String(data.run_id) : null,
   };
 }
 

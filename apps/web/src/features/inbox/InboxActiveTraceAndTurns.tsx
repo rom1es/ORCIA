@@ -1,9 +1,12 @@
 import {
   AgentExecutionTrace,
+  AssistantApprovalRequiredCard,
+  AssistantToolCallTrace,
   PermissionBrokerCard,
   SourceLineInspectorDrawer,
   type UiAgentTraceEventItem,
-  type UiAssistantRagCitationItem,
+  type UiAssistantApprovalProposal,
+  type UiAssistantToolCallStepItem,
   type UiReflexivePendingWritePreview,
   type UiReflexiveSessionStatus,
   type UiSourceLineInspectTarget,
@@ -17,7 +20,7 @@ import {
   AssistantTopToolbar,
   SavedConversationsPanel,
 } from "./SavedConversationsAndThreadView";
-import type { SavedAssistantConversation } from "./savedConversationsStore";
+import type { SavedAssistantConversation, SavedConversationTurnItem } from "./savedConversationsStore";
 import type { SendAssistantTurnPayload } from "./useAssistantStreamingTurn";
 import type { usePermissionBrokerTickets } from "./usePermissionBrokerTickets";
 import type { useSourceLineInspector } from "../shared/useSourceLineInspector";
@@ -61,17 +64,24 @@ export function InboxTopSection({
   onResumeConversation,
   onDeleteConversation,
 }: InboxTopSectionProps): React.JSX.Element {
+  const feedbackIsError = Boolean(
+    governanceFeedback &&
+      (/⚠️|❌/.test(governanceFeedback) ||
+        /\b(erreur|error|failed|impossible|interdit|forbidden|refusé|denied)\b/i.test(governanceFeedback)),
+  );
   return (
     <>
       {governanceFeedback ? (
         <div
-          role="status"
+          role={feedbackIsError ? "alert" : "status"}
           data-testid="assistant-governance-feedback-banner"
           className="rounded border px-3 py-2 text-xs font-medium"
           style={{
-            backgroundColor: "var(--color-bg-elevated)",
-            borderColor: "var(--color-border-subtle)",
-            color: "var(--color-text-primary)",
+            backgroundColor: feedbackIsError
+              ? "var(--color-status-error-bg, var(--color-surface-elevated))"
+              : "var(--color-surface-elevated)",
+            borderColor: feedbackIsError ? "var(--color-status-error)" : "var(--color-border-subtle)",
+            color: feedbackIsError ? "var(--color-status-error)" : "var(--color-text-primary)",
           }}
         >
           {governanceFeedback}
@@ -118,37 +128,67 @@ export function buildInboxStreamSlots(params: {
   readonly showActiveReflexiveSlot: boolean;
   readonly reflexiveStatus: UiReflexiveSessionStatus | null;
   readonly reflexiveEvents: readonly UiAgentTraceEventItem[];
+  readonly toolCallSteps: readonly UiAssistantToolCallStepItem[];
+  readonly approvalProposal: UiAssistantApprovalProposal | null;
+  readonly approvalBusy: boolean;
   readonly pendingWritePreview: UiReflexivePendingWritePreview | null;
   readonly activeConversation: SavedAssistantConversation | null;
   readonly isFr: boolean;
   readonly isGenerating: boolean;
-  readonly ragCitations: readonly UiAssistantRagCitationItem[];
-  readonly traceLabels: TranslationDictionary["executionTrace"];
+  readonly supportsTools: boolean;
+  readonly dictionary: TranslationDictionary;
   readonly onInspectLines: (target: UiSourceLineInspectTarget) => void;
   readonly onInspectCitationUri: (uri: string, title?: string) => void;
   readonly onSynthesizeNow: () => void;
-  readonly onApproveWrite: (previewId: string) => void;
-  readonly onRejectWrite: (previewId: string) => void;
+  readonly onApproveProposal: (proposalId: string, humanAnchorMarkdown?: string) => void;
+  readonly onRejectProposal: (proposalId: string, rationale?: string) => void;
+  readonly onOpenProcess: (runId?: string | null) => void;
   readonly onSendTurn: (payload: SendAssistantTurnPayload) => void;
+  readonly onDeepenTurn: (turn: SavedConversationTurnItem) => void;
   readonly onContinueInProcess: () => void;
   readonly onFeedbackTurn: (turnId: string, feedback: "LIKE" | "DISLIKE" | null) => void;
 }): {
   readonly activeReflexiveNode: React.ReactNode;
   readonly previousTurnsNode: React.ReactNode;
 } {
+  const hasActiveToolTrace = params.toolCallSteps.length > 0;
+  const hasApproval = params.approvalProposal !== null;
+  const hasTrace = params.showActiveReflexiveSlot && params.reflexiveStatus !== null;
+
   const activeReflexiveNode =
-    params.showActiveReflexiveSlot && params.reflexiveStatus ? (
-      <AgentExecutionTrace
-        status={params.reflexiveStatus}
-        events={params.reflexiveEvents}
-        pendingWritePreview={params.pendingWritePreview}
-        labels={params.traceLabels}
-        defaultCollapsedWhenCompleted={false}
-        onInspectLines={params.onInspectLines}
-        onSynthesizeNow={params.onSynthesizeNow}
-        onApproveWrite={params.onApproveWrite}
-        onRejectWrite={params.onRejectWrite}
-      />
+    hasTrace || hasActiveToolTrace || hasApproval ? (
+      <div className="space-y-2.5">
+        {hasActiveToolTrace && (
+          <AssistantToolCallTrace
+            steps={params.toolCallSteps}
+            labels={params.dictionary.assistantToolTrace}
+            onInspectLines={params.onInspectLines}
+          />
+        )}
+        {hasApproval && params.approvalProposal && (
+          <AssistantApprovalRequiredCard
+            proposal={params.approvalProposal}
+            labels={params.dictionary.assistantApprovalCard}
+            busy={params.approvalBusy}
+            onApprove={params.onApproveProposal}
+            onReject={params.onRejectProposal}
+            onOpenProcess={params.onOpenProcess}
+          />
+        )}
+        {hasTrace && params.reflexiveStatus && (
+          <AgentExecutionTrace
+            status={params.reflexiveStatus}
+            events={params.reflexiveEvents}
+            pendingWritePreview={params.pendingWritePreview}
+            labels={params.dictionary.executionTrace}
+            defaultCollapsedWhenCompleted={false}
+            onInspectLines={params.onInspectLines}
+            onSynthesizeNow={params.onSynthesizeNow}
+            onApproveWrite={(id) => params.onApproveProposal(id)}
+            onRejectWrite={(id) => params.onRejectProposal(id)}
+          />
+        )}
+      </div>
     ) : null;
 
   const previousTurnsNode =
@@ -157,13 +197,16 @@ export function buildInboxStreamSlots(params: {
         conversation={params.activeConversation}
         isFr={params.isFr}
         isGenerating={params.isGenerating}
-        ragCitations={params.ragCitations}
-        traceLabels={params.traceLabels}
+        supportsTools={params.supportsTools}
+        deepenLabel={params.dictionary.assistantSpeedStream.deepenCta}
+        deepenLowEvidenceLabel={params.dictionary.assistantSpeedStream.deepenLowEvidenceCta}
+        traceLabels={params.dictionary.executionTrace}
+        toolTraceLabels={params.dictionary.assistantToolTrace}
         onInspectLines={params.onInspectLines}
         onInspectCitation={(src) => params.onInspectCitationUri(src.uri, src.title)}
         onSynthesizeNow={params.onSynthesizeNow}
-        onApproveWrite={params.onApproveWrite}
-        onRejectWrite={params.onRejectWrite}
+        onApproveWrite={(id) => params.onApproveProposal(id)}
+        onRejectWrite={(id) => params.onRejectProposal(id)}
         onRegenerateTurn={(userPrompt) =>
           params.onSendTurn({
             userPrompt,
@@ -171,6 +214,7 @@ export function buildInboxStreamSlots(params: {
             deepAuditPillActive: false,
           })
         }
+        onDeepenTurn={params.onDeepenTurn}
         onContinueInProcess={params.onContinueInProcess}
         onFeedbackTurn={params.onFeedbackTurn}
       />

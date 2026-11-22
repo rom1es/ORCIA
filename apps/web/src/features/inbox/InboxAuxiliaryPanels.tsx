@@ -4,16 +4,14 @@ import {
   AssistantGovernanceModalAndStudio,
   formatFolderVisibilityLabel,
   type AssistantFolderVisibilityMode,
+  type UiAssembledLayerItem,
   type UiAssistantFolderItem,
   type UiAssistantPromptTelemetryRecord,
-  type UiEvidenceSourceItem,
 } from "@orcia/ui";
 import React from "react";
 import type { TranslationDictionary } from "../../i18n/types";
-import {
-  writeSavedAssistantGovernancePrefs,
-  type SavedAssistantGovernancePrefs,
-} from "./assistantFoldersAndPrefsStore";
+import type { SavedAssistantGovernancePrefs } from "./assistantFoldersAndPrefsStore";
+import type { BuiltCitationCardPreview } from "./inboxCitationHelpers";
 
 export interface InboxAuxiliaryPanelsProps {
   readonly isFr: boolean;
@@ -22,37 +20,35 @@ export interface InboxAuxiliaryPanelsProps {
   readonly foldersPanelOpen: boolean;
   readonly governanceOpen: boolean;
   readonly governancePrefs: SavedAssistantGovernancePrefs;
+  readonly canEditWorkspaceLayer: boolean;
+  readonly mcpFrozenByUpperLayer: boolean;
+  readonly mcpIdeConfigJson: string;
+  readonly assembledLayers: readonly UiAssembledLayerItem[];
   readonly promptTelemetryLog: readonly UiAssistantPromptTelemetryRecord[];
   readonly folders: readonly UiAssistantFolderItem[];
   readonly authorIdentity: string;
   readonly dictionary: TranslationDictionary;
-  readonly setGovernancePrefs: React.Dispatch<
-    React.SetStateAction<SavedAssistantGovernancePrefs>
-  >;
   readonly setGovernanceOpen: (open: boolean) => void;
   readonly setGovernanceFeedback: (msg: string | null) => void;
+  readonly onSaveUserPreferences: (payload: {
+    responseTone: SavedAssistantGovernancePrefs["responseTone"];
+    favoriteFormat: SavedAssistantGovernancePrefs["favoriteFormat"];
+    defaultHat: string;
+    personalInstructions: string;
+  }) => Promise<void>;
+  readonly onSaveWorkspaceSettings: (payload: {
+    workspaceInstructions: string;
+    mcpExposeAssistant: boolean;
+  }) => Promise<void>;
   readonly selectActiveFolderAndPersist: (folderId: string) => void;
   readonly createFolder: (title: string) => Promise<UiAssistantFolderItem | null>;
-  readonly savePinnedNotes: (
-    folder: UiAssistantFolderItem,
-    notes: string,
-  ) => Promise<boolean>;
-  readonly changeVisibility: (
-    folder: UiAssistantFolderItem,
-    mode: AssistantFolderVisibilityMode,
-  ) => Promise<boolean>;
+  readonly savePinnedNotes: (folder: UiAssistantFolderItem, notes: string) => Promise<boolean>;
+  readonly changeVisibility: (folder: UiAssistantFolderItem, mode: AssistantFolderVisibilityMode) => Promise<boolean>;
   readonly onOpenHelpSection: (sectionId: string) => void;
   readonly onSendCollaborativeMessage: (message: string) => void;
   readonly onLaunchProcessFromFolder: (folderId: string, targetWorkflowUri: string) => void;
   readonly onNavigateToProcesses: () => void;
-  readonly citationCardPreview?: {
-    readonly sanitizedResponseText: string;
-    readonly footerSummaryLine: string;
-    readonly sources?: readonly UiEvidenceSourceItem[];
-    readonly artifactTitle?: string;
-    readonly artifactContent?: string;
-    readonly onInspectSource?: (source: UiEvidenceSourceItem) => void;
-  } | null;
+  readonly citationCardPreview?: BuiltCitationCardPreview | null;
 }
 
 export function InboxAuxiliaryPanels({
@@ -62,13 +58,18 @@ export function InboxAuxiliaryPanels({
   foldersPanelOpen,
   governanceOpen,
   governancePrefs,
+  canEditWorkspaceLayer,
+  mcpFrozenByUpperLayer,
+  mcpIdeConfigJson,
+  assembledLayers,
   promptTelemetryLog,
   folders,
   authorIdentity,
   dictionary,
-  setGovernancePrefs,
   setGovernanceOpen,
   setGovernanceFeedback,
+  onSaveUserPreferences,
+  onSaveWorkspaceSettings,
   selectActiveFolderAndPersist,
   createFolder,
   savePinnedNotes,
@@ -84,74 +85,41 @@ export function InboxAuxiliaryPanels({
       {governanceOpen ? (
         <AssistantGovernanceModalAndStudio
           workspaceId={activeWorkspaceId}
-          canEditWorkspaceLayer={true}
-          canOpenStudioModeB={false}
+          canEditWorkspaceLayer={canEditWorkspaceLayer}
           initialUserTone={governancePrefs.responseTone}
           initialUserFormat={governancePrefs.favoriteFormat}
           initialDefaultHat={governancePrefs.defaultHat}
           initialPersonalInstructions={governancePrefs.personalInstructions}
           initialWorkspaceInstructions={governancePrefs.workspaceInstructions}
           initialMcpExposed={governancePrefs.mcpExposeAssistant}
-          assembledLayers={[]}
+          mcpFrozenByUpperLayer={mcpFrozenByUpperLayer}
+          mcpIdeConfigJson={mcpIdeConfigJson}
+          assembledLayers={assembledLayers}
           promptTelemetryLog={promptTelemetryLog}
-          studioNodes={[]}
           labels={dictionary.assistantGovernance}
           onSaveUserPreferences={(payload) => {
-            setGovernancePrefs((prev) => {
-              const next: SavedAssistantGovernancePrefs = {
-                ...prev,
-                responseTone: payload.responseTone,
-                favoriteFormat: payload.favoriteFormat,
-                defaultHat: payload.defaultHat,
-                personalInstructions: payload.personalInstructions,
-              };
-              writeSavedAssistantGovernancePrefs(next);
-              return next;
-            });
-            setGovernanceFeedback(
-              isFr
-                ? `✅ Préférences personnelles enregistrées automatiquement (rôle : ${payload.defaultHat}).`
-                : `✅ Personal preferences auto-saved (role: ${payload.defaultHat}).`,
-            );
+            void onSaveUserPreferences(payload);
           }}
           onSaveWorkspaceSettings={(payload) => {
-            setGovernancePrefs((prev) => {
-              const next: SavedAssistantGovernancePrefs = {
-                ...prev,
-                workspaceInstructions: payload.workspaceInstructions,
-                mcpExposeAssistant: payload.mcpExposeAssistant,
-              };
-              writeSavedAssistantGovernancePrefs(next);
-              return next;
-            });
+            void onSaveWorkspaceSettings(payload);
+          }}
+          onCopyMcpConfig={(jsonText) => {
+            if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+              void navigator.clipboard.writeText(jsonText).catch((err: unknown) => {
+                console.warn("[orcia:assistant.copyMcp]", err instanceof Error ? err.message : String(err));
+              });
+            }
             setGovernanceFeedback(
               isFr
-                ? `✅ Réglages de l'Espace enregistrés automatiquement (accès externe : ${payload.mcpExposeAssistant ? "activé" : "désactivé"}).`
-                : `✅ Workspace settings auto-saved (external access: ${payload.mcpExposeAssistant ? "enabled" : "disabled"}).`,
+                ? "✅ Configuration éditeur copiée dans le presse-papiers."
+                : "✅ Editor configuration copied to clipboard.",
             );
           }}
-          onSaveStudioOverride={(payload) =>
-            setGovernanceFeedback(
-              isFr
-                ? `✅ Configuration avancée enregistrée pour le périmètre ${payload.scopeLevel}.`
-                : `✅ Advanced configuration saved for scope ${payload.scopeLevel}.`,
-            )
-          }
-          onResetStudioOverride={(scopeLevel) =>
-            setGovernanceFeedback(
-              isFr
-                ? `✅ Configuration réinitialisée aux valeurs par défaut (${scopeLevel}).`
-                : `✅ Configuration reset to defaults (${scopeLevel}).`,
-            )
-          }
           onClose={() => setGovernanceOpen(false)}
         />
       ) : null}
 
-      <div
-        data-testid="assistant-folders-panel-wrapper"
-        className={foldersPanelOpen ? "" : "sr-only"}
-      >
+      <div data-testid="assistant-folders-panel-wrapper" className={foldersPanelOpen ? "" : "sr-only"}>
         <AssistantFoldersAndCollaborativeThreadView
           workspaceId={activeWorkspaceId}
           activeFolderId={activeFolderId}
@@ -209,14 +177,16 @@ export function InboxAuxiliaryPanels({
         <div data-testid="assistant-citations-card-wrapper">
           <AssistantCitationPillsAndArtifactCard
             sanitizedResponseText={citationCardPreview.sanitizedResponseText}
-            sources={citationCardPreview.sources ?? []}
-            glossaryItems={[]}
-            toolOutputs={[]}
+            strippedPhantomTags={citationCardPreview.strippedPhantomTags}
+            sources={citationCardPreview.sources}
+            glossaryItems={citationCardPreview.glossaryItems}
+            toolOutputs={citationCardPreview.toolOutputs}
             footerSummaryLine={citationCardPreview.footerSummaryLine}
             artifactTitle={citationCardPreview.artifactTitle}
             artifactContent={citationCardPreview.artifactContent}
             labels={dictionary.assistantCitations}
             onInspectSource={citationCardPreview.onInspectSource}
+            onRequestRestrictedAccess={citationCardPreview.onRequestRestrictedAccess}
             onContinueInProcess={onNavigateToProcesses}
           />
         </div>

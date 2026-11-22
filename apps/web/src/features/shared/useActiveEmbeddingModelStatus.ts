@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 export function useActiveEmbeddingModelStatus(): {
   readonly hasActiveEmbeddingModel: boolean;
   readonly hasActiveChatModel: boolean;
+  readonly hasSupportsTools: boolean;
   readonly isLoaded: boolean;
 } {
   const [hasActiveEmbeddingModel, setHasActiveEmbeddingModel] = useState<boolean>(true);
   const [hasActiveChatModel, setHasActiveChatModel] = useState<boolean>(true);
+  const [hasSupportsTools, setHasSupportsTools] = useState<boolean>(true);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
   useEffect(() => {
@@ -25,11 +27,19 @@ export function useActiveEmbeddingModelStatus(): {
               (m.scope_level ?? "GLOBAL") === "GLOBAL" &&
               m.usage === "embedding",
           );
-          const hasChat = items.some(
+          const activeChatModels = items.filter(
             (m) => m.is_active && !m.draining && m.usage !== "embedding",
           );
+          const hasChat = activeChatModels.length > 0;
+          const supportsTools =
+            hasChat &&
+            activeChatModels.some((m) => {
+              const eff = m.supports_tools_override ?? m.supports_tools;
+              return eff === undefined || eff === null ? true : Boolean(eff);
+            });
           setHasActiveEmbeddingModel(hasEmbedding);
           setHasActiveChatModel(hasChat);
+          setHasSupportsTools(supportsTools);
           setIsLoaded(true);
         }
       })
@@ -38,6 +48,7 @@ export function useActiveEmbeddingModelStatus(): {
           console.warn("[ORCIA-UI] Failed to verify active AI model statuses:", err);
           setHasActiveEmbeddingModel(false);
           setHasActiveChatModel(false);
+          setHasSupportsTools(false);
           setIsLoaded(true);
         }
       });
@@ -46,5 +57,5 @@ export function useActiveEmbeddingModelStatus(): {
     };
   }, []);
 
-  return { hasActiveEmbeddingModel, hasActiveChatModel, isLoaded };
+  return { hasActiveEmbeddingModel, hasActiveChatModel, hasSupportsTools, isLoaded };
 }

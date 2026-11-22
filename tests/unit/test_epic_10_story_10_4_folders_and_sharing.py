@@ -276,30 +276,52 @@ def _run_story_10_4_fastapi_endpoints_assertions(isolated_app: object) -> None:
         assert share_resp.status_code == 200
         assert share_resp.json()["restricted_sources_warning"] is not None
 
-        # 4. Marc sends a turn holding the lock (`release_lock_after_turn=False`)
+        # 4. Marc sends a canonical turn on the thread (`POST /api/v1/assistant/turns`)
         turn1 = client.post(
-            f"/api/v1/assistant/threads/{thread_id}/turns",
+            "/api/v1/assistant/turns",
             params={"persona_key": "marc"},
             json={
                 "workspace_id": ws_id,
-                "message_text": "Synthèse des risques PSP",
-                "release_lock_after_turn": False,
+                "thread_id": thread_id,
+                "folder_id": folder_id,
+                "user_prompt": "Synthèse des risques PSP",
             },
         )
-        assert turn1.status_code == 200
-        assert "marc" in turn1.json()["author_passthrough_identity"]
+        assert turn1.status_code == 202
+        stream1 = client.get(turn1.json()["stream_url"], params={"persona_key": "marc"})
+        assert stream1.status_code == 200
 
-        # 5. Karim sends a turn while Marc's lock is active -> 409 ERR_THREAD_TURN_LOCK_HELD
-        turn2_conflict = client.post(
-            f"/api/v1/assistant/threads/{thread_id}/turns",
-            params={"persona_key": "karim"},
-            json={
-                "workspace_id": ws_id,
-                "message_text": "Conflit de tour",
-            },
+        # 5. While Marc holds the Redis thread lock, Karim receives 409 ERR_THREAD_TURN_LOCK_HELD
+        from orcia_api.routers._assistant_background_registry import (
+            get_thread_turn_lock_from_request,
         )
-        assert turn2_conflict.status_code == 409
-        assert turn2_conflict.json()["error_code"] == "ERR_THREAD_TURN_LOCK_HELD"
+
+        class _ReqStub:
+            def __init__(self, app_obj: object) -> None:
+                self.app = app_obj
+
+        lock = get_thread_turn_lock_from_request(_ReqStub(isolated_app))
+        assert client.portal is not None
+        _, token = client.portal.call(
+            lambda: lock.acquire_async(thread_id=thread_id, user_id="u-marc", ttl_seconds=60)
+        )
+        try:
+            turn2_conflict = client.post(
+                "/api/v1/assistant/turns",
+                params={"persona_key": "karim"},
+                json={
+                    "workspace_id": ws_id,
+                    "thread_id": thread_id,
+                    "folder_id": folder_id,
+                    "user_prompt": "Conflit de tour",
+                },
+            )
+            assert turn2_conflict.status_code == 409
+            assert turn2_conflict.json()["error_code"] == "ERR_THREAD_TURN_LOCK_HELD"
+        finally:
+            client.portal.call(
+                lambda: lock.release_async(thread_id=thread_id, user_id="u-marc", token=token)
+            )
 
         # 6. Overview 3 tabs (`💬`, `📁`, `🕘`)
         overview_resp = client.get(

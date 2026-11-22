@@ -9,12 +9,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-22",
   "stats": {
     "activeRoutesCount": 28,
-    "uiPrimitivesCount": 137,
+    "uiPrimitivesCount": 139,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 217,
+    "techLeadReportsCount": 218,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 61,
@@ -66,6 +66,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "AgentsAndSkillsManagerView",
     "AppShell",
     "ArbitrationTieBreakCard",
+    "AssistantApprovalRequiredCard",
     "AssistantAttachedFilesInlineBar",
     "AssistantCitationPillsAndArtifactCard",
     "AssistantDock",
@@ -76,6 +77,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "AssistantSpeedSelectorAndStreamView",
     "AssistantThinkingSliderIndicator",
     "AssistantThinkingSubWindow",
+    "AssistantToolCallTrace",
     "AssistantUserQuestionBubble",
     "AutonomousExecutionBadge",
     "AutonomyContractModal",
@@ -548,6 +550,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-22",
+      "phaseOrStory": "Story 26.9",
+      "reportFile": "26-9-ui-and-sdk-wiring-mode-a-citations-history-and-deepen-tech-lead-report.md",
+      "domain": "Epic 26 Lot 7 — UI & SDK Wiring: Mode A Governance API, Server citation_map Pills, PG18 Thread History, Tool Trace, Approval Cards, \"Deepen\" Button & F5 Cold Survival (CAP-070, CAP-071, CAP-072, CAP-073, CAP-260)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): deleted duplicate POST /api/v1/assistant/threads/{thread_id}/turns + unused schemas (0-diff OpenAPI SDK), added _SQL_SYNC_THREAD_TURN_COUNT in sql_assistant_thread_messages.py (235 L), eliminated filterUsedRagSourcesForTurn & localStorage turn/governance stores, wired PG18 thread/message history, SSE ?after= cursor reattach, server citation_map pills, Mode A 3-tab governance (GET /governance, PUT /governance/mode-a/{user,workspace}, zero Mode B Studio UI), Direction C @orcia/ui AssistantToolCallTrace, AssistantApprovalRequiredCard, supports_tools=false disabled Speed 2/3, and \"Deepen\" (parent_turn_id) button; all 40 production modules <= 293 L; verified 97% 3-module branch coverage (90% / 100% / 98%), 1189 passed Python unit/evals/security/contract/unit-PG18, 28 passed PG18+Redis integration (26.x, 25.5, 16.2, 20.4, 23.5, 22.1, 22.3, 23.2, 10.1..10.4), 9/9 Turbo (21 + 154 + 264 = 439 JS/TS tests), 16 passed, 1 mobile-only skipped, 0 failed (2.8m) Playwright Desktop E2E (00, 02, 12-finops, 12-epic16, 16, 21, 22), ruff/mypy --strict (720 files)/lint-imports (5/5)/export_openapi (0-diff)/lint_spine (0)/detect-secrets clean."
+    },
     {
       "date": "2026-11-22",
       "phaseOrStory": "Story 26.8",

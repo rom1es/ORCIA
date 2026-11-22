@@ -34,6 +34,11 @@ export interface AssistantActiveStreamContentProps {
   readonly mergedRagCitations: readonly UiAssistantRagCitationItem[];
   readonly currentTurnFeedback: "LIKE" | "DISLIKE" | null;
   readonly onFeedbackLastTurn?: (feedback: "LIKE" | "DISLIKE" | null) => void;
+  readonly canDeepen?: boolean;
+  readonly lowEvidence?: boolean;
+  readonly deepenLabel?: string;
+  readonly deepenLowEvidenceLabel?: string;
+  readonly onDeepen?: () => void;
   readonly onRegenerate: () => void;
   readonly onSaveDraftFromResponse?: (content: string) => void;
   readonly onContinueInProcessFromResponse?: (content: string) => void;
@@ -60,6 +65,11 @@ export function AssistantActiveStreamContent({
   mergedRagCitations,
   currentTurnFeedback,
   onFeedbackLastTurn,
+  canDeepen = false,
+  lowEvidence = false,
+  deepenLabel,
+  deepenLowEvidenceLabel,
+  onDeepen,
   onRegenerate,
   onSaveDraftFromResponse,
   onContinueInProcessFromResponse,
@@ -156,6 +166,11 @@ export function AssistantActiveStreamContent({
               effortLabel={effortTitle}
               ragCitations={mergedRagCitations}
               initialFeedback={currentTurnFeedback}
+              canDeepen={canDeepen}
+              lowEvidence={lowEvidence}
+              deepenLabel={deepenLabel}
+              deepenLowEvidenceLabel={deepenLowEvidenceLabel}
+              onDeepen={onDeepen}
               onFeedbackChange={onFeedbackLastTurn}
               onRegenerate={onRegenerate}
               onSaveDraft={onSaveDraftFromResponse}

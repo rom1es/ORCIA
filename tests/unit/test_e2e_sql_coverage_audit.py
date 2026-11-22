@@ -158,6 +158,9 @@ SPEC_ALLOWED_DOMAIN_TABLES: dict[str, frozenset[str]] = {
             "catalog_items",
         }
     ),
+    "22-assistant-tool-loop-approval-and-reattach.spec.ts": frozenset(
+        {"assistant_threads", "assistant_thread_messages"}
+    ),
     "shell.spec.ts": frozenset({"users", "platform_auth_settings"}),
 }
 
@@ -208,7 +211,7 @@ def _audit_spec_content(
 
 def test_all_e2e_specs_invoke_domain_postgresql_18_assertions_in_every_test_block() -> None:
     specs = sorted(E2E_DIR.glob("*.spec.ts"))
-    assert len(specs) == 24
+    assert len(specs) == 25
     assert set(SPEC_ALLOWED_DOMAIN_TABLES.keys()) == {p.name for p in specs}
 
     total_blocks = 0
@@ -230,7 +233,7 @@ def test_all_e2e_specs_invoke_domain_postgresql_18_assertions_in_every_test_bloc
         trivial_sql_blocks.extend(trivial)
         out_of_domain_blocks.extend(out_domain)
 
-    assert total_blocks == 56
+    assert total_blocks == 57
     assert blocks_missing_sql == []
     assert trivial_sql_blocks == []
     assert out_of_domain_blocks == []
@@ -262,11 +265,8 @@ def test_e2e_sql_audit_rejects_trivial_select_1_out_of_domain_and_missing_sql() 
     cnt2, missing2, trivial2, out_domain2 = _audit_spec_content(
         "12-finops-and-audit-provenance.spec.ts", alibi_spec, finops_allowed
     )
-    assert cnt2 == 1
-    assert missing2 == []
-    assert trivial2 == []
-    assert len(out_domain2) == 1
-    assert "users" in out_domain2[0]
+    assert cnt2 == 1 and missing2 == [] and trivial2 == []
+    assert len(out_domain2) == 1 and "users" in out_domain2[0]
 
     no_sql_spec = """
     test("missing sql altogether", async () => {
@@ -276,10 +276,7 @@ def test_e2e_sql_audit_rejects_trivial_select_1_out_of_domain_and_missing_sql() 
     cnt3, missing3, trivial3, out_domain3 = _audit_spec_content(
         "12-finops-and-audit-provenance.spec.ts", no_sql_spec, finops_allowed
     )
-    assert cnt3 == 1
-    assert len(missing3) == 1
-    assert trivial3 == []
-    assert out_domain3 == []
+    assert cnt3 == 1 and len(missing3) == 1 and trivial3 == [] and out_domain3 == []
 
     tautological_count_spec = """
     test("tautological >= 0 on COUNT(*)", async () => {
@@ -292,8 +289,5 @@ def test_e2e_sql_audit_rejects_trivial_select_1_out_of_domain_and_missing_sql() 
     cnt4, missing4, trivial4, out_domain4 = _audit_spec_content(
         "12-finops-and-audit-provenance.spec.ts", tautological_count_spec, finops_allowed
     )
-    assert cnt4 == 1
-    assert missing4 == []
-    assert len(trivial4) == 1
-    assert "toBeGreaterThanOrEqual(0)" in trivial4[0]
-    assert out_domain4 == []
+    assert cnt4 == 1 and missing4 == [] and out_domain4 == []
+    assert len(trivial4) == 1 and "toBeGreaterThanOrEqual(0)" in trivial4[0]

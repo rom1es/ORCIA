@@ -5,14 +5,9 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as bridgeStore from "../components/agentsAndSkillsBridgeStore";
 import { clearPlatformSetupStorage } from "../components/platformSetupStorageHelpers";
-import {
-  writeSavedActiveConversationId,
-  writeSavedAssistantFolders,
-} from "../features/inbox/assistantFoldersAndPrefsStore";
-import {
-  clearSavedAssistantConversationsStorage,
-  writeSavedAssistantConversations,
-} from "../features/inbox/savedConversationsStore";
+import { writeSavedAssistantFolders } from "../features/inbox/assistantFoldersAndPrefsStore";
+import { backendState } from "./setup/mockBackendState";
+import { clearSavedAssistantConversationsStorage } from "../features/inbox/savedConversationsStore";
 import {
   AssistantTopToolbar,
   SavedConversationsPanel,
@@ -109,7 +104,6 @@ beforeEach(() => {
   bridgeStore.resetCachedAgentsAndSkillsForTest();
   clearSavedAssistantConversationsStorage();
   writeSavedAssistantFolders([]);
-  writeSavedActiveConversationId(null);
 });
 
 afterEach(() => {
@@ -248,38 +242,57 @@ describe("Story 23.5 — Cockpit sobriety, ModuleWorkspaceView inbox headerless,
   it("passes citationCardPreview from inbox/index.tsx to InboxAuxiliaryPanels when a conversation turn exists", async () => {
     seedAdminSession(false);
     const convId = "conv-23-5-citations";
-    writeSavedAssistantConversations([
+    backendState.assistantThreads = [
       {
-        id: convId,
-        workspaceId: WS_ID,
+        thread_id: convId,
+        workspace_id: WS_ID,
+        folder_id: null,
+        creator_user_id: "0195f000-0000-7000-8000-000000000001",
+        last_author_user_id: "0195f000-0000-7000-8000-000000000001",
         title: "Analyse SEPA [S1]",
-        createdAtIso: "2026-11-20T01:00:00Z",
-        updatedAtIso: "2026-11-20T01:00:10Z",
-        modelTier: "simple",
-        modelLabel: "Fast",
-        thinkingEffort: "fast",
-        turns: [
-          {
-            turnId: "turn-23-5-1",
-            userPrompt: "Explique le rapprochement SEPA.",
-            assistantReply: "Le rapprochement s'appuie sur le contrat [S1].",
-            modelTier: "simple",
-            modelLabel: "Fast",
-            thinkingEffort: "fast",
-            effortLabel: "Rapide",
-            timestampIso: "2026-11-20T01:00:10Z",
-            usedSources: [
-              {
-                uri: "orcia://kb/sepa-contract.md",
-                title: "Contrat SEPA",
-                snippet: "Règle de compensation J+1.",
-              },
-            ],
-          },
-        ],
+        thread_summary: "Le rapprochement s'appuie sur le contrat [S1].",
+        turn_count: 1,
       },
-    ]);
-    writeSavedActiveConversationId(convId);
+    ];
+    backendState.assistantThreadMessages = [
+      {
+        message_id: "msg-23-5-u1",
+        thread_id: convId,
+        workspace_id: WS_ID,
+        turn_id: "turn-23-5-1",
+        role: "user",
+        content: "Explique le rapprochement SEPA.",
+        created_at: "2026-11-20T01:00:00Z",
+      },
+      {
+        message_id: "msg-23-5-a1",
+        thread_id: convId,
+        workspace_id: WS_ID,
+        turn_id: "turn-23-5-1",
+        role: "assistant",
+        content: "Le rapprochement s'appuie sur le contrat [S1].",
+        citation_map: {
+          sources: [
+            {
+              tag: "S1",
+              index: 1,
+              uri: "orcia://kb/sepa-contract.md",
+              title: "Contrat SEPA",
+              authority_tier: "REFERENCE",
+              freshness: "FRESH",
+              snippet: "Règle de compensation J+1.",
+              line_start: 1,
+              line_end: 20,
+              restricted_access: false,
+              display_pill: "[S1] Contrat SEPA",
+            },
+          ],
+          footer_summary_line: "1 source(s) vérifiée(s) par le serveur",
+          sanitized_response_text: "Le rapprochement s'appuie sur le contrat [S1].",
+        },
+        created_at: "2026-11-20T01:00:10Z",
+      },
+    ];
 
     await mountAppAt("/assistant");
 

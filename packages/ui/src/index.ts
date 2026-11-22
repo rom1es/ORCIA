@@ -458,6 +458,20 @@ export {
   type UiEvidenceToolItem,
 } from "./primitives/AssistantCitationPillsAndArtifactCard";
 export {
+  AssistantToolCallTrace,
+  type AssistantToolCallTraceLabels,
+  type AssistantToolCallTraceProps,
+  type UiAssistantToolCallStatus,
+  type UiAssistantToolCallStepItem,
+} from "./primitives/AssistantToolCallTrace";
+export {
+  AssistantApprovalRequiredCard,
+  type AssistantApprovalRequiredCardLabels,
+  type AssistantApprovalRequiredCardProps,
+  type UiAssistantApprovalProposal,
+  type UiAssistantApprovalStatus,
+} from "./primitives/AssistantApprovalRequiredCard";
+export {
   AssistantFoldersAndCollaborativeThreadView,
   formatFolderVisibilityLabel,
   type AssistantFolderVisibilityMode,

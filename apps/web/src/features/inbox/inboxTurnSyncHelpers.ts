@@ -1,20 +1,18 @@
 import { createOrciaApiClient } from "@orcia/api-client";
 import type {
-  ControlCenterDatasourceItem,
   UiAgentTraceEventItem,
   UiAssistantFolderItem,
   UiAssistantModelOption,
   UiAssistantPromptTelemetryRecord,
 } from "@orcia/ui";
+import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import {
-  readSavedActiveConversationId,
   updatePromptTelemetryFeedback,
   upsertSavedPromptTelemetryRecord,
 } from "./assistantFoldersAndPrefsStore";
+import { citationMapToRagItems } from "./inboxCitationHelpers";
 import {
-  filterUsedRagSourcesForTurn,
-  readSavedAssistantConversations,
-  updateTurnFeedbackInSavedConversations,
+  updateTurnFeedbackInConversations,
   upsertTurnIntoSavedConversations,
   type SavedAssistantConversation,
 } from "./savedConversationsStore";
@@ -28,39 +26,26 @@ export function persistCompletedInboxTurn(params: {
   readonly activeFolderId: string;
   readonly activeFolder: UiAssistantFolderItem | null;
   readonly modelOptions: readonly UiAssistantModelOption[];
-  readonly datasources: readonly ControlCenterDatasourceItem[];
   readonly isFr: boolean;
   readonly reflexiveExecutionId: string | null;
   readonly reflexiveEvents: readonly UiAgentTraceEventItem[];
-  readonly onFeedbackBanner: (message: string) => void;
 }): {
   readonly nextConversations: readonly SavedAssistantConversation[];
   readonly resolvedConversationId: string;
   readonly nextTelemetryLog: readonly UiAssistantPromptTelemetryRecord[];
 } {
   const { completed } = params;
-  const usedSources = filterUsedRagSourcesForTurn({
-    userPrompt: completed.userPrompt,
-    assistantReply: completed.assistantReply,
-    datasources: params.datasources,
-    ...(completed.attachedFiles
-      ? { attachedFiles: completed.attachedFiles }
-      : {}),
-  });
-  const latestStored = readSavedAssistantConversations();
-  const persistedActiveId =
-    readSavedActiveConversationId() ?? params.activeConversationId;
+  const usedSources = citationMapToRagItems(completed.citationMap);
+  const resolvedConvIdInput = completed.threadId ?? params.activeConversationId;
   const outcome = upsertTurnIntoSavedConversations({
-    prevConversations:
-      latestStored.length >= params.savedConversations.length
-        ? latestStored
-        : params.savedConversations,
-    activeConversationId: persistedActiveId,
+    prevConversations: params.savedConversations,
+    activeConversationId: resolvedConvIdInput,
     activeWorkspaceId: params.activeWorkspaceId,
     activeFolderId: params.activeFolderId,
     modelOptions: params.modelOptions,
     isFr: params.isFr,
     ...(completed.turnId ? { turnId: completed.turnId } : {}),
+    ...(completed.parentTurnId ? { parentTurnId: completed.parentTurnId } : {}),
     userPrompt: completed.userPrompt,
     assistantReply: completed.assistantReply,
     ...(completed.assembledSystemPrompt
@@ -68,10 +53,10 @@ export function persistCompletedInboxTurn(params: {
       : {}),
     requestedTier: completed.requestedTier,
     thinkingEffort: completed.thinkingEffort,
-    ...(completed.attachedFiles
-      ? { attachedFiles: completed.attachedFiles }
-      : {}),
+    ...(completed.attachedFiles ? { attachedFiles: completed.attachedFiles } : {}),
     usedSources,
+    ...(completed.citationMap !== undefined ? { citationMap: completed.citationMap } : {}),
+    ...(completed.lowEvidence !== undefined ? { lowEvidence: completed.lowEvidence } : {}),
     ...(completed.stepProgress ? { stepProgress: completed.stepProgress } : {}),
     ...(completed.thinkingElapsedSeconds !== undefined
       ? { thinkingElapsedSeconds: completed.thinkingElapsedSeconds }
@@ -82,6 +67,10 @@ export function persistCompletedInboxTurn(params: {
           reflexiveTraceEvents: params.reflexiveEvents,
         }
       : {}),
+    ...(completed.toolCallSteps && completed.toolCallSteps.length > 0
+      ? { toolCallSteps: completed.toolCallSteps }
+      : {}),
+    ...(completed.approvalProposal ? { approvalProposal: completed.approvalProposal } : {}),
   });
 
   const nextTelemetryLog = upsertSavedPromptTelemetryRecord({
@@ -92,9 +81,7 @@ export function persistCompletedInboxTurn(params: {
     conversationHistoryCount: completed.conversationHistoryCount ?? 0,
     folderTitle: completed.folderTitle ?? params.activeFolder?.title ?? null,
     folderPinnedNotes:
-      completed.folderPinnedNotes ??
-      params.activeFolder?.pinnedNotesMarkdown ??
-      null,
+      completed.folderPinnedNotes ?? params.activeFolder?.pinnedNotesMarkdown ?? null,
     thinkingText: completed.thinkingText || "",
     assistantReply: completed.assistantReply,
     modelLabel: outcome.createdTurn.modelLabel,
@@ -102,27 +89,6 @@ export function persistCompletedInboxTurn(params: {
     thinkingElapsedSeconds: completed.thinkingElapsedSeconds ?? 1,
     userFeedback: null,
   });
-
-  if (outcome.isNewConversation) {
-    const client = createOrciaApiClient({ baseUrl: "" });
-    void client
-      .createAssistantThread({
-        workspace_id:
-          params.activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
-        ...(params.activeFolderId ? { folder_id: params.activeFolderId } : {}),
-        title: outcome.createdTitle,
-        initial_summary: completed.assistantReply.slice(0, 240),
-      })
-      .catch((err: unknown) => {
-        const detail =
-          err instanceof Error ? err.message : "Synchronisation différée";
-        params.onFeedbackBanner(
-          params.isFr
-            ? `ℹ️ Conversation sauvegardée localement (${detail}).`
-            : `ℹ️ Conversation saved locally (${detail}).`,
-        );
-      });
-  }
 
   return {
     nextConversations: outcome.nextConversations,
@@ -132,6 +98,7 @@ export function persistCompletedInboxTurn(params: {
 }
 
 export function persistInboxTurnFeedback(params: {
+  readonly conversations: readonly SavedAssistantConversation[];
   readonly turnId: string;
   readonly feedback: "LIKE" | "DISLIKE" | null;
   readonly activeWorkspaceId: string;
@@ -141,29 +108,22 @@ export function persistInboxTurnFeedback(params: {
   readonly nextConversations: readonly SavedAssistantConversation[];
   readonly nextTelemetryLog: readonly UiAssistantPromptTelemetryRecord[];
 } {
-  const nextConversations = updateTurnFeedbackInSavedConversations(
+  const nextConversations = updateTurnFeedbackInConversations(
+    params.conversations,
     params.turnId,
     params.feedback,
   );
-  const nextTelemetryLog = updatePromptTelemetryFeedback(
-    params.turnId,
-    params.feedback,
-  );
+  const nextTelemetryLog = updatePromptTelemetryFeedback(params.turnId, params.feedback);
   const client = createOrciaApiClient({ baseUrl: "" });
   if (params.feedback === "LIKE" || params.feedback === "DISLIKE") {
     void client
       .recordAssistantTurnFeedback(params.turnId, {
-        workspace_id:
-          params.activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
+        workspace_id: params.activeWorkspaceId,
         rating: params.feedback === "LIKE" ? "up" : "down",
       })
       .catch((err: unknown) => {
-        const detail =
-          err instanceof Error ? err.message : "Synchronisation locale";
         params.onFeedbackBanner(
-          params.isFr
-            ? `ℹ️ Avis enregistré localement (${detail}).`
-            : `ℹ️ Feedback saved locally (${detail}).`,
+          formatRfc9457ErrorToBanner(err, params.isFr ? "fr" : "en", "Avis Assistant").fullText,
         );
       });
   }

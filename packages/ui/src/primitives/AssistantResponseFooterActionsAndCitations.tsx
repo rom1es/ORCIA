@@ -96,6 +96,11 @@ export interface AssistantResponseFooterActionsAndCitationsProps {
   readonly effortLabel?: string;
   readonly ragCitations?: readonly UiAssistantRagCitationItem[];
   readonly initialFeedback?: "LIKE" | "DISLIKE" | null;
+  readonly canDeepen?: boolean;
+  readonly lowEvidence?: boolean;
+  readonly deepenLabel?: string;
+  readonly deepenLowEvidenceLabel?: string;
+  readonly onDeepen?: () => void;
   readonly onRegenerate?: () => void;
   readonly onSaveDraft?: (content: string) => void;
   readonly onContinueInProcess?: (content: string) => void;
@@ -110,6 +115,11 @@ export function AssistantResponseFooterActionsAndCitations({
   effortLabel = "Standard",
   ragCitations = [],
   initialFeedback = null,
+  canDeepen = false,
+  lowEvidence = false,
+  deepenLabel,
+  deepenLowEvidenceLabel,
+  onDeepen,
   onRegenerate,
   onSaveDraft,
   onContinueInProcess,
@@ -205,6 +215,34 @@ export function AssistantResponseFooterActionsAndCitations({
         ) : null}
         <button type="button" data-testid="assistant-action-continue-process-btn" aria-label={continueProcessLabel} title={continueProcessLabel} onClick={() => onContinueInProcess?.(responseText)} className={`${iconBtnClass} text-action-primary`}><OrciaIcon name="processes" /></button>
         <button type="button" data-testid="assistant-action-details-btn" aria-label={detailsLabel} title={detailsLabel} aria-expanded={detailsOpen} onClick={() => setDetailsOpen((prev) => !prev)} className={iconBtnClass}><OrciaIcon name="moreHorizontal" /></button>
+        {canDeepen && onDeepen ? (
+          <button
+            type="button"
+            data-testid="assistant-deepen-turn-btn"
+            data-low-evidence={lowEvidence ? "true" : "false"}
+            onClick={onDeepen}
+            style={
+              lowEvidence
+                ? {
+                    backgroundColor: "var(--color-action-primary)",
+                    color: "var(--color-primary-foreground)",
+                  }
+                : undefined
+            }
+            className={
+              lowEvidence
+                ? "ml-1 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-opacity hover:opacity-95"
+                : "ml-1 inline-flex items-center gap-1 rounded-full border border-border-subtle bg-surface-secondary px-2.5 py-1 text-[11px] font-medium text-text-primary hover:bg-surface-elevated"
+            }
+          >
+            <OrciaIcon name="search" />
+            <span>
+              {lowEvidence && deepenLowEvidenceLabel
+                ? deepenLowEvidenceLabel
+                : deepenLabel ?? (isFr ? "Approfondir" : "Deepen")}
+            </span>
+          </button>
+        ) : null}
       </div>
 
       {feedback !== null && (

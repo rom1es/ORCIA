@@ -1,4 +1,3 @@
-import { createOrciaApiClient } from "@orcia/api-client";
 import {
   sanitizeAssistantDisplayReply,
   type UiAssistantAttachedFileItem,
@@ -7,10 +6,10 @@ import {
   type UiInferenceEffort,
   type UiInferenceTier,
 } from "@orcia/ui";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   bgSnapshot,
-  buildConversationHistoryPayload,
+  classifyAssistantStreamError,
   clearBgTimers,
   detectAdaptiveThinkingStepsForQuestion,
   getBgAbortController,
@@ -25,11 +24,15 @@ import {
 } from "./assistantBackgroundStreamStore";
 import type { SavedAssistantGovernancePrefs } from "./assistantFoldersAndPrefsStore";
 import { startAssistantStreamingTurnExecution } from "./assistantStreamingRunner";
+import {
+  decideAssistantTurnProposal,
+  reattachAssistantRunningTurn,
+  stopActiveAssistantTurn,
+  synthesizeActiveAssistantTurn,
+} from "./assistantTurnControlsHelper";
 import { buildAssistantTurnRequestPayload } from "./assistantTurnPayloadHelper";
-import type { SavedAssistantConversation } from "./savedConversationsStore";
 
 export {
-  buildConversationHistoryPayload,
   detectAdaptiveThinkingStepsForQuestion,
   resetBackgroundAssistantStreamForTests,
   shouldUseProgressiveStepThinking,
@@ -40,7 +43,8 @@ export interface UseAssistantStreamingTurnOptions {
   readonly activeWorkspaceId: string;
   readonly isFr: boolean;
   readonly initialStreamedText: string;
-  readonly activeConversation?: SavedAssistantConversation | null;
+  readonly activeThreadId?: string | null;
+  readonly ensureThreadForTurn?: (titleSeed: string) => Promise<string>;
   readonly activeFolder?: UiAssistantFolderItem | null;
   readonly governancePrefs?: SavedAssistantGovernancePrefs;
   readonly streamErrorLabels?: AssistantStreamErrorLabels;
@@ -61,7 +65,8 @@ export function useAssistantStreamingTurn({
   activeWorkspaceId,
   isFr,
   initialStreamedText,
-  activeConversation = null,
+  activeThreadId = null,
+  ensureThreadForTurn,
   activeFolder = null,
   governancePrefs,
   streamErrorLabels,
@@ -78,69 +83,26 @@ export function useAssistantStreamingTurn({
 
   const [, setTick] = useState(0);
   useEffect(() => {
-    // Intentionally DO NOT abort bgAbortController on unmount so thinking continues across ORCIA screens.
     return subscribeBgStream(() => setTick((n) => n + 1));
   }, []);
 
+  const reattachToActiveTurn = useCallback(
+    () =>
+      reattachAssistantRunningTurn({
+        activeWorkspaceId,
+        isFr,
+        streamErrorLabels,
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeWorkspaceId, isFr],
+  );
+
+  useEffect(() => {
+    void reattachToActiveTurn();
+  }, [reattachToActiveTurn]);
+
   const setStreamedText = (next: string) =>
     updateBgSnapshot({ streamedText: sanitizeAssistantDisplayReply(next) });
-
-  const stopGeneration = () => {
-    const turnId = bgSnapshot.activeTurnId;
-    getBgAbortController()?.abort();
-    setBgAbortController(null);
-    clearBgTimers();
-    updateBgSnapshot({
-      isGenerating: false,
-      thinkingStartedAtMs: null,
-      generationStopped: true,
-      activeTraceStatus: bgSnapshot.activeTraceStatus ? "CANCELLED" : null,
-      stepProgress: bgSnapshot.stepProgress.map((st) =>
-        st.status === "RUNNING" ? { ...st, status: "COMPLETED" } : st,
-      ),
-    });
-    if (turnId) {
-      const client = createOrciaApiClient({ baseUrl: "", locale: isFr ? "fr" : "en" });
-      void client.stopAssistantTurn(turnId).catch((err: unknown) => {
-        const detail = err instanceof Error ? err.message : String(err);
-        console.warn("[orcia:assistant.stopTurn]", detail);
-        if (detail) updateBgSnapshot({ generationStopped: true });
-      });
-    }
-  };
-
-  const synthesizeNow = async () => {
-    const turnId = bgSnapshot.activeTurnId;
-    if (!turnId) return;
-    updateBgSnapshot({ activeTraceStatus: "SYNTHESIZING" });
-    const client = createOrciaApiClient({ baseUrl: "", locale: isFr ? "fr" : "en" });
-    try {
-      await client.synthesizeAssistantTurnNow(turnId);
-    } catch (err: unknown) {
-      console.warn("[orcia:assistant.synthesizeNow]", err instanceof Error ? err.message : String(err));
-    }
-  };
-
-  const decideProposal = async (proposalId: string, approved: boolean) => {
-    const turnId = bgSnapshot.activeTurnId;
-    if (!turnId) return;
-    const workspaceIdValue = activeWorkspaceId || "0195f000-0000-7000-8000-000000000301";
-    const client = createOrciaApiClient({ baseUrl: "", locale: isFr ? "fr" : "en" });
-    try {
-      await client.approveAssistantTurnProposal(turnId, {
-        workspace_id: workspaceIdValue,
-        proposal_id: proposalId,
-        approved,
-        human_authored_required: false,
-      });
-      updateBgSnapshot({ pendingWritePreview: null, activeTraceStatus: approved ? "COMPLETED" : "CANCELLED" });
-    } catch (err: unknown) {
-      updateBgSnapshot({
-        errorKind: "stream_error",
-        errorMessage: `⚠️ ${err instanceof Error ? err.message : String(err)}`,
-      });
-    }
-  };
 
   const resetStreamState = (nextText = "") => {
     getBgAbortController()?.abort();
@@ -148,6 +110,7 @@ export function useAssistantStreamingTurn({
     clearBgTimers();
     updateBgSnapshot({
       activeTurnId: null,
+      lastEventCursor: null,
       isGenerating: false,
       thinkingStartedAtMs: null,
       generationStopped: false,
@@ -156,6 +119,9 @@ export function useAssistantStreamingTurn({
       stepProgress: [],
       activeTraceStatus: null,
       traceEvents: [],
+      toolCallSteps: [],
+      approvalProposal: null,
+      approvalBusy: false,
       pendingWritePreview: null,
       citationMap: null,
       lowEvidence: false,
@@ -193,13 +159,13 @@ export function useAssistantStreamingTurn({
     });
     const plannedSteps = useSteps ? detectAdaptiveThinkingStepsForQuestion(userPrompt, isFr) : [];
     const tStart = Date.now();
-    const historyPayload = buildConversationHistoryPayload(activeConversation);
     const activeHat = governancePrefs?.defaultHat || "PM";
     const pinnedNotes = activeFolder?.pinnedNotesMarkdown?.trim() || undefined;
     const folderTitle = activeFolder?.title || null;
 
     updateBgSnapshot({
       activeTurnId: null,
+      lastEventCursor: null,
       errorMessage: null,
       errorKind: null,
       generationStopped: false,
@@ -209,6 +175,9 @@ export function useAssistantStreamingTurn({
       streamedText: "",
       activeTraceStatus: useSteps || requestedSpeed !== "SPEED_1_FAST" ? "RUNNING" : null,
       traceEvents: [],
+      toolCallSteps: [],
+      approvalProposal: null,
+      approvalBusy: false,
       pendingWritePreview: null,
       citationMap: null,
       lowEvidence: false,
@@ -219,40 +188,60 @@ export function useAssistantStreamingTurn({
           : [],
     });
 
-    const workspaceIdValue = activeWorkspaceId || "0195f000-0000-7000-8000-000000000301";
-    const requestPayload = buildAssistantTurnRequestPayload({
-      workspaceIdValue,
-      activeHat,
-      userPrompt,
-      ...(attachedFiles ? { attachedFiles } : {}),
-      requestedSpeed,
-      deepAuditPillActive,
-      effectiveTier,
-      effectiveEffort,
-      historyPayload,
-      activeFolder,
-      ...(parentTurnId ? { parentTurnId } : {}),
-      ...(governancePrefs ? { governancePrefs } : {}),
-      isFr,
-    });
+    const launchWithThread = (resolvedThreadId: string | null) => {
+      if (controller.signal.aborted) return;
+      const requestPayload = buildAssistantTurnRequestPayload({
+        workspaceIdValue: activeWorkspaceId,
+        activeHat,
+        userPrompt,
+        ...(attachedFiles ? { attachedFiles } : {}),
+        requestedSpeed,
+        deepAuditPillActive,
+        effectiveTier,
+        effectiveEffort,
+        threadId: resolvedThreadId,
+        activeFolder,
+        ...(parentTurnId ? { parentTurnId } : {}),
+        ...(governancePrefs ? { governancePrefs } : {}),
+        isFr,
+      });
 
-    startAssistantStreamingTurnExecution({
-      controller,
-      workspaceIdValue,
-      isFr,
-      tStart,
-      userPrompt,
-      effectiveTier,
-      effectiveEffort,
-      historyPayload,
-      folderTitle,
-      pinnedNotes,
-      attachedFiles,
-      useSteps,
-      plannedSteps,
-      requestPayload,
-      streamErrorLabels,
-    });
+      startAssistantStreamingTurnExecution({
+        controller,
+        workspaceIdValue: activeWorkspaceId,
+        threadId: resolvedThreadId,
+        parentTurnId: parentTurnId ?? null,
+        isFr,
+        tStart,
+        userPrompt,
+        effectiveTier,
+        effectiveEffort,
+        folderTitle,
+        pinnedNotes,
+        attachedFiles,
+        useSteps,
+        plannedSteps,
+        requestPayload,
+        streamErrorLabels,
+      });
+    };
+
+    if (activeThreadId || !ensureThreadForTurn) {
+      launchWithThread(activeThreadId);
+    } else {
+      void ensureThreadForTurn(userPrompt)
+        .then((newThreadId) => launchWithThread(newThreadId))
+        .catch((err: unknown) => {
+          if (controller.signal.aborted) return;
+          const classified = classifyAssistantStreamError(err, isFr, streamErrorLabels);
+          updateBgSnapshot({
+            isGenerating: false,
+            thinkingStartedAtMs: null,
+            errorKind: classified.errorKind,
+            errorMessage: classified.errorMessage,
+          });
+        });
+    }
   };
 
   const initialElapsedSeconds =
@@ -262,12 +251,17 @@ export function useAssistantStreamingTurn({
 
   return {
     activeTurnId: bgSnapshot.activeTurnId,
+    activeThreadId: bgSnapshot.activeThreadId,
+    lastEventCursor: bgSnapshot.lastEventCursor,
     streamedText: bgSnapshot.streamedText,
     setStreamedText,
     activeUserPrompt: bgSnapshot.activeUserPrompt,
     stepProgress: bgSnapshot.stepProgress,
     activeTraceStatus: bgSnapshot.activeTraceStatus,
     traceEvents: bgSnapshot.traceEvents,
+    toolCallSteps: bgSnapshot.toolCallSteps,
+    approvalProposal: bgSnapshot.approvalProposal,
+    approvalBusy: bgSnapshot.approvalBusy,
     pendingWritePreview: bgSnapshot.pendingWritePreview,
     citationMap: bgSnapshot.citationMap,
     lowEvidence: bgSnapshot.lowEvidence,
@@ -283,10 +277,13 @@ export function useAssistantStreamingTurn({
     errorMessage: bgSnapshot.errorMessage,
     errorKind: bgSnapshot.errorKind,
     sendTurn,
-    stopGeneration,
-    synthesizeNow,
-    approveProposal: (id: string) => decideProposal(id, true),
-    rejectProposal: (id: string) => decideProposal(id, false),
+    stopGeneration: () => stopActiveAssistantTurn(isFr),
+    synthesizeNow: () => synthesizeActiveAssistantTurn(isFr),
+    reattachToActiveTurn,
+    approveProposal: (id: string, humanAnchorMarkdown?: string) =>
+      decideAssistantTurnProposal({ activeWorkspaceId, isFr, proposalId: id, approved: true, humanAnchorMarkdown }),
+    rejectProposal: (id: string, rationale?: string) =>
+      decideAssistantTurnProposal({ activeWorkspaceId, isFr, proposalId: id, approved: false, rationale }),
     resetStreamState,
   };
 }
