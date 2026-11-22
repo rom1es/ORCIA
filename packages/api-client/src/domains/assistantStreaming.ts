@@ -9,14 +9,19 @@ import {
 type RequestJsonFn = ReturnType<typeof createRequestJson>;
 type RequestSseFn = ReturnType<typeof createRequestSse>;
 
-export type ThreeSpeedTurnRequest = components["schemas"]["ThreeSpeedTurnRequest"];
-export type ThreeSpeedTurnResponse = components["schemas"]["ThreeSpeedTurnResponse"];
+export type AssistantTurnCreateRequest = components["schemas"]["AssistantTurnCreateRequest"];
+export type AssistantTurnAcceptedResponse =
+  components["schemas"]["AssistantTurnAcceptedResponse"];
+export type AssistantActiveTurnsListResponse =
+  components["schemas"]["AssistantActiveTurnsListResponse"];
 export type ActiveBackgroundTurnStatusResponse =
   components["schemas"]["ActiveBackgroundTurnStatusResponse"];
-export type StopActiveBackgroundTurnRequest =
-  components["schemas"]["StopActiveBackgroundTurnRequest"];
-export type RecordAssistantTurnFeedbackRequest =
-  components["schemas"]["RecordAssistantTurnFeedbackRequest"];
+export type AssistantTurnSynthesizeNowResponse =
+  components["schemas"]["AssistantTurnSynthesizeNowResponse"];
+export type AssistantTurnApproveRequest = components["schemas"]["AssistantTurnApproveRequest"];
+export type AssistantTurnApproveResponse = components["schemas"]["AssistantTurnApproveResponse"];
+export type AssistantTurnFeedbackRequest = components["schemas"]["AssistantTurnFeedbackRequest"];
+export type AssistantTurnFeedbackResponse = components["schemas"]["AssistantTurnFeedbackResponse"];
 export type AssistantWorkspaceOverviewResponse =
   components["schemas"]["AssistantWorkspaceOverviewResponse"];
 export type CreateAssistantFolderRequest =
@@ -35,8 +40,10 @@ export type SendCollaborativeThreadTurnResponse =
   components["schemas"]["SendCollaborativeThreadTurnResponse"];
 
 export interface AssistantTurnSseOptions {
+  readonly after?: string;
   readonly signal?: AbortSignal;
   readonly accessToken?: string;
+  readonly onTurnCreated?: (accepted: AssistantTurnAcceptedResponse) => void;
   readonly onOpen?: (response: Response) => void;
   readonly onEvent?: SseEventHandler;
 }
@@ -58,15 +65,16 @@ export interface WorkspaceEventsSseOptions {
   readonly onEvent?: SseEventHandler;
 }
 
-export function streamAssistantTurnSse(
+export function streamAssistantTurnByIdSse(
   requestSse: RequestSseFn,
-  payload: ThreeSpeedTurnRequest,
+  turnId: string,
   options?: AssistantTurnSseOptions,
 ): Promise<void> {
+  const encoded = encodeURIComponent(turnId);
+  const query = options?.after ? `?after=${encodeURIComponent(options.after)}` : "";
   return requestSse({
-    path: "/api/v1/assistant/three-speed/stream",
-    method: "POST",
-    body: payload,
+    path: `/api/v1/assistant/turns/${encoded}/stream${query}`,
+    method: "GET",
     ...(options?.signal ? { signal: options.signal } : {}),
     ...(options?.accessToken !== undefined ? { accessToken: options.accessToken } : {}),
     ...(options?.onOpen ? { onOpen: options.onOpen } : {}),
@@ -116,34 +124,66 @@ export function createAssistantStreamingDomainClient(
   requestSse: RequestSseFn,
   requestJson: RequestJsonFn,
 ) {
+  const createAssistantTurn = (
+    payload: AssistantTurnCreateRequest,
+  ): Promise<AssistantTurnAcceptedResponse> =>
+    requestJson<AssistantTurnAcceptedResponse>("/api/v1/assistant/turns", "POST", payload);
+
   return {
-    executeAssistantTurn(payload: ThreeSpeedTurnRequest): Promise<ThreeSpeedTurnResponse> {
-      return requestJson<ThreeSpeedTurnResponse>("/api/v1/assistant/three-speed/turn", "POST", payload);
-    },
-    getActiveAssistantTurnStatus(workspaceId: string): Promise<ActiveBackgroundTurnStatusResponse> {
-      return requestJson<ActiveBackgroundTurnStatusResponse>(
-        `/api/v1/assistant/three-speed/active-turn?workspace_id=${encodeURIComponent(workspaceId)}`,
+    createAssistantTurn,
+    listActiveAssistantTurns(workspaceId: string): Promise<AssistantActiveTurnsListResponse> {
+      return requestJson<AssistantActiveTurnsListResponse>(
+        `/api/v1/assistant/turns/active?workspace_id=${encodeURIComponent(workspaceId)}`,
       );
     },
-    stopActiveAssistantTurn(payload: StopActiveBackgroundTurnRequest): Promise<ActiveBackgroundTurnStatusResponse> {
+    stopAssistantTurn(turnId: string): Promise<ActiveBackgroundTurnStatusResponse> {
       return requestJson<ActiveBackgroundTurnStatusResponse>(
-        "/api/v1/assistant/three-speed/stop",
+        `/api/v1/assistant/turns/${encodeURIComponent(turnId)}/stop`,
+        "POST",
+        {},
+      );
+    },
+    synthesizeAssistantTurnNow(turnId: string): Promise<AssistantTurnSynthesizeNowResponse> {
+      return requestJson<AssistantTurnSynthesizeNowResponse>(
+        `/api/v1/assistant/turns/${encodeURIComponent(turnId)}/synthesize-now`,
+        "POST",
+        {},
+      );
+    },
+    approveAssistantTurnProposal(
+      turnId: string,
+      payload: AssistantTurnApproveRequest,
+    ): Promise<AssistantTurnApproveResponse> {
+      return requestJson<AssistantTurnApproveResponse>(
+        `/api/v1/assistant/turns/${encodeURIComponent(turnId)}/approve`,
         "POST",
         payload,
       );
     },
-    recordAssistantTurnFeedback(payload: RecordAssistantTurnFeedbackRequest): Promise<Record<string, unknown>> {
-      return requestJson<Record<string, unknown>>(
-        "/api/v1/assistant/three-speed/feedback",
+    recordAssistantTurnFeedback(
+      turnId: string,
+      payload: AssistantTurnFeedbackRequest,
+    ): Promise<AssistantTurnFeedbackResponse> {
+      return requestJson<AssistantTurnFeedbackResponse>(
+        `/api/v1/assistant/turns/${encodeURIComponent(turnId)}/feedback`,
         "POST",
         payload,
       );
     },
-    streamAssistantTurnSse(
-      payload: ThreeSpeedTurnRequest,
+    streamAssistantTurnByIdSse(
+      turnId: string,
       options?: AssistantTurnSseOptions,
     ): Promise<void> {
-      return streamAssistantTurnSse(requestSse, payload, options);
+      return streamAssistantTurnByIdSse(requestSse, turnId, options);
+    },
+    async streamAssistantTurnSse(
+      payload: AssistantTurnCreateRequest,
+      options?: AssistantTurnSseOptions,
+    ): Promise<AssistantTurnAcceptedResponse> {
+      const accepted = await createAssistantTurn(payload);
+      options?.onTurnCreated?.(accepted);
+      await streamAssistantTurnByIdSse(requestSse, accepted.turn_id, options);
+      return accepted;
     },
     streamReflexiveExecutionTraceSse(
       executionId: string,

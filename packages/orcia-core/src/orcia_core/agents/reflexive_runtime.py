@@ -10,6 +10,7 @@ import time
 from datetime import UTC, datetime
 
 from orcia_core.agents._assistant_profile_guard import (
+    AssistantReflexiveSessionMixin,
     assert_assistant_profile_write_gate_unreachable,
     resolve_effective_write_gate,
 )
@@ -48,7 +49,7 @@ from orcia_core.ports.surgical_explorer_port import SurgicalExplorerPort
 from orcia_core.storage.claim_check import ClaimCheckStorageService, get_claim_check_storage
 
 
-class NonDeterministicReflexiveRuntime:
+class NonDeterministicReflexiveRuntime(AssistantReflexiveSessionMixin):
     """100% pure `asyncio` reflexive orchestrator (zero DBOS tables or decorators)."""
 
     def __init__(
@@ -290,10 +291,10 @@ class NonDeterministicReflexiveRuntime:
         return exec_id in self._cancel_flags or str(snapshot.status) == "CANCELLED"
 
     async def _append_and_publish(
-        self, snapshot: ReflexiveSessionSnapshot, event: AgentTraceEvent
+        self, snap: ReflexiveSessionSnapshot, ev: AgentTraceEvent
     ) -> None:
-        snapshot.trace_events.append(event)
-        await self._event_stream.publish_event(snapshot.execution_id, event.model_dump(mode="json"))
+        snap.trace_events.append(ev)
+        await self._event_stream.publish_event(snap.execution_id, ev.model_dump(mode="json"))
 
     async def _persist_snapshot(self, snapshot: ReflexiveSessionSnapshot) -> None:
         await persist_reflexive_snapshot(self._session_store, snapshot)

@@ -276,7 +276,7 @@ development_status:
   # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-21-epic-26-harnais-assistant-remediation-plan.md
   # Source audit: docs/implementation-artifacts/tech-lead-reports/2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md
   # Decisions   : docs/implementation-artifacts/epic-26-decisions-grill-2026-11-21.md (D1-D11 amended by R1-R9)
-  # Lots        : L0 26-0 (done) | L1 26-1 (done) | L2 26-2 (done) | L3 26-3 (done) -> 26-4a (done) -> 26-4b (done) | L4 26-5 (done) | L5 26-6a (done) -> 26-6b (done) | L6 26-7 -> 26-8 | L7 26-9 -> 26-10 — IN PROGRESS
+  # Lots        : L0 26-0 (done) | L1 26-1 (done) | L2 26-2 (done) | L3 26-3 (done) -> 26-4a (done) -> 26-4b (done) | L4 26-5 (done) | L5 26-6a (done) -> 26-6b (done) | L6 26-7 (done) -> 26-8 | L7 26-9 -> 26-10 — IN PROGRESS
   epic-26: in-progress
   26-0-adr-unified-turn-engine-sse-v2-and-ssrf-policy: done
   26-1-immediate-security-hardening-scope-observer-and-ssrf: done
@@ -287,7 +287,7 @@ development_status:
   26-5-real-context-ontology-hybrid-rag-blackboard-and-context-budget: done
   26-6a-llm-streaming-port-tool-calls-and-loop-budgets: done
   26-6b-governed-assistant-tool-router-broker-v5-anchors-and-audit: done
-  26-7-unified-turn-engine-convergence-direct-cutover-and-citations: ready-for-dev
+  26-7-unified-turn-engine-convergence-direct-cutover-and-citations: done
   26-8-continue-in-process-dbos-pg18-and-human-anchors: ready-for-dev
   26-9-ui-and-sdk-wiring-mode-a-citations-history-and-deepen: ready-for-dev
   26-10-golden-evals-red-team-multi-worker-and-epic-26-closure: ready-for-dev
@@ -1475,7 +1475,7 @@ action_items:
     title: "Redis assembled-prompt cache & Outbox invalidation - deferred under measure-first policy (R6)"
     action: >
       Implement a Redis assembled-prompt cache and Outbox invalidation consumer (GLOSSARY_PROMOTED, SETTINGS_CHANGED)
-      ONLY if measured SQL prompt-assembly p95 exceeds 50 ms in 26.5/26.7 or threatens Speed 1 TTFT p95 < 1.2 s.
+      ONLY if measured SQL prompt-assembly p95 exceeds 50 ms on standard turns in 26.5/26.7 or threatens Speed 1 TTFT p95 < 1.2 s.
     priority: P3
     depends_on: ["26-7-unified-turn-engine-convergence-direct-cutover-and-citations"]
     owner: "Amelia (Dev) / Winston (Architect)"
@@ -1485,7 +1485,9 @@ action_items:
     ad_ref: "AD-15, AD-25"
     description: >
       Simplification R6 (Recommended Set). 26.4a removes InMemoryPromptCacheStore and forged outbox_event_id;
-      26.5/26.7 measure real assembly latency first. Amend FR-33 / Story 10.2 if cache remains unneeded.
+      26.7 post-remediation PG18 measurements confirm warm non-embedding SQL prompt assembly holds 29.33-43.23 ms (<= 50 ms)
+      and active-embedding + RRF 5-turn warm assembly holds p50=65.945 ms / p95=66.798 ms (<= 100 ms), so Redis prompt
+      cache remains deferred (open, P3) without invalidation complexity. Amend FR-33 / Story 10.2 if cache remains unneeded.
   - id: ACTION_ITEM-26.4
     title: "Native Gemini REST functionCall & native Ollama /api/chat tool-calling parsers - deferred (R7)"
     action: >

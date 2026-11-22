@@ -36,56 +36,12 @@ import type {
 } from "../generated/ontology_and_rag";
 import type { components } from "../generated/schema";
 import { buildPersonaQuery, createRequestSse, type createRequestJson } from "../helpers";
-import {
-  createAssistantStreamingDomainClient,
-  streamAssistantTurnSse,
-  streamReflexiveExecutionTraceSse,
-  streamWorkspaceEventsSse,
-  type ActiveBackgroundTurnStatusResponse,
-  type AssistantFolderResponse,
-  type AssistantThreadResponse,
-  type AssistantTurnSseOptions,
-  type AssistantWorkspaceOverviewResponse,
-  type ConfigureAssistantFolderSharingRequest,
-  type ConfigureAssistantFolderSharingResponse,
-  type CreateAssistantFolderRequest,
-  type CreateAssistantThreadRequest,
-  type RecordAssistantTurnFeedbackRequest,
-  type ReflexiveTraceSseOptions,
-  type SendCollaborativeThreadTurnRequest,
-  type SendCollaborativeThreadTurnResponse,
-  type StopActiveBackgroundTurnRequest,
-  type ThreeSpeedTurnRequest,
-  type ThreeSpeedTurnResponse,
-  type WorkspaceEventsSseOptions,
-} from "./assistantStreaming";
+import { createAssistantStreamingDomainClient } from "./assistantStreaming";
 
 type RequestJsonFn = ReturnType<typeof createRequestJson>;
 type RequestSseFn = ReturnType<typeof createRequestSse>;
 
-export {
-  createAssistantStreamingDomainClient,
-  streamAssistantTurnSse,
-  streamReflexiveExecutionTraceSse,
-  streamWorkspaceEventsSse,
-  type ActiveBackgroundTurnStatusResponse,
-  type AssistantFolderResponse,
-  type AssistantThreadResponse,
-  type AssistantTurnSseOptions,
-  type AssistantWorkspaceOverviewResponse,
-  type ConfigureAssistantFolderSharingRequest,
-  type ConfigureAssistantFolderSharingResponse,
-  type CreateAssistantFolderRequest,
-  type CreateAssistantThreadRequest,
-  type RecordAssistantTurnFeedbackRequest,
-  type ReflexiveTraceSseOptions,
-  type SendCollaborativeThreadTurnRequest,
-  type SendCollaborativeThreadTurnResponse,
-  type StopActiveBackgroundTurnRequest,
-  type ThreeSpeedTurnRequest,
-  type ThreeSpeedTurnResponse,
-  type WorkspaceEventsSseOptions,
-};
+export * from "./assistantStreaming";
 
 export type FederatedSearchResponse = components["schemas"]["TwoSpeedSearchResponse"];
 export type UserPreferencesResponse = components["schemas"]["UserPreferencesResponse"];

@@ -108,23 +108,8 @@ def test_all_assistant_routes_and_federated_search_succeed_without_embedding(
     app.dependency_overrides[get_embedding_port] = _raise_rag_unavailable
     with TestClient(app) as client:
         ws_seeded = "0192c4e0-0000-7000-8000-000000000201"
-        r_chat = client.post(
-            "/api/v1/assistant/chat",
-            params={"persona_key": "marc"},
-            json={"workspace_id": ws_seeded, "user_prompt": "Bonjour"},
-        )
-        assert r_chat.status_code == 200, r_chat.text
-        assert r_chat.json()["response_text"]
-
-        r_chat_stream = client.post(
-            "/api/v1/assistant/chat/stream",
-            params={"persona_key": "marc"},
-            json={"workspace_id": ws_seeded, "user_prompt": "Bonjour"},
-        )
-        assert r_chat_stream.status_code == 200
-
-        r_3s_turn = client.post(
-            "/api/v1/assistant/three-speed/turn",
+        r_turns = client.post(
+            "/api/v1/assistant/turns",
             params={"persona_key": "marc"},
             json={
                 "workspace_id": ws_seeded,
@@ -132,14 +117,10 @@ def test_all_assistant_routes_and_federated_search_succeed_without_embedding(
                 "requested_speed": "SPEED_1_FAST",
             },
         )
-        assert r_3s_turn.status_code == 200
-
-        r_3s_stream = client.post(
-            "/api/v1/assistant/three-speed/stream",
-            params={"persona_key": "marc"},
-            json={"workspace_id": ws_seeded, "user_prompt": "Bonjour"},
-        )
-        assert r_3s_stream.status_code == 200
+        assert r_turns.status_code == 202, r_turns.text
+        r_turns_stream = client.get(r_turns.json()["stream_url"], params={"persona_key": "marc"})
+        assert r_turns_stream.status_code == 200
+        assert "event: turn_completed" in r_turns_stream.text
 
         # Create folder + thread, then post turn without embedding model
         r_folder = client.post(
@@ -212,21 +193,13 @@ def test_live_assistant_rejects_422_when_zero_active_chat_model_even_if_embeddin
         )
 
         resp_turn = client.post(
-            "/api/v1/assistant/three-speed/turn",
+            "/api/v1/assistant/turns",
             params={"persona_key": "marc"},
             json={"workspace_id": "0192c4e0-0000-7000-8000-000000000201", "user_prompt": "Bonjour"},
         )
         assert resp_turn.status_code == 422
         assert resp_turn.json()["error_code"] == "ERR_TIER_MODEL_NOT_CONFIGURED"
         assert resp_turn.headers.get("content-type") == "application/problem+json"
-
-        resp_stream = client.post(
-            "/api/v1/assistant/three-speed/stream",
-            params={"persona_key": "marc"},
-            json={"workspace_id": "0192c4e0-0000-7000-8000-000000000201", "user_prompt": "Bonjour"},
-        )
-        assert resp_stream.status_code == 422
-        assert resp_stream.json()["error_code"] == "ERR_TIER_MODEL_NOT_CONFIGURED"
 
 
 class _FakeResult:

@@ -65,16 +65,45 @@ def test_chat_preserves_authorized_dynamic_slices_and_blocks_unauthorized_uris(
             structured_payload={"summary": "Secret prompt body that must be dropped."},
             text_excerpt="Secret prompt body that must be dropped.",
         )
+        from orcia_api.dependencies._assistant_guards import prepare_server_source_uri_authorizer
+        from orcia_core.permissions.models import UserIdentity
+
+        nadia = UserIdentity(
+            id="0192c4e0-0000-7000-8000-000000000002",
+            email="nadia@orcia.io",
+            display_name="Nadia",
+            auth_mode="LOCAL",
+            human_profile_archetype="ARCHITECT",
+            platform_role="CONTRIBUTOR",
+            primary_org_unit_id="0192c4e0-0000-7000-8000-000000000104",
+        )
+        turn = svc.run_conversation_turn(
+            workspace_id=ws_id,
+            user_prompt="Résume le guide paiement.",
+            human_profile_archetype="ARCHITECT",
+            source_uri_authorizer=lambda uris: frozenset(
+                u for u in uris if u == "git://gitlab.entreprise.io/payments/open-guide.md"
+            ),
+        )
+        assert (
+            "git://gitlab.entreprise.io/payments/open-guide.md" in turn.assembled_prompt.cited_uris
+        )
+        assert (
+            "git://gitlab.entreprise.io/archi/security-audit-agent@v2.1.0"
+            not in turn.assembled_prompt.cited_uris
+        )
+        _ = prepare_server_source_uri_authorizer, nadia
+
         resp = client.post(
-            "/api/v1/assistant/chat",
+            "/api/v1/assistant/turns",
             params={"persona_key": "nadia"},
             json={"workspace_id": ws_id, "user_prompt": "Résume le guide paiement."},
         )
-        assert resp.status_code == 200
-        body = resp.json()
-        assert "git://gitlab.entreprise.io/payments/open-guide.md" in body["cited_uris"]
+        assert resp.status_code == 202
+        stream_resp = client.get(resp.json()["stream_url"], params={"persona_key": "nadia"})
+        assert stream_resp.status_code == 200
         assert (
-            "git://gitlab.entreprise.io/archi/security-audit-agent@v2.1.0" not in body["cited_uris"]
+            "git://gitlab.entreprise.io/archi/security-audit-agent@v2.1.0" not in stream_resp.text
         )
 
 
@@ -207,7 +236,7 @@ def test_platform_admin_no_read_source_bypass_and_private_folder_acl_and_en_loca
         assert share_resp.status_code == 200
 
         turn_res = client.post(
-            "/api/v1/assistant/three-speed/turn",
+            "/api/v1/assistant/turns",
             params={"persona_key": "nadia"},
             json={
                 "workspace_id": ws_id,

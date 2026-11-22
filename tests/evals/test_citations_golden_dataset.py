@@ -96,3 +96,32 @@ def test_golden_dataset_thresholds_zero_phantom_leak() -> None:
         )
         leaked += len(set(TAG_RE.findall(result.sanitized_text)) & set(case["expect_stripped"]))  # type: ignore[arg-type]
     assert leaked == 0
+
+
+@pytest.mark.asyncio
+async def test_live_turn_engine_golden_citations_zero_phantom_leak() -> None:
+    """Verify `AssistantTurnEngine` N4+N6 keeps valid tags and purges 100% phantoms."""
+    from tests.unit.fakes.in_memory_audit_ledger import InMemoryAuditLedgerSink
+
+    from orcia_core.orchestration.assistant_turn_engine import AssistantTurnEngine
+
+    sink = InMemoryAuditLedgerSink()
+    guard = AssistantCitationAndV5GuardService(audit_ledger_sink=sink)
+    engine = AssistantTurnEngine(citation_guard=guard)
+    _, base_table = _service_and_table()
+    final_table, low_evidence = engine.n4_build_evidence_table(base_table=base_table)
+    assert low_evidence is False
+
+    for case in _load_cases():
+        res, cmap, is_low = await engine.n6_verify_citations_async(
+            response_text=str(case["text"]),
+            evidence_table=final_table,
+            workspace_id="0192c4e0-0000-7000-8000-000000001030",
+            user_id="u-eval-01",
+            turn_id=f"turn-{case['id']}",
+            trace_id="0192c4e0000070008000000000001030",
+        )
+        assert is_low is False
+        assert sorted(TAG_RE.findall(res.sanitized_text)) == sorted(case["expect_kept"])  # type: ignore[arg-type]
+        assert sorted(res.stripped_phantom_tags) == sorted(case["expect_stripped"])  # type: ignore[arg-type]
+        assert cmap["purged_phantom_count"] == len(case["expect_stripped"])  # type: ignore[arg-type]

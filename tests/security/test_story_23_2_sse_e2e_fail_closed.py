@@ -69,7 +69,7 @@ async def test_story_23_2_sse_and_reflexive_endpoints_reject_anon_and_persona_in
             assert r_trace_sse.json()["error_code"] == "ERR_AUTH_REQUIRED"
 
             r_assistant_sse = await client.post(
-                "/api/v1/assistant/three-speed/stream",
+                "/api/v1/assistant/turns",
                 params=auth_params,
                 headers=auth_headers,
                 json={
@@ -79,3 +79,11 @@ async def test_story_23_2_sse_and_reflexive_endpoints_reject_anon_and_persona_in
             )
             assert r_assistant_sse.status_code == 401
             assert r_assistant_sse.json()["error_code"] == "ERR_AUTH_REQUIRED"
+
+            r_stream_unauth = await client.get(
+                "/api/v1/assistant/turns/turn-nonexistent/stream",
+                params=auth_params,
+                headers=auth_headers,
+            )
+            assert r_stream_unauth.status_code == 401
+            assert r_stream_unauth.json()["error_code"] == "ERR_AUTH_REQUIRED"

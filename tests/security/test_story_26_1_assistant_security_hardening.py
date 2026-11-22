@@ -60,30 +60,15 @@ def test_observer_and_header_rejected_403_pre_stream_across_all_assistant_mutati
         mutating_calls: list[tuple[str, str, dict[str, Any]]] = [
             (
                 "POST",
-                "/api/v1/assistant/three-speed/stream",
+                "/api/v1/assistant/turns",
                 {"workspace_id": _WS_PAY_ID, "user_prompt": "Hi"},
             ),
+            ("POST", "/api/v1/assistant/turns/turn-obs-1/stop", {}),
+            ("POST", "/api/v1/assistant/turns/turn-obs-1/synthesize-now", {}),
             (
                 "POST",
-                "/api/v1/assistant/three-speed/turn",
-                {"workspace_id": _WS_PAY_ID, "user_prompt": "Hi"},
-            ),
-            ("POST", "/api/v1/assistant/three-speed/stop", {"workspace_id": _WS_PAY_ID}),
-            (
-                "POST",
-                "/api/v1/assistant/three-speed/feedback",
-                {"workspace_id": _WS_PAY_ID, "turn_id": "t1", "user_feedback": "LIKE"},
-            ),
-            (
-                "POST",
-                "/api/v1/assistant/three-speed/invalidate-cache",
-                {"workspace_id": _WS_PAY_ID, "reason": "SETTINGS_CHANGED"},
-            ),
-            ("POST", "/api/v1/assistant/chat", {"workspace_id": _WS_PAY_ID, "user_prompt": "Hi"}),
-            (
-                "POST",
-                "/api/v1/assistant/chat/stream",
-                {"workspace_id": _WS_PAY_ID, "user_prompt": "Hi"},
+                "/api/v1/assistant/turns/turn-obs-1/approve",
+                {"workspace_id": _WS_PAY_ID, "proposal_id": "p1", "approved": True},
             ),
             (
                 "PUT",
@@ -99,21 +84,6 @@ def test_observer_and_header_rejected_403_pre_stream_across_all_assistant_mutati
                 "POST",
                 "/api/v1/assistant/turns/0192c4e0-0000-7000-8000-000000007001/feedback",
                 {"workspace_id": _WS_PAY_ID, "rating": "up"},
-            ),
-            (
-                "POST",
-                "/api/v1/assistant/citations/verify-turn",
-                {"workspace_id": _WS_PAY_ID, "response_text": "Ok [S1]"},
-            ),
-            (
-                "POST",
-                "/api/v1/assistant/artifacts/action",
-                {
-                    "workspace_id": _WS_PAY_ID,
-                    "action_type": "COPY",
-                    "artifact_title": "T",
-                    "artifact_content": "Body",
-                },
             ),
             ("POST", "/api/v1/assistant/folders", {"workspace_id": _WS_PAY_ID, "title": "Folder"}),
             ("POST", "/api/v1/assistant/threads", {"workspace_id": _WS_PAY_ID, "title": "Thread"}),
@@ -174,39 +144,20 @@ def test_cross_workspace_idor_rejected_for_uuid_and_slug(
         calls: list[tuple[str, str, dict[str, Any] | None, dict[str, Any]]] = [
             (
                 "POST",
-                "/api/v1/assistant/three-speed/stream",
-                {"workspace_id": target_ws, "user_prompt": "Leak?"},
-                {},
-            ),
-            (
-                "POST",
-                "/api/v1/assistant/three-speed/turn",
+                "/api/v1/assistant/turns",
                 {"workspace_id": target_ws, "user_prompt": "Leak?"},
                 {},
             ),
             (
                 "GET",
-                "/api/v1/assistant/three-speed/active-turn",
+                "/api/v1/assistant/turns/active",
                 None,
                 {"workspace_id": target_ws},
             ),
-            ("POST", "/api/v1/assistant/three-speed/stop", {"workspace_id": target_ws}, {}),
             (
                 "POST",
-                "/api/v1/assistant/three-speed/feedback",
-                {"workspace_id": target_ws, "turn_id": "t-idor", "user_feedback": "LIKE"},
-                {},
-            ),
-            (
-                "POST",
-                "/api/v1/assistant/chat",
-                {"workspace_id": target_ws, "user_prompt": "Hi"},
-                {},
-            ),
-            (
-                "POST",
-                "/api/v1/assistant/chat/stream",
-                {"workspace_id": target_ws, "user_prompt": "Leak?"},
+                "/api/v1/assistant/turns/t-idor/feedback",
+                {"workspace_id": target_ws, "rating": "up"},
                 {},
             ),
             ("GET", "/api/v1/assistant/governance", None, {"workspace_id": target_ws}),
@@ -220,23 +171,6 @@ def test_cross_workspace_idor_rejected_for_uuid_and_slug(
                 "PUT",
                 "/api/v1/assistant/governance/mode-a/workspace",
                 {"workspace_id": target_ws, "workspace_instructions": "IDOR"},
-                {},
-            ),
-            (
-                "POST",
-                "/api/v1/assistant/citations/verify-turn",
-                {"workspace_id": target_ws, "response_text": "IDOR [S1]"},
-                {},
-            ),
-            (
-                "POST",
-                "/api/v1/assistant/artifacts/action",
-                {
-                    "workspace_id": target_ws,
-                    "action_type": "COPY",
-                    "artifact_title": "IDOR",
-                    "artifact_content": "IDOR",
-                },
                 {},
             ),
             ("POST", "/api/v1/assistant/folders", {"workspace_id": target_ws, "title": "IDOR"}, {}),
@@ -260,53 +194,57 @@ def test_server_side_read_source_and_confidential_masking_and_no_client_allowed_
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Client `reader_allowed_source_uris` absent; server enforces READ_SOURCE & masking."""
-    from orcia_api.schemas.assistant_citations_and_folders import VerifyAndFilterCitationsRequest
+    from orcia_api.schemas.assistant import AssistantTurnCreateRequest
+    from orcia_core.orchestration.assistant_citations_and_v5_guard import (
+        AssistantCitationAndV5GuardService,
+    )
+    from orcia_core.orchestration.assistant_citations_models import RawSourceCandidate
+    from orcia_core.permissions.models import UserIdentity
 
-    assert "reader_allowed_source_uris" not in VerifyAndFilterCitationsRequest.model_fields
+    assert "reader_allowed_source_uris" not in AssistantTurnCreateRequest.model_fields
+
+    cit_svc = AssistantCitationAndV5GuardService()
+    raw_table = cit_svc.build_evidence_table(
+        sources=(
+            RawSourceCandidate(
+                uri="git://repo-core/docs/adr-015.md",
+                title="ADR-015",
+                authority_tier="REFERENCE",
+                freshness="FRESH",
+                snippet="Secret ADR snippet",
+            ),
+        ),
+    )
+    reader = UserIdentity(
+        id="0192c4e0-0000-7000-8000-000000000099",
+        email="reader@orcia.io",
+        display_name="Reader",
+        auth_mode="LOCAL",
+        human_profile_archetype="ARCHITECT",
+        platform_role="CONTRIBUTOR",
+        primary_org_unit_id="0192c4e0-0000-7000-8000-000000000104",
+    )
+    table = cit_svc.filter_citation_map_for_reader(
+        reader,
+        evidence_table=raw_table,
+        reader_allowed_source_uris=frozenset(),
+    )
+    assert table.sources[0].restricted_access is True
+    assert table.sources[0].snippet is None
 
     app = _make_local_app(monkeypatch)
     with TestClient(app, raise_server_exceptions=False) as client:
+        # Extra forbidden field rejected (extra='forbid')
         spoof_resp = client.post(
-            "/api/v1/assistant/citations/verify-turn",
+            "/api/v1/assistant/turns",
             params={"persona_key": "nadia"},
             json={
                 "workspace_id": _WS_PAY_ID,
-                "response_text": "Selon [S1].",
-                "sources": [
-                    {
-                        "uri": "git://repo-core/docs/adr-015.md",
-                        "title": "ADR-015",
-                        "authority_tier": "REFERENCE",
-                        "freshness": "FRESH",
-                        "snippet": "Secret ADR snippet",
-                    }
-                ],
+                "user_prompt": "Selon [S1].",
                 "reader_allowed_source_uris": ["git://repo-core/docs/adr-015.md"],
             },
         )
         assert spoof_resp.status_code == 422
-
-        server_resp = client.post(
-            "/api/v1/assistant/citations/verify-turn",
-            params={"persona_key": "nadia"},
-            json={
-                "workspace_id": _WS_PAY_ID,
-                "response_text": "Selon [S1].",
-                "sources": [
-                    {
-                        "uri": "git://repo-core/docs/adr-015.md",
-                        "title": "ADR-015",
-                        "authority_tier": "REFERENCE",
-                        "freshness": "FRESH",
-                        "snippet": "Secret ADR snippet",
-                    }
-                ],
-            },
-        )
-        assert server_resp.status_code == 200
-        src0 = server_resp.json()["sources"][0]
-        assert src0["restricted_access"] is True
-        assert src0["snippet"] is None
 
         # Confidential / unauthorized context slice never reaches LLM payload
         svc = app.state.assistant_service
@@ -318,17 +256,19 @@ def test_server_side_read_source_and_confidential_masking_and_no_client_allowed_
             structured_payload={"visibility_mode": "CONFIDENTIAL_RESTRICTED"},
             text_excerpt="TOP_SECRET_MERGER_PAYLOAD_XYZ",
         )
-        chat_resp = client.post(
-            "/api/v1/assistant/chat",
+        turn_resp = client.post(
+            "/api/v1/assistant/turns",
             params={"persona_key": "nadia"},
             json={
                 "workspace_id": _WS_PAY_ID,
                 "user_prompt": "Synthesize workspace context",
             },
         )
-        assert chat_resp.status_code == 200
-        assert "git://secret-vault/confidential-doc.md" not in chat_resp.json()["cited_uris"]
-        assert "TOP_SECRET_MERGER_PAYLOAD_XYZ" not in chat_resp.json()["response_text"]
+        assert turn_resp.status_code == 202
+        stream_resp = client.get(turn_resp.json()["stream_url"], params={"persona_key": "nadia"})
+        assert stream_resp.status_code == 200
+        assert "git://secret-vault/confidential-doc.md" not in stream_resp.text
+        assert "TOP_SECRET_MERGER_PAYLOAD_XYZ" not in stream_resp.text
 
 
 def test_layer1_immutability_tag_sanitization_history_role_and_agents_skills_regression(
@@ -378,7 +318,7 @@ def test_layer1_immutability_tag_sanitization_history_role_and_agents_skills_reg
     app = _make_local_app(monkeypatch)
     with TestClient(app, raise_server_exceptions=False) as client:
         bad_role = client.post(
-            "/api/v1/assistant/three-speed/turn",
+            "/api/v1/assistant/turns",
             params={"persona_key": "marc"},
             json={
                 "workspace_id": _WS_PAY_ID,
@@ -389,7 +329,7 @@ def test_layer1_immutability_tag_sanitization_history_role_and_agents_skills_reg
         assert bad_role.status_code == 422
 
         bad_override = client.post(
-            "/api/v1/assistant/three-speed/stream",
+            "/api/v1/assistant/turns",
             params={"persona_key": "marc"},
             json={
                 "workspace_id": _WS_PAY_ID,

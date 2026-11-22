@@ -479,10 +479,6 @@ describe("createOrciaApiClient", () => {
       "marc",
     );
     await client.replayWorkflowFromStep("run-1", "step-1", {}, "marc");
-    await client.assistantChatTurn(
-      { workspace_id: "ws-1", user_prompt: "Bonjour" },
-      "marc",
-    );
     await client.assistantSaveAndLaunchWorkflow(
       { workspace_id: "ws-1", manifest_yaml: "uri: orcia://w/1" },
       "marc",
@@ -630,6 +626,6 @@ describe("createOrciaApiClient", () => {
     await client.checkRunStepMutationGuard("run-1", "step-1", {}, "marc");
     await client.searchCommandPalette("paiement", "marc");
 
-    expect(mockFetch).toHaveBeenCalledTimes(44);
+    expect(mockFetch).toHaveBeenCalledTimes(43);
   });
 });

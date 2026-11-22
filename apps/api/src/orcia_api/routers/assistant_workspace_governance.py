@@ -6,10 +6,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request
 
-from orcia_api.dependencies import (
-    get_assistant_governance_service,
-    get_assistant_three_speed_router_service,
-)
+from orcia_api.dependencies import get_assistant_governance_service
 from orcia_api.dependencies._assistant_guards import (
     can_user_manage_workspace_governance,
     enforce_assistant_workspace_guard,
@@ -30,7 +27,6 @@ from orcia_core.orchestration.assistant_governance import (
     UserLayerPreferences,
     WorkspaceLayerSettings,
 )
-from orcia_core.orchestration.assistant_three_speed_router import AssistantThreeSpeedRouterService
 from orcia_core.permissions.models import UserIdentity
 
 router = APIRouter()
@@ -38,9 +34,6 @@ router = APIRouter()
 CurrentUserDep = Annotated[UserIdentity, Depends(resolve_request_user)]
 GovernanceServiceDep = Annotated[
     AssistantFourLevelGovernanceService, Depends(get_assistant_governance_service)
-]
-ThreeSpeedRouterDep = Annotated[
-    AssistantThreeSpeedRouterService, Depends(get_assistant_three_speed_router_service)
 ]
 
 
@@ -123,7 +116,6 @@ async def update_user_layer_preferences_endpoint(
     request: Request,
     user: CurrentUserDep,
     svc: GovernanceServiceDep,
-    router_svc: ThreeSpeedRouterDep,
 ) -> UserLayerPreferencesSchemaItem:
     """Update Tab 1 (`USER` layer 5) and persist to PG18 (`Story 26.4b`)."""
     await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
@@ -134,9 +126,6 @@ async def update_user_layer_preferences_endpoint(
         favorite_format=payload.favorite_format,
         default_hat=payload.default_hat,
         personal_instructions=payload.personal_instructions,
-    )
-    router_svc.invalidate_prompt_cache(
-        workspace_id=payload.workspace_id, reason="OVERRIDE_UPDATED", user_id=user.id
     )
     outbox = resolve_assistant_outbox_emitter(request)
     if outbox is not None:
@@ -157,7 +146,6 @@ async def update_workspace_layer_settings_endpoint(
     request: Request,
     user: CurrentUserDep,
     svc: GovernanceServiceDep,
-    router_svc: ThreeSpeedRouterDep,
 ) -> WorkspaceLayerSettingsSchemaItem:
     """Update Tab 2 (`WORKSPACE` layer 4) and persist to PG18 (`Story 26.4b`)."""
     await enforce_assistant_workspace_guard(
@@ -175,7 +163,6 @@ async def update_workspace_layer_settings_endpoint(
         ),
         mcp_expose_assistant=payload.mcp_expose_assistant,
     )
-    router_svc.invalidate_prompt_cache(workspace_id=payload.workspace_id, reason="SETTINGS_CHANGED")
     outbox = resolve_assistant_outbox_emitter(request)
     if outbox is not None:
         await outbox.emit_settings_changed(

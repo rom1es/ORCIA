@@ -7,17 +7,16 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass, field
+from typing import Any
 
 from orcia_core.orchestration._governed_mcp_helpers import (
     build_mcp_agent_spec,
     build_mcp_invocation_result,
     validate_and_invoke_assistant_read_only,
+    verify_mcp_pat_token_async,
+    verify_mcp_pat_token_sync,
 )
-from orcia_core.orchestration.errors import (
-    ObserverModeReadOnlyError,
-    ScopeAccessDeniedError,
-    ValidationDomainError,
-)
+from orcia_core.orchestration.errors import ObserverModeReadOnlyError, ValidationDomainError
 from orcia_core.orchestration.remote_test_bench_models import (
     ExposedMcpAgentSpec,
     GovernedMcpInvocationResult,
@@ -206,14 +205,9 @@ class GovernedMcpExposureService:
             raise ObserverModeReadOnlyError(
                 detail_override="READ_ONLY_OBSERVER cannot invoke MCP tools."
             )
-        if not raw_pat_token.startswith("pat_mcp_"):
-            raise ScopeAccessDeniedError(detail_override="Invalid MCP token prefix.")
-        token_hash = hashlib.sha256(raw_pat_token.encode("utf-8")).hexdigest()
-        allowed_ws = self._pat_tokens.get(token_hash)
-        if allowed_ws is None or workspace_slug not in allowed_ws:
-            raise ScopeAccessDeniedError(
-                detail_override=f"Token not authorized for workspace '{workspace_slug}'."
-            )
+        verify_mcp_pat_token_sync(
+            pat_tokens=self._pat_tokens, raw_pat_token=raw_pat_token, workspace_slug=workspace_slug
+        )
         spec = self._exposed_agents.get((workspace_slug, agent_slug))
         return self._build_invocation_result(
             spec=spec,
@@ -225,6 +219,19 @@ class GovernedMcpExposureService:
             prompt_text=prompt_text,
             requested_write_target_uri=requested_write_target_uri,
         )
+
+    async def verify_pat_token_for_workspace_async(
+        self, *, raw_pat_token: str, workspace_slug: str
+    ) -> Any:
+        """Verify MCP PAT prefix + workspace authorization (`pat_mcp_*`, Lock 2)."""
+        repo = self._require_repository_when_strict()
+        await verify_mcp_pat_token_async(
+            repo=repo,
+            pat_tokens=self._pat_tokens,
+            raw_pat_token=raw_pat_token,
+            workspace_slug=workspace_slug,
+        )
+        return repo
 
     async def invoke_governed_mcp_tool_async(
         self,
@@ -243,20 +250,14 @@ class GovernedMcpExposureService:
             raise ObserverModeReadOnlyError(
                 detail_override="READ_ONLY_OBSERVER cannot invoke MCP tools."
             )
-        if not raw_pat_token.startswith("pat_mcp_"):
-            raise ScopeAccessDeniedError(detail_override="Invalid MCP token prefix.")
-        token_hash = hashlib.sha256(raw_pat_token.encode("utf-8")).hexdigest()
-        repo = self._require_repository_when_strict()
-        if repo is not None:
-            allowed_ws = await repo.get_pat_allowed_workspaces(token_hash)
-            spec = await repo.get_exposed_agent(workspace_slug, agent_slug)
-        else:
-            allowed_ws = self._pat_tokens.get(token_hash)
-            spec = self._exposed_agents.get((workspace_slug, agent_slug))
-        if allowed_ws is None or workspace_slug not in allowed_ws:
-            raise ScopeAccessDeniedError(
-                detail_override=f"Token not authorized for workspace '{workspace_slug}'."
-            )
+        repo = await self.verify_pat_token_for_workspace_async(
+            raw_pat_token=raw_pat_token, workspace_slug=workspace_slug
+        )
+        spec = (
+            await repo.get_exposed_agent(workspace_slug, agent_slug)
+            if repo is not None
+            else self._exposed_agents.get((workspace_slug, agent_slug))
+        )
         return self._build_invocation_result(
             spec=spec,
             workspace_slug=workspace_slug,

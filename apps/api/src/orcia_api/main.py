@@ -24,7 +24,7 @@ from orcia_api.routers._auth_pg_helpers import (
 from orcia_api.routers.agents_and_skills import router as agents_and_skills_router
 from orcia_api.routers.ai_models_hub import router as ai_models_hub_router
 from orcia_api.routers.assistant import router as assistant_router
-from orcia_api.routers.assistant_workspace import router as assistant_workspace_router
+from orcia_api.routers.assistant_turns import router as assistant_turns_router
 from orcia_api.routers.audit_ledger import router as audit_ledger_router
 from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.routers.auth import router as auth_router
@@ -204,7 +204,7 @@ def create_app() -> FastAPI:
     application.include_router(portal_and_help_router)
     application.include_router(user_account_settings_router)
     application.include_router(user_profile_router)
-    application.include_router(assistant_workspace_router)
+    application.include_router(assistant_turns_router)
     application.include_router(workspace_governance_router)
     application.include_router(workspace_datasources_router)
     application.include_router(codegraph_mcp_router)

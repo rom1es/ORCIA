@@ -91,18 +91,6 @@ class AssistantGovernanceViewResponse(BaseModel):
     assembled_layers: list[AssembledLayerPreviewSchemaItem]
 
 
-class ThreeSpeedStepProgressSchemaItem(BaseModel):
-    """Real-time step progress item in 3-Speed routing (`Story 10.2`)."""
-
-    model_config = ConfigDict(extra="forbid")
-    step_code: str
-    label: str
-    duration_ms: float
-    status: Literal["COMPLETED", "RUNNING"] = "COMPLETED"
-    connector_or_lens: str | None = None
-    intermediate_output: str | None = None
-
-
 class ConversationTurnMessageItem(BaseModel):
     """Single message item in multi-turn `conversation_history` (`Story 10.2`, `Story 26.1`)."""
 
@@ -113,8 +101,8 @@ class ConversationTurnMessageItem(BaseModel):
     tool_call_id: str | None = None
 
 
-class ThreeSpeedTurnRequest(BaseModel):
-    """Request payload for `POST /api/v1/assistant/three-speed/turn` (`Story 10.2`)."""
+class AssistantTurnCreateRequest(BaseModel):
+    """Request payload for `POST /api/v1/assistant/turns` (`AD-25`, `Story 26.7`)."""
 
     model_config = ConfigDict(extra="forbid")
     workspace_id: str = Field(..., min_length=1)
@@ -138,31 +126,8 @@ class ThreeSpeedTurnRequest(BaseModel):
     locale: str | None = None
 
 
-class ThreeSpeedTurnResponse(BaseModel):
-    """Response payload for `POST /api/v1/assistant/three-speed/turn` (`Story 10.2`)."""
-
-    model_config = ConfigDict(extra="forbid")
-    turn_id: str
-    workspace_id: str
-    user_id: str
-    hat: str
-    speed_mode: Literal["SPEED_1_FAST", "SPEED_2_AGENT_TOOLS", "SPEED_3_DEEP_AUDIT"]
-    cache_key: str
-    cache_hit: bool
-    cache_lookup_ms: float
-    nodes_1_to_4_deterministic_ms: float
-    ttft_ms: float
-    intermediate_llm_calls: int
-    invoked_targets: list[str]
-    step_progress: list[ThreeSpeedStepProgressSchemaItem]
-    response_text: str
-    assembled_prompt_sha256: str
-    assembled_system_prompt: str = ""
-    deep_audit_lenses: list[str] = Field(default_factory=list)
-
-
 class ActiveBackgroundTurnStatusResponse(BaseModel):
-    """Status snapshot for `GET /api/v1/assistant/three-speed/active-turn` (`Story 10.2`)."""
+    """Status snapshot for `GET /api/v1/assistant/turns/active` (`Story 26.3`)."""
 
     model_config = ConfigDict(extra="forbid")
     workspace_id: str
@@ -177,12 +142,39 @@ class ActiveBackgroundTurnStatusResponse(BaseModel):
     error_message: str | None = None
 
 
-class StopActiveBackgroundTurnRequest(BaseModel):
-    """Request payload for `POST /api/v1/assistant/three-speed/stop` (`Story 10.2`)."""
+class AssistantTurnSynthesizeNowResponse(BaseModel):
+    """202 Accepted response for `POST /api/v1/assistant/turns/{turn_id}/synthesize-now`."""
+
+    model_config = ConfigDict(extra="forbid")
+    turn_id: str
+    workspace_id: str
+    status: Literal["SYNTHESIZING", "RUNNING", "COMPLETED", "STOPPED"]
+    message: str
+
+
+class AssistantTurnApproveRequest(BaseModel):
+    """Request payload for `POST /api/v1/assistant/turns/{turn_id}/approve` (`AD-25`)."""
 
     model_config = ConfigDict(extra="forbid")
     workspace_id: str = Field(..., min_length=1)
-    turn_id: str | None = None
+    proposal_id: str = Field(..., min_length=1)
+    approved: bool = True
+    human_authored_required: bool = True
+    human_anchor_markdown: str | None = None
+    rationale: str | None = None
+
+
+class AssistantTurnApproveResponse(BaseModel):
+    """Response payload for `POST /api/v1/assistant/turns/{turn_id}/approve` (`AD-25`)."""
+
+    model_config = ConfigDict(extra="forbid")
+    turn_id: str
+    proposal_id: str
+    workspace_id: str
+    approved: bool
+    status: Literal["APPROVED", "REJECTED"]
+    human_anchor_sha256: str | None = None
+    audit_id: str | None = None
 
 
 class AssistantTurnAcceptedResponse(BaseModel):
@@ -205,19 +197,6 @@ class AssistantActiveTurnsListResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
     workspace_id: str
     turns: list[ActiveBackgroundTurnStatusResponse] = Field(default_factory=list)
-
-
-class RecordAssistantTurnFeedbackRequest(BaseModel):
-    """Request payload for `POST /api/v1/assistant/three-speed/feedback` (`Story 10.2`)."""
-
-    model_config = ConfigDict(extra="forbid")
-    workspace_id: str = Field(..., min_length=1)
-    turn_id: str = Field(..., min_length=1)
-    user_feedback: Literal["LIKE", "DISLIKE"] | None = None
-    user_prompt: str = ""
-    assembled_system_prompt: str = ""
-    assistant_reply: str = ""
-    thinking_text: str = ""
 
 
 class AssistantTurnFeedbackRequest(BaseModel):
@@ -266,24 +245,3 @@ class AssistantThreadMessagesListResponse(BaseModel):
     workspace_id: str
     thread_id: str
     messages: list[AssistantThreadMessageSchemaItem] = Field(default_factory=list)
-
-
-class InvalidatePromptCacheRequest(BaseModel):
-    """Request payload for `POST /api/v1/assistant/three-speed/invalidate-cache` (`Story 10.2`)."""
-
-    model_config = ConfigDict(extra="forbid")
-    workspace_id: str = Field(..., min_length=1)
-    reason: Literal["SETTINGS_CHANGED", "OVERRIDE_UPDATED", "GLOSSARY_PROMOTED"] = (
-        "SETTINGS_CHANGED"
-    )
-    user_id: str | None = None
-
-
-class InvalidatePromptCacheResponse(BaseModel):
-    """Response payload for `POST /api/v1/assistant/three-speed/invalidate-cache` (`Story 10.2`)."""
-
-    model_config = ConfigDict(extra="forbid")
-    workspace_id: str
-    reason: Literal["SETTINGS_CHANGED", "OVERRIDE_UPDATED", "GLOSSARY_PROMOTED"]
-    invalidated_keys_count: int
-    outbox_event_id: str | None = None

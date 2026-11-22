@@ -313,23 +313,6 @@ export interface components {
       si_impact: string;
       title: string;
     };
-    ArtifactCardActionRequest: {
-      action_type: "COPY" | "EXPORT_MD" | "EXPORT_JSON" | "SAVE_DRAFT" | "CONTINUE_IN_PROCESS" | "DIRECT_SI_WRITE" | "PUBLISH_V1_VAULT";
-      artifact_content: string;
-      artifact_title: string;
-      cited_tags?: (string)[];
-      target_uri?: string | null;
-      workspace_id: string;
-    };
-    ArtifactCardActionResponse: {
-      action_id: string;
-      action_type: string;
-      artifact_title: string;
-      artifact_version_tag: string;
-      draft_uri?: string | null;
-      process_launch_prefill?: Record<string, unknown>;
-      workspace_id: string;
-    };
     ArtifactTemplateCompileRequest: {
       template_key: string;
       variables?: Record<string, string>;
@@ -350,30 +333,6 @@ export interface components {
     };
     AssistantActiveTurnsListResponse: {
       turns?: (components["schemas"]["ActiveBackgroundTurnStatusResponse"])[];
-      workspace_id: string;
-    };
-    AssistantChatRequest: {
-      allowed_datasource_aliases?: (string)[];
-      human_profile_archetype?: string | null;
-      user_prompt: string;
-      workspace_id: string;
-    };
-    AssistantChatResponse: {
-      cited_uris: (string)[];
-      constitutional_sha256: string;
-      first_token_latency_ms: number;
-      highlighted_indicators: (string)[];
-      human_profile_archetype: string;
-      intent: string;
-      node_traces: (components["schemas"]["AssistantNodeTraceSchemaItem"])[];
-      prompt_layers: (components["schemas"]["PromptLayerBlockSchemaItem"])[];
-      register_label: string;
-      response_text: string;
-      stale_warnings: (string)[];
-      turn_id: string;
-      vocabulary_tier: string;
-      workflow_proposal?: components["schemas"]["AssistantWorkflowProposalSchemaItem"] | null;
-      workflow_uri: string;
       workspace_id: string;
     };
     AssistantFolderSchemaItem: {
@@ -403,14 +362,6 @@ export interface components {
       item_kind: "THREAD" | "FOLDER" | "ARTIFACT_CARD";
       snippet: string;
       title: string;
-    };
-    AssistantNodeTraceSchemaItem: {
-      duration_ms: number;
-      node_id: "1_INTENT_ROUTER" | "2_QUERY_PLANNER_AND_ONTOLOGY_EXPANSION" | "3_PARALLEL_FAN_OUT" | "4_CRITICAL_TRIAGE_AND_AXIOM_VERIFICATION" | "5_PROFILE_ADAPTIVE_SYNTHESIZER";
-      node_order: number;
-      output_metadata?: Record<string, unknown>;
-      status: "COMPLETED";
-      summary: string;
     };
     AssistantSaveAndLaunchRequest: {
       manifest_yaml: string;
@@ -463,6 +414,42 @@ export interface components {
       turn_id: string;
       workspace_id: string;
     };
+    AssistantTurnApproveRequest: {
+      approved?: boolean;
+      human_anchor_markdown?: string | null;
+      human_authored_required?: boolean;
+      proposal_id: string;
+      rationale?: string | null;
+      workspace_id: string;
+    };
+    AssistantTurnApproveResponse: {
+      approved: boolean;
+      audit_id?: string | null;
+      human_anchor_sha256?: string | null;
+      proposal_id: string;
+      status: "APPROVED" | "REJECTED";
+      turn_id: string;
+      workspace_id: string;
+    };
+    AssistantTurnCreateRequest: {
+      conversation_history?: (components["schemas"]["ConversationTurnMessageItem"])[];
+      deep_audit_pill_active?: boolean;
+      folder_id?: string | null;
+      folder_pinned_notes?: string | null;
+      hat?: string | null;
+      locale?: string | null;
+      parent_turn_id?: string | null;
+      personal_instructions?: string | null;
+      requested_speed?: "SPEED_1_FAST" | "SPEED_2_AGENT_TOOLS" | "SPEED_3_DEEP_AUDIT" | null;
+      requested_tier?: "simple" | "medium" | "complex" | "auto" | null;
+      response_format?: "BULLETS_SUMMARY" | "STRUCTURED_SECTIONS" | "STEP_BY_STEP" | null;
+      response_tone?: "SYNTHETIC" | "BALANCED" | "DETAILED_CODE" | null;
+      thinking_effort?: "fast" | "balanced" | "deep" | null;
+      thread_id?: string | null;
+      user_prompt: string;
+      workspace_id: string;
+      workspace_instructions?: string | null;
+    };
     AssistantTurnFeedbackRequest: {
       comment?: string | null;
       rating: "up" | "down";
@@ -478,15 +465,11 @@ export interface components {
       user_id: string;
       workspace_id: string;
     };
-    AssistantWorkflowProposalSchemaItem: {
-      description: string;
-      edges: (components["schemas"]["XyFlowEdgeSchemaItem"])[];
-      execution_regime: string;
-      manifest_yaml: string;
-      nodes: (components["schemas"]["XyFlowNodeSchemaItem"])[];
-      proposal_id: string;
-      title: string;
-      workflow_uri: string;
+    AssistantTurnSynthesizeNowResponse: {
+      message: string;
+      status: "SYNTHESIZING" | "RUNNING" | "COMPLETED" | "STOPPED";
+      turn_id: string;
+      workspace_id: string;
     };
     AssistantWorkspaceOverviewResponse: {
       active_folder_pill_label?: string | null;
@@ -1526,35 +1509,6 @@ export interface components {
       evicted: boolean;
       trace_id: string;
     };
-    EvidenceGlossaryCitationSchemaItem: {
-      definition: string;
-      index: number;
-      label: string;
-      ontology_level: "N1_DIRECTIVE" | "N2_NORME" | "N3_MECANISME" | "L4_GLOSSARY";
-      tag: string;
-      term_or_axiom_id: string;
-    };
-    EvidenceSourceCitationSchemaItem: {
-      authority_tier: "REFERENCE" | "ACTIVE";
-      display_pill: string;
-      freshness: "FRESH" | "STALE_WARNING";
-      index: number;
-      line_end: number;
-      line_start: number;
-      request_access_uri?: string | null;
-      restricted_access?: boolean;
-      snippet?: string | null;
-      tag: string;
-      title: string;
-      uri: string;
-    };
-    EvidenceToolCitationSchemaItem: {
-      connector_uri: string;
-      index: number;
-      summary: string;
-      tag: string;
-      tool_name: string;
-    };
     EvolveBusinessPackWhatIfRequest: {
       active_run_lock_ids?: (string)[];
       actor_role?: string;
@@ -1854,12 +1808,13 @@ export interface components {
       workspace_id: string;
     };
     GovernedMcpInvokeRequest: {
-      agent_slug: string;
+      agent_slug?: string;
       caller_verbs?: (string)[];
       passthrough_identity: string;
       prompt_text: string;
       raw_pat_token: string;
       requested_write_target_uri?: string | null;
+      tool_name?: string | null;
     };
     GovernedMcpInvokeResponse: {
       audit_actor_type: "MCP_IDE_CLIENT";
@@ -2327,17 +2282,6 @@ export interface components {
       sse_dispatch_latency_ms: number;
       status: string;
       trace_id?: string | null;
-      workspace_id: string;
-    };
-    InvalidatePromptCacheRequest: {
-      reason?: "SETTINGS_CHANGED" | "OVERRIDE_UPDATED" | "GLOSSARY_PROMOTED";
-      user_id?: string | null;
-      workspace_id: string;
-    };
-    InvalidatePromptCacheResponse: {
-      invalidated_keys_count: number;
-      outbox_event_id?: string | null;
-      reason: "SETTINGS_CHANGED" | "OVERRIDE_UPDATED" | "GLOSSARY_PROMOTED";
       workspace_id: string;
     };
     InvokeCodegraphToolRequest: {
@@ -3115,12 +3059,6 @@ export interface components {
       model_name: string;
       provider_slug: string;
     };
-    PromptLayerBlockSchemaItem: {
-      content_sha256: string;
-      immutable: boolean;
-      layer_id: "1_CONSTITUTIONAL_IMMUTABLE" | "2_ONTOLOGY_AND_AXIOMS_L1_L4" | "3_HUMAN_PROFILE_ADAPTATION" | "4_FEDERATED_CONTEXT_FANOUT" | "5_CONVERSATIONAL_INTENT_AND_COMPOSER";
-      layer_order: number;
-    };
     PublicAuthConfigResponse: {
       auth_mode: "LOCAL" | "SSO";
       boot_epoch: string;
@@ -3172,27 +3110,6 @@ export interface components {
       confidence_score?: number;
       definition_fr: string;
     };
-    RawGlossaryCandidateSchemaItem: {
-      definition: string;
-      label: string;
-      ontology_level?: "N1_DIRECTIVE" | "N2_NORME" | "N3_MECANISME" | "L4_GLOSSARY";
-      term_or_axiom_id: string;
-    };
-    RawSourceCandidateSchemaItem: {
-      authority_tier?: "REFERENCE" | "ACTIVE";
-      freshness?: "FRESH" | "STALE_WARNING";
-      line_end?: number;
-      line_start?: number;
-      relevance_score?: number;
-      snippet: string;
-      title: string;
-      uri: string;
-    };
-    RawToolOutputCandidateSchemaItem: {
-      connector_uri: string;
-      summary: string;
-      tool_name: string;
-    };
     ReadinessResponse: {
       initialized?: boolean;
       status?: "ready";
@@ -3228,15 +3145,6 @@ export interface components {
       stale_count: number;
       synced_count: number;
       trace_id: string;
-      workspace_id: string;
-    };
-    RecordAssistantTurnFeedbackRequest: {
-      assembled_system_prompt?: string;
-      assistant_reply?: string;
-      thinking_text?: string;
-      turn_id: string;
-      user_feedback?: "LIKE" | "DISLIKE" | null;
-      user_prompt?: string;
       workspace_id: string;
     };
     RecursiveRunLockManifestSchemaItem: {
@@ -3843,10 +3751,6 @@ export interface components {
       upstream_steps_reexecuted_count: number;
       upstream_tokens_consumed: number;
     };
-    StopActiveBackgroundTurnRequest: {
-      turn_id?: string | null;
-      workspace_id: string;
-    };
     StudioDryRunRequest: {
       input_values?: Record<string, unknown>;
       preview_markdown_output?: string | null;
@@ -4053,52 +3957,6 @@ export interface components {
       status: "PASS" | "FAIL" | "WAITING_USER_PASSTHROUGH_TOKEN" | "SKIPPED";
       step_code: "1_NETWORK_TLS_ANTI_SSRF" | "2_AUTHENTICATION" | "3_CONTRACT_DISCOVERY" | "4_HOT_DRY_RUN";
       step_number: 1 | 2 | 3 | 4;
-    };
-    ThreeSpeedStepProgressSchemaItem: {
-      connector_or_lens?: string | null;
-      duration_ms: number;
-      intermediate_output?: string | null;
-      label: string;
-      status?: "COMPLETED" | "RUNNING";
-      step_code: string;
-    };
-    ThreeSpeedTurnRequest: {
-      conversation_history?: (components["schemas"]["ConversationTurnMessageItem"])[];
-      deep_audit_pill_active?: boolean;
-      folder_id?: string | null;
-      folder_pinned_notes?: string | null;
-      hat?: string | null;
-      locale?: string | null;
-      parent_turn_id?: string | null;
-      personal_instructions?: string | null;
-      requested_speed?: "SPEED_1_FAST" | "SPEED_2_AGENT_TOOLS" | "SPEED_3_DEEP_AUDIT" | null;
-      requested_tier?: "simple" | "medium" | "complex" | "auto" | null;
-      response_format?: "BULLETS_SUMMARY" | "STRUCTURED_SECTIONS" | "STEP_BY_STEP" | null;
-      response_tone?: "SYNTHETIC" | "BALANCED" | "DETAILED_CODE" | null;
-      thinking_effort?: "fast" | "balanced" | "deep" | null;
-      thread_id?: string | null;
-      user_prompt: string;
-      workspace_id: string;
-      workspace_instructions?: string | null;
-    };
-    ThreeSpeedTurnResponse: {
-      assembled_prompt_sha256: string;
-      assembled_system_prompt?: string;
-      cache_hit: boolean;
-      cache_key: string;
-      cache_lookup_ms: number;
-      deep_audit_lenses?: (string)[];
-      hat: string;
-      intermediate_llm_calls: number;
-      invoked_targets: (string)[];
-      nodes_1_to_4_deterministic_ms: number;
-      response_text: string;
-      speed_mode: "SPEED_1_FAST" | "SPEED_2_AGENT_TOOLS" | "SPEED_3_DEEP_AUDIT";
-      step_progress: (components["schemas"]["ThreeSpeedStepProgressSchemaItem"])[];
-      ttft_ms: number;
-      turn_id: string;
-      user_id: string;
-      workspace_id: string;
     };
     Tier2TddVerifyRequest: {
       buggy_files?: Record<string, string>;
@@ -4535,25 +4393,6 @@ export interface components {
       subtitle: string;
       title: string;
       tools_note?: string;
-    };
-    VerifyAndFilterCitationsRequest: {
-      glossary_items?: (components["schemas"]["RawGlossaryCandidateSchemaItem"])[];
-      response_text: string;
-      sources?: (components["schemas"]["RawSourceCandidateSchemaItem"])[];
-      tool_outputs?: (components["schemas"]["RawToolOutputCandidateSchemaItem"])[];
-      workspace_id: string;
-    };
-    VerifyAndFilterCitationsResponse: {
-      audit_id?: string | null;
-      citation_map_emitted_at_ms?: number;
-      footer_summary_line: string;
-      glossary_items: (components["schemas"]["EvidenceGlossaryCitationSchemaItem"])[];
-      sanitized_text: string;
-      sources: (components["schemas"]["EvidenceSourceCitationSchemaItem"])[];
-      stripped_phantom_tags: (string)[];
-      tool_outputs: (components["schemas"]["EvidenceToolCitationSchemaItem"])[];
-      valid_tags: (string)[];
-      verification_duration_ms: number;
     };
     VerifyLoginTwoFactorRequest: {
       challenge_token: string;
@@ -5080,20 +4919,6 @@ export interface components {
       preview_id?: string;
       target_resource_uri: string;
     };
-    XyFlowEdgeSchemaItem: {
-      animated?: boolean;
-      id: string;
-      source: string;
-      target: string;
-    };
-    XyFlowNodeSchemaItem: {
-      human_authored_required: boolean;
-      id: string;
-      label: string;
-      position_x: number;
-      position_y: number;
-      step_type: string;
-    };
     orcia_api__schemas__ontology_and_rag__WhatIfSimulationRequest: {
       concept_key: string;
       proposed_change: string;
@@ -5190,34 +5015,6 @@ export interface paths {
       };
     };
   };
-  "/api/v1/assistant/artifacts/action": {
-    post: {
-      responses: {
-        200: components["schemas"]["ArtifactCardActionResponse"];
-      };
-    };
-  };
-  "/api/v1/assistant/chat": {
-    post: {
-      responses: {
-        200: components["schemas"]["AssistantChatResponse"];
-      };
-    };
-  };
-  "/api/v1/assistant/chat/stream": {
-    post: {
-      responses: {
-        200: unknown;
-      };
-    };
-  };
-  "/api/v1/assistant/citations/verify-turn": {
-    post: {
-      responses: {
-        200: components["schemas"]["VerifyAndFilterCitationsResponse"];
-      };
-    };
-  };
   "/api/v1/assistant/folders": {
     post: {
       responses: {
@@ -5281,48 +5078,6 @@ export interface paths {
       };
     };
   };
-  "/api/v1/assistant/three-speed/active-turn": {
-    get: {
-      responses: {
-        200: components["schemas"]["ActiveBackgroundTurnStatusResponse"];
-      };
-    };
-  };
-  "/api/v1/assistant/three-speed/feedback": {
-    post: {
-      responses: {
-        200: Record<string, unknown>;
-      };
-    };
-  };
-  "/api/v1/assistant/three-speed/invalidate-cache": {
-    post: {
-      responses: {
-        200: components["schemas"]["InvalidatePromptCacheResponse"];
-      };
-    };
-  };
-  "/api/v1/assistant/three-speed/stop": {
-    post: {
-      responses: {
-        200: components["schemas"]["ActiveBackgroundTurnStatusResponse"];
-      };
-    };
-  };
-  "/api/v1/assistant/three-speed/stream": {
-    post: {
-      responses: {
-        200: unknown;
-      };
-    };
-  };
-  "/api/v1/assistant/three-speed/turn": {
-    post: {
-      responses: {
-        200: components["schemas"]["ThreeSpeedTurnResponse"];
-      };
-    };
-  };
   "/api/v1/assistant/turns": {
     post: {
       responses: {
@@ -5334,6 +5089,13 @@ export interface paths {
     get: {
       responses: {
         200: components["schemas"]["AssistantActiveTurnsListResponse"];
+      };
+    };
+  };
+  "/api/v1/assistant/turns/{turn_id}/approve": {
+    post: {
+      responses: {
+        200: components["schemas"]["AssistantTurnApproveResponse"];
       };
     };
   };
@@ -5353,6 +5115,13 @@ export interface paths {
   };
   "/api/v1/assistant/turns/{turn_id}/stream": {
     get: {
+      responses: {
+        200: unknown;
+      };
+    };
+  };
+  "/api/v1/assistant/turns/{turn_id}/synthesize-now": {
+    post: {
       responses: {
         200: unknown;
       };
@@ -7042,27 +6811,25 @@ export type AiModelTestResponse = components["schemas"]["AiModelTestResponse"];
 export type ApplyRecommendationResponse = components["schemas"]["ApplyRecommendationResponse"];
 export type ApproveReflexiveWriteRequest = components["schemas"]["ApproveReflexiveWriteRequest"];
 export type ArbitrationOptionSchemaItem = components["schemas"]["ArbitrationOptionSchemaItem"];
-export type ArtifactCardActionRequest = components["schemas"]["ArtifactCardActionRequest"];
-export type ArtifactCardActionResponse = components["schemas"]["ArtifactCardActionResponse"];
 export type ArtifactTemplateCompileRequest = components["schemas"]["ArtifactTemplateCompileRequest"];
 export type ArtifactTemplateCompileResponse = components["schemas"]["ArtifactTemplateCompileResponse"];
 export type AssembledLayerPreviewSchemaItem = components["schemas"]["AssembledLayerPreviewSchemaItem"];
 export type AssistantActiveTurnsListResponse = components["schemas"]["AssistantActiveTurnsListResponse"];
-export type AssistantChatRequest = components["schemas"]["AssistantChatRequest"];
-export type AssistantChatResponse = components["schemas"]["AssistantChatResponse"];
 export type AssistantFolderSchemaItem = components["schemas"]["AssistantFolderSchemaItem"];
 export type AssistantGovernanceViewResponse = components["schemas"]["AssistantGovernanceViewResponse"];
 export type AssistantHistorySearchHitSchemaItem = components["schemas"]["AssistantHistorySearchHitSchemaItem"];
-export type AssistantNodeTraceSchemaItem = components["schemas"]["AssistantNodeTraceSchemaItem"];
 export type AssistantSaveAndLaunchRequest = components["schemas"]["AssistantSaveAndLaunchRequest"];
 export type AssistantSaveAndLaunchResponse = components["schemas"]["AssistantSaveAndLaunchResponse"];
 export type AssistantThreadMessageSchemaItem = components["schemas"]["AssistantThreadMessageSchemaItem"];
 export type AssistantThreadMessagesListResponse = components["schemas"]["AssistantThreadMessagesListResponse"];
 export type AssistantThreadSchemaItem = components["schemas"]["AssistantThreadSchemaItem"];
 export type AssistantTurnAcceptedResponse = components["schemas"]["AssistantTurnAcceptedResponse"];
+export type AssistantTurnApproveRequest = components["schemas"]["AssistantTurnApproveRequest"];
+export type AssistantTurnApproveResponse = components["schemas"]["AssistantTurnApproveResponse"];
+export type AssistantTurnCreateRequest = components["schemas"]["AssistantTurnCreateRequest"];
 export type AssistantTurnFeedbackRequest = components["schemas"]["AssistantTurnFeedbackRequest"];
 export type AssistantTurnFeedbackResponse = components["schemas"]["AssistantTurnFeedbackResponse"];
-export type AssistantWorkflowProposalSchemaItem = components["schemas"]["AssistantWorkflowProposalSchemaItem"];
+export type AssistantTurnSynthesizeNowResponse = components["schemas"]["AssistantTurnSynthesizeNowResponse"];
 export type AssistantWorkspaceOverviewResponse = components["schemas"]["AssistantWorkspaceOverviewResponse"];
 export type AttachedWorkspaceRefResponse = components["schemas"]["AttachedWorkspaceRefResponse"];
 export type AuditExportResponse = components["schemas"]["AuditExportResponse"];
@@ -7179,9 +6946,6 @@ export type EvaluateResourceAccessRequest = components["schemas"]["EvaluateResou
 export type EvaluateStarlarkMechanismRequest = components["schemas"]["EvaluateStarlarkMechanismRequest"];
 export type EvaluationLensItem = components["schemas"]["EvaluationLensItem"];
 export type EvictMemoryCachesResponse = components["schemas"]["EvictMemoryCachesResponse"];
-export type EvidenceGlossaryCitationSchemaItem = components["schemas"]["EvidenceGlossaryCitationSchemaItem"];
-export type EvidenceSourceCitationSchemaItem = components["schemas"]["EvidenceSourceCitationSchemaItem"];
-export type EvidenceToolCitationSchemaItem = components["schemas"]["EvidenceToolCitationSchemaItem"];
 export type EvolveBusinessPackWhatIfRequest = components["schemas"]["EvolveBusinessPackWhatIfRequest"];
 export type EvolveBusinessPackWhatIfResponse = components["schemas"]["EvolveBusinessPackWhatIfResponse"];
 export type ExceptionWaiverResponse = components["schemas"]["ExceptionWaiverResponse"];
@@ -7265,8 +7029,6 @@ export type InstalledBusinessPackItemResponse = components["schemas"]["Installed
 export type InstalledBusinessPackListResponse = components["schemas"]["InstalledBusinessPackListResponse"];
 export type InvalidateAndRestoreRequest = components["schemas"]["InvalidateAndRestoreRequest"];
 export type InvalidateAndRestoreResponse = components["schemas"]["InvalidateAndRestoreResponse"];
-export type InvalidatePromptCacheRequest = components["schemas"]["InvalidatePromptCacheRequest"];
-export type InvalidatePromptCacheResponse = components["schemas"]["InvalidatePromptCacheResponse"];
 export type InvokeCodegraphToolRequest = components["schemas"]["InvokeCodegraphToolRequest"];
 export type InvokeCodegraphToolResponse = components["schemas"]["InvokeCodegraphToolResponse"];
 export type InvokedSkillTraceResponseItem = components["schemas"]["InvokedSkillTraceResponseItem"];
@@ -7359,22 +7121,17 @@ export type ProbabilisticControlExecutionRecord = components["schemas"]["Probabi
 export type ProblemDetails = components["schemas"]["ProblemDetails"];
 export type ProcessOrchestrationType = components["schemas"]["ProcessOrchestrationType"];
 export type ProgressiveLlmEndpointRequest = components["schemas"]["ProgressiveLlmEndpointRequest"];
-export type PromptLayerBlockSchemaItem = components["schemas"]["PromptLayerBlockSchemaItem"];
 export type PublicAuthConfigResponse = components["schemas"]["PublicAuthConfigResponse"];
 export type QuickActionSpec = components["schemas"]["QuickActionSpec"];
 export type RagReciprocityResponse = components["schemas"]["RagReciprocityResponse"];
 export type RagReindexStatusResponse = components["schemas"]["RagReindexStatusResponse"];
 export type RagReindexTriggerResponse = components["schemas"]["RagReindexTriggerResponse"];
 export type RawGlossaryCandidateInput = components["schemas"]["RawGlossaryCandidateInput"];
-export type RawGlossaryCandidateSchemaItem = components["schemas"]["RawGlossaryCandidateSchemaItem"];
-export type RawSourceCandidateSchemaItem = components["schemas"]["RawSourceCandidateSchemaItem"];
-export type RawToolOutputCandidateSchemaItem = components["schemas"]["RawToolOutputCandidateSchemaItem"];
 export type ReadinessResponse = components["schemas"]["ReadinessResponse"];
 export type RebaseExternalArtifactEditsRequest = components["schemas"]["RebaseExternalArtifactEditsRequest"];
 export type RebasedSectionChunkSchema = components["schemas"]["RebasedSectionChunkSchema"];
 export type ReconcileWorkspaceStalenessItem = components["schemas"]["ReconcileWorkspaceStalenessItem"];
 export type ReconcileWorkspaceStalenessResponse = components["schemas"]["ReconcileWorkspaceStalenessResponse"];
-export type RecordAssistantTurnFeedbackRequest = components["schemas"]["RecordAssistantTurnFeedbackRequest"];
 export type RecursiveRunLockManifestSchemaItem = components["schemas"]["RecursiveRunLockManifestSchemaItem"];
 export type ReflexiveExecutionSnapshotResponse = components["schemas"]["ReflexiveExecutionSnapshotResponse"];
 export type ReflexiveScratchpadItem = components["schemas"]["ReflexiveScratchpadItem"];
@@ -7445,7 +7202,6 @@ export type StepMemlogSchemaItem = components["schemas"]["StepMemlogSchemaItem"]
 export type StepReplayRequest = components["schemas"]["StepReplayRequest"];
 export type StepReplayResponse = components["schemas"]["StepReplayResponse"];
 export type StepReplayResultSchemaItem = components["schemas"]["StepReplayResultSchemaItem"];
-export type StopActiveBackgroundTurnRequest = components["schemas"]["StopActiveBackgroundTurnRequest"];
 export type StudioDryRunRequest = components["schemas"]["StudioDryRunRequest"];
 export type StudioDryRunResponse = components["schemas"]["StudioDryRunResponse"];
 export type SubStepExecutionRecord = components["schemas"]["SubStepExecutionRecord"];
@@ -7465,9 +7221,6 @@ export type SystemBootstrapWorkflowItem = components["schemas"]["SystemBootstrap
 export type TaskNotificationItemResponse = components["schemas"]["TaskNotificationItemResponse"];
 export type TemporaryPasswordProvisionResponse = components["schemas"]["TemporaryPasswordProvisionResponse"];
 export type TestBenchStepResultSchema = components["schemas"]["TestBenchStepResultSchema"];
-export type ThreeSpeedStepProgressSchemaItem = components["schemas"]["ThreeSpeedStepProgressSchemaItem"];
-export type ThreeSpeedTurnRequest = components["schemas"]["ThreeSpeedTurnRequest"];
-export type ThreeSpeedTurnResponse = components["schemas"]["ThreeSpeedTurnResponse"];
 export type Tier2TddVerifyRequest = components["schemas"]["Tier2TddVerifyRequest"];
 export type Tier2TddVerifyResponse = components["schemas"]["Tier2TddVerifyResponse"];
 export type ToggleAgentGovernanceRequest = components["schemas"]["ToggleAgentGovernanceRequest"];
@@ -7512,8 +7265,6 @@ export type ValidateFencedWriteResponse = components["schemas"]["ValidateFencedW
 export type ValidateHelpArticleRequest = components["schemas"]["ValidateHelpArticleRequest"];
 export type ValidateHelpArticleResponse = components["schemas"]["ValidateHelpArticleResponse"];
 export type ValueStreamMapSpec = components["schemas"]["ValueStreamMapSpec"];
-export type VerifyAndFilterCitationsRequest = components["schemas"]["VerifyAndFilterCitationsRequest"];
-export type VerifyAndFilterCitationsResponse = components["schemas"]["VerifyAndFilterCitationsResponse"];
 export type VerifyLoginTwoFactorRequest = components["schemas"]["VerifyLoginTwoFactorRequest"];
 export type VsmListResponse = components["schemas"]["VsmListResponse"];
 export type VsmPassageNodeSpec = components["schemas"]["VsmPassageNodeSpec"];
@@ -7565,7 +7316,5 @@ export type WorkspaceSummaryItem = components["schemas"]["WorkspaceSummaryItem"]
 export type WorkspacesListResponse = components["schemas"]["WorkspacesListResponse"];
 export type WritableScopeOptionItem = components["schemas"]["WritableScopeOptionItem"];
 export type WritePreviewCard = components["schemas"]["WritePreviewCard"];
-export type XyFlowEdgeSchemaItem = components["schemas"]["XyFlowEdgeSchemaItem"];
-export type XyFlowNodeSchemaItem = components["schemas"]["XyFlowNodeSchemaItem"];
 export type orcia_api__schemas__ontology_and_rag__WhatIfSimulationRequest = components["schemas"]["orcia_api__schemas__ontology_and_rag__WhatIfSimulationRequest"];
 export type orcia_api__schemas__process_studio_v2__WhatIfSimulationRequest = components["schemas"]["orcia_api__schemas__process_studio_v2__WhatIfSimulationRequest"];

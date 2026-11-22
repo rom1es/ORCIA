@@ -488,7 +488,7 @@ def test_api_rejects_speed_2_and_3_with_422_err_model_tools_unsupported(
         assert "trace_id" in body
 
         r_s3 = client.post(
-            "/api/v1/assistant/three-speed/stream",
+            "/api/v1/assistant/turns",
             params={"persona_key": "marc"},
             json={
                 "workspace_id": "0192c4e0-0000-7000-8000-000000000201",

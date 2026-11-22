@@ -206,11 +206,11 @@ def test_fastapi_rag_blocked_503_while_assistant_and_search_stay_unlocked_during
         "user_prompt": "Bonjour assistant",
     }
     res_assistant = client.post(
-        "/api/v1/assistant/three-speed/turn",
+        "/api/v1/assistant/turns",
         params={"persona_key": "marc"},
         json=assistant_payload,
     )
-    assert res_assistant.status_code == 200
+    assert res_assistant.status_code == 202
 
     res_fed_search = client.get(
         "/api/v1/search",

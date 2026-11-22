@@ -66,7 +66,9 @@ def test_zero_event_loop_blocking_and_zero_silent_except_ast_invariants() -> Non
         REPO_ROOT / "packages/orcia-core/src/orcia_core/rag/context_adapters.py",
         REPO_ROOT / "packages/orcia-core/src/orcia_core/rag/hybrid_rag_service.py",
         REPO_ROOT / "apps/api/src/orcia_api/routers/assistant.py",
-        REPO_ROOT / "apps/api/src/orcia_api/routers/assistant_workspace.py",
+        REPO_ROOT / "apps/api/src/orcia_api/routers/assistant_turns.py",
+        REPO_ROOT / "apps/api/src/orcia_api/routers/_assistant_turn_controls_routes.py",
+        REPO_ROOT / "apps/api/src/orcia_api/routers/_assistant_turn_finalizer.py",
         REPO_ROOT / "apps/api/src/orcia_api/routers/assistant_background_turns.py",
         REPO_ROOT / "apps/api/src/orcia_api/routers/_assistant_background_registry.py",
     ]
@@ -88,11 +90,11 @@ def test_zero_event_loop_blocking_and_zero_silent_except_ast_invariants() -> Non
                 if len(node.body) == 1 and isinstance(node.body[0], ast.Pass):
                     raise AssertionError(f"Silent pass in {path}:{node.lineno}: {seg}")
 
-    # Verify assistant.py SSE generator is async def
-    asst_src = (REPO_ROOT / "apps/api/src/orcia_api/routers/assistant.py").read_text(
+    # Verify assistant_turns.py SSE generator is async def
+    turns_src = (REPO_ROOT / "apps/api/src/orcia_api/routers/assistant_turns.py").read_text(
         encoding="utf-8"
     )
-    assert "async def _event_generator()" in asst_src
+    assert "async def _sse()" in turns_src
 
 
 @pytest.mark.asyncio

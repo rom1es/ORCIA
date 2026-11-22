@@ -119,6 +119,8 @@ def build_tool_sse_events(
     deduplicated: bool = False,
     reason_code: str = "",
     approval_proposal: dict[str, Any] | None = None,
+    audit_event_id: str | None = None,
+    evidence_refs: tuple[str, ...] = (),
 ) -> tuple[AssistantToolSseEvent, ...]:
     """Build canonical SSE events (`tool_call`, `tool_result`, optional `approval_required`)."""
     masked_args = scrub_connector_secrets(dict(request.arguments))
@@ -131,6 +133,7 @@ def build_tool_sse_events(
                 "tool_call_id": request.tool_call_id,
                 "tool_name": request.tool_name,
                 "arguments": masked_args,
+                "sanitized_args": masked_args,
                 "trace_id": request.trace_id,
             },
         )
@@ -141,11 +144,28 @@ def build_tool_sse_events(
                 event="approval_required",
                 data={
                     **approval_proposal,
+                    "proposal_id": str(
+                        approval_proposal.get("proposal_id") or request.tool_call_id
+                    ),
+                    "action_kind": str(
+                        approval_proposal.get("transition_action") or "CONTINUE_IN_PROCESS"
+                    ),
+                    "target_uri": str(approval_proposal.get("target_uri") or ""),
+                    "workflow_ref": str(
+                        approval_proposal.get("human_arbitration_uri")
+                        or "orcia://system/workflows/hitl-gate"
+                    ),
+                    "requires_human_anchor": True,
                     "turn_id": request.turn_id,
                     "trace_id": request.trace_id,
                 },
             )
         )
+    mapped_status = (
+        "ok"
+        if verdict in ("EXECUTED", "DEDUPLICATED")
+        else ("denied" if verdict in ("DENIED", "APPROVAL_REQUIRED") else "error")
+    )
     events.append(
         AssistantToolSseEvent(
             event="tool_result",
@@ -155,9 +175,12 @@ def build_tool_sse_events(
                 "tool_call_id": request.tool_call_id,
                 "tool_name": request.tool_name,
                 "verdict": verdict,
+                "status": mapped_status,
                 "deduplicated": deduplicated,
                 "reason_code": reason_code,
                 "summary": summary,
+                "evidence_refs": list(evidence_refs),
+                "audit_event_id": audit_event_id,
                 "latency_ms": round(latency_ms, 2),
                 "trace_id": request.trace_id,
             },

@@ -209,13 +209,28 @@ describe("createRequestSse & assistantStreaming (@orcia/api-client)", () => {
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
 
-  it("routes assistantStreaming methods to /three-speed/stream, /executions/{id}/trace-stream and /events/stream with Bearer", async () => {
+  it("routes assistantStreaming methods to 2-step POST /turns + GET /turns/{id}/stream, /executions/{id}/trace-stream and /events/stream with Bearer", async () => {
     registerDefaultAccessTokenProvider(() => "client-jwt-token");
-    const mockFetch = vi.fn().mockImplementation(() =>
-      Promise.resolve(
+    const mockFetch = vi.fn().mockImplementation((url: string) => {
+      if (url.endsWith("/api/v1/assistant/turns")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              turn_id: "turn-abc",
+              workspace_id: "ws-1",
+              speed_mode: "SPEED_1_FAST",
+              status: "RUNNING",
+              stream_url: "/api/v1/assistant/turns/turn-abc/stream",
+              trace_id: "trace-1",
+            }),
+            { status: 202, headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      return Promise.resolve(
         makeSseResponse(['event: ping\ndata: {"ok":true}\n\n']),
-      ),
-    );
+      );
+    });
 
     const client = createOrciaApiClient({
       baseUrl: "http://api.test",
@@ -223,7 +238,7 @@ describe("createRequestSse & assistantStreaming (@orcia/api-client)", () => {
       fetchImpl: mockFetch as unknown as typeof fetch,
     });
 
-    await client.streamAssistantTurnSse({
+    const accepted = await client.streamAssistantTurnSse({
       workspace_id: "ws-1",
       hat: "PM",
       user_prompt: "Synthèse ?",
@@ -244,19 +259,24 @@ describe("createRequestSse & assistantStreaming (@orcia/api-client)", () => {
       personaKey: "karim",
     });
 
-    expect(mockFetch).toHaveBeenCalledTimes(3);
+    expect(accepted.turn_id).toBe("turn-abc");
+    expect(mockFetch).toHaveBeenCalledTimes(4);
     expect(mockFetch.mock.calls[0]?.[0]).toBe(
-      "http://api.test/api/v1/assistant/three-speed/stream",
+      "http://api.test/api/v1/assistant/turns",
     );
     expect((mockFetch.mock.calls[0]?.[1] as RequestInit).method).toBe("POST");
     expect(mockFetch.mock.calls[1]?.[0]).toBe(
-      "http://api.test/api/v1/executions/exec%2F123/trace-stream?persona_key=karim",
+      "http://api.test/api/v1/assistant/turns/turn-abc/stream",
     );
     expect((mockFetch.mock.calls[1]?.[1] as RequestInit).method).toBe("GET");
     expect(mockFetch.mock.calls[2]?.[0]).toBe(
-      "http://api.test/api/v1/events/stream?workspace_id=ws-42&live=false&persona_key=karim",
+      "http://api.test/api/v1/executions/exec%2F123/trace-stream?persona_key=karim",
     );
     expect((mockFetch.mock.calls[2]?.[1] as RequestInit).method).toBe("GET");
+    expect(mockFetch.mock.calls[3]?.[0]).toBe(
+      "http://api.test/api/v1/events/stream?workspace_id=ws-42&live=false&persona_key=karim",
+    );
+    expect((mockFetch.mock.calls[3]?.[1] as RequestInit).method).toBe("GET");
 
     for (const call of mockFetch.mock.calls) {
       const headers = (call[1] as RequestInit).headers as Record<string, string>;

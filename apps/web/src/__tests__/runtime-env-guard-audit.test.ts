@@ -76,7 +76,7 @@ describe("garde jsdom supprimée & transport @orcia/api-client sous Vitest (TEST
     });
     fireEvent.click(screen.getByTestId("first-boot-admin-submit-btn"));
 
-    // 2. Envoyer un tour à Mon Assistant -> déclenche POST /api/v1/assistant/three-speed/stream (SSE ReadableStream)
+    // 2. Envoyer un tour à Mon Assistant -> déclenche POST /api/v1/assistant/turns + GET /stream (SSE ReadableStream)
     fireEvent.change(screen.getByTestId("assistant-three-speed-input"), {
       target: { value: "Vérifie le transport SSE" },
     });
@@ -103,7 +103,12 @@ describe("garde jsdom supprimée & transport @orcia/api-client sous Vitest (TEST
     ).toBe(true);
     expect(
       callsBeforeReload.some(
-        (c) => c.method === "POST" && c.path === "/api/v1/assistant/three-speed/stream",
+        (c) => c.method === "POST" && c.path === "/api/v1/assistant/turns",
+      ),
+    ).toBe(true);
+    expect(
+      callsBeforeReload.some(
+        (c) => c.method === "GET" && /^\/api\/v1\/assistant\/turns\/[^/]+\/stream$/.test(c.path),
       ),
     ).toBe(true);
 

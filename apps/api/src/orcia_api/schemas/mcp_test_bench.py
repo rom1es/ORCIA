@@ -124,7 +124,8 @@ class GovernedMcpInvokeRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     raw_pat_token: str = Field(..., min_length=8, max_length=256)
-    agent_slug: str = Field(..., min_length=1, max_length=128)
+    agent_slug: str = Field(default="assistant", min_length=1, max_length=128)
+    tool_name: str | None = Field(default=None, max_length=128)
     caller_verbs: list[str] = Field(default_factory=lambda: ["execute"])
     passthrough_identity: str = Field(..., min_length=1, max_length=255)
     prompt_text: str = Field(..., min_length=1, max_length=4000)

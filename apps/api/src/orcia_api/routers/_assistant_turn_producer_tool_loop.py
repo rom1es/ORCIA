@@ -13,10 +13,12 @@ from orcia_api.routers._assistant_tool_loop_rounds import (
 from orcia_api.routers._assistant_tool_loop_rounds import (
     execute_sync_tool_followup as execute_sync_tool_followup,
 )
+from orcia_core.orchestration.assistant_citations_models import RawToolOutputCandidate
 from orcia_core.orchestration.assistant_loop_budgets import (
     AssistantLoopBudgetController,
     resolve_loop_budget_for_speed,
 )
+from orcia_core.orchestration.assistant_turn_engine import AssistantTurnEngine
 from orcia_core.orchestration.llm_streaming_sse_utils import delta_to_sse_dict
 from orcia_core.orchestration.redis_turn_registry import RedisAssistantTurnRegistry
 from orcia_core.ports.assistant_tool_executor_port import (
@@ -102,6 +104,7 @@ async def run_streaming_tool_loop(
     t0: float,
     user_identity: Any | None = None,
     active_hat: str = "ARCHITECT",
+    turn_engine: AssistantTurnEngine | None = None,
 ) -> dict[str, Any]:
     """Stream LLM deltas and execute multi-step governed tool loops within profile budgets."""
     policy = resolve_loop_budget_for_speed(record.speed_mode)
@@ -113,11 +116,32 @@ async def run_streaming_tool_loop(
     has_approval_required = False
     pending_completed_data: dict[str, Any] | None = None
     stream_error_data: dict[str, Any] | None = None
+    collected_tool_outputs: list[RawToolOutputCandidate] = []
+    synth_round_started = False
+
+    async def _synthesize_now_active() -> bool:
+        if await registry.is_synthesize_now_requested(record.turn_id):
+            return True
+        rt = turn_engine.reflexive_runtime if turn_engine is not None else None
+        return bool(rt is not None and await rt.is_synthesize_now_requested(record.turn_id))
 
     while True:
         check = controller.check_budget()
-        active_tools = tools if (check.can_continue and stream_ep.supports_tools) else ()
-        if not check.can_continue:
+        synth_requested = await _synthesize_now_active()
+        force_synth = (not check.can_continue) or synth_requested
+        active_tools = () if force_synth or not stream_ep.supports_tools else tools
+        if synth_requested and not synth_round_started:
+            synth_round_started = True
+            working_msgs.append(
+                {
+                    "role": "user",
+                    "content": (
+                        "Early synthesis requested (`synthesize-now`). Synthesize a concise final"
+                        " answer now from gathered evidence without calling additional tools."
+                    ),
+                }
+            )
+        elif not check.can_continue:
             working_msgs.append(
                 {
                     "role": "user",
@@ -175,7 +199,7 @@ async def run_streaming_tool_loop(
         tool_calls = [tc for tc in raw_tcs if isinstance(tc, dict)]
         controller.record_usage(round_in, round_out, increment_iteration=bool(active_tools))
 
-        if not tool_calls or tool_router is None or not tool_catalog or not check.can_continue:
+        if not tool_calls or tool_router is None or not tool_catalog or force_synth:
             pending_completed_data = _finalize_completed_payload(
                 round_completed=round_completed,
                 record=record,
@@ -207,8 +231,18 @@ async def run_streaming_tool_loop(
             locale=locale,
             user_identity=user_identity,
             active_hat=active_hat,
+            collected_tool_outputs=collected_tool_outputs,
         )
         working_msgs.extend(tool_msgs)
+        if turn_engine is not None:
+            await turn_engine.record_assistant_reflexive_step_async(
+                turn_id=record.turn_id,
+                turn_index=iteration,
+                action_kind="READ_ONLY_TOOL_ROUND",
+                summary=f"Executed {len(tool_calls)} governed tool call(s)",
+                tool_name=",".join(str(tc.get("name") or "") for tc in tool_calls),
+                tokens_used=round_in + round_out,
+            )
         if approval_outcomes:
             has_approval_required = True
             proposal = build_approval_proposal_text(approval_outcomes, locale=locale)
@@ -220,6 +254,7 @@ async def run_streaming_tool_loop(
                     event="token_delta",
                     data={
                         "delta": proposal,
+                        "delta_text": proposal,
                         "accumulated_text": streamed_text,
                         "trace_id": record.trace_id,
                     },
@@ -246,6 +281,7 @@ async def run_streaming_tool_loop(
         "saw_usage": saw_usage,
         "obs_lat": obs_lat,
         "pending_completed_data": pending_completed_data,
+        "tool_outputs": collected_tool_outputs,
     }
 
 

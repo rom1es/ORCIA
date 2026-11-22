@@ -1,10 +1,13 @@
 import { OrciaProblemError } from "@orcia/api-client";
 import type {
+  UiAgentTraceEventItem,
   UiAssistantAttachedFileItem,
   UiAssistantErrorKind,
   UiAssistantSpeedMode,
   UiInferenceEffort,
   UiInferenceTier,
+  UiReflexivePendingWritePreview,
+  UiReflexiveSessionStatus,
   UiThreeSpeedStepProgress,
 } from "@orcia/ui";
 import type { SavedAssistantConversation } from "./savedConversationsStore";
@@ -23,12 +26,24 @@ export interface CompletedAssistantTurnPayload {
   readonly attachedFiles?: readonly UiAssistantAttachedFileItem[];
   readonly stepProgress?: readonly UiThreeSpeedStepProgress[];
   readonly thinkingElapsedSeconds?: number;
+  readonly traceEvents?: readonly UiAgentTraceEventItem[];
+  readonly citationMap?: Readonly<Record<string, unknown>> | null;
+  readonly lowEvidence?: boolean;
+  readonly supportsTools?: boolean;
 }
 
 export interface BackgroundAssistantStreamSnapshot {
+  activeTurnId: string | null;
   streamedText: string;
   activeUserPrompt: string;
   stepProgress: readonly UiThreeSpeedStepProgress[];
+  activeTraceStatus: UiReflexiveSessionStatus | null;
+  traceEvents: readonly UiAgentTraceEventItem[];
+  pendingWritePreview: UiReflexivePendingWritePreview | null;
+  citationMap: Readonly<Record<string, unknown>> | null;
+  lowEvidence: boolean;
+  supportsTools: boolean;
+  purgedPhantomCount: number;
   cacheHit: boolean;
   cacheLookupMs: number;
   nodes1To4Ms: number;
@@ -46,9 +61,17 @@ let bgTimers: ReturnType<typeof setTimeout>[] = [];
 let bgOnTurnCompletedCallback: ((params: CompletedAssistantTurnPayload) => void) | null = null;
 
 export let bgSnapshot: BackgroundAssistantStreamSnapshot = {
+  activeTurnId: null,
   streamedText: "",
   activeUserPrompt: "",
   stepProgress: [],
+  activeTraceStatus: null,
+  traceEvents: [],
+  pendingWritePreview: null,
+  citationMap: null,
+  lowEvidence: false,
+  supportsTools: true,
+  purgedPhantomCount: 0,
   cacheHit: false,
   cacheLookupMs: 0,
   nodes1To4Ms: 0,
@@ -104,9 +127,17 @@ export function resetBackgroundAssistantStreamForTests(): void {
   bgAbortController = null;
   clearBgTimers();
   bgSnapshot = {
+    activeTurnId: null,
     streamedText: "",
     activeUserPrompt: "",
     stepProgress: [],
+    activeTraceStatus: null,
+    traceEvents: [],
+    pendingWritePreview: null,
+    citationMap: null,
+    lowEvidence: false,
+    supportsTools: true,
+    purgedPhantomCount: 0,
     cacheHit: false,
     cacheLookupMs: 0,
     nodes1To4Ms: 0,

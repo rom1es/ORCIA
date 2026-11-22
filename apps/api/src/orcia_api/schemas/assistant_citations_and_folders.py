@@ -6,37 +6,6 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from orcia_api.schemas.assistant_citations import (
-    ArtifactCardActionRequest as ArtifactCardActionRequest,
-)
-from orcia_api.schemas.assistant_citations import (
-    ArtifactCardActionResponse as ArtifactCardActionResponse,
-)
-from orcia_api.schemas.assistant_citations import (
-    EvidenceGlossaryCitationSchemaItem as EvidenceGlossaryCitationSchemaItem,
-)
-from orcia_api.schemas.assistant_citations import (
-    EvidenceSourceCitationSchemaItem as EvidenceSourceCitationSchemaItem,
-)
-from orcia_api.schemas.assistant_citations import (
-    EvidenceToolCitationSchemaItem as EvidenceToolCitationSchemaItem,
-)
-from orcia_api.schemas.assistant_citations import (
-    RawGlossaryCandidateSchemaItem as RawGlossaryCandidateSchemaItem,
-)
-from orcia_api.schemas.assistant_citations import (
-    RawSourceCandidateSchemaItem as RawSourceCandidateSchemaItem,
-)
-from orcia_api.schemas.assistant_citations import (
-    RawToolOutputCandidateSchemaItem as RawToolOutputCandidateSchemaItem,
-)
-from orcia_api.schemas.assistant_citations import (
-    VerifyAndFilterCitationsRequest as VerifyAndFilterCitationsRequest,
-)
-from orcia_api.schemas.assistant_citations import (
-    VerifyAndFilterCitationsResponse as VerifyAndFilterCitationsResponse,
-)
-
 
 class FolderShareGrantSchemaItem(BaseModel):
     """Colleague share grant (`READ_ONLY` or `CO_CONTRIBUTOR`) (`Story 10.4`)."""

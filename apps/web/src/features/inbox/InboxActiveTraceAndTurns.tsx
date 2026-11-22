@@ -130,7 +130,6 @@ export function buildInboxStreamSlots(params: {
   readonly onApproveWrite: (previewId: string) => void;
   readonly onRejectWrite: (previewId: string) => void;
   readonly onSendTurn: (payload: SendAssistantTurnPayload) => void;
-  readonly onSaveDraft: (content: string) => void;
   readonly onContinueInProcess: () => void;
   readonly onFeedbackTurn: (turnId: string, feedback: "LIKE" | "DISLIKE" | null) => void;
 }): {
@@ -172,7 +171,6 @@ export function buildInboxStreamSlots(params: {
             deepAuditPillActive: false,
           })
         }
-        onSaveDraft={params.onSaveDraft}
         onContinueInProcess={params.onContinueInProcess}
         onFeedbackTurn={params.onFeedbackTurn}
       />

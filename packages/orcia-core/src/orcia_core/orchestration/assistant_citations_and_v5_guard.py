@@ -16,8 +16,6 @@ from orcia_core.orchestration._assistant_citations_verifier import (
     verify_and_sanitize_citations_impl,
 )
 from orcia_core.orchestration.assistant_citations_models import (
-    ArtifactCardActionOutcome,
-    ArtifactCardActionType,
     CitationVerificationResult,
     EvidenceGlossaryCitation,
     EvidenceSourceCitation,
@@ -29,11 +27,6 @@ from orcia_core.orchestration.assistant_citations_models import (
     RawToolOutputCandidate,
     SourceAuthorityTier,
     SourceFreshnessStatus,
-    build_artifact_card_outcome,
-)
-from orcia_core.orchestration.errors import (
-    DirectSiWriteRequiresProcessGateError,
-    ObserverModeReadOnlyError,
 )
 from orcia_core.permissions.models import UserIdentity
 from orcia_core.ports.finops_telemetry import AuditLedgerSinkPort, FinopsCostLedgerEntry
@@ -55,8 +48,6 @@ class AssistantCitationAndV5GuardService:
 
     def __init__(self, *, audit_ledger_sink: AuditLedgerSinkPort | None = None) -> None:
         self._audit_ledger_sink: AuditLedgerSinkPort | None = audit_ledger_sink
-        # Retained temporarily until Story 26.7 removes `/artifacts/action` (E2E spec 21).
-        self._saved_drafts: dict[str, ArtifactCardActionOutcome] = {}
 
     def set_audit_ledger_sink(self, sink: AuditLedgerSinkPort | None) -> None:
         """Bind or refresh the append-only `AuditLedgerSinkPort` from the Composition Root."""
@@ -204,47 +195,6 @@ class AssistantCitationAndV5GuardService:
                 )
         return result
 
-    def execute_artifact_card_action(
-        self,
-        user: UserIdentity,
-        *,
-        workspace_id: str,
-        action_type: ArtifactCardActionType,
-        artifact_title: str,
-        artifact_content: str,
-        cited_tags: tuple[str, ...] = (),
-        target_uri: str | None = None,
-        target_workflow_uri: str | None = None,
-    ) -> ArtifactCardActionOutcome:
-        """Execute a Structured Artifact Card action while enforcing Verrou V5 (`AD-15`)."""
-        if user.platform_role == "OBSERVER":
-            raise ObserverModeReadOnlyError()
-        if action_type in ("DIRECT_SI_WRITE", "PUBLISH_V1_VAULT"):
-            raise DirectSiWriteRequiresProcessGateError()
-        if (
-            target_uri is not None
-            and "://" in target_uri
-            and not target_uri.startswith(("orcia://", "local://"))
-        ):
-            raise DirectSiWriteRequiresProcessGateError(
-                detail_override=(
-                    f"Verrou V5 (AD-15) : Écriture directe vers '{target_uri}' interdite depuis "
-                    "Mon Assistant. Utilisez '☍ Continuer dans un Processus →' pour passer par "
-                    "une Gate de Validation et de Publication."
-                )
-            )
-        outcome = build_artifact_card_outcome(
-            workspace_id=workspace_id,
-            action_type=action_type,
-            artifact_title=artifact_title,
-            artifact_content=artifact_content,
-            cited_tags=cited_tags,
-            target_workflow_uri=target_workflow_uri,
-        )
-        if action_type == "SAVE_DRAFT" and outcome.draft_uri is not None:
-            self._saved_drafts[outcome.draft_uri] = outcome
-        return outcome
-
     def evaluate_tool_v5_and_human_anchor_guard(
         self,
         *,
@@ -266,8 +216,6 @@ class AssistantCitationAndV5GuardService:
 
 __all__ = [
     "UNVERIFIED_CITATION_BADGE",
-    "ArtifactCardActionOutcome",
-    "ArtifactCardActionType",
     "AssistantCitationAndV5GuardService",
     "CitationVerificationResult",
     "EvidenceGlossaryCitation",

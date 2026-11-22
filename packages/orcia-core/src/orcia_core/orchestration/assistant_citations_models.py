@@ -2,23 +2,11 @@
 
 from __future__ import annotations
 
-import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Literal
-
-from orcia_kernel.ids import new_uuid7_str
 
 SourceAuthorityTier = Literal["REFERENCE", "ACTIVE"]
 SourceFreshnessStatus = Literal["FRESH", "STALE_WARNING"]
-ArtifactCardActionType = Literal[
-    "COPY",
-    "EXPORT_MD",
-    "EXPORT_JSON",
-    "SAVE_DRAFT",
-    "CONTINUE_IN_PROCESS",
-    "DIRECT_SI_WRITE",
-    "PUBLISH_V1_VAULT",
-]
 
 
 @dataclass(frozen=True, slots=True)
@@ -128,62 +116,3 @@ class CitationVerificationResult:
     verification_duration_ms: float
     audit_entry: PhantomCitationAuditEntry | None
     evidence_table: EvidenceTable
-
-
-@dataclass(frozen=True, slots=True)
-class ArtifactCardActionOutcome:
-    """Outcome of an action on a Structured Artifact Card in `Mon Assistant` (`Story 10.3`)."""
-
-    action_id: str
-    workspace_id: str
-    action_type: ArtifactCardActionType
-    artifact_title: str
-    artifact_version_tag: str
-    draft_uri: str | None = None
-    process_launch_prefill: dict[str, object] = field(default_factory=dict)
-
-
-def build_artifact_card_outcome(
-    *,
-    workspace_id: str,
-    action_type: ArtifactCardActionType,
-    artifact_title: str,
-    artifact_content: str,
-    cited_tags: tuple[str, ...],
-    target_workflow_uri: str | None,
-) -> ArtifactCardActionOutcome:
-    """Construct `ArtifactCardActionOutcome` for `SAVE_DRAFT`, `CONTINUE_IN_PROCESS`, or export."""
-    action_id = new_uuid7_str()
-    if action_type == "SAVE_DRAFT":
-        slug = re.sub(r"[^a-z0-9-]+", "-", artifact_title.lower()).strip("-") or "artefact"
-        return ArtifactCardActionOutcome(
-            action_id=action_id,
-            workspace_id=workspace_id,
-            action_type="SAVE_DRAFT",
-            artifact_title=artifact_title,
-            artifact_version_tag="@draft",
-            draft_uri=f"orcia://workspaces/{workspace_id}/artifacts/{slug}@draft",
-            process_launch_prefill={},
-        )
-    if action_type == "CONTINUE_IN_PROCESS":
-        return ArtifactCardActionOutcome(
-            action_id=action_id,
-            workspace_id=workspace_id,
-            action_type="CONTINUE_IN_PROCESS",
-            artifact_title=artifact_title,
-            artifact_version_tag="@draft",
-            draft_uri=None,
-            process_launch_prefill={
-                "target_workflow_uri": target_workflow_uri or "",
-                "prefilled_artifact_title": artifact_title,
-                "prefilled_artifact_content": artifact_content,
-                "preserved_evidence_tags": list(cited_tags),
-            },
-        )
-    return ArtifactCardActionOutcome(
-        action_id=action_id,
-        workspace_id=workspace_id,
-        action_type=action_type,
-        artifact_title=artifact_title,
-        artifact_version_tag="@draft",
-    )

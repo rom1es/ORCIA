@@ -22,12 +22,12 @@ from orcia_api.routers.assistant_background_turns import (
 )
 from orcia_api.schemas.assistant import (
     ActiveBackgroundTurnStatusResponse,
-    ThreeSpeedTurnRequest,
+    AssistantTurnCreateRequest,
 )
 from orcia_core.kernel.errors import OrciaDomainError
 from orcia_core.observability.logging import get_logger
 from orcia_core.orchestration._assistant_folders_helpers import enforce_folder_turn_access
-from orcia_core.orchestration.assistant_three_speed_router import AssistantSpeedMode
+from orcia_core.orchestration.assistant_three_speed_models import AssistantSpeedMode
 from orcia_core.permissions.models import UserIdentity
 
 logger = get_logger("orcia.assistant.llm")
@@ -35,7 +35,7 @@ _SPEED2_MENTION_OR_SLASH_RE = re.compile(r"(?:^|\s)(?:@[a-zA-Z0-9_-]{2,}|/[a-zA-
 
 
 def resolve_effective_speed(
-    payload: ThreeSpeedTurnRequest,
+    payload: AssistantTurnCreateRequest,
 ) -> tuple[bool, AssistantSpeedMode | None, AssistantSpeedMode]:
     """Determine effective deep audit flag, requested speed, and resolved runtime speed."""
     effective_deep_audit = payload.deep_audit_pill_active or payload.thinking_effort == "deep"
@@ -56,7 +56,7 @@ def resolve_effective_speed(
 
 async def resolve_turn_history(
     request: Request,
-    payload: ThreeSpeedTurnRequest,
+    payload: AssistantTurnCreateRequest,
     *,
     user: UserIdentity | None = None,
 ) -> list[dict[str, Any]]:
@@ -105,7 +105,7 @@ async def resolve_turn_history(
 
 async def resolve_folder_notes(
     request: Request,
-    payload: ThreeSpeedTurnRequest,
+    payload: AssistantTurnCreateRequest,
     *,
     user: UserIdentity | None = None,
 ) -> str | None:
@@ -160,7 +160,7 @@ async def record_non_stream_turn_telemetry(
     request: Request,
     *,
     user: UserIdentity,
-    payload: ThreeSpeedTurnRequest,
+    payload: AssistantTurnCreateRequest,
     turn: Any,
     live_outcome: Any | None,
     assembled_sys_prompt: str,

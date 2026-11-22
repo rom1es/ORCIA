@@ -151,93 +151,54 @@ def test_story_10_3_phantom_citation_verifier_and_v5_lock() -> None:
     assert res.audit_entry is not None
     assert res.audit_entry.stripped_tags == ("S99", "O4")
 
-    # Allowed Artifact Card actions: SAVE_DRAFT (@draft) and CONTINUE_IN_PROCESS
-    draft = svc.execute_artifact_card_action(
-        claire,
-        workspace_id="ws-claims-alpha",
-        action_type="SAVE_DRAFT",
-        artifact_title="Note de cadrage Sinistres",
-        artifact_content="# Cadrage [S1]",
-        cited_tags=("S1", "G1"),
-    )
-    assert draft.artifact_version_tag == "@draft"
-    assert draft.draft_uri is not None and draft.draft_uri.endswith("@draft")
+    # R5: _saved_drafts & execute_artifact_card_action removed; V5 guard in AssistantTurnEngine
+    assert not hasattr(svc, "execute_artifact_card_action")
+    assert not hasattr(svc, "_saved_drafts")
+    from orcia_core.orchestration.assistant_turn_engine import AssistantTurnEngine
 
-    cont = svc.execute_artifact_card_action(
-        claire,
-        workspace_id="ws-claims-alpha",
-        action_type="CONTINUE_IN_PROCESS",
-        artifact_title="Note de cadrage Sinistres",
-        artifact_content="# Cadrage [S1]",
-        cited_tags=("S1", "G1"),
-    )
-    assert cont.process_launch_prefill["preserved_evidence_tags"] == ["S1", "G1"]
-
-    # Verrou V5 (AD-15): Direct SI write or @v1 Vault officialization -> 422
+    engine = AssistantTurnEngine(citation_guard=svc)
     with pytest.raises(DirectSiWriteRequiresProcessGateError) as exc1:
-        svc.execute_artifact_card_action(
+        engine.n1_intent_guard(
             claire,
-            workspace_id="ws-claims-alpha",
-            action_type="DIRECT_SI_WRITE",
-            artifact_title="Note",
-            artifact_content="Contenu",
-            target_uri="git://repo-core/docs/spec.md",
+            user_prompt="Écris directement",
+            requested_write_target_uri="git://repo-core/docs/spec.md",
         )
     assert exc1.value.error_code == "ERR_DIRECT_SI_WRITE_REQUIRES_PROCESS_GATE"
 
-    with pytest.raises(DirectSiWriteRequiresProcessGateError) as exc2:
-        svc.execute_artifact_card_action(
-            claire,
-            workspace_id="ws-claims-alpha",
-            action_type="PUBLISH_V1_VAULT",
-            artifact_title="Note",
-            artifact_content="Contenu",
-        )
-    assert exc2.value.error_code == "ERR_DIRECT_SI_WRITE_REQUIRES_PROCESS_GATE"
 
-
-def test_story_10_3_api_endpoints_verify_citations_and_v5_guard() -> None:
-    """Verify `/api/v1/assistant/citations/verify-turn` and `/artifacts/action` (`Story 10.3`)."""
+def test_story_10_3_api_endpoints_verify_citations_and_v5_guard(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify legacy `/citations/verify-turn` & `/artifacts/action` are deleted & Lock V5 holds."""
+    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
     ws_id = "0192c4e0-0000-7000-8000-000000000201"
     with TestClient(app) as client:
-        v_resp = client.post(
+        for legacy_path in (
             "/api/v1/assistant/citations/verify-turn",
-            params={"persona_key": "nadia"},
-            json={
-                "workspace_id": ws_id,
-                "response_text": "Conformément à [S1] et [S99].",
-                "sources": [
-                    {
-                        "uri": "git://repo-core/docs/adr-015.md",
-                        "title": "ADR-015",
-                        "authority_tier": "REFERENCE",
-                        "freshness": "FRESH",
-                        "snippet": "Extrait confidentiel ADR-015",
-                    }
-                ],
-            },
-        )
-        assert v_resp.status_code == 200
-        v_data = v_resp.json()
-        assert "[Citation non vérifiée]" in v_data["sanitized_text"]
-        assert v_data["stripped_phantom_tags"] == ["S99"]
-        assert v_data["sources"][0]["restricted_access"] is True
-        assert v_data["sources"][0]["snippet"] is None
-        assert (
-            v_data["sources"][0]["display_pill"] == "[S1 · 🔒 Source restreinte — Demander l'accès]"
-        )
-
-        # Verrou V5 via API -> HTTP 422 ERR_DIRECT_SI_WRITE_REQUIRES_PROCESS_GATE
-        bad_act = client.post(
             "/api/v1/assistant/artifacts/action",
-            params={"persona_key": "nadia"},
+        ):
+            assert client.post(
+                legacy_path, params={"persona_key": "nadia"}, json={"workspace_id": ws_id}
+            ).status_code in (404, 405)
+
+        turn_res = client.post(
+            "/api/v1/assistant/turns",
+            params={"persona_key": "marc"},
+            json={"workspace_id": ws_id, "user_prompt": "Vérifie le statut"},
+        )
+        assert turn_res.status_code == 202
+        turn_id = turn_res.json()["turn_id"]
+
+        bad_approve = client.post(
+            f"/api/v1/assistant/turns/{turn_id}/approve",
+            params={"persona_key": "marc"},
             json={
                 "workspace_id": ws_id,
-                "action_type": "DIRECT_SI_WRITE",
-                "artifact_title": "Spec directe",
-                "artifact_content": "# Spec",
-                "target_uri": "confluence://space/page-1",
+                "proposal_id": "prop-v5",
+                "approved": True,
+                "human_authored_required": True,
             },
         )
-        assert bad_act.status_code == 422
-        assert bad_act.json()["error_code"] == "ERR_DIRECT_SI_WRITE_REQUIRES_PROCESS_GATE"
+        assert bad_approve.status_code == 422
+        assert bad_approve.json()["error_code"] == "ERR_HUMAN_ANCHOR_REQUIRED"

@@ -11,10 +11,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "activeRoutesCount": 28,
     "uiPrimitivesCount": 137,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 61,
+    "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 215,
+    "techLeadReportsCount": 216,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 61,
@@ -264,7 +264,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261122_264a_story_26_4a_ai_models_schema_and_assistant_outbox",
     "20261122_264b_story_26_4b_assistant_feedback_and_folder_meta",
     "20261122_265_story_26_5_assistant_thread_messages",
-    "20261122_266a_story_26_6a_llm_supports_tools"
+    "20261122_266a_story_26_6a_llm_supports_tools",
+    "20261122_267_story_26_7_reflexive_execution_profile"
   ],
   "architectureDecisions": [
     {
@@ -547,6 +548,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-22",
+      "phaseOrStory": "Story 26.7",
+      "reportFile": "26-7-unified-turn-engine-convergence-direct-cutover-and-citations-tech-lead-report.md",
+      "domain": "Epic 26 Lot 6.1 — Unified AssistantTurnEngine Convergence, execution_profile, Server Citations (citation_map), MCP assistant.ask, Direct UI/E2E Cutover & Deletion of Legacy Routes (CAP-022, CAP-071, CAP-072, CAP-160, CAP-260)",
+      "summary": "Closed (done, post-remediation independent Testing Sub-Agent verified): Alembic 20261122_267 (execution_profile PROCESS vs ASSISTANT on reflexive_execution_sessions), AssistantTurnEngine (N1–N5 + CitationGuard) in packages/orcia-core, canonical /api/v1/assistant/turns* router (assistant_turns.py, Composition Root require_not_observer_write, [P1]/[P2] fixes, AssistantQuestionBubbleAndSanitizer.tsx split, PRIVATE-safe _sql_assistant_folders_queries.py & sql_assistant_feedback.py), server-side CitationGuard + ASSISTANT_PHANTOM_CITATION_PURGED + citation_map SSE, MCP assistant.ask Speed 1 bridge, direct deletion of /three-speed/*, /chat*, /citations/verify-turn, /artifacts/action, _saved_drafts, execute_artifact_card_action, atomic 0-diff OpenAPI SDK & SPA cutover eliminating parallel /api/v1/executions/reflexive (H-01), 98% 10-module / 93% 23-module branch coverage (>= 90%), 1179 passed Python unit/evals/security/contract (0 phantom leaks), 27 passed PG18+Redis create_app() integration (Batches 1+2+3 incl. 22.3/23.2; R6 warm non-embedding 29.33–43.23 ms <= 50 ms, active embedding+RRF p50=65.95 ms/p95=66.80 ms <= 100 ms, ACTION_ITEM-26.3 deferred), 9/9 Turbo (417 JS/TS tests), 15 passed / 1 skipped / 0 failed (3.0m) Playwright Desktop E2E, ruff/mypy --strict (717 files)/lint-imports (5/5, 759 files/5558 deps)/export_openapi (0-diff)/lint_spine (0)/detect-secrets clean."
+    },
     {
       "date": "2026-11-22",
       "phaseOrStory": "Story 26.6b",

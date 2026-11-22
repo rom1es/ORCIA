@@ -18,6 +18,9 @@ from orcia_core.orchestration._assistant_folders_models import (
     FolderVisibilityMode,
 )
 from orcia_core.orchestration._internal._sql_assistant_folders_sql import (
+    SQL_INSERT_MISSING_IDENTITY_USER,
+)
+from orcia_core.orchestration._internal._sql_assistant_folders_sql import (
     SQL_UPDATE_THREAD_TURN as SQL_UPDATE_THREAD_TURN,
 )
 from orcia_core.orchestration._internal._sql_assistant_folders_sql import (
@@ -30,9 +33,96 @@ from orcia_core.orchestration._internal._sql_assistant_folders_sql import (
     SQL_UPSERT_THREAD as SQL_UPSERT_THREAD,
 )
 from orcia_core.orchestration.errors import ResourceNotFoundError
+from orcia_core.permissions.models import UserIdentity
 from orcia_kernel.ids import new_uuid7_str
 
 _ORCIA_FOLDER_NS = UUID("0195f000-0000-7000-8000-00000000f000")
+_VALID_DB_ROLES = frozenset(
+    {
+        "PLATFORM_ADMIN",
+        "BU_DIRECTOR",
+        "TEAM_LEAD",
+        "CONTRIBUTOR",
+        "GATE_REVIEWER",
+        "ONTOLOGY_STEWARD_L3",
+        "OBSERVER",
+    }
+)
+
+
+async def _find_user_uuid(conn: AsyncConnection, *, uid: str, email: str) -> UUID | None:
+    row = (
+        await conn.execute(
+            sa.text(
+                "SELECT id FROM users WHERE id::text = :uid "
+                "OR (:email <> '' AND lower(email) = lower(:email)) LIMIT 1"
+            ),
+            {"uid": uid.strip(), "email": email.strip()},
+        )
+    ).first()
+    return UUID(str(row[0])) if row is not None else None
+
+
+async def _provision_missing_identity_user(
+    conn: AsyncConnection, user: UserIdentity
+) -> UUID | None:
+    """Persist an authenticated persona/JIT `UserIdentity` in `users` when absent."""
+    try:
+        parsed_uid = UUID(user.id.strip())
+    except ValueError:
+        return None
+    org_row = (
+        await conn.execute(
+            sa.text("SELECT id FROM org_units WHERE id::text = :oid LIMIT 1"),
+            {"oid": (user.primary_org_unit_id or "").strip()},
+        )
+    ).first() or (
+        await conn.execute(sa.text("SELECT id FROM org_units ORDER BY created_at ASC LIMIT 1"))
+    ).first()
+    if org_row is None:
+        return None
+    email_val = (user.email or f"{parsed_uid}@local.orcia").strip()
+    await conn.execute(
+        SQL_INSERT_MISSING_IDENTITY_USER,
+        {
+            "uid": str(parsed_uid),
+            "email": email_val,
+            "display_name": (user.display_name or email_val).strip()[:255],
+            "auth_mode": user.auth_mode
+            if user.auth_mode in ("OIDC", "LOCAL", "HYBRID")
+            else "OIDC",
+            "oidc_subject": user.oidc_subject,
+            "archetype": (user.human_profile_archetype or "ARCHITECT").strip()[:64],
+            "role": user.platform_role if user.platform_role in _VALID_DB_ROLES else "CONTRIBUTOR",
+            "org_id": str(org_row[0]),
+        },
+    )
+    return await _find_user_uuid(conn, uid=str(parsed_uid), email=email_val)
+
+
+async def resolve_user_uuid(
+    conn: AsyncConnection,
+    *,
+    user_id: str,
+    email: str | None = None,
+    user: UserIdentity | None = None,
+) -> UUID:
+    """Resolve `users.id` by UUID or email, provisioning missing `user` before fallback."""
+    found = await _find_user_uuid(conn, uid=user_id, email=email or "")
+    if found is not None:
+        return found
+    if user is not None:
+        provisioned = await _provision_missing_identity_user(conn, user)
+        if provisioned is not None:
+            return provisioned
+    fallback = (
+        await conn.execute(sa.text("SELECT id FROM users ORDER BY created_at ASC LIMIT 1"))
+    ).first()
+    if fallback is not None:
+        return UUID(str(fallback[0]))
+    raise ResourceNotFoundError(
+        detail_override="No registered user account found in PostgreSQL 18 for this operation."
+    )
 
 
 def _decode_str_list(raw: Any, *, default: tuple[str, ...] = ()) -> tuple[str, ...]:
@@ -74,32 +164,6 @@ async def resolve_workspace_uuid(
             detail_override=f"Workspace '{workspace_id}' not found in PostgreSQL 18."
         )
     return None
-
-
-async def resolve_user_uuid(
-    conn: AsyncConnection, *, user_id: str, email: str | None = None
-) -> UUID:
-    """Resolve `users.id` by UUID or email, falling back to first registered user."""
-    row = (
-        await conn.execute(
-            sa.text(
-                "SELECT id FROM users "
-                "WHERE id::text = :uid OR (:email <> '' AND lower(email) = lower(:email)) "
-                "LIMIT 1"
-            ),
-            {"uid": user_id.strip(), "email": (email or "").strip()},
-        )
-    ).first()
-    if row is not None:
-        return UUID(str(row[0]))
-    fallback = (
-        await conn.execute(sa.text("SELECT id FROM users ORDER BY created_at ASC LIMIT 1"))
-    ).first()
-    if fallback is not None:
-        return UUID(str(fallback[0]))
-    raise ResourceNotFoundError(
-        detail_override="No registered user account found in PostgreSQL 18 for this operation."
-    )
 
 
 def row_to_folder(

@@ -184,15 +184,15 @@ capabilities:
     title: Agent assistant DAG 5 nœuds (AssistantHarness 5 couches)
     fr: [FR-1, FR-13]
     origin: epic
-    origin_ref: 3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc + 25-5 + 26-1 + 26-5
+    origin_ref: 3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc + 25-5 + 26-1 + 26-5 + 26-7
     status: live
     kind: feature
     uj: [UJ-1, UJ-17]
-    db_tables: [workflow_runs, step_executions, blackboard_snapshots, assistant_threads, assistant_thread_messages]
-    tests: [tests/unit/test_story_3_3_assistant_agent_5_nodes_and_context_ports.py, tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py, tests/security/test_story_26_1_assistant_security_hardening.py, tests/integration/api/test_story_26_1_assistant_security_postgres18.py, tests/unit/test_story_26_5_real_context_and_budget.py, tests/unit/test_story_26_5_routes_and_adapters.py, tests/evals/test_story_26_5_ontology_relevance_evals.py, tests/integration/api/test_story_26_5_real_context_and_history_postgres18.py, tests/evals/test_assistant_and_ontology_evals.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
+    db_tables: [workflow_runs, step_executions, blackboard_snapshots, assistant_threads, assistant_thread_messages, reflexive_execution_sessions]
+    tests: [tests/unit/test_story_3_3_assistant_agent_5_nodes_and_context_ports.py, tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py, tests/security/test_story_26_1_assistant_security_hardening.py, tests/integration/api/test_story_26_1_assistant_security_postgres18.py, tests/unit/test_story_26_5_real_context_and_budget.py, tests/unit/test_story_26_5_routes_and_adapters.py, tests/evals/test_story_26_5_ontology_relevance_evals.py, tests/integration/api/test_story_26_5_real_context_and_history_postgres18.py, tests/evals/test_assistant_and_ontology_evals.py, tests/unit/test_story_26_7_unified_turn_engine_and_mcp.py, tests/integration/api/test_story_26_7_unified_turn_engine_postgres18.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
     verification: api
     verified_at: "2026-11-22"
-    surfaces: { api: "/api/v1/assistant + _assistant_guards.py + _assistant_thread_messages_routes.py" }
+    surfaces: { api: "/api/v1/assistant/turns (assistant_turns.py, assistant_turn_engine.py, _assistant_guards.py, _assistant_thread_messages_routes.py)" }
   - id: CAP-023
     title: Ancrages humains obligatoires et arbitrage / tie-break
     fr: [FR-4, FR-5]
@@ -599,7 +599,7 @@ capabilities:
       - apps/web/e2e/14-auth-2fa-account-and-profile.spec.ts
     surfaces:
       route: /profile
-      api: "user_profile.py (/api/v1/users/me/profile-summary), llm_usage_telemetry.py, assistant_llm_providers.py, _assistant_usage_telemetry.py, assistant_background_turns.py, assistant_workspace.py"
+      api: "user_profile.py (/api/v1/users/me/profile-summary), llm_usage_telemetry.py, assistant_llm_providers.py, _assistant_usage_telemetry.py, assistant_background_turns.py, assistant_turns.py"
       ui: "UserProfileOverviewPage + UserProfileRouteView"
 
   # ───────────── Mon Assistant (Epic 10 + ad-hoc) ─────────────
@@ -617,36 +617,36 @@ capabilities:
     verified_at: "2026-11-22"
     surfaces: { route: /assistant, api: "assistant_workspace_governance.py, assistant_governance.py, sql_assistant_governance.py", ui: AssistantGovernanceModalAndStudio }
   - id: CAP-071
-    title: Routage 3 vitesses, assemblage direct 5 couches (R6) et tours assistant avec Outbox PG18
+    title: Moteur unifié des tours assistant (AssistantTurnEngine N1-N6), 3 vitesses, SSE v2 canonique, synthesize-now, execution_profile ASSISTANT et MCP assistant.ask
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-2 + 26-4a
+    origin_ref: 10-2 + 26-4a + 26-7
     status: live
     kind: feature
     uj: [UJ-17]
-    db_tables: [assistant_threads, workspace_customization_overrides, inference_attempts, domain_events_outbox]
-    tests: [tests/unit/test_story_26_4a_locks_outbox_cache_removal_and_ddl_audit.py, tests/integration/api/test_story_26_4a_redis_locks_outbox_ddl_postgres18.py, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts]
+    db_tables: [assistant_threads, workspace_customization_overrides, inference_attempts, domain_events_outbox, reflexive_execution_sessions]
+    tests: [tests/unit/test_story_26_4a_locks_outbox_cache_removal_and_ddl_audit.py, tests/integration/api/test_story_26_4a_redis_locks_outbox_ddl_postgres18.py, tests/unit/test_story_26_7_unified_turn_engine_and_mcp.py, tests/integration/api/test_story_26_7_unified_turn_engine_postgres18.py, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts]
     verification: runtime
     verified_at: "2026-11-22"
-    surfaces: { api: "assistant_workspace.py, _assistant_workspace_controls.py", ui: AssistantSpeedSelectorAndStreamView, migration: "20261122_264a" }
+    surfaces: { route: /assistant, api: "assistant_turns.py (/api/v1/assistant/turns*), _assistant_turn_controls_routes.py, assistant_turn_engine.py, _assistant_turn_engine_plan.py, _assistant_turn_engine_mcp.py, _mcp_assistant_ask_bridge.py", ui: AssistantSpeedSelectorAndStreamView, migration: "20261122_264a + 20261122_267" }
   - id: CAP-072
-    title: Citations déterministes [S1]/[G1]/[O1] et cartes d'artefact
+    title: Citations déterministes [S1]/[G1]/[O1], garde CitationGuard côté serveur pré-turn_completed et purge des citations fantômes
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-3 + 26-1 + 26-4b
+    origin_ref: 10-3 + 26-1 + 26-4b + 26-7
     status: live
     kind: feature
     uj: [UJ-1, UJ-17]
-    db_tables: [kb_chunks, ontology_concepts, assistant_threads, audit_ledger]
-    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, tests/evals/test_citations_golden_dataset.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
+    db_tables: [kb_chunks, ontology_concepts, assistant_threads, assistant_thread_messages, audit_ledger]
+    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, tests/evals/test_citations_golden_dataset.py, tests/unit/test_story_26_7_unified_turn_engine_and_mcp.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
     verification: api
     verified_at: "2026-11-22"
-    surfaces: { api: "assistant_workspace_citations.py, assistant_citations_and_v5_guard.py", ui: AssistantCitationPillsAndArtifactCard }
+    surfaces: { api: "_assistant_turn_engine_citations.py, _assistant_turn_finalizer.py, assistant_citations_and_v5_guard.py", ui: AssistantCitationPillsAndArtifactCard }
   - id: CAP-073
     title: Dossiers thématiques, métadonnées PG18, feedback par tour, fils collaboratifs, verrous de tour Redis (SET NX EX), partage et processus
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-4 + 26-4a + 26-4b
+    origin_ref: 10-4 + 26-4a + 26-4b + 26-7
     status: live
     kind: feature
     uj: [UJ-17]
@@ -654,7 +654,7 @@ capabilities:
     tests: [tests/integration/api/test_story_26_4a_redis_locks_outbox_ddl_postgres18.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/src/__tests__/assistant-folders-server-rehydration.test.tsx]
     verification: runtime
     verified_at: "2026-11-22"
-    surfaces: { api: "assistant_workspace_folders.py, _assistant_turns_v2_routes.py, _assistant_workspace_controls.py, sql_assistant_feedback.py, sql_assistant_folders.py", ui: AssistantFoldersAndCollaborativeThreadView, migration: "20261122_264b" }
+    surfaces: { api: "assistant_workspace_folders.py, assistant_turns.py, _assistant_turn_controls_routes.py, sql_assistant_feedback.py, sql_assistant_folders.py", ui: AssistantFoldersAndCollaborativeThreadView, migration: "20261122_264b" }
   - id: CAP-074
     title: Câblage LLM réel et streaming SSE multi-fournisseurs (« Envoyer à Mon Assistant »)
     fr: [FR-33]
@@ -809,8 +809,8 @@ capabilities:
       - tests/unit/test_story_26_3_turn_reliability_and_async_loop.py
       - tests/integration/api/test_story_26_3_redis_multi_worker_turns_postgres18.py
     verification: runtime
-    verified_at: "2026-11-21"
-    surfaces: { route: /assistant, api: "assistant_background_turns.py + _assistant_turns_v2_routes.py" }
+    verified_at: "2026-11-22"
+    surfaces: { route: /assistant, api: "assistant_turns.py + assistant_background_turns.py" }
   - id: CAP-076
     title: Refactorisation LLM agnostique/async et vrai streaming SSE ; intégration Gemini (Mode A/B)
     fr: [FR-33]
@@ -906,7 +906,7 @@ capabilities:
       route: "/assistant + /agents + /processes + /processes/studio/$workflowId"
       api: "/api/v1/sources/inspect-lines + /api/v1/sources/surgical-explore (sources_surgical.py) + /api/v1/executions/reflexive + /api/v1/executions/{execution_id}/trace-stream (executions_trace.py) + /api/v1/workflows/v2 + /api/v1/workflows/v2/{workflow_id}/runs (workflows.py)"
       ui: "WorkflowOrchestrationModeSelector + WorkflowBlock2ExecutionSection + AgentExecutionTrace + SourceLineInspectorDrawer + AgentTestBenchSection + InteractiveRunDrawer + AssistantSpeedSelectorAndStreamView"
-      migration: 20261111_01_reflexive_execution_sessions.py
+      migration: "20261111_01_reflexive_execution_sessions.py + 20261122_267_story_26_7_reflexive_execution_profile.py"
     tests:
       - tests/unit/connectors/test_surgical_context_explorer.py
       - tests/unit/core/test_non_deterministic_reflexive_runtime.py
@@ -1128,19 +1128,22 @@ capabilities:
     title: Governed Assistant Tool Router, dynamic workspace catalog (surgical, RAG, ontology, PG18 skills, MCP), Lock V5 / Human-Anchor arbitration outbox, idempotency, sandboxing, and anti-injection delimiters
     fr: [FR-4, FR-13, FR-21, FR-22, FR-33]
     origin: epic
-    origin_ref: 26-6b-governed-assistant-tool-router-broker-v5-anchors-and-audit
+    origin_ref: 26-6b-governed-assistant-tool-router-broker-v5-anchors-and-audit + 26-7
     status: live
     kind: feature
     uj: [UJ-17]
-    db_tables: [catalog_items, audit_ledger, domain_events_outbox, workspace_llm_tier_mappings]
+    db_tables: [catalog_items, audit_ledger, domain_events_outbox, workspace_llm_tier_mappings, reflexive_execution_sessions]
     verification: api
     verified_at: "2026-11-22"
     tests:
       - tests/unit/test_story_26_6b_governed_tool_router_and_catalog.py
       - tests/unit/test_story_26_6b_execution_profile_and_loop.py
+      - tests/unit/test_story_26_7_unified_turn_engine_and_mcp.py
       - tests/evals/test_assistant_tool_output_injection.py
       - tests/integration/api/test_story_26_6b_tool_router_audit_outbox_postgres18.py
+      - tests/integration/api/test_story_26_7_unified_turn_engine_postgres18.py
       - apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts
     surfaces:
-      api: "assistant_tool_executor_port.py, governed_tool_router.py, _assistant_tool_catalog.py, _assistant_tool_guards.py, _assistant_tool_sanitization.py, _assistant_tool_execution.py, _assistant_tool_audit.py, _assistant_tool_idempotency.py, _assistant_profile_guard.py, reflexive_runtime.py, governed_mcp_exposure.py, remote_test_bench_and_mcp_exposure.py, dependencies/assistant_tools.py, dependencies/_assistant_tools_helpers.py, dependencies/reflexive_execution.py, dependencies/workspace_and_packs.py, _assistant_turn_producer.py, _assistant_turn_producer_tool_loop.py, _assistant_tool_loop_rounds.py, _assistant_llm_tools_and_budget.py, assistant_workspace.py"
+      api: "assistant_tool_executor_port.py, governed_tool_router.py, _assistant_tool_catalog.py, _assistant_tool_guards.py, _assistant_tool_sanitization.py, _assistant_tool_execution.py, _assistant_tool_audit.py, _assistant_tool_idempotency.py, _assistant_profile_guard.py, reflexive_runtime.py, governed_mcp_exposure.py, remote_test_bench_and_mcp_exposure.py, _mcp_assistant_ask_bridge.py, dependencies/assistant_tools.py, dependencies/_assistant_tools_helpers.py, dependencies/reflexive_execution.py, dependencies/workspace_and_packs.py, _assistant_turn_producer.py, _assistant_turn_producer_tool_loop.py, _assistant_tool_loop_rounds.py, _assistant_llm_tools_and_budget.py, assistant_turns.py"
+      migration: "20261122_267_story_26_7_reflexive_execution_profile.py"
     notes: "Story 26.6b (Lot 5.2, AD-25 Rule 5; runtime E2E promotion in Story 26.10 E2E spec 22 per D9): Dynamic per-turn authorized tool catalog removing single-tool stub and 10-item cap; sequential PermissionBrokerService passthrough/READ_SOURCE -> Lock V5 & deterministic Human-Anchor guard with HumanArbitrationRequested outbox -> Redis idem:{ws}:{user}:{turn_id}:{iter}:{call_id} -> timeout-capped sandbox -> scrub_connector_secrets + <untrusted_tool_output> + immutable audit_ledger; ExecutionProfile='ASSISTANT' makes ConnectorReflexiveWriteGateAdapter unreachable."

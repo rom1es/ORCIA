@@ -54,7 +54,7 @@ class SqlAssistantFoldersRepository:
             ws_uuid = await resolve_workspace_uuid(conn, folder.workspace_id, required=True)
             assert ws_uuid is not None
             owner_uuid = await resolve_user_uuid(
-                conn, user_id=folder.owner_user_id, email=user.email
+                conn, user_id=folder.owner_user_id, email=user.email, user=user
             )
             row = (
                 (

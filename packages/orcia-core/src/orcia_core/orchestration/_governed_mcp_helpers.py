@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
+from typing import Any
+
 from uuid_utils.compat import uuid7
 
 from orcia_core.orchestration.errors import (
@@ -133,3 +136,39 @@ def validate_and_invoke_assistant_read_only(
         prompt_text=prompt_text,
         requested_write_target_uri=None,
     )
+
+
+def verify_mcp_pat_token_sync(
+    *, pat_tokens: dict[str, set[str]], raw_pat_token: str, workspace_slug: str
+) -> None:
+    """Verify MCP PAT prefix and in-memory workspace scope authorization."""
+    if not raw_pat_token.startswith("pat_mcp_"):
+        raise ScopeAccessDeniedError(detail_override="Invalid MCP token prefix.")
+    token_hash = hashlib.sha256(raw_pat_token.encode("utf-8")).hexdigest()
+    allowed_ws = pat_tokens.get(token_hash)
+    if allowed_ws is None or workspace_slug not in allowed_ws:
+        raise ScopeAccessDeniedError(
+            detail_override=f"Token not authorized for workspace '{workspace_slug}'."
+        )
+
+
+async def verify_mcp_pat_token_async(
+    *,
+    repo: Any | None,
+    pat_tokens: dict[str, set[str]],
+    raw_pat_token: str,
+    workspace_slug: str,
+) -> None:
+    """Verify MCP PAT prefix and workspace scope authorization (`Lock 2`)."""
+    if not raw_pat_token.startswith("pat_mcp_"):
+        raise ScopeAccessDeniedError(detail_override="Invalid MCP token prefix.")
+    token_hash = hashlib.sha256(raw_pat_token.encode("utf-8")).hexdigest()
+    allowed_ws = (
+        await repo.get_pat_allowed_workspaces(token_hash)
+        if repo is not None
+        else pat_tokens.get(token_hash)
+    )
+    if allowed_ws is None or workspace_slug not in allowed_ws:
+        raise ScopeAccessDeniedError(
+            detail_override=f"Token not authorized for workspace '{workspace_slug}'."
+        )

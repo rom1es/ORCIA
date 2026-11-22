@@ -140,7 +140,7 @@ async def test_story_26_5_real_context_history_acl_and_r6_latency_postgres18(
             # Phase A (0 embeddings -> 25.5 invariant): lexical PG18 RAG + Ontology + Blackboard
             t_start = time.perf_counter()
             r_t1 = await c1.post(
-                "/api/v1/assistant/three-speed/turn",
+                "/api/v1/assistant/turns",
                 headers=hdrs,
                 json={
                     "workspace_id": ws_a,
@@ -150,10 +150,20 @@ async def test_story_26_5_real_context_history_acl_and_r6_latency_postgres18(
                     "locale": "en",
                 },
             )
+            assert r_t1.status_code == 202, r_t1.text
+            t1_id = r_t1.json()["turn_id"]
+            async with c1.stream(
+                "GET", f"/api/v1/assistant/turns/{t1_id}/stream", headers=hdrs
+            ) as s_t1:
+                assert s_t1.status_code == 200
+                t1_lines = [ln async for ln in s_t1.aiter_lines() if ln.startswith("data:")]
             r6_turn_ms = round((time.perf_counter() - t_start) * 1000.0, 2)
-            assert r_t1.status_code == 200, r_t1.text
             assert r6_turn_ms < 2500.0
-            sys_prompt_1 = r_t1.json()["assembled_system_prompt"]
+            completed_events = [
+                json.loads(ln[5:].strip()) for ln in t1_lines if "assembled_system_prompt" in ln
+            ]
+            assert completed_events
+            sys_prompt_1 = str(completed_events[-1]["assembled_system_prompt"])
             assert "Event-Sourced Payment Ledger (PG18)" in sys_prompt_1
             assert "ax-ledger-append-only" in sys_prompt_1
             assert "Onboarding Badge" not in sys_prompt_1
@@ -234,7 +244,7 @@ async def test_story_26_5_real_context_history_acl_and_r6_latency_postgres18(
             with capture_logs() as cap_logs:
                 for idx in range(5):
                     r_warm = await c1.post(
-                        "/api/v1/assistant/three-speed/turn",
+                        "/api/v1/assistant/turns",
                         headers=hdrs,
                         json={
                             "workspace_id": ws_a,
@@ -244,7 +254,13 @@ async def test_story_26_5_real_context_history_acl_and_r6_latency_postgres18(
                             "locale": "en",
                         },
                     )
-                    assert r_warm.status_code == 200, r_warm.text
+                    assert r_warm.status_code == 202, r_warm.text
+                    w_id = r_warm.json()["turn_id"]
+                    async with c1.stream(
+                        "GET", f"/api/v1/assistant/turns/{w_id}/stream", headers=hdrs
+                    ) as w_sse:
+                        async for _ in w_sse.aiter_lines():
+                            pass
             for rec in cap_logs:
                 if rec.get("event") == "assistant_prompt_assembly_benchmarked":
                     warm_samples.append(dict(rec))

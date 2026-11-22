@@ -23,6 +23,12 @@ def _is_observer_request(request: Request, user: UserIdentity) -> bool:
     return hdr == "READ_ONLY_OBSERVER" or user.platform_role in ("OBSERVER", "BU_DIRECTOR")
 
 
+def require_not_observer_write(request: Request, user: UserIdentity) -> None:
+    """Reject read-only observers pre-lookup (`HTTP 403 ERR_OBSERVER_MODE_READ_ONLY`)."""
+    if _is_observer_request(request, user):
+        raise ObserverModeReadOnlyError(instance=str(request.url.path))
+
+
 def _user_leads_org_or_ancestors(evaluator: Any, user: UserIdentity, org_unit_id: str) -> bool:
     node = evaluator.get_org_unit(org_unit_id)
     if node is None:
@@ -240,6 +246,7 @@ __all__ = [
     "enforce_assistant_workspace_guard",
     "filter_allowed_source_uris_with_evaluator",
     "prepare_server_source_uri_authorizer",
+    "require_not_observer_write",
     "resolve_assistant_workspace_uuid",
     "resolve_server_allowed_source_uris",
 ]

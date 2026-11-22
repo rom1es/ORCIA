@@ -40,7 +40,7 @@ function AssistantInboxFeatureContent() {
     savedConversationsOpen, setSavedConversationsOpen, savedConversations,
     activeConversationId, activeConversation, promptTelemetryLog,
     governanceOpen, setGovernanceOpen, governanceFeedback, setGovernanceFeedback,
-    foldersController, inspector, reflexive, streaming,
+    foldersController, inspector, streaming,
     modelOptions, agentOptions, skillOptions, orciaDocuments, ragCitations, autocompleteSuggestions,
     selectActiveConversationAndPersist, selectActiveFolderAndPersist,
     handleFeedbackTurn, handleSendTurnWithReflexive, handleStopAll, handleDeleteConversation,
@@ -81,28 +81,19 @@ function AssistantInboxFeatureContent() {
     onInspectCitationUri: inspector.openInspectCitationUri,
   });
 
-  const handleSaveDraftAction = (content: string) => {
-    const excerpt = content.slice(0, 42).replace(/\s+/g, " ").trim();
-    setGovernanceFeedback(
-      isFr
-        ? `✅ Brouillon « ${excerpt || "Réponse"} » enregistré dans votre Espace.`
-        : `✅ Draft "${excerpt || "Reply"}" saved to your Workspace.`,
-    );
-  };
-
   const showActiveReflexiveSlot = Boolean(
-    reflexive.status &&
-      (reflexive.events.length > 0 || reflexive.pendingWritePreview) &&
+    streaming.activeTraceStatus &&
+      (streaming.traceEvents.length > 0 || streaming.pendingWritePreview) &&
       (streaming.isGenerating ||
-        reflexive.status !== "COMPLETED" ||
-        latestTurnInActiveConv?.reflexiveExecutionId !== reflexive.executionId),
+        streaming.activeTraceStatus !== "COMPLETED" ||
+        latestTurnInActiveConv?.reflexiveExecutionId !== streaming.activeTurnId),
   );
 
   const { activeReflexiveNode, previousTurnsNode } = buildInboxStreamSlots({
     showActiveReflexiveSlot,
-    reflexiveStatus: reflexive.status,
-    reflexiveEvents: reflexive.events,
-    pendingWritePreview: reflexive.pendingWritePreview,
+    reflexiveStatus: streaming.activeTraceStatus,
+    reflexiveEvents: streaming.traceEvents,
+    pendingWritePreview: streaming.pendingWritePreview,
     activeConversation,
     isFr,
     isGenerating: streaming.isGenerating,
@@ -110,11 +101,10 @@ function AssistantInboxFeatureContent() {
     traceLabels: dictionary.executionTrace,
     onInspectLines: inspector.openInspectTarget,
     onInspectCitationUri: inspector.openInspectCitationUri,
-    onSynthesizeNow: () => void reflexive.synthesizeNow(),
-    onApproveWrite: (id) => void reflexive.approveWrite(id),
-    onRejectWrite: (id) => void reflexive.rejectWrite(id),
+    onSynthesizeNow: () => void streaming.synthesizeNow(),
+    onApproveWrite: (id) => void streaming.approveProposal(id),
+    onRejectWrite: (id) => void streaming.rejectProposal(id),
     onSendTurn: handleSendTurnWithReflexive,
-    onSaveDraft: handleSaveDraftAction,
     onContinueInProcess: () => navigateToRoute("/processes"),
     onFeedbackTurn: handleFeedbackTurn,
   });
@@ -133,7 +123,6 @@ function AssistantInboxFeatureContent() {
         broker={broker}
         onNewConversation={() => {
           selectActiveConversationAndPersist(null);
-          reflexive.clearExecution();
           streaming.resetStreamState("");
         }}
         onToggleSavedConversations={() => setSavedConversationsOpen((prev) => !prev)}
@@ -213,7 +202,6 @@ function AssistantInboxFeatureContent() {
           disabledReasonBanner={disabledReasonBannerNode}
           onOpenFoldersFromPlus={() => setFoldersPanelOpen((prev) => !prev)}
           onStopGeneration={handleStopAll}
-          onSaveDraftFromResponse={handleSaveDraftAction}
           onContinueInProcessFromResponse={() => navigateToRoute("/processes")}
           onInspectCitation={(src) => inspector.openInspectCitationUri(src.uri, src.title)}
           onSendTurn={(payload) => {
@@ -252,7 +240,6 @@ function AssistantInboxFeatureContent() {
                 : `💬 Message added to thread: ${message}`,
             ),
           onNavigateToProcesses: () => navigateToRoute("/processes"),
-          onSaveDraftAction: handleSaveDraftAction,
           citationCardPreview,
         }}
       />

@@ -62,9 +62,10 @@ async def stream_assistant_turn_events(
                 instance=instance,
                 locale=locale,
             )
-            err_cursor = await registry.append_event(
+            err_cursor, err_seq = await registry.append_event_with_seq(
                 turn_id, event="stream_error", data=err_payload, ttl_seconds=1800
             )
+            err_payload["seq"] = err_seq
             updated = replace(
                 rec,
                 status="ERROR",

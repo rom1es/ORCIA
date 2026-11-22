@@ -231,7 +231,8 @@ async def test_story_22_3_folders_notifications_leases_and_broker_pg18(
 
             r_inbox2 = await client2.get(
                 "/api/v1/inbox/notifications",
-                params={"workspace_id": ws_id, "persona_key": "marc"},
+                headers={"Authorization": f"Bearer {admin_token}"},
+                params={"workspace_id": ws_id},
             )
             assert r_inbox2.status_code == 200, r_inbox2.text
             claimed_item = next((i for i in r_inbox2.json()["items"] if i["id"] == notif.id), None)

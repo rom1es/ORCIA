@@ -1,14 +1,16 @@
-import { sanitizeAssistantDisplayReply } from "@orcia/ui";
-import type {
-  UiAssistantAttachedFileItem,
-  UiAssistantFolderItem,
-  UiAssistantSpeedMode,
-  UiInferenceEffort,
-  UiInferenceTier,
+import {
+  sanitizeAssistantDisplayReply,
+  type UiAgentTraceEventItem,
+  type UiAssistantAttachedFileItem,
+  type UiAssistantFolderItem,
+  type UiAssistantSpeedMode,
+  type UiFileBadgeCode,
+  type UiInferenceEffort,
+  type UiInferenceTier,
 } from "@orcia/ui";
 import type { SavedAssistantGovernancePrefs } from "./assistantFoldersAndPrefsStore";
 
-export function buildThreeSpeedTurnRequestPayload(params: {
+export function buildAssistantTurnRequestPayload(params: {
   readonly workspaceIdValue: string;
   readonly activeHat: string;
   readonly userPrompt: string;
@@ -20,6 +22,7 @@ export function buildThreeSpeedTurnRequestPayload(params: {
   readonly historyPayload: Array<{ role: "user" | "assistant"; content: string }>;
   readonly activeFolder?: UiAssistantFolderItem | null;
   readonly governancePrefs?: SavedAssistantGovernancePrefs;
+  readonly parentTurnId?: string;
   readonly isFr: boolean;
 }) {
   const {
@@ -34,6 +37,7 @@ export function buildThreeSpeedTurnRequestPayload(params: {
     historyPayload,
     activeFolder,
     governancePrefs,
+    parentTurnId,
     isFr,
   } = params;
   const attachmentHeader = isFr
@@ -62,6 +66,7 @@ export function buildThreeSpeedTurnRequestPayload(params: {
       | "balanced"
       | "deep",
     conversation_history: historyPayload,
+    ...(parentTurnId ? { parent_turn_id: parentTurnId } : {}),
     ...(activeFolder?.folderId ? { folder_id: activeFolder.folderId } : {}),
     ...(pinnedNotes ? { folder_pinned_notes: pinnedNotes } : {}),
     ...(governancePrefs?.responseTone ? { response_tone: governancePrefs.responseTone } : {}),
@@ -76,16 +81,86 @@ export function buildThreeSpeedTurnRequestPayload(params: {
   };
 }
 
+export function inferBadgeCodeFromUri(uri: string): UiFileBadgeCode {
+  const lower = uri.toLowerCase();
+  if (lower.endsWith(".py")) return "PY";
+  if (lower.endsWith(".ts") || lower.endsWith(".tsx")) return "TS";
+  if (lower.endsWith(".yaml") || lower.endsWith(".yml")) return "YML";
+  if (lower.endsWith(".json")) return "JSON";
+  return "MD";
+}
+
+export function buildTraceEventFromToolSse(params: {
+  readonly eventName: "tool_call" | "tool_result";
+  readonly data: Readonly<Record<string, unknown>>;
+  readonly nextSeq: number;
+  readonly isFr: boolean;
+}): readonly UiAgentTraceEventItem[] {
+  const { eventName, data, nextSeq, isFr } = params;
+  const toolName = String(data.tool_name ?? "tool");
+  const args = (data.sanitized_args ?? {}) as Readonly<Record<string, unknown>>;
+  const uri = String(
+    data.uri ??
+      args.uri ??
+      args.resource_uri ??
+      (Array.isArray(data.evidence_refs) ? data.evidence_refs[0] ?? "" : ""),
+  );
+  const startLine = Number(data.start_line ?? args.start_line ?? 1) || 1;
+  const endLine = Number(data.end_line ?? args.end_line ?? 25) || 25;
+  const isFileRead = Boolean(uri) || /read|inspect|line|file/i.test(toolName);
+  const items: UiAgentTraceEventItem[] = [];
+  if (nextSeq <= 1) {
+    items.push({
+      eventId: `evt-grp-${nextSeq}`,
+      sequence: nextSeq,
+      kind: "GROUP_HEADER",
+      label: isFr ? "Exploration et preuves" : "Exploration & evidence",
+      actorSlug: "assistant",
+      groupKey: "assistant-turn",
+    });
+  }
+  const seq = nextSeq + items.length;
+  items.push({
+    eventId: `evt-${eventName}-${seq}`,
+    sequence: seq,
+    kind: eventName === "tool_result" && isFileRead ? "FILE_ANALYZED" : "CHECK_EXECUTED",
+    label:
+      eventName === "tool_call"
+        ? isFr
+          ? `Appel outil : ${toolName}`
+          : `Calling tool: ${toolName}`
+        : isFr
+          ? `Résultat : ${toolName}`
+          : `Result: ${toolName}`,
+    actorSlug: "assistant",
+    groupKey: "assistant-turn",
+    ...(uri
+      ? {
+          resourceUri: uri,
+          displayFilename: uri.split("/").pop() || uri,
+          fileBadgeCode: inferBadgeCodeFromUri(uri),
+          startLine,
+          endLine,
+          redacted: String(data.status ?? "") === "DENIED",
+        }
+      : {}),
+  });
+  return items;
+}
+
 export async function pollActiveAssistantTurnUntilDone(params: {
   readonly signal: AbortSignal;
   readonly isCompletedHandled: () => boolean;
-  readonly fetchStatus: () => Promise<{
-    turn_id?: string | null;
-    status?: string;
-    thinking_text?: string | null;
-    streamed_text?: string | null;
-    assembled_system_prompt?: string | null;
-    elapsed_ms?: number | null;
+  readonly getTargetTurnId: () => string | null;
+  readonly fetchActiveTurns: () => Promise<{
+    turns?: Array<{
+      turn_id?: string | null;
+      status?: string;
+      thinking_text?: string | null;
+      streamed_text?: string | null;
+      assembled_system_prompt?: string | null;
+      elapsed_ms?: number | null;
+    }>;
   }>;
   readonly onThinking: (thinking: string) => void;
   readonly onStreamedText: (reply: string) => void;
@@ -101,7 +176,12 @@ export async function pollActiveAssistantTurnUntilDone(params: {
   for (let attempt = 0; attempt < 150; attempt += 1) {
     if (params.signal.aborted || params.isCompletedHandled()) return;
     try {
-      const snap = await params.fetchStatus();
+      const list = await params.fetchActiveTurns();
+      const turns = list.turns ?? [];
+      const targetId = params.getTargetTurnId();
+      const snap =
+        (targetId ? turns.find((t) => t.turn_id === targetId) : undefined) ?? turns[0];
+      if (!snap) break;
       if (snap.thinking_text) params.onThinking(snap.thinking_text);
       if (snap.streamed_text) {
         params.onStreamedText(sanitizeAssistantDisplayReply(snap.streamed_text));

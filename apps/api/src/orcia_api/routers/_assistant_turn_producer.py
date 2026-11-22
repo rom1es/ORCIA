@@ -6,11 +6,14 @@ import asyncio
 import contextlib
 import time
 from collections.abc import Callable
-from dataclasses import replace
 from typing import Any
 
 import httpx
 
+from orcia_api.routers._assistant_turn_finalizer import (
+    emit_fallback_response_events_async,
+    finalize_and_emit_turn_completion_async,
+)
 from orcia_api.routers._assistant_turn_producer_helpers import (
     emit_stream_error_and_outbox,
     flush_turn_telemetry_and_finops,
@@ -19,20 +22,19 @@ from orcia_api.routers._assistant_turn_producer_helpers import (
     watch_liveness_and_stop,
 )
 from orcia_api.routers._assistant_turn_producer_tool_loop import run_streaming_tool_loop
-from orcia_api.routers._assistant_usage_telemetry import resolve_usage_with_fallback
 from orcia_core.observability.logging import get_logger, scrub_sensitive_text
+from orcia_core.orchestration.assistant_citations_models import EvidenceTable
+from orcia_core.orchestration.assistant_turn_engine import AssistantTurnEngine
 from orcia_core.orchestration.llm_streaming_httpx import HttpxMultiProviderLlmStreamingAdapter
 from orcia_core.orchestration.redis_rate_limiter import RedisAssistantRateLimiter
+from orcia_core.orchestration.redis_thread_lock import RedisThreadTurnLock
 from orcia_core.orchestration.redis_turn_registry import RedisAssistantTurnRegistry
 from orcia_core.ports.assistant_tool_executor_port import (
     AssistantToolExecutorPort,
     AuthorizedToolDescriptor,
 )
 from orcia_core.ports.assistant_turn_stream_port import AssistantTurnRecord
-from orcia_core.ports.llm_streaming_port import (
-    LlmEndpointConfig,
-    LlmStreamingPort,
-)
+from orcia_core.ports.llm_streaming_port import LlmEndpointConfig, LlmStreamingPort
 
 logger = get_logger("orcia.assistant.llm")
 
@@ -65,31 +67,52 @@ async def execute_turn_producer_task(
     tool_catalog: tuple[AuthorizedToolDescriptor, ...] = (),
     user_identity: Any | None = None,
     active_hat: str = "ARCHITECT",
+    turn_engine: AssistantTurnEngine | None = None,
+    base_evidence_table: EvidenceTable | None = None,
+    thread_lock: RedisThreadTurnLock | None = None,
 ) -> None:
     """Execute background LLM turn, push events to Redis Stream, and flush FinOps in `finally`."""
     record = initial_record
     turn_id = record.turn_id
     current_task = asyncio.current_task()
-    assert current_task is not None
-    watcher = asyncio.create_task(
-        watch_liveness_and_stop(
-            registry, turn_id=turn_id, liveness_ttl_s=liveness_ttl_s, producer_task=current_task
+    watcher = (
+        asyncio.create_task(
+            watch_liveness_and_stop(
+                registry, turn_id=turn_id, liveness_ttl_s=liveness_ttl_s, producer_task=current_task
+            )
         )
+        if current_task is not None
+        else None
     )
     obs_in, obs_out, saw_usage, obs_lat = 0, 0, False, 0.0
     streamed_text, thinking_text, emitted_tokens = "", "", False
-    flushed = False
+    flushed, lock_released = False, False
     model_label = ep.model_name if ep is not None else "Polyvalent"
 
-    async def _flush_once(rec: AssistantTurnRecord) -> None:
+    async def _release_lock_once() -> None:
+        nonlocal lock_released
+        if (
+            lock_released
+            or thread_lock is None
+            or not record.thread_id
+            or not record.thread_lock_token
+        ):
+            return
+        lock_released = True
+        await thread_lock.release_async(
+            thread_id=record.thread_id, user_id=record.user_id, token=record.thread_lock_token
+        )
+
+    async def _flush_once(rec: AssistantTurnRecord, reply_override: str | None = None) -> None:
         nonlocal flushed
         if flushed:
             return
         flushed = True
+        final_reply = reply_override if reply_override is not None else streamed_text
         await flush_turn_telemetry_and_finops(
             record=rec,
             t0=t0,
-            streamed_text=streamed_text,
+            streamed_text=final_reply,
             thinking_text=thinking_text,
             obs_in=obs_in,
             obs_out=obs_out,
@@ -104,14 +127,25 @@ async def execute_turn_producer_task(
             outbox_emitter=outbox_emitter,
             thread_messages_repo=thread_messages_repo,
         )
+        await _release_lock_once()
 
     try:
+        if turn_engine is not None:
+            await turn_engine.start_assistant_reflexive_session_async(
+                turn_id=turn_id,
+                workspace_id=record.workspace_id,
+                user_id=record.user_id,
+                user_prompt=record.user_prompt,
+                speed_mode=record.speed_mode,  # type: ignore[arg-type]
+                locale=locale,
+            )
         active_port = llm_port
         use_streaming_port = ep is not None or (
             active_port is not None
             and getattr(active_port, "is_cassette_adapter", False)
             and not fallback_response_text
         )
+        stream_ep: LlmEndpointConfig | None = ep
         if use_streaming_port:
             stream_ep = ep or LlmEndpointConfig(
                 provider="cassette",
@@ -139,9 +173,11 @@ async def execute_turn_producer_task(
                 t0=t0,
                 user_identity=user_identity,
                 active_hat=active_hat,
+                turn_engine=turn_engine,
             )
             if "stream_error" in loop_out:
                 err_data = loop_out["stream_error"]
+                await _release_lock_once()
                 await emit_stream_error_and_outbox(
                     registry=registry,
                     record=record,
@@ -164,100 +200,59 @@ async def execute_turn_producer_task(
             saw_usage = bool(loop_out["saw_usage"])
             obs_lat = float(loop_out["obs_lat"])
             pending_completed_data = loop_out["pending_completed_data"]
-            if emitted_tokens or bool(loop_out.get("has_approval_required")):
-                record = replace(
-                    record,
-                    status="COMPLETED",
+            if not emitted_tokens and not bool(loop_out.get("has_approval_required")):
+                await _release_lock_once()
+                await emit_stream_error_and_outbox(
+                    registry=registry,
+                    record=record,
+                    t0=t0,
+                    error_code="ERR_INTERNAL_SERVER_ERROR",
+                    status=502,
+                    detail_override=(
+                        f"AI model {stream_ep.model_name} ({stream_ep.endpoint_uri}) "
+                        "returned zero tokens. Verify provider availability."
+                    ),
                     thinking_text=thinking_text,
                     streamed_text=streamed_text,
-                    elapsed_ms=round((time.perf_counter() - t0) * 1000.0, 2),
+                    instance=instance,
+                    locale=locale,
+                    outbox_emitter=outbox_emitter,
                 )
-                await _flush_once(record)
-                await registry.set_stream_ttl(turn_id, ttl_seconds=1800)
-                if pending_completed_data is not None:
-                    await registry.append_event(
-                        turn_id,
-                        event="turn_completed",
-                        data=pending_completed_data,
-                        ttl_seconds=1800,
-                    )
-                await registry.update_turn(record)
                 return
-            await emit_stream_error_and_outbox(
+            tool_outputs = loop_out.get("tool_outputs") or ()
+        else:
+            stream_ep = ep
+            thinking_text = default_thinking
+            streamed_text, emitted_tokens = await emit_fallback_response_events_async(
                 registry=registry,
                 record=record,
+                default_thinking=default_thinking,
+                fallback_response_text=fallback_response_text,
                 t0=t0,
-                error_code="ERR_INTERNAL_SERVER_ERROR",
-                status=502,
-                detail_override=(
-                    f"AI model {stream_ep.model_name} ({stream_ep.endpoint_uri}) "
-                    "returned zero tokens. Verify provider availability."
-                ),
-                thinking_text=thinking_text,
-                streamed_text=streamed_text,
-                instance=instance,
-                locale=locale,
-                outbox_emitter=outbox_emitter,
             )
-            return
+            obs_lat = round((time.perf_counter() - t0) * 1000.0, 2)
+            tool_outputs, pending_completed_data = (), None
 
-        thinking_text = default_thinking
-        await registry.append_event(
-            turn_id,
-            event="thinking_delta",
-            data={
-                "step_code": "NODE_5_SINGLE_STREAM_LLM",
-                "thinking_text": default_thinking,
-                "elapsed_ms": round((time.perf_counter() - t0) * 1000.0, 2),
-                "trace_id": record.trace_id,
-            },
-        )
-        full_text = fallback_response_text or ""
-        acc: list[str] = []
-        for chunk in full_text.splitlines(keepends=True) or ([full_text] if full_text else []):
-            acc.append(chunk)
-            streamed_text = "".join(acc)
-            emitted_tokens = True
-            await registry.append_event(
-                turn_id,
-                event="token_delta",
-                data={
-                    "delta": chunk,
-                    "accumulated_text": streamed_text,
-                    "trace_id": record.trace_id,
-                },
-            )
-        fb_in, fb_out, fb_src = resolve_usage_with_fallback(
-            prompt_text=f"{record.assembled_system_prompt}\n{record.user_prompt}",
-            reply_text=f"{full_text}\n{default_thinking}",
-        )
-        obs_in, obs_out, saw_usage = fb_in, fb_out, fb_src == "provider"
-        obs_lat = round((time.perf_counter() - t0) * 1000.0, 2)
-        record = replace(
-            record,
-            status="COMPLETED",
+        record = await finalize_and_emit_turn_completion_async(
+            turn_engine=turn_engine,
+            base_evidence_table=base_evidence_table,
+            tool_outputs=tool_outputs,
+            pending_completed_data=pending_completed_data,
+            record=record,
+            stream_ep=stream_ep,
             thinking_text=thinking_text,
             streamed_text=streamed_text,
-            elapsed_ms=obs_lat,
+            obs_in=obs_in,
+            obs_out=obs_out,
+            saw_usage=saw_usage,
+            obs_lat=obs_lat,
+            t0=t0,
+            user_email=user_email,
+            user_display_name=user_display_name,
+            registry=registry,
+            flush_before_emit=_flush_once,
         )
-        await _flush_once(record)
-        await registry.set_stream_ttl(turn_id, ttl_seconds=1800)
-        await registry.append_event(
-            turn_id,
-            event="turn_completed",
-            data={
-                "turn_id": turn_id,
-                "response_text": full_text,
-                "thinking_text": default_thinking,
-                "assembled_system_prompt": record.assembled_system_prompt,
-                "latency_ms": obs_lat,
-                "input_tokens": fb_in,
-                "output_tokens": fb_out,
-                "usage_source": fb_src,
-                "trace_id": record.trace_id,
-            },
-        )
-        await registry.update_turn(record)
+        streamed_text = record.streamed_text
     except asyncio.CancelledError:
         record = await handle_turn_cancelled(
             registry=registry,
@@ -270,6 +265,7 @@ async def execute_turn_producer_task(
             saw_usage=saw_usage,
             outbox_emitter=outbox_emitter,
             flush_before_emit=_flush_once,
+            turn_engine=turn_engine,
         )
     except Exception as exc:
         logger.warning(
@@ -288,13 +284,16 @@ async def execute_turn_producer_task(
             instance=instance,
             locale=locale,
             outbox_emitter=outbox_emitter,
+            turn_engine=turn_engine,
         )
     finally:
-        watcher.cancel()
-        with contextlib.suppress(asyncio.CancelledError, Exception):
-            await watcher
+        if watcher is not None:
+            watcher.cancel()
+            with contextlib.suppress(asyncio.CancelledError, Exception):
+                await watcher
         if not flushed and (record.status in ("COMPLETED", "STOPPED") or emitted_tokens):
             await _flush_once(record)
         await registry.clear_liveness(turn_id)
         await registry.set_stream_ttl(turn_id, ttl_seconds=1800)
         await rate_limiter.release_concurrency_slot(record.user_id, lease_token)
+        await _release_lock_once()

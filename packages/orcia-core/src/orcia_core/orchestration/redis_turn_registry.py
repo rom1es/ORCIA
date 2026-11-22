@@ -6,7 +6,7 @@ import asyncio
 import json
 import time
 from datetime import UTC, datetime
-from typing import Any, cast
+from typing import Any
 
 from orcia_core.orchestration._redis_turn_helpers import (
     build_rfc9457_stream_error_payload as build_rfc9457_stream_error_payload,
@@ -14,6 +14,7 @@ from orcia_core.orchestration._redis_turn_helpers import (
 from orcia_core.orchestration._redis_turn_helpers import (
     cursor_gt,
     decode_redis_val,
+    parse_redis_stream_entries,
     record_from_json,
     record_to_json,
 )
@@ -47,6 +48,7 @@ class RedisAssistantTurnRegistry(AssistantTurnRegistryPort, AssistantTurnStreamP
         self._local_idx: dict[tuple[str, str], list[str]] = {}
         self._local_live: dict[str, float] = {}
         self._local_stops: dict[str, str] = {}
+        self._local_synth: set[str] = set()
         self._local_streams: dict[str, list[AssistantTurnStreamEvent]] = {}
         self._local_seq: dict[str, int] = {}
         self._local_conds: dict[str, asyncio.Condition] = {}
@@ -56,28 +58,17 @@ class RedisAssistantTurnRegistry(AssistantTurnRegistryPort, AssistantTurnStreamP
         self._redis = redis_client
 
     @staticmethod
-    def _turn_key(turn_id: str) -> str:
-        return f"orcia:assistant:turn:{turn_id}"
+    def _tkey(kind: str, turn_id: str) -> str:
+        prefix = f"{kind}:" if kind else ""
+        return f"orcia:assistant:turn:{prefix}{turn_id}"
 
     @staticmethod
     def _idx_key(workspace_id: str, user_id: str) -> str:
         return f"orcia:assistant:turns:idx:{workspace_id}:{user_id}"
 
     @staticmethod
-    def _live_key(turn_id: str) -> str:
-        return f"orcia:assistant:turn:live:{turn_id}"
-
-    @staticmethod
-    def _stop_key(turn_id: str) -> str:
-        return f"orcia:assistant:turn:stop:{turn_id}"
-
-    @staticmethod
     def stop_channel(turn_id: str) -> str:
         return f"orcia:assistant:turn:stop_chan:{turn_id}"
-
-    @staticmethod
-    def _stream_key(turn_id: str) -> str:
-        return f"orcia:assistant:turn:stream:{turn_id}"
 
     async def register_turn(self, record: AssistantTurnRecord, *, ttl_seconds: int = 3600) -> None:
         ttl = ttl_seconds or self._turn_ttl_seconds
@@ -88,7 +79,7 @@ class RedisAssistantTurnRegistry(AssistantTurnRegistryPort, AssistantTurnStreamP
                 bucket.insert(0, record.turn_id)
             return
         idx_k = self._idx_key(record.workspace_id, record.user_id)
-        await self._redis.set(self._turn_key(record.turn_id), record_to_json(record), ex=ttl)
+        await self._redis.set(self._tkey("", record.turn_id), record_to_json(record), ex=ttl)
         await self._redis.zadd(
             idx_k, {record.turn_id: record.started_at_ms or time.time() * 1000.0}
         )
@@ -103,7 +94,7 @@ class RedisAssistantTurnRegistry(AssistantTurnRegistryPort, AssistantTurnStreamP
         if self._redis is None:
             self._local_turns[record.turn_id] = record
             return
-        await self._redis.set(self._turn_key(record.turn_id), record_to_json(record), ex=ttl)
+        await self._redis.set(self._tkey("", record.turn_id), record_to_json(record), ex=ttl)
 
     async def get_turn(
         self, workspace_id: str, user_id: str, turn_id: str
@@ -116,7 +107,7 @@ class RedisAssistantTurnRegistry(AssistantTurnRegistryPort, AssistantTurnStreamP
     async def get_turn_by_id(self, turn_id: str) -> AssistantTurnRecord | None:
         if self._redis is None:
             return self._local_turns.get(turn_id)
-        return record_from_json(await self._redis.get(self._turn_key(turn_id)))
+        return record_from_json(await self._redis.get(self._tkey("", turn_id)))
 
     async def list_active_turns(
         self, workspace_id: str, user_id: str
@@ -148,19 +139,19 @@ class RedisAssistantTurnRegistry(AssistantTurnRegistryPort, AssistantTurnStreamP
         if self._redis is None:
             self._local_live[turn_id] = time.monotonic() + eff_ttl
             return
-        await self._redis.set(self._live_key(turn_id), "1", ex=eff_ttl)
+        await self._redis.set(self._tkey("live", turn_id), "1", ex=eff_ttl)
 
     async def is_live(self, turn_id: str) -> bool:
         if self._redis is None:
             exp = self._local_live.get(turn_id)
             return exp is not None and exp > time.monotonic()
-        return bool(await self._redis.exists(self._live_key(turn_id)))
+        return bool(await self._redis.exists(self._tkey("live", turn_id)))
 
     async def clear_liveness(self, turn_id: str) -> None:
         if self._redis is None:
             self._local_live.pop(turn_id, None)
             return
-        await self._redis.delete(self._live_key(turn_id))
+        await self._redis.delete(self._tkey("live", turn_id))
 
     async def request_stop(
         self, turn_id: str, *, stopped_by_user_id: str, ttl_seconds: int = 300
@@ -172,14 +163,25 @@ class RedisAssistantTurnRegistry(AssistantTurnRegistryPort, AssistantTurnStreamP
                 async with cond:
                     cond.notify_all()
             return
-        await self._redis.set(self._stop_key(turn_id), stopped_by_user_id, ex=ttl_seconds)
+        await self._redis.set(self._tkey("stop", turn_id), stopped_by_user_id, ex=ttl_seconds)
         await self._redis.publish(self.stop_channel(turn_id), stopped_by_user_id)
 
     async def is_stop_requested(self, turn_id: str) -> str | None:
         if self._redis is None:
             return self._local_stops.get(turn_id)
-        raw = await self._redis.get(self._stop_key(turn_id))
+        raw = await self._redis.get(self._tkey("stop", turn_id))
         return decode_redis_val(raw) if raw is not None else None
+
+    async def request_synthesize_now(self, turn_id: str, *, ttl_seconds: int = 300) -> None:
+        if self._redis is None:
+            self._local_synth.add(turn_id)
+            return
+        await self._redis.set(self._tkey("synth", turn_id), "1", ex=ttl_seconds)
+
+    async def is_synthesize_now_requested(self, turn_id: str) -> bool:
+        if self._redis is None:
+            return turn_id in self._local_synth
+        return bool(await self._redis.exists(self._tkey("synth", turn_id)))
 
     async def append_event(
         self,
@@ -190,11 +192,32 @@ class RedisAssistantTurnRegistry(AssistantTurnRegistryPort, AssistantTurnStreamP
         maxlen: int = 1000,
         ttl_seconds: int | None = None,
     ) -> str:
-        seq = self._local_seq.get(turn_id, 0) + 1
-        self._local_seq[turn_id] = seq
+        cursor, _ = await self.append_event_with_seq(
+            turn_id, event=event, data=data, maxlen=maxlen, ttl_seconds=ttl_seconds
+        )
+        return cursor
+
+    async def append_event_with_seq(
+        self,
+        turn_id: str,
+        *,
+        event: str,
+        data: dict[str, Any],
+        maxlen: int = 1000,
+        ttl_seconds: int | None = None,
+    ) -> tuple[str, int]:
+        if self._redis is None:
+            seq = self._local_seq.get(turn_id, 0) + 1
+            self._local_seq[turn_id] = seq
+        else:
+            seq_k = self._tkey("seq", turn_id)
+            seq = int(await self._redis.incr(seq_k))
+            await self._redis.expire(seq_k, max(ttl_seconds or self._turn_ttl_seconds, 1800))
         payload_data = dict(data)
         payload_data.setdefault("turn_id", turn_id)
-        payload_data.setdefault("seq", seq)
+        if int(payload_data.get("seq") or 0) <= 0:
+            payload_data["seq"] = seq
+        assigned_seq = int(payload_data["seq"])
         payload_data.setdefault("timestamp", datetime.now(UTC).isoformat())
         encoded = json.dumps({"seq": seq, "event": event, "data": payload_data}, ensure_ascii=False)
         eff_maxlen = maxlen or self._stream_maxlen
@@ -208,15 +231,15 @@ class RedisAssistantTurnRegistry(AssistantTurnRegistryPort, AssistantTurnStreamP
             cond = self._local_conds.setdefault(turn_id, asyncio.Condition())
             async with cond:
                 cond.notify_all()
-            return cursor
+            return cursor, assigned_seq
 
-        s_key = self._stream_key(turn_id)
+        s_key = self._tkey("stream", turn_id)
         raw_id = await self._redis.xadd(
             s_key, {"payload": encoded}, maxlen=eff_maxlen, approximate=True
         )
         if ttl_seconds is not None:
             await self._redis.expire(s_key, ttl_seconds)
-        return decode_redis_val(raw_id)
+        return decode_redis_val(raw_id), assigned_seq
 
     async def read_events(
         self,
@@ -241,33 +264,15 @@ class RedisAssistantTurnRegistry(AssistantTurnRegistryPort, AssistantTurnStreamP
                 filtered = [e for e in events if cursor_gt(e.cursor, cursor)]
             return tuple(filtered[:count])
 
-        s_key = self._stream_key(turn_id)
+        s_key = self._tkey("stream", turn_id)
         resp = await self._redis.xread(
             {s_key: cursor}, count=count, block=block_ms if block_ms > 0 else None
         )
-        parsed: list[AssistantTurnStreamEvent] = []
-        for _stream_name, entries in resp or ():
-            for msg_id, fields in entries:
-                cur_id = decode_redis_val(msg_id)
-                raw_payload = fields.get("payload") if isinstance(fields, dict) else None
-                if raw_payload is None and isinstance(fields, dict):
-                    raw_payload = fields.get(b"payload")
-                if raw_payload is None:
-                    continue
-                obj = cast(dict[str, Any], json.loads(decode_redis_val(raw_payload)))
-                parsed.append(
-                    AssistantTurnStreamEvent(
-                        cursor=cur_id,
-                        seq=int(obj.get("seq") or 0),
-                        event=str(obj.get("event") or "token_delta"),
-                        data=dict(obj.get("data") or {}),
-                    )
-                )
-        return tuple(parsed)
+        return parse_redis_stream_entries(resp)
 
     async def set_stream_ttl(self, turn_id: str, ttl_seconds: int = 1800) -> None:
         if self._redis is not None:
-            await self._redis.expire(self._stream_key(turn_id), ttl_seconds)
+            await self._redis.expire(self._tkey("stream", turn_id), ttl_seconds)
 
 
 __all__ = [

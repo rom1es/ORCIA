@@ -95,7 +95,7 @@ class SqlAssistantFeedbackRepository:
         async with self._engine.begin() as conn:
             ws_uuid = await resolve_workspace_uuid(conn, workspace_id, required=True)
             assert ws_uuid is not None
-            user_uuid = await resolve_user_uuid(conn, user_id=user.id, email=user.email)
+            user_uuid = await resolve_user_uuid(conn, user_id=user.id, email=user.email, user=user)
             row = (
                 (
                     await conn.execute(

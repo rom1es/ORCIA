@@ -216,7 +216,7 @@ describe("Story 23.2 — Authenticated SSE hooks & 401 vs AI unavailable UX bann
         title: "Authentification requise",
         status,
         detail: `HTTP ${status} Unauthorized`,
-        instance: "/api/v1/assistant/three-speed/stream",
+        instance: "/api/v1/assistant/turns",
         error_code: status === 401 ? "ERR_AUTH_REQUIRED" : "ERR_FORBIDDEN_SCOPE",
         trace_id: "0195f000000070008000000000000001",
       });
@@ -241,7 +241,7 @@ describe("Story 23.2 — Authenticated SSE hooks & 401 vs AI unavailable UX bann
         title: "Service IA indisponible",
         status,
         detail: "Fournisseur LLM injoignable",
-        instance: "/api/v1/assistant/three-speed/stream",
+        instance: "/api/v1/assistant/turns",
         error_code: "ERR_AI_UNAVAILABLE",
         trace_id: "0195f000000070008000000000000002",
       });
@@ -265,12 +265,12 @@ describe("Story 23.2 — Authenticated SSE hooks & 401 vs AI unavailable UX bann
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const rawUrl = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
       const pathname = new URL(rawUrl, "http://127.0.0.1:8000").pathname;
-      if (pathname === "/api/v1/assistant/three-speed/stream") {
+      if (pathname === "/api/v1/assistant/turns") {
         return makeProblemDetailsResponse(
           401,
           "ERR_AUTH_REQUIRED",
           "Jeton expiré",
-          "/api/v1/assistant/three-speed/stream",
+          "/api/v1/assistant/turns",
         );
       }
       if (pathname === "/api/v1/auth/refresh") {
@@ -323,17 +323,17 @@ describe("Story 23.2 — Authenticated SSE hooks & 401 vs AI unavailable UX bann
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const rawUrl = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
       const pathname = new URL(rawUrl, "http://127.0.0.1:8000").pathname;
-      if (pathname === "/api/v1/assistant/three-speed/stream") {
+      if (pathname === "/api/v1/assistant/turns") {
         return makeProblemDetailsResponse(
           503,
           "ERR_AI_UNAVAILABLE",
           "Service LLM temporairement arrêté",
-          "/api/v1/assistant/three-speed/stream",
+          "/api/v1/assistant/turns",
         );
       }
-      if (pathname === "/api/v1/assistant/three-speed/active-turn") {
+      if (pathname === "/api/v1/assistant/turns/active") {
         return new Response(
-          JSON.stringify({ status: "IDLE", streamed_text: "", thinking_text: "" }),
+          JSON.stringify({ workspace_id: "ws-23-2", turns: [] }),
           { status: 200, headers: { "Content-Type": "application/json" } },
         );
       }

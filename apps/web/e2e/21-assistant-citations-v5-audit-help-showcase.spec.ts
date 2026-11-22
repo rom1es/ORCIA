@@ -47,90 +47,65 @@ test.describe("Assistant conversationnel, citations déterministes, centre d'aid
     await promptInput.fill("@assistant Analyse les capacités et cite les sources vérifiées.");
     const [turnRes] = await Promise.all([
       page.waitForResponse(
-        (r) => r.url().includes("/api/v1/assistant/three-speed/") && r.request().method() === "POST",
+        (r) => r.url().endsWith("/api/v1/assistant/turns") && r.request().method() === "POST",
         { timeout: 30000 },
       ),
       page.getByTestId("assistant-three-speed-send-btn").click(),
     ]);
-    expect(turnRes.status()).toBeLessThan(400);
+    expect(turnRes.status()).toBe(202);
+    const acceptedTurn = (await turnRes.json()) as { turn_id: string };
+    expect(acceptedTurn.turn_id).toBeTruthy();
     await expect(page.getByTestId("assistant-streamed-response-box").first()).not.toBeEmpty({
       timeout: 30000,
     });
 
-    const verifyRes = await apiPost<{
-      sanitized_text: string;
-      valid_tags: string[];
-      stripped_phantom_tags: string[];
-    }>(page, "/api/v1/assistant/citations/verify-turn", {
-      token,
-      data: {
-        workspace_id: ws.pgWorkspaceId,
-        response_text: "Synthèse appuyée sur [S1], [G1], [O1] et bloc suspect [S99].",
-        sources: [
-          {
-            uri: "orcia://kb/architecture-spine.md",
-            title: "Architecture Spine",
-            authority_tier: "REFERENCE",
-            freshness: "FRESH",
-            snippet: "Isolation stricte des contextes.",
-          },
-        ],
-        glossary_items: [
-          {
-            term_or_axiom_id: "L1-HEXAGONAL",
-            label: "Hexagonal",
-            ontology_level: "N1_DIRECTIVE",
-            definition: "Ports et adaptateurs stricts.",
-          },
-        ],
-        tool_outputs: [
-          {
-            tool_name: "codegraph_locate_symbol",
-            connector_uri: "mcp://gitnexus",
-            summary: "Symbole vérifié.",
-          },
-        ],
-      },
-    });
-    expect(verifyRes.status()).toBe(200);
-    const verifiedBody = await verifyRes.json();
-    expect(verifiedBody.valid_tags).toEqual(["S1", "G1", "O1"]);
-    expect(verifiedBody.stripped_phantom_tags).toContain("S99");
-    expect(verifiedBody.sanitized_text).toContain("[Citation non vérifiée]");
-
-    const directWriteRes = await apiPost<{ error_code: string }>(
-      page,
+    // Legacy deleted routes must fail cleanly with 404/405 (R4/R5 direct cutover)
+    for (const legacyPath of [
+      "/api/v1/assistant/three-speed/turn",
+      "/api/v1/assistant/chat",
+      "/api/v1/assistant/citations/verify-turn",
       "/api/v1/assistant/artifacts/action",
+    ]) {
+      const legacyRes = await apiPost(page, legacyPath, {
+        token,
+        data: { workspace_id: ws.pgWorkspaceId },
+      });
+      expect([404, 405], `Legacy route ${legacyPath} must be removed`).toContain(legacyRes.status());
+    }
+
+    // Lock V5 human anchor enforcement on canonical /turns/{turn_id}/approve
+    const missingAnchorRes = await apiPost<{ error_code: string }>(
+      page,
+      `/api/v1/assistant/turns/${acceptedTurn.turn_id}/approve`,
       {
         token,
         data: {
           workspace_id: ws.pgWorkspaceId,
-          action_type: "DIRECT_SI_WRITE",
-          artifact_title: "Écriture directe interdite",
-          artifact_content: "Contenu non validé",
-          target_uri: "confluence://space/page-42",
+          proposal_id: "prop-e2e-v5",
+          approved: true,
+          human_authored_required: true,
         },
       },
     );
-    expect(directWriteRes.status()).toBe(422);
-    expect((await directWriteRes.json()).error_code).toBe(
-      "ERR_DIRECT_SI_WRITE_REQUIRES_PROCESS_GATE",
-    );
+    expect(missingAnchorRes.status()).toBe(422);
+    expect((await missingAnchorRes.json()).error_code).toBe("ERR_HUMAN_ANCHOR_REQUIRED");
 
-    const bgAuditRes = await apiPost(page, "/api/v1/executions/reflexive", {
-      token,
-      data: {
-        workspace_id: ws.pgWorkspaceId,
-        actor_slug: "assistant",
-        objective: "BACKGROUND_AUDIT: vérifier la fraîcheur documentaire de l'espace.",
-        effort_level: "high",
-        effort_mode: "approfondi",
-        allow_sub_agent_delegation: true,
-        available_delegate_agents: ["assistant"],
-        initial_resources: ["docs/product/capabilities.yaml"],
+    const approvedRes = await apiPost<{ status: string }>(
+      page,
+      `/api/v1/assistant/turns/${acceptedTurn.turn_id}/approve`,
+      {
+        token,
+        data: {
+          workspace_id: ws.pgWorkspaceId,
+          proposal_id: "prop-e2e-v5",
+          approved: true,
+          human_authored_required: true,
+          human_anchor_markdown: "Decision validated by admin during E2E citation & V5 check.",
+        },
       },
-    });
-    expect([200, 201]).toContain(bgAuditRes.status());
+    );
+    expect(approvedRes.status()).toBe(200);
+    expect((await approvedRes.json()).status).toBe("APPROVED");
 
     await expect(page.getByTestId("assistant-citation-pills-and-artifact-card")).toBeVisible({
       timeout: 10000,
@@ -153,11 +128,10 @@ test.describe("Assistant conversationnel, citations déterministes, centre d'aid
       1,
       "Fil conversationnel persisté dans assistant_threads PG18",
     );
-    expectDbRowCount(
-      "SELECT COUNT(*)::int AS count FROM reflexive_execution_sessions",
+    expectDbRowExists(
+      "SELECT execution_id, execution_profile FROM reflexive_execution_sessions WHERE execution_profile = 'ASSISTANT'",
       undefined,
-      1,
-      "Audit en tâche de fond persisté dans reflexive_execution_sessions PG18",
+      "Session réflexive profil ASSISTANT persistée dans reflexive_execution_sessions PG18",
     );
     expectDbRowCount(
       "SELECT COUNT(*)::int AS count FROM audit_ledger",

@@ -275,63 +275,68 @@ def test_fastapi_assistant_chat_stream_and_save_and_launch_endpoints(
     app.state.embedding_port = fake_emb
     app.dependency_overrides[get_embedding_port] = lambda: fake_emb
     app.dependency_overrides[require_rag_available] = lambda: fake_emb
-    client = TestClient(app)
+    with TestClient(app) as client:
+        # 1. Deleted legacy /chat and /chat/stream must return 404/405
+        assert client.post(
+            "/api/v1/assistant/chat?persona_key=marc",
+            json={"workspace_id": _WS_PAY, "user_prompt": "Bonjour"},
+        ).status_code in (404, 405)
+        assert client.post(
+            "/api/v1/assistant/chat/stream?persona_key=marc",
+            json={"workspace_id": _WS_PAY, "user_prompt": "Bonjour"},
+        ).status_code in (404, 405)
 
-    # 1. POST /api/v1/assistant/chat (WORKFLOW_COMPOSE)
-    chat_resp = client.post(
-        "/api/v1/assistant/chat?persona_key=marc",
-        json={
-            "workspace_id": _WS_PAY,
-            "user_prompt": "Propose un workflow d'audit Confluence et Jira face au dépôt Git.",
-            "human_profile_archetype": "ARCHITECT",
-        },
-    )
-    assert chat_resp.status_code == 200
-    body = chat_resp.json()
-    assert body["workflow_uri"] == ASSISTANT_WORKFLOW_URI
-    assert body["intent"] == "WORKFLOW_COMPOSE"
-    assert body["first_token_latency_ms"] < 1500.0
-    assert len(body["node_traces"]) == 5
-    assert len(body["prompt_layers"]) == 5
-    assert body["workflow_proposal"] is not None
-    manifest_yaml = body["workflow_proposal"]["manifest_yaml"]
+        # 2. Canonical POST /api/v1/assistant/turns -> GET /turns/{id}/stream (SSE)
+        turn_resp = client.post(
+            "/api/v1/assistant/turns?persona_key=marc",
+            json={
+                "workspace_id": _WS_PAY,
+                "user_prompt": "Explique la gouvernance de ce workspace.",
+            },
+        )
+        assert turn_resp.status_code == 202
+        stream_resp = client.get(f"{turn_resp.json()['stream_url']}?persona_key=marc")
+        assert stream_resp.status_code == 200
+        assert "text/event-stream" in stream_resp.headers["content-type"]
+        sse_text = stream_resp.text
+        assert "event: token_delta" in sse_text
+        assert "event: citation_map" in sse_text
+        assert "event: turn_completed" in sse_text
 
-    # 2. POST /api/v1/assistant/chat/stream (SSE)
-    stream_resp = client.post(
-        "/api/v1/assistant/chat/stream?persona_key=marc",
-        json={
-            "workspace_id": _WS_PAY,
-            "user_prompt": "Explique la gouvernance de ce workspace.",
-            "human_profile_archetype": "EXECUTIVE",
-        },
-    )
-    assert stream_resp.status_code == 200
-    assert "text/event-stream" in stream_resp.headers["content-type"]
-    sse_text = stream_resp.text
-    assert "event: node_trace" in sse_text
-    assert "event: token" in sse_text
-    assert "event: done" in sse_text
+        # Compose manifest via AssistantAgentService & launch via /workflows/save-and-launch
+        import asyncio
 
-    # 3. POST /api/v1/assistant/workflows/save-and-launch (Contributor `marc` succeeds)
-    launch_resp = client.post(
-        "/api/v1/assistant/workflows/save-and-launch?persona_key=marc",
-        json={
-            "workspace_id": _WS_PAY,
-            "manifest_yaml": manifest_yaml,
-        },
-    )
-    assert launch_resp.status_code == 200
-    launch_body = launch_resp.json()
-    assert launch_body["snapshot_count"] == 4
-    assert len(launch_body["executed_step_keys"]) == 4
+        composed = asyncio.run(
+            app.state.assistant_service.run_conversation_turn_async(
+                workspace_id=_WS_PAY,
+                user_prompt="Propose un workflow d'audit Confluence et Jira face au dépôt Git.",
+                human_profile_archetype="ARCHITECT",
+                embedding_available=True,
+            )
+        )
+        assert composed.workflow_proposal is not None
+        manifest_yaml = composed.workflow_proposal.manifest_yaml
 
-    # 4. Observer role (`claire` BU_DIRECTOR in observer mode on workspace) is rejected with 403
-    obs_resp = client.post(
-        "/api/v1/assistant/workflows/save-and-launch?persona_key=claire",
-        json={
-            "workspace_id": _WS_PAY,
-            "manifest_yaml": manifest_yaml,
-        },
-    )
-    assert obs_resp.status_code == 403
-    assert obs_resp.json()["error_code"] == "ERR_OBSERVER_MODE_READ_ONLY"
+        # 3. POST /api/v1/assistant/workflows/save-and-launch (Contributor `marc` succeeds)
+        launch_resp = client.post(
+            "/api/v1/assistant/workflows/save-and-launch?persona_key=marc",
+            json={
+                "workspace_id": _WS_PAY,
+                "manifest_yaml": manifest_yaml,
+            },
+        )
+        assert launch_resp.status_code == 200
+        launch_body = launch_resp.json()
+        assert launch_body["snapshot_count"] == 4
+        assert len(launch_body["executed_step_keys"]) == 4
+
+        # 4. Observer role (`claire` BU_DIRECTOR in observer mode on workspace) is rejected with 403
+        obs_resp = client.post(
+            "/api/v1/assistant/workflows/save-and-launch?persona_key=claire",
+            json={
+                "workspace_id": _WS_PAY,
+                "manifest_yaml": manifest_yaml,
+            },
+        )
+        assert obs_resp.status_code == 403
+        assert obs_resp.json()["error_code"] == "ERR_OBSERVER_MODE_READ_ONLY"

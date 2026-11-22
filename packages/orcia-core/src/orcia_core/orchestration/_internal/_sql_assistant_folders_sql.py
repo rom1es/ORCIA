@@ -86,3 +86,16 @@ SQL_UPSERT_SHARE = sa.text(
         access_role = EXCLUDED.access_role
     """
 )
+
+SQL_INSERT_MISSING_IDENTITY_USER = sa.text(
+    """
+    INSERT INTO users (
+        id, email, display_name, auth_mode, oidc_subject,
+        human_profile_archetype, platform_role, primary_org_unit_id
+    ) VALUES (
+        CAST(:uid AS uuid), :email, :display_name, :auth_mode, :oidc_subject,
+        :archetype, :role, CAST(:org_id AS uuid)
+    )
+    ON CONFLICT DO NOTHING
+    """
+)

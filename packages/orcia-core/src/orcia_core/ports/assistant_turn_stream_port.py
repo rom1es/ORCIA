@@ -38,8 +38,11 @@ class AssistantTurnRecord:
     stopped_by_user_id: str | None = None
     thread_id: str | None = None
     parent_turn_id: str | None = None
+    thread_lock_token: str | None = None
     citation_map: dict[str, Any] = field(default_factory=dict)
     prompt_assembly_latency_ms: float = 0.0
+    supports_tools: bool = True
+    low_evidence: bool = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,6 +107,14 @@ class AssistantTurnRegistryPort(Protocol):
 
     async def is_stop_requested(self, turn_id: str) -> str | None:
         """Return `stopped_by_user_id` if a stop signal was requested for `turn_id`."""
+        ...
+
+    async def request_synthesize_now(self, turn_id: str, *, ttl_seconds: int = 300) -> None:
+        """Signal early N3 -> N4/N5 synthesis transition for `turn_id`."""
+        ...
+
+    async def is_synthesize_now_requested(self, turn_id: str) -> bool:
+        """Return True when early synthesis was requested for `turn_id`."""
         ...
 
 

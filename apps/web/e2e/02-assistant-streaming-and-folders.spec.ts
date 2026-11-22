@@ -35,7 +35,7 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
     await input.fill("Bonjour, présente-toi en une phrase.");
 
     const apiTurn = page.waitForResponse(
-      (r) => r.url().includes("/api/v1/assistant/") && r.request().method() === "POST",
+      (r) => r.url().includes("/api/v1/assistant/turns") && r.request().method() === "POST",
       { timeout: 30000 },
     );
     await page.getByRole("button", { name: "Envoyer à Mon Assistant" }).click();

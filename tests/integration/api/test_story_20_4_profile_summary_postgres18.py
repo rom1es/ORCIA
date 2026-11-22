@@ -363,14 +363,17 @@ async def test_story_20_4_profile_summary_and_assistant_telemetry_postgres18(
             assert "agent-beta-secret" not in pop_keys
             assert "secret-b-tool" not in pop_keys
 
-            # 2. Verify POST /api/v1/assistant/three-speed/turn persists ledger row in PG18
+            # 2. Verify POST /api/v1/assistant/turns + stream persists ledger row in PG18
             turn_res = await client.post(
-                "/api/v1/assistant/three-speed/turn",
+                "/api/v1/assistant/turns",
                 headers=headers_a,
                 json={"workspace_id": ws_id, "user_prompt": "Résume la conformité DORA."},
             )
-            assert turn_res.status_code == 200, turn_res.text
+            assert turn_res.status_code == 202, turn_res.text
             turn_id = turn_res.json()["turn_id"]
+            sse_res = await client.get(turn_res.json()["stream_url"], headers=headers_a)
+            assert sse_res.status_code == 200
+            assert "event: turn_completed" in sse_res.text
 
         async with engine.connect() as conn:
             row = (

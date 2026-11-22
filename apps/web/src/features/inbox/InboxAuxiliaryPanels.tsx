@@ -44,7 +44,6 @@ export interface InboxAuxiliaryPanelsProps {
   readonly onOpenHelpSection: (sectionId: string) => void;
   readonly onSendCollaborativeMessage: (message: string) => void;
   readonly onNavigateToProcesses: () => void;
-  readonly onSaveDraftAction: (content: string) => void;
   readonly citationCardPreview?: {
     readonly sanitizedResponseText: string;
     readonly footerSummaryLine: string;
@@ -76,7 +75,6 @@ export function InboxAuxiliaryPanels({
   onOpenHelpSection,
   onSendCollaborativeMessage,
   onNavigateToProcesses,
-  onSaveDraftAction,
   citationCardPreview = null,
 }: InboxAuxiliaryPanelsProps): React.JSX.Element {
   return (
@@ -217,7 +215,6 @@ export function InboxAuxiliaryPanels({
             artifactContent={citationCardPreview.artifactContent}
             labels={dictionary.assistantCitations}
             onInspectSource={citationCardPreview.onInspectSource}
-            onSaveDraft={(title) => onSaveDraftAction(title)}
             onContinueInProcess={onNavigateToProcesses}
           />
         </div>

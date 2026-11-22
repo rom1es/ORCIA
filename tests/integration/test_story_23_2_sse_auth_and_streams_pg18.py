@@ -64,6 +64,7 @@ async def test_story_23_2_sse_streams_auth_scope_and_cassette_on_real_compositio
     monkeypatch.setenv("DATABASE_URL", pg_url)
     monkeypatch.setenv("REDIS_URL", redis_url)
     monkeypatch.setenv("ORCIA_ENV", "e2e")
+    monkeypatch.setenv("ORCIA_LLM_ALLOWED_PRIVATE_HOSTS", "127.0.0.1")
     monkeypatch.setenv("ORCIA_ENV_FILE", str(REPO_ROOT / ".orcia-run" / "does-not-exist.env"))
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
     monkeypatch.setenv("ORCIA_JWT_SIGNING_SECRET", "orcia-story-23-2-jwt-secret-0001")
@@ -309,21 +310,26 @@ async def test_story_23_2_sse_streams_auth_scope_and_cassette_on_real_compositio
             }
 
             r_stream_anon = await client.post(
-                "/api/v1/assistant/three-speed/stream",
+                "/api/v1/assistant/turns",
                 json=turn_payload,
             )
             assert r_stream_anon.status_code == 401
             assert r_stream_anon.json()["error_code"] == "ERR_AUTH_REQUIRED"
 
-            r_stream_ok = await client.post(
-                "/api/v1/assistant/three-speed/stream",
+            r_turn_ok = await client.post(
+                "/api/v1/assistant/turns",
                 headers=admin_auth,
                 json=turn_payload,
             )
+            assert r_turn_ok.status_code == 202, r_turn_ok.text
+            r_stream_ok = await client.get(
+                r_turn_ok.json()["stream_url"],
+                headers=admin_auth,
+            )
             assert r_stream_ok.status_code == 200, r_stream_ok.text
             assert "text/event-stream" in r_stream_ok.headers["content-type"]
-            assert "event: cache_status" in r_stream_ok.text
             assert "event: token_delta" in r_stream_ok.text
+            assert "event: citation_map" in r_stream_ok.text
             assert "event: turn_completed" in r_stream_ok.text
 
         # 7. Verify PostgreSQL 18 persisted state directly

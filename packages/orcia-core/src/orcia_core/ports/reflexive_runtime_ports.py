@@ -234,8 +234,51 @@ class ReflexiveWriteGatePort(Protocol):
         ...
 
 
+@runtime_checkable
+class AssistantReflexiveRuntimePort(Protocol):
+    """Hexagonal port for `ASSISTANT` profile session tracking & early synthesis."""
+
+    async def ensure_assistant_session(
+        self,
+        *,
+        execution_id: str,
+        workspace_id: str,
+        user_id: str,
+        objective: str,
+        effort_mode: Literal["standard", "approfondi"],
+        locale: str = "fr",
+    ) -> None: ...
+
+    async def record_assistant_step(
+        self,
+        *,
+        execution_id: str,
+        turn_index: int,
+        action_kind: str,
+        summary: str,
+        tool_name: str = "",
+        tokens_used: int = 0,
+    ) -> None: ...
+
+    async def complete_assistant_session(
+        self,
+        *,
+        execution_id: str,
+        status: Literal["COMPLETED", "CANCELLED", "FAILED"],
+        final_markdown: str,
+        tokens_used: int = 0,
+    ) -> None: ...
+
+    async def request_synthesize_now(
+        self, execution_id: str, *, resume_if_idle: bool = True
+    ) -> Any: ...
+
+    async def is_synthesize_now_requested(self, execution_id: str) -> bool: ...
+
+
 __all__ = [
     "AgentTraceEvent",
+    "AssistantReflexiveRuntimePort",
     "PendingWritePreviewSpec",
     "ReflexiveActionKind",
     "ReflexiveEventStreamPort",

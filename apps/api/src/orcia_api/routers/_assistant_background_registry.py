@@ -9,6 +9,7 @@ from dataclasses import dataclass, field, replace
 from typing import Any, Literal
 
 from orcia_core.orchestration.redis_rate_limiter import RedisAssistantRateLimiter
+from orcia_core.orchestration.redis_thread_lock import RedisThreadTurnLock
 from orcia_core.orchestration.redis_turn_registry import RedisAssistantTurnRegistry
 from orcia_core.ports.assistant_turn_stream_port import AssistantTurnRecord
 
@@ -69,6 +70,18 @@ def get_rate_limiter_from_request(request: Any | None) -> RedisAssistantRateLimi
     fallback = RedisAssistantRateLimiter(redis_client=getattr(state, "redis_client", None))
     if state is not None:
         state.assistant_rate_limiter = fallback
+    return fallback
+
+
+def get_thread_turn_lock_from_request(request: Any | None) -> RedisThreadTurnLock:
+    """Resolve `app.state.assistant_thread_turn_lock` or bind a Redis/local fallback."""
+    state = getattr(getattr(request, "app", None), "state", None)
+    lock = getattr(state, "assistant_thread_turn_lock", None)
+    if isinstance(lock, RedisThreadTurnLock):
+        return lock
+    fallback = RedisThreadTurnLock(redis_client=getattr(state, "redis_client", None))
+    if state is not None:
+        state.assistant_thread_turn_lock = fallback
     return fallback
 
 
@@ -147,6 +160,13 @@ async def get_active_turn_for_workspace(
     return turn_record_to_background_state(rec) if rec is not None else None
 
 
+async def _release_rec_thread_lock(request: Any | None, rec: AssistantTurnRecord) -> None:
+    if request is not None and rec.thread_id and rec.thread_lock_token:
+        await get_thread_turn_lock_from_request(request).release_async(
+            thread_id=rec.thread_id, user_id=rec.user_id, token=rec.thread_lock_token
+        )
+
+
 async def stop_assistant_turn_by_id(
     turn_id: str, *, request: Any | None = None, stopped_by_user_id: str
 ) -> ActiveBackgroundTurnState | None:
@@ -159,13 +179,17 @@ async def stop_assistant_turn_by_id(
     for _ in range(30):
         latest = await reg.get_turn_by_id(turn_id)
         if latest is not None and latest.status in ("STOPPED", "COMPLETED", "ERROR"):
+            await _release_rec_thread_lock(request, latest)
             return turn_record_to_background_state(latest)
         await asyncio.sleep(0.05)
     latest = await reg.get_turn_by_id(turn_id)
     if latest is not None and latest.status == "RUNNING":
         forced = replace(latest, status="STOPPED", stopped_by_user_id=stopped_by_user_id)
         await reg.update_turn(forced, ttl_seconds=1800)
+        await _release_rec_thread_lock(request, forced)
         return turn_record_to_background_state(forced)
+    if latest is not None:
+        await _release_rec_thread_lock(request, latest)
     return turn_record_to_background_state(latest) if latest is not None else None
 
 

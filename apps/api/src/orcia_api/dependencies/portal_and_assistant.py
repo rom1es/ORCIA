@@ -22,6 +22,7 @@ from orcia_api.dependencies._rag_availability_guards import (
     require_rag_available as require_rag_available,
 )
 from orcia_api.dependencies.core_and_lifespan import initialize_app_services
+from orcia_api.dependencies.reflexive_execution import get_assistant_reflexive_runtime_service
 from orcia_core.bootstrap import (
     ProgressiveDay0AccostageService,
     SqlUserPreferencesAndMcpService,
@@ -40,12 +41,11 @@ from orcia_core.orchestration.assistant_folders_and_sharing import (
 from orcia_core.orchestration.assistant_governance import (
     AssistantFourLevelGovernanceService,
 )
+from orcia_core.orchestration.assistant_prompt_builder import AssistantPromptBuilder
 from orcia_core.orchestration.assistant_thread_messages import (
     SqlAssistantThreadMessagesRepository,
 )
-from orcia_core.orchestration.assistant_three_speed_router import (
-    AssistantThreeSpeedRouterService,
-)
+from orcia_core.orchestration.assistant_turn_engine import AssistantTurnEngine
 from orcia_core.rag import TwoSpeedFederatedSearchService
 
 
@@ -162,17 +162,27 @@ def get_assistant_governance_service(
     return svc
 
 
-def get_assistant_three_speed_router_service(
+def get_assistant_turn_engine(
     request: Request,
-) -> AssistantThreeSpeedRouterService:
-    """FastAPI `Depends` provider returning `AssistantThreeSpeedRouterService`."""
+) -> AssistantTurnEngine:
+    """FastAPI `Depends` provider returning the unified `AssistantTurnEngine` (`AD-25`)."""
     gov = get_assistant_governance_service(request)
-    svc: AssistantThreeSpeedRouterService | None = getattr(
-        request.app.state, "assistant_three_speed_router_service", None
-    )
+    guard = get_assistant_citation_and_v5_guard_service(request)
+    runtime = get_assistant_reflexive_runtime_service(request)
+    llm_port = get_llm_streaming_port(request)
+    svc: AssistantTurnEngine | None = getattr(request.app.state, "assistant_turn_engine", None)
     if svc is None:
-        svc = AssistantThreeSpeedRouterService(governance_service=gov)
-        request.app.state.assistant_three_speed_router_service = svc
+        svc = AssistantTurnEngine(
+            governance_service=gov,
+            citation_guard=guard,
+            prompt_builder=AssistantPromptBuilder(),
+            reflexive_runtime=runtime,
+            llm_streaming_port=llm_port,
+        )
+        request.app.state.assistant_turn_engine = svc
+    else:
+        svc.set_reflexive_runtime(runtime)
+        svc.set_llm_streaming_port(llm_port)
     return svc
 
 

@@ -239,6 +239,18 @@ class RemoteServiceTestBenchAndGovernedMcpService:
             requested_write_target_uri=requested_write_target_uri,
         )
 
+    async def verify_mcp_pat_for_workspace_async(
+        self,
+        *,
+        raw_pat_token: str,
+        workspace_slug: str,
+    ) -> None:
+        """Verify MCP PAT prefix and workspace scope authorization (`Lock 2`)."""
+        await self._exposure.verify_pat_token_for_workspace_async(
+            raw_pat_token=raw_pat_token,
+            workspace_slug=workspace_slug,
+        )
+
     async def invoke_governed_mcp_read_only_for_assistant_async(
         self,
         *,

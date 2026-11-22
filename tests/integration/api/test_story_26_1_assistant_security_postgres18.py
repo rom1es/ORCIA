@@ -171,7 +171,7 @@ async def test_pg18_vertical_assistant_scope_guard_resolver_and_setup_state(
             # 4. Cross-workspace IDOR on confidential workspace (both UUID and slug) -> 403
             for conf_ref in (ws_b_id, "ws-conf-26-1"):
                 idor_res = await client.post(
-                    "/api/v1/assistant/three-speed/stream",
+                    "/api/v1/assistant/turns",
                     headers=admin_headers,
                     json={"workspace_id": conf_ref, "user_prompt": "Read confidential"},
                 )
@@ -218,7 +218,7 @@ async def test_pg18_vertical_assistant_scope_guard_resolver_and_setup_state(
                 "type": "http",
                 "app": app,
                 "headers": [],
-                "path": "/api/v1/assistant/three-speed/turn",
+                "path": "/api/v1/assistant/turns",
             }
             fake_req = StarletteRequest(scope)
             ep_a = await resolve_configured_llm_endpoint(

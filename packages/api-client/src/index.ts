@@ -10,7 +10,7 @@ import { createAutonomousSupervisionDomainClient } from "./domains/autonomousSup
 import { createAutonomyContractsDomainClient } from "./domains/autonomyContracts";
 import {
   createAssistantStreamingDomainClient,
-  streamAssistantTurnSse,
+  streamAssistantTurnByIdSse,
   streamReflexiveExecutionTraceSse,
   streamWorkspaceEventsSse,
   type AssistantTurnSseOptions,
@@ -106,7 +106,7 @@ export {
   OrciaProblemError,
   registerDefaultAccessTokenProvider,
   registerDefaultAccessTokenRefreshedHandler,
-  streamAssistantTurnSse,
+  streamAssistantTurnByIdSse,
   streamReflexiveExecutionTraceSse,
   streamWorkspaceEventsSse,
   type ApiImpactAssessmentResult,

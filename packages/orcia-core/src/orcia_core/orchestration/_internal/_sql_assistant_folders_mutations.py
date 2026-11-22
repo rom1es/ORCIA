@@ -51,7 +51,7 @@ async def create_thread_sql(
             if exists_f is None:
                 raise ResourceNotFoundError(detail_override=f"Folder not found: {thread.folder_id}")
         creator_uuid = await resolve_user_uuid(
-            conn, user_id=thread.creator_user_id, email=user.email
+            conn, user_id=thread.creator_user_id, email=user.email, user=user
         )
         row = (
             (
@@ -119,7 +119,9 @@ async def update_thread_turn_sql(
     async with engine.begin() as conn:
         ws_uuid = await resolve_workspace_uuid(conn, workspace_id, required=True)
         assert ws_uuid is not None
-        author_uuid = await resolve_user_uuid(conn, user_id=author.id, email=author.email)
+        author_uuid = await resolve_user_uuid(
+            conn, user_id=author.id, email=author.email, user=author
+        )
         row = (
             (
                 await conn.execute(

@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
+from orcia_core.orchestration.assistant_citations_models import RawToolOutputCandidate
 from orcia_core.orchestration.llm_tool_dialects import (
     format_tool_result_message,
     parse_json_arguments,
@@ -59,6 +60,7 @@ async def execute_governed_round_with_outcomes(
     locale: str,
     user_identity: Any | None = None,
     active_hat: str = "ARCHITECT",
+    collected_tool_outputs: list[RawToolOutputCandidate] | None = None,
 ) -> tuple[list[dict[str, Any]], list[AssistantToolExecutionResult]]:
     """Execute one LLM tool-call round, forward SSE events, and flag approval blocks."""
     result_messages: list[dict[str, Any]] = []
@@ -90,6 +92,18 @@ async def execute_governed_round_with_outcomes(
         outcome = await tool_router.execute_tool_call(req, catalog=catalog)
         if outcome.verdict == "APPROVAL_REQUIRED":
             approval_outcomes.append(outcome)
+        elif collected_tool_outputs is not None and outcome.verdict in ("EXECUTED", "DEDUPLICATED"):
+            desc = next((d for d in catalog if d.tool_name == tc_name), None)
+            connector_uri = (
+                desc.source_uri_or_scope if desc is not None else ""
+            ) or f"tool://{tc_name}"
+            collected_tool_outputs.append(
+                RawToolOutputCandidate(
+                    tool_name=tc_name or outcome.tool_name,
+                    connector_uri=connector_uri,
+                    summary=outcome.raw_scrubbed_summary or outcome.delimited_output[:320],
+                )
+            )
         for sse_evt in outcome.sse_events:
             await registry.append_event(
                 record.turn_id,

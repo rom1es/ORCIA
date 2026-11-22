@@ -241,6 +241,7 @@ class GovernedAssistantToolRouter(AssistantToolExecutorPort):
                 summary=summary,
                 latency_ms=latency_ms,
                 reason_code=reason_code,
+                audit_event_id=audit_id,
             ),
         )
 
@@ -290,6 +291,7 @@ class GovernedAssistantToolRouter(AssistantToolExecutorPort):
                 latency_ms=latency_ms,
                 reason_code=reason_code,
                 approval_proposal=approval_proposal,
+                audit_event_id=audit_id,
             ),
         )
 

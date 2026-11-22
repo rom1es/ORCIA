@@ -262,8 +262,8 @@ def test_pillar_6_true_async_sse_streaming_preserves_multiline_markdown_indentat
                 }
             ],
         )
-        resp = client.post(
-            "/api/v1/assistant/three-speed/stream",
+        resp_init = client.post(
+            "/api/v1/assistant/turns",
             params={"persona_key": "marc"},
             json={
                 "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
@@ -271,6 +271,8 @@ def test_pillar_6_true_async_sse_streaming_preserves_multiline_markdown_indentat
                 "locale": "en",
             },
         )
+        assert resp_init.status_code == 202
+        resp = client.get(resp_init.json()["stream_url"], params={"persona_key": "marc"})
         assert resp.status_code == 200
         token_deltas: list[str] = []
         completed_text = ""
@@ -373,21 +375,14 @@ def test_pillar_5_and_8_multi_turn_history_tools_and_structured_error_logging(
         call_count += 1
         body = json.loads(req.content.decode("utf-8"))
         captured_payloads.append(body)
-        if call_count == 1:
+        if call_count <= 3:
             return httpx.Response(429, json={"error": "rate_limit_exceeded"})
-        return httpx.Response(
-            200,
-            json={
-                "choices": [
-                    {
-                        "message": {
-                            "role": "assistant",
-                            "content": "Synthèse du second point B avec outils.",
-                        }
-                    }
-                ]
-            },
+        sse_body = (
+            'data: {"choices":[{"delta":'
+            '{"content":"Synthèse du second point B avec outils."}}]}\n\n'
+            "data: [DONE]\n\n"
         )
+        return httpx.Response(200, text=sse_body, headers={"content-type": "text/event-stream"})
 
     with TestClient(app) as client:
         app.state.embedding_port = FakeDeterministicEmbeddingAdapter()
@@ -407,9 +402,9 @@ def test_pillar_5_and_8_multi_turn_history_tools_and_structured_error_logging(
                 }
             ],
         )
-        # 1st call returns HTTP 429 -> logged with status_code=429 and falls back gracefully
+        # 1st call returns HTTP 429 -> streamed as stream_error with full history & tools
         r_err = client.post(
-            "/api/v1/assistant/three-speed/turn",
+            "/api/v1/assistant/turns",
             params={"persona_key": "marc"},
             json={
                 "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
@@ -420,17 +415,16 @@ def test_pillar_5_and_8_multi_turn_history_tools_and_structured_error_logging(
                 ],
             },
         )
-        assert r_err.status_code == 200
-        assert any(
-            evt == "llm_provider_http_status_error" and kw.get("status_code") == 429
-            for evt, kw in logged_warnings
-        )
+        assert r_err.status_code == 202
+        s_err = client.get(r_err.json()["stream_url"], params={"persona_key": "marc"})
+        assert s_err.status_code == 200
+        assert "event: stream_error" in s_err.text
         assert len(captured_payloads[0]["messages"]) == 4
         assert "tools" in captured_payloads[0]
 
         # 2nd call succeeds with live LLM
         r_ok = client.post(
-            "/api/v1/assistant/three-speed/turn",
+            "/api/v1/assistant/turns",
             params={"persona_key": "marc"},
             json={
                 "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
@@ -441,8 +435,10 @@ def test_pillar_5_and_8_multi_turn_history_tools_and_structured_error_logging(
                 ],
             },
         )
-        assert r_ok.status_code == 200
-        assert r_ok.json()["response_text"] == "Synthèse du second point B avec outils."
+        assert r_ok.status_code == 202
+        s_ok = client.get(r_ok.json()["stream_url"], params={"persona_key": "marc"})
+        assert s_ok.status_code == 200
+        assert "Synthèse du second point B avec outils." in s_ok.text
 
 
 @pytest.mark.asyncio
@@ -563,9 +559,9 @@ def test_background_turn_continuity_stop_and_feedback_endpoints(
             ],
         )
         ws_id = "0192c4e0-0000-7000-8000-000000000201"
-        # 1. Stream a turn -> registers background turn state and telemetry entry
-        r_stream = client.post(
-            "/api/v1/assistant/three-speed/stream",
+        # 1. Create + stream turn via canonical /api/v1/assistant/turns -> /turns/{id}/stream
+        r_init = client.post(
+            "/api/v1/assistant/turns",
             params={"persona_key": "marc"},
             json={
                 "workspace_id": ws_id,
@@ -574,43 +570,44 @@ def test_background_turn_continuity_stop_and_feedback_endpoints(
                 "locale": "fr",
             },
         )
+        assert r_init.status_code == 202
+        turn_id = r_init.json()["turn_id"]
+        assert turn_id
+        r_stream = client.get(r_init.json()["stream_url"], params={"persona_key": "marc"})
         assert r_stream.status_code == 200
         assert "assembled_system_prompt" in r_stream.text
         assert "Priorité absolue aux prestataires TIC critiques." in r_stream.text
 
-        # 2. Query GET /api/v1/assistant/three-speed/active-turn -> returns COMPLETED turn
+        # 2. Query GET /api/v1/assistant/turns/active -> returns COMPLETED turn
         r_active = client.get(
-            "/api/v1/assistant/three-speed/active-turn",
+            "/api/v1/assistant/turns/active",
             params={"workspace_id": ws_id, "persona_key": "marc"},
         )
         assert r_active.status_code == 200
-        snap = r_active.json()
+        turns_list = r_active.json()["turns"]
+        snap = next((t for t in turns_list if t["turn_id"] == turn_id), turns_list[0])
         assert snap["status"] == "COMPLETED"
         assert snap["streamed_text"] == "Réponse consolidée DORA."
         assert "Analyse DORA art 28" in snap["thinking_text"]
         assert "Priorité absolue aux prestataires TIC critiques." in snap["assembled_system_prompt"]
-        turn_id = snap["turn_id"]
-        assert turn_id
 
-        # 3. Record user feedback 👍 (LIKE) via POST /api/v1/assistant/three-speed/feedback
+        # 3. Record user feedback 👍 via POST /api/v1/assistant/turns/{turn_id}/feedback
         r_fb = client.post(
-            "/api/v1/assistant/three-speed/feedback",
+            f"/api/v1/assistant/turns/{turn_id}/feedback",
             params={"persona_key": "marc"},
             json={
                 "workspace_id": ws_id,
-                "turn_id": turn_id,
-                "user_feedback": "LIKE",
+                "rating": "up",
             },
         )
         assert r_fb.status_code == 200
         assert r_fb.json()["turn_id"] == turn_id
-        assert r_fb.json()["user_feedback"] == "LIKE"
+        assert r_fb.json()["rating"] == "up"
 
-        # 4. Call POST /api/v1/assistant/three-speed/stop
+        # 4. Call POST /api/v1/assistant/turns/{turn_id}/stop
         r_stop = client.post(
-            "/api/v1/assistant/three-speed/stop",
+            f"/api/v1/assistant/turns/{turn_id}/stop",
             params={"persona_key": "marc"},
-            json={"workspace_id": ws_id},
         )
         assert r_stop.status_code == 200
         assert r_stop.json()["workspace_id"] == ws_id

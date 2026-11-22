@@ -25,7 +25,7 @@ import {
 } from "./assistantBackgroundStreamStore";
 import type { SavedAssistantGovernancePrefs } from "./assistantFoldersAndPrefsStore";
 import { startAssistantStreamingTurnExecution } from "./assistantStreamingRunner";
-import { buildThreeSpeedTurnRequestPayload } from "./assistantTurnPayloadHelper";
+import { buildAssistantTurnRequestPayload } from "./assistantTurnPayloadHelper";
 import type { SavedAssistantConversation } from "./savedConversationsStore";
 
 export {
@@ -53,6 +53,7 @@ export interface SendAssistantTurnPayload {
   readonly deepAuditPillActive: boolean;
   readonly requestedTier?: UiInferenceTier;
   readonly thinkingEffort?: UiInferenceEffort;
+  readonly parentTurnId?: string;
   readonly attachedFiles?: readonly UiAssistantAttachedFileItem[];
 }
 
@@ -85,6 +86,7 @@ export function useAssistantStreamingTurn({
     updateBgSnapshot({ streamedText: sanitizeAssistantDisplayReply(next) });
 
   const stopGeneration = () => {
+    const turnId = bgSnapshot.activeTurnId;
     getBgAbortController()?.abort();
     setBgAbortController(null);
     clearBgTimers();
@@ -92,20 +94,52 @@ export function useAssistantStreamingTurn({
       isGenerating: false,
       thinkingStartedAtMs: null,
       generationStopped: true,
+      activeTraceStatus: bgSnapshot.activeTraceStatus ? "CANCELLED" : null,
       stepProgress: bgSnapshot.stepProgress.map((st) =>
         st.status === "RUNNING" ? { ...st, status: "COMPLETED" } : st,
       ),
     });
-    const client = createOrciaApiClient({ baseUrl: "", locale: isFr ? "fr" : "en" });
-    void client
-      .stopActiveAssistantTurn({
-        workspace_id: activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
-      })
-      .catch((err: unknown) => {
+    if (turnId) {
+      const client = createOrciaApiClient({ baseUrl: "", locale: isFr ? "fr" : "en" });
+      void client.stopAssistantTurn(turnId).catch((err: unknown) => {
         const detail = err instanceof Error ? err.message : String(err);
-        console.warn("[orcia:assistant.stopActiveTurn]", detail);
+        console.warn("[orcia:assistant.stopTurn]", detail);
         if (detail) updateBgSnapshot({ generationStopped: true });
       });
+    }
+  };
+
+  const synthesizeNow = async () => {
+    const turnId = bgSnapshot.activeTurnId;
+    if (!turnId) return;
+    updateBgSnapshot({ activeTraceStatus: "SYNTHESIZING" });
+    const client = createOrciaApiClient({ baseUrl: "", locale: isFr ? "fr" : "en" });
+    try {
+      await client.synthesizeAssistantTurnNow(turnId);
+    } catch (err: unknown) {
+      console.warn("[orcia:assistant.synthesizeNow]", err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const decideProposal = async (proposalId: string, approved: boolean) => {
+    const turnId = bgSnapshot.activeTurnId;
+    if (!turnId) return;
+    const workspaceIdValue = activeWorkspaceId || "0195f000-0000-7000-8000-000000000301";
+    const client = createOrciaApiClient({ baseUrl: "", locale: isFr ? "fr" : "en" });
+    try {
+      await client.approveAssistantTurnProposal(turnId, {
+        workspace_id: workspaceIdValue,
+        proposal_id: proposalId,
+        approved,
+        human_authored_required: false,
+      });
+      updateBgSnapshot({ pendingWritePreview: null, activeTraceStatus: approved ? "COMPLETED" : "CANCELLED" });
+    } catch (err: unknown) {
+      updateBgSnapshot({
+        errorKind: "stream_error",
+        errorMessage: `⚠️ ${err instanceof Error ? err.message : String(err)}`,
+      });
+    }
   };
 
   const resetStreamState = (nextText = "") => {
@@ -113,12 +147,20 @@ export function useAssistantStreamingTurn({
     setBgAbortController(null);
     clearBgTimers();
     updateBgSnapshot({
+      activeTurnId: null,
       isGenerating: false,
       thinkingStartedAtMs: null,
       generationStopped: false,
       activeUserPrompt: "",
       streamedText: sanitizeAssistantDisplayReply(nextText),
       stepProgress: [],
+      activeTraceStatus: null,
+      traceEvents: [],
+      pendingWritePreview: null,
+      citationMap: null,
+      lowEvidence: false,
+      supportsTools: true,
+      purgedPhantomCount: 0,
       nodes1To4Ms: 0,
       errorMessage: null,
       errorKind: null,
@@ -131,6 +173,7 @@ export function useAssistantStreamingTurn({
     deepAuditPillActive,
     requestedTier,
     thinkingEffort,
+    parentTurnId,
     attachedFiles,
   }: SendAssistantTurnPayload) => {
     getBgAbortController()?.abort();
@@ -156,6 +199,7 @@ export function useAssistantStreamingTurn({
     const folderTitle = activeFolder?.title || null;
 
     updateBgSnapshot({
+      activeTurnId: null,
       errorMessage: null,
       errorKind: null,
       generationStopped: false,
@@ -163,6 +207,12 @@ export function useAssistantStreamingTurn({
       thinkingStartedAtMs: tStart,
       activeUserPrompt: userPrompt,
       streamedText: "",
+      activeTraceStatus: useSteps || requestedSpeed !== "SPEED_1_FAST" ? "RUNNING" : null,
+      traceEvents: [],
+      pendingWritePreview: null,
+      citationMap: null,
+      lowEvidence: false,
+      purgedPhantomCount: 0,
       stepProgress:
         useSteps && plannedSteps.length > 0
           ? [{ ...plannedSteps[0]!, status: "RUNNING", durationMs: 0 }]
@@ -170,7 +220,7 @@ export function useAssistantStreamingTurn({
     });
 
     const workspaceIdValue = activeWorkspaceId || "0195f000-0000-7000-8000-000000000301";
-    const requestPayload = buildThreeSpeedTurnRequestPayload({
+    const requestPayload = buildAssistantTurnRequestPayload({
       workspaceIdValue,
       activeHat,
       userPrompt,
@@ -181,6 +231,7 @@ export function useAssistantStreamingTurn({
       effectiveEffort,
       historyPayload,
       activeFolder,
+      ...(parentTurnId ? { parentTurnId } : {}),
       ...(governancePrefs ? { governancePrefs } : {}),
       isFr,
     });
@@ -210,10 +261,18 @@ export function useAssistantStreamingTurn({
       : 0;
 
   return {
+    activeTurnId: bgSnapshot.activeTurnId,
     streamedText: bgSnapshot.streamedText,
     setStreamedText,
     activeUserPrompt: bgSnapshot.activeUserPrompt,
     stepProgress: bgSnapshot.stepProgress,
+    activeTraceStatus: bgSnapshot.activeTraceStatus,
+    traceEvents: bgSnapshot.traceEvents,
+    pendingWritePreview: bgSnapshot.pendingWritePreview,
+    citationMap: bgSnapshot.citationMap,
+    lowEvidence: bgSnapshot.lowEvidence,
+    supportsTools: bgSnapshot.supportsTools,
+    purgedPhantomCount: bgSnapshot.purgedPhantomCount,
     cacheHit: bgSnapshot.cacheHit,
     cacheLookupMs: bgSnapshot.cacheLookupMs,
     nodes1To4Ms: bgSnapshot.nodes1To4Ms,
@@ -225,6 +284,9 @@ export function useAssistantStreamingTurn({
     errorKind: bgSnapshot.errorKind,
     sendTurn,
     stopGeneration,
+    synthesizeNow,
+    approveProposal: (id: string) => decideProposal(id, true),
+    rejectProposal: (id: string) => decideProposal(id, false),
     resetStreamState,
   };
 }

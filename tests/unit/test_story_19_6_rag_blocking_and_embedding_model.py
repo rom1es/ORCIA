@@ -221,23 +221,25 @@ def test_api_assistant_and_federated_search_succeed_when_no_active_embedding_mod
         )
 
     app.dependency_overrides[get_embedding_port] = _raise_no_model
-    client = TestClient(app)
+    with TestClient(app) as client:
+        resp_turn = client.post(
+            "/api/v1/assistant/turns",
+            params={"persona_key": "marc"},
+            json={
+                "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
+                "user_prompt": "Hello assistant without embedding",
+                "requested_speed": "SPEED_1_FAST",
+            },
+        )
+        assert resp_turn.status_code == 202
+        assert resp_turn.json()["turn_id"]
+        resp_stream = client.get(resp_turn.json()["stream_url"], params={"persona_key": "marc"})
+        assert resp_stream.status_code == 200
+        assert "event: turn_completed" in resp_stream.text
 
-    resp_turn = client.post(
-        "/api/v1/assistant/three-speed/turn",
-        params={"persona_key": "marc"},
-        json={
-            "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
-            "user_prompt": "Hello assistant without embedding",
-            "requested_speed": "SPEED_1_FAST",
-        },
-    )
-    assert resp_turn.status_code == 200
-    assert resp_turn.json()["response_text"]
-
-    resp_search = client.get(
-        "/api/v1/search",
-        params={"q": "claims validation rule", "workspace_id": "ws-test"},
-    )
-    assert resp_search.status_code == 200
-    assert resp_search.json()["speed2_executed"] is False
+        resp_search = client.get(
+            "/api/v1/search",
+            params={"q": "claims validation rule", "workspace_id": "ws-test"},
+        )
+        assert resp_search.status_code == 200
+        assert resp_search.json()["speed2_executed"] is False

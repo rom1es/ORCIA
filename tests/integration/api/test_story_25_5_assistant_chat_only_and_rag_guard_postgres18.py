@@ -189,9 +189,9 @@ async def test_story_25_5_chat_only_assistant_and_rag_datasource_guard_postgres1
                 ).scalar_one()
                 assert emb_cnt == 0
 
-            # 4. Assistant endpoints & GET /search return 200 with 0 embedding model
+            # 4. Canonical Assistant /turns + /stream & GET /search return 200/202 with 0 embedding
             r_turn = await client.post(
-                "/api/v1/assistant/three-speed/turn",
+                "/api/v1/assistant/turns",
                 headers=auth,
                 json={
                     "workspace_id": ws_id,
@@ -199,19 +199,11 @@ async def test_story_25_5_chat_only_assistant_and_rag_datasource_guard_postgres1
                     "requested_speed": "SPEED_1_FAST",
                 },
             )
-            assert r_turn.status_code == 200, r_turn.text
-            assert r_turn.json()["response_text"]
-
-            r_stream = await client.post(
-                "/api/v1/assistant/chat/stream",
-                headers=auth,
-                json={
-                    "workspace_id": ws_id,
-                    "user_prompt": "Synthèse rapide",
-                },
-            )
+            assert r_turn.status_code == 202, r_turn.text
+            r_stream = await client.get(r_turn.json()["stream_url"], headers=auth)
             assert r_stream.status_code == 200, r_stream.text
             assert "text/event-stream" in r_stream.headers["content-type"]
+            assert "event: turn_completed" in r_stream.text
 
             r_search = await client.get(
                 "/api/v1/search",

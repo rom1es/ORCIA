@@ -137,45 +137,45 @@ def test_story_10_2_three_speeds_routing_and_slos() -> None:
 def test_story_10_2_api_endpoints_turn_stream_and_invalidation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Verify `/api/v1/assistant/three-speed/*` endpoints (`Story 10.2`)."""
+    """Verify canonical `/api/v1/assistant/turns*` endpoints and 404/405 on deleted legacy."""
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
     monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
     app.state.embedding_port = FakeDeterministicEmbeddingAdapter()
     ws_id = "0192c4e0-0000-7000-8000-000000000201"
     with TestClient(app) as client:
-        # 1st turn (MISS -> populates cache)
+        # 1st turn (Speed 1)
         r1 = client.post(
-            "/api/v1/assistant/three-speed/turn",
+            "/api/v1/assistant/turns",
             params={"persona_key": "marc"},
             json={
                 "workspace_id": ws_id,
                 "user_prompt": "Synthèse rapide des règles de gestion",
             },
         )
-        assert r1.status_code == 200
+        assert r1.status_code == 202
         d1 = r1.json()
         assert d1["speed_mode"] == "SPEED_1_FAST"
-        assert d1["ttft_ms"] < 1200.0
-        assert all(st.get("intermediate_output") for st in d1["step_progress"])
+        s1 = client.get(d1["stream_url"], params={"persona_key": "marc"})
+        assert s1.status_code == 200
+        assert "event: token_delta" in s1.text
+        assert "event: citation_map" in s1.text
+        assert "event: turn_completed" in s1.text
 
-        # 2nd turn (uncached per R6, Speed 2)
+        # 2nd turn (Speed 2)
         r2 = client.post(
-            "/api/v1/assistant/three-speed/turn",
+            "/api/v1/assistant/turns",
             params={"persona_key": "marc"},
             json={
                 "workspace_id": ws_id,
                 "user_prompt": "Interroge @jira-triage sur l'épic 10",
             },
         )
-        assert r2.status_code == 200
-        d2 = r2.json()
-        assert d2["cache_hit"] is False
-        assert d2["speed_mode"] == "SPEED_2_AGENT_TOOLS"
-        assert all(st.get("intermediate_output") for st in d2["step_progress"])
+        assert r2.status_code == 202
+        assert r2.json()["speed_mode"] == "SPEED_2_AGENT_TOOLS"
 
-        # SSE stream endpoint
-        stream_resp = client.post(
-            "/api/v1/assistant/three-speed/stream",
+        # 3rd turn (Speed 3 deep audit)
+        r3 = client.post(
+            "/api/v1/assistant/turns",
             params={"persona_key": "marc"},
             json={
                 "workspace_id": ws_id,
@@ -183,26 +183,22 @@ def test_story_10_2_api_endpoints_turn_stream_and_invalidation(
                 "deep_audit_pill_active": True,
             },
         )
-        assert stream_resp.status_code == 200
-        assert "event: cache_status" in stream_resp.text
-        assert "event: step_progress" in stream_resp.text
-        assert "event: thinking_delta" in stream_resp.text
-        assert "event: token_delta" in stream_resp.text
-        assert "event: turn_completed" in stream_resp.text
-        assert "SPEED_3_DEEP_AUDIT" in stream_resp.text
+        assert r3.status_code == 202
+        assert r3.json()["speed_mode"] == "SPEED_3_DEEP_AUDIT"
+        s3 = client.get(r3.json()["stream_url"], params={"persona_key": "marc"})
+        assert s3.status_code == 200
+        assert "event: thinking_delta" in s3.text
+        assert "event: token_delta" in s3.text
+        assert "event: citation_map" in s3.text
+        assert "event: turn_completed" in s3.text
 
-        # Legacy invalidate-cache endpoint remains safe no-op without forged outbox_event_id
-        inv_resp = client.post(
+        # Deleted legacy /three-speed/* endpoints must return 404/405
+        for legacy_path in (
+            "/api/v1/assistant/three-speed/turn",
+            "/api/v1/assistant/three-speed/stream",
             "/api/v1/assistant/three-speed/invalidate-cache",
-            params={"persona_key": "marc"},
-            json={
-                "workspace_id": ws_id,
-                "reason": "GLOSSARY_PROMOTED",
-            },
-        )
-        assert inv_resp.status_code == 200
-        assert inv_resp.json()["invalidated_keys_count"] == 0
-        assert inv_resp.json()["outbox_event_id"] is None
+        ):
+            assert client.post(legacy_path, json={"workspace_id": ws_id}).status_code in (404, 405)
 
 
 def test_story_10_2_live_llm_bridge_agnostic_provider_and_url_normalization(
@@ -285,18 +281,31 @@ def test_story_10_2_live_llm_bridge_agnostic_provider_and_url_normalization(
                 }
             ],
         )
+
+        def _sse_stream_mock(req: httpx.Request) -> httpx.Response:
+            import json
+
+            json_body = json.loads(req.content.decode("utf-8"))
+            model = str(json_body.get("model", ""))
+            sse_body = (
+                f'data: {{"choices":[{{"delta":{{"content":"Réponse live via {model}."}}}}]}}\n\n'
+                "data: [DONE]\n\n"
+            )
+            return httpx.Response(200, text=sse_body, headers={"content-type": "text/event-stream"})
+
+        app.state.http_client = httpx.AsyncClient(transport=httpx.MockTransport(_sse_stream_mock))
         r_live = client.post(
-            "/api/v1/assistant/three-speed/turn",
+            "/api/v1/assistant/turns",
             params={"persona_key": "marc"},
             json={
                 "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
                 "user_prompt": "Bonjour",
             },
         )
-        assert r_live.status_code == 200
-        data_live = r_live.json()
-        assert "gemma4:12b" in data_live["response_text"]
-        assert any("gemma4:12b" in st["label"] for st in data_live["step_progress"])
+        assert r_live.status_code == 202
+        s_live = client.get(r_live.json()["stream_url"], params={"persona_key": "marc"})
+        assert s_live.status_code == 200
+        assert "gemma4:12b" in s_live.text
 
 
 def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
@@ -387,19 +396,11 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
         captured_models.append(model)
         if msgs:
             captured_sys_prompts.append(str(msgs[0].get("content", "")))
-        return httpx.Response(
-            200,
-            json={
-                "choices": [
-                    {
-                        "message": {
-                            "role": "assistant",
-                            "content": f"Réponse générée par {model}.",
-                        }
-                    }
-                ]
-            },
+        sse_body = (
+            f'data: {{"choices":[{{"delta":{{"content":"Réponse générée par {model}."}}}}]}}\n\n'
+            "data: [DONE]\n\n"
         )
+        return httpx.Response(200, text=sse_body, headers={"content-type": "text/event-stream"})
 
     monkeypatch.delenv("ORCIA_USE_CASSETTE_LLM", raising=False)
     monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
@@ -417,7 +418,7 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
         )
         # Non-/v1 Ollama tier (`simple`) rejects Speed 2/3 with 422 (D5/R7)
         r_non_v1_reject = client.post(
-            "/api/v1/assistant/three-speed/turn",
+            "/api/v1/assistant/turns",
             params={"persona_key": "marc"},
             json={
                 "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
@@ -430,7 +431,7 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
         assert r_non_v1_reject.json()["error_code"] == "ERR_MODEL_TOOLS_UNSUPPORTED"
 
         r_complex_deep = client.post(
-            "/api/v1/assistant/three-speed/turn",
+            "/api/v1/assistant/turns",
             params={"persona_key": "marc"},
             json={
                 "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
@@ -439,11 +440,12 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
                 "thinking_effort": "deep",
             },
         )
-        assert r_complex_deep.status_code == 200
+        assert r_complex_deep.status_code == 202
         d_complex = r_complex_deep.json()
         assert d_complex["speed_mode"] == "SPEED_3_DEEP_AUDIT"
-        assert "gemma4:27b-pro" in d_complex["response_text"]
+        s_complex = client.get(d_complex["stream_url"], params={"persona_key": "marc"})
+        assert s_complex.status_code == 200
+        assert "gemma4:27b-pro" in s_complex.text
         assert captured_models[-1] == "gemma4:27b-pro"
         assert "Niveau de réflexion Élevé" in captured_sys_prompts[-1]
         assert "1. 🔒 Constitution (AssistantHarness Socle)" in captured_sys_prompts[-1]
-        assert any("Réflexion Élevée" in st["label"] for st in d_complex["step_progress"])

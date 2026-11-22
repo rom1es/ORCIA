@@ -150,21 +150,22 @@ export function persistInboxTurnFeedback(params: {
     params.feedback,
   );
   const client = createOrciaApiClient({ baseUrl: "" });
-  void client
-    .recordAssistantTurnFeedback({
-      workspace_id:
-        params.activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
-      turn_id: params.turnId,
-      user_feedback: params.feedback,
-    })
-    .catch((err: unknown) => {
-      const detail =
-        err instanceof Error ? err.message : "Synchronisation locale";
-      params.onFeedbackBanner(
-        params.isFr
-          ? `ℹ️ Avis enregistré localement (${detail}).`
-          : `ℹ️ Feedback saved locally (${detail}).`,
-      );
-    });
+  if (params.feedback === "LIKE" || params.feedback === "DISLIKE") {
+    void client
+      .recordAssistantTurnFeedback(params.turnId, {
+        workspace_id:
+          params.activeWorkspaceId || "0195f000-0000-7000-8000-000000000301",
+        rating: params.feedback === "LIKE" ? "up" : "down",
+      })
+      .catch((err: unknown) => {
+        const detail =
+          err instanceof Error ? err.message : "Synchronisation locale";
+        params.onFeedbackBanner(
+          params.isFr
+            ? `ℹ️ Avis enregistré localement (${detail}).`
+            : `ℹ️ Feedback saved locally (${detail}).`,
+        );
+      });
+  }
   return { nextConversations, nextTelemetryLog };
 }

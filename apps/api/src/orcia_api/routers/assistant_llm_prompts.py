@@ -105,13 +105,13 @@ def resolve_5_layers_and_ontology_from_request(
     assembled_text: str | None = None
     ontology_summary: str | None = None
     try:
-        from orcia_api.dependencies import get_assistant_three_speed_router_service
+        from orcia_api.dependencies import get_assistant_governance_service
 
-        router_svc = get_assistant_three_speed_router_service(request)
-        cached = router_svc.get_or_assemble_cached_prompt(
-            workspace_id=workspace_id, user_id=user_id, hat=hat, locale=locale
+        gov = get_assistant_governance_service(request)
+        layers = gov.assemble_five_layers_preview(
+            workspace_id=workspace_id, user_id=user_id, locale=locale
         )
-        assembled_text = cached.assembled_prompt_text
+        assembled_text = "\n\n".join(f"### {layer.label}\n{layer.content}" for layer in layers)
     except Exception as exc:
         get_logger("orcia.assistant.llm").warning(
             "assistant_5_layer_prompt_resolution_fallback", error_type=type(exc).__name__

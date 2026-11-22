@@ -114,7 +114,7 @@ async def test_vertical_pg18_persistence_across_cold_restart_real_create_app(
                         "user_feedback": "LIKE",
                     },
                 )
-            ).status_code == 200
+            ).status_code in (404, 405)
 
             r_fld = await c1.post(
                 "/api/v1/assistant/folders",
@@ -178,12 +178,28 @@ async def test_vertical_pg18_persistence_across_cold_restart_real_create_app(
             )
             assert len(layers) == 5
 
-            r_cit = await c1.post(
-                "/api/v1/assistant/citations/verify-turn",
-                headers=hdrs,
-                json={"workspace_id": ws_id, "response_text": "Claim [S99] unverified."},
+            assert (
+                await c1.post(
+                    "/api/v1/assistant/citations/verify-turn",
+                    headers=hdrs,
+                    json={"workspace_id": ws_id, "response_text": "Claim [S99] unverified."},
+                )
+            ).status_code in (404, 405)
+            from orcia_core.audit_finops._internal.sql_audit_ledger import SqlAuditLedgerService
+            from orcia_core.orchestration.assistant_citations_and_v5_guard import (
+                AssistantCitationAndV5GuardService,
             )
-            assert r_cit.status_code == 200 and r_cit.json()["stripped_phantom_tags"] == ["S99"]
+
+            cit_guard = AssistantCitationAndV5GuardService(
+                audit_ledger_sink=SqlAuditLedgerService(engine=engine)
+            )
+            await cit_guard.verify_and_sanitize_citations_async(
+                response_text="Claim [S99] unverified.",
+                evidence_table=cit_guard.build_evidence_table(sources=()),
+                workspace_id=ws_id,
+                user_id="admin264b@orcia.io",
+                turn_id=turn_v2_id,
+            )
             assert (
                 await c1.post(
                     "/api/v1/assistant/artifacts/action",
@@ -191,11 +207,11 @@ async def test_vertical_pg18_persistence_across_cold_restart_real_create_app(
                     json={
                         "workspace_id": ws_id,
                         "action_type": "SAVE_DRAFT",
-                        "artifact_title": "Keep Until 26.7",
+                        "artifact_title": "Removed in 26.7",
                         "artifact_content": "Draft content",
                     },
                 )
-            ).status_code == 200
+            ).status_code in (404, 405)
 
         app2 = create_app()
         async with (
@@ -262,7 +278,7 @@ async def test_vertical_pg18_persistence_across_cold_restart_real_create_app(
                 .all()
             )
             by_turn = {str(r["turn_id"]): r for r in fb_rows}
-            assert len(by_turn) == 2 and by_turn[turn_v2_id]["rating"] == "up"
+            assert len(by_turn) == 1 and by_turn[turn_v2_id]["rating"] == "up"
             ledger_count = (
                 await conn.execute(
                     sa.text(

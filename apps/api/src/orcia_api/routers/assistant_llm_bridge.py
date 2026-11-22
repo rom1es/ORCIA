@@ -1,4 +1,4 @@
-"""Live Async LLM Orchestration Bridge for `Mon Assistant` (`/api/v1/assistant/three-speed/*`)."""
+"""Live Async LLM Orchestration Bridge for `Mon Assistant` (`/api/v1/assistant/turns*`)."""
 
 from __future__ import annotations
 

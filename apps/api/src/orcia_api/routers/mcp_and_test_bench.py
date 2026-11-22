@@ -8,11 +8,15 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, Request
 
 from orcia_api.dependencies import (
+    get_assistant_turn_engine,
     get_audit_ledger_service,
     get_connector_quota_guard_service,
+    get_llm_streaming_port,
+    get_optional_embedding_port,
     get_remote_test_bench_and_mcp_service,
     get_remote_usage_sanitizer,
 )
+from orcia_api.routers._mcp_assistant_ask_bridge import dispatch_governed_mcp_invoke_async
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.mcp_test_bench import (
     ConfigureAgentMcpExposureRequest,
@@ -29,16 +33,18 @@ from orcia_core.audit_finops import (
     RemoteUsageSanitizer,
     SqlAuditLedgerService,
     SqlConnectorQuotaGuardService,
-    extract_remote_usage_payload,
     map_domain_event_to_ledger_entry,
 )
 from orcia_core.kernel.events import AdminConnectionTested
 from orcia_core.observability.logging import get_current_trace_id
+from orcia_core.orchestration.assistant_turn_engine import AssistantTurnEngine
 from orcia_core.orchestration.remote_test_bench_and_mcp_exposure import (
     RemoteServiceTestBenchAndGovernedMcpService,
 )
 from orcia_core.permissions.errors import ConnectorCircuitOpenError
 from orcia_core.permissions.models import UserIdentity
+from orcia_core.ports.embedding import EmbeddingPort
+from orcia_core.ports.llm_streaming_port import LlmStreamingPort
 
 router = APIRouter(
     prefix="/api/v1",
@@ -62,6 +68,9 @@ UsageSanitizerDep = Annotated[
     RemoteUsageSanitizer,
     Depends(get_remote_usage_sanitizer),
 ]
+TurnEngineDep = Annotated[AssistantTurnEngine, Depends(get_assistant_turn_engine)]
+LlmPortDep = Annotated[LlmStreamingPort, Depends(get_llm_streaming_port)]
+OptionalEmbeddingDep = Annotated[EmbeddingPort | None, Depends(get_optional_embedding_port)]
 
 
 @router.post(
@@ -231,52 +240,31 @@ async def configure_mcp_exposure(
 async def invoke_governed_mcp_agent(
     workspace_slug: str,
     body: GovernedMcpInvokeRequest,
+    request: Request,
     user: CurrentUserDep,
     svc: TestBenchMcpServiceDep,
     quota_guard: QuotaGuardDep,
     sanitizer: UsageSanitizerDep,
+    turn_engine: TurnEngineDep,
+    llm_port: LlmPortDep,
+    _embedding_port: OptionalEmbeddingDep,
 ) -> GovernedMcpInvokeResponse:
-    """Invoke an exposed MCP agent enforcing the 7 hardware locks (`execute != read`, `AD-3`)."""
-    connector_key = f"mcp:{workspace_slug}:{body.agent_slug}".lower()
+    """Invoke an exposed MCP agent or `assistant.ask` enforcing the 7 hardware locks."""
+    is_assistant_ask = body.tool_name == "assistant.ask" or body.agent_slug == "assistant.ask"
+    target_key = "assistant.ask" if is_assistant_ask else body.agent_slug
+    connector_key = f"mcp:{workspace_slug}:{target_key}".lower()
     decision = await quota_guard.evaluate_call_allowed(connector_key, "WORKSPACE", None)
     if not decision.is_allowed or decision.circuit_state == "CIRCUIT_OPEN":
         raise ConnectorCircuitOpenError(detail_override=decision.reason)
-
-    res = await svc.invoke_governed_mcp_tool_async(
-        raw_pat_token=body.raw_pat_token,
+    return await dispatch_governed_mcp_invoke_async(
+        request,
         workspace_slug=workspace_slug,
-        agent_slug=body.agent_slug,
-        caller_role=user.platform_role,
-        caller_verbs=set(body.caller_verbs),
-        passthrough_identity=body.passthrough_identity,
-        prompt_text=body.prompt_text,
-        requested_write_target_uri=body.requested_write_target_uri,
-    )
-    raw_usage = extract_remote_usage_payload({"_meta": {"usage": dict(res.meta_usage)}})
-    sanitized = sanitizer.sanitize(
-        raw_usage,
-        valuation_mode="NATIVE_TELEMETRY",
-        fixed_cost_per_call_eur=0.0,
-        fixed_cost_per_unit_eur=0.0,
-        max_reported_cost_per_call_eur=5.0,
-        connector_id=connector_key,
-    )
-    await quota_guard.record_call_usage(connector_key, sanitized)
-
-    return GovernedMcpInvokeResponse(
-        invocation_id=res.invocation_id,
-        tool_name=res.tool_name,
-        workspace_slug=res.workspace_slug,
-        passthrough_identity=res.passthrough_identity,
-        sanitized_response_text=res.sanitized_response_text,
-        system_prompt_exposed=res.system_prompt_exposed,
-        secret_refs_exposed=list(res.secret_refs_exposed),
-        staged_actions=list(res.staged_actions),
-        meta_usage={
-            "prompt_tokens": sanitized.input_tokens,
-            "completion_tokens": sanitized.output_tokens,
-            "cost_eur": sanitized.cost_eur,
-        },
-        history_badge_fr=res.history_badge_fr,
-        audit_actor_type=res.audit_actor_type,
+        body=body,
+        user=user,
+        mcp_svc=svc,
+        quota_guard=quota_guard,
+        sanitizer=sanitizer,
+        turn_engine=turn_engine,
+        llm_port=llm_port,
+        embedding_port=_embedding_port,
     )

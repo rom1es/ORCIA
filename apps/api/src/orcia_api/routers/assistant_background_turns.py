@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import time
-import uuid
 from collections.abc import AsyncIterator, Callable
 from typing import Any
 
@@ -39,6 +38,10 @@ from orcia_api.routers._assistant_background_registry import (
 from orcia_api.routers._assistant_turn_consumer import stream_assistant_turn_events
 from orcia_api.routers._assistant_turn_producer import execute_turn_producer_task
 from orcia_api.routers._assistant_usage_telemetry import resolve_assistant_outbox_emitter
+from orcia_core.kernel.ids import new_uuid7_str
+from orcia_core.orchestration._assistant_turn_engine_citations import is_low_evidence_table
+from orcia_core.orchestration.assistant_citations_models import EvidenceTable
+from orcia_core.orchestration.assistant_turn_engine import AssistantTurnEngine
 from orcia_core.orchestration.assistant_turn_errors import (
     AssistantConcurrencyLimitError,
     AssistantRateLimitExceededError,
@@ -47,6 +50,7 @@ from orcia_core.orchestration.redis_rate_limiter import (
     RedisAssistantRateLimiter,
     resolve_rate_limit_settings,
 )
+from orcia_core.orchestration.redis_thread_lock import RedisThreadTurnLock
 from orcia_core.orchestration.redis_turn_registry import (
     RedisAssistantTurnRegistry,
     resolve_liveness_ttl_seconds,
@@ -117,6 +121,11 @@ async def start_background_assistant_turn(
     tool_catalog: tuple[AuthorizedToolDescriptor, ...] = (),
     user_identity: Any | None = None,
     active_hat: str = "ARCHITECT",
+    turn_engine: AssistantTurnEngine | None = None,
+    base_evidence_table: EvidenceTable | None = None,
+    supports_tools: bool | None = None,
+    thread_lock: RedisThreadTurnLock | None = None,
+    thread_lock_token: str | None = None,
 ) -> str:
     """Register a Redis-tracked turn and launch its bounded `asyncio.Task` producer."""
     resolved_trace = trace_id or "00000000000000000000000000000000"
@@ -124,8 +133,13 @@ async def start_background_assistant_turn(
         rate_limiter, user_id=user_id, workspace_id=workspace_id, instance=instance
     )
     t0 = time.perf_counter()
-    turn_id = f"turn-{uuid.uuid4().hex[:10]}"
+    turn_id = new_uuid7_str()
     liveness_ttl_s = resolve_liveness_ttl_seconds()
+    resolved_supports_tools = (
+        supports_tools
+        if supports_tools is not None
+        else (ep.supports_tools if ep is not None else True)
+    )
     record = AssistantTurnRecord(
         turn_id=turn_id,
         workspace_id=workspace_id,
@@ -141,8 +155,13 @@ async def start_background_assistant_turn(
         effort=thinking_effort or "balanced",
         thread_id=thread_id,
         parent_turn_id=parent_turn_id,
+        thread_lock_token=thread_lock_token,
         citation_map=dict(citation_map or {}),
         prompt_assembly_latency_ms=prompt_assembly_latency_ms,
+        supports_tools=resolved_supports_tools,
+        low_evidence=(
+            is_low_evidence_table(base_evidence_table) if base_evidence_table is not None else True
+        ),
     )
     await registry.register_turn(record)
     await registry.refresh_liveness(turn_id, ttl_seconds=liveness_ttl_s)
@@ -183,6 +202,9 @@ async def start_background_assistant_turn(
             tool_catalog=tool_catalog,
             user_identity=user_identity,
             active_hat=active_hat,
+            turn_engine=turn_engine,
+            base_evidence_table=base_evidence_table,
+            thread_lock=thread_lock,
         )
     )
     task_set.add(task)

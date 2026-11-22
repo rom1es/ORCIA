@@ -68,8 +68,9 @@ def test_zero_ram_dicts_in_governance_folders_and_citations_and_mode_b_deleted()
         "_phantom_audit_log RAM list must be replaced by audit_ledger persistence"
     )
     assert not hasattr(cit_svc, "phantom_audit_log")
-    # _saved_drafts & execute_artifact_card_action remain intact until Story 26.7 for E2E 21
-    assert hasattr(cit_svc, "execute_artifact_card_action")
+    # _saved_drafts & execute_artifact_card_action removed in Story 26.7 (R5)
+    assert not hasattr(cit_svc, "execute_artifact_card_action")
+    assert not hasattr(cit_svc, "_saved_drafts")
 
     gov_router_src = (
         REPO_ROOT / "apps/api/src/orcia_api/routers/assistant_workspace_governance.py"
@@ -108,9 +109,9 @@ def test_story_26_4b_source_files_respect_300_line_cap_and_no_inmemory_in_prod()
         "packages/orcia-core/src/orcia_core/orchestration/_internal/_sql_assistant_governance_queries.py",
         "packages/orcia-core/src/orcia_core/orchestration/_internal/sql_assistant_feedback.py",
         "apps/api/src/orcia_api/routers/assistant_workspace_governance.py",
-        "apps/api/src/orcia_api/routers/assistant_workspace_citations.py",
-        "apps/api/src/orcia_api/routers/_assistant_workspace_controls.py",
-        "apps/api/src/orcia_api/routers/_assistant_turns_v2_routes.py",
+        "apps/api/src/orcia_api/routers/assistant_turns.py",
+        "apps/api/src/orcia_api/routers/_assistant_turn_controls_routes.py",
+        "apps/api/src/orcia_api/routers/_assistant_turn_finalizer.py",
         "apps/api/src/orcia_api/routers/assistant_llm_bridge.py",
         "apps/api/src/orcia_api/routers/assistant_llm_prompts.py",
         "apps/api/src/orcia_api/schemas/assistant_governance_and_three_speed.py",
@@ -171,16 +172,9 @@ async def test_phantom_citation_idempotent_audit_ledger_sink_and_v5_action_prese
     assert sink.entries[0].event_type == "ASSISTANT_PHANTOM_CITATION_PURGED"
     assert sink.entries[0].metadata["stripped_tags"] == ["S99"]
 
-    # Temporary preservation of /artifacts/action until Story 26.7
-    outcome = svc.execute_artifact_card_action(
-        user,
-        workspace_id="0192c4e0-0000-7000-8000-000000000201",
-        action_type="SAVE_DRAFT",
-        artifact_title="Preserved Draft",
-        artifact_content="# Content [S1]",
-        cited_tags=("S1",),
-    )
-    assert outcome.draft_uri is not None and outcome.draft_uri.endswith("@draft")
+    # R5 removed execute_artifact_card_action and _saved_drafts in Story 26.7
+    assert not hasattr(svc, "execute_artifact_card_action")
+    assert not hasattr(svc, "_saved_drafts")
 
 
 def test_mode_b_routes_removed_and_mode_a_governance_returns_mode_a_only(
@@ -246,3 +240,90 @@ def test_folder_row_mapper_decodes_attachments_and_evidence_tags() -> None:
     rec = row_to_folder(row, ())  # type: ignore[arg-type]
     assert rec.working_attachments_uris == ("orcia://drafts/a@draft",)
     assert rec.evidence_tags == ("S1", "O2")
+
+
+@pytest.mark.asyncio
+async def test_persona_private_folder_isolation_and_resolve_user_uuid_provisioning(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Persona PRIVATE folders remain visible to owner, hidden from peers, & provision UUID."""
+    from typing import Any
+    from uuid import UUID
+
+    from orcia_core.orchestration._internal._sql_assistant_folders_queries import resolve_user_uuid
+    from orcia_core.permissions.models import UserIdentity
+
+    karim = UserIdentity(
+        id="0192c4e0-0000-7000-8000-000000000601",
+        email="karim.admin@orcia.io",
+        display_name="Karim",
+        auth_mode="OIDC",
+        human_profile_archetype="TECH_LEAD",
+        platform_role="PLATFORM_ADMIN",
+        primary_org_unit_id="0192c4e0-0000-7000-8000-000000000101",
+    )
+    executed_sql: list[str] = []
+    inserted_users: set[str] = set()
+
+    class _Res:
+        def __init__(self, rows: list[tuple[str]]) -> None:
+            self._rows = rows
+
+        def first(self) -> tuple[str] | None:
+            return self._rows[0] if self._rows else None
+
+    class _FakeConn:
+        async def execute(self, stmt: Any, params: dict[str, Any] | None = None) -> _Res:
+            sql = str(stmt)
+            executed_sql.append(sql)
+            p = params or {}
+            if "FROM users WHERE id::text" in sql:
+                uid = str(p.get("uid") or "")
+                return _Res([(uid,)] if uid in inserted_users else [])
+            if "FROM org_units WHERE id::text" in sql:
+                return _Res([])
+            if "FROM org_units ORDER BY" in sql:
+                return _Res([("0192c4e0-0000-7000-8000-000000009001",)])
+            if "INSERT INTO users" in sql:
+                inserted_users.add(str(p["uid"]))
+                return _Res([])
+            return _Res([])
+
+    resolved = await resolve_user_uuid(
+        _FakeConn(),  # type: ignore[arg-type]
+        user_id=karim.id,
+        email=karim.email,
+        user=karim,
+    )
+    assert resolved == UUID(karim.id)
+    assert any("INSERT INTO users" in s for s in executed_sql)
+
+    monkeypatch.setenv("ORCIA_ENV_FILE", "/nonexistent/.env")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
+    monkeypatch.setenv("ORCIA_ENV", "local")
+    app = create_app()
+    ws_id = "0192c4e0-0000-7000-8000-000000000201"
+    with TestClient(app) as client:
+        r_create = client.post(
+            "/api/v1/assistant/folders",
+            params={"persona_key": "karim"},
+            json={"workspace_id": ws_id, "title": "Karim Secret Folder"},
+        )
+        assert r_create.status_code == 200
+        fid = r_create.json()["folder_id"]
+        assert r_create.json()["owner_user_id"] == karim.id
+
+        r_owner = client.get(
+            f"/api/v1/assistant/workspaces/{ws_id}/overview",
+            params={"persona_key": "karim"},
+        )
+        assert r_owner.status_code == 200
+        assert any(f["folder_id"] == fid for f in r_owner.json()["folders"])
+
+        r_peer = client.get(
+            f"/api/v1/assistant/workspaces/{ws_id}/overview",
+            params={"persona_key": "marc"},
+        )
+        assert r_peer.status_code == 200
+        assert not any(f["folder_id"] == fid for f in r_peer.json()["folders"])

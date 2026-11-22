@@ -6,7 +6,6 @@ import { useShellNavigation } from "../../components/ShellContainer";
 import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions";
 import { useI18n } from "../../i18n";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
-import { useReflexiveExecutionController } from "../shared/useReflexiveExecutionController";
 import { useSourceLineInspector } from "../shared/useSourceLineInspector";
 import { subscribeBgStream } from "./assistantBackgroundStreamStore";
 import {
@@ -23,7 +22,6 @@ import {
   persistInboxTurnFeedback,
 } from "./inboxTurnSyncHelpers";
 import {
-  attachReflexiveTraceToConversationLatestTurn,
   buildAssistantAutocompleteAndRagOptions,
   buildAssistantAutocompleteSuggestions,
   buildAssistantModelOptions,
@@ -116,26 +114,6 @@ export function useInboxPanelController() {
     onFeedback: setGovernanceFeedback,
   });
 
-  const reflexive = useReflexiveExecutionController({
-    storageKey: ASSISTANT_REFLEXIVE_STORAGE_KEY,
-    locale,
-    onFeedback: setGovernanceFeedback,
-    onSnapshotUpdated: (mapped) => {
-      if (mapped.events.length === 0) return;
-      const targetConvId =
-        readSavedActiveConversationId() ?? activeConversationId;
-      if (targetConvId) {
-        setSavedConversations(
-          attachReflexiveTraceToConversationLatestTurn(
-            targetConvId,
-            mapped.executionId,
-            mapped.events,
-          ),
-        );
-      }
-    },
-  });
-
   const modelOptions = buildAssistantModelOptions(llmTiers, isFr);
   const activeConversation =
     savedConversations.find((c) => c.id === activeConversationId) ?? null;
@@ -207,8 +185,8 @@ export function useInboxPanelController() {
         modelOptions,
         datasources,
         isFr,
-        reflexiveExecutionId: reflexive.executionId,
-        reflexiveEvents: reflexive.events,
+        reflexiveExecutionId: completed.turnId ?? null,
+        reflexiveEvents: completed.traceEvents ?? [],
         onFeedbackBanner: setGovernanceFeedback,
       });
       setSavedConversations(res.nextConversations);
@@ -236,42 +214,11 @@ export function useInboxPanelController() {
     payload: Parameters<typeof streaming.sendTurn>[0],
   ) => {
     if (assistantInputBlocked) return;
-    const agentMatch = /(?:^|\s)@([a-zA-Z0-9_-]+)/.exec(payload.userPrompt);
-    const isDeepOrDelegated =
-      payload.thinkingEffort === "deep" ||
-      payload.deepAuditPillActive ||
-      Boolean(agentMatch);
-    if (isDeepOrDelegated) {
-      void reflexive.startExecution({
-        actor_slug: agentMatch?.[1] ?? "assistant",
-        objective: payload.userPrompt,
-        effort_level:
-          payload.thinkingEffort === "deep" || payload.deepAuditPillActive
-            ? "high"
-            : "medium",
-        effort_mode:
-          payload.thinkingEffort === "deep" || payload.deepAuditPillActive
-            ? "approfondi"
-            : "standard",
-        allow_sub_agent_delegation: true,
-        available_delegate_agents: agentOptions.slice(0, 3).map((a) => a.slug),
-        initial_resources: ["docs/product/capabilities.yaml"],
-        ...(activeWorkspaceId ? { workspace_id: activeWorkspaceId } : {}),
-      });
-    } else if (reflexive.executionId) {
-      reflexive.clearExecution();
-    }
     streaming.sendTurn(payload);
   };
 
   const handleStopAll = () => {
     streaming.stopGeneration();
-    if (
-      reflexive.executionId &&
-      (reflexive.status === "RUNNING" || reflexive.status === "SYNTHESIZING")
-    ) {
-      void reflexive.cancelExecution();
-    }
   };
 
   const handleDeleteConversation = (convId: string) => {
@@ -313,7 +260,6 @@ export function useInboxPanelController() {
     setGovernanceFeedback,
     foldersController,
     inspector,
-    reflexive,
     streaming,
     modelOptions,
     agentOptions,

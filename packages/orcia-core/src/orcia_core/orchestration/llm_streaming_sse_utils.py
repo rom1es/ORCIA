@@ -82,6 +82,7 @@ def delta_to_sse_dict(delta: LlmStreamDelta) -> dict[str, Any]:
             "data": {
                 "step_code": delta.step_code,
                 "delta": delta.delta,
+                "delta_text": delta.delta,
                 "thinking_text": delta.thinking_text,
                 "elapsed_ms": delta.elapsed_ms,
             },
@@ -89,7 +90,11 @@ def delta_to_sse_dict(delta: LlmStreamDelta) -> dict[str, Any]:
     if delta.event == "token_delta":
         return {
             "event": "token_delta",
-            "data": {"delta": delta.delta, "accumulated_text": delta.accumulated_text},
+            "data": {
+                "delta": delta.delta,
+                "delta_text": delta.delta,
+                "accumulated_text": delta.accumulated_text,
+            },
         }
     if delta.event == "tool_call_delta":
         return {

@@ -238,14 +238,16 @@ export function AssistantCitationPillsAndArtifactCard({
             {artifactContent}
           </pre>
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              data-testid="artifact-card-save-draft-btn"
-              onClick={() => onSaveDraft?.(artifactTitle, artifactContent)}
-              className="rounded border border-border-subtle bg-surface-secondary px-2.5 py-1 text-xs font-medium"
-            >
-              {labels.saveDraftCta}
-            </button>
+            {onSaveDraft ? (
+              <button
+                type="button"
+                data-testid="artifact-card-save-draft-btn"
+                onClick={() => onSaveDraft(artifactTitle, artifactContent)}
+                className="rounded border border-border-subtle bg-surface-secondary px-2.5 py-1 text-xs font-medium"
+              >
+                {labels.saveDraftCta}
+              </button>
+            ) : null}
             <button
               type="button"
               data-testid="artifact-card-continue-process-btn"

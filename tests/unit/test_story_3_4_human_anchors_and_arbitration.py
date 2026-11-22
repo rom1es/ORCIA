@@ -208,17 +208,20 @@ def test_story_3_4_mandatory_human_anchor_and_agent_rejection(
     assert exec_unlocked.json()["step_execution"]["status"] == "COMMITTED"
 
     # 6. Asking Assistant "Remplis-le pour moi" triggers Layer 1 Socratic refusal (FR-4)
-    socratic_resp = client.post(
+    socratic_turn = app.state.assistant_service.run_conversation_turn(
+        workspace_id="0192c4e0-0000-7000-8000-000000000201",
+        user_prompt="Remplis-le pour moi sur la section human_authored_required",
+        human_profile_archetype="ARCHITECT",
+    )
+    assert socratic_turn.intent == "HUMAN_ANCHOR_WRITE_REFUSAL"
+    assert "human_authored_required: true" in socratic_turn.response_text
+    assert client.post(
         "/api/v1/assistant/chat?persona_key=marc",
         json={
             "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
-            "user_prompt": "Remplis-le pour moi sur la section human_authored_required",
-            "human_profile_archetype": "ARCHITECT",
+            "user_prompt": "Remplis-le pour moi",
         },
-    )
-    assert socratic_resp.status_code == 200
-    assert socratic_resp.json()["intent"] == "HUMAN_ANCHOR_WRITE_REFUSAL"
-    assert "human_authored_required: true" in socratic_resp.json()["response_text"]
+    ).status_code in (404, 405)
 
 
 def test_story_3_4_arbitration_pause_and_escalate_outbox_and_resolve(

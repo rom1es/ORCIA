@@ -39,11 +39,9 @@ STRICT_RAG_PROTECTED_ROUTES: frozenset[tuple[str, str]] = frozenset(
 OPTIONAL_EMBEDDING_ROUTES: frozenset[tuple[str, str]] = frozenset(
     {
         ("GET", "/api/v1/search"),
-        ("POST", "/api/v1/assistant/chat"),
-        ("POST", "/api/v1/assistant/chat/stream"),
-        ("POST", "/api/v1/assistant/three-speed/turn"),
-        ("POST", "/api/v1/assistant/three-speed/stream"),
+        ("POST", "/api/v1/assistant/turns"),
         ("POST", "/api/v1/assistant/threads/{thread_id}/turns"),
+        ("POST", "/api/v1/mcp/spaces/{workspace_slug}/invoke"),
     }
 )
 
@@ -126,9 +124,9 @@ def _extract_called_names(node: ast.AST) -> set[str]:
 def test_ast_audit_no_require_rag_available_on_assistant_or_search_and_datasource_guard() -> None:
     """AST audit on routers and SQL datasource mutations (`AD-24` Epic 25)."""
     decoupled_router_files = (
-        REPO_ROOT / "apps/api/src/orcia_api/routers/assistant.py",
-        REPO_ROOT / "apps/api/src/orcia_api/routers/assistant_workspace.py",
+        REPO_ROOT / "apps/api/src/orcia_api/routers/assistant_turns.py",
         REPO_ROOT / "apps/api/src/orcia_api/routers/assistant_workspace_folders.py",
+        REPO_ROOT / "apps/api/src/orcia_api/routers/mcp_and_test_bench.py",
         REPO_ROOT / "apps/api/src/orcia_api/routers/portal_and_help.py",
     )
     for path in decoupled_router_files:

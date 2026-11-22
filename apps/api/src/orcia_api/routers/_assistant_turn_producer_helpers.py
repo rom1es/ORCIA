@@ -39,6 +39,7 @@ async def handle_turn_cancelled(
     saw_usage: bool,
     outbox_emitter: Any | None = None,
     flush_before_emit: Callable[[AssistantTurnRecord], Awaitable[None]] | None = None,
+    turn_engine: Any | None = None,
 ) -> AssistantTurnRecord:
     """Persist stopped turn, FinOps ledger, and Outbox before emitting `turn_stopped`."""
     turn_id = record.turn_id
@@ -84,6 +85,13 @@ async def handle_turn_cancelled(
         ttl_seconds=1800,
     )
     await registry.update_turn(updated, ttl_seconds=1800)
+    if turn_engine is not None:
+        await turn_engine.complete_assistant_reflexive_session_async(
+            turn_id=turn_id,
+            status="STOPPED",
+            final_markdown=streamed_text,
+            tokens_used=in_tok + out_tok,
+        )
     return updated
 
 
@@ -98,6 +106,7 @@ async def handle_turn_failure(
     instance: str,
     locale: str,
     outbox_emitter: Any | None = None,
+    turn_engine: Any | None = None,
 ) -> AssistantTurnRecord:
     """Log failure safely, record ERROR state, and append RFC 9457 `stream_error` event."""
     safe_err = scrub_sensitive_text(str(exc))
@@ -142,6 +151,13 @@ async def handle_turn_failure(
         record.turn_id, event="stream_error", data=err_payload, ttl_seconds=1800
     )
     await registry.update_turn(updated, ttl_seconds=1800)
+    if turn_engine is not None:
+        await turn_engine.complete_assistant_reflexive_session_async(
+            turn_id=record.turn_id,
+            status="ERROR",
+            final_markdown=streamed_text,
+            tokens_used=0,
+        )
     return updated
 
 

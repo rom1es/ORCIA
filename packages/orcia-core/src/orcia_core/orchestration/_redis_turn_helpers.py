@@ -5,11 +5,14 @@ from __future__ import annotations
 import json
 from dataclasses import asdict
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 
 from orcia_core.kernel.errors import get_localized_error_text
 from orcia_core.observability.logging import get_logger, scrub_sensitive_text
-from orcia_core.ports.assistant_turn_stream_port import AssistantTurnRecord
+from orcia_core.ports.assistant_turn_stream_port import (
+    AssistantTurnRecord,
+    AssistantTurnStreamEvent,
+)
 
 logger = get_logger("orcia.core.orchestration.redis_turn_registry")
 
@@ -89,3 +92,26 @@ def build_rfc9457_stream_error_payload(
         "seq": seq,
         "timestamp": datetime.now(UTC).isoformat(),
     }
+
+
+def parse_redis_stream_entries(resp: Any) -> tuple[AssistantTurnStreamEvent, ...]:
+    """Decode `xread` response entries into `AssistantTurnStreamEvent` tuples."""
+    parsed: list[AssistantTurnStreamEvent] = []
+    for _stream_name, entries in resp or ():
+        for msg_id, fields in entries:
+            cur_id = decode_redis_val(msg_id)
+            raw_payload = fields.get("payload") if isinstance(fields, dict) else None
+            if raw_payload is None and isinstance(fields, dict):
+                raw_payload = fields.get(b"payload")
+            if raw_payload is None:
+                continue
+            obj = cast(dict[str, Any], json.loads(decode_redis_val(raw_payload)))
+            parsed.append(
+                AssistantTurnStreamEvent(
+                    cursor=cur_id,
+                    seq=int(obj.get("seq") or 0),
+                    event=str(obj.get("event") or "token_delta"),
+                    data=dict(obj.get("data") or {}),
+                )
+            )
+    return tuple(parsed)

@@ -55,15 +55,24 @@ class SqlReflexiveSessionStore(ReflexiveSessionStorePort):
         status: str,
         snapshot_payload: dict[str, Any],
         expires_at_utc: str,
+        execution_profile: str | None = None,
     ) -> None:
         """Upsert `reflexive_execution_sessions` in PostgreSQL 18 when `session_maker` is wired."""
+        raw_profile = (
+            str(execution_profile or snapshot_payload.get("execution_profile") or "PROCESS")
+            .strip()
+            .upper()
+        )
+        norm_profile = raw_profile if raw_profile in ("PROCESS", "ASSISTANT") else "PROCESS"
+        stored_payload = dict(snapshot_payload)
+        stored_payload.setdefault("execution_profile", norm_profile)
         if not self._strict_sql:
-            self._memory_fallback[execution_id] = dict(snapshot_payload)
+            self._memory_fallback[execution_id] = stored_payload
         if self._session_maker is None:
             return
 
         expires_dt = _parse_iso_utc(expires_at_utc)
-        payload_json = json.dumps(snapshot_payload, ensure_ascii=False)
+        payload_json = json.dumps(stored_payload, ensure_ascii=False)
         stmt = sa.text(
             """
             INSERT INTO reflexive_execution_sessions (
@@ -73,6 +82,7 @@ class SqlReflexiveSessionStore(ReflexiveSessionStorePort):
                 actor_slug,
                 orchestration_mode,
                 effort_level,
+                execution_profile,
                 status,
                 snapshot_jsonb,
                 created_at,
@@ -86,6 +96,7 @@ class SqlReflexiveSessionStore(ReflexiveSessionStorePort):
                 :actor_slug,
                 :orchestration_mode,
                 :effort_level,
+                :execution_profile,
                 :status,
                 CAST(:snapshot_jsonb AS JSONB),
                 NOW(),
@@ -97,6 +108,7 @@ class SqlReflexiveSessionStore(ReflexiveSessionStorePort):
                 actor_slug = EXCLUDED.actor_slug,
                 orchestration_mode = EXCLUDED.orchestration_mode,
                 effort_level = EXCLUDED.effort_level,
+                execution_profile = EXCLUDED.execution_profile,
                 status = EXCLUDED.status,
                 snapshot_jsonb = EXCLUDED.snapshot_jsonb,
                 updated_at = NOW(),
@@ -114,6 +126,7 @@ class SqlReflexiveSessionStore(ReflexiveSessionStorePort):
                         "actor_slug": actor_slug,
                         "orchestration_mode": orchestration_mode,
                         "effort_level": effort_level,
+                        "execution_profile": norm_profile,
                         "status": status,
                         "snapshot_jsonb": payload_json,
                         "expires_at": expires_dt,
@@ -134,7 +147,7 @@ class SqlReflexiveSessionStore(ReflexiveSessionStorePort):
         if self._session_maker is not None:
             stmt = sa.text(
                 """
-                SELECT snapshot_jsonb
+                SELECT snapshot_jsonb, execution_profile
                 FROM reflexive_execution_sessions
                 WHERE execution_id = :execution_id
                 """
@@ -143,12 +156,16 @@ class SqlReflexiveSessionStore(ReflexiveSessionStorePort):
                 async with self._session_maker() as session:
                     row = (await session.execute(stmt, {"execution_id": execution_id})).first()
                 if row is not None:
-                    raw_snap = row[0]
+                    raw_snap, db_profile = row[0], row[1]
                     if isinstance(raw_snap, str):
                         parsed: dict[str, Any] = json.loads(raw_snap)
-                        return parsed
-                    if isinstance(raw_snap, dict):
-                        return dict(raw_snap)
+                    elif isinstance(raw_snap, dict):
+                        parsed = dict(raw_snap)
+                    else:
+                        parsed = {}
+                    if db_profile and "execution_profile" not in parsed:
+                        parsed["execution_profile"] = str(db_profile)
+                    return parsed
                 if self._strict_sql:
                     return None
             except Exception as exc:
