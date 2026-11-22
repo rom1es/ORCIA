@@ -1,8 +1,9 @@
-"""SQL statements & row mappers for `SqlAssistantFoldersRepository` (`0025_story_10_4`)."""
+"""SQL statements & row mappers for `SqlAssistantFoldersRepository` (`0025_story_10_4`, `26.4b`)."""
 
 from __future__ import annotations
 
-from typing import cast
+import json
+from typing import Any, cast
 from uuid import UUID, uuid5
 
 import sqlalchemy as sa
@@ -16,88 +17,33 @@ from orcia_core.orchestration._assistant_folders_models import (
     FolderShareGrant,
     FolderVisibilityMode,
 )
+from orcia_core.orchestration._internal._sql_assistant_folders_sql import (
+    SQL_UPDATE_THREAD_TURN as SQL_UPDATE_THREAD_TURN,
+)
+from orcia_core.orchestration._internal._sql_assistant_folders_sql import (
+    SQL_UPSERT_FOLDER as SQL_UPSERT_FOLDER,
+)
+from orcia_core.orchestration._internal._sql_assistant_folders_sql import (
+    SQL_UPSERT_SHARE as SQL_UPSERT_SHARE,
+)
+from orcia_core.orchestration._internal._sql_assistant_folders_sql import (
+    SQL_UPSERT_THREAD as SQL_UPSERT_THREAD,
+)
 from orcia_core.orchestration.errors import ResourceNotFoundError
 from orcia_kernel.ids import new_uuid7_str
 
 _ORCIA_FOLDER_NS = UUID("0195f000-0000-7000-8000-00000000f000")
 
-SQL_UPSERT_FOLDER = sa.text(
-    """
-    INSERT INTO assistant_folders (
-        folder_id, workspace_id, owner_user_id, title,
-        pinned_notes_markdown, visibility_mode,
-        consolidated_summary, has_restricted_sources
-    ) VALUES (
-        CAST(:folder_id AS uuid), CAST(:workspace_id AS uuid),
-        CAST(:owner_user_id AS uuid), :title,
-        :pinned_notes_markdown, :visibility_mode,
-        :consolidated_summary, :has_restricted_sources
-    )
-    ON CONFLICT (folder_id) DO UPDATE SET
-        title = EXCLUDED.title,
-        pinned_notes_markdown = EXCLUDED.pinned_notes_markdown,
-        consolidated_summary = EXCLUDED.consolidated_summary,
-        has_restricted_sources = EXCLUDED.has_restricted_sources,
-        updated_at = NOW()
-    RETURNING folder_id, workspace_id, owner_user_id, title,
-              pinned_notes_markdown, visibility_mode,
-              consolidated_summary, has_restricted_sources
-    """
-)
 
-SQL_UPSERT_THREAD = sa.text(
-    """
-    INSERT INTO assistant_threads (
-        thread_id, workspace_id, folder_id, creator_user_id,
-        title, thread_summary, turn_count,
-        last_author_user_id, last_author_passthrough_identity
-    ) VALUES (
-        CAST(:thread_id AS uuid), CAST(:workspace_id AS uuid),
-        CAST(:folder_id AS uuid), CAST(:creator_user_id AS uuid),
-        :title, :thread_summary, :turn_count,
-        CAST(:last_author_user_id AS uuid), :last_author_passthrough_identity
-    )
-    ON CONFLICT (thread_id) DO UPDATE SET
-        title = EXCLUDED.title,
-        thread_summary = EXCLUDED.thread_summary,
-        turn_count = EXCLUDED.turn_count,
-        last_author_user_id = EXCLUDED.last_author_user_id,
-        last_author_passthrough_identity = EXCLUDED.last_author_passthrough_identity,
-        updated_at = NOW()
-    RETURNING thread_id, workspace_id, folder_id, creator_user_id,
-              title, thread_summary, turn_count,
-              last_author_user_id, last_author_passthrough_identity
-    """
-)
-
-SQL_UPDATE_THREAD_TURN = sa.text(
-    """
-    UPDATE assistant_threads
-       SET thread_summary = :thread_summary,
-           turn_count = :turn_count,
-           last_author_user_id = CAST(:author_id AS uuid),
-           last_author_passthrough_identity = :passthrough_id,
-           updated_at = NOW()
-     WHERE thread_id = CAST(:thread_id AS uuid)
-       AND workspace_id = CAST(:workspace_id AS uuid)
-    RETURNING thread_id, workspace_id, folder_id, creator_user_id,
-              title, thread_summary, turn_count,
-              last_author_user_id, last_author_passthrough_identity
-    """
-)
-
-SQL_UPSERT_SHARE = sa.text(
-    """
-    INSERT INTO assistant_folder_shares (
-        share_id, folder_id, workspace_id, grantee_user_id, access_role
-    ) VALUES (
-        CAST(:share_id AS uuid), CAST(:folder_id AS uuid),
-        CAST(:workspace_id AS uuid), CAST(:grantee_user_id AS uuid), :access_role
-    )
-    ON CONFLICT (folder_id, grantee_user_id) DO UPDATE SET
-        access_role = EXCLUDED.access_role
-    """
-)
+def _decode_str_list(raw: Any, *, default: tuple[str, ...] = ()) -> tuple[str, ...]:
+    if raw is None:
+        return default
+    if isinstance(raw, str):
+        parsed = json.loads(raw) if raw.strip() else []
+        return tuple(str(x) for x in parsed) if isinstance(parsed, list) else default
+    if isinstance(raw, (list, tuple)):
+        return tuple(str(x) for x in raw)
+    return default
 
 
 def coerce_folder_uuid(raw_id: str | None) -> UUID:
@@ -125,7 +71,7 @@ async def resolve_workspace_uuid(
         return UUID(str(row[0]))
     if required:
         raise ResourceNotFoundError(
-            detail_override=f"Espace de travail '{workspace_id}' introuvable en base."
+            detail_override=f"Workspace '{workspace_id}' not found in PostgreSQL 18."
         )
     return None
 
@@ -152,17 +98,17 @@ async def resolve_user_uuid(
     if fallback is not None:
         return UUID(str(fallback[0]))
     raise ResourceNotFoundError(
-        detail_override="Aucun compte utilisateur enregistré en base pour cette opération."
+        detail_override="No registered user account found in PostgreSQL 18 for this operation."
     )
 
 
 def row_to_folder(
     row: RowMapping,
     shares: tuple[FolderShareGrant, ...],
-    attachments: tuple[str, ...] = (),
-    evidence_tags: tuple[str, ...] = ("S1",),
 ) -> AssistantFolderRecord:
     """Map an `assistant_folders` row into `AssistantFolderRecord`."""
+    attachments = _decode_str_list(row.get("working_attachments_uris"), default=())
+    tags = _decode_str_list(row.get("evidence_tags"), default=())
     return AssistantFolderRecord(
         folder_id=str(row["folder_id"]),
         workspace_id=str(row["workspace_id"]),
@@ -171,7 +117,7 @@ def row_to_folder(
         pinned_notes_markdown=str(row["pinned_notes_markdown"] or ""),
         working_attachments_uris=attachments,
         consolidated_summary=str(row["consolidated_summary"] or ""),
-        evidence_tags=evidence_tags,
+        evidence_tags=tags if tags else ("S1",),
         has_restricted_sources=bool(row["has_restricted_sources"]),
         visibility_mode=cast(FolderVisibilityMode, str(row["visibility_mode"])),
         shares=shares,
@@ -235,7 +181,8 @@ async def fetch_workspace_folders_and_threads(
                 sa.text(
                     "SELECT folder_id, workspace_id, owner_user_id, title, "
                     "pinned_notes_markdown, visibility_mode, consolidated_summary, "
-                    "has_restricted_sources FROM assistant_folders "
+                    "has_restricted_sources, working_attachments_uris, evidence_tags "
+                    "FROM assistant_folders "
                     "WHERE workspace_id = CAST(:workspace_id AS uuid) ORDER BY created_at ASC"
                 ),
                 {"workspace_id": str(ws_uuid)},

@@ -51,6 +51,7 @@ from orcia_api.dependencies.orchestration_and_settings import (
 from orcia_api.dependencies.portal_and_assistant import (
     get_accostage_service,
     get_assistant_citation_and_v5_guard_service,
+    get_assistant_feedback_repository,
     get_assistant_folders_and_sharing_service,
     get_assistant_governance_service,
     get_assistant_service,
@@ -89,6 +90,7 @@ __all__ = [
     "get_agents_and_skills_service",
     "get_ai_models_hub_service",
     "get_assistant_citation_and_v5_guard_service",
+    "get_assistant_feedback_repository",
     "get_assistant_folders_and_sharing_service",
     "get_assistant_governance_service",
     "get_assistant_service",

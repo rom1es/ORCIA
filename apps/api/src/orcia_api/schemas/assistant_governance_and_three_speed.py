@@ -80,63 +80,15 @@ class AssembledLayerPreviewSchemaItem(BaseModel):
     sha256: str
 
 
-class AssistantStudioNodeSchemaItem(BaseModel):
-    """Mode B Studio node schema (`Story 10.1`)."""
-
-    model_config = ConfigDict(extra="forbid")
-    node_id: str
-    title: str
-    node_order: int
-    is_harness_boundary: bool
-    locked_by: Literal["HARNESS", "PLATFORM", "TEAM"] | None = None
-    enabled: bool = True
-    sub_layers_count: int = 3
-    enabled_sub_layers: list[str] = Field(default_factory=list)
-    sub_agent_uri: str | None = None
-
-
-class AssistantStudioGraphStateSchemaItem(BaseModel):
-    """Mode B Studio graph state (`Story 10.1`)."""
-
-    model_config = ConfigDict(extra="forbid")
-    workflow_uri: str
-    scope_level: Literal["DEFAULT", "TEAM", "WORKSPACE"]
-    scope_id: str
-    ai_pre_prompt: str
-    nodes: list[AssistantStudioNodeSchemaItem]
-    override_key: str | None = None
-    sha256: str
-
-
-class SaveAssistantStudioGraphRequest(BaseModel):
-    """Request payload for `POST /api/v1/assistant/governance/mode-b/save` (`Story 10.1`)."""
-
-    model_config = ConfigDict(extra="forbid")
-    scope_level: Literal["TEAM", "WORKSPACE"] = "WORKSPACE"
-    scope_id: str = Field(..., min_length=1)
-    ai_pre_prompt: str = Field(..., min_length=3)
-    nodes: list[AssistantStudioNodeSchemaItem]
-
-
-class ResetAssistantStudioGraphRequest(BaseModel):
-    """Request payload for `POST /api/v1/assistant/governance/mode-b/reset` (`Story 10.1`)."""
-
-    model_config = ConfigDict(extra="forbid")
-    scope_level: Literal["TEAM", "WORKSPACE"] = "WORKSPACE"
-    scope_id: str = Field(..., min_length=1)
-
-
 class AssistantGovernanceViewResponse(BaseModel):
-    """Response envelope for `GET /api/v1/assistant/governance` (`Story 10.1`)."""
+    """Response envelope for `GET /api/v1/assistant/governance` (`Mode A`, `Story 26.4b`)."""
 
     model_config = ConfigDict(extra="forbid")
     workspace_id: str
     can_edit_workspace_layer: bool
-    can_open_studio_mode_b: bool
     user_preferences: UserLayerPreferencesSchemaItem
     workspace_settings: WorkspaceLayerSettingsSchemaItem
     assembled_layers: list[AssembledLayerPreviewSchemaItem]
-    studio_graph: AssistantStudioGraphStateSchemaItem
 
 
 class ThreeSpeedStepProgressSchemaItem(BaseModel):
@@ -265,6 +217,29 @@ class RecordAssistantTurnFeedbackRequest(BaseModel):
     assembled_system_prompt: str = ""
     assistant_reply: str = ""
     thinking_text: str = ""
+
+
+class AssistantTurnFeedbackRequest(BaseModel):
+    """Request payload for `POST /api/v1/assistant/turns/{turn_id}/feedback` (`AD-25`, `R5`)."""
+
+    model_config = ConfigDict(extra="forbid")
+    workspace_id: str = Field(..., min_length=1)
+    rating: Literal["up", "down"]
+    reason_code: str | None = Field(default=None, max_length=64)
+    comment: str | None = Field(default=None, max_length=2000)
+
+
+class AssistantTurnFeedbackResponse(BaseModel):
+    """Response payload for `POST /api/v1/assistant/turns/{turn_id}/feedback` (`AD-25`, `R5`)."""
+
+    model_config = ConfigDict(extra="forbid")
+    feedback_id: str
+    turn_id: str
+    workspace_id: str
+    user_id: str
+    rating: Literal["up", "down"]
+    reason_code: str | None = None
+    comment: str | None = None
 
 
 class InvalidatePromptCacheRequest(BaseModel):

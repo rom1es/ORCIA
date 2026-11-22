@@ -1,4 +1,4 @@
-"""5-Layer Assembly Preview & Mode B Studio Graph Helpers (`Story 10.1`, `Story 26.1`)."""
+"""Mode A 5-Layer Assembly & Governance Helper Builders (`Story 10.1`, `Story 26.4b`)."""
 
 from __future__ import annotations
 
@@ -10,14 +10,11 @@ from orcia_core.orchestration.assistant_governance_layers import (
     build_five_layers_preview_items as build_five_layers_preview_items,
 )
 from orcia_core.orchestration.assistant_governance_models import (
+    AssistantArbitrationPolicy,
     AssistantCustomizationOverrideRecord,
-    AssistantStudioGraphState,
-    AssistantStudioNodeSpec,
     UserLayerPreferences,
     WorkspaceLayerSettings,
     _compute_sha256_hex,
-    build_default_studio_nodes,
-    validate_harness_boundaries,
 )
 from orcia_core.orchestration.assistant_harness import sanitize_layer_marker_tags
 from orcia_core.orchestration.errors import ObserverModeReadOnlyError, ScopeAccessDeniedError
@@ -67,78 +64,6 @@ def build_default_workspace_layer_settings(workspace_id: str) -> WorkspaceLayerS
         mcp_ide_config_json=ide_cfg,
         sha256=digest,
     )
-
-
-def build_default_studio_graph_state(workspace_id: str) -> AssistantStudioGraphState:
-    """Build default Mode B Studio graph state when no override is active."""
-    nodes = build_default_studio_nodes()
-    pre_prompt = (
-        "Exécuter le graphe assistant-agent à 5 nœuds entre les bornes 🔒 AssistantHarness."
-    )
-    return AssistantStudioGraphState(
-        workflow_uri=ASSISTANT_WORKFLOW_URI,
-        scope_level="DEFAULT",
-        scope_id=workspace_id,
-        ai_pre_prompt=pre_prompt,
-        nodes=nodes,
-        override_key=None,
-        sha256=_compute_sha256_hex({"pre_prompt": pre_prompt, "nodes": [n.node_id for n in nodes]}),
-    )
-
-
-def build_saved_studio_graph_override(
-    *,
-    scope_level: Literal["TEAM", "WORKSPACE"],
-    scope_id: str,
-    ai_pre_prompt: str,
-    nodes: tuple[AssistantStudioNodeSpec, ...],
-) -> tuple[AssistantStudioGraphState, AssistantCustomizationOverrideRecord]:
-    """Validate boundaries and return `(graph_state, override_record)`."""
-    validate_harness_boundaries(nodes)
-    clean_pre_prompt = sanitize_layer_marker_tags(ai_pre_prompt)
-    manifest: dict[str, object] = {
-        "workflow_uri": ASSISTANT_WORKFLOW_URI,
-        "scope_level": scope_level,
-        "scope_id": scope_id,
-        "ai_pre_prompt": clean_pre_prompt,
-        "nodes": [
-            {
-                "node_id": n.node_id,
-                "title": n.title,
-                "node_order": n.node_order,
-                "is_harness_boundary": n.is_harness_boundary,
-                "locked_by": n.locked_by,
-                "enabled": n.enabled,
-                "sub_layers_count": n.sub_layers_count,
-                "enabled_sub_layers": list(n.enabled_sub_layers),
-                "sub_agent_uri": n.sub_agent_uri,
-            }
-            for n in nodes
-        ],
-    }
-    digest = _compute_sha256_hex(manifest)
-    ov_key = f"assistant-studio-{scope_level.lower()}-{scope_id}"
-    state = AssistantStudioGraphState(
-        workflow_uri=ASSISTANT_WORKFLOW_URI,
-        scope_level=scope_level,
-        scope_id=scope_id,
-        ai_pre_prompt=clean_pre_prompt,
-        nodes=nodes,
-        override_key=ov_key,
-        sha256=digest,
-    )
-    record = AssistantCustomizationOverrideRecord(
-        id=new_uuid7_str(),
-        override_key=ov_key,
-        org_unit_id=scope_id if scope_level == "TEAM" else None,
-        workspace_id=scope_id if scope_level == "WORKSPACE" else None,
-        user_id=None,
-        target_uri=ASSISTANT_WORKFLOW_URI,
-        override_layer=scope_level,
-        override_manifest_jsonb=manifest,
-        sha256=digest,
-    )
-    return state, record
 
 
 def build_default_user_preferences(*, workspace_id: str, user_id: str) -> UserLayerPreferences:
@@ -206,6 +131,62 @@ def build_updated_user_preferences_override(
     return prefs, record
 
 
+def build_updated_workspace_settings_override(
+    *,
+    workspace_id: str,
+    current: WorkspaceLayerSettings,
+    workspace_instructions: str,
+    default_checked_sources: tuple[str, ...],
+    recommended_agents: tuple[str, ...],
+    arbitration_policy: AssistantArbitrationPolicy,
+    welcome_suggestions: tuple[str, ...] | None,
+    mcp_expose_assistant: bool,
+    frozen_entry: tuple[bool, Literal["PLATFORM", "TEAM"]] | None,
+) -> tuple[WorkspaceLayerSettings, AssistantCustomizationOverrideRecord]:
+    """Build updated Layer 4 workspace settings and override record."""
+    suggestions = (
+        welcome_suggestions if welcome_suggestions is not None else current.welcome_suggestions
+    )
+    ws_instr_str = sanitize_layer_marker_tags(workspace_instructions)
+    manifest: dict[str, object] = {
+        "workspace_instructions": ws_instr_str,
+        "default_checked_sources": list(default_checked_sources),
+        "recommended_agents": list(recommended_agents),
+        "arbitration_policy": arbitration_policy,
+        "welcome_suggestions": list(suggestions),
+        "mcp_expose_assistant": mcp_expose_assistant,
+    }
+    digest = _compute_sha256_hex(manifest)
+    updated = WorkspaceLayerSettings(
+        workspace_id=workspace_id,
+        workspace_instructions=ws_instr_str,
+        default_checked_sources=tuple(default_checked_sources),
+        recommended_agents=tuple(recommended_agents),
+        arbitration_policy=arbitration_policy,
+        welcome_suggestions=tuple(suggestions),
+        mcp_expose_assistant=mcp_expose_assistant,
+        mcp_frozen_by_upper_layer=bool(frozen_entry and frozen_entry[0]),
+        mcp_frozen_origin=frozen_entry[1] if frozen_entry else None,
+        mcp_endpoint_url=current.mcp_endpoint_url,
+        mcp_tool_name=current.mcp_tool_name,
+        mcp_ide_config_json=current.mcp_ide_config_json,
+        sha256=digest,
+    )
+    ov_key = f"assistant-workspace-{workspace_id}"
+    record = AssistantCustomizationOverrideRecord(
+        id=new_uuid7_str(),
+        override_key=ov_key,
+        org_unit_id=None,
+        workspace_id=workspace_id,
+        user_id=None,
+        target_uri=ASSISTANT_WORKFLOW_URI,
+        override_layer="WORKSPACE",
+        override_manifest_jsonb=manifest,
+        sha256=digest,
+    )
+    return updated, record
+
+
 def build_frozen_workspace_settings(
     existing: WorkspaceLayerSettings,
     *,
@@ -237,7 +218,7 @@ def can_manage_workspace_or_team(user: UserIdentity) -> bool:
 
 
 def ensure_workspace_or_team_manager(user: UserIdentity, detail: str | None = None) -> None:
-    """Enforce non-observer + manager privilege before Mode A/B governance writes."""
+    """Enforce non-observer + manager privilege before Mode A governance writes."""
     if user.platform_role in ("OBSERVER", "BU_DIRECTOR"):
         raise ObserverModeReadOnlyError()
     if not can_manage_workspace_or_team(user):

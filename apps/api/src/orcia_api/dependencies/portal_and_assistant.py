@@ -31,6 +31,9 @@ from orcia_core.orchestration import AssistantAgentService
 from orcia_core.orchestration.assistant_citations_and_v5_guard import (
     AssistantCitationAndV5GuardService,
 )
+from orcia_core.orchestration.assistant_feedback import (
+    SqlAssistantFeedbackRepository,
+)
 from orcia_core.orchestration.assistant_folders_and_sharing import (
     AssistantFoldersAndSharingService,
 )
@@ -141,13 +144,18 @@ def get_contextual_help_service(request: Request) -> ContextualHelpResolutionSer
 def get_assistant_governance_service(
     request: Request,
 ) -> AssistantFourLevelGovernanceService:
-    """FastAPI `Depends` provider returning `AssistantFourLevelGovernanceService`."""
+    """FastAPI `Depends` provider returning `AssistantFourLevelGovernanceService` (PG18)."""
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
+
+    engine = get_configured_db_engine(request)
     svc: AssistantFourLevelGovernanceService | None = getattr(
         request.app.state, "assistant_governance_service", None
     )
     if svc is None:
-        svc = AssistantFourLevelGovernanceService()
+        svc = AssistantFourLevelGovernanceService(engine=engine)
         request.app.state.assistant_governance_service = svc
+    elif getattr(svc, "_engine", None) is None and engine is not None:
+        svc.set_engine(engine)
     return svc
 
 
@@ -155,11 +163,11 @@ def get_assistant_three_speed_router_service(
     request: Request,
 ) -> AssistantThreeSpeedRouterService:
     """FastAPI `Depends` provider returning `AssistantThreeSpeedRouterService`."""
+    gov = get_assistant_governance_service(request)
     svc: AssistantThreeSpeedRouterService | None = getattr(
         request.app.state, "assistant_three_speed_router_service", None
     )
     if svc is None:
-        gov = get_assistant_governance_service(request)
         svc = AssistantThreeSpeedRouterService(governance_service=gov)
         request.app.state.assistant_three_speed_router_service = svc
     return svc
@@ -168,14 +176,42 @@ def get_assistant_three_speed_router_service(
 def get_assistant_citation_and_v5_guard_service(
     request: Request,
 ) -> AssistantCitationAndV5GuardService:
-    """FastAPI `Depends` provider returning `AssistantCitationAndV5GuardService`."""
+    """FastAPI `Depends` provider returning `AssistantCitationAndV5GuardService` (PG18 ledger)."""
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
+    from orcia_core.audit_finops import SqlAuditLedgerService
+
+    engine = get_configured_db_engine(request)
+    ledger_sink = getattr(request.app.state, "audit_ledger_service", None)
+    if ledger_sink is None and engine is not None:
+        ledger_sink = SqlAuditLedgerService(engine=engine)
+        request.app.state.audit_ledger_service = ledger_sink
     svc: AssistantCitationAndV5GuardService | None = getattr(
         request.app.state, "assistant_citation_and_v5_guard_service", None
     )
     if svc is None:
-        svc = AssistantCitationAndV5GuardService()
+        svc = AssistantCitationAndV5GuardService(audit_ledger_sink=ledger_sink)
         request.app.state.assistant_citation_and_v5_guard_service = svc
+    elif getattr(svc, "_audit_ledger_sink", None) is None and ledger_sink is not None:
+        svc.set_audit_ledger_sink(ledger_sink)
     return svc
+
+
+def get_assistant_feedback_repository(
+    request: Request,
+) -> SqlAssistantFeedbackRepository:
+    """FastAPI `Depends` provider returning `SqlAssistantFeedbackRepository` (PG18)."""
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
+
+    engine = get_configured_db_engine(request)
+    repo: SqlAssistantFeedbackRepository | None = getattr(
+        request.app.state, "assistant_feedback_repository", None
+    )
+    if repo is None:
+        repo = SqlAssistantFeedbackRepository(engine=engine)
+        request.app.state.assistant_feedback_repository = repo
+    elif getattr(repo, "_engine", None) is None and engine is not None:
+        repo.set_engine(engine)
+    return repo
 
 
 def get_assistant_folders_and_sharing_service(

@@ -51,7 +51,7 @@ async def stream_configured_llm_for_assistant_turn(
 ) -> AsyncIterator[dict[str, Any]]:
     """True async SSE token streamer decoupled via Redis Streams (`Story 26.3`)."""
     from orcia_api.routers.assistant_llm_bridge import (
-        resolve_assembled_system_instructions_for_turn,
+        resolve_assembled_system_instructions_for_turn_async,
     )
 
     resolved_locale = resolve_request_locale(request, locale)
@@ -63,7 +63,7 @@ async def stream_configured_llm_for_assistant_turn(
         request, requested_tier=requested_tier, workspace_id=workspace_id
     )
     active_port = llm_port or get_llm_streaming_port(request)
-    system_msg = resolve_assembled_system_instructions_for_turn(
+    system_msg = await resolve_assembled_system_instructions_for_turn_async(
         request,
         hat=hat,
         speed_mode=speed_mode,

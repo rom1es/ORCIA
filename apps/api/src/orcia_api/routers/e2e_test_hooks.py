@@ -48,6 +48,7 @@ _E2E_EVICTABLE_STATE_ATTRS: tuple[str, ...] = (
     "assistant_governance_service",
     "assistant_three_speed_router_service",
     "assistant_citation_and_v5_guard_service",
+    "assistant_feedback_repository",
     "assistant_folders_and_sharing_service",
     "assistant_service",
     "workspace_governance_and_rebaser_service",

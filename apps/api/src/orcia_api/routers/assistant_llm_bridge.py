@@ -32,6 +32,8 @@ from orcia_api.routers.assistant_llm_prompts import (
     build_workspace_tools_schema,
     detect_adaptive_thinking_steps_for_question,
     resolve_5_layers_and_ontology_from_request,
+    resolve_5_layers_and_ontology_from_request_async,
+    resolve_assembled_system_instructions_for_turn_async,
     resolve_request_locale,
 )
 from orcia_api.routers.assistant_llm_providers import (
@@ -176,7 +178,7 @@ async def invoke_configured_llm_for_assistant_turn(
         if resolved_locale == "en"
         else ("Réflexion Élevée" if effort == "deep" else "Réflexion Standard")
     )
-    system_msg = resolve_assembled_system_instructions_for_turn(
+    system_msg = await resolve_assembled_system_instructions_for_turn_async(
         request,
         hat=hat,
         speed_mode=speed_mode,
@@ -284,7 +286,9 @@ __all__ = [
     "normalize_chat_completions_url",
     "record_prompt_telemetry_entry",
     "resolve_5_layers_and_ontology_from_request",
+    "resolve_5_layers_and_ontology_from_request_async",
     "resolve_assembled_system_instructions_for_turn",
+    "resolve_assembled_system_instructions_for_turn_async",
     "resolve_configured_llm_endpoint",
     "resolve_request_locale",
     "stop_active_turn_for_workspace",

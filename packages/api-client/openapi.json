@@ -2722,7 +2722,7 @@
       },
       "AssistantGovernanceViewResponse": {
         "additionalProperties": false,
-        "description": "Response envelope for `GET /api/v1/assistant/governance` (`Story 10.1`).",
+        "description": "Response envelope for `GET /api/v1/assistant/governance` (`Mode A`, `Story 26.4b`).",
         "properties": {
           "assembled_layers": {
             "items": {
@@ -2734,13 +2734,6 @@
           "can_edit_workspace_layer": {
             "title": "Can Edit Workspace Layer",
             "type": "boolean"
-          },
-          "can_open_studio_mode_b": {
-            "title": "Can Open Studio Mode B",
-            "type": "boolean"
-          },
-          "studio_graph": {
-            "$ref": "#/components/schemas/AssistantStudioGraphStateSchemaItem"
           },
           "user_preferences": {
             "$ref": "#/components/schemas/UserLayerPreferencesSchemaItem"
@@ -2756,11 +2749,9 @@
         "required": [
           "workspace_id",
           "can_edit_workspace_layer",
-          "can_open_studio_mode_b",
           "user_preferences",
           "workspace_settings",
-          "assembled_layers",
-          "studio_graph"
+          "assembled_layers"
         ],
         "title": "AssistantGovernanceViewResponse",
         "type": "object"
@@ -2929,139 +2920,6 @@
         "title": "AssistantSaveAndLaunchResponse",
         "type": "object"
       },
-      "AssistantStudioGraphStateSchemaItem": {
-        "additionalProperties": false,
-        "description": "Mode B Studio graph state (`Story 10.1`).",
-        "properties": {
-          "ai_pre_prompt": {
-            "title": "Ai Pre Prompt",
-            "type": "string"
-          },
-          "nodes": {
-            "items": {
-              "$ref": "#/components/schemas/AssistantStudioNodeSchemaItem"
-            },
-            "title": "Nodes",
-            "type": "array"
-          },
-          "override_key": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Override Key"
-          },
-          "scope_id": {
-            "title": "Scope Id",
-            "type": "string"
-          },
-          "scope_level": {
-            "enum": [
-              "DEFAULT",
-              "TEAM",
-              "WORKSPACE"
-            ],
-            "title": "Scope Level",
-            "type": "string"
-          },
-          "sha256": {
-            "title": "Sha256",
-            "type": "string"
-          },
-          "workflow_uri": {
-            "title": "Workflow Uri",
-            "type": "string"
-          }
-        },
-        "required": [
-          "workflow_uri",
-          "scope_level",
-          "scope_id",
-          "ai_pre_prompt",
-          "nodes",
-          "sha256"
-        ],
-        "title": "AssistantStudioGraphStateSchemaItem",
-        "type": "object"
-      },
-      "AssistantStudioNodeSchemaItem": {
-        "additionalProperties": false,
-        "description": "Mode B Studio node schema (`Story 10.1`).",
-        "properties": {
-          "enabled": {
-            "default": true,
-            "title": "Enabled",
-            "type": "boolean"
-          },
-          "enabled_sub_layers": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Enabled Sub Layers",
-            "type": "array"
-          },
-          "is_harness_boundary": {
-            "title": "Is Harness Boundary",
-            "type": "boolean"
-          },
-          "locked_by": {
-            "anyOf": [
-              {
-                "enum": [
-                  "HARNESS",
-                  "PLATFORM",
-                  "TEAM"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Locked By"
-          },
-          "node_id": {
-            "title": "Node Id",
-            "type": "string"
-          },
-          "node_order": {
-            "title": "Node Order",
-            "type": "integer"
-          },
-          "sub_agent_uri": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sub Agent Uri"
-          },
-          "sub_layers_count": {
-            "default": 3,
-            "title": "Sub Layers Count",
-            "type": "integer"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "node_id",
-          "title",
-          "node_order",
-          "is_harness_boundary"
-        ],
-        "title": "AssistantStudioNodeSchemaItem",
-        "type": "object"
-      },
       "AssistantThreadSchemaItem": {
         "additionalProperties": false,
         "description": "Thread representation inside a `📁 Dossier` (`Story 10.4`).",
@@ -3206,6 +3064,116 @@
           "trace_id"
         ],
         "title": "AssistantTurnAcceptedResponse",
+        "type": "object"
+      },
+      "AssistantTurnFeedbackRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for `POST /api/v1/assistant/turns/{turn_id}/feedback` (`AD-25`, `R5`).",
+        "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "rating": {
+            "enum": [
+              "up",
+              "down"
+            ],
+            "title": "Rating",
+            "type": "string"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Code"
+          },
+          "workspace_id": {
+            "minLength": 1,
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "rating"
+        ],
+        "title": "AssistantTurnFeedbackRequest",
+        "type": "object"
+      },
+      "AssistantTurnFeedbackResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for `POST /api/v1/assistant/turns/{turn_id}/feedback` (`AD-25`, `R5`).",
+        "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "feedback_id": {
+            "title": "Feedback Id",
+            "type": "string"
+          },
+          "rating": {
+            "enum": [
+              "up",
+              "down"
+            ],
+            "title": "Rating",
+            "type": "string"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Code"
+          },
+          "turn_id": {
+            "title": "Turn Id",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "feedback_id",
+          "turn_id",
+          "workspace_id",
+          "user_id",
+          "rating"
+        ],
+        "title": "AssistantTurnFeedbackResponse",
         "type": "object"
       },
       "AssistantWorkflowProposalSchemaItem": {
@@ -22162,31 +22130,6 @@
         "title": "ResendLoginTwoFactorResponse",
         "type": "object"
       },
-      "ResetAssistantStudioGraphRequest": {
-        "additionalProperties": false,
-        "description": "Request payload for `POST /api/v1/assistant/governance/mode-b/reset` (`Story 10.1`).",
-        "properties": {
-          "scope_id": {
-            "minLength": 1,
-            "title": "Scope Id",
-            "type": "string"
-          },
-          "scope_level": {
-            "default": "WORKSPACE",
-            "enum": [
-              "TEAM",
-              "WORKSPACE"
-            ],
-            "title": "Scope Level",
-            "type": "string"
-          }
-        },
-        "required": [
-          "scope_id"
-        ],
-        "title": "ResetAssistantStudioGraphRequest",
-        "type": "object"
-      },
       "ResetCircuitBreakerRequest": {
         "description": "Request payload to reset a suspended connector circuit breaker.",
         "properties": {
@@ -23131,45 +23074,6 @@
           "judge_model_family"
         ],
         "title": "RunPilotTicketToTechSpecRequest",
-        "type": "object"
-      },
-      "SaveAssistantStudioGraphRequest": {
-        "additionalProperties": false,
-        "description": "Request payload for `POST /api/v1/assistant/governance/mode-b/save` (`Story 10.1`).",
-        "properties": {
-          "ai_pre_prompt": {
-            "minLength": 3,
-            "title": "Ai Pre Prompt",
-            "type": "string"
-          },
-          "nodes": {
-            "items": {
-              "$ref": "#/components/schemas/AssistantStudioNodeSchemaItem"
-            },
-            "title": "Nodes",
-            "type": "array"
-          },
-          "scope_id": {
-            "minLength": 1,
-            "title": "Scope Id",
-            "type": "string"
-          },
-          "scope_level": {
-            "default": "WORKSPACE",
-            "enum": [
-              "TEAM",
-              "WORKSPACE"
-            ],
-            "title": "Scope Level",
-            "type": "string"
-          }
-        },
-        "required": [
-          "scope_id",
-          "ai_pre_prompt",
-          "nodes"
-        ],
-        "title": "SaveAssistantStudioGraphRequest",
         "type": "object"
       },
       "SaveWorkflowV2Request": {
@@ -36845,7 +36749,7 @@
     },
     "/api/v1/assistant/governance": {
       "get": {
-        "description": "Return Mode A (3 tabs) & Mode B (Studio graph) governance state (`Story 10.1`).",
+        "description": "Return Mode A (3 tabs) governance state hydrated from PG18 (`Story 26.4b`).",
         "operationId": "get_assistant_governance_endpoint_api_v1_assistant_governance_get",
         "parameters": [
           {
@@ -36993,7 +36897,7 @@
     },
     "/api/v1/assistant/governance/mode-a/user": {
       "put": {
-        "description": "Update Tab 1 (`Mes préférences — Couche 5 USER`) (`Story 10.1`).",
+        "description": "Update Tab 1 (`USER` layer 5) and persist to PG18 (`Story 26.4b`).",
         "operationId": "update_user_layer_preferences_endpoint_api_v1_assistant_governance_mode_a_user_put",
         "parameters": [
           {
@@ -37125,7 +37029,7 @@
     },
     "/api/v1/assistant/governance/mode-a/workspace": {
       "put": {
-        "description": "Update Tab 2 (`Réglages de l'Espace — Couche 4 WORKSPACE`) (`Story 10.1`).",
+        "description": "Update Tab 2 (`WORKSPACE` layer 4) and persist to PG18 (`Story 26.4b`).",
         "operationId": "update_workspace_layer_settings_endpoint_api_v1_assistant_governance_mode_a_workspace_put",
         "parameters": [
           {
@@ -37250,270 +37154,6 @@
           }
         ],
         "summary": "Update Workspace Layer Settings Endpoint",
-        "tags": [
-          "assistant-workspace"
-        ]
-      }
-    },
-    "/api/v1/assistant/governance/mode-b/reset": {
-      "post": {
-        "description": "Reset Mode B Studio override in 1 click (`Story 10.1`).",
-        "operationId": "reset_assistant_studio_graph_endpoint_api_v1_assistant_governance_mode_b_reset_post",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "persona_key",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Persona Key"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResetAssistantStudioGraphRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AssistantStudioGraphStateSchemaItem"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Conflict"
-          },
-          "412": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Precondition Failed"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Unprocessable Entity"
-          },
-          "428": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Precondition Required"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Reset Assistant Studio Graph Endpoint",
-        "tags": [
-          "assistant-workspace"
-        ]
-      }
-    },
-    "/api/v1/assistant/governance/mode-b/save": {
-      "post": {
-        "description": "Save Mode B Studio graph override (`TEAM` or `WORKSPACE`).",
-        "operationId": "save_assistant_studio_graph_endpoint_api_v1_assistant_governance_mode_b_save_post",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "persona_key",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Persona Key"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SaveAssistantStudioGraphRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AssistantStudioGraphStateSchemaItem"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Conflict"
-          },
-          "412": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Precondition Failed"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Unprocessable Entity"
-          },
-          "428": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Precondition Required"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Save Assistant Studio Graph Endpoint",
         "tags": [
           "assistant-workspace"
         ]
@@ -37925,7 +37565,7 @@
     },
     "/api/v1/assistant/three-speed/feedback": {
       "post": {
-        "description": "Record user `LIKE` or `DISLIKE` feedback on a prompt telemetry entry.",
+        "description": "Record user `LIKE` or `DISLIKE` feedback into PG18 `assistant_turn_feedback`.",
         "operationId": "record_assistant_turn_feedback_endpoint_api_v1_assistant_three_speed_feedback_post",
         "parameters": [
           {
@@ -38846,6 +38486,147 @@
           }
         ],
         "summary": "List Active Assistant Turns V2 Endpoint",
+        "tags": [
+          "assistant-workspace"
+        ]
+      }
+    },
+    "/api/v1/assistant/turns/{turn_id}/feedback": {
+      "post": {
+        "description": "Idempotently upsert user feedback for `(turn_id, user_id)` in `assistant_turn_feedback`.",
+        "operationId": "upsert_assistant_turn_feedback_v2_endpoint_api_v1_assistant_turns__turn_id__feedback_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "turn_id",
+            "required": true,
+            "schema": {
+              "title": "Turn Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantTurnFeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantTurnFeedbackResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Upsert Assistant Turn Feedback V2 Endpoint",
         "tags": [
           "assistant-workspace"
         ]

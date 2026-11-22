@@ -18,17 +18,12 @@ from __future__ import annotations
 
 import pytest
 from fastapi.testclient import TestClient
+from tests.unit.fakes.in_memory_assistant_governance import InMemoryAssistantGovernanceStore
 
 from orcia_api.main import app
-from orcia_core.orchestration.assistant_governance import (
-    ENTRY_HARNESS_NODE_ID,
-    AssistantFourLevelGovernanceService,
-    AssistantStudioNodeSpec,
-    build_default_studio_nodes,
-)
+from orcia_core.orchestration.assistant_governance import AssistantFourLevelGovernanceService
 from orcia_core.orchestration.errors import (
     FunnelRuleViolationError,
-    ImmutableHarnessBoundaryError,
     ObserverModeReadOnlyError,
     ScopeAccessDeniedError,
 )
@@ -54,7 +49,7 @@ def _make_user(
 
 def test_story_10_1_mode_a_three_tabs_and_funnel_rule_enforcement() -> None:
     """Verify Mode A Tab 1 (USER), Tab 2 (WORKSPACE + Funnel Rule), and Tab 3 (5 layers)."""
-    svc = AssistantFourLevelGovernanceService()
+    svc = AssistantFourLevelGovernanceService(store=InMemoryAssistantGovernanceStore())
     contributor = _make_user(user_id="u-helene", org_role="CONTRIBUTOR", archetype="PM")
     team_lead = _make_user(user_id="u-marc", org_role="TEAM_LEAD", archetype="TECH_LEAD")
     observer = _make_user(
@@ -136,72 +131,8 @@ def test_story_10_1_mode_a_three_tabs_and_funnel_rule_enforcement() -> None:
     assert "Synthèse en 3 puces" in layers[4].content
 
 
-def test_story_10_1_mode_b_studio_immutable_harness_boundary_and_reset() -> None:
-    """Verify Mode B Studio rejects tampering with `🔒 AssistantHarness` and resets."""
-    svc = AssistantFourLevelGovernanceService()
-    team_lead = _make_user(user_id="u-marc", org_role="TEAM_LEAD", archetype="TECH_LEAD")
-    default_nodes = list(build_default_studio_nodes())
-
-    # 1. Tampering with ENTRY_BOUNDARY_HARNESS -> 422 ERR_IMMUTABLE_HARNESS_BOUNDARY
-    tampered_nodes = [
-        AssistantStudioNodeSpec(
-            node_id=ENTRY_HARNESS_NODE_ID,
-            title="Tampered Entry",
-            node_order=0,
-            is_harness_boundary=True,
-            locked_by="HARNESS",
-            enabled=False,
-        ),
-        *default_nodes[1:],
-    ]
-    with pytest.raises(ImmutableHarnessBoundaryError) as exc_info:
-        svc.save_studio_graph_override(
-            team_lead,
-            scope_level="WORKSPACE",
-            scope_id="ws-claims-alpha",
-            ai_pre_prompt="Test",
-            nodes=tuple(tampered_nodes),
-        )
-    assert exc_info.value.error_code == "ERR_IMMUTABLE_HARNESS_BOUNDARY"
-
-    # 2. Valid Mode B customization (adding a sub-agent to Node 3 while keeping Harness bounds)
-    custom_nodes = [
-        n
-        if n.node_id != "3_PARALLEL_FAN_OUT"
-        else AssistantStudioNodeSpec(
-            node_id=n.node_id,
-            title=n.title,
-            node_order=n.node_order,
-            is_harness_boundary=False,
-            locked_by=None,
-            enabled=True,
-            sub_layers_count=5,
-            sub_agent_uri="orcia://agents/custom-finops-auditor",
-        )
-        for n in default_nodes
-    ]
-    saved = svc.save_studio_graph_override(
-        team_lead,
-        scope_level="WORKSPACE",
-        scope_id="ws-claims-alpha",
-        ai_pre_prompt="Pré-prompt personnalisé Mode B pour ws-claims-alpha",
-        nodes=tuple(custom_nodes),
-    )
-    assert saved.scope_level == "WORKSPACE"
-    assert saved.override_key == "assistant-studio-workspace-ws-claims-alpha"
-
-    # 3. 1-click Reset restores default configuration
-    restored = svc.reset_studio_graph_override(
-        team_lead,
-        scope_level="WORKSPACE",
-        scope_id="ws-claims-alpha",
-    )
-    assert restored.scope_level == "DEFAULT"
-    assert restored.override_key is None
-
-
-def test_story_10_1_api_endpoints_mode_a_and_mode_b() -> None:
-    """Verify FastAPI endpoints `/api/v1/assistant/governance/*` (`Story 10.1`)."""
+def test_story_10_1_api_endpoints_mode_a_and_mode_b_removed() -> None:
+    """Verify Mode A `/governance/*` and 404/405 on deleted Mode B (`R2`, `26.4b`)."""
     ws_id = "0192c4e0-0000-7000-8000-000000000201"
     with TestClient(app) as client:
         get_resp = client.get(
@@ -211,7 +142,8 @@ def test_story_10_1_api_endpoints_mode_a_and_mode_b() -> None:
         assert get_resp.status_code == 200
         data = get_resp.json()
         assert len(data["assembled_layers"]) == 5
-        assert len(data["studio_graph"]["nodes"]) == 7
+        assert "studio_graph" not in data
+        assert "can_open_studio_mode_b" not in data
 
         # Update user preferences (Mode A Tab 1)
         u_resp = client.put(
@@ -228,39 +160,17 @@ def test_story_10_1_api_endpoints_mode_a_and_mode_b() -> None:
         assert u_resp.status_code == 200
         assert u_resp.json()["response_tone"] == "DETAILED_CODE"
 
-        # Tamper with Mode B Harness boundary via API -> 422 ERR_IMMUTABLE_HARNESS_BOUNDARY
-        bad_nodes = data["studio_graph"]["nodes"][1:]  # missing ENTRY_BOUNDARY_HARNESS
+        # Mode B Studio routes are deleted under R2 / R4 (Story 26.4b)
         bad_resp = client.post(
             "/api/v1/assistant/governance/mode-b/save",
             params={"persona_key": "marc"},
-            json={
-                "scope_level": "WORKSPACE",
-                "scope_id": ws_id,
-                "ai_pre_prompt": "Tentative de suppression de borne",
-                "nodes": bad_nodes,
-            },
+            json={"scope_level": "WORKSPACE", "scope_id": ws_id, "ai_pre_prompt": "x", "nodes": []},
         )
-        assert bad_resp.status_code == 422
-        assert bad_resp.json()["error_code"] == "ERR_IMMUTABLE_HARNESS_BOUNDARY"
-
-        # Valid Mode B save & 1-click reset
-        ok_resp = client.post(
-            "/api/v1/assistant/governance/mode-b/save",
-            params={"persona_key": "marc"},
-            json={
-                "scope_level": "WORKSPACE",
-                "scope_id": ws_id,
-                "ai_pre_prompt": "Surcharge Studio valide",
-                "nodes": data["studio_graph"]["nodes"],
-            },
-        )
-        assert ok_resp.status_code == 200
-        assert ok_resp.json()["scope_level"] == "WORKSPACE"
+        assert bad_resp.status_code in (404, 405)
 
         rst_resp = client.post(
             "/api/v1/assistant/governance/mode-b/reset",
             params={"persona_key": "marc"},
             json={"scope_level": "WORKSPACE", "scope_id": ws_id},
         )
-        assert rst_resp.status_code == 200
-        assert rst_resp.json()["scope_level"] == "DEFAULT"
+        assert rst_resp.status_code in (404, 405)

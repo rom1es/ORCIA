@@ -6,7 +6,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request
 
-from orcia_api.dependencies import get_assistant_three_speed_router_service
+from orcia_api.dependencies import (
+    get_assistant_feedback_repository,
+    get_assistant_three_speed_router_service,
+)
 from orcia_api.dependencies._assistant_guards import enforce_assistant_workspace_guard
 from orcia_api.routers._assistant_workspace_context import to_active_turn_response
 from orcia_api.routers.assistant_llm_bridge import (
@@ -22,6 +25,10 @@ from orcia_api.schemas.assistant import (
     RecordAssistantTurnFeedbackRequest,
     StopActiveBackgroundTurnRequest,
 )
+from orcia_core.orchestration.assistant_feedback import (
+    FeedbackRating,
+    SqlAssistantFeedbackRepository,
+)
 from orcia_core.orchestration.assistant_three_speed_router import AssistantThreeSpeedRouterService
 from orcia_core.permissions.models import UserIdentity
 
@@ -29,6 +36,9 @@ controls_router = APIRouter()
 CurrentUserDep = Annotated[UserIdentity, Depends(resolve_request_user)]
 ThreeSpeedRouterDep = Annotated[
     AssistantThreeSpeedRouterService, Depends(get_assistant_three_speed_router_service)
+]
+FeedbackRepoDep = Annotated[
+    SqlAssistantFeedbackRepository, Depends(get_assistant_feedback_repository)
 ]
 
 
@@ -69,10 +79,11 @@ async def record_assistant_turn_feedback_endpoint(
     payload: RecordAssistantTurnFeedbackRequest,
     request: Request,
     user: CurrentUserDep,
+    feedback_repo: FeedbackRepoDep,
 ) -> dict[str, object]:
-    """Record user `LIKE` or `DISLIKE` feedback on a prompt telemetry entry."""
+    """Record user `LIKE` or `DISLIKE` feedback into PG18 `assistant_turn_feedback`."""
     await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
-    return record_prompt_telemetry_entry(
+    entry = record_prompt_telemetry_entry(
         workspace_id=payload.workspace_id,
         turn_id=payload.turn_id,
         user_prompt=payload.user_prompt,
@@ -81,6 +92,17 @@ async def record_assistant_turn_feedback_endpoint(
         thinking_text=payload.thinking_text,
         user_feedback=payload.user_feedback,
     )
+    if payload.user_feedback in ("LIKE", "DISLIKE"):
+        rating: FeedbackRating = "up" if payload.user_feedback == "LIKE" else "down"
+        saved = await feedback_repo.upsert_feedback(
+            turn_id=payload.turn_id,
+            workspace_id=payload.workspace_id,
+            user=user,
+            rating=rating,
+        )
+        entry["feedback_id"] = saved.feedback_id
+        entry["rating"] = saved.rating
+    return entry
 
 
 @controls_router.post("/three-speed/invalidate-cache", response_model=InvalidatePromptCacheResponse)

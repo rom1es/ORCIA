@@ -61,7 +61,6 @@ class AssistantFoldersAndSharingService(_AssistantFoldersAsyncOpsMixin, _Assista
         )
         self._folders: dict[str, AssistantFolderRecord] = {}
         self._threads: dict[str, AssistantThreadSummary] = {}
-        self._folder_meta: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {}
         self._workspace_members: dict[str, set[str]] = {}
 
     def set_engine(self, engine: AsyncEngine | None) -> None:
@@ -102,7 +101,6 @@ class AssistantFoldersAndSharingService(_AssistantFoldersAsyncOpsMixin, _Assista
         resolved_folder_id = folder_id or new_uuid7_str()
         attachments = tuple(working_attachments_uris or ())
         tags = tuple(evidence_tags or ("S1",))
-        self._folder_meta[resolved_folder_id] = (attachments, tags)
         return AssistantFolderRecord(
             folder_id=resolved_folder_id,
             workspace_id=workspace_id,

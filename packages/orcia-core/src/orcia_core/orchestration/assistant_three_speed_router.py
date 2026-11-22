@@ -78,6 +78,35 @@ class AssistantThreeSpeedRouterService:
             layers=layers,
         )
 
+    async def get_or_assemble_cached_prompt_async(
+        self,
+        *,
+        workspace_id: str,
+        user_id: str,
+        hat: str = "ARCHITECT",
+        pack_key: str | None = None,
+        locale: str = "fr",
+    ) -> CachedAssembledPromptResult:
+        """Assemble 5-layer prompt from PG18 governance overrides without caching (`R6`)."""
+        norm_hat = hat.strip().upper() or "ARCHITECT"
+        key = build_assistant_prompt_cache_key(workspace_id, user_id, norm_hat)
+        t0 = time.perf_counter()
+        layers = await self._governance.assemble_five_layers_preview_async(
+            workspace_id=workspace_id, user_id=user_id, pack_key=pack_key, locale=locale
+        )
+        assembled_text = "\n\n".join(f"### {layer.label}\n{layer.content}" for layer in layers)
+        digest = hashlib.sha256(assembled_text.encode("utf-8")).hexdigest()
+        elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 3)
+        return CachedAssembledPromptResult(
+            cache_key=key,
+            cache_hit=False,
+            ttl_seconds=PROMPT_CACHE_TTL_SECONDS,
+            lookup_latency_ms=elapsed_ms,
+            assembled_prompt_text=assembled_text,
+            layers_sha256=digest,
+            layers=layers,
+        )
+
     def invalidate_prompt_cache(
         self,
         *,

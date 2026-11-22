@@ -11,10 +11,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "activeRoutesCount": 28,
     "uiPrimitivesCount": 137,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 58,
+    "alembicMigrationsCount": 59,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 211,
+    "techLeadReportsCount": 212,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 61,
@@ -261,7 +261,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261120_2401_story_24_1_jira_staged_actions_and_mcp_proposals_pg18",
     "20261120_2402_story_24_2_workspace_dna_mechanisms_pg18",
     "20261120_2403_story_24_3_mcp_exposures_and_audit_contract",
-    "20261122_264a_story_26_4a_ai_models_schema_and_assistant_outbox"
+    "20261122_264a_story_26_4a_ai_models_schema_and_assistant_outbox",
+    "20261122_264b_story_26_4b_assistant_feedback_and_folder_meta"
   ],
   "architectureDecisions": [
     {
@@ -544,6 +545,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-22",
+      "phaseOrStory": "Story 26.4b",
+      "reportFile": "26-4b-pg18-persistence-mode-a-governance-feedback-and-folders-tech-lead-report.md",
+      "domain": "Epic 26 Lot 3 — PostgreSQL 18 Persistence of Mode A Governance, Turn Feedback (assistant_turn_feedback), Folder Metadata (working_attachments_uris / evidence_tags), Phantom Citation audit_ledger & Deletion of RAM-Only Mode B (CAP-070, CAP-072, CAP-073)",
+      "summary": "Closed (done, Testing Sub-Agent verified): shipped raw-SQL Alembic revision 20261122_264b (down_revision = \"20261122_264a\", PG18 upgrade -> downgrade -> upgrade verified, added assistant_turn_feedback to _first_boot_reset_guards.py); wired SqlAssistantGovernanceRepository (sql_assistant_governance.py 299 L, Mode A USER/WORKSPACE/TEAM in workspace_customization_overrides), SqlAssistantFeedbackRepository (assistant_feedback.py 15 L, POST /three-speed/feedback & POST /turns/{turn_id}/feedback upsert), SqlAssistantFoldersRepository (working_attachments_uris + evidence_tags on assistant_folders, zero _folder_meta), and SqlAuditLedgerService (ASSISTANT_PHANTOM_CITATION_PURGED replacing _phantom_audit_log); deleted Mode B routes/schemas/_studio_graphs/OpenAPI entries (canOpenStudioModeB={false}) while preserving /artifacts/action temporarily until 26.7; every touched source file <= 299 L; verified 91% 18-module Story 26.4b branch coverage, 1118 passed (971 unit + 147 security/evals/contract), 8/8 PG18+Redis integration, 9/9 Turbo, 15 passed / 1 skipped / 0 failed Playwright Desktop E2E, ruff (1463 files)/mypy --strict (668 files)/lint-imports (5/5)/export_openapi (0-diff)/detect-secrets clean."
+    },
     {
       "date": "2026-11-22",
       "phaseOrStory": "Story 26.4a",

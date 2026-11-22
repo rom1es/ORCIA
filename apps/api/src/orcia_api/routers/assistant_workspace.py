@@ -28,7 +28,7 @@ from orcia_api.routers.assistant_background_turns import enforce_assistant_rate_
 from orcia_api.routers.assistant_llm_bridge import (
     ensure_active_chat_model_if_live,
     invoke_configured_llm_for_assistant_turn,
-    resolve_assembled_system_instructions_for_turn,
+    resolve_assembled_system_instructions_for_turn_async,
     resolve_request_locale,
     stream_configured_llm_for_assistant_turn,
 )
@@ -99,7 +99,7 @@ async def execute_three_speed_turn_endpoint(
     assembled_sys_prompt = (
         live_outcome.assembled_system_prompt
         if live_outcome is not None and live_outcome.assembled_system_prompt
-        else resolve_assembled_system_instructions_for_turn(
+        else await resolve_assembled_system_instructions_for_turn_async(
             request,
             hat=active_hat,
             speed_mode=resolved_speed,

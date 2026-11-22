@@ -89,11 +89,14 @@ async def verify_and_filter_citations_endpoint(
         evidence_table=table,
         reader_allowed_source_uris=allowed_uris,
     )
-    verified = citation_svc.verify_and_sanitize_citations(
+    verified = await citation_svc.verify_and_sanitize_citations_async(
         response_text=payload.response_text,
         evidence_table=table,
         workspace_id=payload.workspace_id,
         user_id=user.id,
+        user_email=user.email,
+        user_display_name=user.display_name,
+        trace_id=str(getattr(getattr(request, "state", None), "trace_id", "") or "") or None,
     )
     return VerifyAndFilterCitationsResponse(
         sanitized_text=verified.sanitized_text,

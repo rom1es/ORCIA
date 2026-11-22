@@ -120,6 +120,88 @@ def resolve_5_layers_and_ontology_from_request(
     return assembled_text, ontology_summary
 
 
+async def resolve_5_layers_and_ontology_from_request_async(
+    request: Request,
+    *,
+    workspace_id: str,
+    user_id: str,
+    hat: str,
+    locale: str = "fr",
+) -> tuple[str | None, str | None]:
+    """Async version reading PG18 Mode A governance overrides and active L1-L4 Ontology concepts."""
+    assembled_text: str | None = None
+    ontology_summary: str | None = None
+    try:
+        from orcia_api.dependencies import get_assistant_three_speed_router_service
+
+        router_svc = get_assistant_three_speed_router_service(request)
+        cached = await router_svc.get_or_assemble_cached_prompt_async(
+            workspace_id=workspace_id, user_id=user_id, hat=hat, locale=locale
+        )
+        assembled_text = cached.assembled_prompt_text
+    except Exception as exc:
+        get_logger("orcia.assistant.llm").warning(
+            "assistant_5_layer_prompt_resolution_fallback", error_type=type(exc).__name__
+        )
+    try:
+        from orcia_api.dependencies import get_ontology_and_rag_services
+
+        ont_svc, _, _ = get_ontology_and_rag_services(request)
+        concepts = getattr(ont_svc, "concepts", ())
+        lines = [
+            f"- [{c.level}] {c.canonical_term}: {c.definition_text}"
+            for c in list(concepts)[:8]
+            if getattr(c, "snapshot_branch_status", "ACTIVE") == "ACTIVE"
+        ]
+        if lines:
+            ontology_summary = "\n".join(lines)
+    except Exception as exc:
+        get_logger("orcia.assistant.llm").warning(
+            "assistant_ontology_l1_l4_resolution_fallback", error_type=type(exc).__name__
+        )
+    return assembled_text, ontology_summary
+
+
+async def resolve_assembled_system_instructions_for_turn_async(
+    request: Request,
+    *,
+    hat: str,
+    speed_mode: str,
+    workspace_id: str,
+    user_id: str,
+    requested_tier: str | None = None,
+    thinking_effort: str | None = None,
+    system_instructions_override: str | None = None,
+    allow_system_override: bool = False,
+    response_tone: str | None = None,
+    response_format: str | None = None,
+    personal_instructions: str | None = None,
+    workspace_instructions: str | None = None,
+    folder_pinned_notes: str | None = None,
+    locale: str = "fr",
+) -> str:
+    """Async builder hydrating Mode A PG18 overrides into the 5-layer system prompt."""
+    assembled_5_layers, ontology_summary = await resolve_5_layers_and_ontology_from_request_async(
+        request, workspace_id=workspace_id, user_id=user_id, hat=hat, locale=locale
+    )
+    return build_assistant_system_instructions(
+        hat=hat,
+        speed_mode=speed_mode,
+        requested_tier=requested_tier,
+        thinking_effort=thinking_effort,
+        system_instructions_override=system_instructions_override,
+        allow_system_override=allow_system_override,
+        assembled_5_layers_prompt=assembled_5_layers,
+        ontology_concepts_summary=ontology_summary,
+        response_tone=response_tone,
+        response_format=response_format,
+        personal_instructions=personal_instructions,
+        workspace_instructions=workspace_instructions,
+        folder_pinned_notes=folder_pinned_notes,
+        locale=locale,
+    )
+
+
 def build_workspace_tools_schema(request: Request | None, speed_mode: str) -> list[dict[str, Any]]:
     """Build OpenAI/Anthropic JSON Schema `tools` list for `SPEED_2_AGENT_TOOLS` / `SPEED_3`."""
     if speed_mode not in ("SPEED_2_AGENT_TOOLS", "SPEED_3_DEEP_AUDIT"):

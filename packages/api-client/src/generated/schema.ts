@@ -386,8 +386,6 @@ export interface components {
     AssistantGovernanceViewResponse: {
       assembled_layers: (components["schemas"]["AssembledLayerPreviewSchemaItem"])[];
       can_edit_workspace_layer: boolean;
-      can_open_studio_mode_b: boolean;
-      studio_graph: components["schemas"]["AssistantStudioGraphStateSchemaItem"];
       user_preferences: components["schemas"]["UserLayerPreferencesSchemaItem"];
       workspace_id: string;
       workspace_settings: components["schemas"]["WorkspaceLayerSettingsSchemaItem"];
@@ -420,26 +418,6 @@ export interface components {
       version: string;
       workflow_uri: string;
     };
-    AssistantStudioGraphStateSchemaItem: {
-      ai_pre_prompt: string;
-      nodes: (components["schemas"]["AssistantStudioNodeSchemaItem"])[];
-      override_key?: string | null;
-      scope_id: string;
-      scope_level: "DEFAULT" | "TEAM" | "WORKSPACE";
-      sha256: string;
-      workflow_uri: string;
-    };
-    AssistantStudioNodeSchemaItem: {
-      enabled?: boolean;
-      enabled_sub_layers?: (string)[];
-      is_harness_boundary: boolean;
-      locked_by?: "HARNESS" | "PLATFORM" | "TEAM" | null;
-      node_id: string;
-      node_order: number;
-      sub_agent_uri?: string | null;
-      sub_layers_count?: number;
-      title: string;
-    };
     AssistantThreadSchemaItem: {
       creator_user_id: string;
       folder_id?: string | null;
@@ -459,6 +437,21 @@ export interface components {
       thread_id?: string | null;
       trace_id: string;
       turn_id: string;
+      workspace_id: string;
+    };
+    AssistantTurnFeedbackRequest: {
+      comment?: string | null;
+      rating: "up" | "down";
+      reason_code?: string | null;
+      workspace_id: string;
+    };
+    AssistantTurnFeedbackResponse: {
+      comment?: string | null;
+      feedback_id: string;
+      rating: "up" | "down";
+      reason_code?: string | null;
+      turn_id: string;
+      user_id: string;
       workspace_id: string;
     };
     AssistantWorkflowProposalSchemaItem: {
@@ -3362,10 +3355,6 @@ export interface components {
       sent?: boolean;
       trace_id: string;
     };
-    ResetAssistantStudioGraphRequest: {
-      scope_id: string;
-      scope_level?: "TEAM" | "WORKSPACE";
-    };
     ResetCircuitBreakerRequest: {
       scope_id?: string | null;
       target_state?: "CLOSED" | "HALF_OPEN";
@@ -3508,12 +3497,6 @@ export interface components {
       ticket_summary: string;
       workspace_slug: string;
       workspace_sovereignty_tier?: "CLOUD_PUBLIC" | "EU_SOVEREIGN" | "ON_PREM_AIRGAPPED";
-    };
-    SaveAssistantStudioGraphRequest: {
-      ai_pre_prompt: string;
-      nodes: (components["schemas"]["AssistantStudioNodeSchemaItem"])[];
-      scope_id: string;
-      scope_level?: "TEAM" | "WORKSPACE";
     };
     SaveWorkflowV2Request: {
       publish?: boolean;
@@ -5251,20 +5234,6 @@ export interface paths {
       };
     };
   };
-  "/api/v1/assistant/governance/mode-b/reset": {
-    post: {
-      responses: {
-        200: components["schemas"]["AssistantStudioGraphStateSchemaItem"];
-      };
-    };
-  };
-  "/api/v1/assistant/governance/mode-b/save": {
-    post: {
-      responses: {
-        200: components["schemas"]["AssistantStudioGraphStateSchemaItem"];
-      };
-    };
-  };
   "/api/v1/assistant/threads": {
     post: {
       responses: {
@@ -5332,6 +5301,13 @@ export interface paths {
     get: {
       responses: {
         200: components["schemas"]["AssistantActiveTurnsListResponse"];
+      };
+    };
+  };
+  "/api/v1/assistant/turns/{turn_id}/feedback": {
+    post: {
+      responses: {
+        200: components["schemas"]["AssistantTurnFeedbackResponse"];
       };
     };
   };
@@ -7047,10 +7023,10 @@ export type AssistantHistorySearchHitSchemaItem = components["schemas"]["Assista
 export type AssistantNodeTraceSchemaItem = components["schemas"]["AssistantNodeTraceSchemaItem"];
 export type AssistantSaveAndLaunchRequest = components["schemas"]["AssistantSaveAndLaunchRequest"];
 export type AssistantSaveAndLaunchResponse = components["schemas"]["AssistantSaveAndLaunchResponse"];
-export type AssistantStudioGraphStateSchemaItem = components["schemas"]["AssistantStudioGraphStateSchemaItem"];
-export type AssistantStudioNodeSchemaItem = components["schemas"]["AssistantStudioNodeSchemaItem"];
 export type AssistantThreadSchemaItem = components["schemas"]["AssistantThreadSchemaItem"];
 export type AssistantTurnAcceptedResponse = components["schemas"]["AssistantTurnAcceptedResponse"];
+export type AssistantTurnFeedbackRequest = components["schemas"]["AssistantTurnFeedbackRequest"];
+export type AssistantTurnFeedbackResponse = components["schemas"]["AssistantTurnFeedbackResponse"];
 export type AssistantWorkflowProposalSchemaItem = components["schemas"]["AssistantWorkflowProposalSchemaItem"];
 export type AssistantWorkspaceOverviewResponse = components["schemas"]["AssistantWorkspaceOverviewResponse"];
 export type AttachedWorkspaceRefResponse = components["schemas"]["AttachedWorkspaceRefResponse"];
@@ -7377,7 +7353,6 @@ export type RequestedWritePreviewInput = components["schemas"]["RequestedWritePr
 export type RequiredConnectorSpec = components["schemas"]["RequiredConnectorSpec"];
 export type ResendLoginTwoFactorRequest = components["schemas"]["ResendLoginTwoFactorRequest"];
 export type ResendLoginTwoFactorResponse = components["schemas"]["ResendLoginTwoFactorResponse"];
-export type ResetAssistantStudioGraphRequest = components["schemas"]["ResetAssistantStudioGraphRequest"];
 export type ResetCircuitBreakerRequest = components["schemas"]["ResetCircuitBreakerRequest"];
 export type ResetCircuitBreakerResponse = components["schemas"]["ResetCircuitBreakerResponse"];
 export type ResolveArtifactDestinationRequest = components["schemas"]["ResolveArtifactDestinationRequest"];
@@ -7396,7 +7371,6 @@ export type RunLockSourceTripletItem = components["schemas"]["RunLockSourceTripl
 export type RunMutationGuardCheckRequest = components["schemas"]["RunMutationGuardCheckRequest"];
 export type RunMutationGuardCheckResponse = components["schemas"]["RunMutationGuardCheckResponse"];
 export type RunPilotTicketToTechSpecRequest = components["schemas"]["RunPilotTicketToTechSpecRequest"];
-export type SaveAssistantStudioGraphRequest = components["schemas"]["SaveAssistantStudioGraphRequest"];
 export type SaveWorkflowV2Request = components["schemas"]["SaveWorkflowV2Request"];
 export type SaveWorkflowV2Response = components["schemas"]["SaveWorkflowV2Response"];
 export type ScopeBudgetResponse = components["schemas"]["ScopeBudgetResponse"];

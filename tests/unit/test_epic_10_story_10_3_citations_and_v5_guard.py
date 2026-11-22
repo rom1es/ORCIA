@@ -149,7 +149,7 @@ def test_story_10_3_phantom_citation_verifier_and_v5_lock() -> None:
     assert UNVERIFIED_CITATION_BADGE in res.sanitized_text
     assert "[S99]" not in res.sanitized_text
     assert res.audit_entry is not None
-    assert len(svc.phantom_audit_log) == 1
+    assert res.audit_entry.stripped_tags == ("S99", "O4")
 
     # Allowed Artifact Card actions: SAVE_DRAFT (@draft) and CONTINUE_IN_PROCESS
     draft = svc.execute_artifact_card_action(

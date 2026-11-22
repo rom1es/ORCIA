@@ -85,7 +85,7 @@ export function InboxAuxiliaryPanels({
         <AssistantGovernanceModalAndStudio
           workspaceId={activeWorkspaceId}
           canEditWorkspaceLayer={true}
-          canOpenStudioModeB={true}
+          canOpenStudioModeB={false}
           initialUserTone={governancePrefs.responseTone}
           initialUserFormat={governancePrefs.favoriteFormat}
           initialDefaultHat={governancePrefs.defaultHat}

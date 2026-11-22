@@ -44,7 +44,6 @@ class _AssistantFoldersSyncMixin:
     _sql_repo: SqlAssistantFoldersRepository | None
     _folders: dict[str, AssistantFolderRecord]
     _threads: dict[str, AssistantThreadSummary]
-    _folder_meta: dict[str, tuple[tuple[str, ...], tuple[str, ...]]]
     _workspace_members: dict[str, set[str]]
     _thread_lock: Any
 

@@ -126,18 +126,6 @@ def test_cross_org_team_lead_and_archetype_contributor_rejected_on_governance(
             )
             assert r_ws.status_code == 403, f"{persona}: {r_ws.status_code} {r_ws.text}"
 
-            r_b = client.post(
-                "/api/v1/assistant/governance/mode-b/save",
-                params={"persona_key": persona},
-                json={
-                    "scope_level": "WORKSPACE",
-                    "scope_id": ws_id,
-                    "ai_pre_prompt": "Escalation",
-                    "nodes": [],
-                },
-            )
-            assert r_b.status_code == 403
-
         r_glob = client.put(
             "/api/v1/assistant/governance/mode-a/workspace",
             params={"persona_key": "marc"},
@@ -151,18 +139,6 @@ def test_cross_org_team_lead_and_archetype_contributor_rejected_on_governance(
             },
         )
         assert r_glob.status_code == 403
-
-        r_team_cross = client.post(
-            "/api/v1/assistant/governance/mode-b/save",
-            params={"persona_key": "cross_lead"},
-            json={
-                "scope_level": "TEAM",
-                "scope_id": "0192c4e0-0000-7000-8000-000000000104",
-                "ai_pre_prompt": "Cross team escalation",
-                "nodes": [],
-            },
-        )
-        assert r_team_cross.status_code == 403
 
 
 def test_platform_admin_no_read_source_bypass_and_private_folder_acl_and_en_locale(

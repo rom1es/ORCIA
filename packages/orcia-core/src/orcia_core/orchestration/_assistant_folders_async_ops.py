@@ -43,7 +43,6 @@ class _AssistantFoldersAsyncOpsMixin:
     _sql_repo: SqlAssistantFoldersRepository | None
     _folders: dict[str, AssistantFolderRecord]
     _threads: dict[str, AssistantThreadSummary]
-    _folder_meta: dict[str, tuple[tuple[str, ...], tuple[str, ...]]]
     _workspace_members: dict[str, set[str]]
     _thread_lock: ThreadTurnLockPort
 
@@ -76,16 +75,10 @@ class _AssistantFoldersAsyncOpsMixin:
             raise ResourceNotFoundError(
                 detail_override=f"Dossier introuvable dans l'Espace {workspace_id} : {folder_id}"
             )
-        att, tags = self._folder_meta.get(
-            folder_id, (folder.working_attachments_uris, folder.evidence_tags)
-        )
-        enriched = AssistantFolderRecord(
-            **{**folder.__dict__, "working_attachments_uris": att, "evidence_tags": tags}
-        )
         summaries = [
             t.thread_summary for t in threads if t.folder_id == folder_id and t.thread_summary
         ]
-        return assemble_layer5_injection(enriched, summaries)
+        return assemble_layer5_injection(folder, summaries)
 
     async def prepare_workflow_launch_from_folder_async(
         self,

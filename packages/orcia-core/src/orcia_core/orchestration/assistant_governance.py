@@ -1,108 +1,103 @@
-"""Story 10.1 — 4-Level Governance & Customization of `Mon Assistant` (Mode A & Mode B)."""
+"""Story 10.1 / 26.4b — Mode A 3-Level Governance of `Mon Assistant` (PG18-backed, Zero RAM)."""
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
-from orcia_core.orchestration.assistant_agent import ASSISTANT_WORKFLOW_URI
+from orcia_core.orchestration._assistant_governance_sync import _AssistantGovernanceSyncMixin
+from orcia_core.orchestration._internal.sql_assistant_governance import (
+    SqlAssistantGovernanceRepository,
+)
 from orcia_core.orchestration.assistant_governance_models import (
-    ENTRY_HARNESS_NODE_ID,
-    EXIT_HARNESS_NODE_ID,
-    REQUIRED_CORE_NODE_IDS,
     AssembledLayerPreviewItem,
     AssistantArbitrationPolicy,
     AssistantCustomizationOverrideRecord,
+    AssistantGovernanceStorePort,
     AssistantGovernanceView,
     AssistantOverrideScope,
     AssistantResponseFormat,
     AssistantResponseTone,
-    AssistantStudioGraphState,
-    AssistantStudioNodeSpec,
     UserLayerPreferences,
     WorkspaceLayerSettings,
-    _compute_sha256_hex,
-    build_default_studio_nodes,
 )
 from orcia_core.orchestration.assistant_governance_studio import (
-    build_default_studio_graph_state,
-    build_default_user_preferences,
-    build_default_workspace_layer_settings,
     build_five_layers_preview_items,
     build_frozen_workspace_settings,
-    build_saved_studio_graph_override,
     build_updated_user_preferences_override,
+    build_updated_workspace_settings_override,
     can_manage_workspace_or_team,
     ensure_workspace_or_team_manager,
 )
-from orcia_core.orchestration.assistant_harness import sanitize_layer_marker_tags
 from orcia_core.orchestration.errors import FunnelRuleViolationError, ObserverModeReadOnlyError
 from orcia_core.permissions.models import UserIdentity
-from orcia_kernel.ids import new_uuid7_str
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncEngine
 
 __all__ = [
     "AssembledLayerPreviewItem",
     "AssistantArbitrationPolicy",
     "AssistantCustomizationOverrideRecord",
     "AssistantFourLevelGovernanceService",
+    "AssistantGovernanceStorePort",
     "AssistantGovernanceView",
     "AssistantOverrideScope",
     "AssistantResponseFormat",
     "AssistantResponseTone",
-    "AssistantStudioGraphState",
-    "AssistantStudioNodeSpec",
-    "ENTRY_HARNESS_NODE_ID",
-    "EXIT_HARNESS_NODE_ID",
-    "REQUIRED_CORE_NODE_IDS",
     "UserLayerPreferences",
     "WorkspaceLayerSettings",
-    "build_default_studio_nodes",
 ]
 
 
-class AssistantFourLevelGovernanceService:
-    """Manages Mode A (3-tab modal) & Mode B (Studio graph) for `Mon Assistant` (`Story 10.1`)."""
+class AssistantFourLevelGovernanceService(_AssistantGovernanceSyncMixin):
+    """Manages Mode A (3-tab) governance persisted in `workspace_customization_overrides`."""
 
-    def __init__(self) -> None:
-        self._user_prefs: dict[tuple[str, str], UserLayerPreferences] = {}
-        self._workspace_settings: dict[str, WorkspaceLayerSettings] = {}
-        self._team_instructions: dict[str, str] = {}
-        self._team_mcp_frozen: dict[str, tuple[bool, Literal["PLATFORM", "TEAM"]]] = {}
-        self._studio_graphs: dict[tuple[str, str], AssistantStudioGraphState] = {}
-        self._overrides: dict[str, AssistantCustomizationOverrideRecord] = {}
-        self._version_counter: int = 1
+    def __init__(
+        self,
+        *,
+        engine: AsyncEngine | None = None,
+        store: AssistantGovernanceStorePort | None = None,
+    ) -> None:
+        self._engine: AsyncEngine | None = engine
+        self._sql_repo: SqlAssistantGovernanceRepository | None = (
+            SqlAssistantGovernanceRepository(engine) if engine is not None else None
+        )
+        self._store: AssistantGovernanceStorePort | None = store
 
-    @property
-    def version_counter(self) -> int:
-        """Monotonic counter incremented whenever any assistant governance setting changes."""
-        return self._version_counter
+    def set_engine(self, engine: AsyncEngine | None) -> None:
+        """Bind or refresh the SQLAlchemy `AsyncEngine` from the Composition Root."""
+        self._engine = engine
+        self._sql_repo = SqlAssistantGovernanceRepository(engine) if engine is not None else None
 
-    def freeze_mcp_at_upper_layer(
+    async def _pg_ready(self) -> bool:
+        return self._sql_repo is not None and await self._sql_repo.pg_tables_ready()
+
+    async def freeze_mcp_at_upper_layer_async(
         self,
         *,
         workspace_id: str,
         frozen: bool,
         origin: Literal["PLATFORM", "TEAM"] = "TEAM",
     ) -> None:
-        """Freeze or unfreeze MCP exposure from `TEAM` or `PLATFORM` (`Principe G`)."""
-        if frozen:
-            self._team_mcp_frozen[workspace_id] = (True, origin)
-            existing = self.get_workspace_settings(workspace_id)
-            self._workspace_settings[workspace_id] = build_frozen_workspace_settings(
-                existing, origin=origin
+        """Freeze or unfreeze MCP exposure in PG18 `TEAM` override layer (or unit store)."""
+        if await self._pg_ready() and self._sql_repo is not None:
+            await self._sql_repo.set_team_mcp_frozen(
+                workspace_id=workspace_id, frozen=frozen, origin=origin
             )
-        else:
-            self._team_mcp_frozen.pop(workspace_id, None)
-        self._version_counter += 1
+            return
+        self.freeze_mcp_at_upper_layer(workspace_id=workspace_id, frozen=frozen, origin=origin)
 
-    def get_user_preferences(self, *, workspace_id: str, user_id: str) -> UserLayerPreferences:
-        key = (workspace_id, user_id)
-        if key not in self._user_prefs:
-            self._user_prefs[key] = build_default_user_preferences(
-                workspace_id=workspace_id, user_id=user_id
+    async def get_user_preferences_async(
+        self, *, workspace_id: str, user_id: str, user_email: str | None = None
+    ) -> UserLayerPreferences:
+        """Load `USER` layer preferences from PG18 `workspace_customization_overrides`."""
+        if await self._pg_ready() and self._sql_repo is not None:
+            return await self._sql_repo.get_user_preferences(
+                workspace_id=workspace_id, user_id=user_id, user_email=user_email
             )
-        return self._user_prefs[key]
+        return self.get_user_preferences(workspace_id=workspace_id, user_id=user_id)
 
-    def update_user_preferences(
+    async def update_user_preferences_async(
         self,
         user: UserIdentity,
         *,
@@ -112,7 +107,7 @@ class AssistantFourLevelGovernanceService:
         default_hat: str,
         personal_instructions: str,
     ) -> UserLayerPreferences:
-        """Update Tab 1 (`Mes préférences — Couche 5 USER`)."""
+        """Persist Tab 1 (`USER` layer 5) to PG18 `workspace_customization_overrides`."""
         if user.platform_role in ("OBSERVER", "BU_DIRECTOR"):
             raise ObserverModeReadOnlyError()
         prefs, record = build_updated_user_preferences_override(
@@ -123,19 +118,27 @@ class AssistantFourLevelGovernanceService:
             default_hat=default_hat,
             personal_instructions=personal_instructions,
         )
-        self._user_prefs[(workspace_id, user.id)] = prefs
-        self._overrides[record.override_key] = record
-        self._version_counter += 1
+        if await self._pg_ready() and self._sql_repo is not None:
+            return await self._sql_repo.upsert_user_preferences(
+                workspace_id=workspace_id,
+                user_id=user.id,
+                user_email=user.email,
+                prefs=prefs,
+                record=record,
+            )
+        if self._store is not None:
+            return self._store.save_user_preferences(
+                workspace_id=workspace_id, user_id=user.id, prefs=prefs, record=record
+            )
         return prefs
 
-    def get_workspace_settings(self, workspace_id: str) -> WorkspaceLayerSettings:
-        if workspace_id not in self._workspace_settings:
-            self._workspace_settings[workspace_id] = build_default_workspace_layer_settings(
-                workspace_id
-            )
-        return self._workspace_settings[workspace_id]
+    async def get_workspace_settings_async(self, workspace_id: str) -> WorkspaceLayerSettings:
+        """Load `WORKSPACE` layer settings from PG18 `workspace_customization_overrides`."""
+        if await self._pg_ready() and self._sql_repo is not None:
+            return await self._sql_repo.get_workspace_settings(workspace_id)
+        return self.get_workspace_settings(workspace_id)
 
-    def update_workspace_settings(
+    async def update_workspace_settings_async(
         self,
         user: UserIdentity,
         *,
@@ -147,130 +150,71 @@ class AssistantFourLevelGovernanceService:
         welcome_suggestions: tuple[str, ...] | None = None,
         mcp_expose_assistant: bool = True,
     ) -> WorkspaceLayerSettings:
-        """Update Tab 2 (`Réglages de l'Espace — Couche 4 WORKSPACE`), enforcing Funnel Rule."""
+        """Persist Tab 2 (`WORKSPACE` layer 4) to PG18 while enforcing the Funnel Rule."""
         ensure_workspace_or_team_manager(
             user,
             detail="TEAM_LEAD or PLATFORM_ADMIN role required to update workspace settings.",
         )
-        frozen_entry = self._team_mcp_frozen.get(workspace_id)
-        if frozen_entry is not None and frozen_entry[0] and mcp_expose_assistant:
-            raise FunnelRuleViolationError()
-
-        current = self.get_workspace_settings(workspace_id)
-        suggestions = (
-            welcome_suggestions if welcome_suggestions is not None else current.welcome_suggestions
-        )
-        ws_instr_str = sanitize_layer_marker_tags(workspace_instructions)
-        manifest: dict[str, object] = {
-            "workspace_instructions": ws_instr_str,
-            "default_checked_sources": list(default_checked_sources),
-            "recommended_agents": list(recommended_agents),
-            "arbitration_policy": arbitration_policy,
-            "welcome_suggestions": list(suggestions),
-            "mcp_expose_assistant": mcp_expose_assistant,
-        }
-        digest = _compute_sha256_hex(manifest)
-        updated = WorkspaceLayerSettings(
+        if await self._pg_ready() and self._sql_repo is not None:
+            _, frozen_entry = await self._sql_repo.get_team_layer_state(workspace_id)
+            if frozen_entry is not None and frozen_entry[0] and mcp_expose_assistant:
+                raise FunnelRuleViolationError()
+            current = await self._sql_repo.get_workspace_settings(workspace_id)
+            updated, record = build_updated_workspace_settings_override(
+                workspace_id=workspace_id,
+                current=current,
+                workspace_instructions=workspace_instructions,
+                default_checked_sources=default_checked_sources,
+                recommended_agents=recommended_agents,
+                arbitration_policy=arbitration_policy,
+                welcome_suggestions=welcome_suggestions,
+                mcp_expose_assistant=mcp_expose_assistant,
+                frozen_entry=frozen_entry,
+            )
+            if frozen_entry is not None and frozen_entry[0]:
+                updated = build_frozen_workspace_settings(updated, origin=frozen_entry[1])
+            return await self._sql_repo.upsert_workspace_settings(
+                workspace_id=workspace_id, settings=updated, record=record
+            )
+        return self.update_workspace_settings(
+            user,
             workspace_id=workspace_id,
-            workspace_instructions=ws_instr_str,
-            default_checked_sources=tuple(default_checked_sources),
-            recommended_agents=tuple(recommended_agents),
+            workspace_instructions=workspace_instructions,
+            default_checked_sources=default_checked_sources,
+            recommended_agents=recommended_agents,
             arbitration_policy=arbitration_policy,
-            welcome_suggestions=tuple(suggestions),
+            welcome_suggestions=welcome_suggestions,
             mcp_expose_assistant=mcp_expose_assistant,
-            mcp_frozen_by_upper_layer=bool(frozen_entry and frozen_entry[0]),
-            mcp_frozen_origin=frozen_entry[1] if frozen_entry else None,
-            mcp_endpoint_url=current.mcp_endpoint_url,
-            mcp_tool_name=current.mcp_tool_name,
-            mcp_ide_config_json=current.mcp_ide_config_json,
-            sha256=digest,
         )
-        self._workspace_settings[workspace_id] = updated
-        ov_key = f"assistant-workspace-{workspace_id}"
-        self._overrides[ov_key] = AssistantCustomizationOverrideRecord(
-            id=new_uuid7_str(),
-            override_key=ov_key,
-            org_unit_id=None,
-            workspace_id=workspace_id,
-            user_id=None,
-            target_uri=ASSISTANT_WORKFLOW_URI,
-            override_layer="WORKSPACE",
-            override_manifest_jsonb=manifest,
-            sha256=digest,
-        )
-        self._version_counter += 1
-        return updated
 
-    def assemble_five_layers_preview(
+    async def assemble_five_layers_preview_async(
         self,
         *,
         workspace_id: str,
         user_id: str,
         pack_key: str | None = None,
         locale: str = "fr",
+        user_email: str | None = None,
     ) -> tuple[AssembledLayerPreviewItem, ...]:
-        """Build Tab 3 (`Assemblage complet`) showing the 5 active prompt layers (`AD-15`)."""
-        return build_five_layers_preview_items(
-            workspace_id=workspace_id,
-            user_id=user_id,
-            pack_key=pack_key,
-            user_prefs=self.get_user_preferences(workspace_id=workspace_id, user_id=user_id),
-            ws_settings=self.get_workspace_settings(workspace_id),
-            team_instr=self._team_instructions.get(
-                workspace_id,
-                "Team standards: decision traceability and peer review."
-                if locale.startswith("en")
-                else (
-                    "Standards d'équipe : traçabilité systématique des décisions "
-                    "et revues croisées."
+        """Assemble Tab 3 5-layer preview hydrated from PG18 overrides."""
+        if await self._pg_ready() and self._sql_repo is not None:
+            team_instr, _ = await self._sql_repo.get_team_layer_state(workspace_id)
+            return build_five_layers_preview_items(
+                workspace_id=workspace_id,
+                user_id=user_id,
+                pack_key=pack_key,
+                user_prefs=await self._sql_repo.get_user_preferences(
+                    workspace_id=workspace_id, user_id=user_id, user_email=user_email
                 ),
-            ),
-            locale=locale,
+                ws_settings=await self._sql_repo.get_workspace_settings(workspace_id),
+                team_instr=team_instr or self._default_team_instructions(locale),
+                locale=locale,
+            )
+        return self.assemble_five_layers_preview(
+            workspace_id=workspace_id, user_id=user_id, pack_key=pack_key, locale=locale
         )
 
-    def get_studio_graph(
-        self, *, workspace_id: str, team_id: str = "team-default"
-    ) -> AssistantStudioGraphState:
-        """Return active Mode B Studio graph (`WORKSPACE` -> `TEAM` -> `DEFAULT`)."""
-        if ("WORKSPACE", workspace_id) in self._studio_graphs:
-            return self._studio_graphs[("WORKSPACE", workspace_id)]
-        if ("TEAM", team_id) in self._studio_graphs:
-            return self._studio_graphs[("TEAM", team_id)]
-        return build_default_studio_graph_state(workspace_id)
-
-    def save_studio_graph_override(
-        self,
-        user: UserIdentity,
-        *,
-        scope_level: Literal["TEAM", "WORKSPACE"],
-        scope_id: str,
-        ai_pre_prompt: str,
-        nodes: tuple[AssistantStudioNodeSpec, ...],
-    ) -> AssistantStudioGraphState:
-        """Validate `AssistantHarness` boundaries and persist Mode B graph override."""
-        ensure_workspace_or_team_manager(
-            user,
-            detail="TEAM_LEAD or PLATFORM_ADMIN role required for Mode B Studio override.",
-        )
-        state, record = build_saved_studio_graph_override(
-            scope_level=scope_level, scope_id=scope_id, ai_pre_prompt=ai_pre_prompt, nodes=nodes
-        )
-        self._studio_graphs[(scope_level, scope_id)] = state
-        self._overrides[record.override_key] = record
-        self._version_counter += 1
-        return state
-
-    def reset_studio_graph_override(
-        self, user: UserIdentity, *, scope_level: Literal["TEAM", "WORKSPACE"], scope_id: str
-    ) -> AssistantStudioGraphState:
-        """1-click reset to default configuration."""
-        ensure_workspace_or_team_manager(user)
-        self._studio_graphs.pop((scope_level, scope_id), None)
-        self._overrides.pop(f"assistant-studio-{scope_level.lower()}-{scope_id}", None)
-        self._version_counter += 1
-        return self.get_studio_graph(workspace_id=scope_id)
-
-    def get_governance_view(
+    async def get_governance_view_async(
         self,
         user: UserIdentity,
         *,
@@ -278,19 +222,26 @@ class AssistantFourLevelGovernanceService:
         pack_key: str | None = None,
         locale: str = "fr",
     ) -> AssistantGovernanceView:
-        """Assemble full Mode A & Mode B governance view for `user` and `workspace_id`."""
-        can_edit = can_manage_workspace_or_team(user)
-        return AssistantGovernanceView(
-            workspace_id=workspace_id,
-            can_edit_workspace_layer=can_edit,
-            can_open_studio_mode_b=can_edit,
-            user_preferences=self.get_user_preferences(workspace_id=workspace_id, user_id=user.id),
-            workspace_settings=self.get_workspace_settings(workspace_id),
-            assembled_layers=self.assemble_five_layers_preview(
-                workspace_id=workspace_id, user_id=user.id, pack_key=pack_key, locale=locale
-            ),
-            studio_graph=self.get_studio_graph(workspace_id=workspace_id),
-            override_records=tuple(self._overrides.values()),
+        """Assemble Mode A governance view from PG18 `workspace_customization_overrides`."""
+        if await self._pg_ready() and self._sql_repo is not None:
+            return AssistantGovernanceView(
+                workspace_id=workspace_id,
+                can_edit_workspace_layer=can_manage_workspace_or_team(user),
+                user_preferences=await self._sql_repo.get_user_preferences(
+                    workspace_id=workspace_id, user_id=user.id, user_email=user.email
+                ),
+                workspace_settings=await self._sql_repo.get_workspace_settings(workspace_id),
+                assembled_layers=await self.assemble_five_layers_preview_async(
+                    workspace_id=workspace_id,
+                    user_id=user.id,
+                    pack_key=pack_key,
+                    locale=locale,
+                    user_email=user.email,
+                ),
+                override_records=await self._sql_repo.list_overrides(workspace_id=workspace_id),
+            )
+        return self.get_governance_view(
+            user, workspace_id=workspace_id, pack_key=pack_key, locale=locale
         )
 
     @staticmethod

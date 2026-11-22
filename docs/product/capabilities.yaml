@@ -604,18 +604,18 @@ capabilities:
 
   # ───────────── Mon Assistant (Epic 10 + ad-hoc) ─────────────
   - id: CAP-070
-    title: Gouvernance de personnalisation 4 niveaux (Mode A / Mode B studio)
+    title: Gouvernance de personnalisation 3 niveaux (Mode A)
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-1 + 26-1
+    origin_ref: 10-1 + 26-1 + 26-4b
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [workspace_customization_overrides, user_preferences]
-    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts]
+    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, tests/unit/test_story_26_4b_governance_feedback_folders_and_audit.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts]
     verification: api
-    verified_at: "2026-11-21"
-    surfaces: { route: /assistant, api: assistant_workspace_governance.py, ui: AssistantGovernanceModalAndStudio }
+    verified_at: "2026-11-22"
+    surfaces: { route: /assistant, api: "assistant_workspace_governance.py, assistant_governance.py, sql_assistant_governance.py", ui: AssistantGovernanceModalAndStudio }
   - id: CAP-071
     title: Routage 3 vitesses, assemblage direct 5 couches (R6) et tours assistant avec Outbox PG18
     fr: [FR-33]
@@ -633,28 +633,28 @@ capabilities:
     title: Citations déterministes [S1]/[G1]/[O1] et cartes d'artefact
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-3 + 26-1
+    origin_ref: 10-3 + 26-1 + 26-4b
     status: live
     kind: feature
     uj: [UJ-1, UJ-17]
-    db_tables: [kb_chunks, ontology_concepts, assistant_threads]
-    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, tests/evals/test_citations_golden_dataset.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
+    db_tables: [kb_chunks, ontology_concepts, assistant_threads, audit_ledger]
+    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, tests/evals/test_citations_golden_dataset.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
     verification: api
-    verified_at: "2026-11-21"
-    surfaces: { api: assistant_workspace_citations.py, ui: AssistantCitationPillsAndArtifactCard }
+    verified_at: "2026-11-22"
+    surfaces: { api: "assistant_workspace_citations.py, assistant_citations_and_v5_guard.py", ui: AssistantCitationPillsAndArtifactCard }
   - id: CAP-073
-    title: Dossiers thématiques, fils collaboratifs, verrous de tour Redis (SET NX EX), partage et processus
+    title: Dossiers thématiques, métadonnées PG18, feedback par tour, fils collaboratifs, verrous de tour Redis (SET NX EX), partage et processus
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-4 + 26-4a
+    origin_ref: 10-4 + 26-4a + 26-4b
     status: live
     kind: feature
     uj: [UJ-17]
-    db_tables: [assistant_folders, assistant_threads, assistant_folder_shares]
-    tests: [tests/integration/api/test_story_26_4a_redis_locks_outbox_ddl_postgres18.py, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/src/__tests__/assistant-folders-server-rehydration.test.tsx]
+    db_tables: [assistant_folders, assistant_threads, assistant_folder_shares, assistant_turn_feedback]
+    tests: [tests/integration/api/test_story_26_4a_redis_locks_outbox_ddl_postgres18.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/src/__tests__/assistant-folders-server-rehydration.test.tsx]
     verification: runtime
     verified_at: "2026-11-22"
-    surfaces: { api: assistant_workspace_folders.py, ui: AssistantFoldersAndCollaborativeThreadView, migration: "0025" }
+    surfaces: { api: "assistant_workspace_folders.py, _assistant_turns_v2_routes.py, _assistant_workspace_controls.py, sql_assistant_feedback.py, sql_assistant_folders.py", ui: AssistantFoldersAndCollaborativeThreadView, migration: "20261122_264b" }
   - id: CAP-074
     title: Câblage LLM réel et streaming SSE multi-fournisseurs (« Envoyer à Mon Assistant »)
     fr: [FR-33]

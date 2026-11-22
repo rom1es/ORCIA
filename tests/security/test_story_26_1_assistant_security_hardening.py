@@ -97,18 +97,8 @@ def test_observer_and_header_rejected_403_pre_stream_across_all_assistant_mutati
             ),
             (
                 "POST",
-                "/api/v1/assistant/governance/mode-b/save",
-                {
-                    "scope_level": "WORKSPACE",
-                    "scope_id": _WS_PAY_ID,
-                    "ai_pre_prompt": "Pre",
-                    "nodes": [],
-                },
-            ),
-            (
-                "POST",
-                "/api/v1/assistant/governance/mode-b/reset",
-                {"scope_level": "WORKSPACE", "scope_id": _WS_PAY_ID},
+                "/api/v1/assistant/turns/0192c4e0-0000-7000-8000-000000007001/feedback",
+                {"workspace_id": _WS_PAY_ID, "rating": "up"},
             ),
             (
                 "POST",

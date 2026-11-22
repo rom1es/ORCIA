@@ -9,7 +9,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.responses import StreamingResponse
 
-from orcia_api.dependencies import get_llm_streaming_port, get_optional_embedding_port
+from orcia_api.dependencies import (
+    get_assistant_feedback_repository,
+    get_llm_streaming_port,
+    get_optional_embedding_port,
+)
 from orcia_api.dependencies._assistant_guards import enforce_assistant_workspace_guard
 from orcia_api.routers._assistant_background_registry import (
     get_rate_limiter_from_request,
@@ -34,7 +38,7 @@ from orcia_api.routers.assistant_background_turns import (
 )
 from orcia_api.routers.assistant_llm_bridge import (
     ensure_active_chat_model_if_live,
-    resolve_assembled_system_instructions_for_turn,
+    resolve_assembled_system_instructions_for_turn_async,
     resolve_configured_llm_endpoint,
     resolve_request_locale,
 )
@@ -48,7 +52,12 @@ from orcia_api.schemas.assistant import (
     ActiveBackgroundTurnStatusResponse,
     AssistantActiveTurnsListResponse,
     AssistantTurnAcceptedResponse,
+    AssistantTurnFeedbackRequest,
+    AssistantTurnFeedbackResponse,
     ThreeSpeedTurnRequest,
+)
+from orcia_core.orchestration.assistant_feedback import (
+    SqlAssistantFeedbackRepository,
 )
 from orcia_core.orchestration.assistant_prompt_builder import resolve_default_hat
 from orcia_core.orchestration.errors import ResourceNotFoundError, ScopeAccessDeniedError
@@ -59,6 +68,9 @@ from orcia_core.ports.llm_streaming_port import LlmStreamingPort
 turns_v2_router = APIRouter()
 CurrentUserDep = Annotated[UserIdentity, Depends(resolve_request_user)]
 LlmStreamingPortDep = Annotated[LlmStreamingPort, Depends(get_llm_streaming_port)]
+FeedbackRepoDep = Annotated[
+    SqlAssistantFeedbackRepository, Depends(get_assistant_feedback_repository)
+]
 
 
 @turns_v2_router.post("/turns", status_code=202, response_model=AssistantTurnAcceptedResponse)
@@ -82,7 +94,7 @@ async def create_assistant_turn_v2_endpoint(
     ep = await resolve_configured_llm_endpoint(
         request, requested_tier=payload.requested_tier, workspace_id=payload.workspace_id
     )
-    system_msg = resolve_assembled_system_instructions_for_turn(
+    system_msg = await resolve_assembled_system_instructions_for_turn_async(
         request,
         hat=active_hat,
         speed_mode=resolved_speed,
@@ -227,3 +239,32 @@ async def stop_assistant_turn_v2_endpoint(
     state = await stop_assistant_turn_by_id(turn_id, request=request, stopped_by_user_id=user.id)
     assert state is not None
     return to_active_turn_response(state)
+
+
+@turns_v2_router.post("/turns/{turn_id}/feedback", response_model=AssistantTurnFeedbackResponse)
+async def upsert_assistant_turn_feedback_v2_endpoint(
+    turn_id: str,
+    payload: AssistantTurnFeedbackRequest,
+    request: Request,
+    user: CurrentUserDep,
+    feedback_repo: FeedbackRepoDep,
+) -> AssistantTurnFeedbackResponse:
+    """Idempotently upsert user feedback for `(turn_id, user_id)` in `assistant_turn_feedback`."""
+    await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
+    record = await feedback_repo.upsert_feedback(
+        turn_id=turn_id,
+        workspace_id=payload.workspace_id,
+        user=user,
+        rating=payload.rating,
+        reason_code=payload.reason_code,
+        comment=payload.comment,
+    )
+    return AssistantTurnFeedbackResponse(
+        feedback_id=record.feedback_id,
+        turn_id=record.turn_id,
+        workspace_id=record.workspace_id,
+        user_id=record.user_id,
+        rating=record.rating,
+        reason_code=record.reason_code,
+        comment=record.comment,
+    )
