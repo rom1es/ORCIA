@@ -166,17 +166,13 @@ def build_anthropic_native_request_body(
     *,
     stream: bool,
     tools: list[dict[str, Any]] | None = None,
+    tool_choice: str | dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build Anthropic `/v1/messages` JSON request body."""
+    from orcia_core.orchestration.llm_tool_dialects import format_messages_for_dialect
+
     sys_blocks = [str(m.get("content") or "") for m in messages if m.get("role") == "system"]
-    conv_msgs = [
-        {
-            "role": "assistant" if m.get("role") == "assistant" else "user",
-            "content": str(m.get("content") or ""),
-        }
-        for m in messages
-        if m.get("role") != "system"
-    ]
+    conv_msgs = format_messages_for_dialect(messages, dialect="anthropic_messages")
     body: dict[str, Any] = {
         "model": model_name,
         "max_tokens": 4096,
@@ -195,4 +191,11 @@ def build_anthropic_native_request_body(
             for t in tools
             if isinstance(t, dict)
         ]
+        if tool_choice is not None:
+            if isinstance(tool_choice, dict):
+                body["tool_choice"] = tool_choice
+            elif tool_choice == "required":
+                body["tool_choice"] = {"type": "any"}
+            elif tool_choice == "auto":
+                body["tool_choice"] = {"type": "auto"}
     return body

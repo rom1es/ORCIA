@@ -200,6 +200,8 @@ export interface components {
       scope_id?: string;
       scope_level?: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
       secret_input?: components["schemas"]["SecretInputPayload"] | null;
+      supports_tools?: boolean | null;
+      supports_tools_override?: boolean | null;
       usage?: "chat" | "embedding";
     };
     AiModelDeleteImpactResponse: {
@@ -256,6 +258,8 @@ export interface components {
       scope_id: string;
       scope_level: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
       secret_status: components["schemas"]["SecretStatusResponse"];
+      supports_tools?: boolean;
+      supports_tools_override?: boolean | null;
       updated_at: string;
       usage?: "chat" | "embedding";
     };
@@ -273,6 +277,8 @@ export interface components {
       is_active?: boolean | null;
       protocol_mode?: "openai_compatible" | "gemini_native" | "anthropic_messages" | null;
       secret_input?: components["schemas"]["SecretInputPayload"] | null;
+      supports_tools?: boolean | null;
+      supports_tools_override?: boolean | null;
       usage?: "chat" | "embedding" | null;
     };
     AiModelTestResponse: {
@@ -280,6 +286,7 @@ export interface components {
       latency_ms: number;
       mapping_id: string;
       message: string;
+      supports_tools?: boolean;
       tested_at: string;
     };
     ApplyRecommendationResponse: {
@@ -1355,6 +1362,7 @@ export interface components {
       display_name?: string | null;
       id: string;
       owned_by?: string | null;
+      supports_tools?: boolean;
       usage_hint?: "chat" | "embedding" | "unknown";
     };
     DiscoveredRemoteCapabilitySchema: {

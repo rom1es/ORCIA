@@ -46,6 +46,7 @@ from orcia_core.orchestration import (
     evaluate_ai_model_delete_impact_pg18,
     record_ai_model_test_result_pg18,
 )
+from orcia_core.orchestration.ai_models_capabilities import infer_default_supports_tools
 from orcia_core.permissions import AuthAndOrganizationService, UserIdentity
 from orcia_kernel.errors import OrciaDomainError
 
@@ -68,6 +69,17 @@ async def test_ai_model_connection(
 
     try:
         health, resp = await execute_model_connection_test(rec, decrypted_key, request)
+        detected_tools = (
+            infer_default_supports_tools(
+                endpoint_uri=rec.endpoint_uri,
+                protocol_mode=rec.protocol_mode,
+                provider_slug=rec.provider_slug,
+                usage=rec.usage,
+                model_name=rec.model_name,
+            )
+            if rec.supports_tools_override is not None
+            else resp.supports_tools
+        )
         if engine is not None:
             async with engine.begin() as conn:
                 await record_ai_model_test_result_pg18(
@@ -75,11 +87,16 @@ async def test_ai_model_connection(
                     mapping_id,
                     health_status=health,
                     latency_ms=resp.latency_ms,
+                    supports_tools=detected_tools,
                     instance=path,
                 )
         else:
             hub_svc.record_test_result(
-                mapping_id, health_status=health, latency_ms=resp.latency_ms, instance=path
+                mapping_id,
+                health_status=health,
+                latency_ms=resp.latency_ms,
+                supports_tools=detected_tools,
+                instance=path,
             )
         evt = AdminConnectionTested.create(
             actor_id=user.id,

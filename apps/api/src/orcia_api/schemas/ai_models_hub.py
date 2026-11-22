@@ -58,6 +58,8 @@ class AiModelMappingItemResponse(BaseModel):
     created_at: str
     updated_at: str
     secret_status: SecretStatusResponse
+    supports_tools: bool = False
+    supports_tools_override: bool | None = None
 
 
 class AiModelMappingsListResponse(BaseModel):
@@ -93,6 +95,8 @@ class AiModelCreateRequest(BaseModel):
     max_tokens_budget: int = Field(default=8192, gt=0)
     max_cost_usd: float = Field(default=10.0, ge=0.0)
     secret_input: SecretInputRequest | None = None
+    supports_tools: bool | None = None
+    supports_tools_override: bool | None = None
 
 
 class AiModelPatchRequest(BaseModel):
@@ -109,6 +113,8 @@ class AiModelPatchRequest(BaseModel):
     env_var_name: str | None = Field(default=None, max_length=128)
     is_active: bool | None = None
     secret_input: SecretInputRequest | None = None
+    supports_tools: bool | None = None
+    supports_tools_override: bool | None = None
 
 
 class AiModelTestResponse(BaseModel):
@@ -121,6 +127,7 @@ class AiModelTestResponse(BaseModel):
     latency_ms: int
     tested_at: str
     message: str
+    supports_tools: bool = False
 
 
 class AiModelDeleteImpactResponse(BaseModel):
@@ -158,6 +165,7 @@ class DiscoveredModelItem(BaseModel):
     description: str | None = None
     usage_hint: Literal["chat", "embedding", "unknown"] = "unknown"
     owned_by: str | None = None
+    supports_tools: bool = False
 
 
 class AiModelDiscoverRequest(BaseModel):

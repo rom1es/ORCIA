@@ -60,6 +60,7 @@ from orcia_api.routers.assistant_llm_resolver import (
 from orcia_api.routers.assistant_llm_resolver import (
     select_endpoint_from_tiers as _select_endpoint_from_tiers,
 )
+from orcia_core.orchestration.llm_tool_dialects import format_tool_result_message
 from orcia_core.ports.llm_streaming_port import LlmStreamingPort, LlmStreamRequest
 
 
@@ -201,7 +202,7 @@ async def invoke_configured_llm_for_assistant_turn(
         conversation_history=conversation_history,
         max_tokens_budget=ep.max_tokens_budget,
     )
-    tools = build_workspace_tools_schema(request, speed_mode)
+    tools = build_workspace_tools_schema(request, speed_mode) if ep.supports_tools else []
 
     outcome = await active_port.complete_chat(
         LlmStreamRequest(
@@ -219,16 +220,21 @@ async def invoke_configured_llm_for_assistant_turn(
     total_in_tokens = outcome.input_tokens
     total_out_tokens = outcome.output_tokens
     usage_source = outcome.usage_source
-    if not content and invoked_tools:
-        followup_msgs = [
+    if not content and outcome.tool_calls:
+        followup_msgs: list[dict[str, Any]] = [
             *messages,
-            {
-                "role": "user",
-                "content": (
-                    f"[Tool Execution Results for {', '.join(invoked_tools)}]: "
-                    f"Workspace context verified for '{user_prompt.strip()}'. Synthesize answer."
-                ),
-            },
+            {"role": "assistant", "content": "", "tool_calls": list(outcome.tool_calls)},
+            *[
+                format_tool_result_message(
+                    tool_call_id=str(tc.get("id") or f"call_{idx + 1}"),
+                    name=str(tc.get("name") or "tool"),
+                    content=(
+                        f"Workspace context verified for '{user_prompt.strip()}' "
+                        f"({tc.get('name') or 'tool'}). Synthesize answer."
+                    ),
+                )
+                for idx, tc in enumerate(outcome.tool_calls)
+            ],
         ]
         second = await active_port.complete_chat(
             LlmStreamRequest(endpoint=ep, messages=tuple(followup_msgs), include_thoughts=True)

@@ -343,7 +343,7 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
             "tier": "complex",
             "primaryModel": "gemma4:27b-pro",
             "modelFamily": "Ollama Local",
-            "endpointUrl": "http://localhost:11434/api",
+            "endpointUrl": "http://localhost:11434/v1",
             "authMode": "none_local",
         },
     ]
@@ -352,8 +352,10 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
     ep_medium = _select_endpoint_from_tiers(tiers_cfg, "medium")
     ep_complex = _select_endpoint_from_tiers(tiers_cfg, "complex")
     assert ep_simple is not None and ep_simple.model_name == "gemma4:4b-fast"
+    assert ep_simple.supports_tools is False
     assert ep_medium is not None and ep_medium.model_name == "gemma4:12b"
     assert ep_complex is not None and ep_complex.model_name == "gemma4:27b-pro"
+    assert ep_complex.supports_tools is True
 
     sys_fast = build_assistant_system_instructions(
         hat="ARCHITECT",
@@ -401,6 +403,7 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
 
     monkeypatch.delenv("ORCIA_USE_CASSETTE_LLM", raising=False)
     monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
+    monkeypatch.setenv("ORCIA_ENV_FILE", "/tmp/orcia-unit-none.env")
     monkeypatch.delenv("DATABASE_URL", raising=False)
 
     with TestClient(app) as client:
@@ -412,6 +415,20 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
             first_admin_display_name="Admin",
             llm_tiers=tiers_cfg,
         )
+        # Non-/v1 Ollama tier (`simple`) rejects Speed 2/3 with 422 (D5/R7)
+        r_non_v1_reject = client.post(
+            "/api/v1/assistant/three-speed/turn",
+            params={"persona_key": "marc"},
+            json={
+                "workspace_id": "0192c4e0-0000-7000-8000-000000000201",
+                "user_prompt": "Vérifie avec @jira-triage",
+                "requested_tier": "simple",
+                "requested_speed": "SPEED_2_AGENT_TOOLS",
+            },
+        )
+        assert r_non_v1_reject.status_code == 422
+        assert r_non_v1_reject.json()["error_code"] == "ERR_MODEL_TOOLS_UNSUPPORTED"
+
         r_complex_deep = client.post(
             "/api/v1/assistant/three-speed/turn",
             params={"persona_key": "marc"},

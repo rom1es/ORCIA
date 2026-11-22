@@ -102,7 +102,11 @@ async def stream_configured_llm_for_assistant_turn(
             conversation_history=conversation_history,
             max_tokens_budget=max_budget,
         ),
-        tools_builder=lambda: build_workspace_tools_schema(request, speed_mode),
+        tools_builder=lambda: (
+            build_workspace_tools_schema(request, speed_mode)
+            if (ep is None or ep.supports_tools)
+            else []
+        ),
         conversation_history_count=len(conversation_history or []),
         folder_pinned_notes=folder_pinned_notes,
         thinking_effort=thinking_effort,

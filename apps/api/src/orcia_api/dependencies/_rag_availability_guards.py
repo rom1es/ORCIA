@@ -30,10 +30,8 @@ from orcia_core.rag.reindex import check_rag_operational_on_conn
 
 async def get_embedding_port(request: Request) -> EmbeddingPort:
     """FastAPI `Depends` provider resolving the active global EmbeddingPort."""
-    from orcia_api.dependencies.core_and_lifespan import (
-        get_or_create_shared_db_engine,
-        initialize_app_services,
-    )
+    from orcia_api.dependencies._core_providers import get_configured_db_engine
+    from orcia_api.dependencies.core_and_lifespan import initialize_app_services
 
     test_reindex_mgr = getattr(request.app.state, "reindex_manager", None)
     if test_reindex_mgr is not None:
@@ -62,7 +60,7 @@ async def get_embedding_port(request: Request) -> EmbeddingPort:
 
     engine = getattr(request.app.state, "db_engine", None)
     if engine is None and test_reindex_mgr is None:
-        engine = get_or_create_shared_db_engine(request)
+        engine = get_configured_db_engine(request)
 
     if engine is not None:
         async with engine.connect() as conn:

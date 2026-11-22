@@ -111,6 +111,7 @@ async def execute_turn_producer_task(
                 model_name="cassette-deterministic",
                 endpoint_uri="http://localhost",
                 auth_mode="none",
+                supports_tools=True,
             )
             if active_port is None:
                 active_port = HttpxMultiProviderLlmStreamingAdapter(

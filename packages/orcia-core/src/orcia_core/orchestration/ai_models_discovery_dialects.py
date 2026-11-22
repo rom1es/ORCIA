@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any
 from urllib.parse import urlparse
 
 import httpx
 
 from orcia_core.observability.logging import get_logger
+from orcia_core.orchestration._ai_models_discovery_common import (
+    MAX_PAGINATED_MODELS,
+    DiscoveredModel,
+    ModelUsageHint,
+    parse_ollama_tags_response,
+)
+from orcia_core.orchestration.ai_models_capabilities import detect_discovered_model_supports_tools
 from orcia_core.orchestration.ai_models_errors import (
     ModelDiscoveryAuthFailedError,
     ModelDiscoveryEndpointNotFoundError,
@@ -17,31 +23,6 @@ from orcia_core.orchestration.ai_models_errors import (
 from orcia_core.orchestration.ai_models_pinned_http import prepare_pinned_http_request
 
 logger = get_logger(__name__)
-
-ModelUsageHint = Literal["chat", "embedding", "unknown"]
-MAX_PAGINATED_MODELS = 250
-
-
-@dataclass(frozen=True, slots=True)
-class DiscoveredModel:
-    """Standardized representation of a discovered model returned by a provider."""
-
-    id: str
-    display_name: str | None = None
-    description: str | None = None
-    usage_hint: ModelUsageHint = "unknown"
-    owned_by: str | None = None
-
-
-def parse_ollama_tags_response(body: dict[str, Any]) -> list[DiscoveredModel]:
-    """Parse Ollama `/api/tags` JSON payload into normalized discovered models."""
-    models: list[DiscoveredModel] = []
-    for item in body.get("models", []):
-        mname = str(item.get("name") or item.get("model") or "")
-        if not mname:
-            continue
-        models.append(DiscoveredModel(id=mname, display_name=mname, usage_hint="unknown"))
-    return sorted(models, key=lambda m: m.id.lower())
 
 
 async def discover_gemini_native(
@@ -181,6 +162,14 @@ async def discover_anthropic_messages(
             id=str(item.get("id") or ""),
             display_name=item.get("display_name") or str(item.get("id") or ""),
             usage_hint="chat",
+            supports_tools=detect_discovered_model_supports_tools(
+                item,
+                protocol_mode="anthropic_messages",
+                endpoint_uri=base_url,
+                provider_slug="anthropic",
+                usage_hint="chat",
+                model_id=str(item.get("id") or ""),
+            ),
         )
         for item in items
         if str(item.get("id") or "")
@@ -270,6 +259,14 @@ async def discover_openai_compatible(
                 display_name=str(item.get("id") or ""),
                 owned_by=item.get("owned_by"),
                 usage_hint="unknown",
+                supports_tools=detect_discovered_model_supports_tools(
+                    item,
+                    protocol_mode="openai_compatible",
+                    endpoint_uri=base_url,
+                    provider_slug=provider_slug,
+                    usage_hint="unknown",
+                    model_id=str(item.get("id") or ""),
+                ),
             )
             for item in body["data"]
             if str(item.get("id") or "")

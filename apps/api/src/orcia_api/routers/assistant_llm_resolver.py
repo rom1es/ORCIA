@@ -81,8 +81,9 @@ async def ensure_active_chat_model_if_live(
     *,
     requested_tier: str | None = None,
     workspace_id: str | None = None,
+    speed_mode: str = "SPEED_1_FAST",
 ) -> LlmEndpointConfig | None:
-    """Assert an active `chat` model exists when calling live LLM (outside cassette mode)."""
+    """Assert an active `chat` model exists (and supports tools for Speed 2/3) when live."""
     if is_cassette_llm_enabled():
         return None
     ep = await resolve_configured_llm_endpoint(
@@ -97,6 +98,13 @@ async def ensure_active_chat_model_if_live(
                 "Aucun modèle IA de dialogue (chat) actif n'est configuré. "
                 "Veuillez configurer un modèle chat dans /settings/ai-models."
             ),
+            instance=str(request.url.path),
+        )
+    if speed_mode in ("SPEED_2_AGENT_TOOLS", "SPEED_3_DEEP_AUDIT") and not ep.supports_tools:
+        from orcia_core.orchestration.ai_models_errors import ModelToolsUnsupportedError
+
+        raise ModelToolsUnsupportedError(
+            model_name=ep.model_name,
             instance=str(request.url.path),
         )
     return ep

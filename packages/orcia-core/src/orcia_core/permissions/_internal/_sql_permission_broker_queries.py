@@ -54,6 +54,7 @@ SQL_INSERT_POLICY = sa.text(
         :role, :team, :tpl, :sla, :proc, :sp,
         CAST(:admin AS uuid), CAST(:anchor AS uuid), :sig, :ttl
     )
+    ON CONFLICT DO NOTHING
     RETURNING *
     """
 )
@@ -222,3 +223,49 @@ def row_to_ticket(row: RowMapping) -> PermissionBrokerTicket:
         procedure_markdown=str(row["procedure_markdown"] or ""),
         request_url=req_url,
     )
+
+
+async def upsert_policy_on_conn(
+    conn: AsyncConnection, policy: PermissionBrokerPolicy, *, update_existing: bool
+) -> PermissionBrokerPolicy:
+    """Idempotently insert/update `permission_broker_policies` safe against concurrent seeds."""
+    await ensure_scheme_row(conn, policy.connector_scheme)
+    admin_uuid = await resolve_nullable_user(conn, policy.approved_by_admin_id)
+    anchor_uuid = await resolve_nullable_user(conn, policy.human_anchor_author_id)
+    pol_uuid = str(coerce_broker_uuid(policy.id))
+    find_sql = sa.text(
+        "SELECT * FROM permission_broker_policies "
+        "WHERE id = CAST(:id AS uuid) OR policy_key = :pk OR uri_pattern = :up LIMIT 1"
+    )
+    find_args = {"id": pol_uuid, "pk": policy.policy_key, "up": policy.uri_pattern}
+    existing = (await conn.execute(find_sql, find_args)).mappings().first()
+    params = {
+        "up": policy.uri_pattern,
+        "scheme": policy.connector_scheme,
+        "role": policy.required_role,
+        "team": policy.approver_team,
+        "tpl": policy.request_url_template,
+        "sla": policy.sla_hours,
+        "proc": policy.procedure_markdown,
+        "sp": policy.service_principal_allowed,
+        "admin": str(admin_uuid) if admin_uuid is not None else None,
+        "anchor": str(anchor_uuid) if anchor_uuid is not None else None,
+        "sig": policy.human_anchor_signature,
+        "ttl": policy.freshness_ttl_days,
+    }
+    if existing is None:
+        ins_res = await conn.execute(
+            SQL_INSERT_POLICY, {**params, "id": pol_uuid, "pk": policy.policy_key}
+        )
+        inserted = ins_res.mappings().first()
+        if inserted is not None:
+            return row_to_policy(inserted)
+        existing = (await conn.execute(find_sql, find_args)).mappings().one()
+    if not update_existing:
+        return row_to_policy(existing)
+    row = (
+        (await conn.execute(SQL_UPDATE_POLICY, {**params, "id": str(existing["id"])}))
+        .mappings()
+        .one()
+    )
+    return row_to_policy(row)

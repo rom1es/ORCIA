@@ -1,4 +1,4 @@
-"""Base HTTPX Async Streaming & Non-Streaming Client with DNS-Pinned SSRF Guard (`Story 26.2`)."""
+"""Base HTTPX Async Streaming & Non-Streaming Client with SSRF Guard (`Story 26.2`, `26.6a`)."""
 
 from __future__ import annotations
 
@@ -10,19 +10,16 @@ from collections.abc import AsyncIterator, Callable
 import httpx
 
 from orcia_core.observability.logging import get_logger, scrub_sensitive_text
+from orcia_core.orchestration._llm_streaming_http_helpers import (
+    build_effective_request_parts,
+    build_openai_fallback_body,
+    should_attempt_openai_404_fallback,
+)
 from orcia_core.orchestration.ai_models_errors import UnsafeLlmEndpointUrlError
 from orcia_core.orchestration.ai_models_pinned_http import prepare_pinned_http_request
-from orcia_core.orchestration.ai_models_urls import (
-    build_legacy_local_chat_url,
-    is_anthropic_provider,
-    normalize_chat_completions_url,
-)
-from orcia_core.orchestration.llm_gemini_dialect import is_google_gemini_native_provider
 from orcia_core.orchestration.llm_provider_parsing import (
-    build_provider_headers,
-    build_provider_request_body,
     extract_stream_chunk_deltas,
-    parse_non_stream_json,
+    parse_non_stream_outcome,
 )
 from orcia_core.orchestration.llm_streaming_sse_utils import (
     emit_chunk_deltas,
@@ -32,16 +29,23 @@ from orcia_core.orchestration.llm_streaming_sse_utils import (
     resolve_stream_retry_base_delay_s,
     stream_error_code_for_status,
 )
+from orcia_core.orchestration.llm_tool_dialects import ToolCallAccumulator
 from orcia_core.orchestration.llm_usage_telemetry import (
     extract_usage_tokens_from_payload,
     resolve_usage_with_fallback,
 )
 from orcia_core.ports.llm_streaming_port import (
+    Finish,
     LlmChatTurnOutcome,
     LlmEndpointConfig,
     LlmStreamDelta,
     LlmStreamingPort,
     LlmStreamRequest,
+    LlmTypedStreamEvent,
+    StreamErrorEvent,
+    Usage,
+    delta_to_typed_event,
+    typed_event_to_delta,
 )
 
 LogErrorFn = Callable[[str, Exception, LlmEndpointConfig, str, float], None]
@@ -70,53 +74,35 @@ class BaseHttpxLlmAdapter(LlmStreamingPort):
     async def complete_chat(self, request: LlmStreamRequest) -> LlmChatTurnOutcome | None:
         """Execute async non-streaming chat completion with DNS pinning."""
         ep = request.endpoint
-        msgs = list(request.messages)
-        tools = list(request.tools) or None
-        target_url = normalize_chat_completions_url(
-            ep.endpoint_uri,
-            ep.provider,
-            protocol_mode=ep.protocol_mode,
-            model_name=ep.model_name,
-            stream=False,
-        )
-        headers = build_provider_headers(ep, target_url)
-        body = build_provider_request_body(
-            ep=ep,
-            target_url=target_url,
-            messages=msgs,
-            stream=False,
-            tools=tools,
-            include_thoughts=request.include_thoughts,
-        )
+        target_url, headers, body, msgs = build_effective_request_parts(request, stream=False)
         t0 = time.perf_counter()
         try:
             p_url, p_headers, ext = await prepare_pinned_http_request(
                 self._client, target_url, headers
             )
             resp = await self._client.post(p_url, json=body, headers=p_headers, extensions=ext)
-            if (
-                self._allow_legacy_fallback
-                and resp.status_code == 404
-                and not is_anthropic_provider(target_url, ep.provider)
-                and not is_google_gemini_native_provider(target_url, ep.provider)
-            ):
-                fallback_url = build_legacy_local_chat_url(ep.endpoint_uri)
-                if fallback_url != target_url:
-                    fb_url, fb_hdrs, fb_ext = await prepare_pinned_http_request(
-                        self._client, fallback_url, headers
-                    )
-                    resp = await self._client.post(
-                        fb_url,
-                        json={"model": ep.model_name, "messages": msgs, "stream": False},
-                        headers=fb_hdrs,
-                        extensions=fb_ext,
-                    )
+            fallback_url = should_attempt_openai_404_fallback(
+                allow_legacy_fallback=self._allow_legacy_fallback,
+                status_code=resp.status_code,
+                ep=ep,
+                target_url=target_url,
+            )
+            if fallback_url is not None:
+                fb_url, fb_hdrs, fb_ext = await prepare_pinned_http_request(
+                    self._client, fallback_url, headers
+                )
+                resp = await self._client.post(
+                    fb_url,
+                    json=build_openai_fallback_body(request, stream=False),
+                    headers=fb_hdrs,
+                    extensions=fb_ext,
+                )
             resp.raise_for_status()
             data = resp.json()
             elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 2)
             if not isinstance(data, dict):
                 return None
-            clean_content, thinking_text, tool_calls = parse_non_stream_json(data)
+            clean_content, thinking_text, tool_calls, finish_reason = parse_non_stream_outcome(data)
             if not clean_content and not tool_calls:
                 return None
             obs = extract_usage_tokens_from_payload(data)
@@ -135,6 +121,7 @@ class BaseHttpxLlmAdapter(LlmStreamingPort):
                 input_tokens=in_tok,
                 output_tokens=out_tok,
                 usage_source=u_src,
+                finish_reason=finish_reason,
             )
         except UnsafeLlmEndpointUrlError:
             raise
@@ -145,30 +132,16 @@ class BaseHttpxLlmAdapter(LlmStreamingPort):
             self._log_error("llm_provider_invocation_failed", exc, ep, target_url, t0)
             return None
 
-    async def stream_chat_sse(self, request: LlmStreamRequest) -> AsyncIterator[LlmStreamDelta]:
-        """Stream true async HTTP SSE deltas (`resp.aiter_lines()`) with DNS pinning."""
+    async def stream_chat_events(
+        self, request: LlmStreamRequest
+    ) -> AsyncIterator[LlmTypedStreamEvent]:
+        """Stream typed `ContentDelta | ReasoningDelta | ToolCallDelta | Usage | Finish` events."""
         ep = request.endpoint
-        msgs = list(request.messages)
-        tools = list(request.tools) or None
-        target_url = normalize_chat_completions_url(
-            ep.endpoint_uri,
-            ep.provider,
-            protocol_mode=ep.protocol_mode,
-            model_name=ep.model_name,
-            stream=True,
-        )
-        headers = build_provider_headers(ep, target_url)
-        body = build_provider_request_body(
-            ep=ep,
-            target_url=target_url,
-            messages=msgs,
-            stream=True,
-            tools=tools,
-            include_thoughts=request.include_thoughts,
-        )
+        target_url, headers, body, msgs = build_effective_request_parts(request, stream=True)
         t0 = time.perf_counter()
         acc_content: list[str] = []
         acc_thinking: list[str] = []
+        tool_acc = ToolCallAccumulator()
         in_think = False
         saw_usage, obs_in_tok, obs_out_tok = False, 0, 0
         idle_timeout_s = resolve_inter_chunk_timeout_s(
@@ -176,14 +149,27 @@ class BaseHttpxLlmAdapter(LlmStreamingPort):
         )
         base_delay_s = resolve_stream_retry_base_delay_s()
         emitted_any_byte = False
+        use_url, use_body = target_url, body
+
         for attempt in range(self._max_stream_retries + 1):
             try:
                 p_url, p_headers, ext = await prepare_pinned_http_request(
-                    self._client, target_url, headers
+                    self._client, use_url, headers
                 )
                 async with self._client.stream(
-                    "POST", p_url, json=body, headers=p_headers, extensions=ext
+                    "POST", p_url, json=use_body, headers=p_headers, extensions=ext
                 ) as resp:
+                    if resp.status_code == 404 and not emitted_any_byte:
+                        fb = should_attempt_openai_404_fallback(
+                            allow_legacy_fallback=self._allow_legacy_fallback,
+                            status_code=404,
+                            ep=ep,
+                            target_url=use_url,
+                        )
+                        if fb is not None:
+                            use_url = fb
+                            use_body = build_openai_fallback_body(request, stream=True)
+                            continue
                     resp.raise_for_status()
                     async for raw_line in iter_lines_with_idle_timeout(
                         resp.aiter_lines(), idle_timeout_s=idle_timeout_s
@@ -215,8 +201,13 @@ class BaseHttpxLlmAdapter(LlmStreamingPort):
                             t0=t0,
                         )
                         for delta_item in out_deltas:
-                            yield delta_item
+                            yield delta_to_typed_event(delta_item)
+                        for tc_delta in tool_acc.process_chunk(chunk):
+                            yield tc_delta
+                        if chunk.get("type") == "message_stop":
+                            break
                 resp_txt, think_txt = "".join(acc_content), "".join(acc_thinking)
+                final_tcs = tool_acc.finalize_tool_calls()
                 in_tok, out_tok, u_src = resolve_usage_with_fallback(
                     messages=msgs,
                     reply_text=f"{resp_txt}\n{think_txt}",
@@ -224,10 +215,13 @@ class BaseHttpxLlmAdapter(LlmStreamingPort):
                     observed_output_tokens=obs_out_tok,
                     saw_provider_usage=saw_usage,
                 )
-                yield LlmStreamDelta(
-                    event="turn_completed",
+                yield Usage(input_tokens=in_tok, output_tokens=out_tok, usage_source=u_src)
+                f_reason = tool_acc.finish_reason or ("tool_calls" if final_tcs else "stop")
+                yield Finish(
+                    finish_reason=f_reason,
                     accumulated_text=resp_txt,
                     thinking_text=think_txt,
+                    tool_calls=final_tcs,
                     latency_ms=round((time.perf_counter() - t0) * 1000.0, 2),
                     input_tokens=in_tok,
                     output_tokens=out_tok,
@@ -237,9 +231,8 @@ class BaseHttpxLlmAdapter(LlmStreamingPort):
             except UnsafeLlmEndpointUrlError:
                 raise
             except TimeoutError as exc:
-                self._log_error("llm_provider_stream_idle_timeout", exc, ep, target_url, t0)
-                yield LlmStreamDelta(
-                    event="stream_error",
+                self._log_error("llm_provider_stream_idle_timeout", exc, ep, use_url, t0)
+                yield StreamErrorEvent(
                     error_message=scrub_sensitive_text(
                         f"Stream idle timeout after {idle_timeout_s:.1f}s ({ep.model_name})."
                     ),
@@ -264,9 +257,8 @@ class BaseHttpxLlmAdapter(LlmStreamingPort):
                     )
                     await asyncio.sleep(delay)
                     continue
-                self._log_error("llm_provider_stream_http_status_error", exc, ep, target_url, t0)
-                yield LlmStreamDelta(
-                    event="stream_error",
+                self._log_error("llm_provider_stream_http_status_error", exc, ep, use_url, t0)
+                yield StreamErrorEvent(
                     error_message=scrub_sensitive_text(
                         f"Provider HTTP {status} ({ep.model_name})."
                     ),
@@ -282,9 +274,8 @@ class BaseHttpxLlmAdapter(LlmStreamingPort):
                 ):
                     await asyncio.sleep(base_delay_s * (2**attempt))
                     continue
-                self._log_error("llm_provider_stream_failed", exc, ep, target_url, t0)
-                yield LlmStreamDelta(
-                    event="stream_error",
+                self._log_error("llm_provider_stream_failed", exc, ep, use_url, t0)
+                yield StreamErrorEvent(
                     error_message=scrub_sensitive_text(
                         f"Provider stream failed ({type(exc).__name__}): {exc}"
                     ),
@@ -292,3 +283,8 @@ class BaseHttpxLlmAdapter(LlmStreamingPort):
                     http_status=502,
                 )
                 return
+
+    async def stream_chat_sse(self, request: LlmStreamRequest) -> AsyncIterator[LlmStreamDelta]:
+        """Stream true async HTTP SSE deltas (`resp.aiter_lines()`) with DNS pinning."""
+        async for event in self.stream_chat_events(request):
+            yield typed_event_to_delta(event)

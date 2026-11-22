@@ -20,6 +20,7 @@ from orcia_api.routers._ai_models_helpers import (
     require_ai_models_platform_admin,
     resolve_mapping_decrypted_key,
     to_item_response,
+    to_secret_input_spec,
 )
 from orcia_api.routers._ai_models_reindex_helpers import trigger_global_reindexing_job
 from orcia_api.routers._ai_models_test_and_reindex_routes import (
@@ -47,7 +48,7 @@ from orcia_core.orchestration import (
     list_ai_model_mappings_pg18,
     update_ai_model_mapping_pg18,
 )
-from orcia_core.permissions import AuthAndOrganizationService, SecretInputSpec, UserIdentity
+from orcia_core.permissions import AuthAndOrganizationService, UserIdentity
 
 router = APIRouter(prefix="/api/v1/settings/ai-models", tags=["settings-ai-models"])
 
@@ -99,14 +100,7 @@ async def create_ai_model_mapping(
     hub_svc: Annotated[AiModelsHubService, Depends(get_ai_models_hub_service)],
 ) -> AiModelMappingItemResponse:
     """Connect a new AI model mapping with AES-256-GCM encrypted API key."""
-    sec_input = (
-        SecretInputSpec(
-            action=payload.secret_input.action,
-            plaintext_value=payload.secret_input.plaintext_value,
-        )
-        if payload.secret_input is not None
-        else None
-    )
+    sec_input = to_secret_input_spec(payload.secret_input)
     engine = getattr(request.app.state, "db_engine", None)
     if engine is not None:
         async with engine.begin() as conn:
@@ -131,6 +125,8 @@ async def create_ai_model_mapping(
                 max_tokens_budget=payload.max_tokens_budget,
                 max_cost_usd=payload.max_cost_usd,
                 secret_input=sec_input,
+                supports_tools=payload.supports_tools,
+                supports_tools_override=payload.supports_tools_override,
                 actor_id=user.id,
                 instance=str(request.url.path),
             )
@@ -154,6 +150,8 @@ async def create_ai_model_mapping(
             max_tokens_budget=payload.max_tokens_budget,
             max_cost_usd=payload.max_cost_usd,
             secret_input=sec_input,
+            supports_tools=payload.supports_tools,
+            supports_tools_override=payload.supports_tools_override,
             actor_id=user.id,
             instance=str(request.url.path),
         )
@@ -176,13 +174,10 @@ async def update_ai_model_mapping(
     hub_svc: Annotated[AiModelsHubService, Depends(get_ai_models_hub_service)],
 ) -> AiModelMappingItemResponse:
     """Update model settings or rotate/clear its API key."""
-    sec_input = (
-        SecretInputSpec(
-            action=payload.secret_input.action,
-            plaintext_value=payload.secret_input.plaintext_value,
-        )
-        if payload.secret_input is not None
-        else None
+    sec_input = to_secret_input_spec(payload.secret_input)
+    clear_override = (
+        "supports_tools_override" in payload.model_fields_set
+        and payload.supports_tools_override is None
     )
     engine = getattr(request.app.state, "db_engine", None)
     if engine is not None:
@@ -200,6 +195,9 @@ async def update_ai_model_mapping(
                 env_var_name=payload.env_var_name,
                 is_active=payload.is_active,
                 secret_input=sec_input,
+                supports_tools=payload.supports_tools,
+                supports_tools_override=payload.supports_tools_override,
+                clear_supports_tools_override=clear_override,
                 actor_id=user.id,
                 instance=str(request.url.path),
             )
@@ -215,6 +213,9 @@ async def update_ai_model_mapping(
             env_var_name=payload.env_var_name,
             is_active=payload.is_active,
             secret_input=sec_input,
+            supports_tools=payload.supports_tools,
+            supports_tools_override=payload.supports_tools_override,
+            clear_supports_tools_override=clear_override,
             actor_id=user.id,
             instance=str(request.url.path),
         )

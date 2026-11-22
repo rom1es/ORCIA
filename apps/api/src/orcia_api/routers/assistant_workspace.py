@@ -78,10 +78,13 @@ async def execute_three_speed_turn_endpoint(
 ) -> ThreeSpeedTurnResponse:
     """Execute a 3-Speed conversational turn (`Rapide`, `@Agent / /Skill`, `Approfondi`)."""
     await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
-    await ensure_active_chat_model_if_live(
-        request, requested_tier=payload.requested_tier, workspace_id=payload.workspace_id
-    )
     effective_deep_audit, effective_speed, resolved_speed = resolve_effective_speed(payload)
+    await ensure_active_chat_model_if_live(
+        request,
+        requested_tier=payload.requested_tier,
+        workspace_id=payload.workspace_id,
+        speed_mode=resolved_speed,
+    )
     resolved_notes = await resolve_folder_notes(request, payload, user=user)
     active_hat = resolve_default_hat(explicit_hat=payload.hat, user=user)
     history = await resolve_turn_history(request, payload, user=user)
@@ -217,8 +220,12 @@ async def stream_three_speed_turn_endpoint(
 ) -> StreamingResponse:
     """Stream SSE events (`cache_status`, `step_progress`, `thinking_delta`, `token_delta`)."""
     await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
+    effective_deep_audit, effective_speed, resolved_speed = resolve_effective_speed(payload)
     await ensure_active_chat_model_if_live(
-        request, requested_tier=payload.requested_tier, workspace_id=payload.workspace_id
+        request,
+        requested_tier=payload.requested_tier,
+        workspace_id=payload.workspace_id,
+        speed_mode=resolved_speed,
     )
     pre_lease = await enforce_assistant_rate_and_concurrency(
         get_rate_limiter_from_request(request),
@@ -226,7 +233,6 @@ async def stream_three_speed_turn_endpoint(
         workspace_id=payload.workspace_id,
         instance=str(request.url.path),
     )
-    effective_deep_audit, effective_speed, resolved_speed = resolve_effective_speed(payload)
     active_hat = resolve_default_hat(explicit_hat=payload.hat, user=user)
     history = await resolve_turn_history(request, payload, user=user)
     resolved_notes = await resolve_folder_notes(request, payload, user=user)
@@ -278,11 +284,10 @@ async def stream_three_speed_turn_endpoint(
                         "turn_stopped",
                         "stream_error",
                     ):
-                        s_name = stream_evt["event"]
                         s_json = json.dumps(stream_evt["data"], ensure_ascii=False)
                         cursor_id = stream_evt.get("cursor")
                         prefix = f"id: {cursor_id}\n" if cursor_id else ""
-                        yield f"{prefix}event: {s_name}\ndata: {s_json}\n\n"
+                        yield f"{prefix}event: {stream_evt['event']}\ndata: {s_json}\n\n"
 
     return StreamingResponse(_event_generator(), media_type="text/event-stream")
 

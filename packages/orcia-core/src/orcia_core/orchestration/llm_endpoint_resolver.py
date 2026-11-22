@@ -8,6 +8,7 @@ from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any
 
 from orcia_core.observability.logging import get_logger
+from orcia_core.orchestration.ai_models_capabilities import infer_default_supports_tools
 from orcia_core.permissions.ssrf_guard import is_safe_llm_endpoint_url
 from orcia_core.ports.llm_streaming_port import LlmEndpointConfig
 
@@ -36,6 +37,19 @@ def extract_tier_endpoint_from_dict(item: dict[str, Any]) -> LlmEndpointConfig |
         budget = max(128, int(raw_budget))
     except (TypeError, ValueError):
         budget = 8192
+    if "supportsTools" in item or "supports_tools" in item:
+        raw_st = (
+            item.get("supportsTools") if "supportsTools" in item else item.get("supports_tools")
+        )
+        supports_tools = bool(raw_st)
+    else:
+        supports_tools = infer_default_supports_tools(
+            endpoint_uri=endpoint_uri,
+            protocol_mode=protocol_mode or "openai_compatible",
+            provider_slug=provider,
+            usage="chat",
+            model_name=model_name,
+        )
     return LlmEndpointConfig(
         provider=provider,
         model_name=model_name,
@@ -45,6 +59,7 @@ def extract_tier_endpoint_from_dict(item: dict[str, Any]) -> LlmEndpointConfig |
         api_key=api_key,
         protocol_mode=protocol_mode,
         max_tokens_budget=budget,
+        supports_tools=supports_tools,
     )
 
 
@@ -123,33 +138,30 @@ async def resolve_configured_llm_endpoint_from_sources(
                                 max_tokens_budget=max(
                                     128, int(getattr(rec, "max_tokens_budget", 8192))
                                 ),
+                                supports_tools=bool(getattr(rec, "supports_tools", False)),
                             ),
                             None,
                         )
-            if snapshot is not None and getattr(snapshot, "llm_tiers", None):
-                chosen = select_endpoint_from_tiers(list(snapshot.llm_tiers), requested_tier)
-                if chosen is not None:
-                    return chosen, None
             resolved_env = orcia_env or os.environ.get("ORCIA_ENV", "").strip() or "local"
-            if snapshot_loader is not None:
+            if snapshot is None and snapshot_loader is not None:
                 db_snap = await snapshot_loader(engine, resolved_env)
                 if db_snap is not None:
-                    return (
-                        select_endpoint_from_tiers(list(db_snap.llm_tiers), requested_tier),
-                        db_snap,
-                    )
+                    chosen = select_endpoint_from_tiers(list(db_snap.llm_tiers), requested_tier)
+                    if chosen is not None:
+                        return chosen, db_snap
         except Exception as exc:
             logger.warning(
                 "llm_endpoint_pg_resolution_failed",
                 elapsed_ms=round((time.perf_counter() - t0) * 1000.0, 2),
                 error_type=type(exc).__name__,
             )
-        return None, None
 
     if snapshot is not None and getattr(snapshot, "llm_tiers", None):
         chosen = select_endpoint_from_tiers(list(snapshot.llm_tiers), requested_tier)
         if chosen is not None:
             return chosen, None
+    if engine is not None:
+        return None, None
     if hub_svc is not None:
         active_chat = hub_svc.list_mappings(is_active=True, usage="chat")
         target = (requested_tier or "medium").strip().lower()
@@ -168,6 +180,7 @@ async def resolve_configured_llm_endpoint_from_sources(
                     api_key=None,
                     protocol_mode=getattr(chosen_rec, "protocol_mode", ""),
                     max_tokens_budget=max(128, int(getattr(chosen_rec, "max_tokens_budget", 8192))),
+                    supports_tools=bool(getattr(chosen_rec, "supports_tools", False)),
                 ),
                 None,
             )

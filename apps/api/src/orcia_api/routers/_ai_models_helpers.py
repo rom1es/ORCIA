@@ -18,7 +18,7 @@ from orcia_api.schemas.ai_models_hub import (
     DiscoveredModelItem,
     LlmProtocolModeLiteral,
 )
-from orcia_api.schemas.settings_and_studio import SecretStatusResponse
+from orcia_api.schemas.settings_and_studio import SecretInputPayload, SecretStatusResponse
 from orcia_core.orchestration import (
     AiModelMappingRecord,
     AiModelsHubService,
@@ -27,7 +27,7 @@ from orcia_core.orchestration import (
     test_ai_model_endpoint_connection,
     validate_safe_llm_endpoint_url,
 )
-from orcia_core.permissions import AuthAndOrganizationService, UserIdentity
+from orcia_core.permissions import AuthAndOrganizationService, SecretInputSpec, UserIdentity
 from orcia_core.permissions.errors import ObserverModeReadOnlyError, ScopeAccessDeniedError
 
 
@@ -74,6 +74,13 @@ def require_ai_models_platform_admin(
     return user
 
 
+def to_secret_input_spec(payload: SecretInputPayload | None) -> SecretInputSpec | None:
+    """Convert Pydantic `SecretInputPayload` into domain `SecretInputSpec`."""
+    if payload is None:
+        return None
+    return SecretInputSpec(action=payload.action, plaintext_value=payload.plaintext_value)
+
+
 def to_item_response(m: AiModelMappingRecord) -> AiModelMappingItemResponse:
     """Serialize domain model mapping record to OpenAPI response with zero secret leakage."""
     return AiModelMappingItemResponse(
@@ -109,6 +116,8 @@ def to_item_response(m: AiModelMappingRecord) -> AiModelMappingItemResponse:
             updated_at=m.secret_status.updated_at,
             updated_by=m.secret_status.updated_by,
         ),
+        supports_tools=m.supports_tools,
+        supports_tools_override=m.supports_tools_override,
     )
 
 
@@ -139,12 +148,18 @@ async def execute_model_connection_test(
 
     is_fr = "fr" in request.headers.get("accept-language", "").lower()
     msg = outcome.message_fr if is_fr else outcome.message_en
+    effective_tools = (
+        rec.supports_tools_override
+        if rec.supports_tools_override is not None
+        else outcome.supports_tools
+    )
     resp = AiModelTestResponse(
         mapping_id=rec.id,
         health_status="OPERATIONAL",
         latency_ms=outcome.latency_ms,
         tested_at=datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         message=msg,
+        supports_tools=effective_tools,
     )
     return "OPERATIONAL", resp
 
@@ -214,6 +229,7 @@ async def execute_models_discovery(
             description=m.description,
             usage_hint=m.usage_hint,
             owned_by=m.owned_by,
+            supports_tools=m.supports_tools,
         )
         for m in raw_models
     ]
@@ -234,4 +250,5 @@ __all__ = [
     "require_ai_models_platform_admin",
     "resolve_mapping_decrypted_key",
     "to_item_response",
+    "to_secret_input_spec",
 ]

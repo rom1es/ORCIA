@@ -6,22 +6,21 @@ and `0020_story_4_4_contract` (`request_url` column, `REM-13`).
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any, cast
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from orcia_core.permissions._internal._sql_permission_broker_queries import (
-    SQL_INSERT_POLICY,
-    SQL_UPDATE_POLICY,
     SQL_UPSERT_TICKET,
     coerce_broker_uuid,
     ensure_scheme_row,
-    resolve_nullable_user,
     resolve_nullable_workspace,
     resolve_required_user,
     row_to_policy,
     row_to_ticket,
+    upsert_policy_on_conn,
 )
 from orcia_core.permissions.broker_models import (
     BrokerStepState,
@@ -38,6 +37,15 @@ class SqlPermissionBrokerRepository:
         self._engine: AsyncEngine = cast(AsyncEngine, engine)
         self._tables_ready_verified = False
         self._policies_seeded = False
+        self._seed_lock: asyncio.Lock | None = None
+        self._seed_lock_loop: asyncio.AbstractEventLoop | None = None
+
+    def _get_seed_lock(self) -> asyncio.Lock:
+        loop = asyncio.get_running_loop()
+        if self._seed_lock is None or self._seed_lock_loop is not loop:
+            self._seed_lock = asyncio.Lock()
+            self._seed_lock_loop = loop
+        return self._seed_lock
 
     async def pg_tables_ready(self) -> bool:
         """Return `True` when `permission_broker_tickets` exists in PG18."""
@@ -57,56 +65,7 @@ class SqlPermissionBrokerRepository:
     async def _upsert_policy_on_conn(
         self, conn: AsyncConnection, policy: PermissionBrokerPolicy, *, update_existing: bool
     ) -> PermissionBrokerPolicy:
-        await ensure_scheme_row(conn, policy.connector_scheme)
-        admin_uuid = await resolve_nullable_user(conn, policy.approved_by_admin_id)
-        anchor_uuid = await resolve_nullable_user(conn, policy.human_anchor_author_id)
-        existing = (
-            (
-                await conn.execute(
-                    sa.text(
-                        "SELECT * FROM permission_broker_policies "
-                        "WHERE policy_key = :pk OR uri_pattern = :up LIMIT 1"
-                    ),
-                    {"pk": policy.policy_key, "up": policy.uri_pattern},
-                )
-            )
-            .mappings()
-            .first()
-        )
-        params = {
-            "up": policy.uri_pattern,
-            "scheme": policy.connector_scheme,
-            "role": policy.required_role,
-            "team": policy.approver_team,
-            "tpl": policy.request_url_template,
-            "sla": policy.sla_hours,
-            "proc": policy.procedure_markdown,
-            "sp": policy.service_principal_allowed,
-            "admin": str(admin_uuid) if admin_uuid is not None else None,
-            "anchor": str(anchor_uuid) if anchor_uuid is not None else None,
-            "sig": policy.human_anchor_signature,
-            "ttl": policy.freshness_ttl_days,
-        }
-        if existing is not None:
-            if not update_existing:
-                return row_to_policy(existing)
-            row = (
-                (await conn.execute(SQL_UPDATE_POLICY, {**params, "id": str(existing["id"])}))
-                .mappings()
-                .one()
-            )
-            return row_to_policy(row)
-        row = (
-            (
-                await conn.execute(
-                    SQL_INSERT_POLICY,
-                    {**params, "id": str(coerce_broker_uuid(policy.id)), "pk": policy.policy_key},
-                )
-            )
-            .mappings()
-            .one()
-        )
-        return row_to_policy(row)
+        return await upsert_policy_on_conn(conn, policy, update_existing=update_existing)
 
     async def ensure_policies_seeded(
         self, policies: tuple[PermissionBrokerPolicy, ...]
@@ -114,20 +73,25 @@ class SqlPermissionBrokerRepository:
         """Idempotently seed default/fallback policies into `permission_broker_policies`."""
         if self._policies_seeded:
             return await self.list_policies()
-        async with self._engine.begin() as conn:
-            for pol in policies:
-                await self._upsert_policy_on_conn(conn, pol, update_existing=False)
-            rows = (
-                (
-                    await conn.execute(
-                        sa.text("SELECT * FROM permission_broker_policies ORDER BY created_at ASC")
+        async with self._get_seed_lock():
+            if self._policies_seeded:
+                return await self.list_policies()
+            async with self._engine.begin() as conn:
+                for pol in policies:
+                    await self._upsert_policy_on_conn(conn, pol, update_existing=False)
+                rows = (
+                    (
+                        await conn.execute(
+                            sa.text(
+                                "SELECT * FROM permission_broker_policies ORDER BY created_at ASC"
+                            )
+                        )
                     )
+                    .mappings()
+                    .all()
                 )
-                .mappings()
-                .all()
-            )
-        self._policies_seeded = True
-        return [row_to_policy(r) for r in rows]
+            self._policies_seeded = True
+            return [row_to_policy(r) for r in rows]
 
     async def upsert_policy(self, policy: PermissionBrokerPolicy) -> PermissionBrokerPolicy:
         """Persist or update a KB policy in `permission_broker_policies`."""

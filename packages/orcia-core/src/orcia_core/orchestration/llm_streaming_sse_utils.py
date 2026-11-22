@@ -1,4 +1,4 @@
-"""SSE delta serialization & structured error logging helpers (`Story 26.2`)."""
+"""SSE delta serialization & structured error logging helpers (`Story 26.2`, `Story 26.6a`)."""
 
 from __future__ import annotations
 
@@ -91,6 +91,25 @@ def delta_to_sse_dict(delta: LlmStreamDelta) -> dict[str, Any]:
             "event": "token_delta",
             "data": {"delta": delta.delta, "accumulated_text": delta.accumulated_text},
         }
+    if delta.event == "tool_call_delta":
+        return {
+            "event": "tool_call_delta",
+            "data": {
+                "index": delta.tool_call_index,
+                "tool_call_id": delta.tool_call_id,
+                "name": delta.tool_name,
+                "arguments_delta": delta.arguments_delta,
+            },
+        }
+    if delta.event == "usage":
+        return {
+            "event": "usage",
+            "data": {
+                "input_tokens": delta.input_tokens,
+                "output_tokens": delta.output_tokens,
+                "usage_source": delta.usage_source,
+            },
+        }
     if delta.event == "stream_error":
         payload: dict[str, Any] = {"message": delta.error_message}
         if delta.error_code:
@@ -98,17 +117,19 @@ def delta_to_sse_dict(delta: LlmStreamDelta) -> dict[str, Any]:
         if delta.http_status:
             payload["status"] = delta.http_status
         return {"event": "stream_error", "data": payload}
-    return {
-        "event": "turn_completed",
-        "data": {
-            "response_text": delta.accumulated_text,
-            "thinking_text": delta.thinking_text,
-            "latency_ms": delta.latency_ms,
-            "input_tokens": delta.input_tokens,
-            "output_tokens": delta.output_tokens,
-            "usage_source": delta.usage_source,
-        },
+    completed_data: dict[str, Any] = {
+        "response_text": delta.accumulated_text,
+        "thinking_text": delta.thinking_text,
+        "latency_ms": delta.latency_ms,
+        "input_tokens": delta.input_tokens,
+        "output_tokens": delta.output_tokens,
+        "usage_source": delta.usage_source,
     }
+    if delta.finish_reason:
+        completed_data["finish_reason"] = delta.finish_reason
+    if delta.tool_calls:
+        completed_data["tool_calls"] = list(delta.tool_calls)
+    return {"event": "turn_completed", "data": completed_data}
 
 
 def emit_chunk_deltas(
@@ -171,4 +192,5 @@ __all__ = [
     "log_provider_error",
     "resolve_inter_chunk_timeout_s",
     "resolve_stream_retry_base_delay_s",
+    "stream_error_code_for_status",
 ]

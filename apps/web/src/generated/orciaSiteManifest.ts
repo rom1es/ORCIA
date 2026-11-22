@@ -11,10 +11,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "activeRoutesCount": 28,
     "uiPrimitivesCount": 137,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 60,
+    "alembicMigrationsCount": 61,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 213,
+    "techLeadReportsCount": 214,
     "capabilitiesCount": 65,
     "liveCapabilitiesCount": 65,
     "verifiedCapabilitiesCount": 61,
@@ -263,7 +263,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261120_2403_story_24_3_mcp_exposures_and_audit_contract",
     "20261122_264a_story_26_4a_ai_models_schema_and_assistant_outbox",
     "20261122_264b_story_26_4b_assistant_feedback_and_folder_meta",
-    "20261122_265_story_26_5_assistant_thread_messages"
+    "20261122_265_story_26_5_assistant_thread_messages",
+    "20261122_266a_story_26_6a_llm_supports_tools"
   ],
   "architectureDecisions": [
     {
@@ -546,6 +547,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-22",
+      "phaseOrStory": "Story 26.6a",
+      "reportFile": "26-6a-llm-streaming-port-tool-calls-and-loop-budgets-tech-lead-report.md",
+      "domain": "Epic 26 Lot 5.1 — LlmStreamingPort Typed Events & Native tool_calls on 2 Dialects (OpenAI-Compatible & Anthropic), supports_tools PG18 Discovery/Override & 422 ERR_MODEL_TOOLS_UNSUPPORTED, Loop Budgets & Extended Cassettes (CAP-074, CAP-076, CAP-190)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): shipped raw-SQL Alembic 20261122_266a, typed stream events & native streamed/non-streamed tool_calls on openai_compatible + anthropic_messages (llm_tool_dialects.py, preserving HTTP 404 tools fallback & 3 text adapters CAP-076), 0-token supports_tools discovery/override + pre-stream HTTP 422 ERR_MODEL_TOOLS_UNSUPPORTED on Speed 2/3, concurrent sql_permission_broker.py race fix (ON CONFLICT DO NOTHING + per-loop lock), deterministic loop budget controller (assistant_loop_budgets.py) + extended cassettes, <= 300 L file compliance, 94% 28-module branch coverage (>= 90%), 1174 Layer 1/3/4/Security Python tests, 14 PG18+Redis integration tests, 9/9 Turbo, 15 passed / 1 skipped / 0 failed Playwright Desktop E2E, ruff/mypy --strict (652 files)/lint-imports (5/5)/export_openapi (0-diff)/lint_spine (0)/detect-secrets clean."
+    },
     {
       "date": "2026-11-22",
       "phaseOrStory": "Story 26.5",

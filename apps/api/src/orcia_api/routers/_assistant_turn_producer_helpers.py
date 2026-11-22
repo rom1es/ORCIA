@@ -16,6 +16,7 @@ from orcia_api.routers._assistant_usage_telemetry import (
     persist_assistant_turn_ledger_entry,
     resolve_usage_with_fallback,
 )
+from orcia_core.kernel.errors import OrciaDomainError
 from orcia_core.observability.logging import get_logger, scrub_sensitive_text
 from orcia_core.orchestration.redis_turn_registry import (
     RedisAssistantTurnRegistry,
@@ -100,18 +101,21 @@ async def handle_turn_failure(
 ) -> AssistantTurnRecord:
     """Log failure safely, record ERROR state, and append RFC 9457 `stream_error` event."""
     safe_err = scrub_sensitive_text(str(exc))
+    err_code = exc.error_code if isinstance(exc, OrciaDomainError) else "ERR_INTERNAL_SERVER_ERROR"
+    err_status = exc.http_status if isinstance(exc, OrciaDomainError) else 500
     logger.warning(
         "background_turn_producer_failed",
         turn_id=record.turn_id,
         error_type=type(exc).__name__,
+        error_code=err_code,
         error=safe_err,
     )
     err_payload = build_rfc9457_stream_error_payload(
         turn_id=record.turn_id,
         seq=0,
         trace_id=record.trace_id,
-        error_code="ERR_INTERNAL_SERVER_ERROR",
-        status=500,
+        error_code=err_code,
+        status=err_status,
         detail_override=safe_err,
         instance=instance,
         locale=locale,
@@ -119,7 +123,7 @@ async def handle_turn_failure(
     updated = replace(
         record,
         status="ERROR",
-        error_code="ERR_INTERNAL_SERVER_ERROR",
+        error_code=err_code,
         error_message=safe_err,
         thinking_text=thinking_text,
         streamed_text=streamed_text,
@@ -130,7 +134,7 @@ async def handle_turn_failure(
             turn_id=record.turn_id,
             workspace_id=record.workspace_id,
             user_id=record.user_id,
-            error_code="ERR_INTERNAL_SERVER_ERROR",
+            error_code=err_code,
             trace_id=record.trace_id,
         )
     await registry.set_stream_ttl(record.turn_id, ttl_seconds=1800)

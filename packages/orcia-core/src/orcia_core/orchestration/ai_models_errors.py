@@ -136,6 +136,20 @@ AI_MODELS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = 
             "The AI provider returned an internal error or invalid response (HTTP 5xx).",
         ),
     },
+    "ERR_MODEL_TOOLS_UNSUPPORTED": {
+        "fr": LocalizedErrorCopy(
+            "Appels d'outils natifs non pris en charge par ce modèle IA",
+            "Le modèle configuré pour ce palier ne supporte pas les appels d'outils natifs "
+            "(supports_tools=false). Utilisez le mode rapide (Vitesse 1) ou activez un modèle "
+            "compatible OpenAI/Anthropic.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Native tool calling is not supported by this AI model",
+            "The configured AI model for this tier does not support native tool calling "
+            "(supports_tools=false). Use fast mode (Speed 1) or select an OpenAI/Anthropic "
+            "tool-capable model.",
+        ),
+    },
 }
 
 register_domain_error_catalog(AI_MODELS_ERROR_CATALOG)
@@ -251,6 +265,23 @@ class ModelConnectionUpstreamError(OrciaDomainError):
         self.latency_ms = latency_ms
 
 
+class ModelToolsUnsupportedError(OrciaDomainError):
+    """Raised pre-stream (`HTTP 422`) when Speed 2/3 is requested on `supports_tools=false`."""
+
+    error_code = "ERR_MODEL_TOOLS_UNSUPPORTED"
+    http_status, type_slug = 422, "model-tools-unsupported"
+
+    def __init__(
+        self,
+        model_name: str = "",
+        *,
+        detail_override: str | None = None,
+        instance: str | None = None,
+    ) -> None:
+        self.model_name = model_name
+        super().__init__(detail_override=detail_override, instance=instance)
+
+
 __all__ = [
     "AI_MODELS_ERROR_CATALOG",
     "LastTierModelInUseError",
@@ -263,5 +294,6 @@ __all__ = [
     "ModelDiscoveryAuthFailedError",
     "ModelDiscoveryEndpointNotFoundError",
     "ModelDiscoveryNetworkError",
+    "ModelToolsUnsupportedError",
     "UnsafeLlmEndpointUrlError",
 ]

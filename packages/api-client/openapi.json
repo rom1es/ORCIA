@@ -1471,6 +1471,28 @@
               }
             ]
           },
+          "supports_tools": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supports Tools"
+          },
+          "supports_tools_override": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supports Tools Override"
+          },
           "usage": {
             "default": "chat",
             "enum": [
@@ -1854,6 +1876,22 @@
           "secret_status": {
             "$ref": "#/components/schemas/SecretStatusResponse"
           },
+          "supports_tools": {
+            "default": false,
+            "title": "Supports Tools",
+            "type": "boolean"
+          },
+          "supports_tools_override": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supports Tools Override"
+          },
           "updated_at": {
             "title": "Updated At",
             "type": "string"
@@ -2030,6 +2068,28 @@
               }
             ]
           },
+          "supports_tools": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supports Tools"
+          },
+          "supports_tools_override": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supports Tools Override"
+          },
           "usage": {
             "anyOf": [
               {
@@ -2074,6 +2134,11 @@
           "message": {
             "title": "Message",
             "type": "string"
+          },
+          "supports_tools": {
+            "default": false,
+            "title": "Supports Tools",
+            "type": "boolean"
           },
           "tested_at": {
             "title": "Tested At",
@@ -9027,6 +9092,11 @@
               }
             ],
             "title": "Owned By"
+          },
+          "supports_tools": {
+            "default": false,
+            "title": "Supports Tools",
+            "type": "boolean"
           },
           "usage_hint": {
             "default": "unknown",

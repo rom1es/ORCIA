@@ -8,6 +8,7 @@ from typing import Literal
 import httpx
 
 from orcia_core.observability.logging import get_logger
+from orcia_core.orchestration.ai_models_capabilities import infer_default_supports_tools
 from orcia_core.orchestration.ai_models_connection_helpers import (
     AiModelConnectionTestSuccess,
     build_chat_connection_probe,
@@ -123,6 +124,13 @@ async def _test_chat_connection(
             instance=instance,
         )
     p_label = provider_slug or "provider"
+    detected_tools = infer_default_supports_tools(
+        endpoint_uri=endpoint_uri,
+        protocol_mode=protocol_mode,
+        provider_slug=provider_slug,
+        usage="chat",
+        model_name=model_name,
+    )
     return AiModelConnectionTestSuccess(
         latency_ms=latency_ms,
         message_fr=(
@@ -133,6 +141,7 @@ async def _test_chat_connection(
             f"✅ Successfully connected to model '{model_name}' ({p_label}) at {endpoint_uri} — "
             f"Response received in {latency_ms} ms."
         ),
+        supports_tools=detected_tools,
     )
 
 

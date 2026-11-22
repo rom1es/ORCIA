@@ -29,7 +29,8 @@ COLUMNS_SELECT = """
     fallback_order, is_active, draining, updated_at, display_name, fallback_model_name,
     endpoint_uri, auth_mode, protocol_mode, env_var_name, encrypted_api_key,
     secret_fingerprint, secret_masked_hint, secret_updated_at, secret_updated_by,
-    health_status, last_tested_at, last_latency_ms, created_at, usage
+    health_status, last_tested_at, last_latency_ms, created_at, usage,
+    supports_tools, supports_tools_override
 """
 
 
@@ -45,6 +46,9 @@ def row_to_mapping(row: Any) -> AiModelMappingRecord:
     usage_val: LlmModelUsage = (
         cast(LlmModelUsage, str(row[31])) if len(row) > 31 and row[31] else "chat"
     )
+    detected_tools = bool(row[32]) if len(row) > 32 and row[32] is not None else False
+    override_tools = bool(row[33]) if len(row) > 33 and row[33] is not None else None
+    effective_tools = override_tools if override_tools is not None else detected_tools
     return AiModelMappingRecord(
         id=str(row[0]),
         scope_level=cast(ScopeLevel, str(row[1])),
@@ -73,6 +77,9 @@ def row_to_mapping(row: Any) -> AiModelMappingRecord:
         last_latency_ms=int(row[29]) if row[29] is not None else None,
         created_at=row[30].isoformat() if row[30] else "",
         secret_status=sec_status,
+        supports_tools=effective_tools,
+        supports_tools_detected=detected_tools,
+        supports_tools_override=override_tools,
     )
 
 

@@ -19,10 +19,21 @@ from orcia_core.ports.llm_port import (
     compute_prompt_sha256,
 )
 from orcia_core.ports.llm_streaming_port import (
+    ContentDelta,
+    Finish,
     LlmChatTurnOutcome,
     LlmStreamDelta,
     LlmStreamingPort,
     LlmStreamRequest,
+    LlmTypedStreamEvent,
+    ReasoningDelta,
+    ToolCallDelta,
+    Usage,
+    typed_event_to_delta,
+)
+from orcia_core.testing._cassette_tool_cassettes import (
+    build_cassette_tool_delta_fragments,
+    resolve_cassette_tool_scenario,
 )
 
 
@@ -37,13 +48,7 @@ class CassetteEntry:
 
 
 class DeterministicCassetteLLM(LlmGatewayPort):
-    """Deterministic LLM adapter replaying recorded cassettes with 0 external calls ($0 cost).
-
-    Supports:
-    - Exact `sha256:<64-hex>` prompt fingerprint lookup
-    - Substring / scenario trigger matching (`WAITING_FOR_HUMAN_ARBITRATION`, `[ASSUMPTION]`)
-    - AD-10 model family orthogonality verification when `executor_model_family` is set
-    """
+    """Deterministic LLM adapter replaying recorded cassettes with 0 external calls ($0 cost)."""
 
     is_cassette_adapter: bool = True
 
@@ -164,6 +169,20 @@ class DeterministicCassetteLlmStreamingAdapter(LlmStreamingPort):
 
     async def complete_chat(self, request: LlmStreamRequest) -> LlmChatTurnOutcome | None:
         t0 = time.perf_counter()
+        if (tool_sc := resolve_cassette_tool_scenario(request)) is not None:
+            content, t_calls, finish_reason = tool_sc
+            in_tok = max(1, sum(len(str(m.get("content") or "")) for m in request.messages) // 4)
+            out_tok = max(8, (len(content) // 4) + len(t_calls) * 16)
+            return LlmChatTurnOutcome(
+                content=content,
+                thinking_text="Cassette deterministic tool reasoning.",
+                latency_ms=round((time.perf_counter() - t0) * 1000.0, 2),
+                tool_calls=t_calls,
+                input_tokens=in_tok,
+                output_tokens=out_tok,
+                usage_source="estimated",
+                finish_reason=finish_reason,
+            )
         reply, thinking, in_tok, out_tok = self._build_reply(request)
         return LlmChatTurnOutcome(
             content=reply,
@@ -172,13 +191,54 @@ class DeterministicCassetteLlmStreamingAdapter(LlmStreamingPort):
             input_tokens=in_tok,
             output_tokens=out_tok,
             usage_source="estimated",
+            finish_reason="stop",
         )
 
-    async def stream_chat_sse(self, request: LlmStreamRequest) -> AsyncIterator[LlmStreamDelta]:
+    async def stream_chat_events(
+        self, request: LlmStreamRequest
+    ) -> AsyncIterator[LlmTypedStreamEvent]:
         t0 = time.perf_counter()
+        if (tool_sc := resolve_cassette_tool_scenario(request)) is not None:
+            content, t_calls, finish_reason = tool_sc
+            thinking = "Cassette deterministic tool reasoning."
+            in_tok = max(1, sum(len(str(m.get("content") or "")) for m in request.messages) // 4)
+            out_tok = max(8, (len(content) // 4) + len(t_calls) * 16)
+            yield ReasoningDelta(
+                delta=thinking,
+                thinking_text=thinking,
+                elapsed_ms=round((time.perf_counter() - t0) * 1000.0, 2),
+            )
+            for idx, tc in enumerate(t_calls):
+                p1, p2 = build_cassette_tool_delta_fragments(tc)
+                yield ToolCallDelta(
+                    index=idx,
+                    tool_call_id=str(tc["id"]),
+                    name=str(tc["name"]),
+                    arguments_delta=p1,
+                )
+                yield ToolCallDelta(
+                    index=idx,
+                    tool_call_id=str(tc["id"]),
+                    name=str(tc["name"]),
+                    arguments_delta=p2,
+                )
+            if content:
+                yield ContentDelta(delta=content, accumulated_text=content)
+            yield Usage(input_tokens=in_tok, output_tokens=out_tok, usage_source="estimated")
+            yield Finish(
+                finish_reason=finish_reason,
+                accumulated_text=content,
+                thinking_text=thinking,
+                tool_calls=t_calls,
+                latency_ms=round((time.perf_counter() - t0) * 1000.0, 2),
+                input_tokens=in_tok,
+                output_tokens=out_tok,
+                usage_source="estimated",
+            )
+            return
+
         reply, thinking, in_tok, out_tok = self._build_reply(request)
-        yield LlmStreamDelta(
-            event="thinking_delta",
+        yield ReasoningDelta(
             delta=thinking,
             thinking_text=thinking,
             elapsed_ms=round((time.perf_counter() - t0) * 1000.0, 2),
@@ -186,13 +246,10 @@ class DeterministicCassetteLlmStreamingAdapter(LlmStreamingPort):
         acc: list[str] = []
         for chunk in reply.splitlines(keepends=True) or [reply]:
             acc.append(chunk)
-            yield LlmStreamDelta(
-                event="token_delta",
-                delta=chunk,
-                accumulated_text="".join(acc),
-            )
-        yield LlmStreamDelta(
-            event="turn_completed",
+            yield ContentDelta(delta=chunk, accumulated_text="".join(acc))
+        yield Usage(input_tokens=in_tok, output_tokens=out_tok, usage_source="estimated")
+        yield Finish(
+            finish_reason="stop",
             accumulated_text=reply,
             thinking_text=thinking,
             latency_ms=round((time.perf_counter() - t0) * 1000.0, 2),
@@ -200,6 +257,12 @@ class DeterministicCassetteLlmStreamingAdapter(LlmStreamingPort):
             output_tokens=out_tok,
             usage_source="estimated",
         )
+
+    async def stream_chat_sse(self, request: LlmStreamRequest) -> AsyncIterator[LlmStreamDelta]:
+        async for event in self.stream_chat_events(request):
+            if isinstance(event, Usage):
+                continue
+            yield typed_event_to_delta(event)
 
 
 def build_cassette_gateway_plugin(**kwargs: Any) -> LlmGatewayPort:

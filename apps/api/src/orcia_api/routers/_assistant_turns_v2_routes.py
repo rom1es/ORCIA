@@ -85,10 +85,13 @@ async def create_assistant_turn_v2_endpoint(
 ) -> AssistantTurnAcceptedResponse:
     """Validate guards & rate limits, launch tracked background turn, return `202` + `turn_id`."""
     await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
-    await ensure_active_chat_model_if_live(
-        request, requested_tier=payload.requested_tier, workspace_id=payload.workspace_id
-    )
     _, _, resolved_speed = resolve_effective_speed(payload)
+    await ensure_active_chat_model_if_live(
+        request,
+        requested_tier=payload.requested_tier,
+        workspace_id=payload.workspace_id,
+        speed_mode=resolved_speed,
+    )
     active_hat = resolve_default_hat(explicit_hat=payload.hat, user=user)
     resolved_locale = resolve_request_locale(request, payload.locale)
     history, resolved_notes, ep = await asyncio.gather(
@@ -143,7 +146,11 @@ async def create_assistant_turn_v2_endpoint(
             conversation_history=history,
             max_tokens_budget=max_budget,
         ),
-        tools_builder=lambda: build_workspace_tools_schema(request, resolved_speed),
+        tools_builder=lambda: (
+            build_workspace_tools_schema(request, resolved_speed)
+            if (ep is None or ep.supports_tools)
+            else []
+        ),
         conversation_history_count=len(history),
         folder_pinned_notes=resolved_notes,
         thinking_effort=payload.thinking_effort,

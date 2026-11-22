@@ -29,6 +29,7 @@ class AiModelConnectionTestSuccess:
     latency_ms: int
     message_fr: str
     message_en: str
+    supports_tools: bool = False
 
 
 def clean_error_snippet(text: str, secret_key: str | None) -> str:

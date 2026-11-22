@@ -1,16 +1,24 @@
-"""AI Models Hub Domain Governance Service (`Story 17.5`, `AD-21`).
+"""AI Models Hub Domain Governance Service (`Story 17.5`, `AD-21`, `Story 26.6a`).
 
 Pure domain logic: zero SQL, zero FastAPI, zero httpx imports (`AD-19`).
 """
 
 from __future__ import annotations
 
-from dataclasses import replace
 from datetime import UTC, datetime
 from urllib.parse import urlparse
 
+from orcia_core.orchestration._ai_models_delete_helpers import (
+    apply_inmemory_delete_or_drain,
+    evaluate_inmemory_delete_impact,
+)
+from orcia_core.orchestration._ai_models_governance_helpers import (
+    apply_inmemory_mapping_update,
+    apply_inmemory_test_result,
+    build_inmemory_mapping_record,
+    deactivate_other_inmemory_embeddings,
+)
 from orcia_core.orchestration.ai_models_crypto import (
-    apply_ai_model_secret_input,
     pack_encrypted_api_key,
     unpack_encrypted_api_key,
     validate_safe_llm_endpoint_url,
@@ -31,15 +39,9 @@ from orcia_core.orchestration.ai_models_records import (
     PinRemovalMode,
     ScopeLevel,
 )
-from orcia_core.orchestration.errors import (
-    ObserverModeReadOnlyError,
-    ResourceNotFoundError,
-    ResourcePinnedByActiveRunsError,
-)
+from orcia_core.orchestration.errors import ResourceNotFoundError
 from orcia_core.permissions.crypto import PassthroughVaultCipher
-from orcia_core.permissions.secret_hint import SecretInputSpec, SecretStatusView
-from orcia_core.rag.adapters.embedding_httpx import assert_embedding_usage_supported
-from orcia_kernel.ids import new_uuid7_str
+from orcia_core.permissions.secret_hint import SecretInputSpec
 
 
 def _now_iso() -> str:
@@ -47,7 +49,7 @@ def _now_iso() -> str:
 
 
 class AiModelsHubService:
-    """Pure in-memory governance service for AI model tier mappings (`Story 17.5`)."""
+    """Pure in-memory governance service for AI model tier mappings (`Story 17.5`, `26.6a`)."""
 
     def __init__(
         self,
@@ -79,30 +81,30 @@ class AiModelsHubService:
         is_active: bool | None = None,
         usage: LlmModelUsage | None = None,
     ) -> list[AiModelMappingRecord]:
-        items = list(self._mappings.values())
-        if scope_level is not None:
-            items = [m for m in items if m.scope_level == scope_level]
-        if scope_id is not None:
-            items = [m for m in items if m.scope_id == scope_id]
-        if inference_tier is not None:
-            items = [m for m in items if m.inference_tier == inference_tier]
-        if is_active is not None:
-            items = [m for m in items if m.is_active == is_active]
-        if usage is not None:
-            items = [m for m in items if m.usage == usage]
+        items = [
+            m
+            for m in self._mappings.values()
+            if (scope_level is None or m.scope_level == scope_level)
+            and (scope_id is None or m.scope_id == scope_id)
+            and (inference_tier is None or m.inference_tier == inference_tier)
+            and (is_active is None or m.is_active == is_active)
+            and (usage is None or m.usage == usage)
+        ]
         return sorted(items, key=lambda m: (m.inference_tier, m.fallback_order, m.created_at))
 
     def get_active_embedding_mapping(self) -> AiModelMappingRecord | None:
         """Return currently active GLOBAL embedding mapping if any."""
-        for m in self._mappings.values():
-            if (
-                m.usage == "embedding"
+        return next(
+            (
+                m
+                for m in self._mappings.values()
+                if m.usage == "embedding"
                 and m.scope_level == "GLOBAL"
                 and m.is_active
                 and not m.draining
-            ):
-                return m
-        return None
+            ),
+            None,
+        )
 
     def get_mapping(self, mapping_id: str, *, instance: str | None = None) -> AiModelMappingRecord:
         rec = self._mappings.get(mapping_id)
@@ -133,58 +135,25 @@ class AiModelsHubService:
         max_tokens_budget: int = 8192,
         max_cost_usd: float = 10.0,
         secret_input: SecretInputSpec | None = None,
+        supports_tools: bool | None = None,
+        supports_tools_override: bool | None = None,
         actor_id: str = "system",
         instance: str | None = None,
     ) -> AiModelMappingRecord:
-        clean_url = validate_safe_llm_endpoint_url(endpoint_uri, instance=instance)
-        if usage == "embedding":
-            assert_embedding_usage_supported(
-                provider_slug=provider_slug, protocol_mode=protocol_mode
-            )
-            if scope_level == "GLOBAL":
-                for existing_id, existing_rec in list(self._mappings.items()):
-                    if (
-                        existing_rec.usage == "embedding"
-                        and existing_rec.scope_level == "GLOBAL"
-                        and existing_rec.is_active
-                    ):
-                        self._mappings[existing_id] = replace(
-                            existing_rec, is_active=False, updated_at=_now_iso()
-                        )
-
-        mapping_id = new_uuid7_str()
         now = _now_iso()
-        host = urlparse(clean_url).netloc or "default"
-        init_sec = SecretStatusView(
-            configured=False,
-            fingerprint=None,
-            masked_hint=None,
-            updated_at=now,
-            updated_by=actor_id,
-        )
-        sec_status, encrypted_key = apply_ai_model_secret_input(
-            self._cipher,
-            mapping_id=mapping_id,
-            target_host=host,
-            current_status=init_sec,
-            current_encrypted_key=None,
-            secret_input=secret_input if auth_mode == "api_key" else None,
+        rec = build_inmemory_mapping_record(
+            cipher=self._cipher,
             now_iso=now,
-            actor_id=actor_id,
-        )
-
-        rec = AiModelMappingRecord(
-            id=mapping_id,
             scope_level=scope_level,
             scope_id=scope_id,
-            display_name=display_name.strip() or f"{provider_slug} / {model_name}",
+            display_name=display_name,
             inference_tier=inference_tier,
             effort=effort,
             provider_slug=provider_slug,
             model_family=model_family,
             model_name=model_name,
             fallback_model_name=fallback_model_name,
-            endpoint_uri=clean_url,
+            endpoint_uri=endpoint_uri,
             auth_mode=auth_mode,
             protocol_mode=protocol_mode,
             usage=usage,
@@ -192,15 +161,15 @@ class AiModelsHubService:
             fallback_order=fallback_order,
             max_tokens_budget=max_tokens_budget,
             max_cost_usd=max_cost_usd,
-            is_active=True,
-            draining=False,
-            health_status="UNTESTED",
-            created_at=now,
-            updated_at=now,
-            secret_status=sec_status,
-            encrypted_api_key=encrypted_key,
+            secret_input=secret_input,
+            supports_tools=supports_tools,
+            supports_tools_override=supports_tools_override,
+            actor_id=actor_id,
+            instance=instance,
         )
-        self._mappings[mapping_id] = rec
+        if usage == "embedding" and scope_level == "GLOBAL":
+            deactivate_other_inmemory_embeddings(self._mappings, now_iso=now)
+        self._mappings[rec.id] = rec
         return rec
 
     def update_mapping(
@@ -216,67 +185,33 @@ class AiModelsHubService:
         env_var_name: str | None = None,
         is_active: bool | None = None,
         secret_input: SecretInputSpec | None = None,
+        supports_tools: bool | None = None,
+        supports_tools_override: bool | None = None,
+        clear_supports_tools_override: bool = False,
         actor_id: str = "system",
         instance: str | None = None,
     ) -> AiModelMappingRecord:
         current = self.get_mapping(mapping_id, instance=instance)
-        now = _now_iso()
-        effective_usage = usage if usage is not None else current.usage
-        effective_protocol = protocol_mode if protocol_mode is not None else current.protocol_mode
-        effective_active = is_active if is_active is not None else current.is_active
-
-        if effective_usage == "embedding":
-            assert_embedding_usage_supported(
-                provider_slug=current.provider_slug, protocol_mode=effective_protocol
-            )
-            if effective_active and current.scope_level == "GLOBAL":
-                for existing_id, existing_rec in list(self._mappings.items()):
-                    if (
-                        existing_id != mapping_id
-                        and existing_rec.usage == "embedding"
-                        and existing_rec.scope_level == "GLOBAL"
-                        and existing_rec.is_active
-                    ):
-                        self._mappings[existing_id] = replace(
-                            existing_rec, is_active=False, updated_at=now
-                        )
-
-        clean_url = current.endpoint_uri
-        if endpoint_uri is not None:
-            clean_url = validate_safe_llm_endpoint_url(endpoint_uri, instance=instance)
-        host = urlparse(clean_url).netloc or "default"
-
-        sec_status, encrypted_key = apply_ai_model_secret_input(
-            self._cipher,
-            mapping_id=mapping_id,
-            target_host=host,
-            current_status=current.secret_status,
-            current_encrypted_key=current.encrypted_api_key,
+        updated = apply_inmemory_mapping_update(
+            mappings=self._mappings,
+            cipher=self._cipher,
+            current=current,
+            now_iso=_now_iso(),
+            display_name=display_name,
+            fallback_model_name=fallback_model_name,
+            endpoint_uri=endpoint_uri,
+            auth_mode=auth_mode,
+            protocol_mode=protocol_mode,
+            usage=usage,
+            env_var_name=env_var_name,
+            is_active=is_active,
             secret_input=secret_input,
-            now_iso=now,
+            supports_tools=supports_tools,
+            supports_tools_override=supports_tools_override,
+            clear_supports_tools_override=clear_supports_tools_override,
             actor_id=actor_id,
+            instance=instance,
         )
-
-        updated = replace(
-            current,
-            display_name=display_name.strip() if display_name is not None else current.display_name,
-            fallback_model_name=(
-                fallback_model_name
-                if fallback_model_name is not None
-                else current.fallback_model_name
-            ),
-            endpoint_uri=clean_url,
-            auth_mode=auth_mode if auth_mode is not None else current.auth_mode,
-            protocol_mode=protocol_mode if protocol_mode is not None else current.protocol_mode,
-            usage=usage if usage is not None else current.usage,
-            env_var_name=env_var_name if env_var_name is not None else current.env_var_name,
-            is_active=is_active if is_active is not None else current.is_active,
-            updated_at=now,
-            secret_status=sec_status,
-            encrypted_api_key=encrypted_key,
-        )
-        self._mappings[mapping_id] = updated
-        return updated
         self._mappings[mapping_id] = updated
         return updated
 
@@ -286,15 +221,15 @@ class AiModelsHubService:
         *,
         health_status: HealthStatus,
         latency_ms: int,
+        supports_tools: bool | None = None,
         instance: str | None = None,
     ) -> AiModelMappingRecord:
-        current = self.get_mapping(mapping_id, instance=instance)
-        updated = replace(
-            current,
+        updated = apply_inmemory_test_result(
+            self.get_mapping(mapping_id, instance=instance),
             health_status=health_status,
-            last_latency_ms=latency_ms,
-            last_tested_at=_now_iso(),
-            updated_at=_now_iso(),
+            latency_ms=latency_ms,
+            supports_tools=supports_tools,
+            now_iso=_now_iso(),
         )
         self._mappings[mapping_id] = updated
         return updated
@@ -302,29 +237,12 @@ class AiModelsHubService:
     def evaluate_delete_impact(
         self, mapping_id: str, *, instance: str | None = None
     ) -> AiModelDeleteImpact:
-        current = self.get_mapping(mapping_id, instance=instance)
-        other_active = [
-            m
-            for m in self._mappings.values()
-            if m.id != mapping_id
-            and m.inference_tier == current.inference_tier
-            and m.is_active
-            and not m.draining
-        ]
-        wf_deps = tuple(sorted(self._workflows_tier_reqs.get(current.inference_tier, set())))
-        run_pins = tuple(sorted(self._active_runs.get(mapping_id, set())))
-        is_last = len(other_active) == 0
-
-        return AiModelDeleteImpact(
+        return evaluate_inmemory_delete_impact(
+            mappings=self._mappings,
+            workflows_tier_reqs=self._workflows_tier_reqs,
+            active_runs=self._active_runs,
             mapping_id=mapping_id,
-            inference_tier=current.inference_tier,
-            model_name=current.model_name,
-            remaining_active_for_tier=len(other_active),
-            dependent_workflows_count=len(wf_deps),
-            dependent_workflow_ids=wf_deps,
-            pinned_active_runs_count=len(run_pins),
-            pinned_run_ids=run_pins,
-            is_last_active_for_tier=is_last,
+            current=self.get_mapping(mapping_id, instance=instance),
         )
 
     def delete_or_drain_mapping(
@@ -335,28 +253,17 @@ class AiModelsHubService:
         actor_role: str = "PLATFORM_ADMIN",
         instance: str | None = None,
     ) -> AiModelMappingRecord | None:
-        if actor_role == "OBSERVER":
-            raise ObserverModeReadOnlyError(instance=instance)
-        impact = self.evaluate_delete_impact(mapping_id, instance=instance)
-
-        if (
-            impact.dependent_workflows_count > 0
-            and impact.is_last_active_for_tier
-            and mode != "force"
-        ):
-            raise LastTierModelInUseError(instance=instance)
-
-        if impact.pinned_active_runs_count > 0:
-            if mode == "reject":
-                raise ResourcePinnedByActiveRunsError(instance=instance)
-            if mode == "drain":
-                current = self.get_mapping(mapping_id, instance=instance)
-                draining = replace(current, draining=True, is_active=False, updated_at=_now_iso())
-                self._mappings[mapping_id] = draining
-                return draining
-
-        self._mappings.pop(mapping_id, None)
-        return None
+        current = self.get_mapping(mapping_id, instance=instance)
+        return apply_inmemory_delete_or_drain(
+            mappings=self._mappings,
+            impact=self.evaluate_delete_impact(mapping_id, instance=instance),
+            current=current,
+            mapping_id=mapping_id,
+            mode=mode,
+            actor_role=actor_role,
+            now_iso=_now_iso(),
+            instance=instance,
+        )
 
     def resolve_decrypted_api_key(
         self, mapping_id: str, *, instance: str | None = None

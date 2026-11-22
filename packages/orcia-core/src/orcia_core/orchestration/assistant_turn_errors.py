@@ -44,6 +44,18 @@ ASSISTANT_TURN_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy
             "You have reached the maximum number of concurrently running assistant turns.",
         ),
     },
+    "ERR_ASSISTANT_TURN_BUDGET_EXCEEDED": {
+        "fr": LocalizedErrorCopy(
+            "Budget d'exécution du tour d'assistant dépassé",
+            "La boucle d'outils de l'assistant a atteint sa limite autorisée "
+            "(itérations, jetons ou durée maximale).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Assistant turn execution budget exceeded",
+            "The assistant tool loop reached its configured limit "
+            "(max iterations, token budget, or wall-clock duration).",
+        ),
+    },
 }
 
 register_domain_error_catalog(ASSISTANT_TURN_ERROR_CATALOG)
@@ -83,9 +95,28 @@ class AssistantConcurrencyLimitError(OrciaDomainError):
     type_slug = "assistant-concurrency-limit"
 
 
+class TurnBudgetExceededError(OrciaDomainError):
+    """Raised when assistant multi-step tool loop exceeds iteration, token, or wall-clock limit."""
+
+    error_code = "ERR_ASSISTANT_TURN_BUDGET_EXCEEDED"
+    http_status = 422
+    type_slug = "assistant-turn-budget-exceeded"
+
+    def __init__(
+        self,
+        *,
+        limit_kind: str = "iterations",
+        detail_override: str | None = None,
+        instance: str | None = None,
+    ) -> None:
+        self.limit_kind = limit_kind
+        super().__init__(detail_override=detail_override, instance=instance)
+
+
 __all__ = [
     "ASSISTANT_TURN_ERROR_CATALOG",
     "AssistantConcurrencyLimitError",
     "AssistantRateLimitExceededError",
     "AssistantTurnInterruptedError",
+    "TurnBudgetExceededError",
 ]

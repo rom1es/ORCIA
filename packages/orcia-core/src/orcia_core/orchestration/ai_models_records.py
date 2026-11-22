@@ -1,4 +1,4 @@
-"""AI Models Hub Domain Records & Value Objects (`Story 17.5`, `AD-21`)."""
+"""AI Models Hub Domain Records & Value Objects (`Story 17.5`, `AD-21`, `Story 26.6a`)."""
 
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ def _now_iso() -> str:
 
 @dataclass(frozen=True, slots=True)
 class AiModelMappingRecord:
-    """Full domain entity for an AI Model mapping (`AD-21`, `Story 17.5`)."""
+    """Full domain entity for an AI Model mapping (`AD-21`, `Story 17.5`, `Story 26.6a`)."""
 
     id: str
     scope_level: ScopeLevel
@@ -55,6 +55,9 @@ class AiModelMappingRecord:
         default_factory=lambda: SecretStatusView(configured=False)
     )
     encrypted_api_key: str | None = None
+    supports_tools: bool = False
+    supports_tools_detected: bool = False
+    supports_tools_override: bool | None = None
 
 
 @dataclass(frozen=True, slots=True)

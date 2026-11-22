@@ -24,6 +24,7 @@ from orcia_core.ports.llm_streaming_port import (
     LlmStreamDelta,
     LlmStreamingPort,
     LlmStreamRequest,
+    LlmTypedStreamEvent,
 )
 
 
@@ -117,7 +118,7 @@ class HttpxMultiProviderLlmStreamingAdapter(LlmStreamingPort):
             max_stream_retries=max_stream_retries,
         )
 
-    def _select(self, ep: LlmEndpointConfig) -> LlmStreamingPort:
+    def _select(self, ep: LlmEndpointConfig) -> BaseHttpxLlmAdapter:
         if ep.protocol_mode == "gemini_native" or is_google_gemini_native_provider(
             ep.endpoint_uri, ep.provider
         ):
@@ -133,6 +134,9 @@ class HttpxMultiProviderLlmStreamingAdapter(LlmStreamingPort):
 
     def stream_chat_sse(self, request: LlmStreamRequest) -> AsyncIterator[LlmStreamDelta]:
         return self._select(request.endpoint).stream_chat_sse(request)
+
+    def stream_chat_events(self, request: LlmStreamRequest) -> AsyncIterator[LlmTypedStreamEvent]:
+        return self._select(request.endpoint).stream_chat_events(request)
 
 
 __all__ = [
