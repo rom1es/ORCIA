@@ -7,7 +7,6 @@ from typing import Any, Literal
 
 from orcia_core.orchestration.assistant_composer import (
     AssistantWorkflowProposal,
-    SavedAndLaunchedWorkflowResult,
     XyFlowEdgeSpec,
     XyFlowNodeSpec,
 )
@@ -98,7 +97,6 @@ __all__ = [
     "AssistantNodeTrace",
     "AssistantTurnResult",
     "AssistantWorkflowProposal",
-    "SavedAndLaunchedWorkflowResult",
     "XyFlowEdgeSpec",
     "XyFlowNodeSpec",
     "filter_authorized_context_slices",

@@ -30,10 +30,7 @@ from orcia_core.orchestration.jit_hydrator import (
     MemlogMarkerPluginProtocol,
     register_memlog_marker_plugin,
 )
-from orcia_core.orchestration.models import (
-    WorkflowAsCodeDefinition,
-    WorkflowRunEntity,
-)
+from orcia_core.orchestration.models import WorkflowAsCodeDefinition, WorkflowRunEntity
 from orcia_core.orchestration.step_executors import (
     execute_step_port_async,
     register_default_step_executors,
@@ -42,6 +39,11 @@ from orcia_core.permissions.models import UserIdentity
 
 if TYPE_CHECKING:
     from orcia_core.orchestration.run_lock_service import WorkflowOrchestrationSetupService
+
+_DEFAULT_AUDIT_DIVERGENCE = (
+    "Écart seuil d'exemption TRA : source documentaire v12 indique 500€ "
+    "vs source opérationnelle indique 350€"
+)
 
 
 class DurableOrchestrationEngine:
@@ -61,10 +63,19 @@ class DurableOrchestrationEngine:
         register_default_step_executors()
 
     def initialize_run_steps(
-        self, run: WorkflowRunEntity, workflow: WorkflowAsCodeDefinition
+        self,
+        run: WorkflowRunEntity,
+        workflow: WorkflowAsCodeDefinition,
+        *,
+        initialize_anchored_as_waiting: bool = False,
     ) -> tuple[StepExecutionEntity, ...]:
         """Initialize `StepExecutionEntity` rows in topological order if not already created."""
-        return _sh.initialize_run_steps_helper(self, run, workflow)
+        return _sh.initialize_run_steps_helper(
+            self,
+            run,
+            workflow,
+            initialize_anchored_as_waiting=initialize_anchored_as_waiting,
+        )
 
     def get_root_accumulated_cost(self, root_run_id: str) -> float:
         """Compute total accumulated cost across `root_run_id` and all nested child runs."""
@@ -251,10 +262,7 @@ class DurableOrchestrationEngine:
         user: UserIdentity,
         *,
         run_id: str,
-        divergence_note: str = (
-            "Écart seuil d'exemption TRA : source documentaire v12 indique 500€ "
-            "vs source opérationnelle indique 350€"
-        ),
+        divergence_note: str = _DEFAULT_AUDIT_DIVERGENCE,
         instance: str | None = None,
     ) -> BackgroundAuditConsolidatedReport:
         """Async execution of all steps of `run_id` in `BACKGROUND_FAST_PATH` (`UJ-10`)."""
@@ -267,10 +275,7 @@ class DurableOrchestrationEngine:
         user: UserIdentity,
         *,
         run_id: str,
-        divergence_note: str = (
-            "Écart seuil d'exemption TRA : source documentaire v12 indique 500€ "
-            "vs source opérationnelle indique 350€"
-        ),
+        divergence_note: str = _DEFAULT_AUDIT_DIVERGENCE,
         instance: str | None = None,
     ) -> BackgroundAuditConsolidatedReport:
         """Execute all steps of `run_id` in non-blocking `BACKGROUND_FAST_PATH` (`UJ-10`)."""

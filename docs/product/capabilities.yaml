@@ -184,15 +184,15 @@ capabilities:
     title: Agent assistant DAG 5 nœuds (AssistantHarness 5 couches)
     fr: [FR-1, FR-13]
     origin: epic
-    origin_ref: 3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc + 25-5 + 26-1 + 26-5 + 26-7
+    origin_ref: 3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc + 25-5 + 26-1 + 26-5 + 26-7 + 26-8
     status: live
     kind: feature
     uj: [UJ-1, UJ-17]
     db_tables: [workflow_runs, step_executions, blackboard_snapshots, assistant_threads, assistant_thread_messages, reflexive_execution_sessions]
-    tests: [tests/unit/test_story_3_3_assistant_agent_5_nodes_and_context_ports.py, tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py, tests/security/test_story_26_1_assistant_security_hardening.py, tests/integration/api/test_story_26_1_assistant_security_postgres18.py, tests/unit/test_story_26_5_real_context_and_budget.py, tests/unit/test_story_26_5_routes_and_adapters.py, tests/evals/test_story_26_5_ontology_relevance_evals.py, tests/integration/api/test_story_26_5_real_context_and_history_postgres18.py, tests/evals/test_assistant_and_ontology_evals.py, tests/unit/test_story_26_7_unified_turn_engine_and_mcp.py, tests/integration/api/test_story_26_7_unified_turn_engine_postgres18.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
+    tests: [tests/unit/test_story_3_3_assistant_agent_5_nodes_and_context_ports.py, tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py, tests/security/test_story_26_1_assistant_security_hardening.py, tests/integration/api/test_story_26_1_assistant_security_postgres18.py, tests/unit/test_story_26_5_real_context_and_budget.py, tests/unit/test_story_26_5_routes_and_adapters.py, tests/evals/test_story_26_5_ontology_relevance_evals.py, tests/integration/api/test_story_26_5_real_context_and_history_postgres18.py, tests/evals/test_assistant_and_ontology_evals.py, tests/unit/test_story_26_7_unified_turn_engine_and_mcp.py, tests/integration/api/test_story_26_7_unified_turn_engine_postgres18.py, tests/unit/test_story_26_8_continue_in_process_and_human_anchors.py, tests/integration/api/test_story_26_8_continue_in_process_dbos_postgres18.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
     verification: api
     verified_at: "2026-11-22"
-    surfaces: { api: "/api/v1/assistant/turns (assistant_turns.py, assistant_turn_engine.py, _assistant_guards.py, _assistant_thread_messages_routes.py)" }
+    surfaces: { api: "/api/v1/assistant/turns (assistant_turns.py, assistant_turn_engine.py, _assistant_guards.py, _assistant_thread_messages_routes.py, assistant_process_launcher.py, _assistant_process_wiring.py)" }
   - id: CAP-023
     title: Ancrages humains obligatoires et arbitrage / tie-break
     fr: [FR-4, FR-5]
@@ -646,15 +646,15 @@ capabilities:
     title: Dossiers thématiques, métadonnées PG18, feedback par tour, fils collaboratifs, verrous de tour Redis (SET NX EX), partage et processus
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-4 + 26-4a + 26-4b + 26-7
+    origin_ref: 10-4 + 26-4a + 26-4b + 26-7 + 26-8
     status: live
     kind: feature
     uj: [UJ-17]
-    db_tables: [assistant_folders, assistant_threads, assistant_folder_shares, assistant_turn_feedback]
-    tests: [tests/integration/api/test_story_26_4a_redis_locks_outbox_ddl_postgres18.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/src/__tests__/assistant-folders-server-rehydration.test.tsx]
+    db_tables: [assistant_folders, assistant_threads, assistant_folder_shares, assistant_turn_feedback, workflow_runs, step_executions, blackboard_snapshots, domain_events_outbox]
+    tests: [tests/integration/api/test_story_26_4a_redis_locks_outbox_ddl_postgres18.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, tests/integration/api/test_story_26_8_continue_in_process_dbos_postgres18.py, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/src/__tests__/assistant-folders-server-rehydration.test.tsx]
     verification: runtime
     verified_at: "2026-11-22"
-    surfaces: { api: "assistant_workspace_folders.py, assistant_turns.py, _assistant_turn_controls_routes.py, sql_assistant_feedback.py, sql_assistant_folders.py", ui: AssistantFoldersAndCollaborativeThreadView, migration: "20261122_264b" }
+    surfaces: { api: "assistant_workspace_folders.py, assistant_turns.py, _assistant_turn_controls_routes.py, _assistant_process_wiring.py, sql_assistant_feedback.py, sql_assistant_folders.py", ui: AssistantFoldersAndCollaborativeThreadView, migration: "20261122_264b" }
   - id: CAP-074
     title: Câblage LLM réel et streaming SSE multi-fournisseurs (« Envoyer à Mon Assistant »)
     fr: [FR-33]
@@ -997,7 +997,7 @@ capabilities:
     verified_at: "2026-11-21"
     surfaces:
       route: "/settings/ai-models, /assistant, /workspaces/$wsId/sources"
-      api: "ai_models_hub.py, _ai_models_test_and_reindex_routes.py, _ai_models_reindex_helpers.py, _rag_availability_guards.py, rag.py, ontology_and_rag.py, assistant.py, _ai_models_discovery.py, _ai_models_helpers.py, bootstrap_accostage.py"
+      api: "ai_models_hub.py, _ai_models_test_and_reindex_routes.py, _ai_models_reindex_helpers.py, _rag_availability_guards.py, rag.py, ontology_and_rag.py, assistant_turns.py, _ai_models_discovery.py, _ai_models_helpers.py, bootstrap_accostage.py"
       ui: "AiModelModal + AiModelDiscoveryCombobox + AiModelConnectionTestButton + AssistantNoEmbeddingBanner + AssistantReindexingBanner + AiModelReindexPanel + SettingsAiModelsSection + AiModelMappingRowCard + OrciaSpinner"
       migration: "20261115_2105, 20261115_2206, 20261115_2307, 20261115_2359"
     notes: "Formalisé dans AD-24 (ARCHITECTURE-SPINE.md) et livré dans l'Epic 19 (Stories 19.1..19.7), puis amendé en Story 25.5 (découplage Mon Assistant / GET /search sans modèle sémantique ; blocage ciblé POST /datasources RAG != SOURCE_CODE et routes RAG pures)."
@@ -1128,22 +1128,24 @@ capabilities:
     title: Governed Assistant Tool Router, dynamic workspace catalog (surgical, RAG, ontology, PG18 skills, MCP), Lock V5 / Human-Anchor arbitration outbox, idempotency, sandboxing, and anti-injection delimiters
     fr: [FR-4, FR-13, FR-21, FR-22, FR-33]
     origin: epic
-    origin_ref: 26-6b-governed-assistant-tool-router-broker-v5-anchors-and-audit + 26-7
+    origin_ref: 26-6b-governed-assistant-tool-router-broker-v5-anchors-and-audit + 26-7 + 26-8
     status: live
     kind: feature
     uj: [UJ-17]
-    db_tables: [catalog_items, audit_ledger, domain_events_outbox, workspace_llm_tier_mappings, reflexive_execution_sessions]
+    db_tables: [catalog_items, audit_ledger, domain_events_outbox, workspace_llm_tier_mappings, reflexive_execution_sessions, workflow_runs, step_executions, blackboard_snapshots]
     verification: api
     verified_at: "2026-11-22"
     tests:
       - tests/unit/test_story_26_6b_governed_tool_router_and_catalog.py
       - tests/unit/test_story_26_6b_execution_profile_and_loop.py
       - tests/unit/test_story_26_7_unified_turn_engine_and_mcp.py
+      - tests/unit/test_story_26_8_continue_in_process_and_human_anchors.py
       - tests/evals/test_assistant_tool_output_injection.py
       - tests/integration/api/test_story_26_6b_tool_router_audit_outbox_postgres18.py
       - tests/integration/api/test_story_26_7_unified_turn_engine_postgres18.py
+      - tests/integration/api/test_story_26_8_continue_in_process_dbos_postgres18.py
       - apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts
     surfaces:
-      api: "assistant_tool_executor_port.py, governed_tool_router.py, _assistant_tool_catalog.py, _assistant_tool_guards.py, _assistant_tool_sanitization.py, _assistant_tool_execution.py, _assistant_tool_audit.py, _assistant_tool_idempotency.py, _assistant_profile_guard.py, reflexive_runtime.py, governed_mcp_exposure.py, remote_test_bench_and_mcp_exposure.py, _mcp_assistant_ask_bridge.py, dependencies/assistant_tools.py, dependencies/_assistant_tools_helpers.py, dependencies/reflexive_execution.py, dependencies/workspace_and_packs.py, _assistant_turn_producer.py, _assistant_turn_producer_tool_loop.py, _assistant_tool_loop_rounds.py, _assistant_llm_tools_and_budget.py, assistant_turns.py"
+      api: "assistant_tool_executor_port.py, governed_tool_router.py, _assistant_tool_catalog.py, _assistant_tool_guards.py, _assistant_tool_sanitization.py, _assistant_tool_execution.py, _assistant_tool_audit.py, _assistant_tool_idempotency.py, _assistant_profile_guard.py, reflexive_runtime.py, governed_mcp_exposure.py, remote_test_bench_and_mcp_exposure.py, _mcp_assistant_ask_bridge.py, dependencies/assistant_tools.py, dependencies/_assistant_tools_helpers.py, dependencies/reflexive_execution.py, dependencies/workspace_and_packs.py, _assistant_turn_producer.py, _assistant_turn_producer_tool_loop.py, _assistant_tool_loop_rounds.py, _assistant_llm_tools_and_budget.py, assistant_turns.py, assistant_process_launcher.py, _assistant_process_wiring.py, _assistant_turn_controls_routes.py, assistant_workspace_folders.py, blackboard_and_engine.py"
       migration: "20261122_267_story_26_7_reflexive_execution_profile.py"
-    notes: "Story 26.6b (Lot 5.2, AD-25 Rule 5; runtime E2E promotion in Story 26.10 E2E spec 22 per D9): Dynamic per-turn authorized tool catalog removing single-tool stub and 10-item cap; sequential PermissionBrokerService passthrough/READ_SOURCE -> Lock V5 & deterministic Human-Anchor guard with HumanArbitrationRequested outbox -> Redis idem:{ws}:{user}:{turn_id}:{iter}:{call_id} -> timeout-capped sandbox -> scrub_connector_secrets + <untrusted_tool_output> + immutable audit_ledger; ExecutionProfile='ASSISTANT' makes ConnectorReflexiveWriteGateAdapter unreachable."
+    notes: "Story 26.6b + 26.7 + 26.8 (Lot 5.2, AD-25 Rule 5; runtime E2E promotion in Story 26.10 E2E spec 22 per D9): Dynamic per-turn authorized tool catalog; sequential PermissionBrokerService passthrough/READ_SOURCE -> Lock V5 & deterministic Human-Anchor guard with HumanArbitrationRequested outbox; durable DBOS + PG18 CONTINUE_IN_PROCESS via /turns/{id}/approve and /folders/{id}/launch-process with WAITING_FOR_HUMAN_ANCHOR halt, 422 ERR_HUMAN_ANCHOR_REQUIRED enforcement, signed resume, and complete removal of legacy /workflows/save-and-launch."

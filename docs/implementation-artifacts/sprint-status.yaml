@@ -288,7 +288,7 @@ development_status:
   26-6a-llm-streaming-port-tool-calls-and-loop-budgets: done
   26-6b-governed-assistant-tool-router-broker-v5-anchors-and-audit: done
   26-7-unified-turn-engine-convergence-direct-cutover-and-citations: done
-  26-8-continue-in-process-dbos-pg18-and-human-anchors: ready-for-dev
+  26-8-continue-in-process-dbos-pg18-and-human-anchors: done
   26-9-ui-and-sdk-wiring-mode-a-citations-history-and-deepen: ready-for-dev
   26-10-golden-evals-red-team-multi-worker-and-epic-26-closure: ready-for-dev
   epic-26-retrospective: optional

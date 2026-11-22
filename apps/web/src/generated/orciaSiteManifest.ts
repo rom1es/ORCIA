@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 216,
+    "techLeadReportsCount": 217,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 61,
@@ -548,6 +548,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-22",
+      "phaseOrStory": "Story 26.8",
+      "reportFile": "26-8-continue-in-process-dbos-pg18-and-human-anchors-tech-lead-report.md",
+      "domain": "Epic 26 Lot 6.2 — CONTINUE_IN_PROCESS Wired to Durable DBOS + PG18 & Human Anchors (WAITING_FOR_HUMAN_ANCHOR), Direct Deletion of /workflows/save-and-launch (CAP-022, CAP-073, CAP-160, CAP-260)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): wired POST /api/v1/assistant/turns/{turn_id}/approve and POST /api/v1/assistant/folders/{folder_id}/launch-process via pure hexagonal AssistantProcessLauncherService (assistant_process_launcher.py), dbos_engine_ports.py, _assistant_dbos_backend.py, and _assistant_process_wiring.py into real DBOS + PG18 orchestration (app_lifespan lifecycle, WAITING_FOR_HUMAN_ANCHOR initialization & durable DBOS.recv_async(HUMAN_ANCHOR_TOPIC) pause, 422 ERR_HUMAN_ANCHOR_REQUIRED, 403 ERR_OBSERVER_MODE_READ_ONLY, DBOS.send_async resume, transactional Outbox HumanArbitrationRequested/StepCompleted/ArtifactProduced/RunTerminated, deterministic DBOS replay preserved for 3.2f/3.2s); deleted /api/v1/assistant/workflows/save-and-launch, assistant.py, and _assistant_workflow_launch.py (0-diff OpenAPI); all non-barrel touched files <= 298 L; 92% 25-module branch coverage (>= 90%), 1187 passed Python unit/evals/security/contract/unit-PG18, 36 passed PG18+Redis integration (26.x, 25.5, 16.2, 20.4, 23.5, 10.1..10.4, 22.1, 22.3, 23.2, 3.2f, 3.2s), 9/9 Turbo (417 JS/TS tests), 15 passed / 1 skipped / 0 failed (3.1m) Playwright Desktop E2E, ruff/mypy --strict (720 files)/lint-imports (5/5)/export_openapi (0-diff)/lint_spine (0)/detect-secrets clean."
+    },
     {
       "date": "2026-11-22",
       "phaseOrStory": "Story 26.7",

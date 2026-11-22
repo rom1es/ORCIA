@@ -15,6 +15,7 @@ Covers:
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
 import pytest
@@ -208,16 +209,28 @@ def test_arthur_uj10_conversational_workflow_composer_modify_and_save_and_launch
     assert len(proposal_v2.nodes) == 5
     assert "step_4_security_compliance_check" in [n.id for n in proposal_v2.nodes]
 
-    # Step 3: Arthur clicks "Enregistrer & Lancer" -> registers and executes via step_executors
-    launched = service.save_and_launch_workflow(
-        arthur,
-        workspace_id=workspace_id,
-        manifest_yaml=proposal_v2.manifest_yaml,
+    # Step 3: Validate manifest & launch durable process via AssistantProcessLauncherService
+    from orcia_core.orchestration.assistant_process_launcher import AssistantProcessLauncherService
+
+    assert service._setup is not None
+    rep = service._setup.validate_workflow_manifest(
+        proposal_v2.manifest_yaml, workspace_id=workspace_id, raise_on_error=True
+    )
+    assert rep.workflow is not None
+    service._setup.register_validated_workflow(rep.workflow)
+    launcher = AssistantProcessLauncherService(setup_service=service._setup, engine=service._engine)
+    launched = asyncio.run(
+        launcher.launch_process_async(
+            arthur,
+            workspace_id=workspace_id,
+            workflow_uri=proposal_v2.workflow_uri,
+            idempotency_token="uj10-composed-v2",
+        )
     )
     assert launched.workflow_uri == proposal_v2.workflow_uri
-    assert launched.version == "1.1.0"
-    assert len(launched.executed_step_keys) == 5
-    assert launched.snapshot_count == 5
+    assert "step_1_scope_anchor" in launched.waiting_step_keys
+    assert launched.run_status == "WAITING_FOR_HUMAN_ARBITRATION"
+    assert launched.snapshot_count == 0
 
 
 def test_core_without_sdlc_zero_vocabulary_and_generic_blueprint_fallback() -> None:
@@ -276,7 +289,7 @@ def test_fastapi_assistant_chat_stream_and_save_and_launch_endpoints(
     app.dependency_overrides[get_embedding_port] = lambda: fake_emb
     app.dependency_overrides[require_rag_available] = lambda: fake_emb
     with TestClient(app) as client:
-        # 1. Deleted legacy /chat and /chat/stream must return 404/405
+        # 1. Deleted legacy /chat, /chat/stream, and /workflows/save-and-launch must return 404/405
         assert client.post(
             "/api/v1/assistant/chat?persona_key=marc",
             json={"workspace_id": _WS_PAY, "user_prompt": "Bonjour"},
@@ -284,6 +297,10 @@ def test_fastapi_assistant_chat_stream_and_save_and_launch_endpoints(
         assert client.post(
             "/api/v1/assistant/chat/stream?persona_key=marc",
             json={"workspace_id": _WS_PAY, "user_prompt": "Bonjour"},
+        ).status_code in (404, 405)
+        assert client.post(
+            "/api/v1/assistant/workflows/save-and-launch?persona_key=marc",
+            json={"workspace_id": _WS_PAY, "manifest_yaml": "uri: orcia://workflows/legacy\n"},
         ).status_code in (404, 405)
 
         # 2. Canonical POST /api/v1/assistant/turns -> GET /turns/{id}/stream (SSE)
@@ -295,6 +312,7 @@ def test_fastapi_assistant_chat_stream_and_save_and_launch_endpoints(
             },
         )
         assert turn_resp.status_code == 202
+        turn_id = turn_resp.json()["turn_id"]
         stream_resp = client.get(f"{turn_resp.json()['stream_url']}?persona_key=marc")
         assert stream_resp.status_code == 200
         assert "text/event-stream" in stream_resp.headers["content-type"]
@@ -303,39 +321,33 @@ def test_fastapi_assistant_chat_stream_and_save_and_launch_endpoints(
         assert "event: citation_map" in sse_text
         assert "event: turn_completed" in sse_text
 
-        # Compose manifest via AssistantAgentService & launch via /workflows/save-and-launch
-        import asyncio
-
-        composed = asyncio.run(
-            app.state.assistant_service.run_conversation_turn_async(
-                workspace_id=_WS_PAY,
-                user_prompt="Propose un workflow d'audit Confluence et Jira face au dépôt Git.",
-                human_profile_archetype="ARCHITECT",
-                embedding_available=True,
-            )
-        )
-        assert composed.workflow_proposal is not None
-        manifest_yaml = composed.workflow_proposal.manifest_yaml
-
-        # 3. POST /api/v1/assistant/workflows/save-and-launch (Contributor `marc` succeeds)
+        # 3. Canonical CONTINUE_IN_PROCESS via /turns/{id}/approve (Contributor `marc` succeeds)
         launch_resp = client.post(
-            "/api/v1/assistant/workflows/save-and-launch?persona_key=marc",
+            f"/api/v1/assistant/turns/{turn_id}/approve?persona_key=marc",
             json={
                 "workspace_id": _WS_PAY,
-                "manifest_yaml": manifest_yaml,
+                "proposal_id": "prop-story-3-3",
+                "approved": True,
+                "human_anchor_markdown": "Human anchor justification >= 10 chars.",
+                "continue_in_process": True,
             },
         )
         assert launch_resp.status_code == 200
         launch_body = launch_resp.json()
-        assert launch_body["snapshot_count"] == 4
-        assert len(launch_body["executed_step_keys"]) == 4
+        assert launch_body["status"] == "APPROVED"
+        assert launch_body["run_id"]
+        assert launch_body["run_status"] == "WAITING_FOR_HUMAN_ARBITRATION"
+        assert launch_body["waiting_step_keys"] == ["frame-architecture-intent"]
 
         # 4. Observer role (`claire` BU_DIRECTOR in observer mode on workspace) is rejected with 403
         obs_resp = client.post(
-            "/api/v1/assistant/workflows/save-and-launch?persona_key=claire",
+            f"/api/v1/assistant/turns/{turn_id}/approve?persona_key=claire",
             json={
                 "workspace_id": _WS_PAY,
-                "manifest_yaml": manifest_yaml,
+                "proposal_id": "prop-story-3-3-obs",
+                "approved": True,
+                "human_anchor_markdown": "Observer anchor should be denied.",
+                "continue_in_process": True,
             },
         )
         assert obs_resp.status_code == 403

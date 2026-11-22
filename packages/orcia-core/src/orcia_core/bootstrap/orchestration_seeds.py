@@ -121,6 +121,44 @@ steps:
     instructions: "Observer le puits de logs après déploiement pour confirmer zéro régression."
 """
 
+DEFAULT_FOLDER_PILOT_WORKFLOW_YAML = """uri: "orcia://pack-sdlc/workflows/ticket-to-tech-spec"
+title: "Pilot Process: Folder & Request to Governed Specification"
+description: "Three-step governed pilot workflow with mandatory human anchor and verification."
+version: "1.0.0"
+criticality: "HIGH_CRITICAL"
+execution_regime: "INTERACTIVE_COACHING"
+tie_break_policy: "PAUSE_AND_ESCALATE"
+mode: "standard"
+adaptive_gate_policy: "STRICT"
+max_cost_usd: 10.0
+datasources:
+  - "git://claims/core-engine@main"
+steps:
+  - step_key: "frame-spec-human-anchor"
+    title: "Human Intent & Anchor Framing"
+    step_type: "AGENT"
+    agent_uri: "orcia://agents/product-architect@1.0.0"
+    template_key: "tpl-architecture-decision-record"
+    instructions: "Author and sign the mandatory human intent anchor before downstream synthesis."
+    human_authored_required: true
+    requires_human_gate: true
+    declares_intention: true
+  - step_key: "synthesize-spec-artifact"
+    title: "Synthesize Governed Specification"
+    step_type: "AGENT"
+    agent_uri: "orcia://agents/architect-investigator@1.0.0"
+    depends_on:
+      - "frame-spec-human-anchor"
+    instructions: "Generate governed specification bound to the signed human anchor."
+  - step_key: "post-spec-verification"
+    title: "Post-Specification Verification"
+    step_type: "POST_ACTION_VERIFICATION"
+    depends_on:
+      - "synthesize-spec-artifact"
+    verification_window_seconds: 120
+    instructions: "Verify specification invariants after generation."
+"""
+
 
 @dataclass(frozen=True, slots=True)
 class BootstrapTemplateSectionSeed:
@@ -188,6 +226,7 @@ __all__ = [
     "BootstrapTemplateSeed",
     "DEFAULT_ADR_TEMPLATE_SEED",
     "DEFAULT_CHILD_SUB_WORKFLOW_YAML",
+    "DEFAULT_FOLDER_PILOT_WORKFLOW_YAML",
     "DEFAULT_LEAF_SUB_WORKFLOW_YAML",
     "DEFAULT_ROOT_WORKFLOW_YAML",
 ]

@@ -43,6 +43,7 @@ export interface InboxAuxiliaryPanelsProps {
   ) => Promise<boolean>;
   readonly onOpenHelpSection: (sectionId: string) => void;
   readonly onSendCollaborativeMessage: (message: string) => void;
+  readonly onLaunchProcessFromFolder: (folderId: string, targetWorkflowUri: string) => void;
   readonly onNavigateToProcesses: () => void;
   readonly citationCardPreview?: {
     readonly sanitizedResponseText: string;
@@ -74,6 +75,7 @@ export function InboxAuxiliaryPanels({
   changeVisibility,
   onOpenHelpSection,
   onSendCollaborativeMessage,
+  onLaunchProcessFromFolder,
   onNavigateToProcesses,
   citationCardPreview = null,
 }: InboxAuxiliaryPanelsProps): React.JSX.Element {
@@ -199,7 +201,7 @@ export function InboxAuxiliaryPanels({
             });
           }}
           onSendCollaborativeMessage={onSendCollaborativeMessage}
-          onLaunchProcessFromFolder={onNavigateToProcesses}
+          onLaunchProcessFromFolder={onLaunchProcessFromFolder}
         />
       </div>
 

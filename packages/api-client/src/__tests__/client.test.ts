@@ -479,10 +479,7 @@ describe("createOrciaApiClient", () => {
       "marc",
     );
     await client.replayWorkflowFromStep("run-1", "step-1", {}, "marc");
-    await client.assistantSaveAndLaunchWorkflow(
-      { workspace_id: "ws-1", manifest_yaml: "uri: orcia://w/1" },
-      "marc",
-    );
+    await client.launchProcessFromFolder("folder-1", { workspace_id: "ws-1" });
     await client.evaluateDeterministicGate(
       {
         workspace_id: "ws-1",

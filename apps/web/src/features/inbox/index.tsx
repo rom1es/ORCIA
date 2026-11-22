@@ -239,6 +239,13 @@ function AssistantInboxFeatureContent() {
                 ? `💬 Message ajouté à la discussion : ${message}`
                 : `💬 Message added to thread: ${message}`,
             ),
+          onLaunchProcessFromFolder: (folderId, targetWorkflowUri) => {
+            void foldersController.launchProcess(folderId, targetWorkflowUri).then((launchedRunId) => {
+              if (launchedRunId) {
+                navigateToRoute("/processes");
+              }
+            });
+          },
           onNavigateToProcesses: () => navigateToRoute("/processes"),
           citationCardPreview,
         }}

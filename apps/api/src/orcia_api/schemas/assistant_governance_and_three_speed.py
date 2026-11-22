@@ -162,6 +162,8 @@ class AssistantTurnApproveRequest(BaseModel):
     human_authored_required: bool = True
     human_anchor_markdown: str | None = None
     rationale: str | None = None
+    continue_in_process: bool = False
+    target_workflow_uri: str | None = None
 
 
 class AssistantTurnApproveResponse(BaseModel):
@@ -175,6 +177,13 @@ class AssistantTurnApproveResponse(BaseModel):
     status: Literal["APPROVED", "REJECTED"]
     human_anchor_sha256: str | None = None
     audit_id: str | None = None
+    run_id: str | None = None
+    workflow_uri: str | None = None
+    run_status: str | None = None
+    dbos_workflow_id: str | None = None
+    waiting_step_keys: list[str] = Field(default_factory=list)
+    executed_step_keys: list[str] = Field(default_factory=list)
+    snapshot_count: int = 0
 
 
 class AssistantTurnAcceptedResponse(BaseModel):

@@ -38,6 +38,10 @@ export type SendCollaborativeThreadTurnRequest =
   components["schemas"]["SendCollaborativeThreadTurnRequest"];
 export type SendCollaborativeThreadTurnResponse =
   components["schemas"]["SendCollaborativeThreadTurnResponse"];
+export type LaunchProcessFromFolderRequest =
+  components["schemas"]["LaunchProcessFromFolderRequest"];
+export type LaunchProcessFromFolderResponse =
+  components["schemas"]["LaunchProcessFromFolderResponse"];
 
 export interface AssistantTurnSseOptions {
   readonly after?: string;
@@ -224,6 +228,16 @@ export function createAssistantStreamingDomainClient(
     ): Promise<SendCollaborativeThreadTurnResponse> {
       return requestJson<SendCollaborativeThreadTurnResponse>(
         `/api/v1/assistant/threads/${encodeURIComponent(threadId)}/turns`,
+        "POST",
+        payload,
+      );
+    },
+    launchProcessFromFolder(
+      folderId: string,
+      payload: LaunchProcessFromFolderRequest,
+    ): Promise<LaunchProcessFromFolderResponse> {
+      return requestJson<LaunchProcessFromFolderResponse>(
+        `/api/v1/assistant/folders/${encodeURIComponent(folderId)}/launch-process`,
         "POST",
         payload,
       );

@@ -114,7 +114,6 @@ from orcia_core.orchestration.assistant_agent import (
     AssistantNodeTrace,
     AssistantTurnResult,
     AssistantWorkflowProposal,
-    SavedAndLaunchedWorkflowResult,
     XyFlowEdgeSpec,
     XyFlowNodeSpec,
 )
@@ -392,7 +391,6 @@ __all__ = [
     "ResourceLeasePort",
     "ResourceLeaseRecord",
     "ResourceLeaseService",
-    "SavedAndLaunchedWorkflowResult",
     "ScopeType",
     "SkillStepExecutor",
     "SqlDomainEventsOutboxRepository",

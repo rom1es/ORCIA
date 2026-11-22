@@ -93,6 +93,28 @@ def build_default_orchestration_setup_service(
     return svc
 
 
+def ensure_folder_pilot_workflow_registered(
+    svc: WorkflowOrchestrationSetupService,
+    *,
+    workflow_uri: str | None,
+) -> None:
+    """Lazily register the pilot folder workflow only on explicit folder process launch."""
+    clean_uri = (workflow_uri or "").strip()
+    if not clean_uri.endswith("ticket-to-tech-spec"):
+        return
+    if any(uri.endswith("ticket-to-tech-spec") for uri in svc._workflows_by_uri):
+        return
+    boot = _load_bootstrap_orchestration_seeds()
+    rep = svc.validate_workflow_manifest(
+        boot.DEFAULT_FOLDER_PILOT_WORKFLOW_YAML,
+        workspace_id="0192c4e0-0000-7000-8000-000000000201",
+        raise_on_error=True,
+    )
+    if rep.workflow is not None:
+        svc.register_validated_workflow(rep.workflow)
+
+
 __all__ = [
     "build_default_orchestration_setup_service",
+    "ensure_folder_pilot_workflow_registered",
 ]

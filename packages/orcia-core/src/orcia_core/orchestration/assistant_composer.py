@@ -53,19 +53,6 @@ class AssistantWorkflowProposal:
     edges: tuple[XyFlowEdgeSpec, ...]
 
 
-@dataclass(frozen=True, slots=True)
-class SavedAndLaunchedWorkflowResult:
-    """Result of saving a composed workflow in the Workspace and launching a real run."""
-
-    workflow_uri: str
-    version: str
-    run_id: str
-    execution_regime: WorkflowExecutionRegime
-    run_status: str
-    executed_step_keys: tuple[str, ...]
-    snapshot_count: int
-
-
 def build_generic_core_blueprint(
     *,
     workspace_id: str,

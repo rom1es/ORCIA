@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from orcia_core.blackboard.models import (
     BackgroundAuditConsolidatedReport,
     StepExecutionEntity,
+    StepExecutionStatus,
 )
 from orcia_core.orchestration._engine_fast_path import build_background_fast_path_report
 from orcia_core.orchestration.errors import ResourceNotFoundError, ValidationDomainError
@@ -29,13 +30,43 @@ def initialize_run_steps_helper(
     engine: DurableOrchestrationEngine,
     run: WorkflowRunEntity,
     workflow: WorkflowAsCodeDefinition,
+    *,
+    initialize_anchored_as_waiting: bool = False,
 ) -> tuple[StepExecutionEntity, ...]:
     """Initialize `StepExecutionEntity` rows in topological order if not already created."""
     existing = engine.blackboard.list_step_executions(run.id)
     if existing:
+        if initialize_anchored_as_waiting:
+            updated_steps: list[StepExecutionEntity] = []
+            specs_by_key = {s.step_key: s for s in workflow.steps}
+            for step_exec in existing:
+                spec = specs_by_key.get(step_exec.step_key)
+                if (
+                    spec is not None
+                    and spec.human_authored_required
+                    and step_exec.status == "PENDING"
+                    and not engine.anchors_and_arbitration.get_step_anchors(
+                        run.id, step_exec.step_key
+                    )
+                ):
+                    draft = engine.blackboard.save_step_draft(
+                        run.id,
+                        step_exec.step_key,
+                        status="WAITING_FOR_HUMAN_ANCHOR",
+                        draft_artifact=step_exec.draft_artifact,
+                    )
+                    updated_steps.append(draft)
+                else:
+                    updated_steps.append(step_exec)
+            return tuple(updated_steps)
         return existing
     created: list[StepExecutionEntity] = []
     for idx, step in enumerate(workflow.steps):
+        initial_status: StepExecutionStatus = (
+            "WAITING_FOR_HUMAN_ANCHOR"
+            if (initialize_anchored_as_waiting and step.human_authored_required)
+            else "PENDING"
+        )
         step_exec = StepExecutionEntity(
             id=new_uuid7_str(),
             step_execution_key=f"stepexec-{run.id[-6:]}-{step.step_key}",
@@ -44,7 +75,7 @@ def initialize_run_steps_helper(
             step_index=idx,
             step_type=step.step_type,
             execution_mode=run.execution_regime,
-            status="PENDING",
+            status=initial_status,
             attempt_count=0,
             max_agent_retries=step.max_agent_retries,
         )

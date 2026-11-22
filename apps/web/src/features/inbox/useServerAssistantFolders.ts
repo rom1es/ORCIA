@@ -154,5 +154,25 @@ export function useServerAssistantFolders(params: {
     [workspaceId, messages, onFeedback, upsertFromServer],
   );
 
-  return { folders, createFolder, savePinnedNotes, changeVisibility };
+  const launchProcess = useCallback(
+    async (folderId: string, targetWorkflowUri?: string): Promise<string | null> => {
+      if (!workspaceId.trim()) {
+        onFeedback(messages.workspaceRequired);
+        return null;
+      }
+      try {
+        const outcome = await createOrciaApiClient({ baseUrl: "" }).launchProcessFromFolder(folderId, {
+          workspace_id: workspaceId,
+          ...(targetWorkflowUri ? { target_workflow_uri: targetWorkflowUri } : {}),
+        });
+        return outcome.run_id ?? outcome.workflow_uri;
+      } catch (err: unknown) {
+        onFeedback(messages.saveFailed(errorDetail(err)));
+        return null;
+      }
+    },
+    [workspaceId, messages, onFeedback],
+  );
+
+  return { folders, createFolder, savePinnedNotes, changeVisibility, launchProcess };
 }

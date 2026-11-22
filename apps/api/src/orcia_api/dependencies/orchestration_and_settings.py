@@ -42,6 +42,7 @@ from orcia_core.orchestration import (
     WorkflowOrchestrationSetupService,
     WorkflowStudioAndPackService,
 )
+from orcia_core.orchestration.assistant_process_launcher import AssistantProcessLauncherService
 from orcia_core.permissions import (
     HierarchicalRbacService,
     IamAccountsGovernanceService,
@@ -205,3 +206,17 @@ def get_ai_models_hub_service(request: Request) -> AiModelsHubService:
         svc = AiModelsHubService(vault_cipher=auth.vault_cipher)
         request.app.state.ai_models_hub_service = svc
     return svc
+
+
+def get_assistant_process_launcher_service(request: Request) -> AssistantProcessLauncherService:
+    """FastAPI `Depends` provider returning `AssistantProcessLauncherService` (`Story 26.8`)."""
+    launcher: AssistantProcessLauncherService | None = getattr(
+        request.app.state, "assistant_process_launcher_service", None
+    )
+    if launcher is None:
+        setup_svc = get_orchestration_service(request)
+        engine = setup_svc.engine
+        request.app.state.orchestration_engine = engine
+        launcher = AssistantProcessLauncherService(setup_service=setup_svc, engine=engine)
+        request.app.state.assistant_process_launcher_service = launcher
+    return launcher

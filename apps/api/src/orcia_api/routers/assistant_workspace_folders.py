@@ -12,6 +12,7 @@ from orcia_api.dependencies import (
     get_optional_embedding_port,
 )
 from orcia_api.dependencies._assistant_guards import enforce_assistant_workspace_guard
+from orcia_api.routers._assistant_process_wiring import launch_folder_process_response
 from orcia_api.routers._assistant_thread_messages_routes import persist_thread_turn_messages
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.assistant_citations_and_folders import (
@@ -170,7 +171,7 @@ async def launch_process_from_folder_endpoint(
     user: CurrentUserDep,
     folders_svc: FoldersSharingDep,
 ) -> LaunchProcessFromFolderResponse:
-    """Pre-fill a Process contract in 1 click from a thematic folder."""
+    """Launch a durable DBOS process from a thematic folder (`WAITING_FOR_HUMAN_ANCHOR`)."""
     await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
     prep = await folders_svc.prepare_workflow_launch_from_folder_async(
         workspace_id=payload.workspace_id,
@@ -178,14 +179,7 @@ async def launch_process_from_folder_endpoint(
         user=user,
         target_workflow_uri=payload.target_workflow_uri,
     )
-    return LaunchProcessFromFolderResponse(
-        folder_id=prep.folder_id,
-        workspace_id=prep.workspace_id,
-        workflow_uri=prep.workflow_uri,
-        initiated_by_user_id=prep.initiated_by_user_id,
-        passthrough_identity=prep.passthrough_identity,
-        prefilled_contract_inputs=prep.prefilled_contract_inputs,
-    )
+    return await launch_folder_process_response(request, user=user, prep=prep)
 
 
 @router.post("/threads/{thread_id}/turns", response_model=SendCollaborativeThreadTurnResponse)

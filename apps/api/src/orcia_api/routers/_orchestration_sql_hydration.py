@@ -20,6 +20,7 @@ from orcia_core.orchestration import (
     list_upstream_challenges_sql,
     list_workflow_runs_with_locks_sql,
 )
+from orcia_core.orchestration.seeds import ensure_folder_pilot_workflow_registered
 
 logger = get_logger("orcia.api.orchestration")
 
@@ -146,6 +147,7 @@ async def hydrate_run_from_sql_if_missing(
             svc._runs_by_id[r.id] = r
     if run_id not in svc._runs_by_id:
         return
+    ensure_folder_pilot_workflow_registered(svc, workflow_uri=svc._runs_by_id[run_id].workflow_uri)
     for step in await sql_repo.list_step_executions(run_id):
         svc.engine.blackboard.register_step_execution(step)
     for snap in await sql_repo.list_snapshots(run_id):

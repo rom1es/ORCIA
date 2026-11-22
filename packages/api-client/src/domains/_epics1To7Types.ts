@@ -11,11 +11,6 @@ export type UpstreamChallengeSubmitResponse =
 export type StepReplayRequest = components["schemas"]["StepReplayRequest"];
 export type StepReplayResponse = components["schemas"]["StepReplayResponse"];
 
-export type AssistantSaveAndLaunchRequest =
-  components["schemas"]["AssistantSaveAndLaunchRequest"];
-export type AssistantSaveAndLaunchResponse =
-  components["schemas"]["AssistantSaveAndLaunchResponse"];
-
 export type DeterministicGateEvaluateRequest =
   components["schemas"]["DeterministicGateEvaluateRequest"];
 export type DeterministicGateEvaluateResponse =

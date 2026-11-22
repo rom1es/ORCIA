@@ -121,6 +121,12 @@ class LaunchProcessFromFolderResponse(BaseModel):
     initiated_by_user_id: str
     passthrough_identity: str
     prefilled_contract_inputs: dict[str, object]
+    run_id: str | None = None
+    run_status: str | None = None
+    dbos_workflow_id: str | None = None
+    waiting_step_keys: list[str] = Field(default_factory=list)
+    executed_step_keys: list[str] = Field(default_factory=list)
+    snapshot_count: int = 0
 
 
 class SendCollaborativeThreadTurnRequest(BaseModel):

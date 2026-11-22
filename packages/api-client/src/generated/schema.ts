@@ -363,19 +363,6 @@ export interface components {
       snippet: string;
       title: string;
     };
-    AssistantSaveAndLaunchRequest: {
-      manifest_yaml: string;
-      workspace_id: string;
-    };
-    AssistantSaveAndLaunchResponse: {
-      executed_step_keys: (string)[];
-      execution_regime: string;
-      run_id: string;
-      run_status: string;
-      snapshot_count: number;
-      version: string;
-      workflow_uri: string;
-    };
     AssistantThreadMessageSchemaItem: {
       citation_map?: Record<string, unknown>;
       content: string;
@@ -416,19 +403,28 @@ export interface components {
     };
     AssistantTurnApproveRequest: {
       approved?: boolean;
+      continue_in_process?: boolean;
       human_anchor_markdown?: string | null;
       human_authored_required?: boolean;
       proposal_id: string;
       rationale?: string | null;
+      target_workflow_uri?: string | null;
       workspace_id: string;
     };
     AssistantTurnApproveResponse: {
       approved: boolean;
       audit_id?: string | null;
+      dbos_workflow_id?: string | null;
+      executed_step_keys?: (string)[];
       human_anchor_sha256?: string | null;
       proposal_id: string;
+      run_id?: string | null;
+      run_status?: string | null;
+      snapshot_count?: number;
       status: "APPROVED" | "REJECTED";
       turn_id: string;
+      waiting_step_keys?: (string)[];
+      workflow_uri?: string | null;
       workspace_id: string;
     };
     AssistantTurnCreateRequest: {
@@ -2377,10 +2373,16 @@ export interface components {
       workspace_id: string;
     };
     LaunchProcessFromFolderResponse: {
+      dbos_workflow_id?: string | null;
+      executed_step_keys?: (string)[];
       folder_id: string;
       initiated_by_user_id: string;
       passthrough_identity: string;
       prefilled_contract_inputs: Record<string, unknown>;
+      run_id?: string | null;
+      run_status?: string | null;
+      snapshot_count?: number;
+      waiting_step_keys?: (string)[];
       workflow_uri: string;
       workspace_id: string;
     };
@@ -5127,13 +5129,6 @@ export interface paths {
       };
     };
   };
-  "/api/v1/assistant/workflows/save-and-launch": {
-    post: {
-      responses: {
-        200: components["schemas"]["AssistantSaveAndLaunchResponse"];
-      };
-    };
-  };
   "/api/v1/assistant/workspaces/{workspace_id}/overview": {
     get: {
       responses: {
@@ -6818,8 +6813,6 @@ export type AssistantActiveTurnsListResponse = components["schemas"]["AssistantA
 export type AssistantFolderSchemaItem = components["schemas"]["AssistantFolderSchemaItem"];
 export type AssistantGovernanceViewResponse = components["schemas"]["AssistantGovernanceViewResponse"];
 export type AssistantHistorySearchHitSchemaItem = components["schemas"]["AssistantHistorySearchHitSchemaItem"];
-export type AssistantSaveAndLaunchRequest = components["schemas"]["AssistantSaveAndLaunchRequest"];
-export type AssistantSaveAndLaunchResponse = components["schemas"]["AssistantSaveAndLaunchResponse"];
 export type AssistantThreadMessageSchemaItem = components["schemas"]["AssistantThreadMessageSchemaItem"];
 export type AssistantThreadMessagesListResponse = components["schemas"]["AssistantThreadMessagesListResponse"];
 export type AssistantThreadSchemaItem = components["schemas"]["AssistantThreadSchemaItem"];

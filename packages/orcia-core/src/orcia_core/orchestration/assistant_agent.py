@@ -7,17 +7,12 @@ from collections.abc import AsyncIterator, Callable, Iterator
 from typing import Any
 
 from orcia_core.orchestration._assistant_agent_nodes import execute_assistant_nodes_async
-from orcia_core.orchestration._assistant_workflow_launch import (
-    execute_saved_and_launched_workflow,
-    execute_saved_and_launched_workflow_async,
-)
 from orcia_core.orchestration.assistant_agent_models import (
     ASSISTANT_WORKFLOW_URI,
     AssistantNodeId,
     AssistantNodeTrace,
     AssistantTurnResult,
     AssistantWorkflowProposal,
-    SavedAndLaunchedWorkflowResult,
     XyFlowEdgeSpec,
     XyFlowNodeSpec,
 )
@@ -32,7 +27,6 @@ from orcia_core.orchestration.assistant_composer import (
 from orcia_core.orchestration.assistant_harness import AssistantHarness, AssistantIntentKind
 from orcia_core.orchestration.engine import DurableOrchestrationEngine
 from orcia_core.orchestration.run_lock_service import WorkflowOrchestrationSetupService
-from orcia_core.permissions.models import UserIdentity
 from orcia_kernel.context_ports import ContextSourcePort, VectorStorePort
 from orcia_kernel.ports import LLMPort
 
@@ -43,7 +37,6 @@ __all__ = [
     "AssistantNodeTrace",
     "AssistantTurnResult",
     "AssistantWorkflowProposal",
-    "SavedAndLaunchedWorkflowResult",
     "XyFlowEdgeSpec",
     "XyFlowNodeSpec",
     "build_generic_core_blueprint",
@@ -199,27 +192,3 @@ class AssistantAgentService:
             source_uri_authorizer=source_uri_authorizer,
         )
         yield from iter_assistant_turn_sse_events(turn)
-
-    async def save_and_launch_workflow_async(
-        self, user: UserIdentity, *, workspace_id: str, manifest_yaml: str
-    ) -> SavedAndLaunchedWorkflowResult:
-        """Async register and launch composed YAML workflow without blocking event loop."""
-        return await execute_saved_and_launched_workflow_async(
-            self._setup,
-            self._engine,
-            user,
-            workspace_id=workspace_id,
-            manifest_yaml=manifest_yaml,
-        )
-
-    def save_and_launch_workflow(
-        self, user: UserIdentity, *, workspace_id: str, manifest_yaml: str
-    ) -> SavedAndLaunchedWorkflowResult:
-        """Register the composed YAML workflow in the Workspace and launch its real execution."""
-        return execute_saved_and_launched_workflow(
-            self._setup,
-            self._engine,
-            user,
-            workspace_id=workspace_id,
-            manifest_yaml=manifest_yaml,
-        )

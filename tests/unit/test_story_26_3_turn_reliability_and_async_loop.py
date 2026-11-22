@@ -65,7 +65,7 @@ def test_zero_event_loop_blocking_and_zero_silent_except_ast_invariants() -> Non
         REPO_ROOT / "packages/orcia-core/src/orcia_core/orchestration/assistant_agent_synthesis.py",
         REPO_ROOT / "packages/orcia-core/src/orcia_core/rag/context_adapters.py",
         REPO_ROOT / "packages/orcia-core/src/orcia_core/rag/hybrid_rag_service.py",
-        REPO_ROOT / "apps/api/src/orcia_api/routers/assistant.py",
+        REPO_ROOT / "apps/api/src/orcia_api/routers/_assistant_process_wiring.py",
         REPO_ROOT / "apps/api/src/orcia_api/routers/assistant_turns.py",
         REPO_ROOT / "apps/api/src/orcia_api/routers/_assistant_turn_controls_routes.py",
         REPO_ROOT / "apps/api/src/orcia_api/routers/_assistant_turn_finalizer.py",

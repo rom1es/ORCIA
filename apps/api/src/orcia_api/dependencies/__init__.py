@@ -31,6 +31,7 @@ from orcia_api.dependencies.jira_and_mcp import (
 )
 from orcia_api.dependencies.orchestration_and_settings import (
     get_ai_models_hub_service,
+    get_assistant_process_launcher_service,
     get_audit_ledger_service,
     get_autonomy_contract_service,
     get_cognitive_impact_service,
@@ -100,6 +101,7 @@ __all__ = [
     "get_assistant_feedback_repository",
     "get_assistant_folders_and_sharing_service",
     "get_assistant_governance_service",
+    "get_assistant_process_launcher_service",
     "get_assistant_reflexive_runtime_service",
     "get_assistant_service",
     "get_assistant_thread_messages_repository",

@@ -17,6 +17,7 @@ from orcia_connectors import (
 from orcia_core.gates import SqlGateEvaluationRepository
 from orcia_core.observability.logging import get_logger
 from orcia_core.orchestration import (
+    DbosDurableWorkflowEngine,
     DbosSqlAlchemyUnitOfWork,
     GovernedMcpServerService,
     SqlMcpExposureRepository,
@@ -162,6 +163,21 @@ async def startup_declarative_packs_and_dbos(app: FastAPI) -> None:
             get_logger("orcia.api.lifespan").warning(
                 "lifespan_dbos_datasource_fallback_engine", error_type=type(exc).__name__
             )
+    if getattr(app.state, "dbos_durable_engine", None) is None:
+        try:
+            async_db_url = resolve_database_url()
+            sync_db_url = async_db_url.replace("+asyncpg", "", 1)
+            dbos_eng = DbosDurableWorkflowEngine(
+                system_database_url=sync_db_url,
+                application_database_url=async_db_url,
+                app_name="orcia-api",
+            )
+            await dbos_eng.launch(existing_engine=db_engine)
+            app.state.dbos_durable_engine = dbos_eng
+        except Exception as exc:
+            get_logger("orcia.api.lifespan").warning(
+                "lifespan_dbos_durable_engine_skipped", error_type=type(exc).__name__
+            )
 
 
 def _resolve_assistant_drain_timeout_seconds() -> float:
@@ -214,6 +230,10 @@ async def shutdown_app_resources(app: FastAPI, tracer_provider: Any) -> None:
     if redis_client is not None:
         with suppress(Exception):
             await redis_client.aclose()
+    dbos_durable_engine = getattr(app.state, "dbos_durable_engine", None)
+    if dbos_durable_engine is not None:
+        with suppress(Exception):
+            await dbos_durable_engine.shutdown(dispose_engine=False)
     db_engine = getattr(app.state, "db_engine", None)
     if db_engine is not None:
         with suppress(Exception):

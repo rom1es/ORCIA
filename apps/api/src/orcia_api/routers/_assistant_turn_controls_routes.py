@@ -18,6 +18,7 @@ from orcia_api.routers._assistant_background_registry import (
     get_turn_registry_from_request,
     stop_assistant_turn_by_id,
 )
+from orcia_api.routers._assistant_process_wiring import launch_assistant_process_from_api
 from orcia_api.routers._assistant_turn_finalizer import record_turn_approval_audit
 from orcia_api.routers._assistant_usage_telemetry import resolve_audit_ledger_sink
 from orcia_api.routers._assistant_workspace_context import to_active_turn_response
@@ -140,6 +141,25 @@ async def approve_assistant_turn_proposal_endpoint(
         rationale=payload.rationale,
         trace_id=trace_id,
     )
+    run_outcome = None
+    should_launch = payload.approved and (
+        payload.continue_in_process or payload.target_workflow_uri is not None
+    )
+    if should_launch:
+        run_outcome = await launch_assistant_process_from_api(
+            request,
+            user=user,
+            workspace_id=payload.workspace_id,
+            workflow_uri=payload.target_workflow_uri,
+            idempotency_token=f"turn:{turn_id}:{payload.proposal_id}",
+            seed_inputs={
+                "turn_id": turn_id,
+                "proposal_id": payload.proposal_id,
+                "user_prompt": rec.user_prompt,
+                "human_anchor_markdown": payload.human_anchor_markdown or "",
+            },
+            trace_id=trace_id,
+        )
     return AssistantTurnApproveResponse(
         turn_id=turn_id,
         proposal_id=payload.proposal_id,
@@ -148,6 +168,13 @@ async def approve_assistant_turn_proposal_endpoint(
         status="APPROVED" if payload.approved else "REJECTED",
         human_anchor_sha256=anchor_sha,
         audit_id=audit_id,
+        run_id=run_outcome.run.id if run_outcome is not None else None,
+        workflow_uri=run_outcome.workflow_uri if run_outcome is not None else None,
+        run_status=run_outcome.run_status if run_outcome is not None else None,
+        dbos_workflow_id=run_outcome.dbos_workflow_id if run_outcome is not None else None,
+        waiting_step_keys=list(run_outcome.waiting_step_keys) if run_outcome is not None else [],
+        executed_step_keys=list(run_outcome.executed_step_keys) if run_outcome is not None else [],
+        snapshot_count=run_outcome.snapshot_count if run_outcome is not None else 0,
     )
 
 

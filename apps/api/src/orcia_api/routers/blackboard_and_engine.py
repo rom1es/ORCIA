@@ -7,6 +7,7 @@ from typing import cast
 from fastapi import APIRouter, Path, Query, Request
 
 from orcia_api.dependencies import get_auth_service, get_orchestration_service
+from orcia_api.routers._assistant_process_wiring import resume_assistant_process_after_anchor
 from orcia_api.routers._blackboard_arbitration_routes import arbitration_router
 from orcia_api.routers._finops_auth_guards import enforce_observer_headers_guard
 from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
@@ -202,6 +203,16 @@ async def sign_human_anchor(
         step_exec=step_exec,
         signature=sig,
     )
+    await resume_assistant_process_after_anchor(
+        request,
+        user=user,
+        run=run,
+        step_key=payload.step_key,
+        signature_id=sig.id,
+        trace_id=trace_id,
+    )
+    await hydrate_run_from_sql_if_missing(request, svc, payload.run_id)
+    step_exec = svc.engine.blackboard.get_step_execution(payload.run_id, payload.step_key)
     return HumanAnchorSignResponse(
         signature=serialize_anchor(sig),
         step_execution=serialize_step_exec(step_exec),

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
-
 from orcia_api.schemas.assistant_governance_and_three_speed import (
     ActiveBackgroundTurnStatusResponse as ActiveBackgroundTurnStatusResponse,
 )
@@ -58,24 +56,3 @@ from orcia_api.schemas.assistant_governance_and_three_speed import (
 from orcia_api.schemas.assistant_governance_and_three_speed import (
     WorkspaceLayerSettingsSchemaItem as WorkspaceLayerSettingsSchemaItem,
 )
-
-
-class AssistantSaveAndLaunchRequest(BaseModel):
-    """Request payload for `POST /api/v1/assistant/workflows/save-and-launch` (`FR-11`)."""
-
-    model_config = ConfigDict(extra="forbid")
-    workspace_id: str = Field(..., min_length=1)
-    manifest_yaml: str = Field(..., min_length=10)
-
-
-class AssistantSaveAndLaunchResponse(BaseModel):
-    """Response envelope for `POST /api/v1/assistant/workflows/save-and-launch` (`FR-11`)."""
-
-    model_config = ConfigDict(extra="forbid")
-    workflow_uri: str
-    version: str
-    run_id: str
-    execution_regime: str
-    run_status: str
-    executed_step_keys: list[str]
-    snapshot_count: int

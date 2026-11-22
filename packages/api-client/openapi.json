@@ -2606,76 +2606,6 @@
         "title": "AssistantHistorySearchHitSchemaItem",
         "type": "object"
       },
-      "AssistantSaveAndLaunchRequest": {
-        "additionalProperties": false,
-        "description": "Request payload for `POST /api/v1/assistant/workflows/save-and-launch` (`FR-11`).",
-        "properties": {
-          "manifest_yaml": {
-            "minLength": 10,
-            "title": "Manifest Yaml",
-            "type": "string"
-          },
-          "workspace_id": {
-            "minLength": 1,
-            "title": "Workspace Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "workspace_id",
-          "manifest_yaml"
-        ],
-        "title": "AssistantSaveAndLaunchRequest",
-        "type": "object"
-      },
-      "AssistantSaveAndLaunchResponse": {
-        "additionalProperties": false,
-        "description": "Response envelope for `POST /api/v1/assistant/workflows/save-and-launch` (`FR-11`).",
-        "properties": {
-          "executed_step_keys": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Executed Step Keys",
-            "type": "array"
-          },
-          "execution_regime": {
-            "title": "Execution Regime",
-            "type": "string"
-          },
-          "run_id": {
-            "title": "Run Id",
-            "type": "string"
-          },
-          "run_status": {
-            "title": "Run Status",
-            "type": "string"
-          },
-          "snapshot_count": {
-            "title": "Snapshot Count",
-            "type": "integer"
-          },
-          "version": {
-            "title": "Version",
-            "type": "string"
-          },
-          "workflow_uri": {
-            "title": "Workflow Uri",
-            "type": "string"
-          }
-        },
-        "required": [
-          "workflow_uri",
-          "version",
-          "run_id",
-          "execution_regime",
-          "run_status",
-          "executed_step_keys",
-          "snapshot_count"
-        ],
-        "title": "AssistantSaveAndLaunchResponse",
-        "type": "object"
-      },
       "AssistantThreadMessageSchemaItem": {
         "additionalProperties": false,
         "description": "Persisted conversational turn message (`D4`, `Story 26.5`).",
@@ -2928,6 +2858,11 @@
             "title": "Approved",
             "type": "boolean"
           },
+          "continue_in_process": {
+            "default": false,
+            "title": "Continue In Process",
+            "type": "boolean"
+          },
           "human_anchor_markdown": {
             "anyOf": [
               {
@@ -2959,6 +2894,17 @@
               }
             ],
             "title": "Rationale"
+          },
+          "target_workflow_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Workflow Uri"
           },
           "workspace_id": {
             "minLength": 1,
@@ -2992,6 +2938,24 @@
             ],
             "title": "Audit Id"
           },
+          "dbos_workflow_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dbos Workflow Id"
+          },
+          "executed_step_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Executed Step Keys",
+            "type": "array"
+          },
           "human_anchor_sha256": {
             "anyOf": [
               {
@@ -3007,6 +2971,33 @@
             "title": "Proposal Id",
             "type": "string"
           },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "run_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Status"
+          },
+          "snapshot_count": {
+            "default": 0,
+            "title": "Snapshot Count",
+            "type": "integer"
+          },
           "status": {
             "enum": [
               "APPROVED",
@@ -3018,6 +3009,24 @@
           "turn_id": {
             "title": "Turn Id",
             "type": "string"
+          },
+          "waiting_step_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Waiting Step Keys",
+            "type": "array"
+          },
+          "workflow_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Uri"
           },
           "workspace_id": {
             "title": "Workspace Id",
@@ -15687,6 +15696,24 @@
         "additionalProperties": false,
         "description": "Response for `POST /api/v1/assistant/folders/{folder_id}/launch-process` (`Story 10.4`).",
         "properties": {
+          "dbos_workflow_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dbos Workflow Id"
+          },
+          "executed_step_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Executed Step Keys",
+            "type": "array"
+          },
           "folder_id": {
             "title": "Folder Id",
             "type": "string"
@@ -15703,6 +15730,40 @@
             "additionalProperties": true,
             "title": "Prefilled Contract Inputs",
             "type": "object"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "run_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Status"
+          },
+          "snapshot_count": {
+            "default": 0,
+            "title": "Snapshot Count",
+            "type": "integer"
+          },
+          "waiting_step_keys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Waiting Step Keys",
+            "type": "array"
           },
           "workflow_uri": {
             "title": "Workflow Uri",
@@ -35061,7 +35122,7 @@
     },
     "/api/v1/assistant/folders/{folder_id}/launch-process": {
       "post": {
-        "description": "Pre-fill a Process contract in 1 click from a thematic folder.",
+        "description": "Launch a durable DBOS process from a thematic folder (`WAITING_FOR_HUMAN_ANCHOR`).",
         "operationId": "launch_process_from_folder_endpoint_api_v1_assistant_folders__folder_id__launch_process_post",
         "parameters": [
           {
@@ -37149,140 +37210,6 @@
         "summary": "Synthesize Now Assistant Turn Endpoint",
         "tags": [
           "assistant-turns"
-        ]
-      }
-    },
-    "/api/v1/assistant/workflows/save-and-launch": {
-      "post": {
-        "description": "Register and execute a composed workflow via `orcia.step_executors` (`FR-11`, `UJ-10`).",
-        "operationId": "assistant_save_and_launch_workflow_api_v1_assistant_workflows_save_and_launch_post",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "persona_key",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 64,
-                  "minLength": 1,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Persona Key"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AssistantSaveAndLaunchRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AssistantSaveAndLaunchResponse"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Not Found"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Conflict"
-          },
-          "412": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Precondition Failed"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Unprocessable Entity"
-          },
-          "428": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              },
-              "application/problem+json": {}
-            },
-            "description": "Precondition Required"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Save a composed Workflow-as-Code manifest in the Workspace and launch its real run",
-        "tags": [
-          "assistant-agent"
         ]
       }
     },

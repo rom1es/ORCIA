@@ -2,8 +2,6 @@ import { buildPersonaQuery, type createRequestJson } from "../helpers";
 import type {
   AcquireResourceLeasesRequest,
   AcquireResourceLeasesResponse,
-  AssistantSaveAndLaunchRequest,
-  AssistantSaveAndLaunchResponse,
   ClaimTaskRequest,
   ClaimTaskResponse,
   CommandPaletteSearchResponse,
@@ -39,16 +37,6 @@ type RequestJsonFn = ReturnType<typeof createRequestJson>;
 
 export function createEpics4To7TailOperations(requestJson: RequestJsonFn) {
   return {
-    assistantSaveAndLaunchWorkflow(
-      payload: AssistantSaveAndLaunchRequest,
-      personaKey?: string,
-    ): Promise<AssistantSaveAndLaunchResponse> {
-      return requestJson<AssistantSaveAndLaunchResponse>(
-        `/api/v1/assistant/workflows/save-and-launch${buildPersonaQuery(personaKey)}`,
-        "POST",
-        payload,
-      );
-    },
     listHumanGateEvaluations(
       workspaceId?: string,
       personaKey?: string,
