@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 222,
+    "techLeadReportsCount": 223,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -550,6 +550,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-23",
+      "phaseOrStory": "Story 27.1",
+      "reportFile": "27-1-deterministic-i18n-ci-guardrails-and-client-error-code-foundation-tech-lead-report.md",
+      "domain": "Epic 27 Lot 0 — Deterministic i18n CI Guardrails (Gates 1–4) & Shared ClientErrorCode Resolution Foundation (CAP-100)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): created clientErrorCodes.ts (111 L) + client_errors_labels.ts (29 L), split fr.ts/en.ts (355 → 47 L) into core_shell_labels_{fr,en}.ts (136 L) & core_domain_labels_{fr,en}.ts (195/194 L), and installed Gates 1–4 (1,253 Gate 1 AST baseline, 0 Gate 2 dictionary parity/jargon violations, 177 Gate 3 client error baseline, 757 + 3 + 0 prompt directives Gate 4 baseline); all 18 files <= 282 L; verified 9/9 Turbo (@orcia/api-client 20, @orcia/ui 139, @orcia/web 284 = 443 JS/TS tests), 3 passed test_i18n_backend_catalog_and_english_dev_audit.py, ruff (1571 files) & mypy --strict (723 files) clean."
+    },
     {
       "date": "2026-11-23",
       "phaseOrStory": "Cross-Cutting UX & Locale",

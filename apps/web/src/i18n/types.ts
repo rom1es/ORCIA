@@ -14,6 +14,7 @@ import type {
   UpstreamChallengeModalLabels,
   UserProfileOverviewLabels,
 } from "@orcia/ui";
+import type { ClientErrorLabels } from "../lib/clientErrorCodes";
 import type { ActivityDictionarySection } from "./locales/activity_labels";
 import type { AdminAndStudioDictionarySection } from "./locales/admin_and_studio_labels";
 import type { AiModelsHubDictionary } from "./locales/ai_models_hub_labels";
@@ -61,6 +62,7 @@ export interface TranslationDictionary
     ProcessOrchestrationModesDictionarySection,
     ReflexiveTraceAndInspectorDictionarySection {
   locale: SupportedWebLocale;
+  clientErrors: ClientErrorLabels;
   aiModelsHub: AiModelsHubDictionary;
   authSettings: AuthSettingsDictionarySection;
   autonomousSupervision: AutonomousSupervisionCopy;
