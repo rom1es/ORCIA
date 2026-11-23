@@ -13,6 +13,11 @@ from orcia_api.routers._assistant_tool_loop_rounds import (
 from orcia_api.routers._assistant_tool_loop_rounds import (
     execute_sync_tool_followup as execute_sync_tool_followup,
 )
+from orcia_api.routers._assistant_turn_locale_messages import (
+    build_budget_reached_prompt,
+    build_synthesize_now_prompt,
+    format_governed_tool_round_summary,
+)
 from orcia_core.orchestration.assistant_citations_models import RawToolOutputCandidate
 from orcia_core.orchestration.assistant_loop_budgets import (
     AssistantLoopBudgetController,
@@ -135,20 +140,14 @@ async def run_streaming_tool_loop(
             working_msgs.append(
                 {
                     "role": "user",
-                    "content": (
-                        "Early synthesis requested (`synthesize-now`). Synthesize a concise final"
-                        " answer now from gathered evidence without calling additional tools."
-                    ),
+                    "content": build_synthesize_now_prompt(locale),
                 }
             )
         elif not check.can_continue:
             working_msgs.append(
                 {
                     "role": "user",
-                    "content": (
-                        "Execution budget reached. Synthesize a concise final answer from the "
-                        "tool results already gathered without calling additional tools."
-                    ),
+                    "content": build_budget_reached_prompt(locale),
                 }
             )
         req = LlmStreamRequest(
@@ -239,7 +238,7 @@ async def run_streaming_tool_loop(
                 turn_id=record.turn_id,
                 turn_index=iteration,
                 action_kind="READ_ONLY_TOOL_ROUND",
-                summary=f"Executed {len(tool_calls)} governed tool call(s)",
+                summary=format_governed_tool_round_summary(len(tool_calls), locale),
                 tool_name=",".join(str(tc.get("name") or "") for tc in tool_calls),
                 tokens_used=round_in + round_out,
             )

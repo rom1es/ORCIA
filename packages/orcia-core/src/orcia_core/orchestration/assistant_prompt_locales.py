@@ -128,9 +128,11 @@ PROMPT_LOCALES: dict[str, PromptLocaleBundle] = {
             "clôturés avec balise de langage)."
         ),
         language_rule=(
-            "- CRITICAL LANGUAGE RULE: Respond in the exact same language as the "
-            "user's message (unless the user explicitly asks to translate or answer in another "
-            "language). Do NOT translate technical identifiers or user-supplied terms arbitrarily."
+            "- RÈGLE DE LANGUE IMPÉRATIVE : L'interface est en français. Réponds en français "
+            "et rédige en français tous les fichiers, artefacts, titres et commentaires générés "
+            "par défaut (sauf si l'utilisateur écrit explicitement dans une autre langue ou "
+            "demande une traduction). Ne traduis pas arbitrairement les identifiants techniques "
+            "ni les termes exacts fournis par l'utilisateur."
         ),
         pack_layer_summary="Conventions de domaine et axiomes N1–N3 chargés depuis le Pack actif.",
         default_sources_label="Sources par défaut",
@@ -197,9 +199,10 @@ PROMPT_LOCALES: dict[str, PromptLocaleBundle] = {
             "with language tags when showing code)."
         ),
         language_rule=(
-            "- CRITICAL LANGUAGE RULE: Respond in the exact same language as the "
-            "user's message (unless the user explicitly asks to translate or answer in another "
-            "language). Do NOT translate technical identifiers or user-supplied terms arbitrarily."
+            "- CRITICAL LANGUAGE RULE: Respond in the exact same language as the user's message "
+            "when they explicitly write in or request another language, and default to English for "
+            "responses and generated files/artifacts when the UI locale is English. "
+            "Do NOT translate technical identifiers or user-supplied terms arbitrarily."
         ),
         pack_layer_summary=(
             "Domain conventions and N1-N3 axioms loaded from the active domain pack."

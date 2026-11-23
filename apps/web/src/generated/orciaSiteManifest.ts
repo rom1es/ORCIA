@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 220,
+    "techLeadReportsCount": 221,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -552,10 +552,17 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "techLeadReports": [
     {
       "date": "2026-11-23",
-      "phaseOrStory": "Ajustement Transverse",
+      "phaseOrStory": "Cross-Cutting UX & Locale",
+      "reportFile": "2026-11-23-ai-model-edit-api-key-and-fr-en-locale-tech-lead-report.md",
+      "domain": "AI Model Edit API Key Exposure, Localized Preset Display Names, <= 300 L Splits & FR/EN Assistant Locale Alignment (CAP-052, CAP-053, CAP-074, CAP-076, CAP-190)",
+      "summary": "Verified & closed (independent Testing Sub-Agent): exposed ai-model-api-key-input in edit mode (AiModelAuthAndEndpointFields.tsx 180 L, useAiModelConfigModalState.ts 278 L sending secret_input on non-empty key), localized preset displayName suffixes via tierLabels (AiModelFormFields.tsx 281 L), split ai_models_hub_labels_en.ts (127 L), fixed Accept-Language primary-tag precedence (_assistant_prompt_sanitization.py 185 L), aligned PROMPT_LOCALES[\"fr\"]/[\"en\"] language_rule (assistant_prompt_locales.py 227 L), and localized tool-loop/zero-token messages (_assistant_turn_locale_messages.py 55 L); all 14 touched files <= 299 L, 98% 5-module branch coverage (73 passed), full tests/unit passed, 180 passed tests/security+evals+contract, 6/6 passed PG18+Redis (2 isolated batches), 9/9 Turbo (@orcia/web 70 files/270 tests, @orcia/api-client 20 tests), 7 passed (1.7m) Playwright Desktop E2E (16, 02), ruff/mypy --strict (723 files)/lint-imports (5/5)/export_openapi (0-diff)/lint_spine (0)/detect-secrets clean."
+    },
+    {
+      "date": "2026-11-23",
+      "phaseOrStory": "Cross-Cutting Adjustment",
       "reportFile": "2026-11-23-gemini-interactions-api-et-fallback-secours-tech-lead-report.md",
-      "domain": "Support Google Gemini Interactions API (/v1beta/interactions), Modèle de Secours Runtime (fallback_model_name), Tri Découverte Gemini & Résolution protocol_mode Frontend (CAP-052, CAP-053, CAP-074, CAP-076, CAP-190)",
-      "summary": "Vérifié & clôturé (Testing Sub-Agent indépendant) : dialecte pur llm_gemini_interactions.py (196 L, zéro SDK AD-19), auto-switch HTTP 400 (model → agent) + bascule fallback_model_name avant premier octet (_llm_streaming_fallbacks.py, llm_streaming_base_httpx.py, ai_models_connection.py, llm_endpoint_resolver.py, _ai_models_helpers.py), support createInteraction & tri generateContent (ai_models_discovery_dialects.py), factorisation resolveEffectiveLlmProtocolMode (settingsAiModelsPresets.ts, useAiModelConfigModalState.ts réduit à 273 L) ; tous les 21 fichiers <= 300 L, 97 % couv. branches 13 modules (91%–99%), 1049 passed tests/unit, 180 passed tests/security+evals+contract, 15 passed PG18+Redis (testcontainers), 9/9 Turbo (427 tests JS/TS), 7 passed (1.6m) Playwright Desktop (16, 02), ruff (1562 fichiers)/mypy --strict (722 fichiers)/lint-imports (5/5, 765 fichiers)/export_openapi (0-diff)/lint_spine (0)/detect-secrets propres."
+      "domain": "Google Gemini Interactions API (/v1beta/interactions), Runtime Secondary Fallback Model (fallback_model_name), Gemini Discovery Sorting & Frontend protocol_mode Resolution (CAP-052, CAP-053, CAP-074, CAP-076, CAP-190)",
+      "summary": "Verified & closed (independent Testing Sub-Agent): pure llm_gemini_interactions.py dialect (196 L, zero SDK AD-19), HTTP 400 auto-switch (model → agent) + fallback_model_name fallback before first byte (_llm_streaming_fallbacks.py, llm_streaming_base_httpx.py, ai_models_connection.py, llm_endpoint_resolver.py, _ai_models_helpers.py), createInteraction support & generateContent sorting (ai_models_discovery_dialects.py), shared resolveEffectiveLlmProtocolMode (settingsAiModelsPresets.ts, useAiModelConfigModalState.ts reduced to 273 L); all 21 files <= 300 L, 97 % 13-module branch coverage (91%–99%), 1049 passed tests/unit, 180 passed tests/security+evals+contract, 15 passed PG18+Redis (testcontainers), 9/9 Turbo (427 JS/TS tests), 7 passed (1.6m) Playwright Desktop (16, 02), ruff (1562 files)/mypy --strict (722 files)/lint-imports (5/5, 765 files)/export_openapi (0-diff)/lint_spine (0)/detect-secrets clean."
     },
     {
       "date": "2026-11-22",

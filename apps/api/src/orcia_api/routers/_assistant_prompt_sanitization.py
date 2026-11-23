@@ -156,9 +156,10 @@ def resolve_request_locale(request: Request | None, explicit_locale: str | None 
     raw = (explicit_locale or "").strip().lower()
     if not raw and request is not None:
         raw = str(request.headers.get("accept-language") or "").strip().lower()
-    if raw.startswith("en") or ",en" in raw:
+    primary = raw.split(",")[0].split(";")[0].strip()
+    if primary.startswith("en"):
         return "en"
-    if raw.startswith("es") or ",es" in raw:
+    if primary.startswith("es"):
         return "es"
     return "fr"
 

@@ -97,6 +97,8 @@ export interface AiModelsHubDictionary {
   readonly backupPrefix: string;
   readonly secretApiKeySaved: string;
   readonly secretApiKey: string;
+  readonly secretApiKeyCreatePlaceholder: string;
+  readonly secretApiKeyEditPlaceholder: string;
   readonly closeErrorLabel: string;
   readonly testTimeoutError: string;
   readonly reindexPanel: {
@@ -221,6 +223,8 @@ export const AI_MODELS_HUB_FR: AiModelsHubDictionary = {
   backupPrefix: "secours",
   secretApiKeySaved: "Clé d'API enregistrée",
   secretApiKey: "Clé d'API",
+  secretApiKeyCreatePlaceholder: "Saisir la clé d'API secrète...", // pragma: allowlist secret
+  secretApiKeyEditPlaceholder: "Laisser vide pour conserver la clé enregistrée (••••••••)...", // pragma: allowlist secret
   closeErrorLabel: "Fermer l'erreur",
   testTimeoutError: "Délai d'attente dépassé (16 s) : le fournisseur IA n'a pas répondu à temps.",
   reindexPanel: {
@@ -244,126 +248,4 @@ export const AI_MODELS_HUB_FR: AiModelsHubDictionary = {
   },
 };
 
-export const AI_MODELS_HUB_EN: AiModelsHubDictionary = {
-  title: "AI Models & Providers",
-  subtitle:
-    "Monitor connectivity, protect access keys with strong encryption, and manage the platform's 4 model tiers.",
-  connectModelBtn: "+ Connect a model",
-  emptyTitle: "No AI models configured",
-  emptyDescription:
-    "Connect a provider (Anthropic, OpenAI, Mistral, Google Gemini, or local) to enable inference for assistants and processes.",
-  emptyCta: "Connect first model",
-  coverageTitle: "4 model tiers coverage",
-  coverageAllConfigured: "All model tiers are operational",
-  coverageMissingTiers: "Missing tiers:",
-  countLabel: "model configured",
-  countLabelPlural: "models configured",
-  colModel: "Model & Provider",
-  colTier: "Model Tier",
-  colEndpoint: "Service Address",
-  colSecret: "Authentication", // pragma: allowlist secret
-  colHealth: "Health & Latency",
-  colActions: "Actions",
-  testConnectionBtn: "Test",
-  testingStatus: "Testing",
-  menuActions: "Actions menu",
-  menuEdit: "Edit configuration",
-  menuRotateKey: "Replace API key",
-  menuToggleActive: "Enable / Disable",
-  menuDelete: "Delete model",
-  modalCreateTitle: "Connect a new AI model",
-  modalEditTitle: "Edit model configuration",
-  modalRotateTitle: "Replace secret API key",
-  modalDescription:
-    "Access keys are encrypted on the server and are never returned in plaintext to the interface.",
-  providerLabel: "Provider",
-  geminiProtocolLabel: "Google Gemini Protocol",
-  geminiModeB: "Google Standard Mode",
-  geminiModeA: "OpenAI-Compatible Bridge",
-  tierLabel: "Model Tier",
-  effortLabel: "Effort level",
-  displayNameLabel: "Display name",
-  displayNamePlaceholder: "e.g. Claude 3.7 Sonnet (Default)",
-  primaryModelLabel: "Primary model identifier",
-  primaryModelPlaceholderGeneric: "Exact identifier published by provider",
-  primaryModelPlaceholderMistral: "e.g. mistral-large-latest",
-  primaryModelPlaceholderOllama: "e.g. llama3.2",
-  fallbackModelLabel: "Fallback model (optional)",
-  fallbackModelPlaceholder: "Optional fallback model",
-  endpointUriLabel: "Service Address URL",
-  authModeLabel: "Authentication mode",
-  authModeApiKey: "API Key (Secret token)", // pragma: allowlist secret
-  authModeEnvVar: "Server environment variable",
-  authModeNoneLocal: "No key (Local server / Internal network)",
-  envVarNameLabel: "Server variable name",
-  envVarNamePlaceholder: "e.g. SERVER_KEY",
-  saveAndTestBtn: "Save and test connection",
-  saveOnlyBtn: "Save only",
-  updateBtn: "Update model",
-  cancelBtn: "Cancel",
-  deleteDialogTitle: "Delete AI model",
-  deleteDialogDescription: "This will remove the model from the list of available providers.",
-  deleteDialogBlockedNotice:
-    "Deletion blocked: this model is the sole active provider for this tier and published processes depend on it.",
-  deleteDialogActiveRunsNotice:
-    "Active process executions are pinned to this model. You can drain it to let active runs finish.",
-  drainBtn: "Drain model",
-  confirmDeleteBtn: "Delete permanently",
-  healthOperational: "Operational",
-  healthDegraded: "Degraded",
-  healthError: "Error",
-  healthUntested: "Untested",
-  secretServerEnv: "Server variable", // pragma: allowlist secret
-  secretLocalNoAuth: "Local network (no key)", // pragma: allowlist secret
-  usageLabel: "Model Role / Usage",
-  usageChat: "Dialogue & Assisted Drafting",
-  usageEmbedding: "Semantic Document Indexing",
-  activeEmbeddingBadge: "Active global indexing model",
-  colUsage: "Role",
-  anthropicNoEmbeddingWarning:
-    "Anthropic does not offer a semantic indexing service. Choose OpenAI, Mistral, Gemini or Ollama.",
-  modelDiscoveryNoMatch: "No models found from provider",
-  modelDiscoveryRefresh: "Discover models",
-  modelDiscoveryLoading: "Discovering...",
-  modelDiscoveryFreeformHint: "You can enter any model identifier freely",
-  chatBadge: "Dialogue",
-  embeddingBadge: "Indexing",
-  deleteSummaryProvider: "Provider",
-  deleteSummaryModel: "Model",
-  deleteSummaryTier: "Tier",
-  deleteImpactLoading: "Analyzing impact",
-  deleteImpactWorkflowsCount: "Impacted workflows",
-  deleteImpactRemainingModels: "Other active models on this tier",
-  deleteImpactActiveRunsCount: "Active runs pinning this model",
-  deleteFailedError: "Failed to delete AI model.",
-  menuEnable: "Enable",
-  menuDisable: "Disable",
-  drainingBadge: "Draining",
-  providerPrimaryLabel: "Primary provider",
-  providerSecondaryLabel: "Secondary provider",
-  highPrecisionSuffix: "high precision",
-  backupPrefix: "backup",
-  secretApiKeySaved: "API key saved", // pragma: allowlist secret
-  secretApiKey: "API key", // pragma: allowlist secret
-  closeErrorLabel: "Close error",
-  testTimeoutError: "Connection test timed out (16s): the AI provider did not respond in time.",
-  reindexPanel: {
-    title: "Semantic Reindexing & Vector Corpus",
-    activeModelPrefix: "Active model:",
-    chunksUnit: "chunks",
-    documentsUnit: "document(s)",
-    indexedChunksLabel: "indexed chunks",
-    noActiveModel: "No active semantic search model",
-    relaunchBtn: "Relaunch reindexing",
-    launchSuccess: "Global reindexing triggered successfully.",
-    launchFailedPrefix: "Trigger failed:",
-    statuses: {
-      IDLE: "Ready",
-      PENDING: "Pending",
-      IN_PROGRESS: "In progress",
-      COMPLETED: "Completed",
-      FAILED: "Failed",
-      CANCELLED: "Cancelled",
-    },
-  },
-};
+export { AI_MODELS_HUB_EN } from "./ai_models_hub_labels_en";

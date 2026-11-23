@@ -14,6 +14,7 @@ from orcia_api.routers._assistant_turn_finalizer import (
     emit_fallback_response_events_async,
     finalize_and_emit_turn_completion_async,
 )
+from orcia_api.routers._assistant_turn_locale_messages import format_zero_tokens_error_detail
 from orcia_api.routers._assistant_turn_producer_helpers import (
     emit_stream_error_and_outbox,
     flush_turn_telemetry_and_finops,
@@ -208,9 +209,8 @@ async def execute_turn_producer_task(
                     t0=t0,
                     error_code="ERR_INTERNAL_SERVER_ERROR",
                     status=502,
-                    detail_override=(
-                        f"AI model {stream_ep.model_name} ({stream_ep.endpoint_uri}) "
-                        "returned zero tokens. Verify provider availability."
+                    detail_override=format_zero_tokens_error_detail(
+                        stream_ep.model_name, stream_ep.endpoint_uri, locale
                     ),
                     thinking_text=thinking_text,
                     streamed_text=streamed_text,

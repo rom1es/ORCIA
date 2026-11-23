@@ -66,6 +66,7 @@ export function useAiModelConfigModalState(params: {
       setEnvVarName(initialMapping.env_var_name || "");
       setProtocolMode(initialMapping.protocol_mode);
       setUsage((initialMapping.usage as "chat" | "embedding") ?? "chat");
+      setRawApiKey("");
       setSecretAction("keep");
       setSecretInputText("");
     } else {
@@ -223,6 +224,10 @@ export function useAiModelConfigModalState(params: {
           env_var_name: authMode === "env_var" ? envVarName.trim() : null,
           protocol_mode: effectiveProtocol,
           usage,
+          secret_input:
+            authMode === "api_key" && rawApiKey.trim()
+              ? { action: "set", plaintext_value: rawApiKey.trim() }
+              : undefined,
         };
         if (await onSubmitPatch(initialMapping.id, patch)) onOpenChange(false);
       } else if (mode === "rotate-key" && initialMapping) {

@@ -1,6 +1,5 @@
 import {
   EffortSelector,
-  OrciaModelCombobox,
   type DiscoveredModelOption,
   type InferenceTierAndEffortLabels,
   type UiInferenceEffort,
@@ -12,18 +11,13 @@ import {
   AI_PROVIDER_PRESETS,
   GOOGLE_GEMINI_NATIVE_ENDPOINT,
   GOOGLE_GEMINI_OPENAI_ENDPOINT,
-  resolvePrimaryModelPlaceholder,
 } from "../../../routes/settingsAiModelsPresets";
+import {
+  AiModelAuthAndEndpointFields,
+  aiModelInputStyle,
+} from "./AiModelAuthAndEndpointFields";
 
-export const aiModelInputStyle: React.CSSProperties = {
-  padding: "7px 10px",
-  borderRadius: "var(--radius-sm)",
-  border: "1px solid var(--color-border)",
-  backgroundColor: "var(--color-surface-card)",
-  color: "var(--color-foreground)",
-  fontSize: "13px",
-  width: "100%",
-};
+export { aiModelInputStyle };
 
 export interface AiModelFormFieldsProps {
   readonly mode: "create" | "edit" | "rotate-key";
@@ -90,6 +84,13 @@ export function AiModelFormFields({
   discoveryError = null,
   onRefreshDiscovery,
 }: AiModelFormFieldsProps): React.ReactElement {
+  const tierDisplayNames: Record<UiInferenceTier, string> = {
+    simple: tierLabels.simpleBadge,
+    medium: tierLabels.mediumBadge,
+    complex: tierLabels.complexBadge,
+    auto: tierLabels.autoBadge,
+  };
+
   return (
     <>
       {mode === "create" && (
@@ -105,7 +106,7 @@ export function AiModelFormFields({
                   setModelFamily(preset.familyValue);
                   setEndpointUri(preset.defaultEndpointUrl);
                   setAuthMode(preset.defaultAuthMode as "api_key" | "env_var" | "none_local");
-                  setDisplayName(`${preset.label} (${selectedTier})`);
+                  setDisplayName(`${preset.label} (${tierDisplayNames[selectedTier] ?? selectedTier})`);
                 }}
                 style={{
                   padding: "3px 9px",
@@ -177,9 +178,7 @@ export function AiModelFormFields({
               borderRadius: "var(--radius-sm)",
               border: `1px solid ${usage === "chat" ? "var(--color-primary-cobalt)" : "var(--color-border)"}`,
               backgroundColor:
-                usage === "chat"
-                  ? "var(--color-action-primary-subtle)"
-                  : "var(--color-surface-card)",
+                usage === "chat" ? "var(--color-action-primary-subtle)" : "var(--color-surface-card)",
               color: usage === "chat" ? "var(--color-primary-cobalt)" : "var(--color-foreground)",
               fontWeight: usage === "chat" ? 600 : 400,
               cursor: "pointer",
@@ -206,9 +205,7 @@ export function AiModelFormFields({
                   ? "var(--color-action-primary-subtle)"
                   : "var(--color-surface-card)",
               color:
-                usage === "embedding"
-                  ? "var(--color-primary-cobalt)"
-                  : "var(--color-foreground)",
+                usage === "embedding" ? "var(--color-primary-cobalt)" : "var(--color-foreground)",
               fontWeight: usage === "embedding" ? 600 : 400,
               cursor: modelFamily.toLowerCase() === "anthropic" ? "not-allowed" : "pointer",
               opacity: modelFamily.toLowerCase() === "anthropic" ? 0.5 : 1,
@@ -257,122 +254,28 @@ export function AiModelFormFields({
         />
       </label>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
-          <span style={{ fontWeight: 600 }}>{labels.primaryModelLabel}</span>
-          <OrciaModelCombobox
-            testId="ai-model-primary-model-input"
-            value={primaryModel}
-            onChange={setPrimaryModel}
-            disabled={mode === "edit"}
-            models={discoveredModels}
-            targetUsage={usage}
-            isLoading={isDiscovering}
-            errorMessage={discoveryError}
-            onRefresh={onRefreshDiscovery}
-            placeholder={resolvePrimaryModelPlaceholder(modelFamily, labels)}
-            labels={{
-              noModelsFound: labels.modelDiscoveryNoMatch,
-              refreshLabel: labels.modelDiscoveryRefresh,
-              loadingLabel: labels.modelDiscoveryLoading,
-              freeformHint: labels.modelDiscoveryFreeformHint,
-              chatBadge: labels.chatBadge,
-              embeddingBadge: labels.embeddingBadge,
-            }}
-          />
-        </label>
-        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
-          <span style={{ fontWeight: 600 }}>{labels.fallbackModelLabel}</span>
-          <OrciaModelCombobox
-            testId="ai-model-fallback-model-input"
-            value={fallbackModel}
-            onChange={setFallbackModel}
-            models={discoveredModels}
-            targetUsage={usage}
-            isLoading={isDiscovering}
-            onRefresh={onRefreshDiscovery}
-            placeholder={labels.fallbackModelPlaceholder}
-            labels={{
-              noModelsFound: labels.modelDiscoveryNoMatch,
-              refreshLabel: labels.modelDiscoveryRefresh,
-              loadingLabel: labels.modelDiscoveryLoading,
-              freeformHint: labels.modelDiscoveryFreeformHint,
-              chatBadge: labels.chatBadge,
-              embeddingBadge: labels.embeddingBadge,
-            }}
-          />
-        </label>
-      </div>
-
-      <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
-        <span style={{ fontWeight: 600 }}>{labels.endpointUriLabel}</span>
-        <input
-          type="text"
-          autoComplete="off"
-          data-lpignore="true"
-          data-1p-ignore="true"
-          data-bwignore="true"
-          data-form-type="other"
-          data-testid="ai-model-endpoint-uri-input"
-          value={endpointUri}
-          onChange={(e) => setEndpointUri(e.target.value)}
-          style={aiModelInputStyle}
-        />
-      </label>
-
-      <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
-        <span style={{ fontWeight: 600 }}>{labels.authModeLabel}</span>
-        <select
-          data-testid="ai-model-auth-mode-select"
-          value={authMode}
-          onChange={(e) => setAuthMode(e.target.value as "api_key" | "env_var" | "none_local")}
-          style={aiModelInputStyle}
-        >
-          <option value="api_key">{labels.authModeApiKey}</option>
-          <option value="env_var">{labels.authModeEnvVar}</option>
-          <option value="none_local">{labels.authModeNoneLocal}</option>
-        </select>
-      </label>
-
-      {authMode === "env_var" && (
-        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
-          <span style={{ fontWeight: 600 }}>{labels.envVarNameLabel}</span>
-          <input
-            type="text"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid="ai-model-env-var-name-input"
-            value={envVarName}
-            onChange={(e) => setEnvVarName(e.target.value)}
-            placeholder={labels.envVarNamePlaceholder}
-            style={aiModelInputStyle}
-          />
-        </label>
-      )}
-
-      {mode === "create" && authMode === "api_key" && (
-        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
-          <span style={{ fontWeight: 600 }}>Clé d'API secrète</span>
-          <input
-            type="text"
-            className="orcia-masked-secret-input"
-            spellCheck={false}
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid="ai-model-api-key-input"
-            value={rawApiKey}
-            onChange={(e) => setRawApiKey(e.target.value)}
-            placeholder="Saisir la clé d'API secrète..."
-            style={{ ...aiModelInputStyle, WebkitTextSecurity: "disc" } as React.CSSProperties}
-          />
-        </label>
-      )}
+      <AiModelAuthAndEndpointFields
+        mode={mode}
+        labels={labels}
+        modelFamily={modelFamily}
+        primaryModel={primaryModel}
+        setPrimaryModel={setPrimaryModel}
+        fallbackModel={fallbackModel}
+        setFallbackModel={setFallbackModel}
+        endpointUri={endpointUri}
+        setEndpointUri={setEndpointUri}
+        authMode={authMode}
+        setAuthMode={setAuthMode}
+        envVarName={envVarName}
+        setEnvVarName={setEnvVarName}
+        rawApiKey={rawApiKey}
+        setRawApiKey={setRawApiKey}
+        usage={usage}
+        discoveredModels={discoveredModels}
+        isDiscovering={isDiscovering}
+        discoveryError={discoveryError}
+        onRefreshDiscovery={onRefreshDiscovery}
+      />
     </>
   );
 }
