@@ -31,7 +31,7 @@ export function OrgUnitInlineCreateMemberModal({
   orgUnits = [],
   onMemberCreated,
 }: OrgUnitInlineCreateMemberModalProps): React.ReactElement {
-  const { dictionary, locale } = useI18n();
+  const { dictionary, isFr, locale } = useI18n();
   const iamLabels = dictionary.settingsHub.iamTab;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -149,7 +149,7 @@ export function OrgUnitInlineCreateMemberModal({
       {tempPasswordModalData && (
         <TemporaryPasswordInvitationModal
           isOpen={true}
-          isFr={locale === "fr"}
+          isFr={isFr}
           displayName={tempPasswordModalData.displayName}
           email={tempPasswordModalData.email}
           temporaryPassword={tempPasswordModalData.temporaryPassword}

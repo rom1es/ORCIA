@@ -4,7 +4,7 @@ import { usePlatformSetup } from "../../components/platformSetupStore";
 import { resolveGlobalScopeLabel } from "../../components/platformSetupWorkspaces";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions";
-import { useI18n } from "../../i18n";
+import { formatI18nTemplate, useI18n } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { CreateWorkspaceCard } from "./CreateWorkspaceCard";
@@ -20,9 +20,9 @@ export function WorkspacesFeaturePanel({
   initialWorkspaceId,
   initialTab,
 }: WorkspacesFeaturePanelProps = {}) {
-  const { dictionary, locale } = useI18n();
+  const { dictionary, isFr, locale } = useI18n();
+  const wsPanelCopy = dictionary.featureWorkspaces.panel;
   const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
-  const isFr = locale === "fr";
   const {
     orgUnits,
     workspaces,
@@ -50,19 +50,11 @@ export function WorkspacesFeaturePanel({
   const selectedPrivateOrTeamWs = workspaces.find((w) => w.workspaceId === activeScopeId);
   const activeScopeCategoryLabel = selectedPrivateOrTeamWs
     ? selectedPrivateOrTeamWs.visibilityMode === "PRIVATE_USER"
-      ? isFr
-        ? "🔒 Mon Espace Privé"
-        : "🔒 My Private Space"
-      : isFr
-        ? "👥 Espace d'Équipe"
-        : "👥 Team Space"
+      ? wsPanelCopy.privateSpaceLabel
+      : wsPanelCopy.teamSpaceLabel
     : activeScopeNode?.level === "TEAM"
-      ? isFr
-        ? "👥 Équipe active"
-        : "👥 Active Team"
-      : isFr
-        ? "🏢 Supervision Organisation"
-        : "🏢 Organization Supervision";
+      ? wsPanelCopy.activeTeamLabel
+      : wsPanelCopy.orgSupervisionLabel;
 
   const explicitTargetWs = initialWorkspaceId
     ? workspaces.find((w) => w.workspaceId === initialWorkspaceId)
@@ -95,7 +87,7 @@ export function WorkspacesFeaturePanel({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       <nav
-        aria-label={isFr ? "Navigation Mes Espaces" : "My Spaces navigation"}
+        aria-label={wsPanelCopy.navAriaLabel}
         className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2"
         style={{
           backgroundColor: "var(--color-bg-surface)",
@@ -103,7 +95,7 @@ export function WorkspacesFeaturePanel({
         }}
       >
         <span className="text-xs font-semibold">
-          {isFr ? "Espaces de travail & Sources" : "Workspaces & Sources"}
+          {wsPanelCopy.headerTitle}
         </span>
         <button
           type="button"
@@ -111,7 +103,7 @@ export function WorkspacesFeaturePanel({
           onClick={() => navigateToRoute("/ontology")}
           className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
         >
-          {isFr ? "📖 Glossaire métier →" : "📖 Business Glossary →"}
+          {wsPanelCopy.glossaryLinkBtn}
         </button>
       </nav>
       {actionFeedback ? (
@@ -127,9 +119,9 @@ export function WorkspacesFeaturePanel({
       <OrciaDialog
         open={effectiveCreateFormVisible}
         onOpenChange={setIsCreateFormOpen}
-        title={isFr ? "Créer un Nouvel Espace de Travail" : "Create a New Workspace"}
+        title={wsPanelCopy.createModalTitle}
         testId="create-workspace-modal"
-        closeLabel={isFr ? "Fermer" : "Close"}
+        closeLabel={wsPanelCopy.createModalCloseLabel}
       >
         <div className="orcia-ds-dialog-body" data-testid="create-workspace-collapsible-wrapper">
           <CreateWorkspaceCard
@@ -146,14 +138,15 @@ export function WorkspacesFeaturePanel({
               try {
                 const created = await createWorkspace(input);
                 setActionFeedback(
-                  isFr
-                    ? `✅ Espace « ${created.name} » créé (${created.slug ?? created.workspaceId}).`
-                    : `✅ Workspace "${created.name}" created (${created.slug ?? created.workspaceId}).`,
+                  formatI18nTemplate(wsPanelCopy.workspaceCreatedTemplate, {
+                    name: created.name,
+                    id: created.slug ?? created.workspaceId,
+                  }),
                 );
                 setIsCreateFormOpen(false);
               } catch (err: unknown) {
                 setActionFeedback(
-                  `⚠️ ${formatRfc9457ErrorToBanner(err, locale, isFr ? "Espace de travail" : "Workspace").fullText}`,
+                  `⚠️ ${formatRfc9457ErrorToBanner(err, locale, wsPanelCopy.workspaceErrorContext).fullText}`,
                 );
               }
             }}
@@ -200,18 +193,16 @@ export function WorkspacesFeaturePanel({
           {
             entryId: "nav-cockpit",
             category: "NAVIGATION",
-            label: "Aller au Cockpit & Décisions",
-            subtitle: "Navigation rapide",
+            label: wsPanelCopy.paletteCockpitLabel,
+            subtitle: wsPanelCopy.paletteCockpitSubtitle,
             shortcut: "g c",
             targetRoute: "/cockpit",
           },
           {
             entryId: "nav-settings",
             category: "NAVIGATION",
-            label: isFr ? "Ouvrir l'Administration" : "Open Administration",
-            subtitle: isFr
-              ? "Comptes, Authentification, Modèles IA, Connecteurs, Packs"
-              : "Accounts, Authentication, AI Models, Connectors, Packs",
+            label: wsPanelCopy.paletteSettingsLabel,
+            subtitle: wsPanelCopy.paletteSettingsSubtitle,
             shortcut: "g s",
             targetRoute: "/settings",
           },

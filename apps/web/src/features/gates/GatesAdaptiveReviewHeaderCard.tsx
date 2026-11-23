@@ -1,4 +1,5 @@
 import React from "react";
+import { resolveDictionaryForFlag } from "../../i18n";
 import type {
   HumanGateEvaluationItem,
   StagedJiraActionItem,
@@ -19,6 +20,7 @@ export function GatesAdaptiveReviewHeaderCard({
   stagedJira,
   onOpenHumanReview,
 }: GatesAdaptiveReviewHeaderCardProps): React.ReactElement {
+  const hdrCopy = resolveDictionaryForFlag(isFr).featureCockpitGates.gates.headerCard;
   return (
     <div
       className="orcia-bento-card"
@@ -31,11 +33,7 @@ export function GatesAdaptiveReviewHeaderCard({
       }}
     >
       <div>
-        <strong>
-          {isFr
-            ? "Revue Humaine Adaptative (Synthèse en 4 Points & Validation par Section)"
-            : "Adaptive Human Review (4-Point Summary & Section-by-Section Review)"}
-        </strong>
+        <strong>{hdrCopy.title}</strong>
         {evaluation || stagedJira ? (
           <div style={{ display: "flex", gap: "8px", marginTop: "6px", flexWrap: "wrap" }}>
             {evaluation ? (
@@ -44,15 +42,11 @@ export function GatesAdaptiveReviewHeaderCard({
                 data-status={evaluation.status}
                 className="orcia-uri-pill"
               >
-                {isFr ? "Point de contrôle" : "Gate"} :{" "}
+                {hdrCopy.gatePrefix} :{" "}
                 {evaluation.status === "PENDING_HUMAN_REVIEW"
-                  ? isFr
-                    ? "Validation humaine requise"
-                    : "Pending human review"
+                  ? hdrCopy.statusPendingReview
                   : evaluation.status === "PASS"
-                    ? isFr
-                      ? "Validé"
-                      : "Passed"
+                    ? hdrCopy.statusPassed
                     : evaluation.status}
               </span>
             ) : null}
@@ -62,15 +56,11 @@ export function GatesAdaptiveReviewHeaderCard({
                 data-status={stagedJira.status}
                 className="orcia-uri-pill"
               >
-                Jira {stagedJira.issue_key} :{" "}
+                {`Jira ${stagedJira.issue_key} :`}{" "}
                 {stagedJira.status === "STAGED"
-                  ? isFr
-                    ? "Préparée (en attente)"
-                    : "Prepared (pending)"
+                  ? hdrCopy.jiraStaged
                   : stagedJira.status === "EXECUTED"
-                    ? isFr
-                      ? "Exécutée"
-                      : "Executed"
+                    ? hdrCopy.jiraExecuted
                     : stagedJira.status}
               </span>
             ) : null}
@@ -92,9 +82,7 @@ export function GatesAdaptiveReviewHeaderCard({
           cursor: loading ? "not-allowed" : "pointer",
         }}
       >
-        {isFr
-          ? "Préparer une revue humaine (4 blocs + Jira)"
-          : "Prepare Human Review (4 blocks + Jira)"}
+        {hdrCopy.prepareReviewBtn}
       </button>
     </div>
   );

@@ -131,7 +131,7 @@ export function AiModelMappingRowCard({
             <StatusBadge label={health.label} tone={health.tone} monospace />
             {item.last_latency_ms !== null && item.last_latency_ms !== undefined && (
               <span data-testid={`latency-ms-${item.id}`} className="font-mono text-[10px] text-[var(--color-muted-foreground)]">
-                {item.last_latency_ms} ms
+                {`${item.last_latency_ms} ms`}
               </span>
             )}
           </div>

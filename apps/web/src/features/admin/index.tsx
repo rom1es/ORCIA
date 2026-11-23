@@ -2,20 +2,15 @@ import { BootstrapOnboardingPanel, type UiBootstrapWorkflowView } from "@orcia/u
 import React from "react";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
+import { FEATURE_ADMIN_CATALOG_SETTINGS_FR } from "../../i18n/locales/feature_admin_catalog_settings_labels_fr";
 
-export const DEFAULT_BOOTSTRAP_WORKFLOWS: UiBootstrapWorkflowView[] = [
-  { uri: "orcia://system/bootstrap/init-organization", title: "Configuration de l'organisation", requiredRole: "PLATFORM_ADMIN", scopeLevel: "GLOBAL", gateRules: ["Au moins 2 fournisseurs IA distincts"] },
-  { uri: "orcia://system/bootstrap/init-workspace", title: "Création d'un Espace de travail", requiredRole: "TEAM_LEAD", scopeLevel: "TEAM", gateRules: ["Alignement avec le glossaire parent"] },
-  { uri: "orcia://system/bootstrap/init-datasource", title: "Connexion d'une source documentaire", requiredRole: "TEAM_LEAD", scopeLevel: "WORKSPACE", gateRules: ["Justification signée par le responsable"] },
-  { uri: "orcia://system/bootstrap/init-existing-project", title: "Intégration d'un projet existant", requiredRole: "TEAM_LEAD", scopeLevel: "WORKSPACE", gateRules: ["Analyse préalable de l'existant"] },
-  { uri: "orcia://system/bootstrap/init-skill", title: "Ajout d'une compétence métier", requiredRole: "CONTRIBUTOR", scopeLevel: "WORKSPACE", gateRules: ["Structure et paramètres vérifiés"] },
-  { uri: "orcia://system/bootstrap/init-user", title: "Configuration de mon profil personnel", requiredRole: "CONTRIBUTOR", scopeLevel: "WORKSPACE", gateRules: ["Identifiants personnels protégés"] },
-];
+export const DEFAULT_BOOTSTRAP_WORKFLOWS: readonly UiBootstrapWorkflowView[] =
+  FEATURE_ADMIN_CATALOG_SETTINGS_FR.adminPanel.bootstrapWorkflows;
 
 export function AdminFeaturePanel() {
-  const { dictionary, locale } = useI18n();
+  const { dictionary } = useI18n();
   const { navigateToRoute } = useShellNavigation();
-  const isFr = locale === "fr";
+  const adminCopy = dictionary.featureAdminCatalogSettings.adminPanel;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
@@ -30,15 +25,9 @@ export function AdminFeaturePanel() {
         }}
       >
         <div>
-          <strong style={{ fontSize: "15px" }}>
-            {isFr
-              ? "Administration de la Plateforme & Assistants Guidés"
-              : "Platform Administration & Guided Assistants"}
-          </strong>
+          <strong style={{ fontSize: "15px" }}>{adminCopy.title}</strong>
           <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "var(--color-muted-foreground)" }}>
-            {isFr
-              ? "Accédez aux 5 rubriques d'administration (Comptes & Habilitations, Authentification, Modèles IA, Connecteurs, Packs Métiers) ou lancez un assistant pas à pas."
-              : "Access the 5 administration sections (Accounts & Permissions, Authentication, AI Models, Connectors, Business Packs) or launch a step-by-step assistant."}
+            {adminCopy.subtitle}
           </p>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
@@ -56,7 +45,7 @@ export function AdminFeaturePanel() {
               cursor: "pointer",
             }}
           >
-            {isFr ? "Ouvrir l'Administration" : "Open Administration"}
+            {adminCopy.openSettingsBtn}
           </button>
           <button
             type="button"
@@ -72,7 +61,7 @@ export function AdminFeaturePanel() {
               cursor: "pointer",
             }}
           >
-            {isFr ? "Ouvrir les Assistants Guidés" : "Open Guided Assistants"}
+            {adminCopy.openWizardsBtn}
           </button>
         </div>
       </div>
@@ -80,7 +69,7 @@ export function AdminFeaturePanel() {
       <div className="orcia-bento-card">
         <BootstrapOnboardingPanel
           activePersona="marc"
-          workflows={DEFAULT_BOOTSTRAP_WORKFLOWS}
+          workflows={[...adminCopy.bootstrapWorkflows]}
           labels={dictionary.bootstrapOnboarding}
         />
       </div>

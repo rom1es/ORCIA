@@ -6,6 +6,7 @@ import {
   type UiInferenceTier,
   type UiThreeSpeedStepProgress,
 } from "@orcia/ui";
+import { resolveDictionaryForFlag } from "../../i18n";
 import {
   bgSnapshot,
   clearBgTimers,
@@ -40,6 +41,7 @@ export function createTurnSseProcessor(cfg: {
   let activeTurnId: string | null = cfg.initialTurnId ?? null;
   let hasStreamError = false;
   let completedHandled = false;
+  const flowCopy = resolveDictionaryForFlag(cfg.isFr).featureInboxAssistant.assistantFlow;
 
   const finalizeCompletedTurn = (done: {
     turnId?: string;
@@ -59,7 +61,7 @@ export function createTurnSseProcessor(cfg: {
     const finalSteps: readonly UiThreeSpeedStepProgress[] = done.thinkingText
       ? [{
           stepCode: "LIVE_MODEL_REASONING",
-          label: cfg.isFr ? "Raisonnement du modèle" : "Model reasoning",
+          label: flowCopy.modelReasoningLabel,
           durationMs: Number(done.latencyMs ?? elapsedSec * 1000),
           status: "COMPLETED",
           intermediateOutput: done.thinkingText,
@@ -117,14 +119,14 @@ export function createTurnSseProcessor(cfg: {
       const seq = bgSnapshot.traceEvents.length + 1;
       const thoughtEvt: UiAgentTraceEventItem = {
         eventId: `evt-thought-${seq}`, sequence: seq, kind: "THOUGHT_DELTA",
-        label: cfg.isFr ? "Raisonnement" : "Reasoning", actorSlug: "assistant",
+        label: flowCopy.explorationGroupLabel, actorSlug: "assistant",
         groupKey: "assistant-turn", thoughtContent: txt,
       };
       updateBgSnapshot({
         ...(bgSnapshot.activeTraceStatus ? { traceEvents: [...bgSnapshot.traceEvents, thoughtEvt] } : {}),
         stepProgress: [{
           stepCode: "LIVE_MODEL_REASONING",
-          label: cfg.isFr ? "Raisonnement du modèle en cours" : "Model reasoning in progress",
+          label: flowCopy.modelReasoningInProgressLabel,
           durationMs: Number(data.elapsed_ms ?? Date.now() - cfg.tStart),
           status: "RUNNING",
           intermediateOutput: txt,
@@ -143,7 +145,7 @@ export function createTurnSseProcessor(cfg: {
         pendingWritePreview: {
           previewId: proposal.proposalId,
           targetConnector: proposal.targetUri || proposal.actionKind || "ORCIA",
-          actionSummary: proposal.rationale || (cfg.isFr ? "Action soumise à approbation humaine" : "Action pending human approval"),
+          actionSummary: proposal.rationale || flowCopy.actionPendingApprovalLabel,
           payloadPreview: data,
         },
       });

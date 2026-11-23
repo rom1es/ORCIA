@@ -13,6 +13,7 @@ import type {
   ConfiguredWorkflowItem,
   PlatformSetupContextValue,
 } from "../../components/platformSetupStore";
+import { formatI18nTemplate, resolveDictionaryForFlag } from "../../i18n";
 import { WorkspaceDetailTabsPanel } from "./WorkspaceDetailTabsPanel";
 import { WorkspaceStudioSummaryCard } from "./WorkspaceStudioSummaryCard";
 
@@ -67,6 +68,7 @@ export function WorkspaceStudioCardsAndDetailView({
   onPromoteOntologyConcept,
   onFeedback,
 }: WorkspaceStudioCardsAndDetailViewProps): React.ReactElement {
+  const studioCopy = resolveDictionaryForFlag(isFr).featureWorkspaces.studioCards;
   const [filterMode, setFilterMode] = useState<WorkspaceQuickFilterKey>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedWsId, setSelectedWsId] = useState<string>(initialWorkspaceId || "");
@@ -123,8 +125,8 @@ export function WorkspaceStudioCardsAndDetailView({
             style={getTabStyle(filterMode === "ALL")}
           >
             {workspaces.length > 0
-              ? isFr ? `Tous (${workspaces.length})` : `All (${workspaces.length})`
-              : isFr ? "Tous" : "All"}
+              ? formatI18nTemplate(studioCopy.filterAllCountTemplate, { count: workspaces.length })
+              : studioCopy.filterAll}
           </button>
           <button
             type="button"
@@ -136,8 +138,8 @@ export function WorkspaceStudioCardsAndDetailView({
           >
             <OrciaIcon name="team" />{" "}
             {teamWorkspacesCount > 0
-              ? isFr ? `Espaces d'Équipe (${teamWorkspacesCount})` : `Team Spaces (${teamWorkspacesCount})`
-              : isFr ? "Espaces d'Équipe" : "Team Spaces"}
+              ? formatI18nTemplate(studioCopy.filterTeamCountTemplate, { count: teamWorkspacesCount })
+              : studioCopy.filterTeam}
           </button>
           <button
             type="button"
@@ -149,8 +151,10 @@ export function WorkspaceStudioCardsAndDetailView({
           >
             <OrciaIcon name="lock" />{" "}
             {privateWorkspacesCount > 0
-              ? isFr ? `Mes Espaces Privés (${privateWorkspacesCount})` : `My Private Spaces (${privateWorkspacesCount})`
-              : isFr ? "Mes Espaces Privés" : "My Private Spaces"}
+              ? formatI18nTemplate(studioCopy.filterPrivateCountTemplate, {
+                  count: privateWorkspacesCount,
+                })
+              : studioCopy.filterPrivate}
           </button>
         </div>
 
@@ -165,7 +169,7 @@ export function WorkspaceStudioCardsAndDetailView({
             data-testid="workspaces-search-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={isFr ? "Rechercher un espace…" : "Search a space…"}
+            placeholder={studioCopy.searchPlaceholder}
             style={{ ...inputStyle, minWidth: "230px", fontSize: "12px" }}
           />
           <button
@@ -175,7 +179,7 @@ export function WorkspaceStudioCardsAndDetailView({
             onClick={onToggleCreateForm}
             className="orcia-ds-btn orcia-ds-btn-primary orcia-ds-btn-sm"
           >
-            {isFr ? "+ Nouvel espace" : "+ New space"}
+            {studioCopy.newSpaceBtn}
           </button>
         </div>
       </section>
@@ -193,11 +197,7 @@ export function WorkspaceStudioCardsAndDetailView({
             color: "var(--color-muted-foreground)",
           }}
         >
-          <span>
-            {isFr
-              ? "Aucun Espace de Travail ne correspond à ce filtre. Créez votre premier espace ci-dessus pour connecter vos sources et définir votre glossaire métier."
-              : "No Workspace matches this filter. Create your first workspace above to connect sources and define your business glossary."}
-          </span>
+          <span>{studioCopy.emptyFilterText}</span>
         </section>
       ) : (
         <section

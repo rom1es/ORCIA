@@ -6,6 +6,11 @@ import {
 import React, { useState } from "react";
 import type { ConfiguredWorkflowItem } from "../../components/platformSetupStore";
 import {
+  formatI18nTemplate,
+  resolveDictionaryForFlag,
+  resolveLocaleForFlag,
+} from "../../i18n";
+import {
   buildGeneratedDocumentationMarkdown,
   buildOrciaDocumentationWorkflowSpec,
 } from "./orciaDocProcessTemplates";
@@ -46,6 +51,8 @@ export function OrciaDocumentationProcessCard({
   onLoadIntoBuilder,
   onFeedback,
 }: OrciaDocumentationProcessCardProps) {
+  const resolvedLocale = resolveLocaleForFlag(isFr);
+  const docCopy = resolveDictionaryForFlag(isFr, resolvedLocale).featureCockpitGates.gates.docProcess;
   const [executedSteps, setExecutedSteps] = useState<
     readonly OrciaDocumentationProcessStepItem[]
   >([]);
@@ -64,78 +71,30 @@ export function OrciaDocumentationProcessCard({
       });
     }
 
-    const steps: readonly OrciaDocumentationProcessStepItem[] = [
-      {
-        stepNumber: 1,
-        title: isFr
-          ? "Étape 1 — Inventaire du dépôt ORCIA"
-          : "Step 1 — ORCIA Repository Inventory",
-        agentHandle: "@Rédacteur-Documentation-Orcia",
-        summary: isFr
-          ? "20 routes UI, 16 primitives @orcia/ui, fiches d'aide bilingues (docs/help/fr/*.md, docs/help/en/*.md), FAQ d'architecture (faq-architecture-modele-metier.md) et rapports Tech Lead recensés."
-          : "20 UI routes, 16 @orcia/ui primitives, bilingual help files (docs/help/fr/*.md, docs/help/en/*.md), architecture FAQ, and Tech Lead reports inventoried.",
-        status: "COMPLETED",
-      },
-      {
-        stepNumber: 2,
-        title: isFr
-          ? "Étape 2 — Génération & Enrichissement des Guides et de la FAQ"
-          : "Step 2 — Screen Guides & Architecture FAQ Generation",
-        agentHandle: "@Rédacteur-Documentation-Orcia & @Architecte-Métier-Pack",
-        summary: isFr
-          ? "Sections obligatoires structurées : Objectif, Guide Fonctionnel par Écran, Architecture & Modèle Métier, Questions Fréquentes (FAQ)."
-          : "Mandatory sections structured: Objective, Functional Screen Guide, Architecture & Domain Model, Frequently Asked Questions (FAQ).",
-        status: "COMPLETED",
-      },
-      {
-        stepNumber: 3,
-        title: isFr
-          ? "Étape 3 — Contrôle Qualité Déterministe (validate_help_article)"
-          : "Step 3 — Deterministic Quality Check (validate_help_article)",
-        agentHandle: "@Certificateur-Sécurité-et-Sandbox",
-        summary: isFr
-          ? "Routes liées (bound_routes) vérifiées, sections obligatoires présentes et absence totale de secrets ou de jargon interne confirmée."
-          : "Bound routes verified, mandatory sections present, and zero secrets or internal jargon confirmed.",
-        status: "COMPLETED",
-      },
-      {
-        stepNumber: 4,
-        title: isFr
-          ? "Étape 4 — Publication & Rattachement à Chaud (/showcase & docs/help/)"
-          : "Step 4 — Hot Attachment & Publication (/showcase & docs/help/)",
-        agentHandle: "@Rédacteur-Documentation-Orcia",
-        summary: isFr
-          ? "Récapitulatif complet des documents générés/vérifiés publié dans docs/help/{fr,en}/ et synchronisé avec /showcase."
-          : "Full summary of generated/verified documents published to docs/help/{fr,en}/ and synchronized with /showcase.",
-        status: "COMPLETED",
-      },
-    ];
+    const steps: readonly OrciaDocumentationProcessStepItem[] = docCopy.steps.map((s) => ({
+      ...s,
+      status: "COMPLETED" as const,
+    }));
 
     const markdownPreview = buildGeneratedDocumentationMarkdown(isFr);
     setExecutedSteps(steps);
     setGeneratedMarkdown(markdownPreview);
-    onFeedback(
-      isFr
-        ? "✅ Processus « Génération de la Documentation ORCIA » publié et exécuté avec succès en 4 étapes."
-        : '✅ Process "ORCIA Documentation Generation" published and executed in 4 steps.',
-    );
+    onFeedback(docCopy.publishSuccessBanner);
 
     const client = createOrciaApiClient({ baseUrl: "" });
     void client
       .validateHelpArticle({
         markdown_text:
           "---\nid: help.orcia.complete-documentation\nversion: 1.0.0\npack_id: orcia://packs/orcia-pack-builder\nbound_routes:\n  - /cockpit\n  - /processes\n  - /help\nroles_allowed:\n  - CONTRIBUTOR\nglossary_terms: []\nrelated_workflows:\n  - orcia://pack-builder/workflows/generate-orcia-documentation\n---\n# Documentation Complète d'ORCIA {#top}\n## 1. À quoi sert cet écran ? {#overview}\nGuide complet d'ORCIA.\n## 2. Comment faire (Pas-à-pas) {#steps}\n- Lancer la génération de documentation ORCIA\n## 3. Questions fréquentes & Dépannage {#faq}\n- Comment mettre à jour la documentation ?",
-        lang: isFr ? "fr" : "en",
+        lang: resolvedLocale,
         extra_allowed_routes: ["/cockpit", "/processes", "/help"],
         known_glossary_terms: [],
       })
       .catch((err: unknown) => {
         const detail =
-          err instanceof Error ? err.message : "Validation locale appliquée";
+          err instanceof Error ? err.message : docCopy.localValidationFallback;
         onFeedback(
-          isFr
-            ? `✅ Processus « Génération de la Documentation ORCIA » exécuté en 4 étapes (${detail}).`
-            : `✅ Process "ORCIA Documentation Generation" executed in 4 steps (${detail}).`,
+          formatI18nTemplate(docCopy.publishWithDetailTemplate, { detail }),
         );
       });
   };
@@ -144,11 +103,7 @@ export function OrciaDocumentationProcessCard({
     const draftSpec = buildOrciaDocumentationWorkflowSpec(isFr, "PUBLISHED");
     upsertWorkflow(draftSpec);
     onLoadIntoBuilder(draftSpec);
-    onFeedback(
-      isFr
-        ? "✏️ Modèle « Génération de la Documentation ORCIA » chargé dans l'Atelier de Processus pour personnalisation."
-        : '✏️ Template "ORCIA Documentation Generation" loaded into the Process Studio for customization.',
-    );
+    onFeedback(docCopy.loadedInBuilderBanner);
   };
 
   return (
@@ -169,25 +124,14 @@ export function OrciaDocumentationProcessCard({
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
             <h3 style={{ margin: 0, fontSize: "15px" }}>
-              {isFr
-                ? "📚 Processus du Pack ORCIA — Génération de la Documentation ORCIA"
-                : "📚 ORCIA Pack Process — ORCIA Documentation Generation"}
+              {docCopy.cardTitle}
             </h3>
           </div>
           <p style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}>
-            {isFr
-              ? "Génère, vérifie et met à jour les guides fonctionnels par écran (FR/EN), la FAQ d'architecture et le site de documentation d'ORCIA en 4 étapes."
-              : "Generates, verifies, and updates functional screen guides (FR/EN), the architecture FAQ, and the ORCIA documentation site in 4 steps."}
+            {docCopy.cardDescription}
           </p>
         </div>
-        <StatusBadge
-          label={
-            isFr
-              ? "📦 Pack Documentation ORCIA · Agent : @Rédacteur-Documentation-Orcia"
-              : "📦 ORCIA Documentation Pack · Agent: @Rédacteur-Documentation-Orcia"
-          }
-          tone="cobalt"
-        />
+        <StatusBadge label={docCopy.badgeLabel} tone="cobalt" />
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
@@ -205,9 +149,7 @@ export function OrciaDocumentationProcessCard({
             cursor: "pointer",
           }}
         >
-          {isFr
-            ? "▶️ Lancer la génération de la documentation ORCIA"
-            : "▶️ Run ORCIA documentation generation"}
+          {docCopy.runBtn}
         </button>
 
         <button
@@ -224,9 +166,7 @@ export function OrciaDocumentationProcessCard({
             cursor: "pointer",
           }}
         >
-          {isFr
-            ? "✏️ Charger dans l'Atelier de Processus"
-            : "✏️ Load in Process Studio"}
+          {docCopy.loadInBuilderBtn}
         </button>
       </div>
 
@@ -243,9 +183,7 @@ export function OrciaDocumentationProcessCard({
           }}
         >
           <strong style={{ fontSize: "13px" }}>
-            {isFr
-              ? "Bilan des 4 étapes exécutées :"
-              : "Summary of the 4 executed steps:"}
+            {docCopy.stepsSummaryTitle}
           </strong>
           {executedSteps.map((step) => (
             <div
@@ -268,10 +206,7 @@ export function OrciaDocumentationProcessCard({
                   {step.summary}
                 </div>
               </div>
-              <StatusBadge
-                label={isFr ? "✓ Terminé" : "✓ Completed"}
-                tone="emerald"
-              />
+              <StatusBadge label={docCopy.stepCompletedBadge} tone="emerald" />
             </div>
           ))}
         </div>

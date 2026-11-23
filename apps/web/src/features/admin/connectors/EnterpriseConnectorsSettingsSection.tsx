@@ -1,10 +1,9 @@
 import {
   OrciaAlertBanner,
-  OrciaIcon,
-  StatusBadge,
 } from "@orcia/ui";
 import React from "react";
 import type { EnterpriseConnectorCreateRequest } from "@orcia/api-client";
+import { resolveDictionaryForFlag } from "../../../i18n";
 import type { TranslationDictionary } from "../../../i18n/types";
 import { useEnterpriseConnectorsController } from "./useEnterpriseConnectorsController";
 
@@ -26,9 +25,9 @@ const inputStyle: React.CSSProperties = {
 
 export function EnterpriseConnectorsSettingsSection({
   isFr,
-  copy,
   canMutate = true,
 }: EnterpriseConnectorsSettingsSectionProps): React.ReactElement {
+  const connCopy = resolveDictionaryForFlag(isFr).featureAdminCatalogSettings.connectors;
   const {
     connectors,
     isLoading,
@@ -56,14 +55,10 @@ export function EnterpriseConnectorsSettingsSection({
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <strong style={{ fontSize: "15px" }}>
-            {isFr
-              ? "Connecteurs d'Entreprise du Socle"
-              : "Enterprise Connectors"}
-          </strong>
+          <strong style={{ fontSize: "15px" }}>{connCopy.title}</strong>
         </div>
         <span style={{ fontSize: "11px", color: "var(--color-muted-foreground)" }}>
-          {isFr ? "Gouvernance globale Socle (zéro pollution d'espace)" : "Global Foundation Governance"}
+          {connCopy.globalGovernanceBadge}
         </span>
       </div>
 
@@ -79,7 +74,7 @@ export function EnterpriseConnectorsSettingsSection({
         </OrciaAlertBanner>
       )}
 
-      {/* Formulaire d'enregistrement de connecteur socle */}
+      {/* Platform connector registration form */}
       {canMutate && (
         <form
           data-testid="register-connector-form"
@@ -98,7 +93,7 @@ export function EnterpriseConnectorsSettingsSection({
           }}
         >
           <span style={{ fontSize: "13px", fontWeight: 600 }}>
-            {isFr ? "Ajouter un connecteur d'entreprise" : "Add an enterprise connector"}
+            {connCopy.addConnectorTitle}
           </span>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px" }}>
             <select
@@ -107,14 +102,12 @@ export function EnterpriseConnectorsSettingsSection({
               onChange={(e) => setKind(e.target.value as EnterpriseConnectorCreateRequest["connector_kind"])}
               style={inputStyle}
             >
-              <option value="GITLAB">GitLab Entreprise</option>
-              <option value="JIRA">Jira Entreprise</option>
-              <option value="CONFLUENCE">Confluence</option>
-              <option value="OIDC_SSO">OIDC SSO / IAM</option>
-              <option value="S3_OBJECT_STORE">S3 Object Store</option>
-              <option value="SMTP_MAIL">
-                {isFr ? "Serveur SMTP (codes OTP e-mail)" : "SMTP Server (email OTP codes)"}
-              </option>
+              <option value="GITLAB">{connCopy.kindGitlabOption}</option>
+              <option value="JIRA">{connCopy.kindJiraOption}</option>
+              <option value="CONFLUENCE">{connCopy.kindConfluenceOption}</option>
+              <option value="OIDC_SSO">{connCopy.kindOidcOption}</option>
+              <option value="S3_OBJECT_STORE">{connCopy.kindS3Option}</option>
+              <option value="SMTP_MAIL">{connCopy.kindSmtpOption}</option>
             </select>
             <input
               type="text"
@@ -128,12 +121,8 @@ export function EnterpriseConnectorsSettingsSection({
               onChange={(e) => setName(e.target.value)}
               placeholder={
                 kind === "SMTP_MAIL"
-                  ? isFr
-                    ? "Nom usuel (ex: SMTP Relais Entreprise)"
-                    : "Display name (e.g. Corporate SMTP)"
-                  : isFr
-                    ? "Nom usuel (ex: GitLab DS3C)"
-                    : "Display name"
+                  ? connCopy.namePlaceholderSmtp
+                  : connCopy.namePlaceholderDefault
               }
               style={inputStyle}
             />
@@ -150,9 +139,7 @@ export function EnterpriseConnectorsSettingsSection({
               placeholder={
                 kind === "SMTP_MAIL"
                   ? "smtp://smtp.entreprise.internal:587"
-                  : isFr
-                    ? "URL de base (ex: https://gitlab.ds3c.internal)"
-                    : "Base URL"
+                  : connCopy.baseUrlPlaceholderDefault
               }
               style={inputStyle}
             />
@@ -162,10 +149,10 @@ export function EnterpriseConnectorsSettingsSection({
               onChange={(e) => setAuthMode(e.target.value as EnterpriseConnectorCreateRequest["auth_mode"])}
               style={inputStyle}
             >
-              <option value="OAUTH2_PASSTHROUGH">Connexion déléguée (OAuth2 utilisateur)</option>
-              <option value="PERSONAL_ACCESS_TOKEN">Jeton d'accès personnel</option>
-              <option value="OIDC_FEDERATION">Fédération d'identité (OIDC)</option>
-              <option value="SERVICE_SECRET">Secret de service</option>
+              <option value="OAUTH2_PASSTHROUGH">{connCopy.authOAuth2Option}</option>
+              <option value="PERSONAL_ACCESS_TOKEN">{connCopy.authPatOption}</option>
+              <option value="OIDC_FEDERATION">{connCopy.authOidcOption}</option>
+              <option value="SERVICE_SECRET">{connCopy.authServiceSecretOption}</option>
             </select>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
@@ -179,7 +166,7 @@ export function EnterpriseConnectorsSettingsSection({
               data-testid="connector-admin-secret-input"
               value={adminSecret}
               onChange={(e) => setAdminSecret(e.target.value)}
-              placeholder={isFr ? "Secret d'administration (optionnel, chiffré côté serveur)" : "Admin secret (optional)"}
+              placeholder={connCopy.adminSecretPlaceholder}
               style={{ ...inputStyle, flex: 1, fontFamily: "monospace", WebkitTextSecurity: "disc" } as React.CSSProperties}
             />
             <button
@@ -189,27 +176,25 @@ export function EnterpriseConnectorsSettingsSection({
               className="orcia-ds-btn-primary"
               style={{ padding: "7px 14px", fontSize: "12px", whiteSpace: "nowrap" }}
             >
-              {isFr ? "Enregistrer le connecteur" : "Save connector"}
+              {connCopy.saveConnectorBtn}
             </button>
           </div>
         </form>
       )}
 
-      {/* Liste des connecteurs configurés */}
+      {/* Configured connectors list */}
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         <span style={{ fontSize: "13px", fontWeight: 600 }}>
-          {isFr ? "Connecteurs disponibles sur la plateforme" : "Available platform connectors"}
+          {connCopy.availableConnectorsTitle}
         </span>
 
         {isLoading ? (
           <p style={{ fontSize: "12px", color: "var(--color-muted-foreground)" }}>
-            {isFr ? "Chargement des connecteurs..." : "Loading connectors..."}
+            {connCopy.loadingConnectors}
           </p>
         ) : connectors.length === 0 ? (
           <p style={{ fontSize: "12px", color: "var(--color-muted-foreground)", fontStyle: "italic" }}>
-            {isFr
-              ? "Aucun connecteur d'entreprise configuré pour l'instant."
-              : "No enterprise connectors configured yet."}
+            {connCopy.emptyConnectors}
           </p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -272,7 +257,7 @@ export function EnterpriseConnectorsSettingsSection({
                         color: "var(--color-muted-foreground)",
                       }}
                     >
-                      {isFr ? "Passthrough nominatif" : "Personal passthrough"}
+                      {connCopy.personalDelegatedBadge}
                     </span>
                   )}
 
@@ -284,7 +269,7 @@ export function EnterpriseConnectorsSettingsSection({
                       className="orcia-ds-btn-danger"
                       style={{ padding: "4px 8px", fontSize: "11px" }}
                     >
-                      {isFr ? "Supprimer" : "Delete"}
+                      {connCopy.deleteBtn}
                     </button>
                   )}
                 </div>

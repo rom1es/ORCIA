@@ -1,5 +1,6 @@
 import { createOrciaApiClient } from "@orcia/api-client";
 import { sanitizeAssistantDisplayReply } from "@orcia/ui";
+import { resolveDictionaryForFlag, resolveLocaleForFlag } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import {
   bgSnapshot,
@@ -26,7 +27,7 @@ export function stopActiveAssistantTurn(isFr: boolean): void {
     ),
   });
   if (turnId) {
-    const client = createOrciaApiClient({ baseUrl: "", locale: isFr ? "fr" : "en" });
+    const client = createOrciaApiClient({ baseUrl: "", locale: resolveLocaleForFlag(isFr) });
     void client.stopAssistantTurn(turnId).catch((err: unknown) => {
       const detail = err instanceof Error ? err.message : String(err);
       updateBgSnapshot({ generationStopped: true, errorKind: "stream_error", errorMessage: `⚠️ ${detail}` });
@@ -37,12 +38,14 @@ export function stopActiveAssistantTurn(isFr: boolean): void {
 export async function synthesizeActiveAssistantTurn(isFr: boolean): Promise<void> {
   const turnId = bgSnapshot.activeTurnId;
   if (!turnId) return;
+  const resolvedLocale = resolveLocaleForFlag(isFr);
+  const flowCopy = resolveDictionaryForFlag(isFr, resolvedLocale).featureInboxAssistant.assistantFlow;
   updateBgSnapshot({ activeTraceStatus: "SYNTHESIZING" });
-  const client = createOrciaApiClient({ baseUrl: "", locale: isFr ? "fr" : "en" });
+  const client = createOrciaApiClient({ baseUrl: "", locale: resolvedLocale });
   try {
     await client.synthesizeAssistantTurnNow(turnId);
   } catch (err: unknown) {
-    const msg = formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", "Mon Assistant").fullText;
+    const msg = formatRfc9457ErrorToBanner(err, resolvedLocale, flowCopy.governanceErrorContext).fullText;
     updateBgSnapshot({ errorKind: "stream_error", errorMessage: msg });
   }
 }
@@ -58,8 +61,10 @@ export async function decideAssistantTurnProposal(params: {
   const { activeWorkspaceId, isFr, proposalId, approved, humanAnchorMarkdown, rationale } = params;
   const turnId = bgSnapshot.activeTurnId;
   if (!turnId || !activeWorkspaceId) return;
+  const resolvedLocale = resolveLocaleForFlag(isFr);
+  const flowCopy = resolveDictionaryForFlag(isFr, resolvedLocale).featureInboxAssistant.assistantFlow;
   updateBgSnapshot({ approvalBusy: true, errorMessage: null, errorKind: null });
-  const client = createOrciaApiClient({ baseUrl: "", locale: isFr ? "fr" : "en" });
+  const client = createOrciaApiClient({ baseUrl: "", locale: resolvedLocale });
   try {
     const resp = await client.approveAssistantTurnProposal(turnId, {
       workspace_id: activeWorkspaceId,
@@ -84,7 +89,7 @@ export async function decideAssistantTurnProposal(params: {
         : null,
     });
   } catch (err: unknown) {
-    const msg = formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", "Validation Assistant").fullText;
+    const msg = formatRfc9457ErrorToBanner(err, resolvedLocale, flowCopy.turnErrorContext).fullText;
     updateBgSnapshot({ approvalBusy: false, errorKind: "stream_error", errorMessage: msg });
   }
 }
@@ -97,7 +102,7 @@ export async function reattachAssistantRunningTurn(params: {
   const { activeWorkspaceId, isFr, streamErrorLabels } = params;
   if (!activeWorkspaceId || bgSnapshot.isGenerating) return;
   try {
-    const client = createOrciaApiClient({ baseUrl: "", locale: isFr ? "fr" : "en" });
+    const client = createOrciaApiClient({ baseUrl: "", locale: resolveLocaleForFlag(isFr) });
     const activeList = await client.listActiveAssistantTurns(activeWorkspaceId);
     const runningTurn = (activeList.turns ?? []).find((t) => t.status === "RUNNING" && t.turn_id);
     if (!runningTurn?.turn_id) return;

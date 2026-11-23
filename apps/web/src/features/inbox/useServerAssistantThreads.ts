@@ -5,12 +5,15 @@ import {
 } from "@orcia/api-client";
 import { sanitizeAssistantDisplayReply, type UiAssistantModelOption } from "@orcia/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { normalizeWebLocale, resolveDictionaryForFlag } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import { citationMapToRagItems, parseServerCitationMap } from "./inboxCitationHelpers";
 import type { SavedAssistantConversation, SavedConversationTurnItem } from "./savedConversationsStore";
 
 function errorDetail(err: unknown, locale: string): string {
-  return formatRfc9457ErrorToBanner(err, locale === "en" ? "en" : "fr", "Mon Assistant").fullText;
+  const normalized = normalizeWebLocale(locale);
+  const title = resolveDictionaryForFlag(undefined, normalized).featureInboxAssistant.savedConversations.defaultModelLabel;
+  return formatRfc9457ErrorToBanner(err, normalized, title).fullText;
 }
 
 export function mapServerMessagesToConversationTurns(
@@ -80,10 +83,13 @@ export function useServerAssistantThreads(params: {
   const activeIdRef = useRef<string | null>(null);
   activeIdRef.current = activeConversationId;
 
+  const normalizedLocale = normalizeWebLocale(locale);
+  const savedCopy = resolveDictionaryForFlag(undefined, normalizedLocale).featureInboxAssistant.savedConversations;
+  const flowCopy = resolveDictionaryForFlag(undefined, normalizedLocale).featureInboxAssistant.assistantFlow;
   const defaultModelLabel =
     modelOptions.find((m) => m.tier === "medium")?.configuredModelName ??
     modelOptions[1]?.title ??
-    "Mon Assistant";
+    savedCopy.defaultModelLabel;
 
   const refreshThreadsOverview = useCallback(async (): Promise<readonly AssistantThreadSchemaItem[]> => {
     if (!workspaceId) {
@@ -139,7 +145,7 @@ export function useServerAssistantThreads(params: {
         const mappedTurns = mapServerMessagesToConversationTurns(
           resp.messages ?? [],
           defaultModelLabel,
-        );
+        ).map((t) => ({ ...t, effortLabel: flowCopy.standardEffortLabel }));
         setConversations((prev) =>
           prev.map((conv) =>
             conv.id === threadId ? { ...conv, turns: mappedTurns } : conv,
@@ -166,7 +172,7 @@ export function useServerAssistantThreads(params: {
     async (titleSeed: string, folderId?: string | null): Promise<string> => {
       if (activeIdRef.current) return activeIdRef.current;
       const client = createOrciaApiClient({ baseUrl: "" });
-      const title = titleSeed.trim().slice(0, 72) || "Nouvelle discussion";
+      const title = titleSeed.trim().slice(0, 72) || savedCopy.defaultNewDiscussionTitle;
       const created = await client.createAssistantThread({
         workspace_id: workspaceId,
         title,

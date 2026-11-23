@@ -10,6 +10,7 @@ import {
   type UiInferenceTier,
   type UiThreeSpeedStepProgress,
 } from "@orcia/ui";
+import { resolveDictionaryForFlag } from "../../i18n";
 import { ignoreBenignStorageError } from "../../utils/benignBrowserError";
 
 export {
@@ -73,9 +74,11 @@ export function clearSavedAssistantConversationsStorage(): void {
   }
 }
 
-export function summarizePromptAsConversationTitle(prompt: string): string {
+export function summarizePromptAsConversationTitle(prompt: string, isFr = true): string {
   const clean = prompt.replace(/\s+/g, " ").trim();
-  if (!clean) return "Nouvelle conversation";
+  if (!clean) {
+    return resolveDictionaryForFlag(isFr).featureInboxAssistant.savedConversations.defaultThreadTitle;
+  }
   return clean.length > 64 ? `${clean.slice(0, 61)}...` : clean;
 }
 
@@ -115,8 +118,9 @@ export function upsertTurnIntoSavedConversations(params: {
     modelOpt.configuredModelName && modelOpt.title !== modelOpt.configuredModelName
       ? `${modelOpt.title} (${modelOpt.configuredModelName})`
       : modelOpt.configuredModelName || modelOpt.title;
+  const flowCopy = resolveDictionaryForFlag(params.isFr).featureInboxAssistant.assistantFlow;
   const effortLabel =
-    params.thinkingEffort === "deep" ? (params.isFr ? "Approfondi" : "In-depth") : "Standard";
+    params.thinkingEffort === "deep" ? flowCopy.deepEffortLabel : flowCopy.standardEffortLabel;
   const nowIso = new Date().toISOString();
   const cleanReply = sanitizeAssistantDisplayReply(params.assistantReply);
   const normalizedEffort: UiInferenceEffort =
@@ -168,7 +172,7 @@ export function upsertTurnIntoSavedConversations(params: {
   }
 
   const convId = params.activeConversationId ?? `thread-${Date.now()}`;
-  const createdTitle = summarizePromptAsConversationTitle(params.userPrompt);
+  const createdTitle = summarizePromptAsConversationTitle(params.userPrompt, params.isFr);
   const createdConv: SavedAssistantConversation = {
     id: convId,
     workspaceId: params.activeWorkspaceId,

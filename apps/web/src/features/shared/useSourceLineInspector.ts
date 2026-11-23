@@ -5,6 +5,7 @@ import type {
   UiSourceLineInspectTarget,
 } from "@orcia/ui";
 import { useCallback, useState } from "react";
+import { resolveDictionaryForFlag, resolveLocaleForFlag } from "../../i18n";
 import {
   inferFileBadgeFromUri,
   parseUriWithLineRange,
@@ -128,12 +129,11 @@ export function useSourceLineInspector(
           }));
         })
         .catch((err: unknown) => {
+          const sourcesCopy = resolveDictionaryForFlag(undefined, resolveLocaleForFlag(undefined, locale)).featureWorkspaces.sources;
           const detail =
             err instanceof Error
               ? err.message
-              : locale === "fr"
-                ? "Impossible de lire cet extrait source."
-                : "Unable to load source excerpt.";
+              : sourcesCopy.sourceInspectorErrorFallback;
           setState((prev) => ({
             ...prev,
             isLoading: false,
@@ -184,13 +184,14 @@ export function useSourceLineInspector(
           setState((prev) => ({ ...prev, copiedFeedback: true }));
         })
         .catch((err: unknown) => {
-          const detail = err instanceof Error ? err.message : "Clipboard";
+          const sourcesCopy = resolveDictionaryForFlag(undefined, resolveLocaleForFlag(undefined, locale)).featureWorkspaces.sources;
+          const detail = err instanceof Error ? err.message : sourcesCopy.clipboardErrorFallback;
           onFeedback?.(detail);
         });
     } else {
       setState((prev) => ({ ...prev, copiedFeedback: true }));
     }
-  }, [state.redacted, state.lines, state.startLine, state.endLine, onFeedback]);
+  }, [state.redacted, state.lines, state.startLine, state.endLine, locale, onFeedback]);
 
   return {
     inspectorState: state,

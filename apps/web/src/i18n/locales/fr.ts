@@ -12,6 +12,10 @@ import { CONTEXTUAL_HELP_FR } from "./contextual_help_catalog_fr";
 import { CORE_DOMAIN_FR_LABELS } from "./core_domain_labels_fr";
 import { CORE_SHELL_FR_LABELS } from "./core_shell_labels_fr";
 import { EPIC18_SOURCES_LABELS_FR } from "./epic18_sources_labels";
+import { FEATURE_ADMIN_CATALOG_SETTINGS_FR } from "./feature_admin_catalog_settings_labels_fr";
+import { FEATURE_COCKPIT_GATES_FR } from "./feature_cockpit_gates_labels_fr";
+import { FEATURE_INBOX_ASSISTANT_FR } from "./feature_inbox_assistant_labels_fr";
+import { FEATURE_WORKSPACES_FR } from "./feature_workspaces_labels_fr";
 import { FINOPS_FR_LABELS } from "./finops_labels";
 import { GATES_AND_INBOX_FR_LABELS } from "./gates_and_inbox_labels";
 import { GOVERNANCE_AND_PACKS_FR_LABELS } from "./governance_and_packs_labels";
@@ -47,6 +51,10 @@ export const frDictionary: TranslationDictionary = {
   clientErrors: CLIENT_ERRORS_FR_LABELS,
   rfc9457Errors: RFC9457_BANNER_FR_LABELS,
   categoryAControllers: CATEGORY_A_CONTROLLER_FR_LABELS,
+  featureCockpitGates: FEATURE_COCKPIT_GATES_FR,
+  featureInboxAssistant: FEATURE_INBOX_ASSISTANT_FR,
+  featureWorkspaces: FEATURE_WORKSPACES_FR,
+  featureAdminCatalogSettings: FEATURE_ADMIN_CATALOG_SETTINGS_FR,
   contextualHelp: CONTEXTUAL_HELP_FR,
   shellNotifications: SHELL_NOTIFICATIONS_FR,
   shellBreadcrumbsAndScope: SHELL_BREADCRUMBS_AND_SCOPE_FR,

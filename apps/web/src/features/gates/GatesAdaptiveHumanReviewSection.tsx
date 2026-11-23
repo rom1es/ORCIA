@@ -4,7 +4,7 @@ import {
   type UiChunkValidationItem,
 } from "@orcia/ui";
 import React from "react";
-import { useI18n } from "../../i18n";
+import { formatI18nTemplate, useI18n } from "../../i18n";
 import { GatesAdaptiveReviewHeaderCard } from "./GatesAdaptiveReviewHeaderCard";
 import { GatesChallengeModalSection } from "./GatesChallengeModalSection";
 import { useGatesAdaptiveHumanReview } from "./useGatesAdaptiveHumanReview";
@@ -21,6 +21,7 @@ export function GatesAdaptiveHumanReviewSection({
   onFeedback,
 }: GatesAdaptiveHumanReviewSectionProps) {
   const { dictionary } = useI18n();
+  const reviewCopy = dictionary.featureCockpitGates.gates.humanReview;
   const {
     evaluation,
     stagedJira,
@@ -40,9 +41,7 @@ export function GatesAdaptiveHumanReviewSection({
   >;
   const executiveSummary = String(
     briefingJson.block_1_executive_summary?.summary ??
-      (isFr
-        ? "Synthèse exécutive de l'étape soumise à validation humaine."
-        : "Executive summary of the step awaiting human review."),
+      reviewCopy.defaultExecutiveSummary,
   );
   const decisionsTaken = Array.isArray(briefingJson.block_3_decisions_taken?.decisions)
     ? (briefingJson.block_3_decisions_taken?.decisions as string[])
@@ -79,12 +78,15 @@ export function GatesAdaptiveHumanReviewSection({
           <CognitiveReviewBriefingGrid
             executiveSummary={executiveSummary}
             keyElementsAndTransverse={[
-              isFr
-                ? `Alignement Étape 1 : ${evaluation.ontology_conflicts === 0 ? "Conforme" : "Conflit"}`
-                : `Step 1 Alignment: ${evaluation.ontology_conflicts === 0 ? "Aligned" : "Conflict"}`,
-              isFr
-                ? `Volume total : ${evaluation.total_word_count} mots`
-                : `Total volume: ${evaluation.total_word_count} words`,
+              formatI18nTemplate(reviewCopy.step1AlignmentTemplate, {
+                status:
+                  evaluation.ontology_conflicts === 0
+                    ? reviewCopy.alignmentAligned
+                    : reviewCopy.alignmentConflict,
+              }),
+              formatI18nTemplate(reviewCopy.totalVolumeTemplate, {
+                count: evaluation.total_word_count,
+              }),
             ]}
             decisionsTaken={decisionsTaken}
             retainedHypotheses={retainedHypotheses}

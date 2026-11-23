@@ -26,6 +26,11 @@ import type { AutonomousSupervisionCopy } from "./locales/autonomous_supervision
 import type { AutonomyContractStudioCopy } from "./locales/autonomy_contract_labels";
 import type { ContextualHelpDictionarySection } from "./locales/contextual_help_labels";
 import type { Epic18SourcesLabels } from "./locales/epic18_sources_labels";
+import type { FeatureAdminCatalogSettingsDictionary } from "./locales/feature_admin_catalog_settings_labels";
+import type { FeatureCockpitGatesDictionary } from "./locales/feature_cockpit_gates_labels";
+import type { FeatureInboxAssistantDictionary } from "./locales/feature_inbox_assistant_labels";
+import type { FeatureWorkspacesDictionary } from "./locales/feature_workspaces_labels";
+
 import type { FinopsDictionarySection } from "./locales/finops_labels";
 import type { GovernanceAndPacksDictionarySection } from "./locales/governance_and_packs_labels";
 import type { InboxAndCockpitDictionarySection } from "./locales/inbox_and_cockpit_labels";
@@ -74,6 +79,10 @@ export interface TranslationDictionary
   clientErrors: ClientErrorLabels;
   rfc9457Errors: Rfc9457BannerDictionary;
   categoryAControllers: CategoryAControllersDictionary;
+  featureCockpitGates: FeatureCockpitGatesDictionary;
+  featureInboxAssistant: FeatureInboxAssistantDictionary;
+  featureWorkspaces: FeatureWorkspacesDictionary;
+  featureAdminCatalogSettings: FeatureAdminCatalogSettingsDictionary;
   contextualHelp: ContextualHelpDictionarySection;
   shellNotifications: ShellNotificationsDictionary;
   shellBreadcrumbsAndScope: ShellBreadcrumbsAndScopeDictionary;

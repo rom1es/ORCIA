@@ -14,6 +14,7 @@ import {
   consumeAssistantPrefillPrompt,
   readCachedAgentsAndSkills,
 } from "../../components/agentsAndSkillsBridgeStore";
+import { resolveDictionaryForFlag } from "../../i18n";
 
 export function buildAssistantAutocompleteAndRagOptions(params: {
   readonly catalogItems: readonly UiCatalogExplorerItemView[];
@@ -67,6 +68,7 @@ export function buildAssistantModelOptions(
   llmTiers: readonly { readonly tier: string; readonly primaryModel?: string }[],
   isFr: boolean,
 ): readonly UiAssistantModelOption[] {
+  const autoCopy = resolveDictionaryForFlag(isFr).featureInboxAssistant.autocomplete;
   const configuredTiers = llmTiers.filter((t) => Boolean(t.primaryModel?.trim()));
   const distinctModels = new Set(
     configuredTiers.map((t) => t.primaryModel!.trim()),
@@ -75,7 +77,7 @@ export function buildAssistantModelOptions(
     distinctModels.size === 1 ? [...distinctModels][0] : undefined;
 
   if (singleModelOnly) {
-    const sub = isFr ? "Modèle IA configuré" : "Configured AI model";
+    const sub = autoCopy.configuredModelSubtitle;
     return [
       {
         tier: "simple",
@@ -122,23 +124,9 @@ export function buildAssistantModelOptions(
   };
 
   return [
-    buildEntry(
-      "simple",
-      isFr ? "Rapide" : "Fast",
-      isFr ? "Réponses les plus rapides" : "Fastest answers",
-    ),
-    buildEntry(
-      "medium",
-      isFr ? "Polyvalent" : "Versatile",
-      isFr ? "Aide polyvalente au quotidien" : "Everyday versatile assistance",
-    ),
-    buildEntry(
-      "complex",
-      isFr ? "Raisonnement avancé" : "Advanced reasoning",
-      isFr
-        ? "Tâches complexes & analyse critique"
-        : "Complex tasks & critical analysis",
-    ),
+    buildEntry("simple", autoCopy.tierSimpleTitle, autoCopy.tierSimpleSubtitle),
+    buildEntry("medium", autoCopy.tierMediumTitle, autoCopy.tierMediumSubtitle),
+    buildEntry("complex", autoCopy.tierComplexTitle, autoCopy.tierComplexSubtitle),
   ];
 }
 
@@ -148,10 +136,19 @@ export function consumeAssistantPrefillFromStorage(): string | null {
 
 export function buildAssistantAutocompleteSuggestions(
   activePacks: readonly { readonly packKey: string }[] = [],
+  isFr = true,
 ): readonly UiAssistantAutocompleteSuggestion[] {
+  const autoCopy = resolveDictionaryForFlag(isFr).featureInboxAssistant.autocomplete;
   const suggestions: UiAssistantAutocompleteSuggestion[] = [];
   const seenTokens = new Set<string>();
   const cached = readCachedAgentsAndSkills();
+
+  const resolveScopeBadge = (scope: string | undefined, sourcePackKey?: string | null) =>
+    scope === "PRIVATE"
+      ? autoCopy.badgePrivate
+      : scope === "PACK"
+        ? `📦 ${sourcePackKey ?? autoCopy.badgePackDefault}`
+        : autoCopy.badgeTeam;
 
   for (const ag of cached.agents ?? []) {
     if (seenTokens.has(ag.handle)) continue;
@@ -162,12 +159,7 @@ export function buildAssistantAutocompleteSuggestions(
       token: ag.handle,
       name: ag.name,
       description: ag.roleMission,
-      badge:
-        ag.visibilityScope === "PRIVATE"
-          ? "🔒 Privé"
-          : ag.visibilityScope === "PACK"
-            ? `📦 ${ag.sourcePackKey ?? "Pack"}`
-            : "👥 Équipe",
+      badge: resolveScopeBadge(ag.visibilityScope, ag.sourcePackKey),
     });
   }
   for (const sk of cached.skills ?? []) {
@@ -179,12 +171,7 @@ export function buildAssistantAutocompleteSuggestions(
       token: sk.commandHandle,
       name: sk.name,
       description: sk.objective,
-      badge:
-        sk.visibilityScope === "PRIVATE"
-          ? "🔒 Privé"
-          : sk.visibilityScope === "PACK"
-            ? `📦 ${sk.sourcePackKey ?? "Pack"}`
-            : "👥 Équipe",
+      badge: resolveScopeBadge(sk.visibilityScope, sk.sourcePackKey),
     });
   }
   for (const pack of activePacks) {
@@ -194,24 +181,24 @@ export function buildAssistantAutocompleteSuggestions(
           id: "agent-architecte-solution",
           kind: "agent",
           token: "@architecte-solution",
-          name: "Architecte Solution",
-          description: "Concevoir et vérifier l'architecture cible",
+          name: autoCopy.sdlcArchitectName,
+          description: autoCopy.sdlcArchitectDesc,
           badge: "📦 orcia-pack-sdlc",
         },
         {
           id: "agent-analyste-metier",
           kind: "agent",
           token: "@analyste-metier",
-          name: "Analyste Métier",
-          description: "Clarifier les besoins et rédiger les exigences",
+          name: autoCopy.sdlcAnalystName,
+          description: autoCopy.sdlcAnalystDesc,
           badge: "📦 orcia-pack-sdlc",
         },
         {
           id: "skill-revue-architecture",
           kind: "skill",
           token: "/revue-architecture",
-          name: "Revue d'Architecture",
-          description: "Vérifier la cohérence des choix d'architecture",
+          name: autoCopy.sdlcReviewName,
+          description: autoCopy.sdlcReviewDesc,
           badge: "📦 orcia-pack-sdlc",
         },
       ];

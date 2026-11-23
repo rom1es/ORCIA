@@ -4,6 +4,7 @@ import type {
   UiEvidenceSourceItem,
   UiEvidenceToolItem,
 } from "@orcia/ui";
+import { formatI18nTemplate, resolveDictionaryForFlag } from "../../i18n";
 
 export interface BuiltCitationCardPreview {
   readonly sanitizedResponseText: string;
@@ -187,15 +188,16 @@ export function buildAssistantCitationCardPreview(params: {
     return null;
   }
 
+  const citCopy = resolveDictionaryForFlag(isFr).featureInboxAssistant.citations;
   const summaryLine =
     parsed.footerSummaryLine ||
     (parsed.sources.length > 0
-      ? isFr
-        ? `${parsed.sources.length} source(s) vérifiée(s) par le serveur`
-        : `${parsed.sources.length} server-verified source(s)`
-      : isFr
-        ? `Dossier « ${activeFolderTitle ?? "Synthèse"} »`
-        : `Folder "${activeFolderTitle ?? "Draft"}"`);
+      ? formatI18nTemplate(citCopy.serverVerifiedSourcesTemplate, {
+          count: parsed.sources.length,
+        })
+      : formatI18nTemplate(citCopy.folderTitleTemplate, {
+          title: activeFolderTitle ?? citCopy.defaultDraftTitle,
+        }));
 
   return {
     sanitizedResponseText: parsed.sanitizedResponseText ?? trimmed,
@@ -203,7 +205,7 @@ export function buildAssistantCitationCardPreview(params: {
     sources: parsed.sources,
     glossaryItems: parsed.glossaryItems,
     toolOutputs: parsed.toolOutputs,
-    artifactTitle: activeFolderTitle ?? (isFr ? "Synthèse de réponse" : "Response Draft"),
+    artifactTitle: activeFolderTitle ?? citCopy.defaultResponseDraftTitle,
     artifactContent: (parsed.sanitizedResponseText ?? trimmed).slice(0, 800),
     footerSummaryLine: summaryLine,
     onInspectSource: (src: UiEvidenceSourceItem) => onInspectCitationUri(src.uri, src.title),

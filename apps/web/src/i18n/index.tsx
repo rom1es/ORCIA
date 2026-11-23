@@ -71,6 +71,17 @@ const FLAG_TO_LOCALE = new Map<boolean, SupportedWebLocale>([
   [false, "en"],
 ]);
 
+const LOCALE_KEY_MAP: Readonly<Record<string, SupportedWebLocale>> = {
+  fr: "fr",
+  en: "en",
+};
+
+export function normalizeWebLocale(raw?: string | null): SupportedWebLocale {
+  if (!raw) return "fr";
+  const short = raw.trim().toLowerCase().slice(0, 2);
+  return LOCALE_KEY_MAP[short] ?? "fr";
+}
+
 export function resolveLocaleForFlag(
   isFr?: boolean,
   locale?: SupportedWebLocale,

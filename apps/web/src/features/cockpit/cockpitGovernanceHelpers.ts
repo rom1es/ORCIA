@@ -6,6 +6,7 @@ import type {
   RunBlackboardStateResponse,
   WorkflowAsCodeDefinitionSchemaItem,
 } from "@orcia/api-client";
+import { resolveDictionaryForFlag } from "../../i18n";
 
 export interface PendingAnchorRequirement {
   readonly stepKey: string;
@@ -33,44 +34,31 @@ export interface DerivedGovernanceState {
 }
 
 export function formatStepStatusLabel(status: string, isFr: boolean): string {
+  const stepStatus = resolveDictionaryForFlag(isFr).featureCockpitGates.cockpit.stepStatus;
   switch (status.toUpperCase()) {
     case "PENDING":
-      return isFr ? "En attente" : "Pending";
+      return stepStatus.pending;
     case "RUNNING":
-      return isFr ? "En cours" : "Running";
+      return stepStatus.running;
     case "COMMITTED":
     case "COMPLETED":
-      return isFr ? "Validé" : "Completed";
+      return stepStatus.completed;
     case "STALE_NEEDS_REVIEW":
-      return isFr ? "À revalider" : "Needs review";
+      return stepStatus.staleNeedsReview;
     case "WAITING_FOR_HUMAN_ANCHOR":
-      return isFr ? "Ancrage humain requis" : "Human anchor required";
+      return stepStatus.waitingHumanAnchor;
     case "WAITING_FOR_HUMAN_ARBITRATION":
     case "PAUSED_ARBITRATION":
-      return isFr ? "Arbitrage requis" : "Arbitration required";
+      return stepStatus.waitingHumanArbitration;
     case "PAUSED_HUMAN_GATE":
-      return isFr ? "Validation humaine requise" : "Human review required";
+      return stepStatus.pausedHumanGate;
     default:
       return status;
   }
 }
 
 export function formatStepKeyLabel(stepKey: string, isFr: boolean): string {
-  const mapFr: Record<string, string> = {
-    "frame-architecture-intent": "Cadrage de l'intention d'architecture",
-    "delegate-remediation-subworkflow": "Sous-processus de correction",
-    "post-deploy-verification": "Vérification post-déploiement",
-    "step-architecture-gate": "Validation d'architecture",
-    "inbox-review-step": "Relecture en boîte de réception",
-  };
-  const mapEn: Record<string, string> = {
-    "frame-architecture-intent": "Architecture intent framing",
-    "delegate-remediation-subworkflow": "Remediation sub-process",
-    "post-deploy-verification": "Post-deployment verification",
-    "step-architecture-gate": "Architecture review gate",
-    "inbox-review-step": "Inbox review step",
-  };
-  const dict = isFr ? mapFr : mapEn;
+  const dict = resolveDictionaryForFlag(isFr).featureCockpitGates.cockpit.stepKeyLabels;
   if (dict[stepKey]) return dict[stepKey];
   return stepKey
     .replace(/[-_]+/g, " ")

@@ -141,7 +141,7 @@ export function useInboxPanelController() {
   }, [savedConversations, foldersController.folders]);
   const { agentOptions, skillOptions, orciaDocuments, ragCitations } =
     buildAssistantAutocompleteAndRagOptions({ catalogItems, datasources });
-  const autocompleteSuggestions = buildAssistantAutocompleteSuggestions(packs);
+  const autocompleteSuggestions = buildAssistantAutocompleteSuggestions(packs, isFr);
 
   const selectActiveConversationAndPersist = (nextConvId: string | null) => {
     threads.setActiveConversationId(nextConvId);

@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 225,
+    "techLeadReportsCount": 226,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -550,6 +550,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-23",
+      "phaseOrStory": "Story 27.4",
+      "reportFile": "27-4-category-c-cockpit-assistant-workspaces-gates-catalog-and-admin-tech-lead-report.md",
+      "domain": "Epic 27 Lot 2 Part 2 — Category C Remediation: apps/web Cockpit, Inbox/Assistant, Workspaces, Gates, Catalog, Admin, Settings & Shared Features (CAP-001..CAP-091, CAP-180, CAP-190, CAP-200..CAP-260)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): created modular FR/EN sub-dictionaries (feature_cockpit_gates_labels*, feature_inbox_assistant_labels*, feature_workspaces_labels*, feature_admin_catalog_settings_labels*), migrated all 45 Gate 1 files across cockpit, inbox, workspaces, gates, catalog, admin, settings, and shared plus non-AST locale helpers, split all oversized touched files (72/72 .ts/.tsx files <= 300 L; 55 modified, 17 created, max 296 L), reduced Gate 1 AST baseline (943 → 631, -312 violations, 0 entries in target scopes), preserved Gate 2 (0 parity/jargon violations) & Gate 3 (0 client error violations), and verified 9/9 Turbo (@orcia/api-client 20, @orcia/ui 139, @orcia/web 288 = 447 JS/TS tests), Gate 4 (3 passed), and detect-secrets-hook (0 findings)."
+    },
     {
       "date": "2026-11-23",
       "phaseOrStory": "Story 27.3",

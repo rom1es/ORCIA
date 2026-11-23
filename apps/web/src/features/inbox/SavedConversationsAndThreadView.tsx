@@ -13,6 +13,7 @@ import {
   type UiSourceLineInspectTarget,
 } from "@orcia/ui";
 import React from "react";
+import { formatI18nTemplate, useI18n } from "../../i18n";
 import type { SavedAssistantConversation, SavedConversationTurnItem } from "./savedConversationsStore";
 
 export { AssistantTopToolbar, type AssistantTopToolbarProps } from "./AssistantTopToolbar";
@@ -28,10 +29,12 @@ export interface SavedConversationsPanelProps {
 export function SavedConversationsPanel({
   conversations,
   activeConversationId,
-  isFr,
   onResumeConversation,
   onDeleteConversation,
 }: SavedConversationsPanelProps): React.JSX.Element {
+  const { dictionary } = useI18n();
+  const savedCopy = dictionary.featureInboxAssistant.savedConversations;
+
   return (
     <section
       data-testid="assistant-saved-conversations-panel"
@@ -40,21 +43,15 @@ export function SavedConversationsPanel({
       <div className="flex items-center justify-between gap-2">
         <h3 className="text-xs font-semibold text-text-primary">
           <OrciaIcon name="clock" />{" "}
-          {isFr
-            ? conversations.length > 0
-              ? `Conversations sauvegardées (${conversations.length})`
-              : "Conversations sauvegardées"
-            : conversations.length > 0
-              ? `Saved conversations (${conversations.length})`
-              : "Saved conversations"}
+          {conversations.length > 0
+            ? formatI18nTemplate(savedCopy.panelTitleCountTemplate, { count: conversations.length })
+            : savedCopy.panelTitle}
         </h3>
       </div>
 
       {conversations.length === 0 ? (
         <p data-testid="assistant-saved-conversations-empty" className="text-xs text-text-secondary">
-          {isFr
-            ? "Aucune conversation sauvegardée pour le moment. Posez une question ci-dessous pour démarrer et enregistrer automatiquement votre premier échange."
-            : "No saved conversation yet. Ask a question below to start and automatically save your first thread."}
+          {savedCopy.emptyText}
         </p>
       ) : (
         <ul className="space-y-1.5" data-testid="assistant-saved-conversations-list">
@@ -79,14 +76,8 @@ export function SavedConversationsPanel({
                   <div className="font-semibold text-text-primary">{conv.title}</div>
                   <div className="text-[11px] text-text-secondary">
                     {conv.turns.length}{" "}
-                    {isFr
-                      ? conv.turns.length > 1
-                        ? "échanges"
-                        : "échange"
-                      : conv.turns.length > 1
-                        ? "turns"
-                        : "turn"}{" "}
-                    · {conv.modelLabel}
+                    {conv.turns.length > 1 ? savedCopy.turnPlural : savedCopy.turnSingular} ·{" "}
+                    {conv.modelLabel}
                   </div>
                 </button>
                 <button
@@ -95,7 +86,7 @@ export function SavedConversationsPanel({
                   onClick={() => onDeleteConversation(conv.id)}
                   className="rounded border border-border-subtle bg-surface-secondary px-2 py-0.5 text-[11px] text-text-secondary hover:text-text-primary"
                 >
-                  {isFr ? "Supprimer" : "Delete"}
+                  {savedCopy.deleteBtn}
                 </button>
               </li>
             );

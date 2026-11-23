@@ -6,8 +6,8 @@ import { PackCardItem } from "./PackCardItem";
 import { usePacksRegistryHealthchecks } from "./usePacksRegistryHealthchecks";
 
 export function PacksRegistryPage() {
-  const { locale } = useI18n();
-  const isFr = locale === "fr";
+  const { dictionary, isFr, locale } = useI18n();
+  const packsCopy = dictionary.featureAdminCatalogSettings.packsRegistry;
   const {
     packs,
     isLoading,
@@ -42,9 +42,7 @@ export function PacksRegistryPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
             <h2 style={{ margin: 0, fontSize: "var(--font-size-h3)" }}>
-              {isFr
-                ? "Registre des Packs Métiers & Connecteurs"
-                : "Business Packs Registry & Connectors"}
+              {packsCopy.title}
             </h2>
             <span
               className="rounded px-2 py-0.5 text-xs font-semibold"
@@ -53,13 +51,11 @@ export function PacksRegistryPage() {
                 color: "var(--color-gate-emerald)",
               }}
             >
-              {isFr ? "100 % Déclaratif" : "100% Declarative"}
+              {packsCopy.declarativeBadge}
             </span>
           </div>
           <p style={{ margin: 0, fontSize: "13px", color: "var(--color-text-secondary)" }}>
-            {isFr
-              ? "Packs métiers prêts à l'emploi : chargement automatique des modèles, guides et vérification des connecteurs requis."
-              : "Ready-to-use business packs: automatic loading of templates, guides, and verification of required connectors."}
+            {packsCopy.subtitle}
           </p>
         </div>
 
@@ -71,11 +67,11 @@ export function PacksRegistryPage() {
             disabled={isLoading}
             className="orcia-ds-btn-secondary"
           >
-            {isFr ? "🔄 Tester les connecteurs MCP" : "🔄 Check MCP Connectors"}
+            {packsCopy.checkConnectorsBtn}
           </button>
 
           <select
-            aria-label={isFr ? "Sélectionner l'espace à exporter" : "Select workspace to export"}
+            aria-label={packsCopy.selectWorkspaceAriaLabel}
             data-testid="pack-export-workspace-select"
             value={selectedWorkspaceId}
             onChange={(e) => setSelectedWorkspaceId(e.target.value)}
@@ -83,9 +79,7 @@ export function PacksRegistryPage() {
             className="orcia-ds-select"
           >
             {workspaceOptions.length === 0 ? (
-              <option value="">
-                {isFr ? "Aucun espace disponible" : "No workspace available"}
-              </option>
+              <option value="">{packsCopy.noWorkspaceOption}</option>
             ) : (
               workspaceOptions.map((opt) => (
                 <option key={opt.id} value={opt.id}>
@@ -101,7 +95,7 @@ export function PacksRegistryPage() {
             onClick={() => void handleExportWorkspaceZip(selectedPackId)}
             className="orcia-ds-btn-primary"
           >
-            {isFr ? "📦 Exporter un espace en Pack (.zip)" : "📦 Export Workspace as Pack (.zip)"}
+            {packsCopy.exportWorkspaceBtn}
           </button>
         </div>
       </div>

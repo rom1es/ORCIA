@@ -2,20 +2,13 @@ import type { AiModelMappingItemResponse } from "@orcia/api-client";
 import {
   PermissionGuard,
   type InferenceTierAndEffortLabels,
-  type PermissionGuardLabels,
   type UiInferenceTier,
   type UiPermissionVerb,
 } from "@orcia/ui";
 import React from "react";
+import { resolveDictionaryForFlag } from "../../../i18n";
 import type { AiModelsHubDictionary } from "../../../i18n/locales/ai_models_hub_labels";
 import { AiModelMappingRowCard } from "./AiModelMappingRowCard";
-
-const DEFAULT_GUARD_LABELS: PermissionGuardLabels = {
-  passiveLockBadge: "Lecture seule",
-  passiveLockDescription: "Action réservée aux administrateurs",
-  requestAccessCta: "Demander l'accès",
-  disabledHint: "Action non autorisée",
-};
 
 export interface AiModelsMasterTableProps {
   readonly isFr: boolean;
@@ -36,6 +29,7 @@ export interface AiModelsMasterTableProps {
 const ALL_TIERS: readonly UiInferenceTier[] = ["simple", "medium", "complex", "auto"];
 
 export function AiModelsMasterTable({
+  isFr,
   labels,
   tierLabels,
   mappings,
@@ -49,6 +43,7 @@ export function AiModelsMasterTable({
   onOpenDeleteDialog,
   onTestConnection,
 }: AiModelsMasterTableProps): React.ReactElement {
+  const guardLabels = resolveDictionaryForFlag(isFr).featureAdminCatalogSettings.permissionGuard;
   const activeCount = mappings.filter((m) => m.is_active && !m.draining).length;
   const configuredTiers = new Set(
     mappings
@@ -95,7 +90,7 @@ export function AiModelsMasterTable({
           verb="create"
           allowedVerbs={allowedVerbs}
           fallbackMode="hidden"
-          labels={DEFAULT_GUARD_LABELS}
+          labels={guardLabels}
         >
           <button
             type="button"
@@ -182,7 +177,7 @@ export function AiModelsMasterTable({
             verb="create"
             allowedVerbs={allowedVerbs}
             fallbackMode="hidden"
-            labels={DEFAULT_GUARD_LABELS}
+            labels={guardLabels}
           >
             <button
               type="button"
@@ -203,7 +198,7 @@ export function AiModelsMasterTable({
               item={item}
               labels={labels}
               tierLabels={tierLabels}
-              guardLabels={DEFAULT_GUARD_LABELS}
+              guardLabels={guardLabels}
               allowedVerbs={allowedVerbs}
               isTesting={testingId === item.id}
               testError={testErrorsByModelId[item.id] ?? null}

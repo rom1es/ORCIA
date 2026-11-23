@@ -17,7 +17,12 @@ import {
   type WritableScopeOptionItem,
 } from "../../components/ontologyApiBridge";
 import type { ConfiguredOrgUnit } from "../../components/platformSetupStore";
-import { useI18n } from "../../i18n";
+import { formatI18nTemplate, normalizeWebLocale, useI18n } from "../../i18n";
+import {
+  type GlossaryScopeTier,
+  resolveGlossaryScopeId,
+  WorkspaceGlossaryCascadeGrid,
+} from "./WorkspaceGlossaryCascadeGrid";
 
 export interface WorkspaceGlossaryAndOntologyTabProps {
   readonly isFr: boolean;
@@ -42,22 +47,21 @@ const inputStyle: React.CSSProperties = {
 };
 
 export function WorkspaceGlossaryAndOntologyTab({
-  isFr,
   selectedWorkspace,
   orgUnits,
   ontologyConcepts,
-  openHelpSection,
   onAddConcept,
 }: WorkspaceGlossaryAndOntologyTabProps): React.ReactElement {
   const { dictionary, locale } = useI18n();
   const copy = dictionary.ontologyGlossary;
-  const typedLocale = locale === "en" ? "en" : "fr";
+  const glossaryTabCopy = dictionary.featureWorkspaces.glossaryTab;
+  const typedLocale = normalizeWebLocale(locale);
 
   const [termName, setTermName] = useState("");
   const [termDefinition, setTermDefinition] = useState("");
-  const [selectedScopeTier, setSelectedScopeTier] = useState<
-    "WORKSPACE" | "TEAM" | "BU" | "ENTERPRISE"
-  >(selectedWorkspace ? "WORKSPACE" : "ENTERPRISE");
+  const [selectedScopeTier, setSelectedScopeTier] = useState<GlossaryScopeTier>(
+    selectedWorkspace ? "WORKSPACE" : "ENTERPRISE",
+  );
   const [serverConcepts, setServerConcepts] = useState<readonly UiOntologyConceptView[]>([]);
   const [pendingConceptKeys, setPendingConceptKeys] = useState<readonly string[]>([]);
   const [writableLevels, setWritableLevels] = useState<readonly UiOntologyLevel[] | null>(null);
@@ -98,7 +102,9 @@ export function WorkspaceGlossaryAndOntologyTab({
 
   const displayedConcepts = serverConcepts.length > 0 ? serverConcepts : ontologyConcepts;
   const canTier = (lvl: UiOntologyLevel) =>
-    writableLevels === null || writableLevels.includes(lvl) || (lvl === "4_WORKSPACE" && writableLevels.includes("3_WORKSPACE"));
+    writableLevels === null ||
+    writableLevels.includes(lvl) ||
+    (lvl === "4_WORKSPACE" && writableLevels.includes("3_WORKSPACE"));
 
   const handleCreateConcept = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,34 +118,14 @@ export function WorkspaceGlossaryAndOntologyTab({
           : selectedScopeTier === "TEAM"
             ? "3_TEAM"
             : "4_WORKSPACE";
-    const resolvedScopeId = (() => {
-      if (selectedScopeTier === "ENTERPRISE") {
-        return (
-          writableScopes.find((s) => s.level === "1_ENTERPRISE")?.scope_id ?? "scope-global"
-        );
-      }
-      if (selectedScopeTier === "BU") {
-        const match =
-          writableScopes.find(
-            (s) => s.level === "2_DOMAIN" && (!parentBuUnit || s.scope_id === parentBuUnit.id),
-          ) ?? writableScopes.find((s) => s.level === "2_DOMAIN");
-        return match?.scope_id ?? parentBuUnit?.id ?? "";
-      }
-      if (selectedScopeTier === "TEAM") {
-        const preferredTeamId = selectedWorkspace?.ownerOrgUnitId ?? ownerTeamUnit?.id;
-        const match =
-          writableScopes.find(
-            (s) => s.level === "3_TEAM" && (!preferredTeamId || s.scope_id === preferredTeamId),
-          ) ?? writableScopes.find((s) => s.level === "3_TEAM");
-        return match?.scope_id ?? preferredTeamId ?? "";
-      }
-      const wsMatch = writableScopes.find(
-        (s) =>
-          (s.level === "4_WORKSPACE" || s.level === "3_WORKSPACE") &&
-          (!selectedWorkspace || s.scope_id === wsId),
-      );
-      return wsMatch?.scope_id ?? wsId;
-    })();
+    const resolvedScopeId = resolveGlossaryScopeId({
+      selectedScopeTier,
+      writableScopes,
+      parentBuUnit,
+      preferredTeamId: selectedWorkspace?.ownerOrgUnitId ?? ownerTeamUnit?.id,
+      hasSelectedWorkspace: Boolean(selectedWorkspace),
+      wsId,
+    });
     if (!resolvedScopeId) {
       setErrorBanner(copy.errorFallback);
       return;
@@ -181,7 +167,9 @@ export function WorkspaceGlossaryAndOntologyTab({
     setErrorBanner(null);
     const fallbackTargetLevel: UiOntologyLevel =
       concept.level === "4_WORKSPACE" || concept.level === "3_WORKSPACE"
-        ? (selectedWorkspace?.ownerOrgUnitId || ownerTeamUnit?.id ? "3_TEAM" : "2_DOMAIN")
+        ? selectedWorkspace?.ownerOrgUnitId || ownerTeamUnit?.id
+          ? "3_TEAM"
+          : "2_DOMAIN"
         : concept.level === "3_TEAM"
           ? "2_DOMAIN"
           : "1_ENTERPRISE";
@@ -204,6 +192,10 @@ export function WorkspaceGlossaryAndOntologyTab({
   const workspaceIcon = getOrciaIconGlyph("workspaceFolder");
   const isSubmitDisabled = !termName.trim();
 
+  const domainText = formatI18nTemplate(glossaryTabCopy.domainBadgeTemplate, { name: buLabel });
+  const teamText = formatI18nTemplate(glossaryTabCopy.teamBadgeTemplate, { name: teamLabel });
+  const wsText = formatI18nTemplate(glossaryTabCopy.workspaceBadgeTemplate, { name: wsName });
+
   const cascadeTiers = [
     {
       tierId: "enterprise",
@@ -213,19 +205,19 @@ export function WorkspaceGlossaryAndOntologyTab({
     },
     {
       tierId: "domain",
-      badge: `${divisionIcon} Direction (${buLabel})`,
+      badge: `${divisionIcon} ${domainText}`,
       subtitle: copy.workspaceGlossaryDomainSub,
       items: displayedConcepts.filter((c) => c.level === "2_DOMAIN"),
     },
     {
       tierId: "team",
-      badge: `${teamIcon} Équipe (${teamLabel})`,
+      badge: `${teamIcon} ${teamText}`,
       subtitle: copy.workspaceGlossaryTeamSub,
       items: displayedConcepts.filter((c) => c.level === "3_TEAM"),
     },
     {
       tierId: "workspace",
-      badge: `${workspaceIcon} Cet Espace (${wsName})`,
+      badge: `${workspaceIcon} ${wsText}`,
       subtitle: copy.workspaceGlossaryWorkspaceSub,
       items: displayedConcepts.filter(
         (c) => c.level === "4_WORKSPACE" || c.level === "3_WORKSPACE" || c.level === "4_RUN_EPHEMERAL",
@@ -235,9 +227,9 @@ export function WorkspaceGlossaryAndOntologyTab({
 
   const getLevelBadgeLabel = (level: UiOntologyLevel): string => {
     if (level === "1_ENTERPRISE") return `${enterpriseIcon} ${copy.workspaceGlossaryEnterpriseTitle}`;
-    if (level === "2_DOMAIN") return `${divisionIcon} Direction (${buLabel})`;
-    if (level === "3_TEAM") return `${teamIcon} Équipe (${teamLabel})`;
-    return `${workspaceIcon} Cet Espace (${wsName})`;
+    if (level === "2_DOMAIN") return `${divisionIcon} ${domainText}`;
+    if (level === "3_TEAM") return `${teamIcon} ${teamText}`;
+    return `${workspaceIcon} ${wsText}`;
   };
 
   return (
@@ -254,7 +246,7 @@ export function WorkspaceGlossaryAndOntologyTab({
           </strong>
         </div>
         <span data-testid="workspace-glossary-cascade-summary" style={{ fontSize: "11px", padding: "3px 8px", borderRadius: "var(--radius-sm)", backgroundColor: "var(--color-bg-elevated)", border: "1px solid var(--color-border-subtle)", color: "var(--color-text-secondary)" }}>
-          {`${enterpriseIcon} ${copy.workspaceGlossaryEnterpriseTitle} ➔ ${divisionIcon} Direction (${buLabel}) ➔ ${teamIcon} Équipe (${teamLabel}) ➔ ${workspaceIcon} Cet Espace (${wsName})`}
+          {`${enterpriseIcon} ${copy.workspaceGlossaryEnterpriseTitle} ➔ ${divisionIcon} ${domainText} ➔ ${teamIcon} ${teamText} ➔ ${workspaceIcon} ${wsText}`}
         </span>
       </div>
 
@@ -275,9 +267,9 @@ export function WorkspaceGlossaryAndOntologyTab({
           onChange={(e) => setSelectedScopeTier(e.target.value as "WORKSPACE" | "TEAM" | "BU" | "ENTERPRISE")}
           style={inputStyle}
         >
-          {canTier("4_WORKSPACE") && <option value="WORKSPACE">{`${workspaceIcon} Cet Espace (${wsName})`}</option>}
-          {canTier("3_TEAM") && <option value="TEAM">{`${teamIcon} Équipe (${teamLabel})`}</option>}
-          {canTier("2_DOMAIN") && <option value="BU">{`${divisionIcon} Direction (${buLabel})`}</option>}
+          {canTier("4_WORKSPACE") && <option value="WORKSPACE">{`${workspaceIcon} ${wsText}`}</option>}
+          {canTier("3_TEAM") && <option value="TEAM">{`${teamIcon} ${teamText}`}</option>}
+          {canTier("2_DOMAIN") && <option value="BU">{`${divisionIcon} ${domainText}`}</option>}
           {canTier("1_ENTERPRISE") && <option value="ENTERPRISE">{`${enterpriseIcon} ${copy.workspaceGlossaryEnterpriseTitle}`}</option>}
         </select>
         <button
@@ -292,49 +284,13 @@ export function WorkspaceGlossaryAndOntologyTab({
         </button>
       </form>
 
-      <div data-testid="workspace-glossary-cascade-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "10px" }}>
-        {cascadeTiers.map((tier) => (
-          <div key={tier.tierId} data-testid={`workspace-glossary-tier-${tier.tierId}`} style={{ padding: "10px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border)", backgroundColor: "var(--color-surface-card)", display: "flex", flexDirection: "column", gap: "8px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <strong style={{ fontSize: "12px" }}>{tier.badge}</strong>
-              <span style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>{tier.items.length}</span>
-            </div>
-            <p style={{ margin: 0, fontSize: "11px", color: "var(--color-muted-foreground)" }}>{tier.subtitle}</p>
-            {tier.items.length === 0 ? (
-              <p data-testid={`workspace-glossary-empty-${tier.tierId}`} style={{ margin: 0, fontSize: "11px", color: "var(--color-muted-foreground)" }}>{copy.workspaceGlossaryEmptyTier}</p>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                {tier.items.map((concept) => {
-                  const isPending = pendingConceptKeys.includes(concept.conceptKey);
-                  const canPromote = concept.level !== "1_ENTERPRISE" && (concept.canProposePromotion ?? true);
-                  return (
-                    <div key={concept.conceptKey} data-testid={`glossary-concept-card-${concept.conceptKey}`} style={{ padding: "8px 10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border-subtle)", backgroundColor: "var(--color-bg-elevated)", display: "flex", flexDirection: "column", gap: "4px" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                        <strong style={{ fontSize: "12px" }}>{concept.canonicalTerm}</strong>
-                        <span data-testid={`glossary-concept-level-badge-${concept.conceptKey}`} style={{ fontSize: "10px", color: "var(--color-text-secondary)" }}>{getLevelBadgeLabel(concept.level)}</span>
-                      </div>
-                      <span style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>{concept.definitionText}</span>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                        {isPending && (
-                          <span data-testid={`promoted-glossary-badge-${concept.conceptKey}`} style={{ fontSize: "10px", fontWeight: 700, padding: "2px 6px", borderRadius: "var(--radius-sm)", backgroundColor: "var(--color-action-primary-subtle)", color: "var(--color-status-warning)" }}>
-                            <OrciaIcon name="hourglass" /> {copy.workspaceGlossaryProposedBadge}
-                          </span>
-                        )}
-                        {canPromote && (
-                          <button type="button" data-testid={`promote-glossary-concept-btn-${concept.conceptKey}`} onClick={() => void handlePromote(concept)} className="orcia-ds-btn">
-                            <OrciaIcon name="promoteUp" />{" "}
-                            {concept.level === "2_DOMAIN" ? copy.workspaceGlossaryProposeOrg : copy.workspaceGlossaryProposeTeamOrBu}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+      <WorkspaceGlossaryCascadeGrid
+        cascadeTiers={cascadeTiers}
+        pendingConceptKeys={pendingConceptKeys}
+        copy={copy}
+        getLevelBadgeLabel={getLevelBadgeLabel}
+        onPromote={(concept) => void handlePromote(concept)}
+      />
     </div>
   );
 }

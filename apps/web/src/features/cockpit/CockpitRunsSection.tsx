@@ -5,6 +5,7 @@ import {
 } from "@orcia/ui";
 import React from "react";
 import type { ConfiguredWorkflowItem } from "../../components/platformSetupStore";
+import { useI18n } from "../../i18n";
 import { formatStepKeyLabel, formatStepStatusLabel } from "./cockpitGovernanceHelpers";
 
 export interface CockpitRunsSectionProps {
@@ -38,6 +39,8 @@ export function CockpitRunsSection({
   onLaunchRun,
   onNavigateToWorkspaces,
 }: CockpitRunsSectionProps): React.ReactElement {
+  const { dictionary } = useI18n();
+  const runsCopy = dictionary.featureCockpitGates.cockpit.runsSection;
   return (
     <section
       data-testid="cockpit-prompt-and-runs-section"
@@ -60,11 +63,7 @@ export function CockpitRunsSection({
           }}
         >
           <div>
-            <strong>
-              {isFr
-                ? "Aucun Espace de Travail ni processus en cours"
-                : "No Workspace or active process yet"}
-            </strong>
+            <strong>{runsCopy.emptyTitle}</strong>
             <p
               style={{
                 margin: "4px 0 0 0",
@@ -72,9 +71,7 @@ export function CockpitRunsSection({
                 color: "var(--color-muted-foreground)",
               }}
             >
-              {isFr
-                ? "Créez votre premier Espace de Travail pour lancer vos processus, utiliser Mon Assistant et suivre vos validations."
-                : "Create your first Workspace to run processes, use My Assistant, and track your reviews."}
+              {runsCopy.emptyDescription}
             </p>
           </div>
           <button
@@ -91,7 +88,7 @@ export function CockpitRunsSection({
               cursor: "pointer",
             }}
           >
-            {isFr ? "+ Créer un Espace de Travail" : "+ Create a Workspace"}
+            {runsCopy.createWorkspaceCta}
           </button>
         </div>
       ) : (
@@ -146,7 +143,7 @@ export function CockpitRunsSection({
             }}
           >
             <option value="assistant-agent">
-              {isFr ? "Assistant ORCIA" : "ORCIA Assistant"}
+              {runsCopy.assistantOptionLabel}
             </option>
             {workflows.map((wf) => (
               <option key={wf.workflowKey} value={wf.workflowKey}>
@@ -165,7 +162,7 @@ export function CockpitRunsSection({
             data-testid="cockpit-run-title-input"
             value={runTitle}
             onChange={(e) => onChangeRunTitle(e.target.value)}
-            placeholder={isFr ? "Intitulé de l'exécution..." : "Execution title..."}
+            placeholder={runsCopy.runTitlePlaceholder}
             style={{
               flex: "1 1 200px",
               minWidth: 0,
@@ -190,7 +187,7 @@ export function CockpitRunsSection({
               cursor: "pointer",
             }}
           >
-            {isFr ? "Démarrer le processus" : "Start process"}
+            {runsCopy.startProcessBtn}
           </button>
         </form>
       )}

@@ -4,7 +4,7 @@ import {
   type UpstreamChallengeWhatIfPreview,
 } from "@orcia/ui";
 import React, { useMemo, useState } from "react";
-import { useI18n } from "../../i18n";
+import { formatI18nTemplate, resolveDictionaryForFlag, resolveLocaleForFlag, useI18n } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 
 const CHALLENGER_STEP_KEY = "delegate-remediation-subworkflow";
@@ -28,6 +28,8 @@ export function GatesChallengeModalSection({
   onFeedback,
 }: GatesChallengeModalSectionProps) {
   const { dictionary } = useI18n();
+  const resolvedLocale = resolveLocaleForFlag(isFr);
+  const modalCopy = resolveDictionaryForFlag(isFr, resolvedLocale).featureCockpitGates.gates.challengeModal;
   const apiClient = useMemo(() => createOrciaApiClient({ baseUrl: "" }), []);
   const [preview, setPreview] = useState<UpstreamChallengeWhatIfPreview>({
     runId,
@@ -35,9 +37,7 @@ export function GatesChallengeModalSection({
     targetUpstreamStepKey: TARGET_UPSTREAM_STEP_KEY,
     challengedSectionKey: sectionKey,
     targetProfileArchetype: "PM_BUSINESS",
-    translatedSummary: isFr
-      ? "Impact What-If : réévaluation ciblée de la section contestée sans retraiter l'amont validé."
-      : "What-If Impact: targeted re-evaluation of the challenged section without reprocessing validated upstream steps.",
+    translatedSummary: modalCopy.defaultSummary,
     invalidatedDownstreamStepKeys: [TARGET_UPSTREAM_STEP_KEY, CHALLENGER_STEP_KEY],
     invalidatedArtifactSections: [`${TARGET_UPSTREAM_STEP_KEY}:${sectionKey}`],
     invalidatedOntologyAxiomKeys: [],
@@ -74,14 +74,10 @@ export function GatesChallengeModalSection({
         preservedUpstreamStepKeys: res.preview.preserved_upstream_step_keys,
         upstreamTokensSaved: res.preview.upstream_tokens_saved,
       });
-      onFeedback(
-        isFr
-          ? "⚠️ Contestation amont enregistrée et transmise pour révision."
-          : "⚠️ Upstream challenge recorded and dispatched for revision.",
-      );
+      onFeedback(modalCopy.challengeSubmittedBanner);
     } catch (err: unknown) {
       onFeedback(
-        `⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Rejeu du processus" : "Process replay").fullText}`,
+        `⚠️ ${formatRfc9457ErrorToBanner(err, resolvedLocale, modalCopy.errorContextLabel).fullText}`,
       );
     }
   };
@@ -95,13 +91,13 @@ export function GatesChallengeModalSection({
         sub_workflow_step_key: payload.subWorkflowStepKey ?? null,
       });
       onFeedback(
-        isFr
-          ? `Alerte d'obsolescence : replay déclenché depuis « ${res.replay.replayed_from_step_key} ».`
-          : `Stale notice: replay triggered from "${res.replay.replayed_from_step_key}".`,
+        formatI18nTemplate(modalCopy.replayBannerTemplate, {
+          stepKey: res.replay.replayed_from_step_key,
+        }),
       );
     } catch (err: unknown) {
       onFeedback(
-        `⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Rejeu du processus" : "Process replay").fullText}`,
+        `⚠️ ${formatRfc9457ErrorToBanner(err, resolvedLocale, modalCopy.errorContextLabel).fullText}`,
       );
     }
   };

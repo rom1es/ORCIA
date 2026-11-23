@@ -8,10 +8,10 @@ import { useI18n } from "../../i18n";
 import { GatesAdaptiveHumanReviewSection } from "./GatesAdaptiveHumanReviewSection";
 
 export function GatesFeaturePanel() {
-  const { locale } = useI18n();
+  const { dictionary, isFr } = useI18n();
+  const gatesPanel = dictionary.featureCockpitGates.gates.panel;
   const { workspaces, scopes } = usePlatformSetup();
   const { activeScopeId, navigateToRoute } = useShellNavigation();
-  const isFr = locale === "fr";
   const activeScopeNode = scopes.find((s) => s.id === activeScopeId);
   const resolvedWsId = resolveEffectiveWorkspaceId(activeScopeId, workspaces);
   const activeWorkspace = workspaces.find((w) => w.workspaceId === resolvedWsId) ?? workspaces[0];
@@ -43,14 +43,14 @@ export function GatesFeaturePanel() {
         }}
       >
         <span>
-          {isFr ? "Périmètre de validation actif :" : "Active review scope:"}{" "}
+          {gatesPanel.activeScopeLabel}{" "}
           <strong style={{ color: "var(--color-text-primary)" }}>
             {activeScopeNode?.name ?? resolveGlobalScopeLabel(isFr)}
           </strong>
         </span>
       </div>
 
-      {/* Vue Fokus dédiée : Briefing 4 blocs, Validation par découpage, Garde-fou < 15 s & Jira Staged */}
+      {/* Dedicated Focus View: 4-block briefing, chunk validation, <15s guard & staged Jira */}
       <GatesAdaptiveHumanReviewSection
         activeWorkspaceId={activeWorkspace?.workspaceId}
         isFr={isFr}
@@ -69,11 +69,7 @@ export function GatesFeaturePanel() {
         }}
       >
         <div>
-          <strong>
-            {isFr
-              ? "Aucune étape de validation en attente actuellement"
-              : "No review checkpoint currently awaiting approval"}
-          </strong>
+          <strong>{gatesPanel.emptyTitle}</strong>
           <p
             style={{
               margin: "4px 0 0 0",
@@ -81,9 +77,7 @@ export function GatesFeaturePanel() {
               color: "var(--color-muted-foreground)",
             }}
           >
-            {isFr
-              ? "Les contrôles automatiques, revues croisées et étapes de validation humaine s'affichent ici lors de l'exécution d'un processus."
-              : "Automated checks, cross-checked reviews, and human approval steps appear here during process runs."}
+            {gatesPanel.emptyDescription}
           </p>
         </div>
         <button
@@ -100,7 +94,7 @@ export function GatesFeaturePanel() {
             cursor: "pointer",
           }}
         >
-          {isFr ? "Ouvrir Mes Processus" : "Open My Processes"}
+          {gatesPanel.openProcessesBtn}
         </button>
       </div>
     </div>

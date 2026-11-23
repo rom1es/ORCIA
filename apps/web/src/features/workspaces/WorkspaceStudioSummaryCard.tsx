@@ -7,8 +7,14 @@ import {
 } from "@orcia/ui";
 import React from "react";
 import { resolveGlobalScopeLabel } from "../../components/platformSetupWorkspaces";
+import {
+  formatI18nTemplate,
+  resolveDictionaryForFlag,
+  resolveLocaleForFlag,
+} from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import { formatCurrency } from "../../lib/formatters";
+import { formatPackCountNoun } from "../settings/packs/packDisplayFormatters";
 
 export interface WorkspaceStudioSummaryCardProps {
   readonly ws: ControlCenterWorkspaceGovItem;
@@ -49,6 +55,8 @@ export function WorkspaceStudioSummaryCard({
   onFeedback,
   onNavigateToRoute,
 }: WorkspaceStudioSummaryCardProps): React.ReactElement {
+  const resolvedLocale = resolveLocaleForFlag(isFr);
+  const cardCopy = resolveDictionaryForFlag(isFr, resolvedLocale).featureWorkspaces.summaryCard;
   const visibilityIconName =
     ws.visibilityMode === "PRIVATE_USER"
       ? "lock"
@@ -57,10 +65,10 @@ export function WorkspaceStudioSummaryCard({
         : "team";
   const visibilityLabelText =
     ws.visibilityMode === "PRIVATE_USER"
-      ? isFr ? "Privé personnel" : "Private personal"
+      ? cardCopy.visibilityPrivate
       : ws.visibilityMode === "CONFIDENTIAL_RESTRICTED"
-        ? isFr ? "Confidentiel isolé" : "Confidential isolated"
-        : isFr ? "Collectif d'équipe" : "Team shared";
+        ? cardCopy.visibilityConfidential
+        : cardCopy.visibilityStandard;
 
   return (
     <div
@@ -77,7 +85,7 @@ export function WorkspaceStudioSummaryCard({
         <div>
           <strong style={{ fontSize: "15px" }}>{ws.name}</strong>
           <div style={{ fontSize: "11px", color: "var(--color-muted-foreground)", marginTop: "2px" }}>
-            {isFr ? "Équipe de facturation :" : "Billing Team :"}{" "}
+            {cardCopy.billingTeamLabel}{" "}
             <strong>{ws.ownerOrgUnitName ?? resolveGlobalScopeLabel(isFr)}</strong>
           </div>
         </div>
@@ -94,7 +102,7 @@ export function WorkspaceStudioSummaryCard({
                 color: "var(--color-status-success)",
               }}
             >
-              <OrciaIcon name="check" /> {isFr ? "Enregistré" : "Saved"}
+              <OrciaIcon name="check" /> {cardCopy.savedBadge}
             </span>
           )}
           <span
@@ -118,68 +126,68 @@ export function WorkspaceStudioSummaryCard({
           {wsSourcesCount > 0 && (
             <span>
               <OrciaIcon name="books" /> <strong>{wsSourcesCount}</strong>{" "}
-              {isFr ? (wsSourcesCount <= 1 ? "Source rattachée" : "Sources rattachées") : wsSourcesCount === 1 ? "Attached source" : "Attached sources"}
+              {formatPackCountNoun(wsSourcesCount, cardCopy.attachedSourceSingular, cardCopy.attachedSourcePlural, isFr)}
             </span>
           )}
           {ontologyConceptsCount > 0 && (
             <span>
               <OrciaIcon name="bookOpen" /> <strong>{ontologyConceptsCount}</strong>{" "}
-              {isFr ? (ontologyConceptsCount <= 1 ? "Terme & Règle actif" : "Termes & Règles actifs") : ontologyConceptsCount === 1 ? "Active term & rule" : "Active terms & rules"}
+              {formatPackCountNoun(ontologyConceptsCount, cardCopy.activeTermSingular, cardCopy.activeTermPlural, isFr)}
             </span>
           )}
           {workflowsCount > 0 && (
             <span>
               <OrciaIcon name="menuProcesses" /> <strong>{workflowsCount}</strong>{" "}
-              {isFr ? "Processus" : workflowsCount === 1 ? "Process" : "Processes"}
+              {formatPackCountNoun(workflowsCount, cardCopy.processSingular, cardCopy.processPlural, isFr)}
             </span>
           )}
           {(ws.finopsCostUsd ?? 0) > 0 && (
-            <span><OrciaIcon name="moneyBag" /> <strong>{formatCurrency(ws.finopsCostUsd ?? 0, isFr ? "fr" : "en")}</strong></span>
+            <span><OrciaIcon name="moneyBag" /> <strong>{formatCurrency(ws.finopsCostUsd ?? 0, resolvedLocale)}</strong></span>
           )}
         </div>
       ) : (
         <div style={{ fontSize: "11px", color: "var(--color-muted-foreground)" }}>
-          {isFr ? "Aucune source ni consommation enregistrée pour le moment." : "No sources or usage recorded yet."}
+          {cardCopy.noSourcesOrUsage}
         </div>
       )}
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center", paddingTop: "4px" }}>
         <select
           data-testid={`workspace-card-phase-select-${ws.workspaceId}`}
-          aria-label={isFr ? "Phase de l'espace" : "Workspace phase"}
+          aria-label={cardCopy.phaseSelectAriaLabel}
           value={ws.lifecyclePhase}
           onChange={(e) => {
             const nextPhase = e.target.value as ProductLifecyclePhaseType;
             void Promise.resolve(onUpdateWorkspacePhase(ws.workspaceId, nextPhase))
               .then(() => onMarkAutosaved(ws.workspaceId))
               .catch((err: unknown) => {
-                onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Phase de l'espace" : "Workspace phase").fullText}`);
+                onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, resolvedLocale, cardCopy.phaseErrorContext).fullText}`);
               });
           }}
           style={{ ...inputStyle, fontSize: "11px", padding: "4px 8px" }}
         >
-          <option value="BUILD">{isFr ? "Phase : Construction" : "Phase: Build"}</option>
-          <option value="RUN">{isFr ? "Phase : Exploitation" : "Phase: Operations"}</option>
-          <option value="MIGRATION">{isFr ? "Phase : Évolution" : "Phase: Evolution"}</option>
+          <option value="BUILD">{cardCopy.phaseBuildOption}</option>
+          <option value="RUN">{cardCopy.phaseRunOption}</option>
+          <option value="MIGRATION">{cardCopy.phaseMigrationOption}</option>
         </select>
 
         <select
           data-testid={`workspace-card-visibility-select-${ws.workspaceId}`}
-          aria-label={isFr ? "Visibilité de l'espace" : "Workspace visibility"}
+          aria-label={cardCopy.visibilitySelectAriaLabel}
           value={ws.visibilityMode}
           onChange={(e) => {
             const nextVis = e.target.value as WorkspaceVisibilityMode;
             void Promise.resolve(onUpdateWorkspaceVisibility(ws.workspaceId, nextVis))
               .then(() => onMarkAutosaved(ws.workspaceId))
               .catch((err: unknown) => {
-                onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Visibilité de l'espace" : "Workspace visibility").fullText}`);
+                onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, resolvedLocale, cardCopy.visibilityErrorContext).fullText}`);
               });
           }}
           style={{ ...inputStyle, fontSize: "11px", padding: "4px 8px" }}
         >
-          <option value="STANDARD">{`${getOrciaIconGlyph("team")} ${isFr ? "Collectif d'équipe" : "Team shared"}`}</option>
-          <option value="PRIVATE_USER">{`${getOrciaIconGlyph("lock")} ${isFr ? "Privé personnel" : "Private personal"}`}</option>
-          <option value="CONFIDENTIAL_RESTRICTED">{`${getOrciaIconGlyph("shield")} ${isFr ? "Confidentiel isolé" : "Confidential isolated"}`}</option>
+          <option value="STANDARD">{`${getOrciaIconGlyph("team")} ${cardCopy.visibilityStandard}`}</option>
+          <option value="PRIVATE_USER">{`${getOrciaIconGlyph("lock")} ${cardCopy.visibilityPrivate}`}</option>
+          <option value="CONFIDENTIAL_RESTRICTED">{`${getOrciaIconGlyph("shield")} ${cardCopy.visibilityConfidential}`}</option>
         </select>
 
         {ws.visibilityMode === "PRIVATE_USER" && (
@@ -190,10 +198,10 @@ export function WorkspaceStudioSummaryCard({
               void Promise.resolve(onUpdateWorkspaceVisibility(ws.workspaceId, "STANDARD"))
                 .then(() => {
                   onMarkAutosaved(ws.workspaceId);
-                  onFeedback(isFr ? `✅ L'espace « ${ws.name} » est désormais partagé avec l'équipe.` : `✅ Workspace "${ws.name}" is now shared with the team.`);
+                  onFeedback(formatI18nTemplate(cardCopy.shareSuccessTemplate, { name: ws.name }));
                 })
                 .catch((err: unknown) => {
-                  onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Partage d'espace" : "Workspace sharing").fullText}`);
+                  onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, resolvedLocale, cardCopy.shareErrorContext).fullText}`);
                 });
             }}
             style={{
@@ -207,7 +215,7 @@ export function WorkspaceStudioSummaryCard({
               cursor: "pointer",
             }}
           >
-            <OrciaIcon name="team" /> {isFr ? "Partager avec l'Équipe" : "Share with Team"}
+            <OrciaIcon name="team" /> {cardCopy.shareWithTeamBtn}
           </button>
         )}
       </div>
@@ -238,7 +246,7 @@ export function WorkspaceStudioSummaryCard({
             cursor: "pointer",
           }}
         >
-          <OrciaIcon name="target" /> {isFr ? "Travailler dans cet Espace" : "Work in this Space"}
+          <OrciaIcon name="target" /> {cardCopy.workInSpaceBtn}
         </button>
         <div style={{ display: "flex", gap: "6px" }}>
           <button
@@ -247,7 +255,7 @@ export function WorkspaceStudioSummaryCard({
             onClick={() => onNavigateToRoute("/assistant")}
             style={{ padding: "4px 8px", fontSize: "11px", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border)", backgroundColor: "var(--color-surface-card)", cursor: "pointer" }}
           >
-            <OrciaIcon name="menuAssistant" /> {isFr ? "Ouvrir Mon Assistant" : "Open My Assistant"}
+            <OrciaIcon name="menuAssistant" /> {cardCopy.openAssistantBtn}
           </button>
           <button
             type="button"
@@ -255,7 +263,7 @@ export function WorkspaceStudioSummaryCard({
             onClick={() => onNavigateToRoute("/processes")}
             style={{ padding: "4px 8px", fontSize: "11px", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border)", backgroundColor: "var(--color-surface-card)", cursor: "pointer" }}
           >
-            <OrciaIcon name="menuProcesses" /> {isFr ? "Lancer un Processus" : "Launch a Process"}
+            <OrciaIcon name="menuProcesses" /> {cardCopy.launchProcessBtn}
           </button>
         </div>
       </div>
