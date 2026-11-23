@@ -102,13 +102,15 @@ export function useFinopsDashboardController(activeScopeId: string) {
   const apiClient = useMemo(() => createOrciaApiClient({ baseUrl: "" }), []);
 
   const reportMutationError = useCallback(
-    (err: unknown, frLabel: string, enLabel: string) => {
+    (err: unknown, resourceLabel: string) => {
       setErrorMessage(
-        formatRfc9457ErrorToBanner(err, locale, locale === "fr" ? frLabel : enLabel).fullText,
+        formatRfc9457ErrorToBanner(err, locale, resourceLabel).fullText,
       );
     },
     [locale],
   );
+
+  const finopsResources = dictionary.categoryAControllers.finopsResources;
 
   const loadDashboard = useCallback(async () => {
     try {
@@ -125,9 +127,9 @@ export function useFinopsDashboardController(activeScopeId: string) {
       setCognitiveData(cog);
       setRemoteData(remote);
     } catch (err: unknown) {
-      reportMutationError(err, "Tableau de bord FinOps", "FinOps dashboard");
+      reportMutationError(err, finopsResources.dashboard);
     }
-  }, [apiClient, selectedScope, resolveValidScopeIdForLevel, reportMutationError]);
+  }, [apiClient, selectedScope, resolveValidScopeIdForLevel, reportMutationError, finopsResources.dashboard]);
 
   useEffect(() => {
     void loadDashboard();
@@ -155,10 +157,10 @@ export function useFinopsDashboardController(activeScopeId: string) {
         setSuccessMessage(dictionary.finops.modals.saveButton + " ✓");
         setReloadTrigger((prev) => prev + 1);
       } catch (err: unknown) {
-        reportMutationError(err, "Plafond budgétaire", "Budget ceiling");
+        reportMutationError(err, finopsResources.budgetCeiling);
       }
     },
-    [apiClient, dictionary.finops.modals.saveButton, reportMutationError],
+    [apiClient, dictionary.finops.modals.saveButton, reportMutationError, finopsResources.budgetCeiling],
   );
 
   const handleSubmitOverride = useCallback(
@@ -174,10 +176,10 @@ export function useFinopsDashboardController(activeScopeId: string) {
         setSuccessMessage(dictionary.finops.modals.overrideSubmitButton + " ✓");
         setReloadTrigger((prev) => prev + 1);
       } catch (err: unknown) {
-        reportMutationError(err, "Dérogation budgétaire", "Budget override");
+        reportMutationError(err, finopsResources.budgetOverride);
       }
     },
-    [apiClient, dictionary.finops.modals.overrideSubmitButton, reportMutationError, resolvedScopeIdsByLevel.WORKSPACE],
+    [apiClient, dictionary.finops.modals.overrideSubmitButton, reportMutationError, resolvedScopeIdsByLevel.WORKSPACE, finopsResources.budgetOverride],
   );
 
   const handleApplyRecommendation = useCallback(
@@ -189,10 +191,10 @@ export function useFinopsDashboardController(activeScopeId: string) {
         setSuccessMessage(dictionary.finops.humanMastery.appliedBadge);
         setReloadTrigger((prev) => prev + 1);
       } catch (err: unknown) {
-        reportMutationError(err, "Recommandation FinOps", "FinOps recommendation");
+        reportMutationError(err, finopsResources.recommendation);
       }
     },
-    [apiClient, dictionary.finops.humanMastery.appliedBadge, reportMutationError],
+    [apiClient, dictionary.finops.humanMastery.appliedBadge, reportMutationError, finopsResources.recommendation],
   );
 
   const handleUpdateConnectorQuota = useCallback(
@@ -217,10 +219,10 @@ export function useFinopsDashboardController(activeScopeId: string) {
         setSuccessMessage(dictionary.finops.remoteServices.quotaModal.saveButton + " ✓");
         setReloadTrigger((prev) => prev + 1);
       } catch (err: unknown) {
-        reportMutationError(err, "Quota de service distant", "Remote service quota");
+        reportMutationError(err, finopsResources.remoteQuota);
       }
     },
-    [apiClient, selectedScope, resolveValidScopeIdForLevel, dictionary.finops.remoteServices.quotaModal.saveButton, reportMutationError],
+    [apiClient, selectedScope, resolveValidScopeIdForLevel, dictionary.finops.remoteServices.quotaModal.saveButton, reportMutationError, finopsResources.remoteQuota],
   );
 
   const handleResetConnectorCircuit = useCallback(
@@ -236,10 +238,10 @@ export function useFinopsDashboardController(activeScopeId: string) {
         setSuccessMessage(dictionary.finops.remoteServices.circuitStates.closed + " ✓");
         setReloadTrigger((prev) => prev + 1);
       } catch (err: unknown) {
-        reportMutationError(err, "Réarmement du connecteur", "Connector circuit reset");
+        reportMutationError(err, finopsResources.circuitReset);
       }
     },
-    [apiClient, selectedScope, resolveValidScopeIdForLevel, dictionary.finops.remoteServices.circuitStates.closed, reportMutationError],
+    [apiClient, selectedScope, resolveValidScopeIdForLevel, dictionary.finops.remoteServices.circuitStates.closed, reportMutationError, finopsResources.circuitReset],
   );
 
   const handleReviewPostHocSample = useCallback(
@@ -259,10 +261,10 @@ export function useFinopsDashboardController(activeScopeId: string) {
         );
         setReloadTrigger((prev) => prev + 1);
       } catch (err: unknown) {
-        reportMutationError(err, "Audit exécution autonome", "Autonomous run review");
+        reportMutationError(err, finopsResources.autonomousReview);
       }
     },
-    [apiClient, dictionary.autonomousSupervision.restoreSuccessBanner, dictionary.autonomousSupervision.reviewValidatedBanner, reportMutationError, resolvedScopeIdsByLevel.WORKSPACE],
+    [apiClient, dictionary.autonomousSupervision.restoreSuccessBanner, dictionary.autonomousSupervision.reviewValidatedBanner, reportMutationError, resolvedScopeIdsByLevel.WORKSPACE, finopsResources.autonomousReview],
   );
 
   const mappedProcesses = useMemo(() => mapProcessesRows(dashboardData), [dashboardData]);

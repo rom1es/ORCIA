@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 223,
+    "techLeadReportsCount": 224,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -550,6 +550,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-23",
+      "phaseOrStory": "Story 27.2",
+      "reportFile": "27-2-category-a-client-error-codes-bridges-stores-and-rfc9457-banner-tech-lead-report.md",
+      "domain": "Epic 27 Lot 1 — Category A Remediation: Client API Bridges, SSE Stores, Controllers & formatRfc9457ErrorToBanner Migrated to ClientErrorCode (CAP-001..CAP-260 hygiene)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified on ce4ba7bca): expanded ClientErrorCode (43 codes) + ClientCodedError, introduced OrciaClientError in @orcia/api-client, removed UserPasswordChangeCard default locale fallbacks, extracted rfc9457_banner_labels_{fr,en}.ts & category_a_controller_labels_{fr,en}.ts, split all > 300 L files (56/56 .ts/.tsx files <= 300 L), locked Gate 3 clientErrorBaseline to 0 (totalClientErrorViolations: 0), reduced Gate 1 AST baseline (1,253 → 1,129), and verified 9/9 Turbo (@orcia/api-client 20, @orcia/ui 139, @orcia/web 288 = 447 JS/TS tests), Gate 2 (0 violations), and Gate 4 (3 passed)."
+    },
     {
       "date": "2026-11-23",
       "phaseOrStory": "Story 27.1",

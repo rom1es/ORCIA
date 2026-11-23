@@ -96,4 +96,24 @@ export const TEST_USER_SETTINGS_LABELS: UserAccountDropdownAndSettingsLabels = {
   passthroughConnectTokenCta: "Connecter mon jeton",
   passthroughRevokeTokenCta: "Révoquer",
   passthroughEmptyConnectorsMessage: "Aucun connecteur configuré au niveau du socle.",
+  passwordSecurity: {
+    title: "Sécurité & Mot de Passe",
+    renewalRequiredBadge: "Renouvellement Requis",
+    temporaryPasswordWarning:
+      "Vous utilisez un mot de passe temporaire à renouveler obligatoirement.",
+    currentPasswordLabel: "Mot de passe actuel", // pragma: allowlist secret
+    newPasswordLabel: "Nouveau mot de passe (min. 12 car., Maj/Min/Chiffre)", // pragma: allowlist secret
+    confirmPasswordLabel: "Confirmer le nouveau mot de passe", // pragma: allowlist secret
+    submitButtonLabel: "Changer mon mot de passe",
+    submittingButtonLabel: "Mise à jour...",
+    updatedSuccessMessage: "Mot de passe mis à jour avec succès.",
+    missingCurrentPasswordError: "Veuillez renseigner votre mot de passe actuel.", // pragma: allowlist secret
+    weakPasswordError:
+      "Le mot de passe doit comporter au moins 12 caractères (min. 1 min, 1 maj, 1 chiffre).",
+    unchangedPasswordError:
+      "Le nouveau mot de passe doit être différent de l'actuel.", // pragma: allowlist secret
+    mismatchPasswordError: "Les deux mots de passe ne correspondent pas.", // pragma: allowlist secret
+    actionNotConfiguredError: "Action non configurée.",
+    genericError: "Erreur lors de la modification du mot de passe.",
+  },
 };

@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   createOrciaApiClient,
-  OrciaProblemError,
   type EnterpriseConnectorCreateRequest,
   type EnterpriseConnectorItemResponse,
 } from "@orcia/api-client";
+import { useI18n } from "../../../i18n";
+import { extractLocalizedApiError } from "../../../lib/formatRfc9457ErrorToBanner";
 import { useAuthSessionStore } from "../../../stores/authSessionStore";
 
-export function useEnterpriseConnectorsController(isFr: boolean) {
+export function useEnterpriseConnectorsController(_useFrench?: boolean) {
+  const { dictionary, locale } = useI18n();
+  const copy = dictionary.categoryAControllers.connectors;
   const [connectors, setConnectors] = useState<readonly EnterpriseConnectorItemResponse[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -18,7 +21,7 @@ export function useEnterpriseConnectorsController(isFr: boolean) {
   const [authMode, setAuthMode] = useState<EnterpriseConnectorCreateRequest["auth_mode"]>("OAUTH2_PASSTHROUGH");
   const [adminSecret, setAdminSecret] = useState<string>("");
 
-  const client = createOrciaApiClient({ baseUrl: "" });
+  const client = createOrciaApiClient({ baseUrl: "", locale });
 
   const loadConnectors = useCallback(async () => {
     setIsLoading(true);
@@ -27,15 +30,13 @@ export function useEnterpriseConnectorsController(isFr: boolean) {
       const res = await client.listEnterpriseConnectors();
       setConnectors(res.items);
     } catch (err) {
-      if (err instanceof OrciaProblemError) {
-        setErrorMessage(err.problem.title || err.message);
-      } else {
-        setErrorMessage(isFr ? "Impossible de charger les connecteurs." : "Failed to load connectors.");
-      }
+      setErrorMessage(
+        extractLocalizedApiError(err, locale, "ERR_CLIENT_CONNECTORS_LOAD").errorMessage,
+      );
     } finally {
       setIsLoading(false);
     }
-  }, [isFr]);
+  }, [locale]);
 
   const isHydrating = useAuthSessionStore((s) => s.isHydrating);
   const accessToken = useAuthSessionStore((s) => s.accessToken);
@@ -63,16 +64,12 @@ export function useEnterpriseConnectorsController(isFr: boolean) {
       setName("");
       setBaseUrl("");
       setAdminSecret("");
-      setSuccessMessage(
-        isFr ? "Connecteur d'entreprise enregistré au niveau du socle." : "Enterprise connector registered.",
-      );
+      setSuccessMessage(copy.registeredSuccess);
       await loadConnectors();
     } catch (err) {
-      if (err instanceof OrciaProblemError) {
-        setErrorMessage(err.problem.detail || err.problem.title);
-      } else {
-        setErrorMessage(isFr ? "Erreur lors de l'enregistrement du connecteur." : "Error registering connector.");
-      }
+      setErrorMessage(
+        extractLocalizedApiError(err, locale, "ERR_CLIENT_CONNECTOR_SAVE").errorMessage,
+      );
     }
   };
 
@@ -81,14 +78,12 @@ export function useEnterpriseConnectorsController(isFr: boolean) {
     setSuccessMessage(null);
     try {
       await client.deleteEnterpriseConnector(connectorId);
-      setSuccessMessage(isFr ? "Connecteur supprimé." : "Connector deleted.");
+      setSuccessMessage(copy.deletedSuccess);
       await loadConnectors();
     } catch (err) {
-      if (err instanceof OrciaProblemError) {
-        setErrorMessage(err.problem.detail || err.problem.title);
-      } else {
-        setErrorMessage(isFr ? "Erreur lors de la suppression." : "Error deleting connector.");
-      }
+      setErrorMessage(
+        extractLocalizedApiError(err, locale, "ERR_CLIENT_CONNECTOR_DELETE").errorMessage,
+      );
     }
   };
 

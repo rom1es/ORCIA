@@ -9,6 +9,7 @@ import {
   SHELL_AND_SEARCH_EN_LABELS,
   SHELL_AND_SEARCH_FR_LABELS,
 } from "../i18n/locales/shell_and_search_labels";
+import { ClientCodedError } from "../lib/clientErrorCodes";
 import { resolveWebApiBaseUrl } from "../stores/authSessionStore";
 import {
   formatHumanReadableScopePath,
@@ -35,8 +36,8 @@ export interface RegisterDatasourceInput {
   readonly freshnessTtlDays: number;
 }
 
-export function resolveGlobalScopeLabel(isFr = true): string {
-  const section = isFr ? SHELL_AND_SEARCH_FR_LABELS : SHELL_AND_SEARCH_EN_LABELS;
+export function resolveGlobalScopeLabel(useFrench = true): string {
+  const section = useFrench ? SHELL_AND_SEARCH_FR_LABELS : SHELL_AND_SEARCH_EN_LABELS;
   return section.fourZoneShell.doubleSelector?.globalPlatformLabel ?? "ORCIA";
 }
 
@@ -81,9 +82,9 @@ export async function createWorkspaceViaServer(params: {
   });
 
   if (!created || !created.id) {
-    throw new Error(
-      "Le serveur n'a pas retourné d'identifiant UUIDv7 valide pour le nouvel espace.",
-    );
+    throw new ClientCodedError("ERR_CLIENT_INVALID_PAYLOAD", {
+      detail: "workspace.id",
+    });
   }
 
   const effectiveOwnerId = ownerOrgUnitId ?? created.owner_org_unit_id;

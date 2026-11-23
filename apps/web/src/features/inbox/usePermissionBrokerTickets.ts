@@ -1,6 +1,11 @@
 import { createOrciaApiClient, type PermissionBrokerTicketItem } from "@orcia/api-client";
 import type { UiBrokerConnectorScheme, UiPermissionBrokerTicketView } from "@orcia/ui";
 import { useCallback, useEffect, useState } from "react";
+import { useI18n } from "../../i18n";
+import {
+  extractLocalizedApiError,
+  resolveLocalizedClientError,
+} from "../../lib/formatRfc9457ErrorToBanner";
 
 const ALLOWED_BROKER_SCHEMES: ReadonlySet<UiBrokerConnectorScheme> = new Set([
   "git",
@@ -38,22 +43,19 @@ function mapBrokerTicket(item: PermissionBrokerTicketItem): UiPermissionBrokerTi
   };
 }
 
-function errorMessage(err: unknown): string {
-  return err instanceof Error ? err.message : String(err);
-}
-
 export function usePermissionBrokerTickets(params: {
   readonly workspaceId: string;
-  readonly isFr: boolean;
+  readonly isFr?: boolean;
   readonly onFeedback: (message: string) => void;
 }) {
-  const { workspaceId, isFr, onFeedback } = params;
+  const { workspaceId, onFeedback } = params;
+  const { locale } = useI18n();
   const [tickets, setTickets] = useState<readonly UiPermissionBrokerTicketView[]>([]);
   const [interactedTicketId, setInteractedTicketId] = useState<string | null>(null);
 
   const refreshTickets = useCallback(async () => {
     try {
-      const client = createOrciaApiClient({ baseUrl: "" });
+      const client = createOrciaApiClient({ baseUrl: "", locale });
       const res = await client.getPermissionBrokerState(
         undefined,
         workspaceId ? workspaceId : undefined,
@@ -61,14 +63,15 @@ export function usePermissionBrokerTickets(params: {
       const rawTickets = Array.isArray(res?.tickets) ? res.tickets : [];
       setTickets(rawTickets.map(mapBrokerTicket));
     } catch (err: unknown) {
+      const extracted = extractLocalizedApiError(err, locale, "ERR_CLIENT_PERMISSION_LOAD");
       onFeedback(
-        isFr
-          ? `⚠️ Impossible de charger les demandes d'accès (${errorMessage(err)}).`
-          : `⚠️ Failed to load access requests (${errorMessage(err)}).`,
+        resolveLocalizedClientError("ERR_CLIENT_PERMISSION_LOAD", locale, {
+          detail: extracted.errorMessage,
+        }),
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspaceId, isFr]);
+  }, [workspaceId, locale]);
 
   useEffect(() => {
     void refreshTickets();
@@ -77,7 +80,7 @@ export function usePermissionBrokerTickets(params: {
   const handleAction = useCallback(
     async (ticketId: string, action: "PAUSE" | "REPLAY") => {
       try {
-        const client = createOrciaApiClient({ baseUrl: "" });
+        const client = createOrciaApiClient({ baseUrl: "", locale });
         const res = await client.applyPermissionTicketAction(ticketId, {
           action,
           ...(workspaceId ? { workspace_id: workspaceId } : {}),
@@ -92,14 +95,15 @@ export function usePermissionBrokerTickets(params: {
           );
         }
       } catch (err: unknown) {
+        const extracted = extractLocalizedApiError(err, locale, "ERR_CLIENT_PERMISSION_ACTION");
         onFeedback(
-          isFr
-            ? `⚠️ Échec de l'action Permission Broker (${errorMessage(err)}).`
-            : `⚠️ Permission Broker action failed (${errorMessage(err)}).`,
+          resolveLocalizedClientError("ERR_CLIENT_PERMISSION_ACTION", locale, {
+            detail: extracted.errorMessage,
+          }),
         );
       }
     },
-    [workspaceId, isFr, onFeedback],
+    [workspaceId, locale, onFeedback],
   );
 
   const waitingTicket =

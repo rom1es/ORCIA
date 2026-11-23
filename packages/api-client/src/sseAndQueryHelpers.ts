@@ -1,5 +1,22 @@
 import type { ProblemDetails } from "./generated/schema";
 
+export interface OrciaClientErrorParams {
+  readonly seconds?: number;
+  readonly detail?: string;
+}
+
+export class OrciaClientError extends Error {
+  public readonly code: string;
+  public readonly params?: OrciaClientErrorParams;
+
+  constructor(code: string, params?: OrciaClientErrorParams) {
+    super(code);
+    this.name = "OrciaClientError";
+    this.code = code;
+    this.params = params;
+  }
+}
+
 export class OrciaProblemError extends Error {
   public readonly problem: ProblemDetails;
 
@@ -24,9 +41,9 @@ export async function parseProblemError(
     .catch(
       (): ProblemDetails => ({
         type: "about:blank",
-        title: response.statusText || "HTTP Error",
+        title: response.statusText || "ERR_CLIENT_HTTP_FALLBACK",
         status: response.status || 500,
-        detail: response.statusText || "Unexpected non-JSON error response",
+        detail: response.statusText || "ERR_CLIENT_INVALID_PAYLOAD",
         instance: path,
         error_code: "ERR_INTERNAL_SERVER_ERROR",
         trace_id: fallbackTraceId,

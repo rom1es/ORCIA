@@ -7,6 +7,7 @@ import type {
   UiOntologyConceptView,
 } from "@orcia/ui";
 import React, { createContext, useContext, useRef, useState } from "react";
+import { ClientCodedError } from "../lib/clientErrorCodes";
 import { useAuthSessionStore } from "../stores/authSessionStore";
 import { createPlatformGovernanceActions } from "./platformSetupGovernanceActions";
 import {
@@ -74,22 +75,12 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   );
   const [initialCache] = useState<CachedPlatformSetupState>(() => readCachedPlatformSetupState());
   const [orgUnits, setOrgUnits] = useState<readonly ConfiguredOrgUnit[]>(initialCache.orgUnits);
-  const [rbacGrants, setRbacGrants] = useState<readonly ConfiguredRbacGrant[]>(
-    initialCache.rbacGrants,
-  );
-  const [llmTiers, setLlmTiers] = useState<readonly ConfiguredLlmTierMapping[]>(
-    initialCache.llmTiers,
-  );
-  const [workspaces, setWorkspaces] = useState<readonly ControlCenterWorkspaceGovItem[]>(
-    initialCache.workspaces,
-  );
-  const [datasources, setDatasources] = useState<readonly ControlCenterDatasourceItem[]>(
-    initialCache.datasources,
-  );
+  const [rbacGrants, setRbacGrants] = useState<readonly ConfiguredRbacGrant[]>(initialCache.rbacGrants);
+  const [llmTiers, setLlmTiers] = useState<readonly ConfiguredLlmTierMapping[]>(initialCache.llmTiers);
+  const [workspaces, setWorkspaces] = useState<readonly ControlCenterWorkspaceGovItem[]>(initialCache.workspaces);
+  const [datasources, setDatasources] = useState<readonly ControlCenterDatasourceItem[]>(initialCache.datasources);
   const [packs, setPacks] = useState<readonly ConfiguredPackItem[]>(initialCache.packs);
-  const [workflows, setWorkflows] = useState<readonly ConfiguredWorkflowItem[]>(
-    initialCache.workflows,
-  );
+  const [workflows, setWorkflows] = useState<readonly ConfiguredWorkflowItem[]>(initialCache.workflows);
   const [runs, setRuns] = useState<readonly ControlCenterRunItem[]>(initialCache.runs);
   const [catalogItems, setCatalogItems] = useState<readonly UiCatalogExplorerItemView[]>(
     initialCache.catalogItems,
@@ -289,9 +280,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
 
 export function usePlatformSetup(): PlatformSetupContextValue {
   const ctx = useContext(PlatformSetupContext);
-  if (!ctx) {
-    throw new Error("usePlatformSetup must be used inside PlatformSetupProvider");
-  }
+  if (!ctx) throw new ClientCodedError("ERR_CLIENT_CONTEXT_MISSING", { detail: "PlatformSetupProvider" });
   return ctx;
 }
 

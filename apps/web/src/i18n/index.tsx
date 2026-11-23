@@ -10,8 +10,14 @@ export const DICTIONARIES: Record<SupportedWebLocale, TranslationDictionary> = {
   en: enDictionary,
 };
 
+const IS_FR_BY_LOCALE: Record<SupportedWebLocale, boolean> = {
+  fr: true,
+  en: false,
+};
+
 export interface I18nContextValue {
   locale: SupportedWebLocale;
+  isFr: boolean;
   dictionary: TranslationDictionary;
   setLocale: (nextLocale: SupportedWebLocale) => void;
   toggleLocale: () => void;
@@ -19,6 +25,7 @@ export interface I18nContextValue {
 
 const I18nContext = createContext<I18nContextValue>({
   locale: "fr",
+  isFr: true,
   dictionary: frDictionary,
   setLocale: () => undefined,
   toggleLocale: () => undefined,
@@ -38,6 +45,7 @@ export function I18nProvider({ initialLocale = "fr", children }: I18nProviderPro
   const value = useMemo<I18nContextValue>(
     () => ({
       locale,
+      isFr: IS_FR_BY_LOCALE[locale],
       dictionary: DICTIONARIES[locale],
       setLocale,
       toggleLocale: () => setLocale((prev) => (prev === "fr" ? "en" : "fr")),

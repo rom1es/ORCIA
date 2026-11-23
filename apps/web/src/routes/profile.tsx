@@ -86,7 +86,7 @@ export function UserProfileRouteView(): React.ReactElement {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const genericErrorLabel =
-    dictionary.userAccountAndSettings.passwordSecurity?.genericError ?? "Error";
+    dictionary.userAccountAndSettings.passwordSecurity.genericError;
 
   const loadProfileSummary = useCallback(async () => {
     setIsLoading(true);

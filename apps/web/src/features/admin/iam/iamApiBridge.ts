@@ -1,6 +1,5 @@
 import {
   createOrciaApiClient,
-  OrciaProblemError,
   type DelegateGrantRequest,
   type IamAccountCreateRequest,
   type IamAccountPatchRequest,
@@ -9,6 +8,7 @@ import {
   type RolePermissionGrantResponse,
 } from "@orcia/api-client";
 import type { ConfiguredRbacGrant } from "../../../components/platformSetupStorageHelpers";
+import { extractLocalizedApiError } from "../../../lib/formatRfc9457ErrorToBanner";
 import { useAuthSessionStore } from "../../../stores/authSessionStore";
 
 export type OfficialIamRoleKey =
@@ -113,21 +113,7 @@ function extractIamApiError(
   err: unknown,
   locale: "fr" | "en",
 ): { readonly errorMessage: string; readonly errorCode?: string } {
-  if (err instanceof OrciaProblemError) {
-    return {
-      errorMessage: err.problem.detail || err.problem.title,
-      errorCode: err.problem.error_code,
-    };
-  }
-  if (err instanceof Error && err.message.trim().length > 0) {
-    return { errorMessage: err.message };
-  }
-  return {
-    errorMessage:
-      locale === "fr"
-        ? "Une erreur réseau est survenue lors de la mise à jour des comptes et habilitations."
-        : "A network error occurred while updating accounts and permissions.",
-  };
+  return extractLocalizedApiError(err, locale, "ERR_CLIENT_IAM_NETWORK");
 }
 
 export async function fetchIamRoleMatrixFromApi(

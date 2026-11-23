@@ -300,7 +300,7 @@ development_status:
   # Lots        : L0 27-1 | L1 27-2 | L2 27-3 -> 27-4 | L3 27-5 -> 27-6 | L4 27-7 | L5 27-8
   epic-27: in-progress
   27-1-deterministic-i18n-ci-guardrails-and-client-error-code-foundation: done
-  27-2-category-a-client-error-codes-bridges-stores-and-rfc9457-banner: ready-for-dev
+  27-2-category-a-client-error-codes-bridges-stores-and-rfc9457-banner: done
   27-3-category-c-shell-contextual-help-notifications-routes-and-wizards: ready-for-dev
   27-4-category-c-cockpit-assistant-workspaces-gates-catalog-and-admin: ready-for-dev
   27-5-category-c-process-studio-v2-vsm-execution-and-bilingual-catalog-data: ready-for-dev

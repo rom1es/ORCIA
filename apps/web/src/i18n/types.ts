@@ -15,6 +15,8 @@ import type {
   UserProfileOverviewLabels,
 } from "@orcia/ui";
 import type { ClientErrorLabels } from "../lib/clientErrorCodes";
+import type { CategoryAControllersDictionary } from "./locales/category_a_controller_labels";
+import type { Rfc9457BannerDictionary } from "./locales/rfc9457_banner_labels";
 import type { ActivityDictionarySection } from "./locales/activity_labels";
 import type { AdminAndStudioDictionarySection } from "./locales/admin_and_studio_labels";
 import type { AiModelsHubDictionary } from "./locales/ai_models_hub_labels";
@@ -63,6 +65,8 @@ export interface TranslationDictionary
     ReflexiveTraceAndInspectorDictionarySection {
   locale: SupportedWebLocale;
   clientErrors: ClientErrorLabels;
+  rfc9457Errors: Rfc9457BannerDictionary;
+  categoryAControllers: CategoryAControllersDictionary;
   aiModelsHub: AiModelsHubDictionary;
   authSettings: AuthSettingsDictionarySection;
   autonomousSupervision: AutonomousSupervisionCopy;

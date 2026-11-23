@@ -1,6 +1,10 @@
 import { createOrciaApiClient, type DiscoveredModelItem } from "@orcia/api-client";
 import type { LlmAuthMode } from "../components/platformSetupStore";
 import type { AiModelsHubDictionary } from "../i18n/locales/ai_models_hub_labels";
+import {
+  extractLocalizedApiError,
+  resolveLocalizedClientError,
+} from "../lib/formatRfc9457ErrorToBanner";
 
 export type GoogleGeminiProtocolMode = "native" | "openai";
 
@@ -123,14 +127,16 @@ export function resolvePrimaryModelPlaceholder(
 }
 
 export function validateLlmConnectionParameters(params: {
-  readonly isFr: boolean;
+  readonly isFr?: boolean;
+  readonly locale?: "fr" | "en";
   readonly model: string;
   readonly uri: string;
   readonly mode: LlmAuthMode;
   readonly rawKey: string;
   readonly keyAlreadyConfigured: boolean;
 }): ConnectionTestFeedback | null {
-  const { isFr } = params;
+  const activeLocale: "fr" | "en" =
+    params.locale ?? (params.isFr === false ? "en" : "fr");
   const modelClean = params.model.trim();
   const uriClean = params.uri.trim();
   const hasKey = Boolean(params.rawKey.trim() || params.keyAlreadyConfigured);
@@ -138,9 +144,7 @@ export function validateLlmConnectionParameters(params: {
   if (!modelClean) {
     return {
       ok: false,
-      message: isFr
-        ? "❌ Échec du test : veuillez renseigner l'identifiant du modèle principal (ex. : llama3.2, mistral-large-latest)."
-        : "❌ Test failed: please enter the primary model identifier (e.g. llama3.2, mistral-large-latest).",
+      message: resolveLocalizedClientError("ERR_CLIENT_AI_MODEL_ID_REQUIRED", activeLocale),
     };
   }
 
@@ -150,18 +154,14 @@ export function validateLlmConnectionParameters(params: {
   ) {
     return {
       ok: false,
-      message: isFr
-        ? "❌ Échec du test : veuillez indiquer une URL d'API valide commençant par https:// ou http:// (ex. https://generativelanguage.googleapis.com/v1beta ou http://localhost:11434/v1)."
-        : "❌ Test failed: please enter a valid API URL starting with https:// or http:// (e.g. https://generativelanguage.googleapis.com/v1beta or http://localhost:11434/v1).",
+      message: resolveLocalizedClientError("ERR_CLIENT_AI_ENDPOINT_URL_INVALID", activeLocale),
     };
   }
 
   if (params.mode === "api_key" && !hasKey) {
     return {
       ok: false,
-      message: isFr
-        ? "❌ Échec du test : veuillez saisir votre clé d'API (jeton secret) ou choisir « Sans clé (Serveur local) » / « Variable d'environnement du serveur »."
-        : "❌ Test failed: please enter your API key (secret token) or select 'No key (Local server)' / 'Server environment variable'.",
+      message: resolveLocalizedClientError("ERR_CLIENT_AI_API_KEY_REQUIRED", activeLocale),
     };
   }
 
@@ -169,7 +169,8 @@ export function validateLlmConnectionParameters(params: {
 }
 
 export async function runRemoteLlmConnectionTestEvaluation(params: {
-  readonly isFr: boolean;
+  readonly isFr?: boolean;
+  readonly locale?: "fr" | "en";
   readonly provider: string;
   readonly model: string;
   readonly uri: string;
@@ -177,8 +178,10 @@ export async function runRemoteLlmConnectionTestEvaluation(params: {
   readonly rawKey: string;
   readonly keyAlreadyConfigured: boolean;
 }): Promise<ConnectionTestFeedback> {
+  const activeLocale: "fr" | "en" =
+    params.locale ?? (params.isFr === false ? "en" : "fr");
   try {
-    const client = createOrciaApiClient({ baseUrl: "" });
+    const client = createOrciaApiClient({ baseUrl: "", locale: activeLocale });
     const remote = await client.testLlmEndpointConnection({
       provider_slug: params.provider.trim() || "Anthropic",
       model_name: params.model.trim(),
@@ -187,24 +190,23 @@ export async function runRemoteLlmConnectionTestEvaluation(params: {
       api_key: params.rawKey.trim() || null,
       api_key_configured: params.keyAlreadyConfigured,
     });
+    const remoteMsgKey = ({ fr: "message_fr", en: "message_en" } as const)[activeLocale];
     return {
       ok: remote.ok,
-      message: params.isFr ? remote.message_fr : remote.message_en,
+      message: remote[remoteMsgKey],
     };
   } catch (err: unknown) {
-    let msg = params.isFr
-      ? "❌ Échec du test : impossible de joindre le fournisseur LLM."
-      : "❌ Test failed: unable to contact LLM provider.";
-    if (err && typeof err === "object" && "problem" in err) {
-      const p = (err as { problem?: { detail?: string; title?: string } }).problem;
-      if (p?.detail) msg = `❌ ${p.detail}`;
-      else if (p?.title) msg = `❌ ${p.title}`;
-    } else if (err instanceof Error && err.message) {
-      msg = `❌ ${err.message}`;
-    }
+    const extracted = extractLocalizedApiError(
+      err,
+      activeLocale,
+      "ERR_CLIENT_AI_PROVIDER_UNREACHABLE",
+    );
+    const message = extracted.errorMessage.startsWith("❌")
+      ? extracted.errorMessage
+      : `❌ ${extracted.errorMessage}`;
     return {
       ok: false,
-      message: msg,
+      message,
     };
   }
 }

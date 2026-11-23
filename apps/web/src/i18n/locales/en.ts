@@ -6,6 +6,7 @@ import { ASSISTANT_EN_LABELS } from "./assistant_labels";
 import { AUTH_SETTINGS_EN_LABELS } from "./auth_settings_labels";
 import { AUTONOMOUS_SUPERVISION_EN_LABELS } from "./autonomous_supervision_labels";
 import { AUTONOMY_CONTRACT_EN_LABELS } from "./autonomy_contract_labels";
+import { CATEGORY_A_CONTROLLER_EN_LABELS } from "./category_a_controller_labels";
 import { CLIENT_ERRORS_EN_LABELS } from "./client_errors_labels";
 import { CORE_DOMAIN_EN_LABELS } from "./core_domain_labels_en";
 import { CORE_SHELL_EN_LABELS } from "./core_shell_labels_en";
@@ -18,6 +19,7 @@ import { ONTOLOGY_GLOSSARY_EN } from "./ontology_glossary_labels";
 import { PROCESS_ORCHESTRATION_MODES_EN_LABELS } from "./process_orchestration_modes_labels";
 import { PROFILE_OVERVIEW_EN_LABELS } from "./profile_overview_labels";
 import { REFLEXIVE_TRACE_AND_INSPECTOR_EN_LABELS } from "./reflexive_trace_and_inspector_labels";
+import { RFC9457_BANNER_EN_LABELS } from "./rfc9457_banner_labels";
 import { SHELL_AND_SEARCH_EN_LABELS } from "./shell_and_search_labels";
 import { WORKFLOW_TRIGGERS_EN_LABELS } from "./workflow_triggers_labels";
 
@@ -36,6 +38,8 @@ export const enDictionary: TranslationDictionary = {
   ...CORE_DOMAIN_EN_LABELS,
   locale: "en",
   clientErrors: CLIENT_ERRORS_EN_LABELS,
+  rfc9457Errors: RFC9457_BANNER_EN_LABELS,
+  categoryAControllers: CATEGORY_A_CONTROLLER_EN_LABELS,
   aiModelsHub: AI_MODELS_HUB_EN,
   authSettings: AUTH_SETTINGS_EN_LABELS,
   autonomousSupervision: AUTONOMOUS_SUPERVISION_EN_LABELS,

@@ -148,7 +148,7 @@ export interface UserAccountDropdownAndSettingsLabels extends RgaaModalGuardLabe
   readonly passthroughConnectTokenCta: string;
   readonly passthroughRevokeTokenCta: string;
   readonly passthroughEmptyConnectorsMessage: string;
-  readonly passwordSecurity?: UserPasswordSecurityLabels;
+  readonly passwordSecurity: UserPasswordSecurityLabels;
 }
 
 export interface UserAccountPreferencesPatch {

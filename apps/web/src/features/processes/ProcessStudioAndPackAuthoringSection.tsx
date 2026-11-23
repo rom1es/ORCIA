@@ -15,11 +15,16 @@ import { useShellNavigation } from "../../components/ShellContainer";
 import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions";
 import { SimplifiedProcessBuilderSection } from "../../components/SimplifiedProcessBuilderSection";
 import { useI18n } from "../../i18n";
+import {
+  extractLocalizedApiError,
+  resolveLocalizedClientError,
+} from "../../lib/formatRfc9457ErrorToBanner";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { OrciaDocumentationProcessCard } from "../gates/OrciaDocumentationProcessCard";
 
 export function ProcessStudioAndPackAuthoringSection() {
-  const { dictionary, locale } = useI18n();
+  const { dictionary, locale, isFr } = useI18n();
+  const processCopy = dictionary.categoryAControllers.processes;
   const {
     packs,
     workflows,
@@ -30,7 +35,6 @@ export function ProcessStudioAndPackAuthoringSection() {
   } = usePlatformSetup();
   const { activeScopeId, openHelpSection } = useShellNavigation();
   const authEmail = useAuthSessionStore((s) => s.email);
-  const isFr = locale === "fr";
   const resolvedWsId = resolveEffectiveWorkspaceId(activeScopeId, workspaces, authEmail);
   const activeWorkspace =
     workspaces.find((w) => w.workspaceId === resolvedWsId) ?? workspaces[0];
@@ -133,18 +137,12 @@ export function ProcessStudioAndPackAuthoringSection() {
               certificateSha256: "sha256:pack-certified",
             },
           ]);
-          setActionFeedback(
-            isFr
-              ? `✅ Pack Métier « ${slug} » créé et enregistré avec l'intention métier fournie.`
-              : `✅ Business Pack "${slug}" created and registered with the provided intent.`,
-          );
+          setActionFeedback(processCopy.packCreatedBanner.replace("{slug}", slug));
         }}
         onPromoteAssetToPack={() => {
           const targetPack = packs[0]?.packKey ?? "core";
           setActionFeedback(
-            isFr
-              ? `✅ Composant promu avec succès vers le Pack Métier « ${targetPack} ».`
-              : `✅ Asset promoted to Business Pack "${targetPack}".`,
+            processCopy.assetPromotedBanner.replace("{pack}", targetPack),
           );
         }}
       />
@@ -193,11 +191,9 @@ export function ProcessStudioAndPackAuthoringSection() {
             elapsedMs: 2.3,
           }));
           setActionFeedback(
-            isFr
-              ? `✅ Fiche d'aide « ${nextArticleId} » générée, vérifiée et rattachée à l'écran.`
-              : `✅ Help article "${nextArticleId}" generated, verified, and attached.`,
+            processCopy.helpArticleAttachedBanner.replace("{article}", nextArticleId),
           );
-          const client = createOrciaApiClient({ baseUrl: "" });
+          const client = createOrciaApiClient({ baseUrl: "", locale });
           void client
             .validateHelpArticle({
               markdown_text:
@@ -219,11 +215,11 @@ export function ProcessStudioAndPackAuthoringSection() {
               });
             })
             .catch((err: unknown) => {
-              const detail = err instanceof Error ? err.message : "Erreur de validation";
+              const extracted = extractLocalizedApiError(err, locale);
               setActionFeedback(
-                isFr
-                  ? `⚠️ Fiche d'aide rattachée localement (détail serveur : ${detail}).`
-                  : `⚠️ Help article attached locally (server detail: ${detail}).`,
+                resolveLocalizedClientError("ERR_CLIENT_HELP_ARTICLE_ATTACHED_LOCAL", locale, {
+                  detail: extracted.errorMessage,
+                }),
               );
             });
         }}

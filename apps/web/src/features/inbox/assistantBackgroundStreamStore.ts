@@ -12,6 +12,8 @@ import type {
   UiReflexiveSessionStatus,
   UiThreeSpeedStepProgress,
 } from "@orcia/ui";
+import { CATEGORY_A_CONTROLLER_BY_LOCALE } from "../../i18n/locales/category_a_controller_labels";
+import { resolveLocalizedClientError } from "../../lib/formatRfc9457ErrorToBanner";
 
 export interface CompletedAssistantTurnPayload {
   readonly turnId?: string;
@@ -172,48 +174,33 @@ export function resetBackgroundAssistantStreamForTests(): void {
 
 export function detectAdaptiveThinkingStepsForQuestion(
   userPrompt: string,
-  isFr = true,
+  useFrench = true,
 ): readonly UiThreeSpeedStepProgress[] {
   const lower = userPrompt.toLowerCase();
-  const buildStep = (
-    stepCode: string,
-    label: string,
-    durationMs: number,
-    intermediateOutput: string,
-  ): UiThreeSpeedStepProgress => ({
-    stepCode,
-    label,
-    durationMs,
-    status: "COMPLETED",
-    intermediateOutput,
-  });
+  const thinkingDict =
+    CATEGORY_A_CONTROLLER_BY_LOCALE[useFrench ? "fr" : "en"].assistantThinking;
+  const templates =
+    /\b(code|coder|fonction|python|sql|bug|script|algorithme|api|test|typescript|react|classe|boucle|erreur)\b/i.test(
+      lower,
+    )
+      ? thinkingDict.code
+      : /\b(explique|expliquer|résume|résumer|document|contrat|texte|synthèse|rapport|note|dossier|extrait)\b/i.test(
+            lower,
+          )
+        ? thinkingDict.explain
+        : /\b(choisir|comparer|comparaison|option|options|avantage|avantages|risque|risques|pourquoi|quel|quelle|quels|quelles|arbitrage|versus)\b/i.test(
+              lower,
+            )
+          ? thinkingDict.compare
+          : thinkingDict.fallback;
 
-  if (/\b(code|coder|fonction|python|sql|bug|script|algorithme|api|test|typescript|react|classe|boucle|erreur)\b/i.test(lower)) {
-    return [
-      buildStep("STEP_1_SPEC_EDGE_CASES", isFr ? "Spécification et cas limites" : "Specification and edge cases", 1100, isFr ? "Cadrage des entrées/sorties, complexité et cas particuliers pour la demande." : "Framing inputs/outputs, complexity, and edge cases for the request."),
-      buildStep("STEP_2_IMPLEMENTATION_DESIGN", isFr ? "Conception de l'implémentation" : "Implementation design", 1400, isFr ? "Structuration du code et choix techniques adaptés." : "Code structuring and technical choices."),
-      buildStep("STEP_3_VERIFICATION_EXAMPLE", isFr ? "Vérification et exemple d'usage" : "Verification and usage example", 900, isFr ? "Contrôle de validité et préparation d'un cas de test." : "Validity check and test case preparation."),
-    ];
-  }
-  if (/\b(explique|expliquer|résume|résumer|document|contrat|texte|synthèse|rapport|note|dossier|extrait)\b/i.test(lower)) {
-    return [
-      buildStep("STEP_1_KEY_POINTS_EXTRACTION", isFr ? "Extraction des points clés" : "Extracting key points", 1100, isFr ? "Repérage des idées principales et de la structure." : "Identifying main ideas and structure."),
-      buildStep("STEP_2_WORKSPACE_CONTEXT_CROSS", isFr ? "Croisement avec le contexte de l'espace" : "Cross-referencing workspace context", 1300, isFr ? "Mise en regard avec le glossaire et les règles métiers." : "Aligning with glossary and business rules."),
-      buildStep("STEP_3_PEDAGOGICAL_STRUCTURING", isFr ? "Structuration pédagogique" : "Pedagogical structuring", 900, isFr ? "Organisation claire de l'explication." : "Clear organization of the explanation."),
-    ];
-  }
-  if (/\b(choisir|comparer|comparaison|option|options|avantage|avantages|risque|risques|pourquoi|quel|quelle|quels|quelles|arbitrage|versus)\b/i.test(lower)) {
-    return [
-      buildStep("STEP_1_EVALUATION_CRITERIA", isFr ? "Critères d'évaluation" : "Evaluation criteria", 1000, isFr ? "Définition des axes de comparaison pertinents." : "Defining relevant comparison axes."),
-      buildStep("STEP_2_OPTIONS_AND_RISKS", isFr ? "Analyse des options et points de vigilance" : "Analyzing options and watchpoints", 1400, isFr ? "Pesée des avantages et limites de chaque piste." : "Weighing pros and limitations of each option."),
-      buildStep("STEP_3_ARGUED_RECOMMENDATION", isFr ? "Recommandation argumentée" : "Reasoned recommendation", 900, isFr ? "Synthèse décisionnelle structurée." : "Structured decision summary."),
-    ];
-  }
-  return [
-    buildStep("STEP_1_REQUEST_FRAMING", isFr ? "Cadrage de la demande" : "Framing the request", 1000, isFr ? "Identification des objectifs et du périmètre de la question." : "Identifying objectives and scope of the question."),
-    buildStep("STEP_2_DEEP_ANALYSIS_SOURCES", isFr ? "Analyse approfondie et sources" : "In-depth analysis and sources", 1400, isFr ? "Exploration détaillée des éléments de réponse et références." : "Detailed exploration of answer elements and references."),
-    buildStep("STEP_3_RESPONSE_CONSOLIDATION", isFr ? "Consolidation de la réponse" : "Response consolidation", 900, isFr ? "Mise en forme structurée et synthétique." : "Structured and concise formatting."),
-  ];
+  return templates.map((step) => ({
+    stepCode: step.stepCode,
+    label: step.label,
+    durationMs: step.durationMs,
+    status: "COMPLETED",
+    intermediateOutput: step.intermediateOutput,
+  }));
 }
 
 export function shouldUseProgressiveStepThinking(params: {
@@ -253,18 +240,17 @@ export function extractHttpErrorStatus(err: unknown): number | null {
 
 export function classifyAssistantStreamError(
   err: unknown,
-  isFr: boolean,
+  useFrench: boolean,
   labels?: AssistantStreamErrorLabels,
 ): { readonly errorKind: UiAssistantErrorKind; readonly errorMessage: string } {
+  const activeLocale: "fr" | "en" = useFrench ? "fr" : "en";
   const status = extractHttpErrorStatus(err);
   if (status === 401 || status === 403) {
     return {
       errorKind: "auth_expired",
       errorMessage:
         labels?.sessionExpiredMessage ??
-        (isFr
-          ? "Votre session a expiré ou doit être renouvelée pour continuer la conversation."
-          : "Your session has expired or needs to be renewed to continue the conversation."),
+        resolveLocalizedClientError("ERR_CLIENT_SESSION_EXPIRED", activeLocale),
     };
   }
   const detail =
@@ -272,17 +258,13 @@ export function classifyAssistantStreamError(
       ? err.problem.detail
       : err instanceof Error
         ? err.message
-        : isFr
-          ? "Erreur de communication avec le serveur"
-          : "Server communication error";
+        : resolveLocalizedClientError("ERR_CLIENT_NETWORK", activeLocale);
   if (status === 502 || status === 503 || status === 504 || status === null) {
     return {
       errorKind: "ai_unavailable",
       errorMessage: labels
         ? labels.aiUnavailableMessage(detail)
-        : isFr
-          ? `⚠️ Impossible d'obtenir une réponse de Mon Assistant (${detail}). Vérifiez que le modèle IA configuré est bien démarré.`
-          : `⚠️ Could not get a response from My Assistant (${detail}). Please check that your configured AI model is running.`,
+        : resolveLocalizedClientError("ERR_CLIENT_AI_UNAVAILABLE", activeLocale, { detail }),
     };
   }
   return {

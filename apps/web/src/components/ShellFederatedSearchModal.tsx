@@ -1,4 +1,6 @@
 import { createOrciaApiClient } from "@orcia/api-client";
+import { useI18n } from "../i18n";
+import { resolveLocalizedClientError } from "../lib/formatRfc9457ErrorToBanner";
 import { resolveEffectiveWorkspaceId } from "./shellScopeOptions";
 import {
   TopHeaderSearchCommand,
@@ -45,7 +47,6 @@ function mapBackendSearchFamily(rawFamily: string): TopSearchFamilyKey {
 
 export function ShellFederatedSearchModal({
   isOpen,
-  isFr,
   pathname,
   activeScopeId,
   workspaces,
@@ -56,6 +57,7 @@ export function ShellFederatedSearchModal({
   onAskAssistant,
   onClose,
 }: ShellFederatedSearchModalProps): React.ReactElement | null {
+  const { locale } = useI18n();
   const [speed2Hits, setSpeed2Hits] = useState<readonly TopSearchHitItem[]>([]);
   const [speed2Loading, setSpeed2Loading] = useState<boolean>(false);
   const [speed2Executed, setSpeed2Executed] = useState<boolean>(false);
@@ -91,7 +93,7 @@ export function ShellFederatedSearchModal({
         activeWsId,
         pathname ?? "/cockpit",
         true,
-        isFr ? "fr" : "en",
+        locale,
       )
       .then((res) => {
         setSpeed2Loading(false);
@@ -108,7 +110,7 @@ export function ShellFederatedSearchModal({
             speedTier: 2,
             lockedTop: false,
             score: Number(hit.score ?? 0.85),
-            badge: hit.badge ?? (isFr ? "Passage proche" : "Close match"),
+            badge: hit.badge ?? labels.semanticCloseMatchBadge,
             highlightDurationMs: Number(hit.highlight_duration_ms ?? 2000),
             opensContextualHelpColumn: Boolean(hit.opens_contextual_help_column),
           }),
@@ -121,9 +123,7 @@ export function ShellFederatedSearchModal({
         setSpeed2Hits([]);
         const detail = err instanceof Error ? err.message : String(err);
         setSpeed2Error(
-          isFr
-            ? `Erreur lors de la recherche fédérée (recherche approfondie) : ${detail}`
-            : `Federated search error (deep search): ${detail}`,
+          resolveLocalizedClientError("ERR_CLIENT_FEDERATED_SEARCH", locale, { detail }),
         );
       });
   };

@@ -3,10 +3,12 @@ import {
   buildOrgUnitsQuery,
   buildPersonaQuery,
   dispatchSseBlock,
+  OrciaClientError,
   OrciaProblemError,
   parseProblemError,
   type ListKnownOrgUsersParams,
   type ListOrgUnitsParams,
+  type OrciaClientErrorParams,
   type SseEventHandler,
   type SseRequestParams,
 } from "./sseAndQueryHelpers";
@@ -15,9 +17,11 @@ export {
   buildKnownOrgUsersQuery,
   buildOrgUnitsQuery,
   buildPersonaQuery,
+  OrciaClientError,
   OrciaProblemError,
   type ListKnownOrgUsersParams,
   type ListOrgUnitsParams,
+  type OrciaClientErrorParams,
   type SseEventHandler,
   type SseRequestParams,
 };
@@ -278,9 +282,8 @@ export function createRequestSse(options: OrciaApiClientOptions) {
     }
     params.onOpen?.(response);
     if (!response.body) {
-      throw new Error(`SSE stream error: empty response body for ${params.path}`);
+      throw new OrciaClientError("ERR_CLIENT_SSE_EMPTY_BODY", { detail: params.path });
     }
-
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
@@ -290,12 +293,8 @@ export function createRequestSse(options: OrciaApiClientOptions) {
       buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
       const blocks = buffer.split("\n\n");
       buffer = blocks.pop() ?? "";
-      for (const block of blocks) {
-        dispatchSseBlock(block, params.onEvent);
-      }
+      for (const block of blocks) dispatchSseBlock(block, params.onEvent);
     }
-    if (buffer.trim().length > 0) {
-      dispatchSseBlock(buffer, params.onEvent);
-    }
+    if (buffer.trim().length > 0) dispatchSseBlock(buffer, params.onEvent);
   };
 }

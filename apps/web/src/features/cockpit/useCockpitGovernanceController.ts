@@ -5,6 +5,7 @@ import {
 } from "@orcia/api-client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useI18n } from "../../i18n";
+import { extractLocalizedApiError } from "../../lib/formatRfc9457ErrorToBanner";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
 import {
   derivePendingGovernanceFromBlackboard,
@@ -21,8 +22,6 @@ export interface UseCockpitGovernanceControllerOptions {
   readonly onGovernanceStateChanged?: () => void;
 }
 
-const toErrMsg = (err: unknown): string => (err instanceof Error ? err.message : String(err));
-
 export function useCockpitGovernanceController({
   runId,
   workflow = null,
@@ -31,9 +30,8 @@ export function useCockpitGovernanceController({
   refreshSignal = 0,
   onGovernanceStateChanged,
 }: UseCockpitGovernanceControllerOptions) {
-  const { dictionary, locale } = useI18n();
-  const isFr = locale === "fr";
-  const apiClient = useMemo(() => createOrciaApiClient({ baseUrl: "" }), []);
+  const { dictionary, locale, isFr } = useI18n();
+  const apiClient = useMemo(() => createOrciaApiClient({ baseUrl: "", locale }), [locale]);
 
   const isHydrating = useAuthSessionStore((s) => s.isHydrating);
   const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
@@ -77,10 +75,10 @@ export function useCockpitGovernanceController({
         const bb = await apiClient.getRunBlackboardState(targetRunId);
         applyBlackboard(bb);
       } catch (err) {
-        setErrorBanner(toErrMsg(err));
+        setErrorBanner(extractLocalizedApiError(err, locale).errorMessage);
       }
     },
-    [apiClient, applyBlackboard],
+    [apiClient, applyBlackboard, locale],
   );
 
   useEffect(() => {
@@ -100,12 +98,12 @@ export function useCockpitGovernanceController({
         }
       })
       .catch((err) => {
-        if (!cancelled) setErrorBanner(toErrMsg(err));
+        if (!cancelled) setErrorBanner(extractLocalizedApiError(err, locale).errorMessage);
       });
     return () => {
       cancelled = true;
     };
-  }, [apiClient, applyBlackboard, isAuthenticated, isHydrating, refreshSignal, runId]);
+  }, [apiClient, applyBlackboard, isAuthenticated, isHydrating, locale, refreshSignal, runId]);
 
   const handleSignAnchor = async (sectionKey: string, content: string) => {
     if (!pendingAnchor) return;
@@ -123,7 +121,7 @@ export function useCockpitGovernanceController({
       await hydrateFromRun(runId);
       onGovernanceStateChanged?.();
     } catch (err) {
-      setErrorBanner(toErrMsg(err));
+      setErrorBanner(extractLocalizedApiError(err, locale).errorMessage);
     }
   };
 
@@ -133,9 +131,7 @@ export function useCockpitGovernanceController({
     try {
       const cleanJustification =
         justification.trim() ||
-        (isFr
-          ? "Décision humaine motivée enregistrée depuis le Cockpit."
-          : "Justified human decision recorded from the Cockpit.");
+        dictionary.categoryAControllers.cockpit.defaultArbitrationJustification;
       await apiClient.resolveHumanArbitration(runId, pendingArbitration.stepKey, {
         arbitration_id: pendingArbitration.arbitrationId,
         selected_option_key: optionKey,
@@ -144,7 +140,7 @@ export function useCockpitGovernanceController({
       await hydrateFromRun(runId);
       onGovernanceStateChanged?.();
     } catch (err) {
-      setErrorBanner(toErrMsg(err));
+      setErrorBanner(extractLocalizedApiError(err, locale).errorMessage);
     }
   };
 

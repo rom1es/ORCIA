@@ -81,6 +81,11 @@ export const WIZARD_STEPS_EN: readonly DurableWizardStepDescriptor[] = [
   },
 ];
 
+export const WIZARD_STEPS_BY_LOCALE = {
+  fr: WIZARD_STEPS_FR,
+  en: WIZARD_STEPS_EN,
+} as const;
+
 export interface WizardsStepFormProps {
   readonly currentStep: number;
   readonly status: "IN_PROGRESS" | "PAUSED" | "COMPLETED" | "ABANDONED";

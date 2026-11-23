@@ -137,9 +137,9 @@ export function useSidebarAccountSettings(options: {
         setTwoFactorMode(authCfgRes.two_factor_mode);
       }
     } catch (err: unknown) {
-      setPrefsError(extractUiErrorMessage(err, labels.passwordSecurity?.genericError ?? "Error"));
+      setPrefsError(extractUiErrorMessage(err, labels.passwordSecurity.genericError));
     }
-  }, [client, labels.passwordSecurity?.genericError]);
+  }, [client, labels.passwordSecurity.genericError]);
 
   const isHydrating = useAuthSessionStore((s) => s.isHydrating);
   const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
@@ -197,7 +197,7 @@ export function useSidebarAccountSettings(options: {
       });
       setPrefsSavedMsg(labels.preferencesSavedMessage);
     } catch (err: unknown) {
-      setPrefsError(extractUiErrorMessage(err, labels.passwordSecurity?.genericError ?? "Error"));
+      setPrefsError(extractUiErrorMessage(err, labels.passwordSecurity.genericError));
     } finally {
       setIsSavingPrefs(false);
     }
@@ -221,7 +221,7 @@ export function useSidebarAccountSettings(options: {
       await loadModalDetails();
       setLastIssuedPlaintext(issued.plaintext_token);
     } catch (err: unknown) {
-      setMcpError(extractUiErrorMessage(err, labels.passwordSecurity?.genericError ?? "Error"));
+      setMcpError(extractUiErrorMessage(err, labels.passwordSecurity.genericError));
     } finally {
       setIsSubmittingMcp(false);
     }
@@ -233,7 +233,7 @@ export function useSidebarAccountSettings(options: {
       await client.revokeMcpToken(tokenId);
       await loadModalDetails();
     } catch (err: unknown) {
-      setMcpError(extractUiErrorMessage(err, labels.passwordSecurity?.genericError ?? "Error"));
+      setMcpError(extractUiErrorMessage(err, labels.passwordSecurity.genericError));
     }
   };
 
@@ -265,7 +265,7 @@ export function useSidebarAccountSettings(options: {
     } catch (err: unknown) {
       return {
         success: false,
-        error: extractUiErrorMessage(err, labels.passwordSecurity?.genericError ?? "Error"),
+        error: extractUiErrorMessage(err, labels.passwordSecurity.genericError),
       };
     }
   };

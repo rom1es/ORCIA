@@ -1,13 +1,20 @@
+import { OrciaClientError, OrciaProblemError } from "@orcia/api-client";
 import { describe, expect, it } from "vitest";
 import { enDictionary } from "../i18n/locales/en";
 import { frDictionary } from "../i18n/locales/fr";
 import {
   CLIENT_ERROR_CODES,
+  ClientCodedError,
   createClientErrorPayload,
   isClientErrorCode,
   isClientErrorPayload,
   resolveClientErrorMessage,
 } from "../lib/clientErrorCodes";
+import {
+  extractLocalizedApiError,
+  formatRfc9457ErrorToBanner,
+  resolveLocalizedClientError,
+} from "../lib/formatRfc9457ErrorToBanner";
 
 describe("Story 27.1 — Shared ClientErrorCode resolution foundation", () => {
   it("resolves every ClientErrorCode to non-empty distinct French and English messages", () => {
@@ -94,5 +101,80 @@ describe("Story 27.1 — Shared ClientErrorCode resolution foundation", () => {
       false,
     );
     expect(isClientErrorPayload(null)).toBe(false);
+  });
+});
+
+describe("Story 27.2 — Bilingual ClientErrorCode & RFC 9457 banner resolution", () => {
+  it("formats OrciaClientError and ClientCodedError in both fr and en without hardcoded leaks", () => {
+    const sseErr = new OrciaClientError("ERR_CLIENT_SSE_EMPTY_BODY", {
+      detail: "/api/v1/assistant/turns/1/stream",
+    });
+    const frBanner = formatRfc9457ErrorToBanner(sseErr, "fr");
+    const enBanner = formatRfc9457ErrorToBanner(sseErr, "en");
+    expect(frBanner.title).toBe("Échec de l'opération");
+    expect(enBanner.title).toBe("Operation failed");
+    expect(frBanner.message).toContain("/api/v1/assistant/turns/1/stream");
+    expect(enBanner.message).toContain("/api/v1/assistant/turns/1/stream");
+    expect(frBanner.message).not.toEqual(enBanner.message);
+
+    const timeoutErr = new ClientCodedError("ERR_CLIENT_AUTH_HYDRATION_TIMEOUT", {
+      seconds: 5,
+    });
+    expect(formatRfc9457ErrorToBanner(timeoutErr, "fr").message).toContain("5 s");
+    expect(formatRfc9457ErrorToBanner(timeoutErr, "en").message).toContain("5s");
+  });
+
+  it("resolves ProblemDetails carrying ERR_CLIENT_* fallback codes into localized fr/en banners", () => {
+    const problem = new OrciaProblemError({
+      type: "about:blank",
+      title: "ERR_CLIENT_HTTP_FALLBACK",
+      status: 500,
+      detail: "ERR_CLIENT_INVALID_PAYLOAD",
+      instance: "/api/v1/workspaces",
+      error_code: "ERR_INTERNAL_SERVER_ERROR",
+      trace_id: "0195f000000070008000000000000001",
+    });
+
+    const frBanner = formatRfc9457ErrorToBanner(problem, "fr");
+    const enBanner = formatRfc9457ErrorToBanner(problem, "en");
+    expect(frBanner.message).toContain("données reçues du serveur sont invalides");
+    expect(enBanner.message).toContain("data received from the server is invalid");
+    expect(frBanner.fullText).not.toContain("ERR_CLIENT_");
+    expect(enBanner.fullText).not.toContain("ERR_CLIENT_");
+  });
+
+  it("sanitizes internal enum tokens in the active locale (fr and en)", () => {
+    const problem = new OrciaProblemError({
+      type: "https://orcia.io/problems/test",
+      title: "Error",
+      status: 403,
+      detail: "Action blocked because READ_ONLY_OBSERVER and HIGH_CRITICAL apply",
+      error_code: "ERR_UNKNOWN_CODE",
+      trace_id: "0195f000000070008000000000000002",
+    });
+
+    const frBanner = formatRfc9457ErrorToBanner(problem, "fr");
+    const enBanner = formatRfc9457ErrorToBanner(problem, "en");
+    expect(frBanner.message).toContain("lecture seule");
+    expect(frBanner.message).toContain("critique");
+    expect(enBanner.message).toContain("read-only mode");
+    expect(enBanner.message).toContain("critical");
+    expect(enBanner.message).not.toContain("lecture seule");
+  });
+
+  it("extracts timeout and client error codes cleanly via extractLocalizedApiError", () => {
+    const timeoutDom = new DOMException("Timed out", "TimeoutError");
+    const frExtracted = extractLocalizedApiError(timeoutDom, "fr");
+    const enExtracted = extractLocalizedApiError(timeoutDom, "en");
+    expect(frExtracted.errorCode).toBe("ERR_CLIENT_TIMEOUT");
+    expect(frExtracted.errorMessage).toContain("16 s");
+    expect(enExtracted.errorMessage).toContain("16s");
+
+    expect(resolveLocalizedClientError("ERR_CLIENT_WIZARD_STEP_BACK", "fr")).toContain(
+      "étape précédente",
+    );
+    expect(resolveLocalizedClientError("ERR_CLIENT_WIZARD_STEP_BACK", "en")).toContain(
+      "previous step",
+    );
   });
 });

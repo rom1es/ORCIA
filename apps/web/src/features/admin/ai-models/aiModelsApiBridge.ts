@@ -1,6 +1,5 @@
 import {
   createOrciaApiClient,
-  OrciaProblemError,
   type AiModelCreateRequest,
   type AiModelDeleteImpactResponse,
   type AiModelDeleteResponse,
@@ -8,6 +7,7 @@ import {
   type AiModelPatchRequest,
   type AiModelTestResponse,
 } from "@orcia/api-client";
+import { extractLocalizedApiError } from "../../../lib/formatRfc9457ErrorToBanner";
 import { useAuthSessionStore } from "../../../stores/authSessionStore";
 
 export type AiModelOperationResult<T> =
@@ -31,35 +31,18 @@ function extractAiModelsApiError(
   err: unknown,
   locale: "fr" | "en",
 ): { readonly errorMessage: string; readonly errorCode?: string } {
-  if (err instanceof OrciaProblemError) {
+  const extracted = extractLocalizedApiError(
+    err,
+    locale,
+    "ERR_CLIENT_AI_HUB_COMMUNICATION",
+  );
+  if (extracted.errorCode === "ERR_CLIENT_TIMEOUT") {
     return {
-      errorMessage: err.problem.detail || err.problem.title,
-      errorCode: err.problem.error_code,
-    };
-  }
-  if (
-    (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) ||
-    (typeof DOMException !== "undefined" &&
-      err instanceof DOMException &&
-      (err.name === "TimeoutError" || err.name === "AbortError"))
-  ) {
-    return {
-      errorMessage:
-        locale === "fr"
-          ? "Délai d'attente dépassé (16 s) : le fournisseur IA n'a pas répondu à temps."
-          : "Connection test timed out (16s): the AI provider did not respond in time.",
+      errorMessage: extracted.errorMessage,
       errorCode: "ERR_MODEL_CONNECTION_TIMEOUT",
     };
   }
-  if (err instanceof Error && err.message.trim().length > 0) {
-    return { errorMessage: err.message };
-  }
-  return {
-    errorMessage:
-      locale === "fr"
-        ? "Une erreur est survenue lors de la communication avec le hub de modèles IA."
-        : "An error occurred while communicating with the AI models hub.",
-  };
+  return extracted;
 }
 
 export async function fetchAiModelMappings(

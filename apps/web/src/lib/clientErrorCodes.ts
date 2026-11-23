@@ -2,7 +2,7 @@
  * Structured client-side error codes and localized message resolution.
  *
  * Used when network requests, streams, or local validations fail without a
- * localized server RFC 9457 Problem Details payload.
+ * localized server error payload.
  */
 
 export const CLIENT_ERROR_CODES = [
@@ -10,7 +10,44 @@ export const CLIENT_ERROR_CODES = [
   "ERR_CLIENT_NETWORK",
   "ERR_CLIENT_ABORTED",
   "ERR_CLIENT_SSE_DISCONNECTED",
+  "ERR_CLIENT_SSE_EMPTY_BODY",
+  "ERR_CLIENT_HTTP_FALLBACK",
   "ERR_CLIENT_INVALID_PAYLOAD",
+  "ERR_CLIENT_NOT_CONFIGURED",
+  "ERR_CLIENT_AUTH_HYDRATION_TIMEOUT",
+  "ERR_CLIENT_SESSION_EXPIRED",
+  "ERR_CLIENT_AI_UNAVAILABLE",
+  "ERR_CLIENT_AI_HUB_COMMUNICATION",
+  "ERR_CLIENT_AI_MODEL_ID_REQUIRED",
+  "ERR_CLIENT_AI_ENDPOINT_URL_INVALID",
+  "ERR_CLIENT_AI_API_KEY_REQUIRED",
+  "ERR_CLIENT_AI_PROVIDER_UNREACHABLE",
+  "ERR_CLIENT_IAM_NETWORK",
+  "ERR_CLIENT_ORG_UNITS_NETWORK",
+  "ERR_CLIENT_AUDIT_NETWORK",
+  "ERR_CLIENT_CONNECTORS_LOAD",
+  "ERR_CLIENT_CONNECTOR_SAVE",
+  "ERR_CLIENT_CONNECTOR_DELETE",
+  "ERR_CLIENT_FEDERATED_SEARCH",
+  "ERR_CLIENT_PLATFORM_HYDRATION",
+  "ERR_CLIENT_CONTEXT_MISSING",
+  "ERR_CLIENT_PERMISSION_LOAD",
+  "ERR_CLIENT_PERMISSION_ACTION",
+  "ERR_CLIENT_PACKS_LOAD",
+  "ERR_CLIENT_PACKS_HEALTH_REFRESH",
+  "ERR_CLIENT_PACKS_EXPORT_ZIP",
+  "ERR_CLIENT_PACKS_WORKSPACE_REQUIRED",
+  "ERR_CLIENT_PACKS_HEALTH_DEGRADED",
+  "ERR_CLIENT_PROCESS_RUN_START",
+  "ERR_CLIENT_PROCESS_DELIVERABLE_APPROVE",
+  "ERR_CLIENT_PROCESS_SIMULATION_UNAVAILABLE",
+  "ERR_CLIENT_HELP_ARTICLE_ATTACHED_LOCAL",
+  "ERR_CLIENT_WIZARD_LOAD",
+  "ERR_CLIENT_WIZARD_START",
+  "ERR_CLIENT_WIZARD_STEP_SAVE",
+  "ERR_CLIENT_WIZARD_STEP_BACK",
+  "ERR_CLIENT_WIZARD_DEMO_PROVISION",
+  "ERR_CLIENT_WORKSPACE_SOURCE_ACTION",
   "ERR_CLIENT_UNKNOWN",
 ] as const;
 
@@ -26,6 +63,22 @@ export type ClientErrorLabels = Record<ClientErrorCode, string>;
 export interface ClientErrorPayload {
   readonly code: ClientErrorCode;
   readonly params?: ClientErrorParams;
+}
+
+/**
+ * Typed client-side error carrying a structured `ClientErrorCode` and optional
+ * interpolation parameters for locale-aware resolution in the UI layer.
+ */
+export class ClientCodedError extends Error {
+  public readonly code: ClientErrorCode;
+  public readonly params?: ClientErrorParams;
+
+  constructor(code: ClientErrorCode, params?: ClientErrorParams) {
+    super(code);
+    this.name = "ClientCodedError";
+    this.code = code;
+    this.params = params;
+  }
 }
 
 const CLIENT_ERROR_CODE_SET: ReadonlySet<string> = new Set<string>(CLIENT_ERROR_CODES);
