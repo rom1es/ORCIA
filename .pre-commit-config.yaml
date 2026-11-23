@@ -3,6 +3,7 @@ repos:
     rev: v4.5.0
     hooks:
     -   id: check-added-large-files
+        exclude: '^docs/implementation-artifacts/tech-lead-reports/_i18n-audit-inventory-raw\.md$'
     -   id: check-yaml
     -   id: end-of-file-fixer
     -   id: trailing-whitespace

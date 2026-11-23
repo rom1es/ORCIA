@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 221,
+    "techLeadReportsCount": 222,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -668,6 +668,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "reportFile": "25-5-decouplage-assistant-sans-modele-semantique-blocage-sources-rag-et-cloture-epic-25-tech-lead-report.md",
       "domain": "Epic 25 — Découplage Mon Assistant / Search Speed-1 sans Modèle Sémantique, Blocage Sources RAG (422 ERR_NO_ACTIVE_EMBEDDING_MODEL) & Clôture Technique Epic 25 (CAP-011, CAP-022, CAP-074, CAP-075, CAP-076, CAP-180, CAP-190)",
       "summary": "Clôture (done, epic-25: done, QA post-revue VALIDATE complète) : get_optional_embedding_port sur les 5 routes Assistant et /search, require_rag_available strict sur /rag/search et /rag/index-db-ddl, blocage 422 ERR_NO_ACTIVE_EMBEDDING_MODEL hors SOURCE_CODE (POST/PATCH /datasources), hook DRY useActiveEmbeddingModelStatus (GLOBAL && !draining), assistant-rag-inactive-notice non-bloquant vs assistant-no-chat-model-banner, blocage UX modale WorkspaceSourceAttachModal, correctifs MAJOR-1/MAJOR-2/MINOR-1..7 (42P01 vs RuntimeError, RBAC PLATFORM_ADMIN AI Models, isolation PRIVATE_USER, DOMException TimeoutError) ; 96 % couv. ciblée (9 modules, --fail-under=90), 1066 passed (unit+security+evals), 14 passed PG18 testcontainers, 9/9 Turbo (20+136+260 Vitest), 20 passed, 0 failed (5.4m) Playwright Desktop (6 specs post-revue), ruff/mypy --strict/lint-imports (5/5)/export_openapi (0-diff)/lint_spine (0) vert."
+    },
+    {
+      "date": "2026-11-20",
+      "phaseOrStory": "Audit / ACTION_ITEM-I18N.1",
+      "reportFile": "2026-11-20-audit-i18n-chaines-codees-en-dur-tech-lead-report.md",
+      "domain": "Cross-Cutting i18n Audit & Deterministic Guardrails (_i18n-audit-inventory-raw.md)",
+      "summary": "Restored & translated to English (2026-11-23): inventoried 3,809 hardcoded FR/EN occurrences across 461 files (A=71 client errors, B=577 server fallbacks, C=2,816 UI labels, D=193 backend payloads/prompts, E=152 legitimate uses) and defined the 4 deterministic CI gates + 6-lot Epic 27 remediation plan (Stories 27.1–27.8)."
     },
     {
       "date": "2026-11-20",

@@ -2,11 +2,12 @@
 """Validation script for Tech Lead implementation reports in ORCIA.
 
 Ensures:
-1. Each report in docs/implementation-artifacts/tech-lead-reports/ matches *-tech-lead-report.md
-2. Contains the 3 mandatory sections:
-   - Analyse du Besoin
-   - Plan d'Implémentation
-   - Bilan des Modifications
+1. Each report in docs/implementation-artifacts/tech-lead-reports/ (excluding README.md
+   and underscore-prefixed annexes) matches *-tech-lead-report.md
+2. Contains the 3 mandatory sections (in English or legacy French for immutable historical reports):
+   - Needs Analysis / Analyse du Besoin
+   - Implementation Plan / Plan d'Implémentation
+   - Summary of Changes / Bilan des Modifications
 3. Is indexed in docs/implementation-artifacts/tech-lead-reports/README.md
 """
 
@@ -25,9 +26,18 @@ DOCS_DIR = (
 README_FILE = DOCS_DIR / "README.md"
 
 MANDATORY_SECTIONS = [
-    re.compile(r"^##\s+1\.\s+.*analyse\s+du\s+besoin", re.IGNORECASE | re.MULTILINE),
-    re.compile(r"^##\s+2\.\s+.*plan\s+d['’]impl[ée]mentation", re.IGNORECASE | re.MULTILINE),
-    re.compile(r"^##\s+3\.\s+.*bilan\s+des\s+modifications", re.IGNORECASE | re.MULTILINE),
+    re.compile(
+        r"^##\s+1\.\s+.*(analyse\s+du\s+besoin|needs\s+analysis)",
+        re.IGNORECASE | re.MULTILINE,
+    ),
+    re.compile(
+        r"^##\s+2\.\s+.*(plan\s+d['’]impl[ée]mentation|implementation\s+plan)",
+        re.IGNORECASE | re.MULTILINE,
+    ),
+    re.compile(
+        r"^##\s+3\.\s+.*(bilan\s+des\s+modifications|summary\s+of\s+changes)",
+        re.IGNORECASE | re.MULTILINE,
+    ),
 ]
 
 
@@ -39,7 +49,11 @@ def check_docs() -> int:
     readme_content = README_FILE.read_text(encoding="utf-8") if README_FILE.exists() else ""
     errors: list[str] = []
 
-    files = [f for f in DOCS_DIR.glob("*.md") if f.name not in ("README.md",)]
+    files = [
+        f
+        for f in DOCS_DIR.glob("*.md")
+        if f.name not in ("README.md",) and not f.name.startswith("_")
+    ]
 
     if not files:
         print("⚠️ No Tech Lead implementation reports found.")

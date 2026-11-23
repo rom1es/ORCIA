@@ -1,100 +1,102 @@
-# [Story N.M ou YYYY-MM-DD — Nom de l'Implémentation / Ajustement / Fonctionnalité]
+# [Story N.M or YYYY-MM-DD — Implementation / Adjustment / Feature Name]
 
-> **Convention de nommage du fichier (Obligatoire — à créer AVANT toute modification de code)** :
-> - Demande d'ajustement, correctif ou évolution hors Story : `docs/implementation-artifacts/tech-lead-reports/{YYYY-MM-DD}-{descriptif-court}-tech-lead-report.md`
-> - User Story du sprint : `docs/implementation-artifacts/tech-lead-reports/{story-key}-tech-lead-report.md`
+> **Mandatory File Naming Convention (Must be created BEFORE any code modification)**:
+> - Ad-hoc adjustment, bugfix, or evolution outside a Story: `docs/implementation-artifacts/tech-lead-reports/{YYYY-MM-DD}-{short-slug}-tech-lead-report.md`
+> - Sprint User Story: `docs/implementation-artifacts/tech-lead-reports/{story-key}-tech-lead-report.md`
+> - **Language Policy**: Author all new Tech Lead reports in **English** (historical reports remain immutable).
 
-- **Date** : YYYY-MM-DD
-- **Story / Clé Sprint** : `{story-key}` ou `{YYYY-MM-DD}-{descriptif-court}` (`Epic N` / `Ajustement Transverse`)
-- **Capacité(s)** : `CAP-xxx` (existant à mettre à jour / nouveau à créer dans `docs/product/capabilities.yaml`) ou `none (hygiène/NFR/UX)` — classification : `feature | hygiène | ux | doc` (voir `AGENTS.md` §5)
-- **Auteur / Contexte** : [Contexte métier, objectif principal, problème résolu, exigences `FR-*`, `NFR-*`, `AD-*`, `UX-DR*` couvertes]
-- **Commits associés** : `hash1`, `hash2`
-
----
-
-## 1. Analyse du Besoin & Étude d'Impact Tech Lead (Pré-Implémentation)
-
-### 1.1 Contexte & Problématique
-- [Description du problème ou de l'opportunité métier/technique]
-- [Comportement attendu vs comportement actuel]
-- [Impacts collatéraux ou contraintes spécifiques de `ARCHITECTURE-SPINE.md`]
-
-### 1.2 Exploration, Analyse d'Impact GitNexus, Factorisation & Dette Technique
-- **Analyse d'Impact GitNexus (`gitnexus_query`, `gitnexus_context`, `gitnexus_impact`)** :
-  - [Symboles existants touchés, appelants directs (`upstream`), processus impactés, niveau de risque]
-- **Exploration & Chiffres Clés (Base de Données / Conteneurs / Benchmark)** :
-  - [Requêtes SQL / CTE ou scripts exploratoires exécutés]
-  - [Volumétries constatées, cas limites identifiés, signaux faibles mesurés]
-  - [Conclusions justifiant les choix techniques]
-- **Opportunités de Factorisation & Résorption de Dette Technique Naissante** :
-  - [Primitives partagées extraites ou réutilisées (`packages/orcia-core`, `packages/api-client`, composants UI)]
-  - [Contrôle de volumétrie des fichiers (`> 300–400 lignes`) et découpages effectués]
-  - [Tickets de dette technique / refactoring créés : `Story N.Ma` dans `epics.md` ou entrées `action_items` dans `sprint-status.yaml`]
+- **Date**: YYYY-MM-DD
+- **Story / Sprint Key**: `{story-key}` or `{YYYY-MM-DD}-{short-slug}` (`Epic N` / `Cross-Cutting Adjustment`)
+- **Capability(ies)**: `CAP-xxx` (existing to update / new to create in `docs/product/capabilities.yaml`) or `none (hygiene/NFR/UX)` — classification: `feature | hygiene | ux | doc` (see `AGENTS.md` §5)
+- **Author / Context**: [Business context, primary goal, problem solved, `FR-*`, `NFR-*`, `AD-*`, `UX-DR*` requirements covered]
+- **Associated Commits**: `hash1`, `hash2`
 
 ---
 
-## 2. Plan d'Implémentation
+## 1. Needs Analysis & Tech Lead Impact Study (Pre-Implementation)
 
-### 2.1 Schéma de Données & Migrations Alembic (`infra/migrations/versions/...`, si applicable)
-- `infra/migrations/versions/XXXX_nom_migration.py` :
-  - Tables, colonnes (`UUIDv7`), types, contraintes d'intégrité et triggers PostgreSQL 18 (ex. *Append-Only* `audit_ledger` / `blackboard_snapshots`).
-  - Index B-Tree / GIN (`tsvector`) / HNSW (`pgvector halfvec(1024)`) / partiels créés et justification de performance.
-  - Validation de la réversibilité (`upgrade()` et `downgrade()`).
+### 1.1 Context & Problem Statement
+- [Description of the business/technical problem or opportunity]
+- [Expected behavior vs current behavior]
+- [Collateral impacts or specific constraints from `ARCHITECTURE-SPINE.md`]
 
-### 2.2 Noyau Métier Hexagonal, Orchestration & Workers (`packages/orcia-core/`, `apps/worker/`, `infra/sandbox/`)
-- `packages/orcia-core/<domaine>/...` :
-  - Logique algorithmique, complexité (McCabe $\le 10$), structures de données et invariants du domaine (zéro dépendance framework dans `domain/` et `ports/`).
-  - Règles d'isolation et garde-fous architecturaux (`AD-1` à `AD-19` : ex. immuabilité `run-lock.json`, ancres humaines `AD-3`, orthogonalité des modèles `AD-10`, sandbox `--unshare-net` `AD-9`).
-- `apps/worker/...` :
-  - Acteurs Dramatiq, garanties d'idempotence en cas de retry et gestion des erreurs.
-
-### 2.3 Couche Backend API, Sécurité & Contrats (`apps/api/`, `packages/api-client/`)
-- `apps/api/repositories/...` & `apps/api/services/...` :
-  - Nouvelles fonctions, CTE récursives (`WITH RECURSIVE`), requêtes d'agrégation (zéro requête `N+1`), filtres multi-niveaux (`GLOBAL | BU | TEAM | WORKSPACE`), pagination et transaction `Unit of Work`.
-- `apps/api/routers/...` & `apps/api/dependencies/...` :
-  - Endpoints FastAPI exposés, gardes RBAC/ABAC (`RunAccessGuard`, rejet `HTTP 403` en mode `READ_ONLY_OBSERVER`), schémas Pydantic v2, enveloppes d'erreur **RFC 9457 Problem Details** et corrélation `trace_id` OpenTelemetry (`structlog`).
-- `packages/api-client/` :
-  - Régénération du SDK TypeScript via `openapi-typescript` (`0-diff` vérifié).
-
-### 2.4 Interface Utilisateur & Expérience (`apps/web/`)
-- Routes TanStack Router (`apps/web/src/...`) et composants React 19 / `@orcia/ui` créés ou modifiés.
-- Respect des Design Tokens Direction C (`DESIGN.md` — zéro hexadécimal en dur hors `tokens.css`, exclusivité du violet `#6D28D9` pour `human-led-anchor-card`) et des 11 règles fondamentales UX/UI.
-- Câblage vertical complet via `@orcia/api-client` (zéro store métier `useState` purement éphémère, zéro court-circuit `isJsdom`) et survie au rechargement de l'URL (`F5`).
-
-### 2.5 Analyse d'Impact sur la Pyramide des Tests (`AD-17` — Couches 1 à 5 + Sécurité, Obligatoire)
-- **Couche 1a (Unitaires Python `tests/unit/`) & Couche 1b (Unitaires/Composants TS `Vitest` sans `isJsdom`)** : [Fichiers de tests unitaires créés ou mis à jour]
-- **Couche 2 (Intégration Verticale `HTTP FastAPI ➔ PostgreSQL 18` `tests/integration/`)** : [Routes HTTP testées contre PostgreSQL 18 + vérification `SELECT`]
-- **Couche 3 (Contrats OpenAPI 3.1 `0-diff`, Schemathesis & `lint-imports`)** : [Impacts éventuels sur les schémas HTTP / SDK `@orcia/api-client`]
-- **Couche 4 (Evals IA « Golden Dataset » `0 $` `tests/evals/`)** : [Jeux dorés `tests/evals/golden/*.jsonl` impactés ou ajoutés]
-- **Couche Sécurité / Red-Team (`tests/security/`)** : [Vérification SSRF, `403 ERR_OBSERVER_MODE_READ_ONLY`, RBAC/ABAC, masquage `CONFIDENTIAL_RESTRICTED`, zéro secret en clair]
-- **Couche 5 (E2E Navigateur Playwright Bi-Serveur `apps/web/e2e/00..11-*.spec.ts`)** : [Specs Playwright et sélecteurs `data-testid` impactés, mise à jour de `tests:` dans `docs/product/capabilities.yaml`]
+### 1.2 Exploration, GitNexus Impact Analysis, Refactoring & Technical Debt
+- **GitNexus Impact Analysis (`gitnexus_query`, `gitnexus_context`, `gitnexus_impact`)**:
+  - [Touched existing symbols, direct upstream callers, impacted processes, risk level]
+- **Exploration & Key Metrics (Database / Containers / Benchmarks)**:
+  - [SQL queries / CTEs or exploratory scripts executed]
+  - [Observed volumes, identified edge cases, measured signals]
+  - [Conclusions justifying technical choices]
+- **Refactoring Opportunities & Emerging Technical Debt Mitigation**:
+  - [Shared primitives extracted or reused (`packages/orcia-core`, `packages/api-client`, `@orcia/ui` components)]
+  - [File line-count control (`<= 300–400` lines) and modular splits performed]
+  - [Technical debt / refactoring tickets created: `Story N.Ma` in `epics.md` or `action_items` entries in `sprint-status.yaml`]
 
 ---
 
-## 3. Bilan des Modifications & Résultats (Post-Implémentation)
+## 2. Implementation Plan
 
-### 3.1 Fichiers Développés & Modifiés
-| Fichier | Nature (Création / Modification / Refactoring) | Description synthétique |
+### 2.1 Data Schema & Alembic Migrations (`infra/migrations/versions/...`, if applicable)
+- `infra/migrations/versions/XXXX_migration_name.py`:
+  - Tables, columns (`UUIDv7`), types, integrity constraints, and PostgreSQL 18 triggers (e.g., Append-Only `audit_ledger` / `blackboard_snapshots`).
+  - B-Tree / GIN (`tsvector`) / HNSW (`pgvector halfvec(1024)`) / partial indexes created and performance rationale.
+  - Reversibility validation (`upgrade()` and `downgrade()`).
+
+### 2.2 Hexagonal Core, Orchestration & Workers (`packages/orcia-core/`, `apps/worker/`, `infra/sandbox/`)
+- `packages/orcia-core/<domain>/...`:
+  - Algorithmic logic, complexity (McCabe $\le 10$), data structures, and domain invariants (zero framework imports inside `domain/` and `ports/`).
+  - Isolation rules and architectural guardrails (`AD-1` to `AD-25`: e.g., `run-lock.json` immutability, `AD-3` human anchors, `AD-10` model orthogonality, `AD-9` `--unshare-net` sandbox).
+- `apps/worker/...`:
+  - Dramatiq actors, retry idempotency guarantees, and error handling.
+
+### 2.3 Backend API, Security & Contracts (`apps/api/`, `packages/api-client/`)
+- `apps/api/repositories/...` & `apps/api/services/...`:
+  - New functions, recursive CTEs (`WITH RECURSIVE`), aggregation queries (zero `N+1`), multi-level scope filters (`GLOBAL | BU | TEAM | WORKSPACE`), pagination, and `Unit of Work` transactions.
+- `apps/api/routers/...` & `apps/api/dependencies/...`:
+  - Exposed FastAPI endpoints, RBAC/ABAC guards (`RunAccessGuard`, `HTTP 403` rejection in `READ_ONLY_OBSERVER`), Pydantic v2 schemas, bilingual **RFC 9457 Problem Details** error envelopes (`Accept-Language`), and OpenTelemetry `trace_id` correlation (`structlog`).
+- `packages/api-client/`:
+  - TypeScript SDK regeneration via `openapi-typescript` (`0-diff` verified).
+
+### 2.4 User Interface & Experience (`apps/web/`, `packages/ui/`)
+- TanStack Router routes (`apps/web/src/...`) and React 19 / `@orcia/ui` components created or modified.
+- Direction C Design Tokens compliance (`DESIGN.md` — zero raw hex colors outside `tokens.css`, Violet `#6D28D9` reserved for `human-led-anchor-card`) and the 11 fundamental UX/UI rules.
+- Full bilingual (`fr` / `en`) compatibility via typed dictionaries in `apps/web/src/i18n/locales/` (zero hardcoded strings or `locale === "fr"` ternaries).
+- Full vertical wiring via `@orcia/api-client` (zero ephemeral `useState` business stores, zero `isJsdom` short-circuits) and URL reload (`F5`) cold survival.
+
+### 2.5 Test Pyramid Impact Analysis (`AD-17` — Layers 1 to 5 + Security, Mandatory)
+- **Layer 1a (Python Unit `tests/unit/`) & Layer 1b (TS/React Unit/Component `Vitest` without `isJsdom`)**: [Unit test files created or updated]
+- **Layer 2 (Vertical Integration `HTTP FastAPI ➔ PostgreSQL 18` `tests/integration/`)**: [HTTP routes tested against PostgreSQL 18 + `SELECT` verification]
+- **Layer 3 (OpenAPI 3.1 Contracts `0-diff`, Schemathesis & `lint-imports`)**: [Impacts on HTTP schemas / `@orcia/api-client` SDK]
+- **Layer 4 (`$0` Golden Dataset AI Evals `tests/evals/`)**: [Golden datasets `tests/evals/golden/*.jsonl` impacted or added]
+- **Security / Red-Team Layer (`tests/security/`)**: [SSRF guard, `403 ERR_OBSERVER_MODE_READ_ONLY`, RBAC/ABAC, `CONFIDENTIAL_RESTRICTED` masking, zero plaintext secrets]
+- **Layer 5 (Dual-Server Playwright E2E `apps/web/e2e/*.spec.ts`)**: [Impacted Playwright specs and `data-testid` selectors, bilingual `fr`/`en` verification, and `tests:` update in `docs/product/capabilities.yaml`]
+
+---
+
+## 3. Summary of Changes & Results (Post-Implementation)
+
+### 3.1 Created & Modified Files
+| File | Action (Created / Modified / Refactored) | Concise Summary |
 | :--- | :--- | :--- |
-| `infra/migrations/...` | Création | ... |
-| `packages/orcia-core/...` | Création / Modification | ... |
-| `apps/api/...` | Création / Modification | ... |
-| `apps/web/...` | Création / Modification | ... |
+| `infra/migrations/...` | Created | ... |
+| `packages/orcia-core/...` | Created / Modified | ... |
+| `apps/api/...` | Created / Modified | ... |
+| `apps/web/...` | Created / Modified | ... |
 
-### 3.2 Résultats Chiffrés, Métriques & Qualité
-- **Couverture de tests** : [Couverture unitaire `pytest` / `Vitest` obtenue ($\ge 90\%$ requis)]
-- **Performances mesurées** : [Temps d'exécution des requêtes CTE (`< 15 ms`), RAG hybride (`< 50 ms`), diffusion SSE (`< 500 ms`), bascule UI (`< 1 s`)]
-- **Qualité statique & Architecture** :
-  - `ruff check` & `ruff format --check` : `0 warning`
-  - `mypy --strict` & `pnpm typecheck` : `0 error`
-  - `lint-imports` : `5 contracts kept, 0 broken`
-  - `lint_spine.py` : `ok: true, 0 findings`
-  - `gitnexus_detect_changes()` : [Périmètre vérifié et conforme]
+### 3.2 Quantitative Metrics, Coverage & Static Quality
+- **Test coverage**: [Obtained unit test coverage (`pytest` / `Vitest`, $\ge 90\%$ required)]
+- **Measured performance**: [CTE query times (`< 15 ms`), hybrid RAG (`< 50 ms`), SSE broadcast (`< 500 ms`), UI view switching (`< 1 s`)]
+- **Static Quality & Architecture**:
+  - `ruff check` & `ruff format --check`: `0` warnings
+  - `mypy --strict` & `pnpm typecheck`: `0` errors
+  - `lint-imports`: `5 contracts kept, 0 broken`
+  - `lint_spine.py`: `ok: true, 0 findings`
+  - `gitnexus_detect_changes()`: [Verified and compliant scope]
 
-### 3.3 Validation & Procédure de Test sur Toute la Pyramide (`AD-17` + 5 Garde-Fous de Câblage Vertical)
-- **Couche 1a — Tests Unitaires Python (`pytest` + `hypothesis`, $\ge 90\%$) & Couche 1b — Frontend TS (`Vitest` sans court-circuit `isJsdom`)** : [Détail des invariants testés]
-- **Couche 2 — Tests d'Intégration Verticale `HTTP ➔ PostgreSQL 18` (`testcontainers-python` : PostgreSQL 18 + `pgvector`, Redis 7.4, SeaweedFS)** : [Appel de la route FastAPI (`AsyncClient`) + vérification `SELECT` en base, zéro adaptateur SQL orphelin]
-- **Couche 3 — Tests de Contrat API (`openapi-typescript` `0-diff`, `Schemathesis`, `lint-imports`, `lint_spine.py`)** : [Validation des schémas et codes RFC 9457]
-- **Couche 4 — Tests d'Orchestration IA & Evals Golden Dataset (`DeterministicCassetteLLM`, `tests/evals/`)** : [Validation déterministe à `0 $` des flux d'agents, citations et Gates]
-- **Couche Sécurité / Red-Team (`tests/security/`)** : [Validation SSRF, rejet `403 ERR_OBSERVER_MODE_READ_ONLY`, RBAC/ABAC, masquage `CONFIDENTIAL_RESTRICTED`, non-fuite de secrets]
-- **Couche 5 — Tests E2E Navigateur Playwright Bi-Serveur (`pnpm e2e`, `apps/web/e2e/00..11-*.spec.ts`), Survie au `F5` (`unmount()` + `render()`) & Vérité Terrain Jour 0 (`pnpm db:reset`)** : [Scénarios E2E Desktop/Mobile vérifiés, persistance après rechargement de la page et mise à jour du champ `tests:` / `verification: runtime` dans `docs/product/capabilities.yaml`]
+### 3.3 AD-17 Test Pyramid & Vertical Wiring Verification
+- **Layer 1a — Python Unit Tests (`pytest` + `hypothesis`, $\ge 90\%$) & Layer 1b — Frontend TS (`Vitest` without `isJsdom`)**: [Details of verified invariants]
+- **Layer 2 — Vertical Integration `HTTP ➔ PostgreSQL 18` (`testcontainers-python`: PostgreSQL 18 + `pgvector`, Redis 7.4, SeaweedFS)**: [FastAPI route call (`AsyncClient`) + database `SELECT` verification, zero orphan SQL adapters]
+- **Layer 3 — API Contract (`openapi-typescript` `0-diff`, `Schemathesis`, `lint-imports`, `lint_spine.py`)**: [Schema and RFC 9457 error code validation]
+- **Layer 4 — AI Orchestration & Golden Dataset Evals (`DeterministicCassetteLLM`, `tests/evals/`)**: [`$0` deterministic verification of agent flows, citations, and Gates]
+- **Security / Red-Team Layer (`tests/security/`)**: [SSRF, `403 ERR_OBSERVER_MODE_READ_ONLY`, RBAC/ABAC, `CONFIDENTIAL_RESTRICTED` masking, zero secret leaks]
+- **Layer 5 — Dual-Server Playwright E2E (`pnpm e2e`), `F5` Cold Survival (`unmount()` + `render()`) & Day-0 Ground Truth (`pnpm db:reset`)**: [Desktop/Mobile E2E scenarios verified, post-reload persistence, bilingual FR/EN behavior, and `tests:` / `verification: runtime` update in `docs/product/capabilities.yaml`]
