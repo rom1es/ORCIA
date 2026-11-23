@@ -14,10 +14,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 218,
+    "techLeadReportsCount": 219,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
-    "verifiedCapabilitiesCount": 61,
+    "verifiedCapabilitiesCount": 65,
     "userJourneysCount": 20,
     "coveredUserJourneysCount": 20,
     "e2eCoveredCapabilitiesCount": 63
@@ -550,6 +550,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-22",
+      "phaseOrStory": "Story 26.10",
+      "reportFile": "26-10-golden-evals-red-team-multi-worker-and-epic-26-closure-tech-lead-report.md",
+      "domain": "Epic 26 Lot 7 — Golden Evals, Red-Team & Multi-Worker Verification, Anti-Regression AST Audits, 0-Uncalled Route Check, runtime Promotion & Epic 26 Closure (CAP-022, CAP-070, CAP-072, CAP-260)",
+      "summary": "Closed (done, epic-26: done, post-remediation independent Testing Sub-Agent verified): authored $0 golden eval datasets & suite (tests/evals/test_story_26_10_assistant_golden_evals.py), adversarial red-team suite (tests/security/test_story_26_10_assistant_security_redteam.py), 2-instance create_app() PG18 + Redis multi-worker SSE/stop/recovery test (tests/integration/api/test_story_26_10_multi_worker_sse_stop_recovery_postgres18.py), AST & 0-uncalled route audits (_epic_26_closure_ast_helpers.py / test_story_26_10_epic_26_closure_ast_and_routes_audit.py), and Epic 22->23->24 traceability sync (_epic23_to_epic24_constants.py / test_epic23_to_epic24_traceability.py); removed PROMPT_TELEMETRY_LOG RAM state + localStorage residue, hardened immutable MappingProxyType/frozenset constants, promoted CAP-022/CAP-070/CAP-072/CAP-260 to verification: runtime, closed BUG-E2E-01b, completed H-01..H-38 traceability matrix; verified 95% Epic 26 non-SQL / 90% all-Epic-26 branch coverage (85% whole orcia-core non-PG18 alone before Layer 2 SQL integration combine), 1217 passed Python non-integration suites (948 + 55 + 9 + 178 + 2 + 25), 31 passed PG18+Redis integration suites, 9/9 Turbo (20 + 139 + 264 = 423 JS/TS tests), 25 passed, 1 skipped (mobile-only), 0 failed 10-spec Playwright Desktop E2E (00, 01, 02, 12-finops, 12-epic16, 14, 15, 16, 21, 22), ruff (1555 files)/mypy --strict (720 files)/lint-imports (5/5, 763 files)/export_openapi (0-diff)/lint_spine (0)/detect-secrets clean."
+    },
     {
       "date": "2026-11-22",
       "phaseOrStory": "Story 26.9",

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import time
-import uuid
 from dataclasses import dataclass, field, replace
 from typing import Any, Literal
 
@@ -14,7 +13,6 @@ from orcia_core.orchestration.redis_turn_registry import RedisAssistantTurnRegis
 from orcia_core.ports.assistant_turn_stream_port import AssistantTurnRecord
 
 TurnStatus = Literal["IDLE", "RUNNING", "COMPLETED", "STOPPED", "ERROR"]
-PROMPT_TELEMETRY_LOG: dict[str, list[dict[str, object]]] = {}
 
 
 @dataclass
@@ -95,60 +93,6 @@ def get_tracked_turn_tasks_from_request(request: Any | None) -> set[asyncio.Task
     if state is not None:
         state.assistant_turn_tasks = created
     return created
-
-
-def record_prompt_telemetry_entry(
-    *,
-    workspace_id: str,
-    turn_id: str | None,
-    user_prompt: str,
-    assembled_system_prompt: str,
-    conversation_history_count: int = 0,
-    folder_title: str | None = None,
-    folder_pinned_notes: str | None = None,
-    thinking_text: str = "",
-    assistant_reply: str = "",
-    model_label: str = "Polyvalent",
-    thinking_effort: str = "balanced",
-    thinking_elapsed_seconds: int = 1,
-    user_feedback: Literal["LIKE", "DISLIKE"] | None = None,
-    timestamp_iso: str | None = None,
-) -> dict[str, object]:
-    """Upsert a prompt telemetry & feedback record for `workspace_id`."""
-    resolved_id = (turn_id or "").strip() or f"turn-{uuid.uuid4().hex[:10]}"
-    now_iso = timestamp_iso or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-    bucket = PROMPT_TELEMETRY_LOG.setdefault(workspace_id, [])
-    for existing in bucket:
-        if existing.get("turn_id") == resolved_id:
-            if user_prompt:
-                existing["user_prompt"] = user_prompt
-            if assembled_system_prompt:
-                existing["assembled_system_prompt"] = assembled_system_prompt
-            if assistant_reply:
-                existing["assistant_reply"] = assistant_reply
-            if thinking_text:
-                existing["thinking_text"] = thinking_text
-            existing["user_feedback"] = user_feedback
-            return existing
-    entry: dict[str, object] = {
-        "turn_id": resolved_id,
-        "workspace_id": workspace_id,
-        "timestamp_iso": now_iso,
-        "user_prompt": user_prompt,
-        "assembled_system_prompt": assembled_system_prompt,
-        "conversation_history_count": conversation_history_count,
-        "folder_title": folder_title,
-        "folder_pinned_notes": folder_pinned_notes,
-        "thinking_text": thinking_text,
-        "assistant_reply": assistant_reply,
-        "model_label": model_label,
-        "thinking_effort": thinking_effort,
-        "thinking_elapsed_seconds": thinking_elapsed_seconds,
-        "user_feedback": user_feedback,
-    }
-    bucket.insert(0, entry)
-    del bucket[100:]
-    return entry
 
 
 async def get_active_turn_for_workspace(

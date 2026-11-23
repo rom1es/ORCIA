@@ -394,23 +394,64 @@ Toutes les migrations sont incrémentales, en SQL brut (`op.execute(sa.text(...)
 
 ## 3. Bilan des Modifications & Résultats (Post-Implémentation)
 
-> Rapport d'audit et de planification : **aucune modification de code applicatif**. Cette section sera complétée story par story via les rapports `26-x-*-tech-lead-report.md`.
+> Epic 26 remediation completed across Stories `26.0` through `26.10` on branch `feat/epic-26-assistant-harness-debt-remediation` (`AD-25` + `R1–R9`). Final `H-01..H-38` closure mapping below; full `AD-17` verification details reside in `26-10-golden-evals-red-team-multi-worker-and-epic-26-closure-tech-lead-report.md`.
 
-### 3.1 Fichiers Développés & Modifiés
+### 3.1 Epic 26 Closure Matrix (`H-01..H-38`)
+
+| ID | Sev. | Story | Final Status | Implemented Resolution & Verification Surface |
+| :--- | :---: | :---: | :--- | :--- |
+| `H-01` | P0 | `26-7` | Closed | Converged UI & API onto single `AssistantTurnEngine` (`N1–N5` + `CitationGuard`) on `/api/v1/assistant/turns*`; deleted `/three-speed/*`, `/chat*`, `/citations/verify-turn`, `/artifacts/action` (`test_story_26_7_unified_turn_engine_postgres18.py`, `26-10` AST audit). |
+| `H-02` | P0 | `26-7`, `26-9` | Closed | Removed parallel `POST /api/v1/executions/reflexive` trigger in `apps/web`; single turn submission (`202` + `turn_id`) with Speed 2/3 `execution_profile='ASSISTANT'` (`22-assistant-tool-loop-approval-and-reattach.spec.ts`). |
+| `H-03` | P0 | `26-6a`, `26-6b` | Closed | Implemented real streamed & non-streamed native `tool_calls` on OpenAI-compatible + Anthropic (`llm_tool_dialects.py`, `R7`) and sequential `GovernedAssistantToolRouter` (`test_story_26_6a_*`, `test_story_26_6b_*`, `26-10` golden evals). |
+| `H-04` | P0 | `26-6a` | Closed | Enforced deterministic iteration, token, and wall-clock budgets via `AssistantLoopBudgetController` (`assistant_loop_budgets.py`, `loop-06-budget-cap-halt` golden eval). |
+| `H-05` | P0 | `26-8` | Closed | Wired `/turns/{id}/approve` and `/folders/{id}/launch-process` to DBOS + PG18 via `AssistantProcessLauncherService` halting at `WAITING_FOR_HUMAN_ANCHOR` (`422 ERR_HUMAN_ANCHOR_REQUIRED`); deleted `/workflows/save-and-launch` (`test_story_26_8_*`). |
+| `H-06` | P0 | `26-1`, `26-7` | Closed | Moved `READ_ONLY_OBSERVER` & `X-Orcia-Access-Mode` `403 ERR_OBSERVER_MODE_READ_ONLY` checks into pre-stream FastAPI dependencies (`enforce_assistant_workspace_guard`) across all `/api/v1/assistant/*` mutations (`test_story_26_1_*`, `26-10` AST & red-team). |
+| `H-07` | P0 | `26-1` | Closed | Enforced `ScopeAccessGuard` + `MatrixPermissionEvaluator` (UUID + slug resolution) and real workspace `scope_id` LLM tier resolution across all assistant routes (`test_story_26_1_assistant_security_hardening.py`). |
+| `H-08` | P0 | `26-1`, `26-5` | Closed | Removed client `reader_allowed_source_uris` (`extra='forbid'`); enforced server-side `READ_SOURCE` & `CONFIDENTIAL_RESTRICTED` masking before LLM dispatch and in `EvidenceTable` (`test_story_26_1_*`, `test_story_26_5_*`). |
+| `H-09` | P0 | `26-4a`, `26-4b`, `26-5` | Closed | Migrated turns/locks/rate-limits to Redis 7.4 and Mode A governance (`workspace_customization_overrides`), feedback (`assistant_turn_feedback`), folder metadata (`assistant_folders`), messages (`assistant_thread_messages`), and phantom audit (`audit_ledger`) to PG18 (`0` RAM business state, `26-10` AST audit). |
+| `H-10` | P0 | `26-3` | Closed | Replaced `ACTIVE_WORKSPACE_TURNS` dict with Redis registry keyed by `(workspace_id, user_id, turn_id)`, tracked `app.state.assistant_turn_tasks` (`add_done_callback`), and bounded `SIGTERM` drain (`test_story_26_3_*`, `26-10` multi-worker PG18+Redis). |
+| `H-11` | P0 | `26-3` | Closed | Converted step executors, hybrid RAG search, and SSE generators to native `async`/`await` (`0` `ThreadPoolExecutor.result()` / `loop.is_running()` skips in `apps/api/src/` and assistant core, `26-10` AST audit). |
+| `H-12` | P0 | `26-5` | Closed | Hydrated ontology from PG18 via `resolve_snapshot(workspace_scope_id)`, relevance ranker (`rank_ontology_snapshot_for_query`), `ProfileSemanticTranslator`, and L1–L4 axioms (`test_story_26_5_ontology_relevance_evals.py`). |
+| `H-13` | P0 | `26-5` | Closed | Wired async `SqlHybridRagRepository` (`halfvec(1024)` + `ts_rank_cd` RRF `k=60`) into assistant turn context assembly while preserving `AD-24.6` optional-embedding decoupling (`test_story_26_5_*`). |
+| `H-14` | P0 | `26-7`, `26-9` | Closed | Enforced server `CitationGuard` before `turn_completed` + `citation_map` SSE (`ASSISTANT_PHANTOM_CITATION_PURGED` in `audit_ledger`); deleted client `filterUsedRagSourcesForTurn` & fabricated pills (`test_citations_golden_dataset.py`, `26-10` golden evals). |
+| `H-15` | P1 | `26-1` | Closed | Sealed constitutional Layer 1 (`ImmutableHarnessBoundaryError` for assistant, preserving `agents_and_skills`), restricted history to `user\|assistant`, and sanitized `[LAYER_*]`/`[CONSTITUTIONAL_*]` tags (`test_story_26_1_*`, `26-10` red-team). |
+| `H-16` | P1 | `26-1` | Closed | Implemented `ORCIA_LLM_ALLOWED_PRIVATE_HOSTS` env allowlist (`D3`/`R8`), permanent metadata/internal-port blocks, and connection-time `getaddrinfo` DNS pinning (`ssrf_guard.py`, `ai_models_pinned_http.py`, `ACTION_ITEM-26.5` deferred). |
+| `H-17` | P1 | `26-1` | Closed | Restricted unauthenticated `GET /bootstrap/platform-setup-state` to `{is_initialized, step}`, stripped `apiKey` from `platform_setup_snapshot`, bounded `_REGISTERED_SECRET_VALUES` LRU (`<= 2048`), and scrubbed `str(exc)` (`test_story_26_1_*`). |
+| `H-18` | P1 | `26-5`, `26-9` | Closed | Replaced `localStorage` history & `" \| "` summary split with PG18 `assistant_thread_messages`, `GET /threads/{id}/messages`, and `max_tokens_budget` history trimmer (`test_story_26_5_*`, `e2e/22`). |
+| `H-19` | P1 | `26-4a` | Closed | Removed `InMemoryPromptCacheStore`, `AssembledPromptCachePort`, and forged `outbox_event_id` (`R6`); measured warm SQL assembly `29.3–66.8 ms` (`ACTION_ITEM-26.3` deferred). |
+| `H-20` | P1 | `26-3` | Closed | Emitted RFC 9457 `stream_error` envelopes carrying W3C `trace_id` and structured `orcia.*` logging without swallowing exceptions (`test_story_26_3_*`, `test_codebase_architectural_anti_patterns_audit.py`). |
+| `H-21` | P1 | `26-3` | Closed | Wired Redis cross-worker `stop` + `finally` idempotent `audit_ledger` FinOps flush + cursor-reattachable `?after=<cursor>` Redis Streams SSE (`test_story_26_3_*`, `test_story_26_10_multi_worker_sse_stop_recovery_postgres18.py`). |
+| `H-22` | P1 | `26-4a`, `26-6b` | Closed | Emitted real `domain_events_outbox` rows via `AssistantOutboxEmitter` and per-tool `ASSISTANT_TOOL_INVOKED`/`ASSISTANT_TOOL_DENIED` rows in `audit_ledger` (`test_story_26_4a_*`, `test_story_26_6b_*`). |
+| `H-23` | P1 | `26-3` | Closed | Enforced Redis sliding-window rate limiting and per-user concurrency semaphores (`429 ERR_ASSISTANT_RATE_LIMITED` / `ERR_ASSISTANT_CONCURRENCY_LIMIT`, `test_story_26_3_redis_multi_worker_turns_postgres18.py`). |
+| `H-24` | P1 | `26-2` | Closed | Eliminated all `testclient`, `pytest in sys.modules`, and `ORCIA_FORCE_LIVE_LLM_IN_TESTS` production branches via Composition Root `LlmStreamingPort` injection (`26-10` AST audit). |
+| `H-25` | P1 | `26-2` | Closed | Extracted hexagonal `LlmStreamingPort`, HTTPX streaming/dialect adapters, `AssistantPromptBuilder`, and telemetry into `orcia_core`, removed `_internal` imports in `orcia_api`, and decoupled `agents_and_skills` (`lint-imports` `5/5`). |
+| `H-26` | P1 | `26-9` | Closed | Wired Mode A governance UI, `citation_map` pills, PG18 thread history, `launch-process`, `AssistantToolCallTrace`, `AssistantApprovalRequiredCard`, and `"Deepen"` flow via `@orcia/api-client` (`e2e/22`, zero-dead-buttons audit). |
+| `H-27` | P1 | `26-6a`, `26-6b` | Closed | Scoped native `tool_calls` to OpenAI-compatible & Anthropic (`R7`; Gemini/non-`/v1` Ollama `supports_tools=false` deferred to `ACTION_ITEM-26.4`) and built dynamic per-turn PG18/RBAC/MCP catalog (`test_story_26_6b_*`). |
+| `H-28` | P1 | `26-6b` | Closed | Replaced lexical refusal heuristics on tool calls with deterministic `evaluate_tool_v5_and_human_anchor_guard` and real `HumanArbitrationRequested` emission to `domain_events_outbox` (`test_story_26_6b_*`, `26-10` golden evals). |
+| `H-29` | P1 | `26-6b` | Closed | Sealed `ExecutionProfile='ASSISTANT'` against `ConnectorReflexiveWriteGateAdapter` (`ERR_ASSISTANT_WRITE_GATE_FORBIDDEN`, `test_story_26_6b_execution_profile_and_loop.py`). |
+| `H-30` | P1/P2 | `26-1`, `26-2` | Closed | Removed production `assert` (`assistant_three_speed_router.py`), replaced hardcoded latencies with `perf_counter()`, unified hat resolution via `resolve_default_hat`, and removed hardcoded `pack_key`/URIs (`test_story_26_1_*`, `test_story_26_2_*`). |
+| `H-31` | P2 | `26-2` | Closed | Isolated bilingual `fr`/`en` prompt templates in `assistant_prompt_locales.py` with `0` French leaks in `en` (`test_story_26_2_core_llm_streaming_and_prompt_builder.py`). |
+| `H-32` | P2 | `26-4a` | Closed | Moved `ai_model_mappings` DDL to Alembic `20261122_264a` (`0` per-request DDL) and shared `app.state.http_client` (`test_story_26_4a_*`). |
+| `H-33` | P2 | `26-3` | Closed | Added pre-first-byte retry/backoff (`429`/`502`/`503`) and inter-chunk idle timeout (`LlmStreamTimeoutError` -> `stream_error` RFC 9457, `test_story_26_3_turn_reliability_and_async_loop.py`). |
+| `H-34` | P2 | `26-2..26-9` | Closed | Split all Epic 26 assistant harness modules (`apps/api` + `orcia_core`) to `<= 300` lines (`26-10` AST/size audit). |
+| `H-35` | P2 | `26-4a` | Closed | Added bounded TTL + Redis marker invalidation on `app.state.platform_setup_snapshot` across AI Hub mutations (`setup_snapshot_cache.py`, `test_story_26_4a_*`). |
+| `H-36` | P2 | `26-10` | Closed | Removed `dependency_overrides` & `require_rag_available` from `test_story_3_3_*`, shipped 3 Golden Eval suites (`tool_loop`, `anchor_and_v5`, `tool_output_injection`), Red-Team security, 2-instance PG18+Redis tests, and AST + 0-uncalled-route audits. |
+| `H-37` | P3 | `26-4b`, `26-10` | Closed | Closed `BUG-E2E-01b` (PG18 `assistant_folders` metadata + active `e2e/02` test) and updated `AUTH-01` in `sprint-status.yaml` with explicit remaining legacy `local`/`test` `persona_key` scope (`test_story_26_4b_*`, `26-10`). |
+| `H-38` | P3 | `26-0..26-10` | Closed | Refreshed GitNexus index (`npx gitnexus analyze --index-only .`) and validated impact queries across Epic 26 stories. |
+
+### 3.2 Fichiers Développés & Modifiés
 | Fichier | Nature | Description synthétique |
 | :--- | :--- | :--- |
-| `docs/implementation-artifacts/tech-lead-reports/2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md` | Création | Audit approfondi en 6 axes (38 constats `H-xx`, dont 14 P0 re-vérifiés en revue `VALIDATE`) + plan de remédiation Epic 26 (13 stories). |
-| `docs/implementation-artifacts/tech-lead-reports/README.md` | Modification | Enregistrement du rapport. |
-| `docs/planning-artifacts/sprint-change-proposal-2026-11-21-epic-26-harnais-assistant-remediation-plan.md` | Création | Plan directeur de l'Epic 26 : 8 lots, défauts D1–D6, Definition of Ready, protocole de lancement, invariants, critères de sortie. |
-| `docs/planning-artifacts/epics.md` | Modification | Ajout de l'Epic 26 et de ses 13 stories (`26.0` à `26.10`, dont `26.4a/b` et `26.6a/b`) avec critères d'acceptation. |
-| `docs/implementation-artifacts/sprint-status.yaml` | Modification | `epic-26: backlog`, 13 stories `ready-for-dev`, `epic-26-retrospective: optional`. |
+| `docs/implementation-artifacts/tech-lead-reports/2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md` | Modification | Audit matrix `H-01..H-38` finalized in Section 3. |
+| `docs/implementation-artifacts/tech-lead-reports/README.md` | Modification | Indexed audit and `26-0..26-10` Tech Lead reports. |
+| `docs/planning-artifacts/sprint-change-proposal-2026-11-21-epic-26-harnais-assistant-remediation-plan.md` | Création | Epic 26 master remediation plan (`8` lots, `D1–D11` + `R1–R9`). |
+| `docs/planning-artifacts/epics.md` | Modification | Added Epic 26 (`26.0`–`26.10`) with acceptance criteria. |
+| `docs/implementation-artifacts/sprint-status.yaml` | Modification | Tracked `epic-26` (`26-0..26-10`), `BUG-E2E-01b` (`done`), `AUTH-01` remaining scope, and `ACTION_ITEM-26.1..26.5`. |
 
-### 3.2 Résultats Chiffrés, Métriques & Qualité
-- Constats consolidés : **38** (P0 : 14, dont 13 confirmés et 1 partiel ; P1 : 16 ; P2 : 6 ; P3 : 2).
-- Endpoints assistant : **22**, dont **13 sans appelant UI**.
-- Logique métier dans `apps/api/routers/` : **~2 100 L** ; fichiers `> 300 L` : **13**.
-- Couverture, performances, `ruff` / `mypy` / `lint-imports` : non applicables (aucun code modifié).
+### 3.3 Résultats Chiffrés, Métriques & Qualité
+- Consolidated findings remediated: **`38 / 38`** (`H-01..H-38`, including all `14` P0s, `16` P1s, `6` P2s, `2` P3s).
+- Assistant HTTP surface: **`16` canonical `/api/v1/assistant/*` endpoints** (`0` uncalled UI endpoints, `0` legacy `deprecated` routes) + governed MCP `assistant.ask` (`POST /api/v1/mcp/spaces/{workspace_slug}/invoke`).
+- Harness file sizes: **`0` Epic 26 harness file `> 300` lines**.
 
-### 3.3 Validation & Procédure de Test
-- Revue critique `VALIDATE` (`bmad-architect-worker`) : vérification des constats P0, de `H-30` et de 5 constats P1 dans le code ; corrections de lignes et de sévérité appliquées ; plan re-découpé (`26-4`, `26-6` et `26-7` scindées ; `assistant.ask` MCP rattaché à `26-7`).
-- Les procédures de validation par couche sont définies en §2.5 et seront exécutées dans chaque story `26-x`.
+### 3.4 Validation & Procédure de Test
+- Verified via `AD-17` 5-layer pyramid in Story `26.10` (`26-10-golden-evals-red-team-multi-worker-and-epic-26-closure-tech-lead-report.md`).

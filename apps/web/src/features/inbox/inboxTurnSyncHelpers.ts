@@ -3,13 +3,8 @@ import type {
   UiAgentTraceEventItem,
   UiAssistantFolderItem,
   UiAssistantModelOption,
-  UiAssistantPromptTelemetryRecord,
 } from "@orcia/ui";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
-import {
-  updatePromptTelemetryFeedback,
-  upsertSavedPromptTelemetryRecord,
-} from "./assistantFoldersAndPrefsStore";
 import { citationMapToRagItems } from "./inboxCitationHelpers";
 import {
   updateTurnFeedbackInConversations,
@@ -32,7 +27,6 @@ export function persistCompletedInboxTurn(params: {
 }): {
   readonly nextConversations: readonly SavedAssistantConversation[];
   readonly resolvedConversationId: string;
-  readonly nextTelemetryLog: readonly UiAssistantPromptTelemetryRecord[];
 } {
   const { completed } = params;
   const usedSources = citationMapToRagItems(completed.citationMap);
@@ -73,27 +67,9 @@ export function persistCompletedInboxTurn(params: {
     ...(completed.approvalProposal ? { approvalProposal: completed.approvalProposal } : {}),
   });
 
-  const nextTelemetryLog = upsertSavedPromptTelemetryRecord({
-    turnId: outcome.createdTurn.turnId,
-    timestampIso: outcome.createdTurn.timestampIso,
-    userPrompt: completed.userPrompt,
-    assembledSystemPrompt: completed.assembledSystemPrompt || "",
-    conversationHistoryCount: completed.conversationHistoryCount ?? 0,
-    folderTitle: completed.folderTitle ?? params.activeFolder?.title ?? null,
-    folderPinnedNotes:
-      completed.folderPinnedNotes ?? params.activeFolder?.pinnedNotesMarkdown ?? null,
-    thinkingText: completed.thinkingText || "",
-    assistantReply: completed.assistantReply,
-    modelLabel: outcome.createdTurn.modelLabel,
-    thinkingEffort: completed.thinkingEffort,
-    thinkingElapsedSeconds: completed.thinkingElapsedSeconds ?? 1,
-    userFeedback: null,
-  });
-
   return {
     nextConversations: outcome.nextConversations,
     resolvedConversationId: outcome.resolvedConversationId,
-    nextTelemetryLog,
   };
 }
 
@@ -106,14 +82,12 @@ export function persistInboxTurnFeedback(params: {
   readonly onFeedbackBanner: (message: string) => void;
 }): {
   readonly nextConversations: readonly SavedAssistantConversation[];
-  readonly nextTelemetryLog: readonly UiAssistantPromptTelemetryRecord[];
 } {
   const nextConversations = updateTurnFeedbackInConversations(
     params.conversations,
     params.turnId,
     params.feedback,
   );
-  const nextTelemetryLog = updatePromptTelemetryFeedback(params.turnId, params.feedback);
   const client = createOrciaApiClient({ baseUrl: "" });
   if (params.feedback === "LIKE" || params.feedback === "DISLIKE") {
     void client
@@ -127,5 +101,5 @@ export function persistInboxTurnFeedback(params: {
         );
       });
   }
-  return { nextConversations, nextTelemetryLog };
+  return { nextConversations };
 }

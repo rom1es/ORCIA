@@ -7,7 +7,6 @@ from collections.abc import Awaitable, Callable
 from dataclasses import replace
 from typing import Any
 
-from orcia_api.routers._assistant_background_registry import record_prompt_telemetry_entry
 from orcia_api.routers._assistant_thread_messages_routes import persist_thread_turn_messages
 from orcia_api.routers._assistant_turn_liveness_watchdog import (
     watch_liveness_and_stop as watch_liveness_and_stop,
@@ -188,18 +187,18 @@ async def flush_turn_telemetry_and_finops(
         observed_output_tokens=obs_out,
         saw_provider_usage=saw_usage,
     )
-    record_prompt_telemetry_entry(
-        workspace_id=record.workspace_id,
+    logger.info(
+        "assistant.turn_telemetry_flushed",
         turn_id=record.turn_id,
-        user_prompt=record.user_prompt,
-        assembled_system_prompt=record.assembled_system_prompt,
-        conversation_history_count=conversation_history_count,
-        folder_pinned_notes=folder_pinned_notes,
-        thinking_text=thinking_text,
-        assistant_reply=streamed_text,
+        workspace_id=record.workspace_id,
+        status=record.status,
         model_label=model_label,
-        thinking_effort=record.effort,
-        thinking_elapsed_seconds=max(1, round(time.perf_counter() - t0)),
+        conversation_history_count=conversation_history_count,
+        has_folder_notes=bool(folder_pinned_notes),
+        input_tokens=in_tok,
+        output_tokens=out_tok,
+        usage_source=u_src,
+        elapsed_seconds=max(1, round(time.perf_counter() - t0)),
     )
     await persist_assistant_turn_ledger_entry(
         audit_ledger_sink=audit_ledger_sink,

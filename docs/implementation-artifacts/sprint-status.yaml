@@ -276,8 +276,8 @@ development_status:
   # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-21-epic-26-harnais-assistant-remediation-plan.md
   # Source audit: docs/implementation-artifacts/tech-lead-reports/2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md
   # Decisions   : docs/implementation-artifacts/epic-26-decisions-grill-2026-11-21.md (D1-D11 amended by R1-R9)
-  # Lots        : L0 26-0 (done) | L1 26-1 (done) | L2 26-2 (done) | L3 26-3 (done) -> 26-4a (done) -> 26-4b (done) | L4 26-5 (done) | L5 26-6a (done) -> 26-6b (done) | L6 26-7 (done) -> 26-8 (done) | L7 26-9 (done) -> 26-10 — IN PROGRESS
-  epic-26: in-progress
+  # Lots        : L0 26-0 (done) | L1 26-1 (done) | L2 26-2 (done) | L3 26-3 (done) -> 26-4a (done) -> 26-4b (done) | L4 26-5 (done) | L5 26-6a (done) -> 26-6b (done) | L6 26-7 (done) -> 26-8 (done) | L7 26-9 (done) -> 26-10 (done)
+  epic-26: done
   26-0-adr-unified-turn-engine-sse-v2-and-ssrf-policy: done
   26-1-immediate-security-hardening-scope-observer-and-ssrf: done
   26-2-core-llm-streaming-extraction-and-unified-prompt-builder: done
@@ -290,7 +290,7 @@ development_status:
   26-7-unified-turn-engine-convergence-direct-cutover-and-citations: done
   26-8-continue-in-process-dbos-pg18-and-human-anchors: done
   26-9-ui-and-sdk-wiring-mode-a-citations-history-and-deepen: done
-  26-10-golden-evals-red-team-multi-worker-and-epic-26-closure: ready-for-dev
+  26-10-golden-evals-red-team-multi-worker-and-epic-26-closure: done
   epic-26-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
@@ -1139,13 +1139,18 @@ action_items:
     priority: P0
     depends_on: [BUG-E2E-04]
     owner: "Winston (Architect) / Amelia (Dev)"
-    status: open
+    status: in-progress
     epic: epic-13
     description: >
       Suite de BUG-E2E-04. Constat : le 1er administrateur créé au Jour 0 n'est pas connu du service d'authentification
       (utilisateurs en mémoire), apps/web n'envoie jamais de Bearer, et la vérification ORCIA_BOOTSTRAP_TOKEN est
       neutralisée (orcia_env="local" codé en dur dans dependencies/portal_and_assistant.py). Impact GitNexus CRITICAL
       (resolve_user : 90 appelants).
+      Epic 26 closure update (2026-11-22, Story 26.10): PG18 `users` authentication, `apps/web` Bearer token delivery,
+      dynamic `ORCIA_ENV`/`ORCIA_BOOTSTRAP_TOKEN` in `get_accostage_service`, and PG18 `task_notifications` persistence
+      (`SqlTaskNotificationsRepository`) are completed. Remaining explicit scope: removal of legacy `ORCIA_ENV=local|test`
+      `persona_key` query-parameter compatibility in pre-Epic-26 non-assistant routers (`shell.py`, `control_center.py`,
+      `catalog.py`, `bootstrap.py`) and unit tests.
   - id: TEST-HYG-01
     title: "Deux tests d'architecture rouges sur main : vocabulaire SDLC et chaînes `simulated_*` dans orcia_core/orchestration"
     action: "Purger le vocabulaire métier et les paramètres simulated_* de orchestration/remote_test_bench_and_mcp_exposure.py (et fichiers signalés) ou les déplacer vers le pack concerné ; remettre au vert test_ac_e2_* et test_ac_f2_*"
@@ -1163,11 +1168,13 @@ action_items:
     priority: P0
     depends_on: [AUTH-01]
     owner: "Amelia (Dev)"
-    status: open
+    status: done
     epic: epic-13
     description: >
-      AssistantFoldersAndSharingService stocke les dossiers dans un dict en mémoire. Les tables existent (migration 0025) mais
-      owner_user_id référence users(id) : tant que l'identité API est une persona en mémoire (AUTH-01), l'insertion viole la clé étrangère.
+      Closed via Stories 26.4b and 26.10: `SqlAssistantFoldersRepository` persists folders, `working_attachments_uris`,
+      and `evidence_tags` in PG18 (`assistant_folders`, `assistant_threads`, `assistant_folder_shares`, zero `_folder_meta`
+      RAM state), verified by `test_story_26_4b_pg18_persistence_governance_feedback_folders.py` and active E2E test #3
+      in `apps/web/e2e/02-assistant-streaming-and-folders.spec.ts` (zero `test.fixme`).
   - id: OBS-17.5-1
     title: "Retrait définitif de l'accordéon de compatibilité SettingsAiModelsQuickForm après bascule du wizard Jour 0 sur /api/v1/settings/ai-models/mappings"
     action: "Migrer les tests d'accostage résiduels vers POST /api/v1/settings/ai-models/mappings + OrciaDialog, puis supprimer SettingsAiModelsQuickForm.tsx"

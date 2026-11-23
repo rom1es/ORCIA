@@ -38,15 +38,17 @@ from orcia_core.permissions.errors import (
 )
 
 logger = get_logger("orcia.api.org_units.helpers")
-_SCHEMA_DRIFT_EXC_NAMES = {
-    "ProgrammingError",
-    "UndefinedColumnError",
-    "UndefinedTableError",
-    "InvalidColumnReferenceError",
-    "DuplicateTableError",
-    "DataError",
-    "IntegrityError",
-}
+_SCHEMA_DRIFT_EXC_NAMES = frozenset(
+    {
+        "ProgrammingError",
+        "UndefinedColumnError",
+        "UndefinedTableError",
+        "InvalidColumnReferenceError",
+        "DuplicateTableError",
+        "DataError",
+        "IntegrityError",
+    }
+)
 
 
 def resolve_trace_id(request: Request) -> str:

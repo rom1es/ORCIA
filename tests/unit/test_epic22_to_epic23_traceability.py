@@ -432,7 +432,8 @@ def test_epic23_desktop_campaign_deliverables_and_registry_counts_when_23_7_done
     ]
     failed_caps = [c for c in capabilities if c.get("verification") == "failed_e2e"]
     if dev_status.get("epic-24") == "done":
-        assert len(runtime_caps) + len(epic26_api_caps) == 64
+        cap260_runtime = [c for c in runtime_caps if c.get("id") == "CAP-260"]
+        assert len(runtime_caps) + len(epic26_api_caps) - len(cap260_runtime) == 64
         assert len(failed_caps) == 1
         assert [c.get("id") for c in failed_caps] == ["CAP-042"]
     else:

@@ -272,22 +272,12 @@ def test_fastapi_assistant_chat_stream_and_save_and_launch_endpoints(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Verify FastAPI `/api/v1/assistant/chat`, `/chat/stream`, and `/workflows/save-and-launch`."""
-    from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
-
-    from orcia_api.dependencies.portal_and_assistant import (
-        get_embedding_port,
-        require_rag_available,
-    )
     from orcia_core.orchestration.step_executors import _DEFAULT_AGENT_EXECUTOR
     from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
 
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
     _DEFAULT_AGENT_EXECUTOR.set_llm_gateway(DeterministicCassetteLLM())
     app = create_app()
-    fake_emb = FakeDeterministicEmbeddingAdapter()
-    app.state.embedding_port = fake_emb
-    app.dependency_overrides[get_embedding_port] = lambda: fake_emb
-    app.dependency_overrides[require_rag_available] = lambda: fake_emb
     with TestClient(app) as client:
         # 1. Deleted legacy /chat, /chat/stream, and /workflows/save-and-launch must return 404/405
         assert client.post(

@@ -599,11 +599,9 @@ async def test_background_turn_wrappers_registry_fallbacks_and_telemetry_upsert(
     from types import SimpleNamespace
 
     from orcia_api.routers._assistant_background_registry import (
-        PROMPT_TELEMETRY_LOG,
         get_rate_limiter_from_request,
         get_tracked_turn_tasks_from_request,
         get_turn_registry_from_request,
-        record_prompt_telemetry_entry,
     )
     from orcia_api.routers._assistant_turn_consumer import stream_assistant_turn_events
     from orcia_api.routers.assistant_background_turns import (
@@ -621,26 +619,6 @@ async def test_background_turn_wrappers_registry_fallbacks_and_telemetry_upsert(
     assert reg is dummy_req.app.state.assistant_turn_registry
     assert lim is dummy_req.app.state.assistant_rate_limiter
     assert tasks is dummy_req.app.state.assistant_turn_tasks
-
-    record_prompt_telemetry_entry(
-        workspace_id="ws-tel-26-3",
-        turn_id="t-tel-1",
-        user_prompt="First prompt",
-        assembled_system_prompt="Sys v1",
-        assistant_reply="Draft 1",
-        thinking_text="Think 1",
-    )
-    upserted = record_prompt_telemetry_entry(
-        workspace_id="ws-tel-26-3",
-        turn_id="t-tel-1",
-        user_prompt="Updated prompt",
-        assembled_system_prompt="Sys v2",
-        assistant_reply="Final reply",
-        thinking_text="Think 2",
-        user_feedback="LIKE",
-    )
-    assert upserted["user_feedback"] == "LIKE"
-    assert len(PROMPT_TELEMETRY_LOG["ws-tel-26-3"]) >= 1
 
     streamed = [
         evt

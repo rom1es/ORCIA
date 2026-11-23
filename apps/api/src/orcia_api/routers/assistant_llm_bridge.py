@@ -15,9 +15,6 @@ from orcia_api.routers._assistant_background_registry import (
     get_active_turn_for_workspace as get_active_turn_for_workspace,
 )
 from orcia_api.routers._assistant_background_registry import (
-    record_prompt_telemetry_entry as record_prompt_telemetry_entry,
-)
-from orcia_api.routers._assistant_background_registry import (
     stop_active_turn_for_workspace as stop_active_turn_for_workspace,
 )
 from orcia_api.routers._assistant_llm_stream_bridge import (
@@ -250,7 +247,6 @@ __all__ = [
     "is_anthropic_provider",
     "is_safe_llm_endpoint_url",
     "normalize_chat_completions_url",
-    "record_prompt_telemetry_entry",
     "resolve_5_layers_and_ontology_from_request",
     "resolve_5_layers_and_ontology_from_request_async",
     "resolve_assembled_system_instructions_for_turn",

@@ -1,5 +1,5 @@
 import type { UiAssistantPromptTelemetryRecord } from "@orcia/ui";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { readAssistantPrefillPrompt } from "../../components/agentsAndSkillsBridgeStore";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
@@ -9,7 +9,6 @@ import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { useSourceLineInspector } from "../shared/useSourceLineInspector";
 import {
   readSavedActiveFolderId,
-  readSavedPromptTelemetryLog,
   writeSavedActiveFolderId,
 } from "./assistantFoldersAndPrefsStore";
 import {
@@ -64,9 +63,6 @@ export function useInboxPanelController() {
   const [foldersPanelOpen, setFoldersPanelOpen] = useState<boolean>(false);
   const [savedConversationsOpen, setSavedConversationsOpen] =
     useState<boolean>(false);
-  const [promptTelemetryLog, setPromptTelemetryLog] = useState<
-    readonly UiAssistantPromptTelemetryRecord[]
-  >(() => readSavedPromptTelemetryLog());
   const [governanceOpen, setGovernanceOpen] = useState<boolean>(false);
   const [governanceFeedback, setGovernanceFeedback] = useState<string | null>(null);
 
@@ -120,6 +116,30 @@ export function useInboxPanelController() {
     savedConversations.find((c) => c.id === activeConversationId) ?? null;
   const activeFolder =
     foldersController.folders.find((f) => f.folderId === activeFolderId) ?? null;
+  const promptTelemetryLog = useMemo<readonly UiAssistantPromptTelemetryRecord[]>(() => {
+    const foldersById = new Map(foldersController.folders.map((f) => [f.folderId, f]));
+    const rows: UiAssistantPromptTelemetryRecord[] = [];
+    for (const conv of savedConversations) {
+      const folder = conv.folderId ? foldersById.get(conv.folderId) : undefined;
+      conv.turns.forEach((turn, idx) => {
+        rows.push({
+          turnId: turn.turnId,
+          timestampIso: turn.timestampIso,
+          userPrompt: turn.userPrompt,
+          assembledSystemPrompt: turn.assembledSystemPrompt ?? "",
+          conversationHistoryCount: idx * 2,
+          folderTitle: folder?.title ?? null,
+          folderPinnedNotes: folder?.pinnedNotesMarkdown ?? null,
+          assistantReply: turn.assistantReply,
+          modelLabel: turn.modelLabel,
+          thinkingEffort: turn.thinkingEffort,
+          thinkingElapsedSeconds: turn.thinkingElapsedSeconds ?? 1,
+          userFeedback: turn.userFeedback ?? null,
+        });
+      });
+    }
+    return rows.slice(-100).reverse();
+  }, [savedConversations, foldersController.folders]);
   const { agentOptions, skillOptions, orciaDocuments, ragCitations } =
     buildAssistantAutocompleteAndRagOptions({ catalogItems, datasources });
   const autocompleteSuggestions = buildAssistantAutocompleteSuggestions(packs);
@@ -169,7 +189,6 @@ export function useInboxPanelController() {
       });
       threads.setConversations(res.nextConversations);
       threads.setActiveConversationId(res.resolvedConversationId);
-      setPromptTelemetryLog(res.nextTelemetryLog);
     },
   });
 
@@ -188,7 +207,6 @@ export function useInboxPanelController() {
       onFeedbackBanner: setGovernanceFeedback,
     });
     threads.setConversations(res.nextConversations);
-    setPromptTelemetryLog(res.nextTelemetryLog);
   };
 
   const handleSendTurnWithReflexive = (

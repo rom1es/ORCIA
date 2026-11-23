@@ -10,9 +10,6 @@ from typing import Any
 import httpx
 
 from orcia_api.routers._assistant_background_registry import (
-    PROMPT_TELEMETRY_LOG as PROMPT_TELEMETRY_LOG,
-)
-from orcia_api.routers._assistant_background_registry import (
     ActiveBackgroundTurnState as ActiveBackgroundTurnState,
 )
 from orcia_api.routers._assistant_background_registry import (
@@ -25,9 +22,6 @@ from orcia_api.routers._assistant_background_registry import (
     get_rate_limiter_from_request,
     get_tracked_turn_tasks_from_request,
     get_turn_registry_from_request,
-)
-from orcia_api.routers._assistant_background_registry import (
-    record_prompt_telemetry_entry as record_prompt_telemetry_entry,
 )
 from orcia_api.routers._assistant_background_registry import (
     stop_active_turn_for_workspace as stop_active_turn_for_workspace,

@@ -16,10 +16,7 @@ from orcia_api.routers._assistant_usage_telemetry import (
     resolve_audit_ledger_sink,
     resolve_usage_with_fallback,
 )
-from orcia_api.routers.assistant_background_turns import (
-    ActiveBackgroundTurnState,
-    record_prompt_telemetry_entry,
-)
+from orcia_api.routers.assistant_background_turns import ActiveBackgroundTurnState
 from orcia_api.schemas.assistant import (
     ActiveBackgroundTurnStatusResponse,
     AssistantTurnCreateRequest,
@@ -167,19 +164,13 @@ async def record_non_stream_turn_telemetry(
     history_count: int,
     resolved_notes: str | None,
 ) -> None:
-    """Record prompt telemetry and `ASSISTANT_TURN_COMPLETED` audit ledger entry."""
-    record_prompt_telemetry_entry(
-        workspace_id=turn.workspace_id,
+    """Record structured prompt telemetry and `ASSISTANT_TURN_COMPLETED` audit ledger entry."""
+    logger.info(
+        "assistant.non_stream_turn_telemetry",
         turn_id=turn.turn_id,
-        user_prompt=payload.user_prompt,
-        assembled_system_prompt=assembled_sys_prompt,
+        workspace_id=turn.workspace_id,
         conversation_history_count=history_count,
-        folder_pinned_notes=resolved_notes,
-        thinking_text=(
-            live_outcome.thinking_text if live_outcome and live_outcome.thinking_text else ""
-        ),
-        assistant_reply=turn.response_text,
-        thinking_effort=payload.thinking_effort or "balanced",
+        has_folder_notes=bool(resolved_notes),
     )
     in_tok, out_tok, u_src = (
         (live_outcome.input_tokens, live_outcome.output_tokens, live_outcome.usage_source)
