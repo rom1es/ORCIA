@@ -5,9 +5,8 @@ import { useI18n } from "../../i18n";
 import { useFinopsDashboardController } from "./useFinopsDashboardController";
 
 export function FinopsFeaturePanel() {
-  const { dictionary, locale } = useI18n();
+  const { dictionary } = useI18n();
   const { activeScopeId, openHelpSection, navigateToRoute } = useShellNavigation();
-  const isFr = locale === "fr";
   const ctrl = useFinopsDashboardController(activeScopeId);
   const overview = ctrl.overview;
 
@@ -56,7 +55,7 @@ export function FinopsFeaturePanel() {
             onClick={() => navigateToRoute("/activity")}
             className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
           >
-            {dictionary.fourZoneShell.activityMenuLabel ?? (isFr ? "Journal d'Activité" : "Activity Log")} →
+            {dictionary.fourZoneShell.activityMenuLabel} →
           </button>
         }
         onOpenHelpSection={openHelpSection}

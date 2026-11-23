@@ -1,8 +1,8 @@
-import { OrciaIcon } from "@orcia/ui";
 import React from "react";
+import { formatI18nTemplate, resolveDictionaryForFlag } from "../../../i18n";
 import type { ProcessOrchestrationModesCopy } from "../../../i18n/locales/process_orchestration_modes_labels";
 import type { WorkflowDefinitionV2Item } from "../processStudioV2Data";
-import { AVAILABLE_DELEGATE_AGENTS } from "./studioLabelsAndMappers";
+import { WorkflowBlock2GoalDrivenSection } from "./WorkflowBlock2GoalDrivenSection";
 
 export interface WorkflowBlock2ExecutionSectionProps {
   readonly workflow: WorkflowDefinitionV2Item;
@@ -27,139 +27,18 @@ export function WorkflowBlock2ExecutionSection({
   onToggleSubStepEnabled,
   onSwitchExecutionMode,
 }: WorkflowBlock2ExecutionSectionProps) {
-  const isGoalDriven = workflow.orchestration_type === "non_deterministic";
+  const studioCopy = resolveDictionaryForFlag(isFr).processStudioUi.studio;
 
-  if (isGoalDriven) {
+  if (workflow.orchestration_type === "non_deterministic") {
     return (
-      <div
-        data-testid="studio-block-2-goal-driven"
-        className="orcia-bento-card"
-        style={{ display: "flex", flexDirection: "column", gap: "12px" }}
-      >
-        <div>
-          <strong style={{ fontSize: "14px", color: "var(--color-primary-cobalt)" }}>
-            {copy.goalBlock2Title}
-          </strong>
-          <div style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
-            {copy.goalBlock2Subtitle}
-          </div>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <label
-            htmlFor="studio-goal-reflexive-objective"
-            style={{ fontSize: "12.5px", fontWeight: 600 }}
-          >
-            {copy.goalObjectiveLabel}
-          </label>
-          <textarea
-            id="studio-goal-reflexive-objective"
-            data-testid="studio-goal-reflexive-objective-input"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            rows={4}
-            value={goalObjectiveDraft}
-            placeholder={copy.goalObjectivePlaceholder}
-            onChange={(e) => onChangeGoalObjective(e.target.value)}
-            className="orcia-ds-textarea"
-            style={{ fontSize: "13px" }}
-          />
-        </div>
-
-        <div
-          data-testid="studio-goal-delegate-agents-picker"
-          style={{ display: "flex", flexDirection: "column", gap: "8px" }}
-        >
-          <div>
-            <div style={{ fontSize: "12.5px", fontWeight: 600 }}>
-              {copy.goalDelegateAgentsLabel}
-            </div>
-            <div style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
-              {copy.goalDelegateAgentsHint}
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
-              gap: "8px",
-            }}
-          >
-            {AVAILABLE_DELEGATE_AGENTS.map((agent) => {
-              const selected = goalDelegateAgentsDraft.includes(agent.slug);
-              return (
-                <button
-                  key={agent.slug}
-                  type="button"
-                  aria-pressed={selected}
-                  data-testid={`toggle-delegate-agent-${agent.slug}`}
-                  onClick={() => onToggleDelegateAgent(agent.slug)}
-                  className="rounded border p-2.5 text-left"
-                  style={{
-                    backgroundColor: selected
-                      ? "var(--color-ontology-bg)"
-                      : "var(--color-bg-elevated)",
-                    borderColor: selected
-                      ? "var(--color-ontology-cyan)"
-                      : "var(--color-border-subtle)",
-                    cursor: "pointer",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "4px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        fontSize: "12.5px",
-                        fontWeight: 700,
-                      }}
-                    >
-                      <OrciaIcon name="agents" />
-                      <span>{isFr ? agent.labelFr : agent.labelEn}</span>
-                    </span>
-                    {selected ? (
-                      <span style={{ color: "var(--color-gate-emerald)" }}>
-                        <OrciaIcon name="check" />
-                      </span>
-                    ) : null}
-                  </div>
-                  <div style={{ fontSize: "11.5px", color: "var(--color-text-secondary)" }}>
-                    {isFr ? agent.roleFr : agent.roleEn}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {goalDelegateAgentsDraft.length === 0 ? (
-            <div
-              className="rounded border px-3 py-2 text-xs"
-              style={{
-                backgroundColor: "var(--color-bg-elevated)",
-                borderColor: "var(--color-border-subtle)",
-                color: "var(--color-text-secondary)",
-              }}
-            >
-              {copy.goalNoDelegateAgentsNotice}
-            </div>
-          ) : null}
-        </div>
-      </div>
+      <WorkflowBlock2GoalDrivenSection
+        goalObjectiveDraft={goalObjectiveDraft}
+        goalDelegateAgentsDraft={goalDelegateAgentsDraft}
+        copy={copy}
+        isFr={isFr}
+        onChangeGoalObjective={onChangeGoalObjective}
+        onToggleDelegateAgent={onToggleDelegateAgent}
+      />
     );
   }
 
@@ -198,7 +77,7 @@ export function WorkflowBlock2ExecutionSection({
                 : "orcia-ds-btn-secondary"
             }
           >
-            {isFr ? "Exécution guidée ORCIA" : "Guided execution in ORCIA"}
+            {studioCopy.block2GuidedOrciaBtn}
           </button>
           <button
             type="button"
@@ -210,7 +89,7 @@ export function WorkflowBlock2ExecutionSection({
                 : "orcia-ds-btn-secondary"
             }
           >
-            {isFr ? "Réalisation dans l'IDE / Git" : "Realization in IDE / Git"}
+            {studioCopy.block2ExternalIdeBtn}
           </button>
         </div>
       </div>
@@ -224,14 +103,8 @@ export function WorkflowBlock2ExecutionSection({
             borderColor: "var(--color-arbitration-amber)",
           }}
         >
-          <strong>
-            {isFr
-              ? "Réalisation confiée à l'équipe dans son IDE / Git :"
-              : "Realization delegated to the team's IDE / Git:"}
-          </strong>{" "}
-          {isFr
-            ? "ORCIA prépare le dossier de contexte et vérifie automatiquement la conformité dès que la Pull Request est proposée."
-            : "ORCIA prepares the context brief and automatically verifies compliance as soon as the Pull Request is opened."}
+          <strong>{studioCopy.block2ExternalBannerTitle}</strong>{" "}
+          {studioCopy.block2ExternalBannerDesc}
         </div>
       ) : null}
 
@@ -268,7 +141,7 @@ export function WorkflowBlock2ExecutionSection({
                     color: "var(--color-primary-cobalt)",
                   }}
                 >
-                  {isFr ? `Étape ${idx + 1}` : `Step ${idx + 1}`}
+                  {formatI18nTemplate(studioCopy.block2StepLabelTemplate, { index: idx + 1 })}
                 </span>
                 <strong style={{ fontSize: "13.5px" }}>{sub.name}</strong>
                 {sub.requires_human_checkpoint ? (
@@ -279,7 +152,7 @@ export function WorkflowBlock2ExecutionSection({
                       color: "var(--color-arbitration-amber)",
                     }}
                   >
-                    {isFr ? "Validation humaine" : "Human review"}
+                    {studioCopy.block2HumanReviewBadge}
                   </span>
                 ) : null}
                 {sub.write_preview_required ? (
@@ -290,7 +163,7 @@ export function WorkflowBlock2ExecutionSection({
                       color: "var(--color-gate-emerald)",
                     }}
                   >
-                    {isFr ? "Confirmation avant publication" : "Confirm before publishing"}
+                    {studioCopy.block2ConfirmPublishBadge}
                   </span>
                 ) : null}
               </div>
@@ -301,21 +174,15 @@ export function WorkflowBlock2ExecutionSection({
                 onClick={() => onToggleSubStepEnabled(sub.id)}
                 className="orcia-ds-btn-secondary"
               >
-                {sub.enabled
-                  ? isFr
-                    ? "✓ Étape activée (Ignorer)"
-                    : "✓ Step enabled (Skip)"
-                  : isFr
-                    ? "Étape ignorée (Activer)"
-                    : "Step skipped (Enable)"}
+                {sub.enabled ? studioCopy.block2StepEnabledBtn : studioCopy.block2StepSkippedBtn}
               </button>
             </div>
 
             <div style={{ fontSize: "12px", color: "var(--color-text-secondary)", marginTop: "6px" }}>
-              <strong>{isFr ? "Objectif :" : "Goal:"}</strong> {sub.role_description}
+              <strong>{studioCopy.block2GoalLabel}</strong> {sub.role_description}
             </div>
             <div style={{ fontSize: "12px", marginTop: "3px" }}>
-              <strong>{isFr ? "Livrable produit :" : "Expected output:"}</strong> {sub.output_description}
+              <strong>{studioCopy.block2ExpectedOutputLabel}</strong> {sub.output_description}
             </div>
           </div>
         ))}

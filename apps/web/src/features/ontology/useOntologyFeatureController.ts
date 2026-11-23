@@ -56,10 +56,10 @@ export function useOntologyFeatureController(
       setSelectedScopeIdx(0);
     } catch (err: unknown) {
       setErrorBanner(
-        formatRfc9457ErrorToBanner(err, typedLocale, typedLocale === "fr" ? "Glossaire métier" : "Business glossary").fullText,
+        formatRfc9457ErrorToBanner(err, typedLocale, copy.glossaryErrorResourceLabel).fullText,
       );
     }
-  }, [typedLocale]);
+  }, [typedLocale, copy.glossaryErrorResourceLabel]);
 
   useEffect(() => {
     void loadOntologyData();
@@ -91,7 +91,7 @@ export function useOntologyFeatureController(
       await loadOntologyData();
     } catch (err: unknown) {
       setErrorBanner(
-        formatRfc9457ErrorToBanner(err, typedLocale, typedLocale === "fr" ? "Terme du glossaire" : "Glossary term").fullText,
+        formatRfc9457ErrorToBanner(err, typedLocale, copy.glossaryTermResourceLabel).fullText,
       );
     } finally {
       setIsSaving(false);
@@ -120,7 +120,7 @@ export function useOntologyFeatureController(
       await loadOntologyData();
     } catch (err: unknown) {
       setErrorBanner(
-        formatRfc9457ErrorToBanner(err, typedLocale, typedLocale === "fr" ? "Graphe tripartite" : "Tripartite graph").fullText,
+        formatRfc9457ErrorToBanner(err, typedLocale, copy.tripartiteGraphResourceLabel).fullText,
       );
     } finally {
       setIsAuditingTripartite(false);
@@ -140,7 +140,7 @@ export function useOntologyFeatureController(
       await loadOntologyData();
     } catch (err: unknown) {
       setErrorBanner(
-        formatRfc9457ErrorToBanner(err, typedLocale, typedLocale === "fr" ? "Proposition de promotion" : "Promotion proposal").fullText,
+        formatRfc9457ErrorToBanner(err, typedLocale, copy.promotionProposalResourceLabel).fullText,
       );
     }
   };
@@ -155,7 +155,7 @@ export function useOntologyFeatureController(
       await loadOntologyData();
     } catch (err: unknown) {
       setErrorBanner(
-        formatRfc9457ErrorToBanner(err, typedLocale, typedLocale === "fr" ? "Terme du glossaire" : "Glossary term").fullText,
+        formatRfc9457ErrorToBanner(err, typedLocale, copy.glossaryTermResourceLabel).fullText,
       );
     } finally {
       setBusyProposalId(null);

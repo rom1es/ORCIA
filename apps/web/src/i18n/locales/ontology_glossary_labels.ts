@@ -61,6 +61,10 @@ export interface OntologyGlossaryCopy {
   readonly workspaceGlossaryDomainSub: string;
   readonly workspaceGlossaryTeamSub: string;
   readonly workspaceGlossaryWorkspaceSub: string;
+  readonly glossaryErrorResourceLabel: string;
+  readonly glossaryTermResourceLabel: string;
+  readonly tripartiteGraphResourceLabel: string;
+  readonly promotionProposalResourceLabel: string;
 }
 
 export const ONTOLOGY_GLOSSARY_FR: OntologyGlossaryCopy = {
@@ -141,6 +145,10 @@ export const ONTOLOGY_GLOSSARY_FR: OntologyGlossaryCopy = {
   workspaceGlossaryDomainSub: "Vocabulaire et règles de votre Direction",
   workspaceGlossaryTeamSub: "Termes partagés par l'équipe",
   workspaceGlossaryWorkspaceSub: "Termes spécifiques à cet espace",
+  glossaryErrorResourceLabel: "Glossaire métier",
+  glossaryTermResourceLabel: "Terme du glossaire",
+  tripartiteGraphResourceLabel: "Graphe tripartite",
+  promotionProposalResourceLabel: "Proposition de promotion",
 };
 
 export const ONTOLOGY_GLOSSARY_EN: OntologyGlossaryCopy = {
@@ -220,4 +228,8 @@ export const ONTOLOGY_GLOSSARY_EN: OntologyGlossaryCopy = {
   workspaceGlossaryDomainSub: "Division vocabulary & rules",
   workspaceGlossaryTeamSub: "Team shared terms",
   workspaceGlossaryWorkspaceSub: "Workspace-specific terms",
+  glossaryErrorResourceLabel: "Business glossary",
+  glossaryTermResourceLabel: "Glossary term",
+  tripartiteGraphResourceLabel: "Tripartite graph",
+  promotionProposalResourceLabel: "Promotion proposal",
 };

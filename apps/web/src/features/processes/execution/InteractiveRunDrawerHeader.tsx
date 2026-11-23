@@ -1,5 +1,6 @@
 import { OrciaIcon } from "@orcia/ui";
 import React from "react";
+import { formatI18nTemplate, resolveDictionaryForFlag } from "../../../i18n";
 import type { WorkflowDefinitionV2Item } from "../processStudioV2Data";
 import type { InteractiveProcessDrawerStatus } from "./useInteractiveProcessRunController";
 
@@ -34,6 +35,8 @@ export function InteractiveRunDrawerHeader({
   onStopReflexive,
   onCloseDrawer,
 }: InteractiveRunDrawerHeaderProps): React.JSX.Element {
+  const copy = resolveDictionaryForFlag(isFr).processVsmExecutionUi.execution;
+
   return (
     <div className="flex flex-wrap items-start justify-between gap-2.5">
       <div>
@@ -65,9 +68,7 @@ export function InteractiveRunDrawerHeader({
                 color: "var(--color-arbitration-amber)",
               }}
             >
-              {isFr
-                ? `Cycle de correction n°${iteration}`
-                : `Correction cycle #${iteration}`}
+              {formatI18nTemplate(copy.correctionCycleTemplate, { iteration })}
             </span>
           ) : null}
           <span
@@ -91,7 +92,7 @@ export function InteractiveRunDrawerHeader({
               className="orcia-ds-btn-secondary text-xs"
             >
               <OrciaIcon name="play" />{" "}
-              {isFr ? "Relancer l'analyse en direct" : "Run live analysis"}
+              {copy.launchLiveAnalysisBtn}
             </button>
             <button
               type="button"
@@ -99,9 +100,7 @@ export function InteractiveRunDrawerHeader({
               onClick={onStageExternalWritePreview}
               className="orcia-ds-btn-secondary text-xs"
             >
-              {isFr
-                ? "Préparer la publication externe"
-                : "Stage external publication"}
+              {copy.stageExternalPubBtn}
             </button>
           </>
         ) : null}
@@ -112,7 +111,7 @@ export function InteractiveRunDrawerHeader({
             onClick={onStopReflexive}
             className="orcia-ds-btn-danger text-xs"
           >
-            <OrciaIcon name="stopSquare" /> {isFr ? "Arrêter" : "Stop"}
+            <OrciaIcon name="stopSquare" /> {copy.stopBtn}
           </button>
         ) : null}
         <button
@@ -121,7 +120,7 @@ export function InteractiveRunDrawerHeader({
           onClick={onCloseDrawer}
           className="orcia-ds-btn-secondary"
         >
-          {isFr ? "✕ Refermer le dossier" : "✕ Close"}
+          {copy.closeDrawerBtn}
         </button>
       </div>
     </div>

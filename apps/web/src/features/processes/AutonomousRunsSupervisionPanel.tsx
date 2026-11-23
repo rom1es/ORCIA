@@ -187,7 +187,7 @@ export function AutonomousRunsSupervisionPanel(): React.ReactElement | null {
                   {run.workflow_title}
                 </strong>
                 <span style={{ fontSize: "11.5px", color: "var(--color-text-muted)" }}>
-                  {formatCurrency(run.cost_usd, locale === "en" ? "en" : "fr")}
+                  {formatCurrency(run.cost_usd, locale)}
                 </span>
               </div>
 

@@ -6,7 +6,7 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-23",
+  "lastSyncedDate": "2026-11-24",
   "stats": {
     "activeRoutesCount": 28,
     "uiPrimitivesCount": 139,
@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 226,
+    "techLeadReportsCount": 227,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -550,6 +550,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-24",
+      "phaseOrStory": "Story 27.5",
+      "reportFile": "27-5-category-c-process-studio-v2-vsm-execution-and-bilingual-catalog-data-tech-lead-report.md",
+      "domain": "Epic 27 Lot 3 Part 1 — Category C Remediation: Process Studio v2, VSM, Execution Panels, Bilingual Catalog Data (processStudioV2Data.ts) & apps/web/src/ Gate 1 Baseline = 0 (CAP-020..CAP-036, CAP-140, CAP-160)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): created modular FR/EN sub-dictionaries (process_studio_ui_labels*, process_vsm_execution_ui_labels*, process_catalog_packs_and_workflows_labels, process_catalog_workflows_*, process_catalog_vsm_*), split processStudioV2Data.ts (1,726 → 22 L + 5 structural/type/storage modules) and oversized Process/VSM/Studio views (57/57 .ts/.tsx files <= 300 L; 30 modified, 28 created apps/web files), reduced Gate 1 AST baseline (631 → 421, -210 violations, 0 remaining in apps/web/src/), preserved Gate 2 (0 parity/jargon violations) & Gate 3 (0 client error violations), and verified 9/9 Turbo (@orcia/api-client 20, @orcia/ui 139, @orcia/web 290 = 449 JS/TS tests), Gate 4 (3 passed), and detect-secrets-hook (0 findings)."
+    },
     {
       "date": "2026-11-23",
       "phaseOrStory": "Story 27.4",

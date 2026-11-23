@@ -1,5 +1,6 @@
 import { AgentExecutionTrace, SourceLineInspectorDrawer } from "@orcia/ui";
 import React from "react";
+import { formatI18nTemplate, resolveDictionaryForFlag } from "../../../i18n";
 import type { WorkflowDefinitionV2Item } from "../processStudioV2Data";
 import { InteractiveRunDeliverableAndHitlPanels } from "./InteractiveRunDeliverableAndHitlPanels";
 import { InteractiveRunDrawerHeader } from "./InteractiveRunDrawerHeader";
@@ -24,6 +25,7 @@ export function InteractiveRunDrawer({
   onClose,
   isFr,
 }: InteractiveRunDrawerProps) {
+  const execCopy = resolveDictionaryForFlag(isFr).processVsmExecutionUi.execution;
   const ctrl = useInteractiveProcessRunController(workflow, isFr, workspaceId);
   const {
     dictionary,
@@ -68,25 +70,13 @@ export function InteractiveRunDrawer({
   const s3Uri = `s3://orcia-artifacts/${runId}/${currentSubStep?.id ?? "step"}/iter-${iteration}/${artifactSha256.slice(0, 16)}.md`;
 
   const statusHumanLabel: Record<InteractiveProcessDrawerStatus, string> = {
-    WAITING_EXTERNAL_GATE: isFr
-      ? "En attente de réalisation (IDE / Git)"
-      : "Waiting for external IDE/Git",
-    WAITING_SUBSTEP_HITL: isFr
-      ? "En attente de votre validation"
-      : "Waiting for your review",
-    WAITING_WRITE_PREVIEW: isFr
-      ? "Confirmation avant publication externe"
-      : "Confirm external publication",
-    WAITING_FINAL_ANCHOR: isFr
-      ? "Prêt pour validation finale du dossier"
-      : "Ready for final approval",
-    COMPLETED_APPROVED: isFr
-      ? "Dossier validé et publié"
-      : "Approved and published",
-    RETURN_LOOP_TRIGGERED: isFr
-      ? `Renvoyé pour corrections (Cycle ${iteration})`
-      : `Returned for corrections (Cycle ${iteration})`,
-    SLA_SUSPENDED: isFr ? "Dossier mis en pause" : "On hold",
+    WAITING_EXTERNAL_GATE: execCopy.statusWaitingExternal,
+    WAITING_SUBSTEP_HITL: execCopy.statusWaitingSubstepHitl,
+    WAITING_WRITE_PREVIEW: execCopy.statusWaitingWritePreview,
+    WAITING_FINAL_ANCHOR: execCopy.statusWaitingFinalAnchor,
+    COMPLETED_APPROVED: execCopy.statusCompletedApproved,
+    RETURN_LOOP_TRIGGERED: formatI18nTemplate(execCopy.statusReturnLoopTemplate, { iteration }),
+    SLA_SUSPENDED: execCopy.statusSlaSuspended,
   };
 
   return (
@@ -98,11 +88,11 @@ export function InteractiveRunDrawer({
         <span data-testid="run-drawer-status-badge">{status}</span>
         <span data-testid="run-drawer-idempotency-key">{idempotencyKey}</span>
         <span data-testid="run-drawer-reentry-mode">
-          mode: {reentryMode} (iter-{iteration})
+          {`mode: ${reentryMode} (iter-${iteration})`}
         </span>
         <span data-testid="claim-check-s3-uri">{s3Uri}</span>
         <span data-testid="claim-check-sha256">
-          SHA-256: {artifactSha256.slice(0, 16)}
+          {`SHA-256: ${artifactSha256.slice(0, 16)}`}
         </span>
       </div>
 
@@ -167,7 +157,7 @@ export function InteractiveRunDrawer({
                   }}
                 >
                   {isDone ? "✓ " : isCurrent ? "● " : ""}
-                  {isFr ? `Étape ${idx + 1}` : `Step ${idx + 1}`}
+                  {formatI18nTemplate(execCopy.stepBadgeTemplate, { index: idx + 1 })}
                 </div>
                 <div style={{ fontSize: "13px", fontWeight: 600 }}>
                   {sub.name}
@@ -232,11 +222,7 @@ export function InteractiveRunDrawer({
         onSetIsEditingDiff={setIsEditingDiff}
         onSimulateExternalWebhook={() => {
           setStatus("WAITING_FINAL_ANCHOR");
-          setStatusBanner(
-            isFr
-              ? "Travaux externes reçus (Pull Request détectée) : les contrôles automatiques de conformité sont validés."
-              : "External work received: automated quality checks passed.",
-          );
+          setStatusBanner(execCopy.externalWorkReceivedBanner);
         }}
         isStartingRun={isStartingRun}
         isSubmittingDecision={isSubmittingDecision}
@@ -246,11 +232,7 @@ export function InteractiveRunDrawer({
         onAction3RejectAndLoop={handleAction3RejectAndLoop}
         onAction4SuspendSla={() => {
           setStatus("SLA_SUSPENDED");
-          setStatusBanner(
-            isFr
-              ? "Dossier mis en pause : le suivi de délai est suspendu jusqu'à votre reprise."
-              : "Process paused: SLA timer suspended until resumed.",
-          );
+          setStatusBanner(execCopy.processPausedBanner);
         }}
         onChangeReturnLoopTarget={setReturnLoopTargetStep}
         onChangeReturnLoopRemarks={setReturnLoopRemarks}

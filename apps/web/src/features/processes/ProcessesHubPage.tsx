@@ -1,4 +1,4 @@
-import { OrciaAlertBanner, OrciaIcon } from "@orcia/ui";
+import { OrciaAlertBanner } from "@orcia/ui";
 import React, { useEffect, useState } from "react";
 import { CreateProcessFormDialog } from "../../components/CreateProcessFormDialog";
 import { useOptionalPlatformSetup } from "../../components/platformSetupStore";
@@ -8,28 +8,25 @@ import { useI18n } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
 import {
-  formatAgentHumanLabel,
-  InteractiveRunDrawer,
-} from "./execution/InteractiveRunDrawer";
+  readPersistedReflexiveId,
+  writePersistedReflexiveId,
+} from "../shared/reflexiveTraceMappers";
+import { AutonomousRunsSupervisionPanel } from "./AutonomousRunsSupervisionPanel";
 import {
   ProcessCatalogCardGrid,
   type WorkflowHubFilter,
 } from "./ProcessCatalogCardGrid";
+import { ProcessesActiveDossiersCard } from "./ProcessesActiveDossiersCard";
 import {
   loadPersistedWorkflowsV2,
   savePersistedWorkflowV2,
   type WorkflowDefinitionV2Item,
 } from "./processStudioV2Data";
-import { AutonomousRunsSupervisionPanel } from "./AutonomousRunsSupervisionPanel";
 import { ProcessesValueStreamOverviewCard } from "./ProcessesValueStreamOverviewCard";
 import {
   createProcessesApiClient,
   mapApiWorkflowV2ToUiItem,
 } from "./studio/studioLabelsAndMappers";
-import {
-  readPersistedReflexiveId,
-  writePersistedReflexiveId,
-} from "../shared/reflexiveTraceMappers";
 
 export type { WorkflowHubFilter };
 
@@ -37,7 +34,7 @@ export const ACTIVE_PROCESS_RUN_WORKFLOW_STORAGE_KEY =
   "orcia.processes.active_run_workflow_id.v1";
 
 export function ProcessesHubPage() {
-  const { locale, dictionary } = useI18n();
+  const { locale, isFr, dictionary } = useI18n();
   const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
   const setupCtx = useOptionalPlatformSetup();
   const authEmail = useAuthSessionStore((s) => s.email);
@@ -46,12 +43,12 @@ export function ProcessesHubPage() {
     setupCtx?.workspaces ?? [],
     authEmail,
   );
-  const isFr = locale === "fr";
   const modesCopy = dictionary.processOrchestrationModes;
+  const hubCopy = dictionary.processStudioUi.hub;
   const [isCreateProcessOpen, setIsCreateProcessOpen] = useState(false);
 
   const [workflows, setWorkflows] = useState<WorkflowDefinitionV2Item[]>(() =>
-    loadPersistedWorkflowsV2(),
+    loadPersistedWorkflowsV2(locale),
   );
   const [filter, setFilter] = useState<WorkflowHubFilter>("all");
   const [activeRunWorkflowId, setActiveRunWorkflowIdState] = useState<
@@ -90,7 +87,7 @@ export function ProcessesHubPage() {
         setWorkflows((prev) => {
           const mapped = wfRes.items.map((apiWf) => {
             const existing = prev.find((p) => p.id === apiWf.id || p.slug === apiWf.slug);
-            const uiItem = mapApiWorkflowV2ToUiItem(apiWf, existing);
+            const uiItem = mapApiWorkflowV2ToUiItem(apiWf, existing, locale);
             savePersistedWorkflowV2(uiItem);
             return uiItem;
           });
@@ -101,15 +98,15 @@ export function ProcessesHubPage() {
         if (cancelled) return;
         const formatted = formatRfc9457ErrorToBanner(
           err,
-          isFr ? "fr" : "en",
-          isFr ? "Catalogue de processus" : "Processes catalog",
+          locale,
+          hubCopy.catalogResourceLabel,
         );
         setHubErrorBanner(formatted.fullText);
       });
     return () => {
       cancelled = true;
     };
-  }, [locale, isFr]);
+  }, [locale, hubCopy.catalogResourceLabel]);
 
   const activeRunWorkflow =
     workflows.find((w) => w.id === activeRunWorkflowId) ?? null;
@@ -126,126 +123,13 @@ export function ProcessesHubPage() {
         </OrciaAlertBanner>
       ) : null}
 
-      {/* ZONE 1 (PRIORITÉ 1) : DOSSIERS EN COURS & ACTIONS ATTENDUES */}
-      <div
-        data-testid="processes-active-dossiers-card"
-        className="orcia-bento-card"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          borderLeft: "4px solid var(--color-primary-cobalt)",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            flexWrap: "wrap",
-            gap: "12px",
-          }}
-        >
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-              <span
-                className="rounded px-2.5 py-0.5 text-xs font-semibold"
-                style={{
-                  backgroundColor: "var(--color-arbitration-bg)",
-                  color: "var(--color-arbitration-amber)",
-                }}
-              >
-                {isFr ? "1 validation en attente de votre décision" : "1 review awaiting your decision"}
-              </span>
-            </div>
-            <h2 style={{ margin: "6px 0 0 0", fontSize: "var(--font-size-h2)" }}>
-              {isFr
-                ? "Mes dossiers en cours & validations à traiter"
-                : "Active Dossiers & Pending Reviews"}
-            </h2>
-            <p style={{ margin: "2px 0 0 0", fontSize: "13px", color: "var(--color-text-secondary)" }}>
-              {isFr
-                ? "Examinez les livrables préparés par vos agents, validez les étapes clés ou demandez des ajustements sans quitter cette page."
-                : "Review deliverables prepared by your agents, approve milestones, or request adjustments directly from this page."}
-            </p>
-          </div>
+      <ProcessesActiveDossiersCard
+        featuredPendingWorkflow={featuredPendingWorkflow}
+        activeRunWorkflow={activeRunWorkflow}
+        activeWorkspaceId={activeWorkspaceId}
+        onSelectWorkflowRun={setActiveRunWorkflowId}
+      />
 
-          {featuredPendingWorkflow && !activeRunWorkflow ? (
-            <button
-              type="button"
-              data-testid="resume-featured-dossier-btn"
-              onClick={() => setActiveRunWorkflowId(featuredPendingWorkflow.id)}
-              className="orcia-ds-btn-primary"
-              style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-            >
-              <OrciaIcon name="play" />
-              <span>
-                {isFr
-                  ? "Examiner & Valider le dossier en attente"
-                  : "Review & Approve Pending Dossier"}
-              </span>
-            </button>
-          ) : null}
-        </div>
-
-        {featuredPendingWorkflow && !activeRunWorkflow ? (
-          <div
-            className="rounded border p-3"
-            style={{
-              backgroundColor: "var(--color-bg-elevated)",
-              borderColor: "var(--color-border-subtle)",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "10px",
-            }}
-          >
-            <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                <strong style={{ fontSize: "14px" }}>
-                  Dossier « Mon Compte » — {featuredPendingWorkflow.title}
-                </strong>
-                <span
-                  className="rounded px-2 py-0.5 text-xs font-semibold"
-                  style={{
-                    backgroundColor: "var(--color-action-primary-subtle)",
-                    color: "var(--color-primary-cobalt)",
-                  }}
-                >
-                  {isFr ? "Étape 1/3 : Qualification du besoin" : "Step 1/3: Qualification"}
-                </span>
-              </div>
-              <span style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
-                {formatAgentHumanLabel(featuredPendingWorkflow.agent_ref)} ·{" "}
-                {isFr
-                  ? "Livrable prêt pour relecture et validation Product Owner"
-                  : "Deliverable ready for Product Owner review"}
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setActiveRunWorkflowId(featuredPendingWorkflow.id)}
-              className="orcia-ds-btn-secondary"
-            >
-              {isFr ? "Ouvrir le livrable" : "Open deliverable"}
-            </button>
-          </div>
-        ) : null}
-
-        {activeRunWorkflow ? (
-          <InteractiveRunDrawer
-            key={`${activeRunWorkflow.id}-${activeWorkspaceId || "default"}`}
-            workflow={activeRunWorkflow}
-            workspaceId={activeWorkspaceId || undefined}
-            onClose={() => setActiveRunWorkflowId(null)}
-            isFr={isFr}
-          />
-        ) : null}
-      </div>
-
-      {/* ZONE 2 : PROCESSUS MÉTIERS DISPONIBLES PAR ÉTAPE */}
       <ProcessCatalogCardGrid
         workflows={workflows}
         filter={filter}
@@ -299,10 +183,8 @@ export function ProcessesHubPage() {
         }}
       />
 
-      {/* ZONE 2B : SUPERVISION DES EXÉCUTIONS AUTOMATISÉES SOUS CONTRAT (STORY 7.4) */}
       <AutonomousRunsSupervisionPanel />
 
-      {/* ZONE 3 : VUE D'ENSEMBLE DE LA CHAÎNE DE VALEUR (4 PHASES · 11 ÉTAPES) */}
       <ProcessesValueStreamOverviewCard
         isFr={isFr}
         vsmId={vsmSummary?.id}

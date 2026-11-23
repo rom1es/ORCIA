@@ -52,13 +52,14 @@ export function useInteractiveProcessRunController(
   );
 
   const currentSubStep = enabledSubSteps[currentSubIndex] ?? enabledSubSteps[0];
-  const agentLabel = formatAgentHumanLabel(workflow.agent_ref);
+  const agentLabel = formatAgentHumanLabel(workflow.agent_ref, locale);
 
   const [artifactMarkdown, setArtifactMarkdown] = useState<string>(() =>
     buildInitialArtifactMarkdown(
       workflow.title,
       currentSubStep?.name ?? processCopy.executionDefaultName,
       agentLabel,
+      locale,
     ),
   );
   const [artifactSha256, setArtifactSha256] = useState<string>(() =>
@@ -197,6 +198,7 @@ export function useInteractiveProcessRunController(
         workflow.title,
         nextSub?.name ?? "",
         nextSub?.output_description ?? "",
+        locale,
       );
       setArtifactMarkdown(nextMd);
       setArtifactSha256(simpleHashHex(nextMd));

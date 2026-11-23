@@ -35,7 +35,15 @@ import type { FinopsDictionarySection } from "./locales/finops_labels";
 import type { GovernanceAndPacksDictionarySection } from "./locales/governance_and_packs_labels";
 import type { InboxAndCockpitDictionarySection } from "./locales/inbox_and_cockpit_labels";
 import type { OntologyGlossaryCopy } from "./locales/ontology_glossary_labels";
+import type { ProcessCatalogWorkflowsDictionary } from "./locales/process_catalog_packs_and_workflows_labels";
+import type {
+  ProcessCatalogVsmPart1Dictionary,
+  ProcessCatalogVsmPart2Dictionary,
+  ProcessCatalogVsmPart3Dictionary,
+} from "./locales/process_catalog_vsm_labels";
 import type { ProcessOrchestrationModesDictionarySection } from "./locales/process_orchestration_modes_labels";
+import type { ProcessStudioUiDictionary } from "./locales/process_studio_ui_labels";
+import type { ProcessVsmExecutionUiDictionary } from "./locales/process_vsm_execution_ui_labels";
 import type { ReflexiveTraceAndInspectorDictionarySection } from "./locales/reflexive_trace_and_inspector_labels";
 import type { RoutesAndWizardsDictionary } from "./locales/routes_and_wizards_labels";
 import type { ShellChromeDictionary } from "./locales/shell_chrome_labels";
@@ -94,6 +102,12 @@ export interface TranslationDictionary
   autonomyContract: AutonomyContractStudioCopy;
   epic18Sources: Epic18SourcesLabels;
   workflowTriggers: WorkflowTriggersStudioCopy;
+  processStudioUi: ProcessStudioUiDictionary;
+  processVsmExecutionUi: ProcessVsmExecutionUiDictionary;
+  processCatalogWorkflows: ProcessCatalogWorkflowsDictionary;
+  processCatalogVsmP1: ProcessCatalogVsmPart1Dictionary;
+  processCatalogVsmP2: ProcessCatalogVsmPart2Dictionary;
+  processCatalogVsmP3: ProcessCatalogVsmPart3Dictionary;
   shell: UiShellLabels;
   humanAnchor: HumanLedAnchorCardLabels & {
     defaultSectionTitle: string;

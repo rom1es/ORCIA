@@ -21,7 +21,13 @@ import { GATES_AND_INBOX_FR_LABELS } from "./gates_and_inbox_labels";
 import { GOVERNANCE_AND_PACKS_FR_LABELS } from "./governance_and_packs_labels";
 import { INBOX_AND_COCKPIT_FR_LABELS } from "./inbox_and_cockpit_labels";
 import { ONTOLOGY_GLOSSARY_FR } from "./ontology_glossary_labels";
+import { PROCESS_CATALOG_VSM_P1_FR } from "./process_catalog_vsm_p1_fr";
+import { PROCESS_CATALOG_VSM_P2_FR } from "./process_catalog_vsm_p2_fr";
+import { PROCESS_CATALOG_VSM_P3_FR } from "./process_catalog_vsm_p3_fr";
+import { PROCESS_CATALOG_WORKFLOWS_FR } from "./process_catalog_workflows_fr";
 import { PROCESS_ORCHESTRATION_MODES_FR_LABELS } from "./process_orchestration_modes_labels";
+import { PROCESS_STUDIO_UI_FR } from "./process_studio_ui_labels_fr";
+import { PROCESS_VSM_EXECUTION_UI_FR } from "./process_vsm_execution_ui_labels_fr";
 import { PROFILE_OVERVIEW_FR_LABELS } from "./profile_overview_labels";
 import { REFLEXIVE_TRACE_AND_INSPECTOR_FR_LABELS } from "./reflexive_trace_and_inspector_labels";
 import { RFC9457_BANNER_FR_LABELS } from "./rfc9457_banner_labels";
@@ -66,6 +72,12 @@ export const frDictionary: TranslationDictionary = {
   autonomyContract: AUTONOMY_CONTRACT_FR_LABELS,
   epic18Sources: EPIC18_SOURCES_LABELS_FR,
   workflowTriggers: WORKFLOW_TRIGGERS_FR_LABELS,
+  processStudioUi: PROCESS_STUDIO_UI_FR,
+  processVsmExecutionUi: PROCESS_VSM_EXECUTION_UI_FR,
+  processCatalogWorkflows: PROCESS_CATALOG_WORKFLOWS_FR,
+  processCatalogVsmP1: PROCESS_CATALOG_VSM_P1_FR,
+  processCatalogVsmP2: PROCESS_CATALOG_VSM_P2_FR,
+  processCatalogVsmP3: PROCESS_CATALOG_VSM_P3_FR,
   ontologyGlossary: ONTOLOGY_GLOSSARY_FR,
   profileOverview: PROFILE_OVERVIEW_FR_LABELS,
 };

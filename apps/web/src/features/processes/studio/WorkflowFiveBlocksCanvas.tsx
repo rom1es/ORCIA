@@ -3,7 +3,7 @@ import React, { useMemo, useState } from "react";
 import { useShellNavigation } from "../../../components/ShellContainer";
 import { resolveEffectiveWorkspaceId } from "../../../components/shellScopeOptions";
 import { usePlatformSetup } from "../../../components/platformSetupStore";
-import { useI18n } from "../../../i18n";
+import { formatI18nTemplate, useI18n } from "../../../i18n";
 import { useAuthSessionStore } from "../../../stores/authSessionStore";
 import { InteractiveRunDrawer } from "../execution/InteractiveRunDrawer";
 import { StudioCopilotSidebar } from "./StudioCopilotSidebar";
@@ -36,12 +36,12 @@ export type { StudioViewMode };
 const DEFAULT_FALLBACK_WORKSPACE_ID = "0192c4e0-0000-7000-8000-000000000201";
 
 export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }) {
-  const { locale, dictionary } = useI18n();
+  const { locale, isFr, dictionary } = useI18n();
   const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
   const { workspaces } = usePlatformSetup();
   const authEmail = useAuthSessionStore((s) => s.email);
-  const isFr = locale === "fr";
   const modesCopy = dictionary.processOrchestrationModes;
+  const studioCopy = dictionary.processStudioUi.studio;
   const contractLabels = dictionary.autonomyContract;
   const triggersLabels = dictionary.workflowTriggers;
   const targetId = workflowId ?? "wf-01-qualification-prd";
@@ -212,19 +212,12 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
           onAttachSkill={(skillUri) => {
             const nextWf = attachSkillToWorkflow(workflow, skillUri);
             if (!nextWf) return;
-            persistUpdate(
-              nextWf,
-              isFr
-                ? "Savoir-faire ajouté au processus."
-                : "Business skill attached to the process.",
-            );
+            persistUpdate(nextWf, studioCopy.skillAttachedBanner);
           }}
           onAttachMcpTool={(toolPerm) => {
             persistUpdate(
               attachMcpToolToWorkflow(workflow, toolPerm),
-              isFr
-                ? "Outil connecté autorisé sur ce processus."
-                : "Connected tool enabled for this process.",
+              studioCopy.toolAttachedBanner,
             );
           }}
           onAttachDeterministicGate={(gate) => {
@@ -232,9 +225,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
             if (!nextWf) return;
             persistUpdate(
               nextWf,
-              isFr
-                ? `Contrôle qualité « ${gate.name} » ajouté.`
-                : `Quality check "${gate.name}" added.`,
+              formatI18nTemplate(studioCopy.gateAttachedTemplate, { name: gate.name }),
             );
           }}
         />

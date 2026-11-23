@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  INITIAL_WORKFLOWS_V2,
+  getInitialWorkflowsV2,
   loadPersistedWorkflowsV2,
   savePersistedWorkflowV2,
   type WorkflowDefinitionV2Item,
@@ -47,12 +47,12 @@ export function useStudioWorkflowController({
   }, []);
 
   const initialWf = useMemo(() => {
-    const list = loadPersistedWorkflowsV2();
+    const list = loadPersistedWorkflowsV2(locale);
     return (
       list.find((w) => w.id === targetId || w.slug === targetId) ??
-      INITIAL_WORKFLOWS_V2[0]!
+      getInitialWorkflowsV2(locale)[0]!
     );
-  }, [targetId]);
+  }, [targetId, locale]);
 
   const [workflow, setWorkflow] = useState<WorkflowDefinitionV2Item>(initialWf);
   const [viewMode, setViewMode] = useState<StudioViewMode>("design");
@@ -71,7 +71,7 @@ export function useStudioWorkflowController({
       .getWorkflowV2(targetId)
       .then((apiWf) => {
         if (cancelled || !isMountedRef.current || hasUserEditedRef.current || !apiWf?.id) return;
-        const hydrated = mapApiWorkflowV2ToUiItem(apiWf, initialWf);
+        const hydrated = mapApiWorkflowV2ToUiItem(apiWf, initialWf, locale);
         savePersistedWorkflowV2(hydrated);
         setWorkflow((prev) =>
           JSON.stringify(prev) === JSON.stringify(hydrated) ? prev : hydrated,
@@ -108,14 +108,14 @@ export function useStudioWorkflowController({
       .saveWorkflowV2(
         nextWf.id,
         {
-          workflow: mapUiItemToApiWorkflowV2(nextWf),
+          workflow: mapUiItemToApiWorkflowV2(nextWf, locale),
           publish,
         },
         workspaceId ? { workspaceId } : undefined,
       )
       .then((res) => {
         if (!isMountedRef.current || !res?.workflow?.id) return;
-        const synced = mapApiWorkflowV2ToUiItem(res.workflow, nextWf);
+        const synced = mapApiWorkflowV2ToUiItem(res.workflow, nextWf, locale);
         savePersistedWorkflowV2(synced);
         if (synced.version !== nextWf.version || synced.status !== nextWf.status) {
           setWorkflow(synced);

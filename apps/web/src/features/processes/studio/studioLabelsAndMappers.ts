@@ -1,95 +1,36 @@
-import { createOrciaApiClient, type ApiWorkflowDefinitionV2 } from "@orcia/api-client";
+import type { ApiWorkflowDefinitionV2 } from "@orcia/api-client";
 import {
-  INITIAL_WORKFLOWS_V2,
+  DICTIONARIES,
+  formatI18nTemplate,
+  type SupportedWebLocale,
+} from "../../../i18n";
+import {
+  getInitialWorkflowsV2,
   type DeterministicSubStepItem,
   type WorkflowDefinitionV2Item,
 } from "../processStudioV2Data";
 
 export {
-  AVAILABLE_DELEGATE_AGENTS,
-  HUMAN_KB_LABELS,
-  HUMAN_SKILL_LABELS,
-  HUMAN_TOOL_LABELS,
+  getDelegateAgents,
+  getHumanKbLabel,
+  getHumanSkillLabel,
+  getHumanToolLabel,
   type DelegateAgentOption,
 } from "./studioCatalogLabels";
+export {
+  attachDeterministicGateToWorkflow,
+  attachMcpToolToWorkflow,
+  attachSkillToWorkflow,
+  buildNextPublishedWorkflow,
+  createProcessesApiClient,
+  ensureDraftOnEdit,
+} from "./studioWorkflowActions";
 
-export function createProcessesApiClient(locale: "fr" | "en") {
-  return createOrciaApiClient({ baseUrl: "", locale });
-}
-
-export function ensureDraftOnEdit(base: WorkflowDefinitionV2Item): WorkflowDefinitionV2Item {
-  if (base.status === "published") {
-    const cleanVer = base.version.replace(/-draft$/, "");
-    return {
-      ...base,
-      status: "draft",
-      version: `${cleanVer}-draft`,
-    };
-  }
-  return base;
-}
-
-export function buildNextPublishedWorkflow(base: WorkflowDefinitionV2Item): WorkflowDefinitionV2Item {
-  const cleanVer = base.version.replace(/-draft$/, "");
-  const parts = cleanVer.split(".").map((n) => Number.parseInt(n, 10) || 0);
-  const nextVer = `${parts[0] ?? 1}.${parts[1] ?? 0}.${(parts[2] ?? 0) + 1}`;
-  return { ...base, status: "published", version: nextVer };
-}
-
-export function attachSkillToWorkflow(
-  workflow: WorkflowDefinitionV2Item,
-  skillUri: string,
-): WorkflowDefinitionV2Item | null {
-  if (workflow.skills_refs.includes(skillUri)) return null;
-  const base = ensureDraftOnEdit(workflow);
-  return { ...base, skills_refs: [...base.skills_refs, skillUri] };
-}
-
-export function attachMcpToolToWorkflow(
-  workflow: WorkflowDefinitionV2Item,
-  toolPerm: string,
-): WorkflowDefinitionV2Item {
-  const base = ensureDraftOnEdit(workflow);
-  const nextSubs = base.sub_steps.map((s, idx) =>
-    idx === 0 && !s.mcp_tools_allowed.includes(toolPerm)
-      ? { ...s, mcp_tools_allowed: [...s.mcp_tools_allowed, toolPerm] }
-      : s,
-  );
-  return { ...base, sub_steps: nextSubs };
-}
-
-export function attachDeterministicGateToWorkflow(
-  workflow: WorkflowDefinitionV2Item,
-  gate: {
-    id: string;
-    name: string;
-    runner: WorkflowDefinitionV2Item["controls"]["deterministic_gates"][number]["runner"];
-  },
-): WorkflowDefinitionV2Item | null {
-  if (workflow.controls.deterministic_gates.some((g) => g.id === gate.id)) {
-    return null;
-  }
-  const base = ensureDraftOnEdit(workflow);
-  return {
-    ...base,
-    controls: {
-      ...base.controls,
-      deterministic_gates: [
-        ...base.controls.deterministic_gates,
-        {
-          id: gate.id,
-          name: gate.name,
-          runner: gate.runner,
-          config: { required_headings: ["# "] },
-          blocking: true,
-          max_self_heal_retries: 3,
-        },
-      ],
-    },
-  };
-}
-
-function parseContractInputString(raw: string, index: number): { name: string; label: string } {
+function parseContractInputString(
+  raw: string,
+  index: number,
+  locale: SupportedWebLocale,
+): { name: string; label: string } {
   const match = /^([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.+)\)$/.exec(raw.trim());
   if (match) {
     return { name: match[1]!, label: match[2]! };
@@ -98,13 +39,17 @@ function parseContractInputString(raw: string, index: number): { name: string; l
     .trim()
     .replace(/[^a-zA-Z0-9_]+/g, "_")
     .replace(/^[^a-zA-Z_]+/, "");
+  const tpl = DICTIONARIES[locale].processStudioUi.studio.mapperDefaultParamTemplate;
   return {
     name: cleanName || `input_${index + 1}`,
-    label: raw.trim() || `Paramètre ${index + 1}`,
+    label: raw.trim() || formatI18nTemplate(tpl, { index: index + 1 }),
   };
 }
 
-export function mapUiItemToApiWorkflowV2(uiWf: WorkflowDefinitionV2Item): ApiWorkflowDefinitionV2 {
+export function mapUiItemToApiWorkflowV2(
+  uiWf: WorkflowDefinitionV2Item,
+  locale: SupportedWebLocale = "fr",
+): ApiWorkflowDefinitionV2 {
   return {
     id: uiWf.id,
     slug: uiWf.slug,
@@ -126,7 +71,7 @@ export function mapUiItemToApiWorkflowV2(uiWf: WorkflowDefinitionV2Item): ApiWor
     knowledge_feedback_target_agent: uiWf.knowledge_base_refs[0] ?? null,
     contract: {
       parameters: uiWf.contract.inputs.map((inp, idx) => {
-        const parsed = parseContractInputString(inp, idx);
+        const parsed = parseContractInputString(inp, idx, locale);
         return {
           name: parsed.name,
           label: parsed.label,
@@ -204,10 +149,12 @@ const VALID_RUNNERS = new Set([
 export function mapApiWorkflowV2ToUiItem(
   apiWf: ApiWorkflowDefinitionV2,
   fallbackUi?: WorkflowDefinitionV2Item,
+  locale: SupportedWebLocale = "fr",
 ): WorkflowDefinitionV2Item {
+  const studioCopy = DICTIONARIES[locale].processStudioUi.studio;
   const matchedSeed =
     fallbackUi ??
-    INITIAL_WORKFLOWS_V2.find((w) => w.id === apiWf.id || w.slug === apiWf.slug);
+    getInitialWorkflowsV2(locale).find((w) => w.id === apiWf.id || w.slug === apiWf.slug);
 
   const normalizedStatus: "draft" | "published" | "archived" =
     apiWf.status === "published"
@@ -278,7 +225,7 @@ export function mapApiWorkflowV2ToUiItem(
     triggers: matchedSeed?.triggers ?? [
       {
         trigger_type: "manual_or_event",
-        source_label: "Déclenchement métier",
+        source_label: studioCopy.mapperDefaultTriggerLabel,
         condition_expression: null,
       },
     ],
@@ -291,10 +238,7 @@ export function mapApiWorkflowV2ToUiItem(
         (apiWf.contract?.required_markdown_sections ?? []).length > 0
           ? [...(apiWf.contract?.required_markdown_sections ?? [])]
           : (matchedSeed?.contract.outputs ?? []),
-      exit_criteria: matchedSeed?.contract.exit_criteria ?? [
-        "Contrôles de complétude validés",
-        "Approbation du responsable",
-      ],
+      exit_criteria: matchedSeed?.contract.exit_criteria ?? [...studioCopy.mapperDefaultExitCriteria],
       expected_format: "markdown",
     },
     sub_steps: subSteps.length > 0 ? subSteps : (matchedSeed?.sub_steps ?? []),

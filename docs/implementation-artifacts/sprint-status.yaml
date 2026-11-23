@@ -303,7 +303,7 @@ development_status:
   27-2-category-a-client-error-codes-bridges-stores-and-rfc9457-banner: done
   27-3-category-c-shell-contextual-help-notifications-routes-and-wizards: done
   27-4-category-c-cockpit-assistant-workspaces-gates-catalog-and-admin: done
-  27-5-category-c-process-studio-v2-vsm-execution-and-bilingual-catalog-data: ready-for-dev
+  27-5-category-c-process-studio-v2-vsm-execution-and-bilingual-catalog-data: done
   27-6-category-c-orcia-ui-design-system-primitives-typed-label-props: ready-for-dev
   27-7-categories-b-and-d-bilingual-rfc9457-backend-catalogs-prompts-and-seeds: ready-for-dev
   27-8-zero-baseline-lock-bilingual-e2e-verification-and-epic-27-closure: ready-for-dev

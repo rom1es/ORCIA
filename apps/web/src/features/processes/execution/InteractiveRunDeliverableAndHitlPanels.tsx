@@ -1,5 +1,6 @@
 import { FormattedMarkdownContent } from "@orcia/ui";
 import React from "react";
+import { formatI18nTemplate, resolveDictionaryForFlag } from "../../../i18n";
 import type {
   DeterministicSubStepItem,
   WorkflowDefinitionV2Item,
@@ -53,7 +54,9 @@ export function InteractiveRunDeliverableAndHitlPanels({
   onChangeReturnLoopTarget,
   onChangeReturnLoopRemarks,
 }: InteractiveRunDeliverableAndHitlPanelsProps): React.JSX.Element {
+  const copy = resolveDictionaryForFlag(isFr).processVsmExecutionUi.execution;
   const isActionDisabled = Boolean(isStartingRun || isSubmittingDecision);
+
   return (
     <>
       {status === "WAITING_EXTERNAL_GATE" ? (
@@ -63,14 +66,19 @@ export function InteractiveRunDeliverableAndHitlPanels({
           style={{ backgroundColor: "var(--color-arbitration-bg)", borderColor: "var(--color-arbitration-amber)" }}
         >
           <strong style={{ fontSize: "14px", color: "var(--color-arbitration-amber)" }}>
-            🛠️ Réalisation en cours dans votre environnement de développement ({workflow.external_tool_label ?? "IDE / Git"})
+            {formatI18nTemplate(copy.externalGateHeadingTemplate, {
+              tool: workflow.external_tool_label ?? "IDE / Git",
+            })}
           </strong>
-          <div style={{ fontSize: "12.5px" }}>
-            Le contexte métier et les critères d&apos;acceptation sont transmis à l&apos;équipe. Dès que la Pull Request est ouverte, ORCIA vérifie automatiquement la conformité du livrable avant la revue finale.
-          </div>
+          <div style={{ fontSize: "12.5px" }}>{copy.externalGateDescription}</div>
           <div>
-            <button type="button" data-testid="simulate-external-webhook-btn" onClick={onSimulateExternalWebhook} className="orcia-ds-btn-primary">
-              {isFr ? "✓ Signaler la Pull Request prête pour contrôle" : "✓ Mark Pull Request ready for review"}
+            <button
+              type="button"
+              data-testid="simulate-external-webhook-btn"
+              onClick={onSimulateExternalWebhook}
+              className="orcia-ds-btn-primary"
+            >
+              {copy.markPrReadyBtn}
             </button>
           </div>
         </div>
@@ -83,7 +91,7 @@ export function InteractiveRunDeliverableAndHitlPanels({
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
           <strong style={{ fontSize: "13.5px" }}>
-            📄 {isFr ? "Livrable proposé" : "Proposed Deliverable"} — {currentSubStep?.name ?? workflow.title}
+            📄 {copy.proposedDeliverablePrefix} — {currentSubStep?.name ?? workflow.title}
           </strong>
           <span style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
             {currentSubStep?.output_description}
@@ -93,7 +101,7 @@ export function InteractiveRunDeliverableAndHitlPanels({
         {isEditingDiff ? (
           <div className="flex flex-col gap-2">
             <textarea
-              aria-label="Contenu du livrable"
+              aria-label={copy.deliverableContentAriaLabel}
               data-testid="amend-diff-markdown-textarea"
               autoComplete="off"
               data-lpignore="true"
@@ -107,11 +115,21 @@ export function InteractiveRunDeliverableAndHitlPanels({
               style={{ fontSize: "13px" }}
             />
             <div className="flex gap-2">
-              <button type="button" data-testid="confirm-amend-diff-btn" onClick={onAction2SaveAmendedDiff} className="orcia-ds-btn-primary">
-                {isFr ? "💾 Enregistrer mes modifications" : "💾 Save changes"}
+              <button
+                type="button"
+                data-testid="confirm-amend-diff-btn"
+                onClick={onAction2SaveAmendedDiff}
+                className="orcia-ds-btn-primary"
+              >
+                {copy.saveChangesBtn}
               </button>
-              <button type="button" data-testid="cancel-amend-diff-btn" onClick={() => onSetIsEditingDiff(false)} className="orcia-ds-btn-secondary">
-                {isFr ? "Annuler" : "Cancel"}
+              <button
+                type="button"
+                data-testid="cancel-amend-diff-btn"
+                onClick={() => onSetIsEditingDiff(false)}
+                className="orcia-ds-btn-secondary"
+              >
+                {copy.cancelBtn}
               </button>
             </div>
           </div>
@@ -135,27 +153,49 @@ export function InteractiveRunDeliverableAndHitlPanels({
           style={{ backgroundColor: "var(--color-arbitration-bg)", borderColor: "var(--color-arbitration-amber)" }}
         >
           <div style={{ fontSize: "12.5px" }}>
-            <strong>🛡️ Confirmation avant publication :</strong> Cette étape s&apos;apprête à créer ou mettre à jour un élément dans votre outil externe ({currentSubStep?.name ?? workflow.title}).
+            <strong>{copy.writePreviewStrongPrefix}</strong>{" "}
+            {formatI18nTemplate(copy.writePreviewMessageTemplate, {
+              target: currentSubStep?.name ?? workflow.title,
+            })}
           </div>
-          <button type="button" data-testid="sign-write-preview-token-btn" onClick={onApproveCurrentSubStep} className="orcia-ds-btn-primary">
-            {isFr ? "✓ Confirmer la publication externe" : "✓ Confirm external publication"}
+          <button
+            type="button"
+            data-testid="sign-write-preview-token-btn"
+            onClick={onApproveCurrentSubStep}
+            className="orcia-ds-btn-primary"
+          >
+            {copy.confirmExternalPubBtn}
           </button>
         </div>
       ) : null}
 
       {signedTokenPreview ? (
         <div data-testid="signed-approval-token-badge" style={{ fontSize: "12px", color: "var(--color-gate-emerald)" }}>
-          ✓ Publication externe confirmée ({signedTokenPreview})
+          {formatI18nTemplate(copy.signedTokenBadgeTemplate, { token: signedTokenPreview })}
         </div>
       ) : null}
 
       {status === "WAITING_SUBSTEP_HITL" && currentSubStep ? (
         <div className="flex flex-wrap gap-2">
-          <button type="button" data-testid="approve-substep-checkpoint-btn" disabled={isActionDisabled} onClick={onApproveCurrentSubStep} className="orcia-ds-btn-primary">
-            {isFr ? `✓ Valider « ${currentSubStep.short_label} » et passer à la suite` : `✓ Approve "${currentSubStep.short_label}" and continue`}
+          <button
+            type="button"
+            data-testid="approve-substep-checkpoint-btn"
+            disabled={isActionDisabled}
+            onClick={onApproveCurrentSubStep}
+            className="orcia-ds-btn-primary"
+          >
+            {formatI18nTemplate(copy.approveSubstepBtnTemplate, {
+              step: currentSubStep.short_label,
+            })}
           </button>
-          <button type="button" data-testid="open-amend-diff-editor-btn" disabled={isActionDisabled} onClick={() => onSetIsEditingDiff(true)} className="orcia-ds-btn-secondary">
-            {isFr ? "✎ Modifier le livrable avant validation" : "✎ Edit deliverable"}
+          <button
+            type="button"
+            data-testid="open-amend-diff-editor-btn"
+            disabled={isActionDisabled}
+            onClick={() => onSetIsEditingDiff(true)}
+            className="orcia-ds-btn-secondary"
+          >
+            {copy.editDeliverableBtn}
           </button>
         </div>
       ) : null}
@@ -166,53 +206,78 @@ export function InteractiveRunDeliverableAndHitlPanels({
         style={{ backgroundColor: "var(--color-human-led-bg)", borderColor: "var(--color-primary-cobalt)" }}
       >
         <div className="flex flex-wrap items-center justify-between">
-          <strong style={{ fontSize: "14px" }}>
-            {isFr ? "Décision & Validation du livrable" : "Deliverable Review & Decision"}
-          </strong>
+          <strong style={{ fontSize: "14px" }}>{copy.decisionSectionTitle}</strong>
           {isStartingRun ? (
             <span data-testid="run-drawer-starting-indicator" style={{ fontSize: "12px", color: "var(--color-text-secondary)", fontWeight: 600 }}>
-              {isFr ? "⏳ Démarrage du run sur le serveur…" : "⏳ Starting run on server…"}
+              {copy.startingRunIndicator}
             </span>
           ) : (
             <span style={{ fontSize: "12px", color: "var(--color-gate-emerald)", fontWeight: 600 }}>
-              {isFr ? "✓ Contrôles automatiques de complétude : Conformes · Relecture contradictoire : Validée" : "✓ Automated checks: Passed · Peer review: Passed"}
+              {copy.automatedChecksPassedIndicator}
             </span>
           )}
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <button type="button" data-testid="anchor-action-1-accept-btn" disabled={isActionDisabled} aria-busy={isActionDisabled} onClick={() => { void onAction1AcceptAndSign(); }} className="orcia-ds-btn-primary">
-            {isSubmittingDecision ? (isFr ? "Validation en cours…" : "Submitting…") : isFr ? "✓ Valider et publier le livrable" : "✓ Approve & publish"}
+          <button
+            type="button"
+            data-testid="anchor-action-1-accept-btn"
+            disabled={isActionDisabled}
+            aria-busy={isActionDisabled}
+            onClick={() => { void onAction1AcceptAndSign(); }}
+            className="orcia-ds-btn-primary"
+          >
+            {isSubmittingDecision ? copy.submittingBtn : copy.approveAndPublishBtn}
           </button>
-          <button type="button" data-testid="anchor-action-2-amend-diff-btn" disabled={isActionDisabled} onClick={() => onSetIsEditingDiff(true)} className="orcia-ds-btn-secondary">
-            {isFr ? "✎ Modifier le texte" : "✎ Edit text"}
+          <button
+            type="button"
+            data-testid="anchor-action-2-amend-diff-btn"
+            disabled={isActionDisabled}
+            onClick={() => onSetIsEditingDiff(true)}
+            className="orcia-ds-btn-secondary"
+          >
+            {copy.editTextBtn}
           </button>
-          <button type="button" data-testid="anchor-action-3-reject-loop-btn" disabled={isActionDisabled} onClick={onAction3RejectAndLoop} className="orcia-ds-btn-secondary">
-            {isFr ? `↩ Demander des corrections (→ Étape ${returnLoopTargetStep})` : `↩ Request corrections (→ Step ${returnLoopTargetStep})`}
+          <button
+            type="button"
+            data-testid="anchor-action-3-reject-loop-btn"
+            disabled={isActionDisabled}
+            onClick={onAction3RejectAndLoop}
+            className="orcia-ds-btn-secondary"
+          >
+            {formatI18nTemplate(copy.requestCorrectionsBtnTemplate, {
+              step: returnLoopTargetStep,
+            })}
           </button>
-          <button type="button" data-testid="anchor-action-4-suspend-sla-btn" disabled={isActionDisabled} onClick={onAction4SuspendSla} className="orcia-ds-btn-secondary">
-            {isFr ? "⏸ Mettre en pause" : "⏸ Pause"}
+          <button
+            type="button"
+            data-testid="anchor-action-4-suspend-sla-btn"
+            disabled={isActionDisabled}
+            onClick={onAction4SuspendSla}
+            className="orcia-ds-btn-secondary"
+          >
+            {copy.pauseBtn}
           </button>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "minmax(200px, 260px) 1fr", gap: "8px", alignItems: "center" }}>
           <select
-            aria-label="Étape cible pour reprise"
+            aria-label={copy.returnStepSelectAriaLabel}
             data-testid="anchor-return-loop-target-select"
             value={returnLoopTargetStep}
             onChange={(e) => onChangeReturnLoopTarget(e.target.value)}
             className="orcia-ds-select"
           >
-            <option value="01">Renvoyer à l&apos;Étape 01 (Qualification)</option>
-            <option value="02">Renvoyer à l&apos;Étape 02 (Revue du PRD)</option>
-            <option value="03">Renvoyer à l&apos;Étape 03 (Étude d&apos;Architecture)</option>
-            <option value="06">Renvoyer à l&apos;Étape 06 (Découpage User Stories)</option>
-            <option value="08">Renvoyer à l&apos;Étape 08 (Réalisation)</option>
+            {copy.returnStepOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
           </select>
 
           <input
             type="text"
-            aria-label="Commentaire de correction"
+            aria-label={copy.returnRemarksAriaLabel}
             data-testid="anchor-return-loop-remarks-input"
             autoComplete="off"
             data-lpignore="true"
@@ -221,7 +286,7 @@ export function InteractiveRunDeliverableAndHitlPanels({
             data-form-type="other"
             value={returnLoopRemarks}
             onChange={(e) => onChangeReturnLoopRemarks(e.target.value)}
-            placeholder={isFr ? "Précisez les points à corriger..." : "Specify required changes..."}
+            placeholder={copy.returnRemarksPlaceholder}
             className="orcia-ds-input"
           />
         </div>
