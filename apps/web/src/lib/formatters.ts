@@ -1,7 +1,12 @@
 export type SupportedUiLocale = "fr" | "en";
 
+const INTL_LOCALE_BY_UI_LOCALE: Readonly<Record<SupportedUiLocale, string>> = {
+  fr: "fr-FR",
+  en: "en-US",
+};
+
 /**
- * Formate un montant monétaire en Euro (`EUR`) selon la locale (`fr` -> `12,34 €`, `en` -> `€12.34`).
+ * Format a monetary amount in EUR according to the active locale (`fr` -> `12,34 €`, `en` -> `€12.34`).
  */
 export function formatCurrency(
   amount: number,
@@ -14,10 +19,11 @@ export function formatCurrency(
 ): string {
   const safeAmount = Number.isFinite(amount) ? amount : 0;
   const currency = options.currency ?? "EUR";
-  const intlLocale = locale === "en" ? "en-US" : "fr-FR";
+  const intlLocale = INTL_LOCALE_BY_UI_LOCALE[locale];
   const isMicroAmount = Math.abs(safeAmount) > 0 && Math.abs(safeAmount) < 0.01;
   const minDigits = options.minimumFractionDigits ?? (isMicroAmount ? 3 : 2);
-  const maxDigits = options.maximumFractionDigits ?? (isMicroAmount ? Math.max(minDigits, 4) : Math.max(minDigits, 2));
+  const maxDigits =
+    options.maximumFractionDigits ?? (isMicroAmount ? Math.max(minDigits, 4) : Math.max(minDigits, 2));
   return new Intl.NumberFormat(intlLocale, {
     style: "currency",
     currency,
@@ -27,7 +33,7 @@ export function formatCurrency(
 }
 
 /**
- * Formate une date ISO en format court localisé (`fr` -> `jj/mm/aaaa`, `en` -> `mm/dd/yyyy`).
+ * Format an ISO date or Date instance as a short localized date (`fr` -> `dd/mm/yyyy`, `en` -> `mm/dd/yyyy`).
  */
 export function formatShortDate(
   isoOrDate: string | Date,
@@ -37,7 +43,7 @@ export function formatShortDate(
   if (Number.isNaN(parsed.getTime())) {
     return typeof isoOrDate === "string" ? isoOrDate : "";
   }
-  const intlLocale = locale === "en" ? "en-US" : "fr-FR";
+  const intlLocale = INTL_LOCALE_BY_UI_LOCALE[locale];
   return new Intl.DateTimeFormat(intlLocale, {
     day: "2-digit",
     month: "2-digit",
@@ -47,7 +53,7 @@ export function formatShortDate(
 }
 
 /**
- * Formate un horodatage ISO complet avec date localisée (`jj/mm/aaaa HH:mm:ss` en français).
+ * Format an ISO timestamp or Date instance with localized UTC date and time (`HH:mm:ss`).
  */
 export function formatShortDateTime(
   isoOrDate: string | Date,

@@ -29,9 +29,7 @@ export interface LoginScreenViewProps {
 }
 
 function mapTwoFactorStepFromResponse(res: AuthTokenResponse): LoginTwoFactorStepState | null {
-  if (!res.requires_two_factor || !res.challenge_token || !res.challenge_kind) {
-    return null;
-  }
+  if (!res.requires_two_factor || !res.challenge_token || !res.challenge_kind) return null;
   return {
     challengeToken: res.challenge_token,
     challengeKind: res.challenge_kind,
@@ -68,22 +66,13 @@ export function LoginScreenView({ onAuthenticated }: LoginScreenViewProps = {}) 
   );
 
   const toProblemError = useCallback(
-    (err: unknown): Rfc9457LoginError => {
-      if (err instanceof OrciaProblemError) {
-        return {
-          errorCode: err.problem.error_code,
-          detail: err.problem.detail,
-          traceId: err.problem.trace_id,
-        };
-      }
-      return {
-        errorCode: "ERR_AUTH_UNAVAILABLE",
-        detail:
-          err instanceof Error && err.message
-            ? err.message
-            : dictionary.biModeLogin.errorBannerTitle,
-      };
-    },
+    (err: unknown): Rfc9457LoginError =>
+      err instanceof OrciaProblemError
+        ? { errorCode: err.problem.error_code, detail: err.problem.detail, traceId: err.problem.trace_id }
+        : {
+            errorCode: "ERR_AUTH_UNAVAILABLE",
+            detail: err instanceof Error && err.message ? err.message : dictionary.biModeLogin.errorBannerTitle,
+          },
     [dictionary.biModeLogin.errorBannerTitle],
   );
 
@@ -101,9 +90,7 @@ export function LoginScreenView({ onAuthenticated }: LoginScreenViewProps = {}) 
         must_change_password: res.must_change_password,
       });
       writeStorageItem(SESSION_STORAGE_KEY, res.email);
-      if (onAuthenticated) {
-        onAuthenticated();
-      }
+      if (onAuthenticated) onAuthenticated();
       navigateTo("/");
     },
     [loginWithSession, navigateTo, onAuthenticated],
@@ -111,8 +98,7 @@ export function LoginScreenView({ onAuthenticated }: LoginScreenViewProps = {}) 
 
   useEffect(() => {
     let cancelled = false;
-    void apiClient
-      .getPublicAuthConfig()
+    void apiClient.getPublicAuthConfig()
       .then((cfg) => {
         if (cancelled) return;
         if (syncBrowserBootEpoch(cfg.boot_epoch)) {
@@ -126,9 +112,7 @@ export function LoginScreenView({ onAuthenticated }: LoginScreenViewProps = {}) 
         // Pre-flight config failure must never render a user login-attempt error banner on mount.
         console.warn("[orcia/auth] public-config bootstrap fallback to LOCAL mode", err);
       });
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [apiClient, resetAuthSession]);
 
   useEffect(() => {
@@ -191,11 +175,7 @@ export function LoginScreenView({ onAuthenticated }: LoginScreenViewProps = {}) 
         className="flex min-h-[400px] items-center justify-center p-8 text-center"
       >
         <div className="space-y-2" style={{ color: "var(--color-text-secondary)" }}>
-          <p className="text-sm">
-            {locale === "en"
-              ? "Platform initialization in progress..."
-              : "Initialisation de la plateforme en cours..."}
-          </p>
+          <p className="text-sm">{dictionary.shellChrome.loginInitializing}</p>
         </div>
       </div>
     );

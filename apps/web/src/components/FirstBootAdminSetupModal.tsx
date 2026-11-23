@@ -9,10 +9,12 @@ import {
   useUnsavedChangesDialogGuard,
 } from "@orcia/ui";
 import React, { useState } from "react";
-import {
-  SHELL_AND_SEARCH_EN_LABELS,
-  SHELL_AND_SEARCH_FR_LABELS,
-} from "../i18n/locales/shell_and_search_labels";
+import { resolveDictionaryForFlag, resolveLocaleForFlag } from "../i18n";
+
+const RGAA_MODAL_LABELS_BY_LOCALE = {
+  fr: DEFAULT_RGAA_MODAL_LABELS_FR,
+  en: DEFAULT_RGAA_MODAL_LABELS_EN,
+} as const;
 
 export interface FirstBootAdminSetupModalProps {
   readonly isOpen: boolean;
@@ -36,10 +38,10 @@ export function FirstBootAdminSetupModal({
   const [adminPassword, setAdminPassword] = useState<string>("");
   const [adminPasswordConfirm, setAdminPasswordConfirm] = useState<string>("");
 
-  const copy = isFr
-    ? SHELL_AND_SEARCH_FR_LABELS.firstBootAdminModal
-    : SHELL_AND_SEARCH_EN_LABELS.firstBootAdminModal;
-  const rgaaLabels = isFr ? DEFAULT_RGAA_MODAL_LABELS_FR : DEFAULT_RGAA_MODAL_LABELS_EN;
+  const resolvedLocale = resolveLocaleForFlag(isFr);
+  const dict = resolveDictionaryForFlag(isFr);
+  const copy = dict.firstBootAdminModal;
+  const rgaaLabels = RGAA_MODAL_LABELS_BY_LOCALE[resolvedLocale];
 
   const isAdminModalDirty = Boolean(
     adminFullName.trim() ||
@@ -120,7 +122,7 @@ export function FirstBootAdminSetupModal({
             color: "var(--color-action-primary)",
           }}
         >
-          {isFr ? "Étape obligatoire · Non ignorable" : "Required step · Cannot be skipped"}
+          {dict.shellChrome.firstBootMandatoryBadge}
         </span>
       }
     >

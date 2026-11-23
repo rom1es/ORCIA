@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 224,
+    "techLeadReportsCount": 225,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -550,6 +550,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-23",
+      "phaseOrStory": "Story 27.3",
+      "reportFile": "27-3-category-c-shell-contextual-help-notifications-routes-and-wizards-tech-lead-report.md",
+      "domain": "Epic 27 Lot 2 Part 1 — Category C Remediation: apps/web Shell, Contextual Help, Notifications, Routes & Bootstrap Wizards (CAP-004, CAP-058, CAP-060, CAP-065, CAP-066, CAP-068, CAP-100)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): created modular FR/EN sub-dictionaries (contextual_help_*, shell_chrome_*, shell_notifications_*, routes_and_wizards_*), migrated all 33 Gate 1 files across components/, routes/, features/bootstrap/, lib/, and stores/ plus non-AST locale helpers, split all oversized touched files (66/66 .ts/.tsx files <= 300 L; 45 modified, 21 created), reduced Gate 1 AST baseline (1,129 → 943, 0 entries in target scopes), preserved Gate 2 (0 parity/jargon violations) & Gate 3 (0 client error violations), and verified 9/9 Turbo (@orcia/api-client 20, @orcia/ui 139, @orcia/web 288 = 447 JS/TS tests) and Gate 4 (3 passed)."
+    },
     {
       "date": "2026-11-23",
       "phaseOrStory": "Story 27.2",

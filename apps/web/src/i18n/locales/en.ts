@@ -8,6 +8,7 @@ import { AUTONOMOUS_SUPERVISION_EN_LABELS } from "./autonomous_supervision_label
 import { AUTONOMY_CONTRACT_EN_LABELS } from "./autonomy_contract_labels";
 import { CATEGORY_A_CONTROLLER_EN_LABELS } from "./category_a_controller_labels";
 import { CLIENT_ERRORS_EN_LABELS } from "./client_errors_labels";
+import { CONTEXTUAL_HELP_EN } from "./contextual_help_catalog_en";
 import { CORE_DOMAIN_EN_LABELS } from "./core_domain_labels_en";
 import { CORE_SHELL_EN_LABELS } from "./core_shell_labels_en";
 import { EPIC18_SOURCES_LABELS_EN } from "./epic18_sources_labels";
@@ -20,6 +21,12 @@ import { PROCESS_ORCHESTRATION_MODES_EN_LABELS } from "./process_orchestration_m
 import { PROFILE_OVERVIEW_EN_LABELS } from "./profile_overview_labels";
 import { REFLEXIVE_TRACE_AND_INSPECTOR_EN_LABELS } from "./reflexive_trace_and_inspector_labels";
 import { RFC9457_BANNER_EN_LABELS } from "./rfc9457_banner_labels";
+import { ROUTES_AND_WIZARDS_EN } from "./routes_and_wizards_labels_en";
+import { SHELL_CHROME_EN } from "./shell_chrome_labels_en";
+import {
+  SHELL_BREADCRUMBS_AND_SCOPE_EN,
+  SHELL_NOTIFICATIONS_EN,
+} from "./shell_notifications_labels_en";
 import { SHELL_AND_SEARCH_EN_LABELS } from "./shell_and_search_labels";
 import { WORKFLOW_TRIGGERS_EN_LABELS } from "./workflow_triggers_labels";
 
@@ -40,6 +47,11 @@ export const enDictionary: TranslationDictionary = {
   clientErrors: CLIENT_ERRORS_EN_LABELS,
   rfc9457Errors: RFC9457_BANNER_EN_LABELS,
   categoryAControllers: CATEGORY_A_CONTROLLER_EN_LABELS,
+  contextualHelp: CONTEXTUAL_HELP_EN,
+  shellNotifications: SHELL_NOTIFICATIONS_EN,
+  shellBreadcrumbsAndScope: SHELL_BREADCRUMBS_AND_SCOPE_EN,
+  shellChrome: SHELL_CHROME_EN,
+  routesAndWizards: ROUTES_AND_WIZARDS_EN,
   aiModelsHub: AI_MODELS_HUB_EN,
   authSettings: AUTH_SETTINGS_EN_LABELS,
   autonomousSupervision: AUTONOMOUS_SUPERVISION_EN_LABELS,

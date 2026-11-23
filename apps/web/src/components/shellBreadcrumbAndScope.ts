@@ -5,6 +5,7 @@ import type {
   UiModuleKey,
   UiScopeNode,
 } from "@orcia/ui";
+import { resolveLocaleForFlag } from "../i18n";
 import type { TranslationDictionary } from "../i18n/types";
 import {
   canAccessConfigurationSettings,
@@ -98,7 +99,7 @@ export function deriveShellScopeAndBreadcrumbs(params: {
   const { scopes, orgUnits, workspaces, llmTiers, runs, platformAdmin, accostageSummary } = setup;
   const { adminCreated, hasModels, hasOrgUnits, hasWorkspaces } = accostageSummary;
 
-  const isFr = locale === "fr";
+  const isFr = resolveLocaleForFlag(undefined, locale) === "fr";
   const canObserveGlobal = canObserveGlobalAuditScope({ roles, readOnlyObserver });
   const showConfigurationMenu = canAccessConfigurationSettings({ roles, readOnlyObserver });
   const safeModuleKey: UiModuleKey = selectedModuleOverride ?? resolveModuleFromPathname(pathname ?? null);
@@ -155,6 +156,7 @@ export function deriveShellScopeAndBreadcrumbs(params: {
   const breadcrumbItems = buildShellBreadcrumbItems({
     pathname,
     isFr,
+    locale,
     menuEntries: dictionary.fourZoneShell.menuEntries,
     activeTeamLabel: activeOrgUnitLabel,
     activeWorkspaceLabel,
@@ -165,7 +167,7 @@ export function deriveShellScopeAndBreadcrumbs(params: {
     selectedScope.name ??
     workspaces[0]?.name ??
     dictionary.fourZoneShell.doubleSelector?.globalPlatformLabel ??
-    "ORCIA";
+    dictionary.shellChrome.brandName;
 
   const disabledMenuKeys = buildShellDisabledMenuKeys({
     isFr,
@@ -179,6 +181,7 @@ export function deriveShellScopeAndBreadcrumbs(params: {
 
   const notificationItems = buildShellNotificationItems({
     isFr,
+    locale,
     platformAdmin,
     orgUnits,
     workspaces,

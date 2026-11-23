@@ -1,22 +1,18 @@
 import {
   OrciaAlertBanner,
-  type InferenceTierAndEffortLabels,
   type UiInferenceEffort,
   type UiInferenceTier,
 } from "@orcia/ui";
 import React from "react";
-import type { ConfiguredLlmTierMapping, LlmAuthMode } from "../components/platformSetupStore";
+import type { LlmAuthMode } from "../components/platformSetupStore";
+import { resolveDictionaryForFlag } from "../i18n";
+import { SettingsAiModelsQuickFormFields } from "./SettingsAiModelsQuickFormFields";
 import {
   AI_PROVIDER_PRESETS,
   GOOGLE_GEMINI_NATIVE_ENDPOINT,
   GOOGLE_GEMINI_OPENAI_ENDPOINT,
-  resolvePrimaryModelPlaceholder,
   type ConnectionTestFeedback,
 } from "./settingsAiModelsPresets";
-import {
-  AI_MODELS_HUB_EN,
-  AI_MODELS_HUB_FR,
-} from "../i18n/locales/ai_models_hub_labels";
 
 export interface SettingsAiModelsQuickFormProps {
   readonly isFr: boolean;
@@ -74,8 +70,6 @@ const secondaryBtnStyle: React.CSSProperties = {
 
 export function SettingsAiModelsQuickForm({
   isFr,
-  selectedTier,
-  selectedEffort,
   modelFamily,
   setModelFamily,
   primaryModel,
@@ -95,7 +89,10 @@ export function SettingsAiModelsQuickForm({
   onQuickSubmit,
   onEvaluateTest,
 }: SettingsAiModelsQuickFormProps): React.ReactElement {
-  const hubLabels = isFr ? AI_MODELS_HUB_FR : AI_MODELS_HUB_EN;
+  const dict = resolveDictionaryForFlag(isFr);
+  const copy = dict.routesAndWizards.aiModelsQuickForm;
+  const hubLabels = dict.aiModelsHub;
+
   return (
     <details
       style={{
@@ -113,7 +110,7 @@ export function SettingsAiModelsQuickForm({
           marginBottom: "10px",
         }}
       >
-        {isFr ? "⚙ Configuration directe / rapide" : "⚙ Direct / quick configuration"}
+        {copy.summaryLabel}
       </summary>
 
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px", fontSize: "12px", marginBottom: "10px" }}>
@@ -163,9 +160,7 @@ export function SettingsAiModelsQuickForm({
             marginBottom: "10px",
           }}
         >
-          <span style={{ fontWeight: 600 }}>
-            {isFr ? "Protocole Google Gemini :" : "Google Gemini protocol:"}
-          </span>
+          <span style={{ fontWeight: 600 }}>{copy.geminiProtocolLabel}</span>
           <button
             type="button"
             data-testid="google-gemini-mode-native-btn"
@@ -182,7 +177,7 @@ export function SettingsAiModelsQuickForm({
                   : "var(--color-surface-card)",
             }}
           >
-            Mode B
+            {copy.geminiModeNative}
           </button>
           <button
             type="button"
@@ -200,143 +195,32 @@ export function SettingsAiModelsQuickForm({
                   : "var(--color-surface-card)",
             }}
           >
-            Mode A
+            {copy.geminiModeOpenai}
           </button>
         </div>
       )}
 
-      <form
-        data-testid="configure-llm-tier-form"
-        autoComplete="off"
-        data-lpignore="true"
-        data-1p-ignore="true"
-        data-bwignore="true"
-        data-form-type="other"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onQuickSubmit();
-        }}
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: "10px",
-          alignItems: "end",
-        }}
-      >
-        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
-          <span style={{ fontWeight: 600 }}>Fournisseur IA</span>
-          <input
-            type="text"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid="llm-family-input"
-            value={modelFamily}
-            onChange={(e) => setModelFamily(e.target.value)}
-            style={inputStyle}
-          />
-        </label>
-
-        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
-          <span style={{ fontWeight: 600 }}>Identifiant du modèle principal</span>
-          <input
-            type="text"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid="llm-primary-model-input"
-            value={primaryModel}
-            onChange={(e) => setPrimaryModel(e.target.value)}
-            placeholder={resolvePrimaryModelPlaceholder(modelFamily, hubLabels)}
-            style={inputStyle}
-          />
-        </label>
-
-        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
-          <span style={{ fontWeight: 600 }}>Modèle de secours</span>
-          <input
-            type="text"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid="llm-secondary-model-input"
-            value={secondaryModel}
-            onChange={(e) => setSecondaryModel(e.target.value)}
-            placeholder={hubLabels.fallbackModelPlaceholder}
-            style={inputStyle}
-          />
-        </label>
-
-        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
-          <span style={{ fontWeight: 600 }}>URL Endpoint</span>
-          <input
-            type="text"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid="llm-endpoint-url-input"
-            value={endpointUrl}
-            onChange={(e) => setEndpointUrl(e.target.value)}
-            style={inputStyle}
-          />
-        </label>
-
-        <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
-          <span style={{ fontWeight: 600 }}>Mode auth</span>
-          <select
-            data-testid="llm-auth-mode-select"
-            value={authMode}
-            onChange={(e) => setAuthMode(e.target.value as LlmAuthMode)}
-            style={inputStyle}
-          >
-            <option value="api_key">Clé d'API</option>
-            <option value="env_var">Variable d'environnement</option>
-            <option value="none_local">Sans clé (Local)</option>
-          </select>
-        </label>
-
-        {authMode === "api_key" && (
-          <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px" }}>
-            <span style={{ fontWeight: 600 }}>Clé d'API</span>
-            <input
-              type="text"
-              className="orcia-masked-secret-input"
-              spellCheck={false}
-              autoComplete="off"
-              data-lpignore="true"
-              data-1p-ignore="true"
-              data-bwignore="true"
-              data-form-type="other"
-              data-testid="llm-api-key-input"
-              value={apiKeyInput}
-              onChange={(e) => setApiKeyInput(e.target.value)}
-              style={{ ...inputStyle, WebkitTextSecurity: "disc" } as React.CSSProperties}
-            />
-          </label>
-        )}
-
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", gridColumn: "1 / -1", marginTop: "4px" }}>
-          <button
-            type="button"
-            data-testid="test-llm-connection-btn"
-            onClick={onEvaluateTest}
-            style={secondaryBtnStyle}
-          >
-            🔌 Tester la connexion
-          </button>
-          <button type="submit" data-testid="save-llm-tier-btn" style={primaryBtnStyle}>
-            Enregistrer le niveau
-          </button>
-        </div>
-      </form>
+      <SettingsAiModelsQuickFormFields
+        copy={copy}
+        hubLabels={hubLabels}
+        modelFamily={modelFamily}
+        setModelFamily={setModelFamily}
+        primaryModel={primaryModel}
+        setPrimaryModel={setPrimaryModel}
+        secondaryModel={secondaryModel}
+        setSecondaryModel={setSecondaryModel}
+        endpointUrl={endpointUrl}
+        setEndpointUrl={setEndpointUrl}
+        authMode={authMode}
+        setAuthMode={setAuthMode}
+        apiKeyInput={apiKeyInput}
+        setApiKeyInput={setApiKeyInput}
+        onQuickSubmit={onQuickSubmit}
+        onEvaluateTest={onEvaluateTest}
+        inputStyle={inputStyle}
+        primaryBtnStyle={primaryBtnStyle}
+        secondaryBtnStyle={secondaryBtnStyle}
+      />
 
       {testResult !== null && (
         <OrciaAlertBanner

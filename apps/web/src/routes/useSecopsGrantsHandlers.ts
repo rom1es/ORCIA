@@ -6,6 +6,7 @@ import {
   fetchIamGrantsFromApi,
 } from "../features/admin/iam/iamApiBridge";
 import type { CreateSecopsExceptionInput } from "../features/admin/iam/IamSecopsExceptionsDrawer";
+import { DICTIONARIES, formatI18nTemplate } from "../i18n";
 
 export function useSecopsGrantsHandlers(params: {
   readonly locale: "fr" | "en";
@@ -21,6 +22,7 @@ export function useSecopsGrantsHandlers(params: {
   ) => void;
 }) {
   const { locale, rbacGrants, syncRbacGrantsFromServer } = params;
+  const copy = DICTIONARIES[locale].routesAndWizards.orgUnitsActions;
   const [grantsError, setGrantsError] = useState<string | null>(null);
   const [isSubmittingGrant, setIsSubmittingGrant] = useState(false);
 
@@ -63,7 +65,7 @@ export function useSecopsGrantsHandlers(params: {
     const nextGrants = rbacGrants.filter((g) => g.id !== grantId);
     syncRbacGrantsFromServer(nextGrants, {
       eventType: "PermissionRevoked",
-      summary: `Exception ${grantId} supprimée`,
+      summary: formatI18nTemplate(copy.secopsDeletedTemplate, { grantId }),
     });
   };
 
@@ -80,7 +82,7 @@ export function useSecopsGrantsHandlers(params: {
     const nextGrants = rbacGrants.filter((g) => !removedSet.has(g.id));
     syncRbacGrantsFromServer(nextGrants, {
       eventType: "PermissionRevoked",
-      summary: `${grantIds.length} exceptions supprimées`,
+      summary: formatI18nTemplate(copy.secopsBulkDeletedTemplate, { count: grantIds.length }),
     });
   };
 

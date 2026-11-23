@@ -1,30 +1,40 @@
+import { DICTIONARIES, type SupportedWebLocale } from "../i18n";
 import type {
   ConfiguredAuditEvent,
   ConfiguredPlatformAdmin,
 } from "./platformSetupStorageHelpers";
 
-export function formatHumanReadableScopePath(rawScopePath: string | undefined): string {
+export function formatHumanReadableScopePath(
+  rawScopePath: string | undefined,
+  locale: SupportedWebLocale = "fr",
+): string {
   const trimmed = (rawScopePath ?? "").trim();
   if (!trimmed || trimmed === "GLOBAL" || trimmed === "scope-global") {
-    return "Plateforme entière";
+    return DICTIONARIES[locale].shellChrome.auditSanitizer.globalScopeLabel;
   }
   return trimmed;
 }
 
-export function cleanAuditSummaryJargon(rawSummary: string): string {
+export function cleanAuditSummaryJargon(
+  rawSummary: string,
+  locale: SupportedWebLocale = "fr",
+): string {
+  const s = DICTIONARIES[locale].shellChrome.auditSanitizer;
   return rawSummary
-    .replace(/\bsur GLOBAL\b/g, "sur Plateforme entière")
-    .replace(/\(PUBLISHED\)/g, "(Publié)")
-    .replace(/\(DRAFT\)/g, "(Brouillon)")
-    .replace(/\(VALIDATED\)/g, "(Validé)")
-    .replace(/\bmode passthrough\b/gi, "mode Identité personnelle")
-    .replace(/\bmode service_account\b/gi, "mode Compte technique partagé");
+    .replace(/\bsur GLOBAL\b/g, s.onGlobalPhrase)
+    .replace(/\(PUBLISHED\)/g, s.statusPublished)
+    .replace(/\(DRAFT\)/g, s.statusDraft)
+    .replace(/\(VALIDATED\)/g, s.statusValidated)
+    .replace(/\bmode passthrough\b/gi, s.personalIdentityMode)
+    .replace(/\bmode service_account\b/gi, s.sharedAccountMode);
 }
 
 export function normalizeConfiguredAuditEvent(
   raw: Partial<ConfiguredAuditEvent> & Record<string, unknown>,
   fallbackActor?: ConfiguredPlatformAdmin | null,
+  locale: SupportedWebLocale = "fr",
 ): ConfiguredAuditEvent {
+  const govCopy = DICTIONARIES[locale].shellChrome.platformSetupGovernance;
   const id = typeof raw.id === "string" && raw.id.trim() ? raw.id.trim() : "evt-1";
   const timestampIso =
     typeof raw.timestampIso === "string" && raw.timestampIso.trim()
@@ -36,11 +46,12 @@ export function normalizeConfiguredAuditEvent(
       : "SettingsChanged";
   const summary = cleanAuditSummaryJargon(
     typeof raw.summary === "string" ? raw.summary : "",
+    locale,
   );
   const actorName =
     typeof raw.actorName === "string" && raw.actorName.trim()
       ? raw.actorName.trim()
-      : (fallbackActor?.displayName ?? "Administrateur de la plateforme");
+      : (fallbackActor?.displayName ?? govCopy.defaultAdminDisplayName);
   const actorEmail =
     typeof raw.actorEmail === "string" && raw.actorEmail.trim()
       ? raw.actorEmail.trim()
@@ -51,8 +62,8 @@ export function normalizeConfiguredAuditEvent(
       : "GLOBAL";
   const scopeLabel =
     typeof raw.scopeLabel === "string" && raw.scopeLabel.trim()
-      ? formatHumanReadableScopePath(raw.scopeLabel)
-      : formatHumanReadableScopePath(rawScopePath);
+      ? formatHumanReadableScopePath(raw.scopeLabel, locale)
+      : formatHumanReadableScopePath(rawScopePath, locale);
   const scopeId =
     typeof raw.scopeId === "string" && raw.scopeId.trim()
       ? raw.scopeId.trim()

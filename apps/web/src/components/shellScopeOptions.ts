@@ -8,9 +8,9 @@ import type {
   ConfiguredLlmTierMapping,
   ConfiguredOrgUnit,
 } from "./platformSetupStore";
+import { resolveLocaleForFlag } from "../i18n";
 import {
-  SHELL_SCOPE_OPTIONS_EN,
-  SHELL_SCOPE_OPTIONS_FR,
+  SHELL_SCOPE_OPTIONS_BY_LOCALE,
 } from "../i18n/locales/shell_scope_labels";
 export { buildShellNotificationItems } from "./shellNotificationBuilder";
 export {
@@ -39,7 +39,7 @@ export function buildDoubleScopeSelectorState(params: {
   readonly scopes: readonly UiScopeNode[];
   readonly activeScopeId: string;
 }): DoubleScopeSelectorState {
-  const { isFr, orgUnits, workspaces, scopes, activeScopeId } = params;
+  const { orgUnits, workspaces, scopes, activeScopeId } = params;
   const globalScopes = scopes.filter((s) => s.level === "GLOBAL");
   const buUnits = orgUnits.filter((u) => u.level === "BU");
   const teamUnits = orgUnits.filter((u) => u.level === "TEAM");
@@ -47,7 +47,7 @@ export function buildDoubleScopeSelectorState(params: {
   const teamBuOptions = [
     ...globalScopes.map((s) => ({
       id: s.id,
-      label: isFr ? `🌐 ${s.name}` : `🌐 ${s.name}`,
+      label: `🌐 ${s.name}`,
     })),
     ...buUnits.map((bu) => ({
       id: bu.id,
@@ -132,7 +132,7 @@ export function buildWorkspaceSwitcherOptions(params: {
     return ws.ownerOrgUnitName ?? "";
   };
 
-  const scopeLabels = isFr ? SHELL_SCOPE_OPTIONS_FR : SHELL_SCOPE_OPTIONS_EN;
+  const scopeLabels = SHELL_SCOPE_OPTIONS_BY_LOCALE[resolveLocaleForFlag(isFr)];
 
   const groupPrivateLabel = `${getOrciaIconGlyph("lock")} ${scopeLabels.groupPrivateSuffix}`;
   const groupTeamUnitLabel = `${getOrciaIconGlyph("team")} ${scopeLabels.groupTeamUnitSuffix}`;
@@ -198,7 +198,7 @@ export function buildShellDisabledMenuKeys(params: {
     hasModels,
     hasWorkspaces,
   } = params;
-  const scopeLabels = isFr ? SHELL_SCOPE_OPTIONS_FR : SHELL_SCOPE_OPTIONS_EN;
+  const scopeLabels = SHELL_SCOPE_OPTIONS_BY_LOCALE[resolveLocaleForFlag(isFr)];
   if (!adminCreated) {
     const adminReason = day0AdminMissingReason ?? scopeLabels.disabledReasons.adminMissing;
     return {

@@ -1,5 +1,6 @@
 import { StatusBadge } from "@orcia/ui";
 import React, { useEffect, useState } from "react";
+import { formatI18nTemplate, resolveDictionaryForFlag } from "../i18n";
 import { CreateProcessFormDialog } from "./CreateProcessFormDialog";
 import type { ConfiguredWorkflowItem } from "./platformSetupStore";
 
@@ -32,6 +33,7 @@ export function SimplifiedProcessBuilderSection({
   presetDraft,
 }: SimplifiedProcessBuilderSectionProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const copy = resolveDictionaryForFlag(isFr).shellChrome.simplifiedProcessBuilder;
 
   useEffect(() => {
     if (presetDraft) {
@@ -59,29 +61,23 @@ export function SimplifiedProcessBuilderSection({
       >
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-            <h2 style={{ margin: 0, fontSize: "16px" }}>
-              {isFr
-                ? "Créer et Gérer mes Processus Métiers"
-                : "Create and Manage Business Processes"}
-            </h2>
+            <h2 style={{ margin: 0, fontSize: "16px" }}>{copy.title}</h2>
           </div>
           <p style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}>
-            {isFr
-              ? "Définissez un processus réutilisable qui combine vos agents et vos validations humaines."
-              : "Define a reusable process combining your agents and human reviews."}
+            {copy.description}
           </p>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
           {publishedCount > 0 ? (
             <StatusBadge
-              label={isFr ? `Publiés : ${publishedCount}` : `Published: ${publishedCount}`}
+              label={formatI18nTemplate(copy.publishedBadgeTemplate, { count: publishedCount })}
               tone="emerald"
             />
           ) : null}
           {draftCount > 0 ? (
             <StatusBadge
-              label={isFr ? `Brouillons : ${draftCount}` : `Drafts: ${draftCount}`}
+              label={formatI18nTemplate(copy.draftsBadgeTemplate, { count: draftCount })}
               tone="cobalt"
             />
           ) : null}
@@ -91,7 +87,7 @@ export function SimplifiedProcessBuilderSection({
             onClick={() => setIsCreateModalOpen(true)}
             className="orcia-ds-btn orcia-ds-btn-primary orcia-ds-btn-sm"
           >
-            {isFr ? "+ Nouveau processus" : "+ New process"}
+            {copy.newProcessCta}
           </button>
           {onOpenProcessesMenu ? (
             <button
@@ -100,7 +96,7 @@ export function SimplifiedProcessBuilderSection({
               onClick={onOpenProcessesMenu}
               style={secondaryBtnStyle}
             >
-              {isFr ? "Ouvrir dans Mes Processus →" : "Open in My Processes →"}
+              {copy.openProcessesMenuCta}
             </button>
           ) : null}
         </div>
@@ -115,22 +111,15 @@ export function SimplifiedProcessBuilderSection({
         presetDraft={presetDraft}
       />
 
-      {/* Liste des processus enregistrés */}
       <div className="orcia-bento-card" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         <strong style={{ fontSize: "14px" }}>
           {workflows.length > 0
-            ? isFr
-              ? `Processus enregistrés (${workflows.length})`
-              : `Saved processes (${workflows.length})`
-            : isFr
-              ? "Processus enregistrés"
-              : "Saved processes"}
+            ? formatI18nTemplate(copy.savedProcessesCountTemplate, { count: workflows.length })
+            : copy.savedProcessesTitle}
         </strong>
         {workflows.length === 0 ? (
           <p data-testid="workflows-empty-state" style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}>
-            {isFr
-              ? "Aucun processus enregistré pour le moment. Cliquez sur « + Nouveau processus » pour créer votre premier processus."
-              : "No process saved yet. Click '+ New process' to create your first process."}
+            {copy.emptyState}
           </p>
         ) : (
           <div data-testid="workflow-saved-list" style={{ display: "grid", gap: "8px" }}>
@@ -156,15 +145,7 @@ export function SimplifiedProcessBuilderSection({
                   </span>
                 </div>
                 <StatusBadge
-                  label={
-                    wf.status === "PUBLISHED"
-                      ? isFr
-                        ? "Publié"
-                        : "Published"
-                      : isFr
-                        ? "Brouillon"
-                        : "Draft"
-                  }
+                  label={wf.status === "PUBLISHED" ? copy.statusPublished : copy.statusDraft}
                   tone={wf.status === "PUBLISHED" ? "emerald" : "cobalt"}
                 />
               </div>

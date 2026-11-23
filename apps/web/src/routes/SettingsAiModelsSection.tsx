@@ -8,11 +8,7 @@ import { AiModelConfigModal } from "../features/admin/ai-models/AiModelConfigMod
 import { AiModelDeleteDialog } from "../features/admin/ai-models/AiModelDeleteDialog";
 import { AiModelReindexPanel } from "../features/admin/ai-models/AiModelReindexPanel";
 import { AiModelsMasterTable } from "../features/admin/ai-models/AiModelsMasterTable";
-import { useI18n } from "../i18n";
-import {
-  AI_MODELS_HUB_EN,
-  AI_MODELS_HUB_FR,
-} from "../i18n/locales/ai_models_hub_labels";
+import { resolveDictionaryForFlag, useI18n } from "../i18n";
 import { SettingsAiModelsQuickForm } from "./SettingsAiModelsQuickForm";
 import { useAiModelsSectionController } from "./useAiModelsSectionController";
 
@@ -31,7 +27,7 @@ export function SettingsAiModelsSection({
   allowedVerbs = ["read", "create", "update", "delete", "execute", "grant"],
 }: SettingsAiModelsSectionProps): React.ReactElement {
   const { dictionary } = useI18n();
-  const hubLabels = dictionary?.aiModelsHub ?? (isFr ? AI_MODELS_HUB_FR : AI_MODELS_HUB_EN);
+  const hubLabels = dictionary?.aiModelsHub ?? resolveDictionaryForFlag(isFr).aiModelsHub;
   const ctrl = useAiModelsSectionController({ isFr });
   const hasActiveEmbeddingModel = ctrl.activeMappings.some(
     (m) =>

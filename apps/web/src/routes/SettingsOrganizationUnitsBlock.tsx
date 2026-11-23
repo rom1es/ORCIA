@@ -37,10 +37,9 @@ export function SettingsOrganizationUnitsBlock({
   const { dictionary, locale } = useI18n();
   const { navigateToRoute } = useShellNavigation();
   const labels = dictionary.settingsHub.organizationTab;
-  const typedLocale = locale === "en" ? "en" : "fr";
 
   const s = useOrgUnitsBlockActions({
-    locale: typedLocale,
+    locale,
     orgUnits,
     syncOrgUnitsFromServer,
   });
@@ -57,7 +56,7 @@ export function SettingsOrganizationUnitsBlock({
   );
   const rootEnterpriseFallbackUnit: ConfiguredOrgUnit = {
     id: "0192c4e0-0000-7000-8000-000000000001",
-    name: `${resolveGlobalScopeLabel(isFr)} (${isFr ? "Racine" : "Root"})`,
+    name: `${resolveGlobalScopeLabel(isFr)} (${dictionary.routesAndWizards.settingsHubExtra.rootSuffix})`,
     slug: "orcia-root",
     level: "TEAM",
     parentId: "",

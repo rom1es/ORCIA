@@ -27,7 +27,7 @@ export function ModuleWorkspaceView({
   catalogMode,
   inboxMode,
 }: ModuleWorkspaceViewProps) {
-  const { dictionary, locale } = useI18n();
+  const { dictionary } = useI18n();
   const { pathname } = useOrciaNavigation();
   const { activeModuleKey } = useShellNavigation();
 
@@ -36,16 +36,11 @@ export function ModuleWorkspaceView({
     currentModule === "inbox" &&
     (inboxMode === "notifications" || Boolean(pathname?.startsWith("/inbox")));
   const pageCopy = dictionary.modulePages[currentModule];
-  const isFr = locale === "fr";
   const headerSubtitle = isInboxNotifications
-    ? isFr
-      ? "Centre de Notifications & Prises en Charge Équipe"
-      : "Team Notification & Claim Center"
+    ? dictionary.shellChrome.inboxNotificationsSubtitle
     : pageCopy.subtitle;
   const headerDescription = isInboxNotifications
-    ? isFr
-      ? "Suivi temps réel des arbitrages humains, validations en attente et prises en charge d'équipe."
-      : "Real-time tracking of human arbitrations, pending gates, and team claims."
+    ? dictionary.shellChrome.inboxNotificationsDescription
     : pageCopy.description;
 
   return (

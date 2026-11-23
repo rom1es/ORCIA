@@ -5,6 +5,8 @@ import { enDictionary } from "./locales/en";
 import { frDictionary } from "./locales/fr";
 import type { SupportedWebLocale, TranslationDictionary } from "./types";
 
+export type { SupportedWebLocale, TranslationDictionary };
+
 export const DICTIONARIES: Record<SupportedWebLocale, TranslationDictionary> = {
   fr: frDictionary,
   en: enDictionary,
@@ -61,6 +63,35 @@ export function I18nProvider({ initialLocale = "fr", children }: I18nProviderPro
     <I18nMountedContext.Provider value={true}>
       <I18nContext.Provider value={value}>{children}</I18nContext.Provider>
     </I18nMountedContext.Provider>
+  );
+}
+
+const FLAG_TO_LOCALE = new Map<boolean, SupportedWebLocale>([
+  [true, "fr"],
+  [false, "en"],
+]);
+
+export function resolveLocaleForFlag(
+  isFr?: boolean,
+  locale?: SupportedWebLocale,
+): SupportedWebLocale {
+  if (locale) return locale;
+  return FLAG_TO_LOCALE.get(isFr !== false) ?? "fr";
+}
+
+export function resolveDictionaryForFlag(
+  isFr?: boolean,
+  locale?: SupportedWebLocale,
+): TranslationDictionary {
+  return DICTIONARIES[resolveLocaleForFlag(isFr, locale)];
+}
+
+export function formatI18nTemplate(
+  template: string,
+  params: Readonly<Record<string, string | number>>,
+): string {
+  return template.replace(/\{([a-zA-Z0-9_]+)\}/g, (_match, key: string) =>
+    key in params ? String(params[key]) : `{${key}}`,
   );
 }
 

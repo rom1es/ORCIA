@@ -24,6 +24,7 @@ import type { AssistantDictionarySection } from "./locales/assistant_labels";
 import type { AuthSettingsDictionarySection } from "./locales/auth_settings_labels";
 import type { AutonomousSupervisionCopy } from "./locales/autonomous_supervision_labels";
 import type { AutonomyContractStudioCopy } from "./locales/autonomy_contract_labels";
+import type { ContextualHelpDictionarySection } from "./locales/contextual_help_labels";
 import type { Epic18SourcesLabels } from "./locales/epic18_sources_labels";
 import type { FinopsDictionarySection } from "./locales/finops_labels";
 import type { GovernanceAndPacksDictionarySection } from "./locales/governance_and_packs_labels";
@@ -31,6 +32,12 @@ import type { InboxAndCockpitDictionarySection } from "./locales/inbox_and_cockp
 import type { OntologyGlossaryCopy } from "./locales/ontology_glossary_labels";
 import type { ProcessOrchestrationModesDictionarySection } from "./locales/process_orchestration_modes_labels";
 import type { ReflexiveTraceAndInspectorDictionarySection } from "./locales/reflexive_trace_and_inspector_labels";
+import type { RoutesAndWizardsDictionary } from "./locales/routes_and_wizards_labels";
+import type { ShellChromeDictionary } from "./locales/shell_chrome_labels";
+import type {
+  ShellBreadcrumbsAndScopeDictionary,
+  ShellNotificationsDictionary,
+} from "./locales/shell_notifications_labels";
 import type { ShellAndSearchDictionarySection } from "./locales/shell_and_search_labels";
 import type { WorkflowTriggersStudioCopy } from "./locales/workflow_triggers_labels";
 
@@ -67,6 +74,11 @@ export interface TranslationDictionary
   clientErrors: ClientErrorLabels;
   rfc9457Errors: Rfc9457BannerDictionary;
   categoryAControllers: CategoryAControllersDictionary;
+  contextualHelp: ContextualHelpDictionarySection;
+  shellNotifications: ShellNotificationsDictionary;
+  shellBreadcrumbsAndScope: ShellBreadcrumbsAndScopeDictionary;
+  shellChrome: ShellChromeDictionary;
+  routesAndWizards: RoutesAndWizardsDictionary;
   aiModelsHub: AiModelsHubDictionary;
   authSettings: AuthSettingsDictionarySection;
   autonomousSupervision: AutonomousSupervisionCopy;

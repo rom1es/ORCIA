@@ -158,12 +158,17 @@ export function resolveSessionHatLabel(
   return resolveUserRoleDisplayLabel(effectiveKey, locale);
 }
 
+const PLURAL_PREDICATE_BY_LOCALE: Readonly<Record<UiLocalePreference, (count: number) => boolean>> = {
+  fr: (count) => count > 1,
+  en: (count) => count !== 1,
+};
+
 export function formatCountNoun(
   count: number,
   singular: string,
   plural: string,
   locale: UiLocalePreference = "fr",
 ): string {
-  const isPlural = locale === "en" ? count !== 1 : count > 1;
+  const isPlural = PLURAL_PREDICATE_BY_LOCALE[locale](count);
   return `${count} ${isPlural ? plural : singular}`;
 }

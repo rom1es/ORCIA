@@ -50,10 +50,9 @@ export interface SettingsHubViewProps {
 }
 
 export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
-  const { dictionary, locale } = useI18n();
+  const { dictionary, isFr } = useI18n();
   const { openHelpSection, navigateToRoute } = useShellNavigation();
   const copy = dictionary.settingsHub;
-  const isFr = locale === "fr";
   const roles = useAuthSessionStore((s) => s.roles);
   const activeHat = useAuthSessionStore((s) => s.activeHat);
   const readOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
@@ -116,7 +115,7 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
           <nav
             role="tablist"
             data-testid="settings-domain-tabs"
-            aria-label="Settings hub navigation"
+            aria-label={dictionary.routesAndWizards.settingsHubExtra.tabsAriaLabel}
             className="orcia-ds-tabs"
             style={{ marginTop: "8px", flexWrap: "nowrap", gap: "6px", overflowX: "auto" }}
           >
@@ -187,7 +186,7 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
           verb="read"
           allowedVerbs={access.allowedVerbs}
           labels={{
-            passiveLockBadge: isFr ? "Accès restreint" : "Restricted access",
+            passiveLockBadge: dictionary.routesAndWizards.settingsHubExtra.restrictedAccessBadge,
             passiveLockDescription: copy.lockedSectionNotice,
             requestAccessCta: copy.requestAccessLabel,
             disabledHint: copy.lockedSectionNotice,

@@ -23,6 +23,7 @@ import {
   mapAccountProfileDto,
   mapMcpTokensDto,
   mapPassthroughConnectorsDto,
+  parseUiLocalePreference,
 } from "./sidebarAccountMappers";
 
 export function useSidebarAccountSettings(options: {
@@ -75,8 +76,7 @@ export function useSidebarAccountSettings(options: {
         prefs.theme === "dark" || prefs.theme === "system" || prefs.theme === "light"
           ? prefs.theme
           : "light";
-      const validLocale: UiLocalePreference | null =
-        prefs.locale === "fr" || prefs.locale === "en" ? prefs.locale : null;
+      const validLocale = parseUiLocalePreference(prefs.locale);
       const validTone: UiAssistantTone =
         prefs.assistant_tone === "concise" ||
         prefs.assistant_tone === "detailed" ||
@@ -183,10 +183,11 @@ export function useSidebarAccountSettings(options: {
       setPersonalInstructions(updated.personal_instructions);
       setAutoOpenHelp(updated.auto_open_contextual_help);
       setNotificationsEnabled(updated.notifications_enabled);
-      if (updated.locale === "fr" || updated.locale === "en") {
-        applyZeroMsDomPreferences(updated.theme, updated.locale);
-        if (updated.locale !== locale) {
-          onLocaleChange(updated.locale);
+      const updatedLocale = parseUiLocalePreference(updated.locale);
+      if (updatedLocale) {
+        applyZeroMsDomPreferences(updated.theme, updatedLocale);
+        if (updatedLocale !== locale) {
+          onLocaleChange(updatedLocale);
         }
       }
       const currentAst = readSavedAssistantGovernancePrefs();

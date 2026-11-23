@@ -7,6 +7,7 @@ import type {
   ControlCenterWorkspaceGovItem,
   UiNotificationCenterItem,
 } from "@orcia/ui";
+import { formatI18nTemplate, resolveDictionaryForFlag } from "../i18n";
 import type {
   ConfiguredLlmTierMapping,
   ConfiguredOrgUnit,
@@ -16,6 +17,7 @@ import type { WorkspaceSseClaimEvent } from "./useWorkspaceEventsSse";
 
 export function buildShellNotificationItems(params: {
   readonly isFr: boolean;
+  readonly locale?: "fr" | "en";
   readonly platformAdmin: ConfiguredPlatformAdmin | null;
   readonly orgUnits: readonly ConfiguredOrgUnit[];
   readonly workspaces: readonly ControlCenterWorkspaceGovItem[];
@@ -31,6 +33,7 @@ export function buildShellNotificationItems(params: {
 }): readonly UiNotificationCenterItem[] {
   const {
     isFr,
+    locale,
     platformAdmin,
     orgUnits,
     workspaces,
@@ -49,6 +52,7 @@ export function buildShellNotificationItems(params: {
     return [];
   }
 
+  const copy = resolveDictionaryForFlag(isFr, locale).shellNotifications;
   const effectiveHasModels = hasModels ?? llmTiers.length > 0;
   const effectiveHasOrgUnits = hasOrgUnits ?? orgUnits.length > 0;
   const effectiveHasWorkspaces = hasWorkspaces ?? workspaces.length > 0;
@@ -63,15 +67,11 @@ export function buildShellNotificationItems(params: {
           {
             id: "notif-temporary-password",
             kind: "SETUP_PREREQUISITE" as const,
-            badgeLabel: isFr ? "Sécurité requise" : "Security required",
-            title: isFr
-              ? "Mot de passe temporaire actif — changement requis"
-              : "Temporary password active — change required",
-            description: isFr
-              ? "Votre compte utilise un mot de passe temporaire. Pour sécuriser vos accès, définissez un mot de passe personnel dès maintenant."
-              : "Your account is using a temporary password. To secure your access, set a personal password now.",
+            badgeLabel: copy.tempPassword.badge,
+            title: copy.tempPassword.title,
+            description: copy.tempPassword.description,
             targetRoute: "#change-password",
-            ctaLabel: isFr ? "Changer mon mot de passe →" : "Change my password →",
+            ctaLabel: copy.tempPassword.cta,
           },
         ]
       : []),
@@ -80,15 +80,11 @@ export function buildShellNotificationItems(params: {
           {
             id: "setup-llm-missing",
             kind: "SETUP_PREREQUISITE" as const,
-            badgeLabel: isFr ? "Prérequis requis" : "Prerequisite required",
-            title: isFr
-              ? "Aucun modèle IA configuré (menus Mon Assistant & Mes Agents verrouillés)"
-              : "No AI model configured (My Assistant & My Agents menus locked)",
-            description: isFr
-              ? "Enregistrez au moins un fournisseur et un modèle IA dans Configuration pour déverrouiller Mon Assistant, Mes Agents et Mes Processus."
-              : "Register at least one AI provider and model in Configuration to unlock My Assistant, My Agents, and My Processes.",
+            badgeLabel: copy.llmMissing.badge,
+            title: copy.llmMissing.title,
+            description: copy.llmMissing.description,
             targetRoute: "/settings",
-            ctaLabel: isFr ? "Configurer →" : "Configure →",
+            ctaLabel: copy.llmMissing.cta,
           },
         ]
       : []),
@@ -97,15 +93,11 @@ export function buildShellNotificationItems(params: {
           {
             id: "setup-billing-team-missing",
             kind: "SETUP_PREREQUISITE" as const,
-            badgeLabel: isFr ? "Équipe de facturation" : "Billing Team",
-            title: isFr
-              ? "Aucune Équipe de facturation rattachée (appels IA verrouillés)"
-              : "No billing Team attached (AI calls locked)",
-            description: isFr
-              ? "Tout appel IA doit être rattaché à une Équipe de facturation et un Espace de Travail. Créez une Équipe dans Configuration › Organisation et rattachez-y votre compte."
-              : "Every AI call must be attached to a billing Team and a Workspace. Create a Team in Configuration › Organization and attach your account.",
+            badgeLabel: copy.billingTeamMissing.badge,
+            title: copy.billingTeamMissing.title,
+            description: copy.billingTeamMissing.description,
             targetRoute: "/settings",
-            ctaLabel: isFr ? "Créer une Équipe →" : "Create a Team →",
+            ctaLabel: copy.billingTeamMissing.cta,
           },
         ]
       : []),
@@ -114,15 +106,11 @@ export function buildShellNotificationItems(params: {
           {
             id: "setup-org-missing",
             kind: "SETUP_PREREQUISITE" as const,
-            badgeLabel: isFr ? "Organisation" : "Organization",
-            title: isFr
-              ? "Structure d'organisation (Directions / BU & Équipes) à définir"
-              : "Organization structure (Divisions / BUs & Teams) to define",
-            description: isFr
-              ? "Créez au moins une Direction (BU) ou une Équipe dans Configuration pour déverrouiller l'attribution des règles d'habilitation."
-              : "Create at least one Division (BU) or Team in Configuration to unlock permission rule grants.",
+            badgeLabel: copy.orgMissing.badge,
+            title: copy.orgMissing.title,
+            description: copy.orgMissing.description,
             targetRoute: "/settings",
-            ctaLabel: isFr ? "Structurer →" : "Structure →",
+            ctaLabel: copy.orgMissing.cta,
           },
         ]
       : []),
@@ -131,26 +119,22 @@ export function buildShellNotificationItems(params: {
           {
             id: "setup-workspace-missing",
             kind: "SETUP_PREREQUISITE" as const,
-            badgeLabel: isFr ? "Espace requis" : "Workspace required",
-            title: isFr
-              ? "Aucun Espace de travail créé (menu Mes Processus verrouillé)"
-              : "No Workspace created (My Processes menu locked)",
-            description: isFr
-              ? "Créez votre premier Espace de travail (collectif ou privé rattaché à une Équipe de facturation) dans 📦 Mes Espaces pour rattacher vos sources documentaires et lancer des processus."
-              : "Create your first Workspace (team or private attached to a billing Team) in 📦 My Spaces to attach document sources and launch processes.",
+            badgeLabel: copy.workspaceMissing.badge,
+            title: copy.workspaceMissing.title,
+            description: copy.workspaceMissing.description,
             targetRoute: "/workspaces",
-            ctaLabel: isFr ? "Créer un Espace →" : "Create Workspace →",
+            ctaLabel: copy.workspaceMissing.cta,
           },
         ]
       : []),
     ...runs.map((run) => ({
       id: `run-decision-${run.runId}`,
       kind: "DECISION_WAITING" as const,
-      badgeLabel: isFr ? "Décision attendue" : "Decision pending",
+      badgeLabel: copy.decisionWaiting.badge,
       title: run.title,
       description: `${run.workspaceName} • ${run.currentStepKey} — ${run.blackboardSummary}`,
       targetRoute: "/cockpit",
-      ctaLabel: isFr ? "Ouvrir →" : "Open →",
+      ctaLabel: copy.decisionWaiting.cta,
     })),
     ...inboxNotifications
       .filter((n) => n.status !== "RESOLVED")
@@ -159,11 +143,11 @@ export function buildShellNotificationItems(params: {
         kind: (n.status === "OPEN" ? "ACTION_REQUIRED" : "DECISION_WAITING") as
           | "ACTION_REQUIRED"
           | "DECISION_WAITING",
-        badgeLabel: n.status === "OPEN" ? (isFr ? "Action requise" : "Action required") : (isFr ? "Prise en charge" : "Claimed"),
+        badgeLabel: n.status === "OPEN" ? copy.inboxTask.openBadge : copy.inboxTask.claimedBadge,
         title: n.title,
         description: n.summary,
         targetRoute: "/inbox",
-        ctaLabel: isFr ? "Boîte de réception →" : "Open inbox →",
+        ctaLabel: copy.inboxTask.cta,
       })),
     ...autonomousRuns.map((autoRun): UiNotificationCenterItem => {
       const isEsc = autoRun.run_status === "PAUSED_AUTONOMOUS_ESCALATION";
@@ -171,10 +155,10 @@ export function buildShellNotificationItems(params: {
       const isSample = autoRun.post_hoc_status === "PENDING_SAMPLE";
       if (isEsc || isOpen || isSample) {
         const badgeLabel = isEsc
-          ? (isFr ? "Escalade autonome" : "Autonomous escalation")
+          ? copy.autonomous.escalationBadge
           : isOpen
-            ? (isFr ? "Déclencheur suspendu" : "Trigger paused")
-            : (isFr ? "Contrôle qualité" : "Quality sample");
+            ? copy.autonomous.triggerPausedBadge
+            : copy.autonomous.qualitySampleBadge;
         return {
           id: `auto-priority-${autoRun.run_id}`,
           kind: "ACTION_REQUIRED",
@@ -182,11 +166,14 @@ export function buildShellNotificationItems(params: {
           triggerLabel: autoRun.trigger_label,
           badgeLabel,
           title: autoRun.workflow_title,
-          description: isSample
-            ? (isFr ? `Dossier tiré au sort pour contrôle qualité (${autoRun.trigger_label}).` : `Run selected for quality sampling review (${autoRun.trigger_label}).`)
-            : (isFr ? `Exécution automatisée nécessitant une attention (${autoRun.trigger_label}).` : `Automated run requiring attention (${autoRun.trigger_label}).`),
+          description: formatI18nTemplate(
+            isSample
+              ? copy.autonomous.sampleDescriptionTemplate
+              : copy.autonomous.attentionDescriptionTemplate,
+            { triggerLabel: autoRun.trigger_label },
+          ),
           targetRoute: isSample ? "/finops" : "/processes",
-          ctaLabel: isFr ? "Examiner →" : "Review →",
+          ctaLabel: copy.autonomous.reviewCta,
         };
       }
       return {
@@ -194,25 +181,30 @@ export function buildShellNotificationItems(params: {
         kind: "INFO",
         isAutonomousNominal: true,
         triggerLabel: autoRun.trigger_label,
-        badgeLabel: isFr ? "Automatisé sous contrat" : "Automated under contract",
+        badgeLabel: copy.autonomous.nominalBadge,
         title: autoRun.workflow_title,
         description: `${autoRun.trigger_label}`,
         targetRoute: "/processes",
-        ctaLabel: isFr ? "Superviser →" : "Inspect →",
+        ctaLabel: copy.autonomous.inspectCta,
       };
     }),
     ...(lastClaimEvent
-      ? [{
-          id: `sse-claim-${lastClaimEvent.eventId}`,
-          kind: "DECISION_WAITING" as const,
-          badgeLabel: isFr ? "Présence temps réel" : "Live presence",
-          title: lastClaimEvent.eventName === "task.claim.locked"
-            ? (isFr ? `Étape prise en charge (${lastClaimEvent.stepExecutionId})` : `Step claimed (${lastClaimEvent.stepExecutionId})`)
-            : (isFr ? `Étape libérée (${lastClaimEvent.stepExecutionId})` : `Step released (${lastClaimEvent.stepExecutionId})`),
-          description: `${lastClaimEvent.workspaceId} • ${lastClaimEvent.dispatchLatencyMs} ms`,
-          targetRoute: "/cockpit",
-          ctaLabel: isFr ? "Voir →" : "View →",
-        }]
+      ? [
+          {
+            id: `sse-claim-${lastClaimEvent.eventId}`,
+            kind: "DECISION_WAITING" as const,
+            badgeLabel: copy.livePresence.badge,
+            title: formatI18nTemplate(
+              lastClaimEvent.eventName === "task.claim.locked"
+                ? copy.livePresence.claimedTitleTemplate
+                : copy.livePresence.releasedTitleTemplate,
+              { stepExecutionId: lastClaimEvent.stepExecutionId },
+            ),
+            description: `${lastClaimEvent.workspaceId} • ${lastClaimEvent.dispatchLatencyMs} ms`,
+            targetRoute: "/cockpit",
+            ctaLabel: copy.livePresence.cta,
+          },
+        ]
       : []),
   ];
 }

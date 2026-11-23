@@ -8,6 +8,7 @@ import { AUTONOMOUS_SUPERVISION_FR_LABELS } from "./autonomous_supervision_label
 import { AUTONOMY_CONTRACT_FR_LABELS } from "./autonomy_contract_labels";
 import { CATEGORY_A_CONTROLLER_FR_LABELS } from "./category_a_controller_labels";
 import { CLIENT_ERRORS_FR_LABELS } from "./client_errors_labels";
+import { CONTEXTUAL_HELP_FR } from "./contextual_help_catalog_fr";
 import { CORE_DOMAIN_FR_LABELS } from "./core_domain_labels_fr";
 import { CORE_SHELL_FR_LABELS } from "./core_shell_labels_fr";
 import { EPIC18_SOURCES_LABELS_FR } from "./epic18_sources_labels";
@@ -20,6 +21,12 @@ import { PROCESS_ORCHESTRATION_MODES_FR_LABELS } from "./process_orchestration_m
 import { PROFILE_OVERVIEW_FR_LABELS } from "./profile_overview_labels";
 import { REFLEXIVE_TRACE_AND_INSPECTOR_FR_LABELS } from "./reflexive_trace_and_inspector_labels";
 import { RFC9457_BANNER_FR_LABELS } from "./rfc9457_banner_labels";
+import { ROUTES_AND_WIZARDS_FR } from "./routes_and_wizards_labels_fr";
+import { SHELL_CHROME_FR } from "./shell_chrome_labels_fr";
+import {
+  SHELL_BREADCRUMBS_AND_SCOPE_FR,
+  SHELL_NOTIFICATIONS_FR,
+} from "./shell_notifications_labels_fr";
 import { SHELL_AND_SEARCH_FR_LABELS } from "./shell_and_search_labels";
 import { WORKFLOW_TRIGGERS_FR_LABELS } from "./workflow_triggers_labels";
 
@@ -40,6 +47,11 @@ export const frDictionary: TranslationDictionary = {
   clientErrors: CLIENT_ERRORS_FR_LABELS,
   rfc9457Errors: RFC9457_BANNER_FR_LABELS,
   categoryAControllers: CATEGORY_A_CONTROLLER_FR_LABELS,
+  contextualHelp: CONTEXTUAL_HELP_FR,
+  shellNotifications: SHELL_NOTIFICATIONS_FR,
+  shellBreadcrumbsAndScope: SHELL_BREADCRUMBS_AND_SCOPE_FR,
+  shellChrome: SHELL_CHROME_FR,
+  routesAndWizards: ROUTES_AND_WIZARDS_FR,
   aiModelsHub: AI_MODELS_HUB_FR,
   authSettings: AUTH_SETTINGS_FR_LABELS,
   autonomousSupervision: AUTONOMOUS_SUPERVISION_FR_LABELS,

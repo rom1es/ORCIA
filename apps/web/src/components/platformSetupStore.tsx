@@ -7,6 +7,7 @@ import type {
   UiOntologyConceptView,
 } from "@orcia/ui";
 import React, { createContext, useContext, useRef, useState } from "react";
+import { useI18n } from "../i18n";
 import { ClientCodedError } from "../lib/clientErrorCodes";
 import { useAuthSessionStore } from "../stores/authSessionStore";
 import { createPlatformGovernanceActions } from "./platformSetupGovernanceActions";
@@ -68,6 +69,7 @@ const isVitest =
 const PlatformSetupContext = createContext<PlatformSetupContextValue | null>(null);
 
 export function PlatformSetupProvider({ children }: { children: React.ReactNode }) {
+  const { locale } = useI18n();
   const [isInitialLoading, setIsInitialLoading] = useState<boolean>(() => !isVitest);
   const [lastSyncError, setLastSyncError] = useState<string | null>(null);
   const [platformAdmin, setPlatformAdmin] = useState<ConfiguredPlatformAdmin | null>(() =>
@@ -183,6 +185,7 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
     });
 
   const governanceActions = createPlatformGovernanceActions({
+    locale,
     platformAdmin,
     orgUnits,
     rbacGrants,
