@@ -12,18 +12,16 @@ from orcia_core.orchestration.ai_models_capabilities import infer_default_suppor
 from orcia_core.orchestration.ai_models_connection_helpers import (
     AiModelConnectionTestSuccess,
     build_chat_connection_probe,
+    maybe_retry_gemini_interactions_probe,
+    post_pinned_probe,
     raise_for_chat_http_status,
+    raise_for_embedding_connection_error,
 )
 from orcia_core.orchestration.ai_models_crypto import validate_safe_llm_endpoint_url
 from orcia_core.orchestration.ai_models_errors import (
-    ModelConnectionAuthFailedError,
     ModelConnectionNetworkError,
-    ModelConnectionNotFoundError,
-    ModelConnectionRateLimitedError,
     ModelConnectionTimeoutError,
-    ModelConnectionUpstreamError,
 )
-from orcia_core.orchestration.ai_models_pinned_http import prepare_pinned_http_request
 from orcia_core.orchestration.ai_models_records import LlmProtocolMode
 from orcia_core.orchestration.ai_models_urls import (
     build_legacy_local_chat_url as _build_legacy_local_chat_url,
@@ -56,6 +54,7 @@ async def _test_chat_connection(
     provider_slug: str | None,
     timeout_seconds: float,
     instance: str,
+    fallback_model_name: str | None = None,
 ) -> AiModelConnectionTestSuccess:
     target_url, headers, body = build_chat_connection_probe(
         endpoint_uri=endpoint_uri,
@@ -66,11 +65,8 @@ async def _test_chat_connection(
     )
     t0 = time.perf_counter()
     try:
-        p_url, p_headers, ext = await prepare_pinned_http_request(
-            http_client, target_url, headers, instance=instance
-        )
-        resp = await http_client.post(
-            p_url, json=body, headers=p_headers, timeout=timeout_seconds, extensions=ext
+        resp = await post_pinned_probe(
+            http_client, target_url, headers, body, timeout_seconds, instance
         )
         if (
             resp.status_code == 404
@@ -80,20 +76,29 @@ async def _test_chat_connection(
         ):
             fallback_url = _build_legacy_local_chat_url(endpoint_uri)
             if fallback_url != target_url:
-                fb_url, fb_headers, fb_ext = await prepare_pinned_http_request(
-                    http_client, fallback_url, headers, instance=instance
-                )
-                resp = await http_client.post(
-                    fb_url,
-                    json={
+                resp = await post_pinned_probe(
+                    http_client,
+                    fallback_url,
+                    headers,
+                    {
                         "model": model_name,
                         "messages": [{"role": "user", "content": "ping"}],
                         "stream": False,
                     },
-                    headers=fb_headers,
-                    timeout=timeout_seconds,
-                    extensions=fb_ext,
+                    timeout_seconds,
+                    instance,
                 )
+        elif protocol_mode == "gemini_native" or _is_gemini_native(endpoint_uri, provider_slug):
+            target_url, resp = await maybe_retry_gemini_interactions_probe(
+                http_client,
+                resp,
+                endpoint_uri=endpoint_uri,
+                target_url=target_url,
+                headers=headers,
+                model_name=model_name,
+                timeout_seconds=timeout_seconds,
+                instance=instance,
+            )
         latency_ms = max(1, int(round((time.perf_counter() - t0) * 1000.0)))
     except httpx.TimeoutException as exc:
         logger.warning("llm_connection_test_timeout", endpoint=target_url, model=model_name)
@@ -112,6 +117,34 @@ async def _test_chat_connection(
             detail_override=f"Network error while connecting to '{target_url}'.",
             instance=instance,
         ) from exc
+
+    if resp.status_code not in (200, 401, 403):
+        fb_model = (fallback_model_name or "").strip()
+        if fb_model and fb_model != model_name.strip():
+            logger.warning(
+                "llm_connection_test_falling_back_to_secondary",
+                primary_model=model_name,
+                fallback_model=fb_model,
+                status_code=resp.status_code,
+            )
+            fb_outcome = await _test_chat_connection(
+                http_client=http_client,
+                endpoint_uri=endpoint_uri,
+                protocol_mode=protocol_mode,
+                model_name=fb_model,
+                api_key=api_key,
+                provider_slug=provider_slug,
+                timeout_seconds=timeout_seconds,
+                instance=instance,
+                fallback_model_name=None,
+            )
+            ms = fb_outcome.latency_ms
+            return AiModelConnectionTestSuccess(
+                latency_ms=ms,
+                message_fr=f"Connexion établie via le modèle de secours ({fb_model}) en {ms} ms.",
+                message_en=f"Connection established via fallback model ({fb_model}) in {ms} ms.",
+                supports_tools=fb_outcome.supports_tools,
+            )
 
     if resp.status_code != 200:
         raise_for_chat_http_status(
@@ -159,22 +192,18 @@ async def _test_embedding_connection(
     assert_embedding_usage_supported(provider_slug=provider_slug or "", protocol_mode=protocol_mode)
     validate_safe_llm_endpoint_url(endpoint_uri, instance=instance)
     adapter: EmbeddingPort
-    if protocol_mode == "gemini_native" or _is_gemini_native(endpoint_uri, provider_slug):
-        adapter = HttpxGeminiNativeEmbeddingAdapter(
-            http_client=http_client,
-            endpoint_uri=endpoint_uri,
-            model_name=model_name,
-            api_key=api_key,
-            timeout_seconds=timeout_seconds,
-        )
-    else:
-        adapter = HttpxOpenAiCompatibleEmbeddingAdapter(
-            http_client=http_client,
-            endpoint_uri=endpoint_uri,
-            model_name=model_name,
-            api_key=api_key,
-            timeout_seconds=timeout_seconds,
-        )
+    adapter_cls = (
+        HttpxGeminiNativeEmbeddingAdapter
+        if (protocol_mode == "gemini_native" or _is_gemini_native(endpoint_uri, provider_slug))
+        else HttpxOpenAiCompatibleEmbeddingAdapter
+    )
+    adapter = adapter_cls(
+        http_client=http_client,
+        endpoint_uri=endpoint_uri,
+        model_name=model_name,
+        api_key=api_key,
+        timeout_seconds=timeout_seconds,
+    )
 
     t0 = time.perf_counter()
     try:
@@ -184,30 +213,7 @@ async def _test_embedding_connection(
         raise
     except EmbeddingGenerationFailedError as exc:
         latency_ms = max(1, int(round((time.perf_counter() - t0) * 1000.0)))
-        err_msg = str(exc)
-        if "HTTP 401" in err_msg or "HTTP 403" in err_msg:
-            raise ModelConnectionAuthFailedError(
-                detail_override=err_msg, instance=instance, latency_ms=latency_ms
-            ) from exc
-        if "HTTP 404" in err_msg:
-            raise ModelConnectionNotFoundError(
-                detail_override=err_msg, instance=instance, latency_ms=latency_ms
-            ) from exc
-        if "HTTP 429" in err_msg:
-            raise ModelConnectionRateLimitedError(
-                detail_override=err_msg, instance=instance, latency_ms=latency_ms
-            ) from exc
-        if isinstance(exc.__cause__, httpx.TimeoutException) or "Timeout" in err_msg:
-            raise ModelConnectionTimeoutError(
-                detail_override=f"Timeout on embedding endpoint: {err_msg}",
-                instance=instance,
-                latency_ms=latency_ms,
-            ) from exc
-        if "Network error" in err_msg:
-            raise ModelConnectionNetworkError(detail_override=err_msg, instance=instance) from exc
-        raise ModelConnectionUpstreamError(
-            detail_override=err_msg, instance=instance, latency_ms=latency_ms
-        ) from exc
+        raise_for_embedding_connection_error(exc, instance=instance, latency_ms=latency_ms)
     except httpx.TimeoutException as exc:
         raise ModelConnectionTimeoutError(
             detail_override="Timeout on embedding endpoint.", instance=instance
@@ -239,6 +245,7 @@ async def test_ai_model_endpoint_connection(
     usage: Literal["chat", "embedding"] = "chat",
     api_key: str | None = None,
     provider_slug: str | None = None,
+    fallback_model_name: str | None = None,
     timeout_seconds: float = DEFAULT_TEST_TIMEOUT_SECONDS,
     instance: str = "/api/v1/settings/ai-models/test",
 ) -> AiModelConnectionTestSuccess:
@@ -265,6 +272,7 @@ async def test_ai_model_endpoint_connection(
         provider_slug=provider_slug,
         timeout_seconds=timeout_seconds,
         instance=instance,
+        fallback_model_name=fallback_model_name,
     )
 
 

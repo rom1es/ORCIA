@@ -6,7 +6,7 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-22",
+  "lastSyncedDate": "2026-11-23",
   "stats": {
     "activeRoutesCount": 28,
     "uiPrimitivesCount": 139,
@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 219,
+    "techLeadReportsCount": 220,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -550,6 +550,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-23",
+      "phaseOrStory": "Ajustement Transverse",
+      "reportFile": "2026-11-23-gemini-interactions-api-et-fallback-secours-tech-lead-report.md",
+      "domain": "Support Google Gemini Interactions API (/v1beta/interactions), Modèle de Secours Runtime (fallback_model_name), Tri Découverte Gemini & Résolution protocol_mode Frontend (CAP-052, CAP-053, CAP-074, CAP-076, CAP-190)",
+      "summary": "Vérifié & clôturé (Testing Sub-Agent indépendant) : dialecte pur llm_gemini_interactions.py (196 L, zéro SDK AD-19), auto-switch HTTP 400 (model → agent) + bascule fallback_model_name avant premier octet (_llm_streaming_fallbacks.py, llm_streaming_base_httpx.py, ai_models_connection.py, llm_endpoint_resolver.py, _ai_models_helpers.py), support createInteraction & tri generateContent (ai_models_discovery_dialects.py), factorisation resolveEffectiveLlmProtocolMode (settingsAiModelsPresets.ts, useAiModelConfigModalState.ts réduit à 273 L) ; tous les 21 fichiers <= 300 L, 97 % couv. branches 13 modules (91%–99%), 1049 passed tests/unit, 180 passed tests/security+evals+contract, 15 passed PG18+Redis (testcontainers), 9/9 Turbo (427 tests JS/TS), 7 passed (1.6m) Playwright Desktop (16, 02), ruff (1562 fichiers)/mypy --strict (722 fichiers)/lint-imports (5/5, 765 fichiers)/export_openapi (0-diff)/lint_spine (0)/detect-secrets propres."
+    },
     {
       "date": "2026-11-22",
       "phaseOrStory": "Story 26.10",

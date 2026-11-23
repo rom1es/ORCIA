@@ -16,16 +16,26 @@ logger = get_logger("orcia.assistant.usage")
 def extract_usage_tokens_from_payload(payload: dict[str, Any]) -> tuple[int, int] | None:
     """Extract `(input_tokens, output_tokens)` from OpenAI, Anthropic, Gemini or local JSON."""
     usage = payload.get("usage")
+    if not isinstance(usage, dict) and isinstance(payload.get("interaction"), dict):
+        usage = payload["interaction"].get("usage")
     if isinstance(usage, dict):
         in_t = (
             usage.get("input_tokens")
             if usage.get("input_tokens") is not None
-            else usage.get("prompt_tokens")
+            else (
+                usage.get("total_input_tokens")
+                if usage.get("total_input_tokens") is not None
+                else usage.get("prompt_tokens")
+            )
         )
         out_t = (
             usage.get("output_tokens")
             if usage.get("output_tokens") is not None
-            else usage.get("completion_tokens")
+            else (
+                usage.get("total_output_tokens")
+                if usage.get("total_output_tokens") is not None
+                else usage.get("completion_tokens")
+            )
         )
         if in_t is not None or out_t is not None:
             return max(0, int(in_t or 0)), max(0, int(out_t or 0))

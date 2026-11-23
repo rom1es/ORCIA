@@ -14,6 +14,8 @@ import type { AiModelsHubDictionary } from "../../../i18n/locales/ai_models_hub_
 import {
   discoverProviderModelsViaApi,
   isGoogleGeminiFamily,
+  resolveEffectiveLlmProtocolMode,
+  type LlmProtocolMode,
 } from "../../../routes/settingsAiModelsPresets";
 
 export type AiModelModalMode = "create" | "edit" | "rotate-key";
@@ -24,14 +26,8 @@ export function useAiModelConfigModalState(params: {
   readonly mode: AiModelModalMode;
   readonly initialMapping?: AiModelMappingItemResponse | null;
   readonly labels: AiModelsHubDictionary;
-  readonly onSubmitCreate: (
-    payload: AiModelCreateRequest,
-    andTest: boolean,
-  ) => Promise<boolean>;
-  readonly onSubmitPatch: (
-    mappingId: string,
-    payload: AiModelPatchRequest,
-  ) => Promise<boolean>;
+  readonly onSubmitCreate: (payload: AiModelCreateRequest, andTest: boolean) => Promise<boolean>;
+  readonly onSubmitPatch: (mappingId: string, payload: AiModelPatchRequest) => Promise<boolean>;
 }) {
   const { open, onOpenChange, mode, initialMapping, labels, onSubmitCreate, onSubmitPatch } =
     params;
@@ -48,9 +44,7 @@ export function useAiModelConfigModalState(params: {
   const [rawApiKey, setRawApiKey] = useState<string>("");
   const [secretAction, setSecretAction] = useState<"keep" | "set" | "clear">("keep");
   const [secretInputText, setSecretInputText] = useState<string>("");
-  const [protocolMode, setProtocolMode] = useState<
-    "openai_compatible" | "gemini_native" | "anthropic_messages"
-  >("openai_compatible");
+  const [protocolMode, setProtocolMode] = useState<LlmProtocolMode>("openai_compatible");
   const [usage, setUsage] = useState<"chat" | "embedding">("chat");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -110,19 +104,16 @@ export function useAiModelConfigModalState(params: {
         return;
       }
 
-      const effectiveProtocol =
-        isGemini && targetEndpoint.includes("openai")
-          ? "openai_compatible"
-          : isGemini
-            ? "gemini_native"
-            : protocolMode;
-
+      const effectiveProtocol = resolveEffectiveLlmProtocolMode(
+        modelFamily,
+        targetEndpoint,
+        protocolMode,
+      );
       const effectiveKey =
         opts?.forcedKey ??
         (authMode === "api_key"
           ? rawApiKey.trim() || (secretAction === "set" ? secretInputText.trim() : "") // pragma: allowlist secret
           : undefined);
-
       const canShowError =
         Boolean(opts?.explicit) ||
         hasUserInteracted ||
@@ -132,7 +123,6 @@ export function useAiModelConfigModalState(params: {
 
       setIsDiscovering(true);
       setDiscoveryError(null);
-
       const res = await discoverProviderModelsViaApi({
         endpointUri: targetEndpoint,
         protocolMode: effectiveProtocol,
@@ -160,18 +150,8 @@ export function useAiModelConfigModalState(params: {
       }
     },
     [
-      endpointUri,
-      isGemini,
-      protocolMode,
-      authMode,
-      rawApiKey,
-      secretAction,
-      secretInputText,
-      hasUserInteracted,
-      mode,
-      modelFamily,
-      initialMapping?.id,
-      labels.modelDiscoveryNoMatch,
+      endpointUri, protocolMode, authMode, rawApiKey, secretAction, secretInputText,
+      hasUserInteracted, mode, modelFamily, initialMapping?.id, labels.modelDiscoveryNoMatch,
     ],
   );
 
@@ -181,22 +161,13 @@ export function useAiModelConfigModalState(params: {
       setDiscoveryError(null);
       return;
     }
-
     const timer = setTimeout(() => {
       void triggerDiscovery();
     }, 500);
-
     return () => clearTimeout(timer);
   }, [
-    open,
-    endpointUri,
-    rawApiKey,
-    secretInputText,
-    authMode,
-    modelFamily,
-    mode,
-    initialMapping?.id,
-    triggerDiscovery,
+    open, endpointUri, rawApiKey, secretInputText, authMode, modelFamily,
+    mode, initialMapping?.id, triggerDiscovery,
   ]);
 
   const handleSecretAction = (act: UiSecretInputValue) => {
@@ -214,6 +185,11 @@ export function useAiModelConfigModalState(params: {
 
     setIsSubmitting(true);
     setErrorMessage(null);
+    const effectiveProtocol = resolveEffectiveLlmProtocolMode(
+      modelFamily,
+      endpointUri,
+      protocolMode,
+    );
 
     try {
       if (mode === "create") {
@@ -228,12 +204,7 @@ export function useAiModelConfigModalState(params: {
           fallback_model_name: fallbackModel.trim() || null,
           endpoint_uri: endpointUri.trim(),
           auth_mode: authMode,
-          protocol_mode:
-            isGemini && endpointUri.includes("openai")
-              ? "openai_compatible"
-              : isGemini
-                ? "gemini_native"
-                : protocolMode,
+          protocol_mode: effectiveProtocol,
           usage,
           env_var_name: authMode === "env_var" ? envVarName.trim() : null,
           secret_input:
@@ -242,8 +213,7 @@ export function useAiModelConfigModalState(params: {
               : null,
           fallback_order: 1,
         };
-        const ok = await onSubmitCreate(payload, andTest);
-        if (ok) onOpenChange(false);
+        if (await onSubmitCreate(payload, andTest)) onOpenChange(false);
       } else if (mode === "edit" && initialMapping) {
         const patch: AiModelPatchRequest = {
           display_name: displayName.trim() || null,
@@ -251,11 +221,10 @@ export function useAiModelConfigModalState(params: {
           endpoint_uri: endpointUri.trim() || null,
           auth_mode: authMode,
           env_var_name: authMode === "env_var" ? envVarName.trim() : null,
-          protocol_mode: protocolMode,
+          protocol_mode: effectiveProtocol,
           usage,
         };
-        const ok = await onSubmitPatch(initialMapping.id, patch);
-        if (ok) onOpenChange(false);
+        if (await onSubmitPatch(initialMapping.id, patch)) onOpenChange(false);
       } else if (mode === "rotate-key" && initialMapping) {
         const patch: AiModelPatchRequest = {
           secret_input: {
@@ -263,8 +232,7 @@ export function useAiModelConfigModalState(params: {
             plaintext_value: secretAction === "set" ? secretInputText.trim() || null : null, // pragma: allowlist secret
           },
         };
-        const ok = await onSubmitPatch(initialMapping.id, patch);
-        if (ok) onOpenChange(false);
+        if (await onSubmitPatch(initialMapping.id, patch)) onOpenChange(false);
       }
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : String(err));
@@ -274,21 +242,14 @@ export function useAiModelConfigModalState(params: {
   };
 
   return {
-    selectedTier,
-    setSelectedTier,
-    selectedEffort,
-    setSelectedEffort,
+    selectedTier, setSelectedTier, selectedEffort, setSelectedEffort,
     modelFamily,
     setModelFamily: (val: string) => {
       setHasUserInteracted(true);
       setModelFamily(val);
     },
-    displayName,
-    setDisplayName,
-    primaryModel,
-    setPrimaryModel,
-    fallbackModel,
-    setFallbackModel,
+    displayName, setDisplayName, primaryModel, setPrimaryModel,
+    fallbackModel, setFallbackModel,
     endpointUri,
     setEndpointUri: (val: string) => {
       setHasUserInteracted(true);
@@ -299,23 +260,14 @@ export function useAiModelConfigModalState(params: {
       setHasUserInteracted(true);
       setAuthMode(val);
     },
-    envVarName,
-    setEnvVarName,
+    envVarName, setEnvVarName,
     rawApiKey,
     setRawApiKey: (val: string) => {
       setHasUserInteracted(true);
       setRawApiKey(val);
     },
-    isGemini,
-    usage,
-    setUsage,
-    errorMessage,
-    isSubmitting,
-    discoveredModels,
-    isDiscovering,
-    discoveryError,
-    triggerDiscovery,
-    handleSecretAction,
-    handleFormSubmit,
+    isGemini, usage, setUsage, errorMessage, isSubmitting,
+    discoveredModels, isDiscovering, discoveryError,
+    triggerDiscovery, handleSecretAction, handleFormSubmit,
   };
 }

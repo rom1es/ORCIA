@@ -24,6 +24,7 @@ import { useAuthSessionStore } from "../stores/authSessionStore";
 import {
   detectGoogleGeminiProtocolMode,
   isGoogleGeminiFamily,
+  resolveEffectiveLlmProtocolMode,
   runRemoteLlmConnectionTestEvaluation,
   validateLlmConnectionParameters,
   type ConnectionTestFeedback,
@@ -227,7 +228,7 @@ export function useAiModelsSectionController(params: {
           fallback_model_name: secondaryModel.trim() || null,
           endpoint_uri: endpointUrl.trim(),
           auth_mode: authMode,
-          protocol_mode: "openai_compatible",
+          protocol_mode: resolveEffectiveLlmProtocolMode(modelFamily, endpointUrl),
           secret_input:
             authMode === "api_key" && apiKeyInput.trim()
               ? { action: "set", plaintext_value: apiKeyInput.trim() }

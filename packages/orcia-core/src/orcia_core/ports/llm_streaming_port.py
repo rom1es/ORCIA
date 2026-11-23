@@ -29,6 +29,7 @@ class LlmEndpointConfig:
     protocol_mode: str = ""
     max_tokens_budget: int = 8192
     supports_tools: bool = False
+    fallback_model_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

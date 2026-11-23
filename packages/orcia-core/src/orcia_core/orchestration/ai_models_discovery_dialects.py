@@ -21,6 +21,7 @@ from orcia_core.orchestration.ai_models_errors import (
     ModelDiscoveryNetworkError,
 )
 from orcia_core.orchestration.ai_models_pinned_http import prepare_pinned_http_request
+from orcia_core.orchestration.ai_models_urls import is_gemini_interactions_only_model
 
 logger = get_logger(__name__)
 
@@ -38,7 +39,7 @@ async def discover_gemini_native(
     headers: dict[str, str] = {"Accept": "application/json"}
     if api_key:
         headers["x-goog-api-key"] = api_key
-    all_models: list[DiscoveredModel] = []
+    ranked_models: list[tuple[int, DiscoveredModel]] = []
     page_token: str | None = None
 
     while True:
@@ -87,24 +88,35 @@ async def discover_gemini_native(
             model_id = raw_name[len("models/") :] if raw_name.startswith("models/") else raw_name
             methods = list(m.get("supportedGenerationMethods") or [])
             is_embed = "embedContent" in methods or "batchEmbedContents" in methods
-            is_chat = "generateContent" in methods
+            is_chat = "generateContent" in methods or "createInteraction" in methods
             hint: ModelUsageHint = (
                 "embedding"
                 if (is_embed and not is_chat)
                 else ("chat" if (is_chat and not is_embed) else "unknown")
             )
-            all_models.append(
-                DiscoveredModel(
-                    id=model_id,
-                    display_name=m.get("displayName") or model_id,
-                    description=m.get("description"),
-                    usage_hint=hint,
+            is_standard_chat = ("generateContent" in methods) and not (
+                is_gemini_interactions_only_model(model_id)
+            )
+            rank = (
+                0
+                if (hint == "chat" and is_standard_chat)
+                else (1 if hint in ("chat", "embedding") else 2)
+            )
+            ranked_models.append(
+                (
+                    rank,
+                    DiscoveredModel(
+                        id=model_id,
+                        display_name=m.get("displayName") or model_id,
+                        description=m.get("description"),
+                        usage_hint=hint,
+                    ),
                 )
             )
         page_token = data.get("nextPageToken")
-        if not page_token or len(all_models) >= MAX_PAGINATED_MODELS:
+        if not page_token or len(ranked_models) >= MAX_PAGINATED_MODELS:
             break
-    return sorted(all_models, key=lambda m: m.id.lower())
+    return [m for _, m in sorted(ranked_models, key=lambda item: (item[0], item[1].id.lower()))]
 
 
 async def discover_anthropic_messages(

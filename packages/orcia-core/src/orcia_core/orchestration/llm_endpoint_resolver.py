@@ -31,6 +31,10 @@ def extract_tier_endpoint_from_dict(item: dict[str, Any]) -> LlmEndpointConfig |
     tier_key = str(item.get("tier") or item.get("tierKey") or "medium").strip().lower()
     raw_key = item.get("apiKey")
     api_key = str(raw_key).strip() if isinstance(raw_key, str) and raw_key.strip() else None
+    raw_fb = item.get("secondaryModel") or item.get("fallback_model_name")
+    fallback_model_name = (
+        str(raw_fb).strip() if isinstance(raw_fb, str) and raw_fb.strip() else None
+    )
     protocol_mode = str(item.get("protocolMode") or item.get("protocol_mode") or "").strip()
     raw_budget = item.get("maxTokensBudget") or item.get("max_tokens_budget") or 8192
     try:
@@ -60,6 +64,7 @@ def extract_tier_endpoint_from_dict(item: dict[str, Any]) -> LlmEndpointConfig |
         protocol_mode=protocol_mode,
         max_tokens_budget=budget,
         supports_tools=supports_tools,
+        fallback_model_name=fallback_model_name,
     )
 
 
@@ -139,6 +144,7 @@ async def resolve_configured_llm_endpoint_from_sources(
                                     128, int(getattr(rec, "max_tokens_budget", 8192))
                                 ),
                                 supports_tools=bool(getattr(rec, "supports_tools", False)),
+                                fallback_model_name=getattr(rec, "fallback_model_name", None),
                             ),
                             None,
                         )
@@ -181,6 +187,7 @@ async def resolve_configured_llm_endpoint_from_sources(
                     protocol_mode=getattr(chosen_rec, "protocol_mode", ""),
                     max_tokens_budget=max(128, int(getattr(chosen_rec, "max_tokens_budget", 8192))),
                     supports_tools=bool(getattr(chosen_rec, "supports_tools", False)),
+                    fallback_model_name=getattr(chosen_rec, "fallback_model_name", None),
                 ),
                 None,
             )

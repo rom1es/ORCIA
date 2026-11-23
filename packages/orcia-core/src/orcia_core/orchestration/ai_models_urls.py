@@ -40,13 +40,52 @@ def is_gemini_native_provider(
     )
 
 
+def is_gemini_interactions_only_model(model_name: str) -> bool:
+    """Return True for Gemini models/agents that exclusively use the Interactions API."""
+    model_id = (model_name or "").strip().lower().removeprefix("models/").strip()
+    return model_id.startswith(("antigravity-", "deep-research-")) or "interactions" in model_id
+
+
+def is_gemini_interactions_url(endpoint_uri: str) -> bool:
+    """Return True if the endpoint URI already targets `/interactions`."""
+    u = (endpoint_uri or "").strip().lower().rstrip("/")
+    return u.endswith("/interactions") or "/interactions?" in u
+
+
+def build_gemini_interactions_url(endpoint_uri: str) -> str:
+    """Construct Google Gemini Interactions API URL (`/v1beta/interactions`)."""
+    base = endpoint_uri.strip().rstrip("/")
+    low = base.lower()
+    if low.endswith("/interactions") or "/interactions?" in low:
+        return base
+    if ":generateContent" in base or ":streamGenerateContent" in base or "/models/" in base:
+        if "/models/" in base:
+            root = base.split("/models/", 1)[0].rstrip("/")
+        else:
+            root = base.split(":generateContent")[0].split(":streamGenerateContent")[0].rstrip("/")
+            for ver in ("/v1beta", "/v1alpha", "/v1"):
+                if ver in root:
+                    root = root.split(ver, 1)[0] + ver
+                    break
+        parsed_root = urlparse(root)
+        if not parsed_root.path or parsed_root.path == "/":
+            return f"{root}/v1beta/interactions"
+        return f"{root}/interactions"
+    if base.endswith("/models"):
+        base = base[: -len("/models")].rstrip("/")
+    parsed = urlparse(base)
+    if not parsed.path or parsed.path == "/":
+        return f"{base}/v1beta/interactions"
+    return f"{base}/interactions"
+
+
 def build_gemini_native_chat_url(
     endpoint_uri: str,
     model_name: str,
     *,
     stream: bool = False,
 ) -> str:
-    """Construct Google Gemini Native `:generateContent` or `:streamGenerateContent?alt=sse` URL."""
+    """Construct Gemini `:generateContent`, `:streamGenerateContent?alt=sse`, or `/interactions`."""
     base = endpoint_uri.strip().rstrip("/")
     cleaned_name = (model_name or "").strip()
     if not cleaned_name:
@@ -54,6 +93,8 @@ def build_gemini_native_chat_url(
     model_id = cleaned_name.removeprefix("models/").strip()
     if not model_id:
         raise ValueError("model_name is mandatory and cannot be empty")
+    if is_gemini_interactions_url(base) or is_gemini_interactions_only_model(model_name):
+        return build_gemini_interactions_url(base)
     action = "streamGenerateContent?alt=sse" if stream else "generateContent"
     if ":generateContent" in base or ":streamGenerateContent" in base:
         prefix = base.split(":generateContent")[0].split(":streamGenerateContent")[0]

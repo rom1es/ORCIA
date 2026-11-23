@@ -379,15 +379,18 @@ capabilities:
       - tests/unit/test_story_19_5_ai_models_usage_and_uniqueness.py
       - tests/integration/api/test_story_19_5_ai_models_usage_postgres18.py
       - apps/web/src/__tests__/story-25-4-spinner-localized-timeout-and-delete.test.tsx
+      - tests/unit/test_gemini_interactions_and_fallback_model.py
+      - tests/unit/test_gemini_endpoint_resolver_coverage.py
+      - apps/web/src/__tests__/gemini-protocol-mode-resolution.test.ts
       - apps/web/e2e/16-ai-models-reindex-connectors-and-broker.spec.ts
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-23"
     surfaces: { route: /settings/ai-models, api: ai_models_hub.py, ui: "SettingsAiModelsSection + AiModelsMasterTable + AiModelMappingRowCard + AiModelConfigModal + OrciaModelCombobox + AiModelDeleteDialog + OrciaSpinner", migration: "20261114_1705, 20261115_2105" }
   - id: CAP-053
     title: Modèles IA — authentification, test de connexion, garde SSRF
     fr: [FR-31]
     origin: adhoc
-    origin_ref: 2026-11-05-modeles-ia-authentification-test-connexion-et-scroll-independant-aide + 17-5 + 25-4
+    origin_ref: 2026-11-05-modeles-ia-authentification-test-connexion-et-scroll-independant-aide + 17-5 + 25-4 + 2026-11-23-gemini-interactions-api-et-fallback-secours
     status: live
     kind: feature
     uj: [UJ-15]
@@ -396,11 +399,13 @@ capabilities:
       - tests/security/test_api_security_baseline.py
       - tests/unit/test_story_17_5_ai_models_hub_secrets_and_lifecycle.py
       - tests/unit/test_story_25_4_ai_model_delete_and_reindex_empty.py
+      - tests/unit/test_gemini_interactions_and_fallback_model.py
+      - tests/unit/test_gemini_adapters_coverage_edges.py
       - tests/integration/api/test_story_17_5_ai_models_hub_postgres18.py
       - apps/web/src/__tests__/story-25-4-spinner-localized-timeout-and-delete.test.tsx
       - apps/web/e2e/16-ai-models-reindex-connectors-and-broker.spec.ts
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-23"
     surfaces: { route: /settings/ai-models, api: ai_models_hub.py, ui: "SettingsAiModelsSection + SecretField + AiModelsMasterTable + AiModelMappingRowCard + OrciaSpinner", migration: "20261114_1705" }
   - id: CAP-054
     title: Hub Connecteurs (Git, Jira, Confluence, SMTP_MAIL) et gestion des secrets
@@ -659,15 +664,15 @@ capabilities:
     title: Câblage LLM réel et streaming SSE multi-fournisseurs (« Envoyer à Mon Assistant »)
     fr: [FR-33]
     origin: adhoc
-    origin_ref: 2026-11-05-cablage-reel-llm-envoyer-a-mon-assistant-et-feedback-ui + 25-5 + 26-2
+    origin_ref: 2026-11-05-cablage-reel-llm-envoyer-a-mon-assistant-et-feedback-ui + 25-5 + 26-2 + 2026-11-23-gemini-interactions-api-et-fallback-secours
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [llm_model_endpoints, workspace_llm_tier_mappings, assistant_threads, inference_attempts]
-    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py, tests/unit/test_story_26_2_core_llm_streaming_and_prompt_builder.py, tests/integration/api/test_story_25_5_assistant_chat_only_and_rag_guard_postgres18.py]
+    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py, tests/unit/test_story_26_2_core_llm_streaming_and_prompt_builder.py, tests/unit/test_gemini_interactions_and_fallback_model.py, tests/unit/test_gemini_adapters_coverage_edges.py, tests/integration/api/test_story_25_5_assistant_chat_only_and_rag_guard_postgres18.py]
     verification: runtime
-    verified_at: "2026-11-21"
-    surfaces: { api: llm_streaming_port.py + llm_streaming_httpx.py + assistant_prompt_builder.py + assistant_llm_bridge.py + assistant_llm_providers.py + assistant_llm_resolver.py }
+    verified_at: "2026-11-23"
+    surfaces: { api: llm_streaming_port.py + llm_streaming_base_httpx.py + _llm_streaming_fallbacks.py + assistant_prompt_builder.py + assistant_llm_bridge.py + assistant_llm_providers.py + llm_endpoint_resolver.py }
 
   # ───────────── Mes Espaces, MCP/A2A, pack-builder (Epic 11) ─────────────
   - id: CAP-080
@@ -812,18 +817,18 @@ capabilities:
     verified_at: "2026-11-22"
     surfaces: { route: /assistant, api: "assistant_turns.py + assistant_background_turns.py" }
   - id: CAP-076
-    title: Refactorisation LLM agnostique/async et vrai streaming SSE ; intégration Gemini (Mode A/B)
+    title: Refactorisation LLM agnostique/async et vrai streaming SSE ; intégration Gemini (Mode A/B & Interactions API)
     fr: [FR-33]
     origin: adhoc
-    origin_ref: 2026-11-07-refactorisation-agnostique-async-llm-ontologie-et-vrai-streaming-sse + 2026-11-08-integration-gemini-argon-configuration-et-assistant + 25-5 + 26-2
+    origin_ref: 2026-11-07-refactorisation-agnostique-async-llm-ontologie-et-vrai-streaming-sse + 2026-11-08-integration-gemini-argon-configuration-et-assistant + 25-5 + 26-2 + 2026-11-23-gemini-interactions-api-et-fallback-secours
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [llm_model_endpoints, workspace_llm_tier_mappings, inference_attempts]
-    tests: [tests/unit/test_assistant_agnostic_async_llm_bridge.py, tests/unit/test_gemini_argon_provider_adapter.py, tests/unit/test_story_26_2_core_llm_streaming_and_prompt_builder.py, tests/integration/api/test_story_25_5_assistant_chat_only_and_rag_guard_postgres18.py, apps/web/src/__tests__/gemini-settings-and-assistant.test.tsx, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
+    tests: [tests/unit/test_assistant_agnostic_async_llm_bridge.py, tests/unit/test_gemini_argon_provider_adapter.py, tests/unit/test_story_26_2_core_llm_streaming_and_prompt_builder.py, tests/unit/test_gemini_interactions_and_fallback_model.py, tests/unit/test_gemini_interactions_coverage_edges.py, tests/unit/test_gemini_adapters_coverage_edges.py, tests/unit/test_gemini_endpoint_resolver_coverage.py, tests/integration/api/test_story_25_5_assistant_chat_only_and_rag_guard_postgres18.py, apps/web/src/__tests__/gemini-settings-and-assistant.test.tsx, apps/web/src/__tests__/gemini-protocol-mode-resolution.test.ts, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts]
     verification: runtime
-    verified_at: "2026-11-21"
-    surfaces: { api: llm_gemini_dialect.py + llm_streaming_httpx.py + assistant_llm_gemini_adapter.py + assistant_llm_providers.py + assistant_llm_resolver.py }
+    verified_at: "2026-11-23"
+    surfaces: { api: llm_gemini_dialect.py + llm_gemini_interactions.py + llm_streaming_base_httpx.py + _llm_streaming_fallbacks.py + assistant_llm_gemini_adapter.py + assistant_llm_providers.py + llm_endpoint_resolver.py }
   - id: CAP-084
     title: Mes Espaces — intégration glossaire/ontologie (option A) et processus de génération de documentation pack-builder
     fr: [FR-34, FR-35]
@@ -992,9 +997,10 @@ capabilities:
       - apps/web/src/__tests__/story-19-7-reindexing-banner-hub-and-f5.test.tsx
       - apps/web/src/__tests__/story-25-4-spinner-localized-timeout-and-delete.test.tsx
       - apps/web/src/__tests__/story-25-5-assistant-unlocked-and-rag-source-blocked.test.tsx
+      - apps/web/src/__tests__/gemini-protocol-mode-resolution.test.ts
       - apps/web/e2e/16-ai-models-reindex-connectors-and-broker.spec.ts
     verification: runtime
-    verified_at: "2026-11-21"
+    verified_at: "2026-11-23"
     surfaces:
       route: "/settings/ai-models, /assistant, /workspaces/$wsId/sources"
       api: "ai_models_hub.py, _ai_models_test_and_reindex_routes.py, _ai_models_reindex_helpers.py, _rag_availability_guards.py, rag.py, ontology_and_rag.py, assistant_turns.py, _ai_models_discovery.py, _ai_models_helpers.py, bootstrap_accostage.py"

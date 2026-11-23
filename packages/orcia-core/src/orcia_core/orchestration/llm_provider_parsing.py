@@ -5,7 +5,10 @@ from __future__ import annotations
 import time
 from typing import Any
 
-from orcia_core.orchestration.ai_models_urls import is_anthropic_provider
+from orcia_core.orchestration.ai_models_urls import (
+    is_anthropic_provider,
+    is_gemini_interactions_url,
+)
 from orcia_core.orchestration.llm_gemini_dialect import (
     build_anthropic_native_request_body,
     build_gemini_native_headers,
@@ -14,6 +17,11 @@ from orcia_core.orchestration.llm_gemini_dialect import (
     is_google_gemini_native_provider,
     parse_gemini_native_response,
     separate_think_tags,
+)
+from orcia_core.orchestration.llm_gemini_interactions import (
+    build_gemini_interactions_request_body,
+    extract_gemini_interactions_stream_deltas,
+    parse_gemini_interactions_response,
 )
 from orcia_core.orchestration.llm_tool_dialects import (
     format_messages_for_dialect,
@@ -28,7 +36,9 @@ extract_thinking_and_clean_content = separate_think_tags
 
 def build_provider_headers(ep: LlmEndpointConfig, target_url: str) -> dict[str, str]:
     """Construct HTTP headers for OpenAI-compatible, Anthropic Messages, Gemini Native, or Azure."""
-    if is_google_gemini_native_provider(target_url, ep.provider):
+    if is_gemini_interactions_url(target_url) or is_google_gemini_native_provider(
+        target_url, ep.provider
+    ):
         return build_gemini_native_headers(ep.api_key)
     headers: dict[str, str] = {"Content-Type": "application/json"}
     if is_anthropic_provider(target_url, ep.provider):
@@ -53,7 +63,11 @@ def build_provider_request_body(
     tool_choice: str | dict[str, Any] | None = None,
     include_thoughts: bool = True,
 ) -> dict[str, Any]:
-    """Build JSON payload for Gemini Native, Anthropic (`/v1/messages`), or OpenAI-compatible."""
+    """Build JSON payload for Gemini Interactions/Native, Anthropic, or OpenAI-compatible."""
+    if is_gemini_interactions_url(target_url):
+        return build_gemini_interactions_request_body(
+            ep.model_name, messages, stream=stream, tools=tools
+        )
     if is_google_gemini_native_provider(target_url, ep.provider):
         return build_gemini_native_request_body(
             messages, include_thoughts=include_thoughts, tools=tools
@@ -89,6 +103,12 @@ def parse_non_stream_outcome(
             else {}
         )
         return clean, think, t_calls, str(c0.get("finishReason") or "stop")
+    if "candidates" not in data and (
+        any(k in data for k in ("outputs", "steps", "interaction", "output_text"))
+        or data.get("object") == "interaction"
+    ):
+        clean, think, t_calls = parse_gemini_interactions_response(data)
+        return clean, think, t_calls, "tool_calls" if t_calls else "stop"
     if isinstance(data.get("content"), list):
         blocks = [b for b in data["content"] if isinstance(b, dict)]
         texts = "".join(str(b.get("text") or "") for b in blocks if b.get("type") == "text")
@@ -158,6 +178,10 @@ def extract_stream_chunk_deltas(chunk: dict[str, Any]) -> tuple[str, str]:
             return str(d.get("text") or ""), ""
         if d.get("type") == "thinking_delta":
             return "", str(d.get("thinking") or "")
+    if "delta" in chunk or str(chunk.get("event_type") or "").startswith(
+        ("content.", "step.", "interaction.")
+    ):
+        return extract_gemini_interactions_stream_deltas(chunk)
     choices = chunk.get("choices")
     if isinstance(choices, list) and choices and isinstance(choices[0], dict):
         delta = choices[0].get("delta")

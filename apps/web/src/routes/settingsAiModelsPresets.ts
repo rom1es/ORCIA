@@ -81,6 +81,33 @@ export function detectGoogleGeminiProtocolMode(
     : "native";
 }
 
+export type LlmProtocolMode =
+  | "openai_compatible"
+  | "gemini_native"
+  | "anthropic_messages";
+
+export function resolveEffectiveLlmProtocolMode(
+  modelFamily: string,
+  endpointUrl: string,
+  fallbackMode: LlmProtocolMode = "openai_compatible",
+): LlmProtocolMode {
+  if (isGoogleGeminiFamily(modelFamily, endpointUrl)) {
+    return detectGoogleGeminiProtocolMode(endpointUrl) === "openai"
+      ? "openai_compatible"
+      : "gemini_native";
+  }
+  const fam = modelFamily.toLowerCase();
+  const uri = endpointUrl.trim().toLowerCase().replace(/\/+$/, "");
+  if (
+    fam.includes("anthropic") ||
+    uri.includes("anthropic.com") ||
+    uri.endsWith("/messages")
+  ) {
+    return "anthropic_messages";
+  }
+  return fallbackMode;
+}
+
 export function resolvePrimaryModelPlaceholder(
   modelFamily: string,
   labels: AiModelsHubDictionary,

@@ -143,6 +143,7 @@ async def execute_model_connection_test(
         usage=rec.usage,
         api_key=effective_key,
         provider_slug=rec.provider_slug,
+        fallback_model_name=rec.fallback_model_name,
         instance=path,
     )
 
