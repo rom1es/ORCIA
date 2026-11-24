@@ -45,12 +45,14 @@ export interface ContextualHelpColumnAndCenterLabels {
   readonly rollbackButtonLabel: string;
   readonly rollbackCompletedPrefix: string;
   readonly mergedLayersPrefix: string;
-  readonly realExampleTitle?: string;
-  readonly commonPitfallsTitle?: string;
-  readonly technicalDetailsTitle?: string;
-  readonly stepsBlockPrefix?: string;
-  readonly stepsBlockSuffix?: string;
-  readonly targetedHelpBadgeLabel?: string;
+  readonly realExampleTitle: string;
+  readonly commonPitfallsTitle: string;
+  readonly technicalDetailsTitle: string;
+  readonly versionLabel: string;
+  readonly layerLabels: Readonly<Record<UiHelpArticleLayer, string>>;
+  readonly stepsBlockPrefix: string;
+  readonly stepsBlockSuffix: string;
+  readonly targetedHelpBadgeLabel: string;
   readonly askAssistantPrefillTemplate?: string;
 }
 

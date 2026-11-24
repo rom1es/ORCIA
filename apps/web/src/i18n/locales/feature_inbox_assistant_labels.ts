@@ -1,3 +1,5 @@
+import type { UiAssistantAutocompleteOption } from "@orcia/ui";
+
 export interface FeatureInboxAssistantDictionary {
   readonly notificationsCenter: {
     readonly directClaimPrefix: string;
@@ -72,6 +74,8 @@ export interface FeatureInboxAssistantDictionary {
     readonly sdlcAnalystDesc: string;
     readonly sdlcReviewName: string;
     readonly sdlcReviewDesc: string;
+    readonly defaultAgents: readonly UiAssistantAutocompleteOption[];
+    readonly defaultSkills: readonly UiAssistantAutocompleteOption[];
   };
   readonly citations: {
     readonly serverVerifiedSourcesTemplate: string;

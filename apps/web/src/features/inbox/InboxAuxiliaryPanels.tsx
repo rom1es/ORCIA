@@ -149,7 +149,7 @@ export function InboxAuxiliaryPanels({
           onChangeVisibility={(folderId, mode: AssistantFolderVisibilityMode) => {
             const folder = folders.find((f) => f.folderId === folderId);
             if (!folder) return;
-            const humanLabel = formatFolderVisibilityLabel(mode, isFr);
+            const humanLabel = formatFolderVisibilityLabel(mode, dictionary.assistantFolders);
             void changeVisibility(folder, mode).then((ok) => {
               if (ok) {
                 setGovernanceFeedback(

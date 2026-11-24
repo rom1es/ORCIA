@@ -1,4 +1,8 @@
 import type { UserProfileOverviewLabels } from "@orcia/ui";
+import {
+  ROLE_DISPLAY_LABELS_EN,
+  ROLE_DISPLAY_LABELS_FR,
+} from "./role_display_labels";
 
 export const PROFILE_OVERVIEW_FR_LABELS: UserProfileOverviewLabels = {
   editButtonLabel: "Modifier",
@@ -27,9 +31,12 @@ export const PROFILE_OVERVIEW_FR_LABELS: UserProfileOverviewLabels = {
   emptyPopularTitle: "Aucune utilisation enregistrée pour le moment",
   emptyPopularDescription:
     "Lancez un processus ou sollicitez un agent pour voir apparaître vos favoris.",
+  emptyKpisMessage:
+    "Aucune activité enregistrée pour le moment. Vos indicateurs d'usage apparaîtront ici dès vos premiers échanges avec Mon Assistant.",
   exploreAgentsCta: "Explorer Mes Agents →",
   loadingLabel: "Chargement du profil...",
   retryLabel: "Réessayer",
+  roleDisplayLabels: ROLE_DISPLAY_LABELS_FR,
 };
 
 export const PROFILE_OVERVIEW_EN_LABELS: UserProfileOverviewLabels = {
@@ -59,7 +66,10 @@ export const PROFILE_OVERVIEW_EN_LABELS: UserProfileOverviewLabels = {
   emptyPopularTitle: "No usage recorded yet",
   emptyPopularDescription:
     "Run a process or invoke an agent to see your most-used items here.",
+  emptyKpisMessage:
+    "No assistant activity or token usage recorded yet. Your metrics will appear here after your first exchanges.",
   exploreAgentsCta: "Explore My Agents →",
   loadingLabel: "Loading profile...",
   retryLabel: "Retry",
+  roleDisplayLabels: ROLE_DISPLAY_LABELS_EN,
 };

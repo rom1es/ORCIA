@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AssistantActiveStreamContent } from "../primitives/AssistantActiveStreamContent";
+import { TEST_ASSISTANT_STREAM_LABELS } from "./assistantLabelsFixture";
 
 afterEach(() => {
   cleanup();
@@ -30,6 +31,7 @@ describe("Story 23.2 — AssistantActiveStreamContent critical 401/403 vs ai_una
         isStoppedVisible={false}
         mergedRagCitations={[]}
         currentTurnFeedback={null}
+        labels={TEST_ASSISTANT_STREAM_LABELS}
         onRegenerate={vi.fn()}
       />,
     );
@@ -66,6 +68,7 @@ describe("Story 23.2 — AssistantActiveStreamContent critical 401/403 vs ai_una
         isStoppedVisible={false}
         mergedRagCitations={[]}
         currentTurnFeedback={null}
+        labels={TEST_ASSISTANT_STREAM_LABELS}
         onRegenerate={vi.fn()}
       />,
     );

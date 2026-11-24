@@ -14,7 +14,11 @@ import {
   type FourZoneDirectionCShellLabels,
   type OrciaIconName,
 } from "../index";
-import { TEST_USER_SETTINGS_LABELS } from "./userSettingsLabelsFixture";
+import {
+  TEST_ROLE_DISPLAY_LABELS_EN,
+  TEST_ROLE_DISPLAY_LABELS_FR,
+  TEST_USER_SETTINGS_LABELS,
+} from "./userSettingsLabelsFixture";
 
 const SHELL_LABELS: FourZoneDirectionCShellLabels = {
   workspacePrefix: "Espace",
@@ -155,11 +159,11 @@ describe("Story 17.1 — Wireframe SVG Icons, CSS Button Reset & Sidebar Collaps
   });
 
   it("CA-17.1.3: supports controlled open on UserSettingsModalDialog, SidebarAccountPopover, and localized FR/EN governance roles", () => {
-    expect(resolveUserRoleDisplayLabel("SECOPS", "fr")).toBe(
+    expect(resolveUserRoleDisplayLabel("SECOPS", TEST_ROLE_DISPLAY_LABELS_FR)).toBe(
       "Responsable Sécurité & Habilitations",
     );
-    expect(resolveUserRoleDisplayLabel("BU_LEAD", "en")).toBe("Business Unit Lead");
-    expect(resolveUserRoleDisplayLabel("OBSERVER", "fr")).toBe("Observateur (Lecture seule)");
+    expect(resolveUserRoleDisplayLabel("BU_LEAD", TEST_ROLE_DISPLAY_LABELS_EN)).toBe("Business Unit Lead");
+    expect(resolveUserRoleDisplayLabel("OBSERVER", TEST_ROLE_DISPLAY_LABELS_FR)).toBe("Observateur (Lecture seule)");
 
     const onModalOpenChange = vi.fn();
     render(
@@ -168,7 +172,7 @@ describe("Story 17.1 — Wireframe SVG Icons, CSS Button Reset & Sidebar Collaps
           railCollapsed={false}
           userDisplayName="Claire"
           userEmail="claire@orcia.io"
-          userRoleLabel={resolveUserRoleDisplayLabel("SECOPS", "fr")}
+          userRoleLabel={resolveUserRoleDisplayLabel("SECOPS", TEST_ROLE_DISPLAY_LABELS_FR)}
           labels={TEST_USER_SETTINGS_LABELS.popover}
           onOpenSettingsTab={vi.fn()}
           onNavigateProfile={vi.fn()}

@@ -33,6 +33,13 @@ const HELP_LABELS_FR: ContextualHelpColumnAndCenterLabels = {
   realExampleTitle: "Un exemple réel",
   commonPitfallsTitle: "Ce qui coince souvent",
   technicalDetailsTitle: "Détails techniques",
+  versionLabel: "Version",
+  layerLabels: {
+    BASE: "Base",
+    PACK: "Pack",
+    WORKSPACE: "Espace",
+    USER: "Utilisateur",
+  },
   stepsBlockPrefix: "En",
   stepsBlockSuffix: "gestes",
   targetedHelpBadgeLabel: "Aide ciblée",
@@ -343,6 +350,8 @@ describe("Story 24.6 (USER24-BUG-3 + UX23-05 + UX23-08) — Markdown Help & Zero
             sampleHumanMarkdown: "# Aperçu",
             sampleAgentJsonSchema: "{}",
             subWorkflowLocksTitle: "Sous-processus",
+            depthPrefix: "Niveau",
+            principalDepthLabel: "principal",
           }}
         />
         <ArbitrationTieBreakCard

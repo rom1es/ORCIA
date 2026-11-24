@@ -39,6 +39,8 @@ export interface AssistantCitationPillsAndArtifactCardLabels {
   readonly requestAccessCta: string;
   readonly unverifiedCitationBadge: string;
   readonly artifactCardTitlePrefix: string;
+  readonly linesLabel: string;
+  readonly draftBadgeLabel: string;
   readonly copyArtifactCta: string;
   readonly exportArtifactCta: string;
   readonly saveDraftCta: string;
@@ -210,8 +212,7 @@ export function AssistantCitationPillsAndArtifactCard({
           className="rounded border border-action-primary/40 bg-surface-primary p-3 text-xs space-y-1"
         >
           <div className="font-semibold">
-            [{inspectedSource.tag}] {inspectedSource.title} — Lignes{" "}
-            {inspectedSource.lineStart}..{inspectedSource.lineEnd}
+            {`[${inspectedSource.tag}] ${inspectedSource.title} — ${labels.linesLabel} ${inspectedSource.lineStart}..${inspectedSource.lineEnd}`}
           </div>
           <div className="font-mono text-[11px] text-text-secondary">
             {inspectedSource.uri}
@@ -230,7 +231,7 @@ export function AssistantCitationPillsAndArtifactCard({
             <h4 className="text-xs font-semibold">
               {labels.artifactCardTitlePrefix} : {artifactTitle}{" "}
               <span className="rounded bg-surface-secondary px-1.5 py-0.5 font-mono text-[10px]">
-                @draft
+                {labels.draftBadgeLabel}
               </span>
             </h4>
           </div>

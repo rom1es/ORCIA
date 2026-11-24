@@ -14,51 +14,21 @@ export interface UiAssistantModelOption {
   readonly hiddenDuplicate?: boolean;
 }
 
-export const DEFAULT_ASSISTANT_MODEL_OPTIONS: readonly UiAssistantModelOption[] = [
-  {
-    tier: "simple",
-    title: "Rapide",
-    subtitle: "Réponses les plus rapides",
-  },
-  {
-    tier: "medium",
-    title: "Polyvalent",
-    subtitle: "Aide polyvalente au quotidien",
-  },
-  {
-    tier: "complex",
-    title: "Raisonnement avancé",
-    subtitle: "Tâches complexes & analyse critique",
-  },
-];
-
-export const ASSISTANT_EFFORT_OPTIONS: ReadonlyArray<{
+export interface UiAssistantEffortOption {
   readonly effort: UiInferenceEffort;
   readonly speed: UiAssistantSpeedMode;
   readonly title: string;
   readonly subtitle: string;
   readonly hiddenLegacyFast?: boolean;
-}> = [
-  {
-    effort: "fast",
-    speed: "SPEED_1_FAST",
-    title: "Standard",
-    subtitle: "Réponse directe avec vos sources & compétences",
-    hiddenLegacyFast: true,
-  },
-  {
-    effort: "balanced",
-    speed: "SPEED_2_AGENT_TOOLS",
-    title: "Standard",
-    subtitle: "Réponse directe avec vos sources & compétences",
-  },
-  {
-    effort: "deep",
-    speed: "SPEED_3_DEEP_AUDIT",
-    title: "Approfondi",
-    subtitle: "Réflexion décomposée en étapes selon la question",
-  },
-];
+}
+
+export interface AssistantModelAndEffortPopoverLabels {
+  readonly aiModelHeading: string;
+  readonly selectedAriaLabel: string;
+  readonly thinkingLevelTriggerLabel: string;
+  readonly thinkingModeHeading: string;
+  readonly effortOptions: readonly UiAssistantEffortOption[];
+}
 
 export interface AssistantModelAndEffortPopoverProps {
   readonly modelOptions: readonly UiAssistantModelOption[];
@@ -67,6 +37,7 @@ export interface AssistantModelAndEffortPopoverProps {
   readonly thinkingSubmenuOpen: boolean;
   readonly supportsTools?: boolean;
   readonly toolsUnsupportedBadge?: string;
+  readonly labels: AssistantModelAndEffortPopoverLabels;
   readonly onSelectTier: (tier: UiInferenceTier) => void;
   readonly onToggleThinkingSubmenu: () => void;
   readonly onSelectEffort: (effort: UiInferenceEffort) => void;
@@ -79,6 +50,7 @@ export function AssistantModelAndEffortPopover({
   thinkingSubmenuOpen,
   supportsTools = true,
   toolsUnsupportedBadge,
+  labels,
   onSelectTier,
   onToggleThinkingSubmenu,
   onSelectEffort,
@@ -89,8 +61,9 @@ export function AssistantModelAndEffortPopover({
       ? "deep"
       : "balanced";
   const activeEffortOption =
-    ASSISTANT_EFFORT_OPTIONS.find((e) => e.effort === normalizedSelectedEffort) ??
-    ASSISTANT_EFFORT_OPTIONS[1]!;
+    labels.effortOptions.find((e) => e.effort === normalizedSelectedEffort) ??
+    labels.effortOptions[1] ??
+    labels.effortOptions[0];
   const visibleModelCount = modelOptions.filter((m) => !m.hiddenDuplicate).length;
   const isSingleModelOnly = visibleModelCount === 1;
 
@@ -113,7 +86,7 @@ export function AssistantModelAndEffortPopover({
         }
       >
         <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
-          Modèle IA
+          {labels.aiModelHeading}
         </div>
         {modelOptions.map((opt) => {
           const isSelected = opt.tier === selectedTier || visibleModelCount === 1;
@@ -154,7 +127,7 @@ export function AssistantModelAndEffortPopover({
               {isSelected && (
                 <OrciaIcon
                   name="check"
-                  ariaLabel="Sélectionné"
+                  ariaLabel={labels.selectedAriaLabel}
                   className="text-xs font-bold"
                 />
               )}
@@ -170,10 +143,10 @@ export function AssistantModelAndEffortPopover({
             className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left font-medium hover:bg-surface-secondary"
           >
             <span>
-              <OrciaIcon name="brain" /> Niveau de réflexion
+              <OrciaIcon name="brain" /> {labels.thinkingLevelTriggerLabel}
             </span>
             <span className="text-text-secondary">
-              {activeEffortOption.title} <OrciaIcon name="caretRight" />
+              {activeEffortOption?.title ?? ""} <OrciaIcon name="caretRight" />
             </span>
           </button>
         </div>
@@ -186,9 +159,9 @@ export function AssistantModelAndEffortPopover({
           className={isSingleModelOnly ? "space-y-1" : "space-y-1 md:pl-1"}
         >
           <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
-            Mode de réflexion
+            {labels.thinkingModeHeading}
           </div>
-          {ASSISTANT_EFFORT_OPTIONS.map((eff) => {
+          {labels.effortOptions.map((eff) => {
             const isHidden = supportsTools ? Boolean(eff.hiddenLegacyFast) : false;
             const isDisabledByTools = !supportsTools && eff.effort !== "fast";
             const isSelected = !isHidden && eff.effort === normalizedSelectedEffort;
@@ -230,7 +203,7 @@ export function AssistantModelAndEffortPopover({
                 {isSelected && (
                   <OrciaIcon
                     name="check"
-                    ariaLabel="Sélectionné"
+                    ariaLabel={labels.selectedAriaLabel}
                     className="text-xs font-bold"
                   />
                 )}

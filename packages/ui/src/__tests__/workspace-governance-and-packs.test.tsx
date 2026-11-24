@@ -57,12 +57,27 @@ const DNA_LABELS_FR: DnaStarlarkAndGlossaryLabels = {
 const TEST_BENCH_LABELS_FR: RemoteServiceTestBenchLabels = {
   heading: "Banc de Test à Chaud & Découverte (🔌)",
   testAndDiscoverCta: "🔌 Tester la connexion & Découvrir les capacités",
+  testingInProgressCta: "⏳ Vérification en cours…",
+  testingInProgressNotice: "⏳ Vérification en cours auprès du serveur…",
   activateConnectorCta: "Activer le service",
+  activateDisabledReason: "Validez les 4 étapes du banc d'essai pour activer ce connecteur.",
   testWithPersonalTokenCta: "Tester avec mon jeton personnel",
   mcpExposureHeading: "Serveur MCP Gouverné (/api/v1/mcp)",
   exposeMcpToggleLabel: "🔌 Exposer en MCP",
   mcpIdeBadge: "💻 Appelé via MCP (IDE)",
   ipProtectionNotice: "execute != read : protection du system_prompt et des SecretRef.",
+  stepLabels: {
+    "1_NETWORK_TLS_ANTI_SSRF": "Réseau, sécurité et protection d'adresse",
+    "2_AUTHENTICATION": "Authentification et droits d'accès",
+    "3_CONTRACT_DISCOVERY": "Découverte du contrat et des actions",
+    "4_HOT_DRY_RUN": "Test d'exécution à blanc",
+  },
+  statusLabels: {
+    PASS: "Validé",
+    FAIL: "Échec",
+    WAITING_USER_PASSTHROUGH_TOKEN: "En attente de jeton personnel",
+    SKIPPED: "Ignoré",
+  },
 };
 
 describe("Story 11.1 — WorkspaceFiveTabsAndExternalRebaseView", () => {

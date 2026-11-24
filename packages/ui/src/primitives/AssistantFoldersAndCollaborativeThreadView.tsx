@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { OrciaIcon, getOrciaIconGlyph } from "../components/icons";
+import { OrciaIcon } from "../components/icons";
+import { AssistantFolderNotesDrawer } from "./AssistantFolderNotesDrawer";
 
 export type AssistantMainTabCode = "ACTIVE_DISCUSSION" | "FOLDERS" | "HISTORY_SEARCH";
 export type AssistantFolderVisibilityMode = "PRIVATE" | "SHARED_SELECTED" | "WORKSPACE_OPEN";
@@ -34,6 +35,18 @@ export interface AssistantFoldersAndCollaborativeThreadViewLabels {
   readonly visibilityWorkspaceOpenLabel: string;
   readonly restrictedSourcesWarningText: string;
   readonly searchPlaceholder: string;
+  readonly clearActiveFolderCta: string;
+  readonly noActiveFolderHint: string;
+  readonly permanentNotesTitleTemplate: string;
+  readonly notesSavedBadgeLabel: string;
+  readonly notesTextareaPlaceholder: string;
+  readonly notesEnrichHint: string;
+  readonly saveNotesCta: string;
+  readonly newFolderTitlePlaceholder: string;
+  readonly defaultNewFolderTitlePrefix: string;
+  readonly newFolderCta: string;
+  readonly activeAccountPrefix: string;
+  readonly collaborativeSendCta: string;
 }
 
 export interface AssistantFoldersAndCollaborativeThreadViewProps {
@@ -54,20 +67,20 @@ export interface AssistantFoldersAndCollaborativeThreadViewProps {
   readonly onOpenHelpSection?: (sectionId: string) => void;
 }
 
-export function formatFolderVisibilityLabel(mode: AssistantFolderVisibilityMode, isFr = true): string {
+export function formatFolderVisibilityLabel(
+  mode: AssistantFolderVisibilityMode,
+  labels: Pick<
+    AssistantFoldersAndCollaborativeThreadViewLabels,
+    "visibilityPrivateLabel" | "visibilitySharedSelectedLabel" | "visibilityWorkspaceOpenLabel"
+  >,
+): string {
   if (mode === "SHARED_SELECTED") {
-    return isFr
-      ? `${getOrciaIconGlyph("team")} Partagé (Membres choisis)`
-      : `${getOrciaIconGlyph("team")} Shared (Selected members)`;
+    return labels.visibilitySharedSelectedLabel;
   }
   if (mode === "WORKSPACE_OPEN") {
-    return isFr
-      ? `${getOrciaIconGlyph("spaces")} Visible par tout l'Espace`
-      : `${getOrciaIconGlyph("spaces")} Open to entire Workspace`;
+    return labels.visibilityWorkspaceOpenLabel;
   }
-  return isFr
-    ? `${getOrciaIconGlyph("lock")} Privé (Moi uniquement)`
-    : `${getOrciaIconGlyph("lock")} Private (Only me)`;
+  return labels.visibilityPrivateLabel;
 }
 
 export function AssistantFoldersAndCollaborativeThreadView({
@@ -96,7 +109,6 @@ export function AssistantFoldersAndCollaborativeThreadView({
   const [newFolderTitle, setNewFolderTitle] = useState<string>("");
   const [notesSavedBadge, setNotesSavedBadge] = useState<boolean>(false);
 
-  const isFr = !labels.searchPlaceholder.toLowerCase().includes("search");
   const cleanPillPrefix = labels.activeFolderPillPrefix.replace(/\s*:\s*$/, "").trim();
 
   useEffect(() => {
@@ -133,12 +145,12 @@ export function AssistantFoldersAndCollaborativeThreadView({
                 {labels.shareButtonLabel}
               </button>
               <button type="button" data-testid="assistant-deselect-folder-btn" onClick={() => onSelectFolder?.("")} className="rounded border border-border-subtle bg-surface-primary px-2 py-0.5 text-[11px] text-text-secondary hover:text-text-primary">
-                {isFr ? "Désélectionner" : "Clear active folder"}
+                {labels.clearActiveFolderCta}
               </button>
             </div>
           ) : (
             <span className="text-xs text-text-secondary">
-              {isFr ? "Aucun dossier actif sélectionné. Créez ou cliquez sur un dossier ci-dessous pour activer ses notes." : "No active folder selected. Create or click a folder below to activate its notes."}
+              {labels.noActiveFolderHint}
             </span>
           )}
         </div>
@@ -151,53 +163,14 @@ export function AssistantFoldersAndCollaborativeThreadView({
       )}
 
       {notesOpen && activeFolder && (
-        <div data-testid="assistant-folder-pinned-notes-drawer" className="rounded-lg border border-border-subtle bg-surface-primary p-3 space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-semibold text-text-primary">
-              <OrciaIcon name="pin" />{" "}
-              {isFr ? `Notes permanentes du dossier « ${activeFolder.title} » (injectées dans chaque question)` : `Permanent notes for folder "${activeFolder.title}" (injected into every question)`}
-            </span>
-            {notesSavedBadge && (
-              <span data-testid="assistant-folder-notes-saved-badge" className="text-[11px] font-semibold text-status-success">
-                <OrciaIcon name="check" /> {isFr ? "Notes enregistrées et actives" : "Notes saved and active"}
-              </span>
-            )}
-          </div>
-          <textarea
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid="assistant-folder-pinned-notes-textarea"
-            rows={2}
-            placeholder={isFr ? "Ex. : Toujours répondre avec des exemples Python 3.12 et respecter le glossaire DORA..." : "E.g.: Always include Python 3.12 examples and follow the domain glossary..."}
-            value={draftNotes}
-            onChange={(e) => { setDraftNotes(e.target.value); setNotesSavedBadge(false); }}
-            className="w-full rounded border border-border-subtle bg-surface-secondary px-2.5 py-1.5 text-xs"
-          />
-          <div className="flex items-center justify-between gap-2">
-            {activeFolder.assembledLayer5PromptBlock.trim() ? (
-              <span data-testid="assistant-layer5-injected-preview" className="font-mono text-[11px] text-text-secondary truncate">
-                {activeFolder.assembledLayer5PromptBlock}
-              </span>
-            ) : (
-              <span className="text-[11px] text-text-secondary">
-                {isFr
-                  ? "Les notes enregistrées enrichissent automatiquement vos questions dans ce dossier."
-                  : "Saved notes automatically enrich your questions in this folder."}
-              </span>
-            )}
-            <button
-              type="button"
-              data-testid="assistant-save-pinned-notes-btn"
-              onClick={() => { onUpdatePinnedNotes?.(activeFolder.folderId, draftNotes); setNotesSavedBadge(true); }}
-              className="rounded bg-action-primary px-3 py-1 text-xs font-semibold text-white shrink-0"
-            >
-              {isFr ? "Enregistrer les notes" : "Save notes"}
-            </button>
-          </div>
-        </div>
+        <AssistantFolderNotesDrawer
+          activeFolder={activeFolder}
+          draftNotes={draftNotes}
+          notesSavedBadge={notesSavedBadge}
+          labels={labels}
+          onChangeDraftNotes={(val) => { setDraftNotes(val); setNotesSavedBadge(false); }}
+          onSavePinnedNotes={() => { onUpdatePinnedNotes?.(activeFolder.folderId, draftNotes); setNotesSavedBadge(true); }}
+        />
       )}
 
       {shareModalOpen && activeFolder && (
@@ -230,16 +203,16 @@ export function AssistantFoldersAndCollaborativeThreadView({
               data-testid="assistant-new-folder-title-input"
               value={newFolderTitle}
               onChange={(e) => setNewFolderTitle(e.target.value)}
-              placeholder={isFr ? "Titre du nouveau dossier thématique..." : "New thematic folder title..."}
+              placeholder={labels.newFolderTitlePlaceholder}
               className="min-w-0 flex-1 rounded border border-border-subtle bg-surface-primary px-3 py-1.5 text-xs"
             />
             <button
               type="button"
               data-testid="assistant-create-folder-btn"
-              onClick={() => { const title = newFolderTitle.trim() || `Dossier thématique #${folders.length + 1}`; onCreateFolder(title); setNewFolderTitle(""); }}
+              onClick={() => { const title = newFolderTitle.trim() || `${labels.defaultNewFolderTitlePrefix}${folders.length + 1}`; onCreateFolder(title); setNewFolderTitle(""); }}
               className="rounded bg-action-primary px-3 py-1.5 text-xs font-semibold text-white"
             >
-              {isFr ? "+ Nouveau dossier" : "+ New folder"}
+              {labels.newFolderCta}
             </button>
           </div>
         )}
@@ -258,7 +231,7 @@ export function AssistantFoldersAndCollaborativeThreadView({
                     {isSelected ? <OrciaIcon name="check" /> : ""}
                   </button>
                   <span data-testid={`assistant-folder-visibility-badge-${folder.folderId}`} className="rounded bg-surface-secondary px-2 py-0.5 text-[11px] font-medium text-text-secondary">
-                    {formatFolderVisibilityLabel(folder.visibilityMode, isFr)}
+                    {formatFolderVisibilityLabel(folder.visibilityMode, labels)}
                   </span>
                 </div>
                 <p className="text-[11px] text-text-secondary">{folder.consolidatedSummary}</p>
@@ -274,14 +247,14 @@ export function AssistantFoldersAndCollaborativeThreadView({
       </div>
 
       <div data-testid="assistant-tab-panel-active-discussion" style={{ display: "none" }} className="sr-only">
-        <span data-testid="assistant-author-passthrough-badge">Compte actif : <code className="font-mono">{currentAuthorPassthroughIdentity}</code></span>
+        <span data-testid="assistant-author-passthrough-badge">{labels.activeAccountPrefix} <code className="font-mono">{currentAuthorPassthroughIdentity}</code></span>
         {activeFolder && (
           <button type="button" data-testid="assistant-launch-process-from-folder-btn" onClick={() => onLaunchProcessFromFolder?.(activeFolder.folderId, "orcia://pack-sdlc/workflows/ticket-to-tech-spec")}>
             {labels.launchProcessFromFolderCta}
           </button>
         )}
         <input type="text" autoComplete="off" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-testid="assistant-collaborative-message-input" value={draftMessage} onChange={(e) => setDraftMessage(e.target.value)} />
-        <button type="button" data-testid="assistant-collaborative-send-btn" onClick={() => { if (draftMessage.trim()) onSendCollaborativeMessage?.(draftMessage.trim()); }}>Envoyer</button>
+        <button type="button" data-testid="assistant-collaborative-send-btn" onClick={() => { if (draftMessage.trim()) onSendCollaborativeMessage?.(draftMessage.trim()); }}>{labels.collaborativeSendCta}</button>
       </div>
 
       <div data-testid="assistant-tab-panel-history-search" style={{ display: "none" }} className="sr-only">

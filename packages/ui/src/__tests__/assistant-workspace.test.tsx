@@ -11,8 +11,18 @@ import {
   AssistantSpeedSelectorAndStreamView,
   type AssistantSpeedSelectorAndStreamViewLabels,
 } from "../index";
+import {
+  TEST_ASSISTANT_AGENT_OPTIONS,
+  TEST_ASSISTANT_CITATIONS_EXTRAS,
+  TEST_ASSISTANT_FOLDER_EXTRAS,
+  TEST_ASSISTANT_GOV_EXTRAS,
+  TEST_ASSISTANT_ORCIA_DOCUMENTS,
+  TEST_ASSISTANT_SKILL_OPTIONS,
+  TEST_ASSISTANT_SPEED_DEFAULTS,
+} from "./assistantLabelsFixture";
 
 const GOV_LABELS: AssistantGovernanceModalAndStudioLabels = {
+  ...TEST_ASSISTANT_GOV_EXTRAS,
   modalTitle: "⚙ Réglages de l'assistant (Mode A — 3 onglets)",
   tab1UserTitle: "👤 Mes préférences (Couche 5 — USER)",
   tab2WorkspaceTitle: "📦 Réglages de l'Espace (Couche 4 — WORKSPACE)",
@@ -174,6 +184,7 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
   it("Story 10.2 — renders 3-Speed Conversational Selector (⚡ Rapide, @Agent / /Skill, 🧠 Approfondi), Redis cache badge, and real-time step progress", () => {
     const onSendTurn = vi.fn();
     const speedLabels: AssistantSpeedSelectorAndStreamViewLabels = {
+      ...TEST_ASSISTANT_SPEED_DEFAULTS,
       headerTitle: "Routage Conversationnel à 3 Vitesses & Cache Redis 5 Couches",
       speed1PillLabel: "⚡ Vitesse 1 — Rapide (TTFT < 1,2 s)",
       speed2PillLabel: "🛠️ Vitesse 2 — @Agent / /Skill (TTFT < 2,5 s)",
@@ -255,6 +266,7 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
       const onSendTurn = vi.fn();
       const onStopGeneration = vi.fn();
       const speedLabels: AssistantSpeedSelectorAndStreamViewLabels = {
+        ...TEST_ASSISTANT_SPEED_DEFAULTS,
         headerTitle: "Routage Conversationnel à 3 Vitesses",
         speed1PillLabel: "⚡ Rapide",
         speed2PillLabel: "🛠️ Outils",
@@ -456,6 +468,7 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     const onSaveDraft = vi.fn();
     const onContinueInProcess = vi.fn();
     const citationLabels: AssistantCitationPillsAndArtifactCardLabels = {
+      ...TEST_ASSISTANT_CITATIONS_EXTRAS,
       freshnessFreshBadge: "✅ À jour",
       freshnessStaleBadge: "⚠️ [STALE_WARNING]",
       restrictedSourcePillSuffix: "🔒 Source restreinte",
@@ -568,6 +581,7 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     const onSendCollaborativeMessage = vi.fn();
 
     const folderLabels: AssistantFoldersAndCollaborativeThreadViewLabels = {
+      ...TEST_ASSISTANT_FOLDER_EXTRAS,
       tab1ActiveDiscussionTitle: "💬 Discussion active",
       tab2FoldersTitlePrefix: "📁 Dossiers",
       tab3HistorySearchTitle: "🕘 Historique & Recherche",
@@ -673,6 +687,7 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
   it("Story 10.2c — renders FormattedMarkdownContent (headings, fenced code blocks with python language header & Copy button, bold/inline code, lists), clears input on send, strips internal jargon in AssistantThinkingSubWindow, and shows a single clean duration in seconds", () => {
     const onSendTurn = vi.fn();
     const speedLabels: AssistantSpeedSelectorAndStreamViewLabels = {
+      ...TEST_ASSISTANT_SPEED_DEFAULTS,
       headerTitle: "Routage Conversationnel",
       speed1PillLabel: "⚡ Rapide",
       speed2PillLabel: "🛠️ Outils",
@@ -780,6 +795,7 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     const onOpenFolders = vi.fn();
     const onSaveUserPrefs = vi.fn();
     const speedLabels: AssistantSpeedSelectorAndStreamViewLabels = {
+      ...TEST_ASSISTANT_SPEED_DEFAULTS,
       headerTitle: "Routage Conversationnel",
       speed1PillLabel: "⚡ Rapide",
       speed2PillLabel: "🛠️ Outils",
@@ -809,6 +825,9 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
             uri: "https://docs.orcia.local/securite/espaces",
           },
         ]}
+        agentOptions={TEST_ASSISTANT_AGENT_OPTIONS}
+        skillOptions={TEST_ASSISTANT_SKILL_OPTIONS}
+        orciaDocuments={TEST_ASSISTANT_ORCIA_DOCUMENTS}
         labels={speedLabels}
         onOpenFoldersFromPlus={onOpenFolders}
         onRegenerateLastTurn={onRegenerate}
@@ -851,6 +870,9 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
             uri: "https://docs.orcia.local/securite/espaces",
           },
         ]}
+        agentOptions={TEST_ASSISTANT_AGENT_OPTIONS}
+        skillOptions={TEST_ASSISTANT_SKILL_OPTIONS}
+        orciaDocuments={TEST_ASSISTANT_ORCIA_DOCUMENTS}
         labels={speedLabels}
         onOpenFoldersFromPlus={onOpenFolders}
         onRegenerateLastTurn={onRegenerate}
@@ -960,6 +982,7 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
   it("Story 10.2e — enforces progressive step thinking (collapse show on RUNNING step -> collapse hide on COMPLETED step, sticky manual user step toggle), static summary without fake steps when stepProgress is empty, streamlined Standard/Approfondi single-model pill, borderless action icons, and PLATFORM_ADMIN purge", () => {
     const onSendTurn = vi.fn();
     const speedLabels: AssistantSpeedSelectorAndStreamViewLabels = {
+      ...TEST_ASSISTANT_SPEED_DEFAULTS,
       headerTitle: "Routage Conversationnel",
       speed1PillLabel: "⚡ Rapide",
       speed2PillLabel: "🛠️ Outils",
@@ -1194,6 +1217,7 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
 
   it("Story 10.2f — enforces Viewport-Locked Chat Layout with sticky prompt footer, renders previousTurnsSlot inside central stream, and applies Smart Sticky Scroll (auto-scroll when pinned, stops auto-scroll when user scrolls up, and resumes via ↓ Suivre la réponse en direct)", () => {
     const speedLabels: AssistantSpeedSelectorAndStreamViewLabels = {
+      ...TEST_ASSISTANT_SPEED_DEFAULTS,
       headerTitle: "Routage Conversationnel",
       speed1PillLabel: "⚡ Rapide",
       speed2PillLabel: "🛠️ Outils",
@@ -1296,6 +1320,7 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
   it("Story 10.2g — renders 'Bonne réponse' / 'Réponse à améliorer' feedback buttons with 'Merci pour votre retour !' banner and displays the Prompt + Context + Feedback Telemetry Log in Tab 3 of AssistantGovernanceModalAndStudio", () => {
     const onFeedbackLastTurn = vi.fn();
     const speedLabels: AssistantSpeedSelectorAndStreamViewLabels = {
+      ...TEST_ASSISTANT_SPEED_DEFAULTS,
       headerTitle: "Routage Conversationnel",
       speed1PillLabel: "⚡ Rapide",
       speed2PillLabel: "🛠️ Outils",

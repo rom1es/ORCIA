@@ -13,6 +13,7 @@ const LABELS_FR: RemoteServiceTestBenchLabels = {
   testingInProgressNotice:
     "⏳ Vérification en cours auprès du serveur et enregistrement dans le registre d'audit…",
   activateConnectorCta: "✓ Activer ce service dans l'Espace",
+  activateDisabledReason: "Validez les 4 étapes du banc d'essai pour activer ce connecteur.",
   testWithPersonalTokenCta: "🔑 Tester avec mon compte personnel",
   mcpExposureHeading: "Accès depuis un Éditeur de Code Externe",
   exposeMcpToggleLabel:
@@ -41,6 +42,7 @@ const LABELS_EN: RemoteServiceTestBenchLabels = {
   testingInProgressNotice:
     "⏳ Verifying connection with remote server and recording audit trail…",
   activateConnectorCta: "✓ Enable this service in the Space",
+  activateDisabledReason: "Complete the 4 test bench verification steps to enable this connector.",
   testWithPersonalTokenCta: "🔑 Test with my personal account",
   mcpExposureHeading: "External Code Editor Access",
   exposeMcpToggleLabel:

@@ -11,6 +11,7 @@ const mockLabels: OrciaModelComboboxLabels = {
   noModelsFound: "Aucun modèle trouvé",
   refreshLabel: "Découvrir les modèles",
   loadingLabel: "Découverte...",
+  toggleListAriaLabel: "Toggle models list",
   freeformHint: "Vous pouvez saisir un identifiant librement",
   chatBadge: "Chat",
   embeddingBadge: "Embedding",

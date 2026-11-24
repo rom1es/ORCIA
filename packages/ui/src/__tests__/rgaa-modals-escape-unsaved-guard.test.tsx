@@ -20,9 +20,13 @@ import {
   type UpstreamChallengeWhatIfPreview,
   type UiUserSettingsTabKey,
 } from "../index.js";
+import {
+  TEST_ASSISTANT_GOV_EXTRAS,
+} from "./assistantLabelsFixture";
 import { TEST_USER_SETTINGS_LABELS } from "./userSettingsLabelsFixture";
 
 const SAMPLE_ASSISTANT_GOV_LABELS: AssistantGovernanceModalAndStudioLabels = {
+  ...TEST_ASSISTANT_GOV_EXTRAS,
   modalTitle: "⚙ Réglages de l'assistant",
   tab1UserTitle: "Mes préférences",
   tab2WorkspaceTitle: "Réglages de l'Espace",

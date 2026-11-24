@@ -27,6 +27,7 @@ export interface HelpArticleGeneratorAndValidatorLabels {
   hotAttachmentHeading: string;
   authorityReferenceBadge: string;
   generateAndAttachCta: string;
+  durationMsUnit?: string;
 }
 
 export interface HelpArticleGeneratorAndValidatorViewProps {
@@ -122,7 +123,8 @@ export const HelpArticleGeneratorAndValidatorView: FC<
           >
             <div className="mb-2 flex items-center justify-between font-semibold">
               <span>
-                {labels.validationChecksHeading} ({val.lang.toUpperCase()}) · {val.elapsedMs} ms
+                {labels.validationChecksHeading} ({val.lang.toUpperCase()}) ·{" "}
+            {`${val.elapsedMs} ${labels.durationMsUnit ?? "ms"}`}
               </span>
               <span
                 data-testid={`help-validation-status-${val.lang}`}
@@ -161,7 +163,7 @@ export const HelpArticleGeneratorAndValidatorView: FC<
         <div className="mb-1 flex items-center justify-between font-semibold">
           <span>{labels.hotAttachmentHeading}</span>
           <span data-testid="hot-attach-elapsed-ms" className="font-mono">
-            {hotAttachElapsedMs} ms
+            {`${hotAttachElapsedMs} ${labels.durationMsUnit ?? "ms"}`}
           </span>
         </div>
         <p className="font-mono" data-testid="help-bound-routes">

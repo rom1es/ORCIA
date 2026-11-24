@@ -11,10 +11,16 @@ import type { UiInferenceEffort } from "./InferenceTierAndEffortSelector";
 export function AssistantActiveFolderPromptBadge({
   activeFolderTitle,
   activeFolderNotes,
+  activeFolderPrefix,
+  activeNoteAppliedText,
+  detachActiveFolderAriaLabel,
   onClearActiveFolder,
 }: {
   readonly activeFolderTitle: string | null;
   readonly activeFolderNotes: string | null;
+  readonly activeFolderPrefix: string;
+  readonly activeNoteAppliedText: string;
+  readonly detachActiveFolderAriaLabel: string;
   readonly onClearActiveFolder?: (() => void) | undefined;
 }): React.JSX.Element | null {
   if (!activeFolderTitle) return null;
@@ -24,14 +30,15 @@ export function AssistantActiveFolderPromptBadge({
       className="mb-1.5 inline-flex flex-wrap items-center gap-1.5 rounded-full border border-action-primary/30 bg-action-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-action-primary"
     >
       <span>
-        <OrciaIcon name="folder" /> Dossier actif : <strong>{activeFolderTitle}</strong>
+        <OrciaIcon name="folder" /> {activeFolderPrefix} <strong>{activeFolderTitle}</strong>
       </span>
       {activeFolderNotes && activeFolderNotes.trim() ? (
         <span
           data-testid="assistant-prompt-active-folder-note-indicator"
           className="text-text-secondary"
         >
-          · <OrciaIcon name="pin" /> Note active prise en compte par l&apos;Assistant
+          {`· `}
+          <OrciaIcon name="pin" /> {activeNoteAppliedText}
         </span>
       ) : null}
       {onClearActiveFolder ? (
@@ -39,7 +46,7 @@ export function AssistantActiveFolderPromptBadge({
           type="button"
           data-testid="assistant-prompt-clear-active-folder-btn"
           onClick={onClearActiveFolder}
-          aria-label="Détacher le dossier actif"
+          aria-label={detachActiveFolderAriaLabel}
           className="ml-1 font-bold hover:opacity-80"
         >
           <OrciaIcon name="times" />

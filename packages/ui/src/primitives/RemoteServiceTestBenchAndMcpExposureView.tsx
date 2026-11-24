@@ -26,31 +26,18 @@ export interface UiDiscoveredCapabilityItem {
 export interface RemoteServiceTestBenchLabels {
   readonly heading: string;
   readonly testAndDiscoverCta: string;
-  readonly testingInProgressCta?: string;
-  readonly testingInProgressNotice?: string;
+  readonly testingInProgressCta: string;
+  readonly testingInProgressNotice: string;
   readonly activateConnectorCta: string;
+  readonly activateDisabledReason: string;
   readonly testWithPersonalTokenCta: string;
   readonly mcpExposureHeading: string;
   readonly exposeMcpToggleLabel: string;
   readonly mcpIdeBadge: string;
   readonly ipProtectionNotice: string;
-  readonly stepLabels?: Readonly<Record<UiTestBenchStepItem["stepCode"], string>>;
-  readonly statusLabels?: Readonly<Record<UiTestBenchStepItem["status"], string>>;
+  readonly stepLabels: Readonly<Record<UiTestBenchStepItem["stepCode"], string>>;
+  readonly statusLabels: Readonly<Record<UiTestBenchStepItem["status"], string>>;
 }
-
-const DEFAULT_STEP_LABELS: Readonly<Record<UiTestBenchStepItem["stepCode"], string>> = {
-  "1_NETWORK_TLS_ANTI_SSRF": "Réseau, sécurité et protection d'adresse",
-  "2_AUTHENTICATION": "Authentification et contrôle d'accès",
-  "3_CONTRACT_DISCOVERY": "Découverte du contrat et des actions",
-  "4_HOT_DRY_RUN": "Test d'exécution à blanc",
-};
-
-const DEFAULT_STATUS_LABELS: Readonly<Record<UiTestBenchStepItem["status"], string>> = {
-  PASS: "Validé",
-  FAIL: "Échec",
-  WAITING_USER_PASSTHROUGH_TOKEN: "En attente de jeton personnel",
-  SKIPPED: "Ignoré",
-};
 
 export interface RemoteServiceTestBenchAndMcpExposureViewProps {
   readonly endpointUrl: string;
@@ -83,8 +70,8 @@ export const RemoteServiceTestBenchAndMcpExposureView: React.FC<
   onActivateService,
   onToggleMcpExposure,
 }) => {
-  const stepLabelMap = labels.stepLabels ?? DEFAULT_STEP_LABELS;
-  const statusLabelMap = labels.statusLabels ?? DEFAULT_STATUS_LABELS;
+  const stepLabelMap = labels.stepLabels;
+  const statusLabelMap = labels.statusLabels;
 
   return (
     <section
@@ -111,7 +98,7 @@ export const RemoteServiceTestBenchAndMcpExposureView: React.FC<
               {isTesting && <OrciaSpinner size="xs" />}
               <span>
                 {isTesting
-                  ? (labels.testingInProgressCta ?? "Vérification en cours…")
+                  ? labels.testingInProgressCta
                   : labels.testAndDiscoverCta}
               </span>
             </button>
@@ -126,7 +113,7 @@ export const RemoteServiceTestBenchAndMcpExposureView: React.FC<
             <span>{labels.activateConnectorCta}</span>
             <DisabledButtonAlertIndicator
               disabled={!canActivate || isTesting || isSavingMcp}
-              reason="Validez les 4 étapes du banc d'essai pour activer ce connecteur."
+              reason={labels.activateDisabledReason}
               testIdSuffix="activate-remote-service-btn"
             />
           </button>
@@ -140,10 +127,7 @@ export const RemoteServiceTestBenchAndMcpExposureView: React.FC<
           className="flex items-center gap-2 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2 text-xs font-medium text-[var(--orcia-text-secondary)]"
         >
           <OrciaSpinner size="xs" />
-          <span>
-            {labels.testingInProgressNotice ??
-              "Vérification en cours auprès du serveur et enregistrement de la trace d'audit…"}
-          </span>
+          <span>{labels.testingInProgressNotice}</span>
         </div>
       )}
 

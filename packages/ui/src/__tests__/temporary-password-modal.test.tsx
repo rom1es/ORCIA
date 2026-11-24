@@ -5,7 +5,10 @@ import {
   TemporaryPasswordInvitationModal,
   UserPasswordChangeCard,
 } from "../index";
-import { TEST_USER_SETTINGS_LABELS } from "./userSettingsLabelsFixture";
+import {
+  TEST_TEMP_PASSWORD_LABELS_FR,
+  TEST_USER_SETTINGS_LABELS,
+} from "./userSettingsLabelsFixture";
 
 describe("TemporaryPasswordInvitationModal & UserPasswordChangeCard (@orcia/ui)", () => {
   it("renders TemporaryPasswordInvitationModal with 12-char value, ready-to-copy textarea, and action buttons", () => {
@@ -15,7 +18,7 @@ describe("TemporaryPasswordInvitationModal & UserPasswordChangeCard (@orcia/ui)"
     render(
       <TemporaryPasswordInvitationModal
         isOpen={true}
-        isFr={true}
+        labels={TEST_TEMP_PASSWORD_LABELS_FR}
         displayName="Claire Martin"
         email="claire.martin@entreprise.fr"
         temporaryPassword="TempSecret12" // pragma: allowlist secret

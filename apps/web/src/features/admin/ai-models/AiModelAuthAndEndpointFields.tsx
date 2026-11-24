@@ -62,6 +62,7 @@ export function AiModelAuthAndEndpointFields({
     noModelsFound: labels.modelDiscoveryNoMatch,
     refreshLabel: labels.modelDiscoveryRefresh,
     loadingLabel: labels.modelDiscoveryLoading,
+    toggleListAriaLabel: labels.modelDiscoveryToggleListAriaLabel,
     freeformHint: labels.modelDiscoveryFreeformHint,
     chatBadge: labels.chatBadge,
     embeddingBadge: labels.embeddingBadge,

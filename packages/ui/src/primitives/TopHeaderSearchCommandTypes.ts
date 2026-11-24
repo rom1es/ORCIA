@@ -42,6 +42,13 @@ export interface TopHeaderSearchCommandLabels {
   readonly openHelpColumnActionLabel: string;
   readonly askAssistantFooterPrefix: string;
   readonly askAssistantFooterSuffix: string;
+  readonly deepSearchCtaLabel?: string;
+  readonly searchScopesAriaLabel?: string;
+  readonly helpColumnDeepLinkPrefix?: string;
+  readonly autoFocusDeepLinkPrefix?: string;
+  readonly durationMsUnit?: string;
+  readonly keyboardShortcutsHint?: string;
+  readonly disabledOpenHint?: string;
   readonly familyLabels: Readonly<Record<TopSearchFamilyKey, string>>;
 }
 

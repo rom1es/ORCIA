@@ -137,7 +137,7 @@ export function FinopsRemoteMcpServicesTab({
                     <td style={{ padding: "10px 12px" }}>
                       <div>{s.dailyCallsCount} {labels.callsSuffix}</div>
                       <div style={{ fontSize: "11px", color: "var(--color-text-muted)" }}>
-                        {s.avgLatencyMs} ms
+                        {`${s.avgLatencyMs} ${labels.durationMsUnit ?? "ms"}`}
                       </div>
                     </td>
                     <td style={{ padding: "10px 12px" }}>

@@ -3,60 +3,11 @@ import React, { useState } from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   AgentsAndSkillsManagerView,
-  type AgentsAndSkillsManagerLabels,
   type UiAgentThinkingLevel,
   type UiManagedAgentItem,
   type UiManagedSkillItem,
 } from "../index";
-
-const TEST_LABELS: AgentsAndSkillsManagerLabels = {
-  heading: "🤖 Mes Agents & Compétences (Skills)",
-  subtitle: "Créez vos compétences réutilisables et rattachez-les à vos agents.",
-  tabAgents: "🤖 Mes Agents",
-  tabSkills: "🛠️ Compétences (Skills)",
-  tabConnections: "🔌 Serveurs d'outils & MCP",
-  emptyAgentsTitle: "Aucun agent configuré",
-  emptyAgentsDescription: "Créez votre premier agent ci-dessus.",
-  emptySkillsTitle: "Aucune compétence enregistrée",
-  emptySkillsDescription: "Créez votre première compétence ci-dessus.",
-  createAgentSectionTitle: "Créer un Agent spécialisé",
-  agentNameLabel: "Nom de l'agent",
-  agentNamePlaceholder: "Ex: Analyste Risques Fournisseurs",
-  agentRoleLabel: "Rôle & mission métier",
-  agentRolePlaceholder: "Ex: Évaluer la conformité",
-  agentInstructionsLabel: "Instructions de travail",
-  agentInstructionsPlaceholder: "Précisez la posture...",
-  agentThinkingLevelLabel: "Niveau de réflexion par défaut",
-  thinkingLevels: {
-    simple: "⚡ Rapide",
-    medium: "⚖️ Équilibré",
-    complex: "🧠 Approfondi",
-    auto: "✨ Automatique",
-  },
-  attachedSkillsLabel: "Compétences rattachées",
-  noSkillsAvailableHint: "Aucune compétence disponible.",
-  createAgentButtonLabel: "+ Enregistrer l'Agent",
-  testAgentInputPlaceholder: "Demande concrète...",
-  runAgentButtonLabel: "▶ Exécuter l'Agent",
-  deleteAgentButtonLabel: "Supprimer",
-  mobilizedSkillsLabel: "Compétences mobilisées",
-  createSkillSectionTitle: "Créer une Compétence (Skill) réutilisable",
-  skillUsageBanner: "Une compétence est modulaire.",
-  skillNameLabel: "Nom de la compétence",
-  skillNamePlaceholder: "Ex: Synthèse de conformité",
-  skillObjectiveLabel: "Objectif métier",
-  skillObjectivePlaceholder: "Ex: Vérifier les clauses...",
-  skillParamsLabel: "Paramètres d'entrée attendus",
-  skillParamsPlaceholder: "Ex: contrat, annexe",
-  skillInstructionsLabel: "Méthode & instructions d'exécution",
-  skillInstructionsPlaceholder: "Étapes de vérification...",
-  skillOutputFormatLabel: "Format de résultat attendu",
-  skillOutputFormatPlaceholder: "Ex: Tableau Go / No-Go",
-  createSkillButtonLabel: "+ Enregistrer la Compétence",
-  testSkillInputPlaceholder: "Cas de test...",
-  runSkillButtonLabel: "▶ Tester la Compétence",
-  deleteSkillButtonLabel: "Supprimer",
-};
+import { TEST_AGENTS_AND_SKILLS_LABELS as TEST_LABELS } from "./agentsAndSkillsLabelsFixture";
 
 function StatefulHarness() {
   const [skills, setSkills] = useState<UiManagedSkillItem[]>([]);

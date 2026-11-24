@@ -11,6 +11,7 @@ export interface ProductLifecycleCardLabels {
   readonly migrationBadge: string;
   readonly suggestedWorkflowsTitle: string;
   readonly readOnlyHint: string;
+  readonly payloadMaskedLabel?: string;
 }
 
 export interface ProductLifecycleCardProps {
@@ -90,10 +91,15 @@ export function ProductLifecycleCard({
             {visibilityMode}
             {ownerOrgUnitName ? ` • ${ownerOrgUnitName}` : ""}
             {finopsCostUsd !== null ? ` • $${finopsCostUsd.toFixed(2)}` : ""}
-            {payloadMasked ? (
+            {payloadMasked && labels.payloadMaskedLabel ? (
               <>
                 {" • "}
-                <OrciaIcon name="lock" /> Payload Masqué
+                <OrciaIcon name="lock" /> {labels.payloadMaskedLabel}
+              </>
+            ) : payloadMasked ? (
+              <>
+                {" • "}
+                <OrciaIcon name="lock" />
               </>
             ) : (
               ""

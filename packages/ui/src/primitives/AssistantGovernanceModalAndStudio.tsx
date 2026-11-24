@@ -8,25 +8,25 @@ import {
 } from "../components/RgaaModalDialog";
 import { AssistantGovernanceModeATabs } from "./AssistantGovernanceModeATabs";
 import {
-  ASSISTANT_DEFAULT_HAT_OPTIONS,
   type AssistantGovernanceModalAndStudioLabels,
   type AssistantGovernanceModalAndStudioProps,
   type UiAssembledLayerItem,
   type UiAssistantPromptTelemetryRecord,
   type UiAssistantResponseFormat,
   type UiAssistantResponseTone,
+  type UiAssistantSelectOption,
   type UiAssistantStudioNode,
 } from "./AssistantGovernanceTypes";
 
-export {
-  ASSISTANT_DEFAULT_HAT_OPTIONS,
-  type AssistantGovernanceModalAndStudioLabels,
-  type AssistantGovernanceModalAndStudioProps,
-  type UiAssembledLayerItem,
-  type UiAssistantPromptTelemetryRecord,
-  type UiAssistantResponseFormat,
-  type UiAssistantResponseTone,
-  type UiAssistantStudioNode,
+export type {
+  AssistantGovernanceModalAndStudioLabels,
+  AssistantGovernanceModalAndStudioProps,
+  UiAssembledLayerItem,
+  UiAssistantPromptTelemetryRecord,
+  UiAssistantResponseFormat,
+  UiAssistantResponseTone,
+  UiAssistantSelectOption,
+  UiAssistantStudioNode,
 };
 
 export function AssistantGovernanceModalAndStudio({
@@ -188,7 +188,7 @@ export function AssistantGovernanceModalAndStudio({
               }}
               className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
             >
-              <OrciaIcon name="check" /> Enregistré
+              <OrciaIcon name="check" /> {labels.savedBadgeLabel}
             </span>
           )}
         </div>

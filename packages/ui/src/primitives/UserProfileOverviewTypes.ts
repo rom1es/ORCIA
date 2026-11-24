@@ -3,6 +3,8 @@
  * Isolated in `packages/ui` — zero imports of `@orcia/api-client` or `@tanstack/react-router`.
  */
 
+import type { RoleDisplayLabels } from "./UserRoleDisplayLabels";
+
 export type UiProfilePopularItemType = "AGENT" | "PROCESS" | "SKILL" | "TOOL";
 
 export interface UiProfilePopularUsageItem {
@@ -52,7 +54,9 @@ export interface UserProfileOverviewLabels {
   readonly itemTypeLabels: Readonly<Record<UiProfilePopularItemType, string>>;
   readonly emptyPopularTitle: string;
   readonly emptyPopularDescription: string;
+  readonly emptyKpisMessage: string;
   readonly exploreAgentsCta: string;
   readonly loadingLabel: string;
   readonly retryLabel: string;
+  readonly roleDisplayLabels?: RoleDisplayLabels | Readonly<Record<string, string>>;
 }

@@ -48,6 +48,7 @@ export interface StreamlinedCockpitLabels {
   readonly focusWorkshopBreadcrumbPrefix: string;
   readonly focusWorkshopCloseCta: string;
   readonly redisLockAcquiredPrefix: string;
+  readonly runNumberPrefix?: string;
 }
 
 export interface StreamlinedCockpitViewProps {

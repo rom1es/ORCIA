@@ -54,8 +54,8 @@ export function AssistantGovernanceStudioModeB({
           }
           className="px-2.5 py-1.5 rounded border border-surface-border bg-surface-primary"
         >
-          <option value="WORKSPACE">WORKSPACE ({workspaceId})</option>
-          <option value="TEAM">TEAM</option>
+          <option value="WORKSPACE">{`${labels.studioWorkspaceScopeLabel ?? ""} (${workspaceId})`}</option>
+          <option value="TEAM">{labels.studioTeamScopeLabel ?? ""}</option>
         </select>
         <span
           data-testid="studio-harness-immutable-badge"
@@ -98,8 +98,7 @@ export function AssistantGovernanceStudioModeB({
             <div>
               <div className="font-semibold">{node.title}</div>
               <div className="text-[11px] font-mono text-text-secondary">
-                COUCHES · {node.subLayersCount}
-                {node.subAgentUri ? ` · ${node.subAgentUri}` : ""}
+                {`${labels.studioLayersPrefix ?? ""} · ${node.subLayersCount}${node.subAgentUri ? ` · ${node.subAgentUri}` : ""}`}
               </div>
             </div>
             {node.isHarnessBoundary || node.lockedBy !== null ? (
@@ -116,7 +115,7 @@ export function AssistantGovernanceStudioModeB({
                 onClick={() => onToggleNodeSubAgent(node.nodeId)}
                 className="px-2 py-1 rounded border border-surface-border bg-surface-secondary text-[11px]"
               >
-                + Sous-agent / Couche
+                {labels.studioAddSubAgentCta ?? "+"}
               </button>
             )}
           </div>
@@ -137,7 +136,7 @@ export function AssistantGovernanceStudioModeB({
           data-testid="studio-reset-restored-banner"
           className="p-2 rounded bg-surface-secondary border border-surface-border font-mono text-[11px]"
         >
-          <OrciaIcon name="undo" /> Configuration standard restaurée
+          <OrciaIcon name="undo" /> {labels.studioResetRestoredBanner ?? ""}
         </div>
       )}
 

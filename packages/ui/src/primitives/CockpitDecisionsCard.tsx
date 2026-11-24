@@ -28,7 +28,9 @@ export function CockpitFocusWorkshopPanel({
       <div className="flex items-center justify-between">
         <div className="text-xs font-semibold">
           {labels.focusWorkshopBreadcrumbPrefix}{" "}
-          <span className="font-mono">Run #{activeFocusWorkshop.runId}</span>
+          <span className="font-mono">
+            {`${labels.runNumberPrefix ?? "#"}${activeFocusWorkshop.runId}`}
+          </span>
         </div>
         <button
           type="button"
@@ -53,8 +55,7 @@ export function CockpitFocusWorkshopPanel({
           color: "var(--color-action-primary)",
         }}
       >
-        {labels.redisLockAcquiredPrefix} SET {activeFocusWorkshop.redisLockKey}{" "}
-        {activeFocusWorkshop.claimedByUserId} NX EX {activeFocusWorkshop.redisLockTtlSeconds}
+        {`${labels.redisLockAcquiredPrefix} SET ${activeFocusWorkshop.redisLockKey} ${activeFocusWorkshop.claimedByUserId} NX EX ${activeFocusWorkshop.redisLockTtlSeconds}`}
       </div>
     </section>
   );

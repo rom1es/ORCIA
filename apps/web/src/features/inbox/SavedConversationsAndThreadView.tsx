@@ -138,6 +138,7 @@ export function ActiveConversationMessagesView({
   onContinueInProcess,
   onFeedbackTurn,
 }: ActiveConversationMessagesViewProps): React.JSX.Element | null {
+  const { dictionary } = useI18n();
   if (conversation.turns.length === 0) {
     return null;
   }
@@ -204,7 +205,7 @@ export function ActiveConversationMessagesView({
               {isLastSavedTurn && !isGenerating && (
                 <AssistantResponseFooterActionsAndCitations
                   responseText={cleanReply}
-                  isFr={isFr}
+                  labels={dictionary.assistantSpeedStream.responseFooter}
                   modelLabel={turn.modelLabel}
                   effortLabel={turn.effortLabel}
                   ragCitations={turnCitations}

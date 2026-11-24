@@ -205,7 +205,7 @@ export function SettingsOrganizationUnitsBlock({
       {s.inviteTempPasswordData ? (
         <TemporaryPasswordInvitationModal
           isOpen={true}
-          isFr={isFr}
+          labels={dictionary.tempPasswordModal}
           displayName={s.inviteTempPasswordData.displayName}
           email={s.inviteTempPasswordData.email}
           temporaryPassword={s.inviteTempPasswordData.temporaryPassword}

@@ -9,12 +9,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-24",
   "stats": {
     "activeRoutesCount": 28,
-    "uiPrimitivesCount": 139,
+    "uiPrimitivesCount": 131,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 227,
+    "techLeadReportsCount": 228,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -53,8 +53,6 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "/workspaces/$wsId/sources"
   ],
   "uiPrimitives": [
-    "AGENT_STUDIO_BLOCKS",
-    "ASSISTANT_DEFAULT_HAT_OPTIONS",
     "AccessibleModalDialog",
     "ActivityLogExplorerView",
     "ActivityLogFiltersBar",
@@ -92,7 +90,6 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "ContextualHelpColumnAndCenter",
     "ContextualHelpColumnView",
     "ContextualInfoTriggerButton",
-    "DIALOGUE_MECHANISM_LABELS_FR",
     "DisabledButtonAlertIndicator",
     "DnaStarlarkCompilerAndGlossaryLifecycleView",
     "DurableWizardRunnerView",
@@ -113,12 +110,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "FourZoneNotificationsDrawer",
     "GlobalSidebar",
     "GuidanceDrawer",
-    "HUMAN_PARTNER_ROLE_LABELS_FR",
     "HelpArticleGeneratorAndValidatorView",
     "HelpCenterCatalogView",
     "HumanLedAnchorCard",
     "InferenceTierBadge",
-    "LLM_MODEL_TIER_LABELS_FR",
     "LayersInspectorPopover",
     "LoginTwoFactorStepPanel",
     "MobileCompanionView",
@@ -127,7 +122,6 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "ORCIA_ICON_SVG_PATHS",
     "ORCIA_MODULE_ICON_NAMES",
     "ORCIA_SCOPE_LEVEL_ICON_NAMES",
-    "OUTPUT_CONTRACT_FORMAT_LABELS_FR",
     "OntologyAndKbExplorerPanel",
     "OrciaAlertBanner",
     "OrciaButton",
@@ -156,8 +150,6 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "PresenceClaimPill",
     "ProductLifecycleCard",
     "ProgressiveDay0AccostageBanner",
-    "ROLE_DISPLAY_LABELS_EN",
-    "ROLE_DISPLAY_LABELS_FR",
     "RemoteServiceTestBenchAndMcpExposureView",
     "RgaaDialogFooterActions",
     "RgaaModalDialog",
@@ -550,6 +542,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-24",
+      "phaseOrStory": "Story 27.6",
+      "reportFile": "27-6-category-c-orcia-ui-design-system-primitives-typed-label-props-tech-lead-report.md",
+      "domain": "Epic 27 Lot 3 Part 2 — Category C Remediation: @orcia/ui Design System Components & Primitives via Typed Label Props (packages/ui Gate 1 Baseline = 0, CAP-060, CAP-090, CAP-091, CAP-100, CAP-200, CAP-260)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): migrated all 55 remaining packages/ui/src/ Gate 1 files (components/, primitives/, shell/, split OrciaProductShowcaseSiteView.tsx + oversized components/primitives into <= 299 L modules, 0 non-barrel source files > 300 L across 166 .ts/.tsx files: 120 modified, 46 created) to typed label props wired from modular FR/EN dictionaries in apps/web/src/i18n/locales/ + showcaseArchitectureCatalog.ts; reduced Gate 1 AST baseline (421 → 0 across both apps/web/src/ and packages/ui/src/, astFiles: {}), preserved Gate 2 (0 parity/jargon violations) & Gate 3 (0 client error violations), and verified 9/9 Turbo (@orcia/api-client 20, @orcia/ui 139, @orcia/web 290 = 449 JS/TS tests), Gate 4 (3 passed), and detect-secrets-hook (0 findings)."
+    },
     {
       "date": "2026-11-24",
       "phaseOrStory": "Story 27.5",

@@ -29,6 +29,8 @@ const STUDIO_LABELS: UiWorkflowStudioLabels = {
     '{\n  "$schema": "https://json-schema.org/draft/2020-12/schema",\n  "x-ontology-concept-key": "strategic_asset"\n}',
   subWorkflowLocksTitle:
     "Arbre Récursif run-lock.json & Sous-Workflows Verrouillés (SHA-256)",
+  depthPrefix: "Niveau",
+  principalDepthLabel: "principal",
 };
 
 describe("WorkflowStudioSection (Story 3.1)", () => {

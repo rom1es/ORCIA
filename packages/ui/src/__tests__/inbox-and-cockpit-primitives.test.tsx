@@ -259,6 +259,8 @@ describe("Epic 5 @orcia/ui Primitives (Stories 5.1, 5.2, 5.3, 5.4)", () => {
       <>
         <BiModeLoginView
           labels={{
+            brandName: "ORCIA",
+            traceIdPrefix: "trace_id:",
             title: "Connexion ORCIA",
             subtitle: "Bi-Mode",
             primarySsoCta: "SSO d'Entreprise (OIDC PKCE)",

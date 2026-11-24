@@ -34,6 +34,7 @@ export const CORE_DOMAIN_EN_LABELS: Pick<
     mutationAllowedBanner: "Editing allowed (active Contributor role)",
     mutationDeniedObserverBanner:
       "Action denied — Your current role is limited to read-only access",
+    emptyWorkspacesText: "0 workspaces",
   },
   catalogExplorer: {
     panelTitle: "Catalog of Agents, Skills and Process Templates",
@@ -96,6 +97,7 @@ export const CORE_DOMAIN_EN_LABELS: Pick<
         '{"$schema":"https://json-schema.org/draft/2020-12/schema","x-bound-ontology-terms":["Strategic Asset"]}',
       subWorkflowLocksTitle: "Linked sub-processes and associated versions",
       depthPrefix: "Level",
+      principalDepthLabel: "primary",
     },
   },
   permissionBroker: {
@@ -190,5 +192,20 @@ export const CORE_DOMAIN_EN_LABELS: Pick<
     auditConfluencePlaceholder: "Documentation URI (e.g. confluence://SPACE/page)",
     auditGitPlaceholder: "Repository or code symbol (e.g. https://git.internal.orcia/app)",
     auditJiraPlaceholder: "Ticket reference (e.g. PROJ-101)",
+    profileDisplayLabels: {
+      EXECUTIVE: "Executive / Leadership",
+      PM_BUSINESS: "Product & Business",
+      ARCHITECT: "Architecture",
+      TECH_LEAD: "Tech Lead",
+      DEVELOPER: "Developer",
+      SECOPS: "Security & Compliance",
+    },
+    immutableRuleBadgeLabel: "Locked rule",
+    impactPreviewPrefix: "Impact preview",
+    impactTemplatesLabel: "Templates",
+    impactWorkflowsLabel: "Processes",
+    impactRunsLabel: "Executions",
+    staleJiraPrefix: "Ticket",
+    staleRunsPrefix: "Executions",
   },
 };

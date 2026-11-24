@@ -34,6 +34,7 @@ export const CORE_DOMAIN_FR_LABELS: Pick<
     mutationAllowedBanner: "Modification autorisée (rôle Contributeur actif)",
     mutationDeniedObserverBanner:
       "Action refusée — Votre rôle actuel est limité à la consultation seule",
+    emptyWorkspacesText: "0 espace",
   },
   catalogExplorer: {
     panelTitle: "Catalogue des Agents, Compétences et Modèles de Processus",
@@ -97,6 +98,7 @@ export const CORE_DOMAIN_FR_LABELS: Pick<
         '{"$schema":"https://json-schema.org/draft/2020-12/schema","x-bound-ontology-terms":["Actif Stratégique"]}',
       subWorkflowLocksTitle: "Sous-processus rattachés et versions associées",
       depthPrefix: "Niveau",
+      principalDepthLabel: "principal",
     },
   },
   permissionBroker: {
@@ -191,5 +193,20 @@ export const CORE_DOMAIN_FR_LABELS: Pick<
     auditConfluencePlaceholder: "Adresse de la page documentaire (ex. confluence://ESPACE/page)",
     auditGitPlaceholder: "Dépôt ou symbole applicatif (ex. https://git.internal.orcia/app)",
     auditJiraPlaceholder: "Référence ticket (ex. PROJ-101)",
+    profileDisplayLabels: {
+      EXECUTIVE: "Direction / Exécutif",
+      PM_BUSINESS: "Produit & Métier",
+      ARCHITECT: "Architecture",
+      TECH_LEAD: "Référent Technique",
+      DEVELOPER: "Développeur",
+      SECOPS: "Sécurité & Conformité",
+    },
+    immutableRuleBadgeLabel: "Règle verrouillée",
+    impactPreviewPrefix: "Aperçu d'impact",
+    impactTemplatesLabel: "Modèles",
+    impactWorkflowsLabel: "Processus",
+    impactRunsLabel: "Exécutions",
+    staleJiraPrefix: "Ticket",
+    staleRunsPrefix: "Exécutions",
   },
 };

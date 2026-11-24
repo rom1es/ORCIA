@@ -140,7 +140,7 @@ export function useInboxPanelController() {
     return rows.slice(-100).reverse();
   }, [savedConversations, foldersController.folders]);
   const { agentOptions, skillOptions, orciaDocuments, ragCitations } =
-    buildAssistantAutocompleteAndRagOptions({ catalogItems, datasources });
+    buildAssistantAutocompleteAndRagOptions({ catalogItems, datasources, isFr });
   const autocompleteSuggestions = buildAssistantAutocompleteSuggestions(packs, isFr);
 
   const selectActiveConversationAndPersist = (nextConvId: string | null) => {

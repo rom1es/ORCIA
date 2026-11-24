@@ -18,6 +18,10 @@ import {
 } from "../components/icons";
 import { AssistantResponseFooterActionsAndCitations } from "../primitives/AssistantResponseFooterActionsAndCitations";
 import { AssistantSpeedSelectorAndStreamView } from "../primitives/AssistantSpeedSelectorAndStreamView";
+import {
+  TEST_ASSISTANT_RESPONSE_FOOTER_LABELS,
+  TEST_ASSISTANT_SPEED_DEFAULTS,
+} from "./assistantLabelsFixture";
 import { FourZoneDirectionCShell } from "../primitives/FourZoneDirectionCShell";
 import { GlobalSidebar } from "../shell/GlobalSidebar";
 import { ScopeSwitcher } from "../shell/ScopeSwitcher";
@@ -280,6 +284,7 @@ describe("ORCIA Centralized Icon Registry (@orcia/ui) & Anti-Regression Audit", 
           />
           <AssistantResponseFooterActionsAndCitations
             responseText="Réponse synthétique"
+            labels={TEST_ASSISTANT_RESPONSE_FOOTER_LABELS}
           />
           <AssistantSpeedSelectorAndStreamView
             workspaceId="ws-1"
@@ -287,6 +292,7 @@ describe("ORCIA Centralized Icon Registry (@orcia/ui) & Anti-Regression Audit", 
             hat="TECH_LEAD"
             stepProgress={[]}
             labels={{
+              ...TEST_ASSISTANT_SPEED_DEFAULTS,
               headerTitle: "Mon Assistant",
               speed1PillLabel: "Vitesse 1",
               speed2PillLabel: "Vitesse 2",

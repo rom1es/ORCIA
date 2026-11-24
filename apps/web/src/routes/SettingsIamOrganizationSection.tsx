@@ -12,7 +12,7 @@ import {
   fetchIamRoleMatrixFromApi,
   resetIamAccountTemporaryPasswordViaApi,
 } from "../features/admin/iam/iamApiBridge";
-import { resolveLocaleForFlag } from "../i18n";
+import { resolveDictionaryForFlag, resolveLocaleForFlag } from "../i18n";
 import type { IamTabDictionarySection } from "../i18n/locales/iam_accounts_labels";
 import { useAuthSessionStore } from "../stores/authSessionStore";
 import { useIamOrganizationAccountHandlers } from "./useIamOrganizationAccountHandlers";
@@ -210,7 +210,7 @@ export function SettingsIamOrganizationSection({
       {accountHandlers.tempPasswordModalData && (
         <TemporaryPasswordInvitationModal
           isOpen={true}
-          isFr={isFr}
+          labels={resolveDictionaryForFlag(isFr).tempPasswordModal}
           displayName={accountHandlers.tempPasswordModalData.displayName}
           email={accountHandlers.tempPasswordModalData.email}
           temporaryPassword={accountHandlers.tempPasswordModalData.temporaryPassword}

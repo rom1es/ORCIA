@@ -76,6 +76,20 @@ export const FEATURE_INBOX_ASSISTANT_FR: FeatureInboxAssistantDictionary = {
     sdlcAnalystDesc: "Clarifier les besoins et rédiger les exigences",
     sdlcReviewName: "Revue d'Architecture",
     sdlcReviewDesc: "Vérifier la cohérence des choix d'architecture",
+    defaultAgents: [
+      { slug: "analyste-metier", label: "Analyste Métier", description: "Analyse des besoins, règles de gestion et cas d'usage", kind: "agent" },
+      { slug: "architecte-solution", label: "Architecte Solution", description: "Conception technique, modèles de données et intégration", kind: "agent" },
+      { slug: "reviseur-conformite", label: "Réviseur Conformité & Qualité", description: "Vérification des exigences, normes et points d'attention", kind: "agent" },
+      { slug: "redacteur-technique", label: "Rédacteur Technique", description: "Structuration claire de livrables, guides et synthèses", kind: "agent" },
+      { slug: "expert-securite", label: "Expert Sécurité", description: "Analyse des risques de sécurité et protection des données", kind: "agent" },
+    ],
+    defaultSkills: [
+      { slug: "synthese-executive", label: "Synthèse Exécutive", description: "Résumé structuré des points clés et décisions attendues", kind: "skill" },
+      { slug: "analyse-risques", label: "Analyse des Risques", description: "Identification des risques, impacts et mesures de maîtrise", kind: "skill" },
+      { slug: "revue-code", label: "Revue de Code & Qualité", description: "Inspection de la lisibilité, de la sécurité et des tests", kind: "skill" },
+      { slug: "extraction-exigences", label: "Extraction d'Exigences", description: "Transformation de notes ou documents en critères vérifiables", kind: "skill" },
+      { slug: "comparaison-versions", label: "Comparaison de Versions", description: "Mise en évidence des écarts entre deux documents ou normes", kind: "skill" },
+    ],
   },
   citations: {
     serverVerifiedSourcesTemplate: "{count} source(s) vérifiée(s) par le serveur",

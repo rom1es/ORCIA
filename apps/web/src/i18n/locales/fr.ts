@@ -29,6 +29,10 @@ import { PROCESS_ORCHESTRATION_MODES_FR_LABELS } from "./process_orchestration_m
 import { PROCESS_STUDIO_UI_FR } from "./process_studio_ui_labels_fr";
 import { PROCESS_VSM_EXECUTION_UI_FR } from "./process_vsm_execution_ui_labels_fr";
 import { PROFILE_OVERVIEW_FR_LABELS } from "./profile_overview_labels";
+import {
+  ROLE_DISPLAY_LABELS_FR,
+  TEMP_PASSWORD_MODAL_FR,
+} from "./role_display_labels";
 import { REFLEXIVE_TRACE_AND_INSPECTOR_FR_LABELS } from "./reflexive_trace_and_inspector_labels";
 import { RFC9457_BANNER_FR_LABELS } from "./rfc9457_banner_labels";
 import { ROUTES_AND_WIZARDS_FR } from "./routes_and_wizards_labels_fr";
@@ -38,6 +42,7 @@ import {
   SHELL_NOTIFICATIONS_FR,
 } from "./shell_notifications_labels_fr";
 import { SHELL_AND_SEARCH_FR_LABELS } from "./shell_and_search_labels";
+import { SHOWCASE_LABELS_FR } from "./showcase_labels_fr";
 import { WORKFLOW_TRIGGERS_FR_LABELS } from "./workflow_triggers_labels";
 
 export const frDictionary: TranslationDictionary = {
@@ -65,6 +70,7 @@ export const frDictionary: TranslationDictionary = {
   shellNotifications: SHELL_NOTIFICATIONS_FR,
   shellBreadcrumbsAndScope: SHELL_BREADCRUMBS_AND_SCOPE_FR,
   shellChrome: SHELL_CHROME_FR,
+  showcase: SHOWCASE_LABELS_FR,
   routesAndWizards: ROUTES_AND_WIZARDS_FR,
   aiModelsHub: AI_MODELS_HUB_FR,
   authSettings: AUTH_SETTINGS_FR_LABELS,
@@ -80,4 +86,6 @@ export const frDictionary: TranslationDictionary = {
   processCatalogVsmP3: PROCESS_CATALOG_VSM_P3_FR,
   ontologyGlossary: ONTOLOGY_GLOSSARY_FR,
   profileOverview: PROFILE_OVERVIEW_FR_LABELS,
+  roleDisplayLabels: ROLE_DISPLAY_LABELS_FR,
+  tempPasswordModal: TEMP_PASSWORD_MODAL_FR,
 };

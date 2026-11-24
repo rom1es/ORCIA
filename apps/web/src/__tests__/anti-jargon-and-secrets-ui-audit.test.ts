@@ -209,9 +209,7 @@ describe("CI Guardrail — Zero Technical Jargon, Internal Enums, or Secrets in 
   }, 15_000);
 
   it("forbids visible UI leaks of banned jargon and secret tokens in packages/ui/src primitives and components", () => {
-    const uiFiles = collectFiles(path.join(REPO_ROOT, "packages/ui/src"), [".ts", ".tsx"]).filter(
-      (filePath) => path.basename(filePath) !== "OrciaProductShowcaseSiteView.tsx",
-    );
+    const uiFiles = collectFiles(path.join(REPO_ROOT, "packages/ui/src"), [".ts", ".tsx"]);
 
     expect(uiFiles.length).toBeGreaterThan(10);
 
@@ -234,9 +232,7 @@ describe("CI Guardrail — Zero Technical Jargon, Internal Enums, or Secrets in 
     ];
     const tsUiTargets = [
       ...collectFiles(path.join(REPO_ROOT, "apps/web/src"), [".ts", ".tsx"]),
-      ...collectFiles(path.join(REPO_ROOT, "packages/ui/src"), [".ts", ".tsx"]).filter(
-        (filePath) => path.basename(filePath) !== "OrciaProductShowcaseSiteView.tsx",
-      ),
+      ...collectFiles(path.join(REPO_ROOT, "packages/ui/src"), [".ts", ".tsx"]),
     ];
     const violations: string[] = [];
 

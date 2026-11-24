@@ -4,6 +4,10 @@ import {
   type UiLocalePreference,
   type UiPermissionVerb,
 } from "@orcia/ui";
+import {
+  ROLE_DISPLAY_LABELS_EN,
+  ROLE_DISPLAY_LABELS_FR,
+} from "../i18n/locales/role_display_labels";
 
 export type OrciaSystemRole =
   | "PLATFORM_ADMIN"
@@ -148,6 +152,11 @@ export function resolveSettingsAccess(session: AuthSessionSnapshot): ResolvedSet
   };
 }
 
+const ROLE_LABELS_BY_LOCALE = {
+  fr: ROLE_DISPLAY_LABELS_FR,
+  en: ROLE_DISPLAY_LABELS_EN,
+} as const;
+
 export function resolveSessionHatLabel(
   session: AuthSessionSnapshot,
   locale: UiLocalePreference,
@@ -155,7 +164,7 @@ export function resolveSessionHatLabel(
   const effectiveKey = session.readOnlyObserver
     ? "OBSERVER"
     : session.roles[0]?.trim() || "CONTRIBUTOR";
-  return resolveUserRoleDisplayLabel(effectiveKey, locale);
+  return resolveUserRoleDisplayLabel(effectiveKey, ROLE_LABELS_BY_LOCALE[locale]);
 }
 
 const PLURAL_PREDICATE_BY_LOCALE: Readonly<Record<UiLocalePreference, (count: number) => boolean>> = {

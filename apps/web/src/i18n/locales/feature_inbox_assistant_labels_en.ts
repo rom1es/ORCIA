@@ -75,6 +75,20 @@ export const FEATURE_INBOX_ASSISTANT_EN: FeatureInboxAssistantDictionary = {
     sdlcAnalystDesc: "Clarify business needs and author requirements",
     sdlcReviewName: "Architecture Review",
     sdlcReviewDesc: "Check consistency of architecture decisions",
+    defaultAgents: [
+      { slug: "business-analyst", label: "Business Analyst", description: "Requirements analysis, business rules, and use cases", kind: "agent" },
+      { slug: "solution-architect", label: "Solution Architect", description: "Technical design, data models, and integration", kind: "agent" },
+      { slug: "compliance-reviewer", label: "Compliance & Quality Reviewer", description: "Verification of requirements, standards, and safeguards", kind: "agent" },
+      { slug: "technical-writer", label: "Technical Writer", description: "Clear structuring of deliverables, guides, and summaries", kind: "agent" },
+      { slug: "security-expert", label: "Security Expert", description: "Security risk analysis and data protection review", kind: "agent" },
+    ],
+    defaultSkills: [
+      { slug: "executive-summary", label: "Executive Summary", description: "Structured summary of key takeaways and pending decisions", kind: "skill" },
+      { slug: "risk-analysis", label: "Risk Analysis", description: "Identification of risks, impacts, and mitigation controls", kind: "skill" },
+      { slug: "code-review", label: "Code & Quality Review", description: "Inspection of readability, security, and test coverage", kind: "skill" },
+      { slug: "requirements-extraction", label: "Requirements Extraction", description: "Turn notes or documents into verifiable criteria", kind: "skill" },
+      { slug: "version-comparison", label: "Version Comparison", description: "Highlight differences between two documents or standards", kind: "skill" },
+    ],
   },
   citations: {
     serverVerifiedSourcesTemplate: "{count} server-verified source(s)",

@@ -7,8 +7,10 @@ import {
   AssistantToolCallTrace,
   type AssistantSpeedSelectorAndStreamViewLabels,
 } from "../index";
+import { TEST_ASSISTANT_SPEED_DEFAULTS } from "./assistantLabelsFixture";
 
 const SPEED_LABELS: AssistantSpeedSelectorAndStreamViewLabels = {
+  ...TEST_ASSISTANT_SPEED_DEFAULTS,
   headerTitle: "Assistant Response Mode",
   speed1PillLabel: "Fast response",
   speed2PillLabel: "With agent or skill",

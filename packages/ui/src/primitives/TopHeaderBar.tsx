@@ -6,6 +6,7 @@ export interface TopHeaderBarLabels {
   readonly sprintSelectorLabel: string;
   readonly dbosPg18HealthLabel: string;
   readonly outboxHealthLabel: string;
+  readonly outboxDlqLabel?: string;
 }
 
 export interface TopHeaderBarProps {
@@ -97,7 +98,8 @@ export function TopHeaderBar({
             backgroundColor: "var(--orcia-surface-secondary)",
           }}
         >
-          <OrciaIcon name={outboxDlqCount === 0 ? "statusHealthy" : "statusWarning"} /> {labels.outboxHealthLabel} (DLQ={outboxDlqCount})
+          <OrciaIcon name={outboxDlqCount === 0 ? "statusHealthy" : "statusWarning"} />{" "}
+          {`${labels.outboxHealthLabel} (${labels.outboxDlqLabel ?? "DLQ"}=${outboxDlqCount})`}
         </span>
       </div>
     </header>

@@ -1,14 +1,12 @@
-import {
-  DEFAULT_ASSISTANT_AGENT_OPTIONS,
-  DEFAULT_ASSISTANT_SKILL_OPTIONS,
-  type ControlCenterDatasourceItem,
-  type UiAssistantAutocompleteOption,
-  type UiAssistantAutocompleteSuggestion,
-  type UiAssistantModelOption,
-  type UiAssistantOrciaDocumentOption,
-  type UiAssistantRagCitationItem,
-  type UiCatalogExplorerItemView,
-  type UiInferenceTier,
+import type {
+  ControlCenterDatasourceItem,
+  UiAssistantAutocompleteOption,
+  UiAssistantAutocompleteSuggestion,
+  UiAssistantModelOption,
+  UiAssistantOrciaDocumentOption,
+  UiAssistantRagCitationItem,
+  UiCatalogExplorerItemView,
+  UiInferenceTier,
 } from "@orcia/ui";
 import {
   consumeAssistantPrefillPrompt,
@@ -19,12 +17,14 @@ import { resolveDictionaryForFlag } from "../../i18n";
 export function buildAssistantAutocompleteAndRagOptions(params: {
   readonly catalogItems: readonly UiCatalogExplorerItemView[];
   readonly datasources: readonly ControlCenterDatasourceItem[];
+  readonly isFr?: boolean;
 }): {
   readonly agentOptions: readonly UiAssistantAutocompleteOption[];
   readonly skillOptions: readonly UiAssistantAutocompleteOption[];
   readonly orciaDocuments: readonly UiAssistantOrciaDocumentOption[];
   readonly ragCitations: readonly UiAssistantRagCitationItem[];
 } {
+  const autoCopy = resolveDictionaryForFlag(params.isFr ?? true).featureInboxAssistant.autocomplete;
   const catalogAgents: readonly UiAssistantAutocompleteOption[] =
     params.catalogItems
       .filter((item) => item.resourceType === "agent")
@@ -44,15 +44,15 @@ export function buildAssistantAutocompleteAndRagOptions(params: {
         kind: "skill" as const,
       }));
   const agentOptions: readonly UiAssistantAutocompleteOption[] = [
-    ...DEFAULT_ASSISTANT_AGENT_OPTIONS,
+    ...autoCopy.defaultAgents,
     ...catalogAgents.filter(
-      (ca) => !DEFAULT_ASSISTANT_AGENT_OPTIONS.some((d) => d.slug === ca.slug),
+      (ca) => !autoCopy.defaultAgents.some((d) => d.slug === ca.slug),
     ),
   ];
   const skillOptions: readonly UiAssistantAutocompleteOption[] = [
-    ...DEFAULT_ASSISTANT_SKILL_OPTIONS,
+    ...autoCopy.defaultSkills,
     ...catalogSkills.filter(
-      (cs) => !DEFAULT_ASSISTANT_SKILL_OPTIONS.some((d) => d.slug === cs.slug),
+      (cs) => !autoCopy.defaultSkills.some((d) => d.slug === cs.slug),
     ),
   ];
   const orciaDocuments: readonly UiAssistantOrciaDocumentOption[] =

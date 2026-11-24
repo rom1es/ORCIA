@@ -4,6 +4,8 @@ import type {
   CognitiveReviewBriefingLabels,
   HumanLedAnchorCardLabels,
   PresenceClaimPillLabels,
+  RoleDisplayLabels,
+  TemporaryPasswordInvitationModalLabels,
   UiBootstrapOnboardingLabels,
   UiCatalogExplorerLabels,
   UiModuleKey,
@@ -52,6 +54,7 @@ import type {
   ShellNotificationsDictionary,
 } from "./locales/shell_notifications_labels";
 import type { ShellAndSearchDictionarySection } from "./locales/shell_and_search_labels";
+import type { ShowcasePublicDictionary } from "./locales/showcase_labels";
 import type { WorkflowTriggersStudioCopy } from "./locales/workflow_triggers_labels";
 
 export type SupportedWebLocale = "fr" | "en";
@@ -95,6 +98,7 @@ export interface TranslationDictionary
   shellNotifications: ShellNotificationsDictionary;
   shellBreadcrumbsAndScope: ShellBreadcrumbsAndScopeDictionary;
   shellChrome: ShellChromeDictionary;
+  showcase: ShowcasePublicDictionary;
   routesAndWizards: RoutesAndWizardsDictionary;
   aiModelsHub: AiModelsHubDictionary;
   authSettings: AuthSettingsDictionarySection;
@@ -131,5 +135,7 @@ export interface TranslationDictionary
   ontologyExplorer: UiOntologyExplorerLabels;
   ontologyGlossary: OntologyGlossaryCopy;
   profileOverview: UserProfileOverviewLabels;
+  roleDisplayLabels: RoleDisplayLabels;
+  tempPasswordModal: TemporaryPasswordInvitationModalLabels;
   modulePages: Record<UiModuleKey, ModulePageCopy>;
 }

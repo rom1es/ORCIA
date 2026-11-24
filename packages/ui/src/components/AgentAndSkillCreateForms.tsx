@@ -9,7 +9,7 @@ import type {
   AgentsAndSkillsManagerLabels,
   UiAgentThinkingLevel,
   UiManagedSkillItem,
-} from "./AgentsAndSkillsManagerView";
+} from "./AgentsAndSkillsTypes";
 import { AgentsAndSkillsHeaderAndToolbar } from "./AgentsAndSkillsHeaderAndToolbar";
 import { DisabledButtonAlertIndicator } from "./DisabledButtonAlertIndicator";
 
@@ -24,7 +24,6 @@ export interface AgentCreateFormDrawerProps {
   readonly onToggleSkillId: (skillId: string, checked: boolean) => void;
   readonly onSubmit: (e: React.FormEvent) => void;
   readonly onClose?: () => void;
-  // Backward-compatible individual props for callers that pass flat fields
   readonly agentName?: string;
   readonly agentRole?: string;
   readonly agentInstructions?: string;
@@ -50,6 +49,7 @@ export const AgentCreateFormDrawer: React.FC<AgentCreateFormDrawerProps> = ({
 }) => {
   const [activeBlock, setActiveBlock] = useState<AgentStudioBlockKey>("A");
   const [showAllBlocks, setShowAllBlocks] = useState<boolean>(true);
+  const studio = labels.studio;
 
   useEffect(() => {
     if (!isOpen || !onClose) return;
@@ -69,9 +69,8 @@ export const AgentCreateFormDrawer: React.FC<AgentCreateFormDrawerProps> = ({
     !draft.name.trim() ||
     !draft.roleMission.trim() ||
     (!draft.instructions.trim() && !draft.promptRef.trim());
-  const disabledReason =
-    "Renseignez le nom (Bloc A), la mission (Bloc A) et l'instruction système ou prompt_ref (Bloc C) pour créer l'agent.";
-  const readiness = computeAgentReadinessChecklist(draft);
+  const disabledReason = studio.createAgentDisabledReason;
+  const readiness = computeAgentReadinessChecklist(draft, studio);
 
   return (
     <div
@@ -94,7 +93,7 @@ export const AgentCreateFormDrawer: React.FC<AgentCreateFormDrawerProps> = ({
           <div>
             <h3 className="text-sm font-semibold">{labels.createAgentSectionTitle}</h3>
             <p className="text-[11px] text-[var(--orcia-text-secondary)]">
-              Configurez un rôle métier spécialisé (Persona) en 6 blocs gouvernés, cloisonné et subordonné à l&apos;humain.
+              {studio.createAgentSubtitle}
             </p>
           </div>
         </header>
@@ -124,13 +123,12 @@ export const AgentCreateFormDrawer: React.FC<AgentCreateFormDrawerProps> = ({
               onToggleSkillId={onToggleSkillId}
             />
 
-            {/* 6 Conversational Readiness Conditions Summary Strip */}
             <div
               data-testid="create-agent-readiness-checklist"
               className="rounded-lg border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3 text-xs"
             >
               <strong className="block mb-1.5 font-semibold">
-                📋 Les 6 conditions d&apos;employabilité dans « 💬 Mon Assistant » :
+                {studio.readinessChecklistTitle}
               </strong>
               <div className="grid grid-cols-1 gap-1.5 md:grid-cols-3">
                 {readiness.map((item) => (
@@ -140,10 +138,10 @@ export const AgentCreateFormDrawer: React.FC<AgentCreateFormDrawerProps> = ({
                     className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-1.5"
                   >
                     <div className="font-semibold">
-                      {item.satisfied ? "✅" : "⏳"} {item.index}. {item.labelFr}
+                      {item.satisfied ? "✅" : "⏳"} {item.index}. {item.label}
                     </div>
                     <div className="text-[11px] text-[var(--orcia-text-secondary)]">
-                      {item.detailFr}
+                      {item.detail}
                     </div>
                   </div>
                 ))}
@@ -153,7 +151,7 @@ export const AgentCreateFormDrawer: React.FC<AgentCreateFormDrawerProps> = ({
 
           <footer className="flex items-center justify-between border-t border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-4 py-3">
             <span className="text-[11px] text-[var(--orcia-text-secondary)]">
-              Raccourci : <code>Échap</code> pour annuler · Validation au Banc de Test disponible après enregistrement.
+              {studio.escapeCancelHint}
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -162,7 +160,7 @@ export const AgentCreateFormDrawer: React.FC<AgentCreateFormDrawerProps> = ({
                 onClick={onClose}
                 className="orcia-ds-btn orcia-ds-btn-secondary text-xs"
               >
-                Annuler
+                {studio.cancelButton}
               </button>
               <button
                 type="submit"

@@ -108,12 +108,14 @@ export function mergeRagCitationsWithFiles(
   ];
 }
 
-export function resolveEffectiveTurnPrompt(overridePrompt: string | undefined, promptText: string, lastSubmittedPrompt: string, sendPromptCta: string): string {
+export function resolveEffectiveTurnPrompt(
+  overridePrompt: string | undefined,
+  promptText: string,
+  lastSubmittedPrompt: string,
+  defaultGreetingPrompt: string,
+): string {
   const trimmed = (overridePrompt ?? promptText).trim();
-  const fallbackPrompt = sendPromptCta.toLowerCase().includes("envoyer")
-    ? "Bonjour, peux-tu te présenter brièvement et confirmer que tu es opérationnel ?"
-    : "Hello, can you briefly introduce yourself and confirm you are operational?";
-  return trimmed || lastSubmittedPrompt || fallbackPrompt;
+  return trimmed || lastSubmittedPrompt || defaultGreetingPrompt;
 }
 
 export function findTopAutocompleteMatch(
@@ -207,19 +209,19 @@ export function AssistantTechnicalCacheHeader({
           data-testid="assistant-prompt-cache-badge"
           className="rounded border border-border-subtle bg-surface-secondary px-2 py-0.5 font-mono text-[11px]"
         >
-          {cacheHit ? labels.cacheHitBadge : labels.cacheMissBadge} · {cacheLookupMs} ms · {cacheKey}
+          {`${cacheHit ? labels.cacheHitBadge : labels.cacheMissBadge} · ${cacheLookupMs} ${labels.durationMsUnit} · ${cacheKey}`}
         </span>
         <span
           data-testid="assistant-nodes-deterministic-badge"
           className="rounded bg-surface-secondary px-2 py-0.5 font-mono text-[11px] text-text-secondary"
         >
-          {labels.nodesDeterministicLabel}: {nodes1To4DeterministicMs} ms
+          {`${labels.nodesDeterministicLabel}: ${nodes1To4DeterministicMs} ${labels.durationMsUnit}`}
         </span>
         <span
           data-testid="assistant-ttft-badge"
           className="rounded bg-action-primary/15 px-2 py-0.5 font-mono text-[11px] font-semibold text-action-primary"
         >
-          {labels.ttftBadgePrefix}: {ttftMs} ms
+          {`${labels.ttftBadgePrefix}: ${ttftMs} ${labels.durationMsUnit}`}
         </span>
       </div>
     </header>

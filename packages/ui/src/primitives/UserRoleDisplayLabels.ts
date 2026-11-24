@@ -1,43 +1,54 @@
-import type { UiLocalePreference } from "./UserAccountDropdownTypes";
-
-export const ROLE_DISPLAY_LABELS_FR: Record<string, string> = {
-  PLATFORM_ADMIN: "Administrateur de la plateforme",
-  SECOPS: "Responsable Sécurité & Habilitations",
-  BU_LEAD: "Responsable de Direction (BU)",
-  BU_DIRECTOR: "Responsable de Direction (BU)",
-  TEAM_LEAD: "Responsable d'Équipe",
-  ONTOLOGY_LEAD: "Référent Glossaire",
-  CONTRIBUTOR: "Contributeur",
-  OBSERVER: "Observateur (Lecture seule)",
-  READ_ONLY_OBSERVER: "Observateur (Lecture seule)",
-  ANALYST_PM_PO: "Product Manager / Métier",
-  ARCHITECT: "Architecte",
-  TECH_LEAD_DEV: "Référent Technique / Développeur",
-  SECURITY_COMPLIANCE: "Sécurité & Conformité",
-};
-
-export const ROLE_DISPLAY_LABELS_EN: Record<string, string> = {
-  PLATFORM_ADMIN: "Platform Administrator",
-  SECOPS: "Security & Access Officer",
-  BU_LEAD: "Business Unit Lead",
-  BU_DIRECTOR: "Business Unit Lead",
-  TEAM_LEAD: "Team Lead",
-  ONTOLOGY_LEAD: "Glossary Lead",
-  CONTRIBUTOR: "Contributor",
-  OBSERVER: "Observer (Read-only)",
-  READ_ONLY_OBSERVER: "Observer (Read-only)",
-  ANALYST_PM_PO: "Product Manager / Business",
-  ARCHITECT: "Architect",
-  TECH_LEAD_DEV: "Technical Lead / Developer",
-  SECURITY_COMPLIANCE: "Security & Compliance",
-};
+export interface RoleDisplayLabels {
+  readonly platformAdmin: string;
+  readonly secops: string;
+  readonly buLead: string;
+  readonly teamLead: string;
+  readonly ontologyLead: string;
+  readonly contributor: string;
+  readonly observer: string;
+  readonly analystPmPo: string;
+  readonly architect: string;
+  readonly techLeadDev: string;
+  readonly securityCompliance: string;
+}
 
 export function resolveUserRoleDisplayLabel(
   roleKey: string,
-  locale: UiLocalePreference = "fr",
+  roleLabels?: RoleDisplayLabels | Readonly<Record<string, string>>,
 ): string {
-  const map = locale === "en" ? ROLE_DISPLAY_LABELS_EN : ROLE_DISPLAY_LABELS_FR;
-  return map[roleKey] ?? roleKey;
+  if (!roleLabels) return roleKey;
+  if (roleKey in roleLabels) {
+    return (roleLabels as Readonly<Record<string, string>>)[roleKey] ?? roleKey;
+  }
+  const typed = roleLabels as Partial<RoleDisplayLabels>;
+  switch (roleKey) {
+    case "PLATFORM_ADMIN":
+      return typed.platformAdmin ?? roleKey;
+    case "SECOPS":
+      return typed.secops ?? roleKey;
+    case "BU_LEAD":
+    case "BU_DIRECTOR":
+      return typed.buLead ?? roleKey;
+    case "TEAM_LEAD":
+      return typed.teamLead ?? roleKey;
+    case "ONTOLOGY_LEAD":
+      return typed.ontologyLead ?? roleKey;
+    case "CONTRIBUTOR":
+      return typed.contributor ?? roleKey;
+    case "OBSERVER":
+    case "READ_ONLY_OBSERVER":
+      return typed.observer ?? roleKey;
+    case "ANALYST_PM_PO":
+      return typed.analystPmPo ?? roleKey;
+    case "ARCHITECT":
+      return typed.architect ?? roleKey;
+    case "TECH_LEAD_DEV":
+      return typed.techLeadDev ?? roleKey;
+    case "SECURITY_COMPLIANCE":
+      return typed.securityCompliance ?? roleKey;
+    default:
+      return roleKey;
+  }
 }
 
 export function computeUserInitials(displayName: string): string {

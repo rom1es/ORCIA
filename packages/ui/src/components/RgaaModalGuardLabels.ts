@@ -41,14 +41,16 @@ export const DEFAULT_RGAA_MODAL_GUARD_LABELS_EN: Required<RgaaModalGuardLabels> 
 export const DEFAULT_RGAA_MODAL_LABELS_FR = DEFAULT_RGAA_MODAL_GUARD_LABELS_FR;
 export const DEFAULT_RGAA_MODAL_LABELS_EN = DEFAULT_RGAA_MODAL_GUARD_LABELS_EN;
 
+const DEFAULT_RGAA_LABELS_BY_LOCALE = {
+  fr: DEFAULT_RGAA_MODAL_GUARD_LABELS_FR,
+  en: DEFAULT_RGAA_MODAL_GUARD_LABELS_EN,
+} as const;
+
 export function resolveRgaaModalGuardLabels(
   labels?: RgaaModalGuardLabels,
   locale: "fr" | "en" = "fr",
 ): Required<RgaaModalGuardLabels> {
-  const defaults =
-    locale === "en"
-      ? DEFAULT_RGAA_MODAL_GUARD_LABELS_EN
-      : DEFAULT_RGAA_MODAL_GUARD_LABELS_FR;
+  const defaults = DEFAULT_RGAA_LABELS_BY_LOCALE[locale];
   const cancelText =
     labels?.cancelButtonLabel ?? labels?.cancelCta ?? defaults.cancelButtonLabel;
   const submitText =
