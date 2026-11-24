@@ -1,8 +1,16 @@
-import { backendState, jsonResponse } from "./mockBackendState";
+import { useAuthSessionStore } from "../../stores/authSessionStore";
+import { backendState, jsonResponse, problemResponse } from "./mockBackendState";
+
+function getWorkspaceSettingsForId(workspaceId: string): Record<string, unknown> {
+  return (
+    backendState.assistantGovernance.workspaceSettingsByWs?.[workspaceId] ??
+    backendState.assistantGovernance.workspaceSettings
+  );
+}
 
 function buildAssembledLayers(workspaceId: string) {
   const userPrefs = backendState.assistantGovernance.userPreferences;
-  const wsSettings = backendState.assistantGovernance.workspaceSettings;
+  const wsSettings = getWorkspaceSettingsForId(workspaceId);
   return [
     {
       layer_number: 1,
@@ -89,16 +97,21 @@ export function handleAssistantGovernanceAndThreadsRoute(params: {
 
   if (path === "/api/v1/assistant/governance" && method === "GET") {
     const wsId = parsedUrl.searchParams.get("workspace_id") ?? "0195f000-0000-7000-8000-000000000301";
+    const wsSettings = getWorkspaceSettingsForId(wsId);
+    const session = useAuthSessionStore.getState();
+    const isObserver =
+      Boolean(session.readOnlyObserver) ||
+      session.roles.map((r) => String(r).toUpperCase()).includes("OBSERVER");
     return jsonResponse({
       workspace_id: wsId,
-      can_edit_workspace_layer: backendState.assistantGovernance.canEditWorkspaceLayer,
+      can_edit_workspace_layer: !isObserver && backendState.assistantGovernance.canEditWorkspaceLayer,
       user_preferences: {
         ...backendState.assistantGovernance.userPreferences,
         user_id: "0195f000-0000-7000-8000-000000000001",
         workspace_id: wsId,
       },
       workspace_settings: {
-        ...backendState.assistantGovernance.workspaceSettings,
+        ...wsSettings,
         workspace_id: wsId,
       },
       assembled_layers: buildAssembledLayers(wsId),
@@ -123,15 +136,44 @@ export function handleAssistantGovernanceAndThreadsRoute(params: {
   }
 
   if (path === "/api/v1/assistant/governance/mode-a/workspace" && method === "PUT") {
+    const session = useAuthSessionStore.getState();
+    if (
+      session.readOnlyObserver ||
+      session.roles.map((r) => String(r).toUpperCase()).includes("OBSERVER")
+    ) {
+      return problemResponse(
+        403,
+        "ERR_OBSERVER_MODE_READ_ONLY",
+        "Mode observateur en lecture seule",
+        "Les mutations sont refusées en mode observateur lecture seule.",
+        path,
+      );
+    }
     const wsId = String(body.workspace_id ?? "0195f000-0000-7000-8000-000000000301");
-    backendState.assistantGovernance.workspaceSettings = {
-      ...backendState.assistantGovernance.workspaceSettings,
-      workspace_instructions: body.workspace_instructions ?? "",
+    const nextInstructions = String(body.workspace_instructions ?? "");
+    if (nextInstructions.trim().length < 3) {
+      return problemResponse(
+        422,
+        "ERR_VALIDATION_ERROR",
+        "Consignes invalides",
+        "Les consignes doivent contenir au moins 3 caractères.",
+        path,
+      );
+    }
+    const prevSettings = getWorkspaceSettingsForId(wsId);
+    const updated = {
+      ...prevSettings,
+      workspace_instructions: nextInstructions,
       mcp_expose_assistant: Boolean(body.mcp_expose_assistant ?? true),
       sha256: `sha-ws-${backendState.recordedCalls.length}`,
     };
+    backendState.assistantGovernance.workspaceSettings = updated;
+    backendState.assistantGovernance.workspaceSettingsByWs = {
+      ...(backendState.assistantGovernance.workspaceSettingsByWs ?? {}),
+      [wsId]: updated,
+    };
     return jsonResponse({
-      ...backendState.assistantGovernance.workspaceSettings,
+      ...updated,
       workspace_id: wsId,
     });
   }

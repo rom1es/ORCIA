@@ -61,6 +61,7 @@ export interface MockBackendState {
   assistantGovernance: {
     userPreferences: Record<string, unknown>;
     workspaceSettings: Record<string, unknown>;
+    workspaceSettingsByWs?: Record<string, Record<string, unknown>>;
     canEditWorkspaceLayer: boolean;
   };
   inboxNotifications: Array<Record<string, unknown>>;
@@ -132,6 +133,7 @@ export const backendState: MockBackendState = {
       welcome_suggestions: [],
       sha256: "sha-ws-default",
     },
+    workspaceSettingsByWs: {},
     canEditWorkspaceLayer: true,
   },
   inboxNotifications: [],
@@ -256,6 +258,7 @@ export function resetVitestApiBackend(): void {
       welcome_suggestions: [],
       sha256: "sha-ws-default",
     },
+    workspaceSettingsByWs: {},
     canEditWorkspaceLayer: true,
   };
   backendState.inboxNotifications = [];

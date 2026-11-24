@@ -11,6 +11,7 @@ import { I18nProvider } from "../i18n";
 import { createOrciaQueryClient, createOrciaRouter } from "../router";
 import { useAuthSessionStore } from "../stores/authSessionStore";
 import { resetVitestApiBackend, seedVitestPlatformSetupState } from "./vitest.setup";
+import { seedVitestConnectorsInitialData } from "./vitestConnectorsMockHandlers";
 
 const WS_ID = "0195f000-0000-7000-8000-000000000282";
 
@@ -58,6 +59,27 @@ function seedWorkspace(options: { readonly withActivity?: boolean } = {}) {
     },
     { email: "alice@orcia.fr", displayName: "Alice Produit", roles: ["PLATFORM_ADMIN"] },
   );
+  seedVitestConnectorsInitialData({
+    datasources: options.withActivity
+      ? [
+          {
+            id: "ds-282",
+            workspace_id: WS_ID,
+            alias: "Docs Architecture",
+            scheme: "git",
+            uri: "git://internal/docs-arch",
+            connector_id: null,
+            sync_identity_mode: "SERVICE_ACCOUNT",
+            service_account_id: null,
+            referent_user_id: null,
+            source_nature: "SOURCE_CODE",
+            sync_mode: "POLLING_24H",
+            freshness_status: "SYNCED",
+            created_at_iso: new Date().toISOString(),
+          },
+        ]
+      : [],
+  });
   useAuthSessionStore.setState({
     isAuthenticated: true,
     isHydrating: false,

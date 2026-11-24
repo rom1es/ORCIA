@@ -2143,9 +2143,10 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
 
     // 6. Test Unified 5-Tab Workspace Container for active workspace ("Mon Labo Perso", UUIDv7)
     expect(screen.queryByTestId("workspace-detail-tabs-panel")).toBeNull();
-    // Tab 2: Documents & Sources -> connect a source via modal without navigating to /settings
+    // Tab 2: Documents & Sources -> hide filter pills at 0 sources, then connect a source via modal and reveal pills
     fireEvent.click(screen.getByTestId("workspace-tab-DOCUMENTS_SOURCES"));
     expect(screen.getByTestId("workspace-sources-empty-state")).toBeDefined();
+    expect(screen.queryByTestId("sources-filter-pill-all")).toBeNull();
     fireEvent.click(screen.getByTestId("open-attach-source-modal-btn"));
     expect(screen.getByTestId("workspace-source-attach-modal")).toBeDefined();
     await waitFor(() => {
@@ -2163,6 +2164,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("modal-source-save-btn"));
     await waitFor(() => {
       expect(screen.getAllByText("Wiki Produit Interne").length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByTestId("sources-filter-pill-all")).toBeDefined();
     });
 
     // Tab 4: Glossaire & Règles Métiers (Ontologie) -> multi-level cascade + add term + 1-click upward promotion
@@ -2209,14 +2211,16 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       ).toContain("En attente de validation");
     });
 
-    // Tab 5: Membres & Équipe -> auto-save workspace instructions
+    // Tab 5: Membres & Équipe -> auto-save workspace instructions to PG18
     fireEvent.click(screen.getByTestId("workspace-tab-MEMBERS_TEAM"));
     fireEvent.change(screen.getByTestId("workspace-instructions-textarea"), {
       target: { value: "Toujours citer la source Wiki Produit Interne." },
     });
-    expect(screen.getByTestId("workspace-instructions-saved-badge").textContent).toContain(
-      "Enregistré",
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId("workspace-instructions-saved-badge").textContent).toContain(
+        "Enregistré",
+      );
+    });
 
     // 7. F5 Reload Survival Gate: unmount() and re-render() -> verify shared visibility, attached source, and persisted glossary term survive F5
     unmount();
@@ -2236,9 +2240,11 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       "Équipe",
     );
     fireEvent.click(screen.getByTestId("workspace-tab-DOCUMENTS_SOURCES"));
-    expect(screen.getByTestId("workspace-detail-source-row-ds-1").textContent).toContain(
-      "Wiki Produit Interne",
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId("workspace-detail-source-row-ds-1").textContent).toContain(
+        "Wiki Produit Interne",
+      );
+    });
     fireEvent.click(screen.getByTestId("workspace-tab-GLOSSARY_RULES"));
     await waitFor(() => {
       expect(

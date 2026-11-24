@@ -1,11 +1,13 @@
 import React from "react";
 import {
+  DeliverablesTabPanel,
+  MembersTeamTabPanel,
+} from "./WorkspaceFiveTabsDeliverablesAndMembersPanels";
+import {
   GlossaryRulesTabPanel,
   OverviewTabPanel,
 } from "./WorkspaceFiveTabsOverviewAndGlossaryPanels";
 import {
-  DeliverablesTabPanel,
-  MembersTeamTabPanel,
   sanitizeUiDestinationUri,
   sanitizeUiWorkspaceSlug,
   SourcesTabListPanel,
@@ -45,6 +47,14 @@ export interface RebasedChunkItem {
   readonly lockedAgainstAgentOverwrite: boolean;
 }
 
+export interface WorkspaceDeliverableItem {
+  readonly deliverableId: string;
+  readonly title: string;
+  readonly casUri: string;
+  readonly versionLabel: string;
+  readonly status: string;
+}
+
 export interface WorkspaceFiveTabsLabels {
   readonly heading: string;
   readonly tabOverview: string;
@@ -70,6 +80,7 @@ export interface WorkspaceFiveTabsLabels {
   readonly roleLabel?: string;
   readonly phaseLabel?: string;
   readonly emptyDeliverablesText?: string;
+  readonly deliverablesCatalogTitle?: string;
   readonly emptyGlossaryRulesText?: string;
   readonly membersAccessHint?: string;
 }
@@ -81,6 +92,7 @@ export interface WorkspaceFiveTabsAndExternalRebaseViewProps {
   readonly pendingGlossaryCandidatesCount: number;
   readonly sources: readonly WorkspaceSourceItem[];
   readonly activeWaivers: readonly ExceptionWaiverItem[];
+  readonly deliverables?: readonly WorkspaceDeliverableItem[];
   readonly rebasedChunks: readonly RebasedChunkItem[];
   readonly labels: WorkspaceFiveTabsLabels;
   readonly workspaceName?: string;
@@ -90,6 +102,7 @@ export interface WorkspaceFiveTabsAndExternalRebaseViewProps {
   readonly lifecyclePhaseLabel?: string;
   readonly submitting?: boolean;
   readonly sourcesTabSlot?: React.ReactNode;
+  readonly deliverablesTabSlot?: React.ReactNode;
   readonly glossaryTabSlot?: React.ReactNode;
   readonly membersTabSlot?: React.ReactNode;
   readonly onSelectTab?: (tab: WorkspaceSubTabKey) => void;
@@ -105,6 +118,7 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
   pendingGlossaryCandidatesCount,
   sources,
   activeWaivers,
+  deliverables = [],
   rebasedChunks,
   labels,
   workspaceName,
@@ -114,6 +128,7 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
   lifecyclePhaseLabel,
   submitting = false,
   sourcesTabSlot,
+  deliverablesTabSlot,
   glossaryTabSlot,
   membersTabSlot,
   onSelectTab,
@@ -204,8 +219,11 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
       case "DELIVERABLES_ARTIFACTS":
         return (
           <DeliverablesTabPanel
+            workspaceSlug={safeSlug}
             defaultArtifactDestinationUri={safeDestinationUri}
+            deliverables={deliverables}
             rebasedChunks={rebasedChunks}
+            deliverablesTabSlot={deliverablesTabSlot}
             labels={labels}
           />
         );

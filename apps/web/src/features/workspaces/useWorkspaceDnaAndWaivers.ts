@@ -2,6 +2,7 @@ import {
   createOrciaApiClient,
   type ExceptionWaiverResponseItem,
   type GeneratedStarlarkMechanismResponse,
+  type WorkspaceDatasourceItemResponse,
 } from "@orcia/api-client";
 import type {
   ControlCenterWorkspaceGovItem,
@@ -58,6 +59,9 @@ export function useWorkspaceDnaAndWaivers(params: {
   const [activeWaivers, setActiveWaivers] = useState<ExceptionWaiverItem[]>([]);
   const [compiledMechanism, setCompiledMechanism] =
     useState<UiCompiledStarlarkMechanism | null>(null);
+  const [scopedDatasources, setScopedDatasources] = useState<
+    readonly WorkspaceDatasourceItemResponse[]
+  >([]);
   const [glossaryCandidates, setGlossaryCandidates] = useState<UiGlossaryCandidateItem[]>([]);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
@@ -67,23 +71,28 @@ export function useWorkspaceDnaAndWaivers(params: {
     if (!targetWsId) {
       setActiveWaivers([]);
       setCompiledMechanism(null);
+      setScopedDatasources([]);
       return;
     }
     const client = createOrciaApiClient({ baseUrl: "", locale });
-    const [waiversRows, mechanismRows] = await Promise.all([
+    const [waiversRows, mechanismRows, dsRes] = await Promise.all([
       client.listWorkspaceExceptionWaivers(targetWsId, true),
       client.listDnaMechanisms(targetWsId),
+      client.listWorkspaceDatasources(targetWsId),
     ]);
     setActiveWaivers(waiversRows.map(mapWaiverItem));
     setCompiledMechanism(mechanismRows[0] ? mapMechanismItem(mechanismRows[0]) : null);
+    setScopedDatasources(dsRes.items ?? []);
   }, [targetWsId, locale]);
 
   useEffect(() => {
     if (!targetWsId) {
       setActiveWaivers([]);
       setCompiledMechanism(null);
+      setScopedDatasources([]);
       return;
     }
+    setScopedDatasources([]);
     let cancelled = false;
     void reloadWaiversAndMechanisms().catch((err: unknown) => {
       if (cancelled) return;
@@ -177,6 +186,8 @@ export function useWorkspaceDnaAndWaivers(params: {
     dnaCopy,
     activeWaivers,
     compiledMechanism,
+    scopedDatasources,
+    setScopedDatasources,
     glossaryCandidates,
     setGlossaryCandidates,
     submitting,

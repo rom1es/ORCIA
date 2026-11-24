@@ -1,10 +1,13 @@
 import {
   DnaStarlarkCompilerAndGlossaryLifecycleView,
-  type ControlCenterDatasourceItem,
+  type ControlCenterRunItem,
   type ControlCenterWorkspaceGovItem,
+  type ProductLifecyclePhaseType,
   type UiOntologyConceptView,
   type UiOntologyLevel,
+  type WorkspaceDeliverableItem,
   type WorkspaceSubTabKey,
+  type WorkspaceVisibilityMode,
   WorkspaceFiveTabsAndExternalRebaseView,
 } from "@orcia/ui";
 import React, { useEffect, useRef, useState } from "react";
@@ -16,25 +19,34 @@ import { formatI18nTemplate, resolveDictionaryForFlag } from "../../i18n";
 import type { TranslationDictionary } from "../../i18n/types";
 import { useWorkspaceDnaAndWaivers } from "./useWorkspaceDnaAndWaivers";
 import { WorkspaceGlossaryAndOntologyTab } from "./WorkspaceGlossaryAndOntologyTab";
-import { WorkspaceMembersInstructionsCard } from "./WorkspaceMembersInstructionsCard";
+import { WorkspaceMembersAndSettingsTab } from "./WorkspaceMembersAndSettingsTab";
 import { WorkspaceSourcesRagTab } from "./WorkspaceSourcesRagTab";
 import {
   formatWorkspaceDisplaySlug,
   resolveWorkspacePhaseLabel,
   resolveWorkspaceVisibilityMeta,
   sanitizeWorkspaceDestinationUri,
+  toKebabWorkspaceSlug,
 } from "./workspaceDisplayHelpers";
 
 export interface WorkspaceDnaAndWaiversSectionProps {
   readonly isFr: boolean;
   readonly initialTab?: string;
   readonly targetWorkspace: ControlCenterWorkspaceGovItem | null;
-  readonly datasources: readonly ControlCenterDatasourceItem[];
+  readonly runs?: readonly ControlCenterRunItem[];
   readonly ontologyConcepts: readonly UiOntologyConceptView[];
   readonly orgUnits: readonly ConfiguredOrgUnit[];
   readonly dictionary: TranslationDictionary;
   readonly openHelpSection: (sectionId: string) => void;
   readonly onRegisterDatasource: PlatformSetupContextValue["registerDatasource"];
+  readonly onUpdateWorkspacePhase?: (
+    workspaceId: string,
+    phase: ProductLifecyclePhaseType,
+  ) => void | Promise<void>;
+  readonly onUpdateWorkspaceVisibility?: (
+    workspaceId: string,
+    visibilityMode: WorkspaceVisibilityMode,
+  ) => void | Promise<void>;
   readonly onAddOntologyConcept: (concept: UiOntologyConceptView) => void;
   readonly onPromoteOntologyConcept: (
     conceptKey: string,
@@ -74,12 +86,14 @@ export function WorkspaceDnaAndWaiversSection({
   isFr,
   initialTab,
   targetWorkspace,
-  datasources,
+  runs = [],
   ontologyConcepts,
   orgUnits,
   dictionary,
   openHelpSection,
   onRegisterDatasource,
+  onUpdateWorkspacePhase,
+  onUpdateWorkspaceVisibility,
   onAddOntologyConcept,
   onPromoteOntologyConcept,
   onFeedback,
@@ -100,6 +114,8 @@ export function WorkspaceDnaAndWaiversSection({
     dnaCopy,
     activeWaivers,
     compiledMechanism,
+    scopedDatasources,
+    setScopedDatasources,
     glossaryCandidates,
     setGlossaryCandidates,
     submitting,
@@ -114,10 +130,20 @@ export function WorkspaceDnaAndWaiversSection({
 
   const targetWsId = targetWorkspace.workspaceId;
   const displayWsSlug = formatWorkspaceDisplaySlug(targetWorkspace);
-  const defaultDestinationUri = datasources[0]?.uri
-    ? sanitizeWorkspaceDestinationUri(datasources[0].uri, targetWorkspace.name)
+  const defaultDestinationUri = scopedDatasources[0]?.uri
+    ? sanitizeWorkspaceDestinationUri(scopedDatasources[0].uri, targetWorkspace.name)
     : `orcia://workspaces/${displayWsSlug}/deliverables`;
   const tabsCopy = dictionary.featureWorkspaces.detailTabs;
+
+  const scopedDeliverables: readonly WorkspaceDeliverableItem[] = runs
+    .filter((r) => r.workspaceId === targetWsId)
+    .map((r) => ({
+      deliverableId: r.runId,
+      title: r.title,
+      casUri: `orcia://workspaces/${displayWsSlug}/artifacts/${toKebabWorkspaceSlug(r.title)}@v1`,
+      versionLabel: "@v1",
+      status: r.status,
+    }));
 
   return (
     <div
@@ -134,15 +160,22 @@ export function WorkspaceDnaAndWaiversSection({
         activeTab={activeSubTab}
         defaultArtifactDestinationUri={defaultDestinationUri}
         pendingGlossaryCandidatesCount={ontologyConcepts.length + glossaryCandidates.length}
-        sources={datasources.map((d) => ({
+        sources={scopedDatasources.map((d) => ({
           sourceId: d.id,
           uri: d.uri,
           title: d.alias,
-          authorityRole: d.scheme === "git" ? ("ACTIVE" as const) : ("REFERENCE" as const),
+          authorityRole:
+            d.codegraph_enabled || d.source_nature === "SOURCE_CODE"
+              ? ("ACTIVE" as const)
+              : ("REFERENCE" as const),
           accessMode: "READ_WRITE_TARGET" as const,
-          freshnessStatus: "FRESH" as const,
+          freshnessStatus:
+            d.freshness_status === "STALE" || d.freshness_status === "SYNC_ERROR"
+              ? ("STALE_WARNING" as const)
+              : ("FRESH" as const),
         }))}
         activeWaivers={activeWaivers}
+        deliverables={scopedDeliverables}
         rebasedChunks={[]}
         labels={dictionary.workspaceFiveTabs}
         submitting={submitting}
@@ -154,9 +187,10 @@ export function WorkspaceDnaAndWaiversSection({
           <WorkspaceSourcesRagTab
             isFr={isFr}
             activeWorkspace={targetWorkspace}
-            fallbackDatasources={datasources}
+            initialDatasources={scopedDatasources}
             openHelpSection={openHelpSection}
             onRegisterDatasource={onRegisterDatasource}
+            onSourcesChanged={setScopedDatasources}
             onFeedback={onFeedback}
           />
         }
@@ -180,7 +214,14 @@ export function WorkspaceDnaAndWaiversSection({
           />
         }
         membersTabSlot={
-          <WorkspaceMembersInstructionsCard isFr={isFr} activeWorkspace={targetWorkspace} />
+          <WorkspaceMembersAndSettingsTab
+            isFr={isFr}
+            activeWorkspace={targetWorkspace}
+            orgUnits={orgUnits}
+            onUpdateWorkspacePhase={onUpdateWorkspacePhase}
+            onUpdateWorkspaceVisibility={onUpdateWorkspaceVisibility}
+            onFeedback={onFeedback}
+          />
         }
       />
 

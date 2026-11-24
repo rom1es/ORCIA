@@ -1,5 +1,24 @@
 import type { ControlCenterDatasourceItem } from "@orcia/ui";
-import type { WorkspaceDatasourceItemResponse } from "@orcia/api-client";
+import type {
+  CreateWorkspaceDatasourceRequest,
+  WorkspaceDatasourceItemResponse,
+} from "@orcia/api-client";
+import type { RegisterDatasourceInput } from "../../../components/platformSetupWorkspaces";
+
+export function toRegisterDatasourceInput(
+  workspaceName: string,
+  payload: CreateWorkspaceDatasourceRequest,
+): RegisterDatasourceInput {
+  return {
+    workspaceName,
+    alias: payload.alias,
+    scheme: (payload.scheme as "git" | "confluence" | "jira" | "db") || "confluence",
+    uri: payload.uri,
+    executionIdentity:
+      payload.sync_identity_mode === "SERVICE_ACCOUNT" ? "service_account" : "passthrough",
+    freshnessTtlDays: 1,
+  };
+}
 
 export function mapFallbackWorkspaceDatasources(
   fallbackDatasources: readonly ControlCenterDatasourceItem[],

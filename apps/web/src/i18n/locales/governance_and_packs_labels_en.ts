@@ -33,6 +33,7 @@ export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection
     phaseLabel: "Active phase",
     emptyDeliverablesText:
       "No deliverable edited directly yet. Outputs are saved to the default target location.",
+    deliverablesCatalogTitle: "Validated workspace deliverables",
     emptyGlossaryRulesText:
       "No local adaptation active yet on glossary rules.",
     membersAccessHint:

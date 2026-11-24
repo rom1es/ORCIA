@@ -101,6 +101,18 @@ export const FEATURE_WORKSPACES_EN: FeatureWorkspacesDictionary = {
       "Define the default instructions that My Assistant and your Agents will follow in this Workspace.",
     savedBadge: "✓ Saved",
     instructionsPlaceholder: "Workspace-specific instructions...",
+    saveInstructionsBtn: "Save instructions",
+    savingInstructionsBtn: "Saving…",
+    instructionsTooShortHint: "Enter at least 3 characters to save instructions.",
+    instructionsErrorContext: "Workspace instructions",
+    membersRosterTitle: "Team members & access",
+    membersLeadsLabel: "Leads",
+    membersListLabel: "Members",
+    membersEmptyHint:
+      "No members assigned to this team yet. Manage invitations from Configuration › Organization.",
+    workspaceSettingsTitle: "Space settings",
+    workspaceSettingsPhaseLabel: "Lifecycle phase",
+    workspaceSettingsVisibilityLabel: "Visibility & sharing",
   },
   dnaAndWaivers: {
     accessReadOnly: "Read-only observer",
@@ -130,6 +142,8 @@ export const FEATURE_WORKSPACES_EN: FeatureWorkspacesDictionary = {
   sources: {
     syncPolling24h: "24h polling",
     syncWebhookPush: "Webhook push",
+    emptyWorkspaceMessage:
+      'No sources connected yet. Click "+ Attach a source" to connect your first knowledge repository.',
     emptyFilterMessage: "No source matches the selected filter.",
     syncPausedBanner: "⚠️ Sync paused — Referent renewal required",
     renewReferentBtn: "Renew referent",

@@ -1,10 +1,20 @@
+import {
+  createOrciaApiClient,
+  type WorkspaceLayerSettingsSchemaItem,
+} from "@orcia/api-client";
 import type { ControlCenterWorkspaceGovItem } from "@orcia/ui";
-import React, { useState } from "react";
-import { formatI18nTemplate, resolveDictionaryForFlag } from "../../i18n";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  formatI18nTemplate,
+  resolveDictionaryForFlag,
+  resolveLocaleForFlag,
+} from "../../i18n";
+import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 
 export interface WorkspaceMembersInstructionsCardProps {
   readonly isFr: boolean;
   readonly activeWorkspace: ControlCenterWorkspaceGovItem;
+  readonly onFeedback?: (message: string | null) => void;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -18,10 +28,105 @@ const inputStyle: React.CSSProperties = {
 export function WorkspaceMembersInstructionsCard({
   isFr,
   activeWorkspace,
+  onFeedback,
 }: WorkspaceMembersInstructionsCardProps): React.ReactElement {
-  const tabsCopy = resolveDictionaryForFlag(isFr).featureWorkspaces.detailTabs;
+  const locale = resolveLocaleForFlag(isFr);
+  const tabsCopy = resolveDictionaryForFlag(isFr, locale).featureWorkspaces.detailTabs;
+  const wsId = activeWorkspace.workspaceId;
+  const isObserver = activeWorkspace.accessMode === "READ_ONLY_OBSERVER";
+
   const [instructionsByWs, setInstructionsByWs] = useState<Record<string, string>>({});
+  const [wsSettings, setWsSettings] = useState<WorkspaceLayerSettingsSchemaItem | null>(null);
+  const [canEditWorkspaceLayer, setCanEditWorkspaceLayer] = useState<boolean>(true);
   const [instructionsSavedWsId, setInstructionsSavedWsId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [errorAlert, setErrorAlert] = useState<string | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onFeedbackRef = useRef(onFeedback);
+  onFeedbackRef.current = onFeedback;
+
+  useEffect(() => {
+    setErrorAlert(null);
+    setInstructionsSavedWsId(null);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    if (!wsId) return;
+
+    let cancelled = false;
+    const client = createOrciaApiClient({ baseUrl: "", locale });
+    void client
+      .getAssistantGovernance(wsId)
+      .then((view) => {
+        if (cancelled) return;
+        setWsSettings(view.workspace_settings);
+        setCanEditWorkspaceLayer(Boolean(view.can_edit_workspace_layer));
+        setInstructionsByWs((prev) => ({
+          ...prev,
+          [wsId]: view.workspace_settings.workspace_instructions ?? "",
+        }));
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        const msg = `⚠️ ${formatRfc9457ErrorToBanner(err, locale, tabsCopy.instructionsErrorContext).fullText}`;
+        setErrorAlert(msg);
+        onFeedbackRef.current?.(msg);
+      });
+
+    return () => {
+      cancelled = true;
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+    };
+  }, [wsId, locale, tabsCopy.instructionsErrorContext]);
+
+  const persistInstructions = useCallback(
+    async (targetWsId: string, rawText: string) => {
+      if (!targetWsId || isObserver || !canEditWorkspaceLayer) return;
+      const trimmed = rawText.trim();
+      if (trimmed.length < 3) {
+        setErrorAlert(tabsCopy.instructionsTooShortHint);
+        return;
+      }
+      setIsSaving(true);
+      setErrorAlert(null);
+      const client = createOrciaApiClient({ baseUrl: "", locale });
+      try {
+        const updated = await client.updateAssistantWorkspaceSettings({
+          workspace_id: targetWsId,
+          workspace_instructions: trimmed,
+          default_checked_sources: wsSettings?.default_checked_sources ?? [],
+          recommended_agents: wsSettings?.recommended_agents ?? [],
+          arbitration_policy: wsSettings?.arbitration_policy ?? "PAUSE_AND_ESCALATE",
+          mcp_expose_assistant: wsSettings?.mcp_expose_assistant ?? true,
+        });
+        setWsSettings(updated);
+        setInstructionsSavedWsId(targetWsId);
+      } catch (err: unknown) {
+        setInstructionsSavedWsId(null);
+        const msg = `⚠️ ${formatRfc9457ErrorToBanner(err, locale, tabsCopy.instructionsErrorContext).fullText}`;
+        setErrorAlert(msg);
+        onFeedback?.(msg);
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [
+      isObserver,
+      canEditWorkspaceLayer,
+      locale,
+      tabsCopy.instructionsTooShortHint,
+      tabsCopy.instructionsErrorContext,
+      wsSettings,
+      onFeedback,
+    ],
+  );
+
+  const currentValue = instructionsByWs[wsId] ?? "";
+  const isEditable = !isObserver && canEditWorkspaceLayer;
 
   return (
     <div
@@ -47,7 +152,7 @@ export function WorkspaceMembersInstructionsCard({
             {tabsCopy.instructionsHint}
           </p>
         </div>
-        {instructionsSavedWsId === activeWorkspace.workspaceId && (
+        {instructionsSavedWsId === wsId && (
           <span
             data-testid="workspace-instructions-saved-badge"
             style={{
@@ -63,6 +168,17 @@ export function WorkspaceMembersInstructionsCard({
           </span>
         )}
       </div>
+
+      {errorAlert ? (
+        <div
+          role="alert"
+          data-testid="workspace-instructions-error-alert"
+          className="rounded border border-status-danger/40 bg-status-danger/10 px-3 py-2 text-xs text-status-danger"
+        >
+          {errorAlert}
+        </div>
+      ) : null}
+
       <textarea
         autoComplete="off"
         data-lpignore="true"
@@ -71,15 +187,44 @@ export function WorkspaceMembersInstructionsCard({
         data-form-type="other"
         data-testid="workspace-instructions-textarea"
         rows={3}
-        value={instructionsByWs[activeWorkspace.workspaceId] ?? ""}
+        disabled={!isEditable}
+        value={currentValue}
         onChange={(e) => {
           const val = e.target.value;
-          setInstructionsByWs((prev) => ({ ...prev, [activeWorkspace.workspaceId]: val }));
-          setInstructionsSavedWsId(activeWorkspace.workspaceId);
+          setInstructionsByWs((prev) => ({ ...prev, [wsId]: val }));
+          setInstructionsSavedWsId(null);
+          setErrorAlert(null);
+          if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+          }
+          if (isEditable && val.trim().length >= 3) {
+            debounceTimerRef.current = setTimeout(() => {
+              void persistInstructions(wsId, val);
+            }, 120);
+          }
         }}
         placeholder={tabsCopy.instructionsPlaceholder}
         style={{ ...inputStyle, width: "100%", fontFamily: "var(--font-sans)" }}
       />
+
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <button
+          type="button"
+          data-testid="workspace-instructions-save-btn"
+          disabled={!isEditable || isSaving || currentValue.trim().length < 3}
+          aria-busy={isSaving}
+          onClick={() => {
+            if (debounceTimerRef.current) {
+              clearTimeout(debounceTimerRef.current);
+              debounceTimerRef.current = null;
+            }
+            void persistInstructions(wsId, currentValue);
+          }}
+          className="orcia-ds-btn orcia-ds-btn-primary orcia-ds-btn-sm"
+        >
+          {isSaving ? tabsCopy.savingInstructionsBtn : tabsCopy.saveInstructionsBtn}
+        </button>
+      </div>
     </div>
   );
 }

@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 232,
+    "techLeadReportsCount": 233,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -542,6 +542,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-24",
+      "phaseOrStory": "Story 28.3",
+      "reportFile": "28-3-scoped-pg18-sources-deliverables-and-members-tabs-consolidation-tech-lead-report.md",
+      "domain": "Epic 28 Lot 2 — Scoped PG18 Consolidation of Tab 2 (Documents & Sources), Tab 3 (Livrables & Artefacts) & Tab 5 (Membres & Paramètres de l'espace) (CAP-067, CAP-080, CAP-180)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): eliminated unscoped PlatformSetupContext.datasources duplicate in favor of scoped listWorkspaceDatasources(wsId) (useWorkspaceDnaAndWaivers.ts 198 L, WorkspaceDnaAndWaiversSection.tsx 273 L, WorkspaceSourcesRagTab.tsx 295 L), hid Tab 2 category filter pills when datasources.length === 0 && natureFilter === \"ALL\" (WorkspaceSourcesMasterTable.tsx 223 L), split WorkspaceFiveTabsDeliverablesAndMembersPanels.tsx (187 L) from WorkspaceFiveTabsPanels.tsx (194 L) with sanitized URIs (safeSlug), deliverables catalog + conditional Lock V2 ExternalEditRebaser, and created WorkspaceMembersAndSettingsTab.tsx (233 L) + PG18-persisted WorkspaceMembersInstructionsCard.tsx (230 L) (getAssistantGovernance / updateAssistantWorkspaceSettings + F5 survival), all 16/16 non-barrel production .ts/.tsx files and new Story 28.3 test (281 L) <= 300 L; verified 9/9 Turbo (@orcia/api-client 20, @orcia/ui 141, @orcia/web 296 = 457 JS/TS tests, incl. i18n Gates 1–3, zero-dead-buttons 4/4, e2e-testids-sync 1/1, story-28-3 2/2) and lint_spine.py (0 findings)."
+    },
     {
       "date": "2026-11-24",
       "phaseOrStory": "Story 28.2",

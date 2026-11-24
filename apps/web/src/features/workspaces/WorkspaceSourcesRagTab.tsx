@@ -2,7 +2,7 @@ import type {
   ControlCenterDatasourceItem,
   ControlCenterWorkspaceGovItem,
 } from "@orcia/ui";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createOrciaApiClient,
   type CreateWorkspaceDatasourceRequest,
@@ -21,23 +21,33 @@ import {
 import { useActiveEmbeddingModelStatus } from "../shared/useActiveEmbeddingModelStatus";
 import { WorkspaceSourcesMasterTable } from "./sources/WorkspaceSourcesMasterTable";
 import { WorkspaceSourceAttachModal } from "./sources/WorkspaceSourceAttachModal";
-import { mapFallbackWorkspaceDatasources } from "./sources/WorkspaceSourcesFallbackHelper";
+import {
+  mapFallbackWorkspaceDatasources,
+  toRegisterDatasourceInput,
+} from "./sources/WorkspaceSourcesFallbackHelper";
 import { WorkspaceSourcesColdStartBanner } from "./sources/WorkspaceSourcesColdStartBanner";
 import { WorkspaceSourcesRenewReferentForm } from "./sources/WorkspaceSourcesRenewReferentForm";
 
 export interface WorkspaceSourcesRagTabProps {
   readonly isFr?: boolean;
   readonly activeWorkspace: ControlCenterWorkspaceGovItem;
+  readonly initialDatasources?: readonly WorkspaceDatasourceItemResponse[];
   readonly fallbackDatasources?: readonly ControlCenterDatasourceItem[];
   readonly openHelpSection?: (sectionId: string) => void;
   readonly onRegisterDatasource?: PlatformSetupContextValue["registerDatasource"];
+  readonly onSourcesChanged?: (items: readonly WorkspaceDatasourceItemResponse[]) => void;
   readonly onFeedback?: (message: string) => void;
 }
 
+const EMPTY_FALLBACK_DATASOURCES: readonly ControlCenterDatasourceItem[] = [];
+const EMPTY_INITIAL_DATASOURCES: readonly WorkspaceDatasourceItemResponse[] = [];
+
 export function WorkspaceSourcesRagTab({
   activeWorkspace,
-  fallbackDatasources = [],
+  initialDatasources = EMPTY_INITIAL_DATASOURCES,
+  fallbackDatasources = EMPTY_FALLBACK_DATASOURCES,
   onRegisterDatasource,
+  onSourcesChanged,
   onFeedback = () => {},
 }: WorkspaceSourcesRagTabProps): React.ReactElement {
   const { dictionary, locale } = useI18n();
@@ -48,8 +58,15 @@ export function WorkspaceSourcesRagTab({
 
   const wsId = activeWorkspace.workspaceId || "";
   const [datasources, setDatasources] = useState<readonly WorkspaceDatasourceItemResponse[]>(() =>
-    mapFallbackWorkspaceDatasources(fallbackDatasources, activeWorkspace.name, wsId),
+    initialDatasources.length > 0
+      ? initialDatasources
+      : mapFallbackWorkspaceDatasources(fallbackDatasources, activeWorkspace.name, wsId),
   );
+  const onSourcesChangedRef = useRef(onSourcesChanged);
+  onSourcesChangedRef.current = onSourcesChanged;
+  const fallbackRef = useRef(fallbackDatasources);
+  fallbackRef.current = fallbackDatasources;
+  const prevWsIdRef = useRef(wsId);
   const [connectors, setConnectors] = useState<readonly EnterpriseConnectorItemResponse[]>([]);
   const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
   const [editingDatasource, setEditingDatasource] = useState<WorkspaceDatasourceItemResponse | null>(null);
@@ -89,26 +106,27 @@ export function WorkspaceSourcesRagTab({
       ]);
       setDatasources(dsRes.items);
       setConnectors(connRes.items);
+      onSourcesChangedRef.current?.(dsRes.items);
     } catch (err: unknown) {
       console.warn(
         "[orcia:workspaceSources.loadData]",
         err instanceof Error ? err.message : String(err),
       );
-      if (fallbackDatasources.length > 0) {
-        setDatasources(
-          mapFallbackWorkspaceDatasources(
-            fallbackDatasources,
-            activeWorkspace.name,
-            wsId,
-          ),
-        );
+      if (fallbackRef.current.length > 0) {
+        const mapped = mapFallbackWorkspaceDatasources(fallbackRef.current, activeWorkspace.name, wsId);
+        setDatasources(mapped);
+        onSourcesChangedRef.current?.(mapped);
       }
     }
-  }, [wsId, activeWorkspace.name, client, fallbackDatasources]);
+  }, [wsId, activeWorkspace.name, client]);
 
   useEffect(() => {
+    if (prevWsIdRef.current !== wsId) {
+      prevWsIdRef.current = wsId;
+      setDatasources(mapFallbackWorkspaceDatasources(fallbackRef.current, activeWorkspace.name, wsId));
+    }
     void loadData();
-  }, [loadData]);
+  }, [wsId, activeWorkspace.name, loadData]);
 
   const showClientActionError = (err: unknown) => {
     const detail = err instanceof Error ? err.message : "";
@@ -131,14 +149,7 @@ export function WorkspaceSourcesRagTab({
       } else {
         const createPayload = payload as CreateWorkspaceDatasourceRequest;
         await client.createWorkspaceDatasource(wsId, createPayload);
-        onRegisterDatasource?.({
-          workspaceName: activeWorkspace.name,
-          alias: createPayload.alias,
-          scheme: (createPayload.scheme as "git" | "confluence" | "jira" | "db") || "confluence",
-          uri: createPayload.uri,
-          executionIdentity: createPayload.sync_identity_mode === "SERVICE_ACCOUNT" ? "service_account" : "passthrough",
-          freshnessTtlDays: 1,
-        });
+        onRegisterDatasource?.(toRegisterDatasourceInput(activeWorkspace.name, createPayload));
         showFeedback(sourcesCopy.attached);
       }
       setIsAttachModalOpen(false);
@@ -227,11 +238,7 @@ export function WorkspaceSourcesRagTab({
       />
 
       {errorBanner ? (
-        <div
-          role="alert"
-          data-testid="sources-error-alert"
-          className="rounded-lg border border-status-danger/40 bg-status-danger/10 px-3 py-2 text-xs text-status-danger"
-        >
+        <div role="alert" data-testid="sources-error-alert" className="rounded-lg border border-status-danger/40 bg-status-danger/10 px-3 py-2 text-xs text-status-danger">
           {errorBanner}
         </div>
       ) : null}
@@ -242,13 +249,9 @@ export function WorkspaceSourcesRagTab({
         </div>
       ) : null}
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <strong style={{ fontSize: "14px" }}>
-            {sourcesCopy.sourcesTitle.replace("{name}", activeWorkspace.name)}
-          </strong>
-        </div>
-      </div>
+      <strong style={{ fontSize: "14px" }}>
+        {sourcesCopy.sourcesTitle.replace("{name}", activeWorkspace.name)}
+      </strong>
 
       {renewingDsId ? (
         <WorkspaceSourcesRenewReferentForm

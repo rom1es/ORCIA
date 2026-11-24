@@ -34,6 +34,7 @@ export const GOVERNANCE_AND_PACKS_FR_LABELS: GovernanceAndPacksDictionarySection
     phaseLabel: "Phase active",
     emptyDeliverablesText:
       "Aucun document livrable modifié manuellement pour le moment. Les productions suivent l'emplacement d'enregistrement par défaut.",
+    deliverablesCatalogTitle: "Livrables validés de l'espace",
     emptyGlossaryRulesText:
       "Aucune adaptation locale active pour le moment sur les règles du glossaire.",
     membersAccessHint:

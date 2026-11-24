@@ -482,6 +482,7 @@ export {
   WorkspaceFiveTabsAndExternalRebaseView,
   type ExceptionWaiverItem,
   type RebasedChunkItem,
+  type WorkspaceDeliverableItem,
   type WorkspaceFiveTabsAndExternalRebaseViewProps,
   type WorkspaceFiveTabsLabels,
   type WorkspaceSourceItem,

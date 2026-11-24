@@ -54,6 +54,7 @@ export function WorkspaceSourcesMasterTable({
   const [isReconciling, setIsReconciling] = useState(false);
 
   const connectorMap = new Map(connectors.map((c) => [c.id, c.name]));
+  const showFilterPills = datasources.length > 0 || natureFilter !== "ALL";
   const filtered = datasources.filter(
     (ds) => natureFilter === "ALL" || ds.source_nature === natureFilter,
   );
@@ -102,31 +103,41 @@ export function WorkspaceSourcesMasterTable({
 
   return (
     <div data-testid="workspace-sources-master-table-root" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
-        <div role="radiogroup" aria-label={copy.columns.nature} style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-          {filterTabs.map((item) => {
-            const active = natureFilter === item.key;
-            return (
-              <button
-                key={item.key}
-                type="button"
-                data-testid={`sources-filter-pill-${item.key.toLowerCase()}`}
-                onClick={() => setNatureFilter(item.key)}
-                className="orcia-ds-btn orcia-ds-btn-secondary"
-                style={{
-                  fontSize: "12px",
-                  padding: "4px 10px",
-                  fontWeight: active ? 700 : 500,
-                  backgroundColor: active ? "var(--color-action-primary-subtle)" : "var(--color-bg-elevated)",
-                  color: active ? "var(--color-action-primary)" : "var(--color-text-primary)",
-                  borderColor: active ? "var(--color-action-primary)" : "var(--color-border)",
-                }}
-              >
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: showFilterPills ? "space-between" : "flex-end",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "8px",
+        }}
+      >
+        {showFilterPills ? (
+          <div role="radiogroup" aria-label={copy.columns.nature} style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+            {filterTabs.map((item) => {
+              const active = natureFilter === item.key;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  data-testid={`sources-filter-pill-${item.key.toLowerCase()}`}
+                  onClick={() => setNatureFilter(item.key)}
+                  className="orcia-ds-btn orcia-ds-btn-secondary"
+                  style={{
+                    fontSize: "12px",
+                    padding: "4px 10px",
+                    fontWeight: active ? 700 : 500,
+                    backgroundColor: active ? "var(--color-action-primary-subtle)" : "var(--color-bg-elevated)",
+                    color: active ? "var(--color-action-primary)" : "var(--color-text-primary)",
+                    borderColor: active ? "var(--color-action-primary)" : "var(--color-border)",
+                  }}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
 
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           {onReconcileStaleness ? (
@@ -162,7 +173,9 @@ export function WorkspaceSourcesMasterTable({
       {filtered.length === 0 ? (
         <div data-testid="workspace-sources-empty-state" className="orcia-bento-card" style={{ textAlign: "center", padding: "28px" }}>
           <p style={{ margin: 0, color: "var(--color-muted-foreground)" }}>
-            {sourcesCopy.emptyFilterMessage}
+            {datasources.length === 0 && natureFilter === "ALL"
+              ? sourcesCopy.emptyWorkspaceMessage
+              : sourcesCopy.emptyFilterMessage}
           </p>
         </div>
       ) : (

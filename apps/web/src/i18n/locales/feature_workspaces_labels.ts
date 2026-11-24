@@ -94,6 +94,17 @@ export interface FeatureWorkspacesDictionary {
     readonly instructionsHint: string;
     readonly savedBadge: string;
     readonly instructionsPlaceholder: string;
+    readonly saveInstructionsBtn: string;
+    readonly savingInstructionsBtn: string;
+    readonly instructionsTooShortHint: string;
+    readonly instructionsErrorContext: string;
+    readonly membersRosterTitle: string;
+    readonly membersLeadsLabel: string;
+    readonly membersListLabel: string;
+    readonly membersEmptyHint: string;
+    readonly workspaceSettingsTitle: string;
+    readonly workspaceSettingsPhaseLabel: string;
+    readonly workspaceSettingsVisibilityLabel: string;
   };
   readonly dnaAndWaivers: {
     readonly accessReadOnly: string;
@@ -123,6 +134,7 @@ export interface FeatureWorkspacesDictionary {
   readonly sources: {
     readonly syncPolling24h: string;
     readonly syncWebhookPush: string;
+    readonly emptyWorkspaceMessage: string;
     readonly emptyFilterMessage: string;
     readonly syncPausedBanner: string;
     readonly renewReferentBtn: string;

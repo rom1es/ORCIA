@@ -132,6 +132,7 @@ describe("Story 24.2 (USER24-BUG-6 & REM24-03) — WorkspaceFiveTabsAndExternalR
     // 3. DELIVERABLES_ARTIFACTS
     fireEvent.click(screen.getByTestId("workspace-tab-DELIVERABLES_ARTIFACTS")); // pragma: allowlist secret
     expect(screen.getByTestId("workspace-deliverables-panel")).toBeDefined();
+    expect(screen.getByTestId("workspace-deliverables-empty-state")).toBeDefined();
     expect(screen.queryByTestId("workspace-sources-panel")).toBeNull();
 
     // 4. GLOSSARY_RULES
@@ -169,6 +170,48 @@ describe("Story 24.2 (USER24-BUG-6 & REM24-03) — WorkspaceFiveTabsAndExternalR
     expect(screen.getByTestId("workspace-overview-empty-hint").textContent).toContain(
       "Cet espace est prêt",
     );
+  });
+
+  it("renders deliverables catalog, sanitized destination URI, and ExternalEditRebaser Lock V2 in Tab 3", () => {
+    const rawUuid = "0195f000-0000-7000-8000-000000000242";
+    render(
+      <WorkspaceFiveTabsAndExternalRebaseView
+        workspaceSlug={`personal-${rawUuid}`}
+        workspaceName="Mon Espace Tech"
+        activeTab="DELIVERABLES_ARTIFACTS"
+        defaultArtifactDestinationUri={`orcia://workspaces/personal-${rawUuid}/deliverables`}
+        pendingGlossaryCandidatesCount={0}
+        sources={[]}
+        activeWaivers={[]}
+        deliverables={[
+          {
+            deliverableId: "deliv-1",
+            title: "Architecture Spec",
+            casUri: `orcia://workspaces/personal-${rawUuid}/artifacts/architecture-spec@v2`,
+            versionLabel: "@v2",
+            status: "COMPLETED",
+          },
+        ]}
+        rebasedChunks={[
+          {
+            chunkKey: "sec-1",
+            sectionTitle: "1. Security",
+            status: "HUMAN_AMENDED_EXTERNAL",
+            lockedAgainstAgentOverwrite: true,
+          },
+        ]}
+        labels={FIVE_TABS_LABELS_FR}
+      />,
+    );
+
+    const panel = screen.getByTestId("workspace-deliverables-panel");
+    expect(panel.textContent).toContain("orcia://workspaces/mon-espace-tech/deliverables");
+    expect(panel.textContent).toContain("orcia://workspaces/mon-espace-tech/artifacts/architecture-spec@v2");
+    expect(panel.textContent).not.toContain(`personal-${rawUuid}`);
+    expect(screen.getByTestId("workspace-deliverable-item-deliv-1")).toBeDefined();
+    expect(screen.getByTestId("rebased-chunk-sec-1")).toBeDefined();
+    expect(screen.getByTestId("human-amended-badge-sec-1")).toBeDefined();
+    expect(screen.queryByTestId("workspace-deliverables-empty-state")).toBeNull();
   });
 
   it("submits optional trigger_key in WorkflowTriggersModal and renders RFC 9457 409 error in [role=alert]", () => {

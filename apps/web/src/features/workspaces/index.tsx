@@ -163,12 +163,14 @@ export function WorkspacesFeaturePanel({
           isFr={isFr}
           initialTab={initialTab}
           targetWorkspace={targetWorkspace}
-          datasources={datasources}
+          runs={runs}
           ontologyConcepts={ontologyConcepts}
           orgUnits={orgUnits}
           dictionary={dictionary}
           openHelpSection={openHelpSection}
           onRegisterDatasource={registerDatasource}
+          onUpdateWorkspacePhase={updateWorkspacePhase}
+          onUpdateWorkspaceVisibility={updateWorkspaceVisibility}
           onAddOntologyConcept={addOntologyConcept}
           onPromoteOntologyConcept={promoteOntologyConcept}
           onFeedback={setActionFeedback}

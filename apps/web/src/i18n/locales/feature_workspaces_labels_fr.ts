@@ -101,6 +101,18 @@ export const FEATURE_WORKSPACES_FR: FeatureWorkspacesDictionary = {
       "Définissez les consignes par défaut que Mon Assistant et vos Agents respecteront dans cet Espace.",
     savedBadge: "✓ Enregistré",
     instructionsPlaceholder: "Consignes spécifiques à cet espace...",
+    saveInstructionsBtn: "Enregistrer les consignes",
+    savingInstructionsBtn: "Enregistrement…",
+    instructionsTooShortHint: "Saisissez au moins 3 caractères pour enregistrer les consignes.",
+    instructionsErrorContext: "Consignes de l'espace",
+    membersRosterTitle: "Membres & accès de l'équipe",
+    membersLeadsLabel: "Responsables",
+    membersListLabel: "Membres",
+    membersEmptyHint:
+      "Aucun membre affecté à cette équipe pour le moment. Gérez les invitations depuis Configuration › Organisation.",
+    workspaceSettingsTitle: "Paramètres de l'espace",
+    workspaceSettingsPhaseLabel: "Cycle de vie",
+    workspaceSettingsVisibilityLabel: "Confidentialité & partage",
   },
   dnaAndWaivers: {
     accessReadOnly: "Consultation seule",
@@ -130,6 +142,8 @@ export const FEATURE_WORKSPACES_FR: FeatureWorkspacesDictionary = {
   sources: {
     syncPolling24h: "Sonde 24h",
     syncWebhookPush: "Webhook temps réel",
+    emptyWorkspaceMessage:
+      "Aucune source rattachée pour le moment. Cliquez sur « + Rattacher une source » pour connecter votre premier référentiel.",
     emptyFilterMessage: "Aucune source ne correspond au filtre sélectionné.",
     syncPausedBanner: "⚠️ Synchronisation en pause — Référent à renouveler",
     renewReferentBtn: "Renouveler le référent",
