@@ -6,6 +6,7 @@ import {
 } from "@orcia/ui";
 import React, { useState } from "react";
 import type { ConfiguredOrgUnit } from "../../components/platformSetupStore";
+import { formatI18nTemplate, resolveDictionaryForFlag } from "../../i18n";
 
 export interface CreateWorkspaceCardProps {
   readonly isFr: boolean;
@@ -40,6 +41,7 @@ export function CreateWorkspaceCard({
   onNavigateToSettings,
   onCreateWorkspace,
 }: CreateWorkspaceCardProps): React.ReactElement {
+  const cardCopy = resolveDictionaryForFlag(isFr).featureWorkspaces.createCard;
   const [wsName, setWsName] = useState("");
   const [wsSlug, setWsSlug] = useState("");
   const [wsVisibility, setWsVisibility] = useState<WorkspaceVisibilityMode>("STANDARD");
@@ -51,13 +53,7 @@ export function CreateWorkspaceCard({
     selectedTeamId || teamUnits[0]?.id || orgUnits[orgUnits.length - 1]?.id || "";
   const isSubmitDisabled = !wsName.trim();
   const submitDisabledReason =
-    teamUnits.length === 0
-      ? isFr
-        ? "Saisissez le nom de l'Espace de Travail et créez une Équipe de rattachement (facturation IA) dans Configuration › Organisation."
-        : "Enter the Workspace name and create a billing Team in Configuration › Organization."
-      : isFr
-        ? "Saisissez le nom de l'Espace de Travail pour le créer."
-        : "Enter the Workspace name to create it.";
+    teamUnits.length === 0 ? cardCopy.disabledReasonNoTeam : cardCopy.disabledReasonWithTeam;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,18 +85,10 @@ export function CreateWorkspaceCard({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <h2 style={{ margin: 0, fontSize: "var(--font-size-h2)" }}>
-            {isFr
-              ? "Créer un Nouvel Espace de Travail"
-              : "Create a New Workspace"}
-          </h2>
+          <h2 style={{ margin: 0, fontSize: "var(--font-size-h2)" }}>{cardCopy.title}</h2>
           <ContextualInfoTriggerButton
             sectionId="workspace-sources"
-            label={
-              isFr
-                ? "Comprendre la création d'un Espace de travail et ses sources"
-                : "Understand how to create a Workspace and connect sources"
-            }
+            label={cardCopy.helpTriggerLabel}
             onOpenHelpSection={openHelpSection}
           />
         </div>
@@ -136,11 +124,7 @@ export function CreateWorkspaceCard({
             fontSize: "12px",
           }}
         >
-          <span>
-            {isFr
-              ? "💡 Tout Espace de Travail (collectif ou privé) est rattaché à une Équipe pour le suivi des coûts IA. Créez vos Équipes dans Configuration › Organisation."
-              : "💡 Every Workspace (team or private) is attached to a Team for AI cost tracking. Create your Teams in Configuration › Organization."}
-          </span>
+          <span>{cardCopy.noTeamBannerText}</span>
           <button
             type="button"
             data-testid="workspace-go-create-team-btn"
@@ -156,7 +140,7 @@ export function CreateWorkspaceCard({
               cursor: "pointer",
             }}
           >
-            {isFr ? "Créer une Équipe →" : "Create a Team →"}
+            {cardCopy.createTeamBtn}
           </button>
         </div>
       )}
@@ -179,9 +163,7 @@ export function CreateWorkspaceCard({
           data-testid="workspace-name-input"
           value={wsName}
           onChange={(e) => setWsName(e.target.value)}
-          placeholder={
-            isFr ? "Nom de l'Espace de Travail..." : "Workspace name..."
-          }
+          placeholder={cardCopy.namePlaceholder}
           style={{ ...inputStyle, flex: 1, minWidth: "200px" }}
         />
         <input
@@ -194,32 +176,22 @@ export function CreateWorkspaceCard({
           data-testid="workspace-slug-input"
           value={wsSlug}
           onChange={(e) => setWsSlug(e.target.value)}
-          placeholder={isFr ? "Identifiant court (optionnel)..." : "Short ID (optional)..."}
+          placeholder={cardCopy.slugPlaceholder}
           style={inputStyle}
         />
         <select
           data-testid="workspace-owner-team-select"
-          aria-label={
-            isFr
-              ? "Équipe de rattachement (facturation IA)"
-              : "Billing Team attachment"
-          }
+          aria-label={cardCopy.ownerTeamAriaLabel}
           value={effectiveOwnerTeamId}
           onChange={(e) => setSelectedTeamId(e.target.value)}
           style={inputStyle}
         >
           {teamUnits.length === 0 ? (
-            <option value="">
-              {isFr
-                ? "Équipe de facturation : par défaut"
-                : "Billing Team: default"}
-            </option>
+            <option value="">{cardCopy.defaultBillingTeamOption}</option>
           ) : (
             teamUnits.map((team) => (
               <option key={team.id} value={team.id}>
-                {isFr
-                  ? `Équipe de facturation : ${team.name}`
-                  : `Billing Team: ${team.name}`}
+                {formatI18nTemplate(cardCopy.billingTeamOptionTemplate, { name: team.name })}
               </option>
             ))
           )}
@@ -227,34 +199,22 @@ export function CreateWorkspaceCard({
         <select
           data-testid="workspace-visibility-select"
           value={wsVisibility}
-          onChange={(e) =>
-            setWsVisibility(e.target.value as WorkspaceVisibilityMode)
-          }
+          onChange={(e) => setWsVisibility(e.target.value as WorkspaceVisibilityMode)}
           style={inputStyle}
         >
-          <option value="STANDARD">
-            {isFr ? "Collectif d'équipe (Standard)" : "Team shared (Standard)"}
-          </option>
-          <option value="PRIVATE_USER">
-            {isFr
-              ? "Privé personnel (Facturé à l'équipe)"
-              : "Private personal (Billed to team)"}
-          </option>
-          <option value="CONFIDENTIAL_RESTRICTED">
-            {isFr ? "Confidentiel (isolé)" : "Confidential (isolated)"}
-          </option>
+          <option value="STANDARD">{cardCopy.visibilityTeamStandard}</option>
+          <option value="PRIVATE_USER">{cardCopy.visibilityPrivatePersonal}</option>
+          <option value="CONFIDENTIAL_RESTRICTED">{cardCopy.visibilityConfidential}</option>
         </select>
         <select
           data-testid="workspace-phase-select"
           value={wsPhase}
-          onChange={(e) =>
-            setWsPhase(e.target.value as ProductLifecyclePhaseType)
-          }
+          onChange={(e) => setWsPhase(e.target.value as ProductLifecyclePhaseType)}
           style={inputStyle}
         >
-          <option value="BUILD">{isFr ? "Construction" : "Build"}</option>
-          <option value="RUN">{isFr ? "Exploitation" : "Operations"}</option>
-          <option value="MIGRATION">{isFr ? "Évolution" : "Evolution"}</option>
+          <option value="BUILD">{cardCopy.phaseBuild}</option>
+          <option value="RUN">{cardCopy.phaseRun}</option>
+          <option value="MIGRATION">{cardCopy.phaseMigration}</option>
         </select>
         <button
           type="submit"
@@ -275,7 +235,7 @@ export function CreateWorkspaceCard({
             cursor: isSubmitDisabled ? "not-allowed" : "pointer",
           }}
         >
-          <span>{isFr ? "+ Créer l'Espace" : "+ Create Workspace"}</span>
+          <span>{cardCopy.submitBtn}</span>
           <DisabledButtonAlertIndicator
             disabled={isSubmitDisabled}
             reason={submitDisabledReason}

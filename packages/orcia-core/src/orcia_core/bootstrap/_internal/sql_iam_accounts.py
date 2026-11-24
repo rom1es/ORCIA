@@ -77,7 +77,7 @@ async def create_iam_account_on_postgres18(
     cleaned_name = display_name.strip()
     if not cleaned_name:
         raise ValidationDomainError(
-            detail_override="Le nom affiché du compte ne peut pas être vide.",
+            detail_code="ERR_IAM_ACCOUNT_EMPTY_DISPLAY_NAME",
             instance=instance,
         )
     valid_roles = validate_iam_roles(roles, instance=instance)
@@ -207,7 +207,7 @@ async def update_iam_account_on_postgres18(
             stripped = display_name.strip()
             if not stripped:
                 raise ValidationDomainError(
-                    detail_override="Le nom affiché du compte ne peut pas être vide.",
+                    detail_code="ERR_IAM_ACCOUNT_EMPTY_DISPLAY_NAME",
                     instance=instance,
                 )
             next_name = stripped[:160]

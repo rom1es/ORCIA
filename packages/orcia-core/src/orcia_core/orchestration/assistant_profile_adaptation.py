@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass
 from typing import Literal
 
+from orcia_core.orchestration._assistant_profile_locales import PROFILE_LABELS_LOCALES
 from orcia_core.orchestration.assistant_prompt_locales import (
     CONSTITUTIONAL_LAYER_1_TEXT_EN,
     CONSTITUTIONAL_LAYER_1_TEXT_FR,
@@ -61,117 +62,40 @@ class ProfileAdaptationSpec:
     response_prefix_en: str = ""
 
 
+_VocabTier = Literal[
+    "N1_N2_EXECUTIVE",
+    "N2_PRODUCT_RULES",
+    "N3_TECHNICAL_LINEAGE",
+    "N3_SECOPS_GATES",
+]
+
+_VOCAB_TIERS: dict[str, _VocabTier] = {
+    "EXECUTIVE": "N1_N2_EXECUTIVE",
+    "PM": "N2_PRODUCT_RULES",
+    "ARCHITECT": "N3_TECHNICAL_LINEAGE",
+    "TECH_LEAD": "N3_TECHNICAL_LINEAGE",
+    "DEVELOPER": "N3_TECHNICAL_LINEAGE",
+    "SECOPS": "N3_SECOPS_GATES",
+}
+
 PROFILE_ADAPTATION_MAP: dict[str, ProfileAdaptationSpec] = {
-    "EXECUTIVE": ProfileAdaptationSpec(
-        archetype="EXECUTIVE",
-        register_label="Direction / BU — KPIs FinOps, ROI, TTM & Risques N1/N2",
-        vocabulary_tier="N1_N2_EXECUTIVE",
-        highlighted_indicators=("Coût FinOps ($)", "Gain TTM (%)", "Indice de Risque BU", "ROI"),
-        response_prefix_fr="[Synthèse Direction N1/N2 — KPIs FinOps & TTM]",
-        register_label_en="Executive / BU — FinOps KPIs, ROI, TTM & N1/N2 Risks",
-        highlighted_indicators_en=("FinOps Cost ($)", "TTM Gain (%)", "BU Risk Index", "ROI"),
-        response_prefix_en="[Executive Summary N1/N2 — FinOps KPIs & TTM]",
-    ),
-    "PM": ProfileAdaptationSpec(
-        archetype="PM",
-        register_label="Product / Métier — Règles de Gestion & Invariants Fonctionnels",
-        vocabulary_tier="N2_PRODUCT_RULES",
-        highlighted_indicators=(
-            "Règles de Gestion",
-            "Parcours Utilisateurs",
-            "Critères d'Acceptation",
-            "Ancres Humaines",
+    arch: ProfileAdaptationSpec(
+        archetype=arch,
+        register_label=str(PROFILE_LABELS_LOCALES["fr"][arch]["register"]),
+        vocabulary_tier=_VOCAB_TIERS[arch],
+        highlighted_indicators=tuple(
+            str(x)
+            for x in PROFILE_LABELS_LOCALES["fr"][arch]["indicators"]  # type: ignore[attr-defined]
         ),
-        response_prefix_fr="[Synthèse Produit & Règles de Gestion Métier]",
-        register_label_en="Product / Business — Domain Rules & Functional Invariants",
-        highlighted_indicators_en=(
-            "Business Rules",
-            "User Journeys",
-            "Acceptance Criteria",
-            "Human Anchors",
+        response_prefix_fr=str(PROFILE_LABELS_LOCALES["fr"][arch]["prefix"]),
+        register_label_en=str(PROFILE_LABELS_LOCALES["en"][arch]["register"]),
+        highlighted_indicators_en=tuple(
+            str(x)
+            for x in PROFILE_LABELS_LOCALES["en"][arch]["indicators"]  # type: ignore[attr-defined]
         ),
-        response_prefix_en="[Product & Business Rules Summary]",
-    ),
-    "ARCHITECT": ProfileAdaptationSpec(
-        archetype="ARCHITECT",
-        register_label="Architecte — URIs Canoniques, Contrats OpenAPI & Hashes SHA-256 N3",
-        vocabulary_tier="N3_TECHNICAL_LINEAGE",
-        highlighted_indicators=(
-            "URI Canoniques orcia://",
-            "Contrats OpenAPI 3.1",
-            "Hashes CAS SHA-256",
-            "Axiomes Ontologiques L1..L4",
-        ),
-        response_prefix_fr="[Synthèse Architecture N3 — URIs, Contrats & SHA-256]",
-        register_label_en="Architect — Canonical URIs, OpenAPI Contracts & SHA-256 Digests N3",
-        highlighted_indicators_en=(
-            "Canonical orcia:// URIs",
-            "OpenAPI 3.1 Contracts",
-            "CAS SHA-256 Digests",
-            "Ontology Axioms L1..L4",
-        ),
-        response_prefix_en="[Architecture Summary N3 — URIs, Contracts & SHA-256]",
-    ),
-    "TECH_LEAD": ProfileAdaptationSpec(
-        archetype="TECH_LEAD",
-        register_label="Tech Lead — Topologie DAG, Dépendances, Hashes SHA-256 & Exécution N3",
-        vocabulary_tier="N3_TECHNICAL_LINEAGE",
-        highlighted_indicators=(
-            "DAG Steps & Verrous run-lock.json",
-            "Hashes CAS SHA-256",
-            "Couverture & Dette Technique",
-            "URIs orcia://",
-        ),
-        response_prefix_fr="[Synthèse Tech Lead N3 — Topologie DAG & Hashes SHA-256]",
-        register_label_en="Tech Lead — DAG Topology, Dependencies, SHA-256 & Execution N3",
-        highlighted_indicators_en=(
-            "DAG Steps & run-lock.json",
-            "CAS SHA-256 Digests",
-            "Coverage & Technical Debt",
-            "orcia:// URIs",
-        ),
-        response_prefix_en="[Tech Lead Summary N3 — DAG Topology & SHA-256]",
-    ),
-    "DEVELOPER": ProfileAdaptationSpec(
-        archetype="DEVELOPER",
-        register_label="Développeur — Spécifications d'Étape, Entrées/Sorties & Contrats N3",
-        vocabulary_tier="N3_TECHNICAL_LINEAGE",
-        highlighted_indicators=(
-            "Pointeurs JIT d'Artefacts",
-            "Schémas d'Entrée/Sortie",
-            "Hashes CAS SHA-256",
-            "URIs orcia://",
-        ),
-        response_prefix_fr="[Synthèse Technique N3 — Contrats & Pointeurs d'Étape]",
-        register_label_en="Developer — Step Specifications, Input/Output Schemas & Contracts N3",
-        highlighted_indicators_en=(
-            "JIT Artifact Pointers",
-            "Input/Output Schemas",
-            "CAS SHA-256 Digests",
-            "orcia:// URIs",
-        ),
-        response_prefix_en="[Technical Summary N3 — Contracts & Step Pointers]",
-    ),
-    "SECOPS": ProfileAdaptationSpec(
-        archetype="SECOPS",
-        register_label="SecOps — Preuves de Gates, Isolation Passthrough & Conformité",
-        vocabulary_tier="N3_SECOPS_GATES",
-        highlighted_indicators=(
-            "Preuves de Gates",
-            "Isolation Passthrough / Service Principal",
-            "Politiques Permission Broker",
-            "Intégrité Audit Ledger",
-        ),
-        response_prefix_fr="[Synthèse SecOps — Preuves de Gates & Isolation Passthrough]",
-        register_label_en="SecOps — Gate Evidence, Passthrough Isolation & Compliance",
-        highlighted_indicators_en=(
-            "Gate Evidence",
-            "Passthrough / Service Principal Isolation",
-            "Permission Broker Policies",
-            "Audit Ledger Integrity",
-        ),
-        response_prefix_en="[SecOps Summary — Gate Evidence & Passthrough Isolation]",
-    ),
+        response_prefix_en=str(PROFILE_LABELS_LOCALES["en"][arch]["prefix"]),
+    )
+    for arch in ("EXECUTIVE", "PM", "ARCHITECT", "TECH_LEAD", "DEVELOPER", "SECOPS")
 }
 
 

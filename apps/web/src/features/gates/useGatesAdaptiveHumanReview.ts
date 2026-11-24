@@ -1,14 +1,17 @@
 import { createOrciaApiClient, type components } from "@orcia/api-client";
 import type { UiChunkDecisionAction } from "@orcia/ui";
 import { useCallback, useEffect, useState } from "react";
+import {
+  formatI18nTemplate,
+  resolveDictionaryForFlag,
+  resolveLocaleForFlag,
+} from "../../i18n";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
 
 export type HumanGateEvaluationItem = components["schemas"]["HumanGateEvaluationSchemaItem"];
 export type StagedJiraActionItem = components["schemas"]["StagedJiraActionItemSchema"];
 
-function buildLargeSectionText(prefix: string, count = 95): string {
-  const phrase =
-    "Vérification croisée de conformité architecturale, traçabilité du RunLock et validation des axiomes ontologiques L1-L4.";
+function buildLargeSectionText(prefix: string, phrase: string, count = 95): string {
   return `${prefix} — ${Array.from({ length: count }, () => phrase).join(" ")}`;
 }
 
@@ -24,7 +27,8 @@ export function useGatesAdaptiveHumanReview({
   onFeedback,
 }: UseGatesAdaptiveHumanReviewArgs) {
   const workspaceId = activeWorkspaceId || "0192c4e0-0000-7000-8000-000000000201";
-  const locale: "fr" | "en" = isFr ? "fr" : "en";
+  const locale = resolveLocaleForFlag(isFr);
+  const reviewCopy = resolveDictionaryForFlag(isFr, locale).featureCockpitGates.gates.humanReview;
   const [evaluation, setEvaluation] = useState<HumanGateEvaluationItem | null>(null);
   const [stagedJira, setStagedJira] = useState<StagedJiraActionItem | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -44,14 +48,16 @@ export function useGatesAdaptiveHumanReview({
       setEvaluation(evalRes.evaluations[evalRes.evaluations.length - 1] ?? null);
       setStagedJira(jiraRes.actions[jiraRes.actions.length - 1] ?? null);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : isFr ? "Erreur de chargement des gates" : "Gate load error";
-      onFeedback(
-        isFr
-          ? `⚠️ Impossible de charger les revues humaines (${msg}).`
-          : `⚠️ Unable to load human gate reviews (${msg}).`,
-      );
+      const msg = err instanceof Error ? err.message : reviewCopy.loadErrorFallback;
+      onFeedback(formatI18nTemplate(reviewCopy.loadErrorBannerTemplate, { msg }));
     }
-  }, [workspaceId, locale, isFr, onFeedback]);
+  }, [
+    workspaceId,
+    locale,
+    onFeedback,
+    reviewCopy.loadErrorBannerTemplate,
+    reviewCopy.loadErrorFallback,
+  ]);
 
   useEffect(() => {
     if (isHydrating) {
@@ -79,29 +85,19 @@ export function useGatesAdaptiveHumanReview({
           ontology_conflicts: 0,
           stale_warnings: 0,
           artifact_payload: {
-            decisions: [
-              "Validation du contrat de service et enregistrement sécurisé.",
-              "Exécution différée des transitions Jira après validation humaine.",
-            ],
-            hypotheses: [
-              "H1 : Les transitions Jira PAYBUILD-101 restent en attente jusqu'à la validation finale.",
-              "H2 : L'empreinte de validation couvre toute modification humaine de section.",
-            ],
+            decisions: [...reviewCopy.seedDecisions],
+            hypotheses: [...reviewCopy.seedHypotheses],
             sections: [
               {
                 chunk_key: "sec-architecture",
-                title: "Section 1 — Architecture & Frontières Hexagonales",
-                content: buildLargeSectionText(
-                  "Section 1 : Architecture modulaire et séparation des ports",
-                ),
+                title: reviewCopy.seedSec1Title,
+                content: buildLargeSectionText(reviewCopy.seedSec1Prefix, reviewCopy.seedPhrase),
                 human_authored_required: false,
               },
               {
                 chunk_key: "sec-security-jira",
-                title: "Section 2 — Sécurité & Actions Jira Pré-Validées",
-                content: buildLargeSectionText(
-                  "Section 2 : Contrôle d'accès RBAC et exécution Jira conditionnelle",
-                ),
+                title: reviewCopy.seedSec2Title,
+                content: buildLargeSectionText(reviewCopy.seedSec2Prefix, reviewCopy.seedPhrase),
                 human_authored_required: false,
               },
             ],
@@ -115,21 +111,15 @@ export function useGatesAdaptiveHumanReview({
           action_type: "transition_issue",
           issue_key: "PAYBUILD-101",
           target_transition: "Submit for Review",
-          summary:
-            "Soumettre PAYBUILD-101 en revue dès validation de la Gate humaine",
+          summary: reviewCopy.seedJiraSummary,
           fields_payload: { pr_url: "https://git.orcia.local/pr/101" },
         }),
       ]);
       setEvaluation(evalRes.evaluation);
       setStagedJira(jiraRes.staged_action);
-      onFeedback(
-        isFr
-          ? "✅ Briefing de revue 4 blocs et découpage par sections prêts pour validation."
-          : "✅ 4-block review briefing and section chunks ready for validation.",
-      );
+      onFeedback(reviewCopy.openReviewSuccess);
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : isFr ? "Erreur d'ouverture de revue" : "Review open error";
+      const msg = err instanceof Error ? err.message : reviewCopy.openReviewErrorFallback;
       onFeedback(`⚠️ ${msg}`);
     } finally {
       setLoading(false);
@@ -142,14 +132,9 @@ export function useGatesAdaptiveHumanReview({
     try {
       const res = await client.inspectHumanGateHypotheses(evaluation.id);
       setEvaluation(res.evaluation);
-      onFeedback(
-        isFr
-          ? "✅ Point 4 (Hypothèses Retenues) marqué comme relu."
-          : "✅ Block 4 (Retained Assumptions) marked as inspected.",
-      );
+      onFeedback(reviewCopy.inspectHypothesesSuccess);
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : isFr ? "Erreur d'inspection" : "Inspection error";
+      const msg = err instanceof Error ? err.message : reviewCopy.inspectHypothesesErrorFallback;
       onFeedback(`⚠️ ${msg}`);
     }
   };
@@ -165,29 +150,20 @@ export function useGatesAdaptiveHumanReview({
       const res = await client.decideHumanGateChunk(evaluation.id, chunkKey, {
         action,
         co_edited_content: coEditedContent ?? null,
-        challenge_reason:
-          action === "CHALLENGE"
-            ? "Demande de précision sur l'alignement amont."
-            : null,
+        challenge_reason: action === "CHALLENGE" ? reviewCopy.defaultChallengeReason : null,
       });
       setEvaluation(res.evaluation);
       if (action === "CHALLENGE") {
         setChallengedSectionKey(chunkKey);
         setChallengeModalOpen(true);
       }
-      const chunkStatusLabels: Record<string, string> = isFr
-        ? { APPROVED: "Approuvée", CO_EDITED: "Co-éditée", CHALLENGED: "Contestée", PENDING: "En attente" }
-        : { APPROVED: "Approved", CO_EDITED: "Co-edited", CHALLENGED: "Challenged", PENDING: "Pending" };
       const rawChunkStatus = res.chunk.status ?? "PENDING";
-      const localizedChunkStatus = chunkStatusLabels[rawChunkStatus] ?? rawChunkStatus;
+      const localizedChunkStatus = reviewCopy.chunkStatusLabels[rawChunkStatus] ?? rawChunkStatus;
       onFeedback(
-        isFr
-          ? `✅ Section mise à jour (${localizedChunkStatus}).`
-          : `✅ Section updated (${localizedChunkStatus}).`,
+        formatI18nTemplate(reviewCopy.chunkUpdatedTemplate, { status: localizedChunkStatus }),
       );
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : isFr ? "Erreur sur la section" : "Section error";
+      const msg = err instanceof Error ? err.message : reviewCopy.chunkErrorFallback;
       onFeedback(`⚠️ ${msg}`);
     }
   };
@@ -212,14 +188,9 @@ export function useGatesAdaptiveHumanReview({
         });
         setStagedJira(committed.executed_action);
       }
-      onFeedback(
-        isFr
-          ? "✅ Validation humaine enregistrée et action Jira en attente exécutée."
-          : "✅ Human review approved and staged Jira action executed.",
-      );
+      onFeedback(reviewCopy.finalizeSuccess);
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : isFr ? "Erreur de finalisation Gate" : "Gate finalization error";
+      const msg = err instanceof Error ? err.message : reviewCopy.finalizeErrorFallback;
       onFeedback(`⚠️ ${msg}`);
     }
   };

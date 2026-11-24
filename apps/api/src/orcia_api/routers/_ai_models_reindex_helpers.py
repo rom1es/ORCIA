@@ -171,22 +171,19 @@ async def trigger_manual_reindex_embeddings(
                 active_mapping, _ = resolved
 
     if active_mapping is None:
-        raise NoActiveEmbeddingModelError(
-            detail_override=(
-                "Impossible de lancer la réindexation : aucun modèle d'embedding actif "
-                "configuré au niveau GLOBAL. Activez un modèle dans /settings/ai-models."
-            )
-        )
+        raise NoActiveEmbeddingModelError(detail_code="ERR_RAG_REINDEX_NO_EMBEDDING_DETAIL")
 
     job = await trigger_global_reindexing_job(
         request,
         active_mapping,
         actor_id=actor_id,
     )
+    from orcia_api.locales._router_locale_messages import get_router_copy
+
     return RagReindexTriggerResponse(
         job_id=job.id,
         status=job.status,
         target_model_id=active_mapping.id,
         target_model_name=active_mapping.model_name,
-        message="Réindexation globale du corpus vectoriel initiée avec succès.",
+        message=get_router_copy().rag_reindex_initiated,
     )

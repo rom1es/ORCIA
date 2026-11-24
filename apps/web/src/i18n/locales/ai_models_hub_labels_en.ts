@@ -81,6 +81,7 @@ export const AI_MODELS_HUB_EN: AiModelsHubDictionary = {
   modelDiscoveryNoMatch: "No models found from provider",
   modelDiscoveryRefresh: "Discover models",
   modelDiscoveryLoading: "Discovering...",
+  modelDiscoveryToggleListAriaLabel: "Toggle models list",
   modelDiscoveryFreeformHint: "You can enter any model identifier freely",
   chatBadge: "Dialogue",
   embeddingBadge: "Indexing",

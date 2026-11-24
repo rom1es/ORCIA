@@ -57,11 +57,7 @@ async def assert_active_global_embedding_model_for_rag_source(
         return
     if not await has_active_global_embedding_model_on_conn(conn):
         raise NoActiveEmbeddingModelError(
-            detail_override=(
-                "Aucun modèle d'embedding actif configuré au niveau GLOBAL. "
-                "L'ajout ou la synchronisation de sources documentaires RAG nécessite "
-                "un modèle d'indexation sémantique (/settings/ai-models)."
-            ),
+            detail_code="ERR_NO_ACTIVE_EMBEDDING_MODEL_DETAIL",
             instance=instance,
         )
 
@@ -164,10 +160,8 @@ async def trigger_workspace_datasource_sync_on_postgres18(
                 progress_percentage=prog_pct,
                 job_id=job_id_str,
                 instance=instance,
-                detail_override=(
-                    f"Réindexation sémantique en cours ({prog_pct}%). "
-                    "Synchronisation documentaire mise en attente."
-                ),
+                detail_code="ERR_RAG_REINDEX_DOC_SYNC_QUEUED",
+                detail_params={"progress": prog_pct},
             )
 
         if not no_model_needed:
@@ -200,10 +194,7 @@ async def trigger_workspace_datasource_sync_on_postgres18(
 
     if no_model_needed:
         raise NoActiveEmbeddingModelError(
-            detail_override=(
-                "Aucun modèle d'embedding actif configuré au niveau GLOBAL. "
-                "Ingestion documentaire bloquée."
-            ),
+            detail_code="ERR_NO_ACTIVE_EMBEDDING_MODEL_SYNC_BLOCKED",
             instance=instance,
         )
 

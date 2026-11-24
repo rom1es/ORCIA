@@ -4,6 +4,9 @@ import type {
   CognitiveReviewBriefingLabels,
   HumanLedAnchorCardLabels,
   PresenceClaimPillLabels,
+  RgaaModalDialogLabels,
+  RoleDisplayLabels,
+  TemporaryPasswordInvitationModalLabels,
   UiBootstrapOnboardingLabels,
   UiCatalogExplorerLabels,
   UiModuleKey,
@@ -14,6 +17,9 @@ import type {
   UpstreamChallengeModalLabels,
   UserProfileOverviewLabels,
 } from "@orcia/ui";
+import type { ClientErrorLabels } from "../lib/clientErrorCodes";
+import type { CategoryAControllersDictionary } from "./locales/category_a_controller_labels";
+import type { Rfc9457BannerDictionary } from "./locales/rfc9457_banner_labels";
 import type { ActivityDictionarySection } from "./locales/activity_labels";
 import type { AdminAndStudioDictionarySection } from "./locales/admin_and_studio_labels";
 import type { AiModelsHubDictionary } from "./locales/ai_models_hub_labels";
@@ -21,14 +27,35 @@ import type { AssistantDictionarySection } from "./locales/assistant_labels";
 import type { AuthSettingsDictionarySection } from "./locales/auth_settings_labels";
 import type { AutonomousSupervisionCopy } from "./locales/autonomous_supervision_labels";
 import type { AutonomyContractStudioCopy } from "./locales/autonomy_contract_labels";
+import type { ContextualHelpDictionarySection } from "./locales/contextual_help_labels";
 import type { Epic18SourcesLabels } from "./locales/epic18_sources_labels";
+import type { FeatureAdminCatalogSettingsDictionary } from "./locales/feature_admin_catalog_settings_labels";
+import type { FeatureCockpitGatesDictionary } from "./locales/feature_cockpit_gates_labels";
+import type { FeatureInboxAssistantDictionary } from "./locales/feature_inbox_assistant_labels";
+import type { FeatureWorkspacesDictionary } from "./locales/feature_workspaces_labels";
+
 import type { FinopsDictionarySection } from "./locales/finops_labels";
 import type { GovernanceAndPacksDictionarySection } from "./locales/governance_and_packs_labels";
 import type { InboxAndCockpitDictionarySection } from "./locales/inbox_and_cockpit_labels";
 import type { OntologyGlossaryCopy } from "./locales/ontology_glossary_labels";
+import type { ProcessCatalogWorkflowsDictionary } from "./locales/process_catalog_packs_and_workflows_labels";
+import type {
+  ProcessCatalogVsmPart1Dictionary,
+  ProcessCatalogVsmPart2Dictionary,
+  ProcessCatalogVsmPart3Dictionary,
+} from "./locales/process_catalog_vsm_labels";
 import type { ProcessOrchestrationModesDictionarySection } from "./locales/process_orchestration_modes_labels";
+import type { ProcessStudioUiDictionary } from "./locales/process_studio_ui_labels";
+import type { ProcessVsmExecutionUiDictionary } from "./locales/process_vsm_execution_ui_labels";
 import type { ReflexiveTraceAndInspectorDictionarySection } from "./locales/reflexive_trace_and_inspector_labels";
+import type { RoutesAndWizardsDictionary } from "./locales/routes_and_wizards_labels";
+import type { ShellChromeDictionary } from "./locales/shell_chrome_labels";
+import type {
+  ShellBreadcrumbsAndScopeDictionary,
+  ShellNotificationsDictionary,
+} from "./locales/shell_notifications_labels";
 import type { ShellAndSearchDictionarySection } from "./locales/shell_and_search_labels";
+import type { ShowcasePublicDictionary } from "./locales/showcase_labels";
 import type { WorkflowTriggersStudioCopy } from "./locales/workflow_triggers_labels";
 
 export type SupportedWebLocale = "fr" | "en";
@@ -61,12 +88,32 @@ export interface TranslationDictionary
     ProcessOrchestrationModesDictionarySection,
     ReflexiveTraceAndInspectorDictionarySection {
   locale: SupportedWebLocale;
+  rgaaModal: RgaaModalDialogLabels;
+  clientErrors: ClientErrorLabels;
+  rfc9457Errors: Rfc9457BannerDictionary;
+  categoryAControllers: CategoryAControllersDictionary;
+  featureCockpitGates: FeatureCockpitGatesDictionary;
+  featureInboxAssistant: FeatureInboxAssistantDictionary;
+  featureWorkspaces: FeatureWorkspacesDictionary;
+  featureAdminCatalogSettings: FeatureAdminCatalogSettingsDictionary;
+  contextualHelp: ContextualHelpDictionarySection;
+  shellNotifications: ShellNotificationsDictionary;
+  shellBreadcrumbsAndScope: ShellBreadcrumbsAndScopeDictionary;
+  shellChrome: ShellChromeDictionary;
+  showcase: ShowcasePublicDictionary;
+  routesAndWizards: RoutesAndWizardsDictionary;
   aiModelsHub: AiModelsHubDictionary;
   authSettings: AuthSettingsDictionarySection;
   autonomousSupervision: AutonomousSupervisionCopy;
   autonomyContract: AutonomyContractStudioCopy;
   epic18Sources: Epic18SourcesLabels;
   workflowTriggers: WorkflowTriggersStudioCopy;
+  processStudioUi: ProcessStudioUiDictionary;
+  processVsmExecutionUi: ProcessVsmExecutionUiDictionary;
+  processCatalogWorkflows: ProcessCatalogWorkflowsDictionary;
+  processCatalogVsmP1: ProcessCatalogVsmPart1Dictionary;
+  processCatalogVsmP2: ProcessCatalogVsmPart2Dictionary;
+  processCatalogVsmP3: ProcessCatalogVsmPart3Dictionary;
   shell: UiShellLabels;
   humanAnchor: HumanLedAnchorCardLabels & {
     defaultSectionTitle: string;
@@ -90,5 +137,7 @@ export interface TranslationDictionary
   ontologyExplorer: UiOntologyExplorerLabels;
   ontologyGlossary: OntologyGlossaryCopy;
   profileOverview: UserProfileOverviewLabels;
+  roleDisplayLabels: RoleDisplayLabels;
+  tempPasswordModal: TemporaryPasswordInvitationModalLabels;
   modulePages: Record<UiModuleKey, ModulePageCopy>;
 }

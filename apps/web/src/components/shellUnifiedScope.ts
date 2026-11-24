@@ -3,10 +3,8 @@ import type {
   ScopeOptionItem,
   UnifiedScopeOptionGroup,
 } from "@orcia/ui";
-import {
-  SHELL_SCOPE_OPTIONS_EN,
-  SHELL_SCOPE_OPTIONS_FR,
-} from "../i18n/locales/shell_scope_labels";
+import { resolveLocaleForFlag } from "../i18n";
+import { SHELL_SCOPE_OPTIONS_BY_LOCALE } from "../i18n/locales/shell_scope_labels";
 import type { ConfiguredOrgUnit } from "./platformSetupStore";
 
 export interface UnifiedScopeSelectorState {
@@ -57,7 +55,7 @@ export function buildUnifiedScopeSelectorState(params: {
   };
 }): UnifiedScopeSelectorState {
   const { isFr, orgUnits, workspaces, activeScopeId, labels } = params;
-  const fallbackLabels = isFr ? SHELL_SCOPE_OPTIONS_FR : SHELL_SCOPE_OPTIONS_EN;
+  const fallbackLabels = SHELL_SCOPE_OPTIONS_BY_LOCALE[resolveLocaleForFlag(isFr)];
   const personalGroupLabel = labels?.personalGroupLabel ?? fallbackLabels.personalGroupLabel;
   const otherSpacesGroupLabel =
     labels?.otherSpacesGroupLabel ?? fallbackLabels.otherSpacesGroupLabel;

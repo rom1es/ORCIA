@@ -14,6 +14,7 @@ import type {
 import type { components } from "../generated/schema";
 import {
   buildPersonaQuery,
+  OrciaClientError,
   type BinaryDownloadResult,
   type createRequestBinary,
   type createRequestJson,
@@ -55,7 +56,9 @@ export function createWorkflowsV2DomainClient(
       const qs = new URLSearchParams({ pack_id: packId }).toString();
       const path = `/api/v1/packs/export/${encodedWs}?${qs}`;
       if (!requestBinary) {
-        throw new Error("Binary download helper not configured on workflowsV2 client.");
+        throw new OrciaClientError("ERR_CLIENT_NOT_CONFIGURED", {
+          detail: "workflowsV2.requestBinary",
+        });
       }
       return requestBinary(path, "POST");
     },

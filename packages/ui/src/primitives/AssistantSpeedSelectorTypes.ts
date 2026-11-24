@@ -1,20 +1,35 @@
 import type React from "react";
+import type { AssistantActiveStreamLabels } from "./AssistantActiveStreamContent";
 import type {
+  AssistantModelAndEffortPopoverLabels,
   UiAssistantAutocompleteSuggestion,
+  UiAssistantEffortOption,
   UiAssistantModelOption,
 } from "./AssistantModelAndEffortPopover";
 import type {
+  AssistantPromptPlusLabels,
   UiAssistantAttachedFileItem,
   UiAssistantAutocompleteOption,
   UiAssistantOrciaDocumentOption,
 } from "./AssistantPromptPlusAndAutocomplete";
-import type { UiAssistantRagCitationItem } from "./AssistantResponseFooterActionsAndCitations";
+import type {
+  AssistantResponseFooterLabels,
+  UiAssistantRagCitationItem,
+} from "./AssistantResponseFooterActionsAndCitations";
 import type {
   UiInferenceEffort,
   UiInferenceTier,
 } from "./InferenceTierAndEffortSelector";
 
-export type { UiAssistantAutocompleteSuggestion, UiAssistantModelOption };
+export type {
+  AssistantActiveStreamLabels,
+  AssistantModelAndEffortPopoverLabels,
+  AssistantPromptPlusLabels,
+  AssistantResponseFooterLabels,
+  UiAssistantAutocompleteSuggestion,
+  UiAssistantEffortOption,
+  UiAssistantModelOption,
+};
 export type UiAssistantSpeedMode =
   | "SPEED_1_FAST"
   | "SPEED_2_AGENT_TOOLS"
@@ -49,6 +64,22 @@ export interface AssistantSpeedSelectorAndStreamViewLabels {
   readonly toolsUnsupportedBadge?: string;
   readonly deepenCta?: string;
   readonly deepenLowEvidenceCta?: string;
+  readonly defaultWelcomeTitle: string;
+  readonly stopGenerationAriaLabel: string;
+  readonly sendTitle: string;
+  readonly stopTitle: string;
+  readonly followLiveResponseCta: string;
+  readonly plusMenuAriaLabel: string;
+  readonly durationMsUnit: string;
+  readonly defaultGreetingPrompt: string;
+  readonly activeFolderPrefix: string;
+  readonly activeNoteAppliedText: string;
+  readonly detachActiveFolderAriaLabel: string;
+  readonly defaultModelOptions: readonly UiAssistantModelOption[];
+  readonly stream: Omit<AssistantActiveStreamLabels, "responseFooter">;
+  readonly responseFooter: AssistantResponseFooterLabels;
+  readonly modelPopover: AssistantModelAndEffortPopoverLabels;
+  readonly plusMenu: AssistantPromptPlusLabels;
 }
 
 export interface AssistantSpeedSelectorAndStreamViewProps {

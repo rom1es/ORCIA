@@ -1,6 +1,7 @@
 import { OrciaProblemError } from "@orcia/api-client";
 import type { DurableWizardStepDescriptor } from "@orcia/ui";
 import type React from "react";
+import { DICTIONARIES, resolveDictionaryForFlag } from "../../i18n";
 
 export function extractWizardStepString(
   stateJsonb: Record<string, unknown> | undefined,
@@ -25,61 +26,16 @@ export function formatWizardError(err: unknown, fallback: string): string {
   return fallback;
 }
 
-export const WIZARD_STEPS_FR: readonly DurableWizardStepDescriptor[] = [
-  {
-    stepIndex: 1,
-    title: "Organisation & Équipe",
-    description: "Création de votre Direction (BU) ou Équipe et choix de votre rôle.",
-  },
-  {
-    stepIndex: 2,
-    title: "Création de l'Espace de Travail",
-    description: "Choix du nom, du niveau de confidentialité et de la phase actuelle.",
-  },
-  {
-    stepIndex: 3,
-    title: "Connexion d'une Source Documentaire",
-    description: "Ajout d'un dépôt de code, d'un espace documentaire ou d'un outil de suivi.",
-  },
-  {
-    stepIndex: 4,
-    title: "Choix du Modèle IA",
-    description: "Association d'un modèle IA principal pour vos questions et processus.",
-  },
-  {
-    stepIndex: 5,
-    title: "Vérification & Mise en Service",
-    description: "Récapitulatif de vos réglages et ouverture de votre Espace de travail.",
-  },
-];
+export const WIZARD_STEPS_FR: readonly DurableWizardStepDescriptor[] =
+  DICTIONARIES.fr.routesAndWizards.wizardsStepForm.steps;
 
-export const WIZARD_STEPS_EN: readonly DurableWizardStepDescriptor[] = [
-  {
-    stepIndex: 1,
-    title: "Organization & Team",
-    description: "Create your Division (BU) or Team and select your role.",
-  },
-  {
-    stepIndex: 2,
-    title: "Workspace Creation",
-    description: "Choose the workspace name, confidentiality level, and initial phase.",
-  },
-  {
-    stepIndex: 3,
-    title: "Connect a Document Source",
-    description: "Add a code repository, documentation space, or issue tracker.",
-  },
-  {
-    stepIndex: 4,
-    title: "Primary AI Model",
-    description: "Assign a primary AI model for your questions and processes.",
-  },
-  {
-    stepIndex: 5,
-    title: "Verification & Go-Live",
-    description: "Review your configuration and open your Workspace.",
-  },
-];
+export const WIZARD_STEPS_EN: readonly DurableWizardStepDescriptor[] =
+  DICTIONARIES.en.routesAndWizards.wizardsStepForm.steps;
+
+export const WIZARD_STEPS_BY_LOCALE = {
+  fr: WIZARD_STEPS_FR,
+  en: WIZARD_STEPS_EN,
+} as const;
 
 export interface WizardsStepFormProps {
   readonly currentStep: number;
@@ -125,6 +81,7 @@ export function WizardsStepForm({
   if (status === "COMPLETED") {
     return null;
   }
+  const copy = resolveDictionaryForFlag(isFr).routesAndWizards.wizardsStepForm;
 
   return (
     <div
@@ -133,9 +90,7 @@ export function WizardsStepForm({
     >
       {currentStep === 1 && (
         <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <span style={{ fontWeight: 600, fontSize: "13px" }}>
-            {isFr ? "Nom de la Direction (BU) ou de l'Équipe" : "Division (BU) or Team Name"}
-          </span>
+          <span style={{ fontWeight: 600, fontSize: "13px" }}>{copy.orgUnitLabel}</span>
           <input
             type="text"
             autoComplete="off"
@@ -146,11 +101,7 @@ export function WizardsStepForm({
             data-testid="wizard-input-org-unit"
             value={orgUnitName}
             onChange={(e) => onOrgUnitNameChange(e.target.value)}
-            placeholder={
-              isFr
-                ? "Saisir le nom de l'équipe ou de la direction..."
-                : "Enter Team or Division name..."
-            }
+            placeholder={copy.orgUnitPlaceholder}
             style={INPUT_STYLE}
           />
         </label>
@@ -158,9 +109,7 @@ export function WizardsStepForm({
 
       {currentStep === 2 && (
         <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <span style={{ fontWeight: 600, fontSize: "13px" }}>
-            {isFr ? "Nom de l'Espace de Travail" : "Workspace Name"}
-          </span>
+          <span style={{ fontWeight: 600, fontSize: "13px" }}>{copy.workspaceLabel}</span>
           <input
             type="text"
             autoComplete="off"
@@ -171,7 +120,7 @@ export function WizardsStepForm({
             data-testid="wizard-input-workspace-name"
             value={workspaceName}
             onChange={(e) => onWorkspaceNameChange(e.target.value)}
-            placeholder={isFr ? "Saisir le nom de l'Espace..." : "Enter Workspace name..."}
+            placeholder={copy.workspacePlaceholder}
             style={INPUT_STYLE}
           />
         </label>
@@ -189,7 +138,7 @@ export function WizardsStepForm({
             data-testid="wizard-input-connector-alias"
             value={connectorAlias}
             onChange={(e) => onConnectorAliasChange(e.target.value)}
-            placeholder={isFr ? "Nom donné à cette source..." : "Source display name..."}
+            placeholder={copy.connectorAliasPlaceholder}
             style={INPUT_STYLE}
           />
           <input
@@ -202,9 +151,7 @@ export function WizardsStepForm({
             data-testid="wizard-input-connector-uri"
             value={connectorUri}
             onChange={(e) => onConnectorUriChange(e.target.value)}
-            placeholder={
-              isFr ? "Adresse de la source (ex: https://...)" : "Source address (e.g. https://...)"
-            }
+            placeholder={copy.connectorUriPlaceholder}
             style={INPUT_STYLE}
           />
         </div>
@@ -212,11 +159,7 @@ export function WizardsStepForm({
 
       {currentStep === 4 && (
         <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <span style={{ fontWeight: 600, fontSize: "13px" }}>
-            {isFr
-              ? "Nom du Modèle IA Principal (Niveau Standard)"
-              : "Primary AI Model Name (Standard Level)"}
-          </span>
+          <span style={{ fontWeight: 600, fontSize: "13px" }}>{copy.primaryModelLabel}</span>
           <input
             type="text"
             autoComplete="off"
@@ -227,7 +170,7 @@ export function WizardsStepForm({
             data-testid="wizard-input-primary-model"
             value={primaryModelId}
             onChange={(e) => onPrimaryModelIdChange(e.target.value)}
-            placeholder={isFr ? "Saisir le nom du modèle IA..." : "Enter AI model name..."}
+            placeholder={copy.primaryModelPlaceholder}
             style={INPUT_STYLE}
           />
         </label>
@@ -235,9 +178,7 @@ export function WizardsStepForm({
 
       {currentStep === 5 && (
         <p style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}>
-          {isFr
-            ? "Vérifiez vos paramètres puis cliquez sur « Valider et continuer » pour ouvrir votre Espace."
-            : "Review your settings and click 'Validate and continue' to open your Workspace."}
+          {copy.reviewInstruction}
         </p>
       )}
     </div>

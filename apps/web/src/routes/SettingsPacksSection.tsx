@@ -4,7 +4,6 @@ import {
 } from "@orcia/api-client";
 import {
   OrciaAlertBanner,
-  StatusBadge,
   type ControlCenterWorkspaceGovItem,
 } from "@orcia/ui";
 import React, { useEffect, useState } from "react";
@@ -12,7 +11,9 @@ import type {
   ConfiguredOrgUnit,
   ConfiguredPackItem,
 } from "../components/platformSetupStore";
+import { DICTIONARIES, resolveLocaleForFlag } from "../i18n";
 import { formatRfc9457ErrorToBanner } from "../lib/formatRfc9457ErrorToBanner";
+import { SettingsPacksCatalogCard } from "./SettingsPacksCatalogCard";
 import { BUILTIN_INSTALLED_BUSINESS_PACKS } from "./settingsPacksPresets";
 
 export { BUILTIN_INSTALLED_BUSINESS_PACKS };
@@ -27,6 +28,14 @@ export interface SettingsPacksSectionProps {
   readonly openHelpSection: (sectionId: string) => void;
 }
 
+const selectStyle: React.CSSProperties = {
+  padding: "7px 10px",
+  borderRadius: "var(--radius-sm)",
+  border: "1px solid var(--color-border)",
+  backgroundColor: "var(--color-surface-card)",
+  color: "var(--color-foreground)",
+};
+
 export function SettingsPacksSection({
   isFr,
   packs,
@@ -35,6 +44,8 @@ export function SettingsPacksSection({
   registerPack,
   removePack,
 }: SettingsPacksSectionProps) {
+  const locale = resolveLocaleForFlag(isFr);
+  const copy = DICTIONARIES[locale].routesAndWizards.settingsPacks;
   const [installedPacks, setInstalledPacks] = useState<
     readonly InstalledBusinessPackItemResponse[]
   >(BUILTIN_INSTALLED_BUSINESS_PACKS);
@@ -43,7 +54,7 @@ export function SettingsPacksSection({
 
   useEffect(() => {
     let cancelled = false;
-    const client = createOrciaApiClient({ baseUrl: "" });
+    const client = createOrciaApiClient({ baseUrl: "", locale });
     void client
       .listInstalledBusinessPacks()
       .then((res) => {
@@ -55,74 +66,36 @@ export function SettingsPacksSection({
       .catch((err: unknown) => {
         if (!cancelled) {
           setPacksLoadError(
-            formatRfc9457ErrorToBanner(
-              err,
-              isFr ? "fr" : "en",
-              isFr ? "Catalogue des packs métiers" : "Business packs catalog",
-            ).fullText,
+            formatRfc9457ErrorToBanner(err, locale, copy.catalogErrorContext).fullText,
           );
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [isFr]);
+  }, [locale, copy.catalogErrorContext]);
 
   const scopeOptions: readonly { readonly value: string; readonly label: string }[] = [
-    {
-      value: "GLOBAL",
-      label: isFr ? "Plateforme entière" : "Entire Platform",
-    },
+    { value: "GLOBAL", label: copy.entirePlatformLabel },
     ...orgUnits.map((unit) => ({
       value: unit.slug,
-      label: `${unit.level === "BU" ? (isFr ? "Direction" : "Division") : isFr ? "Équipe" : "Team"} · ${unit.name}`,
+      label: `${unit.level === "BU" ? copy.divisionLabel : copy.teamLabel} · ${unit.name}`,
     })),
     ...workspaces
       .filter((ws) => !orgUnits.some((u) => u.name === ws.name))
       .map((ws) => ({
         value: ws.workspaceId,
-        label: `${isFr ? "Espace de travail" : "Workspace"} · ${ws.name}`,
+        label: `${copy.workspaceLabel} · ${ws.name}`,
       })),
   ];
 
   const formatScopeLabel = (scopePath: string): string => {
-    if (scopePath === "GLOBAL") {
-      return isFr ? "Plateforme entière" : "Entire Platform";
-    }
+    if (scopePath === "GLOBAL") return copy.entirePlatformLabel;
     const foundOption = scopeOptions.find((opt) => opt.value === scopePath);
     return foundOption ? foundOption.label : scopePath;
   };
 
   const selectedScopeLabel = formatScopeLabel(selectedScopePath);
-
-  const selectStyle: React.CSSProperties = {
-    padding: "7px 10px",
-    borderRadius: "var(--radius-sm)",
-    border: "1px solid var(--color-border)",
-    backgroundColor: "var(--color-surface-card)",
-    color: "var(--color-foreground)",
-  };
-
-  const primaryBtnStyle: React.CSSProperties = {
-    padding: "7px 14px",
-    borderRadius: "var(--radius-sm)",
-    border: "none",
-    backgroundColor: "var(--color-primary-cobalt)",
-    color: "var(--color-primary-foreground)",
-    fontWeight: 600,
-    cursor: "pointer",
-  };
-
-  const secondaryBtnStyle: React.CSSProperties = {
-    padding: "6px 12px",
-    borderRadius: "var(--radius-sm)",
-    border: "1px solid var(--color-border)",
-    backgroundColor: "var(--color-surface-card)",
-    color: "var(--color-foreground)",
-    fontSize: "12px",
-    fontWeight: 600,
-    cursor: "pointer",
-  };
 
   return (
     <section
@@ -145,21 +118,15 @@ export function SettingsPacksSection({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <h2 style={{ margin: 0, fontSize: "var(--font-size-h3)" }}>
-            {isFr
-              ? "Catalogue des Packs Métiers disponibles"
-              : "Available Business Packs Catalog"}
-          </h2>
+          <h2 style={{ margin: 0, fontSize: "var(--font-size-h3)" }}>{copy.catalogTitle}</h2>
         </div>
 
-        <div
-          style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}
-        >
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
           <label
             htmlFor="settings-pack-scope-select"
             style={{ fontSize: "13px", fontWeight: 600 }}
           >
-            {isFr ? "Périmètre cible :" : "Target scope:"}
+            {copy.targetScopeLabel}
           </label>
           <select
             id="settings-pack-scope-select"
@@ -186,147 +153,20 @@ export function SettingsPacksSection({
           gap: "12px",
         }}
       >
-        {installedPacks.map((item) => {
-          const activeScopesForPack = packs.filter((p) => p.packKey === item.pack_key);
-          const isActiveGlobally = activeScopesForPack.some(
-            (p) => p.scopePath === "GLOBAL",
-          );
-          const isActiveOnSelectedScope =
-            isActiveGlobally ||
-            activeScopesForPack.some((p) => p.scopePath === selectedScopePath);
-          const displayTitle = isFr ? item.title : item.title_en;
-          const displayDesc = isFr ? item.description : item.description_en;
-
-          return (
-            <article
-              key={item.pack_key}
-              data-testid={`installed-pack-card-${item.pack_key}`}
-              style={{
-                padding: "14px",
-                borderRadius: "var(--radius-md)",
-                border: "1px solid var(--color-border)",
-                backgroundColor: "var(--color-surface-card)",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                gap: "10px",
-              }}
-            >
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    gap: "8px",
-                  }}
-                >
-                  <strong style={{ fontSize: "14px" }}>{displayTitle}</strong>
-                  <StatusBadge label={`v${item.version}`} tone="cobalt" monospace />
-                </div>
-                <span
-                  style={{
-                    fontSize: "12px",
-                    color: "var(--color-muted-foreground)",
-                  }}
-                >
-                  {displayDesc}
-                </span>
-
-                {activeScopesForPack.length > 0 && (
-                  <div
-                    data-testid={`pack-card-active-scopes-${item.pack_key}`}
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      alignItems: "center",
-                      gap: "6px",
-                      paddingTop: "4px",
-                    }}
-                  >
-                    {activeScopesForPack.map((activeEntry) => (
-                      <StatusBadge
-                        key={`${activeEntry.packKey}:${activeEntry.scopePath}`}
-                        label={`${isFr ? "Actif" : "Active"} · ${formatScopeLabel(activeEntry.scopePath)}`}
-                        tone="emerald"
-                      />
-                    ))}
-                    {isActiveGlobally && selectedScopePath !== "GLOBAL" && (
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          color: "var(--color-muted-foreground)",
-                        }}
-                      >
-                        {isFr
-                          ? "(couvre déjà toutes les Directions et Espaces)"
-                          : "(already covers all Divisions and Workspaces)"}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: "8px",
-                  paddingTop: "6px",
-                  borderTop: "1px solid var(--color-border)",
-                }}
-              >
-                <span style={{ fontSize: "12px", fontWeight: 600 }}>
-                  {isFr
-                    ? `${item.workflows_count} processus · ${item.agents_count} agents spécialisés`
-                    : `${item.workflows_count} processes · ${item.agents_count} specialized agents`}
-                </span>
-
-                {isActiveOnSelectedScope ? (
-                  <button
-                    type="button"
-                    data-testid={`deactivate-pack-btn-${item.pack_key}`}
-                    onClick={() =>
-                      removePack(
-                        item.pack_key,
-                        isActiveGlobally ? "GLOBAL" : selectedScopePath,
-                      )
-                    }
-                    style={secondaryBtnStyle}
-                  >
-                    {isActiveGlobally && selectedScopePath !== "GLOBAL"
-                      ? isFr
-                        ? "Désactiver (Plateforme entière)"
-                        : "Disable (Entire Platform)"
-                      : isFr
-                        ? "Désactiver sur ce périmètre"
-                        : "Disable on this scope"}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    data-testid={`activate-pack-btn-${item.pack_key}`}
-                    onClick={() =>
-                      registerPack({
-                        packKey: item.pack_key,
-                        version: item.version,
-                        scopePath: selectedScopePath,
-                        status: "PUBLISHED",
-                      })
-                    }
-                    style={primaryBtnStyle}
-                  >
-                    {isFr
-                      ? `Activer sur : ${selectedScopeLabel}`
-                      : `Enable on: ${selectedScopeLabel}`}
-                  </button>
-                )}
-              </div>
-            </article>
-          );
-        })}
+        {installedPacks.map((item) => (
+          <SettingsPacksCatalogCard
+            key={item.pack_key}
+            item={item}
+            locale={locale}
+            copy={copy}
+            packs={packs}
+            selectedScopePath={selectedScopePath}
+            selectedScopeLabel={selectedScopeLabel}
+            formatScopeLabel={formatScopeLabel}
+            registerPack={registerPack}
+            removePack={removePack}
+          />
+        ))}
       </div>
 
       {packs.length === 0 && (
@@ -334,9 +174,7 @@ export function SettingsPacksSection({
           data-testid="packs-empty-state"
           style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}
         >
-          {isFr
-            ? "Aucun Pack métier activé pour le moment. Choisissez un périmètre cible et cliquez sur le bouton d'activation d'une carte."
-            : "No Business Pack enabled yet. Select a target scope and click a card's activation button."}
+          {copy.emptyState}
         </p>
       )}
     </section>

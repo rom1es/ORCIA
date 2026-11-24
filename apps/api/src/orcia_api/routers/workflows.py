@@ -36,6 +36,7 @@ from orcia_api.routers._workflows_helpers import (
 from orcia_api.routers._workflows_helpers import (
     publish_workflow_outbox_event as _publish_workflow_outbox_event,
 )
+from orcia_api.routers._workflows_what_if import execute_workflow_what_if_simulation
 from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.schemas.process_studio_v2 import (
     HitlSignalRequest,
@@ -55,10 +56,8 @@ from orcia_core.agents import ProcessExecutionDispatcher
 from orcia_core.kernel.errors import resolve_locale
 from orcia_core.kernel.ids import new_uuid7_str
 from orcia_core.workflows import SqlVsmDefinitionsV2Store, SqlWorkflowDefinitionsV2Store
-from orcia_core.workflows.gates.pipeline import GatePipelineExecutor
 from orcia_core.workflows.schemas_v2 import (
     ImpactAssessmentResult,
-    ProcessOrchestrationType,
     ValueStreamMapSpec,
     WorkflowDefinitionV2,
     WorkflowLifecycleStatus,
@@ -190,57 +189,7 @@ async def run_workflow_v2_what_if_simulation(
     wf = store.get(workflow_id)
     if wf is None:
         raise HTTPException(status_code=404, detail=f"Workflow '{workflow_id}' not found")
-
-    enabled_steps = [s for s in wf.sub_steps if s.enabled]
-    headings = wf.contract.required_markdown_sections or [f"# {wf.title}", "## Contexte"]
-    sample_md = payload.sample_artifact_markdown or (
-        "\n\n".join(
-            f"{h}\nSimulation What-If isolée pour {wf.title} avec section complète et détaillée."
-            for h in headings
-        )
-        + "\n```mermaid\nflowchart LR\n  A --> B\n```\n"
-    )
-    gate_report = GatePipelineExecutor().execute_pipeline(
-        pipeline=wf.controls,
-        artifact_text=sample_md,
-        execution_mode=wf.execution_mode,
-    )
-    findings = [
-        {
-            "control_id": r.control_id,
-            "type": "deterministic",
-            "status": r.status,
-            "violations": r.violations,
-        }
-        for r in gate_report.deterministic_records
-    ] + [
-        {
-            "control_id": p.control_id,
-            "type": "probabilistic",
-            "status": p.status,
-            "risk_score": p.risk_score,
-            "findings": p.findings,
-        }
-        for p in gate_report.probabilistic_records
-    ]
-    step_units = (
-        max(1, len(wf.allowed_delegate_agents) + 1)
-        if wf.orchestration_type == ProcessOrchestrationType.NON_DETERMINISTIC
-        else max(1, len(enabled_steps))
-    )
-    est_tokens = step_units * 1450
-    return ImpactAssessmentResult(
-        workflow_id=wf.id,
-        version=wf.version,
-        sandbox_isolated=True,
-        external_writes_executed=0,
-        sub_steps_evaluated=len(enabled_steps) if enabled_steps else step_units,
-        deterministic_gates_passed=gate_report.deterministic_passed,
-        probabilistic_gates_passed=gate_report.overall_status == "NOMINAL",
-        estimated_tokens=est_tokens,
-        estimated_cost_usd=round(est_tokens * 0.000003, 4),
-        findings=findings,
-    )
+    return execute_workflow_what_if_simulation(wf, payload)
 
 
 @router.post("/api/v1/workflows/v2/{workflow_id}/runs", response_model=WorkflowV2RunResponse)

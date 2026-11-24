@@ -1,10 +1,11 @@
 import { OrciaIcon } from "@orcia/ui";
 import React from "react";
+import { resolveDictionaryForFlag, resolveLocaleForFlag } from "../../../i18n";
 import type { WorkflowDefinitionV2Item } from "../processStudioV2Data";
 import {
-  HUMAN_KB_LABELS,
-  HUMAN_SKILL_LABELS,
-  HUMAN_TOOL_LABELS,
+  getHumanKbLabel,
+  getHumanSkillLabel,
+  getHumanToolLabel,
 } from "./studioLabelsAndMappers";
 
 export {
@@ -20,6 +21,8 @@ export function WorkflowBlock1ContractSection({
   readonly workflow: WorkflowDefinitionV2Item;
   readonly isFr: boolean;
 }) {
+  const copy = resolveDictionaryForFlag(isFr).processStudioUi.studio;
+
   return (
     <div
       data-testid="studio-block-1-triggers-contract"
@@ -27,9 +30,7 @@ export function WorkflowBlock1ContractSection({
       style={{ display: "flex", flexDirection: "column", gap: "8px" }}
     >
       <strong style={{ fontSize: "14px", color: "var(--color-primary-cobalt)" }}>
-        {isFr
-          ? "1. Éléments d'entrée & Livrable attendu"
-          : "1. Inputs & Expected Deliverable"}
+        {copy.block1Title}
       </strong>
       <div
         style={{
@@ -46,7 +47,7 @@ export function WorkflowBlock1ContractSection({
             borderColor: "var(--color-border-subtle)",
           }}
         >
-          <strong>{isFr ? "Éléments en entrée :" : "Inputs:"}</strong>
+          <strong>{copy.block1InputsLabel}</strong>
           <div style={{ marginTop: "4px", color: "var(--color-text-secondary)" }}>
             {workflow.contract.inputs.join(" · ")}
           </div>
@@ -58,9 +59,7 @@ export function WorkflowBlock1ContractSection({
             borderColor: "var(--color-border-subtle)",
           }}
         >
-          <strong>
-            {isFr ? "Rubriques attendues dans le livrable :" : "Expected deliverable headings:"}
-          </strong>
+          <strong>{copy.block1OutputsLabel}</strong>
           <div style={{ marginTop: "4px", fontSize: "12px" }}>
             {workflow.contract.outputs.map((h) => h.replace(/^#+\s*/, "")).join(" · ")}
           </div>
@@ -72,11 +71,9 @@ export function WorkflowBlock1ContractSection({
             borderColor: "var(--color-border-subtle)",
           }}
         >
-          <strong>{isFr ? "Conditions de validation :" : "Approval criteria:"}</strong>
+          <strong>{copy.block1CriteriaLabel}</strong>
           <div style={{ marginTop: "4px", color: "var(--color-gate-emerald)" }}>
-            {isFr
-              ? "Contrôles de complétude validés · Approbation du responsable"
-              : "Completeness checks passed · Owner sign-off"}
+            {copy.block1CriteriaValue}
           </div>
         </div>
       </div>
@@ -91,7 +88,9 @@ export function WorkflowBlocks345Sections({
   readonly workflow: WorkflowDefinitionV2Item;
   readonly isFr: boolean;
 }) {
-  const langKey = isFr ? "fr" : "en";
+  const locale = resolveLocaleForFlag(isFr);
+  const copy = resolveDictionaryForFlag(isFr).processStudioUi.studio;
+
   return (
     <>
       <div
@@ -107,7 +106,7 @@ export function WorkflowBlocks345Sections({
           style={{ display: "flex", flexDirection: "column", gap: "8px" }}
         >
           <strong style={{ fontSize: "14px", color: "var(--color-primary-cobalt)" }}>
-            {isFr ? "3. Outils connectés mobilisés" : "3. Connected Tools"}
+            {copy.block3Title}
           </strong>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {Array.from(
@@ -125,7 +124,7 @@ export function WorkflowBlocks345Sections({
                 }}
               >
                 <OrciaIcon name="plug" />
-                <span>{HUMAN_TOOL_LABELS[tool]?.[langKey] ?? tool}</span>
+                <span>{getHumanToolLabel(tool, locale)}</span>
               </span>
             ))}
           </div>
@@ -137,9 +136,7 @@ export function WorkflowBlocks345Sections({
           style={{ display: "flex", flexDirection: "column", gap: "8px" }}
         >
           <strong style={{ fontSize: "14px", color: "var(--color-primary-cobalt)" }}>
-            {isFr
-              ? "4. Savoir-faire métier & Socle documentaire"
-              : "4. Business Skills & Knowledge Base"}
+            {copy.block4Title}
           </strong>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {workflow.skills_refs.map((skill) => (
@@ -155,7 +152,7 @@ export function WorkflowBlocks345Sections({
                 }}
               >
                 <OrciaIcon name="sparkles" />
-                <span>{HUMAN_SKILL_LABELS[skill]?.[langKey] ?? skill}</span>
+                <span>{getHumanSkillLabel(skill, locale)}</span>
               </span>
             ))}
             {workflow.knowledge_base_refs.map((kb) => (
@@ -171,7 +168,7 @@ export function WorkflowBlocks345Sections({
                 }}
               >
                 <OrciaIcon name="document" />
-                <span>{HUMAN_KB_LABELS[kb]?.[langKey] ?? kb}</span>
+                <span>{getHumanKbLabel(kb, locale)}</span>
               </span>
             ))}
           </div>
@@ -184,9 +181,7 @@ export function WorkflowBlocks345Sections({
         style={{ display: "flex", flexDirection: "column", gap: "10px" }}
       >
         <strong style={{ fontSize: "14px", color: "var(--color-primary-cobalt)" }}>
-          {isFr
-            ? "5. Contrôles de qualité avant validation humaine"
-            : "5. Quality Checks Before Human Sign-Off"}
+          {copy.block5Title}
         </strong>
 
         <div
@@ -204,9 +199,7 @@ export function WorkflowBlocks345Sections({
             }}
           >
             <div style={{ fontWeight: 700, fontSize: "12.5px", color: "var(--color-gate-emerald)" }}>
-              {isFr
-                ? "1. Vérifications automatiques de complétude"
-                : "1. Automated Completeness Checks"}
+              {copy.block5AutomatedTitle}
             </div>
             {workflow.controls.deterministic_gates.map((dg) => (
               <div key={dg.id} style={{ marginTop: "6px", fontSize: "12.5px" }}>
@@ -223,9 +216,7 @@ export function WorkflowBlocks345Sections({
             }}
           >
             <div style={{ fontWeight: 700, fontSize: "12.5px", color: "var(--color-arbitration-amber)" }}>
-              {isFr
-                ? "2. Relecture critique par un agent contradicteur"
-                : "2. Critical Review by Challenger Agent"}
+              {copy.block5ChallengerTitle}
             </div>
             {workflow.controls.probabilistic_evaluations.map((pg) => (
               <div key={pg.id} style={{ marginTop: "6px", fontSize: "12.5px" }}>

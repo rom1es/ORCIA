@@ -2,11 +2,13 @@ import React, { useState } from "react";
 import { OrciaIcon } from "../components/icons";
 
 export interface CollapsibleAppRailLabels {
+  readonly railTitle?: string;
   readonly railAriaLabel: string;
   readonly expandRailCta: string;
   readonly collapseRailCta: string;
   readonly activePackPrefix: string;
   readonly actionRequiredBadgeLabel: string;
+  readonly outboxBadgePrefix?: string;
   readonly outboxHealthyLabel: string;
 }
 
@@ -60,7 +62,7 @@ export function CollapsibleAppRail({
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         {!collapsed ? (
-          <strong style={{ fontSize: "0.8125rem" }}>ORCIA Rail</strong>
+          <strong style={{ fontSize: "0.8125rem" }}>{labels.railTitle ?? ""}</strong>
         ) : null}
         <button
           type="button"
@@ -114,7 +116,8 @@ export function CollapsibleAppRail({
           data-testid="rail-outbox-health-pill"
           style={{ fontSize: "0.7rem", color: "var(--orcia-text-secondary)" }}
         >
-          <OrciaIcon name="statusHealthy" /> Outbox ({outboxPendingCount}) {!collapsed ? labels.outboxHealthyLabel : ""}
+          <OrciaIcon name="statusHealthy" />{" "}
+          {`${labels.outboxBadgePrefix ?? ""} (${outboxPendingCount}) ${!collapsed ? labels.outboxHealthyLabel : ""}`.trim()}
         </span>
       </footer>
     </aside>

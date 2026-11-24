@@ -9,6 +9,7 @@ import sqlalchemy as sa
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from orcia_core.audit_finops._audit_finops_locales import get_audit_finops_locale_bundle
 from orcia_core.audit_finops._internal._sql_scope_filter import is_missing_table_error
 from orcia_core.audit_finops._internal.sql_connector_quotas_helpers import (
     insert_connector_ledger_row,
@@ -179,7 +180,9 @@ async def reset_connector_circuit_sql(
                 actor_type="USER",
                 actor_id=actor_id,
                 event_type="SettingsChanged",
-                summary=f"Réarmement du coupe-circuit connecteur {connector_key} -> {target_state}",
+                summary=get_audit_finops_locale_bundle("fr").circuit_reset_tpl.format(
+                    key=connector_key, state=target_state
+                ),
                 scope_type=rec.scope_type,
                 scope_id=rec.scope_id,
                 cost_usd=Decimal("0.000000"),

@@ -3,7 +3,7 @@ import type {
   AgentsAndSkillsManagerLabels,
   UiAgentSkillVisibilityScope,
   UiManagedSkillItem,
-} from "./AgentsAndSkillsManagerView";
+} from "./AgentsAndSkillsTypes";
 import { FormattedMarkdownContent } from "./FormattedMarkdownContent";
 import { OrciaIcon, getOrciaIconGlyph } from "./icons";
 
@@ -20,7 +20,9 @@ export interface SkillDetailAndSandboxModalProps {
   readonly onClose: () => void;
 }
 
-export const SkillDetailAndSandboxModal: React.FC<SkillDetailAndSandboxModalProps> = ({
+export const SkillDetailAndSandboxModal: React.FC<
+  SkillDetailAndSandboxModalProps
+> = ({
   skill,
   labels,
   testInputValue,
@@ -29,6 +31,8 @@ export const SkillDetailAndSandboxModal: React.FC<SkillDetailAndSandboxModalProp
   onUpdateSkillVisibility,
   onClose,
 }) => {
+  const studio = labels.studio;
+
   useEffect(() => {
     if (!skill) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -44,11 +48,13 @@ export const SkillDetailAndSandboxModal: React.FC<SkillDetailAndSandboxModalProp
   if (!skill) return null;
 
   const isPack = skill.visibilityScope === "PACK";
-  const visibilityScope: UiAgentSkillVisibilityScope = skill.visibilityScope ?? "TEAM";
+  const visibilityScope: UiAgentSkillVisibilityScope =
+    skill.visibilityScope ?? "TEAM";
 
   const handleRunSkill = () => {
     const raw = testInputValue.trim();
-    const txt = raw || `Exécute la compétence ${skill.name} sur un cas d'exemple concret.`;
+    const txt =
+      raw || studio.defaultSkillTestPromptTemplate.replace("{name}", skill.name);
     if (!raw) {
       onChangeTestInput(skill.skillId, txt);
     }
@@ -59,7 +65,7 @@ export const SkillDetailAndSandboxModal: React.FC<SkillDetailAndSandboxModalProp
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`Configuration & Bac à sable — ${skill.name}`}
+      aria-label={`${studio.skillDetailAriaPrefix} ${skill.name}`}
       data-testid={`skill-detail-modal-${skill.skillId}`}
       className="fixed inset-0 z-40 flex items-center justify-center p-4"
       style={{ backgroundColor: "var(--color-modal-backdrop)" }}
@@ -80,7 +86,7 @@ export const SkillDetailAndSandboxModal: React.FC<SkillDetailAndSandboxModalProp
             onClick={onClose}
             className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2.5 py-1 text-xs font-medium"
           >
-            Fermer (Échap)
+            {studio.closeEscapeLabel}
           </button>
         </header>
 
@@ -90,10 +96,12 @@ export const SkillDetailAndSandboxModal: React.FC<SkillDetailAndSandboxModalProp
               <strong>{labels.skillObjectiveLabel} :</strong> {skill.objective}
             </p>
             <p>
-              <strong>{labels.skillInstructionsLabel} :</strong> {skill.instructions}
+              <strong>{labels.skillInstructionsLabel} :</strong>{" "}
+              {skill.instructions}
             </p>
             <p>
-              <strong>{labels.skillOutputFormatLabel} :</strong> {skill.expectedOutputFormat}
+              <strong>{labels.skillOutputFormatLabel} :</strong>{" "}
+              {skill.expectedOutputFormat}
             </p>
             {skill.inputParameters.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5 pt-1">
@@ -111,7 +119,7 @@ export const SkillDetailAndSandboxModal: React.FC<SkillDetailAndSandboxModalProp
             {!isPack && (
               <div className="pt-2">
                 <label className="inline-flex items-center gap-2">
-                  <span className="font-medium">Visibilité :</span>
+                  <span className="font-medium">{studio.visibilityShortLabel}</span>
                   <select
                     data-testid={`edit-skill-visibility-select-${skill.skillId}`}
                     value={visibilityScope === "PRIVATE" ? "PRIVATE" : "TEAM"}
@@ -123,8 +131,12 @@ export const SkillDetailAndSandboxModal: React.FC<SkillDetailAndSandboxModalProp
                     }
                     className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-1"
                   >
-                    <option value="TEAM">{getOrciaIconGlyph("team")} Équipe / Espace</option>
-                    <option value="PRIVATE">{getOrciaIconGlyph("lock")} Privé</option>
+                    <option value="TEAM">
+                      {getOrciaIconGlyph("team")} {studio.visibilityTeamShort}
+                    </option>
+                    <option value="PRIVATE">
+                      {getOrciaIconGlyph("lock")} {studio.visibilityPrivateShort}
+                    </option>
                   </select>
                 </label>
               </div>
@@ -133,7 +145,7 @@ export const SkillDetailAndSandboxModal: React.FC<SkillDetailAndSandboxModalProp
 
           <div className="space-y-2 rounded-lg border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3">
             <h4 className="font-semibold">
-              <OrciaIcon name="playOutline" /> Tester la Compétence (Simulation)
+              <OrciaIcon name="playOutline" /> {studio.skillSandboxHeading}
             </h4>
             <div className="flex flex-wrap gap-2">
               <input
@@ -169,7 +181,11 @@ export const SkillDetailAndSandboxModal: React.FC<SkillDetailAndSandboxModalProp
                 data-testid={`skill-execution-output-${skill.skillId}`}
                 className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2.5"
               >
-                <FormattedMarkdownContent content={skill.lastExecutionOutput} />
+                <FormattedMarkdownContent
+                  content={skill.lastExecutionOutput}
+                  copyLabel={studio.copyCodeLabel}
+                  copiedLabel={studio.copiedShortLabel}
+                />
               </div>
             )}
           </div>

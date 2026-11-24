@@ -152,20 +152,11 @@ def _build_otp_email_message(
     msg["From"] = sender_email
     msg["To"] = recipient_email
     ttl_minutes = max(1, EMAIL_OTP_TTL_SECONDS // 60)
-    if locale.lower().startswith("en"):
-        msg["Subject"] = f"[ORCIA] Your 6-digit verification code: {otp_code}"
-        msg.set_content(
-            f"Hello,\n\nYour ORCIA verification code is: {otp_code}\n\n"
-            f"This code expires in {ttl_minutes} minutes. "
-            "If you did not initiate this login, ignore this message.\n"
-        )
-    else:
-        msg["Subject"] = f"[ORCIA] Votre code de vérification à 6 chiffres : {otp_code}"
-        msg.set_content(
-            f"Bonjour,\n\nVotre code de vérification ORCIA est : {otp_code}\n\n"
-            f"Ce code est valable pendant {ttl_minutes} minutes. "
-            "Si vous n'êtes pas à l'origine de cette connexion, ignorez ce message.\n"
-        )
+    from orcia_core.bootstrap._bootstrap_locales import get_otp_email_copy
+
+    subject, body = get_otp_email_copy(locale, otp_code=otp_code, ttl_minutes=ttl_minutes)
+    msg["Subject"] = subject
+    msg.set_content(body)
     return msg
 
 

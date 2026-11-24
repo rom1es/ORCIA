@@ -7,6 +7,10 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from orcia_core.ontology.models import HumanProfileArchetype
 from orcia_core.ontology.resolver import ProfileSemanticTranslator
+from orcia_core.orchestration._orchestration_runtime_locales import (
+    CHALLENGE_REPLAY_LOCALES,
+    get_runtime_copy,
+)
 from orcia_core.orchestration.errors import ResourceNotFoundError, ValidationDomainError
 from orcia_core.orchestration.jit_hydrator import JitStepHydrator
 from orcia_core.permissions.models import UserIdentity
@@ -88,9 +92,7 @@ def compute_upstream_challenge_preview(
     """Compute DAG + Ontology `What-If Impact Preview` for challenging an upstream step."""
     if len(challenge_reason.strip()) < 10:
         raise ValidationDomainError(
-            detail_override=(
-                "La justification du Challenge Amont doit comporter au moins 10 caractères."
-            ),
+            detail_code="ERR_CHALLENGE_REASON_TOO_SHORT",
             instance=instance,
         )
     run = engine._get_run(run_id, instance=instance)
@@ -100,22 +102,27 @@ def compute_upstream_challenge_preview(
     step_index = {s.step_key: idx for idx, s in enumerate(wf.steps)}
     if target_upstream_step_key not in step_index:
         raise ResourceNotFoundError(
-            detail_override=f"Étape amont '{target_upstream_step_key}' introuvable.",
+            detail_code="ERR_CHALLENGE_UPSTREAM_NOT_FOUND",
+            detail_params={"step_key": target_upstream_step_key},
             instance=instance,
         )
     if challenger_step_key not in step_index:
         raise ResourceNotFoundError(
-            detail_override=f"Étape émettrice '{challenger_step_key}' introuvable.",
+            detail_code="ERR_CHALLENGE_CHALLENGER_NOT_FOUND",
+            detail_params={"step_key": challenger_step_key},
             instance=instance,
         )
     target_idx = step_index[target_upstream_step_key]
     challenger_idx = step_index[challenger_step_key]
     if target_idx > challenger_idx:
         raise ValidationDomainError(
-            detail_override=(
-                f"L'étape cible '{target_upstream_step_key}' (index {target_idx}) doit être "
-                f"en amont de l'étape '{challenger_step_key}' (index {challenger_idx})."
-            ),
+            detail_code="ERR_CHALLENGE_NOT_UPSTREAM",
+            detail_params={
+                "target": target_upstream_step_key,
+                "target_idx": target_idx,
+                "challenger": challenger_step_key,
+                "challenger_idx": challenger_idx,
+            },
             instance=instance,
         )
 
@@ -150,12 +157,15 @@ def compute_upstream_challenge_preview(
         if primary_concept is not None
         else challenged_section_key
     )
-    translated_summary = (
-        f"[Traduction Ontologique -> {target_profile_archetype}] "
-        f"Challenge émis depuis '{challenger_step_key}' sur "
-        f"'{target_upstream_step_key}.{challenged_section_key}' ({concept_translation}) : "
-        f"{challenge_reason.strip()} — Impact : {len(invalidated_steps)} étape(s) à rejouer, "
-        f"{len(preserved_steps)} étape(s) amont préservées (0 token reconsommé)."
+    translated_summary = get_runtime_copy(CHALLENGE_REPLAY_LOCALES)["preview_summary"].format(
+        arch=target_profile_archetype,
+        challenger=challenger_step_key,
+        target=target_upstream_step_key,
+        section=challenged_section_key,
+        translation=concept_translation,
+        reason=challenge_reason.strip(),
+        inv_count=len(invalidated_steps),
+        pres_count=len(preserved_steps),
     )
     return UpstreamChallengeImpactPreview(
         run_id=run.id,
@@ -189,7 +199,9 @@ def prepare_replay_scope(
     step_index = {s.step_key: idx for idx, s in enumerate(wf.steps)}
     if step_key not in step_index:
         raise ResourceNotFoundError(
-            detail_override=f"Étape '{step_key}' introuvable pour le Replay.", instance=instance
+            detail_code="ERR_REPLAY_STEP_NOT_FOUND",
+            detail_params={"step_key": step_key},
+            instance=instance,
         )
     target_idx = step_index[step_key]
     active_before = engine.blackboard.get_active_snapshots(run.id)

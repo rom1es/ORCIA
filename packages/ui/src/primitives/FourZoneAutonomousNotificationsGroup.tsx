@@ -26,7 +26,7 @@ export function FourZoneAutonomousNotificationsGroup({
 
   const groupedByTrigger = new Map<string, UiNotificationCenterItem[]>();
   for (const item of items) {
-    const key = item.triggerLabel?.trim() || (labels.autonomousDefaultTriggerLabel ?? "Automatisé sous contrat");
+    const key = item.triggerLabel?.trim() || labels.autonomousDefaultTriggerLabel || item.id;
     const bucket = groupedByTrigger.get(key) ?? [];
     bucket.push(item);
     groupedByTrigger.set(key, bucket);
@@ -52,7 +52,7 @@ export function FourZoneAutonomousNotificationsGroup({
         <span className="inline-flex items-center gap-1.5">
           <OrciaIcon name="lightning" size={13} />
           <span>
-            {labels.autonomousNominalGroupTitle ?? "Exécutions autonomes nominales"} ({items.length})
+            {labels.autonomousNominalGroupTitle ?? labels.notificationsDrawerTitle} ({items.length})
           </span>
         </span>
         <OrciaIcon name={expanded ? "caretDown" : "caretRight"} size={13} />

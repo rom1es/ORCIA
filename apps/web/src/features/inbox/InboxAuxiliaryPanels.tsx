@@ -9,6 +9,7 @@ import {
   type UiAssistantPromptTelemetryRecord,
 } from "@orcia/ui";
 import React from "react";
+import { formatI18nTemplate } from "../../i18n";
 import type { TranslationDictionary } from "../../i18n/types";
 import type { SavedAssistantGovernancePrefs } from "./assistantFoldersAndPrefsStore";
 import type { BuiltCitationCardPreview } from "./inboxCitationHelpers";
@@ -80,6 +81,7 @@ export function InboxAuxiliaryPanels({
   onNavigateToProcesses,
   citationCardPreview = null,
 }: InboxAuxiliaryPanelsProps): React.JSX.Element {
+  const flowCopy = dictionary.featureInboxAssistant.assistantFlow;
   return (
     <>
       {governanceOpen ? (
@@ -109,11 +111,7 @@ export function InboxAuxiliaryPanels({
                 console.warn("[orcia:assistant.copyMcp]", err instanceof Error ? err.message : String(err));
               });
             }
-            setGovernanceFeedback(
-              isFr
-                ? "✅ Configuration éditeur copiée dans le presse-papiers."
-                : "✅ Editor configuration copied to clipboard.",
-            );
+            setGovernanceFeedback(flowCopy.mcpConfigCopiedBanner);
           }}
           onClose={() => setGovernanceOpen(false)}
         />
@@ -135,9 +133,7 @@ export function InboxAuxiliaryPanels({
               if (!saved) return;
               selectActiveFolderAndPersist(saved.folderId);
               setGovernanceFeedback(
-                isFr
-                  ? `✅ Dossier « ${saved.title} » créé et sélectionné.`
-                  : `✅ Folder "${saved.title}" created and selected.`,
+                formatI18nTemplate(flowCopy.folderCreatedTemplate, { title: saved.title }),
               );
             });
           }}
@@ -146,24 +142,20 @@ export function InboxAuxiliaryPanels({
             if (!folder) return;
             void savePinnedNotes(folder, notes).then((ok) => {
               if (ok) {
-                setGovernanceFeedback(
-                  isFr
-                    ? "✅ Notes du dossier enregistrées et activées pour vos prochaines questions."
-                    : "✅ Folder notes saved and activated for your next questions.",
-                );
+                setGovernanceFeedback(flowCopy.folderNotesSavedBanner);
               }
             });
           }}
           onChangeVisibility={(folderId, mode: AssistantFolderVisibilityMode) => {
             const folder = folders.find((f) => f.folderId === folderId);
             if (!folder) return;
-            const humanLabel = formatFolderVisibilityLabel(mode, isFr);
+            const humanLabel = formatFolderVisibilityLabel(mode, dictionary.assistantFolders);
             void changeVisibility(folder, mode).then((ok) => {
               if (ok) {
                 setGovernanceFeedback(
-                  isFr
-                    ? `✅ Visibilité du dossier mise à jour (${humanLabel}).`
-                    : `✅ Folder visibility updated (${humanLabel}).`,
+                  formatI18nTemplate(flowCopy.folderVisibilityUpdatedTemplate, {
+                    label: humanLabel,
+                  }),
                 );
               }
             });

@@ -1,5 +1,6 @@
 import { OrciaAlertBanner, OrciaIcon } from "@orcia/ui";
 import React from "react";
+import { formatI18nTemplate, resolveDictionaryForFlag } from "../../../i18n";
 import type { WorkflowDefinitionV2Item } from "../processStudioV2Data";
 
 export type StudioViewMode = "design" | "what_if" | "yaml";
@@ -49,6 +50,8 @@ export function WorkflowStudioHeaderBar({
   onOpenAutonomyContract,
   onOpenTriggers,
 }: WorkflowStudioHeaderBarProps) {
+  const copy = resolveDictionaryForFlag(isFr).processStudioUi.studio;
+
   return (
     <>
       <header
@@ -69,7 +72,7 @@ export function WorkflowStudioHeaderBar({
               onClick={onBackToHub}
               className="orcia-ds-btn-secondary"
             >
-              {isFr ? "← Retour à Mes Processus" : "← Back to My Processes"}
+              {copy.backToProcessesBtn}
             </button>
             {workflow.vsm_step_num ? (
               <button
@@ -81,9 +84,9 @@ export function WorkflowStudioHeaderBar({
               >
                 <OrciaIcon name="compass" />
                 <span>
-                  {isFr
-                    ? `Voir l'Étape ${workflow.vsm_step_num} dans la chaîne de valeur`
-                    : `View Step ${workflow.vsm_step_num} in Value Stream`}
+                  {formatI18nTemplate(copy.viewStepInVsmTemplate, {
+                    step: workflow.vsm_step_num,
+                  })}
                 </span>
               </button>
             ) : null}
@@ -102,12 +105,12 @@ export function WorkflowStudioHeaderBar({
               }}
             >
               {workflow.status === "published"
-                ? isFr
-                  ? `Actif · v${workflow.version}`
-                  : `Active · v${workflow.version}`
-                : isFr
-                  ? `En préparation · v${workflow.version}`
-                  : `Draft · v${workflow.version}`}
+                ? formatI18nTemplate(copy.activeVersionBadgeTemplate, {
+                    version: workflow.version,
+                  })
+                : formatI18nTemplate(copy.draftVersionBadgeTemplate, {
+                    version: workflow.version,
+                  })}
             </span>
             {hasActiveAutonomyContract ? (
               <span
@@ -124,16 +127,14 @@ export function WorkflowStudioHeaderBar({
             ) : null}
           </div>
           <h1 style={{ margin: "6px 0 0 0", fontSize: "var(--font-size-h2)" }}>
-            {isFr
-              ? `Atelier d'adaptation — ${workflow.title}`
-              : `Process Studio — ${workflow.title}`}
+            {formatI18nTemplate(copy.studioTitleTemplate, { title: workflow.title })}
           </h1>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
           <div
             role="tablist"
-            aria-label={isFr ? "Modes de l'atelier" : "Studio view modes"}
+            aria-label={copy.viewModesAriaLabel}
             className="orcia-ds-tabs"
           >
             {(
@@ -141,17 +142,17 @@ export function WorkflowStudioHeaderBar({
                 {
                   key: "design",
                   testId: "studio-view-mode-design",
-                  label: isFr ? "Étapes & Règles" : "Steps & Rules",
+                  label: copy.tabStepsAndRules,
                 },
                 {
                   key: "what_if",
                   testId: "studio-view-mode-whatif",
-                  label: isFr ? "Simuler l'impact" : "Simulate impact",
+                  label: copy.tabSimulateImpact,
                 },
                 {
                   key: "yaml",
                   testId: "studio-view-mode-yaml",
-                  label: isFr ? "Définition" : "Specification",
+                  label: copy.tabSpecification,
                 },
               ] as const
             ).map((tab) => (
@@ -199,7 +200,7 @@ export function WorkflowStudioHeaderBar({
             onClick={onSaveAsDraft}
             className="orcia-ds-btn-secondary"
           >
-            {isFr ? "Enregistrer le brouillon" : "Save draft"}
+            {copy.saveDraftBtn}
           </button>
 
           <button
@@ -208,7 +209,7 @@ export function WorkflowStudioHeaderBar({
             onClick={onPublishWorkflow}
             className="orcia-ds-btn-secondary"
           >
-            {isFr ? "Publier" : "Publish"}
+            {copy.publishBtn}
           </button>
 
           <button
@@ -219,7 +220,7 @@ export function WorkflowStudioHeaderBar({
             style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
           >
             <OrciaIcon name="play" />
-            <span>{isFr ? "Tester l'exécution" : "Test run"}</span>
+            <span>{copy.testRunBtn}</span>
           </button>
         </div>
       </header>

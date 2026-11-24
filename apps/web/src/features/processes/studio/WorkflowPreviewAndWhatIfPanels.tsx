@@ -1,4 +1,5 @@
 import React from "react";
+import { resolveDictionaryForFlag } from "../../../i18n";
 import type { WorkflowDefinitionV2Item } from "../processStudioV2Data";
 
 export interface WhatIfSummaryState {
@@ -19,6 +20,7 @@ export function WorkflowWhatIfSandboxPanel({
   readonly isFr: boolean;
   readonly onRerun: () => void;
 }) {
+  const copy = resolveDictionaryForFlag(isFr).processStudioUi.studio;
   const fallbackCount =
     workflow.orchestration_type === "non_deterministic"
       ? 1
@@ -31,18 +33,14 @@ export function WorkflowWhatIfSandboxPanel({
       style={{ display: "flex", flexDirection: "column", gap: "12px" }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h3 style={{ margin: 0, fontSize: "16px" }}>
-          {isFr
-            ? "Simulation à blanc (sans écriture dans Jira, Confluence ou Git)"
-            : "Simulation Preview (zero external writes)"}
-        </h3>
+        <h3 style={{ margin: 0, fontSize: "16px" }}>{copy.simulationTitle}</h3>
         <button
           type="button"
           data-testid="rerun-what-if-simulation-btn"
           onClick={onRerun}
           className="orcia-ds-btn-primary"
         >
-          {isFr ? "↻ Relancer le test à blanc" : "↻ Re-run simulation"}
+          {copy.rerunSimulationBtn}
         </button>
       </div>
       <div
@@ -60,7 +58,7 @@ export function WorkflowWhatIfSandboxPanel({
           }}
         >
           <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
-            {isFr ? "Étapes actives testées" : "Active steps verified"}
+            {copy.simulationStepsVerifiedLabel}
           </div>
           <div
             data-testid="what-if-substeps-count"
@@ -77,13 +75,13 @@ export function WorkflowWhatIfSandboxPanel({
           }}
         >
           <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
-            {isFr ? "Modifications externes" : "External writes"}
+            {copy.simulationExternalWritesLabel}
           </div>
           <div
             data-testid="what-if-external-writes-count"
             style={{ fontSize: "18px", fontWeight: 700, color: "var(--color-gate-emerald)" }}
           >
-            {isFr ? "0 (Mode isolé)" : "0 (Isolated mode)"}
+            {copy.simulationZeroIsolatedValue}
           </div>
         </div>
         <div
@@ -94,10 +92,10 @@ export function WorkflowWhatIfSandboxPanel({
           }}
         >
           <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
-            {isFr ? "Contrôles qualité" : "Quality checks"}
+            {copy.simulationChecksLabel}
           </div>
           <div style={{ fontSize: "18px", fontWeight: 700, color: "var(--color-gate-emerald)" }}>
-            {isFr ? "Conformes" : "Compliant"}
+            {copy.simulationCompliantValue}
           </div>
         </div>
         <div
@@ -108,7 +106,7 @@ export function WorkflowWhatIfSandboxPanel({
           }}
         >
           <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
-            {isFr ? "Coût estimé par dossier" : "Estimated cost per dossier"}
+            {copy.simulationEstimatedCostLabel}
           </div>
           <div style={{ fontSize: "18px", fontWeight: 700 }}>
             {whatIfResult?.estimatedCostUsd ?? 0.045} $
@@ -128,6 +126,7 @@ export function WorkflowDeclarativePreviewPanel({
   readonly modeBadgeLabel: string;
   readonly isFr: boolean;
 }) {
+  const copy = resolveDictionaryForFlag(isFr).processStudioUi.studio;
   const readableSpec = {
     id: workflow.id,
     slug: workflow.slug,
@@ -146,9 +145,7 @@ export function WorkflowDeclarativePreviewPanel({
   return (
     <div data-testid="studio-yaml-preview-panel" className="orcia-bento-card">
       <h3 style={{ margin: "0 0 8px 0", fontSize: "15px" }}>
-        {isFr
-          ? "Définition déclarative du processus"
-          : "Declarative Process Definition"}
+        {copy.declarativeSpecTitle}
       </h3>
       <pre
         style={{

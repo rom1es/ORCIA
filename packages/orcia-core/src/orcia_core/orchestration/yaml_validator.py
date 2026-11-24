@@ -11,16 +11,13 @@ from typing import Any
 
 from orcia_core.catalog.cas_resolver import compute_bytes_sha256
 from orcia_core.catalog.models import ScalarValue
-from orcia_core.orchestration.errors import (
-    CriticalWorkflowRequiresHumanGateError,
-    IntentionBeforeCodeRequiredError,
-    SubWorkflowCycleDetectedError,
-    SubWorkflowMaxDepthExceededError,
-    UnknownWorkflowPolicyError,
-    ValidationDomainError,
+from orcia_core.orchestration._orchestration_yaml_locales import get_yaml_copy
+from orcia_core.orchestration._yaml_dag_validator import (
+    raise_validation_domain_error,
+    validate_steps_and_dag,
+    validate_sub_workflow_hierarchy,
 )
 from orcia_core.orchestration.models import (
-    MAX_SUB_WORKFLOW_NESTING_DEPTH,
     WorkflowAsCodeDefinition,
     WorkflowEngineeringMode,
     WorkflowStepSpec,
@@ -33,11 +30,9 @@ from orcia_core.orchestration.yaml_loader import (
     VALID_GATE_POLICIES,
     VALID_TIE_BREAK_POLICIES,
     get_valid_workflow_modes,
-    get_workflow_policy_plugins,
     is_registered_workflow_policy,
     line_of,
     parse_raw_yaml_or_json,
-    parse_single_step_spec,
 )
 from orcia_kernel.ids import new_uuid7_str
 
@@ -61,96 +56,9 @@ class WorkflowAsCodeValidator:
         mode: WorkflowEngineeringMode,
         findings: list[WorkflowValidationFinding],
     ) -> tuple[tuple[WorkflowStepSpec, ...], tuple[str, ...]]:
-        if not isinstance(raw_steps, list) or not raw_steps:
-            findings.append(
-                WorkflowValidationFinding(
-                    line=steps_line,
-                    rule_code="RULE_STEPS_NON_EMPTY",
-                    field_path="steps",
-                    message="Le manifeste doit contenir au moins une étape dans 'steps'.",
-                )
-            )
-            return (), ()
-
-        parsed_steps: list[WorkflowStepSpec] = []
-        seen_keys: set[str] = set()
-        for idx, raw_step in enumerate(raw_steps):
-            step = parse_single_step_spec(raw_step, idx, steps_line, seen_keys, findings)
-            if step is not None:
-                parsed_steps.append(step)
-
-        steps_by_key = {s.step_key: s for s in parsed_steps}
-        for step in parsed_steps:
-            for dep in step.depends_on:
-                if dep not in steps_by_key:
-                    findings.append(
-                        WorkflowValidationFinding(
-                            line=step.line_number,
-                            rule_code="RULE_UNKNOWN_DEPENDENCY",
-                            field_path=f"steps.{step.step_key}.depends_on",
-                            message=f"L'étape '{step.step_key}' dépend de '{dep}' introuvable.",
-                        )
-                    )
-            if step.feedback_target_step_key and step.feedback_target_step_key not in steps_by_key:
-                findings.append(
-                    WorkflowValidationFinding(
-                        line=step.line_number,
-                        rule_code="RULE_UNKNOWN_FEEDBACK_TARGET",
-                        field_path=f"steps.{step.step_key}.feedback_target_step_key",
-                        message=(
-                            f"La boucle de rétroaction de '{step.step_key}' cible "
-                            f"'{step.feedback_target_step_key}' introuvable."
-                        ),
-                    )
-                )
-
-        in_degree: dict[str, int] = {s.step_key: 0 for s in parsed_steps}
-        adj: dict[str, list[str]] = {s.step_key: [] for s in parsed_steps}
-        for step in parsed_steps:
-            for dep in step.depends_on:
-                if dep in adj:
-                    adj[dep].append(step.step_key)
-                    in_degree[step.step_key] += 1
-
-        queue = [s.step_key for s in parsed_steps if in_degree[s.step_key] == 0]
-        topo_order: list[str] = []
-        while queue:
-            curr = queue.pop(0)
-            topo_order.append(curr)
-            for nxt in adj[curr]:
-                in_degree[nxt] -= 1
-                if in_degree[nxt] == 0:
-                    queue.append(nxt)
-
-        if len(topo_order) < len(parsed_steps):
-            cycle_keys = [s.step_key for s in parsed_steps if s.step_key not in topo_order]
-            first_cycle_step = steps_by_key[cycle_keys[0]]
-            findings.append(
-                WorkflowValidationFinding(
-                    line=first_cycle_step.line_number,
-                    rule_code="RULE_DAG_CYCLE_DETECTED",
-                    field_path=f"steps.{first_cycle_step.step_key}.depends_on",
-                    message=(
-                        f"Cycle de dépendances détecté à la ligne {first_cycle_step.line_number} "
-                        f"impliquant: {', '.join(cycle_keys)}."
-                    ),
-                )
-            )
-
-        cls._validate_registered_policy_plugins(parsed_steps, steps_by_key, mode, findings)
-        return tuple(parsed_steps), tuple(topo_order)
-
-    @classmethod
-    def _validate_registered_policy_plugins(
-        cls,
-        parsed_steps: list[WorkflowStepSpec],
-        steps_by_key: dict[str, WorkflowStepSpec],
-        mode: WorkflowEngineeringMode,
-        findings: list[WorkflowValidationFinding],
-    ) -> None:
-        """Delegate domain/pack policy checks to `entry_points(group='orcia.workflow_policies')`."""
-        for plugin in get_workflow_policy_plugins():
-            plugin.validate_dag(parsed_steps, steps_by_key, mode, findings)
+        return validate_steps_and_dag(
+            raw_steps, steps_line=steps_line, mode=mode, findings=findings
+        )
 
     @classmethod
     def _validate_sub_workflow_hierarchy(
@@ -161,52 +69,9 @@ class WorkflowAsCodeValidator:
         known_workflows: dict[str, WorkflowAsCodeDefinition],
         findings: list[WorkflowValidationFinding],
     ) -> int:
-        def walk(
-            curr_steps: tuple[WorkflowStepSpec, ...],
-            curr_depth: int,
-            call_stack: tuple[str, ...],
-        ) -> int:
-            max_seen = curr_depth
-            for step in curr_steps:
-                if step.step_type != "SUB_WORKFLOW" or not step.sub_workflow_uri:
-                    continue
-                target_uri = step.sub_workflow_uri
-                next_depth = curr_depth + 1
-                if target_uri in call_stack:
-                    findings.append(
-                        WorkflowValidationFinding(
-                            line=step.line_number,
-                            rule_code="ERR_SUB_WORKFLOW_CYCLE_DETECTED",
-                            field_path=f"steps.{step.step_key}.sub_workflow_uri",
-                            message=(
-                                f"Ligne {step.line_number}: Cycle d'appels SUB_WORKFLOW détecté: "
-                                f"{' -> '.join((*call_stack, target_uri))}."
-                            ),
-                        )
-                    )
-                    continue
-                if next_depth > MAX_SUB_WORKFLOW_NESTING_DEPTH:
-                    findings.append(
-                        WorkflowValidationFinding(
-                            line=step.line_number,
-                            rule_code="ERR_SUB_WORKFLOW_MAX_DEPTH_EXCEEDED",
-                            field_path=f"steps.{step.step_key}.sub_workflow_uri",
-                            message=(
-                                f"Ligne {step.line_number}: Profondeur SUB_WORKFLOW {next_depth} > "
-                                f"{MAX_SUB_WORKFLOW_NESTING_DEPTH} pour '{target_uri}'."
-                            ),
-                        )
-                    )
-                    max_seen = max(max_seen, next_depth)
-                    continue
-                max_seen = max(max_seen, next_depth)
-                child_wf = known_workflows.get(target_uri)
-                if child_wf is not None:
-                    child_max = walk(child_wf.steps, next_depth, (*call_stack, target_uri))
-                    max_seen = max(max_seen, child_max)
-            return max_seen
-
-        return walk(steps, 0, (workflow_uri,))
+        return validate_sub_workflow_hierarchy(
+            workflow_uri, steps, known_workflows=known_workflows, findings=findings
+        )
 
     @classmethod
     def validate_manifest(
@@ -219,6 +84,7 @@ class WorkflowAsCodeValidator:
         instance: str | None = None,
     ) -> WorkflowValidationReport:
         """Validate a YAML/JSON Workflow-as-Code manifest with exact line numbers (`FR-11`)."""
+        yc = get_yaml_copy()
         root, findings = cls.parse_raw_manifest(raw_manifest)
         if findings:
             if raise_on_error:
@@ -232,7 +98,7 @@ class WorkflowAsCodeValidator:
                     line=line_of(root, "uri", 1),
                     rule_code="RULE_VALID_URI_REQUIRED",
                     field_path="uri",
-                    message="Le champ 'uri' doit être une URI canonique valide.",
+                    message=yc["valid_uri_required"],
                 )
             )
         title = str(root.get("title", "")).strip()
@@ -242,7 +108,7 @@ class WorkflowAsCodeValidator:
                     line=line_of(root, "title", 1),
                     rule_code="RULE_TITLE_REQUIRED",
                     field_path="title",
-                    message="Le champ 'title' est obligatoire.",
+                    message=yc["title_required"],
                 )
             )
 
@@ -254,7 +120,7 @@ class WorkflowAsCodeValidator:
                     line=line_of(root, "criticality", 1),
                     rule_code="RULE_INVALID_CRITICALITY",
                     field_path="criticality",
-                    message=f"Criticité invalide '{criticality}'.",
+                    message=yc["invalid_criticality"].format(value=criticality),
                 )
             )
         execution_regime = str(root.get("execution_regime", "INTERACTIVE_COACHING")).strip()
@@ -264,7 +130,7 @@ class WorkflowAsCodeValidator:
                     line=line_of(root, "execution_regime", 1),
                     rule_code="RULE_INVALID_EXECUTION_REGIME",
                     field_path="execution_regime",
-                    message=f"Régime d'exécution invalide '{execution_regime}'.",
+                    message=yc["invalid_regime"].format(value=execution_regime),
                 )
             )
         tie_break_policy = str(root.get("tie_break_policy", "PAUSE_AND_ESCALATE")).strip()
@@ -274,7 +140,7 @@ class WorkflowAsCodeValidator:
                     line=line_of(root, "tie_break_policy", 1),
                     rule_code="RULE_INVALID_TIE_BREAK_POLICY",
                     field_path="tie_break_policy",
-                    message=f"Politique de départage invalide '{tie_break_policy}'.",
+                    message=yc["invalid_tie_break"].format(value=tie_break_policy),
                 )
             )
         mode = str(root.get("mode", "standard")).strip()
@@ -285,7 +151,7 @@ class WorkflowAsCodeValidator:
                     line=line_of(root, "mode", 1),
                     rule_code="RULE_INVALID_WORKFLOW_MODE",
                     field_path="mode",
-                    message=f"Mode invalide '{mode}'.",
+                    message=yc["invalid_mode"].format(value=mode),
                 )
             )
             mode = "standard"
@@ -303,7 +169,7 @@ class WorkflowAsCodeValidator:
                         line=line_of(root, "policies", 1),
                         rule_code="ERR_UNKNOWN_WORKFLOW_POLICY",
                         field_path="policies",
-                        message=f"Politique de workflow inconnue '{rp}'.",
+                        message=yc["unknown_root_policy"].format(policy=rp),
                     )
                 )
 
@@ -318,10 +184,7 @@ class WorkflowAsCodeValidator:
                     line=reg_line,
                     rule_code="ERR_CRITICAL_WORKFLOW_REQUIRES_HUMAN_GATE",
                     field_path="execution_regime",
-                    message=(
-                        f"Ligne {reg_line}: Un workflow HIGH_CRITICAL ne peut pas utiliser "
-                        "execution_regime: AUTONOMOUS_CONTRACT (FR-29, AD-18)."
-                    ),
+                    message=yc["high_critical_autonomous"].format(line=reg_line),
                 )
             )
 
@@ -341,7 +204,7 @@ class WorkflowAsCodeValidator:
                     line=line_of(root, "criticality", 1),
                     rule_code="ERR_CRITICAL_WORKFLOW_REQUIRES_HUMAN_GATE",
                     field_path="steps",
-                    message="Tout workflow HIGH_CRITICAL exige au moins une Gate/Ancre Humaine.",
+                    message=yc["high_critical_gate"],
                 )
             )
 
@@ -420,20 +283,4 @@ class WorkflowAsCodeValidator:
     def _raise_domain_error(
         finding: WorkflowValidationFinding, *, instance: str | None = None
     ) -> None:
-        if finding.rule_code == "ERR_CRITICAL_WORKFLOW_REQUIRES_HUMAN_GATE":
-            raise CriticalWorkflowRequiresHumanGateError(
-                detail_override=finding.message, instance=instance
-            )
-        if finding.rule_code == "ERR_INTENTION_BEFORE_CODE_REQUIRED":
-            raise IntentionBeforeCodeRequiredError(
-                detail_override=finding.message, instance=instance
-            )
-        if finding.rule_code == "ERR_UNKNOWN_WORKFLOW_POLICY":
-            raise UnknownWorkflowPolicyError(detail_override=finding.message, instance=instance)
-        if finding.rule_code == "ERR_SUB_WORKFLOW_MAX_DEPTH_EXCEEDED":
-            raise SubWorkflowMaxDepthExceededError(
-                detail_override=finding.message, instance=instance
-            )
-        if finding.rule_code == "ERR_SUB_WORKFLOW_CYCLE_DETECTED":
-            raise SubWorkflowCycleDetectedError(detail_override=finding.message, instance=instance)
-        raise ValidationDomainError(detail_override=finding.message, instance=instance)
+        raise_validation_domain_error(finding, instance=instance)

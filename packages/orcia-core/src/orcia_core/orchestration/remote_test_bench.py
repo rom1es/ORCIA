@@ -8,6 +8,10 @@ from __future__ import annotations
 from typing import Literal
 from urllib.parse import urlparse
 
+from orcia_core.orchestration._orchestration_runtime_locales import (
+    MCP_BENCH_LOCALES,
+    get_runtime_copy,
+)
 from orcia_core.orchestration.errors import ObserverModeReadOnlyError
 from orcia_core.orchestration.remote_test_bench_models import (
     DiscoveredRemoteCapability,
@@ -42,18 +46,19 @@ def check_remote_endpoint_anti_ssrf(
     protocol: RemoteProtocolType,
     allow_private_network: bool,
 ) -> tuple[bool, str]:
-    """Evaluate Step 1 Network, TLS & Anti-SSRF checks with localized FR diagnostic."""
+    """Evaluate Step 1 Network, TLS & Anti-SSRF checks with localized diagnostic."""
+    mc = get_runtime_copy(MCP_BENCH_LOCALES)
     if protocol == "WASM_SANDBOX" and endpoint_url.startswith("orcia://"):
-        return True, "Sandbox WASM locale isolée vérifiée."
+        return True, mc["wasm_ok"]
     parsed = urlparse(endpoint_url)
     if parsed.scheme not in ("https", "http"):
-        return False, f"Schéma '{parsed.scheme}' interdit (HTTPS requis)."
+        return False, mc["bad_scheme"].format(scheme=parsed.scheme)
     host = (parsed.hostname or "").strip().lower()
     if not host:
-        return False, "Hôte manquant dans l'URL."
+        return False, mc["missing_host"]
     if not is_safe_llm_endpoint_url(endpoint_url, allow_private_network=allow_private_network):
-        return False, f"Anti-SSRF : cible ou adresse IP interdite '{host}' bloquée."
-    return True, "Réseau, TLS & Anti-SSRF validés."
+        return False, mc["ssrf_blocked"].format(host=host)
+    return True, mc["net_ok"]
 
 
 class RemoteServiceTestBenchService:
@@ -74,6 +79,7 @@ class RemoteServiceTestBenchService:
         simulated_dry_run_bytes: int = 2048,
     ) -> RemoteServiceTestAndDiscoverResult:
         """Execute the 4-step Hot Test Bench (`🔌`) for MCP/OpenAPI/A2A/WASM services."""
+        mc = get_runtime_copy(MCP_BENCH_LOCALES)
         if actor_role == "READ_ONLY_OBSERVER":
             raise ObserverModeReadOnlyError(
                 detail_override="READ_ONLY_OBSERVER cannot run connector test-and-discover."
@@ -96,28 +102,28 @@ class RemoteServiceTestBenchService:
                 step_number=2,
                 step_code="2_AUTHENTICATION",
                 status="SKIPPED",
-                detail_fr="Ignoré (Étape 1 Réseau/Anti-SSRF en échec).",
+                detail_fr=mc["auth_skipped"],
             )
         elif identity_mode == "PASSTHROUGH" and not has_user_personal_token:
             step2 = TestBenchStepResult(
                 step_number=2,
                 step_code="2_AUTHENTICATION",
                 status="WAITING_USER_PASSTHROUGH_TOKEN",
-                detail_fr="🟠 En attente de jeton utilisateur (Passthrough)",
+                detail_fr=mc["auth_wait_token"],
             )
         elif identity_mode == "SECRET_REF" and not secret_ref_valid:
             step2 = TestBenchStepResult(
                 step_number=2,
                 step_code="2_AUTHENTICATION",
                 status="FAIL",
-                detail_fr="Échec de validation du secret via SecretProviderPort.",
+                detail_fr=mc["auth_secret_fail"],
             )
         else:
             step2 = TestBenchStepResult(
                 step_number=2,
                 step_code="2_AUTHENTICATION",
                 status="PASS",
-                detail_fr="Authentification vérifiée avec succès.",
+                detail_fr=mc["auth_ok"],
             )
 
         default_tools = ["search_docs", "create_issue"]
@@ -127,15 +133,11 @@ class RemoteServiceTestBenchService:
             for t_name in tool_list:
                 is_write = any(k in t_name.lower() for k in _WRITE_KEYWORDS)
                 qual: ToolAccessQualification = "WRITE_STAGED_REQUIRED" if is_write else "READ_ONLY"
-                badge = (
-                    "✍️ Écriture -> Action Staged obligatoire (AD-3)"
-                    if is_write
-                    else "👁️ Lecture seule"
-                )
+                badge = mc["write_staged"] if is_write else mc["read_only"]
                 discovered.append(
                     DiscoveredRemoteCapability(
                         tool_name=t_name,
-                        description=f"Capacité découverte : {t_name}",
+                        description=mc["cap_desc"].format(name=t_name),
                         qualification=qual,
                         badge_fr=badge,
                     )
@@ -144,14 +146,14 @@ class RemoteServiceTestBenchService:
                 step_number=3,
                 step_code="3_CONTRACT_DISCOVERY",
                 status="PASS" if discovered else "FAIL",
-                detail_fr=f"{len(discovered)} outil(s) découvert(s) et qualifié(s).",
+                detail_fr=mc["discovered_count"].format(count=len(discovered)),
             )
         else:
             step3 = TestBenchStepResult(
                 step_number=3,
                 step_code="3_CONTRACT_DISCOVERY",
                 status="SKIPPED",
-                detail_fr="Ignoré.",
+                detail_fr=mc["skipped"],
             )
 
         if step1.status == "PASS" and step3.status == "PASS" and step2.status == "PASS":
@@ -160,28 +162,28 @@ class RemoteServiceTestBenchService:
                     step_number=4,
                     step_code="4_HOT_DRY_RUN",
                     status="FAIL",
-                    detail_fr="Timeout Dry-Run dépassé (> 5 s).",
+                    detail_fr=mc["dry_timeout"],
                 )
             elif simulated_dry_run_bytes > 1_048_576:
                 step4 = TestBenchStepResult(
                     step_number=4,
                     step_code="4_HOT_DRY_RUN",
                     status="FAIL",
-                    detail_fr="Taille maximale de réponse Dry-Run dépassée (> 1 Mo).",
+                    detail_fr=mc["dry_size"],
                 )
             else:
                 step4 = TestBenchStepResult(
                     step_number=4,
                     step_code="4_HOT_DRY_RUN",
                     status="PASS",
-                    detail_fr="Essai rapide à chaud validé (< 5 s, <= 1 Mo).",
+                    detail_fr=mc["dry_ok"],
                 )
         else:
             step4 = TestBenchStepResult(
                 step_number=4,
                 step_code="4_HOT_DRY_RUN",
                 status="SKIPPED",
-                detail_fr="Dry-Run différé (en attente de jeton Passthrough ou étape amont).",
+                detail_fr=mc["dry_deferred"],
             )
 
         can_activate = (

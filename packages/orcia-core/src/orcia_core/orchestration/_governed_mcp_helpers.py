@@ -7,6 +7,10 @@ from typing import Any
 
 from uuid_utils.compat import uuid7
 
+from orcia_core.orchestration._orchestration_runtime_locales import (
+    MCP_BENCH_LOCALES,
+    get_runtime_copy,
+)
 from orcia_core.orchestration.errors import (
     HumanAnchorRequiredError,
     ObserverModeReadOnlyError,
@@ -83,10 +87,11 @@ def build_mcp_invocation_result(
         "READ_ONLY_OBSERVER",
         "BU_DIRECTOR",
     )
+    mc = get_runtime_copy(MCP_BENCH_LOCALES)
     scrubbed_prompt = prompt_text.replace("IBAN_SECRET", "[REDACTED_PII]")
-    citation_tag = "[S1]" if has_read_source else "[S1 · 🔒 Source restreinte]"
-    response_text = (
-        f"Réponse gouvernée ({spec.display_name}) sur « {scrubbed_prompt} » {citation_tag}"
+    citation_tag = "[S1]" if has_read_source else mc["restricted_tag"]
+    response_text = mc["governed_reply"].format(
+        name=spec.display_name, prompt=scrubbed_prompt, tag=citation_tag
     )
     staged_actions: list[str] = []
     if requested_write_target_uri:
@@ -101,7 +106,7 @@ def build_mcp_invocation_result(
         secret_refs_exposed=(),
         staged_actions=tuple(staged_actions),
         meta_usage={"prompt_tokens": 64, "completion_tokens": 48, "cost_eur": 0.0005},
-        history_badge_fr="💻 Appelé via MCP (IDE)",
+        history_badge_fr=mc["history_badge"],
         audit_actor_type="MCP_IDE_CLIENT",
     )
 

@@ -2,18 +2,20 @@ import { createOrciaApiClient, type IamAccountResponse, type RoleMatrixEntryResp
 import { TemporaryPasswordInvitationModal, type ControlCenterWorkspaceGovItem } from "@orcia/ui";
 import React, { useCallback, useEffect, useState } from "react";
 import type { ConfiguredOrgUnit, ConfiguredRbacGrant } from "../components/platformSetupStore";
-import { IamAccountModal, type IamAccountModalSubmitValues } from "../features/admin/iam/IamAccountModal";
+import { IamAccountModal } from "../features/admin/iam/IamAccountModal";
 import { IamAccountsDirectoryCard } from "../features/admin/iam/IamAccountsDirectoryCard";
 import { IamRoleMatrixReferenceModal } from "../features/admin/iam/IamRoleMatrixReferenceModal";
 import { IamSecopsExceptionsDrawer } from "../features/admin/iam/IamSecopsExceptionsDrawer";
 import {
-  createIamAccountViaApi, deleteIamAccountViaApi, fetchIamAccountsFromApi,
-  fetchIamGrantsFromApi, fetchIamRoleMatrixFromApi,
-  resetIamAccountTemporaryPasswordViaApi, updateIamAccountViaApi,
+  fetchIamAccountsFromApi,
+  fetchIamGrantsFromApi,
+  fetchIamRoleMatrixFromApi,
+  resetIamAccountTemporaryPasswordViaApi,
 } from "../features/admin/iam/iamApiBridge";
-import { fetchOrgUnitsFromApi } from "../features/admin/organization/orgUnitsApiBridge";
+import { resolveDictionaryForFlag, resolveLocaleForFlag } from "../i18n";
 import type { IamTabDictionarySection } from "../i18n/locales/iam_accounts_labels";
 import { useAuthSessionStore } from "../stores/authSessionStore";
+import { useIamOrganizationAccountHandlers } from "./useIamOrganizationAccountHandlers";
 import { useSecopsGrantsHandlers } from "./useSecopsGrantsHandlers";
 
 export interface SettingsIamOrganizationSectionProps {
@@ -55,7 +57,7 @@ export function SettingsIamOrganizationSection({
   syncOrgUnitsFromServer,
   syncRbacGrantsFromServer,
 }: SettingsIamOrganizationSectionProps): React.ReactElement {
-  const locale: "fr" | "en" = isFr ? "fr" : "en";
+  const locale = resolveLocaleForFlag(isFr);
   const roles = useAuthSessionStore((s) => s.roles);
   const userEmail = useAuthSessionStore((s) => s.email);
   const readOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
@@ -67,11 +69,7 @@ export function SettingsIamOrganizationSection({
   const [roleMatrix, setRoleMatrix] = useState<readonly RoleMatrixEntryResponse[]>([]);
   const [authMode, setAuthMode] = useState<"LOCAL" | "SSO">("LOCAL");
   const [accountsError, setAccountsError] = useState<string | null>(null);
-  const [modalError, setModalError] = useState<string | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
   const [isRoleMatrixModalOpen, setIsRoleMatrixModalOpen] = useState(false);
-  const [editingAccount, setEditingAccount] = useState<IamAccountResponse | null>(null);
-  const [isSubmittingAccount, setIsSubmittingAccount] = useState(false);
 
   const currentAccount = accounts.find(
     (acc) =>
@@ -81,15 +79,15 @@ export function SettingsIamOrganizationSection({
         acc.principal_id?.toLowerCase() === userEmail.toLowerCase()),
   );
   const hasSecopsRole =
-    roles.includes("SECOPS") ||
-    Boolean(currentAccount?.roles.includes("SECOPS"));
+    roles.includes("SECOPS") || Boolean(currentAccount?.roles.includes("SECOPS"));
   const isSecopsAuthorized = canMutate && !readOnlyObserver && hasSecopsRole;
-  const [tempPasswordModalData, setTempPasswordModalData] = useState<{
-    displayName: string;
-    email: string;
-    temporaryPassword: string;
-    accountId: string;
-  } | null>(null);
+
+  const accountHandlers = useIamOrganizationAccountHandlers({
+    locale,
+    setAccounts,
+    setAccountsError,
+    syncOrgUnitsFromServer,
+  });
 
   const {
     grantsError,
@@ -133,104 +131,6 @@ export function SettingsIamOrganizationSection({
     void refreshAccountsAndGrants();
   }, [refreshAccountsAndGrants, isHydrating, isAuthenticated, accessToken]);
 
-  const syncOrgUnitsAfterAccountTeamChange = async () => {
-    const orgRes = await fetchOrgUnitsFromApi(locale);
-    if (orgRes.ok) {
-      syncOrgUnitsFromServer(orgRes.units);
-    }
-  };
-
-  const handleAccountModalSubmit = async (values: IamAccountModalSubmitValues) => {
-    setIsSubmittingAccount(true);
-    setModalError(null);
-    setAccountsError(null);
-    if (editingAccount) {
-      const res = await updateIamAccountViaApi(
-        editingAccount.id,
-        {
-          display_name: values.displayName,
-          email: values.accountKind === "HUMAN" ? values.emailOrPrincipal : editingAccount.email,
-          roles: [...values.roles],
-          team_ids: [...values.teamIds],
-          led_bu_ids: values.ledBuIds ? [...values.ledBuIds] : [],
-          led_team_ids: values.ledTeamIds ? [...values.ledTeamIds] : [],
-          ontology_led_bu_ids: values.ontologyLedBuIds ? [...values.ontologyLedBuIds] : [],
-          status: values.status,
-        },
-        locale,
-      );
-      setIsSubmittingAccount(false);
-      if (!res.ok) {
-        setModalError(res.errorMessage);
-        return;
-      }
-      setModalOpen(false);
-      setEditingAccount(null);
-    } else {
-      const res = await createIamAccountViaApi(
-        {
-          account_kind: values.accountKind,
-          display_name: values.displayName,
-          email: values.accountKind === "HUMAN" ? values.emailOrPrincipal : null,
-          principal_id: values.emailOrPrincipal,
-          roles: [...values.roles],
-          team_ids: [...values.teamIds],
-          led_bu_ids: values.ledBuIds ? [...values.ledBuIds] : [],
-          led_team_ids: values.ledTeamIds ? [...values.ledTeamIds] : [],
-          ontology_led_bu_ids: values.ontologyLedBuIds ? [...values.ontologyLedBuIds] : [],
-          status: values.status,
-        },
-        locale,
-      );
-      setIsSubmittingAccount(false);
-      if (!res.ok) {
-        setModalError(res.errorMessage);
-        return;
-      }
-      setModalOpen(false);
-      if (res.temporaryPassword) {
-        setTempPasswordModalData({
-          displayName: values.displayName,
-          email: values.emailOrPrincipal,
-          temporaryPassword: res.temporaryPassword,
-          accountId: res.account.id,
-        });
-      }
-    }
-    const listRes = await fetchIamAccountsFromApi(locale);
-    if (listRes.ok) setAccounts(listRes.accounts);
-    await syncOrgUnitsAfterAccountTeamChange();
-    await useAuthSessionStore.getState().hydrateSession({ force: true });
-  };
-
-  const handleResetTemporaryPassword = async (account: IamAccountResponse) => {
-    setAccountsError(null);
-    const res = await resetIamAccountTemporaryPasswordViaApi(account.id, locale);
-    if (!res.ok) {
-      setAccountsError(res.errorMessage);
-      return;
-    }
-    setTempPasswordModalData({
-      displayName: account.display_name,
-      email: account.email ?? account.principal_id,
-      temporaryPassword: res.temporaryPassword,
-      accountId: account.id,
-    });
-  };
-
-  const handleDeleteAccount = async (account: IamAccountResponse) => {
-    setAccountsError(null);
-    const res = await deleteIamAccountViaApi(account.id, locale);
-    if (!res.ok) {
-      setAccountsError(res.errorMessage);
-      return;
-    }
-    const listRes = await fetchIamAccountsFromApi(locale);
-    if (listRes.ok) setAccounts(listRes.accounts);
-    await syncOrgUnitsAfterAccountTeamChange();
-    await useAuthSessionStore.getState().hydrateSession({ force: true });
-  };
-
   return (
     <div
       data-testid="settings-iam-section"
@@ -245,20 +145,20 @@ export function SettingsIamOrganizationSection({
         authMode={authMode}
         onOpenRoleMatrix={() => setIsRoleMatrixModalOpen(true)}
         onOpenCreateModal={() => {
-          setEditingAccount(null);
-          setModalError(null);
-          setModalOpen(true);
+          accountHandlers.setEditingAccount(null);
+          accountHandlers.setModalError(null);
+          accountHandlers.setModalOpen(true);
         }}
         onOpenEditModal={(acc) => {
-          setEditingAccount(acc);
-          setModalError(null);
-          setModalOpen(true);
+          accountHandlers.setEditingAccount(acc);
+          accountHandlers.setModalError(null);
+          accountHandlers.setModalOpen(true);
         }}
         onDeleteAccount={(acc) => {
-          void handleDeleteAccount(acc);
+          void accountHandlers.handleDeleteAccount(acc);
         }}
         onResetTemporaryPassword={(acc) => {
-          void handleResetTemporaryPassword(acc);
+          void accountHandlers.handleResetTemporaryPassword(acc);
         }}
       />
 
@@ -293,40 +193,39 @@ export function SettingsIamOrganizationSection({
       />
 
       <IamAccountModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
+        open={accountHandlers.modalOpen}
+        onOpenChange={accountHandlers.setModalOpen}
         canMutate={canMutate && !readOnlyObserver}
-        editingAccount={editingAccount}
+        editingAccount={accountHandlers.editingAccount}
         orgUnits={orgUnits}
         labels={iamLabels}
-        errorMessage={modalError}
-        isSubmitting={isSubmittingAccount}
+        errorMessage={accountHandlers.modalError}
+        isSubmitting={accountHandlers.isSubmittingAccount}
         onOpenRoleMatrix={() => setIsRoleMatrixModalOpen(true)}
         onSubmit={(values) => {
-          void handleAccountModalSubmit(values);
+          void accountHandlers.handleAccountModalSubmit(values);
         }}
       />
 
-      {tempPasswordModalData && (
+      {accountHandlers.tempPasswordModalData && (
         <TemporaryPasswordInvitationModal
           isOpen={true}
-          isFr={isFr}
-          displayName={tempPasswordModalData.displayName}
-          email={tempPasswordModalData.email}
-          temporaryPassword={tempPasswordModalData.temporaryPassword}
+          labels={resolveDictionaryForFlag(isFr).tempPasswordModal}
+          displayName={accountHandlers.tempPasswordModalData.displayName}
+          email={accountHandlers.tempPasswordModalData.email}
+          temporaryPassword={accountHandlers.tempPasswordModalData.temporaryPassword}
           orciaUrl={
             typeof window !== "undefined"
               ? window.location.origin
               : "http://localhost:3100"
           }
-          onClose={() => setTempPasswordModalData(null)}
+          onClose={() => accountHandlers.setTempPasswordModalData(null)}
           onRegeneratePassword={async () => {
-            const resetRes = await resetIamAccountTemporaryPasswordViaApi(
-              tempPasswordModalData.accountId,
-              locale,
-            );
+            const payload = accountHandlers.tempPasswordModalData;
+            if (!payload) return;
+            const resetRes = await resetIamAccountTemporaryPasswordViaApi(payload.accountId, locale);
             if (resetRes.ok) {
-              setTempPasswordModalData((prev) =>
+              accountHandlers.setTempPasswordModalData((prev) =>
                 prev ? { ...prev, temporaryPassword: resetRes.temporaryPassword } : null,
               );
               return resetRes.temporaryPassword;

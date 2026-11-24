@@ -6,6 +6,7 @@ Unified enterprise connectors library (`OrciaConnectorProtocol`: `healthcheck`, 
 
 from __future__ import annotations
 
+import orcia_connectors._error_catalog  # noqa: F401
 from orcia_connectors._internal.sql_jira_staged_actions import SqlJiraStagedActionsRepository
 from orcia_connectors.adapters import (
     AtlassianConfluenceConnector,

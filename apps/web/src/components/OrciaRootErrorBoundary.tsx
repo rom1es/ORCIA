@@ -1,8 +1,16 @@
 import React from "react";
+import { DICTIONARIES, type SupportedWebLocale } from "../i18n";
 
 interface RootErrorBoundaryState {
   readonly hasError: boolean;
   readonly errorDetail: string | null;
+}
+
+function resolveDocumentFallbackLocale(): SupportedWebLocale {
+  if (typeof document !== "undefined" && document.documentElement.lang.toLowerCase().startsWith("en")) {
+    return "en";
+  }
+  return "fr";
 }
 
 export class OrciaRootErrorBoundary extends React.Component<
@@ -29,10 +37,7 @@ export class OrciaRootErrorBoundary extends React.Component<
     if (!this.state.hasError) {
       return this.props.children;
     }
-    const isFr =
-      typeof document === "undefined" ||
-      !document.documentElement.lang ||
-      document.documentElement.lang.toLowerCase().startsWith("fr");
+    const copy = DICTIONARIES[resolveDocumentFallbackLocale()].shellChrome.rootErrorBoundary;
     return (
       <div
         data-testid="orcia-root-error-boundary"
@@ -41,11 +46,7 @@ export class OrciaRootErrorBoundary extends React.Component<
         <div className="orcia-bento-card max-w-lg w-full space-y-4">
           <div role="alert" className="orcia-ds-alert orcia-ds-alert-error">
             <div className="orcia-ds-alert-content space-y-1">
-              <div className="text-sm font-semibold">
-                {isFr
-                  ? "Une erreur d'affichage inattendue est survenue."
-                  : "An unexpected display error occurred."}
-              </div>
+              <div className="text-sm font-semibold">{copy.unexpectedError}</div>
               {this.state.errorDetail ? (
                 <div className="text-xs">{this.state.errorDetail}</div>
               ) : null}
@@ -62,7 +63,7 @@ export class OrciaRootErrorBoundary extends React.Component<
                 }
               }}
             >
-              {isFr ? "Recharger la page" : "Reload page"}
+              {copy.reloadPage}
             </button>
           </div>
         </div>

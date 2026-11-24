@@ -7,20 +7,6 @@ import type {
   UiHelpArticleLayer,
 } from "./ContextualHelpTypes";
 
-const HELP_LAYER_LABELS_FR: Record<UiHelpArticleLayer, string> = {
-  BASE: "Base",
-  PACK: "Pack",
-  WORKSPACE: "Espace",
-  USER: "Utilisateur",
-};
-
-const HELP_LAYER_LABELS_EN: Record<UiHelpArticleLayer, string> = {
-  BASE: "Base",
-  PACK: "Pack",
-  WORKSPACE: "Workspace",
-  USER: "User",
-};
-
 export function HelpArticleHeaderBlock({
   article,
   pack,
@@ -51,7 +37,6 @@ export function HelpArticleHeaderBlock({
   readonly titleAsHeading?: boolean;
 }): React.ReactElement {
   const displayVersion = rolledBackToVersion ?? article.version;
-  const isEn = article.lang === "en";
 
   return (
     <div className="border-b border-surface-border pb-2.5 space-y-2">
@@ -86,12 +71,12 @@ export function HelpArticleHeaderBlock({
           className="rounded border border-surface-border bg-surface-secondary px-2.5 py-1.5 text-[11px] text-text-secondary"
         >
           <summary className="cursor-pointer font-medium">
-            {labels.technicalDetailsTitle ?? (isEn ? "Technical details" : "Détails techniques")}
+            {labels.technicalDetailsTitle}
           </summary>
           <div className="mt-1.5 space-y-1">
             {displayVersion && (
               <div className="flex items-center justify-between gap-2">
-                <span>Version</span>
+                <span>{labels.versionLabel}</span>
                 <span
                   data-testid="contextual-help-version-pill"
                   className="px-2 py-0.5 rounded-full font-mono text-[11px] bg-surface-primary border border-surface-border"
@@ -104,7 +89,7 @@ export function HelpArticleHeaderBlock({
               <div data-testid="contextual-help-merged-layers">
                 {labels.mergedLayersPrefix}{" "}
                 {mergedLayers
-                  .map((layer) => (isEn ? HELP_LAYER_LABELS_EN[layer] : HELP_LAYER_LABELS_FR[layer]) ?? layer)
+                  .map((layer) => labels.layerLabels[layer] ?? layer)
                   .join(" / ")}{" "}
                 ({pack})
               </div>
@@ -129,12 +114,9 @@ export function HelpCoreNarrativeBlocks({
   readonly labels: ContextualHelpColumnAndCenterLabels;
   readonly showStepsBlock: boolean;
 }): React.ReactElement {
-  const isEn = article.lang === "en";
   const stepsCount = article.stepByStepItems.length;
   const pitfalls = article.commonPitfallsItems ?? [];
-  const stepsHeading = `${labels.stepsBlockPrefix ?? (isEn ? "In" : "En")} ${stepsCount} ${
-    labels.stepsBlockSuffix ?? (isEn ? "steps" : "gestes")
-  }`;
+  const stepsHeading = `${labels.stepsBlockPrefix} ${stepsCount} ${labels.stepsBlockSuffix}`;
 
   return (
     <>
@@ -180,7 +162,7 @@ export function HelpCoreNarrativeBlocks({
             className="text-[11px] font-bold uppercase tracking-wide"
             style={{ color: "var(--color-help-example-title)" }}
           >
-            {labels.realExampleTitle ?? (isEn ? "A real example" : "Un exemple réel")}
+            {labels.realExampleTitle}
           </div>
           <p className="leading-relaxed" style={{ color: "var(--color-help-example-text)" }}>
             {renderInlineMarkdownNodes(article.realExampleText)}
@@ -194,7 +176,7 @@ export function HelpCoreNarrativeBlocks({
           className="p-2.5 rounded-lg border border-surface-border bg-surface-primary space-y-1.5"
         >
           <div className="text-[11px] font-bold uppercase tracking-wide text-text-primary">
-            {labels.commonPitfallsTitle ?? (isEn ? "Common pitfalls" : "Ce qui coince souvent")}
+            {labels.commonPitfallsTitle}
           </div>
           <ul className="list-disc space-y-1.5 pl-4 text-text-secondary leading-relaxed">
             {pitfalls.map((item, idx) => (

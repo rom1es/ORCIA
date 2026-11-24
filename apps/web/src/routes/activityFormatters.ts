@@ -1,80 +1,21 @@
 import type { StatusBadgeTone, UiActivityScopeFilterOption } from "@orcia/ui";
+import { DICTIONARIES, resolveLocaleForFlag, type SupportedWebLocale } from "../i18n";
 import { formatShortDateTime } from "../lib/formatters";
 
-export const EVENT_TYPE_FR_LABELS: Record<string, { label: string; tone: StatusBadgeTone }> = {
-  PlatformAdminInitialized: { label: "Administrateur initialisé", tone: "emerald" },
-  OrgUnitCreated: { label: "Unité d'organisation créée", tone: "cobalt" },
-  OrgUnitDeleted: { label: "Unité d'organisation supprimée", tone: "amber" },
-  PermissionGranted: { label: "Habilitation attribuée", tone: "emerald" },
-  PermissionRevoked: { label: "Habilitation révoquée", tone: "amber" },
-  RbacGrantCreated: { label: "Habilitation attribuée", tone: "emerald" },
-  SettingsChanged: { label: "Paramètre configuré", tone: "cobalt" },
-  LlmTierConfigured: { label: "Modèle IA configuré", tone: "cobalt" },
-  WorkspaceCreated: { label: "Espace créé", tone: "emerald" },
-  WorkspacePhaseUpdated: { label: "Phase d'Espace mise à jour", tone: "cobalt" },
-  ConnectorConfigured: { label: "Connecteur enregistré", tone: "cobalt" },
-  PackRegistered: { label: "Pack activé", tone: "emerald" },
-  PackDeactivated: { label: "Pack désactivé", tone: "amber" },
-  WorkflowSaved: { label: "Processus enregistré", tone: "cobalt" },
-  RunLaunched: { label: "Exécution démarrée", tone: "emerald" },
-  OntologyConceptCreated: { label: "Terme métier créé", tone: "cobalt" },
-  AdminConnectionTested: { label: "Test de connexion administrateur", tone: "cobalt" },
-  ADMIN_CONNECTION_TEST: { label: "Test de connexion administrateur", tone: "cobalt" },
-  StepCompleted: { label: "Étape de processus exécutée", tone: "emerald" },
-  GateEvaluated: { label: "Évaluation de validation", tone: "emerald" },
-  ArtifactProduced: { label: "Livrable produit", tone: "cobalt" },
-  RunTerminated: { label: "Fin d'exécution de processus", tone: "emerald" },
-  BudgetCircuitTripped: { label: "Coupe-circuit budgétaire", tone: "amber" },
-  BudgetOverrideApproved: { label: "Dérogation budgétaire approuvée", tone: "emerald" },
-  RemoteUsageAnomalyCapped: { label: "Télémétrie externe plafonnée", tone: "amber" },
-  ConnectorCircuitTripped: { label: "Coupe-circuit de connecteur", tone: "amber" },
-  ORG_UNIT_CREATED: { label: "Unité d'organisation créée", tone: "cobalt" },
-  ORG_UNIT_UPDATED: { label: "Unité d'organisation mise à jour", tone: "cobalt" },
-  ORG_UNIT_DELETED: { label: "Unité d'organisation supprimée", tone: "amber" },
-  IAM_ACCOUNT_CREATED: { label: "Compte IAM créé", tone: "emerald" },
-  IAM_ACCOUNT_UPDATED: { label: "Compte IAM mis à jour", tone: "cobalt" },
-  IAM_ACCOUNT_DELETED: { label: "Compte IAM supprimé", tone: "amber" },
-  IAM_ACCOUNT_INVITED: { label: "Collaborateur invité", tone: "emerald" },
-};
+export const EVENT_TYPE_FR_LABELS: Readonly<
+  Record<string, { readonly label: string; readonly tone: StatusBadgeTone }>
+> = DICTIONARIES.fr.routesAndWizards.activityEvents;
 
-export const EVENT_TYPE_EN_LABELS: Record<string, { label: string; tone: StatusBadgeTone }> = {
-  PlatformAdminInitialized: { label: "Administrator initialized", tone: "emerald" },
-  OrgUnitCreated: { label: "Organization unit created", tone: "cobalt" },
-  OrgUnitDeleted: { label: "Organization unit deleted", tone: "amber" },
-  PermissionGranted: { label: "Permission granted", tone: "emerald" },
-  PermissionRevoked: { label: "Permission revoked", tone: "amber" },
-  RbacGrantCreated: { label: "Permission granted", tone: "emerald" },
-  SettingsChanged: { label: "Setting configured", tone: "cobalt" },
-  LlmTierConfigured: { label: "AI model configured", tone: "cobalt" },
-  WorkspaceCreated: { label: "Workspace created", tone: "emerald" },
-  WorkspacePhaseUpdated: { label: "Workspace phase updated", tone: "cobalt" },
-  ConnectorConfigured: { label: "Connector registered", tone: "cobalt" },
-  PackRegistered: { label: "Pack enabled", tone: "emerald" },
-  PackDeactivated: { label: "Pack disabled", tone: "amber" },
-  WorkflowSaved: { label: "Process saved", tone: "cobalt" },
-  RunLaunched: { label: "Run started", tone: "emerald" },
-  OntologyConceptCreated: { label: "Glossary term created", tone: "cobalt" },
-  AdminConnectionTested: { label: "Administrator connection test", tone: "cobalt" },
-  ADMIN_CONNECTION_TEST: { label: "Administrator connection test", tone: "cobalt" },
-  StepCompleted: { label: "Process step executed", tone: "emerald" },
-  GateEvaluated: { label: "Gate evaluated", tone: "emerald" },
-  ArtifactProduced: { label: "Artifact produced", tone: "cobalt" },
-  RunTerminated: { label: "Process run completed", tone: "emerald" },
-  BudgetCircuitTripped: { label: "Budget circuit tripped", tone: "amber" },
-  BudgetOverrideApproved: { label: "Budget override approved", tone: "emerald" },
-  RemoteUsageAnomalyCapped: { label: "External usage capped", tone: "amber" },
-  ConnectorCircuitTripped: { label: "Connector circuit tripped", tone: "amber" },
-  ORG_UNIT_CREATED: { label: "Organization unit created", tone: "cobalt" },
-  ORG_UNIT_UPDATED: { label: "Organization unit updated", tone: "cobalt" },
-  ORG_UNIT_DELETED: { label: "Organization unit deleted", tone: "amber" },
-  IAM_ACCOUNT_CREATED: { label: "IAM account created", tone: "emerald" },
-  IAM_ACCOUNT_UPDATED: { label: "IAM account updated", tone: "cobalt" },
-  IAM_ACCOUNT_DELETED: { label: "IAM account deleted", tone: "amber" },
-  IAM_ACCOUNT_INVITED: { label: "Collaborator invited", tone: "emerald" },
-};
+export const EVENT_TYPE_EN_LABELS: Readonly<
+  Record<string, { readonly label: string; readonly tone: StatusBadgeTone }>
+> = DICTIONARIES.en.routesAndWizards.activityEvents;
 
-export function formatActivityTimestamp(timestampIso: string, isFr: boolean): string {
-  return formatShortDateTime(timestampIso, isFr ? "fr" : "en");
+export function formatActivityTimestamp(
+  timestampIso: string,
+  isFr: boolean,
+  locale?: SupportedWebLocale,
+): string {
+  return formatShortDateTime(timestampIso, resolveLocaleForFlag(isFr, locale));
 }
 
 export interface ScopeSourceOrgUnit {

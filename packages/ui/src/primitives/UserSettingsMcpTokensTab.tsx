@@ -247,7 +247,7 @@ export function UserSettingsMcpTokensTab({
                     {tok.label}
                   </div>
                   <div className="text-[11px]" style={{ color: "var(--color-text-secondary)" }}>
-                    Identifiant : <span className="font-mono">{tok.tokenPrefix}</span>
+                    {labels.tokenIdentifierPrefix} <span className="font-mono">{tok.tokenPrefix}</span>
                   </div>
                   <div className="truncate text-[11px] font-mono" style={{ color: "var(--color-text-secondary)" }}>
                     {tok.mcpEndpointUri}

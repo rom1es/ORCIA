@@ -1,7 +1,6 @@
-import {
-  OrciaIcon,
-  type ControlCenterDatasourceItem,
-  type ControlCenterWorkspaceGovItem,
+import type {
+  ControlCenterDatasourceItem,
+  ControlCenterWorkspaceGovItem,
 } from "@orcia/ui";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -15,11 +14,16 @@ import type { PlatformSetupContextValue } from "../../components/platformSetupSt
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { useI18n } from "../../i18n";
-import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
+import {
+  formatRfc9457ErrorToBanner,
+  resolveLocalizedClientError,
+} from "../../lib/formatRfc9457ErrorToBanner";
 import { useActiveEmbeddingModelStatus } from "../shared/useActiveEmbeddingModelStatus";
 import { WorkspaceSourcesMasterTable } from "./sources/WorkspaceSourcesMasterTable";
 import { WorkspaceSourceAttachModal } from "./sources/WorkspaceSourceAttachModal";
 import { mapFallbackWorkspaceDatasources } from "./sources/WorkspaceSourcesFallbackHelper";
+import { WorkspaceSourcesColdStartBanner } from "./sources/WorkspaceSourcesColdStartBanner";
+import { WorkspaceSourcesRenewReferentForm } from "./sources/WorkspaceSourcesRenewReferentForm";
 
 export interface WorkspaceSourcesRagTabProps {
   readonly isFr?: boolean;
@@ -31,15 +35,13 @@ export interface WorkspaceSourcesRagTabProps {
 }
 
 export function WorkspaceSourcesRagTab({
-  isFr = true,
   activeWorkspace,
   fallbackDatasources = [],
-  openHelpSection = () => {},
   onRegisterDatasource,
   onFeedback = () => {},
 }: WorkspaceSourcesRagTabProps): React.ReactElement {
   const { dictionary, locale } = useI18n();
-  const copy = dictionary.epic18Sources;
+  const sourcesCopy = dictionary.categoryAControllers.workspaceSources;
   const openUserSettingsModalAtTab = useAuthSessionStore((s) => s.openUserSettingsModalAtTab);
   const { navigateToRoute } = useShellNavigation();
   const { hasActiveEmbeddingModel } = useActiveEmbeddingModelStatus();
@@ -56,7 +58,7 @@ export function WorkspaceSourcesRagTab({
   const [feedbackBanner, setFeedbackBanner] = useState<string | null>(null);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
 
-  const client = useMemo(() => createOrciaApiClient({ baseUrl: "" }), []);
+  const client = useMemo(() => createOrciaApiClient({ baseUrl: "", locale }), [locale]);
   const effectiveRole =
     (activeWorkspace as unknown as { effectiveRole?: string }).effectiveRole || "PLATFORM_ADMIN";
   const isWorkspaceLead = ["TEAM_LEAD", "BU_LEAD", "PLATFORM_ADMIN", "SECOPS"].includes(effectiveRole);
@@ -94,44 +96,28 @@ export function WorkspaceSourcesRagTab({
       );
       if (fallbackDatasources.length > 0) {
         setDatasources(
-          fallbackDatasources
-            .filter((d) => d.workspaceName === activeWorkspace.name)
-            .map((d) => ({
-              id: d.id,
-              workspace_id: wsId,
-              alias: d.alias,
-              scheme: d.scheme,
-              uri: d.uri,
-              connector_id: null,
-              sync_identity_mode: d.executionIdentity === "service_account" ? "SERVICE_ACCOUNT" : "TEAM_REFERENT_USER",
-              service_account_id: null,
-              referent_user_id: null,
-              sync_status: "ACTIVE",
-              sync_status_reason: null,
-              source_nature: "DOCUMENT_KB",
-              sync_mode: "POLLING_24H",
-              target_scope: null,
-              target_ref: null,
-              last_sync_at_iso: null,
-              last_probe_at_iso: null,
-              fingerprint_hash: null,
-              freshness_status: "PENDING_INITIAL_SYNC",
-              codegraph_enabled: false,
-              codegraph_auth_mode: "SERVICE_ACCOUNT",
-              codegraph_owner_user_id: null,
-              codegraph_status: "DISABLED",
-              codegraph_last_indexed_at_iso: null,
-              codegraph_head_sha: null,
-              created_at_iso: "",
-            })),
+          mapFallbackWorkspaceDatasources(
+            fallbackDatasources,
+            activeWorkspace.name,
+            wsId,
+          ),
         );
       }
     }
-  }, [wsId, activeWorkspace.name, fallbackDatasources]);
+  }, [wsId, activeWorkspace.name, client, fallbackDatasources]);
 
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  const showClientActionError = (err: unknown) => {
+    const detail = err instanceof Error ? err.message : "";
+    showFeedback(
+      resolveLocalizedClientError("ERR_CLIENT_WORKSPACE_SOURCE_ACTION", locale, {
+        detail,
+      }),
+    );
+  };
 
   const handleAttachOrUpdate = async (
     payload: CreateWorkspaceDatasourceRequest | UpdateWorkspaceDatasourceRequest,
@@ -141,7 +127,7 @@ export function WorkspaceSourcesRagTab({
     try {
       if (isEdit && editingDatasource) {
         await client.updateWorkspaceDatasource(wsId, editingDatasource.id, payload as UpdateWorkspaceDatasourceRequest);
-        showFeedback(isFr ? `Source modifiée.` : `Source updated.`);
+        showFeedback(sourcesCopy.updated);
       } else {
         const createPayload = payload as CreateWorkspaceDatasourceRequest;
         await client.createWorkspaceDatasource(wsId, createPayload);
@@ -153,7 +139,7 @@ export function WorkspaceSourcesRagTab({
           executionIdentity: createPayload.sync_identity_mode === "SERVICE_ACCOUNT" ? "service_account" : "passthrough",
           freshnessTtlDays: 1,
         });
-        showFeedback(isFr ? `Source rattachée.` : `Source attached.`);
+        showFeedback(sourcesCopy.attached);
       }
       setIsAttachModalOpen(false);
       setEditingDatasource(null);
@@ -169,9 +155,7 @@ export function WorkspaceSourcesRagTab({
     try {
       const res = await client.triggerWorkspaceDatasourceSync(wsId, datasourceId);
       showFeedback(
-        isFr
-          ? `✅ Synchronisation déclenchée (${res.datasource.freshness_status}).`
-          : `✅ Sync triggered (${res.datasource.freshness_status}).`,
+        sourcesCopy.syncTriggered.replace("{status}", res.datasource.freshness_status ?? ""),
       );
       await loadData();
     } catch (err: unknown) {
@@ -183,10 +167,10 @@ export function WorkspaceSourcesRagTab({
     if (!wsId) return;
     try {
       await client.deleteWorkspaceDatasource(wsId, datasourceId);
-      showFeedback(isFr ? "✅ Source détachée." : "✅ Source deleted.");
+      showFeedback(sourcesCopy.deleted);
       await loadData();
     } catch (err: unknown) {
-      showFeedback(`⚠️ ${err instanceof Error ? err.message : "Erreur"}`);
+      showClientActionError(err);
     }
   };
 
@@ -196,10 +180,10 @@ export function WorkspaceSourcesRagTab({
       await client.updateWorkspaceDatasource(wsId, datasource.id, {
         codegraph_enabled: enabled,
       });
-      showFeedback(enabled ? (isFr ? "✅ GitNexus activé." : "✅ GitNexus active.") : (isFr ? "GitNexus désactivé." : "GitNexus disabled."));
+      showFeedback(enabled ? sourcesCopy.gitNexusEnabled : sourcesCopy.gitNexusDisabled);
       await loadData();
     } catch (err: unknown) {
-      showFeedback(`⚠️ ${err instanceof Error ? err.message : "Erreur GitNexus"}`);
+      showClientActionError(err);
     }
   };
 
@@ -212,10 +196,10 @@ export function WorkspaceSourcesRagTab({
       });
       setRenewingDsId(null);
       setNewReferentInput("");
-      showFeedback(isFr ? "Référent renouvelé." : "Referent renewed.");
+      showFeedback(sourcesCopy.referentRenewed);
       await loadData();
     } catch (err: unknown) {
-      showFeedback(`⚠️ ${err instanceof Error ? err.message : isFr ? "Erreur de renouvellement." : "Renewal error."}`);
+      showClientActionError(err);
     }
   };
 
@@ -224,45 +208,23 @@ export function WorkspaceSourcesRagTab({
     try {
       const res = await client.reconcileWorkspaceStaleness(wsId);
       showFeedback(
-        isFr
-          ? `✅ Fraîcheur réconciliée (${res.evaluated_count} évaluées, ${res.stale_count} désynchronisées).`
-          : `✅ Freshness reconciled (${res.evaluated_count} evaluated, ${res.stale_count} stale).`,
+        sourcesCopy.reconciled
+          .replace("{evaluated}", String(res.evaluated_count))
+          .replace("{stale}", String(res.stale_count)),
       );
       await loadData();
     } catch (err: unknown) {
-      showFeedback(`⚠️ ${err instanceof Error ? err.message : "Erreur réconciliation"}`);
+      showClientActionError(err);
     }
   };
 
   return (
     <div data-testid="workspace-detail-sources-content" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-      <div
-        data-testid="rag-passthrough-cold-start-banner"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "10px 14px",
-          borderRadius: "var(--radius-sm)",
-          backgroundColor: "rgba(59, 130, 246, 0.08)",
-          border: "1px solid rgba(59, 130, 246, 0.2)",
-          fontSize: "12px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <OrciaIcon name="plug" size={16} />
-          <span>{isFr ? "Attribution nominative : vos droits Jira / GitLab s'appliquent." : "Nominative attribution: Jira / GitLab rights apply."}</span>
-        </div>
-        <button
-          type="button"
-          data-testid="open-my-account-passthrough-cta"
-          onClick={() => openUserSettingsModalAtTab("PASSTHROUGH_SOURCES")}
-          className="orcia-ds-btn-secondary"
-          style={{ padding: "4px 10px", fontSize: "11px", whiteSpace: "nowrap" }}
-        >
-          {isFr ? "👤 Mon Compte › Mes Connexions" : "👤 My Account › Connections"}
-        </button>
-      </div>
+      <WorkspaceSourcesColdStartBanner
+        bannerText={sourcesCopy.coldStartBanner}
+        ctaLabel={sourcesCopy.myAccountCta}
+        onOpenMyAccount={() => openUserSettingsModalAtTab("PASSTHROUGH_SOURCES")}
+      />
 
       {errorBanner ? (
         <div
@@ -282,39 +244,23 @@ export function WorkspaceSourcesRagTab({
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <strong style={{ fontSize: "14px" }}>{isFr ? `Sources de « ${activeWorkspace.name} »` : `Sources for "${activeWorkspace.name}"`}</strong>
+          <strong style={{ fontSize: "14px" }}>
+            {sourcesCopy.sourcesTitle.replace("{name}", activeWorkspace.name)}
+          </strong>
         </div>
       </div>
 
       {renewingDsId ? (
-        <form
-          autoComplete="off"
-          data-lpignore="true"
-          data-form-type="other"
-          data-testid={`renew-referent-form-${renewingDsId}`}
-          onSubmit={(e) => { e.preventDefault(); void handleRenewReferent(renewingDsId); }}
-          style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px", borderRadius: "var(--radius-sm)", backgroundColor: "var(--color-bg-elevated)", border: "1px solid var(--color-border)" }}
-        >
-          <input
-            type="text"
-            autoComplete="off"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-bwignore="true"
-            data-form-type="other"
-            data-testid={`renew-referent-input-${renewingDsId}`}
-            value={newReferentInput}
-            onChange={(e) => setNewReferentInput(e.target.value)}
-            placeholder={isFr ? "Nouveau référent (email)..." : "New referent email..."}
-            style={{ flex: 1, padding: "6px 10px", fontSize: "12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border)" }}
-          />
-          <button type="submit" data-testid={`renew-referent-submit-btn-${renewingDsId}`} disabled={!newReferentInput.trim()} className="orcia-ds-btn orcia-ds-btn-primary" style={{ padding: "5px 10px", fontSize: "11px" }}>
-            {isFr ? "Valider le renouvellement" : "Confirm renewal"}
-          </button>
-          <button type="button" onClick={() => setRenewingDsId(null)} className="orcia-ds-btn orcia-ds-btn-secondary" style={{ padding: "5px 10px", fontSize: "11px" }}>
-            {isFr ? "Annuler" : "Cancel"}
-          </button>
-        </form>
+        <WorkspaceSourcesRenewReferentForm
+          datasourceId={renewingDsId}
+          value={newReferentInput}
+          placeholder={sourcesCopy.newReferentPlaceholder}
+          confirmLabel={sourcesCopy.confirmRenewalCta}
+          cancelLabel={sourcesCopy.cancelCta}
+          onChange={setNewReferentInput}
+          onSubmit={() => void handleRenewReferent(renewingDsId)}
+          onCancel={() => setRenewingDsId(null)}
+        />
       ) : null}
 
       <WorkspaceSourcesMasterTable

@@ -3,7 +3,7 @@ import type {
   AgentsAndSkillsManagerLabels,
   UiAgentSkillVisibilityScope,
   UiManagedSkillItem,
-} from "./AgentsAndSkillsManagerView";
+} from "./AgentsAndSkillsTypes";
 import { FormattedMarkdownContent } from "./FormattedMarkdownContent";
 import { OrciaIcon } from "./icons";
 
@@ -32,21 +32,24 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
 }) => {
   const [copiedCommand, setCopiedCommand] = useState(false);
   const [autosavedBadgeVisible, setAutosavedBadgeVisible] = useState(false);
+  const studio = labels.studio;
 
-  const visibilityScope: UiAgentSkillVisibilityScope = skill.visibilityScope ?? "TEAM";
+  const visibilityScope: UiAgentSkillVisibilityScope =
+    skill.visibilityScope ?? "TEAM";
   const isPack = visibilityScope === "PACK";
   const visibilityBadgeContent =
     visibilityScope === "PRIVATE" ? (
       <>
-        <OrciaIcon name="lock" /> Privé
+        <OrciaIcon name="lock" /> {studio.visibilityPrivateShort}
       </>
     ) : visibilityScope === "PACK" ? (
       <>
-        <OrciaIcon name="spaces" /> Pack Métier ({skill.sourcePackKey ?? "orcia-pack-sdlc"})
+        <OrciaIcon name="spaces" /> {studio.visibilityPackPrefix} (
+        {skill.sourcePackKey ?? "orcia-pack-sdlc"})
       </>
     ) : (
       <>
-        <OrciaIcon name="team" /> Équipe
+        <OrciaIcon name="team" /> {studio.visibilityTeamShort}
       </>
     );
 
@@ -54,7 +57,10 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
     if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
       void navigator.clipboard.writeText(skill.commandHandle).catch((err: unknown) => {
         if (typeof console !== "undefined") {
-          console.debug("[orcia:clipboard]", err instanceof Error ? err.message : String(err));
+          console.debug(
+            "[orcia:clipboard]",
+            err instanceof Error ? err.message : String(err),
+          );
         }
       });
     }
@@ -76,7 +82,9 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <strong className="text-sm text-[var(--orcia-text-primary)]">{skill.name}</strong>
+          <strong className="text-sm text-[var(--orcia-text-primary)]">
+            {skill.name}
+          </strong>
           <code
             data-testid={`skill-command-handle-${skill.skillId}`}
             className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-1.5 py-0.5 font-mono text-[11px]"
@@ -87,15 +95,15 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
             type="button"
             data-testid={`copy-skill-handle-btn-${skill.skillId}`}
             onClick={handleCopyCommand}
-            title="Copier la commande /skill"
+            title={studio.copySkillTitle}
             className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-1.5 py-0.5 text-[10px] font-medium"
           >
             {copiedCommand ? (
               <>
-                <OrciaIcon name="check" /> Copié
+                <OrciaIcon name="check" /> {studio.copiedShortLabel}
               </>
             ) : (
-              "Copier /"
+              studio.copySkillButton
             )}
           </button>
           {isPack ? (
@@ -110,7 +118,7 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
               type="button"
               data-testid={`skill-visibility-badge-${skill.skillId}`}
               onClick={handleToggleVisibilityClick}
-              title="Cliquer pour basculer la visibilité (Privé / Équipe)"
+              title={studio.toggleVisibilityTitle}
               className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-0.5 text-[11px] font-medium"
             >
               {visibilityBadgeContent}
@@ -122,7 +130,7 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
               className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px] font-semibold"
               style={{ color: "var(--color-status-success)" }}
             >
-              <OrciaIcon name="check" /> Enregistré
+              <OrciaIcon name="check" /> {studio.savedShortBadge}
             </span>
           )}
         </div>
@@ -135,7 +143,7 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
               onClick={() => onUseSkillInAssistant(skill)}
               className="rounded bg-[var(--orcia-action-primary)] px-2.5 py-1 text-[11px] font-semibold text-[var(--orcia-text-on-action)]"
             >
-              <OrciaIcon name="assistant" /> Utiliser dans Mon Assistant
+              <OrciaIcon name="assistant" /> {studio.useInAssistantButton}
             </button>
           )}
           <button
@@ -144,7 +152,7 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
             onClick={() => onOpenDetailModal?.(skill)}
             className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-1 text-[11px] font-semibold"
           >
-            <OrciaIcon name="configuration" /> Configurer &amp; Tester
+            <OrciaIcon name="configuration" /> {studio.configureAndTestSkillButton}
           </button>
           {!isPack && (
             <button
@@ -164,7 +172,7 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
       {skill.inputParameters.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-[11px] font-medium text-[var(--orcia-text-secondary)]">
-            Paramètres :
+            {studio.skillParametersPrefix}
           </span>
           {skill.inputParameters.map((param) => (
             <code
@@ -182,7 +190,11 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
           data-testid={`skill-execution-output-${skill.skillId}`}
           className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2.5"
         >
-          <FormattedMarkdownContent content={skill.lastExecutionOutput} />
+          <FormattedMarkdownContent
+            content={skill.lastExecutionOutput}
+            copyLabel={studio.copyCodeLabel}
+            copiedLabel={studio.copiedShortLabel}
+          />
         </div>
       )}
     </div>

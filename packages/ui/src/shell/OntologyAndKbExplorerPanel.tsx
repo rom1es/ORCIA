@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { StatusBadge } from "../primitives/StatusBadge";
+import { OntologyConceptCard } from "./OntologyConceptCard";
 import {
   OntologyTripartiteAndStaleSection,
   type TripartiteAuditDraft,
@@ -38,15 +39,6 @@ const PROFILE_KEYS = [
   "DEVELOPER",
   "SECOPS",
 ] as const;
-
-const PROFILE_DISPLAY_LABELS: Record<(typeof PROFILE_KEYS)[number], string> = {
-  EXECUTIVE: "Direction / Exécutif",
-  PM_BUSINESS: "Produit & Métier",
-  ARCHITECT: "Architecture",
-  TECH_LEAD: "Référent Technique",
-  DEVELOPER: "Développeur",
-  SECOPS: "Sécurité & Conformité",
-};
 
 export function OntologyAndKbExplorerPanel({
   concepts,
@@ -135,7 +127,7 @@ export function OntologyAndKbExplorerPanel({
           >
             {PROFILE_KEYS.map((prof) => (
               <option key={prof} value={prof}>
-                {PROFILE_DISPLAY_LABELS[prof]}
+                {labels.profileDisplayLabels?.[prof] ?? prof}
               </option>
             ))}
           </select>
@@ -188,82 +180,15 @@ export function OntologyAndKbExplorerPanel({
                 >
                   <StatusBadge label={columnLabel} tone="cyan" monospace />
                   {colConcepts.map((c) => (
-                    <div
+                    <OntologyConceptCard
                       key={c.conceptKey}
-                      data-testid={`ontology-card-${c.conceptKey}`}
-                      style={{
-                        padding: "8px",
-                        borderRadius: "var(--radius-sm)",
-                        border: "1px solid var(--color-ontology-cyan)",
-                        backgroundColor: "var(--color-ontology-bg)",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "6px",
-                      }}
-                    >
-                      <div style={{ display: "flex", justifyContent: "space-between", gap: "6px" }}>
-                        <strong style={{ fontSize: "13px" }}>{c.canonicalTerm}</strong>
-                        {c.immutable && <StatusBadge label="Règle verrouillée" tone="crimson" />}
-                      </div>
-                      <span
-                        data-testid={`ontology-translation-${c.conceptKey}`}
-                        style={{ fontSize: "12px", color: "var(--color-muted-foreground)" }}
-                      >
-                        {c.profileTranslations[selectedProfile] ?? c.definitionText}
-                      </span>
-                      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                        <button
-                          type="button"
-                          data-testid={`what-if-btn-${c.conceptKey}`}
-                          onClick={() => {
-                            setSelectedConcept(c);
-                            setStatusBanner(
-                              c.immutable
-                                ? labels.immutableConflictBanner
-                                : `${labels.promotedBannerPrefix} ${c.canonicalTerm} (Templates: ${c.impactedTemplates.length}, Workflows: ${c.impactedWorkflows.length}, Runs: ${c.impactedRuns.length})`,
-                            );
-                          }}
-                          style={{
-                            backgroundColor: "var(--color-ontology-cyan)",
-                            color: "var(--color-primary-foreground)",
-                            border: "none",
-                            borderRadius: "var(--radius-sm)",
-                            padding: "4px 8px",
-                            fontSize: "11px",
-                            fontWeight: 600,
-                            cursor: "pointer",
-                          }}
-                        >
-                          {labels.whatIfButtonLabel}
-                        </button>
-                        {!c.immutable && c.level !== "1_ENTERPRISE" && (c.canProposePromotion ?? true) && (
-                          <button
-                            type="button"
-                            data-testid={`promote-btn-${c.conceptKey}`}
-                            onClick={() => {
-                              if (onProposePromotion) {
-                                onProposePromotion(c);
-                              }
-                              setStatusBanner(
-                                `${labels.promoteButtonLabel} : ${c.canonicalTerm} -> ${c.nextPromotionLevel ?? "3_WORKSPACE"}`,
-                              );
-                            }}
-                            style={{
-                              backgroundColor: "var(--color-surface-card)",
-                              color: "var(--color-foreground)",
-                              border: "1px solid var(--color-ontology-cyan)",
-                              borderRadius: "var(--radius-sm)",
-                              padding: "4px 8px",
-                              fontSize: "11px",
-                              fontWeight: 600,
-                              cursor: "pointer",
-                            }}
-                          >
-                            {labels.promoteButtonLabel}
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                      concept={c}
+                      selectedProfile={selectedProfile}
+                      labels={labels}
+                      onSelectConcept={setSelectedConcept}
+                      onStatusBanner={setStatusBanner}
+                      onProposePromotion={onProposePromotion}
+                    />
                   ))}
                 </div>
               );
@@ -282,10 +207,7 @@ export function OntologyAndKbExplorerPanel({
                 fontSize: "var(--font-size-mono)",
               }}
             >
-              What-If ({selectedConcept.canonicalTerm}): Templates=
-              {selectedConcept.impactedTemplates.join(", ") || "0"} | Workflows=
-              {selectedConcept.impactedWorkflows.join(", ") || "0"} | Runs=
-              {selectedConcept.impactedRuns.join(", ") || "0"}
+              {`${labels.impactPreviewPrefix ?? ""} (${selectedConcept.canonicalTerm}): ${labels.impactTemplatesLabel ?? "TEMPLATES"}=${selectedConcept.impactedTemplates.join(", ") || "0"} | ${labels.impactWorkflowsLabel ?? "WORKFLOWS"}=${selectedConcept.impactedWorkflows.join(", ") || "0"} | ${labels.impactRunsLabel ?? "RUNS"}=${selectedConcept.impactedRuns.join(", ") || "0"}`}
             </div>
           )}
 

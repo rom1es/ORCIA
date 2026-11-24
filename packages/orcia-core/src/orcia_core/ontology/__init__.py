@@ -17,6 +17,7 @@ from orcia_core.ontology._internal.sql_ontology_repository import (
     record_ontology_audit_event_pg,
     upsert_concept_pg,
 )
+from orcia_core.ontology._ontology_seed_locales import get_ontology_seed_bundle
 from orcia_core.ontology.errors import OntologyConflictError, OntologyScopeConflictError
 from orcia_core.ontology.impact_and_promotion import (
     ImpactSimulatorService,
@@ -54,6 +55,7 @@ from orcia_core.ontology.resolver import (
     ProfileSemanticTranslator,
     build_ontology_resolution_cte_sql,
 )
+from orcia_kernel.enums import DEFAULT_LOCALE, SupportedLocale
 
 DOMAIN_NAME: str = "ontology"
 
@@ -63,72 +65,65 @@ def build_empty_ontology_service() -> OntologyGovernanceService:
     return OntologyGovernanceService()
 
 
-def build_seeded_ontology_service() -> OntologyGovernanceService:
+def build_seeded_ontology_service(
+    locale: SupportedLocale = DEFAULT_LOCALE,
+) -> OntologyGovernanceService:
     """Build a test-seeded OntologyGovernanceService for automated unit/contract tests."""
+    copy = get_ontology_seed_bundle(locale)
     c_l1 = OntologyConceptEntity(
         id="0192c4e0-0000-7000-8000-000000002001",
         concept_key="concept-l1-strategic-asset",
-        canonical_term="Actif Stratégique",
+        canonical_term=copy.l1_term,
         level="1_ENTERPRISE",
         scope_id="scope-global",
-        definition_text="Actif critique du SI Groupe soumis aux exigences d'audit PCI-DSS/DORA.",
-        synonyms=("Critical Asset", "Brique Critique Groupe"),
-        banned_terms=("Projet Legacy Non Gouverné",),
-        profile_translations={
-            "EXECUTIVE": "Actif Stratégique (ROI & Risque Réglementaire DORA/PCI-DSS)",
-            "PM_BUSINESS": "Produit Cœur Métier à SLA Critique (99.99%)",
-            "ARCHITECT": "Composant Tier-1 sous contrat Architecture Spine immuable",
-            "TECH_LEAD": "Service Tier-1 (Couverture >= 90%, 0-diff OpenAPI)",
-            "DEVELOPER": "Module critique sous garde-fous CI/CD stricts",
-            "SECOPS": "Périmètre régulé PCI-DSS / Audit Ledger Append-Only",
-        },
+        definition_text=copy.l1_definition,
+        synonyms=copy.l1_synonyms,
+        banned_terms=copy.l1_banned_terms,
+        profile_translations=copy.l1_profile_translations,
         expected_schema={"asset_id": "str", "criticality_tier": "int", "owners": "non_empty_list"},
     )
     c_l2 = OntologyConceptEntity(
         id="0192c4e0-0000-7000-8000-000000002002",
         concept_key="concept-l2-payment-ledger",
-        canonical_term="Grand Livre de Paiement",
+        canonical_term=copy.l2_term,
         level="2_DOMAIN",
         scope_id="scope-bu-digital",
         parent_concept_id=c_l1.id,
-        definition_text="Journal comptable immuable des transactions de la BU Digital & Paiements.",
-        synonyms=("Payment Ledger", "Journal Transactionnel"),
-        profile_translations={
-            "EXECUTIVE": "Grand Livre Financier Consolidé BU",
-            "ARCHITECT": "Event-Sourced Ledger Append-Only (PostgreSQL 18)",
-        },
+        definition_text=copy.l2_definition,
+        synonyms=copy.l2_synonyms,
+        profile_translations=copy.l2_profile_translations,
         expected_schema={"ledger_id": "str", "currency": "str"},
     )
     c_l3_parent_team = OntologyConceptEntity(
         id="0192c4e0-0000-7000-8000-000000002003",
         concept_key="concept-l3-team-parent-asset",
-        canonical_term="Actif Stratégique",
+        canonical_term=copy.l1_term,
         level="3_TEAM",
         scope_id="scope-team-core",
         parent_concept_id=c_l1.id,
-        definition_text="Actif Stratégique décliné par l'Équipe Parente Architecture.",
-        synonyms=("Plateforme Agentique Core",),
+        definition_text=copy.l3_parent_definition,
+        synonyms=copy.l3_parent_synonyms,
         expected_schema={"asset_id": "str", "criticality_tier": "int", "owners": "non_empty_list"},
     )
     c_l3_sub_team = OntologyConceptEntity(
         id="0192c4e0-0000-7000-8000-000000002004",
         concept_key="concept-l3-subteam-checkout-asset",
-        canonical_term="Actif Stratégique",
+        canonical_term=copy.l1_term,
         level="3_TEAM",
         scope_id="scope-subteam-checkout",
         parent_concept_id=c_l3_parent_team.id,
-        definition_text="Actif Stratégique spécialisé par la Sous-Équipe Checkout.",
-        synonyms=("Microservice Tier-1", "Tunnel Checkout Critique"),
+        definition_text=copy.l3_subteam_definition,
+        synonyms=copy.l3_subteam_synonyms,
         expected_schema={"asset_id": "str", "criticality_tier": "int", "owners": "non_empty_list"},
     )
     c_l3_workspace = OntologyConceptEntity(
         id="0192c4e0-0000-7000-8000-000000002005",
         concept_key="concept-l3-ws-idempotency-key",
-        canonical_term="Clé d'Idempotence Paiement",
+        canonical_term=copy.l3_ws_term,
         level="3_WORKSPACE",
         scope_id="ws-solution-paiement",
         parent_concept_id=c_l2.id,
-        definition_text="Jeton UUIDv7 garantissant l'exécution unique d'une capture PSP.",
+        definition_text=copy.l3_ws_definition,
         synonyms=("Idempotency-Key", "Capture Dedup Token"),
         expected_schema={"idempotency_key": "str", "ttl_seconds": "int"},
     )
@@ -138,7 +133,7 @@ def build_seeded_ontology_service() -> OntologyGovernanceService:
         canonical_term="Exemption 3DS Frictionless TRA",
         level="4_RUN_EPHEMERAL",
         scope_id="run-checkout-001",
-        definition_text="Règle d'exemption Transaction Risk Analysis découverte durant le Run.",
+        definition_text=copy.l4_active_definition,
         synonyms=("TRA Exemption DSP2",),
         introduced_in_snapshot_id="snap-active-001",
         snapshot_branch_status="ACTIVE",
@@ -146,10 +141,10 @@ def build_seeded_ontology_service() -> OntologyGovernanceService:
     c_l4_superseded = OntologyConceptEntity(
         id="0192c4e0-0000-7000-8000-000000002007",
         concept_key="concept-l4-obsolete-branch-term",
-        canonical_term="Terme Branche Obsolète Replay",
+        canonical_term=copy.l4_obsolete_term,
         level="4_RUN_EPHEMERAL",
         scope_id="run-checkout-001",
-        definition_text="Concept issu d'un snapshot annulé après Replay (ne doit jamais fuiter).",
+        definition_text=copy.l4_obsolete_definition,
         introduced_in_snapshot_id="snap-superseded-000",
         snapshot_branch_status="SUPERSEDED",
     )
@@ -196,7 +191,7 @@ def build_seeded_ontology_service() -> OntologyGovernanceService:
         impact_report=WhatIfImpactReport(
             concept_key=c_l4_active.concept_key,
             canonical_term=c_l4_active.canonical_term,
-            proposed_change="Promote Exemption 3DS Frictionless TRA to 3_WORKSPACE",
+            proposed_change=copy.prop_l4_change,
             transitively_affected_concepts=(),
             impacted_artifact_templates=("tpl://payment-api-contract",),
             impacted_workflow_uris=("db://workflows/payment-delivery-v1",),

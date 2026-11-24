@@ -5,6 +5,7 @@ import {
 } from "@orcia/api-client";
 import type { UiAssembledLayerItem } from "@orcia/ui";
 import { useCallback, useEffect, useState } from "react";
+import { normalizeWebLocale, resolveDictionaryForFlag } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import {
   DEFAULT_ASSISTANT_GOVERNANCE_PREFS,
@@ -24,7 +25,9 @@ function mapAssembledLayer(item: AssembledLayerPreviewSchemaItem): UiAssembledLa
 }
 
 function errorDetail(err: unknown, locale: string): string {
-  return formatRfc9457ErrorToBanner(err, locale === "en" ? "en" : "fr", "Réglages Assistant").fullText;
+  const normalized = normalizeWebLocale(locale);
+  const flowCopy = resolveDictionaryForFlag(undefined, normalized).featureInboxAssistant.assistantFlow;
+  return formatRfc9457ErrorToBanner(err, normalized, flowCopy.governanceErrorContext).fullText;
 }
 
 export function useServerAssistantGovernance(params: {
@@ -33,6 +36,8 @@ export function useServerAssistantGovernance(params: {
   readonly onFeedback: (message: string) => void;
 }) {
   const { workspaceId, locale, onFeedback } = params;
+  const normalizedLocale = normalizeWebLocale(locale);
+  const flowCopy = resolveDictionaryForFlag(undefined, normalizedLocale).featureInboxAssistant.assistantFlow;
   const [governancePrefs, setGovernancePrefs] = useState<SavedAssistantGovernancePrefs>(
     DEFAULT_ASSISTANT_GOVERNANCE_PREFS,
   );
@@ -91,11 +96,7 @@ export function useServerAssistantGovernance(params: {
           personal_instructions: payload.personalInstructions,
         });
         await refreshGovernance();
-        setGovernanceSaveMessage(
-          locale === "en"
-            ? "✅ Personal preferences saved to your account."
-            : "✅ Préférences personnelles enregistrées.",
-        );
+        setGovernanceSaveMessage(flowCopy.personalPrefsSavedBanner);
       } catch (err: unknown) {
         onFeedback(errorDetail(err, locale));
       }
@@ -117,11 +118,7 @@ export function useServerAssistantGovernance(params: {
           mcp_expose_assistant: payload.mcpExposeAssistant,
         });
         await refreshGovernance();
-        setGovernanceSaveMessage(
-          locale === "en"
-            ? "✅ Workspace settings saved and applied to all members."
-            : "✅ Réglages de l'Espace enregistrés pour tous les membres.",
-        );
+        setGovernanceSaveMessage(flowCopy.workspaceSettingsSavedBanner);
       } catch (err: unknown) {
         onFeedback(errorDetail(err, locale));
       }

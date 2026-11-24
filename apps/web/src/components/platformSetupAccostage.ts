@@ -8,6 +8,12 @@ import {
   canMutateMyOrganization,
   isPlatformAdministratorSession,
 } from "../stores/authSessionStore";
+import {
+  DICTIONARIES,
+  formatI18nTemplate,
+  resolveDictionaryForFlag,
+  type SupportedWebLocale,
+} from "../i18n";
 import type { AccostagePg18CountsView } from "./platformSetupHydration";
 import type {
   ConfiguredLlmTierMapping,
@@ -136,52 +142,54 @@ function isUiMilestoneAccessible(params: {
 
 export function buildUnifiedAccostageMilestones(params: {
   readonly isFr: boolean;
+  readonly locale?: SupportedWebLocale;
   readonly summary: AccostageProgressSummary;
   readonly roles?: readonly string[];
   readonly readOnlyObserver?: boolean;
   readonly visibleMilestoneKeys?: readonly string[] | null;
 }): readonly UiAccostageMilestoneItem[] {
-  const { isFr, summary, roles, readOnlyObserver, visibleMilestoneKeys } = params;
+  const { isFr, locale, summary, roles, readOnlyObserver, visibleMilestoneKeys } = params;
+  const copy = resolveDictionaryForFlag(isFr, locale).shellBreadcrumbsAndScope.accostageMilestones;
   const allMilestones: readonly UiAccostageMilestoneItem[] = [
     {
       index: 1,
       key: "first-admin",
-      title: isFr ? "1. Compte Admin" : "1. Admin Account",
+      title: copy.firstAdmin,
       completed: summary.adminCreated,
       targetRoute: summary.adminCreated ? "/profile" : "/cockpit",
     },
     {
       index: 2,
       key: "step-llm",
-      title: isFr ? "2. Modèles IA" : "2. AI Models",
+      title: copy.aiModels,
       completed: summary.hasModels,
       targetRoute: "/configuration",
     },
     {
       index: 3,
       key: "step-iam",
-      title: isFr ? "3. Organisation" : "3. Organization",
+      title: copy.organization,
       completed: summary.hasOrgUnits,
       targetRoute: "/organization",
     },
     {
       index: 4,
       key: "step-workspaces",
-      title: isFr ? "4. Premier Espace d'équipe" : "4. First Team Space",
+      title: copy.firstTeamSpace,
       completed: summary.hasWorkspaces,
       targetRoute: "/spaces",
     },
     {
       index: 5,
       key: "step-connectors",
-      title: isFr ? "5. Première Source" : "5. First Source",
+      title: copy.firstSource,
       completed: summary.hasSources,
       targetRoute: "/configuration",
     },
     {
       index: 6,
       key: "step-workflows",
-      title: isFr ? "6. Premier Processus" : "6. First Process",
+      title: copy.firstProcess,
       completed: summary.hasWorkflows,
       targetRoute: "/processes",
     },
@@ -204,13 +212,18 @@ export function buildUnifiedAccostageMilestones(params: {
 
 export function buildWorkflowOverridesFromWorkflows(
   workflows: readonly ConfiguredWorkflowItem[],
+  locale: SupportedWebLocale = "fr",
 ): ControlCenterOverrideItem[] {
+  const activeLayersTemplate =
+    DICTIONARIES[locale].shellBreadcrumbsAndScope.accostageMilestones.activeLayersTemplate;
   return workflows.map((wf) => ({
     workflowKey: wf.workflowKey,
     title: wf.title,
     baseLayer: `v${wf.version}`,
     teamOverride: "—",
-    workspaceOverride: `${wf.layers.filter((l) => l.enabled).length} couches actives`,
+    workspaceOverride: formatI18nTemplate(activeLayersTemplate, {
+      count: wf.layers.filter((l) => l.enabled).length,
+    }),
     userOverride: "—",
     spineContractRef: "—",
   }));

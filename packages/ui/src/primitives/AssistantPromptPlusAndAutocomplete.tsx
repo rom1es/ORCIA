@@ -1,5 +1,16 @@
 import React, { useRef, useState } from "react";
 import { OrciaIcon } from "../components/icons";
+import {
+  AssistantAttachedFilesInlineBar,
+  type AssistantAttachedFilesInlineBarProps,
+  type UiAssistantAttachedFileItem,
+} from "./AssistantAttachedFilesInlineBar";
+
+export {
+  AssistantAttachedFilesInlineBar,
+  type AssistantAttachedFilesInlineBarProps,
+  type UiAssistantAttachedFileItem,
+};
 
 export interface UiAssistantAutocompleteOption {
   readonly slug: string;
@@ -14,34 +25,16 @@ export interface UiAssistantOrciaDocumentOption {
   readonly uri: string;
 }
 
-export interface UiAssistantAttachedFileItem {
-  readonly id: string;
-  readonly name: string;
-  readonly sourceKind: "LOCAL_PC" | "ORCIA_WORKSPACE";
-  readonly uri?: string;
-  readonly contentExcerpt?: string;
+export interface AssistantPromptPlusLabels {
+  readonly removeFilePrefix: string;
+  readonly selectAgentHeading: string;
+  readonly selectSkillHeading: string;
+  readonly plusInsertAgentLabel: string;
+  readonly plusInsertSkillLabel: string;
+  readonly plusUploadLocalFileLabel: string;
+  readonly plusAttachOrciaDocLabel: string;
+  readonly plusOpenFoldersLabel: string;
 }
-
-export const DEFAULT_ASSISTANT_AGENT_OPTIONS: readonly UiAssistantAutocompleteOption[] = [
-  { slug: "analyste-metier", label: "Analyste Métier", description: "Analyse des besoins, règles de gestion et cas d'usage", kind: "agent" },
-  { slug: "architecte-solution", label: "Architecte Solution", description: "Conception technique, modèles de données et intégration", kind: "agent" },
-  { slug: "reviseur-conformite", label: "Réviseur Conformité & Qualité", description: "Vérification des exigences, normes et points d'attention", kind: "agent" },
-  { slug: "redacteur-technique", label: "Rédacteur Technique", description: "Structuration claire de livrables, guides et synthèses", kind: "agent" },
-  { slug: "expert-securite", label: "Expert Sécurité", description: "Analyse des risques de sécurité et protection des données", kind: "agent" },
-];
-
-export const DEFAULT_ASSISTANT_SKILL_OPTIONS: readonly UiAssistantAutocompleteOption[] = [
-  { slug: "synthese-executive", label: "Synthèse Exécutive", description: "Résumé structuré des points clés et décisions attendues", kind: "skill" },
-  { slug: "analyse-risques", label: "Analyse des Risques", description: "Identification des risques, impacts et mesures de maîtrise", kind: "skill" },
-  { slug: "revue-code", label: "Revue de Code & Qualité", description: "Inspection de la lisibilité, de la sécurité et des tests", kind: "skill" },
-  { slug: "extraction-exigences", label: "Extraction d'Exigences", description: "Transformation de notes ou documents en critères vérifiables", kind: "skill" },
-  { slug: "comparaison-versions", label: "Comparaison de Versions", description: "Mise en évidence des écarts entre deux documents ou normes", kind: "skill" },
-];
-
-export const DEFAULT_ORCIA_DOCUMENT_OPTIONS: readonly UiAssistantOrciaDocumentOption[] = [
-  { id: "orcia-doc-1", title: "Référentiel Métier & Règles de l'Espace", uri: "https://docs.orcia.local/espaces/referentiel-metier" },
-  { id: "orcia-doc-2", title: "Guide d'Architecture & Bonnes Pratiques", uri: "https://docs.orcia.local/espaces/guide-architecture" },
-];
 
 export function detectActiveAutocompleteTrigger(promptText: string): {
   readonly kind: "agent" | "skill";
@@ -82,46 +75,6 @@ export function applyAutocompleteSelectionToPrompt(
   return stripped ? `${prefix} ${stripped} ` : `${prefix} `;
 }
 
-export interface AssistantAttachedFilesInlineBarProps {
-  readonly attachedFiles: readonly UiAssistantAttachedFileItem[];
-  readonly onRemoveAttachedFile: (fileId: string) => void;
-}
-
-export function AssistantAttachedFilesInlineBar({
-  attachedFiles,
-  onRemoveAttachedFile,
-}: AssistantAttachedFilesInlineBarProps): React.JSX.Element | null {
-  if (attachedFiles.length === 0) {
-    return null;
-  }
-  return (
-    <div
-      data-testid="assistant-attached-files-bar"
-      className="flex flex-wrap items-center gap-1.5"
-    >
-      {attachedFiles.map((file) => (
-        <span
-          key={file.id}
-          data-testid="assistant-attached-file-pill"
-          className="inline-flex items-center gap-1.5 rounded-md bg-surface-secondary px-2 py-0.5 text-[11px] font-medium text-text-primary"
-        >
-          <OrciaIcon name={file.sourceKind === "LOCAL_PC" ? "laptop" : "workspaceFolder"} />
-          <span>{file.name}</span>
-          <button
-            type="button"
-            aria-label={`Retirer ${file.name}`}
-            title={`Retirer ${file.name}`}
-            onClick={() => onRemoveAttachedFile(file.id)}
-            className="border-0 bg-transparent p-0.5 text-text-secondary hover:text-text-primary leading-none"
-          >
-            <OrciaIcon name="times" />
-          </button>
-        </span>
-      ))}
-    </div>
-  );
-}
-
 export interface AssistantPromptPlusAndAutocompleteProps {
   readonly plusMenuOpen: boolean;
   readonly autocompleteTrigger: {
@@ -132,6 +85,7 @@ export interface AssistantPromptPlusAndAutocompleteProps {
   readonly skillOptions?: readonly UiAssistantAutocompleteOption[];
   readonly orciaDocuments?: readonly UiAssistantOrciaDocumentOption[];
   readonly attachedFiles?: readonly UiAssistantAttachedFileItem[];
+  readonly labels: AssistantPromptPlusLabels;
   readonly onSelectAutocompleteOption: (option: UiAssistantAutocompleteOption) => void;
   readonly onTriggerAgentAutocompleteFromPlus: () => void;
   readonly onTriggerSkillAutocompleteFromPlus: () => void;
@@ -143,9 +97,10 @@ export interface AssistantPromptPlusAndAutocompleteProps {
 export function AssistantPromptPlusAndAutocomplete({
   plusMenuOpen,
   autocompleteTrigger,
-  agentOptions = DEFAULT_ASSISTANT_AGENT_OPTIONS,
-  skillOptions = DEFAULT_ASSISTANT_SKILL_OPTIONS,
-  orciaDocuments = DEFAULT_ORCIA_DOCUMENT_OPTIONS,
+  agentOptions = [],
+  skillOptions = [],
+  orciaDocuments = [],
+  labels,
   onSelectAutocompleteOption,
   onTriggerAgentAutocompleteFromPlus,
   onTriggerSkillAutocompleteFromPlus,
@@ -201,9 +156,9 @@ export function AssistantPromptPlusAndAutocomplete({
         >
           <div className="px-2 py-1 text-[11px] font-semibold text-text-secondary border-b border-border-subtle">
             {autocompleteTrigger.kind === "agent" ? (
-              <><OrciaIcon name="agents" /> Sélectionner un agent (@) — Entrée ou clic pour valider</>
+              <><OrciaIcon name="agents" /> {labels.selectAgentHeading}</>
             ) : (
-              <><OrciaIcon name="tools" /> Sélectionner une compétence (/) — Entrée ou clic pour valider</>
+              <><OrciaIcon name="tools" /> {labels.selectSkillHeading}</>
             )}
           </div>
           {filteredOptions.map((opt, idx) => (
@@ -241,7 +196,7 @@ export function AssistantPromptPlusAndAutocomplete({
             onClick={() => { setOrciaDocsSubmenuOpen(false); onTriggerAgentAutocompleteFromPlus(); }}
             className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left font-medium text-text-primary hover:bg-surface-secondary"
           >
-            <span>@ Mentionner un agent</span>
+            <span>{labels.plusInsertAgentLabel}</span>
           </button>
 
           <button
@@ -251,7 +206,7 @@ export function AssistantPromptPlusAndAutocomplete({
             onClick={() => { setOrciaDocsSubmenuOpen(false); onTriggerSkillAutocompleteFromPlus(); }}
             className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left font-medium text-text-primary hover:bg-surface-secondary"
           >
-            <span>/ Utiliser une compétence</span>
+            <span>{labels.plusInsertSkillLabel}</span>
           </button>
 
           <button
@@ -261,7 +216,7 @@ export function AssistantPromptPlusAndAutocomplete({
             onClick={() => { setOrciaDocsSubmenuOpen(false); fileInputRef.current?.click(); }}
             className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left font-medium text-text-primary hover:bg-surface-secondary"
           >
-            <span><OrciaIcon name="laptop" /> Ajouter un fichier depuis mon ordinateur</span>
+            <span><OrciaIcon name="laptop" /> {labels.plusUploadLocalFileLabel}</span>
           </button>
 
           <button
@@ -271,7 +226,7 @@ export function AssistantPromptPlusAndAutocomplete({
             onClick={() => setOrciaDocsSubmenuOpen((prev) => !prev)}
             className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left font-medium text-text-primary hover:bg-surface-secondary"
           >
-            <span><OrciaIcon name="workspaceFolder" /> Ajouter un document disponible dans ORCIA</span>
+            <span><OrciaIcon name="workspaceFolder" /> {labels.plusAttachOrciaDocLabel}</span>
             <OrciaIcon name="caretRight" />
           </button>
 
@@ -302,7 +257,7 @@ export function AssistantPromptPlusAndAutocomplete({
               onClick={() => { setOrciaDocsSubmenuOpen(false); onOpenFoldersAndCloseMenus(); }}
               className="flex w-full items-center gap-2 rounded-lg border-t border-border-subtle pt-2 mt-1 px-2.5 py-1.5 text-left font-medium text-text-primary hover:bg-surface-secondary"
             >
-              <span><OrciaIcon name="folder" /> Gérer les dossiers thématiques</span>
+              <span><OrciaIcon name="folder" /> {labels.plusOpenFoldersLabel}</span>
             </button>
           )}
         </div>

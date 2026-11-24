@@ -48,14 +48,28 @@ export interface UiAssistantStudioNode {
   readonly subAgentUri?: string | null;
 }
 
+export interface UiAssistantSelectOption {
+  readonly value: string;
+  readonly label: string;
+}
+
 export interface AssistantGovernanceModalAndStudioLabels extends RgaaModalGuardLabels {
   readonly modalTitle: string;
+  readonly savedBadgeLabel: string;
+  readonly infoBannerText: string;
   readonly tab1UserTitle: string;
   readonly tab2WorkspaceTitle: string;
   readonly tab3AssemblyTitle: string;
   readonly toneLabel: string;
+  readonly toneOptions: readonly UiAssistantSelectOption[];
   readonly formatLabel: string;
+  readonly formatLabels: {
+    readonly bulletsSummary: string;
+    readonly structuredSections: string;
+    readonly stepByStep: string;
+  };
   readonly defaultHatLabel: string;
+  readonly hatOptions: readonly UiAssistantSelectOption[];
   readonly personalInstructionsLabel: string;
   readonly saveUserPrefsCta: string;
   readonly workspaceInstructionsLabel: string;
@@ -64,6 +78,21 @@ export interface AssistantGovernanceModalAndStudioLabels extends RgaaModalGuardL
   readonly mcpFrozenByUpperBadge: string;
   readonly copyMcpConfigCta: string;
   readonly saveWorkspaceSettingsCta: string;
+  readonly telemetryHeading: string;
+  readonly telemetrySubtitle: string;
+  readonly telemetryEmptyIntro: string;
+  readonly telemetryLikeLabel: string;
+  readonly telemetryDislikeLabel: string;
+  readonly telemetryUnratedLabel: string;
+  readonly telemetryHideContextCta: string;
+  readonly telemetryInspectContextCta: string;
+  readonly telemetryModelPrefix: string;
+  readonly telemetryThinkingPrefix: string;
+  readonly telemetryHistoryPrefix: string;
+  readonly telemetryMessagesUnit: string;
+  readonly telemetryFolderPrefix: string;
+  readonly telemetrySystemPromptHeading: string;
+  readonly telemetryDefaultContextFallback: string;
   readonly openStudioModeBCta?: string;
   readonly studioHeaderTitle?: string;
   readonly studioPrePromptLabel?: string;
@@ -71,6 +100,11 @@ export interface AssistantGovernanceModalAndStudioLabels extends RgaaModalGuardL
   readonly studioTestDryRunCta?: string;
   readonly studioSaveOverrideCta?: string;
   readonly studioResetDefaultCta?: string;
+  readonly studioWorkspaceScopeLabel?: string;
+  readonly studioTeamScopeLabel?: string;
+  readonly studioLayersPrefix?: string;
+  readonly studioAddSubAgentCta?: string;
+  readonly studioResetRestoredBanner?: string;
 }
 
 export interface AssistantGovernanceModalAndStudioProps {
@@ -110,16 +144,3 @@ export interface AssistantGovernanceModalAndStudioProps {
   readonly onResetStudioOverride?: (scopeLevel: "TEAM" | "WORKSPACE") => void;
   readonly onClose?: () => void;
 }
-
-export const ASSISTANT_DEFAULT_HAT_OPTIONS: readonly {
-  readonly value: string;
-  readonly label: string;
-}[] = [
-  { value: "PM", label: "Chef de Projet / Product Manager" },
-  { value: "TECH_LEAD", label: "Référent Technique / Architecte" },
-  { value: "DEV", label: "Développeur / Ingénieur" },
-  { value: "ANALYST", label: "Analyste Métier" },
-  { value: "QA_COMPLIANCE", label: "Responsable Qualité & Conformité" },
-  { value: "PLATFORM_ADMIN", label: "Administrateur de la Plateforme" },
-  { value: "CONTRIBUTOR", label: "Contributeur d'Équipe" },
-];

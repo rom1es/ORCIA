@@ -1,309 +1,51 @@
-"""Enriched Visual Workflow Studio (`Contrat`, `Pré-prompt`, `COUCHES · N`)
+"""Enriched Visual Workflow Studio (`Contract`, `Pre-prompt`, `COUCHES · N`)
 & Pack Registry (`Story 8.5`).
-
-Implements (`AD-2`, `AD-5`, `AD-14`, `AD-18`, `AD-19`, `AD-20`, `AD-21`):
-- 5 lifecycle tabs (`PUBLISHED`, `DRAFT`, `TRASH`, `ACTIVE_RUNS`, `PAUSED_ARBITRATION`)
-- Immutable SemVer fork (`v1.0.0` PUBLISHED -> `v1.1.0-draft` DRAFT)
-- Top Governance Bar: `ai_pre_prompt` (`sha256` pinned), `WorkflowContract` (`p_1..p_n` +
-  mandatory Markdown output sections verified by deterministic structure gate), `triggers`,
-  and isolated *What-If* dry-run (`▷ Tester`, `0` external writes)
-- Per-step connector least privilege (`READ_ONLY` vs `READ_WRITE_STAGED`)
-- `COUCHES · N` inspector on `SUB_WORKFLOW` macro-steps (3 zones, reorder, delete,
-  `enabled: false -> SKIPPED` in DBOS checkpoint)
-- Business Pack Registry (`/settings/packs`): `ACTIVE | DISABLED | DRAINING | ORPHANED` with
-  `409 ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS` guard
 """
 
 from __future__ import annotations
 
-import hashlib
-from dataclasses import dataclass, field, replace
-from datetime import UTC, datetime
+from dataclasses import replace
 from typing import Any, Literal
 
+from orcia_core.orchestration._studio_and_packs_helpers import (
+    configure_pack_registration,
+    execute_studio_dry_run,
+)
+from orcia_core.orchestration._studio_and_packs_models import (
+    BusinessPackRegistration,
+    PackLifecycleStatus,
+    StepConnectorPrivilegeMode,
+    StudioContractParamSpec,
+    StudioDryRunResult,
+    StudioLifecycleTab,
+    StudioStepConnectorBinding,
+    StudioWorkflowContract,
+    StudioWorkflowNode,
+    StudioWorkflowRevision,
+    SubWorkflowLayerItem,
+    SubWorkflowLayerZone,
+    _bump_minor_draft_version,
+    _now_iso,
+    build_default_studio_seeds,
+    compute_text_sha256,
+)
 from orcia_core.orchestration.cognitive_router import (
-    InferenceEffort,
-    InferenceTier,
     PinRemovalMode,
 )
 from orcia_core.orchestration.errors import (
     ObserverModeReadOnlyError,
     ResourceNotFoundError,
-    ResourcePinnedByActiveRunsError,
-    ScopeAccessDeniedError,
     ValidationDomainError,
 )
 from orcia_kernel.ids import new_uuid7_str
-
-StudioLifecycleTab = Literal["PUBLISHED", "DRAFT", "TRASH", "ACTIVE_RUNS", "PAUSED_ARBITRATION"]
-StepConnectorPrivilegeMode = Literal["READ_ONLY", "READ_WRITE_STAGED"]
-SubWorkflowLayerZone = Literal[
-    "1_INPUTS_CONTEXT",
-    "2_CAPABILITIES_REASONING",
-    "3_DELIVERABLES_PRE_GATES",
-]
-PackLifecycleStatus = Literal["ACTIVE", "DISABLED", "DRAINING", "ORPHANED"]
-
-
-def _now_iso() -> str:
-    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
-
-
-def compute_text_sha256(text: str) -> str:
-    digest = hashlib.sha256(text.strip().encode("utf-8")).hexdigest()
-    return f"sha256:{digest}"
-
-
-def _bump_minor_draft_version(published_version: str) -> str:
-    clean = published_version.strip().lstrip("v").split("-")[0]
-    parts = clean.split(".")
-    if len(parts) == 3 and all(p.isdigit() for p in parts):
-        major, minor, _patch = int(parts[0]), int(parts[1]), int(parts[2])
-        return f"v{major}.{minor + 1}.0-draft"
-    return f"v{clean}.1-draft"
-
-
-@dataclass(frozen=True, slots=True)
-class StudioContractParamSpec:
-    """Typed workflow input parameter (`p_1..p_n`) linked to an Ontology concept (`Story 8.5`)."""
-
-    param_key: str
-    label: str
-    param_type: Literal["string", "number", "boolean", "enum"]
-    ontology_concept_uri: str
-    required: bool = True
-    default_value: str | None = None
-
-
-@dataclass(frozen=True, slots=True)
-class StudioWorkflowContract:
-    """Formal workflow input/output contract (`Story 8.5`, `AD-21`)."""
-
-    parameters: tuple[StudioContractParamSpec, ...]
-    required_markdown_sections: tuple[str, ...]
-
-
-@dataclass(frozen=True, slots=True)
-class SubWorkflowLayerItem:
-    """Sub-layer inside a `SUB_WORKFLOW` macro-step (`COUCHES · N`, `Story 8.5`)."""
-
-    layer_id: str
-    order_index: int
-    title: str
-    zone: SubWorkflowLayerZone
-    enabled: bool = True
-
-
-@dataclass(frozen=True, slots=True)
-class StudioStepConnectorBinding:
-    """Per-step connector least-privilege binding (`Lire` vs `Écrire`, `Story 8.5`)."""
-
-    connector_uri: str
-    privilege_mode: StepConnectorPrivilegeMode = "READ_ONLY"
-
-
-@dataclass(frozen=True, slots=True)
-class StudioWorkflowNode:
-    """Visual Studio node (`PROGRAM_EXECUTOR`, `AGENT_EXECUTOR`, or `SUB_WORKFLOW`)."""
-
-    step_key: str
-    title: str
-    executor_kind: Literal["PROGRAM_EXECUTOR", "AGENT_EXECUTOR", "SUB_WORKFLOW"]
-    inference_tier: InferenceTier = "medium"
-    effort: InferenceEffort = "default"
-    gate_label: str = "DETERMINISTIC_AND_HUMAN"
-    connector_bindings: tuple[StudioStepConnectorBinding, ...] = ()
-    sub_layers: tuple[SubWorkflowLayerItem, ...] = ()
-
-
-@dataclass(frozen=True, slots=True)
-class StudioWorkflowRevision:
-    """Workflow revision managed in the 5-tab Studio (`Story 8.5`, `AD-21`)."""
-
-    id: str
-    workflow_uri: str
-    title: str
-    version: str
-    lifecycle_tab: StudioLifecycleTab
-    ai_pre_prompt: str
-    ai_pre_prompt_sha256: str
-    contract: StudioWorkflowContract
-    triggers: tuple[str, ...]
-    nodes: tuple[StudioWorkflowNode, ...]
-    immutable: bool
-    updated_at_iso: str = field(default_factory=_now_iso)
-
-
-@dataclass(frozen=True, slots=True)
-class StudioDryRunResult:
-    """Isolated *What-If* dry-run execution outcome (`▷ Tester`, `Story 8.5`)."""
-
-    revision_id: str
-    workflow_uri: str
-    version: str
-    validated_inputs: dict[str, Any]
-    executed_steps: tuple[str, ...]
-    skipped_layers: tuple[str, ...]
-    markdown_output: str
-    deterministic_structure_gate_passed: bool
-    missing_markdown_sections: tuple[str, ...]
-    external_writes_count: int = 0
-
-
-@dataclass(frozen=True, slots=True)
-class BusinessPackRegistration:
-    """Business Pack registration in `/settings/packs` (`AD-20`, `AD-21`, `Story 8.5`)."""
-
-    pack_key: str
-    display_name: str
-    version: str
-    status: PackLifecycleStatus
-    scope_level: Literal["GLOBAL", "BU", "TEAM", "WORKSPACE"]
-    scope_id: str
-    config_json_schema: dict[str, Any]
-    config_values: dict[str, Any]
-    installed_in_environment: bool = True
-    updated_at_iso: str = field(default_factory=_now_iso)
 
 
 class WorkflowStudioAndPackService:
     """Domain service for the 5-tab Workflow Studio, `COUCHES · N`, and Pack Registry."""
 
     def __init__(self) -> None:
-        self._revisions: dict[str, StudioWorkflowRevision] = {}
-        self._packs: dict[str, BusinessPackRegistration] = {}
+        self._revisions, self._packs = build_default_studio_seeds()
         self._pinned_packs_by_key: dict[str, set[str]] = {}
-        self._seed_defaults()
-
-    def _seed_defaults(self) -> None:
-        pre_prompt = (
-            "Respecter l'ontologie N1..N3, citer chaque source et ne jamais inventer de faits."
-        )
-        rev_id = "0195f000-0000-7000-8000-000000008501"
-        self._revisions[rev_id] = StudioWorkflowRevision(
-            id=rev_id,
-            workflow_uri="orcia://catalog/workflows/architecture-review",
-            title="Conception & Validation Technique",
-            version="v1.0.0",
-            lifecycle_tab="PUBLISHED",
-            ai_pre_prompt=pre_prompt,
-            ai_pre_prompt_sha256=compute_text_sha256(pre_prompt),
-            contract=StudioWorkflowContract(
-                parameters=(
-                    StudioContractParamSpec(
-                        param_key="p_1",
-                        label="Périmètre Fonctionnel",
-                        param_type="string",
-                        ontology_concept_uri="orcia://ontology/n1/functional-scope",
-                        required=True,
-                    ),
-                    StudioContractParamSpec(
-                        param_key="p_2",
-                        label="Niveau de Criticité",
-                        param_type="enum",
-                        ontology_concept_uri="orcia://ontology/n1/criticality",
-                        required=True,
-                        default_value="STANDARD",
-                    ),
-                ),
-                required_markdown_sections=(
-                    "## 1. Intention & Cadrage",
-                    "## 2. Analyse d'Impact",
-                    "## 3. Décisions Retenues",
-                ),
-            ),
-            triggers=("CRON:0 8 * * 1", "OUTBOX:ArtifactProduced"),
-            nodes=(
-                StudioWorkflowNode(
-                    step_key="step-01-framing",
-                    title="Cadrage & Intention Métier",
-                    executor_kind="AGENT_EXECUTOR",
-                    inference_tier="medium",
-                    effort="balanced",
-                    connector_bindings=(
-                        StudioStepConnectorBinding(
-                            connector_uri="orcia://connectors/primary-repo",
-                            privilege_mode="READ_ONLY",
-                        ),
-                    ),
-                ),
-                StudioWorkflowNode(
-                    step_key="step-02-macro-analysis",
-                    title="Analyse Architecture & Sécurité",
-                    executor_kind="SUB_WORKFLOW",
-                    inference_tier="complex",
-                    effort="deep",
-                    connector_bindings=(
-                        StudioStepConnectorBinding(
-                            connector_uri="orcia://connectors/primary-kb",
-                            privilege_mode="READ_ONLY",
-                        ),
-                        StudioStepConnectorBinding(
-                            connector_uri="orcia://connectors/work-tracker",
-                            privilege_mode="READ_WRITE_STAGED",
-                        ),
-                    ),
-                    sub_layers=(
-                        SubWorkflowLayerItem(
-                            layer_id="layer-01",
-                            order_index=1,
-                            title="Collecte Chunks KB & Contrat",
-                            zone="1_INPUTS_CONTEXT",
-                            enabled=True,
-                        ),
-                        SubWorkflowLayerItem(
-                            layer_id="layer-02",
-                            order_index=2,
-                            title="Vérification Axiomes Ontologie N1..N3",
-                            zone="2_CAPABILITIES_REASONING",
-                            enabled=True,
-                        ),
-                        SubWorkflowLayerItem(
-                            layer_id="layer-03",
-                            order_index=3,
-                            title="Synthèse Livrable & Pré-Gate",
-                            zone="3_DELIVERABLES_PRE_GATES",
-                            enabled=True,
-                        ),
-                    ),
-                ),
-            ),
-            immutable=True,
-        )
-
-        ws_id = "0195f000-0000-7000-8000-000000000301"
-        self._packs["orcia-pack-sdlc"] = BusinessPackRegistration(
-            pack_key="orcia-pack-sdlc",
-            display_name="Pack Ingénierie Logicielle (SDLC)",
-            version="0.1.0",
-            status="ACTIVE",
-            scope_level="WORKSPACE",
-            scope_id=ws_id,
-            config_json_schema={
-                "type": "object",
-                "properties": {
-                    "enforce_intention_before_implementation": {"type": "boolean"},
-                    "default_branch": {"type": "string"},
-                },
-                "required": ["enforce_intention_before_implementation"],
-            },
-            config_values={
-                "enforce_intention_before_implementation": True,
-                "default_branch": "main",
-            },
-            installed_in_environment=True,
-        )
-        self._packs["orcia-pack-legacy-fin"] = BusinessPackRegistration(
-            pack_key="orcia-pack-legacy-fin",
-            display_name="Pack Finance Legacy (Désinstallé)",
-            version="0.0.9",
-            status="ORPHANED",
-            scope_level="WORKSPACE",
-            scope_id=ws_id,
-            config_json_schema={"type": "object", "properties": {}},
-            config_values={},
-            installed_in_environment=False,
-        )
 
     def get_lifecycle_tab_counts(self) -> dict[StudioLifecycleTab, int]:
         counts: dict[StudioLifecycleTab, int] = {
@@ -457,43 +199,11 @@ class WorkflowStudioAndPackService:
     ) -> StudioDryRunResult:
         """Execute an isolated *What-If* dry-run (`▷ Tester`) from the Workflow Contract."""
         rev = self.get_revision(revision_id, instance=instance)
-        validated: dict[str, Any] = {}
-        for param in rev.contract.parameters:
-            val = input_values.get(param.param_key, param.default_value)
-            if param.required and (val is None or str(val).strip() == ""):
-                raise ValidationDomainError(
-                    detail_override=(
-                        f"Missing required contract parameter '{param.param_key}' ({param.label})."
-                    ),
-                    instance=instance,
-                )
-            validated[param.param_key] = val
-
-        executed_steps: list[str] = []
-        skipped_layers: list[str] = []
-        for node in rev.nodes:
-            executed_steps.append(node.step_key)
-            for layer in node.sub_layers:
-                if not layer.enabled:
-                    skipped_layers.append(f"{node.step_key}:{layer.layer_id}:SKIPPED")
-
-        default_md = "\n\n".join(
-            f"{sec}\nContenu simulé pour {validated}."
-            for sec in rev.contract.required_markdown_sections
-        )
-        md_out = preview_markdown_output if preview_markdown_output is not None else default_md
-        missing = tuple(sec for sec in rev.contract.required_markdown_sections if sec not in md_out)
-        return StudioDryRunResult(
-            revision_id=rev.id,
-            workflow_uri=rev.workflow_uri,
-            version=rev.version,
-            validated_inputs=validated,
-            executed_steps=tuple(executed_steps),
-            skipped_layers=tuple(skipped_layers),
-            markdown_output=md_out,
-            deterministic_structure_gate_passed=len(missing) == 0,
-            missing_markdown_sections=missing,
-            external_writes_count=0,
+        return execute_studio_dry_run(
+            rev,
+            input_values=input_values,
+            preview_markdown_output=preview_markdown_output,
+            instance=instance,
         )
 
     def list_packs(self) -> list[BusinessPackRegistration]:
@@ -513,55 +223,16 @@ class WorkflowStudioAndPackService:
         instance: str | None = None,
     ) -> BusinessPackRegistration:
         """Activate, configure or deactivate a Business Pack (`/settings/packs`, `Story 8.5`)."""
-        if actor_role == "OBSERVER":
-            raise ObserverModeReadOnlyError(instance=instance)
-        pack = self._packs.get(pack_key)
-        if pack is None:
-            raise ResourceNotFoundError(instance=instance)
-        if not pack.installed_in_environment:
-            return replace(pack, status="ORPHANED", updated_at_iso=_now_iso())
-
-        if target_status == "DISABLED":
-            active_runs = sorted(self._pinned_packs_by_key.get(pack_key, set()))
-            if active_runs:
-                if removal_mode == "reject":
-                    raise ResourcePinnedByActiveRunsError(
-                        detail_override=(
-                            f"Pack '{pack_key}' is pinned by active runs: "
-                            f"{', '.join(active_runs)}. Use Drain or Force."
-                        ),
-                        instance=instance,
-                    )
-                if removal_mode == "drain":
-                    drained = replace(pack, status="DRAINING", updated_at_iso=_now_iso())
-                    self._packs[pack_key] = drained
-                    return drained
-                if removal_mode == "force" and actor_role != "PLATFORM_ADMIN":
-                    raise ScopeAccessDeniedError(
-                        detail_override="Only PLATFORM_ADMIN can force-disable a pinned pack.",
-                        instance=instance,
-                    )
-                self._pinned_packs_by_key.pop(pack_key, None)
-
-        merged_vals = dict(pack.config_values)
-        if config_values is not None:
-            required_keys = pack.config_json_schema.get("required", [])
-            merged_vals.update(config_values)
-            for req_key in required_keys:
-                if req_key not in merged_vals:
-                    raise ValidationDomainError(
-                        detail_override=f"Missing required pack config key: '{req_key}'.",
-                        instance=instance,
-                    )
-
-        updated = replace(
-            pack,
-            status=target_status,
-            config_values=merged_vals,
-            updated_at_iso=_now_iso(),
+        return configure_pack_registration(
+            self._packs,
+            self._pinned_packs_by_key,
+            pack_key,
+            target_status=target_status,
+            config_values=config_values,
+            removal_mode=removal_mode,
+            actor_role=actor_role,
+            instance=instance,
         )
-        self._packs[pack_key] = updated
-        return updated
 
 
 __all__ = [

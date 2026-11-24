@@ -19,7 +19,7 @@ AgentOutputContractFormatSchema = Literal[
 
 
 class SkillItemResponse(BaseModel):
-    """Transport schema for a reusable Skill (`🛠️ Compétence`)."""
+    """Transport schema for a reusable Skill."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -31,7 +31,9 @@ class SkillItemResponse(BaseModel):
     objective: str = Field(..., min_length=1, max_length=2000)
     input_parameters: list[str] = Field(default_factory=list)
     instructions: str = Field(..., min_length=1, max_length=8000)
-    expected_output_format: str = Field(default="Synthèse structurée", min_length=1, max_length=512)
+    expected_output_format: str = Field(
+        default="Structured synthesis", min_length=1, max_length=512
+    )
     version: str = Field(default="1.0.0", min_length=1, max_length=64)
     sha256: str = Field(default="", max_length=64)
     visibility_scope: AgentSkillVisibilityScopeSchema = "TEAM"
@@ -49,7 +51,9 @@ class UpsertSkillRequest(BaseModel):
     objective: str = Field(..., min_length=1, max_length=2000)
     input_parameters: list[str] = Field(default_factory=list)
     instructions: str = Field(..., min_length=1, max_length=8000)
-    expected_output_format: str = Field(default="Synthèse structurée", min_length=1, max_length=512)
+    expected_output_format: str = Field(
+        default="Structured synthesis", min_length=1, max_length=512
+    )
     version: str = Field(default="1.0.0", min_length=1, max_length=64)
     visibility_scope: AgentSkillVisibilityScopeSchema | None = None
     source_pack_key: str | None = Field(default=None, max_length=128)

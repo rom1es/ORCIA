@@ -40,22 +40,16 @@ async def get_embedding_port(request: Request) -> EmbeddingPort:
             raise RagReindexInProgressError(
                 progress_percentage=active_mem.progress_percentage,
                 job_id=active_mem.id,
-                detail_override=(
-                    f"Réindexation sémantique en cours ({active_mem.progress_percentage}%). "
-                    "La recherche documentaire et l'ingestion RAG sont temporairement "
-                    "indisponibles."
-                ),
+                detail_code="ERR_RAG_REINDEX_IN_PROGRESS_DETAIL",
+                detail_params={"progress": active_mem.progress_percentage},
             )
         latest_mem = test_reindex_mgr.get_latest_job()
         if latest_mem is not None and latest_mem.status == "FAILED":
             raise RagReindexInProgressError(
                 progress_percentage=latest_mem.progress_percentage,
                 job_id=latest_mem.id,
-                detail_override=(
-                    f"La réindexation sémantique a échoué "
-                    f"({latest_mem.error_message or 'erreur inconnue'}). "
-                    "Veuillez relancer la réindexation dans /settings/ai-models."
-                ),
+                detail_code="ERR_RAG_REINDEX_FAILED_DETAIL",
+                detail_params={"error_message": latest_mem.error_message or "unknown error"},
             )
 
     engine = getattr(request.app.state, "db_engine", None)
@@ -83,12 +77,7 @@ async def get_embedding_port(request: Request) -> EmbeddingPort:
                 conn, cipher=auth_svc.vault_cipher
             )
             if resolved is None:
-                raise NoActiveEmbeddingModelError(
-                    detail_override=(
-                        "Aucun modèle d'embedding actif configuré au niveau GLOBAL. "
-                        "Veuillez en configurer un dans /settings/ai-models."
-                    )
-                )
+                raise NoActiveEmbeddingModelError(detail_code="ERR_RAG_NO_ACTIVE_EMBEDDING_DETAIL")
             rec, api_key = resolved
     else:
         from orcia_api.dependencies.orchestration_and_settings import (
@@ -98,12 +87,7 @@ async def get_embedding_port(request: Request) -> EmbeddingPort:
         hub_svc = get_ai_models_hub_service(request)
         active_rec = hub_svc.get_active_embedding_mapping()
         if active_rec is None:
-            raise NoActiveEmbeddingModelError(
-                detail_override=(
-                    "Aucun modèle d'embedding actif configuré au niveau GLOBAL. "
-                    "Veuillez en configurer un dans /settings/ai-models."
-                )
-            )
+            raise NoActiveEmbeddingModelError(detail_code="ERR_RAG_NO_ACTIVE_EMBEDDING_DETAIL")
         rec = active_rec
         api_key = None
         if rec.encrypted_api_key:

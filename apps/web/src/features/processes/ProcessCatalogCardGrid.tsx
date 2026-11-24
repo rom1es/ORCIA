@@ -1,5 +1,10 @@
 import { OrciaIcon } from "@orcia/ui";
 import React from "react";
+import {
+  formatI18nTemplate,
+  resolveDictionaryForFlag,
+  resolveLocaleForFlag,
+} from "../../i18n";
 import type { ProcessOrchestrationModesCopy } from "../../i18n/locales/process_orchestration_modes_labels";
 import { formatAgentHumanLabel } from "./execution/InteractiveRunDrawer";
 import type { WorkflowDefinitionV2Item } from "./processStudioV2Data";
@@ -27,6 +32,9 @@ export function ProcessCatalogCardGrid({
   onOpenStudio,
   onOpenCreateProcess,
 }: ProcessCatalogCardGridProps) {
+  const locale = resolveLocaleForFlag(isFr);
+  const copy = resolveDictionaryForFlag(isFr).processStudioUi.hub;
+
   const filteredWorkflows = workflows.filter((wf) => {
     if (filter === "published") return wf.status === "published";
     if (filter === "draft") return wf.status === "draft";
@@ -50,32 +58,25 @@ export function ProcessCatalogCardGrid({
       >
         <div>
           <h3 style={{ margin: 0, fontSize: "var(--font-size-h3)" }}>
-            {isFr
-              ? "Processus métiers disponibles"
-              : "Available Business Processes"}
+            {copy.availableProcessesTitle}
           </h3>
           <p style={{ margin: "2px 0 0 0", fontSize: "12.5px", color: "var(--color-text-secondary)" }}>
-            {isFr
-              ? "Lancez une étape métier sur un dossier ou ouvrez l'Atelier (Studio) si vous souhaitez adapter son déroulement."
-              : "Launch a business step on a dossier, or open the Studio if you want to customize its flow."}
+            {copy.availableProcessesSubtitle}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <div
             role="tablist"
-            aria-label={isFr ? "Filtrer les processus" : "Filter processes"}
+            aria-label={copy.filterProcessesAriaLabel}
             className="orcia-ds-tabs"
           >
             {(
               [
-                { key: "all", label: isFr ? "Tous" : "All" },
-                { key: "published", label: isFr ? "Actifs" : "Active" },
-                { key: "draft", label: isFr ? "En préparation" : "Drafts" },
-                {
-                  key: "external_delegated",
-                  label: isFr ? "Réalisation IDE / Git" : "External IDE / Git",
-                },
+                { key: "all", label: copy.filterAll },
+                { key: "published", label: copy.filterActive },
+                { key: "draft", label: copy.filterDrafts },
+                { key: "external_delegated", label: copy.filterExternalIde },
               ] as const
             ).map((tab) => (
               <button
@@ -98,7 +99,7 @@ export function ProcessCatalogCardGrid({
               onClick={onOpenCreateProcess}
               className="orcia-ds-btn orcia-ds-btn-primary orcia-ds-btn-sm"
             >
-              {isFr ? "+ Nouveau processus" : "+ New process"}
+              {copy.newProcessBtn}
             </button>
           ) : null}
         </div>
@@ -147,12 +148,8 @@ export function ProcessCatalogCardGrid({
                     }}
                   >
                     {wf.vsm_step_num
-                      ? isFr
-                        ? `Étape ${wf.vsm_step_num} du parcours`
-                        : `Step ${wf.vsm_step_num}`
-                      : isFr
-                        ? "Processus transverse"
-                        : "Cross-cutting process"}
+                      ? formatI18nTemplate(copy.stepNumberBadgeTemplate, { num: wf.vsm_step_num })
+                      : copy.crossCuttingProcessBadge}
                   </span>
 
                   <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
@@ -186,7 +183,7 @@ export function ProcessCatalogCardGrid({
                           color: "var(--color-arbitration-amber)",
                         }}
                       >
-                        {isFr ? "Équipe & IDE" : "IDE & Team"}
+                        {copy.ideAndTeamBadge}
                       </span>
                     ) : null}
                     <span
@@ -203,12 +200,8 @@ export function ProcessCatalogCardGrid({
                       }}
                     >
                       {wf.status === "published"
-                        ? isFr
-                          ? "Actif"
-                          : "Active"
-                        : isFr
-                          ? "En préparation"
-                          : "Draft"}
+                        ? copy.statusActiveBadge
+                        : copy.statusDraftBadge}
                     </span>
                   </div>
                 </div>
@@ -216,7 +209,7 @@ export function ProcessCatalogCardGrid({
                 <h4 style={{ margin: 0, fontSize: "15px" }}>{wf.title}</h4>
 
                 <div style={{ fontSize: "12.5px", color: "var(--color-text-secondary)" }}>
-                  {formatAgentHumanLabel(wf.agent_ref)} ·{" "}
+                  {formatAgentHumanLabel(wf.agent_ref, locale)} ·{" "}
                   {isGoalDriven
                     ? modesCopy.goalSummaryPrefix
                     : `${activeSubStepsCount} ${modesCopy.milestoneSummarySuffix}`}
@@ -241,7 +234,7 @@ export function ProcessCatalogCardGrid({
                   style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
                 >
                   <OrciaIcon name="play" />
-                  <span>{isFr ? "Lancer ce processus" : "Launch process"}</span>
+                  <span>{copy.launchProcessBtn}</span>
                 </button>
 
                 <button
@@ -250,7 +243,7 @@ export function ProcessCatalogCardGrid({
                   onClick={() => onOpenStudio(wf.id)}
                   className="orcia-ds-btn-secondary"
                 >
-                  {isFr ? "Adapter dans le Studio" : "Customize in Studio"}
+                  {copy.customizeInStudioBtn}
                 </button>
               </div>
             </article>

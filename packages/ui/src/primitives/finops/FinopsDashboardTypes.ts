@@ -92,6 +92,7 @@ export interface RemoteServicesTabLabels {
   readonly resetCircuitButton: string;
   readonly callsSuffix: string;
   readonly unlimitedLabel: string;
+  readonly durationMsUnit?: string;
   readonly quotaModal: RemoteServicesModalLabels;
 }
 

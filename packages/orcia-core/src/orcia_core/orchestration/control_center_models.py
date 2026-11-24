@@ -5,7 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
+from orcia_core.orchestration._orchestration_cc_notif_locales import (
+    GUIDANCE_DRAWER_STEPS_LOCALES,
+)
 from orcia_core.permissions.models import AccessMode, OrgUnitNode
+from orcia_kernel.enums import DEFAULT_LOCALE
 
 ScopeType = Literal["GLOBAL", "BU", "TEAM", "WORKSPACE"]
 ProductLifecyclePhase = Literal["RUN", "BUILD", "MIGRATION"]
@@ -39,43 +43,14 @@ class GuidanceStepSpec:
     action_command: str
 
 
-DEFAULT_GUIDANCE_DRAWER_STEPS: tuple[GuidanceStepSpec, ...] = (
+DEFAULT_GUIDANCE_DRAWER_STEPS: tuple[GuidanceStepSpec, ...] = tuple(
     GuidanceStepSpec(
-        step_number=1,
-        title_fr="1. Qualifier la phase du Produit / Workspace",
-        description_fr="Sélectionner RUN, BUILD ou MIGRATION dans l'onglet Gouvernance.",
-        action_command="set-lifecycle-phase",
-    ),
-    GuidanceStepSpec(
-        step_number=2,
-        title_fr="2. Rattacher les sources dédiées et partagées",
-        description_fr=(
-            "Connecter les dépôts documentaires, bases et référentiels avec un TTL de fraîcheur."
-        ),
-        action_command="init-datasource",
-    ),
-    GuidanceStepSpec(
-        step_number=3,
-        title_fr="3. Configurer l'identité d'exécution (Passthrough vs Compte de Service)",
-        description_fr=(
-            "Choisir passthrough (défaut sécurisé) ou service_account pour l'indexation."
-        ),
-        action_command="configure-execution-identity",
-    ),
-    GuidanceStepSpec(
-        step_number=4,
-        title_fr="4. Vérifier l'alignement dans le Graphe Tripartite",
-        description_fr=(
-            "Inspecter les alertes [STALE_WARNING] et lancer une synchronisation RAG hybride."
-        ),
-        action_command="sync-tripartite-graph",
-    ),
-    GuidanceStepSpec(
-        step_number=5,
-        title_fr="5. Activer les Workflows et Surcharges 4 niveaux",
-        description_fr="Valider les Gates de gouvernance et lancer un premier Run supervisé.",
-        action_command="launch-supervised-run",
-    ),
+        step_number=step.step_number,
+        title_fr=step.title,
+        description_fr=step.description,
+        action_command=step.action_command,
+    )
+    for step in GUIDANCE_DRAWER_STEPS_LOCALES[DEFAULT_LOCALE]
 )
 
 

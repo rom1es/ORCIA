@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import ast
 
+from orcia_core.rag._rag_locales import get_rag_locale_bundle
 from orcia_core.rag.models import CodeGraphEdgeEntity, KbChunkEntity
 from orcia_kernel.ids import new_uuid7_str
 
@@ -24,9 +25,11 @@ def build_contextual_header(
     hierarchy_path: str,
     title: str,
     ontology_concepts: tuple[str, ...] = (),
+    locale: str = "fr",
 ) -> str:
-    """Format `[Alias Source : Espace/Projet > Parent > Titre | Concepts Ontologie]` (`AD-8`)."""
-    concepts_str = ", ".join(ontology_concepts) if ontology_concepts else "Général"
+    """Format `[Source Alias : Space/Project > Parent > Title | Ontology Concepts]` (`AD-8`)."""
+    default_label = get_rag_locale_bundle(locale).default_concept_label
+    concepts_str = ", ".join(ontology_concepts) if ontology_concepts else default_label
     return f"[{datasource_alias} : {hierarchy_path} > {title} | {concepts_str}]"
 
 

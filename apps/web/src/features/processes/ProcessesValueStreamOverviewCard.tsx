@@ -1,5 +1,10 @@
 import React from "react";
-import { INITIAL_VSM_SPEC } from "./processStudioV2Data";
+import {
+  formatI18nTemplate,
+  resolveDictionaryForFlag,
+  resolveLocaleForFlag,
+} from "../../i18n";
+import { getInitialVsmSpec } from "./processStudioV2Data";
 
 export interface ProcessesValueStreamOverviewCardProps {
   readonly isFr: boolean;
@@ -16,6 +21,10 @@ export function ProcessesValueStreamOverviewCard({
   vsmTitle,
   vsmSubtitle,
 }: ProcessesValueStreamOverviewCardProps): React.ReactElement {
+  const locale = resolveLocaleForFlag(isFr);
+  const copy = resolveDictionaryForFlag(isFr).processStudioUi.hub;
+  const vsmSpec = getInitialVsmSpec(locale);
+
   return (
     <div
       data-testid="processes-hub-vsm-hero-card"
@@ -43,29 +52,23 @@ export function ProcessesValueStreamOverviewCard({
               color: "var(--color-primary-cobalt)",
             }}
           >
-            {isFr
-              ? "VUE D'ENSEMBLE DU PARCOURS MÉTIER (4 PHASES · 11 ÉTAPES)"
-              : "END-TO-END VALUE STREAM (4 PHASES · 11 STEPS)"}
+            {copy.vsmOverviewEyebrow}
           </span>
           <h3 style={{ margin: 0, fontSize: "var(--font-size-h3)" }}>
-            {vsmTitle ?? INITIAL_VSM_SPEC.title} — {vsmSubtitle ?? INITIAL_VSM_SPEC.subtitle}
+            {vsmTitle ?? vsmSpec.title} — {vsmSubtitle ?? vsmSpec.subtitle}
           </h3>
           <p style={{ margin: 0, fontSize: "13px", color: "var(--color-text-secondary)" }}>
-            {isFr
-              ? "Visualisez comment s'articulent les 11 étapes entre les équipes et les agents IA, les points de validation humaine et l'évolution des pratiques."
-              : "Explore how the 11 steps connect teams and AI agents, human decision points, and process improvements."}
+            {copy.vsmOverviewSubtitle}
           </p>
         </div>
 
         <button
           type="button"
           data-testid="open-interactive-vsm-btn"
-          onClick={() => onOpenInteractiveVsm(vsmId ?? INITIAL_VSM_SPEC.id)}
+          onClick={() => onOpenInteractiveVsm(vsmId ?? vsmSpec.id)}
           className="orcia-ds-btn-secondary"
         >
-          {isFr
-            ? "🗺️ Explorer la chaîne de valeur complète (11 étapes)"
-            : "🗺️ Explore full 11-step Value Stream"}
+          {copy.exploreFullVsmBtn}
         </button>
       </div>
 
@@ -76,7 +79,7 @@ export function ProcessesValueStreamOverviewCard({
           gap: "10px",
         }}
       >
-        {INITIAL_VSM_SPEC.phases.map((phase) => (
+        {vsmSpec.phases.map((phase) => (
           <div
             key={phase.num}
             data-testid={`vsm-hero-phase-${phase.num}`}
@@ -94,10 +97,13 @@ export function ProcessesValueStreamOverviewCard({
                   color: "var(--color-primary-cobalt)",
                 }}
               >
-                Phase {phase.num} · Étapes {phase.steps_range}
+                {formatI18nTemplate(copy.vsmPhaseStepsRangeTemplate, {
+                  num: phase.num,
+                  range: phase.steps_range,
+                })}
               </span>
               <span style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
-                {phase.steps.length} {isFr ? "étapes" : "steps"}
+                {phase.steps.length} {copy.vsmStepsCountUnit}
               </span>
             </div>
             <div style={{ fontWeight: 700, fontSize: "13.5px", marginTop: "2px" }}>

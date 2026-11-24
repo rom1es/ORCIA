@@ -44,11 +44,11 @@ export interface CatalogFeaturePanelProps {
 export function CatalogFeaturePanel({
   catalogMode = "agents",
 }: CatalogFeaturePanelProps = {}) {
-  const { dictionary, locale } = useI18n();
+  const { dictionary, isFr, locale } = useI18n();
+  const catCopy = dictionary.featureAdminCatalogSettings.catalog;
   const { catalogItems, datasources, packs, workspaces } = usePlatformSetup();
   const { activeScopeId, navigateToRoute } = useShellNavigation();
   const authEmail = useAuthSessionStore((s) => s.email);
-  const isFr = locale === "fr";
   const activeWorkspaceId = resolveEffectiveWorkspaceId(activeScopeId, workspaces, authEmail);
   const activeWorkspaceObj =
     workspaces.find((w) => w.workspaceId === activeWorkspaceId) ?? workspaces[0];
@@ -79,7 +79,7 @@ export function CatalogFeaturePanel({
     onFeedback: setCatalogActionFeedback,
   });
 
-  const managed = useManagedAgentsAndSkills(packs, setCatalogActionFeedback);
+  const managed = useManagedAgentsAndSkills(packs, setCatalogActionFeedback, locale, catCopy);
 
   const handleExecuteAgentWithTrace = (agentId: string, prompt: string) => {
     managed.handleExecuteAgent(agentId, prompt);
@@ -122,11 +122,7 @@ export function CatalogFeaturePanel({
               className="orcia-bento-card flex flex-wrap items-center justify-between gap-3"
             >
               <div>
-                <strong>
-                  {isFr
-                    ? "Aucun Pack métier ni modèle de processus personnalisé"
-                    : "No custom Business Pack or process template yet"}
-                </strong>
+                <strong>{catCopy.emptySetupTitle}</strong>
               </div>
               <button
                 type="button"
@@ -134,7 +130,7 @@ export function CatalogFeaturePanel({
                 onClick={() => navigateToRoute("/settings")}
                 className="orcia-ds-btn orcia-ds-btn-secondary"
               >
-                {isFr ? "Ouvrir l'Administration" : "Open Administration"}
+                {catCopy.openAdminBtn}
               </button>
             </div>
           )}
@@ -195,9 +191,7 @@ export function CatalogFeaturePanel({
           onTogglePinnedAssistantMcp={(next) => {
             setPinnedAssistantMcpExposed(next);
             setCatalogActionFeedback(
-              next
-                ? "🔌 Assistant de l'Espace (@assistant) exposé en MCP."
-                : "🔌 Exposition MCP de l'Assistant de l'Espace désactivée.",
+              next ? catCopy.pinnedMcpEnabledBanner : catCopy.pinnedMcpDisabledBanner,
             );
           }}
           onOpenAssistantSettings={() => navigateToRoute("/assistant")}

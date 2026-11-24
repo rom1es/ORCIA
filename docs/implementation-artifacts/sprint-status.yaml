@@ -292,6 +292,22 @@ development_status:
   26-9-ui-and-sdk-wiring-mode-a-citations-history-and-deepen: done
   26-10-golden-evals-red-team-multi-worker-and-epic-26-closure: done
   epic-26-retrospective: optional
+
+  # Epic 27 — English-Only Development & Documentation Governance, 100% Bilingual FR/EN Web Application & Deterministic i18n Controls (AD-17, AD-19, RFC 9457)
+  # Source audit: docs/implementation-artifacts/tech-lead-reports/2026-11-20-audit-i18n-chaines-codees-en-dur-tech-lead-report.md
+  # Raw inventory: docs/implementation-artifacts/tech-lead-reports/_i18n-audit-inventory-raw.md
+  # Decisions   : docs/implementation-artifacts/epic-27-decisions-grill-2026-11-23.md (D1-D4)
+  # Lots        : L0 27-1 | L1 27-2 | L2 27-3 -> 27-4 | L3 27-5 -> 27-6 | L4 27-7 | L5 27-8
+  epic-27: done
+  27-1-deterministic-i18n-ci-guardrails-and-client-error-code-foundation: done
+  27-2-category-a-client-error-codes-bridges-stores-and-rfc9457-banner: done
+  27-3-category-c-shell-contextual-help-notifications-routes-and-wizards: done
+  27-4-category-c-cockpit-assistant-workspaces-gates-catalog-and-admin: done
+  27-5-category-c-process-studio-v2-vsm-execution-and-bilingual-catalog-data: done
+  27-6-category-c-orcia-ui-design-system-primitives-typed-label-props: done
+  27-7-categories-b-and-d-bilingual-rfc9457-backend-catalogs-prompts-and-seeds: done
+  27-8-zero-baseline-lock-bilingual-e2e-verification-and-epic-27-closure: done
+  epic-27-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
     title: "Politiques de restriction explicite (DENY prioritaire, INHERITANCE_BLOCK) sur sous-entités sensibles"
@@ -1418,18 +1434,23 @@ action_items:
       Suivi post-clôture Epic 24 des 4 constats P3 UX24-04..07 et du P3 architecture consignés dans
       docs/implementation-artifacts/e2e-campaign-epic-24/synthese-remediation-sally-winston-epic-24.md.
   - id: ACTION_ITEM-I18N.1
-    title: "Éradiquer les chaînes FR/EN codées en dur (ternaires locale) — erreurs par error_code résolu côté UI"
+    title: "Eradicate hardcoded FR/EN strings and locale ternaries — enforce English dev/docs, bilingual FR/EN web app & deterministic CI gates"
     action: >
-      Lot 1 : migrer les 71 messages d'erreur client (catégorie A, dont aiModelsApiBridge.ts:48) vers un errorCode + helper de résolution i18n partagé ;
-      Lot 2 : garde-fou AST/ESLint anti 'locale === "fr" ? ... : ...' avec baseline décroissante ;
-      Lot 3 : migration progressive des libellés UI (catégorie C) vers apps/web/src/i18n/locales ;
-      Lot 4 : revue des catégories B (repli problem+json) et D (prompts/seeds).
+      Scheduled and expanded into Epic 27 (Stories 27.1..27.8) under decisions D1-D4 (docs/implementation-artifacts/epic-27-decisions-grill-2026-11-23.md):
+      Lot 0 (27.1): Install 4 deterministic CI gates (TS/JSX AST ratchet, FR<->EN dictionary parity/jargon, ClientErrorCode contract, backend RFC 9457 + English dev comments) & resolveClientErrorMessage foundation;
+      Lot 1 (27.2): Remediate Category A (71 client error hits / 26 files) via ClientErrorCode;
+      Lot 2 (27.3-27.4): Remediate Category C apps/web shell, help, routes, wizards & core features;
+      Lot 3 (27.5-27.6): Remediate Category C Process Studio v2/VSM & @orcia/ui primitives via typed props;
+      Lot 4 (27.7): Remediate Categories B & D (577 + 193 backend RFC 9457 catalogs, prompts & seeds);
+      Lot 5 (27.8): Lock all ratchet baselines to 0 and verify bilingual FR/EN Playwright E2E.
     priority: P2
     owner: "Amelia (Dev) / Winston (Architect)"
-    status: open
+    status: done
+    epic: epic-27
     tech_lead_report: "docs/implementation-artifacts/tech-lead-reports/2026-11-20-audit-i18n-chaines-codees-en-dur-tech-lead-report.md"
     description: >
-      Inventaire brut (3809 hits heuristiques / 461 fichiers, à confirmer) : docs/implementation-artifacts/tech-lead-reports/_i18n-audit-inventory-raw.md.
+      Raw heuristic inventory (3,809 hits / 461 files): docs/implementation-artifacts/tech-lead-reports/_i18n-audit-inventory-raw.md.
+      Tracked via Epic 27 (27-1..27-8) on branch feat/epic-27-bilingual-i18n-and-deterministic-locale-guards.
   - id: TECH-DEBT-EPIC25-SPLIT-01
     title: "Découpage modulaire des fichiers historiques > 350 lignes touchés en Epic 25"
     action: >

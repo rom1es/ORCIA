@@ -42,7 +42,7 @@ export function IamRoleMatrixReferenceModal({
       }}
       title={labels.matrix.sectionTitle}
       testId="iam-role-matrix-modal"
-      closeLabel={labels.matrix.closeRoleMatrixCta || "Fermer"}
+      closeLabel={labels.matrix.closeRoleMatrixCta}
       contentClassName="orcia-ds-dialog-content-wide"
       onEscapeKeyDown={(event) => {
         event.preventDefault();

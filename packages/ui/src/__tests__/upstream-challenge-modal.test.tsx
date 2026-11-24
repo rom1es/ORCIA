@@ -59,6 +59,7 @@ describe("Story 3.5 — UpstreamChallengeRewindModal (UX-DR7)", () => {
         isOpen={true}
         preview={PREVIEW}
         labels={LABELS}
+        initialReason="La fenêtre de garantie FX doit être alignée sur la règle métier."
         subWorkflowStepKey="run-sandbox-tests"
         onSubmitChallenge={onSubmitChallenge}
         onTriggerReplay={onTriggerReplay}

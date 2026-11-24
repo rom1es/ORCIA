@@ -8,9 +8,9 @@ import {
   OrciaSpinner,
   SecretField,
   type InferenceTierAndEffortLabels,
-  type SecretFieldLabels,
 } from "@orcia/ui";
 import React from "react";
+import { useI18n } from "../../../i18n";
 import type { AiModelsHubDictionary } from "../../../i18n/locales/ai_models_hub_labels";
 import { AiModelFormFields } from "./AiModelFormFields";
 import {
@@ -38,18 +38,6 @@ export interface AiModelConfigModalProps {
   ) => Promise<boolean>;
 }
 
-const SECRET_FIELD_LABELS: SecretFieldLabels = {
-  fieldLabel: "Clé d'API secrète",
-  configuredBadge: "Configurée",
-  unconfiguredBadge: "Non configurée",
-  fingerprintPrefix: "Empreinte :",
-  replaceSecretCta: "Remplacer", // pragma: allowlist secret
-  cancelReplaceCta: "Annuler",
-  clearSecretCta: "Effacer", // pragma: allowlist secret
-  saveNewSecretCta: "Confirmer la nouvelle clé", // pragma: allowlist secret
-  inputPlaceholder: "Saisir la nouvelle clé d'API...",
-};
-
 export function AiModelConfigModal({
   open,
   onOpenChange,
@@ -60,6 +48,7 @@ export function AiModelConfigModal({
   onSubmitCreate,
   onSubmitPatch,
 }: AiModelConfigModalProps): React.ReactElement {
+  const { dictionary } = useI18n();
   const s = useAiModelConfigModalState({
     open,
     onOpenChange,
@@ -115,7 +104,7 @@ export function AiModelConfigModal({
                 updatedAt: initialMapping.secret_status?.updated_at ?? "",
                 updatedBy: initialMapping.secret_status?.updated_by ?? "",
               }}
-              labels={SECRET_FIELD_LABELS}
+              labels={dictionary.authSettings.secretField}
               onSecretAction={s.handleSecretAction}
             />
           </div>

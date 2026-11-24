@@ -1,24 +1,19 @@
 import {
   createOrciaApiClient,
-  OrciaProblemError,
   type DeclarativePackSummaryResponse,
 } from "@orcia/api-client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePlatformSetup } from "../../../components/platformSetupStore";
+import { useI18n } from "../../../i18n";
+import {
+  formatLocalizedProblemWithCode,
+  resolveLocalizedClientError,
+} from "../../../lib/formatRfc9457ErrorToBanner";
 import { useAuthSessionStore } from "../../../stores/authSessionStore";
 
-function formatPackApiError(err: unknown, fallback: string): string {
-  if (err instanceof OrciaProblemError) {
-    return `${err.problem.detail} (${err.problem.error_code})`;
-  }
-  if (err instanceof Error && err.message.trim()) {
-    return err.message;
-  }
-  return fallback;
-}
-
 export function usePacksRegistryHealthchecks(locale: "fr" | "en") {
-  const isFr = locale === "fr";
+  const { dictionary } = useI18n();
+  const copy = dictionary.categoryAControllers.packsRegistry;
   const accessToken = useAuthSessionStore((s) => s.accessToken);
   const { workspaces } = usePlatformSetup();
   const apiClient = useMemo(() => createOrciaApiClient({ baseUrl: "", locale }), [locale]);
@@ -44,17 +39,12 @@ export function usePacksRegistryHealthchecks(locale: "fr" | "en") {
       }
     } catch (err: unknown) {
       setErrorMessage(
-        formatPackApiError(
-          err,
-          isFr
-            ? "Impossible de charger le registre des packs déclaratifs."
-            : "Unable to load the declarative packs registry.",
-        ),
+        formatLocalizedProblemWithCode(err, locale, "ERR_CLIENT_PACKS_LOAD"),
       );
     } finally {
       setIsLoading(false);
     }
-  }, [apiClient, isFr, selectedPackId]);
+  }, [apiClient, locale, selectedPackId]);
 
   useEffect(() => {
     void loadPacksFromServer();
@@ -96,32 +86,23 @@ export function usePacksRegistryHealthchecks(locale: "fr" | "en") {
       const { healthy_count: healthyCount, total_count: totalCount, all_healthy: allHealthy } =
         healthRes;
       if (totalCount === 0) {
-        setStatusMessage(
-          isFr
-            ? "Diagnostics de santé MCP actualisés : aucun connecteur requis configuré."
-            : "MCP connector healthchecks refreshed: no required connectors configured.",
-        );
+        setStatusMessage(copy.healthEmpty);
       } else if (allHealthy) {
         setStatusMessage(
-          isFr
-            ? `Diagnostics de santé MCP actualisés : ${healthyCount}/${totalCount} connecteurs requis opérationnels.`
-            : `MCP connector healthchecks refreshed: ${healthyCount}/${totalCount} required connectors healthy.`,
+          copy.healthAllOk
+            .replace("{healthy}", String(healthyCount))
+            .replace("{total}", String(totalCount)),
         );
       } else {
         setErrorMessage(
-          isFr
-            ? `Diagnostics de santé MCP : ${healthyCount}/${totalCount} connecteurs opérationnels (${totalCount - healthyCount} indisponible(s)).`
-            : `MCP connector healthchecks: ${healthyCount}/${totalCount} connectors operational (${totalCount - healthyCount} unavailable).`,
+          resolveLocalizedClientError("ERR_CLIENT_PACKS_HEALTH_DEGRADED", locale, {
+            detail: `${healthyCount}/${totalCount}`,
+          }),
         );
       }
     } catch (err: unknown) {
       setErrorMessage(
-        formatPackApiError(
-          err,
-          isFr
-            ? "Impossible d'actualiser les diagnostics de santé des connecteurs."
-            : "Unable to refresh connector healthchecks.",
-        ),
+        formatLocalizedProblemWithCode(err, locale, "ERR_CLIENT_PACKS_HEALTH_REFRESH"),
       );
     } finally {
       setIsCheckingHealth(false);
@@ -136,11 +117,7 @@ export function usePacksRegistryHealthchecks(locale: "fr" | "en") {
       const result = await apiClient.exportWorkspacePackZip(targetWorkspaceId, targetPackId);
       const archiveName = result.filename ?? `${pack?.slug ?? "sdlc"}-${targetWorkspaceId}.zip`;
       setExportedArchiveName(archiveName);
-      setStatusMessage(
-        isFr
-          ? `Archive déclarative ${archiveName} générée (pack.yaml, glossary.yaml, agents/*.md, skills/*.md, gates/*, workflows/*.yaml — 0 code exécutable).`
-          : `Declarative archive ${archiveName} generated (pack.yaml, glossary.yaml, agents/*.md, skills/*.md, gates/*, workflows/*.yaml — 0 executable code).`,
-      );
+      setStatusMessage(copy.archiveExported.replace("{archive}", archiveName));
       if (typeof URL !== "undefined" && typeof URL.createObjectURL === "function") {
         const objectUrl = URL.createObjectURL(result.blob);
         const link = document.createElement("a");
@@ -151,12 +128,7 @@ export function usePacksRegistryHealthchecks(locale: "fr" | "en") {
       }
     } catch (err: unknown) {
       setErrorMessage(
-        formatPackApiError(
-          err,
-          isFr
-            ? "Échec de l'export ZIP du pack déclaratif."
-            : "Failed to export declarative pack ZIP.",
-        ),
+        formatLocalizedProblemWithCode(err, locale, "ERR_CLIENT_PACKS_EXPORT_ZIP"),
       );
     }
   };
@@ -164,9 +136,7 @@ export function usePacksRegistryHealthchecks(locale: "fr" | "en") {
   const handleExportWorkspaceZip = async (packId?: string) => {
     if (!selectedWorkspaceId) {
       setErrorMessage(
-        isFr
-          ? "Créez d'abord un espace de travail dans « Mes Espaces » avant d'exporter son pack."
-          : "Create a workspace in 'My Spaces' before exporting its pack.",
+        resolveLocalizedClientError("ERR_CLIENT_PACKS_WORKSPACE_REQUIRED", locale),
       );
       return;
     }
@@ -181,9 +151,9 @@ export function usePacksRegistryHealthchecks(locale: "fr" | "en") {
     () =>
       workspaces.map((ws) => ({
         id: ws.workspaceId,
-        label: `Espace : ${ws.name}`,
+        label: copy.workspaceOptionPrefix.replace("{name}", ws.name),
       })),
-    [workspaces],
+    [workspaces, copy.workspaceOptionPrefix],
   );
 
   return {

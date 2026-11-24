@@ -14,6 +14,10 @@ from orcia_core.orchestration._help_article_models import (
     OrciaDocumentationWorkflowStepResult,
     render_bilingual_help_markdown_text,
 )
+from orcia_core.orchestration._help_docs_locales import (
+    ORCIA_DOCS_GLOSSARY_LOCALES,
+    ORCIA_DOCS_WORKFLOW_LOCALES,
+)
 from orcia_core.orchestration.errors import ObserverModeReadOnlyError
 
 if TYPE_CHECKING:
@@ -30,79 +34,15 @@ _DOC_BOUND_ROUTES: list[str] = [
     "/settings",
     "/help",
 ]
-_DOC_GLOSSARY_TERMS: list[str] = ["Espace de Travail", "Équipe", "Processus", "Pack Métier"]
-_PURPOSE_FR = (
-    "### Objectif\n"
-    "Rassembler en un guide unifié la documentation fonctionnelle de chaque écran "
-    "d'ORCIA, le modèle métier d'organisation (Directions, Équipes, Espaces de "
-    "travail) et la FAQ d'accompagnement."
-)
-_PURPOSE_EN = (
-    "### Objective\n"
-    "Gather in a unified guide the functional documentation of every ORCIA screen, "
-    "the organizational domain model (Business Units, Teams, Workspaces) and the "
-    "support FAQ."
-)
-_STEPS_FR: list[str] = [
-    (
-        "**Guide Fonctionnel par Écran** : Piloter l'activité depuis le Cockpit "
-        "(`/cockpit`), dialoguer avec Mon Assistant (`/assistant`), organiser ses "
-        "sources et livrables dans Mes Espaces (`/workspaces`), configurer ses "
-        "Agents (`/agents`) et orchestrer ses Processus (`/processes`)."
-    ),
-    (
-        "**Architecture & Modèle Métier** : Structurer l'organisation en Directions "
-        "(BU) et Équipes de facturation, puis rattacher chaque Espace de travail "
-        "(collectif, privé ou confidentiel) avec héritage gouverné."
-    ),
-    (
-        "**Synchronisation Documentaire** : Exécuter le processus "
-        "`generate-orcia-documentation` pour vérifier et publier l'ensemble des "
-        "guides FR/EN et le catalogue `/showcase`."
-    ),
-]
-_STEPS_EN: list[str] = [
-    (
-        "**Functional Screen Guide**: Monitor activity from the Cockpit (`/cockpit`), "
-        "interact with My Assistant (`/assistant`), organize sources and deliverables "
-        "in My Spaces (`/workspaces`), configure Agents (`/agents`), and orchestrate "
-        "Processes (`/processes`)."
-    ),
-    (
-        "**Architecture & Domain Model**: Structure the organization into Business "
-        "Units and Billing Teams, then attach each Workspace (shared, private, or "
-        "confidential) with governed inheritance."
-    ),
-    (
-        "**Documentation Synchronization**: Run the `generate-orcia-documentation` "
-        "process to verify and publish all FR/EN guides and the `/showcase` catalog."
-    ),
-]
-_FAQ_FR: list[str] = [
-    (
-        "**Questions Fréquentes (FAQ) — Quelle est la différence entre une Équipe "
-        "et un Espace de travail ?** L'Équipe porte les membres et le rattachement "
-        "budgétaire, tandis que l'Espace de travail isole les sources documentaires, "
-        "le glossaire et les livrables d'un projet."
-    ),
-    (
-        "**Questions Fréquentes (FAQ) — Comment mettre à jour l'aide contextuelle "
-        "(`ⓘ`) d'un écran ?** Lancez le processus `generate-orcia-documentation` "
-        "depuis `☍ Mes Processus` pour valider et rattacher à chaud les guides mis à jour."
-    ),
-]
-_FAQ_EN: list[str] = [
-    (
-        "**Frequently Asked Questions (FAQ) — What is the difference between a Team "
-        "and a Workspace?** A Team holds members and billing ownership, whereas a "
-        "Workspace isolates project sources, glossary terms, and deliverables."
-    ),
-    (
-        "**Frequently Asked Questions (FAQ) — How do I update a screen's contextual "
-        "help (`ⓘ`)?** Run the `generate-orcia-documentation` process from "
-        "`☍ My Processes` to validate and hot-attach updated guides."
-    ),
-]
+_DOC_GLOSSARY_TERMS: list[str] = ORCIA_DOCS_GLOSSARY_LOCALES["fr"]
+_FR_DOCS = ORCIA_DOCS_WORKFLOW_LOCALES["fr"]
+_EN_DOCS = ORCIA_DOCS_WORKFLOW_LOCALES["en"]
+_PURPOSE_FR = _FR_DOCS.purpose
+_PURPOSE_EN = _EN_DOCS.purpose
+_STEPS_FR = _FR_DOCS.steps
+_STEPS_EN = _EN_DOCS.steps
+_FAQ_FR = _FR_DOCS.faq
+_FAQ_EN = _EN_DOCS.faq
 
 
 async def execute_orcia_documentation_workflow(
@@ -142,21 +82,23 @@ async def execute_orcia_documentation_workflow(
     step1 = OrciaDocumentationWorkflowStepResult(
         step_number=1,
         step_key="inventory-orcia-repository",
-        title_fr="Étape 1 — Inventaire du dépôt ORCIA",
-        title_en="Step 1 — ORCIA Repository Inventory",
-        lead_agent_handle="@Rédacteur-Documentation-Orcia",
+        title_fr=_FR_DOCS.step1_title,
+        title_en=_EN_DOCS.step1_title,
+        lead_agent_handle=_FR_DOCS.writer_handle,
         status="COMPLETED",
-        summary_fr=(
-            f"{routes_count} routes UI, {ui_components_count} primitives @orcia/ui, "
-            f"{help_files_count} fiches d'aide bilingues (FR/EN), FAQ d'architecture "
-            f"({'présente' if faq_present else 'absente'}) et {tl_count} rapports "
-            "Tech Lead recensés."
+        summary_fr=_FR_DOCS.step1_summary_tpl.format(
+            routes_count=routes_count,
+            ui_components_count=ui_components_count,
+            help_files_count=help_files_count,
+            faq_word=_FR_DOCS.present_word if faq_present else _FR_DOCS.missing_word,
+            tl_count=tl_count,
         ),
-        summary_en=(
-            f"{routes_count} UI routes, {ui_components_count} @orcia/ui primitives, "
-            f"{help_files_count} bilingual help files (FR/EN), architecture FAQ "
-            f"({'present' if faq_present else 'missing'}) and {tl_count} Tech Lead "
-            "reports inventoried."
+        summary_en=_EN_DOCS.step1_summary_tpl.format(
+            routes_count=routes_count,
+            ui_components_count=ui_components_count,
+            help_files_count=help_files_count,
+            faq_word=_EN_DOCS.present_word if faq_present else _EN_DOCS.missing_word,
+            tl_count=tl_count,
         ),
         elapsed_ms=round((time.perf_counter() - t_step1) * 1000.0, 3),
     )
@@ -166,8 +108,8 @@ async def execute_orcia_documentation_workflow(
         article_id="help.orcia.complete-documentation",
         version="1.0.0",
         pack_id="orcia://packs/orcia-pack-builder",
-        title_fr="Documentation Complète d'ORCIA — Guides Écrans, Architecture & FAQ",
-        title_en="ORCIA Complete Documentation — Screen Guides, Architecture & FAQ",
+        title_fr=_FR_DOCS.doc_title,
+        title_en=_EN_DOCS.doc_title,
         bound_routes=_DOC_BOUND_ROUTES,
         roles_allowed=["CONTRIBUTOR", "ARCHITECT", "PLATFORM_ADMIN"],
         glossary_terms=_DOC_GLOSSARY_TERMS,
@@ -183,18 +125,12 @@ async def execute_orcia_documentation_workflow(
     step2 = OrciaDocumentationWorkflowStepResult(
         step_number=2,
         step_key="generate-and-enrich-guides-and-faq",
-        title_fr="Étape 2 — Génération & Enrichissement des Guides et de la FAQ",
-        title_en="Step 2 — Screen Guides & Architecture FAQ Generation",
-        lead_agent_handle="@Rédacteur-Documentation-Orcia",
+        title_fr=_FR_DOCS.step2_title,
+        title_en=_EN_DOCS.step2_title,
+        lead_agent_handle=_FR_DOCS.writer_handle,
         status="COMPLETED",
-        summary_fr=(
-            "Sections obligatoires structurées (Objectif, Guide Fonctionnel par Écran, "
-            "Architecture & Modèle Métier, Questions Fréquentes FAQ) en français et en anglais."
-        ),
-        summary_en=(
-            "Mandatory sections structured (Objective, Functional Screen Guide, "
-            "Architecture & Domain Model, Frequently Asked Questions FAQ) in French and English."
-        ),
+        summary_fr=_FR_DOCS.step2_summary,
+        summary_en=_EN_DOCS.step2_summary,
         elapsed_ms=round((time.perf_counter() - t_step2) * 1000.0, 3),
     )
 
@@ -218,18 +154,12 @@ async def execute_orcia_documentation_workflow(
     step3 = OrciaDocumentationWorkflowStepResult(
         step_number=3,
         step_key="deterministic-quality-gate-validate-help-article",
-        title_fr="Étape 3 — Contrôle Qualité Déterministe (validate_help_article)",
-        title_en="Step 3 — Deterministic Quality Check (validate_help_article)",
-        lead_agent_handle="@Certificateur-Sécurité-et-Sandbox",
+        title_fr=_FR_DOCS.step3_title,
+        title_en=_EN_DOCS.step3_title,
+        lead_agent_handle=_FR_DOCS.certifier_handle,
         status="COMPLETED",
-        summary_fr=(
-            f"Validation FR/EN réussie ({len(_DOC_BOUND_ROUTES)} routes vérifiées, sections "
-            "obligatoires présentes, 0 secret ou jargon technique interne détecté)."
-        ),
-        summary_en=(
-            f"FR/EN validation passed ({len(_DOC_BOUND_ROUTES)} bound routes verified, "
-            "mandatory sections present, 0 secret or internal technical jargon detected)."
-        ),
+        summary_fr=_FR_DOCS.step3_summary_tpl.format(route_count=len(_DOC_BOUND_ROUTES)),
+        summary_en=_EN_DOCS.step3_summary_tpl.format(route_count=len(_DOC_BOUND_ROUTES)),
         elapsed_ms=round((time.perf_counter() - t_step3) * 1000.0, 3),
     )
 
@@ -239,8 +169,8 @@ async def execute_orcia_documentation_workflow(
         article_slug="orcia-complete-documentation",
         version="1.0.0",
         pack_slug="core",
-        title_fr="Documentation Complète d'ORCIA — Guides Écrans, Architecture & FAQ",
-        title_en="ORCIA Complete Documentation — Screen Guides, Architecture & FAQ",
+        title_fr=_FR_DOCS.doc_title,
+        title_en=_EN_DOCS.doc_title,
         bound_routes=_DOC_BOUND_ROUTES,
         roles_allowed=["CONTRIBUTOR", "ARCHITECT", "PLATFORM_ADMIN"],
         glossary_terms=_DOC_GLOSSARY_TERMS,
@@ -264,19 +194,19 @@ async def execute_orcia_documentation_workflow(
     step4 = OrciaDocumentationWorkflowStepResult(
         step_number=4,
         step_key="publish-and-hot-attach-documentation",
-        title_fr="Étape 4 — Publication & Rattachement à Chaud (/showcase & docs/help/)",
-        title_en="Step 4 — Hot Attachment & Publication (/showcase & docs/help/)",
-        lead_agent_handle="@Rédacteur-Documentation-Orcia",
+        title_fr=_FR_DOCS.step4_title,
+        title_en=_EN_DOCS.step4_title,
+        lead_agent_handle=_FR_DOCS.writer_handle,
         status="COMPLETED",
-        summary_fr=f"Guides FR/EN publiés et rattachés à chaud ({', '.join(published_targets)}).",
-        summary_en=(f"FR/EN guides published and hot-attached ({', '.join(published_targets)})."),
+        summary_fr=_FR_DOCS.step4_summary_tpl.format(targets=", ".join(published_targets)),
+        summary_en=_EN_DOCS.step4_summary_tpl.format(targets=", ".join(published_targets)),
         elapsed_ms=round((time.perf_counter() - t_step4) * 1000.0, 3),
     )
 
     return OrciaDocumentationWorkflowReport(
         workflow_slug="generate-orcia-documentation",
         workflow_uri="orcia://pack-builder/workflows/generate-orcia-documentation",
-        lead_agent_handle="@Rédacteur-Documentation-Orcia",
+        lead_agent_handle=_FR_DOCS.writer_handle,
         routes_inventoried_count=routes_count,
         ui_components_inventoried_count=ui_components_count,
         help_files_inventoried_count=help_files_count,

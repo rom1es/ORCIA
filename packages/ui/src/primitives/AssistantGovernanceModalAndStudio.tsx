@@ -2,31 +2,30 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import React, { useEffect, useState } from "react";
 import { OrciaIcon } from "../components/icons";
 import {
-  resolveRgaaModalGuardLabels,
   RgaaUnsavedChangesAlert,
   useUnsavedChangesDialogGuard,
 } from "../components/RgaaModalDialog";
 import { AssistantGovernanceModeATabs } from "./AssistantGovernanceModeATabs";
 import {
-  ASSISTANT_DEFAULT_HAT_OPTIONS,
   type AssistantGovernanceModalAndStudioLabels,
   type AssistantGovernanceModalAndStudioProps,
   type UiAssembledLayerItem,
   type UiAssistantPromptTelemetryRecord,
   type UiAssistantResponseFormat,
   type UiAssistantResponseTone,
+  type UiAssistantSelectOption,
   type UiAssistantStudioNode,
 } from "./AssistantGovernanceTypes";
 
-export {
-  ASSISTANT_DEFAULT_HAT_OPTIONS,
-  type AssistantGovernanceModalAndStudioLabels,
-  type AssistantGovernanceModalAndStudioProps,
-  type UiAssembledLayerItem,
-  type UiAssistantPromptTelemetryRecord,
-  type UiAssistantResponseFormat,
-  type UiAssistantResponseTone,
-  type UiAssistantStudioNode,
+export type {
+  AssistantGovernanceModalAndStudioLabels,
+  AssistantGovernanceModalAndStudioProps,
+  UiAssembledLayerItem,
+  UiAssistantPromptTelemetryRecord,
+  UiAssistantResponseFormat,
+  UiAssistantResponseTone,
+  UiAssistantSelectOption,
+  UiAssistantStudioNode,
 };
 
 export function AssistantGovernanceModalAndStudio({
@@ -94,7 +93,6 @@ export function AssistantGovernanceModalAndStudio({
   }, [autosavedBadgeVisible]);
 
   const effectiveOpen = isOpen && internalOpen;
-  const guardLabels = resolveRgaaModalGuardLabels(labels);
 
   const resetUnsavedChanges = (): void => {
     setUserTone(initialUserTone);
@@ -188,7 +186,7 @@ export function AssistantGovernanceModalAndStudio({
               }}
               className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
             >
-              <OrciaIcon name="check" /> Enregistré
+              <OrciaIcon name="check" /> {labels.savedBadgeLabel}
             </span>
           )}
         </div>
@@ -199,7 +197,7 @@ export function AssistantGovernanceModalAndStudio({
             onClick={requestClose}
             className="px-3 py-1.5 rounded-lg border border-surface-border bg-surface-secondary text-text-primary"
           >
-            {guardLabels.cancelButtonLabel}
+            {labels.cancelButtonLabel ?? labels.cancelCta ?? ""}
           </button>
         </div>
       </div>
@@ -207,7 +205,7 @@ export function AssistantGovernanceModalAndStudio({
       <RgaaUnsavedChangesAlert
         testIdPrefix="assistant-gov"
         isOpen={showUnsavedAlert}
-        labels={guardLabels}
+        labels={labels}
         onStay={cancelDiscard}
         onConfirmDiscard={confirmDiscard}
       />

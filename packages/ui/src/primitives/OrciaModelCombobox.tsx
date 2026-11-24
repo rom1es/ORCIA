@@ -1,42 +1,19 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from "react";
 import { OrciaIcon } from "../components/icons";
 import { normalizeComboboxSearchToken } from "./comboboxSearchUtils";
+import { OrciaModelComboboxDropdown } from "./OrciaModelComboboxDropdown";
+import type {
+  DiscoveredModelOption,
+  OrciaModelComboboxLabels,
+  OrciaModelComboboxProps,
+} from "./OrciaModelComboboxTypes";
 import { OrciaSpinner } from "./OrciaSpinner";
 
-export interface DiscoveredModelOption {
-  readonly id: string;
-  readonly displayName?: string | null;
-  readonly description?: string | null;
-  readonly usageHint?: "chat" | "embedding" | "unknown";
-  readonly ownedBy?: string | null;
-}
-
-export interface OrciaModelComboboxLabels {
-  readonly noModelsFound: string;
-  readonly refreshLabel: string;
-  readonly loadingLabel: string;
-  readonly freeformHint?: string;
-  readonly chatBadge?: string;
-  readonly embeddingBadge?: string;
-}
-
-export interface OrciaModelComboboxProps {
-  readonly id?: string;
-  readonly testId: string;
-  readonly value: string;
-  readonly onChange: (value: string) => void;
-  readonly models: readonly DiscoveredModelOption[];
-  readonly targetUsage?: "chat" | "embedding";
-  readonly isLoading?: boolean;
-  readonly errorMessage?: string | null;
-  readonly onRefresh?: () => void;
-  readonly placeholder?: string;
-  readonly disabled?: boolean;
-  readonly labels: OrciaModelComboboxLabels;
-  readonly className?: string;
-  readonly style?: React.CSSProperties;
-  readonly maxDisplayedItems?: number;
-}
+export type {
+  DiscoveredModelOption,
+  OrciaModelComboboxLabels,
+  OrciaModelComboboxProps,
+};
 
 export function OrciaModelCombobox({
   id,
@@ -256,7 +233,7 @@ export function OrciaModelCombobox({
           <button
             type="button"
             data-testid={`${testId}-toggle-btn`}
-            aria-label="Toggle models list"
+            aria-label={labels.toggleListAriaLabel}
             tabIndex={-1}
             disabled={disabled}
             onClick={() => {
@@ -298,131 +275,17 @@ export function OrciaModelCombobox({
       )}
 
       {isOpen && !disabled && (
-        <div
-          id={listboxId}
-          role="listbox"
-          data-testid={`${testId}-suggestions`}
-          style={{
-            position: "absolute",
-            top: "calc(100% + 4px)",
-            left: 0,
-            right: 0,
-            zIndex: 100,
-            maxHeight: "240px",
-            overflowY: "auto",
-            backgroundColor: "var(--color-surface-card)",
-            border: "1px solid var(--color-border)",
-            borderRadius: "var(--radius-sm)",
-            boxShadow: "var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.15))",
-            padding: "4px 0",
-          }}
-        >
-          {displayedModels.length === 0 ? (
-            <div
-              data-testid={`${testId}-no-match`}
-              style={{
-                padding: "8px 12px",
-                fontSize: "12px",
-                color: "var(--color-muted-foreground)",
-              }}
-            >
-              {labels.noModelsFound}
-              {labels.freeformHint && (
-                <div style={{ fontSize: "11px", marginTop: "2px", opacity: 0.8 }}>
-                  {labels.freeformHint}
-                </div>
-              )}
-            </div>
-          ) : (
-            displayedModels.map((model, idx) => {
-              const isSelected = model.id.toLowerCase() === value.toLowerCase().trim();
-              const isHighlighted = idx === highlightedIndex;
-              return (
-                <div
-                  key={model.id}
-                  id={`${effectiveId}-opt-${model.id}`}
-                  role="option"
-                  aria-selected={isSelected || isHighlighted}
-                  data-testid={`${testId}-option-${model.id}`}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    handleSelect(model.id);
-                  }}
-                  onMouseEnter={() => setHighlightedIndex(idx)}
-                  style={{
-                    padding: "7px 12px",
-                    fontSize: "12px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: "8px",
-                    backgroundColor: isHighlighted
-                      ? "var(--color-action-primary-subtle)"
-                      : "transparent",
-                    color: isHighlighted
-                      ? "var(--color-primary-cobalt)"
-                      : "var(--color-foreground)",
-                  }}
-                >
-                  <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                    <span
-                      style={{
-                        fontWeight: isSelected ? 600 : 500,
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "12px",
-                      }}
-                    >
-                      {model.id}
-                    </span>
-                    {model.displayName && model.displayName !== model.id && (
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          color: "var(--color-muted-foreground)",
-                        }}
-                      >
-                        {model.displayName}
-                      </span>
-                    )}
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    {model.usageHint === "chat" && labels.chatBadge && (
-                      <span
-                        style={{
-                          fontSize: "10px",
-                          fontWeight: 600,
-                          padding: "1px 5px",
-                          borderRadius: "var(--radius-xs, 3px)",
-                          backgroundColor: "var(--color-action-primary-subtle)",
-                          color: "var(--color-primary-cobalt)",
-                        }}
-                      >
-                        {labels.chatBadge}
-                      </span>
-                    )}
-                    {model.usageHint === "embedding" && labels.embeddingBadge && (
-                      <span
-                        style={{
-                          fontSize: "10px",
-                          fontWeight: 600,
-                          padding: "1px 5px",
-                          borderRadius: "var(--radius-xs, 3px)",
-                          backgroundColor: "var(--color-bg-elevated)",
-                          color: "var(--color-foreground)",
-                          border: "1px solid var(--color-border)",
-                        }}
-                      >
-                        {labels.embeddingBadge}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+        <OrciaModelComboboxDropdown
+          effectiveId={effectiveId}
+          listboxId={listboxId}
+          testId={testId}
+          value={value}
+          displayedModels={displayedModels}
+          highlightedIndex={highlightedIndex}
+          labels={labels}
+          onSelect={handleSelect}
+          onHighlight={setHighlightedIndex}
+        />
       )}
     </div>
   );

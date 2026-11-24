@@ -5,6 +5,10 @@ import {
 } from "@orcia/api-client";
 import { create } from "zustand";
 import {
+  executeSessionHydrationWithTimeout,
+  resolveWebApiBaseUrl,
+} from "./authSessionHydration";
+import {
   ALL_SETTINGS_TABS,
   canAccessConfigurationSettings,
   canAccessMyOrganization,
@@ -38,6 +42,7 @@ export {
   READ_ONLY_PERMISSION_VERBS,
   resolveSessionHatLabel,
   resolveSettingsAccess,
+  resolveWebApiBaseUrl,
   SCOPED_LEAD_SETTINGS_TABS,
   SETTINGS_TAB_ICON_NAMES,
   type AuthSessionSnapshot,
@@ -52,19 +57,6 @@ export type UserSettingsModalTabKey =
   | "ACCOUNT_SECURITY"
   | "PASSTHROUGH_SOURCES"
   | "IDE_MCP_KEYS";
-
-export function resolveWebApiBaseUrl(): string {
-  const meta = import.meta as unknown as { env?: Record<string, string | undefined> };
-  const envUrl = meta?.env?.VITE_ORCIA_API_BASE_URL ?? meta?.env?.VITE_ORCIA_API_URL;
-  if (envUrl && envUrl.trim().length > 0) {
-    const trimmed = envUrl.trim().replace(/\/+$/, "");
-    if (trimmed === "/api" || trimmed.endsWith("/api")) {
-      return trimmed.slice(0, -4);
-    }
-    return trimmed;
-  }
-  return "";
-}
 
 export const UNAUTHENTICATED_SESSION_STATE = {
   isAuthenticated: false,
@@ -213,78 +205,30 @@ export const useAuthSessionStore = create<AuthSessionStoreState>((set, get) => (
     });
   },
   hydrateSession: async (options?: { force?: boolean }) => {
-    if (activeHydrationPromise) {
-      return activeHydrationPromise;
-    }
-    if (!options?.force && !get().isHydrating) {
-      return;
-    }
-    if (!get().isAuthenticated) {
-      set({ isHydrating: true });
-    }
+    if (activeHydrationPromise) return activeHydrationPromise;
+    if (!options?.force && !get().isHydrating) return;
+    if (!get().isAuthenticated) set({ isHydrating: true });
 
     const runHydration = async () => {
-      let timeoutId: ReturnType<typeof setTimeout> | undefined;
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        timeoutId = setTimeout(() => {
-          reject(new Error("Hydration timed out after 5000ms"));
-        }, 5000);
-      });
-
       try {
-        const hydrationWork = (async () => {
-          const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
-          const bootstrap = await client.getSessionBootstrap();
-          const tokenRes = bootstrap?.authenticated ? bootstrap.session : null;
-          if (tokenRes && tokenRes.access_token) {
-            const authedClient = createOrciaApiClient({
-              baseUrl: resolveWebApiBaseUrl(),
-              accessToken: tokenRes.access_token,
-            });
-            let me: Awaited<ReturnType<typeof authedClient.getMe>> | null = null;
-            try {
-              me = await authedClient.getMe();
-            } catch (err: unknown) {
-              console.warn(
-                "[orcia:auth.hydrate_getMe]",
-                err instanceof Error ? err.message : String(err),
-              );
-            }
-            const roles =
-              tokenRes.roles && tokenRes.roles.length > 0
-                ? tokenRes.roles
-                : me?.roles && me.roles.length > 0
-                  ? me.roles
-                  : [tokenRes.platform_role];
-            set({
-              isAuthenticated: true,
-              isHydrating: false,
-              accessToken: tokenRes.access_token,
-              roles,
-              activeHat: roles[0] || "CONTRIBUTOR",
-              email: tokenRes.email || me?.email || null,
-              displayName: tokenRes.display_name || me?.display_name || null,
-              mustChangePassword: Boolean(tokenRes.must_change_password || me?.must_change_password),
-            });
-            return;
-          }
+        const hydrated = await executeSessionHydrationWithTimeout(5000);
+        if (hydrated) {
           set({
-            ...UNAUTHENTICATED_SESSION_STATE,
+            isAuthenticated: true,
             isHydrating: false,
+            accessToken: hydrated.accessToken,
+            roles: hydrated.roles,
+            activeHat: hydrated.activeHat,
+            email: hydrated.email,
+            displayName: hydrated.displayName,
+            mustChangePassword: hydrated.mustChangePassword,
           });
-        })();
-
-        await Promise.race([hydrationWork, timeoutPromise]);
+          return;
+        }
+        set({ ...UNAUTHENTICATED_SESSION_STATE, isHydrating: false });
       } catch (err: unknown) {
         console.warn("[orcia:auth.hydrateSession]", err instanceof Error ? err.message : String(err));
-        set({
-          ...UNAUTHENTICATED_SESSION_STATE,
-          isHydrating: false,
-        });
-      } finally {
-        if (timeoutId !== undefined) {
-          clearTimeout(timeoutId);
-        }
+        set({ ...UNAUTHENTICATED_SESSION_STATE, isHydrating: false });
       }
     };
 

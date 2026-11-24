@@ -25,6 +25,10 @@ from orcia_core.orchestration._human_anchors_models import (
     HumanArbitrationStatus,
     validate_human_anchor_submission,
 )
+from orcia_core.orchestration._orchestration_ops_locales import (
+    HUMAN_ANCHOR_LOCALES,
+    get_ops_copy,
+)
 from orcia_core.orchestration.errors import HumanAnchorRequiredError
 from orcia_core.orchestration.models import TieBreakPolicy, WorkflowRunEntity, WorkflowStepSpec
 from orcia_core.permissions.models import UserIdentity
@@ -106,12 +110,15 @@ class HumanAnchorAndArbitrationService:
         )
         self._anchors_by_step_section[(run.id, step_key, section_key)] = entity
 
+        hc = get_ops_copy(HUMAN_ANCHOR_LOCALES)
         anchor_memlog = StepMemlogEntry(
             entry_id=new_uuid7_str(),
             step_key=step_key,
             marker_type="HUMAN_ANCHOR_SIGNED",
-            summary=f"Ancre humaine signée sur '{section_key}' ({char_len} caractères)",
-            details=f"SHA-256={content_sha[:16]} par {user.display_name} ({user.id})",
+            summary=hc["signed_summary"].format(section_key=section_key, char_len=char_len),
+            details=hc["signed_details"].format(
+                sha=content_sha[:16], display_name=user.display_name, user_id=user.id
+            ),
         )
         draft_payload = {
             **step_exec.draft_artifact,
@@ -151,10 +158,8 @@ class HumanAnchorAndArbitrationService:
             return
         if author_type != "HUMAN":
             raise HumanAnchorRequiredError(
-                detail_override=(
-                    f"L'étape '{step_spec.step_key}' requiert une ancre humaine obligatoire "
-                    f"(human_authored_required: true) et rejette toute écriture par un agent."
-                ),
+                detail_code="ERR_HUMAN_ANCHOR_STEP_AGENT_FORBIDDEN",
+                detail_params={"step_key": step_spec.step_key},
                 instance=instance,
             )
         step_exec = self.engine.blackboard.get_step_execution(run.id, step_spec.step_key)
@@ -168,10 +173,8 @@ class HumanAnchorAndArbitrationService:
                 draft_artifact=step_exec.draft_artifact,
             )
             raise HumanAnchorRequiredError(
-                detail_override=(
-                    f"Impossible de lancer l'agent sur l'étape '{step_spec.step_key}' : "
-                    f"aucune signature dans human_anchor_signatures (>= 30 caractères)."
-                ),
+                detail_code="ERR_HUMAN_ANCHOR_MISSING_SIGNATURE",
+                detail_params={"step_key": step_spec.step_key},
                 instance=instance,
             )
 

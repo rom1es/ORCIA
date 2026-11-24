@@ -23,13 +23,15 @@ const THINKING_DOT_BASE_STYLE: React.CSSProperties = {
 
 export function ThinkingDots({
   className = "text-action-primary",
+  ariaLabel,
 }: {
   className?: string;
+  ariaLabel?: string;
 }): React.JSX.Element {
   return (
     <span
       role="status"
-      aria-label="Réflexion en cours"
+      aria-label={ariaLabel}
       data-testid="assistant-thinking-pulsing-dots"
       style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}
       className={`inline-flex items-center gap-1 ${className}`}
@@ -51,11 +53,13 @@ export function ThinkingDots({
 }
 
 export interface AssistantThinkingSliderIndicatorProps {
-  readonly isFr?: boolean;
+  readonly statusText: string;
+  readonly dotsAriaLabel?: string;
 }
 
 export function AssistantThinkingSliderIndicator({
-  isFr = true,
+  statusText,
+  dotsAriaLabel,
 }: AssistantThinkingSliderIndicatorProps): React.JSX.Element {
   return (
     <div
@@ -65,12 +69,8 @@ export function AssistantThinkingSliderIndicator({
       className="w-full max-w-md space-y-1.5 text-xs"
     >
       <div className="flex items-center gap-2 text-text-secondary">
-        <ThinkingDots />
-        <span>
-          {isFr
-            ? "Recherche et rédaction en cours"
-            : "Searching and drafting response"}
-        </span>
+        <ThinkingDots {...(dotsAriaLabel ? { ariaLabel: dotsAriaLabel } : {})} />
+        <span>{statusText}</span>
       </div>
       <div
         className="h-1 w-48 overflow-hidden rounded-full bg-surface-secondary"
@@ -89,9 +89,29 @@ export function AssistantThinkingSliderIndicator({
   );
 }
 
+export interface AssistantResponseFooterLabels {
+  readonly likeLabel: string;
+  readonly dislikeLabel: string;
+  readonly copyLabel: string;
+  readonly copiedLabel: string;
+  readonly regenerateLabel: string;
+  readonly saveDraftLabel: string;
+  readonly draftSavedLabel: string;
+  readonly continueProcessLabel: string;
+  readonly detailsLabel: string;
+  readonly consultedSourcesHeading: string;
+  readonly actionsToolbarAriaLabel: string;
+  readonly deepenFallbackLabel: string;
+  readonly feedbackThanksText: string;
+  readonly modelPrefix: string;
+  readonly effortPrefix: string;
+  readonly defaultModelLabel?: string;
+  readonly defaultEffortLabel?: string;
+}
+
 export interface AssistantResponseFooterActionsAndCitationsProps {
   readonly responseText: string;
-  readonly isFr?: boolean;
+  readonly labels: AssistantResponseFooterLabels;
   readonly modelLabel?: string;
   readonly effortLabel?: string;
   readonly ragCitations?: readonly UiAssistantRagCitationItem[];
@@ -110,9 +130,9 @@ export interface AssistantResponseFooterActionsAndCitationsProps {
 
 export function AssistantResponseFooterActionsAndCitations({
   responseText,
-  isFr = true,
-  modelLabel = "Polyvalent",
-  effortLabel = "Standard",
+  labels,
+  modelLabel,
+  effortLabel,
   ragCitations = [],
   initialFeedback = null,
   canDeepen = false,
@@ -169,13 +189,15 @@ export function AssistantResponseFooterActionsAndCitations({
     onSaveDraft?.(responseText);
   };
 
-  const likeLabel = isFr ? "Bonne réponse" : "Good Response";
-  const dislikeLabel = isFr ? "Réponse à améliorer" : "Needs improvement";
-  const copyLabel = copied ? (isFr ? "Copié" : "Copied") : isFr ? "Copier" : "Copy";
-  const regenerateLabel = isFr ? "Régénérer" : "Regenerate";
-  const saveDraftLabel = draftSaved ? (isFr ? "Brouillon enregistré" : "Draft saved") : isFr ? "Enregistrer en brouillon" : "Save as draft";
-  const continueProcessLabel = isFr ? "Poursuivre dans un Processus" : "Continue in a Process";
-  const detailsLabel = isFr ? "Voir les détails de la réponse" : "View response details";
+  const likeLabel = labels.likeLabel;
+  const dislikeLabel = labels.dislikeLabel;
+  const copyLabel = copied ? labels.copiedLabel : labels.copyLabel;
+  const regenerateLabel = labels.regenerateLabel;
+  const saveDraftLabel = draftSaved ? labels.draftSavedLabel : labels.saveDraftLabel;
+  const continueProcessLabel = labels.continueProcessLabel;
+  const detailsLabel = labels.detailsLabel;
+  const resolvedModelLabel = modelLabel ?? labels.defaultModelLabel ?? "";
+  const resolvedEffortLabel = effortLabel ?? labels.defaultEffortLabel ?? "";
   const iconBtnClass = "h-7 w-7 inline-flex items-center justify-center rounded-md border-0 bg-transparent text-xs text-text-secondary hover:bg-surface-secondary hover:text-text-primary transition-colors";
   const activeFeedbackStyle: React.CSSProperties = { backgroundColor: "var(--color-action-primary)", color: "var(--color-primary-foreground)" };
 
@@ -183,7 +205,7 @@ export function AssistantResponseFooterActionsAndCitations({
     <div className="space-y-2 pt-2">
       {ragCitations.length > 0 && (
         <div data-testid="assistant-rag-citations-list" className="flex flex-wrap items-center gap-1.5">
-          <span className="text-[11px] font-medium text-text-secondary">{isFr ? "Sources consultées :" : "Consulted sources:"}</span>
+          <span className="text-[11px] font-medium text-text-secondary">{labels.consultedSourcesHeading}</span>
           {ragCitations.map((source, index) => (
             <a
               key={`${source.uri}-${index}`}
@@ -205,7 +227,7 @@ export function AssistantResponseFooterActionsAndCitations({
         </div>
       )}
 
-      <div data-testid="assistant-response-actions-bar" role="toolbar" aria-label={isFr ? "Actions sur la réponse" : "Response actions"} className="flex flex-wrap items-center gap-1">
+      <div data-testid="assistant-response-actions-bar" role="toolbar" aria-label={labels.actionsToolbarAriaLabel} className="flex flex-wrap items-center gap-1">
         <button type="button" data-testid="assistant-action-like-btn" aria-label={likeLabel} title={likeLabel} aria-pressed={feedback === "LIKE"} onClick={handleToggleLike} style={feedback === "LIKE" ? activeFeedbackStyle : undefined} className={iconBtnClass}><OrciaIcon name="like" /></button>
         <button type="button" data-testid="assistant-action-dislike-btn" aria-label={dislikeLabel} title={dislikeLabel} aria-pressed={feedback === "DISLIKE"} onClick={handleToggleDislike} style={feedback === "DISLIKE" ? activeFeedbackStyle : undefined} className={iconBtnClass}><OrciaIcon name="dislike" /></button>
         <button type="button" data-testid="assistant-action-copy-btn" aria-label={copyLabel} title={copyLabel} onClick={handleCopy} className={iconBtnClass}><OrciaIcon name={copied ? "check" : "copy"} /></button>
@@ -239,7 +261,7 @@ export function AssistantResponseFooterActionsAndCitations({
             <span>
               {lowEvidence && deepenLowEvidenceLabel
                 ? deepenLowEvidenceLabel
-                : deepenLabel ?? (isFr ? "Approfondir" : "Deepen")}
+                : deepenLabel ?? labels.deepenFallbackLabel}
             </span>
           </button>
         ) : null}
@@ -252,7 +274,7 @@ export function AssistantResponseFooterActionsAndCitations({
           data-feedback-value={feedback}
           className="inline-flex items-center gap-2 rounded-lg border border-border-subtle bg-surface-secondary px-3 py-1.5 text-[11px] font-medium text-text-primary shadow-sm"
         >
-          <span>{isFr ? "Merci pour votre retour !" : "Thanks for your feedback!"}</span>
+          <span>{labels.feedbackThanksText}</span>
           <span className="text-text-secondary">
             · {feedback === "LIKE" ? likeLabel : dislikeLabel}
           </span>
@@ -261,9 +283,9 @@ export function AssistantResponseFooterActionsAndCitations({
 
       {detailsOpen && (
         <div data-testid="assistant-response-details-popover" className="inline-flex flex-wrap items-center gap-2 rounded-md bg-surface-secondary px-2.5 py-1 text-[11px] text-text-secondary">
-          <span>{isFr ? "Modèle :" : "Model :"} <strong className="font-medium text-text-primary">{modelLabel}</strong></span>
+          <span>{labels.modelPrefix} <strong className="font-medium text-text-primary">{resolvedModelLabel}</strong></span>
           <OrciaIcon name="bulletDot" />
-          <span>{isFr ? "Niveau de réflexion :" : "Thinking level :"} <strong className="font-medium text-text-primary">{effortLabel}</strong></span>
+          <span>{labels.effortPrefix} <strong className="font-medium text-text-primary">{resolvedEffortLabel}</strong></span>
         </div>
       )}
     </div>

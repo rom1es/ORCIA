@@ -94,9 +94,7 @@ class AssistantFoldersAndSharingService(_AssistantFoldersAsyncOpsMixin, _Assista
         ensure_not_observer(user)
         clean_title = title.strip()
         if not clean_title:
-            raise ValidationDomainError(
-                detail_override="Le titre du dossier thématique ne peut pas être vide."
-            )
+            raise ValidationDomainError(detail_code="ERR_FOLDER_EMPTY_TITLE")
         self.register_workspace_members(workspace_id, [user.id])
         resolved_folder_id = folder_id or new_uuid7_str()
         attachments = tuple(working_attachments_uris or ())

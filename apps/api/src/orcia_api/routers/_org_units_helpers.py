@@ -231,11 +231,10 @@ def classify_and_handle_pg_error(exc: Exception, operation: str) -> None:
         error_type=type(exc).__name__,
         error=str(exc),
     )
-    detail = (
-        f"Schéma PostgreSQL de l'organisation obsolète ou incompatible lors de '{operation}' "
-        f"({type(exc).__name__}). Une migration Alembic est requise."
-    )
-    raise OrgUnitStorageSchemaError(detail_override=detail) from exc
+    raise OrgUnitStorageSchemaError(
+        detail_code="ERR_ORG_PG_SCHEMA_OUTDATED",
+        detail_params={"op": operation, "exc": type(exc).__name__},
+    ) from exc
 
 
 __all__ = [

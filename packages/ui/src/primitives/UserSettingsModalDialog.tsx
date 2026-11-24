@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { OrciaIcon, type OrciaIconName } from "../components/icons";
 import {
   RgaaUnsavedChangesAlert,
-  resolveRgaaModalGuardLabels,
   useUnsavedChangesDialogGuard,
 } from "../components/RgaaModalDialog";
 import { OrciaAlertBanner } from "./DesignSystemControls";
@@ -105,7 +104,6 @@ export function UserSettingsModalDialog({
 }: UserSettingsModalDialogProps): React.ReactElement | null {
   const [isDirty, setIsDirty] = useState(false);
   useEffect(() => { if (!open) setIsDirty(false); }, [open]);
-  const guardLabels = resolveRgaaModalGuardLabels(labels, locale);
 
   const { showUnsavedAlert, requestClose, cancelDiscard, confirmDiscard } =
     useUnsavedChangesDialogGuard({
@@ -183,8 +181,7 @@ export function UserSettingsModalDialog({
             <RgaaUnsavedChangesAlert
               testIdPrefix="user-settings-modal"
               isOpen={showUnsavedAlert}
-              labels={guardLabels}
-              locale={locale}
+              labels={labels}
               onStay={cancelDiscard}
               onConfirmDiscard={confirmDiscard}
             />

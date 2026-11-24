@@ -5,7 +5,7 @@ import {
   type UpstreamChallengeWhatIfPreview,
 } from "@orcia/ui";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useI18n } from "../../i18n";
+import { formatI18nTemplate, useI18n } from "../../i18n";
 
 const CHALLENGER_STEP_KEY = "delegate-remediation-subworkflow";
 const TARGET_UPSTREAM_STEP_KEY = "frame-architecture-intent";
@@ -26,8 +26,8 @@ export function CockpitUpstreamChallengePanel({
   onError,
   onReplayCompleted,
 }: CockpitUpstreamChallengePanelProps) {
-  const { dictionary, locale } = useI18n();
-  const isFr = locale === "fr";
+  const { dictionary } = useI18n();
+  const chCopy = dictionary.featureCockpitGates.cockpit.upstreamChallenge;
   const apiClient = useMemo(() => createOrciaApiClient({ baseUrl: "" }), []);
   const [portalOpen, setPortalOpen] = useState(false);
   const [staleWarningBanner, setStaleWarningBanner] = useState<string | null>(null);
@@ -37,9 +37,7 @@ export function CockpitUpstreamChallengePanel({
     targetUpstreamStepKey: TARGET_UPSTREAM_STEP_KEY,
     challengedSectionKey: CHALLENGED_SECTION_KEY,
     targetProfileArchetype: "PM_BUSINESS",
-    translatedSummary: isFr
-      ? "Impact What-If : réévaluation ciblée depuis l'intention d'architecture sans reconsommer l'amont."
-      : "What-If Impact: targeted re-evaluation from architecture intent without re-consuming upstream steps.",
+    translatedSummary: chCopy.defaultSummary,
     invalidatedDownstreamStepKeys: [
       TARGET_UPSTREAM_STEP_KEY,
       CHALLENGER_STEP_KEY,
@@ -90,11 +88,9 @@ export function CockpitUpstreamChallengePanel({
 
   useEffect(() => {
     if (isOpen && runId) {
-      void refreshPreview(
-        "La règle métier amont contredit le contrat API partenaire v3 (fenêtre max 15 min).",
-      );
+      void refreshPreview(chCopy.defaultPreviewReason);
     }
-  }, [isOpen, refreshPreview, runId]);
+  }, [chCopy.defaultPreviewReason, isOpen, refreshPreview, runId]);
 
   if (!isOpen || !runId) {
     return null;
@@ -146,9 +142,9 @@ export function CockpitUpstreamChallengePanel({
         sub_workflow_step_key: payload.subWorkflowStepKey ?? null,
       });
       setStaleWarningBanner(
-        isFr
-          ? `Alerte d'obsolescence : replay ciblé exécuté depuis « ${res.replay.replayed_from_step_key} » — les livrables aval liés ont été marqués à revalider.`
-          : `Stale notice: targeted replay executed from "${res.replay.replayed_from_step_key}" — linked downstream artifacts flagged for revalidation.`,
+        formatI18nTemplate(chCopy.staleReplayTemplate, {
+          stepKey: res.replay.replayed_from_step_key,
+        }),
       );
       onReplayCompleted?.();
     } catch (err) {
@@ -165,7 +161,7 @@ export function CockpitUpstreamChallengePanel({
           onClick={() => setPortalOpen(true)}
           className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
         >
-          {isFr ? "Ouvrir la modale What-If" : "Open What-If modal"}
+          {chCopy.openModalBtn}
         </button>
       </div>
 
@@ -175,10 +171,7 @@ export function CockpitUpstreamChallengePanel({
           role="status"
           testId="upstream-replay-stale-warning-banner"
         >
-          {staleWarningBanner ??
-            (isFr
-              ? "Alerte d'obsolescence : replay amont détecté — les livrables aval liés sont marqués à revalider."
-              : "Stale notice: upstream replay detected — linked downstream artifacts are flagged for revalidation.")}
+          {staleWarningBanner ?? chCopy.defaultStaleBanner}
         </OrciaAlertBanner>
       ) : null}
 
@@ -187,6 +180,7 @@ export function CockpitUpstreamChallengePanel({
         inline={!portalOpen}
         preview={preview}
         labels={dictionary.upstreamChallengeModal}
+        rgaaLabels={dictionary.rgaaModal}
         onReasonChange={(nextReason) => void refreshPreview(nextReason)}
         onSubmitChallenge={(p) => void handleSubmitChallenge(p)}
         onTriggerReplay={(p) => void handleTriggerReplay(p)}

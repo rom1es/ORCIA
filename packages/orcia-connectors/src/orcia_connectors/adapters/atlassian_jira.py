@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from orcia_connectors._connectors_locales import CONNECTOR_SEED_LOCALES
 from orcia_connectors.protocol import (
     ConnectorHealthStatus,
     OrciaConnectorProtocol,
@@ -12,6 +13,7 @@ from orcia_connectors.protocol import (
     compute_payload_sha256,
     verify_signed_approval_token,
 )
+from orcia_core.kernel.enums import DEFAULT_LOCALE
 from orcia_core.kernel.errors import ResourceNotFoundError, ValidationDomainError
 from orcia_core.kernel.ids import new_uuid7_str
 
@@ -36,7 +38,7 @@ class AtlassianJiraConnector(OrciaConnectorProtocol):
                 "key": "PAYBUILD-101",
                 "project": "PAYBUILD",
                 "type": "Story",
-                "summary": "Implémenter le connecteur checkout idempotent",
+                "summary": CONNECTOR_SEED_LOCALES[DEFAULT_LOCALE]["jira_paybuild_summary"],
                 "status": "IN_PROGRESS",
             },
         }

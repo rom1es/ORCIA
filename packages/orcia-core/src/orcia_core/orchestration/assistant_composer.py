@@ -65,11 +65,14 @@ def build_generic_core_blueprint(
         if has_extra
         else f"orcia://workflows/{workspace_id}-multi-source-audit"
     )
+    from orcia_core.orchestration._assistant_profile_locales import COMPOSER_LOCALES
+
+    cloc = COMPOSER_LOCALES["fr"]
     version = "1.1.0" if has_extra else "1.0.0"
     steps: list[dict[str, Any]] = [
         {
             "step_key": "step_1_intent_anchor",
-            "title": "1. Cadrage & Objectif Métier (Ancre Humaine)",
+            "title": cloc["step1_title"],
             "step_type": "AGENT",
             "human_authored_required": True,
             "agent_uri": "orcia://agents/intent-framer",
@@ -77,7 +80,7 @@ def build_generic_core_blueprint(
         },
         {
             "step_key": "step_2_context_collect",
-            "title": "2. Collecte & Vérification des Sources Fédérées",
+            "title": cloc["step2_title"],
             "step_type": "SKILL",
             "human_authored_required": False,
             "skill_uri": "orcia://skills/context-collector",
@@ -90,7 +93,7 @@ def build_generic_core_blueprint(
         steps.append(
             {
                 "step_key": "step_3_custom_control",
-                "title": "3. Contrôle Complémentaire Demandé",
+                "title": cloc["step3_title"],
                 "step_type": "AGENT",
                 "human_authored_required": False,
                 "agent_uri": "orcia://agents/compliance-evaluator",
@@ -98,19 +101,19 @@ def build_generic_core_blueprint(
             }
         )
         last_dep = "step_3_custom_control"
-        extra_yaml = """
+        extra_yaml = f"""
   - step_key: "step_3_custom_control"
-    title: "3. Contrôle Complémentaire Demandé"
+    title: "{cloc["step3_title"]}"
     step_type: "AGENT"
     agent_uri: "orcia://agents/compliance-evaluator"
     depends_on:
       - "step_2_context_collect"
-    instructions: "Exécuter le contrôle complémentaire demandé sur les sources collectées." """
+    instructions: "{cloc["step3_inst"]}" """
 
     steps.append(
         {
             "step_key": "step_final_verify",
-            "title": "Vérification Post-Action & Synthèse",
+            "title": cloc["step_final_title"],
             "step_type": "POST_ACTION_VERIFICATION",
             "human_authored_required": False,
             "skill_uri": "orcia://skills/post-action-verifier",
@@ -118,8 +121,8 @@ def build_generic_core_blueprint(
         }
     )
     manifest_yaml = f"""uri: "{wf_uri}"
-title: "Audit Multi-Sources & Vérification de Conformité"
-description: "Workflow générique de collecte multi-sources et vérification post-action."
+title: "{cloc["wf_title"]}"
+description: "{cloc["wf_desc"]}"
 version: "{version}"
 criticality: "STANDARD"
 execution_regime: "BACKGROUND_FAST_PATH"
@@ -129,31 +132,31 @@ adaptive_gate_policy: "STANDARD"
 max_cost_usd: 8.0
 steps:
   - step_key: "step_1_intent_anchor"
-    title: "1. Cadrage & Objectif Métier (Ancre Humaine)"
+    title: "{cloc["step1_title"]}"
     step_type: "AGENT"
     agent_uri: "orcia://agents/intent-framer"
     human_authored_required: true
-    instructions: "Définir l'objectif métier et les invariants de contrôle."
+    instructions: "{cloc["step1_inst"]}"
   - step_key: "step_2_context_collect"
-    title: "2. Collecte & Vérification des Sources Fédérées"
+    title: "{cloc["step2_title"]}"
     step_type: "SKILL"
     skill_uri: "orcia://skills/context-collector"
     depends_on:
       - "step_1_intent_anchor"
-    instructions: "Collecter les tranches via ContextSourcePort."{extra_yaml}
+    instructions: "{cloc["step2_inst"]}"{extra_yaml}
   - step_key: "step_final_verify"
-    title: "Vérification Post-Action & Synthèse"
+    title: "{cloc["step_final_title"]}"
     step_type: "POST_ACTION_VERIFICATION"
     depends_on:
       - "{last_dep}"
     verification_window_seconds: 30
-    instructions: "Vérifier la cohérence finale des livrables produits."
+    instructions: "{cloc["step_final_inst"]}"
 """
     return AssistantWorkflowBlueprint(
         template_key="core-multi-source-audit",
         workflow_uri=wf_uri,
-        title="Audit Multi-Sources & Vérification de Conformité",
-        description="Workflow générique de collecte multi-sources et vérification post-action.",
+        title=cloc["wf_title"],
+        description=cloc["wf_desc"],
         default_execution_regime="BACKGROUND_FAST_PATH",
         manifest_yaml=manifest_yaml,
         steps_summary=tuple(steps),

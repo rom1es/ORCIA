@@ -65,8 +65,8 @@ export function UpstreamChallengeWhatIfPreviewCard({
         <strong>{labels.preservedStepsLabel}:</strong>{" "}
         <code data-testid="what-if-preserved-steps" style={{ fontFamily: "var(--font-mono)" }}>
           {preview.preservedUpstreamStepKeys.length > 0
-            ? `${preview.preservedUpstreamStepKeys.map(resolveStep).join(", ")} (0 token — ${preview.upstreamTokensSaved} tokens économisés)`
-            : (labels.rootWorkflowLabel ?? "Point de départ du processus (Étape 1)")}
+            ? `${preview.preservedUpstreamStepKeys.map(resolveStep).join(", ")} (0 token — ${preview.upstreamTokensSaved} ${labels.tokensSavedLabel ?? ""})`
+            : (labels.rootWorkflowLabel ?? "")}
         </code>
       </div>
       <div

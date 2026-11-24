@@ -149,7 +149,7 @@ export function OrgUnitInlineCreateMemberModal({
       {tempPasswordModalData && (
         <TemporaryPasswordInvitationModal
           isOpen={true}
-          isFr={locale === "fr"}
+          labels={dictionary.tempPasswordModal}
           displayName={tempPasswordModalData.displayName}
           email={tempPasswordModalData.email}
           temporaryPassword={tempPasswordModalData.temporaryPassword}

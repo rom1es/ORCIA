@@ -63,14 +63,12 @@ export function HelpAccordionSection({
 export function HelpTargetedSectionsList({
   sections,
   activeSectionId,
-  isEn,
   targetedHelpBadgeLabel,
   sectionRefs,
 }: {
   readonly sections: readonly UiContextualHelpSectionItem[];
   readonly activeSectionId: string | null;
-  readonly isEn: boolean;
-  readonly targetedHelpBadgeLabel?: string;
+  readonly targetedHelpBadgeLabel: string;
   readonly sectionRefs: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
 }): React.ReactElement | null {
   if (sections.length === 0) return null;
@@ -105,7 +103,7 @@ export function HelpTargetedSectionsList({
                     color: "var(--color-action-primary)",
                   }}
                 >
-                  {targetedHelpBadgeLabel ?? (isEn ? "Targeted help" : "Aide ciblée")}
+                  {targetedHelpBadgeLabel}
                 </span>
               )}
             </div>

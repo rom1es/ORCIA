@@ -1,15 +1,10 @@
-import {
-  createOrciaApiClient,
-  type RunBlackboardStateResponse,
-  type WorkflowAsCodeDefinitionSchemaItem,
-} from "@orcia/api-client";
+import { createOrciaApiClient } from "@orcia/api-client";
 import {
   OrciaAlertBanner,
   ProgressiveDay0AccostageBanner,
   StreamlinedCockpitView,
 } from "@orcia/ui";
-import type { Edge, Node } from "@xyflow/react";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { buildUnifiedAccostageMilestones } from "../../components/platformSetupAccostage";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
@@ -19,52 +14,16 @@ import {
   isPlatformAdministratorSession,
   useAuthSessionStore,
 } from "../../stores/authSessionStore";
-import { derivePendingGovernanceFromBlackboard } from "./cockpitGovernanceHelpers";
+import { buildCockpitWorkflowPreviewGraph } from "./cockpitWorkflowPreview";
 import { CockpitHumanLedGovernanceSection } from "./CockpitHumanLedGovernanceSection";
 import { CockpitRunsSection } from "./CockpitRunsSection";
 import { CockpitUpstreamChallengePanel } from "./CockpitUpstreamChallengePanel";
+import { useCockpitGovernancePoll } from "./useCockpitGovernancePoll";
 
-const TERMINAL_RUN_STATUSES = new Set([
-  "COMPLETED",
-  "FAILED",
-  "ROLLED_BACK",
-  "KILL_SWITCH_STOPPED",
-]);
-
-interface PendingGovernanceTarget {
-  readonly runId: string;
-  readonly workflow: WorkflowAsCodeDefinitionSchemaItem | null;
-  readonly initialBlackboard: RunBlackboardStateResponse;
-}
-
-interface ChallengeRunTarget {
-  readonly runId: string;
-  readonly hasStaleWarning: boolean;
-}
-
-export function buildCockpitWorkflowPreviewGraph(): {
-  nodes: Node[];
-  edges: Edge[];
-} {
-  return {
-    nodes: [
-      { id: "intent-router", position: { x: 0, y: 0 }, data: { label: "1. Intent Router" } },
-      { id: "query-planner", position: { x: 200, y: 0 }, data: { label: "2. Query Planner & Ontology" } },
-      { id: "parallel-fan-out", position: { x: 400, y: 0 }, data: { label: "3. Parallel Fan-Out" } },
-      { id: "critical-triage", position: { x: 600, y: 0 }, data: { label: "4. Critical Triage & Axioms" } },
-      { id: "profile-synthesizer", position: { x: 800, y: 0 }, data: { label: "5. Profile Adaptive Synthesizer" } },
-    ],
-    edges: [
-      { id: "e-intent-planner", source: "intent-router", target: "query-planner" },
-      { id: "e-planner-fanout", source: "query-planner", target: "parallel-fan-out" },
-      { id: "e-fanout-triage", source: "parallel-fan-out", target: "critical-triage" },
-      { id: "e-triage-synthesizer", source: "critical-triage", target: "profile-synthesizer" },
-    ],
-  };
-}
+export { buildCockpitWorkflowPreviewGraph };
 
 export function CockpitFeaturePanel() {
-  const { dictionary, locale } = useI18n();
+  const { dictionary, isFr } = useI18n();
   const {
     activeScopeId,
     navigateToRoute,
@@ -93,12 +52,8 @@ export function CockpitFeaturePanel() {
   const [selectedWfKey, setSelectedWfKey] = useState<string>("");
   const [runTitle, setRunTitle] = useState<string>("");
   const [runRefreshSignal, setRunRefreshSignal] = useState<number>(0);
-  const [pendingGovernance, setPendingGovernance] =
-    useState<PendingGovernanceTarget | null>(null);
-  const [challengeTarget, setChallengeTarget] = useState<ChallengeRunTarget | null>(null);
   const [challengeError, setChallengeError] = useState<string | null>(null);
 
-  const isFr = locale === "fr";
   const activeScopeNode = scopes.find((s) => s.id === activeScopeId);
 
   const availableWorkspaces = useMemo(() => {
@@ -121,6 +76,15 @@ export function CockpitFeaturePanel() {
             availableWorkspaces.some((ws) => ws.workspaceId === r.workspaceId),
           )
         : runs;
+
+  const { pendingGovernance, challengeTarget } = useCockpitGovernancePoll({
+    activeScopeId,
+    activeScopeLevel: activeScopeNode?.level,
+    availableWorkspaces,
+    isAuthenticated,
+    isHydrating,
+    runRefreshSignal,
+  });
 
   const canConfigurePlatform = isPlatformAdministratorSession({ roles, readOnlyObserver });
   const milestones = buildUnifiedAccostageMilestones({
@@ -168,83 +132,7 @@ export function CockpitFeaturePanel() {
     })();
   };
 
-  useEffect(() => {
-    if (isHydrating || !isAuthenticated) {
-      setPendingGovernance(null);
-      setChallengeTarget(null);
-      return;
-    }
-    let cancelled = false;
-    const apiClient = createOrciaApiClient({ baseUrl: "" });
-    void apiClient
-      .getOrchestrationState()
-      .then(async (state) => {
-        if (cancelled) return;
-        const serverRuns = state.runs ?? [];
-        const scopedServerRuns =
-          activeScopeNode?.level === "WORKSPACE"
-            ? serverRuns.filter((r) => r.workspace_id === activeScopeId)
-            : activeScopeNode?.level === "TEAM"
-              ? serverRuns.filter((r) =>
-                  availableWorkspaces.some((ws) => ws.workspaceId === r.workspace_id),
-                )
-              : serverRuns;
-        const activeRuns = scopedServerRuns.filter(
-          (r) => !TERMINAL_RUN_STATUSES.has(r.status),
-        );
-        if (activeRuns.length === 0) {
-          setPendingGovernance(null);
-          setChallengeTarget(null);
-          return;
-        }
-        const candidates = [...activeRuns].reverse();
-        const checked = await Promise.all(
-          candidates.map(async (run) => {
-            try {
-              const bb = await apiClient.getRunBlackboardState(run.id);
-              const wf = (state.workflows ?? []).find((w) => w.uri === run.workflow_uri) ?? null;
-              const derived = derivePendingGovernanceFromBlackboard(bb, wf);
-              const hasSignedAnchor = (bb.human_anchors?.length ?? 0) > 0;
-              return {
-                pending: derived.hasPendingAction
-                  ? { runId: run.id, workflow: wf, initialBlackboard: bb }
-                  : null,
-                challenge:
-                  hasSignedAnchor || derived.hasStaleWarning
-                    ? { runId: run.id, hasStaleWarning: derived.hasStaleWarning }
-                    : null,
-              };
-            } catch (err: unknown) {
-              console.warn("[orcia/cockpit] failed to inspect run blackboard:", err);
-              return { pending: null, challenge: null };
-            }
-          }),
-        );
-        if (cancelled) return;
-        setPendingGovernance(checked.find((item) => item.pending !== null)?.pending ?? null);
-        setChallengeTarget(checked.find((item) => item.challenge !== null)?.challenge ?? null);
-      })
-      .catch((err: unknown) => {
-        console.warn("[orcia/cockpit] failed to check orchestration state:", err);
-        if (!cancelled) {
-          setPendingGovernance(null);
-          setChallengeTarget(null);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    activeScopeId,
-    activeScopeNode?.level,
-    availableWorkspaces,
-    isAuthenticated,
-    isHydrating,
-    runRefreshSignal,
-  ]);
-
   const showGovernanceSection = pendingGovernance !== null;
-
   const currentUserId = authEmail?.trim() || platformAdmin?.email || "";
   const resolvedAuthorName =
     authDisplayName?.trim() ||
@@ -269,7 +157,7 @@ export function CockpitFeaturePanel() {
       data-testid="cockpit-empty-first-panel"
       style={{ display: "flex", flexDirection: "column", gap: "16px", minWidth: 0 }}
     >
-      {/* Bloc majeur 1 : Accostage */}
+      {/* Major Block 1: Onboarding */}
       <section
         data-testid="cockpit-block-accostage"
         className="flex flex-col gap-3 rounded-lg border p-3.5"
@@ -292,7 +180,7 @@ export function CockpitFeaturePanel() {
         />
       </section>
 
-      {/* Bloc majeur 2 : Orientation sobre & Lancement de processus */}
+      {/* Major Block 2: Overview & Process Launch */}
       <section
         data-testid="cockpit-block-decisions"
         className="flex flex-col gap-4"
@@ -346,7 +234,7 @@ export function CockpitFeaturePanel() {
         )}
       </section>
 
-      {/* Bloc majeur 3 : Gouvernance Human-Led & Arbitrage (monté uniquement sur action réelle en attente en PG18) */}
+      {/* Major Block 3: Human-Led Governance & Arbitration (mounted only on pending PG18 action) */}
       {pendingGovernance && (
         <div data-testid="cockpit-block-governance" style={{ minWidth: 0 }}>
           <CockpitHumanLedGovernanceSection

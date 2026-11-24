@@ -18,6 +18,10 @@ from orcia_core.orchestration._challenge_replay_models import (
     UpstreamChallengeImpactPreview,
     compute_upstream_challenge_preview,
 )
+from orcia_core.orchestration._orchestration_runtime_locales import (
+    CHALLENGE_REPLAY_LOCALES,
+    get_runtime_copy,
+)
 from orcia_core.permissions.models import UserIdentity
 from orcia_kernel.events import HumanArbitrationRequested
 from orcia_kernel.ids import new_uuid7_str
@@ -119,9 +123,9 @@ class UpstreamChallengeAndReplayService:
                         entry_id=new_uuid7_str(),
                         step_key=target_upstream_step_key,
                         marker_type="DECISION",
-                        summary=(
-                            f"Révision amont v1.1 suite au challenge de '{challenger_step_key}'"
-                        ),
+                        summary=get_runtime_copy(CHALLENGE_REPLAY_LOCALES)[
+                            "revision_summary"
+                        ].format(challenger=challenger_step_key),
                         details=preview.translated_summary,
                     ),
                 ),

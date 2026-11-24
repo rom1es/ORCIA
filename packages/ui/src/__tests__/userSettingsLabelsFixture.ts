@@ -1,4 +1,54 @@
-import type { UserAccountDropdownAndSettingsLabels } from "../index";
+import type {
+  RoleDisplayLabels,
+  TemporaryPasswordInvitationModalLabels,
+  UserAccountDropdownAndSettingsLabels,
+} from "../index";
+
+export const TEST_ROLE_DISPLAY_LABELS_FR: RoleDisplayLabels = {
+  platformAdmin: "Administrateur de la plateforme",
+  secops: "Responsable Sécurité & Habilitations",
+  buLead: "Responsable de Direction (BU)",
+  teamLead: "Responsable d'Équipe",
+  ontologyLead: "Référent Glossaire",
+  contributor: "Contributeur",
+  observer: "Observateur (Lecture seule)",
+  analystPmPo: "Product Manager / Métier",
+  architect: "Architecte",
+  techLeadDev: "Référent Technique / Développeur",
+  securityCompliance: "Sécurité & Conformité",
+};
+
+export const TEST_ROLE_DISPLAY_LABELS_EN: RoleDisplayLabels = {
+  platformAdmin: "Platform Administrator",
+  secops: "Security & Access Officer",
+  buLead: "Business Unit Lead",
+  teamLead: "Team Lead",
+  ontologyLead: "Glossary Lead",
+  contributor: "Contributor",
+  observer: "Observer (Read-only)",
+  analystPmPo: "Product Manager / Business",
+  architect: "Architect",
+  techLeadDev: "Technical Lead / Developer",
+  securityCompliance: "Security & Compliance",
+};
+
+export const TEST_TEMP_PASSWORD_LABELS_FR: TemporaryPasswordInvitationModalLabels = {
+  modalTitle: "Accès & Mot de Passe Temporaire",
+  closeLabel: "Fermer",
+  securityPolicyHint:
+    "Ce mot de passe temporaire à usage unique est généré selon les exigences de sécurité (12 caractères, Maj/Min/Chiffre).",
+  generatedPasswordTitle: "Mot de passe temporaire généré", // pragma: allowlist secret
+  regeneratingLabel: "Génération...",
+  regenerateLabel: "Régénérer",
+  copiedCodeLabel: "Copié !",
+  copyCodeLabel: "Copier le code",
+  invitationMessageLabel: "Message d'invitation prêt à envoyer",
+  copiedMessageLabel: "Message copié !",
+  copyMessageLabel: "Copier le message d'invitation",
+  clipboardBlockedError: "Copie automatique bloquée par le navigateur.",
+  invitationMessageTemplate:
+    "Bonjour {displayName},\n\nVoici vos accès à ORCIA :\n- Identifiant : {email}\n- Mot de passe temporaire : {temporaryPassword}\n\nConnectez-vous sur {orciaUrl}\nN'oubliez pas de changer votre mot de passe dès votre première connexion.", // pragma: allowlist secret
+};
 
 export const TEST_USER_SETTINGS_LABELS: UserAccountDropdownAndSettingsLabels = {
   triggerAriaLabel: "Mon compte",
@@ -96,4 +146,26 @@ export const TEST_USER_SETTINGS_LABELS: UserAccountDropdownAndSettingsLabels = {
   passthroughConnectTokenCta: "Connecter mon jeton",
   passthroughRevokeTokenCta: "Révoquer",
   passthroughEmptyConnectorsMessage: "Aucun connecteur configuré au niveau du socle.",
+  tokenIdentifierPrefix: "Identifiant :",
+  roleDisplayLabels: TEST_ROLE_DISPLAY_LABELS_FR,
+  passwordSecurity: {
+    title: "Sécurité & Mot de Passe",
+    renewalRequiredBadge: "Renouvellement Requis",
+    temporaryPasswordWarning:
+      "Vous utilisez un mot de passe temporaire à renouveler obligatoirement.",
+    currentPasswordLabel: "Mot de passe actuel", // pragma: allowlist secret
+    newPasswordLabel: "Nouveau mot de passe (min. 12 car., Maj/Min/Chiffre)", // pragma: allowlist secret
+    confirmPasswordLabel: "Confirmer le nouveau mot de passe", // pragma: allowlist secret
+    submitButtonLabel: "Changer mon mot de passe",
+    submittingButtonLabel: "Mise à jour...",
+    updatedSuccessMessage: "Mot de passe mis à jour avec succès.",
+    missingCurrentPasswordError: "Veuillez renseigner votre mot de passe actuel.", // pragma: allowlist secret
+    weakPasswordError:
+      "Le mot de passe doit comporter au moins 12 caractères (min. 1 min, 1 maj, 1 chiffre).",
+    unchangedPasswordError:
+      "Le nouveau mot de passe doit être différent de l'actuel.", // pragma: allowlist secret
+    mismatchPasswordError: "Les deux mots de passe ne correspondent pas.", // pragma: allowlist secret
+    actionNotConfiguredError: "Action non configurée.",
+    genericError: "Erreur lors de la modification du mot de passe.",
+  },
 };

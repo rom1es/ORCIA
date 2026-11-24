@@ -1,18 +1,17 @@
-const AGENT_HUMAN_LABELS: Record<string, string> = {
-  "pack://sdlc/agents/orchestrateur-produit.md":
-    "Agent Product Owner (Qualification & PRD)",
-  "pack://sdlc/agents/crl-etude-archi.md":
-    "Agent Architecte (Dossier d'étude 14 points)",
-  "pack://sdlc/agents/agent-us.md":
-    "Agent Business Analyst (Découpe Epics & US)",
-  "pack://sdlc/agents/crl-socle-generateur.md": "Agent Socle de Connaissance",
-  "pack://orcia-docs/agents/redacteur-documentation-orcia.md":
-    "Agent Rédacteur Documentaire",
-};
+import {
+  DICTIONARIES,
+  formatI18nTemplate,
+  resolveDictionaryForFlag,
+  type SupportedWebLocale,
+} from "../../../i18n";
 
-export function formatAgentHumanLabel(agentRef: string): string {
+export function formatAgentHumanLabel(
+  agentRef: string,
+  locale: SupportedWebLocale = "fr",
+): string {
+  const labels = DICTIONARIES[locale].processVsmExecutionUi.execution.agentHumanLabels;
   return (
-    AGENT_HUMAN_LABELS[agentRef] ??
+    labels[agentRef] ??
     agentRef.replace(/^pack:\/\/[^/]+\/agents\//, "").replace(/\.md$/, "")
   );
 }
@@ -49,16 +48,30 @@ export function buildInitialArtifactMarkdown(
   workflowTitle: string,
   stepName: string,
   agentLabel: string,
+  locale: SupportedWebLocale = "fr",
 ): string {
-  return `# ${workflowTitle}\n\n## Étape en cours : ${stepName}\n\nProposition préparée par ${agentLabel}.\n\n## Synthèse & Critères de valeur\n- Objectif métier clarifié et aligné avec le socle de connaissance.\n- Score de priorité (WSJF) estimé : 8.4 — Prêt pour relecture.`;
+  const tpl =
+    DICTIONARIES[locale].processVsmExecutionUi.execution.initialArtifactMarkdownTemplate;
+  return formatI18nTemplate(tpl, {
+    title: workflowTitle,
+    step: stepName,
+    agent: agentLabel,
+  });
 }
 
 export function buildSubStepAdvanceMarkdown(
   workflowTitle: string,
   stepName: string,
   outputDescription: string,
+  locale: SupportedWebLocale = "fr",
 ): string {
-  return `# ${workflowTitle}\n\n## Étape en cours : ${stepName}\n\nLivrable préparé : ${outputDescription}`;
+  const tpl =
+    DICTIONARIES[locale].processVsmExecutionUi.execution.substepAdvanceMarkdownTemplate;
+  return formatI18nTemplate(tpl, {
+    title: workflowTitle,
+    step: stepName,
+    output: outputDescription,
+  });
 }
 
 export function buildWritePreviewExecutionPayload(
@@ -68,6 +81,9 @@ export function buildWritePreviewExecutionPayload(
   reflexiveObjective: string | null | undefined,
   isFr: boolean,
 ) {
+  const tpl =
+    resolveDictionaryForFlag(isFr).processVsmExecutionUi.execution
+      .writePreviewActionSummaryTemplate;
   return {
     actor_slug: actorSlug,
     objective: reflexiveObjective || workflowTitle,
@@ -80,9 +96,7 @@ export function buildWritePreviewExecutionPayload(
       connector_type: "confluence",
       action: "publish_page",
       target_resource_uri: "confluence://Architecture/Documentation-ORCIA",
-      action_summary: isFr
-        ? `Publier le livrable « ${workflowTitle} »`
-        : `Publish deliverable "${workflowTitle}"`,
+      action_summary: formatI18nTemplate(tpl, { title: workflowTitle }),
       payload: { workflow_id: workflowId, title: workflowTitle },
     },
   };

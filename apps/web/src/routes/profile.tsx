@@ -38,7 +38,8 @@ function mapProfileDtoToUi(dto: UserProfileSummaryResponse): UiUserProfileSummar
 export function UserProfileRouteView(): React.ReactElement {
   const { locale, dictionary } = useI18n();
   const { navigateTo } = useOrciaNavigation();
-  const displayName = useAuthSessionStore((s) => s.displayName) ?? "Utilisateur ORCIA";
+  const displayName =
+    useAuthSessionStore((s) => s.displayName) ?? dictionary.shellChrome.guestDisplayNameFallback;
   const email = useAuthSessionStore((s) => s.email) ?? "";
   const roles = useAuthSessionStore((s) => s.roles);
   const isHydrating = useAuthSessionStore((s) => s.isHydrating);
@@ -86,7 +87,7 @@ export function UserProfileRouteView(): React.ReactElement {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const genericErrorLabel =
-    dictionary.userAccountAndSettings.passwordSecurity?.genericError ?? "Error";
+    dictionary.userAccountAndSettings.passwordSecurity.genericError;
 
   const loadProfileSummary = useCallback(async () => {
     setIsLoading(true);

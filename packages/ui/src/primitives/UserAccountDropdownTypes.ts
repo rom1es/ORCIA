@@ -5,6 +5,7 @@
  */
 
 import type { RgaaModalGuardLabels } from "../components/RgaaModalDialog";
+import type { RoleDisplayLabels } from "./UserRoleDisplayLabels";
 
 export type UiThemePreference = "light" | "dark" | "system";
 export type UiLocalePreference = "fr" | "en";
@@ -148,7 +149,9 @@ export interface UserAccountDropdownAndSettingsLabels extends RgaaModalGuardLabe
   readonly passthroughConnectTokenCta: string;
   readonly passthroughRevokeTokenCta: string;
   readonly passthroughEmptyConnectorsMessage: string;
-  readonly passwordSecurity?: UserPasswordSecurityLabels;
+  readonly tokenIdentifierPrefix: string;
+  readonly roleDisplayLabels?: RoleDisplayLabels | Readonly<Record<string, string>>;
+  readonly passwordSecurity: UserPasswordSecurityLabels;
 }
 
 export interface UserAccountPreferencesPatch {

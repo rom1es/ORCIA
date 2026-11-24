@@ -34,6 +34,7 @@ export interface PackBuilderProcessesStudioLabels {
   process3CertifyTitle: string;
   certifiedBadgeLabel: string;
   process4PromoteButtonLabel: string;
+  durationMsUnit?: string;
 }
 
 export interface PackBuilderProcessesStudioViewProps {
@@ -180,7 +181,7 @@ export const PackBuilderProcessesStudioView: React.FC<
           >
             <span className="font-mono font-semibold">{cert.toolSlug}</span>
             <span className="font-mono text-[var(--color-text-secondary)]">
-              {cert.sandboxTier} · {cert.elapsedMs.toFixed(2)} ms
+              {`${cert.sandboxTier} · ${cert.elapsedMs.toFixed(2)} ${labels.durationMsUnit ?? "ms"}`}
             </span>
             {cert.certified && (
               <span className="rounded bg-[var(--color-status-success-subtle)] px-2 py-0.5 font-medium text-[var(--color-status-success)]">

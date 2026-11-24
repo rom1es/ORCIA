@@ -34,9 +34,10 @@ class _AssistantGovernanceSyncMixin:
 
     @staticmethod
     def _default_team_instructions(locale: str) -> str:
-        if locale.startswith("en"):
-            return "Team standards: decision traceability and peer review."
-        return "Standards d'équipe : traçabilité systématique des décisions et revues croisées."
+        from orcia_core.orchestration._assistant_locales import ASSISTANT_FOLDER_LOCALES
+
+        loc: Literal["fr", "en"] = "en" if locale.startswith("en") else "fr"
+        return ASSISTANT_FOLDER_LOCALES[loc]["team_instructions"]
 
     def freeze_mcp_at_upper_layer(
         self,

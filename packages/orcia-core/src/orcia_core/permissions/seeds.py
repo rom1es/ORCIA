@@ -8,6 +8,18 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from orcia_core.permissions._broker_seeds import (
+    DEFAULT_PERMISSION_BROKER_POLICY_SEEDS,
+    DEFAULT_PERMISSION_BROKER_TICKET_SEEDS,
+    PermissionBrokerPolicySeed,
+    PermissionBrokerTicketSeed,
+)
+from orcia_core.permissions._permissions_seed_locales import (
+    ORG_UNIT_SEED_NAMES,
+    WORKSPACE_SEED_NAMES,
+)
+from orcia_kernel.enums import DEFAULT_LOCALE
+
 INIT_USER_WORKFLOW_URI: str = "orcia://system/bootstrap/init-user"
 
 
@@ -54,40 +66,64 @@ _OU_TEAM = "0192c4e0-0000-7000-8000-000000000103"
 _OU_SUB = "0192c4e0-0000-7000-8000-000000000104"
 _OU_PART = "0192c4e0-0000-7000-8000-000000000105"
 
+_OU_NAMES = ORG_UNIT_SEED_NAMES[DEFAULT_LOCALE]
 DEFAULT_ORG_UNIT_SEEDS: tuple[OrgUnitSeed, ...] = (
-    OrgUnitSeed(_OU_ENT, "orcia-enterprise", "Entreprise ORCIA Group", "ENTERPRISE", None),
-    OrgUnitSeed(_OU_BU, "bu-digital-payments", "BU Digital & Paiements", "BU", _OU_ENT),
+    OrgUnitSeed(_OU_ENT, "orcia-enterprise", _OU_NAMES["orcia-enterprise"], "ENTERPRISE", None),
+    OrgUnitSeed(_OU_BU, "bu-digital-payments", _OU_NAMES["bu-digital-payments"], "BU", _OU_ENT),
     OrgUnitSeed(
-        _OU_TEAM, "team-architecture-parent", "Équipe Parente Architecture & Plateforme",
-        "TEAM", _OU_BU,
+        _OU_TEAM,
+        "team-architecture-parent",
+        _OU_NAMES["team-architecture-parent"],
+        "TEAM",
+        _OU_BU,
     ),
     OrgUnitSeed(
-        _OU_SUB, "subteam-checkout-squad", "Sous-Équipe Checkout & Core Solutions",
-        "SUB_TEAM", _OU_TEAM,
+        _OU_SUB,
+        "subteam-checkout-squad",
+        _OU_NAMES["subteam-checkout-squad"],
+        "SUB_TEAM",
+        _OU_TEAM,
     ),
     OrgUnitSeed(
-        _OU_PART, "team-partner-external", "Équipe Partenaire Intégration", "TEAM", _OU_ENT
+        _OU_PART,
+        "team-partner-external",
+        _OU_NAMES["team-partner-external"],
+        "TEAM",
+        _OU_ENT,
     ),
-)  # fmt: skip
+)
 
 _WS_PAY = "0192c4e0-0000-7000-8000-000000000201"
 _WS_LOY = "0192c4e0-0000-7000-8000-000000000202"
 _WS_CONF = "0192c4e0-0000-7000-8000-000000000203"
 
+_WS_NAMES = WORKSPACE_SEED_NAMES[DEFAULT_LOCALE]
 DEFAULT_WORKSPACE_SEEDS: tuple[WorkspaceSeed, ...] = (
     WorkspaceSeed(
-        _WS_PAY, "ws-solution-paiement", "Workspace 1 : Solution Paiement",
-        _OU_SUB, "STANDARD", 142.50,
+        _WS_PAY,
+        "ws-solution-paiement",
+        _WS_NAMES["ws-solution-paiement"],
+        _OU_SUB,
+        "STANDARD",
+        142.50,
     ),
     WorkspaceSeed(
-        _WS_LOY, "ws-solution-fidelite", "Workspace 2 : Solution Fidélité",
-        _OU_SUB, "STANDARD", 87.25,
+        _WS_LOY,
+        "ws-solution-fidelite",
+        _WS_NAMES["ws-solution-fidelite"],
+        _OU_SUB,
+        "STANDARD",
+        87.25,
     ),
     WorkspaceSeed(
-        _WS_CONF, "ws-projet-confidentiel", "Workspace 3 : Projet Confidentiel M&A",
-        _OU_SUB, "CONFIDENTIAL_RESTRICTED", 310.00,
+        _WS_CONF,
+        "ws-projet-confidentiel",
+        _WS_NAMES["ws-projet-confidentiel"],
+        _OU_SUB,
+        "CONFIDENTIAL_RESTRICTED",
+        310.00,
     ),
-)  # fmt: skip
+)
 
 _DS_PREFIX = "0192c4e0-0000-7000-8000-000000000"
 DEFAULT_WORKSPACE_DATASOURCE_SEEDS: tuple[WorkspaceDatasourceSeed, ...] = (
@@ -103,311 +139,16 @@ DEFAULT_WORKSPACE_DATASOURCE_SEEDS: tuple[WorkspaceDatasourceSeed, ...] = (
     WorkspaceDatasourceSeed(f"{_DS_PREFIX}310", _WS_LOY, "confluence-loyalty-kb", "confluence", "confluence://wiki.entreprise.io/spaces/LOYKB", "kb_product"),  # noqa: E501
 )  # fmt: skip
 
-
-@dataclass(frozen=True, slots=True)
-class PermissionBrokerPolicySeed:
-    """Reference Permission Broker KB policy seed (`permission_broker_policies`, FR-22)."""
-
-    id: str
-    policy_key: str
-    uri_pattern: str
-    connector_scheme: str
-    required_role: str
-    approver_team: str
-    request_url_template: str
-    sla_hours: int
-    procedure_markdown: str
-    service_principal_allowed: bool = False
-    approved_by_admin_id: str | None = None
-    human_anchor_author_id: str | None = None
-    human_anchor_signature: str | None = None
-    freshness_ttl_days: int = 90
-
-
-@dataclass(frozen=True, slots=True)
-class PermissionBrokerTicketSeed:
-    """Reference Permission Broker blocked step ticket seed (`permission_broker_tickets`)."""
-
-    id: str
-    ticket_key: str
-    workspace_id: str | None
-    requester_user_id: str
-    policy_id: str
-    step_key: str
-    step_number: int
-    step_state: str
-    status: str
-    target_uri: str
-    connector_scheme: str
-    execution_identity: str
-    upstream_http_status: int
-    required_role: str
-    approver_team: str
-    sla_hours: int
-    jira_request_url: str
-    permission_broker_hint: str
-    procedure_markdown: str = ""
-    request_url: str = ""
-
-    def __post_init__(self) -> None:
-        if not self.request_url and self.jira_request_url:
-            object.__setattr__(self, "request_url", self.jira_request_url)
-        elif not self.jira_request_url and self.request_url:
-            object.__setattr__(self, "jira_request_url", self.request_url)
-
-
-DEFAULT_PERMISSION_BROKER_POLICY_SEEDS: tuple[PermissionBrokerPolicySeed, ...] = (
-    PermissionBrokerPolicySeed(
-        id="0192c4e0-0000-7000-8000-000000001001",
-        policy_key="pol-git-payments-checkout",
-        uri_pattern="git://*/payments/*",
-        connector_scheme="git",
-        required_role="ROLE_GIT_PAYMENTS_MAINTAINER",
-        approver_team="SecOps & Core Payments IAM",
-        request_url_template=(
-            "https://jira.enterprise.internal/secure/CreateIssueDetails!init.jspa"
-            "?pid=10420&issuetype=10002&summary={summary}&description={description}"
-        ),
-        sla_hours=4,
-        procedure_markdown=(
-            "### Procédure d'habilitation Dépôts Git Paiement\n"
-            "1. Ouvrir le ticket Jira IAM pré-rempli.\n"
-            "2. Faire valider `ROLE_GIT_PAYMENTS_MAINTAINER` par `SecOps & Core Payments IAM`.\n"
-            "3. Cliquer sur **Rejouer l'étape** dans le Dock Permission Broker."
-        ),
-        service_principal_allowed=False,
-        approved_by_admin_id=None,
-        human_anchor_author_id="0192c4e0-0000-7000-8000-000000000601",
-        human_anchor_signature="SIG-KARIM-SECOPS-GIT-PAYMENTS-2026",
-        freshness_ttl_days=90,
-    ),
-    PermissionBrokerPolicySeed(
-        id="0192c4e0-0000-7000-8000-000000001002",
-        policy_key="pol-git-archi-security-blackbox",
-        uri_pattern="git://*/archi/*",
-        connector_scheme="git",
-        required_role="ROLE_GIT_ARCHI_EXECUTOR",
-        approver_team="Architecture & Security Board",
-        request_url_template=(
-            "https://jira.enterprise.internal/secure/CreateIssueDetails!init.jspa"
-            "?pid=10420&issuetype=10002&summary={summary}&description={description}"
-        ),
-        sla_hours=8,
-        procedure_markdown=(
-            "### Procédure d'habilitation Agents Architecture & SecOps\n"
-            "Validation par le comité Architecture & Security Board (SLA 8h)."
-        ),
-        service_principal_allowed=True,
-        approved_by_admin_id="0192c4e0-0000-7000-8000-000000000601",
-        human_anchor_author_id="0192c4e0-0000-7000-8000-000000000601",
-        human_anchor_signature="SIG-KARIM-SERVICE-PRINCIPAL-APPROVED",
-        freshness_ttl_days=60,
-    ),
-    PermissionBrokerPolicySeed(
-        id="0192c4e0-0000-7000-8000-000000001003",
-        policy_key="pol-confluence-pay-spaces",
-        uri_pattern="confluence://PAY*",
-        connector_scheme="confluence",
-        required_role="CONFLUENCE_PAY_ADR_READER",
-        approver_team="Architecture Paiement & Conformité PCI",
-        request_url_template=(
-            "https://jira.enterprise.internal/secure/CreateIssueDetails!init.jspa"
-            "?pid=10421&issuetype=10002&summary={summary}&description={description}"
-        ),
-        sla_hours=2,
-        procedure_markdown=(
-            "### Accès Espace Confluence Architecture PCI\n"
-            "Octroi du groupe `CONFLUENCE_PAY_ADR_READER` sous 2h ouvrées."
-        ),
-        service_principal_allowed=False,
-        approved_by_admin_id=None,
-        human_anchor_author_id="0192c4e0-0000-7000-8000-000000000603",
-        human_anchor_signature="SIG-MARC-TECH-LEAD-CONFLUENCE-PAY",
-        freshness_ttl_days=90,
-    ),
-    PermissionBrokerPolicySeed(
-        id="0192c4e0-0000-7000-8000-000000001004",
-        policy_key="pol-jira-secops-projects",
-        uri_pattern="jira://*SEC*",
-        connector_scheme="jira",
-        required_role="JIRA_SECOPS_TRANSITION_ACTOR",
-        approver_team="CSIRT & SecOps Governance",
-        request_url_template=(
-            "https://jira.enterprise.internal/secure/CreateIssueDetails!init.jspa"
-            "?pid=10422&issuetype=10002&summary={summary}&description={description}"
-        ),
-        sla_hours=4,
-        procedure_markdown=(
-            "### Habilitation Transitions Jira SecOps\n"
-            "Requiert le rôle `JIRA_SECOPS_TRANSITION_ACTOR` validé par CSIRT."
-        ),
-        service_principal_allowed=False,
-        approved_by_admin_id=None,
-        human_anchor_author_id="0192c4e0-0000-7000-8000-000000000601",
-        human_anchor_signature="SIG-KARIM-SECOPS-JIRA-2026",
-        freshness_ttl_days=30,
-    ),
-    PermissionBrokerPolicySeed(
-        id="0192c4e0-0000-7000-8000-000000001005",
-        policy_key="pol-nexus-bmad-registry",
-        uri_pattern="nexus://*",
-        connector_scheme="nexus",
-        required_role="NEXUS_BMAD_PUBLISHER",
-        approver_team="Platform Engineering Registry Team",
-        request_url_template=(
-            "https://jira.enterprise.internal/secure/CreateIssueDetails!init.jspa"
-            "?pid=10423&issuetype=10002&summary={summary}&description={description}"
-        ),
-        sla_hours=6,
-        procedure_markdown=(
-            "### Habilitation Registre Nexus BMAD\n"
-            "Approbation par Platform Engineering Registry Team."
-        ),
-        service_principal_allowed=True,
-        approved_by_admin_id="0192c4e0-0000-7000-8000-000000000601",
-        freshness_ttl_days=120,
-    ),
-    PermissionBrokerPolicySeed(
-        id="0192c4e0-0000-7000-8000-000000001006",
-        policy_key="pol-db-orcia-catalog",
-        uri_pattern="db://*",
-        connector_scheme="db",
-        required_role="DB_CATALOG_WORKFLOW_OPERATOR",
-        approver_team="Data Governance & DBA Team",
-        request_url_template=(
-            "https://jira.enterprise.internal/secure/CreateIssueDetails!init.jspa"
-            "?pid=10424&issuetype=10002&summary={summary}&description={description}"
-        ),
-        sla_hours=4,
-        procedure_markdown=(
-            "### Habilitation Base Catalogue ORCIA\nApprobation par Data Governance & DBA Team."
-        ),
-        service_principal_allowed=False,
-        approved_by_admin_id=None,
-        freshness_ttl_days=90,
-    ),
-    PermissionBrokerPolicySeed(
-        id="0192c4e0-0000-7000-8000-000000001007",
-        policy_key="pol-git-default-fallback",
-        uri_pattern="git://*",
-        connector_scheme="git",
-        required_role="ROLE_GIT_REPOSITORY_READER",
-        approver_team="SecOps & Platform IAM",
-        request_url_template=(
-            "https://jira.enterprise.internal/secure/CreateIssueDetails!init.jspa"
-            "?pid=10420&issuetype=10002&summary={summary}&description={description}"
-        ),
-        sla_hours=4,
-        procedure_markdown=(
-            "### Procédure d'habilitation Dépôt Git\n"
-            "1. Ouvrir la demande d'accès IAM pré-remplie auprès de `SecOps & Platform IAM`.\n"
-            "2. Faire valider le rôle `ROLE_GIT_REPOSITORY_READER` pour la source demandée.\n"
-            "3. Cliquer sur **Relancer l'étape** une fois l'accès confirmé."
-        ),
-        service_principal_allowed=False,
-        approved_by_admin_id=None,
-        freshness_ttl_days=90,
-    ),
-    PermissionBrokerPolicySeed(
-        id="0192c4e0-0000-7000-8000-000000001008",
-        policy_key="pol-jira-default-fallback",
-        uri_pattern="jira://*",
-        connector_scheme="jira",
-        required_role="ROLE_JIRA_PROJECT_CONTRIBUTOR",
-        approver_team="SecOps & PMO IAM",
-        request_url_template=(
-            "https://jira.enterprise.internal/secure/CreateIssueDetails!init.jspa"
-            "?pid=10422&issuetype=10002&summary={summary}&description={description}"
-        ),
-        sla_hours=4,
-        procedure_markdown=(
-            "### Procédure d'habilitation Projet Jira\n"
-            "1. Ouvrir la demande d'accès IAM pré-remplie auprès de `SecOps & PMO IAM`.\n"
-            "2. Faire valider `ROLE_JIRA_PROJECT_CONTRIBUTOR` puis relancer l'étape."
-        ),
-        service_principal_allowed=False,
-        approved_by_admin_id=None,
-        freshness_ttl_days=90,
-    ),
-    PermissionBrokerPolicySeed(
-        id="0192c4e0-0000-7000-8000-000000001009",
-        policy_key="pol-confluence-default-fallback",
-        uri_pattern="confluence://*",
-        connector_scheme="confluence",
-        required_role="ROLE_CONFLUENCE_SPACE_READER",
-        approver_team="Knowledge & SecOps Governance",
-        request_url_template=(
-            "https://jira.enterprise.internal/secure/CreateIssueDetails!init.jspa"
-            "?pid=10421&issuetype=10002&summary={summary}&description={description}"
-        ),
-        sla_hours=4,
-        procedure_markdown=(
-            "### Procédure d'habilitation Espace Confluence\n"
-            "1. Ouvrir la demande d'accès IAM pré-remplie.\n"
-            "2. Faire valider `ROLE_CONFLUENCE_SPACE_READER` puis relancer l'étape."
-        ),
-        service_principal_allowed=False,
-        approved_by_admin_id=None,
-        freshness_ttl_days=90,
-    ),
-    PermissionBrokerPolicySeed(
-        id="0192c4e0-0000-7000-8000-000000001010",
-        policy_key="pol-mcp-default-fallback",
-        uri_pattern="mcp://*",
-        connector_scheme="mcp",
-        required_role="ROLE_MCP_TOOL_EXECUTOR",
-        approver_team="Platform Engineering & SecOps",
-        request_url_template=(
-            "https://jira.enterprise.internal/secure/CreateIssueDetails!init.jspa"
-            "?pid=10425&issuetype=10002&summary={summary}&description={description}"
-        ),
-        sla_hours=4,
-        procedure_markdown=(
-            "### Procédure d'habilitation Outil MCP\n"
-            "1. Faire valider `ROLE_MCP_TOOL_EXECUTOR` par `Platform Engineering & SecOps`.\n"
-            "2. Relancer l'étape."
-        ),
-        service_principal_allowed=False,
-        approved_by_admin_id=None,
-        freshness_ttl_days=90,
-    ),
-)
-
-DEFAULT_PERMISSION_BROKER_TICKET_SEEDS: tuple[PermissionBrokerTicketSeed, ...] = (
-    PermissionBrokerTicketSeed(
-        id="0192c4e0-0000-7000-8000-000000001101",
-        ticket_key="tkt-perm-step-02-git-checkout-core",
-        workspace_id="0192c4e0-0000-7000-8000-000000000201",
-        requester_user_id="0192c4e0-0000-7000-8000-000000000604",
-        policy_id="0192c4e0-0000-7000-8000-000000001001",
-        step_key="step-02-execution",
-        step_number=2,
-        step_state="PERMISSION_DENIED_STEP",
-        status="WAITING_FOR_PERMISSION",
-        target_uri="git://github.enterprise/payments/checkout-core.git",
-        connector_scheme="git",
-        execution_identity="passthrough",
-        upstream_http_status=403,
-        required_role="ROLE_GIT_PAYMENTS_MAINTAINER",
-        approver_team="SecOps & Core Payments IAM",
-        sla_hours=4,
-        jira_request_url=(
-            "https://jira.enterprise.internal/secure/CreateIssueDetails!init.jspa"
-            "?pid=10420&issuetype=10002"
-            "&summary=%5BORCIA%20Permission%20Broker%5D%20ROLE_GIT_PAYMENTS_MAINTAINER"
-            "%20sur%20git%3A//github.enterprise/payments/checkout-core.git"
-            "&description=Demande%20d%27acc%C3%A8s%20Passthrough%20pour%20step-02-execution"
-        ),
-        permission_broker_hint=(
-            "jira://IAM/ROLE_GIT_PAYMENTS_MAINTAINER"
-            "?target=git%3A//github.enterprise/payments/checkout-core.git"
-            "&approver=SecOps%20%26%20Core%20Payments%20IAM&sla_hours=4"
-        ),
-        procedure_markdown=(
-            "### Procédure d'habilitation Dépôts Git Paiement\n"
-            "1. Ouvrir le ticket Jira IAM pré-rempli.\n"
-            "2. Faire valider `ROLE_GIT_PAYMENTS_MAINTAINER` par `SecOps & Core Payments IAM`.\n"
-            "3. Cliquer sur **Rejouer l'étape** dans le Dock Permission Broker."
-        ),
-    ),
-)
+__all__ = [
+    "DEFAULT_ORG_UNIT_SEEDS",
+    "DEFAULT_PERMISSION_BROKER_POLICY_SEEDS",
+    "DEFAULT_PERMISSION_BROKER_TICKET_SEEDS",
+    "DEFAULT_WORKSPACE_DATASOURCE_SEEDS",
+    "DEFAULT_WORKSPACE_SEEDS",
+    "INIT_USER_WORKFLOW_URI",
+    "OrgUnitSeed",
+    "PermissionBrokerPolicySeed",
+    "PermissionBrokerTicketSeed",
+    "WorkspaceDatasourceSeed",
+    "WorkspaceSeed",
+]

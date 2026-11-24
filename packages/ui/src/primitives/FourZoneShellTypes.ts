@@ -90,6 +90,8 @@ export interface MobileCompanionTabLabels {
 }
 
 export interface FourZoneDirectionCShellLabels {
+  readonly brandName?: string;
+  readonly breadcrumbAriaLabel?: string;
   readonly workspacePrefix: string;
   readonly searchTriggerPlaceholder: string;
   readonly contextualHelpButtonLabel: string;

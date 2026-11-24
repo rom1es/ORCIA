@@ -1,5 +1,6 @@
 import { OrciaAlertBanner } from "@orcia/ui";
 import React from "react";
+import { resolveDictionaryForFlag } from "../i18n";
 
 export interface TemporaryPasswordWarningBannerProps {
   readonly isFr: boolean;
@@ -10,17 +11,14 @@ export function TemporaryPasswordWarningBanner({
   isFr,
   onOpenSettings,
 }: TemporaryPasswordWarningBannerProps): React.ReactElement {
+  const copy = resolveDictionaryForFlag(isFr).shellChrome.temporaryPasswordBanner;
   return (
     <OrciaAlertBanner
       tone="amber"
       testId="temporary-password-warning-banner"
       className="flex items-center justify-between gap-3 px-4 py-2 text-xs"
     >
-      <span>
-        {isFr
-          ? "Attention : vous utilisez un mot de passe temporaire. Modifiez-le dès maintenant pour sécuriser votre compte."
-          : "Warning: you are using a temporary password. Change it now to secure your account."}
-      </span>
+      <span>{copy.warningText}</span>
       <button
         type="button"
         data-testid="temporary-password-open-settings-btn"
@@ -28,7 +26,7 @@ export function TemporaryPasswordWarningBanner({
         className="orcia-ds-btn orcia-ds-btn-primary"
         style={{ padding: "4px 8px", fontSize: "12px" }}
       >
-        {isFr ? "Modifier mon mot de passe" : "Change my password"}
+        {copy.changePasswordCta}
       </button>
     </OrciaAlertBanner>
   );

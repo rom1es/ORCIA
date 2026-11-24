@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from orcia_connectors._connectors_locales import SDLC_POLICY_AND_MARKER_LOCALES
+from orcia_core.kernel.enums import DEFAULT_LOCALE
 from orcia_core.orchestration.models import (
     WorkflowStepSpec,
     WorkflowValidationFinding,
@@ -69,6 +71,7 @@ class SdlcFr13WorkflowPolicyPlugin(WorkflowPolicyPluginProtocol):
         def _has_intent(step: WorkflowStepSpec) -> bool:
             return step.declares_intention or "sdlc.declares_intention" in step.tags
 
+        copy = SDLC_POLICY_AND_MARKER_LOCALES[DEFAULT_LOCALE]
         for step in parsed_steps:
             writes_code = "sdlc.writes_code" in step.tags or "sdlc.writes_code" in step.policies
             if writes_code:
@@ -80,10 +83,8 @@ class SdlcFr13WorkflowPolicyPlugin(WorkflowPolicyPluginProtocol):
                             line=step.line_number,
                             rule_code="ERR_INTENTION_BEFORE_CODE_REQUIRED",
                             field_path=f"steps.{step.step_key}.writes_code",
-                            message=(
-                                f"Ligne {step.line_number}: L'étape '{step.step_key}' modifie du "
-                                "code ('writes_code: true') sans étape amont déclarant l'intention "
-                                "('declares_intention: true') (FR-13)."
+                            message=copy["writes_code_without_intent"].format(
+                                line=step.line_number, step_key=step.step_key
                             ),
                         )
                     )
@@ -98,10 +99,8 @@ class SdlcFr13WorkflowPolicyPlugin(WorkflowPolicyPluginProtocol):
                         line=step.line_number,
                         rule_code="ERR_INTENTION_BEFORE_CODE_REQUIRED",
                         field_path=f"steps.{step.step_key}.reverse_doc_from_code",
-                        message=(
-                            f"Ligne {step.line_number}: L'étape '{step.step_key}' active "
-                            "'reverse_doc_from_code: true' uniquement autorisé en mode "
-                            "'brownfield_bootstrap' (FR-13)."
+                        message=copy["reverse_doc_mode_forbidden"].format(
+                            line=step.line_number, step_key=step.step_key
                         ),
                     )
                 )

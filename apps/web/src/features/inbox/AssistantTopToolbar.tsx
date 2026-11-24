@@ -1,5 +1,6 @@
 import { OrciaIcon } from "@orcia/ui";
 import React from "react";
+import { formatI18nTemplate, useI18n } from "../../i18n";
 
 export interface AssistantTopToolbarProps {
   readonly isFr: boolean;
@@ -16,7 +17,6 @@ export interface AssistantTopToolbarProps {
 }
 
 export function AssistantTopToolbar({
-  isFr,
   savedCount,
   foldersCount,
   savedConversationsOpen,
@@ -27,6 +27,9 @@ export function AssistantTopToolbar({
   onToggleFoldersPanel,
   onToggleGovernanceModal,
 }: AssistantTopToolbarProps): React.JSX.Element {
+  const { dictionary } = useI18n();
+  const tbCopy = dictionary.featureInboxAssistant.toolbar;
+
   return (
     <div className="orcia-bento-card flex flex-wrap items-center justify-between gap-2 py-2.5 px-3.5">
       <div className="flex flex-wrap items-center gap-2">
@@ -36,7 +39,7 @@ export function AssistantTopToolbar({
           onClick={onNewConversation}
           className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm rounded-full"
         >
-          {isFr ? "+ Nouvelle conversation" : "+ New conversation"}
+          {tbCopy.newConversationBtn}
         </button>
 
         <button
@@ -47,13 +50,9 @@ export function AssistantTopToolbar({
           className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm rounded-full"
         >
           <OrciaIcon name="clock" />{" "}
-          {isFr
-            ? savedCount > 0
-              ? `Conversations sauvegardées (${savedCount})`
-              : "Conversations sauvegardées"
-            : savedCount > 0
-              ? `Saved conversations (${savedCount})`
-              : "Saved conversations"}
+          {savedCount > 0
+            ? formatI18nTemplate(tbCopy.savedConversationsCountTemplate, { count: savedCount })
+            : tbCopy.savedConversationsLabel}
         </button>
 
         <button
@@ -64,13 +63,9 @@ export function AssistantTopToolbar({
           className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm rounded-full"
         >
           <OrciaIcon name="folder" />{" "}
-          {isFr
-            ? foldersCount > 0
-              ? `Dossiers (${foldersCount})`
-              : "Dossiers"
-            : foldersCount > 0
-              ? `Folders (${foldersCount})`
-              : "Folders"}
+          {foldersCount > 0
+            ? formatI18nTemplate(tbCopy.foldersCountTemplate, { count: foldersCount })
+            : tbCopy.foldersLabel}
         </button>
       </div>
 

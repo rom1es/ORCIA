@@ -17,7 +17,11 @@ export interface AgentIdentityAndSkillsFieldsProps {
   readonly isPack: boolean;
   readonly visibilityScope: UiAgentSkillVisibilityScope;
   readonly onChangeDraft: (patch: Partial<AgentSixBlocksDraftState>) => void;
-  readonly onToggleAgentSkill: (agentId: string, skillId: string, checked: boolean) => void;
+  readonly onToggleAgentSkill: (
+    agentId: string,
+    skillId: string,
+    checked: boolean,
+  ) => void;
 }
 
 export function AgentIdentityAndSkillsFields({
@@ -30,6 +34,7 @@ export function AgentIdentityAndSkillsFields({
   onChangeDraft,
   onToggleAgentSkill,
 }: AgentIdentityAndSkillsFieldsProps): React.JSX.Element {
+  const studio = labels.studio;
   return (
     <>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 rounded-lg border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3">
@@ -55,7 +60,9 @@ export function AgentIdentityAndSkillsFields({
             data-testid={`modal-agent-thinking-select-${agent.agentId}`}
             value={draft.thinkingLevel}
             onChange={(e) =>
-              onChangeDraft({ thinkingLevel: e.target.value as UiAgentThinkingLevel })
+              onChangeDraft({
+                thinkingLevel: e.target.value as UiAgentThinkingLevel,
+              })
             }
             className="orcia-ds-select"
           >
@@ -68,7 +75,7 @@ export function AgentIdentityAndSkillsFields({
         </label>
         {!isPack && (
           <label className="flex flex-col gap-1">
-            <span className="font-medium">Visibilité &amp; Partage</span>
+            <span className="font-medium">{studio.visibilityFieldLabel}</span>
             <select
               data-testid={`edit-agent-visibility-select-${agent.agentId}`}
               value={visibilityScope === "PRIVATE" ? "PRIVATE" : "TEAM"}
@@ -79,8 +86,12 @@ export function AgentIdentityAndSkillsFields({
               }
               className="orcia-ds-select"
             >
-              <option value="TEAM">{getOrciaIconGlyph("team")} Équipe / Espace</option>
-              <option value="PRIVATE">{getOrciaIconGlyph("lock")} Privé</option>
+              <option value="TEAM">
+                {getOrciaIconGlyph("team")} {studio.visibilityTeamShort}
+              </option>
+              <option value="PRIVATE">
+                {getOrciaIconGlyph("lock")} {studio.visibilityPrivateShort}
+              </option>
             </select>
           </label>
         )}
@@ -142,7 +153,9 @@ export function AgentIdentityAndSkillsFields({
                     data-form-type="other"
                     data-testid={`agent-attach-skill-${agent.agentId}-${sk.skillId}`}
                     checked={attached}
-                    onChange={(e) => onToggleAgentSkill(agent.agentId, sk.skillId, e.target.checked)}
+                    onChange={(e) =>
+                      onToggleAgentSkill(agent.agentId, sk.skillId, e.target.checked)
+                    }
                   />
                   <span>
                     <OrciaIcon name="tools" /> {sk.name} (

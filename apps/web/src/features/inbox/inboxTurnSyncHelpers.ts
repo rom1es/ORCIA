@@ -4,6 +4,7 @@ import type {
   UiAssistantFolderItem,
   UiAssistantModelOption,
 } from "@orcia/ui";
+import { resolveDictionaryForFlag, resolveLocaleForFlag } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import { citationMapToRagItems } from "./inboxCitationHelpers";
 import {
@@ -96,8 +97,10 @@ export function persistInboxTurnFeedback(params: {
         rating: params.feedback === "LIKE" ? "up" : "down",
       })
       .catch((err: unknown) => {
+        const resolvedLocale = resolveLocaleForFlag(params.isFr);
+        const context = resolveDictionaryForFlag(params.isFr, resolvedLocale).featureInboxAssistant.assistantFlow.feedbackErrorContext;
         params.onFeedbackBanner(
-          formatRfc9457ErrorToBanner(err, params.isFr ? "fr" : "en", "Avis Assistant").fullText,
+          formatRfc9457ErrorToBanner(err, resolvedLocale, context).fullText,
         );
       });
   }

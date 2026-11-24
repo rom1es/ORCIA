@@ -22,8 +22,16 @@ const HELP_LABELS_FR: ContextualHelpColumnAndCenterLabels = {
   realExampleTitle: "Un exemple réel",
   commonPitfallsTitle: "Ce qui coince souvent",
   technicalDetailsTitle: "Détails techniques",
+  versionLabel: "Version",
+  layerLabels: {
+    BASE: "Base",
+    PACK: "Pack",
+    WORKSPACE: "Espace",
+    USER: "Utilisateur",
+  },
   stepsBlockPrefix: "En",
   stepsBlockSuffix: "gestes",
+  targetedHelpBadgeLabel: "Aide ciblée",
 };
 
 const SAMPLE_ASSISTANT_ARTICLE: UiContextualHelpArticleView = {
@@ -185,6 +193,13 @@ describe("Story 23.3 — Zone 4 DESIGN.md 4 Blocks, Admin Technical Details & Sc
       realExampleTitle: "A real example",
       commonPitfallsTitle: "Common pitfalls",
       technicalDetailsTitle: "Technical details",
+      versionLabel: "Version",
+      layerLabels: {
+        BASE: "Base",
+        PACK: "Pack",
+        WORKSPACE: "Workspace",
+        USER: "User",
+      },
       stepsBlockPrefix: "In",
       stepsBlockSuffix: "steps",
       targetedHelpBadgeLabel: "Targeted help",

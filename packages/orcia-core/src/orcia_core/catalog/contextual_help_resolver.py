@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from orcia_core.catalog._contextual_help_locales import build_localized_assistant_prefill
 from orcia_core.catalog.contextual_help_models import (
     LAYER_PRECEDENCE,
     HelpArticleCatalogItem,
@@ -10,7 +11,7 @@ from orcia_core.catalog.contextual_help_models import (
     normalize_help_pack,
     normalize_help_route,
 )
-from orcia_kernel.errors import ResourceNotFoundError
+from orcia_core.catalog.errors import ResourceNotFoundError
 
 
 def collect_matching_articles(
@@ -55,7 +56,8 @@ def resolve_overview_fallback(
         if art.lang == lang and ("/help" in art.bound_routes or "/cockpit" in art.bound_routes):
             return art
     raise ResourceNotFoundError(
-        detail_override=f"Aucune fiche d'aide trouvée pour route={route} ({lang})."
+        detail_code="ERR_HELP_ARTICLE_NOT_FOUND_DETAIL",
+        detail_params={"route": route, "lang": lang},
     )
 
 
@@ -98,6 +100,4 @@ def merge_matched_layers(
 
 def build_assistant_prefill(route: str, title: str, lang: HelpLanguageCode) -> str:
     """Build localized contextual prompt prefill for Ask-Assistant CTA."""
-    if lang == "en":
-        return f"Help me understand screen {route} ({title})"
-    return f"Explique-moi comment utiliser l'écran {route} ({title})"
+    return build_localized_assistant_prefill(route, title, lang)

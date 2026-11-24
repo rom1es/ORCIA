@@ -1,5 +1,6 @@
 import { StatusBadge } from "@orcia/ui";
 import React from "react";
+import { resolveDictionaryForFlag } from "../../i18n";
 
 export interface OnboardingChecklistStepView {
   readonly id: string;
@@ -25,6 +26,7 @@ export function PlatformOnboardingChecklistCard({
   checklistSteps,
   onNavigateToRoute,
 }: PlatformOnboardingChecklistCardProps): React.ReactElement {
+  const copy = resolveDictionaryForFlag(isFr).featureCockpitGates.cockpit.onboardingChecklist;
   return (
     <section
       data-testid="platform-onboarding-checklist"
@@ -42,9 +44,7 @@ export function PlatformOnboardingChecklistCard({
       >
         <div>
           <h2 style={{ margin: 0, fontSize: "var(--font-size-h2)" }}>
-            {isFr
-              ? "Guide de Mise en Route de la Plateforme"
-              : "Platform Getting Started Checklist"}
+            {copy.title}
           </h2>
           <p
             style={{
@@ -53,9 +53,7 @@ export function PlatformOnboardingChecklistCard({
               color: "var(--color-muted-foreground)",
             }}
           >
-            {isFr
-              ? "Configurez chaque étape depuis les écrans dédiés ou lancez un assistant guidé pas à pas."
-              : "Complete each step from the dedicated settings screens or launch a step-by-step guided assistant."}
+            {copy.subtitle}
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -79,7 +77,7 @@ export function PlatformOnboardingChecklistCard({
               cursor: "pointer",
             }}
           >
-            {isFr ? "Assistants Guidés" : "Guided Assistants"}
+            {copy.guidedAssistantsBtn}
           </button>
         </div>
       </div>
@@ -117,15 +115,7 @@ export function PlatformOnboardingChecklistCard({
               >
                 <strong style={{ fontSize: "13.5px" }}>{step.title}</strong>
                 <StatusBadge
-                  label={
-                    step.done
-                      ? isFr
-                        ? "Configuré"
-                        : "Configured"
-                      : isFr
-                        ? "À configurer"
-                        : "To configure"
-                  }
+                  label={step.done ? copy.statusConfigured : copy.statusToConfigure}
                   tone={step.done ? "emerald" : "amber"}
                 />
               </div>

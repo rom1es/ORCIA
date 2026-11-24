@@ -36,10 +36,8 @@ async def execute_replay_async(
     if sub_workflow_step_key is not None:
         if target_spec.step_type != "SUB_WORKFLOW" or not target_spec.sub_workflow_uri:
             raise ValidationDomainError(
-                detail_override=(
-                    f"L'étape '{step_key}' n'est pas un SUB_WORKFLOW; impossible de rejouer "
-                    f"le sous-step '{sub_workflow_step_key}'."
-                ),
+                detail_code="ERR_REPLAY_STEP_NOT_SUB_WORKFLOW",
+                detail_params={"step_key": step_key, "sub_step": sub_workflow_step_key},
                 instance=instance,
             )
         p_exec = svc.engine.blackboard.get_step_execution(run.id, step_key)
@@ -123,10 +121,8 @@ def execute_replay_sync(
     if sub_workflow_step_key is not None:
         if target_spec.step_type != "SUB_WORKFLOW" or not target_spec.sub_workflow_uri:
             raise ValidationDomainError(
-                detail_override=(
-                    f"L'étape '{step_key}' n'est pas un SUB_WORKFLOW; impossible de rejouer "
-                    f"le sous-step '{sub_workflow_step_key}'."
-                ),
+                detail_code="ERR_REPLAY_STEP_NOT_SUB_WORKFLOW",
+                detail_params={"step_key": step_key, "sub_step": sub_workflow_step_key},
                 instance=instance,
             )
         p_exec = svc.engine.blackboard.get_step_execution(run.id, step_key)

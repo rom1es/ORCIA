@@ -181,8 +181,7 @@ export function FourZoneNotificationsDrawer({
         }}
       >
         <p style={{ margin: 0 }}>
-          {labels.notificationsVsActivityHint ??
-            "Le Centre de Notifications regroupe vos actions et prérequis en attente. Pour consulter l'historique complet des opérations de votre périmètre, ouvrez le Journal d'Activité."}
+          {labels.notificationsVsActivityHint ?? ""}
         </p>
         <button
           type="button"
@@ -204,7 +203,7 @@ export function FourZoneNotificationsDrawer({
           }}
         >
           <OrciaIcon name="activity" size={14} />
-          <span>{labels.notificationsOpenActivityCta ?? "Ouvrir le Journal d'Activité →"}</span>
+          <span>{labels.notificationsOpenActivityCta ?? labels.activityMenuLabel ?? ""}</span>
         </button>
       </div>
           </aside>

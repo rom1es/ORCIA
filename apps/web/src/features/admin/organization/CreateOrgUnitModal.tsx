@@ -3,11 +3,11 @@ import {
   OrciaButton,
   OrciaDialog,
   OrciaSearchableSelect,
-  OrciaUserPillsSelect,
   resolvePendingKnownUserId,
   type KnownUserOption,
 } from "@orcia/ui";
 import React, { useEffect, useState } from "react";
+import { CreateOrgUnitLeadsFields } from "./CreateOrgUnitLeadsFields";
 import type { ConfiguredOrgUnit } from "../../../components/platformSetupStorageHelpers";
 import type { AdminAndStudioDictionarySection } from "../../../i18n/locales/admin_and_studio_labels";
 import { getEligibleParentBuUnits } from "./orgTreeHelpers";
@@ -131,10 +131,7 @@ export function CreateOrgUnitModal({
       (lid) => !isKnownUserIdentifier(lid, allKnownUsers),
     );
     if (invalidLead) {
-      setLeadValidationError(
-        unknownUserErrorLabel ||
-          "L'identifiant saisi ne correspond à aucun utilisateur actif et connu de la plateforme.",
-      );
+      setLeadValidationError(unknownUserErrorLabel ?? "");
       return;
     }
     onSubmit({
@@ -250,47 +247,29 @@ export function CreateOrgUnitModal({
           />
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          <label htmlFor="org-unit-lead-input" className="orcia-ds-label">{labels.leadLabel}</label>
-          <OrciaUserPillsSelect
-            inputId="org-unit-lead-input"
-            inputTestId="org-unit-lead-input"
-            disabled={!canMutate || isSubmitting}
-            selectedUserIds={leadUserIds}
-            onChange={setLeadUserIds}
-            draftQuery={leadDraft}
-            onDraftQueryChange={(val) => { setLeadDraft(val); setLeadValidationError(null); }}
-            knownUsers={leadSearch.knownUsers}
-            placeholder={labels.leadPlaceholder}
-          />
-          {leadValidationError ? (
-            <div data-testid="org-unit-unknown-user-error" style={{ fontSize: "12px", color: "var(--color-status-error)", marginTop: "2px" }}>
-              {leadValidationError}
-            </div>
-          ) : null}
-        </div>
-
-        {kind === "BU" ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            <label htmlFor="org-unit-ontology-lead-input" className="orcia-ds-label">
-              {labels.ontologyLeadLabel}
-            </label>
-            <OrciaUserPillsSelect
-              inputId="org-unit-ontology-lead-input"
-              inputTestId="org-unit-ontology-lead-input"
-              disabled={!canMutate || isSubmitting}
-              selectedUserIds={ontologyLeadUserIds}
-              onChange={setOntologyLeadUserIds}
-              draftQuery={ontologyLeadDraft}
-              onDraftQueryChange={(val) => {
-                setOntologyLeadDraft(val);
-                setLeadValidationError(null);
-              }}
-              knownUsers={ontoSearch.knownUsers}
-              placeholder={labels.ontologyLeadPlaceholder}
-            />
-          </div>
-        ) : null}
+        <CreateOrgUnitLeadsFields
+          kind={kind}
+          canMutate={canMutate}
+          isSubmitting={isSubmitting}
+          labels={labels}
+          leadUserIds={leadUserIds}
+          onChangeLeadUserIds={setLeadUserIds}
+          leadDraft={leadDraft}
+          onChangeLeadDraft={(val) => {
+            setLeadDraft(val);
+            setLeadValidationError(null);
+          }}
+          leadKnownUsers={leadSearch.knownUsers}
+          leadValidationError={leadValidationError}
+          ontologyLeadUserIds={ontologyLeadUserIds}
+          onChangeOntologyLeadUserIds={setOntologyLeadUserIds}
+          ontologyLeadDraft={ontologyLeadDraft}
+          onChangeOntologyLeadDraft={(val) => {
+            setOntologyLeadDraft(val);
+            setLeadValidationError(null);
+          }}
+          ontologyKnownUsers={ontoSearch.knownUsers}
+        />
 
         <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600, cursor: canMutate ? "pointer" : "not-allowed" }}>
           <input

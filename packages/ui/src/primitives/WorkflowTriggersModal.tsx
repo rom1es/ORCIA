@@ -1,15 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { ContextualInfoTriggerButton } from "../components/ContextualInfoTriggerButton";
-import { OrciaIcon } from "../components/icons";
-import {
-  OrciaAlertBanner,
-  OrciaButton,
-  OrciaDialog,
-  OrciaInput,
-  OrciaSelect,
-} from "./DesignSystemControls";
-import { SecretField, type UiSecretInputValue, type UiSecretStatus } from "./SecretField";
+import { OrciaAlertBanner, OrciaDialog } from "./DesignSystemControls";
+import type { UiSecretInputValue } from "./SecretField";
 import { WorkflowTriggerCard } from "./WorkflowTriggerCard";
+import { WorkflowTriggerCreateForm } from "./WorkflowTriggerCreateForm";
 import type {
   CreateWorkflowTriggerDraft,
   UiWorkflowTriggerItem,
@@ -28,14 +22,6 @@ export type {
   UpdateWorkflowTriggerDraft,
   WorkflowTriggersModalLabels,
   WorkflowTriggersModalProps,
-};
-
-const EMPTY_SECRET_STATUS: UiSecretStatus = {
-  configured: false,
-  fingerprint: null,
-  maskedHint: null,
-  updatedAt: "",
-  updatedBy: "",
 };
 
 export function WorkflowTriggersModal({
@@ -176,169 +162,30 @@ export function WorkflowTriggersModal({
           </div>
         )}
 
-        <form
+        <WorkflowTriggerCreateForm
+          hasActiveContract={hasActiveContract}
+          submitting={submitting}
+          triggerType={triggerType}
+          triggerKey={triggerKey}
+          cronExpr={cronExpr}
+          logSinkService={logSinkService}
+          cooldownSeconds={cooldownSeconds}
+          maxRunsPerHour={maxRunsPerHour}
+          maxDailyCostUsd={maxDailyCostUsd}
+          autoHelpOnPublish={autoHelpOnPublish}
+          draftWebhookSecret={draftWebhookSecret}
+          labels={labels}
+          onChangeTriggerType={setTriggerType}
+          onChangeTriggerKey={setTriggerKey}
+          onChangeCronExpr={setCronExpr}
+          onChangeLogSinkService={setLogSinkService}
+          onChangeCooldownSeconds={setCooldownSeconds}
+          onChangeMaxRunsPerHour={setMaxRunsPerHour}
+          onChangeMaxDailyCostUsd={setMaxDailyCostUsd}
+          onChangeAutoHelpOnPublish={setAutoHelpOnPublish}
+          onChangeDraftWebhookSecret={setDraftWebhookSecret}
           onSubmit={handleCreate}
-          data-testid="workflow-trigger-create-form"
-          autoComplete="off"
-          data-lpignore="true"
-          data-form-type="other"
-          style={{
-            borderTop: "1px solid var(--color-border-subtle)",
-            paddingTop: "12px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-          }}
-        >
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <label htmlFor="trigger-type-select" style={{ fontSize: "12px", fontWeight: 600 }}>
-                {labels.typeLabel}
-              </label>
-              <OrciaSelect
-                id="trigger-type-select"
-                testId="trigger-create-type-select"
-                value={triggerType}
-                onChange={(e) => setTriggerType(e.target.value as UiWorkflowTriggerType)}
-              >
-                {(Object.keys(labels.typeOptions) as UiWorkflowTriggerType[]).map((key) => (
-                  <option key={key} value={key}>
-                    {labels.typeOptions[key]}
-                  </option>
-                ))}
-              </OrciaSelect>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <label htmlFor="trigger-cooldown-input" style={{ fontSize: "12px", fontWeight: 600 }}>
-                {labels.cooldownLabel}
-              </label>
-              <OrciaInput
-                id="trigger-cooldown-input"
-                testId="trigger-create-cooldown-input"
-                type="number"
-                min="0"
-                value={cooldownSeconds}
-                onChange={(e) => setCooldownSeconds(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            <label htmlFor="trigger-key-input" style={{ fontSize: "12px", fontWeight: 600 }}>
-              {labels.triggerKeyLabel ?? "Identifiant unique (optionnel)"}
-            </label>
-            <OrciaInput
-              id="trigger-key-input"
-              testId="trigger-create-key-input"
-              value={triggerKey}
-              placeholder={labels.triggerKeyPlaceholder ?? "Ex : alerte-paiement-prod"}
-              maxLength={128}
-              onChange={(e) => setTriggerKey(e.target.value)}
-            />
-          </div>
-
-          {triggerType === "CRON" ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <label htmlFor="trigger-cron-input" style={{ fontSize: "12px", fontWeight: 600 }}>
-                {labels.cronLabel}
-              </label>
-              <OrciaInput
-                id="trigger-cron-input"
-                testId="trigger-create-cron-input"
-                value={cronExpr}
-                placeholder={labels.cronPlaceholder}
-                onChange={(e) => setCronExpr(e.target.value)}
-              />
-            </div>
-          ) : null}
-
-          {triggerType === "LOG_SINK_ALERT" ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <label htmlFor="trigger-log-svc-input" style={{ fontSize: "12px", fontWeight: 600 }}>
-                {labels.logServiceLabel}
-              </label>
-              <OrciaInput
-                id="trigger-log-svc-input"
-                testId="trigger-create-log-service-input"
-                value={logSinkService}
-                placeholder={labels.logServicePlaceholder}
-                onChange={(e) => setLogSinkService(e.target.value)}
-              />
-            </div>
-          ) : null}
-
-          {triggerType === "WEBHOOK" ? (
-            <SecretField
-              status={
-                draftWebhookSecret?.action === "set"
-                  ? { ...EMPTY_SECRET_STATUS, configured: true }
-                  : EMPTY_SECRET_STATUS
-              }
-              labels={secretFieldLabels}
-              onSecretAction={(input) => setDraftWebhookSecret(input)}
-            />
-          ) : null}
-
-          {triggerType === "OUTBOX_EVENT" ? (
-            <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "12px" }}>
-              <input
-                type="checkbox"
-                autoComplete="off"
-                data-lpignore="true"
-                data-1p-ignore="true"
-                data-bwignore="true"
-                data-protonpass-ignore="true"
-                data-form-type="other"
-                data-testid="trigger-create-auto-help-checkbox"
-                checked={autoHelpOnPublish}
-                onChange={(e) => setAutoHelpOnPublish(e.target.checked)}
-              />
-              <span>{labels.autoHelpCheckboxLabel}</span>
-            </label>
-          ) : null}
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <label htmlFor="trigger-max-runs" style={{ fontSize: "12px", fontWeight: 600 }}>
-                {labels.maxRunsPerHourLabel}
-              </label>
-              <OrciaInput
-                id="trigger-max-runs"
-                testId="trigger-create-max-runs-input"
-                type="number"
-                min="1"
-                value={maxRunsPerHour}
-                onChange={(e) => setMaxRunsPerHour(e.target.value)}
-              />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <label htmlFor="trigger-max-cost" style={{ fontSize: "12px", fontWeight: 600 }}>
-                {labels.maxDailyCostLabel}
-              </label>
-              <OrciaInput
-                id="trigger-max-cost"
-                testId="trigger-create-max-cost-input"
-                type="number"
-                min="0.5"
-                step="0.5"
-                value={maxDailyCostUsd}
-                onChange={(e) => setMaxDailyCostUsd(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "6px" }}>
-            <OrciaButton
-              type="submit"
-              variant="primary"
-              testId="trigger-create-submit-btn"
-              disabled={submitting || !hasActiveContract}
-            >
-              <OrciaIcon name="plus" size={14} />
-              <span>{submitting ? labels.creatingButton : labels.createButton}</span>
-            </OrciaButton>
-          </div>
-        </form>
+        />
       </div>
     </OrciaDialog>
   );

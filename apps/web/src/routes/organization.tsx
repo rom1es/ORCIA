@@ -13,9 +13,8 @@ import { validateOrciaRouteSearch } from "./searchSchema";
 import { SettingsOrganizationUnitsBlock } from "./SettingsOrganizationUnitsBlock";
 
 export function OrganizationPageView(): React.ReactElement {
-  const { dictionary, locale } = useI18n();
+  const { dictionary, isFr } = useI18n();
   const { openHelpSection } = useShellNavigation();
-  const isFr = locale === "fr";
   const orgLabels = dictionary.settingsHub.organizationTab;
   const copy = dictionary.settingsHub;
 

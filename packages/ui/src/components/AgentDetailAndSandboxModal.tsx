@@ -29,7 +29,11 @@ export interface AgentDetailAndSandboxModalProps {
   readonly labels: AgentsAndSkillsManagerLabels;
   readonly testInputValue: string;
   readonly onChangeTestInput: (agentId: string, nextValue: string) => void;
-  readonly onToggleAgentSkill: (agentId: string, skillId: string, nextChecked: boolean) => void;
+  readonly onToggleAgentSkill: (
+    agentId: string,
+    skillId: string,
+    nextChecked: boolean,
+  ) => void;
   readonly onExecuteAgent: (agentId: string, prompt: string) => void;
   readonly onUpdateAgentThinkingLevel?: (
     agentId: string,
@@ -39,7 +43,10 @@ export interface AgentDetailAndSandboxModalProps {
     agentId: string,
     nextVisibility: UiAgentSkillVisibilityScope,
   ) => void;
-  readonly onToggleAgentMcpExposure?: (agentId: string, nextExposed: boolean) => void;
+  readonly onToggleAgentMcpExposure?: (
+    agentId: string,
+    nextExposed: boolean,
+  ) => void;
   readonly onUpdateAgentDetails?: (
     agentId: string,
     patch: Partial<AgentSixBlocksDraftState> & {
@@ -55,7 +62,9 @@ export interface AgentDetailAndSandboxModalProps {
   readonly onClose: () => void;
 }
 
-export const AgentDetailAndSandboxModal: React.FC<AgentDetailAndSandboxModalProps> = ({
+export const AgentDetailAndSandboxModal: React.FC<
+  AgentDetailAndSandboxModalProps
+> = ({
   agent,
   skills,
   labels,
@@ -76,6 +85,7 @@ export const AgentDetailAndSandboxModal: React.FC<AgentDetailAndSandboxModalProp
   const [activeBlock, setActiveBlock] = useState<AgentStudioBlockKey>("A");
   const [showAllBlocks, setShowAllBlocks] = useState<boolean>(true);
   const [savedFeedback, setSavedFeedback] = useState<boolean>(false);
+  const studio = labels.studio;
 
   useEffect(() => {
     if (agent) {
@@ -87,15 +97,20 @@ export const AgentDetailAndSandboxModal: React.FC<AgentDetailAndSandboxModalProp
   if (!agent) return null;
 
   const isPack = agent.visibilityScope === "PACK";
-  const visibilityScope: UiAgentSkillVisibilityScope = draft.visibilityScope ?? "TEAM";
-  const readiness = computeAgentReadinessChecklist(draft);
+  const visibilityScope: UiAgentSkillVisibilityScope =
+    draft.visibilityScope ?? "TEAM";
+  const readiness = computeAgentReadinessChecklist(draft, studio);
 
   const applyDraftPatch = (patch: Partial<AgentSixBlocksDraftState>) => {
     const next: AgentSixBlocksDraftState = { ...draft, ...patch };
     setDraft(next);
     setSavedFeedback(true);
-    if (patch.thinkingLevel) onUpdateAgentThinkingLevel?.(agent.agentId, patch.thinkingLevel);
-    if (patch.visibilityScope) onUpdateAgentVisibility?.(agent.agentId, patch.visibilityScope);
+    if (patch.thinkingLevel) {
+      onUpdateAgentThinkingLevel?.(agent.agentId, patch.thinkingLevel);
+    }
+    if (patch.visibilityScope) {
+      onUpdateAgentVisibility?.(agent.agentId, patch.visibilityScope);
+    }
     onUpdateAgentDetails?.(agent.agentId, {
       ...next,
       name: next.name.trim() || agent.name,
@@ -111,7 +126,9 @@ export const AgentDetailAndSandboxModal: React.FC<AgentDetailAndSandboxModalProp
     const raw = testInputValue.trim();
     const prompt =
       raw ||
-      `Bonjour ${agent.name}, présente ton rôle (${agent.roleMission}) et confirme que tu es prêt.`;
+      studio.defaultTestPromptTemplate
+        .replace("{name}", agent.name)
+        .replace("{role}", agent.roleMission);
     if (!raw) onChangeTestInput(agent.agentId, prompt);
     setDraft((prev) => ({ ...prev, testBenchValidated: true }));
     onExecuteAgent(agent.agentId, prompt);
@@ -125,12 +142,13 @@ export const AgentDetailAndSandboxModal: React.FC<AgentDetailAndSandboxModalProp
       }}
       title={agent.name}
       testId={`agent-detail-modal-${agent.agentId}`}
-      closeLabel="Fermer (Échap)"
+      closeLabel={studio.closeEscapeLabel}
       closeButtonTestId={`close-agent-detail-modal-btn-${agent.agentId}`}
       contentClassName="orcia-ds-dialog-content-wide w-[960px] max-w-[96vw] max-h-[82vh] text-xs"
       headerExtra={
         <AgentDetailModalHeader
           agent={agent}
+          labels={labels}
           testBenchValidated={draft.testBenchValidated}
           savedFeedback={savedFeedback}
           onToggleMcpExposure={(checked) => {
@@ -188,7 +206,7 @@ export const AgentDetailAndSandboxModal: React.FC<AgentDetailAndSandboxModalProp
 
       <div className="orcia-ds-dialog-footer justify-between">
         <span className="text-[11px] text-[var(--orcia-text-secondary)]">
-          {savedFeedback ? "Modifications enregistrées" : "Sauvegarde automatique active"}
+          {savedFeedback ? studio.savedFeedbackLabel : studio.autosaveActiveLabel}
         </span>
         <button
           type="button"
@@ -196,7 +214,7 @@ export const AgentDetailAndSandboxModal: React.FC<AgentDetailAndSandboxModalProp
           onClick={() => applyDraftPatch({})}
           className="orcia-ds-btn orcia-ds-btn-primary text-xs"
         >
-          <OrciaIcon name="check" /> Enregistrer
+          <OrciaIcon name="check" /> {studio.saveButtonLabel}
         </button>
       </div>
     </OrciaDialog>

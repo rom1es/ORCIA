@@ -15,6 +15,10 @@ from orcia_core.gates import (
     StarlarkSandboxError,
 )
 from orcia_core.orchestration._dna_starlark_models import GeneratedStarlarkMechanism
+from orcia_core.orchestration._orchestration_runtime_locales import (
+    STARLARK_COMPILER_LOCALES,
+    get_runtime_copy,
+)
 from orcia_core.orchestration.errors import ValidationDomainError
 from orcia_core.permissions.errors import ObserverModeReadOnlyError
 
@@ -38,13 +42,16 @@ def render_starlark_script(
     norm_title: str,
 ) -> str:
     """Render deterministic Starlark evaluation script for a norm."""
+    sc = get_runtime_copy(STARLARK_COMPILER_LOCALES)
+    pass_msg = sc["verdict_pass"].format(norm=norm_title)
+    fail_msg = sc["verdict_fail"].format(norm=norm_title)
     return (
         "def evaluate(doc):\n"
         f"    val = str(doc.get({required_field!r}, ''))\n"
         f"    if orcia_sys.re_fullmatch({regex_pattern!r}, val):\n"
-        f"        orcia_sys.emit_verdict({rule_id!r}, 'PASS', {f'Conforme : {norm_title}'!r})\n"
+        f"        orcia_sys.emit_verdict({rule_id!r}, 'PASS', {pass_msg!r})\n"
         "    else:\n"
-        f"        orcia_sys.emit_verdict({rule_id!r}, 'FAIL', {f'Écart : {norm_title}'!r})\n"
+        f"        orcia_sys.emit_verdict({rule_id!r}, 'FAIL', {fail_msg!r})\n"
         "        orcia_sys.emit_effect(\n"
         f"            'STAGE_ANNOTATION', 'orcia://staged/gate', {{'rule_id': {rule_id!r}}}\n"
         "        )\n"
@@ -129,10 +136,13 @@ def compile_starlark_from_natural_language(
         except StarlarkSandboxError as exc:
             raise ValidationDomainError(detail_override=str(exc)) from exc
 
+    sc = get_runtime_copy(STARLARK_COMPILER_LOCALES)
     elapsed_ms = round((time.perf_counter() - started) * 1000.0, 3)
     script_name = f"{rule_id.lower().replace('_', '-')}.star"
     sha256_hex = hashlib.sha256(candidate_code.encode("utf-8")).hexdigest()
-    breadcrumb = f"🛡️ [{directive_title}] ➔ 📏 [{norm_title}] ➔ ⚙️ Vérifié par : {script_name}"
+    breadcrumb = sc["breadcrumb"].format(
+        directive=directive_title, norm=norm_title, script=script_name
+    )
     return GeneratedStarlarkMechanism(
         mechanism_id=uuid7(),
         rule_id=rule_id,
@@ -143,13 +153,12 @@ def compile_starlark_from_natural_language(
         sha256=sha256_hex,
         passing_test_payload=pass_payload,
         failing_test_payload=fail_payload,
-        explanation_fr=(
-            f"Vérifie de façon déterministe la norme « {norm_title} » "
-            f"({natural_language_rule_fr}) sur le champ '{required_field}'."
+        explanation_fr=sc["explanation"].format(
+            norm=norm_title, rule=natural_language_rule_fr, field=required_field
         ),
         self_corrected=self_corrected,
         compile_elapsed_ms=elapsed_ms,
-        verified_badge_fr="✓ Vérifié sur cas de test (PASS/FAIL en < 5 ms)",
+        verified_badge_fr=sc["verified_badge"],
         causal_breadcrumb=breadcrumb,
         signed_and_active=True,
         workspace_id=workspace_id,

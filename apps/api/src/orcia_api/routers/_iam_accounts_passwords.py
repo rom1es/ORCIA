@@ -8,10 +8,10 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Sequence
 
-import sqlalchemy as sa
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from orcia_api.routers._iam_accounts_pg_cleanup import cleanup_or_disable_linked_user_on_postgres18
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.iam_password_models import (
     TemporaryPasswordProvisionResponse,
@@ -103,19 +103,14 @@ def enforce_iam_anti_escalation(
     if is_delete and "PLATFORM_ADMIN" in existing_norm:
         raise PrivilegeEscalationForbiddenError(
             instance=instance,
-            detail_override=(
-                "Seul un Administrateur Plateforme peut supprimer un compte PLATFORM_ADMIN."
-            ),
+            detail_code="ERR_IAM_PLATFORM_ADMIN_ONLY_DELETE",
         )
     if next_roles is not None:
         next_norm = {r.strip().upper() for r in next_roles if r}
         if ("PLATFORM_ADMIN" in next_norm) != ("PLATFORM_ADMIN" in existing_norm):
             raise PrivilegeEscalationForbiddenError(
                 instance=instance,
-                detail_override=(
-                    "Seul un Administrateur Plateforme peut attribuer ou retirer "
-                    "le rôle PLATFORM_ADMIN."
-                ),
+                detail_code="ERR_IAM_PLATFORM_ADMIN_ONLY_ROLE",
             )
 
 
@@ -246,10 +241,7 @@ async def reset_temporary_password_for_account(
     if account.account_kind != "HUMAN" or not account.email:
         raise ValidationDomainError(
             instance=instance,
-            detail_override=(
-                "Seuls les comptes humains avec adresse e-mail valide "
-                "peuvent recevoir un mot de passe temporaire."
-            ),
+            detail_code="ERR_IAM_TEMP_PW_HUMAN_ONLY",
         )
 
     temp_pw = await provision_human_temporary_password(
@@ -272,99 +264,13 @@ async def reset_temporary_password_for_account(
     )
 
 
-async def cleanup_or_disable_linked_user_on_postgres18(
-    engine: AsyncEngine,
-    *,
-    principal_id: str | None = None,
-    email: str | None = None,
-) -> None:
-    """Clean up or disable the linked `users` row upon IAM account deletion.
-
-    Attempts hard delete first. If foreign keys (runs, audit ledger, etc.) prevent deletion,
-    reassigns `primary_org_unit_id` to the ENTERPRISE root and marks `is_active = FALSE`.
-    """
-    targets = [x.strip().lower() for x in (principal_id, email) if x and x.strip()]
-    if not targets:
-        return
-
-    where_clauses = ["LOWER(email) = :t0 OR id::text = :t0"]
-    params: dict[str, str] = {"t0": targets[0]}
-    if len(targets) > 1:
-        where_clauses.append("LOWER(email) = :t1 OR id::text = :t1")
-        params["t1"] = targets[1]
-
-    async with engine.connect() as conn:
-        res = await conn.execute(
-            sa.text(
-                f"""
-                SELECT id, email, primary_org_unit_id
-                FROM users
-                WHERE {" OR ".join(where_clauses)}
-                """
-            ),
-            params,
-        )
-        user_rows = res.fetchall()
-
-    if not user_rows:
-        return
-
-    for u_row in user_rows:
-        u_id = u_row[0]
-        deleted = False
-        try:
-            async with engine.begin() as del_conn:
-                await del_conn.execute(
-                    sa.text("DELETE FROM user_transverse_groups WHERE user_id = :uid"),
-                    {"uid": u_id},
-                )
-                await del_conn.execute(
-                    sa.text("DELETE FROM users WHERE id = :uid"),
-                    {"uid": u_id},
-                )
-                deleted = True
-        except Exception as exc:
-            logger.info(
-                "iam_account_user_hard_delete_prevented_by_fk",
-                user_id=str(u_id),
-                error_type=type(exc).__name__,
-            )
-            deleted = False
-
-        if not deleted:
-            try:
-                async with engine.begin() as upd_conn:
-                    root_res = await upd_conn.execute(
-                        sa.text(
-                            """
-                            SELECT id FROM org_units
-                            WHERE unit_type = 'ENTERPRISE'
-                            ORDER BY created_at ASC
-                            LIMIT 1
-                            """
-                        )
-                    )
-                    root_id = root_res.scalar()
-                    if root_id is not None:
-                        await upd_conn.execute(
-                            sa.text(
-                                """
-                                UPDATE users
-                                SET primary_org_unit_id = :root_id,
-                                    is_active = FALSE
-                                WHERE id = :uid
-                                """
-                            ),
-                            {"root_id": root_id, "uid": u_id},
-                        )
-                    else:
-                        await upd_conn.execute(
-                            sa.text("UPDATE users SET is_active = FALSE WHERE id = :uid"),
-                            {"uid": u_id},
-                        )
-            except Exception as upd_exc:
-                logger.warning(
-                    "iam_account_user_deactivation_failed",
-                    user_id=str(u_id),
-                    error_type=type(upd_exc).__name__,
-                )
+__all__ = [
+    "cleanup_or_disable_linked_user_on_postgres18",
+    "enforce_iam_accounts_access",
+    "enforce_iam_accounts_mutation_access",
+    "enforce_iam_accounts_read_access",
+    "enforce_iam_anti_escalation",
+    "provision_human_temporary_password",
+    "reset_temporary_password_for_account",
+    "sync_in_memory_team_memberships",
+]

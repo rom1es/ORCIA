@@ -11,6 +11,7 @@ import json
 from collections.abc import AsyncIterator
 from typing import Any
 
+from orcia_core.agents._agents_locales import get_agent_runtime_copy
 from orcia_core.ports.llm_port import LlmGatewayPort, LlmPromptRequest
 from orcia_core.ports.reflexive_runtime_ports import (
     ReflexiveLlmChunk,
@@ -116,12 +117,10 @@ class GatewayReflexiveLlmAdapter(ReflexiveLlmPort):
                 if turn_input.initial_resources
                 else _DEFAULT_FALLBACK_RESOURCE
             )
+            copy = get_agent_runtime_copy()
             return ReflexiveTurnDecision(
-                group_title="Inspection chirurgicale des sources de l'Espace",
-                thought_text=(
-                    f"Analysons un extrait ciblé de `{target_uri}` (`#L1-35`)\n"
-                    "afin d'ancrer la réponse sur les lignes exactes."
-                ),
+                group_title=copy.inspect_group_title,
+                thought_text=copy.inspect_thought_tpl.format(target_uri=target_uri),
                 action_kind="surgical_primitive",
                 primitive=SurgicalPrimitiveName.INSPECT_RESOURCE_LINES,
                 resource_uri=target_uri,
@@ -142,16 +141,14 @@ class GatewayReflexiveLlmAdapter(ReflexiveLlmPort):
             and not has_delegated
         ):
             delegate_slug = turn_input.available_delegate_agents[0]
+            copy = get_agent_runtime_copy()
             return ReflexiveTurnDecision(
-                group_title="Vérification croisée par un agent spécialisé",
-                thought_text=(
-                    f"Sollicitons @{delegate_slug} pour croiser les constats documentaires\n"
-                    "avec les exigences métier de l'Espace."
-                ),
+                group_title=copy.delegate_group_title,
+                thought_text=copy.delegate_thought_tpl.format(delegate_slug=delegate_slug),
                 action_kind="delegate_sub_agent",
                 delegate_agent_slug=delegate_slug,
-                delegate_sub_objective=(
-                    f"Vérifier la cohérence métier pour : {turn_input.objective}"
+                delegate_sub_objective=copy.delegate_objective_tpl.format(
+                    objective=turn_input.objective
                 ),
                 tokens_used=tokens,
             )
@@ -163,12 +160,10 @@ class GatewayReflexiveLlmAdapter(ReflexiveLlmPort):
             for item in turn_input.scratchpad
         )
         if write_spec is not None and not has_write_resolution:
+            copy = get_agent_runtime_copy()
             return ReflexiveTurnDecision(
-                group_title="Préparation de l'aperçu d'écriture gouvernée",
-                thought_text=(
-                    "Préparons la carte d'aperçu avant toute écriture externe\n"
-                    "pour soumettre la modification à validation humaine."
-                ),
+                group_title=copy.write_preview_group_title,
+                thought_text=copy.write_preview_thought,
                 action_kind="propose_external_write_preview",
                 connector_type=str(write_spec.get("connector_type") or "mcp:enterprise-docs"),
                 write_action=str(write_spec.get("action") or "publish_document"),
@@ -176,7 +171,7 @@ class GatewayReflexiveLlmAdapter(ReflexiveLlmPort):
                     write_spec.get("target_resource_uri") or "catalog://docs/deliverable"
                 ),
                 write_summary=str(
-                    write_spec.get("action_summary") or "Valider la publication du livrable"
+                    write_spec.get("action_summary") or copy.write_preview_default_summary
                 ),
                 write_payload=dict(write_spec.get("payload") or {"content": turn_input.objective}),
                 tokens_used=tokens,
@@ -189,6 +184,7 @@ class GatewayReflexiveLlmAdapter(ReflexiveLlmPort):
         turn_input: ReflexiveTurnInput,
         tokens: int,
     ) -> ReflexiveTurnDecision:
+        copy = get_agent_runtime_copy()
         citations: list[str] = []
         write_notes: list[str] = []
         for idx, item in enumerate(turn_input.scratchpad, start=1):
@@ -199,22 +195,22 @@ class GatewayReflexiveLlmAdapter(ReflexiveLlmPort):
                 write_notes.append(f"- {item.get('summary', '')}")
             elif uri:
                 citations.append(f"- `[S{idx}]` `{uri}` {anchor}".rstrip())
-        refs_block = "\n".join(citations) if citations else "- Aucune source additionnelle."
+        refs_block = "\n".join(citations) if citations else copy.synthesis_empty_refs
         writes_block = (
-            ("\n\n### Gouvernance d'écriture\n" + "\n".join(write_notes)) if write_notes else ""
+            (copy.synthesis_writes_heading + "\n".join(write_notes)) if write_notes else ""
         )
         markdown = (
-            f"## Synthèse — {turn_input.objective}\n\n"
-            "### Sources inspectées\n"
+            f"{copy.synthesis_heading_tpl.format(objective=turn_input.objective)}"
+            f"{copy.synthesis_sources_heading}"
             f"{refs_block}"
             f"{writes_block}\n\n"
             "```markdown\n"
-            "  Livrable structuré vérifié par lecture chirurgicale.\n"
+            f"{copy.synthesis_code_note}"
             "```\n"
         )
         return ReflexiveTurnDecision(
-            group_title="Consolidation du livrable final",
-            thought_text="Synthèse finale prête à partir des observations collectées.",
+            group_title=copy.synthesis_group_title,
+            thought_text=copy.synthesis_thought,
             action_kind="final_answer",
             final_markdown=markdown,
             tokens_used=tokens,

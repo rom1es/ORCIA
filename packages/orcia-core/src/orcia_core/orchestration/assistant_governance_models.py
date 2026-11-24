@@ -7,6 +7,8 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
 
+from orcia_core.orchestration._assistant_locales import ASSISTANT_FOLDER_LOCALES
+
 AssistantResponseTone = Literal["SYNTHETIC", "BALANCED", "DETAILED_CODE"]
 AssistantResponseFormat = Literal["BULLETS_SUMMARY", "STRUCTURED_SECTIONS", "STEP_BY_STEP"]
 AssistantOverrideScope = Literal["TEAM", "WORKSPACE", "USER"]
@@ -22,6 +24,9 @@ def _compute_sha256_hex(payload: Any) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
+_FLOC_FR = ASSISTANT_FOLDER_LOCALES["fr"]
+
+
 @dataclass(frozen=True, slots=True)
 class UserLayerPreferences:
     """Tab 1 (`Mes préférences — Couche 5 USER`) settings (`Story 10.1`)."""
@@ -31,7 +36,7 @@ class UserLayerPreferences:
     response_tone: AssistantResponseTone = "BALANCED"
     favorite_format: AssistantResponseFormat = "STRUCTURED_SECTIONS"
     default_hat: str = "PM"
-    personal_instructions: str = "Toujours citer les preuves [S1] et synthétiser les risques."
+    personal_instructions: str = _FLOC_FR["user_default_instructions"]
     sha256: str = ""
 
 
@@ -40,9 +45,7 @@ class WorkspaceLayerSettings:
     """Tab 2 (`Réglages de l'Espace — Couche 4 WORKSPACE`) settings (`Story 10.1`)."""
 
     workspace_id: str
-    workspace_instructions: str = (
-        "Respecter le glossaire actif de l'Espace et privilégier les sources RÉFÉRENCE."
-    )
+    workspace_instructions: str = _FLOC_FR["ws_default_instructions"]
     default_checked_sources: tuple[str, ...] = (
         "orcia://sources/repo-main",
         "orcia://sources/architecture-kb",
@@ -51,9 +54,7 @@ class WorkspaceLayerSettings:
     recommended_agents: tuple[str, ...] = ("@spec-architect", "@security-reviewer")
     arbitration_policy: AssistantArbitrationPolicy = "PAUSE_AND_ESCALATE"
     welcome_suggestions: tuple[str, ...] = (
-        "Synthétiser les derniers écarts documentaires de l'Espace",
-        "Vérifier la conformité d'un ticket avec l'ontologie N1–N3",
-        "Préparer un dossier de cadrage technique",
+        *_FLOC_FR["ws_suggestions"].split("|"),
         "Analyser l'impact d'une modification d'API",
     )
     mcp_expose_assistant: bool = True

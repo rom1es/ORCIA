@@ -7,24 +7,20 @@ import { ShellContextualHelpColumn } from "./ShellContextualHelpColumn";
 
 function resolveHelpTitleFallback(params: {
   readonly pathname: string | undefined;
-  readonly locale: "fr" | "en";
   readonly activeMenuKey: EightFixedMenuKey | null;
   readonly safeModuleKey: UiModuleKey;
   readonly dictionary: TranslationDictionary;
 }): string {
-  const { pathname, locale, activeMenuKey, safeModuleKey, dictionary } = params;
-  const isFr = locale === "fr";
+  const { pathname, activeMenuKey, safeModuleKey, dictionary } = params;
+  const fallbacks = dictionary.contextualHelp.routeTitleFallbacks;
   if (pathname?.startsWith("/inbox")) {
-    return isFr ? "Boîte de Réception" : "Inbox";
+    return fallbacks.inbox;
   }
   if (pathname?.startsWith("/showcase")) {
-    return isFr ? "Présentation ORCIA" : "ORCIA Showcase";
+    return fallbacks.showcase;
   }
   if (pathname?.startsWith("/organization")) {
-    return (
-      dictionary.fourZoneShell.organizationMenuLabel ??
-      (isFr ? "Mon Organisation" : "My Organization")
-    );
+    return dictionary.fourZoneShell.organizationMenuLabel ?? fallbacks.organization;
   }
   return activeMenuKey
     ? (dictionary.fourZoneShell.menuEntries[activeMenuKey] ??
@@ -70,7 +66,6 @@ export function renderShellZone4HelpColumn(params: {
 
   const helpTitleFallback = resolveHelpTitleFallback({
     pathname,
-    locale,
     activeMenuKey,
     safeModuleKey,
     dictionary,

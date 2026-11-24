@@ -5,7 +5,8 @@ import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions";
 import { useWorkspaceEventsSse } from "../../components/useWorkspaceEventsSse";
-import { useI18n } from "../../i18n";
+import { formatI18nTemplate, useI18n } from "../../i18n";
+import type { FeatureInboxAssistantDictionary } from "../../i18n/locales/feature_inbox_assistant_labels";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
 
 const DEFAULT_INBOX_WORKSPACE_ID = "0195f000-0000-7000-8000-000000000301";
@@ -14,24 +15,27 @@ function errorDetail(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
 }
 
-function formatNotificationTitle(rawTitle: string, isFr: boolean): string {
+function formatNotificationTitle(
+  rawTitle: string,
+  notifCopy: FeatureInboxAssistantDictionary["notificationsCenter"],
+): string {
   const prefix = "Prise en charge directe de l'étape '";
   if (rawTitle.startsWith(prefix) && rawTitle.endsWith("'")) {
     const slug = rawTitle.slice(prefix.length, -1);
-    const known: Record<string, string> = isFr
-      ? { "inbox-review-step": "Relecture en boîte de réception" }
-      : { "inbox-review-step": "Inbox review step" };
+    const known: Record<string, string> = {
+      "inbox-review-step": notifCopy.inboxReviewStepLabel,
+    };
     const clean =
       known[slug] ??
       slug.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-    return isFr ? `Prise en charge directe — ${clean}` : `Direct claim — ${clean}`;
+    return formatI18nTemplate(notifCopy.directClaimPrefix, { label: clean });
   }
   return rawTitle;
 }
 
 export function InboxNotificationsCenterView(): React.JSX.Element {
-  const { dictionary, locale } = useI18n();
-  const isFr = locale === "fr";
+  const { dictionary } = useI18n();
+  const notifCopy = dictionary.featureInboxAssistant.notificationsCenter;
   const { workspaces } = usePlatformSetup();
   const { activeScopeId } = useShellNavigation();
   const { readOnlyObserver, email: authEmail } = useAuthSessionStore();
@@ -59,14 +63,12 @@ export function InboxNotificationsCenterView(): React.JSX.Element {
       setFeedback(null);
     } catch (err: unknown) {
       setFeedback(
-        isFr
-          ? `⚠️ Impossible de charger les notifications (${errorDetail(err)}).`
-          : `⚠️ Failed to load notifications (${errorDetail(err)}).`,
+        formatI18nTemplate(notifCopy.loadErrorTemplate, { detail: errorDetail(err) }),
       );
     } finally {
       setLoading(false);
     }
-  }, [activeWorkspaceId, scopeFilter, isFr]);
+  }, [activeWorkspaceId, notifCopy.loadErrorTemplate, scopeFilter]);
 
   useEffect(() => {
     void loadNotifications();
@@ -84,13 +86,11 @@ export function InboxNotificationsCenterView(): React.JSX.Element {
         await loadNotifications();
       } catch (err: unknown) {
         setFeedback(
-          isFr
-            ? `⚠️ Prise en charge refusée (${errorDetail(err)}).`
-            : `⚠️ Claim rejected (${errorDetail(err)}).`,
+          formatI18nTemplate(notifCopy.claimErrorTemplate, { detail: errorDetail(err) }),
         );
       }
     },
-    [activeWorkspaceId, isFr, loadNotifications],
+    [activeWorkspaceId, loadNotifications, notifCopy.claimErrorTemplate],
   );
 
   const handleRelease = useCallback(
@@ -101,14 +101,18 @@ export function InboxNotificationsCenterView(): React.JSX.Element {
         await loadNotifications();
       } catch (err: unknown) {
         setFeedback(
-          isFr
-            ? `⚠️ Libération impossible (${errorDetail(err)}).`
-            : `⚠️ Release failed (${errorDetail(err)}).`,
+          formatI18nTemplate(notifCopy.releaseErrorTemplate, { detail: errorDetail(err) }),
         );
       }
     },
-    [isFr, loadNotifications],
+    [loadNotifications, notifCopy.releaseErrorTemplate],
   );
+
+  const scopeLabels: Record<"ALL" | "PERSONAL" | "TEAM", string> = {
+    ALL: notifCopy.filterAll,
+    PERSONAL: notifCopy.filterPersonal,
+    TEAM: notifCopy.filterTeam,
+  };
 
   return (
     <div className="space-y-4" data-testid="inbox-feature-panel">
@@ -118,9 +122,7 @@ export function InboxNotificationsCenterView(): React.JSX.Element {
       >
         <header className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold">
-              {isFr ? "Boîte de Réception & Prises en Charge Équipe" : "Team Inbox & Claims"}
-            </h2>
+            <h2 className="text-sm font-semibold">{notifCopy.title}</h2>
             <span
               data-testid="inbox-amber-badge-count"
               className="rounded-full px-2 py-0.5 text-xs font-semibold"
@@ -139,13 +141,7 @@ export function InboxNotificationsCenterView(): React.JSX.Element {
               className="text-xs font-mono"
               style={{ color: "var(--color-text-secondary)" }}
             >
-              {connected
-                ? isFr
-                  ? "Flux temps réel actif"
-                  : "Live stream active"
-                : isFr
-                  ? "Synchronisation REST"
-                  : "REST sync"}
+              {connected ? notifCopy.liveStreamBadge : notifCopy.restSyncBadge}
             </span>
             {(["ALL", "PERSONAL", "TEAM"] as const).map((scope) => (
               <button
@@ -166,17 +162,7 @@ export function InboxNotificationsCenterView(): React.JSX.Element {
                       : "var(--color-text-primary)",
                 }}
               >
-                {scope === "ALL"
-                  ? isFr
-                    ? "Toutes"
-                    : "All"
-                  : scope === "PERSONAL"
-                    ? isFr
-                      ? "Personnelles"
-                      : "Personal"
-                    : isFr
-                      ? "Équipe"
-                      : "Team"}
+                {scopeLabels[scope]}
               </button>
             ))}
           </div>
@@ -199,7 +185,7 @@ export function InboxNotificationsCenterView(): React.JSX.Element {
 
         {loading ? (
           <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
-            {isFr ? "Chargement des notifications..." : "Loading notifications..."}
+            {notifCopy.loadingText}
           </p>
         ) : items.length === 0 ? (
           <p
@@ -207,9 +193,7 @@ export function InboxNotificationsCenterView(): React.JSX.Element {
             className="text-xs"
             style={{ color: "var(--color-text-secondary)" }}
           >
-            {isFr
-              ? "Aucune notification en attente sur ce périmètre."
-              : "No pending notifications in this scope."}
+            {notifCopy.emptyText}
           </p>
         ) : (
           <ul
@@ -231,7 +215,7 @@ export function InboxNotificationsCenterView(): React.JSX.Element {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <strong className="text-xs font-semibold">
-                      {formatNotificationTitle(item.title, isFr)}
+                      {formatNotificationTitle(item.title, notifCopy)}
                     </strong>
                     <p className="text-xs mt-0.5" style={{ color: "var(--color-text-secondary)" }}>
                       {item.summary}

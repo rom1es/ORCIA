@@ -15,15 +15,15 @@ import type {
   EditOrgUnitFormValues,
   InviteOrganizationUserFormValues,
 } from "../features/admin/organization/SettingsOrganizationModalsGroup";
-import { isPlatformAdministratorSession, useAuthSessionStore } from "../stores/authSessionStore";
+import { useAuthSessionStore, isPlatformAdministratorSession } from "../stores/authSessionStore";
+import {
+  buildOrgUnitAuditMeta,
+  buildOrgUnitPatchPayload,
+  resolveEffectiveLeads,
+  type OrgUnitAuditMeta,
+} from "./orgUnitsAuditHelpers";
 
-export type OrgUnitAuditMeta = {
-  readonly eventType: string;
-  readonly summary: string;
-  readonly scopeId?: string;
-  readonly scopePath?: string;
-  readonly scopeLabel?: string;
-};
+export type { OrgUnitAuditMeta };
 
 export function useOrgUnitsBlockActions({
   locale,
@@ -64,21 +64,15 @@ export function useOrgUnitsBlockActions({
   const isPlatformAdmin = isPlatformAdministratorSession({ roles, activeHat, readOnlyObserver });
 
   useEffect(() => {
-    if (isHydrating || !isAuthenticated) {
-      return;
-    }
+    if (isHydrating || !isAuthenticated) return;
     let cancelled = false;
     void fetchOrgUnitsFromApi(locale).then((res) => {
       if (cancelled) return;
       if (res.ok) {
         setOrgDeleteFeedback(null);
         setCapabilitiesById(res.capabilitiesById);
-        if (res.units.length > 0) {
-          syncOrgUnitsFromServer(res.units);
-        }
-        if (res.knownUsers) {
-          setKnownUsers(res.knownUsers);
-        }
+        if (res.units.length > 0) syncOrgUnitsFromServer(res.units);
+        if (res.knownUsers) setKnownUsers(res.knownUsers);
       } else {
         setOrgDeleteFeedback(res.errorMessage);
       }
@@ -94,12 +88,7 @@ export function useOrgUnitsBlockActions({
     setOrgDeleteFeedback(null);
     const parentPayload =
       values.parentId && values.parentId !== "scope-global" ? values.parentId : null;
-    const effectiveLeads =
-      Array.isArray(values.leadUserIds) && values.leadUserIds.length > 0
-        ? values.leadUserIds
-        : values.leadUserId
-          ? [values.leadUserId]
-          : [];
+    const effectiveLeads = resolveEffectiveLeads(values.leadUserIds, values.leadUserId);
     const res = await createOrgUnitViaApi(
       {
         name: values.name,
@@ -108,7 +97,7 @@ export function useOrgUnitsBlockActions({
         parent_id: parentPayload,
         billing_enabled: values.billingEnabled,
         lead_user_id: effectiveLeads[0] ?? null,
-        lead_user_ids: effectiveLeads,
+        lead_user_ids: [...effectiveLeads],
         ontology_lead_user_ids:
           values.kind === "BU" ? [...(values.ontologyLeadUserIds ?? [])] : [],
         member_user_ids: [],
@@ -124,14 +113,17 @@ export function useOrgUnitsBlockActions({
       setCapabilitiesById((prev) => ({ ...prev, [res.unit.id]: res.capabilities! }));
     }
     const nextUnits = [...orgUnits.filter((u) => u.id !== res.unit.id), res.unit];
-    const levelLabel = values.kind === "BU" ? "Direction (BU)" : "Équipe";
-    syncOrgUnitsFromServer(nextUnits, {
-      eventType: "OrgUnitCreated",
-      summary: `${levelLabel} "${res.unit.name}" (${res.unit.slug}) créée`,
-      scopeId: res.unit.id,
-      scopePath: res.unit.slug,
-      scopeLabel: `${levelLabel} · ${res.unit.name}`,
-    });
+    syncOrgUnitsFromServer(
+      nextUnits,
+      buildOrgUnitAuditMeta({
+        locale,
+        action: "created",
+        level: values.kind,
+        id: res.unit.id,
+        name: res.unit.name,
+        slug: res.unit.slug,
+      }),
+    );
     await useAuthSessionStore.getState().hydrateSession({ force: true });
     setCreateModalOpen(false);
   };
@@ -141,30 +133,11 @@ export function useOrgUnitsBlockActions({
     setModalError(null);
     const targetUnit = orgUnits.find((u) => u.id === orgUnitId);
     const caps = capabilitiesById[orgUnitId];
-    const parentPayload =
-      values.parentId && values.parentId !== "scope-global" ? values.parentId : null;
-    const effectiveLeads =
-      Array.isArray(values.leadUserIds) && values.leadUserIds.length > 0
-        ? values.leadUserIds
-        : values.leadUserId
-          ? [values.leadUserId]
-          : undefined;
     const isTeamLeadOnly =
       targetUnit?.level === "TEAM" && caps && caps.canEdit && !caps.canInviteUsers;
     const res = await patchOrgUnitViaApi(
       orgUnitId,
-      {
-        name: values.name,
-        ...(isTeamLeadOnly
-          ? {}
-          : { parent_id: parentPayload, billing_enabled: values.billingEnabled }),
-        ...(effectiveLeads !== undefined
-          ? { lead_user_id: effectiveLeads[0] ?? null, lead_user_ids: effectiveLeads }
-          : {}),
-        ...(targetUnit?.level === "BU" && values.ontologyLeadUserIds !== undefined
-          ? { ontology_lead_user_ids: [...values.ontologyLeadUserIds] }
-          : {}),
-      },
+      buildOrgUnitPatchPayload(values, targetUnit?.level, Boolean(isTeamLeadOnly)),
       locale,
     );
     setIsSubmitting(false);
@@ -176,14 +149,17 @@ export function useOrgUnitsBlockActions({
       setCapabilitiesById((prev) => ({ ...prev, [res.unit.id]: res.capabilities! }));
     }
     const nextUnits = orgUnits.map((u) => (u.id === orgUnitId ? res.unit : u));
-    const levelLabel = res.unit.level === "BU" ? "Direction (BU)" : "Équipe";
-    syncOrgUnitsFromServer(nextUnits, {
-      eventType: "SettingsChanged",
-      summary: `${levelLabel} "${res.unit.name}" mise à jour`,
-      scopeId: res.unit.id,
-      scopePath: res.unit.slug,
-      scopeLabel: `${levelLabel} · ${res.unit.name}`,
-    });
+    syncOrgUnitsFromServer(
+      nextUnits,
+      buildOrgUnitAuditMeta({
+        locale,
+        action: "updated",
+        level: res.unit.level,
+        id: res.unit.id,
+        name: res.unit.name,
+        slug: res.unit.slug,
+      }),
+    );
     await useAuthSessionStore.getState().hydrateSession({ force: true });
     setEditingUnit(null);
   };
@@ -235,17 +211,12 @@ export function useOrgUnitsBlockActions({
   ) => {
     setIsSubmitting(true);
     setModalError(null);
-    const effectiveLeads =
-      Array.isArray(values.leadUserIds) && values.leadUserIds.length > 0
-        ? values.leadUserIds
-        : values.leadUserId
-          ? [values.leadUserId]
-          : [];
+    const effectiveLeads = resolveEffectiveLeads(values.leadUserIds, values.leadUserId);
     const res = await patchOrgUnitViaApi(
       orgUnitId,
       {
         lead_user_id: effectiveLeads[0] ?? null,
-        lead_user_ids: effectiveLeads,
+        lead_user_ids: [...effectiveLeads],
         member_user_ids: [...values.memberUserIds],
       },
       locale,
@@ -256,14 +227,18 @@ export function useOrgUnitsBlockActions({
       return;
     }
     const nextUnits = orgUnits.map((u) => (u.id === orgUnitId ? res.unit : u));
-    const levelLabel = res.unit.level === "BU" ? "Direction (BU)" : "Équipe";
-    syncOrgUnitsFromServer(nextUnits, {
-      eventType: "PermissionGranted",
-      summary: `Membres de ${levelLabel} "${res.unit.name}" mis à jour (${res.unit.memberUserIds?.length ?? 0})`,
-      scopeId: res.unit.id,
-      scopePath: res.unit.slug,
-      scopeLabel: `${levelLabel} · ${res.unit.name}`,
-    });
+    syncOrgUnitsFromServer(
+      nextUnits,
+      buildOrgUnitAuditMeta({
+        locale,
+        action: "membersUpdated",
+        level: res.unit.level,
+        id: res.unit.id,
+        name: res.unit.name,
+        slug: res.unit.slug,
+        count: res.unit.memberUserIds?.length ?? 0,
+      }),
+    );
     await useAuthSessionStore.getState().hydrateSession({ force: true });
     setManagingMembersUnit(null);
   };
@@ -280,17 +255,17 @@ export function useOrgUnitsBlockActions({
       return;
     }
     const nextUnits = orgUnits.filter((u) => u.id !== orgUnitId);
-    const levelLabel = target?.level === "BU" ? "Direction (BU)" : "Équipe";
     syncOrgUnitsFromServer(
       nextUnits,
       target
-        ? {
-            eventType: "OrgUnitDeleted",
-            summary: `${levelLabel} "${target.name}" (${target.slug}) supprimée`,
-            scopeId: target.id,
-            scopePath: target.slug,
-            scopeLabel: `${levelLabel} · ${target.name}`,
-          }
+        ? buildOrgUnitAuditMeta({
+            locale,
+            action: "deleted",
+            level: target.level,
+            id: target.id,
+            name: target.name,
+            slug: target.slug,
+          })
         : undefined,
     );
     await useAuthSessionStore.getState().hydrateSession({ force: true });
@@ -299,30 +274,12 @@ export function useOrgUnitsBlockActions({
   };
 
   return {
-    createModalOpen,
-    setCreateModalOpen,
-    inviteModalOpen,
-    setInviteModalOpen,
-    editingUnit,
-    setEditingUnit,
-    managingMembersUnit,
-    setManagingMembersUnit,
-    deletingRowItem,
-    setDeletingRowItem,
-    capabilitiesById,
-    inviteTempPasswordData,
-    setInviteTempPasswordData,
-    isSubmitting,
-    modalError,
-    setModalError,
-    orgDeleteFeedback,
-    setOrgDeleteFeedback,
-    knownUsers,
-    isPlatformAdmin,
-    handleCreateSubmit,
-    handleEditSave,
-    handleInviteSubmit,
-    handleMembersSave,
-    handleConfirmDelete,
+    createModalOpen, setCreateModalOpen, inviteModalOpen, setInviteModalOpen,
+    editingUnit, setEditingUnit, managingMembersUnit, setManagingMembersUnit,
+    deletingRowItem, setDeletingRowItem, capabilitiesById,
+    inviteTempPasswordData, setInviteTempPasswordData, isSubmitting,
+    modalError, setModalError, orgDeleteFeedback, setOrgDeleteFeedback,
+    knownUsers, isPlatformAdmin,
+    handleCreateSubmit, handleEditSave, handleInviteSubmit, handleMembersSave, handleConfirmDelete,
   };
 }

@@ -31,7 +31,7 @@ export function UserProfileOverviewPage({
   onExploreAgents,
 }: UserProfileOverviewPageProps): React.ReactElement {
   const initials = computeUserInitials(profile.displayName || profile.email);
-  const numFmt = new Intl.NumberFormat(locale === "en" ? "en-US" : "fr-FR");
+  const numFmt = new Intl.NumberFormat(locale);
   const distinctRoles = Array.from(new Set(profile.roles.length > 0 ? profile.roles : [profile.primaryRole]));
   const fmtDays = (n: number): string => `${n} ${n === 1 ? labels.daysUnitSingular : labels.daysUnitPlural}`;
 
@@ -98,7 +98,7 @@ export function UserProfileOverviewPage({
               className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium"
               style={{ backgroundColor: "var(--color-badge-cobalt-bg)", color: "var(--color-badge-cobalt-fg)", borderColor: "var(--color-badge-cobalt-border)" }}
             >
-              {resolveUserRoleDisplayLabel(roleKey, locale)}
+              {resolveUserRoleDisplayLabel(roleKey, labels.roleDisplayLabels)}
             </span>
           ))}
           {orgBadgeGroups.flatMap((grp) =>
@@ -147,11 +147,7 @@ export function UserProfileOverviewPage({
             color: "var(--color-text-secondary)",
           }}
         >
-          <span>
-            {locale === "en"
-              ? "No assistant activity or token usage recorded yet. Your metrics will appear here after your first exchanges."
-              : "Aucune activité enregistrée pour le moment. Vos indicateurs d'usage apparaîtront ici dès vos premiers échanges avec Mon Assistant."}
-          </span>
+          <span>{labels.emptyKpisMessage}</span>
         </section>
       ) : (
         <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">

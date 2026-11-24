@@ -23,6 +23,7 @@ import {
   mapAccountProfileDto,
   mapMcpTokensDto,
   mapPassthroughConnectorsDto,
+  parseUiLocalePreference,
 } from "./sidebarAccountMappers";
 
 export function useSidebarAccountSettings(options: {
@@ -75,8 +76,7 @@ export function useSidebarAccountSettings(options: {
         prefs.theme === "dark" || prefs.theme === "system" || prefs.theme === "light"
           ? prefs.theme
           : "light";
-      const validLocale: UiLocalePreference | null =
-        prefs.locale === "fr" || prefs.locale === "en" ? prefs.locale : null;
+      const validLocale = parseUiLocalePreference(prefs.locale);
       const validTone: UiAssistantTone =
         prefs.assistant_tone === "concise" ||
         prefs.assistant_tone === "detailed" ||
@@ -137,9 +137,9 @@ export function useSidebarAccountSettings(options: {
         setTwoFactorMode(authCfgRes.two_factor_mode);
       }
     } catch (err: unknown) {
-      setPrefsError(extractUiErrorMessage(err, labels.passwordSecurity?.genericError ?? "Error"));
+      setPrefsError(extractUiErrorMessage(err, labels.passwordSecurity.genericError));
     }
-  }, [client, labels.passwordSecurity?.genericError]);
+  }, [client, labels.passwordSecurity.genericError]);
 
   const isHydrating = useAuthSessionStore((s) => s.isHydrating);
   const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
@@ -183,10 +183,11 @@ export function useSidebarAccountSettings(options: {
       setPersonalInstructions(updated.personal_instructions);
       setAutoOpenHelp(updated.auto_open_contextual_help);
       setNotificationsEnabled(updated.notifications_enabled);
-      if (updated.locale === "fr" || updated.locale === "en") {
-        applyZeroMsDomPreferences(updated.theme, updated.locale);
-        if (updated.locale !== locale) {
-          onLocaleChange(updated.locale);
+      const updatedLocale = parseUiLocalePreference(updated.locale);
+      if (updatedLocale) {
+        applyZeroMsDomPreferences(updated.theme, updatedLocale);
+        if (updatedLocale !== locale) {
+          onLocaleChange(updatedLocale);
         }
       }
       const currentAst = readSavedAssistantGovernancePrefs();
@@ -197,7 +198,7 @@ export function useSidebarAccountSettings(options: {
       });
       setPrefsSavedMsg(labels.preferencesSavedMessage);
     } catch (err: unknown) {
-      setPrefsError(extractUiErrorMessage(err, labels.passwordSecurity?.genericError ?? "Error"));
+      setPrefsError(extractUiErrorMessage(err, labels.passwordSecurity.genericError));
     } finally {
       setIsSavingPrefs(false);
     }
@@ -221,7 +222,7 @@ export function useSidebarAccountSettings(options: {
       await loadModalDetails();
       setLastIssuedPlaintext(issued.plaintext_token);
     } catch (err: unknown) {
-      setMcpError(extractUiErrorMessage(err, labels.passwordSecurity?.genericError ?? "Error"));
+      setMcpError(extractUiErrorMessage(err, labels.passwordSecurity.genericError));
     } finally {
       setIsSubmittingMcp(false);
     }
@@ -233,7 +234,7 @@ export function useSidebarAccountSettings(options: {
       await client.revokeMcpToken(tokenId);
       await loadModalDetails();
     } catch (err: unknown) {
-      setMcpError(extractUiErrorMessage(err, labels.passwordSecurity?.genericError ?? "Error"));
+      setMcpError(extractUiErrorMessage(err, labels.passwordSecurity.genericError));
     }
   };
 
@@ -265,7 +266,7 @@ export function useSidebarAccountSettings(options: {
     } catch (err: unknown) {
       return {
         success: false,
-        error: extractUiErrorMessage(err, labels.passwordSecurity?.genericError ?? "Error"),
+        error: extractUiErrorMessage(err, labels.passwordSecurity.genericError),
       };
     }
   };

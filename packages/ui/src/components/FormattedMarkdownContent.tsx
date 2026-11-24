@@ -8,6 +8,8 @@ export interface FormattedMarkdownContentProps {
   readonly content: string;
   readonly className?: string;
   readonly testId?: string;
+  readonly copyLabel?: string;
+  readonly copiedLabel?: string;
 }
 
 export function renderInlineMarkdownNodes(text: string): React.ReactNode[] {
@@ -51,6 +53,8 @@ export function FormattedMarkdownContent({
   content,
   className = "",
   testId = "formatted-markdown-content",
+  copyLabel,
+  copiedLabel,
 }: FormattedMarkdownContentProps): React.JSX.Element {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const blocks = parseMarkdownBlocks(content);
@@ -120,7 +124,17 @@ export function FormattedMarkdownContent({
                   onClick={() => handleCopyCode(codeBody, idx)}
                   className="rounded border border-border-subtle bg-surface-primary px-2 py-0.5 font-sans text-[10px] font-medium text-text-primary hover:bg-surface-elevated"
                 >
-                  {copiedIndex === idx ? <><OrciaIcon name="check" /> Copié</> : "Copier"}
+                  {copiedIndex === idx ? (
+                    <>
+                      <OrciaIcon name="check" />
+                      {copiedLabel ? ` ${copiedLabel}` : null}
+                    </>
+                  ) : (
+                    <>
+                      <OrciaIcon name="copy" />
+                      {copyLabel ? ` ${copyLabel}` : null}
+                    </>
+                  )}
                 </button>
               </div>
               <pre className="overflow-x-auto p-3 font-mono text-[11px] leading-relaxed text-text-primary">

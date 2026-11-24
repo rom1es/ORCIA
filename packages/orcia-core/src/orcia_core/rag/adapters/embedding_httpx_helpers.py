@@ -50,12 +50,7 @@ def assert_embedding_usage_supported(
     p_slug = provider_slug.strip().lower()
     p_mode = protocol_mode.strip().lower()
     if p_slug == "anthropic" or p_mode == "anthropic_messages":
-        raise EmbeddingProviderUnsupportedError(
-            detail_override=(
-                "Le fournisseur Anthropic ne propose aucune API native d'embeddings sémantiques. "
-                "Sélectionnez un fournisseur compatible (OpenAI, Mistral, Gemini, Ollama, vLLM)."
-            )
-        )
+        raise EmbeddingProviderUnsupportedError(detail_code="ERR_EMBEDDING_ANTHROPIC_UNSUPPORTED")
 
 
 async def post_pinned_embedding_json(

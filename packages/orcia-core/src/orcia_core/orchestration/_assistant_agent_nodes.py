@@ -88,6 +88,9 @@ async def execute_assistant_nodes_async(
     t_start = time.perf_counter()
     has_active = workspace_id in active_proposals
 
+    from orcia_core.orchestration._assistant_locales import get_assistant_node_copy
+
+    node_copy = get_assistant_node_copy()
     t1 = time.perf_counter()
     intent = classify_fn(user_prompt, has_active_proposal=has_active)
     trace_1 = AssistantNodeTrace(
@@ -95,7 +98,7 @@ async def execute_assistant_nodes_async(
         node_order=1,
         status="COMPLETED",
         duration_ms=round((time.perf_counter() - t1) * 1000.0, 3),
-        summary=f"Intention classifiée : {intent}",
+        summary=node_copy["intent_summary"].format(intent=intent),
         output_metadata={"intent": intent, "has_active_proposal": has_active},
     )
 
@@ -171,9 +174,8 @@ async def execute_assistant_nodes_async(
         node_order=3,
         status="COMPLETED",
         duration_ms=round((time.perf_counter() - t3) * 1000.0, 3),
-        summary=(
-            f"Fan-out parallèle : {len(vector_hits)} hits RAG + "
-            f"{len(context_slices)} tranches ContextSourcePort"
+        summary=node_copy["fan_out_summary"].format(
+            vec_count=len(vector_hits), slice_count=len(context_slices)
         ),
         output_metadata={
             "vector_hit_count": len(vector_hits),
@@ -192,7 +194,7 @@ async def execute_assistant_nodes_async(
         node_order=4,
         status="COMPLETED",
         duration_ms=round((time.perf_counter() - t4) * 1000.0, 3),
-        summary=f"Tri critique & vérification d'axiomes ({len(stale_alerts)} alertes STALE)",
+        summary=node_copy["triage_summary"].format(stale_count=len(stale_alerts)),
         output_metadata={"axioms_verified": True, "stale_alert_count": len(stale_alerts)},
     )
 
@@ -229,9 +231,8 @@ async def execute_assistant_nodes_async(
         node_order=5,
         status="COMPLETED",
         duration_ms=round((time.perf_counter() - t5) * 1000.0, 3),
-        summary=(
-            f"Synthèse profil {assembled.profile_adaptation.archetype} "
-            f"({first_token_ms:.2f} ms < 1500 ms)"
+        summary=node_copy["synth_summary"].format(
+            archetype=assembled.profile_adaptation.archetype, ms=first_token_ms
         ),
         output_metadata={
             "profile_archetype": assembled.profile_adaptation.archetype,

@@ -49,10 +49,7 @@ def assert_can_create_org_unit(
     if cleaned_parent is None or cleaned_parent == "scope-global":
         raise OrgUnitScopeForbiddenError(
             instance=instance,
-            detail_override=(
-                "Un Responsable de Direction (BU) doit rattacher toute nouvelle sous-BU ou "
-                "équipe sous une BU de son périmètre."
-            ),
+            detail_code="ERR_ORG_DELEGATION_ROOT_REQUIRED",
         )
     if cleaned_parent not in scope.governed_bu_ids:
         raise OrgUnitScopeForbiddenError(instance=instance)
@@ -92,7 +89,7 @@ def assert_can_update_org_unit(
             if target.id in scope.led_bu_root_ids:
                 raise OrgUnitScopeForbiddenError(
                     instance=instance,
-                    detail_override="Impossible de déplacer votre Direction (BU) racine.",
+                    detail_code="ERR_ORG_DELEGATION_ROOT_MOVE_FORBIDDEN",
                 )
             if not next_parent_id or next_parent_id not in scope.governed_bu_ids:
                 raise OrgUnitScopeForbiddenError(instance=instance)
@@ -101,23 +98,19 @@ def assert_can_update_org_unit(
         if parent_id_provided and next_parent_id != target.parent_id:
             raise OrgUnitScopeForbiddenError(
                 instance=instance,
-                detail_override="Un Responsable d'Équipe ne peut pas modifier l'unité parente.",
+                detail_code="ERR_ORG_DELEGATION_TEAM_PARENT_FORBIDDEN",
             )
         if billing_enabled_provided and next_billing_enabled != target.billing_enabled:
             raise OrgUnitScopeForbiddenError(
                 instance=instance,
-                detail_override=(
-                    "Un Responsable d'Équipe ne peut pas modifier la facturation FinOps."
-                ),
+                detail_code="ERR_ORG_DELEGATION_TEAM_BILLING_FORBIDDEN",
             )
         if ontology_lead_user_ids_provided and tuple(next_ontology_lead_user_ids) != tuple(
             target.ontology_lead_user_ids
         ):
             raise OrgUnitScopeForbiddenError(
                 instance=instance,
-                detail_override=(
-                    "Les référents glossaire ne peuvent être modifiés que sur une Direction (BU)."
-                ),
+                detail_code="ERR_ORG_DELEGATION_ONTOLOGY_BU_ONLY",
             )
 
     if lead_user_ids_provided:

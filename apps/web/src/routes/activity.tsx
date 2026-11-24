@@ -23,17 +23,15 @@ import {
 } from "./activityApiBridge";
 import {
   buildActivityScopeOptions,
-  EVENT_TYPE_EN_LABELS,
-  EVENT_TYPE_FR_LABELS,
   formatActivityTimestamp,
 } from "./activityFormatters";
 import { Route as rootRoute } from "./__root";
 import { validateOrciaRouteSearch } from "./searchSchema";
 
 export function ActivityLogRouteView(): React.ReactElement {
-  const { locale, dictionary } = useI18n();
+  const { locale, isFr, dictionary } = useI18n();
   const activityDict = dictionary.activity;
-  const isFr = locale === "fr";
+  const eventLabels = dictionary.routesAndWizards.activityEvents;
   const { activeScopeId, openHelpSection } = useShellNavigation();
   const { platformAdmin, orgUnits, workspaces, scopes } = usePlatformSetup();
   const roles = useAuthSessionStore((s) => s.roles);
@@ -51,26 +49,25 @@ export function ActivityLogRouteView(): React.ReactElement {
   useEffect(() => {
     let isCancelled = false;
     void (async () => {
-      const res = await fetchAuditLedgerFromApi(isFr ? "fr" : "en", { limit: 500 });
+      const res = await fetchAuditLedgerFromApi(locale, { limit: 500 });
       if (isCancelled) return;
       if (res.ok && Array.isArray(res.entries)) {
-        const typeMap = isFr ? EVENT_TYPE_FR_LABELS : EVENT_TYPE_EN_LABELS;
         const mapped = res.entries.map((e) => {
-          const resolvedType = typeMap[e.event_type] ?? {
+          const resolvedType = eventLabels[e.event_type] ?? {
             label: activityDict.recordedAction,
             tone: "cobalt" as const,
           };
           const rawScope = e.scope_path || "GLOBAL";
-          const resolvedScopeLabel = formatHumanReadableScopePath(rawScope);
+          const resolvedScopeLabel = formatHumanReadableScopePath(rawScope, locale);
           const createdAtIso = e.created_at || new Date().toISOString();
           return {
             id: e.id,
             timestampIso: createdAtIso,
-            formattedTimestamp: formatActivityTimestamp(createdAtIso, isFr),
+            formattedTimestamp: formatActivityTimestamp(createdAtIso, isFr, locale),
             eventType: e.event_type,
             eventTypeLabel: resolvedType.label,
             badgeTone: resolvedType.tone,
-            summary: cleanAuditSummaryJargon(e.summary),
+            summary: cleanAuditSummaryJargon(e.summary, locale),
             actorName: e.actor_display_name || e.actor_id,
             actorEmail: e.actor_email || undefined,
             scopeId: e.workspace_id || e.org_unit_id || undefined,
@@ -88,7 +85,7 @@ export function ActivityLogRouteView(): React.ReactElement {
     return () => {
       isCancelled = true;
     };
-  }, [isFr, activityDict.recordedAction]);
+  }, [locale, isFr, eventLabels, activityDict.recordedAction]);
 
   const connectedUserName = platformAdmin?.displayName ?? activityDict.connectedAdminFallback;
 
@@ -122,7 +119,7 @@ export function ActivityLogRouteView(): React.ReactElement {
   const effectiveEvents: readonly UiActivityLogEventItem[] = apiEvents;
 
   const handleInspectProvenance = async (runId: string) => {
-    const res = await fetchRunProvenanceFromApi(runId, isFr ? "fr" : "en");
+    const res = await fetchRunProvenanceFromApi(runId, locale);
     if (res.ok) {
       setProvenanceSummary(res.summary);
       setApiErrorMessage(null);
@@ -133,7 +130,7 @@ export function ActivityLogRouteView(): React.ReactElement {
 
   const handleExportProvenance = async (runId: string, format: "json" | "md") => {
     setIsExporting(true);
-    const res = await exportRunProvenanceFromApi(runId, format, isFr ? "fr" : "en");
+    const res = await exportRunProvenanceFromApi(runId, format, locale);
     setIsExporting(false);
     if (!res.ok) {
       setApiErrorMessage(res.errorMessage);

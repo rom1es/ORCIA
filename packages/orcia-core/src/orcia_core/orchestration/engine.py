@@ -20,6 +20,10 @@ from orcia_core.orchestration._engine_fast_path import (
     execute_isolated_sub_workflow_sync,
     finalize_step_outcome,
 )
+from orcia_core.orchestration._orchestration_ops_locales import (
+    ENGINE_STEP_LOCALES,
+    get_ops_copy,
+)
 from orcia_core.orchestration.challenge_and_replay import UpstreamChallengeAndReplayService
 from orcia_core.orchestration.human_anchors_and_arbitration import (
     AuthorIdentityType,
@@ -40,10 +44,7 @@ from orcia_core.permissions.models import UserIdentity
 if TYPE_CHECKING:
     from orcia_core.orchestration.run_lock_service import WorkflowOrchestrationSetupService
 
-_DEFAULT_AUDIT_DIVERGENCE = (
-    "Écart seuil d'exemption TRA : source documentaire v12 indique 500€ "
-    "vs source opérationnelle indique 350€"
-)
+_DEFAULT_AUDIT_DIVERGENCE = get_ops_copy(ENGINE_STEP_LOCALES)["default_audit_div"]
 
 
 class DurableOrchestrationEngine:

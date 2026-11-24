@@ -1,4 +1,5 @@
 import React from "react";
+import { formatI18nTemplate, resolveDictionaryForFlag } from "../../../i18n";
 
 export interface VsmReturnLoopItem {
   id: string;
@@ -24,6 +25,7 @@ export function ReturnLoopsSvgOverlay({
   onSelectLoopStep,
   isFr,
 }: ReturnLoopsSvgOverlayProps) {
+  const copy = resolveDictionaryForFlag(isFr).processVsmExecutionUi.vsm;
   const primaryLoops = loops.filter((l) => l.tier === "primary");
   const secondaryLoops = loops.filter((l) => l.tier === "secondary");
 
@@ -50,23 +52,22 @@ export function ReturnLoopsSvgOverlay({
       >
         <div>
           <strong style={{ fontSize: "13.5px" }}>
-            {isFr
-              ? `Boucles de Retour Dynamiques (${primaryLoops.length} principales · ${secondaryLoops.length} secondaires)`
-              : `Dynamic Return Loops (${primaryLoops.length} primary · ${secondaryLoops.length} secondary)`}
+            {formatI18nTemplate(copy.loopsHeaderTemplate, {
+              primary: primaryLoops.length,
+              secondary: secondaryLoops.length,
+            })}
           </strong>
           <div style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
-            {isFr
-              ? "Survolez un losange de passage humain ou cliquez sur une boucle pour inspecter la ré-entrée en mode corrections (:iter-N)."
-              : "Hover a human checkpoint diamond or click a loop to inspect re-entry in corrections mode (:iter-N)."}
+            {copy.loopsSubtitle}
           </div>
         </div>
 
         <div style={{ display: "flex", gap: "12px", fontSize: "11.5px" }}>
           <span style={{ color: "var(--color-arbitration-amber)", fontWeight: 700 }}>
-            ╌╌► {isFr ? "Boucle principale (fréquente)" : "Primary loop (frequent)"}
+            ╌╌► {copy.primaryLoopLegend}
           </span>
           <span style={{ color: "var(--color-text-secondary)", fontWeight: 600 }}>
-            ┈┈► {isFr ? "Boucle secondaire (exceptionnelle)" : "Secondary loop (exceptional)"}
+            ┈┈► {copy.secondaryLoopLegend}
           </span>
         </div>
       </div>
@@ -78,7 +79,7 @@ export function ReturnLoopsSvgOverlay({
           viewBox="0 0 940 135"
           style={{ width: "100%", minWidth: "740px", height: "135px", display: "block" }}
           role="img"
-          aria-label={isFr ? "Schéma SVG des boucles de retour VSM" : "VSM Return Loops SVG Diagram"}
+          aria-label={copy.loopsSvgAriaLabel}
         >
           {/* Step anchor nodes 01..11 */}
           {Array.from({ length: 11 }, (_, idx) => {

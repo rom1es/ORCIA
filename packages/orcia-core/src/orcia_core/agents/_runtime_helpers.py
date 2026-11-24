@@ -158,7 +158,9 @@ def build_scratchpad_entry_from_observation(
     if obs.start_line is not None and obs.end_line is not None:
         anchor = f"#L{obs.start_line}-{obs.end_line}"
     if obs.redacted:
-        excerpt = "[Extrait protégé — permission READ_SOURCE requise]"
+        from orcia_core.agents._agents_locales import get_agent_runtime_copy
+
+        excerpt = get_agent_runtime_copy().protected_excerpt
     elif obs.lines:
         preview_lines = [f"L{ln.line_number}: {ln.content}" for ln in obs.lines[:12]]
         excerpt = "\n".join(preview_lines)

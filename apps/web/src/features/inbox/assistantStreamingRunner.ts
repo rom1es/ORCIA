@@ -5,6 +5,7 @@ import type {
   UiInferenceTier,
   UiThreeSpeedStepProgress,
 } from "@orcia/ui";
+import { resolveLocaleForFlag } from "../../i18n";
 import {
   addBgTimer,
   bgSnapshot,
@@ -68,7 +69,7 @@ export function startAssistantStreamingTurnExecution(params: StartAssistantStrea
     addBgTimer(setTimeout(() => advanceStep(2), 2600));
   }
 
-  const client = createOrciaApiClient({ baseUrl: "", locale: isFr ? "fr" : "en" });
+  const client = createOrciaApiClient({ baseUrl: "", locale: resolveLocaleForFlag(isFr) });
   const proc = createTurnSseProcessor({
     controller, isFr, tStart, userPrompt, threadId, parentTurnId,
     effectiveTier, effectiveEffort, folderTitle, pinnedNotes, attachedFiles, useSteps, plannedSteps,
@@ -120,7 +121,7 @@ export function startAssistantStreamingTurnExecution(params: StartAssistantStrea
 
 export function reattachAssistantTurnStream(params: ReattachAssistantStreamParams): void {
   const { controller, turnId, afterCursor, workspaceIdValue, isFr, tStart, userPrompt, streamErrorLabels } = params;
-  const client = createOrciaApiClient({ baseUrl: "", locale: isFr ? "fr" : "en" });
+  const client = createOrciaApiClient({ baseUrl: "", locale: resolveLocaleForFlag(isFr) });
   const proc = createTurnSseProcessor({
     controller, isFr, tStart, userPrompt,
     effectiveTier: "medium", effectiveEffort: "balanced",

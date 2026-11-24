@@ -6,51 +6,10 @@ import type {
   UserPasswordSecurityLabels,
 } from "./UserAccountDropdownTypes";
 
-export const DEFAULT_FR_PASSWORD_LABELS: UserPasswordSecurityLabels = {
-  title: "Sécurité & Mot de Passe",
-  renewalRequiredBadge: "Renouvellement Requis",
-  temporaryPasswordWarning:
-    "Vous utilisez un mot de passe temporaire à renouveler obligatoirement.",
-  currentPasswordLabel: "Mot de passe actuel", // pragma: allowlist secret
-  newPasswordLabel: "Nouveau mot de passe (min. 12 car., Maj/Min/Chiffre)", // pragma: allowlist secret
-  confirmPasswordLabel: "Confirmer le nouveau mot de passe", // pragma: allowlist secret
-  submitButtonLabel: "Changer mon mot de passe",
-  submittingButtonLabel: "Mise à jour...",
-  updatedSuccessMessage: "Mot de passe mis à jour avec succès.",
-  missingCurrentPasswordError: "Veuillez renseigner votre mot de passe actuel.", // pragma: allowlist secret
-  weakPasswordError:
-    "Le mot de passe doit comporter au moins 12 caractères (min. 1 min, 1 maj, 1 chiffre).",
-  unchangedPasswordError:
-    "Le nouveau mot de passe doit être différent de l'actuel.", // pragma: allowlist secret
-  mismatchPasswordError: "Les deux mots de passe ne correspondent pas.", // pragma: allowlist secret
-  actionNotConfiguredError: "Action non configurée.",
-  genericError: "Erreur lors de la modification du mot de passe.",
-};
-
-export const DEFAULT_EN_PASSWORD_LABELS: UserPasswordSecurityLabels = {
-  title: "Security & Password",
-  renewalRequiredBadge: "Renewal Required",
-  temporaryPasswordWarning:
-    "You are using a temporary password that must be renewed.",
-  currentPasswordLabel: "Current password", // pragma: allowlist secret
-  newPasswordLabel: "New password (min. 12 chars, upper/lower/digit)", // pragma: allowlist secret
-  confirmPasswordLabel: "Confirm new password", // pragma: allowlist secret
-  submitButtonLabel: "Change password",
-  submittingButtonLabel: "Updating...",
-  updatedSuccessMessage: "Password updated successfully.",
-  missingCurrentPasswordError: "Please enter your current password.", // pragma: allowlist secret
-  weakPasswordError:
-    "Password requires 12+ chars with upper, lower, and digit.",
-  unchangedPasswordError: "New password must differ from current password.", // pragma: allowlist secret
-  mismatchPasswordError: "Passwords do not match.", // pragma: allowlist secret
-  actionNotConfiguredError: "Action not configured.",
-  genericError: "Failed to change password.",
-};
-
 export interface UserPasswordChangeCardProps {
   readonly mustChangePassword?: boolean;
   readonly locale?: UiLocalePreference;
-  readonly labels?: UserPasswordSecurityLabels;
+  readonly labels: UserPasswordSecurityLabels;
   readonly onChangePassword?: (
     currentPassword: string,
     newPassword: string,
@@ -59,13 +18,10 @@ export interface UserPasswordChangeCardProps {
 
 export function UserPasswordChangeCard({
   mustChangePassword = false,
-  locale = "fr",
   labels,
   onChangePassword,
 }: UserPasswordChangeCardProps): React.ReactElement {
-  const fallback =
-    locale === "en" ? DEFAULT_EN_PASSWORD_LABELS : DEFAULT_FR_PASSWORD_LABELS;
-  const copy: UserPasswordSecurityLabels = { ...fallback, ...labels };
+  const copy = labels;
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");

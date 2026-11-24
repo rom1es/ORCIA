@@ -12,6 +12,12 @@ import type {
   UiUserPassthroughConnectorView,
 } from "@orcia/ui";
 
+const SUPPORTED_LOCALES = new Set<string>(["fr", "en"]);
+
+export function parseUiLocalePreference(raw: unknown): UiLocalePreference | null {
+  return typeof raw === "string" && SUPPORTED_LOCALES.has(raw) ? (raw as UiLocalePreference) : null;
+}
+
 export function extractUiErrorMessage(err: unknown, fallback: string): string {
   if (err instanceof OrciaProblemError) {
     return err.problem.detail || err.problem.title || fallback;

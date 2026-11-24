@@ -8,6 +8,7 @@ import re
 from typing import Literal
 from uuid import UUID
 
+from orcia_core.orchestration._studio_and_packs_locales import REBASE_SPEC_LOCALES
 from orcia_core.orchestration._workspace_governance_models import (
     SOVEREIGNTY_RANK,
     ExternalRebaseResult,
@@ -20,6 +21,7 @@ from orcia_core.orchestration.errors import (
     OrthogonalJudgeSovereigntyViolationError,
     PathTraversalDeniedError,
 )
+from orcia_kernel.enums import DEFAULT_LOCALE
 
 
 def enforce_local_realpath_confinement(*, local_uri: str, allowed_root: str) -> str:
@@ -220,10 +222,11 @@ def build_pilot_ticket_to_tech_spec_result(
     requires_human_anchor = (
         generator_model_family.strip().lower() == judge_model_family.strip().lower()
     )
+    spec_tpl = REBASE_SPEC_LOCALES[DEFAULT_LOCALE]
     spec_markdown = (
-        f"# Spécification Technique — {ticket_key}\n\n"
-        f"## 1. Contexte & Périmètre\n{ticket_summary}\n\n"
-        "## 2. Contrats d'Interface & Impacts\nValidation via Gate adaptative.\n"
+        spec_tpl["heading"].format(ticket_key=ticket_key)
+        + spec_tpl["sec1"].format(ticket_summary=ticket_summary)
+        + spec_tpl["sec2"]
     )
     destination: ResolvedArtifactDestination = resolve_destination_fn(spec_markdown.encode("utf-8"))  # type: ignore[operator]
     return PilotWorkflowRunResult(

@@ -35,9 +35,11 @@ export function applyAutocompleteSuggestionToPrompt(
 
 export function AssistantAutocompleteDropdown({
   suggestions,
+  ariaLabel,
   onSelectSuggestion,
 }: {
   readonly suggestions: readonly UiAssistantAutocompleteSuggestion[];
+  readonly ariaLabel?: string;
   readonly onSelectSuggestion: (item: UiAssistantAutocompleteSuggestion) => void;
 }): React.JSX.Element | null {
   if (suggestions.length === 0) return null;
@@ -45,7 +47,7 @@ export function AssistantAutocompleteDropdown({
     <div
       data-testid="assistant-autocomplete-dropdown"
       role="listbox"
-      aria-label="Suggestions d'agents et compétences"
+      aria-label={ariaLabel}
       className="mt-2 max-h-52 overflow-y-auto rounded-lg border border-border-subtle bg-surface-primary p-1.5 text-xs shadow-md space-y-1"
     >
       {suggestions.map((item) => (

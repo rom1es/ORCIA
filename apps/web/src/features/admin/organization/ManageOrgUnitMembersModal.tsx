@@ -74,8 +74,7 @@ export function ManageOrgUnitMembersModal({
   }, [unit, open]);
 
   const allAvailableUsers = [...usersSearch.knownUsers, ...knownUsers];
-  const defaultUnknownError =
-    unknownUserErrorLabel || "L'identifiant saisi ne correspond à aucun utilisateur actif et connu.";
+  const defaultUnknownError = unknownUserErrorLabel ?? "";
 
   const handleAddMember = () => {
     const trimmed = newMemberDraft.trim();
@@ -208,7 +207,7 @@ export function ManageOrgUnitMembersModal({
                     {labels.addMemberButton}
                   </OrciaButton>
                   <OrciaButton variant="secondary" testId="org-unit-new-member-btn" disabled={!canMutate || isSubmitting} onClick={() => setInlineCreateOpen(true)}>
-                    {labels.newMemberButtonLabel || "+ Nouveau membre"}
+                    {labels.newMemberButtonLabel}
                   </OrciaButton>
                 </div>
                 {memberValidationError ? (
@@ -274,7 +273,7 @@ export function ManageOrgUnitMembersModal({
             }
             setNewMemberDraft("");
             setMemberValidationError(null);
-            setFeedbackMessage(labels.newMemberCreatedFeedback || "Nouveau membre créé et rattaché avec succès.");
+            setFeedbackMessage(labels.newMemberCreatedFeedback);
           }}
         />
       ) : null}

@@ -1,6 +1,10 @@
 import type { UiAgentTraceEventItem } from "@orcia/ui";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../../../i18n";
+import {
+  extractLocalizedApiError,
+  resolveLocalizedClientError,
+} from "../../../lib/formatRfc9457ErrorToBanner";
 import type { WorkflowDefinitionV2Item } from "../processStudioV2Data";
 import { createProcessesApiClient } from "../studio/studioLabelsAndMappers";
 import {
@@ -9,6 +13,7 @@ import {
 } from "../../shared/reflexiveTraceMappers";
 import { useReflexiveExecutionController } from "../../shared/useReflexiveExecutionController";
 import { useSourceLineInspector } from "../../shared/useSourceLineInspector";
+import { buildGoalDrivenExecutionPayload } from "./interactiveRunGoalPayload";
 import {
   buildInitialArtifactMarkdown,
   buildSubStepAdvanceMarkdown,
@@ -31,6 +36,7 @@ export function useInteractiveProcessRunController(
   workspaceId?: string,
 ) {
   const { locale, dictionary } = useI18n();
+  const processCopy = dictionary.categoryAControllers.processes;
   const enabledSubSteps = workflow.sub_steps.filter((s) => s.enabled);
   const isExternalGate = workflow.execution_mode === "external_delegated";
   const isGoalDriven = workflow.orchestration_type === "non_deterministic";
@@ -39,19 +45,22 @@ export function useInteractiveProcessRunController(
 
   const [runId, setRunId] = useState<string>(() => `run-${workflow.id}-01`);
   const [iteration, setIteration] = useState<number>(1);
-  const [reentryMode, setReentryMode] = useState<"initial" | "corrections">(
-    "initial",
-  );
+  const [reentryMode, setReentryMode] = useState<"initial" | "corrections">("initial");
   const [currentSubIndex, setCurrentSubIndex] = useState<number>(0);
   const [status, setStatus] = useState<InteractiveProcessDrawerStatus>(
     isExternalGate ? "WAITING_EXTERNAL_GATE" : "WAITING_SUBSTEP_HITL",
   );
 
   const currentSubStep = enabledSubSteps[currentSubIndex] ?? enabledSubSteps[0];
-  const agentLabel = formatAgentHumanLabel(workflow.agent_ref);
+  const agentLabel = formatAgentHumanLabel(workflow.agent_ref, locale);
 
   const [artifactMarkdown, setArtifactMarkdown] = useState<string>(() =>
-    buildInitialArtifactMarkdown(workflow.title, currentSubStep?.name ?? "Exécution", agentLabel),
+    buildInitialArtifactMarkdown(
+      workflow.title,
+      currentSubStep?.name ?? processCopy.executionDefaultName,
+      agentLabel,
+      locale,
+    ),
   );
   const [artifactSha256, setArtifactSha256] = useState<string>(() =>
     simpleHashHex(artifactMarkdown),
@@ -59,7 +68,7 @@ export function useInteractiveProcessRunController(
   const [isEditingDiff, setIsEditingDiff] = useState<boolean>(false);
   const [returnLoopTargetStep, setReturnLoopTargetStep] = useState<string>("02");
   const [returnLoopRemarks, setReturnLoopRemarks] = useState<string>(
-    "Préciser les hypothèses de gain métier sur le segment professionnel.",
+    processCopy.defaultReturnRemarks,
   );
   const [signedTokenPreview, setSignedTokenPreview] = useState<string | null>(null);
   const [statusBanner, setStatusBanner] = useState<string | null>(null);
@@ -74,12 +83,7 @@ export function useInteractiveProcessRunController(
     readonly UiAgentTraceEventItem[]
   >([]);
 
-  const inspector = useSourceLineInspector({
-    locale,
-    workspaceId,
-    onFeedback: setStatusBanner,
-  });
-
+  const inspector = useSourceLineInspector({ locale, workspaceId, onFeedback: setStatusBanner });
   const reflexive = useReflexiveExecutionController({
     storageKey,
     locale,
@@ -87,16 +91,11 @@ export function useInteractiveProcessRunController(
     onSnapshotUpdated: (mapped) => {
       if (mapped.finalMarkdown) {
         setArtifactMarkdown(mapped.finalMarkdown);
-        setArtifactSha256(
-          mapped.artifactSha256 || simpleHashHex(mapped.finalMarkdown),
-        );
+        setArtifactSha256(mapped.artifactSha256 || simpleHashHex(mapped.finalMarkdown));
       }
       if (mapped.status === "WAITING_WRITE_PREVIEW") {
         setStatus("WAITING_WRITE_PREVIEW");
-      } else if (
-        mapped.status === "COMPLETED" &&
-        status === "WAITING_WRITE_PREVIEW"
-      ) {
+      } else if (mapped.status === "COMPLETED" && status === "WAITING_WRITE_PREVIEW") {
         setStatus("WAITING_FINAL_ANCHOR");
       }
     },
@@ -114,60 +113,42 @@ export function useInteractiveProcessRunController(
 
     const startPromise = (async (): Promise<string | null> => {
       try {
-        const res = await createProcessesApiClient(locale).startWorkflowV2Run(
-          workflow.id,
-          {
-            inputs: { objective: workflow.title },
-            iteration: 1,
-            reentry_mode: "initial",
-          },
-        );
+        const res = await createProcessesApiClient(locale).startWorkflowV2Run(workflow.id, {
+          inputs: { objective: workflow.title },
+          iteration: 1,
+          reentry_mode: "initial",
+        });
         if (cancelled || !res?.run) return null;
         const resolvedRunId = res.run.run_id || `run-${workflow.id}-01`;
         setRunId(resolvedRunId);
         hasPersistedServerRunRef.current = Boolean(res.run.run_id);
         if (res.run.reflexive_execution_id) {
           await reflexive.refreshSnapshot(res.run.reflexive_execution_id);
-        } else if (
-          Array.isArray(res.run.trace_events) &&
-          res.run.trace_events.length > 0
-        ) {
-          setInlineRunTraceEvents(
-            res.run.trace_events.map((ev) =>
-              mapApiTraceEventToUi(ev, actorSlug),
-            ),
-          );
+        } else if (Array.isArray(res.run.trace_events) && res.run.trace_events.length > 0) {
+          setInlineRunTraceEvents(res.run.trace_events.map((ev) => mapApiTraceEventToUi(ev, actorSlug)));
         } else if (isGoalDriven) {
-          await reflexive.startExecution({
-            actor_slug: actorSlug,
-            objective: workflow.reflexive_objective || workflow.title,
-            effort_level: "high",
-            effort_mode: "approfondi",
-            allow_sub_agent_delegation: true,
-            available_delegate_agents: ["analyste-metier"],
-            initial_resources: [
-              "docs/product/capabilities.yaml",
-              "packs/orcia-docs/workflows/wf-generate-orcia-documentation.yaml",
-            ],
-            ...(workspaceId ? { workspace_id: workspaceId } : {}),
-          });
+          await reflexive.startExecution(
+            buildGoalDrivenExecutionPayload({
+              actorSlug,
+              objective: workflow.reflexive_objective || workflow.title,
+              workspaceId,
+            }),
+          );
         }
         return resolvedRunId;
       } catch (err: unknown) {
         if (!cancelled) {
-          const detail = err instanceof Error ? err.message : String(err);
+          const extracted = extractLocalizedApiError(err, locale, "ERR_CLIENT_PROCESS_RUN_START");
           setHasError(true);
           setStatusBanner(
-            isFr
-              ? `Échec du démarrage du run : ${detail}`
-              : `Failed to start run: ${detail}`,
+            resolveLocalizedClientError("ERR_CLIENT_PROCESS_RUN_START", locale, {
+              detail: extracted.errorMessage,
+            }),
           );
         }
         return null;
       } finally {
-        if (!cancelled) {
-          setIsStartingRun(false);
-        }
+        if (!cancelled) setIsStartingRun(false);
       }
     })();
 
@@ -179,20 +160,13 @@ export function useInteractiveProcessRunController(
   }, [workflow.id]);
 
   const handleLaunchLiveInvestigation = () => {
-    void reflexive.startExecution({
-      actor_slug: actorSlug,
-      objective: workflow.reflexive_objective || workflow.title,
-      effort_level: "high",
-      effort_mode: "approfondi",
-      allow_sub_agent_delegation: true,
-      available_delegate_agents: ["analyste-metier"],
-      initial_resources: [
-        "docs/product/capabilities.yaml",
-        "packs/orcia-docs/workflows/wf-generate-orcia-documentation.yaml",
-      ],
-      run_in_background: true,
-      step_delay_ms: 120,
-    });
+    void reflexive.startExecution(
+      buildGoalDrivenExecutionPayload({
+        actorSlug,
+        objective: workflow.reflexive_objective || workflow.title,
+        runInBackground: true,
+      }),
+    );
   };
 
   const handleStageExternalWritePreview = () => {
@@ -208,16 +182,9 @@ export function useInteractiveProcessRunController(
   };
 
   const handleApproveCurrentSubStep = () => {
-    if (
-      currentSubStep?.write_preview_required &&
-      status !== "WAITING_WRITE_PREVIEW"
-    ) {
+    if (currentSubStep?.write_preview_required && status !== "WAITING_WRITE_PREVIEW") {
       setStatus("WAITING_WRITE_PREVIEW");
-      setStatusBanner(
-        isFr
-          ? "Vérification avant publication externe : veuillez confirmer la création dans l'outil cible (Jira / Confluence)."
-          : "Pre-publication check: please confirm creation in the target tool.",
-      );
+      setStatusBanner(processCopy.writePreviewPrompt);
       return;
     }
     if (status === "WAITING_WRITE_PREVIEW") {
@@ -231,22 +198,19 @@ export function useInteractiveProcessRunController(
         workflow.title,
         nextSub?.name ?? "",
         nextSub?.output_description ?? "",
+        locale,
       );
       setArtifactMarkdown(nextMd);
       setArtifactSha256(simpleHashHex(nextMd));
       setStatus(nextSub?.write_preview_required ? "WAITING_WRITE_PREVIEW" : "WAITING_SUBSTEP_HITL");
       setStatusBanner(
-        isFr
-          ? `Étape « ${currentSubStep?.short_label} » validée. Passage à « ${nextSub?.short_label} ».`
-          : `Step "${currentSubStep?.short_label}" approved. Advancing to "${nextSub?.short_label}".`,
+        processCopy.stepApprovedAdvance
+          .replace("{step}", currentSubStep?.short_label ?? "")
+          .replace("{nextStep}", nextSub?.short_label ?? ""),
       );
     } else {
       setStatus("WAITING_FINAL_ANCHOR");
-      setStatusBanner(
-        isFr
-          ? "Toutes les étapes et les vérifications de qualité sont conformes. Vous pouvez valider et publier le livrable final."
-          : "All steps and quality checks passed. Ready for final sign-off.",
-      );
+      setStatusBanner(processCopy.readyForFinalSignoff);
     }
   };
 
@@ -267,15 +231,19 @@ export function useInteractiveProcessRunController(
         });
       }
       setStatus("COMPLETED_APPROVED");
-      setStatusBanner(
-        isFr
-          ? "Dossier validé et signé : le livrable final est enregistré et publié."
-          : "Deliverable approved, signed, and published.",
-      );
+      setStatusBanner(processCopy.deliverableApprovedBanner);
     } catch (err: unknown) {
-      const detail = err instanceof Error ? err.message : String(err);
+      const extracted = extractLocalizedApiError(
+        err,
+        locale,
+        "ERR_CLIENT_PROCESS_DELIVERABLE_APPROVE",
+      );
       setHasError(true);
-      setStatusBanner(isFr ? `Échec de la validation du livrable : ${detail}` : `Deliverable approval failed: ${detail}`);
+      setStatusBanner(
+        resolveLocalizedClientError("ERR_CLIENT_PROCESS_DELIVERABLE_APPROVE", locale, {
+          detail: extracted.errorMessage,
+        }),
+      );
     } finally {
       setIsSubmittingDecision(false);
     }
@@ -284,7 +252,7 @@ export function useInteractiveProcessRunController(
   const handleAction2SaveAmendedDiff = () => {
     setArtifactSha256(simpleHashHex(artifactMarkdown));
     setIsEditingDiff(false);
-    setStatusBanner(isFr ? "Modifications enregistrées sur le livrable." : "Deliverable changes saved.");
+    setStatusBanner(processCopy.deliverableDiffSavedBanner);
   };
 
   const handleAction3RejectAndLoop = () => {
@@ -293,13 +261,17 @@ export function useInteractiveProcessRunController(
     setReentryMode("corrections");
     setCurrentSubIndex(0);
     setStatus("RETURN_LOOP_TRIGGERED");
-    const revisedMd = `${artifactMarkdown}\n\n## Reprise sur corrections (Cycle ${nextIter} → Étape ${returnLoopTargetStep})\nCommentaires pris en compte : ${returnLoopRemarks}`;
+    const loopSection = processCopy.returnLoopMarkdown
+      .replace("{cycle}", String(nextIter))
+      .replace("{step}", returnLoopTargetStep)
+      .replace("{remarks}", returnLoopRemarks);
+    const revisedMd = `${artifactMarkdown}\n\n${loopSection}`;
     setArtifactMarkdown(revisedMd);
     setArtifactSha256(simpleHashHex(revisedMd));
     setStatusBanner(
-      isFr
-        ? `Dossier renvoyé vers l'Étape ${returnLoopTargetStep} avec vos commentaires de correction (Cycle ${nextIter}).`
-        : `Returned to Step ${returnLoopTargetStep} with your correction notes (Cycle ${nextIter}).`,
+      processCopy.returnLoopBanner
+        .replace("{step}", returnLoopTargetStep)
+        .replace("{cycle}", String(nextIter)),
     );
   };
 
@@ -309,41 +281,13 @@ export function useInteractiveProcessRunController(
     reflexive.status ?? (effectiveEvents.length > 0 ? "COMPLETED" : null);
 
   return {
-    dictionary,
-    enabledSubSteps,
-    isGoalDriven,
-    runId,
-    iteration,
-    reentryMode,
-    currentSubIndex,
-    currentSubStep,
-    status,
-    setStatus,
-    agentLabel,
-    artifactMarkdown,
-    setArtifactMarkdown,
-    artifactSha256,
-    isEditingDiff,
-    setIsEditingDiff,
-    returnLoopTargetStep,
-    setReturnLoopTargetStep,
-    returnLoopRemarks,
-    setReturnLoopRemarks,
-    signedTokenPreview,
-    statusBanner,
-    hasError,
-    isStartingRun,
-    isSubmittingDecision,
-    setStatusBanner,
-    inspector,
-    reflexive,
-    effectiveEvents,
-    effectiveTraceStatus,
-    handleLaunchLiveInvestigation,
-    handleStageExternalWritePreview,
-    handleApproveCurrentSubStep,
-    handleAction1AcceptAndSign,
-    handleAction2SaveAmendedDiff,
-    handleAction3RejectAndLoop,
+    dictionary, enabledSubSteps, isGoalDriven, runId, iteration, reentryMode,
+    currentSubIndex, currentSubStep, status, setStatus, agentLabel,
+    artifactMarkdown, setArtifactMarkdown, artifactSha256, isEditingDiff, setIsEditingDiff,
+    returnLoopTargetStep, setReturnLoopTargetStep, returnLoopRemarks, setReturnLoopRemarks,
+    signedTokenPreview, statusBanner, hasError, isStartingRun, isSubmittingDecision,
+    setStatusBanner, inspector, reflexive, effectiveEvents, effectiveTraceStatus,
+    handleLaunchLiveInvestigation, handleStageExternalWritePreview, handleApproveCurrentSubStep,
+    handleAction1AcceptAndSign, handleAction2SaveAmendedDiff, handleAction3RejectAndLoop,
   };
 }

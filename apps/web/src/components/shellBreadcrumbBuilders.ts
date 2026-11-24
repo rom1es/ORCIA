@@ -1,4 +1,5 @@
 import type { FourZoneDirectionCShellLabels, ShellBreadcrumbItem } from "@orcia/ui";
+import { DICTIONARIES, resolveDictionaryForFlag } from "../i18n";
 import { resolveGlobalScopeLabel } from "./platformSetupWorkspaces";
 
 function isWorkspaceScopedBreadcrumbRoute(pathname: string | null | undefined): boolean {
@@ -22,9 +23,12 @@ function isWorkspaceScopedBreadcrumbRoute(pathname: string | null | undefined): 
 function buildRouteModuleBreadcrumbItems(params: {
   readonly pathname: string | null | undefined;
   readonly isFr: boolean;
+  readonly locale?: "fr" | "en";
   readonly menuEntries: FourZoneDirectionCShellLabels["menuEntries"];
 }): readonly ShellBreadcrumbItem[] {
-  const { pathname, isFr, menuEntries } = params;
+  const { pathname, isFr, locale, menuEntries } = params;
+  const copy = resolveDictionaryForFlag(isFr, locale).shellBreadcrumbsAndScope.breadcrumbs;
+
   if (!pathname || pathname === "/" || pathname.startsWith("/cockpit")) {
     return [{ label: menuEntries.cockpit, route: "/cockpit" }];
   }
@@ -32,18 +36,18 @@ function buildRouteModuleBreadcrumbItems(params: {
     return [{ label: menuEntries.assistant, route: "/assistant" }];
   }
   if (pathname.startsWith("/inbox")) {
-    return [{ label: isFr ? "Boîte de Réception" : "Inbox", route: "/inbox" }];
+    return [{ label: copy.inbox, route: "/inbox" }];
   }
   if (pathname.startsWith("/processes/studio")) {
     return [
       { label: menuEntries.processes, route: "/processes" },
-      { label: "Studio" },
+      { label: copy.studio },
     ];
   }
   if (pathname.startsWith("/processes/vsm")) {
     return [
       { label: menuEntries.processes, route: "/processes" },
-      { label: isFr ? "Chaîne de valeur" : "Value Stream" },
+      { label: copy.valueStream },
     ];
   }
   if (pathname.startsWith("/processes")) {
@@ -52,7 +56,7 @@ function buildRouteModuleBreadcrumbItems(params: {
   if (pathname.startsWith("/gates")) {
     return [
       { label: menuEntries.processes, route: "/processes" },
-      { label: isFr ? "Validations" : "Quality Gates", route: "/gates" },
+      { label: copy.qualityGates, route: "/gates" },
     ];
   }
   if (pathname.startsWith("/agents")) {
@@ -61,19 +65,19 @@ function buildRouteModuleBreadcrumbItems(params: {
   if (pathname.startsWith("/catalog")) {
     return [
       { label: menuEntries.agents, route: "/agents" },
-      { label: isFr ? "Catalogue" : "Catalog", route: "/catalog" },
+      { label: copy.catalog, route: "/catalog" },
     ];
   }
   if (pathname.startsWith("/ontology")) {
     return [
       { label: menuEntries.spaces, route: "/spaces" },
-      { label: isFr ? "Glossaire" : "Glossary", route: "/ontology" },
+      { label: copy.glossary, route: "/ontology" },
     ];
   }
   if (pathname.includes("/sources") && pathname.startsWith("/workspaces")) {
     return [
       { label: menuEntries.spaces, route: "/spaces" },
-      { label: "Sources" },
+      { label: copy.sources },
     ];
   }
   if (pathname.startsWith("/spaces") || pathname.startsWith("/workspaces")) {
@@ -82,19 +86,19 @@ function buildRouteModuleBreadcrumbItems(params: {
   if (pathname.startsWith("/activity")) {
     return [
       { label: menuEntries.finops, route: "/finops" },
-      { label: isFr ? "Journal d'Activité" : "Activity Log", route: "/activity" },
+      { label: copy.activityLog, route: "/activity" },
     ];
   }
   if (pathname.startsWith("/finops")) {
     return [{ label: menuEntries.finops, route: "/finops" }];
   }
   if (pathname.startsWith("/organization")) {
-    return [{ label: menuEntries.organization ?? (isFr ? "Mon Organisation" : "My Organization"), route: "/organization" }];
+    return [{ label: menuEntries.organization ?? copy.organization, route: "/organization" }];
   }
   if (pathname.startsWith("/wizards")) {
     return [
       { label: menuEntries.configuration, route: "/configuration" },
-      { label: isFr ? "Assistants Guidés" : "Guided Wizards", route: "/wizards" },
+      { label: copy.guidedWizards, route: "/wizards" },
     ];
   }
   if (
@@ -105,12 +109,12 @@ function buildRouteModuleBreadcrumbItems(params: {
     return [{ label: menuEntries.configuration, route: "/configuration" }];
   }
   if (pathname.startsWith("/profile")) {
-    return [{ label: isFr ? "Profil" : "Profile", route: "/profile" }];
+    return [{ label: copy.profile, route: "/profile" }];
   }
   if (pathname.startsWith("/showcase")) {
     return [
       { label: menuEntries.help, route: "/help" },
-      { label: isFr ? "Présentation ORCIA" : "ORCIA Showcase", route: "/showcase" },
+      { label: copy.showcase, route: "/showcase" },
     ];
   }
   if (pathname.startsWith("/help")) {
@@ -122,6 +126,7 @@ function buildRouteModuleBreadcrumbItems(params: {
 export function buildShellBreadcrumbItems(params: {
   readonly pathname: string | null | undefined;
   readonly isFr: boolean;
+  readonly locale?: "fr" | "en";
   readonly menuEntries: FourZoneDirectionCShellLabels["menuEntries"];
   readonly activeTeamLabel?: string | null;
   readonly activeWorkspaceLabel?: string | null;
@@ -130,12 +135,17 @@ export function buildShellBreadcrumbItems(params: {
   const {
     pathname,
     isFr,
+    locale,
     menuEntries,
     activeTeamLabel,
     activeWorkspaceLabel,
   } = params;
   const globalLabelFr = resolveGlobalScopeLabel(true);
   const globalLabelEn = resolveGlobalScopeLabel(false);
+  const redundantAllSpaces = new Set([
+    ...DICTIONARIES.fr.shellBreadcrumbsAndScope.breadcrumbs.redundantAllSpacesLabels,
+    ...DICTIONARIES.en.shellBreadcrumbsAndScope.breadcrumbs.redundantAllSpacesLabels,
+  ]);
   const cleanTeam = (activeTeamLabel ?? "").trim();
   const isRedundantTeam =
     !cleanTeam ||
@@ -150,14 +160,12 @@ export function buildShellBreadcrumbItems(params: {
     cleanWorkspace === cleanTeam ||
     cleanWorkspace === globalLabelFr ||
     cleanWorkspace === globalLabelEn ||
-    cleanWorkspace === "Tous les espaces" ||
-    cleanWorkspace === "All spaces" ||
-    cleanWorkspace === "Tous mes espaces" ||
-    cleanWorkspace === "All my spaces";
+    redundantAllSpaces.has(cleanWorkspace);
 
   const moduleItems = buildRouteModuleBreadcrumbItems({
     pathname,
     isFr,
+    locale,
     menuEntries,
   });
   const prefix: ShellBreadcrumbItem[] = [];

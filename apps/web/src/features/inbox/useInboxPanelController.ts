@@ -33,7 +33,7 @@ export const ASSISTANT_REFLEXIVE_STORAGE_KEY =
   "orcia.reflexive_exec.assistant.v1";
 
 export function useInboxPanelController() {
-  const { dictionary, locale } = useI18n();
+  const { dictionary, locale, isFr } = useI18n();
   const { activeScopeId } = useShellNavigation();
   const authEmail = useAuthSessionStore((s) => s.email);
   const {
@@ -44,7 +44,6 @@ export function useInboxPanelController() {
     catalogItems,
     packs,
   } = usePlatformSetup();
-  const isFr = locale === "fr";
 
   const [prefillPrompt, setPrefillPrompt] = useState<string | null>(null);
   useEffect(() => {
@@ -141,8 +140,8 @@ export function useInboxPanelController() {
     return rows.slice(-100).reverse();
   }, [savedConversations, foldersController.folders]);
   const { agentOptions, skillOptions, orciaDocuments, ragCitations } =
-    buildAssistantAutocompleteAndRagOptions({ catalogItems, datasources });
-  const autocompleteSuggestions = buildAssistantAutocompleteSuggestions(packs);
+    buildAssistantAutocompleteAndRagOptions({ catalogItems, datasources, isFr });
+  const autocompleteSuggestions = buildAssistantAutocompleteSuggestions(packs, isFr);
 
   const selectActiveConversationAndPersist = (nextConvId: string | null) => {
     threads.setActiveConversationId(nextConvId);

@@ -74,3 +74,8 @@ export const SHELL_SCOPE_OPTIONS_EN: ShellScopeOptionsLabels = {
       "Configure an AI model or create a Workspace attached to a Team to view cost tracking.",
   },
 };
+
+export const SHELL_SCOPE_OPTIONS_BY_LOCALE: Readonly<Record<"fr" | "en", ShellScopeOptionsLabels>> = {
+  fr: SHELL_SCOPE_OPTIONS_FR,
+  en: SHELL_SCOPE_OPTIONS_EN,
+};

@@ -72,6 +72,7 @@ const COCKPIT_LABELS: StreamlinedCockpitLabels = {
   focusWorkshopBreadcrumbPrefix: "Mes Processus › Exécutions & Décisions ›",
   focusWorkshopCloseCta: "← Retour au Cockpit",
   redisLockAcquiredPrefix: "🔒 Verrou Redis acquis :",
+  runNumberPrefix: "Run #",
 };
 
 describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streamlined Cockpit", () => {
@@ -675,6 +676,14 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
       rollbackButtonLabel: "⏪ Rollback",
       rollbackCompletedPrefix: "Version restaurée :",
       mergedLayersPrefix: "Fusion 4 couches :",
+      realExampleTitle: "Un exemple réel",
+      commonPitfallsTitle: "Ce qui coince souvent",
+      technicalDetailsTitle: "Détails techniques",
+      versionLabel: "Version",
+      layerLabels: { BASE: "Base", PACK: "Pack", WORKSPACE: "Espace", USER: "Utilisateur" },
+      stepsBlockPrefix: "En",
+      stepsBlockSuffix: "gestes",
+      targetedHelpBadgeLabel: "Aide ciblée",
     };
 
     const onAskAssistantOnScreen = vi.fn();
@@ -769,6 +778,14 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
       rollbackButtonLabel: "Revenir à la version précédente",
       rollbackCompletedPrefix: "Version précédente restaurée :",
       mergedLayersPrefix: "Origine :",
+      realExampleTitle: "Un exemple réel",
+      commonPitfallsTitle: "Ce qui coince souvent",
+      technicalDetailsTitle: "Détails techniques",
+      versionLabel: "Version",
+      layerLabels: { BASE: "Base", PACK: "Pack", WORKSPACE: "Espace", USER: "Utilisateur" },
+      stepsBlockPrefix: "En",
+      stepsBlockSuffix: "gestes",
+      targetedHelpBadgeLabel: "Aide ciblée",
     };
 
     function ControlledShellHarness() {
@@ -889,6 +906,14 @@ describe("Story 9.1 — 4-Zone Direction C Shell, 8 Non-Numbered Menus & Streaml
       rollbackButtonLabel: "Revenir à la version précédente",
       rollbackCompletedPrefix: "Version précédente restaurée :",
       mergedLayersPrefix: "Origine :",
+      realExampleTitle: "Un exemple réel",
+      commonPitfallsTitle: "Ce qui coince souvent",
+      technicalDetailsTitle: "Détails techniques",
+      versionLabel: "Version",
+      layerLabels: { BASE: "Base", PACK: "Pack", WORKSPACE: "Espace", USER: "Utilisateur" },
+      stepsBlockPrefix: "En",
+      stepsBlockSuffix: "gestes",
+      targetedHelpBadgeLabel: "Aide ciblée",
     };
 
     const windowScrollSpy = vi.spyOn(window, "scrollTo");

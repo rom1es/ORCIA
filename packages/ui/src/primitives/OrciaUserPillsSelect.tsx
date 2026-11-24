@@ -62,7 +62,7 @@ export function OrciaUserPillsSelect({
   knownUsers,
   placeholder,
   disabled = false,
-  addButtonLabel = "Ajouter",
+  addButtonLabel = "",
   removeButtonAriaLabel,
   emptyLabel,
   draftQuery,

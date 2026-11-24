@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { OrciaIcon } from "../components/icons";
+import { BiModeLoginLocalForm } from "./BiModeLoginLocalForm";
 import { OrciaAlertBanner } from "./DesignSystemControls";
-import { OrciaPasswordInput } from "./OrciaPasswordInput";
 import {
   LoginTwoFactorStepPanel,
   type LoginTwoFactorLabels,
@@ -17,6 +17,8 @@ export interface Rfc9457LoginError {
 }
 
 export interface BiModeLoginLabels {
+  readonly brandName: string;
+  readonly traceIdPrefix: string;
   readonly title: string;
   readonly subtitle: string;
   readonly subtitleLocal?: string;
@@ -98,100 +100,18 @@ export function BiModeLoginView({
   };
 
   const renderLocalForm = (): React.ReactElement => (
-    <form
-      data-testid="login-local-form"
+    <BiModeLoginLocalForm
+      labels={labels}
+      email={email}
+      password={password}
+      totpCode={totpCode}
+      inlineTotpVisible={inlineTotpVisible}
+      isSubmitting={isSubmitting}
+      onEmailChange={setEmail}
+      onPasswordChange={setPassword}
+      onTotpChange={setTotpCode}
       onSubmit={handleLocalSubmit}
-      className="space-y-3 text-left"
-    >
-      <div className="space-y-1">
-        <label
-          htmlFor="login-local-email"
-          className="block text-xs font-medium"
-          style={{ color: "var(--color-text-primary)" }}
-        >
-          {labels.emailLabel}
-        </label>
-        <input
-          id="login-local-email"
-          data-testid="login-local-email"
-          type="email"
-          required
-          autoComplete="username"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-md border px-3 py-2 text-sm"
-          style={{
-            borderColor: "var(--color-border-strong)",
-            backgroundColor: "var(--color-surface-card)",
-            color: "var(--color-text-primary)",
-          }}
-        />
-      </div>
-
-      <div className="space-y-1">
-        <label
-          htmlFor="login-local-password"
-          className="block text-xs font-medium"
-          style={{ color: "var(--color-text-primary)" }}
-        >
-          {labels.passwordLabel}
-        </label>
-        <OrciaPasswordInput
-          id="login-local-password"
-          testId="login-local-password"
-          toggleTestId="login-local-password-toggle-visibility"
-          maskMode="password"
-          autoComplete="current-password"
-          required={true}
-          value={password}
-          onChange={setPassword}
-          showPasswordLabel={labels.showPasswordLabel ?? labels.passwordLabel}
-          hidePasswordLabel={labels.hidePasswordLabel ?? labels.passwordLabel}
-          inputClassName="rounded-md py-2 text-sm"
-          inputStyle={{
-            borderColor: "var(--color-border-strong)",
-            backgroundColor: "var(--color-surface-card)",
-            color: "var(--color-text-primary)",
-          }}
-        />
-      </div>
-
-      {inlineTotpVisible && (
-        <div className="space-y-1">
-          <label
-            htmlFor="login-local-totp"
-            className="block text-xs font-medium"
-            style={{ color: "var(--color-text-primary)" }}
-          >
-            {labels.totpLabel}
-          </label>
-          <input
-            id="login-local-totp"
-            data-testid="login-local-totp"
-            type="text"
-            inputMode="numeric"
-            maxLength={6}
-            value={totpCode}
-            onChange={(e) => setTotpCode(e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm font-mono"
-            style={{
-              borderColor: "var(--color-border-strong)",
-              backgroundColor: "var(--color-surface-card)",
-              color: "var(--color-text-primary)",
-            }}
-          />
-        </div>
-      )}
-
-      <button
-        type="submit"
-        data-testid="login-local-submit"
-        disabled={isSubmitting}
-        className="orcia-ds-btn orcia-ds-btn-primary w-full justify-center py-2 text-sm font-medium"
-      >
-        {labels.submitLocalCta}
-      </button>
-    </form>
+    />
   );
 
   return (
@@ -215,9 +135,9 @@ export function BiModeLoginView({
               color: "var(--color-bg-surface)",
             }}
           >
-            O
+            {labels.brandName.slice(0, 1)}
           </span>
-          <span className="text-sm font-bold tracking-tight">ORCIA</span>
+          <span className="text-sm font-bold tracking-tight">{labels.brandName}</span>
         </div>
         <h1 className="text-xl font-bold tracking-tight">{labels.title}</h1>
         <p
@@ -240,7 +160,7 @@ export function BiModeLoginView({
           <p>{error.detail}</p>
           {error.traceId && (
             <p className="font-mono text-[10px]" style={{ color: "var(--color-text-secondary)" }}>
-              trace_id: {error.traceId}
+              {`${labels.traceIdPrefix} ${error.traceId}`}
             </p>
           )}
         </OrciaAlertBanner>

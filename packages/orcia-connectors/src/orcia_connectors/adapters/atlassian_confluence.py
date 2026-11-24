@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from orcia_connectors._connectors_locales import CONNECTOR_SEED_LOCALES
 from orcia_connectors.protocol import (
     ConnectorHealthStatus,
     OrciaConnectorProtocol,
@@ -12,6 +13,7 @@ from orcia_connectors.protocol import (
     compute_payload_sha256,
     verify_signed_approval_token,
 )
+from orcia_core.kernel.enums import DEFAULT_LOCALE
 from orcia_core.kernel.errors import ResourceNotFoundError, ValidationDomainError
 from orcia_core.kernel.ids import new_uuid7_str
 
@@ -23,13 +25,14 @@ class AtlassianConfluenceConnector(OrciaConnectorProtocol):
 
     def __init__(self, *, base_url: str = "https://confluence.enterprise.internal") -> None:
         self._base_url = base_url
+        seed_copy = CONNECTOR_SEED_LOCALES[DEFAULT_LOCALE]
         self._pages: dict[str, dict[str, Any]] = {
             "DE-CRL-01": {
                 "page_id": "DE-CRL-01",
                 "space_key": "ARCHI",
-                "title": "Dossier d'Étude d'Architecture CRL — Mon Compte",
+                "title": seed_copy["confluence_seed_title"],
                 "version": 1,
-                "markdown": "# Dossier d'Étude d'Architecture CRL\n\n## Contexte\nSocle CRL.",
+                "markdown": seed_copy["confluence_seed_markdown"],
             }
         }
 
@@ -63,7 +66,9 @@ class AtlassianConfluenceConnector(OrciaConnectorProtocol):
                 "space_key": "ARCHI",
                 "title": f"Page {page_id}",
                 "version": 1,
-                "markdown": f"# {page_id}\nContenu de référence Confluence.",
+                "markdown": CONNECTOR_SEED_LOCALES[DEFAULT_LOCALE][
+                    "confluence_default_markdown"
+                ].format(page_id=page_id),
             },
         )
         return {

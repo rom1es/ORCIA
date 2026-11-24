@@ -1,9 +1,6 @@
 import React from "react";
 import { OrciaIcon } from "../components/icons";
-import {
-  DEFAULT_ACTIVITY_LOG_PROVENANCE_LABELS_FR,
-  type ActivityLogProvenanceLabels,
-} from "./activityLogHelpers";
+import type { ActivityLogProvenanceLabels } from "./activityLogHelpers";
 
 export interface ActivityLogProvenanceExportBarProps {
   readonly selectedRunId?: string;
@@ -18,9 +15,9 @@ export function ActivityLogProvenanceExportBar({
   onInspectProvenance,
   onExportProvenance,
   isExporting = false,
-  labels = DEFAULT_ACTIVITY_LOG_PROVENANCE_LABELS_FR,
+  labels,
 }: ActivityLogProvenanceExportBarProps): React.ReactElement | null {
-  if (!selectedRunId) {
+  if (!selectedRunId || !labels) {
     return null;
   }
 

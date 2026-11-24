@@ -16,6 +16,7 @@ from orcia_api.dependencies import (
     get_remote_test_bench_and_mcp_service,
     get_remote_usage_sanitizer,
 )
+from orcia_api.locales._router_locale_messages import get_router_copy
 from orcia_api.routers._mcp_assistant_ask_bridge import dispatch_governed_mcp_invoke_async
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.mcp_test_bench import (
@@ -100,6 +101,8 @@ async def test_and_discover_connector(
     )
     status_str = "SUCCESS" if res.can_activate else "FAILURE"
     trace_id = str(getattr(request.state, "trace_id", None) or get_current_trace_id())
+    rc = get_router_copy()
+    status_label = rc.connector_status_on if res.can_activate else rc.connector_status_off
     evt = AdminConnectionTested.create(
         actor_id=user.id,
         target_type="MCP_CONNECTOR",
@@ -107,9 +110,7 @@ async def test_and_discover_connector(
         protocol=body.protocol,
         test_status=status_str,
         latency_ms=int(body.simulated_dry_run_elapsed_ms or 0),
-        detail=(
-            f"Banc de test connecteur {body.protocol}: {'Activé' if res.can_activate else 'Refusé'}"
-        ),
+        detail=rc.connector_test_detail.format(protocol=body.protocol, status_label=status_label),
         trace_id=trace_id,
         metadata={
             "actor_type": "ADMIN_CONNECTION_TEST",

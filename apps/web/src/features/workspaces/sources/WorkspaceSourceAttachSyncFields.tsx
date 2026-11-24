@@ -1,4 +1,5 @@
 import React from "react";
+import { useI18n } from "../../../i18n";
 import { FormInput, modalInputStyle } from "./WorkspaceSourceAttachCodegraphFields";
 
 export interface WorkspaceSourceAttachSyncFieldsProps {
@@ -41,6 +42,8 @@ export function WorkspaceSourceAttachSyncFields({
   onReferentUserIdChange,
   onServiceAccountIdChange,
 }: WorkspaceSourceAttachSyncFieldsProps): React.ReactElement {
+  const { dictionary } = useI18n();
+  const sourcesCopy = dictionary.featureWorkspaces.sources;
   return (
     <>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
@@ -72,8 +75,8 @@ export function WorkspaceSourceAttachSyncFields({
             }
             style={modalInputStyle}
           >
-            <option value="POLLING_24H">Sonde 24h</option>
-            <option value="WEBHOOK_PUSH">Webhook push</option>
+            <option value="POLLING_24H">{sourcesCopy.syncPolling24h}</option>
+            <option value="WEBHOOK_PUSH">{sourcesCopy.syncWebhookPush}</option>
           </select>
         </div>
       </div>

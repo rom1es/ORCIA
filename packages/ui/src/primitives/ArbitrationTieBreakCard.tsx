@@ -41,13 +41,13 @@ function resolveTieBreakPolicyLabel(
 ): string {
   switch (policy) {
     case "PAUSE_AND_ESCALATE":
-      return policyLabels?.pauseAndEscalate ?? "Pause et escalade humaine";
+      return policyLabels?.pauseAndEscalate ?? "";
     case "ONTOLOGY_AXIOM_FIRST":
-      return policyLabels?.ontologyAxiomFirst ?? "Règle métier prioritaire";
+      return policyLabels?.ontologyAxiomFirst ?? "";
     case "DEFER_AND_CONTINUE_WITH_ASSUMPTION":
-      return policyLabels?.deferWithAssumption ?? "Poursuivre sous hypothèse";
+      return policyLabels?.deferWithAssumption ?? "";
     default:
-      return policy;
+      return "";
   }
 }
 

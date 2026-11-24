@@ -7,9 +7,12 @@ from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from orcia_core.orchestration._internal.sql_resource_leases import SqlResourceLeaseRepository
+from orcia_core.orchestration._resource_leases_helpers import (
+    check_lease_conflicts_unlocked,
+    classify_resource_uri,
+    resolve_ancestors_unlocked,
+)
 from orcia_core.orchestration.errors import (
-    CyclicResourceWaitDetectedError,
-    ResourceLeaseHeldByOtherRunError,
     StaleFencingTokenError,
     ValidationDomainError,
 )
@@ -21,12 +24,7 @@ if TYPE_CHECKING:
 
 
 def _classify_resource_uri(resource_uri: str) -> str:
-    """Derive DBOS resource queue class from `resource_uri` scheme (`DEC-CONC-01`)."""
-    raw = resource_uri.strip()
-    if "://" in raw:
-        scheme = raw.split("://", 1)[0].strip().lower()
-        return f"queue:resource:{scheme}" if scheme else "queue:resource:default"
-    return "queue:resource:default"
+    return classify_resource_uri(resource_uri)
 
 
 class ResourceLeaseService(ResourceLeasePort):
@@ -58,17 +56,9 @@ class ResourceLeaseService(ResourceLeasePort):
     def _resolve_ancestors_unlocked(
         self, holder_run_id: str, holder_parent_run_id: str | None, explicit: tuple[str, ...]
     ) -> set[str]:
-        ancestors: set[str] = {a for a in explicit if a}
-        if holder_parent_run_id:
-            ancestors.add(holder_parent_run_id)
-            self._run_parent_map[holder_run_id] = holder_parent_run_id
-        cursor = self._run_parent_map.get(holder_run_id)
-        visited: set[str] = {holder_run_id}
-        while cursor and cursor not in visited:
-            ancestors.add(cursor)
-            visited.add(cursor)
-            cursor = self._run_parent_map.get(cursor)
-        return ancestors
+        return resolve_ancestors_unlocked(
+            self._run_parent_map, holder_run_id, holder_parent_run_id, explicit
+        )
 
     def acquire_leases(
         self,
@@ -85,9 +75,7 @@ class ResourceLeaseService(ResourceLeasePort):
         """Acquire leases in canonical sorted order (`sorted(set(resource_uris))`)."""
         cleaned = tuple(sorted({u.strip() for u in resource_uris if u and u.strip()}))
         if not cleaned:
-            raise ValidationDomainError(
-                detail_override="Au moins une URI de ressource est requise pour acquérir un bail."
-            )
+            raise ValidationDomainError(detail_code="ERR_RESOURCE_LEASE_URIS_REQUIRED")
         effective_ttl = max(1, int(ttl_seconds))
         now = now_utc or datetime.now(UTC)
 
@@ -95,35 +83,15 @@ class ResourceLeaseService(ResourceLeasePort):
             ancestors = self._resolve_ancestors_unlocked(
                 holder_run_id, holder_parent_run_id, ancestor_run_ids
             )
-            for uri in cleaned:
-                existing = self._active_leases.get(uri)
-                if existing is None:
-                    continue
-                exp_dt = datetime.fromisoformat(existing.expires_at)
-                if exp_dt <= now:
-                    continue
-                if (
-                    existing.holder_run_id == holder_run_id
-                    and existing.holder_step_execution_id == holder_step_execution_id
-                ):
-                    continue
-                if existing.holder_run_id in ancestors or (
-                    holder_parent_run_id is not None
-                    and existing.holder_run_id == holder_parent_run_id
-                ):
-                    raise CyclicResourceWaitDetectedError(
-                        detail_override=(
-                            f"Attente cyclique parent-enfant détectée sur '{uri}': "
-                            f"le sous-workflow enfant '{holder_run_id}' attend le bail "
-                            f"détenu par son ancêtre '{existing.holder_run_id}'."
-                        )
-                    )
-                raise ResourceLeaseHeldByOtherRunError(
-                    detail_override=(
-                        f"Ressource '{uri}' déjà verrouillée par le Run '{existing.holder_run_id}' "
-                        f"(fencing_token={existing.fencing_token}, expire à {existing.expires_at})."
-                    )
-                )
+            check_lease_conflicts_unlocked(
+                self._active_leases,
+                cleaned_uris=cleaned,
+                holder_run_id=holder_run_id,
+                holder_step_execution_id=holder_step_execution_id,
+                holder_parent_run_id=holder_parent_run_id,
+                ancestors=ancestors,
+                now=now,
+            )
 
             acquired: list[ResourceLeaseRecord] = []
             for uri in cleaned:
@@ -215,10 +183,12 @@ class ResourceLeaseService(ResourceLeasePort):
             highest = self._fencing_counters.get(norm_uri, 0)
             if fencing_token < highest or fencing_token <= 0:
                 raise StaleFencingTokenError(
-                    detail_override=(
-                        f"Jeton de fencing périmé pour '{norm_uri}': jeton reçu={fencing_token} "
-                        f"< jeton actif={highest}."
-                    )
+                    detail_code="ERR_STALE_FENCING_TOKEN",
+                    detail_params={
+                        "uri": norm_uri,
+                        "received": fencing_token,
+                        "highest": highest,
+                    },
                 )
 
     def execute_fenced_write(

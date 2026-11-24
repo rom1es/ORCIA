@@ -1,10 +1,11 @@
 import type { DeclarativePackSummaryResponse } from "@orcia/api-client";
 import React from "react";
+import { formatI18nTemplate, useI18n } from "../../../i18n";
 import {
   formatConnectorDisplayName,
   formatConnectorScopes,
   formatPackAgentDisplayName,
-  formatPackCounterLabel,
+  formatPackCountNoun,
 } from "./packDisplayFormatters";
 
 export interface PackCardItemProps {
@@ -14,30 +15,32 @@ export interface PackCardItemProps {
 }
 
 export function PackCardItem({ pack, isFr, onExportZip }: PackCardItemProps) {
+  const { dictionary } = useI18n();
+  const packsCopy = dictionary.featureAdminCatalogSettings.packsRegistry;
   const counters = [
     {
       key: "agents",
-      label: formatPackCounterLabel(pack.agents_count, "Agent", "Agents", "Agent", "Agents", isFr),
+      label: formatPackCountNoun(pack.agents_count, packsCopy.counterAgentsSingular, packsCopy.counterAgentsPlural, isFr),
       count: pack.agents_count,
     },
     {
       key: "skills",
-      label: formatPackCounterLabel(pack.skills_count, "Compétence", "Compétences", "Skill", "Skills", isFr),
+      label: formatPackCountNoun(pack.skills_count, packsCopy.counterSkillsSingular, packsCopy.counterSkillsPlural, isFr),
       count: pack.skills_count,
     },
     {
       key: "gates",
-      label: formatPackCounterLabel(pack.gates_count, "Validation", "Validations", "Gate", "Gates", isFr),
+      label: formatPackCountNoun(pack.gates_count, packsCopy.counterGatesSingular, packsCopy.counterGatesPlural, isFr),
       count: pack.gates_count,
     },
     {
       key: "vsm",
-      label: formatPackCounterLabel(pack.vsm_count, "Chaîne", "Chaînes", "Stream", "Streams", isFr),
+      label: formatPackCountNoun(pack.vsm_count, packsCopy.counterStreamsSingular, packsCopy.counterStreamsPlural, isFr),
       count: pack.vsm_count,
     },
     {
       key: "workflows",
-      label: formatPackCounterLabel(pack.workflows_count, "Processus", "Processus", "Process", "Processes", isFr),
+      label: formatPackCountNoun(pack.workflows_count, packsCopy.counterProcessesSingular, packsCopy.counterProcessesPlural, isFr),
       count: pack.workflows_count,
     },
   ];
@@ -117,7 +120,7 @@ export function PackCardItem({ pack, isFr, onExportZip }: PackCardItemProps) {
 
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         <strong style={{ fontSize: "12px", color: "var(--color-text-primary)" }}>
-          {isFr ? "Connecteurs requis :" : "Required Connectors:"}
+          {packsCopy.requiredConnectorsLabel}
         </strong>
         {(pack.connector_health ?? []).map((conn) => {
           const readableName = formatConnectorDisplayName(conn.connector_type, isFr);
@@ -156,10 +159,10 @@ export function PackCardItem({ pack, isFr, onExportZip }: PackCardItemProps) {
                 }}
               >
                 {conn.health.ok
-                  ? isFr
-                    ? `✓ Connecté (${conn.health.latency_ms} ms)`
-                    : `✓ Connected (${conn.health.latency_ms} ms)`
-                  : conn.health.error_message || (isFr ? "✗ Déconnecté" : "✗ Disconnected")}
+                  ? formatI18nTemplate(packsCopy.connectedTemplate, {
+                      latency: conn.health.latency_ms ?? 0,
+                    })
+                  : conn.health.error_message || packsCopy.disconnectedFallback}
               </span>
             </div>
           );
@@ -176,7 +179,13 @@ export function PackCardItem({ pack, isFr, onExportZip }: PackCardItemProps) {
         }}
       >
         <div style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
-          {readableAgents.length <= 1 ? "Agent" : "Agents"} : {readableAgents.join(", ")}
+          {formatPackCountNoun(
+            readableAgents.length,
+            packsCopy.agentSingular,
+            packsCopy.agentPlural,
+            isFr,
+          )}{" "}
+          : {readableAgents.join(", ")}
         </div>
         <button
           type="button"
@@ -184,7 +193,7 @@ export function PackCardItem({ pack, isFr, onExportZip }: PackCardItemProps) {
           onClick={() => onExportZip(pack.id)}
           className="orcia-ds-btn-secondary"
         >
-          {isFr ? `Exporter ${pack.name} (.zip)` : `Export ${pack.name} (.zip)`}
+          {formatI18nTemplate(packsCopy.exportPackTemplate, { name: pack.name })}
         </button>
       </div>
     </article>

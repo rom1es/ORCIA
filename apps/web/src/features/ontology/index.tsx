@@ -12,14 +12,13 @@ import { useOntologyFeatureController } from "./useOntologyFeatureController";
 export function OntologyFeaturePanel() {
   const { dictionary, locale } = useI18n();
   const copy = dictionary.ontologyGlossary;
-  const typedLocale = locale === "en" ? "en" : "fr";
   const {
     activeTab, setActiveTab, concepts, writableScopes, proposals, pendingCount,
     tripartiteEdges, staleAlerts, conceptName, setConceptName, conceptDef, setConceptDef,
     selectedScopeIdx, setSelectedScopeIdx, isSaving, isAuditingTripartite, busyProposalId,
     feedbackBanner, errorBanner, handleAddConcept, handleAuditDocVsCode,
     handleProposePromotion, handleDecideProposal,
-  } = useOntologyFeatureController(typedLocale, copy);
+  } = useOntologyFeatureController(locale, copy);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>

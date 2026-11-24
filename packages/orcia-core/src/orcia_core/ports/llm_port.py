@@ -22,10 +22,11 @@ def assert_model_orthogonality(executor_model_family: str, evaluator_model_famil
     eval_norm = evaluator_model_family.strip().lower()
     if not exec_norm or not eval_norm or exec_norm == eval_norm:
         raise ModelOrthogonalityViolationError(
-            detail_override=(
-                f"Orthogonalité des modèles violée (AD-10): executor_model_family="
-                f"'{executor_model_family}' == evaluator_model_family='{evaluator_model_family}'."
-            )
+            detail_code="ERR_MODEL_ORTHOGONALITY_VIOLATION_DETAIL",
+            detail_params={
+                "executor_model_family": executor_model_family,
+                "evaluator_model_family": evaluator_model_family,
+            },
         )
 
 

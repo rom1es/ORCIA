@@ -141,9 +141,11 @@ async def dispatch_governed_mcp_invoke_async(
             llm_port=llm_port,
             embedding_port=embedding_port,
         )
+        from orcia_api.locales._router_locale_messages import get_router_copy
+
         tool_name, sys_prompt, secrets, staged = "assistant.ask", None, [], []
         meta_in: dict[str, int | float] = {"prompt_tokens": in_tok, "completion_tokens": out_tok}
-        badge_fr = "💻 Appelé via MCP (IDE)"
+        badge_fr = get_router_copy().mcp_ide_badge
         actor_type: Literal["MCP_IDE_CLIENT"] = "MCP_IDE_CLIENT"
     else:
         res = await mcp_svc.invoke_governed_mcp_tool_async(

@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import type {
   AgentsAndSkillsManagerLabels,
   UiAgentSkillVisibilityScope,
-} from "./AgentsAndSkillsManagerView";
+} from "./AgentsAndSkillsTypes";
 import { DisabledButtonAlertIndicator } from "./DisabledButtonAlertIndicator";
 import { getOrciaIconGlyph } from "./icons";
 
@@ -43,6 +43,8 @@ export const SkillCreateFormDrawer: React.FC<SkillCreateFormDrawerProps> = ({
   onSubmit,
   onClose,
 }) => {
+  const studio = labels.studio;
+
   useEffect(() => {
     if (!isOpen || !onClose) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -78,7 +80,7 @@ export const SkillCreateFormDrawer: React.FC<SkillCreateFormDrawerProps> = ({
             onClick={onClose}
             className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2.5 py-1 text-xs font-medium"
           >
-            Annuler
+            {studio.cancelButton}
           </button>
         </header>
 
@@ -123,15 +125,21 @@ export const SkillCreateFormDrawer: React.FC<SkillCreateFormDrawerProps> = ({
             />
           </label>
           <label className="flex flex-col gap-1 md:col-span-2">
-            <span>Visibilité &amp; Partage</span>
+            <span>{studio.visibilityFieldLabel}</span>
             <select
               data-testid="skill-visibility-select"
               value={skillVisibility}
-              onChange={(e) => onChangeVisibility(e.target.value as "PRIVATE" | "TEAM")}
+              onChange={(e) =>
+                onChangeVisibility(e.target.value as "PRIVATE" | "TEAM")
+              }
               className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2.5 py-1.5"
             >
-              <option value="TEAM">{getOrciaIconGlyph("team")} Partagé avec mon Équipe &amp; Espace</option>
-              <option value="PRIVATE">{getOrciaIconGlyph("lock")} Privé (Visible uniquement par moi)</option>
+              <option value="TEAM">
+                {getOrciaIconGlyph("team")} {studio.visibilityTeamFull}
+              </option>
+              <option value="PRIVATE">
+                {getOrciaIconGlyph("lock")} {studio.visibilityPrivateFull}
+              </option>
             </select>
           </label>
           <label className="flex flex-col gap-1">
@@ -187,17 +195,13 @@ export const SkillCreateFormDrawer: React.FC<SkillCreateFormDrawerProps> = ({
               type="submit"
               data-testid="create-skill-submit-btn"
               disabled={isDisabled}
-              title={
-                isDisabled
-                  ? "Renseignez le nom, l'objectif et les instructions du skill pour activer sa création."
-                  : undefined
-              }
+              title={isDisabled ? studio.skillCreateDisabledReason : undefined}
               className="inline-flex items-center gap-2 rounded bg-[var(--orcia-action-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--orcia-text-on-action)] disabled:opacity-50"
             >
               <span>{labels.createSkillButtonLabel}</span>
               <DisabledButtonAlertIndicator
                 disabled={isDisabled}
-                reason="Renseignez le nom, l'objectif et les instructions du skill pour activer sa création."
+                reason={studio.skillCreateDisabledReason}
                 testIdSuffix="create-skill-submit-btn"
               />
             </button>

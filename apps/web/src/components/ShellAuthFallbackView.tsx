@@ -1,9 +1,11 @@
 import { OrciaAlertBanner, OrciaSpinner } from "@orcia/ui";
 import React from "react";
+import { resolveDictionaryForFlag } from "../i18n";
 import { LoginRouteComponent } from "./LoginScreenView";
 import { TemporaryPasswordWarningBanner } from "./TemporaryPasswordWarningBanner";
 
 export function ShellHydratingLoaderView({ isFr }: { readonly isFr: boolean }) {
+  const copy = resolveDictionaryForFlag(isFr).shellChrome;
   return (
     <div
       data-testid="auth-hydrating-loader"
@@ -23,12 +25,12 @@ export function ShellHydratingLoaderView({ isFr }: { readonly isFr: boolean }) {
           className="text-base font-bold tracking-tight"
           style={{ color: "var(--color-text-primary)" }}
         >
-          ORCIA
+          {copy.brandName}
         </span>
       </div>
       <div className="inline-flex items-center gap-2 text-sm font-medium">
         <OrciaSpinner size="sm" />
-        <span>{isFr ? "Chargement de la session..." : "Loading session..."}</span>
+        <span>{copy.loadingSession}</span>
       </div>
     </div>
   );

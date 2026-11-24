@@ -102,7 +102,7 @@ async def create_workspace_endpoint(
     engine = get_configured_db_engine(request)
     if engine is None and should_auto_init_infra("DATABASE_URL"):
         raise TransientInfraError(
-            detail_override="PostgreSQL 18 indisponible pour la création d'espace.",
+            detail_code="ERR_ORG_PG_UNAVAILABLE_WORKSPACE",
             instance=str(request.url.path),
         )
 

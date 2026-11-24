@@ -98,6 +98,8 @@ async def test_ai_model_connection(
                 supports_tools=detected_tools,
                 instance=path,
             )
+        from orcia_api.locales._router_locale_messages import get_router_copy
+
         evt = AdminConnectionTested.create(
             actor_id=user.id,
             target_type="AI_MODEL",
@@ -105,7 +107,7 @@ async def test_ai_model_connection(
             protocol="HTTP_INFERENCE",
             test_status=health,
             latency_ms=resp.latency_ms,
-            detail=f"Test de connexion modèle IA {mapping_id}: {health}",
+            detail=get_router_copy().ai_test_audit_ok.format(mapping_id=mapping_id, health=health),
             metadata={
                 "actor_type": "ADMIN_CONNECTION_TEST",
                 "actor_display_name": getattr(user, "display_name", None),
@@ -130,6 +132,8 @@ async def test_ai_model_connection(
             hub_svc.record_test_result(
                 mapping_id, health_status="ERROR", latency_ms=lat_ms, instance=path
             )
+        from orcia_api.locales._router_locale_messages import get_router_copy
+
         evt_err = AdminConnectionTested.create(
             actor_id=user.id,
             target_type="AI_MODEL",
@@ -137,7 +141,9 @@ async def test_ai_model_connection(
             protocol="HTTP_INFERENCE",
             test_status="ERROR",
             latency_ms=lat_ms,
-            detail=f"Test de connexion modèle IA {mapping_id}: ERROR ({type(exc).__name__})",
+            detail=get_router_copy().ai_test_audit_err.format(
+                mapping_id=mapping_id, err_type=type(exc).__name__
+            ),
             metadata={
                 "actor_type": "ADMIN_CONNECTION_TEST",
                 "actor_display_name": getattr(user, "display_name", None),

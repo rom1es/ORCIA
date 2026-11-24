@@ -71,6 +71,8 @@ describe("Story 23.5 — Brand ORCIA in Sidebar/Login, TopHeaderBar sobriety & C
       <BiModeLoginView
         authMode="LOCAL"
         labels={{
+          brandName: "ORCIA",
+          traceIdPrefix: "trace_id:",
           title: "Connexion ORCIA",
           subtitle: "Accès sécurisé",
           primarySsoCta: "SSO",

@@ -4715,7 +4715,7 @@
         "description": "Request payload for `POST /api/v1/orchestration/runs/fast-path-audit` (`UJ-10`).",
         "properties": {
           "divergence_note": {
-            "default": "Écart seuil TRA : Confluence v12 indique 500€ vs Codebase git:// indique 350€",
+            "default": "TRA threshold divergence: Confluence v12 states 500 EUR vs git:// codebase states 350 EUR",
             "maxLength": 512,
             "minLength": 1,
             "title": "Divergence Note",
@@ -9411,7 +9411,7 @@
             "title": "Pii Decision"
           },
           "raw_extracted_text": {
-            "default": "Spécification complète d'architecture modulaire.",
+            "default": "Complete modular architecture specification.",
             "title": "Raw Extracted Text",
             "type": "string"
           },
@@ -13337,7 +13337,7 @@
             "type": "string"
           },
           "org_unit_name": {
-            "default": "Sous-Équipe Checkout & Core Solutions",
+            "default": "Checkout & Core Solutions Sub-Team",
             "title": "Org Unit Name",
             "type": "string"
           },
@@ -16103,7 +16103,7 @@
             "type": "array"
           },
           "label": {
-            "default": "Clé IDE MCP",
+            "default": "MCP IDE Key",
             "maxLength": 120,
             "minLength": 1,
             "title": "Label",
@@ -23460,7 +23460,7 @@
       },
       "SkillItemResponse": {
         "additionalProperties": false,
-        "description": "Transport schema for a reusable Skill (`🛠️ Compétence`).",
+        "description": "Transport schema for a reusable Skill.",
         "properties": {
           "command_handle": {
             "maxLength": 130,
@@ -23474,7 +23474,7 @@
             "type": "boolean"
           },
           "expected_output_format": {
-            "default": "Synthèse structurée",
+            "default": "Structured synthesis",
             "maxLength": 512,
             "minLength": 1,
             "title": "Expected Output Format",
@@ -24837,7 +24837,7 @@
       },
       "StudioDryRunRequest": {
         "additionalProperties": false,
-        "description": "Isolated Studio *What-If* dry-run request (`▷ Tester`, `Story 8.5`).",
+        "description": "Isolated Studio *What-If* dry-run request (`Story 8.5`).",
         "properties": {
           "input_values": {
             "additionalProperties": true,
@@ -28102,7 +28102,7 @@
             "title": "Enabled In Workspace"
           },
           "expected_output_format": {
-            "default": "Synthèse structurée",
+            "default": "Structured synthesis",
             "maxLength": 512,
             "minLength": 1,
             "title": "Expected Output Format",
@@ -43183,7 +43183,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Immediately cancel `execution_id` (`■ Arrêter` — `0` extra LLM calls)",
+        "summary": "Immediately cancel `execution_id` (Stop button — `0` extra LLM calls)",
         "tags": [
           "executions-reflexive"
         ]
@@ -43318,7 +43318,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Raise `force_final=True` (`Synthétiser maintenant`) for immediate synthesis",
+        "summary": "Raise `force_final=True` (`Synthesize Now`) for immediate synthesis",
         "tags": [
           "executions-reflexive"
         ]
@@ -45730,7 +45730,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Mark Block 4 (`Hypothèses Retenues`) of the 4-Block Review Briefing as inspected",
+        "summary": "Mark Block 4 (Retained Hypotheses) of the 4-Block Review Briefing as inspected",
         "tags": [
           "gates"
         ]
@@ -52162,7 +52162,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "List hierarchical organizational units (`BU -> Sous-BU -> TEAM`) with FinOps & counts",
+        "summary": "List hierarchical organizational units (`BU -> Sub-BU -> TEAM`) with FinOps & counts",
         "tags": [
           "workspaces-and-catalog"
         ]

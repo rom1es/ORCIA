@@ -8,6 +8,7 @@ import type {
   UiInferenceTier,
   UiOntologyConceptView,
 } from "@orcia/ui";
+import { ClientCodedError } from "../lib/clientErrorCodes";
 import { resolveWebApiBaseUrl } from "../stores/authSessionStore";
 import {
   buildAccostageCountsFromStatus,
@@ -96,7 +97,7 @@ export async function fetchAndBuildHydrationOutcome(params: {
       if (problemStatus !== 403 && problemStatus !== 401) {
         throw err instanceof Error
           ? err
-          : new Error("Échec d'hydratation de l'état plateforme.");
+          : new ClientCodedError("ERR_CLIENT_PLATFORM_HYDRATION");
       }
     }
   }

@@ -22,6 +22,7 @@ export interface ScopedPromptBoxLabels {
   readonly tier2Label: string;
   readonly tier3Label: string;
   readonly submitCta: string;
+  readonly unauthorizedSourceReason?: string;
 }
 
 export interface ScopedPromptBoxProps {
@@ -121,7 +122,7 @@ export function ScopedPromptBox({
                 </span>
                 <DisabledButtonAlertIndicator
                   disabled={!src.authorized}
-                  reason="Source non autorisée dans ce périmètre."
+                  reason={labels.unauthorizedSourceReason ?? labels.ragScopeLabel}
                   testIdSuffix={`rag-source-toggle-${src.alias}`}
                 />
               </button>

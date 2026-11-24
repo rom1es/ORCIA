@@ -62,7 +62,7 @@ function InnerShellContainer({
   children: React.ReactNode;
   onNavigate?: (href: string) => void;
 }) {
-  const { locale, dictionary, setLocale } = useI18n();
+  const { locale, isFr, dictionary, setLocale } = useI18n();
   const { pathname, navigateTo } = useOrciaNavigation();
   const setup = usePlatformSetup();
   const {
@@ -91,7 +91,6 @@ function InnerShellContainer({
     currentUserEmail: auth.email,
     validScopeIds,
   });
-  const isFr = locale === "fr";
   const dispatchNavigation = (href: string) => (onNavigate ? onNavigate(href) : navigateTo(href));
   const isShowcaseStandalone = Boolean(pathname?.startsWith("/showcase"));
   const isAdminModalOpen = !isShowcaseStandalone && platformAdmin === null && !state.adminModalDismissed;

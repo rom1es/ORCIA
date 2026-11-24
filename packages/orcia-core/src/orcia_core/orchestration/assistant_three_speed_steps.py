@@ -67,13 +67,13 @@ def build_speed_1_turn_result(
     llm_thinking_override: str | None,
 ) -> ThreeSpeedTurnResult:
     """Build Speed 1 (`SPEED_1_FAST`) deterministic + single-shot result."""
+    from orcia_core.orchestration._assistant_locales import ASSISTANT_THREE_SPEED_LOCALES
+
+    tloc = ASSISTANT_THREE_SPEED_LOCALES["fr"]
     t0 = time.perf_counter()
-    step2_label = (
-        llm_step_label_override or "💬 Nœud 5 — Appel LLM unique en streaming SSE (TTFT < 1,2 s)"
-    )
-    step2_thinking = (
-        llm_thinking_override
-        or f"Formulation d'une réponse directe et synthétique pour « {prompt_excerpt} »."
+    step2_label = llm_step_label_override or tloc["s1_step2_label"]
+    step2_thinking = llm_thinking_override or tloc["s1_step2_thinking"].format(
+        prompt_excerpt=prompt_excerpt
     )
     llm_ms = (
         round(llm_latency_ms_override, 2)
@@ -83,9 +83,7 @@ def build_speed_1_turn_result(
     steps: tuple[ThreeSpeedStepProgressItem, ...] = (
         ThreeSpeedStepProgressItem(
             step_code="NODES_1_TO_4_DETERMINISTIC",
-            label=(
-                "⚡ Nœuds 1–4 déterministes (Intention, RBAC, RAG SQL/pgvector & Cache 5 couches)"
-            ),
+            label=tloc["s1_det_label"],
             duration_ms=det_ms,
             intermediate_output=cadrage_summary,
         ),
@@ -96,10 +94,10 @@ def build_speed_1_turn_result(
             intermediate_output=step2_thinking,
         ),
     )
-    response_text = llm_response_override or (
-        f"[⚡ Vitesse 1 · Casquette {active_hat}] Réponse directe générée avec "
-        f"prompt 5 couches ({'HIT' if cached_prompt.cache_hit else 'MISS'} Redis) : "
-        f"Synthèse conforme pour « {user_prompt.strip()} » [S1] [G1]."
+    response_text = llm_response_override or tloc["s1_response"].format(
+        active_hat=active_hat,
+        cache_state="HIT" if cached_prompt.cache_hit else "MISS",
+        prompt=user_prompt.strip(),
     )
     return ThreeSpeedTurnResult(
         turn_id=new_uuid7_str(),
@@ -137,48 +135,45 @@ def build_speed_2_turn_result(
     llm_thinking_override: str | None,
 ) -> ThreeSpeedTurnResult:
     """Build Speed 2 (`SPEED_2_AGENT_TOOLS`) result with governed connector steps."""
+    from orcia_core.orchestration._assistant_locales import ASSISTANT_THREE_SPEED_LOCALES
+
+    tloc = ASSISTANT_THREE_SPEED_LOCALES["fr"]
     t0 = time.perf_counter()
     effective_targets = targets or ("@tracker-triage",)
     first_token = effective_targets[0].lstrip("@/").split("-", maxsplit=1)[0]
-    target_source = first_token.capitalize() if first_token else "Connecteur"
+    target_source = first_token.capitalize() if first_token else tloc["s2_default_target"]
     connector_ms = round((time.perf_counter() - t0) * 1000.0, 3)
     llm_ms = (
         round(llm_latency_ms_override, 2)
         if llm_latency_ms_override is not None
         else round((time.perf_counter() - t0) * 1000.0, 3)
     )
+    targets_csv = ", ".join(effective_targets)
     steps: tuple[ThreeSpeedStepProgressItem, ...] = (
         ThreeSpeedStepProgressItem(
             step_code="NODES_1_TO_4_DETERMINISTIC",
-            label="⚡ Nœuds 1–4 déterministes & vérification RBAC/Passthrough",
+            label=tloc["s2_det_label"],
             duration_ms=det_ms,
             intermediate_output=cadrage_summary,
         ),
         ThreeSpeedStepProgressItem(
             step_code="CONNECTOR_INTERROGATION",
-            label=f"🔍 Interrogation de {target_source}...",
+            label=tloc["s2_conn_label"].format(target_source=target_source),
             duration_ms=connector_ms,
-            connector_or_lens=", ".join(effective_targets),
-            intermediate_output=(
-                f"Mobilisation des compétences et connecteurs : {', '.join(effective_targets)}."
-            ),
+            connector_or_lens=targets_csv,
+            intermediate_output=tloc["s2_conn_out"].format(targets=targets_csv),
         ),
         ThreeSpeedStepProgressItem(
             step_code="CONNECTOR_INVOKER_EXEC",
-            label=llm_step_label_override
-            or f"🛠️ Exécution ConnectorInvoker ({', '.join(effective_targets)})",
+            label=llm_step_label_override or tloc["s2_exec_label"].format(targets=targets_csv),
             duration_ms=llm_ms,
             connector_or_lens=effective_targets[0],
             intermediate_output=llm_thinking_override
-            or (
-                f"Consolidation des éléments retournés par {', '.join(effective_targets)} "
-                f"pour « {prompt_excerpt} »."
-            ),
+            or tloc["s2_exec_thinking"].format(targets=targets_csv, prompt_excerpt=prompt_excerpt),
         ),
     )
-    response_text = llm_response_override or (
-        f"[🛠️ Vitesse 2 · {', '.join(effective_targets)}] Résultat d'interrogation "
-        f"outillée pour « {user_prompt.strip()} » [S1] [O1]."
+    response_text = llm_response_override or tloc["s2_response"].format(
+        targets=targets_csv, prompt=user_prompt.strip()
     )
     return ThreeSpeedTurnResult(
         turn_id=new_uuid7_str(),
@@ -217,6 +212,9 @@ def build_speed_3_turn_result(
     llm_thinking_override: str | None,
 ) -> ThreeSpeedTurnResult:
     """Build Speed 3 (`SPEED_3_DEEP_AUDIT`) multi-lens AD-10 audit result."""
+    from orcia_core.orchestration._assistant_locales import ASSISTANT_THREE_SPEED_LOCALES
+
+    tloc = ASSISTANT_THREE_SPEED_LOCALES["fr"]
     t0 = time.perf_counter()
     lenses = ("ARCHITECTURE_CONSISTENCY", "SECURITY_ZERO_TRUST", "FINOPS_CONTRAST")
     plan_ms = round((time.perf_counter() - t0) * 1000.0, 3)
@@ -229,44 +227,33 @@ def build_speed_3_turn_result(
     steps: tuple[ThreeSpeedStepProgressItem, ...] = (
         ThreeSpeedStepProgressItem(
             step_code="NODES_1_TO_4_DETERMINISTIC",
-            label="⚡ Nœuds 1–4 déterministes & assemblage 5 couches",
+            label=tloc["s3_det_label"],
             duration_ms=det_ms,
             intermediate_output=cadrage_summary,
         ),
         ThreeSpeedStepProgressItem(
             step_code="DEEP_PLANNING_LLM",
-            label="📋 Planification LLM intermédiaire & décomposition causale N1–N3...",
+            label=tloc["s3_plan_label"],
             duration_ms=plan_ms,
             connector_or_lens="PLANNER_LLM",
-            intermediate_output=(
-                f"Décomposition de la problématique « {prompt_excerpt} » en 3 axes : "
-                "1) Synthèse exécutive, 2) Risques & conformité, 3) Plan d'action."
-            ),
+            intermediate_output=tloc["s3_plan_out"].format(prompt_excerpt=prompt_excerpt),
         ),
         ThreeSpeedStepProgressItem(
             step_code="ORTHOGONAL_MULTI_LENS_AD10",
-            label=(
-                "🔬 Vérification multi-facettes orthogonale "
-                "(AD-10 : Architecture, Sécurité, FinOps)..."
-            ),
+            label=tloc["s3_lens_label"],
             duration_ms=judge_ms,
             connector_or_lens="ORTHOGONAL_JUDGE_AD10",
-            intermediate_output=llm_thinking_override
-            or (
-                "Revue croisée des 3 facettes : cohérence fonctionnelle, "
-                "sécurité des accès et maîtrise des coûts."
-            ),
+            intermediate_output=llm_thinking_override or tloc["s3_lens_out"],
         ),
         ThreeSpeedStepProgressItem(
             step_code="DEEP_SYNTHESIS_STREAM",
-            label=llm_step_label_override or "✍️ Synthèse contradictoire consolidée",
+            label=llm_step_label_override or tloc["s3_synth_label"],
             duration_ms=llm_ms,
-            intermediate_output="Rédaction de la synthèse structurée finale.",
+            intermediate_output=tloc["s3_synth_out"],
         ),
     )
-    response_text = llm_response_override or (
-        f"[🧠 Vitesse 3 Approfondi · Audit multi-facettes AD-10 ({', '.join(lenses)})] "
-        f"Analyse approfondie vérifiée pour « {user_prompt.strip()} » [S1] [G1]."
+    response_text = llm_response_override or tloc["s3_response"].format(
+        lenses=", ".join(lenses), prompt=user_prompt.strip()
     )
     return ThreeSpeedTurnResult(
         turn_id=new_uuid7_str(),

@@ -1,24 +1,27 @@
 import {
   createOrciaApiClient,
-  OrciaProblemError,
   type OrgUnitCreateRequest,
   type OrgUnitInviteUserRequest,
   type OrgUnitInviteUserResponse,
   type OrgUnitPatchRequest,
-  type OrgUnitResponse,
 } from "@orcia/api-client";
 import type { KnownUserOption } from "@orcia/ui";
 import type { ConfiguredOrgUnit } from "../../../components/platformSetupStorageHelpers";
+import { extractLocalizedApiError } from "../../../lib/formatRfc9457ErrorToBanner";
 import { useAuthSessionStore } from "../../../stores/authSessionStore";
+import {
+  extractOrgUnitCapabilities,
+  isKnownUserIdentifier,
+  mapOrgUnitDtoToConfigured,
+  type OrgUnitServerCapabilities,
+} from "./orgUnitsApiMappers";
 
-export interface OrgUnitServerCapabilities {
-  readonly canEdit: boolean;
-  readonly canCreateChild: boolean;
-  readonly canDelete: boolean;
-  readonly canManageMembers: boolean;
-  readonly canManageOntologyLeads: boolean;
-  readonly canInviteUsers: boolean;
-}
+export {
+  extractOrgUnitCapabilities,
+  isKnownUserIdentifier,
+  mapOrgUnitDtoToConfigured,
+  type OrgUnitServerCapabilities,
+};
 
 export type OrgUnitsApiListResult =
   | {
@@ -50,44 +53,6 @@ export type OrgUnitApiDeleteResult =
   | { readonly ok: true; readonly deletedId: string }
   | { readonly ok: false; readonly errorMessage: string; readonly errorCode?: string };
 
-export function extractOrgUnitCapabilities(dto: OrgUnitResponse): OrgUnitServerCapabilities {
-  return {
-    canEdit: dto.can_edit ?? true,
-    canCreateChild: dto.can_create_child ?? dto.kind === "BU",
-    canDelete: dto.can_delete ?? true,
-    canManageMembers: dto.can_manage_members ?? dto.kind === "TEAM",
-    canManageOntologyLeads: dto.can_manage_ontology_leads ?? dto.kind === "BU",
-    canInviteUsers: dto.can_invite_users ?? true,
-  };
-}
-
-export function mapOrgUnitDtoToConfigured(dto: OrgUnitResponse): ConfiguredOrgUnit {
-  const rawLeads = Array.isArray(dto.lead_user_ids) ? dto.lead_user_ids : [];
-  const leadUserIds = rawLeads.length > 0
-    ? rawLeads
-    : dto.lead_user_id ? [dto.lead_user_id] : [];
-  const ontologyLeadUserIds =
-    dto.kind === "BU" && Array.isArray(dto.ontology_lead_user_ids)
-      ? dto.ontology_lead_user_ids
-      : [];
-  return {
-    id: dto.id,
-    name: dto.name,
-    slug: dto.slug,
-    level: dto.kind,
-    parentId: dto.parent_id ?? "scope-global",
-    billingEnabled: dto.billing_enabled ?? true,
-    leadUserId: leadUserIds[0] ?? dto.lead_user_id ?? null,
-    leadUserIds,
-    ontologyLeadUserIds,
-    memberUserIds: dto.kind === "BU" ? [] : (dto.member_user_ids ?? []),
-    attachedWorkspacesCount: dto.attached_workspaces_count ?? 0,
-    attachedWorkspaces: dto.attached_workspaces
-      ? dto.attached_workspaces.map((w) => ({ id: w.id, slug: w.slug, name: w.name }))
-      : [],
-  };
-}
-
 function buildOrgUnitsClient(locale: "fr" | "en") {
   const { readOnlyObserver, activeHat } = useAuthSessionStore.getState();
   return createOrciaApiClient({
@@ -104,34 +69,7 @@ function extractApiError(
   err: unknown,
   locale: "fr" | "en",
 ): { readonly errorMessage: string; readonly errorCode?: string } {
-  if (err instanceof OrciaProblemError) {
-    return {
-      errorMessage: err.problem.detail || err.problem.title,
-      errorCode: err.problem.error_code,
-    };
-  }
-  if (err instanceof Error && err.message.trim().length > 0) {
-    return { errorMessage: err.message };
-  }
-  return {
-    errorMessage:
-      locale === "fr"
-        ? "Une erreur réseau est survenue lors de la mise à jour de l'organigramme."
-        : "A network error occurred while updating the organization hierarchy.",
-  };
-}
-
-export function isKnownUserIdentifier(
-  identifier: string,
-  knownUsers: readonly KnownUserOption[],
-): boolean {
-  const trimmed = identifier.trim().toLowerCase();
-  if (!trimmed) return true;
-  return knownUsers.some(
-    (u) =>
-      u.principalId.trim().toLowerCase() === trimmed ||
-      (u.email ? u.email.trim().toLowerCase() === trimmed : false),
-  );
+  return extractLocalizedApiError(err, locale, "ERR_CLIENT_ORG_UNITS_NETWORK");
 }
 
 export async function fetchOrgUnitsFromApi(

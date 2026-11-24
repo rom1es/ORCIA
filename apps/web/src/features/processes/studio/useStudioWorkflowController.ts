@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  INITIAL_WORKFLOWS_V2,
+  getInitialWorkflowsV2,
   loadPersistedWorkflowsV2,
   savePersistedWorkflowV2,
   type WorkflowDefinitionV2Item,
 } from "../processStudioV2Data";
 import type { ProcessOrchestrationModesCopy } from "../../../i18n/locales/process_orchestration_modes_labels";
-import { formatRfc9457ErrorToBanner } from "../../../lib/formatRfc9457ErrorToBanner";
+import { CATEGORY_A_CONTROLLER_BY_LOCALE } from "../../../i18n/locales/category_a_controller_labels";
+import {
+  extractLocalizedApiError,
+  formatRfc9457ErrorToBanner,
+  resolveLocalizedClientError,
+} from "../../../lib/formatRfc9457ErrorToBanner";
 import {
   buildNextPublishedWorkflow,
   createProcessesApiClient,
@@ -31,7 +36,7 @@ export function useStudioWorkflowController({
   modesCopy,
   workspaceId,
 }: UseStudioWorkflowControllerArgs) {
-  const isFr = locale === "fr";
+  const processCopy = CATEGORY_A_CONTROLLER_BY_LOCALE[locale].processes;
   const isMountedRef = useRef<boolean>(true);
 
   useEffect(() => {
@@ -42,12 +47,12 @@ export function useStudioWorkflowController({
   }, []);
 
   const initialWf = useMemo(() => {
-    const list = loadPersistedWorkflowsV2();
+    const list = loadPersistedWorkflowsV2(locale);
     return (
       list.find((w) => w.id === targetId || w.slug === targetId) ??
-      INITIAL_WORKFLOWS_V2[0]!
+      getInitialWorkflowsV2(locale)[0]!
     );
-  }, [targetId]);
+  }, [targetId, locale]);
 
   const [workflow, setWorkflow] = useState<WorkflowDefinitionV2Item>(initialWf);
   const [viewMode, setViewMode] = useState<StudioViewMode>("design");
@@ -66,7 +71,7 @@ export function useStudioWorkflowController({
       .getWorkflowV2(targetId)
       .then((apiWf) => {
         if (cancelled || !isMountedRef.current || hasUserEditedRef.current || !apiWf?.id) return;
-        const hydrated = mapApiWorkflowV2ToUiItem(apiWf, initialWf);
+        const hydrated = mapApiWorkflowV2ToUiItem(apiWf, initialWf, locale);
         savePersistedWorkflowV2(hydrated);
         setWorkflow((prev) =>
           JSON.stringify(prev) === JSON.stringify(hydrated) ? prev : hydrated,
@@ -79,14 +84,14 @@ export function useStudioWorkflowController({
           message: formatRfc9457ErrorToBanner(
             err,
             locale,
-            isFr ? "Processus" : "Process",
+            processCopy.processResource,
           ).fullText,
         });
       });
     return () => {
       cancelled = true;
     };
-  }, [targetId, locale, isFr, initialWf]);
+  }, [targetId, locale, initialWf, processCopy.processResource]);
 
   const persistUpdate = (
     nextWf: WorkflowDefinitionV2Item,
@@ -103,14 +108,14 @@ export function useStudioWorkflowController({
       .saveWorkflowV2(
         nextWf.id,
         {
-          workflow: mapUiItemToApiWorkflowV2(nextWf),
+          workflow: mapUiItemToApiWorkflowV2(nextWf, locale),
           publish,
         },
         workspaceId ? { workspaceId } : undefined,
       )
       .then((res) => {
         if (!isMountedRef.current || !res?.workflow?.id) return;
-        const synced = mapApiWorkflowV2ToUiItem(res.workflow, nextWf);
+        const synced = mapApiWorkflowV2ToUiItem(res.workflow, nextWf, locale);
         savePersistedWorkflowV2(synced);
         if (synced.version !== nextWf.version || synced.status !== nextWf.status) {
           setWorkflow(synced);
@@ -123,7 +128,7 @@ export function useStudioWorkflowController({
           message: formatRfc9457ErrorToBanner(
             err,
             locale,
-            isFr ? "Enregistrement du processus" : "Process save",
+            processCopy.processSaveResource,
           ).fullText,
         });
       });
@@ -158,9 +163,7 @@ export function useStudioWorkflowController({
       : [...current, agentSlug];
     persistUpdate(
       { ...base, allowed_delegate_agents: nextAgents },
-      isFr
-        ? "Liste des agents spécialisés mobilisables mise à jour."
-        : "Mobilizable specialist agents updated.",
+      processCopy.delegatedAgentsUpdated,
     );
   };
 
@@ -170,32 +173,37 @@ export function useStudioWorkflowController({
       s.id === subStepId ? { ...s, enabled: !s.enabled } : s,
     );
     const toggled = nextSubSteps.find((s) => s.id === subStepId);
+    const stateWord = toggled?.enabled
+      ? processCopy.stepActivatedWord
+      : processCopy.stepSkippedWord;
     persistUpdate(
       { ...base, sub_steps: nextSubSteps },
-      isFr
-        ? `Étape « ${toggled?.short_label} » ${toggled?.enabled ? "activée" : "ignorée"} dans votre copie de travail.`
-        : `Step "${toggled?.short_label}" ${toggled?.enabled ? "enabled" : "skipped"} in your working draft.`,
+      processCopy.subStepDraftUpdated
+        .replace("{step}", toggled?.short_label ?? "")
+        .replace("{state}", stateWord),
     );
   };
 
   const handleSwitchExecutionMode = (mode: "native_orcia" | "external_delegated") => {
     const base = ensureDraftOnEdit(workflow);
+    const modeLabel =
+      mode === "external_delegated"
+        ? processCopy.externalIdeLabel
+        : processCopy.nativeOrciaLabel;
     persistUpdate(
       {
         ...base,
         execution_mode: mode,
         external_tool_label:
           mode === "external_delegated"
-            ? (base.external_tool_label ?? "IDE / Git de l'équipe")
+            ? (base.external_tool_label ?? processCopy.externalIdeLabel)
             : base.external_tool_label,
         external_completion_event:
           mode === "external_delegated"
             ? (base.external_completion_event ?? "git:pr_opened")
             : base.external_completion_event,
       },
-      isFr
-        ? `Mode de réalisation basculé sur « ${mode === "external_delegated" ? "Réalisation dans l'IDE / Git de l'équipe" : "Exécution guidée dans ORCIA"} ».`
-        : `Execution mode switched to "${mode === "external_delegated" ? "IDE / Git" : "ORCIA"}".`,
+      processCopy.executionModeSwitched.replace("{mode}", modeLabel),
     );
   };
 
@@ -203,7 +211,7 @@ export function useStudioWorkflowController({
     const drafted = ensureDraftOnEdit(workflow);
     persistUpdate(
       drafted,
-      isFr ? `Brouillon enregistré (${drafted.version}).` : `Draft saved (${drafted.version}).`,
+      processCopy.draftSavedBanner.replace("{version}", drafted.version),
     );
   };
 
@@ -211,9 +219,7 @@ export function useStudioWorkflowController({
     const published = buildNextPublishedWorkflow(workflow);
     persistUpdate(
       published,
-      isFr
-        ? `Processus publié et activé (version ${published.version}).`
-        : `Process published as version ${published.version}.`,
+      processCopy.publishedBanner.replace("{version}", published.version),
       true,
     );
   };
@@ -232,9 +238,7 @@ export function useStudioWorkflowController({
     setViewMode("what_if");
     setStatusBanner({
       tone: "success",
-      message: isFr
-        ? `Simulation à blanc terminée : ${enabledCount} étape(s) vérifiée(s), aucune modification envoyée aux outils externes.`
-        : `Dry-run completed: ${enabledCount} step(s) verified, 0 external writes executed.`,
+      message: processCopy.whatIfDoneBanner.replace("{count}", String(enabledCount)),
     });
     createProcessesApiClient(locale)
       .runWorkflowV2WhatIf(workflow.id, { sample_inputs: {} })
@@ -249,12 +253,14 @@ export function useStudioWorkflowController({
       })
       .catch((err: unknown) => {
         if (!isMountedRef.current) return;
-        const detail = err instanceof Error ? err.message : String(err);
+        const extracted = extractLocalizedApiError(err, locale);
         setStatusBanner({
           tone: "error",
-          message: isFr
-            ? `Simulation distante indisponible (${detail}). Estimation locale affichée.`
-            : `Remote simulation unavailable (${detail}). Showing local estimate.`,
+          message: resolveLocalizedClientError(
+            "ERR_CLIENT_PROCESS_SIMULATION_UNAVAILABLE",
+            locale,
+            { detail: extracted.errorMessage },
+          ),
         });
       });
   };

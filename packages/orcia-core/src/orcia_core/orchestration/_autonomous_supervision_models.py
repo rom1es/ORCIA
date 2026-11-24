@@ -9,6 +9,10 @@ from typing import Any
 
 from orcia_core.kernel.errors import ResourceNotFoundError
 from orcia_core.kernel.ids import new_uuid7_str
+from orcia_core.orchestration._orchestration_runtime_locales import (
+    SUPERVISION_LOCALES,
+    get_runtime_copy,
+)
 from orcia_core.orchestration.presence_and_sse import TaskNotificationEntity
 
 
@@ -66,6 +70,7 @@ def build_autonomous_notification(
     kind: str,
 ) -> TaskNotificationEntity:
     """Create a priority notification for autonomous escalation or post-hoc sampling."""
+    sc = get_runtime_copy(SUPERVISION_LOCALES)
     wf_short = workflow_id.rsplit("/", 1)[-1]
     if kind == "POST_HOC_AUDIT_SAMPLE":
         return TaskNotificationEntity(
@@ -78,8 +83,8 @@ def build_autonomous_notification(
             step_key="post-hoc-audit",
             notification_type="POST_HOC_AUDIT_SAMPLE",
             scope_kind="TEAM",
-            title=f"Contrôle qualité par échantillonnage : {wf_short}",
-            summary=f"Dossier sélectionné automatiquement ({trigger_label}).",
+            title=sc["audit_title"].format(wf=wf_short),
+            summary=sc["audit_summary"].format(trigger=trigger_label),
         )
     return TaskNotificationEntity(
         id=new_uuid7_str(),
@@ -91,8 +96,8 @@ def build_autonomous_notification(
         step_key="autonomous-escalation",
         notification_type="AUTONOMOUS_ESCALATION",
         scope_kind="TEAM",
-        title=f"Escalade requise : {wf_short}",
-        summary=f"L'exécution sous contrat ({trigger_label}) attend une décision humaine.",
+        title=sc["esc_title"].format(wf=wf_short),
+        summary=sc["esc_summary"].format(trigger=trigger_label),
     )
 
 
@@ -111,7 +116,10 @@ def resolve_run_context(
         )
     if mem is not None:
         return mem.workspace_id, mem.workflow_id, mem.contract_id, mem.trigger_id
-    raise ResourceNotFoundError(detail_override=f"Exécution introuvable : {run_id}")
+    raise ResourceNotFoundError(
+        detail_code="ERR_AUTONOMOUS_RUN_NOT_FOUND",
+        detail_params={"run_id": run_id},
+    )
 
 
 def map_pg_row_to_supervision_item(row: dict[str, Any]) -> AutonomousRunSupervisionItem:

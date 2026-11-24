@@ -21,7 +21,7 @@ from orcia_core.ontology.models import (
 from orcia_core.ontology.resolver import ProfileSemanticTranslator
 from orcia_core.ports.embedding import EmbeddingPort
 
-_TOKEN_RE = re.compile(r"[a-z0-9_À-ÿ-]{3,}", re.IGNORECASE)
+_TOKEN_RE = re.compile(r"[a-z0-9_\u00c0-\u00ff-]{3,}", re.IGNORECASE)
 _STOPWORDS: frozenset[str] = frozenset(
     {
         "the",

@@ -15,6 +15,7 @@ from orcia_core.orchestration._assistant_citations_verifier import (
     evaluate_tool_v5_and_human_anchor_guard_impl,
     verify_and_sanitize_citations_impl,
 )
+from orcia_core.orchestration._assistant_locales import get_assistant_node_copy
 from orcia_core.orchestration.assistant_citations_models import (
     CitationVerificationResult,
     EvidenceGlossaryCitation,
@@ -91,7 +92,9 @@ class AssistantCitationAndV5GuardService:
                         line_start=src.line_start,
                         line_end=src.line_end,
                         restricted_access=True,
-                        display_pill=f"[{src.tag} · 🔒 Source restreinte — Demander l'accès]",
+                        display_pill=get_assistant_node_copy()["restricted_pill"].format(
+                            tag=src.tag
+                        ),
                         request_access_uri=f"/api/v1/permissions/request-access?uri={src.uri}",
                     )
                 )

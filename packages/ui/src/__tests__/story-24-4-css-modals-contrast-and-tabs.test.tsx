@@ -10,6 +10,7 @@ import {
   type AgentsAndSkillsManagerLabels,
   type FinopsDashboardLabels,
 } from "../index";
+import { TEST_AGENT_STUDIO_LABELS } from "./agentsAndSkillsLabelsFixture";
 import { TEST_USER_SETTINGS_LABELS } from "./userSettingsLabelsFixture";
 
 const FINOPS_LABELS = {
@@ -135,7 +136,8 @@ const AGENT_LABELS = {
   testSkillInputPlaceholder: "Test",
   runSkillButtonLabel: "Tester",
   deleteSkillButtonLabel: "Supprimer",
-} as unknown as AgentsAndSkillsManagerLabels;
+  studio: TEST_AGENT_STUDIO_LABELS,
+};
 
 afterEach(() => {
   cleanup();

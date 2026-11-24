@@ -61,6 +61,9 @@ def format_skill_execution_outcome(
     llm_response_override: str | None,
 ) -> SkillExecutionOutcome:
     """Build a formatted `SkillExecutionOutcome` from a `ManagedSkillRecord` and input."""
+    from orcia_core.orchestration._agents_skills_locales import get_agents_skills_copy
+
+    copy = get_agents_skills_copy()
     provided = {
         str(k).strip(): str(v).strip() for k, v in (parameters or {}).items() if str(k).strip()
     }
@@ -69,20 +72,20 @@ def format_skill_execution_outcome(
     params_summary = (
         ", ".join(f"{k}={v}" for k, v in provided.items())
         if provided
-        else "aucun paramètre additionnel"
+        else copy.no_additional_params
     )
     res = (
         llm_response_override.strip()
         if llm_response_override and llm_response_override.strip()
-        else f"Synthèse validée pour « {clean_input} »."
+        else copy.validated_synthesis_tpl.format(clean_input=clean_input)
     )
     lines = [
-        f"✅ Compétence « {skill.name} » ({skill.command_handle}) exécutée avec succès.",
-        f"• Objectif appliqué : {skill.objective}",
-        f"• Entrée analysée : {clean_input}",
-        f"• Paramètres pris en compte : {params_summary}",
-        f"• Méthode exécutée : {skill.instructions}",
-        f"• Résultat ({skill.expected_output_format}) :\n{res}",
+        copy.skill_success_tpl.format(name=skill.name, handle=skill.command_handle),
+        copy.skill_objective_tpl.format(objective=skill.objective),
+        copy.skill_input_tpl.format(clean_input=clean_input),
+        copy.skill_params_tpl.format(params_summary=params_summary),
+        copy.skill_method_tpl.format(instructions=skill.instructions),
+        copy.skill_result_tpl.format(expected_output_format=skill.expected_output_format, res=res),
     ]
     return SkillExecutionOutcome(
         skill_id=skill.skill_id,
@@ -102,33 +105,36 @@ def format_agent_execution_outcome(
     llm_text: str,
 ) -> AgentExecutionOutcome:
     """Build a formatted `AgentExecutionOutcome` from an Agent, traces, and LLM output."""
+    from orcia_core.orchestration._agents_skills_locales import get_agents_skills_copy
+
+    copy = get_agents_skills_copy()
     skills_names = (
         ", ".join(f"{t.skill_name} ({t.command_handle})" for t in traces)
         if traces
-        else "aucune compétence rattachée"
+        else copy.no_attached_skill
     )
     posture_lbl = (
-        "Évaluateur / Contradicteur (Gate)"
-        if agent.posture == "EVALUATOR_GATE"
-        else "Producteur / Assistant métier"
+        copy.posture_evaluator if agent.posture == "EVALUATOR_GATE" else copy.posture_producer
     )
     lines = [
-        f"🤖 Réponse de {agent.name} ({agent.handle}) — Mission : {agent.role_mission}",
-        (
-            f"• Posture : {posture_lbl} | Binôme humain : {agent.human_partner_role} "
-            f"| Contrat : {agent.output_contract_format}"
+        copy.agent_header_tpl.format(
+            name=agent.name, handle=agent.handle, role_mission=agent.role_mission
         ),
-        (
-            f"• Moteur cognitif : {agent.llm_model_tier} "
-            f"(effort={agent.thinking_level}, temp={agent.temperature}, "
-            f"max_tokens={agent.max_tokens})"
+        copy.agent_posture_tpl.format(
+            posture_lbl=posture_lbl,
+            human_partner_role=agent.human_partner_role,
+            output_contract_format=agent.output_contract_format,
         ),
-        f"• Demande traitée : « {clean_prompt} »",
-        f"• Compétences mobilisées ({len(traces)}) : {skills_names}",
-        (
-            f"• Synthèse : Selon mes instructions (« {agent.instructions} »), "
-            f"voici la proposition structurée avec citations [S1] pour « {clean_prompt} ». "
-            f"({llm_text})"
+        copy.agent_engine_tpl.format(
+            llm_model_tier=agent.llm_model_tier,
+            thinking_level=agent.thinking_level,
+            temperature=agent.temperature,
+            max_tokens=agent.max_tokens,
+        ),
+        copy.agent_prompt_tpl.format(clean_prompt=clean_prompt),
+        copy.agent_skills_tpl.format(count=len(traces), skills_names=skills_names),
+        copy.agent_synthesis_tpl.format(
+            instructions=agent.instructions, clean_prompt=clean_prompt, llm_text=llm_text
         ),
     ]
     return AgentExecutionOutcome(

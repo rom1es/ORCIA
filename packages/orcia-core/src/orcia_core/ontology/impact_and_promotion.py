@@ -6,17 +6,11 @@ Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`)
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import replace
 
-from orcia_core.ontology.errors import (
-    ObserverModeReadOnlyError,
-    OntologyConflictError,
-    OntologyScopeConflictError,
-    ResourceNotFoundError,
-    ScopeAccessDeniedError,
-)
+from orcia_core.ontology._impact_simulator import ImpactSimulatorService
+from orcia_core.ontology._promotion_runner import execute_promote_concept
+from orcia_core.ontology.errors import ObserverModeReadOnlyError, OntologyScopeConflictError
 from orcia_core.ontology.models import (
-    ONTOLOGY_LEVEL_PRIORITY,
     OntologyAxiomEntity,
     OntologyConceptEntity,
     OntologyLevel,
@@ -24,11 +18,6 @@ from orcia_core.ontology.models import (
     OntologyRelationEntity,
     ResolvedOntologySnapshot,
     WhatIfImpactReport,
-)
-from orcia_core.ontology.permissions import (
-    assert_can_review_promotion,
-    can_write_ontology_level,
-    user_effective_roles,
 )
 from orcia_core.ontology.resolver import OntologyHierarchyResolver
 from orcia_core.permissions.models import (
@@ -38,88 +27,6 @@ from orcia_core.permissions.models import (
     WorkspaceMembershipEntity,
 )
 from orcia_kernel.ids import new_uuid7_str
-
-
-class ImpactSimulatorService:
-    """Graph traversal What-If impact simulator over relations, templates, workflows, and runs."""
-
-    @staticmethod
-    def simulate_what_if(
-        *,
-        concept_key: str,
-        proposed_change: str,
-        concepts: tuple[OntologyConceptEntity, ...],
-        relations: tuple[OntologyRelationEntity, ...],
-        axioms: tuple[OntologyAxiomEntity, ...],
-        template_bindings: dict[str, tuple[str, ...]],
-        workflow_bindings: dict[str, tuple[str, ...]],
-        active_run_bindings: dict[str, tuple[str, ...]],
-        violates_immutable_axiom: bool = False,
-    ) -> WhatIfImpactReport:
-        concept = next((c for c in concepts if c.concept_key == concept_key), None)
-        if concept is None:
-            raise ResourceNotFoundError(detail_override=f"Concept '{concept_key}' not found.")
-
-        # Graph BFS traversal over ontology_relations
-        visited: list[str] = [concept_key]
-        frontier: list[str] = [concept_key]
-        while frontier:
-            curr = frontier.pop(0)
-            for rel in relations:
-                if rel.source_concept_key == curr and rel.target_concept_key not in visited:
-                    visited.append(rel.target_concept_key)
-                    frontier.append(rel.target_concept_key)
-
-        transitively_affected = tuple(k for k in visited if k != concept_key)
-        affected_set = set(visited)
-
-        impacted_templates = tuple(
-            tpl
-            for tpl, bound_keys in sorted(template_bindings.items())
-            if affected_set.intersection(bound_keys)
-        )
-        impacted_workflows = tuple(
-            wf
-            for wf, bound_keys in sorted(workflow_bindings.items())
-            if affected_set.intersection(bound_keys)
-        )
-        impacted_runs = tuple(
-            run_id
-            for run_id, bound_keys in sorted(active_run_bindings.items())
-            if affected_set.intersection(bound_keys)
-        )
-
-        concept_by_id = {c.id: c for c in concepts}
-        concept_by_key = {c.concept_key: c for c in concepts}
-        ancestor_keys: set[str] = {concept_key}
-        cursor_id = concept.parent_concept_id
-        while cursor_id and cursor_id in concept_by_id:
-            parent_c = concept_by_id[cursor_id]
-            if parent_c.concept_key in ancestor_keys:
-                break
-            ancestor_keys.add(parent_c.concept_key)
-            cursor_id = parent_c.parent_concept_id
-
-        for other_c in concepts:
-            if other_c.canonical_term == concept.canonical_term and (
-                ONTOLOGY_LEVEL_PRIORITY[other_c.level] <= ONTOLOGY_LEVEL_PRIORITY[concept.level]
-            ):
-                ancestor_keys.add(other_c.concept_key)
-
-        has_immutable = violates_immutable_axiom or any(
-            ax.immutable and ax.concept_key in ancestor_keys and ax.concept_key in concept_by_key
-            for ax in axioms
-        )
-        return WhatIfImpactReport(
-            concept_key=concept_key,
-            canonical_term=concept.canonical_term,
-            proposed_change=proposed_change,
-            transitively_affected_concepts=transitively_affected,
-            impacted_artifact_templates=impacted_templates,
-            impacted_workflow_uris=impacted_workflows,
-            impacted_active_run_ids=impacted_runs,
-            has_immutable_axiom_conflict=has_immutable,
-        )
 
 
 def _assert_mutable_actor(user: UserIdentity, instance: str) -> None:
@@ -197,11 +104,14 @@ class OntologyGovernanceService:
             concept.scope_id or "",
         ):
             raise OntologyScopeConflictError(
-                detail_override=(
-                    f"La clé '{concept.concept_key}' appartient déjà au périmètre "
-                    f"({existing.level}, '{existing.scope_id}') et ne peut être écrasée "
-                    f"depuis ({concept.level}, '{concept.scope_id}')."
-                )
+                detail_code="ERR_ONTOLOGY_SCOPE_CONFLICT_DETAIL",
+                detail_params={
+                    "concept_key": concept.concept_key,
+                    "existing_level": existing.level,
+                    "existing_scope": existing.scope_id or "",
+                    "level": concept.level,
+                    "target_scope": concept.scope_id or "",
+                },
             )
         self._concepts[concept.concept_key] = concept
         return concept
@@ -308,136 +218,16 @@ class OntologyGovernanceService:
         allow_fixture_fallback: bool = False,
     ) -> OntologyPromotionProposal:
         _assert_mutable_actor(user, "/api/v1/ontology-rag/ontology/promote")
-
-        proposal = self._proposals.get(proposal_key)
-        if proposal is None:
-            raise ResourceNotFoundError(detail_override=f"Proposal '{proposal_key}' not found.")
-        if proposal.status != "PENDING_REVIEW":
-            raise OntologyConflictError(
-                detail_override=f"Proposal '{proposal_key}' has status '{proposal.status}'."
-            )
-        source_concept = self._concepts.get(proposal.concept_key)
-        if source_concept is None:
-            raise ResourceNotFoundError(
-                detail_override=f"Concept '{proposal.concept_key}' not found."
-            )
-        if source_concept.snapshot_branch_status != "ACTIVE":
-            raise OntologyConflictError(
-                detail_override=(
-                    f"Concept '{source_concept.concept_key}' belongs to a SUPERSEDED branch."
-                )
-            )
-        if proposal.impact_report.has_immutable_axiom_conflict:
-            raise OntologyConflictError(
-                detail_override=(
-                    f"Proposal '{proposal_key}' conflicts with an immutable parent axiom."
-                )
-            )
-        roles = user_effective_roles(user)
-        if proposal.target_level == "1_ENTERPRISE" and "PLATFORM_ADMIN" not in roles:
-            raise ScopeAccessDeniedError(
-                detail_override="Promotion to 1_ENTERPRISE requires PLATFORM_ADMIN."
-            )
-        if org_units or workspaces:
-            if proposal.target_level in ("3_WORKSPACE", "4_WORKSPACE"):
-                allowed_ws = can_write_ontology_level(
-                    user,
-                    proposal.target_level,
-                    proposal.target_scope_id,
-                    org_units,
-                    workspaces,
-                    memberships,
-                    allow_ephemeral_fallback=(
-                        allow_fixture_fallback
-                        and proposal.target_scope_id == "ws-solution-paiement"
-                    ),
-                )
-                if not allowed_ws:
-                    raise ScopeAccessDeniedError(
-                        detail_override=(
-                            f"Validation refusée pour le palier {proposal.target_level} "
-                            f"({proposal.target_scope_id})."
-                        )
-                    )
-            else:
-                assert_can_review_promotion(
-                    user,
-                    proposal.target_level,
-                    proposal.target_scope_id,
-                    org_units,
-                    workspaces,
-                    instance="/api/v1/ontology-rag/ontology/promote",
-                )
-        else:
-            if proposal.target_level == "2_DOMAIN":
-                if not (roles & {"PLATFORM_ADMIN", "BU_LEAD", "BU_DIRECTOR", "ONTOLOGY_LEAD"}):
-                    raise ScopeAccessDeniedError(
-                        detail_override=(
-                            "Promotion to 2_DOMAIN requires PLATFORM_ADMIN, "
-                            "BU_LEAD, or ONTOLOGY_LEAD."
-                        )
-                    )
-                if (
-                    "PLATFORM_ADMIN" not in roles
-                    and user.primary_org_unit_id
-                    and proposal.target_scope_id != user.primary_org_unit_id
-                ):
-                    raise ScopeAccessDeniedError(
-                        detail_override=(
-                            f"Validation refusée pour le palier 2_DOMAIN "
-                            f"({proposal.target_scope_id})."
-                        )
-                    )
-            elif proposal.target_level == "3_TEAM":
-                team_review_roles = {
-                    "PLATFORM_ADMIN",
-                    "BU_LEAD",
-                    "BU_DIRECTOR",
-                    "ONTOLOGY_LEAD",
-                    "TEAM_LEAD",
-                }
-                if not (roles & team_review_roles):
-                    raise ScopeAccessDeniedError(
-                        detail_override=(
-                            "Promotion to 3_TEAM requires TEAM_LEAD, BU_LEAD, or ONTOLOGY_LEAD."
-                        )
-                    )
-                if (
-                    "PLATFORM_ADMIN" not in roles
-                    and user.primary_org_unit_id
-                    and proposal.target_scope_id != user.primary_org_unit_id
-                ):
-                    raise ScopeAccessDeniedError(
-                        detail_override=(
-                            f"Validation refusée pour le palier 3_TEAM "
-                            f"({proposal.target_scope_id})."
-                        )
-                    )
-        if (
-            ONTOLOGY_LEVEL_PRIORITY[proposal.target_level]
-            >= ONTOLOGY_LEVEL_PRIORITY[proposal.source_level]
-        ):
-            raise OntologyConflictError(
-                detail_override=(
-                    f"Target {proposal.target_level} must outrank {proposal.source_level}."
-                )
-            )
-
-        promoted_key = f"{proposal.concept_key}-{proposal.target_level.lower()}"
-        self._concepts[promoted_key] = OntologyConceptEntity(
-            id=new_uuid7_str(),
-            concept_key=promoted_key,
-            canonical_term=source_concept.canonical_term,
-            level=proposal.target_level,
-            scope_id=proposal.target_scope_id,
-            definition_text=source_concept.definition_text,
-            parent_concept_id=source_concept.id,
-            synonyms=source_concept.synonyms,
-            banned_terms=source_concept.banned_terms,
-            profile_translations=source_concept.profile_translations,
-            expected_schema=source_concept.expected_schema,
-            snapshot_branch_status="ACTIVE",
+        return execute_promote_concept(
+            self._concepts,
+            self._proposals,
+            user,
+            proposal_key=proposal_key,
+            org_units=org_units,
+            workspaces=workspaces,
+            memberships=memberships,
+            allow_fixture_fallback=allow_fixture_fallback,
         )
-        approved = replace(proposal, status="APPROVED")
-        self._proposals[proposal_key] = approved
-        return approved
+
+
+__all__ = ["ImpactSimulatorService", "OntologyGovernanceService"]

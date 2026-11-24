@@ -132,7 +132,7 @@ export function FourZoneSidebarRail({
           >
             <label className="flex flex-col gap-0.5 text-[11px] font-medium">
               <span style={{ color: "var(--color-text-secondary)" }}>
-                {unifiedScopeLabel ?? selectorLabels?.workspaceLabel ?? "Espace"}
+                {unifiedScopeLabel ?? selectorLabels?.workspaceLabel ?? labels.workspacePrefix}
               </span>
               {usesUnifiedGroups ? (
                 <select
@@ -171,7 +171,7 @@ export function FourZoneSidebarRail({
                       (o) => o.id === activeWorkspaceSelectorId,
                     )?.label ??
                     selectorLabels?.allWorkspacesOption ??
-                    "Tous les espaces"
+                    ""
                   }
                   onChange={(e) => onSelectWorkspaceFromSidebar?.(e.target.value)}
                   className="w-full min-w-0 rounded border px-2 py-1 text-xs"
@@ -182,7 +182,7 @@ export function FourZoneSidebarRail({
                   }}
                 >
                   <option value="">
-                    {selectorLabels?.allWorkspacesOption ?? "Tous les espaces"}
+                    {selectorLabels?.allWorkspacesOption ?? ""}
                   </option>
                   {(workspaceSelectorOptions ?? []).map((opt) => (
                     <option key={opt.id} value={opt.id}>

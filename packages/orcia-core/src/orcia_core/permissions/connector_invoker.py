@@ -101,7 +101,8 @@ class ConnectorInvoker:
         resolved = connector or get_registered_connector(norm_scheme)
         if resolved is None:
             raise ValidationDomainError(
-                detail_override=f"Connecteur '{norm_scheme}' non enregistré dans orcia.connectors."
+                detail_code="ERR_CONNECTOR_NOT_REGISTERED",
+                detail_params={"scheme": norm_scheme},
             )
         return resolved
 

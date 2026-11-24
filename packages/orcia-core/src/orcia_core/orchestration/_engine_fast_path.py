@@ -10,6 +10,10 @@ from orcia_core.blackboard.models import (
     StepExecutionEntity,
     StepMemlogEntry,
 )
+from orcia_core.orchestration._orchestration_ops_locales import (
+    ENGINE_STEP_LOCALES,
+    get_ops_copy,
+)
 from orcia_core.orchestration.jit_hydrator import (
     JitStepHydrator,
     build_default_fast_path_markers,
@@ -136,13 +140,14 @@ def finalize_step_outcome(
     commit_immediately: bool,
 ) -> tuple[StepExecutionEntity, BlackboardSnapshotEntity | None]:
     """Persist draft/memlog, handle human pause, and commit snapshot if requested."""
+    ec = get_ops_copy(ENGINE_STEP_LOCALES)
     memlog_entries: list[StepMemlogEntry] = [
         StepMemlogEntry(
             entry_id=new_uuid7_str(),
             step_key=step_key,
             marker_type="REASONING",
             summary=f"Hydratation JIT de '{step_key}' ({len(hydrated.declared_input_uris)} items)",
-            details=f"Directive exécutée: {hydrated.step_directive}",
+            details=ec["jit_directive"].format(directive=hydrated.step_directive),
             source_uris=hydrated.declared_input_uris,
         )
     ]
@@ -163,11 +168,10 @@ def finalize_step_outcome(
                 entry_id=new_uuid7_str(),
                 step_key=step_key,
                 marker_type="SUB_WORKFLOW_OUTPUT",
-                summary=(
-                    f"Sous-workflow '{child_run.workflow_uri}' engagé "
-                    f"(profondeur {child_run.nesting_depth})"
+                summary=ec["subwf_summary"].format(
+                    uri=child_run.workflow_uri, depth=child_run.nesting_depth
                 ),
-                details=f"Sorties reversées via output_mapping: {sorted(mapped_outputs.keys())}",
+                details=ec["subwf_details"].format(keys=sorted(mapped_outputs.keys())),
             )
         )
         effective_step_cost = 0.0
@@ -189,10 +193,7 @@ def finalize_step_outcome(
             )
         )
         if effective_divergence or run.execution_regime == "BACKGROUND_FAST_PATH":
-            div_note = effective_divergence or (
-                "Divergence détectée entre source documentaire (seuil 500€) "
-                "et source opérationnelle (seuil 350€)"
-            )
+            div_note = effective_divergence or ec["fast_path_div"]
             fast_markers = build_default_fast_path_markers(step_key, div_note, wf.datasources)
             memlog_entries.extend(fast_markers)
             draft_payload["fast_path_markers"] = [m.to_dict() for m in fast_markers]

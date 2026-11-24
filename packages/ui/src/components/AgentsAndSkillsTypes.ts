@@ -1,5 +1,6 @@
-import React from "react";
+import type React from "react";
 import type {
+  AgentGovernanceStudioLabels,
   AgentSixBlocksDraftState,
   UiAgentDialogueMechanism,
   UiAgentHumanPartnerRole,
@@ -101,6 +102,7 @@ export interface AgentsAndSkillsManagerLabels {
   readonly testSkillInputPlaceholder: string;
   readonly runSkillButtonLabel: string;
   readonly deleteSkillButtonLabel: string;
+  readonly studio: AgentGovernanceStudioLabels;
 }
 
 export interface CreateAgentSixBlocksInput {
@@ -124,6 +126,15 @@ export interface CreateAgentSixBlocksInput {
   readonly guardrails?: readonly string[];
   readonly outputContractFormat?: UiAgentOutputContractFormat;
   readonly writePreviewRequired?: boolean;
+}
+
+export interface CreateSkillInput {
+  readonly name: string;
+  readonly objective: string;
+  readonly inputParameters: string[];
+  readonly instructions: string;
+  readonly expectedOutputFormat: string;
+  readonly visibilityScope?: "PRIVATE" | "TEAM";
 }
 
 export interface AgentsAndSkillsManagerViewProps {
@@ -158,14 +169,7 @@ export interface AgentsAndSkillsManagerViewProps {
     nextVisibility: UiAgentSkillVisibilityScope,
   ) => void;
   readonly onUseAgentInAssistant?: (agent: UiManagedAgentItem) => void;
-  readonly onCreateSkill: (input: {
-    name: string;
-    objective: string;
-    inputParameters: string[];
-    instructions: string;
-    expectedOutputFormat: string;
-    visibilityScope?: "PRIVATE" | "TEAM";
-  }) => void;
+  readonly onCreateSkill: (input: CreateSkillInput) => void;
   readonly onExecuteSkill: (skillId: string, inputText: string) => void;
   readonly onDeleteSkill: (skillId: string) => void;
   readonly onUpdateSkillVisibility?: (

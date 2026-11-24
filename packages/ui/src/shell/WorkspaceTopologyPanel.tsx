@@ -139,7 +139,7 @@ export function WorkspaceTopologyPanel({
             fontSize: "var(--font-size-body)",
           }}
         >
-          0 Workspace
+          {labels.emptyWorkspacesText ?? ""}
         </div>
       )}
 

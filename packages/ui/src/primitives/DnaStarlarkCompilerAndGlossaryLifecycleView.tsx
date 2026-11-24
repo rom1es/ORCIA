@@ -32,6 +32,7 @@ export interface DnaStarlarkAndGlossaryLabels {
   readonly promoteInFlowCheckboxLabel: string;
   readonly promoteSelectedCta: string;
   readonly rejectCandidateCta: string;
+  readonly emptyCompiledControlText?: string;
 }
 
 export interface DnaStarlarkCompilerAndGlossaryLifecycleViewProps {
@@ -150,9 +151,7 @@ export const DnaStarlarkCompilerAndGlossaryLifecycleView: React.FC<
             data-testid="dna-starlark-empty-state"
             className="flex flex-col justify-center gap-3 rounded border border-dashed border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-4 text-xs text-[var(--orcia-text-secondary)]"
           >
-            <span>
-              Aucun contrôle automatique compilé pour cet Espace. Ajoutez une règle métier pour générer et vérifier automatiquement ce contrôle.
-            </span>
+            <span>{labels.emptyCompiledControlText ?? ""}</span>
             {onCompileFromNorm && (
               <div>
                 <button

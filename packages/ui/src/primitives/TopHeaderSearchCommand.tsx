@@ -1,13 +1,10 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import React, { useState } from "react";
-import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 import { OrciaIcon } from "../components/icons";
 import {
-  DEFAULT_RGAA_MODAL_LABELS_FR,
   RgaaUnsavedChangesAlert,
-  handleRgaaSubmitKeyDown,
   useUnsavedChangesDialogGuard,
-  type RgaaModalDialogLabels,
+  type RgaaModalGuardLabels,
 } from "../components/RgaaModalDialog.js";
 import type {
   DeepLinkResolutionPayload,
@@ -17,6 +14,7 @@ import type {
   TopSearchHitItem,
   TopSearchScopeMode,
 } from "./TopHeaderSearchCommandTypes";
+import { TopHeaderSearchFooterBanner } from "./TopHeaderSearchFooterBanner";
 import { TopHeaderSearchResultsPane } from "./TopHeaderSearchResultsPane";
 
 export type {
@@ -63,10 +61,10 @@ export function TopHeaderSearchCommand({
   const [previewItemId, setPreviewItemId] = useState<string | null>(null);
   const [lastDeepLink, setLastDeepLink] = useState<DeepLinkResolutionPayload | null>(null);
 
-  const resolvedRgaaLabels: RgaaModalDialogLabels = {
-    ...DEFAULT_RGAA_MODAL_LABELS_FR,
-    submitCta: labels.deepLinkActionLabel || DEFAULT_RGAA_MODAL_LABELS_FR.submitCta,
+  const resolvedRgaaLabels: RgaaModalGuardLabels = {
     ...rgaaLabels,
+    submitCta: labels.deepLinkActionLabel || rgaaLabels?.submitCta || "",
+    cancelCta: rgaaLabels?.cancelCta ?? labels.closeCta ?? "",
   };
 
   const {
@@ -200,7 +198,7 @@ export function TopHeaderSearchCommand({
             onClick={() => onTriggerSpeed2Now?.(query, scope)}
             className="px-2 py-1 rounded text-xs border border-surface-border bg-surface-secondary text-text-secondary"
           >
-            <OrciaIcon name="sparkles" /> Recherche approfondie
+            <OrciaIcon name="sparkles" /> {labels.deepSearchCtaLabel ?? ""}
           </button>
           <button
             type="button"
@@ -208,7 +206,7 @@ export function TopHeaderSearchCommand({
             onClick={requestClose}
             className="px-2 py-1 rounded text-xs border border-surface-border bg-surface-secondary text-text-secondary"
           >
-            {resolvedRgaaLabels.cancelCta}
+            {resolvedRgaaLabels.cancelCta ?? resolvedRgaaLabels.cancelButtonLabel ?? ""}
           </button>
         </div>
 
@@ -233,7 +231,7 @@ export function TopHeaderSearchCommand({
 
         <div
           role="tablist"
-          aria-label="Portées de recherche"
+          aria-label={labels.searchScopesAriaLabel}
           data-testid="cmdk-scope-pills"
           className="orcia-ds-tabs items-center text-xs"
         >
@@ -270,66 +268,16 @@ export function TopHeaderSearchCommand({
         onExecuteHit={handleExecuteHit}
       />
 
-      {/* Auto-Focus Deep-Link Feedback Banner (2s Yellow Highlight Status) */}
-      {lastDeepLink !== null && (
-        <div
-          data-testid="cmdk-deeplink-highlight-banner"
-          className="px-3 py-1.5 bg-surface-secondary border-t border-surface-border text-xs font-mono text-text-primary"
-        >
-          {lastDeepLink.opensContextualHelpColumn ? (
-            <>
-              <OrciaIcon name="help" /> Help Column -&gt; {lastDeepLink.deepLinkUri}
-            </>
-          ) : (
-            <>
-              <OrciaIcon name="target" /> Deep-Link Auto-Focus ({lastDeepLink.highlightDurationMs} ms) -&gt; {lastDeepLink.deepLinkUri}
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Footer CTA: Ask Mon Assistant with pre-filled query & active scope */}
-      <div className="p-2.5 border-t border-surface-border bg-surface-secondary flex items-center justify-between gap-2">
-        <button
-          type="button"
-          data-testid="cmdk-ask-assistant-cta"
-          onClick={() => onAskAssistant?.(query, scope)}
-          className="text-xs font-medium text-brand-primary hover:underline"
-        >
-          {labels.askAssistantFooterPrefix} « {query || "..."} »{" "}
-          {labels.askAssistantFooterSuffix}
-        </button>
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono text-text-secondary">
-            Tab: Portée · ↵: Ouvrir · ⌘↵: Aperçu
-          </span>
-          <button
-            type="button"
-            data-testid="cmdk-submit-btn"
-            disabled={!activeHit}
-            onClick={() => {
-              if (activeHit) handleExecuteHit(activeHit);
-            }}
-            onKeyDown={(e) =>
-              handleRgaaSubmitKeyDown(
-                e,
-                () => {
-                  if (activeHit) handleExecuteHit(activeHit);
-                },
-                !activeHit,
-              )
-            }
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs bg-brand-primary text-[var(--color-primary-foreground)] font-medium disabled:opacity-50"
-          >
-            <span>{resolvedRgaaLabels.submitCta}</span>
-            <DisabledButtonAlertIndicator
-              disabled={!activeHit}
-              reason="Sélectionnez un élément dans la recherche pour l'ouvrir."
-              testIdSuffix="cmdk-submit-btn"
-            />
-          </button>
-        </div>
-      </div>
+      <TopHeaderSearchFooterBanner
+        labels={labels}
+        resolvedRgaaLabels={resolvedRgaaLabels}
+        query={query}
+        scope={scope}
+        activeHit={activeHit}
+        lastDeepLink={lastDeepLink}
+        onAskAssistant={onAskAssistant}
+        onExecuteHit={handleExecuteHit}
+      />
           </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>

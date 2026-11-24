@@ -9,12 +9,14 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 
+from orcia_core.bootstrap._bootstrap_locales import get_bootstrap_rag_seed_copy
 from orcia_core.ports.embedding import EmbeddingPort
 from orcia_core.rag.indexer_and_rrf import DifferentiatedIncrementalIndexer
 from orcia_core.rag.tripartite_and_freshness import (
     HybridRagService,
     TripartiteGraphAndFreshnessService,
 )
+from orcia_kernel.enums import DEFAULT_LOCALE, SupportedLocale
 
 
 def populate_rag_test_dataset(
@@ -23,8 +25,10 @@ def populate_rag_test_dataset(
     *,
     workspace_id: str = "scope-global",
     embedding_port: EmbeddingPort | None = None,
+    locale: SupportedLocale = DEFAULT_LOCALE,
 ) -> tuple[HybridRagService, TripartiteGraphAndFreshnessService]:
     """Populate `rag` and `tripartite` with deterministic test fixtures (`DEC-SEED-01`)."""
+    copy = get_bootstrap_rag_seed_copy(locale)
     conf_doc = None
     if embedding_port is not None:
 
@@ -38,15 +42,9 @@ def populate_rag_test_dataset(
                 datasource_id="ds-confluence-claims",
                 datasource_alias="confluence_claims",
                 source_uri="confluence://CLAIMS/pages/101-spec-seuil-validation",
-                title="Spécification Seuil Validation Sinistre",
-                hierarchy_path="Espace CLAIMS > Règles Métier",
-                markdown_sections=(
-                    "Section 1 — Tout sinistre supérieur au seuil PAY-101 requiert validation.",
-                    (
-                        "Section 2 — La règle s'applique au concept LossEvent et à"
-                        " calculate_reserve."
-                    ),
-                ),
+                title=copy.confluence_title,
+                hierarchy_path=copy.confluence_path,
+                markdown_sections=(copy.section_1, copy.section_2),
                 revision_tag="v12",
                 embedding_port=embedding_port,
                 labels=("orcia-kb",),
@@ -64,11 +62,8 @@ def populate_rag_test_dataset(
                 datasource_alias="jira_claims",
                 issue_key="PAY-142",
                 issue_type="Story",
-                title="Relèvement du seuil de validation LossEvent de 5000 EUR à 7500 EUR",
-                body_text=(
-                    "Suite au comité risques, le ticket PAY-142 relève le seuil de"
-                    " calculate_reserve pour LossEvent à 7500 EUR (remplace PAY-101)."
-                ),
+                title=copy.jira_title,
+                body_text=copy.jira_body,
                 updated_tag="2026-10-20T10:00:00Z",
                 embedding_port=embedding_port,
                 ontology_concepts=("LossEvent",),
@@ -107,7 +102,7 @@ def populate_rag_test_dataset(
     tripartite.register_cross_source_traceability(
         workspace_id=workspace_id,
         confluence_uri="confluence://CLAIMS/pages/101-spec-seuil-validation",
-        confluence_text="Spécification initiale liée à PAY-101 et mise à jour par PAY-142.",
+        confluence_text=copy.traceability_text,
         git_repo_uri="git://claims/core-engine",
         git_symbol="calculate_reserve",
         commit_message="feat(claims): implement PAY-142 reserve threshold 7500 EUR",

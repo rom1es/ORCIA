@@ -171,7 +171,7 @@ export function MobileShellNavigationDrawer({
         <div className="flex flex-col gap-2 rounded border p-2" style={{ borderColor: "var(--color-border-subtle)" }}>
           <label className="flex flex-col gap-1 text-[11px] font-medium">
             <span style={{ color: "var(--color-text-secondary)" }}>
-              {unifiedScopeLabel ?? doubleSelectorLabels?.workspaceLabel ?? "Espace"}
+              {unifiedScopeLabel ?? doubleSelectorLabels?.workspaceLabel ?? labels.workspacePrefix}
             </span>
             {usesUnifiedGroups ? (
               <select
@@ -211,7 +211,7 @@ export function MobileShellNavigationDrawer({
                 }}
               >
                 <option value="">
-                  {doubleSelectorLabels?.allWorkspacesOption ?? "Tous les espaces du périmètre"}
+                  {doubleSelectorLabels?.allWorkspacesOption ?? ""}
                 </option>
                 {(workspaceSelectorOptions ?? []).map((opt) => (
                   <option key={opt.id} value={opt.id}>

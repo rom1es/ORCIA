@@ -20,6 +20,7 @@ import {
 } from "../features/admin/ai-models/aiModelsApiBridge";
 import type { AiModelModalMode } from "../features/admin/ai-models/AiModelConfigModal";
 import type { AiModelDeleteConfirmResult } from "../features/admin/ai-models/AiModelDeleteDialog";
+import { useI18n } from "../i18n";
 import { useAuthSessionStore } from "../stores/authSessionStore";
 import {
   detectGoogleGeminiProtocolMode,
@@ -31,9 +32,13 @@ import {
 } from "./settingsAiModelsPresets";
 
 export function useAiModelsSectionController(params: {
-  readonly isFr: boolean;
+  readonly isFr?: boolean;
+  readonly locale?: "fr" | "en";
 }) {
-  const { isFr } = params;
+  const { locale: ctxLocale } = useI18n();
+  const activeLocale: "fr" | "en" =
+    params.locale ??
+    (params.isFr === false ? "en" : params.isFr === true ? "fr" : ctxLocale);
   const platformSetup = useOptionalPlatformSetup();
   const [serverMappings, setServerMappings] = useState<readonly AiModelMappingItemResponse[]>([]);
   const [mappingsRevision, setMappingsRevision] = useState<number>(0);
@@ -63,14 +68,14 @@ export function useAiModelsSectionController(params: {
   const [testResult, setTestResult] = useState<ConnectionTestFeedback | null>(null);
 
   const loadMappings = useCallback(async () => {
-    const res = await fetchAiModelMappings(isFr ? "fr" : "en");
+    const res = await fetchAiModelMappings(activeLocale);
     if (res.ok && Array.isArray(res.data)) {
       setServerMappings(res.data);
       setMappingsRevision((r) => r + 1);
     } else if (!res.ok) {
       setOperationError(res.errorMessage);
     }
-  }, [isFr]);
+  }, [activeLocale]);
 
   const isHydrating = useAuthSessionStore((s) => s.isHydrating);
   const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
@@ -96,7 +101,7 @@ export function useAiModelsSectionController(params: {
     setTestingId(mappingId);
     clearModelTestError(mappingId);
     try {
-      const res = await testAiModelConnectionViaApi(mappingId, isFr ? "fr" : "en");
+      const res = await testAiModelConnectionViaApi(mappingId, activeLocale);
       if (res.ok) {
         setServerMappings((prev) =>
           prev.map((m) =>
@@ -132,7 +137,7 @@ export function useAiModelsSectionController(params: {
     const res = await patchAiModelMappingViaApi(
       mapping.id,
       { is_active: !mapping.is_active },
-      isFr ? "fr" : "en",
+      activeLocale,
     );
     if (res.ok) {
       await loadMappings();
@@ -144,7 +149,7 @@ export function useAiModelsSectionController(params: {
 
   const handleOpenDelete = async (mapping: AiModelMappingItemResponse) => {
     setDeleteState({ open: true, mapping, impact: null, isLoadingImpact: true });
-    const res = await fetchAiModelDeleteImpactViaApi(mapping.id, isFr ? "fr" : "en");
+    const res = await fetchAiModelDeleteImpactViaApi(mapping.id, activeLocale);
     setDeleteState((prev) =>
       res.ok ? { ...prev, impact: res.data, isLoadingImpact: false } : { ...prev, isLoadingImpact: false },
     );
@@ -154,7 +159,7 @@ export function useAiModelsSectionController(params: {
     mappingId: string,
     mode: "reject" | "drain" | "force",
   ): Promise<AiModelDeleteConfirmResult> => {
-    const res = await deleteAiModelMappingViaApi(mappingId, mode, isFr ? "fr" : "en");
+    const res = await deleteAiModelMappingViaApi(mappingId, mode, activeLocale);
     if (!res.ok) {
       return { ok: false, errorMessage: res.errorMessage };
     }
@@ -168,11 +173,11 @@ export function useAiModelsSectionController(params: {
     payload: AiModelCreateRequest,
     andTest: boolean,
   ): Promise<boolean> => {
-    const res = await createAiModelMappingViaApi(payload, isFr ? "fr" : "en");
+    const res = await createAiModelMappingViaApi(payload, activeLocale);
     if (!res.ok) throw new Error(res.errorMessage);
     setOperationError(null);
     if (andTest) {
-      const testRes = await testAiModelConnectionViaApi(res.data.id, isFr ? "fr" : "en");
+      const testRes = await testAiModelConnectionViaApi(res.data.id, activeLocale);
       if (!testRes.ok) {
         setTestErrorsByModelId((prev) => ({
           ...prev,
@@ -189,7 +194,7 @@ export function useAiModelsSectionController(params: {
     mappingId: string,
     payload: AiModelPatchRequest,
   ): Promise<boolean> => {
-    const res = await patchAiModelMappingViaApi(mappingId, payload, isFr ? "fr" : "en");
+    const res = await patchAiModelMappingViaApi(mappingId, payload, activeLocale);
     if (!res.ok) throw new Error(res.errorMessage);
     await loadMappings();
     await platformSetup?.refreshAccostage?.();
@@ -205,12 +210,12 @@ export function useAiModelsSectionController(params: {
       rawKey: apiKeyInput,
       keyAlreadyConfigured: false,
     };
-    const syncErr = validateLlmConnectionParameters({ isFr, ...p });
+    const syncErr = validateLlmConnectionParameters({ locale: activeLocale, ...p });
     if (syncErr !== null) {
       setTestResult(syncErr);
       return;
     }
-    setTestResult(await runRemoteLlmConnectionTestEvaluation({ isFr, ...p }));
+    setTestResult(await runRemoteLlmConnectionTestEvaluation({ locale: activeLocale, ...p }));
   };
 
   const handleQuickSubmit = async () => {

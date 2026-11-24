@@ -4,6 +4,7 @@ import type { ConfiguredOrgUnit } from "../components/platformSetupStore";
 import type { OrgTreeRowItem } from "../features/admin/organization/orgTreeHelpers";
 import type { OrgUnitServerCapabilities } from "../features/admin/organization/orgUnitsApiBridge";
 import type { AdminAndStudioDictionarySection } from "../i18n/locales/admin_and_studio_labels";
+import { resolveLocaleForFlag } from "../i18n";
 import { formatCountNoun } from "../stores/authSessionStore";
 
 export interface SettingsOrganizationUnitRowProps {
@@ -37,7 +38,7 @@ export function SettingsOrganizationUnitRow({
     attachedTeamsCount,
     attachedWorkspacesCount,
   } = rowItem;
-  const locale = isFr ? "fr" : "en";
+  const locale = resolveLocaleForFlag(isFr);
 
   const kindLabel =
     unit.level === "TEAM"
@@ -185,7 +186,7 @@ export function SettingsOrganizationUnitRow({
             );
             return u?.displayName || lid;
           });
-          const pluralPrefix = labels.badges.leadsPluralPrefix || "Responsables :";
+          const pluralPrefix = labels.badges.leadsPluralPrefix;
           return (
             <StatusBadge
               testId={`org-unit-lead-badge-${unit.id}`}

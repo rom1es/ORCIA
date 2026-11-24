@@ -11,6 +11,11 @@ import {
   type UiInferenceEffort,
   type UiInferenceTier,
 } from "@orcia/ui";
+import {
+  formatI18nTemplate,
+  resolveDictionaryForFlag,
+  resolveLocaleForFlag,
+} from "../../i18n";
 import type { SavedAssistantGovernancePrefs } from "./assistantFoldersAndPrefsStore";
 
 export function buildAssistantTurnRequestPayload(params: {
@@ -43,9 +48,9 @@ export function buildAssistantTurnRequestPayload(params: {
     parentTurnId,
     isFr,
   } = params;
-  const attachmentHeader = isFr
-    ? "\n\n[Pièces jointes fournies par l'utilisateur]\n"
-    : "\n\n[User-supplied attachments]\n";
+  const resolvedLocale = resolveLocaleForFlag(isFr);
+  const flowCopy = resolveDictionaryForFlag(isFr, resolvedLocale).featureInboxAssistant.assistantFlow;
+  const attachmentHeader = flowCopy.attachmentHeader;
   const attachmentContext =
     attachedFiles && attachedFiles.length > 0
       ? attachmentHeader +
@@ -80,7 +85,7 @@ export function buildAssistantTurnRequestPayload(params: {
     ...(governancePrefs?.workspaceInstructions
       ? { workspace_instructions: governancePrefs.workspaceInstructions }
       : {}),
-    locale: isFr ? "fr" : "en",
+    locale: resolvedLocale,
   };
 }
 
@@ -174,6 +179,7 @@ export function buildTraceEventFromToolSse(params: {
   );
   const startLine = Number(data.start_line ?? args.start_line ?? 1) || 1;
   const endLine = Number(data.end_line ?? args.end_line ?? 25) || 25;
+  const flowCopy = resolveDictionaryForFlag(isFr).featureInboxAssistant.assistantFlow;
   const isFileRead = Boolean(uri) || /read|inspect|line|file/i.test(toolName);
   const items: UiAgentTraceEventItem[] = [];
   if (nextSeq <= 1) {
@@ -181,7 +187,7 @@ export function buildTraceEventFromToolSse(params: {
       eventId: `evt-grp-${nextSeq}`,
       sequence: nextSeq,
       kind: "GROUP_HEADER",
-      label: isFr ? "Exploration et preuves" : "Exploration & evidence",
+      label: flowCopy.explorationGroupLabel,
       actorSlug: "assistant",
       groupKey: "assistant-turn",
     });
@@ -191,14 +197,10 @@ export function buildTraceEventFromToolSse(params: {
     eventId: `evt-${eventName}-${seq}`,
     sequence: seq,
     kind: eventName === "tool_result" && isFileRead ? "FILE_ANALYZED" : "CHECK_EXECUTED",
-    label:
-      eventName === "tool_call"
-        ? isFr
-          ? `Appel outil : ${toolName}`
-          : `Calling tool: ${toolName}`
-        : isFr
-          ? `Résultat : ${toolName}`
-          : `Result: ${toolName}`,
+    label: formatI18nTemplate(
+      eventName === "tool_call" ? flowCopy.callingToolTemplate : flowCopy.toolResultTemplate,
+      { toolName },
+    ),
     actorSlug: "assistant",
     groupKey: "assistant-turn",
     ...(uri

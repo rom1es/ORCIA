@@ -6,6 +6,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from orcia_api.schemas._shell_locales import get_shell_scope_copy
+
 ModuleKey = Literal[
     "cockpit",
     "inbox",
@@ -92,7 +94,7 @@ class HumanProfileBadge(BaseModel):
     access_mode: AccessMode
     role: str = "TEAM_LEAD"
     org_unit_id: str = "0192c4e0-0000-7000-8000-000000000104"
-    org_unit_name: str = "Sous-Équipe Checkout & Core Solutions"
+    org_unit_name: str = "Checkout & Core Solutions Sub-Team"
 
 
 class ShellNavigationResponse(BaseModel):
@@ -114,32 +116,33 @@ def build_default_shell_navigation(
     human_profile: HumanProfileBadge | None = None,
 ) -> ShellNavigationResponse:
     """Build the default 8-module Direction C shell topology and hierarchical scope tree."""
+    labels = get_shell_scope_copy()
     scopes = [
         ScopeNode(
             id="scope-global",
             level="GLOBAL",
-            name="Plateforme Globale ORCIA",
+            name=labels["scope_global"],
             parent_id=None,
             access_mode="READ_ONLY_OBSERVER",
         ),
         ScopeNode(
             id="scope-bu-digital",
             level="BU",
-            name="BU Produits & Plateformes",
+            name=labels["scope_bu"],
             parent_id="scope-global",
             access_mode="READ_ONLY_OBSERVER",
         ),
         ScopeNode(
             id="scope-team-core",
             level="TEAM",
-            name="Équipe Architecture & Agentique",
+            name=labels["scope_team"],
             parent_id="scope-bu-digital",
             access_mode="CONTRIBUTOR_ACTION_REQUIRED",
         ),
         ScopeNode(
             id="scope-ws-orcia",
             level="WORKSPACE",
-            name="Workspace Solution ORCIA Core",
+            name=labels["scope_ws"],
             parent_id="scope-team-core",
             access_mode="CONTRIBUTOR_ACTION_REQUIRED",
         ),

@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import json
-from typing import Literal
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
+from orcia_core.ontology._internal._sql_ontology_proposals import decide_proposal_pg
 from orcia_core.ontology._internal.sql_ontology_mappers import (
     PROPOSAL_SELECT_SQL,
     maybe_uuid,
@@ -20,21 +20,14 @@ from orcia_core.ontology._internal.sql_ontology_queries import (
     SQL_INSERT_PROPOSAL,
     SQL_LIST_ACTIVE_CONCEPTS,
     SQL_SELECT_COLLIDING_DEF,
-    SQL_SELECT_CONCEPT_BY_ID,
     SQL_UPDATE_CONCEPT,
-    SQL_UPDATE_PROPOSAL_DECISION,
     record_ontology_audit_event_pg,
 )
-from orcia_core.ontology.errors import (
-    OntologyConflictError,
-    OntologyScopeConflictError,
-    ResourceNotFoundError,
-)
+from orcia_core.ontology.errors import OntologyScopeConflictError
 from orcia_core.ontology.models import (
     OntologyConceptEntity,
     OntologyLevel,
     OntologyPromotionProposal,
-    PromotionStatus,
     WhatIfImpactReport,
 )
 from orcia_core.permissions.models import UserIdentity
@@ -84,11 +77,14 @@ async def _upsert_concept_on_conn(
         target_scope = str(concept.scope_id or "")
         if (existing_level, existing_scope) != (concept.level, target_scope):
             raise OntologyScopeConflictError(
-                detail_override=(
-                    f"La clé '{concept.concept_key}' appartient déjà au périmètre "
-                    f"({existing_level}, '{existing_scope}') et ne peut être écrasée "
-                    f"depuis ({concept.level}, '{target_scope}')."
-                )
+                detail_code="ERR_ONTOLOGY_SCOPE_CONFLICT_DETAIL",
+                detail_params={
+                    "concept_key": concept.concept_key,
+                    "existing_level": existing_level,
+                    "existing_scope": existing_scope,
+                    "level": concept.level,
+                    "target_scope": target_scope,
+                },
             )
     cid: str = str(existing[0]) if existing else (maybe_uuid(concept.id) or new_uuid7_str())
     ckey: str = str(existing[1]) if existing else concept.concept_key
@@ -258,86 +254,3 @@ async def create_proposal_pg(
             )
         ).one()
         return row_to_proposal(row)
-
-
-async def decide_proposal_pg(
-    engine: AsyncEngine,
-    *,
-    proposal_id_or_key: str,
-    decision: Literal["APPROVE", "REJECT"],
-    reviewer: UserIdentity,
-    review_comment: str | None = None,
-) -> tuple[OntologyPromotionProposal, OntologyConceptEntity | None]:
-    """Approve or reject a proposal atomically in PG18, upserting target concept on APPROVE."""
-    async with engine.begin() as conn:
-        row = (
-            await conn.execute(
-                sa.text(
-                    f"{PROPOSAL_SELECT_SQL} "
-                    "WHERE p.proposal_key = :ref OR CAST(p.id AS TEXT) = :ref FOR UPDATE OF p"
-                ),
-                {"ref": proposal_id_or_key},
-            )
-        ).first()
-        if row is None:
-            raise ResourceNotFoundError(
-                detail_override=f"Proposition '{proposal_id_or_key}' introuvable."
-            )
-        proposal = row_to_proposal(row)
-        if proposal.status != "PENDING_REVIEW":
-            raise OntologyConflictError(
-                detail_override=(
-                    f"La proposition '{proposal.proposal_key}' "
-                    f"a déjà le statut '{proposal.status}'."
-                )
-            )
-        promoted_concept: OntologyConceptEntity | None = None
-        if decision == "APPROVE":
-            src_row = (
-                await conn.execute(
-                    SQL_SELECT_CONCEPT_BY_ID,
-                    {"src_id": proposal.source_concept_id or str(row[2])},
-                )
-            ).first()
-            src = row_to_concept(src_row) if src_row is not None else None
-            target_suffix = f"-{proposal.target_level.lower()}"
-            raw_target_key = f"{proposal.concept_key}{target_suffix}"
-            target_key = (
-                raw_target_key
-                if len(raw_target_key) <= 128
-                else f"{proposal.concept_key[: 128 - len(target_suffix)]}{target_suffix}"
-            )
-            candidate = OntologyConceptEntity(
-                id=new_uuid7_str(),
-                concept_key=target_key,
-                canonical_term=proposal.canonical_term,
-                level=proposal.target_level,
-                scope_id=proposal.target_scope_id,
-                definition_text=proposal.definition_text
-                or (src.definition_text if src else proposal.canonical_term),
-                parent_concept_id=src.id if src else None,
-                synonyms=src.synonyms if src else (),
-                banned_terms=src.banned_terms if src else (),
-                profile_translations=src.profile_translations if src else {},
-                expected_schema=src.expected_schema if src else {},
-                snapshot_branch_status="ACTIVE",
-            )
-            promoted_concept = await _upsert_concept_on_conn(conn, candidate)
-
-        next_status: PromotionStatus = "APPROVED" if decision == "APPROVE" else "REJECTED"
-        await conn.execute(
-            SQL_UPDATE_PROPOSAL_DECISION,
-            {
-                "status": next_status,
-                "reviewer": reviewer.email or reviewer.id,
-                "comment": review_comment,
-                "id": proposal.id,
-            },
-        )
-        updated = (
-            await conn.execute(
-                sa.text(f"{PROPOSAL_SELECT_SQL} WHERE p.id = CAST(:id AS uuid)"),
-                {"id": proposal.id},
-            )
-        ).one()
-        return row_to_proposal(updated), promoted_concept

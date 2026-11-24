@@ -1,16 +1,7 @@
 import React, { useState } from "react";
-import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
-import { OrciaIcon } from "../components/icons";
-import {
-  GuidanceDrawer,
-  type GuidanceDrawerLabels,
-  type GuidanceDrawerStepItem,
-} from "./GuidanceDrawer";
-import {
-  ProductLifecycleCard,
-  type ProductLifecycleCardLabels,
-  type ProductLifecyclePhaseType,
-} from "./ProductLifecycleCard";
+import { type GuidanceDrawerLabels, type GuidanceDrawerStepItem } from "./GuidanceDrawer";
+import { type ProductLifecycleCardLabels, type ProductLifecyclePhaseType } from "./ProductLifecycleCard";
+import { WorkspaceControlCenterTabs } from "./WorkspaceControlCenterTabs";
 
 export type ControlCenterScopeType = "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
 export type ControlCenterTabId =
@@ -87,6 +78,16 @@ export interface WorkspaceControlCenterLabels {
   readonly observerBannerDefault: string;
   readonly guidanceDrawer: GuidanceDrawerLabels;
   readonly lifecycleCard: ProductLifecycleCardLabels;
+  readonly consolidatedFinopsLabel?: string;
+  readonly commandPaletteButtonLabel?: string;
+  readonly ttlPrefix?: string;
+  readonly daysShortUnit?: string;
+  readonly overrideChainLabels?: {
+    readonly base: string;
+    readonly team: string;
+    readonly workspace: string;
+    readonly user: string;
+  };
 }
 
 export interface WorkspaceControlCenterProps {
@@ -184,7 +185,9 @@ export function WorkspaceControlCenter({
               color: "var(--orcia-text-secondary)",
             }}
           >
-            {scopeLabel} • FinOps Consolidé :{" "}
+            {labels.consolidatedFinopsLabel
+              ? `${scopeLabel} • ${labels.consolidatedFinopsLabel} `
+              : `${scopeLabel} • `}
             <strong style={{ fontFamily: "var(--orcia-font-mono)" }}>
               ${consolidatedFinopsUsd.toFixed(2)}
             </strong>
@@ -241,17 +244,12 @@ export function WorkspaceControlCenter({
               data-testid="open-command-palette-btn"
               onClick={onOpenCommandPalette}
               style={{
-                padding: "4px 10px",
-                borderRadius: "6px",
-                fontSize: "0.75rem",
-                fontFamily: "var(--orcia-font-mono)",
-                border: "1px solid var(--orcia-border-subtle)",
-                backgroundColor: "var(--orcia-surface-elevated)",
-                color: "var(--orcia-text-primary)",
-                cursor: "pointer",
+                padding: "4px 10px", borderRadius: "6px", fontSize: "0.75rem",
+                fontFamily: "var(--orcia-font-mono)", border: "1px solid var(--orcia-border-subtle)",
+                backgroundColor: "var(--orcia-surface-elevated)", color: "var(--orcia-text-primary)", cursor: "pointer",
               }}
             >
-              ⌘K Palette
+              {labels.commandPaletteButtonLabel ?? "⌘K"}
             </button>
           ) : null}
         </div>
@@ -281,201 +279,18 @@ export function WorkspaceControlCenter({
         ))}
       </div>
 
-      {activeTab === "runs" ? (
-        <div
-          data-testid="tab-panel-runs"
-          style={{ display: "flex", flexDirection: "column", gap: "12px" }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h3 style={{ margin: 0, fontSize: "0.9375rem" }}>
-              <OrciaIcon name="lightning" /> {labels.contributorRunsHeader} ({contributorRuns.length})
-            </h3>
-            <button
-              type="button"
-              disabled={isReadOnlyObserver}
-              data-testid="launch-run-btn"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "4px 10px",
-                borderRadius: "6px",
-                fontSize: "0.75rem",
-                fontWeight: 600,
-                cursor: isReadOnlyObserver ? "not-allowed" : "pointer",
-                border: "1px solid var(--orcia-border-subtle)",
-                backgroundColor: "var(--orcia-surface-secondary)",
-                color: "var(--orcia-text-primary)",
-              }}
-            >
-              <span>{labels.launchRunButton}</span>
-              <DisabledButtonAlertIndicator
-                disabled={isReadOnlyObserver}
-                reason={labels.observerBannerDefault}
-                testIdSuffix="launch-run-btn"
-              />
-            </button>
-          </div>
-          {contributorRuns.map((run) => (
-            <article
-              key={run.runId}
-              data-testid={`contributor-run-${run.runId}`}
-              style={{
-                padding: "10px",
-                borderRadius: "8px",
-                border: "1px solid var(--orcia-border-subtle)",
-                backgroundColor: "var(--orcia-surface-elevated)",
-              }}
-            >
-              <strong>{run.title}</strong> ({run.executionMode}) —{" "}
-              <span style={{ fontFamily: "var(--orcia-font-mono)" }}>
-                ${run.budgetConsumedUsd.toFixed(2)}
-              </span>
-              <div style={{ fontSize: "0.75rem", color: "var(--orcia-text-secondary)" }}>
-                {run.workspaceName} • {run.currentStepKey} • {run.blackboardSummary}
-              </div>
-            </article>
-          ))}
-
-          <h3 style={{ margin: "8px 0 0 0", fontSize: "0.9375rem" }}>
-            <OrciaIcon name="eye" /> {labels.observerRunsHeader} ({observerRuns.length})
-          </h3>
-          {observerRuns.map((run) => (
-            <article
-              key={run.runId}
-              data-testid={`observer-run-${run.runId}`}
-              style={{
-                padding: "10px",
-                borderRadius: "8px",
-                border: "1px solid var(--orcia-border-subtle)",
-                backgroundColor: "var(--orcia-surface-primary)",
-              }}
-            >
-              <strong>{run.title}</strong> ({run.executionMode}) —{" "}
-              <span style={{ fontFamily: "var(--orcia-font-mono)" }}>
-                ${run.budgetConsumedUsd.toFixed(2)}
-              </span>
-              <div style={{ fontSize: "0.75rem", color: "var(--orcia-text-secondary)" }}>
-                {run.workspaceName} • {run.currentStepKey} • {run.blackboardSummary}
-              </div>
-            </article>
-          ))}
-        </div>
-      ) : null}
-
-      {activeTab === "datasources" ? (
-        <div
-          data-testid="tab-panel-datasources"
-          style={{ display: "flex", flexDirection: "column", gap: "12px" }}
-        >
-          <GuidanceDrawer steps={guidanceSteps} labels={labels.guidanceDrawer} />
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <button
-              type="button"
-              disabled={isReadOnlyObserver}
-              data-testid="attach-datasource-btn"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "4px 10px",
-                borderRadius: "6px",
-                fontSize: "0.75rem",
-                fontWeight: 600,
-                cursor: isReadOnlyObserver ? "not-allowed" : "pointer",
-                border: "1px solid var(--orcia-border-subtle)",
-                backgroundColor: "var(--orcia-surface-secondary)",
-                color: "var(--orcia-text-primary)",
-              }}
-            >
-              <span>+ {labels.attachDatasourceButton}</span>
-              <DisabledButtonAlertIndicator
-                disabled={isReadOnlyObserver}
-                reason={labels.observerBannerDefault}
-                testIdSuffix="attach-datasource-btn"
-              />
-            </button>
-          </div>
-          {datasources.map((ds) => (
-            <article
-              key={ds.id}
-              data-testid={`datasource-item-${ds.id}`}
-              style={{
-                padding: "10px",
-                borderRadius: "8px",
-                border: "1px solid var(--orcia-border-subtle)",
-                backgroundColor: "var(--orcia-surface-elevated)",
-              }}
-            >
-              <strong>{ds.alias}</strong> —{" "}
-              <code style={{ fontFamily: "var(--orcia-font-mono)" }}>{ds.uri}</code>
-              <div style={{ fontSize: "0.75rem", color: "var(--orcia-text-secondary)" }}>
-                {ds.workspaceName} • {ds.executionIdentity} • TTL {ds.freshnessTtlDays}j • [
-                {ds.tripartiteStatus}]
-              </div>
-            </article>
-          ))}
-        </div>
-      ) : null}
-
-      {activeTab === "workflows" ? (
-        <div
-          data-testid="tab-panel-workflows"
-          style={{ display: "flex", flexDirection: "column", gap: "10px" }}
-        >
-          {workflowOverrides.map((ov) => (
-            <article
-              key={ov.workflowKey}
-              data-testid={`override-item-${ov.workflowKey}`}
-              style={{
-                padding: "12px",
-                borderRadius: "8px",
-                border: "1px solid var(--orcia-border-subtle)",
-                backgroundColor: "var(--orcia-surface-elevated)",
-              }}
-            >
-              <strong>{ov.title}</strong> ({ov.spineContractRef})
-              <div
-                style={{
-                  fontSize: "0.75rem",
-                  fontFamily: "var(--orcia-font-mono)",
-                  marginTop: "6px",
-                  color: "var(--orcia-text-secondary)",
-                }}
-              >
-                1. Base: {ov.baseLayer} → 2. TEAM: {ov.teamOverride} → 3. WORKSPACE:{" "}
-                {ov.workspaceOverride} → 4. USER: {ov.userOverride}
-              </div>
-            </article>
-          ))}
-        </div>
-      ) : null}
-
-      {activeTab === "governance" ? (
-        <div
-          data-testid="tab-panel-governance"
-          style={{ display: "flex", flexDirection: "column", gap: "10px" }}
-        >
-          {workspacesGovernance.map((ws) => (
-            <ProductLifecycleCard
-              key={ws.workspaceId}
-              workspaceId={ws.workspaceId}
-              workspaceName={ws.name}
-              visibilityMode={ws.visibilityMode}
-              ownerOrgUnitName={ws.ownerOrgUnitName}
-              lifecyclePhase={ws.lifecyclePhase}
-              suggestedWorkflows={ws.suggestedWorkflows}
-              isReadOnlyObserver={
-                isReadOnlyObserver || ws.accessMode === "READ_ONLY_OBSERVER"
-              }
-              finopsCostUsd={ws.finopsCostUsd}
-              payloadMasked={ws.payloadMasked}
-              labels={labels.lifecycleCard}
-              onSelectPhase={onSelectPhase}
-            />
-          ))}
-        </div>
-      ) : null}
+      <WorkspaceControlCenterTabs
+        activeTab={activeTab}
+        isReadOnlyObserver={isReadOnlyObserver}
+        contributorRuns={contributorRuns}
+        observerRuns={observerRuns}
+        datasources={datasources}
+        guidanceSteps={guidanceSteps}
+        workflowOverrides={workflowOverrides}
+        workspacesGovernance={workspacesGovernance}
+        labels={labels}
+        onSelectPhase={onSelectPhase}
+      />
     </section>
   );
 }

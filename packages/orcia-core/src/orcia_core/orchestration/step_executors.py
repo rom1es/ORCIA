@@ -12,6 +12,10 @@ import json
 from typing import Any
 
 from orcia_core.observability.logging import get_logger
+from orcia_core.orchestration._orchestration_ops_locales import (
+    STEP_EXECUTOR_LOCALES,
+    get_ops_copy,
+)
 from orcia_core.orchestration._step_executors_actions import (
     HttpActionStepExecutor,
     HumanTaskStepExecutor,
@@ -143,6 +147,7 @@ class AgentStepExecutor:
             or completion.content.strip() == "WAITING_FOR_HUMAN_ARBITRATION"
             else "EXECUTED"
         )
+        sc = get_ops_copy(STEP_EXECUTOR_LOCALES)
         payload: dict[str, Any] = {
             "step_key": context.step_key,
             "step_type": "AGENT",
@@ -153,16 +158,24 @@ class AgentStepExecutor:
             "llm_scenario_tag": completion.scenario_tag,
             "llm_output": completion.content,
             "artifact": f"{completion.content} [{context.step_key}] ({context.workflow_uri})",
-            "adr": f"ADR [{completion.prompt_sha256[:16]}] pour {context.step_key}",
-            "report": f"Rapport Agent {context.step_key} : PASS ({completion.scenario_tag})",
+            "adr": sc["agent_adr"].format(
+                sha=completion.prompt_sha256[:16], step_key=context.step_key
+            ),
+            "report": sc["agent_report"].format(
+                step_key=context.step_key, tag=completion.scenario_tag
+            ),
         }
         return StepExecutorResult(
             step_key=context.step_key,
             step_type="AGENT",
             status=status,  # type: ignore[arg-type]
             artifact_payload=payload,
-            summary=f"Agent '{context.step_key}' exécuté via LLMPort ({completion.model_id})",
-            details=f"Prompt SHA-256: {completion.prompt_sha256} | Sortie: {completion.content}",
+            summary=sc["agent_summary"].format(
+                step_key=context.step_key, model_id=completion.model_id
+            ),
+            details=sc["agent_details"].format(
+                sha=completion.prompt_sha256, content=completion.content
+            ),
             cost_usd=completion.estimated_cost_usd,
         )
 

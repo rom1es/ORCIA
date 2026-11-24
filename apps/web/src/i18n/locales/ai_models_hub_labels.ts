@@ -77,6 +77,7 @@ export interface AiModelsHubDictionary {
   readonly modelDiscoveryNoMatch: string;
   readonly modelDiscoveryRefresh: string;
   readonly modelDiscoveryLoading: string;
+  readonly modelDiscoveryToggleListAriaLabel: string;
   readonly modelDiscoveryFreeformHint: string;
   readonly chatBadge: string;
   readonly embeddingBadge: string;
@@ -203,6 +204,7 @@ export const AI_MODELS_HUB_FR: AiModelsHubDictionary = {
   modelDiscoveryNoMatch: "Aucun modèle trouvé auprès du fournisseur",
   modelDiscoveryRefresh: "Découvrir les modèles",
   modelDiscoveryLoading: "Découverte...",
+  modelDiscoveryToggleListAriaLabel: "Afficher la liste des modèles",
   modelDiscoveryFreeformHint: "Vous pouvez saisir un identifiant librement",
   chatBadge: "Dialogue",
   embeddingBadge: "Indexation",

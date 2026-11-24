@@ -2,14 +2,7 @@ import React, { useRef } from "react";
 import { useResponsiveBreakpoint } from "../hooks/useResponsiveBreakpoint";
 import { AssistantActiveStreamContent } from "./AssistantActiveStreamContent";
 import {
-  ASSISTANT_EFFORT_OPTIONS,
-  DEFAULT_ASSISTANT_MODEL_OPTIONS,
-} from "./AssistantModelAndEffortPopover";
-import {
   applyAutocompleteSelectionToPrompt,
-  DEFAULT_ASSISTANT_AGENT_OPTIONS,
-  DEFAULT_ASSISTANT_SKILL_OPTIONS,
-  DEFAULT_ORCIA_DOCUMENT_OPTIONS,
   detectActiveAutocompleteTrigger,
   type UiAssistantAutocompleteOption,
 } from "./AssistantPromptPlusAndAutocomplete";
@@ -32,9 +25,14 @@ import { AssistantStickyPromptFooter } from "./AssistantStickyPromptFooter";
 import type { UiInferenceEffort } from "./InferenceTierAndEffortSelector";
 
 export type {
+  AssistantActiveStreamLabels,
+  AssistantModelAndEffortPopoverLabels,
+  AssistantPromptPlusLabels,
+  AssistantResponseFooterLabels,
   AssistantSpeedSelectorAndStreamViewLabels,
   AssistantSpeedSelectorAndStreamViewProps,
   UiAssistantAutocompleteSuggestion,
+  UiAssistantEffortOption,
   UiAssistantErrorKind,
   UiAssistantModelOption,
   UiAssistantSpeedMode,
@@ -45,11 +43,11 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
   const {
     workspaceId, userId, hat, activeSpeed: initialSpeed = "SPEED_1_FAST", deepAuditPillActive: initialDeepAudit = false,
     supportsTools = true, lowEvidence = false,
-    selectedTier: initialTier = "medium", selectedEffort: initialEffort, modelOptions = DEFAULT_ASSISTANT_MODEL_OPTIONS,
-    agentOptions = DEFAULT_ASSISTANT_AGENT_OPTIONS, skillOptions = DEFAULT_ASSISTANT_SKILL_OPTIONS,
-    orciaDocuments = DEFAULT_ORCIA_DOCUMENT_OPTIONS, ragCitations = [], autocompleteSuggestions = [], prefillPrompt = null,
+    selectedTier: initialTier = "medium", selectedEffort: initialEffort, modelOptions: providedModelOptions,
+    agentOptions = [], skillOptions = [],
+    orciaDocuments = [], ragCitations = [], autocompleteSuggestions = [], prefillPrompt = null,
     onPrefillConsumed, activeFolderTitle = null, activeFolderNotes = null, onClearActiveFolder, previousTurnsSlot = null,
-    reflexiveTraceSlot = null, welcomeTitle = "Par quoi voulez-vous commencer ?", showWelcomeHero = true,
+    reflexiveTraceSlot = null, welcomeTitle, showWelcomeHero = true,
     hideTechnicalCacheHeader = false, hideLegacySpeedPills = false, hideDuplicateCompletedStream = false, cacheHit = true,
     cacheLookupMs = 1.4, nodes1To4DeterministicMs = 18.2, ttftMs = 398.2, stepProgress, streamedText = "", activeUserPrompt,
     isGenerating = false, initialElapsedSeconds = 0, generationStopped = false, errorMessage = null,
@@ -58,6 +56,8 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
     onOpenFoldersFromPlus, onStopGeneration, onRegenerateLastTurn, onSaveDraftFromResponse, onContinueInProcessFromResponse,
     onInspectCitation, currentTurnFeedback = null, onFeedbackLastTurn, onDeepenLastTurn, onSendTurn,
   } = props;
+  const modelOptions = providedModelOptions ?? labels.defaultModelOptions;
+  const resolvedWelcomeTitle = welcomeTitle ?? labels.defaultWelcomeTitle;
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { isMobile } = useResponsiveBreakpoint();
   const st = useAssistantSpeedViewState({
@@ -80,9 +80,12 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
 
   const cacheKey = `assistant:prompt:${workspaceId}:${userId}:${hat}`;
   const visibleModelCount = modelOptions.filter((m) => !m.hiddenDuplicate).length;
-  const activeModelOption = modelOptions.find((m) => m.tier === st.tier) ?? modelOptions[1] ?? DEFAULT_ASSISTANT_MODEL_OPTIONS[1]!;
+  const activeModelOption = modelOptions.find((m) => m.tier === st.tier) ?? modelOptions[1] ?? modelOptions[0] ?? labels.defaultModelOptions[0]!;
   const normalizedEffort: UiInferenceEffort = !supportsTools ? "fast" : st.effort === "deep" ? "deep" : "balanced";
-  const activeEffortOption = ASSISTANT_EFFORT_OPTIONS.find((e) => e.effort === normalizedEffort) ?? ASSISTANT_EFFORT_OPTIONS[1]!;
+  const activeEffortOption =
+    labels.modelPopover.effortOptions.find((e) => e.effort === normalizedEffort) ??
+    labels.modelPopover.effortOptions[1] ??
+    labels.modelPopover.effortOptions[0]!;
 
   const { mergedAgentOptions, mergedSkillOptions } = mergeAssistantAutocompleteOptions(
     autocompleteSuggestions,
@@ -102,7 +105,7 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
 
   const triggerSendTurn = (overridePrompt?: string) => {
     if (disabled) return;
-    const effectivePrompt = resolveEffectiveTurnPrompt(overridePrompt, st.promptText, st.lastSubmittedPrompt, labels.sendPromptCta);
+    const effectivePrompt = resolveEffectiveTurnPrompt(overridePrompt, st.promptText, st.lastSubmittedPrompt, labels.defaultGreetingPrompt);
     const submittedFiles = st.attachedFiles;
     pinToBottomRef();
     st.setLastSubmittedPrompt(effectivePrompt);
@@ -154,7 +157,7 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
 
   const displayModelBadge = resolveDisplayModelBadge(activeModelOption);
   const isStoppedVisible = Boolean(generationStopped || st.localStoppedFlag) && !isGenerating;
-  const actionAriaLabel = isGenerating ? "Arrêter la réflexion de Mon Assistant" : labels.sendPromptCta;
+  const actionAriaLabel = isGenerating ? labels.stopGenerationAriaLabel : labels.sendPromptCta;
   const shownUserQuestion = activeUserPrompt || st.lastSubmittedPrompt;
   const cleanStreamedText = sanitizeAssistantDisplayReply(streamedText);
   const mergedRagCitations = mergeRagCitationsWithFiles(ragCitations, st.lastSubmittedFiles);
@@ -182,7 +185,7 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
         />
       )}
       {showWelcomeHero && !cleanStreamedText && !isGenerating && !reflexiveTraceSlot && (
-        <div className="py-6 text-center"><h2 data-testid="assistant-welcome-hero-title" className="text-xl font-semibold tracking-tight text-text-primary">{welcomeTitle}</h2></div>
+        <div className="py-6 text-center"><h2 data-testid="assistant-welcome-hero-title" className="text-xl font-semibold tracking-tight text-text-primary">{resolvedWelcomeTitle}</h2></div>
       )}
       <div ref={scrollContainerRef} onScroll={handleStreamScroll} data-testid="assistant-central-scrollable-stream" data-pinned-to-bottom={isPinnedToBottom ? "true" : "false"} style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto" }} className="space-y-3 pr-1">
         <AssistantActiveStreamContent
@@ -209,6 +212,7 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
           lowEvidence={lowEvidence}
           deepenLabel={labels.deepenCta}
           deepenLowEvidenceLabel={labels.deepenLowEvidenceCta}
+          labels={{ ...labels.stream, responseFooter: labels.responseFooter }}
           onDeepen={onDeepenLastTurn}
           onRegenerate={() => (onRegenerateLastTurn ? onRegenerateLastTurn() : triggerSendTurn(st.lastSubmittedPrompt))}
           onSaveDraftFromResponse={onSaveDraftFromResponse}
@@ -245,6 +249,15 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
         {...(labels.toolsUnsupportedNotice ? { toolsUnsupportedNotice: labels.toolsUnsupportedNotice } : {})}
         {...(labels.toolsUnsupportedBadge ? { toolsUnsupportedBadge: labels.toolsUnsupportedBadge } : {})}
         disabledReasonBanner={disabledReasonBanner}
+        plusMenuAriaLabel={labels.plusMenuAriaLabel}
+        sendTitle={labels.sendTitle}
+        stopTitle={labels.stopTitle}
+        followLiveResponseCta={labels.followLiveResponseCta}
+        activeFolderPrefix={labels.activeFolderPrefix}
+        activeNoteAppliedText={labels.activeNoteAppliedText}
+        detachActiveFolderAriaLabel={labels.detachActiveFolderAriaLabel}
+        plusLabels={labels.plusMenu}
+        popoverLabels={labels.modelPopover}
         onScrollToStreamBottom={scrollToStreamBottom}
         onSelectAutocompleteOption={handleSelectAutocompleteOption}
         onTriggerAgentFromPlus={() => { st.setPromptText(st.promptText ? `${st.promptText} @` : "@"); st.setForcedAutocompleteKind("agent"); st.setPlusMenuOpen(false); inputRef.current?.focus(); }}

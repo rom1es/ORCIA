@@ -1,14 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { DisabledButtonAlertIndicator } from "./DisabledButtonAlertIndicator";
-import {
-  DEFAULT_RGAA_MODAL_GUARD_LABELS_EN,
-  DEFAULT_RGAA_MODAL_GUARD_LABELS_FR,
-  DEFAULT_RGAA_MODAL_LABELS_EN,
-  DEFAULT_RGAA_MODAL_LABELS_FR,
-  resolveRgaaModalGuardLabels,
-  type RgaaModalDialogLabels,
-  type RgaaModalGuardLabels,
-} from "./RgaaModalGuardLabels";
+import type { RgaaModalDialogLabels, RgaaModalGuardLabels } from "./RgaaModalGuardLabels";
 import {
   handleRgaaSubmitKeyDown,
   RgaaUnsavedChangesAlert,
@@ -16,12 +8,7 @@ import {
 } from "./RgaaUnsavedChangesAlert";
 
 export {
-  DEFAULT_RGAA_MODAL_GUARD_LABELS_EN,
-  DEFAULT_RGAA_MODAL_GUARD_LABELS_FR,
-  DEFAULT_RGAA_MODAL_LABELS_EN,
-  DEFAULT_RGAA_MODAL_LABELS_FR,
   handleRgaaSubmitKeyDown,
-  resolveRgaaModalGuardLabels,
   RgaaUnsavedChangesAlert,
   type RgaaModalDialogLabels,
   type RgaaModalGuardLabels,
@@ -48,11 +35,8 @@ export interface UseUnsavedChangesDialogGuardResult {
 }
 
 /**
- * RGAA / UX Rule #5 ("Offrir des sorties de secours") hook for modals and dialogs:
- * - Listens to `<Escape>` on `window` when `isOpen === true`.
- * - If `isDirty === false`, invokes `onClose()` immediately.
- * - If `isDirty === true`, intercepts `<Escape>`, `Annuler` or `✕` clicks and shows an
- *   accessible `role="alertdialog"` warning before discarding unsaved modifications.
+ * RGAA escape-hatch hook for dialogs: intercepts `<Escape>` and close requests
+ * when `isDirty` is true and presents an accessible `role="alertdialog"` warning.
  */
 export function useUnsavedChangesDialogGuard({
   isOpen,
@@ -131,16 +115,12 @@ export function useUnsavedChangesDialogGuard({
   };
 }
 
-/**
- * RGAA keyboard activation helper for `Valider` / `Submit` buttons:
- * When keyboard focus is on the `Valider` button, pressing `<Enter>` (`Entrée`)
- * deterministically acts as a click on that button across all DOM / JSDOM environments.
- */
 export interface RgaaDialogFooterActionsProps {
   readonly testIdPrefix: string;
-  readonly cancelLabel?: string;
+  readonly cancelLabel: string;
   readonly submitLabel?: string;
   readonly submitDisabled?: boolean;
+  readonly disabledReason?: string;
   readonly submitButtonType?: "button" | "submit";
   readonly onCancel: () => void;
   readonly onSubmit?: () => void;
@@ -148,9 +128,10 @@ export interface RgaaDialogFooterActionsProps {
 
 export function RgaaDialogFooterActions({
   testIdPrefix,
-  cancelLabel = DEFAULT_RGAA_MODAL_GUARD_LABELS_FR.cancelButtonLabel,
-  submitLabel = DEFAULT_RGAA_MODAL_GUARD_LABELS_FR.submitButtonLabel,
+  cancelLabel,
+  submitLabel = "",
   submitDisabled = false,
+  disabledReason,
   submitButtonType = "button",
   onCancel,
   onSubmit,
@@ -192,6 +173,7 @@ export function RgaaDialogFooterActions({
           <span>{submitLabel}</span>
           <DisabledButtonAlertIndicator
             disabled={submitDisabled}
+            reason={disabledReason}
             testIdSuffix={`${testIdPrefix}-submit-btn`}
           />
         </button>
@@ -207,8 +189,8 @@ export interface RgaaModalDialogProps {
   readonly title: string;
   readonly isDirty?: boolean;
   readonly submitDisabled?: boolean;
-  readonly labels?: RgaaModalGuardLabels;
-  readonly locale?: "fr" | "en";
+  readonly disabledReason?: string;
+  readonly labels: RgaaModalGuardLabels;
   readonly onClose: () => void;
   readonly onDiscardChanges?: () => void;
   readonly onDiscardUnsavedChanges?: () => void;
@@ -226,8 +208,8 @@ export function RgaaModalDialog({
   title,
   isDirty = false,
   submitDisabled = false,
+  disabledReason,
   labels,
-  locale = "fr",
   onClose,
   onDiscardChanges,
   onDiscardUnsavedChanges,
@@ -235,7 +217,8 @@ export function RgaaModalDialog({
   children,
 }: RgaaModalDialogProps): React.ReactElement | null {
   const prefix = testIdPrefix ?? testId;
-  const resolved = resolveRgaaModalGuardLabels(labels, locale);
+  const cancelText = labels.cancelButtonLabel ?? labels.cancelCta ?? "";
+  const submitText = labels.submitButtonLabel ?? labels.submitCta ?? "";
   const { showUnsavedAlert, requestClose, cancelDiscard, confirmDiscard } =
     useUnsavedChangesDialogGuard({
       isOpen,
@@ -270,7 +253,6 @@ export function RgaaModalDialog({
           testIdPrefix={prefix}
           isOpen={showUnsavedAlert}
           labels={labels}
-          locale={locale}
           onStay={cancelDiscard}
           onConfirmDiscard={confirmDiscard}
         />
@@ -280,9 +262,10 @@ export function RgaaModalDialog({
         <div className="px-4 py-3 border-t border-surface-border bg-surface-secondary">
           <RgaaDialogFooterActions
             testIdPrefix={prefix}
-            cancelLabel={resolved.cancelButtonLabel}
-            submitLabel={resolved.submitButtonLabel}
+            cancelLabel={cancelText}
+            submitLabel={submitText}
             submitDisabled={submitDisabled}
+            disabledReason={disabledReason}
             onCancel={requestClose}
             onSubmit={onSubmit}
           />

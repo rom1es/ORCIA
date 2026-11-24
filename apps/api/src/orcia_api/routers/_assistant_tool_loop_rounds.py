@@ -126,21 +126,15 @@ def build_approval_proposal_text(
     locale: str = "fr",
 ) -> str:
     """Build deterministic read-only proposal text when a tool requires human approval."""
+    from orcia_api.locales._router_locale_messages import get_router_copy
+
+    rc = get_router_copy(locale)
     lines: list[str] = []
     for out in outcomes:
         tool_label = out.tool_name
         proposal = out.approval_proposal or {}
         hint = str(proposal.get("human_arbitration_uri") or "")
-        if locale.lower().startswith("en"):
-            msg = (
-                f"Execution of `{tool_label}` was intercepted (Lock V5 / Process Write Gate) "
-                "and converted into an explicit human-validation proposal."
-            )
-        else:
-            msg = (
-                f"L'exécution de `{tool_label}` a été interceptée (Verrou V5 / Process Write Gate) "
-                "et convertie en proposition soumise à arbitrage humain."
-            )
+        msg = rc.tool_intercepted_write.format(tool_label=tool_label)
         if hint:
             msg = f"{msg} ({hint})"
         lines.append(msg)

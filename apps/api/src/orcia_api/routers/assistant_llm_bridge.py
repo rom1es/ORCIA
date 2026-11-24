@@ -120,11 +120,10 @@ async def invoke_configured_llm_for_assistant_turn(
         else ("balanced" if speed_mode == "SPEED_2_AGENT_TOOLS" else "fast")
     )
     effort = (thinking_effort or "").strip().lower() or default_effort
-    effort_label = (
-        ("High Thinking" if effort == "deep" else "Standard Thinking")
-        if resolved_locale == "en"
-        else ("Réflexion Élevée" if effort == "deep" else "Réflexion Standard")
-    )
+    from orcia_api.locales._router_locale_messages import get_router_copy
+
+    rc = get_router_copy(resolved_locale)
+    effort_label = rc.thinking_deep if effort == "deep" else rc.thinking_std
     system_msg, turn_ctx = await resolve_assembled_turn_context_and_instructions_async(
         request,
         hat=hat,
@@ -149,10 +148,8 @@ async def invoke_configured_llm_for_assistant_turn(
         f"{t}: {s}"
         for t, s in detect_adaptive_thinking_steps_for_question(user_prompt, locale=resolved_locale)
     )
-    step_label = (
-        f"💬 AI Model {ep.model_name} ({ep.provider} · {effort_label}) — reply generated"
-        if resolved_locale == "en"
-        else f"💬 Modèle IA {ep.model_name} ({ep.provider} · {effort_label}) — réponse générée"
+    step_label = rc.llm_step_label.format(
+        model=ep.model_name, provider=ep.provider, effort=effort_label
     )
     messages = build_multi_turn_messages(
         system_msg=system_msg,

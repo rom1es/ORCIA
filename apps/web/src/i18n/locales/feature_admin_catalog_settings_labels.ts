@@ -1,0 +1,109 @@
+import type { PermissionGuardLabels, UiBootstrapWorkflowView } from "@orcia/ui";
+
+export interface FeatureAdminCatalogSettingsDictionary {
+  readonly adminPanel: {
+    readonly title: string;
+    readonly subtitle: string;
+    readonly openSettingsBtn: string;
+    readonly openWizardsBtn: string;
+    readonly bootstrapWorkflows: readonly UiBootstrapWorkflowView[];
+  };
+  readonly permissionGuard: PermissionGuardLabels;
+  readonly connectors: {
+    readonly title: string;
+    readonly globalGovernanceBadge: string;
+    readonly addConnectorTitle: string;
+    readonly kindGitlabOption: string;
+    readonly kindJiraOption: string;
+    readonly kindConfluenceOption: string;
+    readonly kindOidcOption: string;
+    readonly kindS3Option: string;
+    readonly kindSmtpOption: string;
+    readonly namePlaceholderSmtp: string;
+    readonly namePlaceholderDefault: string;
+    readonly baseUrlPlaceholderDefault: string;
+    readonly authOAuth2Option: string;
+    readonly authPatOption: string;
+    readonly authOidcOption: string;
+    readonly authServiceSecretOption: string; // pragma: allowlist secret
+    readonly adminSecretPlaceholder: string; // pragma: allowlist secret
+    readonly saveConnectorBtn: string;
+    readonly availableConnectorsTitle: string;
+    readonly loadingConnectors: string;
+    readonly emptyConnectors: string;
+    readonly personalDelegatedBadge: string;
+    readonly deleteBtn: string;
+  };
+  readonly orgTree: {
+    readonly subUnitSingular: string;
+    readonly subUnitPlural: string;
+    readonly workspaceSingular: string;
+    readonly workspacePlural: string;
+    readonly joinAnd: string;
+    readonly deleteRefusedTemplate: string;
+  };
+  readonly catalog: {
+    readonly emptySetupTitle: string;
+    readonly openAdminBtn: string;
+    readonly pinnedMcpEnabledBanner: string;
+    readonly pinnedMcpDisabledBanner: string;
+    readonly mcpExposureErrorContext: string;
+    readonly testingConnectionTemplate: string;
+    readonly testBenchVerifiedTemplate: string;
+    readonly testBenchIncompleteTemplate: string;
+    readonly testBenchErrorContext: string;
+    readonly defaultRemoteServiceName: string;
+    readonly remoteActivatedBanner: string;
+    readonly defaultMcpConnectorName: string;
+    readonly mcpEnabledBanner: string;
+    readonly mcpDisabledBanner: string;
+    readonly defaultSkillOutputFormat: string;
+    readonly packTemplatesLoadedBanner: string;
+    readonly agentDuplicatedBannerTemplate: string;
+    readonly agentDuplicateSuffix: string;
+    readonly catalogErrorContext: string;
+    readonly skillErrorContext: string;
+    readonly agentErrorContext: string;
+    readonly agentDuplicateErrorContext: string;
+    readonly agentToggleErrorContext: string;
+    readonly agentUpdateErrorContext: string;
+    readonly agentSkillsErrorContext: string;
+    readonly agentThinkingErrorContext: string;
+    readonly agentVisibilityErrorContext: string;
+    readonly agentDeleteErrorContext: string;
+    readonly agentExecuteErrorContext: string;
+    readonly skillPreviewLineTemplate: string;
+    readonly agentPreviewHeadingTemplate: string;
+    readonly agentPreviewSkillsEmpty: string;
+    readonly agentPreviewSkillsSomeTemplate: string;
+    readonly agentPreviewSynthesisLine: string;
+  };
+  readonly packsRegistry: {
+    readonly title: string;
+    readonly declarativeBadge: string;
+    readonly subtitle: string;
+    readonly checkConnectorsBtn: string;
+    readonly selectWorkspaceAriaLabel: string;
+    readonly noWorkspaceOption: string;
+    readonly exportWorkspaceBtn: string;
+    readonly requiredConnectorsLabel: string;
+    readonly connectedTemplate: string;
+    readonly disconnectedFallback: string;
+    readonly agentSingular: string;
+    readonly agentPlural: string;
+    readonly exportPackTemplate: string;
+    readonly counterAgentsSingular: string;
+    readonly counterAgentsPlural: string;
+    readonly counterSkillsSingular: string;
+    readonly counterSkillsPlural: string;
+    readonly counterGatesSingular: string;
+    readonly counterGatesPlural: string;
+    readonly counterStreamsSingular: string;
+    readonly counterStreamsPlural: string;
+    readonly counterProcessesSingular: string;
+    readonly counterProcessesPlural: string;
+    readonly scopeLabels: Readonly<Record<string, string>>;
+    readonly knownConnectorNames: Readonly<Record<string, string>>;
+    readonly knownAgentNames: Readonly<Record<string, string>>;
+  };
+}

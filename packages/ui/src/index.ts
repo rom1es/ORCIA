@@ -1,11 +1,6 @@
 export {
   AccessibleModalDialog,
-  DEFAULT_RGAA_MODAL_GUARD_LABELS_EN,
-  DEFAULT_RGAA_MODAL_GUARD_LABELS_FR,
-  DEFAULT_RGAA_MODAL_LABELS_EN,
-  DEFAULT_RGAA_MODAL_LABELS_FR,
   handleRgaaSubmitKeyDown,
-  resolveRgaaModalGuardLabels,
   RgaaDialogFooterActions,
   RgaaModalDialog,
   RgaaModalFrame,
@@ -239,8 +234,7 @@ export {
 export {
   computeUserInitials,
   resolveUserRoleDisplayLabel,
-  ROLE_DISPLAY_LABELS_EN,
-  ROLE_DISPLAY_LABELS_FR,
+  type RoleDisplayLabels,
 } from "./primitives/UserRoleDisplayLabels";
 export {
   SidebarAccountPopover,
@@ -296,6 +290,7 @@ export type {
 export {
   TemporaryPasswordInvitationModal,
   buildInvitationMessage,
+  type TemporaryPasswordInvitationModalLabels,
   type TemporaryPasswordInvitationModalProps,
 } from "./primitives/TemporaryPasswordInvitationModal";
 export {
@@ -399,7 +394,6 @@ export {
   type ActivityLogProvenanceExportBarProps,
 } from "./primitives/ActivityLogProvenanceExportBar";
 export {
-  ASSISTANT_DEFAULT_HAT_OPTIONS,
   AssistantGovernanceModalAndStudio,
   type AssistantGovernanceModalAndStudioLabels,
   type AssistantGovernanceModalAndStudioProps,
@@ -407,18 +401,17 @@ export {
   type UiAssistantPromptTelemetryRecord,
   type UiAssistantResponseFormat,
   type UiAssistantResponseTone,
+  type UiAssistantSelectOption,
   type UiAssistantStudioNode,
 } from "./primitives/AssistantGovernanceModalAndStudio";
 export {
   applyAutocompleteSelectionToPrompt,
   AssistantAttachedFilesInlineBar,
   AssistantPromptPlusAndAutocomplete,
-  DEFAULT_ASSISTANT_AGENT_OPTIONS,
-  DEFAULT_ASSISTANT_SKILL_OPTIONS,
-  DEFAULT_ORCIA_DOCUMENT_OPTIONS,
   detectActiveAutocompleteTrigger,
   type AssistantAttachedFilesInlineBarProps,
   type AssistantPromptPlusAndAutocompleteProps,
+  type AssistantPromptPlusLabels,
   type UiAssistantAttachedFileItem,
   type UiAssistantAutocompleteOption,
   type UiAssistantOrciaDocumentOption,
@@ -430,15 +423,19 @@ export {
   sanitizeAssistantDisplayReply,
   ThinkingDots,
   type AssistantResponseFooterActionsAndCitationsProps,
+  type AssistantResponseFooterLabels,
   type AssistantThinkingSliderIndicatorProps,
   type AssistantUserQuestionBubbleProps,
   type UiAssistantRagCitationItem,
 } from "./primitives/AssistantResponseFooterActionsAndCitations";
 export {
   AssistantSpeedSelectorAndStreamView,
+  type AssistantActiveStreamLabels,
+  type AssistantModelAndEffortPopoverLabels,
   type AssistantSpeedSelectorAndStreamViewLabels,
   type AssistantSpeedSelectorAndStreamViewProps,
   type UiAssistantAutocompleteSuggestion,
+  type UiAssistantEffortOption,
   type UiAssistantErrorKind,
   type UiAssistantModelOption,
   type UiAssistantSpeedMode,
@@ -522,12 +519,20 @@ export {
   OrciaProductShowcaseSiteView,
   type OrciaProductShowcaseSiteViewProps,
   type OrciaShowcaseArchitectureDecisionItem,
+  type OrciaShowcaseArchitectureLabels,
+  type OrciaShowcaseBadgeCard,
+  type OrciaShowcaseChangelogLabels,
+  type OrciaShowcaseFeaturesLabels,
   type OrciaShowcaseInstalledPackItem,
+  type OrciaShowcaseLabels,
+  type OrciaShowcaseMacroLabels,
   type OrciaShowcaseManifestData,
   type OrciaShowcaseManifestStats,
   type OrciaShowcasePillarTabKey,
+  type OrciaShowcaseScreenGuideItem,
   type OrciaShowcaseStackComponentItem,
   type OrciaShowcaseTechLeadReportItem,
+  type OrciaShowcaseTitleDescCard,
 } from "./primitives/OrciaProductShowcaseSiteView";
 export {
   AgentsAndSkillsManagerView,
@@ -542,15 +547,11 @@ export {
   type UiManagedSkillItem,
 } from "./components/AgentsAndSkillsManagerView";
 export {
-  AGENT_STUDIO_BLOCKS,
   computeAgentReadinessChecklist,
   createDefaultAgentSixBlocksDraft,
   DEFAULT_AGENT_GUARDRAILS,
   DEFAULT_MCP_TOOL_PERMISSIONS_MAP,
-  DIALOGUE_MECHANISM_LABELS_FR,
-  HUMAN_PARTNER_ROLE_LABELS_FR,
-  LLM_MODEL_TIER_LABELS_FR,
-  OUTPUT_CONTRACT_FORMAT_LABELS_FR,
+  type AgentGovernanceStudioLabels,
   type AgentReadinessConditionItem,
   type AgentSixBlocksDraftState,
   type AgentStudioBlockKey,

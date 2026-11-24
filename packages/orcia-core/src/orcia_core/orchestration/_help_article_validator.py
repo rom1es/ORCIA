@@ -12,18 +12,14 @@ from orcia_core.orchestration._help_article_models import (
     KNOWN_ORCIA_UI_COMPONENTS,
     HelpArticleValidationReport,
 )
-
-_MANDATORY_SECTIONS_FR: tuple[str, str, str] = (
-    "## 1. À quoi sert cet écran ?",
-    "## 2. Comment faire (Pas-à-pas)",
-    "## 3. Questions fréquentes & Dépannage",
+from orcia_core.orchestration._help_docs_locales import (
+    HELP_MANDATORY_SECTIONS,
+    HELP_VALIDATOR_VIOLATIONS,
 )
+from orcia_kernel.enums import DEFAULT_LOCALE
 
-_MANDATORY_SECTIONS_EN: tuple[str, str, str] = (
-    "## 1. What is this screen for?",
-    "## 2. How to use (Step-by-step)",
-    "## 3. Frequently Asked Questions & Troubleshooting",
-)
+_MANDATORY_SECTIONS_FR: tuple[str, str, str] = HELP_MANDATORY_SECTIONS["fr"]
+_MANDATORY_SECTIONS_EN: tuple[str, str, str] = HELP_MANDATORY_SECTIONS["en"]
 
 _SECRET_LEAK_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\bpat_mcp_[A-Za-z0-9_-]{8,}"),
@@ -129,10 +125,11 @@ class HelpArticleDeterministicValidator:
         ui_components_and_sections_valid = (
             len(missing_sections) == 0 and has_anchors and len(unknown_components) == 0
         )
+        msg_map = HELP_VALIDATOR_VIOLATIONS[DEFAULT_LOCALE]
         if missing_sections:
-            violations.append(f"Sections obligatoires manquantes : {missing_sections}")
+            violations.append(msg_map["missing_sections"].format(sections=missing_sections))
         if unknown_components:
-            violations.append(f"Composants @orcia/ui inexistants cités : {unknown_components}")
+            violations.append(msg_map["unknown_components"].format(components=unknown_components))
 
         glossary_terms = meta.get("glossary_terms", [])
         glossary_ok = isinstance(glossary_terms, list)
@@ -141,7 +138,7 @@ class HelpArticleDeterministicValidator:
             unaligned = [t for t in glossary_terms if str(t).lower() not in known_lower]
             if unaligned:
                 glossary_ok = False
-                violations.append(f"Termes absents du Glossaire : {unaligned}")
+                violations.append(msg_map["unknown_glossary"].format(terms=unaligned))
 
         secret_hits: list[str] = []
         for pat in _SECRET_LEAK_PATTERNS:
@@ -150,7 +147,7 @@ class HelpArticleDeterministicValidator:
                 secret_hits.extend(found)
         glossary_and_zero_secret_valid = glossary_ok and len(secret_hits) == 0
         if secret_hits:
-            violations.append("Fuite de secret ou token détectée dans le corps HelpArticle.")
+            violations.append(msg_map["secret_leak"])
 
         elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 3)
         passed = (

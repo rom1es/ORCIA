@@ -10,6 +10,7 @@ import type {
   ConfiguredOrgUnit,
   PlatformSetupContextValue,
 } from "../../components/platformSetupStore";
+import { formatI18nTemplate, resolveDictionaryForFlag } from "../../i18n";
 import { WorkspaceGlossaryAndOntologyTab } from "./WorkspaceGlossaryAndOntologyTab";
 import { WorkspaceSourcesRagTab } from "./WorkspaceSourcesRagTab";
 
@@ -54,6 +55,7 @@ export function WorkspaceDetailTabsPanel({
   onPromoteOntologyConcept,
   onFeedback,
 }: WorkspaceDetailTabsPanelProps): React.ReactElement {
+  const tabsCopy = resolveDictionaryForFlag(isFr).featureWorkspaces.detailTabs;
   const [activeDetailTab, setActiveDetailTab] = useState<WorkspaceDetailTabKey>(
     (initialTab as WorkspaceDetailTabKey) || "SOURCES",
   );
@@ -79,12 +81,12 @@ export function WorkspaceDetailTabsPanel({
       >
         <div>
           <h3 style={{ margin: 0, fontSize: "15px" }}>
-            {isFr ? `Espace sélectionné : ${activeWorkspace.name}` : `Selected Workspace: ${activeWorkspace.name}`}
+            {formatI18nTemplate(tabsCopy.selectedWorkspaceTemplate, {
+              name: activeWorkspace.name,
+            })}
           </h3>
           <span style={{ fontSize: "12px", color: "var(--color-muted-foreground)" }}>
-            {isFr
-              ? "Gérez les sources documentaires, le glossaire métier et les consignes de cet espace au même endroit."
-              : "Manage document sources, business glossary, and instructions for this workspace in one place."}
+            {tabsCopy.subtitle}
           </span>
         </div>
 
@@ -97,7 +99,7 @@ export function WorkspaceDetailTabsPanel({
             onClick={() => setActiveDetailTab("SOURCES")}
             className="orcia-ds-tab"
           >
-            <OrciaIcon name="books" /> {isFr ? "Sources & Documents de l'Espace" : "Workspace Sources & Documents"}
+            <OrciaIcon name="books" /> {tabsCopy.tabSources}
           </button>
           <button
             type="button"
@@ -107,7 +109,7 @@ export function WorkspaceDetailTabsPanel({
             onClick={() => setActiveDetailTab("GLOSSARY")}
             className="orcia-ds-tab"
           >
-            <OrciaIcon name="bookOpen" /> {isFr ? "Glossaire & Règles Métiers (Ontologie)" : "Business Glossary & Rules (Ontology)"}
+            <OrciaIcon name="bookOpen" /> {tabsCopy.tabGlossary}
           </button>
           <button
             type="button"
@@ -117,7 +119,7 @@ export function WorkspaceDetailTabsPanel({
             onClick={() => setActiveDetailTab("MEMBERS")}
             className="orcia-ds-tab"
           >
-            <OrciaIcon name="team" /> {isFr ? "Membres, Accès & Consignes" : "Members, Access & Instructions"}
+            <OrciaIcon name="team" /> {tabsCopy.tabMembers}
           </button>
         </nav>
       </div>
@@ -142,11 +144,13 @@ export function WorkspaceDetailTabsPanel({
           openHelpSection={openHelpSection}
           onAddConcept={(concept) => {
             onAddOntologyConcept(concept);
-            onFeedback(isFr ? `✅ Terme « ${concept.canonicalTerm} » ajouté au glossaire.` : `✅ Term "${concept.canonicalTerm}" added to the glossary.`);
+            onFeedback(
+              formatI18nTemplate(tabsCopy.termAddedTemplate, { term: concept.canonicalTerm }),
+            );
           }}
           onPromoteConcept={(conceptKey, targetLevel, targetScopeId) => {
             onPromoteOntologyConcept(conceptKey, targetLevel, targetScopeId);
-            onFeedback(isFr ? "✅ Terme promu au niveau supérieur du glossaire." : "✅ Term promoted to the upper glossary level.");
+            onFeedback(tabsCopy.termPromoted);
           }}
         />
       )}
@@ -159,14 +163,12 @@ export function WorkspaceDetailTabsPanel({
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
             <div>
               <strong style={{ fontSize: "13px" }}>
-                {isFr
-                  ? `Équipe propriétaire (Facturation IA) : ${activeWorkspace.ownerOrgUnitName ?? "Plateforme Globale ORCIA"}`
-                  : `Owner Team (AI Billing): ${activeWorkspace.ownerOrgUnitName ?? "Global Platform ORCIA"}`}
+                {formatI18nTemplate(tabsCopy.ownerTeamTemplate, {
+                  owner: activeWorkspace.ownerOrgUnitName ?? tabsCopy.defaultPlatformOwnerName,
+                })}
               </strong>
               <p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--color-muted-foreground)" }}>
-                {isFr
-                  ? "Définissez les consignes par défaut que Mon Assistant et vos Agents respecteront dans cet Espace."
-                  : "Define the default instructions that My Assistant and your Agents will follow in this Workspace."}
+                {tabsCopy.instructionsHint}
               </p>
             </div>
             {instructionsSavedWsId === activeWorkspace.workspaceId && (
@@ -181,7 +183,7 @@ export function WorkspaceDetailTabsPanel({
                   color: "var(--color-status-success)",
                 }}
               >
-                {isFr ? "✓ Enregistré" : "✓ Saved"}
+                {tabsCopy.savedBadge}
               </span>
             )}
           </div>
@@ -199,7 +201,7 @@ export function WorkspaceDetailTabsPanel({
               setInstructionsByWs((prev) => ({ ...prev, [activeWorkspace.workspaceId]: val }));
               setInstructionsSavedWsId(activeWorkspace.workspaceId);
             }}
-            placeholder={isFr ? "Consignes spécifiques à cet espace..." : "Workspace-specific instructions..."}
+            placeholder={tabsCopy.instructionsPlaceholder}
             style={{ ...inputStyle, width: "100%", fontFamily: "var(--font-sans)" }}
           />
         </div>

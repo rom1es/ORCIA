@@ -1,8 +1,7 @@
 import { createOrciaApiClient } from "@orcia/api-client";
 import { OrciaIcon, OrciaSpinner } from "@orcia/ui";
 import React, { useCallback, useEffect, useState } from "react";
-import { useI18n } from "../../../i18n";
-import { AI_MODELS_HUB_EN, AI_MODELS_HUB_FR } from "../../../i18n/locales/ai_models_hub_labels";
+import { resolveDictionaryForFlag, resolveLocaleForFlag, useI18n } from "../../../i18n";
 
 export interface AiModelReindexPanelProps {
   readonly isFr: boolean;
@@ -18,10 +17,11 @@ export function AiModelReindexPanel({
   refreshSignal = 0,
 }: AiModelReindexPanelProps): React.JSX.Element | null {
   const { dictionary, locale } = useI18n();
+  const propLocale = resolveLocaleForFlag(isFr);
   const labels =
-    locale === (isFr ? "fr" : "en")
+    locale === propLocale
       ? dictionary.aiModelsHub.reindexPanel
-      : (isFr ? AI_MODELS_HUB_FR : AI_MODELS_HUB_EN).reindexPanel;
+      : resolveDictionaryForFlag(isFr, propLocale).aiModelsHub.reindexPanel;
 
   const [status, setStatus] = useState<string>("IDLE");
   const [progressPercentage, setProgressPercentage] = useState<number>(0);

@@ -95,7 +95,7 @@ export function ProgressiveDay0AccostageBanner({
     ? labels.progressFormatTemplate
         .replace("{completed}", String(effectiveCompletedCount))
         .replace("{total}", String(totalCount))
-    : `${labels.progressLabelPrefix ?? "Accostage"} ${effectiveCompletedCount}/${totalCount}`;
+    : `${labels.progressLabelPrefix ?? ""} ${effectiveCompletedCount}/${totalCount}`.trim();
 
   return (
     <section

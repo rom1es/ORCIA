@@ -6,6 +6,7 @@ import json
 from dataclasses import dataclass
 from typing import Literal
 
+from orcia_core.orchestration._help_docs_locales import HELP_MARKDOWN_HEADINGS
 from orcia_kernel.errors import OrciaDomainError
 
 HelpTriggerRegime = Literal["STAGED_HUMAN_REVIEW", "AUTONOMOUS_CONTRACT"]
@@ -57,7 +58,7 @@ class HelpArticleValidationError(OrciaDomainError):
     error_code = "ERR_HELP_ARTICLE_VALIDATION_FAILED"
     http_status, type_slug = 422, "help-article-validation-failed"
 
-    def __init__(self, detail: str) -> None:
+    def __init__(self, detail: str | None = None) -> None:
         super().__init__(detail_override=detail)
 
 
@@ -165,26 +166,28 @@ def render_bilingual_help_markdown_text(
         f"related_workflows: {json.dumps(related_workflows)}\n"
         "---\n\n"
     )
+    fr_hd = HELP_MARKDOWN_HEADINGS["fr"]
+    en_hd = HELP_MARKDOWN_HEADINGS["en"]
     steps_block_fr = "\n".join(f"- {s}" for s in steps_fr)
     faq_block_fr = "\n".join(f"- {q}" for q in faq_fr)
     md_fr = (
         f"{fm}# {title_fr} {{#top}}\n\n"
-        f"## 1. À quoi sert cet écran ? {{#overview}}\n"
-        f"{purpose_fr} Composant UI : `<{ui_component_name} />`.\n\n"
-        f"## 2. Comment faire (Pas-à-pas) {{#steps}}\n"
-        f"### Pas-à-pas\n{steps_block_fr}\n\n"
-        f"## 3. Questions fréquentes & Dépannage {{#faq}}\n"
-        f"### Questions fréquentes\n{faq_block_fr}\n"
+        f"{fr_hd['sec1']}\n"
+        f"{purpose_fr} {fr_hd['ui_prefix']} : `<{ui_component_name} />`.\n\n"
+        f"{fr_hd['sec2']}\n"
+        f"{fr_hd['sec2_sub']}\n{steps_block_fr}\n\n"
+        f"{fr_hd['sec3']}\n"
+        f"{fr_hd['sec3_sub']}\n{faq_block_fr}\n"
     )
     steps_block_en = "\n".join(f"- {s}" for s in steps_en)
     faq_block_en = "\n".join(f"- {q}" for q in faq_en)
     md_en = (
         f"{fm}# {title_en} {{#top}}\n\n"
-        f"## 1. What is this screen for? {{#overview}}\n"
-        f"{purpose_en} UI Component: `<{ui_component_name} />`.\n\n"
-        f"## 2. How to use (Step-by-step) {{#steps}}\n"
-        f"### Step-by-step\n{steps_block_en}\n\n"
-        f"## 3. Frequently Asked Questions & Troubleshooting {{#faq}}\n"
-        f"### Frequently Asked Questions\n{faq_block_en}\n"
+        f"{en_hd['sec1']}\n"
+        f"{purpose_en} {en_hd['ui_prefix']}: `<{ui_component_name} />`.\n\n"
+        f"{en_hd['sec2']}\n"
+        f"{en_hd['sec2_sub']}\n{steps_block_en}\n\n"
+        f"{en_hd['sec3']}\n"
+        f"{en_hd['sec3_sub']}\n{faq_block_en}\n"
     )
     return md_fr, md_en

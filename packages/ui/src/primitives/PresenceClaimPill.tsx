@@ -153,7 +153,9 @@ export function PresenceClaimPill({
               fontWeight: 600,
             }}
           >
-            {`${labels.claimedByPeerPrefix} ${claimedByDisplayName ?? "Pair"}`}
+            {claimedByDisplayName
+              ? `${labels.claimedByPeerPrefix} ${claimedByDisplayName}`
+              : labels.claimedByPeerPrefix}
           </span>
           {canForceUnclaim && !readOnlyObserver ? (
             <button
@@ -188,7 +190,9 @@ export function PresenceClaimPill({
             color: "var(--color-muted-foreground)",
           }}
         >
-          {`${labels.sseLatencyPrefix} ${labels.sseSyncedStatusLabel ?? "temps réel"}`}
+          {labels.sseSyncedStatusLabel
+            ? `${labels.sseLatencyPrefix} ${labels.sseSyncedStatusLabel}`
+            : labels.sseLatencyPrefix}
         </span>
       ) : null}
     </div>

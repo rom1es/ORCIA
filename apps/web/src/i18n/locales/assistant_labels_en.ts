@@ -1,44 +1,12 @@
 import type { AssistantDictionarySection } from "./assistant_labels";
+import {
+  ASSISTANT_GOVERNANCE_LABELS_EN,
+  ASSISTANT_SPEED_STREAM_LABELS_EN,
+} from "./assistant_stream_labels_en";
 
 export const ASSISTANT_EN_LABELS: AssistantDictionarySection = {
-  assistantGovernance: {
-    modalTitle: "⚙ My Assistant Settings",
-    tab1UserTitle: "👤 My preferences",
-    tab2WorkspaceTitle: "📦 Space settings",
-    tab3AssemblyTitle: "👁️ Active instructions (Read-only)",
-    toneLabel: "Tone & conciseness",
-    formatLabel: "Preferred response format",
-    defaultHatLabel: "Default Role",
-    personalInstructionsLabel: "My permanent personal instructions",
-    saveUserPrefsCta: "Save my preferences",
-    workspaceInstructionsLabel: "Shared business instructions for this Space",
-    workspaceReadOnlyBadge:
-      "👁️ Read-only — Only a team lead or administrator can edit Space instructions",
-    mcpExposeToggleLabel:
-      "🔌 Allow access to this Space's Assistant from an external code editor",
-    mcpFrozenByUpperBadge:
-      "🔒 Set by Team or Organization",
-    copyMcpConfigCta: "📋 Copy editor configuration",
-    saveWorkspaceSettingsCta: "Save for Space",
-  },
-  assistantSpeedStream: {
-    headerTitle: "Assistant Response Mode",
-    speed1PillLabel: "⚡ Fast response",
-    speed2PillLabel: "🛠️ With an agent or skill (@Agent / /Skill)",
-    speed3DeepAuditPillLabel: "🧠 In-depth analysis (multiple perspectives)",
-    cacheHitBadge: "⚡ Workspace context ready",
-    cacheMissBadge: "🔄 Preparing context",
-    nodesDeterministicLabel: "Searching your sources:",
-    ttftBadgePrefix: "Response time:",
-    inputPlaceholder:
-      "Type @ for agents, / for skills, or ask your question...",
-    sendPromptCta: "Send to My Assistant",
-    toolsUnsupportedNotice:
-      "The active AI model does not support workspace tools: fast direct dialogue remains available.",
-    toolsUnsupportedBadge: "Direct mode",
-    deepenCta: "Deepen",
-    deepenLowEvidenceCta: "Deepen with workspace tools",
-  },
+  assistantGovernance: ASSISTANT_GOVERNANCE_LABELS_EN,
+  assistantSpeedStream: ASSISTANT_SPEED_STREAM_LABELS_EN,
   assistantCitations: {
     freshnessFreshBadge: "✅ Source up to date",
     freshnessStaleBadge: "⚠️ Source needs review",
@@ -46,6 +14,8 @@ export const ASSISTANT_EN_LABELS: AssistantDictionarySection = {
     requestAccessCta: "Request access",
     unverifiedCitationBadge: "Reference to confirm",
     artifactCardTitlePrefix: "📄 Document Draft",
+    linesLabel: "Lines",
+    draftBadgeLabel: "@draft",
     copyArtifactCta: "📋 Copy",
     exportArtifactCta: "⬇ Download (.md)",
     saveDraftCta: "💾 Save draft",
@@ -72,6 +42,21 @@ export const ASSISTANT_EN_LABELS: AssistantDictionarySection = {
     restrictedSourcesWarningText:
       "⚠️ This folder cites protected sources: each reader will only see excerpts their account is authorized to view.",
     searchPlaceholder: "Search across your discussions, folders, and drafts...",
+    clearActiveFolderCta: "Clear active folder",
+    noActiveFolderHint:
+      "No active folder selected. Create or click a folder below to activate its notes.",
+    permanentNotesTitleTemplate:
+      'Permanent notes for folder "{title}" (injected into every question)',
+    notesSavedBadgeLabel: "Notes saved and active",
+    notesTextareaPlaceholder:
+      "E.g.: Always include structured examples and follow the domain glossary...",
+    notesEnrichHint: "Saved notes automatically enrich your questions in this folder.",
+    saveNotesCta: "Save notes",
+    newFolderTitlePlaceholder: "New thematic folder title...",
+    defaultNewFolderTitlePrefix: "Thematic folder #",
+    newFolderCta: "+ New folder",
+    activeAccountPrefix: "Active account:",
+    collaborativeSendCta: "Send",
   },
   assistantNoEmbeddingModel: {
     bannerTitle: "Direct dialogue active · Document search inactive",

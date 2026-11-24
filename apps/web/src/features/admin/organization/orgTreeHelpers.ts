@@ -1,5 +1,10 @@
 import type { ControlCenterWorkspaceGovItem } from "@orcia/ui";
 import type { ConfiguredOrgUnit } from "../../../components/platformSetupStorageHelpers";
+import {
+  formatI18nTemplate,
+  resolveDictionaryForFlag,
+  resolveLocaleForFlag,
+} from "../../../i18n";
 import { formatCountNoun } from "../../../stores/authSessionStore";
 
 export interface OrgTreeRowItem {
@@ -179,33 +184,32 @@ export function buildNonEmptyDeleteSummary(params: {
   readonly isFr: boolean;
 }): string {
   const { unitName, childrenCount, attachedWorkspacesCount, isFr } = params;
+  const resolvedLocale = resolveLocaleForFlag(isFr);
+  const orgCopy = resolveDictionaryForFlag(isFr, resolvedLocale).featureAdminCatalogSettings.orgTree;
   const parts: string[] = [];
   if (childrenCount > 0) {
     parts.push(
-      isFr
-        ? formatCountNoun(childrenCount, "sous-unité rattachée", "sous-unités rattachées", "fr")
-        : formatCountNoun(childrenCount, "attached sub-unit", "attached sub-units", "en"),
+      formatCountNoun(
+        childrenCount,
+        orgCopy.subUnitSingular,
+        orgCopy.subUnitPlural,
+        resolvedLocale,
+      ),
     );
   }
   if (attachedWorkspacesCount > 0) {
     parts.push(
-      isFr
-        ? formatCountNoun(
-            attachedWorkspacesCount,
-            "Espace de Travail rattaché",
-            "Espaces de Travail rattachés",
-            "fr",
-          )
-        : formatCountNoun(
-            attachedWorkspacesCount,
-            "attached Workspace",
-            "attached Workspaces",
-            "en",
-          ),
+      formatCountNoun(
+        attachedWorkspacesCount,
+        orgCopy.workspaceSingular,
+        orgCopy.workspacePlural,
+        resolvedLocale,
+      ),
     );
   }
-  const joined = parts.join(isFr ? " et " : " and ");
-  return isFr
-    ? `Suppression refusée pour « ${unitName} » : ${joined}. Déplacez ou supprimez d'abord ces éléments.`
-    : `Deletion refused for "${unitName}": ${joined}. Move or delete these items first.`;
+  const summary = parts.join(orgCopy.joinAnd);
+  return formatI18nTemplate(orgCopy.deleteRefusedTemplate, {
+    unitName,
+    summary,
+  });
 }

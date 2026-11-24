@@ -9,6 +9,7 @@ import time
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
+from orcia_core.agents._agents_locales import get_agent_runtime_copy
 from orcia_core.agents._runtime_helpers import (
     assert_snapshot_not_expired,
     build_scratchpad_entry_from_observation,
@@ -167,14 +168,13 @@ async def suspend_for_write_preview(
 ) -> ReflexiveSessionSnapshot:
     """Build `WritePreviewCard`, transition to `WAITING_WRITE_PREVIEW`, persist, and return."""
     if write_gate is None:
-        raise PolicyDeniedError(
-            detail_override="Aucun port de gouvernance d'écriture n'est configuré."
-        )
+        raise PolicyDeniedError(detail_code="ERR_AGENTS_WRITE_GATE_MISSING")
+    copy = get_agent_runtime_copy()
     preview = await write_gate.prepare_write_preview(
         connector_type=decision.connector_type or "mcp:default",
         action=decision.write_action or "write_resource",
         target_resource_uri=decision.write_target_uri or "catalog://resource/target",
-        action_summary=decision.write_summary or "Action externe soumise à approbation",
+        action_summary=decision.write_summary or copy.default_write_summary,
         payload=decision.write_payload,
     )
     snapshot.pending_write_preview = preview
@@ -237,29 +237,6 @@ async def finalize_completed_snapshot(
     return snapshot
 
 
-async def mark_snapshot_cancelled(
-    *,
-    snapshot: ReflexiveSessionSnapshot,
-    publish_fn: PublishEventFn,
-    persist_fn: PersistSnapshotFn,
-) -> ReflexiveSessionSnapshot:
-    """Transition snapshot to `CANCELLED` (`0` extra LLM turns) and emit `loop_cancelled`."""
-    snapshot.status = "CANCELLED"
-    snapshot.updated_at_utc = datetime.now(UTC).isoformat()
-    if not snapshot.trace_events or snapshot.trace_events[-1].kind != TraceEventKind.LOOP_CANCELLED:
-        await publish_fn(
-            snapshot,
-            AgentTraceEvent(
-                execution_id=snapshot.execution_id,
-                sequence_index=len(snapshot.trace_events),
-                turn_index=snapshot.turns_used,
-                kind=TraceEventKind.LOOP_CANCELLED,
-            ),
-        )
-    await persist_fn(snapshot)
-    return snapshot
-
-
 async def apply_write_gate_decision(
     *,
     write_gate: ReflexiveWriteGatePort | None,
@@ -279,31 +256,28 @@ async def apply_write_gate_decision(
         )
     assert_snapshot_not_expired(snapshot)
     preview = snapshot.pending_write_preview
+    copy = get_agent_runtime_copy()
     if approved:
         if write_gate is None or approval is None:
-            raise PolicyDeniedError(
-                detail_override="ERR_WRITE_PREVIEW_APPROVAL_REQUIRED: Jeton signé requis."
-            )
+            raise PolicyDeniedError(detail_code="ERR_WRITE_PREVIEW_APPROVAL_REQUIRED_DETAIL")
         outcome = await write_gate.execute_approved_write(preview=preview, approval=approval)
         snapshot.scratchpad.append(
             ReflexiveScratchpadEntry(
                 turn_index=snapshot.turns_used,
                 action_kind="external_write_approved",
                 resource_uri=preview.target_resource_uri,
-                summary=(
-                    f"Écriture externe approuvée et appliquée sur {preview.target_resource_uri}."
-                ),
+                summary=copy.write_approved_summary.format(uri=preview.target_resource_uri),
                 metadata={"write_outcome": outcome, "preview_id": preview.preview_id},
             )
         )
     else:
-        reason_clean = rejection_reason.strip() or "Refusé par le valideur humain."
+        reason_clean = rejection_reason.strip() or copy.default_rejection_reason
         snapshot.scratchpad.append(
             ReflexiveScratchpadEntry(
                 turn_index=snapshot.turns_used,
                 action_kind="external_write_rejected",
                 resource_uri=preview.target_resource_uri,
-                summary=f"Écriture externe refusée par l'humain : {reason_clean}",
+                summary=copy.write_rejected_summary.format(reason=reason_clean),
                 metadata={"preview_id": preview.preview_id, "rejection_reason": reason_clean},
             )
         )

@@ -1,6 +1,7 @@
 import { AssistantSpeedSelectorAndStreamView } from "@orcia/ui";
 import React from "react";
 import { useShellNavigation } from "../../components/ShellContainer";
+import { formatI18nTemplate } from "../../i18n";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
 import {
   buildAssistantCitationCardPreview,
@@ -194,7 +195,7 @@ function AssistantInboxFeatureContent() {
           onClearActiveFolder={() => selectActiveFolderAndPersist("")}
           reflexiveTraceSlot={activeReflexiveNode}
           previousTurnsSlot={previousTurnsNode}
-          welcomeTitle={isFr ? "Par quoi voulez-vous commencer ?" : "Where would you like to start?"}
+          welcomeTitle={dictionary.featureInboxAssistant.assistantFlow.welcomeTitle}
           showWelcomeHero={
             !showActiveReflexiveSlot &&
             (!activeConversation || activeConversation.turns.length === 0)
@@ -275,9 +276,10 @@ function AssistantInboxFeatureContent() {
           onOpenHelpSection: openHelpSection,
           onSendCollaborativeMessage: (message) =>
             streaming.setStreamedText(
-              isFr
-                ? `💬 Message ajouté à la discussion : ${message}`
-                : `💬 Message added to thread: ${message}`,
+              formatI18nTemplate(
+                dictionary.featureInboxAssistant.assistantFlow.collaborativeMessageAddedTemplate,
+                { message },
+              ),
             ),
           onLaunchProcessFromFolder: (folderId, targetWorkflowUri) => {
             void foldersController.launchProcess(folderId, targetWorkflowUri).then((launchedRunId) => {

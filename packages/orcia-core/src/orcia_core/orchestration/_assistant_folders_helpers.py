@@ -42,20 +42,23 @@ def assemble_layer5_injection(
     folder: AssistantFolderRecord, folder_threads: list[str]
 ) -> Layer5FolderMemoryInjection:
     """Build internal `[LAYER_5_FOLDER_CONTINUITY ...]` prompt block for `AssistantHarness`."""
+    from orcia_core.orchestration._assistant_locales import ASSISTANT_FOLDER_LOCALES
+
+    floc = ASSISTANT_FOLDER_LOCALES["fr"]
     if folder.consolidated_summary and folder.consolidated_summary not in folder_threads:
         folder_threads.insert(0, folder.consolidated_summary)
     attachments_str = (
         ", ".join(folder.working_attachments_uris)
         if folder.working_attachments_uris
-        else "Aucune pièce jointe"
+        else floc["no_attachment"]
     )
-    summaries_str = " | ".join(folder_threads) if folder_threads else "Aucun résumé précédent"
+    summaries_str = " | ".join(folder_threads) if folder_threads else floc["no_prev_summary"]
     clean_notes = sanitize_user_pinned_notes(folder.pinned_notes_markdown)
     block = (
         f"[LAYER_5_FOLDER_CONTINUITY folder={folder.title}]\n"
-        f"📌 Notes du dossier : {clean_notes or 'Aucune note épinglée'}\n"
-        f"📎 Livrables & pièces de travail : {attachments_str}\n"
-        f"🧵 Résumés consolidés des discussions précédentes : {summaries_str}"
+        f"{floc['block_notes'].format(notes=clean_notes or floc['no_pinned_note'])}\n"
+        f"{floc['block_deliverables'].format(attachments=attachments_str)}\n"
+        f"{floc['block_summaries'].format(summaries=summaries_str)}"
     )
     return Layer5FolderMemoryInjection(
         folder_id=folder.folder_id,
@@ -110,34 +113,28 @@ def validate_sharing_request(
         "BU_LEAD",
         "PLATFORM_ADMIN",
     ):
-        raise ScopeAccessDeniedError(
-            detail_override=(
-                "Seul le propriétaire du dossier ou un responsable d'équipe peut "
-                "modifier son partage."
-            )
-        )
+        raise ScopeAccessDeniedError(detail_code="ERR_FOLDER_SHARE_FORBIDDEN")
     outside_ids = set(outside_workspace_user_ids or ())
     for grant in shares:
         if grant.grantee_user_id in outside_ids or (
             known_members and grant.grantee_user_id not in known_members
         ):
             raise ScopeAccessDeniedError(
-                detail_override=(
-                    f"Confinement à l'Espace ({workspace_id}) : impossible de partager un "
-                    f"dossier avec l'utilisateur externe '{grant.grantee_user_id}' (AD-21)."
-                )
+                detail_code="ERR_FOLDER_CONFINEMENT_VIOLATION",
+                detail_params={
+                    "workspace_id": workspace_id,
+                    "grantee_user_id": grant.grantee_user_id,
+                },
             )
 
 
 def build_sharing_result(updated: AssistantFolderRecord) -> FolderSharingUpdateResult:
     """Build sharing update response with restricted-source masking notice when applicable."""
+    from orcia_core.orchestration._assistant_locales import ASSISTANT_FOLDER_LOCALES
+
     warning: str | None = None
     if updated.visibility_mode != "PRIVATE" and updated.has_restricted_sources:
-        warning = (
-            "⚠️ Ce dossier cite des sources restreintes : leurs extraits seront "
-            "automatiquement masqués ([🔒 Source restreinte — Demander l'accès]) "
-            "pour les collègues non habilités."
-        )
+        warning = ASSISTANT_FOLDER_LOCALES["fr"]["restricted_warning"]
     return FolderSharingUpdateResult(
         folder_id=updated.folder_id,
         workspace_id=updated.workspace_id,
@@ -155,20 +152,13 @@ def enforce_folder_turn_access(
     if folder is None or folder.owner_user_id == sender_user.id:
         return
     if folder.visibility_mode == "PRIVATE":
-        raise ScopeAccessDeniedError(detail_override="Ce dossier est privé (🔒 Privé).")
+        raise ScopeAccessDeniedError(detail_code="ERR_FOLDER_PRIVATE")
     if folder.visibility_mode == "SHARED_SELECTED":
         matching = next((s for s in folder.shares if s.grantee_user_id == sender_user.id), None)
         if matching is None:
-            raise ScopeAccessDeniedError(
-                detail_override="Vous n'avez pas accès à ce dossier partagé."
-            )
+            raise ScopeAccessDeniedError(detail_code="ERR_FOLDER_ACCESS_DENIED")
         if matching.access_role == "READ_ONLY":
-            raise ObserverModeReadOnlyError(
-                detail_override=(
-                    "Accès en 👁️ Lecture seule sur ce dossier partagé : "
-                    "seul un ✍️ Co-contributeur peut interroger l'assistant."
-                )
-            )
+            raise ObserverModeReadOnlyError(detail_code="ERR_FOLDER_READ_ONLY")
 
 
 def build_turn_result(
@@ -181,6 +171,9 @@ def build_turn_result(
     personal_passthrough: str,
 ) -> CollaborativeThreadTurnResult:
     """Build `CollaborativeThreadTurnResult` without leaking `[LAYER_5_*]` tags."""
+    from orcia_core.orchestration._assistant_locales import ASSISTANT_FOLDER_LOCALES
+
+    floc = ASSISTANT_FOLDER_LOCALES["fr"]
     first_name = sender_user.display_name.split()[0] if sender_user.display_name else sender_user.id
     folder_creator_id = folder.owner_user_id if folder is not None else thread.creator_user_id
     return CollaborativeThreadTurnResult(
@@ -190,15 +183,15 @@ def build_turn_result(
         redis_lock_key=lock_key,
         lock_holder_user_id=sender_user.id,
         lock_ttl_seconds=THREAD_TURN_LOCK_TTL_SECONDS,
-        sse_presence_banner=f"✍️ {first_name} interroge l'assistant...",
+        sse_presence_banner=floc["presence_banner"].format(first_name=first_name),
         author_user_id=sender_user.id,
         author_passthrough_identity=personal_passthrough,
         folder_creator_user_id=folder_creator_id,
         layer5_memory_injected=folder is not None,
         assembled_layer5_preview="",
-        assistant_reply_markdown=(
-            f"Réponse générée sous identité `{personal_passthrough}` avec continuité "
-            f"Couche 5 (`{folder.title if folder else 'Sans dossier'}`) [S1]."
+        assistant_reply_markdown=floc["collab_reply"].format(
+            identity=personal_passthrough,
+            folder_title=folder.title if folder else floc["no_folder"],
         ),
     )
 

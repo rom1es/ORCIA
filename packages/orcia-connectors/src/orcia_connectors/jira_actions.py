@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
+from orcia_connectors._connectors_locales import CONNECTOR_SEED_LOCALES
 from orcia_connectors._internal.sql_jira_staged_actions import SqlJiraStagedActionsRepository
 from orcia_connectors._jira_models import (
     DEFAULT_PROJECT_TRANSITIONS,
@@ -21,6 +22,7 @@ from orcia_connectors._jira_validation import (
     build_jira_webhook_notification,
     invoke_jira_gate_commit,
 )
+from orcia_core.kernel.enums import DEFAULT_LOCALE
 from orcia_kernel.errors import ResourceNotFoundError, ValidationDomainError
 from orcia_kernel.events import ArtifactProduced, StepCompleted
 from orcia_kernel.ports import OutboxRelayPort
@@ -55,20 +57,21 @@ class MultiProjectJiraStagedActionService(JiraActionsSyncMixin):
         self._repository = repository
         self._strict_sql = strict_sql
         self._memory_staged: dict[str, StagedJiraActionItem] = {}
+        seed_copy = CONNECTOR_SEED_LOCALES[DEFAULT_LOCALE]
         self._SeededIssues: list[dict[str, Any]] = [
             {
                 "issue_key": "PAYBUILD-101",
                 "project_key": "PAYBUILD",
                 "alias": "jira:product",
                 "status": "IN_PROGRESS",
-                "summary": "Implémenter le connecteur checkout idempotent",
+                "summary": seed_copy["jira_paybuild_summary"],
             },
             {
                 "issue_key": "PAYSEC-204",
                 "project_key": "PAYSEC",
                 "alias": "jira:secops",
                 "status": "OPEN",
-                "summary": "Revue SecOps habilitation IAM connecteur paiement",
+                "summary": seed_copy["jira_paysec_summary"],
             },
         ]
 

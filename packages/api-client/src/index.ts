@@ -79,6 +79,7 @@ import {
   createRequestBinary,
   createRequestJson,
   createRequestSse,
+  OrciaClientError,
   OrciaProblemError,
   registerDefaultAccessTokenProvider,
   registerDefaultAccessTokenRefreshedHandler,
@@ -87,6 +88,7 @@ import {
   type ListOrgUnitsParams,
   type OrciaApiClientConfig,
   type OrciaApiClientOptions,
+  type OrciaClientErrorParams,
   type SseEventHandler,
   type SseRequestParams,
 } from "./helpers";
@@ -115,6 +117,7 @@ export {
   createWorkflowsV2DomainClient,
   createWorkflowTriggersDomainClient,
   createWorkspaceGovernanceDomainClient,
+  OrciaClientError,
   OrciaProblemError,
   registerDefaultAccessTokenProvider,
   registerDefaultAccessTokenRefreshedHandler,
@@ -164,6 +167,7 @@ export {
   type WritableScopeOptionItem,
   type OrciaApiClientConfig,
   type OrciaApiClientOptions,
+  type OrciaClientErrorParams,
 };
 
 export function createOrciaOpenApiFetchClient(options: OrciaApiClientOptions) {

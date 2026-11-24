@@ -6,15 +6,15 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-23",
+  "lastSyncedDate": "2026-11-24",
   "stats": {
     "activeRoutesCount": 28,
-    "uiPrimitivesCount": 139,
+    "uiPrimitivesCount": 131,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 221,
+    "techLeadReportsCount": 230,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -53,8 +53,6 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "/workspaces/$wsId/sources"
   ],
   "uiPrimitives": [
-    "AGENT_STUDIO_BLOCKS",
-    "ASSISTANT_DEFAULT_HAT_OPTIONS",
     "AccessibleModalDialog",
     "ActivityLogExplorerView",
     "ActivityLogFiltersBar",
@@ -92,7 +90,6 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "ContextualHelpColumnAndCenter",
     "ContextualHelpColumnView",
     "ContextualInfoTriggerButton",
-    "DIALOGUE_MECHANISM_LABELS_FR",
     "DisabledButtonAlertIndicator",
     "DnaStarlarkCompilerAndGlossaryLifecycleView",
     "DurableWizardRunnerView",
@@ -113,12 +110,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "FourZoneNotificationsDrawer",
     "GlobalSidebar",
     "GuidanceDrawer",
-    "HUMAN_PARTNER_ROLE_LABELS_FR",
     "HelpArticleGeneratorAndValidatorView",
     "HelpCenterCatalogView",
     "HumanLedAnchorCard",
     "InferenceTierBadge",
-    "LLM_MODEL_TIER_LABELS_FR",
     "LayersInspectorPopover",
     "LoginTwoFactorStepPanel",
     "MobileCompanionView",
@@ -127,7 +122,6 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "ORCIA_ICON_SVG_PATHS",
     "ORCIA_MODULE_ICON_NAMES",
     "ORCIA_SCOPE_LEVEL_ICON_NAMES",
-    "OUTPUT_CONTRACT_FORMAT_LABELS_FR",
     "OntologyAndKbExplorerPanel",
     "OrciaAlertBanner",
     "OrciaButton",
@@ -156,8 +150,6 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "PresenceClaimPill",
     "ProductLifecycleCard",
     "ProgressiveDay0AccostageBanner",
-    "ROLE_DISPLAY_LABELS_EN",
-    "ROLE_DISPLAY_LABELS_FR",
     "RemoteServiceTestBenchAndMcpExposureView",
     "RgaaDialogFooterActions",
     "RgaaModalDialog",
@@ -551,6 +543,62 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   ],
   "techLeadReports": [
     {
+      "date": "2026-11-24",
+      "phaseOrStory": "Story 27.8",
+      "reportFile": "27-8-zero-baseline-lock-bilingual-e2e-verification-and-epic-27-closure-tech-lead-report.md",
+      "domain": "Epic 27 Lot 5 — Permanent Zero-Baseline Lock (Gates 1–4), orcia-connectors Localization, Bilingual (fr & en) Playwright E2E Verification (23-bilingual-fr-en-i18n-and-rfc9457.spec.ts), Audit Closure & Showcase Sync (CAP-001, CAP-100)",
+      "summary": "Closed (done, epic-27: done, ACTION_ITEM-I18N.1: done, independent Testing Sub-Agent verified): locked Gates 1–4 permanently at 0 (added packages/orcia-connectors/src to Gate 4 BACKEND_SRC_DIRS + 14 ERR_SURGICAL_* bilingual entries in orcia_connectors/_error_catalog.py wired into errors/registry.py + <= 299 L modular splits + test_story_27_8_connectors_i18n.py), registered 23-bilingual-fr-en-i18n-and-rfc9457.spec.ts (len(specs) == 26, total_blocks == 59) with bilingualI18nHelpers.ts (277 L) & capabilities.yaml (CAP-001, CAP-100), closed Section 3 of 2026-11-20-audit-i18n-chaines-codees-en-dur-tech-lead-report.md; verified 96% scoped branch coverage (93 tests), 1,091 passed tests/unit, 180 passed tests/security+evals+contract, 6 passed PG18 integration, 9/9 Turbo (449 Vitest tests), 8 passed (1.3m) Playwright Desktop E2E (env -u ORCIA_E2E_SEED_FIXTURES: 00, 01, 23), ruff (1,705 files)/mypy --strict (845 files)/lint-imports (5/5, 888 files)/export_openapi (0-diff)/lint_spine (0)/detect-secrets clean, gitnexus_detect_changes (risk_level: low)."
+    },
+    {
+      "date": "2026-11-24",
+      "phaseOrStory": "Story 27.7",
+      "reportFile": "27-7-categories-b-and-d-bilingual-rfc9457-backend-catalogs-prompts-and-seeds-tech-lead-report.md",
+      "domain": "Epic 27 Lot 4 — Categories B & D Remediation: Bilingual RFC 9457 Backend Error Catalogs (Accept-Language), Prompts & Seeds (Gate 4 Baseline = 0, CAP-001..CAP-260)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): added detail_params interpolation on OrciaDomainError/get_localized_error_text(), registered 3 missing catalog codes (ERR_HELP_ARTICLE_VALIDATION_FAILED, ERR_INVALID_MCP_TOKEN_CONFIG, ERR_PACK_BUILDER_VALIDATION_FAILED), extracted bilingual *_error_catalog.py & *_locales.py/*_locale_messages.py bundles across orcia-core and apps/api (preserving fr defaults and Accept-Language: en switching), converted internal diagnostics/comments/docstrings to English, split all 284 hand-written production files <= 300 lines (299 workspace files touched: 180 modified, 119 created), locked Gate 4 i18n_backend_audit_baseline.json to 0 (757 -> 0 French literals across 153 -> 0 files, 3 -> 0 missing codes, 0 prompt directive violations), verified 99% 51-module branch coverage (125 targeted tests), full tests/unit, 180 passed tests/security+evals+contract, 11/11 impacted PG18+Redis integration suites, 9/9 Turbo (449 JS/TS tests), ruff (1695 files)/mypy --strict (837 files)/lint-imports (5/5)/export_openapi (0-diff)/lint_spine (0)/detect-secrets clean."
+    },
+    {
+      "date": "2026-11-24",
+      "phaseOrStory": "Story 27.6",
+      "reportFile": "27-6-category-c-orcia-ui-design-system-primitives-typed-label-props-tech-lead-report.md",
+      "domain": "Epic 27 Lot 3 Part 2 — Category C Remediation: @orcia/ui Design System Components & Primitives via Typed Label Props (packages/ui Gate 1 Baseline = 0, CAP-060, CAP-090, CAP-091, CAP-100, CAP-200, CAP-260)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): migrated all 55 remaining packages/ui/src/ Gate 1 files (components/, primitives/, shell/, split OrciaProductShowcaseSiteView.tsx + oversized components/primitives into <= 299 L modules, 0 non-barrel source files > 300 L across 166 .ts/.tsx files: 120 modified, 46 created) to typed label props wired from modular FR/EN dictionaries in apps/web/src/i18n/locales/ + showcaseArchitectureCatalog.ts; reduced Gate 1 AST baseline (421 → 0 across both apps/web/src/ and packages/ui/src/, astFiles: {}), preserved Gate 2 (0 parity/jargon violations) & Gate 3 (0 client error violations), and verified 9/9 Turbo (@orcia/api-client 20, @orcia/ui 139, @orcia/web 290 = 449 JS/TS tests), Gate 4 (3 passed), and detect-secrets-hook (0 findings)."
+    },
+    {
+      "date": "2026-11-24",
+      "phaseOrStory": "Story 27.5",
+      "reportFile": "27-5-category-c-process-studio-v2-vsm-execution-and-bilingual-catalog-data-tech-lead-report.md",
+      "domain": "Epic 27 Lot 3 Part 1 — Category C Remediation: Process Studio v2, VSM, Execution Panels, Bilingual Catalog Data (processStudioV2Data.ts) & apps/web/src/ Gate 1 Baseline = 0 (CAP-020..CAP-036, CAP-140, CAP-160)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): created modular FR/EN sub-dictionaries (process_studio_ui_labels*, process_vsm_execution_ui_labels*, process_catalog_packs_and_workflows_labels, process_catalog_workflows_*, process_catalog_vsm_*), split processStudioV2Data.ts (1,726 → 22 L + 5 structural/type/storage modules) and oversized Process/VSM/Studio views (57/57 .ts/.tsx files <= 300 L; 30 modified, 28 created apps/web files), reduced Gate 1 AST baseline (631 → 421, -210 violations, 0 remaining in apps/web/src/), preserved Gate 2 (0 parity/jargon violations) & Gate 3 (0 client error violations), and verified 9/9 Turbo (@orcia/api-client 20, @orcia/ui 139, @orcia/web 290 = 449 JS/TS tests), Gate 4 (3 passed), and detect-secrets-hook (0 findings)."
+    },
+    {
+      "date": "2026-11-23",
+      "phaseOrStory": "Story 27.4",
+      "reportFile": "27-4-category-c-cockpit-assistant-workspaces-gates-catalog-and-admin-tech-lead-report.md",
+      "domain": "Epic 27 Lot 2 Part 2 — Category C Remediation: apps/web Cockpit, Inbox/Assistant, Workspaces, Gates, Catalog, Admin, Settings & Shared Features (CAP-001..CAP-091, CAP-180, CAP-190, CAP-200..CAP-260)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): created modular FR/EN sub-dictionaries (feature_cockpit_gates_labels*, feature_inbox_assistant_labels*, feature_workspaces_labels*, feature_admin_catalog_settings_labels*), migrated all 45 Gate 1 files across cockpit, inbox, workspaces, gates, catalog, admin, settings, and shared plus non-AST locale helpers, split all oversized touched files (72/72 .ts/.tsx files <= 300 L; 55 modified, 17 created, max 296 L), reduced Gate 1 AST baseline (943 → 631, -312 violations, 0 entries in target scopes), preserved Gate 2 (0 parity/jargon violations) & Gate 3 (0 client error violations), and verified 9/9 Turbo (@orcia/api-client 20, @orcia/ui 139, @orcia/web 288 = 447 JS/TS tests), Gate 4 (3 passed), and detect-secrets-hook (0 findings)."
+    },
+    {
+      "date": "2026-11-23",
+      "phaseOrStory": "Story 27.3",
+      "reportFile": "27-3-category-c-shell-contextual-help-notifications-routes-and-wizards-tech-lead-report.md",
+      "domain": "Epic 27 Lot 2 Part 1 — Category C Remediation: apps/web Shell, Contextual Help, Notifications, Routes & Bootstrap Wizards (CAP-004, CAP-058, CAP-060, CAP-065, CAP-066, CAP-068, CAP-100)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): created modular FR/EN sub-dictionaries (contextual_help_*, shell_chrome_*, shell_notifications_*, routes_and_wizards_*), migrated all 33 Gate 1 files across components/, routes/, features/bootstrap/, lib/, and stores/ plus non-AST locale helpers, split all oversized touched files (66/66 .ts/.tsx files <= 300 L; 45 modified, 21 created), reduced Gate 1 AST baseline (1,129 → 943, 0 entries in target scopes), preserved Gate 2 (0 parity/jargon violations) & Gate 3 (0 client error violations), and verified 9/9 Turbo (@orcia/api-client 20, @orcia/ui 139, @orcia/web 288 = 447 JS/TS tests) and Gate 4 (3 passed)."
+    },
+    {
+      "date": "2026-11-23",
+      "phaseOrStory": "Story 27.2",
+      "reportFile": "27-2-category-a-client-error-codes-bridges-stores-and-rfc9457-banner-tech-lead-report.md",
+      "domain": "Epic 27 Lot 1 — Category A Remediation: Client API Bridges, SSE Stores, Controllers & formatRfc9457ErrorToBanner Migrated to ClientErrorCode (CAP-001..CAP-260 hygiene)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified on ce4ba7bca): expanded ClientErrorCode (43 codes) + ClientCodedError, introduced OrciaClientError in @orcia/api-client, removed UserPasswordChangeCard default locale fallbacks, extracted rfc9457_banner_labels_{fr,en}.ts & category_a_controller_labels_{fr,en}.ts, split all > 300 L files (56/56 .ts/.tsx files <= 300 L), locked Gate 3 clientErrorBaseline to 0 (totalClientErrorViolations: 0), reduced Gate 1 AST baseline (1,253 → 1,129), and verified 9/9 Turbo (@orcia/api-client 20, @orcia/ui 139, @orcia/web 288 = 447 JS/TS tests), Gate 2 (0 violations), and Gate 4 (3 passed)."
+    },
+    {
+      "date": "2026-11-23",
+      "phaseOrStory": "Story 27.1",
+      "reportFile": "27-1-deterministic-i18n-ci-guardrails-and-client-error-code-foundation-tech-lead-report.md",
+      "domain": "Epic 27 Lot 0 — Deterministic i18n CI Guardrails (Gates 1–4) & Shared ClientErrorCode Resolution Foundation (CAP-100)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): created clientErrorCodes.ts (111 L) + client_errors_labels.ts (29 L), split fr.ts/en.ts (355 → 47 L) into core_shell_labels_{fr,en}.ts (136 L) & core_domain_labels_{fr,en}.ts (195/194 L), and installed Gates 1–4 (1,253 Gate 1 AST baseline, 0 Gate 2 dictionary parity/jargon violations, 177 Gate 3 client error baseline, 757 + 3 + 0 prompt directives Gate 4 baseline); all 18 files <= 282 L; verified 9/9 Turbo (@orcia/api-client 20, @orcia/ui 139, @orcia/web 284 = 443 JS/TS tests), 3 passed test_i18n_backend_catalog_and_english_dev_audit.py, ruff (1571 files) & mypy --strict (723 files) clean."
+    },
+    {
       "date": "2026-11-23",
       "phaseOrStory": "Cross-Cutting UX & Locale",
       "reportFile": "2026-11-23-ai-model-edit-api-key-and-fr-en-locale-tech-lead-report.md",
@@ -668,6 +716,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "reportFile": "25-5-decouplage-assistant-sans-modele-semantique-blocage-sources-rag-et-cloture-epic-25-tech-lead-report.md",
       "domain": "Epic 25 — Découplage Mon Assistant / Search Speed-1 sans Modèle Sémantique, Blocage Sources RAG (422 ERR_NO_ACTIVE_EMBEDDING_MODEL) & Clôture Technique Epic 25 (CAP-011, CAP-022, CAP-074, CAP-075, CAP-076, CAP-180, CAP-190)",
       "summary": "Clôture (done, epic-25: done, QA post-revue VALIDATE complète) : get_optional_embedding_port sur les 5 routes Assistant et /search, require_rag_available strict sur /rag/search et /rag/index-db-ddl, blocage 422 ERR_NO_ACTIVE_EMBEDDING_MODEL hors SOURCE_CODE (POST/PATCH /datasources), hook DRY useActiveEmbeddingModelStatus (GLOBAL && !draining), assistant-rag-inactive-notice non-bloquant vs assistant-no-chat-model-banner, blocage UX modale WorkspaceSourceAttachModal, correctifs MAJOR-1/MAJOR-2/MINOR-1..7 (42P01 vs RuntimeError, RBAC PLATFORM_ADMIN AI Models, isolation PRIVATE_USER, DOMException TimeoutError) ; 96 % couv. ciblée (9 modules, --fail-under=90), 1066 passed (unit+security+evals), 14 passed PG18 testcontainers, 9/9 Turbo (20+136+260 Vitest), 20 passed, 0 failed (5.4m) Playwright Desktop (6 specs post-revue), ruff/mypy --strict/lint-imports (5/5)/export_openapi (0-diff)/lint_spine (0) vert."
+    },
+    {
+      "date": "2026-11-20",
+      "phaseOrStory": "Audit / ACTION_ITEM-I18N.1",
+      "reportFile": "2026-11-20-audit-i18n-chaines-codees-en-dur-tech-lead-report.md",
+      "domain": "Cross-Cutting i18n Audit & Deterministic Guardrails (_i18n-audit-inventory-raw.md)",
+      "summary": "Restored & translated to English (2026-11-23): inventoried 3,809 hardcoded FR/EN occurrences across 461 files (A=71 client errors, B=577 server fallbacks, C=2,816 UI labels, D=193 backend payloads/prompts, E=152 legitimate uses) and defined the 4 deterministic CI gates + 6-lot Epic 27 remediation plan (Stories 27.1–27.8)."
     },
     {
       "date": "2026-11-20",

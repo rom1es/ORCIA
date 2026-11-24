@@ -81,9 +81,8 @@ class RedisThreadTurnLock(ThreadTurnLockPort):
         existing = self._local_entries.get(thread_id)
         if existing is not None and existing[2] > now and existing[0] != user_id:
             raise ThreadTurnLockHeldError(
-                detail_override=(
-                    f"Verrou de tour Redis actif sur {key} (détenu par '{existing[0]}')."
-                )
+                detail_code="ERR_THREAD_TURN_LOCK_HELD",
+                detail_params={"key": key, "holder": existing[0]},
             )
         token = uuid.uuid4().hex
         self._local_entries[thread_id] = (user_id, token, now + float(ttl_seconds))
@@ -121,7 +120,8 @@ class RedisThreadTurnLock(ThreadTurnLockPort):
         holder = _extract_holder_user_id(current_raw)
         if holder and holder != user_id:
             raise ThreadTurnLockHeldError(
-                detail_override=(f"Verrou de tour Redis actif sur {key} (détenu par '{holder}').")
+                detail_code="ERR_THREAD_TURN_LOCK_HELD",
+                detail_params={"key": key, "holder": holder},
             )
         refreshed = await self._redis.eval(
             _REFRESH_IF_OWNER_LUA, 1, key, user_id, lock_value, str(int(ttl_seconds))
@@ -131,9 +131,8 @@ class RedisThreadTurnLock(ThreadTurnLockPort):
 
         latest_holder = _extract_holder_user_id(_decode_redis_str(await self._redis.get(key)))
         raise ThreadTurnLockHeldError(
-            detail_override=(
-                f"Verrou de tour Redis actif sur {key} (détenu par '{latest_holder or 'peer'}')."
-            )
+            detail_code="ERR_THREAD_TURN_LOCK_HELD",
+            detail_params={"key": key, "holder": latest_holder or "peer"},
         )
 
     async def release_async(

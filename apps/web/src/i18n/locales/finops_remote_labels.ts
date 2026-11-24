@@ -47,6 +47,7 @@ export const REMOTE_SERVICES_FR_LABELS: RemoteServicesTabLabels = {
   resetCircuitButton: "Réarmer",
   callsSuffix: "appels",
   unlimitedLabel: "Sans plafond",
+  durationMsUnit: "ms",
   quotaModal: {
     title: "Plafond et mode de valorisation",
     description:
@@ -102,6 +103,7 @@ export const REMOTE_SERVICES_EN_LABELS: RemoteServicesTabLabels = {
   resetCircuitButton: "Reset",
   callsSuffix: "calls",
   unlimitedLabel: "No ceiling",
+  durationMsUnit: "ms",
   quotaModal: {
     title: "Quota and valuation mode",
     description:

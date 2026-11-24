@@ -1351,7 +1351,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     for (const filePath of allTsxFiles) {
       const content = fs.readFileSync(filePath, "utf-8");
       const relPath = path.relative(path.resolve(__dirname, "../../../.."), filePath);
-      const isLoginView = filePath.endsWith("BiModeLoginView.tsx");
+      const isLoginView = filePath.endsWith("BiModeLoginLocalForm.tsx");
 
       if (isLoginView) {
         // /login MUST preserve password input mode, autoComplete="current-password", autoComplete="username", and data-allow-password-manager="true"

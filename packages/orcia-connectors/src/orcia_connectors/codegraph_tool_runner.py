@@ -9,9 +9,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from orcia_connectors._connectors_locales import get_codegraph_markdown_copy
 from orcia_connectors.adapters.codegraph_mcp import CodegraphMcpConnector
 from orcia_connectors.codegraph.models import compute_drift_warning
 from orcia_connectors.codegraph.providers import build_codegraph_provider
+from orcia_core.kernel.enums import DEFAULT_LOCALE, SupportedLocale
 from orcia_core.observability.logging import get_logger
 
 logger = get_logger("orcia.connectors.codegraph.runner")
@@ -126,30 +128,33 @@ async def async_run_codegraph_blast_radius(
     return res.model_dump()
 
 
-def format_codegraph_markdown_section(codegraph_data: dict[str, Any] | None) -> str:
+def format_codegraph_markdown_section(
+    codegraph_data: dict[str, Any] | None,
+    *,
+    locale: SupportedLocale = DEFAULT_LOCALE,
+) -> str:
     """Format structured blast radius result into markdown for deliverables."""
     if not codegraph_data:
         return ""
 
+    copy = get_codegraph_markdown_copy(locale)
     files_str = ", ".join(f"`{f}`" for f in codegraph_data.get("modified_files", []))
     score = codegraph_data.get("blast_radius_score", 0.0)
     risk = codegraph_data.get("risk_level", "LOW")
+    repo_alias = str(codegraph_data.get("repo_alias", "main-repo"))
     lines: list[str] = [
         "",
-        "### Rayon d'Impact Code Graph (`codegraph_calculate_blast_radius`)",
-        f"- **Dépôt** : `{codegraph_data.get('repo_alias', 'main-repo')}`",
-        f"- **Fichiers modifiés** : {files_str}",
-        f"- **Score d'impact** : `{score}` (Risque : **{risk}**)",
+        copy["heading"],
+        copy["repo"].format(repo_alias=repo_alias),
+        copy["files"].format(files_str=files_str),
+        copy["score"].format(score=score, risk=risk),
     ]
 
     drift = codegraph_data.get("drift_warning")
     if drift == "GRAPH_MOVED_SINCE_RUN_LOCK":
         run_sha = codegraph_data.get("run_lock_commit_sha")
         idx_sha = codegraph_data.get("indexed_commit_sha")
-        lines.append(
-            "> [!WARNING] Dérive détectée (GRAPH_MOVED_SINCE_RUN_LOCK) : "
-            f"Le graphe de code a évolué (`{run_sha}` vs `{idx_sha}`)."
-        )
+        lines.append(copy["drift"].format(run_sha=run_sha, idx_sha=idx_sha))
     lines.append("")
     return "\n".join(lines)
 

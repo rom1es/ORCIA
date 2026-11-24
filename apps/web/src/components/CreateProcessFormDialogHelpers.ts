@@ -1,5 +1,6 @@
 import type { SubWorkflowLayerViewItem } from "@orcia/ui";
 import type React from "react";
+import { resolveDictionaryForFlag } from "../i18n";
 import type { ConfiguredWorkflowItem } from "./platformSetupStore";
 
 export interface CreateProcessFormDialogProps {
@@ -42,30 +43,25 @@ export function slugifyProcessTitle(value: string): string {
 }
 
 export function buildDefaultProcessLayers(isFr: boolean): readonly SubWorkflowLayerViewItem[] {
+  const defaultLayers = resolveDictionaryForFlag(isFr).shellChrome.createProcessDialog.defaultLayers;
   return [
     {
       layerId: "layer-ctx",
-      label: isFr
-        ? "Collecte des documents et du contexte"
-        : "Gather documents and context",
+      label: defaultLayers.ctx,
       zone: "inputs",
       orderIndex: 1,
       enabled: true,
     },
     {
       layerId: "layer-agent",
-      label: isFr
-        ? "Analyse par les agents et vérification croisée"
-        : "Agent analysis and cross-checking",
+      label: defaultLayers.agent,
       zone: "capabilities",
       orderIndex: 1,
       enabled: true,
     },
     {
       layerId: "layer-out",
-      label: isFr
-        ? "Validation humaine finale du livrable"
-        : "Final human approval of deliverable",
+      label: defaultLayers.out,
       zone: "deliverables",
       orderIndex: 1,
       enabled: true,

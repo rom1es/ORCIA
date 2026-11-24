@@ -60,7 +60,7 @@ export function UserSettingsProfileTab({
           <span>{labels.profileIdentityTitle}</span>
         </div>
         <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
-          <strong>{displayName}</strong> &lt;{displayEmail}&gt;
+          <strong>{displayName}</strong> {`<${displayEmail}>`}
         </p>
         <div className="flex flex-wrap gap-1.5 pt-1">
           {roles.map((r) => (
@@ -74,7 +74,7 @@ export function UserSettingsProfileTab({
                 color: "var(--color-action-primary)",
               }}
             >
-              {resolveUserRoleDisplayLabel(r, locale)}
+              {resolveUserRoleDisplayLabel(r, labels.roleDisplayLabels)}
             </span>
           ))}
         </div>

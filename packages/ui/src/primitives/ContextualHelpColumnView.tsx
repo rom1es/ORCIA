@@ -79,7 +79,6 @@ export function ContextualHelpColumnView({
   }, [activeSectionId, effectiveSections]);
 
   const showTechDetails = showTechnicalMetadata ?? isAdmin;
-  const isEn = article.lang === "en";
 
   return (
     <section
@@ -109,7 +108,6 @@ export function ContextualHelpColumnView({
       <HelpTargetedSectionsList
         sections={orderedSections}
         activeSectionId={activeSectionId}
-        isEn={isEn}
         targetedHelpBadgeLabel={labels.targetedHelpBadgeLabel}
         sectionRefs={sectionRefs}
       />

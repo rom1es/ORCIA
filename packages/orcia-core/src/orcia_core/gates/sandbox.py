@@ -54,23 +54,17 @@ def classify_sandbox_failure(result: SandboxExecutionResult) -> OrciaDomainError
     if result.exit_code == 124:
         return UpstreamTimeoutError(
             retry_after_s=0.05,
-            detail_override=(
-                f"Dépassement du délai matériel de la Sandbox ({result.duration_ms} ms): "
-                f"{stderr_summary}"
-            ),
+            detail_code="ERR_SANDBOX_TIMEOUT_DETAIL",
+            detail_params={"duration_ms": result.duration_ms, "stderr_summary": stderr_summary},
         )
     if result.exit_code in (126, 137):
         return PolicyDeniedError(
-            detail_override=(
-                f"Violation d'isolation de la Sandbox Palier 1 (code {result.exit_code}): "
-                f"{stderr_summary}"
-            )
+            detail_code="ERR_SANDBOX_ISOLATION_DETAIL",
+            detail_params={"exit_code": result.exit_code, "stderr_summary": stderr_summary},
         )
     return DeterministicGateFailedError(
-        detail_override=(
-            f"Échec de validation dans la Sandbox Palier 1 (code {result.exit_code}): "
-            f"{stderr_summary}"
-        )
+        detail_code="ERR_SANDBOX_VALIDATION_DETAIL",
+        detail_params={"exit_code": result.exit_code, "stderr_summary": stderr_summary},
     )
 
 

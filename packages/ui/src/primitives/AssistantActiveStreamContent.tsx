@@ -4,6 +4,7 @@ import { getOrciaIconGlyph, OrciaIcon } from "../components/icons";
 import type { UiAssistantAttachedFileItem } from "./AssistantPromptPlusAndAutocomplete";
 import {
   AssistantResponseFooterActionsAndCitations,
+  type AssistantResponseFooterLabels,
   AssistantThinkingSliderIndicator,
   AssistantUserQuestionBubble,
   type UiAssistantRagCitationItem,
@@ -13,6 +14,14 @@ import type {
   UiThreeSpeedStepProgress,
 } from "./AssistantSpeedSelectorTypes";
 import { AssistantThinkingSubWindow } from "./AssistantThinkingSubWindow";
+
+export interface AssistantActiveStreamLabels {
+  readonly stoppedByUserText: string;
+  readonly reconnectFallbackCta: string;
+  readonly searchingAndDraftingText: string;
+  readonly thinkingDotsAriaLabel: string;
+  readonly responseFooter: AssistantResponseFooterLabels;
+}
 
 export interface AssistantActiveStreamContentProps {
   readonly previousTurnsSlot: React.ReactNode;
@@ -38,6 +47,7 @@ export interface AssistantActiveStreamContentProps {
   readonly lowEvidence?: boolean;
   readonly deepenLabel?: string;
   readonly deepenLowEvidenceLabel?: string;
+  readonly labels: AssistantActiveStreamLabels;
   readonly onDeepen?: () => void;
   readonly onRegenerate: () => void;
   readonly onSaveDraftFromResponse?: (content: string) => void;
@@ -69,6 +79,7 @@ export function AssistantActiveStreamContent({
   lowEvidence = false,
   deepenLabel,
   deepenLowEvidenceLabel,
+  labels,
   onDeepen,
   onRegenerate,
   onSaveDraftFromResponse,
@@ -88,7 +99,10 @@ export function AssistantActiveStreamContent({
       ) : null}
       {isGenerating && !cleanStreamedText && !reflexiveTraceSlot ? (
         <div className="py-2 my-1">
-          <AssistantThinkingSliderIndicator />
+          <AssistantThinkingSliderIndicator
+            statusText={labels.searchingAndDraftingText}
+            dotsAriaLabel={labels.thinkingDotsAriaLabel}
+          />
         </div>
       ) : null}
       {reflexiveTraceSlot ? (
@@ -134,7 +148,7 @@ export function AssistantActiveStreamContent({
               onClick={onReconnect}
               className="orcia-ds-alert-action orcia-ds-btn orcia-ds-btn-primary orcia-ds-btn-sm"
             >
-              {reconnectCtaLabel ?? "Se reconnecter →"}
+              {reconnectCtaLabel ?? labels.reconnectFallbackCta}
             </button>
           ) : null}
         </div>
@@ -156,12 +170,13 @@ export function AssistantActiveStreamContent({
               data-testid="assistant-generation-stopped-badge"
               className="inline-flex items-center gap-1.5 rounded border border-border-subtle bg-surface-secondary px-2.5 py-1 text-[11px] font-medium text-text-secondary"
             >
-              <OrciaIcon name="stopButton" /> Génération interrompue par l&apos;utilisateur
+              <OrciaIcon name="stopButton" /> {labels.stoppedByUserText}
             </div>
           ) : null}
           {!isGenerating && cleanStreamedText && !hideDuplicateCompletedStream ? (
             <AssistantResponseFooterActionsAndCitations
               responseText={cleanStreamedText}
+              labels={labels.responseFooter}
               modelLabel={displayModelBadge}
               effortLabel={effortTitle}
               ragCitations={mergedRagCitations}

@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { OrciaIcon } from "../components/icons";
 import { useResponsiveBreakpoint } from "../hooks/useResponsiveBreakpoint";
-import { FourZoneHelpAsideColumn } from "./FourZoneHelpAsideColumn";
 import { FourZoneNotificationsDrawer } from "./FourZoneNotificationsDrawer";
 import {
   DEFAULT_EIGHT_FIXED_MENU_ENTRIES,
@@ -19,7 +17,7 @@ import {
   type UnifiedScopeOptionGroup,
   type WorkspaceSwitcherOption,
 } from "./FourZoneShellTypes";
-import { FourZoneSidebarRail } from "./FourZoneSidebarRail";
+import { FourZoneShellWorkspaceBody } from "./FourZoneShellWorkspaceBody";
 import { FourZoneTopHeaderSection } from "./FourZoneTopHeaderSection";
 import {
   MobileCompanionBottomBar,
@@ -148,12 +146,12 @@ export function FourZoneDirectionCShell({
   const effectiveNotificationCount =
     notifications.length > 0 ? notifications.length : pendingDecisionsTotal;
 
-  const mobileTabsLabels = labels.mobileTabs ?? {
-    navAriaLabel: "Navigation mobile",
+  const mobileTabsLabels: MobileCompanionTabLabels = labels.mobileTabs ?? {
+    navAriaLabel: labels.sidebarAriaLabel,
     cockpit: labels.menuEntries.cockpit,
     assistant: labels.menuEntries.assistant,
-    decisions: "Décisions",
-    menuLabel: "Menu",
+    decisions: labels.notificationsButtonLabel,
+    menuLabel: labels.sidebarAriaLabel,
   };
 
   const resolvedMobileTab: MobileCompanionBottomTabKey | null =
@@ -247,78 +245,37 @@ export function FourZoneDirectionCShell({
         />
       )}
 
-      <div
-        className={isMobile ? "flex min-h-0 flex-1" : "flex min-h-0 flex-1 overflow-hidden"}
+      <FourZoneShellWorkspaceBody
+        isMobile={isMobile}
+        railCollapsed={railCollapsed}
+        onToggleRailCollapsed={() => setRailCollapsed((prev) => !prev)}
+        activeMenuKey={activeMenuKey}
+        activePackKey={activePackKey}
+        availablePacks={availablePacks}
+        labels={labels}
+        disabledMenuKeys={disabledMenuKeys}
+        hiddenMenuKeys={hiddenMenuKeys}
+        onSelectMenu={onSelectMenu}
+        onSelectPack={onSelectPack}
+        workspaceSelectorOptions={workspaceSelectorOptions}
+        activeWorkspaceSelectorId={activeWorkspaceSelectorId}
+        onSelectWorkspaceFromSidebar={onSelectWorkspaceFromSidebar}
+        unifiedScopeGroups={unifiedScopeGroups}
+        unifiedAllSpacesOption={unifiedAllSpacesOption}
+        unifiedScopeLabel={unifiedScopeLabel}
+        activeUnifiedScopeId={activeUnifiedScopeId}
+        onSelectUnifiedScope={onSelectUnifiedScope}
+        doubleSelectorLabels={doubleSelectorLabels}
+        sidebarSecondarySlot={sidebarSecondarySlot}
+        renderSidebarFooter={renderSidebarFooter}
+        isDesktopOnlyRoute={isDesktopOnlyRoute}
+        mobileDesktopRecommendedText={mobileDesktopRecommendedText}
+        helpColumnOpen={helpColumnOpen}
+        helpColumnContent={helpColumnContent}
+        onCloseHelpColumn={() => updateHelpColumnOpen(false)}
       >
-        {!isMobile && (
-          <FourZoneSidebarRail
-            railCollapsed={railCollapsed}
-            onToggleRailCollapsed={() => setRailCollapsed((prev) => !prev)}
-            activeMenuKey={activeMenuKey}
-            activePackKey={activePackKey}
-            availablePacks={availablePacks}
-            labels={labels}
-            disabledMenuKeys={disabledMenuKeys}
-            hiddenMenuKeys={hiddenMenuKeys}
-            onSelectMenu={onSelectMenu}
-            onSelectPack={onSelectPack}
-            workspaceSelectorOptions={workspaceSelectorOptions}
-            activeWorkspaceSelectorId={activeWorkspaceSelectorId}
-            onSelectWorkspaceFromSidebar={onSelectWorkspaceFromSidebar}
-            unifiedScopeGroups={unifiedScopeGroups}
-            unifiedAllSpacesOption={unifiedAllSpacesOption}
-            unifiedScopeLabel={unifiedScopeLabel}
-            activeUnifiedScopeId={activeUnifiedScopeId}
-            onSelectUnifiedScope={onSelectUnifiedScope}
-            doubleSelectorLabels={doubleSelectorLabels}
-            sidebarSecondarySlot={sidebarSecondarySlot}
-            renderSidebarFooter={renderSidebarFooter}
-          />
-        )}
-
-        <main
-          data-testid="four-zone-central-workspace"
-          className={
-            isMobile
-              ? "min-h-0 min-w-0 flex-1 p-3 pb-20"
-              : "relative h-full min-h-0 min-w-0 flex-1 overflow-y-auto p-6"
-          }
-          style={{
-            overflowY: isMobile ? undefined : "auto",
-            backgroundColor: "var(--color-bg-canvas)",
-          }}
-        >
-          {isMobile && isDesktopOnlyRoute && (
-            <div
-              role="status"
-              data-testid="mobile-desktop-recommended-banner"
-              className="mb-3 flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium"
-              style={{
-                backgroundColor: "var(--color-bg-elevated)",
-                borderColor: "var(--color-state-warning, var(--color-border-subtle))",
-                color: "var(--color-text-primary)",
-              }}
-            >
-              <OrciaIcon name="desktop" size={14} />
-              <span>
-                {mobileDesktopRecommendedText ??
-                  labels.mobileDesktopRecommendedText ??
-                  "Écran optimisé pour ordinateur : les réglages restent accessibles ci-dessous."}
-              </span>
-            </div>
-          )}
-          {children}
-        </main>
-
-        {helpColumnOpen && (
-          <FourZoneHelpAsideColumn
-            isMobile={isMobile}
-            labels={labels}
-            helpColumnContent={helpColumnContent}
-            onClose={() => updateHelpColumnOpen(false)}
-          />
-        )}
-      </div>
+        {children}
+      </FourZoneShellWorkspaceBody>
 
       {isMobile && (
         <MobileCompanionBottomBar

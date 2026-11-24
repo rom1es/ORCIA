@@ -1,6 +1,11 @@
 import { createOrciaApiClient } from "@orcia/api-client";
 import type { ControlCenterDatasourceItem } from "@orcia/ui";
 import { useEffect, useState } from "react";
+import {
+  formatI18nTemplate,
+  resolveDictionaryForFlag,
+  resolveLocaleForFlag,
+} from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
 
@@ -32,6 +37,8 @@ export function useCatalogRemoteTestBench(params: {
   readonly setFeedback: (message: string) => void;
 }) {
   const { datasources, isFr, setFeedback } = params;
+  const resolvedLocale = resolveLocaleForFlag(isFr);
+  const catCopy = resolveDictionaryForFlag(isFr, resolvedLocale).featureAdminCatalogSettings.catalog;
   const effectiveWorkspaceSlug =
     params.workspaceSlug?.trim() || "global";
   const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
@@ -66,13 +73,13 @@ export function useCatalogRemoteTestBench(params: {
       .catch((err: unknown) => {
         if (cancelled) return;
         setFeedback(
-          `⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Exposition MCP" : "MCP exposure").fullText}`,
+          `⚠️ ${formatRfc9457ErrorToBanner(err, resolvedLocale, catCopy.mcpExposureErrorContext).fullText}`,
         );
       });
     return () => {
       cancelled = true;
     };
-  }, [accessToken, effectiveWorkspaceSlug, isAuthenticated, isFr, setFeedback]);
+  }, [accessToken, catCopy.mcpExposureErrorContext, effectiveWorkspaceSlug, isAuthenticated, resolvedLocale, setFeedback]);
 
   const handleRunRemoteTestBench = async () => {
     const targetUrl =
@@ -81,11 +88,7 @@ export function useCatalogRemoteTestBench(params: {
     setTestBenchSteps([]);
     setDiscoveredCapabilities([]);
     setCanActivateConnector(false);
-    setFeedback(
-      isFr
-        ? `⏳ Vérification en cours sur ${targetUrl}…`
-        : `⏳ Testing connection to ${targetUrl}…`,
-    );
+    setFeedback(formatI18nTemplate(catCopy.testingConnectionTemplate, { url: targetUrl }));
 
     const client = createOrciaApiClient({ baseUrl: "" });
     try {
@@ -127,18 +130,15 @@ export function useCatalogRemoteTestBench(params: {
       const canActivate = Boolean(res.can_activate);
       setCanActivateConnector(canActivate);
       setFeedback(
-        canActivate
-          ? isFr
-            ? `✅ Banc de test vérifié avec succès sur ${targetUrl}.`
-            : `✅ Test bench verified on ${targetUrl}.`
-          : isFr
-            ? `⚠️ Vérification incomplète ou bloquée sur ${targetUrl}.`
-            : `⚠️ Verification incomplete or blocked on ${targetUrl}.`,
+        formatI18nTemplate(
+          canActivate ? catCopy.testBenchVerifiedTemplate : catCopy.testBenchIncompleteTemplate,
+          { url: targetUrl },
+        ),
       );
     } catch (err: unknown) {
       setCanActivateConnector(false);
       setFeedback(
-        `⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Banc de test connecteur" : "Connector test bench").fullText}`,
+        `⚠️ ${formatRfc9457ErrorToBanner(err, resolvedLocale, catCopy.testBenchErrorContext).fullText}`,
       );
     } finally {
       setIsTesting(false);
@@ -167,7 +167,7 @@ export function useCatalogRemoteTestBench(params: {
       setFeedback(successMessage);
     } catch (err: unknown) {
       setFeedback(
-        `⚠️ ${formatRfc9457ErrorToBanner(err, isFr ? "fr" : "en", isFr ? "Exposition MCP" : "MCP exposure").fullText}`,
+        `⚠️ ${formatRfc9457ErrorToBanner(err, resolvedLocale, catCopy.mcpExposureErrorContext).fullText}`,
       );
     } finally {
       setIsSavingMcp(false);
@@ -175,30 +175,22 @@ export function useCatalogRemoteTestBench(params: {
   };
 
   const handleActivateRemoteService = () => {
-    const targetName = datasources[0]?.alias?.trim() || "Service externe gouverné";
+    const targetName = datasources[0]?.alias?.trim() || catCopy.defaultRemoteServiceName;
     void persistMcpExposure(
       true,
       "remote-connector-service",
       targetName,
-      isFr
-        ? "✅ Connecteur externe activé et persisté pour vos agents."
-        : "✅ External connector enabled and saved for your agents.",
+      catCopy.remoteActivatedBanner,
     );
   };
 
   const handleToggleMcp = (next: boolean) => {
-    const targetName = datasources[0]?.alias?.trim() || "Connecteur MCP gouverné";
+    const targetName = datasources[0]?.alias?.trim() || catCopy.defaultMcpConnectorName;
     void persistMcpExposure(
       next,
       "governed-mcp-connector",
       targetName,
-      next
-        ? isFr
-          ? "🔌 Exposition MCP activée et enregistrée pour vos outils."
-          : "🔌 MCP exposure enabled and saved."
-        : isFr
-          ? "🔌 Exposition MCP désactivée et enregistrée."
-          : "🔌 MCP exposure disabled and saved.",
+      next ? catCopy.mcpEnabledBanner : catCopy.mcpDisabledBanner,
     );
   };
 

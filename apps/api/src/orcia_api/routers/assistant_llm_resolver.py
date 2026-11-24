@@ -94,10 +94,7 @@ async def ensure_active_chat_model_if_live(
 
         raise TierModelNotConfiguredError(
             inference_tier=requested_tier or "medium",
-            detail_override=(
-                "Aucun modèle IA de dialogue (chat) actif n'est configuré. "
-                "Veuillez configurer un modèle chat dans /settings/ai-models."
-            ),
+            detail_code="ERR_NO_ACTIVE_CHAT_MODEL_DETAIL",
             instance=str(request.url.path),
         )
     if speed_mode in ("SPEED_2_AGENT_TOOLS", "SPEED_3_DEEP_AUDIT") and not ep.supports_tools:
