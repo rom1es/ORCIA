@@ -8,6 +8,7 @@ from __future__ import annotations
 import re
 from typing import Literal
 
+from orcia_core.rag._two_speed_search_helpers import evaluate_doc_vs_code_divergence
 from orcia_core.rag.hybrid_rag_service import RRF_K, HybridRagService
 from orcia_core.rag.models import (
     DocVsCodeAuditFinding,
@@ -46,14 +47,18 @@ class TripartiteGraphAndFreshnessService:
     def list_edges(
         self, *, workspace_id: str | None = None
     ) -> tuple[TripartiteTraceEdgeEntity, ...]:
-        if workspace_id is None:
-            return tuple(self._edges)
-        return tuple(e for e in self._edges if e.workspace_id == workspace_id)
+        return (
+            tuple(self._edges)
+            if workspace_id is None
+            else tuple(e for e in self._edges if e.workspace_id == workspace_id)
+        )
 
     def list_alerts(self, *, workspace_id: str | None = None) -> tuple[KbStaleAlertEntity, ...]:
-        if workspace_id is None:
-            return tuple(self._alerts)
-        return tuple(a for a in self._alerts if a.workspace_id == workspace_id)
+        return (
+            tuple(self._alerts)
+            if workspace_id is None
+            else tuple(a for a in self._alerts if a.workspace_id == workspace_id)
+        )
 
     def _append_edge(
         self,
@@ -251,41 +256,17 @@ class TripartiteGraphAndFreshnessService:
         doc_rule_summary: str,
         code_rule_summary: str,
         newer_done_jira_key: str | None = None,
+        locale: str = "fr",
     ) -> DocVsCodeAuditFinding:
         """Qualify Doc vs Code divergence using Tripartite Graph (`[DOC_OBSOLETE_SUSPECTED]`)."""
-        if doc_rule_summary.strip() == code_rule_summary.strip():
-            return DocVsCodeAuditFinding(
-                confluence_uri=confluence_uri,
-                git_repo_uri=git_repo_uri,
-                git_symbol=git_symbol,
-                qualification_marker="[ALIGNED]",
-                justifying_jira_key=None,
-                explanation="La spécification Confluence et le symbole Git AST sont alignés.",
-            )
-
-        if newer_done_jira_key is not None:
-            return DocVsCodeAuditFinding(
-                confluence_uri=confluence_uri,
-                git_repo_uri=git_repo_uri,
-                git_symbol=git_symbol,
-                qualification_marker="[DOC_OBSOLETE_SUSPECTED]",
-                justifying_jira_key=newer_done_jira_key,
-                explanation=(
-                    f"Divergence Confluence ({doc_rule_summary}) vs Git ({code_rule_summary}) "
-                    f"justifiée par le ticket Jira Done ({newer_done_jira_key})."
-                ),
-            )
-
-        return DocVsCodeAuditFinding(
+        return evaluate_doc_vs_code_divergence(
             confluence_uri=confluence_uri,
             git_repo_uri=git_repo_uri,
             git_symbol=git_symbol,
-            qualification_marker="[BUG_CODE_SUSPECTED]",
-            justifying_jira_key=None,
-            explanation=(
-                f"Divergence non justifiée par un ticket Jira : Confluence spécifie "
-                f"'{doc_rule_summary}' tandis que le code applique '{code_rule_summary}'."
-            ),
+            doc_rule_summary=doc_rule_summary,
+            code_rule_summary=code_rule_summary,
+            newer_done_jira_key=newer_done_jira_key,
+            locale=locale,
         )
 
 

@@ -122,7 +122,8 @@ async def start_reflexive_execution_endpoint(
             if snap is not None:
                 return _serialize_snapshot(snap, _trace(request))
         raise ResourceNotFoundError(
-            detail_override=f"Execution '{exec_id}' non initialisée.",
+            detail_code="ERR_EXEC_TRACE_NOT_INITIALIZED",
+            detail_params={"execution_id": exec_id},
             instance=str(request.url.path),
         )
 
@@ -150,7 +151,8 @@ async def get_reflexive_execution_endpoint(
     snapshot = await runtime.get_session_snapshot(execution_id)
     if snapshot is None:
         raise ResourceNotFoundError(
-            detail_override=f"Execution '{execution_id}' introuvable.",
+            detail_code="ERR_EXEC_NOT_FOUND",
+            detail_params={"execution_id": execution_id},
             instance=str(request.url.path),
         )
     return _serialize_snapshot(snapshot, _trace(request))
@@ -172,7 +174,8 @@ async def stream_reflexive_execution_trace_endpoint(
     snapshot = await runtime.get_session_snapshot(execution_id)
     if snapshot is None:
         raise ResourceNotFoundError(
-            detail_override=f"Execution '{execution_id}' introuvable.",
+            detail_code="ERR_EXEC_NOT_FOUND",
+            detail_params={"execution_id": execution_id},
             instance=str(request.url.path),
         )
     broker.sync_history_from_snapshot(
@@ -200,7 +203,7 @@ async def stream_reflexive_execution_trace_endpoint(
 @router.post(
     "/{execution_id}/synthesize-now",
     response_model=ReflexiveExecutionSnapshotResponse,
-    summary="Raise `force_final=True` (`Synthétiser maintenant`) for immediate synthesis",
+    summary="Raise `force_final=True` (`Synthesize Now`) for immediate synthesis",
 )
 async def synthesize_reflexive_execution_now_endpoint(
     execution_id: ExecutionIdPath,
@@ -217,7 +220,7 @@ async def synthesize_reflexive_execution_now_endpoint(
 @router.post(
     "/{execution_id}/cancel",
     response_model=ReflexiveExecutionSnapshotResponse,
-    summary="Immediately cancel `execution_id` (`■ Arrêter` — `0` extra LLM calls)",
+    summary="Immediately cancel `execution_id` (Stop button — `0` extra LLM calls)",
 )
 async def cancel_reflexive_execution_endpoint(
     execution_id: ExecutionIdPath,
@@ -248,7 +251,8 @@ async def approve_reflexive_write_endpoint(
     snapshot = await runtime.get_session_snapshot(execution_id)
     if snapshot is None:
         raise ResourceNotFoundError(
-            detail_override=f"Execution '{execution_id}' introuvable.",
+            detail_code="ERR_EXEC_NOT_FOUND",
+            detail_params={"execution_id": execution_id},
             instance=str(request.url.path),
         )
     if snapshot.status != "WAITING_WRITE_PREVIEW" or snapshot.pending_write_preview is None:
@@ -262,10 +266,8 @@ async def approve_reflexive_write_endpoint(
     pending = snapshot.pending_write_preview
     if payload.preview_id != pending.preview_id:
         raise PolicyDeniedError(
-            detail_override=(
-                f"ERR_WRITE_PREVIEW_MISMATCH: preview_id '{payload.preview_id}' "
-                f"ne correspond pas à '{pending.preview_id}'."
-            ),
+            detail_code="ERR_WRITE_PREVIEW_MISMATCH",
+            detail_params={"preview_id": payload.preview_id, "expected_id": pending.preview_id},
             instance=str(request.url.path),
         )
 

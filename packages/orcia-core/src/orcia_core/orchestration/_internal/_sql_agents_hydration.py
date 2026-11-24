@@ -73,6 +73,9 @@ def hydrate_skill_record(
     )
     raw_ws = meta.get("owner_workspace_id") or column_workspace_id
     raw_user = meta.get("owner_user_id")
+    from orcia_core.orchestration._agents_skills_locales import get_agents_skills_copy
+
+    default_fmt = get_agents_skills_copy().default_output_format
     return ManagedSkillRecord(
         skill_id=resource_id,
         slug=slug,
@@ -82,7 +85,7 @@ def hydrate_skill_record(
         objective=description,
         input_parameters=params,
         instructions=str(meta.get("instructions") or ""),
-        expected_output_format=str(meta.get("expected_output_format") or "Synthèse structurée"),
+        expected_output_format=str(meta.get("expected_output_format") or default_fmt),
         version=version,
         sha256=sha256,
         visibility_scope=vis_scope,

@@ -129,3 +129,44 @@ def compute_autonomous_governance_metrics(
         avg_ttm_gain_minutes=avg_ttm_gain,
         pending_samples=pending_samples,
     )
+
+
+def compute_in_memory_governance_metrics(
+    in_mem_runs: list[dict[str, object]],
+    in_mem_samples: list[PostHocAuditSampleRecord],
+    *,
+    scope_type: str,
+    scope_id: str | None,
+    allowed_workspace_ids: tuple[str, ...] | frozenset[str] | None,
+) -> AutonomousGovernanceMetrics:
+    """Compute autonomous governance KPIs from in-memory run and sample collections."""
+    scoped_runs = [
+        r
+        for r in in_mem_runs
+        if (allowed_workspace_ids is None or str(r["workspace_id"]) in allowed_workspace_ids)
+        and (scope_type != "WORKSPACE" or scope_id is None or str(r["workspace_id"]) == scope_id)
+    ]
+    scoped_samples = [
+        s
+        for s in in_mem_samples
+        if (allowed_workspace_ids is None or s.workspace_id in allowed_workspace_ids)
+        and (scope_type != "WORKSPACE" or scope_id is None or s.workspace_id == scope_id)
+    ]
+    total_cost = sum((Decimal(str(r["cost_usd"])) for r in scoped_runs), Decimal("0.000000"))
+    total_ttm = sum((Decimal(str(r["ttm_gain_minutes"])) for r in scoped_runs), Decimal("0.00"))
+    return compute_autonomous_governance_metrics(
+        total_autonomous_runs=len(scoped_runs),
+        escalated_runs_count=sum(
+            1 for r in scoped_runs if r["status"] == "PAUSED_AUTONOMOUS_ESCALATION"
+        ),
+        killed_runs_count=sum(1 for r in scoped_runs if r["status"] == "KILL_SWITCH_STOPPED"),
+        sampled_runs_count=len(scoped_samples),
+        pending_samples_count=sum(1 for s in scoped_samples if s.review_status == "PENDING_SAMPLE"),
+        validated_samples_count=sum(1 for s in scoped_samples if s.review_status == "VALIDATED"),
+        invalidated_samples_count=sum(
+            1 for s in scoped_samples if s.review_status == "INVALIDATED_ROLLED_BACK"
+        ),
+        total_autonomous_cost_usd=total_cost,
+        total_ttm_gain_minutes=total_ttm,
+        pending_samples=tuple(scoped_samples),
+    )

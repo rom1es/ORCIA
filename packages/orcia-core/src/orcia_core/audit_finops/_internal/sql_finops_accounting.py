@@ -13,10 +13,12 @@ from uuid import UUID
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from orcia_core.audit_finops._audit_finops_locales import get_audit_finops_locale_bundle
 from orcia_core.audit_finops._internal._sql_finops_baselines import (
     list_workflow_baselines_sql,
     upsert_workflow_baseline_sql,
 )
+from orcia_core.audit_finops._internal._sql_finops_run_state import fetch_run_finops_state_sql
 from orcia_core.audit_finops._internal._sql_scope_filter import (
     is_missing_table_error,
     safe_uuid,
@@ -246,9 +248,8 @@ async def insert_budget_override_sql(
                     "scope_path": f"WORKSPACE:{resolved_ws}" if resolved_ws else "GLOBAL",
                     "run_id": run_id,
                     "actor_id": str(appr_uuid),
-                    "summary": (
-                        "Dérogation budgétaire approuvée "
-                        f"(+{float(override_amount_usd):.2f} USD) : {reason}"
+                    "summary": get_audit_finops_locale_bundle("fr").budget_override_tpl.format(
+                        amount=float(override_amount_usd), reason=reason
                     ),
                     "trace_id": outbox_event.trace_id,
                     "metadata_jsonb": json.dumps(outbox_event.payload, sort_keys=True),
@@ -264,52 +265,6 @@ async def insert_budget_override_sql(
             reason=row["reason"],
             created_at=row["created_at"],
         )
-
-
-async def fetch_run_finops_state_sql(
-    engine: AsyncEngine,
-    run_id: str,
-) -> dict[str, Any] | None:
-    stmt = sa.text(
-        """
-        WITH step_agg AS (
-            SELECT run_id, COALESCE(SUM(cost_usd), 0.000000) AS total_steps_cost
-            FROM step_executions
-            WHERE run_id = :run_id
-            GROUP BY run_id
-        ),
-        ledger_agg AS (
-            SELECT run_id, COALESCE(SUM(cost_usd), 0.000000) AS total_audit_cost
-            FROM audit_ledger
-            WHERE run_id = :run_id
-            GROUP BY run_id
-        )
-        SELECT
-            r.id,
-            r.workspace_id,
-            r.status,
-            r.budget_max_usd,
-            COALESCE(sa_agg.total_steps_cost, 0.000000) AS total_steps_cost,
-            COALESCE(la_agg.total_audit_cost, 0.000000) AS total_audit_cost
-        FROM workflow_runs r
-        LEFT JOIN step_agg sa_agg ON sa_agg.run_id = r.id
-        LEFT JOIN ledger_agg la_agg ON la_agg.run_id = r.id
-        WHERE r.id = :run_id;
-        """
-    )
-    async with engine.connect() as conn:
-        res = await conn.execute(stmt, {"run_id": UUID(run_id)})
-        row = res.mappings().first()
-        if row is None:
-            return None
-        return {
-            "id": str(row["id"]),
-            "workspace_id": str(row["workspace_id"]),
-            "status": row["status"],
-            "budget_max_usd": Decimal(str(row["budget_max_usd"])),
-            "total_steps_cost": Decimal(str(row["total_steps_cost"])),
-            "total_audit_cost": Decimal(str(row["total_audit_cost"])),
-        }
 
 
 __all__ = [

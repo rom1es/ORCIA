@@ -10,6 +10,10 @@ from orcia_core.orchestration._human_anchors_models import (
     ArbitrationOptionItem,
     HumanArbitrationRequestEntity,
 )
+from orcia_core.orchestration._orchestration_ops_locales import (
+    HUMAN_ANCHOR_LOCALES,
+    get_ops_copy,
+)
 from orcia_core.orchestration.errors import ResourceNotFoundError, ValidationDomainError
 from orcia_core.orchestration.models import TieBreakPolicy
 from orcia_core.permissions.models import UserIdentity
@@ -96,10 +100,12 @@ def execute_request_human_arbitration(
                         entry_id=new_uuid7_str(),
                         step_key=step_key,
                         marker_type="REASONING",
-                        summary=(
-                            f"Départage par axiome ontologique '{axiom_key}' -> {opt.option_key}"
+                        summary=get_ops_copy(HUMAN_ANCHOR_LOCALES)["axiom_summary"].format(
+                            axiom_key=axiom_key, opt_key=opt.option_key
                         ),
-                        details=f"Option '{opt.title}' retenue formellement par l'Ontologie.",
+                        details=get_ops_copy(HUMAN_ANCHOR_LOCALES)["axiom_details"].format(
+                            opt_title=opt.title
+                        ),
                     ),
                 ),
             )
@@ -107,6 +113,7 @@ def execute_request_human_arbitration(
 
     if effective_policy == "DEFER_AND_CONTINUE_WITH_ASSUMPTION":
         chosen = next((o for o in options_matrix if o.recommended), options_matrix[0])
+        hc = get_ops_copy(HUMAN_ANCHOR_LOCALES)
         req = HumanArbitrationRequestEntity(
             id=arb_id,
             arbitration_key=arb_key,
@@ -126,14 +133,10 @@ def execute_request_human_arbitration(
             entry_id=new_uuid7_str(),
             step_key=step_key,
             marker_type="ASSUMPTION",
-            summary=(
-                f"[ASSUMPTION] Option par défaut '{chosen.option_key}' ({chosen.title}) "
-                f"retenue sur '{question_title.strip()}'"
+            summary=hc["assumption_summary"].format(
+                opt_key=chosen.option_key, opt_title=chosen.title, q=question_title.strip()
             ),
-            details=(
-                f"Politique DEFER_AND_CONTINUE_WITH_ASSUMPTION appliquée. "
-                f"Impact SI: {chosen.si_impact} | FinOps: {chosen.finops_impact}"
-            ),
+            details=hc["assumption_details"].format(si=chosen.si_impact, fin=chosen.finops_impact),
         )
         updated_step = svc.engine.blackboard.save_step_draft(
             run.id,
@@ -192,8 +195,12 @@ def execute_request_human_arbitration(
                 entry_id=new_uuid7_str(),
                 step_key=step_key,
                 marker_type="HUMAN_ARBITRATION_REQUESTED",
-                summary=f"Escalade vers Arbitrage Humain : {question_title.strip()}",
-                details=f"{len(options_matrix)} options comparées (outbox={event.event_id}).",
+                summary=get_ops_copy(HUMAN_ANCHOR_LOCALES)["escalate_summary"].format(
+                    q=question_title.strip()
+                ),
+                details=get_ops_copy(HUMAN_ANCHOR_LOCALES)["escalate_details"].format(
+                    count=len(options_matrix), event_id=event.event_id
+                ),
             ),
         ),
     )
@@ -218,13 +225,15 @@ def prepare_arbitration_resolution(
     req = svc._arbitrations_by_id.get(arbitration_id)
     if req is None or req.run_id != run.id or req.step_key != step_key:
         raise ResourceNotFoundError(
-            detail_override=f"Demande d'arbitrage '{arbitration_id}' introuvable.",
+            detail_code="ERR_ARBITRATION_NOT_FOUND",
+            detail_params={"arbitration_id": arbitration_id},
             instance=instance,
         )
     chosen = next((o for o in req.options_matrix if o.option_key == selected_option_key), None)
     if chosen is None:
         raise ValidationDomainError(
-            detail_override=f"Option '{selected_option_key}' absente de options_matrix.",
+            detail_code="ERR_ARBITRATION_OPTION_MISSING",
+            detail_params={"option_key": selected_option_key},
             instance=instance,
         )
     just_clean = human_justification.strip() if human_justification else None
@@ -237,6 +246,7 @@ def prepare_arbitration_resolution(
     )
     svc._arbitrations_by_id[arbitration_id] = resolved_req
     step_exec = svc.engine.blackboard.get_step_execution(run.id, step_key)
+    hc = get_ops_copy(HUMAN_ANCHOR_LOCALES)
     svc.engine.blackboard.save_step_draft(
         run.id,
         step_key,
@@ -257,8 +267,10 @@ def prepare_arbitration_resolution(
                 entry_id=new_uuid7_str(),
                 step_key=step_key,
                 marker_type="HUMAN_ARBITRATION_RESOLVED",
-                summary=f"Arbitrage humain tranché : {chosen.option_key} ({chosen.title})",
-                details=just_clean or "Option validée sans note additionnelle.",
+                summary=hc["resolved_summary"].format(
+                    opt_key=chosen.option_key, opt_title=chosen.title
+                ),
+                details=just_clean or hc["resolved_no_note"],
             ),
         ),
     )

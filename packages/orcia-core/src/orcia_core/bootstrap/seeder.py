@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from orcia_core.bootstrap._bootstrap_locales import HUMAN_PROFILE_ARCHETYPE_LABELS
 from orcia_core.bootstrap.catalog_seeds import (
     DEFAULT_CATALOG_ITEM_SEEDS,
     DEFAULT_CUSTOMIZATION_OVERRIDE_SEEDS,
@@ -68,13 +69,13 @@ class HumanProfileArchetypeSeed:
     label_en: str
 
 
-DEFAULT_HUMAN_PROFILE_ARCHETYPES: tuple[HumanProfileArchetypeSeed, ...] = (
-    HumanProfileArchetypeSeed("PM_BUSINESS", "PM / Métier", "Product Manager / Business"),
-    HumanProfileArchetypeSeed("ARCHITECT", "Architecte", "System Architect"),
-    HumanProfileArchetypeSeed("TECH_LEAD", "Tech Lead", "Tech Lead"),
-    HumanProfileArchetypeSeed("DEVELOPER", "Développeur", "Software Engineer"),
-    HumanProfileArchetypeSeed("SECOPS", "SecOps / IAM", "SecOps / IAM"),
-    HumanProfileArchetypeSeed("EXECUTIVE", "Direction", "Executive Leadership"),
+DEFAULT_HUMAN_PROFILE_ARCHETYPES: tuple[HumanProfileArchetypeSeed, ...] = tuple(
+    HumanProfileArchetypeSeed(
+        key,
+        HUMAN_PROFILE_ARCHETYPE_LABELS["fr"][key],
+        HUMAN_PROFILE_ARCHETYPE_LABELS["en"][key],
+    )
+    for key in ("PM_BUSINESS", "ARCHITECT", "TECH_LEAD", "DEVELOPER", "SECOPS", "EXECUTIVE")
 )
 
 

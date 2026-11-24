@@ -2,41 +2,14 @@
 
 from __future__ import annotations
 
-from orcia_kernel.enums import SupportedLocale
+from orcia_core.ontology._error_catalog import ONTOLOGY_ERROR_CATALOG
 from orcia_kernel.errors import (
-    LocalizedErrorCopy,
     ObserverModeReadOnlyError,
     OrciaDomainError,
     ResourceNotFoundError,
     ScopeAccessDeniedError,
     ValidationDomainError,
-    register_domain_error_catalog,
 )
-
-ONTOLOGY_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
-    "ERR_ONTOLOGY_CONFLICT": {
-        "fr": LocalizedErrorCopy(
-            "Conflit d'axiome ontologique immuable",
-            "La spécialisation ou surcharge viole un axiome parent marqué immutable: true.",
-        ),
-        "en": LocalizedErrorCopy(
-            "Immutable ontology axiom conflict",
-            "The specialization or override violates a parent axiom marked immutable: true.",
-        ),
-    },
-    "ERR_ONTOLOGY_PROMOTION_STEP_INVALID": {
-        "fr": LocalizedErrorCopy(
-            "Transition de promotion ontologique invalide",
-            "La promotion doit cibler le palier immédiatement supérieur (L4 -> L3 -> L2 -> L1).",
-        ),
-        "en": LocalizedErrorCopy(
-            "Invalid ontology promotion transition",
-            "Promotion must target the immediate next governance level (L4 -> L3 -> L2 -> L1).",
-        ),
-    },
-}
-
-register_domain_error_catalog(ONTOLOGY_ERROR_CATALOG)
 
 
 class OntologyConflictError(OrciaDomainError):
@@ -58,6 +31,7 @@ class PromotionLevelJumpError(OrciaDomainError):
 
 
 __all__ = [
+    "ONTOLOGY_ERROR_CATALOG",
     "ObserverModeReadOnlyError",
     "OntologyConflictError",
     "OntologyScopeConflictError",

@@ -5,6 +5,12 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import datetime
 
+from orcia_core.orchestration._control_center_helpers import (
+    build_command_palette_entries,
+    resolve_scope_workspaces_helper,
+    seed_default_control_center_runs,
+)
+from orcia_core.orchestration._orchestration_cc_notif_locales import get_cc_copy
 from orcia_core.orchestration.control_center_models import (
     DEFAULT_GUIDANCE_DRAWER_STEPS,
     LIFECYCLE_SUGGESTED_WORKFLOWS,
@@ -22,12 +28,10 @@ from orcia_core.orchestration.errors import (
     ObserverModeReadOnlyError,
     ResourceNotFoundError,
     StepAlreadyClaimedByPeerError,
-    ValidationDomainError,
 )
 from orcia_core.orchestration.notifications_and_claims import (
     UnifiedNotificationAndClaimService,
 )
-from orcia_core.permissions.errors import ScopeAccessDeniedError
 from orcia_core.permissions.evaluator import MatrixPermissionEvaluator
 from orcia_core.permissions.models import AccessMode, UserIdentity, WorkspaceEntity
 
@@ -51,57 +55,7 @@ class ControlCenterOverviewService:
         self._runs: dict[str, SupervisedRunItem] = self._seed_default_runs()
 
     def _seed_default_runs(self) -> dict[str, SupervisedRunItem]:
-        items = (
-            SupervisedRunItem(
-                run_id="0195f000-0000-7000-8000-000000000701",
-                workspace_id="0192c4e0-0000-7000-8000-000000000201",
-                workspace_name="Workspace 1 — Paiements & Checkout Web",
-                workflow_key="architecture-arbitration-flow",
-                title="Run #701 — Arbitrage Topologie Paiements v2",
-                status="PAUSED_ARBITRATION",
-                current_step_id="0195f000-0000-7000-8000-000000000801",
-                current_step_key="architecture-arbitration",
-                execution_mode="COACHING",
-                access_mode="CONTRIBUTOR_ACTION_REQUIRED",
-                claimed_by_user_id=None,
-                claimed_by_display_name=None,
-                budget_consumed_usd=4.25,
-                blackboard_summary="Synthèse d'architecture prête pour arbitrage humain.",
-            ),
-            SupervisedRunItem(
-                run_id="0195f000-0000-7000-8000-000000000702",
-                workspace_id="0192c4e0-0000-7000-8000-000000000202",
-                workspace_name="Workspace 2 — Core Banking & Ledger",
-                workflow_key="migration-readiness-flow",
-                title="Run #702 — Audit Bascule Core Ledger",
-                status="PAUSED_HUMAN_GATE",
-                current_step_id="0195f000-0000-7000-8000-000000000802",
-                current_step_key="ledger-human-gate",
-                execution_mode="FAST_PATH",
-                access_mode="READ_ONLY_OBSERVER",
-                claimed_by_user_id=None,
-                claimed_by_display_name=None,
-                budget_consumed_usd=8.90,
-                blackboard_summary="Rapport de conformité Core Ledger généré.",
-            ),
-            SupervisedRunItem(
-                run_id="0195f000-0000-7000-8000-000000000703",
-                workspace_id="0192c4e0-0000-7000-8000-000000000203",
-                workspace_name="Workspace 3 — Audit Confidentiel SecOps (Restreint)",
-                workflow_key="secops-incident-flow",
-                title="Run #703 — Investigation SecOps Restreinte",
-                status="RUNNING",
-                current_step_id="0195f000-0000-7000-8000-000000000803",
-                current_step_key="forensic-scan",
-                execution_mode="FAST_PATH",
-                access_mode="READ_ONLY_OBSERVER",
-                claimed_by_user_id=None,
-                claimed_by_display_name=None,
-                budget_consumed_usd=19.50,
-                blackboard_summary="Payload métier confidentiel SecOps.",
-            ),
-        )
-        return {r.run_id: r for r in items}
+        return seed_default_control_center_runs()
 
     def enforce_run_mutation_guard(
         self,
@@ -118,7 +72,9 @@ class ControlCenterOverviewService:
         run = self._runs.get(run_id)
         if run is None:
             raise ResourceNotFoundError(
-                detail_override=f"Run '{run_id}' introuvable.", instance=instance
+                detail_code="ERR_RUN_NOT_FOUND",
+                detail_params={"run_id": run_id},
+                instance=instance,
             )
         access = self.evaluator.resolve_workspace_access(user, run.workspace_id)
         if access is None or access.access_mode == "READ_ONLY_OBSERVER":
@@ -128,10 +84,12 @@ class ControlCenterOverviewService:
         )
         if active_lock is not None and active_lock.holder_user_id != user.id:
             raise StepAlreadyClaimedByPeerError(
-                detail_override=(
-                    f"Mutation refusée: l'étape '{step_execution_id}' du Run '{run_id}' est "
-                    f"verrouillée par '{active_lock.holder_display_name}'."
-                ),
+                detail_code="ERR_CONTROL_CENTER_STEP_LOCKED",
+                detail_params={
+                    "step_id": step_execution_id,
+                    "run_id": run_id,
+                    "holder": active_lock.holder_display_name,
+                },
                 instance=instance,
             )
         return run
@@ -165,43 +123,7 @@ class ControlCenterOverviewService:
         self, user: UserIdentity, scope_type: ScopeType, scope_id: str, instance: str | None
     ) -> tuple[str, list[tuple[WorkspaceEntity, AccessMode, bool, bool]]]:
         """Return `(scope_label, [(workspace, access_mode, finops_visible, payload_masked)])`."""
-        if scope_type == "WORKSPACE":
-            ws = self.evaluator.get_workspace(scope_id)
-            if ws is None:
-                raise ResourceNotFoundError(instance=instance)
-            acc = self.evaluator.resolve_workspace_access(user, ws.id)
-            if acc is not None:
-                return (ws.name, [(ws, acc.access_mode, acc.finops_visible, False)])
-            if user.platform_role == "PLATFORM_ADMIN":
-                return (ws.name, [(ws, "READ_ONLY_OBSERVER", True, True)])
-            raise ScopeAccessDeniedError(instance=instance)
-
-        target_org_id = (
-            "0192c4e0-0000-7000-8000-000000000101" if scope_type == "GLOBAL" else scope_id
-        )
-        org_map = {u.id: u for u in self.evaluator.org_units}
-        root_node = org_map.get(target_org_id)
-        if root_node is None:
-            raise ValidationDomainError(
-                detail_override=f"Périmètre '{target_org_id}' introuvable.", instance=instance
-            )
-        allowed_org_ids = {
-            target_org_id,
-            *self.evaluator.get_descendant_org_unit_ids(target_org_id),
-        }
-        rows: list[tuple[WorkspaceEntity, AccessMode, bool, bool]] = []
-        for ws in self.evaluator.workspaces:
-            if ws.owner_org_unit_id not in allowed_org_ids:
-                continue
-            acc = self.evaluator.resolve_workspace_access(user, ws.id)
-            if acc is not None:
-                rows.append((ws, acc.access_mode, acc.finops_visible, False))
-            elif (
-                user.platform_role == "PLATFORM_ADMIN"
-                and ws.visibility_mode == "CONFIDENTIAL_RESTRICTED"
-            ):
-                rows.append((ws, "READ_ONLY_OBSERVER", True, True))
-        return (root_node.name, rows)
+        return resolve_scope_workspaces_helper(self.evaluator, user, scope_type, scope_id, instance)
 
     def build_overview(
         self,
@@ -212,6 +134,7 @@ class ControlCenterOverviewService:
         instance: str | None = None,
     ) -> ControlCenterOverview:
         """Consolidate the 4 fractal tabs for `GLOBAL | BU | TEAM | WORKSPACE` in a single pass."""
+        cc = get_cc_copy()
         scope_label, ws_rows = self._resolve_scope_workspaces(user, scope_type, scope_id, instance)
         ws_meta = {ws.id: (mode, finops_ok, masked) for ws, mode, finops_ok, masked in ws_rows}
 
@@ -234,11 +157,7 @@ class ControlCenterOverviewService:
                 claimed_by_display_name=(
                     lock.holder_display_name if lock else run.claimed_by_display_name
                 ),
-                blackboard_summary=(
-                    "[CONFIDENTIAL_RESTRICTED — Payload Métier Masqué]"
-                    if masked
-                    else run.blackboard_summary
-                ),
+                blackboard_summary=cc["masked_summary"] if masked else run.blackboard_summary,
                 blackboard_payload_masked=masked,
             )
             if effective_mode == "CONTRIBUTOR_ACTION_REQUIRED":
@@ -291,20 +210,16 @@ class ControlCenterOverviewService:
             and user.platform_role not in ("OBSERVER", "BU_DIRECTOR")
             else "READ_ONLY_OBSERVER"
         )
-        observer_banner = (
-            "👁️ Mode Consultation Seule — Vous suivez ce périmètre en tant qu'Observateur"
-            if viewer_mode == "READ_ONLY_OBSERVER"
-            else None
-        )
+        observer_banner = cc["observer_banner"] if viewer_mode == "READ_ONLY_OBSERVER" else None
         user_mode = "FAST_PATH" if user.platform_role == "TEAM_LEAD" else "COACHING"
         overrides = (
             DeclarativeOverrideLayer(
                 workflow_key="architecture-arbitration-flow",
-                title="Arbitrage Topologie & Gates Adaptatives",
-                base_layer="v1.0.0 (Socle Plateforme)",
-                team_override="seuil_gate_agentique=0.85",
+                title=cc["override_title"],
+                base_layer=cc["override_base"],
+                team_override=cc["override_team"],
                 workspace_override="human_authored_required=true",
-                user_override=f"mode_execution={user_mode}",
+                user_override=cc["override_user_tpl"].format(user_mode=user_mode),
                 spine_contract_ref="ARCHITECTURE-SPINE.md#AD-2",
             ),
         )
@@ -328,105 +243,8 @@ class ControlCenterOverviewService:
         self, user: UserIdentity, query: str = ""
     ) -> tuple[CommandPaletteEntry, ...]:
         """Return `< 1 s` Command Palette (`⌘K`) entries filtered by `query` (`UX-DR13`)."""
-        q = query.strip().lower()
-        entries: list[CommandPaletteEntry] = [
-            CommandPaletteEntry(
-                "nav-cockpit",
-                "NAVIGATION",
-                "Aller au Cockpit & Flux de Travail",
-                "Navigation rapide",
-                "g c",
-                "/cockpit",
-            ),
-            CommandPaletteEntry(
-                "nav-inbox",
-                "NAVIGATION",
-                "Aller à la Boîte & Mes Runs",
-                "Notifications & Claims",
-                "g i",
-                "/inbox",
-            ),
-            CommandPaletteEntry(
-                "nav-workspaces",
-                "NAVIGATION",
-                "Aller au Centre de Pilotage des Workspaces",
-                "Supervision 4 onglets",
-                "g w",
-                "/workspaces",
-            ),
-            CommandPaletteEntry(
-                "nav-catalog",
-                "NAVIGATION",
-                "Aller au Catalogue Fédéré",
-                "Agents, Skills & Workflows",
-                "g f",
-                "/catalog",
-            ),
-            CommandPaletteEntry(
-                "nav-ontology",
-                "NAVIGATION",
-                "Aller à l'Ontologie & Graphe",
-                "Concepts SKOS & What-If",
-                "g o",
-                "/ontology",
-            ),
-            CommandPaletteEntry(
-                "nav-governance",
-                "NAVIGATION",
-                "Aller aux Gates & Permissions",
-                "Courtier d'Accès",
-                "g g",
-                "/governance",
-            ),
-            CommandPaletteEntry(
-                "nav-audit",
-                "NAVIGATION",
-                "Aller à l'Audit & FinOps",
-                "Registre immuable",
-                "g a",
-                "/audit",
-            ),
-            CommandPaletteEntry(
-                "nav-admin",
-                "NAVIGATION",
-                "Aller à l'Administration",
-                "Topologie & Sécurité",
-                "g s",
-                "/admin",
-            ),
-        ]
         overview = self.build_overview(user, scope_type="GLOBAL")
-        for run in (*overview.contributor_runs, *overview.observer_runs):
-            entries.append(
-                CommandPaletteEntry(
-                    entry_id=f"run-{run.run_id}",
-                    category="RUN",
-                    label_fr=run.title,
-                    subtitle_fr=f"{run.workspace_name} • {run.current_step_key}",
-                    shortcut="Alt + ↑/↓",
-                    target_route=f"/cockpit?runId={run.run_id}",
-                    access_mode=run.access_mode,
-                )
-            )
-        for ws in overview.workspaces_governance:
-            entries.append(
-                CommandPaletteEntry(
-                    entry_id=f"ws-{ws.workspace_id}",
-                    category="WORKSPACE",
-                    label_fr=ws.name,
-                    subtitle_fr=f"Cycle {ws.lifecycle_phase} • {ws.visibility_mode}",
-                    shortcut="⌘W",
-                    target_route=f"/workspaces/{ws.workspace_id}",
-                    access_mode=ws.access_mode,
-                )
-            )
-        if not q:
-            return tuple(entries)
-        return tuple(
-            e
-            for e in entries
-            if q in e.label_fr.lower() or q in e.subtitle_fr.lower() or q in e.shortcut.lower()
-        )
+        return build_command_palette_entries(overview, query=query)
 
 
 __all__ = [

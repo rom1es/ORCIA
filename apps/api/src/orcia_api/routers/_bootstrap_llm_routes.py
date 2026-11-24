@@ -12,6 +12,7 @@ from orcia_api.dependencies._core_providers import (
     should_auto_init_infra,
 )
 from orcia_api.dependencies._llm_streaming_providers import get_or_create_async_http_client
+from orcia_api.locales._router_locale_messages import get_router_copy
 from orcia_api.routers._auth_policy_runtime import resolve_auth_policy_runtime
 from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.schemas import bootstrap as bs
@@ -180,13 +181,14 @@ async def test_welcome_setup_llm_connection(
             trace_id=trace_id,
         )
 
+    fr_copy, en_copy = get_router_copy("fr"), get_router_copy("en")
     if not model:
         return _resp(
             False,
             "INVALID_PARAMETERS",
             0,
-            "❌ Échec du test : veuillez renseigner l'identifiant du modèle principal.",
-            "❌ Test failed: please enter the primary model identifier.",
+            fr_copy.bootstrap_missing_model,
+            en_copy.bootstrap_missing_model,
             m_name="",
         )
     if not uri or not uri.startswith(("http://", "https://")):
@@ -194,16 +196,16 @@ async def test_welcome_setup_llm_connection(
             False,
             "INVALID_PARAMETERS",
             0,
-            "❌ Échec du test : veuillez indiquer une URL d'API valide (https:// ou http://).",
-            "❌ Test failed: please enter a valid API URL starting with https:// or http://.",
+            fr_copy.bootstrap_invalid_url,
+            en_copy.bootstrap_invalid_url,
         )
     if payload.auth_mode == "api_key" and not has_key:
         return _resp(
             False,
             "AUTH_REQUIRED",
             0,
-            "❌ Échec du test : veuillez saisir votre clé d'API (jeton secret) ou « Sans clé ».",
-            "❌ Test failed: please enter your API key (secret token) or select 'No key'.",
+            fr_copy.bootstrap_missing_api_key,
+            en_copy.bootstrap_missing_api_key,
         )
 
     u_lower, p_lower = uri.lower(), provider.lower()
@@ -242,6 +244,6 @@ async def test_welcome_setup_llm_connection(
             False,
             st,
             lat,
-            f"❌ Échec du test de connexion : {err_msg}",
-            f"❌ Connection test failed: {err_msg}",
+            fr_copy.bootstrap_connect_failed.format(err_msg=err_msg),
+            en_copy.bootstrap_connect_failed.format(err_msg=err_msg),
         )

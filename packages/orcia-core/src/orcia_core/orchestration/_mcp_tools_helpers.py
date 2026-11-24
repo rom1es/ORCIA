@@ -5,6 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
 
+from orcia_core.orchestration._orchestration_runtime_locales import (
+    MCP_BENCH_LOCALES,
+    get_runtime_copy,
+)
 from orcia_kernel.ports import ContextSourcePort, VectorStorePort
 
 McpToolName = Literal[
@@ -70,27 +74,22 @@ GOVERNED_MCP_TOOLS: tuple[McpToolDescriptor, ...] = (
     ),
     McpToolDescriptor(
         name="kb.search",
-        description=(
-            "Recherche hybride RAG (vecteurs + BM25) dans la KB multi-sources du Workspace."
-        ),
+        description=get_runtime_copy(MCP_BENCH_LOCALES)["tool_kb_search"],
         mode="READ_ONLY",
     ),
     McpToolDescriptor(
         name="catalog.get",
-        description="Consulter les Workflows, Agents et Skills épinglés du Catalogue Fédéré.",
+        description=get_runtime_copy(MCP_BENCH_LOCALES)["tool_catalog_get"],
         mode="READ_ONLY",
     ),
     McpToolDescriptor(
         name="blackboard.read",
-        description="Lire les snapshots actifs du Blackboard pour un Run donné.",
+        description=get_runtime_copy(MCP_BENCH_LOCALES)["tool_blackboard_read"],
         mode="READ_ONLY",
     ),
     McpToolDescriptor(
         name="blackboard.propose_draft",
-        description=(
-            "Proposer un brouillon sur une section non protégée (bloque matériellement toute "
-            "section marquée human_authored_required: true)."
-        ),
+        description=get_runtime_copy(MCP_BENCH_LOCALES)["tool_propose_draft"],
         mode="GOVERNED_DRAFT_WRITE",
     ),
 )

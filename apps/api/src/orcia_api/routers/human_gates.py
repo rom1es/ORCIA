@@ -160,7 +160,7 @@ async def evaluate_human_gate_endpoint(
 @router.post(
     "/api/v1/gates/human/{gate_evaluation_id}/inspect-hypotheses",
     response_model=HumanGateEvaluateResponse,
-    summary="Mark Block 4 (`Hypothèses Retenues`) of the 4-Block Review Briefing as inspected",
+    summary="Mark Block 4 (Retained Hypotheses) of the 4-Block Review Briefing as inspected",
     responses=PROBLEM_RESPONSES,
 )
 async def inspect_human_gate_hypotheses_endpoint(

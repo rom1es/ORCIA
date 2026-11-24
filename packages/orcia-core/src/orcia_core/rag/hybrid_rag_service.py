@@ -189,11 +189,7 @@ class HybridRagService:
         top_k: int,
     ) -> tuple[HybridRagHit, ...]:
         if query_embedding is None:
-            raise NoActiveEmbeddingModelError(
-                detail_override=(
-                    "Aucun modèle d'embedding actif configuré pour vectoriser la requête."
-                )
-            )
+            raise NoActiveEmbeddingModelError(detail_code="ERR_NO_ACTIVE_EMBEDDING_MODEL_VECTORIZE")
 
         searchable = [
             c

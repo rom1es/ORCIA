@@ -7,6 +7,7 @@ import re
 import time
 from typing import Any
 
+from orcia_core.orchestration._assistant_locales import get_assistant_node_copy
 from orcia_core.orchestration.assistant_citations_models import (
     CitationVerificationResult,
     EvidenceGlossaryCitation,
@@ -20,7 +21,7 @@ from orcia_core.orchestration.assistant_citations_models import (
 )
 from orcia_kernel.ids import new_uuid7_str
 
-UNVERIFIED_CITATION_BADGE: str = "[Citation non vérifiée]"
+UNVERIFIED_CITATION_BADGE: str = get_assistant_node_copy()["unverified_citation"]
 _CITATION_TAG_RE = re.compile(r"\[([SGO]\d+)\]")
 
 
@@ -81,8 +82,8 @@ def build_evidence_table_impl(
     s_count, g_count = len(numbered_sources), len(numbered_glossary)
     s_range = f"([S1]..[S{s_count}])" if s_count > 1 else ("([S1])" if s_count == 1 else "()")
     g_range = f"([G1]..[G{g_count}])" if g_count > 1 else ("([G1])" if g_count == 1 else "()")
-    footer_line = (
-        f"📚 {s_count} sources consultées {s_range} · {g_count} termes du Glossaire {g_range} ▾"
+    footer_line = get_assistant_node_copy()["evidence_footer"].format(
+        s_count=s_count, s_range=s_range, g_count=g_count, g_range=g_range
     )
     return EvidenceTable(
         sources=numbered_sources,

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from orcia_core.catalog._error_catalog import CATALOG_ERROR_CATALOG
 from orcia_kernel.errors import (
     ObserverModeReadOnlyError,
     OrciaDomainError,
@@ -9,7 +10,10 @@ from orcia_kernel.errors import (
     ResourceNotFoundError,
     ScopeAccessDeniedError,
     ValidationDomainError,
+    register_domain_error_catalog,
 )
+
+register_domain_error_catalog(CATALOG_ERROR_CATALOG)
 
 __all__ = [
     "ObserverModeReadOnlyError",

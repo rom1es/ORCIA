@@ -10,6 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.engine import RowMapping
 from sqlalchemy.ext.asyncio import AsyncConnection
 
+from orcia_core.orchestration._orchestration_cc_notif_locales import get_notif_copy
 from orcia_core.orchestration.presence_and_sse import (
     NotificationScopeKind,
     NotificationStatus,
@@ -156,7 +157,7 @@ async def ensure_notification_parents(
             {
                 "id": str(ws_uuid),
                 "slug": f"ws-notif-{str(ws_uuid)[-12:]}",
-                "name": "Espace Notifications Équipe",
+                "name": get_notif_copy()["notif_ws_name"],
                 "org_id": str(org_uuid),
             },
         )

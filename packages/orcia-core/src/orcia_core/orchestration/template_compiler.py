@@ -16,6 +16,10 @@ from typing import Any
 
 from orcia_core.catalog.cas_resolver import compute_bytes_sha256
 from orcia_core.ontology.models import OntologyConceptEntity, ResolvedOntologySnapshot
+from orcia_core.orchestration._orchestration_ops_locales import (
+    ENGINE_STEP_LOCALES,
+    get_ops_copy,
+)
 from orcia_core.orchestration.errors import ValidationDomainError
 from orcia_core.orchestration.models import (
     ArtifactTemplateDefinition,
@@ -113,7 +117,9 @@ class MultiAudienceTemplateCompiler:
             properties: dict[str, Any] = {
                 "markdown_summary": {
                     "type": "string",
-                    "description": f"Synthèse rédigée de la section '{section.title}'.",
+                    "description": get_ops_copy(ENGINE_STEP_LOCALES)[
+                        "template_section_desc"
+                    ].format(title=section.title),
                 },
                 "human_authored_required": {
                     "type": "boolean",

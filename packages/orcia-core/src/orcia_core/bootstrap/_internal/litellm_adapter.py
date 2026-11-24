@@ -178,12 +178,7 @@ class LiteLLMAdapter(LLMPort):
     def _resolve_api_key(self) -> str:
         """Resolve API key on-the-fly from `SecretProviderPort` (`DEC-SEC-01`, `NFR-SEC-4`)."""
         if self._api_key_ref is None:
-            raise PermanentInfraError(
-                detail_override=(
-                    "Aucune SecretRef configurée pour LiteLLMAdapter (DEC-SEC-01: "
-                    "les clés par défaut en dur sont interdites)."
-                )
-            )
+            raise PermanentInfraError(detail_code="ERR_LITELLM_MISSING_SECRET_REF")
         resolved = self._secret_provider.resolve_secret(self._api_key_ref)
         register_sensitive_secret_value(resolved)
         return resolved
@@ -267,10 +262,8 @@ class LiteLLMAdapter(LLMPort):
             self._last_invocation_outcome = outcome
             if outcome.status != "SUCCEEDED":
                 raise PermanentInfraError(
-                    detail_override=(
-                        f"Échec de l'appel gouverné LiteLLM via ConnectorInvoker: "
-                        f"status={outcome.status}, code={outcome.error_code}"
-                    )
+                    detail_code="ERR_LITELLM_GOVERNED_CALL_FAILED",
+                    detail_params={"status": outcome.status, "code": outcome.error_code},
                 )
             body = dict(outcome.sanitized_output)
         else:

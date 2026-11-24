@@ -2,28 +2,15 @@
 
 from __future__ import annotations
 
+from orcia_core.blackboard._error_catalog import BLACKBOARD_ERROR_CATALOG
 from orcia_kernel.errors import (
-    LocalizedErrorCopy,
     OrciaDomainError,
     ResourceNotFoundError,
     ValidationDomainError,
     register_domain_error_catalog,
 )
 
-register_domain_error_catalog(
-    {
-        "ERR_BLACKBOARD_APPEND_ONLY_VIOLATION": {
-            "fr": LocalizedErrorCopy(
-                "Violation du Blackboard en ajout seul",
-                "Les snapshots engagés dans blackboard_snapshots sont immuables.",
-            ),
-            "en": LocalizedErrorCopy(
-                "Append-only Blackboard violation",
-                "Committed snapshots in blackboard_snapshots are strictly immutable.",
-            ),
-        },
-    }
-)
+register_domain_error_catalog(BLACKBOARD_ERROR_CATALOG)
 
 
 class BlackboardAppendOnlyViolationError(OrciaDomainError):

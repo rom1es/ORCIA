@@ -15,6 +15,10 @@ from orcia_core.blackboard.models import (
     StepMemlogEntry,
 )
 from orcia_core.blackboard.store import AppendOnlyBlackboardStore
+from orcia_core.orchestration._orchestration_ops_locales import (
+    ENGINE_STEP_LOCALES,
+    get_ops_copy,
+)
 from orcia_core.orchestration.errors import (
     ResourceNotFoundError,
     ValidationDomainError,
@@ -89,20 +93,21 @@ def build_default_fast_path_markers(
     plugin = get_memlog_marker_plugin()
     if plugin is not None:
         return plugin.build_fast_path_markers(step_key, divergence_note, datasources)
+    ec = get_ops_copy(ENGINE_STEP_LOCALES)
     return (
         StepMemlogEntry(
             entry_id=new_uuid7_str(),
             step_key=step_key,
             marker_type="ASSUMPTION",
-            summary="[ASSUMPTION] Continuité d'audit en tâche de fond retenue",
-            details=f"Hypothèse appliquée sans blocage worker: {divergence_note}",
+            summary=ec["fast_path_assumption_summary"],
+            details=ec["fast_path_assumption_details"].format(note=divergence_note),
             source_uris=datasources,
         ),
         StepMemlogEntry(
             entry_id=new_uuid7_str(),
             step_key=step_key,
             marker_type="core.divergence_suspected",
-            summary="[DIVERGENCE] Écart détecté entre sources fédérées",
+            summary=ec["fast_path_div_summary"],
             details=divergence_note,
             source_uris=datasources,
         ),
@@ -133,7 +138,8 @@ class JitStepHydrator:
                 break
         if target_step is None:
             raise ResourceNotFoundError(
-                detail_override=f"Étape '{step_key}' introuvable dans '{workflow.uri}'."
+                detail_code="ERR_JIT_STEP_NOT_FOUND",
+                detail_params={"step_key": step_key, "workflow_uri": workflow.uri},
             )
 
         declared_uris: list[str] = []
@@ -151,10 +157,8 @@ class JitStepHydrator:
             snap = blackboard.get_active_step_snapshot(run.id, upstream_step_key)
             if snap is None:
                 raise ResourceNotFoundError(
-                    detail_override=(
-                        f"Snapshot amont requis introuvable pour '{canonical_uri}' "
-                        f"lors de l'hydratation JIT de '{step_key}'."
-                    )
+                    detail_code="ERR_JIT_UPSTREAM_SNAPSHOT_MISSING",
+                    detail_params={"canonical_uri": canonical_uri, "step_key": step_key},
                 )
             if field_key in snap.artifact_payload:
                 resolved_inputs[alias] = snap.artifact_payload[field_key]
@@ -188,7 +192,8 @@ class JitStepHydrator:
             if len(parts) == 2:
                 return parts[1], "artifact"
         raise ValidationDomainError(
-            detail_override=f"Référence d'entrée JIT invalide '{ref_expr}' sur le run '{run_id}'."
+            detail_code="ERR_JIT_INPUT_REF_INVALID",
+            detail_params={"ref_expr": ref_expr, "run_id": run_id},
         )
 
 

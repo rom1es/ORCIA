@@ -16,161 +16,26 @@ from __future__ import annotations
 import asyncio
 import hmac
 import threading
-from dataclasses import dataclass
-from typing import Literal
 
+from orcia_core.bootstrap._progressive_accostage_models import (
+    ACCOSTAGE_SIX_MILESTONES,
+    EXCLUSIVE_USERS_LOCK_SQL,
+    SINGLE_FAMILY_AMBER_WARNING_FR,
+    AccostageMilestoneSpec,
+    AccostageStatusReport,
+    AccostageVisibleMilestone,
+    FirstPlatformAdminRecord,
+    LlmProgressiveTierMode,
+    build_accostage_status_report,
+    is_accostage_milestone_accessible,
+)
 from orcia_core.bootstrap.errors import (
     FirstUserAlreadyInitializedError,
     InvalidBootstrapTokenError,
 )
 from orcia_core.bootstrap.models import LlmModelEndpoint, ModelRouterService
+from orcia_kernel.enums import DEFAULT_LOCALE, SupportedLocale
 from orcia_kernel.ids import new_uuid7_str
-
-LlmProgressiveTierMode = Literal[
-    "UNCONFIGURED",
-    "QUICK_TRIAL_SINGLE_FAMILY",
-    "FULL_ORTHOGONAL_AD10",
-]
-
-SINGLE_FAMILY_AMBER_WARNING_FR: str = (
-    "⚠️ 1 seule famille de modèles configurée — Ajoutez une 2e famille dans "
-    "Administration › Modèles IA pour activer les contrôles croisés de qualité"
-)
-
-EXCLUSIVE_USERS_LOCK_SQL: str = "LOCK TABLE users IN EXCLUSIVE MODE"
-
-
-@dataclass(frozen=True, slots=True)
-class AccostageMilestoneSpec:
-    """One of the 6 progressive Day-0 Accostage milestones (`Accostage 1/6`..`6/6`)."""
-
-    index: int
-    key: str
-    title_fr: str
-    title_en: str
-    target_route: str
-
-
-@dataclass(frozen=True, slots=True)
-class AccostageVisibleMilestone:
-    """Role-filtered progressive Accostage milestone exposed to the active session."""
-
-    index: int
-    key: str
-    title_fr: str
-    title_en: str
-    target_route: str
-    completed: bool
-    is_accessible: bool
-
-
-ACCOSTAGE_SIX_MILESTONES: tuple[AccostageMilestoneSpec, ...] = (
-    AccostageMilestoneSpec(
-        1,
-        "first-admin",
-        "1. Compte Admin",
-        "1. Admin Account",
-        "/profile",
-    ),
-    AccostageMilestoneSpec(
-        2,
-        "first-llm-model",
-        "2. Modèles IA",
-        "2. AI Models",
-        "/settings/ai-models",
-    ),
-    AccostageMilestoneSpec(
-        3,
-        "first-org-unit",
-        "3. Organisation",
-        "3. Organization",
-        "/organization",
-    ),
-    AccostageMilestoneSpec(
-        4,
-        "first-space",
-        "4. Premier Espace d'équipe",
-        "4. First Team Space",
-        "/spaces",
-    ),
-    AccostageMilestoneSpec(
-        5,
-        "first-datasource",
-        "5. Première Source",
-        "5. First Source",
-        "/spaces",
-    ),
-    AccostageMilestoneSpec(
-        6,
-        "pilot-workflow-run",
-        "6. Premier Processus",
-        "6. First Process",
-        "/processes",
-    ),
-)
-
-_ADMIN_ONLY_MILESTONE_KEYS: frozenset[str] = frozenset(
-    {"first-admin", "first-llm-model", "first-datasource"}
-)
-_ORG_MILESTONE_ROLES: frozenset[str] = frozenset(
-    {"PLATFORM_ADMIN", "BU_LEAD", "BU_DIRECTOR", "TEAM_LEAD"}
-)
-
-
-def is_accostage_milestone_accessible(
-    milestone_key: str,
-    *,
-    user_role: str | None = None,
-    read_only_observer: bool = False,
-    first_admin_initialized: bool = False,
-) -> bool:
-    """Return True if the active role is allowed to see and open the milestone."""
-    if read_only_observer:
-        return False
-    if user_role is None:
-        return not first_admin_initialized
-    normalized_role = user_role.strip().upper()
-    if normalized_role in ("OBSERVER", "READ_ONLY_OBSERVER"):
-        return False
-    if normalized_role == "PLATFORM_ADMIN":
-        return True
-    if milestone_key in _ADMIN_ONLY_MILESTONE_KEYS:
-        return False
-    if milestone_key == "first-org-unit":
-        return normalized_role in _ORG_MILESTONE_ROLES
-    return True
-
-
-@dataclass(frozen=True, slots=True)
-class FirstPlatformAdminRecord:
-    """Created initial `PLATFORM_ADMIN` account under `LOCK TABLE users IN EXCLUSIVE MODE`."""
-
-    user_id: str
-    email: str
-    display_name: str
-    platform_role: Literal["PLATFORM_ADMIN"]
-    orcia_env: str
-    sql_lock_statement: str
-
-
-@dataclass(frozen=True, slots=True)
-class AccostageStatusReport:
-    """Current Day-0 progressive Accostage status (`Accostage k/6` + LLM tier state)."""
-
-    completed_count: int
-    total_count: int
-    badge_label: str
-    llm_tier_mode: LlmProgressiveTierMode
-    distinct_families: tuple[str, ...]
-    assistant_trial_enabled: bool
-    agentic_gates_ad10_enabled: bool
-    amber_warning_badge: str | None
-    completed_milestone_keys: tuple[str, ...]
-    first_admin_initialized: bool = False
-    first_admin_email: str | None = None
-    first_admin_display_name: str | None = None
-    platform_admin_display_name: str | None = None
-    visible_milestones: tuple[AccostageVisibleMilestone, ...] = ()
 
 
 class ProgressiveDay0AccostageService:
@@ -375,74 +240,29 @@ class ProgressiveDay0AccostageService:
         *,
         user_role: str | None = None,
         read_only_observer: bool = False,
+        locale: SupportedLocale = DEFAULT_LOCALE,
     ) -> AccostageStatusReport:
         """Compute current `Accostage k/6` badge, role-scoped milestones, and LLM tier state."""
         orth = self._model_router.evaluate_orthogonality()
-        fam_count = len(orth.distinct_families)
-        if fam_count == 0:
-            tier_mode: LlmProgressiveTierMode = "UNCONFIGURED"
-            trial_ok = False
-            ad10_ok = False
-            amber_badge: str | None = None
-        elif fam_count == 1:
-            tier_mode = "QUICK_TRIAL_SINGLE_FAMILY"
-            trial_ok = True
-            ad10_ok = False
-            amber_badge = SINGLE_FAMILY_AMBER_WARNING_FR
-        else:
-            tier_mode = "FULL_ORTHOGONAL_AD10"
-            trial_ok = True
-            ad10_ok = True
-            amber_badge = None
-
-        ordered_completed = tuple(
-            m.key for m in ACCOSTAGE_SIX_MILESTONES if m.key in self._completed_keys
-        )
-        completed_count = len(ordered_completed)
-        total_count = len(ACCOSTAGE_SIX_MILESTONES)
-        admin = self._first_admin
-        admin_initialized = admin is not None
-        admin_display_name = admin.display_name if admin is not None else None
-        completed_set = set(ordered_completed)
-        visible_milestones: list[AccostageVisibleMilestone] = []
-        for spec in ACCOSTAGE_SIX_MILESTONES:
-            target_route = (
-                ("/profile" if admin_initialized else "/cockpit")
-                if spec.key == "first-admin"
-                else spec.target_route
-            )
-            accessible = is_accostage_milestone_accessible(
-                spec.key,
-                user_role=user_role,
-                read_only_observer=read_only_observer,
-                first_admin_initialized=admin_initialized,
-            )
-            if accessible:
-                visible_milestones.append(
-                    AccostageVisibleMilestone(
-                        index=spec.index,
-                        key=spec.key,
-                        title_fr=spec.title_fr,
-                        title_en=spec.title_en,
-                        target_route=target_route,
-                        completed=spec.key in completed_set,
-                        is_accessible=True,
-                    )
-                )
-
-        return AccostageStatusReport(
-            completed_count=completed_count,
-            total_count=total_count,
-            badge_label=f"Accostage {completed_count}/{total_count}",
-            llm_tier_mode=tier_mode,
+        return build_accostage_status_report(
             distinct_families=orth.distinct_families,
-            assistant_trial_enabled=trial_ok,
-            agentic_gates_ad10_enabled=ad10_ok,
-            amber_warning_badge=amber_badge,
-            completed_milestone_keys=ordered_completed,
-            first_admin_initialized=admin_initialized,
-            first_admin_email=admin.email if admin is not None else None,
-            first_admin_display_name=admin_display_name,
-            platform_admin_display_name=admin_display_name,
-            visible_milestones=tuple(visible_milestones),
+            completed_keys=self._completed_keys,
+            first_admin=self._first_admin,
+            user_role=user_role,
+            read_only_observer=read_only_observer,
+            locale=locale,
         )
+
+
+__all__ = [
+    "ACCOSTAGE_SIX_MILESTONES",
+    "EXCLUSIVE_USERS_LOCK_SQL",
+    "SINGLE_FAMILY_AMBER_WARNING_FR",
+    "AccostageMilestoneSpec",
+    "AccostageStatusReport",
+    "AccostageVisibleMilestone",
+    "FirstPlatformAdminRecord",
+    "LlmProgressiveTierMode",
+    "ProgressiveDay0AccostageService",
+    "is_accostage_milestone_accessible",
+]

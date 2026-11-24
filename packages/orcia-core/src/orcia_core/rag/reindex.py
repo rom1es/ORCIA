@@ -40,21 +40,16 @@ async def check_rag_operational_on_conn(conn: AsyncConnection) -> None:
         raise RagReindexInProgressError(
             progress_percentage=active_job.progress_percentage,
             job_id=active_job.id,
-            detail_override=(
-                f"Réindexation sémantique en cours ({active_job.progress_percentage}%). "
-                "La recherche documentaire et l'ingestion RAG sont temporairement indisponibles."
-            ),
+            detail_code="ERR_RAG_REINDEX_PROGRESS_DETAIL",
+            detail_params={"progress_percentage": active_job.progress_percentage},
         )
     latest_job = await get_latest_reindex_job_pg18(conn)
     if latest_job is not None and latest_job.status == "FAILED":
         raise RagReindexInProgressError(
             progress_percentage=latest_job.progress_percentage,
             job_id=latest_job.id,
-            detail_override=(
-                f"La réindexation sémantique a échoué "
-                f"({latest_job.error_message or 'erreur inconnue'}). "
-                "Veuillez relancer la réindexation dans /settings/ai-models."
-            ),
+            detail_code="ERR_RAG_REINDEX_FAILED_DETAIL",
+            detail_params={"error_message": latest_job.error_message or "unknown error"},
         )
 
 

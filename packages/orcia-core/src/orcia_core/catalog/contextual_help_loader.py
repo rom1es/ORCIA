@@ -15,11 +15,11 @@ from orcia_core.catalog.contextual_help_models import (
 )
 
 _STEPS_HEADING_RE = re.compile(
-    r"(pas-à-pas|step-by-step|en\s+\d+\s+gestes|in\s+\d+\s+steps|étapes|steps)",
+    r"(pas-\u00e0-pas|step-by-step|en\s+\d+\s+gestes|in\s+\d+\s+steps|\u00e9tapes|steps)",
     re.IGNORECASE,
 )
 _REAL_EXAMPLE_HEADING_RE = re.compile(
-    r"(un exemple réel|exemple réel|a real example|real example)",
+    r"(un exemple r\u00e9el|exemple r\u00e9el|a real example|real example)",
     re.IGNORECASE,
 )
 _COMMON_PITFALLS_HEADING_RE = re.compile(
@@ -27,7 +27,7 @@ _COMMON_PITFALLS_HEADING_RE = re.compile(
     re.IGNORECASE,
 )
 _TERMS_HEADING_RE = re.compile(
-    r"(termes|key terms|repères|notions)",
+    r"(termes|key terms|rep\u00e8res|notions)",
     re.IGNORECASE,
 )
 _FAQ_HEADING_RE = re.compile(
@@ -35,7 +35,7 @@ _FAQ_HEADING_RE = re.compile(
     re.IGNORECASE,
 )
 _WHAT_FOR_HEADING_RE = re.compile(
-    r"(à quoi sert|what this screen|what is this screen|objectif)",
+    r"(\u00e0 quoi sert|what this screen|what is this screen|objectif)",
     re.IGNORECASE,
 )
 

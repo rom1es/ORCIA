@@ -12,6 +12,7 @@ from orcia_api.dependencies import (
     get_iam_accounts_service,
     get_or_create_shared_db_engine,
 )
+from orcia_api.locales._router_locale_messages import get_router_copy
 from orcia_api.routers._auth_pg_helpers import sync_auth_service_user_by_email_from_pg
 from orcia_api.routers._auth_policy_runtime import resolve_auth_policy_runtime
 from orcia_api.routers._iam_accounts_passwords import (
@@ -27,6 +28,7 @@ from orcia_api.routers._iam_accounts_routes_helpers import (
 from orcia_api.routers._iam_accounts_routes_helpers import (
     resolve_trace_id as _trace,
 )
+from orcia_api.routers._org_unit_invitations_helpers import apply_in_memory_org_attachment
 from orcia_api.routers._org_units_delegation_helpers import (
     ensure_evaluator_org_units_synced,
     is_observer_request,
@@ -51,7 +53,6 @@ from orcia_core.permissions import (
     IamAccountRecord,
     IamAccountsGovernanceService,
     IamAuthSource,
-    OrgUnitNode,
     OrgUnitSummary,
     assert_can_invite_org_user,
     list_evaluator_org_unit_summaries,
@@ -69,40 +70,6 @@ INVITATION_PROBLEM_RESPONSES = {
     **PROBLEM_RESPONSES,
     409: PROBLEM_RESPONSES[422],
 }
-
-
-def _apply_in_memory_org_attachment(
-    evaluator_nodes: list[OrgUnitNode],
-    *,
-    evaluator_upsert: object,
-    target_node: OrgUnitNode,
-    canonical_kind: str,
-    principal_id: str,
-) -> None:
-    """Attach invited user onto in-memory `OrgUnitNode` when PG sync is disabled."""
-    del evaluator_nodes
-    upsert = evaluator_upsert  # MatrixPermissionEvaluator.upsert_org_unit
-    next_leads = list(target_node.lead_user_ids)
-    next_onto = list(target_node.ontology_lead_user_ids)
-    if canonical_kind in ("TEAM_LEAD", "BU_LEAD") and principal_id not in next_leads:
-        next_leads.append(principal_id)
-    elif canonical_kind == "ONTOLOGY_LEAD" and principal_id not in next_onto:
-        next_onto.append(principal_id)
-    if canonical_kind in ("TEAM_LEAD", "BU_LEAD", "ONTOLOGY_LEAD"):
-        upsert(  # type: ignore[operator]
-            OrgUnitNode(
-                id=target_node.id,
-                slug=target_node.slug,
-                name=target_node.name,
-                unit_type=target_node.unit_type,
-                parent_id=target_node.parent_id,
-                billing_enabled=target_node.billing_enabled,
-                lead_user_id=next_leads[0] if next_leads else None,
-                lead_user_ids=tuple(next_leads),
-                ontology_lead_user_ids=tuple(next_onto),
-                member_user_ids=target_node.member_user_ids,
-            )
-        )
 
 
 @router.post(
@@ -142,12 +109,12 @@ async def invite_org_unit_user(
     if not cleaned_email or "@" not in cleaned_email:
         raise ValidationDomainError(
             instance=str(request.url.path),
-            detail_override="Adresse e-mail invalide pour l'invitation utilisateur.",
+            detail_code="ERR_INVITATION_INVALID_EMAIL",
         )
     if not cleaned_name:
         raise ValidationDomainError(
             instance=str(request.url.path),
-            detail_override="Le nom complet de l'utilisateur invité est requis.",
+            detail_code="ERR_INVITATION_FULL_NAME_REQUIRED",
         )
 
     policy_state, _, _ = await resolve_auth_policy_runtime(request)
@@ -224,7 +191,7 @@ async def invite_org_unit_user(
                     auth_svc.evaluator, created.principal_id, (target_node.id,)
                 )
             else:
-                _apply_in_memory_org_attachment(
+                apply_in_memory_org_attachment(
                     list(auth_svc.evaluator.org_units),
                     evaluator_upsert=auth_svc.evaluator.upsert_org_unit,
                     target_node=target_node,
@@ -278,7 +245,9 @@ async def invite_org_unit_user(
         request,
         actor=caller,
         event_type="IAM_ACCOUNT_INVITED",
-        summary=f"Invitation de {cleaned_name} ({cleaned_email}) sur '{target_node.name}'",
+        summary=get_router_copy().invitation_summary.format(
+            name=cleaned_name, email=cleaned_email, unit_name=target_node.name
+        ),
         org_unit_id=target_node.id,
         scope_path=target_node.slug or "GLOBAL",
         metadata={

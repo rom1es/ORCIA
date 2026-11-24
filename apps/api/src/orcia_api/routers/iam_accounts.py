@@ -21,6 +21,7 @@ from orcia_api.dependencies import (
     get_iam_accounts_service,
     get_or_create_shared_db_engine,
 )
+from orcia_api.locales._router_locale_messages import get_router_copy
 from orcia_api.routers._auth_token_issuer import resolve_request_user
 from orcia_api.routers._iam_accounts_passwords import (
     enforce_iam_accounts_mutation_access,
@@ -178,7 +179,7 @@ async def reset_iam_account_temporary_password(
         request,
         actor=caller,
         event_type="IAM_ACCOUNT_UPDATED",
-        summary=f"Réinitialisation du mot de passe temporaire de '{res.principal_id}'",
+        summary=get_router_copy().iam_pw_reset.format(principal_id=res.principal_id),
         scope_path="GLOBAL",
         metadata={"principal_id": res.principal_id},
     )

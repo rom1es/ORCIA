@@ -51,31 +51,31 @@ CANONICAL_FORBIDDEN_DRIFT_PATTERNS: tuple[dict[str, str], ...] = (
         "rule_id": "DRIFT-NO-SQLITE-IN-INTEGRATION",
         "pattern": "sqlite://",
         "severity": "CRITICAL",
-        "message": "Interdiction d'utiliser SQLite en test d'intégration (PostgreSQL 18 requis).",
+        "message": "SQLite is forbidden in integration tests (PostgreSQL 18 required).",
     },
     {
         "rule_id": "DRIFT-NO-MINIO-AGPL",
         "pattern": "minio/minio",
         "severity": "HIGH",
-        "message": "MinIO (AGPL-3.0 archivé) est interdit ; utiliser SeaweedFS S3 (Apache-2.0).",
+        "message": "MinIO (archived AGPL-3.0) is forbidden; use SeaweedFS S3 (Apache-2.0).",
     },
     {
         "rule_id": "DRIFT-NO-NEXTJS-APP-ROUTER",
         "pattern": "next/navigation",
         "severity": "HIGH",
-        "message": "Next.js est interdit (OQ-02) ; utiliser Vite 6 + TanStack Router v1.",
+        "message": "Next.js is forbidden (OQ-02); use Vite 6 + TanStack Router v1.",
     },
     {
         "rule_id": "DRIFT-NO-DBOS-PRIVATE-API",
         "pattern": "dbos._",
         "severity": "CRITICAL",
-        "message": "Appel interdit à une API privée dbos._* (AD-2 Règle 3).",
+        "message": "Forbidden call to private dbos._* API (AD-2 Rule 3).",
     },
     {
         "rule_id": "DRIFT-NO-IMPORT-SINGLETON",
         "pattern": "_default_orchestration_service",
         "severity": "HIGH",
-        "message": "Singleton d'import interdit (AD-1 / AD-19 M5).",
+        "message": "Import-time singleton forbidden (AD-1 / AD-19 M5).",
     },
 )
 

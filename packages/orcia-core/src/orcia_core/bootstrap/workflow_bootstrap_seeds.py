@@ -6,6 +6,8 @@ import hashlib
 import json
 from dataclasses import dataclass
 
+from orcia_core.bootstrap._bootstrap_locales import WORKFLOW_BOOTSTRAP_SEED_LOCALES
+
 
 def _sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
@@ -112,46 +114,48 @@ def _wf_seed(
     )
 
 
+_WF_FR = WORKFLOW_BOOTSTRAP_SEED_LOCALES["fr"]
+
 DEFAULT_SYSTEM_BOOTSTRAP_WORKFLOW_SEEDS: tuple[SystemBootstrapWorkflowSeed, ...] = (
     _wf_seed(
         "0192c4e0-0000-7000-8000-000000001301", "orcia://system/bootstrap/init-organization",
-        "Amorçage Jour 0 de l'Organisation (init-organization)",
-        "Configure OIDC/Local Argon2id, RBAC, >= 2 familles LLM orthogonales et le catalogue.",
+        _WF_FR["init-organization"][0],
+        _WF_FR["init-organization"][1],
         "PLATFORM_ADMIN", "GLOBAL",
         ("GATE-AUTH-RBAC-VALID", "GATE-LLM-ORTHOGONALITY-MIN-2-FAMILIES"),
     ),
     _wf_seed(
         "0192c4e0-0000-7000-8000-000000001302", "orcia://system/bootstrap/init-workspace",
-        "Onboarding Autonome d'Équipe & Multi-Workspaces (init-workspace)",
-        "Crée en self-service l'équipe/sous-équipes, 1..N Workspaces solutions et invitations.",
+        _WF_FR["init-workspace"][0],
+        _WF_FR["init-workspace"][1],
         "TEAM_LEAD", "TEAM",
         ("GATE-ONTOLOGY-L3-NO-UPSTREAM-CONFLICT", "GATE-WORKSPACE-NON-EMPTY"),
     ),
     _wf_seed(
         "0192c4e0-0000-7000-8000-000000001303", "orcia://system/bootstrap/init-datasource",
-        "Rattachement Gouverné Multi-Sources (init-datasource)",
-        "Rattache N x git://, confluence:// (CQL), jira:// (JQL), db:// avec Ancre Humaine.",
+        _WF_FR["init-datasource"][0],
+        _WF_FR["init-datasource"][1],
         "TEAM_LEAD", "WORKSPACE",
         ("GATE-PERMISSION-BROKER-HUMAN-ANCHOR-SIGNED", "GATE-FRESHNESS-TTL-DAYS-REQUIRED"),
     ),
     _wf_seed(
         "0192c4e0-0000-7000-8000-000000001304", "orcia://system/bootstrap/init-existing-project",
-        "Absorption Brownfield de Projet Existant (init-existing-project)",
-        "Analyse un projet existant et génère sa proposition d'ontologie et de sources fédérées.",
+        _WF_FR["init-existing-project"][0],
+        _WF_FR["init-existing-project"][1],
         "TEAM_LEAD", "WORKSPACE",
         ("GATE-BROWNFIELD-SCAN-VERIFIED",),
     ),
     _wf_seed(
         "0192c4e0-0000-7000-8000-000000001305", "orcia://system/bootstrap/init-skill",
-        "Initialisation Gouvernée de Skill / Agent (init-skill)",
-        "Crée un nouveau Skill ou Agent dans le Catalogue Fédéré avec ses 5 permissions.",
+        _WF_FR["init-skill"][0],
+        _WF_FR["init-skill"][1],
         "CONTRIBUTOR", "WORKSPACE",
         ("GATE-SKILL-SCHEMA-VALID",),
     ),
     _wf_seed(
         "0192c4e0-0000-7000-8000-000000001306", "orcia://system/bootstrap/init-user",
-        "Onboarding Première Connexion & Liaison Passthrough (init-user)",
-        "Confirme le Profil Humain et lie Jira, Confluence et Git en passthrough AES-256-GCM.",
+        _WF_FR["init-user"][0],
+        _WF_FR["init-user"][1],
         "CONTRIBUTOR", "WORKSPACE",
         ("GATE-HUMAN-PROFILE-CONFIRMED", "GATE-PASSTHROUGH-AES256GCM-ENCRYPTED"),
     ),

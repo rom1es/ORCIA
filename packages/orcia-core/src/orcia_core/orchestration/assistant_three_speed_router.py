@@ -158,10 +158,11 @@ class AssistantThreeSpeedRouterService:
                 det_ms=det_ms,
                 threshold_ms=MAX_NODES_1_TO_4_DETERMINISTIC_MS,
             )
+        from orcia_core.orchestration._assistant_locales import ASSISTANT_THREE_SPEED_LOCALES
+
         prompt_excerpt = user_prompt.strip()[:140]
-        cadrage_summary = (
-            f"Demande analysée pour l'espace « {workspace_id} » (rôle : {active_hat}) : "
-            f"« {prompt_excerpt} »."
+        cadrage_summary = ASSISTANT_THREE_SPEED_LOCALES["fr"]["cadrage_summary"].format(
+            workspace_id=workspace_id, active_hat=active_hat, prompt_excerpt=prompt_excerpt
         )
 
         if speed_mode == "SPEED_1_FAST":

@@ -6,12 +6,18 @@ vocabulary (`AD-19`, `AD-20`, `AC-E2`).
 
 from __future__ import annotations
 
-import importlib.metadata
-import threading
-from typing import Any, Protocol, runtime_checkable
+from typing import Any
 
 import yaml  # type: ignore[import-untyped]
 
+from orcia_core.orchestration._orchestration_yaml_locales import get_yaml_copy
+from orcia_core.orchestration._yaml_policy_plugins import (
+    WorkflowPolicyPluginProtocol,
+    get_valid_workflow_modes,
+    get_workflow_policy_plugins,
+    is_registered_workflow_policy,
+    register_workflow_policy_plugin,
+)
 from orcia_core.orchestration.models import (
     WorkflowStepSpec,
     WorkflowValidationFinding,
@@ -28,98 +34,6 @@ VALID_STEP_TYPES = frozenset(
     {"AGENT", "SKILL", "SUB_WORKFLOW", "HUMAN_TASK", "HTTP_ACTION", "POST_ACTION_VERIFICATION"}
 )
 VALID_GATE_POLICIES = frozenset({"STRICT", "STANDARD", "FAST_TRACK"})
-
-
-@runtime_checkable
-class WorkflowPolicyPluginProtocol(Protocol):
-    """Plugin protocol discovered via `entry_points(group='orcia.workflow_policies')` (`AD-20`)."""
-
-    @property
-    def policy_keys(self) -> tuple[str, ...]:
-        """Return namespaced policy keys handled by this plugin."""
-        ...
-
-    @property
-    def allowed_modes(self) -> tuple[str, ...]:
-        """Return additional workflow engineering modes registered by this plugin."""
-        ...
-
-    def normalize_raw_step(
-        self, raw_step: dict[str, Any]
-    ) -> tuple[tuple[str, ...], tuple[str, ...]]:
-        """Extract pack-specific step tags and policies from a raw step dict."""
-        ...
-
-    def validate_dag(
-        self,
-        parsed_steps: list[WorkflowStepSpec],
-        steps_by_key: dict[str, WorkflowStepSpec],
-        mode: str,
-        findings: list[WorkflowValidationFinding],
-    ) -> None:
-        """Validate pack-specific DAG policies and append findings if violated."""
-        ...
-
-
-_POLICY_LOCK = threading.Lock()
-_WORKFLOW_POLICY_PLUGINS: dict[str, WorkflowPolicyPluginProtocol] = {}
-_REGISTERED_POLICY_KEYS: set[str] = {
-    "core.standard",
-    "core.require_human_gate",
-}
-_REGISTERED_WORKFLOW_MODES: set[str] = {"standard"}
-_POLICY_ENTRY_POINTS_LOADED: bool = False
-
-
-def register_workflow_policy_plugin(plugin_id: str, plugin: WorkflowPolicyPluginProtocol) -> None:
-    """Register a `WorkflowPolicyPluginProtocol` instance (`AD-20`, `AC-E1`, `AC-E2`)."""
-    with _POLICY_LOCK:
-        _WORKFLOW_POLICY_PLUGINS[plugin_id] = plugin
-        for p_key in plugin.policy_keys:
-            _REGISTERED_POLICY_KEYS.add(p_key.strip())
-        for m_key in plugin.allowed_modes:
-            _REGISTERED_WORKFLOW_MODES.add(m_key.strip())
-
-
-def _ensure_policy_entry_points_loaded() -> None:
-    global _POLICY_ENTRY_POINTS_LOADED
-    with _POLICY_LOCK:
-        if _POLICY_ENTRY_POINTS_LOADED:
-            return
-        _POLICY_ENTRY_POINTS_LOADED = True
-    try:
-        eps = importlib.metadata.entry_points(group="orcia.workflow_policies")
-        for ep in eps:
-            loaded = ep.load()
-            instance = loaded() if callable(loaded) else loaded
-            if isinstance(instance, WorkflowPolicyPluginProtocol):
-                register_workflow_policy_plugin(ep.name, instance)
-    except Exception:
-        pass
-
-
-def get_workflow_policy_plugins() -> tuple[WorkflowPolicyPluginProtocol, ...]:
-    """Return all registered workflow policy plugins."""
-    _ensure_policy_entry_points_loaded()
-    with _POLICY_LOCK:
-        return tuple(_WORKFLOW_POLICY_PLUGINS.values())
-
-
-def is_registered_workflow_policy(policy_key: str) -> bool:
-    """Return True if `policy_key` is registered by Core or an installed pack (`AC-E2`)."""
-    _ensure_policy_entry_points_loaded()
-    with _POLICY_LOCK:
-        return policy_key.strip() in _REGISTERED_POLICY_KEYS
-
-
-def get_valid_workflow_modes() -> frozenset[str]:
-    """Return valid workflow engineering modes registered by Core and installed packs."""
-    _ensure_policy_entry_points_loaded()
-    with _POLICY_LOCK:
-        return frozenset(_REGISTERED_WORKFLOW_MODES)
-
-
-# Kept for import compatibility; dynamically includes modes from registered plugins
 VALID_MODES: frozenset[str] = frozenset({"standard"})
 
 
@@ -166,13 +80,14 @@ def parse_raw_yaml_or_json(
     raw_text: str,
 ) -> tuple[dict[str, Any], list[WorkflowValidationFinding]]:
     """Parse YAML or JSON text and return root dict with line numbers or syntax findings."""
+    yc = get_yaml_copy()
     if not raw_text or not raw_text.strip():
         return {}, [
             WorkflowValidationFinding(
                 line=1,
                 rule_code="RULE_SYNTAX_EMPTY_MANIFEST",
                 field_path="root",
-                message="Le manifeste Workflow-as-Code YAML/JSON est vide.",
+                message=yc["empty_manifest"],
             )
         ]
     try:
@@ -185,7 +100,7 @@ def parse_raw_yaml_or_json(
                 line=err_line,
                 rule_code="RULE_YAML_JSON_SYNTAX_ERROR",
                 field_path="root",
-                message=f"Erreur de syntaxe YAML/JSON à la ligne {err_line}: {exc}",
+                message=yc["syntax_error"].format(line=err_line, exc=exc),
             )
         ]
 
@@ -195,7 +110,7 @@ def parse_raw_yaml_or_json(
                 line=1,
                 rule_code="RULE_ROOT_MAPPING_REQUIRED",
                 field_path="root",
-                message="La racine du manifeste doit être un objet YAML/JSON.",
+                message=yc["root_mapping"],
             )
         ]
     return loaded, []
@@ -209,13 +124,14 @@ def parse_single_step_spec(
     findings: list[WorkflowValidationFinding],
 ) -> WorkflowStepSpec | None:
     """Validate and convert a raw YAML step dict into a `WorkflowStepSpec`."""
+    yc = get_yaml_copy()
     if not isinstance(raw_step, dict):
         findings.append(
             WorkflowValidationFinding(
                 line=steps_line,
                 rule_code="RULE_STEP_OBJECT_REQUIRED",
                 field_path=f"steps[{idx}]",
-                message="Chaque étape doit être un objet YAML/JSON.",
+                message=yc["step_object"],
             )
         )
         return None
@@ -228,7 +144,7 @@ def parse_single_step_spec(
                 line=s_line,
                 rule_code="RULE_STEP_KEY_REQUIRED",
                 field_path=f"steps[{idx}].step_key",
-                message="Le champ 'step_key' est obligatoire sur chaque étape.",
+                message=yc["step_key_required"],
             )
         )
         return None
@@ -238,7 +154,7 @@ def parse_single_step_spec(
                 line=s_line,
                 rule_code="RULE_STEP_KEY_UNIQUE",
                 field_path=f"steps[{idx}].step_key",
-                message=f"Doublon d'identifiant d'étape '{step_key}' à la ligne {s_line}.",
+                message=yc["step_key_unique"].format(step_key=step_key, line=s_line),
             )
         )
         return None
@@ -251,7 +167,7 @@ def parse_single_step_spec(
                 line=line_of(raw_step, "step_type", s_line),
                 rule_code="RULE_INVALID_STEP_TYPE",
                 field_path=f"steps[{idx}].step_type",
-                message=f"Type d'étape invalide '{raw_type}'.",
+                message=yc["invalid_step_type"].format(step_type=raw_type),
             )
         )
         return None
@@ -263,7 +179,7 @@ def parse_single_step_spec(
                 line=line_of(raw_step, "sub_workflow_uri", s_line),
                 rule_code="RULE_SUB_WORKFLOW_URI_REQUIRED",
                 field_path=f"steps[{idx}].sub_workflow_uri",
-                message=f"L'étape SUB_WORKFLOW '{step_key}' exige 'sub_workflow_uri'.",
+                message=yc["subwf_uri_required"].format(step_key=step_key),
             )
         )
 
@@ -278,7 +194,7 @@ def parse_single_step_spec(
                 line=line_of(raw_step, "max_agent_retries", s_line),
                 rule_code="RULE_BOUNDED_AGENT_RETRIES",
                 field_path=f"steps[{idx}].max_agent_retries",
-                message="Le champ 'max_agent_retries' doit être borné entre 1 et 10.",
+                message=yc["bounded_retries"],
             )
         )
         max_retries = 3
@@ -323,9 +239,10 @@ def parse_single_step_spec(
                     line=line_of(raw_step, "policies", s_line),
                     rule_code="ERR_UNKNOWN_WORKFLOW_POLICY",
                     field_path=f"steps.{step_key}.policies",
-                    message=(
-                        f"Ligne {line_of(raw_step, 'policies', s_line)}: Politique de workflow "
-                        f"inconnue '{p_key}' sur l'étape '{step_key}'."
+                    message=yc["unknown_policy"].format(
+                        line=line_of(raw_step, "policies", s_line),
+                        policy=p_key,
+                        step_key=step_key,
                     ),
                 )
             )

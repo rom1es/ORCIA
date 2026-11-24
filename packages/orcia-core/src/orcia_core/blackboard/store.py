@@ -68,9 +68,7 @@ class AppendOnlyBlackboardStore:
         """Update `draft_artifact_jsonb` and `step_memlog_jsonb` without creating a snapshot."""
         current = self.get_step_execution(run_id, step_key)
         if status == "COMMITTED":
-            raise ValidationDomainError(
-                detail_override="Utilisez commit_step_snapshot() pour passer une étape à COMMITTED."
-            )
+            raise ValidationDomainError(detail_code="ERR_BLACKBOARD_COMMIT_REQUIRED")
         raw_bytes = json.dumps(draft_artifact, sort_keys=True).encode("utf-8")
         sha = compute_bytes_sha256(raw_bytes)
         draft_cas_key = f"cas/{sha}"
@@ -113,7 +111,7 @@ class AppendOnlyBlackboardStore:
             entry_id=new_uuid7_str(),
             step_key=step_key,
             marker_type="FEEDBACK_RETRY",
-            summary=f"Tentative {next_attempt}/{current.max_agent_retries}",
+            summary=f"Attempt {next_attempt}/{current.max_agent_retries}",
             details=feedback_reason,
         )
         if next_attempt > current.max_agent_retries:
@@ -125,10 +123,11 @@ class AppendOnlyBlackboardStore:
             )
             self.register_step_execution(exhausted)
             raise ValidationDomainError(
-                detail_override=(
-                    f"Plafond de boucles de rétroaction atteint ({current.max_agent_retries}) "
-                    f"sur l'étape '{step_key}' — escalade vers arbitrage humain."
-                )
+                detail_code="ERR_BLACKBOARD_RETRY_CEILING_EXHAUSTED",
+                detail_params={
+                    "max_retries": current.max_agent_retries,
+                    "step_key": step_key,
+                },
             )
         updated = replace(
             current,

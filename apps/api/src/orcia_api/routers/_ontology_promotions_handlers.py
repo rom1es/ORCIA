@@ -5,11 +5,12 @@ from __future__ import annotations
 from fastapi import Request
 
 from orcia_api.dependencies import get_auth_service, get_ontology_and_rag_services
+from orcia_api.locales._router_locale_messages import get_router_copy
+from orcia_api.routers._ontology_promotions_decide import handle_decide_promotion
 from orcia_api.routers._ontology_promotions_helpers import (
     build_promotion_impact,
     compute_writable_options,
     create_proposal_in_memory,
-    decide_proposal_in_memory,
     load_ontology_topology,
     resolve_dynamic_ontology_scopes,
     resolve_ontology_caller,
@@ -22,15 +23,12 @@ from orcia_core.ontology import (
     OntologyConceptEntity,
     OntologyHierarchyResolver,
     OntologyLevel,
-    assert_can_review_promotion,
     assert_can_write_ontology_level,
     can_read_ontology_item,
     can_review_promotion_target,
     can_write_ontology_level,
     create_proposal_pg,
-    decide_proposal_pg,
     find_workspace,
-    get_proposal_pg,
     is_observer_user,
     list_concepts_pg,
     list_proposals_pg,
@@ -40,7 +38,6 @@ from orcia_core.ontology import (
 )
 from orcia_core.ontology.errors import (
     ObserverModeReadOnlyError,
-    OntologyConflictError,
     PromotionLevelJumpError,
     ResourceNotFoundError,
     ScopeAccessDeniedError,
@@ -149,7 +146,9 @@ async def handle_upsert_concept(
             engine,
             actor=user,
             event_type="ONTOLOGY_CONCEPT_CREATED",
-            summary=f"Terme « {saved.canonical_term} » enregistré au niveau {saved.level}",
+            summary=get_router_copy().ontology_term_saved.format(
+                term=saved.canonical_term, level=saved.level
+            ),
             scope_id=saved.scope_id,
             level=saved.level,
             owner_org_unit_id=ws_owner.owner_org_unit_id if ws_owner else None,
@@ -216,7 +215,10 @@ async def handle_create_promotion(
     concepts = await list_concepts_pg(engine) if engine is not None else list(gov.concepts)
     source = next((c for c in concepts if c.concept_key == body.concept_key), None)
     if source is None:
-        raise ResourceNotFoundError(detail_override=f"Concept '{body.concept_key}' introuvable.")
+        raise ResourceNotFoundError(
+            detail_code="ERR_ONTOLOGY_CONCEPT_NOT_FOUND",
+            detail_params={"concept_key": body.concept_key},
+        )
     if not can_read_ontology_item(
         user, source.level, source.scope_id, org_units, workspaces, memberships
     ):
@@ -244,9 +246,8 @@ async def handle_create_promotion(
             engine,
             actor=user,
             event_type="ONTOLOGY_PROMOTION_PROPOSED",
-            summary=(
-                f"Promotion proposée pour « {source.canonical_term} » "
-                f"({source.level} -> {target_level})"
+            summary=get_router_copy().ontology_promo_proposed.format(
+                term=source.canonical_term, src=source.level, dst=target_level
             ),
             scope_id=target_scope_id,
             level=target_level,
@@ -270,80 +271,10 @@ async def handle_create_promotion(
     return serialize_proposal_detail(created, can_decide=can_decide)
 
 
-async def handle_decide_promotion(
-    request: Request,
-    body: s.OntologyPromotionDecideRequest,
-    *,
-    proposal_id: str,
-    fixture: bool,
-    persona_key: str | None,
-) -> s.OntologyPromotionDecideResponse:
-    """Approve or reject a pending proposal (`ONTOLOGY_LEAD` for L2, `PLATFORM_ADMIN` for L1)."""
-    user = resolve_ontology_caller(request, persona_key)
-    if is_observer_user(user):
-        raise ObserverModeReadOnlyError(instance=str(request.url.path))
-    gov, _, _ = get_ontology_and_rag_services(request, fixture=fixture)
-    engine, org_units, workspaces = await load_ontology_topology(request, fixture=fixture)
-    existing = (
-        await get_proposal_pg(engine, proposal_id)
-        if engine is not None
-        else next(
-            (p for p in gov.proposals if p.id == proposal_id or p.proposal_key == proposal_id), None
-        )
-    )
-    if existing is None:
-        raise ResourceNotFoundError(detail_override=f"Proposition '{proposal_id}' introuvable.")
-    if existing.status != "PENDING_REVIEW":
-        raise OntologyConflictError(
-            detail_override=f"La proposition '{existing.proposal_key}' a déjà été traitée."
-        )
-    assert_can_review_promotion(
-        user,
-        existing.target_level,
-        existing.target_scope_id,
-        org_units,
-        workspaces,
-        instance=str(request.url.path),
-    )
-    if engine is not None:
-        updated, promoted_concept = await decide_proposal_pg(
-            engine,
-            proposal_id_or_key=proposal_id,
-            decision=body.decision,
-            reviewer=user,
-            review_comment=body.review_comment,
-        )
-        ev_type = (
-            "ONTOLOGY_PROMOTION_APPROVED"
-            if body.decision == "APPROVE"
-            else "ONTOLOGY_PROMOTION_REJECTED"
-        )
-        target_ws = find_workspace(workspaces, updated.target_scope_id)
-        await record_ontology_audit_event_pg(
-            engine,
-            actor=user,
-            event_type=ev_type,
-            summary=(
-                f"Promotion {body.decision} pour « {updated.canonical_term} » "
-                f"-> {updated.target_level}"
-            ),
-            scope_id=updated.target_scope_id,
-            level=updated.target_level,
-            owner_org_unit_id=target_ws.owner_org_unit_id if target_ws else None,
-            metadata={"proposal_key": updated.proposal_key, "decision": body.decision},
-            trace_id=get_trace_id(request),
-        )
-    else:
-        updated, promoted_concept = decide_proposal_in_memory(
-            gov,
-            existing=existing,
-            decision=body.decision,
-            reviewer=user,
-            review_comment=body.review_comment,
-        )
-    return s.OntologyPromotionDecideResponse(
-        proposal=serialize_proposal_detail(updated, can_decide=True),
-        promoted_concept=serialize_concept(promoted_concept) if promoted_concept else None,
-        status=updated.status,
-        trace_id=get_trace_id(request),
-    )
+__all__ = [
+    "handle_create_promotion",
+    "handle_decide_promotion",
+    "handle_list_concepts",
+    "handle_list_promotions",
+    "handle_upsert_concept",
+]

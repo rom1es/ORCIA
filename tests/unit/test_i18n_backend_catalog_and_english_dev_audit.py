@@ -26,9 +26,12 @@ BACKEND_SRC_DIRS = (
 )
 EXCLUDED_BACKEND_SUFFIXES = (
     "_error_catalog.py",
+    "_error_catalog_2.py",
     "_auth_error_catalog.py",
     "assistant_prompt_locales.py",
     "_assistant_turn_locale_messages.py",
+    "_locales.py",
+    "_locale_messages.py",
 )
 FRENCH_CHAR_RE = re.compile(r"[àâäçéèêëîïôöùûüÿœæÀÂÄÇÉÈÊËÎÏÔÖÙÛÜŸŒÆ]")
 FRENCH_STOPWORDS_RE = re.compile(
@@ -165,6 +168,10 @@ def _collect_added_lines_vs_base(base_ref: str) -> dict[str, list[tuple[int, str
 
 def test_rfc9457_error_catalog_bilingual_completeness() -> None:
     """Every registered error code and domain exception must provide valid FR & EN copies."""
+    import orcia_core.blackboard.errors  # noqa: F401
+    import orcia_core.observability.errors  # noqa: F401
+    import orcia_core.permissions.ssrf_policy  # noqa: F401
+
     baseline = _load_baseline()
     allowed_missing = set(baseline["missingErrorCatalogCodes"])  # type: ignore[arg-type]
 

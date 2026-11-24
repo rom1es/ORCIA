@@ -186,10 +186,7 @@ async def sync_ontology_lead_bus_from_iam_account(
             continue
         if clean in team_nodes_by_ref or clean.lower() in team_nodes_by_ref:
             raise ValidationDomainError(
-                detail_override=(
-                    "Les référents glossaire (ONTOLOGY_LEAD) ne peuvent être affectés "
-                    "qu'à une Direction (BU)."
-                ),
+                detail_code="ERR_ORG_ONTOLOGY_LEAD_BU_ONLY",
                 instance=f"/org/units/{clean}",
             )
         matched = by_id.get(clean) or by_slug.get(clean.lower())

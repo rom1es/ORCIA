@@ -98,10 +98,7 @@ def validate_human_anchor_submission(
     """Validate human authorship (`author_type == 'HUMAN'`) and `>= 30` meaningful characters."""
     if author_type != "HUMAN":
         raise HumanAnchorRequiredError(
-            detail_override=(
-                "Toute écriture ou signature par une identité d'agent (author_type='AGENT') sur "
-                "un champ human_authored_required: true est strictement interdite (AD-3, FR-4)."
-            ),
+            detail_code="ERR_HUMAN_ANCHOR_AGENT_FORBIDDEN",
             instance=instance,
         )
     cleaned_content = content_text.strip()
@@ -114,10 +111,8 @@ def validate_human_anchor_submission(
         or any(ord(c) < 32 and c not in ("\n", "\r", "\t") for c in cleaned_content + cleaned_sig)
     ):
         raise HumanAnchorRequiredError(
-            detail_override=(
-                f"Une ancre humaine obligatoire exige au moins {MIN_HUMAN_ANCHOR_CHARS} "
-                f"caractères significatifs rédigés et signés par un humain (reçu: {char_len})."
-            ),
+            detail_code="ERR_HUMAN_ANCHOR_TOO_SHORT",
+            detail_params={"min_chars": MIN_HUMAN_ANCHOR_CHARS, "char_len": char_len},
             instance=instance,
         )
     content_sha = hashlib.sha256(cleaned_content.encode("utf-8")).hexdigest()

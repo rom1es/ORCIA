@@ -31,7 +31,7 @@ def create_in_evaluator(
     """Create unit in memory evaluator when PostgreSQL sync is disabled or disconnected."""
     cleaned_name = payload.name.strip()
     if not cleaned_name:
-        raise ValidationDomainError(detail_override="Le nom de l'unité ne peut pas être vide.")
+        raise ValidationDomainError(detail_code="ERR_ORG_UNIT_NAME_EMPTY")
     normalized_slug = normalize_org_unit_slug(payload.slug, cleaned_name)
     units_by_id = {u.id: u for u in evaluator.org_units}
     assert_unique_org_unit_slug(normalized_slug, units_by_id)
@@ -91,14 +91,15 @@ def update_in_evaluator(
     target = evaluator.get_org_unit(org_unit_id)
     if target is None or target.unit_type == "ENTERPRISE":
         raise ResourceNotFoundError(
-            detail_override=f"Unité organisationnelle introuvable : '{org_unit_id}'."
+            detail_code="ERR_ORG_UNIT_NOT_FOUND_DETAIL",
+            detail_params={"org_unit_id": org_unit_id},
         )
     target_kind: OrgUnitKind = "BU" if target.unit_type in ("BU", "TRIBE") else "TEAM"
     next_name = target.name
     if payload.name is not None:
         stripped = payload.name.strip()
         if not stripped:
-            raise ValidationDomainError(detail_override="Le nom de l'unité ne peut pas être vide.")
+            raise ValidationDomainError(detail_code="ERR_ORG_UNIT_NAME_EMPTY")
         next_name = stripped
 
     if "parent_id" in payload.model_fields_set:
@@ -174,7 +175,8 @@ def delete_in_evaluator(evaluator: MatrixPermissionEvaluator, org_unit_id: str) 
     target = evaluator.get_org_unit(org_unit_id)
     if target is None or target.unit_type == "ENTERPRISE":
         raise ResourceNotFoundError(
-            detail_override=f"Unité organisationnelle introuvable : '{org_unit_id}'."
+            detail_code="ERR_ORG_UNIT_NOT_FOUND_DETAIL",
+            detail_params={"org_unit_id": org_unit_id},
         )
     child_cnt = sum(
         1 for u in evaluator.org_units if u.parent_id == target.id and u.unit_type != "ENTERPRISE"

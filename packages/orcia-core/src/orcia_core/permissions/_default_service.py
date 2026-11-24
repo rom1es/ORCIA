@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from typing import cast
 
+from orcia_core.permissions._permissions_locales import (
+    DEFAULT_SERVICE_CATALOG_TITLES,
+    DEFAULT_SERVICE_PERSONA_NAMES,
+)
 from orcia_core.permissions.crypto import Argon2idPasswordHasher
 from orcia_core.permissions.evaluator import MatrixPermissionEvaluator
 from orcia_core.permissions.models import (
@@ -86,12 +90,14 @@ def build_default_auth_and_org_service(
             access_mode="CONTRIBUTOR_ACTION_REQUIRED",
         ),
     )
+    cat_titles = DEFAULT_SERVICE_CATALOG_TITLES["fr"]
+    p_names = DEFAULT_SERVICE_PERSONA_NAMES["fr"]
     catalog_acls = (
         CatalogAclEntry(
             id="0192c4e0-0000-7000-8000-000000000501",
             resource_id="res-blackbox-security-agent",
             resource_uri="git://gitlab.entreprise.io/archi/security-audit-agent@v2.1.0",
-            title="Agent d'Audit SecOps Boîte Noire (Équipe Parente)",
+            title=cat_titles["blackbox"],
             visibility_scope="SHARED_TEAM",
             owner_org_unit_id="0192c4e0-0000-7000-8000-000000000103",
             can_discover=True,
@@ -107,7 +113,7 @@ def build_default_auth_and_org_service(
             id="0192c4e0-0000-7000-8000-000000000502",
             resource_id="res-open-checkout-skill",
             resource_uri="git://gitlab.entreprise.io/payments/checkout-web/skills/payment-flow@v1.0.0",
-            title="Skill Validation Checkout (Source Ouverte Équipe)",
+            title=cat_titles["checkout"],
             visibility_scope="SHARED_WORKSPACE",
             owner_org_unit_id="0192c4e0-0000-7000-8000-000000000104",
             owner_workspace_id="0192c4e0-0000-7000-8000-000000000201",
@@ -128,7 +134,7 @@ def build_default_auth_and_org_service(
             UserIdentity(
                 id="0192c4e0-0000-7000-8000-000000000601",
                 email="karim.admin@orcia.io",
-                display_name="Karim (Ingénieur Plateforme)",
+                display_name=p_names["karim"],
                 auth_mode="HYBRID",
                 oidc_subject="oidc|karim-admin",
                 password_hash_argon2id=hasher.hash_password("OrciaAdmin!2026"),
@@ -142,7 +148,7 @@ def build_default_auth_and_org_service(
             UserIdentity(
                 id="0192c4e0-0000-7000-8000-000000000602",
                 email="claire.bu@orcia.io",
-                display_name="Claire (Directrice BU / Équipe Parente)",
+                display_name=p_names["claire"],
                 auth_mode="HYBRID",
                 oidc_subject="oidc|claire-bu",
                 password_hash_argon2id=hasher.hash_password("OrciaDirector!2026"),
@@ -155,7 +161,7 @@ def build_default_auth_and_org_service(
             UserIdentity(
                 id="0192c4e0-0000-7000-8000-000000000603",
                 email="marc.lead@orcia.io",
-                display_name="Marc (Chef d'Équipe / Tech Lead)",
+                display_name=p_names["marc"],
                 auth_mode="HYBRID",
                 oidc_subject="oidc|marc-lead",
                 password_hash_argon2id=hasher.hash_password("OrciaLead!2026"),
@@ -168,7 +174,7 @@ def build_default_auth_and_org_service(
             UserIdentity(
                 id="0192c4e0-0000-7000-8000-000000000604",
                 email="nadia.dev@orcia.io",
-                display_name="Nadia (Développeuse Senior)",
+                display_name=p_names["nadia"],
                 auth_mode="LOCAL",
                 password_hash_argon2id=hasher.hash_password("OrciaDev!2026"),
                 totp_enabled=False,
@@ -179,7 +185,7 @@ def build_default_auth_and_org_service(
             UserIdentity(
                 id="0192c4e0-0000-7000-8000-000000000605",
                 email="partenaire.ext@partner.io",
-                display_name="Partenaire Externe (Invité Workspace 1)",
+                display_name=p_names["partenaire"],
                 auth_mode="OIDC",
                 oidc_subject="oidc|partner-ext",
                 totp_enabled=False,

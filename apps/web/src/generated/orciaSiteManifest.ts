@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 228,
+    "techLeadReportsCount": 229,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -542,6 +542,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-24",
+      "phaseOrStory": "Story 27.7",
+      "reportFile": "27-7-categories-b-and-d-bilingual-rfc9457-backend-catalogs-prompts-and-seeds-tech-lead-report.md",
+      "domain": "Epic 27 Lot 4 — Categories B & D Remediation: Bilingual RFC 9457 Backend Error Catalogs (Accept-Language), Prompts & Seeds (Gate 4 Baseline = 0, CAP-001..CAP-260)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): added detail_params interpolation on OrciaDomainError/get_localized_error_text(), registered 3 missing catalog codes (ERR_HELP_ARTICLE_VALIDATION_FAILED, ERR_INVALID_MCP_TOKEN_CONFIG, ERR_PACK_BUILDER_VALIDATION_FAILED), extracted bilingual *_error_catalog.py & *_locales.py/*_locale_messages.py bundles across orcia-core and apps/api (preserving fr defaults and Accept-Language: en switching), converted internal diagnostics/comments/docstrings to English, split all 284 hand-written production files <= 300 lines (299 workspace files touched: 180 modified, 119 created), locked Gate 4 i18n_backend_audit_baseline.json to 0 (757 -> 0 French literals across 153 -> 0 files, 3 -> 0 missing codes, 0 prompt directive violations), verified 99% 51-module branch coverage (125 targeted tests), full tests/unit, 180 passed tests/security+evals+contract, 11/11 impacted PG18+Redis integration suites, 9/9 Turbo (449 JS/TS tests), ruff (1695 files)/mypy --strict (837 files)/lint-imports (5/5)/export_openapi (0-diff)/lint_spine (0)/detect-secrets clean."
+    },
     {
       "date": "2026-11-24",
       "phaseOrStory": "Story 27.6",

@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from orcia_core.orchestration._orchestration_ops_locales import (
+    STEP_EXECUTOR_LOCALES,
+    get_ops_copy,
+)
 from orcia_core.orchestration.connector_invoker import ConnectorInvoker
 from orcia_kernel.ports import StepExecutorContext, StepExecutorResult
 
@@ -16,6 +20,7 @@ class SubWorkflowStepExecutor:
         return "SUB_WORKFLOW"
 
     def execute_step(self, context: StepExecutorContext) -> StepExecutorResult:
+        sc = get_ops_copy(STEP_EXECUTOR_LOCALES)
         payload: dict[str, Any] = {
             "step_key": context.step_key,
             "step_type": "SUB_WORKFLOW",
@@ -27,8 +32,10 @@ class SubWorkflowStepExecutor:
             step_type="SUB_WORKFLOW",
             status="EXECUTED",
             artifact_payload=payload,
-            summary=f"Sous-workflow '{context.sub_workflow_uri}' préparé pour '{context.step_key}'",
-            details=f"Entrées hydratées: {sorted(context.resolved_inputs.keys())}",
+            summary=sc["subwf_summary"].format(
+                uri=context.sub_workflow_uri, step_key=context.step_key
+            ),
+            details=sc["subwf_details"].format(keys=sorted(context.resolved_inputs.keys())),
             cost_usd=0.0,
         )
 
@@ -41,24 +48,30 @@ class HumanTaskStepExecutor:
         return "HUMAN_TASK"
 
     def execute_step(self, context: StepExecutorContext) -> StepExecutorResult:
+        sc = get_ops_copy(STEP_EXECUTOR_LOCALES)
         human_decision = context.metadata.get("human_decision")
         if isinstance(human_decision, str) and human_decision.strip():
+            decision = human_decision.strip()
             payload: dict[str, Any] = {
                 "step_key": context.step_key,
                 "step_type": "HUMAN_TASK",
                 "directive_applied": context.directive,
-                "human_decision": human_decision.strip(),
+                "human_decision": decision,
                 "inputs_received": list(context.resolved_inputs.keys()),
-                "artifact": f"Décision humaine enregistrée: {human_decision.strip()}",
-                "report": f"Tâche humaine {context.step_key} : VALIDÉE ({human_decision.strip()})",
+                "artifact": sc["human_artifact_done"].format(decision=decision),
+                "report": sc["human_report_done"].format(
+                    step_key=context.step_key, decision=decision
+                ),
             }
             return StepExecutorResult(
                 step_key=context.step_key,
                 step_type="HUMAN_TASK",
                 status="EXECUTED",
                 artifact_payload=payload,
-                summary=f"Tâche humaine '{context.step_key}' résolue ({human_decision.strip()})",
-                details=f"Décision appliquée: {human_decision.strip()}",
+                summary=sc["human_summary_done"].format(
+                    step_key=context.step_key, decision=decision
+                ),
+                details=sc["human_details_done"].format(decision=decision),
                 cost_usd=0.0,
             )
 
@@ -68,15 +81,15 @@ class HumanTaskStepExecutor:
             "directive_applied": context.directive,
             "inputs_received": list(context.resolved_inputs.keys()),
             "awaiting_human_action": True,
-            "artifact": f"En attente de validation humaine sur {context.step_key}",
+            "artifact": sc["human_artifact_wait"].format(step_key=context.step_key),
         }
         return StepExecutorResult(
             step_key=context.step_key,
             step_type="HUMAN_TASK",
             status="WAITING_FOR_HUMAN_ARBITRATION",
             artifact_payload=pending_payload,
-            summary=f"Tâche humaine '{context.step_key}' mise en pause (attente arbitrage)",
-            details=f"Directive soumise à validation humaine: {context.directive}",
+            summary=sc["human_summary_wait"].format(step_key=context.step_key),
+            details=sc["human_details_wait"].format(directive=context.directive),
             cost_usd=0.0,
         )
 
@@ -160,6 +173,7 @@ class PostActionVerificationStepExecutor:
         return "POST_ACTION_VERIFICATION"
 
     def execute_step(self, context: StepExecutorContext) -> StepExecutorResult:
+        sc = get_ops_copy(STEP_EXECUTOR_LOCALES)
         verified_keys = sorted(context.resolved_inputs.keys())
         payload: dict[str, Any] = {
             "step_key": context.step_key,
@@ -167,18 +181,16 @@ class PostActionVerificationStepExecutor:
             "directive_applied": context.directive,
             "inputs_received": verified_keys,
             "verification_verdict": "PASS",
-            "artifact": f"Vérification post-action validée pour {context.step_key}",
-            "report": (
-                f"Rapport de vérification {context.step_key} : PASS ({len(verified_keys)} entrées)"
-            ),
+            "artifact": sc["post_artifact"].format(step_key=context.step_key),
+            "report": sc["post_report"].format(step_key=context.step_key, count=len(verified_keys)),
         }
         return StepExecutorResult(
             step_key=context.step_key,
             step_type="POST_ACTION_VERIFICATION",
             status="EXECUTED",
             artifact_payload=payload,
-            summary=f"Vérification post-action '{context.step_key}' : PASS",
-            details=f"Entrées vérifiées: {verified_keys} | Directive: {context.directive}",
+            summary=sc["post_summary"].format(step_key=context.step_key),
+            details=sc["post_details"].format(keys=verified_keys, directive=context.directive),
             cost_usd=0.05,
         )
 

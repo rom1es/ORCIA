@@ -728,7 +728,7 @@ capabilities:
     tests: [apps/web/e2e/09-pack-builder-and-contextual-help.spec.ts, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
     verification: runtime
     verified_at: "2026-11-20"
-    surfaces: { route: /processes, api: pack_builder.py }
+    surfaces: { route: /processes, api: "pack_builder.py + _pack_builder_help_routes.py" }
 
   # ───────────── Agents, skills, MCP (ad-hoc) ─────────────
   - id: CAP-090
@@ -843,7 +843,7 @@ capabilities:
     tests: [apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, packages/ui/src/__tests__/workspace-governance-and-packs.test.tsx, tests/unit/test_epic_11_story_11_4_pack_builder_processes.py]
     verification: runtime
     verified_at: "2026-11-20"
-    surfaces: { route: /spaces, api: pack_builder.py }
+    surfaces: { route: /spaces, api: "pack_builder.py + _pack_builder_help_routes.py" }
   - id: CAP-092
     title: Menu « Mes agents » — visibilité des packs et pont vers l'assistant
     fr: [FR-36]

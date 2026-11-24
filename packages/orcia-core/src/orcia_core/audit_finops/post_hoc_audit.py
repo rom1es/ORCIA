@@ -8,6 +8,7 @@ from typing import Literal
 
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from orcia_core.audit_finops._audit_finops_locales import get_audit_finops_locale_bundle
 from orcia_core.audit_finops._internal.sql_autonomous_metrics import (
     fetch_autonomous_governance_aggregates_sql,
     fetch_post_hoc_samples_sql,
@@ -25,6 +26,7 @@ from orcia_core.audit_finops.post_hoc_audit_models import (
     PostHocReviewStatus,
     clamp_sampling_rate,
     compute_autonomous_governance_metrics,
+    compute_in_memory_governance_metrics,
     select_post_hoc_sample_deterministic,
 )
 from orcia_core.kernel.events import DomainEvent, PostHocSampleSelected
@@ -84,10 +86,14 @@ class PostHocAuditService:
         workflow_id: str,
         sampling_rate: Decimal | float = DEFAULT_POST_HOC_SAMPLING_RATE,
         force_select: bool = False,
-        trigger_label: str = "Exécution sous contrat",
+        trigger_label: str | None = None,
         trace_id: str = "00000000000000000000000000000000",
+        locale: str = "fr",
     ) -> PostHocAuditSampleRecord | None:
         """Select a `COMMITTED_AUTONOMOUS` run into `autonomous_post_hoc_audits` (`10-20%`)."""
+        effective_label = (
+            trigger_label or get_audit_finops_locale_bundle(locale).post_hoc_contract_trigger
+        )
         rate = clamp_sampling_rate(sampling_rate)
         if not force_select and not select_post_hoc_sample_deterministic(
             run_id=run_id, sampling_rate=rate
@@ -123,7 +129,7 @@ class PostHocAuditService:
             workspace_id=workspace_id,
             contract_id=contract_id,
             workflow_title=workflow_id.rsplit("/", 1)[-1] or workflow_id,
-            trigger_label=trigger_label,
+            trigger_label=effective_label,
             review_status="PENDING_SAMPLE",
             run_status="COMMITTED_AUTONOMOUS",
             sampled_at=datetime.now(UTC),
@@ -251,41 +257,12 @@ class PostHocAuditService:
                 pending_samples=samples,
             )
 
-        scoped_runs = [
-            r
-            for r in self._in_mem_runs
-            if (allowed_workspace_ids is None or str(r["workspace_id"]) in allowed_workspace_ids)
-            and (
-                scope_type != "WORKSPACE" or scope_id is None or str(r["workspace_id"]) == scope_id
-            )
-        ]
-        scoped_samples = [
-            s
-            for s in self._in_mem_samples.values()
-            if (allowed_workspace_ids is None or s.workspace_id in allowed_workspace_ids)
-            and (scope_type != "WORKSPACE" or scope_id is None or s.workspace_id == scope_id)
-        ]
-        total_cost = sum((Decimal(str(r["cost_usd"])) for r in scoped_runs), Decimal("0.000000"))
-        total_ttm = sum((Decimal(str(r["ttm_gain_minutes"])) for r in scoped_runs), Decimal("0.00"))
-        return compute_autonomous_governance_metrics(
-            total_autonomous_runs=len(scoped_runs),
-            escalated_runs_count=sum(
-                1 for r in scoped_runs if r["status"] == "PAUSED_AUTONOMOUS_ESCALATION"
-            ),
-            killed_runs_count=sum(1 for r in scoped_runs if r["status"] == "KILL_SWITCH_STOPPED"),
-            sampled_runs_count=len(scoped_samples),
-            pending_samples_count=sum(
-                1 for s in scoped_samples if s.review_status == "PENDING_SAMPLE"
-            ),
-            validated_samples_count=sum(
-                1 for s in scoped_samples if s.review_status == "VALIDATED"
-            ),
-            invalidated_samples_count=sum(
-                1 for s in scoped_samples if s.review_status == "INVALIDATED_ROLLED_BACK"
-            ),
-            total_autonomous_cost_usd=total_cost,
-            total_ttm_gain_minutes=total_ttm,
-            pending_samples=tuple(scoped_samples),
+        return compute_in_memory_governance_metrics(
+            self._in_mem_runs,
+            list(self._in_mem_samples.values()),
+            scope_type=scope_type,
+            scope_id=scope_id,
+            allowed_workspace_ids=allowed_workspace_ids,
         )
 
 

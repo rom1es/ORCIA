@@ -1,8 +1,4 @@
-"""Provenance Dossier & Sealed Compliance Exporter (`Story 6.1`).
-
-Assembles chronological execution timeline, verifies `run_lock.json` alignment,
-and generates tamper-evident audit dossiers in JSON or Markdown format.
-"""
+"""Provenance Dossier & Sealed Compliance Exporter (`Story 6.1`)."""
 
 from __future__ import annotations
 
@@ -10,6 +6,7 @@ import json
 from datetime import UTC, datetime
 from typing import Literal
 
+from orcia_core.audit_finops._audit_finops_locales import get_audit_finops_locale_bundle
 from orcia_core.audit_finops._internal.sql_audit_ledger import SqlAuditLedgerService
 from orcia_core.audit_finops.errors import AuditRunNotFoundError
 from orcia_core.audit_finops.models import (
@@ -17,6 +14,7 @@ from orcia_core.audit_finops.models import (
     AuditProvenanceExport,
     AuditProvenanceSummary,
 )
+from orcia_kernel.enums import DEFAULT_LOCALE
 
 
 class ProvenanceExporterService:
@@ -30,16 +28,15 @@ class ProvenanceExporterService:
         entries = await self._ledger.get_run_provenance_entries(run_id)
         if not entries:
             raise AuditRunNotFoundError(
-                detail_override=f"Aucun enregistrement d'audit trouvé pour le run_id '{run_id}'."
+                detail_code="ERR_AUDIT_RUN_NOT_FOUND_DETAIL",
+                detail_params={"run_id": run_id},
             )
 
         manifest_sha = await self._ledger.get_run_lock_manifest_sha(run_id)
-
         models_set: set[str] = set()
         actors_set: set[str] = set()
         cas_refs_set: set[str] = set()
-        total_in = 0
-        total_out = 0
+        total_in = total_out = 0
         total_cost = 0.0
         run_lock_sha: str | None = None
         contract_sha: str | None = None
@@ -50,8 +47,7 @@ class ProvenanceExporterService:
                 models_set.add(e.model_id)
             if e.actor_id:
                 actors_set.add(e.actor_id)
-            for r in e.cas_references:
-                cas_refs_set.add(r)
+            cas_refs_set.update(e.cas_references)
             total_in += e.input_tokens
             total_out += e.output_tokens
             total_cost += e.cost_usd
@@ -63,10 +59,7 @@ class ProvenanceExporterService:
                 root_run_id = e.root_run_id
 
         effective_lock_sha = run_lock_sha or manifest_sha
-        is_aligned = True
-        if manifest_sha and run_lock_sha and manifest_sha != run_lock_sha:
-            is_aligned = False
-
+        is_aligned = not (manifest_sha and run_lock_sha and manifest_sha != run_lock_sha)
         return AuditProvenanceSummary(
             run_id=run_id,
             root_run_id=root_run_id,
@@ -88,12 +81,15 @@ class ProvenanceExporterService:
         self,
         run_id: str,
         export_format: Literal["json", "md"] = "json",
+        *,
+        locale: str = DEFAULT_LOCALE,
     ) -> AuditProvenanceExport:
         """Export the sealed audit dossier in either JSON or Markdown format."""
         entries = await self._ledger.get_run_provenance_entries(run_id)
         if not entries:
             raise AuditRunNotFoundError(
-                detail_override=f"Aucun enregistrement d'audit trouvé pour le run_id '{run_id}'."
+                detail_code="ERR_AUDIT_RUN_NOT_FOUND_DETAIL",
+                detail_params={"run_id": run_id},
             )
 
         summary = await self.get_provenance_summary(run_id)
@@ -150,7 +146,7 @@ class ProvenanceExporterService:
             }
             content = json.dumps(payload, indent=2, ensure_ascii=False)
         else:
-            content = self._render_markdown_report(summary, entries, now_iso)
+            content = self._render_markdown_report(summary, entries, now_iso, locale=locale)
 
         return AuditProvenanceExport(
             run_id=run_id,
@@ -166,45 +162,38 @@ class ProvenanceExporterService:
         summary: AuditProvenanceSummary,
         entries: list[AuditLedgerEntry],
         exported_at: str,
+        *,
+        locale: str = DEFAULT_LOCALE,
     ) -> str:
-        aligned_label = (
-            "CONFORME (100 % ALIGNÉ)"
-            if summary.is_run_lock_aligned
-            else "ALERTE : DIVERGENCE DÉTECTÉE"
-        )
-        models_str = ", ".join(summary.models_invoked) or "Aucun"
-        actors_str = ", ".join(summary.actors_involved) or "Système"
+        bundle = get_audit_finops_locale_bundle(locale)
+        aligned_label = bundle.prov_aligned if summary.is_run_lock_aligned else bundle.prov_diverged
+        models_str = ", ".join(summary.models_invoked) or bundle.prov_none_models
+        actors_str = ", ".join(summary.actors_involved) or bundle.prov_system_actor
         token_str = f"{summary.total_input_tokens:,} in / {summary.total_output_tokens:,} out"
-        period_str = f"{summary.first_event_at or 'N/A'} → {summary.last_event_at or 'N/A'}"
+        period_str = f"{summary.first_event_at or 'N/A'} -> {summary.last_event_at or 'N/A'}"
 
         lines: list[str] = [
-            f"# Dossier de Provenance & d'Audit Immuable — Exécution `{summary.run_id}`",
+            bundle.prov_title_tpl.format(run_id=summary.run_id),
             "",
-            "> **Attestation de Conformité Réglementaire (AI Act, DORA, NIS 2)**",
-            (
-                f"> Ce dossier certifie l'historique complet, inaltérable et vérifié "
-                f"de l'exécution `{summary.run_id}`."
-            ),
-            f"> Horodatage de l'export : `{exported_at}`",
+            bundle.prov_attestation,
+            bundle.prov_certifies_tpl.format(run_id=summary.run_id),
+            bundle.prov_exported_at_tpl.format(exported_at=exported_at),
             "",
-            "## 1. Synthèse Exécutive & Empreintes Cryptographiques",
+            bundle.prov_sec1_title,
             "",
-            f"- **Statut d'alignement Run Lock** : `{aligned_label}`",
-            f"- **Condensat Run Lock (`run-lock.json`)** : `{summary.run_lock_sha256 or 'N/A'}`",
-            (
-                f"- **Condensat Contrat de Workflow** : "
-                f"`{summary.workflow_contract_sha256 or 'N/A'}`"
-            ),
-            f"- **Nombre total d'événements audités** : `{summary.total_events}`",
-            f"- **Consommation globale de tokens** : `{token_str}`",
-            f"- **Coût complet consolidé** : `${summary.total_cost_usd:.6f} USD`",
-            f"- **Modèles d'intelligence artificielle invoqués** : `{models_str}`",
-            f"- **Intervenants & Acteurs** : `{actors_str}`",
-            f"- **Période d'exécution** : `{period_str}`",
+            bundle.prov_lbl_align.format(aligned_label=aligned_label),
+            bundle.prov_lbl_run_lock.format(sha=summary.run_lock_sha256 or "N/A"),
+            bundle.prov_lbl_contract.format(sha=summary.workflow_contract_sha256 or "N/A"),
+            bundle.prov_lbl_events.format(count=summary.total_events),
+            bundle.prov_lbl_tokens.format(tokens=token_str),
+            bundle.prov_lbl_cost.format(cost=summary.total_cost_usd),
+            bundle.prov_lbl_models.format(models=models_str),
+            bundle.prov_lbl_actors.format(actors=actors_str),
+            bundle.prov_lbl_period.format(period=period_str),
             "",
-            "## 2. Chronologie Inaltérable des Événements (`audit_ledger`)",
+            bundle.prov_sec2_title,
             "",
-            "| Horodatage (UTC) | Type | Acteur | Modèle | Coût USD | Résumé / Action |",
+            bundle.prov_table_header,
             "| :--- | :--- | :--- | :--- | :--- | :--- |",
         ]
 
@@ -218,29 +207,10 @@ class ProvenanceExporterService:
                 f"| `{ts}` | `{e.event_type}` | {actor} | `{model}` | {cost} | {summary_clean} |"
             )
 
-        lines.extend(
-            [
-                "",
-                "## 3. Références Documentaires & CAS SeaweedFS",
-                "",
-            ]
-        )
-
+        lines.extend(["", bundle.prov_sec3_title, ""])
         if summary.cas_references:
-            for ref in summary.cas_references:
-                lines.append(f"- CAS Ref : `{ref}`")
+            lines.extend(f"- CAS Ref : `{ref}`" for ref in summary.cas_references)
         else:
-            lines.append("*Aucune référence de fragment externe CAS injectée.*")
-
-        lines.extend(
-            [
-                "",
-                "---",
-                (
-                    "*Rapport scellé produit par ORCIA Audit & FinOps Ledger Engine. "
-                    "Stockage PostgreSQL 18 append-only protégé par déclencheur d'intégrité.*"
-                ),
-            ]
-        )
-
+            lines.append(bundle.prov_no_cas)
+        lines.extend(["", "---", bundle.prov_footer])
         return "\n".join(lines)

@@ -21,6 +21,7 @@ from orcia_api.dependencies._core_providers import (
     get_configured_db_engine,
     is_pg_runtime_active,
 )
+from orcia_api.locales._router_locale_messages import get_router_copy
 from orcia_api.routers._settings_helpers import enforce_not_observer_mode
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.process_studio_v2 import (
@@ -110,7 +111,7 @@ async def _evaluate_connector_requirement(
             connector_type=req_conn.connector_type,
             ok=False,
             latency_ms=0,
-            error_message=f"Connecteur '{pg_rec.name}' désactivé dans la configuration.",
+            error_message=get_router_copy().connector_disabled.format(name=pg_rec.name),
         )
     elif (adapter := adapters.get(req_conn.connector_type)) is not None:
         health = await adapter.healthcheck()

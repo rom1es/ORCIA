@@ -138,11 +138,19 @@ async def _test_chat_connection(
                 instance=instance,
                 fallback_model_name=None,
             )
+            from orcia_core.orchestration._agents_skills_locales import (
+                AI_MODEL_CONNECTION_MSG_LOCALES,
+            )
+
             ms = fb_outcome.latency_ms
             return AiModelConnectionTestSuccess(
                 latency_ms=ms,
-                message_fr=f"Connexion établie via le modèle de secours ({fb_model}) en {ms} ms.",
-                message_en=f"Connection established via fallback model ({fb_model}) in {ms} ms.",
+                message_fr=AI_MODEL_CONNECTION_MSG_LOCALES["fr"]["fallback_ok"].format(
+                    fb_model=fb_model, ms=ms
+                ),
+                message_en=AI_MODEL_CONNECTION_MSG_LOCALES["en"]["fallback_ok"].format(
+                    fb_model=fb_model, ms=ms
+                ),
                 supports_tools=fb_outcome.supports_tools,
             )
 
@@ -164,15 +172,15 @@ async def _test_chat_connection(
         usage="chat",
         model_name=model_name,
     )
+    from orcia_core.orchestration._agents_skills_locales import AI_MODEL_CONNECTION_MSG_LOCALES
+
     return AiModelConnectionTestSuccess(
         latency_ms=latency_ms,
-        message_fr=(
-            f"✅ Connexion réussie au modèle « {model_name} » ({p_label}) sur {endpoint_uri} — "
-            f"Réponse reçue en {latency_ms} ms."
+        message_fr=AI_MODEL_CONNECTION_MSG_LOCALES["fr"]["chat_ok"].format(
+            model_name=model_name, p_label=p_label, endpoint_uri=endpoint_uri, latency_ms=latency_ms
         ),
-        message_en=(
-            f"✅ Successfully connected to model '{model_name}' ({p_label}) at {endpoint_uri} — "
-            f"Response received in {latency_ms} ms."
+        message_en=AI_MODEL_CONNECTION_MSG_LOCALES["en"]["chat_ok"].format(
+            model_name=model_name, p_label=p_label, endpoint_uri=endpoint_uri, latency_ms=latency_ms
         ),
         supports_tools=detected_tools,
     )
@@ -223,15 +231,15 @@ async def _test_embedding_connection(
             detail_override="Network error on embedding endpoint.", instance=instance
         ) from exc
 
+    from orcia_core.orchestration._agents_skills_locales import AI_MODEL_CONNECTION_MSG_LOCALES
+
     return AiModelConnectionTestSuccess(
         latency_ms=latency_ms,
-        message_fr=(
-            f"✅ Connexion réussie au modèle d'embedding « {model_name} » "
-            f"(dimension 1024 validée) — Réponse en {latency_ms} ms."
+        message_fr=AI_MODEL_CONNECTION_MSG_LOCALES["fr"]["embed_ok"].format(
+            model_name=model_name, latency_ms=latency_ms
         ),
-        message_en=(
-            f"✅ Successfully connected to embedding model '{model_name}' "
-            f"(1024-dim validated) — Response in {latency_ms} ms."
+        message_en=AI_MODEL_CONNECTION_MSG_LOCALES["en"]["embed_ok"].format(
+            model_name=model_name, latency_ms=latency_ms
         ),
     )
 

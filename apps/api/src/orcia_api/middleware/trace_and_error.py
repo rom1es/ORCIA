@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 
 from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
@@ -66,6 +66,8 @@ def build_problem_response(
     error_code: str,
     type_uri: str,
     detail_override: str | None = None,
+    detail_code: str | None = None,
+    detail_params: Mapping[str, object] | None = None,
     instance_override: str | None = None,
     permission_broker_hint: str | None = None,
     progress_percentage: int | None = None,
@@ -74,7 +76,13 @@ def build_problem_response(
     trace_id = _extract_request_trace_id(request)
     locale = resolve_locale(request.headers.get("accept-language"))
     safe_detail = scrub_sensitive_text(detail_override) if detail_override is not None else None
-    copy = get_localized_error_text(error_code, locale=locale, detail_override=safe_detail)
+    copy = get_localized_error_text(
+        error_code,
+        locale=locale,
+        detail_override=safe_detail,
+        detail_code=detail_code,
+        detail_params=detail_params,
+    )
     problem = ProblemDetails(
         type=type_uri,
         title=copy.title,
@@ -118,6 +126,8 @@ def register_exception_handlers(app: FastAPI) -> None:
             error_code=mapping.error_code,
             type_uri=mapping.type_uri,
             detail_override=exc.detail_override,
+            detail_code=getattr(exc, "detail_code", None),
+            detail_params=getattr(exc, "detail_params", None),
             instance_override=exc.instance,
             permission_broker_hint=exc.permission_broker_hint,
             progress_percentage=progress_pct,

@@ -31,6 +31,7 @@ from orcia_core.ports.llm_streaming_port import (
     Usage,
     typed_event_to_delta,
 )
+from orcia_core.testing._cassette_locales import get_cassette_default_copy
 from orcia_core.testing._cassette_tool_cassettes import (
     build_cassette_tool_delta_fragments,
     resolve_cassette_tool_scenario,
@@ -83,7 +84,7 @@ class DeterministicCassetteLLM(LlmGatewayPort):
         if entry is None:
             if request.execution_mode == "FAST_PATH":
                 entry = CassetteEntry(
-                    content="[ASSUMPTION] Option par défaut retenue en mode Fast-Path.",
+                    content=get_cassette_default_copy()["fast_path_assumption"],
                     scenario_tag="FAST_PATH_ASSUMPTION",
                 )
             elif "AMBIGU" in request.user_prompt.upper():

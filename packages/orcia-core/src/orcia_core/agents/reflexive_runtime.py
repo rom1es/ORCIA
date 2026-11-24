@@ -15,8 +15,10 @@ from orcia_core.agents._assistant_profile_guard import (
     resolve_effective_write_gate,
 )
 from orcia_core.agents._runtime_delegation import (
-    execute_delegation_turn,
+    dispatch_non_terminal_turn,
+    mark_snapshot_cancelled,
     persist_reflexive_snapshot,
+    resolve_fallback_final_markdown,
 )
 from orcia_core.agents._runtime_helpers import (
     build_initial_reflexive_snapshot,
@@ -25,9 +27,7 @@ from orcia_core.agents._runtime_helpers import (
 from orcia_core.agents._runtime_turn_actions import (
     apply_write_gate_decision,
     emit_thought_and_answer_deltas,
-    execute_surgical_turn,
     finalize_completed_snapshot,
-    mark_snapshot_cancelled,
     suspend_for_write_preview,
 )
 from orcia_core.agents.errors import ResourceNotFoundError
@@ -255,29 +255,19 @@ class NonDeterministicReflexiveRuntime(AssistantReflexiveSessionMixin):
                         publish_fn=self._append_and_publish,
                         persist_fn=self._persist_snapshot,
                     )
-                if decision.action_kind == "delegate_sub_agent":
-                    await execute_delegation_turn(
-                        snapshot=snapshot,
-                        decision=decision,
-                        turn_idx=turn_idx,
-                        publish_fn=self._append_and_publish,
-                        run_child_fn=self.run_execution,
-                    )
-                else:
-                    await execute_surgical_turn(
-                        explorer=self._explorer,
-                        snapshot=snapshot,
-                        decision=decision,
-                        turn_idx=turn_idx,
-                        publish_fn=self._append_and_publish,
-                    )
-                snapshot.turns_used = turn_idx + 1
-                snapshot.updated_at_utc = datetime.now(UTC).isoformat()
-                await self._persist_snapshot(snapshot)
+                await dispatch_non_terminal_turn(
+                    explorer=self._explorer,
+                    snapshot=snapshot,
+                    decision=decision,
+                    turn_idx=turn_idx,
+                    publish_fn=self._append_and_publish,
+                    run_child_fn=self.run_execution,
+                    persist_fn=self._persist_snapshot,
+                )
             return await finalize_completed_snapshot(
                 claim_check=self._claim_check,
                 snapshot=snapshot,
-                final_markdown=snapshot.final_markdown or "# Synthèse consolidée\n",
+                final_markdown=resolve_fallback_final_markdown(snapshot),
                 publish_fn=self._append_and_publish,
                 persist_fn=self._persist_snapshot,
             )

@@ -10,6 +10,7 @@ from orcia_api.dependencies import (
     get_auth_service,
     get_or_create_shared_db_engine,
 )
+from orcia_api.locales._router_locale_messages import get_router_copy
 from orcia_api.routers._iam_accounts_audit import (
     execute_delete_iam_account,
     first_org_unit_id,
@@ -164,7 +165,7 @@ async def execute_create_iam_account(
         caller,
         account=created,
         event_type="IAM_ACCOUNT_CREATED",
-        summary=f"Création du compte IAM '{created.principal_id}'",
+        summary=get_router_copy().iam_created.format(principal_id=created.principal_id),
         sync_teams=bool(created.team_ids),
     )
     return serialize_iam_account(created, temporary_password=temp_pw)
@@ -241,7 +242,7 @@ async def execute_update_iam_account(
         caller,
         account=updated,
         event_type="IAM_ACCOUNT_UPDATED",
-        summary=f"Mise à jour du compte IAM '{updated.principal_id}'",
+        summary=get_router_copy().iam_updated.format(principal_id=updated.principal_id),
         sync_teams=payload.team_ids is not None,
     )
     return serialize_iam_account(updated)

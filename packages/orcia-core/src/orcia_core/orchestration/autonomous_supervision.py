@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import time
 from decimal import Decimal
 from typing import Any, Literal
 
@@ -11,35 +10,31 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from orcia_core.audit_finops.post_hoc_audit import PostHocAuditService
 from orcia_core.catalog.contextual_help import ContextualHelpResolutionService
 from orcia_core.kernel.events import DomainEvent
-from orcia_core.kernel.ids import new_uuid7_str
+from orcia_core.orchestration._autonomous_supervision_executors import (
+    execute_emergency_stop,
+    execute_invalidate_and_restore,
+)
 from orcia_core.orchestration._autonomous_supervision_models import (
     AutonomousRunSupervisionItem,
     EmergencyStopOutcome,
     InvalidateAndRestoreOutcome,
     make_registered_supervision_item,
     map_pg_row_to_supervision_item,
-    resolve_help_id_from_context,
     resolve_run_context,
 )
 from orcia_core.orchestration._autonomous_supervision_ops import (
     apply_trigger_status_on_register,
-    build_kill_switch_event_and_payload,
-    build_rollback_event_and_payload,
     execute_validated_post_hoc_review,
-    flush_redis_keys,
-    make_emergency_stop_outcome,
-    make_rollback_outcome,
-    mark_mem_killed,
-    mark_mem_rolled_back,
-    restore_help_in_memory_and_flush_redis,
 )
 from orcia_core.orchestration._internal.sql_autonomous_supervision import (
-    apply_emergency_stop_sql,
     get_autonomous_run_sql,
     is_run_kill_switch_stopped_sql,
     list_autonomous_runs_sql,
-    restore_help_article_and_rollback_run_sql,
     update_autonomous_run_status_sql,
+)
+from orcia_core.orchestration._orchestration_runtime_locales import (
+    SUPERVISION_LOCALES,
+    get_runtime_copy,
 )
 from orcia_core.orchestration.presence_and_sse import (
     InMemorySseBrokerAdapter,
@@ -47,6 +42,8 @@ from orcia_core.orchestration.presence_and_sse import (
     TaskNotificationEntity,
 )
 from orcia_core.ports.finops_telemetry import AuditLedgerSinkPort
+
+_DEFAULT_TRIGGER_LABEL = get_runtime_copy(SUPERVISION_LOCALES)["default_trigger"]
 
 
 class AutonomousSupervisionService:
@@ -116,7 +113,7 @@ class AutonomousSupervisionService:
         contract_id: str,
         status: str,
         trigger_id: str | None = None,
-        trigger_label: str = "Exécution sous contrat",
+        trigger_label: str = _DEFAULT_TRIGGER_LABEL,
         trigger_type: str = "MANUAL_AUTONOMOUS",
         trigger_status: str = "ACTIVE",
         sampling_rate: Decimal | float = Decimal("0.15"),
@@ -201,41 +198,13 @@ class AutonomousSupervisionService:
         trace_id: str = "00000000000000000000000000000000",
     ) -> EmergencyStopOutcome:
         """Trigger immediate emergency stop (`KILL_SWITCH_STOPPED`) + optional trigger pause."""
-        mem, pg_row, ws_id, wf_id, _c_id, trig_id = await self._load_run_context(run_id)
-        event, sse_payload = build_kill_switch_event_and_payload(
+        return await execute_emergency_stop(
+            self,
             run_id=run_id,
-            workspace_id=ws_id,
-            workflow_id=wf_id,
             actor_user_id=actor_user_id,
             reason=reason,
-            trigger_id=trig_id,
             suspend_trigger=suspend_trigger,
             trace_id=trace_id,
-        )
-        trigger_suspended = False
-        if self._engine is not None and pg_row is not None:
-            res = await apply_emergency_stop_sql(
-                self._engine,
-                run_id=run_id,
-                suspend_trigger=suspend_trigger,
-                event=event,
-                audit_sink=self._audit_sink,
-            )
-            trigger_suspended = bool(res["trigger_suspended"]) if res is not None else False
-        elif suspend_trigger and trig_id is not None:
-            trigger_suspended = True
-        mark_mem_killed(self._runs, run_id, mem, trigger_suspended)
-        self._post_hoc.register_in_memory_run(
-            run_id=run_id, workspace_id=ws_id, status="KILL_SWITCH_STOPPED"
-        )
-        self._outbox_events.append(event)
-        sse_payload["trigger_suspended"] = trigger_suspended
-        sse_ms = self._publish_sse(ws_id, "autonomous.run.killed", run_id, sse_payload)
-        return make_emergency_stop_outcome(  # type: ignore[no-any-return]
-            run_id=run_id,
-            workspace_id=ws_id,
-            trigger_suspended=trigger_suspended,
-            sse_ms=sse_ms,
         )
 
     async def invalidate_and_restore(
@@ -248,73 +217,13 @@ class AutonomousSupervisionService:
         trace_id: str = "00000000000000000000000000000000",
     ) -> InvalidateAndRestoreOutcome:
         """Invalidate an autonomous deliverable/help article and restore `@v(N-1)` + flush Redis."""
-        mem, pg_row, ws_id, wf_id, contract_id, _trig_id = await self._load_run_context(run_id)
-        resolved_help_id = resolve_help_id_from_context(help_resource_id, mem, pg_row)
-        t_cache = time.perf_counter()
-        restored_ver = await restore_help_in_memory_and_flush_redis(
-            help_service=self._help_service,
-            redis_client=self._redis,
-            help_resource_id=resolved_help_id,
-        )
-        event, sse_payload = build_rollback_event_and_payload(
+        return await execute_invalidate_and_restore(
+            self,
             run_id=run_id,
-            workspace_id=ws_id,
-            workflow_id=wf_id,
             actor_user_id=actor_user_id,
-            restored_ver=restored_ver,
-            help_resource_id=resolved_help_id,
             comment=comment,
+            help_resource_id=help_resource_id,
             trace_id=trace_id,
-        )
-        effective_status = (
-            "KILL_SWITCH_STOPPED"
-            if (pg_row is not None and str(pg_row.get("run_status") or "") == "KILL_SWITCH_STOPPED")
-            or (mem is not None and mem.run_status == "KILL_SWITCH_STOPPED")
-            else "ROLLED_BACK"
-        )
-        if self._engine is not None and pg_row is not None:
-            res = await restore_help_article_and_rollback_run_sql(
-                self._engine,
-                run_id=run_id,
-                reviewer_user_id=actor_user_id,
-                comment=comment or None,
-                help_resource_id=resolved_help_id,
-                contract_id=contract_id or None,
-                event=event,
-                audit_sink=self._audit_sink,
-            )
-            if res is not None:
-                effective_status = str(res["status"])
-                restored_ver = str(res["restored_version"])
-                resolved_help_id = res["help_resource_id"]
-                await flush_redis_keys(self._redis, list(res["invalidated_redis_keys"]))
-        else:
-            await self._post_hoc.record_review(
-                run_id=run_id,
-                decision="INVALIDATED_ROLLED_BACK",
-                reviewer_user_id=actor_user_id,
-                review_comment=comment or None,
-                workspace_id=ws_id,
-                contract_id=contract_id or new_uuid7_str(),
-            )
-        redis_ms = round((time.perf_counter() - t_cache) * 1000.0, 3)
-        mark_mem_rolled_back(self._runs, run_id, mem)
-        self._post_hoc.register_in_memory_run(
-            run_id=run_id, workspace_id=ws_id, status=effective_status
-        )
-        self._outbox_events.append(event)
-        sse_payload["status"] = effective_status
-        sse_payload["restored_version"] = restored_ver
-        sse_payload["help_resource_id"] = resolved_help_id
-        sse_ms = self._publish_sse(ws_id, "autonomous.artifact.rolled_back", run_id, sse_payload)
-        return make_rollback_outcome(  # type: ignore[no-any-return]
-            run_id=run_id,
-            workspace_id=ws_id,
-            restored_ver=restored_ver,
-            help_resource_id=resolved_help_id,
-            redis_ms=redis_ms,
-            sse_ms=sse_ms,
-            status=effective_status,
         )
 
     async def review_post_hoc_sample(

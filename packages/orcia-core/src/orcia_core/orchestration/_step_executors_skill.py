@@ -7,6 +7,10 @@ from typing import Any
 
 from orcia_core.gates.deterministic import DeterministicGateService
 from orcia_core.gates.models import DeterministicGateInput, OntologyAxiomCheckRule
+from orcia_core.orchestration._orchestration_ops_locales import (
+    STEP_EXECUTOR_LOCALES,
+    get_ops_copy,
+)
 from orcia_core.orchestration.connector_invoker import scrub_connector_secrets
 from orcia_kernel.ports import StepExecutorContext, StepExecutorResult
 
@@ -75,6 +79,7 @@ class SkillStepExecutor:
                 ),
                 raise_on_failure=bool(context.metadata.get("raise_on_gate_failure", True)),
             )
+            sc = get_ops_copy(STEP_EXECUTOR_LOCALES)
             payload_gate: dict[str, Any] = {
                 "step_key": context.step_key,
                 "step_type": "SKILL",
@@ -87,19 +92,24 @@ class SkillStepExecutor:
                 "ontology_axioms_passed": gate_eval.ontology_axioms_passed,
                 "pattern_drift_passed": gate_eval.pattern_drift_passed,
                 "duration_ms": gate_eval.duration_ms,
-                "artifact": f"Gate Déterministe {skill_uri} : {gate_eval.status}",
-                "report": f"Rapport Gate {context.step_key} : {gate_eval.status}",
+                "artifact": sc["gate_artifact"].format(
+                    skill_uri=skill_uri, status=gate_eval.status
+                ),
+                "report": sc["gate_report"].format(
+                    step_key=context.step_key, status=gate_eval.status
+                ),
             }
             return StepExecutorResult(
                 step_key=context.step_key,
                 step_type="SKILL",
                 status="EXECUTED" if gate_eval.status == "PASS" else "FAILED",
                 artifact_payload=payload_gate,
-                summary=f"Gate Déterministe '{skill_uri}' ({gate_eval.status})",
+                summary=sc["gate_summary"].format(skill_uri=skill_uri, status=gate_eval.status),
                 details=f"Sandbox TIER_1_WASM ({gate_eval.duration_ms} ms) score={gate_eval.score}",
                 cost_usd=0.01,
             )
 
+        sc = get_ops_copy(STEP_EXECUTOR_LOCALES)
         payload: dict[str, Any] = {
             "step_key": context.step_key,
             "step_type": "SKILL",
@@ -107,17 +117,17 @@ class SkillStepExecutor:
             "directive_applied": context.directive,
             "inputs_received": list(sanitized.keys()),
             "computed_digest": json.dumps(sanitized, sort_keys=True),
-            "artifact": f"Exécution déterministe Skill {skill_uri} pour {context.step_key}",
-            "adr": f"Validation technique Skill {context.step_key}",
-            "report": f"Rapport Skill {context.step_key} : PASS",
+            "artifact": sc["skill_artifact"].format(skill_uri=skill_uri, step_key=context.step_key),
+            "adr": sc["skill_adr"].format(step_key=context.step_key),
+            "report": sc["skill_report"].format(step_key=context.step_key),
         }
         return StepExecutorResult(
             step_key=context.step_key,
             step_type="SKILL",
             status="EXECUTED",
             artifact_payload=payload,
-            summary=f"Skill '{skill_uri}' exécuté sur '{context.step_key}'",
-            details=f"Directive exécutée: {context.directive}",
+            summary=sc["skill_summary"].format(skill_uri=skill_uri, step_key=context.step_key),
+            details=sc["skill_details"].format(directive=context.directive),
             cost_usd=0.05,
         )
 

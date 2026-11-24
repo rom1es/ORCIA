@@ -7,69 +7,64 @@ with zero framework or SDK dependencies.
 
 from __future__ import annotations
 
-import hashlib
 import importlib.metadata
 import threading
-from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Literal, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
-from orcia_core.kernel.enums import SandboxExecutionTier
-from orcia_core.kernel.errors import ModelOrthogonalityViolationError
+from orcia_core.kernel._ports_models import (
+    CasStoredObject,
+    ExecutionMode,
+    LlmCompletionResponse,
+    LlmPromptRequest,
+    SandboxExecutionRequest,
+    SandboxExecutionResult,
+    StepExecutorContext,
+    StepExecutorResult,
+    assert_model_orthogonality,
+    compute_prompt_sha256,
+)
+from orcia_core.kernel.connector_ports import (
+    AccessRequestChannelPort,
+    ConnectorCapabilities,
+    ConnectorFetchResult,
+    ConnectorHealthState,
+    ConnectorHealthStatus,
+    ConnectorInvokeResult,
+    ConnectorPort,
+    ResourceLeasePort,
+    ResourceLeaseRecord,
+    get_access_request_channel,
+    get_registered_connector,
+    is_registered_connector_scheme,
+    list_registered_connector_schemes,
+    register_access_request_channel,
+    register_connector,
+    unregister_connector,
+)
+from orcia_core.kernel.context_ports import (
+    AssistantWorkflowBlueprint,
+    AssistantWorkflowTemplatePort,
+    ContextSliceKind,
+    ContextSliceRecord,
+    ContextSourcePort,
+    IndexerRegimeDescriptor,
+    VectorSearchHitRecord,
+    VectorStorePort,
+    get_registered_indexer_regime,
+    list_registered_assistant_templates,
+    list_registered_indexer_regimes,
+    register_assistant_template,
+    register_indexer_regime,
+    unregister_assistant_template,
+)
 from orcia_core.kernel.events import DomainEvent
-
-ExecutionMode = Literal["COACHING", "FAST_PATH"]
-
-
-@dataclass(frozen=True, slots=True)
-class LlmPromptRequest:
-    """Immutable LLM prompt request crossing the hexagonal boundary."""
-
-    system_prompt: str
-    user_prompt: str
-    model_family: str
-    model_id: str
-    execution_mode: ExecutionMode = "COACHING"
-    executor_model_family: str | None = None
-    metadata: dict[str, str] = field(default_factory=dict)
-
-
-@dataclass(frozen=True, slots=True)
-class LlmCompletionResponse:
-    """Immutable LLM completion response returned by a gateway adapter."""
-
-    content: str
-    model_family: str
-    model_id: str
-    prompt_sha256: str
-    input_tokens: int
-    output_tokens: int
-    estimated_cost_usd: float
-    scenario_tag: str = "STANDARD"
-
-
-def compute_prompt_sha256(request: LlmPromptRequest) -> str:
-    """Compute canonical `sha256:<64-hex>` fingerprint for a prompt request."""
-    canonical = (
-        f"family={request.model_family}|model={request.model_id}|"
-        f"mode={request.execution_mode}|sys={request.system_prompt.strip()}|"
-        f"user={request.user_prompt.strip()}"
-    )
-    digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
-    return f"sha256:{digest}"
-
-
-def assert_model_orthogonality(executor_model_family: str, evaluator_model_family: str) -> None:
-    """Enforce AD-10: evaluator model family must strictly differ from executor model family."""
-    exec_norm = executor_model_family.strip().lower()
-    eval_norm = evaluator_model_family.strip().lower()
-    if not exec_norm or not eval_norm or exec_norm == eval_norm:
-        raise ModelOrthogonalityViolationError(
-            detail_override=(
-                f"Orthogonalité des modèles violée (AD-10): executor_model_family="
-                f"'{executor_model_family}' == evaluator_model_family='{evaluator_model_family}'."
-            )
-        )
+from orcia_core.kernel.secret_ports import (
+    SecretProviderPort,
+    SecretRef,
+    SecretRotationAuditEntry,
+    WorkspaceEnvelopeKeyRecord,
+)
 
 
 @runtime_checkable
@@ -92,17 +87,6 @@ class ClockPort(Protocol):
     def now_utc(self) -> datetime:
         """Return current timezone-aware UTC datetime."""
         ...
-
-
-@dataclass(frozen=True, slots=True)
-class CasStoredObject:
-    """Immutable Content-Addressable Storage object (`cas/<sha256>`)."""
-
-    cas_key: str
-    sha256: str
-    source_uri: str
-    content_bytes: bytes
-    content_type: str = "application/octet-stream"
 
 
 @runtime_checkable
@@ -148,28 +132,6 @@ class OutboxRelayPort(Protocol):
         ...
 
 
-@dataclass(frozen=True, slots=True)
-class SandboxExecutionRequest:
-    """Out-of-process sandbox execution request (`TIER_1_WASM` or `TIER_2_CONTAINER`, `AD-9`)."""
-
-    tier: SandboxExecutionTier
-    entrypoint: str
-    payload: dict[str, Any]
-    timeout_ms: int = 5000
-    max_memory_mb: int = 256
-
-
-@dataclass(frozen=True, slots=True)
-class SandboxExecutionResult:
-    """Out-of-process sandbox execution result."""
-
-    passed: bool
-    exit_code: int
-    stdout: str
-    stderr: str
-    duration_ms: int
-
-
 @runtime_checkable
 class SandboxPort(Protocol):
     """Out-of-process sandbox execution port (`wasmtime-py` Tier 1 / `gVisor` Tier 2, `Q3`)."""
@@ -177,76 +139,6 @@ class SandboxPort(Protocol):
     async def execute(self, request: SandboxExecutionRequest) -> SandboxExecutionResult:
         """Execute a deterministic check or skill in the isolated sandbox runner."""
         ...
-
-
-from orcia_core.kernel.connector_ports import (  # noqa: E402
-    AccessRequestChannelPort,
-    ConnectorCapabilities,
-    ConnectorFetchResult,
-    ConnectorHealthState,
-    ConnectorHealthStatus,
-    ConnectorInvokeResult,
-    ConnectorPort,
-    ResourceLeasePort,
-    ResourceLeaseRecord,
-    get_access_request_channel,
-    get_registered_connector,
-    is_registered_connector_scheme,
-    list_registered_connector_schemes,
-    register_access_request_channel,
-    register_connector,
-    unregister_connector,
-)
-from orcia_core.kernel.secret_ports import (  # noqa: E402
-    SecretProviderPort,
-    SecretRef,
-    SecretRotationAuditEntry,
-    WorkspaceEnvelopeKeyRecord,
-)
-
-
-@dataclass(frozen=True, slots=True)
-class StepExecutorContext:
-    """Immutable execution context passed to a `StepExecutorPort` (`Story 3.2f`, `AC-F1`)."""
-
-    run_id: str
-    root_run_id: str
-    workspace_id: str
-    workflow_uri: str
-    step_key: str
-    step_title: str
-    step_type: str
-    execution_regime: str
-    directive: str
-    declared_input_uris: tuple[str, ...]
-    resolved_inputs: dict[str, Any]
-    datasources: tuple[str, ...] = ()
-    agent_uri: str | None = None
-    skill_uri: str | None = None
-    sub_workflow_uri: str | None = None
-    max_agent_retries: int = 3
-    budget_remaining_usd: float = 10.0
-    idempotency_key: str = ""
-    metadata: dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass(frozen=True, slots=True)
-class StepExecutorResult:
-    """Execution result returned by a `StepExecutorPort` (`Story 3.2f`, `AC-F1`)."""
-
-    step_key: str
-    step_type: str
-    status: Literal[
-        "EXECUTED",
-        "WAITING_FOR_HUMAN_ARBITRATION",
-        "WAITING_FOR_HUMAN_GATE",
-        "FAILED",
-    ]
-    artifact_payload: dict[str, Any]
-    summary: str
-    details: str
-    cost_usd: float = 0.0
-    child_run_id: str | None = None
 
 
 @runtime_checkable
@@ -308,23 +200,6 @@ def list_registered_step_executor_types() -> frozenset[str]:
     with _STEP_EXECUTOR_LOCK:
         return frozenset(_STEP_EXECUTOR_REGISTRY.keys())
 
-
-from orcia_core.kernel.context_ports import (  # noqa: E402
-    AssistantWorkflowBlueprint,
-    AssistantWorkflowTemplatePort,
-    ContextSliceKind,
-    ContextSliceRecord,
-    ContextSourcePort,
-    IndexerRegimeDescriptor,
-    VectorSearchHitRecord,
-    VectorStorePort,
-    get_registered_indexer_regime,
-    list_registered_assistant_templates,
-    list_registered_indexer_regimes,
-    register_assistant_template,
-    register_indexer_regime,
-    unregister_assistant_template,
-)
 
 __all__ = [
     "AccessRequestChannelPort",

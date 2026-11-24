@@ -13,6 +13,7 @@ from orcia_api.routers._org_units_helpers import (
     sync_evaluator_from_summaries,
 )
 from orcia_api.routers.auth import resolve_request_user
+from orcia_api.schemas._shell_locales import get_shell_scope_copy
 from orcia_api.schemas.auth_and_org import (
     OrgUnitCreateRequest,
     OrgUnitPatchRequest,
@@ -108,14 +109,15 @@ def resolve_evaluator_target_node(
             return OrgUnitNode(
                 id="0192c4e0-0000-7000-8000-000000000001",
                 slug="orcia-root",
-                name="Plateforme Globale ORCIA",
+                name=get_shell_scope_copy()["scope_global"],
                 unit_type="ENTERPRISE",
                 parent_id=None,
                 billing_enabled=True,
             )
     if target is None or (target.unit_type == "ENTERPRISE" and not allow_enterprise):
         raise ResourceNotFoundError(
-            detail_override=f"Unité organisationnelle introuvable : '{cleaned}'."
+            detail_code="ERR_ORG_UNIT_NOT_FOUND_DETAIL",
+            detail_params={"org_unit_id": cleaned},
         )
     return target
 

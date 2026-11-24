@@ -139,10 +139,8 @@ class SqlWizardSessionRepository:
             ).scalar()
             if user_exists is None:
                 raise ResourceNotFoundError(
-                    detail_override=(
-                        f"Utilisateur '{user_uuid}' introuvable dans PostgreSQL 18 "
-                        "pour démarrer une session wizard."
-                    )
+                    detail_code="ERR_WIZARD_USER_NOT_FOUND",
+                    detail_params={"user_id": user_uuid},
                 )
 
             existing = (

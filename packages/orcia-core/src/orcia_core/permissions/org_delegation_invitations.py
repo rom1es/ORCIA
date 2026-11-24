@@ -37,39 +37,31 @@ def resolve_org_invitation_roles(
     if norm in ("TEAM_MEMBER", "CONTRIBUTOR"):
         if is_bu:
             raise ValidationDomainError(
-                instance=instance,
-                detail_override="Un membre d'équipe doit être rattaché à une Équipe (TEAM).",
+                instance=instance, detail_code="ERR_ORG_INVITE_MEMBER_TEAM_ONLY"
             )
         return "TEAM_MEMBER", ("CONTRIBUTOR",)
     if norm == "OBSERVER":
         if is_bu:
             raise ValidationDomainError(
-                instance=instance,
-                detail_override="Un observateur d'équipe doit être rattaché à une Équipe (TEAM).",
+                instance=instance, detail_code="ERR_ORG_INVITE_OBSERVER_TEAM_ONLY"
             )
         return "TEAM_MEMBER", ("OBSERVER",)
     if norm == "TEAM_LEAD":
         if is_bu:
             raise ValidationDomainError(
-                instance=instance,
-                detail_override="Le rôle TEAM_LEAD doit être rattaché à une Équipe (TEAM).",
+                instance=instance, detail_code="ERR_ORG_INVITE_TEAM_LEAD_TEAM_ONLY"
             )
         return "TEAM_LEAD", ("TEAM_LEAD",)
     if norm == "BU_LEAD":
         if not is_bu:
             raise ValidationDomainError(
-                instance=instance,
-                detail_override="Le rôle BU_LEAD doit être rattaché à une Direction (BU).",
+                instance=instance, detail_code="ERR_ORG_INVITE_BU_LEAD_BU_ONLY"
             )
         return "BU_LEAD", ("BU_LEAD",)
     if norm == "ONTOLOGY_LEAD":
         if not is_bu:
             raise ValidationDomainError(
-                instance=instance,
-                detail_override=(
-                    "Le rôle ONTOLOGY_LEAD (Référent Glossaire) doit être rattaché "
-                    "à une Direction (BU)."
-                ),
+                instance=instance, detail_code="ERR_ORG_INVITE_ONTOLOGY_LEAD_BU_ONLY"
             )
         return "ONTOLOGY_LEAD", ("ONTOLOGY_LEAD",)
     raise InvalidIamRoleError(instance=instance)

@@ -120,16 +120,20 @@ def prepare_step_inputs(
     current_root_cost = engine.get_root_accumulated_cost(root_run.id)
     if current_root_cost + cost_usd > root_run.budget_max_usd:
         raise ValidationDomainError(
-            detail_override=(
-                f"Plafond budgétaire root_run_id '{root_run.id}' dépassé: "
-                f"{current_root_cost + cost_usd:.2f} USD > {root_run.budget_max_usd:.2f} USD."
-            ),
+            detail_code="ERR_ROOT_BUDGET_EXCEEDED",
+            detail_params={
+                "root_run_id": root_run.id,
+                "spent": f"{current_root_cost + cost_usd:.2f}",
+                "max_usd": f"{root_run.budget_max_usd:.2f}",
+            },
             instance=instance,
         )
     step_spec = next((s for s in wf.steps if s.step_key == step_key), None)
     if step_spec is None:
         raise ResourceNotFoundError(
-            detail_override=f"Étape '{step_key}' introuvable.", instance=instance
+            detail_code="ERR_STEP_NOT_FOUND",
+            detail_params={"step_key": step_key},
+            instance=instance,
         )
     engine.anchors_and_arbitration.enforce_step_anchor_if_required(
         run,
@@ -164,10 +168,8 @@ def build_step_exec_ctx(
     executor = get_registered_step_executor(step_spec.step_type)
     if executor is None:
         raise ValidationDomainError(
-            detail_override=(
-                f"Aucun exécuteur d'étape enregistré dans orcia.step_executors "
-                f"pour step_type='{step_spec.step_type}'."
-            ),
+            detail_code="ERR_STEP_EXECUTOR_NOT_FOUND",
+            detail_params={"step_type": step_spec.step_type},
             instance=instance,
         )
     meta = dict(executor_metadata or {})

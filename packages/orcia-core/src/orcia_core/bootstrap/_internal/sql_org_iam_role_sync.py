@@ -155,7 +155,6 @@ async def _sync_single_role_lead_units(
     nodes: list[Any],
     uids: set[str],
     role_name: str,
-    unit_label: str,
     roles: Sequence[str],
     target_ids: Sequence[str] | None,
     remove_all: bool,
@@ -228,7 +227,6 @@ async def sync_lead_units_from_iam_account(
         nodes=bu_nodes,
         uids=uids,
         role_name="BU_LEAD",
-        unit_label="Direction/Pôle (BU)",
         roles=roles,
         target_ids=led_bu_ids,
         remove_all=remove_all,
@@ -239,7 +237,6 @@ async def sync_lead_units_from_iam_account(
         nodes=team_nodes,
         uids=uids,
         role_name="TEAM_LEAD",
-        unit_label="Équipe (TEAM)",
         roles=roles,
         target_ids=led_team_ids,
         remove_all=remove_all,
@@ -251,12 +248,8 @@ async def _update_unit_leads(conn: AsyncConnection, unit_id: str, next_leads: li
     primary = next_leads[0] if next_leads else None
     await conn.execute(
         sa.text(
-            """
-            UPDATE org_units
-            SET lead_user_ids_jsonb = CAST(:leads_json AS jsonb),
-                lead_user_id = :lead_id
-            WHERE id = :id
-            """
+            "UPDATE org_units SET lead_user_ids_jsonb = CAST(:leads_json AS jsonb), "
+            "lead_user_id = :lead_id WHERE id = :id"
         ),
         {
             "leads_json": json.dumps(next_leads, ensure_ascii=False),

@@ -33,17 +33,20 @@ class InvalidMcpTokenConfigurationError(OrciaDomainError):
     error_code = "ERR_INVALID_MCP_TOKEN_CONFIG"
     http_status, type_slug = 422, "invalid-mcp-token-config"
 
-    def __init__(self, detail_override: str | None = None) -> None:
-        super().__init__(detail_override=detail_override)
+    def __init__(
+        self,
+        detail_override: str | None = None,
+        *,
+        detail_code: str | None = None,
+    ) -> None:
+        super().__init__(detail_override=detail_override, detail_code=detail_code)
 
 
 def build_mcp_target_uri(target_kind: McpTargetKind, target_slug: str) -> str:
     """Build the canonical MCP endpoint URI for a Space or a specific Agent (`Principle M.4`)."""
     clean_slug = target_slug.strip().strip("/")
     if not clean_slug:
-        raise InvalidMcpTokenConfigurationError(
-            "Le slug de cible MCP (Espace ou Agent) ne peut pas être vide."
-        )
+        raise InvalidMcpTokenConfigurationError(detail_code="ERR_MCP_TOKEN_EMPTY_TARGET_SLUG")
     if target_kind == "SPACE":
         return f"/api/v1/mcp/spaces/{clean_slug}"
     return f"/api/v1/mcp/agents/{clean_slug}"
@@ -108,21 +111,15 @@ def mint_mcp_token_fields(
 ) -> tuple[str, dict[str, object]]:
     """Validate MCP config and return `(plaintext_token, record_kwargs)`."""
     if expires_in_days not in (30, 90):
-        raise InvalidMcpTokenConfigurationError(
-            "L'expiration d'un jeton MCP personnel doit être obligatoirement de 30 ou 90 jours."
-        )
+        raise InvalidMcpTokenConfigurationError(detail_code="ERR_MCP_TOKEN_INVALID_EXPIRATION")
     if rpm_limit < 1 or rpm_limit > 600:
-        raise InvalidMcpTokenConfigurationError(
-            "Le plafond RPM du jeton MCP doit être compris entre 1 et 600 requêtes/minute."
-        )
+        raise InvalidMcpTokenConfigurationError(detail_code="ERR_MCP_TOKEN_INVALID_RPM")
     if not allowed_workspace_slugs:
-        raise InvalidMcpTokenConfigurationError(
-            "Au moins un Espace autorisé doit être sélectionné pour le jeton MCP."
-        )
+        raise InvalidMcpTokenConfigurationError(detail_code="ERR_MCP_TOKEN_MISSING_SPACE")
     if not exposed_capabilities:
-        raise InvalidMcpTokenConfigurationError(
-            "Au moins une capacité exposée doit être sélectionnée pour le jeton MCP."
-        )
+        raise InvalidMcpTokenConfigurationError(detail_code="ERR_MCP_TOKEN_MISSING_CAPABILITY")
+    from orcia_core.permissions._permissions_locales import MCP_TOKEN_DEFAULT_LABEL_LOCALES
+
     clean_slug = target_slug.strip()
     endpoint_uri = build_mcp_target_uri(target_kind, clean_slug)
     raw_secret = f"{PAT_MCP_PREFIX}{secrets.token_urlsafe(24)}"
@@ -131,7 +128,7 @@ def mint_mcp_token_fields(
     exp_days: McpExpirationDays = 30 if expires_in_days == 30 else 90
     return raw_secret, {
         "token_id": new_uuid7_str(),
-        "label": label.strip() or "Clé personnelle d'éditeur",
+        "label": label.strip() or MCP_TOKEN_DEFAULT_LABEL_LOCALES["fr"],
         "token_prefix": f"{raw_secret[:14]}...",
         "token_sha256": token_sha256,
         "expires_in_days": exp_days,

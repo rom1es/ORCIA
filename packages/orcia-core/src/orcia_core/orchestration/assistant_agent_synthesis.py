@@ -28,36 +28,18 @@ def classify_assistant_intent(
     gating via `GovernedAssistantToolRouter`; kept solely for legacy `3.3`/`3.4` callers
     until `Story 26.7` deletes the legacy path.
     """
+    from orcia_core.orchestration._assistant_profile_locales import INTENT_KEYWORDS_LOCALES
+
     lower = user_prompt.strip().lower()
-    if any(
-        phrase in lower
-        for phrase in (
-            "remplis-le pour moi",
-            "remplis la section humaine",
-            "rédige l'ancre humaine",
-            "write the human anchor for me",
-            "fill the human anchor",
-        )
-    ):
+    fr_kw = INTENT_KEYWORDS_LOCALES["fr"]
+    en_kw = INTENT_KEYWORDS_LOCALES["en"]
+    if any(phrase in lower for phrase in (*fr_kw["refusal"], *en_kw["refusal"])):
         return "HUMAN_ANCHOR_WRITE_REFUSAL"
-    if has_active_proposal and any(
-        kw in lower for kw in ("modifie", "ajoute", "étape", "step", "ajuste", "modify", "add step")
-    ):
+    if has_active_proposal and any(kw in lower for kw in (*fr_kw["modify"], *en_kw["modify"])):
         return "WORKFLOW_MODIFY"
-    if any(
-        kw in lower
-        for kw in (
-            "workflow",
-            "composer",
-            "propose un workflow",
-            "créer un workflow",
-            "comparer",
-            "rapprochement",
-            "audit",
-        )
-    ):
+    if any(kw in lower for kw in (*fr_kw["compose"], *en_kw["compose"])):
         return "WORKFLOW_COMPOSE"
-    if any(kw in lower for kw in ("lance", "exécute", "launch", "start run")):
+    if any(kw in lower for kw in (*fr_kw["launch"], *en_kw["launch"])):
         return "WORKFLOW_LAUNCH"
     return "QA_COACHING"
 
@@ -73,14 +55,7 @@ def _prepare_synthesis_request(
     prefix = assembled.profile_adaptation.response_prefix_fr
     indicators = ", ".join(assembled.profile_adaptation.highlighted_indicators)
     if intent == "HUMAN_ANCHOR_WRITE_REFUSAL":
-        refusal = (
-            f"{prefix} Refus constitutionnel (`human_authored_required: true`, `FR-4`, `AD-3`) : "
-            "Je ne peux pas rédiger ni pré-remplir une Ancre Humaine à votre place afin de "
-            "préserver votre maîtrise intellectuelle (*Think*). Question socratique : "
-            "quels sont les 2 invariants métier non négociables que vous souhaitez fixer "
-            f"pour le périmètre `{workspace_id}` ?"
-        )
-        return prefix, indicators, None if refusal else None
+        return prefix, indicators, None
     model_family, model_id = "", ""
     if cognitive_router is not None:
         try:
@@ -127,16 +102,23 @@ def _format_synthesis_text(
     workspace_id: str,
     llm_out: Any,
 ) -> str:
+    from orcia_core.orchestration._assistant_locales import ASSISTANT_SYNTHESIS_LOCALES
+
+    sloc = ASSISTANT_SYNTHESIS_LOCALES["fr"]
     uris_note = (
-        f" Sources citées : {', '.join(assembled.cited_uris[:3])}."
+        sloc["cited_sources"].format(uris=", ".join(assembled.cited_uris[:3]))
         if assembled.cited_uris
-        else f" Périmètre : `orcia://workspaces/{workspace_id}`."
+        else sloc["scope_note"].format(workspace_id=workspace_id)
     )
     if proposal is not None:
-        return (
-            f"{prefix} ({indicators}) — Proposition de workflow `{proposal.workflow_uri}` "
-            f"({len(proposal.nodes)} étapes, régime `{proposal.execution_regime}`) prête dans "
-            f"le Canvas `@xyflow/react`.{uris_note} [{llm_out.prompt_sha256[:16]}]"
+        return sloc["proposal_ready"].format(
+            prefix=prefix,
+            indicators=indicators,
+            workflow_uri=proposal.workflow_uri,
+            count=len(proposal.nodes),
+            regime=proposal.execution_regime,
+            uris_note=uris_note,
+            sha=llm_out.prompt_sha256[:16],
         )
     return f"{prefix} ({indicators}) — {llm_out.content}.{uris_note} [{llm_out.prompt_sha256[:16]}]"
 
@@ -159,12 +141,10 @@ async def synthesize_assistant_turn_response_async(
         workspace_id=workspace_id,
     )
     if req is None:
-        return (
-            f"{prefix} Refus constitutionnel (`human_authored_required: true`, `FR-4`, `AD-3`) : "
-            "Je ne peux pas rédiger ni pré-remplir une Ancre Humaine à votre place afin de "
-            "préserver votre maîtrise intellectuelle (*Think*). Question socratique : "
-            "quels sont les 2 invariants métier non négociables que vous souhaitez fixer "
-            f"pour le périmètre `{workspace_id}` ?"
+        from orcia_core.orchestration._assistant_locales import ASSISTANT_SYNTHESIS_LOCALES
+
+        return ASSISTANT_SYNTHESIS_LOCALES["fr"]["anchor_refusal"].format(
+            prefix=prefix, workspace_id=workspace_id
         )
     assert llm_gateway is not None
     llm_out = await llm_gateway.complete(req)

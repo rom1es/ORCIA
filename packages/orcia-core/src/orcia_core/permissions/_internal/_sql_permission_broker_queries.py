@@ -146,9 +146,7 @@ async def resolve_required_user(
     ).first()
     if fallback is not None:
         return UUID(str(fallback[0]))
-    raise ResourceNotFoundError(
-        detail_override="Aucun utilisateur enregistré en base pour créer un ticket d'accès."
-    )
+    raise ResourceNotFoundError(detail_code="ERR_BROKER_NO_DB_USER")
 
 
 async def resolve_nullable_workspace(

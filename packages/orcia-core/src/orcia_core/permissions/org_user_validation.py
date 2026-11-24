@@ -51,10 +51,8 @@ def resolve_and_validate_org_unit_leads(
         matched = index.get(item.lower())
         if matched is None:
             raise OrgUnitUnknownUserError(
-                detail_override=(
-                    f"L'identifiant de responsable '{item}' "
-                    "ne correspond à aucun utilisateur actif et connu de la plateforme."
-                )
+                detail_code="ERR_ORG_UNKNOWN_LEAD_USER",
+                detail_params={"user_ref": item},
             )
         if matched not in seen:
             seen.add(matched)
@@ -102,10 +100,8 @@ def resolve_and_validate_org_unit_users(
         matched_member = index.get(cleaned_member.lower())
         if matched_member is None:
             raise OrgUnitUnknownUserError(
-                detail_override=(
-                    f"L'identifiant de membre '{cleaned_member}' "
-                    "ne correspond à aucun utilisateur actif et connu de la plateforme."
-                )
+                detail_code="ERR_ORG_UNKNOWN_MEMBER_USER",
+                detail_params={"user_ref": cleaned_member},
             )
         if matched_member not in seen_members:
             seen_members.add(matched_member)

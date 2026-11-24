@@ -133,9 +133,7 @@ async def _resolve_approver_user_id(
     ).scalar_one_or_none()
     if fallback is not None:
         return UUID(str(fallback))
-    raise ResourceNotFoundError(
-        detail_override="Aucun compte utilisateur valide trouvé pour signer la dérogation."
-    )
+    raise ResourceNotFoundError(detail_code="ERR_WAIVER_SIGNER_NOT_FOUND")
 
 
 async def upsert_workspace_waiver_sql(
