@@ -173,6 +173,7 @@ function resolveNextTarget(
 export function handleVitestOntologyRoute(params: {
   path: string;
   method: string;
+  parsedUrl?: URL;
   body: Record<string, unknown>;
   orgUnits: readonly MockOntologyOrgUnit[];
   workspaces: readonly Record<string, unknown>[];
@@ -185,7 +186,7 @@ export function handleVitestOntologyRoute(params: {
     instance: string,
   ) => Response;
 }): Response | null {
-  const { path, method, body, orgUnits, workspaces, jsonResponse, problemResponse } = params;
+  const { path, method, parsedUrl, body, orgUnits, workspaces, jsonResponse, problemResponse } = params;
   const actor = resolveMockOntologyActor();
 
   if (path === "/api/v1/ontology-rag/state" && method === "GET") {
@@ -315,7 +316,10 @@ export function handleVitestOntologyRoute(params: {
   }
 
   if (path === "/api/v1/ontology-rag/ontology/promotions" && method === "GET") {
-    const proposals = mockPromotions.map((p) => ({
+    const statusFilter = parsedUrl?.searchParams.get("status");
+    const proposals = mockPromotions
+      .filter((p) => !statusFilter || p.status === statusFilter)
+      .map((p) => ({
       ...p,
       impact_report: {
         concept_key: p.concept_key,

@@ -182,6 +182,7 @@ test.describe("Assistant conversationnel, citations déterministes, centre d'aid
     if ((await zone4FaqBtn.count()) > 0 && (await zone4FaqBtn.getAttribute("aria-expanded")) !== "true") {
       await zone4FaqBtn.click();
     }
+    await expect(zone4Help.locator("strong, code").first()).toBeVisible({ timeout: 15000 });
     const zone4Text = (await zone4Help.textContent()) ?? "";
     expect(zone4Text, "USER24-BUG-3: zéro ** brut en Zone 4").not.toContain("**");
     expect(zone4Text, "USER24-BUG-3: zéro backtick brut en Zone 4").not.toContain("`");

@@ -10,21 +10,14 @@ import {
   type UpdateWorkspaceDatasourceRequest,
   type WorkspaceDatasourceItemResponse,
 } from "@orcia/api-client";
-import type { PlatformSetupContextValue } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { useI18n } from "../../i18n";
-import {
-  formatRfc9457ErrorToBanner,
-  resolveLocalizedClientError,
-} from "../../lib/formatRfc9457ErrorToBanner";
+import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import { useActiveEmbeddingModelStatus } from "../shared/useActiveEmbeddingModelStatus";
 import { WorkspaceSourcesMasterTable } from "./sources/WorkspaceSourcesMasterTable";
 import { WorkspaceSourceAttachModal } from "./sources/WorkspaceSourceAttachModal";
-import {
-  mapFallbackWorkspaceDatasources,
-  toRegisterDatasourceInput,
-} from "./sources/WorkspaceSourcesFallbackHelper";
+import { mapFallbackWorkspaceDatasources } from "./sources/WorkspaceSourcesFallbackHelper";
 import { WorkspaceSourcesColdStartBanner } from "./sources/WorkspaceSourcesColdStartBanner";
 import { WorkspaceSourcesRenewReferentForm } from "./sources/WorkspaceSourcesRenewReferentForm";
 
@@ -34,25 +27,27 @@ export interface WorkspaceSourcesRagTabProps {
   readonly initialDatasources?: readonly WorkspaceDatasourceItemResponse[];
   readonly fallbackDatasources?: readonly ControlCenterDatasourceItem[];
   readonly openHelpSection?: (sectionId: string) => void;
-  readonly onRegisterDatasource?: PlatformSetupContextValue["registerDatasource"];
   readonly onSourcesChanged?: (items: readonly WorkspaceDatasourceItemResponse[]) => void;
   readonly onFeedback?: (message: string) => void;
 }
 
 const EMPTY_FALLBACK_DATASOURCES: readonly ControlCenterDatasourceItem[] = [];
 const EMPTY_INITIAL_DATASOURCES: readonly WorkspaceDatasourceItemResponse[] = [];
+const LEAD_ROLES = new Set(["TEAM_LEAD", "BU_LEAD", "PLATFORM_ADMIN", "SECOPS"]);
 
 export function WorkspaceSourcesRagTab({
   activeWorkspace,
   initialDatasources = EMPTY_INITIAL_DATASOURCES,
   fallbackDatasources = EMPTY_FALLBACK_DATASOURCES,
-  onRegisterDatasource,
   onSourcesChanged,
   onFeedback = () => {},
 }: WorkspaceSourcesRagTabProps): React.ReactElement {
   const { dictionary, locale } = useI18n();
   const sourcesCopy = dictionary.categoryAControllers.workspaceSources;
   const openUserSettingsModalAtTab = useAuthSessionStore((s) => s.openUserSettingsModalAtTab);
+  const sessionRoles = useAuthSessionStore((s) => s.roles);
+  const sessionActiveHat = useAuthSessionStore((s) => s.activeHat);
+  const sessionReadOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
   const { navigateToRoute } = useShellNavigation();
   const { hasActiveEmbeddingModel } = useActiveEmbeddingModelStatus();
 
@@ -64,6 +59,8 @@ export function WorkspaceSourcesRagTab({
   );
   const onSourcesChangedRef = useRef(onSourcesChanged);
   onSourcesChangedRef.current = onSourcesChanged;
+  const onFeedbackRef = useRef(onFeedback);
+  onFeedbackRef.current = onFeedback;
   const fallbackRef = useRef(fallbackDatasources);
   fallbackRef.current = fallbackDatasources;
   const prevWsIdRef = useRef(wsId);
@@ -76,26 +73,37 @@ export function WorkspaceSourcesRagTab({
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
 
   const client = useMemo(() => createOrciaApiClient({ baseUrl: "", locale }), [locale]);
+  const wsEffectiveRole = (activeWorkspace as { effectiveRole?: string }).effectiveRole;
+  const normalizedRoles = sessionRoles.map((r) => String(r).toUpperCase());
   const effectiveRole =
-    (activeWorkspace as unknown as { effectiveRole?: string }).effectiveRole || "PLATFORM_ADMIN";
-  const isWorkspaceLead = ["TEAM_LEAD", "BU_LEAD", "PLATFORM_ADMIN", "SECOPS"].includes(effectiveRole);
+    wsEffectiveRole ||
+    (sessionActiveHat ? String(sessionActiveHat).toUpperCase() : "") ||
+    normalizedRoles[0] ||
+    "CONTRIBUTOR";
+  const isWorkspaceLead =
+    LEAD_ROLES.has(effectiveRole) ||
+    (!wsEffectiveRole && normalizedRoles.some((r) => LEAD_ROLES.has(r)));
   const isReadOnlyObserver =
     activeWorkspace.accessMode === "READ_ONLY_OBSERVER" ||
+    sessionReadOnlyObserver ||
     effectiveRole === "OBSERVER" ||
     effectiveRole === "READ_ONLY_OBSERVER";
 
   const showFeedback = (msg: string) => {
     setErrorBanner(null);
     setFeedbackBanner(msg);
-    onFeedback(msg);
+    onFeedbackRef.current(msg);
   };
 
-  const showApiError = (err: unknown) => {
-    const formatted = formatRfc9457ErrorToBanner(err, locale);
-    setFeedbackBanner(null);
-    setErrorBanner(formatted.fullText);
-    onFeedback(formatted.fullText);
-  };
+  const showApiError = useCallback(
+    (err: unknown) => {
+      const formatted = formatRfc9457ErrorToBanner(err, locale);
+      setFeedbackBanner(null);
+      setErrorBanner(formatted.fullText);
+      onFeedbackRef.current(`⚠️ ${formatted.fullText}`);
+    },
+    [locale],
+  );
 
   const loadData = useCallback(async () => {
     if (!wsId) return;
@@ -108,17 +116,14 @@ export function WorkspaceSourcesRagTab({
       setConnectors(connRes.items);
       onSourcesChangedRef.current?.(dsRes.items);
     } catch (err: unknown) {
-      console.warn(
-        "[orcia:workspaceSources.loadData]",
-        err instanceof Error ? err.message : String(err),
-      );
+      showApiError(err);
       if (fallbackRef.current.length > 0) {
         const mapped = mapFallbackWorkspaceDatasources(fallbackRef.current, activeWorkspace.name, wsId);
         setDatasources(mapped);
         onSourcesChangedRef.current?.(mapped);
       }
     }
-  }, [wsId, activeWorkspace.name, client]);
+  }, [wsId, activeWorkspace.name, client, showApiError]);
 
   useEffect(() => {
     if (prevWsIdRef.current !== wsId) {
@@ -127,15 +132,6 @@ export function WorkspaceSourcesRagTab({
     }
     void loadData();
   }, [wsId, activeWorkspace.name, loadData]);
-
-  const showClientActionError = (err: unknown) => {
-    const detail = err instanceof Error ? err.message : "";
-    showFeedback(
-      resolveLocalizedClientError("ERR_CLIENT_WORKSPACE_SOURCE_ACTION", locale, {
-        detail,
-      }),
-    );
-  };
 
   const handleAttachOrUpdate = async (
     payload: CreateWorkspaceDatasourceRequest | UpdateWorkspaceDatasourceRequest,
@@ -147,9 +143,7 @@ export function WorkspaceSourcesRagTab({
         await client.updateWorkspaceDatasource(wsId, editingDatasource.id, payload as UpdateWorkspaceDatasourceRequest);
         showFeedback(sourcesCopy.updated);
       } else {
-        const createPayload = payload as CreateWorkspaceDatasourceRequest;
-        await client.createWorkspaceDatasource(wsId, createPayload);
-        onRegisterDatasource?.(toRegisterDatasourceInput(activeWorkspace.name, createPayload));
+        await client.createWorkspaceDatasource(wsId, payload as CreateWorkspaceDatasourceRequest);
         showFeedback(sourcesCopy.attached);
       }
       setIsAttachModalOpen(false);
@@ -181,7 +175,7 @@ export function WorkspaceSourcesRagTab({
       showFeedback(sourcesCopy.deleted);
       await loadData();
     } catch (err: unknown) {
-      showClientActionError(err);
+      showApiError(err);
     }
   };
 
@@ -194,7 +188,7 @@ export function WorkspaceSourcesRagTab({
       showFeedback(enabled ? sourcesCopy.gitNexusEnabled : sourcesCopy.gitNexusDisabled);
       await loadData();
     } catch (err: unknown) {
-      showClientActionError(err);
+      showApiError(err);
     }
   };
 
@@ -210,7 +204,7 @@ export function WorkspaceSourcesRagTab({
       showFeedback(sourcesCopy.referentRenewed);
       await loadData();
     } catch (err: unknown) {
-      showClientActionError(err);
+      showApiError(err);
     }
   };
 
@@ -225,7 +219,7 @@ export function WorkspaceSourcesRagTab({
       );
       await loadData();
     } catch (err: unknown) {
-      showClientActionError(err);
+      showApiError(err);
     }
   };
 

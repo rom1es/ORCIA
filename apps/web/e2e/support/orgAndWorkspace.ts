@@ -17,7 +17,7 @@ async function createOrgUnit(page: Page, level: "BU" | "TEAM", name: string, slu
   await expect(page.getByTestId("create-org-unit-form")).toBeHidden({ timeout: 15000 });
 }
 
-/** Crée une Direction (BU) puis une Équipe rattachée, via /organization (parcours réel). */
+/** Create a Business Unit (BU) then an attached Team via `/organization` (real UI flow). */
 export async function createBuAndTeamViaUi(page: Page): Promise<void> {
   await page.goto("/organization");
   await expect(page.getByTestId("settings-organization-section")).toBeVisible({ timeout: 30000 });
@@ -26,7 +26,7 @@ export async function createBuAndTeamViaUi(page: Page): Promise<void> {
   await createOrgUnit(page, "TEAM", "Equipe E2E", "team-e2e");
 }
 
-/** Crée un Espace de Travail rattaché à l'équipe via /spaces. */
+/** Create a Workspace attached to the team via `/spaces`. */
 export async function createWorkspaceViaUi(page: Page, name: string, slug: string) {
   await page.goto("/spaces");
   const toggleBtn = page.getByTestId("toggle-create-workspace-form-btn");

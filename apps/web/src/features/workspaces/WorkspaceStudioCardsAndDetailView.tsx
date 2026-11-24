@@ -1,33 +1,19 @@
 import type {
-  ControlCenterDatasourceItem,
   ControlCenterWorkspaceGovItem,
   ProductLifecyclePhaseType,
-  UiOntologyConceptView,
-  UiOntologyLevel,
   WorkspaceVisibilityMode,
 } from "@orcia/ui";
 import React, { useState } from "react";
-import type {
-  ConfiguredOrgUnit,
-  ConfiguredWorkflowItem,
-  PlatformSetupContextValue,
-} from "../../components/platformSetupStore";
 import { resolveDictionaryForFlag } from "../../i18n";
 import { WorkspaceCompactHeader } from "./WorkspaceCompactHeader";
 
 export interface WorkspaceStudioCardsAndDetailViewProps {
   readonly isFr: boolean;
   readonly initialWorkspaceId?: string;
-  readonly initialTab?: string;
   readonly workspaces: readonly ControlCenterWorkspaceGovItem[];
-  readonly datasources: readonly ControlCenterDatasourceItem[];
-  readonly ontologyConcepts: readonly UiOntologyConceptView[];
-  readonly workflows: readonly ConfiguredWorkflowItem[];
-  readonly orgUnits: readonly ConfiguredOrgUnit[];
   readonly isCreateFormExpanded: boolean;
   readonly onSelectWorkspace?: (workspaceId: string) => void;
   readonly onToggleCreateForm: () => void;
-  readonly openHelpSection: (sectionId: string) => void;
   readonly onNavigateToRoute: (route: string) => void;
   readonly onUpdateWorkspacePhase: (
     workspaceId: string,
@@ -37,13 +23,6 @@ export interface WorkspaceStudioCardsAndDetailViewProps {
     workspaceId: string,
     visibilityMode: WorkspaceVisibilityMode,
   ) => void | Promise<void>;
-  readonly onRegisterDatasource: PlatformSetupContextValue["registerDatasource"];
-  readonly onAddOntologyConcept: (input: UiOntologyConceptView) => void;
-  readonly onPromoteOntologyConcept: (
-    conceptKey: string,
-    targetLevel: UiOntologyLevel,
-    targetScopeId?: string,
-  ) => void;
   readonly onFeedback: (message: string) => void;
 }
 

@@ -22,7 +22,7 @@ export const FEATURE_WORKSPACES_FR: FeatureWorkspacesDictionary = {
     title: "Créer un Nouvel Espace de Travail",
     helpTriggerLabel: "Comprendre la création d'un Espace de travail et ses sources",
     noTeamBannerText:
-      "💡 Tout Espace de Travail (collectif ou privé) est rattaché à une Équipe pour le suivi des coûts IA. Créez vos Équipes dans Configuration › Organisation.",
+      "💡 Tout Espace de Travail (collectif ou privé) est rattaché à une Équipe pour le suivi des coûts IA. Créez vos Équipes dans Mon Organisation.",
     createTeamBtn: "Créer une Équipe →",
     namePlaceholder: "Nom de l'Espace de Travail...",
     slugPlaceholder: "Identifiant court (optionnel)...",
@@ -38,7 +38,7 @@ export const FEATURE_WORKSPACES_FR: FeatureWorkspacesDictionary = {
     submitBtn: "+ Créer l'Espace",
     disabledReasonWithTeam: "Saisissez le nom de l'Espace de Travail pour le créer.",
     disabledReasonNoTeam:
-      "Saisissez le nom de l'Espace de Travail et créez une Équipe de rattachement (facturation IA) dans Configuration › Organisation.",
+      "Saisissez le nom de l'Espace de Travail et créez une Équipe de rattachement (facturation IA) dans Mon Organisation.",
   },
   studioCards: {
     filterAll: "Tous",
@@ -109,7 +109,7 @@ export const FEATURE_WORKSPACES_FR: FeatureWorkspacesDictionary = {
     membersLeadsLabel: "Responsables",
     membersListLabel: "Membres",
     membersEmptyHint:
-      "Aucun membre affecté à cette équipe pour le moment. Gérez les invitations depuis Configuration › Organisation.",
+      "Aucun membre affecté à cette équipe pour le moment. Gérez les invitations depuis Mon Organisation.",
     workspaceSettingsTitle: "Paramètres de l'espace",
     workspaceSettingsPhaseLabel: "Cycle de vie",
     workspaceSettingsVisibilityLabel: "Confidentialité & partage",
@@ -131,8 +131,14 @@ export const FEATURE_WORKSPACES_FR: FeatureWorkspacesDictionary = {
     compileErrorContext: "Compilation de règle métier",
     activateSuccessBanner: "✅ Contrôle automatique signé et activé pour l'Espace de travail.",
     activateErrorContext: "Activation de la règle",
+    compiledVerifiedBadge: "✓ Vérifié automatiquement (cas valide + cas rejeté)",
+    compiledExplanationTemplate:
+      "Vérifie automatiquement la conformité de la règle « {ruleId} » avant chaque validation.",
+    compiledCausalBreadcrumbTemplate: "Orientation ➔ Règle ({ruleId}) ➔ Contrôle automatique",
     candidatesApprovedTemplate: "✅ {count} terme(s) validé(s) et intégré(s) au glossaire.",
     candidateRejectedBanner: "✅ Terme candidat écarté de la file d'attente.",
+    promoteReviewComment: "Validé depuis le glossaire de l'espace de travail.",
+    rejectReviewComment: "Écarté depuis le glossaire de l'espace de travail.",
   },
   glossaryTab: {
     domainBadgeTemplate: "Direction ({name})",

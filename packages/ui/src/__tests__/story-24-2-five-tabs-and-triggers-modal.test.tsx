@@ -167,9 +167,38 @@ describe("Story 24.2 (USER24-BUG-6 & REM24-03) — WorkspaceFiveTabsAndExternalR
 
     expect(screen.getByTestId("workspace-overview-panel")).toBeDefined();
     expect(screen.queryByTestId("workspace-overview-kpi-grid")).toBeNull();
+    expect(screen.queryByTestId("workspace-overview-rebase-section")).toBeNull();
+    expect(screen.queryByText(FIVE_TABS_LABELS_FR.supersededMemlogNotice)).toBeNull();
     expect(screen.getByTestId("workspace-overview-empty-hint").textContent).toContain(
       "Cet espace est prêt",
     );
+  });
+
+  it("renders supersededMemlogNotice on Tab 1 OVERVIEW only when rebasedChunks.length > 0", () => {
+    render(
+      <WorkspaceFiveTabsAndExternalRebaseView
+        workspaceSlug="ws-rebased"
+        workspaceName="Espace Rebasé"
+        activeTab="OVERVIEW"
+        defaultArtifactDestinationUri="orcia://workspaces/ws-rebased/deliverables"
+        pendingGlossaryCandidatesCount={0}
+        sources={[]}
+        activeWaivers={[]}
+        rebasedChunks={[
+          {
+            chunkKey: "chunk-overview-1",
+            sectionTitle: "Architecture",
+            status: "HUMAN_AMENDED_EXTERNAL",
+            lockedAgainstAgentOverwrite: true,
+          },
+        ]}
+        labels={FIVE_TABS_LABELS_FR}
+      />,
+    );
+
+    expect(screen.getByTestId("workspace-overview-rebase-section")).toBeDefined();
+    expect(screen.getByText(FIVE_TABS_LABELS_FR.supersededMemlogNotice)).toBeDefined();
+    expect(screen.getByTestId("rebased-chunk-chunk-overview-1")).toBeDefined();
   });
 
   it("renders deliverables catalog, sanitized destination URI, and ExternalEditRebaser Lock V2 in Tab 3", () => {

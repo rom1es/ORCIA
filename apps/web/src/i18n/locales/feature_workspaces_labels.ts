@@ -123,8 +123,13 @@ export interface FeatureWorkspacesDictionary {
     readonly compileErrorContext: string;
     readonly activateSuccessBanner: string;
     readonly activateErrorContext: string;
+    readonly compiledVerifiedBadge: string;
+    readonly compiledExplanationTemplate: string;
+    readonly compiledCausalBreadcrumbTemplate: string;
     readonly candidatesApprovedTemplate: string;
     readonly candidateRejectedBanner: string;
+    readonly promoteReviewComment: string;
+    readonly rejectReviewComment: string;
   };
   readonly glossaryTab: {
     readonly domainBadgeTemplate: string;

@@ -215,7 +215,7 @@ test.describe("Sources d'espace multi-nature, graphe de code, glossaire, ontolog
       slug: "ws-dna-tripartite",
     });
 
-    // 1. Rattachement et synchronisation réelle d'une source code -> `kb_documents` PG18 (`AD-24.7`)
+    // 1. Attach and sync a real code source -> PG18 `kb_documents` (`AD-24.7`)
     await openWorkspaceSourcesPage(page, ws.uiWorkspaceId);
     await page.getByTestId("open-attach-source-modal-btn").click();
     await expect(page.getByTestId("workspace-source-attach-modal")).toBeVisible({ timeout: 10000 });
@@ -248,23 +248,31 @@ test.describe("Sources d'espace multi-nature, graphe de code, glossaire, ontolog
     ]);
     expect(syncRes.status()).toBe(200);
 
-    // 2. Chaîne ADN Starlark + dérogation d'espace + survie F5 PG18
+    // 2. DNA Starlark chain (strictly inside Tab 4 Glossary) + workspace waiver + PG18 F5 survival
     await page.goto(`/workspaces/${ws.uiWorkspaceId}`);
-    await expect(page.getByTestId("dna-starlark-glossary-view")).toBeVisible({ timeout: 10000 });
-    await page.getByTestId("compile-starlark-btn").click();
-    await expect(page.getByTestId("starlark-compiler-panel")).toBeVisible({ timeout: 10000 });
-
     await expect(page.getByTestId("workspace-five-tabs-view")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("dna-starlark-glossary-view")).toBeHidden();
+
+    await page.getByTestId("workspace-tab-OVERVIEW").click();
     await page.locator('[data-testid^="register-waiver-btn-"]').first().click();
     await expect(page.locator('[data-testid^="waiver-item-"]').first()).toBeVisible({
       timeout: 15000,
     });
 
+    await openWorkspaceGlossaryTab(page);
+    await expect(page.getByTestId("dna-starlark-glossary-view")).toBeVisible({ timeout: 10000 });
+    await page.getByTestId("compile-starlark-btn").click();
+    await expect(page.getByTestId("starlark-compiler-panel")).toBeVisible({ timeout: 10000 });
+    await page.getByTestId("sign-activate-starlark-btn").click();
+
     await reloadColdFromPg(page);
-    await expect(page.getByTestId("starlark-compiler-panel")).toBeVisible({ timeout: 15000 });
     await expect(page.locator('[data-testid^="waiver-item-"]').first()).toBeVisible({
       timeout: 15000,
     });
+    await expect(page.getByTestId("dna-starlark-glossary-view")).toBeHidden();
+    await openWorkspaceGlossaryTab(page);
+    await expect(page.getByTestId("dna-starlark-glossary-view")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId("starlark-compiler-panel")).toBeVisible({ timeout: 15000 });
 
     expectDbRowExists(
       "SELECT waiver_id::text AS waiver_id, workspace_id::text AS workspace_id, source_uri, status FROM workspace_exception_waivers WHERE workspace_id = :ws_id",
@@ -278,8 +286,17 @@ test.describe("Sources d'espace multi-nature, graphe de code, glossaire, ontolog
       "Mécanisme ADN Starlark persisté dans workspace_dna_mechanisms",
     );
 
-    // 3. Audit tripartite Doc vs Code depuis /ontology -> `tripartite_trace_edges` + survie F5
+    // 3. Tripartite Doc vs Code audit from /ontology -> `tripartite_trace_edges` + F5 survival
     await openOntologyPage(page, "EXPLORER");
+    const levelSelect = page.getByTestId("ontology-level-select");
+    await expect(levelSelect).toBeVisible({ timeout: 15000 });
+    const targetScopeOptVal = await levelSelect
+      .locator("option")
+      .filter({ hasText: "Espace ADN Tripartite" })
+      .first()
+      .getAttribute("value");
+    expect(targetScopeOptVal).toBeTruthy();
+    await levelSelect.selectOption(targetScopeOptVal!);
     await expect(page.getByTestId("tripartite-graph-section")).toBeVisible({ timeout: 15000 });
     await expect(page.getByTestId("tripartite-audit-form")).toBeVisible({ timeout: 10000 });
     await page

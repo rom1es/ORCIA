@@ -22,7 +22,7 @@ export const FEATURE_WORKSPACES_EN: FeatureWorkspacesDictionary = {
     title: "Create a New Workspace",
     helpTriggerLabel: "Understand how to create a Workspace and connect sources",
     noTeamBannerText:
-      "💡 Every Workspace (team or private) is attached to a Team for AI cost tracking. Create your Teams in Configuration › Organization.",
+      "💡 Every Workspace (team or private) is attached to a Team for AI cost tracking. Create your Teams in My Organization.",
     createTeamBtn: "Create a Team →",
     namePlaceholder: "Workspace name...",
     slugPlaceholder: "Short ID (optional)...",
@@ -38,7 +38,7 @@ export const FEATURE_WORKSPACES_EN: FeatureWorkspacesDictionary = {
     submitBtn: "+ Create Workspace",
     disabledReasonWithTeam: "Enter the Workspace name to create it.",
     disabledReasonNoTeam:
-      "Enter the Workspace name and create a billing Team in Configuration › Organization.",
+      "Enter the Workspace name and create a billing Team in My Organization.",
   },
   studioCards: {
     filterAll: "All",
@@ -109,7 +109,7 @@ export const FEATURE_WORKSPACES_EN: FeatureWorkspacesDictionary = {
     membersLeadsLabel: "Leads",
     membersListLabel: "Members",
     membersEmptyHint:
-      "No members assigned to this team yet. Manage invitations from Configuration › Organization.",
+      "No members assigned to this team yet. Manage invitations from My Organization.",
     workspaceSettingsTitle: "Space settings",
     workspaceSettingsPhaseLabel: "Lifecycle phase",
     workspaceSettingsVisibilityLabel: "Visibility & sharing",
@@ -131,8 +131,14 @@ export const FEATURE_WORKSPACES_EN: FeatureWorkspacesDictionary = {
     compileErrorContext: "Business rule compilation",
     activateSuccessBanner: "✅ Automated check signed and activated for the Workspace.",
     activateErrorContext: "Rule activation",
+    compiledVerifiedBadge: "✓ Automatically verified (valid case + rejected case)",
+    compiledExplanationTemplate:
+      'Automatically checks compliance of rule "{ruleId}" before each validation.',
+    compiledCausalBreadcrumbTemplate: "Directive ➔ Rule ({ruleId}) ➔ Automated check",
     candidatesApprovedTemplate: "✅ {count} term(s) approved and added to the glossary.",
     candidateRejectedBanner: "✅ Candidate term removed from queue.",
+    promoteReviewComment: "Approved from workspace glossary.",
+    rejectReviewComment: "Dismissed from workspace glossary.",
   },
   glossaryTab: {
     domainBadgeTemplate: "Business Unit ({name})",

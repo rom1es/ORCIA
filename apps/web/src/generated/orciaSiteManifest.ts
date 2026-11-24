@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 233,
+    "techLeadReportsCount": 234,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -542,6 +542,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-24",
+      "phaseOrStory": "Story 28.4",
+      "reportFile": "28-4-tab4-glossary-dna-starlark-encapsulation-and-e2e-lock-tech-lead-report.md",
+      "domain": "Epic 28 Lot 2 & Closure — Encapsulation of DNA Starlark Compiler & PG18 Glossary Candidate Queue Inside Tab 4 (Glossaire & Règles Métiers), WX-01..WX-06 Anti-Stacking Audit, Architecture Remediation & Playwright E2E Lock (CAP-010, CAP-080, CAP-081, CAP-084, CAP-180)",
+      "summary": "Closed (done, epic-28: done, ACTION_ITEM-28.1: open, independent Testing Sub-Agent verified): moved DnaStarlarkCompilerAndGlossaryLifecycleView strictly inside Tab 4 (glossaryTabSlot, WorkspaceDnaAndWaiversSection.tsx 231 L), hydrated scoped PG18 pending glossary candidates & persisted In-Flow promotion/rejection via listOntologyPromotions/decideOntologyPromotion (useWorkspaceDnaAndWaivers.ts 289 L with localized compiledVerifiedBadge/compiledExplanationTemplate/compiledCausalBreadcrumbTemplate, WorkspaceGlossaryAndOntologyTab.tsx 284 L, vitestOntologyMockHandlers.ts status filter), added controlled Top-3 selection & empty guard (DnaStarlarkCompilerAndGlossaryLifecycleView.tsx 291 L), remediated architecture review findings (WorkspaceFiveTabsPanels.tsx 198 L conditional rebasedChunks, WorkspaceSourcesRagTab.tsx 289 L non-escalation & [role=\"alert\"], WorkspaceMembersAndSettingsTab.tsx 115 L read-only badges, deleted WorkspaceStudioSummaryCard.tsx, WorkspaceStudioCardsAndDetailView.tsx 98 L, useOntologyFeatureController.ts 180 L deterministic workspace scope), added workspaces-single-tabs-anti-stacking-audit.test.tsx (389 L, 3/3), updated 07-spaces, 17-workspace-sources, 21-assistant, story-24-2, story-24-6, story-28-3, i18n-and-shell; all 14/14 production .ts/.tsx files <= 291 L; verified 9/9 Turbo (@orcia/api-client 20, @orcia/ui 142, @orcia/web 299 = 461 JS/TS tests, incl. WX-01..06 3/3, story-28-1..3, zero-dead-buttons 4/4, e2e-testids-sync 1/1, i18n Gates 1–3), Python ruff/mypy --strict (795 files)/lint-imports (5/5, 888 files)/lint_spine (0 findings)/detect-secrets (0), and 6 passed (1.9m) Playwright Desktop E2E (07, 17, 21 on real PG18 + Redis 7.4 without fixtures)."
+    },
     {
       "date": "2026-11-24",
       "phaseOrStory": "Story 28.3",

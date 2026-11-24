@@ -29,6 +29,7 @@ export interface WorkspaceGlossaryAndOntologyTabProps {
   readonly selectedWorkspace: ControlCenterWorkspaceGovItem | null;
   readonly orgUnits: readonly ConfiguredOrgUnit[];
   readonly ontologyConcepts: readonly UiOntologyConceptView[];
+  readonly refreshNonce?: number;
   readonly openHelpSection: (sectionId: string) => void;
   readonly onAddConcept: (input: UiOntologyConceptView) => void;
   readonly onPromoteConcept: (
@@ -36,6 +37,7 @@ export interface WorkspaceGlossaryAndOntologyTabProps {
     targetLevel: UiOntologyLevel,
     targetScopeId?: string,
   ) => void;
+  readonly onPromotionsChanged?: () => void;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -50,7 +52,9 @@ export function WorkspaceGlossaryAndOntologyTab({
   selectedWorkspace,
   orgUnits,
   ontologyConcepts,
+  refreshNonce = 0,
   onAddConcept,
+  onPromotionsChanged,
 }: WorkspaceGlossaryAndOntologyTabProps): React.ReactElement {
   const { dictionary, locale } = useI18n();
   const copy = dictionary.ontologyGlossary;
@@ -87,7 +91,7 @@ export function WorkspaceGlossaryAndOntologyTab({
 
   useEffect(() => {
     void loadFromServer();
-  }, [loadFromServer]);
+  }, [loadFromServer, refreshNonce]);
 
   const wsName = selectedWorkspace?.name ?? copy.workspaceGlossaryDefaultPlatformName;
   const wsId = selectedWorkspace?.workspaceId ?? "scope-global";
@@ -181,6 +185,7 @@ export function WorkspaceGlossaryAndOntologyTab({
         target_scope_id: concept.nextPromotionScopeId ?? undefined,
       });
       await loadFromServer();
+      onPromotionsChanged?.();
     } catch (err: unknown) {
       setErrorBanner(err instanceof Error ? err.message : copy.errorFallback);
     }
@@ -197,31 +202,14 @@ export function WorkspaceGlossaryAndOntologyTab({
   const wsText = formatI18nTemplate(glossaryTabCopy.workspaceBadgeTemplate, { name: wsName });
 
   const cascadeTiers = [
-    {
-      tierId: "enterprise",
-      badge: `${enterpriseIcon} ${copy.workspaceGlossaryEnterpriseTitle}`,
-      subtitle: copy.workspaceGlossaryEnterpriseSub,
-      items: displayedConcepts.filter((c) => c.level === "1_ENTERPRISE"),
-    },
-    {
-      tierId: "domain",
-      badge: `${divisionIcon} ${domainText}`,
-      subtitle: copy.workspaceGlossaryDomainSub,
-      items: displayedConcepts.filter((c) => c.level === "2_DOMAIN"),
-    },
-    {
-      tierId: "team",
-      badge: `${teamIcon} ${teamText}`,
-      subtitle: copy.workspaceGlossaryTeamSub,
-      items: displayedConcepts.filter((c) => c.level === "3_TEAM"),
-    },
+    { tierId: "enterprise", badge: `${enterpriseIcon} ${copy.workspaceGlossaryEnterpriseTitle}`, subtitle: copy.workspaceGlossaryEnterpriseSub, items: displayedConcepts.filter((c) => c.level === "1_ENTERPRISE") },
+    { tierId: "domain", badge: `${divisionIcon} ${domainText}`, subtitle: copy.workspaceGlossaryDomainSub, items: displayedConcepts.filter((c) => c.level === "2_DOMAIN") },
+    { tierId: "team", badge: `${teamIcon} ${teamText}`, subtitle: copy.workspaceGlossaryTeamSub, items: displayedConcepts.filter((c) => c.level === "3_TEAM") },
     {
       tierId: "workspace",
       badge: `${workspaceIcon} ${wsText}`,
       subtitle: copy.workspaceGlossaryWorkspaceSub,
-      items: displayedConcepts.filter(
-        (c) => c.level === "4_WORKSPACE" || c.level === "3_WORKSPACE" || c.level === "4_RUN_EPHEMERAL",
-      ),
+      items: displayedConcepts.filter((c) => c.level === "4_WORKSPACE" || c.level === "3_WORKSPACE" || c.level === "4_RUN_EPHEMERAL"),
     },
   ];
 

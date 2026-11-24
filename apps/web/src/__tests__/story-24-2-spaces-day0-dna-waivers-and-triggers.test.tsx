@@ -91,17 +91,21 @@ describe("Story 24.2 (Couche 1b) — /spaces Day-0, 5 Tabs (USER24-BUG-6), DNA/W
     // 1. Wait for WorkspaceDnaAndWaiversSection & verify real 5-tab switching (USER24-BUG-6)
     expect(await screen.findByTestId("workspace-dna-and-waivers-section")).toBeDefined();
     expect(screen.getByTestId("workspace-overview-panel")).toBeDefined();
+    expect(screen.queryByTestId("dna-starlark-glossary-view")).toBeNull();
 
     fireEvent.click(screen.getByTestId("workspace-tab-MEMBERS_TEAM"));
     const membersPanel = await screen.findByTestId("workspace-members-panel");
     expect(membersPanel.textContent).toContain("Direction Produit");
     expect(screen.queryByTestId("workspace-sources-panel")).toBeNull();
+    expect(screen.queryByTestId("dna-starlark-glossary-view")).toBeNull();
 
     fireEvent.click(screen.getByTestId("workspace-tab-DELIVERABLES_ARTIFACTS")); // pragma: allowlist secret
     expect(await screen.findByTestId("workspace-deliverables-panel")).toBeDefined();
+    expect(screen.queryByTestId("dna-starlark-glossary-view")).toBeNull();
 
     fireEvent.click(screen.getByTestId("workspace-tab-DOCUMENTS_SOURCES"));
     expect(await screen.findByTestId("workspace-sources-panel")).toBeDefined();
+    expect(screen.queryByTestId("dna-starlark-glossary-view")).toBeNull();
 
     fireEvent.click(screen.getByTestId("workspace-tab-OVERVIEW"));
     expect(await screen.findByTestId("workspace-overview-panel")).toBeDefined();
@@ -134,7 +138,9 @@ describe("Story 24.2 (Couche 1b) — /spaces Day-0, 5 Tabs (USER24-BUG-6), DNA/W
     });
     globalThis.fetch = originalFetch;
 
-    // 3. Compile & activate Starlark mechanism
+    // 3. Switch to Tab 4 (GLOSSARY_RULES) to compile & activate Starlark mechanism
+    fireEvent.click(screen.getByTestId("workspace-tab-GLOSSARY_RULES"));
+    expect(await screen.findByTestId("dna-starlark-glossary-view")).toBeDefined();
     fireEvent.click(screen.getByTestId("compile-starlark-btn"));
     expect(await screen.findByTestId("starlark-compiler-panel")).toBeDefined();
 
@@ -145,7 +151,7 @@ describe("Story 24.2 (Couche 1b) — /spaces Day-0, 5 Tabs (USER24-BUG-6), DNA/W
       );
     });
 
-    // 4. Simulate F5 reload -> waivers & Starlark mechanism rehydrate from backend
+    // 4. Simulate F5 reload -> waivers on Tab 1 & Starlark mechanism inside Tab 4 rehydrate from backend
     firstRender.unmount();
 
     const queryClient2 = createOrciaQueryClient();
@@ -163,6 +169,11 @@ describe("Story 24.2 (Couche 1b) — /spaces Day-0, 5 Tabs (USER24-BUG-6), DNA/W
 
     await waitFor(() => {
       expect(screen.getAllByTestId(/^waiver-item-/).length).toBe(1);
+      expect(screen.queryByTestId("dna-starlark-glossary-view")).toBeNull();
+    });
+
+    fireEvent.click(screen.getByTestId("workspace-tab-GLOSSARY_RULES"));
+    await waitFor(() => {
       expect(screen.getByTestId("starlark-compiler-panel")).toBeDefined();
     });
 

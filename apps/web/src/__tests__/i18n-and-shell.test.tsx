@@ -406,9 +406,11 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       </QueryClientProvider>,
     );
 
-    // /spaces -> WorkspaceFiveTabsAndExternalRebaseView + DnaStarlarkCompilerAndGlossaryLifecycleView
+    // /spaces -> WorkspaceFiveTabsAndExternalRebaseView on OVERVIEW (Starlark hidden until Tab 4 GLOSSARY_RULES)
     expect(await screen.findByTestId("workspace-five-tabs-view")).toBeDefined();
-    expect(screen.getByTestId("dna-starlark-glossary-view")).toBeDefined();
+    expect(screen.queryByTestId("dna-starlark-glossary-view")).toBeNull();
+    fireEvent.click(screen.getByTestId("workspace-tab-GLOSSARY_RULES"));
+    expect(await screen.findByTestId("dna-starlark-glossary-view")).toBeDefined();
 
     // Navigate to /agents -> RemoteServiceTestBenchAndMcpExposureView inside connections tab
     await act(async () => {

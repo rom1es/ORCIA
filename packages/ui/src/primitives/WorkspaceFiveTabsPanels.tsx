@@ -99,33 +99,38 @@ export const WaiversAndRebasePanel: React.FC<WaiversAndRebasePanelProps> = ({
       </ul>
     </div>
 
-    <div className="border-t border-[var(--orcia-border-subtle)] pt-2">
-      <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
-        {labels.externalRebaseTitle}
-      </h3>
-      <p className="mb-2 font-mono text-[11px] text-[var(--orcia-text-secondary)]">
-        {labels.supersededMemlogNotice}
-      </p>
-      <ul className="space-y-1.5">
-        {rebasedChunks.map((chunk) => (
-          <li
-            key={chunk.chunkKey}
-            data-testid={`rebased-chunk-${chunk.chunkKey}`}
-            className="flex items-center justify-between rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2 text-xs"
-          >
-            <span className="font-medium">{chunk.sectionTitle}</span>
-            {chunk.status === "HUMAN_AMENDED_EXTERNAL" && (
-              <span
-                data-testid={`human-amended-badge-${chunk.chunkKey}`}
-                className="rounded bg-[var(--orcia-surface-secondary)] px-2 py-0.5 font-mono text-[11px]"
-              >
-                {labels.humanAmendedBadge}
-              </span>
-            )}
-          </li>
-        ))}
-      </ul>
-    </div>
+    {rebasedChunks.length > 0 && (
+      <div
+        data-testid="workspace-overview-rebase-section"
+        className="border-t border-[var(--orcia-border-subtle)] pt-2"
+      >
+        <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
+          {labels.externalRebaseTitle}
+        </h3>
+        <p className="mb-2 font-mono text-[11px] text-[var(--orcia-text-secondary)]">
+          {labels.supersededMemlogNotice}
+        </p>
+        <ul className="space-y-1.5">
+          {rebasedChunks.map((chunk) => (
+            <li
+              key={chunk.chunkKey}
+              data-testid={`rebased-chunk-${chunk.chunkKey}`}
+              className="flex items-center justify-between rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2 text-xs"
+            >
+              <span className="font-medium">{chunk.sectionTitle}</span>
+              {chunk.status === "HUMAN_AMENDED_EXTERNAL" && (
+                <span
+                  data-testid={`human-amended-badge-${chunk.chunkKey}`}
+                  className="rounded bg-[var(--orcia-surface-secondary)] px-2 py-0.5 font-mono text-[11px]"
+                >
+                  {labels.humanAmendedBadge}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
   </div>
 );
 

@@ -28,15 +28,12 @@ export function WorkspacesFeaturePanel({
   const {
     orgUnits,
     workspaces,
-    datasources,
-    workflows,
     runs,
     ontologyConcepts,
     scopes,
     createWorkspace,
     updateWorkspacePhase,
     updateWorkspaceVisibility,
-    registerDatasource,
     addOntologyConcept,
     promoteOntologyConcept,
   } = usePlatformSetup();
@@ -139,22 +136,13 @@ export function WorkspacesFeaturePanel({
       <WorkspaceStudioCardsAndDetailView
         isFr={isFr}
         initialWorkspaceId={targetWorkspace?.workspaceId}
-        initialTab={initialTab}
         workspaces={workspaces}
-        datasources={datasources}
-        ontologyConcepts={ontologyConcepts}
-        workflows={workflows}
-        orgUnits={orgUnits}
         isCreateFormExpanded={effectiveCreateFormVisible}
         onSelectWorkspace={handleSelectWorkspace}
         onToggleCreateForm={() => setIsCreateFormOpen((prev) => !prev)}
-        openHelpSection={openHelpSection}
         onNavigateToRoute={navigateToRoute}
         onUpdateWorkspacePhase={updateWorkspacePhase}
         onUpdateWorkspaceVisibility={updateWorkspaceVisibility}
-        onRegisterDatasource={registerDatasource}
-        onAddOntologyConcept={addOntologyConcept}
-        onPromoteOntologyConcept={promoteOntologyConcept}
         onFeedback={setActionFeedback}
       />
 
@@ -168,9 +156,6 @@ export function WorkspacesFeaturePanel({
           orgUnits={orgUnits}
           dictionary={dictionary}
           openHelpSection={openHelpSection}
-          onRegisterDatasource={registerDatasource}
-          onUpdateWorkspacePhase={updateWorkspacePhase}
-          onUpdateWorkspaceVisibility={updateWorkspaceVisibility}
           onAddOntologyConcept={addOntologyConcept}
           onPromoteOntologyConcept={promoteOntologyConcept}
           onFeedback={setActionFeedback}

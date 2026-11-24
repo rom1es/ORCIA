@@ -232,6 +232,7 @@ export function createPlatformWorkspaceActions(params: {
     workspaceId: string,
     phase: ProductLifecyclePhaseType,
   ): Promise<void> => {
+    markMutated();
     const { nextWorkspaces, nextAudit } = applyWorkspacePhaseUpdate({
       workspaces,
       workspaceId,
@@ -249,6 +250,7 @@ export function createPlatformWorkspaceActions(params: {
     workspaceId: string,
     visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER",
   ): Promise<void> => {
+    markMutated();
     const { nextWorkspaces, nextAudit } = applyWorkspaceVisibilityUpdate({
       workspaces,
       workspaceId,

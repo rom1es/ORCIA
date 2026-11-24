@@ -5,6 +5,7 @@ import type {
   UiTripartiteEdgeView,
 } from "@orcia/ui";
 import { useCallback, useEffect, useState } from "react";
+import { useShellNavigation } from "../../components/shellNavigationContext";
 import {
   auditDocVsCodeToApi,
   decideOntologyPromotionToApi,
@@ -24,6 +25,7 @@ export function useOntologyFeatureController(
   typedLocale: "fr" | "en",
   copy: OntologyGlossaryCopy,
 ) {
+  const { activeScopeId } = useShellNavigation();
   const [activeTab, setActiveTab] = useState<"EXPLORER" | "PROPOSALS">("EXPLORER");
   const [concepts, setConcepts] = useState<UiOntologyConceptView[]>([]);
   const [writableScopes, setWritableScopes] = useState<WritableScopeOptionItem[]>([]);
@@ -103,10 +105,16 @@ export function useOntologyFeatureController(
     setErrorBanner(null);
     setFeedbackBanner(null);
     try {
+      const workspaceScopes = writableScopes.filter(
+        (s) => s.level === "3_WORKSPACE" || s.level === "4_WORKSPACE",
+      );
       const wsScope =
-        activeScopeOption && (activeScopeOption.level === "3_WORKSPACE" || activeScopeOption.level === "4_WORKSPACE")
+        activeScopeOption &&
+        (activeScopeOption.level === "3_WORKSPACE" || activeScopeOption.level === "4_WORKSPACE")
           ? activeScopeOption
-          : writableScopes.find((s) => s.level === "3_WORKSPACE" || s.level === "4_WORKSPACE");
+          : workspaceScopes.find((s) => s.scope_id === activeScopeId) ??
+            workspaceScopes.find((s) => !s.scope_id.startsWith("personal-")) ??
+            workspaceScopes[0];
       const res = await auditDocVsCodeToApi(typedLocale, {
         workspace_id: wsScope?.scope_id ?? null,
         confluence_uri: draft.confluenceUri,

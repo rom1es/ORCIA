@@ -313,11 +313,11 @@ development_status:
   # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-23-epic-28-workspaces-unification.md
   # Dependencies: Wait for Epic 27 (Stories 27.4 & 27.6 i18n extraction on features/workspaces & packages/ui) before starting Story 28.1
   # Lots        : L1 28-1 -> 28-2 | L2 28-3 -> 28-4
-  epic-28: in-progress
+  epic-28: done
   28-1-single-workspace-header-sidebar-scope-sync-and-zero-uuid-leak: done
   28-2-canonical-five-tab-container-deduplication-and-tab1-sobriety: done
   28-3-scoped-pg18-sources-deliverables-and-members-tabs-consolidation: done
-  28-4-tab4-glossary-dna-starlark-encapsulation-and-e2e-lock: ready-for-dev
+  28-4-tab4-glossary-dna-starlark-encapsulation-and-e2e-lock: done
   epic-28-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
@@ -1558,3 +1558,24 @@ action_items:
     description: >
       Simplification R8 (Recommended Set). Epic 26 secures SSRF via ORCIA_LLM_ALLOWED_PRIVATE_HOSTS, permanent
       metadata/link-local/internal-port blocks, and connection-time DNS resolution pinning.
+  - id: ACTION_ITEM-28.1
+    title: "Backend workspace-scoped PATCH & full Tab 1/3/5 PG18 capabilities follow-up"
+    action: >
+      (1) Add ScopeAccessGuard-protected PATCH /api/v1/workspaces/{id} for non-admin TEAM_LEAD and personal-* workspace
+      lifecycle phase and visibility transitions (plus bilingual audit messages in platformSetupWorkspaces.ts);
+      (2) Wire editable Tab 1 default destination persistence (PUT /api/v1/workspaces/{id}/five-tabs) and inline 6-milestone
+      onboarding readiness indicator;
+      (3) Wire Tab 3 dedicated PG18 deliverables catalog, CAS diff preview, download CTA, and POST /api/v1/workspaces/{id}/artifacts/external-rebase;
+      (4) Wire Tab 5 workspace-level member add/remove and role/tool toggles directly to PG18.
+    priority: P2
+    depends_on: ["28-4-tab4-glossary-dna-starlark-encapsulation-and-e2e-lock"]
+    owner: "Amelia (Dev) / Winston (Architect)"
+    status: open
+    epic: epic-28
+    story_ref: "28-3-scoped-pg18-sources-deliverables-and-members-tabs-consolidation"
+    ad_ref: "AD-19, AD-21, DESIGN.md, EXPERIENCE.md"
+    description: >
+      Tracked from Epic 28 Final Architecture Gate review (bmad-architect-worker P1 #1-#3). Epic 28 delivers the full
+      UI/UX consolidation, single 5-tab structure, Direction C sobriety, zero UUID leak, Tab 4 DNA/PG18 glossary encapsulation,
+      and scoped datasource/instructions PG18 wiring; backend workspace-scoped PATCH and Tab 1/3/5 interactive backend
+      extensions are decoupled cleanly here for dedicated backend + PG18 story execution.

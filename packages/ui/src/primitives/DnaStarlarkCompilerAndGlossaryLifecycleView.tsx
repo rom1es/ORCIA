@@ -62,6 +62,28 @@ export const DnaStarlarkCompilerAndGlossaryLifecycleView: React.FC<
 }) => {
   const cappedQueue = pendingQueueCandidates.slice(0, 15);
   const cappedTop3 = top3PrecheckedCandidates.slice(0, 3);
+  const [selectedTop3Ids, setSelectedTop3Ids] = React.useState<readonly string[]>(() =>
+    cappedTop3.filter((c) => c.preCheckedForInFlowPromotion).map((c) => c.candidateId),
+  );
+
+  React.useEffect(() => {
+    setSelectedTop3Ids(
+      top3PrecheckedCandidates
+        .slice(0, 3)
+        .filter((c) => c.preCheckedForInFlowPromotion)
+        .map((c) => c.candidateId),
+    );
+  }, [top3PrecheckedCandidates]);
+
+  const toggleTop3Selection = (candidateId: string, checked: boolean) => {
+    setSelectedTop3Ids((prev) =>
+      checked
+        ? prev.includes(candidateId)
+          ? prev
+          : [...prev, candidateId]
+        : prev.filter((id) => id !== candidateId),
+    );
+  };
 
   return (
     <section
@@ -182,10 +204,10 @@ export const DnaStarlarkCompilerAndGlossaryLifecycleView: React.FC<
                 <button
                   type="button"
                   data-testid="promote-in-flow-btn"
-                  onClick={() =>
-                    onPromoteInFlow(cappedTop3.map((c) => c.candidateId))
-                  }
-                  className="rounded bg-[var(--orcia-action-primary)] px-2.5 py-1 text-xs font-medium text-[var(--orcia-text-on-action)]"
+                  disabled={submitting || selectedTop3Ids.length === 0}
+                  aria-busy={submitting}
+                  onClick={() => onPromoteInFlow(selectedTop3Ids)}
+                  className="rounded bg-[var(--orcia-action-primary)] px-2.5 py-1 text-xs font-medium text-[var(--orcia-text-on-action)] disabled:opacity-60"
                 >
                   {labels.promoteSelectedCta}
                 </button>
@@ -206,7 +228,8 @@ export const DnaStarlarkCompilerAndGlossaryLifecycleView: React.FC<
                       data-1p-ignore="true"
                       data-bwignore="true"
                       data-form-type="other"
-                      defaultChecked={cand.preCheckedForInFlowPromotion}
+                      checked={selectedTop3Ids.includes(cand.candidateId)}
+                      onChange={(e) => toggleTop3Selection(cand.candidateId, e.target.checked)}
                       aria-label={`${labels.promoteInFlowCheckboxLabel} ${cand.canonicalTerm}`}
                     />
                     <span className="font-medium">{cand.canonicalTerm}</span>

@@ -61,18 +61,18 @@ This proposal defines **Epic 28 (`Stories 28.1`–`28.4`)** to consolidate `/wor
 ### 3.2 Canonical Responsibility of Each Tab
 
 1. **Tab 1 — `Accostage & Vue d'ensemble`** (`default` when `onboarding < 6/6`, otherwise user-selectable):
-   - Unified workspace readiness/onboarding checklist (when incomplete), default deliverable destination selector, local adaptations / exception waivers (`workspace_exception_waivers` Lock V1), and external edit reset summary.
-   - KPI summary cards are **hidden when `total == 0`** (`DESIGN.md:L198`), showing a single clear pedagogical empty-state sentence and CTA instead.
+   - Local adaptations / exception waivers (`workspace_exception_waivers` Lock V1), sanitized default deliverable destination summary, and external edit rebase section hidden when `rebasedChunks.length === 0`.
+   - KPI summary cards are **hidden when `total == 0`** (`DESIGN.md:L198`), showing a single clear pedagogical empty-state sentence instead. *(Inline onboarding readiness widget and editable destination `PUT` tracked in `ACTION_ITEM-28.1`.)*
 2. **Tab 2 — `Documents & Sources`**:
-   - Absorbs the real scoped `WorkspaceSourcesRagTab` (`client.listWorkspaceDatasources(wsId)`), `+ Rattacher une source` modal (`WorkspaceSourceAttachModal`), `Vérifier fraîcheur` action, and `[STALE_WARNING]` waiver banner.
+   - Absorbs the real scoped `WorkspaceSourcesRagTab` (`client.listWorkspaceDatasources(wsId)`), `+ Rattacher une source` modal (`WorkspaceSourceAttachModal`), `Vérifier fraîcheur` action, `[STALE_WARNING]` waiver banner, and `[role="alert"]` error handling.
    - Category filter pills (`Toutes`, `Connaissances`, `Modèles & Trames`, `Code & Contrats`, `Schémas SQL`) are **hidden when the workspace has `0` sources** (`total == 0`).
 3. **Tab 3 — `Livrables & Artefacts`**:
-   - Validated deliverable catalog (`orcia://workspaces/<ws>/artifacts/<type>/<slug>@v<N>`), default destination configuration, `diff` preview, download CTA, and `ExternalEditRebaser` (`🔒 Human-Amended` Lock V2).
+   - Consolidated workspace deliverables summary (`orcia://` sanitized URI, Lock V2 `ExternalEditRebaser` rebased chunks when present, clean empty state when `0` exist). *(Dedicated PG18 deliverable store, interactive diff/download CTA, and `POST /api/v1/workspaces/{id}/artifacts/external-rebase` tracked in `ACTION_ITEM-28.1`.)*
 4. **Tab 4 — `Glossaire & Règles Métiers`**:
    - Consolidates `WorkspaceGlossaryAndOntologyTab` **and** the DNA Starlark Gate Compiler + `Top-3` in-flow promotions (`Lock V4`) + `✨ À valider (N <= 15 FIFO)` queue (`DnaStarlarkCompilerAndGlossaryLifecycleView`) **strictly inside Tab 4** (never rendered globally at the bottom of the page).
    - Wired 100% to PG18 endpoints (`dna_and_glossary.py` / `ontology_promotions.py`), removing the ephemeral `useState([])` candidate store.
 5. **Tab 5 — `Membres & Paramètres de l'espace`**:
-   - Consolidates workspace membership management, role/tool toggles with immediate PG18 persistence, lifecycle phase transition, and team-sharing modal/drawer.
+   - Consolidates the team roster (`orgUnits`), read-only workspace governance summary badges (without duplicating interactive phase/visibility/share controls from the compact header), and PG18-persisted workspace instructions (`WorkspaceMembersInstructionsCard`). *(Dedicated backend `PATCH /api/v1/workspaces/{id}` for non-admin `TEAM_LEAD` & `personal-*` phase/visibility persistence, workspace-level member add/remove, and role/tool toggles tracked in `ACTION_ITEM-28.1`.)*
 
 ---
 

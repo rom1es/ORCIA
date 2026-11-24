@@ -2,6 +2,7 @@ import {
   createOrciaApiClient,
   type ExceptionWaiverResponseItem,
   type GeneratedStarlarkMechanismResponse,
+  type OntologyPromotionProposalDetailItem,
   type WorkspaceDatasourceItemResponse,
 } from "@orcia/api-client";
 import type {
@@ -10,12 +11,13 @@ import type {
   UiCompiledStarlarkMechanism,
   UiGlossaryCandidateItem,
 } from "@orcia/ui";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   formatI18nTemplate,
   resolveDictionaryForFlag,
   resolveLocaleForFlag,
 } from "../../i18n";
+import type { FeatureWorkspacesDictionary } from "../../i18n/locales/feature_workspaces_labels";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 
 function mapWaiverItem(w: ExceptionWaiverResponseItem): ExceptionWaiverItem {
@@ -32,18 +34,41 @@ function mapWaiverItem(w: ExceptionWaiverResponseItem): ExceptionWaiverItem {
   };
 }
 
-function mapMechanismItem(res: GeneratedStarlarkMechanismResponse): UiCompiledStarlarkMechanism {
+function mapMechanismItem(
+  res: GeneratedStarlarkMechanismResponse,
+  dnaCopy: FeatureWorkspacesDictionary["dnaAndWaivers"],
+): UiCompiledStarlarkMechanism {
   return {
     mechanismId: String(res.mechanism_id),
     ruleId: res.rule_id,
     scriptName: res.script_name,
     starlarkCode: res.starlark_code,
     sha256: res.sha256,
-    explanationFr: res.explanation_fr,
-    verifiedBadgeFr: res.verified_badge_fr,
-    causalBreadcrumb: res.causal_breadcrumb,
+    explanationFr: formatI18nTemplate(dnaCopy.compiledExplanationTemplate, {
+      ruleId: res.rule_id,
+    }),
+    verifiedBadgeFr: dnaCopy.compiledVerifiedBadge,
+    causalBreadcrumb: formatI18nTemplate(dnaCopy.compiledCausalBreadcrumbTemplate, {
+      ruleId: res.rule_id,
+    }),
     selfCorrected: Boolean(res.self_corrected),
     signedAndActive: Boolean(res.signed_and_active),
+  };
+}
+
+function mapProposalToGlossaryCandidate(
+  proposal: OntologyPromotionProposalDetailItem,
+): UiGlossaryCandidateItem {
+  const hasConflict = Boolean(proposal.collision_detected);
+  return {
+    candidateId: String(proposal.id),
+    canonicalTerm: proposal.canonical_term,
+    definitionFr: proposal.definition_text || proposal.canonical_term,
+    confidenceScore: hasConflict ? 0.72 : 0.94,
+    ontologyConflictWarning: hasConflict
+      ? proposal.colliding_definition || proposal.concept_key
+      : null,
+    preCheckedForInFlowPromotion: !hasConflict,
   };
 }
 
@@ -51,10 +76,16 @@ export function useWorkspaceDnaAndWaivers(params: {
   readonly isFr: boolean;
   readonly targetWorkspace: ControlCenterWorkspaceGovItem | null;
   readonly onFeedback: (message: string | null) => void;
+  readonly onGlossaryMutated?: () => void;
 }) {
-  const { isFr, targetWorkspace, onFeedback } = params;
+  const { isFr, targetWorkspace, onFeedback, onGlossaryMutated } = params;
   const locale = resolveLocaleForFlag(isFr);
   const dnaCopy = resolveDictionaryForFlag(isFr, locale).featureWorkspaces.dnaAndWaivers;
+
+  const onFeedbackRef = useRef(onFeedback);
+  onFeedbackRef.current = onFeedback;
+  const onGlossaryMutatedRef = useRef(onGlossaryMutated);
+  onGlossaryMutatedRef.current = onGlossaryMutated;
 
   const [activeWaivers, setActiveWaivers] = useState<ExceptionWaiverItem[]>([]);
   const [compiledMechanism, setCompiledMechanism] =
@@ -72,38 +103,47 @@ export function useWorkspaceDnaAndWaivers(params: {
       setActiveWaivers([]);
       setCompiledMechanism(null);
       setScopedDatasources([]);
+      setGlossaryCandidates([]);
       return;
     }
     const client = createOrciaApiClient({ baseUrl: "", locale });
-    const [waiversRows, mechanismRows, dsRes] = await Promise.all([
+    const [waiversRows, mechanismRows, dsRes, promoRes] = await Promise.all([
       client.listWorkspaceExceptionWaivers(targetWsId, true),
       client.listDnaMechanisms(targetWsId),
       client.listWorkspaceDatasources(targetWsId),
+      client.listOntologyPromotions("PENDING_REVIEW", false),
     ]);
     setActiveWaivers(waiversRows.map(mapWaiverItem));
-    setCompiledMechanism(mechanismRows[0] ? mapMechanismItem(mechanismRows[0]) : null);
+    setCompiledMechanism(mechanismRows[0] ? mapMechanismItem(mechanismRows[0], dnaCopy) : null);
     setScopedDatasources(dsRes.items ?? []);
-  }, [targetWsId, locale]);
+    const scopedPending = (promoRes.proposals ?? []).filter(
+      (p) =>
+        p.status === "PENDING_REVIEW" &&
+        (p.source_scope_id === targetWsId || p.target_scope_id === targetWsId),
+    );
+    setGlossaryCandidates(scopedPending.map(mapProposalToGlossaryCandidate));
+  }, [targetWsId, locale, dnaCopy]);
 
   useEffect(() => {
     if (!targetWsId) {
       setActiveWaivers([]);
       setCompiledMechanism(null);
       setScopedDatasources([]);
+      setGlossaryCandidates([]);
       return;
     }
     setScopedDatasources([]);
+    setGlossaryCandidates([]);
     let cancelled = false;
     void reloadWaiversAndMechanisms().catch((err: unknown) => {
       if (cancelled) return;
-      onFeedback(
+      onFeedbackRef.current(
         `⚠️ ${formatRfc9457ErrorToBanner(err, locale, dnaCopy.governanceErrorContext).fullText}`,
       );
     });
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetWsId, locale, dnaCopy.governanceErrorContext, reloadWaiversAndMechanisms]);
 
   const handleRegisterWaiver = async (sourceUri: string, conflictRuleId: string) => {
@@ -124,11 +164,11 @@ export function useWorkspaceDnaAndWaivers(params: {
       setActiveWaivers(
         reloaded.length > 0 ? reloaded.map(mapWaiverItem) : [mapWaiverItem(saved)],
       );
-      onFeedback(
+      onFeedbackRef.current(
         formatI18nTemplate(dnaCopy.waiverRegisteredTemplate, { ruleId: conflictRuleId }),
       );
     } catch (err: unknown) {
-      onFeedback(
+      onFeedbackRef.current(
         `⚠️ ${formatRfc9457ErrorToBanner(err, locale, dnaCopy.waiverErrorContext).fullText}`,
       );
     } finally {
@@ -150,11 +190,11 @@ export function useWorkspaceDnaAndWaivers(params: {
       });
       const persisted = await client.listDnaMechanisms(targetWsId);
       setCompiledMechanism(
-        persisted[0] ? mapMechanismItem(persisted[0]) : mapMechanismItem(res),
+        persisted[0] ? mapMechanismItem(persisted[0], dnaCopy) : mapMechanismItem(res, dnaCopy),
       );
-      onFeedback(formatI18nTemplate(dnaCopy.compileSuccessTemplate, { ruleId }));
+      onFeedbackRef.current(formatI18nTemplate(dnaCopy.compileSuccessTemplate, { ruleId }));
     } catch (err: unknown) {
-      onFeedback(
+      onFeedbackRef.current(
         `⚠️ ${formatRfc9457ErrorToBanner(err, locale, dnaCopy.compileErrorContext).fullText}`,
       );
     } finally {
@@ -170,11 +210,13 @@ export function useWorkspaceDnaAndWaivers(params: {
       const activated = await client.activateDnaMechanism(targetWsId, mechanismId);
       const persisted = await client.listDnaMechanisms(targetWsId);
       setCompiledMechanism(
-        persisted[0] ? mapMechanismItem(persisted[0]) : mapMechanismItem(activated),
+        persisted[0]
+          ? mapMechanismItem(persisted[0], dnaCopy)
+          : mapMechanismItem(activated, dnaCopy),
       );
-      onFeedback(dnaCopy.activateSuccessBanner);
+      onFeedbackRef.current(dnaCopy.activateSuccessBanner);
     } catch (err: unknown) {
-      onFeedback(
+      onFeedbackRef.current(
         `⚠️ ${formatRfc9457ErrorToBanner(err, locale, dnaCopy.activateErrorContext).fullText}`,
       );
     } finally {
@@ -182,17 +224,66 @@ export function useWorkspaceDnaAndWaivers(params: {
     }
   };
 
+  const handlePromoteInFlow = async (candidateIds: readonly string[]) => {
+    if (!targetWsId || submitting || candidateIds.length === 0) return;
+    setSubmitting(true);
+    const client = createOrciaApiClient({ baseUrl: "", locale });
+    try {
+      for (const candidateId of candidateIds) {
+        await client.decideOntologyPromotion(
+          candidateId,
+          { decision: "APPROVE", review_comment: dnaCopy.promoteReviewComment },
+          false,
+        );
+      }
+      await reloadWaiversAndMechanisms();
+      onGlossaryMutatedRef.current?.();
+      onFeedbackRef.current(
+        formatI18nTemplate(dnaCopy.candidatesApprovedTemplate, { count: candidateIds.length }),
+      );
+    } catch (err: unknown) {
+      onFeedbackRef.current(
+        `⚠️ ${formatRfc9457ErrorToBanner(err, locale, dnaCopy.governanceErrorContext).fullText}`,
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRejectCandidate = async (candidateId: string) => {
+    if (!targetWsId || submitting) return;
+    setSubmitting(true);
+    const client = createOrciaApiClient({ baseUrl: "", locale });
+    try {
+      await client.decideOntologyPromotion(
+        candidateId,
+        { decision: "REJECT", review_comment: dnaCopy.rejectReviewComment },
+        false,
+      );
+      await reloadWaiversAndMechanisms();
+      onGlossaryMutatedRef.current?.();
+      onFeedbackRef.current(dnaCopy.candidateRejectedBanner);
+    } catch (err: unknown) {
+      onFeedbackRef.current(
+        `⚠️ ${formatRfc9457ErrorToBanner(err, locale, dnaCopy.governanceErrorContext).fullText}`,
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return {
-    dnaCopy,
     activeWaivers,
     compiledMechanism,
     scopedDatasources,
     setScopedDatasources,
     glossaryCandidates,
-    setGlossaryCandidates,
     submitting,
+    reloadGovernanceState: reloadWaiversAndMechanisms,
     handleRegisterWaiver,
     handleCompileFromNorm,
     handleSignAndActivate,
+    handlePromoteInFlow,
+    handleRejectCandidate,
   };
 }

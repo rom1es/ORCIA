@@ -220,20 +220,27 @@ describe("Story 28.3 — Scoped PG18 Tab 2 Sources, Tab 3 Deliverables & Tab 5 M
       );
     });
 
-    fireEvent.change(screen.getByTestId(`workspace-settings-phase-select-${WS_ALPHA_ID}`), {
+    // Update phase & team sharing from the single canonical WorkspaceCompactHeader controls
+    fireEvent.change(screen.getByTestId(`workspace-card-phase-select-${WS_ALPHA_ID}`), {
       target: { value: "MIGRATION" },
     });
     await waitFor(() => {
       expect(screen.getByTestId(`workspace-phase-badge-${WS_ALPHA_ID}`).textContent).toContain(
         "Évolution",
       );
+      expect(
+        screen.getByTestId(`workspace-settings-phase-badge-${WS_ALPHA_ID}`).textContent,
+      ).toContain("Évolution");
     });
 
-    fireEvent.click(screen.getByTestId(`workspace-settings-share-btn-${WS_ALPHA_ID}`));
+    fireEvent.click(screen.getByTestId(`share-private-workspace-btn-${WS_ALPHA_ID}`));
     await waitFor(() => {
       expect(screen.getByTestId(`workspace-visibility-badge-${WS_ALPHA_ID}`).textContent).toContain(
         "Équipe",
       );
+      expect(
+        screen.getByTestId(`workspace-settings-visibility-badge-${WS_ALPHA_ID}`).textContent,
+      ).toContain("Collectif d'équipe");
     });
 
     // F5 cold remount survival
@@ -252,6 +259,12 @@ describe("Story 28.3 — Scoped PG18 Tab 2 Sources, Tab 3 Deliverables & Tab 5 M
       expect(screen.getByTestId(`workspace-visibility-badge-${WS_ALPHA_ID}`).textContent).toContain(
         "Équipe",
       );
+      expect(
+        screen.getByTestId(`workspace-settings-phase-badge-${WS_ALPHA_ID}`).textContent,
+      ).toContain("Évolution");
+      expect(
+        screen.getByTestId(`workspace-settings-visibility-badge-${WS_ALPHA_ID}`).textContent,
+      ).toContain("Collectif d'équipe");
     });
     reloaded.unmount();
     cleanup();

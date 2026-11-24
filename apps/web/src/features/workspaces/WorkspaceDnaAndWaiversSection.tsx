@@ -2,19 +2,14 @@ import {
   DnaStarlarkCompilerAndGlossaryLifecycleView,
   type ControlCenterRunItem,
   type ControlCenterWorkspaceGovItem,
-  type ProductLifecyclePhaseType,
   type UiOntologyConceptView,
   type UiOntologyLevel,
   type WorkspaceDeliverableItem,
   type WorkspaceSubTabKey,
-  type WorkspaceVisibilityMode,
   WorkspaceFiveTabsAndExternalRebaseView,
 } from "@orcia/ui";
 import React, { useEffect, useRef, useState } from "react";
-import type {
-  ConfiguredOrgUnit,
-  PlatformSetupContextValue,
-} from "../../components/platformSetupStore";
+import type { ConfiguredOrgUnit } from "../../components/platformSetupStore";
 import { formatI18nTemplate, resolveDictionaryForFlag } from "../../i18n";
 import type { TranslationDictionary } from "../../i18n/types";
 import { useWorkspaceDnaAndWaivers } from "./useWorkspaceDnaAndWaivers";
@@ -38,15 +33,6 @@ export interface WorkspaceDnaAndWaiversSectionProps {
   readonly orgUnits: readonly ConfiguredOrgUnit[];
   readonly dictionary: TranslationDictionary;
   readonly openHelpSection: (sectionId: string) => void;
-  readonly onRegisterDatasource: PlatformSetupContextValue["registerDatasource"];
-  readonly onUpdateWorkspacePhase?: (
-    workspaceId: string,
-    phase: ProductLifecyclePhaseType,
-  ) => void | Promise<void>;
-  readonly onUpdateWorkspaceVisibility?: (
-    workspaceId: string,
-    visibilityMode: WorkspaceVisibilityMode,
-  ) => void | Promise<void>;
   readonly onAddOntologyConcept: (concept: UiOntologyConceptView) => void;
   readonly onPromoteOntologyConcept: (
     conceptKey: string,
@@ -91,9 +77,6 @@ export function WorkspaceDnaAndWaiversSection({
   orgUnits,
   dictionary,
   openHelpSection,
-  onRegisterDatasource,
-  onUpdateWorkspacePhase,
-  onUpdateWorkspaceVisibility,
   onAddOntologyConcept,
   onPromoteOntologyConcept,
   onFeedback,
@@ -101,6 +84,7 @@ export function WorkspaceDnaAndWaiversSection({
   const [activeSubTab, setActiveSubTab] = useState<WorkspaceSubTabKey>(() =>
     resolveInitialWorkspaceSubTab(initialTab),
   );
+  const [glossaryRefreshNonce, setGlossaryRefreshNonce] = useState<number>(0);
   const prevInitialTabRef = useRef(initialTab);
 
   useEffect(() => {
@@ -111,18 +95,24 @@ export function WorkspaceDnaAndWaiversSection({
   }, [initialTab]);
 
   const {
-    dnaCopy,
     activeWaivers,
     compiledMechanism,
     scopedDatasources,
     setScopedDatasources,
     glossaryCandidates,
-    setGlossaryCandidates,
     submitting,
+    reloadGovernanceState,
     handleRegisterWaiver,
     handleCompileFromNorm,
     handleSignAndActivate,
-  } = useWorkspaceDnaAndWaivers({ isFr, targetWorkspace, onFeedback });
+    handlePromoteInFlow,
+    handleRejectCandidate,
+  } = useWorkspaceDnaAndWaivers({
+    isFr,
+    targetWorkspace,
+    onFeedback,
+    onGlossaryMutated: () => setGlossaryRefreshNonce((n) => n + 1),
+  });
 
   if (!targetWorkspace) {
     return null;
@@ -159,7 +149,7 @@ export function WorkspaceDnaAndWaiversSection({
         lifecyclePhaseLabel={resolveWorkspacePhaseLabel(targetWorkspace.lifecyclePhase, isFr)}
         activeTab={activeSubTab}
         defaultArtifactDestinationUri={defaultDestinationUri}
-        pendingGlossaryCandidatesCount={ontologyConcepts.length + glossaryCandidates.length}
+        pendingGlossaryCandidatesCount={glossaryCandidates.length}
         sources={scopedDatasources.map((d) => ({
           sourceId: d.id,
           uri: d.uri,
@@ -189,84 +179,52 @@ export function WorkspaceDnaAndWaiversSection({
             activeWorkspace={targetWorkspace}
             initialDatasources={scopedDatasources}
             openHelpSection={openHelpSection}
-            onRegisterDatasource={onRegisterDatasource}
             onSourcesChanged={setScopedDatasources}
             onFeedback={onFeedback}
           />
         }
         glossaryTabSlot={
-          <WorkspaceGlossaryAndOntologyTab
-            isFr={isFr}
-            selectedWorkspace={targetWorkspace}
-            orgUnits={orgUnits}
-            ontologyConcepts={ontologyConcepts}
-            openHelpSection={openHelpSection}
-            onAddConcept={(concept) => {
-              onAddOntologyConcept(concept);
-              onFeedback(
-                formatI18nTemplate(tabsCopy.termAddedTemplate, { term: concept.canonicalTerm }),
-              );
-            }}
-            onPromoteConcept={(conceptKey, targetLevel, targetScopeId) => {
-              onPromoteOntologyConcept(conceptKey, targetLevel, targetScopeId);
-              onFeedback(tabsCopy.termPromoted);
-            }}
-          />
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <WorkspaceGlossaryAndOntologyTab
+              isFr={isFr}
+              selectedWorkspace={targetWorkspace}
+              orgUnits={orgUnits}
+              ontologyConcepts={ontologyConcepts}
+              refreshNonce={glossaryRefreshNonce}
+              openHelpSection={openHelpSection}
+              onAddConcept={(concept) => {
+                onAddOntologyConcept(concept);
+                onFeedback(
+                  formatI18nTemplate(tabsCopy.termAddedTemplate, { term: concept.canonicalTerm }),
+                );
+              }}
+              onPromoteConcept={(conceptKey, targetLevel, targetScopeId) => {
+                onPromoteOntologyConcept(conceptKey, targetLevel, targetScopeId);
+                onFeedback(tabsCopy.termPromoted);
+              }}
+              onPromotionsChanged={() => void reloadGovernanceState()}
+            />
+            <DnaStarlarkCompilerAndGlossaryLifecycleView
+              mechanism={compiledMechanism}
+              pendingQueueCandidates={glossaryCandidates}
+              top3PrecheckedCandidates={glossaryCandidates.slice(0, 3)}
+              labels={dictionary.dnaStarlarkGlossary}
+              submitting={submitting}
+              onCompileFromNorm={(ruleId) => void handleCompileFromNorm(ruleId)}
+              onSignAndActivate={(mechanismId) => void handleSignAndActivate(mechanismId)}
+              onPromoteInFlow={(candidateIds) => void handlePromoteInFlow(candidateIds)}
+              onRejectCandidate={(candidateId) => void handleRejectCandidate(candidateId)}
+            />
+          </div>
         }
         membersTabSlot={
           <WorkspaceMembersAndSettingsTab
             isFr={isFr}
             activeWorkspace={targetWorkspace}
             orgUnits={orgUnits}
-            onUpdateWorkspacePhase={onUpdateWorkspacePhase}
-            onUpdateWorkspaceVisibility={onUpdateWorkspaceVisibility}
             onFeedback={onFeedback}
           />
         }
-      />
-
-      <DnaStarlarkCompilerAndGlossaryLifecycleView
-        mechanism={compiledMechanism}
-        pendingQueueCandidates={glossaryCandidates}
-        top3PrecheckedCandidates={glossaryCandidates.slice(0, 3)}
-        labels={dictionary.dnaStarlarkGlossary}
-        submitting={submitting}
-        onCompileFromNorm={(ruleId) => void handleCompileFromNorm(ruleId)}
-        onSignAndActivate={(mechanismId) => void handleSignAndActivate(mechanismId)}
-        onPromoteInFlow={(candidateIds) => {
-          const promoted = glossaryCandidates.filter((c) =>
-            candidateIds.includes(c.candidateId),
-          );
-          for (const item of promoted) {
-            onAddOntologyConcept({
-              conceptKey: item.candidateId,
-              canonicalTerm: item.canonicalTerm,
-              level: "3_WORKSPACE",
-              scopeId: targetWsId || "scope-global",
-              definitionText: item.definitionFr,
-              immutable: false,
-              synonyms: [],
-              profileTranslations: {},
-              impactedTemplates: [],
-              impactedWorkflows: [],
-              impactedRuns: [],
-            });
-          }
-          setGlossaryCandidates((prev) =>
-            prev.filter((c) => !candidateIds.includes(c.candidateId)),
-          );
-          onFeedback(
-            formatI18nTemplate(dnaCopy.candidatesApprovedTemplate, {
-              count: candidateIds.length,
-            }),
-          );
-        }}
-        onRejectCandidate={(candidateId) => {
-          setGlossaryCandidates((prev) =>
-            prev.filter((c) => c.candidateId !== candidateId),
-          );
-          onFeedback(dnaCopy.candidateRejectedBanner);
-        }}
       />
     </div>
   );

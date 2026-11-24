@@ -3710,9 +3710,9 @@ So that every workspace capability lives in one obvious place with zero visual n
 **When** rendered for any active workspace
 **Then** the DOM contains **strictly one** workspace `[role="tablist"]` with the **5 canonical Direction C tabs** (`Accostage & Vue d'ensemble`, `Documents & Sources`, `Livrables & Artefacts`, `Glossaire & Règles Métiers`, `Membres & Paramètres de l'espace`), eliminating the competing 3-tab `WorkspaceDetailTabsPanel` (`SOURCES`, `GLOSSARY`, `MEMBERS`) completely.
 
-**Given** Tab 1 (`Accostage & Vue d'ensemble`) on a workspace with `total == 0` (zero attached sources and zero glossary rules)
+**Given** Tab 1 (`Accostage & Vue d'ensemble`) on a workspace with `total == 0` (zero attached sources, zero pending glossary candidates, and zero active waivers)
 **When** rendered
-**Then** KPI summary cards with `0` counters are hidden (`DESIGN.md:L198`), replaced by the unified onboarding readiness status (6-milestone checklist status when incomplete), default deliverable destination settings, and local adaptations / exception waivers (`workspace_exception_waivers` Lock V1) cleanly presented with `<= 300` lines per modified file and zero dead buttons.
+**Then** KPI summary cards with `0` counters are hidden (`DESIGN.md:L198`) and external-rebase clutter is hidden when `rebasedChunks.length === 0`, replaced by a single clear pedagogical empty-state sentence alongside local adaptations / exception waivers (`workspace_exception_waivers` Lock V1) and sanitized deliverable destination info (editable destination `PUT` tracked in `ACTION_ITEM-28.1`), cleanly presented with `<= 300` lines per modified file and zero dead buttons.
 
 ---
 
@@ -3736,7 +3736,7 @@ So that there is only one place to attach/probe sources, manage deliverables, an
 
 **Given** Tab 3 (`Livrables & Artefacts`) and Tab 5 (`Membres & Paramètres de l'espace`)
 **When** selected and modified by an authorized user
-**Then** Tab 3 renders the workspace deliverables catalog (`orcia://` CAS `@vN`, diff, download, `ExternalEditRebaser` Lock V2) without repeating header chrome, and Tab 5 persists member additions/removals, role/tool toggles, lifecycle phase updates, and team sharing directly to PostgreSQL 18 (`@orcia/api-client`, `F5` cold survival verified).
+**Then** Tab 3 renders the workspace deliverables summary (`orcia://` sanitized CAS URI, `ExternalEditRebaser` Lock V2 `rebasedChunks` list when present, and clean empty state when `0` exist — full PG18 artifact store, diff preview, download CTA & `POST /artifacts/external-rebase` deferred cleanly under `ACTION_ITEM-28.1`) without repeating header chrome, and Tab 5 displays the consolidated organization team roster, read-only workspace governance summary badges (without duplicating interactive controls from the compact header), and PG18-persisted workspace instructions (`@orcia/api-client`, `F5` cold survival verified; per-workspace member add/remove, role/tool toggles & non-admin workspace `PATCH` persistence tracked under `ACTION_ITEM-28.1`).
 
 ---
 

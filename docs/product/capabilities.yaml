@@ -681,28 +681,28 @@ capabilities:
     title: Mes Espaces 5 sous-onglets, cascade de localisation d'artefacts, waivers
     fr: [FR-34]
     origin: epic
-    origin_ref: 11-1 + 17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag + 18-2-moteur-fraicheur-webhooks-outbox-sha256-sonde-24h-et-gouvernance-gitnexus
+    origin_ref: 11-1 + 17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag + 18-2-moteur-fraicheur-webhooks-outbox-sha256-sonde-24h-et-gouvernance-gitnexus + 28-1 + 28-2 + 28-3 + 28-4
     status: live
     kind: feature
     uj: [UJ-9, UJ-18]
     db_tables: [workspaces, workspace_datasources, workspace_exception_waivers, workspace_customization_overrides]
-    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx, tests/unit/test_story_18_2_freshness_sha256_probe_and_codegraph_worker.py, tests/integration/api/test_story_18_2_webhooks_outbox_and_freshness_postgres18.py]
+    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, apps/web/src/__tests__/story-28-1-single-workspace-header-and-zero-uuid.test.tsx, apps/web/src/__tests__/story-28-2-canonical-five-tabs-and-tab1-sobriety.test.tsx, apps/web/src/__tests__/story-28-3-scoped-sources-deliverables-and-members-tabs.test.tsx, apps/web/src/__tests__/workspaces-single-tabs-anti-stacking-audit.test.tsx, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx, tests/unit/test_story_18_2_freshness_sha256_probe_and_codegraph_worker.py, tests/integration/api/test_story_18_2_webhooks_outbox_and_freshness_postgres18.py]
     verification: runtime
-    verified_at: "2026-11-20"
-    surfaces: { route: "/spaces, /workspaces, /workspaces/$wsId, /workspaces/$wsId/sources", api: "workspace_governance.py + workspace_datasources.py + datasource_webhooks.py", ui: "WorkspaceSourcesRagTab + WorkspaceSourcesMasterTable", migration: "0026 + 20261111_1704 + 20261114_1801 + 20261114_1802" }
+    verified_at: "2026-11-24"
+    surfaces: { route: "/spaces, /workspaces, /workspaces/$wsId, /workspaces/$wsId/sources", api: "workspace_governance.py + workspace_datasources.py + datasource_webhooks.py", ui: "WorkspaceCompactHeader + WorkspaceFiveTabsAndExternalRebaseView + WorkspaceSourcesRagTab + WorkspaceSourcesMasterTable + WorkspaceMembersAndSettingsTab", migration: "0026 + 20261111_1704 + 20261114_1801 + 20261114_1802" }
   - id: CAP-081
     title: Chaîne ADN et glossaire (règles métier « à valider », extraction)
     fr: [FR-34]
     origin: epic
-    origin_ref: 11-2
+    origin_ref: 11-2 + 28-4
     status: live
     kind: feature
     uj: [UJ-5, UJ-18]
     db_tables: [ontology_concepts, ontology_promotion_proposals, ontology_rejected_candidates]
-    tests: [apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, tests/unit/test_epic_11_story_11_2_dna_starlark_and_glossary.py, tests/integration/test_story_11_2_dna_and_glossary_postgres18_redis.py]
+    tests: [apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, apps/web/src/__tests__/workspaces-single-tabs-anti-stacking-audit.test.tsx, apps/web/src/__tests__/story-24-2-spaces-day0-dna-waivers-and-triggers.test.tsx, tests/unit/test_epic_11_story_11_2_dna_starlark_and_glossary.py, tests/integration/test_story_11_2_dna_and_glossary_postgres18_redis.py]
     verification: runtime
-    verified_at: "2026-11-20"
-    surfaces: { api: dna_and_glossary.py, migration: "0027" }
+    verified_at: "2026-11-24"
+    surfaces: { api: dna_and_glossary.py, ui: "WorkspaceFiveTabsAndExternalRebaseView + DnaStarlarkCompilerAndGlossaryLifecycleView + WorkspaceGlossaryAndOntologyTab", migration: "0027" }
   - id: CAP-082
     title: Services MCP, agents distants A2A et banc de test
     fr: [FR-35]
@@ -835,15 +835,15 @@ capabilities:
     title: Mes Espaces — intégration glossaire/ontologie (option A) et processus de génération de documentation pack-builder
     fr: [FR-34, FR-35]
     origin: adhoc
-    origin_ref: 2026-11-07-refonte-mes-espaces-et-integration-glossaire-ontologie-option-a + 2026-11-07-processus-generation-documentation-orcia-pack-builder
+    origin_ref: 2026-11-07-refonte-mes-espaces-et-integration-glossaire-ontologie-option-a + 2026-11-07-processus-generation-documentation-orcia-pack-builder + 28-4
     status: live
     kind: feature
     uj: [UJ-18]
     db_tables: [workspaces, ontology_concepts, catalog_items]
-    tests: [apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, packages/ui/src/__tests__/workspace-governance-and-packs.test.tsx, tests/unit/test_epic_11_story_11_4_pack_builder_processes.py]
+    tests: [apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, apps/web/src/__tests__/workspaces-single-tabs-anti-stacking-audit.test.tsx, packages/ui/src/__tests__/workspace-governance-and-packs.test.tsx, tests/unit/test_epic_11_story_11_4_pack_builder_processes.py]
     verification: runtime
-    verified_at: "2026-11-20"
-    surfaces: { route: /spaces, api: "pack_builder.py + _pack_builder_help_routes.py" }
+    verified_at: "2026-11-24"
+    surfaces: { route: /spaces, api: "pack_builder.py + _pack_builder_help_routes.py", ui: "WorkspaceFiveTabsAndExternalRebaseView + WorkspaceGlossaryAndOntologyTab + DnaStarlarkCompilerAndGlossaryLifecycleView" }
   - id: CAP-092
     title: Menu « Mes agents » — visibilité des packs et pont vers l'assistant
     fr: [FR-36]

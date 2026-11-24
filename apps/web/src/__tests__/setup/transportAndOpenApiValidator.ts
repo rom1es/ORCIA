@@ -138,6 +138,7 @@ export async function vitestFetchTransport(
   const ontologyResp = handleVitestOntologyRoute({
     path,
     method,
+    parsedUrl,
     body,
     orgUnits: backendState.orgUnits,
     workspaces: setupWorkspaces,
