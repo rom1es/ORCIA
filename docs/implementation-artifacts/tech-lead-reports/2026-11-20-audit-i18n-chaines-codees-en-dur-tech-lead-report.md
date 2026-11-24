@@ -69,17 +69,22 @@ To make i18n and English-dev governance permanently non-regressible in CI (`AD-1
 
 ## 3. Summary of Changes & Results (Post-Implementation)
 
-### 3.1 Audit Artifact & Epic Framing Status
-| File | Action | Concise Summary |
+### 3.1 Epic 27 Remediation Closure (`Stories 27.1`–`27.8`)
+| File / Artifact | Action | Concise Summary |
 | :--- | :--- | :--- |
-| `docs/implementation-artifacts/tech-lead-reports/2026-11-20-audit-i18n-chaines-codees-en-dur-tech-lead-report.md` | Restored & Translated | Restored from audit scratch backup, translated to English, and aligned with `TECH-LEAD-REPORT-TEMPLATE.md` and Epic 27 plan. |
+| `docs/implementation-artifacts/tech-lead-reports/2026-11-20-audit-i18n-chaines-codees-en-dur-tech-lead-report.md` | Restored, Translated & Closed | Restored from audit scratch backup, translated to English, aligned with Epic 27 (`D1`–`D4`), and closed upon completion of `Stories 27.1`–`27.8`. |
 | `docs/implementation-artifacts/tech-lead-reports/_i18n-audit-inventory-raw.md` | Restored & Translated Headers | Preserved full `10,462`-line raw inventory (`3,809` hits / `461` files) with English summary headers. |
 | `docs/implementation-artifacts/epic-27-decisions-grill-2026-11-23.md` | Created | Locked decisions `D1–D4` governing English dev/docs, bilingual `fr`/`en` app compatibility, 4 deterministic CI gates, and 8 stories (`27.1`–`27.8`). |
-| `docs/planning-artifacts/epics.md` & `docs/implementation-artifacts/sprint-status.yaml` | Updated | Formalized **Epic 27 (`Stories 27.1`–`27.8`)** superseding and expanding `ACTION_ITEM-I18N.1`. |
+| `apps/web/src/__tests__/i18n-hardcoded-locale-baseline.json` & Gates 1–3 (`*.test.ts`) | Created & Locked to `0` | Enforced TS/JSX AST audit (`1,253` $\rightarrow$ `0`), FR↔EN dictionary parity & UX Rule 3.1 zero-jargon audit (`0`), and `ClientErrorCode` contract (`177` $\rightarrow$ `0`) with zero allowed baseline exemptions. |
+| `tests/unit/i18n_backend_audit_baseline.json` & Gate 4 (`test_i18n_backend_catalog_and_english_dev_audit.py`) | Created & Locked to `0` | Enforced complete `fr`/`en` RFC 9457 error catalog coverage (`3` missing $\rightarrow$ `0`), prompt locale neutrality (`0`), zero non-catalog backend French literals (`757` $\rightarrow$ `0`), and English-only comments/docstrings on `git diff main...HEAD`. |
+| `apps/web/e2e/23-bilingual-fr-en-i18n-and-rfc9457.spec.ts` | Created | Verified Day-0 `fr` UI rendering, live `fr` $\leftrightarrow$ `en` switching across cold PG18 `F5` reload (`reloadColdFromPg`), localized client error banners, and live backend RFC 9457 `Accept-Language: fr` vs `en` localization. |
 
-### 3.2 Quantitative Audit Baseline (Reference Snapshot `f71f895`)
-- **Total heuristic hits inventoried**: **`3,809`** across **`461`** files (`A=71`, `B=577`, `C=2,816`, `D=193`, `E=152`).
-- **Execution status**: Audit & Epic 27 framing complete; deterministic baseline measurement and code remediation begin in **Story 27.1** on branch `feat/epic-27-bilingual-i18n-and-deterministic-locale-guards`.
+### 3.2 Quantitative Remediation Metrics (`Stories 27.1`–`27.8`)
+- **Category A (Client error messages — `71` heuristic hits / `26` files; `177` AST/contract baseline hits)**: **`177` $\rightarrow$ `0`** in Story `27.2` via `ClientErrorCode` (`43` structured codes), `ClientCodedError`, `OrciaClientError`, and localized `rfc9457_banner_labels_{fr,en}.ts`; Gate 3 permanently locked at **`0`**.
+- **Category B (Server `problem+json` fallback text — `577` heuristic hits)** & **Category D (Backend payloads, LLM prompts & seeds — `193` heuristic hits; `757` Gate 4 literals across `153` files + `3` missing catalog codes)**: **`757` $\rightarrow$ `0`** and **`3` $\rightarrow$ `0`** in Story `27.7` via `detail_params` interpolation, bilingual `*_error_catalog.py` & `*_locales.py`/`*_locale_messages.py` bundles, and `Accept-Language` resolution; Gate 4 permanently locked at **`0`**.
+- **Category C (UI labels & inline ternaries — `2,816` heuristic hits; `1,253` Gate 1 AST baseline hits across `apps/web` and `@orcia/ui`)**: **`1,253` $\rightarrow$ `0`** across Stories `27.3` (`1,129` $\rightarrow$ `943`), `27.4` (`943` $\rightarrow$ `631`), `27.5` (`631` $\rightarrow$ `421`, `apps/web/src/` = `0`), and `27.6` (`421` $\rightarrow$ `0`, `packages/ui/src/` = `0`); Gate 1 permanently locked at **`0`**.
+- **Category E (Legitimate usage — `152` heuristic hits)**: Governed via explicit `Intl` / `i18n-non-user-facing` markers and English-only development/documentation enforcement (`D2`, Gate 4 diff audit vs `main`).
 
-### 3.3 AD-17 Verification Status (Audit & Framing Phase)
-- Documentation compliance verified via `.venv/bin/python scripts/check_implementation_docs.py` and `pnpm site:sync && pnpm site:check`. Full 5-layer `AD-17` code verification executes across **Stories 27.1–27.8**.
+### 3.3 AD-17 Verification Status (Epic 27 Closure)
+- Gates 1–4 are permanently locked at **`0` allowed baseline exemptions** in Story `27.8` (`27-8-zero-baseline-lock-bilingual-e2e-verification-and-epic-27-closure-tech-lead-report.md`).
+- Full `AD-17` 5-layer validation, bilingual (`fr` & `en`) Playwright E2E execution (`env -u ORCIA_E2E_SEED_FIXTURES`), `scripts/check_implementation_docs.py`, and `pnpm site:sync && pnpm site:check` complete Story `27.8` and close `ACTION_ITEM-I18N.1` / `epic-27`.

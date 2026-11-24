@@ -21,6 +21,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 BASELINE_PATH = Path(__file__).resolve().parent / "i18n_backend_audit_baseline.json"
 BACKEND_SRC_DIRS = (
     REPO_ROOT / "packages" / "orcia-core" / "src",
+    REPO_ROOT / "packages" / "orcia-connectors" / "src",
     REPO_ROOT / "apps" / "api" / "src",
     REPO_ROOT / "apps" / "worker" / "src",
 )
@@ -168,12 +169,13 @@ def _collect_added_lines_vs_base(base_ref: str) -> dict[str, list[tuple[int, str
 
 def test_rfc9457_error_catalog_bilingual_completeness() -> None:
     """Every registered error code and domain exception must provide valid FR & EN copies."""
+    import orcia_connectors._error_catalog  # noqa: F401
     import orcia_core.blackboard.errors  # noqa: F401
     import orcia_core.observability.errors  # noqa: F401
     import orcia_core.permissions.ssrf_policy  # noqa: F401
 
     baseline = _load_baseline()
-    allowed_missing = set(baseline["missingErrorCatalogCodes"])  # type: ignore[arg-type]
+    assert baseline["missingErrorCatalogCodes"] == []
 
     incomplete: list[str] = []
     for code, locales in sorted(ERROR_CATALOG.items()):
@@ -203,7 +205,6 @@ def test_rfc9457_error_catalog_bilingual_completeness() -> None:
                                     and isinstance(stmt.value, ast.Constant)
                                     and isinstance(stmt.value.value, str)
                                     and stmt.value.value not in ERROR_CATALOG
-                                    and stmt.value.value not in allowed_missing
                                 ):
                                     ast_missing.append(f"{node.name}:{stmt.value.value}")
     assert ast_missing == [], f"New OrciaDomainError classes missing ERROR_CATALOG: {ast_missing}"
@@ -217,12 +218,12 @@ def test_rfc9457_error_catalog_bilingual_completeness() -> None:
 
 
 def test_backend_prompt_locale_neutrality_and_french_literal_ratchet() -> None:
-    """Zero hardcoded single-language prompt directives and strict backend French ratchet."""
+    """Zero hardcoded single-language prompt directives and zero backend French literals."""
     baseline = _load_baseline()
-    prompt_baseline: dict[str, int] = baseline["promptDirectiveFiles"]  # type: ignore[assignment]
-    french_baseline: dict[str, int] = baseline["nonCatalogFrenchFiles"]  # type: ignore[assignment]
-    assert baseline["totalPromptDirectiveViolations"] == sum(prompt_baseline.values())
-    assert baseline["totalNonCatalogFrenchLiterals"] == sum(french_baseline.values())
+    assert baseline["totalPromptDirectiveViolations"] == 0
+    assert baseline["promptDirectiveFiles"] == {}
+    assert baseline["totalNonCatalogFrenchLiterals"] == 0
+    assert baseline["nonCatalogFrenchFiles"] == {}
 
     regressions: list[str] = []
     for base in BACKEND_SRC_DIRS:
@@ -235,12 +236,10 @@ def test_backend_prompt_locale_neutrality_and_french_literal_ratchet() -> None:
             ):
                 continue
             p_cnt, f_cnt = _scan_python_literals(py_path.read_text(encoding="utf-8"), rel)
-            p_allowed = prompt_baseline.get(rel, 0)
-            if p_cnt > p_allowed:
-                regressions.append(f"{rel}: prompt directives {p_allowed} -> {p_cnt}")
-            f_allowed = french_baseline.get(rel, 0)
-            if f_cnt > f_allowed:
-                regressions.append(f"{rel}: french literals {f_allowed} -> {f_cnt}")
+            if p_cnt > 0:
+                regressions.append(f"{rel}: prompt directives = {p_cnt}")
+            if f_cnt > 0:
+                regressions.append(f"{rel}: french literals = {f_cnt}")
     assert regressions == [], "Backend i18n regressions:\n" + "\n".join(regressions)
 
     p_syn, f_syn = _scan_python_literals(

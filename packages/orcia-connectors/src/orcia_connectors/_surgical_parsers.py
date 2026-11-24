@@ -8,6 +8,7 @@ import re
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
+import orcia_connectors._error_catalog  # noqa: F401
 from orcia_core.kernel.errors import PolicyDeniedError, ValidationDomainError
 from orcia_core.ports.surgical_explorer_port import (
     SurgicalFileBadgeCode,
@@ -103,29 +104,29 @@ def validate_surgical_uri_security(raw_uri: str, *, allow_empty: bool = False) -
     if not trimmed:
         if allow_empty:
             return ""
-        raise ValidationDomainError(detail_override="Le paramètre `uri` ne peut pas être vide.")
+        raise ValidationDomainError(detail_code="ERR_SURGICAL_URI_EMPTY")
 
     decoded = unquote(trimmed)
     if "\x00" in trimmed or "\x00" in decoded:
-        raise ValidationDomainError(detail_override="Octet nul interdit dans l'URI.")
+        raise ValidationDomainError(detail_code="ERR_SURGICAL_NULL_BYTE")
 
     if "://" in trimmed:
         parsed = urlparse(trimmed)
         scheme = (parsed.scheme or "").lower()
         if scheme == "file":
-            raise ValidationDomainError(detail_override="Le schéma `file://` est interdit.")
+            raise ValidationDomainError(detail_code="ERR_SURGICAL_FILE_SCHEME_FORBIDDEN")
         if scheme in _NETWORK_SCHEMES:
             host = parsed.hostname or ""
             if _is_ssrf_host(host):
                 raise PolicyDeniedError(
-                    detail_override=f"Cible SSRF bloquée par la gouvernance : `{host}`."
+                    detail_code="ERR_SURGICAL_SSRF_BLOCKED",
+                    detail_params={"host": host},
                 )
-            raise PolicyDeniedError(
-                detail_override="Les URL réseau directes ne sont pas autorisées en exploration."
-            )
+            raise PolicyDeniedError(detail_code="ERR_SURGICAL_NETWORK_SCHEME_FORBIDDEN")
         if scheme not in _ALLOWED_VIRTUAL_SCHEMES:
             raise ValidationDomainError(
-                detail_override=f"Schéma d'URI non supporté : `{scheme}://`."
+                detail_code="ERR_SURGICAL_UNSUPPORTED_SCHEME",
+                detail_params={"scheme": scheme},
             )
         path_part = unquote(f"{parsed.netloc}/{parsed.path}")
     else:
@@ -133,9 +134,7 @@ def validate_surgical_uri_security(raw_uri: str, *, allow_empty: bool = False) -
 
     normalized_segments = path_part.replace("\\", "/").split("/")
     if any(seg == ".." for seg in normalized_segments):
-        raise ValidationDomainError(
-            detail_override="Traversée de chemin `..` strictement interdite."
-        )
+        raise ValidationDomainError(detail_code="ERR_SURGICAL_PATH_TRAVERSAL")
 
     return strip_uri_fragment_and_query(trimmed)
 

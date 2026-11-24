@@ -10,6 +10,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
+from orcia_connectors._bounded_workflow_serialization import serialize_bounded_launch_outcome
+from orcia_connectors._connectors_locales import BOUNDED_WORKFLOW_LOCALES
 from orcia_connectors.codegraph_tool_runner import format_codegraph_markdown_section
 from orcia_connectors.protocol import (
     SignedApprovalToken,
@@ -17,10 +19,8 @@ from orcia_connectors.protocol import (
     compute_payload_sha256,
 )
 from orcia_core.agents.process_dispatcher import UnifiedProcessRunResult
-from orcia_core.ports.bounded_workflow_port import (
-    BoundedWorkflowLaunchOutcome,
-    BoundedWorkflowSubStepDto,
-)
+from orcia_core.kernel.enums import DEFAULT_LOCALE
+from orcia_core.ports.bounded_workflow_port import BoundedWorkflowLaunchOutcome
 from orcia_core.ports.reflexive_runtime_ports import AgentTraceEvent
 from orcia_core.storage.claim_check import ClaimCheckStorageService
 from orcia_core.workflows.gates.pipeline import (
@@ -211,23 +211,28 @@ def generate_sub_step_markdown(
     remarks: str | None,
     codegraph_data: dict[str, Any] | None = None,
 ) -> str:
+    copy = BOUNDED_WORKFLOW_LOCALES[DEFAULT_LOCALE]
     sections = workflow.contract.required_markdown_sections or [
         f"# {workflow.title}",
         "## Contexte",
-        "## Décisions",
+        copy["decisions_heading"],
     ]
     body_lines: list[str] = []
     for idx, heading in enumerate(sections):
         body_lines.append(heading)
         body_lines.append(
-            f"Section générée pour la sous-étape **{sub_step.name}** (`{sub_step.id}`, "
-            f"itération `iter-{iteration}`). Entrées : `{inputs}`."
+            copy["substep_section"].format(
+                name=sub_step.name,
+                sub_id=sub_step.id,
+                iteration=iteration,
+                inputs=inputs,
+            )
         )
         if remarks:
-            body_lines.append(f"Prise en compte des remarques de retour : {remarks}.")
+            body_lines.append(copy["remarks_line"].format(remarks=remarks))
         if idx == 1:
-            body_lines.append("```mermaid\nflowchart LR\n  Entree --> Analyse --> Livrable\n```")
-        body_lines.append(" Détail complémentaire validé conformément au socle documentaire." * 12)
+            body_lines.append(copy["mermaid_block"])
+        body_lines.append(copy["validated_detail"] * 12)
         body_lines.append("")
     if codegraph_data:
         body_lines.append(format_codegraph_markdown_section(codegraph_data))
@@ -241,10 +246,11 @@ def finalize_gates_and_anchor(
     *,
     auto_approve: bool = False,
 ) -> BoundedWorkflowRunState:
+    copy = BOUNDED_WORKFLOW_LOCALES[DEFAULT_LOCALE]
     artifact_text = (
         claim_storage.resolve_artifact_text(state.final_artifact_pointer)
         if state.final_artifact_pointer is not None
-        else f"# {workflow.title}\n\nContenu validé."
+        else copy["fallback_artifact"].format(title=workflow.title)
     )
     executor = GatePipelineExecutor()
     gate_report = executor.execute_pipeline(
@@ -253,8 +259,8 @@ def finalize_gates_and_anchor(
         execution_mode=workflow.execution_mode,
         self_heal_callback=lambda txt, _err, retry: (
             txt
-            + f"\n\n# {workflow.title}\nSection auto-remédiée (essai #{retry}). "
-            + ("Détail conforme. " * 6)
+            + copy["auto_remediated_line"].format(title=workflow.title, retry=retry)
+            + (copy["compliant_detail"] * 6)
         ),
     )
     state.gate_report = gate_report
@@ -267,53 +273,4 @@ def finalize_gates_and_anchor(
 
 def to_bounded_launch_outcome(state: BoundedWorkflowRunState) -> BoundedWorkflowLaunchOutcome:
     """Serialize `BoundedWorkflowRunState` to pure hexagonal `BoundedWorkflowLaunchOutcome`."""
-    dtos = [
-        BoundedWorkflowSubStepDto(
-            sub_step_id=rec.sub_step_id,
-            sub_step_name=rec.sub_step_name,
-            iteration=rec.iteration,
-            idempotency_key=rec.idempotency_key,
-            status=rec.status,
-            artifact_pointer_payload=(
-                rec.artifact_pointer.model_dump(mode="json")
-                if rec.artifact_pointer is not None
-                else None
-            ),
-            reflexive_execution_id=rec.reflexive_execution_id,
-            write_preview_payload=(
-                rec.write_preview_card.model_dump(mode="json")
-                if rec.write_preview_card is not None
-                else None
-            ),
-            human_actor_id=rec.human_actor_id,
-            correction_remarks_applied=rec.correction_remarks_applied,
-            codegraph_impact=rec.codegraph_impact,
-        )
-        for rec in state.sub_step_records
-    ]
-    return BoundedWorkflowLaunchOutcome(
-        run_id=state.run_id,
-        workflow_id=state.workflow_id,
-        workflow_slug=state.workflow_slug,
-        workflow_version=state.workflow_version,
-        execution_mode=str(state.execution_mode),
-        iteration=state.iteration,
-        reentry_mode=state.reentry_mode,
-        status=state.status,
-        current_sub_step_index=state.current_sub_step_index,
-        inputs=state.inputs,
-        mcp_context_bundle=state.mcp_context_bundle,
-        sub_step_records=dtos,
-        gate_report_payload=(
-            state.gate_report.model_dump(mode="json") if state.gate_report is not None else None
-        ),
-        final_artifact_payload=(
-            state.final_artifact_pointer.model_dump(mode="json")
-            if state.final_artifact_pointer is not None
-            else None
-        ),
-        return_loop_target_step_num=state.return_loop_target_step_num,
-        return_loop_remarks=state.return_loop_remarks,
-        audit_trail=state.audit_trail,
-        trace_events=state.trace_events,
-    )
+    return serialize_bounded_launch_outcome(state)

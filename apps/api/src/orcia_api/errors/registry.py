@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import orcia_connectors._error_catalog  # noqa: F401
 from orcia_api.errors._api_error_catalog import API_EXTRA_ERROR_CATALOG
 from orcia_api.errors._registry_classes import (
     DOMAIN_ERROR_CLASSES,

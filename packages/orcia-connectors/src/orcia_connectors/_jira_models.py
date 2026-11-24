@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 from urllib.parse import quote
 
+from orcia_connectors._connectors_locales import JIRA_ACCESS_REQUEST_LOCALES
+from orcia_core.kernel.enums import DEFAULT_LOCALE
 from orcia_kernel.ports import AccessRequestChannelPort, register_access_request_channel
 
 JiraActionType = Literal["create_issue", "update_issue", "add_comment", "transition_issue"]
@@ -30,10 +32,13 @@ class JiraAccessRequestChannelAdapter(AccessRequestChannelPort):
         step_key: str,
         execution_identity: str,
     ) -> str:
-        summary_raw = f"[ORCIA Permission Broker] {required_role} sur {target_uri}"
-        desc_raw = (
-            f"Demande d'accès ({execution_identity}) pour l'étape {step_key} "
-            f"par {requester_email} — Approbateur: {approver_team}"
+        copy = JIRA_ACCESS_REQUEST_LOCALES[DEFAULT_LOCALE]
+        summary_raw = copy["summary"].format(required_role=required_role, target_uri=target_uri)
+        desc_raw = copy["description"].format(
+            execution_identity=execution_identity,
+            step_key=step_key,
+            requester_email=requester_email,
+            approver_team=approver_team,
         )
         tokens = {
             "{summary}": quote(summary_raw, safe=""),

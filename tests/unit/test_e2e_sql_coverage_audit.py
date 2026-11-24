@@ -161,6 +161,7 @@ SPEC_ALLOWED_DOMAIN_TABLES: dict[str, frozenset[str]] = {
     "22-assistant-tool-loop-approval-and-reattach.spec.ts": frozenset(
         {"assistant_threads", "assistant_thread_messages"}
     ),
+    "23-bilingual-fr-en-i18n-and-rfc9457.spec.ts": frozenset({"user_preferences", "users"}),
     "shell.spec.ts": frozenset({"users", "platform_auth_settings"}),
 }
 
@@ -211,7 +212,7 @@ def _audit_spec_content(
 
 def test_all_e2e_specs_invoke_domain_postgresql_18_assertions_in_every_test_block() -> None:
     specs = sorted(E2E_DIR.glob("*.spec.ts"))
-    assert len(specs) == 25
+    assert len(specs) == 26
     assert set(SPEC_ALLOWED_DOMAIN_TABLES.keys()) == {p.name for p in specs}
 
     total_blocks = 0
@@ -233,7 +234,7 @@ def test_all_e2e_specs_invoke_domain_postgresql_18_assertions_in_every_test_bloc
         trivial_sql_blocks.extend(trivial)
         out_of_domain_blocks.extend(out_domain)
 
-    assert total_blocks == 57
+    assert total_blocks == 59
     assert blocks_missing_sql == []
     assert trivial_sql_blocks == []
     assert out_of_domain_blocks == []

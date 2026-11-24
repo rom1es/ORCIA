@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from orcia_connectors._connectors_locales import SDLC_POLICY_AND_MARKER_LOCALES
 from orcia_core.blackboard.models import StepMemlogEntry
+from orcia_core.kernel.enums import DEFAULT_LOCALE
 from orcia_core.orchestration.engine import (
     MemlogMarkerPluginProtocol,
     register_memlog_marker_plugin,
@@ -29,20 +31,21 @@ class SdlcMemlogMarkerPlugin(MemlogMarkerPluginProtocol):
         self, step_key: str, divergence_note: str, datasources: tuple[str, ...]
     ) -> tuple[StepMemlogEntry, ...]:
         """Build fast-path divergence markers for SDLC runs (`UJ-10`)."""
+        copy = SDLC_POLICY_AND_MARKER_LOCALES[DEFAULT_LOCALE]
         return (
             StepMemlogEntry(
                 entry_id=new_uuid7_str(),
                 step_key=step_key,
                 marker_type="ASSUMPTION",
-                summary="[ASSUMPTION] Continuité d'audit en tâche de fond retenue",
-                details=f"Hypothèse appliquée sans blocage worker: {divergence_note}",
+                summary=copy["assumption_summary"],
+                details=copy["assumption_details"].format(note=divergence_note),
                 source_uris=datasources,
             ),
             StepMemlogEntry(
                 entry_id=new_uuid7_str(),
                 step_key=step_key,
                 marker_type="BUG_CODE_SUSPECTED",
-                summary="[BUG_CODE_SUSPECTED] Écart d'implémentation détecté dans le code",
+                summary=copy["bug_code_summary"],
                 details=divergence_note,
                 source_uris=datasources,
             ),
@@ -50,7 +53,7 @@ class SdlcMemlogMarkerPlugin(MemlogMarkerPluginProtocol):
                 entry_id=new_uuid7_str(),
                 step_key=step_key,
                 marker_type="DOC_OBSOLETE_SUSPECTED",
-                summary="[DOC_OBSOLETE_SUSPECTED] Spécification Confluence possiblement obsolète",
+                summary=copy["doc_obsolete_summary"],
                 details=divergence_note,
                 source_uris=datasources,
             ),

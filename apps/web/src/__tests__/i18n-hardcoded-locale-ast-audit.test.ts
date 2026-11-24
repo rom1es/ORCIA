@@ -28,12 +28,12 @@ function collectGate1TargetFiles(): string[] {
 }
 
 describe("Gate 1 — TS/JSX Hardcoded Locale & Raw String AST Audit", () => {
-  it("keeps baseline totalAstViolations synchronized with the sum of astFiles", () => {
-    const sum = Object.values(BASELINE.astFiles).reduce((acc, n) => acc + n, 0);
-    expect(BASELINE.totalAstViolations).toBe(sum);
+  it("locks Gate 1 baseline permanently at zero exemptions", () => {
+    expect(BASELINE.totalAstViolations).toBe(0);
+    expect(BASELINE.astFiles).toEqual({});
   });
 
-  it("rejects any new or increased hardcoded locale conditionals or raw JSX strings beyond the ratchet baseline", () => {
+  it("rejects any hardcoded locale conditionals or raw JSX strings with zero baseline exemptions", () => {
     const files = collectGate1TargetFiles();
     expect(files.length).toBeGreaterThan(50);
 
@@ -44,18 +44,10 @@ describe("Gate 1 — TS/JSX Hardcoded Locale & Raw String AST Audit", () => {
       const violations = scanFileForHardcodedLocaleAst(rel, src);
       if (violations.length === 0) continue;
 
-      const allowed = BASELINE.astFiles[rel];
       const first = violations[0];
-      const last = violations.at(-1);
-      if (allowed === undefined) {
-        regressions.push(
-          `${rel}: NEW file with ${violations.length} hardcoded i18n violations (sample: L${first?.line ?? 0} ${first?.kind ?? ""} ${first?.detail ?? ""})`,
-        );
-      } else if (violations.length > allowed) {
-        regressions.push(
-          `${rel}: violation count increased ${allowed} -> ${violations.length} (latest: L${last?.line ?? 0} ${last?.kind ?? ""})`,
-        );
-      }
+      regressions.push(
+        `${rel}: ${violations.length} hardcoded i18n violations (sample: L${first?.line ?? 0} ${first?.kind ?? ""} ${first?.detail ?? ""})`,
+      );
     }
 
     expect(regressions).toEqual([]);

@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import hashlib
 
+import orcia_connectors._error_catalog  # noqa: F401
+from orcia_connectors._connectors_locales import get_surgical_copy
 from orcia_connectors._surgical_parsers import (
     extract_display_filename,
     extract_outline_nodes,
     resolve_file_badge_code,
 )
+from orcia_core.kernel.enums import DEFAULT_LOCALE, SupportedLocale
 from orcia_core.kernel.errors import ResourceNotFoundError
 from orcia_core.ports.surgical_explorer_port import (
     MAX_SURGICAL_LINES,
@@ -18,17 +21,18 @@ from orcia_core.ports.surgical_explorer_port import (
     SurgicalSnippetMatch,
 )
 
-DEFAULT_READ_SOURCE_HINT = (
-    "Demandez l'habilitation READ_SOURCE via le courtier de permissions de l'Espace."
-)
+DEFAULT_READ_SOURCE_HINT = get_surgical_copy(DEFAULT_LOCALE).default_read_source_hint
 
 
 def build_redacted_observation(
     kind: SurgicalPrimitiveName,
     uri: str,
     hint: str | None,
+    *,
+    locale: SupportedLocale = DEFAULT_LOCALE,
 ) -> SurgicalObservation:
     """Build a zero-raw-content masked observation when `READ_SOURCE` is missing."""
+    copy = get_surgical_copy(locale)
     filename = extract_display_filename(uri)
     badge = resolve_file_badge_code(uri)
     return SurgicalObservation(
@@ -42,18 +46,23 @@ def build_redacted_observation(
         lines=[],
         outline=[],
         snippets=[],
-        summary="Extrait protégé : habilitation READ_SOURCE requise.",
+        summary=copy.redacted_summary,
         sha256=None,
         redacted=True,
         redacted_reason="READ_SOURCE_REQUIRED",
-        permission_request_hint=hint or DEFAULT_READ_SOURCE_HINT,
+        permission_request_hint=hint or copy.default_read_source_hint,
     )
 
 
 def build_check_state_observation(
-    cleaned_uri: str, *, exists: bool, text: str
+    cleaned_uri: str,
+    *,
+    exists: bool,
+    text: str,
+    locale: SupportedLocale = DEFAULT_LOCALE,
 ) -> SurgicalObservation:
     """Build `check_resource_state` metadata observation without leaking file lines."""
+    copy = get_surgical_copy(locale)
     filename = extract_display_filename(cleaned_uri)
     badge = resolve_file_badge_code(cleaned_uri)
     if not exists:
@@ -65,8 +74,8 @@ def build_check_state_observation(
             formatted_badge=f"Checked {badge} {filename} (absent)",
             exists=False,
             total_lines=0,
-            check_label=f"Vérification : {filename} (introuvable)",
-            summary=f"La ressource {filename} est absente du périmètre autorisé.",
+            check_label=copy.check_missing_label.format(filename=filename),
+            summary=copy.check_missing_summary.format(filename=filename),
             sha256=None,
         )
     total_lines = len(text.splitlines())
@@ -79,16 +88,26 @@ def build_check_state_observation(
         formatted_badge=f"Checked {badge} {filename} ({total_lines} lines)",
         exists=True,
         total_lines=total_lines,
-        check_label=f"Vérification : {filename} ({total_lines} lignes)",
-        summary=f"{filename} disponible ({total_lines} lignes).",
+        check_label=copy.check_ok_label.format(filename=filename, total_lines=total_lines),
+        summary=copy.check_ok_summary.format(filename=filename, total_lines=total_lines),
         sha256=digest,
     )
 
 
-def build_outline_observation(cleaned_uri: str, *, exists: bool, text: str) -> SurgicalObservation:
+def build_outline_observation(
+    cleaned_uri: str,
+    *,
+    exists: bool,
+    text: str,
+    locale: SupportedLocale = DEFAULT_LOCALE,
+) -> SurgicalObservation:
     """Build `outline_resource_structure` observation with structural line-anchored nodes."""
     if not exists:
-        raise ResourceNotFoundError(detail_override=f"Ressource introuvable : `{cleaned_uri}`.")
+        raise ResourceNotFoundError(
+            detail_code="ERR_SURGICAL_RESOURCE_NOT_FOUND",
+            detail_params={"uri": cleaned_uri},
+        )
+    copy = get_surgical_copy(locale)
     filename = extract_display_filename(cleaned_uri)
     badge = resolve_file_badge_code(cleaned_uri)
     total_lines = len(text.splitlines())
@@ -103,8 +122,8 @@ def build_outline_observation(cleaned_uri: str, *, exists: bool, text: str) -> S
         exists=True,
         total_lines=total_lines,
         outline=nodes,
-        summary=(
-            f"Structure extraite de {filename} ({len(nodes)} entrées sur {total_lines} lignes)."
+        summary=copy.outline_summary.format(
+            filename=filename, node_count=len(nodes), total_lines=total_lines
         ),
         sha256=digest,
     )
@@ -117,10 +136,15 @@ def build_inspect_lines_observation(
     text: str,
     start_line: int,
     end_line: int,
+    locale: SupportedLocale = DEFAULT_LOCALE,
 ) -> SurgicalObservation:
     """Build `inspect_resource_lines` observation capped at `MAX_SURGICAL_LINES` (`250`)."""
     if not exists:
-        raise ResourceNotFoundError(detail_override=f"Ressource introuvable : `{cleaned_uri}`.")
+        raise ResourceNotFoundError(
+            detail_code="ERR_SURGICAL_RESOURCE_NOT_FOUND",
+            detail_params={"uri": cleaned_uri},
+        )
+    copy = get_surgical_copy(locale)
     filename = extract_display_filename(cleaned_uri)
     badge = resolve_file_badge_code(cleaned_uri)
     all_lines = text.splitlines()
@@ -140,7 +164,7 @@ def build_inspect_lines_observation(
             end_line=eff_start,
             total_lines=total_lines,
             lines=[],
-            summary=(f"Aucune ligne dans la plage demandée sur {filename} ({total_lines} lignes)."),
+            summary=copy.inspect_empty_summary.format(filename=filename, total_lines=total_lines),
             sha256=digest,
         )
 
@@ -160,7 +184,12 @@ def build_inspect_lines_observation(
         end_line=capped_end,
         total_lines=total_lines,
         lines=sliced,
-        summary=f"Lu {len(sliced)} ligne(s) de {filename} (#L{start_line}-{capped_end}).",
+        summary=copy.inspect_lines_summary.format(
+            count=len(sliced),
+            filename=filename,
+            start_line=start_line,
+            end_line=capped_end,
+        ),
         sha256=digest,
     )
 

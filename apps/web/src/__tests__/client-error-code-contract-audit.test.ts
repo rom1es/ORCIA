@@ -36,12 +36,12 @@ describe("Gate 3 — Client Error Code Contract & Ratchet Audit", () => {
     }
   });
 
-  it("keeps totalClientErrorViolations synchronized with the sum of clientErrorBaseline", () => {
-    const sum = Object.values(BASELINE.clientErrorBaseline).reduce((acc, n) => acc + n, 0);
-    expect(BASELINE.totalClientErrorViolations).toBe(sum);
+  it("locks Gate 3 client error baseline permanently at zero exemptions", () => {
+    expect(BASELINE.totalClientErrorViolations).toBe(0);
+    expect(BASELINE.clientErrorBaseline).toEqual({});
   });
 
-  it("rejects any new or increased hardcoded client error prose or locale ternaries across bridges, stores, and controllers", () => {
+  it("rejects any hardcoded client error prose or locale ternaries with zero baseline exemptions", () => {
     const targets = collectClientErrorAuditTargets();
     expect(targets.length).toBeGreaterThan(20);
 
@@ -52,18 +52,10 @@ describe("Gate 3 — Client Error Code Contract & Ratchet Audit", () => {
       const violations = scanFileForClientErrorViolations(rel, src);
       if (violations.length === 0) continue;
 
-      const allowed = BASELINE.clientErrorBaseline[rel];
       const first = violations[0];
-      const last = violations.at(-1);
-      if (allowed === undefined) {
-        regressions.push(
-          `${rel}: NEW file with ${violations.length} client error violations (sample: L${first?.line ?? 0} ${first?.kind ?? ""} ${first?.detail ?? ""})`,
-        );
-      } else if (violations.length > allowed) {
-        regressions.push(
-          `${rel}: client error violations increased ${allowed} -> ${violations.length} (latest: L${last?.line ?? 0})`,
-        );
-      }
+      regressions.push(
+        `${rel}: ${violations.length} client error violations (sample: L${first?.line ?? 0} ${first?.kind ?? ""} ${first?.detail ?? ""})`,
+      );
     }
 
     expect(regressions).toEqual([]);

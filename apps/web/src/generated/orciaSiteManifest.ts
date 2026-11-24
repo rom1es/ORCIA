@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 229,
+    "techLeadReportsCount": 230,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -542,6 +542,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-24",
+      "phaseOrStory": "Story 27.8",
+      "reportFile": "27-8-zero-baseline-lock-bilingual-e2e-verification-and-epic-27-closure-tech-lead-report.md",
+      "domain": "Epic 27 Lot 5 — Permanent Zero-Baseline Lock (Gates 1–4), orcia-connectors Localization, Bilingual (fr & en) Playwright E2E Verification (23-bilingual-fr-en-i18n-and-rfc9457.spec.ts), Audit Closure & Showcase Sync (CAP-001, CAP-100)",
+      "summary": "Closed (done, epic-27: done, ACTION_ITEM-I18N.1: done, independent Testing Sub-Agent verified): locked Gates 1–4 permanently at 0 (added packages/orcia-connectors/src to Gate 4 BACKEND_SRC_DIRS + 14 ERR_SURGICAL_* bilingual entries in orcia_connectors/_error_catalog.py wired into errors/registry.py + <= 299 L modular splits + test_story_27_8_connectors_i18n.py), registered 23-bilingual-fr-en-i18n-and-rfc9457.spec.ts (len(specs) == 26, total_blocks == 59) with bilingualI18nHelpers.ts (277 L) & capabilities.yaml (CAP-001, CAP-100), closed Section 3 of 2026-11-20-audit-i18n-chaines-codees-en-dur-tech-lead-report.md; verified 96% scoped branch coverage (93 tests), 1,091 passed tests/unit, 180 passed tests/security+evals+contract, 6 passed PG18 integration, 9/9 Turbo (449 Vitest tests), 8 passed (1.3m) Playwright Desktop E2E (env -u ORCIA_E2E_SEED_FIXTURES: 00, 01, 23), ruff (1,705 files)/mypy --strict (845 files)/lint-imports (5/5, 888 files)/export_openapi (0-diff)/lint_spine (0)/detect-secrets clean, gitnexus_detect_changes (risk_level: low)."
+    },
     {
       "date": "2026-11-24",
       "phaseOrStory": "Story 27.7",

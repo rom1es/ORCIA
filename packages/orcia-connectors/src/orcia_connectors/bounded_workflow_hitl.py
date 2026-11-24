@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any
-
+from orcia_connectors._bounded_workflow_records import (
+    append_sub_step_record as append_sub_step_record,
+)
+from orcia_connectors._connectors_locales import BOUNDED_WORKFLOW_LOCALES
 from orcia_connectors.bounded_workflow_models import (
     BoundedWorkflowRunState,
     HitlSignalPayload,
     SubStepExecutionRecord,
     build_cyclic_idempotency_key,
-    build_write_preview_card_for_sub_step,
     finalize_gates_and_anchor,
     generate_sub_step_markdown,
 )
@@ -17,6 +18,7 @@ from orcia_connectors.protocol import (
     SignedApprovalToken,
     verify_signed_approval_token,
 )
+from orcia_core.kernel.enums import DEFAULT_LOCALE
 from orcia_core.storage.claim_check import (
     ClaimCheckStorageService,
     get_claim_check_storage,
@@ -26,77 +28,6 @@ from orcia_core.workflows.schemas_v2 import (
     ProcessOrchestrationType,
     WorkflowDefinitionV2,
 )
-
-
-def append_sub_step_record(
-    *,
-    workflow: WorkflowDefinitionV2,
-    state: BoundedWorkflowRunState,
-    sub_step: DeterministicSubStepSpec,
-    claim_storage: ClaimCheckStorageService,
-    md_content: str,
-    reflexive_execution_id: str | None,
-    correction_remarks: str | None,
-    auto_approve_checkpoints: bool,
-    codegraph_data: dict[str, Any] | None = None,
-) -> None:
-    idem_key = build_cyclic_idempotency_key(state.run_id, sub_step.id, state.iteration)
-    pointer = claim_storage.store_artifact(
-        run_id=state.run_id,
-        step_id=sub_step.id,
-        iteration=state.iteration,
-        content=md_content,
-    )
-    preview_card = (
-        build_write_preview_card_for_sub_step(
-            run_id=state.run_id,
-            workflow=workflow,
-            sub_step=sub_step,
-            iteration=state.iteration,
-            pointer=pointer,
-            md_content=md_content,
-        )
-        if sub_step.write_preview_required
-        else None
-    )
-    rec = SubStepExecutionRecord(
-        sub_step_id=sub_step.id,
-        sub_step_name=sub_step.name,
-        iteration=state.iteration,
-        idempotency_key=idem_key,
-        status="COMPLETED"
-        if auto_approve_checkpoints
-        else ("WAITING_WRITE_PREVIEW" if sub_step.write_preview_required else "WAITING_CHECKPOINT"),
-        artifact_pointer=pointer,
-        reflexive_execution_id=reflexive_execution_id,
-        write_preview_card=preview_card,
-        correction_remarks_applied=correction_remarks,
-        codegraph_impact=codegraph_data,
-    )
-    state.sub_step_records.append(rec)
-    state.final_artifact_pointer = pointer
-    if reflexive_execution_id:
-        state.reflexive_execution_id = reflexive_execution_id
-    state.audit_trail.append(
-        {
-            "event": "SUBSTEP_EXECUTED",
-            "sub_step_id": sub_step.id,
-            "idempotency_key": idem_key,
-            "s3_uri": pointer.s3_uri,
-            "sha256": pointer.sha256,
-            "reflexive_execution_id": reflexive_execution_id,
-        }
-    )
-    if codegraph_data is not None:
-        state.audit_trail.append(
-            {
-                "event": "CODEGRAPH_TOOL_EXECUTED",
-                "sub_step_id": sub_step.id,
-                "tool": "codegraph_calculate_blast_radius",
-                "drift_warning": codegraph_data.get("drift_warning"),
-                "blast_radius_score": codegraph_data.get("blast_radius_score"),
-            }
-        )
 
 
 def apply_hitl_signal_to_run(
@@ -277,12 +208,13 @@ def apply_hitl_signal_to_run(
         return state
 
     if signal.action == "REJECT_AND_LOOP":
+        copy = BOUNDED_WORKFLOW_LOCALES[DEFAULT_LOCALE]
         next_iter = state.iteration + 1
         state.iteration = next_iter
         state.reentry_mode = "corrections"
         state.status = "RETURN_LOOP_TRIGGERED"
         state.return_loop_target_step_num = signal.target_step_num or "02"
-        state.return_loop_remarks = signal.correction_remarks or "Corrections demandées en revue."
+        state.return_loop_remarks = signal.correction_remarks or copy["default_remarks"]
         target_sub_id = signal.target_sub_step_id or (
             enabled_sub_steps[0].id
             if enabled_sub_steps
@@ -312,9 +244,10 @@ def apply_hitl_signal_to_run(
                 auto_approve_checkpoints=False,
             )
         else:
-            goal_loop_md = (
-                f"# {workflow.title}\n\n## Reprise adaptative (`iter-{next_iter}`)\n"
-                f"Corrections demandées : {state.return_loop_remarks}"
+            goal_loop_md = copy["goal_reentry_body"].format(
+                title=workflow.title,
+                iteration=next_iter,
+                remarks=state.return_loop_remarks,
             )
             state.final_artifact_pointer = claim_storage.store_artifact(
                 run_id=state.run_id,

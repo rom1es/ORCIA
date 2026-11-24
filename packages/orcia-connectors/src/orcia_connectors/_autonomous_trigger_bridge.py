@@ -5,6 +5,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Any
 
+from orcia_connectors._connectors_locales import AUTONOMOUS_HELP_DEFAULTS
 from orcia_connectors.autonomous_runner import (
     AutonomousActionRequest,
     AutonomousGateInput,
@@ -78,23 +79,25 @@ class InternalCatalogActionAdapter:
         if "help" in action or article_id:
             resolved_id = article_id or f"help.auto.{self._run_id[:8]}"
             routes = [str(r) for r in (payload.get("bound_routes") or ["/processes"])]
+            fr_help = AUTONOMOUS_HELP_DEFAULTS["fr"]
+            en_help = AUTONOMOUS_HELP_DEFAULTS["en"]
             attached = await self._help.generate_and_attach_help(
                 article_id=resolved_id,
                 article_slug=str(payload.get("article_slug") or resolved_id.replace(".", "-")),
                 version=str(payload.get("version") or "1.0.1"),
                 pack_slug=str(payload.get("pack_slug") or "core"),
-                title_fr=str(payload.get("title_fr") or "Aide mise à jour sous contrat"),
-                title_en=str(payload.get("title_en") or "Contract-updated contextual help"),
+                title_fr=str(payload.get("title_fr") or fr_help["title"]),
+                title_en=str(payload.get("title_en") or en_help["title"]),
                 bound_routes=routes,
                 roles_allowed=["CONTRIBUTOR", "ARCHITECT", "PLATFORM_ADMIN"],
                 glossary_terms=list(payload.get("glossary_terms") or ["Processus"]),
                 related_workflows=[self._contract_label],
-                purpose_fr=str(payload.get("purpose_fr") or "Aide générée sous contrat."),
-                purpose_en=str(payload.get("purpose_en") or "Contract-generated help."),
-                steps_fr=list(payload.get("steps_fr") or ["Vérifier l'exécution autonome."]),
-                steps_en=list(payload.get("steps_en") or ["Verify autonomous execution."]),
-                faq_fr=list(payload.get("faq_fr") or ["Consultable dans l'écran cible."]),
-                faq_en=list(payload.get("faq_en") or ["Available in the target screen."]),
+                purpose_fr=str(payload.get("purpose_fr") or fr_help["purpose"]),
+                purpose_en=str(payload.get("purpose_en") or en_help["purpose"]),
+                steps_fr=list(payload.get("steps_fr") or [fr_help["step"]]),
+                steps_en=list(payload.get("steps_en") or [en_help["step"]]),
+                faq_fr=list(payload.get("faq_fr") or [fr_help["faq"]]),
+                faq_en=list(payload.get("faq_en") or [en_help["faq"]]),
                 autonomous_run_id=self._run_id,
                 contract_label=self._contract_label,
                 trigger_label=self._trigger_label,

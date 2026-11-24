@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from typing import Any
 
+from orcia_connectors._sdlc_template_locales import (
+    SECURITY_MOD_KEYWORDS,
+    get_sdlc_doc_vs_code_copy,
+)
 from orcia_core.catalog.bmad_adapter import BmadSkillPackAdapter
+from orcia_core.kernel.enums import DEFAULT_LOCALE
 from orcia_core.rag.indexer_and_rrf import DifferentiatedIncrementalIndexer
 from orcia_core.rag.tripartite_and_freshness import TripartiteGraphAndFreshnessService
 from orcia_kernel.context_ports import (
@@ -77,17 +82,15 @@ class SdlcDocVsCodeAuditAssistantTemplate(AssistantWorkflowTemplatePort):
         workspace_id: str,
         modification_instruction: str | None = None,
     ) -> AssistantWorkflowBlueprint:
+        copy = get_sdlc_doc_vs_code_copy(DEFAULT_LOCALE)
         include_security_step = bool(
             modification_instruction
-            and any(
-                kw in modification_instruction.lower()
-                for kw in ("secops", "sécurité", "security", "sonar", "étape", "step", "ajout")
-            )
+            and any(kw in modification_instruction.lower() for kw in SECURITY_MOD_KEYWORDS)
         )
         steps_list: list[dict[str, Any]] = [
             {
                 "step_key": "step_1_scope_anchor",
-                "title": "1. Cadrage & Périmètre d'Audit (Ancre Humaine)",
+                "title": copy["step1_title"],
                 "step_type": "AGENT",
                 "human_authored_required": True,
                 "agent_uri": "orcia://catalog/agents/doc-audit-framer@1.0.0",
@@ -95,7 +98,7 @@ class SdlcDocVsCodeAuditAssistantTemplate(AssistantWorkflowTemplatePort):
             },
             {
                 "step_key": "step_2_tripartite_extract",
-                "title": "2. Extraction Tripartite Confluence / Jira / Git",
+                "title": copy["step2_title"],
                 "step_type": "SKILL",
                 "human_authored_required": False,
                 "skill_uri": "orcia://catalog/skills/tripartite-extractor@1.0.0",
@@ -103,7 +106,7 @@ class SdlcDocVsCodeAuditAssistantTemplate(AssistantWorkflowTemplatePort):
             },
             {
                 "step_key": "step_3_drift_qualification",
-                "title": "3. Qualification des Écarts Doc vs Code",
+                "title": copy["step3_title"],
                 "step_type": "AGENT",
                 "human_authored_required": False,
                 "agent_uri": "orcia://catalog/agents/drift-qualifier@1.0.0",
@@ -116,7 +119,7 @@ class SdlcDocVsCodeAuditAssistantTemplate(AssistantWorkflowTemplatePort):
             steps_list.append(
                 {
                     "step_key": "step_4_security_compliance_check",
-                    "title": "4. Contrôle de Conformité & Sécurité",
+                    "title": copy["step4_title"],
                     "step_type": "SKILL",
                     "human_authored_required": False,
                     "skill_uri": "orcia://skills/security-compliance-check",
@@ -124,19 +127,20 @@ class SdlcDocVsCodeAuditAssistantTemplate(AssistantWorkflowTemplatePort):
                 }
             )
             final_dep = "step_4_security_compliance_check"
-            extra_yaml = """
-  - step_key: "step_4_security_compliance_check"
-    title: "4. Contrôle de Conformité & Sécurité"
-    step_type: "SKILL"
-    skill_uri: "orcia://skills/security-compliance-check"
-    depends_on:
-      - "step_3_drift_qualification"
-    instructions: "Vérifier la conformité sécurité et gouvernance sur les écarts identifiés." """
+            extra_yaml = (
+                '\n  - step_key: "step_4_security_compliance_check"\n'
+                f'    title: "{copy["step4_title"]}"\n'
+                '    step_type: "SKILL"\n'
+                '    skill_uri: "orcia://skills/security-compliance-check"\n'
+                "    depends_on:\n"
+                '      - "step_3_drift_qualification"\n'
+                f'    instructions: "{copy["step4_instr"]}" '
+            )
 
         steps_list.append(
             {
                 "step_key": "step_final_verification",
-                "title": "Vérification Post-Action & Rapport",
+                "title": copy["final_title"],
                 "step_type": "POST_ACTION_VERIFICATION",
                 "human_authored_required": False,
                 "skill_uri": "orcia://skills/audit-report-verifier",
@@ -150,53 +154,51 @@ class SdlcDocVsCodeAuditAssistantTemplate(AssistantWorkflowTemplatePort):
             else f"orcia://workflows/{workspace_id}-doc-vs-code-audit"
         )
         version = "1.1.0" if include_security_step else "1.0.0"
-        manifest_yaml = f"""uri: "{wf_uri}"
-title: "Audit Tripartite Documentation Confluence/Jira vs Codebase Git"
-description: "Compare les spécifications Confluence/Jira à l'arbre AST Git (UJ-10)."
-version: "{version}"
-criticality: "STANDARD"
-execution_regime: "BACKGROUND_FAST_PATH"
-tie_break_policy: "PAUSE_AND_ESCALATE"
-mode: "standard"
-adaptive_gate_policy: "STANDARD"
-max_cost_usd: 12.0
-steps:
-  - step_key: "step_1_scope_anchor"
-    title: "1. Cadrage & Périmètre d'Audit (Ancre Humaine)"
-    step_type: "AGENT"
-    agent_uri: "orcia://agents/doc-audit-framer"
-    human_authored_required: true
-    instructions: "Définir le périmètre de comparaison Confluence/Jira vs Git."
-  - step_key: "step_2_tripartite_extract"
-    title: "2. Extraction Tripartite Confluence / Jira / Git"
-    step_type: "SKILL"
-    skill_uri: "orcia://skills/tripartite-extractor"
-    depends_on:
-      - "step_1_scope_anchor"
-    instructions: "Extraire les arêtes tripartites et alertes de fraîcheur."
-  - step_key: "step_3_drift_qualification"
-    title: "3. Qualification des Écarts Doc vs Code"
-    step_type: "AGENT"
-    agent_uri: "orcia://agents/drift-qualifier"
-    depends_on:
-      - "step_2_tripartite_extract"
-    instructions: "Qualifier chaque écart Doc vs Code."{extra_yaml}
-  - step_key: "step_final_verification"
-    title: "Vérification Post-Action & Rapport"
-    step_type: "POST_ACTION_VERIFICATION"
-    depends_on:
-      - "{final_dep}"
-    verification_window_seconds: 30
-    instructions: "Vérifier la complétude du rapport d'audit tripartite."
-"""
+        manifest_yaml = (
+            f'uri: "{wf_uri}"\n'
+            f'title: "{copy["wf_title"]}"\n'
+            f'description: "{copy["wf_desc"]}"\n'
+            f'version: "{version}"\n'
+            'criticality: "STANDARD"\n'
+            'execution_regime: "BACKGROUND_FAST_PATH"\n'
+            'tie_break_policy: "PAUSE_AND_ESCALATE"\n'
+            'mode: "standard"\n'
+            'adaptive_gate_policy: "STANDARD"\n'
+            "max_cost_usd: 12.0\n"
+            "steps:\n"
+            '  - step_key: "step_1_scope_anchor"\n'
+            f'    title: "{copy["step1_title"]}"\n'
+            '    step_type: "AGENT"\n'
+            '    agent_uri: "orcia://agents/doc-audit-framer"\n'
+            "    human_authored_required: true\n"
+            f'    instructions: "{copy["step1_instr"]}"\n'
+            '  - step_key: "step_2_tripartite_extract"\n'
+            f'    title: "{copy["step2_title"]}"\n'
+            '    step_type: "SKILL"\n'
+            '    skill_uri: "orcia://skills/tripartite-extractor"\n'
+            "    depends_on:\n"
+            '      - "step_1_scope_anchor"\n'
+            f'    instructions: "{copy["step2_instr"]}"\n'
+            '  - step_key: "step_3_drift_qualification"\n'
+            f'    title: "{copy["step3_title"]}"\n'
+            '    step_type: "AGENT"\n'
+            '    agent_uri: "orcia://agents/drift-qualifier"\n'
+            "    depends_on:\n"
+            '      - "step_2_tripartite_extract"\n'
+            f'    instructions: "{copy["step3_instr"]}"{extra_yaml}\n'
+            '  - step_key: "step_final_verification"\n'
+            f'    title: "{copy["final_title"]}"\n'
+            '    step_type: "POST_ACTION_VERIFICATION"\n'
+            "    depends_on:\n"
+            f'      - "{final_dep}"\n'
+            "    verification_window_seconds: 30\n"
+            f'    instructions: "{copy["final_instr"]}"\n'
+        )
         return AssistantWorkflowBlueprint(
             template_key=self.template_key,
             workflow_uri=wf_uri,
-            title="Audit Tripartite Documentation Confluence/Jira vs Codebase Git",
-            description=(
-                "Compare les spécifications Confluence/Jira à l'arbre AST Git et qualifie "
-                "les écarts ([DOC_OBSOLETE_SUSPECTED] vs [BUG_CODE_SUSPECTED])."
-            ),
+            title=copy["wf_title"],
+            description=copy["blueprint_desc"],
             default_execution_regime="BACKGROUND_FAST_PATH",
             manifest_yaml=manifest_yaml,
             steps_summary=tuple(steps_list),

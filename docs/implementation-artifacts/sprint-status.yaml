@@ -298,7 +298,7 @@ development_status:
   # Raw inventory: docs/implementation-artifacts/tech-lead-reports/_i18n-audit-inventory-raw.md
   # Decisions   : docs/implementation-artifacts/epic-27-decisions-grill-2026-11-23.md (D1-D4)
   # Lots        : L0 27-1 | L1 27-2 | L2 27-3 -> 27-4 | L3 27-5 -> 27-6 | L4 27-7 | L5 27-8
-  epic-27: in-progress
+  epic-27: done
   27-1-deterministic-i18n-ci-guardrails-and-client-error-code-foundation: done
   27-2-category-a-client-error-codes-bridges-stores-and-rfc9457-banner: done
   27-3-category-c-shell-contextual-help-notifications-routes-and-wizards: done
@@ -306,7 +306,7 @@ development_status:
   27-5-category-c-process-studio-v2-vsm-execution-and-bilingual-catalog-data: done
   27-6-category-c-orcia-ui-design-system-primitives-typed-label-props: done
   27-7-categories-b-and-d-bilingual-rfc9457-backend-catalogs-prompts-and-seeds: done
-  27-8-zero-baseline-lock-bilingual-e2e-verification-and-epic-27-closure: ready-for-dev
+  27-8-zero-baseline-lock-bilingual-e2e-verification-and-epic-27-closure: done
   epic-27-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
@@ -1445,7 +1445,7 @@ action_items:
       Lot 5 (27.8): Lock all ratchet baselines to 0 and verify bilingual FR/EN Playwright E2E.
     priority: P2
     owner: "Amelia (Dev) / Winston (Architect)"
-    status: in-progress
+    status: done
     epic: epic-27
     tech_lead_report: "docs/implementation-artifacts/tech-lead-reports/2026-11-20-audit-i18n-chaines-codees-en-dur-tech-lead-report.md"
     description: >

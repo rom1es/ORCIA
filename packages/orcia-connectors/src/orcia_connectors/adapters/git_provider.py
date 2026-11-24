@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from orcia_connectors._connectors_locales import CONNECTOR_SEED_LOCALES
 from orcia_connectors.protocol import (
     ConnectorHealthStatus,
     OrciaConnectorProtocol,
@@ -12,6 +13,7 @@ from orcia_connectors.protocol import (
     compute_payload_sha256,
     verify_signed_approval_token,
 )
+from orcia_core.kernel.enums import DEFAULT_LOCALE
 from orcia_core.kernel.errors import ResourceNotFoundError, ValidationDomainError
 from orcia_core.kernel.ids import new_uuid7_str
 
@@ -45,7 +47,9 @@ class GitProviderConnector(OrciaConnectorProtocol):
             "resource_uri": cleaned,
             "ref": str(ref),
             "repo": self._default_repo,
-            "content": f"// Contenu vérifié depuis {cleaned}@{ref}",
+            "content": CONNECTOR_SEED_LOCALES[DEFAULT_LOCALE]["git_verified_content"].format(
+                uri=cleaned, ref=ref
+            ),
         }
 
     async def preview_write(self, action: str, payload: dict[str, Any]) -> WritePreviewCard:

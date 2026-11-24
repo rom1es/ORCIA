@@ -11,6 +11,14 @@ import asyncio
 from collections.abc import Callable
 from pathlib import Path
 
+import orcia_connectors._error_catalog  # noqa: F401
+from orcia_connectors._connectors_locales import get_surgical_copy
+from orcia_connectors._surgical_fs_helpers import (
+    collect_searchable_files,
+    detect_default_repo_root,
+    is_within_allowed_roots,
+    resolve_pack_uri_content,
+)
 from orcia_connectors._surgical_observations import (
     DEFAULT_READ_SOURCE_HINT,
     build_check_state_observation,
@@ -25,6 +33,7 @@ from orcia_connectors._surgical_parsers import (
     resolve_file_badge_code,
     validate_surgical_uri_security,
 )
+from orcia_core.kernel.enums import DEFAULT_LOCALE
 from orcia_core.kernel.errors import ValidationDomainError
 from orcia_core.ports.surgical_explorer_port import (
     SurgicalExplorerPort,
@@ -37,17 +46,6 @@ ReadSourceAuthorizer = Callable[[str, str | None, str | None], tuple[bool, str |
 VirtualResourceResolver = Callable[[str, str | None], str | None]
 
 _DEFAULT_ALLOWED_SUBDIRS: tuple[str, ...] = ("packs", "docs", "specs")
-_SEARCHABLE_SUFFIXES: frozenset[str] = frozenset(
-    {".md", ".mdx", ".yaml", ".yml", ".json", ".py", ".ts", ".tsx", ".sql", ".txt", ".star"}
-)
-
-
-def _detect_default_repo_root() -> Path:
-    curr = Path(__file__).resolve()
-    for parent in curr.parents:
-        if (parent / "packs").is_dir() and (parent / "docs").is_dir():
-            return parent
-    return Path.cwd()
 
 
 class SurgicalContextExplorer(SurgicalExplorerPort):
@@ -61,19 +59,13 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
         read_source_authorizer: ReadSourceAuthorizer | None = None,
         virtual_resource_resolver: VirtualResourceResolver | None = None,
     ) -> None:
-        self._repo_root = (repo_root or _detect_default_repo_root()).resolve()
+        self._repo_root = (repo_root or detect_default_repo_root(Path(__file__))).resolve()
         self._allowed_subdirs = allowed_subdirs
         self._read_source_authorizer = read_source_authorizer
         self._virtual_resource_resolver = virtual_resource_resolver
 
-    def _allowed_root_paths(self) -> tuple[Path, ...]:
-        return tuple((self._repo_root / sub).resolve() for sub in self._allowed_subdirs)
-
     def _is_within_allowed_roots(self, candidate: Path) -> bool:
-        resolved = candidate.resolve()
-        return any(
-            resolved == root or resolved.is_relative_to(root) for root in self._allowed_root_paths()
-        )
+        return is_within_allowed_roots(candidate, self._repo_root, self._allowed_subdirs)
 
     def _evaluate_read_source(
         self,
@@ -103,21 +95,7 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
         if "://" in cleaned_uri:
             scheme, rest = cleaned_uri.split("://", 1)
             if scheme.lower() == "pack":
-                rel_tail = rest.strip("/")
-                base_packs = (self._repo_root / "packs").resolve()
-                candidates = [
-                    (base_packs / rel_tail).resolve(),
-                    (base_packs / f"{rel_tail}.md").resolve(),
-                    (base_packs / f"{rel_tail}.yaml").resolve(),
-                ]
-                for cand in candidates:
-                    if not cand.is_relative_to(base_packs):
-                        raise ValidationDomainError(
-                            detail_override="URI `pack://` hors périmètre autorisé."
-                        )
-                    if cand.is_file():
-                        return True, cand.read_text(encoding="utf-8", errors="replace")
-                return False, ""
+                return resolve_pack_uri_content(self._repo_root, rest)
             return False, ""
 
         raw_path = Path(cleaned_uri)
@@ -126,10 +104,8 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
         )
         if not self._is_within_allowed_roots(candidate):
             raise ValidationDomainError(
-                detail_override=(
-                    f"Chemin `{cleaned_uri}` hors des racines autorisées "
-                    f"({', '.join(self._allowed_subdirs)})."
-                )
+                detail_code="ERR_SURGICAL_PATH_OUT_OF_BOUNDS",
+                detail_params={"uri": cleaned_uri, "roots": ", ".join(self._allowed_subdirs)},
             )
         if not candidate.exists() or not candidate.is_file():
             return False, ""
@@ -186,7 +162,10 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
             return await asyncio.to_thread(
                 self._outline_sync, cleaned_uri, workspace_id=workspace_id
             )
-        raise ValidationDomainError(detail_override=f"Primitive inconnue : `{primitive}`.")
+        raise ValidationDomainError(
+            detail_code="ERR_SURGICAL_UNKNOWN_PRIMITIVE",
+            detail_params={"primitive": str(primitive)},
+        )
 
     async def inspect_lines(
         self,
@@ -202,10 +181,8 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
         cleaned_uri = validate_surgical_uri_security(resource_uri)
         if start_line < 1 or end_line < start_line:
             raise ValidationDomainError(
-                detail_override=(
-                    f"Bornes de lignes invalides (`start_line={start_line}`, "
-                    f"`end_line={end_line}`)."
-                )
+                detail_code="ERR_SURGICAL_INVALID_LINE_RANGE",
+                detail_params={"start_line": start_line, "end_line": end_line},
             )
         allowed, hint = self._evaluate_read_source(
             cleaned_uri,
@@ -265,9 +242,7 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
         cleaned_scope = validate_surgical_uri_security(resource_uri, allow_empty=True)
         needle = query.strip().lower()
         if not needle or len(needle) > 256:
-            raise ValidationDomainError(
-                detail_override="La requête `query` doit contenir entre 1 et 256 caractères."
-            )
+            raise ValidationDomainError(detail_code="ERR_SURGICAL_INVALID_QUERY")
         scope_label = cleaned_scope or "workspace"
         if not has_read_source:
             return build_redacted_observation(
@@ -275,7 +250,9 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
             )
 
         bounded_max = max(1, min(max_results, 50))
-        files_to_scan = self._collect_searchable_files(cleaned_scope)
+        files_to_scan = collect_searchable_files(
+            self._repo_root, self._allowed_subdirs, cleaned_scope
+        )
         matches: list[SurgicalSnippetMatch] = []
 
         for file_path in files_to_scan:
@@ -301,6 +278,7 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
             if len(matches) >= bounded_max:
                 break
 
+        copy = get_surgical_copy(DEFAULT_LOCALE)
         return SurgicalObservation(
             kind=SurgicalPrimitiveName.SEARCH_WORKSPACE_SNIPPETS,
             resource_uri=scope_label,
@@ -309,44 +287,12 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
             formatted_badge=f"Searched '{query.strip()}' ({len(matches)} matches)",
             exists=True,
             snippets=matches,
-            summary=f"{len(matches)} extrait(s) trouvé(s) pour « {query.strip()} ».",
+            summary=copy.search_matches_summary.format(count=len(matches), query=query.strip()),
         )
-
-    def _collect_searchable_files(self, cleaned_scope: str) -> list[Path]:
-        if cleaned_scope:
-            target = (self._repo_root / cleaned_scope).resolve()
-            if not self._is_within_allowed_roots(target):
-                raise ValidationDomainError(
-                    detail_override=f"Périmètre de recherche `{cleaned_scope}` non autorisé."
-                )
-            if target.is_file():
-                return [target]
-            if target.is_dir():
-                return sorted(
-                    p
-                    for p in target.rglob("*")
-                    if p.is_file() and p.suffix.lower() in _SEARCHABLE_SUFFIXES
-                )
-            return []
-
-        collected: list[Path] = []
-        for root in self._allowed_root_paths():
-            if root.is_dir():
-                collected.extend(
-                    sorted(
-                        p
-                        for p in root.rglob("*")
-                        if p.is_file() and p.suffix.lower() in _SEARCHABLE_SUFFIXES
-                    )
-                )
-        return collected
 
 
 __all__ = [
-    "ReadSourceAuthorizer",
     "SurgicalContextExplorer",
-    "VirtualResourceResolver",
-    "extract_display_filename",
     "extract_outline_nodes",
     "resolve_file_badge_code",
     "validate_surgical_uri_security",
