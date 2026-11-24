@@ -315,7 +315,7 @@ development_status:
   # Lots        : L1 28-1 -> 28-2 | L2 28-3 -> 28-4
   epic-28: in-progress
   28-1-single-workspace-header-sidebar-scope-sync-and-zero-uuid-leak: done
-  28-2-canonical-five-tab-container-deduplication-and-tab1-sobriety: ready-for-dev
+  28-2-canonical-five-tab-container-deduplication-and-tab1-sobriety: done
   28-3-scoped-pg18-sources-deliverables-and-members-tabs-consolidation: ready-for-dev
   28-4-tab4-glossary-dna-starlark-encapsulation-and-e2e-lock: ready-for-dev
   epic-28-retrospective: optional

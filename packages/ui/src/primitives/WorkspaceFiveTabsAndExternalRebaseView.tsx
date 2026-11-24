@@ -1,5 +1,9 @@
 import React from "react";
 import {
+  GlossaryRulesTabPanel,
+  OverviewTabPanel,
+} from "./WorkspaceFiveTabsOverviewAndGlossaryPanels";
+import {
   DeliverablesTabPanel,
   MembersTeamTabPanel,
   sanitizeUiDestinationUri,
@@ -60,6 +64,7 @@ export interface WorkspaceFiveTabsLabels {
   readonly supersededMemlogNotice: string;
   readonly registerWaiverCta: string;
   readonly overviewSummaryText?: string;
+  readonly overviewEmptyStateHint?: string;
   readonly teamBillingLabel?: string;
   readonly visibilityLabel?: string;
   readonly roleLabel?: string;
@@ -84,6 +89,9 @@ export interface WorkspaceFiveTabsAndExternalRebaseViewProps {
   readonly effectiveRoleLabel?: string;
   readonly lifecyclePhaseLabel?: string;
   readonly submitting?: boolean;
+  readonly sourcesTabSlot?: React.ReactNode;
+  readonly glossaryTabSlot?: React.ReactNode;
+  readonly membersTabSlot?: React.ReactNode;
   readonly onSelectTab?: (tab: WorkspaceSubTabKey) => void;
   readonly onRegisterWaiver?: (sourceUri: string, conflictRuleId: string) => void;
 }
@@ -105,6 +113,9 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
   effectiveRoleLabel,
   lifecyclePhaseLabel,
   submitting = false,
+  sourcesTabSlot,
+  glossaryTabSlot,
+  membersTabSlot,
   onSelectTab,
   onRegisterWaiver,
 }) => {
@@ -149,40 +160,31 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
     switch (activeTab) {
       case "OVERVIEW":
         return (
-          <div
-            role="tabpanel"
-            aria-labelledby="workspace-tab-OVERVIEW"
-            className="grid grid-cols-1 gap-4 md:grid-cols-2"
-          >
-            <div
-              data-testid="workspace-overview-panel"
-              className="space-y-3 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3"
-            >
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
-                {labels.tabOverview}
-              </h3>
-              <p className="text-xs text-[var(--orcia-text-secondary)]">
-                {labels.overviewSummaryText ?? workspaceName ?? safeSlug}
-              </p>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                {overviewStats.map((stat) => (
-                  <div
-                    key={stat.key}
-                    className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2"
-                  >
-                    <div className="text-[11px] text-[var(--orcia-text-secondary)]">
-                      {stat.title}
-                    </div>
-                    <strong className="text-sm">{stat.value}</strong>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <WaiversAndRebasePanel {...sharedWaiverProps} />
-          </div>
+          <OverviewTabPanel
+            sourcesCount={sources.length}
+            pendingGlossaryCandidatesCount={pendingGlossaryCandidatesCount}
+            activeWaivers={activeWaivers}
+            overviewStats={overviewStats}
+            labels={labels}
+            workspaceName={workspaceName}
+            safeSlug={safeSlug}
+            sharedWaiverProps={sharedWaiverProps}
+          />
         );
 
       case "DOCUMENTS_SOURCES":
+        if (sourcesTabSlot) {
+          return (
+            <div role="tabpanel" aria-labelledby="workspace-tab-DOCUMENTS_SOURCES">
+              <div
+                data-testid="workspace-sources-panel"
+                className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3"
+              >
+                {sourcesTabSlot}
+              </div>
+            </div>
+          );
+        }
         return (
           <div
             role="tabpanel"
@@ -210,30 +212,13 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
 
       case "GLOSSARY_RULES":
         return (
-          <div
-            role="tabpanel"
-            aria-labelledby="workspace-tab-GLOSSARY_RULES"
-            data-testid="workspace-glossary-rules-panel"
-            className="space-y-3 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
-                {labels.tabGlossaryRules}
-              </h3>
-              <span className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 font-mono text-[11px]">
-                {pendingGlossaryCandidatesCount}
-              </span>
-            </div>
-            <p className="text-xs text-[var(--orcia-text-secondary)]">
-              {labels.inviolableEnterpriseLockNotice}
-            </p>
-            {activeWaivers.length === 0 && (
-              <p className="text-xs text-[var(--orcia-text-secondary)]">
-                {labels.emptyGlossaryRulesText ?? labels.waiverSectionTitle}
-              </p>
-            )}
-            <WaiversAndRebasePanel {...sharedWaiverProps} />
-          </div>
+          <GlossaryRulesTabPanel
+            pendingGlossaryCandidatesCount={pendingGlossaryCandidatesCount}
+            activeWaiversCount={activeWaivers.length}
+            labels={labels}
+            glossaryTabSlot={glossaryTabSlot}
+            sharedWaiverProps={sharedWaiverProps}
+          />
         );
 
       case "MEMBERS_TEAM":
@@ -245,6 +230,7 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
             visibilityLabel={visibilityLabel}
             effectiveRoleLabel={effectiveRoleLabel}
             labels={labels}
+            membersTabSlot={membersTabSlot}
           />
         );
     }

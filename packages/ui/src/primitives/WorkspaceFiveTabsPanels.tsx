@@ -252,6 +252,7 @@ export interface MembersTeamTabPanelProps {
   readonly visibilityLabel?: string;
   readonly effectiveRoleLabel?: string;
   readonly labels: WorkspaceFiveTabsLabels;
+  readonly membersTabSlot?: React.ReactNode;
 }
 
 export const MembersTeamTabPanel: React.FC<MembersTeamTabPanelProps> = ({
@@ -261,6 +262,7 @@ export const MembersTeamTabPanel: React.FC<MembersTeamTabPanelProps> = ({
   visibilityLabel,
   effectiveRoleLabel,
   labels,
+  membersTabSlot,
 }) => (
   <div
     role="tabpanel"
@@ -279,20 +281,17 @@ export const MembersTeamTabPanel: React.FC<MembersTeamTabPanelProps> = ({
         <strong>{ownerOrgUnitName || workspaceName || sanitizeUiWorkspaceSlug(workspaceSlug, workspaceName)}</strong>
       </div>
       <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2.5">
-        <div className="text-[11px] text-[var(--orcia-text-secondary)]">
-          {labels.visibilityLabel ?? "—"}
-        </div>
+        <div className="text-[11px] text-[var(--orcia-text-secondary)]">{labels.visibilityLabel ?? "—"}</div>
         <strong>{visibilityLabel ?? "—"}</strong>
       </div>
       <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2.5">
-        <div className="text-[11px] text-[var(--orcia-text-secondary)]">
-          {labels.roleLabel ?? "—"}
-        </div>
+        <div className="text-[11px] text-[var(--orcia-text-secondary)]">{labels.roleLabel ?? "—"}</div>
         <strong>{effectiveRoleLabel ?? "—"}</strong>
       </div>
     </div>
     {labels.membersAccessHint && (
       <p className="text-xs text-[var(--orcia-text-secondary)]">{labels.membersAccessHint}</p>
     )}
+    {membersTabSlot ?? null}
   </div>
 );

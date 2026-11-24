@@ -3,13 +3,21 @@ import {
   type ControlCenterDatasourceItem,
   type ControlCenterWorkspaceGovItem,
   type UiOntologyConceptView,
+  type UiOntologyLevel,
   type WorkspaceSubTabKey,
   WorkspaceFiveTabsAndExternalRebaseView,
 } from "@orcia/ui";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import type {
+  ConfiguredOrgUnit,
+  PlatformSetupContextValue,
+} from "../../components/platformSetupStore";
 import { formatI18nTemplate, resolveDictionaryForFlag } from "../../i18n";
 import type { TranslationDictionary } from "../../i18n/types";
 import { useWorkspaceDnaAndWaivers } from "./useWorkspaceDnaAndWaivers";
+import { WorkspaceGlossaryAndOntologyTab } from "./WorkspaceGlossaryAndOntologyTab";
+import { WorkspaceMembersInstructionsCard } from "./WorkspaceMembersInstructionsCard";
+import { WorkspaceSourcesRagTab } from "./WorkspaceSourcesRagTab";
 import {
   formatWorkspaceDisplaySlug,
   resolveWorkspacePhaseLabel,
@@ -19,12 +27,40 @@ import {
 
 export interface WorkspaceDnaAndWaiversSectionProps {
   readonly isFr: boolean;
+  readonly initialTab?: string;
   readonly targetWorkspace: ControlCenterWorkspaceGovItem | null;
   readonly datasources: readonly ControlCenterDatasourceItem[];
   readonly ontologyConcepts: readonly UiOntologyConceptView[];
+  readonly orgUnits: readonly ConfiguredOrgUnit[];
   readonly dictionary: TranslationDictionary;
+  readonly openHelpSection: (sectionId: string) => void;
+  readonly onRegisterDatasource: PlatformSetupContextValue["registerDatasource"];
   readonly onAddOntologyConcept: (concept: UiOntologyConceptView) => void;
+  readonly onPromoteOntologyConcept: (
+    conceptKey: string,
+    targetLevel: UiOntologyLevel,
+    targetScopeId?: string,
+  ) => void;
   readonly onFeedback: (message: string | null) => void;
+}
+
+export function resolveInitialWorkspaceSubTab(initialTab?: string): WorkspaceSubTabKey {
+  switch ((initialTab ?? "").trim().toLowerCase()) {
+    case "sources":
+    case "documents_sources":
+      return "DOCUMENTS_SOURCES";
+    case "deliverables":
+    case "deliverables_artifacts":
+      return "DELIVERABLES_ARTIFACTS";
+    case "glossary":
+    case "glossary_rules":
+      return "GLOSSARY_RULES";
+    case "members":
+    case "members_team":
+      return "MEMBERS_TEAM";
+    default:
+      return "OVERVIEW";
+  }
 }
 
 function formatWorkspaceAccessModeLabel(accessMode: string | undefined, isFr: boolean): string {
@@ -36,14 +72,30 @@ function formatWorkspaceAccessModeLabel(accessMode: string | undefined, isFr: bo
 
 export function WorkspaceDnaAndWaiversSection({
   isFr,
+  initialTab,
   targetWorkspace,
   datasources,
   ontologyConcepts,
+  orgUnits,
   dictionary,
+  openHelpSection,
+  onRegisterDatasource,
   onAddOntologyConcept,
+  onPromoteOntologyConcept,
   onFeedback,
 }: WorkspaceDnaAndWaiversSectionProps): React.ReactElement | null {
-  const [activeSubTab, setActiveSubTab] = useState<WorkspaceSubTabKey>("OVERVIEW");
+  const [activeSubTab, setActiveSubTab] = useState<WorkspaceSubTabKey>(() =>
+    resolveInitialWorkspaceSubTab(initialTab),
+  );
+  const prevInitialTabRef = useRef(initialTab);
+
+  useEffect(() => {
+    if (prevInitialTabRef.current !== initialTab) {
+      prevInitialTabRef.current = initialTab;
+      setActiveSubTab(resolveInitialWorkspaceSubTab(initialTab));
+    }
+  }, [initialTab]);
+
   const {
     dnaCopy,
     activeWaivers,
@@ -65,6 +117,7 @@ export function WorkspaceDnaAndWaiversSection({
   const defaultDestinationUri = datasources[0]?.uri
     ? sanitizeWorkspaceDestinationUri(datasources[0].uri, targetWorkspace.name)
     : `orcia://workspaces/${displayWsSlug}/deliverables`;
+  const tabsCopy = dictionary.featureWorkspaces.detailTabs;
 
   return (
     <div
@@ -96,6 +149,38 @@ export function WorkspaceDnaAndWaiversSection({
         onSelectTab={setActiveSubTab}
         onRegisterWaiver={(sourceUri, conflictRuleId) =>
           void handleRegisterWaiver(sourceUri, conflictRuleId)
+        }
+        sourcesTabSlot={
+          <WorkspaceSourcesRagTab
+            isFr={isFr}
+            activeWorkspace={targetWorkspace}
+            fallbackDatasources={datasources}
+            openHelpSection={openHelpSection}
+            onRegisterDatasource={onRegisterDatasource}
+            onFeedback={onFeedback}
+          />
+        }
+        glossaryTabSlot={
+          <WorkspaceGlossaryAndOntologyTab
+            isFr={isFr}
+            selectedWorkspace={targetWorkspace}
+            orgUnits={orgUnits}
+            ontologyConcepts={ontologyConcepts}
+            openHelpSection={openHelpSection}
+            onAddConcept={(concept) => {
+              onAddOntologyConcept(concept);
+              onFeedback(
+                formatI18nTemplate(tabsCopy.termAddedTemplate, { term: concept.canonicalTerm }),
+              );
+            }}
+            onPromoteConcept={(conceptKey, targetLevel, targetScopeId) => {
+              onPromoteOntologyConcept(conceptKey, targetLevel, targetScopeId);
+              onFeedback(tabsCopy.termPromoted);
+            }}
+          />
+        }
+        membersTabSlot={
+          <WorkspaceMembersInstructionsCard isFr={isFr} activeWorkspace={targetWorkspace} />
         }
       />
 

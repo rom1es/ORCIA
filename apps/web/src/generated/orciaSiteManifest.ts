@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 231,
+    "techLeadReportsCount": 232,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -542,6 +542,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-24",
+      "phaseOrStory": "Story 28.2",
+      "reportFile": "28-2-canonical-five-tab-container-deduplication-and-tab1-sobriety-tech-lead-report.md",
+      "domain": "Epic 28 Lot 1 — Canonical 5-Tab Workspace Container, De-Duplication of 3-Tab vs 5-Tab Panels & Direction C total == 0 Sobriety on Tab 1 (CAP-061, CAP-080)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): deleted competing 3-tab panel WorkspaceDetailTabsPanel.tsx (0 workspace-detail-tab-* selectors), extracted WorkspaceFiveTabsOverviewAndGlossaryPanels.tsx (131 L) & WorkspaceMembersInstructionsCard.tsx (85 L), wired optional sourcesTabSlot/glossaryTabSlot/membersTabSlot on WorkspaceFiveTabsAndExternalRebaseView.tsx (276 L) + WorkspaceFiveTabsPanels.tsx (297 L) from WorkspaceDnaAndWaiversSection.tsx (232 L) with initialTab route mapping (/workspaces/$wsId/sources → DOCUMENTS_SOURCES), enforced Tab 1 total == 0 sobriety hiding workspace-overview-kpi-grid in favor of FR/EN overviewEmptyStateHint, updated openWorkspaceGlossaryTab (workspaceAndCatalogHelpers.ts 163 L), all 10/10 production .ts/.tsx files and new Story 28.2 test (173 L) <= 300 L; verified 9/9 Turbo (@orcia/api-client 20, @orcia/ui 140, @orcia/web 294 = 454 JS/TS tests, incl. i18n Gates 1–3, zero-dead-buttons, e2e-testids-sync, story-28-2 2 tests, story-24-2 3 tests) and lint_spine.py (0 findings)."
+    },
     {
       "date": "2026-11-24",
       "phaseOrStory": "Story 28.1",

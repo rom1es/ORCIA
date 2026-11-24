@@ -25,6 +25,8 @@ export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection
     registerWaiverCta: "+ Request a local adaptation for this space",
     overviewSummaryText:
       "Overview of connected sources, business rules, deliverables, and active local adaptations for this space.",
+    overviewEmptyStateHint:
+      "This workspace is ready: connect a first document in Documents & Sources or define business rules in the Glossary.",
     teamBillingLabel: "Billing team",
     visibilityLabel: "Visibility",
     roleLabel: "Effective role",

@@ -97,7 +97,7 @@ export async function openWorkspaceSourcesPage(
 
 /** Bascule sur l'onglet Glossaire & Règles Métiers dans `/spaces` ou `/workspaces/$wsId`. */
 export async function openWorkspaceGlossaryTab(page: Page): Promise<void> {
-  await page.getByTestId("workspace-detail-tab-glossary").click();
+  await page.getByTestId("workspace-tab-GLOSSARY_RULES").click();
   await expect(page.getByTestId("workspace-glossary-and-ontology-tab")).toBeVisible({
     timeout: 15000,
   });

@@ -29,6 +29,8 @@ const FIVE_TABS_LABELS_FR: WorkspaceFiveTabsLabels = {
   humanAmendedBadge: "HUMAN_AMENDED_EXTERNAL",
   supersededMemlogNotice: "[SUPERSEDED_BY_HUMAN_COMMIT]",
   registerWaiverCta: "Acquitter l'écart",
+  overviewEmptyStateHint:
+    "Cet espace est prêt : rattachez un premier document dans Documents & Sources ou définissez vos règles métier.",
 };
 
 const TRIGGERS_LABELS_FR: WorkflowTriggersModalLabels = {
@@ -115,8 +117,10 @@ describe("Story 24.2 (USER24-BUG-6 & REM24-03) — WorkspaceFiveTabsAndExternalR
   it("switches across all 5 tabs and renders workspace-members-panel on tab 5 instead of Documents & Sources", () => {
     render(<StatefulFiveTabsHarness />);
 
-    // 1. OVERVIEW
+    // 1. OVERVIEW (total >= 1 -> KPI grid visible)
     expect(screen.getByTestId("workspace-overview-panel")).toBeDefined();
+    expect(screen.getByTestId("workspace-overview-kpi-grid")).toBeDefined();
+    expect(screen.queryByTestId("workspace-overview-empty-hint")).toBeNull();
     expect(screen.queryByTestId("workspace-sources-panel")).toBeNull();
     expect(screen.queryByTestId("workspace-members-panel")).toBeNull();
 
@@ -143,6 +147,28 @@ describe("Story 24.2 (USER24-BUG-6 & REM24-03) — WorkspaceFiveTabsAndExternalR
     expect(screen.queryByTestId("workspace-sources-panel")).toBeNull();
     expect(screen.queryByTestId("workspace-overview-panel")).toBeNull();
     expect(screen.queryByTestId("workspace-glossary-rules-panel")).toBeNull();
+  });
+
+  it("hides 0/0/0 KPI cards on Tab 1 OVERVIEW when sources, glossary candidates, and waivers total == 0", () => {
+    render(
+      <WorkspaceFiveTabsAndExternalRebaseView
+        workspaceSlug="ws-empty"
+        workspaceName="Espace Vide"
+        activeTab="OVERVIEW"
+        defaultArtifactDestinationUri="orcia://workspaces/ws-empty/deliverables"
+        pendingGlossaryCandidatesCount={0}
+        sources={[]}
+        activeWaivers={[]}
+        rebasedChunks={[]}
+        labels={FIVE_TABS_LABELS_FR}
+      />,
+    );
+
+    expect(screen.getByTestId("workspace-overview-panel")).toBeDefined();
+    expect(screen.queryByTestId("workspace-overview-kpi-grid")).toBeNull();
+    expect(screen.getByTestId("workspace-overview-empty-hint").textContent).toContain(
+      "Cet espace est prêt",
+    );
   });
 
   it("submits optional trigger_key in WorkflowTriggersModal and renders RFC 9457 409 error in [role=alert]", () => {

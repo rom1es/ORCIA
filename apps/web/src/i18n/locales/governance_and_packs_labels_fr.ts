@@ -26,6 +26,8 @@ export const GOVERNANCE_AND_PACKS_FR_LABELS: GovernanceAndPacksDictionarySection
     registerWaiverCta: "+ Demander une adaptation pour cet espace",
     overviewSummaryText:
       "Synthèse des sources rattachées, règles métier, livrables et adaptations locales actives pour cet espace.",
+    overviewEmptyStateHint:
+      "Cet espace est prêt : rattachez un premier document dans Documents & Sources ou définissez vos règles métier dans le Glossaire.",
     teamBillingLabel: "Équipe de rattachement",
     visibilityLabel: "Visibilité",
     roleLabel: "Rôle effectif",

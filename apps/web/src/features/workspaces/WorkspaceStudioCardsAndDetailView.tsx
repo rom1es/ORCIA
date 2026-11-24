@@ -14,7 +14,6 @@ import type {
 } from "../../components/platformSetupStore";
 import { resolveDictionaryForFlag } from "../../i18n";
 import { WorkspaceCompactHeader } from "./WorkspaceCompactHeader";
-import { WorkspaceDetailTabsPanel } from "./WorkspaceDetailTabsPanel";
 
 export interface WorkspaceStudioCardsAndDetailViewProps {
   readonly isFr: boolean;
@@ -51,21 +50,13 @@ export interface WorkspaceStudioCardsAndDetailViewProps {
 export function WorkspaceStudioCardsAndDetailView({
   isFr,
   initialWorkspaceId,
-  initialTab,
   workspaces,
-  datasources,
-  ontologyConcepts,
-  orgUnits,
   isCreateFormExpanded,
   onSelectWorkspace,
   onToggleCreateForm,
-  openHelpSection,
   onNavigateToRoute,
   onUpdateWorkspacePhase,
   onUpdateWorkspaceVisibility,
-  onRegisterDatasource,
-  onAddOntologyConcept,
-  onPromoteOntologyConcept,
   onFeedback,
 }: WorkspaceStudioCardsAndDetailViewProps): React.ReactElement {
   const studioCopy = resolveDictionaryForFlag(isFr).featureWorkspaces.studioCards;
@@ -122,21 +113,7 @@ export function WorkspaceStudioCardsAndDetailView({
         >
           <span>{studioCopy.emptyFilterText}</span>
         </section>
-      ) : (
-        <WorkspaceDetailTabsPanel
-          isFr={isFr}
-          initialTab={initialTab}
-          activeWorkspace={activeWorkspace}
-          datasources={datasources}
-          ontologyConcepts={ontologyConcepts}
-          orgUnits={orgUnits}
-          openHelpSection={openHelpSection}
-          onRegisterDatasource={onRegisterDatasource}
-          onAddOntologyConcept={onAddOntologyConcept}
-          onPromoteOntologyConcept={onPromoteOntologyConcept}
-          onFeedback={onFeedback}
-        />
-      )}
+      ) : null}
     </div>
   );
 }

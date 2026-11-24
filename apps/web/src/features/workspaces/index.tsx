@@ -161,11 +161,16 @@ export function WorkspacesFeaturePanel({
       {targetWorkspace !== null ? (
         <WorkspaceDnaAndWaiversSection
           isFr={isFr}
+          initialTab={initialTab}
           targetWorkspace={targetWorkspace}
           datasources={datasources}
           ontologyConcepts={ontologyConcepts}
+          orgUnits={orgUnits}
           dictionary={dictionary}
+          openHelpSection={openHelpSection}
+          onRegisterDatasource={registerDatasource}
           onAddOntologyConcept={addOntologyConcept}
+          onPromoteOntologyConcept={promoteOntologyConcept}
           onFeedback={setActionFeedback}
         />
       ) : null}

@@ -2141,11 +2141,18 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       (screen.getByTestId(`workspace-card-phase-select-${ws1Id}`) as HTMLSelectElement).value,
     ).toBe("RUN");
 
-    // 6. Test Unified 3-Tab Detail Panel for active workspace ("Mon Labo Perso", UUIDv7)
-    // Tab 1: Sources & Documents de l'Espace -> connect a source via modal without navigating to /settings
+    // 6. Test Unified 5-Tab Workspace Container for active workspace ("Mon Labo Perso", UUIDv7)
+    expect(screen.queryByTestId("workspace-detail-tabs-panel")).toBeNull();
+    // Tab 2: Documents & Sources -> connect a source via modal without navigating to /settings
+    fireEvent.click(screen.getByTestId("workspace-tab-DOCUMENTS_SOURCES"));
     expect(screen.getByTestId("workspace-sources-empty-state")).toBeDefined();
     fireEvent.click(screen.getByTestId("open-attach-source-modal-btn"));
     expect(screen.getByTestId("workspace-source-attach-modal")).toBeDefined();
+    await waitFor(() => {
+      expect(
+        (screen.getByTestId("modal-source-nature-select") as HTMLSelectElement).value,
+      ).toBe("SOURCE_CODE");
+    });
 
     fireEvent.change(screen.getByTestId("modal-source-alias-input"), {
       target: { value: "Wiki Produit Interne" },
@@ -2158,8 +2165,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       expect(screen.getAllByText("Wiki Produit Interne").length).toBeGreaterThanOrEqual(1);
     });
 
-    // Tab 2: Glossaire & Règles Métiers (Ontologie) -> multi-level cascade + add term + 1-click upward promotion
-    fireEvent.click(screen.getByTestId("workspace-detail-tab-glossary"));
+    // Tab 4: Glossaire & Règles Métiers (Ontologie) -> multi-level cascade + add term + 1-click upward promotion
+    fireEvent.click(screen.getByTestId("workspace-tab-GLOSSARY_RULES"));
     const cascadeBar = screen.getByTestId("glossary-inheritance-cascade-bar");
     expect(cascadeBar.querySelectorAll("svg").length).toBeGreaterThanOrEqual(1);
     expect(cascadeBar.textContent).toContain("Entreprise (Global)");
@@ -2202,8 +2209,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       ).toContain("En attente de validation");
     });
 
-    // Tab 3: Membres, Accès & Consignes -> auto-save workspace instructions
-    fireEvent.click(screen.getByTestId("workspace-detail-tab-members"));
+    // Tab 5: Membres & Équipe -> auto-save workspace instructions
+    fireEvent.click(screen.getByTestId("workspace-tab-MEMBERS_TEAM"));
     fireEvent.change(screen.getByTestId("workspace-instructions-textarea"), {
       target: { value: "Toujours citer la source Wiki Produit Interne." },
     });
@@ -2228,10 +2235,11 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(screen.getByTestId(`workspace-visibility-badge-${ws1Id}`).textContent).toContain(
       "Équipe",
     );
+    fireEvent.click(screen.getByTestId("workspace-tab-DOCUMENTS_SOURCES"));
     expect(screen.getByTestId("workspace-detail-source-row-ds-1").textContent).toContain(
       "Wiki Produit Interne",
     );
-    fireEvent.click(screen.getByTestId("workspace-detail-tab-glossary"));
+    fireEvent.click(screen.getByTestId("workspace-tab-GLOSSARY_RULES"));
     await waitFor(() => {
       expect(
         screen.getByTestId(
