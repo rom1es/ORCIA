@@ -6,6 +6,24 @@ import type {
   WorkspaceSourceItem,
 } from "./WorkspaceFiveTabsAndExternalRebaseView";
 
+const TECHNICAL_UUID_RE =
+  /^(?:personal-)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const EMBEDDED_PERSONAL_UUID_RE =
+  /personal-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+
+export function sanitizeUiWorkspaceSlug(slug: string, workspaceName?: string): string {
+  const trimmed = slug.trim();
+  if (!trimmed || TECHNICAL_UUID_RE.test(trimmed)) {
+    const cleanName = (workspaceName ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    return cleanName.length > 0 ? cleanName : "ws";
+  }
+  return trimmed;
+}
+
+export function sanitizeUiDestinationUri(uri: string, safeSlug: string): string {
+  return uri.replace(EMBEDDED_PERSONAL_UUID_RE, safeSlug);
+}
+
 export interface WaiversAndRebasePanelProps {
   readonly workspaceSlug: string;
   readonly defaultArtifactDestinationUri: string;
@@ -196,7 +214,7 @@ export const DeliverablesTabPanel: React.FC<DeliverablesTabPanelProps> = ({
     </h3>
     <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2.5 text-xs">
       <span className="font-medium">{labels.defaultDestinationTitle} </span>
-      <code className="font-mono">{defaultArtifactDestinationUri}</code>
+      <code className="font-mono">{sanitizeUiDestinationUri(defaultArtifactDestinationUri, "ws")}</code>
     </div>
     <p className="text-xs text-[var(--orcia-text-secondary)]">{labels.supersededMemlogNotice}</p>
     {rebasedChunks.length === 0 ? (
@@ -258,7 +276,7 @@ export const MembersTeamTabPanel: React.FC<MembersTeamTabPanelProps> = ({
         <div className="text-[11px] text-[var(--orcia-text-secondary)]">
           {labels.teamBillingLabel ?? labels.tabMembersTeam}
         </div>
-        <strong>{ownerOrgUnitName || workspaceName || workspaceSlug}</strong>
+        <strong>{ownerOrgUnitName || workspaceName || sanitizeUiWorkspaceSlug(workspaceSlug, workspaceName)}</strong>
       </div>
       <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2.5">
         <div className="text-[11px] text-[var(--orcia-text-secondary)]">

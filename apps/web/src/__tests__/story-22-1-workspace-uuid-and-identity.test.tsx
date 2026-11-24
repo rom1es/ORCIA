@@ -59,14 +59,14 @@ describe("Story 22.1 — UUIDv7 Workspace Creation, F5 Survival & Identity Wirin
     fireEvent.click(screen.getByTestId("create-workspace-submit-btn"));
 
     await waitFor(() => {
-      expect(screen.getByTestId("workspaces-filter-all").textContent).toContain("Tous (1)");
+      expect(screen.getByTestId("workspaces-active-title").textContent).toBe(
+        "Espace E2E Comptabilité",
+      );
     });
 
-    const cards = screen.getAllByTestId(/^workspace-studio-card-/);
-    expect(cards.length).toBe(1);
-    const createdWsId = cards[0]!
-      .getAttribute("data-testid")!
-      .replace("workspace-studio-card-", "");
+    const switcher = screen.getByTestId("workspaces-active-switcher-select") as HTMLSelectElement;
+    expect(switcher.options.length).toBe(1);
+    const createdWsId = switcher.value;
     expect(createdWsId).not.toBe("ws-1");
     expect(createdWsId).toMatch(UUID_REGEX);
     expect(screen.getByTestId("workspaces-action-feedback-banner").textContent).toContain(
@@ -93,8 +93,12 @@ describe("Story 22.1 — UUIDv7 Workspace Creation, F5 Survival & Identity Wirin
       </QueryClientProvider>,
     );
 
-    const persistedCard = await screen.findByTestId(`workspace-studio-card-${createdWsId}`);
-    expect(persistedCard.textContent).toContain("Espace E2E Comptabilité");
+    await waitFor(() => {
+      expect(screen.getByTestId("workspaces-active-title").textContent).toBe(
+        "Espace E2E Comptabilité",
+      );
+      expect(screen.getByTestId(`workspace-visibility-badge-${createdWsId}`)).toBeDefined();
+    });
   });
 
   it("displays an actionable error banner without silent .catch when POST /api/v1/workspaces fails", async () => {
@@ -141,7 +145,7 @@ describe("Story 22.1 — UUIDv7 Workspace Creation, F5 Survival & Identity Wirin
 
       const feedback = await screen.findByTestId("workspaces-action-feedback-banner");
       expect(feedback.textContent).toContain("⚠️");
-      expect(screen.queryByTestId("workspace-studio-card-ws-1")).toBeNull();
+      expect(screen.queryByTestId("workspace-visibility-badge-ws-1")).toBeNull();
     } finally {
       globalThis.fetch = originalFetch;
     }

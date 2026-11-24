@@ -1,5 +1,5 @@
 import { CommandPaletteModal, OrciaAlertBanner, OrciaDialog } from "@orcia/ui";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { resolveGlobalScopeLabel } from "../../components/platformSetupWorkspaces";
 import { useShellNavigation } from "../../components/ShellContainer";
@@ -9,6 +9,7 @@ import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner
 import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { CreateWorkspaceCard } from "./CreateWorkspaceCard";
 import { WorkspaceDnaAndWaiversSection } from "./WorkspaceDnaAndWaiversSection";
+import { formatWorkspaceCreatedBannerId } from "./workspaceDisplayHelpers";
 import { WorkspaceStudioCardsAndDetailView } from "./WorkspaceStudioCardsAndDetailView";
 
 export interface WorkspacesFeaturePanelProps {
@@ -22,7 +23,8 @@ export function WorkspacesFeaturePanel({
 }: WorkspacesFeaturePanelProps = {}) {
   const { dictionary, isFr, locale } = useI18n();
   const wsPanelCopy = dictionary.featureWorkspaces.panel;
-  const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
+  const { activeScopeId, setActiveScopeId, navigateToRoute, openHelpSection } =
+    useShellNavigation();
   const {
     orgUnits,
     workspaces,
@@ -42,6 +44,11 @@ export function WorkspacesFeaturePanel({
   const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  const [fallbackSelectedWsId, setFallbackSelectedWsId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setFallbackSelectedWsId(null);
+  }, [activeScopeId]);
 
   const authEmail = useAuthSessionStore((s) => s.email);
   const activeScopeNode = scopes.find((s) => s.id === activeScopeId);
@@ -60,52 +67,24 @@ export function WorkspacesFeaturePanel({
     ? workspaces.find((w) => w.workspaceId === initialWorkspaceId)
     : undefined;
 
-  const scopedWorkspaces =
-    explicitTargetWs
-      ? workspaces
-      : activeScopeNode?.level === "WORKSPACE"
-        ? workspaces.filter((ws) => ws.workspaceId === activeScopeId)
-        : activeScopeNode?.level === "TEAM"
-          ? workspaces.filter(
-              (ws) => !ws.ownerOrgUnitId || ws.ownerOrgUnitId === activeScopeId,
-            )
-          : workspaces;
-
-  const displayedWorkspaces =
-    scopedWorkspaces.length > 0 ? scopedWorkspaces : workspaces;
-
   const resolvedActiveWsId = resolveEffectiveWorkspaceId(activeScopeId, workspaces, authEmail);
+  const effectiveWsId =
+    explicitTargetWs?.workspaceId ??
+    (fallbackSelectedWsId && workspaces.some((w) => w.workspaceId === fallbackSelectedWsId)
+      ? fallbackSelectedWsId
+      : resolvedActiveWsId);
   const targetWorkspace =
-    explicitTargetWs ??
-    displayedWorkspaces.find((w) => w.workspaceId === resolvedActiveWsId) ??
-    displayedWorkspaces[0] ??
-    workspaces[0] ??
-    null;
+    workspaces.find((w) => w.workspaceId === effectiveWsId) ?? workspaces[0] ?? null;
+
+  const handleSelectWorkspace = (nextWsId: string) => {
+    setFallbackSelectedWsId(nextWsId);
+    setActiveScopeId?.(nextWsId);
+  };
 
   const effectiveCreateFormVisible = isCreateFormOpen;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <nav
-        aria-label={wsPanelCopy.navAriaLabel}
-        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2"
-        style={{
-          backgroundColor: "var(--color-bg-surface)",
-          borderColor: "var(--color-border-subtle)",
-        }}
-      >
-        <span className="text-xs font-semibold">
-          {wsPanelCopy.headerTitle}
-        </span>
-        <button
-          type="button"
-          data-testid="spaces-open-glossary-link"
-          onClick={() => navigateToRoute("/ontology")}
-          className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
-        >
-          {wsPanelCopy.glossaryLinkBtn}
-        </button>
-      </nav>
       {actionFeedback ? (
         <OrciaAlertBanner
           tone={actionFeedback.startsWith("⚠️") ? "crimson" : "emerald"}
@@ -137,10 +116,13 @@ export function WorkspacesFeaturePanel({
             onCreateWorkspace={async (input) => {
               try {
                 const created = await createWorkspace(input);
+                if (!initialWorkspaceId) {
+                  handleSelectWorkspace(created.workspaceId);
+                }
                 setActionFeedback(
                   formatI18nTemplate(wsPanelCopy.workspaceCreatedTemplate, {
                     name: created.name,
-                    id: created.slug ?? created.workspaceId,
+                    id: formatWorkspaceCreatedBannerId(created),
                   }),
                 );
                 setIsCreateFormOpen(false);
@@ -156,14 +138,15 @@ export function WorkspacesFeaturePanel({
 
       <WorkspaceStudioCardsAndDetailView
         isFr={isFr}
-        initialWorkspaceId={initialWorkspaceId || resolvedActiveWsId || undefined}
+        initialWorkspaceId={targetWorkspace?.workspaceId}
         initialTab={initialTab}
-        workspaces={displayedWorkspaces}
+        workspaces={workspaces}
         datasources={datasources}
         ontologyConcepts={ontologyConcepts}
         workflows={workflows}
         orgUnits={orgUnits}
         isCreateFormExpanded={effectiveCreateFormVisible}
+        onSelectWorkspace={handleSelectWorkspace}
         onToggleCreateForm={() => setIsCreateFormOpen((prev) => !prev)}
         openHelpSection={openHelpSection}
         onNavigateToRoute={navigateToRoute}

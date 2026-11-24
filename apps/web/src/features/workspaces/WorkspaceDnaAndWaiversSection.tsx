@@ -10,6 +10,12 @@ import React, { useState } from "react";
 import { formatI18nTemplate, resolveDictionaryForFlag } from "../../i18n";
 import type { TranslationDictionary } from "../../i18n/types";
 import { useWorkspaceDnaAndWaivers } from "./useWorkspaceDnaAndWaivers";
+import {
+  formatWorkspaceDisplaySlug,
+  resolveWorkspacePhaseLabel,
+  resolveWorkspaceVisibilityMeta,
+  sanitizeWorkspaceDestinationUri,
+} from "./workspaceDisplayHelpers";
 
 export interface WorkspaceDnaAndWaiversSectionProps {
   readonly isFr: boolean;
@@ -19,30 +25,6 @@ export interface WorkspaceDnaAndWaiversSectionProps {
   readonly dictionary: TranslationDictionary;
   readonly onAddOntologyConcept: (concept: UiOntologyConceptView) => void;
   readonly onFeedback: (message: string | null) => void;
-}
-
-function formatWorkspaceVisibilityLabel(mode: string | undefined, isFr: boolean): string {
-  const sumCopy = resolveDictionaryForFlag(isFr).featureWorkspaces.summaryCard;
-  switch (mode) {
-    case "PRIVATE_USER":
-      return sumCopy.visibilityPrivate;
-    case "CONFIDENTIAL_RESTRICTED":
-      return sumCopy.visibilityConfidential;
-    default:
-      return sumCopy.visibilityStandard;
-  }
-}
-
-function formatWorkspacePhaseLabel(phase: string | undefined, isFr: boolean): string {
-  const dnaCopy = resolveDictionaryForFlag(isFr).featureWorkspaces.dnaAndWaivers;
-  switch (phase) {
-    case "RUN":
-      return dnaCopy.phaseOperations;
-    case "MIGRATION":
-      return dnaCopy.phaseEvolution;
-    default:
-      return dnaCopy.phaseBuild;
-  }
 }
 
 function formatWorkspaceAccessModeLabel(accessMode: string | undefined, isFr: boolean): string {
@@ -79,7 +61,10 @@ export function WorkspaceDnaAndWaiversSection({
   }
 
   const targetWsId = targetWorkspace.workspaceId;
-  const targetWsSlug = targetWorkspace.slug ?? targetWsId;
+  const displayWsSlug = formatWorkspaceDisplaySlug(targetWorkspace);
+  const defaultDestinationUri = datasources[0]?.uri
+    ? sanitizeWorkspaceDestinationUri(datasources[0].uri, targetWorkspace.name)
+    : `orcia://workspaces/${displayWsSlug}/deliverables`;
 
   return (
     <div
@@ -87,16 +72,14 @@ export function WorkspaceDnaAndWaiversSection({
       style={{ display: "flex", flexDirection: "column", gap: "16px" }}
     >
       <WorkspaceFiveTabsAndExternalRebaseView
-        workspaceSlug={targetWsSlug}
+        workspaceSlug={displayWsSlug}
         workspaceName={targetWorkspace.name}
         ownerOrgUnitName={targetWorkspace.ownerOrgUnitName ?? null}
-        visibilityLabel={formatWorkspaceVisibilityLabel(targetWorkspace.visibilityMode, isFr)}
+        visibilityLabel={resolveWorkspaceVisibilityMeta(targetWorkspace.visibilityMode, isFr).fullLabel}
         effectiveRoleLabel={formatWorkspaceAccessModeLabel(targetWorkspace.accessMode, isFr)}
-        lifecyclePhaseLabel={formatWorkspacePhaseLabel(targetWorkspace.lifecyclePhase, isFr)}
+        lifecyclePhaseLabel={resolveWorkspacePhaseLabel(targetWorkspace.lifecyclePhase, isFr)}
         activeTab={activeSubTab}
-        defaultArtifactDestinationUri={
-          datasources[0]?.uri ?? `orcia://workspaces/${targetWsSlug}/artifacts`
-        }
+        defaultArtifactDestinationUri={defaultDestinationUri}
         pendingGlossaryCandidatesCount={ontologyConcepts.length + glossaryCandidates.length}
         sources={datasources.map((d) => ({
           sourceId: d.id,

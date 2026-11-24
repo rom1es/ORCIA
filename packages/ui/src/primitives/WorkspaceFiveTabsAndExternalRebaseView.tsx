@@ -2,6 +2,8 @@ import React from "react";
 import {
   DeliverablesTabPanel,
   MembersTeamTabPanel,
+  sanitizeUiDestinationUri,
+  sanitizeUiWorkspaceSlug,
   SourcesTabListPanel,
   WaiversAndRebasePanel,
 } from "./WorkspaceFiveTabsPanels";
@@ -106,6 +108,9 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
   onSelectTab,
   onRegisterWaiver,
 }) => {
+  const safeSlug = sanitizeUiWorkspaceSlug(workspaceSlug, workspaceName);
+  const safeDestinationUri = sanitizeUiDestinationUri(defaultArtifactDestinationUri, safeSlug);
+
   const tabs: readonly { key: WorkspaceSubTabKey; label: string; badge?: number }[] = [
     { key: "OVERVIEW", label: labels.tabOverview },
     { key: "DOCUMENTS_SOURCES", label: labels.tabDocumentsSources, badge: sources.length },
@@ -117,6 +122,28 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
     },
     { key: "MEMBERS_TEAM", label: labels.tabMembersTeam },
   ];
+
+  const overviewStats: readonly { key: string; title: string; value: string | number }[] = [
+    { key: "sources", title: labels.tabDocumentsSources, value: sources.length },
+    { key: "glossary", title: labels.tabGlossaryRules, value: pendingGlossaryCandidatesCount },
+    { key: "waivers", title: labels.waiverSectionTitle, value: activeWaivers.length },
+    {
+      key: "phase",
+      title: labels.phaseLabel ?? labels.tabDeliverablesArtifacts,
+      value: lifecyclePhaseLabel ?? "—",
+    },
+  ];
+
+  const sharedWaiverProps = {
+    workspaceSlug: safeSlug,
+    defaultArtifactDestinationUri: safeDestinationUri,
+    sources,
+    activeWaivers,
+    rebasedChunks,
+    labels,
+    submitting,
+    onRegisterWaiver,
+  };
 
   const renderTabPanel = (): React.ReactNode => {
     switch (activeTab) {
@@ -135,45 +162,23 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
                 {labels.tabOverview}
               </h3>
               <p className="text-xs text-[var(--orcia-text-secondary)]">
-                {labels.overviewSummaryText ?? workspaceName ?? workspaceSlug}
+                {labels.overviewSummaryText ?? workspaceName ?? safeSlug}
               </p>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2">
-                  <div className="text-[11px] text-[var(--orcia-text-secondary)]">
-                    {labels.tabDocumentsSources}
+                {overviewStats.map((stat) => (
+                  <div
+                    key={stat.key}
+                    className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2"
+                  >
+                    <div className="text-[11px] text-[var(--orcia-text-secondary)]">
+                      {stat.title}
+                    </div>
+                    <strong className="text-sm">{stat.value}</strong>
                   </div>
-                  <strong className="text-sm">{sources.length}</strong>
-                </div>
-                <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2">
-                  <div className="text-[11px] text-[var(--orcia-text-secondary)]">
-                    {labels.tabGlossaryRules}
-                  </div>
-                  <strong className="text-sm">{pendingGlossaryCandidatesCount}</strong>
-                </div>
-                <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2">
-                  <div className="text-[11px] text-[var(--orcia-text-secondary)]">
-                    {labels.waiverSectionTitle}
-                  </div>
-                  <strong className="text-sm">{activeWaivers.length}</strong>
-                </div>
-                <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-2">
-                  <div className="text-[11px] text-[var(--orcia-text-secondary)]">
-                    {labels.phaseLabel ?? labels.tabDeliverablesArtifacts}
-                  </div>
-                  <strong className="text-xs">{lifecyclePhaseLabel ?? "—"}</strong>
-                </div>
+                ))}
               </div>
             </div>
-            <WaiversAndRebasePanel
-              workspaceSlug={workspaceSlug}
-              defaultArtifactDestinationUri={defaultArtifactDestinationUri}
-              sources={sources}
-              activeWaivers={activeWaivers}
-              rebasedChunks={rebasedChunks}
-              labels={labels}
-              submitting={submitting}
-              onRegisterWaiver={onRegisterWaiver}
-            />
+            <WaiversAndRebasePanel {...sharedWaiverProps} />
           </div>
         );
 
@@ -190,23 +195,14 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
               submitting={submitting}
               onRegisterWaiver={onRegisterWaiver}
             />
-            <WaiversAndRebasePanel
-              workspaceSlug={workspaceSlug}
-              defaultArtifactDestinationUri={defaultArtifactDestinationUri}
-              sources={sources}
-              activeWaivers={activeWaivers}
-              rebasedChunks={rebasedChunks}
-              labels={labels}
-              submitting={submitting}
-              onRegisterWaiver={onRegisterWaiver}
-            />
+            <WaiversAndRebasePanel {...sharedWaiverProps} />
           </div>
         );
 
       case "DELIVERABLES_ARTIFACTS":
         return (
           <DeliverablesTabPanel
-            defaultArtifactDestinationUri={defaultArtifactDestinationUri}
+            defaultArtifactDestinationUri={safeDestinationUri}
             rebasedChunks={rebasedChunks}
             labels={labels}
           />
@@ -236,23 +232,14 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
                 {labels.emptyGlossaryRulesText ?? labels.waiverSectionTitle}
               </p>
             )}
-            <WaiversAndRebasePanel
-              workspaceSlug={workspaceSlug}
-              defaultArtifactDestinationUri={defaultArtifactDestinationUri}
-              sources={sources}
-              activeWaivers={activeWaivers}
-              rebasedChunks={rebasedChunks}
-              labels={labels}
-              submitting={submitting}
-              onRegisterWaiver={onRegisterWaiver}
-            />
+            <WaiversAndRebasePanel {...sharedWaiverProps} />
           </div>
         );
 
       case "MEMBERS_TEAM":
         return (
           <MembersTeamTabPanel
-            workspaceSlug={workspaceSlug}
+            workspaceSlug={safeSlug}
             workspaceName={workspaceName}
             ownerOrgUnitName={ownerOrgUnitName}
             visibilityLabel={visibilityLabel}
@@ -269,27 +256,7 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
       data-testid="workspace-five-tabs-view"
       className="rounded-lg border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-4 text-[var(--orcia-text-primary)]"
     >
-      <header className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-[var(--orcia-border-subtle)] pb-3">
-        <div>
-          <h2 className="text-base font-semibold">{labels.heading}</h2>
-          <p className="font-mono text-xs text-[var(--orcia-text-secondary)]">
-            {workspaceSlug}
-          </p>
-        </div>
-        <div
-          data-testid="workspace-default-destination"
-          className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-1.5 text-xs"
-        >
-          <span className="font-medium">{labels.defaultDestinationTitle}: </span>
-          <code className="font-mono">{defaultArtifactDestinationUri}</code>
-        </div>
-      </header>
-
-      <nav
-        role="tablist"
-        aria-label={labels.heading}
-        className="orcia-ds-tabs mb-4"
-      >
+      <nav role="tablist" aria-label={labels.heading} className="orcia-ds-tabs mb-4">
         {tabs.map((tab) => {
           const isSelected = tab.key === activeTab;
           return (

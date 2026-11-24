@@ -156,6 +156,7 @@ function InnerShellContainer({
         activeModuleKey: derived.safeModuleKey,
         activeMenuKey: derived.activeMenuKey,
         activeScopeId: derived.selectedScope.id,
+        setActiveScopeId: state.setActiveScopeId,
         helpColumnOpen: state.helpColumnOpen,
         activeHelpSectionId: state.activeHelpSectionId,
         disabledMenuKeys: derived.disabledMenuKeys,

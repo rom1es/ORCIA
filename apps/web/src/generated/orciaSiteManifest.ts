@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 230,
+    "techLeadReportsCount": 231,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -542,6 +542,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-24",
+      "phaseOrStory": "Story 28.1",
+      "reportFile": "28-1-single-workspace-header-sidebar-scope-sync-and-zero-uuid-leak-tech-lead-report.md",
+      "domain": "Epic 28 Lot 1 — Single Compact /workspaces Header, Bidirectional Global Sidebar Scope Sync & Zero Raw UUID Leak (CAP-067, CAP-080)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): suppressed outer admin banner (ModuleWorkspaceView.tsx) and secondary <nav>/<header> bars (workspaces/index.tsx, WorkspaceStudioCardsAndDetailView.tsx, WorkspaceFiveTabsAndExternalRebaseView.tsx), introduced WorkspaceCompactHeader.tsx (292 L) & workspaceDisplayHelpers.ts (102 L) with bidirectional ShellNavigationContext setActiveScopeId sync + F5 survival, eliminated all personal-<uuid> / raw UUID leaks (WorkspaceFiveTabsPanels.tsx, WorkspaceDnaAndWaiversSection.tsx), added symmetric FR/EN compactHeader & short visibility badges (Personnel/Équipe/Confidentiel vs Personal/Team/Confidential), all 13/13 modified/created production .ts/.tsx files and new Story 28.1 test (254 L) <= 300 L; verified 9/9 Turbo (@orcia/api-client 20, @orcia/ui 139, @orcia/web 292 = 451 JS/TS tests, incl. i18n Gates 1–3, zero-dead-buttons, e2e-testids-sync, story-28-1 2 tests) and lint_spine.py (0 findings)."
+    },
     {
       "date": "2026-11-24",
       "phaseOrStory": "Story 27.8",

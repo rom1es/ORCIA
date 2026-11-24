@@ -1962,7 +1962,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(createWsBtn.disabled).toBe(false);
     fireEvent.click(createWsBtn);
     await waitFor(() => {
-      expect(screen.getByTestId("workspaces-filter-all").textContent).toContain("Tous (1)");
+      expect(screen.getByTestId("workspaces-active-title").textContent).toBe("Mon Bac à Sable R&D");
     });
 
     // Re-open modal and create a collective workspace ("Projet Socle IA", STANDARD) under "Équipe Core IA" (org-2)
@@ -1978,7 +1978,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     });
     fireEvent.click(screen.getByTestId("create-workspace-submit-btn"));
     await waitFor(() => {
-      expect(screen.getByTestId("workspaces-filter-all").textContent).toContain("Tous (2)");
+      expect(screen.getByTestId("workspaces-active-title").textContent).toBe("Projet Socle IA");
     });
 
     // 4. Open TopHeader Context Switcher and verify the 3 explicit groups:
@@ -1995,7 +1995,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(dropdownMenu.textContent).toContain("🔒 Espace · Mon Bac à Sable R&D · Équipe Core IA");
     expect(dropdownMenu.textContent).toContain("📦 Espace · Projet Socle IA · Équipe Core IA");
 
-    // Select the Private Workspace (UUIDv7) in the TopHeader -> filters /workspaces to that private workspace
+    // Select the Private Workspace (UUIDv7) in the TopHeader -> synchronizes /workspaces compact header
     const privateOption = screen
       .getAllByTestId(/^topbar-workspace-option-/)
       .find((el) => el.textContent?.includes("Mon Bac à Sable R&D"));
@@ -2006,9 +2006,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       "Mon Bac à Sable R&D",
     );
     fireEvent.click(screen.getByTestId("sidebar-rail-toggle-btn"));
-    const filteredCards = screen.getAllByTestId(/^workspace-studio-card-/);
-    expect(filteredCards).toHaveLength(1);
-    expect(filteredCards[0]?.textContent).toContain("Mon Bac à Sable R&D");
+    expect(screen.getByTestId("workspaces-active-title").textContent).toBe("Mon Bac à Sable R&D");
 
     // 5. Verify orphan protection in /organization: cannot delete "Équipe Core IA" (org-2) while workspaces are attached to it
     fireEvent.click(screen.getByTestId("eight-menu-item-organization"));
@@ -2083,7 +2081,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     });
     fireEvent.click(screen.getByTestId("create-workspace-submit-btn"));
     await waitFor(() => {
-      expect(screen.getByTestId("workspaces-filter-all").textContent).toContain("Tous (1)");
+      expect(screen.getByTestId("workspaces-active-title").textContent).toBe("Mon Labo Perso");
     });
 
     // Modal closes on creation; re-open via "+ Nouvel espace" button and create a 2nd workspace
@@ -2099,37 +2097,34 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     });
     fireEvent.click(screen.getByTestId("create-workspace-submit-btn"));
     await waitFor(() => {
-      expect(screen.getByTestId("workspaces-filter-all").textContent).toContain("Tous (2)");
+      expect(screen.getByTestId("workspaces-active-title").textContent).toBe("Espace Produit");
     });
 
-    const cards = screen.getAllByTestId(/^workspace-studio-card-/);
-    expect(cards.length).toBe(2);
-    const ws1Card = cards.find((el) => el.textContent?.includes("Mon Labo Perso"));
-    const ws2Card = cards.find((el) => el.textContent?.includes("Espace Produit"));
-    expect(ws1Card).toBeDefined();
-    expect(ws2Card).toBeDefined();
-    const ws1Id = ws1Card!.getAttribute("data-testid")!.replace("workspace-studio-card-", "");
-    const ws2Id = ws2Card!.getAttribute("data-testid")!.replace("workspace-studio-card-", "");
+    const switcher = screen.getByTestId("workspaces-active-switcher-select") as HTMLSelectElement;
+    const switcherOptions = Array.from(switcher.options);
+    expect(switcherOptions).toHaveLength(2);
+    const ws1Opt = switcherOptions.find((o) => o.textContent?.includes("Mon Labo Perso"));
+    const ws2Opt = switcherOptions.find((o) => o.textContent?.includes("Espace Produit"));
+    expect(ws1Opt).toBeDefined();
+    expect(ws2Opt).toBeDefined();
+    const ws1Id = ws1Opt!.value;
+    const ws2Id = ws2Opt!.value;
     expect(ws1Id).not.toBe("ws-1");
     expect(ws2Id).not.toBe("ws-2");
     expect(ws1Id).toMatch(/^[0-9a-f-]{36}$/);
     expect(ws2Id).toMatch(/^[0-9a-f-]{36}$/);
 
-    // 4. Verify Quick Filters (Tous (2), 👥 Espaces d'Équipe (1), 🔒 Mes Espaces Privés (1))
-    expect(screen.getByTestId("workspaces-filter-all").textContent).toContain("Tous (2)");
-    expect(screen.getByTestId("workspaces-filter-team").textContent).toContain("(1)");
-    expect(screen.getByTestId("workspaces-filter-private").textContent).toContain("(1)");
-
-    fireEvent.click(screen.getByTestId("workspaces-filter-private"));
-    expect(screen.getByTestId(`workspace-studio-card-${ws1Id}`)).toBeDefined();
-    expect(screen.queryByTestId(`workspace-studio-card-${ws2Id}`)).toBeNull();
-    fireEvent.click(screen.getByTestId("workspaces-filter-all"));
+    // 4. Switch to Mon Labo Perso via compact switcher (synchronized with Sidebar)
+    fireEvent.change(switcher, { target: { value: ws1Id } });
+    await waitFor(() => {
+      expect(screen.getByTestId("workspaces-active-title").textContent).toBe("Mon Labo Perso");
+    });
 
     // 5. Test 1-click sharing of Private Workspace (UUIDv7) to Team ("STANDARD") + Phase auto-save with "✓ Enregistré" badge
     fireEvent.click(screen.getByTestId(`share-private-workspace-btn-${ws1Id}`));
     await waitFor(() => {
       expect(screen.getByTestId(`workspace-visibility-badge-${ws1Id}`).textContent).toContain(
-        "Collectif d'équipe",
+        "Équipe",
       );
       expect(
         screen.getByTestId(`workspace-autosaved-badge-${ws1Id}`).querySelector("svg"),
@@ -2231,7 +2226,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     );
 
     expect(screen.getByTestId(`workspace-visibility-badge-${ws1Id}`).textContent).toContain(
-      "Collectif d'équipe",
+      "Équipe",
     );
     expect(screen.getByTestId("workspace-detail-source-row-ds-1").textContent).toContain(
       "Wiki Produit Interne",

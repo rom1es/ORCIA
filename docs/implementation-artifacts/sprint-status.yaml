@@ -313,11 +313,11 @@ development_status:
   # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-23-epic-28-workspaces-unification.md
   # Dependencies: Wait for Epic 27 (Stories 27.4 & 27.6 i18n extraction on features/workspaces & packages/ui) before starting Story 28.1
   # Lots        : L1 28-1 -> 28-2 | L2 28-3 -> 28-4
-  epic-28: backlog
-  28-1-single-workspace-header-sidebar-scope-sync-and-zero-uuid-leak: backlog
-  28-2-canonical-five-tab-container-deduplication-and-tab1-sobriety: backlog
-  28-3-scoped-pg18-sources-deliverables-and-members-tabs-consolidation: backlog
-  28-4-tab4-glossary-dna-starlark-encapsulation-and-e2e-lock: backlog
+  epic-28: in-progress
+  28-1-single-workspace-header-sidebar-scope-sync-and-zero-uuid-leak: done
+  28-2-canonical-five-tab-container-deduplication-and-tab1-sobriety: ready-for-dev
+  28-3-scoped-pg18-sources-deliverables-and-members-tabs-consolidation: ready-for-dev
+  28-4-tab4-glossary-dna-starlark-encapsulation-and-e2e-lock: ready-for-dev
   epic-28-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1

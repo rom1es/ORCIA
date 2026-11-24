@@ -46,11 +46,18 @@ export interface FeatureWorkspacesDictionary {
     readonly searchPlaceholder: string;
     readonly newSpaceBtn: string;
     readonly emptyFilterText: string;
+    readonly switcherAriaLabel: string;
+    readonly switcherPersonalGroup: string;
+    readonly switcherTeamGroup: string;
+    readonly emptyHeaderTitle: string;
   };
   readonly summaryCard: {
     readonly visibilityPrivate: string;
     readonly visibilityConfidential: string;
     readonly visibilityStandard: string;
+    readonly visibilityShortPrivate: string;
+    readonly visibilityShortConfidential: string;
+    readonly visibilityShortStandard: string;
     readonly billingTeamLabel: string;
     readonly savedBadge: string;
     readonly attachedSourceSingular: string;

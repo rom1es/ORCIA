@@ -305,7 +305,9 @@ describe("Story 22.2 — Portals OrciaDialog, Tailwind v4 Compilation, Display:N
     fireEvent.click(screen.getByTestId("create-workspace-submit-btn"));
 
     await waitFor(() => {
-      expect(screen.getByTestId("workspaces-filter-all").textContent).toContain("Tous (1)");
+      expect(screen.getByTestId("workspaces-active-title").textContent).toBe(
+        "Espace Waivers 22.2",
+      );
     });
 
     const registerWaiverBtn = await screen.findByTestId("register-waiver-btn-workspace-default");

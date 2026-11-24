@@ -293,12 +293,15 @@ describe("Story 25.2 — 9-Item Shell, Mon Organisation, Administration 5 Tabs, 
     });
     expect(screen.queryByTestId("cockpit-active-scope-badge")).toBeNull();
 
-    // Propagates to /spaces (filtered to ws-team-data)
+    // Propagates to /spaces (synchronized to ws-team-data)
     fireEvent.click(screen.getByTestId("eight-menu-item-spaces"));
     await waitFor(() => {
-      const cards = screen.getAllByTestId(/^workspace-studio-card-/);
-      expect(cards).toHaveLength(1);
-      expect(cards[0]?.textContent).toContain("Espace Analytics Data");
+      expect(screen.getByTestId("workspaces-active-title").textContent).toBe(
+        "Espace Analytics Data",
+      );
+      expect(
+        (screen.getByTestId("workspaces-active-switcher-select") as HTMLSelectElement).value,
+      ).toBe("ws-team-data");
     });
 
     // Propagates to /assistant, /processes, /agents, /finops

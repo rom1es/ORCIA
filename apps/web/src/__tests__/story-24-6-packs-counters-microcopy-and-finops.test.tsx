@@ -16,6 +16,7 @@ import {
   formatPackCounterLabel,
 } from "../features/settings/packs/packDisplayFormatters";
 import { WorkspaceStudioCardsAndDetailView } from "../features/workspaces/WorkspaceStudioCardsAndDetailView";
+import { WorkspaceStudioSummaryCard } from "../features/workspaces/WorkspaceStudioSummaryCard";
 import { AI_MODELS_HUB_EN, AI_MODELS_HUB_FR } from "../i18n/locales/ai_models_hub_labels";
 import { FINOPS_FR_LABELS } from "../i18n/locales/finops_labels";
 import { IAM_TAB_FR_LABELS } from "../i18n/locales/iam_accounts_labels";
@@ -101,80 +102,98 @@ describe("Story 24.6 — Packs 5 Counters, Singular n <= 1, IAM Split, Microcopy
     expect(card.textContent).not.toContain("crl-etude-archi");
   });
 
-  it("renders WorkspaceStudioCardsAndDetailView with anti-truncation search input & n <= 1 singular labels", () => {
+  it("renders WorkspaceStudioCardsAndDetailView compact header & WorkspaceStudioSummaryCard n <= 1 singular labels", () => {
+    const ws = {
+      workspaceId: "ws-1",
+      name: "Espace Paiements",
+      visibilityMode: "STANDARD" as const,
+      ownerOrgUnitName: "Équipe Paiements",
+      lifecyclePhase: "BUILD" as const,
+      suggestedWorkflows: [],
+      accessMode: "CONTRIBUTOR_ACTION_REQUIRED" as const,
+      finopsCostUsd: 0.002,
+    };
     render(
-      <WorkspaceStudioCardsAndDetailView
-        isFr={true}
-        workspaces={[
-          {
-            workspaceId: "ws-1",
-            name: "Espace Paiements",
-            visibilityMode: "STANDARD",
-            ownerOrgUnitName: "Équipe Paiements",
-            lifecyclePhase: "BUILD",
-            suggestedWorkflows: [],
-            accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
-            finopsCostUsd: 0.002,
-          },
-        ]}
-        datasources={[
-          {
-            id: "ds-1",
-            workspaceName: "Espace Paiements",
-            alias: "Dépôt Paiements",
-            scheme: "git",
-            uri: "git://repo/payments",
-            executionIdentity: "passthrough",
-            freshnessTtlDays: 7,
-            tripartiteStatus: "ALIGNED",
-          },
-        ]}
-        ontologyConcepts={[
-          {
-            conceptKey: "sepa-rule",
-            canonicalTerm: "Règle SEPA",
-            level: "4_WORKSPACE",
-            scopeId: "ws-1",
-            definitionText: "Règle de validation SEPA.",
-            immutable: false,
-            synonyms: [],
-            profileTranslations: {},
-            impactedTemplates: [],
-            impactedWorkflows: [],
-            impactedRuns: [],
-          },
-        ]}
-        workflows={[
-          {
-            workflowKey: "wf-1",
-            title: "Audit SEPA",
-            version: "1.0.0",
-            status: "PUBLISHED",
-            prePrompt: "",
-            prePromptSha256: "sha",
-            requiredParams: [],
-            requiredMarkdownSections: [],
-            triggers: [],
-            layers: [],
-          },
-        ]}
-        orgUnits={[]}
-        isCreateFormExpanded={false}
-        onToggleCreateForm={vi.fn()}
-        openHelpSection={vi.fn()}
-        onNavigateToRoute={vi.fn()}
-        onUpdateWorkspacePhase={vi.fn()}
-        onUpdateWorkspaceVisibility={vi.fn()}
-        onRegisterDatasource={vi.fn()}
-        onAddOntologyConcept={vi.fn()}
-        onPromoteOntologyConcept={vi.fn()}
-        onFeedback={vi.fn()}
-      />,
+      <>
+        <WorkspaceStudioCardsAndDetailView
+          isFr={true}
+          workspaces={[ws]}
+          datasources={[
+            {
+              id: "ds-1",
+              workspaceName: "Espace Paiements",
+              alias: "Dépôt Paiements",
+              scheme: "git",
+              uri: "git://repo/payments",
+              executionIdentity: "passthrough",
+              freshnessTtlDays: 7,
+              tripartiteStatus: "ALIGNED",
+            },
+          ]}
+          ontologyConcepts={[
+            {
+              conceptKey: "sepa-rule",
+              canonicalTerm: "Règle SEPA",
+              level: "4_WORKSPACE",
+              scopeId: "ws-1",
+              definitionText: "Règle de validation SEPA.",
+              immutable: false,
+              synonyms: [],
+              profileTranslations: {},
+              impactedTemplates: [],
+              impactedWorkflows: [],
+              impactedRuns: [],
+            },
+          ]}
+          workflows={[
+            {
+              workflowKey: "wf-1",
+              title: "Audit SEPA",
+              version: "1.0.0",
+              status: "PUBLISHED",
+              prePrompt: "",
+              prePromptSha256: "sha",
+              requiredParams: [],
+              requiredMarkdownSections: [],
+              triggers: [],
+              layers: [],
+            },
+          ]}
+          orgUnits={[]}
+          isCreateFormExpanded={false}
+          onToggleCreateForm={vi.fn()}
+          openHelpSection={vi.fn()}
+          onNavigateToRoute={vi.fn()}
+          onUpdateWorkspacePhase={vi.fn()}
+          onUpdateWorkspaceVisibility={vi.fn()}
+          onRegisterDatasource={vi.fn()}
+          onAddOntologyConcept={vi.fn()}
+          onPromoteOntologyConcept={vi.fn()}
+          onFeedback={vi.fn()}
+        />
+        <WorkspaceStudioSummaryCard
+          ws={ws}
+          isFr={true}
+          isSelected={true}
+          isAutosaved={false}
+          wsSourcesCount={1}
+          ontologyConceptsCount={1}
+          workflowsCount={1}
+          inputStyle={{}}
+          onSelectWorkspace={vi.fn()}
+          onUpdateWorkspacePhase={vi.fn()}
+          onUpdateWorkspaceVisibility={vi.fn()}
+          onMarkAutosaved={vi.fn()}
+          onFeedback={vi.fn()}
+          onNavigateToRoute={vi.fn()}
+        />
+      </>,
     );
 
-    const searchInput = screen.getByTestId("workspaces-search-input") as HTMLInputElement;
-    expect(searchInput.placeholder).toBe("Rechercher un espace…");
-    expect(searchInput.style.minWidth).toBe("230px");
+    expect(screen.getByTestId("workspaces-compact-header")).toBeDefined();
+    expect((screen.getByTestId("workspaces-active-switcher-select") as HTMLSelectElement).value).toBe(
+      "ws-1",
+    );
 
     const card = screen.getByTestId("workspace-studio-card-ws-1");
     expect(card.textContent).toContain("1 Source rattachée");
