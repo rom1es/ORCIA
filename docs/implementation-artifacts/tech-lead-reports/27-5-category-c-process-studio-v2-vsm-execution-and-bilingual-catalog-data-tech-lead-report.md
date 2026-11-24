@@ -4,7 +4,7 @@
 - **Story / Sprint Key**: `27.5` (`Epic 27` — Lot 3 Part 1: Category C Process Studio v2, VSM, Execution & Bilingual Catalog Data)
 - **Capability(ies)**: `CAP-020`..`CAP-036`, `CAP-140`, `CAP-160` — classification: `hygiene` (see `AGENTS.md` §5)
 - **Author / Context**: Coding Sub-Agent (`Amelia`) implementing Story 27.5 under `ACTION_ITEM-I18N.1`, Bilingual Application Policy (`fr` / `en`), and UX Rule 3.1 (zero internal plumbing jargon in user-facing UI copy).
-- **Associated Commits**: Pending commit on branch `feat/epic-27-bilingual-i18n-and-deterministic-locale-guards`.
+- **Associated Commits**: `3194042` (`feat(story-27.5): migrate Process Studio v2 and VSM to bilingual dictionaries and lock apps/web Gate 1 baseline to zero`) on branch `feat/epic-27-bilingual-i18n-and-deterministic-locale-guards`
 
 ---
 

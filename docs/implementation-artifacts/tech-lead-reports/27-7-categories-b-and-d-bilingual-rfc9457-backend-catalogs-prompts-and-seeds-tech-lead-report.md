@@ -4,7 +4,7 @@
 - **Story / Sprint Key**: `27-7-categories-b-and-d-bilingual-rfc9457-backend-catalogs-prompts-and-seeds` (`Epic 27` / Lot 4)
 - **Capability(ies)**: `CAP-001`..`CAP-260` (cross-cutting backend RFC 9457, LLM prompt & seed localization — classification: `hygiene`)
 - **Author / Context**: `Amelia` (`bmad-dev-worker` Coding Sub-Agent) — Remediates Epic 27 Decisions `D2`, `D3` (Gate 4), and `D4` (Categories B `577` + D `193` backend hits; `757` non-catalog French literals across `153` files + `3` missing error catalog codes) while enforcing English-only code comments/docstrings and strict `<= 300`-line modularity.
-- **Associated Commits**: Pending Testing Sub-Agent closure on `feat/epic-27-bilingual-i18n-and-deterministic-locale-guards`
+- **Associated Commits**: `3e7d7f7` (`feat(story-27.7): localize Category B/D backend RFC 9457 error catalogs and prompts in FR/EN and lock Gate 4 to zero`) on branch `feat/epic-27-bilingual-i18n-and-deterministic-locale-guards`
 
 ---
 

@@ -2,7 +2,6 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import React, { useEffect, useState } from "react";
 import { OrciaIcon } from "../components/icons";
 import {
-  resolveRgaaModalGuardLabels,
   RgaaUnsavedChangesAlert,
   useUnsavedChangesDialogGuard,
 } from "../components/RgaaModalDialog";
@@ -94,7 +93,6 @@ export function AssistantGovernanceModalAndStudio({
   }, [autosavedBadgeVisible]);
 
   const effectiveOpen = isOpen && internalOpen;
-  const guardLabels = resolveRgaaModalGuardLabels(labels);
 
   const resetUnsavedChanges = (): void => {
     setUserTone(initialUserTone);
@@ -199,7 +197,7 @@ export function AssistantGovernanceModalAndStudio({
             onClick={requestClose}
             className="px-3 py-1.5 rounded-lg border border-surface-border bg-surface-secondary text-text-primary"
           >
-            {guardLabels.cancelButtonLabel}
+            {labels.cancelButtonLabel ?? labels.cancelCta ?? ""}
           </button>
         </div>
       </div>
@@ -207,7 +205,7 @@ export function AssistantGovernanceModalAndStudio({
       <RgaaUnsavedChangesAlert
         testIdPrefix="assistant-gov"
         isOpen={showUnsavedAlert}
-        labels={guardLabels}
+        labels={labels}
         onStay={cancelDiscard}
         onConfirmDiscard={confirmDiscard}
       />

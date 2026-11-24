@@ -57,7 +57,7 @@ export function ShellFederatedSearchModal({
   onAskAssistant,
   onClose,
 }: ShellFederatedSearchModalProps): React.ReactElement | null {
-  const { locale } = useI18n();
+  const { locale, dictionary } = useI18n();
   const [speed2Hits, setSpeed2Hits] = useState<readonly TopSearchHitItem[]>([]);
   const [speed2Loading, setSpeed2Loading] = useState<boolean>(false);
   const [speed2Executed, setSpeed2Executed] = useState<boolean>(false);
@@ -136,6 +136,7 @@ export function ShellFederatedSearchModal({
     >
       <TopHeaderSearchCommand
         labels={labels}
+        rgaaLabels={dictionary.rgaaModal}
         speed1Hits={[
           ...workspaces.map(
             (ws): TopSearchHitItem => ({

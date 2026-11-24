@@ -4,7 +4,7 @@
 - **Story / Sprint Key**: `27-1-deterministic-i18n-ci-guardrails-and-client-error-code-foundation` (`Epic 27` / Lot 0)
 - **Capability(ies)**: `CAP-100` (existing transverse UI/CI quality guardrails — adding deterministic i18n & English-dev CI gates and shared `ClientErrorCode` foundation) — classification: `hygiene`
 - **Author / Context**: `bmad-dev-worker` (`Amelia`) — Implements `ACTION_ITEM-I18N.1` Lot 0 and `D1–D4` from `docs/implementation-artifacts/epic-27-decisions-grill-2026-11-23.md`, aligned with the `2026-11-20` audit (`3,809` raw heuristic hits across `461` files: `A=71`, `B=577`, `C=2,816`, `D=193`, `E=152`).
-- **Associated Commits**: Pending Testing Sub-Agent verification & commit on `feat/epic-27-bilingual-i18n-and-deterministic-locale-guards`
+- **Associated Commits**: `a538598` (`feat(story-27.1): add 4 deterministic i18n CI gates and shared ClientErrorCode resolution foundation`) on branch `feat/epic-27-bilingual-i18n-and-deterministic-locale-guards`
 
 ---
 

@@ -115,6 +115,23 @@ async def test_surgical_explorer_errors_and_observations_localize(tmp_path: Path
     )
     assert "Read 1 line(s)" in lines_en.summary
 
+    search_fr = await explorer.execute_primitive(
+        SurgicalPrimitiveName.SEARCH_WORKSPACE_SNIPPETS,
+        resource_uri="docs",
+        query="Title",
+        locale="fr",
+    )
+    search_en = await explorer.execute_primitive(
+        SurgicalPrimitiveName.SEARCH_WORKSPACE_SNIPPETS,
+        resource_uri="docs",
+        query="Title",
+        locale="en",
+    )
+    assert "Recherché" in search_fr.formatted_badge
+    assert "extrait(s) trouvé(s)" in search_fr.summary
+    assert "Searched 'Title'" in search_en.formatted_badge
+    assert "snippet(s) matched" in search_en.summary
+
 
 def test_connector_locale_bundles_and_codegraph_markdown_fr_en_parity() -> None:
     for bundle in (

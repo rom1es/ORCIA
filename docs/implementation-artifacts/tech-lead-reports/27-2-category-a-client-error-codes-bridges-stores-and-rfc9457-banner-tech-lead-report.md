@@ -4,7 +4,7 @@
 - **Story / Sprint Key**: `27.2` (`Epic 27` — Lot 1: Category A Client Errors)
 - **Capability(ies)**: `CAP-001`..`CAP-260` (cross-cutting client error localization; primary hygiene/NFR/UX enforcement) — classification: `hygiene` (see `AGENTS.md` §5)
 - **Author / Context**: Coding Sub-Agent (`Amelia`) implementing Story 27.2 under `ACTION_ITEM-I18N.1`, Bilingual Application Policy (`fr` / `en`), and UX Rule 3.1 (zero internal plumbing jargon in user-facing UI text).
-- **Associated Commits**: `ce4ba7bca` (`feat(story-27.2): migrate Category A client errors across 26 files to ClientErrorCode and lock Gate 3 to zero`) on branch `feat/epic-27-bilingual-i18n-and-deterministic-locale-guards` (Testing Sub-Agent closure applied in working tree).
+- **Associated Commits**: `54ca196` (`feat(story-27.2): migrate Category A client errors across 26 files to ClientErrorCode and lock Gate 3 to zero`) on branch `feat/epic-27-bilingual-i18n-and-deterministic-locale-guards`
 
 ---
 

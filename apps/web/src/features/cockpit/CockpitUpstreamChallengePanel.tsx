@@ -180,6 +180,7 @@ export function CockpitUpstreamChallengePanel({
         inline={!portalOpen}
         preview={preview}
         labels={dictionary.upstreamChallengeModal}
+        rgaaLabels={dictionary.rgaaModal}
         onReasonChange={(nextReason) => void refreshPreview(nextReason)}
         onSubmitChallenge={(p) => void handleSubmitChallenge(p)}
         onTriggerReplay={(p) => void handleTriggerReplay(p)}

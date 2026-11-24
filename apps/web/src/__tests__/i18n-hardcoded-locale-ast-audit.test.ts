@@ -53,26 +53,38 @@ describe("Gate 1 — TS/JSX Hardcoded Locale & Raw String AST Audit", () => {
     expect(regressions).toEqual([]);
   });
 
-  it("detects synthetic inline locale ternaries, raw JSX text, and UI attributes while honoring Intl and technical markers", () => {
+  it("detects synthetic inline locale ternaries, raw JSX text, UI attrs, param defaults, fallbacks, switch defaults, and packages/ui DEFAULT_* constants", () => {
     const badSnippet = `
-      export function SampleView({ locale, isFr }: { locale: "fr" | "en"; isFr: boolean }) {
+      const DEFAULT_SAMPLE_LABELS_FR = { close: "Fermer" };
+      export function SampleView({ locale, isFr, closeLabel = "Fermer" }: { locale: "fr" | "en"; isFr: boolean; closeLabel?: string }) {
         const a = locale === "fr" ? "Bonjour" : "Hello";
         const b = isFr ? "Oui" : "Yes";
+        const fallback = closeLabel ?? "Annuler par défaut";
+        const resolveKind = (k: string, labels?: { a?: string }) => {
+          switch (k) {
+            case "A": return labels?.a ?? "Pause et escalade";
+            default: return k;
+          }
+        };
         const okDate = new Intl.DateTimeFormat(locale === "fr" ? "fr-FR" : "en-US").format(new Date());
         // i18n-non-user-facing
         const okFlag = locale === "fr" ? "fr-FR" : "en-US";
         return (
           <div title="Fermer la fenêtre" aria-label="Action principale">
             Texte codé en dur
-            <span>{a}{b}{okDate}{okFlag}</span>
+            <span>{a}{b}{okDate}{okFlag}{fallback}{resolveKind("A")}{DEFAULT_SAMPLE_LABELS_FR.close}</span>
           </div>
         );
       }
     `;
-    const found = scanFileForHardcodedLocaleAst("synthetic/SampleView.tsx", badSnippet);
+    const found = scanFileForHardcodedLocaleAst("packages/ui/src/synthetic/SampleView.tsx", badSnippet);
     expect(found.map((v) => v.kind)).toEqual([
+      "UI_DEFAULT_CONST",
+      "PARAM_DEFAULT",
       "LOCALE_CONDITIONAL",
       "LOCALE_CONDITIONAL",
+      "FALLBACK_LITERAL",
+      "SWITCH_FALLBACK",
       "JSX_ATTR",
       "JSX_ATTR",
       "JSX_TEXT",

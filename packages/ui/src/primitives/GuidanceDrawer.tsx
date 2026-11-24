@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { OrciaIcon } from "../components/icons";
 import {
-  DEFAULT_RGAA_MODAL_LABELS_FR,
   RgaaUnsavedChangesAlert,
   useUnsavedChangesDialogGuard,
-  type RgaaModalDialogLabels,
+  type RgaaModalGuardLabels,
 } from "../components/RgaaModalDialog.js";
+import { GuidanceDrawerStepsList } from "./GuidanceDrawerStepsList";
 
 export interface GuidanceDrawerStepItem {
   readonly stepNumber: number;
@@ -19,6 +19,7 @@ export interface GuidanceDrawerLabels {
   readonly toggleExpand: string;
   readonly toggleCollapse: string;
   readonly commandPrefix: string;
+  readonly closeCta?: string;
 }
 
 export interface GuidanceDrawerProps {
@@ -26,7 +27,7 @@ export interface GuidanceDrawerProps {
   readonly labels: GuidanceDrawerLabels;
   readonly defaultOpen?: boolean;
   readonly isDirty?: boolean;
-  readonly rgaaLabels?: Partial<RgaaModalDialogLabels>;
+  readonly rgaaLabels?: RgaaModalGuardLabels;
   readonly onClose?: () => void;
 }
 
@@ -39,9 +40,9 @@ export function GuidanceDrawer({
   onClose,
 }: GuidanceDrawerProps) {
   const [open, setOpen] = useState(defaultOpen);
-  const resolvedRgaaLabels: RgaaModalDialogLabels = {
-    ...DEFAULT_RGAA_MODAL_LABELS_FR,
+  const resolvedRgaaLabels: RgaaModalGuardLabels = {
     ...rgaaLabels,
+    cancelCta: rgaaLabels?.cancelCta ?? labels.closeCta ?? "",
   };
 
   const handleCloseDrawer = (): void => {
@@ -140,39 +141,7 @@ export function GuidanceDrawer({
         </div>
       ) : null}
 
-      {open ? (
-        <ol
-          data-testid="guidance-drawer-steps"
-          style={{
-            margin: "10px 0 0 0",
-            paddingLeft: "18px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "6px",
-          }}
-        >
-          {steps.map((step) => (
-            <li
-              key={step.stepNumber}
-              data-testid={`guidance-step-${step.stepNumber}`}
-              style={{ fontSize: "0.8125rem" }}
-            >
-              <div style={{ fontWeight: 600 }}>{step.title}</div>
-              <div
-                style={{
-                  fontSize: "0.75rem",
-                  color: "var(--orcia-text-secondary)",
-                }}
-              >
-                {step.description}{" "}
-                <code style={{ fontFamily: "var(--orcia-font-mono)" }}>
-                  ({labels.commandPrefix}: {step.actionCommand})
-                </code>
-              </div>
-            </li>
-          ))}
-        </ol>
-      ) : null}
+      {open ? <GuidanceDrawerStepsList steps={steps} labels={labels} /> : null}
     </aside>
   );
 }

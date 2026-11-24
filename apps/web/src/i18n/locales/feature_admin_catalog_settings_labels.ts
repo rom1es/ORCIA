@@ -57,6 +57,26 @@ export interface FeatureAdminCatalogSettingsDictionary {
     readonly defaultMcpConnectorName: string;
     readonly mcpEnabledBanner: string;
     readonly mcpDisabledBanner: string;
+    readonly defaultSkillOutputFormat: string;
+    readonly packTemplatesLoadedBanner: string;
+    readonly agentDuplicatedBannerTemplate: string;
+    readonly agentDuplicateSuffix: string;
+    readonly catalogErrorContext: string;
+    readonly skillErrorContext: string;
+    readonly agentErrorContext: string;
+    readonly agentDuplicateErrorContext: string;
+    readonly agentToggleErrorContext: string;
+    readonly agentUpdateErrorContext: string;
+    readonly agentSkillsErrorContext: string;
+    readonly agentThinkingErrorContext: string;
+    readonly agentVisibilityErrorContext: string;
+    readonly agentDeleteErrorContext: string;
+    readonly agentExecuteErrorContext: string;
+    readonly skillPreviewLineTemplate: string;
+    readonly agentPreviewHeadingTemplate: string;
+    readonly agentPreviewSkillsEmpty: string;
+    readonly agentPreviewSkillsSomeTemplate: string;
+    readonly agentPreviewSynthesisLine: string;
   };
   readonly packsRegistry: {
     readonly title: string;

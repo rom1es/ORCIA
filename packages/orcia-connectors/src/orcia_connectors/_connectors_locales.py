@@ -19,6 +19,7 @@ class SurgicalLocaleBundle:
     inspect_empty_summary: str
     inspect_lines_summary: str
     search_matches_summary: str
+    search_formatted_badge: str
 
 
 SURGICAL_LOCALES: dict[SupportedLocale, SurgicalLocaleBundle] = {
@@ -39,6 +40,7 @@ SURGICAL_LOCALES: dict[SupportedLocale, SurgicalLocaleBundle] = {
         ),
         inspect_lines_summary="Lu {count} ligne(s) de {filename} (#L{start_line}-{end_line}).",
         search_matches_summary="{count} extrait(s) trouvé(s) pour « {query} ».",
+        search_formatted_badge="Recherché « {query} » ({count} résultat(s))",
     ),
     "en": SurgicalLocaleBundle(
         default_read_source_hint=(
@@ -55,6 +57,7 @@ SURGICAL_LOCALES: dict[SupportedLocale, SurgicalLocaleBundle] = {
         inspect_empty_summary="No lines in requested range for {filename} ({total_lines} lines).",
         inspect_lines_summary="Read {count} line(s) from {filename} (#L{start_line}-{end_line}).",
         search_matches_summary="{count} snippet(s) matched for '{query}'.",
+        search_formatted_badge="Searched '{query}' ({count} matches)",
     ),
 }
 

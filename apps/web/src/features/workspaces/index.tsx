@@ -189,6 +189,7 @@ export function WorkspacesFeaturePanel({
 
       <CommandPaletteModal
         isOpen={paletteOpen}
+        rgaaLabels={dictionary.rgaaModal}
         items={[
           {
             entryId: "nav-cockpit",

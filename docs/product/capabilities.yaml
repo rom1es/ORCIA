@@ -48,7 +48,7 @@ capabilities:
     db_tables: [users, iam_accounts, platform_auth_settings, auth_login_challenges]
     tests: [tests/unit/test_permissions_and_auth.py, tests/security/test_api_security_baseline.py, tests/unit/test_temp_password_and_local_iam_auth.py, tests/unit/test_platform_auth_policy_2fa_and_runtime_isolation.py, tests/unit/test_smtp_otp_and_sql_auth_adapters.py, tests/unit/test_auth_pg_rehydration_after_reload.py, tests/unit/test_change_password_current_check_and_pg_hydration.py, tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py, tests/integration/api/test_platform_auth_modes_2fa_and_local_isolation_postgres18.py, tests/integration/api/test_auth_pg_rehydration_postgres18.py, packages/api-client/src/__tests__/default-access-token-provider.test.ts, apps/web/src/__tests__/auth-logout-incognito-and-temp-password.test.tsx, apps/web/src/__tests__/platform-auth-modes-2fa-and-settings-f5.test.tsx, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts, apps/web/e2e/14-auth-2fa-account-and-profile.spec.ts, apps/web/e2e/23-bilingual-fr-en-i18n-and-rfc9457.spec.ts]
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-24"
     surfaces: { route: /login, api: "/api/v1/auth (auth.py, _auth_session_routes.py, _auth_passthrough_routes.py, auth_settings.py)", ui: "BiModeLoginView + LoginTwoFactorStepPanel", migration: "20261114_1706, 20261115_1901" }
   - id: CAP-002
     title: Catalogue fédéré multi-sources (db/git/nexus/confluence/jira) et surcharges 4 niveaux
@@ -771,7 +771,7 @@ capabilities:
     surfaces:
       api: e2e_test_hooks
     verification: runtime
-    verified_at: "2026-11-19"
+    verified_at: "2026-11-24"
 
   # ───────────── Ajouts hors epic identifiés après audit complémentaire (rapports 06–08/11) ─────────────
   - id: CAP-043

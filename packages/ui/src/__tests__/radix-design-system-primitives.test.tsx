@@ -57,6 +57,7 @@ describe("AD-22 Radix UI + shadcn/ui Design System Primitives (@orcia/ui)", () =
         onOpenChange={onOpenChange}
         title="Configuration du Connecteur"
         description="Paramètres sécurisés de la source"
+        closeLabel="Fermer"
         testId="test-radix-dialog"
       >
         <div data-testid="dialog-inner-body">Formulaire interne</div>
@@ -81,6 +82,7 @@ describe("AD-22 Radix UI + shadcn/ui Design System Primitives (@orcia/ui)", () =
         modal={false}
         onOpenChange={() => {}}
         title="Dialogue non modal"
+        closeLabel="Fermer"
         testId="test-non-modal-dialog"
       >
         <div>Contenu</div>

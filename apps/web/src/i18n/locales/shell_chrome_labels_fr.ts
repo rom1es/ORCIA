@@ -2,6 +2,7 @@ import type { ShellChromeDictionary } from "./shell_chrome_labels";
 
 export const SHELL_CHROME_FR: ShellChromeDictionary = {
   brandName: "ORCIA",
+  guestDisplayNameFallback: "Utilisateur ORCIA",
   loadingSession: "Chargement de la session...",
   loginInitializing: "Initialisation de la plateforme en cours...",
   firstBootMandatoryBadge: "Étape obligatoire · Non ignorable",

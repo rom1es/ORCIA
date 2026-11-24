@@ -107,6 +107,7 @@ export function GatesChallengeModalSection({
       isOpen={isOpen}
       preview={{ ...preview, runId, challengedSectionKey: sectionKey }}
       labels={dictionary.upstreamChallengeModal}
+      rgaaLabels={dictionary.rgaaModal}
       onSubmitChallenge={(p) => void handleSubmitChallenge(p)}
       onTriggerReplay={(p) => void handleTriggerReplay(p)}
       onClose={onClose}

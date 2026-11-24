@@ -226,7 +226,7 @@ export function AppShell({
       <nav
         data-testid="mobile-companion-tabbar"
         className="orcia-mobile-tabbar"
-        aria-label={labels.mobileNavigationAriaLabel ?? "Mobile Companion Navigation"}
+        aria-label={labels.mobileNavigationAriaLabel ?? labels.sidebarNavigationAriaLabel}
         style={{
           position: "fixed",
           bottom: 0,

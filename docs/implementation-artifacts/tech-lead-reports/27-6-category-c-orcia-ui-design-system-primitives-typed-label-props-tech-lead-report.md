@@ -4,7 +4,7 @@
 - **Story / Sprint Key**: `27.6` (`Epic 27` — Lot 3 Part 2: Category C `@orcia/ui` Design System Components & Primitives)
 - **Capability(ies)**: `CAP-060`, `CAP-090`, `CAP-091`, `CAP-100`, `CAP-200`, `CAP-260` — classification: `hygiene` (see `AGENTS.md` §5)
 - **Author / Context**: Coding Sub-Agent (`Amelia`) implementing Story 27.6 under `ACTION_ITEM-I18N.1`, Bilingual Application Policy (`fr` / `en`), strict `@orcia/ui` package isolation, and UX Rule 3.1 (zero internal plumbing jargon in user-facing UI copy).
-- **Associated Commits**: Pending commit on branch `feat/epic-27-bilingual-i18n-and-deterministic-locale-guards`.
+- **Associated Commits**: `c182531` (`feat(story-27.6): inject typed i18n label props into @orcia/ui primitives and lock packages/ui Gate 1 baseline to zero`) on branch `feat/epic-27-bilingual-i18n-and-deterministic-locale-guards` (with post-review Architect remediation applied in Story `27.8` closure)
 
 ---
 
@@ -110,7 +110,7 @@
   - **Barrel file**: `packages/ui/src/index.ts` = `785` L.
   - **Modified test files**: `11` pre-existing test suites `> 300` L (max = `2,304` L in `apps/web/src/__tests__/i18n-and-shell.test.tsx`).
 - **Deterministic Ratchet Baselines (Gates 1–4)**:
-  - **Gate 1 (`i18n-hardcoded-locale-ast-audit.test.ts`, `3` tests)**: Reduced `totalAstViolations` from **`421` -> `0`** (`-421` violations across all `55` remaining `packages/ui/src/` files), locking `totalAstViolations: 0` and `astFiles: {}` across **both `apps/web/src/` and `packages/ui/src/`**.
+  - **Gate 1 (`i18n-hardcoded-locale-ast-audit.test.ts`, `3` tests)**: Reduced `totalAstViolations` from **`421` -> `0`** across `apps/web/src/` and `packages/ui/src/`. *Post-review Architect remediation addendum (`2026-11-24`)*: closed Gate 1 blind spots (parameter default user-facing strings, `??`/`||` fallback literals, `switch` fallback prose, and module-level `DEFAULT_*` / `*_LABELS_FR/EN` constants) and removed all remaining FR/EN default label constants and fallbacks across all 16 `@orcia/ui` primitives/components (moving RGAA modal default labels into `apps/web/src/i18n/locales/rgaa_modal_labels.ts`, splitting `UpstreamChallengeRewindModal.tsx`, `CommandPaletteModal.tsx`, `FourZoneDirectionCShell.tsx`, `RadixDesignSystemPrimitives.tsx`, `OrciaKnownUserCombobox.tsx`, and restoring exact `CatalogExplorerPanel` testids) while keeping `packages/ui/src/` free of hardcoded FR/EN defaults (`totalAstViolations: 0`).
   - **Gate 2 (`i18n-dictionary-parity-and-jargon-audit.test.ts`, `2` tests)**: **`0` violations** across `frDictionary` and `enDictionary` (recursive key parity, `{param}` placeholder parity, non-empty leaves, UX Rule 3.1 zero-jargon).
   - **Gate 3 (`client-error-code-contract-audit.test.ts`, `4` tests)**: **`0` violations** (`totalClientErrorViolations: 0`, `clientErrorBaseline: {}`).
   - **Gate 4 (`tests/unit/test_i18n_backend_catalog_and_english_dev_audit.py --no-cov`, `3 passed`)**: **PASS** (`3 passed in 10.51s` — `ERROR_CATALOG` parity, prompt neutrality, and English-only diff comments/docstrings verified).

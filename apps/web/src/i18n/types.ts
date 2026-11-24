@@ -4,6 +4,7 @@ import type {
   CognitiveReviewBriefingLabels,
   HumanLedAnchorCardLabels,
   PresenceClaimPillLabels,
+  RgaaModalDialogLabels,
   RoleDisplayLabels,
   TemporaryPasswordInvitationModalLabels,
   UiBootstrapOnboardingLabels,
@@ -87,6 +88,7 @@ export interface TranslationDictionary
     ProcessOrchestrationModesDictionarySection,
     ReflexiveTraceAndInspectorDictionarySection {
   locale: SupportedWebLocale;
+  rgaaModal: RgaaModalDialogLabels;
   clientErrors: ClientErrorLabels;
   rfc9457Errors: Rfc9457BannerDictionary;
   categoryAControllers: CategoryAControllersDictionary;

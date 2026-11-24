@@ -121,10 +121,7 @@ export function EditOrgUnitModal({
       (lid) => !isKnownUserIdentifier(lid, allKnownUsers),
     );
     if (invalidLead) {
-      setLeadValidationError(
-        unknownUserErrorLabel ||
-          "L'identifiant saisi ne correspond à aucun utilisateur actif et connu de la plateforme.",
-      );
+      setLeadValidationError(unknownUserErrorLabel ?? "");
       return;
     }
     onSave(unit.id, {

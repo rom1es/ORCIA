@@ -1,4 +1,4 @@
-import type { RgaaModalDialogLabels } from "../components/RgaaModalDialog.js";
+import type { RgaaModalGuardLabels } from "../components/RgaaModalDialog.js";
 
 export type TopSearchScopeMode = "SCREEN" | "WORKSPACE" | "ALL_WORKSPACES";
 
@@ -49,6 +49,7 @@ export interface TopHeaderSearchCommandLabels {
   readonly durationMsUnit?: string;
   readonly keyboardShortcutsHint?: string;
   readonly disabledOpenHint?: string;
+  readonly closeCta?: string;
   readonly familyLabels: Readonly<Record<TopSearchFamilyKey, string>>;
 }
 
@@ -69,7 +70,7 @@ export interface TopHeaderSearchCommandProps {
   readonly speed2Executed?: boolean;
   readonly speed2Error?: string | null;
   readonly isDirty?: boolean;
-  readonly rgaaLabels?: Partial<RgaaModalDialogLabels>;
+  readonly rgaaLabels?: RgaaModalGuardLabels;
   readonly onQueryChange?: (query: string, scope: TopSearchScopeMode) => void;
   readonly onScopeChange?: (scope: TopSearchScopeMode) => void;
   readonly onTriggerSpeed2Now?: (query: string, scope: TopSearchScopeMode) => void;

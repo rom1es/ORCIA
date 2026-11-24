@@ -137,7 +137,7 @@ export function OrciaSearchableSelect({
 
   const truncatedMsg = truncatedHintTemplate
     ? truncatedHintTemplate(hiddenCount)
-    : truncatedHint || `+${hiddenCount} autres résultats non affichés`;
+    : truncatedHint || "";
 
   return (
     <div ref={containerRef} style={{ position: "relative", width: "100%", ...style }} data-testid={`${testId}-container`}>

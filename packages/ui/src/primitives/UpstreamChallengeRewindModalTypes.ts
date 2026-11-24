@@ -1,4 +1,4 @@
-import type { RgaaModalDialogLabels } from "../components/RgaaModalDialog.js";
+import type { RgaaModalGuardLabels } from "../components/RgaaModalDialog.js";
 
 export interface UpstreamChallengeWhatIfPreview {
   readonly runId: string;
@@ -32,6 +32,9 @@ export interface UpstreamChallengeModalLabels {
   readonly closeCta: string;
   readonly challengeSubmittedFeedback: string;
   readonly replayTriggeredFeedback: string;
+  readonly submitDisabledReason?: string;
+  readonly defaultInitialReason?: string;
+  readonly tokensSavedLabel?: string;
   readonly stepLabels?: Readonly<Record<string, string>>;
   readonly sectionLabels?: Readonly<Record<string, string>>;
   readonly axiomLabels?: Readonly<Record<string, string>>;
@@ -43,9 +46,10 @@ export interface UpstreamChallengeRewindModalProps {
   readonly isOpen: boolean;
   readonly preview: UpstreamChallengeWhatIfPreview;
   readonly labels: UpstreamChallengeModalLabels;
+  readonly initialReason?: string;
   readonly subWorkflowStepKey?: string;
   readonly inline?: boolean;
-  readonly rgaaLabels?: Partial<RgaaModalDialogLabels>;
+  readonly rgaaLabels?: RgaaModalGuardLabels;
   readonly onReasonChange?: (reason: string) => void;
   readonly onSubmitChallenge?: (payload: {
     targetUpstreamStepKey: string;

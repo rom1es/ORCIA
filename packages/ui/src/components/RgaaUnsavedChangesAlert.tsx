@@ -1,9 +1,6 @@
 import React from "react";
 import { OrciaIcon } from "./icons";
-import {
-  resolveRgaaModalGuardLabels,
-  type RgaaModalGuardLabels,
-} from "./RgaaModalGuardLabels";
+import type { RgaaModalGuardLabels } from "./RgaaModalGuardLabels";
 
 export function handleRgaaSubmitKeyDown(
   event: React.KeyboardEvent<HTMLButtonElement>,
@@ -20,8 +17,7 @@ export function handleRgaaSubmitKeyDown(
 export interface RgaaUnsavedChangesAlertProps {
   readonly testIdPrefix: string;
   readonly isOpen?: boolean;
-  readonly labels?: RgaaModalGuardLabels;
-  readonly locale?: "fr" | "en";
+  readonly labels: RgaaModalGuardLabels;
   readonly onStay: () => void;
   readonly onConfirmDiscard?: () => void;
   readonly onDiscard?: () => void;
@@ -31,7 +27,6 @@ export function RgaaUnsavedChangesAlert({
   testIdPrefix,
   isOpen = true,
   labels,
-  locale = "fr",
   onStay,
   onConfirmDiscard,
   onDiscard,
@@ -39,7 +34,11 @@ export function RgaaUnsavedChangesAlert({
   if (!isOpen) {
     return null;
   }
-  const resolved = resolveRgaaModalGuardLabels(labels, locale);
+  const alertTitle = labels.unsavedAlertTitle ?? "";
+  const alertMessage = labels.unsavedAlertMessage ?? "";
+  const stayCta = labels.unsavedStayCta ?? "";
+  const discardCta = labels.unsavedDiscardCta ?? "";
+
   const handleDiscard = (): void => {
     onConfirmDiscard?.();
     onDiscard?.();
@@ -49,7 +48,7 @@ export function RgaaUnsavedChangesAlert({
     <div
       role="alertdialog"
       aria-modal="true"
-      aria-label={resolved.unsavedAlertTitle}
+      aria-label={alertTitle}
       data-testid={`${testIdPrefix}-unsaved-changes-alert`}
       className="rounded-lg border p-3 text-xs space-y-2"
       style={{
@@ -59,10 +58,10 @@ export function RgaaUnsavedChangesAlert({
       }}
     >
       <div className="font-semibold" style={{ color: "var(--color-arbitration-amber)" }}>
-        <OrciaIcon name="warning" /> {resolved.unsavedAlertTitle}
+        <OrciaIcon name="warning" /> {alertTitle}
       </div>
       <p className="m-0 text-xs" style={{ color: "var(--color-text-primary)" }}>
-        {resolved.unsavedAlertMessage}
+        {alertMessage}
       </p>
       <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
         <button
@@ -77,7 +76,7 @@ export function RgaaUnsavedChangesAlert({
             cursor: "pointer",
           }}
         >
-          {resolved.unsavedStayCta}
+          {stayCta}
         </button>
         <button
           type="button"
@@ -92,7 +91,7 @@ export function RgaaUnsavedChangesAlert({
             cursor: "pointer",
           }}
         >
-          {resolved.unsavedDiscardCta}
+          {discardCta}
         </button>
       </div>
     </div>

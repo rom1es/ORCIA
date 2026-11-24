@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 
 from orcia_core.kernel.errors import ValidationDomainError
@@ -85,3 +86,33 @@ def collect_searchable_files(
                 )
             )
     return collected
+
+
+def resolve_surgical_target_content(
+    cleaned_uri: str,
+    *,
+    repo_root: Path,
+    allowed_subdirs: tuple[str, ...],
+    workspace_id: str | None,
+    virtual_resource_resolver: Callable[[str, str | None], str | None] | None,
+) -> tuple[bool, str]:
+    """Return `(exists, utf8_text)` for an authorized relative or virtual URI."""
+    if virtual_resource_resolver is not None:
+        virtual_text = virtual_resource_resolver(cleaned_uri, workspace_id)
+        if virtual_text is not None:
+            return True, virtual_text
+    if "://" in cleaned_uri:
+        scheme, rest = cleaned_uri.split("://", 1)
+        return (
+            resolve_pack_uri_content(repo_root, rest) if scheme.lower() == "pack" else (False, "")
+        )
+    raw_path = Path(cleaned_uri)
+    candidate = raw_path.resolve() if raw_path.is_absolute() else (repo_root / raw_path).resolve()
+    if not is_within_allowed_roots(candidate, repo_root, allowed_subdirs):
+        raise ValidationDomainError(
+            detail_code="ERR_SURGICAL_PATH_OUT_OF_BOUNDS",
+            detail_params={"uri": cleaned_uri, "roots": ", ".join(allowed_subdirs)},
+        )
+    if not candidate.exists() or not candidate.is_file():
+        return False, ""
+    return True, candidate.read_text(encoding="utf-8", errors="replace")

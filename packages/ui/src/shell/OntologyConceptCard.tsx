@@ -53,7 +53,7 @@ export function OntologyConceptCard({
             onStatusBanner(
               concept.immutable
                 ? labels.immutableConflictBanner
-                : `${labels.promotedBannerPrefix} ${concept.canonicalTerm} (${labels.impactTemplatesLabel ?? "Templates"}: ${concept.impactedTemplates.length}, ${labels.impactWorkflowsLabel ?? "Workflows"}: ${concept.impactedWorkflows.length}, ${labels.impactRunsLabel ?? "Runs"}: ${concept.impactedRuns.length})`,
+                : `${labels.promotedBannerPrefix} ${concept.canonicalTerm} (${labels.impactTemplatesLabel ?? "TEMPLATES"}: ${concept.impactedTemplates.length}, ${labels.impactWorkflowsLabel ?? "WORKFLOWS"}: ${concept.impactedWorkflows.length}, ${labels.impactRunsLabel ?? "RUNS"}: ${concept.impactedRuns.length})`,
             );
           }}
           style={{

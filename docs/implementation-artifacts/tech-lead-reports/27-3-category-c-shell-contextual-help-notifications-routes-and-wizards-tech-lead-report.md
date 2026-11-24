@@ -4,7 +4,7 @@
 - **Story / Sprint Key**: `27.3` (`Epic 27` — Lot 2 Part 1: Category C Core Web)
 - **Capability(ies)**: `CAP-004`, `CAP-058`, `CAP-060`, `CAP-065`, `CAP-066`, `CAP-068`, `CAP-100` — classification: `hygiene` (see `AGENTS.md` §5)
 - **Author / Context**: Coding Sub-Agent (`Amelia`) implementing Story 27.3 under `ACTION_ITEM-I18N.1`, Bilingual Application Policy (`fr` / `en`), and UX Rule 3.1 (zero internal plumbing jargon in user-facing UI copy).
-- **Associated Commits**: Pending commit on branch `feat/epic-27-bilingual-i18n-and-deterministic-locale-guards`.
+- **Associated Commits**: `d9cbf71` (`feat(story-27.3): migrate Category C shell, contextual help, notifications, routes, and wizards to i18n dictionaries`) on branch `feat/epic-27-bilingual-i18n-and-deterministic-locale-guards`
 
 ---
 

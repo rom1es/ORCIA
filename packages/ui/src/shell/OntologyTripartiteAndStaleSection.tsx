@@ -233,7 +233,7 @@ export function OntologyTripartiteAndStaleSection({
             }}
           >
             <span>
-              {`${alert.diagnosticMarker} ${alert.sourceUri} (${labels.staleJiraPrefix ?? "Jira"}: ${alert.justifyingJiraKey ?? "TTL"}, ${labels.staleRunsPrefix ?? "Runs"}: ${alert.impactedRunIds.join(", ")})`}
+              {`${alert.diagnosticMarker} ${alert.sourceUri} (${labels.staleJiraPrefix ?? "JIRA"}: ${alert.justifyingJiraKey ?? "TTL"}, ${labels.staleRunsPrefix ?? "RUNS"}: ${alert.impactedRunIds.join(", ")})`}
             </span>
             <button
               type="button"

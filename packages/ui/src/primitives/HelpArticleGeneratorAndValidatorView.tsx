@@ -27,6 +27,7 @@ export interface HelpArticleGeneratorAndValidatorLabels {
   hotAttachmentHeading: string;
   authorityReferenceBadge: string;
   generateAndAttachCta: string;
+  publishDisabledReason?: string;
   durationMsUnit?: string;
 }
 
@@ -200,7 +201,7 @@ export const HelpArticleGeneratorAndValidatorView: FC<
           <span>{labels.generateAndAttachCta}</span>
           <DisabledButtonAlertIndicator
             disabled={!allValid && !onGenerateAndAttach}
-            reason="Corrigez les contrôles de validation pour publier la fiche d'aide."
+            reason={labels.publishDisabledReason ?? labels.validationChecksHeading}
             testIdSuffix="generate-and-attach-help-btn"
           />
         </button>

@@ -2,8 +2,10 @@ import type {
   AssistantGovernanceModalAndStudioLabels,
   AssistantSpeedSelectorAndStreamViewLabels,
 } from "@orcia/ui";
+import { RGAA_MODAL_LABELS_EN } from "./rgaa_modal_labels";
 
 export const ASSISTANT_GOVERNANCE_LABELS_EN: AssistantGovernanceModalAndStudioLabels = {
+  ...RGAA_MODAL_LABELS_EN,
   modalTitle: "⚙ My Assistant Settings",
   savedBadgeLabel: "Saved",
   infoBannerText:

@@ -88,7 +88,7 @@ export function PermissionBrokerCard({
             fontFamily: "var(--font-mono)",
           }}
         >
-          {labels.targetUriLabel} ({labels.stepPrefix ?? "Étape"} {ticket.stepNumber})
+          {labels.targetUriLabel} ({labels.stepPrefix ?? "#"} {ticket.stepNumber})
         </span>
         <code
           data-testid="permission-broker-target-uri"
@@ -251,7 +251,7 @@ export function PermissionBrokerCard({
             cursor: "pointer",
           }}
         >
-          {labels.replayStepButtonLabel} ({labels.stepPrefix ?? "Étape"} {ticket.stepNumber})
+          {labels.replayStepButtonLabel} ({labels.stepPrefix ?? "#"} {ticket.stepNumber})
         </button>
       </div>
 

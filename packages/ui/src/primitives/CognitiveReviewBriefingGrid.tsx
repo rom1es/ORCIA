@@ -11,6 +11,7 @@ export interface CognitiveReviewBriefingLabels {
   inspectHypothesesButtonLabel: string;
   hypothesesInspectedBadgeLabel: string;
   hypothesesPendingBadgeLabel: string;
+  readOnlyInspectReason?: string;
 }
 
 export interface CognitiveReviewBriefingGridProps {
@@ -239,7 +240,7 @@ export function CognitiveReviewBriefingGrid({
               <span>{labels.inspectHypothesesButtonLabel}</span>
               <DisabledButtonAlertIndicator
                 disabled={Boolean(readOnly)}
-                reason="Mode lecture seule : inspection réservée aux contributeurs."
+                reason={labels.readOnlyInspectReason ?? labels.gridTitle}
                 testIdSuffix="inspect-hypotheses-btn"
               />
             </button>

@@ -2,10 +2,9 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import React, { useState } from "react";
 import { OrciaIcon } from "../components/icons";
 import {
-  DEFAULT_RGAA_MODAL_LABELS_FR,
   RgaaUnsavedChangesAlert,
   useUnsavedChangesDialogGuard,
-  type RgaaModalDialogLabels,
+  type RgaaModalGuardLabels,
 } from "../components/RgaaModalDialog.js";
 import type {
   DeepLinkResolutionPayload,
@@ -62,10 +61,10 @@ export function TopHeaderSearchCommand({
   const [previewItemId, setPreviewItemId] = useState<string | null>(null);
   const [lastDeepLink, setLastDeepLink] = useState<DeepLinkResolutionPayload | null>(null);
 
-  const resolvedRgaaLabels: RgaaModalDialogLabels = {
-    ...DEFAULT_RGAA_MODAL_LABELS_FR,
-    submitCta: labels.deepLinkActionLabel || DEFAULT_RGAA_MODAL_LABELS_FR.submitCta,
+  const resolvedRgaaLabels: RgaaModalGuardLabels = {
     ...rgaaLabels,
+    submitCta: labels.deepLinkActionLabel || rgaaLabels?.submitCta || "",
+    cancelCta: rgaaLabels?.cancelCta ?? labels.closeCta ?? "",
   };
 
   const {
@@ -207,7 +206,7 @@ export function TopHeaderSearchCommand({
             onClick={requestClose}
             className="px-2 py-1 rounded text-xs border border-surface-border bg-surface-secondary text-text-secondary"
           >
-            {resolvedRgaaLabels.cancelCta}
+            {resolvedRgaaLabels.cancelCta ?? resolvedRgaaLabels.cancelButtonLabel ?? ""}
           </button>
         </div>
 

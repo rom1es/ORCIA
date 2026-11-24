@@ -213,7 +213,7 @@ export function WorkspaceControlCenterTabs({
                 color: "var(--orcia-text-secondary)",
               }}
             >
-              {`1. ${chain?.base ?? "Base"}: ${ov.baseLayer} → 2. ${chain?.team ?? "TEAM"}: ${ov.teamOverride} → 3. ${chain?.workspace ?? "WORKSPACE"}: ${ov.workspaceOverride} → 4. ${chain?.user ?? "USER"}: ${ov.userOverride}`}
+              {`1. ${chain?.base ?? "BASE"}: ${ov.baseLayer} → 2. ${chain?.team ?? "TEAM"}: ${ov.teamOverride} → 3. ${chain?.workspace ?? "WORKSPACE"}: ${ov.workspaceOverride} → 4. ${chain?.user ?? "USER"}: ${ov.userOverride}`}
             </div>
           </article>
         ))}

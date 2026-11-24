@@ -207,7 +207,7 @@ export function OntologyAndKbExplorerPanel({
                 fontSize: "var(--font-size-mono)",
               }}
             >
-              {`${labels.impactPreviewPrefix ?? ""} (${selectedConcept.canonicalTerm}): ${labels.impactTemplatesLabel ?? "Templates"}=${selectedConcept.impactedTemplates.join(", ") || "0"} | ${labels.impactWorkflowsLabel ?? "Workflows"}=${selectedConcept.impactedWorkflows.join(", ") || "0"} | ${labels.impactRunsLabel ?? "Runs"}=${selectedConcept.impactedRuns.join(", ") || "0"}`}
+              {`${labels.impactPreviewPrefix ?? ""} (${selectedConcept.canonicalTerm}): ${labels.impactTemplatesLabel ?? "TEMPLATES"}=${selectedConcept.impactedTemplates.join(", ") || "0"} | ${labels.impactWorkflowsLabel ?? "WORKFLOWS"}=${selectedConcept.impactedWorkflows.join(", ") || "0"} | ${labels.impactRunsLabel ?? "RUNS"}=${selectedConcept.impactedRuns.join(", ") || "0"}`}
             </div>
           )}
 

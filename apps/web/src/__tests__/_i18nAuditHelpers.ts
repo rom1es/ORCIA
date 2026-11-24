@@ -1,7 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
 import ts from "typescript";
+import {
+  collectObjectLiteralStrings,
+  extractStaticString,
+  isUserFacingText,
+  UI_VISIBLE_JSX_ATTRS,
+  type AstViolation,
+} from "./_i18nAuditRules";
 
+export type { AstViolation };
 export const REPO_ROOT = path.resolve(__dirname, "../../../..");
 
 export function collectTsSourceFiles(
@@ -27,26 +35,11 @@ export function collectTsSourceFiles(
   return results.sort();
 }
 
-export const UI_VISIBLE_JSX_ATTRS = new Set([
-  "title",
-  "placeholder",
-  "aria-label",
-  "alt",
-  "label",
-  "description",
-  "emptyMessage",
-  "helperText",
-  "submitLabel",
-  "cancelLabel",
-  "closeLabel",
-  "emptyTitle",
-  "emptyDescription",
-]);
-
 const LOCALE_IDENT_RE = /^(?:locale|lang|language|uiLocale|currentLocale|activeLocale)$/i;
 const LOCALE_BOOL_RE = /^(?:isFr(?:ench)?|isEn(?:glish)?)$/i;
 const LOCALE_LITERAL_RE = /^(?:fr|en|fr-FR|en-US)$/i;
 const WORD_LETTERS_RE = /\p{L}{2,}/u;
+const UI_CONST_NAME_RE = /^(?:DEFAULT_[A-Z0-9_]+|[A-Z0-9_]+_LABELS_(?:FR|EN))$/;
 
 function hasNonUserFacingComment(lines: readonly string[], lineIndexZeroBased: number): boolean {
   const current = lines[lineIndexZeroBased] ?? "";
@@ -78,6 +71,16 @@ function isInsideIntlOrLocaleFormatting(node: ts.Node): boolean {
   return false;
 }
 
+function isInsideSwitchStatement(node: ts.Node): boolean {
+  let cur: ts.Node | undefined = node.parent;
+  while (cur) {
+    if (ts.isSwitchStatement(cur)) return true;
+    if (ts.isFunctionLike(cur)) return false;
+    cur = cur.parent;
+  }
+  return false;
+}
+
 function isLocaleComparisonBinary(node: ts.BinaryExpression): boolean {
   const op = node.operatorToken.kind;
   if (
@@ -100,33 +103,17 @@ function isLocaleComparisonBinary(node: ts.BinaryExpression): boolean {
       : "";
   const leftLit = ts.isStringLiteral(node.left) ? node.left.text : "";
   const rightLit = ts.isStringLiteral(node.right) ? node.right.text : "";
-
   return (
     (LOCALE_IDENT_RE.test(leftText) && LOCALE_LITERAL_RE.test(rightLit)) ||
     (LOCALE_IDENT_RE.test(rightText) && LOCALE_LITERAL_RE.test(leftLit))
   );
 }
 
-function extractStaticStringFromExpr(expr: ts.Expression): string | null {
-  if (ts.isStringLiteral(expr) || ts.isNoSubstitutionTemplateLiteral(expr)) {
-    return expr.text;
-  }
-  if (ts.isTemplateExpression(expr)) {
-    return [expr.head.text, ...expr.templateSpans.map((s) => s.literal.text)].join(" ");
-  }
-  return null;
-}
-
-export interface AstViolation {
-  readonly line: number;
-  readonly kind: "LOCALE_CONDITIONAL" | "JSX_TEXT" | "JSX_ATTR";
-  readonly detail: string;
-}
-
 export function scanFileForHardcodedLocaleAst(rel: string, src: string): AstViolation[] {
   const kind = rel.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
   const sf = ts.createSourceFile(rel, src, ts.ScriptTarget.Latest, true, kind);
   const lines = src.split("\n");
+  const isUiPackage = rel.startsWith("packages/ui/src/");
   const violations: AstViolation[] = [];
 
   const record = (node: ts.Node, vKind: AstViolation["kind"], detail: string) => {
@@ -143,31 +130,79 @@ export function scanFileForHardcodedLocaleAst(rel: string, src: string): AstViol
     } else if (
       ts.isConditionalExpression(node) &&
       ts.isIdentifier(node.condition) &&
-      LOCALE_BOOL_RE.test(node.condition.text)
+      LOCALE_BOOL_RE.test(node.condition.text) &&
+      !isInsideIntlOrLocaleFormatting(node)
     ) {
-      if (!isInsideIntlOrLocaleFormatting(node)) {
-        record(node, "LOCALE_CONDITIONAL", node.condition.text);
-      }
+      record(node, "LOCALE_CONDITIONAL", node.condition.text);
     } else if (ts.isJsxText(node)) {
       const text = node.text.replace(/\s+/g, " ").trim();
-      if (WORD_LETTERS_RE.test(text)) {
-        record(node, "JSX_TEXT", text.slice(0, 60));
-      }
-    } else if (ts.isJsxAttribute(node) && ts.isIdentifier(node.name)) {
+      if (WORD_LETTERS_RE.test(text)) record(node, "JSX_TEXT", text.slice(0, 60));
+    } else if (ts.isJsxAttribute(node) && ts.isIdentifier(node.name) && node.initializer) {
       const attrName = node.name.text;
-      if (UI_VISIBLE_JSX_ATTRS.has(attrName) && node.initializer) {
-        let text: string | null = null;
-        if (ts.isStringLiteral(node.initializer)) {
-          text = node.initializer.text;
-        } else if (ts.isJsxExpression(node.initializer) && node.initializer.expression) {
-          text = extractStaticStringFromExpr(node.initializer.expression);
-        }
-        if (
-          text !== null &&
-          WORD_LETTERS_RE.test(text) &&
-          !/^(?:https?|orcia):\/\/\S+$/.test(text.trim())
-        ) {
+      if (UI_VISIBLE_JSX_ATTRS.has(attrName)) {
+        const text = ts.isStringLiteral(node.initializer)
+          ? node.initializer.text
+          : ts.isJsxExpression(node.initializer) && node.initializer.expression
+            ? extractStaticString(node.initializer.expression)
+            : null;
+        if (text !== null && isUserFacingText(text, attrName)) {
           record(node, "JSX_ATTR", `${attrName}=${JSON.stringify(text.slice(0, 50))}`);
+        }
+      }
+    } else if ((ts.isParameter(node) || ts.isBindingElement(node)) && node.initializer) {
+      const paramName = ts.isIdentifier(node.name) ? node.name.text : node.name.getText(sf);
+      const str = extractStaticString(node.initializer);
+      if (str !== null && isUserFacingText(str, paramName)) {
+        record(node, "PARAM_DEFAULT", `${paramName}=${JSON.stringify(str.slice(0, 50))}`);
+      } else if (
+        ts.isPropertyAccessExpression(node.initializer) &&
+        UI_CONST_NAME_RE.test(node.initializer.expression.getText(sf))
+      ) {
+        record(node, "PARAM_DEFAULT", `${paramName}=${node.initializer.getText(sf)}`);
+      } else if (
+        ts.isIdentifier(node.initializer) &&
+        UI_CONST_NAME_RE.test(node.initializer.text)
+      ) {
+        record(node, "PARAM_DEFAULT", `${paramName}=${node.initializer.text}`);
+      }
+    } else if (
+      ts.isBinaryExpression(node) &&
+      (node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken ||
+        node.operatorToken.kind === ts.SyntaxKind.BarBarToken)
+    ) {
+      const lhs = node.left.getText(sf);
+      const rightStr = extractStaticString(node.right);
+      const inSwitch = isInsideSwitchStatement(node);
+      if (rightStr !== null && isUserFacingText(rightStr, lhs)) {
+        record(
+          node,
+          inSwitch ? "SWITCH_FALLBACK" : "FALLBACK_LITERAL",
+          `${lhs.slice(0, 35)} ${node.operatorToken.getText(sf)} ${JSON.stringify(rightStr.slice(0, 45))}`,
+        );
+      } else if (ts.isObjectLiteralExpression(node.right)) {
+        for (const item of collectObjectLiteralStrings(node.right, lhs)) {
+          if (isUserFacingText(item.text, item.key)) {
+            record(item.node, "FALLBACK_LITERAL", `${item.key}: ${JSON.stringify(item.text.slice(0, 45))}`);
+            break;
+          }
+        }
+      }
+    } else if (
+      isUiPackage &&
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      UI_CONST_NAME_RE.test(node.name.text) &&
+      node.initializer
+    ) {
+      const str = extractStaticString(node.initializer);
+      if (str !== null && isUserFacingText(str, node.name.text)) {
+        record(node, "UI_DEFAULT_CONST", `${node.name.text}=${JSON.stringify(str.slice(0, 50))}`);
+      } else if (ts.isObjectLiteralExpression(node.initializer)) {
+        const hits = collectObjectLiteralStrings(node.initializer, node.name.text).filter((e) =>
+          isUserFacingText(e.text, e.key),
+        );
+        if (hits.length > 0) {
+          record(node, "UI_DEFAULT_CONST", `${node.name.text} (${hits.length} strings)`);
         }
       }
     }

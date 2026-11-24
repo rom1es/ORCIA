@@ -1,5 +1,6 @@
 export interface ShellChromeDictionary {
   readonly brandName: string;
+  readonly guestDisplayNameFallback: string;
   readonly loadingSession: string;
   readonly loginInitializing: string;
   readonly firstBootMandatoryBadge: string;

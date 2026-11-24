@@ -1,6 +1,4 @@
 import {
-  DEFAULT_RGAA_MODAL_LABELS_EN,
-  DEFAULT_RGAA_MODAL_LABELS_FR,
   DisabledButtonAlertIndicator,
   handleRgaaSubmitKeyDown,
   OrciaDialog,
@@ -9,12 +7,7 @@ import {
   useUnsavedChangesDialogGuard,
 } from "@orcia/ui";
 import React, { useState } from "react";
-import { resolveDictionaryForFlag, resolveLocaleForFlag } from "../i18n";
-
-const RGAA_MODAL_LABELS_BY_LOCALE = {
-  fr: DEFAULT_RGAA_MODAL_LABELS_FR,
-  en: DEFAULT_RGAA_MODAL_LABELS_EN,
-} as const;
+import { resolveDictionaryForFlag } from "../i18n";
 
 export interface FirstBootAdminSetupModalProps {
   readonly isOpen: boolean;
@@ -38,10 +31,9 @@ export function FirstBootAdminSetupModal({
   const [adminPassword, setAdminPassword] = useState<string>("");
   const [adminPasswordConfirm, setAdminPasswordConfirm] = useState<string>("");
 
-  const resolvedLocale = resolveLocaleForFlag(isFr);
   const dict = resolveDictionaryForFlag(isFr);
   const copy = dict.firstBootAdminModal;
-  const rgaaLabels = RGAA_MODAL_LABELS_BY_LOCALE[resolvedLocale];
+  const rgaaLabels = dict.rgaaModal;
 
   const isAdminModalDirty = Boolean(
     adminFullName.trim() ||

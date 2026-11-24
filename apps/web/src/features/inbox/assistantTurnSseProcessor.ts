@@ -6,7 +6,8 @@ import {
   type UiInferenceTier,
   type UiThreeSpeedStepProgress,
 } from "@orcia/ui";
-import { resolveDictionaryForFlag } from "../../i18n";
+import { resolveDictionaryForFlag, resolveLocaleForFlag } from "../../i18n";
+import { resolveLocalizedClientError } from "../../lib/formatRfc9457ErrorToBanner";
 import {
   bgSnapshot,
   clearBgTimers,
@@ -176,7 +177,7 @@ export function createTurnSseProcessor(cfg: {
         activeTraceStatus: bgSnapshot.activeTraceStatus ? "FAILED" : null,
         stepProgress: bgSnapshot.stepProgress.map((st) => (st.status === "RUNNING" ? { ...st, status: "COMPLETED" } : st)),
         errorKind: "ai_unavailable",
-        errorMessage: `⚠️ ${String(data.detail ?? data.message ?? "AI provider error")}`,
+        errorMessage: `⚠️ ${String(data.detail ?? data.message ?? resolveLocalizedClientError("ERR_CLIENT_AI_UNAVAILABLE", resolveLocaleForFlag(cfg.isFr), { detail: flowCopy.turnErrorContext }))}`,
       });
     } else if (eventName === "turn_completed") {
       const cMap = (data.citation_map as Readonly<Record<string, unknown>> | undefined) ?? latestCitationMap;

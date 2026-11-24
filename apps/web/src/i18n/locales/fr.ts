@@ -34,6 +34,7 @@ import {
   TEMP_PASSWORD_MODAL_FR,
 } from "./role_display_labels";
 import { REFLEXIVE_TRACE_AND_INSPECTOR_FR_LABELS } from "./reflexive_trace_and_inspector_labels";
+import { RGAA_MODAL_LABELS_FR } from "./rgaa_modal_labels";
 import { RFC9457_BANNER_FR_LABELS } from "./rfc9457_banner_labels";
 import { ROUTES_AND_WIZARDS_FR } from "./routes_and_wizards_labels_fr";
 import { SHELL_CHROME_FR } from "./shell_chrome_labels_fr";
@@ -59,6 +60,7 @@ export const frDictionary: TranslationDictionary = {
   ...CORE_SHELL_FR_LABELS,
   ...CORE_DOMAIN_FR_LABELS,
   locale: "fr",
+  rgaaModal: RGAA_MODAL_LABELS_FR,
   clientErrors: CLIENT_ERRORS_FR_LABELS,
   rfc9457Errors: RFC9457_BANNER_FR_LABELS,
   categoryAControllers: CATEGORY_A_CONTROLLER_FR_LABELS,

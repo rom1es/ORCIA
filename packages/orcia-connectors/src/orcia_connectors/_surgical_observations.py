@@ -225,3 +225,25 @@ def match_file_snippets(
             if len(found) >= remaining:
                 break
     return found
+
+
+def build_search_snippets_observation(
+    scope_label: str,
+    *,
+    query: str,
+    matches: list[SurgicalSnippetMatch],
+    locale: SupportedLocale = DEFAULT_LOCALE,
+) -> SurgicalObservation:
+    """Build localized `search_workspace_snippets` observation."""
+    copy = get_surgical_copy(locale)
+    cleaned_q = query.strip()
+    return SurgicalObservation(
+        kind=SurgicalPrimitiveName.SEARCH_WORKSPACE_SNIPPETS,
+        resource_uri=scope_label,
+        display_filename=extract_display_filename(scope_label),
+        file_badge_code=resolve_file_badge_code(scope_label),
+        formatted_badge=copy.search_formatted_badge.format(query=cleaned_q, count=len(matches)),
+        exists=True,
+        snippets=matches,
+        summary=copy.search_matches_summary.format(count=len(matches), query=cleaned_q),
+    )

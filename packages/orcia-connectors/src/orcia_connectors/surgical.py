@@ -12,12 +12,11 @@ from collections.abc import Callable
 from pathlib import Path
 
 import orcia_connectors._error_catalog  # noqa: F401
-from orcia_connectors._connectors_locales import get_surgical_copy
 from orcia_connectors._surgical_fs_helpers import (
     collect_searchable_files,
     detect_default_repo_root,
     is_within_allowed_roots,
-    resolve_pack_uri_content,
+    resolve_surgical_target_content,
 )
 from orcia_connectors._surgical_observations import (
     DEFAULT_READ_SOURCE_HINT,
@@ -25,16 +24,16 @@ from orcia_connectors._surgical_observations import (
     build_inspect_lines_observation,
     build_outline_observation,
     build_redacted_observation,
+    build_search_snippets_observation,
     match_file_snippets,
 )
 from orcia_connectors._surgical_parsers import (
-    extract_display_filename,
     extract_outline_nodes,
     resolve_file_badge_code,
     validate_surgical_uri_security,
 )
-from orcia_core.kernel.enums import DEFAULT_LOCALE
-from orcia_core.kernel.errors import ValidationDomainError
+from orcia_core.kernel.enums import SupportedLocale
+from orcia_core.kernel.errors import ValidationDomainError, resolve_locale
 from orcia_core.ports.surgical_explorer_port import (
     SurgicalExplorerPort,
     SurgicalObservation,
@@ -87,29 +86,13 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
         self, cleaned_uri: str, *, workspace_id: str | None
     ) -> tuple[bool, str]:
         """Return `(exists, utf8_text)` for an authorized relative or virtual URI."""
-        if self._virtual_resource_resolver is not None:
-            virtual_text = self._virtual_resource_resolver(cleaned_uri, workspace_id)
-            if virtual_text is not None:
-                return True, virtual_text
-
-        if "://" in cleaned_uri:
-            scheme, rest = cleaned_uri.split("://", 1)
-            if scheme.lower() == "pack":
-                return resolve_pack_uri_content(self._repo_root, rest)
-            return False, ""
-
-        raw_path = Path(cleaned_uri)
-        candidate = (
-            raw_path.resolve() if raw_path.is_absolute() else (self._repo_root / raw_path).resolve()
+        return resolve_surgical_target_content(
+            cleaned_uri,
+            repo_root=self._repo_root,
+            allowed_subdirs=self._allowed_subdirs,
+            workspace_id=workspace_id,
+            virtual_resource_resolver=self._virtual_resource_resolver,
         )
-        if not self._is_within_allowed_roots(candidate):
-            raise ValidationDomainError(
-                detail_code="ERR_SURGICAL_PATH_OUT_OF_BOUNDS",
-                detail_params={"uri": cleaned_uri, "roots": ", ".join(self._allowed_subdirs)},
-            )
-        if not candidate.exists() or not candidate.is_file():
-            return False, ""
-        return True, candidate.read_text(encoding="utf-8", errors="replace")
 
     async def execute_primitive(
         self,
@@ -123,8 +106,10 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
         workspace_id: str | None = None,
         actor_id: str | None = None,
         has_read_source: bool = True,
+        locale: str | None = None,
     ) -> SurgicalObservation:
         """Execute one of the 4 read-only surgical exploration primitives."""
+        loc = resolve_locale(locale)
         if primitive == SurgicalPrimitiveName.INSPECT_RESOURCE_LINES:
             return await self.inspect_lines(
                 resource_uri,
@@ -133,6 +118,7 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
                 workspace_id=workspace_id,
                 actor_id=actor_id,
                 has_read_source=has_read_source,
+                locale=loc,
             )
         if primitive == SurgicalPrimitiveName.SEARCH_WORKSPACE_SNIPPETS:
             return await asyncio.to_thread(
@@ -143,6 +129,7 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
                 workspace_id=workspace_id,
                 actor_id=actor_id,
                 has_read_source=has_read_source,
+                locale=loc,
             )
         cleaned_uri = validate_surgical_uri_security(resource_uri)
         allowed, hint = self._evaluate_read_source(
@@ -152,15 +139,23 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
             has_read_source=has_read_source,
         )
         if not allowed:
-            return build_redacted_observation(primitive, cleaned_uri, hint)
+            return build_redacted_observation(primitive, cleaned_uri, hint, locale=loc)
 
         if primitive == SurgicalPrimitiveName.CHECK_RESOURCE_STATE:
             return await asyncio.to_thread(
-                self._check_state_sync, cleaned_uri, workspace_id=workspace_id
+                self._run_text_observation,
+                cleaned_uri,
+                workspace_id=workspace_id,
+                locale=loc,
+                builder=build_check_state_observation,
             )
         if primitive == SurgicalPrimitiveName.OUTLINE_RESOURCE_STRUCTURE:
             return await asyncio.to_thread(
-                self._outline_sync, cleaned_uri, workspace_id=workspace_id
+                self._run_text_observation,
+                cleaned_uri,
+                workspace_id=workspace_id,
+                locale=loc,
+                builder=build_outline_observation,
             )
         raise ValidationDomainError(
             detail_code="ERR_SURGICAL_UNKNOWN_PRIMITIVE",
@@ -176,8 +171,10 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
         workspace_id: str | None = None,
         actor_id: str | None = None,
         has_read_source: bool = True,
+        locale: str | None = None,
     ) -> SurgicalObservation:
         """Read a 1-indexed inclusive slice strictly capped at `MAX_SURGICAL_LINES` (`250`)."""
+        loc = resolve_locale(locale)
         cleaned_uri = validate_surgical_uri_security(resource_uri)
         if start_line < 1 or end_line < start_line:
             raise ValidationDomainError(
@@ -192,7 +189,7 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
         )
         if not allowed:
             return build_redacted_observation(
-                SurgicalPrimitiveName.INSPECT_RESOURCE_LINES, cleaned_uri, hint
+                SurgicalPrimitiveName.INSPECT_RESOURCE_LINES, cleaned_uri, hint, locale=loc
             )
         return await asyncio.to_thread(
             self._inspect_lines_sync,
@@ -200,17 +197,19 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
             start_line=start_line,
             end_line=end_line,
             workspace_id=workspace_id,
+            locale=loc,
         )
 
-    def _check_state_sync(
-        self, cleaned_uri: str, *, workspace_id: str | None
+    def _run_text_observation(
+        self,
+        cleaned_uri: str,
+        *,
+        workspace_id: str | None,
+        locale: SupportedLocale,
+        builder: Callable[..., SurgicalObservation],
     ) -> SurgicalObservation:
         exists, text = self._resolve_target_content(cleaned_uri, workspace_id=workspace_id)
-        return build_check_state_observation(cleaned_uri, exists=exists, text=text)
-
-    def _outline_sync(self, cleaned_uri: str, *, workspace_id: str | None) -> SurgicalObservation:
-        exists, text = self._resolve_target_content(cleaned_uri, workspace_id=workspace_id)
-        return build_outline_observation(cleaned_uri, exists=exists, text=text)
+        return builder(cleaned_uri, exists=exists, text=text, locale=locale)
 
     def _inspect_lines_sync(
         self,
@@ -219,6 +218,7 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
         start_line: int,
         end_line: int,
         workspace_id: str | None,
+        locale: SupportedLocale = "fr",
     ) -> SurgicalObservation:
         exists, text = self._resolve_target_content(cleaned_uri, workspace_id=workspace_id)
         return build_inspect_lines_observation(
@@ -227,6 +227,7 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
             text=text,
             start_line=start_line,
             end_line=end_line,
+            locale=locale,
         )
 
     def _search_snippets_sync(
@@ -238,7 +239,9 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
         workspace_id: str | None,
         actor_id: str | None,
         has_read_source: bool,
+        locale: str | None = None,
     ) -> SurgicalObservation:
+        loc = resolve_locale(locale)
         cleaned_scope = validate_surgical_uri_security(resource_uri, allow_empty=True)
         needle = query.strip().lower()
         if not needle or len(needle) > 256:
@@ -246,7 +249,7 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
         scope_label = cleaned_scope or "workspace"
         if not has_read_source:
             return build_redacted_observation(
-                SurgicalPrimitiveName.SEARCH_WORKSPACE_SNIPPETS, scope_label, None
+                SurgicalPrimitiveName.SEARCH_WORKSPACE_SNIPPETS, scope_label, None, locale=loc
             )
 
         bounded_max = max(1, min(max_results, 50))
@@ -278,16 +281,8 @@ class SurgicalContextExplorer(SurgicalExplorerPort):
             if len(matches) >= bounded_max:
                 break
 
-        copy = get_surgical_copy(DEFAULT_LOCALE)
-        return SurgicalObservation(
-            kind=SurgicalPrimitiveName.SEARCH_WORKSPACE_SNIPPETS,
-            resource_uri=scope_label,
-            display_filename=extract_display_filename(scope_label),
-            file_badge_code=resolve_file_badge_code(scope_label),
-            formatted_badge=f"Searched '{query.strip()}' ({len(matches)} matches)",
-            exists=True,
-            snippets=matches,
-            summary=copy.search_matches_summary.format(count=len(matches), query=query.strip()),
+        return build_search_snippets_observation(
+            scope_label, query=query, matches=matches, locale=loc
         )
 
 

@@ -1,7 +1,7 @@
 import React from "react";
 import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
 import { OrciaIcon } from "../components/icons";
-import { handleRgaaSubmitKeyDown, type RgaaModalDialogLabels } from "../components/RgaaModalDialog.js";
+import { handleRgaaSubmitKeyDown, type RgaaModalGuardLabels } from "../components/RgaaModalDialog.js";
 import type {
   DeepLinkResolutionPayload,
   TopHeaderSearchCommandLabels,
@@ -20,7 +20,7 @@ export function TopHeaderSearchFooterBanner({
   onExecuteHit,
 }: {
   readonly labels: TopHeaderSearchCommandLabels;
-  readonly resolvedRgaaLabels: RgaaModalDialogLabels;
+  readonly resolvedRgaaLabels: RgaaModalGuardLabels;
   readonly query: string;
   readonly scope: TopSearchScopeMode;
   readonly activeHit: TopSearchHitItem | null;

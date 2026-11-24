@@ -258,8 +258,9 @@ def test_english_only_comments_and_docstrings_on_diff_against_main() -> None:
     assert _find_french_in_python_comments(en_py) == []
 
     base_ref = _resolve_base_ref()
-    if base_ref is None:
-        return
+    assert base_ref is not None, (
+        "Neither 'main' nor 'origin/main' git ref is available for English-only diff audit."
+    )
 
     excluded_prefixes = (
         "apps/web/src/i18n/locales/",

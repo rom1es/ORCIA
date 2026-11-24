@@ -79,7 +79,7 @@ export function CatalogFeaturePanel({
     onFeedback: setCatalogActionFeedback,
   });
 
-  const managed = useManagedAgentsAndSkills(packs, setCatalogActionFeedback);
+  const managed = useManagedAgentsAndSkills(packs, setCatalogActionFeedback, locale, catCopy);
 
   const handleExecuteAgentWithTrace = (agentId: string, prompt: string) => {
     managed.handleExecuteAgent(agentId, prompt);

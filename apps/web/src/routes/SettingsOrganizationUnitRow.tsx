@@ -186,7 +186,7 @@ export function SettingsOrganizationUnitRow({
             );
             return u?.displayName || lid;
           });
-          const pluralPrefix = labels.badges.leadsPluralPrefix || "Responsables :";
+          const pluralPrefix = labels.badges.leadsPluralPrefix;
           return (
             <StatusBadge
               testId={`org-unit-lead-badge-${unit.id}`}

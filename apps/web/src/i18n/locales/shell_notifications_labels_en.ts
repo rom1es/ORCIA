@@ -80,7 +80,7 @@ export const SHELL_BREADCRUMBS_AND_SCOPE_EN: ShellBreadcrumbsAndScopeDictionary 
     guidedWizards: "Guided Wizards",
     profile: "Profile",
     showcase: "ORCIA Showcase",
-    redundantAllSpacesLabels: ["All spaces", "All my spaces", "Tous les espaces", "Tous mes espaces"],
+    redundantAllSpacesLabels: ["All spaces", "All my spaces"],
   },
   accostageMilestones: {
     firstAdmin: "1. Admin Account",

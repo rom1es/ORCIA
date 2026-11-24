@@ -1,11 +1,6 @@
 export {
   AccessibleModalDialog,
-  DEFAULT_RGAA_MODAL_GUARD_LABELS_EN,
-  DEFAULT_RGAA_MODAL_GUARD_LABELS_FR,
-  DEFAULT_RGAA_MODAL_LABELS_EN,
-  DEFAULT_RGAA_MODAL_LABELS_FR,
   handleRgaaSubmitKeyDown,
-  resolveRgaaModalGuardLabels,
   RgaaDialogFooterActions,
   RgaaModalDialog,
   RgaaModalFrame,

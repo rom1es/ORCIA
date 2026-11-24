@@ -23,6 +23,8 @@ export const GATES_AND_INBOX_FR_LABELS: Pick<
     closeCta: "Fermer",
     challengeSubmittedFeedback: "Demande de correction transmise au responsable de l'étape ✓",
     replayTriggeredFeedback: "Relance effectuée à partir de l'étape sélectionnée ✓",
+    submitDisabledReason: "Saisissez le motif de remise en cause pour activer l'envoi.",
+    tokensSavedLabel: "tokens économisés",
     rootWorkflowLabel: "Point de départ du processus (Étape 1)",
     stepLabels: {
       "frame-architecture-intent": "Cadrage de l'intention d'architecture",
@@ -59,6 +61,7 @@ export const GATES_AND_INBOX_FR_LABELS: Pick<
       inspectHypothesesButtonLabel: "Confirmer la lecture des hypothèses",
       hypothesesInspectedBadgeLabel: "Hypothèses relues",
       hypothesesPendingBadgeLabel: "Relecture requise (Point 4)",
+      readOnlyInspectReason: "Mode consultation seule : inspection réservée aux contributeurs.",
     },
     chunkValidation: {
       sectionListTitle: "Validation Section par Section",
@@ -133,6 +136,8 @@ export const GATES_AND_INBOX_EN_LABELS: Pick<
     closeCta: "Close",
     challengeSubmittedFeedback: "Correction request sent to the step owner ✓",
     replayTriggeredFeedback: "Restart completed from the selected step ✓",
+    submitDisabledReason: "Enter the correction reason to enable submission.",
+    tokensSavedLabel: "tokens saved",
     rootWorkflowLabel: "Process starting point (Step 1)",
     stepLabels: {
       "frame-architecture-intent": "Architecture intent framing",
@@ -169,6 +174,7 @@ export const GATES_AND_INBOX_EN_LABELS: Pick<
       inspectHypothesesButtonLabel: "Confirm reading of assumptions",
       hypothesesInspectedBadgeLabel: "Assumptions reviewed",
       hypothesesPendingBadgeLabel: "Review required (Point 4)",
+      readOnlyInspectReason: "Read-only mode: inspection reserved for contributors.",
     },
     chunkValidation: {
       sectionListTitle: "Section-by-Section Review",

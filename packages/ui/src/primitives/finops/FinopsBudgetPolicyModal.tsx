@@ -102,10 +102,10 @@ export function FinopsBudgetPolicyModal({
             data-bwignore="true"
             data-form-type="other"
           >
-            <option value="GLOBAL">{labels.scopeGlobalLabel ?? "Plateforme entière"}</option>
-            <option value="BU">{labels.scopeBuLabel ?? "Direction"}</option>
-            <option value="TEAM">{labels.scopeTeamLabel ?? "Équipe"}</option>
-            <option value="WORKSPACE">{labels.scopeWorkspaceLabel ?? "Espace"}</option>
+            <option value="GLOBAL">{labels.scopeGlobalLabel ?? "GLOBAL"}</option>
+            <option value="BU">{labels.scopeBuLabel ?? "BU"}</option>
+            <option value="TEAM">{labels.scopeTeamLabel ?? "TEAM"}</option>
+            <option value="WORKSPACE">{labels.scopeWorkspaceLabel ?? "WORKSPACE"}</option>
           </select>
         </div>
 

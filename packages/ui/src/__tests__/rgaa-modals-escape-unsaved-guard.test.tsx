@@ -4,7 +4,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import {
   AssistantGovernanceModalAndStudio,
   CommandPaletteModal,
-  DEFAULT_RGAA_MODAL_LABELS_FR,
   GuidanceDrawer,
   RgaaModalDialog,
   TopHeaderSearchCommand,
@@ -14,6 +13,7 @@ import {
   type CommandPaletteItemSpec,
   type CommandPaletteModalLabels,
   type GuidanceDrawerLabels,
+  type RgaaModalGuardLabels,
   type TopHeaderSearchCommandLabels,
   type TopSearchHitItem,
   type UpstreamChallengeModalLabels,
@@ -156,6 +156,18 @@ const SAMPLE_GUIDANCE_LABELS: GuidanceDrawerLabels = {
   commandPrefix: "Commande",
 };
 
+const TEST_RGAA_MODAL_LABELS_FR: RgaaModalGuardLabels = {
+  closeButtonLabel: "Fermer",
+  cancelButtonLabel: "Annuler",
+  submitButtonLabel: "Valider",
+  cancelCta: "Annuler",
+  submitCta: "Valider",
+  unsavedAlertTitle: "Modifications non enregistrées",
+  unsavedAlertMessage: "Des modifications non enregistrées seront perdues si vous quittez maintenant.",
+  unsavedStayCta: "Continuer l'édition",
+  unsavedDiscardCta: "Quitter sans enregistrer",
+};
+
 describe("RGAA Modal & Popup Accessibility — Escape, Cancel, Unsaved Changes Guard & Enter Submit", () => {
   describe("1. RgaaModalDialog shared primitive", () => {
     it("closes immediately on Escape or Cancel click when isDirty is false", () => {
@@ -169,7 +181,7 @@ describe("RGAA Modal & Popup Accessibility — Escape, Cancel, Unsaved Changes G
           isDirty={false}
           onClose={onClose}
           onSubmit={onSubmit}
-          labels={DEFAULT_RGAA_MODAL_LABELS_FR}
+          labels={TEST_RGAA_MODAL_LABELS_FR}
         >
           <p>Contenu</p>
         </RgaaModalDialog>,
@@ -193,7 +205,7 @@ describe("RGAA Modal & Popup Accessibility — Escape, Cancel, Unsaved Changes G
           isDirty={true}
           onClose={onClose}
           onDiscardUnsavedChanges={onDiscard}
-          labels={DEFAULT_RGAA_MODAL_LABELS_FR}
+          labels={TEST_RGAA_MODAL_LABELS_FR}
         >
           <p>Formulaire modifié</p>
         </RgaaModalDialog>,
@@ -236,7 +248,7 @@ describe("RGAA Modal & Popup Accessibility — Escape, Cancel, Unsaved Changes G
           isDirty={true}
           onClose={onClose}
           onSubmit={onSubmit}
-          labels={DEFAULT_RGAA_MODAL_LABELS_FR}
+          labels={TEST_RGAA_MODAL_LABELS_FR}
         >
           <p>Contenu</p>
         </RgaaModalDialog>,

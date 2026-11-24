@@ -1,7 +1,9 @@
 import type { UserAccountDropdownAndSettingsLabels } from "@orcia/ui";
+import { RGAA_MODAL_LABELS_FR } from "./rgaa_modal_labels";
 import { ROLE_DISPLAY_LABELS_FR } from "./role_display_labels";
 
 export const USER_ACCOUNT_SETTINGS_FR_LABELS: UserAccountDropdownAndSettingsLabels = {
+  ...RGAA_MODAL_LABELS_FR,
   triggerAriaLabel: "Ouvrir le menu de mon compte",
   popover: {
     triggerAriaLabel: "Mon compte",

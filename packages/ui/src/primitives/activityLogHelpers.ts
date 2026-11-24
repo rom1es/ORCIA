@@ -35,13 +35,6 @@ export interface ActivityLogProvenanceLabels {
   readonly exportMdAction: string;
 }
 
-export const DEFAULT_ACTIVITY_LOG_PROVENANCE_LABELS_FR: ActivityLogProvenanceLabels = {
-  selectedRunPrefix: "Exécution sélectionnée :",
-  inspectProvenanceAction: "Inspecter la provenance",
-  exportJsonAction: "Export JSON certifié",
-  exportMdAction: "Dossier Markdown",
-};
-
 export interface ActivityLogExplorerLabels {
   readonly pageTitle: string;
   readonly pageSubtitle: string;
