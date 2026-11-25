@@ -9,12 +9,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-25",
   "stats": {
     "activeRoutesCount": 28,
-    "uiPrimitivesCount": 131,
+    "uiPrimitivesCount": 134,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 237,
+    "techLeadReportsCount": 238,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -125,12 +125,14 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "OntologyAndKbExplorerPanel",
     "OrciaAlertBanner",
     "OrciaButton",
+    "OrciaDataCard",
     "OrciaDialog",
     "OrciaDropdownMenu",
     "OrciaIcon",
     "OrciaInput",
     "OrciaKnownUserCombobox",
     "OrciaModelCombobox",
+    "OrciaPageHeader",
     "OrciaPasswordInput",
     "OrciaProductShowcaseSiteView",
     "OrciaRadixSelect",
@@ -140,6 +142,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "OrciaSpinner",
     "OrciaSwitch",
     "OrciaTabBar",
+    "OrciaTabStrip",
     "OrciaTextarea",
     "OrciaTooltip",
     "OrciaUserPillsSelect",
@@ -542,6 +545,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-25",
+      "phaseOrStory": "Story 29.4",
+      "reportFile": "29-4-canonical-page-header-tab-strip-data-card-and-visual-grammar-tokens-tech-lead-report.md",
+      "domain": "Epic 29 Lot 2 — Canonical <OrciaPageHeader />, <OrciaTabStrip />, <OrciaDataCard />, Three-Tier Cobalt Visual Grammar & Disabled Secondary/Ghost Button Tokens (UH-06, UH-07, CAP-060, CAP-100)",
+      "summary": "Closed (done, Distinct Testing Sub-Agent verified): shipped pure @orcia/ui primitives OrciaPageHeader.tsx (124 L), OrciaTabStrip.tsx (144 L, underline + segmented, keyboard nav & disabled skip), and OrciaDataCard.tsx (84 L), added tokens-headers.css (300 L) + --orcia-surface-card & --color-tab-strip-* tokens (tokens-palette.css 187 L, tokens.css 12 L), fixed .orcia-ds-btn-secondary:disabled & .orcia-ds-btn-ghost:disabled (opacity: 0.48; cursor: not-allowed; pointer-events: none; in tokens-components.css 293 L), migrated ModuleWorkspaceView.tsx (97 L) to <OrciaPageHeader /> (<h1> + ORCIA_MODULE_ICON_NAMES), and documented rules in DESIGN.md (224 L); verified 37 files / 147 tests @orcia/ui (orcia-page-header-tab-strip-card.test.tsx 3/3), 86 files / 318 tests @orcia/web (story-29-4-canonical-header-and-visual-grammar.test.tsx 4/4), 9/9 Turbo (485 JS/TS tests), 181 passed security+contract+evals, 2 passed (41.1s) Playwright Desktop E2E (11-screens-smoke-without-server-errors.spec.ts without fixtures), ruff (1743 files)/mypy --strict (856 files)/lint-imports (5/5, 899 files)/lint_spine (0)/export_openapi (0-diff) clean, and gitnexus_detect_changes (risk_level: low)."
+    },
     {
       "date": "2026-11-25",
       "phaseOrStory": "Story 29.3",

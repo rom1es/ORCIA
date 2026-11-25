@@ -8,4 +8,5 @@
 @import "./tokens-shell.css";
 @import "./tokens-trace.css";
 @import "./tokens-components.css";
+@import "./tokens-headers.css";
 @import "./tokens-overlays.css";

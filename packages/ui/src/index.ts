@@ -376,6 +376,20 @@ export {
   type OrciaTooltipProps,
 } from "./primitives/DesignSystemControls";
 export {
+  OrciaPageHeader,
+  type OrciaPageHeaderProps,
+} from "./primitives/OrciaPageHeader";
+export {
+  OrciaTabStrip,
+  type OrciaTabStripItem,
+  type OrciaTabStripProps,
+  type OrciaTabStripVariant,
+} from "./primitives/OrciaTabStrip";
+export {
+  OrciaDataCard,
+  type OrciaDataCardProps,
+} from "./primitives/OrciaDataCard";
+export {
   ActivityLogExplorerView,
   type ActivityLogExplorerLabels,
   type ActivityLogExplorerViewProps,

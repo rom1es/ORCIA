@@ -484,15 +484,15 @@ capabilities:
     title: Shell 4 zones Direction C (9 entrées dont Mon Organisation & Administration, logo [O] ORCIA top-left, sélecteur unifié d'espace groupé, popup Mon Compte bas-gauche) et cockpit épuré
     fr: [FR-32]
     origin: epic
-    origin_ref: 9-1, 12-1, 17-1, 20-2, 20-3, 25-2 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa
+    origin_ref: 9-1, 12-1, 17-1, 20-2, 20-3, 25-2, 29-4 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa
     status: live
     kind: feature
     uj: [UJ-20]
     db_tables: [org_units, workspaces, user_preferences]
-    tests: [apps/web/e2e/shell.spec.ts, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, packages/ui/src/__tests__/story-17-1-wireframe-icons-and-shell-rail.test.tsx, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx, apps/web/src/__tests__/story-20-3-sidebar-account-popover-and-settings-f5.test.tsx, apps/web/src/__tests__/story-25-2-shell-9-items-org-admin-and-unified-scope.test.tsx]
+    tests: [apps/web/e2e/shell.spec.ts, apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, packages/ui/src/__tests__/story-17-1-wireframe-icons-and-shell-rail.test.tsx, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx, packages/ui/src/__tests__/orcia-page-header-tab-strip-card.test.tsx, apps/web/src/__tests__/story-20-3-sidebar-account-popover-and-settings-f5.test.tsx, apps/web/src/__tests__/story-25-2-shell-9-items-org-admin-and-unified-scope.test.tsx, apps/web/src/__tests__/story-29-4-canonical-header-and-visual-grammar.test.tsx]
     verification: runtime
-    verified_at: "2026-11-20"
-    surfaces: { ui: "FourZoneDirectionCShell + FourZoneSidebarRail + OrciaIcon SVG + SidebarAccountPopover", api: "/api/v1/navigation (shell.py)" }
+    verified_at: "2026-11-25"
+    surfaces: { ui: "FourZoneDirectionCShell + FourZoneSidebarRail + OrciaIcon SVG + SidebarAccountPopover + OrciaPageHeader + OrciaTabStrip + OrciaDataCard + ModuleWorkspaceView", api: "/api/v1/navigation (shell.py)" }
   - id: CAP-061
     title: Accostage progressif Jour 0 (1/6) et protections
     fr: [FR-32]
@@ -767,15 +767,16 @@ capabilities:
     title: Garde-fous qualité UI/CI (zéro bouton muet, popups RGAA/Échap, zéro donnée fictive, anti-LastPass, séparation design system, socle Radix UI AD-22)
     fr: []
     origin: adhoc
-    origin_ref: "2026-11-04-audit-et-cablage-vertical-epics-1-a-7 + 2026-11-04-cablage-vertical-persistance-epics-8-a-12 + 2026-11-04-audit-et-factorisation-popups-rgaa-echap-annuler + 2026-11-05-audit-et-purge-integrale-donnees-fictives-et-mocks-hors-tests + 2026-11-05-audit-global-inputs-secrets-et-parade-anti-lastpass-hors-login + 2026-11-05-audit-separation-design-system-look-and-feel-logique-et-contenus + 2026-11-06-audit-global-zero-bouton-muet-cablage-callbacks-et-garde-fous-ci + 2026-11-05-unification-ux-onglets-bleu-intense-actif-bleu-pale-inactif + 2026-11-05-renommage-icone-documentation-et-message-export-html + 2026-11-08-bugs-p1-e2e-et-socle-radix-ui + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 27-1..27-8 (epic-27 bilingual FR/EN & zero-baseline lock)"
+    origin_ref: "2026-11-04-audit-et-cablage-vertical-epics-1-a-7 + 2026-11-04-cablage-vertical-persistance-epics-8-a-12 + 2026-11-04-audit-et-factorisation-popups-rgaa-echap-annuler + 2026-11-05-audit-et-purge-integrale-donnees-fictives-et-mocks-hors-tests + 2026-11-05-audit-global-inputs-secrets-et-parade-anti-lastpass-hors-login + 2026-11-05-audit-separation-design-system-look-and-feel-logique-et-contenus + 2026-11-06-audit-global-zero-bouton-muet-cablage-callbacks-et-garde-fous-ci + 2026-11-05-unification-ux-onglets-bleu-intense-actif-bleu-pale-inactif + 2026-11-05-renommage-icone-documentation-et-message-export-html + 2026-11-08-bugs-p1-e2e-et-socle-radix-ui + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 27-1..27-8 (epic-27 bilingual FR/EN & zero-baseline lock) + 29-4"
     status: live
     kind: foundation
-    e2e_exempt_reason: "Garde-fous transverses d'hygiène UI/CI (zéro bouton muet, modales RGAA/Échap, zéro donnée fictive, anti-LastPass, séparation @orcia/ui, socle Radix UI AD-22, verrous déterministes i18n FR/EN) sans parcours métier isolé ; couverts par AD-17 Couches 1a/1b (audit AST/Vitest & Radix UI), contrôles CI statiques et spec E2E bilingue 23-bilingual-fr-en-i18n-and-rfc9457.spec.ts."
-    tests: [apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx, tests/unit/test_zero_fictional_data_and_mocks_in_prod.py, tests/unit/test_platform_auth_policy_2fa_and_runtime_isolation.py, apps/web/src/__tests__/design-system-look-and-feel-isolation.test.tsx, packages/ui/src/__tests__/radix-design-system-primitives.test.tsx, apps/web/src/__tests__/i18n-hardcoded-locale-ast-audit.test.ts, apps/web/src/__tests__/i18n-dictionary-parity-and-jargon-audit.test.ts, apps/web/src/__tests__/client-error-code-contract-audit.test.ts, tests/unit/test_i18n_backend_catalog_and_english_dev_audit.py, apps/web/e2e/23-bilingual-fr-en-i18n-and-rfc9457.spec.ts]
+    e2e_exempt_reason: "Garde-fous transverses d'hygiène UI/CI (zéro bouton muet, modales RGAA/Échap, zéro donnée fictive, anti-LastPass, séparation @orcia/ui, socle Radix UI AD-22, verrous déterministes i18n FR/EN, grammaire visuelle Cobalt 3 niveaux & en-tête canonique) sans parcours métier isolé ; couverts par AD-17 Couches 1a/1b (audit AST/Vitest & Radix UI), contrôles CI statiques et spec E2E bilingue 23-bilingual-fr-en-i18n-and-rfc9457.spec.ts."
+    tests: [apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx, tests/unit/test_zero_fictional_data_and_mocks_in_prod.py, tests/unit/test_platform_auth_policy_2fa_and_runtime_isolation.py, apps/web/src/__tests__/design-system-look-and-feel-isolation.test.tsx, packages/ui/src/__tests__/radix-design-system-primitives.test.tsx, packages/ui/src/__tests__/orcia-page-header-tab-strip-card.test.tsx, apps/web/src/__tests__/story-29-4-canonical-header-and-visual-grammar.test.tsx, apps/web/src/__tests__/i18n-hardcoded-locale-ast-audit.test.ts, apps/web/src/__tests__/i18n-dictionary-parity-and-jargon-audit.test.ts, apps/web/src/__tests__/client-error-code-contract-audit.test.ts, tests/unit/test_i18n_backend_catalog_and_english_dev_audit.py, apps/web/e2e/23-bilingual-fr-en-i18n-and-rfc9457.spec.ts]
     surfaces:
       api: e2e_test_hooks
+      ui: "OrciaPageHeader + OrciaTabStrip + OrciaDataCard"
     verification: runtime
-    verified_at: "2026-11-24"
+    verified_at: "2026-11-25"
 
   # ───────────── Ajouts hors epic identifiés après audit complémentaire (rapports 06–08/11) ─────────────
   - id: CAP-043

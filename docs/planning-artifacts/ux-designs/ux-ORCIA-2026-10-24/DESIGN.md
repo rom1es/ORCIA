@@ -202,3 +202,22 @@ Au-delà des primitives héritées de `shadcn/ui` (`Button`, `Card`, `Badge`, `T
 | Utiliser exclusivement `<SecretField />` (`SecretInput: keep \| set \| clear` + `SecretStatus` fingerprint) pour tout secret ou jeton `Passthrough`                                                                                      | Renvoyer un secret masqué `••••••••` dans un `input` contrôlé qui risquerait d'écraser le secret réel en base                                                                                      |
 | Sélectionner un **Palier de modèle abstrait (`Rapide`, `Équilibré`, `Approfondi`)** dans le Studio et un mode de vitesse (`⚡ Standard` / `🧠 Approfondi`) dans `Mon Assistant`                                                            | Coder en dur des noms commerciaux de modèles LLM (`gpt-4o`, `claude-3-7-sonnet`) dans les nœuds d'un processus                                                                                     |
 | Dans **`📊 FinOps`** (`AD-12`), distinguer le **Coût interne vérifié** du **Coût externe déclaré MCP** (borné par `RemoteUsageSanitizer`) et séparer les compteurs de **Tokens LLM** et d'**Appels / Unités MCP**                         | Additionner artificiellement des unités métiers externes (`pages OCR`, `crédits API`) avec des `tokens LLM` ou laisser un `_meta.usage` externe non borné bloquer les modèles internes de l'Espace |
+
+## Canonical Page Framing & Visual Grammar (`UH-06`, `UH-07`, Story 29.4)
+
+To eliminate cross-screen header fragmentation and overloaded solid-Cobalt button usage, all primary and secondary ORCIA screens converge on three `@orcia/ui` primitives and a strict three-tier visual grammar:
+
+1. **Canonical Two-Tier Page Header (`<OrciaPageHeader />`, `.orcia-ds-page-header`)**:
+   - **Tier 1 (Identity & Primary Action)**: White `.orcia-bento-card` surface (`var(--orcia-surface-card)`, `1px solid var(--orcia-border-subtle)`, `padding: 16px 20px`) containing a monochrome `<OrciaIcon />`, semantic `<h1>` at `var(--font-size-h2)`, optional inline `contextBadge`, concise 1-line `subtitle`, and right-aligned action slots (`secondaryActions` + at most **1** solid Cobalt `primaryAction`).
+   - **Tier 2 (Optional Navigation & Scope Bar)**: Separated by a subtle top border (`.orcia-ds-page-header-tier2`), hosting `<OrciaTabStrip />` on the left and contextual `scopeBar` controls on the right so tab-switching never wraps or shifts primary CTAs (`CLS = 0`).
+   - **Aligned Alert Slot (`alertSlot`)**: Rendered strictly beneath `<header>` at exact page width (`.orcia-ds-page-header-alert-slot`), never above the header card.
+2. **Accessible Horizontal Tab Strip (`<OrciaTabStrip />`, `.orcia-ds-tab-strip`)**:
+   - Exposes `role="tablist"` (`aria-orientation="horizontal"`), `role="tab"`, `aria-selected`, optional count badges, monochrome `<OrciaIcon />`, `disabled` / `disabledReason` tooltips, optional `trailingSlot`, and `ArrowLeft`/`ArrowRight`/`Home`/`End` keyboard navigation across enabled tabs.
+   - Uses `underline` (default) or neutral `segmented` active styling (`var(--color-tab-strip-active-fg)`, `var(--color-tab-strip-active-indicator)`) — visually distinct from solid Cobalt primary buttons and neutral filter pills.
+3. **White Surface Data Card (`<OrciaDataCard />`, `.orcia-ds-data-card`)**:
+   - Frames KPI strips, filter bars, tables, lists, and detail panels on the `#EAF2FB` canvas (`var(--orcia-surface-card)`, `var(--orcia-border-subtle)`) with optional header bar (`icon`, `<h2>` `title`, `subtitle`, `metaBadge`, `actions`) and optional `footer`.
+4. **Three-Tier Visual Grammar & Disabled Affordance**:
+   - **Primary CTAs (`.orcia-ds-btn-primary`)**: Reserved exclusively for at most 1 primary creation/submission action per header; repeated per-row or per-card actions use secondary/subtle styling.
+   - **Tabs (`.orcia-ds-tab-strip-item`)**: Underline or neutral segmented tabs dedicated to view switching.
+   - **Filters & Scope Pills (`.orcia-ds-filter-pill`)**: Neutral rounded-full pills (`var(--color-filter-pill-bg)` -> `var(--color-filter-pill-active-bg)`).
+   - **Disabled Buttons**: `.orcia-ds-btn-secondary:disabled` and `.orcia-ds-btn-ghost:disabled` enforce `opacity: 0.48; cursor: not-allowed; pointer-events: none;`, matching `.orcia-ds-btn-primary:disabled` (`0.48`) and `.orcia-ds-btn-danger:disabled` (`0.50`).

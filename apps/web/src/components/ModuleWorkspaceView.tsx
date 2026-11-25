@@ -1,4 +1,9 @@
-import { StatusBadge, type UiModuleKey } from "@orcia/ui";
+import {
+  ORCIA_MODULE_ICON_NAMES,
+  OrciaPageHeader,
+  StatusBadge,
+  type UiModuleKey,
+} from "@orcia/ui";
 import React from "react";
 import { AdminFeaturePanel } from "../features/admin";
 import { CatalogFeaturePanel } from "../features/catalog";
@@ -57,34 +62,19 @@ export function ModuleWorkspaceView({
       currentModule === "finops" ||
       currentModule === "inbox" ||
       currentModule === "admin" ? null : (
-        <div
-          className="orcia-bento-card"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "8px",
-              flexWrap: "wrap",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <strong style={{ fontSize: "16px" }}>{headerSubtitle}</strong>
-            </div>
+        <OrciaPageHeader
+          testId={`module-header-${currentModule}`}
+          icon={ORCIA_MODULE_ICON_NAMES[currentModule]}
+          title={headerSubtitle}
+          subtitle={headerDescription}
+          contextBadge={
             <StatusBadge
               testId={`module-uri-badge-${currentModule}`}
               label={pageCopy.uriBadgeExample}
               tone="cobalt"
             />
-          </div>
-          <p style={{ margin: 0, color: "var(--color-muted-foreground)" }}>{headerDescription}</p>
-        </div>
+          }
+        />
       )}
 
       {currentModule === "cockpit" && <CockpitFeaturePanel />}

@@ -73,6 +73,28 @@
   --color-tab-inactive-fg: #1E3A8A;
   --color-tab-inactive-border: #93C5FD;
 
+  /* Canonical <OrciaTabStrip /> & <OrciaPageHeader /> Visual Grammar Tokens (Story 29.4) */
+  --color-tab-strip-border: var(--color-border);
+  --color-tab-strip-fg: var(--color-muted-foreground);
+  --color-tab-strip-hover-fg: var(--color-foreground);
+  --color-tab-strip-hover-bg: var(--color-surface-hover);
+  --color-tab-strip-active-fg: var(--color-sidebar-active-fg);
+  --color-tab-strip-active-indicator: var(--color-primary-cobalt);
+  --color-tab-strip-segmented-bg: var(--color-surface-muted);
+  --color-tab-strip-segmented-active-bg: var(--color-surface-card);
+  --color-tab-strip-badge-bg: var(--color-surface-muted);
+  --color-tab-strip-badge-fg: var(--color-muted-foreground);
+  --color-tab-strip-badge-active-bg: var(--color-badge-cobalt-bg);
+  --color-tab-strip-badge-active-fg: var(--color-badge-cobalt-fg);
+  --color-page-header-icon-bg: var(--color-badge-cobalt-bg);
+  --color-page-header-icon-fg: var(--color-badge-cobalt-fg);
+  --color-page-header-icon-border: var(--color-badge-cobalt-border);
+  --color-filter-pill-bg: var(--color-surface-muted);
+  --color-filter-pill-fg: var(--color-muted-foreground);
+  --color-filter-pill-active-bg: var(--color-action-primary-subtle);
+  --color-filter-pill-active-fg: var(--color-badge-cobalt-fg);
+  --color-filter-pill-active-border: var(--color-badge-cobalt-border);
+
   /* Reserved exclusively for HumanLedAnchorCard (human_authored_required: true) */
   --color-human-led-violet: #6D28D9;
   --color-human-led-bg: #F5F3FF;
@@ -111,6 +133,7 @@
   --color-status-failed: var(--color-stale-crimson);
 
   /* Legacy @orcia/ui Primitives Token Aliases (--orcia-*) */
+  --orcia-surface-card: var(--color-surface-card);
   --orcia-surface-primary: var(--color-surface-primary);
   --orcia-surface-secondary: var(--color-surface-secondary);
   --orcia-surface-elevated: var(--color-surface-elevated);
