@@ -4075,7 +4075,7 @@ export interface components {
     UpdateUserLayerPreferencesRequest: {
       default_hat?: string;
       favorite_format?: "BULLETS_SUMMARY" | "STRUCTURED_SECTIONS" | "STEP_BY_STEP";
-      personal_instructions: string;
+      personal_instructions?: string;
       response_tone?: "SYNTHETIC" | "BALANCED" | "DETAILED_CODE";
       workspace_id: string;
     };

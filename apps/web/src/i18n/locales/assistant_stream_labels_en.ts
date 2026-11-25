@@ -45,6 +45,11 @@ export const ASSISTANT_GOVERNANCE_LABELS_EN: AssistantGovernanceModalAndStudioLa
   mcpFrozenByUpperBadge: "Set by Team or Organization",
   copyMcpConfigCta: "Copy editor configuration",
   saveWorkspaceSettingsCta: "Save for Space",
+  saveChangesCta: "Save",
+  savingChangesLabel: "Saving...",
+  unsavedAssemblyNote:
+    "Pending local edits are not yet applied: click Save to refresh this preview.",
+  saveErrorFallback: "Unable to save settings. Please try again.",
   telemetryHeading: "Prompts, Contexts & User Feedback Log",
   telemetrySubtitle: "Continuous analysis and improvement of instructions",
   telemetryEmptyIntro:

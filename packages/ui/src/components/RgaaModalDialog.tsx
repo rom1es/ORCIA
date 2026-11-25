@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { OrciaSpinner } from "../primitives/OrciaSpinner";
 import { DisabledButtonAlertIndicator } from "./DisabledButtonAlertIndicator";
 import type { RgaaModalDialogLabels, RgaaModalGuardLabels } from "./RgaaModalGuardLabels";
 import {
@@ -117,9 +118,12 @@ export function useUnsavedChangesDialogGuard({
 
 export interface RgaaDialogFooterActionsProps {
   readonly testIdPrefix: string;
+  readonly cancelTestId?: string;
+  readonly submitTestId?: string;
   readonly cancelLabel: string;
   readonly submitLabel?: string;
   readonly submitDisabled?: boolean;
+  readonly isSubmitting?: boolean;
   readonly disabledReason?: string;
   readonly submitButtonType?: "button" | "submit";
   readonly onCancel: () => void;
@@ -128,14 +132,18 @@ export interface RgaaDialogFooterActionsProps {
 
 export function RgaaDialogFooterActions({
   testIdPrefix,
+  cancelTestId,
+  submitTestId,
   cancelLabel,
   submitLabel = "",
   submitDisabled = false,
+  isSubmitting = false,
   disabledReason,
   submitButtonType = "button",
   onCancel,
   onSubmit,
 }: RgaaDialogFooterActionsProps): React.ReactElement {
+  const effectiveSubmitTestId = submitTestId ?? `${testIdPrefix}-submit-btn`;
   return (
     <div
       data-testid={`${testIdPrefix}-rgaa-footer-actions`}
@@ -143,7 +151,7 @@ export function RgaaDialogFooterActions({
     >
       <button
         type="button"
-        data-testid={`${testIdPrefix}-cancel-btn`}
+        data-testid={cancelTestId ?? `${testIdPrefix}-cancel-btn`}
         onClick={onCancel}
         className="rounded border px-3 py-1.5 text-xs font-medium"
         style={{
@@ -158,23 +166,24 @@ export function RgaaDialogFooterActions({
       {onSubmit && (
         <button
           type={submitButtonType}
-          data-testid={`${testIdPrefix}-submit-btn`}
-          disabled={submitDisabled}
+          data-testid={effectiveSubmitTestId}
+          disabled={submitDisabled || isSubmitting}
           onClick={onSubmit}
-          onKeyDown={(e) => handleRgaaSubmitKeyDown(e, onSubmit, submitDisabled)}
+          onKeyDown={(e) => handleRgaaSubmitKeyDown(e, onSubmit, submitDisabled || isSubmitting)}
           className="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-semibold"
           style={{
             backgroundColor: "var(--color-action-primary)",
             color: "var(--color-primary-foreground)",
-            opacity: submitDisabled ? 0.55 : 1,
-            cursor: submitDisabled ? "not-allowed" : "pointer",
+            opacity: submitDisabled || isSubmitting ? 0.55 : 1,
+            cursor: submitDisabled || isSubmitting ? "not-allowed" : "pointer",
           }}
         >
+          {isSubmitting && <OrciaSpinner size="xs" testId={`${testIdPrefix}-submit-spinner`} />}
           <span>{submitLabel}</span>
           <DisabledButtonAlertIndicator
             disabled={submitDisabled}
             reason={disabledReason}
-            testIdSuffix={`${testIdPrefix}-submit-btn`}
+            testIdSuffix={effectiveSubmitTestId}
           />
         </button>
       )}

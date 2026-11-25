@@ -30,7 +30,7 @@ class UpdateUserLayerPreferencesRequest(BaseModel):
         "STRUCTURED_SECTIONS"
     )
     default_hat: str = Field(default="PM", min_length=2)
-    personal_instructions: str = Field(..., min_length=3)
+    personal_instructions: str = Field(default="", min_length=0, max_length=4000)
 
 
 class WorkspaceLayerSettingsSchemaItem(BaseModel):

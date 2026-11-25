@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import {
   AssistantGovernanceModalAndStudio,
   CommandPaletteModal,
@@ -331,9 +331,9 @@ describe("RGAA Modal & Popup Accessibility — Escape, Cancel, Unsaved Changes G
   });
 
   describe("3. AssistantGovernanceModalAndStudio", () => {
-    it("supports Escape/Cancel when clean, guards unsaved changes when dirty, and submits on Enter", () => {
+    it("supports Escape/Cancel when clean, guards unsaved changes when dirty, and submits on Enter", async () => {
       const onClose = vi.fn();
-      const onSaveUserPrefs = vi.fn();
+      const onSaveUserPrefs = vi.fn(async () => true);
       render(
         <AssistantGovernanceModalAndStudio
           workspaceId="ws-1"
@@ -341,11 +341,21 @@ describe("RGAA Modal & Popup Accessibility — Escape, Cancel, Unsaved Changes G
           canOpenStudioModeB={true}
           assembledLayers={[]}
           studioNodes={[]}
-          labels={SAMPLE_ASSISTANT_GOV_LABELS}
+          labels={{
+            ...SAMPLE_ASSISTANT_GOV_LABELS,
+            saveChangesCta: "Enregistrer",
+            savingChangesLabel: "Enregistrement...",
+            unsavedAssemblyNote: "Modifications en attente.",
+            saveErrorFallback: "Erreur de sauvegarde.",
+          }}
           onSaveUserPreferences={onSaveUserPrefs}
           onClose={onClose}
         />,
       );
+
+      // 0. Clean state: cancel button says "Fermer", save button is disabled
+      expect(screen.getByTestId("assistant-gov-cancel-btn").textContent).toBe("Fermer");
+      expect((screen.getByTestId("assistant-save-user-prefs-btn") as HTMLButtonElement).disabled).toBe(true);
 
       // 1. Clean Escape calls onClose
       fireEvent.keyDown(window, { key: "Escape" });
@@ -355,6 +365,26 @@ describe("RGAA Modal & Popup Accessibility — Escape, Cancel, Unsaved Changes G
       fireEvent.change(screen.getByTestId("assistant-user-instructions-input"), {
         target: { value: "Nouvelle directive métier" },
       });
+      expect(onSaveUserPrefs).not.toHaveBeenCalled();
+      expect(screen.getByTestId("assistant-gov-cancel-btn").textContent).toBe("Annuler");
+      expect((screen.getByTestId("assistant-save-user-prefs-btn") as HTMLButtonElement).disabled).toBe(false);
+
+      // Reverting back to baseline clears dirty state automatically
+      fireEvent.change(screen.getByTestId("assistant-user-instructions-input"), {
+        target: { value: "" },
+      });
+      expect(screen.getByTestId("assistant-gov-cancel-btn").textContent).toBe("Fermer");
+      expect((screen.getByTestId("assistant-save-user-prefs-btn") as HTMLButtonElement).disabled).toBe(true);
+
+      // Re-edit to make dirty again
+      fireEvent.change(screen.getByTestId("assistant-user-instructions-input"), {
+        target: { value: "Nouvelle directive métier" },
+      });
+
+      // Switch to Tab 3 while dirty -> shows non-blocking pending edits note
+      fireEvent.click(screen.getByTestId("assistant-gov-tab-FULL_ASSEMBLY"));
+      expect(screen.getByTestId("assistant-gov-unsaved-assembly-note")).toBeDefined();
+      fireEvent.click(screen.getByTestId("assistant-gov-tab-USER_PREFS"));
 
       // Click Annuler -> unsaved changes alert appears
       fireEvent.click(screen.getByTestId("assistant-gov-cancel-btn"));
@@ -369,15 +399,54 @@ describe("RGAA Modal & Popup Accessibility — Escape, Cancel, Unsaved Changes G
         screen.queryByTestId("assistant-gov-unsaved-changes-alert"),
       ).toBeNull();
 
-      // 3. Focus Save button and press Enter
+      // 3. Focus Save button and press Enter -> awaits save, resets dirty, keeps modal open
       const saveBtn = screen.getByTestId("assistant-save-user-prefs-btn");
       saveBtn.focus();
       fireEvent.keyDown(saveBtn, { key: "Enter" });
-      expect(onSaveUserPrefs).toHaveBeenCalledWith(
-        expect.objectContaining({
-          personalInstructions: "Nouvelle directive métier",
-        }),
+      await waitFor(() => {
+        expect(onSaveUserPrefs).toHaveBeenCalledWith(
+          expect.objectContaining({
+            personalInstructions: "Nouvelle directive métier",
+          }),
+        );
+        expect(screen.getByTestId("assistant-gov-autosaved-badge")).toBeDefined();
+        expect(screen.getByTestId("assistant-gov-cancel-btn").textContent).toBe("Fermer");
+      });
+
+      // After save, Escape closes cleanly with zero unsaved alert
+      fireEvent.keyDown(window, { key: "Escape" });
+      expect(screen.queryByTestId("assistant-gov-unsaved-changes-alert")).toBeNull();
+      expect(onClose).toHaveBeenCalledTimes(2);
+    });
+
+    it("keeps isDirty=true, hides saved badge, and renders inline error alert when save fails", async () => {
+      const onSaveUserPrefs = vi.fn(async () => false);
+      render(
+        <AssistantGovernanceModalAndStudio
+          workspaceId="ws-1"
+          canEditWorkspaceLayer={true}
+          initialPersonalInstructions="Initial"
+          assembledLayers={[]}
+          labels={{
+            ...SAMPLE_ASSISTANT_GOV_LABELS,
+            saveChangesCta: "Enregistrer",
+            savingChangesLabel: "Enregistrement...",
+            saveErrorFallback: "Échec de l'enregistrement.",
+          }}
+          onSaveUserPreferences={onSaveUserPrefs}
+        />,
       );
+
+      fireEvent.change(screen.getByTestId("assistant-user-instructions-input"), {
+        target: { value: "" },
+      });
+      fireEvent.click(screen.getByTestId("assistant-save-user-prefs-btn"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("assistant-gov-error-banner").getAttribute("role")).toBe("alert");
+      });
+      expect(screen.queryByTestId("assistant-gov-autosaved-badge")).toBeNull();
+      expect(screen.getByTestId("assistant-gov-cancel-btn").textContent).toBe("Annuler");
     });
   });
 

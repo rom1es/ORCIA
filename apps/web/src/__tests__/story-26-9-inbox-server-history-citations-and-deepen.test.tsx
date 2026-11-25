@@ -150,6 +150,9 @@ describe("Story 26.9 — Mode A UI/SDK wiring, server thread history, citations,
     fireEvent.click(screen.getByTestId("assistant-open-governance-btn"));
     await screen.findByTestId("assistant-governance-container");
     expect(screen.queryByTestId("assistant-open-studio-mode-b-btn")).toBeNull();
+    fireEvent.change(screen.getByTestId("assistant-user-instructions-input"), {
+      target: { value: "Concise verified answers only." },
+    });
     fireEvent.click(screen.getByTestId("assistant-save-user-prefs-btn"));
     await waitFor(() => {
       const putGov = backendState.recordedCalls.find((c) => c.path === "/api/v1/assistant/governance/mode-a/user" && c.method === "PUT");

@@ -46,6 +46,11 @@ export function useServerAssistantGovernance(params: {
   const [mcpFrozenByUpperLayer, setMcpFrozenByUpperLayer] = useState<boolean>(false);
   const [mcpIdeConfigJson, setMcpIdeConfigJson] = useState<string>("{}");
   const [governanceSaveMessage, setGovernanceSaveMessage] = useState<string | null>(null);
+  const [governanceModalError, setGovernanceModalError] = useState<string | null>(null);
+
+  const clearGovernanceModalError = useCallback((): void => {
+    setGovernanceModalError(null);
+  }, []);
 
   const applyView = useCallback((view: AssistantGovernanceViewResponse) => {
     setGovernancePrefs({
@@ -62,18 +67,23 @@ export function useServerAssistantGovernance(params: {
     setMcpIdeConfigJson(view.workspace_settings.mcp_ide_config_json || "{}");
   }, []);
 
+  const fetchAndApplyGovernance = useCallback(async (): Promise<void> => {
+    if (!workspaceId) return;
+    const view = await createOrciaApiClient({ baseUrl: "" }).getAssistantGovernance(
+      workspaceId,
+    );
+    applyView(view);
+  }, [workspaceId, applyView]);
+
   const refreshGovernance = useCallback(async (): Promise<void> => {
     if (!workspaceId) return;
     try {
-      const view = await createOrciaApiClient({ baseUrl: "" }).getAssistantGovernance(
-        workspaceId,
-      );
-      applyView(view);
+      await fetchAndApplyGovernance();
     } catch (err: unknown) {
       onFeedback(errorDetail(err, locale));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspaceId, applyView]);
+  }, [workspaceId, fetchAndApplyGovernance]);
 
   useEffect(() => {
     void refreshGovernance();
@@ -85,8 +95,9 @@ export function useServerAssistantGovernance(params: {
       favoriteFormat: SavedAssistantGovernancePrefs["favoriteFormat"];
       defaultHat: string;
       personalInstructions: string;
-    }): Promise<void> => {
-      if (!workspaceId) return;
+    }): Promise<boolean> => {
+      if (!workspaceId) return false;
+      setGovernanceModalError(null);
       try {
         await createOrciaApiClient({ baseUrl: "" }).updateAssistantUserPreferences({
           workspace_id: workspaceId,
@@ -95,36 +106,41 @@ export function useServerAssistantGovernance(params: {
           default_hat: payload.defaultHat,
           personal_instructions: payload.personalInstructions,
         });
-        await refreshGovernance();
+        await fetchAndApplyGovernance();
         setGovernanceSaveMessage(flowCopy.personalPrefsSavedBanner);
+        return true;
       } catch (err: unknown) {
-        onFeedback(errorDetail(err, locale));
+        setGovernanceModalError(errorDetail(err, locale));
+        return false;
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [workspaceId, locale, refreshGovernance],
+    [workspaceId, locale, fetchAndApplyGovernance],
   );
 
   const saveWorkspaceSettings = useCallback(
     async (payload: {
       workspaceInstructions: string;
       mcpExposeAssistant: boolean;
-    }): Promise<void> => {
-      if (!workspaceId) return;
+    }): Promise<boolean> => {
+      if (!workspaceId) return false;
+      setGovernanceModalError(null);
       try {
         await createOrciaApiClient({ baseUrl: "" }).updateAssistantWorkspaceSettings({
           workspace_id: workspaceId,
           workspace_instructions: payload.workspaceInstructions,
           mcp_expose_assistant: payload.mcpExposeAssistant,
         });
-        await refreshGovernance();
+        await fetchAndApplyGovernance();
         setGovernanceSaveMessage(flowCopy.workspaceSettingsSavedBanner);
+        return true;
       } catch (err: unknown) {
-        onFeedback(errorDetail(err, locale));
+        setGovernanceModalError(errorDetail(err, locale));
+        return false;
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [workspaceId, locale, refreshGovernance],
+    [workspaceId, locale, fetchAndApplyGovernance],
   );
 
   return {
@@ -135,6 +151,8 @@ export function useServerAssistantGovernance(params: {
     mcpIdeConfigJson,
     governanceSaveMessage,
     setGovernanceSaveMessage,
+    governanceModalError,
+    clearGovernanceModalError,
     refreshGovernance,
     saveUserPreferences,
     saveWorkspaceSettings,

@@ -336,8 +336,8 @@ development_status:
   # Epic 30 — Honest Save Semantics, Clean Conversational Prompts, Real PG18 Process Runs & Focus Review, and Agent Lifecycle Hardening (UX30-01..UX30-16)
   # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-25-epic-30-assistant-processes-and-agents-ux-hardening.md
   # Lots        : L1 30-1 -> 30-2 | L2 30-3 -> 30-4 | L3 30-5 -> L4 30-6
-  epic-30: backlog
-  30-1-assistant-settings-explicit-save-dirty-guard-and-empty-instructions: backlog
+  epic-30: in-progress
+  30-1-assistant-settings-explicit-save-dirty-guard-and-empty-instructions: done
   30-2-assistant-conversational-prompt-cleanup-and-empty-evidence-guard: backlog
   30-3-processes-real-pg18-pending-runs-live-llm-and-coalesced-trace: backlog
   30-4-processes-tabbed-hub-and-focus-review-action-artifact-reasoning: backlog

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -53,7 +53,7 @@ const GOV_LABELS: AssistantGovernanceModalAndStudioLabels = {
 };
 
 describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
-  it("Story 10.1 — renders Mode A (3 tabs: USER, WORKSPACE with MCP Funnel Rule, and 5-Layer Full Assembly) and switches to Mode B Studio with locked 🔒 AssistantHarness bounds and 1-click Reset", () => {
+  it("Story 10.1 — renders Mode A (3 tabs: USER, WORKSPACE with MCP Funnel Rule, and 5-Layer Full Assembly) and switches to Mode B Studio with locked 🔒 AssistantHarness bounds and 1-click Reset", async () => {
     const onSaveUserPreferences = vi.fn();
     const onSaveWorkspaceSettings = vi.fn();
     const onCopyMcpConfig = vi.fn();
@@ -151,21 +151,42 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
       />,
     );
 
-    // Tab 1: Save user preferences
-    fireEvent.change(screen.getByTestId("assistant-user-tone-select"), {
+    // Tab 1: Changing dropdown sets dirty without auto-saving; explicit Save commits
+    expect(screen.queryByTestId("assistant-user-tone-select")).toBeNull();
+    expect(screen.queryByTestId("assistant-user-format-select")).toBeNull();
+    expect(screen.queryByTestId("assistant-user-hat-input")).toBeNull();
+    expect(screen.queryByTestId("assistant-gov-save-user-btn")).toBeNull();
+    expect(screen.queryByTestId("assistant-gov-save-workspace-btn")).toBeNull();
+    expect(screen.queryByTestId("assistant-save-workspace-settings-btn")).toBeNull();
+
+    const saveBtn = screen.getByTestId("assistant-save-user-prefs-btn") as HTMLButtonElement;
+    expect(saveBtn.disabled).toBe(true);
+
+    fireEvent.change(screen.getByTestId("assistant-gov-tone-select"), {
       target: { value: "SYNTHETIC" },
     });
-    fireEvent.click(screen.getByTestId("assistant-save-user-prefs-btn"));
-    expect(onSaveUserPreferences).toHaveBeenCalledWith(
-      expect.objectContaining({ responseTone: "SYNTHETIC" }),
-    );
+    expect(onSaveUserPreferences).not.toHaveBeenCalled();
+    expect(saveBtn.disabled).toBe(false);
 
-    // Tab 2: Workspace settings + MCP copy config
+    fireEvent.click(saveBtn);
+    await waitFor(() => {
+      expect(onSaveUserPreferences).toHaveBeenCalledWith(
+        expect.objectContaining({ responseTone: "SYNTHETIC" }),
+      );
+    });
+
+    // Tab 2: Workspace settings + MCP copy config + explicit Save
     fireEvent.click(screen.getByTestId("assistant-gov-tab-WORKSPACE_SETTINGS"));
     fireEvent.click(screen.getByTestId("assistant-copy-mcp-config-btn"));
     expect(onCopyMcpConfig).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByTestId("assistant-save-workspace-settings-btn"));
-    expect(onSaveWorkspaceSettings).toHaveBeenCalledTimes(1);
+    fireEvent.change(screen.getByTestId("assistant-workspace-instructions-input"), {
+      target: { value: "Respecter les normes internes." },
+    });
+    expect(onSaveWorkspaceSettings).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId("assistant-save-user-prefs-btn"));
+    await waitFor(() => {
+      expect(onSaveWorkspaceSettings).toHaveBeenCalledTimes(1);
+    });
 
     // Tab 3: Full 5-layer assembly
     fireEvent.click(screen.getByTestId("assistant-gov-tab-FULL_ASSEMBLY"));
@@ -789,7 +810,7 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     expect(input.value).toBe("");
   });
 
-  it("Story 10.2d — renders right-aligned blue user question bubble, animated thinking slider, display:none duplicate suppression, response actions bar (Like, Dislike, Copy, Regenerate), French auto-saving settings with green badge, @Agent and /Skill dynamic autocomplete, and clickable RAG source links", () => {
+  it("Story 10.2d — renders right-aligned blue user question bubble, animated thinking slider, display:none duplicate suppression, response actions bar (Like, Dislike, Copy, Regenerate), French auto-saving settings with green badge, @Agent and /Skill dynamic autocomplete, and clickable RAG source links", async () => {
     const onSendTurn = vi.fn();
     const onRegenerate = vi.fn();
     const onOpenFolders = vi.fn();
@@ -970,13 +991,19 @@ describe("Epic 10 — Mon Assistant All-in-One (Story 10.1)", () => {
     expect(hatSelect.tagName).toBe("SELECT");
     fireEvent.change(hatSelect, { target: { value: "TECH_LEAD" } });
 
-    expect(onSaveUserPrefs).toHaveBeenCalledWith(
-      expect.objectContaining({ defaultHat: "TECH_LEAD" }),
-    );
-    expect(screen.getByTestId("assistant-gov-autosaved-badge").querySelector("svg")).not.toBeNull();
-    expect(screen.getByTestId("assistant-gov-autosaved-badge").textContent).toContain(
-      "Enregistré",
-    );
+    expect(onSaveUserPrefs).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("assistant-gov-autosaved-badge")).toBeNull();
+
+    fireEvent.click(screen.getByTestId("assistant-save-user-prefs-btn"));
+    await waitFor(() => {
+      expect(onSaveUserPrefs).toHaveBeenCalledWith(
+        expect.objectContaining({ defaultHat: "TECH_LEAD" }),
+      );
+      expect(screen.getByTestId("assistant-gov-autosaved-badge").querySelector("svg")).not.toBeNull();
+      expect(screen.getByTestId("assistant-gov-autosaved-badge").textContent).toContain(
+        "Enregistré",
+      );
+    });
   });
 
   it("Story 10.2e — enforces progressive step thinking (collapse show on RUNNING step -> collapse hide on COMPLETED step, sticky manual user step toggle), static summary without fake steps when stepProgress is empty, streamlined Standard/Approfondi single-model pill, borderless action icons, and PLATFORM_ADMIN purge", () => {

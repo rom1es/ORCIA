@@ -118,7 +118,7 @@ def manifest_to_user_prefs(
             AssistantResponseFormat, str(manifest.get("favorite_format", "STRUCTURED_SECTIONS"))
         ),
         default_hat=str(manifest.get("default_hat") or ""),
-        personal_instructions=str(manifest.get("personal_instructions", "")),
+        personal_instructions=str(manifest.get("personal_instructions") or ""),
         sha256=sha256,
     )
 

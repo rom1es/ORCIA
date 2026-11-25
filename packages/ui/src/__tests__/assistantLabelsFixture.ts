@@ -146,6 +146,16 @@ export const TEST_ASSISTANT_GOV_EXTRAS: Pick<
   | "studioLayersPrefix"
   | "studioAddSubAgentCta"
   | "studioResetRestoredBanner"
+  | "cancelButtonLabel"
+  | "closeButtonLabel"
+  | "unsavedAlertTitle"
+  | "unsavedAlertMessage"
+  | "unsavedStayCta"
+  | "unsavedDiscardCta"
+  | "saveChangesCta"
+  | "savingChangesLabel"
+  | "unsavedAssemblyNote"
+  | "saveErrorFallback"
 > = {
   savedBadgeLabel: "Enregistré",
   infoBannerText: "Ces réglages personnalisent directement le rôle métier, le ton et le format.",
@@ -188,6 +198,16 @@ export const TEST_ASSISTANT_GOV_EXTRAS: Pick<
   studioLayersPrefix: "COUCHES",
   studioAddSubAgentCta: "+ Sous-agent / Couche",
   studioResetRestoredBanner: "Configuration standard restaurée",
+  cancelButtonLabel: "Annuler",
+  closeButtonLabel: "Fermer",
+  unsavedAlertTitle: "Modifications non enregistrées",
+  unsavedAlertMessage: "Vous avez des modifications non enregistrées.",
+  unsavedStayCta: "Continuer l'édition",
+  unsavedDiscardCta: "Quitter sans enregistrer",
+  saveChangesCta: "Enregistrer",
+  savingChangesLabel: "Enregistrement...",
+  unsavedAssemblyNote: "Modifications locales en attente.",
+  saveErrorFallback: "Impossible d'enregistrer les réglages.",
 };
 
 export const TEST_ASSISTANT_AGENT_OPTIONS: readonly UiAssistantAutocompleteOption[] = [

@@ -55,7 +55,7 @@ ASSISTANT_FOLDER_LOCALES: dict[SupportedLocale, dict[str, str]] = {
         "team_instructions": (
             "Standards d'équipe : traçabilité systématique des décisions et revues croisées."
         ),
-        "user_default_instructions": "Toujours citer les preuves [S1] et synthétiser les risques.",
+        "user_default_instructions": "",
         "ws_default_instructions": (
             "Respecter le glossaire actif de l'Espace et privilégier les sources RÉFÉRENCE."
         ),
@@ -84,7 +84,7 @@ ASSISTANT_FOLDER_LOCALES: dict[SupportedLocale, dict[str, str]] = {
             "(`{folder_title}`) [S1]."
         ),
         "team_instructions": "Team standards: systematic decision traceability and peer reviews.",
-        "user_default_instructions": "Always cite [S1] evidence and summarize risks.",
+        "user_default_instructions": "",
         "ws_default_instructions": (
             "Follow the active Space glossary and prioritize REFERENCE sources."
         ),

@@ -45,6 +45,11 @@ export const ASSISTANT_GOVERNANCE_LABELS_FR: AssistantGovernanceModalAndStudioLa
   mcpFrozenByUpperBadge: "Défini par l'Équipe ou l'Organisation",
   copyMcpConfigCta: "Copier la configuration éditeur",
   saveWorkspaceSettingsCta: "Enregistrer pour l'Espace",
+  saveChangesCta: "Enregistrer",
+  savingChangesLabel: "Enregistrement...",
+  unsavedAssemblyNote:
+    "Des modifications locales sont en attente : cliquez sur Enregistrer pour mettre à jour cet aperçu.",
+  saveErrorFallback: "Impossible d'enregistrer les réglages. Veuillez réessayer.",
   telemetryHeading: "Journal des Prompts, Contextes & Retours Utilisateurs",
   telemetrySubtitle: "Analyse et amélioration continue des consignes",
   telemetryEmptyIntro:

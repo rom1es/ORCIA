@@ -31,16 +31,18 @@ export interface InboxAuxiliaryPanelsProps {
   readonly dictionary: TranslationDictionary;
   readonly setGovernanceOpen: (open: boolean) => void;
   readonly setGovernanceFeedback: (msg: string | null) => void;
+  readonly governanceModalError?: string | null;
+  readonly onClearGovernanceModalError?: () => void;
   readonly onSaveUserPreferences: (payload: {
     responseTone: SavedAssistantGovernancePrefs["responseTone"];
     favoriteFormat: SavedAssistantGovernancePrefs["favoriteFormat"];
     defaultHat: string;
     personalInstructions: string;
-  }) => Promise<void>;
+  }) => Promise<boolean>;
   readonly onSaveWorkspaceSettings: (payload: {
     workspaceInstructions: string;
     mcpExposeAssistant: boolean;
-  }) => Promise<void>;
+  }) => Promise<boolean>;
   readonly selectActiveFolderAndPersist: (folderId: string) => void;
   readonly createFolder: (title: string) => Promise<UiAssistantFolderItem | null>;
   readonly savePinnedNotes: (folder: UiAssistantFolderItem, notes: string) => Promise<boolean>;
@@ -69,6 +71,8 @@ export function InboxAuxiliaryPanels({
   dictionary,
   setGovernanceOpen,
   setGovernanceFeedback,
+  governanceModalError = null,
+  onClearGovernanceModalError,
   onSaveUserPreferences,
   onSaveWorkspaceSettings,
   selectActiveFolderAndPersist,
@@ -98,13 +102,11 @@ export function InboxAuxiliaryPanels({
           mcpIdeConfigJson={mcpIdeConfigJson}
           assembledLayers={assembledLayers}
           promptTelemetryLog={promptTelemetryLog}
+          saveError={governanceModalError}
           labels={dictionary.assistantGovernance}
-          onSaveUserPreferences={(payload) => {
-            void onSaveUserPreferences(payload);
-          }}
-          onSaveWorkspaceSettings={(payload) => {
-            void onSaveWorkspaceSettings(payload);
-          }}
+          onSaveUserPreferences={onSaveUserPreferences}
+          onSaveWorkspaceSettings={onSaveWorkspaceSettings}
+          onClearSaveError={onClearGovernanceModalError}
           onCopyMcpConfig={(jsonText) => {
             if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
               void navigator.clipboard.writeText(jsonText).catch((err: unknown) => {
@@ -113,7 +115,10 @@ export function InboxAuxiliaryPanels({
             }
             setGovernanceFeedback(flowCopy.mcpConfigCopiedBanner);
           }}
-          onClose={() => setGovernanceOpen(false)}
+          onClose={() => {
+            onClearGovernanceModalError?.();
+            setGovernanceOpen(false);
+          }}
         />
       ) : null}
 

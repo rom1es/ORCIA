@@ -29,8 +29,7 @@ export const DEFAULT_ASSISTANT_GOVERNANCE_PREFS: SavedAssistantGovernancePrefs =
   responseTone: "BALANCED",
   favoriteFormat: "STRUCTURED_SECTIONS",
   defaultHat: "",
-  personalInstructions:
-    "Privilégier des réponses claires, citer les documents utilisés et mettre en évidence les points d'attention.",
+  personalInstructions: "",
   workspaceInstructions:
     "Respecter le vocabulaire métier de l'équipe et s'appuyer en priorité sur les documents de référence de l'espace.",
   mcpExposeAssistant: true,

@@ -27275,7 +27275,9 @@
             "type": "string"
           },
           "personal_instructions": {
-            "minLength": 3,
+            "default": "",
+            "maxLength": 4000,
+            "minLength": 0,
             "title": "Personal Instructions",
             "type": "string"
           },
@@ -27296,8 +27298,7 @@
           }
         },
         "required": [
-          "workspace_id",
-          "personal_instructions"
+          "workspace_id"
         ],
         "title": "UpdateUserLayerPreferencesRequest",
         "type": "object"

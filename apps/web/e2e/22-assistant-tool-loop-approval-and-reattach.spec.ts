@@ -171,9 +171,11 @@ test.describe("Story 26.9 — Assistant Mode A, PG18 Thread History, SSE Re-Atta
         (r) => r.url().endsWith("/api/v1/assistant/governance/mode-a/user") && r.request().method() === "PUT",
         { timeout: 15000 },
       ),
-      page.getByTestId("assistant-save-user-prefs-btn").evaluate((el) => (el as HTMLElement).click()),
+      page.getByTestId("assistant-save-user-prefs-btn").click(),
     ]);
+    await expect(page.getByTestId("assistant-gov-autosaved-badge")).toBeVisible({ timeout: 10000 });
     await page.getByTestId("assistant-gov-cancel-btn").click();
+    await expect(page.getByTestId("assistant-gov-unsaved-changes-alert")).toHaveCount(0);
 
     await reloadColdFromPg(page);
     // Re-select the target workspace so Mode A user governance preferences hydrate for that workspace.

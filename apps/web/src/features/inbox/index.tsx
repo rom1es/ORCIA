@@ -261,6 +261,8 @@ function AssistantInboxFeatureContent() {
           dictionary,
           setGovernanceOpen,
           setGovernanceFeedback,
+          governanceModalError: governance.governanceModalError,
+          onClearGovernanceModalError: governance.clearGovernanceModalError,
           onSaveUserPreferences: governance.saveUserPreferences,
           onSaveWorkspaceSettings: governance.saveWorkspaceSettings,
           selectActiveFolderAndPersist,

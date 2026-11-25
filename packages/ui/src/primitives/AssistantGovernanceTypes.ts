@@ -78,6 +78,10 @@ export interface AssistantGovernanceModalAndStudioLabels extends RgaaModalGuardL
   readonly mcpFrozenByUpperBadge: string;
   readonly copyMcpConfigCta: string;
   readonly saveWorkspaceSettingsCta: string;
+  readonly saveChangesCta?: string;
+  readonly savingChangesLabel?: string;
+  readonly unsavedAssemblyNote?: string;
+  readonly saveErrorFallback?: string;
   readonly telemetryHeading: string;
   readonly telemetrySubtitle: string;
   readonly telemetryEmptyIntro: string;
@@ -124,18 +128,20 @@ export interface AssistantGovernanceModalAndStudioProps {
   readonly promptTelemetryLog?: readonly UiAssistantPromptTelemetryRecord[];
   readonly studioNodes?: readonly UiAssistantStudioNode[];
   readonly initialStudioPrePrompt?: string;
+  readonly saveError?: string | null;
   readonly labels: AssistantGovernanceModalAndStudioLabels;
   readonly onSaveUserPreferences?: (payload: {
     responseTone: UiAssistantResponseTone;
     favoriteFormat: UiAssistantResponseFormat;
     defaultHat: string;
     personalInstructions: string;
-  }) => void;
+  }) => Promise<boolean> | boolean | void;
   readonly onSaveWorkspaceSettings?: (payload: {
     workspaceInstructions: string;
     mcpExposeAssistant: boolean;
-  }) => void;
+  }) => Promise<boolean> | boolean | void;
   readonly onCopyMcpConfig?: (jsonText: string) => void;
+  readonly onClearSaveError?: () => void;
   readonly onSaveStudioOverride?: (payload: {
     scopeLevel: "TEAM" | "WORKSPACE";
     aiPrePrompt: string;

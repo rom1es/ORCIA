@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 241,
+    "techLeadReportsCount": 242,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -545,6 +545,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-25",
+      "phaseOrStory": "Story 30.1",
+      "reportFile": "30-1-assistant-settings-explicit-save-dirty-guard-and-empty-instructions-tech-lead-report.md",
+      "domain": "Epic 30 Lot 1 — Mon Assistant Settings Explicit Save, Honest Dirty Guard, Inline Modal Errors & Empty Personal Instructions (UX30-01, UX30-02, UX30-03, CAP-070, CAP-100)",
+      "summary": "Closed (done, Testing Sub-Agent verified): eliminated keystroke auto-save and 4 hidden Save buttons / 3 hidden <select> duplicates (AssistantGovernanceModalAndStudio.tsx 195 L, useAssistantGovernanceModalState.ts 240 L, AssistantGovernanceModeATabs.tsx 251 L, RgaaModalDialog.tsx 287 L), wired Promise<boolean> saveUserPreferences/saveWorkspaceSettings with inline <OrciaAlertBanner tone=\"crimson\"> modal error reporting, honest isUserDirty/isWorkspaceDirty baseline diff & <Enter>/Fermer/Annuler RGAA footer (useServerAssistantGovernance.ts 160 L, InboxAuxiliaryPanels.tsx 193 L), defaulted personal_instructions to \"\" (_assistant_locales.py 238 L, UpdateUserLayerPreferencesRequest min_length=0 with 0-diff OpenAPI SDK, DEFAULT_ASSISTANT_GOVERNANCE_PREFS), widened select layout (tokens-overlays.css 198 L), and replaced E2E .evaluate() click with real visible Save click (22-assistant-tool-loop-approval-and-reattach.spec.ts); verified 100% 3-module Story 30.1 branch coverage (17 passed), 1,127 tests/unit + 181 evals/security/contract, 2 passed PG18 integration, 9/9 Turbo (@orcia/ui 38 files/149 tests + @orcia/web 91 files/356 tests), 4 passed (1.4m) Playwright Desktop E2E (02, 22, env -u ORCIA_E2E_SEED_FIXTURES), ruff (1,749 files)/mypy --strict (856 files)/lint-imports (5/5, 899 files)/lint_spine (0)/export_openapi (0-diff) clean, and gitnexus_detect_changes (54 symbols, 1 flow, risk_level: medium)."
+    },
     {
       "date": "2026-11-25",
       "phaseOrStory": "Story 29.7",

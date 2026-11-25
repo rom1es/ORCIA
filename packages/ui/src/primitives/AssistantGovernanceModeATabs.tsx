@@ -1,6 +1,5 @@
 import React from "react";
 import { OrciaIcon } from "../components/icons";
-import { handleRgaaSubmitKeyDown } from "../components/RgaaModalDialog";
 import type {
   AssistantGovernanceModalAndStudioLabels,
   UiAssembledLayerItem,
@@ -23,6 +22,7 @@ export interface AssistantGovernanceModeATabsProps {
   readonly workspaceInstructions: string;
   readonly mcpExposed: boolean;
   readonly copiedMcp: boolean;
+  readonly isDirty?: boolean;
   readonly assembledLayers: readonly UiAssembledLayerItem[];
   readonly promptTelemetryLog?: readonly UiAssistantPromptTelemetryRecord[];
   readonly labels: AssistantGovernanceModalAndStudioLabels;
@@ -31,11 +31,9 @@ export interface AssistantGovernanceModeATabsProps {
   readonly onChangeFormat: (format: UiAssistantResponseFormat) => void;
   readonly onChangeDefaultHat: (hat: string) => void;
   readonly onChangePersonalInstructions: (instructions: string) => void;
-  readonly onSaveUserPrefs: () => void;
   readonly onChangeWorkspaceInstructions: (instructions: string) => void;
   readonly onChangeMcpExposed: (exposed: boolean) => void;
   readonly onCopyMcpConfig: () => void;
-  readonly onSaveWorkspaceSettings: () => void;
 }
 
 export function AssistantGovernanceModeATabs({
@@ -51,6 +49,7 @@ export function AssistantGovernanceModeATabs({
   workspaceInstructions,
   mcpExposed,
   copiedMcp,
+  isDirty = false,
   assembledLayers,
   promptTelemetryLog = [],
   labels,
@@ -59,11 +58,9 @@ export function AssistantGovernanceModeATabs({
   onChangeFormat,
   onChangeDefaultHat,
   onChangePersonalInstructions,
-  onSaveUserPrefs,
   onChangeWorkspaceInstructions,
   onChangeMcpExposed,
   onCopyMcpConfig,
-  onSaveWorkspaceSettings,
 }: AssistantGovernanceModeATabsProps): React.JSX.Element {
   return (
     <div data-testid="assistant-governance-mode-a" className="space-y-4">
@@ -97,24 +94,14 @@ export function AssistantGovernanceModeATabs({
 
       {activeTab === "USER_PREFS" && (
         <div data-testid="assistant-gov-panel-user" className="space-y-3">
-          <div className="grid grid-cols-3 gap-3">
-            <label className="block space-y-1">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <label className="block min-w-0 space-y-1">
               <span className="text-text-secondary">{labels.toneLabel}</span>
               <select
                 data-testid="assistant-gov-tone-select"
                 value={userTone}
                 onChange={(e) => onChangeTone(e.target.value as UiAssistantResponseTone)}
-                className="w-full px-2.5 py-1.5 rounded border border-surface-border bg-surface-primary"
-              >
-                {labels.toneOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-              <select
-                data-testid="assistant-user-tone-select"
-                style={{ display: "none" }}
-                value={userTone}
-                onChange={(e) => onChangeTone(e.target.value as UiAssistantResponseTone)}
+                className="w-full min-w-0 px-2.5 py-1.5 rounded border border-surface-border bg-surface-primary"
               >
                 {labels.toneOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -122,23 +109,13 @@ export function AssistantGovernanceModeATabs({
               </select>
             </label>
 
-            <label className="block space-y-1">
+            <label className="block min-w-0 space-y-1">
               <span className="text-text-secondary">{labels.formatLabel}</span>
               <select
                 data-testid="assistant-gov-format-select"
                 value={userFormat}
                 onChange={(e) => onChangeFormat(e.target.value as UiAssistantResponseFormat)}
-                className="w-full px-2.5 py-1.5 rounded border border-surface-border bg-surface-primary"
-              >
-                <option value="BULLETS_SUMMARY">{labels.formatLabels.bulletsSummary}</option>
-                <option value="STRUCTURED_SECTIONS">{labels.formatLabels.structuredSections}</option>
-                <option value="STEP_BY_STEP">{labels.formatLabels.stepByStep}</option>
-              </select>
-              <select
-                data-testid="assistant-user-format-select"
-                style={{ display: "none" }}
-                value={userFormat}
-                onChange={(e) => onChangeFormat(e.target.value as UiAssistantResponseFormat)}
+                className="w-full min-w-0 px-2.5 py-1.5 rounded border border-surface-border bg-surface-primary"
               >
                 <option value="BULLETS_SUMMARY">{labels.formatLabels.bulletsSummary}</option>
                 <option value="STRUCTURED_SECTIONS">{labels.formatLabels.structuredSections}</option>
@@ -146,23 +123,13 @@ export function AssistantGovernanceModeATabs({
               </select>
             </label>
 
-            <label className="block space-y-1">
+            <label className="block min-w-0 space-y-1">
               <span className="text-text-secondary">{labels.defaultHatLabel}</span>
               <select
                 data-testid="assistant-gov-hat-input"
                 value={defaultHat}
                 onChange={(e) => onChangeDefaultHat(e.target.value)}
-                className="w-full px-2.5 py-1.5 rounded border border-surface-border bg-surface-primary"
-              >
-                {labels.hatOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-              <select
-                data-testid="assistant-user-hat-input"
-                style={{ display: "none" }}
-                value={defaultHat}
-                onChange={(e) => onChangeDefaultHat(e.target.value)}
+                className="w-full min-w-0 px-2.5 py-1.5 rounded border border-surface-border bg-surface-primary"
               >
                 {labels.hatOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -174,7 +141,7 @@ export function AssistantGovernanceModeATabs({
           <label className="block space-y-1">
             <span className="text-text-secondary">{labels.personalInstructionsLabel}</span>
             <textarea
-              rows={2}
+              rows={3}
               autoComplete="off"
               data-lpignore="true"
               data-1p-ignore="true"
@@ -186,13 +153,6 @@ export function AssistantGovernanceModeATabs({
               className="w-full px-2.5 py-1.5 rounded border border-surface-border bg-surface-primary"
             />
           </label>
-
-          <button type="button" data-testid="assistant-save-user-prefs-btn" style={{ display: "none" }} onClick={onSaveUserPrefs} onKeyDown={(e) => handleRgaaSubmitKeyDown(e, onSaveUserPrefs, false)}>
-            {labels.saveUserPrefsCta}
-          </button>
-          <button type="button" data-testid="assistant-gov-save-user-btn" style={{ display: "none" }} onClick={onSaveUserPrefs}>
-            {labels.saveUserPrefsCta}
-          </button>
         </div>
       )}
 
@@ -206,7 +166,7 @@ export function AssistantGovernanceModeATabs({
           <label className="block space-y-1">
             <span className="text-text-secondary">{labels.workspaceInstructionsLabel}{workspaceId ? ` (${workspaceId})` : ""}</span>
             <textarea
-              rows={2}
+              rows={3}
               autoComplete="off"
               data-lpignore="true"
               data-1p-ignore="true"
@@ -250,22 +210,25 @@ export function AssistantGovernanceModeATabs({
               </button>
             </div>
           </div>
-
-          {canEditWorkspaceLayer && (
-            <>
-              <button type="button" data-testid="assistant-save-workspace-settings-btn" style={{ display: "none" }} onClick={onSaveWorkspaceSettings} onKeyDown={(e) => handleRgaaSubmitKeyDown(e, onSaveWorkspaceSettings, false)}>
-                {labels.saveWorkspaceSettingsCta}
-              </button>
-              <button type="button" data-testid="assistant-gov-save-workspace-btn" style={{ display: "none" }} onClick={onSaveWorkspaceSettings}>
-                {labels.saveWorkspaceSettingsCta}
-              </button>
-            </>
-          )}
         </div>
       )}
 
       {activeTab === "FULL_ASSEMBLY" && (
         <div data-testid="assistant-gov-panel-assembly" className="space-y-3">
+          {isDirty && labels.unsavedAssemblyNote && (
+            <div
+              data-testid="assistant-gov-unsaved-assembly-note"
+              role="status"
+              className="rounded-lg border px-3 py-2 text-[11px]"
+              style={{
+                backgroundColor: "var(--color-arbitration-bg)",
+                borderColor: "var(--color-arbitration-amber)",
+                color: "var(--color-text-primary)",
+              }}
+            >
+              <OrciaIcon name="warning" /> {labels.unsavedAssemblyNote}
+            </div>
+          )}
           <div className="space-y-2">
             {assembledLayers.map((layer) => (
               <div key={layer.layerCode} data-testid={`assembled-layer-${layer.layerNumber}`} className="p-2.5 rounded-lg border border-surface-border bg-surface-primary space-y-1">
