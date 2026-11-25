@@ -78,7 +78,7 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
   return (
     <div
       data-testid={`skill-card-${skill.skillId}`}
-      className="space-y-2.5 rounded-lg border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3.5 text-xs"
+      className="orcia-bento-card space-y-2.5 p-4 text-xs"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
@@ -141,7 +141,7 @@ export const SkillStudioCardItem: React.FC<SkillStudioCardItemProps> = ({
               type="button"
               data-testid={`use-skill-in-assistant-btn-${skill.skillId}`}
               onClick={() => onUseSkillInAssistant(skill)}
-              className="rounded bg-[var(--orcia-action-primary)] px-2.5 py-1 text-[11px] font-semibold text-[var(--orcia-text-on-action)]"
+              className="orcia-ds-btn orcia-ds-btn-cobalt-outline text-[11px]"
             >
               <OrciaIcon name="assistant" /> {studio.useInAssistantButton}
             </button>

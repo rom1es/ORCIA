@@ -1,4 +1,5 @@
 import React from "react";
+import { OrciaDataCard } from "../OrciaDataCard";
 import type { HumanMasteryLabels, HumanMasteryWorkflowRow } from "./FinopsHumanMasteryTab";
 
 export function FinopsHumanMasteryWorkflowsTable({
@@ -12,29 +13,8 @@ export function FinopsHumanMasteryWorkflowsTable({
     return null;
   }
   return (
-    <div
-      data-testid="human-mastery-workflows-section"
-      style={{ display: "flex", flexDirection: "column", gap: "10px" }}
-    >
-      <h3
-        style={{
-          fontSize: "14px",
-          fontWeight: 600,
-          margin: 0,
-          color: "var(--color-text-primary)",
-        }}
-      >
-        {labels.title}
-      </h3>
-      <div
-        className="orcia-ds-table-wrapper"
-        style={{
-          overflowX: "auto",
-          background: "var(--color-surface-card)",
-          border: "1px solid var(--color-border-subtle)",
-          borderRadius: "8px",
-        }}
-      >
+    <OrciaDataCard testId="human-mastery-workflows-section" title={labels.title}>
+      <div className="orcia-ds-table-wrapper" style={{ overflowX: "auto" }}>
         <table
           data-testid="human-mastery-workflows-table"
           style={{
@@ -100,6 +80,6 @@ export function FinopsHumanMasteryWorkflowsTable({
           </tbody>
         </table>
       </div>
-    </div>
+    </OrciaDataCard>
   );
 }

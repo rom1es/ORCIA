@@ -1,4 +1,4 @@
-import { AssistantSpeedSelectorAndStreamView } from "@orcia/ui";
+import { AssistantSpeedSelectorAndStreamView, OrciaDataCard } from "@orcia/ui";
 import React from "react";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { formatI18nTemplate } from "../../i18n";
@@ -151,19 +151,11 @@ function AssistantInboxFeatureContent() {
         foldersPanelOpen={foldersPanelOpen}
         dictionary={dictionary}
         broker={broker}
-        onNewConversation={() => {
-          threads.startNewThread();
-          streaming.resetStreamState("");
-        }}
+        onSelectActiveDiscussion={() => { setSavedConversationsOpen(false); setFoldersPanelOpen(false); }}
+        onNewConversation={() => { threads.startNewThread(); streaming.resetStreamState(""); }}
         onToggleSavedConversations={() => setSavedConversationsOpen((prev) => !prev)}
         onToggleFoldersPanel={() => setFoldersPanelOpen((prev) => !prev)}
-        onToggleGovernanceModal={() => {
-          setGovernanceOpen((prev) => {
-            const next = !prev;
-            if (next) void governance.refreshGovernance();
-            return next;
-          });
-        }}
+        onToggleGovernanceModal={() => { setGovernanceOpen((prev) => { const next = !prev; if (next) void governance.refreshGovernance(); return next; }); }}
         onOpenHelpSection={openHelpSection}
         onResumeConversation={(convId) => {
           const target = savedConversations.find((c) => c.id === convId);
@@ -177,7 +169,7 @@ function AssistantInboxFeatureContent() {
         onDeleteConversation={handleDeleteConversation}
       />
 
-      <div className="orcia-bento-card space-y-3">
+      <OrciaDataCard testId="assistant-stream-card">
         <AssistantSpeedSelectorAndStreamView
           workspaceId={activeWorkspaceId}
           userId={authorEmail}
@@ -247,7 +239,7 @@ function AssistantInboxFeatureContent() {
             handleSendTurnWithReflexive(payload);
           }}
         />
-      </div>
+      </OrciaDataCard>
 
       <InboxBottomPanelsAndInspector
         inspector={inspector}

@@ -1,6 +1,6 @@
 import { createOrciaApiClient } from "@orcia/api-client";
 import type { AssistantFolderVisibilityMode, UiAssistantFolderItem } from "@orcia/ui";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import { readSavedAssistantFolders, writeSavedAssistantFolders } from "./assistantFoldersAndPrefsStore";
 
@@ -35,6 +35,30 @@ function errorDetail(err: unknown): string {
   return formatRfc9457ErrorToBanner(err, "fr", "Dossier Assistant").fullText;
 }
 
+/**
+ * Merge authoritative server folders with locally mutated entries so a stale
+ * pre-mutation GET overview cannot overwrite concurrent POST/PATCH updates.
+ */
+function mergeServerFoldersWithLocalMutations(
+  serverFolders: readonly UiAssistantFolderItem[],
+  localFolders: readonly UiAssistantFolderItem[],
+  mutatedFolderIds: ReadonlySet<string>,
+): readonly UiAssistantFolderItem[] {
+  const localById = new Map(localFolders.map((folder) => [folder.folderId, folder]));
+  const serverIds = new Set(serverFolders.map((folder) => folder.folderId));
+  const merged = serverFolders.map((serverFolder) =>
+    mutatedFolderIds.has(serverFolder.folderId)
+      ? (localById.get(serverFolder.folderId) ?? serverFolder)
+      : serverFolder,
+  );
+  for (const localFolder of localFolders) {
+    if (!serverIds.has(localFolder.folderId) && mutatedFolderIds.has(localFolder.folderId)) {
+      merged.push(localFolder);
+    }
+  }
+  return merged;
+}
+
 export interface ServerAssistantFoldersMessages {
   readonly workspaceRequired: string;
   readonly loadFailed: (detail: string) => string;
@@ -58,6 +82,11 @@ export function useServerAssistantFolders(params: {
 }) {
   const { workspaceId, messages, onFeedback } = params;
   const [folders, setFolders] = useState<readonly UiAssistantFolderItem[]>(() => readSavedAssistantFolders());
+  const latestWorkspaceIdRef = useRef<string>(workspaceId);
+  latestWorkspaceIdRef.current = workspaceId;
+  const previousWorkspaceIdRef = useRef<string>(workspaceId);
+  const mutationEpochRef = useRef<number>(0);
+  const mutatedFolderIdsRef = useRef<Set<string>>(new Set());
 
   const applyFolders = useCallback((next: readonly UiAssistantFolderItem[]) => {
     setFolders(next);
@@ -65,25 +94,49 @@ export function useServerAssistantFolders(params: {
   }, []);
 
   useEffect(() => {
+    if (previousWorkspaceIdRef.current !== workspaceId) {
+      previousWorkspaceIdRef.current = workspaceId;
+      mutationEpochRef.current += 1;
+      mutatedFolderIdsRef.current = new Set();
+    }
     if (!workspaceId) return;
     let cancelled = false;
+    const startEpoch = mutationEpochRef.current;
     createOrciaApiClient({ baseUrl: "" })
       .listAssistantFolders(workspaceId)
       .then((overview) => {
-        if (!cancelled) applyFolders(overview.folders.map(mapServerFolder));
+        if (cancelled || latestWorkspaceIdRef.current !== workspaceId) return;
+        const serverFolders = overview.folders.map(mapServerFolder);
+        if (mutationEpochRef.current === startEpoch) {
+          applyFolders(serverFolders);
+          return;
+        }
+        setFolders((prev) => {
+          const merged = mergeServerFoldersWithLocalMutations(
+            serverFolders,
+            prev,
+            mutatedFolderIdsRef.current,
+          );
+          writeSavedAssistantFolders(merged);
+          return merged;
+        });
       })
       .catch((err: unknown) => {
-        if (!cancelled) onFeedback(messages.loadFailed(errorDetail(err)));
+        if (!cancelled && latestWorkspaceIdRef.current === workspaceId) {
+          onFeedback(messages.loadFailed(errorDetail(err)));
+        }
       });
     return () => {
       cancelled = true;
     };
-    // `messages` / `onFeedback` sont des libellés et callbacks d'affichage : seul l'espace déclenche le rechargement.
+    // Only workspace changes should trigger folder overview rehydration.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId, applyFolders]);
 
   const upsertFromServer = useCallback(
     (saved: UiAssistantFolderItem) => {
+      mutationEpochRef.current += 1;
+      mutatedFolderIdsRef.current.add(saved.folderId);
       setFolders((prev) => {
         const exists = prev.some((f) => f.folderId === saved.folderId);
         const next = exists ? prev.map((f) => (f.folderId === saved.folderId ? saved : f)) : [...prev, saved];
@@ -100,11 +153,14 @@ export function useServerAssistantFolders(params: {
         onFeedback(messages.workspaceRequired);
         return null;
       }
+      mutationEpochRef.current += 1;
       try {
         const saved = mapServerFolder(
           await createOrciaApiClient({ baseUrl: "" }).createAssistantFolder({ workspace_id: workspaceId, title }),
         );
-        upsertFromServer(saved);
+        if (latestWorkspaceIdRef.current === workspaceId) {
+          upsertFromServer(saved);
+        }
         return saved;
       } catch (err: unknown) {
         onFeedback(messages.saveFailed(errorDetail(err)));
@@ -116,6 +172,7 @@ export function useServerAssistantFolders(params: {
 
   const savePinnedNotes = useCallback(
     async (folder: UiAssistantFolderItem, notes: string): Promise<boolean> => {
+      mutationEpochRef.current += 1;
       try {
         const saved = mapServerFolder(
           await createOrciaApiClient({ baseUrl: "" }).createAssistantFolder({
@@ -127,7 +184,9 @@ export function useServerAssistantFolders(params: {
             has_restricted_sources: folder.hasRestrictedSources,
           }),
         );
-        upsertFromServer({ ...saved, visibilityMode: folder.visibilityMode });
+        if (latestWorkspaceIdRef.current === workspaceId) {
+          upsertFromServer({ ...saved, visibilityMode: folder.visibilityMode });
+        }
         return true;
       } catch (err: unknown) {
         onFeedback(messages.saveFailed(errorDetail(err)));
@@ -139,12 +198,15 @@ export function useServerAssistantFolders(params: {
 
   const changeVisibility = useCallback(
     async (folder: UiAssistantFolderItem, mode: AssistantFolderVisibilityMode): Promise<boolean> => {
+      mutationEpochRef.current += 1;
       try {
         const outcome = await createOrciaApiClient({ baseUrl: "" }).configureAssistantFolderSharing(folder.folderId, {
           workspace_id: workspaceId,
           visibility_mode: mode,
         });
-        upsertFromServer({ ...folder, visibilityMode: mapServerFolder({ ...outcome, title: folder.title }).visibilityMode });
+        if (latestWorkspaceIdRef.current === workspaceId) {
+          upsertFromServer({ ...folder, visibilityMode: mapServerFolder({ ...outcome, title: folder.title }).visibilityMode });
+        }
         return true;
       } catch (err: unknown) {
         onFeedback(messages.saveFailed(errorDetail(err)));

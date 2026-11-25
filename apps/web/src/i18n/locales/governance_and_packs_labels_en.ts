@@ -55,21 +55,27 @@ export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection
       "No automated check compiled for this Space yet. Add a business rule to automatically generate and verify this check.",
   },
   remoteServiceTestBench: {
-    heading: "🔌 External Tool Connection Testing & Code Editor Access",
-    testAndDiscoverCta: "🔌 Test connection and discover actions",
-    testingInProgressCta: "⏳ Checking connection…",
+    heading: "External Tool Connection Testing & Code Editor Access",
+    testAndDiscoverCta: "Test connection and discover actions",
+    testingInProgressCta: "Checking connection…",
     testingInProgressNotice:
-      "⏳ Checking remote service connectivity and recording audit trace…",
+      "Checking remote service connectivity and recording audit trace…",
     activateConnectorCta: "✓ Enable this service in the Space",
     activateDisabledReason:
       "Complete the 4 test bench verification steps to enable this connector.",
-    testWithPersonalTokenCta: "🔑 Test with my personal account",
+    testWithPersonalTokenCta: "Test with my personal account",
     mcpExposureHeading: "External Code Editor Access",
     exposeMcpToggleLabel:
       "Allow usage from an external code editor (Cursor, VS Code, Claude Desktop)",
-    mcpIdeBadge: "🔌 Secure editor access · separate read and execute permissions",
+    mcpIdeBadge: "Secure editor access · separate read and execute permissions",
     ipProtectionNotice:
-      "🔒 Confidentiality: Internal process settings and verification rules remain protected.",
+      "Confidentiality: Internal process settings and verification rules remain protected.",
+    exposedCapabilityLabels: {
+      "assistant.ask": "Query Workspace Assistant",
+      "agent.invoke": "Run a specialized agent",
+      "agent.list_exposed": "List authorized agents",
+    },
+    exposedAgentCapabilityPrefix: "Authorized agent:",
     stepLabels: {
       "1_NETWORK_TLS_ANTI_SSRF": "Network, TLS & Address Guard",
       "2_AUTHENTICATION": "Authentication & Access Control",
@@ -118,12 +124,13 @@ export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection
     durationMsUnit: "ms",
   },
   agentsAndSkillsManager: {
-    heading: "🤖 My Agents & Skills",
+    heading: "My Agents & Skills",
     subtitle:
       "Create reusable business skills, attach them in 1 click to your specialized agents, and execute them immediately on concrete tasks.",
-    tabAgents: "🤖 My Agents",
-    tabSkills: "🛠️ Skills",
-    tabConnections: "🔌 Tool Servers & MCP",
+    tabsAriaLabel: "My Agents and Skills views",
+    tabAgents: "My Agents",
+    tabSkills: "Skills",
+    tabConnections: "Tool Servers & MCP",
     emptyAgentsTitle: "No agent configured yet",
     emptyAgentsDescription:
       "Create your first agent above to attach skills and run it in 1 click.",
@@ -148,7 +155,7 @@ export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection
     },
     attachedSkillsLabel: "Attached Skills",
     noSkillsAvailableHint:
-      "No skills created yet. Open the '🛠️ Skills' tab to create your first reusable skill.",
+      "No skills created yet. Open the 'Skills' tab to create your first reusable skill.",
     createAgentButtonLabel: "+ Save Agent",
     testAgentInputPlaceholder:
       "Enter a concrete request to assign to this agent...",

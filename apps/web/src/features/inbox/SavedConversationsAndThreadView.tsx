@@ -5,6 +5,7 @@ import {
   AssistantToolCallTrace,
   AssistantUserQuestionBubble,
   FormattedMarkdownContent,
+  OrciaDataCard,
   OrciaIcon,
   sanitizeAssistantDisplayReply,
   type AgentExecutionTraceLabels,
@@ -36,19 +37,15 @@ export function SavedConversationsPanel({
   const savedCopy = dictionary.featureInboxAssistant.savedConversations;
 
   return (
-    <section
-      data-testid="assistant-saved-conversations-panel"
-      className="orcia-bento-card space-y-2.5"
+    <OrciaDataCard
+      testId="assistant-saved-conversations-panel"
+      icon="clock"
+      title={
+        conversations.length > 0
+          ? formatI18nTemplate(savedCopy.panelTitleCountTemplate, { count: conversations.length })
+          : savedCopy.panelTitle
+      }
     >
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-xs font-semibold text-text-primary">
-          <OrciaIcon name="clock" />{" "}
-          {conversations.length > 0
-            ? formatI18nTemplate(savedCopy.panelTitleCountTemplate, { count: conversations.length })
-            : savedCopy.panelTitle}
-        </h3>
-      </div>
-
       {conversations.length === 0 ? (
         <p data-testid="assistant-saved-conversations-empty" className="text-xs text-text-secondary">
           {savedCopy.emptyText}
@@ -93,7 +90,7 @@ export function SavedConversationsPanel({
           })}
         </ul>
       )}
-    </section>
+    </OrciaDataCard>
   );
 }
 

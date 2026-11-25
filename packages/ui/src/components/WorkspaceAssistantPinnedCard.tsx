@@ -22,7 +22,7 @@ export const WorkspaceAssistantPinnedCard: React.FC<
   return (
     <div
       data-testid="workspace-assistant-pinned-card"
-      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3.5 text-xs"
+      className="orcia-bento-card flex flex-wrap items-center justify-between gap-3 p-4 text-xs"
     >
       <div className="space-y-1">
         <div className="flex flex-wrap items-center gap-2">
@@ -71,7 +71,7 @@ export const WorkspaceAssistantPinnedCard: React.FC<
           type="button"
           data-testid="pinned-assistant-open-btn"
           onClick={onOpenAssistant}
-          className="rounded bg-[var(--orcia-action-primary)] px-3 py-1 text-[11px] font-semibold text-[var(--orcia-text-on-action)]"
+          className="orcia-ds-btn orcia-ds-btn-cobalt-outline text-[11px]"
         >
           <OrciaIcon name="assistant" /> {labels.pinnedAssistantOpenButton}
         </button>

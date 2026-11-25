@@ -2,7 +2,7 @@ import {
   createOrciaApiClient,
   type AutonomousRunSupervisionItemSchema,
 } from "@orcia/api-client";
-import { AutonomousExecutionBadge, OrciaAlertBanner } from "@orcia/ui";
+import { AutonomousExecutionBadge, OrciaAlertBanner, OrciaDataCard } from "@orcia/ui";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
@@ -139,17 +139,11 @@ export function AutonomousRunsSupervisionPanel(): React.ReactElement | null {
   );
 
   return (
-    <div
-      data-testid="processes-autonomous-supervision-panel"
-      className="orcia-bento-card"
-      style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+    <OrciaDataCard
+      testId="processes-autonomous-supervision-panel"
+      title={labels.panelTitle}
+      subtitle={labels.panelSubtitle}
     >
-      <div>
-        <h3 style={{ margin: 0, fontSize: "var(--font-size-h3)" }}>{labels.panelTitle}</h3>
-        <p style={{ margin: "2px 0 0 0", fontSize: "12.5px", color: "var(--color-text-secondary)" }}>
-          {labels.panelSubtitle}
-        </p>
-      </div>
 
       {errorMessage && (
         <OrciaAlertBanner tone="crimson" role="alert" testId="autonomous-supervision-error-banner">
@@ -216,6 +210,6 @@ export function AutonomousRunsSupervisionPanel(): React.ReactElement | null {
           ))}
         </div>
       ) : null}
-    </div>
+    </OrciaDataCard>
   );
 }

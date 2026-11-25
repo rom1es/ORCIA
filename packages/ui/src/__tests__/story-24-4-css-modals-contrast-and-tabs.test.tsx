@@ -318,7 +318,7 @@ describe("Story 24.4 — Modales OrciaDialog, Onglets horizontaux, Menu Compte, 
     const teamPill = screen.getByTestId("finops-scope-team");
     expect(teamPill.getAttribute("role")).toBe("tab");
     expect(teamPill.getAttribute("aria-selected")).toBe("true");
-    expect(teamPill.className).toContain("orcia-ds-tab");
+    expect(teamPill.className).toContain("orcia-ds-filter-pill");
     expect(teamPill.className).not.toContain("active");
     expect(screen.getByTestId("finops-scope-workspace").getAttribute("aria-selected")).toBe("false");
     expect(screen.getByTestId("finops-header-action-slot")).toBeDefined();

@@ -10,22 +10,27 @@ export function FinopsFeaturePanel() {
   const ctrl = useFinopsDashboardController(activeScopeId);
   const overview = ctrl.overview;
 
+  const alertBannerNode =
+    ctrl.errorMessage || ctrl.successMessage ? (
+      <>
+        {ctrl.errorMessage && (
+          <OrciaAlertBanner tone="crimson" role="alert" testId="finops-error-banner">
+            {ctrl.errorMessage}
+          </OrciaAlertBanner>
+        )}
+        {ctrl.successMessage && (
+          <OrciaAlertBanner tone="emerald" role="status" testId="finops-success-banner">
+            {ctrl.successMessage}
+          </OrciaAlertBanner>
+        )}
+      </>
+    ) : null;
+
   return (
     <div
       data-testid="finops-feature-panel"
       style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%", minWidth: 0 }}
     >
-      {ctrl.errorMessage && (
-        <OrciaAlertBanner tone="crimson" role="alert" testId="finops-error-banner">
-          {ctrl.errorMessage}
-        </OrciaAlertBanner>
-      )}
-      {ctrl.successMessage && (
-        <OrciaAlertBanner tone="emerald" role="status" testId="finops-success-banner">
-          {ctrl.successMessage}
-        </OrciaAlertBanner>
-      )}
-
       <FinopsGovernanceDashboardView
         scopeType={ctrl.selectedScope}
         scopeId={ctrl.resolvedActiveScopeId}
@@ -33,6 +38,7 @@ export function FinopsFeaturePanel() {
         allowedScopes={ctrl.allowedScopePills}
         allowedModalScopes={ctrl.allowedModalScopes}
         error={ctrl.errorMessage}
+        alertSlot={alertBannerNode}
         onScopeChange={ctrl.setSelectedScope}
         totalRuns={overview?.accounted_runs_count ?? 0}
         totalCostEur={overview?.total_cost_eur ?? 0}
@@ -56,7 +62,7 @@ export function FinopsFeaturePanel() {
             type="button"
             data-testid="finops-open-activity-link"
             onClick={() => navigateToRoute("/activity")}
-            className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
+            className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm orcia-ds-nowrap"
           >
             {dictionary.fourZoneShell.activityMenuLabel} →
           </button>

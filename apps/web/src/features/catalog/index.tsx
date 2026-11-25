@@ -96,17 +96,19 @@ export function CatalogFeaturePanel({
     });
   };
 
+  const feedbackBanner = catalogActionFeedback ? (
+    <OrciaAlertBanner
+      testId="catalog-action-feedback-banner"
+      tone={catalogActionFeedback.startsWith("⚠️") ? "crimson" : "emerald"}
+      role={catalogActionFeedback.startsWith("⚠️") ? "alert" : "status"}
+    >
+      {catalogActionFeedback}
+    </OrciaAlertBanner>
+  ) : null;
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      {catalogActionFeedback && (
-        <OrciaAlertBanner
-          testId="catalog-action-feedback-banner"
-          tone={catalogActionFeedback.startsWith("⚠️") ? "crimson" : "emerald"}
-          role={catalogActionFeedback.startsWith("⚠️") ? "alert" : "status"}
-        >
-          {catalogActionFeedback}
-        </OrciaAlertBanner>
-      )}
+      {catalogMode === "catalog" ? feedbackBanner : null}
 
       {catalogMode === "catalog" ? (
         <>
@@ -140,6 +142,7 @@ export function CatalogFeaturePanel({
           agents={managed.agents}
           skills={managed.skills}
           labels={dictionary.agentsAndSkillsManager}
+          alertSlot={feedbackBanner}
           onCreateAgent={managed.handleCreateAgent}
           onDuplicateAgent={managed.handleDuplicateAgent}
           onToggleAgentEnabled={managed.handleToggleAgentEnabled}

@@ -1,4 +1,4 @@
-import { OrciaIcon } from "@orcia/ui";
+import { OrciaDataCard, OrciaIcon } from "@orcia/ui";
 import React from "react";
 import {
   formatI18nTemplate,
@@ -19,7 +19,6 @@ export interface ProcessCatalogCardGridProps {
   readonly onChangeFilter: (nextFilter: WorkflowHubFilter) => void;
   readonly onExecuteWorkflow: (workflowId: string) => void;
   readonly onOpenStudio: (workflowId: string) => void;
-  readonly onOpenCreateProcess?: () => void;
 }
 
 export function ProcessCatalogCardGrid({
@@ -30,7 +29,6 @@ export function ProcessCatalogCardGrid({
   onChangeFilter,
   onExecuteWorkflow,
   onOpenStudio,
-  onOpenCreateProcess,
 }: ProcessCatalogCardGridProps) {
   const locale = resolveLocaleForFlag(isFr);
   const copy = resolveDictionaryForFlag(isFr).processStudioUi.hub;
@@ -42,68 +40,42 @@ export function ProcessCatalogCardGrid({
     return true;
   });
 
-  return (
+  const filterControls = (
     <div
-      className="orcia-bento-card"
-      style={{ display: "flex", flexDirection: "column", gap: "14px" }}
+      role="tablist"
+      aria-label={copy.filterProcessesAriaLabel}
+      className="orcia-ds-tabs"
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "10px",
-        }}
-      >
-        <div>
-          <h3 style={{ margin: 0, fontSize: "var(--font-size-h3)" }}>
-            {copy.availableProcessesTitle}
-          </h3>
-          <p style={{ margin: "2px 0 0 0", fontSize: "12.5px", color: "var(--color-text-secondary)" }}>
-            {copy.availableProcessesSubtitle}
-          </p>
-        </div>
+      {(
+        [
+          { key: "all", label: copy.filterAll },
+          { key: "published", label: copy.filterActive },
+          { key: "draft", label: copy.filterDrafts },
+          { key: "external_delegated", label: copy.filterExternalIde },
+        ] as const
+      ).map((tab) => (
+        <button
+          key={tab.key}
+          type="button"
+          role="tab"
+          aria-selected={filter === tab.key}
+          data-testid={`workflows-hub-filter-${tab.key}`}
+          onClick={() => onChangeFilter(tab.key)}
+          className="orcia-ds-filter-pill"
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
 
-        <div className="flex flex-wrap items-center gap-2">
-          <div
-            role="tablist"
-            aria-label={copy.filterProcessesAriaLabel}
-            className="orcia-ds-tabs"
-          >
-            {(
-              [
-                { key: "all", label: copy.filterAll },
-                { key: "published", label: copy.filterActive },
-                { key: "draft", label: copy.filterDrafts },
-                { key: "external_delegated", label: copy.filterExternalIde },
-              ] as const
-            ).map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                role="tab"
-                aria-selected={filter === tab.key}
-                data-testid={`workflows-hub-filter-${tab.key}`}
-                onClick={() => onChangeFilter(tab.key)}
-                className="orcia-ds-tab"
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          {onOpenCreateProcess ? (
-            <button
-              type="button"
-              data-testid="open-create-process-modal-btn"
-              onClick={onOpenCreateProcess}
-              className="orcia-ds-btn orcia-ds-btn-primary orcia-ds-btn-sm"
-            >
-              {copy.newProcessBtn}
-            </button>
-          ) : null}
-        </div>
-      </div>
+  return (
+    <OrciaDataCard
+      testId="processes-catalog-card"
+      title={copy.availableProcessesTitle}
+      subtitle={copy.availableProcessesSubtitle}
+      actions={filterControls}
+    >
 
       <div
         style={{
@@ -230,8 +202,7 @@ export function ProcessCatalogCardGrid({
                   type="button"
                   data-testid={`execute-workflow-btn-${wf.id}`}
                   onClick={() => onExecuteWorkflow(wf.id)}
-                  className="orcia-ds-btn-primary"
-                  style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+                  className="orcia-ds-btn orcia-ds-btn-cobalt-outline orcia-ds-btn-sm"
                 >
                   <OrciaIcon name="play" />
                   <span>{copy.launchProcessBtn}</span>
@@ -241,7 +212,7 @@ export function ProcessCatalogCardGrid({
                   type="button"
                   data-testid={`open-studio-btn-${wf.id}`}
                   onClick={() => onOpenStudio(wf.id)}
-                  className="orcia-ds-btn-secondary"
+                  className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
                 >
                   {copy.customizeInStudioBtn}
                 </button>
@@ -250,6 +221,6 @@ export function ProcessCatalogCardGrid({
           );
         })}
       </div>
-    </div>
+    </OrciaDataCard>
   );
 }

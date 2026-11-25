@@ -17,6 +17,8 @@ export interface FeatureInboxAssistantDictionary {
     readonly releaseErrorTemplate: string;
   };
   readonly toolbar: {
+    readonly tabsAriaLabel: string;
+    readonly activeDiscussionTab: string;
     readonly newConversationBtn: string;
     readonly savedConversationsLabel: string;
     readonly savedConversationsCountTemplate: string;

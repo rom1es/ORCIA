@@ -1,4 +1,4 @@
-import { OrciaAlertBanner } from "@orcia/ui";
+import { OrciaAlertBanner, OrciaPageHeader } from "@orcia/ui";
 import React, { useEffect, useState } from "react";
 import { CreateProcessFormDialog } from "../../components/CreateProcessFormDialog";
 import { useOptionalPlatformSetup } from "../../components/platformSetupStore";
@@ -117,11 +117,29 @@ export function ProcessesHubPage() {
       data-testid="processes-hub-v2-page"
       style={{ display: "flex", flexDirection: "column", gap: "18px" }}
     >
-      {hubErrorBanner ? (
-        <OrciaAlertBanner tone="crimson" role="alert" testId="processes-hub-error-banner">
-          {hubErrorBanner}
-        </OrciaAlertBanner>
-      ) : null}
+      <OrciaPageHeader
+        testId="processes-page-header"
+        icon="processes"
+        title={dictionary.fourZoneShell.menuEntries.processes}
+        subtitle={dictionary.modulePages.gates.subtitle}
+        primaryAction={
+          <button
+            type="button"
+            data-testid="open-create-process-modal-btn"
+            onClick={() => setIsCreateProcessOpen(true)}
+            className="orcia-ds-btn orcia-ds-btn-primary orcia-ds-btn-sm orcia-ds-nowrap"
+          >
+            {hubCopy.newProcessBtn}
+          </button>
+        }
+        alertSlot={
+          hubErrorBanner ? (
+            <OrciaAlertBanner tone="crimson" role="alert" testId="processes-hub-error-banner">
+              {hubErrorBanner}
+            </OrciaAlertBanner>
+          ) : null
+        }
+      />
 
       <ProcessesActiveDossiersCard
         featuredPendingWorkflow={featuredPendingWorkflow}
@@ -138,7 +156,6 @@ export function ProcessesHubPage() {
         onChangeFilter={setFilter}
         onExecuteWorkflow={(wfId) => setActiveRunWorkflowId(wfId)}
         onOpenStudio={(wfId) => navigateToRoute(`/processes/studio/${wfId}`)}
-        onOpenCreateProcess={() => setIsCreateProcessOpen(true)}
       />
 
       <CreateProcessFormDialog

@@ -1,4 +1,5 @@
 import React from "react";
+import { OrciaDataCard } from "../OrciaDataCard";
 import { StatusBadge } from "../StatusBadge";
 
 export interface FinopsKpiStripLabels {
@@ -78,21 +79,11 @@ export function FinopsKpiStrip({
       return null;
     }
     return (
-      <div
-        className="orcia-bento-card"
-        data-testid="finops-empty-state"
-        style={{
-          padding: "24px",
-          textAlign: "center",
-          borderRadius: "8px",
-          border: "1px dashed var(--color-border)",
-          color: "var(--color-text-muted)",
-        }}
-      >
-        <p style={{ margin: 0, fontSize: "14px", lineHeight: "1.6" }}>
+      <OrciaDataCard testId="finops-empty-state" className="border-dashed text-center">
+        <p style={{ margin: 0, fontSize: "14px", lineHeight: "1.6", color: "var(--color-text-muted)" }}>
           {emptyStateText}
         </p>
-      </div>
+      </OrciaDataCard>
     );
   }
 

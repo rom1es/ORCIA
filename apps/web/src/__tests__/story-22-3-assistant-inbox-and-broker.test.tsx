@@ -168,7 +168,7 @@ describe("Story 22.3 (Couche 1b) — Assistant Folders (REM-08), Inbox Claims (R
         ),
       ).toBe(true);
     });
-    fireEvent.click(await screen.findByRole("button", { name: /^Dossiers \(\d+\)$/ }));
+    fireEvent.click(await screen.findByRole("tab", { name: /^Dossiers \(\d+\)$/ }));
     await waitFor(() => {
       expect(screen.getAllByText("Dossier Paiement PCI").length).toBeGreaterThanOrEqual(1);
     });

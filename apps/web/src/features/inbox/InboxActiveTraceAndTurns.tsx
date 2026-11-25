@@ -2,6 +2,7 @@ import {
   AgentExecutionTrace,
   AssistantApprovalRequiredCard,
   AssistantToolCallTrace,
+  OrciaAlertBanner,
   PermissionBrokerCard,
   SourceLineInspectorDrawer,
   type UiAgentTraceEventItem,
@@ -37,6 +38,7 @@ export interface InboxTopSectionProps {
   readonly foldersPanelOpen: boolean;
   readonly dictionary: TranslationDictionary;
   readonly broker: ReturnType<typeof usePermissionBrokerTickets>;
+  readonly onSelectActiveDiscussion?: () => void;
   readonly onNewConversation: () => void;
   readonly onToggleSavedConversations: () => void;
   readonly onToggleFoldersPanel: () => void;
@@ -56,6 +58,7 @@ export function InboxTopSection({
   foldersPanelOpen,
   dictionary,
   broker,
+  onSelectActiveDiscussion,
   onNewConversation,
   onToggleSavedConversations,
   onToggleFoldersPanel,
@@ -69,25 +72,18 @@ export function InboxTopSection({
       (/⚠️|❌/.test(governanceFeedback) ||
         /\b(erreur|error|failed|impossible|interdit|forbidden|refusé|denied)\b/i.test(governanceFeedback)),
   );
+  const feedbackBanner = governanceFeedback ? (
+    <OrciaAlertBanner
+      tone={feedbackIsError ? "crimson" : "emerald"}
+      role={feedbackIsError ? "alert" : "status"}
+      testId="assistant-governance-feedback-banner"
+    >
+      {governanceFeedback}
+    </OrciaAlertBanner>
+  ) : null;
+
   return (
     <>
-      {governanceFeedback ? (
-        <div
-          role={feedbackIsError ? "alert" : "status"}
-          data-testid="assistant-governance-feedback-banner"
-          className="rounded border px-3 py-2 text-xs font-medium"
-          style={{
-            backgroundColor: feedbackIsError
-              ? "var(--color-status-error-bg, var(--color-surface-elevated))"
-              : "var(--color-surface-elevated)",
-            borderColor: feedbackIsError ? "var(--color-status-error)" : "var(--color-border-subtle)",
-            color: feedbackIsError ? "var(--color-status-error)" : "var(--color-text-primary)",
-          }}
-        >
-          {governanceFeedback}
-        </div>
-      ) : null}
-
       <AssistantTopToolbar
         isFr={isFr}
         savedCount={savedConversations.length}
@@ -95,6 +91,8 @@ export function InboxTopSection({
         savedConversationsOpen={savedConversationsOpen}
         foldersPanelOpen={foldersPanelOpen}
         governanceModalTitle={dictionary.assistantGovernance.modalTitle}
+        alertSlot={feedbackBanner}
+        onSelectActiveDiscussion={onSelectActiveDiscussion}
         onNewConversation={onNewConversation}
         onToggleSavedConversations={onToggleSavedConversations}
         onToggleFoldersPanel={onToggleFoldersPanel}

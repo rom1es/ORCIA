@@ -8,7 +8,7 @@ export const PROCESS_STUDIO_UI_FR: ProcessStudioUiDictionary = {
     activeDossiersSubtitle:
       "Examinez les livrables préparés par vos agents, validez les étapes clés ou demandez des ajustements sans quitter cette page.",
     reviewPendingDossierBtn: "Examiner & Valider le dossier en attente",
-    featuredDossierPrefix: "Dossier « Mon Compte »",
+    featuredDossierPrefix: "Dossier prioritaire",
     featuredStepBadge: "Étape 1/3 : Qualification du besoin",
     featuredReadySummary: "Livrable prêt pour relecture et validation Product Owner",
     openDeliverableBtn: "Ouvrir le livrable",
@@ -31,7 +31,7 @@ export const PROCESS_STUDIO_UI_FR: ProcessStudioUiDictionary = {
     vsmOverviewEyebrow: "VUE D'ENSEMBLE DU PARCOURS MÉTIER (4 PHASES · 11 ÉTAPES)",
     vsmOverviewSubtitle:
       "Visualisez comment s'articulent les 11 étapes entre les équipes et les agents IA, les points de validation humaine et l'évolution des pratiques.",
-    exploreFullVsmBtn: "🗺️ Explorer la chaîne de valeur complète (11 étapes)",
+    exploreFullVsmBtn: "Explorer la chaîne de valeur complète (11 étapes)",
     vsmPhaseStepsRangeTemplate: "Phase {num} · Étapes {range}",
     vsmStepsCountUnit: "étapes",
   },

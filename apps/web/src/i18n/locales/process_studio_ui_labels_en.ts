@@ -8,7 +8,7 @@ export const PROCESS_STUDIO_UI_EN: ProcessStudioUiDictionary = {
     activeDossiersSubtitle:
       "Review deliverables prepared by your agents, approve milestones, or request adjustments directly from this page.",
     reviewPendingDossierBtn: "Review & Approve Pending Dossier",
-    featuredDossierPrefix: '"Mon Compte" Dossier',
+    featuredDossierPrefix: "Priority Dossier",
     featuredStepBadge: "Step 1/3: Qualification",
     featuredReadySummary: "Deliverable ready for Product Owner review",
     openDeliverableBtn: "Open deliverable",
@@ -31,7 +31,7 @@ export const PROCESS_STUDIO_UI_EN: ProcessStudioUiDictionary = {
     vsmOverviewEyebrow: "END-TO-END VALUE STREAM (4 PHASES · 11 STEPS)",
     vsmOverviewSubtitle:
       "Explore how the 11 steps connect teams and AI agents, human decision points, and process improvements.",
-    exploreFullVsmBtn: "🗺️ Explore full 11-step Value Stream",
+    exploreFullVsmBtn: "Explore full 11-step Value Stream",
     vsmPhaseStepsRangeTemplate: "Phase {num} · Steps {range}",
     vsmStepsCountUnit: "steps",
   },

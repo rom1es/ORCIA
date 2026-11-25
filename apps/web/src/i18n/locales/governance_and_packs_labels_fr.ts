@@ -56,21 +56,27 @@ export const GOVERNANCE_AND_PACKS_FR_LABELS: GovernanceAndPacksDictionarySection
       "Aucun contrôle automatique compilé pour cet Espace. Ajoutez une règle métier pour générer et vérifier automatiquement ce contrôle.",
   },
   remoteServiceTestBench: {
-    heading: "🔌 Connexion et Test d'Outils Externes & Accès depuis un Éditeur",
-    testAndDiscoverCta: "🔌 Tester la connexion et détecter les actions",
-    testingInProgressCta: "⏳ Vérification en cours…",
+    heading: "Connexion et Test d'Outils Externes & Accès depuis un Éditeur",
+    testAndDiscoverCta: "Tester la connexion et détecter les actions",
+    testingInProgressCta: "Vérification en cours…",
     testingInProgressNotice:
-      "⏳ Vérification en cours auprès du serveur et enregistrement dans le registre d'audit…",
+      "Vérification en cours auprès du serveur et enregistrement dans le registre d'audit…",
     activateConnectorCta: "✓ Activer ce service dans l'Espace",
     activateDisabledReason:
       "Validez les 4 étapes du banc d'essai pour activer ce connecteur.",
-    testWithPersonalTokenCta: "🔑 Tester avec mon compte personnel",
+    testWithPersonalTokenCta: "Tester avec mon compte personnel",
     mcpExposureHeading: "Accès depuis un Éditeur de Code Externe",
     exposeMcpToggleLabel:
       "Permettre l'utilisation depuis un éditeur externe (Cursor, VS Code, Claude Desktop)",
-    mcpIdeBadge: "🔌 Accès éditeur sécurisé · lecture et exécution distinctes",
+    mcpIdeBadge: "Accès éditeur sécurisé · lecture et exécution distinctes",
     ipProtectionNotice:
-      "🔒 Confidentialité : Les réglages internes et règles de vérification de vos processus restent protégés.",
+      "Confidentialité : Les réglages internes et règles de vérification de vos processus restent protégés.",
+    exposedCapabilityLabels: {
+      "assistant.ask": "Interroger l'Assistant de l'espace",
+      "agent.invoke": "Exécuter un agent spécialisé",
+      "agent.list_exposed": "Lister les agents autorisés",
+    },
+    exposedAgentCapabilityPrefix: "Agent autorisé :",
     stepLabels: {
       "1_NETWORK_TLS_ANTI_SSRF": "Réseau, chiffrement et protection d'adresse",
       "2_AUTHENTICATION": "Authentification et droits d'accès",
@@ -119,12 +125,13 @@ export const GOVERNANCE_AND_PACKS_FR_LABELS: GovernanceAndPacksDictionarySection
     durationMsUnit: "ms",
   },
   agentsAndSkillsManager: {
-    heading: "🤖 Mes Agents & Compétences (Skills)",
+    heading: "Mes Agents & Compétences",
     subtitle:
       "Créez vos compétences réutilisables, rattachez-les en 1 clic à vos agents spécialisés et exécutez-les immédiatement sur un cas concret.",
-    tabAgents: "🤖 Mes Agents",
-    tabSkills: "🛠️ Compétences (Skills)",
-    tabConnections: "🔌 Serveurs d'outils & MCP",
+    tabsAriaLabel: "Vues Mes Agents et Compétences",
+    tabAgents: "Mes Agents",
+    tabSkills: "Compétences",
+    tabConnections: "Serveurs d'outils & MCP",
     emptyAgentsTitle: "Aucun agent configuré",
     emptyAgentsDescription:
       "Créez votre premier agent ci-dessus pour lui confier des compétences et l'exécuter en 1 clic.",
@@ -149,7 +156,7 @@ export const GOVERNANCE_AND_PACKS_FR_LABELS: GovernanceAndPacksDictionarySection
     },
     attachedSkillsLabel: "Compétences (Skills) rattachées",
     noSkillsAvailableHint:
-      "Aucune compétence créée pour le moment. Ouvrez l'onglet « 🛠️ Compétences (Skills) » pour en créer une.",
+      "Aucune compétence créée pour le moment. Ouvrez l'onglet « Compétences » pour en créer une.",
     createAgentButtonLabel: "+ Enregistrer l'Agent",
     testAgentInputPlaceholder:
       "Saisissez une demande concrète à confier à cet agent...",

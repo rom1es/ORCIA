@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 238,
+    "techLeadReportsCount": 239,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -545,6 +545,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-25",
+      "phaseOrStory": "Story 29.5",
+      "reportFile": "29-5-header-layout-convergence-assistant-processes-agents-and-finops-tech-lead-report.md",
+      "domain": "Epic 29 Lot 3 — Header & Layout Convergence for Mon Assistant, Mes Processus, Mes Agents & FinOps (UH-06, UH-09, UH-11, UH-12, CAP-070, CAP-071, CAP-073, CAP-082, CAP-090, CAP-091, CAP-140, CAP-200, CAP-201)",
+      "summary": "Closed (done, Distinct Final Testing Sub-Agent verified): added tokens-actions.css (67 L, .orcia-ds-btn-cobalt-outline + .orcia-ds-filter-pill[role=\"tab\"] overrides), converged /assistant (AssistantTopToolbar.tsx 132 L, useServerAssistantFolders.ts 240 L race guard), /processes (ProcessesHubPage.tsx 214 L, ProcessCatalogCardGrid.tsx 226 L, scope-neutral featuredDossierPrefix), /agents (AgentsAndSkillsManagerView.tsx 278 L unwrapped mega-card, AgentsAndSkillsHeaderAndToolbar.tsx 240 L Tab-3 KPI/filter guard, RemoteServiceTestBenchAndMcpExposureView.tsx 244 L outbound MCP vs inbound IDE split & human-readable exposedCapabilityLabels, emoji removal), and /finops (FinopsGovernanceDashboardView.tsx 280 L, FinopsProcessAndTiersTab.tsx 218 L, FinopsRemoteMcpServicesTab.tsx 217 L, finops_labels_{fr,en}.ts 107 L); verified 37 files / 147 tests @orcia/ui, 88 files / 325 tests @orcia/web (story-29-5-core-screens-header-convergence.test.tsx 4/4, story-29-5-folders-fetch-race-guard.test.tsx 3/3), 9/9 Turbo (492 JS/TS tests), 181 passed security+contract+evals, 14 passed, 2 mobile-only skipped, 0 failed Playwright Desktop E2E (02, 08, 11, 12-epic16, 12-finops, 13, 18, 20, 21, 22 without fixtures), ruff (1,744 files)/mypy --strict (856 files)/lint-imports (5/5, 899 files)/lint_spine (0)/export_openapi (0-diff) clean, and gitnexus_detect_changes (risk_level: low)."
+    },
     {
       "date": "2026-11-25",
       "phaseOrStory": "Story 29.4",

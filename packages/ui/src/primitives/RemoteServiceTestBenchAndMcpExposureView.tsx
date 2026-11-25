@@ -1,5 +1,6 @@
 import React from "react";
 import { DisabledButtonAlertIndicator } from "../components/DisabledButtonAlertIndicator";
+import { OrciaDataCard } from "./OrciaDataCard";
 import { OrciaSpinner } from "./OrciaSpinner";
 
 export interface UiTestBenchStepItem {
@@ -35,6 +36,8 @@ export interface RemoteServiceTestBenchLabels {
   readonly exposeMcpToggleLabel: string;
   readonly mcpIdeBadge: string;
   readonly ipProtectionNotice: string;
+  readonly exposedCapabilityLabels?: Readonly<Record<string, string>>;
+  readonly exposedAgentCapabilityPrefix?: string;
   readonly stepLabels: Readonly<Record<UiTestBenchStepItem["stepCode"], string>>;
   readonly statusLabels: Readonly<Record<UiTestBenchStepItem["status"], string>>;
 }
@@ -52,6 +55,18 @@ export interface RemoteServiceTestBenchAndMcpExposureViewProps {
   readonly onRunTestBench?: () => void;
   readonly onActivateService?: () => void;
   readonly onToggleMcpExposure?: (nextExposed: boolean) => void;
+}
+
+function formatReadableCapability(
+  toolName: string,
+  labels: RemoteServiceTestBenchLabels,
+): string {
+  const mapped = labels.exposedCapabilityLabels?.[toolName];
+  if (mapped) return mapped;
+  if (toolName.startsWith("agent.") && labels.exposedAgentCapabilityPrefix) {
+    return `${labels.exposedAgentCapabilityPrefix} ${toolName.slice("agent.".length)}`;
+  }
+  return toolName;
 }
 
 export const RemoteServiceTestBenchAndMcpExposureView: React.FC<
@@ -77,67 +92,59 @@ export const RemoteServiceTestBenchAndMcpExposureView: React.FC<
     <section
       aria-label={labels.heading}
       data-testid="remote-service-test-bench"
-      className="space-y-4 rounded-lg border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-4 text-[var(--orcia-text-primary)]"
+      className="orcia-ds-page text-[var(--orcia-text-primary)]"
     >
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--orcia-border-subtle)] pb-3">
-        <div>
-          <h2 className="text-base font-semibold">{labels.heading}</h2>
-          <code className="font-mono text-xs text-[var(--orcia-text-secondary)]">
-            {endpointUrl}
-          </code>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {onRunTestBench && (
+      <OrciaDataCard
+        testId="outbound-mcp-server-card"
+        icon="plug"
+        title={labels.heading}
+        subtitle={endpointUrl || undefined}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            {onRunTestBench && (
+              <button
+                type="button"
+                disabled={isTesting}
+                data-testid="run-test-bench-btn"
+                onClick={onRunTestBench}
+                className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
+              >
+                {isTesting && <OrciaSpinner size="xs" />}
+                <span>
+                  {isTesting
+                    ? labels.testingInProgressCta
+                    : labels.testAndDiscoverCta}
+                </span>
+              </button>
+            )}
             <button
               type="button"
-              disabled={isTesting}
-              data-testid="run-test-bench-btn"
-              onClick={onRunTestBench}
-              className="inline-flex items-center gap-1.5 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-1.5 text-xs font-medium disabled:opacity-60"
-            >
-              {isTesting && <OrciaSpinner size="xs" />}
-              <span>
-                {isTesting
-                  ? labels.testingInProgressCta
-                  : labels.testAndDiscoverCta}
-              </span>
-            </button>
-          )}
-          <button
-            type="button"
-            disabled={!canActivate || isTesting || isSavingMcp}
-            data-testid="activate-remote-service-btn"
-            onClick={onActivateService}
-            className="inline-flex items-center gap-1.5 rounded bg-[var(--orcia-action-primary)] px-3 py-1.5 text-xs font-medium text-[var(--orcia-text-on-action)] disabled:opacity-50"
-          >
-            <span>{labels.activateConnectorCta}</span>
-            <DisabledButtonAlertIndicator
               disabled={!canActivate || isTesting || isSavingMcp}
-              reason={labels.activateDisabledReason}
-              testIdSuffix="activate-remote-service-btn"
-            />
-          </button>
-        </div>
-      </header>
-
-      {isTesting && (
-        <div
-          role="status"
-          data-testid="test-bench-loading-banner"
-          className="flex items-center gap-2 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2 text-xs font-medium text-[var(--orcia-text-secondary)]"
-        >
-          <OrciaSpinner size="xs" />
-          <span>{labels.testingInProgressNotice}</span>
-        </div>
-      )}
-
-      <div
-        className={
-          steps.length === 0 && discoveredCapabilities.length === 0
-            ? "grid grid-cols-1 gap-4"
-            : "grid grid-cols-1 gap-4 md:grid-cols-2"
+              data-testid="activate-remote-service-btn"
+              onClick={onActivateService}
+              className="orcia-ds-btn orcia-ds-btn-cobalt-outline orcia-ds-btn-sm"
+            >
+              <span>{labels.activateConnectorCta}</span>
+              <DisabledButtonAlertIndicator
+                disabled={!canActivate || isTesting || isSavingMcp}
+                reason={labels.activateDisabledReason}
+                testIdSuffix="activate-remote-service-btn"
+              />
+            </button>
+          </div>
         }
       >
+        {isTesting && (
+          <div
+            role="status"
+            data-testid="test-bench-loading-banner"
+            className="flex items-center gap-2 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2 text-xs font-medium text-[var(--orcia-text-secondary)]"
+          >
+            <OrciaSpinner size="xs" />
+            <span>{labels.testingInProgressNotice}</span>
+          </div>
+        )}
+
         {(steps.length > 0 || discoveredCapabilities.length > 0) && (
           <div className="space-y-2">
             <ol className="space-y-2">
@@ -190,50 +197,48 @@ export const RemoteServiceTestBenchAndMcpExposureView: React.FC<
             </ul>
           </div>
         )}
+      </OrciaDataCard>
 
-        <div
-          data-testid="governed-mcp-exposure-panel"
-          className="space-y-3 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3"
-        >
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
-              {labels.mcpExposureHeading}
-            </h3>
-            <span className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px]">
-              {labels.mcpIdeBadge}
+      <OrciaDataCard
+        testId="governed-mcp-exposure-panel"
+        icon="desktop"
+        title={labels.mcpExposureHeading}
+        metaBadge={
+          <span className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2 py-0.5 text-[11px]">
+            {labels.mcpIdeBadge}
+          </span>
+        }
+      >
+        <label className="inline-flex items-center gap-2 text-xs font-medium">
+          <input
+            type="checkbox"
+            autoComplete="off"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-bwignore="true"
+            data-form-type="other"
+            disabled={isSavingMcp}
+            checked={mcpExposed}
+            data-testid="toggle-mcp-exposure-checkbox"
+            onChange={(e) => onToggleMcpExposure?.(e.target.checked)}
+          />
+          <span>{labels.exposeMcpToggleLabel}</span>
+        </label>
+        <p className="text-[11px] text-[var(--orcia-text-secondary)]">
+          {labels.ipProtectionNotice}
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {exposedToolNames.map((t) => (
+            <span
+              key={t}
+              data-testid={`exposed-mcp-tool-${t}`}
+              className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2.5 py-0.5 text-[11px] font-medium text-[var(--orcia-text-primary)]"
+            >
+              {formatReadableCapability(t, labels)}
             </span>
-          </div>
-          <label className="inline-flex items-center gap-2 text-xs font-medium">
-            <input
-              type="checkbox"
-              autoComplete="off"
-              data-lpignore="true"
-              data-1p-ignore="true"
-              data-bwignore="true"
-              data-form-type="other"
-              disabled={isSavingMcp}
-              checked={mcpExposed}
-              data-testid="toggle-mcp-exposure-checkbox"
-              onChange={(e) => onToggleMcpExposure?.(e.target.checked)}
-            />
-            <span>{labels.exposeMcpToggleLabel}</span>
-          </label>
-          <p className="text-[11px] text-[var(--orcia-text-secondary)]">
-            {labels.ipProtectionNotice}
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {exposedToolNames.map((t) => (
-              <code
-                key={t}
-                data-testid={`exposed-mcp-tool-${t}`}
-                className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 font-mono text-[11px]"
-              >
-                {t}
-              </code>
-            ))}
-          </div>
+          ))}
         </div>
-      </div>
+      </OrciaDataCard>
     </section>
   );
 };

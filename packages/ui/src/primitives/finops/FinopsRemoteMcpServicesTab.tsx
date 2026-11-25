@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { OrciaDataCard } from "../OrciaDataCard";
 import { StatusBadge } from "../StatusBadge";
 import { FinopsConnectorQuotaModal } from "./FinopsConnectorQuotaModal";
 import type {
@@ -38,11 +39,11 @@ export function FinopsRemoteMcpServicesTab({
   const [editingService, setEditingService] = useState<RemoteServiceRowData | null>(null);
 
   return (
-    <div
-      className="finops-remote-services-tab"
-      data-testid="finops-remote-services-tab"
-      style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-    >
+    <OrciaDataCard testId="finops-remote-services-tab">
+      <div
+        className="finops-remote-services-tab"
+        style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+      >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -184,7 +185,7 @@ export function FinopsRemoteMcpServicesTab({
                           <button
                             type="button"
                             data-testid={`finops-reset-circuit-btn-${s.connectorKey}`}
-                            className="orcia-ds-btn orcia-ds-btn-primary"
+                            className="orcia-ds-btn orcia-ds-btn-cobalt-outline"
                             style={{ fontSize: "12px", padding: "4px 8px" }}
                             onClick={() => onResetConnectorCircuit?.(s.connectorKey)}
                           >
@@ -210,6 +211,7 @@ export function FinopsRemoteMcpServicesTab({
         labels={labels}
         onSaveQuota={onUpdateConnectorQuota}
       />
-    </div>
+      </div>
+    </OrciaDataCard>
   );
 }

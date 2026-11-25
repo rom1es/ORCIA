@@ -106,6 +106,7 @@ export interface FinopsDashboardLabels {
     entirePlatform: string;
   };
   configureBudgetButton: string;
+  tabsAriaLabel?: string;
   emptyStateText: string;
   kpis: FinopsKpiStripLabels;
   tabs: {

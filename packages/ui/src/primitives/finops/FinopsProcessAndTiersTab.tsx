@@ -1,4 +1,5 @@
 import React from "react";
+import { OrciaDataCard } from "../OrciaDataCard";
 import { StatusBadge } from "../StatusBadge";
 
 export interface FinopsProcessRowData {
@@ -81,7 +82,8 @@ export function FinopsProcessAndTiersTab({
 }: FinopsProcessAndTiersTabProps): React.ReactElement {
   if (activeSubTab === "tiers") {
     return (
-      <div className="finops-tiers-tab" data-testid="finops-tiers-tab" style={{ overflowX: "auto" }}>
+      <OrciaDataCard testId="finops-tiers-card" title={labels.tiersTable.title}>
+        <div className="finops-tiers-tab" data-testid="finops-tiers-tab" style={{ overflowX: "auto" }}>
         <table className="orcia-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--color-border)", textAlign: "left", color: "var(--color-text-muted)" }}>
@@ -120,12 +122,14 @@ export function FinopsProcessAndTiersTab({
             )}
           </tbody>
         </table>
-      </div>
+        </div>
+      </OrciaDataCard>
     );
   }
 
   return (
-    <div className="finops-processes-tab" data-testid="finops-processes-tab" style={{ overflowX: "auto" }}>
+    <OrciaDataCard testId="finops-processes-card" title={labels.processesTable.title}>
+      <div className="finops-processes-tab" data-testid="finops-processes-tab" style={{ overflowX: "auto" }}>
       <table className="orcia-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
         <thead>
           <tr style={{ borderBottom: "1px solid var(--color-border)", textAlign: "left", color: "var(--color-text-muted)" }}>
@@ -208,6 +212,7 @@ export function FinopsProcessAndTiersTab({
           )}
         </tbody>
       </table>
-    </div>
+      </div>
+    </OrciaDataCard>
   );
 }

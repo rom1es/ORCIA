@@ -618,12 +618,12 @@ capabilities:
     title: Gouvernance de personnalisation 3 niveaux (Mode A)
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-1 + 26-1 + 26-4b + 26-9 + 26-10 + 29-3
+    origin_ref: 10-1 + 26-1 + 26-4b + 26-9 + 26-10 + 29-3 + 29-5
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [workspace_customization_overrides, user_preferences]
-    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, tests/unit/test_story_26_4b_governance_feedback_folders_and_audit.py, tests/unit/test_story_29_3_assistant_prompt_sanitization.py, tests/unit/test_story_29_3_governance_mappers_cov.py, tests/unit/test_story_29_3_governance_service_cov.py, tests/unit/test_story_29_3_turn_plan_and_preview_cov.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, tests/security/test_story_26_10_assistant_security_redteam.py, apps/web/src/__tests__/story-29-3-assistant-sanitization-and-rbac-notices.test.tsx, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts]
+    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, tests/unit/test_story_26_4b_governance_feedback_folders_and_audit.py, tests/unit/test_story_29_3_assistant_prompt_sanitization.py, tests/unit/test_story_29_3_governance_mappers_cov.py, tests/unit/test_story_29_3_governance_service_cov.py, tests/unit/test_story_29_3_turn_plan_and_preview_cov.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, tests/security/test_story_26_10_assistant_security_redteam.py, apps/web/src/__tests__/story-29-3-assistant-sanitization-and-rbac-notices.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts]
     verification: runtime
     verified_at: "2026-11-25"
     surfaces: { route: /assistant, api: "assistant_workspace_governance.py, assistant_governance.py, assistant_governance_models.py, assistant_prompt_preview.py, assistant_prompt_builder.py, assistant_prompt_locales.py, sql_assistant_governance.py", ui: AssistantGovernanceModalAndStudio }
@@ -631,15 +631,15 @@ capabilities:
     title: Moteur unifié des tours assistant (AssistantTurnEngine N1-N6), 3 vitesses, SSE v2 canonique, synthesize-now, execution_profile ASSISTANT et MCP assistant.ask
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-2 + 26-4a + 26-7 + 26-10 + 29-3
+    origin_ref: 10-2 + 26-4a + 26-7 + 26-10 + 29-3 + 29-5
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [assistant_threads, workspace_customization_overrides, inference_attempts, domain_events_outbox, reflexive_execution_sessions]
-    tests: [tests/unit/test_story_26_4a_locks_outbox_cache_removal_and_ddl_audit.py, tests/integration/api/test_story_26_4a_redis_locks_outbox_ddl_postgres18.py, tests/unit/test_story_26_7_unified_turn_engine_and_mcp.py, tests/unit/test_story_29_3_assistant_prompt_sanitization.py, tests/unit/test_story_29_3_turn_plan_and_preview_cov.py, tests/integration/api/test_story_26_7_unified_turn_engine_postgres18.py, tests/integration/api/test_story_26_10_multi_worker_sse_stop_recovery_postgres18.py, tests/unit/test_story_26_10_epic_26_closure_ast_and_routes_audit.py, apps/web/src/__tests__/story-29-3-assistant-sanitization-and-rbac-notices.test.tsx, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts]
+    tests: [tests/unit/test_story_26_4a_locks_outbox_cache_removal_and_ddl_audit.py, tests/integration/api/test_story_26_4a_redis_locks_outbox_ddl_postgres18.py, tests/unit/test_story_26_7_unified_turn_engine_and_mcp.py, tests/unit/test_story_29_3_assistant_prompt_sanitization.py, tests/unit/test_story_29_3_turn_plan_and_preview_cov.py, tests/integration/api/test_story_26_7_unified_turn_engine_postgres18.py, tests/integration/api/test_story_26_10_multi_worker_sse_stop_recovery_postgres18.py, tests/unit/test_story_26_10_epic_26_closure_ast_and_routes_audit.py, apps/web/src/__tests__/story-29-3-assistant-sanitization-and-rbac-notices.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts]
     verification: runtime
     verified_at: "2026-11-25"
-    surfaces: { route: /assistant, api: "assistant_turns.py (/api/v1/assistant/turns*), _assistant_turn_controls_routes.py, _assistant_context_assembly.py, assistant_turn_engine.py, _assistant_turn_engine_plan.py, _assistant_turn_engine_mcp.py, _mcp_assistant_ask_bridge.py", ui: "AssistantSpeedSelectorAndStreamView + AssistantSpeedSelectorHelpers + AssistantStickyPromptFooter", migration: "20261122_264a + 20261122_267" }
+    surfaces: { route: /assistant, api: "assistant_turns.py (/api/v1/assistant/turns*), _assistant_turn_controls_routes.py, _assistant_context_assembly.py, assistant_turn_engine.py, _assistant_turn_engine_plan.py, _assistant_turn_engine_mcp.py, _mcp_assistant_ask_bridge.py", ui: "AssistantTopToolbar + AssistantSpeedSelectorAndStreamView + AssistantSpeedSelectorHelpers + AssistantStickyPromptFooter", migration: "20261122_264a + 20261122_267" }
   - id: CAP-072
     title: Citations déterministes [S1]/[G1]/[O1], garde CitationGuard côté serveur pré-turn_completed et purge des citations fantômes
     fr: [FR-33]
@@ -657,14 +657,14 @@ capabilities:
     title: Dossiers thématiques, métadonnées PG18, feedback par tour, fils collaboratifs, verrous de tour Redis (SET NX EX), partage et processus
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-4 + 26-4a + 26-4b + 26-7 + 26-8
+    origin_ref: 10-4 + 26-4a + 26-4b + 26-7 + 26-8 + 29-5
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [assistant_folders, assistant_threads, assistant_folder_shares, assistant_turn_feedback, workflow_runs, step_executions, blackboard_snapshots, domain_events_outbox]
-    tests: [tests/integration/api/test_story_26_4a_redis_locks_outbox_ddl_postgres18.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, tests/integration/api/test_story_26_8_continue_in_process_dbos_postgres18.py, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/src/__tests__/assistant-folders-server-rehydration.test.tsx]
+    tests: [tests/integration/api/test_story_26_4a_redis_locks_outbox_ddl_postgres18.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, tests/integration/api/test_story_26_8_continue_in_process_dbos_postgres18.py, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/src/__tests__/assistant-folders-server-rehydration.test.tsx, apps/web/src/__tests__/story-29-5-folders-fetch-race-guard.test.tsx]
     verification: runtime
-    verified_at: "2026-11-22"
+    verified_at: "2026-11-25"
     surfaces: { api: "assistant_workspace_folders.py, assistant_turns.py, _assistant_turn_controls_routes.py, _assistant_process_wiring.py, sql_assistant_feedback.py, sql_assistant_folders.py", ui: AssistantFoldersAndCollaborativeThreadView, migration: "20261122_264b" }
   - id: CAP-074
     title: Câblage LLM réel et streaming SSE multi-fournisseurs (« Envoyer à Mon Assistant »)
@@ -711,15 +711,15 @@ capabilities:
     title: Services MCP, agents distants A2A et banc de test
     fr: [FR-35]
     origin: epic
-    origin_ref: 11-3 + 18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact
+    origin_ref: 11-3 + 18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact + 29-5
     status: live
     kind: feature
     uj: [UJ-9, UJ-19]
     db_tables: [catalog_items, enterprise_connectors, audit_ledger]
-    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/test_epic_11_story_11_3_test_bench_and_mcp_exposure.py, tests/integration/test_story_11_3_mcp_and_test_bench_postgres18_redis.py, tests/unit/connectors/test_story_18_3_codegraph_mcp_tools_and_providers.py]
+    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, tests/unit/test_epic_11_story_11_3_test_bench_and_mcp_exposure.py, tests/integration/test_story_11_3_mcp_and_test_bench_postgres18_redis.py, tests/unit/connectors/test_story_18_3_codegraph_mcp_tools_and_providers.py]
     verification: runtime
-    verified_at: "2026-11-20"
-    surfaces: { api: "mcp_and_test_bench.py + codegraph_mcp.py" }
+    verified_at: "2026-11-25"
+    surfaces: { api: "mcp_and_test_bench.py + codegraph_mcp.py", ui: RemoteServiceTestBenchAndMcpExposureView }
   - id: CAP-083
     title: Atelier orcia-pack-builder (processus 1-5, generate-and-attach, validate_help)
     fr: [FR-35]
@@ -739,28 +739,28 @@ capabilities:
     title: Gestion, création et exécution des agents et compétences (skills)
     fr: [FR-24, FR-36]
     origin: adhoc
-    origin_ref: 2026-11-05-gestion-creation-et-execution-agents-et-competences-skills
+    origin_ref: 2026-11-05-gestion-creation-et-execution-agents-et-competences-skills + 29-5
     status: live
     kind: feature
     uj: [UJ-9, UJ-19]
     db_tables: [catalog_items, catalog_acl_entries]
-    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
+    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-25"
     surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py, _agents_and_skills_skills_routes.py)", ui: AgentsAndSkillsManagerView }
   - id: CAP-091
     title: Refonte complète écran Agents, Skills et MCP & Studio de Gouvernance en 6 Blocs (A..F) + Checklist 6/6 Mon Assistant
     fr: [FR-36]
     origin: adhoc
-    origin_ref: 2026-11-08-refonte-complete-ecran-agents-skills-et-mcp + 2026-11-08-refonte-creation-configuration-agent-6-blocs-gouvernes
+    origin_ref: 2026-11-08-refonte-complete-ecran-agents-skills-et-mcp + 2026-11-08-refonte-creation-configuration-agent-6-blocs-gouvernes + 29-5
     status: live
     kind: feature
     uj: [UJ-19]
     db_tables: [catalog_items, catalog_acl_entries, org_units]
-    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, packages/ui/src/__tests__/agents-and-skills.test.tsx, tests/unit/test_agents_and_skills_router_and_service.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
+    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, packages/ui/src/__tests__/agents-and-skills.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, tests/unit/test_agents_and_skills_router_and_service.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
     verification: runtime
-    verified_at: "2026-11-20"
-    surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py)", ui: "AgentsAndSkillsManagerView + AgentSixBlocksEditorBody + AgentSixBlocksKnowledgeToolsGuardrailsSections + AgentDetailAndSandboxModal + SkillDetailAndSandboxModal + WorkspaceAssistantPinnedCard" }
+    verified_at: "2026-11-25"
+    surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py)", ui: "AgentsAndSkillsManagerView + AgentsAndSkillsHeaderAndToolbar + AgentSixBlocksEditorBody + AgentSixBlocksKnowledgeToolsGuardrailsSections + AgentDetailAndSandboxModal + SkillDetailAndSandboxModal + WorkspaceAssistantPinnedCard" }
 
   # ───────────── Qualité transverse (hygiène — NFR, pas des fonctionnalités) ─────────────
   - id: CAP-100
@@ -882,15 +882,15 @@ capabilities:
     title: ORCIA Process Studio v2 — Chaîne de Valeur Interactive (Macro-VSM 11 étapes), Studio 5 Blocs Control-M, Sas Externe Délégué & Arbitrage HITL 4 Actions sur Diff S3 Claim-Check
     fr: [FR-7, FR-8, FR-9, FR-15, FR-17, FR-29, FR-30, FR-35, FR-36]
     origin: epic
-    origin_ref: epic-14 (14-1..14-5)
+    origin_ref: epic-14 (14-1..14-5) + 29-5
     status: live
     kind: feature
     uj: [UJ-10, UJ-19]
     db_tables: [vsm_definitions_v2, workflow_definitions_v2, declarative_pack_bundles, claim_check_artifacts, workflow_runs]
-    tests: [tests/integration/api/test_dbos_return_loops_and_claim_check.py, tests/unit/core/test_generic_gate_runners_and_auto_heal.py, apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx, apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts]
+    tests: [tests/integration/api/test_dbos_return_loops_and_claim_check.py, tests/unit/core/test_generic_gate_runners_and_auto_heal.py, apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts]
     verification: runtime
     verified_at: "2026-11-25"
-    surfaces: { route: "/processes + /processes/vsm/$vsmId + /processes/studio/$workflowId", api: "/api/v1/vsm + /api/v1/workflows/v2 + /api/v1/runs (workflows.py)", ui: "ProcessesHubPage + ValueStreamMapView + StepDetailSheet + ReturnLoopsSvgOverlay + WorkflowFiveBlocksCanvas + StudioCopilotSidebar + InteractiveRunDrawer", migration: 20261108_0910_declarative_packs_and_workflows_v2.py }
+    surfaces: { route: "/processes + /processes/vsm/$vsmId + /processes/studio/$workflowId", api: "/api/v1/vsm + /api/v1/workflows/v2 + /api/v1/runs (workflows.py)", ui: "ProcessesHubPage + ProcessCatalogCardGrid + ProcessesActiveDossiersCard + ValueStreamMapView + StepDetailSheet + ReturnLoopsSvgOverlay + WorkflowFiveBlocksCanvas + StudioCopilotSidebar + InteractiveRunDrawer", migration: 20261108_0910_declarative_packs_and_workflows_v2.py }
   - id: CAP-150
     title: Simplification Architecturale des Packs 100 % Déclaratifs (packs/sdlc & packs/orcia-docs), Fusion de orcia-kernel dans orcia-core.kernel & Package Unifié packages/orcia-connectors
     fr: [FR-11, FR-13, FR-14, FR-34, FR-35]
@@ -1023,7 +1023,7 @@ capabilities:
     title: Provenance auditable immuable (audit_ledger append-only), comptabilité FinOps consolidée, impact cognitif et télémétrie multi-métriques MCP
     fr: [FR-25, FR-26, FR-27]
     origin: epic
-    origin_ref: epic-6 (6-1..6-4)
+    origin_ref: epic-6 (6-1..6-4) + 29-1 + 29-5
     status: live
     kind: feature
     uj: [UJ-8]
@@ -1061,14 +1061,15 @@ capabilities:
       - tests/integration/api/test_story_29_1_autonomous_runs_and_finops_pg18.py
       - packages/ui/src/__tests__/story-29-1-finops-pills-and-error-guard.test.tsx
       - apps/web/src/__tests__/story-29-1-processes-and-finops-scope.test.tsx
+      - apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx
       - apps/web/e2e/12-finops-and-audit-provenance.spec.ts
       - apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts
-    notes: "Story 6.1 (registre d'audit immuable et contrôle d'accès par périmètre), Story 6.2 (comptabilité FinOps consolidée, garde-fous mensuels hiérarchiques et reprise après rallonge budgétaire), Story 6.3 (tableau de bord de maîtrise humaine, alertes sur validations expéditives, indice de réversibilité d'architecture et mise à jour des politiques adaptatives), Story 6.4 (télémétrie multi-métriques des services externes, plafonnement des anomalies, coupe-circuit isolé par connecteur et onglet Services externes), et Story 29.1 (2026-11-25 : auto-sélection RBAC du périmètre FinOps, masquage des pilules non autorisées, mappage BU -> Équipe/Division, suppression état vide sur erreur et guidage bilingue ERR_SCOPE_ACCESS_DENIED)."
+    notes: "Story 6.1 (registre d'audit immuable et contrôle d'accès par périmètre), Story 6.2 (comptabilité FinOps consolidée, garde-fous mensuels hiérarchiques et reprise après rallonge budgétaire), Story 6.3 (tableau de bord de maîtrise humaine, alertes sur validations expéditives, indice de réversibilité d'architecture et mise à jour des politiques adaptatives), Story 6.4 (télémétrie multi-métriques des services externes, plafonnement des anomalies, coupe-circuit isolé par connecteur et onglet Services externes), Story 29.1 (2026-11-25 : auto-sélection RBAC du périmètre FinOps, masquage des pilules non autorisées, mappage BU -> Équipe/Division, suppression état vide sur erreur et guidage bilingue ERR_SCOPE_ACCESS_DENIED), et Story 29.5 (2026-11-25 : convergence en-tête canonique OrciaPageHeader, pilules périmètre distinctes, onglets OrciaTabStrip et tableaux encadrés OrciaDataCard)."
   - id: CAP-201
     title: Exécution autonome sous contrat, déclencheurs événementiels idempotents et supervision post-hoc
     fr: [FR-29, FR-30]
     origin: epic
-    origin_ref: epic-7 (7-1, 7-2, 7-4 done)
+    origin_ref: epic-7 (7-1, 7-2, 7-4 done) + 29-1 + 29-5
     status: live
     kind: feature
     uj: [UJ-11, UJ-12]
@@ -1100,6 +1101,7 @@ capabilities:
       - tests/unit/test_story_29_1_scope_resolution_extra.py
       - tests/integration/api/test_story_29_1_autonomous_runs_and_finops_pg18.py
       - apps/web/src/__tests__/story-29-1-processes-and-finops-scope.test.tsx
+      - apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx
       - apps/web/e2e/13-epic-7-autonomous-governance-and-supervision.spec.ts
       - apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts
     notes: "Epic 7 complet (2026-11-17, AD-3, AD-6, AD-18) : Story 7.1 (autonomy_contracts, signature unique TEAM_LEAD/BU_LEAD/PLATFORM_ADMIN, SignedApprovalToken.issue_autonomous, AutonomyContractModal), Story 7.2 (déclencheurs idempotents WEBHOOK/LOG_SINK_ALERT/CRON/OUTBOX_EVENT opt-in/MANUAL_AUTONOMOUS, triple verrou Redis NX + UNIQUE SQL + DBOS SetWorkflowID, Self-Trigger Guard, coupe-circuit SSE < 500 ms, WorkflowTriggersModal), Story 7.4 (supervision /processes, AutonomousExecutionBadge Cyan/Cobalt sans violet humain, arrêt d'urgence KILL_SWITCH_STOPPED au niveau @DBOS.step, invalidation & restauration @v(N-1) HELP_ARTICLE avec purge Redis < 10 ms, échantillonnage post-hoc déterministe 10-20%, métriques SM-A1..A3 isolées dans FinOps Maîtrise humaine & Qualité, 0 jargon technique), et Story 29.1 (2026-11-25 : agrégation multi-espaces GET /api/v1/autonomous-runs sans 404/422 sur scope-global ou ID synthétiques ws-*)."

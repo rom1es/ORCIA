@@ -1,3 +1,4 @@
+import { OrciaDataCard, OrciaIcon } from "@orcia/ui";
 import React from "react";
 import {
   formatI18nTemplate,
@@ -26,51 +27,33 @@ export function ProcessesValueStreamOverviewCard({
   const vsmSpec = getInitialVsmSpec(locale);
 
   return (
-    <div
-      data-testid="processes-hub-vsm-hero-card"
-      className="orcia-bento-card"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "12px",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          flexWrap: "wrap",
-          gap: "12px",
-        }}
-      >
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          <span
-            style={{
-              fontSize: "12px",
-              fontWeight: 700,
-              color: "var(--color-primary-cobalt)",
-            }}
-          >
-            {copy.vsmOverviewEyebrow}
-          </span>
-          <h3 style={{ margin: 0, fontSize: "var(--font-size-h3)" }}>
-            {vsmTitle ?? vsmSpec.title} — {vsmSubtitle ?? vsmSpec.subtitle}
-          </h3>
-          <p style={{ margin: 0, fontSize: "13px", color: "var(--color-text-secondary)" }}>
-            {copy.vsmOverviewSubtitle}
-          </p>
-        </div>
-
+    <OrciaDataCard
+      testId="processes-hub-vsm-hero-card"
+      title={`${vsmTitle ?? vsmSpec.title} — ${vsmSubtitle ?? vsmSpec.subtitle}`}
+      subtitle={copy.vsmOverviewSubtitle}
+      metaBadge={
+        <span
+          style={{
+            fontSize: "11px",
+            fontWeight: 700,
+            color: "var(--color-primary-cobalt)",
+          }}
+        >
+          {copy.vsmOverviewEyebrow}
+        </span>
+      }
+      actions={
         <button
           type="button"
           data-testid="open-interactive-vsm-btn"
           onClick={() => onOpenInteractiveVsm(vsmId ?? vsmSpec.id)}
-          className="orcia-ds-btn-secondary"
+          className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm orcia-ds-nowrap"
         >
-          {copy.exploreFullVsmBtn}
+          <OrciaIcon name="compass" size={14} />
+          <span>{copy.exploreFullVsmBtn}</span>
         </button>
-      </div>
+      }
+    >
 
       <div
         style={{
@@ -115,6 +98,6 @@ export function ProcessesValueStreamOverviewCard({
           </div>
         ))}
       </div>
-    </div>
+    </OrciaDataCard>
   );
 }

@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { OrciaTabBar, type OrciaTabItem } from "../RadixDesignSystemPrimitives";
+import { OrciaDataCard } from "../OrciaDataCard";
+import { OrciaPageHeader } from "../OrciaPageHeader";
+import { OrciaTabStrip, type OrciaTabStripItem } from "../OrciaTabStrip";
 import { FinopsBudgetOverrideModal } from "./FinopsBudgetOverrideModal";
 import { FinopsBudgetPolicyModal } from "./FinopsBudgetPolicyModal";
 import type {
@@ -26,6 +28,7 @@ export interface FinopsGovernanceDashboardViewProps {
   readonly allowedScopes?: readonly ("WORKSPACE" | "TEAM" | "BU" | "GLOBAL")[];
   readonly allowedModalScopes?: readonly ("GLOBAL" | "BU" | "TEAM" | "WORKSPACE")[];
   readonly error?: string | null;
+  readonly alertSlot?: React.ReactNode;
   readonly onScopeChange?: (scope: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE") => void;
   readonly totalRuns: number;
   readonly totalCostEur: number;
@@ -70,6 +73,7 @@ export function FinopsGovernanceDashboardView({
   allowedScopes,
   allowedModalScopes,
   error = null,
+  alertSlot,
   onScopeChange,
   totalRuns,
   totalCostEur,
@@ -115,88 +119,74 @@ export function FinopsGovernanceDashboardView({
       )
     : allScopePills;
 
-  const tabs: readonly OrciaTabItem<FinopsTabKey>[] = [
+  const tabs: readonly OrciaTabStripItem<FinopsTabKey>[] = [
     { key: "processes", label: labels.tabs.processes, testId: "finops-tab-processes" },
     { key: "tiers", label: labels.tabs.tiers, testId: "finops-tab-tiers" },
     { key: "externalServices", label: labels.tabs.externalServices, testId: "finops-tab-external-services" },
     { key: "cognitiveGovernance", label: labels.tabs.cognitiveGovernance, testId: "finops-tab-cognitive-governance" },
   ];
 
+  const scopeSelectorBar = (
+    <div
+      className="finops-scope-pills flex flex-wrap items-center gap-1.5"
+      role="tablist"
+      aria-orientation="horizontal"
+      aria-label={labels.scopeSelector.currentWorkspace}
+      data-testid="finops-scope-pills"
+    >
+      {visibleScopePills.map(([sKey, testId, label]) => {
+        const selected = effectivePillScope === sKey;
+        return (
+          <button
+            key={sKey}
+            type="button"
+            role="tab"
+            aria-selected={selected}
+            data-testid={testId}
+            className="orcia-ds-filter-pill"
+            onClick={() => onScopeChange?.(sKey)}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div
-      className="finops-governance-dashboard"
+      className="finops-governance-dashboard orcia-ds-page"
       data-testid="finops-governance-dashboard"
-      style={{ display: "flex", flexDirection: "column", gap: "20px" }}
     >
-      <div
-        className="finops-dashboard-header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          flexWrap: "wrap",
-          gap: "16px",
-        }}
-      >
-        <div style={{ maxWidth: "680px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <h1
-              data-testid="finops-page-title"
-              style={{ fontSize: "20px", fontWeight: 700, margin: 0, color: "var(--color-text-primary)" }}
-            >
-              {labels.pageTitle}
-            </h1>
-          </div>
-          <p
-            style={{
-              fontSize: "13px",
-              color: "var(--color-text-muted)",
-              margin: "6px 0 0 0",
-              lineHeight: "1.5",
-            }}
-          >
-            {labels.pageSubtitle}
-          </p>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-          <div
-            className="finops-scope-pills orcia-ds-tabs"
-            role="tablist"
-            aria-orientation="horizontal"
-            aria-label={labels.scopeSelector.currentWorkspace}
-            data-testid="finops-scope-pills"
-          >
-            {visibleScopePills.map(([sKey, testId, label]) => {
-              const selected = effectivePillScope === sKey;
-              return (
-                <button
-                  key={sKey}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  data-testid={testId}
-                  className="orcia-ds-tab"
-                  onClick={() => onScopeChange?.(sKey)}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-
+      <OrciaPageHeader
+        testId="finops-page"
+        icon="finops"
+        title={labels.pageTitle}
+        subtitle={labels.pageSubtitle}
+        secondaryActions={headerActions}
+        primaryAction={
           <button
             type="button"
             data-testid="finops-configure-budget-btn"
-            className="orcia-ds-btn orcia-ds-btn-primary"
+            className="orcia-ds-btn orcia-ds-btn-primary orcia-ds-btn-sm orcia-ds-nowrap"
             onClick={() => setIsBudgetModalOpen(true)}
           >
             {labels.configureBudgetButton}
           </button>
-
-          {headerActions}
-        </div>
-      </div>
+        }
+        tabs={
+          <OrciaTabStrip<FinopsTabKey>
+            testId="finops-tab-strip"
+            ariaLabel={labels.tabsAriaLabel ?? labels.pageTitle}
+            variant="underline"
+            tabs={tabs}
+            activeTabId={activeTab}
+            onSelectTab={setActiveTab}
+          />
+        }
+        scopeBar={scopeSelectorBar}
+        alertSlot={alertSlot}
+      />
 
       <FinopsKpiStrip
         totalRuns={totalRuns}
@@ -217,57 +207,51 @@ export function FinopsGovernanceDashboardView({
       />
 
       <div className="finops-tabs-container">
-        <OrciaTabBar<FinopsTabKey>
-          tabs={tabs}
-          activeTab={activeTab}
-          onSelectTab={setActiveTab}
-          ariaLabel="Onglets gouvernance FinOps"
-          tabsClassName="flex-nowrap overflow-x-auto"
-          panels={{
-            processes: (
-              <FinopsProcessAndTiersTab
-                activeSubTab="processes"
-                processes={processes}
-                tiers={tiers}
-                labels={labels}
-                onOpenOverrideModal={(runId, title) => setOverrideModalRun({ runId, title })}
-              />
-            ),
-            tiers: (
-              <FinopsProcessAndTiersTab
-                activeSubTab="tiers"
-                processes={processes}
-                tiers={tiers}
-                labels={labels}
-              />
-            ),
-            externalServices: labels.remoteServices ? (
-              <FinopsRemoteMcpServicesTab
-                services={remoteServices}
-                labels={labels.remoteServices}
-                onUpdateConnectorQuota={onUpdateConnectorQuota}
-                onResetConnectorCircuit={onResetConnectorCircuit}
-                onOpenHelpSection={onOpenHelpSection}
-              />
-            ) : hasError ? null : (
-              <div className="orcia-bento-card" data-testid="finops-services-placeholder" style={{ padding: "24px", color: "var(--color-text-muted)", fontSize: "13px" }}>
-                <p style={{ margin: 0 }}>{labels.emptyStateText}</p>
-              </div>
-            ),
-            cognitiveGovernance: cognitiveData ? (
-              <FinopsHumanMasteryTab
-                {...cognitiveData}
-                onApplyRecommendation={onApplyRecommendation}
-                onReviewPostHocSample={onReviewPostHocSample}
-                onOpenHelpSection={onOpenHelpSection}
-              />
-            ) : hasError ? null : (
-              <div className="orcia-bento-card" data-testid="finops-governance-placeholder" style={{ padding: "24px", color: "var(--color-text-muted)", fontSize: "13px" }}>
-                <p style={{ margin: 0 }}>{labels.emptyStateText}</p>
-              </div>
-            ),
-          }}
-        />
+        {activeTab === "processes" ? (
+          <FinopsProcessAndTiersTab
+            activeSubTab="processes"
+            processes={processes}
+            tiers={tiers}
+            labels={labels}
+            onOpenOverrideModal={(runId, title) => setOverrideModalRun({ runId, title })}
+          />
+        ) : activeTab === "tiers" ? (
+          <FinopsProcessAndTiersTab
+            activeSubTab="tiers"
+            processes={processes}
+            tiers={tiers}
+            labels={labels}
+          />
+        ) : activeTab === "externalServices" ? (
+          labels.remoteServices ? (
+            <FinopsRemoteMcpServicesTab
+              services={remoteServices}
+              labels={labels.remoteServices}
+              onUpdateConnectorQuota={onUpdateConnectorQuota}
+              onResetConnectorCircuit={onResetConnectorCircuit}
+              onOpenHelpSection={onOpenHelpSection}
+            />
+          ) : hasError ? null : (
+            <OrciaDataCard testId="finops-services-placeholder">
+              <p style={{ margin: 0, color: "var(--color-text-muted)", fontSize: "13px" }}>
+                {labels.emptyStateText}
+              </p>
+            </OrciaDataCard>
+          )
+        ) : cognitiveData ? (
+          <FinopsHumanMasteryTab
+            {...cognitiveData}
+            onApplyRecommendation={onApplyRecommendation}
+            onReviewPostHocSample={onReviewPostHocSample}
+            onOpenHelpSection={onOpenHelpSection}
+          />
+        ) : hasError ? null : (
+          <OrciaDataCard testId="finops-governance-placeholder">
+            <p style={{ margin: 0, color: "var(--color-text-muted)", fontSize: "13px" }}>
+              {labels.emptyStateText}
+            </p>
+          </OrciaDataCard>
+        )}
       </div>
 
       <FinopsBudgetPolicyModal

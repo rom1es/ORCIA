@@ -69,7 +69,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
   return (
     <div
       data-testid={`agent-card-${agent.agentId}`}
-      className="space-y-2.5 rounded-lg border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] p-3.5 text-xs"
+      className="orcia-bento-card space-y-2.5 p-4 text-xs"
     >
       <AgentStudioCardBadgesRow
         agent={agent}
@@ -136,7 +136,7 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
               type="button"
               data-testid={`use-agent-in-assistant-btn-${agent.agentId}`}
               onClick={() => onUseAgentInAssistant(agent)}
-              className="orcia-ds-btn orcia-ds-btn-primary text-[11px]"
+              className="orcia-ds-btn orcia-ds-btn-cobalt-outline text-[11px]"
             >
               <OrciaIcon name="assistant" /> {studio.useInAssistantButton}
             </button>

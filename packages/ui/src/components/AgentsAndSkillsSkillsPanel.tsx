@@ -110,7 +110,7 @@ export const AgentsAndSkillsSkillsPanel: React.FC<
       {filteredSkills.length === 0 ? (
         <div
           data-testid="skills-empty-state"
-          className="rounded border border-dashed border-[var(--orcia-border-subtle)] p-4 text-center text-xs text-[var(--orcia-text-secondary)]"
+          className="orcia-bento-card orcia-ds-data-card border-dashed p-4 text-center text-xs text-[var(--orcia-text-secondary)]"
         >
           <strong className="block text-[var(--orcia-text-primary)]">
             {labels.emptySkillsTitle}

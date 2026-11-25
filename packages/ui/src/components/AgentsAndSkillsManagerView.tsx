@@ -44,6 +44,7 @@ export const AgentsAndSkillsManagerView: React.FC<
   skills,
   labels,
   initialTab = "AGENTS",
+  alertSlot,
   onCreateAgent,
   onToggleAgentSkill,
   onExecuteAgent,
@@ -148,7 +149,7 @@ export const AgentsAndSkillsManagerView: React.FC<
     <section
       aria-label={labels.heading}
       data-testid="agents-and-skills-manager-view"
-      className="space-y-4 rounded-lg border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-4 text-[var(--orcia-text-primary)]"
+      className="orcia-ds-page text-[var(--orcia-text-primary)]"
     >
       <AgentsAndSkillsHeaderAndToolbar
         labels={labels}
@@ -160,6 +161,7 @@ export const AgentsAndSkillsManagerView: React.FC<
         mcpExposedAgentsCount={mcpExposedAgentsCount}
         searchQuery={searchQuery}
         visibilityFilter={visibilityFilter}
+        alertSlot={alertSlot}
         onSelectTab={setActiveTab}
         onToggleCreateAgent={() => setIsCreateAgentOpen((prev) => !prev)}
         onToggleCreateSkill={() => setIsCreateSkillOpen((prev) => !prev)}
@@ -199,7 +201,7 @@ export const AgentsAndSkillsManagerView: React.FC<
           {filteredAgents.length === 0 ? (
             <div
               data-testid="agents-empty-state"
-              className="rounded border border-dashed border-[var(--orcia-border-subtle)] p-4 text-center text-xs text-[var(--orcia-text-secondary)]"
+              className="orcia-bento-card orcia-ds-data-card border-dashed p-4 text-center text-xs text-[var(--orcia-text-secondary)]"
             >
               <strong className="block text-[var(--orcia-text-primary)]">
                 {labels.emptyAgentsTitle}

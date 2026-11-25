@@ -1,4 +1,4 @@
-import { OrciaIcon } from "@orcia/ui";
+import { OrciaDataCard, OrciaIcon, StatusBadge } from "@orcia/ui";
 import React from "react";
 import { useI18n } from "../../i18n";
 import {
@@ -24,59 +24,25 @@ export function ProcessesActiveDossiersCard({
   const copy = dictionary.processStudioUi.hub;
 
   return (
-    <div
-      data-testid="processes-active-dossiers-card"
-      className="orcia-bento-card"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "12px",
-        borderLeft: "4px solid var(--color-primary-cobalt)",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          flexWrap: "wrap",
-          gap: "12px",
-        }}
-      >
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-            <span
-              className="rounded px-2.5 py-0.5 text-xs font-semibold"
-              style={{
-                backgroundColor: "var(--color-arbitration-bg)",
-                color: "var(--color-arbitration-amber)",
-              }}
-            >
-              {copy.pendingValidationBadge}
-            </span>
-          </div>
-          <h2 style={{ margin: "6px 0 0 0", fontSize: "var(--font-size-h2)" }}>
-            {copy.activeDossiersTitle}
-          </h2>
-          <p style={{ margin: "2px 0 0 0", fontSize: "13px", color: "var(--color-text-secondary)" }}>
-            {copy.activeDossiersSubtitle}
-          </p>
-        </div>
-
-        {featuredPendingWorkflow && !activeRunWorkflow ? (
+    <OrciaDataCard
+      testId="processes-active-dossiers-card"
+      title={copy.activeDossiersTitle}
+      subtitle={copy.activeDossiersSubtitle}
+      metaBadge={<StatusBadge tone="amber" label={copy.pendingValidationBadge} />}
+      actions={
+        featuredPendingWorkflow && !activeRunWorkflow ? (
           <button
             type="button"
             data-testid="resume-featured-dossier-btn"
             onClick={() => onSelectWorkflowRun(featuredPendingWorkflow.id)}
-            className="orcia-ds-btn-primary"
-            style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+            className="orcia-ds-btn orcia-ds-btn-cobalt-outline orcia-ds-btn-sm orcia-ds-nowrap"
           >
             <OrciaIcon name="play" />
             <span>{copy.reviewPendingDossierBtn}</span>
           </button>
-        ) : null}
-      </div>
-
+        ) : null
+      }
+    >
       {featuredPendingWorkflow && !activeRunWorkflow ? (
         <div
           className="rounded border p-3"
@@ -114,7 +80,7 @@ export function ProcessesActiveDossiersCard({
           <button
             type="button"
             onClick={() => onSelectWorkflowRun(featuredPendingWorkflow.id)}
-            className="orcia-ds-btn-secondary"
+            className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
           >
             {copy.openDeliverableBtn}
           </button>
@@ -130,6 +96,6 @@ export function ProcessesActiveDossiersCard({
           isFr={isFr}
         />
       ) : null}
-    </div>
+    </OrciaDataCard>
   );
 }

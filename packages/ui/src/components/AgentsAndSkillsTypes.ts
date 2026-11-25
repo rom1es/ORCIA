@@ -63,6 +63,7 @@ export interface UiManagedAgentItem {
 export interface AgentsAndSkillsManagerLabels {
   readonly heading: string;
   readonly subtitle: string;
+  readonly tabsAriaLabel?: string;
   readonly tabAgents: string;
   readonly tabSkills: string;
   readonly tabConnections: string;
@@ -142,6 +143,7 @@ export interface AgentsAndSkillsManagerViewProps {
   readonly skills: readonly UiManagedSkillItem[];
   readonly labels: AgentsAndSkillsManagerLabels;
   readonly initialTab?: AgentsAndSkillsSubTab;
+  readonly alertSlot?: React.ReactNode;
   readonly onCreateAgent: (input: CreateAgentSixBlocksInput) => void;
   readonly onToggleAgentSkill: (agentId: string, skillId: string, nextChecked: boolean) => void;
   readonly onExecuteAgent: (agentId: string, prompt: string) => void;

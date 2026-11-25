@@ -17,6 +17,8 @@ export const FEATURE_INBOX_ASSISTANT_EN: FeatureInboxAssistantDictionary = {
     releaseErrorTemplate: "⚠️ Release failed ({detail}).",
   },
   toolbar: {
+    tabsAriaLabel: "My Assistant views",
+    activeDiscussionTab: "Active discussion",
     newConversationBtn: "+ New conversation",
     savedConversationsLabel: "Saved conversations",
     savedConversationsCountTemplate: "Saved conversations ({count})",

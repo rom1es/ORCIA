@@ -81,7 +81,7 @@ test.describe("TEST-05 · 08 — Mes Agents : Studio 6 Blocs Gouvernés, Banc de
     ).toContainText("Contradicteur / Gate");
     await expect(
       page.getByTestId("agent-governance-passport-agent-e2e-conformite"),
-    ).toContainText("Write-Preview obligatoire");
+    ).toContainText("Validation avant écriture");
 
     // Ouverture de la modale « Configurer & Tester (6 blocs) » et validation au Banc de Test intégré
     await page.getByTestId("open-agent-detail-modal-btn-agent-e2e-conformite").click();

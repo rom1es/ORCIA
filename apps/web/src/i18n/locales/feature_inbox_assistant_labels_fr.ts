@@ -17,6 +17,8 @@ export const FEATURE_INBOX_ASSISTANT_FR: FeatureInboxAssistantDictionary = {
     releaseErrorTemplate: "⚠️ Libération impossible ({detail}).",
   },
   toolbar: {
+    tabsAriaLabel: "Vues de Mon Assistant",
+    activeDiscussionTab: "Discussion active",
     newConversationBtn: "+ Nouvelle conversation",
     savedConversationsLabel: "Conversations sauvegardées",
     savedConversationsCountTemplate: "Conversations sauvegardées ({count})",
