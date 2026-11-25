@@ -2,6 +2,7 @@ import type { AiModelMappingItemResponse } from "@orcia/api-client";
 import {
   InferenceTierBadge,
   OrciaDropdownMenu,
+  OrciaIcon,
   OrciaSpinner,
   PermissionGuard,
   StatusBadge,
@@ -150,7 +151,10 @@ export function AiModelMappingRowCard({
                   <span>{labels.testingStatus}</span>
                 </>
               ) : (
-                `🔌 ${labels.testConnectionBtn}`
+                <>
+                  <OrciaIcon name="plug" size={14} />
+                  <span>{labels.testConnectionBtn}</span>
+                </>
               )}
             </button>
           </PermissionGuard>

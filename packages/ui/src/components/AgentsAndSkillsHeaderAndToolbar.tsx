@@ -152,45 +152,68 @@ export const AgentsAndSkillsHeaderAndToolbar: React.FC<{
               data-testid="agents-kpi-strip"
               className="grid grid-cols-1 gap-2 text-xs md:grid-cols-3"
             >
-              {(activeAgentsCount ?? agentsCount) > 0 && (
-                <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2">
-                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
-                    {studio.kpiAgentsTitle}
-                  </span>
-                  <strong className="text-sm text-[var(--orcia-text-primary)]">
-                    {activeAgentsCount ?? agentsCount} {studio.kpiActiveSuffix}
-                  </strong>
-                </div>
-              )}
-              {skillsCount > 0 && (
-                <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2">
-                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
-                    {studio.kpiSkillsTitle}
-                  </span>
-                  <strong className="text-sm text-[var(--orcia-text-primary)]">
-                    {skillsCount} {studio.kpiReusableSuffix}
-                  </strong>
-                </div>
-              )}
-              {(packOrTeamAgentsCount > 0 || mcpExposedAgentsCount > 0) && (
-                <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2">
-                  <span className="block text-[10px] font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
-                    {studio.kpiOriginMcpTitle}
-                  </span>
-                  <strong className="text-sm text-[var(--orcia-text-primary)]">
-                    {[
-                      packOrTeamAgentsCount > 0
-                        ? `${packOrTeamAgentsCount} ${studio.kpiPackTeamSuffix}`
-                        : null,
-                      mcpExposedAgentsCount > 0
-                        ? `${mcpExposedAgentsCount} ${studio.mcpActiveBadge}`
-                        : null,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </strong>
-                </div>
-              )}
+              {(activeAgentsCount ?? agentsCount) > 0 && (() => {
+                const resolvedActive = activeAgentsCount ?? agentsCount;
+                const activeSuffix =
+                  resolvedActive === 1
+                    ? (studio.kpiActiveSingular ?? studio.kpiActiveSuffix)
+                    : studio.kpiActiveSuffix;
+                return (
+                  <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2">
+                    <span className="block text-[10px] font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
+                      {studio.kpiAgentsTitle}
+                    </span>
+                    <strong className="text-sm text-[var(--orcia-text-primary)]">
+                      {resolvedActive} {activeSuffix}
+                    </strong>
+                  </div>
+                );
+              })()}
+              {skillsCount > 0 && (() => {
+                const reusableSuffix =
+                  skillsCount === 1
+                    ? (studio.kpiReusableSingular ?? studio.kpiReusableSuffix)
+                    : studio.kpiReusableSuffix;
+                return (
+                  <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2">
+                    <span className="block text-[10px] font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
+                      {studio.kpiSkillsTitle}
+                    </span>
+                    <strong className="text-sm text-[var(--orcia-text-primary)]">
+                      {skillsCount} {reusableSuffix}
+                    </strong>
+                  </div>
+                );
+              })()}
+              {(packOrTeamAgentsCount > 0 || mcpExposedAgentsCount > 0) && (() => {
+                const packTeamSuffix =
+                  packOrTeamAgentsCount === 1
+                    ? (studio.kpiPackTeamSingular ?? studio.kpiPackTeamSuffix)
+                    : studio.kpiPackTeamSuffix;
+                return (
+                  <div className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-3 py-2">
+                    <span className="block text-[10px] font-semibold uppercase tracking-wide text-[var(--orcia-text-secondary)]">
+                      {studio.kpiOriginMcpTitle}
+                    </span>
+                    <strong className="text-sm text-[var(--orcia-text-primary)]">
+                      {[
+                        packOrTeamAgentsCount > 0
+                          ? `${packOrTeamAgentsCount} ${packTeamSuffix}`
+                          : null,
+                        mcpExposedAgentsCount > 0
+                          ? `${mcpExposedAgentsCount} ${
+                              mcpExposedAgentsCount === 1
+                                ? (studio.mcpActiveSingular ?? studio.mcpActiveBadge)
+                                : studio.mcpActiveBadge
+                            }`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </strong>
+                  </div>
+                );
+              })()}
             </div>
           )}
 

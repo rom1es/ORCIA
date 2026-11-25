@@ -69,7 +69,7 @@ export function buildUnifiedScopeSelectorState(params: {
       label: personalGroupLabel,
       options: privateWorkspaces.map((ws) => ({
         id: ws.workspaceId,
-        label: `🔒 ${ws.name}`,
+        label: ws.name,
       })),
     });
   }
@@ -84,7 +84,7 @@ export function buildUnifiedScopeSelectorState(params: {
       label: unit.name,
       options: unitWorkspaces.map((ws) => ({
         id: ws.workspaceId,
-        label: `📦 ${ws.name}`,
+        label: ws.name,
       })),
     });
   }
@@ -105,7 +105,7 @@ export function buildUnifiedScopeSelectorState(params: {
         label: groupName,
         options: wsList.map((ws) => ({
           id: ws.workspaceId,
-          label: `📦 ${ws.name}`,
+          label: ws.name,
         })),
       });
     }
@@ -114,7 +114,7 @@ export function buildUnifiedScopeSelectorState(params: {
   const matchedWorkspace = workspaces.find((ws) => ws.workspaceId === activeScopeId);
   return {
     groups,
-    allSpacesOption: { id: "scope-global", label: `🌐 ${allMySpacesLabel}` },
+    allSpacesOption: { id: "scope-global", label: allMySpacesLabel },
     activeScopeValue: matchedWorkspace ? matchedWorkspace.workspaceId : "scope-global",
     scopeLabel,
   };

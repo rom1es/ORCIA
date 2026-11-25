@@ -6,13 +6,13 @@ import { RGAA_MODAL_LABELS_EN } from "./rgaa_modal_labels";
 
 export const ASSISTANT_GOVERNANCE_LABELS_EN: AssistantGovernanceModalAndStudioLabels = {
   ...RGAA_MODAL_LABELS_EN,
-  modalTitle: "⚙ My Assistant Settings",
+  modalTitle: "My Assistant Settings",
   savedBadgeLabel: "Saved",
   infoBannerText:
     "These settings directly customize the business role, tone, format, and permanent instructions sent automatically to the AI model for each question in My Assistant.",
-  tab1UserTitle: "👤 My preferences",
-  tab2WorkspaceTitle: "📦 Space settings",
-  tab3AssemblyTitle: "👁️ Active instructions (Read-only)",
+  tab1UserTitle: "My preferences",
+  tab2WorkspaceTitle: "Space settings",
+  tab3AssemblyTitle: "Active instructions (Read-only)",
   toneLabel: "Tone & conciseness",
   toneOptions: [
     { value: "SYNTHETIC", label: "Concise & Direct (Get straight to the point)" },
@@ -39,11 +39,11 @@ export const ASSISTANT_GOVERNANCE_LABELS_EN: AssistantGovernanceModalAndStudioLa
   saveUserPrefsCta: "Save my preferences",
   workspaceInstructionsLabel: "Shared business instructions for this Space",
   workspaceReadOnlyBadge:
-    "👁️ Read-only — Only a team lead or administrator can edit Space instructions",
+    "Read-only — Only a team lead or administrator can edit Space instructions",
   mcpExposeToggleLabel:
-    "🔌 Allow access to this Space's Assistant from an external code editor",
-  mcpFrozenByUpperBadge: "🔒 Set by Team or Organization",
-  copyMcpConfigCta: "📋 Copy editor configuration",
+    "Allow access to this Space's Assistant from an external code editor",
+  mcpFrozenByUpperBadge: "Set by Team or Organization",
+  copyMcpConfigCta: "Copy editor configuration",
   saveWorkspaceSettingsCta: "Save for Space",
   telemetryHeading: "Prompts, Contexts & User Feedback Log",
   telemetrySubtitle: "Continuous analysis and improvement of instructions",
@@ -71,11 +71,11 @@ export const ASSISTANT_GOVERNANCE_LABELS_EN: AssistantGovernanceModalAndStudioLa
 
 export const ASSISTANT_SPEED_STREAM_LABELS_EN: AssistantSpeedSelectorAndStreamViewLabels = {
   headerTitle: "Assistant Response Mode",
-  speed1PillLabel: "⚡ Fast response",
-  speed2PillLabel: "🛠️ With an agent or skill (@Agent / /Skill)",
-  speed3DeepAuditPillLabel: "🧠 In-depth analysis (multiple perspectives)",
-  cacheHitBadge: "⚡ Workspace context ready",
-  cacheMissBadge: "🔄 Preparing context",
+  speed1PillLabel: "Fast response",
+  speed2PillLabel: "With an agent or skill (@Agent / /Skill)",
+  speed3DeepAuditPillLabel: "In-depth analysis (multiple perspectives)",
+  cacheHitBadge: "Workspace context ready",
+  cacheMissBadge: "Preparing context",
   nodesDeterministicLabel: "Searching your sources:",
   ttftBadgePrefix: "Response time:",
   inputPlaceholder: "Type @ for agents, / for skills, or ask your question...",

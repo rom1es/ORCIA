@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { ConfiguredPackItem } from "../../components/platformSetupStore";
 import type { SupportedWebLocale } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
+import type { AlertFeedbackInput } from "../shared/alertFeedback";
 import {
   buildSkillLocalOutput,
   type CatalogManagedLabels,
@@ -22,7 +23,7 @@ import { useManagedAgentActions } from "./useManagedAgentActions";
 
 export function useManagedAgentsAndSkills(
   activePacks: readonly ConfiguredPackItem[],
-  onFeedback: (msg: string) => void,
+  onFeedback: (msg: AlertFeedbackInput) => void,
   locale: SupportedWebLocale,
   catalogLabels: CatalogManagedLabels,
 ) {
@@ -59,9 +60,10 @@ export function useManagedAgentsAndSkills(
         setManagedState(nextState);
       })
       .catch((err: unknown) =>
-        onFeedback(
-          `⚠️ ${formatRfc9457ErrorToBanner(err, locale, catalogLabels.catalogErrorContext).fullText}`,
-        ),
+        onFeedback({
+          tone: "crimson",
+          message: formatRfc9457ErrorToBanner(err, locale, catalogLabels.catalogErrorContext).fullText,
+        }),
       );
     return () => {
       cancelled = true;
@@ -118,9 +120,10 @@ export function useManagedAgentsAndSkills(
         visibility_scope: optimisticSkill.visibilityScope,
       })
       .catch((err: unknown) =>
-        onFeedback(
-          `⚠️ ${formatRfc9457ErrorToBanner(err, locale, catalogLabels.skillErrorContext).fullText}`,
-        ),
+        onFeedback({
+          tone: "crimson",
+          message: formatRfc9457ErrorToBanner(err, locale, catalogLabels.skillErrorContext).fullText,
+        }),
       );
   };
 
@@ -135,9 +138,10 @@ export function useManagedAgentsAndSkills(
     void createOrciaApiClient({ baseUrl: "" })
       .deleteSkill(skillId)
       .catch((err: unknown) =>
-        onFeedback(
-          `⚠️ ${formatRfc9457ErrorToBanner(err, locale, catalogLabels.skillErrorContext).fullText}`,
-        ),
+        onFeedback({
+          tone: "crimson",
+          message: formatRfc9457ErrorToBanner(err, locale, catalogLabels.skillErrorContext).fullText,
+        }),
       );
   };
 
@@ -196,14 +200,14 @@ export function useManagedAgentsAndSkills(
           locale,
           catalogLabels.skillErrorContext,
         ).fullText;
-        onFeedback(`⚠️ ${detail}`);
+        onFeedback({ tone: "crimson", message: detail });
         updateManagedState((prev) => ({
           ...prev,
           skills: prev.skills.map((s) =>
             s.skillId === skillId
               ? {
                   ...s,
-                  lastExecutionOutput: `${s.lastExecutionOutput ?? ""}\n⚠️ ${detail}`,
+                  lastExecutionOutput: `${s.lastExecutionOutput ?? ""}\n${detail}`,
                 }
               : s,
           ),

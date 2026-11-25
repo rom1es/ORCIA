@@ -10,8 +10,10 @@ export function normalizeWorkspaceFeedback(
 ): WorkspaceAlertFeedback | null {
   if (!input) return null;
   if (typeof input !== "string") return input;
-  const isError = input.startsWith("⚠️");
   const cleaned = input.replace(/^⚠️\s*/u, "").trim();
+  const isError =
+    input.startsWith("⚠️") ||
+    /\[(ERR_|HTTP_)|^(Erreur|Error|Impossible|Failed|Échec|Echec)/i.test(cleaned);
   return {
     tone: isError ? "crimson" : "emerald",
     message: cleaned,

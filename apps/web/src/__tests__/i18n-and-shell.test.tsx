@@ -753,7 +753,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       fireEvent.click(screen.getByTestId("topbar-contextual-help-toggle"));
     }
     expect(screen.getByTestId("four-zone-contextual-help-column")).toBeDefined();
-    expect(screen.getByTestId("help-section-iam-org-tree")).toBeDefined();
+    expect(screen.getByTestId("help-section-org-hierarchy")).toBeDefined();
 
     fireEvent.click(screen.getByTestId("eight-menu-item-configuration"));
     await screen.findByTestId("settings-tab-iam");
@@ -1983,19 +1983,16 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       expect(screen.getByTestId("workspaces-active-title").textContent).toBe("Projet Socle IA");
     });
 
-    // 4. Open TopHeader Context Switcher and verify the 3 explicit groups:
-    // - 🔒 Mes Espaces Privés
-    // - 👥 Mes Équipes & Espaces
-    // - 🏢 Supervision Organisation
+    // 4. Open TopHeader Context Switcher and verify the 3 explicit groups without raw emojis
     fireEvent.click(screen.getByTestId("sidebar-rail-toggle-btn"));
     fireEvent.click(screen.getByTestId("topbar-fixed-workspace-selector"));
     const dropdownMenu = screen.getByTestId("topbar-workspace-dropdown-menu");
-    expect(dropdownMenu.textContent).toContain("🔒 Mes Espaces Privés");
-    expect(dropdownMenu.textContent).toContain("👥 Mes Équipes & Espaces");
-    expect(dropdownMenu.textContent).toContain("🏢 Supervision Organisation");
-    expect(dropdownMenu.textContent).toContain("👥 Équipe · Équipe Core IA");
-    expect(dropdownMenu.textContent).toContain("🔒 Espace · Mon Bac à Sable R&D · Équipe Core IA");
-    expect(dropdownMenu.textContent).toContain("📦 Espace · Projet Socle IA · Équipe Core IA");
+    expect(dropdownMenu.textContent).toContain("Mes Espaces Privés");
+    expect(dropdownMenu.textContent).toContain("Mes Équipes & Espaces");
+    expect(dropdownMenu.textContent).toContain("Supervision Organisation");
+    expect(dropdownMenu.textContent).toContain("Équipe · Équipe Core IA");
+    expect(dropdownMenu.textContent).toContain("Espace privé · Mon Bac à Sable R&D · Équipe Core IA");
+    expect(dropdownMenu.textContent).toContain("Espace · Projet Socle IA · Équipe Core IA");
 
     // Select the Private Workspace (UUIDv7) in the TopHeader -> synchronizes /workspaces compact header
     const privateOption = screen

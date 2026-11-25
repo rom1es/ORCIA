@@ -42,7 +42,7 @@ export const ROUTES_AND_WIZARDS_FR: RoutesAndWizardsDictionary = {
     rootSuffix: "Racine",
   },
   aiModelsQuickForm: {
-    summaryLabel: "⚙ Configuration directe / rapide",
+    summaryLabel: "Configuration directe / rapide",
     geminiProtocolLabel: "Protocole Google Gemini :",
     geminiModeNative: "Mode B",
     geminiModeOpenai: "Mode A",
@@ -55,7 +55,7 @@ export const ROUTES_AND_WIZARDS_FR: RoutesAndWizardsDictionary = {
     authEnvVarOption: "Variable d'environnement",
     authNoneLocalOption: "Sans clé (Local)",
     apiKeyLabel: "Clé d'API",
-    testConnectionCta: "🔌 Tester la connexion",
+    testConnectionCta: "Tester la connexion",
     saveTierCta: "Enregistrer le niveau",
   },
   settingsPacks: {

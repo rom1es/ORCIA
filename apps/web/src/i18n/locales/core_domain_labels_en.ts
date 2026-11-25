@@ -25,8 +25,8 @@ export const CORE_DOMAIN_EN_LABELS: Pick<
       "Workspaces marked as confidential do not expose any business content to parent levels.",
     datasourcesCountPrefix: "Connected document sources and tools",
     catalogPermissionsTitle: "Source Access Rights & Confidential Content Protection",
-    sourceMaskedBadgeLabel: "🔒 Unauthorized source",
-    sourceOpenBadgeLabel: "📖 Accessible source",
+    sourceMaskedBadgeLabel: "Unauthorized source",
+    sourceOpenBadgeLabel: "Accessible source",
     inspectSourceButtonLabel: "View source",
     sourceDeniedErrorBanner: "Access denied — You do not have read permission for this source",
     sourceAllowedBannerPrefix: "Access granted — Source available",
@@ -50,8 +50,8 @@ export const CORE_DOMAIN_EN_LABELS: Pick<
       PUBLISHED_ORG: "Published (Organization)",
     },
     filterAllSchemesLabel: "All sources",
-    maskedSourceBadgeLabel: "🔒 Restricted source",
-    openSourceBadgeLabel: "📖 Accessible source",
+    maskedSourceBadgeLabel: "Restricted source",
+    openSourceBadgeLabel: "Accessible source",
     resolveCasButtonLabel: "Verify version",
     casResolvedBannerPrefix: "Version verified and ready to use",
     promoteScopeButtonLabel: "Share to a higher level",
@@ -92,7 +92,7 @@ export const CORE_DOMAIN_EN_LABELS: Pick<
       humanMarkdownTabLabel: "Reading View (Structured document)",
       agentSchemaTabLabel: "Structured View (Expected fields)",
       sampleHumanMarkdown:
-        "## 1. Goals & Guidelines [✍️ PERSONAL AUTHORING REQUIRED]\nGuiding directions for the deliverable",
+        "## 1. Goals & Guidelines [PERSONAL AUTHORING REQUIRED]\nGuiding directions for the deliverable",
       sampleAgentJsonSchema:
         '{"$schema":"https://json-schema.org/draft/2020-12/schema","x-bound-ontology-terms":["Strategic Asset"]}',
       subWorkflowLocksTitle: "Linked sub-processes and associated versions",
@@ -101,7 +101,7 @@ export const CORE_DOMAIN_EN_LABELS: Pick<
     },
   },
   permissionBroker: {
-    cardBadgeTitle: "⚠️ SOURCE ACCESS REQUIRED",
+    cardBadgeTitle: "SOURCE ACCESS REQUIRED",
     passthroughBadgeLabel: "Account used: your personal account",
     servicePrincipalBadgeLabel: "Account used: shared technical account",
     targetUriLabel: "Inaccessible external source",
@@ -113,8 +113,8 @@ export const CORE_DOMAIN_EN_LABELS: Pick<
     pauseStepButtonLabel: "Put step on hold",
     replayStepButtonLabel: "Restart step",
     stepPrefix: "Step",
-    pausedStateBanner: "⏸️ Step placed on hold until access is granted",
-    replayedStateBanner: "✅ Access confirmed — Step restarted successfully",
+    pausedStateBanner: "Step placed on hold until access is granted",
+    replayedStateBanner: "Access confirmed — Step restarted successfully",
     simulatorTitle: "External Source Access Management & Permission Requests",
     simulatorSubtitle:
       "Automatic detection of missing permissions, owner identification, and step restart once unlocked.",
@@ -153,7 +153,7 @@ export const CORE_DOMAIN_EN_LABELS: Pick<
     observerDeniedBanner:
       "Action denied — Your current role is limited to read-only access",
     humanAnchorCardLabels: {
-      badgeTitle: "✍️ PERSONAL AUTHORING REQUIRED",
+      badgeTitle: "PERSONAL AUTHORING REQUIRED",
       authorLabel: "Signer",
       sectionTitle: "Business justification and usage scope for this source",
       placeholderText:

@@ -105,14 +105,14 @@ export function ContextualHelpColumnView({
         titleAsHeading
       />
 
+      <HelpCoreNarrativeBlocks article={article} labels={labels} showStepsBlock />
+
       <HelpTargetedSectionsList
         sections={orderedSections}
         activeSectionId={activeSectionId}
         targetedHelpBadgeLabel={labels.targetedHelpBadgeLabel}
         sectionRefs={sectionRefs}
       />
-
-      <HelpCoreNarrativeBlocks article={article} labels={labels} showStepsBlock />
 
       {article.keyTermsItems.length > 0 && (
         <HelpAccordionSection

@@ -26,6 +26,6 @@ Marc selects the "Payments Product" Space, opens the "2026 Compliance" folder wi
 
 ## Common pitfalls
 
-- **The prompt input is locked**: verify that both a document indexing model and a chat model are configured in Configuration › AI Models.
+- **The prompt input is locked**: verify that both a document indexing model and a chat model are configured in Administration › AI Models.
 - **A draft suggests updating an external tool**: for safety, My Assistant never writes directly to external tools; confirm the action or continue inside a governed process.
 - **Folder notes do not seem applied**: click "Save notes" inside the active folder drawer before sending your next question.

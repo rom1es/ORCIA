@@ -27,10 +27,10 @@ Accessible to administrators, security officers, and architects according to the
 
 ## A real example
 
-During initial setup, Alice opens Configuration › AI Models, configures a primary chat provider and an indexing model, runs a live connection test, and switches to "My Organization" to create the Product Division and Payments Team.
+During initial setup, Alice opens Administration › AI Models, configures a primary chat provider and an indexing model, runs a live connection test, and switches to "My Organization" to create the Product Division and Payments Team.
 
 ## Common pitfalls
 
 - **A secret key disappears after saving**: by design, API keys and tokens are write-only and never displayed in plain text again.
 - **Some tabs are hidden**: displayed tabs adapt to your active role (for example, only Security Officers can create isolation exceptions).
-- **My Assistant says no indexing model is active**: configure a global document indexing model under Configuration › AI Models.
+- **My Assistant says no indexing model is active**: configure a global document indexing model under Administration › AI Models.

@@ -27,5 +27,5 @@ When reviewing a technical specification, Nadia inspects the 4 generated section
 ## Common pitfalls
 
 - **A confirmation dialog blocks instant finalization**: if a review is submitted too quickly without inspecting sections, ORCIA asks for explicit confirmation to protect review quality.
-- **Cross-review notes only one provider**: add a second independent AI provider in Configuration › AI Models to unlock orthogonal cross-reviews.
+- **Cross-review notes only one provider**: add a second independent AI provider in Administration › AI Models to unlock orthogonal cross-reviews.
 - **An external action stays staged**: no update to Jira, GitLab, or Confluence is sent until final human approval is signed.

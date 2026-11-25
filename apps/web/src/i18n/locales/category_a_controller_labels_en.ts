@@ -139,24 +139,24 @@ export const CATEGORY_A_CONTROLLER_EN_LABELS: CategoryAControllersDictionary = {
     whatIfDoneBanner:
       "Dry-run completed: {count} step(s) verified, 0 external writes executed.",
     packCreatedBanner:
-      '✅ Business Pack "{slug}" created and registered with the provided intent.',
-    assetPromotedBanner: '✅ Asset promoted to Business Pack "{pack}".',
+      'Business Pack "{slug}"created and registered with the provided intent.',
+    assetPromotedBanner: 'Asset promoted to Business Pack "{pack}".',
     helpArticleAttachedBanner:
-      '✅ Help article "{article}" generated, verified, and attached.',
+      'Help article "{article}"generated, verified, and attached.',
   },
   workspaceSources: {
     updated: "Source updated.",
     attached: "Source attached.",
-    syncTriggered: "✅ Sync triggered ({status}).",
-    deleted: "✅ Source deleted.",
-    gitNexusEnabled: "✅ GitNexus active.",
+    syncTriggered: "Sync triggered ({status}).",
+    deleted: "Source deleted.",
+    gitNexusEnabled: "GitNexus active.",
     gitNexusDisabled: "GitNexus disabled.",
     referentRenewed: "Referent renewed.",
     reconciled:
-      "✅ Freshness reconciled ({evaluated} evaluated, {stale} stale).",
+      "Freshness reconciled ({evaluated} evaluated, {stale} stale).",
     coldStartBanner:
       "Nominative attribution: Jira / GitLab rights apply.",
-    myAccountCta: "👤 My Account › Connections",
+    myAccountCta: "My Account › Connections",
     sourcesTitle: 'Sources for "{name}"',
     newReferentPlaceholder: "New referent email...",
     confirmRenewalCta: "Confirm renewal",

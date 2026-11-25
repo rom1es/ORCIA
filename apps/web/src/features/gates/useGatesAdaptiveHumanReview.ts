@@ -7,6 +7,7 @@ import {
   resolveLocaleForFlag,
 } from "../../i18n";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
+import type { AlertFeedbackInput } from "../shared/alertFeedback";
 
 export type HumanGateEvaluationItem = components["schemas"]["HumanGateEvaluationSchemaItem"];
 export type StagedJiraActionItem = components["schemas"]["StagedJiraActionItemSchema"];
@@ -18,7 +19,7 @@ function buildLargeSectionText(prefix: string, phrase: string, count = 95): stri
 interface UseGatesAdaptiveHumanReviewArgs {
   readonly activeWorkspaceId?: string;
   readonly isFr: boolean;
-  readonly onFeedback: (message: string | null) => void;
+  readonly onFeedback: (message: AlertFeedbackInput) => void;
 }
 
 export function useGatesAdaptiveHumanReview({
@@ -49,7 +50,10 @@ export function useGatesAdaptiveHumanReview({
       setStagedJira(jiraRes.actions[jiraRes.actions.length - 1] ?? null);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : reviewCopy.loadErrorFallback;
-      onFeedback(formatI18nTemplate(reviewCopy.loadErrorBannerTemplate, { msg }));
+      onFeedback({
+        tone: "crimson",
+        message: formatI18nTemplate(reviewCopy.loadErrorBannerTemplate, { msg }),
+      });
     }
   }, [
     workspaceId,
@@ -120,7 +124,7 @@ export function useGatesAdaptiveHumanReview({
       onFeedback(reviewCopy.openReviewSuccess);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : reviewCopy.openReviewErrorFallback;
-      onFeedback(`⚠️ ${msg}`);
+      onFeedback({ tone: "crimson", message: msg });
     } finally {
       setLoading(false);
     }
@@ -135,7 +139,7 @@ export function useGatesAdaptiveHumanReview({
       onFeedback(reviewCopy.inspectHypothesesSuccess);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : reviewCopy.inspectHypothesesErrorFallback;
-      onFeedback(`⚠️ ${msg}`);
+      onFeedback({ tone: "crimson", message: msg });
     }
   };
 
@@ -164,7 +168,7 @@ export function useGatesAdaptiveHumanReview({
       );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : reviewCopy.chunkErrorFallback;
-      onFeedback(`⚠️ ${msg}`);
+      onFeedback({ tone: "crimson", message: msg });
     }
   };
 
@@ -191,7 +195,7 @@ export function useGatesAdaptiveHumanReview({
       onFeedback(reviewCopy.finalizeSuccess);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : reviewCopy.finalizeErrorFallback;
-      onFeedback(`⚠️ ${msg}`);
+      onFeedback({ tone: "crimson", message: msg });
     }
   };
 

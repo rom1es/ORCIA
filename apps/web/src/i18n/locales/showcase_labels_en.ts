@@ -2,7 +2,7 @@ import type { ShowcasePublicDictionary } from "./showcase_labels";
 import { SHOWCASE_CHANGELOG_EN } from "./showcase_changelog_labels";
 
 export const SHOWCASE_LABELS_EN: ShowcasePublicDictionary = {
-  heroTitle: "🌐 ORCIA Living Product & Architecture Showcase Site",
+  heroTitle: "ORCIA Living Product & Architecture Showcase Site",
   heroSubtitle:
     "Explore ORCIA across 4 structured spaces: Macro Human-Led Vision, Functional Guide to the 9 Screens, Under-the-Hood Engineering Architecture, and the automatically synchronized Evolution Changelog.",
   heroHelpLabel: "Understand the 4-tab layout of the ORCIA showcase site",
@@ -14,7 +14,7 @@ export const SHOWCASE_LABELS_EN: ShowcasePublicDictionary = {
   tabMacroLabel: "1. Vision & Human-Led Governance (Macro)",
   tabFeaturesLabel: "2. Features & Screens (Functional Guide)",
   tabArchitectureLabel: "3. Architecture & Engineering Choices (Under the Hood)",
-  tabChangelogLabelTemplate: "4. 🔄 Evolution Changelog ({count})",
+  tabChangelogLabelTemplate: "4. Evolution Changelog ({count})",
   macro: {
     whyTitle:
       "1.1 Why ORCIA? Orchestrating Processes, Documentary Context, and Specialized Agents under Human Leadership",
@@ -22,17 +22,17 @@ export const SHOWCASE_LABELS_EN: ShowcasePublicDictionary = {
       "Move beyond isolated ephemeral chats to build reliable, traceable enterprise deliverables governed by your teams.",
     whyCards: [
       {
-        title: "☍ Structured Business Processes",
+        title: "Structured Business Processes",
         description:
           "Your complex workflows progress step by step under clear deliverable contracts, able to pause for human decisions and resume without losing context.",
       },
       {
-        title: "📚 Documentary Context & Living Glossary",
+        title: "Documentary Context & Living Glossary",
         description:
           "Every step relies on the documentary sources bound to your Workspace and your organization's official business glossary, with immediate alerts when a document is outdated.",
       },
       {
-        title: "🤖 Governed Specialized Agents",
+        title: "Governed Specialized Agents",
         description:
           "Specialized agents equipped with targeted skills prepare analyses, verify consistency, and synthesize options while strictly enforcing each team member's access rights.",
       },
@@ -43,26 +43,26 @@ export const SHOWCASE_LABELS_EN: ShowcasePublicDictionary = {
       "Four methodological safeguards guarantee that AI prepares and illuminates work without ever stripping human experts of their authority.",
     humanAnchorCard: {
       title:
-        "✍️ 1. Mandatory Human-Authored Anchors (Violet visual identity)",
+        "1. Mandatory Human-Authored Anchors (Violet visual identity)",
       badge: "Human Exclusive",
       description:
         "Initial intent, strategic objectives, and foundational assumptions belong exclusively to the human author. Highlighted by a dedicated Violet visual identity across the app, these sections can never be authored or altered by an AI agent.",
     },
     antiRubberStampingCard: {
-      title: "🛑 2. Zero Mechanical Approval ('Anti-Ghost Validation')",
+      title: "2. Zero Mechanical Approval ('Anti-Ghost Validation')",
       badge: "Active Review",
       description:
         "No more 20-page walls of text approved blindly: every step produces a 4-block decision briefing (Summary, Key Elements, Decisions Taken, Assumptions Retained), requires section-by-section validation (Approve / Co-edit / Challenge), and enforces a minimum active reading time.",
     },
     humanArbitrationCard: {
       title:
-        "⚖️ 3. Systematic Human Arbitration on Dilemmas or Contradictions",
+        "3. Systematic Human Arbitration on Dilemmas or Contradictions",
       badge: "Pause & Options",
       description:
         "When an agent detects a contradiction between two reference documents or faces multiple equivalent options, it is forbidden from inventing an implicit compromise: the process pauses and clearly presents the decision matrix to the human.",
     },
     noWildWritesCard: {
-      title: "🛡️ 4. Zero Unapproved Writes to Enterprise Tools",
+      title: "4. Zero Unapproved Writes to Enterprise Tools",
       badge: "Staged Actions",
       description:
         "No publication or update to your external tools can ever be triggered directly from a quick chat: external actions are always staged pending human approval. And if a colleague later edits a document outside the platform, ORCIA respects and reconciles their human edits without ever overwriting them.",
@@ -72,7 +72,7 @@ export const SHOWCASE_LABELS_EN: ShowcasePublicDictionary = {
     doubleBarrierSubtitle:
       "How ORCIA breaks the snowball effect where an error in Step 1 contaminates the entire downstream process.",
     snowballWarningPrefix:
-      "⚠️ The trap of classic AI chains (the snowball effect): ",
+      "The trap of classic AI chains (the snowball effect): ",
     snowballWarningBody:
       "when a first agent makes a slight approximation or cites a non-existent source in Step 1, Step 2 treats it as established truth, and Step 3 builds an entire flawed deliverable on top of it. ORCIA stops this propagation with three successive barriers:",
     deterministicBarrier: {
@@ -109,12 +109,12 @@ export const SHOWCASE_LABELS_EN: ShowcasePublicDictionary = {
       "A natural hierarchy (Entire Platform ➔ Divisions / BUs ➔ Teams ➔ Workspaces) enriched by ready-to-use Business Packs.",
     orgHierarchyCard: {
       title:
-        "🏢 Organization Hierarchy: Entire Platform ➔ Divisions (BUs) ➔ Teams",
+        "Organization Hierarchy: Entire Platform ➔ Divisions (BUs) ➔ Teams",
       description:
         "Enterprise directives apply automatically across the organization, each Division (BU) or Team layers its domain standards, and each Workspace gathers the sources and runs of a specific project or product.",
     },
     packsCard: {
-      title: "📦 Ready-to-Use Business Packs & Smart Deduplication",
+      title: "Ready-to-Use Business Packs & Smart Deduplication",
       description:
         "A Business Pack bundles coherent processes, specialized agents, control rules, and help guides for a given domain. Enable or disable it in 1 click on your chosen scope.",
     },
@@ -182,7 +182,7 @@ export const SHOWCASE_LABELS_EN: ShowcasePublicDictionary = {
       },
       {
         id: "assistant",
-        title: "2. 💬 My Assistant",
+        title: "2. My Assistant",
         route: "/assistant",
         summary:
           "3-speed conversational workspace organized in shareable thematic folders with verified citations and 4-level customization.",
@@ -195,7 +195,7 @@ export const SHOWCASE_LABELS_EN: ShowcasePublicDictionary = {
       },
       {
         id: "processes",
-        title: "3. ☍ My Processes",
+        title: "3. My Processes",
         route: "/processes",
         summary:
           "Step-by-step business process builder and tracker, Business Pack studio, and help guide generator.",
@@ -208,7 +208,7 @@ export const SHOWCASE_LABELS_EN: ShowcasePublicDictionary = {
       },
       {
         id: "agents",
-        title: "4. 🤖 My Agents",
+        title: "4. My Agents",
         route: "/agents",
         summary:
           "Catalog and management of specialized agents, reusable skills, and external service connection test bench.",
@@ -221,7 +221,7 @@ export const SHOWCASE_LABELS_EN: ShowcasePublicDictionary = {
       },
       {
         id: "spaces",
-        title: "5. 📦 My Spaces",
+        title: "5. My Spaces",
         route: "/spaces",
         summary:
           "5-tab workspace control center: executions, documentary sources, business glossary and rules, external reconciliation, and team.",
@@ -234,7 +234,7 @@ export const SHOWCASE_LABELS_EN: ShowcasePublicDictionary = {
       },
       {
         id: "finops",
-        title: "6. 📊 Cost Tracking",
+        title: "6. Cost Tracking",
         route: "/finops",
         summary:
           "Transparent budget tracking across divisions, workspaces, processes, and steps, with spending caps and automatic circuit-breakers.",
@@ -247,7 +247,7 @@ export const SHOWCASE_LABELS_EN: ShowcasePublicDictionary = {
       },
       {
         id: "activity",
-        title: "7. 📜 Activity Log",
+        title: "7. Activity Log",
         route: "/activity",
         summary:
           "Timestamped, tamper-evident history of all actions performed on the platform, filtered by default to your active observation scope.",
@@ -260,7 +260,7 @@ export const SHOWCASE_LABELS_EN: ShowcasePublicDictionary = {
       },
       {
         id: "settings",
-        title: "8. ⚙ Configuration",
+        title: "8. Configuration",
         route: "/settings",
         summary:
           "Unified administration of organization tree, permissions, AI models with connectivity test, connectors, and Business Packs.",
@@ -273,12 +273,12 @@ export const SHOWCASE_LABELS_EN: ShowcasePublicDictionary = {
       },
       {
         id: "help",
-        title: "9. ❓ Contextual Help (ⓘ) & Global Search (⌘K)",
+        title: "9. Contextual Help & Global Search (⌘K)",
         route: "/help",
         summary:
-          "Contextual help center bound to every screen header via the ⓘ trigger button, shared glossary, and 2-speed instant search (⌘K).",
+          "Contextual help center accessible from the top bar via the Help button, shared glossary, and 2-speed instant search (⌘K).",
         keyActions: [
-          "Click any ⓘ icon to open and highlight the targeted explanation in the right column",
+          "Click the Help button in the top-right bar to open and review the targeted explanation in the right column",
           "Search instantly (⌘K) across folders, processes, glossary terms, and guides",
           "Restore the previous version of a help guide in 1 click or ask My Assistant about the active screen",
         ],

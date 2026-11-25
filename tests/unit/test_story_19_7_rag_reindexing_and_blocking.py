@@ -14,6 +14,7 @@ Verifies:
 from __future__ import annotations
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
 from tests.unit.fakes.in_memory_reindex import (
@@ -28,6 +29,31 @@ from orcia_core.kernel.events import (
     EmbeddingReindexStarted,
 )
 from orcia_core.orchestration import AiModelsHubService
+from orcia_core.permissions.models import WorkspaceEntity, WorkspaceMembershipEntity
+
+
+def _seed_rag_workspace(app: FastAPI, workspace_id: str) -> None:
+    """Register the test workspace and default caller membership in the evaluator."""
+    auth_svc = app.state.auth_service
+    caller = auth_svc.resolve_user(persona_key="marc")
+    auth_svc.evaluator.upsert_workspace(
+        WorkspaceEntity(
+            id=workspace_id,
+            slug="ws-rag-reindex-test",
+            name="RAG Reindex Test Workspace",
+            owner_org_unit_id=caller.primary_org_unit_id or "0192c4e0-0000-7000-8000-000000000104",
+            visibility_mode="STANDARD",
+        )
+    )
+    auth_svc.evaluator.upsert_membership(
+        WorkspaceMembershipEntity(
+            id="0195f000-0000-7000-8000-000000000401",
+            workspace_id=workspace_id,
+            user_id=caller.id,
+            role="TEAM_LEAD",
+            access_mode="CONTRIBUTOR_ACTION_REQUIRED",
+        )
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -172,9 +198,12 @@ def test_fastapi_rag_blocked_503_while_assistant_and_search_stay_unlocked_during
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Verify pure RAG returns 503 during reindexing while Assistant & GET /search stay 200."""
+    monkeypatch.setenv("ORCIA_ENV_FILE", "/nonexistent/.env")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
     monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
     app = create_app()
+    _seed_rag_workspace(app, "0195f000-0000-7000-8000-000000000301")
     app.state.reindex_manager = default_in_memory_reindex_manager
     fake_adapter = FakeDeterministicEmbeddingAdapter()
     app.state.embedding_port = fake_adapter
@@ -225,9 +254,15 @@ def test_fastapi_rag_blocked_503_while_assistant_and_search_stay_unlocked_during
     assert res_search_unlocked.status_code == 200
 
 
-def test_empty_corpus_reindex_immediately_completed_without_blocking() -> None:
+def test_empty_corpus_reindex_immediately_completed_without_blocking(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """When corpus has 0 document chunks (Day-0 reset), reindexing passes directly to COMPLETED."""
+    monkeypatch.setenv("ORCIA_ENV_FILE", "/nonexistent/.env")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
     app = create_app()
+    _seed_rag_workspace(app, "0195f000-0000-7000-8000-000000000301")
     app.state.reindex_manager = default_in_memory_reindex_manager
     app.state.embedding_port = FakeDeterministicEmbeddingAdapter()
     client = TestClient(app)

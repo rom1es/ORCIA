@@ -4,7 +4,6 @@ import type {
   UiAgentSkillVisibilityScope,
 } from "./AgentsAndSkillsTypes";
 import { DisabledButtonAlertIndicator } from "./DisabledButtonAlertIndicator";
-import { getOrciaIconGlyph } from "./icons";
 
 export interface SkillCreateFormDrawerProps {
   readonly isOpen: boolean;
@@ -134,12 +133,8 @@ export const SkillCreateFormDrawer: React.FC<SkillCreateFormDrawerProps> = ({
               }
               className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2.5 py-1.5"
             >
-              <option value="TEAM">
-                {getOrciaIconGlyph("team")} {studio.visibilityTeamFull}
-              </option>
-              <option value="PRIVATE">
-                {getOrciaIconGlyph("lock")} {studio.visibilityPrivateFull}
-              </option>
+              <option value="TEAM">{studio.visibilityTeamFull}</option>
+              <option value="PRIVATE">{studio.visibilityPrivateFull}</option>
             </select>
           </label>
           <label className="flex flex-col gap-1">

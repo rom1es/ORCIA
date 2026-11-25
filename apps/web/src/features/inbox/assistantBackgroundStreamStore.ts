@@ -269,6 +269,6 @@ export function classifyAssistantStreamError(
   }
   return {
     errorKind: "stream_error",
-    errorMessage: `⚠️ ${detail}`,
+    errorMessage: `${detail}`,
   };
 }

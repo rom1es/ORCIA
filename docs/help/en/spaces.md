@@ -16,16 +16,16 @@ A Workspace is the dedicated area where a team collaborates on a product, projec
 
 ## In 3 steps
 
-1. Filter between "All", "Team Spaces", and "My Private Spaces", or create a new Workspace linked to an existing Team.
-2. Open a Workspace to adjust its visibility (Standard, Confidential isolated, or Private) and lifecycle phase.
-3. Use the "Sources" tab to attach documents, or click "Business Glossary" to inspect and enrich team definitions.
+1. Pick your active Space from the left sidebar selector (Personal or Team / Division), or click "+ New Space" to create a Workspace linked to an existing Team.
+2. Navigate across the 5 tabs ("Onboarding", "Documents & Sources", "Deliverables & Artifacts", "Glossary", and "Members & Space Settings").
+3. Under "Members & Space Settings", adjust a team Workspace's visibility (Standard or Confidential isolated); personal Spaces stay private by design.
 
 ## A real example
 
-The Claims team creates a "Q4 Partner Audit" Workspace under Operations, sets it to Confidential isolated mode so external teams cannot browse its content, and attaches the dedicated audit tracker.
+The Claims team creates a "Q4 Partner Audit" Space under Operations, opens "Members & Space Settings" to set Confidential isolated mode so external teams cannot browse its content, and attaches the dedicated audit tracker.
 
 ## Common pitfalls
 
 - **What is the difference between an organization unit and a Workspace?** The organization unit (Division, Team) defines *who* works and owns budgets; the Workspace defines *what* you are working on.
-- **Unable to create a team Workspace**: make sure at least one Team exists first under Configuration › My Organization.
-- **A document does not appear in My Assistant**: open the Workspace's Sources tab and verify the source is synced and attached to the active Workspace.
+- **Unable to create a team Workspace**: make sure at least one Team exists first under My Organization.
+- **A document does not appear in My Assistant**: open the Workspace's "Documents & Sources" tab and verify the source is synced and attached to the active Workspace.

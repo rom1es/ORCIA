@@ -1,5 +1,4 @@
 import {
-  getOrciaIconGlyph,
   type ControlCenterWorkspaceGovItem,
   type EightFixedMenuKey,
   type UiScopeNode,
@@ -47,15 +46,15 @@ export function buildDoubleScopeSelectorState(params: {
   const teamBuOptions = [
     ...globalScopes.map((s) => ({
       id: s.id,
-      label: `🌐 ${s.name}`,
+      label: s.name,
     })),
     ...buUnits.map((bu) => ({
       id: bu.id,
-      label: `${getOrciaIconGlyph("organizationBu")} ${bu.name}`,
+      label: bu.name,
     })),
     ...teamUnits.map((team) => ({
       id: team.id,
-      label: `${getOrciaIconGlyph("team")} ${team.name}`,
+      label: team.name,
     })),
   ];
 
@@ -92,10 +91,7 @@ export function buildDoubleScopeSelectorState(params: {
     filteredWorkspaces.length > 0 ? filteredWorkspaces : workspaces
   ).map((ws) => ({
     id: ws.workspaceId,
-    label:
-      ws.visibilityMode === "PRIVATE_USER"
-        ? `🔒 ${ws.name}`
-        : `📦 ${ws.name}`,
+    label: ws.name,
   }));
 
   return {
@@ -134,10 +130,10 @@ export function buildWorkspaceSwitcherOptions(params: {
 
   const scopeLabels = SHELL_SCOPE_OPTIONS_BY_LOCALE[resolveLocaleForFlag(isFr)];
 
-  const groupPrivateLabel = `${getOrciaIconGlyph("lock")} ${scopeLabels.groupPrivateSuffix}`;
-  const groupTeamUnitLabel = `${getOrciaIconGlyph("team")} ${scopeLabels.groupTeamUnitSuffix}`;
-  const groupSharedWorkspaceLabel = `${scopeLabels.groupSharedWorkspacePrefix} ${getOrciaIconGlyph("team")} ${scopeLabels.groupSharedWorkspaceSuffix}`;
-  const groupSupervisionLabel = `${getOrciaIconGlyph("organizationBu")} ${scopeLabels.groupSupervisionSuffix}`;
+  const groupPrivateLabel = scopeLabels.groupPrivateSuffix;
+  const groupTeamUnitLabel = scopeLabels.groupTeamUnitSuffix;
+  const groupSharedWorkspaceLabel = `${scopeLabels.groupSharedWorkspacePrefix} ${scopeLabels.groupSharedWorkspaceSuffix}`;
+  const groupSupervisionLabel = scopeLabels.groupSupervisionSuffix;
 
   return [
     ...privateWorkspaces.map((ws) => {
@@ -152,7 +148,7 @@ export function buildWorkspaceSwitcherOptions(params: {
     }),
     ...teamUnits.map((team) => ({
       id: team.id,
-      label: `${getOrciaIconGlyph("team")} ${scopeLabels.teamPrefix}${team.name}`,
+      label: `${scopeLabels.teamPrefix}${team.name}`,
       groupLabel: groupTeamUnitLabel,
     })),
     ...sharedOrConfidentialWorkspaces.map((ws) => {
@@ -167,7 +163,7 @@ export function buildWorkspaceSwitcherOptions(params: {
     }),
     ...buUnits.map((bu) => ({
       id: bu.id,
-      label: `${getOrciaIconGlyph("organizationBu")} ${scopeLabels.buPrefix}${bu.name}`,
+      label: `${scopeLabels.buPrefix}${bu.name}`,
       groupLabel: groupSupervisionLabel,
     })),
     ...scopes

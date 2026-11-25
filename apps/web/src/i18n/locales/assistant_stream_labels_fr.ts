@@ -6,13 +6,13 @@ import { RGAA_MODAL_LABELS_FR } from "./rgaa_modal_labels";
 
 export const ASSISTANT_GOVERNANCE_LABELS_FR: AssistantGovernanceModalAndStudioLabels = {
   ...RGAA_MODAL_LABELS_FR,
-  modalTitle: "⚙ Réglages de Mon Assistant",
+  modalTitle: "Réglages de Mon Assistant",
   savedBadgeLabel: "Enregistré",
   infoBannerText:
     "Ces réglages personnalisent directement le rôle métier, le ton, le format et les consignes permanentes transmis automatiquement au modèle IA à chaque question posée dans Mon Assistant.",
-  tab1UserTitle: "👤 Mes préférences",
-  tab2WorkspaceTitle: "📦 Réglages de l'Espace",
-  tab3AssemblyTitle: "👁️ Consignes actives (Lecture seule)",
+  tab1UserTitle: "Mes préférences",
+  tab2WorkspaceTitle: "Réglages de l'Espace",
+  tab3AssemblyTitle: "Consignes actives (Lecture seule)",
   toneLabel: "Ton & niveau de synthèse",
   toneOptions: [
     { value: "SYNTHETIC", label: "Synthétique & Direct (Aller à l'essentiel)" },
@@ -39,11 +39,11 @@ export const ASSISTANT_GOVERNANCE_LABELS_FR: AssistantGovernanceModalAndStudioLa
   saveUserPrefsCta: "Enregistrer mes préférences",
   workspaceInstructionsLabel: "Consignes métier communes à l'Espace",
   workspaceReadOnlyBadge:
-    "👁️ Lecture seule — Seul un responsable d'équipe ou un administrateur peut modifier les consignes de l'Espace",
+    "Lecture seule — Seul un responsable d'équipe ou un administrateur peut modifier les consignes de l'Espace",
   mcpExposeToggleLabel:
-    "🔌 Permettre l'accès à l'Assistant de cet Espace depuis un éditeur de code externe",
-  mcpFrozenByUpperBadge: "🔒 Défini par l'Équipe ou l'Organisation",
-  copyMcpConfigCta: "📋 Copier la configuration éditeur",
+    "Permettre l'accès à l'Assistant de cet Espace depuis un éditeur de code externe",
+  mcpFrozenByUpperBadge: "Défini par l'Équipe ou l'Organisation",
+  copyMcpConfigCta: "Copier la configuration éditeur",
   saveWorkspaceSettingsCta: "Enregistrer pour l'Espace",
   telemetryHeading: "Journal des Prompts, Contextes & Retours Utilisateurs",
   telemetrySubtitle: "Analyse et amélioration continue des consignes",
@@ -71,11 +71,11 @@ export const ASSISTANT_GOVERNANCE_LABELS_FR: AssistantGovernanceModalAndStudioLa
 
 export const ASSISTANT_SPEED_STREAM_LABELS_FR: AssistantSpeedSelectorAndStreamViewLabels = {
   headerTitle: "Mode de Réponse de Mon Assistant",
-  speed1PillLabel: "⚡ Réponse rapide",
-  speed2PillLabel: "🛠️ Avec un agent ou une compétence (@Agent / /Compétence)",
-  speed3DeepAuditPillLabel: "🧠 Analyse approfondie (plusieurs points de vue)",
-  cacheHitBadge: "⚡ Contexte de l'espace prêt",
-  cacheMissBadge: "🔄 Préparation du contexte",
+  speed1PillLabel: "Réponse rapide",
+  speed2PillLabel: "Avec un agent ou une compétence (@Agent / /Compétence)",
+  speed3DeepAuditPillLabel: "Analyse approfondie (plusieurs points de vue)",
+  cacheHitBadge: "Contexte de l'espace prêt",
+  cacheMissBadge: "Préparation du contexte",
   nodesDeterministicLabel: "Recherche dans vos sources :",
   ttftBadgePrefix: "Temps de réponse :",
   inputPlaceholder:

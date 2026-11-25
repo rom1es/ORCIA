@@ -72,10 +72,13 @@ export interface AgentGovernanceStudioLabels {
   readonly newSkillButton: string;
   readonly testMcpButton: string;
   readonly kpiAgentsTitle: string;
+  readonly kpiActiveSingular?: string;
   readonly kpiActiveSuffix: string;
   readonly kpiSkillsTitle: string;
+  readonly kpiReusableSingular?: string;
   readonly kpiReusableSuffix: string;
   readonly kpiOriginMcpTitle: string;
+  readonly kpiPackTeamSingular?: string;
   readonly kpiPackTeamSuffix: string;
   readonly searchPlaceholder: string;
   readonly visibilityFilterAriaLabel: string;
@@ -111,10 +114,13 @@ export interface AgentGovernanceStudioLabels {
   readonly postureEvaluatorBadge: string;
   readonly partnerBadgePrefix: string;
   readonly disabledWorkspaceBadge: string;
+  readonly mcpActiveSingular?: string;
   readonly mcpActiveBadge: string;
   readonly modelPassportLabel: string;
   readonly tempShortLabel: string;
   readonly tokShortLabel: string;
+  readonly precisionShortLabel?: string;
+  readonly maxTokensUnitLabel?: string;
   readonly ragShortLabel: string;
   readonly ontologyShortLabel: string;
   readonly outputShortLabel: string;
@@ -150,6 +156,14 @@ export interface AgentGovernanceStudioLabels {
   readonly humanPartnerRoles: Readonly<Record<UiAgentHumanPartnerRole, string>>;
   readonly llmModelFieldLabel: string;
   readonly llmModelTiers: Readonly<Record<UiAgentLlmModelTier, string>>;
+  readonly llmTierShortLabels?: Readonly<Record<UiAgentLlmModelTier, string>>;
+  readonly settingsPrecisionLabels?: {
+    readonly deterministic: string;
+    readonly precise: string;
+    readonly balanced: string;
+    readonly creative: string;
+    readonly contextTemplate: string;
+  };
   readonly temperatureFieldLabel: string;
   readonly temperatureOptions: Readonly<Record<string, string>>;
   readonly maxTokensFieldLabel: string;
@@ -252,3 +266,32 @@ export function createDefaultAgentSixBlocksDraft(
 }
 
 export { computeAgentReadinessChecklist } from "./AgentGovernanceReadiness";
+
+export function formatAgentModelPassportSummary(
+  tier: UiAgentLlmModelTier | undefined,
+  temperature: number | undefined,
+  maxTokens: number | undefined,
+  studio: AgentGovernanceStudioLabels,
+): string {
+  const resolvedTier: UiAgentLlmModelTier = tier ?? "team_default";
+  const tierLabel =
+    studio.llmTierShortLabels?.[resolvedTier] ??
+    studio.llmModelTiers[resolvedTier]?.split("(")[0]?.trim() ??
+    resolvedTier;
+  const tempVal = temperature ?? 0.2;
+  const precision = studio.settingsPrecisionLabels;
+  const styleLabel =
+    tempVal <= 0
+      ? (precision?.deterministic ?? "Deterministic")
+      : tempVal <= 0.3
+        ? (precision?.precise ?? "Precise")
+        : tempVal <= 0.5
+          ? (precision?.balanced ?? "Balanced")
+          : (precision?.creative ?? "Creative");
+  const tokensVal = maxTokens ?? 4096;
+  const windowLabel = tokensVal >= 1024 ? `${Math.round(tokensVal / 1024)}k` : `${tokensVal}`;
+  const contextLabel = precision?.contextTemplate
+    ? precision.contextTemplate.replace("{window}", windowLabel)
+    : `${windowLabel} context`;
+  return `${tierLabel} · ${styleLabel} · ${contextLabel}`;
+}

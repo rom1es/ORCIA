@@ -42,7 +42,7 @@ export const ROUTES_AND_WIZARDS_EN: RoutesAndWizardsDictionary = {
     rootSuffix: "Root",
   },
   aiModelsQuickForm: {
-    summaryLabel: "⚙ Direct / quick configuration",
+    summaryLabel: "Direct / quick configuration",
     geminiProtocolLabel: "Google Gemini protocol:",
     geminiModeNative: "Mode B",
     geminiModeOpenai: "Mode A",
@@ -55,7 +55,7 @@ export const ROUTES_AND_WIZARDS_EN: RoutesAndWizardsDictionary = {
     authEnvVarOption: "Environment variable",
     authNoneLocalOption: "No key (Local)",
     apiKeyLabel: "API Key", // pragma: allowlist secret
-    testConnectionCta: "🔌 Test connection",
+    testConnectionCta: "Test connection",
     saveTierCta: "Save tier",
   },
   settingsPacks: {

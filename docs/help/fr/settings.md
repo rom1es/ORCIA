@@ -27,7 +27,7 @@ Réservé aux administrateurs, aux responsables sécurité et aux architectes se
 
 ## Un exemple réel
 
-Lors de l'installation initiale, Alice ouvre Configuration › Modèles IA, ajoute son fournisseur principal et un modèle de recherche documentaire, teste la connexion avec succès, puis passe à « Mon Organisation » pour créer la Direction Produit et l'Équipe Paiement.
+Lors de l'installation initiale, Alice ouvre Administration › Modèles IA, ajoute son fournisseur principal et un modèle de recherche documentaire, teste la connexion avec succès, puis passe à « Mon Organisation » pour créer la Direction Produit et l'Équipe Paiement.
 
 ## Ce qui coince souvent
 

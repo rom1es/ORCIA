@@ -30,4 +30,4 @@ Before drafting an architecture brief, Marc opens the "Customer Portal" Workspac
 
 - **An external source fails to connect**: double-check the URL and make sure your personal credentials are saved in My Account › Tool Connections.
 - **Changes in a confidential Workspace are hidden elsewhere**: isolation is enforced intentionally to protect sensitive data.
-- **Need the organization-wide glossary?** Use the "Glossary" shortcut at the top of My Spaces.
+- **Need the Space glossary?** Open the "Glossary" tab directly inside My Spaces.

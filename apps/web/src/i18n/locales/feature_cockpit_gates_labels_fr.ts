@@ -78,10 +78,10 @@ export const FEATURE_COCKPIT_GATES_FR: FeatureCockpitGatesDictionary = {
       alignmentConflict: "Conflit",
       totalVolumeTemplate: "Volume total : {count} mots",
       loadErrorFallback: "Erreur de chargement des validations",
-      loadErrorBannerTemplate: "⚠️ Impossible de charger les revues humaines ({msg}).",
-      openReviewSuccess: "✅ Briefing de revue 4 blocs et découpage par sections prêts pour validation.",
+      loadErrorBannerTemplate: "Impossible de charger les revues humaines ({msg}).",
+      openReviewSuccess: "Briefing de revue 4 blocs et découpage par sections prêts pour validation.",
       openReviewErrorFallback: "Erreur d'ouverture de revue",
-      inspectHypothesesSuccess: "✅ Point 4 (Hypothèses Retenues) marqué comme relu.",
+      inspectHypothesesSuccess: "Point 4 (Hypothèses Retenues) marqué comme relu.",
       inspectHypothesesErrorFallback: "Erreur d'inspection",
       chunkStatusLabels: {
         APPROVED: "Approuvée",
@@ -89,9 +89,9 @@ export const FEATURE_COCKPIT_GATES_FR: FeatureCockpitGatesDictionary = {
         CHALLENGED: "Contestée",
         PENDING: "En attente",
       },
-      chunkUpdatedTemplate: "✅ Section mise à jour ({status}).",
+      chunkUpdatedTemplate: "Section mise à jour ({status}).",
       chunkErrorFallback: "Erreur sur la section",
-      finalizeSuccess: "✅ Validation humaine enregistrée et action Jira en attente exécutée.",
+      finalizeSuccess: "Validation humaine enregistrée et action Jira en attente exécutée.",
       finalizeErrorFallback: "Erreur de finalisation de la validation",
       defaultChallengeReason: "Demande de précision sur l'alignement amont.",
       seedPhrase:
@@ -113,26 +113,26 @@ export const FEATURE_COCKPIT_GATES_FR: FeatureCockpitGatesDictionary = {
     challengeModal: {
       defaultSummary:
         "Simulation d'impact : réévaluation ciblée de la section contestée sans retraiter l'amont validé.",
-      challengeSubmittedBanner: "⚠️ Contestation amont enregistrée et transmise pour révision.",
+      challengeSubmittedBanner: "Contestation amont enregistrée et transmise pour révision.",
       replayBannerTemplate: "Alerte d'obsolescence : rejeu déclenché depuis « {stepKey} ».",
       errorContextLabel: "Rejeu du processus",
     },
     docProcess: {
-      cardTitle: "📚 Processus du Pack ORCIA — Génération de la Documentation ORCIA",
+      cardTitle: "Processus du Pack ORCIA — Génération de la Documentation ORCIA",
       cardDescription:
         "Génère, vérifie et met à jour les guides fonctionnels par écran (FR/EN), la FAQ d'architecture et le site de documentation d'ORCIA en 4 étapes.",
-      badgeLabel: "📦 Pack Documentation ORCIA · Agent : @Rédacteur-Documentation-Orcia",
-      runBtn: "▶️ Lancer la génération de la documentation ORCIA",
-      loadInBuilderBtn: "✏️ Charger dans l'Atelier de Processus",
+      badgeLabel: "Pack Documentation ORCIA · Agent : @Rédacteur-Documentation-Orcia",
+      runBtn: "▶ Lancer la génération de la documentation ORCIA",
+      loadInBuilderBtn: "Charger dans l'Atelier de Processus",
       stepsSummaryTitle: "Bilan des 4 étapes exécutées :",
       stepCompletedBadge: "✓ Terminé",
       publishSuccessBanner:
-        "✅ Processus « Génération de la Documentation ORCIA » publié et exécuté avec succès en 4 étapes.",
+        "Processus « Génération de la Documentation ORCIA » publié et exécuté avec succès en 4 étapes.",
       localValidationFallback: "Validation locale appliquée",
       publishWithDetailTemplate:
-        "✅ Processus « Génération de la Documentation ORCIA » exécuté en 4 étapes ({detail}).",
+        "Processus « Génération de la Documentation ORCIA » exécuté en 4 étapes ({detail}).",
       loadedInBuilderBanner:
-        "✏️ Modèle « Génération de la Documentation ORCIA » chargé dans l'Atelier de Processus pour personnalisation.",
+        "Modèle « Génération de la Documentation ORCIA » chargé dans l'Atelier de Processus pour personnalisation.",
       steps: [
         {
           stepNumber: 1,

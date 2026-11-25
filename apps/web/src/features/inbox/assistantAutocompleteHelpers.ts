@@ -147,7 +147,7 @@ export function buildAssistantAutocompleteSuggestions(
     scope === "PRIVATE"
       ? autoCopy.badgePrivate
       : scope === "PACK"
-        ? `📦 ${sourcePackKey ?? autoCopy.badgePackDefault}`
+        ? (sourcePackKey ?? autoCopy.badgePackDefault)
         : autoCopy.badgeTeam;
 
   for (const ag of cached.agents ?? []) {
@@ -183,7 +183,7 @@ export function buildAssistantAutocompleteSuggestions(
           token: "@architecte-solution",
           name: autoCopy.sdlcArchitectName,
           description: autoCopy.sdlcArchitectDesc,
-          badge: "📦 orcia-pack-sdlc",
+          badge: "orcia-pack-sdlc",
         },
         {
           id: "agent-analyste-metier",
@@ -191,7 +191,7 @@ export function buildAssistantAutocompleteSuggestions(
           token: "@analyste-metier",
           name: autoCopy.sdlcAnalystName,
           description: autoCopy.sdlcAnalystDesc,
-          badge: "📦 orcia-pack-sdlc",
+          badge: "orcia-pack-sdlc",
         },
         {
           id: "skill-revue-architecture",
@@ -199,7 +199,7 @@ export function buildAssistantAutocompleteSuggestions(
           token: "/revue-architecture",
           name: autoCopy.sdlcReviewName,
           description: autoCopy.sdlcReviewDesc,
-          badge: "📦 orcia-pack-sdlc",
+          badge: "orcia-pack-sdlc",
         },
       ];
       for (const item of sdlcDefaults) {

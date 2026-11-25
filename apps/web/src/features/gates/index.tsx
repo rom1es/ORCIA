@@ -1,10 +1,15 @@
 import { OrciaAlertBanner } from "@orcia/ui";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { resolveGlobalScopeLabel } from "../../components/platformSetupWorkspaces";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions";
 import { useI18n } from "../../i18n";
+import {
+  type AlertFeedback,
+  type AlertFeedbackInput,
+  normalizeAlertFeedback,
+} from "../shared/alertFeedback";
 import { GatesAdaptiveHumanReviewSection } from "./GatesAdaptiveHumanReviewSection";
 
 export function GatesFeaturePanel() {
@@ -16,7 +21,10 @@ export function GatesFeaturePanel() {
   const resolvedWsId = resolveEffectiveWorkspaceId(activeScopeId, workspaces);
   const activeWorkspace = workspaces.find((w) => w.workspaceId === resolvedWsId) ?? workspaces[0];
 
-  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  const [actionFeedback, setActionFeedbackRaw] = useState<AlertFeedback | null>(null);
+  const setActionFeedback = useCallback((next: AlertFeedbackInput) => {
+    setActionFeedbackRaw(normalizeAlertFeedback(next));
+  }, []);
 
   return (
     <div
@@ -25,11 +33,11 @@ export function GatesFeaturePanel() {
     >
       {actionFeedback ? (
         <OrciaAlertBanner
-          tone={actionFeedback.startsWith("⚠️") ? "crimson" : "emerald"}
-          role={actionFeedback.startsWith("⚠️") ? "alert" : "status"}
+          tone={actionFeedback.tone}
+          role={actionFeedback.tone === "crimson" ? "alert" : "status"}
           testId="gates-action-feedback-banner"
         >
-          {actionFeedback}
+          {actionFeedback.message}
         </OrciaAlertBanner>
       ) : null}
 

@@ -1,3 +1,4 @@
+import { OrciaIcon } from "@orcia/ui";
 import React from "react";
 import { formatI18nTemplate } from "../../../i18n";
 import type { ProcessVsmExecutionUiDictionary } from "../../../i18n/locales/process_vsm_execution_ui_labels";
@@ -158,8 +159,9 @@ export function ValueStreamMapPhaseGrid({
                           {copy.tomorrowPrefix}
                         </strong>{" "}
                         {step.tomorrow.activities}
-                        <div style={{ marginTop: "3px", fontWeight: 600 }}>
-                          ⚡ {step.tomorrow.gains}
+                        <div style={{ marginTop: "3px", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                          <OrciaIcon name="lightning" size={13} />
+                          <span>{step.tomorrow.gains}</span>
                         </div>
                       </div>
                     ) : null}

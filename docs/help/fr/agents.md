@@ -28,4 +28,4 @@ Yanis crée l'agent « Analyste Conformité DORA », lui attribue uniquement la 
 
 - **Un agent n'apparaît pas dans les suggestions « @ » de Mon Assistant** : vérifiez que l'agent est bien publié sur votre Espace ou sur une portée englobant votre équipe.
 - **Une compétence refuse d'accéder à un outil externe** : contrôlez les autorisations d'outils associées à l'agent et l'état de vos connexions personnelles dans Mon Compte.
-- **Les menus Agents sont grisés au premier démarrage** : configurez au moins un modèle IA dans Configuration › Modèles IA pour débloquer les essais.
+- **Les menus Agents sont grisés au premier démarrage** : configurez au moins un modèle IA dans Administration › Modèles IA pour débloquer les essais.

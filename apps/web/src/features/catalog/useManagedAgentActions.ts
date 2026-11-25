@@ -9,6 +9,7 @@ import type {
 import type { ConfiguredPackItem } from "../../components/platformSetupStore";
 import type { SupportedWebLocale } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
+import type { AlertFeedbackInput } from "../shared/alertFeedback";
 import {
   buildAgentLocalOutput,
   buildAgentUpsertPayload,
@@ -27,7 +28,7 @@ export function useManagedAgentActions(params: {
   readonly activePacks: readonly ConfiguredPackItem[];
   readonly locale: SupportedWebLocale;
   readonly catalogLabels: CatalogManagedLabels;
-  readonly onFeedback: (msg: string) => void;
+  readonly onFeedback: (msg: AlertFeedbackInput) => void;
   readonly updateManagedState: (
     updater: (prev: CachedAgentsAndSkillsState) => CachedAgentsAndSkillsState,
   ) => void;
@@ -39,7 +40,10 @@ export function useManagedAgentActions(params: {
       : mergeManagedStateWithActivePacks(prev, activePacks).agents;
 
   const reportError = (err: unknown, context: string) =>
-    onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, locale, context).fullText}`);
+    onFeedback({
+      tone: "crimson",
+      message: formatRfc9457ErrorToBanner(err, locale, context).fullText,
+    });
 
   const handleCreateAgent = (draft: CreateAgentSixBlocksInput) => {
     const optimisticAgent = buildOptimisticAgent(draft);
@@ -234,7 +238,7 @@ export function useManagedAgentActions(params: {
           locale,
           catalogLabels.agentExecuteErrorContext,
         ).fullText;
-        onFeedback(`⚠️ ${detail}`);
+        onFeedback({ tone: "crimson", message: detail });
         updateManagedState((prev) => ({
           ...prev,
           agents: prev.agents.map((a) =>
@@ -242,7 +246,7 @@ export function useManagedAgentActions(params: {
               ? {
                   ...a,
                   testBenchValidated: true,
-                  lastExecutionOutput: `${a.lastExecutionOutput ?? ""}\n⚠️ ${detail}`,
+                  lastExecutionOutput: `${a.lastExecutionOutput ?? ""}\n${detail}`,
                 }
               : a,
           ),

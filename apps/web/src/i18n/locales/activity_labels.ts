@@ -66,8 +66,8 @@ export const ACTIVITY_FR_LABELS: ActivityDictionarySection = {
     provenanceModal: {
       provenanceTitlePrefix: "Dossier de provenance certifié — Exécution",
       alignmentStatusLabel: "Statut alignement :",
-      conformingBadge: "✅ Conforme (100 % aligné)",
-      divergenceBadge: "⚠️ Divergence détectée",
+      conformingBadge: "Conforme (100 % aligné)",
+      divergenceBadge: "Divergence détectée",
       eventsCountLabel: "Événements :",
       totalTokensLabel: "Tokens totaux :",
       consolidatedCostLabel: "Coût consolidé :",
@@ -128,8 +128,8 @@ export const ACTIVITY_EN_LABELS: ActivityDictionarySection = {
     provenanceModal: {
       provenanceTitlePrefix: "Certified provenance dossier — Run",
       alignmentStatusLabel: "Alignment status:",
-      conformingBadge: "✅ Conforming (100% aligned)",
-      divergenceBadge: "⚠️ Divergence detected",
+      conformingBadge: "Conforming (100% aligned)",
+      divergenceBadge: "Divergence detected",
       eventsCountLabel: "Events:",
       totalTokensLabel: "Total tokens:",
       consolidatedCostLabel: "Consolidated cost:",

@@ -30,7 +30,7 @@ export function stopActiveAssistantTurn(isFr: boolean): void {
     const client = createOrciaApiClient({ baseUrl: "", locale: resolveLocaleForFlag(isFr) });
     void client.stopAssistantTurn(turnId).catch((err: unknown) => {
       const detail = err instanceof Error ? err.message : String(err);
-      updateBgSnapshot({ generationStopped: true, errorKind: "stream_error", errorMessage: `⚠️ ${detail}` });
+      updateBgSnapshot({ generationStopped: true, errorKind: "stream_error", errorMessage: `${detail}` });
     });
   }
 }

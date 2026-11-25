@@ -12,6 +12,7 @@ import type {
 } from "./AgentsAndSkillsTypes";
 import { AgentsAndSkillsHeaderAndToolbar } from "./AgentsAndSkillsHeaderAndToolbar";
 import { DisabledButtonAlertIndicator } from "./DisabledButtonAlertIndicator";
+import { OrciaIcon } from "./icons";
 
 export { AgentsAndSkillsHeaderAndToolbar };
 
@@ -137,8 +138,14 @@ export const AgentCreateFormDrawer: React.FC<AgentCreateFormDrawerProps> = ({
                     data-testid={`readiness-condition-${item.index}`}
                     className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-1.5"
                   >
-                    <div className="font-semibold">
-                      {item.satisfied ? "✅" : "⏳"} {item.index}. {item.label}
+                    <div className="inline-flex items-center gap-1 font-semibold">
+                      <OrciaIcon
+                        name={item.satisfied ? "check" : "hourglass"}
+                        size={12}
+                      />
+                      <span>
+                        {item.index}. {item.label}
+                      </span>
                     </div>
                     <div className="text-[11px] text-[var(--orcia-text-secondary)]">
                       {item.detail}

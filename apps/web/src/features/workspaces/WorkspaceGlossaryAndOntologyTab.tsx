@@ -1,6 +1,5 @@
 import {
   DisabledButtonAlertIndicator,
-  getOrciaIconGlyph,
   OrciaAlertBanner,
   OrciaIcon,
   type ControlCenterWorkspaceGovItem,
@@ -205,10 +204,6 @@ export function WorkspaceGlossaryAndOntologyTab({
     }
   };
 
-  const enterpriseIcon = getOrciaIconGlyph("organizationBu");
-  const divisionIcon = getOrciaIconGlyph("divisionLandmark");
-  const teamIcon = getOrciaIconGlyph("team");
-  const workspaceIcon = getOrciaIconGlyph("workspaceFolder");
   const isSubmitDisabled = !termName.trim();
 
   const domainText = formatI18nTemplate(glossaryTabCopy.domainBadgeTemplate, { name: buLabel });
@@ -216,22 +211,23 @@ export function WorkspaceGlossaryAndOntologyTab({
   const wsText = formatI18nTemplate(glossaryTabCopy.workspaceBadgeTemplate, { name: wsName });
 
   const cascadeTiers = [
-    { tierId: "enterprise", badge: `${enterpriseIcon} ${copy.workspaceGlossaryEnterpriseTitle}`, subtitle: copy.workspaceGlossaryEnterpriseSub, items: displayedConcepts.filter((c) => c.level === "1_ENTERPRISE") },
-    { tierId: "domain", badge: `${divisionIcon} ${domainText}`, subtitle: copy.workspaceGlossaryDomainSub, items: displayedConcepts.filter((c) => c.level === "2_DOMAIN") },
-    { tierId: "team", badge: `${teamIcon} ${teamText}`, subtitle: copy.workspaceGlossaryTeamSub, items: displayedConcepts.filter((c) => c.level === "3_TEAM") },
+    { tierId: "enterprise", iconName: "organizationBu" as const, badge: copy.workspaceGlossaryEnterpriseTitle, subtitle: copy.workspaceGlossaryEnterpriseSub, items: displayedConcepts.filter((c) => c.level === "1_ENTERPRISE") },
+    { tierId: "domain", iconName: "divisionLandmark" as const, badge: domainText, subtitle: copy.workspaceGlossaryDomainSub, items: displayedConcepts.filter((c) => c.level === "2_DOMAIN") },
+    { tierId: "team", iconName: "team" as const, badge: teamText, subtitle: copy.workspaceGlossaryTeamSub, items: displayedConcepts.filter((c) => c.level === "3_TEAM") },
     {
       tierId: "workspace",
-      badge: `${workspaceIcon} ${wsText}`,
+      iconName: "workspaceFolder" as const,
+      badge: wsText,
       subtitle: copy.workspaceGlossaryWorkspaceSub,
       items: displayedConcepts.filter((c) => c.level === "4_WORKSPACE" || c.level === "3_WORKSPACE" || c.level === "4_RUN_EPHEMERAL"),
     },
   ];
 
   const getLevelBadgeLabel = (level: UiOntologyLevel): string => {
-    if (level === "1_ENTERPRISE") return `${enterpriseIcon} ${copy.workspaceGlossaryEnterpriseTitle}`;
-    if (level === "2_DOMAIN") return `${divisionIcon} ${domainText}`;
-    if (level === "3_TEAM") return `${teamIcon} ${teamText}`;
-    return `${workspaceIcon} ${wsText}`;
+    if (level === "1_ENTERPRISE") return copy.workspaceGlossaryEnterpriseTitle;
+    if (level === "2_DOMAIN") return domainText;
+    if (level === "3_TEAM") return teamText;
+    return wsText;
   };
 
   return (
@@ -242,13 +238,15 @@ export function WorkspaceGlossaryAndOntologyTab({
         </OrciaAlertBanner>
       )}
       <div data-testid="glossary-inheritance-cascade-bar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <strong style={{ fontSize: "14px" }}>
-            <OrciaIcon name="bookOpen" /> {`${copy.workspaceGlossaryTitlePrefix} « ${wsName} »`}
-          </strong>
-        </div>
-        <span data-testid="workspace-glossary-cascade-summary" style={{ fontSize: "11px", padding: "3px 8px", borderRadius: "var(--radius-sm)", backgroundColor: "var(--color-bg-elevated)", border: "1px solid var(--color-border-subtle)", color: "var(--color-text-secondary)" }}>
-          {`${enterpriseIcon} ${copy.workspaceGlossaryEnterpriseTitle} ➔ ${divisionIcon} ${domainText} ➔ ${teamIcon} ${teamText} ➔ ${workspaceIcon} ${wsText}`}
+        <strong style={{ fontSize: "14px", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+          <OrciaIcon name="bookOpen" />
+          <span>{`${copy.workspaceGlossaryTitlePrefix} « ${wsName} »`}</span>
+        </strong>
+        <span data-testid="workspace-glossary-cascade-summary" style={{ display: "inline-flex", alignItems: "center", gap: "6px", flexWrap: "wrap", fontSize: "11px", padding: "3px 8px", borderRadius: "var(--radius-sm)", backgroundColor: "var(--color-bg-elevated)", border: "1px solid var(--color-border-subtle)", color: "var(--color-text-secondary)" }}>
+          <OrciaIcon name="organizationBu" size={12} /><span>{copy.workspaceGlossaryEnterpriseTitle}</span><span>{"->"}</span>
+          <OrciaIcon name="divisionLandmark" size={12} /><span>{domainText}</span><span>{"->"}</span>
+          <OrciaIcon name="team" size={12} /><span>{teamText}</span><span>{"->"}</span>
+          <OrciaIcon name="workspaceFolder" size={12} /><span>{wsText}</span>
         </span>
       </div>
 
@@ -269,10 +267,10 @@ export function WorkspaceGlossaryAndOntologyTab({
           onChange={(e) => setSelectedScopeTier(e.target.value as "WORKSPACE" | "TEAM" | "BU" | "ENTERPRISE")}
           style={inputStyle}
         >
-          {canTier("4_WORKSPACE") && <option value="WORKSPACE">{`${workspaceIcon} ${wsText}`}</option>}
-          {canTier("3_TEAM") && <option value="TEAM">{`${teamIcon} ${teamText}`}</option>}
-          {canTier("2_DOMAIN") && <option value="BU">{`${divisionIcon} ${domainText}`}</option>}
-          {canTier("1_ENTERPRISE") && <option value="ENTERPRISE">{`${enterpriseIcon} ${copy.workspaceGlossaryEnterpriseTitle}`}</option>}
+          {canTier("4_WORKSPACE") && <option value="WORKSPACE">{wsText}</option>}
+          {canTier("3_TEAM") && <option value="TEAM">{teamText}</option>}
+          {canTier("2_DOMAIN") && <option value="BU">{domainText}</option>}
+          {canTier("1_ENTERPRISE") && <option value="ENTERPRISE">{copy.workspaceGlossaryEnterpriseTitle}</option>}
         </select>
         <button
           type="submit"

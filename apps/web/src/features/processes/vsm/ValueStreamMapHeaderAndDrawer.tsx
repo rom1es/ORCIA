@@ -1,3 +1,4 @@
+import { OrciaIcon } from "@orcia/ui";
 import React from "react";
 import { formatI18nTemplate } from "../../../i18n";
 import type { ProcessVsmExecutionUiDictionary } from "../../../i18n/locales/process_vsm_execution_ui_labels";
@@ -131,8 +132,9 @@ export function ValueStreamMapHeaderAndDrawer({
           }}
         >
           <div>
-            <strong style={{ fontSize: "13px", color: "var(--color-ontology-cyan)" }}>
-              📚 {vsm.knowledge_base.title}
+            <strong style={{ fontSize: "13px", color: "var(--color-ontology-cyan)", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              <OrciaIcon name="books" size={14} />
+              <span>{vsm.knowledge_base.title}</span>
             </strong>
             <div style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
               {vsm.knowledge_base.description}

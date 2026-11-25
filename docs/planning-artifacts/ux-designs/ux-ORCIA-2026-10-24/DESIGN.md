@@ -3,8 +3,8 @@ name: ORCIA
 title: ORCIA — Visual Identity & Design System (Direction C : Enterprise Adaptive Hybrid)
 status: draft
 created: 2026-10-24
-updated: 2026-11-20
-description: Plateforme d'exécution de processus d'entreprise et personnels "Human-Led, Agent-Accelerated". Basée sur shadcn/ui (Radix + Tailwind CSS) avec l'architecture visuelle Direction C Sobriété (Sidebar Gauche à Sélecteur d'Espace Unique & 9 Entrées + TopHeaderBar avec Logo [O] ORCIA › Écran & Recherche + Espace Central Épuré + Colonne d'Aide Contextuelle Intégrée à Droite).
+updated: 2026-11-25
+description: Human-Led, Agent-Accelerated enterprise and personal process execution platform built on shadcn/ui (Radix + Tailwind CSS) with Direction C Sobriety 4-Zone layout (Left Sidebar with single Active Space selector, 9 navigation entries & bottom-left My Account popover + TopHeaderBar with [O] ORCIA › Screen, Breadcrumb, Search, Notifications & Help + Clean Central Canvas + Right Zone 4 Contextual Help Column).
 colors:
   sidebar-bg: '#FFFFFF'
   sidebar-foreground: '#0F172A'
@@ -79,129 +79,118 @@ components:
 
 ## Brand & Style
 
-**ORCIA** incarne la posture **"Human-Led, Agent-Accelerated"** à travers la **Direction C Sobriété (Architecture 4 Zones inspirée de EXEMPLE & Portals)**. Son identité visuelle repose sur quatre piliers complémentaires qui éliminent toute surcharge cognitive et tout jargon d'infrastructure :
-1. **Colonne Gauche — Sidebar de Périmètre & Menu Global (`240px` dépliée / `72px` repliée)** :
-   - **En haut** *(sans doublon `[O] ORCIA`, l'identité cliquable résidant exclusivement dans la `TopHeaderBar`)* : **Sélecteur d'`Espace actif` Unique** groupé par **`Personnel`** + **`Équipe / BU`**, câblé sur tous les écrans (`Cockpit`, `Mon Assistant`, `Mes Processus`, `Mes Agents`, `Mes Espaces`, `FinOps`).
-   - **Au centre** : Les **9 Entrées Fixes du Menu Principal** (*sans numérotation devant les libellés, et sans bouton « Nouvelle discussion » dans la sidebar, celui-ci résidant dans `Mon Assistant`*) :
-     - **`Cockpit`** (Pilotage du périmètre actif, Guide d'Accostage unifié `6` jalons dont `4. Premier Espace d'équipe` avec coches vertes et flèches alignées verticalement proche du texte, non repliable tant que `< 6/6` ; aucune carte d'ancrage/arbitrage affichée si aucune action n'est en attente en base ; suppression du bandeau `"Aucune décision en attente"`, du prompt rapide `"Accès rapide à Mon Assistant"` et du badge `"Contexte actif"` — maximum 3 blocs à l'écran)
-     - **`Mon Assistant`** (Espace conversationnel IA actif dès qu'un modèle `chat` est configuré — même sans modèle d'embedding, avec indicateur non-bloquant signalant l'inactivité de la recherche documentaire — avec boutons `+ Nouvelle discussion` et `⚙ Réglages de l'assistant`, 3 onglets `💬 Discussion active | 📁 Dossiers (N) | 🕘 Historique & Recherche`, citations vérifiées `[S1]`/`[G1]`/`[O1]` et sélecteur de vitesse `⚡ Standard / 🧠 Approfondi`)
-     - **`Mes Processus`** (Dégrisé dès `1` modèle IA actif ; Workflows `Publiés | Brouillons | Exécutions & Décisions` en Vue Fokus de Revue + Studio)
-     - **`Mes Agents`** (Carte n°1 `🤖 Assistant de l'Espace`, Agents interpellables au `@`, Skills de l'agent, Outils & Casquettes)
-     - **`Mes Espaces`** (Structuré en 5 sous-onglets : `Accostage` | `Documents & Sources` | `Livrables & Artefacts` | `Glossaire` | `Membres & Paramètres de l'espace`, incluant l'Espace Personnel automatique `PRIVATE_USER`)
-     - **`Mon Organisation`** (`/organization`, juste sous `Mes Espaces`, visible par tous les utilisateurs authentifiés : lecture seule de l'organigramme pour les membres simples, édition/invitation selon `can_*` pour Leads/Admins)
-     - **`FinOps`** (Visibilité et barre de portée `Cet Espace` | `Cette Équipe / BU` | `Socle Plateforme` strictement filtrées selon l'habilitation de l'utilisateur)
-     - **`Administration`** *(anciennement `Configuration`)* (Réservé `PLATFORM_ADMIN` / `SECOPS`, strictement **`5` onglets** : `Comptes & Habilitations`, `Authentification`, `Modèles IA` — avec masquage du bloc de réindexation vectorielle tant que `0` document est indexé, spinner unifié `<OrciaSpinner />` et erreur/timeout localisée sous la carte du modèle —, `Connecteurs`, `Packs Métiers`)
-     - **`Aide`** (Centre d'aide par intention *« Que voulez-vous faire ? »* en $N$ gestes).
-2. **Barre Supérieure (`TopHeaderBar` `#FFFFFF`, hauteur `56px`) Ultra-Sobre & Contextualisée** :
-   - **À gauche** : **Logo cliquable `[O] ORCIA › <Écran>`** tout en haut à gauche ramenant à `/cockpit`, suivi du **Fil d'Ariane cliquable (`Breadcrumb`)** situant en permanence l'utilisateur dans son périmètre (*ex. `BU Grand Public › Équipe Mon Compte › Espace Portail › Cockpit`*).
-   - **À droite** : **Zone d'input de Recherche Contextuelle (`🔍 Rechercher dans ce périmètre...`)** permettant de retrouver instantanément tous les éléments accessibles à l'utilisateur, suivie des icônes sobres **`🔔 Notifications`** (*Ce qui a avancé*), **`❓ Aide`** (ouvre/ferme la colonne d'aide à droite — remplaçant les icônes flottantes `ⓘ` des en-têtes de cartes principales) et **`👤 Mon Profil`** (Compte/MFA, jetons personnels `Passthrough` et clés MCP IDE).
-3. **Espace Central Épuré (Sobriété & Divulgation Progressive)** :
-   - **Sur l'écran principal (`Cockpit`)** : **Maximum 3 blocs** (au démarrage à vide : Guide d'Accostage unifié `6` jalons non repliable tant que `< 6/6` avec compteurs `0/0/0`, bandeau `"Aucune décision en attente"`, prompt rapide `"Accès rapide à Mon Assistant"` et badge `"Contexte actif"` supprimés ; les cartes d'ancrage/arbitrage ne s'affichent que si une action est réellement en attente en PG18).
-   - **Sur les écrans métiers (`Mes Processus`, `Mes Agents`, `Mes Espaces`, `Mon Organisation`, `FinOps`, `Administration`)** : Gabarit unifié **En-tête sobre (sans icône flottante `ⓘ` dans les en-têtes de cartes principales, au profit du bouton `? Aide` de la `TopHeaderBar`) avec 1 phrase d'intention en langage courant + 3 à 4 compteurs KPI sobres (masqués tant que `total == 0`) + Filtres pilules + Tableau ou État vide pédagogique en 1 phrase**. Les formulaires de création ne sont jamais empilés en permanence sur l'écran : ils s'ouvrent dans une **Modale dédiée** au clic sur le bouton primaire (`+ Nouvel espace`, `+ Nouveau processus`, `+ Nouvel agent`...). Les états de chargement utilisent le spinner unifié `<OrciaSpinner />` et toute erreur/timeout réseau sur un modèle IA s'affiche localisée sous la carte du modèle concerné.
-4. **Colonne Droite — Panneau d'Aide Contextuelle Intégré (`340px`, Ouvert par défaut tant que `total == 0`, Repliable via `❓`)** :
-   - Ouverte automatiquement tant qu'un écran est vide afin d'accompagner l'initialisation (et repliée par défaut sur `< 1440px` dès que `total >= 1`), puis ouvrable/repliable à tout moment via le bouton `❓` de la `TopHeaderBar`.
-   - Structurée invariablement en **4 sections pédagogiques** :
-     - **Ce qui est attendu ici** (objectif de l'écran, temps estimé, rôle concerné)
-     - **`EN N GESTES`** (étapes numérotées claires expliquant comment agir)
-     - **`UN EXEMPLE RÉEL`** (encadré ambre concret illustrant un cas d'usage réel)
-     - **`CE QUI COINCE SOUVENT`** (diagnostics immédiats des erreurs fréquentes).
+**ORCIA** embodies the **"Human-Led, Agent-Accelerated"** posture through **Direction C Sobriety (4-Zone Architecture)**. Its visual identity relies on four complementary zones that eliminate cognitive overload, raw Unicode emoji clutter, and internal infrastructure jargon:
 
-### Les Règles Fondamentales de l'UI (Interface Utilisateur — 5 Piliers Invariants)
+1. **Zone 1 — Left Scope & Global Navigation Sidebar (`240px` expanded / `72px` collapsed rail via `[`)**:
+   - **Top** *(without duplicating `[O] ORCIA`, which lives exclusively in `TopHeaderBar`)*: **Single Active Space Selector** grouped by **`Personal`** + **`Team / Division (BU)`**, synchronized across all primary views (`Cockpit`, `My Assistant`, `My Processes`, `My Agents`, `My Spaces`, `FinOps`).
+   - **Center**: **9 Fixed Unnumbered Navigation Entries** (rendered with monochrome `<OrciaIcon />` wireframe SVGs; no "New discussion" button in the sidebar):
+     - **`Cockpit`** (Active scope overview, unified 6-step onboarding checklist while `< 6/6`, priority human decisions only when pending items exist — max 3 surface blocks).
+     - **`My Assistant`** (Conversational AI workspace active as soon as a chat model is configured, with `+ New conversation` & `Assistant settings` header actions, 3 tabs `Active discussion | Saved (N) | Folders (N)`, verified `[S1]`/`[G1]`/`[O1]` citations, and speed/effort selector).
+     - **`My Processes`** (Unlocked once `1` AI model is active; `Published | Drafts | Runs & Decisions` tabs across Review Focus View and Studio).
+     - **`My Agents`** (`Space Assistant` pinned card, `@handle` specialized agents configured in 6 governed blocks, `/skill` catalog, and `Tool Servers & MCP`).
+     - **`My Spaces`** (Single active-workspace view structured in 5 unnumbered tabs: `Onboarding & Overview | Documents & Sources | Deliverables & Artifacts | Glossary & Business Rules | Members & Space Settings`, including automatic `PRIVATE_USER` personal workspace).
+     - **`My Organization`** (`/organization`, directly under `My Spaces`, visible to all authenticated users: read-only org tree for standard members, scoped unit creation and member invitations according to `can_*` grants for Division/Team Leads and Admins).
+     - **`FinOps`** (Scope bar `This Space | This Team / BU | Platform Base` strictly filtered by user permissions).
+     - **`Administration`** (Restricted to `PLATFORM_ADMIN` / `SECOPS`, strictly **5 tabs**: `Accounts & Permissions`, `Authentication`, `AI Models`, `Connectors`, `Business Packs`).
+     - **`Help`** (Full-width Help Center with direct `Documentation` showcase link and screen guides).
+   - **Bottom-Left Footer**: **Canonical `My Account` / `Mon Compte` Anchor** (`SidebarAccountPopover` + 5-tab `UserSettingsModalDialog`: `Preferences & Display`, `Profile & Security`, `Personal Connections`, `IDE & MCP Keys`, `About / Session`). Account management lives exclusively in the bottom-left sidebar footer and never duplicates inside `TopHeaderBar`.
 
-L'UI traduit l'UX en éléments visuels tangibles, esthétiques et fonctionnels. Tous les composants `@orcia/ui` (`packages/ui`) et écrans `apps/web` respectent impérativement ces **5 règles fondamentales** :
+2. **Zone 2 — Top Header Bar (`TopHeaderBar`, `#FFFFFF`, height `56px`)**:
+   - **Left**: Clickable **`[O] ORCIA › <Screen>`** logo returning to `/cockpit`, followed by the clickable scope **`Breadcrumb`**.
+   - **Right**: **Contextual Federated Search Trigger (`⌘K` / `Ctrl+K`)**, **`Notifications`** bell, and **`Help` / `Aide`** toggle button (opens/closes the Zone 4 right contextual help column; disabled/marked when already on `/help`). No floating `ⓘ` icons appear in main card headers, and no duplicate user account dropdown lives in `TopHeaderBar`.
 
-1. **Hiérarchie visuelle** : Guider l'œil en jouant sur les tailles, les contrastes, les espacements et les graisses de police (`400`, `500`, `600`, `700`) pour distinguer immédiatement l'important (titre de page, grands compteurs KPIs, action principale, alerte critique) du secondaire (métadonnées, descriptions complémentaires).
-2. **Limitation des typographies (Maximum 2)** : Se restreindre strictement à **deux familles typographiques** pour conserver une lecture harmonieuse :
-   - **Primaire (`Inter` / `Geist Sans`)** pour toute l'interface, les titres (`display`) et la lecture documentaire ;
-   - **Secondaire (`JetBrains Mono` / `Geist Mono`)** réservée aux identifiants techniques, URI fédérées, hashes `SHA-256` et extraits de code.
-3. **Cohérence graphique** : Utiliser un système de composants unifié dans `@orcia/ui` (boutons, cartes `#FFFFFF`, badges, menus déroulants, spinner `<OrciaSpinner />` et modales au design strictement identique pour une même famille d'action à travers les 9 entrées du menu).
-4. **Gestion des grilles (Grids)** : Structurer chaque page et panneau à l'aide de colonnes régulières, de gouttières (`gap` sur échelle de `8px`/`16px`/`24px`) et de marges régulières pour aligner proprement tous les éléments.
-5. **Contrastes et accessibilité (WCAG 2.2 AA)** : Garantir que toutes les combinaisons de couleurs de texte et de fond respectent les ratios de contraste normatifs (`>= 4.5:1` texte normal, `>= 3:1` grands titres et composants UI) pour être lisibles par tous, en mode clair comme en mode sombre.
+3. **Zone 3 — Clean Central Workspace (`1fr`, min `680px`, padding `24px`)**:
+   - **Cockpit**: Maximum 3 surface blocks; no empty "No pending decisions" filler banners.
+   - **Business Screens**: Standardized onto `<OrciaPageHeader />`, `<OrciaTabStrip />`, and `<OrciaDataCard />`. Creation forms open in dedicated modals (`OrciaDialog`) triggered by a single primary header action (`.orcia-ds-btn-primary`). Loading states use `<OrciaSpinner />` and errors render in accessible `[role="alert"]` banners.
 
-### Microcopy Centrée Utilisateur & Accès à l'Aide Contextuelle (`? Aide` dans `TopHeaderBar`)
+4. **Zone 4 — Integrated Right Contextual Help Column (`340px`, collapsible via `Help` or `]`)**:
+   - Automatically open while an onboarding screen has `total == 0` (and collapsed by default on `< 1440px` once `total >= 1`), toggleable anytime from the TopBar **`Help`** button.
+   - Always renders the **4 canonical pedagogical blocks above the fold** (followed by route-specific targeted sections):
+     1. **What this screen is for** (`summaryWhatFor`)
+     2. **`IN N STEPS` / `EN N GESTES`** (numbered action steps)
+     3. **`A REAL EXAMPLE` / `UN EXEMPLE RÉEL`** (amber-framed concrete scenario)
+     4. **`COMMON PITFALLS` / `CE QUI COINCE SOUVENT`** (actionable troubleshooting bullets).
 
-- **Zéro jargon d'implémentation interne dans l'UI** : Les dictionnaires `i18n` (`fr`/`en`) et composants adoptent exclusivement le point de vue de l'utilisateur final. Toute référence interne (`DBOS`, `PostgreSQL 18`, `pgvector`, `halfvec`, `Outbox`, `Wasmtime`, `Starlark`, `Argon2id`, `OIDC PKCE`, `Passthrough`, `Tie-Break`, `Rubber-stamping`, `What-If`, `Verrou V1..V5`, `AD-*`, `RFC 9457`, constantes techniques brutes) est proscrite des écrans.
-- **Intitulés auto-porteurs (< 2 secondes)** : Les titres, onglets, boutons et champs restent courts, explicites et immédiatement actionnables.
-- **Zéro pavé explicatif ni icône flottante `ⓘ` dans les en-têtes de cartes principales — Bouton `? Aide` (`TopHeaderBar`)** : Tout complément d'explication est déporté dans la **Colonne d'Aide Contextuelle à droite (`340px`)** pilotée directement depuis le bouton **`? Aide`** de la `TopHeaderBar`. Les en-têtes de cartes principales n'exposent plus d'icône flottante `ⓘ` afin de préserver la sobriété visuelle.
+### Five Fundamental UI Rules (Invariant Pillars)
 
-ORCIA hérite des fondations de **shadcn/ui (Radix UI + Tailwind CSS)**. Ce document spécifie uniquement la couche identitaire et les composants cognitifs propres à ORCIA.
+1. **Visual Hierarchy**: Guide attention with typography scale, contrast, spacing, and weights (`400`, `500`, `600`, `700`) separating page identity, primary CTA, KPI counters, and secondary metadata.
+2. **Maximum Two Font Families**:
+   - **Primary (`Inter` / `Geist Sans`)**: All UI copy, headings (`display`), and document reading.
+   - **Secondary (`JetBrains Mono` / `Geist Mono`)**: Technical identifiers, federated URIs, `SHA-256` fingerprints, keyboard hints (`⌘K`, `[`, `]`), and RFC 9457 error codes.
+3. **Graphical Consistency & Monochrome Icons (`<OrciaIcon />`)**: Every icon across `@orcia/ui` and `apps/web` renders a monochrome wireframe `<svg>` (`currentColor`, `strokeWidth={1.75}`) from `ORCIA_ICONS` (`packages/ui/src/components/icons/`). **Zero raw Unicode emojis (`🤖`, `🛠️`, `🔌`, `🔒`, `📁`, `📦`, `⚠️`, `✅`, etc.) are permitted in headers, tabs, buttons, badges, cards, or scope selectors.**
+4. **Grid & Alignment**: Regular `8px`/`16px`/`24px` spacing scale, crisp surfaces, and zero-CLS tab strips.
+5. **Contrast & Accessibility (WCAG 2.2 AA)**: Normative contrast ratios (`>= 4.5:1` body text, `>= 3:1` large headings and UI controls) in both light and dark modes, full keyboard navigation, and complete `fr` / `en` bilingual parity.
+
+### User-Centric Microcopy & Bilingual Parity (`fr` / `en`)
+
+- **Zero Internal Plumbing Jargon**: UI dictionaries (`fr`/`en`) adopt strictly the business user's perspective. Internal implementation terms (`DBOS`, `PostgreSQL 18`, `pgvector`, `halfvec`, `Outbox`, `Wasmtime`, `Starlark`, `Argon2id`, `OIDC PKCE`, `Passthrough`, `Tie-Break`, `Rubber-stamping`, `What-If`, `RFC 9457`, raw `team_default` keys, `Temp 0.2 · 4096 tok`, or `(Skills)` in French labels) must never leak into user-facing screens.
+- **Human-Readable Settings & Proper Pluralization**: Agent model summaries display clean localized labels (e.g. `Par défaut · Précis · Contexte 4k` / `Team default · Precise · 4k context`) and counters respect singular vs plural (`1 actif` vs `N actifs`, `1 réutilisable` vs `N réutilisables`).
 
 ## Colors
 
-Chaque couleur sémantique d'ORCIA possède une signification stricte liée à la gouvernance humano-agentique — aucune couleur d'accent n'est utilisée à titre purement décoratif :
+Semantic colors carry strict governance meaning — never decorative accent noise:
 
-- **Sidebar Crisp White (`#FFFFFF` / Bordure `#E2E8F0` / Capsule Active `#EFF6FF`)** : Fond clair et aéré de la Sidebar de périmètre et de navigation globale à 9 entrées, isolant visuellement la navigation de la surface de travail.
-- **Canvas Background (`#EAF2FB` / `#F8FAFC` Light / `#0B0F17` Dark)** : Fond doux du panneau central mettant en relief les cartes blanches `#FFFFFF`.
-- **Primary Cobalt (`#2563EB` Light / `#6366F1` Dark)** : Action principale, entrée active dans la Sidebar, sélecteur de portée actif et indicateur de présence de **`Mon Assistant`**.
-- **Human-Led Violet (`#6D28D9` / Fond `#F5F3FF`)** : Réservé exclusivement aux **Ancrages Humains Obligatoires** (`human_authored_required: true`). Dès que l'utilisateur voit une bordure violette, il sait que l'IA a l'interdiction de rédiger cette zone à sa place et que sa réflexion d'expert (*Think*) est attendue.
-- **Arbitration & Challenge Amber (`#D97706` / Fond `#FFFBEB`)** : Indique une suspension du **Workflow Run** requérant une décision humaine (**Arbitrage Humain**, suspicion de *Rubber-Stamping*, encadré *« Un exemple réel »* de l'aide contextuelle ou source expirée `[STALE_WARNING]`).
-- **Gate Pass Emerald (`#059669` / Fond `#ECFDF5`)** : Indique une **Gate** (Déterministe, Agentique Cross-Model ou Humaine) franchie avec succès, une source **`RÉFÉRENCE`** vérifiée, un verrou de présence pris en charge (*Claimed*), ou un cache `SHA-256` valide.
-- **Ontology Cyan (`#0284C7` / Fond `#F0F9FF`)** : Identifie les concepts et règles métiers du **Glossaire / Ontologie Dynamique Multi-Niveaux** (`[G1]`, badges d'origine `Socle`, `Équipe`, `Espace`, et badge `AutonomousExecutionBadge`).
-- **Stale / Blocker Crimson (`#DC2626` / Fond `#FEF2F2`)** : Contradiction critique d'ontologie (`ONTOLOGY_CONFLICT`), coupe-circuit ouvert (`CIRCUIT_OPEN`), échec de **Gate Déterministe** ou blocage d'habilitation.
+- **Sidebar Crisp White (`#FFFFFF` / Border `#E2E8F0` / Active Pill `#EFF6FF`)**: Clean navigation background separating Zone 1 from the central workspace.
+- **Canvas Background (`#EAF2FB` / `#F8FAFC` Light / `#0B0F17` Dark)**: Soft backdrop framing white `#FFFFFF` cards.
+- **Primary Cobalt (`#2563EB` Light / `#6366F1` Dark)**: Primary CTA, active sidebar item, and active Assistant presence.
+- **Human-Led Violet (`#6D28D9` / Background `#F5F3FF`)**: Reserved exclusively for **Mandatory Human Anchors** (`human_authored_required: true`, `HumanLedAnchorCard`).
+- **Arbitration & Challenge Amber (`#D97706` / Background `#FFFBEB`)**: Workflow suspension awaiting human arbitration, Zone 4 *Real Example* callout, or `[STALE_WARNING]` indicator.
+- **Gate Pass Emerald (`#059669` / Background `#ECFDF5`)**: Verified Gate, `REFERENCE` source, claimed presence lock, or valid cache state.
+- **Ontology Cyan (`#0284C7` / Background `#F0F9FF`)**: Multi-level Glossary / Ontology badges (`[G1]`) and `AutonomousExecutionBadge`.
+- **Stale / Blocker Crimson (`#DC2626` / Background `#FEF2F2`)**: Critical ontology conflict, open circuit breaker, Gate failure, or permission block.
 
 ## Typography
 
-Conformément à la règle fondamentale de **limitation à maximum deux typographies** :
-- **Typographie Primaire — Interface, Titres & Lecture (`Inter` / `Geist Sans`)** :
-  - Corps & Conversation (`13.5px`–`14px`, `line-height: 1.5`) : densité calibrée pour afficher côte à côte la Sidebar, l'Espace Central et la Colonne d'Aide Contextuelle `❓` sans troncature.
-  - Titres d'Écrans & Compteurs KPI (`display`, `22px`–`28px`, `font-weight: 700`, `line-height: 1.25`, `letter-spacing: -0.02em`) : hiérarchie visuelle assurée par l'échelle typographique, la graisse et l'espacement (sans troisième police serif).
-- **Typographie Secondaire — Provenance, URI & Code (`JetBrains Mono` / `Geist Mono`, `12px`)** : Obligatoire pour toutes les URI des Sources et du Coffre (`git://`, `confluence://`, `jira://`, `db://`, `orcia://`), les pastilles de citation (`[S1]`, `[G1]`, `[O1]`), les empreintes `SHA-256`, les pastilles de raccourcis clavier (`⌘W`, `⌘K`, `[`, `]`) et les codes d'erreur RFC 9457.
+- **Primary UI & Reading (`Inter` / `Geist Sans`)**:
+  - Body & Conversation (`13.5px`–`14px`, `line-height: 1.5`) calibrated for simultaneous Sidebar + Central Canvas + Zone 4 Help visibility.
+  - Page Titles & KPI Counters (`display`, `22px`–`28px`, `font-weight: 700`, `line-height: 1.25`, `letter-spacing: -0.02em`).
+- **Secondary Provenance & Code (`JetBrains Mono` / `Geist Mono`, `12px`)**: Federated URIs (`orcia://`, `git://`, `confluence://`, `jira://`), citation pills (`[S1]`, `[G1]`, `[O1]`), `SHA-256` digests, and keyboard shortcuts (`⌘K`, `[`, `]`).
 
 ## Layout & Spacing
 
-L'architecture spatiale Desktop repose sur la **Coquille 4 Zones (Direction C Sobriété — EXEMPLE + Portals)** :
-1. **Zone 1 — Colonne Gauche (`240px` dépliée / `72px` repliée en icônes via `[`, `#FFFFFF`)** : Contient en haut le **Sélecteur d'`Espace actif` Unique** groupé par `Personnel` + `Équipe / BU` (sans doublon `[O] ORCIA`), et les **9 entrées fixes non numérotées du menu** (`Cockpit`, `Mon Assistant`, `Mes Processus`, `Mes Agents`, `Mes Espaces`, `Mon Organisation`, `FinOps`, `Administration`, `Aide`).
-2. **Zone 2 — Barre Supérieure (`TopHeaderBar`, `#FFFFFF`, hauteur `56px`)** : **Logo cliquable `[O] ORCIA › <Écran>`** tout en haut à gauche ramenant à `/cockpit` + **Fil d'Ariane cliquable (`Breadcrumb`)** à gauche ; **Barre de Recherche Fédérée & Contextuelle (`🔍 Rechercher dans <Écran> ou partout (⌘K)...`, panneau flottant `680px × max 480px` à 3 portées et 7 familles d'éléments)**, **`🔔 Notifications`**, **`❓ Aide`** et **`👤 Mon Profil`** à droite.
-3. **Zone 3 — Espace Central Épuré (`1fr`, min `680px`, padding `24px`)** : Maximum 3 blocs sur le `Cockpit` ; gabarit unifié sur les écrans métiers (En-tête avec 1 phrase d'intention + 3–4 compteurs KPI masqués si `total == 0` + Filtres pilules + Liste ou État vide en 1 phrase + Création par Modale).
-4. **Zone 4 — Colonne Droite d'Aide Contextuelle Intégrée (`340px`, `#FFFFFF`, repliable via `❓` ou `]`)** : Ouverte automatiquement tant que `total == 0` (et repliée par défaut sur `< 1440px` dès que `total >= 1`), structurée en 4 blocs (*Ce qui est attendu ici*, *En N gestes*, *Un exemple réel*, *Ce qui coince souvent*).
+Desktop architecture relies on the **4-Zone Shell (`Direction C`)**:
+1. **Zone 1 — Left Sidebar (`240px` expanded / `72px` collapsed rail via `[`)**: Single `Active Space` selector (`Personal` + `Team / Division`), 9 unnumbered navigation items (`Cockpit`, `My Assistant`, `My Processes`, `My Agents`, `My Spaces`, `My Organization`, `FinOps`, `Administration`, `Help`), and bottom-left `My Account` footer (`SidebarAccountPopover` -> `UserSettingsModalDialog`).
+2. **Zone 2 — Top Header Bar (`56px`, `#FFFFFF`)**: Left `[O] ORCIA › <Screen>` + clickable Breadcrumb; Right `⌘K` Federated Search, `Notifications`, and `Help` toggle.
+3. **Zone 3 — Central Canvas (`1fr`, min `680px`, padding `24px`)**: Unified `<OrciaPageHeader />`, `<OrciaTabStrip />`, and `<OrciaDataCard />` layout with modal-based creation flows.
+4. **Zone 4 — Right Contextual Help Column (`340px`, `#FFFFFF`, toggleable via `Help` or `]`)**: Auto-open on empty states, 4 canonical blocks rendered above the fold followed by route-matched targeted sections.
 
-Sur **Mobile Companion (`< 768px`)**, la grille cède la place à une vue mono-colonne pilotée par une barre d'onglets inférieure à 3 entrées (`🧭 Cockpit`, `💬 Mon Assistant / Arbitrage`, `☍ Décisions`).
+On **Mobile Companion (`< 768px`)**, the grid collapses to a single-column layout driven by a 3-item bottom tab bar (`Cockpit`, `My Assistant / Arbitration`, `Decisions`).
 
 ## Elevation & Depth
 
-- Pas d'ombres portées lourdes sur la structure : la séparation entre la Sidebar (`#FFFFFF`), la `TopHeaderBar` (`#FFFFFF`), l'Espace Central (`#F8FAFC`/`#EAF2FB`) et la Colonne d'Aide Contextuelle (`#FFFFFF`) repose sur le contraste de surface et des bordures fines de `1px solid #E2E8F0` (`#1E293B` en mode sombre).
-- Les cartes interactives (**Briefing de Revue**, cartes de **Sources**, de **Livrables** et de **Validation par Découpage**) utilisent une élévation subtile `0 1px 3px rgba(15, 23, 42, 0.04)`.
+- Structural separation between Sidebar, TopHeaderBar, Central Canvas, and Zone 4 Help relies on crisp surface contrast and `1px solid` borders (`#E2E8F0` light / `#1E293B` dark).
+- Interactive cards use subtle elevation (`0 1px 3px rgba(15, 23, 42, 0.04)`).
 
 ## Shapes
 
-- Rayons nets et professionnels : `rounded-sm` (`6px`) pour les pastilles de citation (`[S1]`, `[G1]`, `[O1]`), les badges d'origine (`Socle`, `Équipe`, `Pack`) et les badges d'URI ; `rounded-md` (`10px`) et `rounded-lg` (`14px`) pour les cartes d'**Ancrage Humain Obligatoire**, d'**Arbitrage Humain** et de **Découpage** ; `rounded-full` réservé aux pilules de filtre et aux verrous de présence temps réel.
+- `rounded-sm` (`6px`): citation pills (`[S1]`, `[G1]`, `[O1]`), origin badges, and URI badges.
+- `rounded-md` (`10px`) & `rounded-lg` (`14px`): `HumanLedAnchorCard`, `ArbitrationTieBreakCard`, `ChunkValidationCard`, and modal dialogs.
+- `rounded-full`: filter pills (`.orcia-ds-filter-pill`) and real-time claim/status pills.
 
-## Components
+## Key Identity Components (`@orcia/ui`)
 
-Au-delà des primitives héritées de `shadcn/ui` (`Button`, `Card`, `Badge`, `Tabs`, `Sheet`, `Command`, `Dialog`, `Toast`, `Tooltip`), ORCIA définit **19 composants identitaires** dans `@orcia/ui` :
-
-1. **Active Workspace Selector + Sidebar Navigation (`sidebar-nav-item`)** : Sélecteur unique d'`Espace actif` groupé (`Personnel` + `Équipe / BU`) câblé sur tous les écrans et 9 entrées fixes non numérotées avec mode Rail (`72px`, raccourci `[`).
-2. **Human-Led Anchor Card (`human-led-anchor-card`)** : Conteneur à bordure gauche violette (`4px solid #6D28D9`) avec en-tête explicite `✍️ ANCRAGE HUMAIN OBLIGATOIRE (human_authored_required: true)` et mention de l'auteur humain. Aucun bouton "Générer avec l'IA" n'est autorisé dans ce composant.
-3. **Cognitive Review Briefing (`review-briefing-grid`)** : Grille $2 \times 2$ en tête de tout **Artefact** volumineux dans la Vue Fokus de Revue (`Mes Processus › Exécutions & Décisions`) présentant : *1. Résumé Exécutif*, *2. Éléments Clés & Contrôle Transverse*, *3. Décisions Prises*, et *4. Hypothèses Retenues*.
-4. **Chunked Validation Card (`chunk-validation-card`)** : Carte représentant une section du **Gabarit d'Artefact** (ou une **Action Externe Staged** avec son chemin cible et son `diff`) avec 3 actions directes : *Valider la section*, *Co-éditer*, ou *Challenger / Rewind amont*.
-5. **Arbitration Tie-Break Matrix (`arbitration-tiebreak-card`)** : Carte ambre affichée sur la Carte Prioritaire du `Cockpit` et dans `Mes Processus › Exécutions & Décisions` lorsque l'exécution rencontre des options équivalentes.
-6. **Federated URI & Access Mode Badge (`uri-badge`)** : Composant monospace affichant l'URI ou l'alias (`orcia://workspaces/<ws>/artifacts/<type>/<slug>@v<N>`), le rôle (`RÉFÉRENCE` vs `ACTIF`), le mode d'accès (`Lecture seule` vs `Lecture & Écriture`) et l'empreinte `SHA-256` tronquée.
-7. **Presence & Claim Pill (`presence-claim-pill`)** : Indicateur temps réel (`AD-4`) affichant soit `Prendre en charge & Ouvrir la revue →`, soit l'état verrouillé `🔒 En cours : [Prénom]`.
-8. **Autonomous Execution Badge & Kill-Switch Bar (`autonomous-execution-badge`, `UX-DR17`)** : Badge distinctif en **Cyan/Cobalt (`#0284C7` / fond `#F0F9FF`)** — *sans jamais utiliser le Violet `#6D28D9`* — accompagné des sorties de secours `🛑 Kill-Switch` et `⏪ Invalider & Rollback`.
-9. **Declarative Permission Guard (`permission-guard`, `AD-21`)** : Enveloppe déclarative `@orcia/ui` (`verb: "create" | "read" | "update" | "delete" | "execute" | "grant"`, `fallbackMode: "passive-lock" | "disabled" | "hidden"`). Affiche `🔒 Non habilité` et le bouton *Demander l'accès* sans exposer la configuration secrète.
-10. **Write-Only Secret Field (`secret-field`, `AD-21`)** : Champ de saisie de secret adossé à `SecretInput` (`keep | set | clear`) et `SecretStatus` (`configured`, `fingerprint: "sha256:8-hex"`), sans jamais pré-remplir de masque `••••••••`.
-11. **Contextual Help Panel (`contextual-help-panel`)** : Colonne latérale droite (`340px`, ouverte automatiquement tant que `total == 0`, repliable via `❓`) structurée en 4 sections : *Ce qui est attendu ici*, *`EN N GESTES`*, *`UN EXEMPLE RÉEL`*, *`CE QUI COINCE SOUVENT`*.
-12. **Scope Selector Bar & Inheritance Badge (`scope-selector-bar`)** : Barre de portée explicite en en-tête de `Administration` et `FinOps` (`📦 Cet Espace` | `👥 Cette Équipe / BU` | `🌐 Socle Plateforme`) accompagnée des badges d'héritage `Socle` et `Équipe` (`lecture seule` / `🔒 Gelé`).
-13. **Inline Deterministic Citation Pill & Source Preview Popover (`inline-citation-pill`, `Principe K.5`)** : Pastille interactive temps réel (`[S1 · Fichier:L120 · RÉFÉRENCE]`, `[G1 · Glossaire]`, `[O1 · Outil]`, ou `[S1 · 🔒 Source restreinte — Demander l'accès]` si le lecteur n'a pas `READ_SOURCE`) ouvrant au survol/clic l'extrait exact surligné et son statut de fraîcheur.
-14. **Thematic Assistant Folder & Collaborative Share Modal (`assistant-folder-card`, `Principe K.6`)** : Carte de `📁 Dossier` dans `Mon Assistant` regroupant discussions, notes épinglées et brouillons avec sélecteur de visibilité (`🔒 Privé`, `👥 Collègues choisis` en lecture ou co-contribution sous `Passthrough` `AD-6`, `📦 Tout l'Espace`) et bouton `☍ Lancer un Processus à partir de ce dossier`.
-15. **Glossary Candidate Card & What-If Impact Banner (`glossary-candidate-card`, `Principe L`)** : Carte de proposition dans `Mes Espaces › Glossaire › ✨ À valider (N)` affichant l'extrait source d'origine, le compteur d'occurrences, l'encadré de prévisualisation `ImpactSimulatorService` (`AD-7`) et les actions `✓ Accepter`, `✏️ Ajuster`, `✕ Écarter` et `↑ Proposer à l'équipe / BU`.
-16. **Workflow Studio Top Governance Bar & Layers Inspector (`workflow-top-governance-bar`, `layers-inspector-popover`, `AD-21`)** : Barre d'outils supérieure du Studio (`Pré-prompt`, `Contrat`, `⚡ Déclencheurs`, `▷ Tester`, `Publier`) et inspecteur **`COUCHES · N`** (y compris sur les 5 nœuds de `Mon Assistant` entre les bornes `🔒 AssistantHarness` `AD-15`).
-17. **Federated Contextual Search Popover (`top-header-search-command`, `Principe A.2`)** : Palette de recherche fédérée et d'accès rapide à 2 vitesses (`⌘K` / `Ctrl+K`, `680px × max 480px`) ancrée dans la `TopHeaderBar`, avec 3 pilules de portée (`📍 Cet écran` | `📦 Cet Espace` | `🌐 Tous mes Espaces`), recherche lexicale `< 30 ms` (`0 $`) verrouillée en tête et enrichissement sémantique `pgvector` à `450 ms` inséré en dessous sans saut visuel (*Zero Layout Shift*), pilules sur les 7 familles d'éléments et action de secours `💬 Poser la question à Mon Assistant →`.
-18. **User Account Dropdown & Personal Settings Modal (`user-account-dropdown`, `user-settings-modal`, `Principe A.3`)** : Menu déroulant rapide (`280px`) au clic sur le login de la `TopHeaderBar` (identité, bascules 1-clic `🌓 Clair/Sombre` et `🌐 FR/EN` persistées en `0 ms` dans `localStorage` + sync API, bouton `🚪 Se déconnecter`) et modale dédiée **`⚙️ Paramètres de mon compte` (`720px`, 4 onglets sans doublon avec `Mon Assistant` : `🎨 Préférences & Affichage` avec lien croisé vers `⚙ Réglages de l'assistant`, `👤 Profil & Sécurité`, `🔗 Accès aux sources Passthrough`, `💻 Clés IDE & MCP`)** qui s'ouvre en fermant automatiquement le menu déroulant.
-19. **Remote Service / Agent Test & Discovery Bench (`remote-service-test-bench`, `Principe M`)** : Banc de diagnostic isolé (`timeout 5 s`, `1 Mo` max, tracé `ADMIN_CONNECTION_TEST`) en 4 étapes intégré aux modales de déclaration des Serveurs MCP, Connecteurs et Agents distants (`1. Réseau/TLS/Anti-SSRF`, `2. Auth <SecretField /> ou état 🟠 En attente de jeton utilisateur Passthrough non bloquant`, `3. Découverte tools/list ou Agent Card avec écriture forcée en Action Staged`, `4. 💬 Essai rapide à chaud Dry-Run avec détection de la télémétrie FinOps _meta.usage`).
+1. **Sidebar Navigation & Single Space Selector (`GlobalSidebar`, `UnifiedScopeSelector`, `SidebarAccountPopover`)**: Single grouped workspace selector, 9 unnumbered entries with 72px rail mode, and bottom-left `My Account` trigger opening the 5-tab `UserSettingsModalDialog`.
+2. **Human-Led Anchor Card (`HumanLedAnchorCard`)**: `4px solid #6D28D9` left border with `human_authored_required: true` header; AI auto-fill is strictly forbidden inside this component.
+3. **Cognitive Review Briefing (`ReviewBriefingGrid`)**: 2x2 grid in `My Processes › Runs & Decisions` (*1. Executive Summary*, *2. Key Elements & Cross-Check*, *3. Decisions Made*, *4. Retained Assumptions*).
+4. **Chunked Validation Card (`ChunkValidationCard`)**: Section-level validation, co-editing, and upstream challenge/rewind actions.
+5. **Arbitration Tie-Break Matrix (`ArbitrationTieBreakCard`)**: Amber decision card for equal-rank trade-offs.
+6. **Federated URI & Access Mode Badge (`UriBadge`)**: Monospace URI, role (`REFERENCE` vs `ACTIVE`), access mode, and truncated `SHA-256`.
+7. **Presence & Claim Pill (`PresenceClaimPill`)**: Real-time lock indicator (`Claim & Open Review` vs `In progress: [Name]`).
+8. **Autonomous Execution Badge & Kill-Switch (`AutonomousExecutionBadge`)**: Cyan/Cobalt styling (never Violet) with emergency stop and 1-click rollback.
+9. **Declarative Permission Guard (`PermissionGuard`)**: Enforces `create | read | update | delete | execute | grant` visibility (`passive-lock | disabled | hidden`).
+10. **Write-Only Secret Field (`SecretField`)**: Backed by `SecretInput` (`keep | set | clear`) and `SecretStatus` fingerprint without pre-filling masks.
+11. **Contextual Help Panel (`ContextualHelpColumnView`)**: Right 340px column rendering the 4 DESIGN.md blocks (`What this screen is for`, `IN N STEPS`, `A REAL EXAMPLE`, `COMMON PITFALLS`) above the fold, followed by route-targeted sections and Ask-Assistant prefill CTA.
+12. **Canonical Two-Tier Page Header (`<OrciaPageHeader />`)**: White `.orcia-bento-card` surface with monochrome `<OrciaIcon />`, single semantic `<h1>`, optional `contextBadge`, 1-line `subtitle`, `secondaryActions`, at most **1** solid Cobalt `primaryAction`, Tier 2 `<OrciaTabStrip />` + `scopeBar`, and aligned `alertSlot` directly beneath `<header>`.
 
 ## Do's and Don'ts
 
-| Do                                                                                                                                                                                                                                       | Don't                                                                                                                                                                                              |
-| :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Conserver les **9 entrées fixes non numérotées** visibles dans la Sidebar gauche (`Cockpit`, `Mon Assistant`, `Mes Processus`, `Mes Agents`, `Mes Espaces`, `Mon Organisation`, `FinOps`, `Administration`, `Aide`) et utiliser exclusivement le terme **`Espace`** | Numéroter les entrées du menu, utiliser le terme « Produit » dans la navigation, conserver un doublon `[O] ORCIA` dans la Sidebar ou cacher le menu derrière des commandes chat |
-| Masquer automatiquement les compteurs KPI `0 / 0 / 0` et les pilules de filtre tant qu'un écran est vide (`total == 0`) et ouvrir par défaut la Colonne d'Aide `❓` à droite                                                              | Afficher une rangée de compteurs `0 / 0 / 0 / 0` sur un espace neuf ou empiler un formulaire de création en plein écran au lieu d'une **Modale**                                                   |
-| Utiliser le violet `{colors.human-led}` (`#6D28D9`) exclusivement pour les **Ancrages Humains Obligatoires** (`human_authored_required: true`)                                                                                           | Pré-remplir par IA un champ marqué `human_authored_required: true` ou utiliser le violet sur un badge d'exécution autonome                                                                         |
-| Ouvrir les revues de livrables (Briefing 4 blocs, découpage, Actions Staged) dans la **Vue Fokus de Revue (`Mes Processus › Exécutions & Décisions › Run #ID`)** sous verrou Redis (`AD-4`)                                              | Empiler un document de 30 pages directement à l'intérieur des 3 blocs du `Cockpit`                                                                                                                 |
-| Résoudre chaque citation `[S1]`/`[G1]`/`[O1]` via la `citation_map` SSE et masquer l'extrait (`🔒 Source restreinte`) si le lecteur d'un `📁 Dossier` partagé n'a pas le droit `READ_SOURCE`                                               | Demander au LLM de recopier des URL brutes ou exposer un `snippet` d'une source restreinte à un co-lecteur non habilité                                                                            |
-| Utiliser exclusivement `<SecretField />` (`SecretInput: keep \| set \| clear` + `SecretStatus` fingerprint) pour tout secret ou jeton `Passthrough`                                                                                      | Renvoyer un secret masqué `••••••••` dans un `input` contrôlé qui risquerait d'écraser le secret réel en base                                                                                      |
-| Sélectionner un **Palier de modèle abstrait (`Rapide`, `Équilibré`, `Approfondi`)** dans le Studio et un mode de vitesse (`⚡ Standard` / `🧠 Approfondi`) dans `Mon Assistant`                                                            | Coder en dur des noms commerciaux de modèles LLM (`gpt-4o`, `claude-3-7-sonnet`) dans les nœuds d'un processus                                                                                     |
-| Dans **`📊 FinOps`** (`AD-12`), distinguer le **Coût interne vérifié** du **Coût externe déclaré MCP** (borné par `RemoteUsageSanitizer`) et séparer les compteurs de **Tokens LLM** et d'**Appels / Unités MCP**                         | Additionner artificiellement des unités métiers externes (`pages OCR`, `crédits API`) avec des `tokens LLM` ou laisser un `_meta.usage` externe non borné bloquer les modèles internes de l'Espace |
+| Do | Don't |
+| :--- | :--- |
+| Keep the **9 unnumbered navigation entries** visible in the left Sidebar and place `My Account` (`SidebarAccountPopover`) in the bottom-left Sidebar footer | Number menu entries, duplicate `[O] ORCIA` in the Sidebar, or place user account menus inside `TopHeaderBar` |
+| Render monochrome `<OrciaIcon />` SVGs across headers, tabs, cards, buttons, badges, and scope selectors | Leave raw Unicode emojis (`🤖`, `🛠️`, `🔌`, `🔒`, `📁`, `📦`, `⚠️`, `✅`) in production UI copy or headers |
+| Render all 4 Zone 4 Contextual Help blocks above the fold (`<HelpCoreNarrativeBlocks />` before `<HelpTargetedSectionsList />`) | Push `What this screen is for` and `IN N STEPS` below targeted sections or route `/organization` to `/settings` help |
+| Use Violet `{colors.human-led}` (`#6D28D9`) exclusively for `HumanLedAnchorCard` (`human_authored_required: true`) | Auto-fill human anchor fields with AI or use Violet on autonomous execution badges |
+| Display human-readable model settings (`Team default · Precise · 4k context`) and proper singular/plural counters | Expose raw `Temp 0.2 · 4096 tok`, `team_default`, or `(Skills)` jargon inside French UI strings |
 
 ## Canonical Page Framing & Visual Grammar (`UH-06`, `UH-07`, Story 29.4)
 

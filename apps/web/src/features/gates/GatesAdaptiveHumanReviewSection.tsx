@@ -5,6 +5,7 @@ import {
 } from "@orcia/ui";
 import React from "react";
 import { formatI18nTemplate, useI18n } from "../../i18n";
+import type { AlertFeedbackInput } from "../shared/alertFeedback";
 import { GatesAdaptiveReviewHeaderCard } from "./GatesAdaptiveReviewHeaderCard";
 import { GatesChallengeModalSection } from "./GatesChallengeModalSection";
 import { useGatesAdaptiveHumanReview } from "./useGatesAdaptiveHumanReview";
@@ -12,7 +13,7 @@ import { useGatesAdaptiveHumanReview } from "./useGatesAdaptiveHumanReview";
 export interface GatesAdaptiveHumanReviewSectionProps {
   activeWorkspaceId?: string;
   isFr: boolean;
-  onFeedback: (message: string | null) => void;
+  onFeedback: (message: AlertFeedbackInput) => void;
 }
 
 export function GatesAdaptiveHumanReviewSection({

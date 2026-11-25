@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildWorkspaceSwitcherOptions } from "../components/shellScopeOptions";
 
 describe("TopHeader Workspace Switcher explicit Team vs Workspace distinction", () => {
-  it("explicitly distinguishes an Espace (📦 Espace · RTS) from an Équipe (👥 Équipe · MonCompte) and a Direction (🏢 Direction (BU) · 123)", () => {
+  it("explicitly distinguishes an Espace (Espace · RTS) from an Équipe (Équipe · MonCompte) and a Direction (Direction (BU) · 123)", () => {
     const optionsFr = buildWorkspaceSwitcherOptions({
       isFr: true,
       orgUnits: [
@@ -55,29 +55,29 @@ describe("TopHeader Workspace Switcher explicit Team vs Workspace distinction", 
     const rtsWorkspaceOpt = optionsFr.find((o) => o.id === "ws-1");
     expect(rtsWorkspaceOpt).toEqual({
       id: "ws-1",
-      label: "📦 Espace · RTS",
-      groupLabel: "📦 Espace · 👥 Mes Équipes & Espaces",
+      label: "Espace · RTS",
+      groupLabel: "Espace · Mes Équipes & Espaces",
     });
 
     const teamOpt = optionsFr.find((o) => o.id === "org-2");
     expect(teamOpt).toEqual({
       id: "org-2",
-      label: "👥 Équipe · MonCompte",
-      groupLabel: "👥 Mes Équipes & Espaces · Équipe",
+      label: "Équipe · MonCompte",
+      groupLabel: "Mes Équipes & Espaces · Équipe",
     });
 
     const privateWsOpt = optionsFr.find((o) => o.id === "ws-2");
     expect(privateWsOpt).toEqual({
       id: "ws-2",
-      label: "🔒 Espace · Labo Perso · MonCompte",
-      groupLabel: "🔒 Mes Espaces Privés",
+      label: "Espace privé · Labo Perso · MonCompte",
+      groupLabel: "Mes Espaces Privés",
     });
 
     const buOpt = optionsFr.find((o) => o.id === "org-1");
     expect(buOpt).toEqual({
       id: "org-1",
-      label: "🏢 Direction (BU) · 123",
-      groupLabel: "🏢 Supervision Organisation",
+      label: "Direction (BU) · 123",
+      groupLabel: "Supervision Organisation",
     });
   });
 
@@ -111,13 +111,13 @@ describe("TopHeader Workspace Switcher explicit Team vs Workspace distinction", 
     expect(optionsEn).toEqual([
       {
         id: "org-team-1",
-        label: "👥 Team · Core AI Team",
-        groupLabel: "👥 My Teams & Spaces · Team",
+        label: "Team · Core AI Team",
+        groupLabel: "My Teams & Spaces · Team",
       },
       {
         id: "ws-1",
-        label: "📦 Workspace · RTS · Core AI Team",
-        groupLabel: "📦 Workspace · 👥 My Teams & Spaces",
+        label: "Workspace · RTS · Core AI Team",
+        groupLabel: "Workspace · My Teams & Spaces",
       },
     ]);
   });

@@ -1,4 +1,4 @@
-import { OrciaIcon, type UiOntologyConceptView, type UiOntologyLevel } from "@orcia/ui";
+import { OrciaIcon, type OrciaIconName, type UiOntologyConceptView, type UiOntologyLevel } from "@orcia/ui";
 import React from "react";
 import type { ConfiguredOrgUnit } from "../../components/platformSetupStore";
 import type { WritableScopeOptionItem } from "../../components/ontologyApiBridge";
@@ -38,6 +38,7 @@ export function resolveGlossaryScopeId(params: {
 
 export interface GlossaryCascadeTierView {
   readonly tierId: string;
+  readonly iconName?: OrciaIconName;
   readonly badge: string;
   readonly subtitle: string;
   readonly items: readonly UiOntologyConceptView[];
@@ -78,7 +79,10 @@ export function WorkspaceGlossaryCascadeGrid({
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <strong style={{ fontSize: "12px" }}>{tier.badge}</strong>
+            <strong style={{ fontSize: "12px", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+              {tier.iconName ? <OrciaIcon name={tier.iconName} size={13} /> : null}
+              <span>{tier.badge}</span>
+            </strong>
             <span style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
               {tier.items.length}
             </span>

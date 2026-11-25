@@ -7,7 +7,7 @@ import type {
   UiManagedAgentItem,
   UiManagedSkillItem,
 } from "./AgentsAndSkillsTypes";
-import { OrciaIcon, getOrciaIconGlyph } from "./icons";
+import { OrciaIcon } from "./icons";
 
 export interface AgentIdentityAndSkillsFieldsProps {
   readonly agent: UiManagedAgentItem;
@@ -86,12 +86,8 @@ export function AgentIdentityAndSkillsFields({
               }
               className="orcia-ds-select"
             >
-              <option value="TEAM">
-                {getOrciaIconGlyph("team")} {studio.visibilityTeamShort}
-              </option>
-              <option value="PRIVATE">
-                {getOrciaIconGlyph("lock")} {studio.visibilityPrivateShort}
-              </option>
+              <option value="TEAM">{studio.visibilityTeamShort}</option>
+              <option value="PRIVATE">{studio.visibilityPrivateShort}</option>
             </select>
           </label>
         )}

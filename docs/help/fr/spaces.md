@@ -16,16 +16,16 @@ Un Espace de travail est le lieu concret où une équipe collabore sur un produi
 
 ## En 3 gestes
 
-1. Filtrez la vue entre « Tous », « Espaces d'Équipe » et « Mes Espaces Privés », ou créez un nouvel Espace rattaché à une Équipe existante.
-2. Ouvrez un Espace pour ajuster son niveau de confidentialité (Standard, Confidentiel isolé ou Privé) et sa phase de cycle de vie.
-3. Accédez aux onglets « Sources » pour connecter vos documents, ou cliquez sur « Glossaire métier » pour consulter et enrichir les définitions de l'Espace.
+1. Sélectionnez votre Espace actif dans la colonne de gauche (Personnel ou Équipe / Direction), ou cliquez sur « + Nouvel espace » pour créer un Espace rattaché à une Équipe existante.
+2. Parcourez les 5 onglets de l'Espace (« Accostage », « Documents & Sources », « Livrables & Artefacts », « Glossaire » et « Membres & Paramètres de l'espace »).
+3. Dans « Membres & Paramètres de l'espace », ajustez la visibilité d'un espace collectif (Standard ou Confidentiel isolé) ; un Espace personnel reste privé par construction.
 
 ## Un exemple réel
 
-L'équipe Sinistres crée un Espace « Audit Partenaire Q4 » rattaché à la Direction Opérations, le place en mode Confidentiel isolé afin qu'aucune personne extérieure n'y accède, puis y connecte le dossier de suivi dédié.
+L'équipe Sinistres crée un Espace « Audit Partenaire Q4 » rattaché à la Direction Opérations, ouvre l'onglet « Membres & Paramètres de l'espace » pour le placer en mode Confidentiel isolé afin qu'aucune personne extérieure n'y accède, puis y connecte le dossier de suivi dédié.
 
 ## Ce qui coince souvent
 
 - **Quelle est la différence entre une unité d'organisation et un Espace de travail ?** L'unité d'organisation (Direction, Équipe) définit *qui* travaille et porte la facturation, alors que l'Espace de travail définit *sur quoi* vous travaillez.
-- **Impossible de créer un Espace collectif** : assurez-vous qu'au moins une Équipe a été créée au préalable dans Configuration › Mon Organisation.
-- **Un document n'apparaît pas dans Mon Assistant** : ouvrez l'onglet Sources de l'Espace et vérifiez que la source est synchronisée et rattachée au bon Espace actif.
+- **Impossible de créer un Espace collectif** : assurez-vous qu'au moins une Équipe a été créée au préalable dans Mon Organisation.
+- **Un document n'apparaît pas dans Mon Assistant** : ouvrez l'onglet « Documents & Sources » de l'Espace et vérifiez que la source est synchronisée et rattachée au bon Espace actif.

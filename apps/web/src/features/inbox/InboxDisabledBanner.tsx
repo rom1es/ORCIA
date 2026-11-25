@@ -1,3 +1,4 @@
+import { OrciaIcon } from "@orcia/ui";
 import React from "react";
 import type { TranslationDictionary } from "../../i18n/types";
 import { AssistantNoEmbeddingBanner } from "./AssistantNoEmbeddingBanner";
@@ -38,7 +39,8 @@ export function InboxDisabledBanner({
         className="flex flex-1 flex-col gap-1 rounded-lg border border-status-warning/40 bg-status-warning/10 p-3 text-xs text-text-primary"
       >
         <div className="flex items-center gap-2 font-semibold text-status-warning">
-          <span>⚠️ {noChatLabels.bannerTitle}</span>
+          <OrciaIcon name="warning" size={14} />
+          <span>{noChatLabels.bannerTitle}</span>
         </div>
         <p className="text-text-secondary">{noChatLabels.bannerDescription}</p>
         <div>

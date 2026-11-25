@@ -10,16 +10,16 @@ export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection
     tabGlossaryRules: "Glossary & Business Rules",
     tabMembersTeam: "Members & Team",
     defaultDestinationTitle: "Default save location for deliverables:",
-    roleReferenceBadge: "📚 REFERENCE (Official document)",
-    roleActiveBadge: "✏️ WORK IN PROGRESS",
-    modeReadOnlyBadge: "👁️ Read-only",
-    modeReadWriteBadge: "✍️ Publishing allowed",
+    roleReferenceBadge: "REFERENCE (Official document)",
+    roleActiveBadge: "WORK IN PROGRESS",
+    modeReadOnlyBadge: "Read-only",
+    modeReadWriteBadge: "Publishing allowed",
     waiverSectionTitle: "Local Adaptations and Exceptions",
     inviolableEnterpriseLockNotice:
-      "🔒 Organization-wide rules apply to all workspaces and cannot be bypassed locally.",
+      "Organization-wide rules apply to all workspaces and cannot be bypassed locally.",
     externalRebaseTitle: "Syncing Direct Edits Made to Your Documents",
     humanAmendedBadge:
-      "✍️ Edited directly by a team member — Protected against automatic overwrite",
+      "Edited directly by a team member — Protected against automatic overwrite",
     supersededMemlogNotice:
       "Previous drafts have been archived in favor of the latest validated edit.",
     registerWaiverCta: "+ Request a local adaptation for this space",
@@ -40,17 +40,17 @@ export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection
       "Team invitations and workspace access permissions are managed from My Organization and workspace settings.",
   },
   dnaStarlarkGlossary: {
-    heading: "🧬 Automated Business Rules & Glossary Terms to Review",
-    generateStarlarkCta: "⚙ Generate automated check",
-    signAndActivateCta: "✍️ Confirm and activate rule",
+    heading: "Automated Business Rules & Glossary Terms to Review",
+    generateStarlarkCta: "Generate automated check",
+    signAndActivateCta: "Confirm and activate rule",
     runtimeZeroTokenBadge:
-      "⚡ Instant verification without calling an AI model",
+      "Instant verification without calling an AI model",
     queueSectionTitle:
-      "✨ Suggested new terms and rules (up to 15 pending)",
+      "Suggested new terms and rules (up to 15 pending)",
     inFlowBriefingTitle: "Quick Glossary Addition During Review",
     promoteInFlowCheckboxLabel: "Add to the official Space glossary",
-    promoteSelectedCta: "✓ Approve selected",
-    rejectCandidateCta: "✕ Dismiss",
+    promoteSelectedCta: "Approve selected",
+    rejectCandidateCta: "Dismiss",
     emptyCompiledControlText:
       "No automated check compiled for this Space yet. Add a business rule to automatically generate and verify this check.",
   },
@@ -60,7 +60,7 @@ export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection
     testingInProgressCta: "Checking connection…",
     testingInProgressNotice:
       "Checking remote service connectivity and recording audit trace…",
-    activateConnectorCta: "✓ Enable this service in the Space",
+    activateConnectorCta: "Enable this service in the Space",
     activateDisabledReason:
       "Complete the 4 test bench verification steps to enable this connector.",
     testWithPersonalTokenCta: "Test with my personal account",
@@ -90,7 +90,7 @@ export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection
     },
   },
   packBuilderStudio: {
-    studioTitle: "🏗️ Business Pack Creation and Evolution",
+    studioTitle: "Business Pack Creation and Evolution",
     agentsSectionTitle: "Pack Design Assistants",
     humanAnchorSectionTitle:
       "Step 1 — Define Business Pack Goals (Personal Authoring)",
@@ -99,18 +99,18 @@ export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection
     process1CreatePackButtonLabel: "1. Create Business Pack",
     process2WhatIfTitle: "2. New Version Impact Preview",
     runLocksPreservedBadgeLabel:
-      "🔒 In-progress executions keep their current version without interruption",
+      "In-progress executions keep their current version without interruption",
     process3CertifyTitle: "3. Compliance and Security Verification",
-    certifiedBadgeLabel: "✅ VERIFIED AND READY TO PUBLISH",
+    certifiedBadgeLabel: "VERIFIED AND READY TO PUBLISH",
     process4PromoteButtonLabel:
       "4. Turn this Space's settings into a reusable Pack",
     durationMsUnit: "ms",
   },
   helpArticleGenerator: {
-    heading: "❓ Authoring and Updating Contextual Help Articles",
+    heading: "Authoring and Updating Contextual Help Articles",
     triggerRegimeLabel: "Publishing mode:",
-    stagedRegimeBadge: "👤 Review before publishing",
-    autonomousRegimeBadge: "⚡ Publish directly after checks",
+    stagedRegimeBadge: "Review before publishing",
+    autonomousRegimeBadge: "Publish directly after checks",
     validationChecksHeading: "Automated quality checks",
     checkBoundRoutesLabel: "Valid target screens and section anchors",
     checkUiComponentsSectionsLabel: "Complete structure with 3 clear sections",
@@ -119,8 +119,8 @@ export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection
     passedBadge: "PASSED",
     failedBadge: "NEEDS FIX",
     hotAttachmentHeading: "Immediate Publishing to Contextual Help",
-    authorityReferenceBadge: "📚 Official reference guide",
-    generateAndAttachCta: "⚡ Generate, verify, and publish help guide",
+    authorityReferenceBadge: "Official reference guide",
+    generateAndAttachCta: "Generate, verify, and publish help guide",
     durationMsUnit: "ms",
   },
   agentsAndSkillsManager: {
@@ -148,10 +148,10 @@ export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection
       "Specify the posture, analysis steps, and expected quality criteria...",
     agentThinkingLevelLabel: "Default thinking depth",
     thinkingLevels: {
-      simple: "⚡ Fast (Direct tasks)",
-      medium: "⚖️ Balanced (Standard analysis)",
-      complex: "🧠 Deep (Complex trade-offs)",
-      auto: "✨ Automatic (Adaptive)",
+      simple: "Fast (Direct tasks)",
+      medium: "Balanced (Standard analysis)",
+      complex: "Deep (Complex trade-offs)",
+      auto: "Automatic (Adaptive)",
     },
     attachedSkillsLabel: "Attached Skills",
     noSkillsAvailableHint:
@@ -159,12 +159,12 @@ export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection
     createAgentButtonLabel: "+ Save Agent",
     testAgentInputPlaceholder:
       "Enter a concrete request to assign to this agent...",
-    runAgentButtonLabel: "▶ Run Agent",
+    runAgentButtonLabel: "Run Agent",
     deleteAgentButtonLabel: "Delete",
     mobilizedSkillsLabel: "Mobilized skills",
     createSkillSectionTitle: "Create a reusable Skill",
     skillUsageBanner:
-      "💡 A Skill is a modular business capability. Once saved, you can attach it in 1 click to one or more Agents, or invoke it directly in My Assistant and your Processes.",
+      "A Skill is a modular business capability. Once saved, you can attach it in 1 click to one or more Agents, or invoke it directly in My Assistant and your Processes.",
     skillNameLabel: "Skill name",
     skillNamePlaceholder: "e.g., Supplier compliance summary",
     skillObjectiveLabel: "Business goal (When to use this skill?)",
@@ -180,7 +180,7 @@ export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection
       "e.g., Risk summary table + Go / No-Go recommendation",
     createSkillButtonLabel: "+ Save Skill",
     testSkillInputPlaceholder: "Enter a sample input to test this skill...",
-    runSkillButtonLabel: "▶ Test Skill",
+    runSkillButtonLabel: "Test Skill",
     deleteSkillButtonLabel: "Delete",
     studio: AGENT_GOVERNANCE_STUDIO_LABELS_EN,
   },

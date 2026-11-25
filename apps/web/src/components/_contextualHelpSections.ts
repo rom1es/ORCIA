@@ -30,10 +30,10 @@ export function normalizeCanonicalHelpRoute(pathname: string | undefined): strin
   if (clean.startsWith("/activity")) return "/activity";
   if (clean.startsWith("/ontology")) return "/ontology";
   if (clean.startsWith("/settings/packs")) return "/settings/packs";
+  if (clean.startsWith("/organization")) return "/organization";
   if (
     clean.startsWith("/settings") ||
     clean.startsWith("/configuration") ||
-    clean.startsWith("/organization") ||
     clean.startsWith("/bootstrap")
   ) {
     return "/settings";

@@ -55,7 +55,7 @@ export const CONFIGURATION_SECTIONS_FR: readonly UiContextualHelpSectionItem[] =
   {
     sectionId: "iam-org-tree",
     title: "Structure de l'organisation (Directions / BU & Équipes)",
-    body: "Organisez votre entreprise en Directions (BU) puis en Équipes. Les Espaces de travail projets/produits se gèrent quant à eux dans le menu 📦 Mes Espaces. Une unité d'organisation ne peut être supprimée que si elle ne contient aucune Équipe rattachée ni règle d'accès dépendante.",
+    body: "Organisez votre entreprise en Directions (BU) puis en Équipes. Les Espaces de travail projets/produits se gèrent quant à eux dans le menu Mes Espaces. Une unité d'organisation ne peut être supprimée que si elle ne contient aucune Équipe rattachée ni règle d'accès dépendante.",
     category: "steps",
   },
   {
@@ -85,7 +85,7 @@ export const CONFIGURATION_SECTIONS_FR: readonly UiContextualHelpSectionItem[] =
   {
     sectionId: "ai-models-overview",
     title: "Modèles IA : Fournisseur, URL d'API, Authentification & Test de connexion",
-    body: "Pour chaque niveau d'usage (Simple, Standard, Approfondi), renseignez : 1) le Fournisseur IA (ex. Anthropic, OpenAI, Mistral AI, Ollama local), 2) l'identifiant du modèle principal (et un modèle de secours optionnel), 3) l'URL de l'API, et 4) le mode d'authentification. Cliquez sur « 🔌 Tester la connexion au modèle » avant d'enregistrer pour vérifier immédiatement la réponse du serveur.",
+    body: "Pour chaque niveau d'usage (Simple, Standard, Approfondi), renseignez : 1) le Fournisseur IA (ex. Anthropic, OpenAI, Mistral AI, Ollama local), 2) l'identifiant du modèle principal (et un modèle de secours optionnel), 3) l'URL de l'API, et 4) le mode d'authentification. Cliquez sur « Tester la connexion au modèle » avant d'enregistrer pour vérifier immédiatement la réponse du serveur.",
     category: "steps",
   },
   {
@@ -223,6 +223,20 @@ export const SECTIONS_BY_ROUTE_FR: Readonly<Record<string, readonly UiContextual
       sectionId: "glossary-rules",
       title: "Glossaire métier et règles automatiques",
       body: "Définissez les termes clés de votre équipe et transformez vos règles métiers en vérifications automatiques exécutées à chaque étape.",
+      category: "terms",
+    },
+  ],
+  "/organization": [
+    {
+      sectionId: "org-hierarchy",
+      title: "Directions (BU), Équipes et rattachement budgétaire",
+      body: "Chaque Direction regroupe des Équipes autonomes qui portent leurs membres, leurs responsables et la facturation des appels IA. Les unités parentes ou sœurs en lecture seule restent protégées contre toute modification non autorisée.",
+      category: "steps",
+    },
+    {
+      sectionId: "org-delegation",
+      title: "Délégation locale et invitations scopées",
+      body: "Les responsables de Direction ou d'Équipe gèrent directement les membres et invitent des collaborateurs dans leur propre périmètre sans intervention d'un administrateur global.",
       category: "terms",
     },
   ],

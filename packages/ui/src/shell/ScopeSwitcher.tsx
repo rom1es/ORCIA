@@ -1,5 +1,5 @@
 import React from "react";
-import { getOrciaIconGlyph, ORCIA_SCOPE_LEVEL_ICON_NAMES } from "../components/icons";
+import { ORCIA_SCOPE_LEVEL_ICON_NAMES, OrciaIcon } from "../components/icons";
 import { StatusBadge } from "../primitives/StatusBadge";
 import type { UiScopeNode, UiShellLabels } from "./types";
 
@@ -46,10 +46,24 @@ export function ScopeSwitcher({
           fontFamily: "var(--font-sans)",
         }}
       >
-        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {activeScope
-            ? `${getOrciaIconGlyph(ORCIA_SCOPE_LEVEL_ICON_NAMES[activeScope.level])} ${activeScope.name}`
-            : labels.scopeSwitcherButtonLabel}
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {activeScope ? (
+            <>
+              <OrciaIcon name={ORCIA_SCOPE_LEVEL_ICON_NAMES[activeScope.level]} size={14} />
+              <span className="truncate">{activeScope.name}</span>
+            </>
+          ) : (
+            labels.scopeSwitcherButtonLabel
+          )}
         </span>
         <kbd
           style={{
@@ -150,8 +164,11 @@ export function ScopeSwitcher({
                       textAlign: "left",
                     }}
                   >
-                    <span>
-                      {getOrciaIconGlyph(ORCIA_SCOPE_LEVEL_ICON_NAMES[scope.level])} [{labels.scopeLevels[scope.level]}] {scope.name}
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                      <OrciaIcon name={ORCIA_SCOPE_LEVEL_ICON_NAMES[scope.level]} size={14} />
+                      <span>
+                        [{labels.scopeLevels[scope.level]}] {scope.name}
+                      </span>
                     </span>
                     <StatusBadge
                       label={labels.accessModes[scope.accessMode]}

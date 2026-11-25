@@ -201,12 +201,9 @@ export async function runRemoteLlmConnectionTestEvaluation(params: {
       activeLocale,
       "ERR_CLIENT_AI_PROVIDER_UNREACHABLE",
     );
-    const message = extracted.errorMessage.startsWith("❌")
-      ? extracted.errorMessage
-      : `❌ ${extracted.errorMessage}`;
     return {
       ok: false,
-      message,
+      message: extracted.errorMessage,
     };
   }
 }

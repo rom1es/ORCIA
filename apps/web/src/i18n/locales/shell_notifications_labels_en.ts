@@ -36,7 +36,7 @@ export const SHELL_NOTIFICATIONS_EN: ShellNotificationsDictionary = {
     badge: "Workspace required",
     title: "No Workspace created (My Processes menu locked)",
     description:
-      "Create your first Workspace (team or private attached to a billing Team) in 📦 My Spaces to attach document sources and launch processes.",
+      "Create your first Workspace (team or private attached to a billing Team) in My Spaces to attach document sources and launch processes.",
     cta: "Create Workspace →",
   },
   decisionWaiting: {

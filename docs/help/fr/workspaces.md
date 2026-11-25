@@ -30,4 +30,4 @@ Avant de lancer la rédaction d'une note d'architecture, Marc ouvre l'Espace « 
 
 - **Une source externe renvoie une erreur de connexion** : vérifiez l'adresse saisie et assurez-vous que vos identifiants personnels sont renseignés dans Mon Compte › Connexions aux outils.
 - **Les modifications d'un espace confidentiel sont invisibles ailleurs** : c'est le comportement attendu du cloisonnement pour protéger les données sensibles.
-- **Besoin de consulter le glossaire complet de l'organisation** : utilisez le raccourci « Glossaire » présent en haut de la vue Mes Espaces.
+- **Besoin de consulter le glossaire de l'Espace** : ouvrez directement l'onglet « Glossaire » dans Mes Espaces.

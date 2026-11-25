@@ -21,17 +21,17 @@ export const CLIENT_ERRORS_EN_LABELS: ClientErrorLabels = {
   ERR_CLIENT_SESSION_EXPIRED:
     "Your session has expired or needs to be renewed to continue the conversation.",
   ERR_CLIENT_AI_UNAVAILABLE:
-    "⚠️ Could not get a response from My Assistant ({detail}). Please check that your configured AI model is running.",
+    "Could not get a response from My Assistant ({detail}). Please check that your configured AI model is running.",
   ERR_CLIENT_AI_HUB_COMMUNICATION:
     "An error occurred while communicating with the AI models hub.",
   ERR_CLIENT_AI_MODEL_ID_REQUIRED:
-    "❌ Test failed: please enter the primary model identifier (e.g. llama3.2, mistral-large-latest).",
+    "Test failed: please enter the primary model identifier (e.g. llama3.2, mistral-large-latest).",
   ERR_CLIENT_AI_ENDPOINT_URL_INVALID:
-    "❌ Test failed: please enter a valid API URL starting with https:// or http://.",
+    "Test failed: please enter a valid API URL starting with https:// or http://.",
   ERR_CLIENT_AI_API_KEY_REQUIRED:
-    "❌ Test failed: please enter your API key or select local server or environment variable mode.",
+    "Test failed: please enter your API key or select local server or environment variable mode.",
   ERR_CLIENT_AI_PROVIDER_UNREACHABLE:
-    "❌ Test failed: unable to contact the AI provider.",
+    "Test failed: unable to contact the AI provider.",
   ERR_CLIENT_IAM_NETWORK:
     "A network error occurred while updating accounts and permissions.",
   ERR_CLIENT_ORG_UNITS_NETWORK:
@@ -48,9 +48,9 @@ export const CLIENT_ERRORS_EN_LABELS: ClientErrorLabels = {
   ERR_CLIENT_CONTEXT_MISSING:
     "Required application context is not initialized ({detail}).",
   ERR_CLIENT_PERMISSION_LOAD:
-    "⚠️ Failed to load access requests ({detail}).",
+    "Failed to load access requests ({detail}).",
   ERR_CLIENT_PERMISSION_ACTION:
-    "⚠️ Access request action failed ({detail}).",
+    "Access request action failed ({detail}).",
   ERR_CLIENT_PACKS_LOAD:
     "Unable to load the declarative packs registry.",
   ERR_CLIENT_PACKS_HEALTH_REFRESH:
@@ -68,7 +68,7 @@ export const CLIENT_ERRORS_EN_LABELS: ClientErrorLabels = {
   ERR_CLIENT_PROCESS_SIMULATION_UNAVAILABLE:
     "Remote simulation unavailable ({detail}). Showing local estimate.",
   ERR_CLIENT_HELP_ARTICLE_ATTACHED_LOCAL:
-    "⚠️ Help article attached locally ({detail}).",
+    "Help article attached locally ({detail}).",
   ERR_CLIENT_WIZARD_LOAD:
     "Unable to load your guided setup sessions.",
   ERR_CLIENT_WIZARD_START:
@@ -80,7 +80,7 @@ export const CLIENT_ERRORS_EN_LABELS: ClientErrorLabels = {
   ERR_CLIENT_WIZARD_DEMO_PROVISION:
     "Unable to provision demo workspace.",
   ERR_CLIENT_WORKSPACE_SOURCE_ACTION:
-    "⚠️ Document source operation failed ({detail}).",
+    "Document source operation failed ({detail}).",
   ERR_CLIENT_UNKNOWN:
     "An unexpected error occurred. Please try again in a few moments.",
 };

@@ -8,6 +8,7 @@ import {
 } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
+import type { AlertFeedbackInput } from "../shared/alertFeedback";
 
 export interface CatalogTestBenchStep {
   readonly stepNumber: 1 | 2 | 3 | 4;
@@ -34,7 +35,7 @@ export function useCatalogRemoteTestBench(params: {
   readonly datasources: readonly ControlCenterDatasourceItem[];
   readonly workspaceSlug?: string;
   readonly isFr: boolean;
-  readonly setFeedback: (message: string) => void;
+  readonly setFeedback: (message: AlertFeedbackInput) => void;
 }) {
   const { datasources, isFr, setFeedback } = params;
   const resolvedLocale = resolveLocaleForFlag(isFr);
@@ -72,9 +73,10 @@ export function useCatalogRemoteTestBench(params: {
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setFeedback(
-          `⚠️ ${formatRfc9457ErrorToBanner(err, resolvedLocale, catCopy.mcpExposureErrorContext).fullText}`,
-        );
+        setFeedback({
+          tone: "crimson",
+          message: formatRfc9457ErrorToBanner(err, resolvedLocale, catCopy.mcpExposureErrorContext).fullText,
+        });
       });
     return () => {
       cancelled = true;
@@ -129,17 +131,19 @@ export function useCatalogRemoteTestBench(params: {
 
       const canActivate = Boolean(res.can_activate);
       setCanActivateConnector(canActivate);
-      setFeedback(
-        formatI18nTemplate(
+      setFeedback({
+        tone: canActivate ? "emerald" : "crimson",
+        message: formatI18nTemplate(
           canActivate ? catCopy.testBenchVerifiedTemplate : catCopy.testBenchIncompleteTemplate,
           { url: targetUrl },
         ),
-      );
+      });
     } catch (err: unknown) {
       setCanActivateConnector(false);
-      setFeedback(
-        `⚠️ ${formatRfc9457ErrorToBanner(err, resolvedLocale, catCopy.testBenchErrorContext).fullText}`,
-      );
+      setFeedback({
+        tone: "crimson",
+        message: formatRfc9457ErrorToBanner(err, resolvedLocale, catCopy.testBenchErrorContext).fullText,
+      });
     } finally {
       setIsTesting(false);
     }
@@ -166,9 +170,10 @@ export function useCatalogRemoteTestBench(params: {
       setExposedToolNames(updated.exposed_tools ?? []);
       setFeedback(successMessage);
     } catch (err: unknown) {
-      setFeedback(
-        `⚠️ ${formatRfc9457ErrorToBanner(err, resolvedLocale, catCopy.mcpExposureErrorContext).fullText}`,
-      );
+      setFeedback({
+        tone: "crimson",
+        message: formatRfc9457ErrorToBanner(err, resolvedLocale, catCopy.mcpExposureErrorContext).fullText,
+      });
     } finally {
       setIsSavingMcp(false);
     }

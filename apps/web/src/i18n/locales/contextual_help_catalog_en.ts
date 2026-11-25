@@ -18,7 +18,7 @@ export const CONTEXTUAL_HELP_EN: ContextualHelpDictionarySection = {
       "In AI Models, configure your chat and document indexing providers and test the connection before saving.",
     ],
     realExampleText:
-      "During initial setup, Alice opens Configuration › AI Models, adds her primary provider and an indexing model, tests the connection, then opens My Organization to create the Product Division and Payments Team.",
+      "During initial setup, Alice opens Administration › AI Models, adds her primary provider and an indexing model, tests the connection, then opens My Organization to create the Product Division and Payments Team.",
     commonPitfallsItems: [
       "A secret key disappears after saving: for security, API keys and tokens are strictly write-only and never displayed again.",
       "Cannot delete a Division or Team: remove dependent child Teams or permission rules first.",
@@ -51,7 +51,7 @@ export const CONTEXTUAL_HELP_EN: ContextualHelpDictionarySection = {
       realExampleText:
         "Marc selects the \"Payments Product\" Space, opens the \"2026 Compliance\" folder with its pinned guidelines, and asks for a risk summary: My Assistant responds with clickable citation pills pointing straight to the verified Space documents.",
       commonPitfallsItems: [
-        "The prompt input is locked: verify that both a document indexing model and a chat model are configured in Configuration › AI Models.",
+        "The prompt input is locked: verify that both a document indexing model and a chat model are configured in Administration › AI Models.",
         "Folder notes do not seem applied: click \"Save notes\" inside the active folder drawer before sending your next question.",
       ],
     },
@@ -72,17 +72,32 @@ export const CONTEXTUAL_HELP_EN: ContextualHelpDictionarySection = {
     },
     "/spaces": {
       summaryWhatFor:
-        "My Spaces gathers your team, private, or confidential Workspaces, their document sources, rules inherited from your organizational unit, and access to the Business Glossary.",
+        "My Spaces gathers your team, private, or confidential Workspaces, their document sources, rules inherited from your organizational unit, and Business Glossary.",
       steps: [
-        "Filter between \"All\", \"Team Spaces\", and \"My Private Spaces\", or create a new Workspace linked to an existing Team.",
-        "Open a Workspace to adjust its confidentiality level (Standard, Confidential isolated, or Private) and lifecycle phase.",
-        "Use the \"Sources\" tab to connect your documents, or click \"Business Glossary\" to inspect and enrich Space definitions.",
+        "Pick your active Space from the left sidebar selector (Personal or Team / Division), or click \"+ New Space\" to create a Workspace linked to a Team.",
+        "Navigate across the 5 tabs: Onboarding, Documents & Sources, Deliverables & Artifacts, Glossary, and Members & Space Settings.",
+        "In \"Members & Space Settings\", adjust a team Workspace's visibility (Standard or Confidential isolated); personal Spaces stay private by design.",
       ],
       realExampleText:
-        "The Claims team creates a \"Q4 Partner Audit\" Space linked to Operations, sets it to Confidential isolated so no external user can read it, and connects its dedicated tracking folder.",
+        "The Claims team creates a \"Q4 Partner Audit\" Space linked to Operations, opens Members & Space Settings to set Confidential isolated mode, and connects its dedicated tracking folder.",
       commonPitfallsItems: [
-        "Difference between an organizational unit and a Workspace: the organizational unit defines who works and owns the budget; the Workspace holds your sources and deliverables.",
-        "Cannot create a team Space: make sure at least one Team exists first in Configuration › My Organization.",
+        "Difference between an organizational unit and a Workspace: the organizational unit defines who works and owns budgets (in My Organization); the Workspace holds your sources and deliverables.",
+        "Cannot create a team Space: make sure at least one Team exists first in My Organization.",
+      ],
+    },
+    "/organization": {
+      summaryWhatFor:
+        "My Organization structures your company into Divisions (BUs) and Teams, assigns leads, and handles scoped user invitations via local delegation.",
+      steps: [
+        "Inspect the org tree: distinguish parent context units and read-only sibling teams from units you manage.",
+        "Click \"+ New unit\" to add a Division (BU) or Team and set its billing attribution.",
+        "Click \"+ Invite user\" or \"Members\" on an authorized unit to attach colleagues.",
+      ],
+      realExampleText:
+        "The Operations Division Lead creates the \"Payments Compliance\" Team under her Division and invites two analysts independently without involving a global administrator.",
+      commonPitfallsItems: [
+        "Edit buttons are hidden on a unit: you are viewing a parent context or a sibling team in read-only mode.",
+        "Cannot delete a Division or Team: remove child units and attached Workspaces first.",
       ],
     },
   },

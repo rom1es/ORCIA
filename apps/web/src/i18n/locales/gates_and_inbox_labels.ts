@@ -99,11 +99,11 @@ export const GATES_AND_INBOX_FR_LABELS: Pick<
     contributorSectionTitle: "Actions Requises de Votre Part",
     observerSectionTitle: "En Suivi — Consultation Seule",
     observerBannerText:
-      "👁️ Mode Consultation Seule — Vous suivez cette exécution sans pouvoir la modifier",
+      "Mode Consultation Seule — Vous suivez cette exécution sans pouvoir la modifier",
     presencePill: {
       claimActionLabel: "Prendre en charge",
-      claimedByMeBadge: "🔒 Pris en charge par vous",
-      claimedByPeerPrefix: "🔒 Pris en charge par :",
+      claimedByMeBadge: "Pris en charge par vous",
+      claimedByPeerPrefix: "Pris en charge par :",
       releaseActionLabel: "Libérer",
       forceUnclaimActionLabel: "Reprendre la main (après 15 min)",
       readOnlyObserverNotice: "Consultation seule",
@@ -212,11 +212,11 @@ export const GATES_AND_INBOX_EN_LABELS: Pick<
     contributorSectionTitle: "Actions Required from You",
     observerSectionTitle: "Following — Read-Only",
     observerBannerText:
-      "👁️ Read-Only Mode — You are following this execution without edit permissions",
+      "Read-Only Mode — You are following this execution without edit permissions",
     presencePill: {
       claimActionLabel: "Take ownership",
-      claimedByMeBadge: "🔒 Handled by you",
-      claimedByPeerPrefix: "🔒 Handled by:",
+      claimedByMeBadge: "Handled by you",
+      claimedByPeerPrefix: "Handled by:",
       releaseActionLabel: "Release",
       forceUnclaimActionLabel: "Take over (after 15 min)",
       readOnlyObserverNotice: "Read-only",

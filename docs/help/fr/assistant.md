@@ -26,6 +26,6 @@ Marc sélectionne l'Espace « Produit Paiement », ouvre le dossier « Conformit
 
 ## Ce qui coince souvent
 
-- **La zone de saisie est verrouillée** : vérifiez qu'un modèle d'analyse documentaire et un modèle de dialogue sont configurés dans Configuration › Modèles IA.
+- **La zone de saisie est verrouillée** : vérifiez qu'un modèle d'analyse documentaire et un modèle de dialogue sont configurés dans Administration › Modèles IA.
 - **Un brouillon propose une mise à jour vers un outil externe** : par sécurité, Mon Assistant n'écrit jamais directement dans vos outils ; confirmez l'action ou poursuivez dans un processus gouverné.
 - **Les notes du dossier ne semblent pas prises en compte** : cliquez sur « Enregistrer les notes » dans le tiroir du dossier actif avant de poser votre question.

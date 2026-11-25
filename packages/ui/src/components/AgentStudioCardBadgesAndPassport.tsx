@@ -1,8 +1,9 @@
 import React from "react";
-import type {
-  UiAgentHumanPartnerRole,
-  UiAgentOutputContractFormat,
-  UiAgentPosture,
+import {
+  formatAgentModelPassportSummary,
+  type UiAgentHumanPartnerRole,
+  type UiAgentOutputContractFormat,
+  type UiAgentPosture,
 } from "./AgentGovernanceTypesAndDefaults";
 import type {
   AgentsAndSkillsManagerLabels,
@@ -93,8 +94,9 @@ export const AgentStudioCardBadgesRow: React.FC<
 
         <span
           data-testid={`agent-posture-badge-${agent.agentId}`}
-          className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-0.5 text-[11px] font-semibold"
+          className="inline-flex items-center gap-1 rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-0.5 text-[11px] font-semibold"
         >
+          <OrciaIcon name={posture === "EVALUATOR_GATE" ? "shield" : "tools"} size={12} />
           {posture === "EVALUATOR_GATE"
             ? studio.postureEvaluatorBadge
             : studio.postureProducerBadge}
@@ -102,8 +104,9 @@ export const AgentStudioCardBadgesRow: React.FC<
 
         <span
           data-testid={`agent-partner-badge-${agent.agentId}`}
-          className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px]"
+          className="inline-flex items-center gap-1 rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px]"
         >
+          <OrciaIcon name="user" size={12} />
           {studio.partnerBadgePrefix}{" "}
           {studio.humanPartnerRoles[partnerRole].split(" (")[0]}
         </span>
@@ -111,7 +114,7 @@ export const AgentStudioCardBadgesRow: React.FC<
         {isPack ? (
           <span
             data-testid={`agent-visibility-badge-${agent.agentId}`}
-            className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-0.5 text-[11px] font-medium"
+            className="inline-flex items-center gap-1 rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-0.5 text-[11px] font-medium"
           >
             {visibilityBadgeContent}
           </span>
@@ -121,7 +124,7 @@ export const AgentStudioCardBadgesRow: React.FC<
             data-testid={`agent-visibility-badge-${agent.agentId}`}
             onClick={onToggleVisibility}
             title={studio.toggleVisibilityTitle}
-            className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-0.5 text-[11px] font-medium"
+            className="inline-flex items-center gap-1 rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2.5 py-0.5 text-[11px] font-medium"
           >
             {visibilityBadgeContent}
           </button>
@@ -129,8 +132,9 @@ export const AgentStudioCardBadgesRow: React.FC<
 
         <span
           data-testid={`agent-test-bench-badge-${agent.agentId}`}
-          className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px] font-medium"
+          className="inline-flex items-center gap-1 rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px] font-medium"
         >
+          <OrciaIcon name={testBenchValidated ? "check" : "clock"} size={12} />
           {testBenchValidated
             ? studio.benchValidatedBadge
             : studio.benchShortToTestBadge}
@@ -139,8 +143,9 @@ export const AgentStudioCardBadgesRow: React.FC<
         {!isEnabled && (
           <span
             data-testid={`agent-disabled-badge-${agent.agentId}`}
-            className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px] font-medium text-[var(--orcia-text-secondary)]"
+            className="inline-flex items-center gap-1 rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px] font-medium text-[var(--orcia-text-secondary)]"
           >
+            <OrciaIcon name="hourglass" size={12} />
             {studio.disabledWorkspaceBadge}
           </span>
         )}
@@ -204,25 +209,39 @@ export const AgentStudioGovernancePassport: React.FC<
       data-testid={`agent-governance-passport-${agent.agentId}`}
       className="flex flex-wrap items-center gap-1.5 text-[11px] text-[var(--orcia-text-secondary)]"
     >
-      <span className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5">
-        {studio.modelPassportLabel} {agent.llmModelTier ?? "team_default"} ·{" "}
-        {studio.tempShortLabel} {agent.temperature ?? 0.2} ·{" "}
-        {agent.maxTokens ?? 4096} {studio.tokShortLabel}
+      <span className="inline-flex items-center gap-1 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5">
+        <OrciaIcon name="brain" size={12} />
+        <span>
+          {studio.modelPassportLabel}{" "}
+          {formatAgentModelPassportSummary(
+            agent.llmModelTier,
+            agent.temperature,
+            agent.maxTokens,
+            studio,
+          )}
+        </span>
       </span>
-      <span className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5">
-        {studio.ragShortLabel} (
-        {(agent.allowedRagSources ?? ["all_workspace_sources"]).length}
-        {") & "}
-        {studio.ontologyShortLabel} (
-        {(agent.ontologyViews ?? ["glossary"]).length})
+      <span className="inline-flex items-center gap-1 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5">
+        <OrciaIcon name="books" size={12} />
+        <span>
+          {studio.ragShortLabel} (
+          {(agent.allowedRagSources ?? ["all_workspace_sources"]).length}
+          {") & "}
+          {studio.ontologyShortLabel} (
+          {(agent.ontologyViews ?? ["glossary"]).length})
+        </span>
       </span>
-      <span className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5">
-        {studio.outputShortLabel}{" "}
-        {studio.outputContractFormats[outputFormat].split(" (")[0]}
+      <span className="inline-flex items-center gap-1 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5">
+        <OrciaIcon name="document" size={12} />
+        <span>
+          {studio.outputShortLabel}{" "}
+          {studio.outputContractFormats[outputFormat].split(" (")[0]}
+        </span>
       </span>
       {writePreviewRequired && (
-        <span className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5">
-          {studio.writePreviewBadge}
+        <span className="inline-flex items-center gap-1 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5">
+          <OrciaIcon name="shield" size={12} />
+          <span>{studio.writePreviewBadge}</span>
         </span>
       )}
     </div>

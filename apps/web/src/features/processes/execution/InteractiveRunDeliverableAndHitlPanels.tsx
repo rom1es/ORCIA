@@ -1,4 +1,4 @@
-import { FormattedMarkdownContent } from "@orcia/ui";
+import { FormattedMarkdownContent, OrciaIcon } from "@orcia/ui";
 import React from "react";
 import { formatI18nTemplate, resolveDictionaryForFlag } from "../../../i18n";
 import type {
@@ -90,8 +90,9 @@ export function InteractiveRunDeliverableAndHitlPanels({
         style={{ backgroundColor: "var(--color-bg-elevated)", borderColor: "var(--color-border-subtle)" }}
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <strong style={{ fontSize: "13.5px" }}>
-            📄 {copy.proposedDeliverablePrefix} — {currentSubStep?.name ?? workflow.title}
+          <strong style={{ fontSize: "13.5px", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            <OrciaIcon name="document" size={14} />
+            <span>{copy.proposedDeliverablePrefix} — {currentSubStep?.name ?? workflow.title}</span>
           </strong>
           <span style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>
             {currentSubStep?.output_description}

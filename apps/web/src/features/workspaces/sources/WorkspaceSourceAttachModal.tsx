@@ -1,4 +1,4 @@
-import { OrciaDialog } from "@orcia/ui";
+import { OrciaDialog, OrciaIcon } from "@orcia/ui";
 import React, { useEffect, useState } from "react";
 import type {
   CreateWorkspaceDatasourceRequest,
@@ -9,10 +9,10 @@ import type {
 import { useI18n } from "../../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../../lib/formatRfc9457ErrorToBanner";
 import {
-  FormInput,
-  modalInputStyle,
-  WorkspaceSourceAttachCodegraphFields,
-} from "./WorkspaceSourceAttachCodegraphFields";
+  WorkspaceSourceAttachBaseFields,
+  type WorkspaceSourceNature,
+} from "./WorkspaceSourceAttachBaseFields";
+import { WorkspaceSourceAttachCodegraphFields } from "./WorkspaceSourceAttachCodegraphFields";
 import { WorkspaceSourceAttachSyncFields } from "./WorkspaceSourceAttachSyncFields";
 
 export interface WorkspaceSourceAttachModalProps {
@@ -33,7 +33,7 @@ const DEFAULT_FORM = {
   alias: "",
   scheme: "git",
   uri: "",
-  nature: "DOCUMENT_KB" as "DOCUMENT_KB" | "WORK_TRACKER" | "SOURCE_CODE" | "RELATIONAL_SCHEMA",
+  nature: "DOCUMENT_KB" as WorkspaceSourceNature,
   connectorId: "",
   targetScope: "",
   targetRef: "",
@@ -178,7 +178,7 @@ export function WorkspaceSourceAttachModal({
             className="rounded-lg border border-status-warning/40 bg-status-warning/10 p-2.5 text-xs text-text-primary"
             style={{ display: "flex", flexDirection: "column", gap: "4px" }}
           >
-            <strong className="text-status-warning">⚠️ {copy.ragEmbeddingRequiredTitle}</strong>
+            <strong className="inline-flex items-center gap-1.5 text-status-warning"><OrciaIcon name="warning" size={14} /><span>{copy.ragEmbeddingRequiredTitle}</span></strong>
             <span className="text-text-secondary">{copy.ragEmbeddingRequiredDescription}</span>
             {onNavigateToAiModels ? (
               <a
@@ -207,85 +207,21 @@ export function WorkspaceSourceAttachModal({
           </div>
         ) : null}
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-          <div>
-            <label style={{ fontSize: "11px", fontWeight: 600 }}>{copy.natureLabel}</label>
-            <select
-              data-testid="modal-source-nature-select"
-              value={form.nature}
-              onChange={(e) => handleNatureChange(e.target.value as typeof form.nature)}
-              style={modalInputStyle}
-            >
-              <option value="DOCUMENT_KB" disabled={!hasActiveEmbeddingModel}>
-                {copy.natureDoc}
-                {!hasActiveEmbeddingModel ? copy.ragOptionDisabledSuffix : ""}
-              </option>
-              <option value="WORK_TRACKER" disabled={!hasActiveEmbeddingModel}>
-                {copy.natureTracker}
-                {!hasActiveEmbeddingModel ? copy.ragOptionDisabledSuffix : ""}
-              </option>
-              <option value="SOURCE_CODE">{copy.natureCode}</option>
-              <option value="RELATIONAL_SCHEMA" disabled={!hasActiveEmbeddingModel}>
-                {copy.natureSchema}
-                {!hasActiveEmbeddingModel ? copy.ragOptionDisabledSuffix : ""}
-              </option>
-            </select>
-          </div>
-          <div>
-            <label style={{ fontSize: "11px", fontWeight: 600 }}>{copy.connectorLabel}</label>
-            <select
-              data-testid="modal-connector-select"
-              value={form.connectorId}
-              onChange={(e) => updateField("connectorId", e.target.value)}
-              style={modalInputStyle}
-            >
-              <option value="">{copy.connectorNone}</option>
-              {connectors.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} ({c.connector_kind})
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-          <div>
-            <label style={{ fontSize: "11px", fontWeight: 600 }}>{copy.aliasLabel} *</label>
-            <FormInput
-              testId="modal-source-alias-input"
-              type="text"
-              required
-              placeholder={copy.aliasPlaceholder}
-              value={form.alias}
-              onChange={(e) => updateField("alias", e.target.value)}
-            />
-          </div>
-          <div>
-            <label style={{ fontSize: "11px", fontWeight: 600 }}>
-              {copy.schemeLabel}
-            </label>
-            <FormInput
-              testId="modal-source-scheme-input"
-              type="text"
-              required
-              value={form.scheme}
-              onChange={(e) => updateField("scheme", e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div>
-          <label style={{ fontSize: "11px", fontWeight: 600 }}>{copy.uriLabel} *</label>
-          <FormInput
-            testId="modal-source-uri-input"
-            type="text"
-            required
-            placeholder={copy.uriPlaceholder}
-            value={form.uri}
-            onChange={(e) => updateField("uri", e.target.value)}
-          />
-        </div>
+        <WorkspaceSourceAttachBaseFields
+          nature={form.nature}
+          connectorId={form.connectorId}
+          alias={form.alias}
+          scheme={form.scheme}
+          uri={form.uri}
+          connectors={connectors}
+          hasActiveEmbeddingModel={hasActiveEmbeddingModel}
+          copy={copy}
+          onNatureChange={handleNatureChange}
+          onConnectorIdChange={(val) => updateField("connectorId", val)}
+          onAliasChange={(val) => updateField("alias", val)}
+          onSchemeChange={(val) => updateField("scheme", val)}
+          onUriChange={(val) => updateField("uri", val)}
+        />
 
         <WorkspaceSourceAttachSyncFields
           targetScope={form.targetScope}
@@ -303,7 +239,7 @@ export function WorkspaceSourceAttachModal({
           onServiceAccountIdChange={(val) => updateField("serviceAccountId", val)}
         />
 
-        {/* Section GitNexus réservée à SOURCE_CODE */}
+        {/* GitNexus section reserved for SOURCE_CODE */}
         {form.nature === "SOURCE_CODE" ? (
           <WorkspaceSourceAttachCodegraphFields
             cgEnabled={form.cgEnabled}

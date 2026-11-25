@@ -13,7 +13,6 @@ import type {
   AgentsAndSkillsManagerLabels,
   UiManagedSkillItem,
 } from "./AgentsAndSkillsTypes";
-import { getOrciaIconGlyph } from "./icons";
 
 export interface AgentSixBlocksEditorBodyProps {
   readonly draft: AgentSixBlocksDraftState;
@@ -169,12 +168,8 @@ export const AgentSixBlocksEditorBody: React.FC<AgentSixBlocksEditorBodyProps> =
                 }
                 className="orcia-ds-select"
               >
-                <option value="TEAM">
-                  {getOrciaIconGlyph("team")} {studio.visibilityTeamFull}
-                </option>
-                <option value="PRIVATE">
-                  {getOrciaIconGlyph("lock")} {studio.visibilityPrivateFull}
-                </option>
+                <option value="TEAM">{studio.visibilityTeamFull}</option>
+                <option value="PRIVATE">{studio.visibilityPrivateFull}</option>
               </select>
             </label>
             <label className="flex flex-col gap-1">
@@ -214,7 +209,7 @@ export const AgentSixBlocksEditorBody: React.FC<AgentSixBlocksEditorBodyProps> =
               >
                 {HUMAN_PARTNER_KEYS.map((roleKey) => (
                   <option key={roleKey} value={roleKey}>
-                    👤 {studio.humanPartnerRoles[roleKey]}
+                    {studio.humanPartnerRoles[roleKey]}
                   </option>
                 ))}
               </select>

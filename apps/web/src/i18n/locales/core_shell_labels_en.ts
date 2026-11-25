@@ -45,16 +45,16 @@ export const CORE_SHELL_EN_LABELS: Pick<
     localeSwitchLabel: "Language",
     topbarSearchAriaLabel: "Global search",
     topbarSearchPlaceholder: "Search... (⌘K)",
-    darkModeToggleLabel: "🌙 Dark mode",
+    darkModeToggleLabel: "Dark mode",
     mobileNavigationAriaLabel: "Mobile navigation",
     mobileTabs: {
-      inbox: "🔔 To Do",
-      chat: "💬 Decisions / Chat",
-      briefing: "📄 Summary",
+      inbox: "To Do",
+      chat: "Decisions / Chat",
+      briefing: "Summary",
     },
   },
   humanAnchor: {
-    badgeTitle: "✍️ PERSONAL AUTHORING REQUIRED",
+    badgeTitle: "PERSONAL AUTHORING REQUIRED",
     authorLabel: "Author",
     placeholderText:
       "Enter your guiding directions and key assumptions (personal authoring required)...",
@@ -64,7 +64,7 @@ export const CORE_SHELL_EN_LABELS: Pick<
     defaultValue: "Definition of priority goals and expected acceptance criteria.",
   },
   arbitrationTieBreak: {
-    badgeTitle: "⚖️ DECISION REQUIRED",
+    badgeTitle: "DECISION REQUIRED",
     policyPrefixLabel: "Decision rule",
     policyLabels: {
       pauseAndEscalate: "Pause and escalate to human",
@@ -78,7 +78,7 @@ export const CORE_SHELL_EN_LABELS: Pick<
     finopsImpactLabel: "Estimated cost",
     justificationPlaceholder: "Optional justification or additional guidance...",
     selectOptionButtonLabel: "Choose this option",
-    resolvedBannerPrefix: "✅ Decision recorded for the next steps of the process",
+    resolvedBannerPrefix: "Decision recorded for the next steps of the process",
     defaultQuestionTitle: "Choice between two directions",
     defaultContextSummary:
       "Two equivalent options have been prepared and require your decision.",

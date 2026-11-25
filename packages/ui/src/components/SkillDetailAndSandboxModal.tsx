@@ -5,7 +5,7 @@ import type {
   UiManagedSkillItem,
 } from "./AgentsAndSkillsTypes";
 import { FormattedMarkdownContent } from "./FormattedMarkdownContent";
-import { OrciaIcon, getOrciaIconGlyph } from "./icons";
+import { OrciaIcon } from "./icons";
 
 export interface SkillDetailAndSandboxModalProps {
   readonly skill: UiManagedSkillItem | null;
@@ -131,12 +131,8 @@ export const SkillDetailAndSandboxModal: React.FC<
                     }
                     className="rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-1"
                   >
-                    <option value="TEAM">
-                      {getOrciaIconGlyph("team")} {studio.visibilityTeamShort}
-                    </option>
-                    <option value="PRIVATE">
-                      {getOrciaIconGlyph("lock")} {studio.visibilityPrivateShort}
-                    </option>
+                    <option value="TEAM">{studio.visibilityTeamShort}</option>
+                    <option value="PRIVATE">{studio.visibilityPrivateShort}</option>
                   </select>
                 </label>
               </div>

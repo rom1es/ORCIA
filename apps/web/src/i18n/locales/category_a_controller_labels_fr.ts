@@ -139,25 +139,25 @@ export const CATEGORY_A_CONTROLLER_FR_LABELS: CategoryAControllersDictionary = {
     whatIfDoneBanner:
       "Simulation à blanc terminée : {count} étape(s) vérifiée(s), aucune modification envoyée aux outils externes.",
     packCreatedBanner:
-      "✅ Pack Métier « {slug} » créé et enregistré avec l'intention métier fournie.",
+      "Pack Métier « {slug} » créé et enregistré avec l'intention métier fournie.",
     assetPromotedBanner:
-      "✅ Composant promu avec succès vers le Pack Métier « {pack} ».",
+      "Composant promu avec succès vers le Pack Métier « {pack} ».",
     helpArticleAttachedBanner:
-      "✅ Fiche d'aide « {article} » générée, vérifiée et rattachée à l'écran.",
+      "Fiche d'aide « {article} » générée, vérifiée et rattachée à l'écran.",
   },
   workspaceSources: {
     updated: "Source modifiée.",
     attached: "Source rattachée.",
-    syncTriggered: "✅ Synchronisation déclenchée ({status}).",
-    deleted: "✅ Source détachée.",
-    gitNexusEnabled: "✅ GitNexus activé.",
+    syncTriggered: "Synchronisation déclenchée ({status}).",
+    deleted: "Source détachée.",
+    gitNexusEnabled: "GitNexus activé.",
     gitNexusDisabled: "GitNexus désactivé.",
     referentRenewed: "Référent renouvelé.",
     reconciled:
-      "✅ Fraîcheur réconciliée ({evaluated} évaluées, {stale} désynchronisées).",
+      "Fraîcheur réconciliée ({evaluated} évaluées, {stale} désynchronisées).",
     coldStartBanner:
       "Attribution nominative : vos droits Jira / GitLab s'appliquent.",
-    myAccountCta: "👤 Mon Compte › Mes Connexions",
+    myAccountCta: "Mon Compte › Mes Connexions",
     sourcesTitle: "Sources de « {name} »",
     newReferentPlaceholder: "Nouveau référent (e-mail)...",
     confirmRenewalCta: "Valider le renouvellement",

@@ -6,6 +6,7 @@ import {
 import React, { useMemo, useState } from "react";
 import { formatI18nTemplate, resolveDictionaryForFlag, resolveLocaleForFlag, useI18n } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
+import type { AlertFeedbackInput } from "../shared/alertFeedback";
 
 const CHALLENGER_STEP_KEY = "delegate-remediation-subworkflow";
 const TARGET_UPSTREAM_STEP_KEY = "frame-architecture-intent";
@@ -16,7 +17,7 @@ export interface GatesChallengeModalSectionProps {
   readonly sectionKey: string;
   readonly isFr: boolean;
   readonly onClose: () => void;
-  readonly onFeedback: (message: string | null) => void;
+  readonly onFeedback: (message: AlertFeedbackInput) => void;
 }
 
 export function GatesChallengeModalSection({
@@ -76,9 +77,10 @@ export function GatesChallengeModalSection({
       });
       onFeedback(modalCopy.challengeSubmittedBanner);
     } catch (err: unknown) {
-      onFeedback(
-        `⚠️ ${formatRfc9457ErrorToBanner(err, resolvedLocale, modalCopy.errorContextLabel).fullText}`,
-      );
+      onFeedback({
+        tone: "crimson",
+        message: formatRfc9457ErrorToBanner(err, resolvedLocale, modalCopy.errorContextLabel).fullText,
+      });
     }
   };
 
@@ -96,9 +98,10 @@ export function GatesChallengeModalSection({
         }),
       );
     } catch (err: unknown) {
-      onFeedback(
-        `⚠️ ${formatRfc9457ErrorToBanner(err, resolvedLocale, modalCopy.errorContextLabel).fullText}`,
-      );
+      onFeedback({
+        tone: "crimson",
+        message: formatRfc9457ErrorToBanner(err, resolvedLocale, modalCopy.errorContextLabel).fullText,
+      });
     }
   };
 

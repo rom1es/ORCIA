@@ -6,12 +6,17 @@ import {
   RemoteServiceTestBenchAndMcpExposureView,
   SourceLineInspectorDrawer,
 } from "@orcia/ui";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions";
 import { useI18n } from "../../i18n";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
+import {
+  type AlertFeedback,
+  type AlertFeedbackInput,
+  normalizeAlertFeedback,
+} from "../shared/alertFeedback";
 import { useReflexiveExecutionController } from "../shared/useReflexiveExecutionController";
 import { useSourceLineInspector } from "../shared/useSourceLineInspector";
 import {
@@ -54,9 +59,12 @@ export function CatalogFeaturePanel({
     workspaces.find((w) => w.workspaceId === activeWorkspaceId) ?? workspaces[0];
   const [pinnedAssistantMcpExposed, setPinnedAssistantMcpExposed] =
     useState<boolean>(false);
-  const [catalogActionFeedback, setCatalogActionFeedback] = useState<
-    string | null
+  const [catalogActionFeedback, setCatalogActionFeedbackRaw] = useState<
+    AlertFeedback | null
   >(null);
+  const setCatalogActionFeedback = useCallback((next: AlertFeedbackInput) => {
+    setCatalogActionFeedbackRaw(normalizeAlertFeedback(next));
+  }, []);
 
   const activeWorkspaceSlug =
     activeWorkspaceObj?.slug || activeWorkspaceObj?.workspaceId || "global";
@@ -99,10 +107,10 @@ export function CatalogFeaturePanel({
   const feedbackBanner = catalogActionFeedback ? (
     <OrciaAlertBanner
       testId="catalog-action-feedback-banner"
-      tone={catalogActionFeedback.startsWith("⚠️") ? "crimson" : "emerald"}
-      role={catalogActionFeedback.startsWith("⚠️") ? "alert" : "status"}
+      tone={catalogActionFeedback.tone}
+      role={catalogActionFeedback.tone === "crimson" ? "alert" : "status"}
     >
-      {catalogActionFeedback}
+      {catalogActionFeedback.message}
     </OrciaAlertBanner>
   ) : null;
 

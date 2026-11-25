@@ -25,8 +25,8 @@ export const CORE_DOMAIN_FR_LABELS: Pick<
       "Les espaces marqués comme confidentiels ne remontent aucun contenu métier aux niveaux parents.",
     datasourcesCountPrefix: "Sources documentaires et outils rattachés",
     catalogPermissionsTitle: "Droits d'Accès aux Sources & Protection des Contenus Confidentiels",
-    sourceMaskedBadgeLabel: "🔒 Source non autorisée",
-    sourceOpenBadgeLabel: "📖 Source accessible",
+    sourceMaskedBadgeLabel: "Source non autorisée",
+    sourceOpenBadgeLabel: "Source accessible",
     inspectSourceButtonLabel: "Consulter la source",
     sourceDeniedErrorBanner: "Accès refusé — Vous ne disposez pas du droit de lecture sur cette source",
     sourceAllowedBannerPrefix: "Accès autorisé — Source disponible",
@@ -50,8 +50,8 @@ export const CORE_DOMAIN_FR_LABELS: Pick<
       PUBLISHED_ORG: "Publié (Organisation)",
     },
     filterAllSchemesLabel: "Toutes les sources",
-    maskedSourceBadgeLabel: "🔒 Source restreinte",
-    openSourceBadgeLabel: "📖 Source accessible",
+    maskedSourceBadgeLabel: "Source restreinte",
+    openSourceBadgeLabel: "Source accessible",
     resolveCasButtonLabel: "Vérifier la version",
     casResolvedBannerPrefix: "Version vérifiée et prête à l'emploi",
     promoteScopeButtonLabel: "Partager à un niveau supérieur",
@@ -93,7 +93,7 @@ export const CORE_DOMAIN_FR_LABELS: Pick<
       humanMarkdownTabLabel: "Vue Lecture (Document structuré)",
       agentSchemaTabLabel: "Vue Structurée (Champs attendus)",
       sampleHumanMarkdown:
-        "## 1. Objectifs & Orientations [✍️ RÉDACTION PERSONNELLE OBLIGATOIRE]\nOrientations directrices du livrable",
+        "## 1. Objectifs & Orientations [RÉDACTION PERSONNELLE OBLIGATOIRE]\nOrientations directrices du livrable",
       sampleAgentJsonSchema:
         '{"$schema":"https://json-schema.org/draft/2020-12/schema","x-bound-ontology-terms":["Actif Stratégique"]}',
       subWorkflowLocksTitle: "Sous-processus rattachés et versions associées",
@@ -102,7 +102,7 @@ export const CORE_DOMAIN_FR_LABELS: Pick<
     },
   },
   permissionBroker: {
-    cardBadgeTitle: "⚠️ ACCÈS À UNE SOURCE REQUISE",
+    cardBadgeTitle: "ACCÈS À UNE SOURCE REQUISE",
     passthroughBadgeLabel: "Compte utilisé : votre compte personnel",
     servicePrincipalBadgeLabel: "Compte utilisé : compte technique partagé",
     targetUriLabel: "Source externe non accessible",
@@ -114,8 +114,8 @@ export const CORE_DOMAIN_FR_LABELS: Pick<
     pauseStepButtonLabel: "Mettre l'étape en attente",
     replayStepButtonLabel: "Relancer l'étape",
     stepPrefix: "Étape",
-    pausedStateBanner: "⏸️ Étape mise en attente jusqu'à l'obtention de l'accès",
-    replayedStateBanner: "✅ Accès confirmé — Étape relancée avec succès",
+    pausedStateBanner: "Étape mise en attente jusqu'à l'obtention de l'accès",
+    replayedStateBanner: "Accès confirmé — Étape relancée avec succès",
     simulatorTitle: "Gestion des Accès aux Sources Externes & Demandes d'Habilitation",
     simulatorSubtitle:
       "Détection automatique des accès manquants, identification du responsable et relance de l'étape après déblocage.",
@@ -154,7 +154,7 @@ export const CORE_DOMAIN_FR_LABELS: Pick<
       "Rôle métier confirmé et identifiants personnels enregistrés en toute sécurité",
     observerDeniedBanner: "Action refusée — Votre rôle actuel est limité à la consultation seule",
     humanAnchorCardLabels: {
-      badgeTitle: "✍️ RÉDACTION PERSONNELLE OBLIGATOIRE",
+      badgeTitle: "RÉDACTION PERSONNELLE OBLIGATOIRE",
       authorLabel: "Signataire",
       sectionTitle: "Justification métier et périmètre d'utilisation de la source",
       placeholderText:

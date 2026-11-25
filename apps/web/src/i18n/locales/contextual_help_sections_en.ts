@@ -55,7 +55,7 @@ export const CONFIGURATION_SECTIONS_EN: readonly UiContextualHelpSectionItem[] =
   {
     sectionId: "iam-org-tree",
     title: "Organization structure (Divisions / BUs & Teams)",
-    body: "Structure your company into Divisions (BUs) and Teams. Project/product Workspaces are managed separately in 📦 My Workspaces. An organization unit can only be deleted once no child teams or access rules depend on it.",
+    body: "Structure your company into Divisions (BUs) and Teams. Project/product Workspaces are managed separately in My Spaces. An organization unit can only be deleted once no child teams or access rules depend on it.",
     category: "steps",
   },
   {
@@ -85,7 +85,7 @@ export const CONFIGURATION_SECTIONS_EN: readonly UiContextualHelpSectionItem[] =
   {
     sectionId: "ai-models-overview",
     title: "AI Models: Provider, API URL, Authentication & Connection Test",
-    body: "For each usage level (Simple, Standard, In-Depth), specify: 1) AI Provider (e.g. Anthropic, OpenAI, Mistral AI, local Ollama), 2) primary model ID (and optional backup model), 3) API Endpoint URL, and 4) authentication mode. Click '🔌 Test model connection' before saving to verify server response.",
+    body: "For each usage level (Simple, Standard, In-Depth), specify: 1) AI Provider (e.g. Anthropic, OpenAI, Mistral AI, local Ollama), 2) primary model ID (and optional backup model), 3) API Endpoint URL, and 4) authentication mode. Click 'Test model connection' before saving to verify server response.",
     category: "steps",
   },
   {
@@ -223,6 +223,20 @@ export const SECTIONS_BY_ROUTE_EN: Readonly<Record<string, readonly UiContextual
       sectionId: "glossary-rules",
       title: "Business glossary and automated rules",
       body: "Define your team's key terms and turn business rules into automated checks executed at every step.",
+      category: "terms",
+    },
+  ],
+  "/organization": [
+    {
+      sectionId: "org-hierarchy",
+      title: "Divisions (BUs), Teams, and billing ownership",
+      body: "Each Division groups autonomous Teams that own their members, leads, and AI cost attribution. Read-only parent or sibling units remain protected from unauthorized edits.",
+      category: "steps",
+    },
+    {
+      sectionId: "org-delegation",
+      title: "Local delegation and scoped invitations",
+      body: "Division and Team Leads manage members and invite colleagues inside their assigned subtree without waiting for a global administrator.",
       category: "terms",
     },
   ],

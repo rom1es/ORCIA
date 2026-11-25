@@ -27,5 +27,5 @@ Lors de la validation d'une spécification technique, Nadia relit les 4 sections
 ## Ce qui coince souvent
 
 - **Une alerte bloque la finalisation immédiate** : si une validation est déclenchée trop rapidement sans examen des sections, ORCIA demande une confirmation explicite pour préserver la qualité du contrôle humain.
-- **La revue croisée indépendante indique un seul fournisseur** : ajoutez un second fournisseur IA indépendant dans Configuration › Modèles IA pour activer les revues croisées orthogonales.
+- **La revue croisée indépendante indique un seul fournisseur** : ajoutez un second fournisseur IA indépendant dans Administration › Modèles IA pour activer les revues croisées orthogonales.
 - **Une action externe reste en attente** : aucune modification vers Jira, GitLab ou Confluence n'est envoyée tant que l'approbation humaine finale n'est pas signée.

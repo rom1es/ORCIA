@@ -21,17 +21,17 @@ export const CLIENT_ERRORS_FR_LABELS: ClientErrorLabels = {
   ERR_CLIENT_SESSION_EXPIRED:
     "Votre session a expiré ou doit être renouvelée pour continuer la conversation.",
   ERR_CLIENT_AI_UNAVAILABLE:
-    "⚠️ Impossible d'obtenir une réponse de Mon Assistant ({detail}). Vérifiez que le modèle IA configuré est bien démarré.",
+    "Impossible d'obtenir une réponse de Mon Assistant ({detail}). Vérifiez que le modèle IA configuré est bien démarré.",
   ERR_CLIENT_AI_HUB_COMMUNICATION:
     "Une erreur est survenue lors de la communication avec le hub de modèles IA.",
   ERR_CLIENT_AI_MODEL_ID_REQUIRED:
-    "❌ Échec du test : veuillez renseigner l'identifiant du modèle principal (ex. : llama3.2, mistral-large-latest).",
+    "Échec du test : veuillez renseigner l'identifiant du modèle principal (ex. : llama3.2, mistral-large-latest).",
   ERR_CLIENT_AI_ENDPOINT_URL_INVALID:
-    "❌ Échec du test : veuillez indiquer une URL d'API valide commençant par https:// ou http://.",
+    "Échec du test : veuillez indiquer une URL d'API valide commençant par https:// ou http://.",
   ERR_CLIENT_AI_API_KEY_REQUIRED:
-    "❌ Échec du test : veuillez saisir votre clé d'API ou choisir le mode local ou variable d'environnement.",
+    "Échec du test : veuillez saisir votre clé d'API ou choisir le mode local ou variable d'environnement.",
   ERR_CLIENT_AI_PROVIDER_UNREACHABLE:
-    "❌ Échec du test : impossible de joindre le fournisseur IA.",
+    "Échec du test : impossible de joindre le fournisseur IA.",
   ERR_CLIENT_IAM_NETWORK:
     "Une erreur réseau est survenue lors de la mise à jour des comptes et habilitations.",
   ERR_CLIENT_ORG_UNITS_NETWORK:
@@ -48,9 +48,9 @@ export const CLIENT_ERRORS_FR_LABELS: ClientErrorLabels = {
   ERR_CLIENT_CONTEXT_MISSING:
     "Le contexte applicatif requis n'est pas initialisé ({detail}).",
   ERR_CLIENT_PERMISSION_LOAD:
-    "⚠️ Impossible de charger les demandes d'accès ({detail}).",
+    "Impossible de charger les demandes d'accès ({detail}).",
   ERR_CLIENT_PERMISSION_ACTION:
-    "⚠️ Échec de l'action sur la demande d'accès ({detail}).",
+    "Échec de l'action sur la demande d'accès ({detail}).",
   ERR_CLIENT_PACKS_LOAD:
     "Impossible de charger le registre des packs déclaratifs.",
   ERR_CLIENT_PACKS_HEALTH_REFRESH:
@@ -68,7 +68,7 @@ export const CLIENT_ERRORS_FR_LABELS: ClientErrorLabels = {
   ERR_CLIENT_PROCESS_SIMULATION_UNAVAILABLE:
     "Simulation distante indisponible ({detail}). Estimation locale affichée.",
   ERR_CLIENT_HELP_ARTICLE_ATTACHED_LOCAL:
-    "⚠️ Fiche d'aide rattachée localement ({detail}).",
+    "Fiche d'aide rattachée localement ({detail}).",
   ERR_CLIENT_WIZARD_LOAD:
     "Impossible de charger vos parcours d'initialisation.",
   ERR_CLIENT_WIZARD_START:
@@ -80,7 +80,7 @@ export const CLIENT_ERRORS_FR_LABELS: ClientErrorLabels = {
   ERR_CLIENT_WIZARD_DEMO_PROVISION:
     "Impossible de provisionner l'espace de démonstration.",
   ERR_CLIENT_WORKSPACE_SOURCE_ACTION:
-    "⚠️ L'opération sur la source documentaire a échoué ({detail}).",
+    "L'opération sur la source documentaire a échoué ({detail}).",
   ERR_CLIENT_UNKNOWN:
     "Une erreur inattendue est survenue. Veuillez réessayer dans quelques instants.",
 };

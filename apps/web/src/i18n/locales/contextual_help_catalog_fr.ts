@@ -18,7 +18,7 @@ export const CONTEXTUAL_HELP_FR: ContextualHelpDictionarySection = {
       "Dans Modèles IA, renseignez vos fournisseurs (dialogue et recherche documentaire) puis testez la connexion avant d'enregistrer.",
     ],
     realExampleText:
-      "Lors de l'installation initiale, Alice ouvre Configuration › Modèles IA, ajoute son fournisseur principal et un modèle de recherche documentaire, teste la connexion avec succès, puis passe à « Mon Organisation » pour créer la Direction Produit et l'Équipe Paiement.",
+      "Lors de l'installation initiale, Alice ouvre Administration › Modèles IA, ajoute son fournisseur principal et un modèle de recherche documentaire, teste la connexion avec succès, puis passe à « Mon Organisation » pour créer la Direction Produit et l'Équipe Paiement.",
     commonPitfallsItems: [
       "Une clé secrète n'apparaît plus après enregistrement : par sécurité, les jetons et clés API sont protégés en écriture seule et ne sont jamais ré-affichés en clair.",
       "Impossible de supprimer une Direction ou une Équipe : détachez d'abord les Équipes et règles d'habilitation qui y font référence.",
@@ -51,7 +51,7 @@ export const CONTEXTUAL_HELP_FR: ContextualHelpDictionarySection = {
       realExampleText:
         "Marc sélectionne l'Espace « Produit Paiement », ouvre le dossier « Conformité 2026 » contenant ses consignes permanentes, puis demande une synthèse des risques : Mon Assistant répond avec des pastilles de citations cliquables pointant vers les documents exacts de l'Espace.",
       commonPitfallsItems: [
-        "La zone de saisie est verrouillée : vérifiez qu'un modèle d'analyse documentaire et un modèle de dialogue sont configurés dans Configuration › Modèles IA.",
+        "La zone de saisie est verrouillée : vérifiez qu'un modèle d'analyse documentaire et un modèle de dialogue sont configurés dans Administration › Modèles IA.",
         "Les notes du dossier ne semblent pas prises en compte : cliquez sur « Enregistrer les notes » dans le tiroir du dossier actif avant de poser votre question.",
       ],
     },
@@ -72,17 +72,32 @@ export const CONTEXTUAL_HELP_FR: ContextualHelpDictionarySection = {
     },
     "/spaces": {
       summaryWhatFor:
-        "Mes Espaces regroupe vos Espaces de travail collectifs, privés ou confidentiels, leurs sources documentaires, les règles héritées de votre unité d'organisation et l'accès au Glossaire métier.",
+        "Mes Espaces regroupe vos Espaces de travail collectifs, privés ou confidentiels, leurs sources documentaires, les règles héritées de votre unité d'organisation et le Glossaire métier.",
       steps: [
-        "Filtrez la vue entre « Tous », « Espaces d'Équipe » et « Mes Espaces Privés », ou créez un nouvel Espace rattaché à une Équipe existante.",
-        "Ouvrez un Espace pour ajuster son niveau de confidentialité (Standard, Confidentiel isolé ou Privé) et sa phase de cycle de vie.",
-        "Accédez aux onglets « Sources » pour connecter vos documents, ou cliquez sur « Glossaire métier » pour consulter les définitions de l'Espace.",
+        "Sélectionnez votre Espace actif dans la colonne de gauche (Personnel ou Équipe / Direction), ou cliquez sur « + Nouvel espace » pour créer un Espace rattaché à une Équipe.",
+        "Parcourez les 5 onglets de l'Espace : Accostage, Documents & Sources, Livrables & Artefacts, Glossaire et Membres & Paramètres de l'espace.",
+        "Dans l'onglet « Membres & Paramètres de l'espace », ajustez la visibilité d'un espace collectif (Standard ou Confidentiel isolé) ; un Espace personnel reste privé par construction.",
       ],
       realExampleText:
-        "L'équipe Sinistres crée un Espace « Audit Partenaire Q4 » rattaché à la Direction Opérations, le place en mode Confidentiel isolé afin qu'aucune personne extérieure n'y accède, puis y connecte le dossier de suivi dédié.",
+        "L'équipe Sinistres crée un Espace « Audit Partenaire Q4 » rattaché à la Direction Opérations, ouvre l'onglet Membres & Paramètres de l'espace pour le placer en mode Confidentiel isolé, puis rattache le dossier documentaire dédié.",
       commonPitfallsItems: [
-        "Quelle est la différence entre une unité d'organisation et un Espace de travail ? L'unité d'organisation définit qui travaille et porte le budget, l'Espace de travail porte vos sources et livrables.",
-        "Impossible de créer un Espace collectif : assurez-vous qu'au moins une Équipe a été créée au préalable dans Configuration › Mon Organisation.",
+        "Quelle est la différence entre une unité d'organisation et un Espace de travail ? L'unité d'organisation définit qui travaille et porte le budget (dans Mon Organisation) ; l'Espace de travail porte vos sources et livrables.",
+        "Impossible de créer un Espace collectif : assurez-vous qu'au moins une Équipe existe dans Mon Organisation.",
+      ],
+    },
+    "/organization": {
+      summaryWhatFor:
+        "Mon Organisation structure votre entreprise en Directions (BU) et en Équipes, désigne leurs responsables et gère les invitations de membres par périmètre délégué.",
+      steps: [
+        "Consultez l'arborescence : distinguez les unités parentes de contexte et les autres équipes en lecture seule de celles que vous administrez.",
+        "Cliquez sur « + Nouvelle unité » pour créer une Direction (BU) ou une Équipe et définir son rattachement budgétaire.",
+        "Cliquez sur « + Inviter un utilisateur » ou « Membres » sur une unité autorisée pour rattacher vos collègues.",
+      ],
+      realExampleText:
+        "La responsable de la Direction Opérations crée l'Équipe « Conformité Paiement » sous sa Direction puis invite deux analystes sans solliciter d'administrateur global.",
+      commonPitfallsItems: [
+        "Les boutons d'édition sont absents sur une unité : vous consultez un contexte parent ou une autre équipe en lecture seule.",
+        "Impossible de supprimer une Direction ou une Équipe : retirez d'abord les sous-unités et espaces rattachés.",
       ],
     },
   },

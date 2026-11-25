@@ -1,7 +1,8 @@
-import type {
-  AgentGovernanceStudioLabels,
-  AgentReadinessConditionItem,
-  AgentSixBlocksDraftState,
+import {
+  formatAgentModelPassportSummary,
+  type AgentGovernanceStudioLabels,
+  type AgentReadinessConditionItem,
+  type AgentSixBlocksDraftState,
 } from "./AgentGovernanceTypesAndDefaults";
 
 function formatChecklistTemplate(
@@ -64,11 +65,12 @@ export function computeAgentReadinessChecklist(
       code: "COGNITIVE_ENGINE",
       label: rc.engineLabel,
       satisfied: hasModelAndBudget,
-      detail: formatChecklistTemplate(rc.engineTemplate, {
-        tier: studio.llmModelTiers[draft.llmModelTier],
-        temperature: draft.temperature,
-        maxTokens: draft.maxTokens,
-      }),
+      detail: formatAgentModelPassportSummary(
+        draft.llmModelTier,
+        draft.temperature,
+        draft.maxTokens,
+        studio,
+      ),
     },
     {
       index: 4,

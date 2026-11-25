@@ -36,7 +36,7 @@ export const SHELL_NOTIFICATIONS_FR: ShellNotificationsDictionary = {
     badge: "Espace requis",
     title: "Aucun Espace de travail créé (menu Mes Processus verrouillé)",
     description:
-      "Créez votre premier Espace de travail (collectif ou privé rattaché à une Équipe de facturation) dans 📦 Mes Espaces pour rattacher vos sources documentaires et lancer des processus.",
+      "Créez votre premier Espace de travail (collectif ou privé rattaché à une Équipe de facturation) dans Mes Espaces pour rattacher vos sources documentaires et lancer des processus.",
     cta: "Créer un Espace →",
   },
   decisionWaiting: {

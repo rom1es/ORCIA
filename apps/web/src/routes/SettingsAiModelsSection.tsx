@@ -1,6 +1,7 @@
-import type {
-  InferenceTierAndEffortLabels,
-  UiPermissionVerb,
+import {
+  OrciaIcon,
+  type InferenceTierAndEffortLabels,
+  type UiPermissionVerb,
 } from "@orcia/ui";
 import React from "react";
 import type { ConfiguredLlmTierMapping } from "../components/platformSetupStore";
@@ -73,7 +74,7 @@ export function SettingsAiModelsSection({
             }}
             aria-label={hubLabels.closeErrorLabel}
           >
-            ✕
+            <OrciaIcon name="close" size={14} />
           </button>
         </div>
       )}

@@ -99,7 +99,8 @@ export function WorkspaceCompactHeader({
           onClick={onNavigateToGlossary}
           className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
         >
-          {panelCopy.glossaryLinkBtn}
+          <OrciaIcon name="vocabulary" size={14} />
+          <span>{panelCopy.glossaryLinkBtn}</span>
         </button>
       }
       primaryAction={

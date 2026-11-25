@@ -45,16 +45,16 @@ export const CORE_SHELL_FR_LABELS: Pick<
     localeSwitchLabel: "Langue",
     topbarSearchAriaLabel: "Recherche globale",
     topbarSearchPlaceholder: "Rechercher... (⌘K)",
-    darkModeToggleLabel: "🌙 Mode sombre",
+    darkModeToggleLabel: "Mode sombre",
     mobileNavigationAriaLabel: "Navigation mobile",
     mobileTabs: {
-      inbox: "🔔 À traiter",
-      chat: "💬 Arbitrage / Chat",
-      briefing: "📄 Synthèse",
+      inbox: "À traiter",
+      chat: "Arbitrage / Chat",
+      briefing: "Synthèse",
     },
   },
   humanAnchor: {
-    badgeTitle: "✍️ RÉDACTION PERSONNELLE OBLIGATOIRE",
+    badgeTitle: "RÉDACTION PERSONNELLE OBLIGATOIRE",
     authorLabel: "Auteur",
     placeholderText:
       "Saisissez vos orientations et hypothèses structurantes (rédaction personnelle requise)...",
@@ -64,7 +64,7 @@ export const CORE_SHELL_FR_LABELS: Pick<
     defaultValue: "Définition des objectifs prioritaires et des critères d'acceptation attendus.",
   },
   arbitrationTieBreak: {
-    badgeTitle: "⚖️ ARBITRAGE REQUIS",
+    badgeTitle: "ARBITRAGE REQUIS",
     policyPrefixLabel: "Règle de départage",
     policyLabels: {
       pauseAndEscalate: "Pause et escalade humaine",
@@ -78,7 +78,7 @@ export const CORE_SHELL_FR_LABELS: Pick<
     finopsImpactLabel: "Coût estimé",
     justificationPlaceholder: "Justification ou orientation complémentaire (optionnel)...",
     selectOptionButtonLabel: "Retenir cette option",
-    resolvedBannerPrefix: "✅ Décision d'arbitrage enregistrée pour la suite du processus",
+    resolvedBannerPrefix: "Décision d'arbitrage enregistrée pour la suite du processus",
     defaultQuestionTitle: "Choix entre deux orientations",
     defaultContextSummary:
       "Deux options équivalentes ont été préparées et nécessitent votre décision.",

@@ -78,10 +78,10 @@ export const FEATURE_COCKPIT_GATES_EN: FeatureCockpitGatesDictionary = {
       alignmentConflict: "Conflict",
       totalVolumeTemplate: "Total volume: {count} words",
       loadErrorFallback: "Gate load error",
-      loadErrorBannerTemplate: "⚠️ Unable to load human gate reviews ({msg}).",
-      openReviewSuccess: "✅ 4-block review briefing and section chunks ready for validation.",
+      loadErrorBannerTemplate: "Unable to load human gate reviews ({msg}).",
+      openReviewSuccess: "4-block review briefing and section chunks ready for validation.",
       openReviewErrorFallback: "Review open error",
-      inspectHypothesesSuccess: "✅ Block 4 (Retained Assumptions) marked as inspected.",
+      inspectHypothesesSuccess: "Block 4 (Retained Assumptions) marked as inspected.",
       inspectHypothesesErrorFallback: "Inspection error",
       chunkStatusLabels: {
         APPROVED: "Approved",
@@ -89,9 +89,9 @@ export const FEATURE_COCKPIT_GATES_EN: FeatureCockpitGatesDictionary = {
         CHALLENGED: "Challenged",
         PENDING: "Pending",
       },
-      chunkUpdatedTemplate: "✅ Section updated ({status}).",
+      chunkUpdatedTemplate: "Section updated ({status}).",
       chunkErrorFallback: "Section error",
-      finalizeSuccess: "✅ Human review approved and staged Jira action executed.",
+      finalizeSuccess: "Human review approved and staged Jira action executed.",
       finalizeErrorFallback: "Gate finalization error",
       defaultChallengeReason: "Clarification requested on upstream alignment.",
       seedPhrase:
@@ -113,26 +113,26 @@ export const FEATURE_COCKPIT_GATES_EN: FeatureCockpitGatesDictionary = {
     challengeModal: {
       defaultSummary:
         "Impact simulation: targeted re-evaluation of the challenged section without reprocessing validated upstream steps.",
-      challengeSubmittedBanner: "⚠️ Upstream challenge recorded and dispatched for revision.",
+      challengeSubmittedBanner: "Upstream challenge recorded and dispatched for revision.",
       replayBannerTemplate: 'Stale notice: replay triggered from "{stepKey}".',
       errorContextLabel: "Process replay",
     },
     docProcess: {
-      cardTitle: "📚 ORCIA Pack Process — ORCIA Documentation Generation",
+      cardTitle: "ORCIA Pack Process — ORCIA Documentation Generation",
       cardDescription:
         "Generates, verifies, and updates functional screen guides (FR/EN), the architecture FAQ, and the ORCIA documentation site in 4 steps.",
-      badgeLabel: "📦 ORCIA Documentation Pack · Agent: @Rédacteur-Documentation-Orcia",
-      runBtn: "▶️ Run ORCIA documentation generation",
-      loadInBuilderBtn: "✏️ Load in Process Studio",
+      badgeLabel: "ORCIA Documentation Pack · Agent: @Rédacteur-Documentation-Orcia",
+      runBtn: "▶ Run ORCIA documentation generation",
+      loadInBuilderBtn: "Load in Process Studio",
       stepsSummaryTitle: "Summary of the 4 executed steps:",
       stepCompletedBadge: "✓ Completed",
       publishSuccessBanner:
-        '✅ Process "ORCIA Documentation Generation" published and executed in 4 steps.',
+        'Process "ORCIA Documentation Generation"published and executed in 4 steps.',
       localValidationFallback: "Local validation applied",
       publishWithDetailTemplate:
-        '✅ Process "ORCIA Documentation Generation" executed in 4 steps ({detail}).',
+        'Process "ORCIA Documentation Generation"executed in 4 steps ({detail}).',
       loadedInBuilderBanner:
-        '✏️ Template "ORCIA Documentation Generation" loaded into the Process Studio for customization.',
+        'Template "ORCIA Documentation Generation"loaded into the Process Studio for customization.',
       steps: [
         {
           stepNumber: 1,
