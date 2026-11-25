@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 11-21-2026 09:55
+last_updated: 11-25-2026 22:16
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -332,6 +332,18 @@ development_status:
   29-6-header-layout-convergence-workspaces-organization-help-and-secondary: done
   29-7-icon-purge-copy-hygiene-contextual-help-ci-guard-and-epic-29-closure: done
   epic-29-retrospective: optional
+
+  # Epic 30 — Honest Save Semantics, Clean Conversational Prompts, Real PG18 Process Runs & Focus Review, and Agent Lifecycle Hardening (UX30-01..UX30-16)
+  # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-25-epic-30-assistant-processes-and-agents-ux-hardening.md
+  # Lots        : L1 30-1 -> 30-2 | L2 30-3 -> 30-4 | L3 30-5 -> L4 30-6
+  epic-30: backlog
+  30-1-assistant-settings-explicit-save-dirty-guard-and-empty-instructions: backlog
+  30-2-assistant-conversational-prompt-cleanup-and-empty-evidence-guard: backlog
+  30-3-processes-real-pg18-pending-runs-live-llm-and-coalesced-trace: backlog
+  30-4-processes-tabbed-hub-and-focus-review-action-artifact-reasoning: backlog
+  30-5-agents-pg18-mcp-sync-clean-modal-save-and-draft-active-lifecycle: backlog
+  30-6-epic-30-anti-regression-audits-bilingual-e2e-and-closure: backlog
+  epic-30-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
     title: "Politiques de restriction explicite (DENY prioritaire, INHERITANCE_BLOCK) sur sous-entités sensibles"
