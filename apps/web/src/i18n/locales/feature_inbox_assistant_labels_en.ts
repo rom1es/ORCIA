@@ -50,6 +50,7 @@ export const FEATURE_INBOX_ASSISTANT_EN: FeatureInboxAssistantDictionary = {
     modelReasoningInProgressLabel: "Model reasoning in progress",
     actionPendingApprovalLabel: "Action pending human approval",
     streamProviderErrorFallback: "AI provider error",
+    fastEffortLabel: "Fast",
     deepEffortLabel: "In-depth",
     standardEffortLabel: "Standard",
     feedbackErrorContext: "Assistant Feedback",

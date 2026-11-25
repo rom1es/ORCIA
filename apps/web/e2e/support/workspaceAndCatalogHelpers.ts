@@ -161,3 +161,55 @@ export async function openWizardsPage(page: Page): Promise<void> {
   await expect(page.getByTestId("wizards-route-page")).toBeVisible({ timeout: 30000 });
   await expect(page.getByTestId("durable-wizard-runner")).toBeVisible({ timeout: 15000 });
 }
+
+/**
+ * Re-select a workspace via `sidebar-workspace-selector` after a cold reload
+ * and optionally wait for the Assistant workspace overview request to complete.
+ */
+export async function selectWorkspaceInSidebar(
+  page: Page,
+  workspaceIdentifier: { readonly workspaceId?: string; readonly workspaceName: string },
+  options: { readonly waitForAssistantOverview?: boolean } = {},
+): Promise<string> {
+  const scopeSelect = page.getByTestId("sidebar-workspace-selector");
+  await expect(scopeSelect).toBeVisible({ timeout: 30000 });
+  await expect(scopeSelect).toContainText(workspaceIdentifier.workspaceName, { timeout: 30000 });
+
+  let optionValue = workspaceIdentifier.workspaceId ?? "";
+  if (!optionValue) {
+    optionValue =
+      (await scopeSelect
+        .locator("option")
+        .filter({ hasText: workspaceIdentifier.workspaceName })
+        .first()
+        .getAttribute("value")) ?? "";
+  }
+  expect(
+    optionValue,
+    `Missing sidebar option for workspace ${workspaceIdentifier.workspaceName}`,
+  ).toBeTruthy();
+
+  await expect(scopeSelect.locator(`option[value="${optionValue}"]`)).toHaveCount(1, {
+    timeout: 15000,
+  });
+
+  const currentValue = await scopeSelect.inputValue();
+  if (currentValue !== optionValue) {
+    if (options.waitForAssistantOverview) {
+      const [overviewRes] = await Promise.all([
+        page.waitForResponse(
+          (r) =>
+            r.url().includes(`/api/v1/assistant/workspaces/${optionValue}/overview`) &&
+            r.request().method() === "GET",
+          { timeout: 30000 },
+        ),
+        scopeSelect.selectOption(optionValue),
+      ]);
+      expect(overviewRes.status()).toBeLessThan(400);
+    } else {
+      await scopeSelect.selectOption(optionValue);
+    }
+  }
+  await expect(scopeSelect).toHaveValue(optionValue, { timeout: 15000 });
+  return optionValue;
+}

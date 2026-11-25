@@ -54,14 +54,14 @@ class SqlAssistantGovernanceRepository:
                 self._tables_ready_verified = True
             return ready
 
-    async def get_mode_a_layers_bundle(
+    async def get_mode_a_layers_bundle_with_labels(
         self,
         *,
         workspace_id: str,
         user_id: str,
         user_email: str | None = None,
-    ) -> tuple[UserLayerPreferences, WorkspaceLayerSettings, str | None]:
-        """Load `USER`, `WORKSPACE`, and `TEAM` Mode A overrides in 1 consolidated SQL query."""
+    ) -> tuple[UserLayerPreferences, WorkspaceLayerSettings, str | None, str | None, str | None]:
+        """Load Mode A overrides plus resolved workspace and user display names in 1 SQL query."""
         async with self._engine.connect() as conn:
             rows = (
                 (
@@ -78,6 +78,10 @@ class SqlAssistantGovernanceRepository:
                 .mappings()
                 .all()
             )
+        ws_name = str(rows[0]["workspace_name"]) if rows and rows[0].get("workspace_name") else None
+        u_name = (
+            str(rows[0]["user_display_name"]) if rows and rows[0].get("user_display_name") else None
+        )
         user_prefs, ws_settings, team_instr, frozen_entry = rows_to_mode_a_bundle(
             rows,
             workspace_id=workspace_id,
@@ -89,6 +93,19 @@ class SqlAssistantGovernanceRepository:
         )
         if frozen_entry is not None and frozen_entry[0]:
             ws_settings = build_frozen_workspace_settings(ws_settings, origin=frozen_entry[1])
+        return user_prefs, ws_settings, team_instr, ws_name, u_name
+
+    async def get_mode_a_layers_bundle(
+        self,
+        *,
+        workspace_id: str,
+        user_id: str,
+        user_email: str | None = None,
+    ) -> tuple[UserLayerPreferences, WorkspaceLayerSettings, str | None]:
+        """Load `USER`, `WORKSPACE`, and `TEAM` Mode A overrides in 1 consolidated SQL query."""
+        user_prefs, ws_settings, team_instr, _, _ = await self.get_mode_a_layers_bundle_with_labels(
+            workspace_id=workspace_id, user_id=user_id, user_email=user_email
+        )
         return user_prefs, ws_settings, team_instr
 
     async def get_user_preferences(

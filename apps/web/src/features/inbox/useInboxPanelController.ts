@@ -5,7 +5,10 @@ import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions";
 import { useI18n } from "../../i18n";
-import { useAuthSessionStore } from "../../stores/authSessionStore";
+import {
+  isPlatformAdministratorSession,
+  useAuthSessionStore,
+} from "../../stores/authSessionStore";
 import { useSourceLineInspector } from "../shared/useSourceLineInspector";
 import {
   readSavedActiveFolderId,
@@ -36,6 +39,13 @@ export function useInboxPanelController() {
   const { dictionary, locale, isFr } = useI18n();
   const { activeScopeId } = useShellNavigation();
   const authEmail = useAuthSessionStore((s) => s.email);
+  const authRoles = useAuthSessionStore((s) => s.roles);
+  const authReadOnlyObserver = useAuthSessionStore((s) => s.readOnlyObserver);
+  const sessionActiveHat = useAuthSessionStore((s) => s.activeHat);
+  const canConfigureAiModels = isPlatformAdministratorSession({
+    roles: authRoles,
+    readOnlyObserver: authReadOnlyObserver,
+  });
   const {
     platformAdmin,
     workspaces,
@@ -172,6 +182,7 @@ export function useInboxPanelController() {
       threads.ensureThreadForTurn(promptSeed, activeFolderId || null),
     activeFolder,
     governancePrefs: governance.governancePrefs,
+    sessionActiveHat,
     streamErrorLabels: dictionary.assistantStreamErrors,
     onTurnCompleted: (completed) => {
       const res = persistCompletedInboxTurn({
@@ -241,6 +252,8 @@ export function useInboxPanelController() {
     dictionary,
     isFr,
     authorEmail: platformAdmin?.email ?? "",
+    canConfigureAiModels,
+    sessionActiveHat,
     activeWorkspaceId,
     hasActiveEmbeddingModel,
     hasActiveChatModel,

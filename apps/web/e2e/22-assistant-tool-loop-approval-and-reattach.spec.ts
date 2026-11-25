@@ -10,7 +10,10 @@ import {
 } from "./support/embeddingModel";
 import { openAssistantPage } from "./support/processAndAssistantHelpers";
 import { apiGet, apiPost, reloadColdFromPg } from "./support/typedApiRequest";
-import { createOrgAndWorkspaceWithId } from "./support/workspaceAndCatalogHelpers";
+import {
+  createOrgAndWorkspaceWithId,
+  selectWorkspaceInSidebar,
+} from "./support/workspaceAndCatalogHelpers";
 
 test.describe("Story 26.9 — Assistant Mode A, PG18 Thread History, SSE Re-Attach, Tool Loop & Deepen", () => {
   test.beforeEach(() => {
@@ -99,6 +102,13 @@ test.describe("Story 26.9 — Assistant Mode A, PG18 Thread History, SSE Re-Atta
     expect(replayText).toContain("turn_completed");
 
     await reloadColdFromPg(page);
+    // Clearing localStorage resets activeScopeId to scope-global (personal workspace);
+    // re-select the target workspace so its persisted thread history hydrates from PG18.
+    await selectWorkspaceInSidebar(
+      page,
+      { workspaceId: ws.uiWorkspaceId, workspaceName: ws.name },
+      { waitForAssistantOverview: true },
+    );
     await expect(page.getByTestId("assistant-conversation-turn-1")).toBeVisible({ timeout: 30000 });
     await expect(page.getByTestId("assistant-conversation-turn-1")).toContainText(
       "Summarize the active architecture guidelines.",
@@ -166,6 +176,12 @@ test.describe("Story 26.9 — Assistant Mode A, PG18 Thread History, SSE Re-Atta
     await page.getByTestId("assistant-gov-cancel-btn").click();
 
     await reloadColdFromPg(page);
+    // Re-select the target workspace so Mode A user governance preferences hydrate for that workspace.
+    await selectWorkspaceInSidebar(
+      page,
+      { workspaceId: ws.uiWorkspaceId, workspaceName: ws.name },
+      { waitForAssistantOverview: true },
+    );
     await page.getByTestId("assistant-open-governance-btn").click();
     await expect(page.getByTestId("assistant-user-instructions-input")).toHaveValue(customInstr, {
       timeout: 15000,

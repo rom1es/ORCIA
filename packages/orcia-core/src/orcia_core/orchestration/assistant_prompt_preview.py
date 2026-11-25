@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from orcia_core.orchestration.assistant_governance_models import (
     AssembledLayerPreviewItem,
     UserLayerPreferences,
@@ -16,6 +18,66 @@ from orcia_core.orchestration.assistant_profile_adaptation import (
 from orcia_core.orchestration.assistant_prompt_locales import get_prompt_locale_bundle
 from orcia_core.permissions.models import UserIdentity
 
+_UUID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
+
+
+def is_raw_uuid_string(value: str | None) -> bool:
+    """Return True if `value` is a raw UUID string."""
+    return bool(value and _UUID_RE.match(value.strip()))
+
+
+def resolve_human_workspace_label(
+    workspace_id: str,
+    workspace_display_name: str | None = None,
+    *,
+    locale: str = "fr",
+) -> str:
+    """Resolve a human-readable workspace label without leaking raw UUIDv7s or `scope-global`."""
+    bundle = get_prompt_locale_bundle(locale)
+    clean_name = sanitize_layer_marker_tags(workspace_display_name)
+    if clean_name and not is_raw_uuid_string(clean_name):
+        return clean_name
+    raw_id = (workspace_id or "").strip()
+    if raw_id.lower() in ("scope-global", "global"):
+        return bundle.global_scope_label
+    if not raw_id or is_raw_uuid_string(raw_id):
+        return bundle.active_workspace_fallback_label
+    return raw_id
+
+
+def resolve_human_user_label(
+    user_id: str,
+    user_display_name: str | None = None,
+    *,
+    locale: str = "fr",
+) -> str:
+    """Resolve a human-readable user label without leaking raw UUIDv7s."""
+    bundle = get_prompt_locale_bundle(locale)
+    clean_name = sanitize_layer_marker_tags(user_display_name)
+    if clean_name and not is_raw_uuid_string(clean_name):
+        return clean_name
+    raw_id = (user_id or "").strip()
+    if not raw_id or is_raw_uuid_string(raw_id):
+        return bundle.active_user_fallback_label
+    return raw_id
+
+
+def resolve_human_speed_label(speed_mode: str, *, locale: str = "fr") -> str:
+    """Map internal speed enum (`SPEED_*`) to a localized human-readable label."""
+    bundle = get_prompt_locale_bundle(locale)
+    norm = (speed_mode or "").strip().upper()
+    return bundle.speed_mode_labels.get(norm, bundle.speed_mode_labels["SPEED_1_FAST"])
+
+
+def resolve_human_hat_label(hat: str, *, locale: str = "fr") -> str:
+    """Map role/archetype code to a localized human-readable label."""
+    bundle = get_prompt_locale_bundle(locale)
+    norm = (hat or "").strip().upper() or "ARCHITECT"
+    return bundle.hat_labels.get(norm, norm.replace("_", " ").title())
+
 
 def resolve_default_hat(
     *,
@@ -23,11 +85,13 @@ def resolve_default_hat(
     user: UserIdentity | None = None,
     fallback: str = "ARCHITECT",
 ) -> str:
-    """Resolve active hat from explicit override or `user.human_profile_archetype`."""
+    """Resolve active hat from explicit override, `human_profile_archetype`, or `platform_role`."""
     if explicit_hat and explicit_hat.strip():
         return explicit_hat.strip().upper()
     if user is not None and user.human_profile_archetype and user.human_profile_archetype.strip():
         return user.human_profile_archetype.strip().upper()
+    if user is not None and user.platform_role and user.platform_role.strip():
+        return user.platform_role.strip().upper()
     return fallback.strip().upper() or "ARCHITECT"
 
 
@@ -71,30 +135,49 @@ def build_five_layers_preview_items(
     ws_settings: WorkspaceLayerSettings,
     team_instr: str,
     locale: str = "fr",
+    workspace_display_name: str | None = None,
+    user_display_name: str | None = None,
 ) -> tuple[AssembledLayerPreviewItem, ...]:
     """Assemble the 5-layer preview tuple with sanitized mutable layers and `locale`."""
     bundle = get_prompt_locale_bundle(locale)
-    profile_spec = resolve_profile_adaptation(user_prefs.default_hat)
+    effective_hat = (user_prefs.default_hat or "").strip().upper() or "ARCHITECT"
+    profile_spec = resolve_profile_adaptation(effective_hat)
     reg_label, _, _ = resolve_profile_copy_for_locale(profile_spec, locale=locale)
+    human_hat = resolve_human_hat_label(effective_hat, locale=locale)
+    workspace_label = resolve_human_workspace_label(
+        workspace_id, workspace_display_name, locale=locale
+    )
+    user_label = resolve_human_user_label(user_id, user_display_name, locale=locale)
     resolved_pack = (pack_key or "").strip() or "core"
     l1_content = bundle.constitutional_layer_1
     l2_content = f"[ACTIVE_DOMAIN_PACK: {resolved_pack}]\n{bundle.pack_layer_summary}"
     l3_content = (
-        f"[TEAM_AND_HAT: {profile_spec.archetype}]\n"
+        f"[TEAM_AND_HAT: {human_hat}]\n"
         f"{bundle.register_label}: {reg_label}\n"
         f"{bundle.team_instructions_label}: {sanitize_layer_marker_tags(team_instr)}"
     )
-    l4_content = (
-        f"[WORKSPACE: {workspace_id}]\n"
-        f"{bundle.workspace_instructions_label}: "
-        f"{sanitize_layer_marker_tags(ws_settings.workspace_instructions)}\n"
-        f"{bundle.default_sources_label}: {', '.join(ws_settings.default_checked_sources)}\n"
-        f"{bundle.recommended_agents_label}: {', '.join(ws_settings.recommended_agents)}"
-    )
+    l4_lines = [
+        f"[WORKSPACE: {workspace_label}]",
+        (
+            f"{bundle.workspace_instructions_label}: "
+            f"{sanitize_layer_marker_tags(ws_settings.workspace_instructions)}"
+        ),
+    ]
+    if ws_settings.default_checked_sources:
+        l4_lines.append(
+            f"{bundle.default_sources_label}: {', '.join(ws_settings.default_checked_sources)}"
+        )
+    if ws_settings.recommended_agents:
+        l4_lines.append(
+            f"{bundle.recommended_agents_label}: {', '.join(ws_settings.recommended_agents)}"
+        )
+    l4_content = "\n".join(l4_lines)
+    tone_txt = bundle.tone_map.get(user_prefs.response_tone, user_prefs.response_tone)
+    fmt_txt = bundle.format_map.get(user_prefs.favorite_format, user_prefs.favorite_format)
     l5_content = (
-        f"[USER: {user_id}]\n"
-        f"{bundle.tone_label}: {user_prefs.response_tone} | "
-        f"{bundle.format_label}: {user_prefs.favorite_format}\n"
+        f"[USER: {user_label}]\n"
+        f"{bundle.tone_label}: {tone_txt} | "
+        f"{bundle.format_label}: {fmt_txt}\n"
         f"{bundle.personal_instructions_label}: "
         f"{sanitize_layer_marker_tags(user_prefs.personal_instructions)}"
     )
@@ -200,10 +283,12 @@ def format_system_instructions_text(
         if federated_evidence_summary and federated_evidence_summary.strip()
         else ""
     )
+    human_hat = resolve_human_hat_label(hat, locale=locale)
+    human_speed = resolve_human_speed_label(speed_mode, locale=locale)
     return (
         f"{layers_block}{ontology_block}{evidence_block}{custom_block}\n\n"
         f"[ADAPTATION_RUNTIME_METADATA]\n"
-        f"{bundle.active_hat_tpl.format(hat=hat, speed_mode=speed_mode)}\n"
+        f"{bundle.active_hat_tpl.format(hat=human_hat, speed_mode=human_speed)}\n"
         f"- {tier_guidance}\n"
         f"- {effort_guidance}\n"
         f"{bundle.markdown_rule}\n"

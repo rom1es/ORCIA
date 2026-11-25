@@ -35,7 +35,7 @@ function AssistantInboxFeatureContent() {
   const { navigateToRoute, openHelpSection } = useShellNavigation();
   const ctrl = useInboxPanelController();
   const {
-    dictionary, isFr, authorEmail, activeWorkspaceId,
+    dictionary, isFr, authorEmail, canConfigureAiModels, sessionActiveHat, activeWorkspaceId,
     hasActiveEmbeddingModel, hasActiveChatModel, supportsTools, ragReindex, assistantInputBlocked,
     prefillPrompt, setPrefillPrompt, activeFolderId, activeFolder,
     governancePrefs, governance, foldersPanelOpen, setFoldersPanelOpen,
@@ -54,7 +54,8 @@ function AssistantInboxFeatureContent() {
     onFeedback: setGovernanceFeedback,
   });
 
-  const disabledReasonBannerNode = (
+  const hasComposerNotice = !hasActiveChatModel || !hasActiveEmbeddingModel || ragReindex.isReindexing || ragReindex.isReindexFailed;
+  const disabledReasonBannerNode = hasComposerNotice ? (
     <InboxDisabledBanner
       hasActiveChatModel={hasActiveChatModel}
       hasActiveEmbeddingModel={hasActiveEmbeddingModel}
@@ -62,6 +63,7 @@ function AssistantInboxFeatureContent() {
       isReindexFailed={ragReindex.isReindexFailed}
       progressPercentage={ragReindex.progressPercentage}
       errorMessage={ragReindex.errorMessage}
+      canConfigureAiModels={canConfigureAiModels}
       noChatLabels={dictionary.assistantNoChatModel}
       ragNoticeLabels={dictionary.assistantRagNotice}
       onRelaunchReindex={() => {
@@ -69,7 +71,7 @@ function AssistantInboxFeatureContent() {
       }}
       onNavigateAiModels={() => navigateToRoute("/settings/ai-models")}
     />
-  );
+  ) : null;
 
   const latestTurnInActiveConv =
     activeConversation?.turns[activeConversation.turns.length - 1] ?? null;
@@ -179,7 +181,7 @@ function AssistantInboxFeatureContent() {
         <AssistantSpeedSelectorAndStreamView
           workspaceId={activeWorkspaceId}
           userId={authorEmail}
-          hat={governancePrefs.defaultHat}
+          hat={governancePrefs.defaultHat || sessionActiveHat || "ARCHITECT"}
           supportsTools={supportsTools}
           lowEvidence={Boolean(streaming.lowEvidence || latestTurnInActiveConv?.lowEvidence)}
           modelOptions={modelOptions}

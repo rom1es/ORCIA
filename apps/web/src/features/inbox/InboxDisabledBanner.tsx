@@ -10,6 +10,7 @@ export interface InboxDisabledBannerProps {
   readonly isReindexFailed: boolean;
   readonly progressPercentage: number;
   readonly errorMessage: string | null;
+  readonly canConfigureAiModels?: boolean;
   readonly noChatLabels: TranslationDictionary["assistantNoChatModel"];
   readonly ragNoticeLabels: TranslationDictionary["assistantRagNotice"];
   readonly onRelaunchReindex: () => void;
@@ -23,6 +24,7 @@ export function InboxDisabledBanner({
   isReindexFailed,
   progressPercentage,
   errorMessage,
+  canConfigureAiModels = false,
   noChatLabels,
   ragNoticeLabels,
   onRelaunchReindex,
@@ -33,24 +35,33 @@ export function InboxDisabledBanner({
       <div
         role="alert"
         data-testid="assistant-no-chat-model-banner"
-        className="mb-2 flex flex-col gap-1.5 rounded-lg border border-status-warning/40 bg-status-warning/10 p-3 text-xs text-text-primary"
+        className="flex flex-1 flex-col gap-1 rounded-lg border border-status-warning/40 bg-status-warning/10 p-3 text-xs text-text-primary"
       >
         <div className="flex items-center gap-2 font-semibold text-status-warning">
           <span>⚠️ {noChatLabels.bannerTitle}</span>
         </div>
         <p className="text-text-secondary">{noChatLabels.bannerDescription}</p>
         <div>
-          <a
-            href="/settings/ai-models"
-            data-testid="assistant-configure-chat-model-link"
-            onClick={(e) => {
-              e.preventDefault();
-              onNavigateAiModels();
-            }}
-            className="inline-flex items-center gap-1 font-medium text-action-primary underline hover:opacity-80"
-          >
-            {noChatLabels.configureCta}
-          </a>
+          {canConfigureAiModels ? (
+            <a
+              href="/settings/ai-models"
+              data-testid="assistant-configure-chat-model-link"
+              onClick={(e) => {
+                e.preventDefault();
+                onNavigateAiModels();
+              }}
+              className="inline-flex items-center gap-1 font-medium text-action-primary underline hover:opacity-80"
+            >
+              {noChatLabels.configureCta}
+            </a>
+          ) : (
+            <span
+              data-testid="assistant-no-chat-admin-guidance"
+              className="text-text-secondary"
+            >
+              {noChatLabels.contactAdminGuidance}
+            </span>
+          )}
         </div>
       </div>
     );
@@ -61,6 +72,8 @@ export function InboxDisabledBanner({
         title={ragNoticeLabels.noEmbeddingTitle}
         description={ragNoticeLabels.noEmbeddingDescription}
         configureCta={ragNoticeLabels.configureEmbeddingCta}
+        adminContactGuidance={ragNoticeLabels.contactAdminGuidance}
+        canConfigureAiModels={canConfigureAiModels}
         onConfigure={onNavigateAiModels}
       />
     );
@@ -71,6 +84,7 @@ export function InboxDisabledBanner({
         status="IN_PROGRESS"
         progressPercentage={progressPercentage}
         labels={ragNoticeLabels}
+        canConfigureAiModels={canConfigureAiModels}
         onConfigure={onNavigateAiModels}
       />
     );
@@ -82,6 +96,7 @@ export function InboxDisabledBanner({
         progressPercentage={progressPercentage}
         errorMessage={errorMessage}
         labels={ragNoticeLabels}
+        canConfigureAiModels={canConfigureAiModels}
         onRelaunch={onRelaunchReindex}
         onConfigure={onNavigateAiModels}
       />

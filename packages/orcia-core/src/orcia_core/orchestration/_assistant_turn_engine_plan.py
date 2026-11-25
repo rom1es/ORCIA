@@ -115,6 +115,9 @@ async def assemble_prepared_turn_plan_async(
             workspace_id=workspace_id,
             user_id=user.id,
             locale=locale,
+            user_email=user.email,
+            user_display_name=user.display_name,
+            default_hat_fallback=active_hat,
         )
         assembled_text = "\n\n".join(f"### {layer.label}\n{layer.content}" for layer in layers)
     digest = hashlib.sha256(assembled_text.encode("utf-8")).hexdigest()

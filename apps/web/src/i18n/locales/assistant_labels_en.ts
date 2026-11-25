@@ -69,12 +69,16 @@ export const ASSISTANT_EN_LABELS: AssistantDictionarySection = {
     bannerDescription:
       "No active chat AI model is configured on the platform. Configure at least one chat model to use My Assistant.",
     configureCta: "Configure an AI model →",
+    contactAdminGuidance:
+      "Contact a platform administrator to configure an AI model.",
   },
   assistantRagNotice: {
     noEmbeddingTitle: "Direct dialogue & glossary active · Document search inactive",
     noEmbeddingDescription:
       "No semantic indexing model is configured. You can chat normally with My Assistant; searching workspace documents requires an embedding model.",
     configureEmbeddingCta: "Configure in Administration › AI Models →",
+    contactAdminGuidance:
+      "Contact an administrator to enable document indexing.",
     reindexingTitle: "Direct dialogue & glossary active · Document reindexing in progress",
     reindexingDescription:
       "The document corpus is undergoing semantic reindexing. Direct chat remains active; document search will resume automatically once finished.",

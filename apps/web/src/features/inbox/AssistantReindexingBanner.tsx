@@ -7,6 +7,7 @@ export interface AssistantReindexingBannerProps {
   readonly progressPercentage: number;
   readonly errorMessage?: string | null;
   readonly labels: TranslationDictionary["assistantRagNotice"];
+  readonly canConfigureAiModels?: boolean;
   readonly onRelaunch?: () => void;
   readonly onConfigure?: () => void;
 }
@@ -14,14 +15,22 @@ export interface AssistantReindexingBannerProps {
 export function AssistantReindexingBanner(
   props: AssistantReindexingBannerProps,
 ): React.JSX.Element {
-  const { status, progressPercentage, errorMessage, labels, onRelaunch, onConfigure } = props;
+  const {
+    status,
+    progressPercentage,
+    errorMessage,
+    labels,
+    canConfigureAiModels = false,
+    onRelaunch,
+    onConfigure,
+  } = props;
 
   if (status === "FAILED") {
     return (
       <div
         role="status"
         data-testid="assistant-rag-inactive-notice"
-        className="mb-2 flex flex-col gap-1.5 rounded-lg border border-status-warning/40 bg-status-warning/10 px-3 py-2 text-xs text-text-primary"
+        className="flex flex-1 flex-col gap-1 rounded-lg border border-status-warning/40 bg-status-warning/10 px-3 py-1.5 text-xs text-text-primary"
       >
         <div className="flex items-center gap-2 font-medium text-status-warning">
           <OrciaIcon name="warning" size={14} />
@@ -29,7 +38,7 @@ export function AssistantReindexingBanner(
         </div>
         <p className="text-text-secondary">{errorMessage || labels.reindexFailedDescription}</p>
         <div className="flex flex-wrap items-center gap-3">
-          {onRelaunch && (
+          {canConfigureAiModels && onRelaunch && (
             <button
               type="button"
               data-testid="assistant-relaunch-reindex-btn"
@@ -40,7 +49,7 @@ export function AssistantReindexingBanner(
               <span>{labels.relaunchReindexCta}</span>
             </button>
           )}
-          {onConfigure && (
+          {canConfigureAiModels && onConfigure ? (
             <a
               href="/settings/ai-models"
               data-testid="assistant-configure-embedding-link"
@@ -52,6 +61,10 @@ export function AssistantReindexingBanner(
             >
               {labels.checkEmbeddingCta}
             </a>
+          ) : (
+            <span data-testid="assistant-rag-admin-guidance" className="text-[11px] text-text-secondary">
+              {labels.contactAdminGuidance}
+            </span>
           )}
         </div>
       </div>
@@ -62,7 +75,7 @@ export function AssistantReindexingBanner(
     <div
       role="status"
       data-testid="assistant-rag-inactive-notice"
-      className="mb-2 flex flex-col gap-1.5 rounded-lg border border-border-subtle bg-surface-secondary px-3 py-2 text-xs text-text-primary"
+      className="flex flex-1 flex-col gap-1.5 rounded-lg border border-border-subtle bg-surface-secondary px-3 py-1.5 text-xs text-text-primary"
     >
       <div className="flex items-center justify-between font-medium text-text-primary">
         <span className="inline-flex items-center gap-1.5">

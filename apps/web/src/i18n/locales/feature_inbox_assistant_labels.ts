@@ -49,6 +49,7 @@ export interface FeatureInboxAssistantDictionary {
     readonly modelReasoningInProgressLabel: string;
     readonly actionPendingApprovalLabel: string;
     readonly streamProviderErrorFallback: string;
+    readonly fastEffortLabel: string;
     readonly deepEffortLabel: string;
     readonly standardEffortLabel: string;
     readonly feedbackErrorContext: string;

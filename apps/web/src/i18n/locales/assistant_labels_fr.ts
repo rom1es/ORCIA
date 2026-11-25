@@ -71,12 +71,16 @@ export const ASSISTANT_FR_LABELS: AssistantDictionarySection = {
     bannerDescription:
       "Aucun modèle de dialogue (chat) actif n'est configuré sur la plateforme. Configurez au moins un modèle chat pour utiliser Mon Assistant.",
     configureCta: "Configurer un modèle IA →",
+    contactAdminGuidance:
+      "Contactez un administrateur de plateforme pour configurer un modèle IA.",
   },
   assistantRagNotice: {
     noEmbeddingTitle: "Dialogue direct & glossaire actifs · Recherche documentaire inactive",
     noEmbeddingDescription:
       "Aucun modèle d'indexation sémantique n'est configuré. Vous pouvez échanger normalement avec Mon Assistant ; la recherche dans les documents nécessite un modèle d'embedding.",
     configureEmbeddingCta: "Configurer dans Administration › Modèles IA →",
+    contactAdminGuidance:
+      "Contactez un administrateur pour activer l'indexation documentaire.",
     reindexingTitle: "Dialogue direct & glossaire actifs · Réindexation documentaire en cours",
     reindexingDescription:
       "Le corpus documentaire est en cours de réindexation sémantique. Le dialogue direct reste actif ; la recherche documentaire reprendra automatiquement à la fin.",

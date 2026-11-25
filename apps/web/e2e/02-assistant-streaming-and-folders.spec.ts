@@ -6,6 +6,7 @@ import { configureActiveChatModelViaApi } from "./support/embeddingModel";
 import { createFirstAdminViaUi, E2E_ADMIN } from "./support/firstAdmin";
 import { createBuAndTeamViaUi, createWorkspaceViaUi } from "./support/orgAndWorkspace";
 import { apiGet, reloadColdFromPg } from "./support/typedApiRequest";
+import { selectWorkspaceInSidebar } from "./support/workspaceAndCatalogHelpers";
 
 test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et dossiers", () => {
   test.beforeEach(async ({ page }) => {
@@ -63,7 +64,7 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
   }) => {
     // Prérequis réel : un dossier appartient à un Espace de travail (aucun espace de repli fictif).
     await createBuAndTeamViaUi(page);
-    await createWorkspaceViaUi(page, "Espace E2E Dossiers", "espace-e2e-dossiers");
+    const ws = await createWorkspaceViaUi(page, "Espace E2E Dossiers", "espace-e2e-dossiers");
 
     await page.goto("/assistant");
     await page.getByTestId("assistant-folders-toggle-btn").click();
@@ -75,12 +76,14 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
     await page.getByTestId("assistant-create-folder-btn").click();
     expect((await created).status()).toBeLessThan(400);
 
-    const overview = page.waitForResponse(
-      (r) => r.url().includes("/api/v1/assistant/workspaces/") && r.url().endsWith("/overview"),
-      { timeout: 30000 },
-    );
     await reloadColdFromPg(page);
-    expect((await overview).status()).toBeLessThan(400);
+    // Clearing localStorage resets activeScopeId to scope-global (personal workspace);
+    // re-select the shared workspace to verify PG18 folder rehydration for that workspace.
+    await selectWorkspaceInSidebar(
+      page,
+      { workspaceId: ws.id, workspaceName: ws.name },
+      { waitForAssistantOverview: true },
+    );
     await page.getByTestId("assistant-folders-toggle-btn").click();
     await expect(page.getByText("Dossier E2E persistant").first()).toBeVisible({ timeout: 20000 });
     expectDbRowExists(
@@ -92,7 +95,11 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
 
   test("un dossier survit au redémarrage de l'API (persistance PostgreSQL)", async ({ page }) => {
     await createBuAndTeamViaUi(page);
-    await createWorkspaceViaUi(page, "Espace E2E Dossiers PG", "espace-e2e-dossiers-pg");
+    const ws = await createWorkspaceViaUi(
+      page,
+      "Espace E2E Dossiers PG",
+      "espace-e2e-dossiers-pg",
+    );
 
     await page.goto("/assistant");
     await page.getByTestId("assistant-folders-toggle-btn").click();
@@ -105,6 +112,12 @@ test.describe("TEST-04 · 02 — Mon Assistant : flux réel (cassette LLM) et do
     expect((await created).status()).toBeLessThan(400);
 
     await reloadColdFromPg(page);
+    // Re-select the shared workspace after cold reload clears localStorage.
+    await selectWorkspaceInSidebar(
+      page,
+      { workspaceId: ws.id, workspaceName: ws.name },
+      { waitForAssistantOverview: true },
+    );
     await page.getByTestId("assistant-folders-toggle-btn").click();
     await expect(page.getByText("Dossier E2E PostgreSQL").first()).toBeVisible({ timeout: 20000 });
 

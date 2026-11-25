@@ -35,7 +35,7 @@ class UserLayerPreferences:
     workspace_id: str
     response_tone: AssistantResponseTone = "BALANCED"
     favorite_format: AssistantResponseFormat = "STRUCTURED_SECTIONS"
-    default_hat: str = "PM"
+    default_hat: str = ""
     personal_instructions: str = _FLOC_FR["user_default_instructions"]
     sha256: str = ""
 
@@ -46,12 +46,8 @@ class WorkspaceLayerSettings:
 
     workspace_id: str
     workspace_instructions: str = _FLOC_FR["ws_default_instructions"]
-    default_checked_sources: tuple[str, ...] = (
-        "orcia://sources/repo-main",
-        "orcia://sources/architecture-kb",
-        "orcia://sources/project-delivery",
-    )
-    recommended_agents: tuple[str, ...] = ("@spec-architect", "@security-reviewer")
+    default_checked_sources: tuple[str, ...] = ()
+    recommended_agents: tuple[str, ...] = ()
     arbitration_policy: AssistantArbitrationPolicy = "PAUSE_AND_ESCALATE"
     welcome_suggestions: tuple[str, ...] = (
         *_FLOC_FR["ws_suggestions"].split("|"),

@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 236,
+    "techLeadReportsCount": 237,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -542,6 +542,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-25",
+      "phaseOrStory": "Story 29.3",
+      "reportFile": "29-3-assistant-prompt-sanitization-speed-tier-alignment-and-rbac-notices-tech-lead-report.md",
+      "domain": "Epic 29 Lot 1 — Mon Assistant Prompt & Jargon Sanitization, Speed/Tier Alignment & RBAC-Gated Composer Notices (UH-05, CAP-070, CAP-071, CAP-075, CAP-190)",
+      "summary": "Closed (done, Distinct Final Testing Sub-Agent verified): eliminated raw UUIDv7, SPEED_1_FAST enum, \"PM\" fallback, and phantom orcia://sources/repo-main / @spec-architect defaults across 5-layer prompt assembly (assistant_governance_models.py 151 L, assistant_prompt_locales.py 270 L, assistant_prompt_preview.py 296 L, assistant_prompt_builder.py 275 L, sql_assistant_governance.py 284 L, _sql_assistant_governance_queries.py 274 L, assistant_governance.py 282 L, _assistant_governance_sync.py 204 L, _assistant_turn_engine_plan.py 150 L, _assistant_context_assembly.py 298 L); aligned useAssistantSpeedViewState and fast (Rapide/Fast) vs balanced (Standard) effort/speed vocabulary (AssistantSpeedSelectorAndStreamView.tsx 299 L, AssistantSpeedSelectorHelpers.tsx 258 L, savedConversationsStore.ts 213 L, useAssistantStreamingTurn.ts 292 L); gated /settings/ai-models links behind isPlatformAdministratorSession (useInboxPanelController.ts 299 L, InboxDisabledBanner.tsx 106 L, AssistantNoEmbeddingBanner.tsx 57 L, AssistantReindexingBanner.tsx 99 L) and collapsed footer notices (AssistantStickyPromptFooter.tsx 272 L, AssistantStickyFooterBadges.tsx 195 L); verified 100% 10-module Story 29.3 branch coverage (119 passed), 181 passed security+contract+evals, 6 passed PG18 integration, 85 files / 314 tests @orcia/web Vitest, 9/9 Turbo, 12 passed (1.9m) Playwright Desktop E2E (02, 11, 15, 21, 22 without fixtures), ruff (1742 files)/mypy --strict (856 files)/lint-imports (5/5, 899 files)/lint_spine (0)/export_openapi (0-diff) clean."
+    },
     {
       "date": "2026-11-25",
       "phaseOrStory": "Story 29.2",

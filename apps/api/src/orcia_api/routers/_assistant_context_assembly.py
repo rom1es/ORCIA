@@ -161,7 +161,12 @@ async def assemble_real_workspace_context_for_turn_async(
 
             gov = get_assistant_governance_service(request)
             layers = await gov.assemble_five_layers_preview_async(
-                workspace_id=workspace_id, user_id=user_id, locale=locale
+                workspace_id=workspace_id,
+                user_id=user_id,
+                locale=locale,
+                user_email=user.email if user else None,
+                user_display_name=user.display_name if user else None,
+                default_hat_fallback=hat,
             )
             text = "\n\n".join(f"### {layer.label}\n{layer.content}" for layer in layers)
         except Exception as exc:
@@ -291,10 +296,3 @@ async def assemble_real_workspace_context_for_turn_async(
         ontology_concepts=concepts_dicts,
         ontology_axioms=axioms_dicts,
     )
-
-
-__all__ = [
-    "AssembledTurnContext",
-    "assemble_real_workspace_context_for_turn_async",
-    "resolve_ranked_pg18_ontology_for_turn",
-]

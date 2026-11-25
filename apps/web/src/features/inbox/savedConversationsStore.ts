@@ -120,11 +120,19 @@ export function upsertTurnIntoSavedConversations(params: {
       : modelOpt.configuredModelName || modelOpt.title;
   const flowCopy = resolveDictionaryForFlag(params.isFr).featureInboxAssistant.assistantFlow;
   const effortLabel =
-    params.thinkingEffort === "deep" ? flowCopy.deepEffortLabel : flowCopy.standardEffortLabel;
+    params.thinkingEffort === "deep"
+      ? flowCopy.deepEffortLabel
+      : params.thinkingEffort === "fast"
+        ? flowCopy.fastEffortLabel
+        : flowCopy.standardEffortLabel;
   const nowIso = new Date().toISOString();
   const cleanReply = sanitizeAssistantDisplayReply(params.assistantReply);
   const normalizedEffort: UiInferenceEffort =
-    params.thinkingEffort === "deep" ? "deep" : "balanced";
+    params.thinkingEffort === "deep"
+      ? "deep"
+      : params.thinkingEffort === "fast"
+        ? "fast"
+        : "balanced";
   const newTurn: SavedConversationTurnItem = {
     turnId: params.turnId || `turn-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     ...(params.parentTurnId ? { parentTurnId: params.parentTurnId } : {}),

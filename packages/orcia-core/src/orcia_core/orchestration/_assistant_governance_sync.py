@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Literal
 
 from orcia_core.orchestration.assistant_governance_models import (
@@ -23,6 +24,7 @@ from orcia_core.orchestration.assistant_governance_studio import (
     can_manage_workspace_or_team,
     ensure_workspace_or_team_manager,
 )
+from orcia_core.orchestration.assistant_prompt_preview import resolve_default_hat
 from orcia_core.orchestration.errors import FunnelRuleViolationError, ObserverModeReadOnlyError
 from orcia_core.permissions.models import UserIdentity
 
@@ -127,6 +129,18 @@ class _AssistantGovernanceSyncMixin:
             )
         return updated
 
+    @staticmethod
+    def _with_resolved_hat(
+        prefs: UserLayerPreferences,
+        *,
+        user: UserIdentity | None = None,
+        fallback: str | None = None,
+    ) -> UserLayerPreferences:
+        if prefs.default_hat and prefs.default_hat.strip():
+            return prefs
+        resolved = resolve_default_hat(user=user, fallback=fallback or "ARCHITECT")
+        return replace(prefs, default_hat=resolved)
+
     def assemble_five_layers_preview(
         self,
         *,
@@ -134,19 +148,28 @@ class _AssistantGovernanceSyncMixin:
         user_id: str,
         pack_key: str | None = None,
         locale: str = "fr",
+        workspace_display_name: str | None = None,
+        user_display_name: str | None = None,
+        default_hat_fallback: str | None = None,
     ) -> tuple[AssembledLayerPreviewItem, ...]:
         """Build Tab 3 (`Assemblage complet`) showing the 5 active prompt layers (`AD-15`)."""
         team_instr = (
             self._store.get_team_instructions(workspace_id) if self._store else None
         ) or self._default_team_instructions(locale)
+        prefs = self._with_resolved_hat(
+            self.get_user_preferences(workspace_id=workspace_id, user_id=user_id),
+            fallback=default_hat_fallback,
+        )
         return build_five_layers_preview_items(
             workspace_id=workspace_id,
             user_id=user_id,
             pack_key=pack_key,
-            user_prefs=self.get_user_preferences(workspace_id=workspace_id, user_id=user_id),
+            user_prefs=prefs,
             ws_settings=self.get_workspace_settings(workspace_id),
             team_instr=team_instr,
             locale=locale,
+            workspace_display_name=workspace_display_name,
+            user_display_name=user_display_name,
         )
 
     def get_governance_view(
@@ -158,13 +181,24 @@ class _AssistantGovernanceSyncMixin:
         locale: str = "fr",
     ) -> AssistantGovernanceView:
         """Assemble Mode A governance view from unit store or deterministic defaults."""
+        resolved_hat = resolve_default_hat(user=user)
+        prefs = self._with_resolved_hat(
+            self.get_user_preferences(workspace_id=workspace_id, user_id=user.id),
+            user=user,
+            fallback=resolved_hat,
+        )
         return AssistantGovernanceView(
             workspace_id=workspace_id,
             can_edit_workspace_layer=can_manage_workspace_or_team(user),
-            user_preferences=self.get_user_preferences(workspace_id=workspace_id, user_id=user.id),
+            user_preferences=prefs,
             workspace_settings=self.get_workspace_settings(workspace_id),
             assembled_layers=self.assemble_five_layers_preview(
-                workspace_id=workspace_id, user_id=user.id, pack_key=pack_key, locale=locale
+                workspace_id=workspace_id,
+                user_id=user.id,
+                pack_key=pack_key,
+                locale=locale,
+                user_display_name=user.display_name,
+                default_hat_fallback=resolved_hat,
             ),
             override_records=self._store.list_overrides() if self._store is not None else (),
         )

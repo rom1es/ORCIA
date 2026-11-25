@@ -14,6 +14,7 @@ export function useAssistantSpeedViewState({
   supportsTools,
   initialTier,
   initialEffort,
+  hideLegacySpeedPills = false,
   prefillPrompt,
   onPrefillConsumed,
   inputRef,
@@ -23,14 +24,25 @@ export function useAssistantSpeedViewState({
   readonly supportsTools: boolean;
   readonly initialTier: UiInferenceTier;
   readonly initialEffort?: UiInferenceEffort;
+  readonly hideLegacySpeedPills?: boolean;
   readonly prefillPrompt: string | null;
   readonly onPrefillConsumed?: () => void;
   readonly inputRef: React.RefObject<HTMLInputElement | null>;
 }) {
-  const [speed, setSpeed] = useState<UiAssistantSpeedMode>(initialDeepAudit ? "SPEED_3_DEEP_AUDIT" : initialSpeed);
-  const [deepAuditActive, setDeepAuditActive] = useState<boolean>(initialDeepAudit);
+  const defaultEffort: UiInferenceEffort = !supportsTools
+    ? "fast"
+    : initialEffort ?? (initialDeepAudit ? "deep" : hideLegacySpeedPills ? "balanced" : initialSpeed === "SPEED_2_AGENT_TOOLS" ? "balanced" : "fast");
+  const defaultSpeed: UiAssistantSpeedMode = !supportsTools
+    ? "SPEED_1_FAST"
+    : initialDeepAudit
+      ? "SPEED_3_DEEP_AUDIT"
+      : hideLegacySpeedPills && defaultEffort === "balanced"
+        ? "SPEED_2_AGENT_TOOLS"
+        : initialSpeed;
+  const [speed, setSpeed] = useState<UiAssistantSpeedMode>(defaultSpeed);
+  const [deepAuditActive, setDeepAuditActive] = useState<boolean>(initialDeepAudit && supportsTools);
   const [tier, setTier] = useState<UiInferenceTier>(initialTier);
-  const [effort, setEffort] = useState<UiInferenceEffort>(initialEffort ?? (initialDeepAudit ? "deep" : "balanced"));
+  const [effort, setEffort] = useState<UiInferenceEffort>(defaultEffort);
   const [pickerOpen, setPickerOpen] = useState<boolean>(false);
   const [thinkingSubmenuOpen, setThinkingSubmenuOpen] = useState<boolean>(true);
   const [plusMenuOpen, setPlusMenuOpen] = useState<boolean>(false);
@@ -41,6 +53,17 @@ export function useAssistantSpeedViewState({
   const [localStoppedFlag, setLocalStoppedFlag] = useState<boolean>(false);
   const [attachedFiles, setAttachedFiles] = useState<readonly UiAssistantAttachedFileItem[]>([]);
   const [forcedAutocompleteKind, setForcedAutocompleteKind] = useState<"agent" | "skill" | null>(null);
+
+  useEffect(() => {
+    if (!supportsTools) {
+      setSpeed("SPEED_1_FAST");
+      setDeepAuditActive(false);
+      setEffort("fast");
+    } else if (hideLegacySpeedPills && !userEditedTierOrEffort && !deepAuditActive) {
+      setSpeed("SPEED_2_AGENT_TOOLS");
+      setEffort("balanced");
+    }
+  }, [supportsTools, hideLegacySpeedPills, userEditedTierOrEffort, deepAuditActive]);
 
   useEffect(() => {
     if (!prefillPrompt) return;
@@ -74,8 +97,14 @@ export function useAssistantSpeedViewState({
       return;
     }
     if (!deepAuditActive && !userEditedTierOrEffort) {
-      setSpeed(/(?:^|\s)(@[a-zA-Z0-9_-]+|\/[a-zA-Z0-9_-]+)/.test(val) ? "SPEED_2_AGENT_TOOLS" : "SPEED_1_FAST");
-      setEffort("balanced");
+      const hasTarget = /(?:^|\s)(@[a-zA-Z0-9_-]+|\/[a-zA-Z0-9_-]+)/.test(val);
+      if (hasTarget || hideLegacySpeedPills) {
+        setSpeed(hasTarget ? "SPEED_2_AGENT_TOOLS" : hideLegacySpeedPills ? "SPEED_2_AGENT_TOOLS" : "SPEED_1_FAST");
+        setEffort("balanced");
+      } else {
+        setSpeed("SPEED_1_FAST");
+        setEffort("fast");
+      }
     }
   };
 

@@ -214,11 +214,19 @@ export function AssistantStickyPromptFooter(props: AssistantStickyPromptFooterPr
         detachActiveFolderAriaLabel={detachActiveFolderAriaLabel}
         onClearActiveFolder={onClearActiveFolder}
       />
-      {disabledReasonBanner}
-      <AssistantToolsUnsupportedNotice
-        supportsTools={supportsTools}
-        toolsUnsupportedNotice={toolsUnsupportedNotice}
-      />
+      {disabledReasonBanner || (!supportsTools && toolsUnsupportedNotice) ? (
+        <div
+          data-testid="assistant-composer-status-strip"
+          className="mb-1.5 flex flex-wrap items-center justify-between gap-2"
+        >
+          {disabledReasonBanner}
+          <AssistantToolsUnsupportedNotice
+            supportsTools={supportsTools}
+            toolsUnsupportedNotice={toolsUnsupportedNotice}
+            compact={true}
+          />
+        </div>
+      ) : null}
       <div className="rounded-2xl border border-border-subtle bg-surface-primary px-3 py-2 shadow-sm space-y-1.5">
         <AssistantAttachedFilesInlineBar
           attachedFiles={attachedFiles}

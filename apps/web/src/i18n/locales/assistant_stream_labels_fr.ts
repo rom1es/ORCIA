@@ -137,8 +137,8 @@ export const ASSISTANT_SPEED_STREAM_LABELS_FR: AssistantSpeedSelectorAndStreamVi
       {
         effort: "fast",
         speed: "SPEED_1_FAST",
-        title: "Standard",
-        subtitle: "Réponse directe avec vos sources & compétences",
+        title: "Rapide",
+        subtitle: "Réponse directe rapide sans appel d'outils",
         hiddenLegacyFast: true,
       },
       {

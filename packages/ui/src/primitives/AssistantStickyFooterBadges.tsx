@@ -59,9 +59,11 @@ export function AssistantActiveFolderPromptBadge({
 export function AssistantToolsUnsupportedNotice({
   supportsTools,
   toolsUnsupportedNotice,
+  compact = false,
 }: {
   readonly supportsTools: boolean;
   readonly toolsUnsupportedNotice?: string | undefined;
+  readonly compact?: boolean | undefined;
 }): React.JSX.Element | null {
   if (supportsTools || !toolsUnsupportedNotice) return null;
   return (
@@ -73,7 +75,7 @@ export function AssistantToolsUnsupportedNotice({
         borderColor: "var(--color-arbitration-amber)",
         color: "var(--color-text-primary)",
       }}
-      className="mb-1.5 rounded border px-2.5 py-1.5 text-[11px] font-medium"
+      className={`${compact ? "mb-0" : "mb-1.5"} rounded-lg border px-3 py-1.5 text-[11px] font-medium`}
     >
       {toolsUnsupportedNotice}
     </div>
@@ -107,7 +109,7 @@ export function AssistantLegacySpeedPillsRow({
     >
       {(
         [
-          ["SPEED_1_FAST", "balanced", labels.speed1PillLabel],
+          ["SPEED_1_FAST", "fast", labels.speed1PillLabel],
           ["SPEED_2_AGENT_TOOLS", "balanced", labels.speed2PillLabel],
         ] as const
       ).map(([mode, eff, pillLabel]) => {

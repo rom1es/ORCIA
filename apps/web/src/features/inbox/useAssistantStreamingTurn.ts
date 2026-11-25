@@ -47,6 +47,7 @@ export interface UseAssistantStreamingTurnOptions {
   readonly ensureThreadForTurn?: (titleSeed: string) => Promise<string>;
   readonly activeFolder?: UiAssistantFolderItem | null;
   readonly governancePrefs?: SavedAssistantGovernancePrefs;
+  readonly sessionActiveHat?: string;
   readonly streamErrorLabels?: AssistantStreamErrorLabels;
   readonly onTurnCompleted: (params: CompletedAssistantTurnPayload) => void;
 }
@@ -69,6 +70,7 @@ export function useAssistantStreamingTurn({
   ensureThreadForTurn,
   activeFolder = null,
   governancePrefs,
+  sessionActiveHat,
   streamErrorLabels,
   onTurnCompleted,
 }: UseAssistantStreamingTurnOptions) {
@@ -150,7 +152,8 @@ export function useAssistantStreamingTurn({
 
     const effectiveTier: UiInferenceTier = requestedTier ?? "medium";
     const effectiveEffort: UiInferenceEffort =
-      thinkingEffort ?? (deepAuditPillActive ? "deep" : "balanced");
+      thinkingEffort ??
+      (deepAuditPillActive ? "deep" : requestedSpeed === "SPEED_1_FAST" ? "fast" : "balanced");
     const useSteps = shouldUseProgressiveStepThinking({
       userPrompt,
       requestedSpeed,
@@ -159,7 +162,7 @@ export function useAssistantStreamingTurn({
     });
     const plannedSteps = useSteps ? detectAdaptiveThinkingStepsForQuestion(userPrompt, isFr) : [];
     const tStart = Date.now();
-    const activeHat = governancePrefs?.defaultHat || "PM";
+    const activeHat = governancePrefs?.defaultHat?.trim() || sessionActiveHat?.trim() || "ARCHITECT";
     const pinnedNotes = activeFolder?.pinnedNotesMarkdown?.trim() || undefined;
     const folderTitle = activeFolder?.title || null;
 

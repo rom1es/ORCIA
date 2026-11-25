@@ -28,7 +28,7 @@ export interface SavedAssistantGovernancePrefs {
 export const DEFAULT_ASSISTANT_GOVERNANCE_PREFS: SavedAssistantGovernancePrefs = {
   responseTone: "BALANCED",
   favoriteFormat: "STRUCTURED_SECTIONS",
-  defaultHat: "PM",
+  defaultHat: "",
   personalInstructions:
     "Privilégier des réponses claires, citer les documents utilisés et mettre en évidence les points d'attention.",
   workspaceInstructions:

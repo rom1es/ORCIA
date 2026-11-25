@@ -618,28 +618,28 @@ capabilities:
     title: Gouvernance de personnalisation 3 niveaux (Mode A)
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-1 + 26-1 + 26-4b + 26-9 + 26-10
+    origin_ref: 10-1 + 26-1 + 26-4b + 26-9 + 26-10 + 29-3
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [workspace_customization_overrides, user_preferences]
-    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, tests/unit/test_story_26_4b_governance_feedback_folders_and_audit.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, tests/security/test_story_26_10_assistant_security_redteam.py, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts]
+    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, tests/unit/test_story_26_4b_governance_feedback_folders_and_audit.py, tests/unit/test_story_29_3_assistant_prompt_sanitization.py, tests/unit/test_story_29_3_governance_mappers_cov.py, tests/unit/test_story_29_3_governance_service_cov.py, tests/unit/test_story_29_3_turn_plan_and_preview_cov.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, tests/security/test_story_26_10_assistant_security_redteam.py, apps/web/src/__tests__/story-29-3-assistant-sanitization-and-rbac-notices.test.tsx, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts]
     verification: runtime
-    verified_at: "2026-11-22"
-    surfaces: { route: /assistant, api: "assistant_workspace_governance.py, assistant_governance.py, sql_assistant_governance.py", ui: AssistantGovernanceModalAndStudio }
+    verified_at: "2026-11-25"
+    surfaces: { route: /assistant, api: "assistant_workspace_governance.py, assistant_governance.py, assistant_governance_models.py, assistant_prompt_preview.py, assistant_prompt_builder.py, assistant_prompt_locales.py, sql_assistant_governance.py", ui: AssistantGovernanceModalAndStudio }
   - id: CAP-071
     title: Moteur unifié des tours assistant (AssistantTurnEngine N1-N6), 3 vitesses, SSE v2 canonique, synthesize-now, execution_profile ASSISTANT et MCP assistant.ask
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-2 + 26-4a + 26-7 + 26-10
+    origin_ref: 10-2 + 26-4a + 26-7 + 26-10 + 29-3
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [assistant_threads, workspace_customization_overrides, inference_attempts, domain_events_outbox, reflexive_execution_sessions]
-    tests: [tests/unit/test_story_26_4a_locks_outbox_cache_removal_and_ddl_audit.py, tests/integration/api/test_story_26_4a_redis_locks_outbox_ddl_postgres18.py, tests/unit/test_story_26_7_unified_turn_engine_and_mcp.py, tests/integration/api/test_story_26_7_unified_turn_engine_postgres18.py, tests/integration/api/test_story_26_10_multi_worker_sse_stop_recovery_postgres18.py, tests/unit/test_story_26_10_epic_26_closure_ast_and_routes_audit.py, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts]
+    tests: [tests/unit/test_story_26_4a_locks_outbox_cache_removal_and_ddl_audit.py, tests/integration/api/test_story_26_4a_redis_locks_outbox_ddl_postgres18.py, tests/unit/test_story_26_7_unified_turn_engine_and_mcp.py, tests/unit/test_story_29_3_assistant_prompt_sanitization.py, tests/unit/test_story_29_3_turn_plan_and_preview_cov.py, tests/integration/api/test_story_26_7_unified_turn_engine_postgres18.py, tests/integration/api/test_story_26_10_multi_worker_sse_stop_recovery_postgres18.py, tests/unit/test_story_26_10_epic_26_closure_ast_and_routes_audit.py, apps/web/src/__tests__/story-29-3-assistant-sanitization-and-rbac-notices.test.tsx, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts]
     verification: runtime
-    verified_at: "2026-11-22"
-    surfaces: { route: /assistant, api: "assistant_turns.py (/api/v1/assistant/turns*), _assistant_turn_controls_routes.py, assistant_turn_engine.py, _assistant_turn_engine_plan.py, _assistant_turn_engine_mcp.py, _mcp_assistant_ask_bridge.py", ui: AssistantSpeedSelectorAndStreamView, migration: "20261122_264a + 20261122_267" }
+    verified_at: "2026-11-25"
+    surfaces: { route: /assistant, api: "assistant_turns.py (/api/v1/assistant/turns*), _assistant_turn_controls_routes.py, _assistant_context_assembly.py, assistant_turn_engine.py, _assistant_turn_engine_plan.py, _assistant_turn_engine_mcp.py, _mcp_assistant_ask_bridge.py", ui: "AssistantSpeedSelectorAndStreamView + AssistantSpeedSelectorHelpers + AssistantStickyPromptFooter", migration: "20261122_264a + 20261122_267" }
   - id: CAP-072
     title: Citations déterministes [S1]/[G1]/[O1], garde CitationGuard côté serveur pré-turn_completed et purge des citations fantômes
     fr: [FR-33]
@@ -808,7 +808,7 @@ capabilities:
     title: Assistant — streaming réel, bouton Stop, réflexion progressive repliable, sauvegarde des conversations, pièces jointes, citations RAG, autosave/autocomplete
     fr: [FR-33]
     origin: adhoc
-    origin_ref: "2026-11-06-refonte-assistant-minimaliste-routage-llm-et-sauvegarde-conversations + 2026-11-06-streaming-assistant-bouton-stop-et-sous-fenetre-reflexion + 2026-11-07-assistant-* (5 rapports) + 2026-11-07-correction-triplon-reponse-markdown-et-boutons-redondants-assistant + 25-5 + 26-3"
+    origin_ref: "2026-11-06-refonte-assistant-minimaliste-routage-llm-et-sauvegarde-conversations + 2026-11-06-streaming-assistant-bouton-stop-et-sous-fenetre-reflexion + 2026-11-07-assistant-* (5 rapports) + 2026-11-07-correction-triplon-reponse-markdown-et-boutons-redondants-assistant + 25-5 + 26-3 + 29-3"
     status: live
     kind: feature
     uj: [UJ-17]
@@ -816,11 +816,12 @@ capabilities:
     tests:
       - apps/web/e2e/02-assistant-streaming-and-folders.spec.ts
       - apps/web/src/__tests__/story-25-5-assistant-unlocked-and-rag-source-blocked.test.tsx
+      - apps/web/src/__tests__/story-29-3-assistant-sanitization-and-rbac-notices.test.tsx
       - packages/ui/src/__tests__/assistant-workspace.test.tsx
       - tests/unit/test_story_26_3_turn_reliability_and_async_loop.py
       - tests/integration/api/test_story_26_3_redis_multi_worker_turns_postgres18.py
     verification: runtime
-    verified_at: "2026-11-22"
+    verified_at: "2026-11-25"
     surfaces: { route: /assistant, api: "assistant_turns.py + assistant_background_turns.py" }
   - id: CAP-076
     title: Refactorisation LLM agnostique/async et vrai streaming SSE ; intégration Gemini (Mode A/B & Interactions API)
@@ -970,7 +971,7 @@ capabilities:
     title: Hub Modèles IA Fiable, Découverte Dynamique 0 Token, Test Réel (Chat max_tokens=1 & Embedding dim 1024), EmbeddingPort Hexagonal, RAG Sans Hachage SHA-256 & Réindexation Bloquante Idempotente (AD-24 Découplé Epic 25)
     fr: [FR-14, FR-18, FR-23, FR-28, FR-31, FR-33]
     origin: epic
-    origin_ref: epic-19 (19-1..19-7) + 25-4 + 25-5 + 2026-11-23-ai-model-edit-api-key-and-fr-en-locale
+    origin_ref: epic-19 (19-1..19-7) + 25-4 + 25-5 + 2026-11-23-ai-model-edit-api-key-and-fr-en-locale + 29-3
     status: live
     kind: feature
     uj: [UJ-15]
@@ -1003,15 +1004,16 @@ capabilities:
       - apps/web/src/__tests__/story-19-7-reindexing-banner-hub-and-f5.test.tsx
       - apps/web/src/__tests__/story-25-4-spinner-localized-timeout-and-delete.test.tsx
       - apps/web/src/__tests__/story-25-5-assistant-unlocked-and-rag-source-blocked.test.tsx
+      - apps/web/src/__tests__/story-29-3-assistant-sanitization-and-rbac-notices.test.tsx
       - apps/web/src/__tests__/ai-model-edit-modal-api-key.test.tsx
       - apps/web/src/__tests__/gemini-protocol-mode-resolution.test.ts
       - apps/web/e2e/16-ai-models-reindex-connectors-and-broker.spec.ts
     verification: runtime
-    verified_at: "2026-11-23"
+    verified_at: "2026-11-25"
     surfaces:
       route: "/settings/ai-models, /assistant, /workspaces/$wsId/sources"
       api: "ai_models_hub.py, _ai_models_test_and_reindex_routes.py, _ai_models_reindex_helpers.py, _rag_availability_guards.py, rag.py, ontology_and_rag.py, assistant_turns.py, _ai_models_discovery.py, _ai_models_helpers.py, bootstrap_accostage.py"
-      ui: "AiModelModal + AiModelFormFields + AiModelAuthAndEndpointFields + AiModelDiscoveryCombobox + AiModelConnectionTestButton + AssistantNoEmbeddingBanner + AssistantReindexingBanner + AiModelReindexPanel + SettingsAiModelsSection + AiModelMappingRowCard + OrciaSpinner"
+      ui: "AiModelModal + AiModelFormFields + AiModelAuthAndEndpointFields + AiModelDiscoveryCombobox + AiModelConnectionTestButton + InboxDisabledBanner + AssistantNoEmbeddingBanner + AssistantReindexingBanner + AiModelReindexPanel + SettingsAiModelsSection + AiModelMappingRowCard + OrciaSpinner"
       migration: "20261115_2105, 20261115_2206, 20261115_2307, 20261115_2359"
     notes: "Formalisé dans AD-24 (ARCHITECTURE-SPINE.md) et livré dans l'Epic 19 (Stories 19.1..19.7), puis amendé en Story 25.5 (découplage Mon Assistant / GET /search sans modèle sémantique ; blocage ciblé POST /datasources RAG != SOURCE_CODE et routes RAG pures)."
 

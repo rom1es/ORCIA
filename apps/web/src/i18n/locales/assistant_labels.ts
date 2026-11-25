@@ -26,11 +26,13 @@ export interface AssistantDictionarySection {
     readonly bannerTitle: string;
     readonly bannerDescription: string;
     readonly configureCta: string;
+    readonly contactAdminGuidance: string;
   };
   readonly assistantRagNotice: {
     readonly noEmbeddingTitle: string;
     readonly noEmbeddingDescription: string;
     readonly configureEmbeddingCta: string;
+    readonly contactAdminGuidance: string;
     readonly reindexingTitle: string;
     readonly reindexingDescription: string;
     readonly reindexFailedTitle: string;

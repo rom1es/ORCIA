@@ -115,7 +115,7 @@ export const backendState: MockBackendState = {
     userPreferences: {
       response_tone: "BALANCED",
       favorite_format: "STRUCTURED_SECTIONS",
-      default_hat: "PM",
+      default_hat: "",
       personal_instructions: "Privilégier des réponses claires.",
       sha256: "sha-user-default",
     },
@@ -240,7 +240,7 @@ export function resetVitestApiBackend(): void {
     userPreferences: {
       response_tone: "BALANCED",
       favorite_format: "STRUCTURED_SECTIONS",
-      default_hat: "PM",
+      default_hat: "",
       personal_instructions: "Privilégier des réponses claires.",
       sha256: "sha-user-default",
     },

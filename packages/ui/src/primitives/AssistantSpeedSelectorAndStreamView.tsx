@@ -61,7 +61,7 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { isMobile } = useResponsiveBreakpoint();
   const st = useAssistantSpeedViewState({
-    initialSpeed, initialDeepAudit, supportsTools, initialTier, initialEffort, prefillPrompt, onPrefillConsumed, inputRef,
+    initialSpeed, initialDeepAudit, supportsTools, initialTier, initialEffort, hideLegacySpeedPills, prefillPrompt, onPrefillConsumed, inputRef,
   });
 
   const {
@@ -81,7 +81,7 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
   const cacheKey = `assistant:prompt:${workspaceId}:${userId}:${hat}`;
   const visibleModelCount = modelOptions.filter((m) => !m.hiddenDuplicate).length;
   const activeModelOption = modelOptions.find((m) => m.tier === st.tier) ?? modelOptions[1] ?? modelOptions[0] ?? labels.defaultModelOptions[0]!;
-  const normalizedEffort: UiInferenceEffort = !supportsTools ? "fast" : st.effort === "deep" ? "deep" : "balanced";
+  const normalizedEffort: UiInferenceEffort = !supportsTools ? "fast" : st.effort === "deep" ? "deep" : st.effort === "fast" ? "fast" : "balanced";
   const activeEffortOption =
     labels.modelPopover.effortOptions.find((e) => e.effort === normalizedEffort) ??
     labels.modelPopover.effortOptions[1] ??
@@ -290,8 +290,8 @@ export function AssistantSpeedSelectorAndStreamView(props: AssistantSpeedSelecto
         onToggleDeepAudit={() => {
           const next = !st.deepAuditActive;
           st.setDeepAuditActive(next);
-          st.setSpeed(next ? "SPEED_3_DEEP_AUDIT" : "SPEED_1_FAST");
-          st.setEffort(next ? "deep" : "balanced");
+          st.setSpeed(next ? "SPEED_3_DEEP_AUDIT" : hideLegacySpeedPills ? "SPEED_2_AGENT_TOOLS" : "SPEED_1_FAST");
+          st.setEffort(next ? "deep" : hideLegacySpeedPills ? "balanced" : "fast");
         }}
       />
     </section>

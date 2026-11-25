@@ -136,8 +136,8 @@ export const ASSISTANT_SPEED_STREAM_LABELS_EN: AssistantSpeedSelectorAndStreamVi
       {
         effort: "fast",
         speed: "SPEED_1_FAST",
-        title: "Standard",
-        subtitle: "Direct response using your sources & skills",
+        title: "Fast",
+        subtitle: "Direct fast answer without tool calls",
         hiddenLegacyFast: true,
       },
       {

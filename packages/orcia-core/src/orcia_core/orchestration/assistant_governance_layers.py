@@ -21,6 +21,8 @@ def build_five_layers_preview_items(
     ws_settings: WorkspaceLayerSettings,
     team_instr: str,
     locale: str = "fr",
+    workspace_display_name: str | None = None,
+    user_display_name: str | None = None,
 ) -> tuple[AssembledLayerPreviewItem, ...]:
     """Assemble the 5-layer preview tuple via unified `AssistantPromptBuilder`."""
     return _SHARED_PROMPT_BUILDER.build_five_layers_preview(
@@ -31,4 +33,6 @@ def build_five_layers_preview_items(
         ws_settings=ws_settings,
         team_instr=team_instr,
         locale=locale,
+        workspace_display_name=workspace_display_name,
+        user_display_name=user_display_name,
     )

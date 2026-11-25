@@ -67,6 +67,11 @@ class PromptLocaleBundle:
     recommended_agents_label: str
     workspace_instructions_label: str
     layer_labels: tuple[str, str, str, str, str]
+    global_scope_label: str
+    active_workspace_fallback_label: str
+    active_user_fallback_label: str
+    speed_mode_labels: dict[str, str]
+    hat_labels: dict[str, str]
 
 
 PROMPT_LOCALES: dict[str, PromptLocaleBundle] = {
@@ -145,6 +150,25 @@ PROMPT_LOCALES: dict[str, PromptLocaleBundle] = {
             "4. Espace & Glossaire",
             "5. Utilisateur (Préférences & Continuité Dossier)",
         ),
+        global_scope_label="Tous mes espaces",
+        active_workspace_fallback_label="Espace actif",
+        active_user_fallback_label="Utilisateur actif",
+        speed_mode_labels={
+            "SPEED_1_FAST": "Réponse rapide",
+            "SPEED_2_AGENT_TOOLS": "Standard (sources et outils de l'espace)",
+            "SPEED_3_DEEP_AUDIT": "Analyse approfondie",
+        },
+        hat_labels={
+            "EXECUTIVE": "Direction",
+            "PM": "Chef de Projet",
+            "ARCHITECT": "Architecte",
+            "TECH_LEAD": "Référent Technique",
+            "TEAM_LEAD": "Responsable d'équipe",
+            "DEVELOPER": "Développeur",
+            "SECOPS": "SecOps",
+            "CONTRIBUTOR": "Contributeur",
+            "PLATFORM_ADMIN": "Administrateur",
+        },
     ),
     "en": PromptLocaleBundle(
         constitutional_layer_1=CONSTITUTIONAL_LAYER_1_TEXT_EN,
@@ -217,6 +241,25 @@ PROMPT_LOCALES: dict[str, PromptLocaleBundle] = {
             "4. Workspace & Glossary",
             "5. User (Preferences & Folder Continuity)",
         ),
+        global_scope_label="All my spaces",
+        active_workspace_fallback_label="Active space",
+        active_user_fallback_label="Active user",
+        speed_mode_labels={
+            "SPEED_1_FAST": "Fast response",
+            "SPEED_2_AGENT_TOOLS": "Standard (workspace sources and tools)",
+            "SPEED_3_DEEP_AUDIT": "In-depth analysis",
+        },
+        hat_labels={
+            "EXECUTIVE": "Executive",
+            "PM": "Product Manager",
+            "ARCHITECT": "Architect",
+            "TECH_LEAD": "Technical Lead",
+            "TEAM_LEAD": "Team Lead",
+            "DEVELOPER": "Developer",
+            "SECOPS": "SecOps",
+            "CONTRIBUTOR": "Contributor",
+            "PLATFORM_ADMIN": "Platform Administrator",
+        },
     ),
 }
 

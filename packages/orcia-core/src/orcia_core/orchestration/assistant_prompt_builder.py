@@ -25,6 +25,7 @@ from orcia_core.orchestration.assistant_prompt_preview import (
     build_five_layers_preview_items,
     format_governance_and_folder_sections,
     format_system_instructions_text,
+    resolve_human_workspace_label,
 )
 from orcia_core.orchestration.assistant_prompt_preview import (
     resolve_default_hat as resolve_default_hat,
@@ -57,9 +58,13 @@ class AssistantPromptBuilder:
         vector_hits: tuple[VectorSearchHitRecord, ...] = (),
         workflow_blueprint: AssistantWorkflowBlueprint | None = None,
         locale: str = "fr",
+        workspace_display_name: str | None = None,
     ) -> AssembledAssistantPrompt:
         """Assemble all 5 layers with immutable Layer 1 and clean `fr`/`en` localization."""
         bundle = get_prompt_locale_bundle(locale)
+        workspace_label = resolve_human_workspace_label(
+            workspace_id, workspace_display_name, locale=locale
+        )
         layer_1 = PromptLayerBlock(
             layer_id="1_CONSTITUTIONAL_IMMUTABLE",
             layer_order=1,
@@ -131,7 +136,7 @@ class AssistantPromptBuilder:
                 f"{sanitize_layer_marker_tags(h.injected_content[:180])}"
             )
         if not fanout_lines:
-            fanout_lines.append(bundle.empty_fanout_tpl.format(workspace_id=workspace_id))
+            fanout_lines.append(bundle.empty_fanout_tpl.format(workspace_id=workspace_label))
 
         layer_4_text = "[FEDERATED_CONTEXT_FANOUT_LAYER_4]\n" + "\n".join(fanout_lines)
         layer_4 = PromptLayerBlock(
@@ -151,7 +156,7 @@ class AssistantPromptBuilder:
         )
         layer_5_text = (
             f"[CONVERSATIONAL_INTENT_AND_COMPOSER_LAYER_5]\n"
-            f"{bundle.workspace_label}: {workspace_id}\n"
+            f"{bundle.workspace_label}: {workspace_label}\n"
             f"{bundle.intent_label}: {intent}\n"
             f"{composer_note}\n"
             f"{bundle.user_message_label}: {sanitize_layer_marker_tags(user_prompt)}"
@@ -253,6 +258,8 @@ class AssistantPromptBuilder:
         ws_settings: WorkspaceLayerSettings,
         team_instr: str,
         locale: str = "fr",
+        workspace_display_name: str | None = None,
+        user_display_name: str | None = None,
     ) -> tuple[AssembledLayerPreviewItem, ...]:
         """Assemble the 5-layer preview tuple with sanitized mutable layers and `locale`."""
         return build_five_layers_preview_items(
@@ -263,4 +270,6 @@ class AssistantPromptBuilder:
             ws_settings=ws_settings,
             team_instr=team_instr,
             locale=locale,
+            workspace_display_name=workspace_display_name,
+            user_display_name=user_display_name,
         )

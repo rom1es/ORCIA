@@ -25,7 +25,7 @@ _AGENT_OR_SKILL_PATTERN = re.compile(r"(?:^|\s)(@[a-zA-Z0-9_-]+|/[a-zA-Z0-9_-]+)
 
 def build_assistant_prompt_cache_key(workspace_id: str, user_id: str, hat: str) -> str:
     """Build canonical prompt context key `assistant:prompt:<workspace_id>:<user_id>:<hat>`."""
-    norm_hat = hat.strip().upper() or "PM"
+    norm_hat = hat.strip().upper() or "ARCHITECT"
     return f"assistant:prompt:{workspace_id}:{user_id}:{norm_hat}"
 
 

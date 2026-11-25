@@ -117,7 +117,7 @@ def manifest_to_user_prefs(
         favorite_format=cast(
             AssistantResponseFormat, str(manifest.get("favorite_format", "STRUCTURED_SECTIONS"))
         ),
-        default_hat=str(manifest.get("default_hat", "PM")),
+        default_hat=str(manifest.get("default_hat") or ""),
         personal_instructions=str(manifest.get("personal_instructions", "")),
         sha256=sha256,
     )
@@ -158,22 +158,26 @@ def manifest_to_workspace_settings(
 SQL_SELECT_MODE_A_BUNDLE = sa.text(
     """
     WITH target_ws AS (
-        SELECT id, owner_org_unit_id
+        SELECT id, name, owner_org_unit_id
         FROM workspaces
         WHERE id::text = :ws OR slug = :ws
         LIMIT 1
     ),
     target_user AS (
-        SELECT id
+        SELECT id, display_name
         FROM users
         WHERE id::text = :uid OR (:email <> '' AND lower(email) = lower(:email))
         LIMIT 1
     )
-    SELECT o.override_layer, o.override_key, o.override_manifest_jsonb, o.sha256
-    FROM workspace_customization_overrides o
+    SELECT
+        (SELECT name FROM target_ws) AS workspace_name,
+        (SELECT display_name FROM target_user) AS user_display_name,
+        o.override_layer, o.override_key, o.override_manifest_jsonb, o.sha256
+    FROM (SELECT 1) AS _anchor
     LEFT JOIN target_ws w ON TRUE
     LEFT JOIN target_user u ON TRUE
-    WHERE o.target_uri = :uri
+    LEFT JOIN workspace_customization_overrides o
+      ON o.target_uri = :uri
       AND o.override_layer IN ('TEAM', 'WORKSPACE', 'USER')
       AND (
           (o.override_layer = 'USER' AND (
@@ -198,7 +202,7 @@ SQL_SELECT_MODE_A_BUNDLE = sa.text(
                   AND o.org_unit_id = w.owner_org_unit_id AND o.workspace_id IS NULL)
           ))
       )
-    ORDER BY o.created_at DESC
+    ORDER BY o.created_at DESC NULLS LAST
     """
 )
 
@@ -237,7 +241,10 @@ def rows_to_mode_a_bundle(
     ws_row: Any = None
     team_rows: list[Any] = []
     for row in rows:
-        layer = str(row["override_layer"])
+        raw_layer = row.get("override_layer") if isinstance(row, dict) else row["override_layer"]
+        if raw_layer is None:
+            continue
+        layer = str(raw_layer)
         if layer == "USER" and user_row is None:
             user_row = row
         elif layer == "WORKSPACE" and ws_row is None:
