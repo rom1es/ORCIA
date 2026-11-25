@@ -4,6 +4,11 @@ from __future__ import annotations
 
 import re
 
+from orcia_core.orchestration._assistant_conversational_locales import get_conversational_locale
+from orcia_core.orchestration._assistant_conversational_prompt import (
+    format_conversational_governance_sections,
+    format_conversational_system_instructions,
+)
 from orcia_core.orchestration.assistant_governance_models import (
     AssembledLayerPreviewItem,
     UserLayerPreferences,
@@ -104,26 +109,15 @@ def format_governance_and_folder_sections(
     folder_pinned_notes: str | None = None,
     locale: str = "fr",
 ) -> str:
-    """Build sanitized Layer 4 Workspace, Layer 5 User prefs & Folder Notes blocks."""
-    bundle = get_prompt_locale_bundle(locale)
-    sections: list[str] = []
-    safe_ws = sanitize_layer_marker_tags(workspace_instructions)
-    if safe_ws:
-        sections.append(f"[LAYER_4_WORKSPACE_INSTRUCTIONS]\n{safe_ws}")
-    user_lines: list[str] = []
-    if response_tone and response_tone.upper() in bundle.tone_map:
-        user_lines.append(f"- {bundle.tone_label}: {bundle.tone_map[response_tone.upper()]}")
-    if response_format and response_format.upper() in bundle.format_map:
-        user_lines.append(f"- {bundle.format_label}: {bundle.format_map[response_format.upper()]}")
-    safe_personal = sanitize_layer_marker_tags(personal_instructions)
-    if safe_personal:
-        user_lines.append(f"- {bundle.personal_instructions_label}: {safe_personal}")
-    if user_lines:
-        sections.append("[LAYER_5_USER_PREFERENCES]\n" + "\n".join(user_lines))
-    safe_notes = sanitize_layer_marker_tags(folder_pinned_notes)
-    if safe_notes:
-        sections.append(f"[LAYER_5_ACTIVE_FOLDER_PINNED_NOTES]\n{safe_notes}")
-    return ("\n\n" + "\n\n".join(sections)) if sections else ""
+    """Build sanitized Workspace, User preferences & Folder Notes blocks."""
+    return format_conversational_governance_sections(
+        response_tone=response_tone,
+        response_format=response_format,
+        personal_instructions=personal_instructions,
+        workspace_instructions=workspace_instructions,
+        folder_pinned_notes=folder_pinned_notes,
+        locale=locale,
+    )
 
 
 def build_five_layers_preview_items(
@@ -138,8 +132,9 @@ def build_five_layers_preview_items(
     workspace_display_name: str | None = None,
     user_display_name: str | None = None,
 ) -> tuple[AssembledLayerPreviewItem, ...]:
-    """Assemble the 5-layer preview tuple with sanitized mutable layers and `locale`."""
+    """Assemble Tab 3 UI 5-layer preview tuple with sanitized mutable layers and `locale`."""
     bundle = get_prompt_locale_bundle(locale)
+    cloc = get_conversational_locale(locale)
     effective_hat = (user_prefs.default_hat or "").strip().upper() or "ARCHITECT"
     profile_spec = resolve_profile_adaptation(effective_hat)
     reg_label, _, _ = resolve_profile_copy_for_locale(profile_spec, locale=locale)
@@ -150,14 +145,16 @@ def build_five_layers_preview_items(
     user_label = resolve_human_user_label(user_id, user_display_name, locale=locale)
     resolved_pack = (pack_key or "").strip() or "core"
     l1_content = bundle.constitutional_layer_1
-    l2_content = f"[ACTIVE_DOMAIN_PACK: {resolved_pack}]\n{bundle.pack_layer_summary}"
+    l2_content = (
+        f"{cloc.active_pack_tpl.format(pack_key=resolved_pack)}\n{bundle.pack_layer_summary}"
+    )
     l3_content = (
-        f"[TEAM_AND_HAT: {human_hat}]\n"
+        f"{cloc.team_hat_tpl.format(hat=human_hat)}\n"
         f"{bundle.register_label}: {reg_label}\n"
         f"{bundle.team_instructions_label}: {sanitize_layer_marker_tags(team_instr)}"
     )
     l4_lines = [
-        f"[WORKSPACE: {workspace_label}]",
+        cloc.workspace_tpl.format(workspace=workspace_label),
         (
             f"{bundle.workspace_instructions_label}: "
             f"{sanitize_layer_marker_tags(ws_settings.workspace_instructions)}"
@@ -174,13 +171,14 @@ def build_five_layers_preview_items(
     l4_content = "\n".join(l4_lines)
     tone_txt = bundle.tone_map.get(user_prefs.response_tone, user_prefs.response_tone)
     fmt_txt = bundle.format_map.get(user_prefs.favorite_format, user_prefs.favorite_format)
-    l5_content = (
-        f"[USER: {user_label}]\n"
-        f"{bundle.tone_label}: {tone_txt} | "
-        f"{bundle.format_label}: {fmt_txt}\n"
-        f"{bundle.personal_instructions_label}: "
-        f"{sanitize_layer_marker_tags(user_prefs.personal_instructions)}"
-    )
+    l5_lines = [
+        cloc.user_tpl.format(user=user_label),
+        f"{bundle.tone_label}: {tone_txt} | {bundle.format_label}: {fmt_txt}",
+    ]
+    safe_personal = sanitize_layer_marker_tags(user_prefs.personal_instructions)
+    if safe_personal:
+        l5_lines.append(f"{bundle.personal_instructions_label}: {safe_personal}")
+    l5_content = "\n".join(l5_lines)
     lbls = bundle.layer_labels
     return (
         AssembledLayerPreviewItem(
@@ -242,55 +240,22 @@ def format_system_instructions_text(
     federated_evidence_summary: str | None,
     custom_block: str,
     locale: str,
+    has_evidence: bool | None = None,
+    pack_key: str | None = None,
 ) -> str:
-    """Assemble system instructions from layers, evidence, governance, and runtime metadata."""
-    bundle = get_prompt_locale_bundle(locale)
-    profile_spec = resolve_profile_adaptation(hat)
-    reg_label, indicators, _ = resolve_profile_copy_for_locale(profile_spec, locale=locale)
-    effort = (thinking_effort or "").strip().lower() or (
-        "deep"
-        if speed_mode == "SPEED_3_DEEP_AUDIT"
-        else "balanced"
-        if speed_mode == "SPEED_2_AGENT_TOOLS"
-        else "fast"
-    )
-    tier_key = (requested_tier or "medium").strip().lower()
-    tier_guidance = bundle.tier_map.get(tier_key, bundle.tier_default)
-    effort_guidance = (
-        bundle.effort_deep
-        if effort == "deep"
-        else bundle.effort_balanced
-        if effort == "balanced"
-        else bundle.effort_fast
-    )
-    layers_block = (
-        assembled_5_layers_prompt.strip()
-        if assembled_5_layers_prompt and assembled_5_layers_prompt.strip()
-        else (
-            f"{bundle.constitutional_layer_1}\n\n"
-            f"[HUMAN_PROFILE_ADAPTATION_LAYER_3]\n"
-            f"{bundle.register_label}: {reg_label}\n"
-            f"{bundle.indicators_label}: {', '.join(indicators)}"
-        )
-    )
-    ontology_block = (
-        f"\n[ONTOLOGY_L1_L4_CONTEXT]\n{sanitize_layer_marker_tags(ontology_concepts_summary)}"
-        if ontology_concepts_summary and ontology_concepts_summary.strip()
-        else ""
-    )
-    evidence_block = (
-        f"\n\n{federated_evidence_summary.strip()}"
-        if federated_evidence_summary and federated_evidence_summary.strip()
-        else ""
-    )
-    human_hat = resolve_human_hat_label(hat, locale=locale)
-    human_speed = resolve_human_speed_label(speed_mode, locale=locale)
-    return (
-        f"{layers_block}{ontology_block}{evidence_block}{custom_block}\n\n"
-        f"[ADAPTATION_RUNTIME_METADATA]\n"
-        f"{bundle.active_hat_tpl.format(hat=human_hat, speed_mode=human_speed)}\n"
-        f"- {tier_guidance}\n"
-        f"- {effort_guidance}\n"
-        f"{bundle.markdown_rule}\n"
-        f"{bundle.language_rule}"
+    """Assemble conversational system instructions with conditional provenance rules."""
+    return format_conversational_system_instructions(
+        hat=hat,
+        speed_mode=speed_mode,
+        requested_tier=requested_tier,
+        thinking_effort=thinking_effort,
+        assembled_5_layers_prompt=assembled_5_layers_prompt,
+        ontology_concepts_summary=ontology_concepts_summary,
+        federated_evidence_summary=federated_evidence_summary,
+        custom_block=custom_block,
+        locale=locale,
+        human_hat=resolve_human_hat_label(hat, locale=locale),
+        human_speed=resolve_human_speed_label(speed_mode, locale=locale),
+        has_evidence=has_evidence,
+        pack_key=pack_key,
     )

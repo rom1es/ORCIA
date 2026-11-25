@@ -102,7 +102,8 @@ async def test_turn_engine_plan_and_prompt_preview_branches() -> None:
         workspace_id="w",
         user_prompt="hi",
     )
-    assert p1.assembled_5_layers_prompt == "PREBUILT" and "###" in p2.assembled_5_layers_prompt
+    assert p1.assembled_5_layers_prompt == "PREBUILT"
+    assert "Principes de comportement fondamentaux" in p2.assembled_5_layers_prompt
 
     assert resolve_human_workspace_label("w", "Alpha", locale="en") == "Alpha"
     assert resolve_human_workspace_label("scope-global", None, locale="en") != "scope-global"
@@ -118,6 +119,6 @@ async def test_turn_engine_plan_and_prompt_preview_branches() -> None:
         folder_pinned_notes="N",
         locale="en",
     )
-    assert "[LAYER_4_WORKSPACE_INSTRUCTIONS]" in blk
-    assert "[LAYER_5_ACTIVE_FOLDER_PINNED_NOTES]" in blk
+    assert "Workspace instructions:" in blk
+    assert "Active folder pinned notes:" in blk
     assert build_assistant_prompt_cache_key("ws", "u", "  ") == "assistant:prompt:ws:u:ARCHITECT"

@@ -34,116 +34,125 @@ COMPOSER_LOCALES: dict[SupportedLocale, dict[str, str]] = {
 PROFILE_LABELS_LOCALES: dict[SupportedLocale, dict[str, dict[str, object]]] = {
     "fr": {
         "EXECUTIVE": {
-            "register": "Direction / BU — KPIs FinOps, ROI, TTM & Risques N1/N2",
-            "indicators": ("Coût FinOps ($)", "Gain TTM (%)", "Indice de Risque BU", "ROI"),
-            "prefix": "[Synthèse Direction N1/N2 — KPIs FinOps & TTM]",
+            "register": "Direction / BU — Pilotage KPIs, ROI, Délais & Risques",
+            "indicators": ("Coût & Budget", "Délais (TTM)", "Risques métier", "ROI"),
+            "prefix": "[Synthèse Direction — KPIs & Risques]",
         },
         "PM": {
-            "register": "Product / Métier — Règles de Gestion & Invariants Fonctionnels",
+            "register": "Produit / Métier — Règles de Gestion & Priorités Fonctionnelles",
             "indicators": (
                 "Règles de Gestion",
                 "Parcours Utilisateurs",
                 "Critères d'Acceptation",
-                "Ancres Humaines",
+                "Décisions Métier",
             ),
-            "prefix": "[Synthèse Produit & Règles de Gestion Métier]",
+            "prefix": "[Synthèse Produit & Règles de Gestion]",
         },
         "ARCHITECT": {
-            "register": "Architecte — URIs Canoniques, Contrats OpenAPI & Hashes SHA-256 N3",
-            "indicators": (
-                "URI Canoniques orcia://",
-                "Contrats OpenAPI 3.1",
-                "Hashes CAS SHA-256",
-                "Axiomes Ontologiques L1..L4",
+            "register": (
+                "Architecte — Conception Système, Contrats d'Interface & Cohérence Technique"
             ),
-            "prefix": "[Synthèse Architecture N3 — URIs, Contrats & SHA-256]",
+            "indicators": (
+                "Architecture Cible",
+                "Contrats d'API",
+                "Décisions Techniques",
+                "Principes Métier",
+            ),
+            "prefix": "[Synthèse Architecture — Conception & Contrats]",
         },
         "TECH_LEAD": {
-            "register": "Tech Lead — Topologie DAG, Dépendances, Hashes SHA-256 & Exécution N3",
-            "indicators": (
-                "DAG Steps & Verrous run-lock.json",
-                "Hashes CAS SHA-256",
-                "Couverture & Dette Technique",
-                "URIs orcia://",
+            "register": (
+                "Référent Technique — Architecture Applicative, Dépendances, "
+                "Qualité & Plan d'Exécution"
             ),
-            "prefix": "[Synthèse Tech Lead N3 — Topologie DAG & Hashes SHA-256]",
+            "indicators": (
+                "Dépendances & Séquence",
+                "Qualité & Tests",
+                "Risques & Dette Technique",
+                "Faisabilité d'Exécution",
+            ),
+            "prefix": "[Synthèse Référent Technique — Qualité & Exécution]",
         },
         "DEVELOPER": {
-            "register": "Développeur — Spécifications d'Étape, Entrées/Sorties & Contrats N3",
-            "indicators": (
-                "Pointeurs JIT d'Artefacts",
-                "Schémas d'Entrée/Sortie",
-                "Hashes CAS SHA-256",
-                "URIs orcia://",
+            "register": (
+                "Développeur — Implémentation, Schémas d'Entrée/Sortie & Contrats Techniques"
             ),
-            "prefix": "[Synthèse Technique N3 — Contrats & Pointeurs d'Étape]",
+            "indicators": (
+                "Points d'Entrée & Fichiers",
+                "Schémas d'Entrée/Sortie",
+                "Cas Limites & Tests",
+                "Contraintes Techniques",
+            ),
+            "prefix": "[Synthèse Technique — Implémentation & Contrats]",
         },
         "SECOPS": {
-            "register": "SecOps — Preuves de Gates, Isolation Passthrough & Conformité",
+            "register": "SecOps — Contrôles de Sécurité, Isolation des Accès & Conformité",
             "indicators": (
-                "Preuves de Gates",
-                "Isolation Passthrough / Service Principal",
-                "Politiques Permission Broker",
-                "Intégrité Audit Ledger",
+                "Contrôles & Validations",
+                "Isolation des Accès",
+                "Gouvernance des Permissions",
+                "Traçabilité d'Audit",
             ),
-            "prefix": "[Synthèse SecOps — Preuves de Gates & Isolation Passthrough]",
+            "prefix": "[Synthèse SecOps — Sécurité & Conformité]",
         },
     },
     "en": {
         "EXECUTIVE": {
-            "register": "Executive / BU — FinOps KPIs, ROI, TTM & N1/N2 Risks",
-            "indicators": ("FinOps Cost ($)", "TTM Gain (%)", "BU Risk Index", "ROI"),
-            "prefix": "[Executive Summary N1/N2 — FinOps KPIs & TTM]",
+            "register": "Executive / BU — KPIs, ROI, Delivery & Risks",
+            "indicators": ("Cost & Budget", "Time-to-Market", "Business Risks", "ROI"),
+            "prefix": "[Executive Summary — KPIs & Risks]",
         },
         "PM": {
-            "register": "Product / Business — Domain Rules & Functional Invariants",
+            "register": "Product / Business — Business Rules & Functional Priorities",
             "indicators": (
                 "Business Rules",
                 "User Journeys",
                 "Acceptance Criteria",
-                "Human Anchors",
+                "Business Decisions",
             ),
             "prefix": "[Product & Business Rules Summary]",
         },
         "ARCHITECT": {
-            "register": "Architect — Canonical URIs, OpenAPI Contracts & SHA-256 Digests N3",
+            "register": "Architect — System Design, Interface Contracts & Technical Coherence",
             "indicators": (
-                "Canonical orcia:// URIs",
-                "OpenAPI 3.1 Contracts",
-                "CAS SHA-256 Digests",
-                "Ontology Axioms L1..L4",
+                "Target Architecture",
+                "API Contracts",
+                "Technical Decisions",
+                "Domain Principles",
             ),
-            "prefix": "[Architecture Summary N3 — URIs, Contracts & SHA-256]",
+            "prefix": "[Architecture Summary — Design & Contracts]",
         },
         "TECH_LEAD": {
-            "register": "Tech Lead — DAG Topology, Dependencies, SHA-256 & Execution N3",
-            "indicators": (
-                "DAG Steps & run-lock.json",
-                "CAS SHA-256 Digests",
-                "Coverage & Technical Debt",
-                "orcia:// URIs",
+            "register": (
+                "Technical Lead — Application Architecture, Dependencies, Quality & Delivery Plan"
             ),
-            "prefix": "[Tech Lead Summary N3 — DAG Topology & SHA-256]",
+            "indicators": (
+                "Dependencies & Sequencing",
+                "Quality & Testing",
+                "Risks & Technical Debt",
+                "Delivery Feasibility",
+            ),
+            "prefix": "[Technical Lead Summary — Quality & Delivery]",
         },
         "DEVELOPER": {
-            "register": "Developer — Step Specifications, Input/Output Schemas & Contracts N3",
+            "register": ("Developer — Implementation, Input/Output Schemas & Technical Contracts"),
             "indicators": (
-                "JIT Artifact Pointers",
+                "Entry Points & Files",
                 "Input/Output Schemas",
-                "CAS SHA-256 Digests",
-                "orcia:// URIs",
+                "Edge Cases & Tests",
+                "Technical Constraints",
             ),
-            "prefix": "[Technical Summary N3 — Contracts & Step Pointers]",
+            "prefix": "[Technical Summary — Implementation & Contracts]",
         },
         "SECOPS": {
-            "register": "SecOps — Gate Evidence, Passthrough Isolation & Compliance",
+            "register": "SecOps — Security Controls, Access Isolation & Compliance",
             "indicators": (
-                "Gate Evidence",
-                "Passthrough / Service Principal Isolation",
-                "Permission Broker Policies",
-                "Audit Ledger Integrity",
+                "Validation Controls",
+                "Access Isolation",
+                "Permission Governance",
+                "Audit Traceability",
             ),
-            "prefix": "[SecOps Summary — Gate Evidence & Passthrough Isolation]",
+            "prefix": "[SecOps Summary — Security & Compliance]",
         },
     },
 }

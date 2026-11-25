@@ -8,6 +8,9 @@ from orcia_api.routers._assistant_context_assembly import (
     AssembledTurnContext,
     assemble_real_workspace_context_for_turn_async,
 )
+from orcia_api.routers._assistant_context_assembly import (
+    resolve_5_layers_and_ontology_from_request as resolve_5_layers_and_ontology_from_request,
+)
 from orcia_api.routers._assistant_llm_tools_and_budget import (
     build_multi_turn_messages as build_multi_turn_messages,
 )
@@ -26,7 +29,6 @@ from orcia_api.routers._assistant_prompt_sanitization import (
 from orcia_api.routers._assistant_prompt_sanitization import (
     resolve_request_locale as resolve_request_locale,
 )
-from orcia_core.observability.logging import get_logger
 from orcia_core.orchestration.assistant_prompt_builder import AssistantPromptBuilder
 from orcia_core.permissions.models import UserIdentity
 from orcia_core.ports.embedding import EmbeddingPort
@@ -71,8 +73,10 @@ def build_assistant_system_instructions(
     workspace_instructions: str | None = None,
     folder_pinned_notes: str | None = None,
     locale: str = "fr",
+    has_evidence: bool | None = None,
+    pack_key: str | None = None,
 ) -> str:
-    """Delegate 5-layer + ontology + evidence + preferences assembly to `AssistantPromptBuilder`."""
+    """Delegate conversational system prompt assembly to `AssistantPromptBuilder`."""
     return _PROMPT_BUILDER.build_system_instructions(
         hat=hat,
         speed_mode=speed_mode,
@@ -89,50 +93,9 @@ def build_assistant_system_instructions(
         workspace_instructions=workspace_instructions,
         folder_pinned_notes=folder_pinned_notes,
         locale=locale,
+        has_evidence=has_evidence,
+        pack_key=pack_key,
     )
-
-
-def resolve_5_layers_and_ontology_from_request(
-    request: Request,
-    *,
-    workspace_id: str,
-    user_id: str,
-    hat: str,
-    user_prompt: str = "",
-    locale: str = "fr",
-) -> tuple[str | None, str | None]:
-    """Read assembled 5-layer prompt and ranked L1-L4 Ontology concepts (zero [:8] fallback)."""
-    assembled_text: str | None = None
-    ontology_summary: str | None = None
-    try:
-        from orcia_api.dependencies import get_assistant_governance_service
-
-        gov = get_assistant_governance_service(request)
-        layers = gov.assemble_five_layers_preview(
-            workspace_id=workspace_id, user_id=user_id, locale=locale
-        )
-        assembled_text = "\n\n".join(f"### {layer.label}\n{layer.content}" for layer in layers)
-    except Exception as exc:
-        get_logger("orcia.assistant.llm").warning(
-            "assistant_5_layer_prompt_resolution_fallback", error_type=type(exc).__name__
-        )
-    try:
-        from orcia_api.dependencies import get_ontology_and_rag_services
-        from orcia_core.ontology.context_ranker import (
-            format_ranked_ontology_summary,
-            rank_ontology_snapshot_for_query,
-        )
-
-        ont_svc, _, _ = get_ontology_and_rag_services(request)
-        if getattr(ont_svc, "concepts", ()):
-            snap = ont_svc.resolve_snapshot(workspace_scope_id=workspace_id)
-            ranked = rank_ontology_snapshot_for_query(snap, query_text=user_prompt, active_hat=hat)
-            _, _, ontology_summary = format_ranked_ontology_summary(ranked)
-    except Exception as exc:
-        get_logger("orcia.assistant.llm").warning(
-            "assistant_ontology_l1_l4_resolution_fallback", error_type=type(exc).__name__
-        )
-    return assembled_text, ontology_summary
 
 
 async def resolve_5_layers_and_ontology_from_request_async(
@@ -202,12 +165,22 @@ async def resolve_assembled_turn_context_and_instructions_async(
         assembled_5_layers_prompt=ctx.assembled_5_layers_prompt,
         ontology_concepts_summary=ctx.ontology_summary,
         federated_evidence_summary=ctx.federated_evidence_summary,
-        response_tone=response_tone,
-        response_format=response_format,
-        personal_instructions=personal_instructions,
-        workspace_instructions=workspace_instructions,
+        response_tone=response_tone if response_tone is not None else ctx.response_tone,
+        response_format=response_format if response_format is not None else ctx.response_format,
+        personal_instructions=(
+            personal_instructions
+            if personal_instructions is not None
+            else ctx.personal_instructions
+        ),
+        workspace_instructions=(
+            workspace_instructions
+            if workspace_instructions is not None
+            else ctx.workspace_instructions
+        ),
         folder_pinned_notes=folder_pinned_notes,
         locale=locale,
+        has_evidence=ctx.has_evidence,
+        pack_key=ctx.pack_key,
     )
     return sys_msg, ctx
 

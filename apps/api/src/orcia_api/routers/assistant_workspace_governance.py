@@ -11,7 +11,10 @@ from orcia_api.dependencies._assistant_guards import (
     can_user_manage_workspace_governance,
     enforce_assistant_workspace_guard,
 )
-from orcia_api.routers._assistant_prompt_sanitization import resolve_request_locale
+from orcia_api.routers._assistant_prompt_sanitization import (
+    resolve_active_pack_key_from_request,
+    resolve_request_locale,
+)
 from orcia_api.routers._assistant_usage_telemetry import resolve_assistant_outbox_emitter
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.assistant import (
@@ -84,10 +87,11 @@ async def get_assistant_governance_endpoint(
         scope_level="GLOBAL" if workspace_id == "scope-global" else "WORKSPACE",
     )
     can_manage = await can_user_manage_workspace_governance(request, user, workspace_id)
+    resolved_pack = pack_key or resolve_active_pack_key_from_request(request, workspace_id)
     view = await svc.get_governance_view_async(
         user,
         workspace_id=workspace_id,
-        pack_key=pack_key,
+        pack_key=resolved_pack,
         locale=resolve_request_locale(request),
     )
     return AssistantGovernanceViewResponse(

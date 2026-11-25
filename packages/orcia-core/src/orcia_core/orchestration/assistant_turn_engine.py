@@ -125,8 +125,10 @@ class AssistantTurnEngine:
         base_assembly_latency_ms: float = 0.0,
         locale: str = "fr",
         instance: str = "/api/v1/assistant/turns",
+        has_evidence: bool | None = None,
+        pack_key: str | None = None,
     ) -> PreparedTurnPlan:
-        """N1+N2: Validate speed & `supports_tools`, assemble 5-layer Mode A prompt."""
+        """N1+N2: Validate speed & `supports_tools`, assemble conversational prompt."""
         intent = self.n1_intent_guard(user, user_prompt=user_prompt, require_write=True)
         return await assemble_prepared_turn_plan_async(
             governance=self._governance,
@@ -152,6 +154,8 @@ class AssistantTurnEngine:
             base_assembly_latency_ms=base_assembly_latency_ms,
             locale=locale,
             instance=instance,
+            has_evidence=has_evidence,
+            pack_key=pack_key,
         )
 
     async def start_assistant_reflexive_session_async(

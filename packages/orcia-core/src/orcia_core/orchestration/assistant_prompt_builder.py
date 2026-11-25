@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 from typing import Any
 
+from orcia_core.orchestration._assistant_conversational_locales import get_conversational_locale
 from orcia_core.orchestration.assistant_governance_models import (
     AssembledLayerPreviewItem,
     UserLayerPreferences,
@@ -62,6 +63,7 @@ class AssistantPromptBuilder:
     ) -> AssembledAssistantPrompt:
         """Assemble all 5 layers with immutable Layer 1 and clean `fr`/`en` localization."""
         bundle = get_prompt_locale_bundle(locale)
+        cloc = get_conversational_locale(locale)
         workspace_label = resolve_human_workspace_label(
             workspace_id, workspace_display_name, locale=locale
         )
@@ -101,7 +103,7 @@ class AssistantPromptBuilder:
         profile_spec = resolve_profile_adaptation(human_profile_archetype)
         reg_label, indicators, prefix = resolve_profile_copy_for_locale(profile_spec, locale=locale)
         layer_3_text = (
-            f"[HUMAN_PROFILE_ADAPTATION_LAYER_3]\n"
+            f"{cloc.profile_heading}:\n"
             f"{bundle.archetype_label}: {profile_spec.archetype}\n"
             f"{bundle.register_label}: {reg_label}\n"
             f"{bundle.indicators_label}: {', '.join(indicators)}\n"
@@ -137,8 +139,11 @@ class AssistantPromptBuilder:
             )
         if not fanout_lines:
             fanout_lines.append(bundle.empty_fanout_tpl.format(workspace_id=workspace_label))
+            fanout_lines.append(cloc.empty_evidence_guard)
+        else:
+            fanout_lines.append(cloc.evidence_citation_rule)
 
-        layer_4_text = "[FEDERATED_CONTEXT_FANOUT_LAYER_4]\n" + "\n".join(fanout_lines)
+        layer_4_text = f"{cloc.context_heading}:\n" + "\n".join(fanout_lines)
         layer_4 = PromptLayerBlock(
             layer_id="4_FEDERATED_CONTEXT_FANOUT",
             layer_order=4,
@@ -155,7 +160,7 @@ class AssistantPromptBuilder:
             else bundle.no_blueprint
         )
         layer_5_text = (
-            f"[CONVERSATIONAL_INTENT_AND_COMPOSER_LAYER_5]\n"
+            f"{cloc.intent_heading}:\n"
             f"{bundle.workspace_label}: {workspace_label}\n"
             f"{bundle.intent_label}: {intent}\n"
             f"{composer_note}\n"
@@ -219,8 +224,10 @@ class AssistantPromptBuilder:
         workspace_instructions: str | None = None,
         folder_pinned_notes: str | None = None,
         locale: str = "fr",
+        has_evidence: bool | None = None,
+        pack_key: str | None = None,
     ) -> str:
-        """Build complete 5-layer + ontology + evidence + preferences system prompt (`AD-15`)."""
+        """Build complete conversational system prompt (`AD-15`, `Story 30.2`)."""
         if system_instructions_override and system_instructions_override.strip():
             if not allow_system_override:
                 raise ImmutableHarnessBoundaryError(
@@ -246,6 +253,8 @@ class AssistantPromptBuilder:
             federated_evidence_summary=federated_evidence_summary,
             custom_block=custom_block,
             locale=locale,
+            has_evidence=has_evidence,
+            pack_key=pack_key,
         )
 
     def build_five_layers_preview(

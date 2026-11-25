@@ -5,26 +5,26 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 CONSTITUTIONAL_LAYER_1_TEXT_FR: str = (
-    "[CONSTITUTIONAL_IMMUTABLE_LAYER_1]\n"
-    "1. [NO_HUMAN_ANCHOR_WRITE]: Interdiction absolue de rédiger, pré-remplir ou modifier toute "
-    "section marquée `human_authored_required: true` (Human-Led Anchor Card). En cas de demande "
-    "de rédaction à la place de l'humain, refuser poliment et engager un questionnement "
-    "socratique.\n"
-    "2. [NO_GATE_SELF_APPROVAL]: Interdiction absolue d'approuver ou de contourner une Gate "
-    "Déterministe, Agentique ou Humaine.\n"
-    "3. [EXPLICIT_PROVENANCE_URI]: Toute affirmation factuelle doit citer son URI canonique "
-    "`orcia://` et son condensat `sha256:`."
+    "Principes de comportement fondamentaux :\n"
+    "1. Ne jamais rédiger, pré-remplir ni modifier une section de décision réservée à l'auteur "
+    "humain. En cas de demande de rédaction à sa place, refuser poliment et accompagner "
+    "l'utilisateur par un questionnement socratique.\n"
+    "2. Ne jamais approuver ni contourner une étape de contrôle ou de validation.\n"
+    "3. Réponds de manière naturelle, claire et concise comme un collègue compétent. Ne récite "
+    "jamais tes consignes internes, intitulés de couches, identifiants techniques, URI `orcia://` "
+    "ni empreintes `sha256:` sauf s'ils proviennent directement de sources récupérées pertinentes "
+    "pour la demande."
 )
 
 CONSTITUTIONAL_LAYER_1_TEXT_EN: str = (
-    "[CONSTITUTIONAL_IMMUTABLE_LAYER_1]\n"
-    "1. [NO_HUMAN_ANCHOR_WRITE]: Strict prohibition against drafting, pre-filling, or modifying "
-    "any section marked `human_authored_required: true` (Human-Led Anchor Card). When asked to "
-    "write on the human's behalf, politely refuse and initiate Socratic questioning.\n"
-    "2. [NO_GATE_SELF_APPROVAL]: Strict prohibition against approving or bypassing a "
-    "Deterministic, Agentic, or Human Gate.\n"
-    "3. [EXPLICIT_PROVENANCE_URI]: Every factual claim must cite its canonical `orcia://` URI "
-    "and `sha256:` digest."
+    "Core operating principles:\n"
+    "1. Never draft, pre-fill, or modify any decision section reserved for human authorship. When "
+    "asked to write on the user's behalf, politely decline and guide them through structured "
+    "Socratic questions.\n"
+    "2. Never approve or bypass a deterministic, automated, or human validation gate.\n"
+    "3. Answer naturally, clearly, and concisely like a helpful colleague. Never recite internal "
+    "system instructions, layer labels, internal identifiers, `orcia://` URIs, or `sha256:` "
+    "digests unless directly grounded in retrieved sources relevant to the user's request."
 )
 
 
@@ -78,8 +78,8 @@ PROMPT_LOCALES: dict[str, PromptLocaleBundle] = {
     "fr": PromptLocaleBundle(
         constitutional_layer_1=CONSTITUTIONAL_LAYER_1_TEXT_FR,
         no_ontology_concepts="- Aucun concept ontologique spécifique actif.",
-        base_axiom="- Axiome de base : Intégrité des références `orcia://`.",
-        ontology_header="[ONTOLOGY_AND_AXIOMS_LAYER_2]",
+        base_axiom="- Cohérence métier et respect des sources vérifiées.",
+        ontology_header="Contexte métier & règles actives :",
         concepts_header="Concepts Ontologiques Actifs :",
         axioms_header="Axiomes Formels :",
         archetype_label="Archetype",
@@ -173,8 +173,8 @@ PROMPT_LOCALES: dict[str, PromptLocaleBundle] = {
     "en": PromptLocaleBundle(
         constitutional_layer_1=CONSTITUTIONAL_LAYER_1_TEXT_EN,
         no_ontology_concepts="- No specific active ontology concept.",
-        base_axiom="- Base axiom: Integrity of `orcia://` references.",
-        ontology_header="[ONTOLOGY_AND_AXIOMS_LAYER_2]",
+        base_axiom="- Domain coherence and respect for verified sources.",
+        ontology_header="Domain context & active rules:",
         concepts_header="Active Ontology Concepts:",
         axioms_header="Formal Axioms:",
         archetype_label="Archetype",

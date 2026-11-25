@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from orcia_core.ontology.context_ranker import RankedOntologyConcept
 from orcia_core.ontology.models import OntologyAxiomEntity
 from orcia_core.orchestration._assistant_citations_verifier import build_evidence_table_impl
+from orcia_core.orchestration._assistant_conversational_locales import get_conversational_locale
 from orcia_core.orchestration.assistant_citations_models import (
     EvidenceGlossaryCitation,
     EvidenceSourceCitation,
@@ -220,10 +221,7 @@ def format_evidence_table_for_layer_4(table: EvidenceTable, *, locale: str = "fr
     """Format verified `EvidenceTable` entries into deterministic Layer 4 prompt context."""
     if not table.sources and not table.glossary_items:
         return ""
-    is_en = (locale or "fr").strip().lower().startswith("en")
-    lines: list[str] = [
-        "[SERVER_EVIDENCE_TABLE_LAYER_4]" if is_en else "[TABLE_PREUVES_SERVEUR_COUCHE_4]"
-    ]
+    lines: list[str] = [get_conversational_locale(locale).evidence_table_heading]
     for src in table.sources:
         if src.restricted_access or src.snippet is None:
             continue

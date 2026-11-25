@@ -23,6 +23,52 @@ from orcia_kernel.ids import new_uuid7_str
 
 UNVERIFIED_CITATION_BADGE: str = get_assistant_node_copy()["unverified_citation"]
 _CITATION_TAG_RE = re.compile(r"\[([SGO]\d+)\]")
+_EMPTY_SHA256_HEX = hashlib.sha256(b"").hexdigest()
+_EMPTY_SHA256_RE = re.compile(
+    rf"(?:sha256\s*:\s*)?`?{_EMPTY_SHA256_HEX}`?",
+    re.IGNORECASE,
+)
+_UNGROUNDED_ORCIA_URI_RE = re.compile(
+    r"`?orcia://[A-Za-z0-9_./:@?=&%-]+`?",
+    re.IGNORECASE,
+)
+_DANGLING_PARENS_RE = re.compile(r"\(\s*[,;:\-–—]*\s*\)|\[\s*[,;:\-–—]*\s*\]")
+_ORPHAN_PROOF_LINE_RE = re.compile(
+    r"^\s*(?:[-*]\s*)?(?:preuve(?:\s+de\s+conformit[e\u00e9])?|proof(?:\s+of\s+compliance)?|"
+    r"source|r[e\u00e9]f[e\u00e9]rence|hash|sha-?256|uri)\s*[:\-–—.\s]*$",
+    re.IGNORECASE,
+)
+
+
+def _scrub_empty_evidence_artifacts(text: str, *, had_phantom_tags: bool) -> str:
+    """Remove fabricated empty-string SHA-256 digests and ungrounded `orcia://` proof tokens."""
+    if (
+        not had_phantom_tags
+        and not _EMPTY_SHA256_RE.search(text)
+        and not _UNGROUNDED_ORCIA_URI_RE.search(text)
+    ):
+        return text
+    out_lines: list[str] = []
+    for raw_line in text.splitlines():
+        line_dirty = (
+            bool(_EMPTY_SHA256_RE.search(raw_line))
+            or bool(_UNGROUNDED_ORCIA_URI_RE.search(raw_line))
+            or _ORPHAN_PROOF_LINE_RE.match(raw_line) is not None
+        )
+        if not line_dirty and not had_phantom_tags:
+            out_lines.append(raw_line)
+            continue
+        cleaned_line = _EMPTY_SHA256_RE.sub("", raw_line)
+        cleaned_line = _UNGROUNDED_ORCIA_URI_RE.sub("", cleaned_line)
+        cleaned_line = _DANGLING_PARENS_RE.sub("", cleaned_line)
+        if line_dirty:
+            cleaned_line = re.sub(r"[ \t]{2,}", " ", cleaned_line).rstrip()
+            cleaned_line = re.sub(r"\s+([,.;:!?])", r"\1", cleaned_line)
+        if _ORPHAN_PROOF_LINE_RE.match(cleaned_line):
+            continue
+        out_lines.append(cleaned_line)
+    result = "\n".join(out_lines).strip()
+    return re.sub(r"\n{3,}", "\n\n", result)
 
 
 def build_evidence_table_impl(
@@ -119,9 +165,13 @@ def verify_and_sanitize_citations_impl(
             return f"[{tag}]"
         if tag not in stripped_found:
             stripped_found.append(tag)
-        return UNVERIFIED_CITATION_BADGE
+        return UNVERIFIED_CITATION_BADGE if known_tags else ""
 
     sanitized = _CITATION_TAG_RE.sub(_replace_match, response_text)
+    if not known_tags:
+        sanitized = _scrub_empty_evidence_artifacts(
+            sanitized, had_phantom_tags=bool(stripped_found)
+        )
     elapsed_ms = round((time.perf_counter() - t0) * 1000.0, 3)
 
     audit_entry: PhantomCitationAuditEntry | None = None

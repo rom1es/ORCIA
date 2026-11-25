@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 242,
+    "techLeadReportsCount": 243,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -545,6 +545,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-25",
+      "phaseOrStory": "Story 30.2",
+      "reportFile": "30-2-assistant-conversational-prompt-cleanup-and-empty-evidence-guard-tech-lead-report.md",
+      "domain": "Epic 30 Lot 1 — Mon Assistant Clean Conversational System Prompt, Single Layer Injection, Active pack_key & Empty-Evidence Anti-Hallucination Guard (UX30-04, UX30-05, CAP-022, CAP-070, CAP-071, CAP-072, CAP-074)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): decoupled Tab 3 UI preview cards from live conversational prompts (_assistant_conversational_prompt.py 162 L, _assistant_conversational_locales.py 86 L, _assistant_governance_async_views.py 230 L, _assistant_ontology_context.py 100 L), injected Workspace/User instructions once, omitted empty personal_instructions, resolved genuine active pack_key, stripped raw bracket markers and TECH_LEAD DAG/run-lock.json jargon in fr/en while preserving untrusted input escaping (_assistant_prompt_sanitization.py 105 L), made provenance citations conditional on has_evidence with an explicit Empty-Evidence Guard, and scrubbed phantom [S#]/SHA-256(\"\")/orcia://system/* in _assistant_citations_verifier.py (236 L); all 21 Story 30.2 Python files <= 300 L; verified 92% 20-module branch coverage (143 passed), 1,132 tests/unit, 181 passed evals/security/contract, 6 passed PG18+Redis integration, 9/9 Turbo (20+149+356 JS/TS tests), 6 passed (1.8m) Playwright Desktop E2E (02, 21, 22, env -u ORCIA_E2E_SEED_FIXTURES), ruff (1,755 files)/mypy --strict (860 files)/lint-imports (5/5, 903 files)/lint_spine (0)/export_openapi (0-diff) clean."
+    },
     {
       "date": "2026-11-25",
       "phaseOrStory": "Story 30.1",

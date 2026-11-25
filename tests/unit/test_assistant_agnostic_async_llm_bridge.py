@@ -163,7 +163,8 @@ def test_pillar_1_and_2_multilingual_locale_and_5_layers_ontology_prompt() -> No
         locale="en",
     )
     assert "### 1. 🔒 Constitution" in prompt_en
-    assert "[ONTOLOGY_L1_L4_CONTEXT]" in prompt_en
+    assert "Domain context and active glossary:" in prompt_en
+    assert "[ONTOLOGY_L1_L4_CONTEXT]" not in prompt_en
     assert "Actif Stratégique" in prompt_en
     assert "High Thinking Effort" in prompt_en
     assert "Respond in the exact same language as the user's message" in prompt_en
@@ -181,13 +182,13 @@ def test_pillar_1_and_2_multilingual_locale_and_5_layers_ontology_prompt() -> No
         folder_pinned_notes="Contexte du dossier : migration API v2 et audit SLA.",
         locale="fr",
     )
-    assert "[LAYER_4_WORKSPACE_INSTRUCTIONS]" in prompt_fr_gov
+    assert "Instructions de l'espace:" in prompt_fr_gov
     assert "Prioriser les règles de conformité DORA." in prompt_fr_gov
-    assert "[LAYER_5_USER_PREFERENCES]" in prompt_fr_gov
+    assert "Préférences utilisateur:" in prompt_fr_gov
     assert "Synthétique & Direct" in prompt_fr_gov
     assert "Points clés (Liste à puces)" in prompt_fr_gov
     assert "Toujours inclure un exemple SQL PostgreSQL 18." in prompt_fr_gov
-    assert "[LAYER_5_ACTIVE_FOLDER_PINNED_NOTES]" in prompt_fr_gov
+    assert "Notes épinglées du dossier actif:" in prompt_fr_gov
     assert "Contexte du dossier : migration API v2 et audit SLA." in prompt_fr_gov
 
 

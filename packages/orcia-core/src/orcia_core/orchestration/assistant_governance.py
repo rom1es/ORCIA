@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
+from orcia_core.orchestration._assistant_governance_async_views import (
+    _AssistantGovernanceAsyncViewsMixin,
+)
 from orcia_core.orchestration._assistant_governance_sync import _AssistantGovernanceSyncMixin
 from orcia_core.orchestration._internal.sql_assistant_governance import (
     SqlAssistantGovernanceRepository,
@@ -17,18 +20,17 @@ from orcia_core.orchestration.assistant_governance_models import (
     AssistantOverrideScope,
     AssistantResponseFormat,
     AssistantResponseTone,
+    ConversationalGovernanceContext,
     UserLayerPreferences,
     WorkspaceLayerSettings,
 )
 from orcia_core.orchestration.assistant_governance_studio import (
-    build_five_layers_preview_items,
     build_frozen_workspace_settings,
     build_updated_user_preferences_override,
     build_updated_workspace_settings_override,
     can_manage_workspace_or_team,
     ensure_workspace_or_team_manager,
 )
-from orcia_core.orchestration.assistant_prompt_preview import resolve_default_hat
 from orcia_core.orchestration.errors import FunnelRuleViolationError, ObserverModeReadOnlyError
 from orcia_core.permissions.models import UserIdentity
 
@@ -45,12 +47,16 @@ __all__ = [
     "AssistantOverrideScope",
     "AssistantResponseFormat",
     "AssistantResponseTone",
+    "ConversationalGovernanceContext",
     "UserLayerPreferences",
     "WorkspaceLayerSettings",
 ]
 
 
-class AssistantFourLevelGovernanceService(_AssistantGovernanceSyncMixin):
+class AssistantFourLevelGovernanceService(
+    _AssistantGovernanceAsyncViewsMixin,
+    _AssistantGovernanceSyncMixin,
+):
     """Manages Mode A (3-tab) governance persisted in `workspace_customization_overrides`."""
 
     def __init__(
@@ -186,95 +192,6 @@ class AssistantFourLevelGovernanceService(_AssistantGovernanceSyncMixin):
             arbitration_policy=arbitration_policy,
             welcome_suggestions=welcome_suggestions,
             mcp_expose_assistant=mcp_expose_assistant,
-        )
-
-    async def assemble_five_layers_preview_async(
-        self,
-        *,
-        workspace_id: str,
-        user_id: str,
-        pack_key: str | None = None,
-        locale: str = "fr",
-        user_email: str | None = None,
-        workspace_display_name: str | None = None,
-        user_display_name: str | None = None,
-        default_hat_fallback: str | None = None,
-    ) -> tuple[AssembledLayerPreviewItem, ...]:
-        """Assemble Tab 3 5-layer preview hydrated from PG18 overrides in 1 SQL roundtrip."""
-        if await self._pg_ready() and self._sql_repo is not None:
-            (
-                user_prefs,
-                ws_settings,
-                team_instr,
-                pg_ws_name,
-                pg_user_name,
-            ) = await self._sql_repo.get_mode_a_layers_bundle_with_labels(
-                workspace_id=workspace_id, user_id=user_id, user_email=user_email
-            )
-            effective_prefs = self._with_resolved_hat(user_prefs, fallback=default_hat_fallback)
-            return build_five_layers_preview_items(
-                workspace_id=workspace_id,
-                user_id=user_id,
-                pack_key=pack_key,
-                user_prefs=effective_prefs,
-                ws_settings=ws_settings,
-                team_instr=team_instr or self._default_team_instructions(locale),
-                locale=locale,
-                workspace_display_name=workspace_display_name or pg_ws_name,
-                user_display_name=user_display_name or pg_user_name,
-            )
-        return self.assemble_five_layers_preview(
-            workspace_id=workspace_id,
-            user_id=user_id,
-            pack_key=pack_key,
-            locale=locale,
-            workspace_display_name=workspace_display_name,
-            user_display_name=user_display_name,
-            default_hat_fallback=default_hat_fallback,
-        )
-
-    async def get_governance_view_async(
-        self,
-        user: UserIdentity,
-        *,
-        workspace_id: str,
-        pack_key: str | None = None,
-        locale: str = "fr",
-    ) -> AssistantGovernanceView:
-        """Assemble Mode A governance view from PG18 `workspace_customization_overrides`."""
-        resolved_hat = resolve_default_hat(user=user)
-        if await self._pg_ready() and self._sql_repo is not None:
-            (
-                raw_prefs,
-                ws_settings,
-                team_instr,
-                pg_ws_name,
-                pg_user_name,
-            ) = await self._sql_repo.get_mode_a_layers_bundle_with_labels(
-                workspace_id=workspace_id, user_id=user.id, user_email=user.email
-            )
-            effective_prefs = self._with_resolved_hat(raw_prefs, user=user, fallback=resolved_hat)
-            assembled = build_five_layers_preview_items(
-                workspace_id=workspace_id,
-                user_id=user.id,
-                pack_key=pack_key,
-                user_prefs=effective_prefs,
-                ws_settings=ws_settings,
-                team_instr=team_instr or self._default_team_instructions(locale),
-                locale=locale,
-                workspace_display_name=pg_ws_name,
-                user_display_name=user.display_name or pg_user_name,
-            )
-            return AssistantGovernanceView(
-                workspace_id=workspace_id,
-                can_edit_workspace_layer=can_manage_workspace_or_team(user),
-                user_preferences=effective_prefs,
-                workspace_settings=ws_settings,
-                assembled_layers=assembled,
-                override_records=await self._sql_repo.list_overrides(workspace_id=workspace_id),
-            )
-        return self.get_governance_view(
-            user, workspace_id=workspace_id, pack_key=pack_key, locale=locale
         )
 
     @staticmethod

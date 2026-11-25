@@ -178,7 +178,8 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
     )
     assert "Palier Rapide" in sys_fast
     assert "Niveau de réflexion Bas" in sys_fast
-    assert "CONSTITUTIONAL_IMMUTABLE_LAYER_1" in sys_fast
+    assert "Principes de comportement fondamentaux" in sys_fast
+    assert "CONSTITUTIONAL_IMMUTABLE_LAYER_1" not in sys_fast
     assert "RÈGLE DE LANGUE IMPÉRATIVE" in sys_fast
     assert "Réponds en français" in sys_fast
     assert "Palier Raisonnement avancé" in sys_deep
@@ -246,4 +247,5 @@ def test_story_10_2_live_llm_bridge_tier_selection_and_thinking_effort(
         assert "gemma4:27b-pro" in s_complex.text
         assert captured_models[-1] == "gemma4:27b-pro"
         assert "Niveau de réflexion Élevé" in captured_sys_prompts[-1]
-        assert "1. 🔒 Constitution (AssistantHarness Socle)" in captured_sys_prompts[-1]
+        assert "Principes de comportement fondamentaux" in captured_sys_prompts[-1]
+        assert "1. 🔒 Constitution (AssistantHarness Socle)" not in captured_sys_prompts[-1]

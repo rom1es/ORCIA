@@ -12,6 +12,7 @@ from orcia_core.orchestration.assistant_governance_models import (
     AssistantGovernanceView,
     AssistantResponseFormat,
     AssistantResponseTone,
+    ConversationalGovernanceContext,
     UserLayerPreferences,
     WorkspaceLayerSettings,
 )
@@ -24,7 +25,11 @@ from orcia_core.orchestration.assistant_governance_studio import (
     can_manage_workspace_or_team,
     ensure_workspace_or_team_manager,
 )
-from orcia_core.orchestration.assistant_prompt_preview import resolve_default_hat
+from orcia_core.orchestration.assistant_prompt_preview import (
+    resolve_default_hat,
+    resolve_human_user_label,
+    resolve_human_workspace_label,
+)
 from orcia_core.orchestration.errors import FunnelRuleViolationError, ObserverModeReadOnlyError
 from orcia_core.permissions.models import UserIdentity
 
@@ -140,6 +145,41 @@ class _AssistantGovernanceSyncMixin:
             return prefs
         resolved = resolve_default_hat(user=user, fallback=fallback or "ARCHITECT")
         return replace(prefs, default_hat=resolved)
+
+    def load_conversational_governance(
+        self,
+        *,
+        workspace_id: str,
+        user_id: str,
+        pack_key: str | None = None,
+        locale: str = "fr",
+        workspace_display_name: str | None = None,
+        user_display_name: str | None = None,
+        default_hat_fallback: str | None = None,
+    ) -> ConversationalGovernanceContext:
+        """Load Mode A governance fields for live conversational turns (no UI preview cards)."""
+        team_instr = (
+            self._store.get_team_instructions(workspace_id) if self._store else None
+        ) or self._default_team_instructions(locale)
+        prefs = self._with_resolved_hat(
+            self.get_user_preferences(workspace_id=workspace_id, user_id=user_id),
+            fallback=default_hat_fallback,
+        )
+        ws_settings = self.get_workspace_settings(workspace_id)
+        return ConversationalGovernanceContext(
+            workspace_id=workspace_id,
+            workspace_label=resolve_human_workspace_label(
+                workspace_id, workspace_display_name, locale=locale
+            ),
+            user_label=resolve_human_user_label(user_id, user_display_name, locale=locale),
+            team_instructions=team_instr,
+            workspace_instructions=ws_settings.workspace_instructions,
+            response_tone=prefs.response_tone,
+            favorite_format=prefs.favorite_format,
+            default_hat=prefs.default_hat,
+            personal_instructions=prefs.personal_instructions,
+            pack_key=pack_key,
+        )
 
     def assemble_five_layers_preview(
         self,

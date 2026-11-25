@@ -219,16 +219,20 @@ def test_epic_26_harness_files_under_300_lines_and_single_prompt_builder() -> No
     assert oversized == [], f"Epic 26 harness files > 300 L: {oversized}"
 
     layer1_holders: list[str] = []
+    raw_marker_holders: list[str] = []
     prompt_builders: list[str] = []
     for root in (API_SRC_DIR, CORE_SRC_DIR / "orcia_core"):
         for path in sorted(root.rglob("*.py")):
             txt = path.read_text(encoding="utf-8")
             rel = str(path.relative_to(REPO_ROOT))
             if "[CONSTITUTIONAL_IMMUTABLE_LAYER_1]" in txt:
+                raw_marker_holders.append(rel)
+            if "Core operating principles:" in txt:
                 layer1_holders.append(rel)
             if "class AssistantPromptBuilder" in txt:
                 prompt_builders.append(rel)
 
+    assert raw_marker_holders == []
     assert layer1_holders == [
         "packages/orcia-core/src/orcia_core/orchestration/assistant_prompt_locales.py"
     ]

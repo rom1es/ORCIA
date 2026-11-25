@@ -97,6 +97,22 @@ class AssistantCustomizationOverrideRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class ConversationalGovernanceContext:
+    """Hydrated Mode A governance state for live conversational turns (`Story 30.2`)."""
+
+    workspace_id: str
+    workspace_label: str
+    user_label: str
+    team_instructions: str
+    workspace_instructions: str
+    response_tone: AssistantResponseTone
+    favorite_format: AssistantResponseFormat
+    default_hat: str
+    personal_instructions: str
+    pack_key: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class AssistantGovernanceView:
     """Mode A governance response for `GET /api/v1/assistant/governance` (`Story 26.4b`)."""
 

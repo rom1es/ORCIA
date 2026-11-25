@@ -6,6 +6,9 @@ import hashlib
 import time
 from dataclasses import dataclass
 
+from orcia_core.orchestration._assistant_conversational_prompt import (
+    build_conversational_base_context,
+)
 from orcia_core.orchestration.ai_models_errors import ModelToolsUnsupportedError
 from orcia_core.orchestration.assistant_agent_synthesis import classify_assistant_intent
 from orcia_core.orchestration.assistant_governance import AssistantFourLevelGovernanceService
@@ -94,8 +97,10 @@ async def assemble_prepared_turn_plan_async(
     base_assembly_latency_ms: float = 0.0,
     locale: str = "fr",
     instance: str = "/api/v1/assistant/turns",
+    has_evidence: bool | None = None,
+    pack_key: str | None = None,
 ) -> PreparedTurnPlan:
-    """Resolve conversational speed, verify `supports_tools`, and build 5-layer prompt."""
+    """Resolve conversational speed, verify `supports_tools`, and build clean prompt."""
     detected_speed, _ = detect_conversational_speed_mode(
         user_prompt,
         requested_speed=requested_speed,
@@ -108,18 +113,34 @@ async def assemble_prepared_turn_plan_async(
 
     active_hat = resolve_default_hat(explicit_hat=hat, user=user)
     t0 = time.perf_counter()
+    eff_tone = response_tone
+    eff_fmt = response_format
+    eff_personal = personal_instructions
+    eff_ws = workspace_instructions
     if assembled_5_layers_prompt is not None:
         assembled_text = assembled_5_layers_prompt
     else:
-        layers = await governance.assemble_five_layers_preview_async(
+        gov_ctx = await governance.load_conversational_governance_async(
             workspace_id=workspace_id,
             user_id=user.id,
+            pack_key=pack_key,
             locale=locale,
             user_email=user.email,
             user_display_name=user.display_name,
             default_hat_fallback=active_hat,
         )
-        assembled_text = "\n\n".join(f"### {layer.label}\n{layer.content}" for layer in layers)
+        assembled_text = build_conversational_base_context(
+            workspace_id=workspace_id,
+            workspace_label=gov_ctx.workspace_label,
+            hat=active_hat,
+            pack_key=gov_ctx.pack_key,
+            team_instructions=gov_ctx.team_instructions,
+            locale=locale,
+        )
+        eff_tone = eff_tone if eff_tone is not None else gov_ctx.response_tone
+        eff_fmt = eff_fmt if eff_fmt is not None else gov_ctx.favorite_format
+        eff_personal = eff_personal if eff_personal is not None else gov_ctx.personal_instructions
+        eff_ws = eff_ws if eff_ws is not None else gov_ctx.workspace_instructions
     digest = hashlib.sha256(assembled_text.encode("utf-8")).hexdigest()
     assembly_ms = round(base_assembly_latency_ms + (time.perf_counter() - t0) * 1000.0, 3)
 
@@ -131,12 +152,14 @@ async def assemble_prepared_turn_plan_async(
         assembled_5_layers_prompt=assembled_text,
         ontology_concepts_summary=ontology_concepts_summary,
         federated_evidence_summary=federated_evidence_summary,
-        response_tone=response_tone,
-        response_format=response_format,
-        personal_instructions=personal_instructions,
-        workspace_instructions=workspace_instructions,
+        response_tone=eff_tone,
+        response_format=eff_fmt,
+        personal_instructions=eff_personal,
+        workspace_instructions=eff_ws,
         folder_pinned_notes=folder_pinned_notes,
         locale=locale,
+        has_evidence=has_evidence,
+        pack_key=pack_key,
     )
     return PreparedTurnPlan(
         intent=intent,

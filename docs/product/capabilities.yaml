@@ -188,15 +188,15 @@ capabilities:
     title: Agent assistant DAG 5 nœuds (AssistantHarness 5 couches)
     fr: [FR-1, FR-13]
     origin: epic
-    origin_ref: 3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc + 25-5 + 26-1 + 26-5 + 26-7 + 26-8 + 26-10
+    origin_ref: 3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc + 25-5 + 26-1 + 26-5 + 26-7 + 26-8 + 26-10 + 30-2
     status: live
     kind: feature
     uj: [UJ-1, UJ-17]
     db_tables: [workflow_runs, step_executions, blackboard_snapshots, assistant_threads, assistant_thread_messages, reflexive_execution_sessions]
-    tests: [tests/unit/test_story_3_3_assistant_agent_5_nodes_and_context_ports.py, tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py, tests/security/test_story_26_1_assistant_security_hardening.py, tests/integration/api/test_story_26_1_assistant_security_postgres18.py, tests/unit/test_story_26_5_real_context_and_budget.py, tests/unit/test_story_26_5_routes_and_adapters.py, tests/evals/test_story_26_5_ontology_relevance_evals.py, tests/integration/api/test_story_26_5_real_context_and_history_postgres18.py, tests/evals/test_assistant_and_ontology_evals.py, tests/unit/test_story_26_7_unified_turn_engine_and_mcp.py, tests/integration/api/test_story_26_7_unified_turn_engine_postgres18.py, tests/unit/test_story_26_8_continue_in_process_and_human_anchors.py, tests/integration/api/test_story_26_8_continue_in_process_dbos_postgres18.py, tests/evals/test_story_26_10_assistant_golden_evals.py, tests/unit/test_story_26_10_epic_26_closure_ast_and_routes_audit.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts]
+    tests: [tests/unit/test_story_3_3_assistant_agent_5_nodes_and_context_ports.py, tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py, tests/security/test_story_26_1_assistant_security_hardening.py, tests/integration/api/test_story_26_1_assistant_security_postgres18.py, tests/unit/test_story_26_5_real_context_and_budget.py, tests/unit/test_story_26_5_routes_and_adapters.py, tests/evals/test_story_26_5_ontology_relevance_evals.py, tests/integration/api/test_story_26_5_real_context_and_history_postgres18.py, tests/evals/test_assistant_and_ontology_evals.py, tests/unit/test_story_26_7_unified_turn_engine_and_mcp.py, tests/integration/api/test_story_26_7_unified_turn_engine_postgres18.py, tests/unit/test_story_26_8_continue_in_process_and_human_anchors.py, tests/integration/api/test_story_26_8_continue_in_process_dbos_postgres18.py, tests/evals/test_story_26_10_assistant_golden_evals.py, tests/unit/test_story_26_10_epic_26_closure_ast_and_routes_audit.py, tests/unit/test_story_30_2_assistant_conversational_prompt.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts]
     verification: runtime
-    verified_at: "2026-11-22"
-    surfaces: { api: "/api/v1/assistant/turns (assistant_turns.py, assistant_turn_engine.py, _assistant_guards.py, _assistant_thread_messages_routes.py, assistant_process_launcher.py, _assistant_process_wiring.py)" }
+    verified_at: "2026-11-25"
+    surfaces: { api: "/api/v1/assistant/turns (assistant_turns.py, assistant_turn_engine.py, _assistant_guards.py, _assistant_thread_messages_routes.py, assistant_process_launcher.py, _assistant_process_wiring.py, _assistant_conversational_prompt.py, _assistant_conversational_locales.py, _assistant_ontology_context.py)" }
   - id: CAP-023
     title: Ancrages humains obligatoires et arbitrage / tie-break
     fr: [FR-4, FR-5]
@@ -620,41 +620,41 @@ capabilities:
     title: Gouvernance de personnalisation 3 niveaux (Mode A)
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-1 + 26-1 + 26-4b + 26-9 + 26-10 + 29-3 + 29-5 + 30-1
+    origin_ref: 10-1 + 26-1 + 26-4b + 26-9 + 26-10 + 29-3 + 29-5 + 30-1 + 30-2
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [workspace_customization_overrides, user_preferences]
-    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, tests/unit/test_story_26_4b_governance_feedback_folders_and_audit.py, tests/unit/test_story_29_3_assistant_prompt_sanitization.py, tests/unit/test_story_29_3_governance_mappers_cov.py, tests/unit/test_story_29_3_governance_service_cov.py, tests/unit/test_story_29_3_turn_plan_and_preview_cov.py, tests/unit/test_story_30_1_assistant_settings_empty_instructions.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, tests/security/test_story_26_10_assistant_security_redteam.py, apps/web/src/__tests__/story-29-3-assistant-sanitization-and-rbac-notices.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-30-1-assistant-settings-explicit-save.test.tsx, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts]
+    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, tests/unit/test_story_26_4b_governance_feedback_folders_and_audit.py, tests/unit/test_story_29_3_assistant_prompt_sanitization.py, tests/unit/test_story_29_3_governance_mappers_cov.py, tests/unit/test_story_29_3_governance_service_cov.py, tests/unit/test_story_29_3_turn_plan_and_preview_cov.py, tests/unit/test_story_30_1_assistant_settings_empty_instructions.py, tests/unit/test_story_30_2_assistant_conversational_prompt.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, tests/security/test_story_26_10_assistant_security_redteam.py, apps/web/src/__tests__/story-29-3-assistant-sanitization-and-rbac-notices.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-30-1-assistant-settings-explicit-save.test.tsx, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts]
     verification: runtime
     verified_at: "2026-11-25"
-    surfaces: { route: /assistant, api: "assistant_workspace_governance.py, assistant_governance.py, assistant_governance_models.py, assistant_prompt_preview.py, assistant_prompt_builder.py, assistant_prompt_locales.py, sql_assistant_governance.py", ui: AssistantGovernanceModalAndStudio }
+    surfaces: { route: /assistant, api: "assistant_workspace_governance.py, assistant_governance.py, _assistant_governance_async_views.py, _assistant_governance_sync.py, assistant_governance_models.py, assistant_prompt_preview.py, assistant_prompt_builder.py, assistant_prompt_locales.py, _assistant_conversational_prompt.py, _assistant_conversational_locales.py, _assistant_profile_locales.py, sql_assistant_governance.py", ui: AssistantGovernanceModalAndStudio }
   - id: CAP-071
     title: Moteur unifié des tours assistant (AssistantTurnEngine N1-N6), 3 vitesses, SSE v2 canonique, synthesize-now, execution_profile ASSISTANT et MCP assistant.ask
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-2 + 26-4a + 26-7 + 26-10 + 29-3 + 29-5
+    origin_ref: 10-2 + 26-4a + 26-7 + 26-10 + 29-3 + 29-5 + 30-2
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [assistant_threads, workspace_customization_overrides, inference_attempts, domain_events_outbox, reflexive_execution_sessions]
-    tests: [tests/unit/test_story_26_4a_locks_outbox_cache_removal_and_ddl_audit.py, tests/integration/api/test_story_26_4a_redis_locks_outbox_ddl_postgres18.py, tests/unit/test_story_26_7_unified_turn_engine_and_mcp.py, tests/unit/test_story_29_3_assistant_prompt_sanitization.py, tests/unit/test_story_29_3_turn_plan_and_preview_cov.py, tests/integration/api/test_story_26_7_unified_turn_engine_postgres18.py, tests/integration/api/test_story_26_10_multi_worker_sse_stop_recovery_postgres18.py, tests/unit/test_story_26_10_epic_26_closure_ast_and_routes_audit.py, apps/web/src/__tests__/story-29-3-assistant-sanitization-and-rbac-notices.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts]
+    tests: [tests/unit/test_story_26_4a_locks_outbox_cache_removal_and_ddl_audit.py, tests/integration/api/test_story_26_4a_redis_locks_outbox_ddl_postgres18.py, tests/unit/test_story_26_7_unified_turn_engine_and_mcp.py, tests/unit/test_story_29_3_assistant_prompt_sanitization.py, tests/unit/test_story_29_3_turn_plan_and_preview_cov.py, tests/unit/test_story_30_2_assistant_conversational_prompt.py, tests/integration/api/test_story_26_7_unified_turn_engine_postgres18.py, tests/integration/api/test_story_26_10_multi_worker_sse_stop_recovery_postgres18.py, tests/unit/test_story_26_10_epic_26_closure_ast_and_routes_audit.py, apps/web/src/__tests__/story-29-3-assistant-sanitization-and-rbac-notices.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts]
     verification: runtime
     verified_at: "2026-11-25"
-    surfaces: { route: /assistant, api: "assistant_turns.py (/api/v1/assistant/turns*), _assistant_turn_controls_routes.py, _assistant_context_assembly.py, assistant_turn_engine.py, _assistant_turn_engine_plan.py, _assistant_turn_engine_mcp.py, _mcp_assistant_ask_bridge.py", ui: "AssistantTopToolbar + AssistantSpeedSelectorAndStreamView + AssistantSpeedSelectorHelpers + AssistantStickyPromptFooter", migration: "20261122_264a + 20261122_267" }
+    surfaces: { route: /assistant, api: "assistant_turns.py (/api/v1/assistant/turns*), _assistant_turn_controls_routes.py, _assistant_context_assembly.py, _assistant_ontology_context.py, assistant_turn_engine.py, _assistant_turn_engine_plan.py, _assistant_turn_engine_mcp.py, _mcp_assistant_ask_bridge.py", ui: "AssistantTopToolbar + AssistantSpeedSelectorAndStreamView + AssistantSpeedSelectorHelpers + AssistantStickyPromptFooter", migration: "20261122_264a + 20261122_267" }
   - id: CAP-072
     title: Citations déterministes [S1]/[G1]/[O1], garde CitationGuard côté serveur pré-turn_completed et purge des citations fantômes
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-3 + 26-1 + 26-4b + 26-7 + 26-9 + 26-10
+    origin_ref: 10-3 + 26-1 + 26-4b + 26-7 + 26-9 + 26-10 + 30-2
     status: live
     kind: feature
     uj: [UJ-1, UJ-17]
     db_tables: [kb_chunks, ontology_concepts, assistant_threads, assistant_thread_messages, audit_ledger]
-    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, tests/evals/test_citations_golden_dataset.py, tests/evals/test_story_26_10_assistant_golden_evals.py, tests/unit/test_story_26_7_unified_turn_engine_and_mcp.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts]
+    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, tests/evals/test_citations_golden_dataset.py, tests/evals/test_story_26_10_assistant_golden_evals.py, tests/unit/test_story_26_7_unified_turn_engine_and_mcp.py, tests/unit/test_story_30_2_assistant_conversational_prompt.py, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts]
     verification: runtime
-    verified_at: "2026-11-22"
-    surfaces: { api: "_assistant_turn_engine_citations.py, _assistant_turn_finalizer.py, assistant_citations_and_v5_guard.py", ui: AssistantCitationPillsAndArtifactCard }
+    verified_at: "2026-11-25"
+    surfaces: { api: "_assistant_turn_engine_citations.py, _assistant_citations_verifier.py, _assistant_turn_finalizer.py, assistant_citations_and_v5_guard.py, assistant_evidence_table.py", ui: AssistantCitationPillsAndArtifactCard }
   - id: CAP-073
     title: Dossiers thématiques, métadonnées PG18, feedback par tour, fils collaboratifs, verrous de tour Redis (SET NX EX), partage et processus
     fr: [FR-33]
@@ -672,15 +672,15 @@ capabilities:
     title: Câblage LLM réel et streaming SSE multi-fournisseurs (« Envoyer à Mon Assistant »)
     fr: [FR-33]
     origin: adhoc
-    origin_ref: 2026-11-05-cablage-reel-llm-envoyer-a-mon-assistant-et-feedback-ui + 25-5 + 26-2 + 2026-11-23-gemini-interactions-api-et-fallback-secours + 2026-11-23-ai-model-edit-api-key-and-fr-en-locale
+    origin_ref: 2026-11-05-cablage-reel-llm-envoyer-a-mon-assistant-et-feedback-ui + 25-5 + 26-2 + 2026-11-23-gemini-interactions-api-et-fallback-secours + 2026-11-23-ai-model-edit-api-key-and-fr-en-locale + 30-2
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [llm_model_endpoints, workspace_llm_tier_mappings, assistant_threads, inference_attempts]
-    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py, tests/unit/test_story_26_2_core_llm_streaming_and_prompt_builder.py, tests/unit/test_gemini_interactions_and_fallback_model.py, tests/unit/test_gemini_adapters_coverage_edges.py, tests/unit/test_assistant_locale_and_tool_loop_i18n.py, tests/integration/api/test_story_25_5_assistant_chat_only_and_rag_guard_postgres18.py]
+    tests: [apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, tests/unit/test_story_25_5_assistant_without_embedding_and_datasource_guard.py, tests/unit/test_story_26_2_core_llm_streaming_and_prompt_builder.py, tests/unit/test_story_30_2_assistant_conversational_prompt.py, tests/unit/test_gemini_interactions_and_fallback_model.py, tests/unit/test_gemini_adapters_coverage_edges.py, tests/unit/test_assistant_locale_and_tool_loop_i18n.py, tests/integration/api/test_story_25_5_assistant_chat_only_and_rag_guard_postgres18.py]
     verification: runtime
-    verified_at: "2026-11-23"
-    surfaces: { api: llm_streaming_port.py + llm_streaming_base_httpx.py + _llm_streaming_fallbacks.py + assistant_prompt_builder.py + assistant_prompt_locales.py + _assistant_prompt_sanitization.py + _assistant_turn_locale_messages.py + _assistant_turn_producer.py + _assistant_turn_producer_tool_loop.py + assistant_llm_bridge.py + assistant_llm_providers.py + llm_endpoint_resolver.py }
+    verified_at: "2026-11-25"
+    surfaces: { api: llm_streaming_port.py + llm_streaming_base_httpx.py + _llm_streaming_fallbacks.py + assistant_prompt_builder.py + assistant_prompt_locales.py + _assistant_conversational_prompt.py + _assistant_conversational_locales.py + assistant_llm_prompts.py + _assistant_prompt_sanitization.py + _assistant_turn_locale_messages.py + _assistant_turn_producer.py + _assistant_turn_producer_tool_loop.py + assistant_llm_bridge.py + assistant_llm_providers.py + llm_endpoint_resolver.py }
 
   # ───────────── Mes Espaces, MCP/A2A, pack-builder (Epic 11) ─────────────
   - id: CAP-080

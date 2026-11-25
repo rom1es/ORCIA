@@ -18,28 +18,23 @@ from orcia_api.dependencies._core_providers import (
     get_configured_db_engine,
     get_ontology_and_rag_services,
 )
-from orcia_api.routers._ontology_promotions_helpers import (
-    load_ontology_topology,
-    resolve_dynamic_ontology_scopes,
+from orcia_api.routers._assistant_ontology_context import (
+    resolve_ranked_pg18_ontology_for_turn as resolve_ranked_pg18_ontology_for_turn,
 )
+from orcia_api.routers._assistant_prompt_sanitization import resolve_active_pack_key_from_request
 from orcia_api.routers.ontology_rag_helpers import build_sql_rag_repo_from_request
 from orcia_core.blackboard import list_active_workspace_blackboard_snapshots_pg
 from orcia_core.observability.logging import get_logger
-from orcia_core.ontology import (
-    OntologyGovernanceService,
-    load_ontology_governance_service_pg,
-)
-from orcia_core.ontology.context_ranker import (
-    RankedOntologyConcept,
-    build_websearch_or_query,
-    format_ranked_ontology_summary,
-    rank_ontology_with_optional_embedding_async,
+from orcia_core.ontology.context_ranker import build_websearch_or_query
+from orcia_core.orchestration._assistant_conversational_prompt import (
+    build_conversational_base_context,
 )
 from orcia_core.orchestration.assistant_citations_models import EvidenceTable
 from orcia_core.orchestration.assistant_evidence_table import (
     build_server_evidence_table_for_turn,
     evidence_table_to_citation_map_dict,
 )
+from orcia_core.orchestration.assistant_governance_models import ConversationalGovernanceContext
 from orcia_core.permissions.models import UserIdentity
 from orcia_core.ports.embedding import EmbeddingPort
 from orcia_core.rag._context_adapters_helpers import build_blackboard_slices
@@ -60,78 +55,12 @@ class AssembledTurnContext:
     assembly_latency_ms: float
     ontology_concepts: tuple[dict[str, Any], ...] = ()
     ontology_axioms: tuple[dict[str, Any], ...] = ()
-
-
-async def resolve_ranked_pg18_ontology_for_turn(
-    request: Request,
-    *,
-    workspace_id: str,
-    user_prompt: str,
-    hat: str,
-    embedding_port: EmbeddingPort | None = None,
-    resolved_ws_uuid: str | None = None,
-) -> tuple[
-    tuple[RankedOntologyConcept, ...],
-    tuple[Any, ...],
-    tuple[dict[str, Any], ...],
-    tuple[dict[str, Any], ...],
-    str | None,
-]:
-    """Load PG18 ontology & topology concurrently, resolve scopes, and rank concepts."""
-    engine = get_configured_db_engine(request)
-    ont_svc: OntologyGovernanceService | None = None
-    ent_scope = "scope-global"
-    dom_scope = ""
-    team_chain: tuple[str, ...] = ()
-    ws_scope = workspace_id
-
-    if engine is not None:
-        try:
-            if resolved_ws_uuid is None:
-                ont_svc, (_, org_units, workspaces), resolved_ws_uuid = await asyncio.gather(
-                    load_ontology_governance_service_pg(engine),
-                    load_ontology_topology(request, fixture=False),
-                    resolve_assistant_workspace_uuid(request, workspace_id),
-                )
-            else:
-                ont_svc, (_, org_units, workspaces) = await asyncio.gather(
-                    load_ontology_governance_service_pg(engine),
-                    load_ontology_topology(request, fixture=False),
-                )
-            ws_key = resolved_ws_uuid or workspace_id
-            target_ws = ws_key if ws_key != "GLOBAL" else workspace_id
-            ent_scope, dom_scope, team_chain, ws_scope, _ = resolve_dynamic_ontology_scopes(
-                "3_WORKSPACE", target_ws, org_units, workspaces
-            )
-            if not ws_scope:
-                ws_scope = target_ws
-        except Exception as exc:
-            logger.warning("assistant_pg18_ontology_load_fallback", error_type=type(exc).__name__)
-            ont_svc = None
-
-    if ont_svc is None or not ont_svc.concepts:
-        fallback_gov, _, _ = get_ontology_and_rag_services(request)
-        if ont_svc is None or fallback_gov.concepts:
-            ont_svc = fallback_gov
-
-    if not ont_svc.concepts:
-        return (), (), (), (), None
-
-    for scope_candidate in (ws_scope, workspace_id) if ws_scope != workspace_id else (ws_scope,):
-        ranked = await rank_ontology_with_optional_embedding_async(
-            ont_svc,
-            workspace_id=scope_candidate,
-            query_text=user_prompt,
-            active_hat=hat,
-            embedding_port=embedding_port,
-            enterprise_scope_id=ent_scope,
-            domain_scope_id=dom_scope,
-            team_chain_scope_ids=team_chain,
-        )
-        if ranked.selected_concepts:
-            break
-    concepts_dicts, axioms_dicts, summary = format_ranked_ontology_summary(ranked)
-    return ranked.selected_concepts, ranked.applicable_axioms, concepts_dicts, axioms_dicts, summary
+    has_evidence: bool = False
+    pack_key: str | None = None
+    workspace_instructions: str | None = None
+    response_tone: str | None = None
+    response_format: str | None = None
+    personal_instructions: str | None = None
 
 
 async def assemble_real_workspace_context_for_turn_async(
@@ -153,27 +82,38 @@ async def assemble_real_workspace_context_for_turn_async(
     )
     ws_uuid = workspace_id if ws_uuid == "GLOBAL" else ws_uuid
 
-    async def _fetch_mode_a() -> tuple[str | None, float]:
+    active_pack_key = resolve_active_pack_key_from_request(request, workspace_id)
+
+    async def _fetch_mode_a() -> tuple[str | None, ConversationalGovernanceContext | None, float]:
         t0 = time.perf_counter()
         text: str | None = None
+        gov_ctx: ConversationalGovernanceContext | None = None
         try:
             from orcia_api.dependencies import get_assistant_governance_service
 
             gov = get_assistant_governance_service(request)
-            layers = await gov.assemble_five_layers_preview_async(
+            gov_ctx = await gov.load_conversational_governance_async(
                 workspace_id=workspace_id,
                 user_id=user_id,
+                pack_key=active_pack_key,
                 locale=locale,
                 user_email=user.email if user else None,
                 user_display_name=user.display_name if user else None,
                 default_hat_fallback=hat,
             )
-            text = "\n\n".join(f"### {layer.label}\n{layer.content}" for layer in layers)
+            text = build_conversational_base_context(
+                workspace_id=workspace_id,
+                workspace_label=gov_ctx.workspace_label,
+                hat=hat,
+                pack_key=gov_ctx.pack_key,
+                team_instructions=gov_ctx.team_instructions,
+                locale=locale,
+            )
         except Exception as exc:
             logger.warning(
                 "assistant_5_layer_prompt_resolution_fallback", error_type=type(exc).__name__
             )
-        return text, round((time.perf_counter() - t0) * 1000.0, 3)
+        return text, gov_ctx, round((time.perf_counter() - t0) * 1000.0, 3)
 
     async def _fetch_ontology() -> tuple[Any, ...]:
         t1 = time.perf_counter()
@@ -212,15 +152,8 @@ async def assemble_real_workspace_context_for_turn_async(
         return await prepare_server_source_uri_authorizer(request, user, workspace_id=workspace_id)
 
     (
-        (assembled_text, mode_a_ms),
-        (
-            ranked_concepts,
-            ranked_axioms,
-            concepts_dicts,
-            axioms_dicts,
-            ontology_summary,
-            ontology_ms,
-        ),
+        (assembled_text, gov_ctx, mode_a_ms),
+        (ranked_concepts, ranked_axioms, concepts_dicts, axioms_dicts, ontology_summary, ont_ms),
         (bb_slices, blackboard_ms),
         authorizer,
     ) = await asyncio.gather(
@@ -273,12 +206,13 @@ async def assemble_real_workspace_context_for_turn_async(
         locale=locale,
     )
     total_ms = round((time.perf_counter() - t_total) * 1000.0, 3)
+    has_evidence = bool(evidence_res.layer4_markdown.strip())
     logger.info(
         "assistant_prompt_assembly_benchmarked",
         workspace_id=workspace_id,
         assembly_latency_ms=total_ms,
         mode_a_ms=mode_a_ms,
-        ontology_ms=ontology_ms,
+        ontology_ms=ont_ms,
         rag_ms=rag_ms,
         blackboard_ms=blackboard_ms,
         embedding_active=embedding_port is not None,
@@ -295,4 +229,64 @@ async def assemble_real_workspace_context_for_turn_async(
         assembly_latency_ms=total_ms,
         ontology_concepts=concepts_dicts,
         ontology_axioms=axioms_dicts,
+        has_evidence=has_evidence,
+        pack_key=active_pack_key,
+        workspace_instructions=gov_ctx.workspace_instructions if gov_ctx else None,
+        response_tone=gov_ctx.response_tone if gov_ctx else None,
+        response_format=gov_ctx.favorite_format if gov_ctx else None,
+        personal_instructions=gov_ctx.personal_instructions if gov_ctx else None,
     )
+
+
+def resolve_5_layers_and_ontology_from_request(
+    request: Request,
+    *,
+    workspace_id: str,
+    user_id: str,
+    hat: str,
+    user_prompt: str = "",
+    locale: str = "fr",
+) -> tuple[str | None, str | None]:
+    """Read conversational base context and ranked L1-L4 Ontology concepts."""
+    assembled_text: str | None = None
+    ontology_summary: str | None = None
+    active_pack = resolve_active_pack_key_from_request(request, workspace_id)
+    try:
+        from orcia_api.dependencies import get_assistant_governance_service
+
+        gov = get_assistant_governance_service(request)
+        gov_ctx = gov.load_conversational_governance(
+            workspace_id=workspace_id,
+            user_id=user_id,
+            pack_key=active_pack,
+            locale=locale,
+            default_hat_fallback=hat,
+        )
+        assembled_text = build_conversational_base_context(
+            workspace_id=workspace_id,
+            workspace_label=gov_ctx.workspace_label,
+            hat=hat,
+            pack_key=gov_ctx.pack_key,
+            team_instructions=gov_ctx.team_instructions,
+            locale=locale,
+        )
+    except Exception as exc:
+        logger.warning(
+            "assistant_5_layer_prompt_resolution_fallback", error_type=type(exc).__name__
+        )
+    try:
+        from orcia_core.ontology.context_ranker import (
+            format_ranked_ontology_summary,
+            rank_ontology_snapshot_for_query,
+        )
+
+        ont_svc, _, _ = get_ontology_and_rag_services(request)
+        if getattr(ont_svc, "concepts", ()):
+            snap = ont_svc.resolve_snapshot(workspace_scope_id=workspace_id)
+            ranked = rank_ontology_snapshot_for_query(snap, query_text=user_prompt, active_hat=hat)
+            _, _, ontology_summary = format_ranked_ontology_summary(ranked)
+    except Exception as exc:
+        logger.warning(
+            "assistant_ontology_l1_l4_resolution_fallback", error_type=type(exc).__name__
+        )
+    return assembled_text, ontology_summary

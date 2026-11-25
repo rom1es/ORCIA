@@ -139,15 +139,33 @@ async def create_assistant_turn_endpoint(
             endpoint=ep,
             ontology_concepts_summary=turn_ctx.ontology_summary,
             federated_evidence_summary=turn_ctx.federated_evidence_summary,
-            response_tone=payload.response_tone,
-            response_format=payload.response_format,
-            personal_instructions=payload.personal_instructions,
-            workspace_instructions=payload.workspace_instructions,
+            response_tone=(
+                payload.response_tone
+                if payload.response_tone is not None
+                else turn_ctx.response_tone
+            ),
+            response_format=(
+                payload.response_format
+                if payload.response_format is not None
+                else turn_ctx.response_format
+            ),
+            personal_instructions=(
+                payload.personal_instructions
+                if payload.personal_instructions is not None
+                else turn_ctx.personal_instructions
+            ),
+            workspace_instructions=(
+                payload.workspace_instructions
+                if payload.workspace_instructions is not None
+                else turn_ctx.workspace_instructions
+            ),
             folder_pinned_notes=resolved_notes,
             assembled_5_layers_prompt=turn_ctx.assembled_5_layers_prompt,
             base_assembly_latency_ms=turn_ctx.assembly_latency_ms,
             locale=resolved_locale,
             instance=str(request.url.path),
+            has_evidence=turn_ctx.has_evidence,
+            pack_key=turn_ctx.pack_key,
         )
         default_thinking = " · ".join(
             f"{t}: {s}"

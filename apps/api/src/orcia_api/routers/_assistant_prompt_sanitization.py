@@ -12,6 +12,7 @@ from orcia_api.locales._assistant_sanitization_locales import (
     DOC_INTENT_RE,
     STEP_TEMPLATES_BY_LOCALE,
 )
+from orcia_core.observability.logging import get_logger
 
 ALLOWED_CLIENT_HISTORY_ROLES: frozenset[str] = frozenset({"user", "assistant"})
 
@@ -66,3 +67,39 @@ def detect_adaptive_thinking_steps_for_question(
     if DECISION_INTENT_RE.search(user_prompt):
         return templates["decision"]
     return templates["default"]
+
+
+def resolve_active_pack_key_from_request(
+    request: Request | None,
+    workspace_id: str,
+) -> str | None:
+    """Resolve the genuinely active domain pack key from workspace or platform context."""
+    state = getattr(getattr(request, "app", None), "state", None)
+    if state is None:
+        return None
+    studio_svc = getattr(state, "studio_and_packs_service", None)
+    if studio_svc is not None and hasattr(studio_svc, "list_packs"):
+        try:
+            packs = list(studio_svc.list_packs())
+            ws_match = next(
+                (p.pack_key for p in packs if p.status == "ACTIVE" and p.scope_id == workspace_id),
+                None,
+            )
+            if ws_match:
+                return str(ws_match)
+            global_match = next(
+                (p.pack_key for p in packs if p.status == "ACTIVE" and p.scope_level == "GLOBAL"),
+                None,
+            )
+            if global_match:
+                return str(global_match)
+        except Exception as exc:
+            get_logger("orcia.assistant.context").warning(
+                "assistant_studio_pack_resolution_skipped", error_type=type(exc).__name__
+            )
+    bundles = getattr(state, "declarative_pack_bundles", None)
+    if isinstance(bundles, dict) and bundles:
+        if "orcia-pack-sdlc" in bundles:
+            return "orcia-pack-sdlc"
+        return str(sorted(bundles.keys())[0])
+    return None

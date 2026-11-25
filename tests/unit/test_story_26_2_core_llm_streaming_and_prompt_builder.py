@@ -238,7 +238,8 @@ def test_unified_assistant_prompt_builder_en_zero_french_leakage_and_hat_from_pr
             locale="en",
         )
         assert assembled.layers[0].immutable is True
-        assert "[CONSTITUTIONAL_IMMUTABLE_LAYER_1]" in assembled.system_prompt
+        assert "Core operating principles:" in assembled.system_prompt
+        assert "[CONSTITUTIONAL_IMMUTABLE_LAYER_1]" not in assembled.system_prompt
         for french_tok in FRENCH_LEAK_PATTERNS:
             assert french_tok not in assembled.system_prompt, (
                 f"French token {french_tok!r} leaked in EN assembled system_prompt ({archetype})"
