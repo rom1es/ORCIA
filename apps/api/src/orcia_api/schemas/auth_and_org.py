@@ -14,6 +14,10 @@ from orcia_api.schemas._auth_mcp_tokens import (
     UserPreferencesResponse,
     UserPreferencesUpdateRequest,
 )
+from orcia_api.schemas.org_and_workspaces import (
+    WorkspacePatchRequest,
+    WorkspacePatchResponse,
+)
 from orcia_api.schemas.org_unit_models import (
     AttachedWorkspaceRefResponse,
     KnownOrgUserResponse,
@@ -116,6 +120,7 @@ class WorkspaceSummaryItem(BaseModel):
     name: str
     owner_org_unit_id: str
     visibility_mode: Literal["STANDARD", "CONFIDENTIAL_RESTRICTED", "PRIVATE_USER"]
+    lifecycle_phase: Literal["BUILD", "RUN", "MIGRATION"] = "BUILD"
     is_personal: bool = False
     effective_role: PlatformRole
     access_mode: AccessMode
@@ -274,5 +279,7 @@ __all__ = [
     "WorkspaceCreateRequest",
     "WorkspaceCreateResponse",
     "WorkspaceDatasourceItem",
+    "WorkspacePatchRequest",
+    "WorkspacePatchResponse",
     "WorkspaceSummaryItem",
 ]

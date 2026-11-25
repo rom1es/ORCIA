@@ -14,6 +14,10 @@ from orcia_api.dependencies._core_providers import (
 from orcia_api.routers._finops_auth_guards import enforce_observer_headers_guard
 from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
 from orcia_api.routers._personal_workspace_sync import ensure_user_personal_workspace_from_pg
+from orcia_api.routers._workspace_patch_helpers import (
+    execute_workspace_patch,
+    invalidate_setup_snapshot_for_request,
+)
 from orcia_api.routers.auth import (
     PROBLEM_RESPONSES,
     resolve_request_user,
@@ -29,6 +33,7 @@ from orcia_api.schemas.auth_and_org import (
     WorkspaceCreateResponse,
     WorkspacesListResponse,
 )
+from orcia_api.schemas.org_and_workspaces import WorkspacePatchRequest, WorkspacePatchResponse
 from orcia_core.bootstrap import create_workspace_on_postgres18, resolve_exact_workspace_slug
 from orcia_core.kernel.errors import TransientInfraError
 from orcia_core.observability.logging import get_current_trace_id
@@ -127,6 +132,7 @@ async def create_workspace_endpoint(
             rec.ui_visibility_mode,
         )
         phase = cast(Literal["BUILD", "RUN", "MIGRATION"], rec.lifecycle_phase)
+        personal_owner = rec.personal_owner_user_id
     else:
         ws_id = new_uuid7_str()
         ws_slug = resolve_exact_workspace_slug(payload.slug, payload.name)
@@ -142,10 +148,11 @@ async def create_workspace_endpoint(
         ui_vis = payload.visibility_mode
         db_vis = (
             "CONFIDENTIAL_RESTRICTED"
-            if payload.visibility_mode == "CONFIDENTIAL_RESTRICTED"
+            if payload.visibility_mode in ("CONFIDENTIAL_RESTRICTED", "PRIVATE_USER")
             else "STANDARD"
         )
         phase = payload.lifecycle_phase
+        personal_owner = user.id if ui_vis == "PRIVATE_USER" else None
 
     svc.evaluator.upsert_workspace(
         WorkspaceEntity(
@@ -154,7 +161,9 @@ async def create_workspace_endpoint(
             name=ws_name,
             owner_org_unit_id=owner_ou_id,
             visibility_mode=db_vis,
+            personal_owner_user_id=personal_owner,
             ui_visibility_mode=ui_vis,
+            lifecycle_phase=phase,
         )
     )
     if user.platform_role != "OBSERVER":
@@ -167,6 +176,7 @@ async def create_workspace_endpoint(
                 user_id=user.id,
             )
         )
+    await invalidate_setup_snapshot_for_request(request)
     access = svc.evaluator.resolve_workspace_access(user, ws_id)
     return WorkspaceCreateResponse(
         id=ws_id,
@@ -184,6 +194,25 @@ async def create_workspace_endpoint(
     )
 
 
+@router.patch(
+    "/workspaces/{workspace_id}",
+    response_model=WorkspacePatchResponse,
+    summary="Update Workspace name, visibility_mode, or lifecycle_phase (ScopeAccessGuard)",
+    responses={**PROBLEM_RESPONSES, 503: PROBLEM_RESPONSES[422]},
+)
+async def patch_workspace_endpoint(
+    payload: WorkspacePatchRequest,
+    request: Request,
+    workspace_id: str = Path(..., min_length=1, max_length=128),
+    persona_key: str | None = Query(default=None, min_length=1, max_length=64),
+) -> WorkspacePatchResponse:
+    """Persist scoped Workspace updates in PG18 with `PRIVATE_USER` lock and audit."""
+    svc, user = get_auth_service(request), resolve_request_user(request, persona_key=persona_key)
+    return await execute_workspace_patch(
+        request, svc=svc, user=user, workspace_id=workspace_id, payload=payload
+    )  # noqa: E501
+
+
 @router.post(
     "/workspaces/{workspace_id}/mutations/check",
     response_model=ScopeMutationCheckResponse,
@@ -197,15 +226,11 @@ async def check_workspace_mutation_guard(
 ) -> ScopeMutationCheckResponse:
     """Verify the caller can perform mutations on `workspace_id` (`ScopeAccessGuard`)."""
     trace_id: str = getattr(request.state, "trace_id", None) or get_current_trace_id()
-    svc = get_auth_service(request)
+    svc, user = get_auth_service(request), resolve_request_user(request, persona_key=persona_key)
     await sync_evaluator_topology_from_pg(request, svc)
-    user = resolve_request_user(request, persona_key=persona_key)
     enforce_observer_headers_guard(request, user)
-    access = svc.evaluator.enforce_scope_mutation_guard(
-        user,
-        workspace_id,
-        instance=str(request.url.path),
-    )
+    path = str(request.url.path)
+    access = svc.evaluator.enforce_scope_mutation_guard(user, workspace_id, instance=path)
     return ScopeMutationCheckResponse(
         workspace_id=workspace_id,
         allowed=True,
@@ -229,8 +254,7 @@ async def inspect_catalog_resource(
 ) -> CatalogResourceInspectionResponse:
     """Evaluate `DISCOVER`, `EXECUTE`, `READ_SOURCE`, `EDIT`, `ADMIN` for a catalog resource."""
     trace_id: str = getattr(request.state, "trace_id", None) or get_current_trace_id()
-    svc = get_auth_service(request)
-    user = resolve_request_user(request, persona_key=persona_key)
+    svc, user = get_auth_service(request), resolve_request_user(request, persona_key=persona_key)
     effective, _secret = svc.evaluator.evaluate_catalog_resource(
         user,
         resource_id,
@@ -263,8 +287,7 @@ async def get_catalog_resource_source(
 ) -> CatalogResourceSourceResponse:
     """Return internal `system_prompt_secret` if `READ_SOURCE` is granted, else raise HTTP 403."""
     trace_id: str = getattr(request.state, "trace_id", None) or get_current_trace_id()
-    svc = get_auth_service(request)
-    user = resolve_request_user(request, persona_key=persona_key)
+    svc, user = get_auth_service(request), resolve_request_user(request, persona_key=persona_key)
     effective, secret = svc.evaluator.evaluate_catalog_resource(
         user,
         resource_id,

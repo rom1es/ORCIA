@@ -3,10 +3,21 @@
 from __future__ import annotations
 
 from typing import Annotated
+from urllib.parse import urlparse
+from uuid import UUID
 
 from fastapi import APIRouter, Query, Request
 
-from orcia_api.dependencies import get_notification_service, get_resource_lease_service
+from orcia_api.dependencies import (
+    get_auth_service,
+    get_notification_service,
+    get_resource_lease_service,
+)
+from orcia_api.routers._finops_auth_guards import enforce_observer_headers_guard
+from orcia_api.routers._finops_scope_guards import (
+    resolve_run_workspace_server_side,
+    sync_evaluator_topology_from_pg,
+)
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.inbox_and_leases import (
     AcquireResourceLeasesRequest,
@@ -17,6 +28,8 @@ from orcia_api.schemas.inbox_and_leases import (
 )
 from orcia_api.schemas.problem_details import ProblemDetails
 from orcia_core.observability.logging import get_current_trace_id
+from orcia_core.permissions.errors import ScopeAccessDeniedError
+from orcia_core.permissions.models import UserIdentity
 
 router = APIRouter(tags=["inbox"])
 
@@ -27,6 +40,47 @@ _ERR_RESPONSES: dict[int | str, dict[str, object]] = {
     409: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
     422: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
 }
+
+
+def _extract_workspace_ref_from_uri(resource_uri: str) -> str | None:
+    parsed = urlparse(resource_uri.strip())
+    host = (parsed.netloc or "").strip()
+    if host:
+        return host
+    parts = [seg for seg in parsed.path.split("/") if seg]
+    return parts[0] if parts else None
+
+
+async def _enforce_lease_scope_access(
+    request: Request,
+    user: UserIdentity,
+    *,
+    resource_uris: tuple[str, ...],
+    holder_run_id: str | None = None,
+) -> None:
+    path = str(request.url.path)
+    enforce_observer_headers_guard(request, user)
+    auth_svc = get_auth_service(request)
+    await sync_evaluator_topology_from_pg(request, auth_svc)
+
+    if holder_run_id:
+        run_ws_id = await resolve_run_workspace_server_side(request, holder_run_id)
+        if run_ws_id is not None:
+            auth_svc.evaluator.enforce_scope_mutation_guard(user, run_ws_id, instance=path)
+
+    for uri in resource_uris:
+        ws_ref = _extract_workspace_ref_from_uri(uri)
+        if not ws_ref:
+            continue
+        ws = auth_svc.evaluator.get_workspace(ws_ref)
+        if ws is not None:
+            auth_svc.evaluator.enforce_scope_mutation_guard(user, ws.id, instance=path)
+        else:
+            try:
+                UUID(ws_ref)
+            except (ValueError, TypeError):
+                continue
+            raise ScopeAccessDeniedError(instance=path)
 
 
 @router.post(
@@ -44,6 +98,12 @@ async def acquire_resource_leases(
     user = resolve_request_user(request, persona_key=persona_key)
     notif_svc = get_notification_service(request)
     notif_svc._enforce_not_observer(user, instance=str(request.url.path))
+    await _enforce_lease_scope_access(
+        request,
+        user,
+        resource_uris=tuple(payload.resource_uris),
+        holder_run_id=payload.holder_run_id,
+    )
     lease_svc = get_resource_lease_service(request)
     records = await lease_svc.acquire_leases_async(
         resource_uris=tuple(payload.resource_uris),
@@ -90,6 +150,11 @@ async def execute_fenced_resource_write(
     user = resolve_request_user(request, persona_key=persona_key)
     notif_svc = get_notification_service(request)
     notif_svc._enforce_not_observer(user, instance=str(request.url.path))
+    await _enforce_lease_scope_access(
+        request,
+        user,
+        resource_uris=(payload.resource_uri,),
+    )
     lease_svc = get_resource_lease_service(request)
     outcome = await lease_svc.execute_fenced_resource_write_async(
         resource_uri=payload.resource_uri,

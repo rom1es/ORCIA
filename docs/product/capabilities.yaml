@@ -120,7 +120,7 @@ capabilities:
     title: Ontologie 4 niveaux PG18 (héritage, rôle ONTOLOGY_LEAD, extraction temps réel, simulation d'impact et promotions L4->L1)
     fr: [FR-8, FR-9, FR-10]
     origin: epic
-    origin_ref: 2-1, 2-2, 20-2
+    origin_ref: 2-1, 2-2, 20-2, 29-2
     status: live
     kind: feature
     uj: [UJ-5, UJ-18]
@@ -130,14 +130,18 @@ capabilities:
       - apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts
       - tests/evals/test_assistant_and_ontology_evals.py
       - tests/unit/test_story_20_2_ontology_permissions_and_promotions.py
+      - tests/unit/test_story_29_2_ontology_guards.py
+      - tests/unit/test_story_29_2_workspace_patch_and_isolation.py
       - tests/security/test_story_20_2_ontology_rbac_isolation.py
+      - tests/security/test_story_29_2_confidential_isolation.py
       - tests/integration/api/test_story_20_2_ontology_promotions_postgres18.py
       - apps/web/src/__tests__/story-20-2-glossaire-ontology-and-promotions.test.tsx
+      - apps/web/src/__tests__/story-29-2-glossary-single-alert.test.tsx
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-25"
     surfaces:
       route: /ontology
-      api: "/api/v1/ontology-rag (ontology_and_rag.py + ontology_promotions.py)"
+      api: "/api/v1/ontology-rag (ontology_and_rag.py + _ontology_rag_guards.py + _ontology_resolve_guards.py + ontology_promotions.py + _ontology_promotions_decide.py + orcia_core/ontology/permissions.py)"
       ui: "OntologyFeatureView + OntologyPromotionProposalsTab + WorkspaceGlossaryAndOntologyTab"
       migration: "0006 + 0007 + 20261117_2002"
   - id: CAP-011
@@ -331,15 +335,15 @@ capabilities:
     title: Modèle d'habilitations RBAC/ABAC à 6 verbes, matrice native des 7 rôles (incluant ONTOLOGY_LEAD) et exceptions SecOps
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-1, 17-3, 20-1 + 2026-11-15-anti-lastpass-matrice-roles-modale-sync-secops-et-hierarchie-bu + 2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu
+    origin_ref: 8-1, 17-3, 20-1, 29-2 + 2026-11-15-anti-lastpass-matrice-roles-modale-sync-secops-et-hierarchie-bu + 2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu
     status: live
     kind: feature
     uj: [UJ-14]
     db_tables: [role_permission_grants, iam_accounts, org_units]
-    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, tests/unit/test_story_17_3_iam_accounts_and_role_matrix.py, tests/unit/test_evaluator_multi_lead_rollup.py, tests/integration/api/test_story_17_3_iam_accounts_and_secops_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py]
+    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, tests/unit/test_story_17_3_iam_accounts_and_role_matrix.py, tests/unit/test_evaluator_multi_lead_rollup.py, tests/unit/test_permissions_and_auth.py, tests/security/test_story_29_2_confidential_isolation.py, tests/integration/api/test_story_17_3_iam_accounts_and_secops_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py]
     verification: runtime
-    verified_at: "2026-11-20"
-    surfaces: { route: /settings, api: "/api/v1/settings/iam (iam_accounts.py, settings_and_studio.py) + orcia_core/permissions/hierarchical_rbac.py + orcia_core/permissions/org_topology.py", migration: "20261111_1703 + 20261115_1902" }
+    verified_at: "2026-11-25"
+    surfaces: { route: /settings, api: "/api/v1/settings/iam (iam_accounts.py, settings_and_studio.py) + orcia_core/permissions/evaluator.py + orcia_core/permissions/hierarchical_rbac.py + orcia_core/permissions/org_topology.py", migration: "20261111_1703 + 20261115_1902" }
   - id: CAP-051
     title: Annuaire des comptes (anti-lockout), mot de passe temporaire 12 car., matrice des 6 rôles en modale, exceptions SecOps et modale copier-coller
     fr: [FR-31]
@@ -506,15 +510,15 @@ capabilities:
     title: Recherche fédérée contextuelle ⌘K à 2 vitesses
     fr: [FR-32]
     origin: epic
-    origin_ref: 9-3 + 2026-11-08-bugs-p1-e2e-et-socle-radix-ui
+    origin_ref: 9-3, 29-2 + 2026-11-08-bugs-p1-e2e-et-socle-radix-ui
     status: live
     kind: feature
     uj: [UJ-20]
     db_tables: [catalog_items, kb_chunks, ontology_concepts]
-    tests: [apps/web/e2e/10-command-palette-search.spec.ts]
+    tests: [apps/web/e2e/10-command-palette-search.spec.ts, tests/unit/test_story_23_5_search_coverage.py, tests/security/test_story_29_2_confidential_isolation.py, tests/integration/api/test_story_23_5_federated_search_postgres18.py]
     verification: runtime
-    verified_at: "2026-11-20"
-    surfaces: { ui: CommandPaletteModal + TopHeaderSearchCommand }
+    verified_at: "2026-11-25"
+    surfaces: { api: "orcia_core/rag/_internal/sql_federated_search.py + _sql_federated_search_queries.py", ui: CommandPaletteModal + TopHeaderSearchCommand }
   - id: CAP-063
     title: Popup Mon Compte bas-gauche style ChatGPT, modale Paramètres 5 onglets persistée PG18 (/profile, préférences, clés IDE/MCP SHA-256) et alerte mot de passe temporaire
     fr: [FR-32]
@@ -681,15 +685,15 @@ capabilities:
     title: Mes Espaces 5 sous-onglets, cascade de localisation d'artefacts, waivers
     fr: [FR-34]
     origin: epic
-    origin_ref: 11-1 + 17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag + 18-2-moteur-fraicheur-webhooks-outbox-sha256-sonde-24h-et-gouvernance-gitnexus + 28-1 + 28-2 + 28-3 + 28-4
+    origin_ref: 11-1 + 17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag + 18-2-moteur-fraicheur-webhooks-outbox-sha256-sonde-24h-et-gouvernance-gitnexus + 28-1 + 28-2 + 28-3 + 28-4 + 29-2
     status: live
     kind: feature
     uj: [UJ-9, UJ-18]
     db_tables: [workspaces, workspace_datasources, workspace_exception_waivers, workspace_customization_overrides]
-    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, apps/web/src/__tests__/story-28-1-single-workspace-header-and-zero-uuid.test.tsx, apps/web/src/__tests__/story-28-2-canonical-five-tabs-and-tab1-sobriety.test.tsx, apps/web/src/__tests__/story-28-3-scoped-sources-deliverables-and-members-tabs.test.tsx, apps/web/src/__tests__/workspaces-single-tabs-anti-stacking-audit.test.tsx, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx, tests/unit/test_story_18_2_freshness_sha256_probe_and_codegraph_worker.py, tests/integration/api/test_story_18_2_webhooks_outbox_and_freshness_postgres18.py]
+    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, apps/web/src/__tests__/story-28-1-single-workspace-header-and-zero-uuid.test.tsx, apps/web/src/__tests__/story-28-2-canonical-five-tabs-and-tab1-sobriety.test.tsx, apps/web/src/__tests__/story-28-3-scoped-sources-deliverables-and-members-tabs.test.tsx, apps/web/src/__tests__/story-29-2-workspace-patch-rollback-and-banner.test.tsx, apps/web/src/__tests__/story-29-2-subtab-single-alert-and-i18n.test.tsx, apps/web/src/__tests__/story-29-2-glossary-single-alert.test.tsx, apps/web/src/__tests__/workspaces-single-tabs-anti-stacking-audit.test.tsx, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/unit/test_story_29_2_workspace_patch_and_isolation.py, tests/unit/test_story_29_2_workspace_patch_and_sync.py, tests/unit/test_story_29_2_security_hardening.py, tests/security/test_story_29_2_confidential_isolation.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, tests/integration/api/test_story_29_2_workspace_patch_and_isolation_pg18.py, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx, tests/unit/test_story_18_2_freshness_sha256_probe_and_codegraph_worker.py, tests/integration/api/test_story_18_2_webhooks_outbox_and_freshness_postgres18.py]
     verification: runtime
-    verified_at: "2026-11-24"
-    surfaces: { route: "/spaces, /workspaces, /workspaces/$wsId, /workspaces/$wsId/sources", api: "workspace_governance.py + workspace_datasources.py + datasource_webhooks.py", ui: "WorkspaceCompactHeader + WorkspaceFiveTabsAndExternalRebaseView + WorkspaceSourcesRagTab + WorkspaceSourcesMasterTable + WorkspaceMembersAndSettingsTab", migration: "0026 + 20261111_1704 + 20261114_1801 + 20261114_1802" }
+    verified_at: "2026-11-25"
+    surfaces: { route: "/spaces, /workspaces, /workspaces/$wsId, /workspaces/$wsId/sources", api: "org_and_workspaces.py (PATCH /api/v1/workspaces/{id}) + _workspace_patch_helpers.py + sql_workspace_patch.py + workspace_governance.py + _workspace_governance_helpers.py + workspace_datasources.py + _workspace_datasources_helpers.py + datasource_webhooks.py + control_center.py", ui: "WorkspaceCompactHeader + WorkspaceFiveTabsAndExternalRebaseView + WorkspaceSourcesRagTab + WorkspaceSourcesMasterTable + WorkspaceGlossaryAndOntologyTab + WorkspaceMembersAndSettingsTab + platformSetupWorkspaceActions.ts + platformSetupScopeAndDatasources.ts", migration: "0026 + 20261111_1704 + 20261114_1801 + 20261114_1802" }
   - id: CAP-081
     title: Chaîne ADN et glossaire (règles métier « à valider », extraction)
     fr: [FR-34]
@@ -791,15 +795,15 @@ capabilities:
     title: Organigramme hiérarchique multi-niveaux (BU / Sous-BU / Équipe), délégation Mon Organisation (/organization), modales d'édition/membres/facturation, espaces privés et sélecteur de contexte
     fr: [FR-3, FR-21, FR-22, FR-23, FR-34]
     origin: epic
-    origin_ref: 17-2, 20-1, 25-1 + 2026-11-06-rattachement-equipe-facturation-espaces-privés-et-selecteur-contexte + 2026-11-08-distinction-equipes-espaces-et-sync-sql-org-units + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances + 2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu
+    origin_ref: 17-2, 20-1, 25-1, 29-2 + 2026-11-06-rattachement-equipe-facturation-espaces-privés-et-selecteur-contexte + 2026-11-08-distinction-equipes-espaces-et-sync-sql-org-units + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances + 2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu
     status: live
     kind: feature
     uj: [UJ-14]
     db_tables: [org_units, workspaces, workspace_memberships, workspace_invitations, iam_accounts]
-    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/src/__tests__/scope-switcher-and-org-sync.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx, apps/web/src/__tests__/story-25-1-personal-workspace-accostage-and-processes.test.tsx, tests/unit/test_story_17_2_org_hierarchy.py, tests/unit/test_story_17_2_pg_guard_and_reconcilers.py, tests/unit/test_evaluator_multi_lead_rollup.py, tests/unit/test_story_25_1_personal_workspace_and_accostage.py, tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py, tests/integration/api/test_story_25_1_personal_workspace_postgres18.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/security/test_story_25_1_personal_workspace_isolation.py]
+    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/src/__tests__/scope-switcher-and-org-sync.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx, apps/web/src/__tests__/story-25-1-personal-workspace-accostage-and-processes.test.tsx, apps/web/src/__tests__/story-29-2-workspace-patch-rollback-and-banner.test.tsx, tests/unit/test_story_17_2_org_hierarchy.py, tests/unit/test_story_17_2_pg_guard_and_reconcilers.py, tests/unit/test_evaluator_multi_lead_rollup.py, tests/unit/test_story_25_1_personal_workspace_and_accostage.py, tests/unit/test_story_29_2_workspace_patch_and_isolation.py, tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py, tests/integration/api/test_story_25_1_personal_workspace_postgres18.py, tests/integration/api/test_story_29_2_workspace_patch_and_isolation_pg18.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/security/test_story_25_1_personal_workspace_isolation.py, tests/security/test_story_29_2_confidential_isolation.py]
     verification: runtime
-    verified_at: "2026-11-21"
-    surfaces: { route: "/spaces, /organization", api: "org_and_workspaces.py, org_units.py, org_unit_invitations.py, sql_org_iam_role_sync.py", ui: "OrganizationPageView + SettingsOrganizationUnitsBlock + OrgPedagogicalCallout + CreateOrgUnitModal + EditOrgUnitModal + ManageOrgUnitMembersModal + ConfirmDeleteOrgUnitModal + InviteOrganizationUserModal + OrciaUserPillsSelect", migration: "20261111_1702 + 20261115_1902 + 20261117_2001" }
+    verified_at: "2026-11-25"
+    surfaces: { route: "/spaces, /organization", api: "org_and_workspaces.py (_workspace_patch_helpers.py, _workspace_summary_serializer.py), org_units.py, org_unit_invitations.py, sql_org_iam_role_sync.py, sql_workspace_patch.py", ui: "OrganizationPageView + SettingsOrganizationUnitsBlock + OrgPedagogicalCallout + CreateOrgUnitModal + EditOrgUnitModal + ManageOrgUnitMembersModal + ConfirmDeleteOrgUnitModal + InviteOrganizationUserModal + OrciaUserPillsSelect", migration: "20261111_1702 + 20261115_1902 + 20261117_2001" }
   - id: CAP-075
     title: Assistant — streaming réel, bouton Stop, réflexion progressive repliable, sauvegarde des conversations, pièces jointes, citations RAG, autosave/autocomplete
     fr: [FR-33]

@@ -32910,6 +32910,163 @@
         "title": "WorkspaceLayerSettingsSchemaItem",
         "type": "object"
       },
+      "WorkspacePatchRequest": {
+        "additionalProperties": false,
+        "description": "Request payload for scoped `PATCH /api/v1/workspaces/{workspace_id}` (`Story 29.2`).",
+        "properties": {
+          "lifecycle_phase": {
+            "anyOf": [
+              {
+                "enum": [
+                  "BUILD",
+                  "RUN",
+                  "MIGRATION"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lifecycle Phase"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "visibility_mode": {
+            "anyOf": [
+              {
+                "enum": [
+                  "STANDARD",
+                  "CONFIDENTIAL_RESTRICTED",
+                  "PRIVATE_USER"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visibility Mode"
+          }
+        },
+        "title": "WorkspacePatchRequest",
+        "type": "object"
+      },
+      "WorkspacePatchResponse": {
+        "additionalProperties": false,
+        "description": "Response payload for scoped `PATCH /api/v1/workspaces/{workspace_id}`.",
+        "properties": {
+          "access_mode": {
+            "enum": [
+              "CONTRIBUTOR_ACTION_REQUIRED",
+              "READ_ONLY_OBSERVER"
+            ],
+            "title": "Access Mode",
+            "type": "string"
+          },
+          "access_origin": {
+            "enum": [
+              "DIRECT_TEAM",
+              "ROLLUP_PARENT",
+              "PARTNER_INVITE",
+              "GLOBAL_ADMIN"
+            ],
+            "title": "Access Origin",
+            "type": "string"
+          },
+          "effective_role": {
+            "enum": [
+              "PLATFORM_ADMIN",
+              "SECOPS",
+              "BU_LEAD",
+              "BU_DIRECTOR",
+              "TEAM_LEAD",
+              "ONTOLOGY_LEAD",
+              "CONTRIBUTOR",
+              "GATE_REVIEWER",
+              "ONTOLOGY_STEWARD_L3",
+              "OBSERVER"
+            ],
+            "title": "Effective Role",
+            "type": "string"
+          },
+          "finops_cost_usd": {
+            "default": 0.0,
+            "title": "Finops Cost Usd",
+            "type": "number"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "lifecycle_phase": {
+            "enum": [
+              "BUILD",
+              "RUN",
+              "MIGRATION"
+            ],
+            "title": "Lifecycle Phase",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "owner_org_unit_id": {
+            "title": "Owner Org Unit Id",
+            "type": "string"
+          },
+          "owner_org_unit_name": {
+            "title": "Owner Org Unit Name",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "trace_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "visibility_mode": {
+            "enum": [
+              "STANDARD",
+              "CONFIDENTIAL_RESTRICTED",
+              "PRIVATE_USER"
+            ],
+            "title": "Visibility Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "owner_org_unit_id",
+          "owner_org_unit_name",
+          "visibility_mode",
+          "lifecycle_phase",
+          "effective_role",
+          "access_mode",
+          "access_origin",
+          "trace_id"
+        ],
+        "title": "WorkspacePatchResponse",
+        "type": "object"
+      },
       "WorkspaceSourceSummarySchema": {
         "additionalProperties": false,
         "description": "Transport schema for a qualified workspace source in Tab 2 (`Documents & Sources`).",
@@ -33086,6 +33243,16 @@
             "default": false,
             "title": "Is Personal",
             "type": "boolean"
+          },
+          "lifecycle_phase": {
+            "default": "BUILD",
+            "enum": [
+              "BUILD",
+              "RUN",
+              "MIGRATION"
+            ],
+            "title": "Lifecycle Phase",
+            "type": "string"
           },
           "name": {
             "title": "Name",
@@ -49473,6 +49640,22 @@
               "title": "Fixture",
               "type": "boolean"
             }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
           }
         ],
         "requestBody": {
@@ -49632,6 +49815,22 @@
               ],
               "title": "Seed Uri"
             }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
           }
         ],
         "responses": {
@@ -49746,6 +49945,22 @@
               "default": false,
               "title": "Fixture",
               "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
             }
           }
         ],
@@ -58444,6 +58659,24 @@
     "/api/v1/settings/connectors": {
       "get": {
         "operationId": "list_enterprise_connectors_api_v1_settings_connectors_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -65744,6 +65977,162 @@
         ]
       }
     },
+    "/api/v1/workspaces/{workspace_id}": {
+      "patch": {
+        "description": "Persist scoped Workspace updates in PG18 with `PRIVATE_USER` lock and audit.",
+        "operationId": "patch_workspace_endpoint_api_v1_workspaces__workspace_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkspacePatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspacePatchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update Workspace name, visibility_mode, or lifecycle_phase (ScopeAccessGuard)",
+        "tags": [
+          "workspaces-and-catalog"
+        ]
+      }
+    },
     "/api/v1/workspaces/{workspace_id}/artifacts/external-rebase": {
       "post": {
         "description": "Run `ExternalEditRebaser` on an externally edited artifact (`Verrou V2`).",
@@ -66171,6 +66560,22 @@
               "title": "Workspace Id",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
           }
         ],
         "requestBody": {
@@ -66305,6 +66710,22 @@
             "schema": {
               "title": "Workspace Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
             }
           }
         ],
@@ -66723,6 +67144,22 @@
               "description": "Target workspace ID",
               "title": "Workspace Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
             }
           }
         ],

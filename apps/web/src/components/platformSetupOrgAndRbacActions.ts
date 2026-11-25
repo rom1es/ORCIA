@@ -11,6 +11,7 @@ import {
   type ConfiguredPlatformAdmin,
   type ConfiguredRbacGrant,
 } from "./platformSetupStorageHelpers";
+import type { PlatformSetupMutatedSlice } from "./usePlatformSetupHydrationEffect";
 
 export interface OrgAndRbacActionsDeps {
   readonly locale: SupportedWebLocale;
@@ -22,11 +23,12 @@ export interface OrgAndRbacActionsDeps {
   readonly setOrgUnits: (units: readonly ConfiguredOrgUnit[]) => void;
   readonly setRbacGrants: (grants: readonly ConfiguredRbacGrant[]) => void;
   readonly setAuditEvents: (events: readonly ConfiguredAuditEvent[]) => void;
-  readonly markMutated: () => void;
+  readonly markMutated: (slices?: readonly PlatformSetupMutatedSlice[]) => void;
   readonly appendAudit: AppendAuditFn;
   readonly buildSnapshot: (
     overrides: Partial<CachedPlatformSetupState>,
   ) => CachedPlatformSetupState;
+  readonly persistLocalSnapshot?: (next: CachedPlatformSetupState) => void;
   readonly persistSnapshot: (next: CachedPlatformSetupState) => void;
 }
 
@@ -44,6 +46,7 @@ export function createPlatformOrgAndRbacActions(deps: OrgAndRbacActionsDeps) {
     markMutated,
     appendAudit,
     buildSnapshot,
+    persistLocalSnapshot = writeCachedPlatformSetupState,
     persistSnapshot,
   } = deps;
   const copy = DICTIONARIES[locale].shellChrome.platformSetupGovernance;
@@ -63,6 +66,7 @@ export function createPlatformOrgAndRbacActions(deps: OrgAndRbacActionsDeps) {
       ? currentTeamIds.filter((id) => id !== teamId)
       : [...currentTeamIds, teamId];
     const updatedAdmin: ConfiguredPlatformAdmin = { ...baseAdmin, memberTeamIds: nextTeamIds };
+    markMutated(["admin"]);
     writeCachedPlatformAdmin(updatedAdmin);
     setPlatformAdmin(updatedAdmin);
     const nextAudit = appendAudit(
@@ -101,6 +105,7 @@ export function createPlatformOrgAndRbacActions(deps: OrgAndRbacActionsDeps) {
       const currentTeamIds = platformAdmin.memberTeamIds ?? [];
       if (!currentTeamIds.includes(id)) {
         const updatedAdmin = { ...platformAdmin, memberTeamIds: [...currentTeamIds, id] };
+        markMutated(["admin"]);
         writeCachedPlatformAdmin(updatedAdmin);
         setPlatformAdmin(updatedAdmin);
       }
@@ -136,8 +141,8 @@ export function createPlatformOrgAndRbacActions(deps: OrgAndRbacActionsDeps) {
       setAuditEvents(nextAudit);
       persistSnapshot(buildSnapshot({ orgUnits: units, auditEvents: nextAudit }));
     } else {
-      markMutated();
-      writeCachedPlatformSetupState(buildSnapshot({ orgUnits: units }));
+      // Read-only server sync must not mark state mutated or abort initial hydration.
+      persistLocalSnapshot(buildSnapshot({ orgUnits: units }));
     }
   };
 
@@ -154,6 +159,7 @@ export function createPlatformOrgAndRbacActions(deps: OrgAndRbacActionsDeps) {
       return { deleted: outcome.deleted, blockedReason: outcome.blockedReason };
     }
     if (outcome.updatedAdmin) {
+      markMutated(["admin"]);
       writeCachedPlatformAdmin(outcome.updatedAdmin);
       setPlatformAdmin(outcome.updatedAdmin);
     }
@@ -221,8 +227,8 @@ export function createPlatformOrgAndRbacActions(deps: OrgAndRbacActionsDeps) {
       setAuditEvents(nextAudit);
       persistSnapshot(buildSnapshot({ rbacGrants: grants, auditEvents: nextAudit }));
     } else {
-      markMutated();
-      writeCachedPlatformSetupState(buildSnapshot({ rbacGrants: grants }));
+      // Read-only server sync must not mark state mutated or abort initial hydration.
+      persistLocalSnapshot(buildSnapshot({ rbacGrants: grants }));
     }
   };
 

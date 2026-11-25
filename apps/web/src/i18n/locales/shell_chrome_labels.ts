@@ -60,6 +60,8 @@ export interface ShellChromeDictionary {
   readonly platformSetupGovernance: {
     readonly adminInitErrorContext: string;
     readonly aiModelConfigErrorContext: string;
+    readonly platformInitialLoadErrorContext: string;
+    readonly platformSyncErrorContext: string;
     readonly defaultAdminDisplayName: string;
     readonly divisionLabel: string;
     readonly teamLabel: string;
@@ -69,6 +71,12 @@ export interface ShellChromeDictionary {
     readonly userLaunchedSummary: string;
     readonly teamScopePrefix: string;
     readonly spaceScopePrefix: string;
+    readonly visibilityPrivatePersonalLabel: string;
+    readonly visibilityConfidentialLabel: string;
+    readonly visibilityConfidentialIsolatedLabel: string;
+    readonly visibilityTeamCollectiveLabel: string;
+    readonly personalIdentityLabel: string;
+    readonly sharedServiceAccountLabel: string;
     readonly adminCreatedTemplate: string;
     readonly teamDetachedTemplate: string;
     readonly teamAttachedTemplate: string;
@@ -79,6 +87,10 @@ export interface ShellChromeDictionary {
     readonly packDeactivatedTemplate: string;
     readonly runLaunchedTemplate: string;
     readonly ontologyConceptCreatedTemplate: string;
+    readonly workspaceCreatedAuditTemplate: string;
+    readonly workspacePhaseUpdatedAuditTemplate: string;
+    readonly workspaceVisibilityUpdatedAuditTemplate: string;
+    readonly connectorRegisteredAuditTemplate: string;
   };
   readonly auditSanitizer: {
     readonly globalScopeLabel: string;

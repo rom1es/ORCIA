@@ -1,11 +1,4 @@
-import type {
-  ControlCenterDatasourceItem,
-  ControlCenterOverrideItem,
-  ControlCenterRunItem,
-  ControlCenterWorkspaceGovItem,
-  UiCatalogExplorerItemView,
-  UiOntologyConceptView,
-} from "@orcia/ui";
+import type { ControlCenterOverrideItem } from "@orcia/ui";
 import React, { createContext, useContext, useRef, useState } from "react";
 import { useI18n } from "../i18n";
 import { ClientCodedError } from "../lib/clientErrorCodes";
@@ -18,6 +11,7 @@ import {
 import {
   appendPlatformSetupAuditEvent,
   createPlatformWorkspaceActions,
+  createSnapshotSliceSetters,
   EMPTY_CACHED_PLATFORM_SETUP_STATE,
   type PlatformSetupContextValue,
 } from "./platformSetupContextTypes";
@@ -27,18 +21,14 @@ import {
   mergeCachedPlatformSetupSnapshot,
   persistSetupSnapshotStrict,
   usePlatformSetupHydrationEffect,
+  type PlatformSetupMutatedSlice,
 } from "./usePlatformSetupHydrationEffect";
 import {
   readCachedPlatformAdmin,
   readCachedPlatformSetupState,
+  writeCachedPlatformSetupState,
   type CachedPlatformSetupState,
-  type ConfiguredAuditEvent,
-  type ConfiguredLlmTierMapping,
-  type ConfiguredOrgUnit,
-  type ConfiguredPackItem,
   type ConfiguredPlatformAdmin,
-  type ConfiguredRbacGrant,
-  type ConfiguredWorkflowItem,
 } from "./platformSetupStorageHelpers";
 import { buildScopeNodes } from "./platformSetupWorkspaces";
 
@@ -75,52 +65,55 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   const [platformAdmin, setPlatformAdmin] = useState<ConfiguredPlatformAdmin | null>(() =>
     readCachedPlatformAdmin(),
   );
-  const [initialCache] = useState<CachedPlatformSetupState>(() => readCachedPlatformSetupState());
-  const [orgUnits, setOrgUnits] = useState<readonly ConfiguredOrgUnit[]>(initialCache.orgUnits);
-  const [rbacGrants, setRbacGrants] = useState<readonly ConfiguredRbacGrant[]>(initialCache.rbacGrants);
-  const [llmTiers, setLlmTiers] = useState<readonly ConfiguredLlmTierMapping[]>(initialCache.llmTiers);
-  const [workspaces, setWorkspaces] = useState<readonly ControlCenterWorkspaceGovItem[]>(initialCache.workspaces);
-  const [datasources, setDatasources] = useState<readonly ControlCenterDatasourceItem[]>(initialCache.datasources);
-  const [packs, setPacks] = useState<readonly ConfiguredPackItem[]>(initialCache.packs);
-  const [workflows, setWorkflows] = useState<readonly ConfiguredWorkflowItem[]>(initialCache.workflows);
-  const [runs, setRuns] = useState<readonly ControlCenterRunItem[]>(initialCache.runs);
-  const [catalogItems, setCatalogItems] = useState<readonly UiCatalogExplorerItemView[]>(
-    initialCache.catalogItems,
-  );
-  const [ontologyConcepts, setOntologyConcepts] = useState<readonly UiOntologyConceptView[]>(
-    initialCache.ontologyConcepts,
-  );
-  const [auditEvents, setAuditEvents] = useState<readonly ConfiguredAuditEvent[]>(
-    initialCache.auditEvents,
+  const [snapshot, setSnapshot] = useState<CachedPlatformSetupState>(() =>
+    readCachedPlatformSetupState(),
   );
   const [accostageCounts, setAccostageCounts] = useState<AccostagePg18CountsView | null>(null);
   const hasMutatedSinceMountRef = useRef(false);
+  const mutatedSlicesRef = useRef<Set<PlatformSetupMutatedSlice>>(new Set());
+  const latestSnapshotRef = useRef<CachedPlatformSetupState>(snapshot);
+  const latestAdminRef = useRef<ConfiguredPlatformAdmin | null>(platformAdmin);
   const isAuthHydrating = useAuthSessionStore((s) => s.isHydrating);
   const isAuthenticated = useAuthSessionStore((s) => s.isAuthenticated);
   const currentUserEmail = useAuthSessionStore((s) => s.email);
 
-  const applySnapshotToState = (next: CachedPlatformSetupState) => {
-    setOrgUnits(next.orgUnits);
-    setRbacGrants(next.rbacGrants);
-    setLlmTiers(next.llmTiers);
-    setWorkspaces(next.workspaces);
-    setDatasources(next.datasources);
-    setPacks(next.packs);
-    setWorkflows(next.workflows);
-    setRuns(next.runs);
-    setCatalogItems(next.catalogItems);
-    setOntologyConcepts(next.ontologyConcepts);
-    setAuditEvents(next.auditEvents);
+  const updatePlatformAdmin = (next: ConfiguredPlatformAdmin | null) => {
+    latestAdminRef.current = next;
+    setPlatformAdmin(next);
   };
 
+  const persistLocalSnapshot = (next: CachedPlatformSetupState) => {
+    latestSnapshotRef.current = next;
+    writeCachedPlatformSetupState(next);
+  };
+
+  const markMutated = (slices?: readonly PlatformSetupMutatedSlice[]) => {
+    hasMutatedSinceMountRef.current = true;
+    slices?.forEach((slice) => mutatedSlicesRef.current.add(slice));
+  };
+
+  const applySnapshotToState = (next: CachedPlatformSetupState) => {
+    latestSnapshotRef.current = next;
+    setSnapshot(next);
+  };
+
+  const sliceSetters = createSnapshotSliceSetters(latestSnapshotRef, setSnapshot);
+
   const resetAllSetupState = () => {
-    setPlatformAdmin(null);
+    updatePlatformAdmin(null);
     setAccostageCounts(null);
     applySnapshotToState(EMPTY_CACHED_PLATFORM_SETUP_STATE);
   };
 
   const persistSnapshotStrict = async (next: CachedPlatformSetupState): Promise<void> =>
-    persistSetupSnapshotStrict({ next, hasMutatedSinceMountRef, setLastSyncError });
+    persistSetupSnapshotStrict({
+      locale,
+      next,
+      hasMutatedSinceMountRef,
+      mutatedSlicesRef,
+      latestSnapshotRef,
+      setLastSyncError,
+    });
 
   const persistSnapshot = (next: CachedPlatformSetupState) => {
     void persistSnapshotStrict(next).catch((err: unknown) => {
@@ -129,41 +122,37 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   };
 
   const refreshAccostage = async (): Promise<void> =>
-    executeRefreshAccostage({ orgUnits, llmTiers, setAccostageCounts, setLlmTiers, buildSnapshot });
+    executeRefreshAccostage({
+      locale,
+      orgUnits: snapshot.orgUnits,
+      llmTiers: snapshot.llmTiers,
+      setAccostageCounts,
+      setLlmTiers: sliceSetters.setLlmTiers,
+      buildSnapshot,
+      persistLocalSnapshot,
+    });
 
   usePlatformSetupHydrationEffect({
+    locale,
     isAuthHydrating,
     isAuthenticated,
     currentUserEmail,
     platformAdmin,
     hasMutatedSinceMountRef,
+    mutatedSlicesRef,
+    latestSnapshotRef,
+    latestAdminRef,
     applySnapshotToState,
     resetAllSetupState,
     setIsInitialLoading,
-    setPlatformAdmin,
+    setPlatformAdmin: updatePlatformAdmin,
     setAccostageCounts,
     setLastSyncError,
   });
 
   const buildSnapshot = (
     overrides: Partial<CachedPlatformSetupState>,
-  ): CachedPlatformSetupState =>
-    mergeCachedPlatformSetupSnapshot(
-      {
-        orgUnits,
-        rbacGrants,
-        llmTiers,
-        workspaces,
-        datasources,
-        packs,
-        workflows,
-        runs,
-        catalogItems,
-        ontologyConcepts,
-        auditEvents,
-      },
-      overrides,
-    );
+  ): CachedPlatformSetupState => mergeCachedPlatformSetupSnapshot(latestSnapshotRef.current, overrides);
 
   const appendAudit = (
     eventType: string,
@@ -175,9 +164,9 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
       readonly scopePath?: string;
       readonly scopeLabel?: string;
     },
-  ): readonly ConfiguredAuditEvent[] =>
+  ): CachedPlatformSetupState["auditEvents"] =>
     appendPlatformSetupAuditEvent({
-      auditEvents,
+      auditEvents: latestSnapshotRef.current.auditEvents,
       platformAdmin,
       eventType,
       summary,
@@ -187,66 +176,51 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
   const governanceActions = createPlatformGovernanceActions({
     locale,
     platformAdmin,
-    orgUnits,
-    rbacGrants,
-    llmTiers,
-    workspaces,
-    packs,
-    workflows,
-    runs,
-    catalogItems,
-    ontologyConcepts,
-    setPlatformAdmin,
-    setOrgUnits,
-    setRbacGrants,
-    setLlmTiers,
-    setPacks,
-    setWorkflows,
-    setRuns,
-    setCatalogItems,
-    setOntologyConcepts,
-    setAuditEvents,
+    ...snapshot,
+    ...sliceSetters,
+    setPlatformAdmin: updatePlatformAdmin,
     setLastSyncError,
-    markMutated: () => {
-      hasMutatedSinceMountRef.current = true;
-    },
+    markMutated,
     appendAudit,
     buildSnapshot,
+    persistLocalSnapshot,
     persistSnapshot,
   });
 
   const workspaceActions = createPlatformWorkspaceActions({
+    locale,
     platformAdmin,
-    orgUnits,
-    workflows,
-    workspaces,
-    datasources,
-    setWorkspaces,
-    setDatasources,
-    setAuditEvents,
-    markMutated: () => {
-      hasMutatedSinceMountRef.current = true;
-    },
+    orgUnits: snapshot.orgUnits,
+    workflows: snapshot.workflows,
+    workspaces: snapshot.workspaces,
+    datasources: snapshot.datasources,
+    getLatestSnapshot: () => latestSnapshotRef.current,
+    setWorkspaces: sliceSetters.setWorkspaces,
+    setDatasources: sliceSetters.setDatasources,
+    setAuditEvents: sliceSetters.setAuditEvents,
+    markMutated,
     appendAudit,
     buildSnapshot,
+    persistLocalSnapshot,
     persistSnapshotStrict,
+    setLastSyncError,
   });
 
-  const scopes = buildScopeNodes(orgUnits, workspaces);
+  const scopes = buildScopeNodes(snapshot.orgUnits, snapshot.workspaces, locale);
   const accostageSummary = computeAccostageProgressSummary({
     accostageCounts,
     platformAdmin,
-    orgUnits,
-    llmTiers,
-    workspaces,
-    datasources,
-    workflows,
-    packs,
+    orgUnits: snapshot.orgUnits,
+    llmTiers: snapshot.llmTiers,
+    workspaces: snapshot.workspaces,
+    datasources: snapshot.datasources,
+    workflows: snapshot.workflows,
+    packs: snapshot.packs,
   });
   const completedSetupStepsCount = accostageSummary.completedCount;
   const isDay0Complete = accostageSummary.isDay0Complete;
   const workflowOverrides: ControlCenterOverrideItem[] =
-    buildWorkflowOverridesFromWorkflows(workflows);
+    buildWorkflowOverridesFromWorkflows(snapshot.workflows);
 
   return (
     <PlatformSetupContext.Provider
@@ -254,18 +228,8 @@ export function PlatformSetupProvider({ children }: { children: React.ReactNode 
         isInitialLoading,
         lastSyncError,
         platformAdmin,
-        orgUnits,
-        rbacGrants,
-        llmTiers,
-        workspaces,
-        datasources,
-        packs,
-        workflows,
-        runs,
-        catalogItems,
-        ontologyConcepts,
+        ...snapshot,
         workflowOverrides,
-        auditEvents,
         scopes,
         accostageCounts,
         accostageSummary,

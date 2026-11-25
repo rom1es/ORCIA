@@ -113,15 +113,15 @@ async def reconcile_workspaces_on_load(
             org_by_ref[uslug] = u
 
     workspaces = [dict(ws) for ws in raw_workspaces]
-    existing_ws_ids: set[str] = set()
-    existing_slugs: set[str] = set()
+    existing_by_id: dict[str, dict[str, Any]] = {}
+    existing_by_slug: dict[str, dict[str, Any]] = {}
     for ws in workspaces:
         ws_id = str(ws.get("workspaceId") or ws.get("id") or "").strip()
         if ws_id:
-            existing_ws_ids.add(ws_id)
+            existing_by_id[ws_id] = ws
         slug = str(ws.get("slug") or "").strip().lower()
         if slug:
-            existing_slugs.add(slug)
+            existing_by_slug[slug] = ws
 
     try:
         ws_rows = (
@@ -195,12 +195,6 @@ async def reconcile_workspaces_on_load(
 
         ui_ws_id = str(st_dict.get("ui_workspace_id") or sql_id)
 
-        # Check if already present in JSONB snapshot
-        if ui_ws_id in existing_ws_ids or sql_id in existing_ws_ids:
-            continue
-        if sql_slug.lower() in existing_slugs:
-            continue
-
         owner_from_st = str(st_dict.get("owner_org_unit_id") or owner_id_col).strip()
         matched_org = org_by_ref.get(owner_from_st) or (
             org_by_ref.get(owner_slug_col.lower()) if owner_type_col in ("BU", "TEAM") else None
@@ -214,12 +208,39 @@ async def reconcile_workspaces_on_load(
                 or (owner_name_col if owner_type_col in ("BU", "TEAM") else "")
             )
         )
+        resolved_vis = str(st_dict.get("ui_visibility_mode") or vis_mode)
+        explicit_phase = (
+            str(st_dict["lifecycle_phase"]).strip().upper()
+            if st_dict.get("lifecycle_phase")
+            else None
+        )
+
+        matched_existing = (
+            existing_by_id.get(ui_ws_id)
+            or existing_by_id.get(sql_id)
+            or existing_by_slug.get(sql_slug.lower())
+        )
+        if matched_existing is not None:
+            if sql_name:
+                matched_existing["name"] = sql_name
+            if sql_slug:
+                matched_existing["slug"] = sql_slug
+            matched_existing["visibilityMode"] = resolved_vis
+            if explicit_phase:
+                matched_existing["lifecyclePhase"] = explicit_phase
+            matched_existing["finopsCostUsd"] = finops_cost
+            if owner_org_id and not matched_existing.get("ownerOrgUnitId"):
+                matched_existing["ownerOrgUnitId"] = owner_org_id
+            if owner_org_name:
+                matched_existing["ownerOrgUnitName"] = owner_org_name
+            continue
+
         ws_entry: dict[str, Any] = {
             "workspaceId": ui_ws_id,
             "name": sql_name,
             "slug": sql_slug,
-            "visibilityMode": str(st_dict.get("ui_visibility_mode") or vis_mode),
-            "lifecyclePhase": str(st_dict.get("lifecycle_phase") or "BUILD"),
+            "visibilityMode": resolved_vis,
+            "lifecyclePhase": explicit_phase or "BUILD",
             "suggestedWorkflows": [],
             "accessMode": "CONTRIBUTOR_ACTION_REQUIRED",
             "finopsCostUsd": finops_cost,
@@ -230,9 +251,9 @@ async def reconcile_workspaces_on_load(
             ws_entry["ownerOrgUnitName"] = owner_org_name
 
         workspaces.append(ws_entry)
-        existing_ws_ids.add(ui_ws_id)
-        existing_ws_ids.add(sql_id)
-        existing_slugs.add(sql_slug.lower())
+        existing_by_id[ui_ws_id] = ws_entry
+        existing_by_id[sql_id] = ws_entry
+        existing_by_slug[sql_slug.lower()] = ws_entry
 
     for ws in workspaces:
         if not ws.get("ownerOrgUnitName"):

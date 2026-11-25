@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import cast
+from typing import Literal, cast
 
 from fastapi import Request
 
@@ -101,9 +101,23 @@ def sync_setup_snapshot_to_evaluator(
         owner_ou_id = (
             raw_owner_ou if raw_owner_ou and ev.has_org_unit(raw_owner_ou) else _ROOT_ENTERPRISE_ID
         )
-        raw_vis = str(raw_ws.get("visibilityMode") or "STANDARD").strip()
+        raw_vis = str(raw_ws.get("visibilityMode") or "STANDARD").strip().upper()
+        ui_vis: Literal["STANDARD", "CONFIDENTIAL_RESTRICTED", "PRIVATE_USER"] = (
+            cast(Literal["STANDARD", "CONFIDENTIAL_RESTRICTED", "PRIVATE_USER"], raw_vis)
+            if raw_vis in ("STANDARD", "CONFIDENTIAL_RESTRICTED", "PRIVATE_USER")
+            else "STANDARD"
+        )
         vis_mode: WorkspaceVisibilityMode = (
-            "CONFIDENTIAL_RESTRICTED" if raw_vis == "CONFIDENTIAL_RESTRICTED" else "STANDARD"
+            "CONFIDENTIAL_RESTRICTED"
+            if ui_vis in ("CONFIDENTIAL_RESTRICTED", "PRIVATE_USER")
+            else "STANDARD"
+        )
+        personal_owner = str(raw_ws.get("personalOwnerUserId") or "").strip() or None
+        raw_phase = str(raw_ws.get("lifecyclePhase") or "BUILD").strip().upper()
+        lifecycle_phase: Literal["BUILD", "RUN", "MIGRATION"] = (
+            cast(Literal["BUILD", "RUN", "MIGRATION"], raw_phase)
+            if raw_phase in ("BUILD", "RUN", "MIGRATION")
+            else "BUILD"
         )
         ev.upsert_workspace(
             WorkspaceEntity(
@@ -112,9 +126,26 @@ def sync_setup_snapshot_to_evaluator(
                 name=ws_name,
                 owner_org_unit_id=owner_ou_id,
                 visibility_mode=vis_mode,
+                personal_owner_user_id=personal_owner,
+                ui_visibility_mode=ui_vis,
+                lifecycle_phase=lifecycle_phase,
             )
         )
-        if owner_user is not None and owner_user.platform_role not in ("OBSERVER", "BU_DIRECTOR"):
+        # Never auto-inject PLATFORM_ADMIN / first_admin into CONFIDENTIAL_RESTRICTED,
+        # nor into PRIVATE_USER unless owner_user matches personal_owner_user_id.
+        should_upsert_owner = (
+            owner_user is not None
+            and owner_user.platform_role not in ("OBSERVER", "BU_DIRECTOR")
+            and (
+                ui_vis == "STANDARD"
+                or (
+                    ui_vis == "PRIVATE_USER"
+                    and personal_owner is not None
+                    and str(owner_user.id) == str(personal_owner)
+                )
+            )
+        )
+        if should_upsert_owner and owner_user is not None:
             ev.upsert_membership(
                 WorkspaceMembershipEntity(
                     id=new_uuid7_str(),

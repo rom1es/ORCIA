@@ -10,6 +10,11 @@ import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { CreateWorkspaceCard } from "./CreateWorkspaceCard";
 import { WorkspaceDnaAndWaiversSection } from "./WorkspaceDnaAndWaiversSection";
 import { formatWorkspaceCreatedBannerId } from "./workspaceDisplayHelpers";
+import {
+  normalizeWorkspaceFeedback,
+  type WorkspaceAlertFeedback,
+  type WorkspaceFeedbackInput,
+} from "./workspaceFeedbackTypes";
 import { WorkspaceStudioCardsAndDetailView } from "./WorkspaceStudioCardsAndDetailView";
 
 export interface WorkspacesFeaturePanelProps {
@@ -40,8 +45,12 @@ export function WorkspacesFeaturePanel({
 
   const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<WorkspaceAlertFeedback | null>(null);
   const [fallbackSelectedWsId, setFallbackSelectedWsId] = useState<string | null>(null);
+
+  const handleFeedback = (feedback: WorkspaceFeedbackInput) => {
+    setActionFeedback(normalizeWorkspaceFeedback(feedback));
+  };
 
   useEffect(() => {
     setFallbackSelectedWsId(null);
@@ -84,11 +93,11 @@ export function WorkspacesFeaturePanel({
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
       {actionFeedback ? (
         <OrciaAlertBanner
-          tone={actionFeedback.startsWith("⚠️") ? "crimson" : "emerald"}
-          role={actionFeedback.startsWith("⚠️") ? "alert" : "status"}
+          tone={actionFeedback.tone}
+          role={actionFeedback.tone === "crimson" ? "alert" : "status"}
           testId="workspaces-action-feedback-banner"
         >
-          {actionFeedback}
+          {actionFeedback.message}
         </OrciaAlertBanner>
       ) : null}
 
@@ -116,17 +125,23 @@ export function WorkspacesFeaturePanel({
                 if (!initialWorkspaceId) {
                   handleSelectWorkspace(created.workspaceId);
                 }
-                setActionFeedback(
-                  formatI18nTemplate(wsPanelCopy.workspaceCreatedTemplate, {
+                setActionFeedback({
+                  tone: "emerald",
+                  message: formatI18nTemplate(wsPanelCopy.workspaceCreatedTemplate, {
                     name: created.name,
                     id: formatWorkspaceCreatedBannerId(created),
                   }),
-                );
+                });
                 setIsCreateFormOpen(false);
               } catch (err: unknown) {
-                setActionFeedback(
-                  `⚠️ ${formatRfc9457ErrorToBanner(err, locale, wsPanelCopy.workspaceErrorContext).fullText}`,
-                );
+                setActionFeedback({
+                  tone: "crimson",
+                  message: formatRfc9457ErrorToBanner(
+                    err,
+                    locale,
+                    wsPanelCopy.workspaceErrorContext,
+                  ).fullText,
+                });
               }
             }}
           />
@@ -143,7 +158,7 @@ export function WorkspacesFeaturePanel({
         onNavigateToRoute={navigateToRoute}
         onUpdateWorkspacePhase={updateWorkspacePhase}
         onUpdateWorkspaceVisibility={updateWorkspaceVisibility}
-        onFeedback={setActionFeedback}
+        onFeedback={handleFeedback}
       />
 
       {targetWorkspace !== null ? (
@@ -158,7 +173,7 @@ export function WorkspacesFeaturePanel({
           openHelpSection={openHelpSection}
           onAddOntologyConcept={addOntologyConcept}
           onPromoteOntologyConcept={promoteOntologyConcept}
-          onFeedback={setActionFeedback}
+          onFeedback={handleFeedback}
         />
       ) : null}
 

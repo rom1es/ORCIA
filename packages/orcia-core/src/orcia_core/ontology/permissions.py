@@ -76,6 +76,32 @@ def _has_bu_authority(user: UserIdentity, roles: frozenset[str], node: OrgUnitNo
     )
 
 
+def _is_personal_workspace(ws: WorkspaceEntity) -> bool:
+    return ws.personal_owner_user_id is not None or ws.ui_visibility_mode == "PRIVATE_USER"
+
+
+def _find_ws_membership(
+    user: UserIdentity,
+    ws: WorkspaceEntity,
+    memberships: Sequence[WorkspaceMembershipEntity],
+) -> WorkspaceMembershipEntity | None:
+    return next(
+        (
+            m
+            for m in memberships
+            if m.workspace_id == ws.id
+            and (
+                m.user_id == user.id
+                or (
+                    m.invited_org_unit_id is not None
+                    and m.invited_org_unit_id == user.primary_org_unit_id
+                )
+            )
+        ),
+        None,
+    )
+
+
 def can_write_ontology_level(
     user: UserIdentity,
     level: OntologyLevel,
@@ -90,6 +116,20 @@ def can_write_ontology_level(
     if is_observer_user(user):
         return False
     roles = user_effective_roles(user)
+    if level in ("3_WORKSPACE", "4_WORKSPACE"):
+        ws = find_workspace(workspaces, scope_id)
+        if ws is not None:
+            if _is_personal_workspace(ws):
+                return ws.personal_owner_user_id is not None and str(
+                    ws.personal_owner_user_id
+                ) == str(user.id)
+            if ws.visibility_mode == "CONFIDENTIAL_RESTRICTED":
+                mem = _find_ws_membership(user, ws, memberships)
+                return (
+                    mem is not None
+                    and mem.access_mode != "READ_ONLY_OBSERVER"
+                    and mem.role != "OBSERVER"
+                )
     if "PLATFORM_ADMIN" in roles:
         return True
     if level == "1_ENTERPRISE":
@@ -111,9 +151,7 @@ def can_write_ontology_level(
         return any(_has_bu_authority(user, roles, anc) for anc in _ancestors(org_units, team.id))
     ws = find_workspace(workspaces, scope_id)
     if ws is not None:
-        direct = next(
-            (m for m in memberships if m.workspace_id == ws.id and m.user_id == user.id), None
-        )
+        direct = _find_ws_membership(user, ws, memberships)
         if direct is not None:
             return direct.access_mode != "READ_ONLY_OBSERVER" and direct.role != "OBSERVER"
         owner = find_org_unit(org_units, ws.owner_org_unit_id)
@@ -173,7 +211,19 @@ def can_read_ontology_item(
     memberships: Sequence[WorkspaceMembershipEntity] = (),
 ) -> bool:
     """Return True if `user` can read a concept or proposal at `(level, scope_id)`."""
-    if level == "1_ENTERPRISE" or "PLATFORM_ADMIN" in user_effective_roles(user):
+    if level == "1_ENTERPRISE":
+        return True
+    if level in ("3_WORKSPACE", "4_WORKSPACE"):
+        ws = find_workspace(workspaces, scope_id)
+        if ws is None:
+            return False
+        if _is_personal_workspace(ws):
+            return ws.personal_owner_user_id is not None and str(ws.personal_owner_user_id) == str(
+                user.id
+            )
+        if ws.visibility_mode == "CONFIDENTIAL_RESTRICTED":
+            return _find_ws_membership(user, ws, memberships) is not None
+    if "PLATFORM_ADMIN" in user_effective_roles(user):
         return True
     if can_write_ontology_level(user, level, scope_id, org_units, workspaces, memberships):
         return True

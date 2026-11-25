@@ -184,6 +184,13 @@ def test_matrix_permission_evaluator_rollup_isolation_and_5_permissions() -> Non
     assert len([d for d in ws1_datasources if d.scheme == "confluence"]) == 2
     assert ev.compute_finops_rollup_usd(marc) == 539.75
 
+    # 1b. Teammate on subteam-checkout-squad WITHOUT explicit membership cannot access WS 3
+    assert ev.resolve_workspace_access(nadia, "0192c4e0-0000-7000-8000-000000000203") is None
+    assert [w.workspace.slug for w in ev.resolve_accessible_workspaces(nadia)] == [
+        "ws-solution-paiement",
+        "ws-solution-fidelite",
+    ]
+
     # 2. Claire (BU_DIRECTOR on parent BU) gets upward Roll-up in READ_ONLY_OBSERVER on WS 1 & 2,
     #    but WS 3 (CONFIDENTIAL_RESTRICTED) is strictly excluded!
     claire_ws = ev.resolve_accessible_workspaces(claire)

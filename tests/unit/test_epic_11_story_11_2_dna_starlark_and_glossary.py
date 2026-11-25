@@ -141,8 +141,31 @@ def test_two_pass_glossary_extractor_verrou_v4_fifo_and_in_flow_promotion() -> N
 
 def test_story_11_2_fastapi_endpoints() -> None:
     """Verify Story 11.2 FastAPI endpoints (`/dna-mechanisms/compile` & `/extract-two-pass`)."""
-    client = TestClient(create_app())
+    from orcia_core.permissions.models import WorkspaceEntity, WorkspaceMembershipEntity
+
+    app = create_app()
     ws_id = str(uuid4())
+    auth_svc = app.state.auth_service
+    auth_svc.evaluator.upsert_workspace(
+        WorkspaceEntity(
+            id=ws_id,
+            slug="dna-test-ws",
+            name="DNA Test WS",
+            owner_org_unit_id="0192c4e0-0000-7000-8000-000000000101",
+            visibility_mode="STANDARD",
+        )
+    )
+    claire = auth_svc.resolve_user(persona_key="claire")
+    auth_svc.evaluator.upsert_membership(
+        WorkspaceMembershipEntity(
+            id=str(uuid4()),
+            workspace_id=ws_id,
+            role="BU_DIRECTOR",
+            access_mode="CONTRIBUTOR_ACTION_REQUIRED",
+            user_id=claire.id,
+        )
+    )
+    client = TestClient(app)
 
     resp_compile = client.post(
         f"/api/v1/workspaces/{ws_id}/dna-mechanisms/compile",

@@ -7,7 +7,7 @@ import {
   type UiOntologyConceptView,
   type UiOntologyLevel,
 } from "@orcia/ui";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   fetchOntologyConceptsFromApi,
   fetchOntologyPromotionsFromApi,
@@ -23,6 +23,7 @@ import {
   resolveGlossaryScopeId,
   WorkspaceGlossaryCascadeGrid,
 } from "./WorkspaceGlossaryCascadeGrid";
+import type { WorkspaceFeedbackInput } from "./workspaceFeedbackTypes";
 
 export interface WorkspaceGlossaryAndOntologyTabProps {
   readonly isFr: boolean;
@@ -38,6 +39,7 @@ export interface WorkspaceGlossaryAndOntologyTabProps {
     targetScopeId?: string,
   ) => void;
   readonly onPromotionsChanged?: () => void;
+  readonly onFeedback?: (feedback: WorkspaceFeedbackInput) => void;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -55,12 +57,15 @@ export function WorkspaceGlossaryAndOntologyTab({
   refreshNonce = 0,
   onAddConcept,
   onPromotionsChanged,
+  onFeedback,
 }: WorkspaceGlossaryAndOntologyTabProps): React.ReactElement {
   const { dictionary, locale } = useI18n();
   const copy = dictionary.ontologyGlossary;
   const glossaryTabCopy = dictionary.featureWorkspaces.glossaryTab;
   const typedLocale = normalizeWebLocale(locale);
 
+  const onFeedbackRef = useRef(onFeedback);
+  onFeedbackRef.current = onFeedback;
   const [termName, setTermName] = useState("");
   const [termDefinition, setTermDefinition] = useState("");
   const [selectedScopeTier, setSelectedScopeTier] = useState<GlossaryScopeTier>(
@@ -71,6 +76,15 @@ export function WorkspaceGlossaryAndOntologyTab({
   const [writableLevels, setWritableLevels] = useState<readonly UiOntologyLevel[] | null>(null);
   const [writableScopes, setWritableScopes] = useState<readonly WritableScopeOptionItem[]>([]);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
+
+  const reportError = useCallback((message: string) => {
+    if (onFeedbackRef.current) {
+      setErrorBanner(null);
+      onFeedbackRef.current({ tone: "crimson", message });
+    } else {
+      setErrorBanner(message);
+    }
+  }, []);
 
   const loadFromServer = useCallback(async () => {
     try {
@@ -85,9 +99,9 @@ export function WorkspaceGlossaryAndOntologyTab({
         pRes.proposals.filter((p) => p.status === "PENDING_REVIEW").map((p) => p.concept_key),
       );
     } catch (err: unknown) {
-      setErrorBanner(err instanceof Error ? err.message : copy.errorFallback);
+      reportError(err instanceof Error ? err.message : copy.errorFallback);
     }
-  }, [typedLocale, copy.errorFallback]);
+  }, [typedLocale, copy.errorFallback, reportError]);
 
   useEffect(() => {
     void loadFromServer();
@@ -131,7 +145,7 @@ export function WorkspaceGlossaryAndOntologyTab({
       wsId,
     });
     if (!resolvedScopeId) {
-      setErrorBanner(copy.errorFallback);
+      reportError(copy.errorFallback);
       return;
     }
     const cleanDef = termDefinition.trim() || termName.trim();
@@ -163,7 +177,7 @@ export function WorkspaceGlossaryAndOntologyTab({
       setTermDefinition("");
       await loadFromServer();
     } catch (err: unknown) {
-      setErrorBanner(err instanceof Error ? err.message : copy.errorFallback);
+      reportError(err instanceof Error ? err.message : copy.errorFallback);
     }
   };
 
@@ -187,7 +201,7 @@ export function WorkspaceGlossaryAndOntologyTab({
       await loadFromServer();
       onPromotionsChanged?.();
     } catch (err: unknown) {
-      setErrorBanner(err instanceof Error ? err.message : copy.errorFallback);
+      reportError(err instanceof Error ? err.message : copy.errorFallback);
     }
   };
 
@@ -222,7 +236,7 @@ export function WorkspaceGlossaryAndOntologyTab({
 
   return (
     <div data-testid="workspace-glossary-and-ontology-tab" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-      {errorBanner && (
+      {!onFeedback && errorBanner && (
         <OrciaAlertBanner tone="crimson" testId="workspace-glossary-error-banner">
           {errorBanner}
         </OrciaAlertBanner>

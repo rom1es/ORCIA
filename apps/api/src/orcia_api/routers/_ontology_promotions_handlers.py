@@ -4,16 +4,17 @@ from __future__ import annotations
 
 from fastapi import Request
 
-from orcia_api.dependencies import get_auth_service, get_ontology_and_rag_services
 from orcia_api.locales._router_locale_messages import get_router_copy
-from orcia_api.routers._ontology_promotions_decide import handle_decide_promotion
-from orcia_api.routers._ontology_promotions_helpers import (
+from orcia_api.routers._ontology_promotions_decide import (
     build_promotion_impact,
-    compute_writable_options,
     create_proposal_in_memory,
-    load_ontology_topology,
+    handle_decide_promotion,
+)
+from orcia_api.routers._ontology_promotions_helpers import (
+    compute_writable_options,
+    is_restricted_proposal_denied,
+    prepare_ontology_handler_context,
     resolve_dynamic_ontology_scopes,
-    resolve_ontology_caller,
     serialize_proposal_detail,
 )
 from orcia_api.routers.ontology_rag_helpers import get_trace_id, serialize_concept
@@ -37,7 +38,6 @@ from orcia_core.ontology import (
     upsert_concept_pg,
 )
 from orcia_core.ontology.errors import (
-    ObserverModeReadOnlyError,
     PromotionLevelJumpError,
     ResourceNotFoundError,
     ScopeAccessDeniedError,
@@ -49,10 +49,9 @@ async def handle_list_concepts(
     request: Request, *, fixture: bool, persona_key: str | None
 ) -> s.OntologyConceptsListResponse:
     """List concepts readable by caller along with edit/promotion capabilities."""
-    user = resolve_ontology_caller(request, persona_key)
-    memberships = get_auth_service(request).evaluator.list_memberships()
-    gov, _, _ = get_ontology_and_rag_services(request, fixture=fixture)
-    engine, org_units, workspaces = await load_ontology_topology(request, fixture=fixture)
+    user, memberships, gov, engine, org_units, workspaces = await prepare_ontology_handler_context(
+        request, fixture=fixture, persona_key=persona_key
+    )
     raw_concepts = await list_concepts_pg(engine) if engine is not None else list(gov.concepts)
     items: list[s.OntologyConceptWithPermissionsItem] = []
     for c in raw_concepts:
@@ -80,7 +79,9 @@ async def handle_list_concepts(
                 next_promotion_scope_id=next_scope,
             )
         )
-    writable_levels, writable_scopes = compute_writable_options(user, org_units, workspaces)
+    writable_levels, writable_scopes = compute_writable_options(
+        user, org_units, workspaces, memberships
+    )
     return s.OntologyConceptsListResponse(
         concepts=items,
         writable_levels=writable_levels,
@@ -97,10 +98,9 @@ async def handle_upsert_concept(
     persona_key: str | None,
 ) -> base_s.OntologyConceptSchemaItem:
     """Create or update an ontology concept with L1–L4 RBAC & immutable axiom guard."""
-    user = resolve_ontology_caller(request, persona_key)
-    memberships = get_auth_service(request).evaluator.list_memberships()
-    gov, _, _ = get_ontology_and_rag_services(request, fixture=fixture)
-    engine, org_units, workspaces = await load_ontology_topology(request, fixture=fixture)
+    user, memberships, gov, engine, org_units, workspaces = await prepare_ontology_handler_context(
+        request, fixture=fixture, persona_key=persona_key
+    )
     assert_can_write_ontology_level(
         user,
         body.level,
@@ -168,10 +168,9 @@ async def handle_list_promotions(
     persona_key: str | None,
 ) -> s.OntologyPromotionsListResponse:
     """List visible promotion proposals annotated with caller `can_decide`."""
-    user = resolve_ontology_caller(request, persona_key)
-    memberships = get_auth_service(request).evaluator.list_memberships()
-    gov, _, _ = get_ontology_and_rag_services(request, fixture=fixture)
-    engine, org_units, workspaces = await load_ontology_topology(request, fixture=fixture)
+    user, memberships, gov, engine, org_units, workspaces = await prepare_ontology_handler_context(
+        request, fixture=fixture, persona_key=persona_key
+    )
     raw = (
         await list_proposals_pg(engine, status=status)
         if engine is not None
@@ -179,8 +178,16 @@ async def handle_list_promotions(
     )
     items: list[s.OntologyPromotionProposalDetailItem] = []
     for p in raw:
+        if is_restricted_proposal_denied(user, p, workspaces, memberships):
+            continue
         can_decide = can_review_promotion_target(
-            user, p.target_level, p.target_scope_id, org_units, workspaces
+            user,
+            p.target_level,
+            p.target_scope_id,
+            org_units,
+            workspaces,
+            memberships,
+            source_scope_id=p.source_scope_id,
         )
         src_scope = p.source_scope_id or p.target_scope_id
         if (
@@ -206,12 +213,9 @@ async def handle_create_promotion(
     persona_key: str | None,
 ) -> s.OntologyPromotionProposalDetailItem:
     """Propose promotion strictly to the immediate next level (`L4 -> L3 -> L2 -> L1`)."""
-    user = resolve_ontology_caller(request, persona_key)
-    if is_observer_user(user):
-        raise ObserverModeReadOnlyError(instance=str(request.url.path))
-    memberships = get_auth_service(request).evaluator.list_memberships()
-    gov, _, _ = get_ontology_and_rag_services(request, fixture=fixture)
-    engine, org_units, workspaces = await load_ontology_topology(request, fixture=fixture)
+    user, memberships, gov, engine, org_units, workspaces = await prepare_ontology_handler_context(
+        request, fixture=fixture, persona_key=persona_key, reject_observer=True
+    )
     concepts = await list_concepts_pg(engine) if engine is not None else list(gov.concepts)
     source = next((c for c in concepts if c.concept_key == body.concept_key), None)
     if source is None:
@@ -266,7 +270,13 @@ async def handle_create_promotion(
             impact=impact,
         )
     can_decide = can_review_promotion_target(
-        user, created.target_level, created.target_scope_id, org_units, workspaces
+        user,
+        created.target_level,
+        created.target_scope_id,
+        org_units,
+        workspaces,
+        memberships,
+        source_scope_id=created.source_scope_id,
     )
     return serialize_proposal_detail(created, can_decide=can_decide)
 

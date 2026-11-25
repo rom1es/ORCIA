@@ -144,7 +144,11 @@ describe("Story 22.1 — UUIDv7 Workspace Creation, F5 Survival & Identity Wirin
       fireEvent.click(screen.getByTestId("create-workspace-submit-btn"));
 
       const feedback = await screen.findByTestId("workspaces-action-feedback-banner");
-      expect(feedback.textContent).toContain("⚠️");
+      expect(feedback.getAttribute("role")).toBe("alert");
+      expect(feedback.className).toContain("orcia-ds-alert-error");
+      expect(feedback.querySelector(".orcia-ds-alert-icon")).not.toBeNull();
+      expect(feedback.textContent).not.toContain("⚠️");
+      expect(feedback.textContent?.trim().length).toBeGreaterThan(0);
       expect(screen.queryByTestId("workspace-visibility-badge-ws-1")).toBeNull();
     } finally {
       globalThis.fetch = originalFetch;

@@ -74,6 +74,100 @@ export function handleWorkspacesAndCatalogRoute(params: {
     return jsonResponse(created, 201);
   }
 
+  const wsPatchMatch = path.match(/^\/api\/v1\/workspaces\/([^/]+)$/);
+  if (wsPatchMatch && method === "PATCH") {
+    if (isObserverRequest(reqHeaders)) {
+      return problemResponse(
+        403,
+        "ERR_OBSERVER_MODE_READ_ONLY",
+        "Mode observateur en lecture seule",
+        "Les mutations sont refusées en mode observateur lecture seule.",
+        path,
+      );
+    }
+    const wsId = decodeURIComponent(wsPatchMatch[1] ?? "");
+    const setupWorkspaces = Array.isArray(backendState.platformSetupState?.workspaces)
+      ? (backendState.platformSetupState.workspaces as Array<Record<string, unknown>>)
+      : [];
+    const memWs = backendState.workspaces.find((w) => w.id === wsId || w.slug === wsId);
+    const setupWs = setupWorkspaces.find(
+      (w) => String(w.workspaceId ?? w.id ?? "") === wsId || String(w.slug ?? "") === wsId,
+    );
+    const target = memWs ?? setupWs;
+    if (!target) {
+      return problemResponse(404, "ERR_RESOURCE_NOT_FOUND", "Introuvable", "Espace introuvable.", path);
+    }
+    const wsSlug = String(target.slug ?? wsId);
+    const curVis = String(target.visibility_mode ?? target.visibilityMode ?? "STANDARD").toUpperCase();
+    const isPersonal = curVis === "PRIVATE_USER" || wsSlug.startsWith("personal-");
+    const reqVis =
+      typeof body.visibility_mode === "string" ? body.visibility_mode.trim().toUpperCase() : null;
+    if (isPersonal && reqVis !== null && reqVis !== "PRIVATE_USER") {
+      return problemResponse(
+        403,
+        "ERR_PRIVATE_WORKSPACE_VISIBILITY_LOCKED",
+        "Visibilité d'espace personnel verrouillée",
+        "Un espace personnel privé (PRIVATE_USER) ne peut pas changer de visibilité sur place.",
+        path,
+      );
+    }
+    if (!isPersonal && reqVis === "PRIVATE_USER") {
+      return problemResponse(
+        403,
+        "ERR_PRIVATE_WORKSPACE_VISIBILITY_LOCKED",
+        "Visibilité d'espace personnel verrouillée",
+        "Un espace d'équipe ne peut pas devenir PRIVATE_USER sur place.",
+        path,
+      );
+    }
+    const nextName =
+      typeof body.name === "string" && body.name.trim() ? body.name.trim() : String(target.name ?? wsId);
+    const nextVis = reqVis ?? curVis;
+    const nextPhase =
+      typeof body.lifecycle_phase === "string" && ["BUILD", "RUN", "MIGRATION"].includes(body.lifecycle_phase)
+        ? body.lifecycle_phase
+        : String(target.lifecycle_phase ?? target.lifecyclePhase ?? "BUILD");
+    const resolvedId = String(target.id ?? target.workspaceId ?? wsId);
+    const ownerOuId = String(
+      target.owner_org_unit_id ?? target.ownerOrgUnitId ?? "0192c4e0-0000-7000-8000-000000000101",
+    );
+    const ownerOuName = String(target.owner_org_unit_name ?? target.ownerOrgUnitName ?? "ORCIA");
+
+    if (memWs) {
+      backendState.workspaces = backendState.workspaces.map((w) =>
+        w.id === resolvedId
+          ? { ...w, name: nextName, visibility_mode: nextVis, lifecycle_phase: nextPhase }
+          : w,
+      );
+    }
+    if (backendState.platformSetupState && Array.isArray(backendState.platformSetupState.workspaces)) {
+      backendState.platformSetupState = {
+        ...backendState.platformSetupState,
+        workspaces: (backendState.platformSetupState.workspaces as Array<Record<string, unknown>>).map(
+          (w) =>
+            String(w.workspaceId ?? w.id ?? "") === resolvedId
+              ? { ...w, name: nextName, visibilityMode: nextVis, lifecyclePhase: nextPhase }
+              : w,
+        ),
+      };
+    }
+
+    return jsonResponse({
+      id: resolvedId,
+      slug: wsSlug,
+      name: nextName,
+      owner_org_unit_id: ownerOuId,
+      owner_org_unit_name: ownerOuName,
+      visibility_mode: nextVis,
+      lifecycle_phase: nextPhase,
+      effective_role: "PLATFORM_ADMIN",
+      access_mode: "CONTRIBUTOR_ACTION_REQUIRED",
+      access_origin: "GLOBAL_ADMIN",
+      finops_cost_usd: Number(target.finops_cost_usd ?? target.finopsCostUsd ?? 0),
+      trace_id: "0195f000000070008000000000000999",
+    });
+  }
+
   const waiverMatch = path.match(/^\/api\/v1\/workspaces\/([^/]+)\/exception-waivers$/);
   if (waiverMatch) {
     const wsId = decodeURIComponent(waiverMatch[1] ?? "");

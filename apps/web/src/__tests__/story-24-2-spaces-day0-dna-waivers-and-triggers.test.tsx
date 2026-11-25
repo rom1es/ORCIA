@@ -183,7 +183,10 @@ describe("Story 24.2 (Couche 1b) — /spaces Day-0, 5 Tabs (USER24-BUG-6), DNA/W
     await waitFor(() => {
       const alertBanner = screen.getByTestId("workspaces-action-feedback-banner");
       expect(alertBanner.getAttribute("role")).toBe("alert");
-      expect(alertBanner.textContent).toContain("⚠️");
+      expect(alertBanner.className).toContain("orcia-ds-alert-error");
+      expect(alertBanner.querySelector(".orcia-ds-alert-icon")).not.toBeNull();
+      expect(alertBanner.textContent).not.toContain("⚠️");
+      expect(alertBanner.textContent?.trim().length).toBeGreaterThan(0);
     });
   });
 

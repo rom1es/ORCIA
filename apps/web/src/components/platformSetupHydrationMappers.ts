@@ -10,6 +10,7 @@ type OrgUnitsTreeResult = Awaited<ReturnType<ApiClient["listOrgUnits"]>>;
 type RbacGrantsResult = Awaited<ReturnType<ApiClient["listIamGrants"]>>;
 type WorkspacesResult = Awaited<ReturnType<ApiClient["listWorkspaces"]>>;
 import type { ControlCenterWorkspaceGovItem } from "@orcia/ui";
+import type { SupportedWebLocale } from "../i18n";
 import { resolveWebApiBaseUrl } from "../stores/authSessionStore";
 import type {
   CachedPlatformSetupState,
@@ -51,8 +52,9 @@ export function buildPlatformSetupPutPayload(
 
 export async function savePlatformSetupSnapshotToApi(
   next: CachedPlatformSetupState,
+  locale: SupportedWebLocale = "fr",
 ): Promise<PlatformSetupStateResponse> {
-  const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
+  const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl(), locale });
   return client.savePlatformSetupState(buildPlatformSetupPutPayload(next));
 }
 
@@ -163,10 +165,97 @@ export function mapRemoteApiWorkspaces(params: {
           ? { ownerOrgUnitName: snapMatch.ownerOrgUnitName }
           : {}),
       ...(wsDto.is_personal ? { ownerUserId: params.fallbackOwnerEmail } : {}),
-      lifecyclePhase: snapMatch?.lifecyclePhase ?? "BUILD",
+      lifecyclePhase: wsDto.lifecycle_phase ?? snapMatch?.lifecyclePhase ?? "BUILD",
       suggestedWorkflows: snapMatch?.suggestedWorkflows ?? [],
       accessMode: wsDto.access_mode,
       finopsCostUsd: wsDto.finops_cost_usd ?? 0,
     };
   });
+}
+
+export type PlatformSetupMutatedSlice = keyof CachedPlatformSetupState | "admin";
+
+const SNAPSHOT_SLICE_KEYS: readonly (keyof CachedPlatformSetupState)[] = [
+  "orgUnits",
+  "rbacGrants",
+  "llmTiers",
+  "workspaces",
+  "datasources",
+  "packs",
+  "workflows",
+  "runs",
+  "catalogItems",
+  "ontologyConcepts",
+  "auditEvents",
+];
+
+export function recordChangedSnapshotSlices(
+  prev: CachedPlatformSetupState,
+  next: CachedPlatformSetupState,
+  mutatedSlices: Set<PlatformSetupMutatedSlice>,
+): void {
+  for (const key of SNAPSHOT_SLICE_KEYS) {
+    if (prev[key] !== next[key]) {
+      mutatedSlices.add(key);
+    }
+  }
+}
+
+export function mergeWorkspacesPreferLocal(
+  hydratedWorkspaces: readonly ControlCenterWorkspaceGovItem[],
+  localWorkspaces: readonly ControlCenterWorkspaceGovItem[],
+): readonly ControlCenterWorkspaceGovItem[] {
+  const localById = new Map(localWorkspaces.map((ws) => [ws.workspaceId, ws] as const));
+  const merged = hydratedWorkspaces.map((ws) => localById.get(ws.workspaceId) ?? ws);
+  const hydratedIds = new Set(hydratedWorkspaces.map((ws) => ws.workspaceId));
+  for (const ws of localWorkspaces) {
+    if (!hydratedIds.has(ws.workspaceId)) {
+      merged.push(ws);
+    }
+  }
+  return merged;
+}
+
+export function mergeHydratedSnapshotWithLocalMutations(params: {
+  readonly hydrated: CachedPlatformSetupState;
+  readonly local: CachedPlatformSetupState;
+  readonly mutatedSlices: ReadonlySet<PlatformSetupMutatedSlice>;
+}): CachedPlatformSetupState {
+  const { hydrated, local, mutatedSlices } = params;
+  return {
+    orgUnits: mutatedSlices.has("orgUnits") ? local.orgUnits : hydrated.orgUnits,
+    rbacGrants: mutatedSlices.has("rbacGrants") ? local.rbacGrants : hydrated.rbacGrants,
+    llmTiers: mutatedSlices.has("llmTiers") ? local.llmTiers : hydrated.llmTiers,
+    workspaces: mutatedSlices.has("workspaces")
+      ? mergeWorkspacesPreferLocal(hydrated.workspaces, local.workspaces)
+      : hydrated.workspaces,
+    datasources: mutatedSlices.has("datasources") ? local.datasources : hydrated.datasources,
+    packs: mutatedSlices.has("packs") ? local.packs : hydrated.packs,
+    workflows: mutatedSlices.has("workflows") ? local.workflows : hydrated.workflows,
+    runs: mutatedSlices.has("runs") ? local.runs : hydrated.runs,
+    catalogItems: mutatedSlices.has("catalogItems") ? local.catalogItems : hydrated.catalogItems,
+    ontologyConcepts: mutatedSlices.has("ontologyConcepts")
+      ? local.ontologyConcepts
+      : hydrated.ontologyConcepts,
+    auditEvents: mutatedSlices.has("auditEvents") ? local.auditEvents : hydrated.auditEvents,
+  };
+}
+
+export function mergeCachedPlatformSetupSnapshot(
+  current: CachedPlatformSetupState,
+  overrides: Partial<CachedPlatformSetupState>,
+): CachedPlatformSetupState {
+  return {
+    orgUnits: overrides.orgUnits ?? current.orgUnits,
+    rbacGrants: overrides.rbacGrants ?? current.rbacGrants,
+    llmTiers: overrides.llmTiers ?? current.llmTiers,
+    workspaces: overrides.workspaces ?? current.workspaces,
+    datasources: overrides.datasources ?? current.datasources,
+    packs: overrides.packs ?? current.packs,
+    workflows: overrides.workflows ?? current.workflows,
+    runs: overrides.runs ?? current.runs,
+    catalogItems: overrides.catalogItems ?? current.catalogItems,
+    ontologyConcepts: overrides.ontologyConcepts ?? current.ontologyConcepts,
+    auditEvents: overrides.auditEvents ?? current.auditEvents,
+  };
 }

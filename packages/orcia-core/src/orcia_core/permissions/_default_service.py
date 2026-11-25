@@ -81,7 +81,7 @@ def build_default_auth_and_org_service(
         )
         for w in DEFAULT_WORKSPACE_SEEDS
     )
-    memberships = (
+    base_memberships: tuple[WorkspaceMembershipEntity, ...] = (
         WorkspaceMembershipEntity(
             id="0192c4e0-0000-7000-8000-000000000401",
             workspace_id="0192c4e0-0000-7000-8000-000000000201",
@@ -89,6 +89,20 @@ def build_default_auth_and_org_service(
             role="CONTRIBUTOR",
             access_mode="CONTRIBUTOR_ACTION_REQUIRED",
         ),
+    )
+    memberships: tuple[WorkspaceMembershipEntity, ...] = (
+        (
+            *base_memberships,
+            WorkspaceMembershipEntity(
+                id="0192c4e0-0000-7000-8000-000000000402",
+                workspace_id="0192c4e0-0000-7000-8000-000000000203",
+                user_id="0192c4e0-0000-7000-8000-000000000603",
+                role="TEAM_LEAD",
+                access_mode="CONTRIBUTOR_ACTION_REQUIRED",
+            ),
+        )
+        if seed_reference_personas
+        else base_memberships
     )
     cat_titles = DEFAULT_SERVICE_CATALOG_TITLES["fr"]
     p_names = DEFAULT_SERVICE_PERSONA_NAMES["fr"]

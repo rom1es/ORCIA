@@ -217,7 +217,19 @@ async def test_codegraph_mcp_connector_confinement_and_rejections() -> None:
 
 def test_fastapi_codegraph_endpoints() -> None:
     """Verify FastAPI GET /tools and POST /invoke endpoints."""
+    from orcia_core.permissions.models import WorkspaceEntity
+
     app = create_app()
+    default_user = app.state.auth_service.resolve_user()
+    app.state.auth_service.evaluator.upsert_workspace(
+        WorkspaceEntity(
+            id="ws-test-123",
+            slug="ws-test-123",
+            name="Codegraph Test WS",
+            owner_org_unit_id=default_user.primary_org_unit_id,
+            visibility_mode="STANDARD",
+        )
+    )
     client = TestClient(app)
 
     # 1. GET /tools

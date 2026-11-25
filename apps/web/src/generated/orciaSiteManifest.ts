@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 235,
+    "techLeadReportsCount": 236,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -542,6 +542,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-25",
+      "phaseOrStory": "Story 29.2",
+      "reportFile": "29-2-scoped-workspace-patch-confidential-isolation-rollback-and-single-banner-tech-lead-report.md",
+      "domain": "Epic 29 Lot 1 — Scoped PATCH /api/v1/workspaces/{id}, Strict CONFIDENTIAL_RESTRICTED Isolation, Optimistic Rollback & Single Aligned Error Banner (UH-03, UH-04, ACTION_ITEM-28.1 #1, CAP-010, CAP-050, CAP-062, CAP-067, CAP-080)",
+      "summary": "Closed (done, Distinct Final Re-Test verified): added ScopeAccessGuard-protected PATCH /api/v1/workspaces/{id} backed by atomic PG18 SQL (sql_workspace_patch.py 262 L, _workspace_patch_helpers.py 266 L, org_and_workspaces.py 303 L, audit_ledger WORKSPACE_UPDATED, PRIVATE_USER 403 ERR_PRIVATE_WORKSPACE_VISIBILITY_LOCKED, explicit creator/actor membership upsert on CONFIDENTIAL_RESTRICTED), closed all 6 CONFIDENTIAL_RESTRICTED isolation gaps + ontology resolve/what-if/promotion/GLOBAL write guards (evaluator.py DIRECT_TEAM guard preserving compute_finops_rollup_usd, ontology/permissions.py + sql_ontology_mappers.py, ontology_and_rag.py + _ontology_rag_guards.py + _ontology_resolve_guards.py + _ontology_promotions_{decide,handlers,helpers}.py, control_center.py PG sync & confidential masking, workspace_governance.py + _workspace_governance_helpers.py, workspace_datasources.py + _workspace_datasources_helpers.py, sql_federated_search.py + _sql_federated_search_queries.py), added patchWorkspace (0-diff OpenAPI), transactional React/localStorage rollback without duplicate global lastSyncError (platformSetupWorkspaceActions.ts 175 L, platformSetupScopeAndDatasources.ts 116 L, platformSetupStore.tsx 256 L), and typed single alert banner (workspaceFeedbackTypes.ts 19 L, WorkspaceCompactHeader.tsx 300 L, WorkspaceGlossaryAndOntologyTab.tsx onFeedback); verified 97% 11-module Story 29.2 branch coverage (83 passed), 45 passed targeted unit (test_story_18_3, test_openapi_security), 181 passed security+contract+evals, 5 passed PG18 create_app(), 84 files / 311 tests @orcia/web Vitest, 9/9 Turbo, 8 passed (1.8m) Playwright Desktop E2E (07, 11, 17, 20 without fixtures), ruff (1737 files)/mypy --strict (856 files)/lint-imports (5/5, 899 files)/lint_spine (0)/export_openapi (0-diff) clean."
+    },
     {
       "date": "2026-11-25",
       "phaseOrStory": "Story 29.1",

@@ -76,6 +76,11 @@ export const RFC9457_BANNER_EN_LABELS: Rfc9457BannerDictionary = {
       remediation:
         "Enter a different unique identifier or leave the field blank to auto-generate one.",
     },
+    ERR_PRIVATE_WORKSPACE_VISIBILITY_LOCKED: {
+      title: "Personal workspace visibility locked",
+      message: "A private personal workspace cannot change visibility in place.",
+      remediation: "Create a new team workspace if you wish to share with teammates.",
+    },
   },
   statusFallbacks: {
     401: {

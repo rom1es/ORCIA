@@ -6,7 +6,8 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, Query, Request
 
-from orcia_api.dependencies import get_control_center_service
+from orcia_api.dependencies import get_auth_service, get_control_center_service
+from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.control_center import (
     CommandPaletteEntryResponse,
@@ -52,6 +53,7 @@ async def get_control_center_overview(
 ) -> ControlCenterOverviewResponse:
     trace_id: str = getattr(request.state, "trace_id", None) or get_current_trace_id()
     user = resolve_request_user(request, persona_key=persona_key)
+    await sync_evaluator_topology_from_pg(request, get_auth_service(request))
     svc = get_control_center_service(request)
     ov = svc.build_overview(
         user,
@@ -184,6 +186,7 @@ async def update_workspace_lifecycle(
     persona_key: str | None = Query(default=None, min_length=1, max_length=64),
 ) -> WorkspaceGovernanceItemResponse:
     user = resolve_request_user(request, persona_key=persona_key)
+    await sync_evaluator_topology_from_pg(request, get_auth_service(request))
     svc = get_control_center_service(request)
     gov = svc.set_workspace_lifecycle_phase(
         user,
@@ -220,6 +223,7 @@ async def check_run_step_mutation_guard(
 ) -> RunMutationGuardCheckResponse:
     trace_id: str = getattr(request.state, "trace_id", None) or get_current_trace_id()
     user = resolve_request_user(request, persona_key=persona_key)
+    await sync_evaluator_topology_from_pg(request, get_auth_service(request))
     svc = get_control_center_service(request)
     run = svc.enforce_run_mutation_guard(
         user,
@@ -249,6 +253,7 @@ async def search_command_palette(
 ) -> CommandPaletteSearchResponse:
     trace_id: str = getattr(request.state, "trace_id", None) or get_current_trace_id()
     user = resolve_request_user(request, persona_key=persona_key)
+    await sync_evaluator_topology_from_pg(request, get_auth_service(request))
     svc = get_control_center_service(request)
     entries = svc.search_command_palette(user, query=q)
     return CommandPaletteSearchResponse(

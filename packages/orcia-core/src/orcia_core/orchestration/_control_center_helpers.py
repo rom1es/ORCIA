@@ -16,6 +16,10 @@ from orcia_core.permissions.models import AccessMode, UserIdentity, WorkspaceEnt
 from orcia_kernel.enums import DEFAULT_LOCALE, SupportedLocale
 
 
+def _is_private_user_workspace(ws: WorkspaceEntity) -> bool:
+    return ws.ui_visibility_mode == "PRIVATE_USER" or ws.personal_owner_user_id is not None
+
+
 def resolve_scope_workspaces_helper(
     evaluator: MatrixPermissionEvaluator,
     user: UserIdentity,
@@ -31,7 +35,11 @@ def resolve_scope_workspaces_helper(
         acc = evaluator.resolve_workspace_access(user, ws.id)
         if acc is not None:
             return (ws.name, [(ws, acc.access_mode, acc.finops_visible, False)])
-        if user.platform_role == "PLATFORM_ADMIN":
+        if (
+            user.platform_role == "PLATFORM_ADMIN"
+            and ws.visibility_mode == "CONFIDENTIAL_RESTRICTED"
+            and not _is_private_user_workspace(ws)
+        ):
             return (ws.name, [(ws, "READ_ONLY_OBSERVER", True, True)])
         raise ScopeAccessDeniedError(instance=instance)
 
@@ -54,6 +62,7 @@ def resolve_scope_workspaces_helper(
         elif (
             user.platform_role == "PLATFORM_ADMIN"
             and ws.visibility_mode == "CONFIDENTIAL_RESTRICTED"
+            and not _is_private_user_workspace(ws)
         ):
             rows.append((ws, "READ_ONLY_OBSERVER", True, True))
     return (root_node.name, rows)

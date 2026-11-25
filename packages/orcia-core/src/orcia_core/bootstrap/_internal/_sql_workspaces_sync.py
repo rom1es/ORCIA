@@ -16,13 +16,63 @@ from orcia_core.bootstrap._internal.sql_platform_setup_store import (
 )
 
 
+async def ensure_user_workspace_membership(
+    conn: AsyncConnection,
+    *,
+    workspace_uuid: UUID,
+    user_id: str | None,
+    fallback_role: str = "TEAM_LEAD",
+) -> None:
+    """Idempotently ensure `user_id` holds an explicit `workspace_memberships` row."""
+    if not user_id:
+        return
+    try:
+        uid = UUID(str(user_id).strip())
+    except (ValueError, TypeError):
+        return
+    user_row = (
+        await conn.execute(
+            sa.text(
+                "SELECT id, platform_role FROM users WHERE id = :id AND is_active = TRUE LIMIT 1"
+            ),
+            {"id": uid},
+        )
+    ).first()
+    if user_row is None or user_row[0] is None:
+        return
+    role_val = str(user_row[1] or fallback_role)
+    if role_val == "OBSERVER":
+        return
+    await conn.execute(
+        sa.text(
+            """
+            INSERT INTO workspace_memberships (
+                id, workspace_id, user_id, role, access_mode
+            )
+            SELECT :id, :ws_id, :user_id, :role, 'CONTRIBUTOR_ACTION_REQUIRED'
+            WHERE NOT EXISTS (
+                SELECT 1 FROM workspace_memberships
+                WHERE workspace_id = :ws_id AND user_id = :user_id
+            )
+            """
+        ),
+        {
+            "id": UUID(str(uuid7())),
+            "ws_id": workspace_uuid,
+            "user_id": UUID(str(user_row[0])),
+            "role": role_val,
+        },
+    )
+
+
 async def sync_workspace_owner_memberships(
     conn: AsyncConnection,
     *,
     persisted_ws_uuid: UUID,
     creator_user_id: str | None,
+    visibility_mode: str = "STANDARD",
 ) -> None:
-    """Create idempotent owner memberships for workspace creator and active admins."""
+    """Create idempotent owner memberships for workspace creator (and admins on STANDARD)."""
     target_user_ids: list[tuple[UUID, str]] = []
     if creator_user_id:
         try:
@@ -43,21 +93,23 @@ async def sync_workspace_owner_memberships(
         except (ValueError, TypeError):
             pass
 
-    admin_rows = (
-        await conn.execute(
-            sa.text(
-                "SELECT id FROM users WHERE platform_role = 'PLATFORM_ADMIN' AND is_active = TRUE"
+    if visibility_mode != "CONFIDENTIAL_RESTRICTED":
+        admin_rows = (
+            await conn.execute(
+                sa.text(
+                    "SELECT id FROM users WHERE platform_role = 'PLATFORM_ADMIN' "
+                    "AND is_active = TRUE"
+                )
             )
-        )
-    ).fetchall()
-    seen_uids = {uid for uid, _ in target_user_ids}
-    for admin_row in admin_rows:
-        if not admin_row or admin_row[0] is None:
-            continue
-        auid = UUID(str(admin_row[0]))
-        if auid not in seen_uids:
-            seen_uids.add(auid)
-            target_user_ids.append((auid, "PLATFORM_ADMIN"))
+        ).fetchall()
+        seen_uids = {uid for uid, _ in target_user_ids}
+        for admin_row in admin_rows:
+            if not admin_row or admin_row[0] is None:
+                continue
+            auid = UUID(str(admin_row[0]))
+            if auid not in seen_uids:
+                seen_uids.add(auid)
+                target_user_ids.append((auid, "PLATFORM_ADMIN"))
 
     for uid, member_role in target_user_ids:
         await conn.execute(
@@ -92,6 +144,7 @@ async def sync_workspace_to_platform_settings(
     resolved_owner_id: UUID,
     resolved_owner_name: str,
     phase: str,
+    personal_owner_user_id: str | None = None,
 ) -> None:
     """Append newly created workspace into `platform_settings` snapshot when initialized."""
     ps_row = (
@@ -126,20 +179,21 @@ async def sync_workspace_to_platform_settings(
         if isinstance(w, dict)
     ):
         return
-    ws_list.append(
-        {
-            "workspaceId": ws_id_str,
-            "name": cleaned_name[:255],
-            "slug": resolved_slug,
-            "visibilityMode": ui_vis,
-            "ownerOrgUnitId": str(resolved_owner_id),
-            "ownerOrgUnitName": resolved_owner_name,
-            "lifecyclePhase": phase,
-            "suggestedWorkflows": [],
-            "accessMode": "CONTRIBUTOR_ACTION_REQUIRED",
-            "finopsCostUsd": 0,
-        }
-    )
+    ws_entry: dict[str, Any] = {
+        "workspaceId": ws_id_str,
+        "name": cleaned_name[:255],
+        "slug": resolved_slug,
+        "visibilityMode": ui_vis,
+        "ownerOrgUnitId": str(resolved_owner_id),
+        "ownerOrgUnitName": resolved_owner_name,
+        "lifecyclePhase": phase,
+        "suggestedWorkflows": [],
+        "accessMode": "CONTRIBUTOR_ACTION_REQUIRED",
+        "finopsCostUsd": 0,
+    }
+    if personal_owner_user_id is not None:
+        ws_entry["personalOwnerUserId"] = personal_owner_user_id
+    ws_list.append(ws_entry)
     ps_dict["workspaces"] = ws_list
     await conn.execute(
         sa.text(
@@ -162,4 +216,8 @@ async def sync_workspace_to_platform_settings(
     )
 
 
-__all__ = ["sync_workspace_owner_memberships", "sync_workspace_to_platform_settings"]
+__all__ = [
+    "ensure_user_workspace_membership",
+    "sync_workspace_owner_memberships",
+    "sync_workspace_to_platform_settings",
+]

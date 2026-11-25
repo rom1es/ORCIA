@@ -21,7 +21,7 @@ export type OntologyTabKey = "EXPLORER" | "PROPOSALS";
 export type CatalogAgentsTabKey = "AGENTS" | "SKILLS" | "CONNECTIONS";
 
 /**
- * Résout l'identifiant UI (`platform-setup-state`) et l'UUID PostgreSQL 18 d'un Espace par son nom/slug.
+ * Resolve the UI workspace ID (`GET /api/v1/workspaces`) and PostgreSQL 18 UUID for a workspace by name/slug.
  */
 export async function resolveWorkspaceIds(
   page: Page,
@@ -34,14 +34,14 @@ export async function resolveWorkspaceIds(
     .poll(
       async () => {
         const res = await apiGet<{
-          workspaces?: Array<{ workspaceId?: string; id?: string; slug?: string; name?: string }>;
-        }>(page, "/api/v1/bootstrap/platform-setup-state", { token });
+          workspaces?: Array<{ id?: string; slug?: string; name?: string }>;
+        }>(page, "/api/v1/workspaces", { token });
         if (!res.ok()) return "";
         const body = await res.json();
         const found = (body.workspaces ?? []).find(
           (w) => w.name === name || (slug !== undefined && w.slug === slug),
         );
-        uiWorkspaceId = found?.workspaceId ?? found?.id ?? "";
+        uiWorkspaceId = found?.id ?? "";
         return uiWorkspaceId;
       },
       { timeout: 20000 },

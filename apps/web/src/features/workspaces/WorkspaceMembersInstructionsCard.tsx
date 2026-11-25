@@ -10,11 +10,12 @@ import {
   resolveLocaleForFlag,
 } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
+import type { WorkspaceFeedbackInput } from "./workspaceFeedbackTypes";
 
 export interface WorkspaceMembersInstructionsCardProps {
   readonly isFr: boolean;
   readonly activeWorkspace: ControlCenterWorkspaceGovItem;
-  readonly onFeedback?: (message: string | null) => void;
+  readonly onFeedback?: (feedback: WorkspaceFeedbackInput) => void;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -69,9 +70,14 @@ export function WorkspaceMembersInstructionsCard({
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        const msg = `⚠️ ${formatRfc9457ErrorToBanner(err, locale, tabsCopy.instructionsErrorContext).fullText}`;
-        setErrorAlert(msg);
-        onFeedbackRef.current?.(msg);
+        const msg = formatRfc9457ErrorToBanner(err, locale, tabsCopy.instructionsErrorContext)
+          .fullText;
+        if (onFeedbackRef.current) {
+          setErrorAlert(null);
+          onFeedbackRef.current({ tone: "crimson", message: msg });
+        } else {
+          setErrorAlert(msg);
+        }
       });
 
     return () => {
@@ -88,7 +94,12 @@ export function WorkspaceMembersInstructionsCard({
       if (!targetWsId || isObserver || !canEditWorkspaceLayer) return;
       const trimmed = rawText.trim();
       if (trimmed.length < 3) {
-        setErrorAlert(tabsCopy.instructionsTooShortHint);
+        if (onFeedbackRef.current) {
+          setErrorAlert(null);
+          onFeedbackRef.current({ tone: "crimson", message: tabsCopy.instructionsTooShortHint });
+        } else {
+          setErrorAlert(tabsCopy.instructionsTooShortHint);
+        }
         return;
       }
       setIsSaving(true);
@@ -107,9 +118,14 @@ export function WorkspaceMembersInstructionsCard({
         setInstructionsSavedWsId(targetWsId);
       } catch (err: unknown) {
         setInstructionsSavedWsId(null);
-        const msg = `⚠️ ${formatRfc9457ErrorToBanner(err, locale, tabsCopy.instructionsErrorContext).fullText}`;
-        setErrorAlert(msg);
-        onFeedback?.(msg);
+        const msg = formatRfc9457ErrorToBanner(err, locale, tabsCopy.instructionsErrorContext)
+          .fullText;
+        if (onFeedbackRef.current) {
+          setErrorAlert(null);
+          onFeedbackRef.current({ tone: "crimson", message: msg });
+        } else {
+          setErrorAlert(msg);
+        }
       } finally {
         setIsSaving(false);
       }
@@ -121,7 +137,6 @@ export function WorkspaceMembersInstructionsCard({
       tabsCopy.instructionsTooShortHint,
       tabsCopy.instructionsErrorContext,
       wsSettings,
-      onFeedback,
     ],
   );
 
@@ -169,7 +184,7 @@ export function WorkspaceMembersInstructionsCard({
         )}
       </div>
 
-      {errorAlert ? (
+      {!onFeedback && errorAlert ? (
         <div
           role="alert"
           data-testid="workspace-instructions-error-alert"

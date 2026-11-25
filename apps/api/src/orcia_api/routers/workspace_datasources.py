@@ -2,15 +2,20 @@
 
 from __future__ import annotations
 
-import json
 from typing import Annotated, Any
-from uuid import UUID
 
-import sqlalchemy as sa
 from fastapi import APIRouter, Path, Query, Request
 
-from orcia_api.dependencies import get_auth_service, get_or_create_shared_db_engine
-from orcia_api.routers.auth import resolve_request_user
+from orcia_api.dependencies import get_or_create_shared_db_engine
+from orcia_api.routers._workspace_datasources_helpers import (
+    enforce_codegraph_access,
+    enforce_datasource_mutation_access,
+    enforce_personal_workspace_isolation,
+    pg_enabled,
+    resolve_datasources_user,
+    serialize_datasource,
+    trace_id_for_request,
+)
 from orcia_api.routers.ontology_rag_helpers import persist_ingested_document_pg
 from orcia_api.schemas.enterprise_connectors import (
     CreateWorkspaceDatasourceRequest,
@@ -28,20 +33,7 @@ from orcia_core.bootstrap import (
     trigger_workspace_datasource_sync_on_postgres18,
     update_workspace_datasource_on_postgres18,
 )
-from orcia_core.observability.logging import get_current_trace_id, get_logger
-from orcia_core.permissions import UserIdentity
-from orcia_core.permissions.errors import (
-    CodegraphWorkspaceLeadRequiredError,
-    ObserverModeReadOnlyError,
-    ResourceNotFoundError,
-    ScopeAccessDeniedError,
-)
-from orcia_core.permissions.workspace_sources_governance import (
-    WorkspaceDatasourceRecord,
-    can_manage_workspace_codegraph,
-)
-
-logger = get_logger("orcia.api.workspace_datasources")
+from orcia_core.permissions.errors import ResourceNotFoundError
 
 WORKSPACE_DATASOURCES_PROBLEM_RESPONSES: dict[int | str, dict[str, Any]] = {
     400: {"model": ProblemDetails, "content": {"application/problem+json": {}}},
@@ -59,147 +51,6 @@ router = APIRouter(
 )
 
 
-def _trace(request: Request) -> str:
-    return str(getattr(request.state, "trace_id", None) or get_current_trace_id())
-
-
-def _pg_enabled() -> bool:
-    from orcia_api.dependencies._core_providers import is_pg_runtime_active
-
-    return is_pg_runtime_active()
-
-
-def _resolve_datasources_user(request: Request, persona_key: str | None = None) -> UserIdentity:
-    has_bearer = bool(request.headers.get("Authorization"))
-    effective_persona = (
-        None
-        if has_bearer
-        else (persona_key or request.headers.get("x-orcia-persona", "").strip() or None)
-    )
-    return resolve_request_user(request, persona_key=effective_persona)
-
-
-def _enforce_mutation_access(request: Request, persona_key: str | None = None) -> UserIdentity:
-    access_mode_hdr = request.headers.get("x-orcia-access-mode", "").strip().upper()
-    observer_hdr = request.headers.get("x-orcia-observer-mode", "").strip().lower()
-    active_hat = request.headers.get("x-orcia-active-hat", "").strip().upper()
-    if (
-        access_mode_hdr == "READ_ONLY_OBSERVER"
-        or observer_hdr in ("1", "true", "yes")
-        or active_hat == "OBSERVER"
-    ):
-        raise ObserverModeReadOnlyError(instance=str(request.url.path))
-
-    user = _resolve_datasources_user(request, persona_key=persona_key)
-    if user.platform_role == "OBSERVER":
-        raise ObserverModeReadOnlyError(instance=str(request.url.path))
-    return user
-
-
-async def _enforce_personal_workspace_isolation(
-    request: Request,
-    user: UserIdentity,
-    workspace_id: str,
-) -> None:
-    """Reject any caller (even `PLATFORM_ADMIN`) accessing another user's `PRIVATE_USER` space."""
-    path = str(request.url.path)
-    auth_svc = get_auth_service(request)
-    ws_ent = auth_svc.evaluator.get_workspace(workspace_id)
-    if (
-        ws_ent is not None
-        and (
-            ws_ent.ui_visibility_mode == "PRIVATE_USER" or ws_ent.personal_owner_user_id is not None
-        )
-        and (
-            not ws_ent.personal_owner_user_id or str(ws_ent.personal_owner_user_id) != str(user.id)
-        )
-    ):
-        raise ScopeAccessDeniedError(instance=path)
-
-    if _pg_enabled() or getattr(request.app.state, "db_engine", None) is not None:
-        try:
-            UUID(workspace_id)
-        except (ValueError, TypeError):
-            return
-        engine = get_or_create_shared_db_engine(request)
-        async with engine.connect() as conn:
-            row = (
-                (
-                    await conn.execute(
-                        sa.text(
-                            "SELECT settings_jsonb FROM workspaces WHERE id = CAST(:ws_id AS uuid)"
-                        ),
-                        {"ws_id": workspace_id},
-                    )
-                )
-                .mappings()
-                .first()
-            )
-        if row is not None:
-            raw_st = row.get("settings_jsonb")
-            st_dict: dict[str, object] = {}
-            if isinstance(raw_st, dict):
-                st_dict = raw_st
-            elif isinstance(raw_st, str):
-                try:
-                    decoded = json.loads(raw_st)
-                    if isinstance(decoded, dict):
-                        st_dict = decoded
-                except ValueError:
-                    st_dict = {}
-            ui_vis = str(st_dict.get("ui_visibility_mode") or "").strip()
-            personal_owner = str(st_dict.get("personal_owner_user_id") or "").strip() or None
-            if (ui_vis == "PRIVATE_USER" or personal_owner is not None) and (
-                not personal_owner or personal_owner != str(user.id)
-            ):
-                raise ScopeAccessDeniedError(instance=path)
-
-
-def _enforce_codegraph_access(request: Request, user: Any) -> None:
-    candidate_roles: set[str] = set()
-    if getattr(user, "platform_role", None):
-        candidate_roles.add(str(user.platform_role).upper())
-    if hat := request.headers.get("x-orcia-active-hat"):
-        candidate_roles.add(hat.strip().upper())
-    if role_hdr := request.headers.get("x-orcia-role"):
-        candidate_roles.add(role_hdr.strip().upper())
-
-    if not can_manage_workspace_codegraph(candidate_roles):
-        raise CodegraphWorkspaceLeadRequiredError(instance=str(request.url.path))
-
-
-def _serialize_datasource(rec: WorkspaceDatasourceRecord) -> WorkspaceDatasourceItemResponse:
-    return WorkspaceDatasourceItemResponse(
-        id=rec.id,
-        workspace_id=rec.workspace_id,
-        alias=rec.alias,
-        scheme=rec.scheme,
-        uri=rec.uri,
-        connector_id=rec.connector_id,
-        sync_identity_mode=rec.sync_identity_mode,
-        service_account_id=rec.service_account_id,
-        referent_user_id=rec.referent_user_id,
-        sync_status=rec.sync_status,
-        sync_status_reason=rec.sync_status_reason,
-        created_at_iso=rec.created_at_iso,
-        source_nature=rec.source_nature,
-        sync_mode=rec.sync_mode,
-        target_scope=rec.target_scope,
-        target_ref=rec.target_ref,
-        last_sync_at_iso=rec.last_sync_at_iso,
-        last_probe_at_iso=rec.last_probe_at_iso,
-        fingerprint_hash=rec.fingerprint_hash,
-        freshness_status=rec.freshness_status,
-        codegraph_enabled=rec.codegraph_enabled,
-        codegraph_auth_mode=rec.codegraph_auth_mode,
-        codegraph_owner_user_id=rec.codegraph_owner_user_id,
-        codegraph_status=rec.codegraph_status,
-        codegraph_status_reason=rec.codegraph_status_reason,
-        codegraph_last_indexed_at_iso=rec.codegraph_last_indexed_at_iso,
-        codegraph_head_sha=rec.codegraph_head_sha,
-    )
-
-
 @router.get(
     "/{workspace_id}/datasources",
     response_model=WorkspaceDatasourcesListResponse,
@@ -210,10 +61,10 @@ async def list_workspace_datasources(
     workspace_id: Annotated[str, Path()],
     persona: Annotated[str | None, Query(alias="persona")] = None,
 ) -> WorkspaceDatasourcesListResponse:
-    user = _resolve_datasources_user(request, persona_key=persona)
-    await _enforce_personal_workspace_isolation(request, user, workspace_id)
+    user = resolve_datasources_user(request, persona_key=persona)
+    await enforce_personal_workspace_isolation(request, user, workspace_id)
 
-    if _pg_enabled():
+    if pg_enabled():
         engine = get_or_create_shared_db_engine(request)
         datasources = await list_workspace_datasources_from_postgres18(
             engine, workspace_id=workspace_id
@@ -222,8 +73,8 @@ async def list_workspace_datasources(
         datasources = []
 
     return WorkspaceDatasourcesListResponse(
-        items=[_serialize_datasource(d) for d in datasources],
-        trace_id=_trace(request),
+        items=[serialize_datasource(d) for d in datasources],
+        trace_id=trace_id_for_request(request),
     )
 
 
@@ -239,40 +90,38 @@ async def create_workspace_datasource(
     payload: CreateWorkspaceDatasourceRequest,
     persona: Annotated[str | None, Query(alias="persona")] = None,
 ) -> WorkspaceDatasourceItemResponse:
-    user = _enforce_mutation_access(request, persona_key=persona)
-    await _enforce_personal_workspace_isolation(request, user, workspace_id)
+    user = enforce_datasource_mutation_access(request, persona_key=persona)
+    await enforce_personal_workspace_isolation(request, user, workspace_id, require_write=True)
 
     if payload.codegraph_enabled:
-        _enforce_codegraph_access(request, user)
+        enforce_codegraph_access(request, user)
 
-    if _pg_enabled():
-        engine = get_or_create_shared_db_engine(request)
-        rec = await create_workspace_datasource_on_postgres18(
-            engine,
-            workspace_id=workspace_id,
-            alias=payload.alias,
-            scheme=payload.scheme,
-            uri=payload.uri,
-            connector_id=payload.connector_id,
-            sync_identity_mode=payload.sync_identity_mode,
-            service_account_id=payload.service_account_id,
-            referent_user_id=payload.referent_user_id,
-            source_nature=payload.source_nature,
-            sync_mode=payload.sync_mode,
-            target_scope=payload.target_scope,
-            target_ref=payload.target_ref,
-            codegraph_enabled=payload.codegraph_enabled,
-            codegraph_auth_mode=payload.codegraph_auth_mode,
-            codegraph_owner_user_id=payload.codegraph_owner_user_id,
-            instance=str(request.url.path),
-        )
-    else:
+    if not pg_enabled():
         raise ResourceNotFoundError(
             detail_override="In-memory mode does not support standalone datasource creation.",
             instance=str(request.url.path),
         )
-
-    return _serialize_datasource(rec)
+    engine = get_or_create_shared_db_engine(request)
+    rec = await create_workspace_datasource_on_postgres18(
+        engine,
+        workspace_id=workspace_id,
+        alias=payload.alias,
+        scheme=payload.scheme,
+        uri=payload.uri,
+        connector_id=payload.connector_id,
+        sync_identity_mode=payload.sync_identity_mode,
+        service_account_id=payload.service_account_id,
+        referent_user_id=payload.referent_user_id,
+        source_nature=payload.source_nature,
+        sync_mode=payload.sync_mode,
+        target_scope=payload.target_scope,
+        target_ref=payload.target_ref,
+        codegraph_enabled=payload.codegraph_enabled,
+        codegraph_auth_mode=payload.codegraph_auth_mode,
+        codegraph_owner_user_id=payload.codegraph_owner_user_id,
+        instance=str(request.url.path),
+    )
+    return serialize_datasource(rec)
 
 
 @router.patch(
@@ -287,41 +136,39 @@ async def update_workspace_datasource(
     payload: UpdateWorkspaceDatasourceRequest,
     persona: Annotated[str | None, Query(alias="persona")] = None,
 ) -> WorkspaceDatasourceItemResponse:
-    user = _enforce_mutation_access(request, persona_key=persona)
-    await _enforce_personal_workspace_isolation(request, user, workspace_id)
+    user = enforce_datasource_mutation_access(request, persona_key=persona)
+    await enforce_personal_workspace_isolation(request, user, workspace_id, require_write=True)
 
     if (
         payload.codegraph_enabled is not None
         or payload.codegraph_auth_mode is not None
         or payload.codegraph_owner_user_id is not None
     ):
-        _enforce_codegraph_access(request, user)
+        enforce_codegraph_access(request, user)
 
-    if _pg_enabled():
-        engine = get_or_create_shared_db_engine(request)
-        rec = await update_workspace_datasource_on_postgres18(
-            engine,
-            workspace_id=workspace_id,
-            datasource_id=datasource_id,
-            alias=payload.alias,
-            uri=payload.uri,
-            connector_id=payload.connector_id,
-            sync_identity_mode=payload.sync_identity_mode,
-            service_account_id=payload.service_account_id,
-            referent_user_id=payload.referent_user_id,
-            source_nature=payload.source_nature,
-            sync_mode=payload.sync_mode,
-            target_scope=payload.target_scope,
-            target_ref=payload.target_ref,
-            codegraph_enabled=payload.codegraph_enabled,
-            codegraph_auth_mode=payload.codegraph_auth_mode,
-            codegraph_owner_user_id=payload.codegraph_owner_user_id,
-            instance=str(request.url.path),
-        )
-    else:
+    if not pg_enabled():
         raise ResourceNotFoundError(instance=str(request.url.path))
-
-    return _serialize_datasource(rec)
+    engine = get_or_create_shared_db_engine(request)
+    rec = await update_workspace_datasource_on_postgres18(
+        engine,
+        workspace_id=workspace_id,
+        datasource_id=datasource_id,
+        alias=payload.alias,
+        uri=payload.uri,
+        connector_id=payload.connector_id,
+        sync_identity_mode=payload.sync_identity_mode,
+        service_account_id=payload.service_account_id,
+        referent_user_id=payload.referent_user_id,
+        source_nature=payload.source_nature,
+        sync_mode=payload.sync_mode,
+        target_scope=payload.target_scope,
+        target_ref=payload.target_ref,
+        codegraph_enabled=payload.codegraph_enabled,
+        codegraph_auth_mode=payload.codegraph_auth_mode,
+        codegraph_owner_user_id=payload.codegraph_owner_user_id,
+        instance=str(request.url.path),
+    )
+    return serialize_datasource(rec)
 
 
 @router.delete(
@@ -335,25 +182,23 @@ async def delete_workspace_datasource(
     datasource_id: Annotated[str, Path()],
     persona: Annotated[str | None, Query(alias="persona")] = None,
 ) -> WorkspaceDatasourceDeleteResponse:
-    user = _enforce_mutation_access(request, persona_key=persona)
-    await _enforce_personal_workspace_isolation(request, user, workspace_id)
+    user = enforce_datasource_mutation_access(request, persona_key=persona)
+    await enforce_personal_workspace_isolation(request, user, workspace_id, require_write=True)
 
-    if _pg_enabled():
-        engine = get_or_create_shared_db_engine(request)
-        await delete_workspace_datasource_on_postgres18(
-            engine,
-            workspace_id=workspace_id,
-            datasource_id=datasource_id,
-            instance=str(request.url.path),
-        )
-    else:
+    if not pg_enabled():
         raise ResourceNotFoundError(instance=str(request.url.path))
-
+    engine = get_or_create_shared_db_engine(request)
+    await delete_workspace_datasource_on_postgres18(
+        engine,
+        workspace_id=workspace_id,
+        datasource_id=datasource_id,
+        instance=str(request.url.path),
+    )
     return WorkspaceDatasourceDeleteResponse(
         deleted=True,
         workspace_id=workspace_id,
         datasource_id=datasource_id,
-        trace_id=_trace(request),
+        trace_id=trace_id_for_request(request),
     )
 
 
@@ -368,49 +213,47 @@ async def trigger_workspace_datasource_sync(
     datasource_id: Annotated[str, Path()],
     persona: Annotated[str | None, Query(alias="persona")] = None,
 ) -> TriggerWorkspaceDatasourceSyncResponse:
-    user = _enforce_mutation_access(request, persona_key=persona)
-    await _enforce_personal_workspace_isolation(request, user, workspace_id)
+    user = enforce_datasource_mutation_access(request, persona_key=persona)
+    await enforce_personal_workspace_isolation(request, user, workspace_id, require_write=True)
 
-    if _pg_enabled():
-        engine = get_or_create_shared_db_engine(request)
-        rec = await trigger_workspace_datasource_sync_on_postgres18(
-            engine,
-            workspace_id=workspace_id,
-            datasource_id=datasource_id,
-            instance=str(request.url.path),
-        )
-        if rec.freshness_status != "SYNC_ERROR":
-            regime = (
-                "CODE_AST_GRAPH"
-                if rec.source_nature == "SOURCE_CODE"
-                else "DB_DDL_ONLY"
-                if rec.scheme == "db"
-                else "DOC_PARENT_CHILD"
-            )
-            chunk_role = (
-                "AST_SYMBOL"
-                if regime == "CODE_AST_GRAPH"
-                else "DDL_SCHEMA"
-                if regime == "DB_DDL_ONLY"
-                else "PARENT"
-            )
-            await persist_ingested_document_pg(
-                request,
-                document_id=rec.id,
-                workspace_id=rec.workspace_id,
-                datasource_id=rec.id,
-                datasource_alias=rec.alias,
-                uri=rec.uri,
-                title=rec.alias,
-                content_text=f"{rec.alias} ({rec.uri})",
-                indexing_regime=regime,
-                chunk_role=chunk_role,
-                is_stale=rec.freshness_status == "STALE",
-            )
-    else:
+    if not pg_enabled():
         raise ResourceNotFoundError(instance=str(request.url.path))
-
+    engine = get_or_create_shared_db_engine(request)
+    rec = await trigger_workspace_datasource_sync_on_postgres18(
+        engine,
+        workspace_id=workspace_id,
+        datasource_id=datasource_id,
+        instance=str(request.url.path),
+    )
+    if rec.freshness_status != "SYNC_ERROR":
+        regime = (
+            "CODE_AST_GRAPH"
+            if rec.source_nature == "SOURCE_CODE"
+            else "DB_DDL_ONLY"
+            if rec.scheme == "db"
+            else "DOC_PARENT_CHILD"
+        )
+        chunk_role = (
+            "AST_SYMBOL"
+            if regime == "CODE_AST_GRAPH"
+            else "DDL_SCHEMA"
+            if regime == "DB_DDL_ONLY"
+            else "PARENT"
+        )
+        await persist_ingested_document_pg(
+            request,
+            document_id=rec.id,
+            workspace_id=rec.workspace_id,
+            datasource_id=rec.id,
+            datasource_alias=rec.alias,
+            uri=rec.uri,
+            title=rec.alias,
+            content_text=f"{rec.alias} ({rec.uri})",
+            indexing_regime=regime,
+            chunk_role=chunk_role,
+            is_stale=rec.freshness_status == "STALE",
+        )
     return TriggerWorkspaceDatasourceSyncResponse(
-        datasource=_serialize_datasource(rec),
-        trace_id=_trace(request),
+        datasource=serialize_datasource(rec),
+        trace_id=trace_id_for_request(request),
     )

@@ -82,6 +82,8 @@ class FederatedSearchCandidate:
         "OBSERVER",
     )
     embedding: tuple[float, ...] | None = None
+    visibility_mode: str = "STANDARD"
+    allowed_user_ids: tuple[str, ...] | None = None
 
 
 @dataclass(frozen=True, slots=True)

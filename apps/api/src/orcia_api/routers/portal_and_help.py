@@ -10,11 +10,13 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, Depends, Query, Request
 
 from orcia_api.dependencies import (
+    get_auth_service,
     get_contextual_help_service,
     get_optional_embedding_port,
     get_two_speed_search_service,
 )
 from orcia_api.dependencies._core_providers import get_configured_db_engine
+from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
 from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
 from orcia_api.schemas.catalog import (
     ContextualHelpPublishRequest,
@@ -125,6 +127,23 @@ async def execute_two_speed_federated_search(
                 locale=req_locale,
             )
 
+    auth_svc = get_auth_service(request)
+    await sync_evaluator_topology_from_pg(request, auth_svc)
+    authorized_ws_ids: set[str] = set()
+    restricted_ws_ids: set[str] = set()
+    for ws in auth_svc.evaluator.workspaces:
+        is_restricted = (
+            ws.visibility_mode == "CONFIDENTIAL_RESTRICTED"
+            or ws.ui_visibility_mode == "PRIVATE_USER"
+            or ws.personal_owner_user_id is not None
+        )
+        if is_restricted:
+            restricted_ws_ids.add(ws.id)
+            restricted_ws_ids.add(ws.slug)
+        if auth_svc.evaluator.resolve_workspace_access(user, ws.id) is not None:
+            authorized_ws_ids.add(ws.id)
+            authorized_ws_ids.add(ws.slug)
+
     report = await svc.execute_search_async(
         query=q,
         scope=normalized_scope,
@@ -137,6 +156,8 @@ async def execute_two_speed_federated_search(
         force_semantic=force_semantic,
         query_embedding=query_embedding,
         extra_candidates=extra_candidates,
+        authorized_workspace_ids=authorized_ws_ids,
+        restricted_workspace_ids=restricted_ws_ids,
     )
     return TwoSpeedSearchResponse(
         query=report.query,

@@ -23,6 +23,7 @@ import {
   sanitizeWorkspaceDestinationUri,
   toKebabWorkspaceSlug,
 } from "./workspaceDisplayHelpers";
+import type { WorkspaceFeedbackInput } from "./workspaceFeedbackTypes";
 
 export interface WorkspaceDnaAndWaiversSectionProps {
   readonly isFr: boolean;
@@ -39,7 +40,7 @@ export interface WorkspaceDnaAndWaiversSectionProps {
     targetLevel: UiOntologyLevel,
     targetScopeId?: string,
   ) => void;
-  readonly onFeedback: (message: string | null) => void;
+  readonly onFeedback: (feedback: WorkspaceFeedbackInput) => void;
 }
 
 export function resolveInitialWorkspaceSubTab(initialTab?: string): WorkspaceSubTabKey {
@@ -203,6 +204,7 @@ export function WorkspaceDnaAndWaiversSection({
                 onFeedback(tabsCopy.termPromoted);
               }}
               onPromotionsChanged={() => void reloadGovernanceState()}
+              onFeedback={onFeedback}
             />
             <DnaStarlarkCompilerAndGlossaryLifecycleView
               mechanism={compiledMechanism}

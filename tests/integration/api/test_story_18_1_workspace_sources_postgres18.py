@@ -123,6 +123,40 @@ async def test_workspace_sources_multi_nature_and_codegraph_postgres18(
                 "ou_id": ou_id,
             },
         )
+        karim_id = UUID("0192c4e0-0000-7000-8000-000000000601")
+        nadia_id = UUID("0192c4e0-0000-7000-8000-000000000604")
+        personas = (
+            (karim_id, "karim.admin@orcia.io", "Karim", "HYBRID", "SECOPS", "PLATFORM_ADMIN"),
+            (nadia_id, "nadia.dev@orcia.io", "Nadia", "LOCAL", "DEVELOPER", "CONTRIBUTOR"),
+        )
+        for uid, email, name, auth_mode, arch, p_role in personas:
+            await conn.execute(
+                sa.text(
+                    "INSERT INTO users (id, email, display_name, auth_mode, "
+                    "human_profile_archetype, platform_role, primary_org_unit_id, is_active) "
+                    "VALUES (:id, :email, :name, :auth_mode, :arch, :p_role, :ou_id, TRUE) "
+                    "ON CONFLICT (id) DO NOTHING;"
+                ),
+                {
+                    "id": uid,
+                    "email": email,
+                    "name": name,
+                    "auth_mode": auth_mode,
+                    "arch": arch,
+                    "p_role": p_role,
+                    "ou_id": ou_id,
+                },
+            )
+            ws_role = "TEAM_LEAD" if p_role == "PLATFORM_ADMIN" else "CONTRIBUTOR"
+            await conn.execute(
+                sa.text(
+                    "INSERT INTO workspace_memberships "
+                    "(id, workspace_id, user_id, role, access_mode) "
+                    "VALUES (:mid, :wid, :uid, :role, 'CONTRIBUTOR_ACTION_REQUIRED') "
+                    "ON CONFLICT (id) DO NOTHING;"
+                ),
+                {"mid": UUID(new_uuid7_str()), "wid": UUID(ws_id), "uid": uid, "role": ws_role},
+            )
         check = (
             await conn.execute(
                 sa.text("SELECT id FROM workspaces WHERE id = :wid"),

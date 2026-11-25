@@ -3,30 +3,34 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from typing import Literal
 
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from orcia_api.dependencies import get_auth_service
+from orcia_api.dependencies import get_auth_service, get_ontology_and_rag_services
 from orcia_api.dependencies._core_providers import get_configured_db_engine
+from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.routers.ontology_rag_helpers import serialize_what_if
 from orcia_api.schemas import ontology_promotions as s
 from orcia_core.observability.logging import get_logger
 from orcia_core.ontology import (
-    OntologyConceptEntity,
     OntologyGovernanceService,
     OntologyLevel,
     OntologyPromotionProposal,
-    WhatIfImpactReport,
     can_write_ontology_level,
     find_org_unit,
     find_workspace,
+    is_observer_user,
     load_org_and_workspaces_context,
 )
-from orcia_core.permissions.models import OrgUnitNode, UserIdentity, WorkspaceEntity
-from orcia_kernel.ids import new_uuid7_str
+from orcia_core.ontology.errors import ObserverModeReadOnlyError
+from orcia_core.permissions.models import (
+    OrgUnitNode,
+    UserIdentity,
+    WorkspaceEntity,
+    WorkspaceMembershipEntity,
+)
 
 logger = get_logger("orcia.api.ontology_promotions")
 
@@ -72,6 +76,32 @@ async def load_ontology_topology(
     return engine, tuple(svc.evaluator.org_units), tuple(svc.evaluator.workspaces)
 
 
+def is_restricted_proposal_denied(
+    user: UserIdentity,
+    proposal: OntologyPromotionProposal,
+    workspaces: tuple[WorkspaceEntity, ...],
+    memberships: tuple[WorkspaceMembershipEntity, ...],
+) -> bool:
+    """Return True if proposal touches a confidential/private workspace without caller access."""
+    from orcia_core.ontology import can_read_ontology_item
+
+    for scope_id in (proposal.source_scope_id, proposal.target_scope_id):
+        if not scope_id:
+            continue
+        ws = find_workspace(workspaces, scope_id)
+        if (
+            ws is not None
+            and (
+                ws.visibility_mode == "CONFIDENTIAL_RESTRICTED"
+                or ws.ui_visibility_mode == "PRIVATE_USER"
+                or ws.personal_owner_user_id is not None
+            )
+            and not can_read_ontology_item(user, "4_WORKSPACE", ws.id, (), workspaces, memberships)
+        ):
+            return True
+    return False
+
+
 def serialize_proposal_detail(
     p: OntologyPromotionProposal,
     *,
@@ -107,10 +137,13 @@ def compute_writable_options(
     user: UserIdentity,
     org_units: tuple[OrgUnitNode, ...],
     workspaces: tuple[WorkspaceEntity, ...],
+    memberships: tuple[WorkspaceMembershipEntity, ...] = (),
 ) -> tuple[list[OntologyLevel], list[s.WritableScopeOptionItem]]:
     """Compute allowed direct-write `(level, scope_id, label)` choices for `user`."""
     options: list[s.WritableScopeOptionItem] = []
-    if can_write_ontology_level(user, "1_ENTERPRISE", "scope-global", org_units, workspaces):
+    if can_write_ontology_level(
+        user, "1_ENTERPRISE", "scope-global", org_units, workspaces, memberships
+    ):
         options.append(
             s.WritableScopeOptionItem(
                 level="1_ENTERPRISE", scope_id="scope-global", label="Organisation (Global)"
@@ -118,89 +151,24 @@ def compute_writable_options(
         )
     for unit in org_units:
         if unit.unit_type == "BU" and can_write_ontology_level(
-            user, "2_DOMAIN", unit.id, org_units, workspaces
+            user, "2_DOMAIN", unit.id, org_units, workspaces, memberships
         ):
             options.append(
                 s.WritableScopeOptionItem(level="2_DOMAIN", scope_id=unit.id, label=unit.name)
             )
         elif unit.unit_type in ("TEAM", "SUB_TEAM") and can_write_ontology_level(
-            user, "3_TEAM", unit.id, org_units, workspaces
+            user, "3_TEAM", unit.id, org_units, workspaces, memberships
         ):
             options.append(
                 s.WritableScopeOptionItem(level="3_TEAM", scope_id=unit.id, label=unit.name)
             )
     for ws in workspaces:
-        if can_write_ontology_level(user, "4_WORKSPACE", ws.id, org_units, workspaces):
+        if can_write_ontology_level(user, "4_WORKSPACE", ws.id, org_units, workspaces, memberships):
             options.append(
                 s.WritableScopeOptionItem(level="4_WORKSPACE", scope_id=ws.id, label=ws.name)
             )
     levels: list[OntologyLevel] = list(dict.fromkeys(opt.level for opt in options))
     return levels, options
-
-
-def build_promotion_impact(
-    gov: OntologyGovernanceService,
-    source: OntologyConceptEntity,
-    target_level: OntologyLevel,
-    proposed_change: str | None,
-) -> WhatIfImpactReport:
-    """Compute What-If impact report or lightweight report for PG-only concepts."""
-    summary = proposed_change or f"Promote {source.canonical_term} to {target_level}"
-    if any(c.concept_key == source.concept_key for c in gov.concepts):
-        return gov.simulate_what_if(concept_key=source.concept_key, proposed_change=summary)
-    return WhatIfImpactReport(
-        concept_key=source.concept_key,
-        canonical_term=source.canonical_term,
-        proposed_change=summary,
-        transitively_affected_concepts=(),
-        impacted_artifact_templates=(),
-        impacted_workflow_uris=(),
-        impacted_active_run_ids=(),
-        has_immutable_axiom_conflict=False,
-    )
-
-
-def create_proposal_in_memory(
-    gov: OntologyGovernanceService,
-    *,
-    concepts: list[OntologyConceptEntity],
-    source: OntologyConceptEntity,
-    target_level: OntologyLevel,
-    target_scope_id: str,
-    user: UserIdentity,
-    impact: WhatIfImpactReport,
-) -> OntologyPromotionProposal:
-    """Create and store a promotion proposal in the in-memory governance service."""
-    coll = next(
-        (
-            c
-            for c in concepts
-            if c.level == target_level
-            and c.scope_id == target_scope_id
-            and c.canonical_term.lower() == source.canonical_term.lower()
-        ),
-        None,
-    )
-    prop_id = new_uuid7_str()
-    created = OntologyPromotionProposal(
-        id=prop_id,
-        proposal_key=f"prop-{source.concept_key}-to-{target_level.lower()}-{prop_id[-6:]}",
-        concept_key=source.concept_key,
-        canonical_term=source.canonical_term,
-        source_level=source.level,
-        target_level=target_level,
-        target_scope_id=target_scope_id,
-        proposed_by_user_id=user.email or user.id,
-        status="PENDING_REVIEW",
-        impact_report=impact,
-        source_concept_id=source.id,
-        source_scope_id=source.scope_id,
-        definition_text=source.definition_text,
-        collision_detected=coll is not None,
-        colliding_definition=coll.definition_text if coll else None,
-    )
-    gov.save_proposal(created)
-    return created
 
 
 def resolve_dynamic_ontology_scopes(
@@ -247,32 +215,28 @@ def resolve_dynamic_ontology_scopes(
     return enterprise_scope, domain_scope, tuple(team_chain), workspace_scope, None
 
 
-def decide_proposal_in_memory(
-    gov: OntologyGovernanceService,
+async def prepare_ontology_handler_context(
+    request: Request,
     *,
-    existing: OntologyPromotionProposal,
-    decision: Literal["APPROVE", "REJECT"],
-    reviewer: UserIdentity,
-    review_comment: str | None,
-) -> tuple[OntologyPromotionProposal, OntologyConceptEntity | None]:
-    """Approve or reject a proposal in the in-memory governance service."""
-    promoted_concept: OntologyConceptEntity | None = None
-    if decision == "APPROVE":
-        promoted_concept = OntologyConceptEntity(
-            id=new_uuid7_str(),
-            concept_key=f"{existing.concept_key}-{existing.target_level.lower()}",
-            canonical_term=existing.canonical_term,
-            level=existing.target_level,
-            scope_id=existing.target_scope_id,
-            definition_text=existing.definition_text or existing.canonical_term,
-            parent_concept_id=existing.source_concept_id,
-        )
-        gov.upsert_concept(reviewer, promoted_concept)
-    updated = replace(
-        existing,
-        status="APPROVED" if decision == "APPROVE" else "REJECTED",
-        reviewed_by_user_id=reviewer.email or reviewer.id,
-        review_comment=review_comment,
-    )
-    gov.save_proposal(updated)
-    return updated, promoted_concept
+    fixture: bool,
+    persona_key: str | None,
+    reject_observer: bool = False,
+) -> tuple[
+    UserIdentity,
+    tuple[WorkspaceMembershipEntity, ...],
+    OntologyGovernanceService,
+    AsyncEngine | None,
+    tuple[OrgUnitNode, ...],
+    tuple[WorkspaceEntity, ...],
+]:
+    """Resolve caller, sync PG18 topology when non-fixture, and load ontology topology."""
+    user = resolve_ontology_caller(request, persona_key)
+    if reject_observer and is_observer_user(user):
+        raise ObserverModeReadOnlyError(instance=str(request.url.path))
+    auth_svc = get_auth_service(request)
+    if not fixture:
+        await sync_evaluator_topology_from_pg(request, auth_svc)
+    memberships = auth_svc.evaluator.list_memberships()
+    gov, _, _ = get_ontology_and_rag_services(request, fixture=fixture)
+    engine, org_units, workspaces = await load_ontology_topology(request, fixture=fixture)
+    return user, memberships, gov, engine, org_units, workspaces

@@ -79,7 +79,7 @@ export function ShellCentralWorkspaceBody({
   return (
     <div className="flex h-full flex-col">
       {lastSyncError && (
-        <div className="px-4 pt-3">
+        <div className="pb-3">
           <OrciaAlertBanner tone="crimson" role="alert" testId="platform-sync-error-banner">
             {lastSyncError}
           </OrciaAlertBanner>

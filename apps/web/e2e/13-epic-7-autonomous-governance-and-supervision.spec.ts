@@ -35,16 +35,15 @@ test.describe("TEST-07 · 13 — Story 7.4 Gouvernance & Supervision des Exécut
     const adminToken = refreshJson.access_token ?? "";
     expect(adminToken).not.toBe("");
 
-    const stateRes = await apiGet<{
-      workspaces?: Array<{ workspaceId?: string; workspace_id?: string; id?: string }>;
-    }>(page, "/api/v1/bootstrap/platform-setup-state", { token: adminToken });
-    expect(stateRes.status()).toBe(200);
-    const setupState = await stateRes.json();
-    const wsId =
-      setupState.workspaces?.[0]?.workspaceId ??
-      setupState.workspaces?.[0]?.workspace_id ??
-      setupState.workspaces?.[0]?.id ??
-      "";
+    const wsRes = await apiGet<{
+      workspaces?: Array<{ id?: string; slug?: string; is_personal?: boolean }>;
+    }>(page, "/api/v1/workspaces", { token: adminToken });
+    expect(wsRes.status()).toBe(200);
+    const wsPayload = await wsRes.json();
+    const targetWs =
+      (wsPayload.workspaces ?? []).find((w) => w.slug === "ws-auto-e2e") ??
+      (wsPayload.workspaces ?? []).find((w) => !w.is_personal);
+    const wsId = targetWs?.id ?? "";
     expect(wsId).not.toBe("");
 
     const spRes = await apiPost(page, "/api/v1/settings/iam/accounts", {

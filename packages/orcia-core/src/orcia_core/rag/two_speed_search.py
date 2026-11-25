@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from typing import Any
 
 from orcia_core.ports.embedding import EmbeddingPort
@@ -97,6 +97,8 @@ class TwoSpeedFederatedSearchService:
         force_semantic: bool = False,
         query_embedding: tuple[float, ...] | None = None,
         extra_candidates: Sequence[FederatedSearchCandidate] = (),
+        authorized_workspace_ids: Collection[str] | None = None,
+        restricted_workspace_ids: Collection[str] | None = None,
     ) -> TwoSpeedSearchReport:
         """Execute Speed 1 + Speed 2 synchronously (Redis sync or unit-test fallback)."""
         norm_q, words, authorized, speed1_hits, speed1_ids = prepare_authorized_and_speed1_hits(
@@ -107,6 +109,9 @@ class TwoSpeedFederatedSearchService:
             active_screen_route=active_screen_route,
             user_role=user_role,
             extra_candidates=extra_candidates,
+            user_id=user_id,
+            authorized_workspace_ids=authorized_workspace_ids,
+            restricted_workspace_ids=restricted_workspace_ids,
         )
         should_run_speed2 = include_speed2 and (len(words) >= 3 or force_semantic) and bool(norm_q)
         if not should_run_speed2:
@@ -181,6 +186,8 @@ class TwoSpeedFederatedSearchService:
         force_semantic: bool = False,
         query_embedding: tuple[float, ...] | None = None,
         extra_candidates: Sequence[FederatedSearchCandidate] = (),
+        authorized_workspace_ids: Collection[str] | None = None,
+        restricted_workspace_ids: Collection[str] | None = None,
     ) -> TwoSpeedSearchReport:
         """Execute Speed 1 + Speed 2 with async Redis 7.4 (`TTL 300s`)."""
         norm_q, words, authorized, speed1_hits, speed1_ids = prepare_authorized_and_speed1_hits(
@@ -191,6 +198,9 @@ class TwoSpeedFederatedSearchService:
             active_screen_route=active_screen_route,
             user_role=user_role,
             extra_candidates=extra_candidates,
+            user_id=user_id,
+            authorized_workspace_ids=authorized_workspace_ids,
+            restricted_workspace_ids=restricted_workspace_ids,
         )
         should_run_speed2 = include_speed2 and (len(words) >= 3 or force_semantic) and bool(norm_q)
         if not should_run_speed2:

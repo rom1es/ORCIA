@@ -20,6 +20,7 @@ import { WorkspaceSourceAttachModal } from "./sources/WorkspaceSourceAttachModal
 import { mapFallbackWorkspaceDatasources } from "./sources/WorkspaceSourcesFallbackHelper";
 import { WorkspaceSourcesColdStartBanner } from "./sources/WorkspaceSourcesColdStartBanner";
 import { WorkspaceSourcesRenewReferentForm } from "./sources/WorkspaceSourcesRenewReferentForm";
+import type { WorkspaceFeedbackInput } from "./workspaceFeedbackTypes";
 
 export interface WorkspaceSourcesRagTabProps {
   readonly isFr?: boolean;
@@ -28,7 +29,7 @@ export interface WorkspaceSourcesRagTabProps {
   readonly fallbackDatasources?: readonly ControlCenterDatasourceItem[];
   readonly openHelpSection?: (sectionId: string) => void;
   readonly onSourcesChanged?: (items: readonly WorkspaceDatasourceItemResponse[]) => void;
-  readonly onFeedback?: (message: string) => void;
+  readonly onFeedback?: (feedback: WorkspaceFeedbackInput) => void;
 }
 
 const EMPTY_FALLBACK_DATASOURCES: readonly ControlCenterDatasourceItem[] = [];
@@ -40,7 +41,7 @@ export function WorkspaceSourcesRagTab({
   initialDatasources = EMPTY_INITIAL_DATASOURCES,
   fallbackDatasources = EMPTY_FALLBACK_DATASOURCES,
   onSourcesChanged,
-  onFeedback = () => {},
+  onFeedback,
 }: WorkspaceSourcesRagTabProps): React.ReactElement {
   const { dictionary, locale } = useI18n();
   const sourcesCopy = dictionary.categoryAControllers.workspaceSources;
@@ -91,16 +92,24 @@ export function WorkspaceSourcesRagTab({
 
   const showFeedback = (msg: string) => {
     setErrorBanner(null);
-    setFeedbackBanner(msg);
-    onFeedbackRef.current(msg);
+    if (onFeedbackRef.current) {
+      setFeedbackBanner(null);
+      onFeedbackRef.current({ tone: "emerald", message: msg });
+    } else {
+      setFeedbackBanner(msg);
+    }
   };
 
   const showApiError = useCallback(
     (err: unknown) => {
       const formatted = formatRfc9457ErrorToBanner(err, locale);
       setFeedbackBanner(null);
-      setErrorBanner(formatted.fullText);
-      onFeedbackRef.current(`⚠️ ${formatted.fullText}`);
+      if (onFeedbackRef.current) {
+        setErrorBanner(null);
+        onFeedbackRef.current({ tone: "crimson", message: formatted.fullText });
+      } else {
+        setErrorBanner(formatted.fullText);
+      }
     },
     [locale],
   );
@@ -231,13 +240,13 @@ export function WorkspaceSourcesRagTab({
         onOpenMyAccount={() => openUserSettingsModalAtTab("PASSTHROUGH_SOURCES")}
       />
 
-      {errorBanner ? (
+      {!onFeedback && errorBanner ? (
         <div role="alert" data-testid="sources-error-alert" className="rounded-lg border border-status-danger/40 bg-status-danger/10 px-3 py-2 text-xs text-status-danger">
           {errorBanner}
         </div>
       ) : null}
 
-      {feedbackBanner ? (
+      {!onFeedback && feedbackBanner ? (
         <div data-testid="sources-feedback-banner" style={{ padding: "8px 12px", borderRadius: "var(--radius-sm)", backgroundColor: "var(--color-bg-elevated)", border: "1px solid var(--color-border)", fontSize: "12px" }}>
           {feedbackBanner}
         </div>

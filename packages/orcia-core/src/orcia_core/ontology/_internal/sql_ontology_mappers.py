@@ -217,21 +217,32 @@ async def load_org_and_workspaces_context(
                 await conn.execute(
                     sa.text(
                         "SELECT id, slug, name, owner_org_unit_id, "
-                        "visibility_mode, finops_cost_usd FROM workspaces"
+                        "visibility_mode, finops_cost_usd, settings_jsonb FROM workspaces"
                     )
                 )
             ).fetchall()
-        return tuple(
-            WorkspaceEntity(
-                id=str(r[0]),
-                slug=str(r[1]),
-                name=str(r[2]),
-                owner_org_unit_id=str(r[3]),
-                visibility_mode=cast(WorkspaceVisibilityMode, str(r[4])),
-                finops_cost_usd=float(r[5] or 0.0),
+        out: list[WorkspaceEntity] = []
+        for r in ws_rows:
+            st = parse_json_dict(r[6]) if len(r) > 6 else {}
+            ui_vis = str(st["ui_visibility_mode"]).strip() if st.get("ui_visibility_mode") else None
+            personal_owner = (
+                str(st["personal_owner_user_id"]).strip()
+                if st.get("personal_owner_user_id")
+                else None
             )
-            for r in ws_rows
-        )
+            out.append(
+                WorkspaceEntity(
+                    id=str(r[0]),
+                    slug=str(r[1]),
+                    name=str(r[2]),
+                    owner_org_unit_id=str(r[3]),
+                    visibility_mode=cast(WorkspaceVisibilityMode, str(r[4])),
+                    finops_cost_usd=float(r[5] or 0.0),
+                    personal_owner_user_id=personal_owner,
+                    ui_visibility_mode=ui_vis,
+                )
+            )
+        return tuple(out)
 
     units, workspaces = await asyncio.gather(_fetch_org_units(), _fetch_workspaces())
     return units, workspaces

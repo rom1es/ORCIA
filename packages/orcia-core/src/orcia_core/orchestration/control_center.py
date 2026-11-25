@@ -150,17 +150,32 @@ class ControlCenterOverviewService:
                 if mode == "READ_ONLY_OBSERVER" or user.platform_role in ("OBSERVER", "BU_DIRECTOR")
                 else "CONTRIBUTOR_ACTION_REQUIRED"
             )
-            hydrated = replace(
-                run,
-                access_mode=effective_mode,
-                claimed_by_user_id=lock.holder_user_id if lock else run.claimed_by_user_id,
-                claimed_by_display_name=(
-                    lock.holder_display_name if lock else run.claimed_by_display_name
-                ),
-                blackboard_summary=cc["masked_summary"] if masked else run.blackboard_summary,
-                blackboard_payload_masked=masked,
+            hydrated = (
+                replace(
+                    run,
+                    workspace_name="[CONFIDENTIAL_RESTRICTED]",
+                    workflow_key="masked",
+                    title=cc["masked_summary"],
+                    current_step_key="masked",
+                    access_mode="READ_ONLY_OBSERVER",
+                    claimed_by_user_id=None,
+                    claimed_by_display_name=None,
+                    blackboard_summary=cc["masked_summary"],
+                    blackboard_payload_masked=True,
+                )
+                if masked
+                else replace(
+                    run,
+                    access_mode=effective_mode,
+                    claimed_by_user_id=lock.holder_user_id if lock else run.claimed_by_user_id,
+                    claimed_by_display_name=(
+                        lock.holder_display_name if lock else run.claimed_by_display_name
+                    ),
+                    blackboard_summary=run.blackboard_summary,
+                    blackboard_payload_masked=False,
+                )
             )
-            if effective_mode == "CONTRIBUTOR_ACTION_REQUIRED":
+            if not masked and effective_mode == "CONTRIBUTOR_ACTION_REQUIRED":
                 contributor_runs.append(hydrated)
             else:
                 observer_runs.append(hydrated)
@@ -186,23 +201,24 @@ class ControlCenterOverviewService:
                     blackboard_payload_masked=masked,
                 )
             )
-            for ds in ws.datasources:
-                datasources.append(
-                    SupervisedDatasourceItem(
-                        id=ds.id,
-                        workspace_id=ws.id,
-                        workspace_name=ws.name,
-                        alias=ds.alias,
-                        scheme=ds.scheme,
-                        uri=ds.uri,
-                        role=ds.role,
-                        execution_identity=ds.execution_identity,
-                        freshness_ttl_days=ds.freshness_ttl_days,
-                        tripartite_status=(
-                            "STALE_WARNING" if ds.freshness_ttl_days <= 30 else "ALIGNED"
-                        ),
+            if not masked:
+                for ds in ws.datasources:
+                    datasources.append(
+                        SupervisedDatasourceItem(
+                            id=ds.id,
+                            workspace_id=ws.id,
+                            workspace_name=ws.name,
+                            alias=ds.alias,
+                            scheme=ds.scheme,
+                            uri=ds.uri,
+                            role=ds.role,
+                            execution_identity=ds.execution_identity,
+                            freshness_ttl_days=ds.freshness_ttl_days,
+                            tripartite_status=(
+                                "STALE_WARNING" if ds.freshness_ttl_days <= 30 else "ALIGNED"
+                            ),
+                        )
                     )
-                )
 
         viewer_mode: AccessMode = (
             "CONTRIBUTOR_ACTION_REQUIRED"

@@ -178,7 +178,25 @@ def _serialize_passthrough_view(
     response_model=EnterpriseConnectorsListResponse,
     summary="List all platform-level Enterprise Connectors (Socle)",
 )
-async def list_enterprise_connectors(request: Request) -> EnterpriseConnectorsListResponse:
+async def list_enterprise_connectors(
+    request: Request,
+    persona: Annotated[str | None, Query(alias="persona")] = None,
+) -> EnterpriseConnectorsListResponse:
+    has_bearer = bool(request.headers.get("Authorization"))
+    effective_persona = (
+        None
+        if has_bearer
+        else (persona or request.headers.get("x-orcia-persona", "").strip() or None)
+    )
+    user = resolve_request_user(request, persona_key=effective_persona)
+    active_hat = request.headers.get("x-orcia-active-hat", "").strip().upper()
+    if active_hat and active_hat not in (*ADMIN_MODULE_ALLOWED_ROLES, "SECOPS"):
+        raise ScopeAccessDeniedError(instance=str(request.url.path))
+    if (
+        user.platform_role not in ADMIN_MODULE_ALLOWED_ROLES
+        and user.human_profile_archetype != "SECOPS"
+    ):
+        raise ScopeAccessDeniedError(instance=str(request.url.path))
     if _pg_enabled():
         engine = get_or_create_shared_db_engine(request)
         connectors = await list_enterprise_connectors_from_postgres18(engine)

@@ -35,5 +35,7 @@ export type UserPreferencesUpdateRequest = components["schemas"]["UserPreference
 export type WorkspaceCreateRequest = components["schemas"]["WorkspaceCreateRequest"];
 export type WorkspaceCreateResponse = components["schemas"]["WorkspaceCreateResponse"];
 export type WorkspaceDatasourceItem = components["schemas"]["WorkspaceDatasourceItem"];
+export type WorkspacePatchRequest = components["schemas"]["WorkspacePatchRequest"];
+export type WorkspacePatchResponse = components["schemas"]["WorkspacePatchResponse"];
 export type WorkspaceSummaryItem = components["schemas"]["WorkspaceSummaryItem"];
 export type WorkspacesListResponse = components["schemas"]["WorkspacesListResponse"];

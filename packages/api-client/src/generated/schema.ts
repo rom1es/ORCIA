@@ -4852,6 +4852,25 @@ export interface components {
       workspace_id: string;
       workspace_instructions: string;
     };
+    WorkspacePatchRequest: {
+      lifecycle_phase?: "BUILD" | "RUN" | "MIGRATION" | null;
+      name?: string | null;
+      visibility_mode?: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER" | null;
+    };
+    WorkspacePatchResponse: {
+      access_mode: "CONTRIBUTOR_ACTION_REQUIRED" | "READ_ONLY_OBSERVER";
+      access_origin: "DIRECT_TEAM" | "ROLLUP_PARENT" | "PARTNER_INVITE" | "GLOBAL_ADMIN";
+      effective_role: "PLATFORM_ADMIN" | "SECOPS" | "BU_LEAD" | "BU_DIRECTOR" | "TEAM_LEAD" | "ONTOLOGY_LEAD" | "CONTRIBUTOR" | "GATE_REVIEWER" | "ONTOLOGY_STEWARD_L3" | "OBSERVER";
+      finops_cost_usd?: number;
+      id: string;
+      lifecycle_phase: "BUILD" | "RUN" | "MIGRATION";
+      name: string;
+      owner_org_unit_id: string;
+      owner_org_unit_name: string;
+      slug: string;
+      trace_id: string;
+      visibility_mode: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER";
+    };
     WorkspaceSourceSummarySchema: {
       access_mode: "READ_ONLY" | "READ_WRITE_TARGET";
       authority_role: "REFERENCE" | "ACTIVE";
@@ -4878,6 +4897,7 @@ export interface components {
       finops_cost_usd?: number | null;
       id: string;
       is_personal?: boolean;
+      lifecycle_phase?: "BUILD" | "RUN" | "MIGRATION";
       name: string;
       owner_org_unit_id: string;
       slug: string;
@@ -6537,6 +6557,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/workspaces/{workspace_id}": {
+    patch: {
+      responses: {
+        200: components["schemas"]["WorkspacePatchResponse"];
+      };
+    };
+  };
   "/api/v1/workspaces/{workspace_id}/artifacts/external-rebase": {
     post: {
       responses: {
@@ -7281,6 +7308,8 @@ export type WorkspaceDatasourcesListResponse = components["schemas"]["WorkspaceD
 export type WorkspaceFiveTabsStateResponse = components["schemas"]["WorkspaceFiveTabsStateResponse"];
 export type WorkspaceGovernanceItemResponse = components["schemas"]["WorkspaceGovernanceItemResponse"];
 export type WorkspaceLayerSettingsSchemaItem = components["schemas"]["WorkspaceLayerSettingsSchemaItem"];
+export type WorkspacePatchRequest = components["schemas"]["WorkspacePatchRequest"];
+export type WorkspacePatchResponse = components["schemas"]["WorkspacePatchResponse"];
 export type WorkspaceSourceSummarySchema = components["schemas"]["WorkspaceSourceSummarySchema"];
 export type WorkspaceSpineBaselineSchemaItem = components["schemas"]["WorkspaceSpineBaselineSchemaItem"];
 export type WorkspaceSummaryItem = components["schemas"]["WorkspaceSummaryItem"];

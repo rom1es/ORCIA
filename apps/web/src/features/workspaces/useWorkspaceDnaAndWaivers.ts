@@ -19,6 +19,7 @@ import {
 } from "../../i18n";
 import type { FeatureWorkspacesDictionary } from "../../i18n/locales/feature_workspaces_labels";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
+import type { WorkspaceFeedbackInput } from "./workspaceFeedbackTypes";
 
 function mapWaiverItem(w: ExceptionWaiverResponseItem): ExceptionWaiverItem {
   return {
@@ -75,7 +76,7 @@ function mapProposalToGlossaryCandidate(
 export function useWorkspaceDnaAndWaivers(params: {
   readonly isFr: boolean;
   readonly targetWorkspace: ControlCenterWorkspaceGovItem | null;
-  readonly onFeedback: (message: string | null) => void;
+  readonly onFeedback: (feedback: WorkspaceFeedbackInput) => void;
   readonly onGlossaryMutated?: () => void;
 }) {
   const { isFr, targetWorkspace, onFeedback, onGlossaryMutated } = params;
@@ -137,9 +138,10 @@ export function useWorkspaceDnaAndWaivers(params: {
     let cancelled = false;
     void reloadWaiversAndMechanisms().catch((err: unknown) => {
       if (cancelled) return;
-      onFeedbackRef.current(
-        `⚠️ ${formatRfc9457ErrorToBanner(err, locale, dnaCopy.governanceErrorContext).fullText}`,
-      );
+      onFeedbackRef.current({
+        tone: "crimson",
+        message: formatRfc9457ErrorToBanner(err, locale, dnaCopy.governanceErrorContext).fullText,
+      });
     });
     return () => {
       cancelled = true;
@@ -168,9 +170,10 @@ export function useWorkspaceDnaAndWaivers(params: {
         formatI18nTemplate(dnaCopy.waiverRegisteredTemplate, { ruleId: conflictRuleId }),
       );
     } catch (err: unknown) {
-      onFeedbackRef.current(
-        `⚠️ ${formatRfc9457ErrorToBanner(err, locale, dnaCopy.waiverErrorContext).fullText}`,
-      );
+      onFeedbackRef.current({
+        tone: "crimson",
+        message: formatRfc9457ErrorToBanner(err, locale, dnaCopy.waiverErrorContext).fullText,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -194,9 +197,10 @@ export function useWorkspaceDnaAndWaivers(params: {
       );
       onFeedbackRef.current(formatI18nTemplate(dnaCopy.compileSuccessTemplate, { ruleId }));
     } catch (err: unknown) {
-      onFeedbackRef.current(
-        `⚠️ ${formatRfc9457ErrorToBanner(err, locale, dnaCopy.compileErrorContext).fullText}`,
-      );
+      onFeedbackRef.current({
+        tone: "crimson",
+        message: formatRfc9457ErrorToBanner(err, locale, dnaCopy.compileErrorContext).fullText,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -216,9 +220,10 @@ export function useWorkspaceDnaAndWaivers(params: {
       );
       onFeedbackRef.current(dnaCopy.activateSuccessBanner);
     } catch (err: unknown) {
-      onFeedbackRef.current(
-        `⚠️ ${formatRfc9457ErrorToBanner(err, locale, dnaCopy.activateErrorContext).fullText}`,
-      );
+      onFeedbackRef.current({
+        tone: "crimson",
+        message: formatRfc9457ErrorToBanner(err, locale, dnaCopy.activateErrorContext).fullText,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -242,9 +247,10 @@ export function useWorkspaceDnaAndWaivers(params: {
         formatI18nTemplate(dnaCopy.candidatesApprovedTemplate, { count: candidateIds.length }),
       );
     } catch (err: unknown) {
-      onFeedbackRef.current(
-        `⚠️ ${formatRfc9457ErrorToBanner(err, locale, dnaCopy.governanceErrorContext).fullText}`,
-      );
+      onFeedbackRef.current({
+        tone: "crimson",
+        message: formatRfc9457ErrorToBanner(err, locale, dnaCopy.governanceErrorContext).fullText,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -264,9 +270,10 @@ export function useWorkspaceDnaAndWaivers(params: {
       onGlossaryMutatedRef.current?.();
       onFeedbackRef.current(dnaCopy.candidateRejectedBanner);
     } catch (err: unknown) {
-      onFeedbackRef.current(
-        `⚠️ ${formatRfc9457ErrorToBanner(err, locale, dnaCopy.governanceErrorContext).fullText}`,
-      );
+      onFeedbackRef.current({
+        tone: "crimson",
+        message: formatRfc9457ErrorToBanner(err, locale, dnaCopy.governanceErrorContext).fullText,
+      });
     } finally {
       setSubmitting(false);
     }

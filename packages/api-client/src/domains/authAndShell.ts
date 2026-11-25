@@ -15,6 +15,8 @@ import type {
   UserMeResponse,
   WorkspaceCreateRequest,
   WorkspaceCreateResponse,
+  WorkspacePatchRequest,
+  WorkspacePatchResponse,
   WorkspacesListResponse,
 } from "../generated/auth_and_org";
 import type {
@@ -111,6 +113,17 @@ export function createAuthAndShellDomainClient(requestJson: RequestJsonFn) {
       return requestJson<WorkspaceCreateResponse>(
         `/api/v1/workspaces${buildPersonaQuery(personaKey)}`,
         "POST",
+        payload,
+      );
+    },
+    patchWorkspace(
+      workspaceId: string,
+      payload: WorkspacePatchRequest,
+      personaKey?: string,
+    ): Promise<WorkspacePatchResponse> {
+      return requestJson<WorkspacePatchResponse>(
+        `/api/v1/workspaces/${encodeURIComponent(workspaceId)}${buildPersonaQuery(personaKey)}`,
+        "PATCH",
         payload,
       );
     },

@@ -23,14 +23,11 @@ import {
   type ConfiguredRbacGrant,
   type ConfiguredWorkflowItem,
 } from "./platformSetupStorageHelpers";
-import {
-  applyRegisterDatasource,
-  applyWorkspacePhaseUpdate,
-  applyWorkspaceVisibilityUpdate,
-  createWorkspaceViaServer,
-  type CreateWorkspaceInput,
-  type RegisterDatasourceInput,
+import type {
+  CreateWorkspaceInput,
+  RegisterDatasourceInput,
 } from "./platformSetupWorkspaces";
+export { createPlatformWorkspaceActions } from "./platformSetupWorkspaceActions";
 
 export interface PlatformSetupContextValue {
   readonly isInitialLoading: boolean;
@@ -165,122 +162,31 @@ export function appendPlatformSetupAuditEvent(params: {
   ];
 }
 
-export function createPlatformWorkspaceActions(params: {
-  readonly platformAdmin: ConfiguredPlatformAdmin | null;
-  readonly orgUnits: readonly ConfiguredOrgUnit[];
-  readonly workflows: readonly ConfiguredWorkflowItem[];
-  readonly workspaces: readonly ControlCenterWorkspaceGovItem[];
-  readonly datasources: readonly ControlCenterDatasourceItem[];
-  readonly setWorkspaces: (next: readonly ControlCenterWorkspaceGovItem[]) => void;
-  readonly setDatasources: (next: readonly ControlCenterDatasourceItem[]) => void;
-  readonly setAuditEvents: (next: readonly ConfiguredAuditEvent[]) => void;
-  readonly markMutated: () => void;
-  readonly appendAudit: (
-    eventType: string,
-    summary: string,
-    meta?: {
-      readonly scopeId?: string;
-      readonly scopePath?: string;
-      readonly scopeLabel?: string;
-    },
-  ) => readonly ConfiguredAuditEvent[];
-  readonly buildSnapshot: (
-    overrides: Partial<CachedPlatformSetupState>,
-  ) => CachedPlatformSetupState;
-  readonly persistSnapshotStrict: (next: CachedPlatformSetupState) => Promise<void>;
-}) {
-  const {
-    platformAdmin,
-    orgUnits,
-    workflows,
-    workspaces,
-    datasources,
-    setWorkspaces,
-    setDatasources,
-    setAuditEvents,
-    markMutated,
-    appendAudit,
-    buildSnapshot,
-    persistSnapshotStrict,
-  } = params;
-
-  const createWorkspace = async (
-    input: CreateWorkspaceInput,
-  ): Promise<ControlCenterWorkspaceGovItem> => {
-    markMutated();
-    const { workspace, auditEvent } = await createWorkspaceViaServer({
-      input,
-      orgUnits,
-      workflows,
-      platformAdmin,
-    });
-    const nextWorkspaces = [...workspaces, workspace];
-    const nextAudit = appendAudit(auditEvent.eventType, auditEvent.summary, {
-      scopeId: auditEvent.scopeId,
-      scopePath: auditEvent.scopePath,
-      scopeLabel: auditEvent.scopeLabel,
-    });
-    setWorkspaces(nextWorkspaces);
-    setAuditEvents(nextAudit);
-    await persistSnapshotStrict(
-      buildSnapshot({ workspaces: nextWorkspaces, auditEvents: nextAudit }),
-    );
-    return workspace;
+export function createSnapshotSliceSetters(
+  latestSnapshotRef: { current: CachedPlatformSetupState },
+  setSnapshot: (next: CachedPlatformSetupState) => void,
+) {
+  const updateSlice = <K extends keyof CachedPlatformSetupState>(
+    key: K,
+    value: CachedPlatformSetupState[K],
+  ) => {
+    const next = { ...latestSnapshotRef.current, [key]: value };
+    latestSnapshotRef.current = next;
+    setSnapshot(next);
   };
-
-  const updateWorkspacePhase = async (
-    workspaceId: string,
-    phase: ProductLifecyclePhaseType,
-  ): Promise<void> => {
-    markMutated();
-    const { nextWorkspaces, nextAudit } = applyWorkspacePhaseUpdate({
-      workspaces,
-      workspaceId,
-      phase,
-      appendAudit,
-    });
-    setWorkspaces(nextWorkspaces);
-    setAuditEvents(nextAudit);
-    await persistSnapshotStrict(
-      buildSnapshot({ workspaces: nextWorkspaces, auditEvents: nextAudit }),
-    );
-  };
-
-  const updateWorkspaceVisibility = async (
-    workspaceId: string,
-    visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER",
-  ): Promise<void> => {
-    markMutated();
-    const { nextWorkspaces, nextAudit } = applyWorkspaceVisibilityUpdate({
-      workspaces,
-      workspaceId,
-      visibilityMode,
-      appendAudit,
-    });
-    setWorkspaces(nextWorkspaces);
-    setAuditEvents(nextAudit);
-    await persistSnapshotStrict(
-      buildSnapshot({ workspaces: nextWorkspaces, auditEvents: nextAudit }),
-    );
-  };
-
-  const registerDatasource = async (input: RegisterDatasourceInput): Promise<void> => {
-    const { nextDatasources, nextAudit } = applyRegisterDatasource({
-      datasources,
-      input,
-      appendAudit,
-    });
-    setDatasources(nextDatasources);
-    setAuditEvents(nextAudit);
-    await persistSnapshotStrict(
-      buildSnapshot({ datasources: nextDatasources, auditEvents: nextAudit }),
-    );
-  };
-
   return {
-    createWorkspace,
-    updateWorkspacePhase,
-    updateWorkspaceVisibility,
-    registerDatasource,
+    setOrgUnits: (v: CachedPlatformSetupState["orgUnits"]) => updateSlice("orgUnits", v),
+    setRbacGrants: (v: CachedPlatformSetupState["rbacGrants"]) => updateSlice("rbacGrants", v),
+    setLlmTiers: (v: CachedPlatformSetupState["llmTiers"]) => updateSlice("llmTiers", v),
+    setWorkspaces: (v: CachedPlatformSetupState["workspaces"]) => updateSlice("workspaces", v),
+    setDatasources: (v: CachedPlatformSetupState["datasources"]) => updateSlice("datasources", v),
+    setPacks: (v: CachedPlatformSetupState["packs"]) => updateSlice("packs", v),
+    setWorkflows: (v: CachedPlatformSetupState["workflows"]) => updateSlice("workflows", v),
+    setRuns: (v: CachedPlatformSetupState["runs"]) => updateSlice("runs", v),
+    setCatalogItems: (v: CachedPlatformSetupState["catalogItems"]) =>
+      updateSlice("catalogItems", v),
+    setOntologyConcepts: (v: CachedPlatformSetupState["ontologyConcepts"]) =>
+      updateSlice("ontologyConcepts", v),
+    setAuditEvents: (v: CachedPlatformSetupState["auditEvents"]) => updateSlice("auditEvents", v),
   };
 }

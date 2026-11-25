@@ -278,6 +278,18 @@ PERMISSIONS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] 
             "The target identifier (Space or Agent) cannot be empty.",
         ),
     },
+    "ERR_PRIVATE_WORKSPACE_VISIBILITY_LOCKED": {
+        "fr": LocalizedErrorCopy(
+            "Visibilité d'espace personnel verrouillée",
+            "Un espace personnel privé (PRIVATE_USER) ne peut pas changer de visibilité sur "
+            "place ; créez un nouvel espace d'équipe si vous souhaitez partager.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Personal workspace visibility locked",
+            "A private personal workspace (PRIVATE_USER) cannot change visibility in place; "
+            "create a new team workspace if you wish to share.",
+        ),
+    },
 }
 
 __all__ = ["PERMISSIONS_ERROR_CATALOG"]

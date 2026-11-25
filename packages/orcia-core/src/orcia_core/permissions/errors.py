@@ -98,6 +98,14 @@ class C3WorkspaceRequiredError(OrciaDomainError):
     error_code, http_status, type_slug = "ERR_C3_WORKSPACE_REQUIRED", 403, "c3-workspace-required"
 
 
+class PrivateWorkspaceVisibilityLockedError(OrciaDomainError):
+    error_code, http_status, type_slug = (
+        "ERR_PRIVATE_WORKSPACE_VISIBILITY_LOCKED",
+        403,
+        "private-workspace-visibility-locked",
+    )
+
+
 class OrgUnitInvalidParentKindError(OrciaDomainError):
     error_code, http_status, type_slug = (
         "ERR_ORG_UNIT_INVALID_PARENT_KIND",
@@ -354,6 +362,7 @@ __all__ = [
     "PasswordUnchangedError",
     "PermissionBrokerDeniedError",
     "PreconditionRequiredError",
+    "PrivateWorkspaceVisibilityLockedError",
     "PrivilegeEscalationForbiddenError",
     "ReadSourceDeniedError",
     "ResourceNotFoundError",

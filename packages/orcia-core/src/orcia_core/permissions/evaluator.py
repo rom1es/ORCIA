@@ -122,6 +122,10 @@ class MatrixPermissionEvaluator:
         """Return all workspace membership records tracked by this evaluator."""
         return self._memberships
 
+    def replace_memberships(self, memberships: tuple[WorkspaceMembershipEntity, ...]) -> None:
+        """Replace all tracked memberships from an authoritative PG18 snapshot."""
+        self._memberships = memberships
+
     def has_org_unit(self, org_unit_id: str) -> bool:
         return org_unit_id in self._org_units_by_id
 
@@ -170,21 +174,27 @@ class MatrixPermissionEvaluator:
 
         for mem in self._memberships:
             if mem.workspace_id == workspace.id and mem.user_id == user.id:
-                return WorkspaceAccessSummary(
-                    workspace, mem.role, mem.access_mode, "DIRECT_TEAM", True
+                mem_mode: AccessMode = (
+                    "READ_ONLY_OBSERVER" if user.platform_role == "OBSERVER" else mem.access_mode
                 )
+                return WorkspaceAccessSummary(workspace, mem.role, mem_mode, "DIRECT_TEAM", True)
 
-        owner_node = self._org_units_by_id.get(workspace.owner_org_unit_id)
-        if workspace.owner_org_unit_id == user.primary_org_unit_id or (
-            owner_node is not None
-            and (_user_leads_node(user, owner_node) or _user_is_member_of_node(user, owner_node))
-        ):
-            mode: AccessMode = (
-                "READ_ONLY_OBSERVER"
-                if user.platform_role == "OBSERVER"
-                else "CONTRIBUTOR_ACTION_REQUIRED"
-            )
-            return WorkspaceAccessSummary(workspace, user.platform_role, mode, "DIRECT_TEAM", True)
+        if workspace.visibility_mode != "CONFIDENTIAL_RESTRICTED":
+            owner_node = self._org_units_by_id.get(workspace.owner_org_unit_id)
+            if workspace.owner_org_unit_id == user.primary_org_unit_id or (
+                owner_node is not None
+                and (
+                    _user_leads_node(user, owner_node) or _user_is_member_of_node(user, owner_node)
+                )
+            ):
+                mode: AccessMode = (
+                    "READ_ONLY_OBSERVER"
+                    if user.platform_role == "OBSERVER"
+                    else "CONTRIBUTOR_ACTION_REQUIRED"
+                )
+                return WorkspaceAccessSummary(
+                    workspace, user.platform_role, mode, "DIRECT_TEAM", True
+                )
 
         for mem in self._memberships:
             if (

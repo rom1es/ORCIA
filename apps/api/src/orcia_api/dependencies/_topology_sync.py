@@ -8,7 +8,8 @@ from typing import cast
 import sqlalchemy as sa
 from fastapi import Request
 
-from orcia_api.dependencies._core_providers import get_configured_db_engine
+from orcia_api.dependencies._core_providers import get_configured_db_engine, is_pg_runtime_active
+from orcia_core.kernel.errors import TransientInfraError
 from orcia_core.observability.logging import get_logger
 from orcia_core.permissions.models import (
     AccessMode,
@@ -37,11 +38,11 @@ async def sync_evaluator_topology_from_pg(
     engine = get_configured_db_engine(request)
     if engine is None:
         return
+    from orcia_api.dependencies.core_and_lifespan import should_seed_test_personas_in_memory
+
+    authoritative_pg_only = not should_seed_test_personas_in_memory()
     try:
         async with engine.connect() as conn:
-            from orcia_api.dependencies.core_and_lifespan import should_seed_test_personas_in_memory
-
-            authoritative_pg_only = not should_seed_test_personas_in_memory()
             ou_rows = (
                 (
                     await conn.execute(
@@ -119,6 +120,10 @@ async def sync_evaluator_topology_from_pg(
                     if st_dict.get("personal_owner_user_id")
                     else None
                 )
+                raw_phase = str(st_dict.get("lifecycle_phase") or "BUILD").strip().upper()
+                lifecycle_phase = (
+                    raw_phase if raw_phase in ("BUILD", "RUN", "MIGRATION") else "BUILD"
+                )
                 db_vis = cast(WorkspaceVisibilityMode, str(w["visibility_mode"]))
                 existing = auth_svc.evaluator.get_workspace(ws_id)
                 ws_entity = WorkspaceEntity(
@@ -130,6 +135,7 @@ async def sync_evaluator_topology_from_pg(
                     datasources=existing.datasources if existing else (),
                     personal_owner_user_id=personal_owner,
                     ui_visibility_mode=ui_vis,
+                    lifecycle_phase=lifecycle_phase,
                 )
                 pg_workspaces.append(ws_entity)
                 if not authoritative_pg_only and (
@@ -139,6 +145,7 @@ async def sync_evaluator_topology_from_pg(
                     or existing.visibility_mode != db_vis
                     or existing.personal_owner_user_id != personal_owner
                     or existing.ui_visibility_mode != ui_vis
+                    or existing.lifecycle_phase != lifecycle_phase
                 ):
                     auth_svc.evaluator.upsert_workspace(ws_entity)
             if authoritative_pg_only:
@@ -156,27 +163,38 @@ async def sync_evaluator_topology_from_pg(
                 .mappings()
                 .all()
             )
+            pg_memberships: list[WorkspaceMembershipEntity] = []
             for m in mem_rows:
-                auth_svc.evaluator.upsert_membership(
-                    WorkspaceMembershipEntity(
-                        id=str(m["id"]),
-                        workspace_id=str(m["workspace_id"]),
-                        role=cast(PlatformRole, str(m["role"])),
-                        access_mode=cast(AccessMode, str(m["access_mode"])),
-                        user_id=str(m["user_id"]) if m["user_id"] else None,
-                        invited_org_unit_id=(
-                            str(m["invited_org_unit_id"]) if m["invited_org_unit_id"] else None
-                        ),
-                    )
+                mem_entity = WorkspaceMembershipEntity(
+                    id=str(m["id"]),
+                    workspace_id=str(m["workspace_id"]),
+                    role=cast(PlatformRole, str(m["role"])),
+                    access_mode=cast(AccessMode, str(m["access_mode"])),
+                    user_id=str(m["user_id"]) if m["user_id"] else None,
+                    invited_org_unit_id=(
+                        str(m["invited_org_unit_id"]) if m["invited_org_unit_id"] else None
+                    ),
                 )
+                pg_memberships.append(mem_entity)
+                if not authoritative_pg_only:
+                    auth_svc.evaluator.upsert_membership(mem_entity)
+            if authoritative_pg_only:
+                auth_svc.evaluator.replace_memberships(tuple(pg_memberships))
         if req_state is not None:
             req_state._orcia_topology_synced = True
     except Exception as exc:
-        logger.warning(
-            "finops_sync_evaluator_topology_fallback",
+        logger.error(
+            "finops_sync_evaluator_topology_failed",
             error_type=type(exc).__name__,
             detail=str(exc),
+            authoritative_pg_only=authoritative_pg_only,
         )
+        if authoritative_pg_only or is_pg_runtime_active():
+            path = str(getattr(getattr(request, "url", None), "path", "/"))
+            raise TransientInfraError(
+                detail_code="ERR_ORG_PG_UNAVAILABLE_TOPOLOGY",
+                instance=path,
+            ) from exc
         return
 
 

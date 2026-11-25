@@ -56,14 +56,17 @@ async def _validate_dna_workspace_access(
         enforce_observer_headers_guard(request, user)
     auth_svc = get_auth_service(request)
     await sync_evaluator_topology_from_pg(request, auth_svc)
-    if user.platform_role != "PLATFORM_ADMIN":
+    ws = auth_svc.evaluator.get_workspace(str(workspace_id))
+    if ws is None:
+        await sync_evaluator_topology_from_pg(request, auth_svc, force=True)
         ws = auth_svc.evaluator.get_workspace(str(workspace_id))
-        if ws is not None:
-            access = auth_svc.evaluator.resolve_workspace_access(user, ws.id)
-            if access is None:
-                raise ScopeAccessDeniedError(instance=str(request.url.path))
-            if require_write and access.access_mode == "READ_ONLY_OBSERVER":
-                raise ObserverModeReadOnlyError(instance=str(request.url.path))
+    if ws is None:
+        raise ScopeAccessDeniedError(instance=str(request.url.path))
+    access = auth_svc.evaluator.resolve_workspace_access(user, ws.id)
+    if access is None:
+        raise ScopeAccessDeniedError(instance=str(request.url.path))
+    if require_write and access.access_mode == "READ_ONLY_OBSERVER":
+        raise ObserverModeReadOnlyError(instance=str(request.url.path))
 
 
 def _to_candidate_schema(item: GlossaryCandidateItem) -> GlossaryCandidateSchema:

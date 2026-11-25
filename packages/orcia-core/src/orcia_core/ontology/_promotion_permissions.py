@@ -10,7 +10,12 @@ from orcia_core.ontology.errors import (
     ScopeAccessDeniedError,
 )
 from orcia_core.ontology.models import OntologyLevel
-from orcia_core.permissions.models import OrgUnitNode, UserIdentity, WorkspaceEntity
+from orcia_core.permissions.models import (
+    OrgUnitNode,
+    UserIdentity,
+    WorkspaceEntity,
+    WorkspaceMembershipEntity,
+)
 
 
 def resolve_next_promotion_target(
@@ -94,27 +99,58 @@ def resolve_next_promotion_target(
     return canonical_level, canonical_scope_id
 
 
+def _has_confidential_workspace_access(
+    user: UserIdentity,
+    ws: WorkspaceEntity,
+    memberships: Sequence[WorkspaceMembershipEntity],
+) -> bool:
+    from orcia_core.ontology.permissions import _find_ws_membership, _is_personal_workspace
+
+    if _is_personal_workspace(ws):
+        return ws.personal_owner_user_id is not None and str(ws.personal_owner_user_id) == str(
+            user.id
+        )
+    if ws.visibility_mode == "CONFIDENTIAL_RESTRICTED":
+        mem = _find_ws_membership(user, ws, memberships)
+        return (
+            mem is not None and mem.access_mode != "READ_ONLY_OBSERVER" and mem.role != "OBSERVER"
+        )
+    return True
+
+
 def can_review_promotion_target(
     user: UserIdentity,
     target_level: OntologyLevel,
     target_scope_id: str,
     org_units: Sequence[OrgUnitNode],
     workspaces: Sequence[WorkspaceEntity] = (),
+    memberships: Sequence[WorkspaceMembershipEntity] = (),
+    *,
+    source_scope_id: str | None = None,
 ) -> bool:
     """Return True when `user` is authorized to approve/reject a promotion to `target_level`."""
     from orcia_core.ontology.permissions import (
         can_write_ontology_level,
+        find_workspace,
         is_observer_user,
         user_effective_roles,
     )
 
     if is_observer_user(user):
         return False
+    for scope_id in (target_scope_id, source_scope_id):
+        if not scope_id:
+            continue
+        ws = find_workspace(workspaces, scope_id)
+        if ws is not None and not _has_confidential_workspace_access(user, ws, memberships):
+            return False
     if "PLATFORM_ADMIN" in user_effective_roles(user):
         return True
     if target_level == "1_ENTERPRISE":
         return False
-    return can_write_ontology_level(user, target_level, target_scope_id, org_units, workspaces)
+    return can_write_ontology_level(
+        user, target_level, target_scope_id, org_units, workspaces, memberships
+    )
 
 
 def assert_can_review_promotion(
@@ -123,7 +159,9 @@ def assert_can_review_promotion(
     target_scope_id: str,
     org_units: Sequence[OrgUnitNode],
     workspaces: Sequence[WorkspaceEntity] = (),
+    memberships: Sequence[WorkspaceMembershipEntity] = (),
     *,
+    source_scope_id: str | None = None,
     instance: str = "/api/v1/ontology-rag/ontology/promotions",
 ) -> None:
     """Enforce target-level review governance (`ONTOLOGY_LEAD` on BU L2, `PLATFORM_ADMIN` on L1)."""
@@ -131,7 +169,15 @@ def assert_can_review_promotion(
 
     if is_observer_user(user):
         raise ObserverModeReadOnlyError(instance=instance)
-    if not can_review_promotion_target(user, target_level, target_scope_id, org_units, workspaces):
+    if not can_review_promotion_target(
+        user,
+        target_level,
+        target_scope_id,
+        org_units,
+        workspaces,
+        memberships,
+        source_scope_id=source_scope_id,
+    ):
         raise ScopeAccessDeniedError(
             instance=instance,
             detail_code="ERR_ONTOLOGY_VALIDATION_DENIED",

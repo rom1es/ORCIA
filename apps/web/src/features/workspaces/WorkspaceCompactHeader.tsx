@@ -17,6 +17,7 @@ import {
   resolveWorkspacePhaseLabel,
   resolveWorkspaceVisibilityMeta,
 } from "./workspaceDisplayHelpers";
+import type { WorkspaceFeedbackInput } from "./workspaceFeedbackTypes";
 
 export interface WorkspaceCompactHeaderProps {
   readonly isFr: boolean;
@@ -36,7 +37,7 @@ export interface WorkspaceCompactHeaderProps {
     visibilityMode: WorkspaceVisibilityMode,
   ) => void | Promise<void>;
   readonly onMarkAutosaved: (workspaceId: string) => void;
-  readonly onFeedback: (message: string) => void;
+  readonly onFeedback: (feedback: WorkspaceFeedbackInput) => void;
 }
 
 const selectStyle: React.CSSProperties = {
@@ -82,9 +83,10 @@ export function WorkspaceCompactHeader({
     void Promise.resolve(onUpdateWorkspacePhase(activeWorkspace.workspaceId, nextPhase))
       .then(() => onMarkAutosaved(activeWorkspace.workspaceId))
       .catch((err: unknown) => {
-        onFeedback(
-          `⚠️ ${formatRfc9457ErrorToBanner(err, resolvedLocale, cardCopy.phaseErrorContext).fullText}`,
-        );
+        onFeedback({
+          tone: "crimson",
+          message: formatRfc9457ErrorToBanner(err, resolvedLocale, cardCopy.phaseErrorContext).fullText,
+        });
       });
   };
 
@@ -97,12 +99,18 @@ export function WorkspaceCompactHeader({
       .then(() => {
         onMarkAutosaved(activeWorkspace.workspaceId);
         if (successTemplate) {
-          onFeedback(formatI18nTemplate(successTemplate, { name: activeWorkspace.name }));
+          onFeedback({
+            tone: "emerald",
+            message: formatI18nTemplate(successTemplate, { name: activeWorkspace.name }),
+          });
         }
       })
       .catch((err: unknown) => {
         const ctx = successTemplate ? cardCopy.shareErrorContext : cardCopy.visibilityErrorContext;
-        onFeedback(`⚠️ ${formatRfc9457ErrorToBanner(err, resolvedLocale, ctx).fullText}`);
+        onFeedback({
+          tone: "crimson",
+          message: formatRfc9457ErrorToBanner(err, resolvedLocale, ctx).fullText,
+        });
       });
   };
 

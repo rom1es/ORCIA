@@ -389,8 +389,21 @@ async def test_load_federated_search_candidates_pg18_visibility_branches() -> No
     by_id = {c.item_id: c for c in candidates}
     assert "OBSERVER" not in by_id["pg-catalog:res-draft"].allowed_roles
     assert by_id["pg-workspace:ws-priv"].allowed_roles == ("CONTRIBUTOR",)
-    assert by_id["pg-workspace:ws-conf"].allowed_roles == ("CONTRIBUTOR", "PLATFORM_ADMIN")
+    assert by_id["pg-workspace:ws-conf"].allowed_roles == ("CONTRIBUTOR",)
     assert by_id["pg-folder:f-open"].allowed_roles == ("CONTRIBUTOR",)
+
+    # Non-member PLATFORM_ADMIN sees zero CONFIDENTIAL_RESTRICTED workspace candidates
+    admin_no_member_conn = _FakeAsyncConnection(
+        {
+            "workspaces": [],
+        }
+    )
+    admin_cands = await load_federated_search_candidates_pg18(  # type: ignore[arg-type]
+        admin_no_member_conn, user_id="admin-non-member", user_role="PLATFORM_ADMIN"
+    )
+    assert admin_cands == ()
+    ws_sqls = [sql for sql, _ in admin_no_member_conn.executed if "FROM workspaces" in sql]
+    assert ws_sqls and all(":is_admin" not in sql for sql in ws_sqls)
 
     # Without workspaces table, assistant_folders uses fallback WORKSPACE_OPEN clause
     no_ws_conn = _FakeAsyncConnection(

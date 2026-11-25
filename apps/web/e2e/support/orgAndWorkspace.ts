@@ -26,8 +26,12 @@ export async function createBuAndTeamViaUi(page: Page): Promise<void> {
   await createOrgUnit(page, "TEAM", "Equipe E2E", "team-e2e");
 }
 
-/** Create a Workspace attached to the team via `/spaces`. */
-export async function createWorkspaceViaUi(page: Page, name: string, slug: string) {
+/** Create a Workspace attached to the team via `/spaces` (`POST /api/v1/workspaces`). */
+export async function createWorkspaceViaUi(
+  page: Page,
+  name: string,
+  slug: string,
+): Promise<{ readonly id: string; readonly slug: string; readonly name: string }> {
   await page.goto("/spaces");
   const toggleBtn = page.getByTestId("toggle-create-workspace-form-btn");
   await expect(toggleBtn).toBeVisible({ timeout: 30000 });
@@ -38,20 +42,21 @@ export async function createWorkspaceViaUi(page: Page, name: string, slug: strin
   await expect(form).toBeVisible({ timeout: 15000 });
   await page.getByTestId("workspace-name-input").fill(name);
   await page.getByTestId("workspace-slug-input").fill(slug);
-  const [createRes, syncRes] = await Promise.all([
+  const [createRes] = await Promise.all([
     page.waitForResponse(
       (res) => res.url().includes("/api/v1/workspaces") && res.request().method() === "POST",
       { timeout: 15000 },
     ),
-    page.waitForResponse(
-      (res) =>
-        res.url().includes("/api/v1/bootstrap/platform-setup-state") &&
-        res.request().method() === "PUT",
-      { timeout: 15000 },
-    ),
     page.getByTestId("create-workspace-submit-btn").click(),
   ]);
-  expect(createRes.ok()).toBe(true);
-  expect(syncRes.ok()).toBe(true);
+  expect([200, 201]).toContain(createRes.status());
+  const created = (await createRes.json()) as { id?: string; slug?: string; name?: string };
+  expect(created.id).toBeTruthy();
+  await expect(form).toBeHidden({ timeout: 15000 });
   await expect(page.locator("main").getByText(name).first()).toBeVisible({ timeout: 15000 });
+  return {
+    id: created.id ?? "",
+    slug: created.slug ?? slug,
+    name: created.name ?? name,
+  };
 }

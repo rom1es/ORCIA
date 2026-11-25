@@ -7,12 +7,13 @@ import {
   resolveWorkspacePhaseLabel,
   resolveWorkspaceVisibilityMeta,
 } from "./workspaceDisplayHelpers";
+import type { WorkspaceFeedbackInput } from "./workspaceFeedbackTypes";
 
 export interface WorkspaceMembersAndSettingsTabProps {
   readonly isFr: boolean;
   readonly activeWorkspace: ControlCenterWorkspaceGovItem;
   readonly orgUnits: readonly ConfiguredOrgUnit[];
-  readonly onFeedback?: (message: string | null) => void;
+  readonly onFeedback?: (feedback: WorkspaceFeedbackInput) => void;
 }
 
 export function WorkspaceMembersAndSettingsTab({

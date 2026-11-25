@@ -467,34 +467,12 @@ async def test_story_23_5_federated_search_multi_user_isolation_postgres18(
             )
             assert r_ws_shared.status_code in (200, 201), r_ws_shared.text
 
-            r_ws_priv = await client.post(
-                "/api/v1/workspaces",
-                headers=admin_headers,
-                json={
-                    "name": "Espace Confidentiel AliceIsoXYZ",
-                    "slug": "ws-priv-alice-iso-235",
-                    "owner_org_unit_id": team_a_id,
-                    "visibility_mode": "PRIVATE_USER",
-                },
-            )
-            assert r_ws_priv.status_code in (200, 201), r_ws_priv.text
-
             async with engine.connect() as conn:
                 ws_alpha_id = str(
                     (
                         await conn.execute(
                             sa.text(
                                 "SELECT id::text FROM workspaces WHERE slug = 'ws-alpha-iso-235'"
-                            )
-                        )
-                    ).scalar_one()
-                )
-                ws_priv_alice_id = str(
-                    (
-                        await conn.execute(
-                            sa.text(
-                                "SELECT id::text FROM workspaces "
-                                "WHERE slug = 'ws-priv-alice-iso-235'"
                             )
                         )
                     ).scalar_one()
@@ -579,24 +557,35 @@ async def test_story_23_5_federated_search_multi_user_isolation_postgres18(
                     ).scalar_one()
                 )
 
-            # Grant User A explicit membership on PRIVATE_USER workspace only (never User B)
-            async with engine.begin() as conn:
-                await conn.execute(
-                    sa.text(
-                        """
-                        INSERT INTO workspace_memberships (
-                            id, workspace_id, user_id, role, access_mode
-                        ) VALUES (
-                            CAST(:id AS uuid),
-                            CAST(:wid AS uuid),
-                            CAST(:uid AS uuid),
-                            'CONTRIBUTOR',
-                            'CONTRIBUTOR_ACTION_REQUIRED'
-                        )
-                        """
-                    ),
-                    {"id": new_uuid7_str(), "wid": ws_priv_alice_id, "uid": user_a_id},
-                )
+            # User A creates her own PRIVATE_USER workspace (`personal_owner_user_id = user_a_id`)
+            r_ws_priv = await client.post(
+                "/api/v1/workspaces",
+                headers=headers_a,
+                json={
+                    "name": "Espace Confidentiel AliceIsoXYZ",
+                    "slug": "ws-priv-alice-iso-235",
+                    "owner_org_unit_id": team_a_id,
+                    "visibility_mode": "PRIVATE_USER",
+                },
+            )
+            assert r_ws_priv.status_code in (200, 201), r_ws_priv.text
+            assert r_ws_priv.json()["visibility_mode"] == "PRIVATE_USER"
+            ws_priv_alice_id = str(r_ws_priv.json()["id"])
+
+            async with engine.connect() as conn:
+                priv_settings = (
+                    await conn.execute(
+                        sa.text(
+                            "SELECT visibility_mode, settings_jsonb "
+                            "FROM workspaces WHERE id = CAST(:wid AS uuid)"
+                        ),
+                        {"wid": ws_priv_alice_id},
+                    )
+                ).first()
+            assert priv_settings is not None
+            assert priv_settings[0] == "CONFIDENTIAL_RESTRICTED"
+            assert priv_settings[1]["ui_visibility_mode"] == "PRIVATE_USER"
+            assert priv_settings[1]["personal_owner_user_id"] == user_a_id
 
             # User A creates a PRIVATE folder via real API in ws_alpha_id
             r_folder_a = await client.post(
@@ -710,5 +699,25 @@ async def test_story_23_5_federated_search_multi_user_isolation_postgres18(
             assert f"pg-folder:{folder_a_id}" not in b2_ids
             assert f"pg-workspace:{ws_priv_alice_id}" not in b2_ids
             assert not any("AliceIsoXYZ" in f"{h['title']} {h['snippet']}" for h in b2_json["hits"])
+
+            # Non-owner PLATFORM_ADMIN must also see 0 leaks from User A's PRIVATE_USER workspace
+            r_search_admin = await client.get(
+                "/api/v1/search",
+                headers=admin_headers,
+                params={
+                    "q": secret_query,
+                    "scope": "ALL_WORKSPACES",
+                    "workspace_id": ws_alpha_id,
+                    "include_speed2": "true",
+                },
+            )
+            assert r_search_admin.status_code == 200, r_search_admin.text
+            admin_ids = {h["item_id"] for h in r_search_admin.json()["hits"]}
+            assert f"pg-folder:{folder_a_id}" not in admin_ids
+            assert f"pg-workspace:{ws_priv_alice_id}" not in admin_ids
+            assert not any(
+                "AliceIsoXYZ" in f"{h['title']} {h['snippet']}"
+                for h in r_search_admin.json()["hits"]
+            )
     finally:
         await engine.dispose()

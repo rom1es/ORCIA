@@ -38,6 +38,7 @@ class WorkspaceCreationRecord:
     ui_visibility_mode: str
     lifecycle_phase: str
     finops_cost_usd: float
+    personal_owner_user_id: str | None = None
 
 
 def resolve_exact_workspace_slug(raw_slug: str | None, name: str) -> str:
@@ -72,7 +73,18 @@ async def create_workspace_on_postgres18(
         raise ValidationDomainError(detail_code="ERR_WORKSPACE_EMPTY_NAME")
     resolved_slug = resolve_exact_workspace_slug(slug, cleaned_name)
     ui_vis = (visibility_mode or "STANDARD").strip().upper()
-    db_vis = "CONFIDENTIAL_RESTRICTED" if ui_vis == "CONFIDENTIAL_RESTRICTED" else "STANDARD"
+    if ui_vis not in ("STANDARD", "CONFIDENTIAL_RESTRICTED", "PRIVATE_USER"):
+        ui_vis = "STANDARD"
+    db_vis = (
+        "CONFIDENTIAL_RESTRICTED"
+        if ui_vis in ("CONFIDENTIAL_RESTRICTED", "PRIVATE_USER")
+        else "STANDARD"
+    )
+    personal_owner = (
+        creator_user_id.strip()
+        if ui_vis == "PRIVATE_USER" and creator_user_id and creator_user_id.strip()
+        else None
+    )
     phase = (lifecycle_phase or "BUILD").strip().upper()
     if phase not in ("BUILD", "RUN", "MIGRATION"):
         phase = "BUILD"
@@ -124,6 +136,8 @@ async def create_workspace_on_postgres18(
             "owner_org_unit_id": str(resolved_owner_id),
             "owner_org_unit_name": resolved_owner_name,
         }
+        if personal_owner is not None:
+            settings_payload["personal_owner_user_id"] = personal_owner
         inserted = (
             await conn.execute(
                 sa.text(
@@ -158,6 +172,7 @@ async def create_workspace_on_postgres18(
             conn,
             persisted_ws_uuid=persisted_ws_uuid,
             creator_user_id=creator_user_id,
+            visibility_mode=db_vis,
         )
         await sync_workspace_to_platform_settings(
             conn,
@@ -168,6 +183,7 @@ async def create_workspace_on_postgres18(
             resolved_owner_id=resolved_owner_id,
             resolved_owner_name=resolved_owner_name,
             phase=phase,
+            personal_owner_user_id=personal_owner,
         )
 
     return WorkspaceCreationRecord(
@@ -180,6 +196,7 @@ async def create_workspace_on_postgres18(
         ui_visibility_mode=ui_vis,
         lifecycle_phase=phase,
         finops_cost_usd=0.0,
+        personal_owner_user_id=personal_owner,
     )
 
 

@@ -2122,26 +2122,28 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       expect(screen.getByTestId("workspaces-active-title").textContent).toBe("Mon Labo Perso");
     });
 
-    // 5. Test 1-click sharing of Private Workspace (UUIDv7) to Team ("STANDARD") + Phase auto-save with "✓ Enregistré" badge
-    fireEvent.click(screen.getByTestId(`share-private-workspace-btn-${ws1Id}`));
+    // 5. Phase auto-save with saved badge on ws1Id; PRIVATE_USER visibility remains locked
+    fireEvent.change(screen.getByTestId(`workspace-card-phase-select-${ws1Id}`), {
+      target: { value: "RUN" },
+    });
     await waitFor(() => {
-      expect(screen.getByTestId(`workspace-visibility-badge-${ws1Id}`).textContent).toContain(
-        "Équipe",
-      );
       expect(
         screen.getByTestId(`workspace-autosaved-badge-${ws1Id}`).querySelector("svg"),
       ).not.toBeNull();
       expect(screen.getByTestId(`workspace-autosaved-badge-${ws1Id}`).textContent).toContain(
         "Enregistré",
       );
+      expect(
+        (screen.getByTestId(`workspace-card-phase-select-${ws1Id}`) as HTMLSelectElement).value,
+      ).toBe("RUN");
     });
 
-    fireEvent.change(screen.getByTestId(`workspace-card-phase-select-${ws1Id}`), {
-      target: { value: "RUN" },
+    fireEvent.click(screen.getByTestId(`share-private-workspace-btn-${ws1Id}`));
+    await waitFor(() => {
+      expect(screen.getByTestId(`workspace-visibility-badge-${ws1Id}`).textContent).toContain(
+        "Personnel",
+      );
     });
-    expect(
-      (screen.getByTestId(`workspace-card-phase-select-${ws1Id}`) as HTMLSelectElement).value,
-    ).toBe("RUN");
 
     // 6. Test Unified 5-Tab Workspace Container for active workspace ("Mon Labo Perso", UUIDv7)
     expect(screen.queryByTestId("workspace-detail-tabs-panel")).toBeNull();
@@ -2239,7 +2241,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     );
 
     expect(screen.getByTestId(`workspace-visibility-badge-${ws1Id}`).textContent).toContain(
-      "Équipe",
+      "Personnel",
     );
     fireEvent.click(screen.getByTestId("workspace-tab-DOCUMENTS_SOURCES"));
     await waitFor(() => {

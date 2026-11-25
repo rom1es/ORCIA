@@ -275,8 +275,31 @@ def test_external_edit_rebaser_verrou_v2_and_pilot_workflow_verrou_v3() -> None:
 
 def test_story_11_1_fastapi_endpoints() -> None:
     """Verify Story 11.1 FastAPI endpoints and RFC 9457 Problem Details error codes."""
-    client = TestClient(create_app())
+    from orcia_core.permissions.models import WorkspaceEntity, WorkspaceMembershipEntity
+
+    app = create_app()
     ws_id = str(uuid4())
+    auth_svc = app.state.auth_service
+    auth_svc.evaluator.upsert_workspace(
+        WorkspaceEntity(
+            id=ws_id,
+            slug="claims-core",
+            name="Claims Core",
+            owner_org_unit_id="0192c4e0-0000-7000-8000-000000000101",
+            visibility_mode="STANDARD",
+        )
+    )
+    claire = auth_svc.resolve_user(persona_key="claire")
+    auth_svc.evaluator.upsert_membership(
+        WorkspaceMembershipEntity(
+            id=str(uuid4()),
+            workspace_id=ws_id,
+            role="BU_DIRECTOR",
+            access_mode="CONTRIBUTOR_ACTION_REQUIRED",
+            user_id=claire.id,
+        )
+    )
+    client = TestClient(app)
 
     resp_tabs = client.get(
         f"/api/v1/workspaces/{ws_id}/five-tabs",

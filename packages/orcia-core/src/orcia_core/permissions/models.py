@@ -112,6 +112,7 @@ class WorkspaceEntity:
     datasources: tuple[WorkspaceDatasourceEntity, ...] = field(default_factory=tuple)
     personal_owner_user_id: str | None = None
     ui_visibility_mode: str | None = None
+    lifecycle_phase: str = "BUILD"
 
 
 @dataclass(frozen=True, slots=True)

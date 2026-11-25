@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 
 from orcia_core.rag._rag_locales import get_rag_locale_bundle
 from orcia_core.rag._two_speed_search_models import (
@@ -24,6 +24,9 @@ def prepare_authorized_and_speed1_hits(
     active_screen_route: str,
     user_role: str,
     extra_candidates: Sequence[FederatedSearchCandidate],
+    user_id: str = "",
+    authorized_workspace_ids: Collection[str] | None = None,
+    restricted_workspace_ids: Collection[str] | None = None,
 ) -> tuple[
     str,
     list[str],
@@ -43,10 +46,31 @@ def prepare_authorized_and_speed1_hits(
 
     clean_ws = active_workspace_id.strip()
     is_global_or_empty_ws = not clean_ws or clean_ws in ("scope-global", "GLOBAL")
+    auth_ws_set = (
+        frozenset(authorized_workspace_ids) if authorized_workspace_ids is not None else None
+    )
+    restricted_ws_set = (
+        frozenset(restricted_workspace_ids) if restricted_workspace_ids is not None else frozenset()
+    )
     authorized: list[FederatedSearchCandidate] = []
     for cand in merged_candidates:
         if user_role not in cand.allowed_roles:
             continue
+        if cand.allowed_user_ids is not None and user_id not in cand.allowed_user_ids:
+            continue
+        if cand.workspace_id not in ("", "GLOBAL", "scope-global"):
+            is_restricted_ws = cand.workspace_id in restricted_ws_set or cand.visibility_mode in (
+                "CONFIDENTIAL_RESTRICTED",
+                "PRIVATE_USER",
+            )
+            if is_restricted_ws and (auth_ws_set is None or cand.workspace_id not in auth_ws_set):
+                continue
+            if (
+                restricted_workspace_ids is None
+                and auth_ws_set is not None
+                and cand.workspace_id not in auth_ws_set
+            ):
+                continue
         cand_matches_ws = cand.workspace_id in (clean_ws, "GLOBAL")
         if scope == "SCREEN" and (
             (not is_global_or_empty_ws and not cand_matches_ws)

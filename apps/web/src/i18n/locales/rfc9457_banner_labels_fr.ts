@@ -83,6 +83,12 @@ export const RFC9457_BANNER_FR_LABELS: Rfc9457BannerDictionary = {
       remediation:
         "Saisissez un autre identifiant unique ou laissez le champ vide pour en générer un automatiquement.",
     },
+    ERR_PRIVATE_WORKSPACE_VISIBILITY_LOCKED: {
+      title: "Visibilité d'espace personnel verrouillée",
+      message:
+        "Un espace personnel privé ne peut pas être converti en espace d'équipe sur place.",
+      remediation: "Créez un nouvel espace collectif si vous souhaitez partager avec l'équipe.",
+    },
   },
   statusFallbacks: {
     401: {

@@ -286,7 +286,9 @@ async def sync_relational_tables_on_postgres18(
             slug = normalize_setup_slug(raw_slug, f"ws-{idx + 1}")
         vis_raw = str(ws.get("visibilityMode") or "STANDARD").upper()
         visibility_mode = (
-            "CONFIDENTIAL_RESTRICTED" if vis_raw == "CONFIDENTIAL_RESTRICTED" else "STANDARD"
+            "CONFIDENTIAL_RESTRICTED"
+            if vis_raw in ("CONFIDENTIAL_RESTRICTED", "PRIVATE_USER")
+            else "STANDARD"
         )
         phase = str(ws.get("lifecyclePhase") or "BUILD").upper()
         owner_ref = str(ws.get("ownerOrgUnitId") or "").strip()
@@ -338,37 +340,43 @@ async def sync_relational_tables_on_postgres18(
         )
         active_ws_uuids.append(persisted_ws_uuid)
 
-        admin_rows = (
-            await conn.execute(
-                sa.text(
-                    "SELECT id FROM users "
-                    "WHERE platform_role = 'PLATFORM_ADMIN' AND is_active = TRUE"
+        if visibility_mode == "STANDARD" and vis_raw == "STANDARD":
+            admin_rows = (
+                await conn.execute(
+                    sa.text(
+                        "SELECT id FROM users "
+                        "WHERE platform_role = 'PLATFORM_ADMIN' AND is_active = TRUE"
+                    )
                 )
-            )
-        ).fetchall()
-        for admin_row in admin_rows:
-            if not admin_row or admin_row[0] is None:
-                continue
-            admin_user_uuid = UUID(str(admin_row[0]))
-            await conn.execute(
-                sa.text(
-                    """
-                    INSERT INTO workspace_memberships (
-                        id, workspace_id, user_id, role, access_mode
-                    )
-                    SELECT :id, :ws_id, :user_id, 'PLATFORM_ADMIN', 'CONTRIBUTOR_ACTION_REQUIRED'
-                    WHERE NOT EXISTS (
-                        SELECT 1 FROM workspace_memberships
-                        WHERE workspace_id = :ws_id AND user_id = :user_id
-                    )
-                    """
-                ),
-                {
-                    "id": UUID(str(uuid7())),
-                    "ws_id": persisted_ws_uuid,
-                    "user_id": admin_user_uuid,
-                },
-            )
+            ).fetchall()
+            for admin_row in admin_rows:
+                if not admin_row or admin_row[0] is None:
+                    continue
+                admin_user_uuid = UUID(str(admin_row[0]))
+                await conn.execute(
+                    sa.text(
+                        """
+                        INSERT INTO workspace_memberships (
+                            id, workspace_id, user_id, role, access_mode
+                        )
+                        SELECT
+                            :id, :ws_id, :user_id, 'PLATFORM_ADMIN', 'CONTRIBUTOR_ACTION_REQUIRED'
+                        WHERE EXISTS (
+                            SELECT 1 FROM workspaces w
+                            WHERE w.id = :ws_id AND w.visibility_mode = 'STANDARD'
+                        )
+                        AND NOT EXISTS (
+                            SELECT 1 FROM workspace_memberships
+                            WHERE workspace_id = :ws_id AND user_id = :user_id
+                        )
+                        """
+                    ),
+                    {
+                        "id": UUID(str(uuid7())),
+                        "ws_id": persisted_ws_uuid,
+                        "user_id": admin_user_uuid,
+                    },
+                )
 
     await _purge_removed_workspaces(conn, active_ws_uuids=active_ws_uuids)
 

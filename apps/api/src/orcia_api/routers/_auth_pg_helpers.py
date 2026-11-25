@@ -9,12 +9,16 @@ import asyncio
 import inspect
 import os
 from dataclasses import replace
-from typing import Literal
 
 from fastapi import Request, Response
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from orcia_api.schemas.auth_and_org import WorkspaceDatasourceItem, WorkspaceSummaryItem
+from orcia_api.routers._auth_bearer_rehydration import (
+    rehydrate_bearer_subject_from_pg_if_missing as rehydrate_bearer_subject_from_pg_if_missing,
+)
+from orcia_api.routers._workspace_summary_serializer import (
+    serialize_workspace_summary as serialize_workspace_summary,
+)
 from orcia_api.schemas.iam_password_models import ChangePasswordResponse
 from orcia_core.bootstrap import (
     LocalAuthCandidate,
@@ -27,11 +31,9 @@ from orcia_core.permissions import (
     AuthAndOrganizationService,
     SessionTokenPair,
     UserIdentity,
-    WorkspaceAccessSummary,
 )
 from orcia_core.permissions.errors import (
     InvalidCredentialsError,
-    OrciaDomainError,
     ResourceNotFoundError,
 )
 
@@ -154,59 +156,6 @@ async def sync_auth_service_user_by_email_from_pg(
         )
 
 
-async def rehydrate_bearer_subject_from_pg_if_missing(
-    request: Request,
-) -> AuthAndOrganizationService | None:
-    """ASGI/HTTP middleware hook rehydrating caller identity from PG 18 if RAM was cleared."""
-    auth_hdr = request.headers.get("Authorization")
-    if not auth_hdr:
-        return None
-    clean_hdr = auth_hdr.strip()
-    if not (clean_hdr.startswith("Bearer ") or clean_hdr.startswith("bearer ")):
-        return None
-
-    auth_svc: AuthAndOrganizationService | None = getattr(request.app.state, "auth_service", None)
-    if auth_svc is None:
-        return None
-
-    try:
-        claims = auth_svc.verify_access_token_claims(clean_hdr)
-    except OrciaDomainError:
-        return auth_svc
-    except Exception as exc:
-        logger.debug("auth_claims_verification_skipped", error_type=type(exc).__name__)
-        return auth_svc
-
-    if auth_svc.has_user_in_memory(claims.sub):
-        request.state.hydrated_auth_service = auth_svc
-        return auth_svc
-
-    engine = resolve_app_db_engine(request)
-    hydrated_user: UserIdentity | None = None
-    if engine is not None:
-        try:
-            hydrated_user = await rehydrate_user_from_pg_by_id(
-                engine, auth_svc, claims.sub, auth_mode=claims.auth_mode
-            )
-        except Exception as exc:
-            get_logger("orcia.api.auth").warning(
-                "rehydrate_bearer_subject_from_pg_failed",
-                sub=claims.sub,
-                error_type=type(exc).__name__,
-            )
-
-    current_svc: AuthAndOrganizationService | None = getattr(
-        request.app.state, "auth_service", None
-    )
-    active_svc = current_svc or auth_svc
-    if hydrated_user is not None:
-        if current_svc is not None and current_svc is not auth_svc:
-            current_svc.register_user(hydrated_user)
-        request.state.resolved_bearer_user = hydrated_user
-    request.state.hydrated_auth_service = active_svc
-    return active_svc
-
-
 async def authenticate_via_postgres18(
     engine: AsyncEngine,
     email: str,
@@ -311,42 +260,6 @@ async def execute_change_password(
         trace_id=trace_id,
         svc=svc,
         engine=engine,
-    )
-
-
-def serialize_workspace_summary(item: WorkspaceAccessSummary) -> WorkspaceSummaryItem:
-    """Convert domain `WorkspaceAccessSummary` into Pydantic `WorkspaceSummaryItem`."""
-    ws = item.workspace
-    is_personal = bool(ws.personal_owner_user_id is not None)
-    effective_visibility: Literal["STANDARD", "CONFIDENTIAL_RESTRICTED", "PRIVATE_USER"] = (
-        "PRIVATE_USER"
-        if ws.ui_visibility_mode == "PRIVATE_USER" or is_personal
-        else ws.visibility_mode
-    )
-    return WorkspaceSummaryItem(
-        id=ws.id,
-        slug=ws.slug,
-        name=ws.name,
-        owner_org_unit_id=ws.owner_org_unit_id,
-        visibility_mode=effective_visibility,
-        is_personal=is_personal,
-        effective_role=item.effective_role,
-        access_mode=item.access_mode,
-        access_origin=item.access_origin,
-        finops_cost_usd=ws.finops_cost_usd if item.finops_visible else None,
-        datasources=[
-            WorkspaceDatasourceItem(
-                id=ds.id,
-                workspace_id=ds.workspace_id,
-                alias=ds.alias,
-                scheme=ds.scheme,
-                uri=ds.uri,
-                role=ds.role,
-                execution_identity=ds.execution_identity,
-                freshness_ttl_days=ds.freshness_ttl_days,
-            )
-            for ds in ws.datasources
-        ],
     )
 
 

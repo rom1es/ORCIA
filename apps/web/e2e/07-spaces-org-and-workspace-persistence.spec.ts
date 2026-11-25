@@ -26,13 +26,17 @@ test.describe("TEST-05 · 07 — My Spaces: organization, workspace and real F5"
     await expect
       .poll(
         async () => {
-          const res = await apiGet<{ org_units: unknown[]; workspaces: unknown[] }>(
-            page,
-            "/api/v1/bootstrap/platform-setup-state",
-            { token: adminToken },
-          );
-          const body = await res.json();
-          return { orgUnits: body.org_units.length, workspaces: body.workspaces.length };
+          const [orgRes, wsRes] = await Promise.all([
+            apiGet<{ org_units: unknown[] }>(page, "/api/v1/org-units", { token: adminToken }),
+            apiGet<{ workspaces: Array<{ is_personal?: boolean }> }>(page, "/api/v1/workspaces", {
+              token: adminToken,
+            }),
+          ]);
+          if (!orgRes.ok() || !wsRes.ok()) return { orgUnits: -1, workspaces: -1 };
+          const orgBody = await orgRes.json();
+          const wsBody = await wsRes.json();
+          const nonPersonalCount = (wsBody.workspaces ?? []).filter((w) => !w.is_personal).length;
+          return { orgUnits: orgBody.org_units.length, workspaces: nonPersonalCount };
         },
         { timeout: 20000 },
       )

@@ -8,6 +8,7 @@ import type {
   UiInferenceTier,
   UiOntologyConceptView,
 } from "@orcia/ui";
+import type { SupportedWebLocale } from "../i18n";
 import { ClientCodedError } from "../lib/clientErrorCodes";
 import { resolveWebApiBaseUrl } from "../stores/authSessionStore";
 import {
@@ -59,8 +60,12 @@ export async function fetchAndBuildHydrationOutcome(params: {
   readonly currentAdmin: ConfiguredPlatformAdmin | null;
   readonly isAuthenticated: boolean;
   readonly currentUserEmail?: string | null;
+  readonly locale?: SupportedWebLocale;
 }): Promise<HydrationOutcome> {
-  const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
+  const client = createOrciaApiClient({
+    baseUrl: resolveWebApiBaseUrl(),
+    locale: params.locale ?? "fr",
+  });
   const status = await client.getAccostageStatus();
   const [setupSettled, orgUnitsSettled, iamGrantsSettled, workspacesSettled] =
     params.isAuthenticated

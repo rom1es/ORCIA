@@ -1,23 +1,36 @@
-import { createOrciaApiClient } from "@orcia/api-client";
+import { createOrciaApiClient, type WorkspacePatchResponse } from "@orcia/api-client";
 import type {
-  ControlCenterDatasourceItem,
   ControlCenterWorkspaceGovItem,
   ProductLifecyclePhaseType,
-  UiScopeNode,
 } from "@orcia/ui";
 import {
-  SHELL_AND_SEARCH_EN_LABELS,
-  SHELL_AND_SEARCH_FR_LABELS,
-} from "../i18n/locales/shell_and_search_labels";
+  DICTIONARIES,
+  formatI18nTemplate,
+  type SupportedWebLocale,
+} from "../i18n";
 import { ClientCodedError } from "../lib/clientErrorCodes";
 import { resolveWebApiBaseUrl } from "../stores/authSessionStore";
 import {
-  formatHumanReadableScopePath,
-  type ConfiguredAuditEvent,
-  type ConfiguredOrgUnit,
-  type ConfiguredPlatformAdmin,
-  type ConfiguredWorkflowItem,
+  applyRegisterDatasource,
+  BASE_GLOBAL_SCOPE,
+  buildScopeNodes,
+  resolveGlobalScopeLabel,
+  type RegisterDatasourceInput,
+} from "./platformSetupScopeAndDatasources";
+import type {
+  ConfiguredAuditEvent,
+  ConfiguredOrgUnit,
+  ConfiguredPlatformAdmin,
+  ConfiguredWorkflowItem,
 } from "./platformSetupStorageHelpers";
+
+export {
+  applyRegisterDatasource,
+  BASE_GLOBAL_SCOPE,
+  buildScopeNodes,
+  resolveGlobalScopeLabel,
+  type RegisterDatasourceInput,
+};
 
 export interface CreateWorkspaceInput {
   readonly name: string;
@@ -27,28 +40,8 @@ export interface CreateWorkspaceInput {
   readonly ownerOrgUnitId?: string;
 }
 
-export interface RegisterDatasourceInput {
-  readonly workspaceName: string;
-  readonly alias: string;
-  readonly scheme: "git" | "confluence" | "jira" | "db";
-  readonly uri: string;
-  readonly executionIdentity: "passthrough" | "service_account";
-  readonly freshnessTtlDays: number;
-}
-
-export function resolveGlobalScopeLabel(useFrench = true): string {
-  const section = useFrench ? SHELL_AND_SEARCH_FR_LABELS : SHELL_AND_SEARCH_EN_LABELS;
-  return section.fourZoneShell.doubleSelector?.globalPlatformLabel ?? "ORCIA";
-}
-
-export const BASE_GLOBAL_SCOPE: UiScopeNode = {
-  id: "scope-global",
-  level: "GLOBAL",
-  name: resolveGlobalScopeLabel(true),
-  accessMode: "CONTRIBUTOR_ACTION_REQUIRED",
-};
-
 export async function createWorkspaceViaServer(params: {
+  readonly locale?: SupportedWebLocale;
   readonly input: CreateWorkspaceInput;
   readonly orgUnits: readonly ConfiguredOrgUnit[];
   readonly workflows: readonly ConfiguredWorkflowItem[];
@@ -63,16 +56,21 @@ export async function createWorkspaceViaServer(params: {
     readonly scopeLabel: string;
   };
 }> {
-  const { input, orgUnits, workflows, platformAdmin } = params;
+  const { locale = "fr", input, orgUnits, workflows, platformAdmin } = params;
+  const dict = DICTIONARIES[locale];
+  const copy = dict.shellChrome.platformSetupGovernance;
   const teamUnits = orgUnits.filter((u) => u.level === "TEAM");
   const resolvedOwnerUnit =
     orgUnits.find((u) => u.id === input.ownerOrgUnitId) ??
     teamUnits[0] ??
     orgUnits[orgUnits.length - 1];
   const ownerOrgUnitId = resolvedOwnerUnit?.id;
-  const fallbackOwnerName = resolvedOwnerUnit?.name ?? resolveGlobalScopeLabel(true);
+  const fallbackOwnerName =
+    resolvedOwnerUnit?.name ??
+    dict.fourZoneShell.doubleSelector?.globalPlatformLabel ??
+    copy.globalScopeLabel;
 
-  const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl() });
+  const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl(), locale });
   const created = await client.createWorkspace({
     name: input.name,
     slug: input.slug,
@@ -109,24 +107,46 @@ export async function createWorkspaceViaServer(params: {
 
   const modeLabel =
     input.visibilityMode === "PRIVATE_USER"
-      ? "Privé personnel"
+      ? copy.visibilityPrivatePersonalLabel
       : input.visibilityMode === "CONFIDENTIAL_RESTRICTED"
-        ? "Confidentiel"
-        : "Collectif d'équipe";
+        ? copy.visibilityConfidentialLabel
+        : copy.visibilityTeamCollectiveLabel;
 
   return {
     workspace: newWs,
     auditEvent: {
       eventType: "WorkspaceCreated",
-      summary: `Espace de travail "${newWs.name}" (${newWs.slug}, ${modeLabel}, facturé à ${effectiveOwnerName}) créé`,
+      summary: formatI18nTemplate(copy.workspaceCreatedAuditTemplate, {
+        name: newWs.name,
+        slug: newWs.slug ?? input.slug,
+        modeLabel,
+        ownerName: effectiveOwnerName,
+      }),
       scopeId: newWs.workspaceId,
       scopePath: newWs.slug ?? newWs.workspaceId,
-      scopeLabel: `Espace · ${newWs.name}`,
+      scopeLabel: formatI18nTemplate(copy.spaceScopePrefix, { name: newWs.name }),
     },
   };
 }
 
+export async function patchWorkspaceViaServer(params: {
+  readonly locale?: SupportedWebLocale;
+  readonly workspaceId: string;
+  readonly payload: {
+    readonly name?: string;
+    readonly visibility_mode?: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER";
+    readonly lifecycle_phase?: ProductLifecyclePhaseType;
+  };
+}): Promise<WorkspacePatchResponse> {
+  const client = createOrciaApiClient({
+    baseUrl: resolveWebApiBaseUrl(),
+    locale: params.locale ?? "fr",
+  });
+  return client.patchWorkspace(params.workspaceId, params.payload);
+}
+
 export function applyWorkspacePhaseUpdate(params: {
+  readonly locale?: SupportedWebLocale;
   readonly workspaces: readonly ControlCenterWorkspaceGovItem[];
   readonly workspaceId: string;
   readonly phase: ProductLifecyclePhaseType;
@@ -139,24 +159,27 @@ export function applyWorkspacePhaseUpdate(params: {
   readonly nextWorkspaces: readonly ControlCenterWorkspaceGovItem[];
   readonly nextAudit: readonly ConfiguredAuditEvent[];
 } {
-  const { workspaces, workspaceId, phase, appendAudit } = params;
+  const { locale = "fr", workspaces, workspaceId, phase, appendAudit } = params;
+  const copy = DICTIONARIES[locale].shellChrome.platformSetupGovernance;
   const targetWs = workspaces.find((w) => w.workspaceId === workspaceId);
+  const wsName = targetWs?.name ?? workspaceId;
   const nextWorkspaces = workspaces.map((ws) =>
     ws.workspaceId === workspaceId ? { ...ws, lifecyclePhase: phase } : ws,
   );
   const nextAudit = appendAudit(
     "WorkspacePhaseUpdated",
-    `Espace "${targetWs?.name ?? workspaceId}" passé en phase ${phase}`,
+    formatI18nTemplate(copy.workspacePhaseUpdatedAuditTemplate, { name: wsName, phase }),
     {
       scopeId: workspaceId,
       scopePath: targetWs?.slug ?? targetWs?.name ?? workspaceId,
-      scopeLabel: `Espace · ${targetWs?.name ?? workspaceId}`,
+      scopeLabel: formatI18nTemplate(copy.spaceScopePrefix, { name: wsName }),
     },
   );
   return { nextWorkspaces, nextAudit };
 }
 
 export function applyWorkspaceVisibilityUpdate(params: {
+  readonly locale?: SupportedWebLocale;
   readonly workspaces: readonly ControlCenterWorkspaceGovItem[];
   readonly workspaceId: string;
   readonly visibilityMode: "STANDARD" | "CONFIDENTIAL_RESTRICTED" | "PRIVATE_USER";
@@ -169,90 +192,30 @@ export function applyWorkspaceVisibilityUpdate(params: {
   readonly nextWorkspaces: readonly ControlCenterWorkspaceGovItem[];
   readonly nextAudit: readonly ConfiguredAuditEvent[];
 } {
-  const { workspaces, workspaceId, visibilityMode, appendAudit } = params;
+  const { locale = "fr", workspaces, workspaceId, visibilityMode, appendAudit } = params;
+  const copy = DICTIONARIES[locale].shellChrome.platformSetupGovernance;
   const targetWs = workspaces.find((w) => w.workspaceId === workspaceId);
+  const wsName = targetWs?.name ?? workspaceId;
   const nextWorkspaces = workspaces.map((ws) =>
     ws.workspaceId === workspaceId ? { ...ws, visibilityMode } : ws,
   );
   const modeLabel =
     visibilityMode === "PRIVATE_USER"
-      ? "Privé personnel"
+      ? copy.visibilityPrivatePersonalLabel
       : visibilityMode === "CONFIDENTIAL_RESTRICTED"
-        ? "Confidentiel isolé"
-        : "Collectif d'équipe";
+        ? copy.visibilityConfidentialIsolatedLabel
+        : copy.visibilityTeamCollectiveLabel;
   const nextAudit = appendAudit(
     "SettingsChanged",
-    `Visibilité de l'Espace "${targetWs?.name ?? workspaceId}" mise à jour : ${modeLabel}`,
+    formatI18nTemplate(copy.workspaceVisibilityUpdatedAuditTemplate, {
+      name: wsName,
+      modeLabel,
+    }),
     {
       scopeId: workspaceId,
       scopePath: targetWs?.slug ?? targetWs?.name ?? workspaceId,
-      scopeLabel: `Espace · ${targetWs?.name ?? workspaceId}`,
+      scopeLabel: formatI18nTemplate(copy.spaceScopePrefix, { name: wsName }),
     },
   );
   return { nextWorkspaces, nextAudit };
-}
-
-export function applyRegisterDatasource(params: {
-  readonly datasources: readonly ControlCenterDatasourceItem[];
-  readonly input: RegisterDatasourceInput;
-  readonly appendAudit: (
-    eventType: string,
-    summary: string,
-    meta?: { scopeId?: string; scopePath?: string; scopeLabel?: string },
-  ) => readonly ConfiguredAuditEvent[];
-}): {
-  readonly nextDatasources: readonly ControlCenterDatasourceItem[];
-  readonly nextAudit: readonly ConfiguredAuditEvent[];
-} {
-  const { datasources, input, appendAudit } = params;
-  const id = `ds-${datasources.length + 1}`;
-  const nextDatasources: readonly ControlCenterDatasourceItem[] = [
-    ...datasources,
-    {
-      id,
-      workspaceName: input.workspaceName,
-      alias: input.alias,
-      scheme: input.scheme,
-      uri: input.uri,
-      executionIdentity: input.executionIdentity,
-      freshnessTtlDays: input.freshnessTtlDays,
-      tripartiteStatus: "ALIGNED",
-    },
-  ];
-  const identityLabel =
-    input.executionIdentity === "passthrough"
-      ? "Identité personnelle"
-      : "Compte technique partagé";
-  const nextAudit = appendAudit(
-    "ConnectorConfigured",
-    `Connecteur "${input.alias}" (${input.uri}) enregistré (${identityLabel})`,
-    {
-      scopePath: input.workspaceName,
-      scopeLabel: formatHumanReadableScopePath(input.workspaceName),
-    },
-  );
-  return { nextDatasources, nextAudit };
-}
-
-export function buildScopeNodes(
-  orgUnits: readonly ConfiguredOrgUnit[],
-  workspaces: readonly ControlCenterWorkspaceGovItem[],
-): readonly UiScopeNode[] {
-  return [
-    BASE_GLOBAL_SCOPE,
-    ...orgUnits.map((unit) => ({
-      id: unit.id,
-      level: unit.level,
-      name: unit.name,
-      parentId: unit.parentId,
-      accessMode: "CONTRIBUTOR_ACTION_REQUIRED" as const,
-    })),
-    ...workspaces.map((ws) => ({
-      id: ws.workspaceId,
-      level: "WORKSPACE" as const,
-      name: ws.name,
-      parentId: ws.ownerOrgUnitId ?? orgUnits[orgUnits.length - 1]?.id ?? BASE_GLOBAL_SCOPE.id,
-      accessMode: ws.accessMode,
-    })),
-  ];
 }

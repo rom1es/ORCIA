@@ -9,9 +9,12 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, HTTPException, Path, Request
+from fastapi import APIRouter, HTTPException, Path, Query, Request
 
-from orcia_api.dependencies import get_or_create_shared_db_engine
+from orcia_api.dependencies import get_auth_service, get_or_create_shared_db_engine
+from orcia_api.routers._finops_auth_guards import enforce_observer_headers_guard
+from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
+from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.codegraph_mcp import (
     CodegraphActiveRepoResponse,
     CodegraphToolItemResponse,
@@ -28,6 +31,7 @@ from orcia_connectors.codegraph.providers import build_codegraph_provider
 from orcia_core.bootstrap import list_workspace_datasources_from_postgres18
 from orcia_core.kernel.errors import ValidationDomainError
 from orcia_core.observability.logging import get_current_trace_id, get_logger
+from orcia_core.permissions.errors import ObserverModeReadOnlyError, ScopeAccessDeniedError
 
 logger = get_logger("orcia.api.codegraph_mcp")
 
@@ -72,6 +76,36 @@ async def _get_workspace_datasources(request: Request, workspace_id: str) -> lis
         return []
 
 
+async def _enforce_codegraph_workspace_access(
+    request: Request,
+    workspace_id: str,
+    *,
+    persona_key: str | None = None,
+    require_execute: bool = False,
+) -> None:
+    effective_persona = (
+        None
+        if request.headers.get("Authorization")
+        else (persona_key or request.headers.get("x-orcia-persona", "").strip() or None)
+    )
+    user = resolve_request_user(request, persona_key=effective_persona)
+    if require_execute:
+        enforce_observer_headers_guard(request, user)
+    auth_svc = get_auth_service(request)
+    await sync_evaluator_topology_from_pg(request, auth_svc)
+    ws = auth_svc.evaluator.get_workspace(workspace_id)
+    if ws is None:
+        await sync_evaluator_topology_from_pg(request, auth_svc, force=True)
+        ws = auth_svc.evaluator.get_workspace(workspace_id)
+    if ws is None:
+        raise ScopeAccessDeniedError(instance=str(request.url.path))
+    access = auth_svc.evaluator.resolve_workspace_access(user, ws.id)
+    if access is None:
+        raise ScopeAccessDeniedError(instance=str(request.url.path))
+    if require_execute and access.access_mode == "READ_ONLY_OBSERVER":
+        raise ObserverModeReadOnlyError(instance=str(request.url.path))
+
+
 @router.get(
     "/{workspace_id}/codegraph/tools",
     response_model=CodegraphToolsListResponse,
@@ -80,7 +114,11 @@ async def _get_workspace_datasources(request: Request, workspace_id: str) -> lis
 async def list_codegraph_tools(
     request: Request,
     workspace_id: Annotated[str, Path()],
+    persona_key: Annotated[str | None, Query()] = None,
 ) -> CodegraphToolsListResponse:
+    await _enforce_codegraph_workspace_access(
+        request, workspace_id, persona_key=persona_key, require_execute=False
+    )
     http_client = getattr(request.app.state, "http_client", None)
     provider = build_codegraph_provider(http_client=http_client)
     datasources = await _get_workspace_datasources(request, workspace_id)
@@ -130,7 +168,11 @@ async def invoke_codegraph_tool(
     request: Request,
     workspace_id: Annotated[str, Path()],
     body: InvokeCodegraphToolRequest,
+    persona_key: Annotated[str | None, Query()] = None,
 ) -> InvokeCodegraphToolResponse:
+    await _enforce_codegraph_workspace_access(
+        request, workspace_id, persona_key=persona_key, require_execute=True
+    )
     http_client = getattr(request.app.state, "http_client", None)
     provider = build_codegraph_provider(http_client=http_client)
 

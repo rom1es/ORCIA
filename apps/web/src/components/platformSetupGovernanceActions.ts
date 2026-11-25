@@ -22,6 +22,7 @@ import {
   type ConfiguredRbacGrant,
   type ConfiguredWorkflowItem,
 } from "./platformSetupStorageHelpers";
+import type { PlatformSetupMutatedSlice } from "./usePlatformSetupHydrationEffect";
 
 export interface GovernanceActionsDeps {
   readonly locale?: SupportedWebLocale;
@@ -46,11 +47,12 @@ export interface GovernanceActionsDeps {
   readonly setOntologyConcepts: (concepts: readonly UiOntologyConceptView[]) => void;
   readonly setAuditEvents: (events: readonly ConfiguredAuditEvent[]) => void;
   readonly setLastSyncError: (msg: string | null) => void;
-  readonly markMutated: () => void;
+  readonly markMutated: (slices?: readonly PlatformSetupMutatedSlice[]) => void;
   readonly appendAudit: AppendAuditFn;
   readonly buildSnapshot: (
     overrides: Partial<CachedPlatformSetupState>,
   ) => CachedPlatformSetupState;
+  readonly persistLocalSnapshot?: (next: CachedPlatformSetupState) => void;
   readonly persistSnapshot: (next: CachedPlatformSetupState) => void;
 }
 
@@ -81,6 +83,7 @@ export function createPlatformGovernanceActions(deps: GovernanceActionsDeps) {
     markMutated,
     appendAudit,
     buildSnapshot,
+    persistLocalSnapshot,
     persistSnapshot,
   } = deps;
   const copy = DICTIONARIES[locale].shellChrome.platformSetupGovernance;
@@ -98,6 +101,7 @@ export function createPlatformGovernanceActions(deps: GovernanceActionsDeps) {
     markMutated,
     appendAudit,
     buildSnapshot,
+    ...(persistLocalSnapshot ? { persistLocalSnapshot } : {}),
     persistSnapshot,
   });
 
@@ -135,7 +139,7 @@ export function createPlatformGovernanceActions(deps: GovernanceActionsDeps) {
         ? input.password.trim()
         : "OrciaInitialAdmin!2026";
     const client = createOrciaApiClient({ baseUrl: resolveWebApiBaseUrl(), locale });
-    markMutated();
+    markMutated(["admin"]);
     void client
       .createWelcomeSetupFirstAdmin({
         email: admin.email,

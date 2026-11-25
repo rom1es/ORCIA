@@ -12,9 +12,12 @@ import os
 from datetime import UTC, datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Header, Path, Request
+from fastapi import APIRouter, Header, Path, Query, Request
 
-from orcia_api.dependencies import get_or_create_shared_db_engine
+from orcia_api.dependencies import get_auth_service, get_or_create_shared_db_engine
+from orcia_api.routers._finops_auth_guards import enforce_observer_headers_guard
+from orcia_api.routers._finops_scope_guards import sync_evaluator_topology_from_pg
+from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.datasource_webhooks import (
     DatasourceWebhookIngressRequest,
     DatasourceWebhookIngressResponse,
@@ -41,6 +44,7 @@ from orcia_core.permissions.enterprise_connectors_crypto import (
 from orcia_core.permissions.errors import (
     ObserverModeReadOnlyError,
     ResourceNotFoundError,
+    ScopeAccessDeniedError,
     WebhookSignatureInvalidError,
 )
 from orcia_core.permissions.webhook_security import verify_webhook_hmac_sha256
@@ -217,12 +221,28 @@ async def ingest_datasource_webhook(
 async def reconcile_workspace_staleness(
     request: Request,
     workspace_id: Annotated[str, Path(description="Target workspace ID")],
+    persona_key: Annotated[str | None, Query()] = None,
 ) -> ReconcileWorkspaceStalenessResponse:
     """Evaluate 24h freshness on workspace datasources and trigger delta sync if stale."""
-    # RBAC guard: reject read-only observer
-    hdr_mode = request.headers.get("x-orcia-access-mode", "").strip().upper()
-    hdr_obs = request.headers.get("x-orcia-observer-mode", "").strip().lower()
-    if hdr_mode == "READ_ONLY_OBSERVER" or hdr_obs in ("1", "true", "yes"):
+    effective_persona = (
+        None
+        if request.headers.get("Authorization")
+        else (persona_key or request.headers.get("x-orcia-persona", "").strip() or None)
+    )
+    user = resolve_request_user(request, persona_key=effective_persona)
+    enforce_observer_headers_guard(request, user)
+    auth_svc = get_auth_service(request)
+    await sync_evaluator_topology_from_pg(request, auth_svc)
+    ws = auth_svc.evaluator.get_workspace(workspace_id)
+    if ws is None:
+        await sync_evaluator_topology_from_pg(request, auth_svc, force=True)
+        ws = auth_svc.evaluator.get_workspace(workspace_id)
+    if ws is None:
+        raise ScopeAccessDeniedError(instance=str(request.url.path))
+    access = auth_svc.evaluator.resolve_workspace_access(user, ws.id)
+    if access is None:
+        raise ScopeAccessDeniedError(instance=str(request.url.path))
+    if access.access_mode == "READ_ONLY_OBSERVER":
         raise ObserverModeReadOnlyError(instance=str(request.url.path))
 
     trace_id = _trace(request)

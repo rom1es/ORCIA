@@ -94,6 +94,8 @@ def execute_promote_concept(
                 proposal.target_scope_id,
                 org_units,
                 workspaces,
+                memberships,
+                source_scope_id=proposal.source_scope_id,
                 instance="/api/v1/ontology-rag/ontology/promote",
             )
     else:

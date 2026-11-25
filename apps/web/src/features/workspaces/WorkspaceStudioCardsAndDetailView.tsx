@@ -6,6 +6,7 @@ import type {
 import React, { useState } from "react";
 import { resolveDictionaryForFlag } from "../../i18n";
 import { WorkspaceCompactHeader } from "./WorkspaceCompactHeader";
+import type { WorkspaceFeedbackInput } from "./workspaceFeedbackTypes";
 
 export interface WorkspaceStudioCardsAndDetailViewProps {
   readonly isFr: boolean;
@@ -23,7 +24,7 @@ export interface WorkspaceStudioCardsAndDetailViewProps {
     workspaceId: string,
     visibilityMode: WorkspaceVisibilityMode,
   ) => void | Promise<void>;
-  readonly onFeedback: (message: string) => void;
+  readonly onFeedback: (feedback: WorkspaceFeedbackInput) => void;
 }
 
 export function WorkspaceStudioCardsAndDetailView({
