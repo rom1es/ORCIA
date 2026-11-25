@@ -43,7 +43,7 @@ export function HelpCenterCatalogView({
       data-testid="contextual-help-hybrid-panel"
       data-mode="HELP_MENU_CENTER"
       data-active-section={activeSectionId ?? ""}
-      className="w-full max-w-4xl rounded-xl border border-surface-border bg-surface-elevated p-4 text-xs text-text-primary space-y-3"
+      className="orcia-bento-card orcia-ds-data-card w-full text-xs text-text-primary space-y-3"
     >
       <HelpArticleHeaderBlock
         article={article}

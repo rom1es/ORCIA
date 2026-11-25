@@ -44,6 +44,8 @@ export interface OrganizationTabDictionarySection extends OrganizationModalsSect
     readonly ontologyLeadPrefix: string;
     readonly ontologyLeadsPluralPrefix: string;
     readonly readOnlyAncestor: string;
+    readonly readOnlySibling: string;
+    readonly activePerimeter: string;
     readonly rootAttachment: string;
     readonly parentAttachmentPrefix: string;
   };
@@ -104,7 +106,9 @@ export const ORGANIZATION_TAB_FR_LABELS: OrganizationTabDictionarySection = {
     leadsPluralPrefix: "Responsables :",
     ontologyLeadPrefix: "Référent Glossaire :",
     ontologyLeadsPluralPrefix: "Référents Glossaire :",
-    readOnlyAncestor: "Contexte parent (lecture seule)",
+    readOnlyAncestor: "Contexte parent",
+    readOnlySibling: "Autre équipe — lecture seule",
+    activePerimeter: "Périmètre actif",
     rootAttachment: "Racine — Plateforme entière",
     parentAttachmentPrefix: "Rattaché à :",
   },
@@ -162,7 +166,9 @@ export const ORGANIZATION_TAB_EN_LABELS: OrganizationTabDictionarySection = {
     leadsPluralPrefix: "Leads:",
     ontologyLeadPrefix: "Glossary Lead:",
     ontologyLeadsPluralPrefix: "Glossary Leads:",
-    readOnlyAncestor: "Parent context (read-only)",
+    readOnlyAncestor: "Parent context",
+    readOnlySibling: "Other team — read-only",
+    activePerimeter: "Active scope",
     rootAttachment: "Root — Entire platform",
     parentAttachmentPrefix: "Attached to:",
   },

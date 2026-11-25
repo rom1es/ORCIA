@@ -113,6 +113,16 @@ export const FEATURE_WORKSPACES_FR: FeatureWorkspacesDictionary = {
     workspaceSettingsTitle: "Paramètres de l'espace",
     workspaceSettingsPhaseLabel: "Cycle de vie",
     workspaceSettingsVisibilityLabel: "Confidentialité & partage",
+    visibilityModeStandardDesc:
+      "Tous les membres de l'équipe accèdent et contribuent à cet espace.",
+    visibilityModeConfidentialDesc:
+      "Accès strictement réservé aux membres explicitement autorisés de cet espace.",
+    visibilityModePrivateDesc:
+      "Espace personnel strictement réservé à son propriétaire.",
+    visibilityPrivateLockedHint:
+      "Les espaces personnels restent strictement privés et ne peuvent pas être convertis en espace d'équipe.",
+    visibilityObserverLockedHint:
+      "Mode consultation seule : la visibilité ne peut pas être modifiée.",
   },
   dnaAndWaivers: {
     accessReadOnly: "Consultation seule",

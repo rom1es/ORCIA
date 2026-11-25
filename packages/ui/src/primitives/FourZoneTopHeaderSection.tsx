@@ -25,6 +25,7 @@ export interface FourZoneTopHeaderSectionProps {
   readonly onSelectWorkspace?: (scopeId: string) => void;
   readonly onOpenSearchCommand?: () => void;
   readonly helpColumnOpen: boolean;
+  readonly helpColumnToggleDisabled?: boolean;
   readonly onToggleHelpColumn: () => void;
   readonly notificationsOpen: boolean;
   readonly onToggleNotifications: () => void;
@@ -50,6 +51,7 @@ export function FourZoneTopHeaderSection({
   onSelectWorkspace,
   onOpenSearchCommand,
   helpColumnOpen,
+  helpColumnToggleDisabled = false,
   onToggleHelpColumn,
   notificationsOpen,
   onToggleNotifications,
@@ -194,17 +196,26 @@ export function FourZoneTopHeaderSection({
           type="button"
           data-testid="topbar-contextual-help-toggle"
           aria-label={labels.contextualHelpButtonLabel}
+          aria-current={helpColumnToggleDisabled ? "page" : undefined}
+          disabled={helpColumnToggleDisabled}
           onClick={onToggleHelpColumn}
-          aria-expanded={helpColumnOpen}
+          aria-expanded={helpColumnToggleDisabled ? false : helpColumnOpen}
           className={`inline-flex items-center gap-1.5 rounded border py-1 text-xs font-medium ${
             isMobile ? "px-2" : "px-2.5"
           }`}
           style={{
-            backgroundColor: helpColumnOpen
-              ? "var(--color-action-primary-subtle)"
-              : "var(--color-bg-elevated)",
-            borderColor: "var(--color-border-subtle)",
-            color: "var(--color-text-primary)",
+            backgroundColor:
+              helpColumnToggleDisabled || helpColumnOpen
+                ? "var(--color-action-primary-subtle)"
+                : "var(--color-bg-elevated)",
+            borderColor: helpColumnToggleDisabled
+              ? "var(--color-primary-cobalt)"
+              : "var(--color-border-subtle)",
+            color: helpColumnToggleDisabled
+              ? "var(--color-primary-cobalt)"
+              : "var(--color-text-primary)",
+            opacity: helpColumnToggleDisabled ? 0.72 : 1,
+            cursor: helpColumnToggleDisabled ? "default" : "pointer",
           }}
         >
           <OrciaIcon name="help" size={14} />

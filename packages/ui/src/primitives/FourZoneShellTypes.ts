@@ -173,6 +173,7 @@ export interface FourZoneDirectionCShellProps {
   readonly renderSidebarFooter?: (railCollapsed: boolean) => React.ReactNode;
   readonly helpColumnContent?: React.ReactNode;
   readonly helpColumnOpen?: boolean;
+  readonly helpColumnToggleDisabled?: boolean;
   readonly onHelpColumnOpenChange?: (open: boolean) => void;
   readonly mobileDrawerCloseSignal?: string | boolean | number;
   readonly children: React.ReactNode;

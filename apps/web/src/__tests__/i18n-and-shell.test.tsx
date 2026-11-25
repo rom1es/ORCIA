@@ -2102,9 +2102,8 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
       expect(screen.getByTestId("workspaces-active-title").textContent).toBe("Espace Produit");
     });
 
-    const switcher = screen.getByTestId("workspaces-active-switcher-select") as HTMLSelectElement;
-    const switcherOptions = Array.from(switcher.options);
-    expect(switcherOptions).toHaveLength(2);
+    const sidebarSwitcher = screen.getByTestId("sidebar-workspace-selector") as HTMLSelectElement;
+    const switcherOptions = Array.from(sidebarSwitcher.options);
     const ws1Opt = switcherOptions.find((o) => o.textContent?.includes("Mon Labo Perso"));
     const ws2Opt = switcherOptions.find((o) => o.textContent?.includes("Espace Produit"));
     expect(ws1Opt).toBeDefined();
@@ -2116,34 +2115,24 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(ws1Id).toMatch(/^[0-9a-f-]{36}$/);
     expect(ws2Id).toMatch(/^[0-9a-f-]{36}$/);
 
-    // 4. Switch to Mon Labo Perso via compact switcher (synchronized with Sidebar)
-    fireEvent.change(switcher, { target: { value: ws1Id } });
+    // 4. Switch to Mon Labo Perso via Left Rail sidebar selector (no duplicate header switcher)
+    expect(screen.queryByTestId("workspaces-active-switcher-select")).toBeNull();
+    fireEvent.change(sidebarSwitcher, { target: { value: ws1Id } });
     await waitFor(() => {
       expect(screen.getByTestId("workspaces-active-title").textContent).toBe("Mon Labo Perso");
     });
 
-    // 5. Phase auto-save with saved badge on ws1Id; PRIVATE_USER visibility remains locked
-    fireEvent.change(screen.getByTestId(`workspace-card-phase-select-${ws1Id}`), {
-      target: { value: "RUN" },
-    });
-    await waitFor(() => {
-      expect(
-        screen.getByTestId(`workspace-autosaved-badge-${ws1Id}`).querySelector("svg"),
-      ).not.toBeNull();
-      expect(screen.getByTestId(`workspace-autosaved-badge-${ws1Id}`).textContent).toContain(
-        "Enregistré",
-      );
-      expect(
-        (screen.getByTestId(`workspace-card-phase-select-${ws1Id}`) as HTMLSelectElement).value,
-      ).toBe("RUN");
-    });
-
-    fireEvent.click(screen.getByTestId(`share-private-workspace-btn-${ws1Id}`));
-    await waitFor(() => {
-      expect(screen.getByTestId(`workspace-visibility-badge-${ws1Id}`).textContent).toContain(
-        "Personnel",
-      );
-    });
+    // 5. Dead Phase control removed; PRIVATE_USER visibility remains locked in Tab 5
+    expect(screen.queryByTestId(`workspace-card-phase-select-${ws1Id}`)).toBeNull();
+    expect(screen.queryByTestId(`share-private-workspace-btn-${ws1Id}`)).toBeNull();
+    fireEvent.click(screen.getByTestId("workspace-tab-MEMBERS_TEAM"));
+    expect(
+      ((await screen.findByTestId(`workspace-card-visibility-select-${ws1Id}`)) as HTMLSelectElement)
+        .disabled,
+    ).toBe(true);
+    expect(screen.getByTestId(`workspace-visibility-badge-${ws1Id}`).textContent).toContain(
+      "Personnel",
+    );
 
     // 6. Test Unified 5-Tab Workspace Container for active workspace ("Mon Labo Perso", UUIDv7)
     expect(screen.queryByTestId("workspace-detail-tabs-panel")).toBeNull();

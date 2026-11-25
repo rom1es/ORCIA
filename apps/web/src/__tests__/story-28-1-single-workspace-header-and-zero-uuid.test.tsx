@@ -146,9 +146,8 @@ describe("Story 28.1 — Single Compact Workspace Header, Sidebar Scope Sync & Z
     expect(screen.getByTestId(`workspace-visibility-badge-${PERSONAL_WS_ID}`).textContent).toContain(
       "Personnel",
     );
-    expect(screen.getByTestId(`workspace-phase-badge-${PERSONAL_WS_ID}`).textContent).toContain(
-      "Construction",
-    );
+    expect(screen.queryByTestId(`workspace-phase-badge-${PERSONAL_WS_ID}`)).toBeNull();
+    expect(screen.queryByTestId("workspaces-active-switcher-select")).toBeNull();
     expect(screen.getByTestId("toggle-create-workspace-form-btn")).toBeDefined();
     expect(screen.getByTestId("spaces-open-glossary-link")).toBeDefined();
 
@@ -163,12 +162,10 @@ describe("Story 28.1 — Single Compact Workspace Header, Sidebar Scope Sync & Z
     );
     expect(deliverablesPanel.textContent).not.toContain(PERSONAL_WS_SLUG);
 
-    // Switch via compact /workspaces switcher -> updates Sidebar selector + TopHeader + localStorage
-    const compactSwitcher = screen.getByTestId(
-      "workspaces-active-switcher-select",
-    ) as HTMLSelectElement;
+    // Switch via single Left Rail sidebar selector -> updates compact header + TopHeader + localStorage
+    const sidebarSwitcher = screen.getByTestId("sidebar-workspace-selector") as HTMLSelectElement;
     await act(async () => {
-      fireEvent.change(compactSwitcher, { target: { value: TEAM_WS_ID } });
+      fireEvent.change(sidebarSwitcher, { target: { value: TEAM_WS_ID } });
     });
 
     await waitFor(() => {
@@ -181,9 +178,7 @@ describe("Story 28.1 — Single Compact Workspace Header, Sidebar Scope Sync & Z
     expect(screen.getByTestId(`workspace-visibility-badge-${TEAM_WS_ID}`).textContent).toContain(
       "Équipe",
     );
-    expect(screen.getByTestId(`workspace-phase-badge-${TEAM_WS_ID}`).textContent).toContain(
-      "Exploitation",
-    );
+    expect(screen.queryByTestId(`workspace-phase-badge-${TEAM_WS_ID}`)).toBeNull();
 
     // F5 reload simulation -> Sidebar & /workspaces compact header remain synchronized
     first.unmount();
@@ -208,7 +203,7 @@ describe("Story 28.1 — Single Compact Workspace Header, Sidebar Scope Sync & Z
         "Mon Espace Personnel",
       );
       expect(
-        (screen.getByTestId("workspaces-active-switcher-select") as HTMLSelectElement).value,
+        (screen.getByTestId("sidebar-workspace-selector") as HTMLSelectElement).value,
       ).toBe(PERSONAL_WS_ID);
     });
     reloaded.unmount();
@@ -225,9 +220,8 @@ describe("Story 28.1 — Single Compact Workspace Header, Sidebar Scope Sync & Z
         "Personal",
       );
     });
-    expect(screen.getByTestId(`workspace-phase-badge-${PERSONAL_WS_ID}`).textContent).toContain(
-      "Build",
-    );
+    expect(screen.queryByTestId(`workspace-phase-badge-${PERSONAL_WS_ID}`)).toBeNull();
+    expect(screen.queryByTestId("workspaces-active-switcher-select")).toBeNull();
     expect(screen.getByTestId("toggle-create-workspace-form-btn").textContent).toContain(
       "+ New space",
     );
@@ -237,7 +231,7 @@ describe("Story 28.1 — Single Compact Workspace Header, Sidebar Scope Sync & Z
     expect(view.container.textContent ?? "").not.toContain(PERSONAL_WS_SLUG);
 
     await act(async () => {
-      fireEvent.change(screen.getByTestId("workspaces-active-switcher-select"), {
+      fireEvent.change(screen.getByTestId("sidebar-workspace-selector"), {
         target: { value: TEAM_WS_ID },
       });
     });
@@ -245,9 +239,7 @@ describe("Story 28.1 — Single Compact Workspace Header, Sidebar Scope Sync & Z
       expect(screen.getByTestId(`workspace-visibility-badge-${TEAM_WS_ID}`).textContent).toContain(
         "Team",
       );
-      expect(screen.getByTestId(`workspace-phase-badge-${TEAM_WS_ID}`).textContent).toContain(
-        "Operations",
-      );
+      expect(screen.queryByTestId(`workspace-phase-badge-${TEAM_WS_ID}`)).toBeNull();
     });
     view.unmount();
   });

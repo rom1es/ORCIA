@@ -33,6 +33,8 @@ export interface OntologyGlossaryCopy {
   readonly helpCenterShowcaseTitle: string;
   readonly helpCenterShowcaseDesc: string;
   readonly helpCenterShowcaseBtnLabel: string;
+  readonly helpCenterPageTitle: string;
+  readonly helpCenterPageSubtitle: string;
   readonly helpCenterOverviewTitle: string;
   readonly helpCenterOverviewSummary: string;
   readonly helpCenterStep1: string;
@@ -110,6 +112,9 @@ export const ONTOLOGY_GLOSSARY_FR: OntologyGlossaryCopy = {
   helpCenterShowcaseDesc:
     "Découvrez la vision Human-Led, la double barrière anti-hallucination, le guide des écrans et les choix d'architecture en 4 onglets structurés.",
   helpCenterShowcaseBtnLabel: "Documentation",
+  helpCenterPageTitle: "Centre d'Aide",
+  helpCenterPageSubtitle:
+    "Guides pratiques par intention, documentation produit et repères d'utilisation.",
   helpCenterOverviewTitle: "Centre d'Aide Contextuelle & Guides Pratiques",
   helpCenterOverviewSummary:
     "Ce centre rassemble les guides pratiques et explications rattachés à vos écrans et à vos Packs métiers.",
@@ -194,6 +199,9 @@ export const ONTOLOGY_GLOSSARY_EN: OntologyGlossaryCopy = {
   helpCenterShowcaseDesc:
     "Explore the Human-Led vision, double anti-hallucination barrier, screen guide, and engineering architecture across 4 structured tabs.",
   helpCenterShowcaseBtnLabel: "Documentation",
+  helpCenterPageTitle: "Help Center",
+  helpCenterPageSubtitle:
+    "Practical guides by intent, product documentation, and usage tips.",
   helpCenterOverviewTitle: "Contextual Help Center & Practical Guides",
   helpCenterOverviewSummary:
     "This center gathers practical guides and explanations bound to your screens and Business Packs.",

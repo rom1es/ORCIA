@@ -1,6 +1,9 @@
 import { createOrciaApiClient } from "@orcia/api-client";
 import {
+  ORCIA_MODULE_ICON_NAMES,
   OrciaAlertBanner,
+  OrciaDataCard,
+  OrciaPageHeader,
   ProgressiveDay0AccostageBanner,
   StreamlinedCockpitView,
 } from "@orcia/ui";
@@ -157,15 +160,15 @@ export function CockpitFeaturePanel() {
       data-testid="cockpit-empty-first-panel"
       style={{ display: "flex", flexDirection: "column", gap: "16px", minWidth: 0 }}
     >
+      <OrciaPageHeader
+        testId="cockpit-page-header"
+        icon={ORCIA_MODULE_ICON_NAMES.cockpit}
+        title={dictionary.fourZoneShell.menuEntries.cockpit}
+        subtitle={dictionary.modulePages.cockpit.subtitle}
+      />
+
       {/* Major Block 1: Onboarding */}
-      <section
-        data-testid="cockpit-block-accostage"
-        className="flex flex-col gap-3 rounded-lg border p-3.5"
-        style={{
-          backgroundColor: "var(--color-bg-surface)",
-          borderColor: "var(--color-border-subtle)",
-        }}
-      >
+      <OrciaDataCard testId="cockpit-block-accostage">
         <ProgressiveDay0AccostageBanner
           completedCount={completedSetupStepsCount}
           totalCount={6}
@@ -178,7 +181,7 @@ export function CockpitFeaturePanel() {
           labels={dictionary.progressiveAccostage}
           onNavigateMilestone={(href) => navigateToRoute(href)}
         />
-      </section>
+      </OrciaDataCard>
 
       {/* Major Block 2: Overview & Process Launch */}
       <section

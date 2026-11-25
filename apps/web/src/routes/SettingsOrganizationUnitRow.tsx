@@ -1,7 +1,11 @@
 import { OrciaButton, OrciaIcon, StatusBadge, type KnownUserOption } from "@orcia/ui";
 import React from "react";
 import type { ConfiguredOrgUnit } from "../components/platformSetupStore";
-import type { OrgTreeRowItem } from "../features/admin/organization/orgTreeHelpers";
+import {
+  formatOrgUnitLeadBadgeLabel,
+  formatOrgUnitOntologyLeadBadgeLabel,
+  type OrgTreeRowItem,
+} from "../features/admin/organization/orgTreeHelpers";
 import type { OrgUnitServerCapabilities } from "../features/admin/organization/orgUnitsApiBridge";
 import type { AdminAndStudioDictionarySection } from "../i18n/locales/admin_and_studio_labels";
 import { resolveLocaleForFlag } from "../i18n";
@@ -11,6 +15,8 @@ export interface SettingsOrganizationUnitRowProps {
   readonly rowItem: OrgTreeRowItem;
   readonly isFr: boolean;
   readonly canMutate: boolean;
+  readonly isAncestorContext?: boolean;
+  readonly isScopedActiveView?: boolean;
   readonly capabilities?: OrgUnitServerCapabilities;
   readonly knownUsers?: readonly KnownUserOption[];
   readonly labels: AdminAndStudioDictionarySection["settingsHub"]["organizationTab"];
@@ -23,6 +29,8 @@ export function SettingsOrganizationUnitRow({
   rowItem,
   isFr,
   canMutate,
+  isAncestorContext = false,
+  isScopedActiveView = false,
   capabilities,
   knownUsers = [],
   labels,
@@ -72,18 +80,37 @@ export function SettingsOrganizationUnitRow({
   const rowCanEdit = canMutate && (capabilities ? capabilities.canEdit : true);
   const rowCanManageMembers = canMutate && (capabilities ? capabilities.canManageMembers : true);
   const rowCanDelete = canMutate && (capabilities ? capabilities.canDelete : true);
+  const isActivePerimeterRow = Boolean(isScopedActiveView && rowCanEdit);
+  const leadBadgeLabel = formatOrgUnitLeadBadgeLabel({
+    unit,
+    knownUsers,
+    leadPrefix: labels.badges.leadPrefix,
+    leadsPluralPrefix: labels.badges.leadsPluralPrefix,
+  });
+  const ontologyLeadBadgeLabel = formatOrgUnitOntologyLeadBadgeLabel({
+    unit,
+    knownUsers,
+    singularPrefix: labels.badges.ontologyLeadPrefix,
+    pluralPrefix: labels.badges.ontologyLeadsPluralPrefix,
+  });
 
   return (
     <div
       data-testid={`org-unit-row-${unit.id}`}
       data-depth={String(depth)}
+      data-perimeter={isActivePerimeterRow ? "active" : isAncestorContext ? "ancestor" : "default"}
       style={{
         padding: "10px 12px",
         paddingLeft: `${12 + depth * 28}px`,
         borderRadius: "var(--radius-sm)",
-        border: "1px solid var(--color-border)",
-        backgroundColor:
-          depth === 0 ? "var(--color-surface-card)" : "var(--color-surface-secondary)",
+        border: isActivePerimeterRow
+          ? "1px solid var(--color-badge-cobalt-border)"
+          : "1px solid var(--color-border)",
+        backgroundColor: isActivePerimeterRow
+          ? "var(--color-action-primary-subtle)"
+          : depth === 0
+            ? "var(--color-surface-card)"
+            : "var(--color-surface-secondary)",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
@@ -154,82 +181,33 @@ export function SettingsOrganizationUnitRow({
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-        {(() => {
-          const effectiveLeads = Array.isArray(unit.leadUserIds) && unit.leadUserIds.length > 0
-            ? unit.leadUserIds
-            : (unit.leadUserId ? [unit.leadUserId] : []);
-          if (effectiveLeads.length === 0) return null;
-          if (effectiveLeads.length === 1) {
-            const leadId = effectiveLeads[0];
-            const leadUser = knownUsers.find(
-              (u) =>
-                u.principalId.toLowerCase() === leadId.toLowerCase() ||
-                (u.email && u.email.toLowerCase() === leadId.toLowerCase()),
-            );
-            const leadLabelText =
-              leadUser && leadUser.displayName && leadUser.displayName !== leadId
-                ? `${labels.badges.leadPrefix} ${leadUser.displayName} (${leadId})`
-                : `${labels.badges.leadPrefix} ${leadId}`;
-            return (
-              <StatusBadge
-                testId={`org-unit-lead-badge-${unit.id}`}
-                label={leadLabelText}
-                tone="neutral"
-              />
-            );
-          }
-          const leadNames = effectiveLeads.map((lid) => {
-            const u = knownUsers.find(
-              (k) =>
-                k.principalId.toLowerCase() === lid.toLowerCase() ||
-                (k.email && k.email.toLowerCase() === lid.toLowerCase()),
-            );
-            return u?.displayName || lid;
-          });
-          const pluralPrefix = labels.badges.leadsPluralPrefix;
-          return (
-            <StatusBadge
-              testId={`org-unit-lead-badge-${unit.id}`}
-              label={`${pluralPrefix} ${leadNames.join(", ")}`}
-              tone="neutral"
-            />
-          );
-        })()}
+        {leadBadgeLabel ? (
+          <StatusBadge testId={`org-unit-lead-badge-${unit.id}`} label={leadBadgeLabel} tone="neutral" />
+        ) : null}
+
+        {isActivePerimeterRow ? (
+          <StatusBadge
+            testId={`org-unit-active-perimeter-badge-${unit.id}`}
+            label={labels.badges.activePerimeter}
+            tone="cobalt"
+          />
+        ) : null}
 
         {isReadOnlyContext ? (
           <StatusBadge
             testId={`org-unit-readonly-badge-${unit.id}`}
-            label={labels.badges.readOnlyAncestor}
+            label={isAncestorContext ? labels.badges.readOnlyAncestor : labels.badges.readOnlySibling}
             tone="neutral"
           />
         ) : null}
 
-        {(() => {
-          const ontoLeads =
-            unit.level === "BU" && Array.isArray(unit.ontologyLeadUserIds)
-              ? unit.ontologyLeadUserIds
-              : [];
-          if (ontoLeads.length === 0) return null;
-          const names = ontoLeads.map((lid) => {
-            const u = knownUsers.find(
-              (k) =>
-                k.principalId.toLowerCase() === lid.toLowerCase() ||
-                (k.email && k.email.toLowerCase() === lid.toLowerCase()),
-            );
-            return u?.displayName || lid;
-          });
-          const prefix =
-            ontoLeads.length === 1
-              ? labels.badges.ontologyLeadPrefix
-              : labels.badges.ontologyLeadsPluralPrefix;
-          return (
-            <StatusBadge
-              testId={`org-unit-ontology-lead-badge-${unit.id}`}
-              label={`${prefix} ${names.join(", ")}`}
-              tone="cobalt"
-            />
-          );
-        })()}
+        {ontologyLeadBadgeLabel ? (
+          <StatusBadge
+            testId={`org-unit-ontology-lead-badge-${unit.id}`}
+            label={ontologyLeadBadgeLabel}
+            tone="cobalt"
+          />
+        ) : null}
 
         {unit.level === "TEAM" ? (
           <StatusBadge
@@ -251,21 +229,21 @@ export function SettingsOrganizationUnitRow({
           tone={billingActive ? "emerald" : "neutral"}
         />
 
-        <OrciaButton
-          variant="secondary"
-          testId={`edit-org-unit-btn-${unit.id}`}
-          disabled={!rowCanEdit}
-          onClick={() => onEdit(unit)}
-          style={{ padding: "5px 10px", fontSize: "12px" }}
-        >
-          {labels.rowActions.edit}
-        </OrciaButton>
+        {rowCanEdit ? (
+          <OrciaButton
+            variant="secondary"
+            testId={`edit-org-unit-btn-${unit.id}`}
+            onClick={() => onEdit(unit)}
+            style={{ padding: "5px 10px", fontSize: "12px" }}
+          >
+            {labels.rowActions.edit}
+          </OrciaButton>
+        ) : null}
 
-        {unit.level === "TEAM" ? (
+        {unit.level === "TEAM" && rowCanManageMembers ? (
           <OrciaButton
             variant="secondary"
             testId={`manage-members-org-unit-btn-${unit.id}`}
-            disabled={!rowCanManageMembers}
             onClick={() => onManageMembers(unit)}
             style={{ padding: "5px 10px", fontSize: "12px" }}
           >
@@ -273,15 +251,16 @@ export function SettingsOrganizationUnitRow({
           </OrciaButton>
         ) : null}
 
-        <OrciaButton
-          variant="danger"
-          testId={`delete-org-unit-btn-${unit.id}`}
-          disabled={!rowCanDelete}
-          onClick={() => onRequestDelete(rowItem)}
-          style={{ padding: "5px 10px", fontSize: "12px" }}
-        >
-          {labels.rowActions.delete}
-        </OrciaButton>
+        {rowCanDelete ? (
+          <OrciaButton
+            variant="danger"
+            testId={`delete-org-unit-btn-${unit.id}`}
+            onClick={() => onRequestDelete(rowItem)}
+            style={{ padding: "5px 10px", fontSize: "12px" }}
+          >
+            {labels.rowActions.delete}
+          </OrciaButton>
+        ) : null}
       </div>
     </div>
   );

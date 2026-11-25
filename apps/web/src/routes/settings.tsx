@@ -1,5 +1,8 @@
 import {
+  OrciaDataCard,
   OrciaIcon,
+  OrciaPageHeader,
+  OrciaTabStrip,
   PermissionGuard,
   type InferenceTierAndEffortLabels,
 } from "@orcia/ui";
@@ -98,67 +101,38 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
   };
 
   return (
-    <div
-      data-testid="settings-hub-page"
-      style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-    >
-      <header
-        className="orcia-bento-card"
-        style={{ display: "flex", flexDirection: "column", gap: "6px" }}
-      >
-        <h1 style={{ margin: 0, fontSize: "var(--font-size-h2)" }}>{copy.hubTitle}</h1>
-        <p style={{ margin: 0, fontSize: "var(--font-size-body)", color: "var(--color-muted-foreground)" }}>
-          {copy.hubSubtitle}
-        </p>
-
-        {access.visibleTabs.length > 0 && (
-          <nav
-            role="tablist"
-            data-testid="settings-domain-tabs"
-            aria-label={dictionary.routesAndWizards.settingsHubExtra.tabsAriaLabel}
-            className="orcia-ds-tabs"
-            style={{ marginTop: "8px", flexWrap: "nowrap", gap: "6px", overflowX: "auto" }}
-          >
-            {access.visibleTabs.map((tabKey) => {
-              const isSelected = effectiveTab === tabKey;
-              return (
-                <button
-                  key={tabKey}
-                  type="button"
-                  role="tab"
-                  aria-selected={isSelected}
-                  data-testid={`settings-tab-${tabKey}`}
-                  onClick={() => setActiveTab(tabKey)}
-                  className="orcia-ds-tab"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "5px",
-                    padding: "5px 8px",
-                    fontSize: "12px",
-                    whiteSpace: "nowrap",
-                    flexShrink: 0,
-                  }}
-                >
-                  <OrciaIcon name={SETTINGS_TAB_ICON_NAMES[tabKey]} size={13} />
-                  <span>{copy.tabs[tabKey]}</span>
-                </button>
-              );
-            })}
-          </nav>
-        )}
-      </header>
+    <div data-testid="settings-hub-page" className="orcia-ds-page">
+      <OrciaPageHeader
+        testId="settings-page-header"
+        icon="configuration"
+        title={copy.hubTitle}
+        subtitle={copy.hubSubtitle}
+        tabs={
+          access.visibleTabs.length > 0 ? (
+            <OrciaTabStrip
+              testId="settings-domain-tabs"
+              testIdPrefix="settings-tab"
+              ariaLabel={dictionary.routesAndWizards.settingsHubExtra.tabsAriaLabel}
+              variant="underline"
+              activeTabId={effectiveTab ?? "iam"}
+              onSelectTab={(tabKey) => setActiveTab(tabKey)}
+              tabs={access.visibleTabs.map((tabKey) => ({
+                key: tabKey,
+                label: copy.tabs[tabKey],
+                icon: SETTINGS_TAB_ICON_NAMES[tabKey],
+                testId: `settings-tab-${tabKey}`,
+              }))}
+            />
+          ) : undefined
+        }
+      />
 
       {access.isReadOnlyRestricted || effectiveTab === null ? (
-        <section
-          data-testid="settings-readonly-access-banner"
-          className="orcia-bento-card"
-          style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+        <OrciaDataCard
+          testId="settings-readonly-access-banner"
+          icon="lock"
+          title={copy.readOnlyRestrictedTitle}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <OrciaIcon name="lock" size={16} />
-            <h2 style={{ margin: 0, fontSize: "15px" }}>{copy.readOnlyRestrictedTitle}</h2>
-          </div>
           <p
             style={{
               margin: 0,
@@ -179,7 +153,7 @@ export function SettingsHubView({ initialTab }: SettingsHubViewProps = {}) {
               <span>{copy.openMyAccountCta}</span>
             </button>
           </div>
-        </section>
+        </OrciaDataCard>
       ) : (
         <PermissionGuard
           scopePath="GLOBAL"

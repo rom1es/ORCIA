@@ -3,12 +3,12 @@ import type { GovernanceAndPacksDictionarySection } from "./governance_and_packs
 
 export const GOVERNANCE_AND_PACKS_FR_LABELS: GovernanceAndPacksDictionarySection = {
   workspaceFiveTabs: {
-    heading: "📦 Mes Espaces — Sources, Livrables, Glossaire & Équipe",
-    tabOverview: "1. Vue d'ensemble",
-    tabDocumentsSources: "2. Documents & Sources",
-    tabDeliverablesArtifacts: "3. Livrables & Documents Produits",
-    tabGlossaryRules: "4. Glossaire & Règles Métiers",
-    tabMembersTeam: "5. Membres & Équipe",
+    heading: "Mes Espaces — Sources, Livrables, Glossaire & Équipe",
+    tabOverview: "Vue d'ensemble",
+    tabDocumentsSources: "Documents & Sources",
+    tabDeliverablesArtifacts: "Livrables & Artefacts",
+    tabGlossaryRules: "Glossaire & Règles Métiers",
+    tabMembersTeam: "Membres & Équipe",
     defaultDestinationTitle: "Emplacement d'enregistrement des livrables :",
     roleReferenceBadge: "📚 RÉFÉRENCE (Document officiel)",
     roleActiveBadge: "✏️ TRAVAIL EN COURS",

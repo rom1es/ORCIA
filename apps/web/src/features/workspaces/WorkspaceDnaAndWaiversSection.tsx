@@ -6,6 +6,7 @@ import {
   type UiOntologyLevel,
   type WorkspaceDeliverableItem,
   type WorkspaceSubTabKey,
+  type WorkspaceVisibilityMode,
   WorkspaceFiveTabsAndExternalRebaseView,
 } from "@orcia/ui";
 import React, { useEffect, useRef, useState } from "react";
@@ -40,6 +41,11 @@ export interface WorkspaceDnaAndWaiversSectionProps {
     targetLevel: UiOntologyLevel,
     targetScopeId?: string,
   ) => void;
+  readonly onUpdateWorkspaceVisibility?: (
+    workspaceId: string,
+    visibilityMode: WorkspaceVisibilityMode,
+  ) => void | Promise<void>;
+  readonly onMarkAutosaved?: (workspaceId: string) => void;
   readonly onFeedback: (feedback: WorkspaceFeedbackInput) => void;
 }
 
@@ -80,6 +86,8 @@ export function WorkspaceDnaAndWaiversSection({
   openHelpSection,
   onAddOntologyConcept,
   onPromoteOntologyConcept,
+  onUpdateWorkspaceVisibility,
+  onMarkAutosaved,
   onFeedback,
 }: WorkspaceDnaAndWaiversSectionProps): React.ReactElement | null {
   const [activeSubTab, setActiveSubTab] = useState<WorkspaceSubTabKey>(() =>
@@ -224,6 +232,8 @@ export function WorkspaceDnaAndWaiversSection({
             isFr={isFr}
             activeWorkspace={targetWorkspace}
             orgUnits={orgUnits}
+            onUpdateWorkspaceVisibility={onUpdateWorkspaceVisibility}
+            onMarkAutosaved={onMarkAutosaved}
             onFeedback={onFeedback}
           />
         }

@@ -1,5 +1,8 @@
 import React from "react";
 import { OrciaIcon } from "../components/icons";
+import { OrciaAlertBanner } from "./OrciaAlertBanner";
+import { OrciaDataCard } from "./OrciaDataCard";
+import { OrciaPageHeader } from "./OrciaPageHeader";
 import type { UiLocalePreference } from "./UserAccountDropdownTypes";
 import type {
   UiUserProfileSummaryView,
@@ -57,41 +60,61 @@ export function UserProfileOverviewPage({
     profile.currentStreakDays === 0;
 
   return (
-    <div data-testid="user-profile-overview-page" className="mx-auto flex w-full max-w-4xl flex-col gap-6 py-4">
-      {errorMessage && (
-        <div
-          data-testid="profile-error-banner"
-          role="alert"
-          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 text-xs"
-          style={{ backgroundColor: "var(--color-stale-bg)", borderColor: "var(--color-stale-crimson)", color: "var(--color-stale-crimson)" }}
-        >
-          <span>{errorMessage}</span>
-          {onRetry && (
-            <button type="button" data-testid="profile-retry-btn" onClick={onRetry} className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm">
-              {labels.retryLabel}
-            </button>
-          )}
-        </div>
-      )}
+    <div data-testid="user-profile-overview-page" className="orcia-ds-page">
+      <OrciaPageHeader
+        testId="profile-page-header"
+        icon="user"
+        title={profile.displayName}
+        titleTestId="profile-display-name"
+        subtitle={`@${profile.handle}${profile.email ? ` · ${profile.email}` : ""}`}
+        subtitleTestId="profile-handle-email"
+        contextBadge={
+          <div
+            data-testid="profile-avatar-initials"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold"
+            style={{ backgroundColor: "var(--color-action-primary-subtle)", color: "var(--color-action-primary)" }}
+          >
+            {initials}
+          </div>
+        }
+        secondaryActions={
+          <button
+            type="button"
+            data-testid="profile-open-account-settings-btn"
+            onClick={onEditAccount}
+            className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm inline-flex items-center gap-1.5"
+          >
+            <OrciaIcon name="pen" size={14} />
+            <span>{labels.editButtonLabel}</span>
+          </button>
+        }
+        alertSlot={
+          errorMessage ? (
+            <OrciaAlertBanner
+              tone="crimson"
+              role="alert"
+              testId="profile-error-banner"
+              action={
+                onRetry ? (
+                  <button
+                    type="button"
+                    data-testid="profile-retry-btn"
+                    onClick={onRetry}
+                    className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
+                  >
+                    {labels.retryLabel}
+                  </button>
+                ) : undefined
+              }
+            >
+              {errorMessage}
+            </OrciaAlertBanner>
+          ) : undefined
+        }
+      />
 
-      <section className="orcia-bento-card flex flex-col items-center gap-3 px-6 py-8 text-center" style={{ backgroundColor: "var(--color-bg-surface)" }}>
-        <div
-          data-testid="profile-avatar-initials"
-          className="flex h-16 w-16 items-center justify-center rounded-full text-xl font-bold"
-          style={{ backgroundColor: "var(--color-action-primary-subtle)", color: "var(--color-action-primary)" }}
-        >
-          {initials}
-        </div>
-        <div className="space-y-1">
-          <h1 data-testid="profile-display-name" className="text-2xl font-semibold tracking-tight" style={{ color: "var(--color-text-primary)" }}>
-            {profile.displayName}
-          </h1>
-          <p data-testid="profile-handle-email" className="text-sm" style={{ color: "var(--color-text-secondary)" }}>
-            @{profile.handle}{profile.email ? ` · ${profile.email}` : ""}
-          </p>
-        </div>
-
-        <div data-testid="profile-org-badges" className="flex flex-wrap items-center justify-center gap-2 pt-1">
+      <OrciaDataCard testId="profile-org-badges-card">
+        <div data-testid="profile-org-badges" className="flex flex-wrap items-center gap-2">
           {distinctRoles.map((roleKey) => (
             <span
               key={roleKey}
@@ -113,65 +136,38 @@ export function UserProfileOverviewPage({
             )),
           )}
         </div>
-
-        <div className="pt-2">
-          <button
-            type="button"
-            data-testid="profile-open-account-settings-btn"
-            onClick={onEditAccount}
-            className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm inline-flex items-center gap-1.5"
-          >
-            <OrciaIcon name="pen" size={14} />
-            <span>{labels.editButtonLabel}</span>
-          </button>
-        </div>
-      </section>
+      </OrciaDataCard>
 
       {isLoading ? (
-        <section
-          data-testid="profile-kpis-loading"
-          className="orcia-bento-card flex items-center gap-3 px-5 py-4 text-xs"
-          style={{
-            backgroundColor: "var(--color-bg-surface)",
-            color: "var(--color-text-secondary)",
-          }}
-        >
-          <span>{labels.loadingLabel}</span>
-        </section>
+        <OrciaDataCard testId="profile-kpis-loading">
+          <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>{labels.loadingLabel}</span>
+        </OrciaDataCard>
       ) : allKpisZero ? (
-        <section
-          data-testid="profile-kpis-empty-state"
-          className="orcia-bento-card flex items-center justify-between gap-3 px-5 py-4 text-xs"
-          style={{
-            backgroundColor: "var(--color-bg-surface)",
-            color: "var(--color-text-secondary)",
-          }}
-        >
-          <span>{labels.emptyKpisMessage}</span>
-        </section>
+        <OrciaDataCard testId="profile-kpis-empty-state">
+          <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>{labels.emptyKpisMessage}</span>
+        </OrciaDataCard>
       ) : (
         <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {kpiCards.map((kpi) => (
-            <div key={kpi.testId} data-testid={kpi.testId} className="orcia-bento-card flex flex-col justify-between gap-2 p-4" style={{ backgroundColor: "var(--color-bg-surface)" }}>
+            <OrciaDataCard key={kpi.testId} testId={kpi.testId}>
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-medium" style={{ color: "var(--color-text-secondary)" }}>{kpi.label}</span>
                 <OrciaIcon name={kpi.icon} size={15} />
               </div>
               <div className="text-xl font-semibold tabular-nums" style={{ color: "var(--color-text-primary)" }}>
-                {isLoading ? "…" : kpi.value}
+                {kpi.value}
               </div>
               {kpi.hint && <span className="text-[11px]" style={{ color: "var(--color-text-secondary)" }}>{kpi.hint}</span>}
-            </div>
+            </OrciaDataCard>
           ))}
         </section>
       )}
 
-      <section data-testid="profile-popular-items-section" className="orcia-bento-card flex flex-col gap-4 p-5" style={{ backgroundColor: "var(--color-bg-surface)" }}>
-        <div className="space-y-0.5">
-          <h2 className="text-sm font-semibold" style={{ color: "var(--color-text-primary)" }}>{labels.popularSectionTitle}</h2>
-          <p className="text-xs" style={{ color: "var(--color-text-secondary)" }}>{labels.popularSectionSubtitle}</p>
-        </div>
-
+      <OrciaDataCard
+        testId="profile-popular-items-section"
+        title={labels.popularSectionTitle}
+        subtitle={labels.popularSectionSubtitle}
+      >
         {isLoading ? (
           <p className="py-4 text-xs" style={{ color: "var(--color-text-secondary)" }}>{labels.loadingLabel}</p>
         ) : profile.popularItems.length === 0 ? (
@@ -192,14 +188,7 @@ export function UserProfileOverviewPage({
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             {profile.popularItems.map((item) => {
               const countUnit = item.usageCount === 1 ? labels.usageCountSingular : labels.usageCountPlural;
-              const allKpisZero =
-    !isLoading &&
-    profile.totalTokens === 0 &&
-    profile.peakDailyTokens === 0 &&
-    profile.longestStreakDays === 0 &&
-    profile.currentStreakDays === 0;
-
-  return (
+              return (
                 <button
                   key={`${item.itemType}-${item.itemKey}`}
                   type="button"
@@ -226,7 +215,7 @@ export function UserProfileOverviewPage({
             })}
           </div>
         )}
-      </section>
+      </OrciaDataCard>
     </div>
   );
 }

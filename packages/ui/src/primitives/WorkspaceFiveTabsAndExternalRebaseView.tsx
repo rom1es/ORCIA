@@ -1,4 +1,6 @@
 import React from "react";
+import { OrciaDataCard } from "./OrciaDataCard";
+import { OrciaTabStrip, type OrciaTabStripItem } from "./OrciaTabStrip";
 import {
   DeliverablesTabPanel,
   MembersTeamTabPanel,
@@ -137,27 +139,28 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
   const safeSlug = sanitizeUiWorkspaceSlug(workspaceSlug, workspaceName);
   const safeDestinationUri = sanitizeUiDestinationUri(defaultArtifactDestinationUri, safeSlug);
 
-  const tabs: readonly { key: WorkspaceSubTabKey; label: string; badge?: number }[] = [
-    { key: "OVERVIEW", label: labels.tabOverview },
-    { key: "DOCUMENTS_SOURCES", label: labels.tabDocumentsSources, badge: sources.length },
-    { key: "DELIVERABLES_ARTIFACTS", label: labels.tabDeliverablesArtifacts },
+  const tabs: readonly OrciaTabStripItem<WorkspaceSubTabKey>[] = [
+    { key: "OVERVIEW", label: labels.tabOverview, icon: "spaces" },
+    {
+      key: "DOCUMENTS_SOURCES",
+      label: labels.tabDocumentsSources,
+      icon: "document",
+      count: sources.length,
+    },
+    { key: "DELIVERABLES_ARTIFACTS", label: labels.tabDeliverablesArtifacts, icon: "pack" },
     {
       key: "GLOSSARY_RULES",
       label: labels.tabGlossaryRules,
-      badge: pendingGlossaryCandidatesCount > 0 ? pendingGlossaryCandidatesCount : undefined,
+      icon: "vocabulary",
+      count: pendingGlossaryCandidatesCount > 0 ? pendingGlossaryCandidatesCount : undefined,
     },
-    { key: "MEMBERS_TEAM", label: labels.tabMembersTeam },
+    { key: "MEMBERS_TEAM", label: labels.tabMembersTeam, icon: "team" },
   ];
 
   const overviewStats: readonly { key: string; title: string; value: string | number }[] = [
     { key: "sources", title: labels.tabDocumentsSources, value: sources.length },
     { key: "glossary", title: labels.tabGlossaryRules, value: pendingGlossaryCandidatesCount },
     { key: "waivers", title: labels.waiverSectionTitle, value: activeWaivers.length },
-    {
-      key: "phase",
-      title: labels.phaseLabel ?? labels.tabDeliverablesArtifacts,
-      value: lifecyclePhaseLabel ?? "—",
-    },
   ];
 
   const sharedWaiverProps = {
@@ -255,40 +258,18 @@ export const WorkspaceFiveTabsAndExternalRebaseView: React.FC<
   };
 
   return (
-    <section
-      aria-label={labels.heading}
-      data-testid="workspace-five-tabs-view"
-      className="rounded-lg border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] p-4 text-[var(--orcia-text-primary)]"
-    >
-      <nav role="tablist" aria-label={labels.heading} className="orcia-ds-tabs mb-4">
-        {tabs.map((tab) => {
-          const isSelected = tab.key === activeTab;
-          return (
-            <button
-              key={tab.key}
-              id={`workspace-tab-${tab.key}`}
-              type="button"
-              role="tab"
-              aria-selected={isSelected}
-              data-testid={`workspace-tab-${tab.key}`}
-              onClick={() => onSelectTab?.(tab.key)}
-              className="orcia-ds-tab inline-flex items-center gap-1.5"
-            >
-              <span>{tab.label}</span>
-              {tab.badge !== undefined && (
-                <span
-                  data-testid={`workspace-tab-badge-${tab.key}`}
-                  className="rounded-full bg-[var(--orcia-surface-primary)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--color-text-primary)]"
-                >
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
+    <OrciaDataCard testId="workspace-five-tabs-view">
+      <OrciaTabStrip
+        ariaLabel={labels.heading}
+        variant="underline"
+        testId="workspace-five-tabs-strip"
+        testIdPrefix="workspace-tab"
+        tabs={tabs}
+        activeTabId={activeTab}
+        onSelectTab={(tabKey) => onSelectTab?.(tabKey)}
+      />
 
       {renderTabPanel()}
-    </section>
+    </OrciaDataCard>
   );
 };

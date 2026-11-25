@@ -243,11 +243,11 @@ describe("Story 24.5 — Accostage Identity, Route Targets (USER24-BUG-2), Zone 
     expect(screen.queryByTestId("help-section-assistant-folders")).toBeNull();
     inboxView.unmount();
 
-    // Render /settings -> strictly 5 tabs with flexWrap: "nowrap" (Story 25.2)
+    // Render /settings -> strictly 5 tabs on canonical .orcia-ds-tab-strip (flex-wrap: nowrap, Story 25.2 / 29.6)
     const settingsView = await renderAppAtRoute("/settings");
     await waitFor(() => {
       const tabsNav = screen.getByTestId("settings-domain-tabs");
-      expect(tabsNav.style.flexWrap).toBe("nowrap");
+      expect(tabsNav.className).toContain("orcia-ds-tab-strip");
       expect(tabsNav.querySelectorAll("button").length).toBe(5);
     });
     settingsView.unmount();

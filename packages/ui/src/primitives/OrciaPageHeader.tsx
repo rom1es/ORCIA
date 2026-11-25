@@ -24,6 +24,10 @@ export interface OrciaPageHeaderProps {
   readonly alertSlot?: React.ReactNode;
   /** Optional `data-testid` applied to the `.orcia-bento-card` `<header>` element. */
   readonly testId?: string;
+  /** Optional override for the `<h1>` element's `data-testid` (defaults to `${testId}-title`). */
+  readonly titleTestId?: string;
+  /** Optional override for the `<p>` subtitle element's `data-testid` (defaults to `${testId}-subtitle`). */
+  readonly subtitleTestId?: string;
   /** Optional extra CSS class names on the `<header>` card. */
   readonly className?: string;
 }
@@ -46,6 +50,8 @@ export function OrciaPageHeader({
   scopeBar,
   alertSlot,
   testId,
+  titleTestId,
+  subtitleTestId,
   className,
 }: OrciaPageHeaderProps): React.ReactElement {
   const headerClassName = ["orcia-bento-card", "orcia-ds-page-header", className]
@@ -70,7 +76,7 @@ export function OrciaPageHeader({
             <div className="orcia-ds-page-header-copy">
               <div className="orcia-ds-page-header-title-row">
                 <h1
-                  data-testid={testId ? `${testId}-title` : undefined}
+                  data-testid={titleTestId ?? (testId ? `${testId}-title` : undefined)}
                   className="orcia-ds-page-header-title"
                 >
                   {title}
@@ -79,7 +85,7 @@ export function OrciaPageHeader({
               </div>
               {subtitle ? (
                 <p
-                  data-testid={testId ? `${testId}-subtitle` : undefined}
+                  data-testid={subtitleTestId ?? (testId ? `${testId}-subtitle` : undefined)}
                   className="orcia-ds-page-header-subtitle"
                 >
                   {subtitle}

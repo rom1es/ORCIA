@@ -91,6 +91,7 @@ export function FourZoneDirectionCShell({
   renderSidebarFooter,
   helpColumnContent,
   helpColumnOpen: controlledHelpColumnOpen,
+  helpColumnToggleDisabled = false,
   onHelpColumnOpenChange,
   mobileDrawerCloseSignal,
   children,
@@ -116,23 +117,13 @@ export function FourZoneDirectionCShell({
 
   useEffect(() => {
     if (controlledHelpColumnOpen === undefined) {
-      setInternalHelpColumnOpen(
-        computeDefaultHelpColumnOpen(viewportWidthPx, pendingDecisionsTotal),
-      );
+      setInternalHelpColumnOpen(computeDefaultHelpColumnOpen(viewportWidthPx, pendingDecisionsTotal));
     }
   }, [viewportWidthPx, pendingDecisionsTotal, controlledHelpColumnOpen]);
 
-  const breadcrumbSig = (breadcrumbItems ?? [])
-    .map((item) => item.route ?? item.label)
-    .join("|");
-
-  useEffect(() => {
-    if (!isMobile) setMobileMenuOpen(false);
-  }, [isMobile]);
-
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [breadcrumbSig, mobileDrawerCloseSignal]);
+  const breadcrumbSig = (breadcrumbItems ?? []).map((item) => item.route ?? item.label).join("|");
+  useEffect(() => { if (!isMobile) setMobileMenuOpen(false); }, [isMobile]);
+  useEffect(() => { setMobileMenuOpen(false); }, [breadcrumbSig, mobileDrawerCloseSignal]);
 
   useFourZoneShellHotkeys({
     onToggleRailCollapsed: () => setRailCollapsed((prev) => !prev),
@@ -205,7 +196,10 @@ export function FourZoneDirectionCShell({
         onSelectWorkspace={onSelectWorkspace}
         onOpenSearchCommand={onOpenSearchCommand}
         helpColumnOpen={helpColumnOpen}
-        onToggleHelpColumn={() => updateHelpColumnOpen(!helpColumnOpen)}
+        helpColumnToggleDisabled={helpColumnToggleDisabled}
+        onToggleHelpColumn={() => {
+          if (!helpColumnToggleDisabled) updateHelpColumnOpen(!helpColumnOpen);
+        }}
         notificationsOpen={notificationsOpen}
         onToggleNotifications={() => setNotificationsOpen((prev) => !prev)}
         effectiveNotificationCount={effectiveNotificationCount}

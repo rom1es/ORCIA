@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { OrciaIcon } from "../components/icons";
 import { ActivityLogEventsList } from "./ActivityLogEventsList";
 import { ActivityLogFiltersBar } from "./ActivityLogFiltersBar";
+import { OrciaDataCard } from "./OrciaDataCard";
+import { OrciaPageHeader } from "./OrciaPageHeader";
 import {
   matchesScopeSelection,
   matchesTimeWindow,
@@ -107,101 +109,70 @@ export function ActivityLogExplorerView({
   const isScopeBroadened = selectedScopeId !== activeObservationScopeId;
 
   return (
-    <div
-      data-testid="activity-log-explorer-page"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "16px",
-        padding: "20px",
-        maxWidth: "1400px",
-        margin: "0 auto",
-        width: "100%",
-      }}
-    >
-      {/* Scope Observation Top Banner */}
-      <div
-        data-testid="activity-observation-scope-banner"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: "8px",
-          padding: "10px 14px",
-          borderRadius: "var(--radius-sm)",
-          backgroundColor: "var(--color-surface-card)",
-          border: "1px solid var(--color-border)",
-          fontSize: "13px",
-        }}
-      >
-        <div
-          data-testid="activity-observation-scope-badge"
-          style={{ display: "flex", alignItems: "center", gap: "8px" }}
-        >
-          <span style={{ color: "var(--color-muted-foreground)" }}>
-            {labels.observationScopeBannerPrefix}
-          </span>
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "4px",
-              padding: "2px 8px",
-              borderRadius: "var(--radius-sm)",
-              backgroundColor: "var(--color-action-primary-subtle)",
-              color: "var(--color-primary-cobalt)",
-              fontWeight: 600,
-              fontSize: "12px",
-            }}
+    <div data-testid="activity-log-explorer-page" className="orcia-ds-page">
+      <OrciaPageHeader
+        testId="activity-page-header"
+        icon="activity"
+        title={labels.pageTitle}
+        subtitle={labels.pageSubtitle}
+        contextBadge={
+          <div
+            data-testid="activity-observation-scope-banner"
+            style={{ display: "inline-flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}
           >
-            <OrciaIcon name="spaces" />
-            {activeObservationScopeLabel}
-          </span>
-        </div>
-
-        {isScopeBroadened && (
-          <button
-            type="button"
-            data-testid="activity-reset-observation-scope-btn"
-            onClick={() => setSelectedScopeId(activeObservationScopeId)}
-            style={{
-              background: "transparent",
-              border: "none",
-              color: "var(--color-primary-cobalt)",
-              cursor: "pointer",
-              fontSize: "12px",
-              fontWeight: 500,
-              textDecoration: "underline",
-              padding: 0,
-            }}
-          >
-            {labels.resetToObservationScopeCta}
-          </button>
-        )}
-      </div>
-
-      {/* Header with Title and Filters */}
-      <header
-        className="orcia-bento-card"
-        style={{
-          padding: "16px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <h1 style={{ margin: 0, fontSize: "18px", fontWeight: 700 }}>{labels.pageTitle}</h1>
+            <div
+              data-testid="activity-observation-scope-badge"
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12px" }}
+            >
+              <span style={{ color: "var(--color-muted-foreground)" }}>
+                {labels.observationScopeBannerPrefix}
+              </span>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "2px 8px",
+                  borderRadius: "var(--radius-sm)",
+                  backgroundColor: "var(--color-action-primary-subtle)",
+                  color: "var(--color-primary-cobalt)",
+                  fontWeight: 600,
+                  fontSize: "12px",
+                }}
+              >
+                <OrciaIcon name="spaces" />
+                {activeObservationScopeLabel}
+              </span>
+            </div>
           </div>
-        </div>
+        }
+        secondaryActions={
+          isScopeBroadened ? (
+            <button
+              type="button"
+              data-testid="activity-reset-observation-scope-btn"
+              onClick={() => setSelectedScopeId(activeObservationScopeId)}
+              className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
+            >
+              {labels.resetToObservationScopeCta}
+            </button>
+          ) : undefined
+        }
+      />
 
-        <p style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}>
-          {labels.pageSubtitle}
-        </p>
-
-        {/* Filters Bar Component */}
+      <OrciaDataCard
+        testId="activity-filters-card"
+        footer={
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <span
+              data-testid="activity-results-counter"
+              style={{ fontSize: "12px", fontWeight: 600, color: "var(--color-muted-foreground)" }}
+            >
+              {labels.resultsCounterPrefix} {visibleEvents.length} / {matchingEvents.length}
+            </span>
+          </div>
+        }
+      >
         <ActivityLogFiltersBar
           labels={labels}
           scopeOptions={scopeOptions}
@@ -222,19 +193,8 @@ export function ActivityLogExplorerView({
           dateTo={dateTo}
           onDateToChange={setDateTo}
         />
+      </OrciaDataCard>
 
-        {/* Results Counter */}
-        <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: "4px" }}>
-          <span
-            data-testid="activity-results-counter"
-            style={{ fontSize: "12px", fontWeight: 600, color: "var(--color-muted-foreground)" }}
-          >
-            {labels.resultsCounterPrefix} {visibleEvents.length} / {matchingEvents.length}
-          </span>
-        </div>
-      </header>
-
-      {/* Provenance and Export Bar */}
       {selectedRunId && (
         <ActivityLogProvenanceExportBar
           selectedRunId={selectedRunId}
@@ -245,12 +205,14 @@ export function ActivityLogExplorerView({
         />
       )}
 
-      <ActivityLogEventsList
-        visibleEvents={visibleEvents}
-        selectedRunId={selectedRunId}
-        labels={labels}
-        onSelectRunId={onSelectRunId}
-      />
+      <OrciaDataCard testId="activity-events-card">
+        <ActivityLogEventsList
+          visibleEvents={visibleEvents}
+          selectedRunId={selectedRunId}
+          labels={labels}
+          onSelectRunId={onSelectRunId}
+        />
+      </OrciaDataCard>
     </div>
   );
 }

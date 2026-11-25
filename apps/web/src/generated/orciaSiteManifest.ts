@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 239,
+    "techLeadReportsCount": 240,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -545,6 +545,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-25",
+      "phaseOrStory": "Story 29.6",
+      "reportFile": "29-6-header-layout-convergence-workspaces-organization-help-and-secondary-tech-lead-report.md",
+      "domain": "Epic 29 Lot 3 — Header & Layout Convergence: Mes Espaces, Mon Organisation, Aide & Secondary Routes (UH-06, UH-08, UH-10, UH-13, CAP-023, CAP-055, CAP-056, CAP-058, CAP-060, CAP-063, CAP-064, CAP-065, CAP-067, CAP-080, CAP-100, CAP-150, CAP-203)",
+      "summary": "Closed (done, Distinct Final Testing Sub-Agent verified): extended OrciaPageHeader (titleTestId), OrciaTabStrip (countTestId), and FourZoneDirectionCShell (helpColumnToggleDisabled + aria-current=\"page\" on /help); converged Mes Espaces (WorkspaceCompactHeader.tsx 119 L, removed dead Phase & duplicate switcher, stripped \"1.\"–\"5.\" prefixes, moved visibility governance into Tab 5 WorkspaceMembersAndSettingsTab.tsx 204 L), Mon Organisation (organization.tsx 60 L, SettingsOrganizationUnitsBlock.tsx 254 L, SettingsOrganizationUnitRow.tsx 267 L, orgTreeHelpers.ts 287 L: header CTAs, removed inline callout, ancestor vs. sibling read-only badges, hidden unauthorized buttons), Aide (help.tsx 169 L, HelpCenterCatalogView.tsx 114 L full canvas width + bottom showcase banner), and secondary routes (/cockpit 255 L, /settings 249 L, /settings/packs 127 L, /profile 221 L, /activity 218 L); all 32 production files <= 300 L; verified 37 files / 147 tests @orcia/ui, 89 files / 329 tests @orcia/web (story-29-6-spaces-org-help-and-secondary-convergence.test.tsx 297 L), 9/9 Turbo (496 JS/TS tests), 181 passed security+contract+evals, 25 passed, 0 failed Playwright Desktop E2E (07, 09, 11, 14, 15, 17, 18, 21, shell without fixtures), ruff (1,745 files)/mypy --strict (856 files)/lint-imports (5/5, 899 files)/lint_spine (0)/export_openapi (0-diff) clean, and gitnexus_detect_changes (risk_level: low)."
+    },
     {
       "date": "2026-11-25",
       "phaseOrStory": "Story 29.5",

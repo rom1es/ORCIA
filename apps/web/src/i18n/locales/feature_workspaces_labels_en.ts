@@ -113,6 +113,16 @@ export const FEATURE_WORKSPACES_EN: FeatureWorkspacesDictionary = {
     workspaceSettingsTitle: "Space settings",
     workspaceSettingsPhaseLabel: "Lifecycle phase",
     workspaceSettingsVisibilityLabel: "Visibility & sharing",
+    visibilityModeStandardDesc:
+      "All team members can access and contribute to this space.",
+    visibilityModeConfidentialDesc:
+      "Access strictly restricted to explicitly authorized members of this space.",
+    visibilityModePrivateDesc:
+      "Personal space strictly reserved for its owner.",
+    visibilityPrivateLockedHint:
+      "Personal spaces remain strictly private and cannot be converted into team spaces.",
+    visibilityObserverLockedHint:
+      "Read-only mode: visibility cannot be changed.",
   },
   dnaAndWaivers: {
     accessReadOnly: "Read-only observer",

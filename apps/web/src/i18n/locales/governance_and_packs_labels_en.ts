@@ -3,12 +3,12 @@ import type { GovernanceAndPacksDictionarySection } from "./governance_and_packs
 
 export const GOVERNANCE_AND_PACKS_EN_LABELS: GovernanceAndPacksDictionarySection = {
   workspaceFiveTabs: {
-    heading: "📦 My Spaces — Sources, Deliverables, Glossary & Team",
-    tabOverview: "1. Overview",
-    tabDocumentsSources: "2. Documents & Sources",
-    tabDeliverablesArtifacts: "3. Deliverables & Produced Documents",
-    tabGlossaryRules: "4. Glossary & Business Rules",
-    tabMembersTeam: "5. Members & Team",
+    heading: "My Spaces — Sources, Deliverables, Glossary & Team",
+    tabOverview: "Overview",
+    tabDocumentsSources: "Documents & Sources",
+    tabDeliverablesArtifacts: "Deliverables & Artifacts",
+    tabGlossaryRules: "Glossary & Business Rules",
+    tabMembersTeam: "Members & Team",
     defaultDestinationTitle: "Default save location for deliverables:",
     roleReferenceBadge: "📚 REFERENCE (Official document)",
     roleActiveBadge: "✏️ WORK IN PROGRESS",

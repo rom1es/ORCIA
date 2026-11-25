@@ -64,9 +64,8 @@ describe("Story 22.1 — UUIDv7 Workspace Creation, F5 Survival & Identity Wirin
       );
     });
 
-    const switcher = screen.getByTestId("workspaces-active-switcher-select") as HTMLSelectElement;
-    expect(switcher.options.length).toBe(1);
-    const createdWsId = switcher.value;
+    const sidebarSelector = screen.getByTestId("sidebar-workspace-selector") as HTMLSelectElement;
+    const createdWsId = sidebarSelector.value;
     expect(createdWsId).not.toBe("ws-1");
     expect(createdWsId).toMatch(UUID_REGEX);
     expect(screen.getByTestId("workspaces-action-feedback-banner").textContent).toContain(

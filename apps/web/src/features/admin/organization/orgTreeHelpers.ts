@@ -1,4 +1,4 @@
-import type { ControlCenterWorkspaceGovItem } from "@orcia/ui";
+import type { ControlCenterWorkspaceGovItem, KnownUserOption } from "@orcia/ui";
 import type { ConfiguredOrgUnit } from "../../../components/platformSetupStorageHelpers";
 import {
   formatI18nTemplate,
@@ -175,6 +175,78 @@ export function getEligibleParentBuUnits(
     ? getDescendantOrgUnitIds(orgUnits, editingUnitId)
     : new Set<string>();
   return orgUnits.filter((u) => u.level === "BU" && !excluded.has(u.id));
+}
+
+export function resolveReadOnlyAncestorUnitIds(
+  orgUnits: readonly ConfiguredOrgUnit[],
+  capabilitiesById: Readonly<Record<string, { readonly canEdit: boolean; readonly canManageMembers?: boolean; readonly canCreateChild?: boolean }>>,
+): ReadonlySet<string> {
+  const byId = new Map(orgUnits.map((u) => [u.id, u]));
+  const ancestors = new Set<string>();
+  for (const unit of orgUnits) {
+    const cap = capabilitiesById[unit.id];
+    if (!cap || (!cap.canEdit && !cap.canManageMembers && !cap.canCreateChild)) {
+      continue;
+    }
+    let currentParentId = unit.parentId;
+    let guard = 0;
+    while (currentParentId && currentParentId !== "scope-global" && guard < orgUnits.length) {
+      const parent = byId.get(currentParentId);
+      if (!parent) break;
+      const parentCap = capabilitiesById[parent.id];
+      if (!parentCap || !parentCap.canEdit) {
+        ancestors.add(parent.id);
+      }
+      currentParentId = parent.parentId;
+      guard += 1;
+    }
+  }
+  return ancestors;
+}
+
+function findKnownUserDisplayName(knownUsers: readonly KnownUserOption[], userId: string): KnownUserOption | undefined {
+  const lower = userId.toLowerCase();
+  return knownUsers.find(
+    (u) => u.principalId.toLowerCase() === lower || (u.email && u.email.toLowerCase() === lower),
+  );
+}
+
+export function formatOrgUnitLeadBadgeLabel(params: {
+  readonly unit: ConfiguredOrgUnit;
+  readonly knownUsers: readonly KnownUserOption[];
+  readonly leadPrefix: string;
+  readonly leadsPluralPrefix: string;
+}): string | null {
+  const { unit, knownUsers, leadPrefix, leadsPluralPrefix } = params;
+  const effectiveLeads =
+    Array.isArray(unit.leadUserIds) && unit.leadUserIds.length > 0
+      ? unit.leadUserIds
+      : unit.leadUserId
+        ? [unit.leadUserId]
+        : [];
+  if (effectiveLeads.length === 0) return null;
+  if (effectiveLeads.length === 1) {
+    const leadId = effectiveLeads[0]!;
+    const leadUser = findKnownUserDisplayName(knownUsers, leadId);
+    return leadUser && leadUser.displayName && leadUser.displayName !== leadId
+      ? `${leadPrefix} ${leadUser.displayName} (${leadId})`
+      : `${leadPrefix} ${leadId}`;
+  }
+  const leadNames = effectiveLeads.map((lid) => findKnownUserDisplayName(knownUsers, lid)?.displayName || lid);
+  return `${leadsPluralPrefix} ${leadNames.join(", ")}`;
+}
+
+export function formatOrgUnitOntologyLeadBadgeLabel(params: {
+  readonly unit: ConfiguredOrgUnit;
+  readonly knownUsers: readonly KnownUserOption[];
+  readonly singularPrefix: string;
+  readonly pluralPrefix: string;
+}): string | null {
+  const { unit, knownUsers, singularPrefix, pluralPrefix } = params;
+  const ontoLeads = unit.level === "BU" && Array.isArray(unit.ontologyLeadUserIds) ? unit.ontologyLeadUserIds : [];
+  if (ontoLeads.length === 0) return null;
+  const names = ontoLeads.map((lid) => findKnownUserDisplayName(knownUsers, lid)?.displayName || lid);
+  return `${ontoLeads.length === 1 ? singularPrefix : pluralPrefix} ${names.join(", ")}`;
 }
 
 export function buildNonEmptyDeleteSummary(params: {

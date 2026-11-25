@@ -196,11 +196,9 @@ describe("Story 20.1 — Menu Mon Organisation, Délégation BU/Team, Invitation
       expect(within(firstOrgPage).getByText("Équipe Support N2")).toBeTruthy();
       expect(within(firstOrgPage).getByText("Direction Finance")).toBeTruthy();
     });
-    // Direction Finance is outside Martin's delegation -> strictly read-only
+    // Direction Finance is outside Martin's delegation -> strictly read-only without disabled write buttons
     expect(within(firstOrgPage).getByTestId("org-unit-readonly-badge-bu-finance")).toBeTruthy();
-    expect(
-      (within(firstOrgPage).getByTestId("edit-org-unit-btn-bu-finance") as HTMLButtonElement).disabled,
-    ).toBe(true);
+    expect(within(firstOrgPage).queryByTestId("edit-org-unit-btn-bu-finance")).toBeNull();
     expect(screen.getByTestId("org-unit-ontology-lead-badge-bu-ops")).toBeTruthy();
 
     const rootDeleteBtn = screen.queryByTestId("delete-org-unit-btn-bu-ops") as HTMLButtonElement | null;
@@ -261,7 +259,7 @@ describe("Story 20.1 — Menu Mon Organisation, Délégation BU/Team, Invitation
 
     const editTeamBtn = screen.getByTestId("edit-org-unit-btn-team-ops-1") as HTMLButtonElement;
     expect(editTeamBtn.disabled).toBe(false);
-    expect((screen.getByTestId("delete-org-unit-btn-team-ops-1") as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.queryByTestId("delete-org-unit-btn-team-ops-1")).toBeNull();
   });
 
   it("never exposes or preselects global platform scope in /activity for BU_LEAD or TEAM_LEAD, but keeps it for PLATFORM_ADMIN & SECOPS", async () => {

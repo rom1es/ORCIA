@@ -121,7 +121,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .orcia-ds-tab-strip--underline {

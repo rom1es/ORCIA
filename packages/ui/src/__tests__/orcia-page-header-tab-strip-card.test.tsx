@@ -1,4 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import fs from "node:fs";
+import path from "node:path";
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -106,6 +108,11 @@ describe("Story 29.4 — Canonical OrciaPageHeader, OrciaTabStrip & OrciaDataCar
     expect(tablist.getAttribute("role")).toBe("tablist");
     expect(tablist.getAttribute("aria-orientation")).toBe("horizontal");
     expect(tablist.className).toContain("orcia-ds-tab-strip--underline");
+    const headersCss = fs.readFileSync(
+      path.resolve(__dirname, "../styles/tokens-headers.css"),
+      "utf-8",
+    );
+    expect(headersCss).toMatch(/\.orcia-ds-tab-strip\s*\{[^}]*flex-wrap:\s*nowrap;/s);
     expect(screen.getByTestId("strip-trailing-content").textContent).toBe("3 items");
     expect(screen.getByTestId("strip-trailing")).toBeTruthy();
 

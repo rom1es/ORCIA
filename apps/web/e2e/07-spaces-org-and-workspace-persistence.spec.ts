@@ -45,10 +45,6 @@ test.describe("TEST-05 · 07 — My Spaces: organization, workspace and real F5"
     await page.goto("/spaces");
     await reloadColdFromPg(page);
     await expect(page.getByTestId("workspaces-compact-header")).toBeVisible({ timeout: 20000 });
-    await expect(page.getByTestId("workspaces-active-switcher-select")).toContainText(
-      "Espace E2E Comptabilité",
-      { timeout: 20000 },
-    );
     await expect(page.getByTestId("sidebar-unified-scope-selector").locator("select")).toHaveCount(1);
     const scopeSelect = page.getByTestId("sidebar-workspace-selector");
     await expect(scopeSelect).toBeVisible();

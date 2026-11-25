@@ -1,7 +1,9 @@
 import { createOrciaApiClient } from "@orcia/api-client";
 import {
   ContextualHelpColumnAndCenter,
+  OrciaDataCard,
   OrciaIcon,
+  OrciaPageHeader,
   type UiContextualHelpArticleView,
   type UiHelpArticleLayer,
 } from "@orcia/ui";
@@ -113,35 +115,24 @@ export function HelpCenterRouteView(): React.ReactElement {
   }, [apiClient, fallbackArticle, isAuthenticated, locale]);
 
   return (
-    <div data-testid="help-menu-center-view" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <section
-        data-testid="help-showcase-site-banner"
-        className="orcia-bento-card"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "12px",
-        }}
-      >
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          <strong>
-            <OrciaIcon name="globe" /> {copy.helpCenterShowcaseTitle}
-          </strong>
-          <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
-            {copy.helpCenterShowcaseDesc}
-          </span>
-        </div>
-        <button
-          type="button"
-          data-testid="open-orcia-showcase-site-btn"
-          onClick={() => navigateToRoute("/showcase")}
-          className="orcia-ds-btn orcia-ds-btn-primary"
-        >
-          <OrciaIcon name="globe" /> <span>{copy.helpCenterShowcaseBtnLabel}</span>
-        </button>
-      </section>
+    <div data-testid="help-menu-center-view" className="orcia-ds-page w-full">
+      <OrciaPageHeader
+        testId="help-page-header"
+        icon="help"
+        title={copy.helpCenterPageTitle}
+        subtitle={copy.helpCenterPageSubtitle}
+        secondaryActions={
+          <button
+            type="button"
+            data-testid="open-orcia-showcase-site-btn"
+            onClick={() => navigateToRoute("/showcase")}
+            className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
+          >
+            <OrciaIcon name="globe" size={14} />
+            <span>{copy.helpCenterShowcaseBtnLabel}</span>
+          </button>
+        }
+      />
 
       <ContextualHelpColumnAndCenter
         mode="HELP_MENU_CENTER"
@@ -156,6 +147,16 @@ export function HelpCenterRouteView(): React.ReactElement {
         askAssistantPrefill={resolvedPrefill ?? undefined}
         labels={dictionary.contextualHelpHybrid}
       />
+
+      <OrciaDataCard
+        testId="help-showcase-site-banner"
+        icon="globe"
+        title={copy.helpCenterShowcaseTitle}
+      >
+        <p style={{ margin: 0, fontSize: "13px", color: "var(--color-muted-foreground)" }}>
+          {copy.helpCenterShowcaseDesc}
+        </p>
+      </OrciaDataCard>
     </div>
   );
 }

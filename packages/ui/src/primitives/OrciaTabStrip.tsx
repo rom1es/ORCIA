@@ -12,6 +12,7 @@ export interface OrciaTabStripItem<T extends string = string> {
   readonly disabledReason?: string;
   readonly tooltip?: string;
   readonly testId?: string;
+  readonly countTestId?: string;
 }
 
 export interface OrciaTabStripProps<T extends string = string> {
@@ -130,7 +131,12 @@ export function OrciaTabStrip<T extends string = string>({
               {tab.icon ? <OrciaIcon name={tab.icon} size={14} /> : null}
               <span>{tab.label}</span>
               {typeof tab.count === "number" ? (
-                <span className="orcia-ds-tab-strip-badge">{tab.count}</span>
+                <span
+                  data-testid={tab.countTestId ?? `${testIdPrefix}-badge-${tab.key}`}
+                  className="orcia-ds-tab-strip-badge"
+                >
+                  {tab.count}
+                </span>
               ) : null}
             </button>
           );

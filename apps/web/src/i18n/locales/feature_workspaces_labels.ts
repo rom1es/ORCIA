@@ -105,6 +105,11 @@ export interface FeatureWorkspacesDictionary {
     readonly workspaceSettingsTitle: string;
     readonly workspaceSettingsPhaseLabel: string;
     readonly workspaceSettingsVisibilityLabel: string;
+    readonly visibilityModeStandardDesc: string;
+    readonly visibilityModeConfidentialDesc: string;
+    readonly visibilityModePrivateDesc: string;
+    readonly visibilityPrivateLockedHint: string;
+    readonly visibilityObserverLockedHint: string;
   };
   readonly dnaAndWaivers: {
     readonly accessReadOnly: string;

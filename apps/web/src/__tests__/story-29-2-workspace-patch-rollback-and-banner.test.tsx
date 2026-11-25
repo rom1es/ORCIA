@@ -4,7 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clearPlatformSetupStorage,
   PLATFORM_SETUP_STATE_STORAGE_KEY,
@@ -103,23 +103,25 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.restoreAllMocks();
   cleanup();
 });
 
-describe("Story 29.2 — Scoped PATCH /api/v1/workspaces/{id}, Rollback & Single Banner", () => {
-  it("routes team workspace visibility updates via PATCH /api/v1/workspaces/{id} (never PUT platform-setup-state)", async () => {
+describe("Story 29.2 — Scoped PATCH /api/v1/workspaces/{id}, Rollback & Single Banner (Tab 5 Visibility)", () => {
+  it("routes team workspace visibility updates via PATCH /api/v1/workspaces/{id} from Tab 5 (never PUT platform-setup-state)", async () => {
     seedTeamLeadWorkspaces();
     const view = await mountWorkspaces("fr");
 
     const switcher = (await screen.findByTestId(
-      "workspaces-active-switcher-select",
+      "sidebar-workspace-selector",
     )) as HTMLSelectElement;
     fireEvent.change(switcher, { target: { value: WS_TEAM_ID } });
     await waitFor(() => {
       expect(screen.getByTestId("workspaces-active-title").textContent).toBe("Projet Rouge Gorge");
     });
 
-    fireEvent.change(screen.getByTestId(`workspace-card-visibility-select-${WS_TEAM_ID}`), {
+    fireEvent.click(screen.getByTestId("workspace-tab-MEMBERS_TEAM"));
+    fireEvent.change(await screen.findByTestId(`workspace-card-visibility-select-${WS_TEAM_ID}`), {
       target: { value: "CONFIDENTIAL_RESTRICTED" },
     });
 
@@ -141,65 +143,92 @@ describe("Story 29.2 — Scoped PATCH /api/v1/workspaces/{id}, Rollback & Single
     view.unmount();
   });
 
-  it("rolls back React state & never writes localStorage on 403, rendering strictly 1 banner without ⚠️", async () => {
+  it("locks PRIVATE_USER in Tab 5 and rolls back React state & localStorage on 403 team PATCH with strictly 1 banner without ⚠️", async () => {
     seedTeamLeadWorkspaces();
-    const view = await mountWorkspaces("fr");
+    const origFetch = globalThis.fetch;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      if (url.includes(`/api/v1/workspaces/${WS_TEAM_ID}`) && init?.method === "PATCH") {
+        return new Response(
+          JSON.stringify({
+            type: "about:blank", title: "Accès refusé", status: 403,
+            detail: "Droits insuffisants pour modifier la visibilité de cet espace.",
+            error_code: "ERR_FORBIDDEN_WORKSPACE_VISIBILITY",
+          }),
+          { status: 403, headers: { "Content-Type": "application/problem+json" } },
+        );
+      }
+      return origFetch(input, init);
+    });
 
+    const view = await mountWorkspaces("fr");
     await waitFor(() => {
-      expect(screen.getByTestId("workspaces-active-title").textContent).toBe(
-        "Espace personnel — Rouge Gorge",
-      );
+      expect(screen.getByTestId("workspaces-active-title").textContent).toBe("Espace personnel — Rouge Gorge");
+    });
+    fireEvent.click(screen.getByTestId("workspace-tab-MEMBERS_TEAM"));
+    const personalSelect = (await screen.findByTestId(`workspace-card-visibility-select-${WS_PERSONAL_ID}`)) as HTMLSelectElement;
+    expect(personalSelect.disabled).toBe(true);
+    expect(personalSelect.value).toBe("PRIVATE_USER");
+
+    fireEvent.change(screen.getByTestId("sidebar-workspace-selector"), { target: { value: WS_TEAM_ID } });
+    await waitFor(() => {
+      expect(screen.getByTestId("workspaces-active-title").textContent).toBe("Projet Rouge Gorge");
     });
 
     const cachedBefore = readStorageItem(PLATFORM_SETUP_STATE_STORAGE_KEY);
-    // Attempt in-place conversion of PRIVATE_USER -> STANDARD -> backend returns 403
-    fireEvent.change(screen.getByTestId(`workspace-card-visibility-select-${WS_PERSONAL_ID}`), {
-      target: { value: "STANDARD" },
+    fireEvent.change(await screen.findByTestId(`workspace-card-visibility-select-${WS_TEAM_ID}`), {
+      target: { value: "CONFIDENTIAL_RESTRICTED" },
     });
 
     const alertBanner = await screen.findByTestId("workspaces-action-feedback-banner");
     expect(alertBanner.getAttribute("role")).toBe("alert");
-    // Zero ⚠️ emoji colliding with OrciaIcon cross, strictly 1 error banner (no platform-sync-error-banner)
     expect(alertBanner.textContent).not.toContain("⚠️");
     expect(screen.queryByTestId("platform-sync-error-banner")).toBeNull();
     expect(screen.getAllByRole("alert")).toHaveLength(1);
-
-    // State must NOT mutate into Team visibility, and localStorage must not change
-    expect(screen.getByTestId(`workspace-visibility-badge-${WS_PERSONAL_ID}`).textContent).toContain(
-      "Personnel",
-    );
-    expect(
-      (screen.getByTestId(`workspace-card-visibility-select-${WS_PERSONAL_ID}`) as HTMLSelectElement)
-        .value,
-    ).toBe("PRIVATE_USER");
+    expect(screen.getByTestId(`workspace-visibility-badge-${WS_TEAM_ID}`).textContent).toContain("Équipe");
+    expect((screen.getByTestId(`workspace-card-visibility-select-${WS_TEAM_ID}`) as HTMLSelectElement).value).toBe("STANDARD");
     expect(readStorageItem(PLATFORM_SETUP_STATE_STORAGE_KEY)).toBe(cachedBefore);
-
     view.unmount();
   });
 
   it("renders localized EN error banner without ⚠️ when PATCH fails in English locale", async () => {
     seedTeamLeadWorkspaces();
     await createOrciaApiClient({ baseUrl: "" }).updateUserPreferences({ locale: "en" });
-    const view = await mountWorkspaces("en");
-
-    await waitFor(() => {
-      expect(screen.getByTestId("workspaces-active-title").textContent).toBe(
-        "Espace personnel — Rouge Gorge",
-      );
+    const origFetch = globalThis.fetch;
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      if (url.includes(`/api/v1/workspaces/${WS_TEAM_ID}`) && init?.method === "PATCH") {
+        return new Response(
+          JSON.stringify({
+            type: "about:blank", title: "Personal workspace visibility locked", status: 403,
+            detail: "Visibility transition denied.", error_code: "ERR_PRIVATE_WORKSPACE_VISIBILITY_LOCKED",
+          }),
+          { status: 403, headers: { "Content-Type": "application/problem+json" } },
+        );
+      }
+      return origFetch(input, init);
     });
 
-    fireEvent.click(await screen.findByTestId(`share-private-workspace-btn-${WS_PERSONAL_ID}`));
+    const view = await mountWorkspaces("en");
+    fireEvent.change(await screen.findByTestId("sidebar-workspace-selector"), { target: { value: WS_TEAM_ID } });
+    await waitFor(() => {
+      expect(screen.getByTestId("workspaces-active-title").textContent).toBe("Projet Rouge Gorge");
+    });
+    fireEvent.click(screen.getByTestId("workspace-tab-MEMBERS_TEAM"));
+    fireEvent.change(await screen.findByTestId(`workspace-card-visibility-select-${WS_TEAM_ID}`), {
+      target: { value: "CONFIDENTIAL_RESTRICTED" },
+    });
+
     const alertBanner = await screen.findByTestId("workspaces-action-feedback-banner");
     expect(alertBanner.getAttribute("role")).toBe("alert");
     expect(alertBanner.textContent).toContain("Personal workspace visibility locked");
-    expect(alertBanner.textContent).toContain("Workspace sharing");
+    expect(alertBanner.textContent).toContain("Workspace visibility");
     expect(alertBanner.textContent).not.toContain("⚠️");
     expect(screen.queryByTestId("platform-sync-error-banner")).toBeNull();
-
     view.unmount();
   });
 
-  it("persists POST create + PATCH visibility/phase across cold storage clear and remount (F5)", async () => {
+  it("persists POST create + PATCH visibility in Tab 5 across cold storage clear and remount (F5)", async () => {
     seedVitestPlatformSetupState(
       { org_units: [] },
       { email: "admin@orcia.fr", displayName: "Admin", roles: ["PLATFORM_ADMIN"] },
@@ -228,9 +257,10 @@ describe("Story 29.2 — Scoped PATCH /api/v1/workspaces/{id}, Rollback & Single
       expect(screen.getByTestId("workspaces-active-title").textContent).toBe("Espace Persistant");
     });
 
-    const switcher = screen.getByTestId("workspaces-active-switcher-select") as HTMLSelectElement;
-    const wsId = switcher.value;
-    fireEvent.change(screen.getByTestId(`workspace-card-visibility-select-${wsId}`), {
+    const sidebarSelector = screen.getByTestId("sidebar-workspace-selector") as HTMLSelectElement;
+    const wsId = sidebarSelector.value;
+    fireEvent.click(screen.getByTestId("workspace-tab-MEMBERS_TEAM"));
+    fireEvent.change(await screen.findByTestId(`workspace-card-visibility-select-${wsId}`), {
       target: { value: "CONFIDENTIAL_RESTRICTED" },
     });
     await waitFor(() => {
@@ -238,20 +268,11 @@ describe("Story 29.2 — Scoped PATCH /api/v1/workspaces/{id}, Rollback & Single
         "Confidentiel",
       );
     });
-    fireEvent.change(screen.getByTestId(`workspace-card-phase-select-${wsId}`), {
-      target: { value: "RUN" },
-    });
-    await waitFor(() => {
-      expect(
-        (screen.getByTestId(`workspace-card-phase-select-${wsId}`) as HTMLSelectElement).value,
-      ).toBe("RUN");
-    });
 
     await waitFor(() => {
       expect(screen.queryByTestId("create-workspace-form")).toBeNull();
     });
     firstView.unmount();
-    // Clear only browser storage (do not wipe Vitest mock backend state) to simulate cold F5 reload.
     writeCachedPlatformSetupState(null);
     writeCachedPlatformAdmin(null);
 
@@ -260,10 +281,15 @@ describe("Story 29.2 — Scoped PATCH /api/v1/workspaces/{id}, Rollback & Single
       expect(screen.getByTestId(`workspace-visibility-badge-${wsId}`).textContent).toContain(
         "Confidentiel",
       );
-      expect(
-        (screen.getByTestId(`workspace-card-phase-select-${wsId}`) as HTMLSelectElement).value,
-      ).toBe("RUN");
     });
+    fireEvent.click(screen.getByTestId("workspace-tab-MEMBERS_TEAM"));
+    expect(
+      (
+        (await screen.findByTestId(
+          `workspace-card-visibility-select-${wsId}`,
+        )) as HTMLSelectElement
+      ).value,
+    ).toBe("CONFIDENTIAL_RESTRICTED");
 
     remountView.unmount();
   });

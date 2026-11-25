@@ -201,7 +201,7 @@ capabilities:
     title: Ancrages humains obligatoires et arbitrage / tie-break
     fr: [FR-4, FR-5]
     origin: epic
-    origin_ref: 3-4, 25-3
+    origin_ref: 3-4, 25-3, 29-6
     status: live
     kind: feature
     uj: [UJ-5]
@@ -213,14 +213,15 @@ capabilities:
         tests/unit/test_story_25_3_cockpit_zero_demo_run.py,
         tests/integration/api/test_story_25_3_orchestration_zero_demo_postgres18.py,
         apps/web/src/__tests__/story-25-3-cockpit-empty-vs-real-pending.test.tsx,
+        apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx,
       ]
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-25"
     surfaces:
       {
         route: /cockpit,
         api: _blackboard_arbitration_routes.py,
-        ui: HumanLedAnchorCard + ArbitrationTieBreakCard,
+        ui: CockpitFeaturePanel + OrciaPageHeader + OrciaDataCard + HumanLedAnchorCard + ArbitrationTieBreakCard,
         migration: "0015",
       }
   - id: CAP-024
@@ -430,27 +431,27 @@ capabilities:
     title: Studio workflows et registre des packs
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-5
+    origin_ref: 8-5, 29-6
     status: live
     kind: feature
     uj: [UJ-19]
     db_tables: [workflow_definitions, declarative_pack_bundles]
-    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx]
+    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx]
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-25"
     surfaces: { route: /settings, api: studio_and_wizards.py, ui: SettingsPacksSection }
   - id: CAP-056
     title: Packs métiers — catalogue backend, écran simplifié, activation unique
     fr: [FR-31]
     origin: adhoc
-    origin_ref: 2026-11-05-simplification-ecran-packs-metiers-catalogue-backend + 2026-11-05-unification-activation-unique-packs-metiers-sally-winston
+    origin_ref: 2026-11-05-simplification-ecran-packs-metiers-catalogue-backend + 2026-11-05-unification-activation-unique-packs-metiers-sally-winston + 29-6
     status: live
     kind: feature
     uj: [UJ-19]
     db_tables: [declarative_pack_bundles, catalog_items, platform_settings]
-    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
+    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-25"
     surfaces: { route: /settings }
   - id: CAP-057
     title: Wizards d'initialisation durables
@@ -469,27 +470,27 @@ capabilities:
     title: Coquille Administration (/settings) à 5 onglets réservée aux Administrateurs Plateforme (PLATFORM_ADMIN) & SecOps, délégation Mon Organisation (/organization) et gouvernance Authentification
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-3, 17-1, 20-1, 25-2 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa + 2026-11-15-anti-lastpass-matrice-roles-modale-sync-secops-et-hierarchie-bu + 2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu
+    origin_ref: 8-3, 17-1, 20-1, 25-2, 29-6 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa + 2026-11-15-anti-lastpass-matrice-roles-modale-sync-secops-et-hierarchie-bu + 2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu
     status: live
     kind: feature
     uj: [UJ-13, UJ-14]
     db_tables: [platform_settings, platform_auth_settings, org_units, iam_accounts]
-    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/unit/test_auth_pg_rehydration_after_reload.py, tests/unit/test_story_25_2_org_units_read_access.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_platform_auth_modes_2fa_and_local_isolation_postgres18.py, tests/integration/api/test_auth_pg_rehydration_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx, packages/ui/src/__tests__/status-badge-and-anti-lastpass-inputs.test.tsx, apps/web/src/__tests__/story-17-1-settings-5-tabs-and-rbac.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx, apps/web/src/__tests__/story-25-2-shell-9-items-org-admin-and-unified-scope.test.tsx, apps/web/src/__tests__/platform-auth-modes-2fa-and-settings-f5.test.tsx, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, apps/web/e2e/14-auth-2fa-account-and-profile.spec.ts]
+    tests: [tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/unit/test_auth_pg_rehydration_after_reload.py, tests/unit/test_story_25_2_org_units_read_access.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_platform_auth_modes_2fa_and_local_isolation_postgres18.py, tests/integration/api/test_auth_pg_rehydration_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx, packages/ui/src/__tests__/status-badge-and-anti-lastpass-inputs.test.tsx, apps/web/src/__tests__/story-17-1-settings-5-tabs-and-rbac.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx, apps/web/src/__tests__/story-25-2-shell-9-items-org-admin-and-unified-scope.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx, apps/web/src/__tests__/platform-auth-modes-2fa-and-settings-f5.test.tsx, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, apps/web/e2e/14-auth-2fa-account-and-profile.spec.ts]
     verification: runtime
-    verified_at: "2026-11-20"
-    surfaces: { route: "/settings, /configuration, /organization", api: "settings_and_studio.py, auth_settings.py, sql_local_auth.py, sql_org_iam_role_sync.py", ui: "SettingsHubView (iam, authentication, models, connectors, packs) + OrganizationPageView + SettingsOrganizationUnitRow + StatusBadge (cobalt pastel) + OrciaKnownUserCombobox (anti-LastPass) + SettingsAuthenticationSection + PlatformAuthSettingsCard + OrciaAlertBanner + authSessionStore", migration: "20261115_1901 + 20261115_1902 + 20261117_2001" }
+    verified_at: "2026-11-25"
+    surfaces: { route: "/settings, /configuration, /organization", api: "settings_and_studio.py, auth_settings.py, sql_local_auth.py, sql_org_iam_role_sync.py", ui: "SettingsHubView (iam, authentication, models, connectors, packs) + OrciaPageHeader + OrciaTabStrip + OrciaDataCard + OrganizationPageView + SettingsOrganizationUnitRow + StatusBadge (cobalt pastel) + OrciaKnownUserCombobox (anti-LastPass) + SettingsAuthenticationSection + PlatformAuthSettingsCard + OrciaAlertBanner + authSessionStore", migration: "20261115_1901 + 20261115_1902 + 20261117_2001" }
 
   # ───────────── Shell, navigation, aide (Epic 9, 12, 17 + ad-hoc) ─────────────
   - id: CAP-060
     title: Shell 4 zones Direction C (9 entrées dont Mon Organisation & Administration, logo [O] ORCIA top-left, sélecteur unifié d'espace groupé, popup Mon Compte bas-gauche) et cockpit épuré
     fr: [FR-32]
     origin: epic
-    origin_ref: 9-1, 12-1, 17-1, 20-2, 20-3, 25-2, 29-4 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa
+    origin_ref: 9-1, 12-1, 17-1, 20-2, 20-3, 25-2, 29-4, 29-6 + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa
     status: live
     kind: feature
     uj: [UJ-20]
     db_tables: [org_units, workspaces, user_preferences]
-    tests: [apps/web/e2e/shell.spec.ts, apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, packages/ui/src/__tests__/story-17-1-wireframe-icons-and-shell-rail.test.tsx, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx, packages/ui/src/__tests__/orcia-page-header-tab-strip-card.test.tsx, apps/web/src/__tests__/story-20-3-sidebar-account-popover-and-settings-f5.test.tsx, apps/web/src/__tests__/story-25-2-shell-9-items-org-admin-and-unified-scope.test.tsx, apps/web/src/__tests__/story-29-4-canonical-header-and-visual-grammar.test.tsx]
+    tests: [apps/web/e2e/shell.spec.ts, apps/web/e2e/11-screens-smoke-without-server-errors.spec.ts, apps/web/src/__tests__/day0-modal-and-settings-auth-token-wiring.test.tsx, packages/ui/src/__tests__/story-17-1-wireframe-icons-and-shell-rail.test.tsx, packages/ui/src/__tests__/alert-banner-and-auth-spacing.test.tsx, packages/ui/src/__tests__/orcia-page-header-tab-strip-card.test.tsx, apps/web/src/__tests__/story-20-3-sidebar-account-popover-and-settings-f5.test.tsx, apps/web/src/__tests__/story-25-2-shell-9-items-org-admin-and-unified-scope.test.tsx, apps/web/src/__tests__/story-29-4-canonical-header-and-visual-grammar.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx]
     verification: runtime
     verified_at: "2026-11-25"
     surfaces: { ui: "FourZoneDirectionCShell + FourZoneSidebarRail + OrciaIcon SVG + SidebarAccountPopover + OrciaPageHeader + OrciaTabStrip + OrciaDataCard + ModuleWorkspaceView", api: "/api/v1/navigation (shell.py)" }
@@ -523,39 +524,39 @@ capabilities:
     title: Popup Mon Compte bas-gauche style ChatGPT, modale Paramètres 5 onglets persistée PG18 (/profile, préférences, clés IDE/MCP SHA-256) et alerte mot de passe temporaire
     fr: [FR-32]
     origin: epic
-    origin_ref: 9-4, 20-3, 20-4 + 17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances + 2026-11-15-correction-erreur-mot-de-passe-actuel-et-repli-ui-post-modification
+    origin_ref: 9-4, 20-3, 20-4, 29-6 + 17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances + 2026-11-15-correction-erreur-mot-de-passe-actuel-et-repli-ui-post-modification
     status: live
     kind: feature
     uj: [UJ-16]
     db_tables: [user_preferences, user_mcp_tokens, users]
-    tests: [tests/unit/test_epic_9_story_9_4_user_preferences_and_mcp_tokens.py, tests/unit/test_story_20_3_user_preferences_and_mcp_tokens.py, tests/security/test_story_20_3_mcp_tokens_isolation.py, tests/integration/api/test_story_20_3_user_preferences_and_mcp_postgres18.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/unit/test_change_password_current_check_and_pg_hydration.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py, packages/ui/src/__tests__/temporary-password-modal.test.tsx, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx, apps/web/src/__tests__/story-20-3-sidebar-account-popover-and-settings-f5.test.tsx, apps/web/src/__tests__/auth-logout-incognito-and-temp-password.test.tsx, apps/web/e2e/14-auth-2fa-account-and-profile.spec.ts]
+    tests: [tests/unit/test_epic_9_story_9_4_user_preferences_and_mcp_tokens.py, tests/unit/test_story_20_3_user_preferences_and_mcp_tokens.py, tests/security/test_story_20_3_mcp_tokens_isolation.py, tests/integration/api/test_story_20_3_user_preferences_and_mcp_postgres18.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/unit/test_change_password_current_check_and_pg_hydration.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, tests/integration/api/test_local_auth_logout_and_temp_password_postgres18.py, packages/ui/src/__tests__/temporary-password-modal.test.tsx, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx, apps/web/src/__tests__/story-20-3-sidebar-account-popover-and-settings-f5.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx, apps/web/src/__tests__/auth-logout-incognito-and-temp-password.test.tsx, apps/web/e2e/14-auth-2fa-account-and-profile.spec.ts]
     verification: runtime
-    verified_at: "2026-11-20"
-    surfaces: { route: /profile, api: "user_account_settings.py (/api/v1/users/me/preferences, /api/v1/users/me/mcp-tokens), /api/v1/users/me/account-profile, /api/v1/auth/change-password", ui: "ShellSidebarAccountControl + SidebarAccountPopover + UserSettingsModalDialog (5 onglets) + UserPasswordChangeCard + TemporaryPasswordWarningBanner + UserProfileOverviewPage", migration: "20261117_2003" }
+    verified_at: "2026-11-25"
+    surfaces: { route: /profile, api: "user_account_settings.py (/api/v1/users/me/preferences, /api/v1/users/me/mcp-tokens), /api/v1/users/me/account-profile, /api/v1/auth/change-password", ui: "ShellSidebarAccountControl + SidebarAccountPopover + UserSettingsModalDialog (5 onglets) + UserPasswordChangeCard + TemporaryPasswordWarningBanner + UserProfileOverviewPage + OrciaPageHeader + OrciaDataCard", migration: "20261117_2003" }
   - id: CAP-064
     title: Aide contextuelle hybride (ⓘ, HelpArticle, catalogue d'aide & bannière Vitrine sur /help)
     fr: [FR-32]
     origin: epic
-    origin_ref: 9-5, 20-2 + 2026-11-05-audit-textes-ux-ui-zero-jargon-et-aide-contextuelle-icone-i
+    origin_ref: 9-5, 20-2, 29-6 + 2026-11-05-audit-textes-ux-ui-zero-jargon-et-aide-contextuelle-icone-i
     status: live
     kind: feature
     uj: [UJ-20]
     db_tables: [catalog_items, kb_chunks]
-    tests: [apps/web/e2e/09-pack-builder-and-contextual-help.spec.ts, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts, apps/web/src/__tests__/story-20-2-glossaire-ontology-and-promotions.test.tsx]
+    tests: [apps/web/e2e/09-pack-builder-and-contextual-help.spec.ts, apps/web/e2e/21-assistant-citations-v5-audit-help-showcase.spec.ts, apps/web/src/__tests__/story-20-2-glossaire-ontology-and-promotions.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx]
     verification: runtime
-    verified_at: "2026-11-20"
-    surfaces: { route: /help, api: portal_and_help.py, ui: "HelpCenterRouteView (Centre d'Aide & Showcase)" }
+    verified_at: "2026-11-25"
+    surfaces: { route: /help, api: portal_and_help.py, ui: "HelpCenterRouteView (Centre d'Aide & Showcase) + HelpCenterCatalogView + OrciaPageHeader + OrciaDataCard" }
   - id: CAP-065
     title: Registre de provenance auditable immuable (`audit_ledger` append-only) & journal d'activité scopé par rôle (/activity)
     fr: [FR-25, FR-32]
     origin: epic
-    origin_ref: 6-1-registre-de-provenance-auditable-immuable-audit_ledger-appen, 20-1, 20-4
+    origin_ref: 6-1-registre-de-provenance-auditable-immuable-audit_ledger-appen, 20-1, 20-4, 29-6
     status: live
     kind: feature
     uj: [UJ-8, UJ-14]
     db_tables: [audit_ledger, run_lock_manifests]
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-25"
     tests:
       - tests/unit/test_story_6_1_audit_ledger_core.py
       - tests/unit/test_story_6_1_outbox_subscriber.py
@@ -567,13 +568,14 @@ capabilities:
       - tests/integration/api/test_story_20_1_org_delegation_and_audit_postgres18.py
       - apps/web/src/__tests__/story-6-1-activity-provenance-export-and-f5.test.tsx
       - apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx
+      - apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx
       - apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx
       - apps/web/e2e/12-finops-and-audit-provenance.spec.ts
     surfaces:
       route: /activity
       api: "audit_ledger.py + _finops_auth_guards.py + sql_audit_ledger_mappers.py + _assistant_usage_telemetry.py"
       migration: "20261116_0601 + 20261117_2001"
-      ui: "ActivityLogExplorerView + ActivityLogFiltersBar + ActivityProvenanceModal"
+      ui: "ActivityLogExplorerView + ActivityLogFiltersBar + ActivityProvenanceModal + OrciaPageHeader + OrciaDataCard"
     notes: "Story 6.1 (réconciliation CAP-ACT-3) : table append-only PostgreSQL 18 protégée contre toute modification ou suppression, traçabilité des tests de connexion à chaud, contrôle anti-IDOR par périmètre et export JSON/Markdown certifié conforme au manifeste d'exécution et aux pièces SeaweedFS."
   - id: CAP-066
     title: Site de présentation /showcase et site statique autonome (sync auto)
@@ -685,15 +687,15 @@ capabilities:
     title: Mes Espaces 5 sous-onglets, cascade de localisation d'artefacts, waivers
     fr: [FR-34]
     origin: epic
-    origin_ref: 11-1 + 17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag + 18-2-moteur-fraicheur-webhooks-outbox-sha256-sonde-24h-et-gouvernance-gitnexus + 28-1 + 28-2 + 28-3 + 28-4 + 29-2
+    origin_ref: 11-1 + 17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag + 18-2-moteur-fraicheur-webhooks-outbox-sha256-sonde-24h-et-gouvernance-gitnexus + 28-1 + 28-2 + 28-3 + 28-4 + 29-2 + 29-6
     status: live
     kind: feature
     uj: [UJ-9, UJ-18]
     db_tables: [workspaces, workspace_datasources, workspace_exception_waivers, workspace_customization_overrides]
-    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, apps/web/src/__tests__/story-28-1-single-workspace-header-and-zero-uuid.test.tsx, apps/web/src/__tests__/story-28-2-canonical-five-tabs-and-tab1-sobriety.test.tsx, apps/web/src/__tests__/story-28-3-scoped-sources-deliverables-and-members-tabs.test.tsx, apps/web/src/__tests__/story-29-2-workspace-patch-rollback-and-banner.test.tsx, apps/web/src/__tests__/story-29-2-subtab-single-alert-and-i18n.test.tsx, apps/web/src/__tests__/story-29-2-glossary-single-alert.test.tsx, apps/web/src/__tests__/workspaces-single-tabs-anti-stacking-audit.test.tsx, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/unit/test_story_29_2_workspace_patch_and_isolation.py, tests/unit/test_story_29_2_workspace_patch_and_sync.py, tests/unit/test_story_29_2_security_hardening.py, tests/security/test_story_29_2_confidential_isolation.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, tests/integration/api/test_story_29_2_workspace_patch_and_isolation_pg18.py, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx, tests/unit/test_story_18_2_freshness_sha256_probe_and_codegraph_worker.py, tests/integration/api/test_story_18_2_webhooks_outbox_and_freshness_postgres18.py]
+    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/e2e/17-workspace-sources-codegraph-dna-and-ontology.spec.ts, apps/web/src/__tests__/story-28-1-single-workspace-header-and-zero-uuid.test.tsx, apps/web/src/__tests__/story-28-2-canonical-five-tabs-and-tab1-sobriety.test.tsx, apps/web/src/__tests__/story-28-3-scoped-sources-deliverables-and-members-tabs.test.tsx, apps/web/src/__tests__/story-29-2-workspace-patch-rollback-and-banner.test.tsx, apps/web/src/__tests__/story-29-2-subtab-single-alert-and-i18n.test.tsx, apps/web/src/__tests__/story-29-2-glossary-single-alert.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx, apps/web/src/__tests__/workspaces-single-tabs-anti-stacking-audit.test.tsx, tests/unit/test_story_17_4_connectors_passthrough_and_rag_referent.py, tests/unit/test_story_29_2_workspace_patch_and_isolation.py, tests/unit/test_story_29_2_workspace_patch_and_sync.py, tests/unit/test_story_29_2_security_hardening.py, tests/security/test_story_29_2_confidential_isolation.py, tests/integration/api/test_story_17_4_connectors_passthrough_and_rag_referent_postgres18.py, tests/integration/api/test_story_29_2_workspace_patch_and_isolation_pg18.py, apps/web/src/__tests__/story-17-4-connectors-account-passthrough-and-rag-referent.test.tsx, tests/unit/test_story_18_2_freshness_sha256_probe_and_codegraph_worker.py, tests/integration/api/test_story_18_2_webhooks_outbox_and_freshness_postgres18.py]
     verification: runtime
     verified_at: "2026-11-25"
-    surfaces: { route: "/spaces, /workspaces, /workspaces/$wsId, /workspaces/$wsId/sources", api: "org_and_workspaces.py (PATCH /api/v1/workspaces/{id}) + _workspace_patch_helpers.py + sql_workspace_patch.py + workspace_governance.py + _workspace_governance_helpers.py + workspace_datasources.py + _workspace_datasources_helpers.py + datasource_webhooks.py + control_center.py", ui: "WorkspaceCompactHeader + WorkspaceFiveTabsAndExternalRebaseView + WorkspaceSourcesRagTab + WorkspaceSourcesMasterTable + WorkspaceGlossaryAndOntologyTab + WorkspaceMembersAndSettingsTab + platformSetupWorkspaceActions.ts + platformSetupScopeAndDatasources.ts", migration: "0026 + 20261111_1704 + 20261114_1801 + 20261114_1802" }
+    surfaces: { route: "/spaces, /workspaces, /workspaces/$wsId, /workspaces/$wsId/sources", api: "org_and_workspaces.py (PATCH /api/v1/workspaces/{id}) + _workspace_patch_helpers.py + sql_workspace_patch.py + workspace_governance.py + _workspace_governance_helpers.py + workspace_datasources.py + _workspace_datasources_helpers.py + datasource_webhooks.py + control_center.py", ui: "WorkspaceCompactHeader + OrciaPageHeader + OrciaTabStrip + OrciaDataCard + WorkspaceFiveTabsAndExternalRebaseView + WorkspaceSourcesRagTab + WorkspaceSourcesMasterTable + WorkspaceGlossaryAndOntologyTab + WorkspaceMembersAndSettingsTab + platformSetupWorkspaceActions.ts + platformSetupScopeAndDatasources.ts", migration: "0026 + 20261111_1704 + 20261114_1801 + 20261114_1802" }
   - id: CAP-081
     title: Chaîne ADN et glossaire (règles métier « à valider », extraction)
     fr: [FR-34]
@@ -767,11 +769,11 @@ capabilities:
     title: Garde-fous qualité UI/CI (zéro bouton muet, popups RGAA/Échap, zéro donnée fictive, anti-LastPass, séparation design system, socle Radix UI AD-22)
     fr: []
     origin: adhoc
-    origin_ref: "2026-11-04-audit-et-cablage-vertical-epics-1-a-7 + 2026-11-04-cablage-vertical-persistance-epics-8-a-12 + 2026-11-04-audit-et-factorisation-popups-rgaa-echap-annuler + 2026-11-05-audit-et-purge-integrale-donnees-fictives-et-mocks-hors-tests + 2026-11-05-audit-global-inputs-secrets-et-parade-anti-lastpass-hors-login + 2026-11-05-audit-separation-design-system-look-and-feel-logique-et-contenus + 2026-11-06-audit-global-zero-bouton-muet-cablage-callbacks-et-garde-fous-ci + 2026-11-05-unification-ux-onglets-bleu-intense-actif-bleu-pale-inactif + 2026-11-05-renommage-icone-documentation-et-message-export-html + 2026-11-08-bugs-p1-e2e-et-socle-radix-ui + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 27-1..27-8 (epic-27 bilingual FR/EN & zero-baseline lock) + 29-4"
+    origin_ref: "2026-11-04-audit-et-cablage-vertical-epics-1-a-7 + 2026-11-04-cablage-vertical-persistance-epics-8-a-12 + 2026-11-04-audit-et-factorisation-popups-rgaa-echap-annuler + 2026-11-05-audit-et-purge-integrale-donnees-fictives-et-mocks-hors-tests + 2026-11-05-audit-global-inputs-secrets-et-parade-anti-lastpass-hors-login + 2026-11-05-audit-separation-design-system-look-and-feel-logique-et-contenus + 2026-11-06-audit-global-zero-bouton-muet-cablage-callbacks-et-garde-fous-ci + 2026-11-05-unification-ux-onglets-bleu-intense-actif-bleu-pale-inactif + 2026-11-05-renommage-icone-documentation-et-message-export-html + 2026-11-08-bugs-p1-e2e-et-socle-radix-ui + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 27-1..27-8 (epic-27 bilingual FR/EN & zero-baseline lock) + 29-4 + 29-6"
     status: live
     kind: foundation
     e2e_exempt_reason: "Garde-fous transverses d'hygiène UI/CI (zéro bouton muet, modales RGAA/Échap, zéro donnée fictive, anti-LastPass, séparation @orcia/ui, socle Radix UI AD-22, verrous déterministes i18n FR/EN, grammaire visuelle Cobalt 3 niveaux & en-tête canonique) sans parcours métier isolé ; couverts par AD-17 Couches 1a/1b (audit AST/Vitest & Radix UI), contrôles CI statiques et spec E2E bilingue 23-bilingual-fr-en-i18n-and-rfc9457.spec.ts."
-    tests: [apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx, tests/unit/test_zero_fictional_data_and_mocks_in_prod.py, tests/unit/test_platform_auth_policy_2fa_and_runtime_isolation.py, apps/web/src/__tests__/design-system-look-and-feel-isolation.test.tsx, packages/ui/src/__tests__/radix-design-system-primitives.test.tsx, packages/ui/src/__tests__/orcia-page-header-tab-strip-card.test.tsx, apps/web/src/__tests__/story-29-4-canonical-header-and-visual-grammar.test.tsx, apps/web/src/__tests__/i18n-hardcoded-locale-ast-audit.test.ts, apps/web/src/__tests__/i18n-dictionary-parity-and-jargon-audit.test.ts, apps/web/src/__tests__/client-error-code-contract-audit.test.ts, tests/unit/test_i18n_backend_catalog_and_english_dev_audit.py, apps/web/e2e/23-bilingual-fr-en-i18n-and-rfc9457.spec.ts]
+    tests: [apps/web/src/__tests__/zero-dead-buttons-and-silent-catches-audit.test.tsx, tests/unit/test_zero_fictional_data_and_mocks_in_prod.py, tests/unit/test_platform_auth_policy_2fa_and_runtime_isolation.py, apps/web/src/__tests__/design-system-look-and-feel-isolation.test.tsx, packages/ui/src/__tests__/radix-design-system-primitives.test.tsx, packages/ui/src/__tests__/orcia-page-header-tab-strip-card.test.tsx, apps/web/src/__tests__/story-29-4-canonical-header-and-visual-grammar.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx, apps/web/src/__tests__/i18n-hardcoded-locale-ast-audit.test.ts, apps/web/src/__tests__/i18n-dictionary-parity-and-jargon-audit.test.ts, apps/web/src/__tests__/client-error-code-contract-audit.test.ts, tests/unit/test_i18n_backend_catalog_and_english_dev_audit.py, apps/web/e2e/23-bilingual-fr-en-i18n-and-rfc9457.spec.ts]
     surfaces:
       api: e2e_test_hooks
       ui: "OrciaPageHeader + OrciaTabStrip + OrciaDataCard"
@@ -796,15 +798,15 @@ capabilities:
     title: Organigramme hiérarchique multi-niveaux (BU / Sous-BU / Équipe), délégation Mon Organisation (/organization), modales d'édition/membres/facturation, espaces privés et sélecteur de contexte
     fr: [FR-3, FR-21, FR-22, FR-23, FR-34]
     origin: epic
-    origin_ref: 17-2, 20-1, 25-1, 29-2 + 2026-11-06-rattachement-equipe-facturation-espaces-privés-et-selecteur-contexte + 2026-11-08-distinction-equipes-espaces-et-sync-sql-org-units + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances + 2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu
+    origin_ref: 17-2, 20-1, 25-1, 29-2, 29-6 + 2026-11-06-rattachement-equipe-facturation-espaces-privés-et-selecteur-contexte + 2026-11-08-distinction-equipes-espaces-et-sync-sql-org-units + 2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances + 2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu
     status: live
     kind: feature
     uj: [UJ-14]
     db_tables: [org_units, workspaces, workspace_memberships, workspace_invitations, iam_accounts]
-    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/src/__tests__/scope-switcher-and-org-sync.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx, apps/web/src/__tests__/story-25-1-personal-workspace-accostage-and-processes.test.tsx, apps/web/src/__tests__/story-29-2-workspace-patch-rollback-and-banner.test.tsx, tests/unit/test_story_17_2_org_hierarchy.py, tests/unit/test_story_17_2_pg_guard_and_reconcilers.py, tests/unit/test_evaluator_multi_lead_rollup.py, tests/unit/test_story_25_1_personal_workspace_and_accostage.py, tests/unit/test_story_29_2_workspace_patch_and_isolation.py, tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py, tests/integration/api/test_story_25_1_personal_workspace_postgres18.py, tests/integration/api/test_story_29_2_workspace_patch_and_isolation_pg18.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/security/test_story_25_1_personal_workspace_isolation.py, tests/security/test_story_29_2_confidential_isolation.py]
+    tests: [apps/web/e2e/07-spaces-org-and-workspace-persistence.spec.ts, apps/web/src/__tests__/scope-switcher-and-org-sync.test.tsx, apps/web/src/__tests__/story-17-2-org-hierarchy-and-modals.test.tsx, apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx, apps/web/src/__tests__/story-25-1-personal-workspace-accostage-and-processes.test.tsx, apps/web/src/__tests__/story-29-2-workspace-patch-rollback-and-banner.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx, tests/unit/test_story_17_2_org_hierarchy.py, tests/unit/test_story_17_2_pg_guard_and_reconcilers.py, tests/unit/test_evaluator_multi_lead_rollup.py, tests/unit/test_story_25_1_personal_workspace_and_accostage.py, tests/unit/test_story_29_2_workspace_patch_and_isolation.py, tests/integration/api/test_story_17_2_org_units_hierarchy_postgres18.py, tests/integration/api/test_multi_lead_and_bu_no_members_postgres18.py, tests/integration/api/test_story_25_1_personal_workspace_postgres18.py, tests/integration/api/test_story_29_2_workspace_patch_and_isolation_pg18.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/security/test_story_25_1_personal_workspace_isolation.py, tests/security/test_story_29_2_confidential_isolation.py]
     verification: runtime
     verified_at: "2026-11-25"
-    surfaces: { route: "/spaces, /organization", api: "org_and_workspaces.py (_workspace_patch_helpers.py, _workspace_summary_serializer.py), org_units.py, org_unit_invitations.py, sql_org_iam_role_sync.py, sql_workspace_patch.py", ui: "OrganizationPageView + SettingsOrganizationUnitsBlock + OrgPedagogicalCallout + CreateOrgUnitModal + EditOrgUnitModal + ManageOrgUnitMembersModal + ConfirmDeleteOrgUnitModal + InviteOrganizationUserModal + OrciaUserPillsSelect", migration: "20261111_1702 + 20261115_1902 + 20261117_2001" }
+    surfaces: { route: "/spaces, /organization", api: "org_and_workspaces.py (_workspace_patch_helpers.py, _workspace_summary_serializer.py), org_units.py, org_unit_invitations.py, sql_org_iam_role_sync.py, sql_workspace_patch.py", ui: "OrganizationPageView + SettingsOrganizationUnitsBlock + SettingsOrganizationUnitRow + OrciaPageHeader + OrciaDataCard + CreateOrgUnitModal + EditOrgUnitModal + ManageOrgUnitMembersModal + ConfirmDeleteOrgUnitModal + InviteOrganizationUserModal + OrciaUserPillsSelect", migration: "20261111_1702 + 20261115_1902 + 20261117_2001" }
   - id: CAP-075
     title: Assistant — streaming réel, bouton Stop, réflexion progressive repliable, sauvegarde des conversations, pièces jointes, citations RAG, autosave/autocomplete
     fr: [FR-33]
@@ -895,15 +897,15 @@ capabilities:
     title: Simplification Architecturale des Packs 100 % Déclaratifs (packs/sdlc & packs/orcia-docs), Fusion de orcia-kernel dans orcia-core.kernel & Package Unifié packages/orcia-connectors
     fr: [FR-11, FR-13, FR-14, FR-34, FR-35]
     origin: epic
-    origin_ref: epic-15 (15-1..15-3)
+    origin_ref: epic-15 (15-1..15-3) + 29-6
     status: live
     kind: feature
     uj: [UJ-19]
     db_tables: [declarative_pack_bundles, vsm_definitions_v2, workflow_definitions_v2]
-    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/connectors/test_connector_protocol_and_write_preview.py, tests/unit/core/test_core_domain_isolation.py, tests/unit/packs/test_declarative_packs_loading.py, apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx]
+    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/connectors/test_connector_protocol_and_write_preview.py, tests/unit/core/test_core_domain_isolation.py, tests/unit/packs/test_declarative_packs_loading.py, apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx]
     verification: runtime
-    verified_at: "2026-11-20"
-    surfaces: { route: /settings/packs, api: "/api/v1/packs (packs.py)", ui: PacksRegistryPage }
+    verified_at: "2026-11-25"
+    surfaces: { route: /settings/packs, api: "/api/v1/packs (packs.py)", ui: "PacksRegistryPage + OrciaPageHeader + OrciaDataCard" }
   - id: CAP-160
     title: Orchestration réflexive (Mon Assistant, Mes Agents & Processus pilotés par l'objectif), exploration chirurgicale #Lstart-end et dualité Objectif vs Jalons
     fr: [FR-1, FR-14, FR-20, FR-22, FR-24, FR-33, FR-36]
@@ -1130,17 +1132,17 @@ capabilities:
     title: Menu dédié Mon Organisation (lecture seule pour tous, délégation stricte par sous-arbre BU/Équipe), invitation scopée, rôle Référent Glossaire (ONTOLOGY_LEAD) et filtrage de périmètre /activity
     fr: [FR-3, FR-17, FR-21, FR-22, FR-23, FR-24, FR-34]
     origin: epic
-    origin_ref: 20-1, 25-2
+    origin_ref: 20-1, 25-2, 29-6
     status: live
     kind: feature
     uj: [UJ-14]
     db_tables: [org_units, iam_accounts, users, audit_ledger]
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-25"
     surfaces:
       route: "/organization, /activity, /settings"
       api: "org_units.py (GET/POST/PATCH/DELETE avec can_* et périmètre), org_unit_invitations.py (POST /api/v1/org-units/invite-user), org_delegation.py, sql_org_ontology_lead_sync.py, iam_accounts.py (verrou PLATFORM_ADMIN + SECOPS), _auth_pg_helpers.py (hydrate platform_role), audit_ledger.py & _finops_auth_guards.py (filtrage org_unit_id + workspace_id)"
-      ui: "OrganizationPageView + FourZoneDirectionCShell (menu Mon Organisation) + SettingsOrganizationUnitsBlock + InviteOrganizationUserModal + TemporaryPasswordInvitationModal + EditOrgUnitModal (Référents Glossaire) + ActivityLogExplorerView (scope filtré par rôle)"
+      ui: "OrganizationPageView + FourZoneDirectionCShell (menu Mon Organisation) + SettingsOrganizationUnitsBlock + SettingsOrganizationUnitRow + OrciaPageHeader + OrciaDataCard + InviteOrganizationUserModal + TemporaryPasswordInvitationModal + EditOrgUnitModal (Référents Glossaire) + ActivityLogExplorerView (scope filtré par rôle)"
       migration: "20261117_2001"
     tests:
       - tests/unit/test_story_20_1_org_delegation_and_audit_scope.py
@@ -1149,6 +1151,7 @@ capabilities:
       - tests/integration/api/test_story_20_1_org_delegation_and_audit_postgres18.py
       - apps/web/src/__tests__/story-20-1-mon-organisation-and-scoped-activity.test.tsx
       - apps/web/src/__tests__/story-25-2-shell-9-items-org-admin-and-unified-scope.test.tsx
+      - apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx
       - apps/web/e2e/15-organization-iam-secops-inbox-and-observer.spec.ts
     notes: "Story 20.1 (Epic 20) : séparation de Mon Organisation (/organization) sous Mes Espaces (visibilité PLATFORM_ADMIN, BU_LEAD, TEAM_LEAD ; /settings ramené à 5 onglets avec redirection ?tab=organization), délégation stricte par sous-arbre et booléens can_*, invitation scopée avec garde anti-escalade, 7e rôle ONTOLOGY_LEAD (B1 sync bidirectionnelle BU <-> IAM), journalisation org_unit_id et isolation de lecture /activity."
   - id: CAP-260

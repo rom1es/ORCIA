@@ -1,4 +1,4 @@
-import { OrciaAlertBanner, OrciaIcon } from "@orcia/ui";
+import { OrciaAlertBanner } from "@orcia/ui";
 import { createRoute } from "@tanstack/react-router";
 import React from "react";
 import { usePlatformSetup } from "../components/platformSetupStore";
@@ -25,44 +25,24 @@ export function OrganizationPageView(): React.ReactElement {
 
   const { orgUnits, workspaces, syncOrgUnitsFromServer } = usePlatformSetup();
 
-  return (
-    <div
-      data-testid="organization-page"
-      style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+  const readOnlyBanner = !canMutateOrg ? (
+    <OrciaAlertBanner
+      tone="cobalt"
+      role="status"
+      testId="organization-readonly-access-banner"
+      title={copy.readOnlyRestrictedTitle}
     >
-      <header
-        className="orcia-bento-card"
-        style={{ display: "flex", flexDirection: "column", gap: "6px" }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <OrciaIcon name="organizationBu" size={18} />
-          <h1 style={{ margin: 0, fontSize: "var(--font-size-h2)" }}>{orgLabels.pageTitle}</h1>
-        </div>
-        <p
-          style={{
-            margin: 0,
-            fontSize: "var(--font-size-body)",
-            color: "var(--color-muted-foreground)",
-          }}
-        >
-          {orgLabels.pageSubtitle}
-        </p>
-      </header>
+      {orgLabels.readOnlyChartNotice}
+    </OrciaAlertBanner>
+  ) : undefined;
 
-      {!canMutateOrg && (
-        <OrciaAlertBanner
-          tone="cobalt"
-          role="status"
-          testId="organization-readonly-access-banner"
-          title={copy.readOnlyRestrictedTitle}
-        >
-          {orgLabels.readOnlyChartNotice}
-        </OrciaAlertBanner>
-      )}
-
+  return (
+    <div data-testid="organization-page" className="orcia-ds-page">
       <SettingsOrganizationUnitsBlock
         isFr={isFr}
         canMutate={canMutateOrg}
+        showPageHeader={true}
+        readOnlyAccessNotice={readOnlyBanner}
         orgUnits={orgUnits}
         workspaces={workspaces}
         openHelpSection={openHelpSection}

@@ -119,17 +119,13 @@ describe("Story 24.6 — Packs 5 Counters, Singular n <= 1, IAM Split, Microcopy
         isCreateFormExpanded={false}
         onToggleCreateForm={vi.fn()}
         onNavigateToRoute={vi.fn()}
-        onUpdateWorkspacePhase={vi.fn()}
-        onUpdateWorkspaceVisibility={vi.fn()}
-        onFeedback={vi.fn()}
       />,
     );
 
     expect(screen.getByTestId("workspaces-compact-header")).toBeDefined();
-    expect((screen.getByTestId("workspaces-active-switcher-select") as HTMLSelectElement).value).toBe(
-      "ws-1",
-    );
-    expect(screen.getByTestId("workspace-phase-badge-ws-1").textContent).toContain("Construction");
+    expect(screen.getByTestId("workspaces-active-title").textContent).toBe("Espace Paiements");
+    expect(screen.queryByTestId("workspaces-active-switcher-select")).toBeNull();
+    expect(screen.queryByTestId("workspace-phase-badge-ws-1")).toBeNull();
     expect(screen.getByTestId("workspace-visibility-badge-ws-1").textContent).toContain("Équipe");
   });
 

@@ -237,8 +237,8 @@ describe("Story 25.2 — 9-Item Shell, Mon Organisation, Administration 5 Tabs, 
       expect(within(orgRow).getByText("Direction Ingénierie")).toBeDefined();
       expect((screen.getByTestId("open-create-org-unit-modal-btn") as HTMLButtonElement).disabled).toBe(true);
       expect((screen.getByTestId("open-invite-org-user-modal-btn") as HTMLButtonElement).disabled).toBe(true);
-      expect((screen.getByTestId("edit-org-unit-btn-bu-eng") as HTMLButtonElement).disabled).toBe(true);
-      expect((screen.getByTestId("delete-org-unit-btn-bu-eng") as HTMLButtonElement).disabled).toBe(true);
+      expect(screen.queryByTestId("edit-org-unit-btn-bu-eng")).toBeNull();
+      expect(screen.queryByTestId("delete-org-unit-btn-bu-eng")).toBeNull();
       expect(document.querySelectorAll(".orcia-info-trigger-btn")).toHaveLength(0);
       unmount();
     }
@@ -293,15 +293,16 @@ describe("Story 25.2 — 9-Item Shell, Mon Organisation, Administration 5 Tabs, 
     });
     expect(screen.queryByTestId("cockpit-active-scope-badge")).toBeNull();
 
-    // Propagates to /spaces (synchronized to ws-team-data)
+    // Propagates to /spaces (synchronized to ws-team-data via single Left Rail selector)
     fireEvent.click(screen.getByTestId("eight-menu-item-spaces"));
     await waitFor(() => {
       expect(screen.getByTestId("workspaces-active-title").textContent).toBe(
         "Espace Analytics Data",
       );
       expect(
-        (screen.getByTestId("workspaces-active-switcher-select") as HTMLSelectElement).value,
+        (screen.getByTestId("sidebar-workspace-selector") as HTMLSelectElement).value,
       ).toBe("ws-team-data");
+      expect(screen.queryByTestId("workspaces-active-switcher-select")).toBeNull();
     });
 
     // Propagates to /assistant, /processes, /agents, /finops

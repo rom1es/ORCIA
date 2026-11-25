@@ -37,7 +37,6 @@ export function WorkspacesFeaturePanel({
     ontologyConcepts,
     scopes,
     createWorkspace,
-    updateWorkspacePhase,
     updateWorkspaceVisibility,
     addOntologyConcept,
     promoteOntologyConcept,
@@ -47,6 +46,7 @@ export function WorkspacesFeaturePanel({
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [actionFeedback, setActionFeedback] = useState<WorkspaceAlertFeedback | null>(null);
   const [fallbackSelectedWsId, setFallbackSelectedWsId] = useState<string | null>(null);
+  const [autosavedWsIds, setAutosavedWsIds] = useState<readonly string[]>([]);
 
   const handleFeedback = (feedback: WorkspaceFeedbackInput) => {
     setActionFeedback(normalizeWorkspaceFeedback(feedback));
@@ -88,19 +88,21 @@ export function WorkspacesFeaturePanel({
   };
 
   const effectiveCreateFormVisible = isCreateFormOpen;
+  const markAutosaved = (workspaceId: string) => {
+    setAutosavedWsIds((prev) => (prev.includes(workspaceId) ? prev : [...prev, workspaceId]));
+  };
+  const headerAlertSlot = actionFeedback ? (
+    <OrciaAlertBanner
+      tone={actionFeedback.tone}
+      role={actionFeedback.tone === "crimson" ? "alert" : "status"}
+      testId="workspaces-action-feedback-banner"
+    >
+      {actionFeedback.message}
+    </OrciaAlertBanner>
+  ) : undefined;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      {actionFeedback ? (
-        <OrciaAlertBanner
-          tone={actionFeedback.tone}
-          role={actionFeedback.tone === "crimson" ? "alert" : "status"}
-          testId="workspaces-action-feedback-banner"
-        >
-          {actionFeedback.message}
-        </OrciaAlertBanner>
-      ) : null}
-
       <OrciaDialog
         open={effectiveCreateFormVisible}
         onOpenChange={setIsCreateFormOpen}
@@ -152,13 +154,11 @@ export function WorkspacesFeaturePanel({
         isFr={isFr}
         initialWorkspaceId={targetWorkspace?.workspaceId}
         workspaces={workspaces}
+        isAutosaved={Boolean(targetWorkspace && autosavedWsIds.includes(targetWorkspace.workspaceId))}
         isCreateFormExpanded={effectiveCreateFormVisible}
-        onSelectWorkspace={handleSelectWorkspace}
+        alertSlot={headerAlertSlot}
         onToggleCreateForm={() => setIsCreateFormOpen((prev) => !prev)}
         onNavigateToRoute={navigateToRoute}
-        onUpdateWorkspacePhase={updateWorkspacePhase}
-        onUpdateWorkspaceVisibility={updateWorkspaceVisibility}
-        onFeedback={handleFeedback}
       />
 
       {targetWorkspace !== null ? (
@@ -173,6 +173,8 @@ export function WorkspacesFeaturePanel({
           openHelpSection={openHelpSection}
           onAddOntologyConcept={addOntologyConcept}
           onPromoteOntologyConcept={promoteOntologyConcept}
+          onUpdateWorkspaceVisibility={updateWorkspaceVisibility}
+          onMarkAutosaved={markAutosaved}
           onFeedback={handleFeedback}
         />
       ) : null}

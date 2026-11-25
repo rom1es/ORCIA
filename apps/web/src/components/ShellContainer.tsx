@@ -204,6 +204,7 @@ function InnerShellContainer({
         disabledMenuKeys={derived.disabledMenuKeys}
         hiddenMenuKeys={derived.showConfigurationMenu ? [] : ["configuration"]}
         helpColumnOpen={isHelpCenterRoute ? false : state.helpColumnOpen}
+        helpColumnToggleDisabled={isHelpCenterRoute}
         mobileDrawerCloseSignal={`${pathname ?? ""}:${String(auth.userSettingsModalOpen)}`}
         onHelpColumnOpenChange={(nextOpen) => !isHelpCenterRoute && state.setHelpColumnOpen(nextOpen)}
         onSelectMenu={(menuKey) => {

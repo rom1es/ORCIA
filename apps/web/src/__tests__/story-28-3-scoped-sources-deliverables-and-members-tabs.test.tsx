@@ -148,9 +148,9 @@ describe("Story 28.3 — Scoped PG18 Tab 2 Sources, Tab 3 Deliverables & Tab 5 M
     expect(screen.getByTestId("sources-filter-pill-all")).toBeDefined();
     expect(screen.getByTestId("sources-filter-pill-document_kb")).toBeDefined();
 
-    // Switch to Beta (0 sources) -> filter pills hidden, attach & reconcile buttons stay visible
+    // Switch to Beta (0 sources) via Left Rail selector -> filter pills hidden, attach & reconcile buttons stay visible
     await act(async () => {
-      fireEvent.change(screen.getByTestId("workspaces-active-switcher-select"), {
+      fireEvent.change(screen.getByTestId("sidebar-workspace-selector"), {
         target: { value: WS_BETA_ID },
       });
     });
@@ -220,31 +220,20 @@ describe("Story 28.3 — Scoped PG18 Tab 2 Sources, Tab 3 Deliverables & Tab 5 M
       );
     });
 
-    // Update phase on Alpha (PRIVATE_USER); visibility conversion on PRIVATE_USER is locked (403 rollback)
-    fireEvent.change(screen.getByTestId(`workspace-card-phase-select-${WS_ALPHA_ID}`), {
-      target: { value: "MIGRATION" },
-    });
-    await waitFor(() => {
-      expect(screen.getByTestId(`workspace-phase-badge-${WS_ALPHA_ID}`).textContent).toContain(
-        "Évolution",
-      );
-      expect(
-        screen.getByTestId(`workspace-settings-phase-badge-${WS_ALPHA_ID}`).textContent,
-      ).toContain("Évolution");
-    });
-
-    fireEvent.click(screen.getByTestId(`share-private-workspace-btn-${WS_ALPHA_ID}`));
-    await waitFor(() => {
-      expect(screen.getByTestId("workspaces-action-feedback-banner").getAttribute("role")).toBe(
-        "alert",
-      );
-      expect(screen.getByTestId(`workspace-visibility-badge-${WS_ALPHA_ID}`).textContent).toContain(
-        "Personnel",
-      );
-      expect(
-        screen.getByTestId(`workspace-settings-visibility-badge-${WS_ALPHA_ID}`).textContent,
-      ).toContain("Privé personnel");
-    });
+    // Dead Phase control and share button are eliminated; PRIVATE_USER visibility selector is locked in Tab 5
+    expect(screen.queryByTestId(`workspace-card-phase-select-${WS_ALPHA_ID}`)).toBeNull();
+    expect(screen.queryByTestId(`workspace-phase-badge-${WS_ALPHA_ID}`)).toBeNull();
+    expect(screen.queryByTestId(`share-private-workspace-btn-${WS_ALPHA_ID}`)).toBeNull();
+    expect(
+      (screen.getByTestId(`workspace-card-visibility-select-${WS_ALPHA_ID}`) as HTMLSelectElement)
+        .disabled,
+    ).toBe(true);
+    expect(screen.getByTestId(`workspace-visibility-badge-${WS_ALPHA_ID}`).textContent).toContain(
+      "Personnel",
+    );
+    expect(
+      screen.getByTestId(`workspace-settings-visibility-badge-${WS_ALPHA_ID}`).textContent,
+    ).toContain("Privé personnel");
 
     // F5 cold remount survival
     first.unmount();
@@ -256,15 +245,9 @@ describe("Story 28.3 — Scoped PG18 Tab 2 Sources, Tab 3 Deliverables & Tab 5 M
       expect(
         (screen.getByTestId("workspace-instructions-textarea") as HTMLTextAreaElement).value,
       ).toBe("Respecter le modèle d'architecture Alpha et citer les ADR.");
-      expect(screen.getByTestId(`workspace-phase-badge-${WS_ALPHA_ID}`).textContent).toContain(
-        "Évolution",
-      );
       expect(screen.getByTestId(`workspace-visibility-badge-${WS_ALPHA_ID}`).textContent).toContain(
         "Personnel",
       );
-      expect(
-        screen.getByTestId(`workspace-settings-phase-badge-${WS_ALPHA_ID}`).textContent,
-      ).toContain("Évolution");
       expect(
         screen.getByTestId(`workspace-settings-visibility-badge-${WS_ALPHA_ID}`).textContent,
       ).toContain("Privé personnel");
