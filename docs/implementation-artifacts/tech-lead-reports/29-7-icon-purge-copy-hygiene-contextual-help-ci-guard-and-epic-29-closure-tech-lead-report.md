@@ -82,7 +82,7 @@
 
 ### 3.1 Created & Modified Files
 
-Total diff scope: **111 files** (`104` modified, `7` created). Every production file and every new Story 29.7 test file satisfies `<= 300` lines (`apps/web/src/__tests__/i18n-and-shell.test.tsx` is a pre-existing legacy suite at `2,303` lines).
+Total diff scope (`645a6a3..HEAD`): **116 files** (`109` modified, `7` created). Every production `.py`/`.ts`/`.tsx`/`.css` file and every new Story `29.7` test file satisfies `<= 300` lines (`apps/web/src/__tests__/i18n-and-shell.test.tsx` is a pre-existing legacy suite at `2,303` lines). Note on `test_story_19_7_rag_reindexing_and_blocking.py`: added `_seed_rag_workspace(...)` plus isolated `ORCIA_ENV_FILE`/`DATABASE_URL` test env cleanup so the `TestClient` tests satisfy Story `29.2` strict workspace membership guards without altering production behavior.
 
 | Area / File | Action | Lines (`wc -l`) | Summary |
 | :--- | :--- | :---: | :--- |
@@ -114,38 +114,38 @@ Total diff scope: **111 files** (`104` modified, `7` created). Every production 
 | `apps/web/src/routes/SettingsAiModelsSection.tsx`, `settingsAiModelsPresets.ts` | Modified | `158` / `232` | Purged raw emojis from AI model configuration views & presets. |
 | `apps/web/src/i18n/locales/*.ts` (`43` files) | Modified | `81`–`291` | Purged all raw emojis, removed English `(/SKILLS)`/`(Skills)` from FR labels, added `/organization` Zone 4 fallback & sections, fixed singular/plural copy, and removed stale help references. |
 | `apps/web/src/__tests__/i18n-and-shell.test.tsx`, `scope-switcher-and-org-sync.test.tsx` | Modified | `2303` / `124` | Updated test assertions for purified icons, scope options, and bilingual copy. |
-| **Help Docs, UX Spec & Python Audits (`17` modified)** | | | |
+| **Help Docs, UX Spec & Python Audits (`17` modified + governance sync)** | | | |
 | `docs/help/{fr,en}/{agents,assistant,gates,help,settings,spaces,workspaces}.md` (`14` files) | Modified | `31`–`36` | Removed stale `« Tous »`, `« Espaces d'Équipe »`, `Phase`, `ⓘ`, and `Configuration ›` instructions. |
 | `docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/DESIGN.md` | Modified | `212` | Aligned UX spec in English with TopHeaderBar, Bottom-Left Sidebar `Mon Compte`, monochrome `<OrciaIcon />`, and Zone 4 4-block structure. |
-| `tests/unit/test_e2e_sql_coverage_audit.py`, `tests/unit/test_story_19_7_rag_reindexing_and_blocking.py` | Modified | `297` / `293` | Registered `29-epic-29-canonical-headers-bilingual.spec.ts` in the E2E SQL audit (`27` specs) and kept unit tests `<= 300` lines. |
+| `tests/unit/test_e2e_sql_coverage_audit.py`, `tests/unit/test_story_19_7_rag_reindexing_and_blocking.py` | Modified | `297` / `293` | Registered `29-epic-29-canonical-headers-bilingual.spec.ts` in E2E SQL audit and seeded explicit `marc` workspace membership in `test_story_19_7` (`<= 300` L). |
 
 ### 3.2 Quantitative Metrics, Coverage & Static Quality
-- **Python Coverage (`AD-17` Layer 1a)**:
-  - Scoped Epic 29 Python branch coverage: **`98%`** (`70 passed` in `57.19s`, `615 stmts`, `7 miss`, `222 branch`, `9 brpart`) across all 8 Epic 29 modified Python modules.
-  - Full `tests/unit`: **`175/175` files, `1,066` tests passed** (`orcia-core` domain branch coverage `--omit="*/_internal/*"`: **`90%`** across `22,539` stmts / `4,916` branches; raw with unexecuted `_internal` PG18 adapters: `84%`).
-  - Post-E2E-edit audit gate: `test_e2e_sql_coverage_audit.py` + `test_i18n_backend_catalog_and_english_dev_audit.py` (`5 passed` in `16.30s`).
+- **Python Coverage (`AD-17` Layer 1a — Final Closure Verifier Run)**:
+  - **22-Module Epic 29 `orcia-core` Branch Coverage** (`coverage run --branch --source=packages/orcia-core/src/orcia_core -m pytest --no-cov` across `263` Epic 29 non-PG18 unit tests in 3 sequential append batches: `125` + `73` + `65`): **`98%`** (**`1,275` statements, `15` missed, `334` branches, `16` partial**, `--fail-under=90` passed, exit `0`):
+    - `100%`: `autonomous_supervision.py` (`66/8`), `workspaces_patch.py` (`3/0`), `_assistant_turn_engine_plan.py` (`47/10`), `_internal/_sql_assistant_governance_queries.py` (`65/24`), `_internal/sql_assistant_governance.py` (`68/8`), `assistant_governance.py` (`53/14`), `assistant_governance_layers.py` (`4/0`), `assistant_governance_models.py` (`62/0`), `assistant_prompt_builder.py` (`23/4`), `assistant_prompt_locales.py` (`50/0`), `assistant_prompt_preview.py` (`79/28`), `assistant_three_speed_models.py` (`52/0`), `_error_catalog.py` (`7/0`), `errors.py` (`119/0`), `evaluator.py` (`165/76`), `_sql_federated_search_queries.py` (`52/10`), `sql_federated_search.py` (`10/0`).
+    - `99%`: `sql_workspace_patch.py` (`108/34`, `1` partial). `95%`: `control_center.py` (`71/22`). `93%`: `_promotion_permissions.py` (`76/50`), `_two_speed_search_helpers.py` (`54/28`). `80%`: `_control_center_helpers.py` (`41/18`).
+  - **Full `tests/unit` Pass**: **`1,124` passed** (`1,099` non-PG18 tests: `263` Epic 29 + `9` solo `test_story_7_0c*`/`test_epic_11_story_11_2*` + `344` + `425` remaining root `tests/unit/*.py` + `58` subdirectory `tests/unit/{connectors,core,infra,packs}`; plus **`25` passed** in `49.14s` across the 6 `testcontainers` PG18 unit files).
 - **Frontend Coverage (`AD-17` Layer 1b)**:
-  - Full `pnpm turbo run lint typecheck test --concurrency=1`: **`9/9` tasks green** (`@orcia/api-client`: `20`, `@orcia/ui`: `148`, `@orcia/web`: `354` = **`522` JS/TS tests**, `90/90` `@orcia/web` files).
-  - Post-E2E-edit Vitest CI guard run: `e2e-testids-sync-audit.test.ts` (`1/1`) + `page-header-structure-and-visual-grammar-audit.test.tsx` (`25/25`) = **`26 passed` in `15.44s`**.
+  - Full `pnpm turbo run lint typecheck test --concurrency=1`: **`9/9` tasks green** (`@orcia/api-client`: `3` files / **`20 passed`**; `@orcia/ui`: `38` files / **`148 passed`**; `@orcia/web`: `90` files / **`354 passed`** = **`522` JS/TS tests**, including `page-header-structure-and-visual-grammar-audit.test.tsx` `25/25`).
 - **Static Quality & Architecture**:
-  - `ruff check .`: `0` issues
-  - `ruff format --check .`: `1746` files formatted (`0` diffs)
-  - `mypy --strict`: `0` issues across `856` files
-  - `lint-imports`: `5/5` contracts kept, `0` broken
+  - `ruff check .`: `0` issues (`All checks passed!`)
+  - `ruff format --check .`: `1746 files already formatted`
+  - `mypy --strict` (`packages/orcia-core`, `packages/orcia-connectors`, `apps/api`, `apps/worker`, `tests/unit/test_story_19_7_rag_reindexing_and_blocking.py`): `0` issues across `857` source files
+  - `lint-imports`: `5/5` contracts kept, `0` broken (`899` files, `6,486` dependencies)
   - `lint_spine.py`: `ok: true, 0 findings`
   - `export_openapi.py --check`: `0-diff`
-  - `sync_site_catalog.py` + `--check` + `check_implementation_docs.py`: `0` errors
+  - Note on `eslint`: ORCIA uses `tsc --noEmit && node scripts/check-feature-boundaries.mjs` for `@orcia/web` `lint` (no repo-level ESLint config); `29-epic-29-canonical-headers-bilingual.spec.ts` passed Playwright E2E cleanly.
+  - `sync_site_catalog.py` + `--check`, `check_implementation_docs.py`, `test_i18n_backend_catalog_and_english_dev_audit.py`, and `detect-secrets-hook`: `0` errors.
 - **GitNexus Index & Impact (`npx gitnexus analyze --index-only .` & `gitnexus_detect_changes`)**:
-  - Index refreshed: **`46,753` nodes | `127,433` edges | `786` clusters | `1,532` flows** (`67.3s`).
-  - `gitnexus_detect_changes(repo="/home/romain/.gemini/antigravity/worktrees/ORCIA/audit_ui_headers", scope="all")`: `changed_count: 59`, `changed_files: 104`, `affected_count: 1,532`, `risk_level: critical` (expected blast radius from shared frontend FR/EN locale dictionaries in `apps/web/src/i18n/locales/*.ts`, `ORCIA_ICONS` in `packages/ui/src/components/icons/iconRegistry.ts`, and `ScopeSwitcher.tsx`, with zero production Python runtime edits).
+  - Index refreshed: **`46,756` nodes | `131,579` edges | `786` clusters | `1,532` flows** (`27.9s`).
+  - `gitnexus_detect_changes(repo="ORCIA", scope="compare", base_ref="645a6a3", worktree=...)`: `changed_count: 66`, `changed_files: 116`, `affected_count: 3`, `risk_level: medium`.
 
 ### 3.3 AD-17 Test Pyramid & Vertical Wiring Verification
-- **Layer 1a & 1b (Unit & Static Audits)**: `1,066` Python unit tests (`90%` `orcia-core` domain branch coverage; `98%` scoped Epic 29 branch coverage) and `522` JS/TS tests across `9/9` Turbo tasks (`@orcia/api-client` `20`, `@orcia/ui` `148`, `@orcia/web` `354`), including i18n Gates 1–4, `zero-dead-buttons-and-silent-catches-audit`, `e2e-testids-sync-audit`, and `page-header-structure-and-visual-grammar-audit` (`25/25`).
-- **Layer 2 (`HTTP ➔ PostgreSQL 18` via `testcontainers-python`)**: **`3 passed`** (`test_story_29_1_*`, `test_story_29_2_*`, `test_story_7_4_*` on real `create_app()` Composition Root without overrides).
+- **Layer 1a & 1b (Unit & Static Audits)**: `1,124` Python unit tests (`98%` 22-module Epic 29 `orcia-core` branch coverage) and `522` JS/TS tests across `9/9` Turbo tasks (`@orcia/api-client` `20`, `@orcia/ui` `148`, `@orcia/web` `354`), including i18n Gates 1–4, `zero-dead-buttons-and-silent-catches-audit`, `e2e-testids-sync-audit`, and `page-header-structure-and-visual-grammar-audit` (`25/25`).
+- **Layer 2 (`HTTP ➔ PostgreSQL 18` via `testcontainers-python`)**: **`2 passed in 30.19s`** (`tests/integration/api/test_story_29_1_autonomous_runs_and_finops_pg18.py` + `test_story_29_2_workspace_patch_and_isolation_pg18.py` on real `create_app()` Composition Root without overrides).
 - **Layer 3 (API Contract & Architecture)**: `export_openapi.py --check` (`0-diff`), `lint-imports` (`5/5`), `lint_spine.py` (`0` findings), and `tests/contract` green.
-- **Layer 4 (`$0` Evals) & Security (`tests/evals`, `tests/security`)**: **`181 passed` in `88.32s`** (`tests/security` + `tests/contract` + `tests/evals`), confirming zero leak of `Story 26.1 Regression Agent` and full `CONFIDENTIAL_RESTRICTED` / RBAC / SSRF enforcement.
-- **Layer 5 (Dual-Server Playwright Desktop E2E, `env -u ORCIA_E2E_SEED_FIXTURES`, `--project=desktop-cockpit`)**: **`23 passed, 0 failed`** across 3 sequential batches (`12` spec files on real ephemeral PostgreSQL 18 + Redis 7.4):
-  - **Batch 1 (`8 passed` in `2.1m`)**: `29-epic-29-canonical-headers-bilingual.spec.ts` (`1/1`, `22.7s`), `07-spaces-org-and-workspace-persistence.spec.ts` (`1/1`, `17.7s`), `11-screens-smoke-without-server-errors.spec.ts` (`2/2`, `13.4s` + `7.6s`), `shell.spec.ts` (`4/4`, `7.1s` + `5.9s` + `6.7s` + `7.6s`). *(Note: an initial Batch 1 run was interrupted externally by `SIGTERM` on the API/worker processes; isolated spec 29 passed `1/1` in `1.0m` and the full Batch 1 re-run passed `8/8` in `2.1m`.)*
-  - **Batch 2 (`4 passed` in `1.2m`)**: `09-pack-builder-and-contextual-help.spec.ts` (`11.1s`), `12-processes-multi-workspace-and-global-scope.spec.ts` (`10.0s`), `13-finops-rbac-scope-and-error-guard.spec.ts` (`9.5s`), `14-auth-2fa-account-and-profile.spec.ts` (`10.3s`).
-  - **Batch 3 (`11 passed` in `3.0m`)**: `15-organization-iam-secops-inbox-and-observer.spec.ts` (`3/3`, `16.1s` + `8.3s` + `8.1s`), `17-workspace-sources-codegraph-dna-and-ontology.spec.ts` (`4/4`, `7.1s` + `13.3s` + `14.6s` + `17.7s`), `20-process-studio-v2-finops-and-log-sink.spec.ts` (`2/2`, `16.7s` + `19.1s`), `21-assistant-citations-v5-audit-help-showcase.spec.ts` (`2/2`, `15.3s` + `8.2s`).
-- **Epic 29 Closure**: All 7 stories (`29.1`–`29.7`) are `done`, `epic-29` is `done`, and `CAP-060`, `CAP-064`, `CAP-090`, `CAP-100`, `CAP-203` are verified `runtime` in `docs/product/capabilities.yaml`.
+- **Layer 4 (`$0` Evals) & Security (`tests/evals`, `tests/security`)**: **`181 passed in 59.18s`** (`tests/security` + `tests/contract` + `tests/evals`), confirming zero leak of `Story 26.1 Regression Agent` and full `CONFIDENTIAL_RESTRICTED` / RBAC / SSRF enforcement.
+- **Layer 5 (Dual-Server Playwright Desktop E2E Regression, `env -u ORCIA_E2E_SEED_FIXTURES`, `--project=desktop-cockpit`)**: **`13 passed, 0 failed`** across 2 sequential batches (`7` spec files on real ephemeral PostgreSQL 18 + Redis 7.4, zero leftover worktree processes):
+  - **Batch 1 (`5 passed` in `1.3m`)**: `29-epic-29-canonical-headers-bilingual.spec.ts`, `07-spaces-org-and-workspace-persistence.spec.ts`, `08-agents-skills-persistence.spec.ts`, `11-screens-smoke-without-server-errors.spec.ts`.
+  - **Batch 2 (`8 passed` in `1.6m`)**: `15-organization-iam-secops-inbox-and-observer.spec.ts`, `20-process-studio-v2-finops-and-log-sink.spec.ts`, `21-assistant-citations-v5-audit-help-showcase.spec.ts`.
+- **Epic 29 Closure**: All 7 stories (`29.1`–`29.7`) are `done`, `epic-29` is `done`, and `CAP-060`, `CAP-064`, `CAP-090`, `CAP-100`, `CAP-203` are verified `runtime` (`2026-11-25`) in `docs/product/capabilities.yaml`.
