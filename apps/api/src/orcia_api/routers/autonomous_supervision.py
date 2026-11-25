@@ -4,15 +4,17 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Path, Request
+from fastapi import APIRouter, Depends, Path, Query, Request
 
-from orcia_api.dependencies import get_autonomous_supervision_service
+from orcia_api.dependencies import get_auth_service, get_autonomous_supervision_service
 from orcia_api.routers._finops_auth_guards import (
     enforce_workspace_governed_mutation,
     resolve_finops_read_scope,
     resolve_run_workspace_server_side,
+    sync_evaluator_topology_from_pg,
     validate_uuid,
 )
+from orcia_api.routers._finops_scope_guards import user_governs_org_unit
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.autonomous_supervision import (
     AutonomousRunsListResponse,
@@ -73,6 +75,81 @@ async def _enforce_run_mutation_guard(
     await enforce_workspace_governed_mutation(request, user, resolved_ws_id)
 
 
+def _map_runs_to_schema(runs: list[Any]) -> list[AutonomousRunSupervisionItemSchema]:
+    return [
+        AutonomousRunSupervisionItemSchema(
+            run_id=r.run_id,
+            workspace_id=r.workspace_id,
+            workflow_id=r.workflow_id,
+            workflow_title=r.workflow_title,
+            trigger_id=r.trigger_id,
+            trigger_label=r.trigger_label,
+            trigger_type=r.trigger_type,
+            trigger_status=r.trigger_status,
+            run_status=r.run_status,
+            post_hoc_status=r.post_hoc_status,
+            contract_id=r.contract_id,
+            cost_usd=r.cost_usd,
+            created_at_iso=r.created_at_iso,
+            help_resource_id=r.help_resource_id,
+            previous_version_available=r.previous_version_available,
+        )
+        for r in runs
+    ]
+
+
+@router.get(
+    "/api/v1/autonomous-runs",
+    response_model=AutonomousRunsListResponse,
+    summary="List supervised autonomous contract runs across authorized workspaces (`Story 29.1`)",
+)
+async def list_authorized_autonomous_runs(
+    request: Request,
+    user: CurrentUserDep,
+    svc: SupervisionDep,
+    scope_id: Annotated[
+        str | None, Query(description="Optional workspace or org-unit UUID filter")
+    ] = None,
+) -> AutonomousRunsListResponse:
+    path = str(request.url.path)
+    auth_svc = get_auth_service(request)
+    await sync_evaluator_topology_from_pg(request, auth_svc)
+    accessible = auth_svc.evaluator.resolve_accessible_workspaces(user)
+    accessible_ids = tuple(a.workspace.id for a in accessible)
+
+    if scope_id is not None:
+        target_uuid = validate_uuid(scope_id, "scope_id")
+        if auth_svc.evaluator.get_workspace(target_uuid) is not None:
+            await resolve_finops_read_scope(request, user, "WORKSPACE", target_uuid)
+            target_ws_ids: tuple[str, ...] = (target_uuid,)
+        elif auth_svc.evaluator.has_org_unit(target_uuid):
+            allowed_ous = {
+                target_uuid,
+                *auth_svc.evaluator.get_descendant_org_unit_ids(target_uuid),
+            }
+            target_ws_ids = tuple(
+                a.workspace.id for a in accessible if a.workspace.owner_org_unit_id in allowed_ous
+            )
+            is_admin = user.platform_role == "PLATFORM_ADMIN" or "PLATFORM_ADMIN" in user.roles
+            if (
+                not is_admin
+                and not user_governs_org_unit(auth_svc, user, target_uuid)
+                and not target_ws_ids
+            ):
+                raise ScopeAccessDeniedError(instance=path)
+        else:
+            raise ResourceNotFoundError(instance=path)
+    else:
+        target_ws_ids = accessible_ids
+
+    runs = await svc.list_autonomous_runs_for_workspaces(workspace_ids=target_ws_ids)
+    return AutonomousRunsListResponse(
+        workspace_id=None,
+        runs=_map_runs_to_schema(runs),
+        trace_id=_trace(request),
+    )
+
+
 @router.get(
     "/api/v1/workspaces/{workspace_id}/autonomous-runs",
     response_model=AutonomousRunsListResponse,
@@ -89,26 +166,7 @@ async def list_workspace_autonomous_runs(
     runs = await svc.list_autonomous_runs(workspace_id=resolved_ws_id)
     return AutonomousRunsListResponse(
         workspace_id=resolved_ws_id,
-        runs=[
-            AutonomousRunSupervisionItemSchema(
-                run_id=r.run_id,
-                workspace_id=r.workspace_id,
-                workflow_id=r.workflow_id,
-                workflow_title=r.workflow_title,
-                trigger_id=r.trigger_id,
-                trigger_label=r.trigger_label,
-                trigger_type=r.trigger_type,
-                trigger_status=r.trigger_status,
-                run_status=r.run_status,
-                post_hoc_status=r.post_hoc_status,
-                contract_id=r.contract_id,
-                cost_usd=r.cost_usd,
-                created_at_iso=r.created_at_iso,
-                help_resource_id=r.help_resource_id,
-                previous_version_available=r.previous_version_available,
-            )
-            for r in runs
-        ],
+        runs=_map_runs_to_schema(runs),
         trace_id=_trace(request),
     )
 

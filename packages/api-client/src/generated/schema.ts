@@ -622,7 +622,7 @@ export interface components {
     AutonomousRunsListResponse: {
       runs?: (components["schemas"]["AutonomousRunSupervisionItemSchema"])[];
       trace_id?: string | null;
-      workspace_id: string;
+      workspace_id?: string | null;
     };
     AutonomyContractResponse: {
       allowed_read_sources?: (string)[];
@@ -5218,6 +5218,13 @@ export interface paths {
     get: {
       responses: {
         200: components["schemas"]["AuthSessionBootstrapResponse"];
+      };
+    };
+  };
+  "/api/v1/autonomous-runs": {
+    get: {
+      responses: {
+        200: components["schemas"]["AutonomousRunsListResponse"];
       };
     };
   };

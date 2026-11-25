@@ -30,11 +30,11 @@ class AutonomousRunSupervisionItemSchema(BaseModel):
 
 
 class AutonomousRunsListResponse(BaseModel):
-    """List of autonomous contract runs in a workspace."""
+    """List of autonomous contract runs in a workspace or across authorized workspaces."""
 
     model_config = ConfigDict(extra="forbid")
 
-    workspace_id: str
+    workspace_id: str | None = None
     runs: list[AutonomousRunSupervisionItemSchema] = Field(default_factory=list)
     trace_id: str | None = None
 

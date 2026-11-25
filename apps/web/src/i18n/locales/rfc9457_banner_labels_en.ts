@@ -12,7 +12,7 @@ export const RFC9457_BANNER_EN_LABELS: Rfc9457BannerDictionary = {
       title: "Scope access denied",
       message: "You do not have sufficient permissions for this space or unit.",
       remediation:
-        "Select an authorized space or request access in My Organization.",
+        "Select an authorized team or workspace scope, or contact a division or platform administrator.",
     },
     ERR_READ_SOURCE_DENIED: {
       title: "Source read access denied",

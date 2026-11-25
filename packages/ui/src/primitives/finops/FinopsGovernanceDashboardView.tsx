@@ -23,6 +23,9 @@ export interface FinopsGovernanceDashboardViewProps {
   readonly scopeType: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
   readonly scopeId?: string | null;
   readonly scopeIdsByLevel?: Partial<Record<"BU" | "TEAM" | "WORKSPACE", string | null>>;
+  readonly allowedScopes?: readonly ("WORKSPACE" | "TEAM" | "BU" | "GLOBAL")[];
+  readonly allowedModalScopes?: readonly ("GLOBAL" | "BU" | "TEAM" | "WORKSPACE")[];
+  readonly error?: string | null;
   readonly onScopeChange?: (scope: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE") => void;
   readonly totalRuns: number;
   readonly totalCostEur: number;
@@ -64,6 +67,9 @@ export function FinopsGovernanceDashboardView({
   scopeType,
   scopeId = null,
   scopeIdsByLevel,
+  allowedScopes,
+  allowedModalScopes,
+  error = null,
   onScopeChange,
   totalRuns,
   totalCostEur,
@@ -94,6 +100,20 @@ export function FinopsGovernanceDashboardView({
   const [activeTab, setActiveTab] = useState<FinopsTabKey>("processes");
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
   const [overrideModalRun, setOverrideModalRun] = useState<{ runId: string; title: string } | null>(null);
+  const hasError = error !== null && error !== undefined;
+  const effectivePillScope = scopeType === "BU" ? "TEAM" : scopeType;
+  const allScopePills = [
+    ["WORKSPACE", "finops-scope-workspace", labels.scopeSelector.currentWorkspace],
+    ["TEAM", "finops-scope-team", labels.scopeSelector.currentTeam],
+    ["GLOBAL", "finops-scope-global", labels.scopeSelector.entirePlatform],
+  ] as const;
+  const visibleScopePills = allowedScopes
+    ? allScopePills.filter(([sKey]) =>
+        sKey === "TEAM"
+          ? allowedScopes.includes("TEAM") || allowedScopes.includes("BU")
+          : allowedScopes.includes(sKey),
+      )
+    : allScopePills;
 
   const tabs: readonly OrciaTabItem<FinopsTabKey>[] = [
     { key: "processes", label: labels.tabs.processes, testId: "finops-tab-processes" },
@@ -147,14 +167,8 @@ export function FinopsGovernanceDashboardView({
             aria-label={labels.scopeSelector.currentWorkspace}
             data-testid="finops-scope-pills"
           >
-            {(
-              [
-                ["WORKSPACE", "finops-scope-workspace", labels.scopeSelector.currentWorkspace],
-                ["TEAM", "finops-scope-team", labels.scopeSelector.currentTeam],
-                ["GLOBAL", "finops-scope-global", labels.scopeSelector.entirePlatform],
-              ] as const
-            ).map(([sKey, testId, label]) => {
-              const selected = scopeType === sKey;
+            {visibleScopePills.map(([sKey, testId, label]) => {
+              const selected = effectivePillScope === sKey;
               return (
                 <button
                   key={sKey}
@@ -197,6 +211,7 @@ export function FinopsGovernanceDashboardView({
         cacheSavingsEur={cacheSavingsEur}
         activeCircuitBreakersCount={activeCircuitBreakersCount}
         pausedRunsCount={pausedRunsCount}
+        suppressEmptyState={hasError}
         emptyStateText={labels.emptyStateText}
         labels={labels.kpis}
       />
@@ -234,12 +249,8 @@ export function FinopsGovernanceDashboardView({
                 onResetConnectorCircuit={onResetConnectorCircuit}
                 onOpenHelpSection={onOpenHelpSection}
               />
-            ) : (
-              <div
-                className="orcia-bento-card"
-                data-testid="finops-services-placeholder"
-                style={{ padding: "24px", color: "var(--color-text-muted)", fontSize: "13px" }}
-              >
+            ) : hasError ? null : (
+              <div className="orcia-bento-card" data-testid="finops-services-placeholder" style={{ padding: "24px", color: "var(--color-text-muted)", fontSize: "13px" }}>
                 <p style={{ margin: 0 }}>{labels.emptyStateText}</p>
               </div>
             ),
@@ -250,12 +261,8 @@ export function FinopsGovernanceDashboardView({
                 onReviewPostHocSample={onReviewPostHocSample}
                 onOpenHelpSection={onOpenHelpSection}
               />
-            ) : (
-              <div
-                className="orcia-bento-card"
-                data-testid="finops-governance-placeholder"
-                style={{ padding: "24px", color: "var(--color-text-muted)", fontSize: "13px" }}
-              >
+            ) : hasError ? null : (
+              <div className="orcia-bento-card" data-testid="finops-governance-placeholder" style={{ padding: "24px", color: "var(--color-text-muted)", fontSize: "13px" }}>
                 <p style={{ margin: 0 }}>{labels.emptyStateText}</p>
               </div>
             ),
@@ -269,6 +276,7 @@ export function FinopsGovernanceDashboardView({
         currentScopeType={scopeType}
         currentScopeId={scopeId}
         scopeIdsByLevel={scopeIdsByLevel}
+        allowedScopes={allowedModalScopes}
         labels={labels.modals}
         onSaveBudget={onSaveBudget}
       />

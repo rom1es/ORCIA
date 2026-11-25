@@ -6,7 +6,7 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-24",
+  "lastSyncedDate": "2026-11-25",
   "stats": {
     "activeRoutesCount": 28,
     "uiPrimitivesCount": 131,
@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 62,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 234,
+    "techLeadReportsCount": 235,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -542,6 +542,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-25",
+      "phaseOrStory": "Story 29.1",
+      "reportFile": "29-1-multi-workspace-scope-resolution-processes-404-finops-403-and-error-empty-guard-tech-lead-report.md",
+      "domain": "Epic 29 Lot 1 — Multi-Workspace Scope Resolution (Mes Processus 404, FinOps 403/Scope-Pill Sync) & Error-vs-Empty Mutual Exclusion (UH-01, UH-02, CAP-140, CAP-200, CAP-201)",
+      "summary": "Closed (done, independent Story 29.1 Final Verifier verified): added GET /api/v1/autonomous-runs multi-workspace aggregation (list_autonomous_runs_for_workspaces_sql 284 L, autonomous_supervision.py 292 L/284 L, autonomousSupervision.ts + 0-diff OpenAPI SDK), added user.roles check in _finops_scope_guards.py (181 L), removed synthetic ^ws-\\d+$ handling (AutonomousRunsSupervisionPanel.tsx 221 L, useShellAutonomousSupervision.ts 85 L), extracted finopsScopeResolver.ts (89 L) & useFinopsDashboardMutations.ts (187 L) auto-defaulting scope-global to highest authorized scope, hid unauthorized pills & mapped BU → TEAM pill (FinopsGovernanceDashboardView.tsx 296 L), suppressed empty states on error, updated FR/EN ERR_SCOPE_ACCESS_DENIED copy; all production modules <= 296 L; verified 100% branch coverage (autonomous_supervision.py, 17 passed), 2/2 PG18 create_app() integration, 2/2 @orcia/ui + 9/9 @orcia/web Vitest audits, 2 passed (1.2m) Playwright Desktop E2E (20-process-studio-v2-finops-and-log-sink.spec.ts without fixtures), ruff (1715 files)/mypy --strict (845 files)/lint-imports (5/5, 888 files)/export_openapi (0-diff) clean."
+    },
     {
       "date": "2026-11-24",
       "phaseOrStory": "Story 28.4",

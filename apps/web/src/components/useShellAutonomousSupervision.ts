@@ -8,10 +8,8 @@ import { useWorkspaceEventsSse } from "./useWorkspaceEventsSse";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const SETUP_WS_RE = /^ws-\d+$/;
-
-function isValidWorkspaceKey(id: string): boolean {
-  return UUID_RE.test(id) || SETUP_WS_RE.test(id);
+function isValidWorkspaceUuid(id: string): boolean {
+  return UUID_RE.test(id);
 }
 
 export function useShellAutonomousSupervision({
@@ -29,7 +27,7 @@ export function useShellAutonomousSupervision({
     const callerEmail = currentUserEmail?.trim().toLowerCase() ?? "";
     const eligibleWorkspaces = workspaces.filter(
       (w) =>
-        isValidWorkspaceKey(w.workspaceId) &&
+        isValidWorkspaceUuid(w.workspaceId) &&
         (!w.ownerUserId || !callerEmail || w.ownerUserId.toLowerCase() === callerEmail),
     );
     const scopeWs = selectedScope.id.startsWith("scope-ws-")
@@ -48,7 +46,7 @@ export function useShellAutonomousSupervision({
   const shellApiClient = useMemo(() => createOrciaApiClient({ baseUrl: "" }), []);
 
   useEffect(() => {
-    if (!isAuthenticated || !activeWsUuid) {
+    if (!isAuthenticated) {
       setAutonomousRuns([]);
       setInboxNotifications([]);
       return;
@@ -56,10 +54,13 @@ export function useShellAutonomousSupervision({
     let cancelled = false;
     void (async () => {
       try {
-        const [autoRes, inboxRes] = await Promise.all([
-          shellApiClient.listWorkspaceAutonomousRuns(activeWsUuid),
-          shellApiClient.listInboxNotifications({ workspaceId: activeWsUuid }),
-        ]);
+        const autoPromise = activeWsUuid
+          ? shellApiClient.listWorkspaceAutonomousRuns(activeWsUuid)
+          : shellApiClient.listAutonomousRuns();
+        const inboxPromise = activeWsUuid
+          ? shellApiClient.listInboxNotifications({ workspaceId: activeWsUuid })
+          : Promise.resolve({ items: [] as TaskNotificationItemResponse[] });
+        const [autoRes, inboxRes] = await Promise.all([autoPromise, inboxPromise]);
         if (!cancelled) {
           setAutonomousRuns(Array.isArray(autoRes?.runs) ? autoRes.runs : []);
           setInboxNotifications(Array.isArray(inboxRes?.items) ? inboxRes.items : []);

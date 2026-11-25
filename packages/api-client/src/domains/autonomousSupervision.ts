@@ -25,6 +25,11 @@ export type {
 
 export function createAutonomousSupervisionDomainClient(requestJson: RequestJsonFn) {
   return {
+    listAutonomousRuns(params?: { scopeId?: string | null }): Promise<AutonomousRunsListResponse> {
+      const qs = params?.scopeId ? `?scope_id=${encodeURIComponent(params.scopeId)}` : "";
+      return requestJson<AutonomousRunsListResponse>(`/api/v1/autonomous-runs${qs}`);
+    },
+
     listWorkspaceAutonomousRuns(workspaceId: string): Promise<AutonomousRunsListResponse> {
       const ws = encodeURIComponent(workspaceId);
       return requestJson<AutonomousRunsListResponse>(

@@ -204,6 +204,8 @@ test.describe("Catalogue agents, chaîne de valeur, studio cinq blocs, autonomie
     expect(quotaRes.status()).toBe(200);
 
     await openFinopsPage(page);
+    await page.getByTestId("finops-scope-global").click();
+    await expect(page.getByTestId("finops-scope-global")).toHaveAttribute("aria-selected", "true");
     await page.getByTestId("finops-configure-budget-btn").click();
     await expect(page.getByTestId("finops-budget-modal")).toBeVisible();
     await page.getByTestId("finops-budget-monthly-limit").fill("350");

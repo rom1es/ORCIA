@@ -121,7 +121,11 @@ async def resolve_finops_read_scope(
         ]
         return None if not restricted_unaccessible else accessible_ids
 
-    if user.platform_role not in ("BU_DIRECTOR", "TEAM_LEAD", "OBSERVER") and not accessible_ids:
+    user_roles = {str(user.platform_role).upper(), *(str(r).upper() for r in user.roles)}
+    if (
+        not (user_roles & {"BU_DIRECTOR", "BU_LEAD", "TEAM_LEAD", "OBSERVER", "SECOPS"})
+        and not accessible_ids
+    ):
         raise ScopeAccessDeniedError(instance=path)
     return accessible_ids
 

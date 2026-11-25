@@ -22,15 +22,15 @@ from orcia_kernel.events import DomainEvent
 logger = get_logger("orcia.core.orchestration.sql_autonomous_supervision")
 
 
-async def list_autonomous_runs_sql(
+async def list_autonomous_runs_for_workspaces_sql(
     engine: AsyncEngine,
     *,
-    workspace_id: str,
+    workspace_ids: tuple[str, ...],
     limit: int = 100,
 ) -> list[dict[str, Any]]:
-    """Fetch autonomous contract runs for a workspace joined with trigger & post-hoc status."""
-    ws_uuid = safe_uuid(workspace_id)
-    if ws_uuid is None:
+    """Fetch autonomous contract runs across authorized workspaces."""
+    ws_uuids = [u for raw in workspace_ids if (u := safe_uuid(raw)) is not None]
+    if not ws_uuids:
         return []
     stmt = sa.text(
         """
@@ -89,7 +89,7 @@ async def list_autonomous_runs_sql(
             LIMIT 1
         ) help_art ON TRUE
         LEFT JOIN run_costs rc ON rc.run_id = wr.id
-        WHERE wr.workspace_id = :ws_id
+        WHERE wr.workspace_id = ANY(:ws_ids)
           AND wr.execution_regime = 'AUTONOMOUS_CONTRACT'
         ORDER BY wr.created_at DESC
         LIMIT :lim;
@@ -98,7 +98,7 @@ async def list_autonomous_runs_sql(
     try:
         async with engine.connect() as conn:
             rows = (
-                (await conn.execute(stmt, {"ws_id": ws_uuid, "lim": max(1, min(limit, 200))}))
+                (await conn.execute(stmt, {"ws_ids": ws_uuids, "lim": max(1, min(limit, 200))}))
                 .mappings()
                 .all()
             )
@@ -108,6 +108,18 @@ async def list_autonomous_runs_sql(
             logger.warning("list_autonomous_runs_sql_skipped", error=str(exc))
             return []
         raise
+
+
+async def list_autonomous_runs_sql(
+    engine: AsyncEngine,
+    *,
+    workspace_id: str,
+    limit: int = 100,
+) -> list[dict[str, Any]]:
+    """Fetch autonomous contract runs for a workspace joined with trigger & post-hoc status."""
+    return await list_autonomous_runs_for_workspaces_sql(
+        engine, workspace_ids=(workspace_id,), limit=limit
+    )
 
 
 async def get_autonomous_run_sql(engine: AsyncEngine, *, run_id: str) -> dict[str, Any] | None:
@@ -265,6 +277,7 @@ __all__ = [
     "apply_emergency_stop_sql",
     "get_autonomous_run_sql",
     "is_run_kill_switch_stopped_sql",
+    "list_autonomous_runs_for_workspaces_sql",
     "list_autonomous_runs_sql",
     "restore_help_article_and_rollback_run_sql",
     "update_autonomous_run_status_sql",

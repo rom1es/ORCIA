@@ -7,6 +7,7 @@ export interface FinopsBudgetPolicyModalProps {
   readonly currentScopeType?: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
   readonly currentScopeId?: string | null;
   readonly scopeIdsByLevel?: Partial<Record<"BU" | "TEAM" | "WORKSPACE", string | null>>;
+  readonly allowedScopes?: readonly ("GLOBAL" | "BU" | "TEAM" | "WORKSPACE")[];
   readonly defaultMonthlyBudgetUsd?: number;
   readonly defaultWarningPct?: number;
   readonly defaultHardStopPct?: number;
@@ -39,6 +40,7 @@ export function FinopsBudgetPolicyModal({
   currentScopeType = "GLOBAL",
   currentScopeId = null,
   scopeIdsByLevel,
+  allowedScopes,
   defaultMonthlyBudgetUsd = 100,
   defaultWarningPct = 80,
   defaultHardStopPct = 100,
@@ -102,10 +104,20 @@ export function FinopsBudgetPolicyModal({
             data-bwignore="true"
             data-form-type="other"
           >
-            <option value="GLOBAL">{labels.scopeGlobalLabel ?? "GLOBAL"}</option>
-            <option value="BU">{labels.scopeBuLabel ?? "BU"}</option>
-            <option value="TEAM">{labels.scopeTeamLabel ?? "TEAM"}</option>
-            <option value="WORKSPACE">{labels.scopeWorkspaceLabel ?? "WORKSPACE"}</option>
+            {(
+              [
+                ["GLOBAL", labels.scopeGlobalLabel ?? "GLOBAL"],
+                ["BU", labels.scopeBuLabel ?? "BU"],
+                ["TEAM", labels.scopeTeamLabel ?? "TEAM"],
+                ["WORKSPACE", labels.scopeWorkspaceLabel ?? "WORKSPACE"],
+              ] as const
+            )
+              .filter(([val]) => !allowedScopes || allowedScopes.includes(val))
+              .map(([val, label]) => (
+                <option key={val} value={val}>
+                  {label}
+                </option>
+              ))}
           </select>
         </div>
 

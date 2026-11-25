@@ -323,8 +323,8 @@ development_status:
   # Epic 29 — Canonical Page Headers (<OrciaPageHeader />), Multi-Workspace Scope & CONFIDENTIAL_RESTRICTED Hardening, Visual Grammar & Cross-Screen Consistency (UH-01..UH-15)
   # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-24-epic-29-ui-headers-scope-and-screen-consistency.md
   # Lots        : L1 29-1 | 29-2 | 29-3 -> L2 29-4 -> L3 29-5 | 29-6 -> L4 29-7
-  epic-29: backlog
-  29-1-multi-workspace-scope-resolution-processes-404-finops-403-and-error-empty-guard: backlog
+  epic-29: in-progress
+  29-1-multi-workspace-scope-resolution-processes-404-finops-403-and-error-empty-guard: done
   29-2-scoped-workspace-patch-confidential-isolation-rollback-and-single-banner: backlog
   29-3-assistant-prompt-sanitization-speed-tier-alignment-and-rbac-notices: backlog
   29-4-canonical-page-header-tab-strip-data-card-and-visual-grammar-tokens: backlog

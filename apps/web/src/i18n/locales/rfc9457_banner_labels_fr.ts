@@ -12,7 +12,7 @@ export const RFC9457_BANNER_FR_LABELS: Rfc9457BannerDictionary = {
       title: "Accès au périmètre refusé",
       message: "Vous ne disposez pas des droits nécessaires sur cet espace ou cette unité.",
       remediation:
-        "Sélectionnez un espace autorisé ou demandez l'habilitation dans Mon Organisation.",
+        "Sélectionnez un périmètre d'équipe ou d'espace autorisé, ou contactez un administrateur de division ou de plateforme.",
     },
     ERR_READ_SOURCE_DENIED: {
       title: "Lecture de la source non autorisée",

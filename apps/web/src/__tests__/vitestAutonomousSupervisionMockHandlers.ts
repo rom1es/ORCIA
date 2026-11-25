@@ -107,6 +107,18 @@ export function handleVitestAutonomousSupervisionRoute(
   jsonResponse: (data: unknown, status?: number) => Response,
   searchParams?: URLSearchParams,
 ): Response | null {
+  if (path === "/api/v1/autonomous-runs" && method === "GET") {
+    const scopeId = searchParams?.get("scope_id");
+    const runs = scopeId
+      ? mockAutonomousRuns.filter((r) => r.workspace_id === scopeId || mockAutonomousRuns.length > 0)
+      : [...mockAutonomousRuns];
+    return jsonResponse({
+      workspace_id: null,
+      runs,
+      trace_id: "0195f000000070008000000000007401",
+    });
+  }
+
   const listMatch = /^\/api\/v1\/workspaces\/([^/]+)\/autonomous-runs$/.exec(path);
   if (listMatch && method === "GET") {
     const wsId = decodeURIComponent(listMatch[1] ?? "");

@@ -28,6 +28,7 @@ export interface FinopsKpiStripProps {
   readonly cacheSavingsEur?: number;
   readonly activeCircuitBreakersCount?: number;
   readonly pausedRunsCount?: number;
+  readonly suppressEmptyState?: boolean;
   readonly emptyStateText: string;
   readonly labels: FinopsKpiStripLabels;
 }
@@ -61,9 +62,10 @@ export function FinopsKpiStrip({
   cacheSavingsEur = 0,
   activeCircuitBreakersCount = 0,
   pausedRunsCount = 0,
+  suppressEmptyState = false,
   emptyStateText,
   labels,
-}: FinopsKpiStripProps): React.ReactElement {
+}: FinopsKpiStripProps): React.ReactElement | null {
   const isEmpty =
     totalRuns === 0 &&
     totalCostEur === 0 &&
@@ -72,6 +74,9 @@ export function FinopsKpiStrip({
   const unitEntries = Object.entries(externalUnitsBreakdown ?? {}).filter(([, val]) => val > 0);
 
   if (isEmpty) {
+    if (suppressEmptyState) {
+      return null;
+    }
     return (
       <div
         className="orcia-bento-card"

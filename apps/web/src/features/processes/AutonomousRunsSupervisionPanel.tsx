@@ -7,15 +7,11 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
+import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import { formatCurrency } from "../../lib/formatters";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const SETUP_WS_REGEX = /^ws-\d+$/;
-
-function isWorkspaceKey(id: string): boolean {
-  return UUID_REGEX.test(id) || SETUP_WS_REGEX.test(id);
-}
 
 export function AutonomousRunsSupervisionPanel(): React.ReactElement | null {
   const { dictionary, locale } = useI18n();
@@ -28,42 +24,50 @@ export function AutonomousRunsSupervisionPanel(): React.ReactElement | null {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const activeWorkspaceId = useMemo(() => {
+  const scopeTarget = useMemo(() => {
     const scopeRaw = activeScopeId.startsWith("scope-ws-")
       ? activeScopeId.slice("scope-ws-".length)
       : activeScopeId;
-    if (isWorkspaceKey(scopeRaw)) {
-      return scopeRaw;
+    if (!UUID_REGEX.test(scopeRaw)) {
+      return { exactWorkspaceId: null, orgScopeId: null };
     }
-    const activeScope = scopes.find((s) => s.id === activeScopeId);
-    if (activeScope?.level === "WORKSPACE" && isWorkspaceKey(activeScope.id)) {
-      return activeScope.id;
+    const matchingScope = scopes.find((s) => s.id === activeScopeId || s.id === scopeRaw);
+    if (
+      matchingScope?.level === "WORKSPACE" ||
+      workspaces.some((w) => w.workspaceId === scopeRaw)
+    ) {
+      return { exactWorkspaceId: scopeRaw, orgScopeId: null };
     }
-    const wsFromScopes = scopes.find(
-      (s) => s.level === "WORKSPACE" && isWorkspaceKey(s.id),
-    )?.id;
-    if (wsFromScopes) {
-      return wsFromScopes;
+    if (matchingScope?.level === "BU" || matchingScope?.level === "TEAM") {
+      return { exactWorkspaceId: null, orgScopeId: scopeRaw };
     }
-    const wsFromList = workspaces.find((w) => isWorkspaceKey(w.workspaceId))?.workspaceId;
-    return wsFromList ?? null;
+    return { exactWorkspaceId: null, orgScopeId: null };
   }, [activeScopeId, scopes, workspaces]);
 
   const apiClient = useMemo(() => createOrciaApiClient({ baseUrl: "" }), []);
 
   const loadAutonomousRuns = useCallback(async () => {
-    if (!activeWorkspaceId) {
-      setRuns([]);
-      return;
-    }
     try {
       setErrorMessage(null);
-      const res = await apiClient.listWorkspaceAutonomousRuns(activeWorkspaceId);
+      const res = scopeTarget.exactWorkspaceId
+        ? await apiClient.listWorkspaceAutonomousRuns(scopeTarget.exactWorkspaceId)
+        : await apiClient.listAutonomousRuns(
+            scopeTarget.orgScopeId ? { scopeId: scopeTarget.orgScopeId } : undefined,
+          );
       setRuns(res.runs ?? []);
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : labels.loadErrorBanner);
+      setRuns([]);
+      const formatted = formatRfc9457ErrorToBanner(err, locale, labels.panelTitle).fullText;
+      setErrorMessage(formatted || (err instanceof Error ? err.message : labels.loadErrorBanner));
     }
-  }, [activeWorkspaceId, apiClient, labels.loadErrorBanner]);
+  }, [
+    apiClient,
+    labels.loadErrorBanner,
+    labels.panelTitle,
+    locale,
+    scopeTarget.exactWorkspaceId,
+    scopeTarget.orgScopeId,
+  ]);
 
   useEffect(() => {
     void loadAutonomousRuns();
@@ -75,25 +79,30 @@ export function AutonomousRunsSupervisionPanel(): React.ReactElement | null {
         setBusyRunId(runId);
         setErrorMessage(null);
         setSuccessMessage(null);
+        const targetRun = runs.find((r) => r.run_id === runId);
         await apiClient.emergencyStopAutonomousRun(runId, {
           reason: "",
           suspend_trigger: true,
-          workspace_id: activeWorkspaceId ?? undefined,
+          workspace_id: scopeTarget.exactWorkspaceId ?? targetRun?.workspace_id ?? undefined,
         });
         setSuccessMessage(labels.emergencyStopSuccessBanner);
         await loadAutonomousRuns();
       } catch (err: unknown) {
-        setErrorMessage(err instanceof Error ? err.message : labels.loadErrorBanner);
+        const formatted = formatRfc9457ErrorToBanner(err, locale, labels.panelTitle).fullText;
+        setErrorMessage(formatted || (err instanceof Error ? err.message : labels.loadErrorBanner));
       } finally {
         setBusyRunId(null);
       }
     },
     [
-      activeWorkspaceId,
       apiClient,
       labels.emergencyStopSuccessBanner,
       labels.loadErrorBanner,
+      labels.panelTitle,
       loadAutonomousRuns,
+      locale,
+      runs,
+      scopeTarget.exactWorkspaceId,
     ],
   );
 
@@ -103,30 +112,31 @@ export function AutonomousRunsSupervisionPanel(): React.ReactElement | null {
         setBusyRunId(runId);
         setErrorMessage(null);
         setSuccessMessage(null);
+        const targetRun = runs.find((r) => r.run_id === runId);
         await apiClient.invalidateAndRestoreAutonomousRun(runId, {
           comment: "",
-          workspace_id: activeWorkspaceId ?? undefined,
+          workspace_id: scopeTarget.exactWorkspaceId ?? targetRun?.workspace_id ?? undefined,
         });
         setSuccessMessage(labels.restoreSuccessBanner);
         await loadAutonomousRuns();
       } catch (err: unknown) {
-        setErrorMessage(err instanceof Error ? err.message : labels.loadErrorBanner);
+        const formatted = formatRfc9457ErrorToBanner(err, locale, labels.panelTitle).fullText;
+        setErrorMessage(formatted || (err instanceof Error ? err.message : labels.loadErrorBanner));
       } finally {
         setBusyRunId(null);
       }
     },
     [
-      activeWorkspaceId,
       apiClient,
       labels.loadErrorBanner,
+      labels.panelTitle,
       labels.restoreSuccessBanner,
       loadAutonomousRuns,
+      locale,
+      runs,
+      scopeTarget.exactWorkspaceId,
     ],
   );
-
-  if (!activeWorkspaceId && runs.length === 0 && !errorMessage) {
-    return null;
-  }
 
   return (
     <div
@@ -152,14 +162,14 @@ export function AutonomousRunsSupervisionPanel(): React.ReactElement | null {
         </OrciaAlertBanner>
       )}
 
-      {runs.length === 0 ? (
+      {!errorMessage && runs.length === 0 ? (
         <p
           data-testid="processes-autonomous-supervision-empty"
           style={{ margin: 0, fontSize: "12.5px", color: "var(--color-text-muted)" }}
         >
           {labels.emptyStateText}
         </p>
-      ) : (
+      ) : runs.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {runs.map((run) => (
             <div
@@ -205,7 +215,7 @@ export function AutonomousRunsSupervisionPanel(): React.ReactElement | null {
             </div>
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

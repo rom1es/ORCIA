@@ -883,7 +883,7 @@ capabilities:
     db_tables: [vsm_definitions_v2, workflow_definitions_v2, declarative_pack_bundles, claim_check_artifacts, workflow_runs]
     tests: [tests/integration/api/test_dbos_return_loops_and_claim_check.py, tests/unit/core/test_generic_gate_runners_and_auto_heal.py, apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx, apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts]
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-25"
     surfaces: { route: "/processes + /processes/vsm/$vsmId + /processes/studio/$workflowId", api: "/api/v1/vsm + /api/v1/workflows/v2 + /api/v1/runs (workflows.py)", ui: "ProcessesHubPage + ValueStreamMapView + StepDetailSheet + ReturnLoopsSvgOverlay + WorkflowFiveBlocksCanvas + StudioCopilotSidebar + InteractiveRunDrawer", migration: 20261108_0910_declarative_packs_and_workflows_v2.py }
   - id: CAP-150
     title: Simplification Architecturale des Packs 100 % Déclaratifs (packs/sdlc & packs/orcia-docs), Fusion de orcia-kernel dans orcia-core.kernel & Package Unifié packages/orcia-connectors
@@ -1022,7 +1022,7 @@ capabilities:
     uj: [UJ-8]
     db_tables: [audit_ledger, finops_scope_budgets, finops_workflow_baselines, finops_budget_overrides, finops_connector_quotas]
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-25"
     surfaces:
       route: /finops
       api: "finops.py, finops_remote.py, audit_ledger.py, finops_cognitive.py"
@@ -1049,9 +1049,14 @@ capabilities:
       - tests/unit/test_story_6_4_sql_connector_quotas_unit.py
       - tests/integration/api/test_story_6_4_connector_quotas_postgres18.py
       - apps/web/src/__tests__/story-6-4-finops-connector-quotas-and-circuit.test.tsx
+      - tests/unit/test_story_29_1_scope_resolution.py
+      - tests/unit/test_story_29_1_scope_resolution_extra.py
+      - tests/integration/api/test_story_29_1_autonomous_runs_and_finops_pg18.py
+      - packages/ui/src/__tests__/story-29-1-finops-pills-and-error-guard.test.tsx
+      - apps/web/src/__tests__/story-29-1-processes-and-finops-scope.test.tsx
       - apps/web/e2e/12-finops-and-audit-provenance.spec.ts
       - apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts
-    notes: "Story 6.1 (registre d'audit immuable et contrôle d'accès par périmètre), Story 6.2 (comptabilité FinOps consolidée, garde-fous mensuels hiérarchiques et reprise après rallonge budgétaire), Story 6.3 (tableau de bord de maîtrise humaine, alertes sur validations expéditives, indice de réversibilité d'architecture et mise à jour des politiques adaptatives) et Story 6.4 (télémétrie multi-métriques des services externes, plafonnement des anomalies, coupe-circuit isolé par connecteur et onglet Services externes)."
+    notes: "Story 6.1 (registre d'audit immuable et contrôle d'accès par périmètre), Story 6.2 (comptabilité FinOps consolidée, garde-fous mensuels hiérarchiques et reprise après rallonge budgétaire), Story 6.3 (tableau de bord de maîtrise humaine, alertes sur validations expéditives, indice de réversibilité d'architecture et mise à jour des politiques adaptatives), Story 6.4 (télémétrie multi-métriques des services externes, plafonnement des anomalies, coupe-circuit isolé par connecteur et onglet Services externes), et Story 29.1 (2026-11-25 : auto-sélection RBAC du périmètre FinOps, masquage des pilules non autorisées, mappage BU -> Équipe/Division, suppression état vide sur erreur et guidage bilingue ERR_SCOPE_ACCESS_DENIED)."
   - id: CAP-201
     title: Exécution autonome sous contrat, déclencheurs événementiels idempotents et supervision post-hoc
     fr: [FR-29, FR-30]
@@ -1062,10 +1067,10 @@ capabilities:
     uj: [UJ-11, UJ-12]
     db_tables: [autonomy_contracts, workflow_triggers, trigger_webhook_deliveries, autonomous_post_hoc_audits, workflow_runs]
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-25"
     surfaces:
       route: "/processes, /processes/studio/$workflowId, /finops"
-      api: "autonomy_contracts.py (GET/POST/revoke autonomy-contract, POST runs/autonomous); workflow_triggers.py (CRUD/test triggers, webhooks/{trigger_id}, triggers/alerts); autonomous_supervision.py (GET autonomous-runs, POST emergency-stop, POST invalidate-and-restore, POST post-hoc-review); finops_cognitive.py (autonomous_governance); portal_and_help.py (autonomous metadata); workflows.py (WorkflowPublished)"
+      api: "autonomy_contracts.py (GET/POST/revoke autonomy-contract, POST runs/autonomous); workflow_triggers.py (CRUD/test triggers, webhooks/{trigger_id}, triggers/alerts); autonomous_supervision.py (GET autonomous-runs, GET workspaces/{workspace_id}/autonomous-runs, POST emergency-stop, POST invalidate-and-restore, POST post-hoc-review); finops_cognitive.py (autonomous_governance); portal_and_help.py (autonomous metadata); workflows.py (WorkflowPublished)"
       ui: "AutonomyContractModal + WorkflowTriggersModal + WorkflowStudioHeaderBar + WorkflowBlock2ExecutionSection + WorkflowBlocks1345Sections + WorkflowFiveBlocksCanvas + AutonomousExecutionBadge + AutonomousRunsSupervisionPanel + FinopsAutonomousGovernanceSection + FourZoneAutonomousNotificationsGroup + ShellContextualHelpColumn"
       migration: "20261117_0701, 20261117_0702, 20261117_0704, 20261117_0705"
     tests:
@@ -1084,9 +1089,13 @@ capabilities:
       - tests/unit/test_epic_7_review_fixes.py
       - tests/integration/api/test_epic_7_composition_root_postgres18.py
       - apps/web/src/__tests__/story-7-4-autonomous-supervision-and-f5.test.tsx
+      - tests/unit/test_story_29_1_scope_resolution.py
+      - tests/unit/test_story_29_1_scope_resolution_extra.py
+      - tests/integration/api/test_story_29_1_autonomous_runs_and_finops_pg18.py
+      - apps/web/src/__tests__/story-29-1-processes-and-finops-scope.test.tsx
       - apps/web/e2e/13-epic-7-autonomous-governance-and-supervision.spec.ts
       - apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts
-    notes: "Epic 7 complet (2026-11-17, AD-3, AD-6, AD-18) : Story 7.1 (autonomy_contracts, signature unique TEAM_LEAD/BU_LEAD/PLATFORM_ADMIN, SignedApprovalToken.issue_autonomous, AutonomyContractModal), Story 7.2 (déclencheurs idempotents WEBHOOK/LOG_SINK_ALERT/CRON/OUTBOX_EVENT opt-in/MANUAL_AUTONOMOUS, triple verrou Redis NX + UNIQUE SQL + DBOS SetWorkflowID, Self-Trigger Guard, coupe-circuit SSE < 500 ms, WorkflowTriggersModal), et Story 7.4 (supervision /processes, AutonomousExecutionBadge Cyan/Cobalt sans violet humain, arrêt d'urgence KILL_SWITCH_STOPPED au niveau @DBOS.step, invalidation & restauration @v(N-1) HELP_ARTICLE avec purge Redis < 10 ms, échantillonnage post-hoc déterministe 10-20%, métriques SM-A1..A3 isolées dans FinOps Maîtrise humaine & Qualité, 0 jargon technique)."
+    notes: "Epic 7 complet (2026-11-17, AD-3, AD-6, AD-18) : Story 7.1 (autonomy_contracts, signature unique TEAM_LEAD/BU_LEAD/PLATFORM_ADMIN, SignedApprovalToken.issue_autonomous, AutonomyContractModal), Story 7.2 (déclencheurs idempotents WEBHOOK/LOG_SINK_ALERT/CRON/OUTBOX_EVENT opt-in/MANUAL_AUTONOMOUS, triple verrou Redis NX + UNIQUE SQL + DBOS SetWorkflowID, Self-Trigger Guard, coupe-circuit SSE < 500 ms, WorkflowTriggersModal), Story 7.4 (supervision /processes, AutonomousExecutionBadge Cyan/Cobalt sans violet humain, arrêt d'urgence KILL_SWITCH_STOPPED au niveau @DBOS.step, invalidation & restauration @v(N-1) HELP_ARTICLE avec purge Redis < 10 ms, échantillonnage post-hoc déterministe 10-20%, métriques SM-A1..A3 isolées dans FinOps Maîtrise humaine & Qualité, 0 jargon technique), et Story 29.1 (2026-11-25 : agrégation multi-espaces GET /api/v1/autonomous-runs sans 404/422 sur scope-global ou ID synthétiques ws-*)."
   - id: CAP-202
     title: Journalisation unifiée 12-factor JSON stdout, puits de logs paramétrable (Elasticsearch / Loki), traces distribuées OpenTelemetry OTLP et conformité OpenShift SCC restricted
     fr: [] # NFR-OBS-1, NFR-SEC-1, NFR-SEC-4, prérequis transverse Epic 7 (Stories 7.0a..7.0c) et conformité OpenShift

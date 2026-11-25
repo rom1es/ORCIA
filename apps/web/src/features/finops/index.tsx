@@ -30,6 +30,9 @@ export function FinopsFeaturePanel() {
         scopeType={ctrl.selectedScope}
         scopeId={ctrl.resolvedActiveScopeId}
         scopeIdsByLevel={ctrl.resolvedScopeIdsByLevel}
+        allowedScopes={ctrl.allowedScopePills}
+        allowedModalScopes={ctrl.allowedModalScopes}
+        error={ctrl.errorMessage}
         onScopeChange={ctrl.setSelectedScope}
         totalRuns={overview?.accounted_runs_count ?? 0}
         totalCostEur={overview?.total_cost_eur ?? 0}

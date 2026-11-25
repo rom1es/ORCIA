@@ -29,6 +29,7 @@ from orcia_core.orchestration._autonomous_supervision_ops import (
 from orcia_core.orchestration._internal.sql_autonomous_supervision import (
     get_autonomous_run_sql,
     is_run_kill_switch_stopped_sql,
+    list_autonomous_runs_for_workspaces_sql,
     list_autonomous_runs_sql,
     update_autonomous_run_status_sql,
 )
@@ -187,6 +188,24 @@ class AutonomousSupervisionService:
             rows = await list_autonomous_runs_sql(self._engine, workspace_id=workspace_id)
             return [map_pg_row_to_supervision_item(r) for r in rows]
         return [r for r in self._runs.values() if r.workspace_id == workspace_id]
+
+    async def list_autonomous_runs_for_workspaces(
+        self, *, workspace_ids: tuple[str, ...]
+    ) -> list[AutonomousRunSupervisionItem]:
+        """List autonomous contract runs across multiple authorized workspaces."""
+        if not workspace_ids:
+            return []
+        if self._engine is not None:
+            rows = await list_autonomous_runs_for_workspaces_sql(
+                self._engine, workspace_ids=workspace_ids
+            )
+            return [map_pg_row_to_supervision_item(r) for r in rows]
+        allowed = set(workspace_ids)
+        return sorted(
+            (r for r in self._runs.values() if r.workspace_id in allowed),
+            key=lambda item: item.created_at_iso,
+            reverse=True,
+        )
 
     async def emergency_stop(
         self,

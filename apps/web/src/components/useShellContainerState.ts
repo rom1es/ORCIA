@@ -55,6 +55,7 @@ export function useShellContainerState(
   const isAuthHydrating = options?.isAuthHydrating ?? false;
   const isInitialLoading = options?.isInitialLoading ?? false;
   const validScopeIds = options?.validScopeIds;
+  const hasExplicitScopeSelectionRef = useRef<boolean>(readSavedActiveScopeId() !== null);
   const [activeScopeId, setActiveScopeIdState] = useState(() => {
     const saved = readSavedActiveScopeId();
     if (saved) return saved;
@@ -63,6 +64,7 @@ export function useShellContainerState(
       : "scope-global";
   });
   const setActiveScopeId = (nextScopeId: string) => {
+    hasExplicitScopeSelectionRef.current = true;
     setActiveScopeIdState(nextScopeId);
     writeSavedActiveScopeId(nextScopeId);
   };
@@ -89,6 +91,7 @@ export function useShellContainerState(
       email: options?.currentUserEmail,
     };
     if (loggedOut || switchedUser) {
+      hasExplicitScopeSelectionRef.current = false;
       writeSavedActiveScopeId(null);
       setActiveScopeIdState("scope-global");
     }
@@ -126,6 +129,7 @@ export function useShellContainerState(
       !canObserveGlobalScope &&
       activeScopeId === "scope-global" &&
       defaultScopedId &&
+      !hasExplicitScopeSelectionRef.current &&
       readSavedActiveScopeId() === null
     ) {
       setActiveScopeIdState(defaultScopedId);
