@@ -3054,6 +3054,27 @@ export interface components {
       type?: string;
     };
     ProcessOrchestrationType: "non_deterministic" | "deterministic_dbos";
+    ProcessPendingRunItemResponse: {
+      actor_slug: string;
+      created_at_iso?: string;
+      is_pending: boolean;
+      raw_status: string;
+      reflexive_execution_id?: string | null;
+      run_id: string;
+      source: string;
+      status: string;
+      updated_at_iso?: string;
+      workflow_id: string;
+      workflow_slug: string;
+      workflow_title: string;
+      workspace_id?: string | null;
+    };
+    ProcessPendingRunsListResponse: {
+      items: (components["schemas"]["ProcessPendingRunItemResponse"])[];
+      pending_count: number;
+      total_count: number;
+      trace_id: string;
+    };
     ProgressiveLlmEndpointRequest: {
       endpoint_key: string;
       endpoint_uri: string;
@@ -3640,9 +3661,11 @@ export interface components {
     StartWorkflowV2RunRequest: {
       auto_approve_checkpoints?: boolean;
       correction_remarks?: string | null;
+      initial_resources?: (string)[];
       inputs?: Record<string, unknown>;
       iteration?: number;
       reentry_mode?: string;
+      workspace_id?: string | null;
     };
     "StepControlsPipeline-Input": {
       delegated_to_step_num?: string | null;
@@ -6519,6 +6542,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/workflows/v2/runs": {
+    get: {
+      responses: {
+        200: components["schemas"]["ProcessPendingRunsListResponse"];
+      };
+    };
+  };
   "/api/v1/workflows/v2/{workflow_id}": {
     get: {
       responses: {
@@ -7120,6 +7150,8 @@ export type PostHocReviewResponse = components["schemas"]["PostHocReviewResponse
 export type ProbabilisticControlExecutionRecord = components["schemas"]["ProbabilisticControlExecutionRecord"];
 export type ProblemDetails = components["schemas"]["ProblemDetails"];
 export type ProcessOrchestrationType = components["schemas"]["ProcessOrchestrationType"];
+export type ProcessPendingRunItemResponse = components["schemas"]["ProcessPendingRunItemResponse"];
+export type ProcessPendingRunsListResponse = components["schemas"]["ProcessPendingRunsListResponse"];
 export type ProgressiveLlmEndpointRequest = components["schemas"]["ProgressiveLlmEndpointRequest"];
 export type PublicAuthConfigResponse = components["schemas"]["PublicAuthConfigResponse"];
 export type QuickActionSpec = components["schemas"]["QuickActionSpec"];

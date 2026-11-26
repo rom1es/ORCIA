@@ -15,6 +15,11 @@ from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from orcia_api.dependencies._core_providers import should_auto_init_infra
+from orcia_api.dependencies._llm_streaming_providers import (
+    get_llm_streaming_port,
+    is_cassette_llm_enabled,
+)
+from orcia_api.dependencies._process_llm_bridge import build_app_llm_endpoint_resolver
 from orcia_api.dependencies.core_and_lifespan import (
     get_or_create_shared_db_engine,
     initialize_app_services,
@@ -33,7 +38,11 @@ from orcia_core.agents import (
     SqlReflexiveSessionStore,
 )
 from orcia_core.storage.claim_check import get_claim_check_storage
-from orcia_core.workflows import SqlVsmDefinitionsV2Store, SqlWorkflowDefinitionsV2Store
+from orcia_core.workflows import (
+    SqlVsmDefinitionsV2Store,
+    SqlWorkflowDefinitionsV2Store,
+    SqlWorkflowV2RunsStore,
+)
 
 
 def _resolve_reflexive_session_maker(
@@ -104,7 +113,13 @@ def get_reflexive_runtime_service(request: Request) -> NonDeterministicReflexive
         session_maker=session_maker,
         strict_sql=strict_sql,
     )
-    llm_adapter = GatewayReflexiveLlmAdapter(llm_gateway=request.app.state.llm_gateway)
+    llm_adapter = GatewayReflexiveLlmAdapter(
+        llm_gateway=request.app.state.llm_gateway,
+        streaming_port=None if is_cassette_llm_enabled() else get_llm_streaming_port(request),
+        endpoint_resolver=(
+            None if is_cassette_llm_enabled() else build_app_llm_endpoint_resolver(request.app)
+        ),
+    )
     runtime = NonDeterministicReflexiveRuntime(
         llm_port=llm_adapter,
         surgical_explorer=get_surgical_explorer_service(request),
@@ -136,7 +151,13 @@ def get_assistant_reflexive_runtime_service(
         session_maker=session_maker,
         strict_sql=strict_sql,
     )
-    llm_adapter = GatewayReflexiveLlmAdapter(llm_gateway=request.app.state.llm_gateway)
+    llm_adapter = GatewayReflexiveLlmAdapter(
+        llm_gateway=request.app.state.llm_gateway,
+        streaming_port=None if is_cassette_llm_enabled() else get_llm_streaming_port(request),
+        endpoint_resolver=(
+            None if is_cassette_llm_enabled() else build_app_llm_endpoint_resolver(request.app)
+        ),
+    )
     runtime = NonDeterministicReflexiveRuntime(
         llm_port=llm_adapter,
         surgical_explorer=get_surgical_explorer_service(request),
@@ -180,6 +201,25 @@ def get_vsm_v2_sql_store(request: Request) -> SqlVsmDefinitionsV2Store:
             strict_sql=strict_sql,
         )
         request.app.state.vsm_v2_sql_store = store
+    elif getattr(store, "_session_maker", None) is None and session_maker is not None:
+        store._session_maker = session_maker
+        store._strict_sql = True
+    return store
+
+
+def get_workflows_v2_runs_sql_store(request: Request) -> SqlWorkflowV2RunsStore:
+    """FastAPI `Depends` provider returning `SqlWorkflowV2RunsStore` (PostgreSQL 18)."""
+    session_maker = _resolve_reflexive_session_maker(request)
+    strict_sql = (session_maker is not None) or should_auto_init_infra("DATABASE_URL")
+    store: SqlWorkflowV2RunsStore | None = getattr(
+        request.app.state, "workflows_v2_runs_sql_store", None
+    )
+    if store is None:
+        store = SqlWorkflowV2RunsStore(
+            session_maker=session_maker,
+            strict_sql=strict_sql,
+        )
+        request.app.state.workflows_v2_runs_sql_store = store
     elif getattr(store, "_session_maker", None) is None and session_maker is not None:
         store._session_maker = session_maker
         store._strict_sql = True

@@ -854,7 +854,8 @@ def test_epic_8_alembic_migration_0022_upgrade_and_downgrade_sql() -> None:
         assert f"DROP TABLE IF EXISTS {table_name}" in joined_downgrade
 
 
-def test_epic_8_fastapi_endpoints_contract_and_rfc9457() -> None:
+def test_epic_8_fastapi_endpoints_contract_and_rfc9457(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
     app = create_app()
     client = TestClient(app)
 

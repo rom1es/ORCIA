@@ -44,7 +44,11 @@ export function TraceEventRow({
       item.kind === "THOUGHT_DELTA"
         ? labels.thoughtInProgressLabel
         : labels.thoughtSummaryLabel(secs);
-    const bodyText = (item.thoughtContent ?? item.label ?? "").trim();
+    const bodyText = (
+      item.thoughtContent !== undefined && item.thoughtContent !== null
+        ? item.thoughtContent
+        : (item.label ?? "")
+    ).trim();
 
     return (
       <div className="space-y-1 text-xs" data-testid={`trace-event-thought-${item.eventId}`}>

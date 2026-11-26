@@ -3,14 +3,31 @@ import type { ProcessStudioUiDictionary } from "./process_studio_ui_labels";
 export const PROCESS_STUDIO_UI_FR: ProcessStudioUiDictionary = {
   hub: {
     catalogResourceLabel: "Catalogue de processus",
-    pendingValidationBadge: "1 validation en attente de votre décision",
+    pendingRunsResourceLabel: "Validations en attente",
+    noPendingValidationsBadge: "Aucune validation en attente",
+    pendingValidationSingleBadge: "1 validation en attente de votre décision",
+    pendingValidationsPluralBadgeTemplate: "{count} validations en attente de votre décision",
+    emptyPendingRunsTitle: "Aucune validation en attente dans cet espace",
+    emptyPendingRunsBody:
+      "Lancez un processus métier ci-dessous pour générer un livrable et initier une validation.",
+    loadingPendingRunsLabel: "Chargement des validations en attente...",
     activeDossiersTitle: "Mes dossiers en cours & validations à traiter",
     activeDossiersSubtitle:
       "Examinez les livrables préparés par vos agents, validez les étapes clés ou demandez des ajustements sans quitter cette page.",
     reviewPendingDossierBtn: "Examiner & Valider le dossier en attente",
-    featuredDossierPrefix: "Dossier prioritaire",
-    featuredStepBadge: "Étape 1/3 : Qualification du besoin",
-    featuredReadySummary: "Livrable prêt pour relecture et validation Product Owner",
+    featuredDossierPrefix: "Exécution en cours",
+    pendingRunStatusLabels: {
+      INITIALIZED: "Initialisé",
+      RUNNING: "En cours d'exécution",
+      WAITING_SUBSTEP_HITL: "Validation d'étape requise",
+      WAITING_EXTERNAL_GATE: "En attente du sas externe",
+      WAITING_FINAL_ANCHOR: "Validation finale requise",
+      WAITING_WRITE_PREVIEW: "Confirmation d'écriture requise",
+      RETURN_LOOP_TRIGGERED: "Corrections demandées",
+      PAUSED: "En pause",
+      FAILED_GATES: "Contrôles en échec",
+      COMPLETED: "Terminé",
+    },
     openDeliverableBtn: "Ouvrir le livrable",
     availableProcessesTitle: "Processus métiers disponibles",
     availableProcessesSubtitle:

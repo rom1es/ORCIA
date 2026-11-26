@@ -340,8 +340,9 @@ async def test_dec_sec_01_secret_ref_envelope_rotation_and_canary_leak_verificat
     assert report.leaked_in_structlog is False
 
 
-def test_api_agentic_gate_endpoint_and_observer_guard() -> None:
+def test_api_agentic_gate_endpoint_and_observer_guard(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify `POST /api/v1/gates/agentic/evaluate` endpoint, orthogonality 422, observer 403."""
+    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
     app = create_app()
     client = TestClient(app)
 

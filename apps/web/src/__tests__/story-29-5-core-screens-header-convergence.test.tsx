@@ -148,9 +148,9 @@ describe("Story 29.5 — Header & Layout Convergence Across Assistant, Processes
     const activeDossiers = screen.getByTestId("processes-active-dossiers-card");
     expect(activeDossiers.className).toContain("orcia-ds-data-card");
     expect(activeDossiers.textContent ?? "").not.toContain("Mon Compte");
-    expect(screen.getByTestId("resume-featured-dossier-btn").className).toContain(
-      "orcia-ds-btn-cobalt-outline",
-    );
+    expect(activeDossiers.textContent ?? "").not.toContain("1 validation en attente de votre décision");
+    expect(screen.getByTestId("processes-empty-pending-runs")).toBeDefined();
+    expect(screen.queryByTestId("resume-featured-dossier-btn")).toBeNull();
 
     const launchBtn = hub.querySelector("[data-testid^='execute-workflow-btn-']");
     expect(launchBtn?.className).toContain("orcia-ds-btn-cobalt-outline");

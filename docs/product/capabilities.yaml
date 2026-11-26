@@ -163,27 +163,27 @@ capabilities:
     title: Workflow-as-code YAML/JSON et gabarits d'artefact multi-audience
     fr: [FR-11, FR-12]
     origin: epic
-    origin_ref: 3-1-workflow-as-code-yaml-json-gabarits-d-artefact-multi-audienc
+    origin_ref: 3-1-workflow-as-code-yaml-json-gabarits-d-artefact-multi-audienc + 30-3
     status: live
     kind: feature
     uj: [UJ-1, UJ-10]
-    db_tables: [workflow_definitions, catalog_items]
-    tests: [tests/unit/test_workflow_as_code_and_run_lock.py, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
+    db_tables: [workflow_definitions, catalog_items, workflow_v2_runs]
+    tests: [tests/unit/test_workflow_as_code_and_run_lock.py, tests/unit/test_story_30_3_processes_live_llm_and_pending_runs.py, tests/integration/api/test_story_30_3_pending_runs_and_live_guard_postgres18.py, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-26"
   - id: CAP-021
     title: Moteur d'orchestration durable (DBOS), blackboard, checkpoints, version pinning, exécution réelle des étapes
     fr: [FR-14, FR-15]
     origin: epic
-    origin_ref: 3-2, 3-2f
+    origin_ref: 3-2, 3-2f, 30-3
     status: live
     kind: feature
     uj: [UJ-4, UJ-5, UJ-10]
-    db_tables: [workflow_runs, step_executions, blackboard_snapshots, run_lock_manifests, domain_events_outbox]
-    tests: [tests/unit/test_story_3_2f_step_executors_invoker_and_finance.py, tests/integration/test_story_3_2f_real_api_run_and_restart_postgres18.py, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
+    db_tables: [workflow_runs, workflow_v2_runs, step_executions, blackboard_snapshots, run_lock_manifests, domain_events_outbox]
+    tests: [tests/unit/test_story_3_2f_step_executors_invoker_and_finance.py, tests/integration/test_story_3_2f_real_api_run_and_restart_postgres18.py, tests/integration/api/test_story_30_3_pending_runs_and_live_guard_postgres18.py, apps/web/e2e/19-orchestration-whatif-replay-and-gates.spec.ts]
     verification: runtime
-    verified_at: "2026-11-20"
-    surfaces: { api: "/api/v1/orchestration + blackboard_and_engine.py" }
+    verified_at: "2026-11-26"
+    surfaces: { api: "/api/v1/orchestration + /api/v1/workflows/v2/runs + blackboard_and_engine.py" }
   - id: CAP-022
     title: Agent assistant DAG 5 nœuds (AssistantHarness 5 couches)
     fr: [FR-1, FR-13]
@@ -884,15 +884,15 @@ capabilities:
     title: ORCIA Process Studio v2 — Chaîne de Valeur Interactive (Macro-VSM 11 étapes), Studio 5 Blocs Control-M, Sas Externe Délégué & Arbitrage HITL 4 Actions sur Diff S3 Claim-Check
     fr: [FR-7, FR-8, FR-9, FR-15, FR-17, FR-29, FR-30, FR-35, FR-36]
     origin: epic
-    origin_ref: epic-14 (14-1..14-5) + 29-5
+    origin_ref: epic-14 (14-1..14-5) + 29-5 + 30-3
     status: live
     kind: feature
     uj: [UJ-10, UJ-19]
-    db_tables: [vsm_definitions_v2, workflow_definitions_v2, declarative_pack_bundles, claim_check_artifacts, workflow_runs]
-    tests: [tests/integration/api/test_dbos_return_loops_and_claim_check.py, tests/unit/core/test_generic_gate_runners_and_auto_heal.py, apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts]
+    db_tables: [vsm_definitions_v2, workflow_definitions_v2, declarative_pack_bundles, claim_check_artifacts, workflow_runs, workflow_v2_runs]
+    tests: [tests/integration/api/test_dbos_return_loops_and_claim_check.py, tests/integration/api/test_story_30_3_pending_runs_and_live_guard_postgres18.py, tests/unit/core/test_generic_gate_runners_and_auto_heal.py, tests/unit/test_story_30_3_processes_live_llm_and_pending_runs.py, apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-30-3-processes-pg18-pending-runs.test.tsx, apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts]
     verification: runtime
-    verified_at: "2026-11-25"
-    surfaces: { route: "/processes + /processes/vsm/$vsmId + /processes/studio/$workflowId", api: "/api/v1/vsm + /api/v1/workflows/v2 + /api/v1/runs (workflows.py)", ui: "ProcessesHubPage + ProcessCatalogCardGrid + ProcessesActiveDossiersCard + ValueStreamMapView + StepDetailSheet + ReturnLoopsSvgOverlay + WorkflowFiveBlocksCanvas + StudioCopilotSidebar + InteractiveRunDrawer", migration: 20261108_0910_declarative_packs_and_workflows_v2.py }
+    verified_at: "2026-11-26"
+    surfaces: { route: "/processes + /processes/vsm/$vsmId + /processes/studio/$workflowId", api: "/api/v1/vsm + /api/v1/workflows/v2 + /api/v1/workflows/v2/runs + /api/v1/runs (workflows.py, _workflows_pending_runs.py)", ui: "ProcessesHubPage + ProcessCatalogCardGrid + ProcessesActiveDossiersCard + ValueStreamMapView + StepDetailSheet + ReturnLoopsSvgOverlay + WorkflowFiveBlocksCanvas + StudioCopilotSidebar + InteractiveRunDrawer", migration: "20261108_0910_declarative_packs_and_workflows_v2.py + 20261125_303_workflow_v2_runs.py" }
   - id: CAP-150
     title: Simplification Architecturale des Packs 100 % Déclaratifs (packs/sdlc & packs/orcia-docs), Fusion de orcia-kernel dans orcia-core.kernel & Package Unifié packages/orcia-connectors
     fr: [FR-11, FR-13, FR-14, FR-34, FR-35]
@@ -910,30 +910,34 @@ capabilities:
     title: Orchestration réflexive (Mon Assistant, Mes Agents & Processus pilotés par l'objectif), exploration chirurgicale #Lstart-end et dualité Objectif vs Jalons
     fr: [FR-1, FR-14, FR-20, FR-22, FR-24, FR-33, FR-36]
     origin: epic
-    origin_ref: epic-16 (16-1..16-4)
+    origin_ref: epic-16 (16-1..16-4) + 30-3
     status: live
     kind: feature
     uj: [UJ-10, UJ-17]
-    db_tables: [reflexive_execution_sessions, workflow_definitions_v2, workflow_runs]
+    db_tables: [reflexive_execution_sessions, workflow_definitions_v2, workflow_runs, workflow_v2_runs]
     verification: runtime
-    verified_at: "2026-11-20"
+    verified_at: "2026-11-26"
     surfaces:
       route: "/assistant + /agents + /processes + /processes/studio/$workflowId"
-      api: "/api/v1/sources/inspect-lines + /api/v1/sources/surgical-explore (sources_surgical.py) + /api/v1/executions/reflexive + /api/v1/executions/{execution_id}/trace-stream (executions_trace.py) + /api/v1/workflows/v2 + /api/v1/workflows/v2/{workflow_id}/runs (workflows.py)"
-      ui: "WorkflowOrchestrationModeSelector + WorkflowBlock2ExecutionSection + AgentExecutionTrace + SourceLineInspectorDrawer + AgentTestBenchSection + InteractiveRunDrawer + AssistantSpeedSelectorAndStreamView"
-      migration: "20261111_01_reflexive_execution_sessions.py + 20261122_267_story_26_7_reflexive_execution_profile.py"
+      api: "/api/v1/sources/inspect-lines + /api/v1/sources/surgical-explore (sources_surgical.py) + /api/v1/executions/reflexive + /api/v1/executions/{execution_id}/trace-stream (executions_trace.py) + /api/v1/workflows/v2 + /api/v1/workflows/v2/runs + /api/v1/workflows/v2/{workflow_id}/runs (workflows.py, _workflows_pending_runs.py, _process_llm_bridge.py)"
+      ui: "WorkflowOrchestrationModeSelector + WorkflowBlock2ExecutionSection + AgentExecutionTrace + agentExecutionTraceGrouping + SourceLineInspectorDrawer + AgentTestBenchSection + InteractiveRunDrawer + AssistantSpeedSelectorAndStreamView"
+      migration: "20261111_01_reflexive_execution_sessions.py + 20261122_267_story_26_7_reflexive_execution_profile.py + 20261125_303_workflow_v2_runs.py"
     tests:
       - tests/unit/connectors/test_surgical_context_explorer.py
       - tests/unit/core/test_non_deterministic_reflexive_runtime.py
       - tests/unit/core/test_reflexive_llm_stream_and_gate_adapters.py
       - tests/unit/core/test_process_orchestration_dispatcher.py
       - tests/unit/connectors/test_bounded_workflow_v2_encapsulation.py
+      - tests/unit/test_story_30_3_processes_live_llm_and_pending_runs.py
       - tests/integration/api/test_story_16_1_sources_surgical_api.py
       - tests/integration/api/test_story_16_2_reflexive_runtime_and_sse_postgres18.py
       - tests/integration/api/test_story_16_3_dual_mode_processes_api.py
+      - tests/integration/api/test_story_30_3_pending_runs_and_live_guard_postgres18.py
       - packages/ui/src/__tests__/story-16-4-agent-execution-trace-and-inspector.test.tsx
+      - packages/ui/src/__tests__/story-30-3-coalesced-thought-trace.test.tsx
       - apps/web/src/__tests__/story-16-3-dual-mode-processes-studio.test.tsx
       - apps/web/src/__tests__/story-16-4-reflexive-trace-wiring-and-f5.test.tsx
+      - apps/web/src/__tests__/story-30-3-processes-pg18-pending-runs.test.tsx
       - apps/web/e2e/00-stack-smoke.spec.ts
       - apps/web/e2e/09-pack-builder-and-contextual-help.spec.ts
       - apps/web/e2e/12-epic16-reflexive-trace-and-line-inspector.spec.ts

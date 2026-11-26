@@ -259,6 +259,13 @@ describe("Story 16.4 — Vertical Wiring Across 3 Surfaces, Surgical Line Inspec
     firstMount.unmount();
     await mountProcessesRoute();
 
+    // Story 30.3: zero sticky auto-launch on mount; pending run is hydrated from PG18 & reopened explicitly
+    expect(screen.queryByTestId("interactive-run-hitl-drawer")).toBeNull();
+    const resumePendingBtn = await waitFor(() =>
+      screen.getByTestId("resume-featured-dossier-btn"),
+    );
+    fireEvent.click(resumePendingBtn);
+
     await waitFor(() => {
       expect(screen.getByTestId("interactive-run-hitl-drawer")).toBeDefined();
       expect(screen.getByTestId("trace-write-preview-card")).toBeDefined();

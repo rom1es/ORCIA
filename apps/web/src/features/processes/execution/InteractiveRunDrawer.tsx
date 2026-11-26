@@ -1,3 +1,4 @@
+import type { ProcessPendingRunItemResponse } from "@orcia/api-client";
 import { AgentExecutionTrace, SourceLineInspectorDrawer } from "@orcia/ui";
 import React from "react";
 import { formatI18nTemplate, resolveDictionaryForFlag } from "../../../i18n";
@@ -5,16 +6,19 @@ import type { WorkflowDefinitionV2Item } from "../processStudioV2Data";
 import { InteractiveRunDeliverableAndHitlPanels } from "./InteractiveRunDeliverableAndHitlPanels";
 import { InteractiveRunDrawerHeader } from "./InteractiveRunDrawerHeader";
 import {
+  extractAgentSlugFromRef,
   formatAgentHumanLabel,
   useInteractiveProcessRunController,
   type InteractiveProcessDrawerStatus,
 } from "./useInteractiveProcessRunController";
 
-export { formatAgentHumanLabel };
+export { extractAgentSlugFromRef, formatAgentHumanLabel };
 
 export interface InteractiveRunDrawerProps {
   workflow: WorkflowDefinitionV2Item;
   workspaceId?: string;
+  initialPendingRun?: ProcessPendingRunItemResponse | null;
+  onRunStateChanged?: () => void;
   onClose: () => void;
   isFr: boolean;
 }
@@ -22,11 +26,19 @@ export interface InteractiveRunDrawerProps {
 export function InteractiveRunDrawer({
   workflow,
   workspaceId,
+  initialPendingRun = null,
+  onRunStateChanged,
   onClose,
   isFr,
 }: InteractiveRunDrawerProps) {
   const execCopy = resolveDictionaryForFlag(isFr).processVsmExecutionUi.execution;
-  const ctrl = useInteractiveProcessRunController(workflow, isFr, workspaceId);
+  const ctrl = useInteractiveProcessRunController(
+    workflow,
+    isFr,
+    workspaceId,
+    initialPendingRun,
+    onRunStateChanged,
+  );
   const {
     dictionary,
     enabledSubSteps,
@@ -64,12 +76,14 @@ export function InteractiveRunDrawer({
     handleAction1AcceptAndSign,
     handleAction2SaveAmendedDiff,
     handleAction3RejectAndLoop,
+    handleAction4SuspendSla,
   } = ctrl;
 
   const idempotencyKey = `${runId}:${currentSubStep?.id ?? "step"}:iter-${iteration}`;
   const s3Uri = `s3://orcia-artifacts/${runId}/${currentSubStep?.id ?? "step"}/iter-${iteration}/${artifactSha256.slice(0, 16)}.md`;
 
   const statusHumanLabel: Record<InteractiveProcessDrawerStatus, string> = {
+    RUNNING: execCopy.statusRunning,
     WAITING_EXTERNAL_GATE: execCopy.statusWaitingExternal,
     WAITING_SUBSTEP_HITL: execCopy.statusWaitingSubstepHitl,
     WAITING_WRITE_PREVIEW: execCopy.statusWaitingWritePreview,
@@ -77,6 +91,7 @@ export function InteractiveRunDrawer({
     COMPLETED_APPROVED: execCopy.statusCompletedApproved,
     RETURN_LOOP_TRIGGERED: formatI18nTemplate(execCopy.statusReturnLoopTemplate, { iteration }),
     SLA_SUSPENDED: execCopy.statusSlaSuspended,
+    FAILED_GATES: execCopy.statusFailedGates,
   };
 
   return (
@@ -229,10 +244,11 @@ export function InteractiveRunDrawer({
         onApproveCurrentSubStep={handleApproveCurrentSubStep}
         onAction1AcceptAndSign={handleAction1AcceptAndSign}
         onAction2SaveAmendedDiff={handleAction2SaveAmendedDiff}
-        onAction3RejectAndLoop={handleAction3RejectAndLoop}
+        onAction3RejectAndLoop={() => {
+          void handleAction3RejectAndLoop();
+        }}
         onAction4SuspendSla={() => {
-          setStatus("SLA_SUSPENDED");
-          setStatusBanner(execCopy.processPausedBanner);
+          handleAction4SuspendSla(execCopy.processPausedBanner);
         }}
         onChangeReturnLoopTarget={setReturnLoopTargetStep}
         onChangeReturnLoopRemarks={setReturnLoopRemarks}

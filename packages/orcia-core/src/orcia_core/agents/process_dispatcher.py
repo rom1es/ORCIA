@@ -11,10 +11,12 @@ Routes any `WorkflowDefinitionV2` transparently according to `workflow.orchestra
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any, Literal
 
 from orcia_core.agents._internal.dispatcher_helpers import (
     UnifiedProcessRunResult,
+    build_milestone_unified_result,
     compose_goal_objective,
     default_self_heal_callback,
     ensure_contract_sections,
@@ -28,17 +30,14 @@ from orcia_core.ports.bounded_workflow_port import (
     SubStepAgentExecutionOutcome,
 )
 from orcia_core.storage.claim_check import (
-    ClaimCheckPointer,
     ClaimCheckStorageService,
     get_claim_check_storage,
 )
 from orcia_core.workflows.gates.pipeline import (
-    GatePipelineExecutionReport,
     GatePipelineExecutor,
     SelfHealCallback,
 )
 from orcia_core.workflows.schemas_v2 import (
-    ExecutionMode,
     ProcessOrchestrationType,
     WorkflowDefinitionV2,
 )
@@ -77,10 +76,12 @@ class ProcessExecutionDispatcher:
         workspace_id: str | None = None,
         actor_user_id: str | None = None,
         locale: str = "fr",
+        initial_resources: Sequence[str] = (),
     ) -> UnifiedProcessRunResult:
         """Execute `workflow` using its configured `orchestration_type`."""
         resolved_run_id = run_id or f"run-{new_uuid7_str()}"
         raw_inputs = dict(inputs or {})
+        resources = tuple(str(r).strip() for r in initial_resources if str(r).strip())
 
         if workflow.orchestration_type == ProcessOrchestrationType.NON_DETERMINISTIC:
             return await self._dispatch_goal_driven(
@@ -94,6 +95,7 @@ class ProcessExecutionDispatcher:
                 workspace_id=workspace_id,
                 actor_user_id=actor_user_id,
                 locale=locale,
+                initial_resources=resources,
             )
 
         return await self._dispatch_milestone_driven(
@@ -107,6 +109,7 @@ class ProcessExecutionDispatcher:
             workspace_id=workspace_id,
             actor_user_id=actor_user_id,
             locale=locale,
+            initial_resources=resources,
         )
 
     async def _dispatch_goal_driven(
@@ -122,6 +125,7 @@ class ProcessExecutionDispatcher:
         workspace_id: str | None,
         actor_user_id: str | None,
         locale: str,
+        initial_resources: tuple[str, ...] = (),
     ) -> UnifiedProcessRunResult:
         config = ReflexiveRuntimeConfig.from_effort_level(
             workflow.effort,
@@ -130,6 +134,7 @@ class ProcessExecutionDispatcher:
             workspace_id=workspace_id,
             actor_user_id=actor_user_id,
             locale=locale,
+            initial_resources=initial_resources,
         )
         snap = await self._reflexive_runtime.run_execution(
             actor_slug=resolve_actor_slug(workflow),
@@ -200,6 +205,7 @@ class ProcessExecutionDispatcher:
         workspace_id: str | None,
         actor_user_id: str | None,
         locale: str,
+        initial_resources: tuple[str, ...] = (),
     ) -> UnifiedProcessRunResult:
         async def _run_encapsulated_sub_step(
             sub_step_id: str,
@@ -216,6 +222,7 @@ class ProcessExecutionDispatcher:
                 workspace_id=workspace_id,
                 actor_user_id=actor_user_id,
                 locale=locale,
+                initial_resources=initial_resources,
             )
             step_obj = f"{workflow.title} — {sub_step_name} ({sub_step_id}, iter-{step_iteration})"
             if step_remarks:
@@ -251,46 +258,7 @@ class ProcessExecutionDispatcher:
                 _run_encapsulated_sub_step if self._encapsulate_agent_sub_steps else None
             ),
         )
-        gate_report = (
-            GatePipelineExecutionReport.model_validate(outcome.gate_report_payload)
-            if outcome.gate_report_payload is not None
-            else None
-        )
-        final_ptr = (
-            ClaimCheckPointer.model_validate(outcome.final_artifact_payload)
-            if outcome.final_artifact_payload is not None
-            else None
-        )
-        last_exec_id = next(
-            (
-                r.reflexive_execution_id
-                for r in reversed(outcome.sub_step_records)
-                if r.reflexive_execution_id
-            ),
-            None,
-        )
-        return UnifiedProcessRunResult(
-            run_id=outcome.run_id,
-            workflow_id=outcome.workflow_id,
-            workflow_slug=outcome.workflow_slug,
-            workflow_version=outcome.workflow_version,
-            orchestration_type=ProcessOrchestrationType.DETERMINISTIC_DBOS,
-            execution_mode=ExecutionMode(outcome.execution_mode),
-            iteration=outcome.iteration,
-            reentry_mode=outcome.reentry_mode,
-            status=outcome.status,
-            current_sub_step_index=outcome.current_sub_step_index,
-            inputs=outcome.inputs,
-            mcp_context_bundle=outcome.mcp_context_bundle,
-            sub_step_records=outcome.sub_step_records,
-            gate_report=gate_report,
-            final_artifact_pointer=final_ptr,
-            reflexive_execution_id=last_exec_id,
-            trace_events=outcome.trace_events,
-            return_loop_target_step_num=outcome.return_loop_target_step_num,
-            return_loop_remarks=outcome.return_loop_remarks,
-            audit_trail=outcome.audit_trail,
-        )
+        return build_milestone_unified_result(outcome)
 
 
 __all__ = [

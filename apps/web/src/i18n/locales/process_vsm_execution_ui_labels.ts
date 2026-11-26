@@ -62,6 +62,7 @@ export interface ProcessVsmExecutionUiDictionary {
     readonly sheetComplementsLabel: string;
   };
   readonly execution: {
+    readonly statusRunning: string;
     readonly statusWaitingExternal: string;
     readonly statusWaitingSubstepHitl: string;
     readonly statusWaitingWritePreview: string;
@@ -69,6 +70,7 @@ export interface ProcessVsmExecutionUiDictionary {
     readonly statusCompletedApproved: string;
     readonly statusReturnLoopTemplate: string;
     readonly statusSlaSuspended: string;
+    readonly statusFailedGates: string;
     readonly stepBadgeTemplate: string;
     readonly externalWorkReceivedBanner: string;
     readonly processPausedBanner: string;

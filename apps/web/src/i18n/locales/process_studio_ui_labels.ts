@@ -22,13 +22,18 @@ export interface ProcessStudioGateCatalogItem {
 export interface ProcessStudioUiDictionary {
   readonly hub: {
     readonly catalogResourceLabel: string;
-    readonly pendingValidationBadge: string;
+    readonly pendingRunsResourceLabel: string;
+    readonly noPendingValidationsBadge: string;
+    readonly pendingValidationSingleBadge: string;
+    readonly pendingValidationsPluralBadgeTemplate: string;
+    readonly emptyPendingRunsTitle: string;
+    readonly emptyPendingRunsBody: string;
+    readonly loadingPendingRunsLabel: string;
     readonly activeDossiersTitle: string;
     readonly activeDossiersSubtitle: string;
     readonly reviewPendingDossierBtn: string;
     readonly featuredDossierPrefix: string;
-    readonly featuredStepBadge: string;
-    readonly featuredReadySummary: string;
+    readonly pendingRunStatusLabels: Readonly<Record<string, string>>;
     readonly openDeliverableBtn: string;
     readonly availableProcessesTitle: string;
     readonly availableProcessesSubtitle: string;

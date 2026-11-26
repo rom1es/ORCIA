@@ -96,10 +96,35 @@ class StartWorkflowV2RunRequest(BaseModel):
     reentry_mode: str = "initial"
     correction_remarks: str | None = None
     auto_approve_checkpoints: bool = False
+    workspace_id: str | None = None
+    initial_resources: list[str] = Field(default_factory=list)
 
 
 class WorkflowV2RunResponse(BaseModel):
     run: BoundedWorkflowRunState
+
+
+class ProcessPendingRunItemResponse(BaseModel):
+    run_id: str
+    workspace_id: str | None = None
+    workflow_id: str
+    workflow_slug: str
+    workflow_title: str
+    actor_slug: str
+    status: str
+    raw_status: str
+    is_pending: bool
+    reflexive_execution_id: str | None = None
+    source: str
+    created_at_iso: str = ""
+    updated_at_iso: str = ""
+
+
+class ProcessPendingRunsListResponse(BaseModel):
+    items: list[ProcessPendingRunItemResponse]
+    pending_count: int
+    total_count: int
+    trace_id: str
 
 
 class HitlSignalRequest(HitlSignalPayload):
@@ -112,6 +137,8 @@ __all__ = [
     "DeclarativePacksListResponse",
     "HitlSignalRequest",
     "PacksConnectorHealthResponse",
+    "ProcessPendingRunItemResponse",
+    "ProcessPendingRunsListResponse",
     "SaveWorkflowV2Request",
     "SaveWorkflowV2Response",
     "StartWorkflowV2RunRequest",

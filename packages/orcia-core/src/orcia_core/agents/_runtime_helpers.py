@@ -196,6 +196,7 @@ def build_turn_input(snapshot: ReflexiveSessionSnapshot, turn_index: int) -> Ref
     """Build `ReflexiveTurnInput` for the current turn from `snapshot`."""
     return ReflexiveTurnInput(
         execution_id=snapshot.execution_id,
+        workspace_id=snapshot.workspace_id,
         actor_slug=snapshot.actor_slug,
         objective=snapshot.objective,
         turn_index=turn_index,

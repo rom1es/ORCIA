@@ -1,4 +1,5 @@
 import type { ApiWorkflowDefinitionV2 } from "@orcia/api-client";
+import { listVitestPendingReflexiveRuns } from "../vitestReflexiveBackend";
 import { backendState, jsonResponse, problemResponse } from "./mockBackendState";
 
 export function handleAutonomyTriggersAndWorkflowsV2Route(params: {
@@ -185,8 +186,51 @@ export function handleAutonomyTriggersAndWorkflowsV2Route(params: {
     }
   }
 
+  if (path === "/api/v1/vsm" && method === "GET") {
+    return jsonResponse({
+      items: [
+        {
+          id: "vsm-mon-compte-idea-to-prod",
+          title: "Chaîne de Valeur Mon Compte",
+          subtitle: "Parcours complet en 11 étapes",
+        },
+      ],
+    });
+  }
   if (path === "/api/v1/workflows/v2" && method === "GET") {
     return jsonResponse({ items: Array.from(backendState.workflowsV2.values()) });
+  }
+  if (path === "/api/v1/workflows/v2/runs" && method === "GET") {
+    const wfItems = Array.from(backendState.workflowV2Runs.values())
+      .reverse()
+      .filter((r) => String(r.status ?? "") !== "COMPLETED_APPROVED" && String(r.status ?? "") !== "COMPLETED")
+      .map((r) => {
+        const wfId = String(r.workflow_id ?? "");
+        const wf = backendState.workflowsV2.get(wfId);
+        return {
+          run_id: String(r.run_id ?? ""),
+          workspace_id: r.workspace_id ? String(r.workspace_id) : null,
+          workflow_id: wfId,
+          workflow_slug: String(r.workflow_slug ?? wfId),
+          workflow_title: wf?.title ?? wfId,
+          actor_slug: wf?.global_system_prompt_or_ref ?? "assistant",
+          status: String(r.status ?? "WAITING_FINAL_ANCHOR"),
+          raw_status: String(r.status ?? "WAITING_FINAL_ANCHOR"),
+          is_pending: true,
+          reflexive_execution_id: r.reflexive_execution_id ? String(r.reflexive_execution_id) : null,
+          source: "workflow_v2",
+          created_at_iso: "",
+          updated_at_iso: "",
+        };
+      });
+    const rxItems = listVitestPendingReflexiveRuns();
+    const combined = [...rxItems, ...wfItems];
+    return jsonResponse({
+      items: combined,
+      pending_count: combined.length,
+      total_count: combined.length,
+      trace_id: "0195f000000070008000000000000303",
+    });
   }
   const wfV2WhatIfMatch = /^\/api\/v1\/workflows\/v2\/([^/]+)\/what-if$/.exec(path);
   if (wfV2WhatIfMatch && method === "POST") {
@@ -207,30 +251,32 @@ export function handleAutonomyTriggersAndWorkflowsV2Route(params: {
   if (wfV2RunsMatch && method === "POST") {
     const wfId = decodeURIComponent(wfV2RunsMatch[1] ?? "");
     const existing = backendState.workflowsV2.get(wfId);
-    return jsonResponse({
-      run: {
-        run_id: `run-${wfId}-01`,
-        workflow_id: wfId,
-        workflow_slug: existing?.slug ?? wfId,
-        workflow_version: existing?.version ?? "1.0.0",
-        orchestration_type: existing?.orchestration_type ?? "deterministic_dbos",
-        execution_mode: existing?.execution_mode ?? "native_orcia",
-        status: "WAITING_FINAL_ANCHOR",
-        iteration: 1,
-        reentry_mode: "initial",
-        current_sub_step_index: 0,
-        inputs: {},
-        mcp_context_bundle: null,
-        sub_step_records: [],
-        gate_report: null,
-        final_artifact_pointer: null,
-        reflexive_execution_id: `reflx-${wfId}-01`,
-        trace_events: [],
-        return_loop_target_step_num: null,
-        return_loop_remarks: null,
-        audit_trail: [],
-      },
-    });
+    const runId = `run-${wfId}-01`;
+    const runRecord: Record<string, unknown> = {
+      run_id: runId,
+      workspace_id: body.workspace_id ? String(body.workspace_id) : null,
+      workflow_id: wfId,
+      workflow_slug: existing?.slug ?? wfId,
+      workflow_version: existing?.version ?? "1.0.0",
+      orchestration_type: existing?.orchestration_type ?? "deterministic_dbos",
+      execution_mode: existing?.execution_mode ?? "native_orcia",
+      status: "WAITING_FINAL_ANCHOR",
+      iteration: 1,
+      reentry_mode: "initial",
+      current_sub_step_index: 0,
+      inputs: {},
+      mcp_context_bundle: null,
+      sub_step_records: [],
+      gate_report: null,
+      final_artifact_pointer: null,
+      reflexive_execution_id: `reflx-${wfId}-01`,
+      trace_events: [],
+      return_loop_target_step_num: null,
+      return_loop_remarks: null,
+      audit_trail: [],
+    };
+    backendState.workflowV2Runs.set(runId, runRecord);
+    return jsonResponse({ run: runRecord });
   }
   const wfV2ItemMatch = /^\/api\/v1\/workflows\/v2\/([^/]+)$/.exec(path);
   if (wfV2ItemMatch && method === "GET") {
@@ -247,6 +293,14 @@ export function handleAutonomyTriggersAndWorkflowsV2Route(params: {
     return jsonResponse({ workflow: saved, forked_as_draft: false });
   }
 
+  const runGetMatch = /^\/api\/v1\/runs\/([^/]+)$/.exec(path);
+  if (runGetMatch && method === "GET") {
+    const runId = decodeURIComponent(runGetMatch[1] ?? "");
+    const found = backendState.workflowV2Runs.get(runId);
+    if (!found) return jsonResponse({ detail: `Run '${runId}' not found` }, 404);
+    return jsonResponse({ run: found });
+  }
+
   const hitlSignalMatch = /^\/api\/v1\/runs\/([^/]+)\/hitl-signal$/.exec(path);
   if (hitlSignalMatch && method === "POST") {
     const runId = decodeURIComponent(hitlSignalMatch[1] ?? "");
@@ -256,35 +310,36 @@ export function handleAutonomyTriggersAndWorkflowsV2Route(params: {
     const nextStatus =
       action === "APPROVE"
         ? "COMPLETED_APPROVED"
-        : action === "REJECT_LOOP"
+        : action === "REJECT_LOOP" || action === "REJECT_AND_LOOP"
           ? "RETURN_LOOP_TRIGGERED"
           : action === "SUSPEND_SLA"
             ? "SLA_SUSPENDED"
             : "WAITING_FINAL_ANCHOR";
-    return jsonResponse({
-      run: {
-        run_id: runId,
-        workflow_id: wfId,
-        workflow_slug: existing?.slug ?? wfId,
-        workflow_version: existing?.version ?? "1.0.0",
-        orchestration_type: existing?.orchestration_type ?? "deterministic_dbos",
-        execution_mode: existing?.execution_mode ?? "native_orcia",
-        status: nextStatus,
-        iteration: 1,
-        reentry_mode: "initial",
-        current_sub_step_index: 0,
-        inputs: {},
-        mcp_context_bundle: null,
-        sub_step_records: [],
-        gate_report: null,
-        final_artifact_pointer: null,
-        reflexive_execution_id: `reflx-${wfId}-01`,
-        trace_events: [],
-        return_loop_target_step_num: null,
-        return_loop_remarks: null,
-        audit_trail: [],
-      },
-    });
+    const updatedRun: Record<string, unknown> = {
+      ...(backendState.workflowV2Runs.get(runId) ?? {}),
+      run_id: runId,
+      workflow_id: wfId,
+      workflow_slug: existing?.slug ?? wfId,
+      workflow_version: existing?.version ?? "1.0.0",
+      orchestration_type: existing?.orchestration_type ?? "deterministic_dbos",
+      execution_mode: existing?.execution_mode ?? "native_orcia",
+      status: nextStatus,
+      iteration: 1,
+      reentry_mode: "initial",
+      current_sub_step_index: 0,
+      inputs: {},
+      mcp_context_bundle: null,
+      sub_step_records: [],
+      gate_report: null,
+      final_artifact_pointer: null,
+      reflexive_execution_id: `reflx-${wfId}-01`,
+      trace_events: [],
+      return_loop_target_step_num: null,
+      return_loop_remarks: null,
+      audit_trail: [],
+    };
+    backendState.workflowV2Runs.set(runId, updatedRun);
+    return jsonResponse({ run: updatedRun });
   }
 
   return null;

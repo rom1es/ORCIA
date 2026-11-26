@@ -3,14 +3,31 @@ import type { ProcessStudioUiDictionary } from "./process_studio_ui_labels";
 export const PROCESS_STUDIO_UI_EN: ProcessStudioUiDictionary = {
   hub: {
     catalogResourceLabel: "Processes catalog",
-    pendingValidationBadge: "1 review awaiting your decision",
+    pendingRunsResourceLabel: "Pending reviews",
+    noPendingValidationsBadge: "No pending reviews",
+    pendingValidationSingleBadge: "1 review awaiting your decision",
+    pendingValidationsPluralBadgeTemplate: "{count} reviews awaiting your decision",
+    emptyPendingRunsTitle: "No pending reviews in this space",
+    emptyPendingRunsBody:
+      "Launch a business process below to generate a deliverable and start a review.",
+    loadingPendingRunsLabel: "Loading pending reviews...",
     activeDossiersTitle: "Active Dossiers & Pending Reviews",
     activeDossiersSubtitle:
       "Review deliverables prepared by your agents, approve milestones, or request adjustments directly from this page.",
     reviewPendingDossierBtn: "Review & Approve Pending Dossier",
-    featuredDossierPrefix: "Priority Dossier",
-    featuredStepBadge: "Step 1/3: Qualification",
-    featuredReadySummary: "Deliverable ready for Product Owner review",
+    featuredDossierPrefix: "Active Run",
+    pendingRunStatusLabels: {
+      INITIALIZED: "Initialized",
+      RUNNING: "Running",
+      WAITING_SUBSTEP_HITL: "Step approval required",
+      WAITING_EXTERNAL_GATE: "Awaiting external gate",
+      WAITING_FINAL_ANCHOR: "Final approval required",
+      WAITING_WRITE_PREVIEW: "Write confirmation required",
+      RETURN_LOOP_TRIGGERED: "Corrections requested",
+      PAUSED: "Paused",
+      FAILED_GATES: "Quality gates failed",
+      COMPLETED: "Completed",
+    },
     openDeliverableBtn: "Open deliverable",
     availableProcessesTitle: "Available Business Processes",
     availableProcessesSubtitle:

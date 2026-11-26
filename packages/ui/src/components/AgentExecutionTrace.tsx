@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { groupTraceEvents } from "./agentExecutionTraceGrouping";
 import {
   TraceEventRow,
   TraceWritePreviewCard,
@@ -24,88 +25,6 @@ export interface AgentExecutionTraceProps {
   readonly defaultCollapsedWhenCompleted?: boolean;
 }
 
-interface TraceGroupSection {
-  readonly key: string;
-  readonly title: string;
-  readonly items: readonly UiAgentTraceEventItem[];
-  readonly delegatedChildrenByParentId: ReadonlyMap<string, readonly UiAgentTraceEventItem[]>;
-}
-
-function groupTraceEvents(
-  events: readonly UiAgentTraceEventItem[],
-  defaultTitle: string,
-): readonly TraceGroupSection[] {
-  const sorted = [...events].sort((a, b) => a.sequence - b.sequence);
-  const groups: Array<{
-    key: string;
-    title: string;
-    items: UiAgentTraceEventItem[];
-    delegatedChildrenByParentId: Map<string, UiAgentTraceEventItem[]>;
-  }> = [];
-
-  let activeGroup: (typeof groups)[number] | null = null;
-  let activeDelegationParent: { eventId: string; agentSlug: string } | null = null;
-
-  for (const ev of sorted) {
-    if (ev.kind === "EXECUTION_FINISHED") {
-      continue;
-    }
-    if (ev.kind === "GROUP_HEADER") {
-      const key = ev.groupKey || ev.eventId || `group-${groups.length + 1}`;
-      activeGroup = {
-        key,
-        title: ev.label || defaultTitle,
-        items: [],
-        delegatedChildrenByParentId: new Map(),
-      };
-      groups.push(activeGroup);
-      activeDelegationParent = null;
-      continue;
-    }
-
-    if (!activeGroup) {
-      activeGroup = {
-        key: ev.groupKey || "default-group",
-        title: defaultTitle,
-        items: [],
-        delegatedChildrenByParentId: new Map(),
-      };
-      groups.push(activeGroup);
-    }
-
-    if (ev.kind === "AGENT_DELEGATED") {
-      activeGroup.items.push(ev);
-      const slug = (ev.delegatedAgentSlug || "").replace(/^@/, "");
-      activeDelegationParent = slug ? { eventId: ev.eventId, agentSlug: slug } : null;
-      continue;
-    }
-
-    if (ev.kind === "WRITE_PREVIEW_REQUESTED") {
-      continue;
-    }
-
-    const cleanActor = (ev.actorSlug || "").replace(/^@/, "");
-    if (
-      activeDelegationParent &&
-      cleanActor &&
-      cleanActor === activeDelegationParent.agentSlug
-    ) {
-      const existing =
-        activeGroup.delegatedChildrenByParentId.get(activeDelegationParent.eventId) ?? [];
-      activeGroup.delegatedChildrenByParentId.set(activeDelegationParent.eventId, [
-        ...existing,
-        ev,
-      ]);
-      continue;
-    }
-
-    activeDelegationParent = null;
-    activeGroup.items.push(ev);
-  }
-
-  return groups;
-}
-
 export function AgentExecutionTrace({
   status,
   events,
@@ -126,13 +45,14 @@ export function AgentExecutionTrace({
 
   const visibleStepCount = useMemo(
     () =>
-      events.filter(
-        (e) =>
-          e.kind !== "GROUP_HEADER" &&
-          e.kind !== "EXECUTION_FINISHED" &&
-          e.kind !== "THOUGHT_DELTA",
-      ).length,
-    [events],
+      groups.reduce((total, grp) => {
+        let childCount = 0;
+        for (const children of grp.delegatedChildrenByParentId.values()) {
+          childCount += children.length;
+        }
+        return total + grp.items.length + childCount;
+      }, 0),
+    [groups],
   );
 
   const derivedWritePreview: UiReflexivePendingWritePreview | null = useMemo(() => {

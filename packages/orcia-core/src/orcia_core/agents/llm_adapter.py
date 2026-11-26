@@ -1,69 +1,146 @@
-"""Agnostic `ReflexiveLlmPort` adapter bridging `LlmGatewayPort` (`Story 16.2`).
+"""Agnostic `ReflexiveLlmPort` adapter bridging live workspace LLMs & test cassettes (`Story 30.3`).
 
-Supports both structured JSON `ReflexiveTurnDecision` responses from live/cassette LLMs and
-zero-cost deterministic multi-turn plans when backed by `DeterministicCassetteLLM`.
-Preserves `\n` and Markdown indentation verbatim across streamed chunks (zero word-splitting).
+Uses the workspace's configured `LlmEndpointConfig` via `LlmStreamingPort` in live production
+(or an injected `LlmGatewayPort` test double in unit/cassette tests) with zero hardcoded
+fallback to `DeterministicCassetteLLM` or `docs/product/capabilities.yaml`.
+Preserves `\\n` and Markdown indentation verbatim across streamed chunks.
 """
 
 from __future__ import annotations
 
 import json
-from collections.abc import AsyncIterator
+import re
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
 
 from orcia_core.agents._agents_locales import get_agent_runtime_copy
+from orcia_core.agents._cassette_reflexive_decisions import (
+    build_deterministic_cassette_decision,
+    resolve_locale_key,
+)
+from orcia_core.agents.errors import ProcessModelNotConfiguredError
 from orcia_core.ports.llm_port import LlmGatewayPort, LlmPromptRequest
+from orcia_core.ports.llm_streaming_port import (
+    LlmEndpointConfig,
+    LlmStreamingPort,
+    LlmStreamRequest,
+)
 from orcia_core.ports.reflexive_runtime_ports import (
     ReflexiveLlmChunk,
     ReflexiveLlmPort,
     ReflexiveTurnDecision,
     ReflexiveTurnInput,
 )
-from orcia_core.ports.surgical_explorer_port import SurgicalPrimitiveName
 
-_DEFAULT_FALLBACK_RESOURCE = "docs/product/capabilities.yaml"
+LlmEndpointResolver = Callable[[str | None], Awaitable[LlmEndpointConfig | None]]
+_JSON_FENCE_RE = re.compile(r"^```(?:json)?\s*\n?(.*?)\n?```$", re.DOTALL | re.IGNORECASE)
 
 
 def _slice_preserving_newlines(text: str, chunk_chars: int = 80) -> list[str]:
-    """Slice `text` into contiguous character spans preserving every `\n` and space verbatim."""
     if not text:
         return []
     step = max(16, chunk_chars)
     return [text[idx : idx + step] for idx in range(0, len(text), step)]
 
 
+def _try_parse_json_decision(raw: str, tokens: int) -> ReflexiveTurnDecision | None:
+    candidate = raw.strip()
+    fence_match = _JSON_FENCE_RE.match(candidate)
+    if fence_match:
+        candidate = fence_match.group(1).strip()
+    if not candidate.startswith("{"):
+        return None
+    try:
+        parsed: dict[str, Any] = json.loads(candidate)
+    except json.JSONDecodeError:
+        return None
+    parsed.setdefault("tokens_used", tokens)
+    return ReflexiveTurnDecision.model_validate(parsed)
+
+
 class GatewayReflexiveLlmAdapter(ReflexiveLlmPort):
-    """Bridges `LlmGatewayPort` (`LiteLLMAdapter` / `CassetteLLM`) to `ReflexiveLlmPort`."""
+    """Bridges live workspace `LlmStreamingPort` or test `LlmGatewayPort` to `ReflexiveLlmPort`."""
 
     def __init__(
         self,
-        llm_gateway: LlmGatewayPort,
+        llm_gateway: LlmGatewayPort | None = None,
         *,
+        streaming_port: LlmStreamingPort | None = None,
+        endpoint_resolver: LlmEndpointResolver | None = None,
         model_family: str = "agnostic-default",
         model_id: str = "orcia-reflexive-default",
     ) -> None:
         self._gateway = llm_gateway
+        self._streaming_port = streaming_port
+        self._endpoint_resolver = endpoint_resolver
         self._model_family = model_family
         self._model_id = model_id
 
+    def _is_cassette_mode(self) -> bool:
+        return bool(
+            self._gateway is not None and getattr(self._gateway, "is_cassette_adapter", False)
+        )
+
     async def decide_next_turn(self, turn_input: ReflexiveTurnInput) -> ReflexiveTurnDecision:
-        """Query `LlmGatewayPort` and resolve a structured `ReflexiveTurnDecision`."""
+        """Query live workspace LLM (or explicit test cassette) for next `ReflexiveTurnDecision`."""
+        loc = resolve_locale_key(turn_input.locale)
+        copy = get_agent_runtime_copy(loc)
         system_prompt = (
             "You are an ORCIA reflexive agent orchestrating read-only surgical exploration "
-            "and governed outputs. Respond in the user's language ("
-            f"{turn_input.locale})."
+            "and governed outputs. Respond clearly in the user's language ("
+            f"{loc})."
         )
-        user_prompt = json.dumps(
-            {
-                "actor_slug": turn_input.actor_slug,
-                "objective": turn_input.objective,
-                "turn_index": turn_input.turn_index,
-                "force_final": turn_input.force_final,
-                "scratchpad_len": len(turn_input.scratchpad),
-            },
-            ensure_ascii=False,
-            sort_keys=True,
-        )
+        user_payload: dict[str, Any] = {
+            "actor_slug": turn_input.actor_slug,
+            "objective": turn_input.objective,
+            "turn_index": turn_input.turn_index,
+            "force_final": turn_input.force_final,
+            "initial_resources": list(turn_input.initial_resources),
+            "scratchpad": list(turn_input.scratchpad),
+        }
+        user_prompt = json.dumps(user_payload, ensure_ascii=False, sort_keys=True)
+
+        if (
+            not self._is_cassette_mode()
+            and self._streaming_port is not None
+            and self._endpoint_resolver is not None
+        ):
+            endpoint = await self._endpoint_resolver(turn_input.workspace_id)
+            if endpoint is None:
+                raise ProcessModelNotConfiguredError()
+            outcome = await self._streaming_port.complete_chat(
+                LlmStreamRequest(
+                    endpoint=endpoint,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    stream=False,
+                    include_thoughts=True,
+                )
+            )
+            if outcome is None:
+                raise ProcessModelNotConfiguredError()
+            tokens = max(1, outcome.input_tokens + outcome.output_tokens)
+            parsed = _try_parse_json_decision(outcome.content, tokens)
+            if parsed is not None:
+                if not parsed.thought_text and outcome.thinking_text.strip():
+                    return parsed.model_copy(update={"thought_text": outcome.thinking_text.strip()})
+                return parsed
+            content = outcome.content.strip()
+            if not content:
+                raise ProcessModelNotConfiguredError()
+            return ReflexiveTurnDecision(
+                group_title=copy.synthesis_group_title,
+                thought_text=outcome.thinking_text.strip(),
+                action_kind="final_answer",
+                final_markdown=content,
+                tokens_used=tokens,
+            )
+
+        if self._gateway is None:
+            raise ProcessModelNotConfiguredError()
+
         completion = await self._gateway.complete(
             LlmPromptRequest(
                 system_prompt=system_prompt,
@@ -74,19 +151,29 @@ class GatewayReflexiveLlmAdapter(ReflexiveLlmPort):
         )
         tokens = max(1, completion.input_tokens + completion.output_tokens)
         raw = completion.content.strip()
-        if raw.startswith("{"):
-            parsed: dict[str, Any] = json.loads(raw)
-            parsed.setdefault("tokens_used", tokens)
-            return ReflexiveTurnDecision.model_validate(parsed)
+        parsed = _try_parse_json_decision(raw, tokens)
+        if parsed is not None:
+            return parsed
 
-        return self._build_deterministic_cassette_decision(turn_input, tokens)
+        if self._is_cassette_mode():
+            return build_deterministic_cassette_decision(turn_input, tokens)
+
+        if not raw:
+            raise ProcessModelNotConfiguredError()
+        return ReflexiveTurnDecision(
+            group_title=copy.synthesis_group_title,
+            thought_text="",
+            action_kind="final_answer",
+            final_markdown=raw,
+            tokens_used=tokens,
+        )
 
     async def stream_turn_deltas(
         self,
         turn_input: ReflexiveTurnInput,
         decision: ReflexiveTurnDecision,
     ) -> AsyncIterator[ReflexiveLlmChunk]:
-        """Yield character-faithful `thinking_delta` and `answer_delta` chunks (`\n` preserved)."""
+        """Yield character-faithful `thinking_delta` and `answer_delta` chunks (`\\n` preserved)."""
         del turn_input
         for piece in _slice_preserving_newlines(decision.thought_text, chunk_chars=64):
             yield ReflexiveLlmChunk(thinking_delta=piece)
@@ -94,124 +181,5 @@ class GatewayReflexiveLlmAdapter(ReflexiveLlmPort):
             for piece in _slice_preserving_newlines(decision.final_markdown, chunk_chars=72):
                 yield ReflexiveLlmChunk(answer_delta=piece)
 
-    def _build_deterministic_cassette_decision(
-        self,
-        turn_input: ReflexiveTurnInput,
-        tokens: int,
-    ) -> ReflexiveTurnDecision:
-        if turn_input.force_final:
-            return self._build_final_synthesis_decision(turn_input, tokens)
 
-        # Step 1: Surgical inspection of initial resource (or default workspace registry)
-        has_surgical_obs = any(
-            item.get("action_kind")
-            in (
-                SurgicalPrimitiveName.INSPECT_RESOURCE_LINES.value,
-                SurgicalPrimitiveName.CHECK_RESOURCE_STATE.value,
-            )
-            for item in turn_input.scratchpad
-        )
-        if not has_surgical_obs:
-            target_uri = (
-                turn_input.initial_resources[0]
-                if turn_input.initial_resources
-                else _DEFAULT_FALLBACK_RESOURCE
-            )
-            copy = get_agent_runtime_copy()
-            return ReflexiveTurnDecision(
-                group_title=copy.inspect_group_title,
-                thought_text=copy.inspect_thought_tpl.format(target_uri=target_uri),
-                action_kind="surgical_primitive",
-                primitive=SurgicalPrimitiveName.INSPECT_RESOURCE_LINES,
-                resource_uri=target_uri,
-                start_line=1,
-                end_line=35,
-                tokens_used=tokens,
-            )
-
-        # Step 1b: Governed @Agent sub-delegation when enabled & available (depth-capped by runtime)
-        has_delegated = any(
-            item.get("action_kind")
-            in ("sub_agent_result", "delegation_blocked", "delegate_sub_agent")
-            for item in turn_input.scratchpad
-        )
-        if (
-            turn_input.allow_sub_agent_delegation
-            and turn_input.available_delegate_agents
-            and not has_delegated
-        ):
-            delegate_slug = turn_input.available_delegate_agents[0]
-            copy = get_agent_runtime_copy()
-            return ReflexiveTurnDecision(
-                group_title=copy.delegate_group_title,
-                thought_text=copy.delegate_thought_tpl.format(delegate_slug=delegate_slug),
-                action_kind="delegate_sub_agent",
-                delegate_agent_slug=delegate_slug,
-                delegate_sub_objective=copy.delegate_objective_tpl.format(
-                    objective=turn_input.objective
-                ),
-                tokens_used=tokens,
-            )
-
-        # Step 2: Optional governed external write preview if requested and not yet resolved
-        write_spec = turn_input.requested_write_preview
-        has_write_resolution = any(
-            item.get("action_kind") in ("external_write_approved", "external_write_rejected")
-            for item in turn_input.scratchpad
-        )
-        if write_spec is not None and not has_write_resolution:
-            copy = get_agent_runtime_copy()
-            return ReflexiveTurnDecision(
-                group_title=copy.write_preview_group_title,
-                thought_text=copy.write_preview_thought,
-                action_kind="propose_external_write_preview",
-                connector_type=str(write_spec.get("connector_type") or "mcp:enterprise-docs"),
-                write_action=str(write_spec.get("action") or "publish_document"),
-                write_target_uri=str(
-                    write_spec.get("target_resource_uri") or "catalog://docs/deliverable"
-                ),
-                write_summary=str(
-                    write_spec.get("action_summary") or copy.write_preview_default_summary
-                ),
-                write_payload=dict(write_spec.get("payload") or {"content": turn_input.objective}),
-                tokens_used=tokens,
-            )
-
-        return self._build_final_synthesis_decision(turn_input, tokens)
-
-    def _build_final_synthesis_decision(
-        self,
-        turn_input: ReflexiveTurnInput,
-        tokens: int,
-    ) -> ReflexiveTurnDecision:
-        copy = get_agent_runtime_copy()
-        citations: list[str] = []
-        write_notes: list[str] = []
-        for idx, item in enumerate(turn_input.scratchpad, start=1):
-            uri = str(item.get("resource_uri") or "")
-            anchor = str(item.get("line_anchor") or "")
-            kind = str(item.get("action_kind") or "")
-            if kind in ("external_write_approved", "external_write_rejected"):
-                write_notes.append(f"- {item.get('summary', '')}")
-            elif uri:
-                citations.append(f"- `[S{idx}]` `{uri}` {anchor}".rstrip())
-        refs_block = "\n".join(citations) if citations else copy.synthesis_empty_refs
-        writes_block = (
-            (copy.synthesis_writes_heading + "\n".join(write_notes)) if write_notes else ""
-        )
-        markdown = (
-            f"{copy.synthesis_heading_tpl.format(objective=turn_input.objective)}"
-            f"{copy.synthesis_sources_heading}"
-            f"{refs_block}"
-            f"{writes_block}\n\n"
-            "```markdown\n"
-            f"{copy.synthesis_code_note}"
-            "```\n"
-        )
-        return ReflexiveTurnDecision(
-            group_title=copy.synthesis_group_title,
-            thought_text=copy.synthesis_thought,
-            action_kind="final_answer",
-            final_markdown=markdown,
-            tokens_used=tokens,
-        )
+__all__ = ["GatewayReflexiveLlmAdapter", "LlmEndpointResolver"]

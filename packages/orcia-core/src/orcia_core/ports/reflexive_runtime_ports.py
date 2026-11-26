@@ -116,6 +116,7 @@ class ReflexiveTurnInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     execution_id: str
+    workspace_id: str | None = None
     actor_slug: str
     objective: str
     turn_index: int = Field(ge=0)

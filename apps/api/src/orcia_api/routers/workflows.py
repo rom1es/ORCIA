@@ -2,7 +2,7 @@
 
 Exposes:
 - `GET /api/v1/vsm` & `GET /api/v1/vsm/{vsm_id}`
-- `GET /api/v1/workflows/v2` & `GET /api/v1/workflows/v2/{workflow_id}` (PostgreSQL 18 rehydration)
+- `GET /api/v1/workflows/v2`, `/api/v1/workflows/v2/runs` & `/api/v1/workflows/v2/{workflow_id}`
 - `PUT /api/v1/workflows/v2/{workflow_id}` (auto-forks `vX.Y.Z-draft` & persists in PG18)
 - `POST /api/v1/workflows/v2/{workflow_id}/what-if` (isolated sandbox dry-run, 0 external writes)
 - `POST /api/v1/workflows/v2/{workflow_id}/runs` (routed through `ProcessExecutionDispatcher`)
@@ -19,6 +19,7 @@ from orcia_api.dependencies import (
     get_process_execution_dispatcher,
     get_vsm_v2_sql_store,
     get_workflow_v2_runs_store,
+    get_workflows_v2_runs_sql_store,
     get_workflows_v2_sql_store,
 )
 from orcia_api.routers._workflows_helpers import (
@@ -36,10 +37,17 @@ from orcia_api.routers._workflows_helpers import (
 from orcia_api.routers._workflows_helpers import (
     publish_workflow_outbox_event as _publish_workflow_outbox_event,
 )
+from orcia_api.routers._workflows_pending_runs import (
+    execute_hitl_signal_handler,
+    execute_start_workflow_v2_run_handler,
+    list_pending_process_runs_handler,
+    load_or_rehydrate_run_state,
+)
 from orcia_api.routers._workflows_what_if import execute_workflow_what_if_simulation
 from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.schemas.process_studio_v2 import (
     HitlSignalRequest,
+    ProcessPendingRunsListResponse,
     SaveWorkflowV2Request,
     SaveWorkflowV2Response,
     StartWorkflowV2RunRequest,
@@ -48,14 +56,13 @@ from orcia_api.schemas.process_studio_v2 import (
     WorkflowsV2ListResponse,
     WorkflowV2RunResponse,
 )
-from orcia_connectors.bounded_workflow_v2 import (
-    BoundedWorkflowRunState,
-    apply_hitl_signal_to_run,
-)
+from orcia_connectors.bounded_workflow_v2 import BoundedWorkflowRunState
 from orcia_core.agents import ProcessExecutionDispatcher
-from orcia_core.kernel.errors import resolve_locale
-from orcia_core.kernel.ids import new_uuid7_str
-from orcia_core.workflows import SqlVsmDefinitionsV2Store, SqlWorkflowDefinitionsV2Store
+from orcia_core.workflows import (
+    SqlVsmDefinitionsV2Store,
+    SqlWorkflowDefinitionsV2Store,
+    SqlWorkflowV2RunsStore,
+)
 from orcia_core.workflows.schemas_v2 import (
     ImpactAssessmentResult,
     ValueStreamMapSpec,
@@ -70,6 +77,9 @@ router = APIRouter(
 )
 
 WorkflowSqlStoreDep = Annotated[SqlWorkflowDefinitionsV2Store, Depends(get_workflows_v2_sql_store)]
+WorkflowRunsSqlStoreDep = Annotated[
+    SqlWorkflowV2RunsStore, Depends(get_workflows_v2_runs_sql_store)
+]
 VsmSqlStoreDep = Annotated[SqlVsmDefinitionsV2Store, Depends(get_vsm_v2_sql_store)]
 RunsStoreDep = Annotated[dict[str, BoundedWorkflowRunState], Depends(get_workflow_v2_runs_store)]
 ProcessDispatcherDep = Annotated[
@@ -112,6 +122,30 @@ async def list_workflows_v2(
     for wf in store.values():
         unique_by_id[wf.id] = wf
     return WorkflowsV2ListResponse(items=list(unique_by_id.values()))
+
+
+@router.get("/api/v1/workflows/v2/runs", response_model=ProcessPendingRunsListResponse)
+async def list_workflow_v2_pending_runs(
+    request: Request,
+    sql_runs_store: WorkflowRunsSqlStoreDep,
+    workspace_id: Annotated[str | None, Query(max_length=128)] = None,
+    scope_type: Annotated[Literal["GLOBAL", "BU", "TEAM", "WORKSPACE"] | None, Query()] = None,
+    scope_id: Annotated[str | None, Query(max_length=128)] = None,
+    include_completed: bool = False,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    persona_key: PersonaQuery = None,
+) -> ProcessPendingRunsListResponse:
+    """List workspace-scoped pending/active process runs hydrated from PG18."""
+    return await list_pending_process_runs_handler(
+        request,
+        sql_runs_store,
+        workspace_id=workspace_id,
+        scope_type=scope_type,
+        scope_id=scope_id,
+        include_completed=include_completed,
+        limit=limit,
+        persona_key=persona_key,
+    )
 
 
 @router.get("/api/v1/workflows/v2/{workflow_id}", response_model=WorkflowDefinitionV2)
@@ -198,45 +232,32 @@ async def start_workflow_v2_run(
     payload: StartWorkflowV2RunRequest,
     request: Request,
     sql_store: WorkflowSqlStoreDep,
+    sql_runs_store: WorkflowRunsSqlStoreDep,
     dispatcher: ProcessDispatcherDep,
     runs_store: RunsStoreDep,
     persona_key: PersonaQuery = None,
 ) -> WorkflowV2RunResponse:
     """Start a dual-mode workflow run (`ProcessExecutionDispatcher`: Goal vs Milestone)."""
-    actor = _enforce_not_observer(request, persona_key=persona_key)
-    store = await _load_workflows_store(request, sql_store)
-    wf = store.get(workflow_id)
-    if wf is None:
-        raise HTTPException(status_code=404, detail=f"Workflow '{workflow_id}' not found")
-
-    run_id = f"run-{new_uuid7_str()}"
-    reentry: Literal["initial", "corrections"] = (
-        "corrections" if payload.reentry_mode == "corrections" else "initial"
+    return await execute_start_workflow_v2_run_handler(
+        workflow_id,
+        payload,
+        request,
+        sql_store,
+        sql_runs_store,
+        dispatcher,
+        runs_store,
+        persona_key=persona_key,
     )
-    locale = resolve_locale(request.headers.get("accept-language"))
-    unified = await dispatcher.dispatch(
-        wf,
-        run_id=run_id,
-        inputs=payload.inputs,
-        iteration=payload.iteration,
-        reentry_mode=reentry,
-        correction_remarks=payload.correction_remarks,
-        auto_approve_checkpoints=payload.auto_approve_checkpoints,
-        actor_user_id=actor.id,
-        locale=locale,
-    )
-    run_state = BoundedWorkflowRunState.from_unified_result(unified)
-    runs_store[run_id] = run_state
-    return WorkflowV2RunResponse(run=run_state)
 
 
 @router.get("/api/v1/runs/{run_id}", response_model=WorkflowV2RunResponse)
 async def get_workflow_v2_run(
     run_id: str,
     runs_store: RunsStoreDep,
+    sql_runs_store: WorkflowRunsSqlStoreDep,
 ) -> WorkflowV2RunResponse:
-    """Fetch the live state of a workflow v2 run."""
-    run_state = runs_store.get(run_id)
+    """Fetch the live or PG18-persisted state of a workflow v2 run."""
+    run_state, _ws_id = await load_or_rehydrate_run_state(runs_store, sql_runs_store, run_id)
     if run_state is None:
         raise HTTPException(status_code=404, detail=f"Run '{run_id}' not found")
     return WorkflowV2RunResponse(run=run_state)
@@ -248,20 +269,17 @@ async def send_hitl_signal_to_workflow_v2_run(
     payload: HitlSignalRequest,
     request: Request,
     sql_store: WorkflowSqlStoreDep,
+    sql_runs_store: WorkflowRunsSqlStoreDep,
     runs_store: RunsStoreDep,
     persona_key: PersonaQuery = None,
 ) -> WorkflowV2RunResponse:
     """Deliver a human checkpoint, WritePreview approval, or 4-action Anchor Card signal."""
-    _enforce_not_observer(request, persona_key=persona_key)
-    run_state = runs_store.get(run_id)
-    if run_state is None:
-        raise HTTPException(status_code=404, detail=f"Run '{run_id}' not found")
-
-    wf_store = await _load_workflows_store(request, sql_store)
-    wf = wf_store.get(run_state.workflow_id) or wf_store.get(run_state.workflow_slug)
-    if wf is None:
-        raise HTTPException(status_code=404, detail=f"Workflow '{run_state.workflow_id}' not found")
-
-    updated = apply_hitl_signal_to_run(wf, run_state, payload)
-    runs_store[run_id] = updated
-    return WorkflowV2RunResponse(run=updated)
+    return await execute_hitl_signal_handler(
+        run_id,
+        payload,
+        request,
+        sql_store,
+        sql_runs_store,
+        runs_store,
+        persona_key=persona_key,
+    )

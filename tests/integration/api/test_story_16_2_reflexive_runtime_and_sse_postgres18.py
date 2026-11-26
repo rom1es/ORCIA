@@ -20,6 +20,7 @@ import importlib.util
 import json
 import os
 import shutil
+import tempfile
 import time
 from collections.abc import Iterator
 from pathlib import Path
@@ -40,13 +41,10 @@ from orcia_api.main import create_app
 os.environ["TESTCONTAINERS_RYUK_DISABLED"] = "true"
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-SOCK_BASE_DIR = REPO_ROOT / ".pytest_cache" / "tc_s16_2"
 
 
 def _prepare_sock_dir(prefix: str) -> Path:
-    unique = f"{prefix}_{os.getpid()}_{int(time.time() * 1000) % 100000}"
-    target = SOCK_BASE_DIR / unique
-    target.mkdir(parents=True, exist_ok=True)
+    target = Path(tempfile.mkdtemp(prefix=f"orcia_16_2_{prefix}_"))
     target.chmod(0o777)
     return target
 

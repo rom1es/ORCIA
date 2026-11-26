@@ -3,6 +3,7 @@ export function buildGoalDrivenExecutionPayload(params: {
   readonly objective: string;
   readonly workspaceId?: string;
   readonly runInBackground?: boolean;
+  readonly initialResources?: readonly string[];
 }) {
   return {
     actor_slug: params.actorSlug,
@@ -11,10 +12,7 @@ export function buildGoalDrivenExecutionPayload(params: {
     effort_mode: "approfondi" as const,
     allow_sub_agent_delegation: true,
     available_delegate_agents: ["analyste-metier"],
-    initial_resources: [
-      "docs/product/capabilities.yaml",
-      "packs/orcia-docs/workflows/wf-generate-orcia-documentation.yaml",
-    ],
+    initial_resources: params.initialResources ? [...params.initialResources] : [],
     ...(params.workspaceId ? { workspace_id: params.workspaceId } : {}),
     ...(params.runInBackground ? { run_in_background: true, step_delay_ms: 120 } : {}),
   };

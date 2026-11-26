@@ -6,6 +6,7 @@ from orcia_core.workflows._internal.sql_vsm_v2 import (
     SqlVsmDefinitionsV2Store,
     upsert_vsm_definitions_v2_sql,
 )
+from orcia_core.workflows._internal.sql_workflow_v2_runs import SqlWorkflowV2RunsStore
 from orcia_core.workflows._internal.sql_workflows_v2 import SqlWorkflowDefinitionsV2Store
 from orcia_core.workflows.schemas_v2 import (
     ClaimCheckPointer,
@@ -45,6 +46,7 @@ __all__ = [
     "ReturnLoopSpec",
     "SqlVsmDefinitionsV2Store",
     "SqlWorkflowDefinitionsV2Store",
+    "SqlWorkflowV2RunsStore",
     "StepControlsPipeline",
     "ValueStreamMapSpec",
     "VsmPassageNodeSpec",

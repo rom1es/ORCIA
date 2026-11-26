@@ -339,7 +339,7 @@ development_status:
   epic-30: in-progress
   30-1-assistant-settings-explicit-save-dirty-guard-and-empty-instructions: done
   30-2-assistant-conversational-prompt-cleanup-and-empty-evidence-guard: done
-  30-3-processes-real-pg18-pending-runs-live-llm-and-coalesced-trace: backlog
+  30-3-processes-real-pg18-pending-runs-live-llm-and-coalesced-trace: done
   30-4-processes-tabbed-hub-and-focus-review-action-artifact-reasoning: backlog
   30-5-agents-pg18-mcp-sync-clean-modal-save-and-draft-active-lifecycle: backlog
   30-6-epic-30-anti-regression-audits-bilingual-e2e-and-closure: backlog

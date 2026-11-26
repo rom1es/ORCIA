@@ -20378,6 +20378,122 @@
         "title": "ProcessOrchestrationType",
         "type": "string"
       },
+      "ProcessPendingRunItemResponse": {
+        "properties": {
+          "actor_slug": {
+            "title": "Actor Slug",
+            "type": "string"
+          },
+          "created_at_iso": {
+            "default": "",
+            "title": "Created At Iso",
+            "type": "string"
+          },
+          "is_pending": {
+            "title": "Is Pending",
+            "type": "boolean"
+          },
+          "raw_status": {
+            "title": "Raw Status",
+            "type": "string"
+          },
+          "reflexive_execution_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reflexive Execution Id"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at_iso": {
+            "default": "",
+            "title": "Updated At Iso",
+            "type": "string"
+          },
+          "workflow_id": {
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "workflow_slug": {
+            "title": "Workflow Slug",
+            "type": "string"
+          },
+          "workflow_title": {
+            "title": "Workflow Title",
+            "type": "string"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          }
+        },
+        "required": [
+          "run_id",
+          "workflow_id",
+          "workflow_slug",
+          "workflow_title",
+          "actor_slug",
+          "status",
+          "raw_status",
+          "is_pending",
+          "source"
+        ],
+        "title": "ProcessPendingRunItemResponse",
+        "type": "object"
+      },
+      "ProcessPendingRunsListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProcessPendingRunItemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "pending_count": {
+            "title": "Pending Count",
+            "type": "integer"
+          },
+          "total_count": {
+            "title": "Total Count",
+            "type": "integer"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "items",
+          "pending_count",
+          "total_count",
+          "trace_id"
+        ],
+        "title": "ProcessPendingRunsListResponse",
+        "type": "object"
+      },
       "ProgressiveLlmEndpointRequest": {
         "additionalProperties": false,
         "description": "Request payload for `POST /api/v1/bootstrap/welcome-setup/progressive-llm` (`Story 9.2`).",
@@ -24219,6 +24335,13 @@
             ],
             "title": "Correction Remarks"
           },
+          "initial_resources": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Initial Resources",
+            "type": "array"
+          },
           "inputs": {
             "additionalProperties": true,
             "title": "Inputs",
@@ -24233,6 +24356,17 @@
             "default": "initial",
             "title": "Reentry Mode",
             "type": "string"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
           }
         },
         "title": "StartWorkflowV2RunRequest",
@@ -55396,7 +55530,7 @@
     },
     "/api/v1/runs/{run_id}": {
       "get": {
-        "description": "Fetch the live state of a workflow v2 run.",
+        "description": "Fetch the live or PG18-persisted state of a workflow v2 run.",
         "operationId": "get_workflow_v2_run_api_v1_runs__run_id__get",
         "parameters": [
           {
@@ -65164,6 +65298,208 @@
           }
         ],
         "summary": "List Workflows V2",
+        "tags": [
+          "Process Studio v2 & VSM (Epic 14)"
+        ]
+      }
+    },
+    "/api/v1/workflows/v2/runs": {
+      "get": {
+        "description": "List workspace-scoped pending/active process runs hydrated from PG18.",
+        "operationId": "list_workflow_v2_pending_runs_api_v1_workflows_v2_runs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scope_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "GLOBAL",
+                    "BU",
+                    "TEAM",
+                    "WORKSPACE"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Scope Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scope_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Scope Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_completed",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Completed",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessPendingRunsListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List Workflow V2 Pending Runs",
         "tags": [
           "Process Studio v2 & VSM (Epic 14)"
         ]

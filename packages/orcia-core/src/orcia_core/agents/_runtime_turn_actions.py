@@ -74,7 +74,26 @@ async def emit_thought_and_answer_deltas(
             ),
         )
     emitted_thought = False
+    emitted_thought_completed = False
     emitted_answer = False
+
+    async def _flush_thought_completed() -> None:
+        nonlocal emitted_thought_completed
+        if emitted_thought_completed or not (emitted_thought or decision.thought_text):
+            return
+        emitted_thought_completed = True
+        elapsed_ms = max(1, int((time.perf_counter() - started_perf) * 1000))
+        await publish_fn(
+            snapshot,
+            AgentTraceEvent(
+                execution_id=snapshot.execution_id,
+                sequence_index=len(snapshot.trace_events),
+                turn_index=turn_idx,
+                kind=TraceEventKind.THOUGHT_COMPLETED,
+                thought_duration_ms=elapsed_ms,
+            ),
+        )
+
     async for chunk in llm.stream_turn_deltas(turn_input, decision):
         if chunk.thinking_delta:
             emitted_thought = True
@@ -89,6 +108,7 @@ async def emit_thought_and_answer_deltas(
                 ),
             )
         if chunk.answer_delta:
+            await _flush_thought_completed()
             emitted_answer = True
             await publish_fn(
                 snapshot,
@@ -100,18 +120,7 @@ async def emit_thought_and_answer_deltas(
                     delta_text=chunk.answer_delta,
                 ),
             )
-    if emitted_thought or decision.thought_text:
-        elapsed_ms = max(1, int((time.perf_counter() - started_perf) * 1000))
-        await publish_fn(
-            snapshot,
-            AgentTraceEvent(
-                execution_id=snapshot.execution_id,
-                sequence_index=len(snapshot.trace_events),
-                turn_index=turn_idx,
-                kind=TraceEventKind.THOUGHT_COMPLETED,
-                thought_duration_ms=elapsed_ms,
-            ),
-        )
+    await _flush_thought_completed()
     if decision.action_kind == "final_answer" and decision.final_markdown and not emitted_answer:
         await publish_fn(
             snapshot,

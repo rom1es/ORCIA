@@ -23,6 +23,7 @@ from orcia_api.dependencies import (
     get_reflexive_event_stream_broker,
     get_reflexive_runtime_service,
 )
+from orcia_api.dependencies._process_llm_bridge import enforce_live_process_prerequisites
 from orcia_api.routers._executions_trace_helpers import (
     enforce_not_observer as _enforce_not_observer,
 )
@@ -89,6 +90,12 @@ async def start_reflexive_execution_endpoint(
     user = await _enforce_not_observer(
         request, persona_key=persona_key, workspace_id=payload.workspace_id
     )
+    resolved_resources = await enforce_live_process_prerequisites(
+        request,
+        user=user,
+        workspace_id=payload.workspace_id,
+        explicit_resources=payload.initial_resources,
+    )
     locale = resolve_locale(request.headers.get("accept-language"))
     cfg_kwargs: dict[str, object] = {
         "effort_level": payload.effort_level,
@@ -98,7 +105,7 @@ async def start_reflexive_execution_endpoint(
         "actor_user_id": user.id,
         "has_read_source": _resolve_has_read_source(request),
         "locale": locale,
-        "initial_resources": payload.initial_resources,
+        "initial_resources": resolved_resources,
         "requested_write_preview": (
             payload.requested_write_preview.model_dump(mode="json")
             if payload.requested_write_preview is not None

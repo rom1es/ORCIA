@@ -17,9 +17,10 @@ from __future__ import annotations
 import io
 import zipfile
 
+import pytest
 from fastapi.testclient import TestClient
 
-from orcia_api.main import app
+from orcia_api.main import app, create_app
 
 
 def test_packs_registry_healthcheck_and_zip_export_endpoints() -> None:
@@ -90,9 +91,14 @@ def test_vsm_and_workflow_v2_draft_fork_and_what_if_simulation() -> None:
         assert impact["sub_steps_evaluated"] == 3
 
 
-def test_dbos_bounded_workflow_claim_check_amend_diff_and_return_loop() -> None:
+def test_dbos_bounded_workflow_claim_check_amend_diff_and_return_loop(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Verify cyclic idempotency (`:iter-{iteration}`), S3 Claim-Check, diff amend, and loops."""
-    with TestClient(app) as client:
+    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
+    monkeypatch.setenv("ORCIA_ENV_FILE", "/nonexistent/.env")
+    monkeypatch.setenv("DATABASE_URL", "")
+    with TestClient(create_app()) as client:
         # 1. Start wf-01-qualification-prd (3 sub-steps: qualification -> prd -> jira)
         start_resp = client.post(
             "/api/v1/workflows/v2/wf-01-qualification-prd/runs",
@@ -173,9 +179,14 @@ def test_dbos_bounded_workflow_claim_check_amend_diff_and_return_loop() -> None:
         assert "segment pro" in (last_rec["correction_remarks_applied"] or "")
 
 
-def test_external_delegated_gate_workflow_mode() -> None:
+def test_external_delegated_gate_workflow_mode(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Verify `EXTERNAL_DELEGATED_GATE` (`wf-08-dev-external-gate`) exposes MCP bundle & gates."""
-    with TestClient(app) as client:
+    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
+    monkeypatch.setenv("ORCIA_ENV_FILE", "/nonexistent/.env")
+    monkeypatch.setenv("DATABASE_URL", "")
+    with TestClient(create_app()) as client:
         start_resp = client.post(
             "/api/v1/workflows/v2/wf-08-dev-external-gate/runs",
             json={"inputs": {"us_key": "MCIA-US-204"}},

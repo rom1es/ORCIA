@@ -83,6 +83,7 @@ export interface MockBackendState {
   workflowTriggers: Array<Record<string, unknown>>;
   mockReindexStatus: Record<string, unknown>;
   workflowsV2: Map<string, ApiWorkflowDefinitionV2>;
+  workflowV2Runs: Map<string, Record<string, unknown>>;
   recordedCalls: RecordedVitestApiCall[];
 }
 
@@ -150,6 +151,7 @@ export const backendState: MockBackendState = {
     indexed_documents_count: 0,
   },
   workflowsV2: buildInitialWorkflowsV2Map(),
+  workflowV2Runs: new Map<string, Record<string, unknown>>(),
   recordedCalls: [],
 };
 
@@ -275,6 +277,7 @@ export function resetVitestApiBackend(): void {
     indexed_documents_count: 0,
   };
   backendState.workflowsV2 = buildInitialWorkflowsV2Map();
+  backendState.workflowV2Runs = new Map<string, Record<string, unknown>>();
   backendState.recordedCalls = [];
   resetVitestIamMockState();
   resetVitestConnectorsMockState();

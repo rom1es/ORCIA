@@ -3,8 +3,11 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "./support/e2eCaptureFixture";
 import { expectDbRowExists } from "./support/dbAssertions";
 import { watchApiServerErrors } from "./support/apiErrors";
+import { getBearerTokenFromSession } from "./support/authAndOrgHelpers";
 import { resetDay0 } from "./support/day0";
 import { createFirstAdminViaUi } from "./support/firstAdmin";
+import { apiPost } from "./support/typedApiRequest";
+import { selectWorkspaceInSidebar } from "./support/workspaceAndCatalogHelpers";
 
 const FORBIDDEN_JARGON_REGEX =
   /\b(DBOS|asyncio|Redis|SSE|Claim-Check|déterministe|non-déterministe|deterministic|non-deterministic)\b/i;
@@ -36,6 +39,66 @@ test.describe("Story 16.4 — Trace d'exécution réflexive, Inspecteur chirurgi
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     resetDay0();
     await createFirstAdminViaUi(page);
+
+    const token = await getBearerTokenFromSession(page);
+    const buRes = await apiPost<{ id?: string }>(page, "/api/v1/org-units", {
+      token,
+      data: {
+        name: "Direction Trace E2E",
+        kind: "BU",
+        slug: "bu-trace-e2e",
+        billing_enabled: true,
+      },
+    });
+    expect(buRes.status()).toBe(200);
+    const buId = (await buRes.json()).id ?? "";
+    expect(buId).toBeTruthy();
+
+    const teamRes = await apiPost<{ id?: string }>(page, "/api/v1/org-units", {
+      token,
+      data: {
+        name: "Equipe Trace E2E",
+        kind: "TEAM",
+        slug: "team-trace-e2e",
+        parent_id: buId,
+        billing_enabled: true,
+      },
+    });
+    expect(teamRes.status()).toBe(200);
+    const teamId = (await teamRes.json()).id ?? "";
+    expect(teamId).toBeTruthy();
+
+    const wsRes = await apiPost<{ id?: string }>(page, "/api/v1/workspaces", {
+      token,
+      data: {
+        name: "Espace Trace E2E",
+        slug: "ws-trace-e2e",
+        owner_org_unit_id: teamId,
+      },
+    });
+    expect(wsRes.status()).toBe(201);
+    const wsId = (await wsRes.json()).id ?? "";
+    expect(wsId).toBeTruthy();
+
+    const dsRes = await apiPost<{ id?: string }>(
+      page,
+      `/api/v1/workspaces/${wsId}/datasources`,
+      {
+        token,
+        data: {
+          alias: "capabilities-registry",
+          scheme: "git",
+          uri: "docs/product/capabilities.yaml",
+          source_nature: "SOURCE_CODE",
+        },
+      },
+    );
+    expect(dsRes.status()).toBe(201);
+    expectDbRowExists(
+      "SELECT id::text AS id FROM workspace_datasources WHERE workspace_id = :ws_id AND uri = :uri",
+      { ws_id: wsId, uri: "docs/product/capabilities.yaml" },
+      "Source locale docs/product/capabilities.yaml persistée dans workspace_datasources PG18",
+    );
   });
 
   test("affiche la trace réflexive sans jargon (@Agent + #Lstart-end), ouvre l'inspecteur chirurgical + garde READ_SOURCE, et survit au F5 sur WAITING_WRITE_PREVIEW", async ({
@@ -46,6 +109,13 @@ test.describe("Story 16.4 — Trace d'exécution réflexive, Inspecteur chirurgi
     const isMobile = viewportLabel === "mobile-companion";
 
     await page.goto("/processes");
+    if (isMobile) {
+      const sidebar = page.getByTestId("four-zone-sidebar");
+      if ((await sidebar.getAttribute("data-rail-collapsed")) === "true") {
+        await page.getByTestId("sidebar-rail-toggle-btn").click();
+      }
+    }
+    await selectWorkspaceInSidebar(page, { workspaceName: "Espace Trace E2E" });
     await ensureCentralWorkspaceVisibleOnMobile(page, isMobile);
     const hub = page.getByTestId("processes-hub-v2-page");
     await expect(hub).toBeVisible({ timeout: 30000 });
@@ -66,6 +136,8 @@ test.describe("Story 16.4 — Trace d'exécution réflexive, Inspecteur chirurgi
 
     const trace = page.getByTestId("agent-execution-trace");
     await expect(trace).toBeVisible({ timeout: 20000 });
+    const traceText = await trace.innerText();
+    expect(traceText.match(/Synthèse prête/g)?.length ?? 0).toBeLessThanOrEqual(1);
 
     const drawerText = await runDrawer.innerText();
     expect(drawerText).not.toMatch(FORBIDDEN_JARGON_REGEX);
@@ -152,6 +224,8 @@ test.describe("Story 16.4 — Trace d'exécution réflexive, Inspecteur chirurgi
 
     await page.reload();
     await ensureCentralWorkspaceVisibleOnMobile(page, isMobile);
+    await expect(page.getByTestId("interactive-run-hitl-drawer")).toHaveCount(0);
+    await page.getByTestId("resume-featured-dossier-btn").click();
     await expect(page.getByTestId("interactive-run-hitl-drawer")).toBeVisible({
       timeout: 30000,
     });

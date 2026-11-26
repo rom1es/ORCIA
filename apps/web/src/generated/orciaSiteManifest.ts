@@ -6,15 +6,15 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-25",
+  "lastSyncedDate": "2026-11-26",
   "stats": {
     "activeRoutesCount": 28,
     "uiPrimitivesCount": 134,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 62,
+    "alembicMigrationsCount": 63,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 243,
+    "techLeadReportsCount": 244,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -262,7 +262,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261122_264b_story_26_4b_assistant_feedback_and_folder_meta",
     "20261122_265_story_26_5_assistant_thread_messages",
     "20261122_266a_story_26_6a_llm_supports_tools",
-    "20261122_267_story_26_7_reflexive_execution_profile"
+    "20261122_267_story_26_7_reflexive_execution_profile",
+    "20261125_303_workflow_v2_runs"
   ],
   "architectureDecisions": [
     {
@@ -545,6 +546,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-26",
+      "phaseOrStory": "Story 30.3",
+      "reportFile": "30-3-processes-real-pg18-pending-runs-live-llm-and-coalesced-trace-tech-lead-report.md",
+      "domain": "Epic 30 Lot 2 — Mes Processus Real PG18 Pending Validations (workflow_v2_runs), Live Workspace LLM Guard & Coalesced Reasoning Trace (UX30-06, UX30-07, UX30-08, CAP-020, CAP-021, CAP-140, CAP-160)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): shipped Alembic 20261125_303_workflow_v2_runs.py (54 L) + SqlWorkflowV2RunsStore (169 L) & unified pending-run query (231 L) with Day-0 reset guard; added ScopeAccessGuard-protected GET /api/v1/workflows/v2/runs, PG18 run persistence & cold F5 rehydration (_workflows_pending_runs.py 255 L) + 0-diff OpenAPI SDK; removed silent DeterministicCassetteLLM prod fallback (core_and_lifespan.py), _DEFAULT_FALLBACK_RESOURCE = \"docs/product/capabilities.yaml\", and sticky localStorage auto-launch; added live LLM + workspace_datasources preflight guard (_process_llm_bridge.py 215 L, localized 422 RFC 9457), THOUGHT_COMPLETED flush before ANSWER_TOKEN_DELTA (_runtime_turn_actions.py 296 L), and coalesced THOUGHT_DELTA/SYNTHESIS_READY trace (agentExecutionTraceGrouping.ts 162 L); all 41 production files <= 299 L; verified 94% 20-module branch coverage (45 passed), 1,142 tests/unit, 181 passed evals/security/contract, 11 passed PG18+Redis integration, 9/9 Turbo (20+151+359 JS/TS tests, i18n Gates 1–4 = 0), 10 passed, 1 skipped (mobile-only), 0 failed (2.2m) Playwright Desktop E2E (env -u ORCIA_E2E_SEED_FIXTURES), ruff (1,766 files)/mypy --strict (865 files)/lint-imports (5/5, 906 files)/lint_spine (0)/export_openapi (0-diff)/detect-secrets clean."
+    },
     {
       "date": "2026-11-25",
       "phaseOrStory": "Story 30.2",

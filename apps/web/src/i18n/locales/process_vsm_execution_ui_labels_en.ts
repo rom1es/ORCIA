@@ -67,6 +67,7 @@ export const PROCESS_VSM_EXECUTION_UI_EN: ProcessVsmExecutionUiDictionary = {
     sheetComplementsLabel: "Complements:",
   },
   execution: {
+    statusRunning: "Execution in progress",
     statusWaitingExternal: "Waiting for external IDE/Git",
     statusWaitingSubstepHitl: "Waiting for your review",
     statusWaitingWritePreview: "Confirm external publication",
@@ -74,6 +75,7 @@ export const PROCESS_VSM_EXECUTION_UI_EN: ProcessVsmExecutionUiDictionary = {
     statusCompletedApproved: "Approved and published",
     statusReturnLoopTemplate: "Returned for corrections (Cycle {iteration})",
     statusSlaSuspended: "On hold",
+    statusFailedGates: "Quality gates failed",
     stepBadgeTemplate: "Step {index}",
     externalWorkReceivedBanner:
       "External work received: automated quality checks passed.",

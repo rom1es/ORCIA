@@ -1,5 +1,6 @@
+import type { ProcessPendingRunItemResponse } from "@orcia/api-client";
 import { OrciaAlertBanner, OrciaPageHeader } from "@orcia/ui";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { CreateProcessFormDialog } from "../../components/CreateProcessFormDialog";
 import { useOptionalPlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
@@ -7,16 +8,15 @@ import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions"
 import { useI18n } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
-import {
-  readPersistedReflexiveId,
-  writePersistedReflexiveId,
-} from "../shared/reflexiveTraceMappers";
 import { AutonomousRunsSupervisionPanel } from "./AutonomousRunsSupervisionPanel";
 import {
   ProcessCatalogCardGrid,
   type WorkflowHubFilter,
 } from "./ProcessCatalogCardGrid";
-import { ProcessesActiveDossiersCard } from "./ProcessesActiveDossiersCard";
+import {
+  ProcessesActiveDossiersCard,
+  resolveWorkflowForPendingRun,
+} from "./ProcessesActiveDossiersCard";
 import {
   loadPersistedWorkflowsV2,
   savePersistedWorkflowV2,
@@ -30,9 +30,6 @@ import {
 
 export type { WorkflowHubFilter };
 
-export const ACTIVE_PROCESS_RUN_WORKFLOW_STORAGE_KEY =
-  "orcia.processes.active_run_workflow_id.v1";
-
 export function ProcessesHubPage() {
   const { locale, isFr, dictionary } = useI18n();
   const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
@@ -43,6 +40,11 @@ export function ProcessesHubPage() {
     setupCtx?.workspaces ?? [],
     authEmail,
   );
+  const effectivePendingScopeParam =
+    activeScopeId === "scope-global" || !activeWorkspaceId
+      ? "scope-global"
+      : activeWorkspaceId;
+
   const modesCopy = dictionary.processOrchestrationModes;
   const hubCopy = dictionary.processStudioUi.hub;
   const [isCreateProcessOpen, setIsCreateProcessOpen] = useState(false);
@@ -50,14 +52,13 @@ export function ProcessesHubPage() {
   const [workflows, setWorkflows] = useState<WorkflowDefinitionV2Item[]>(() =>
     loadPersistedWorkflowsV2(locale),
   );
+  const [pendingRuns, setPendingRuns] = useState<ProcessPendingRunItemResponse[]>([]);
+  const [isLoadingPendingRuns, setIsLoadingPendingRuns] = useState<boolean>(true);
   const [filter, setFilter] = useState<WorkflowHubFilter>("all");
-  const [activeRunWorkflowId, setActiveRunWorkflowIdState] = useState<
-    string | null
-  >(() => readPersistedReflexiveId(ACTIVE_PROCESS_RUN_WORKFLOW_STORAGE_KEY));
-  const setActiveRunWorkflowId = (nextId: string | null) => {
-    setActiveRunWorkflowIdState(nextId);
-    writePersistedReflexiveId(ACTIVE_PROCESS_RUN_WORKFLOW_STORAGE_KEY, nextId);
-  };
+  const [activeRunWorkflow, setActiveRunWorkflow] = useState<WorkflowDefinitionV2Item | null>(null);
+  const [activePendingRun, setActivePendingRun] = useState<ProcessPendingRunItemResponse | null>(
+    null,
+  );
   const [hubErrorBanner, setHubErrorBanner] = useState<string | null>(null);
   const [vsmSummary, setVsmSummary] = useState<{
     id: string;
@@ -65,14 +66,39 @@ export function ProcessesHubPage() {
     subtitle: string;
   } | null>(null);
 
+  const refreshPendingRuns = useCallback(() => {
+    const apiClient = createProcessesApiClient(locale);
+    setIsLoadingPendingRuns(true);
+    return apiClient
+      .listProcessPendingRuns({ workspaceId: effectivePendingScopeParam })
+      .then((res) => {
+        setPendingRuns(Array.isArray(res?.items) ? res.items : []);
+      })
+      .catch((err: unknown) => {
+        const formatted = formatRfc9457ErrorToBanner(
+          err,
+          locale,
+          hubCopy.pendingRunsResourceLabel,
+        );
+        setHubErrorBanner(formatted.fullText);
+      })
+      .finally(() => {
+        setIsLoadingPendingRuns(false);
+      });
+  }, [locale, effectivePendingScopeParam, hubCopy.pendingRunsResourceLabel]);
+
   useEffect(() => {
     let cancelled = false;
     const apiClient = createProcessesApiClient(locale);
-    Promise.all([apiClient.listWorkflowsV2(), apiClient.listValueStreamMaps()])
-      .then(([wfRes, vsmRes]) => {
-        if (cancelled) {
-          return;
-        }
+    setIsLoadingPendingRuns(true);
+
+    Promise.all([
+      apiClient.listWorkflowsV2(),
+      apiClient.listValueStreamMaps(),
+      apiClient.listProcessPendingRuns({ workspaceId: effectivePendingScopeParam }),
+    ])
+      .then(([wfRes, vsmRes, pendingRes]) => {
+        if (cancelled) return;
         const firstVsm = Array.isArray(vsmRes?.items) ? vsmRes.items[0] : undefined;
         if (firstVsm?.id) {
           setVsmSummary({
@@ -81,18 +107,16 @@ export function ProcessesHubPage() {
             subtitle: firstVsm.subtitle,
           });
         }
-        if (!Array.isArray(wfRes?.items) || wfRes.items.length === 0) {
-          return;
-        }
-        setWorkflows((prev) => {
-          const mapped = wfRes.items.map((apiWf) => {
+        setPendingRuns(Array.isArray(pendingRes?.items) ? pendingRes.items : []);
+        if (!Array.isArray(wfRes?.items) || wfRes.items.length === 0) return;
+        setWorkflows((prev) =>
+          wfRes.items.map((apiWf) => {
             const existing = prev.find((p) => p.id === apiWf.id || p.slug === apiWf.slug);
             const uiItem = mapApiWorkflowV2ToUiItem(apiWf, existing, locale);
             savePersistedWorkflowV2(uiItem);
             return uiItem;
-          });
-          return mapped;
-        });
+          }),
+        );
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -102,15 +126,15 @@ export function ProcessesHubPage() {
           hubCopy.catalogResourceLabel,
         );
         setHubErrorBanner(formatted.fullText);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingPendingRuns(false);
       });
+
     return () => {
       cancelled = true;
     };
-  }, [locale, hubCopy.catalogResourceLabel]);
-
-  const activeRunWorkflow =
-    workflows.find((w) => w.id === activeRunWorkflowId) ?? null;
-  const featuredPendingWorkflow = workflows[0] ?? null;
+  }, [locale, effectivePendingScopeParam, hubCopy.catalogResourceLabel]);
 
   return (
     <section
@@ -142,10 +166,24 @@ export function ProcessesHubPage() {
       />
 
       <ProcessesActiveDossiersCard
-        featuredPendingWorkflow={featuredPendingWorkflow}
+        pendingRuns={pendingRuns}
+        workflows={workflows}
+        isLoadingPendingRuns={isLoadingPendingRuns}
         activeRunWorkflow={activeRunWorkflow}
+        activePendingRun={activePendingRun}
         activeWorkspaceId={activeWorkspaceId}
-        onSelectWorkflowRun={setActiveRunWorkflowId}
+        onOpenPendingRun={(run) => {
+          setActivePendingRun(run);
+          setActiveRunWorkflow(resolveWorkflowForPendingRun(run, workflows));
+        }}
+        onCloseRunDrawer={() => {
+          setActiveRunWorkflow(null);
+          setActivePendingRun(null);
+          void refreshPendingRuns();
+        }}
+        onRunStateChanged={() => {
+          void refreshPendingRuns();
+        }}
       />
 
       <ProcessCatalogCardGrid
@@ -154,7 +192,11 @@ export function ProcessesHubPage() {
         modesCopy={modesCopy}
         isFr={isFr}
         onChangeFilter={setFilter}
-        onExecuteWorkflow={(wfId) => setActiveRunWorkflowId(wfId)}
+        onExecuteWorkflow={(wfId) => {
+          const matched = workflows.find((w) => w.id === wfId) ?? null;
+          setActivePendingRun(null);
+          setActiveRunWorkflow(matched);
+        }}
         onOpenStudio={(wfId) => navigateToRoute(`/processes/studio/${wfId}`)}
       />
 
@@ -180,16 +222,9 @@ export function ProcessesHubPage() {
             skills_refs: [],
             knowledge_base_refs: [],
             triggers: [],
-            contract: {
-              inputs: [],
-              outputs: [],
-              exit_criteria: [],
-            },
+            contract: { inputs: [], outputs: [], exit_criteria: [] },
             sub_steps: [],
-            controls: {
-              deterministic_gates: [],
-              probabilistic_evaluations: [],
-            },
+            controls: { deterministic_gates: [], probabilistic_evaluations: [] },
             guardrails: [],
           };
           savePersistedWorkflowV2(createdV2);

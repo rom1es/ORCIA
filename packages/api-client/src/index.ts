@@ -63,6 +63,9 @@ import {
   type ApiWorkflowDefinitionV2,
   type DeclarativePacksListResponse,
   type DeclarativePackSummaryResponse,
+  type ListProcessPendingRunsParams,
+  type ProcessPendingRunItemResponse,
+  type ProcessPendingRunsListResponse,
   type SaveWorkflowV2Options,
 } from "./domains/workflowsV2";
 import { createWorkflowTriggersDomainClient } from "./domains/workflowTriggers";
@@ -145,6 +148,7 @@ export {
   type ListAuditLedgerParams,
   type ListKnownOrgUsersParams,
   type ListOrgUnitsParams,
+  type ListProcessPendingRunsParams,
   type OntologyConceptWithPermissionsItem,
   type OntologyConceptsListResponse,
   type OntologyPromotionCreateRequest,
@@ -152,6 +156,8 @@ export {
   type OntologyPromotionDecideResponse,
   type OntologyPromotionProposalDetailItem,
   type OntologyPromotionsListResponse,
+  type ProcessPendingRunItemResponse,
+  type ProcessPendingRunsListResponse,
   type ReflexiveTraceSseOptions,
   type RegisterExceptionWaiverInput,
   type SaveWorkflowV2Options,

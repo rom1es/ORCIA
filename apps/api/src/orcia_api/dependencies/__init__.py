@@ -79,6 +79,7 @@ from orcia_api.dependencies.reflexive_execution import (
     get_reflexive_write_gate_service,
     get_vsm_v2_sql_store,
     get_workflow_v2_runs_store,
+    get_workflows_v2_runs_sql_store,
     get_workflows_v2_sql_store,
 )
 from orcia_api.dependencies.workspace_and_packs import (
@@ -155,6 +156,7 @@ __all__ = [
     "get_user_preferences_and_mcp_token_service",
     "get_vsm_v2_sql_store",
     "get_workflow_v2_runs_store",
+    "get_workflows_v2_runs_sql_store",
     "get_workflows_v2_sql_store",
     "get_workspace_governance_and_rebaser_service",
     "initialize_app_services",

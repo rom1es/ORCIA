@@ -7,7 +7,10 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from orcia_core.ports.bounded_workflow_port import BoundedWorkflowSubStepDto
+from orcia_core.ports.bounded_workflow_port import (
+    BoundedWorkflowLaunchOutcome,
+    BoundedWorkflowSubStepDto,
+)
 from orcia_core.ports.reflexive_runtime_ports import AgentTraceEvent
 from orcia_core.storage.claim_check import ClaimCheckPointer
 from orcia_core.workflows.gates.pipeline import (
@@ -166,3 +169,49 @@ class UnifiedProcessRunResult(BaseModel):
     return_loop_target_step_num: str | None = None
     return_loop_remarks: str | None = None
     audit_trail: list[dict[str, Any]] = Field(default_factory=list)
+
+
+def build_milestone_unified_result(
+    outcome: BoundedWorkflowLaunchOutcome,
+) -> UnifiedProcessRunResult:
+    """Convert `BoundedWorkflowLaunchOutcome` into `UnifiedProcessRunResult`."""
+    gate_report = (
+        GatePipelineExecutionReport.model_validate(outcome.gate_report_payload)
+        if outcome.gate_report_payload is not None
+        else None
+    )
+    final_ptr = (
+        ClaimCheckPointer.model_validate(outcome.final_artifact_payload)
+        if outcome.final_artifact_payload is not None
+        else None
+    )
+    last_exec_id = next(
+        (
+            r.reflexive_execution_id
+            for r in reversed(outcome.sub_step_records)
+            if r.reflexive_execution_id
+        ),
+        None,
+    )
+    return UnifiedProcessRunResult(
+        run_id=outcome.run_id,
+        workflow_id=outcome.workflow_id,
+        workflow_slug=outcome.workflow_slug,
+        workflow_version=outcome.workflow_version,
+        orchestration_type=ProcessOrchestrationType.DETERMINISTIC_DBOS,
+        execution_mode=ExecutionMode(outcome.execution_mode),
+        iteration=outcome.iteration,
+        reentry_mode=outcome.reentry_mode,
+        status=outcome.status,
+        current_sub_step_index=outcome.current_sub_step_index,
+        inputs=outcome.inputs,
+        mcp_context_bundle=outcome.mcp_context_bundle,
+        sub_step_records=outcome.sub_step_records,
+        gate_report=gate_report,
+        final_artifact_pointer=final_ptr,
+        reflexive_execution_id=last_exec_id,
+        trace_events=outcome.trace_events,
+        return_loop_target_step_num=outcome.return_loop_target_step_num,
+        return_loop_remarks=outcome.return_loop_remarks,
+        audit_trail=outcome.audit_trail,
+    )

@@ -14,6 +14,45 @@ export function setVitestForceNextSourceRedacted(redacted: boolean): void {
   forceNextSourceRedacted = redacted;
 }
 
+export function listVitestPendingReflexiveRuns() {
+  const items: Array<{
+    run_id: string;
+    workspace_id: string | null;
+    workflow_id: string;
+    workflow_slug: string;
+    workflow_title: string;
+    actor_slug: string;
+    status: string;
+    raw_status: string;
+    is_pending: boolean;
+    reflexive_execution_id: string;
+    source: string;
+    created_at_iso: string;
+    updated_at_iso: string;
+  }> = [];
+  for (const snap of Array.from(reflexiveSessions.values()).reverse()) {
+    const isPending =
+      snap.status === "RUNNING" || snap.status === "WAITING_WRITE_PREVIEW";
+    if (!isPending) continue;
+    items.push({
+      run_id: snap.execution_id,
+      workspace_id: snap.workspace_id ?? null,
+      workflow_id: "",
+      workflow_slug: "",
+      workflow_title: snap.objective || snap.actor_slug,
+      actor_slug: snap.actor_slug,
+      status: snap.status,
+      raw_status: snap.status,
+      is_pending: true,
+      reflexive_execution_id: snap.execution_id,
+      source: "reflexive_session",
+      created_at_iso: snap.created_at_utc,
+      updated_at_iso: snap.updated_at_utc,
+    });
+  }
+  return items;
+}
+
 export function resetVitestReflexiveBackend(): void {
   reflexiveSessions.clear();
   reflexiveSeqCounter = 1;

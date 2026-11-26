@@ -72,7 +72,7 @@ def _resolve_default_llm_gateway() -> LLMPort:
         return DeterministicCassetteLLM()
     if mode == "litellm_plugin":
         return build_litellm_gateway_plugin()
-    return LiteLLMAdapter(fallback_cassette=DeterministicCassetteLLM())
+    return LiteLLMAdapter()
 
 
 def should_seed_test_personas_in_memory() -> bool:

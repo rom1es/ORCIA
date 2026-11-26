@@ -3,6 +3,8 @@ import type {
   DeclarativePackSummaryResponse,
   HitlSignalRequest,
   PacksConnectorHealthResponse,
+  ProcessPendingRunItemResponse,
+  ProcessPendingRunsListResponse,
   SaveWorkflowV2Request,
   SaveWorkflowV2Response,
   StartWorkflowV2RunRequest,
@@ -30,10 +32,21 @@ export type {
   DeclarativePacksListResponse,
   DeclarativePackSummaryResponse,
   PacksConnectorHealthResponse,
+  ProcessPendingRunItemResponse,
+  ProcessPendingRunsListResponse,
 };
 
 export interface SaveWorkflowV2Options {
   readonly workspaceId?: string;
+  readonly personaKey?: string;
+}
+
+export interface ListProcessPendingRunsParams {
+  readonly workspaceId?: string;
+  readonly scopeType?: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE";
+  readonly scopeId?: string;
+  readonly includeCompleted?: boolean;
+  readonly limit?: number;
   readonly personaKey?: string;
 }
 
@@ -64,6 +77,23 @@ export function createWorkflowsV2DomainClient(
     },
     listWorkflowsV2(): Promise<WorkflowsV2ListResponse> {
       return requestJson<WorkflowsV2ListResponse>("/api/v1/workflows/v2");
+    },
+    listProcessPendingRuns(
+      params: ListProcessPendingRunsParams = {},
+    ): Promise<ProcessPendingRunsListResponse> {
+      const search = new URLSearchParams();
+      if (params.workspaceId) search.set("workspace_id", params.workspaceId);
+      if (params.scopeType) search.set("scope_type", params.scopeType);
+      if (params.scopeId) search.set("scope_id", params.scopeId);
+      if (params.includeCompleted !== undefined) {
+        search.set("include_completed", String(params.includeCompleted));
+      }
+      if (params.limit !== undefined) search.set("limit", String(params.limit));
+      if (params.personaKey) search.set("persona_key", params.personaKey);
+      const qs = search.toString();
+      return requestJson<ProcessPendingRunsListResponse>(
+        `/api/v1/workflows/v2/runs${qs ? `?${qs}` : ""}`,
+      );
     },
     listValueStreamMaps(): Promise<VsmListResponse> {
       return requestJson<VsmListResponse>("/api/v1/vsm");

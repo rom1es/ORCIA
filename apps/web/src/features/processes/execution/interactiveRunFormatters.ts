@@ -36,13 +36,42 @@ export function simpleHashHex(text: string): string {
 }
 
 export type InteractiveProcessDrawerStatus =
+  | "RUNNING"
   | "WAITING_EXTERNAL_GATE"
   | "WAITING_SUBSTEP_HITL"
   | "WAITING_WRITE_PREVIEW"
   | "WAITING_FINAL_ANCHOR"
   | "COMPLETED_APPROVED"
   | "RETURN_LOOP_TRIGGERED"
-  | "SLA_SUSPENDED";
+  | "SLA_SUSPENDED"
+  | "FAILED_GATES";
+
+export function mapBackendRunStatusToDrawerStatus(
+  rawStatus: string | undefined,
+  fallback: InteractiveProcessDrawerStatus,
+): InteractiveProcessDrawerStatus {
+  const upper = (rawStatus ?? "").trim().toUpperCase();
+  if (upper === "COMPLETED" || upper === "COMPLETED_APPROVED") {
+    return "COMPLETED_APPROVED";
+  }
+  if (upper === "PAUSED" || upper === "SLA_SUSPENDED") {
+    return "SLA_SUSPENDED";
+  }
+  if (upper === "INITIALIZED" || upper === "RUNNING") {
+    return "RUNNING";
+  }
+  if (
+    upper === "WAITING_EXTERNAL_GATE" ||
+    upper === "WAITING_SUBSTEP_HITL" ||
+    upper === "WAITING_WRITE_PREVIEW" ||
+    upper === "WAITING_FINAL_ANCHOR" ||
+    upper === "RETURN_LOOP_TRIGGERED" ||
+    upper === "FAILED_GATES"
+  ) {
+    return upper as InteractiveProcessDrawerStatus;
+  }
+  return fallback;
+}
 
 export function buildInitialArtifactMarkdown(
   workflowTitle: string,
@@ -80,6 +109,7 @@ export function buildWritePreviewExecutionPayload(
   workflowTitle: string,
   reflexiveObjective: string | null | undefined,
   isFr: boolean,
+  workspaceId?: string,
 ) {
   const tpl =
     resolveDictionaryForFlag(isFr).processVsmExecutionUi.execution
@@ -91,7 +121,8 @@ export function buildWritePreviewExecutionPayload(
     effort_mode: "approfondi" as const,
     allow_sub_agent_delegation: true,
     available_delegate_agents: ["analyste-metier"],
-    initial_resources: ["docs/product/capabilities.yaml"],
+    initial_resources: [],
+    ...(workspaceId ? { workspace_id: workspaceId } : {}),
     requested_write_preview: {
       connector_type: "confluence",
       action: "publish_page",

@@ -67,6 +67,7 @@ export const PROCESS_VSM_EXECUTION_UI_FR: ProcessVsmExecutionUiDictionary = {
     sheetComplementsLabel: "Points d'attention & compléments :",
   },
   execution: {
+    statusRunning: "Exécution en cours",
     statusWaitingExternal: "En attente de réalisation (IDE / Git)",
     statusWaitingSubstepHitl: "En attente de votre validation",
     statusWaitingWritePreview: "Confirmation avant publication externe",
@@ -74,6 +75,7 @@ export const PROCESS_VSM_EXECUTION_UI_FR: ProcessVsmExecutionUiDictionary = {
     statusCompletedApproved: "Dossier validé et publié",
     statusReturnLoopTemplate: "Renvoyé pour corrections (Cycle {iteration})",
     statusSlaSuspended: "Dossier mis en pause",
+    statusFailedGates: "Contrôles qualité en échec",
     stepBadgeTemplate: "Étape {index}",
     externalWorkReceivedBanner:
       "Travaux externes reçus (Pull Request détectée) : les contrôles automatiques de conformité sont validés.",
