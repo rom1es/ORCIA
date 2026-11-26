@@ -70,7 +70,7 @@ function resolveAccessToken(
   return options.getAccessToken?.() ?? defaultAccessTokenProvider?.() ?? undefined;
 }
 
-function buildBaseHeaders(
+export function buildBaseHeaders(
   options: OrciaApiClientOptions,
   accept: string,
   extraHeaders?: Record<string, string>,

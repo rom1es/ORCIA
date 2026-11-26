@@ -51,6 +51,9 @@ export const AgentStudioCardBadgesRow: React.FC<
   onUpdateThinkingLevel,
 }) => {
   const studio = labels.studio;
+  const originPackLabel = agent.sourcePackKey ?? agent.packSlug ?? "";
+  const displayedHandle =
+    agent.isColliding && agent.qualifiedRef ? agent.qualifiedRef : agent.handle;
   const visibilityBadgeContent =
     visibilityScope === "PRIVATE" ? (
       <>
@@ -58,8 +61,8 @@ export const AgentStudioCardBadgesRow: React.FC<
       </>
     ) : visibilityScope === "PACK" ? (
       <>
-        <OrciaIcon name="spaces" /> {studio.visibilityPackPrefix} (
-        {agent.sourcePackKey ?? "orcia-pack-sdlc"})
+        <OrciaIcon name="spaces" /> {studio.visibilityPackPrefix}
+        {originPackLabel ? ` (${originPackLabel})` : ""}
       </>
     ) : (
       <>
@@ -75,10 +78,10 @@ export const AgentStudioCardBadgesRow: React.FC<
         </strong>
         <code
           data-testid={`agent-handle-${agent.agentId}`}
-          title={agent.handle}
+          title={displayedHandle}
           className="whitespace-nowrap rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 font-mono text-[11px]"
         >
-          {agent.handle}
+          {displayedHandle}
         </code>
         <button
           type="button"

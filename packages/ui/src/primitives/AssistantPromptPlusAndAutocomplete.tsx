@@ -17,6 +17,7 @@ export interface UiAssistantAutocompleteOption {
   readonly label: string;
   readonly description: string;
   readonly kind: "agent" | "skill";
+  readonly badge?: string;
 }
 
 export interface UiAssistantOrciaDocumentOption {
@@ -173,9 +174,19 @@ export function AssistantPromptPlusAndAutocomplete({
                 idx === 0 ? "bg-surface-secondary/70" : ""
               }`}
             >
-              <span className="font-semibold text-text-primary">
-                {opt.kind === "agent" ? `@${opt.slug}` : `/${opt.slug}`} — {opt.label}
-              </span>
+              <div className="flex w-full items-center justify-between gap-2">
+                <span className="font-semibold text-text-primary">
+                  {opt.kind === "agent" ? `@${opt.slug}` : `/${opt.slug}`} — {opt.label}
+                </span>
+                {opt.badge ? (
+                  <span
+                    data-testid={`assistant-autocomplete-badge-${opt.slug}`}
+                    className="rounded-full border border-border-subtle bg-surface-secondary px-2 py-0.5 font-mono text-[10px] font-semibold text-text-secondary"
+                  >
+                    {opt.badge}
+                  </span>
+                ) : null}
+              </div>
               <span className="text-[11px] text-text-secondary">{opt.description}</span>
             </button>
           ))}

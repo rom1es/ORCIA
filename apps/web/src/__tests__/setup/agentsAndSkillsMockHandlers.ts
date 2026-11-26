@@ -1,11 +1,13 @@
 import { backendState, jsonResponse, problemResponse } from "./mockBackendState";
+import { checkAndUnlinkDraftMembership } from "./vitestEpic31PackHandlers";
 
 export function handleAgentsAndSkillsMockRoute(params: {
   path: string;
   method: string;
+  parsedUrl?: URL;
   body: Record<string, unknown>;
 }): Response | null {
-  const { path, method, body } = params;
+  const { path, method, parsedUrl, body } = params;
 
   if (path === "/api/v1/agents-and-skills" && method === "GET") {
     const setupPacks = Array.isArray(backendState.platformSetupState?.packs)
@@ -78,6 +80,14 @@ export function handleAgentsAndSkillsMockRoute(params: {
   }
   if (path.startsWith("/api/v1/agents-and-skills/skills/") && method === "DELETE") {
     const skillId = decodeURIComponent(path.slice("/api/v1/agents-and-skills/skills/".length));
+    const unlink = parsedUrl?.searchParams.get("unlink_from_draft_packs") === "true";
+    const blocked = checkAndUnlinkDraftMembership({
+      entityType: "SKILL",
+      entityId: skillId,
+      unlinkFromDraftPacks: unlink,
+      path,
+    });
+    if (blocked) return blocked;
     backendState.skills = backendState.skills.filter((s) => s.skill_id !== skillId);
     return jsonResponse({ deleted: true, skill_id: skillId });
   }
@@ -193,6 +203,14 @@ export function handleAgentsAndSkillsMockRoute(params: {
   }
   if (path.startsWith("/api/v1/agents-and-skills/agents/") && method === "DELETE") {
     const agentId = decodeURIComponent(path.slice("/api/v1/agents-and-skills/agents/".length));
+    const unlink = parsedUrl?.searchParams.get("unlink_from_draft_packs") === "true";
+    const blocked = checkAndUnlinkDraftMembership({
+      entityType: "AGENT",
+      entityId: agentId,
+      unlinkFromDraftPacks: unlink,
+      path,
+    });
+    if (blocked) return blocked;
     backendState.agents = backendState.agents.filter((a) => a.agent_id !== agentId);
     return jsonResponse({ deleted: true, agent_id: agentId });
   }

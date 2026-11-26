@@ -173,6 +173,7 @@ export function mergeAssistantAutocompleteOptions(
       label: s.name,
       description: s.description,
       kind: "agent" as const,
+      ...(s.badge ? { badge: s.badge } : {}),
     }));
   const extraSkills = autocompleteSuggestions
     .filter((s) => s.kind === "skill")
@@ -181,6 +182,7 @@ export function mergeAssistantAutocompleteOptions(
       label: s.name,
       description: s.description,
       kind: "skill" as const,
+      ...(s.badge ? { badge: s.badge } : {}),
     }));
   return {
     mergedAgentOptions: [

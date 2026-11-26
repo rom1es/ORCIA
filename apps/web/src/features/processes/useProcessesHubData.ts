@@ -154,6 +154,53 @@ export function useProcessesHubData(params: {
     [workflows, locale, activeWorkspaceId, navigateToRoute, hubCopy.catalogResourceLabel],
   );
 
+  const handleDeleteWorkflow = useCallback(
+    async (
+      wfId: string,
+      unlinkFromDraftPacks = false,
+      onInterceptDraftDelete?: (params: {
+        readonly error: unknown;
+        readonly entityType: "WORKFLOW_V2";
+        readonly entityId: string;
+        readonly entityLabel: string;
+        readonly executeUnlinkedDelete: () => Promise<boolean>;
+      }) => boolean,
+    ): Promise<boolean> => {
+      const matched = workflows.find((w) => w.id === wfId);
+      setHubErrorBanner(null);
+      try {
+        await createProcessesApiClient(locale).deleteWorkflowV2(wfId, {
+          unlinkFromDraftPacks,
+        });
+        setWorkflows((prev) => prev.filter((w) => w.id !== wfId));
+        return true;
+      } catch (err: unknown) {
+        const intercepted =
+          !unlinkFromDraftPacks &&
+          Boolean(
+            onInterceptDraftDelete?.({
+              error: err,
+              entityType: "WORKFLOW_V2",
+              entityId: wfId,
+              entityLabel: matched?.title ?? wfId,
+              executeUnlinkedDelete: () => handleDeleteWorkflow(wfId, true),
+            }),
+          );
+        if (!intercepted) {
+          setHubErrorBanner(
+            formatRfc9457ErrorToBanner(
+              err,
+              locale,
+              matched?.title ?? hubCopy.catalogResourceLabel,
+            ).fullText,
+          );
+        }
+        return false;
+      }
+    },
+    [workflows, locale, hubCopy.catalogResourceLabel],
+  );
+
   return {
     workflows,
     setWorkflows,
@@ -164,5 +211,6 @@ export function useProcessesHubData(params: {
     hubErrorBanner,
     vsmSummary,
     handleLaunchWorkflow,
+    handleDeleteWorkflow,
   };
 }

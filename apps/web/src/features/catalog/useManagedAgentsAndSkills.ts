@@ -15,7 +15,10 @@ import {
   slugifyIdentifier,
   writeCachedAgentsAndSkills,
 } from "./managedAgentsHelpers";
-import { useManagedAgentActions } from "./useManagedAgentActions";
+import {
+  useManagedAgentActions,
+  type InterceptPackDraftDeleteFn,
+} from "./useManagedAgentActions";
 
 export function useManagedAgentsAndSkills(
   activePacks: readonly ConfiguredPackItem[],
@@ -23,6 +26,7 @@ export function useManagedAgentsAndSkills(
   locale: SupportedWebLocale,
   catalogLabels: CatalogManagedLabels,
   onModalError?: (msg: string) => void,
+  onInterceptDraftDeleteError?: InterceptPackDraftDeleteFn,
 ) {
   const [managedState, setManagedState] = useState<CachedAgentsAndSkillsState>(() =>
     readCachedAgentsAndSkills(),
@@ -135,22 +139,52 @@ export function useManagedAgentsAndSkills(
       );
   };
 
-  const handleDeleteSkill = (skillId: string) => {
-    updateManagedState((prev) => ({
-      skills: prev.skills.filter((s) => s.skillId !== skillId),
-      agents: prev.agents.map((a) => ({
-        ...a,
-        skillIds: a.skillIds.filter((id) => id !== skillId),
-      })),
-    }));
-    void createOrciaApiClient({ baseUrl: "" })
-      .deleteSkill(skillId)
-      .catch((err: unknown) =>
+  const handleDeleteSkill = async (
+    skillId: string,
+    unlinkFromDraftPacks = false,
+  ): Promise<boolean> => {
+    let previousState: CachedAgentsAndSkillsState | null = null;
+    let deletedLabel = skillId;
+    updateManagedState((prev) => {
+      previousState = prev;
+      deletedLabel = prev.skills.find((s) => s.skillId === skillId)?.name ?? skillId;
+      return {
+        skills: prev.skills.filter((s) => s.skillId !== skillId),
+        agents: prev.agents.map((a) => ({
+          ...a,
+          skillIds: a.skillIds.filter((id) => id !== skillId),
+        })),
+      };
+    });
+    try {
+      await createOrciaApiClient({ baseUrl: "", locale }).deleteSkill(skillId, {
+        unlinkFromDraftPacks,
+      });
+      return true;
+    } catch (err: unknown) {
+      if (previousState) {
+        const snapshot = previousState;
+        updateManagedState(() => snapshot);
+      }
+      const intercepted =
+        !unlinkFromDraftPacks &&
+        Boolean(
+          onInterceptDraftDeleteError?.({
+            error: err,
+            entityType: "SKILL",
+            entityId: skillId,
+            entityLabel: deletedLabel,
+            executeUnlinkedDelete: () => handleDeleteSkill(skillId, true),
+          }),
+        );
+      if (!intercepted) {
         onFeedback({
           tone: "crimson",
           message: formatRfc9457ErrorToBanner(err, locale, catalogLabels.skillErrorContext).fullText,
-        }),
-      );
+        });
+      }
+      return false;
+    }
   };
 
   const handleUpdateSkillVisibility = (
@@ -214,6 +248,7 @@ export function useManagedAgentsAndSkills(
     catalogLabels,
     onFeedback,
     onModalError,
+    onInterceptDraftDeleteError,
     updateManagedState,
   });
 

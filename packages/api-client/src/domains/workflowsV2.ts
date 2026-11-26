@@ -1,4 +1,5 @@
 import type {
+  GuardedEntityDeleteResponse,
   PackDeleteResponse,
   PackImportRequest,
   PackImportResponse,
@@ -36,6 +37,7 @@ export type ApiImpactAssessmentResult = components["schemas"]["ImpactAssessmentR
 export type {
   DeclarativePacksListResponse,
   DeclarativePackSummaryResponse,
+  GuardedEntityDeleteResponse,
   PackDeleteResponse,
   PackImportRequest,
   PackImportResponse,
@@ -43,6 +45,20 @@ export type {
   ProcessPendingRunItemResponse,
   ProcessPendingRunsListResponse,
 };
+
+export interface GuardedWorkflowDeleteOptions {
+  readonly unlinkFromDraftPacks?: boolean;
+  readonly personaKey?: string;
+}
+
+function buildWorkflowDeleteQuery(options?: GuardedWorkflowDeleteOptions): string {
+  if (!options) return "";
+  const qs = new URLSearchParams();
+  if (options.unlinkFromDraftPacks) qs.set("unlink_from_draft_packs", "true");
+  if (options.personaKey) qs.set("persona_key", options.personaKey);
+  const encoded = qs.toString();
+  return encoded ? `?${encoded}` : "";
+}
 
 export interface SaveWorkflowV2Options {
   readonly workspaceId?: string;
@@ -180,6 +196,26 @@ export function createWorkflowsV2DomainClient(
         `/api/v1/runs/${encoded}/hitl-signal${buildPersonaQuery(personaKey)}`,
         "POST",
         payload,
+      );
+    },
+    deleteWorkflowV2(
+      workflowId: string,
+      options?: GuardedWorkflowDeleteOptions,
+    ): Promise<GuardedEntityDeleteResponse> {
+      const encoded = encodeURIComponent(workflowId);
+      return requestJson<GuardedEntityDeleteResponse>(
+        `/api/v1/workflows/v2/${encoded}${buildWorkflowDeleteQuery(options)}`,
+        "DELETE",
+      );
+    },
+    deleteVsmV2(
+      vsmId: string,
+      options?: GuardedWorkflowDeleteOptions,
+    ): Promise<GuardedEntityDeleteResponse> {
+      const encoded = encodeURIComponent(vsmId);
+      return requestJson<GuardedEntityDeleteResponse>(
+        `/api/v1/vsm/${encoded}${buildWorkflowDeleteQuery(options)}`,
+        "DELETE",
       );
     },
   };

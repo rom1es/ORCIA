@@ -138,6 +138,7 @@ export function useInboxPanelController() {
   const [agentsSyncTick] = useSyncManagedAgentsCache(
     locale,
     dictionary.featureAdminCatalogSettings.catalog.defaultSkillOutputFormat,
+    activeWorkspaceId,
   );
   const { agentOptions, skillOptions, orciaDocuments, ragCitations } = useMemo(
     () => buildAssistantAutocompleteAndRagOptions({ catalogItems, datasources, isFr }),

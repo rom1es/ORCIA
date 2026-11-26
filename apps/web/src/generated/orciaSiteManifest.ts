@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 64,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 252,
+    "techLeadReportsCount": 253,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -548,6 +548,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-26",
+      "phaseOrStory": "Story 31.6",
+      "reportFile": "31-6-direction-c-bilingual-pack-registry-composer-slot-drawer-and-autocomplete-ui-tech-lead-report.md",
+      "domain": "Epic 31 Lot 5 — Direction C Bilingual (fr/en) Pack Registry, Workspace Pack Activation & Slot Binding Drawer, CUSTOM Pack Composer Modal, Anti-Hostage Unlink Dialog & @pack/agent Autocomplete Badges (CAP-055, CAP-056, CAP-070, CAP-082, CAP-090, CAP-100, CAP-140, CAP-200)",
+      "summary": "Closed (done, independent Testing Verifier verified): added typed packs/composer/multipart client (packs.ts 286 L, multipartHelper.ts 131 L, packTypes.ts 16 L, unlinkFromDraftPacks delete options), @orcia/ui Direction C primitives (WorkspacePacksPanel.tsx 193 L, PackImportModal.tsx 209 L, PackSlotBindingDrawer.tsx 279 L, PackComposerModal.tsx 273 L + PackComposerMetadataStep.tsx 175 L + PackComposerMembersStep.tsx 182 L, EntityUnlinkConfirmDialog.tsx 90 L, pack attribution badges on AssistantPromptPlusAndAutocomplete.tsx 278 L / AgentStudioCardItem.tsx 236 L / SkillStudioCardItem.tsx 205 L), unified /settings/packs + /settings?tab=packs + /spaces (DeclarativePacksRegistrySection.tsx 286 L, WorkspacePacksTabSection.tsx 70 L, useWorkspacePacksController.ts 212 L, usePackComposerAndImportController.ts 248 L), 409 unlink guard across Agents/Skills/Workflows/VSM (useGuardedEntityDelete.ts 90 L), and 100% FR/EN parity (packs_ui_labels_{fr,en}.ts 146 L); all new/edited production .ts/.tsx files <= 300 L; verified 9/9 Turbo (@orcia/api-client 4/23 + @orcia/ui 41/157 + @orcia/web 98/375 = 555 JS/TS tests, all i18n/audit gates 0), 11 passed, 0 failed (2.1m) Desktop Playwright E2E (02, 07, 08, 09, 18 with env -u ORCIA_E2E_SEED_FIXTURES), ruff (1,916 files)/lint_spine (0)/export_openapi (0-diff)/detect-secrets clean, site:sync/site:check (253 reports, 66/66 capabilities), and gitnexus analyze (51,479 nodes / 235,430 edges / 881 clusters / 1,524 flows)."
+    },
     {
       "date": "2026-11-26",
       "phaseOrStory": "Story 31.5",

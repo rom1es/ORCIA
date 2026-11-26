@@ -18,6 +18,29 @@ import { buildPersonaQuery, type createRequestJson } from "../helpers";
 
 type RequestJsonFn = ReturnType<typeof createRequestJson>;
 
+export interface DeleteEntityGuardOptions {
+  readonly personaKey?: string;
+  readonly unlinkFromDraftPacks?: boolean;
+}
+
+function buildGuardedDeleteQuery(
+  personaKeyOrOptions?: string | DeleteEntityGuardOptions,
+): string {
+  if (!personaKeyOrOptions) return "";
+  if (typeof personaKeyOrOptions === "string") {
+    return buildPersonaQuery(personaKeyOrOptions);
+  }
+  const qs = new URLSearchParams();
+  if (personaKeyOrOptions.unlinkFromDraftPacks) {
+    qs.set("unlink_from_draft_packs", "true");
+  }
+  if (personaKeyOrOptions.personaKey) {
+    qs.set("persona_key", personaKeyOrOptions.personaKey);
+  }
+  const encoded = qs.toString();
+  return encoded ? `?${encoded}` : "";
+}
+
 export function createAgentsAndSkillsDomainClient(requestJson: RequestJsonFn) {
   return {
     listAgentsAndSkills(
@@ -60,10 +83,10 @@ export function createAgentsAndSkillsDomainClient(requestJson: RequestJsonFn) {
     },
     deleteSkill(
       skillId: string,
-      personaKey?: string,
+      personaKeyOrOptions?: string | DeleteEntityGuardOptions,
     ): Promise<DeleteSkillOrAgentResponse> {
       return requestJson<DeleteSkillOrAgentResponse>(
-        `/api/v1/agents-and-skills/skills/${encodeURIComponent(skillId)}${buildPersonaQuery(personaKey)}`,
+        `/api/v1/agents-and-skills/skills/${encodeURIComponent(skillId)}${buildGuardedDeleteQuery(personaKeyOrOptions)}`,
         "DELETE",
       );
     },
@@ -123,10 +146,10 @@ export function createAgentsAndSkillsDomainClient(requestJson: RequestJsonFn) {
     },
     deleteAgent(
       agentId: string,
-      personaKey?: string,
+      personaKeyOrOptions?: string | DeleteEntityGuardOptions,
     ): Promise<DeleteSkillOrAgentResponse> {
       return requestJson<DeleteSkillOrAgentResponse>(
-        `/api/v1/agents-and-skills/agents/${encodeURIComponent(agentId)}${buildPersonaQuery(personaKey)}`,
+        `/api/v1/agents-and-skills/agents/${encodeURIComponent(agentId)}${buildGuardedDeleteQuery(personaKeyOrOptions)}`,
         "DELETE",
       );
     },

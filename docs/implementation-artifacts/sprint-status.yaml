@@ -355,7 +355,7 @@ development_status:
   31-3-qualified-pack-namespacing-and-flat-workspace-pack-ontology: done
   31-4-workspace-pack-activation-slot-bindings-422-guard-and-run-lock-pinning: done
   31-5-pack-composer-anti-hostage-unlink-closure-gate-and-scrubbed-zip-export: done
-  31-6-direction-c-bilingual-pack-registry-composer-slot-drawer-and-autocomplete-ui: backlog
+  31-6-direction-c-bilingual-pack-registry-composer-slot-drawer-and-autocomplete-ui: done
   31-7-epic-31-red-team-security-roundtrip-e2e-help-sync-and-closure: backlog
   epic-31-retrospective: optional
 action_items:

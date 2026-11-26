@@ -153,6 +153,7 @@ export async function vitestFetchTransport(
     method,
     parsedUrl,
     body,
+    rawInit: init,
     reqHeaders,
     jsonResponse,
     problemResponse,

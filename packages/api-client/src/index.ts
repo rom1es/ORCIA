@@ -1,5 +1,5 @@
 import createClient from "openapi-fetch";
-import { createAgentsAndSkillsDomainClient } from "./domains/agentsAndSkills";
+import { createAgentsAndSkillsDomainClient, type DeleteEntityGuardOptions } from "./domains/agentsAndSkills";
 import { createAiModelsHubDomainClient } from "./domains/aiModelsHub";
 import {
   createAssistantGovernanceAndThreadsDomainClient,
@@ -56,6 +56,8 @@ import {
   createReflexiveExecutionDomainClient,
   type InspectSourceLinesParams,
 } from "./domains/reflexiveExecution";
+import { createPacksDomainClient } from "./domains/packs";
+import { createRequestMultipart } from "./multipartHelper";
 import {
   createWorkflowsV2DomainClient,
   type ApiImpactAssessmentResult,
@@ -63,6 +65,8 @@ import {
   type ApiWorkflowDefinitionV2,
   type DeclarativePacksListResponse,
   type DeclarativePackSummaryResponse,
+  type GuardedEntityDeleteResponse,
+  type GuardedWorkflowDeleteOptions,
   type ListProcessPendingRunsParams,
   type PackDeleteResponse,
   type PackImportRequest,
@@ -100,6 +104,7 @@ import {
 } from "./helpers";
 
 export type * from "./generated/schema";
+export * from "./packTypes";
 export type { PopularUsageItemResponse, UserProfileSummaryResponse } from "./generated/user_profile";
 export {
   buildKnownOrgUsersQuery,
@@ -145,8 +150,11 @@ export {
   type BinaryDownloadResult,
   type DeclarativePacksListResponse,
   type DeclarativePackSummaryResponse,
+  type DeleteEntityGuardOptions,
   type DemoWorkspaceProvisionResponse,
   type ExceptionWaiverResponseItem,
+  type GuardedEntityDeleteResponse,
+  type GuardedWorkflowDeleteOptions,
   type InspectSourceLinesParams,
   type ListAuditLedgerParams,
   type ListKnownOrgUsersParams,
@@ -204,9 +212,11 @@ export function createOrciaOpenApiFetchClient(options: OrciaApiClientOptions) {
 export function createOrciaApiClient(options: OrciaApiClientOptions) {
   const requestJson = createRequestJson(options);
   const requestBinary = createRequestBinary(options);
+  const requestMultipart = createRequestMultipart(options);
   const requestSse = createRequestSse(options);
   const aiModelsHubClient = createAiModelsHubDomainClient(requestJson);
   const auditFinopsClient = createAuditFinopsDomainClient(requestJson);
+  const packsClient = createPacksDomainClient(requestJson, requestBinary, requestMultipart);
   return {
     ...createAuthAndShellDomainClient(requestJson),
     ...createAutonomousSupervisionDomainClient(requestJson),
@@ -221,10 +231,12 @@ export function createOrciaApiClient(options: OrciaApiClientOptions) {
     ...createOntologyPromotionsDomainClient(requestJson),
     ...createReflexiveExecutionDomainClient(requestJson, options.baseUrl),
     ...createWorkflowsV2DomainClient(requestJson, requestBinary),
+    ...packsClient,
     ...createWorkflowTriggersDomainClient(requestJson),
     ...createWorkspaceGovernanceDomainClient(requestJson),
     ...auditFinopsClient,
     ...aiModelsHubClient,
+    packs: packsClient,
     aiModelsHub: aiModelsHubClient,
     auditFinops: auditFinopsClient,
   };

@@ -12,6 +12,8 @@ import type {
   ConfiguredPackItem,
 } from "../components/platformSetupStore";
 import { DICTIONARIES, resolveLocaleForFlag } from "../i18n";
+import { DeclarativePacksRegistrySection } from "../features/settings/packs/DeclarativePacksRegistrySection";
+import { usePacksRegistryHealthchecks } from "../features/settings/packs/usePacksRegistryHealthchecks";
 import { formatRfc9457ErrorToBanner } from "../lib/formatRfc9457ErrorToBanner";
 import { SettingsPacksCatalogCard } from "./SettingsPacksCatalogCard";
 
@@ -48,6 +50,7 @@ export function SettingsPacksSection({
   >([]);
   const [selectedScopePath, setSelectedScopePath] = useState<string>("GLOBAL");
   const [packsLoadError, setPacksLoadError] = useState<string | null>(null);
+  const registry = usePacksRegistryHealthchecks(locale);
 
   useEffect(() => {
     let cancelled = false;
@@ -174,6 +177,21 @@ export function SettingsPacksSection({
           {copy.emptyState}
         </p>
       )}
+
+      <DeclarativePacksRegistrySection
+        packs={registry.packs}
+        selectedWorkspaceId={registry.selectedWorkspaceId}
+        onSelectedWorkspaceChange={registry.setSelectedWorkspaceId}
+        onRefreshPacks={registry.reloadPacksFromServer}
+        onExportPackZip={(packId) => {
+          registry.setSelectedPackId(packId);
+          void registry.handleExportPackBundleZip(packId);
+        }}
+        onStatusMessage={registry.setStatusMessage}
+        onErrorMessage={registry.setErrorMessage}
+        statusMessage={registry.statusMessage}
+        errorMessage={registry.errorMessage}
+      />
     </section>
   );
 }

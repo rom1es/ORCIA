@@ -215,6 +215,6 @@ export function handleWorkspacesAndCatalogRoute(params: {
 
   return (
     handleDnaMechanismsMockRoute({ path, method, body, isObserver: isObserverRequest(reqHeaders) }) ??
-    handleAgentsAndSkillsMockRoute({ path, method, body })
+    handleAgentsAndSkillsMockRoute({ path, method, parsedUrl, body })
   );
 }

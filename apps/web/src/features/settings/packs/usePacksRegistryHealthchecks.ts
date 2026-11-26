@@ -34,8 +34,10 @@ export function usePacksRegistryHealthchecks(locale: "fr" | "en") {
       const res = await apiClient.listDeclarativePacks();
       setPacks(res.packs);
       const firstPack = res.packs[0];
-      if (firstPack && !res.packs.some((p) => p.id === selectedPackId)) {
-        setSelectedPackId(firstPack.id);
+      if (firstPack) {
+        setSelectedPackId((prev) =>
+          res.packs.some((p) => p.id === prev) ? prev : firstPack.id,
+        );
       }
     } catch (err: unknown) {
       setErrorMessage(
@@ -44,7 +46,7 @@ export function usePacksRegistryHealthchecks(locale: "fr" | "en") {
     } finally {
       setIsLoading(false);
     }
-  }, [apiClient, locale, selectedPackId]);
+  }, [apiClient, locale]);
 
   useEffect(() => {
     void loadPacksFromServer();
@@ -170,6 +172,9 @@ export function usePacksRegistryHealthchecks(locale: "fr" | "en") {
     handleRefreshHealthchecks: () => {
       void handleRefreshHealthchecks();
     },
+    reloadPacksFromServer: loadPacksFromServer,
+    setStatusMessage,
+    setErrorMessage,
     handleExportWorkspaceZip,
     handleExportPackBundleZip,
   };
