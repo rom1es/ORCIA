@@ -54,6 +54,7 @@ from orcia_core.ontology.resolver import (
     OntologyHierarchyResolver,
     ProfileSemanticTranslator,
     build_ontology_resolution_cte_sql,
+    build_workspace_pack_ontology_cte_sql,
 )
 from orcia_kernel.enums import DEFAULT_LOCALE, SupportedLocale
 
@@ -260,6 +261,7 @@ __all__ = [
     "build_empty_ontology_service",
     "build_ontology_resolution_cte_sql",
     "build_seeded_ontology_service",
+    "build_workspace_pack_ontology_cte_sql",
     "can_read_ontology_item",
     "can_review_promotion_target",
     "can_write_ontology_level",

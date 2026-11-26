@@ -11,6 +11,7 @@ import re
 from dataclasses import dataclass
 from typing import Literal
 
+from orcia_core.domain.namespacing import ResolutionTier
 from orcia_kernel.ids import new_uuid7_str
 
 AgentThinkingLevel = Literal["simple", "medium", "complex", "auto"]
@@ -81,6 +82,11 @@ class ManagedSkillRecord:
     human_authored_required: bool = False
     owner_workspace_id: str | None = None
     owner_user_id: str | None = None
+    pack_slug: str | None = None
+    qualified_ref: str = ""
+    is_colliding: bool = False
+    collision_pack_slugs: tuple[str, ...] = ()
+    resolution_tier: ResolutionTier = "WORKSPACE_OVERRIDE"
 
 
 @dataclass(frozen=True, slots=True)
@@ -123,6 +129,11 @@ class ManagedAgentRecord:
     test_bench_status: AgentTestBenchStatus = "UNTESTED"
     owner_workspace_id: str | None = None
     owner_user_id: str | None = None
+    pack_slug: str | None = None
+    qualified_ref: str = ""
+    is_colliding: bool = False
+    collision_pack_slugs: tuple[str, ...] = ()
+    resolution_tier: ResolutionTier = "WORKSPACE_OVERRIDE"
 
 
 @dataclass(frozen=True, slots=True)

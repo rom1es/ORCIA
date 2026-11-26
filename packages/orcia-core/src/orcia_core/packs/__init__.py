@@ -12,10 +12,16 @@ from orcia_core.packs._internal.seaweedfs_pack_cas import (
     build_pack_cas_key,
 )
 from orcia_core.packs._internal.sql_declarative_packs import SqlPackBundleV2Repository
+from orcia_core.packs._internal.sql_pack_ontology_resolution import (
+    WorkspacePackEffectiveResolution,
+    load_workspace_active_pack_priorities_pg,
+    resolve_workspace_pack_ontology_pg,
+)
 from orcia_core.packs.errors import (
     EntityReferencedByPackDraftError,
     PackBundleNotFoundError,
     PackClosureIncompleteError,
+    PackEntityCollisionError,
     PackExecutableHookForbiddenError,
     PackInvalidArchiveError,
     PackPiiOrInfraLeakError,
@@ -62,6 +68,17 @@ from orcia_core.packs.models import (
     WorkspacePackActivation,
     WorkspacePackSlotBinding,
 )
+from orcia_core.packs.namespacing import (
+    QualifiedEntityRef,
+    ResolutionTier,
+    ResolvedEntityCandidate,
+    WorkspaceEntityCandidate,
+    format_agent_mention,
+    format_pack_resource_uri,
+    format_skill_command,
+    parse_qualified_entity_ref,
+    resolve_workspace_entity_candidates,
+)
 from orcia_core.packs.ports import (
     PackBundleRepositoryPort,
     PackCasStoragePort,
@@ -86,6 +103,7 @@ __all__ = [
     "PackDnaMechanismSpec",
     "PackDraftEntityType",
     "PackDraftMembership",
+    "PackEntityCollisionError",
     "PackExecutableHookForbiddenError",
     "PackExporter",
     "PackHelpArticleSpec",
@@ -109,15 +127,27 @@ __all__ = [
     "PackSourceOrigin",
     "PackSystemDeleteForbiddenError",
     "PackVersionConflictError",
+    "QualifiedEntityRef",
     "QuickActionSpec",
     "RequiredConnectorSpec",
+    "ResolutionTier",
+    "ResolvedEntityCandidate",
     "ResourcePinnedByActiveRunsError",
     "SeaweedFsPackCasAdapter",
     "SqlPackBundleV2Repository",
+    "WorkspaceEntityCandidate",
     "WorkspacePackActivation",
+    "WorkspacePackEffectiveResolution",
     "WorkspacePackSlotBinding",
     "build_lockfile_dict",
     "build_pack_cas_key",
     "compute_archive_sha256",
+    "format_agent_mention",
+    "format_pack_resource_uri",
+    "format_skill_command",
+    "load_workspace_active_pack_priorities_pg",
+    "parse_qualified_entity_ref",
+    "resolve_workspace_entity_candidates",
+    "resolve_workspace_pack_ontology_pg",
     "seed_system_packs_on_engine",
 ]

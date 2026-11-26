@@ -5,7 +5,7 @@ Zero framework imports (`fastapi`, `sqlalchemy`, `dramatiq`, `redis`, `litellm`)
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
 from orcia_core.ontology._impact_simulator import ImpactSimulatorService
 from orcia_core.ontology._promotion_runner import execute_promote_concept
@@ -82,6 +82,7 @@ class OntologyGovernanceService:
         team_chain_scope_ids: tuple[str, ...] = ("scope-subteam-checkout", "scope-team-core"),
         workspace_scope_id: str = "ws-solution-paiement",
         run_scope_id: str | None = None,
+        active_pack_priorities: Mapping[str, int] | None = None,
     ) -> ResolvedOntologySnapshot:
         return OntologyHierarchyResolver.resolve_effective_ontology(
             concepts=self.concepts,
@@ -92,6 +93,7 @@ class OntologyGovernanceService:
             team_chain_scope_ids=team_chain_scope_ids,
             workspace_scope_id=workspace_scope_id,
             run_scope_id=run_scope_id,
+            active_pack_priorities=active_pack_priorities,
         )
 
     def upsert_concept(

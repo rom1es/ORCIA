@@ -6,12 +6,24 @@ import json
 from uuid import UUID
 
 import sqlalchemy as sa
-from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncEngine
 
+from orcia_core.orchestration._agents_namespacing import annotate_skills_and_agents_namespacing
 from orcia_core.orchestration._internal._sql_agents_hydration import (
     hydrate_agent_record,
     hydrate_skill_record,
     parse_visibility_scope,
+)
+from orcia_core.orchestration._internal._sql_agents_pack_queries import (
+    SQL_LOAD_AGENTS_AND_SKILLS_WITH_PACKS,
+    load_workspace_pack_priorities_pg,
+    resolve_pack_tier_for_row,
+)
+from orcia_core.orchestration._internal._sql_agents_pack_queries import (
+    ensure_root_org_unit_id as _ensure_root_org_unit_id,
+)
+from orcia_core.orchestration._internal._sql_agents_pack_queries import (
+    optional_uuid as _optional_uuid,
 )
 from orcia_core.orchestration.agents_and_skills_models import (
     ManagedAgentRecord,
@@ -20,70 +32,36 @@ from orcia_core.orchestration.agents_and_skills_models import (
 from orcia_kernel.ids import new_uuid7_str
 
 
-async def _ensure_root_org_unit_id(conn: AsyncConnection) -> UUID:
-    """Return an existing root `org_units.id` or create `orcia-root` idempotently."""
-    sql = (
-        "SELECT id FROM org_units "
-        "ORDER BY (CASE WHEN slug = 'orcia-root' THEN 0 ELSE 1 END), created_at ASC LIMIT 1"
-    )
-    existing = (await conn.execute(sa.text(sql))).first()
-    if existing is not None:
-        return UUID(str(existing[0]))
-
-    row = await conn.execute(
-        sa.text(
-            """
-            INSERT INTO org_units (id, slug, name, unit_type, parent_id)
-            VALUES (:id, 'orcia-root', 'ORCIA Root Organization', 'ENTERPRISE', NULL)
-            ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name
-            RETURNING id
-            """
-        ),
-        {"id": UUID(new_uuid7_str())},
-    )
-    return UUID(str(row.scalar_one()))
-
-
-def _optional_uuid(raw_id: str | None) -> UUID | None:
-    if not raw_id:
-        return None
-    try:
-        return UUID(str(raw_id).strip())
-    except (ValueError, TypeError):
-        return None
-
-
 async def load_agents_and_skills_from_postgres18(
     engine: AsyncEngine,
+    workspace_id: str | None = None,
 ) -> tuple[tuple[ManagedSkillRecord, ...], tuple[ManagedAgentRecord, ...]]:
     """Load all `USER_SKILL` and `USER_AGENT` records from PostgreSQL 18 `catalog_items`."""
     skills: list[ManagedSkillRecord] = []
     agents: list[ManagedAgentRecord] = []
     async with engine.connect() as conn:
-        rows = (
-            await conn.execute(
-                sa.text(
-                    """
-                    SELECT resource_id, uri, title, description, resource_type, version,
-                           sha256, item_type, metadata_jsonb, owner_workspace_id
-                    FROM catalog_items
-                    WHERE item_type IN ('USER_SKILL', 'USER_AGENT')
-                    ORDER BY created_at ASC, resource_id ASC
-                    """
-                )
-            )
-        ).fetchall()
+        active_priorities, inactive_packs = await load_workspace_pack_priorities_pg(
+            conn, workspace_id
+        )
+        rows = (await conn.execute(SQL_LOAD_AGENTS_AND_SKILLS_WITH_PACKS)).fetchall()
 
     for row in rows:
         resource_id, uri, title, description = str(row[0]), str(row[1]), str(row[2]), str(row[3])
         version, sha256, item_type, raw_meta = str(row[5]), str(row[6]), str(row[7]), row[8]
         col_ws = str(row[9]) if len(row) > 9 and row[9] is not None else None
+        pack_slug = str(row[10]).strip().lower() if len(row) > 10 and row[10] else None
+        bundle_kind = str(row[11]).strip().upper() if len(row) > 11 and row[11] else None
         meta = raw_meta if isinstance(raw_meta, dict) else json.loads(str(raw_meta or "{}"))
         slug = str(meta.get("slug") or resource_id)
         vis_scope = parse_visibility_scope(meta.get("visibility_scope"))
         raw_pack = meta.get("source_pack_key")
         source_pack_key = str(raw_pack).strip() if raw_pack else None
         enabled_in_workspace = bool(meta.get("enabled_in_workspace", True))
+        if pack_slug and pack_slug in inactive_packs:
+            enabled_in_workspace = False
+        tier = resolve_pack_tier_for_row(
+            pack_slug=pack_slug, bundle_kind=bundle_kind, active_priorities=active_priorities
+        )
 
         if item_type == "USER_SKILL":
             skills.append(
@@ -100,6 +78,9 @@ async def load_agents_and_skills_from_postgres18(
                     source_pack_key=source_pack_key,
                     enabled_in_workspace=enabled_in_workspace,
                     column_workspace_id=col_ws,
+                    pack_slug=pack_slug,
+                    bundle_kind=bundle_kind,
+                    resolution_tier=tier,
                 )
             )
         elif item_type == "USER_AGENT":
@@ -117,10 +98,15 @@ async def load_agents_and_skills_from_postgres18(
                     source_pack_key=source_pack_key,
                     enabled_in_workspace=enabled_in_workspace,
                     column_workspace_id=col_ws,
+                    pack_slug=pack_slug,
+                    bundle_kind=bundle_kind,
+                    resolution_tier=tier,
                 )
             )
 
-    return tuple(skills), tuple(agents)
+    return annotate_skills_and_agents_namespacing(
+        tuple(skills), tuple(agents), active_pack_priorities=active_priorities or None
+    )
 
 
 async def persist_skill_to_postgres18(
@@ -141,6 +127,7 @@ async def persist_skill_to_postgres18(
         "human_authored_required": skill.human_authored_required,
         "owner_workspace_id": skill.owner_workspace_id,
         "owner_user_id": skill.owner_user_id,
+        "pack_slug": skill.pack_slug,
     }
     async with engine.begin() as conn:
         org_id = await _ensure_root_org_unit_id(conn)
@@ -224,6 +211,7 @@ async def persist_agent_to_postgres18(
         "test_bench_status": agent.test_bench_status,
         "owner_workspace_id": agent.owner_workspace_id,
         "owner_user_id": agent.owner_user_id,
+        "pack_slug": agent.pack_slug,
     }
     async with engine.begin() as conn:
         org_id = await _ensure_root_org_unit_id(conn)

@@ -69,6 +69,7 @@ export interface components {
       agent_id: string;
       agent_kind?: "LOCAL" | "REMOTE_MCP_A2A";
       allowed_rag_sources?: (string)[];
+      collision_pack_slugs?: (string)[];
       dialogue_mechanism?: "questionnaire_prealable" | "pause_par_bloc" | "direct";
       enabled_in_workspace?: boolean;
       guardrails?: (string)[];
@@ -76,6 +77,7 @@ export interface components {
       human_partner_role?: "PO_PM" | "ARCHITECT" | "TECH_LEAD" | "SECURITY_QA" | "ALL";
       instructions: string;
       invocation_modes?: (string)[];
+      is_colliding?: boolean;
       lifecycle_status?: "DRAFT" | "ACTIVE";
       llm_model_tier?: "team_default" | "fast" | "deep" | "discovery";
       max_tokens?: number;
@@ -84,9 +86,12 @@ export interface components {
       name: string;
       ontology_views?: (string)[];
       output_contract_format?: "markdown_structure" | "confluence_draft" | "jira_draft" | "gate_risk_json";
+      pack_slug?: string | null;
       posture?: "PRODUCER" | "EVALUATOR_GATE";
       prompt_ref?: string | null;
+      qualified_ref?: string;
       remote_endpoint_url?: string | null;
+      resolution_tier?: "WORKSPACE_OVERRIDE" | "WORKSPACE_PACK" | "SYSTEM_PACK";
       role_mission: string;
       sha256?: string;
       skill_ids?: (string)[];
@@ -2575,6 +2580,8 @@ export interface components {
       id: string;
       introduced_in_snapshot_id?: string | null;
       level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_WORKSPACE" | "4_RUN_EPHEMERAL";
+      pack_bundle_id?: string | null;
+      pack_slug?: string | null;
       parent_concept_id?: string | null;
       profile_translations: Record<string, string>;
       scope_id: string;
@@ -2594,6 +2601,8 @@ export interface components {
       level: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_WORKSPACE" | "4_RUN_EPHEMERAL";
       next_promotion_level?: "1_ENTERPRISE" | "2_DOMAIN" | "3_TEAM" | "3_WORKSPACE" | "4_WORKSPACE" | "4_RUN_EPHEMERAL" | null;
       next_promotion_scope_id?: string | null;
+      pack_bundle_id?: string | null;
+      pack_slug?: string | null;
       parent_concept_id?: string | null;
       profile_translations: Record<string, string>;
       scope_id: string;
@@ -2683,7 +2692,11 @@ export interface components {
       workspace_scope_id?: string;
     };
     OntologyResolveResponse: {
+      active_pack_priorities?: Record<string, number>;
+      broker_policies?: (Record<string, unknown>)[];
       concepts: (components["schemas"]["OntologyConceptSchemaItem"])[];
+      dna_mechanisms?: (Record<string, unknown>)[];
+      instructions?: (Record<string, unknown>)[];
       profile_labels: Record<string, string>;
       relations: (components["schemas"]["OntologyRelationSchemaItem"])[];
       trace_id?: string | null;
@@ -3384,6 +3397,19 @@ export interface components {
       reset_at: string;
       reset_by: string;
     };
+    ResolveAgentOrSkillResponse: {
+      candidates?: (string)[];
+      collision_pack_slugs?: (string)[];
+      entity_id: string;
+      is_colliding?: boolean;
+      kind: "agent" | "skill";
+      pack_slug?: string | null;
+      qualified_ref: string;
+      raw_ref: string;
+      resolution_tier: "WORKSPACE_OVERRIDE" | "WORKSPACE_PACK" | "SYSTEM_PACK";
+      slug: string;
+      trace_id: string;
+    };
     ResolveArtifactDestinationRequest: {
       artifact_slug: string;
       artifact_type: string;
@@ -3609,13 +3635,18 @@ export interface components {
       preview_id: string;
     };
     SkillItemResponse: {
+      collision_pack_slugs?: (string)[];
       command_handle: string;
       enabled_in_workspace?: boolean;
       expected_output_format?: string;
       input_parameters?: (string)[];
       instructions: string;
+      is_colliding?: boolean;
       name: string;
       objective: string;
+      pack_slug?: string | null;
+      qualified_ref?: string;
+      resolution_tier?: "WORKSPACE_OVERRIDE" | "WORKSPACE_PACK" | "SYSTEM_PACK";
       sha256?: string;
       skill_id: string;
       slug: string;
@@ -5081,6 +5112,13 @@ export interface paths {
       };
     };
   };
+  "/api/v1/agents-and-skills/resolve": {
+    get: {
+      responses: {
+        200: components["schemas"]["ResolveAgentOrSkillResponse"];
+      };
+    };
+  };
   "/api/v1/agents-and-skills/skills": {
     post: {
       responses: {
@@ -5793,6 +5831,13 @@ export interface paths {
     post: {
       responses: {
         200: components["schemas"]["OntologyConceptSchemaItem"];
+      };
+    };
+  };
+  "/api/v1/ontology-rag/ontology/effective": {
+    get: {
+      responses: {
+        200: components["schemas"]["OntologyResolveResponse"];
       };
     };
   };
@@ -7260,6 +7305,7 @@ export type ResendLoginTwoFactorRequest = components["schemas"]["ResendLoginTwoF
 export type ResendLoginTwoFactorResponse = components["schemas"]["ResendLoginTwoFactorResponse"];
 export type ResetCircuitBreakerRequest = components["schemas"]["ResetCircuitBreakerRequest"];
 export type ResetCircuitBreakerResponse = components["schemas"]["ResetCircuitBreakerResponse"];
+export type ResolveAgentOrSkillResponse = components["schemas"]["ResolveAgentOrSkillResponse"];
 export type ResolveArtifactDestinationRequest = components["schemas"]["ResolveArtifactDestinationRequest"];
 export type ResolvedArtifactDestinationResponse = components["schemas"]["ResolvedArtifactDestinationResponse"];
 export type ResourceDiscoveryResponse = components["schemas"]["ResourceDiscoveryResponse"];

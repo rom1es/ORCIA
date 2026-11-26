@@ -11,6 +11,7 @@ from orcia_api.dependencies._assistant_guards import (
     can_user_manage_workspace_governance,
     enforce_assistant_workspace_guard,
 )
+from orcia_api.dependencies._core_providers import get_configured_db_engine
 from orcia_api.routers._assistant_prompt_sanitization import (
     resolve_active_pack_key_from_request,
     resolve_request_locale,
@@ -30,6 +31,7 @@ from orcia_core.orchestration.assistant_governance import (
     UserLayerPreferences,
     WorkspaceLayerSettings,
 )
+from orcia_core.packs import resolve_workspace_pack_ontology_pg
 from orcia_core.permissions.models import UserIdentity
 
 router = APIRouter()
@@ -87,30 +89,49 @@ async def get_assistant_governance_endpoint(
         scope_level="GLOBAL" if workspace_id == "scope-global" else "WORKSPACE",
     )
     can_manage = await can_user_manage_workspace_governance(request, user, workspace_id)
-    resolved_pack = pack_key or resolve_active_pack_key_from_request(request, workspace_id)
+    resolved_pack = pack_key
+    pack_instructions_block = ""
+    engine = get_configured_db_engine(request)
+    if engine is not None and workspace_id != "scope-global":
+        eff_pack = await resolve_workspace_pack_ontology_pg(engine, workspace_id=workspace_id)
+        if not resolved_pack and eff_pack.active_pack_slugs:
+            resolved_pack = ", ".join(eff_pack.active_pack_slugs)
+        if eff_pack.instructions:
+            pack_instructions_block = "\n".join(
+                f"[{ins.get('qualified_ref') or ins.get('slug')}] {ins.get('body_markdown', '')}"
+                for ins in eff_pack.instructions
+                if str(ins.get("body_markdown") or "").strip()
+            )
+    if not resolved_pack:
+        resolved_pack = resolve_active_pack_key_from_request(request, workspace_id)
     view = await svc.get_governance_view_async(
         user,
         workspace_id=workspace_id,
         pack_key=resolved_pack,
         locale=resolve_request_locale(request),
     )
+    assembled_items = [
+        AssembledLayerPreviewSchemaItem(
+            layer_number=layer.layer_number,
+            layer_code=layer.layer_code,
+            label=layer.label,
+            immutable=layer.immutable,
+            origin_badge=layer.origin_badge,
+            content=(
+                f"{layer.content}\n\n{pack_instructions_block}".strip()
+                if layer.layer_code == "2_PACK_METIER" and pack_instructions_block
+                else layer.content
+            ),
+            sha256=layer.sha256,
+        )
+        for layer in view.assembled_layers
+    ]
     return AssistantGovernanceViewResponse(
         workspace_id=view.workspace_id,
         can_edit_workspace_layer=can_manage,
         user_preferences=_to_user_prefs_schema(view.user_preferences),
         workspace_settings=_to_workspace_settings_schema(view.workspace_settings),
-        assembled_layers=[
-            AssembledLayerPreviewSchemaItem(
-                layer_number=layer.layer_number,
-                layer_code=layer.layer_code,
-                label=layer.label,
-                immutable=layer.immutable,
-                origin_badge=layer.origin_badge,
-                content=layer.content,
-                sha256=layer.sha256,
-            )
-            for layer in view.assembled_layers
-        ],
+        assembled_layers=assembled_items,
     )
 
 

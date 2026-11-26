@@ -55,6 +55,65 @@ def build_ontology_resolution_cte_sql() -> str:
     )
 
 
+def build_workspace_pack_ontology_cte_sql() -> str:
+    """Return bounded PG18 CTE evaluating flat `WORKSPACE_PACK` precedence (`R4`, `D6.a`).
+
+    Precedence: `4_RUN_EPHEMERAL -> 3_WORKSPACE (overrides) -> WORKSPACE_PACK
+    (ordered by workspace_pack_activations.priority_order ASC) -> 3_TEAM -> 2_DOMAIN
+    -> 1_ENTERPRISE -> SYSTEM_PACK`.
+    """
+    return (
+        "WITH RECURSIVE team_ancestry AS ("
+        " SELECT id, slug, parent_id, 0 AS depth FROM org_units"
+        " WHERE CAST(id AS TEXT) = :team_org_unit_id OR slug = :team_org_unit_id"
+        " UNION ALL"
+        " SELECT p.id, p.slug, p.parent_id, a.depth + 1 FROM org_units p"
+        " INNER JOIN team_ancestry a ON p.id = a.parent_id AND p.unit_type = 'TEAM'"
+        "), active_packs AS ("
+        " SELECT wpa.pack_bundle_id, wpa.pack_slug, wpa.priority_order"
+        " FROM workspace_pack_activations wpa"
+        " LEFT JOIN workspaces w ON w.id = wpa.workspace_id"
+        " WHERE wpa.is_active = TRUE"
+        "   AND (CAST(wpa.workspace_id AS TEXT) = :workspace_scope_id"
+        "        OR LOWER(w.slug) = LOWER(:workspace_scope_id))"
+        "), ranked_concepts AS ("
+        " SELECT c.*, dpb.slug AS pack_slug, dpb.bundle_kind AS pack_bundle_kind,"
+        "   CASE"
+        "     WHEN c.pack_bundle_id IS NULL AND c.level = '4_RUN_EPHEMERAL' THEN 500000"
+        "     WHEN c.pack_bundle_id IS NULL AND c.level IN ('3_WORKSPACE', '4_WORKSPACE')"
+        "       THEN 400000"
+        "     WHEN ap.pack_bundle_id IS NOT NULL"
+        "       THEN 380000 - COALESCE(ap.priority_order, 9999)"
+        "     WHEN c.pack_bundle_id IS NULL AND c.level = '3_TEAM'"
+        "       THEN 350000 - COALESCE(ta.depth, 0)"
+        "     WHEN c.pack_bundle_id IS NULL AND c.level = '2_DOMAIN' THEN 200000"
+        "     WHEN c.pack_bundle_id IS NULL AND c.level = '1_ENTERPRISE' THEN 100000"
+        "     WHEN dpb.bundle_kind = 'SYSTEM' AND dpb.status = 'PUBLISHED' THEN 50000"
+        "     ELSE 0 END AS priority_rank"
+        " FROM ontology_concepts c"
+        " LEFT JOIN declarative_pack_bundles dpb ON dpb.id = c.pack_bundle_id"
+        " LEFT JOIN active_packs ap ON ap.pack_bundle_id = c.pack_bundle_id"
+        " LEFT JOIN team_ancestry ta ON c.pack_bundle_id IS NULL AND c.level = '3_TEAM'"
+        "   AND (c.scope_id = CAST(ta.id AS TEXT) OR c.scope_id = ta.slug)"
+        " WHERE c.snapshot_branch_status = 'ACTIVE'"
+        "   AND ("
+        "     ap.pack_bundle_id IS NOT NULL"
+        "     OR (c.pack_bundle_id IS NOT NULL AND dpb.bundle_kind = 'SYSTEM'"
+        "         AND dpb.status = 'PUBLISHED')"
+        "     OR (c.pack_bundle_id IS NULL AND ("
+        "       (c.level = '1_ENTERPRISE' AND c.scope_id = :enterprise_scope_id)"
+        "       OR (c.level = '2_DOMAIN' AND c.scope_id = :domain_scope_id)"
+        "       OR (c.level = '3_TEAM' AND (ta.id IS NOT NULL OR c.scope_id = :team_org_unit_id))"
+        "       OR (c.level IN ('3_WORKSPACE', '4_WORKSPACE') AND c.scope_id = :workspace_scope_id)"
+        "       OR (c.level = '4_RUN_EPHEMERAL' AND c.scope_id = :run_id)"
+        "     ))"
+        "   )"
+        ")"
+        " SELECT DISTINCT ON (canonical_term) * FROM ranked_concepts"
+        " ORDER BY canonical_term, priority_rank DESC;"
+    )
+
+
 class ProfileSemanticTranslator:
     """Plan 2 of Triple Active Execution: translates concepts per Human Profile archetype."""
 
@@ -158,6 +217,7 @@ def expand_rag_query_terms(raw_query: str, snapshot: ResolvedOntologySnapshot) -
 __all__ = [
     "ProfileSemanticTranslator",
     "build_ontology_resolution_cte_sql",
+    "build_workspace_pack_ontology_cte_sql",
     "expand_rag_query_terms",
     "validate_blackboard_artifact_schema",
 ]

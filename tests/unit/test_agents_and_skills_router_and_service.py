@@ -379,8 +379,8 @@ async def test_agents_and_skills_postgres18_sql_adapter_queries() -> None:
                     p.get("owner_workspace_id"),
                 )
                 return _FakeResult([])
-            if "SELECT resource_id, uri, title" in sql:
-                return _FakeResult(list(stored_rows.values()))
+            if "ci.resource_id, ci.uri, ci.title" in sql or "SELECT resource_id, uri, title" in sql:
+                return _FakeResult([(*row, None, None) for row in stored_rows.values()])
             if "DELETE FROM catalog_items" in sql:
                 stored_rows.pop(p["resource_id"], None)
                 return _FakeResult([])

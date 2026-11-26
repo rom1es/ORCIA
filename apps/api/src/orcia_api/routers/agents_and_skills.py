@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Path, Query, Request
 
@@ -16,6 +16,9 @@ from orcia_api.routers._agents_and_skills_helpers import (
 )
 from orcia_api.routers._agents_and_skills_helpers import (
     enforce_not_observer as _enforce_not_observer,
+)
+from orcia_api.routers._agents_and_skills_helpers import (
+    resolve_entity_for_api as _resolve_entity_for_api,
 )
 from orcia_api.routers._agents_and_skills_helpers import (
     run_pg_persistence as _run_pg_persistence,
@@ -42,6 +45,7 @@ from orcia_api.schemas.agents_and_skills import (
     ExecuteAgentRequest,
     ExecuteAgentResponse,
     InvokedSkillTraceResponseItem,
+    ResolveAgentOrSkillResponse,
     ToggleAgentGovernanceRequest,
     UpdateAgentSkillsRequest,
     UpsertAgentRequest,
@@ -66,13 +70,40 @@ IdPath = Annotated[str, Path(min_length=1, max_length=128)]
 
 @router.get("", response_model=AgentsAndSkillsListResponse, responses=PROBLEM_RESPONSES)
 async def list_agents_and_skills(
-    request: Request, svc: AgentsAndSkillsSvcDep, persona_key: PersonaQuery = None
+    request: Request,
+    svc: AgentsAndSkillsSvcDep,
+    persona_key: PersonaQuery = None,
+    workspace_id: Annotated[str | None, Query(min_length=1, max_length=128)] = None,
 ) -> AgentsAndSkillsListResponse:
     resolve_request_user(request, persona_key=persona_key)
-    await _sync_from_postgres18_if_enabled(request, svc)
+    await _sync_from_postgres18_if_enabled(request, svc, workspace_id=workspace_id)
     return AgentsAndSkillsListResponse(
         agents=[_serialize_agent(a) for a in svc.agents],
         skills=[_serialize_skill(s) for s in svc.skills],
+        trace_id=_trace(request),
+    )
+
+
+@router.get("/resolve", response_model=ResolveAgentOrSkillResponse, responses=PROBLEM_RESPONSES)
+async def resolve_agent_or_skill_endpoint(
+    request: Request,
+    svc: AgentsAndSkillsSvcDep,
+    ref: Annotated[str, Query(min_length=1, max_length=256)],
+    kind: Annotated[Literal["agent", "skill"], Query()] = "agent",
+    workspace_id: Annotated[str | None, Query(min_length=1, max_length=128)] = None,
+    strict_disambiguation: Annotated[bool, Query()] = False,
+    persona_key: PersonaQuery = None,
+) -> ResolveAgentOrSkillResponse:
+    """Resolve `@<pack>/<slug>`, `/<pack>/<slug>`, `<pack>:<slug>`, or bare handles flatly."""
+    resolve_request_user(request, persona_key=persona_key)
+    priorities = await _sync_from_postgres18_if_enabled(request, svc, workspace_id=workspace_id)
+    return _resolve_entity_for_api(
+        svc,
+        raw_ref=ref,
+        kind=kind,
+        active_pack_priorities=priorities or None,
+        strict_disambiguation=strict_disambiguation,
+        instance=str(request.url.path),
         trace_id=_trace(request),
     )
 

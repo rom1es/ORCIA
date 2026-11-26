@@ -11,13 +11,16 @@ import asyncio
 from dataclasses import replace
 from typing import Any
 
-from orcia_core.catalog.errors import ResourceNotFoundError, ValidationDomainError
 from orcia_core.orchestration._agents_and_skills_executor import (
     delete_skill_from_registries,
     normalize_agent_upsert_lists,
 )
+from orcia_core.orchestration._agents_and_skills_executor import (
+    require_non_empty_field as _require_non_empty,
+)
 from orcia_core.orchestration._agents_and_skills_mixin import AgentLifecycleMethodsMixin
 from orcia_core.orchestration._agents_and_skills_outcomes import ensure_agent_ready_for_activation
+from orcia_core.orchestration._agents_namespacing import annotate_skills_and_agents_namespacing
 from orcia_core.orchestration._agents_skills_locales import get_agents_skills_copy
 from orcia_core.orchestration.agents_and_skills_models import (
     AgentDialogueMechanism,
@@ -44,6 +47,7 @@ from orcia_core.orchestration.agents_and_skills_models import (
     normalize_identifier_slug,
 )
 from orcia_core.orchestration.errors import AgentDraftLifecycleBlockedError
+from orcia_kernel.errors import ResourceNotFoundError
 from orcia_kernel.ports import LLMPort, LlmPromptRequest
 
 
@@ -57,13 +61,6 @@ def _run_llm_sync(llm: LLMPort, request: LlmPromptRequest) -> str:
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
         return pool.submit(lambda: asyncio.run(llm.complete(request)).content).result()
-
-
-def _require_non_empty(value: str, detail_code: str, instance: str | None) -> str:
-    cleaned = value.strip()
-    if not cleaned:
-        raise ValidationDomainError(detail_code=detail_code, instance=instance)
-    return cleaned
 
 
 class AgentsAndSkillsManagementService(AgentLifecycleMethodsMixin):
@@ -89,13 +86,20 @@ class AgentsAndSkillsManagementService(AgentLifecycleMethodsMixin):
         return tuple(self._agents.values())
 
     def sync_from_records(
-        self, *, skills: tuple[ManagedSkillRecord, ...], agents: tuple[ManagedAgentRecord, ...]
+        self,
+        *,
+        skills: tuple[ManagedSkillRecord, ...],
+        agents: tuple[ManagedAgentRecord, ...],
+        active_pack_priorities: dict[str, int] | None = None,
     ) -> None:
-        valid_ids = {s.skill_id for s in skills}
-        self._skills = {s.skill_id: s for s in skills}
+        ann_skills, ann_agents = annotate_skills_and_agents_namespacing(
+            skills, agents, active_pack_priorities=active_pack_priorities
+        )
+        valid_ids = {s.skill_id for s in ann_skills}
+        self._skills = {s.skill_id: s for s in ann_skills}
         self._agents = {
             a.agent_id: replace(a, skill_ids=tuple(sid for sid in a.skill_ids if sid in valid_ids))
-            for a in agents
+            for a in ann_agents
         }
 
     def get_skill(self, skill_id: str, *, instance: str | None = None) -> ManagedSkillRecord:
@@ -207,15 +211,7 @@ class AgentsAndSkillsManagementService(AgentLifecycleMethodsMixin):
         clean_inst = _require_non_empty(instructions, "ERR_AGENT_INSTRUCTIONS_REQUIRED", instance)
         slug = normalize_identifier_slug(clean_name, fallback_prefix="agent")
         resolved_id = (agent_id or "").strip() or f"agent-{slug}"
-        (
-            valid_skills,
-            clean_prompt_ref,
-            clean_modes,
-            clean_sources,
-            clean_views,
-            norm_perms,
-            clean_guardrails,
-        ) = normalize_agent_upsert_lists(
+        normalized = normalize_agent_upsert_lists(
             skill_ids=skill_ids,
             valid_skills_map=self._skills,
             invocation_modes=invocation_modes,
@@ -225,6 +221,8 @@ class AgentsAndSkillsManagementService(AgentLifecycleMethodsMixin):
             guardrails=guardrails,
             prompt_ref=prompt_ref,
         )
+        valid_skills, clean_prompt_ref, clean_modes, clean_sources = normalized[:4]
+        clean_views, norm_perms, clean_guardrails = normalized[4:]
         record = build_managed_agent_record(
             resolved_id=resolved_id,
             slug=slug,

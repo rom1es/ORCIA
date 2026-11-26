@@ -116,6 +116,20 @@ export function createBootstrapAndOntologyDomainClient(
       requestJson<OntologyAndRagStateResponse>(`/api/v1/ontology-rag/state${fq(fixture)}`),
     resolveOntologyHierarchy: (payload: OntologyResolveRequest, fixture = false) =>
       requestJson<OntologyResolveResponse>(`/api/v1/ontology-rag/ontology/resolve${fq(fixture)}`, "POST", payload),
+    getEffectiveWorkspaceOntology: (
+      workspaceId: string,
+      humanProfile = "TECH_LEAD",
+      fixture = false,
+    ) => {
+      const qs = new URLSearchParams({
+        workspace_id: workspaceId,
+        human_profile: humanProfile,
+      });
+      if (fixture) qs.set("fixture", "true");
+      return requestJson<OntologyResolveResponse>(
+        `/api/v1/ontology-rag/ontology/effective?${qs.toString()}`,
+      );
+    },
     upsertOntologyConcept: (payload: OntologyUpsertConceptRequest, fixture = false) =>
       requestJson<OntologyConceptSchemaItem>(`/api/v1/ontology-rag/ontology/concepts${fq(fixture)}`, "POST", payload),
     simulateOntologyWhatIf: (payload: WhatIfSimulationRequest, fixture = false) =>

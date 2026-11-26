@@ -57,6 +57,9 @@ class OntologyConceptEntity:
     expected_schema: dict[str, str] = field(default_factory=dict)
     introduced_in_snapshot_id: str | None = None
     snapshot_branch_status: SnapshotBranchStatus = "ACTIVE"
+    pack_bundle_id: str | None = None
+    pack_slug: str | None = None
+    bundle_kind: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,6 +72,8 @@ class OntologyRelationEntity:
     target_concept_key: str
     relation_type: str
     cardinality: str = "1..N"
+    pack_bundle_id: str | None = None
+    pack_slug: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,6 +87,8 @@ class OntologyAxiomEntity:
     scope_id: str
     rule_expression: str
     immutable: bool = False
+    pack_bundle_id: str | None = None
+    pack_slug: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,6 +101,7 @@ class ResolvedOntologySnapshot:
     relations: tuple[OntologyRelationEntity, ...]
     axioms: tuple[OntologyAxiomEntity, ...]
     resolution_chain_scopes: tuple[str, ...]
+    pack_priorities: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)

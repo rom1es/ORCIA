@@ -13,6 +13,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from orcia_core.domain.namespacing import parse_qualified_entity_ref
 from orcia_core.ports.assistant_tool_executor_port import (
     AssistantToolCatalogContext,
     AuthorizedToolDescriptor,
@@ -134,11 +135,25 @@ def _build_surgical_descriptors() -> tuple[AuthorizedToolDescriptor, ...]:
 
 
 def _skill_to_descriptor(
-    skill: SkillCatalogEntry, *, workspace_id: str
+    skill: SkillCatalogEntry,
+    *,
+    workspace_id: str,
+    qualify_tool_name: bool = False,
 ) -> AuthorizedToolDescriptor:
     slug = skill.slug.strip().replace("-", "_") or "custom"
+    tool_name = f"skill_{slug}"
+    if qualify_tool_name:
+        pack_prefix = ""
+        if skill.uri and skill.uri.lower().startswith(("orcia://packs/", "pack://")):
+            parsed = parse_qualified_entity_ref(skill.uri, default_kind="skills")
+            if parsed.pack_slug:
+                pack_prefix = parsed.pack_slug.replace("-", "_")
+        elif ":" in skill.skill_id:
+            pack_prefix = skill.skill_id.split(":", 1)[0].strip().lower().replace("-", "_")
+        if pack_prefix:
+            tool_name = f"skill_{pack_prefix}__{slug}"
     return AuthorizedToolDescriptor(
-        tool_name=f"skill_{slug}",
+        tool_name=tool_name,
         description=f"{skill.name}: {skill.objective}".strip(),
         parameters_schema=build_skill_parameters_schema(skill.input_parameters),
         category="skill",
@@ -245,9 +260,19 @@ def build_authorized_tool_catalog(
         )
 
     if can_execute:
+        slug_counts: dict[str, int] = {}
         for skill in ctx.skills:
             if skill.enabled_in_workspace:
-                _append_unique(_skill_to_descriptor(skill, workspace_id=ctx.workspace_id))
+                norm_s = skill.slug.strip().lower()
+                slug_counts[norm_s] = slug_counts.get(norm_s, 0) + 1
+        for skill in ctx.skills:
+            if skill.enabled_in_workspace:
+                is_colliding = slug_counts.get(skill.slug.strip().lower(), 0) > 1
+                _append_unique(
+                    _skill_to_descriptor(
+                        skill, workspace_id=ctx.workspace_id, qualify_tool_name=is_colliding
+                    )
+                )
 
     for mcp_spec in ctx.mcp_tools:
         if not mcp_spec.mcp_exposed or mcp_spec.permission_mode == "NONE":

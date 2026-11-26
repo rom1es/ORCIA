@@ -620,12 +620,12 @@ capabilities:
     title: Gouvernance de personnalisation 3 niveaux (Mode A)
     fr: [FR-33]
     origin: epic
-    origin_ref: 10-1 + 26-1 + 26-4b + 26-9 + 26-10 + 29-3 + 29-5 + 30-1 + 30-2 + 30-6
+    origin_ref: 10-1 + 26-1 + 26-4b + 26-9 + 26-10 + 29-3 + 29-5 + 30-1 + 30-2 + 30-6 + 31-3
     status: live
     kind: feature
     uj: [UJ-17]
     db_tables: [workspace_customization_overrides, user_preferences]
-    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, tests/unit/test_story_26_4b_governance_feedback_folders_and_audit.py, tests/unit/test_story_29_3_assistant_prompt_sanitization.py, tests/unit/test_story_29_3_governance_mappers_cov.py, tests/unit/test_story_29_3_governance_service_cov.py, tests/unit/test_story_29_3_turn_plan_and_preview_cov.py, tests/unit/test_story_30_1_assistant_settings_empty_instructions.py, tests/unit/test_story_30_2_assistant_conversational_prompt.py, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, tests/security/test_story_26_10_assistant_security_redteam.py, apps/web/src/__tests__/story-29-3-assistant-sanitization-and-rbac-notices.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-30-1-assistant-settings-explicit-save.test.tsx, apps/web/src/__tests__/epic-30-ux-hardening-audit.test.ts, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts]
+    tests: [tests/security/test_story_26_1_assistant_security_hardening.py, tests/unit/test_story_26_4b_governance_feedback_folders_and_audit.py, tests/unit/test_story_29_3_assistant_prompt_sanitization.py, tests/unit/test_story_29_3_governance_mappers_cov.py, tests/unit/test_story_29_3_governance_service_cov.py, tests/unit/test_story_29_3_turn_plan_and_preview_cov.py, tests/unit/test_story_30_1_assistant_settings_empty_instructions.py, tests/unit/test_story_30_2_assistant_conversational_prompt.py, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, tests/unit/packs/test_story_31_3_ontology_and_autocomplete.py, tests/integration/api/test_story_26_4b_pg18_persistence_governance_feedback_folders.py, tests/integration/test_story_31_3_qualified_namespacing_and_ontology_postgres18.py, tests/security/test_story_26_10_assistant_security_redteam.py, apps/web/src/__tests__/story-29-3-assistant-sanitization-and-rbac-notices.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-30-1-assistant-settings-explicit-save.test.tsx, apps/web/src/__tests__/story-31-3-autocomplete-collision.test.ts, apps/web/src/__tests__/epic-30-ux-hardening-audit.test.ts, apps/web/e2e/02-assistant-streaming-and-folders.spec.ts, apps/web/e2e/22-assistant-tool-loop-approval-and-reattach.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts]
     verification: runtime
     verified_at: "2026-11-26"
     surfaces: { route: /assistant, api: "assistant_workspace_governance.py, assistant_governance.py, _assistant_governance_async_views.py, _assistant_governance_sync.py, assistant_governance_models.py, assistant_prompt_preview.py, assistant_prompt_builder.py, assistant_prompt_locales.py, _assistant_conversational_prompt.py, _assistant_conversational_locales.py, _assistant_profile_locales.py, sql_assistant_governance.py", ui: AssistantGovernanceModalAndStudio }
@@ -713,12 +713,12 @@ capabilities:
     title: Services MCP, agents distants A2A et banc de test
     fr: [FR-35]
     origin: epic
-    origin_ref: 11-3 + 18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact + 29-5 + 30-5 + 30-6
+    origin_ref: 11-3 + 18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact + 29-5 + 30-5 + 30-6 + 31-3
     status: live
     kind: feature
     uj: [UJ-9, UJ-19]
     db_tables: [catalog_items, enterprise_connectors, audit_ledger]
-    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, tests/unit/test_epic_11_story_11_3_test_bench_and_mcp_exposure.py, tests/unit/test_story_30_5_agents_lifecycle_and_mcp.py, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, tests/integration/test_story_11_3_mcp_and_test_bench_postgres18_redis.py, tests/integration/api/test_story_30_5_agent_governance_and_lifecycle_pg18.py, tests/unit/connectors/test_story_18_3_codegraph_mcp_tools_and_providers.py]
+    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, tests/unit/test_epic_11_story_11_3_test_bench_and_mcp_exposure.py, tests/unit/test_story_30_5_agents_lifecycle_and_mcp.py, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, tests/unit/packs/test_story_31_3_namespacing_and_flat_ontology.py, tests/integration/test_story_11_3_mcp_and_test_bench_postgres18_redis.py, tests/integration/api/test_story_30_5_agent_governance_and_lifecycle_pg18.py, tests/integration/test_story_31_3_qualified_namespacing_and_ontology_postgres18.py, tests/unit/connectors/test_story_18_3_codegraph_mcp_tools_and_providers.py]
     verification: runtime
     verified_at: "2026-11-26"
     surfaces: { api: "mcp_and_test_bench.py + codegraph_mcp.py + _agents_lifecycle_guards.py", ui: RemoteServiceTestBenchAndMcpExposureView }
@@ -741,12 +741,12 @@ capabilities:
     title: Gestion, création et exécution des agents et compétences (skills)
     fr: [FR-24, FR-36]
     origin: adhoc
-    origin_ref: 2026-11-05-gestion-creation-et-execution-agents-et-competences-skills + 29-5 + 29-7 + 30-5 + 30-6
+    origin_ref: 2026-11-05-gestion-creation-et-execution-agents-et-competences-skills + 29-5 + 29-7 + 30-5 + 30-6 + 31-3
     status: live
     kind: feature
     uj: [UJ-9, UJ-19]
     db_tables: [catalog_items, catalog_acl_entries]
-    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, apps/web/e2e/29-epic-29-canonical-headers-bilingual.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-30-5-agent-lifecycle-and-errors.test.tsx, apps/web/src/__tests__/epic-30-ux-hardening-audit.test.ts, apps/web/src/__tests__/page-header-structure-and-visual-grammar-audit.test.tsx, packages/ui/src/__tests__/agents-and-skills.test.tsx, packages/ui/src/__tests__/agents-and-skills-studio-and-governance.test.tsx, packages/ui/src/__tests__/story-30-5-agent-modal-save-and-status.test.tsx, tests/unit/test_story_30_5_agents_lifecycle_and_mcp.py, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, tests/security/test_story_30_6_prompt_leak_and_draft_redteam.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_story_30_5_agent_governance_and_lifecycle_pg18.py]
+    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, apps/web/e2e/29-epic-29-canonical-headers-bilingual.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-30-5-agent-lifecycle-and-errors.test.tsx, apps/web/src/__tests__/story-31-3-autocomplete-collision.test.ts, apps/web/src/__tests__/epic-30-ux-hardening-audit.test.ts, apps/web/src/__tests__/page-header-structure-and-visual-grammar-audit.test.tsx, packages/ui/src/__tests__/agents-and-skills.test.tsx, packages/ui/src/__tests__/agents-and-skills-studio-and-governance.test.tsx, packages/ui/src/__tests__/story-30-5-agent-modal-save-and-status.test.tsx, tests/unit/test_story_30_5_agents_lifecycle_and_mcp.py, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, tests/unit/packs/test_story_31_3_namespacing_and_flat_ontology.py, tests/unit/packs/test_story_31_3_flat_loaders_and_parser_edges.py, tests/security/test_story_30_6_prompt_leak_and_draft_redteam.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_story_30_5_agent_governance_and_lifecycle_pg18.py, tests/integration/test_story_31_3_qualified_namespacing_and_ontology_postgres18.py]
     verification: runtime
     verified_at: "2026-11-26"
     surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py, _agents_and_skills_skills_routes.py, _agents_lifecycle_guards.py)", ui: AgentsAndSkillsManagerView }
@@ -769,7 +769,7 @@ capabilities:
     title: Garde-fous qualité UI/CI (zéro bouton muet, popups RGAA/Échap, zéro donnée fictive, anti-LastPass, séparation design system, socle Radix UI AD-22)
     fr: []
     origin: adhoc
-    origin_ref: "2026-11-04-audit-et-cablage-vertical-epics-1-a-7 + 2026-11-04-cablage-vertical-persistance-epics-8-a-12 + 2026-11-04-audit-et-factorisation-popups-rgaa-echap-annuler + 2026-11-05-audit-et-purge-integrale-donnees-fictives-et-mocks-hors-tests + 2026-11-05-audit-global-inputs-secrets-et-parade-anti-lastpass-hors-login + 2026-11-05-audit-separation-design-system-look-and-feel-logique-et-contenus + 2026-11-06-audit-global-zero-bouton-muet-cablage-callbacks-et-garde-fous-ci + 2026-11-05-unification-ux-onglets-bleu-intense-actif-bleu-pale-inactif + 2026-11-05-renommage-icone-documentation-et-message-export-html + 2026-11-08-bugs-p1-e2e-et-socle-radix-ui + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 27-1..27-8 (epic-27 bilingual FR/EN & zero-baseline lock) + 29-4 + 29-6 + 29-7 + 30-1 + 30-5 + 30-6"
+    origin_ref: "2026-11-04-audit-et-cablage-vertical-epics-1-a-7 + 2026-11-04-cablage-vertical-persistance-epics-8-a-12 + 2026-11-04-audit-et-factorisation-popups-rgaa-echap-annuler + 2026-11-05-audit-et-purge-integrale-donnees-fictives-et-mocks-hors-tests + 2026-11-05-audit-global-inputs-secrets-et-parade-anti-lastpass-hors-login + 2026-11-05-audit-separation-design-system-look-and-feel-logique-et-contenus + 2026-11-06-audit-global-zero-bouton-muet-cablage-callbacks-et-garde-fous-ci + 2026-11-05-unification-ux-onglets-bleu-intense-actif-bleu-pale-inactif + 2026-11-05-renommage-icone-documentation-et-message-export-html + 2026-11-08-bugs-p1-e2e-et-socle-radix-ui + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 27-1..27-8 (epic-27 bilingual FR/EN & zero-baseline lock) + 29-4 + 29-6 + 29-7 + 30-1 + 30-5 + 30-6 + 31-3"
     status: live
     kind: foundation
     e2e_exempt_reason: "Garde-fous transverses d'hygiène UI/CI (zéro bouton muet, modales RGAA/Échap, zéro donnée fictive, anti-LastPass, séparation @orcia/ui, socle Radix UI AD-22, verrous déterministes i18n FR/EN, grammaire visuelle Cobalt 3 niveaux & en-tête canonique) sans parcours métier isolé ; couverts par AD-17 Couches 1a/1b (audit AST/Vitest & Radix UI), contrôles CI statiques et spec E2E bilingue 23-bilingual-fr-en-i18n-and-rfc9457.spec.ts."
@@ -1032,7 +1032,7 @@ capabilities:
     title: Provenance auditable immuable (audit_ledger append-only), comptabilité FinOps consolidée, impact cognitif et télémétrie multi-métriques MCP
     fr: [FR-25, FR-26, FR-27]
     origin: epic
-    origin_ref: epic-6 (6-1..6-4) + 29-1 + 29-5
+    origin_ref: epic-6 (6-1..6-4) + 29-1 + 29-5 + 31-3
     status: live
     kind: feature
     uj: [UJ-8]

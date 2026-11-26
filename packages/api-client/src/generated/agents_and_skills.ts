@@ -14,6 +14,7 @@ export type ExecuteAgentResponse = components["schemas"]["ExecuteAgentResponse"]
 export type ExecuteSkillRequest = components["schemas"]["ExecuteSkillRequest"];
 export type ExecuteSkillResponse = components["schemas"]["ExecuteSkillResponse"];
 export type InvokedSkillTraceResponseItem = components["schemas"]["InvokedSkillTraceResponseItem"];
+export type ResolveAgentOrSkillResponse = components["schemas"]["ResolveAgentOrSkillResponse"];
 export type SkillItemResponse = components["schemas"]["SkillItemResponse"];
 export type ToggleAgentGovernanceRequest = components["schemas"]["ToggleAgentGovernanceRequest"];
 export type UpdateAgentSkillsRequest = components["schemas"]["UpdateAgentSkillsRequest"];

@@ -444,6 +444,13 @@
             "title": "Allowed Rag Sources",
             "type": "array"
           },
+          "collision_pack_slugs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Collision Pack Slugs",
+            "type": "array"
+          },
           "dialogue_mechanism": {
             "default": "questionnaire_prealable",
             "enum": [
@@ -496,6 +503,11 @@
             },
             "title": "Invocation Modes",
             "type": "array"
+          },
+          "is_colliding": {
+            "default": false,
+            "title": "Is Colliding",
+            "type": "boolean"
           },
           "lifecycle_status": {
             "default": "DRAFT",
@@ -560,6 +572,18 @@
             "title": "Output Contract Format",
             "type": "string"
           },
+          "pack_slug": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pack Slug"
+          },
           "posture": {
             "default": "PRODUCER",
             "enum": [
@@ -581,6 +605,12 @@
             ],
             "title": "Prompt Ref"
           },
+          "qualified_ref": {
+            "default": "",
+            "maxLength": 256,
+            "title": "Qualified Ref",
+            "type": "string"
+          },
           "remote_endpoint_url": {
             "anyOf": [
               {
@@ -592,6 +622,16 @@
               }
             ],
             "title": "Remote Endpoint Url"
+          },
+          "resolution_tier": {
+            "default": "WORKSPACE_OVERRIDE",
+            "enum": [
+              "WORKSPACE_OVERRIDE",
+              "WORKSPACE_PACK",
+              "SYSTEM_PACK"
+            ],
+            "title": "Resolution Tier",
+            "type": "string"
           },
           "role_mission": {
             "maxLength": 2000,
@@ -17030,6 +17070,28 @@
             "title": "Level",
             "type": "string"
           },
+          "pack_bundle_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pack Bundle Id"
+          },
+          "pack_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pack Slug"
+          },
           "parent_concept_id": {
             "anyOf": [
               {
@@ -17180,6 +17242,28 @@
               }
             ],
             "title": "Next Promotion Scope Id"
+          },
+          "pack_bundle_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pack Bundle Id"
+          },
+          "pack_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pack Slug"
           },
           "parent_concept_id": {
             "anyOf": [
@@ -17809,11 +17893,42 @@
       "OntologyResolveResponse": {
         "additionalProperties": false,
         "properties": {
+          "active_pack_priorities": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Active Pack Priorities",
+            "type": "object"
+          },
+          "broker_policies": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Broker Policies",
+            "type": "array"
+          },
           "concepts": {
             "items": {
               "$ref": "#/components/schemas/OntologyConceptSchemaItem"
             },
             "title": "Concepts",
+            "type": "array"
+          },
+          "dna_mechanisms": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Dna Mechanisms",
+            "type": "array"
+          },
+          "instructions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Instructions",
             "type": "array"
           },
           "profile_labels": {
@@ -22451,6 +22566,90 @@
         "title": "ResetCircuitBreakerResponse",
         "type": "object"
       },
+      "ResolveAgentOrSkillResponse": {
+        "additionalProperties": false,
+        "description": "Deterministic resolution payload for a qualified or bare `@agent` / `/skill` handle.",
+        "properties": {
+          "candidates": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "collision_pack_slugs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Collision Pack Slugs",
+            "type": "array"
+          },
+          "entity_id": {
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "is_colliding": {
+            "default": false,
+            "title": "Is Colliding",
+            "type": "boolean"
+          },
+          "kind": {
+            "enum": [
+              "agent",
+              "skill"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "pack_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pack Slug"
+          },
+          "qualified_ref": {
+            "title": "Qualified Ref",
+            "type": "string"
+          },
+          "raw_ref": {
+            "title": "Raw Ref",
+            "type": "string"
+          },
+          "resolution_tier": {
+            "enum": [
+              "WORKSPACE_OVERRIDE",
+              "WORKSPACE_PACK",
+              "SYSTEM_PACK"
+            ],
+            "title": "Resolution Tier",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "raw_ref",
+          "entity_id",
+          "slug",
+          "qualified_ref",
+          "resolution_tier",
+          "trace_id"
+        ],
+        "title": "ResolveAgentOrSkillResponse",
+        "type": "object"
+      },
       "ResolveArtifactDestinationRequest": {
         "additionalProperties": false,
         "description": "Request to resolve the 4-level artifact destination cascade (`Story 11.1`).",
@@ -23944,6 +24143,13 @@
         "additionalProperties": false,
         "description": "Transport schema for a reusable Skill.",
         "properties": {
+          "collision_pack_slugs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Collision Pack Slugs",
+            "type": "array"
+          },
           "command_handle": {
             "maxLength": 130,
             "minLength": 2,
@@ -23975,6 +24181,11 @@
             "title": "Instructions",
             "type": "string"
           },
+          "is_colliding": {
+            "default": false,
+            "title": "Is Colliding",
+            "type": "boolean"
+          },
           "name": {
             "maxLength": 255,
             "minLength": 1,
@@ -23985,6 +24196,34 @@
             "maxLength": 2000,
             "minLength": 1,
             "title": "Objective",
+            "type": "string"
+          },
+          "pack_slug": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pack Slug"
+          },
+          "qualified_ref": {
+            "default": "",
+            "maxLength": 256,
+            "title": "Qualified Ref",
+            "type": "string"
+          },
+          "resolution_tier": {
+            "default": "WORKSPACE_OVERRIDE",
+            "enum": [
+              "WORKSPACE_OVERRIDE",
+              "WORKSPACE_PACK",
+              "SYSTEM_PACK"
+            ],
+            "title": "Resolution Tier",
             "type": "string"
           },
           "sha256": {
@@ -34200,6 +34439,24 @@
               ],
               "title": "Persona Key"
             }
+          },
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace Id"
+            }
           }
         ],
         "responses": {
@@ -35140,6 +35397,183 @@
           }
         ],
         "summary": "Update Agent Skills Endpoint",
+        "tags": [
+          "agents-and-skills"
+        ]
+      }
+    },
+    "/api/v1/agents-and-skills/resolve": {
+      "get": {
+        "description": "Resolve `@<pack>/<slug>`, `/<pack>/<slug>`, `<pack>:<slug>`, or bare handles flatly.",
+        "operationId": "resolve_agent_or_skill_endpoint_api_v1_agents_and_skills_resolve_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ref",
+            "required": true,
+            "schema": {
+              "maxLength": 256,
+              "minLength": 1,
+              "title": "Ref",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "default": "agent",
+              "enum": [
+                "agent",
+                "skill"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workspace Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "strict_disambiguation",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Strict Disambiguation",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolveAgentOrSkillResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Resolve Agent Or Skill Endpoint",
         "tags": [
           "agents-and-skills"
         ]
@@ -49154,6 +49588,144 @@
           }
         ],
         "summary": "Upsert Ontology Concept",
+        "tags": [
+          "ontology-rag"
+        ]
+      }
+    },
+    "/api/v1/ontology-rag/ontology/effective": {
+      "get": {
+        "operationId": "get_effective_workspace_ontology_api_v1_ontology_rag_ontology_effective_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "human_profile",
+            "required": false,
+            "schema": {
+              "default": "TECH_LEAD",
+              "maxLength": 64,
+              "minLength": 1,
+              "title": "Human Profile",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "fixture",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Fixture",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OntologyResolveResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Resolve flat workspace-pack effective ontology, DNA, policies & instructions",
         "tags": [
           "ontology-rag"
         ]

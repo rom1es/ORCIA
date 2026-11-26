@@ -7,6 +7,7 @@ import type {
   ExecuteAgentResponse,
   ExecuteSkillRequest,
   ExecuteSkillResponse,
+  ResolveAgentOrSkillResponse,
   SkillItemResponse,
   ToggleAgentGovernanceRequest,
   UpdateAgentSkillsRequest,
@@ -19,9 +20,32 @@ type RequestJsonFn = ReturnType<typeof createRequestJson>;
 
 export function createAgentsAndSkillsDomainClient(requestJson: RequestJsonFn) {
   return {
-    listAgentsAndSkills(personaKey?: string): Promise<AgentsAndSkillsListResponse> {
+    listAgentsAndSkills(
+      personaKey?: string,
+      workspaceId?: string,
+    ): Promise<AgentsAndSkillsListResponse> {
+      const qs = new URLSearchParams();
+      if (personaKey) qs.set("persona_key", personaKey);
+      if (workspaceId) qs.set("workspace_id", workspaceId);
+      const q = qs.toString();
       return requestJson<AgentsAndSkillsListResponse>(
-        `/api/v1/agents-and-skills${buildPersonaQuery(personaKey)}`,
+        `/api/v1/agents-and-skills${q ? `?${q}` : ""}`,
+      );
+    },
+    resolveAgentOrSkill(params: {
+      ref: string;
+      kind?: "agent" | "skill";
+      workspaceId?: string;
+      strictDisambiguation?: boolean;
+      personaKey?: string;
+    }): Promise<ResolveAgentOrSkillResponse> {
+      const qs = new URLSearchParams({ ref: params.ref });
+      if (params.kind) qs.set("kind", params.kind);
+      if (params.workspaceId) qs.set("workspace_id", params.workspaceId);
+      if (params.strictDisambiguation) qs.set("strict_disambiguation", "true");
+      if (params.personaKey) qs.set("persona_key", params.personaKey);
+      return requestJson<ResolveAgentOrSkillResponse>(
+        `/api/v1/agents-and-skills/resolve?${qs.toString()}`,
       );
     },
     upsertSkill(

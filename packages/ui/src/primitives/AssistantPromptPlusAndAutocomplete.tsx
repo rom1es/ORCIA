@@ -41,7 +41,7 @@ export function detectActiveAutocompleteTrigger(promptText: string): {
   readonly query: string;
   readonly tokenStartIndex: number;
 } | null {
-  const match = /(?:^|\s)([@/])([a-zA-Z0-9_-]*)$/.exec(promptText);
+  const match = /(?:^|\s)([@/])([a-zA-Z0-9_/:.-]*)$/.exec(promptText);
   if (!match) {
     return null;
   }

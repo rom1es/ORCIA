@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
+
 from orcia_core.packs._error_catalog import PACKS_ERROR_CATALOG
 from orcia_kernel.errors import OrciaDomainError
 
@@ -94,6 +96,40 @@ class PackScopeEscalationForbiddenError(OrciaDomainError):
     type_slug = "pack-scope-escalation-forbidden"
 
 
+class PackEntityCollisionError(OrciaDomainError):
+    """Raised (`HTTP 409`) when strict disambiguation detects an ambiguous entity ref."""
+
+    error_code = "ERR_PACK_ENTITY_AMBIGUOUS"
+    http_status = 409
+    type_slug = "pack-entity-ambiguous"
+
+    def __init__(
+        self,
+        *,
+        entity_ref: str = "",
+        candidates: Sequence[str] = (),
+        detail_override: str | None = None,
+        detail_code: str | None = None,
+        detail_params: Mapping[str, object] | None = None,
+        instance: str | None = None,
+        permission_broker_hint: str | None = None,
+    ) -> None:
+        self.entity_ref = entity_ref
+        self.candidates = tuple(candidates)
+        merged_params = dict(detail_params) if detail_params is not None else {}
+        if entity_ref and "entity_ref" not in merged_params:
+            merged_params["entity_ref"] = entity_ref
+        if candidates and "candidates" not in merged_params:
+            merged_params["candidates"] = ", ".join(candidates)
+        super().__init__(
+            detail_override=detail_override,
+            detail_code=detail_code or ("ERR_PACK_ENTITY_AMBIGUOUS_DETAIL" if candidates else None),
+            detail_params=merged_params or None,
+            instance=instance,
+            permission_broker_hint=permission_broker_hint,
+        )
+
+
 PACK_DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     PackExecutableHookForbiddenError,
     PackInvalidArchiveError,
@@ -104,6 +140,7 @@ PACK_DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     ResourcePinnedByActiveRunsError,
     EntityReferencedByPackDraftError,
     PackBundleNotFoundError,
+    PackEntityCollisionError,
     PackSystemDeleteForbiddenError,
     PackScopeEscalationForbiddenError,
 )
@@ -114,6 +151,7 @@ __all__ = [
     "PACK_DOMAIN_ERROR_CLASSES",
     "PackBundleNotFoundError",
     "PackClosureIncompleteError",
+    "PackEntityCollisionError",
     "PackExecutableHookForbiddenError",
     "PackInvalidArchiveError",
     "PackPiiOrInfraLeakError",

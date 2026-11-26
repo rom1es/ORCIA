@@ -110,6 +110,23 @@ async def resolve_ontology_hierarchy(
     return await resolve_ontology_for_caller(request, body=body, gov=gov, fixture=fixture)
 
 
+@router.get(
+    "/ontology/effective",
+    response_model=s.OntologyResolveResponse,
+    summary="Resolve flat workspace-pack effective ontology, DNA, policies & instructions",
+    responses=PROBLEM_RESPONSES,
+)
+async def get_effective_workspace_ontology(
+    request: Request,
+    workspace_id: str = Query(..., min_length=1, max_length=128),
+    human_profile: str = Query(default="TECH_LEAD", min_length=1, max_length=64),
+    fixture: bool = Query(default=False),
+) -> s.OntologyResolveResponse:
+    gov, _, _ = get_ontology_and_rag_services(request, fixture=fixture)
+    body = s.OntologyResolveRequest(workspace_scope_id=workspace_id, human_profile=human_profile)
+    return await resolve_ontology_for_caller(request, body=body, gov=gov, fixture=fixture)
+
+
 @router.post(
     "/ontology/what-if",
     response_model=s.WhatIfSimulationResponse,

@@ -48,8 +48,8 @@ async def sync_evaluator_topology_from_pg(
                     await conn.execute(
                         sa.text(
                             "SELECT id, slug, name, unit_type, parent_id, "
-                            "lead_user_id, lead_user_ids_jsonb, member_user_ids_jsonb "
-                            "FROM org_units;"
+                            "lead_user_id, lead_user_ids_jsonb, member_user_ids_jsonb, "
+                            "ontology_lead_user_ids_jsonb FROM org_units;"
                         )
                     )
                 )
@@ -65,6 +65,9 @@ async def sync_evaluator_topology_from_pg(
                 raw_members = r.get("member_user_ids_jsonb") or []
                 if isinstance(raw_members, str):
                     raw_members = json.loads(raw_members)
+                raw_onto_leads = r.get("ontology_lead_user_ids_jsonb") or []
+                if isinstance(raw_onto_leads, str):
+                    raw_onto_leads = json.loads(raw_onto_leads)
                 node = OrgUnitNode(
                     id=ou_id,
                     slug=str(r["slug"]),
@@ -74,6 +77,7 @@ async def sync_evaluator_topology_from_pg(
                     lead_user_id=str(r["lead_user_id"]) if r["lead_user_id"] else None,
                     lead_user_ids=tuple(str(x) for x in raw_leads),
                     member_user_ids=tuple(str(x) for x in raw_members),
+                    ontology_lead_user_ids=tuple(str(x) for x in raw_onto_leads),
                 )
                 pg_org_units.append(node)
                 if not authoritative_pg_only:

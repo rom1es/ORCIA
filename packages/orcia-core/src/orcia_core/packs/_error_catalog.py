@@ -129,6 +129,30 @@ PACKS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
             "Importing a SYSTEM pack bundle or GLOBAL scope pack via user API is forbidden.",
         ),
     },
+    "ERR_PACK_ENTITY_AMBIGUOUS": {
+        "fr": LocalizedErrorCopy(
+            "Référence d'entité de pack ambiguë",
+            "Plusieurs packs actifs déclarent ce slug ; utilisez une référence qualifiée "
+            "@<pack_slug>/<slug> ou /<pack_slug>/<slug>.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Ambiguous pack entity reference",
+            "Multiple active packs declare this slug; use a qualified reference "
+            "@<pack_slug>/<slug> or /<pack_slug>/<slug>.",
+        ),
+    },
+    "ERR_PACK_ENTITY_AMBIGUOUS_DETAIL": {
+        "fr": LocalizedErrorCopy(
+            "Référence d'entité de pack ambiguë",
+            "La référence « {entity_ref} » correspond à plusieurs candidats ({candidates}). "
+            "Précisez la référence qualifiée.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Ambiguous pack entity reference",
+            "Reference '{entity_ref}' matches multiple candidates ({candidates}). "
+            "Specify the qualified reference.",
+        ),
+    },
 }
 
 register_domain_error_catalog(PACKS_ERROR_CATALOG)

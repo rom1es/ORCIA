@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 64,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 249,
+    "techLeadReportsCount": 250,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -548,6 +548,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-26",
+      "phaseOrStory": "Story 31.3",
+      "reportFile": "31-3-qualified-pack-namespacing-and-flat-workspace-pack-ontology-tech-lead-report.md",
+      "domain": "Epic 31 Lot 2 — Qualified {pack_slug}:{entity_slug} / @<pack>/<slug> Namespacing & Flat Priority-Ordered Workspace Pack Ontology (D6.a, R1, R3, R4, CAP-070, CAP-082, CAP-090, CAP-100, CAP-200)",
+      "summary": "Closed (done, independent Testing Verifier verified): extracted pure namespacing primitives (domain/namespacing.py 131 L, _namespacing_parser.py 218 L, packs/namespacing.py 120 L, catalog/_uri_parser.py 85 L) normalizing pack://, <pack>:<entity>, @<pack>/<slug>, /<pack>/<slug>, and orcia://packs/... with 409 ERR_PACK_ENTITY_AMBIGUOUS; wired flat workspace-pack ontology, DNA mechanisms, broker policies & pack instructions (sql_pack_ontology_resolution.py 146 L, _sql_pack_flat_loaders.py 208 L, OntologyHierarchyResolver, GET /api/v1/ontology-rag/ontology/effective) respecting workspace_overrides > priority_order ASC > SYSTEM and DEFERRABLE priority swaps without pack-to-pack inheritance; updated agents/skills SQL hydration & lifecycle guards (_agents_namespacing.py 232 L, _sql_agents_pack_queries.py 118 L, _topology_sync.py 205 L), OpenAPI SDK (0-diff), and UI autocomplete collision badges (assistantAutocompleteHelpers.ts 236 L, AssistantAutocompleteDropdown.tsx 79 L); all production files <= 300 L; verified 98% scoped branch coverage (95 tests), 1,242 passed tests/unit, 193 passed evals/security/contract, 9 passed PG18+Redis+S3 testcontainers, 9/9 Turbo (20+154+370 = 544 JS/TS tests), ruff (1,834 files)/mypy --strict (901 files)/lint-imports (5/5, 944 files, 6,839 deps)/lint_spine (0)/export_openapi (0-diff)/detect-secrets clean, and gitnexus analyze (49,317 nodes / 180,705 edges / 805 clusters / 1,520 flows)."
+    },
     {
       "date": "2026-11-26",
       "phaseOrStory": "Story 31.2",

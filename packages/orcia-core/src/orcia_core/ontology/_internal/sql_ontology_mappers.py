@@ -90,6 +90,9 @@ def row_to_concept(row: Any) -> OntologyConceptEntity:
         expected_schema={str(k): str(v) for k, v in parse_json_dict(row[10]).items()},
         introduced_in_snapshot_id=str(row[11]) if row[11] is not None else None,
         snapshot_branch_status=cast(SnapshotBranchStatus, str(row[12])),
+        pack_bundle_id=str(row[13]) if len(row) > 13 and row[13] is not None else None,
+        pack_slug=str(row[14]) if len(row) > 14 and row[14] is not None else None,
+        bundle_kind=str(row[15]) if len(row) > 15 and row[15] is not None else None,
     )
 
 
@@ -101,6 +104,8 @@ def row_to_relation(row: Any) -> OntologyRelationEntity:
         target_concept_key=str(row[3]),
         relation_type=str(row[4]),
         cardinality=str(row[5] or "1..N"),
+        pack_bundle_id=str(row[6]) if len(row) > 6 and row[6] is not None else None,
+        pack_slug=str(row[7]) if len(row) > 7 and row[7] is not None else None,
     )
 
 
@@ -113,6 +118,8 @@ def row_to_axiom(row: Any) -> OntologyAxiomEntity:
         scope_id=str(row[4]),
         rule_expression=str(row[5]),
         immutable=bool(row[6]),
+        pack_bundle_id=str(row[7]) if len(row) > 7 and row[7] is not None else None,
+        pack_slug=str(row[8]) if len(row) > 8 and row[8] is not None else None,
     )
 
 

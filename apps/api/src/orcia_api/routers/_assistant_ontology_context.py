@@ -23,6 +23,7 @@ from orcia_core.ontology.context_ranker import (
     format_ranked_ontology_summary,
     rank_ontology_with_optional_embedding_async,
 )
+from orcia_core.packs import load_workspace_active_pack_priorities_pg
 from orcia_core.ports.embedding import EmbeddingPort
 
 logger = get_logger("orcia.assistant.context")
@@ -50,6 +51,7 @@ async def resolve_ranked_pg18_ontology_for_turn(
     dom_scope = ""
     team_chain: tuple[str, ...] = ()
     ws_scope = workspace_id
+    active_pack_priorities: dict[str, int] = {}
 
     if engine is not None:
         try:
@@ -66,6 +68,9 @@ async def resolve_ranked_pg18_ontology_for_turn(
                 )
             ws_key = resolved_ws_uuid or workspace_id
             target_ws = ws_key if ws_key != "GLOBAL" else workspace_id
+            active_pack_priorities, _ = await load_workspace_active_pack_priorities_pg(
+                engine, target_ws
+            )
             ent_scope, dom_scope, team_chain, ws_scope, _ = resolve_dynamic_ontology_scopes(
                 "3_WORKSPACE", target_ws, org_units, workspaces
             )
@@ -93,6 +98,7 @@ async def resolve_ranked_pg18_ontology_for_turn(
             enterprise_scope_id=ent_scope,
             domain_scope_id=dom_scope,
             team_chain_scope_ids=team_chain,
+            active_pack_priorities=active_pack_priorities or None,
         )
         if ranked.selected_concepts:
             break

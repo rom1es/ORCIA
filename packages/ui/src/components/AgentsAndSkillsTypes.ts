@@ -28,6 +28,11 @@ export interface UiManagedSkillItem {
   readonly lastExecutionOutput?: string | null;
   readonly visibilityScope?: UiAgentSkillVisibilityScope;
   readonly sourcePackKey?: string | null;
+  readonly packSlug?: string | null;
+  readonly qualifiedRef?: string;
+  readonly isColliding?: boolean;
+  readonly collisionPackSlugs?: readonly string[];
+  readonly resolutionTier?: "WORKSPACE_OVERRIDE" | "WORKSPACE_PACK" | "SYSTEM_PACK";
 }
 
 export interface UiManagedAgentItem {
@@ -62,6 +67,11 @@ export interface UiManagedAgentItem {
   readonly testBenchValidated?: boolean;
   readonly lifecycleStatus?: UiAgentLifecycleStatus;
   readonly testBenchStatus?: UiAgentTestBenchStatus;
+  readonly packSlug?: string | null;
+  readonly qualifiedRef?: string;
+  readonly isColliding?: boolean;
+  readonly collisionPackSlugs?: readonly string[];
+  readonly resolutionTier?: "WORKSPACE_OVERRIDE" | "WORKSPACE_PACK" | "SYSTEM_PACK";
 }
 
 export interface AgentsAndSkillsManagerLabels {

@@ -21,7 +21,6 @@ _THINKING_MAP = {
     "reasoning": "complex",
 }
 _TIER_MAP = {
-    "team_default": "team_default",
     "fast": "fast",
     "deep": "deep",
     "discovery": "discovery",
@@ -164,7 +163,9 @@ async def materialize_pack_catalog_items(
         )
         agent_meta: dict[str, Any] = {
             "slug": agent.slug,
+            "pack_slug": slug,
             "handle": f"@{agent.slug}",
+            "qualified_ref": f"@{slug}/{agent.slug}",
             "instructions": agent.instructions_markdown,
             "thinking_level": _THINKING_MAP.get(agent.model_tier.strip().lower(), "medium"),
             "skill_ids": [s if ":" in s else f"{slug}:{s}" for s in agent.skill_refs],
@@ -210,7 +211,9 @@ async def materialize_pack_catalog_items(
         ]
         skill_meta: dict[str, Any] = {
             "slug": skill.slug,
+            "pack_slug": slug,
             "command_handle": cmd,
+            "qualified_ref": f"/{slug}/{skill.slug}",
             "input_parameters": params,
             "instructions": skill.instructions_markdown,
             "visibility_scope": "PACK",

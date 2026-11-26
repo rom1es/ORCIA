@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Sequence
 from typing import Any
 from urllib.parse import urlparse
 
 from fastapi import Request
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
+from orcia_api.dependencies import get_auth_service
 from orcia_api.dependencies._core_providers import get_configured_db_engine
 from orcia_api.schemas import ontology_and_rag as s
 from orcia_core.kernel.ids import new_uuid7_str
@@ -18,6 +20,13 @@ from orcia_core.ontology import (
     OntologyPromotionProposal,
     OntologyRelationEntity,
     WhatIfImpactReport,
+    can_read_ontology_item,
+)
+from orcia_core.permissions.models import (
+    OrgUnitNode,
+    UserIdentity,
+    WorkspaceEntity,
+    WorkspaceMembershipEntity,
 )
 from orcia_core.rag import (
     KbChunkEntity,
@@ -126,6 +135,8 @@ def serialize_concept(c: OntologyConceptEntity) -> s.OntologyConceptSchemaItem:
         expected_schema=dict(c.expected_schema),
         introduced_in_snapshot_id=c.introduced_in_snapshot_id,
         snapshot_branch_status=c.snapshot_branch_status,
+        pack_bundle_id=c.pack_bundle_id,
+        pack_slug=c.pack_slug,
     )
 
 
@@ -218,3 +229,47 @@ def serialize_stale_alert(a: KbStaleAlertEntity) -> s.KbStaleAlertSchemaItem:
         impacted_run_ids=list(a.impacted_run_ids),
         resolved=a.resolved,
     )
+
+
+def is_concept_readable(
+    request: Request,
+    *,
+    user: UserIdentity,
+    concept: OntologyConceptEntity,
+    concepts_by_id: dict[str, OntologyConceptEntity],
+    org_units: Sequence[OrgUnitNode],
+    workspaces: Sequence[WorkspaceEntity],
+    memberships: Sequence[WorkspaceMembershipEntity],
+    allowed_pack_slugs: frozenset[str] | None = None,
+) -> bool:
+    """Return True if `user` can read `concept` and its parent lineage without leaks."""
+    if concept.pack_bundle_id is not None:
+        pslug = (concept.pack_slug or concept.scope_id or "").strip().lower()
+        if (concept.bundle_kind or "").upper() == "SYSTEM":
+            return True
+        return allowed_pack_slugs is not None and pslug in allowed_pack_slugs
+    if not can_read_ontology_item(
+        user, concept.level, concept.scope_id, org_units, workspaces, memberships
+    ):
+        return False
+    auth_svc = get_auth_service(request)
+    if concept.level == "4_RUN_EPHEMERAL":
+        cc_svc = getattr(request.app.state, "control_center_service", None)
+        if cc_svc is not None:
+            run = getattr(cc_svc, "_runs", {}).get(concept.scope_id)
+            if (
+                run is not None
+                and auth_svc.evaluator.resolve_workspace_access(user, run.workspace_id) is None
+            ):
+                return False
+    cursor = concept.parent_concept_id
+    visited: set[str] = set()
+    while cursor and cursor in concepts_by_id and cursor not in visited and len(visited) < 32:
+        visited.add(cursor)
+        parent = concepts_by_id[cursor]
+        if not can_read_ontology_item(
+            user, parent.level, parent.scope_id, org_units, workspaces, memberships
+        ):
+            return False
+        cursor = parent.parent_concept_id
+    return True

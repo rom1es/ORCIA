@@ -106,7 +106,9 @@ async def build_assistant_tool_catalog_context_async(
     loaded_skills = list(ag_svc.skills)
     if engine is not None:
         try:
-            pg_skills, pg_agents = await load_agents_and_skills_from_postgres18(engine)
+            pg_skills, pg_agents = await load_agents_and_skills_from_postgres18(
+                engine, workspace_id=ws_uuid
+            )
             if pg_skills or pg_agents:
                 ag_svc.sync_from_records(skills=pg_skills, agents=pg_agents)
                 loaded_skills = list(pg_skills)

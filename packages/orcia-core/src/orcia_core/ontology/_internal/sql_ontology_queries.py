@@ -14,27 +14,32 @@ from orcia_core.permissions.models import UserIdentity
 from orcia_kernel.ids import new_uuid7_str
 
 SQL_LIST_ACTIVE_CONCEPTS = sa.text(
-    "SELECT id, concept_key, canonical_term, level, scope_id, parent_concept_id, "
-    "definition_text, synonyms_jsonb, banned_terms_jsonb, profile_translations_jsonb, "
-    "expected_schema_jsonb, introduced_in_snapshot_id, snapshot_branch_status "
-    "FROM ontology_concepts WHERE snapshot_branch_status = 'ACTIVE' "
-    "ORDER BY level ASC, created_at ASC"
+    "SELECT c.id, c.concept_key, c.canonical_term, c.level, c.scope_id, c.parent_concept_id, "
+    "c.definition_text, c.synonyms_jsonb, c.banned_terms_jsonb, c.profile_translations_jsonb, "
+    "c.expected_schema_jsonb, c.introduced_in_snapshot_id, c.snapshot_branch_status, "
+    "c.pack_bundle_id, dpb.slug AS pack_slug, dpb.bundle_kind AS pack_bundle_kind "
+    "FROM ontology_concepts c "
+    "LEFT JOIN declarative_pack_bundles dpb ON dpb.id = c.pack_bundle_id "
+    "WHERE c.snapshot_branch_status = 'ACTIVE' "
+    "ORDER BY c.level ASC, c.created_at ASC"
 )
 
 SQL_LIST_RELATIONS = sa.text(
     "SELECT r.id, r.relation_key, src.concept_key, tgt.concept_key, "
-    "r.relation_type, r.cardinality "
+    "r.relation_type, r.cardinality, r.pack_bundle_id, dpb.slug AS pack_slug "
     "FROM ontology_relations r "
     "JOIN ontology_concepts src ON src.id = r.source_concept_id "
     "JOIN ontology_concepts tgt ON tgt.id = r.target_concept_id "
+    "LEFT JOIN declarative_pack_bundles dpb ON dpb.id = r.pack_bundle_id "
     "ORDER BY r.created_at ASC"
 )
 
 SQL_LIST_AXIOMS = sa.text(
     "SELECT a.id, a.axiom_key, c.concept_key, a.level, a.scope_id, "
-    "a.rule_expression, a.immutable "
+    "a.rule_expression, a.immutable, a.pack_bundle_id, dpb.slug AS pack_slug "
     "FROM ontology_axioms a "
     "JOIN ontology_concepts c ON c.id = a.concept_id "
+    "LEFT JOIN declarative_pack_bundles dpb ON dpb.id = a.pack_bundle_id "
     "ORDER BY a.immutable DESC, a.created_at ASC"
 )
 
