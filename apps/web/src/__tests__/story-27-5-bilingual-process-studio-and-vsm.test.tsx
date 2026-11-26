@@ -5,15 +5,13 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
-  getInitialDeclarativePacks,
   getInitialVsmSpec,
   getInitialWorkflowsV2,
-  INITIAL_DECLARATIVE_PACKS,
   INITIAL_VSM_SPEC,
   INITIAL_WORKFLOWS_V2,
   resetPersistedWorkflowsV2,
 } from "../features/processes/processStudioV2Data";
-import { I18nProvider } from "../i18n";
+import { DICTIONARIES, I18nProvider } from "../i18n";
 import { createOrciaQueryClient, createOrciaRouter } from "../router";
 import { seedVitestPlatformSetupState } from "./vitest.setup";
 
@@ -28,11 +26,10 @@ describe("Story 27.5 — Bilingual FR/EN Process Studio v2, VSM & Catalog Data",
   });
 
   it("provides full French and English localized pack, VSM, and workflow catalog builders", () => {
-    const frPacks = getInitialDeclarativePacks("fr");
-    const enPacks = getInitialDeclarativePacks("en");
-    expect(frPacks).toEqual(INITIAL_DECLARATIVE_PACKS);
-    expect(enPacks[0]?.name).toContain("SDLC Pack");
-    expect(enPacks[0]?.name).not.toContain("Chaîne");
+    const frPackCopy = DICTIONARIES.fr.processCatalogWorkflows.packs["orcia-pack-sdlc"];
+    const enPackCopy = DICTIONARIES.en.processCatalogWorkflows.packs["orcia-pack-sdlc"];
+    expect(enPackCopy.name).toContain("SDLC Pack");
+    expect(frPackCopy.name).not.toEqual(enPackCopy.name);
 
     const frVsm = getInitialVsmSpec("fr");
     const enVsm = getInitialVsmSpec("en");

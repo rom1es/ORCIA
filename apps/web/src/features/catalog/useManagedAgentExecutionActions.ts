@@ -3,11 +3,11 @@ import type { UiManagedAgentItem } from "@orcia/ui";
 import type { SupportedWebLocale } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import type { AlertFeedbackInput } from "../shared/alertFeedback";
-import { buildAgentLocalOutput, type CatalogManagedLabels } from "./managedAgentsHelpers";
 import {
   type CachedAgentsAndSkillsState,
-  PACK_SKILLS_BY_PACK_KEY,
-} from "./packAgentsCatalog";
+  type CatalogManagedLabels,
+  buildAgentLocalOutput,
+} from "./managedAgentsHelpers";
 
 export function useManagedAgentExecutionActions(params: {
   readonly locale: SupportedWebLocale;
@@ -24,12 +24,7 @@ export function useManagedAgentExecutionActions(params: {
     let previousAgent: UiManagedAgentItem | undefined;
     updateManagedState((prev) => {
       previousAgent = prev.agents.find((a) => a.agentId === agentId);
-      const allSkills = [
-        ...prev.skills,
-        ...Object.values(PACK_SKILLS_BY_PACK_KEY)
-          .flat()
-          .filter((sk) => !prev.skills.some((ps) => ps.skillId === sk.skillId)),
-      ];
+      const allSkills = prev.skills;
       return {
         ...prev,
         agents: prev.agents.map((agent: UiManagedAgentItem) =>

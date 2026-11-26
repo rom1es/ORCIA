@@ -1055,9 +1055,13 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(screen.getByTestId("remote-service-test-bench")).toBeDefined();
 
     // 4. Load Business Pack Agents & Skills and verify 📦 Pack Métier badges + protection against deletion
+    const { seedVitestActivePacks } = await import("./setup/installedPacksMockHandler");
+    seedVitestActivePacks(["orcia-pack-sdlc"]);
     fireEvent.click(screen.getByTestId("agents-subview-tab-agents"));
     fireEvent.click(screen.getByTestId("load-pack-agents-templates-btn"));
-    expect(screen.getByTestId("agent-card-agent-architecte-solution")).toBeDefined();
+    expect(
+      await screen.findByTestId("agent-card-agent-architecte-solution"),
+    ).toBeDefined();
     const packBadgeEl = screen.getByTestId(
       "agent-visibility-badge-agent-architecte-solution",
     );
@@ -1263,7 +1267,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(screen.queryByTestId("save-pack-btn")).toBeNull();
 
     // Installed packs catalog cards are directly displayed with human-readable titles
-    const sdlcCard = screen.getByTestId("installed-pack-card-orcia-pack-sdlc");
+    const sdlcCard = await screen.findByTestId("installed-pack-card-orcia-pack-sdlc");
     expect(sdlcCard.textContent).toContain("Ingénierie Logicielle & Cycle de Vie Produit");
     expect(sdlcCard.textContent).toContain("4 processus · 6 agents spécialisés");
 
@@ -1569,7 +1573,7 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("eight-menu-item-configuration"));
     await screen.findByTestId("settings-tab-packs");
     fireEvent.click(screen.getByTestId("settings-tab-packs"));
-    fireEvent.click(screen.getByTestId("activate-pack-btn-orcia-pack-builder"));
+    fireEvent.click(await screen.findByTestId("activate-pack-btn-orcia-pack-builder"));
     fireEvent.click(screen.getByTestId("deactivate-pack-btn-orcia-pack-builder"));
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 50));

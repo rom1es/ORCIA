@@ -1,4 +1,4 @@
-"""Localized RFC 9457 error catalog for the declarative packs domain (`Story 31.1`)."""
+"""Localized RFC 9457 error catalog for the declarative packs domain (`Story 31.1`, `31.2`)."""
 
 from __future__ import annotations
 
@@ -97,6 +97,36 @@ PACKS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
             "Entity referenced by a pack draft",
             "This resource is referenced by one or more pack drafts. Unlink the draft "
             "membership first or confirm explicit unlink.",
+        ),
+    },
+    "ERR_PACK_BUNDLE_NOT_FOUND": {
+        "fr": LocalizedErrorCopy(
+            "Pack déclaratif introuvable",
+            "Le pack demandé est introuvable dans le registre PostgreSQL 18.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Declarative pack not found",
+            "The requested pack bundle was not found in the PostgreSQL 18 registry.",
+        ),
+    },
+    "ERR_PACK_SYSTEM_DELETE_FORBIDDEN": {
+        "fr": LocalizedErrorCopy(
+            "Suppression d'un pack système interdite",
+            "Les packs systèmes intégrés (SYSTEM) ne peuvent pas être supprimés via l'API.",
+        ),
+        "en": LocalizedErrorCopy(
+            "System pack deletion forbidden",
+            "Built-in SYSTEM pack bundles cannot be deleted via the API.",
+        ),
+    },
+    "ERR_PACK_SCOPE_ESCALATION_FORBIDDEN": {
+        "fr": LocalizedErrorCopy(
+            "Portée ou type de pack non autorisé à l'import",
+            "L'import d'un pack de type SYSTEM ou de portée GLOBAL est interdit via l'API.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Pack scope or kind escalation forbidden",
+            "Importing a SYSTEM pack bundle or GLOBAL scope pack via user API is forbidden.",
         ),
     },
 }

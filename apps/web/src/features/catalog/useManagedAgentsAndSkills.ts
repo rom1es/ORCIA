@@ -6,19 +6,15 @@ import type { SupportedWebLocale } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import type { AlertFeedbackInput } from "../shared/alertFeedback";
 import {
-  buildSkillLocalOutput,
+  type CachedAgentsAndSkillsState,
   type CatalogManagedLabels,
+  buildSkillLocalOutput,
   mapAgentDtoToUi,
   mapSkillDtoToUi,
-} from "./managedAgentsHelpers";
-import {
-  type CachedAgentsAndSkillsState,
-  mergeManagedStateWithActivePacks,
-  PACK_SKILLS_BY_PACK_KEY,
   readCachedAgentsAndSkills,
   slugifyIdentifier,
   writeCachedAgentsAndSkills,
-} from "./packAgentsCatalog";
+} from "./managedAgentsHelpers";
 import { useManagedAgentActions } from "./useManagedAgentActions";
 
 export function useManagedAgentsAndSkills(
@@ -70,15 +66,27 @@ export function useManagedAgentsAndSkills(
     };
   }, [onFeedback, locale, catalogLabels.catalogErrorContext, catalogLabels.defaultSkillOutputFormat]);
 
-  const combinedState = mergeManagedStateWithActivePacks(managedState, activePacks);
+  const combinedState = managedState;
 
   const handleLoadPackTemplates = () => {
-    const defaultPacks: readonly ConfiguredPackItem[] = [
-      { packKey: "orcia-pack-sdlc", version: "1.0.0", scopePath: "GLOBAL", status: "PUBLISHED" },
-      { packKey: "orcia-pack-builder", version: "1.0.0", scopePath: "GLOBAL", status: "PUBLISHED" },
-    ];
-    updateManagedState((prev) => mergeManagedStateWithActivePacks(prev, defaultPacks));
-    onFeedback(catalogLabels.packTemplatesLoadedBanner);
+    void createOrciaApiClient({ baseUrl: "", locale })
+      .listAgentsAndSkills()
+      .then((res) => {
+        const mappedSkills = (res.skills ?? []).map((s) =>
+          mapSkillDtoToUi(s, catalogLabels.defaultSkillOutputFormat),
+        );
+        const mappedAgents = (res.agents ?? []).map(mapAgentDtoToUi);
+        const nextState = { agents: mappedAgents, skills: mappedSkills };
+        writeCachedAgentsAndSkills(nextState);
+        setManagedState(nextState);
+        onFeedback(catalogLabels.packTemplatesLoadedBanner);
+      })
+      .catch((err: unknown) =>
+        onFeedback({
+          tone: "crimson",
+          message: formatRfc9457ErrorToBanner(err, locale, catalogLabels.catalogErrorContext).fullText,
+        }),
+      );
   };
 
   const handleCreateSkill = (draft: {
@@ -149,41 +157,26 @@ export function useManagedAgentsAndSkills(
     skillId: string,
     nextVisibility: UiAgentSkillVisibilityScope,
   ) => {
-    updateManagedState((prev) => {
-      const baseList = prev.skills.some((s) => s.skillId === skillId)
-        ? prev.skills
-        : mergeManagedStateWithActivePacks(prev, activePacks).skills;
-      return {
-        ...prev,
-        skills: baseList.map((s) =>
-          s.skillId === skillId ? { ...s, visibilityScope: nextVisibility } : s,
-        ),
-      };
-    });
+    updateManagedState((prev) => ({
+      ...prev,
+      skills: prev.skills.map((s) =>
+        s.skillId === skillId ? { ...s, visibilityScope: nextVisibility } : s,
+      ),
+    }));
   };
 
   const handleExecuteSkill = (skillId: string, inputText: string) => {
-    updateManagedState((prev) => {
-      const baseSkills = prev.skills.some((s) => s.skillId === skillId)
-        ? prev.skills
-        : [
-            ...prev.skills,
-            ...Object.values(PACK_SKILLS_BY_PACK_KEY)
-              .flat()
-              .filter((s) => s.skillId === skillId),
-          ];
-      return {
-        ...prev,
-        skills: baseSkills.map((skill) =>
-          skill.skillId === skillId
-            ? {
-                ...skill,
-                lastExecutionOutput: buildSkillLocalOutput(skill, inputText, catalogLabels),
-              }
-            : skill,
-        ),
-      };
-    });
+    updateManagedState((prev) => ({
+      ...prev,
+      skills: prev.skills.map((skill) =>
+        skill.skillId === skillId
+          ? {
+              ...skill,
+              lastExecutionOutput: buildSkillLocalOutput(skill, inputText, catalogLabels),
+            }
+          : skill,
+      ),
+    }));
     void createOrciaApiClient({ baseUrl: "" })
       .executeSkill(skillId, { input_text: inputText })
       .then((res) =>

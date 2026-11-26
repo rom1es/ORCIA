@@ -1,12 +1,12 @@
-import type { InstalledBusinessPackItemResponse } from "@orcia/api-client";
+import { backendState, jsonResponse } from "./mockBackendState";
 
-export const BUILTIN_INSTALLED_BUSINESS_PACKS: readonly InstalledBusinessPackItemResponse[] = [
+const MOCK_INSTALLED_BUSINESS_PACKS = [
   {
     pack_key: "orcia-pack-sdlc",
     pack_slug: "sdlc",
     title: "Ingénierie Logicielle & Cycle de Vie Produit",
     title_en: "Software Engineering & Product Lifecycle",
-    version: "0.1.0",
+    version: "1.0.0",
     domain_name: "INGÉNIERIE LOGICIELLE & PRODUIT",
     description:
       "Connecteurs Git, Jira, Confluence et Nexus, processus guidés de spécification et réalisation, revues croisées et suivi de cohérence documentaire.",
@@ -21,7 +21,7 @@ export const BUILTIN_INSTALLED_BUSINESS_PACKS: readonly InstalledBusinessPackIte
     pack_slug: "pack-builder",
     title: "Atelier de Création & Gouvernance de Packs Métiers",
     title_en: "Business Pack Authoring & Governance Studio",
-    version: "0.1.0",
+    version: "1.0.0",
     domain_name: "GOUVERNANCE & MÉTHODOLOGIE",
     description:
       "Conception guidée de nouveaux Packs métiers, simulation d'impact avant évolution, certification des règles métiers et génération de fiches d'aide.",
@@ -32,3 +32,21 @@ export const BUILTIN_INSTALLED_BUSINESS_PACKS: readonly InstalledBusinessPackIte
     is_system_pack: true,
   },
 ];
+
+export function seedVitestActivePacks(packKeys: readonly string[]): void {
+  const prev = backendState.platformSetupState ?? {};
+  backendState.platformSetupState = {
+    ...prev,
+    packs: packKeys.map((packKey) => ({ packKey, status: "PUBLISHED" })),
+  };
+}
+
+export function handleInstalledPacksRoute(params: {
+  readonly path: string;
+  readonly method: string;
+}): Response | null {
+  if (params.path === "/api/v1/pack-builder/installed-packs" && params.method === "GET") {
+    return jsonResponse({ packs: MOCK_INSTALLED_BUSINESS_PACKS });
+  }
+  return null;
+}

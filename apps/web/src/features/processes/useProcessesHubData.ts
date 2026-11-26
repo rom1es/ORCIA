@@ -8,7 +8,6 @@ import {
   resolveAutonomousScopeTarget,
 } from "./autonomousRunsScopeHelper";
 import {
-  loadPersistedWorkflowsV2,
   savePersistedWorkflowV2,
   type WorkflowDefinitionV2Item,
 } from "./processStudioV2Data";
@@ -41,9 +40,7 @@ export function useProcessesHubData(params: {
     [activeScopeId, setupCtx?.scopes, setupCtx?.workspaces],
   );
 
-  const [workflows, setWorkflows] = useState<WorkflowDefinitionV2Item[]>(() =>
-    loadPersistedWorkflowsV2(locale),
-  );
+  const [workflows, setWorkflows] = useState<WorkflowDefinitionV2Item[]>([]);
   const [pendingRuns, setPendingRuns] = useState<ProcessPendingRunItemResponse[]>([]);
   const [autonomousCount, setAutonomousCount] = useState<number>(0);
   const [isLoadingPendingRuns, setIsLoadingPendingRuns] = useState<boolean>(true);

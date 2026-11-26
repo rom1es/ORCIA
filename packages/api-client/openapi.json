@@ -8333,15 +8333,48 @@
             "title": "Agents Slugs",
             "type": "array"
           },
+          "archive_sha256": {
+            "default": "",
+            "title": "Archive Sha256",
+            "type": "string"
+          },
+          "bundle_id": {
+            "default": "",
+            "title": "Bundle Id",
+            "type": "string"
+          },
+          "bundle_kind": {
+            "default": "SYSTEM",
+            "title": "Bundle Kind",
+            "type": "string"
+          },
           "bundle_sha256": {
             "title": "Bundle Sha256",
             "type": "string"
+          },
+          "cas_object_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cas Object Key"
           },
           "connector_health": {
             "items": {
               "$ref": "#/components/schemas/ConnectorRequirementHealthItemResponse"
             },
             "title": "Connector Health",
+            "type": "array"
+          },
+          "declared_slots": {
+            "items": {
+              "$ref": "#/components/schemas/PackSlotSpec"
+            },
+            "title": "Declared Slots",
             "type": "array"
           },
           "description": {
@@ -8385,6 +8418,16 @@
             "title": "Required Connectors",
             "type": "array"
           },
+          "scope_id": {
+            "default": "global",
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_type": {
+            "default": "GLOBAL",
+            "title": "Scope Type",
+            "type": "string"
+          },
           "skills_count": {
             "title": "Skills Count",
             "type": "integer"
@@ -8398,6 +8441,11 @@
           },
           "slug": {
             "title": "Slug",
+            "type": "string"
+          },
+          "status": {
+            "default": "PUBLISHED",
+            "title": "Status",
             "type": "string"
           },
           "version": {
@@ -18637,6 +18685,282 @@
           "event_ids"
         ],
         "title": "OutboxReplayResponse",
+        "type": "object"
+      },
+      "PackDeleteResponse": {
+        "description": "Response envelope returned after guarded pack bundle deletion.",
+        "properties": {
+          "bundle_id": {
+            "title": "Bundle Id",
+            "type": "string"
+          },
+          "deleted": {
+            "default": true,
+            "title": "Deleted",
+            "type": "boolean"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bundle_id",
+          "slug",
+          "version",
+          "trace_id"
+        ],
+        "title": "PackDeleteResponse",
+        "type": "object"
+      },
+      "PackImportEntityCountsResponse": {
+        "description": "Materialized entity counts persisted for an imported pack bundle.",
+        "properties": {
+          "agents": {
+            "default": 0,
+            "title": "Agents",
+            "type": "integer"
+          },
+          "dna_mechanisms": {
+            "default": 0,
+            "title": "Dna Mechanisms",
+            "type": "integer"
+          },
+          "help_articles": {
+            "default": 0,
+            "title": "Help Articles",
+            "type": "integer"
+          },
+          "instructions": {
+            "default": 0,
+            "title": "Instructions",
+            "type": "integer"
+          },
+          "ontology_terms": {
+            "default": 0,
+            "title": "Ontology Terms",
+            "type": "integer"
+          },
+          "policies": {
+            "default": 0,
+            "title": "Policies",
+            "type": "integer"
+          },
+          "skills": {
+            "default": 0,
+            "title": "Skills",
+            "type": "integer"
+          },
+          "vsm": {
+            "default": 0,
+            "title": "Vsm",
+            "type": "integer"
+          },
+          "workflows": {
+            "default": 0,
+            "title": "Workflows",
+            "type": "integer"
+          }
+        },
+        "title": "PackImportEntityCountsResponse",
+        "type": "object"
+      },
+      "PackImportRequest": {
+        "description": "JSON payload for `POST /api/v1/packs/import` (base64-encoded `.zip` archive).",
+        "properties": {
+          "replace_draft": {
+            "default": false,
+            "title": "Replace Draft",
+            "type": "boolean"
+          },
+          "scope_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Scope Id"
+          },
+          "scope_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "GLOBAL",
+                  "BU",
+                  "TEAM",
+                  "WORKSPACE"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Scope Type"
+          },
+          "zip_base64": {
+            "minLength": 4,
+            "title": "Zip Base64",
+            "type": "string"
+          }
+        },
+        "required": [
+          "zip_base64"
+        ],
+        "title": "PackImportRequest",
+        "type": "object"
+      },
+      "PackImportResponse": {
+        "description": "Response envelope returned after transactional pack `.zip` import.",
+        "properties": {
+          "archive_sha256": {
+            "title": "Archive Sha256",
+            "type": "string"
+          },
+          "bundle_id": {
+            "title": "Bundle Id",
+            "type": "string"
+          },
+          "bundle_kind": {
+            "title": "Bundle Kind",
+            "type": "string"
+          },
+          "cas_object_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cas Object Key"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/PackImportEntityCountsResponse"
+          },
+          "idempotent_noop": {
+            "default": false,
+            "title": "Idempotent Noop",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "pack_id": {
+            "title": "Pack Id",
+            "type": "string"
+          },
+          "scope_id": {
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_type": {
+            "title": "Scope Type",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bundle_id",
+          "pack_id",
+          "slug",
+          "name",
+          "version",
+          "bundle_kind",
+          "scope_type",
+          "scope_id",
+          "status",
+          "archive_sha256",
+          "counts",
+          "trace_id"
+        ],
+        "title": "PackImportResponse",
+        "type": "object"
+      },
+      "PackSlotSpec": {
+        "description": "Logical connector slot declared in `apm.yml` (`x-orcia.connector_slots`).",
+        "properties": {
+          "connector_kind": {
+            "default": "",
+            "title": "Connector Kind",
+            "type": "string"
+          },
+          "description_en": {
+            "default": "",
+            "title": "Description En",
+            "type": "string"
+          },
+          "description_fr": {
+            "default": "",
+            "title": "Description Fr",
+            "type": "string"
+          },
+          "required": {
+            "default": true,
+            "title": "Required",
+            "type": "boolean"
+          },
+          "required_access": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Required Access",
+            "type": "array"
+          },
+          "scheme": {
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Scheme",
+            "type": "string"
+          },
+          "slot_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Slot Key",
+            "type": "string"
+          },
+          "source_nature": {
+            "default": "",
+            "title": "Source Nature",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slot_key",
+          "scheme"
+        ],
+        "title": "PackSlotSpec",
         "type": "object"
       },
       "PacksConnectorHealthResponse": {
@@ -54295,7 +54619,7 @@
     },
     "/api/v1/packs": {
       "get": {
-        "description": "Return all declarative packs from `packs/<domain>/` with PG18 sync & healthchecks.",
+        "description": "List declarative packs strictly from PostgreSQL 18 with live connector healthchecks.",
         "operationId": "list_declarative_packs_api_v1_packs_get",
         "responses": {
           "200": {
@@ -54393,13 +54717,13 @@
         ],
         "summary": "List Declarative Packs",
         "tags": [
-          "Declarative Packs (Epic 15)"
+          "Declarative Packs (Epic 15 / Epic 31)"
         ]
       }
     },
     "/api/v1/packs/export/{workspace_id}": {
       "post": {
-        "description": "Sync packs to PG18 and export a workspace's declarative pack into `.zip` (`CA-10.2.2`).",
+        "description": "Export a PostgreSQL 18 / SeaweedFS CAS pack bundle as a `.zip` archive.",
         "operationId": "export_workspace_as_declarative_pack_zip_api_v1_packs_export__workspace_id__post",
         "parameters": [
           {
@@ -54522,13 +54846,13 @@
         ],
         "summary": "Export Workspace As Declarative Pack Zip",
         "tags": [
-          "Declarative Packs (Epic 15)"
+          "Declarative Packs (Epic 15 / Epic 31)"
         ]
       }
     },
     "/api/v1/packs/health": {
       "get": {
-        "description": "Probe live connector health across all loaded declarative packs.",
+        "description": "Probe live connector health across all PostgreSQL 18 declarative packs.",
         "operationId": "check_packs_connectors_health_api_v1_packs_health_get",
         "responses": {
           "200": {
@@ -54626,7 +54950,261 @@
         ],
         "summary": "Check Packs Connectors Health",
         "tags": [
-          "Declarative Packs (Epic 15)"
+          "Declarative Packs (Epic 15 / Epic 31)"
+        ]
+      }
+    },
+    "/api/v1/packs/import": {
+      "post": {
+        "description": "Import a validated `.zip` APM pack into PostgreSQL 18 + SeaweedFS CAS.",
+        "operationId": "import_declarative_pack_archive_api_v1_packs_import_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackImportRequest"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "type": "string"
+                  },
+                  "replace_draft": {
+                    "type": "boolean"
+                  },
+                  "scope_id": {
+                    "type": "string"
+                  },
+                  "scope_type": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackImportResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Import Declarative Pack Archive",
+        "tags": [
+          "Declarative Packs (Epic 15 / Epic 31)"
+        ]
+      }
+    },
+    "/api/v1/packs/{bundle_id}": {
+      "delete": {
+        "description": "Delete an unused non-SYSTEM pack bundle (`403`/`409` guarded).",
+        "operationId": "delete_declarative_pack_bundle_api_v1_packs__bundle_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bundle_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Bundle Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete Declarative Pack Bundle",
+        "tags": [
+          "Declarative Packs (Epic 15 / Epic 31)"
         ]
       }
     },

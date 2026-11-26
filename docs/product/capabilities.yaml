@@ -431,28 +431,28 @@ capabilities:
     title: Studio workflows et registre des packs
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-5, 29-6
+    origin_ref: 8-5, 29-6, 31-2
     status: live
     kind: feature
     uj: [UJ-19]
-    db_tables: [workflow_definitions, declarative_pack_bundles]
-    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx]
+    db_tables: [workflow_definitions, declarative_pack_bundles, pack_dna_mechanisms]
+    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/unit/packs/test_story_31_2_pack_import_service.py, tests/unit/packs/test_story_31_2_packs_router.py, tests/integration/test_story_31_2_pack_import_and_day0_postgres18_s3.py, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx]
     verification: runtime
-    verified_at: "2026-11-25"
-    surfaces: { route: /settings, api: studio_and_wizards.py, ui: SettingsPacksSection }
+    verified_at: "2026-11-26"
+    surfaces: { route: /settings, api: "studio_and_wizards.py, packs.py", ui: SettingsPacksSection }
   - id: CAP-056
     title: Packs métiers — catalogue backend, écran simplifié, activation unique
     fr: [FR-31]
     origin: adhoc
-    origin_ref: 2026-11-05-simplification-ecran-packs-metiers-catalogue-backend + 2026-11-05-unification-activation-unique-packs-metiers-sally-winston + 29-6
+    origin_ref: 2026-11-05-simplification-ecran-packs-metiers-catalogue-backend + 2026-11-05-unification-activation-unique-packs-metiers-sally-winston + 29-6 + 31-2
     status: live
     kind: feature
     uj: [UJ-19]
     db_tables: [declarative_pack_bundles, catalog_items, platform_settings]
-    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
+    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/test_story_31_2_pack_import_and_day0_postgres18_s3.py]
     verification: runtime
-    verified_at: "2026-11-25"
-    surfaces: { route: /settings }
+    verified_at: "2026-11-26"
+    surfaces: { route: /settings, api: packs.py }
   - id: CAP-057
     title: Wizards d'initialisation durables
     fr: [FR-31]

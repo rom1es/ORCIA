@@ -322,7 +322,40 @@ export function handleWorkspacesAndCatalogRoute(params: {
   }
 
   if (path === "/api/v1/agents-and-skills" && method === "GET") {
-    return jsonResponse({ agents: backendState.agents, skills: backendState.skills });
+    const setupPacks = Array.isArray(backendState.platformSetupState?.packs)
+      ? (backendState.platformSetupState.packs as Array<Record<string, unknown>>)
+      : [];
+    const hasSdlcPack = setupPacks.some(
+      (p) => String(p.packKey ?? p.pack_key ?? "") === "orcia-pack-sdlc",
+    );
+    const seededPackAgents =
+      hasSdlcPack && !backendState.agents.some((a) => a.agent_id === "agent-architecte-solution")
+        ? [
+            {
+              agent_id: "agent-architecte-solution",
+              slug: "architecte-solution",
+              handle: "@architecte-solution",
+              name: "Architecte Solution",
+              role_mission: "Cadrer les dossiers d'architecture et ADR.",
+              instructions: "Construire le dossier d'architecture en 14 points.",
+              thinking_level: "complex",
+              skill_ids: [],
+              visibility_scope: "PACK",
+              source_pack_key: "orcia-pack-sdlc",
+              enabled_in_workspace: true,
+              mcp_exposed: false,
+              posture: "PRODUCER",
+              human_partner_role: "ARCHITECT",
+              test_bench_validated: true,
+              test_bench_status: "PASSED",
+              lifecycle_status: "ACTIVE",
+            },
+          ]
+        : [];
+    return jsonResponse({
+      agents: [...backendState.agents, ...seededPackAgents],
+      skills: backendState.skills,
+    });
   }
   if (path === "/api/v1/agents-and-skills/skills" && method === "POST") {
     const skillId = String(body.skill_id ?? "skill-custom");

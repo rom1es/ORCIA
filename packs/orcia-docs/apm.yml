@@ -1,0 +1,39 @@
+name: orcia-docs
+version: 2.0.0
+description: >-
+  Pack déclaratif de génération, validation bilingue FR/EN et rattachement à chaud
+  des articles d'aide contextuelle et guides d'administration ORCIA.
+author: ORCIA Platform
+license: Apache-2.0
+x-orcia:
+  id: orcia-pack-docs
+  slug: orcia-docs
+  title_fr: Pack Documentation & Aide Contextuelle ORCIA
+  title_en: ORCIA Documentation & Contextual Help Pack
+  description_fr: >-
+    Pack déclaratif de génération, validation bilingue FR/EN et rattachement à chaud
+    des articles d'aide contextuelle et guides d'administration ORCIA.
+  description_en: >-
+    Declarative pack for bilingual FR/EN contextual help generation, validation, and
+    hot attachment of ORCIA administration guides.
+  rbac_namespace: docs
+  bundle_kind: SYSTEM
+  scope_type: GLOBAL
+  scope_id: global
+  status: PUBLISHED
+  connector_slots:
+    - slot_key: confluence-docs
+      scheme: confluence
+      connector_kind: mcp:atlassian-confluence
+      source_nature: KNOWLEDGE_BASE
+      required_access:
+        - read
+        - write_preview
+      required: false
+      description_fr: Publication gouvernée des guides documentaires validés
+      description_en: Governed publishing of validated documentation guides
+  quick_actions:
+    - id: qa-gen-help
+      label: Générer & rattacher un article d'aide contextuelle
+      target_workflow_slug: wf-generate-orcia-documentation
+      icon: book-open

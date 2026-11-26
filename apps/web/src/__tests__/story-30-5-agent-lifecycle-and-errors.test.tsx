@@ -247,10 +247,12 @@ describe("Story 30.5 Web Lifecycle, Autocomplete/Process Filtering & Modal Error
         expect(calledUrls.some((c) => c.endsWith("/api/v1/agents-and-skills/agents"))).toBe(true);
       });
       expect(calledUrls.some((c) => c.includes("/duplicate"))).toBe(false);
-      // P1: PACK preset must NOT leak into cached client workspace agents
+      // Story 31.2: PACK agent is hydrated directly from backend GET /api/v1/agents-and-skills (PG18)
       expect(
-        readCachedAgentsAndSkills().agents.some((a) => a.agentId === "agent-architecte-solution"),
-      ).toBe(false);
+        readCachedAgentsAndSkills().agents.some(
+          (a) => a.agentId === "agent-architecte-solution" && a.visibilityScope === "PACK",
+        ),
+      ).toBe(true);
 
       // P0: buildAgentUpsertPayload must be strictly typed to UpsertAgentRequest & omit test_bench_*
       const strictPayload = buildAgentUpsertPayload("agent-strict-check", {

@@ -27,23 +27,25 @@ _SELECT_V2_COLS = (
     "id::text, pack_id, slug, name, version, rbac_namespace, bundle_sha256, "
     "bundle_kind, scope_type, scope_id, status, archive_sha256, cas_object_key, "
     "source_origin, declared_slots_jsonb, author, description, published_at, "
-    "created_by_user_id::text, loaded_at, updated_at"
+    "created_by_user_id::text, loaded_at, updated_at, manifest_jsonb"
 )
 
 
-def _row_to_v2_dict(row: Any) -> dict[str, object]:
-    slots_raw = row[14]
-    slots: list[Any]
-    if isinstance(slots_raw, list):
-        slots = slots_raw
-    elif isinstance(slots_raw, str):
+def _decode_json_val(raw: object, default: Any) -> Any:
+    if isinstance(raw, type(default)):
+        return raw
+    if isinstance(raw, str):
         try:
-            decoded = json.loads(slots_raw)
-            slots = decoded if isinstance(decoded, list) else []
+            decoded = json.loads(raw)
+            return decoded if isinstance(decoded, type(default)) else default
         except ValueError:
-            slots = []
-    else:
-        slots = []
+            return default
+    return default
+
+
+def _row_to_v2_dict(row: Any) -> dict[str, object]:
+    slots: list[Any] = _decode_json_val(row[14], [])
+    manifest_meta: dict[str, Any] = _decode_json_val(row[21], {}) if len(row) > 21 else {}
     return {
         "id": str(row[0]),
         "pack_id": str(row[1]),
@@ -66,6 +68,7 @@ def _row_to_v2_dict(row: Any) -> dict[str, object]:
         "created_by_user_id": str(row[18]) if row[18] is not None else None,
         "loaded_at": row[19].isoformat() if hasattr(row[19], "isoformat") else str(row[19] or ""),
         "updated_at": row[20].isoformat() if hasattr(row[20], "isoformat") else str(row[20] or ""),
+        "manifest": manifest_meta,
     }
 
 

@@ -131,36 +131,25 @@ def test_enforce_not_observer_rejects_header_and_workspace_observer(
 
 
 @pytest.mark.asyncio
-async def test_load_workflows_store_indexes_draft_key(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_load_workflows_store_indexes_draft_key() -> None:
     req = _make_request()
     wf_pub = _make_workflow(WorkflowLifecycleStatus.PUBLISHED)
     wf_draft = _make_workflow(WorkflowLifecycleStatus.DRAFT)
-    monkeypatch.setattr(
-        helpers,
-        "load_declarative_pack_bundles",
-        lambda _req: {"sdlc": SimpleNamespace(workflows=[wf_pub], vsm_specs=[])},
-    )
-    sql_store = SimpleNamespace(list_persisted_workflows=AsyncMock(return_value=[wf_draft]))
+    sql_store = SimpleNamespace(list_persisted_workflows=AsyncMock(return_value=[wf_pub, wf_draft]))
     store = await helpers.load_workflows_store(req, sql_store)  # type: ignore[arg-type]
     assert store["wf-304-test:draft"] is wf_draft
     assert store["wf-304-test"] is wf_draft
 
 
 @pytest.mark.asyncio
-async def test_vsm_loading_and_sdlc_alias_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_vsm_loading_and_sdlc_alias_fallback() -> None:
     req = _make_request()
     vsm = _make_vsm()
-    monkeypatch.setattr(
-        helpers,
-        "load_declarative_pack_bundles",
-        lambda _req: {"sdlc": SimpleNamespace(workflows=[], vsm_specs=[vsm])},
-    )
-    empty_after_upsert_store = SimpleNamespace(
+    populated_store = SimpleNamespace(
         get_vsm=AsyncMock(return_value=None),
-        list_vsm=AsyncMock(side_effect=[[], []]),
-        upsert_many_vsm=AsyncMock(),
+        list_vsm=AsyncMock(return_value=[vsm]),
     )
-    loaded = await helpers.load_vsm_definitions_from_pg18(req, empty_after_upsert_store)  # type: ignore[arg-type]
+    loaded = await helpers.load_vsm_definitions_from_pg18(req, populated_store)  # type: ignore[arg-type]
     assert loaded == [vsm]
 
     slug_store = SimpleNamespace(
@@ -188,11 +177,9 @@ async def test_vsm_loading_and_sdlc_alias_fallback(monkeypatch: pytest.MonkeyPat
     )
     assert missing is None
 
-    monkeypatch.setattr(helpers, "load_declarative_pack_bundles", lambda _req: {})
     completely_empty_store = SimpleNamespace(
         get_vsm=AsyncMock(return_value=None),
         list_vsm=AsyncMock(return_value=[]),
-        upsert_many_vsm=AsyncMock(),
     )
     res_empty = await helpers.get_vsm_definition_from_pg18(
         req,

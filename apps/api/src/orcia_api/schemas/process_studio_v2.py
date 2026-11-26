@@ -15,6 +15,7 @@ from orcia_connectors.bounded_workflow_v2 import (
 )
 from orcia_connectors.protocol import ConnectorHealthStatus
 from orcia_core.packs.loader import QuickActionSpec, RequiredConnectorSpec
+from orcia_core.packs.models import PackSlotSpec
 from orcia_core.workflows.schemas_v2 import (
     ImpactAssessmentResult,
     ValueStreamMapSpec,
@@ -31,12 +32,19 @@ class ConnectorRequirementHealthItemResponse(BaseModel):
 
 class DeclarativePackSummaryResponse(BaseModel):
     id: str
+    bundle_id: str = ""
     slug: str
     name: str
     version: str
     description: str
     rbac_namespace: str
     bundle_sha256: str
+    archive_sha256: str = ""
+    bundle_kind: str = "SYSTEM"
+    scope_type: str = "GLOBAL"
+    scope_id: str = "global"
+    status: str = "PUBLISHED"
+    cas_object_key: str | None = None
     agents_count: int
     skills_count: int
     gates_count: int
@@ -45,6 +53,7 @@ class DeclarativePackSummaryResponse(BaseModel):
     agents_slugs: list[str] = Field(default_factory=list)
     skills_slugs: list[str] = Field(default_factory=list)
     gates_slugs: list[str] = Field(default_factory=list)
+    declared_slots: list[PackSlotSpec] = Field(default_factory=list)
     required_connectors: list[RequiredConnectorSpec] = Field(default_factory=list)
     connector_health: list[ConnectorRequirementHealthItemResponse] = Field(default_factory=list)
     quick_actions: list[QuickActionSpec] = Field(default_factory=list)

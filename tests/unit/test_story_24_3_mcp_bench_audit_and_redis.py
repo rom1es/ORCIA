@@ -630,7 +630,36 @@ def test_packs_health_endpoint_healthy_degraded_and_disabled(
     """Verify `GET /api/v1/packs/health` computes healthy/degraded counts accurately."""
     import orcia_api.routers.packs as packs_router
 
-    client = TestClient(create_app())
+    app = create_app()
+
+    async def _mock_pg_bundles(_repo: Any) -> list[dict[str, object]]:
+        return [
+            {
+                "id": "0195f000-0000-7000-8000-000000000011",
+                "pack_id": "orcia-pack-sdlc",
+                "slug": "sdlc",
+                "name": "SDLC",
+                "version": "2.4.0",
+                "declared_slots": [
+                    {
+                        "slot_key": "jira-tracker",
+                        "scheme": "jira",
+                        "connector_kind": "mcp:atlassian-jira",
+                        "required_access": ["read"],
+                    },
+                    {
+                        "slot_key": "git-repo",
+                        "scheme": "git",
+                        "connector_kind": "mcp:git-provider",
+                        "required_access": ["read"],
+                    },
+                ],
+                "manifest": {},
+            }
+        ]
+
+    monkeypatch.setattr(packs_router, "_list_pg_bundles", _mock_pg_bundles)
+    client = TestClient(app)
 
     # Default healthy state
     resp_ok = client.get("/api/v1/packs/health")

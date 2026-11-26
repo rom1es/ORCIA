@@ -40,9 +40,11 @@ SQL_LIST_AXIOMS = sa.text(
 
 SQL_FIND_CONCEPT_FOR_UPSERT = sa.text(
     "SELECT id, concept_key, level, scope_id FROM ontology_concepts "
-    "WHERE concept_key = :concept_key "
+    "WHERE pack_bundle_id IS NULL AND ("
+    "concept_key = :concept_key "
     "OR (level = :level AND COALESCE(scope_id, '') = COALESCE(:scope_id, '') "
-    "AND LOWER(canonical_term) = LOWER(:term)) "
+    "AND LOWER(canonical_term) = LOWER(:term))"
+    ") "
     "ORDER BY CASE WHEN concept_key = :concept_key THEN 0 ELSE 1 END "
     "LIMIT 1"
 )
@@ -81,7 +83,8 @@ SQL_INSERT_PROPOSAL = sa.text(
 
 SQL_SELECT_COLLIDING_DEF = sa.text(
     "SELECT definition_text FROM ontology_concepts "
-    "WHERE level = :target_level AND scope_id = :target_scope_id "
+    "WHERE pack_bundle_id IS NULL "
+    "AND level = :target_level AND scope_id = :target_scope_id "
     "AND LOWER(canonical_term) = LOWER(:term) "
     "AND snapshot_branch_status = 'ACTIVE' LIMIT 1"
 )

@@ -1214,8 +1214,13 @@ export interface components {
     DeclarativePackSummaryResponse: {
       agents_count: number;
       agents_slugs?: (string)[];
+      archive_sha256?: string;
+      bundle_id?: string;
+      bundle_kind?: string;
       bundle_sha256: string;
+      cas_object_key?: string | null;
       connector_health?: (components["schemas"]["ConnectorRequirementHealthItemResponse"])[];
+      declared_slots?: (components["schemas"]["PackSlotSpec"])[];
       description: string;
       gates_count: number;
       gates_slugs?: (string)[];
@@ -1224,9 +1229,12 @@ export interface components {
       quick_actions?: (components["schemas"]["QuickActionSpec"])[];
       rbac_namespace: string;
       required_connectors?: (components["schemas"]["RequiredConnectorSpec"])[];
+      scope_id?: string;
+      scope_type?: string;
       skills_count: number;
       skills_slugs?: (string)[];
       slug: string;
+      status?: string;
       version: string;
       vsm_count: number;
       workflows_count: number;
@@ -2800,6 +2808,56 @@ export interface components {
       event_ids: (string)[];
       replayed_count: number;
       scanned_count: number;
+    };
+    PackDeleteResponse: {
+      bundle_id: string;
+      deleted?: boolean;
+      slug: string;
+      trace_id: string;
+      version: string;
+    };
+    PackImportEntityCountsResponse: {
+      agents?: number;
+      dna_mechanisms?: number;
+      help_articles?: number;
+      instructions?: number;
+      ontology_terms?: number;
+      policies?: number;
+      skills?: number;
+      vsm?: number;
+      workflows?: number;
+    };
+    PackImportRequest: {
+      replace_draft?: boolean;
+      scope_id?: string | null;
+      scope_type?: "GLOBAL" | "BU" | "TEAM" | "WORKSPACE" | null;
+      zip_base64: string;
+    };
+    PackImportResponse: {
+      archive_sha256: string;
+      bundle_id: string;
+      bundle_kind: string;
+      cas_object_key?: string | null;
+      counts: components["schemas"]["PackImportEntityCountsResponse"];
+      idempotent_noop?: boolean;
+      name: string;
+      pack_id: string;
+      scope_id: string;
+      scope_type: string;
+      slug: string;
+      status: string;
+      trace_id: string;
+      version: string;
+    };
+    PackSlotSpec: {
+      connector_kind?: string;
+      description_en?: string;
+      description_fr?: string;
+      required?: boolean;
+      required_access?: (string)[];
+      scheme: string;
+      slot_key: string;
+      source_nature?: string;
     };
     PacksConnectorHealthResponse: {
       all_healthy: boolean;
@@ -6033,6 +6091,20 @@ export interface paths {
       };
     };
   };
+  "/api/v1/packs/import": {
+    post: {
+      responses: {
+        200: components["schemas"]["PackImportResponse"];
+      };
+    };
+  };
+  "/api/v1/packs/{bundle_id}": {
+    delete: {
+      responses: {
+        200: components["schemas"]["PackDeleteResponse"];
+      };
+    };
+  };
   "/api/v1/permissions/broker/check-access": {
     post: {
       responses: {
@@ -7126,6 +7198,11 @@ export type OrgUnitTreeItem = components["schemas"]["OrgUnitTreeItem"];
 export type OrgUnitsListResponse = components["schemas"]["OrgUnitsListResponse"];
 export type OutboxReplayRequest = components["schemas"]["OutboxReplayRequest"];
 export type OutboxReplayResponse = components["schemas"]["OutboxReplayResponse"];
+export type PackDeleteResponse = components["schemas"]["PackDeleteResponse"];
+export type PackImportEntityCountsResponse = components["schemas"]["PackImportEntityCountsResponse"];
+export type PackImportRequest = components["schemas"]["PackImportRequest"];
+export type PackImportResponse = components["schemas"]["PackImportResponse"];
+export type PackSlotSpec = components["schemas"]["PackSlotSpec"];
 export type PacksConnectorHealthResponse = components["schemas"]["PacksConnectorHealthResponse"];
 export type PassthroughSecretMetadataResponse = components["schemas"]["PassthroughSecretMetadataResponse"];
 export type PassthroughSecretStoreRequest = components["schemas"]["PassthroughSecretStoreRequest"];

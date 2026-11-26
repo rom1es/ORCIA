@@ -113,7 +113,7 @@ class SqlWorkflowDefinitionsV2Store:
                 """
                 SELECT spec_jsonb
                 FROM workflow_definitions_v2
-                ORDER BY updated_at ASC
+                ORDER BY (pack_bundle_id IS NULL) ASC, updated_at ASC
                 """
             )
             try:

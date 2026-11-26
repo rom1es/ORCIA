@@ -39,12 +39,7 @@ for _rel_pkg in ("packages/orcia-kernel/src", "packages/orcia-core/src"):
     if _pkg_path not in sys.path:
         sys.path.insert(0, _pkg_path)
 
-from orcia_core.bootstrap import upsert_declarative_pack_bundles_sql  # noqa: E402
-from orcia_core.packs.loader import (  # noqa: E402
-    DeclarativePackLoader,
-    resolve_default_packs_root,
-)
-from orcia_core.workflows import upsert_vsm_definitions_v2_sql  # noqa: E402
+from orcia_core.packs import seed_system_packs_on_engine  # noqa: E402
 
 RESET_SCRIPT = REPO_ROOT / "infra" / "scripts" / "maintenance" / "09_reset_db_first_boot.py"
 
@@ -194,10 +189,7 @@ async def _reset_postgres_e2e(database_url: str) -> tuple[list[str], list[str], 
                 )
 
         if "declarative_pack_bundles" in all_public:
-            pack_bundles = DeclarativePackLoader(resolve_default_packs_root()).load_all_packs()
-            await upsert_declarative_pack_bundles_sql(engine, pack_bundles)
-            if "vsm_definitions_v2" in all_public:
-                await upsert_vsm_definitions_v2_sql(engine, pack_bundles)
+            await seed_system_packs_on_engine(engine)
 
         await _verify_post_reset_invariants(engine, all_public, dbos_to_truncate)
         return public_to_truncate, dbos_to_truncate, users_count
@@ -250,13 +242,9 @@ def reset_day0_environment(
     api_port: int | None = None,
 ) -> dict[str, Any]:
     """Réinitialise la base `orcia_e2e`, Redis 7.4 et les caches mémoire de l'API E2E."""
-    resolved_state: Mapping[str, Any]
-    if state is not None:
-        resolved_state = state
-    elif database_url is None:
-        resolved_state = read_state()
-    else:
-        resolved_state = {}
+    resolved_state: Mapping[str, Any] = (
+        state if state is not None else (read_state() if database_url is None else {})
+    )
 
     db_url = str(
         database_url if database_url is not None else resolved_state.get("database_url", "")

@@ -69,6 +69,11 @@ def install_openapi_bearer_security(application: FastAPI) -> None:
             routes=application.routes,
         )
         components = schema.setdefault("components", {})
+        from orcia_api.schemas.packs import PackImportRequest
+
+        schemas_map = components.setdefault("schemas", {})
+        if "PackImportRequest" not in schemas_map:
+            schemas_map["PackImportRequest"] = PackImportRequest.model_json_schema()
         security_schemes = components.setdefault("securitySchemes", {})
         security_schemes["BearerAuth"] = {
             "type": "http",

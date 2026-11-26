@@ -1,4 +1,4 @@
-"""Declarative packs domain errors (`AD-19`, `Story 31.1`)."""
+"""Declarative packs domain errors (`AD-19`, `Story 31.1`, `31.2`)."""
 
 from __future__ import annotations
 
@@ -70,6 +70,30 @@ class EntityReferencedByPackDraftError(OrciaDomainError):
     type_slug = "entity-referenced-by-pack-draft"
 
 
+class PackBundleNotFoundError(OrciaDomainError):
+    """Raised (`HTTP 404`) when a requested declarative pack bundle does not exist."""
+
+    error_code = "ERR_PACK_BUNDLE_NOT_FOUND"
+    http_status = 404
+    type_slug = "pack-bundle-not-found"
+
+
+class PackSystemDeleteForbiddenError(OrciaDomainError):
+    """Raised (`HTTP 403`) when attempting to delete a built-in `SYSTEM` pack."""
+
+    error_code = "ERR_PACK_SYSTEM_DELETE_FORBIDDEN"
+    http_status = 403
+    type_slug = "pack-system-delete-forbidden"
+
+
+class PackScopeEscalationForbiddenError(OrciaDomainError):
+    """Raised (`HTTP 403`) when importing a `SYSTEM` or `GLOBAL` pack from user API."""
+
+    error_code = "ERR_PACK_SCOPE_ESCALATION_FORBIDDEN"
+    http_status = 403
+    type_slug = "pack-scope-escalation-forbidden"
+
+
 PACK_DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     PackExecutableHookForbiddenError,
     PackInvalidArchiveError,
@@ -79,17 +103,23 @@ PACK_DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     PackPiiOrInfraLeakError,
     ResourcePinnedByActiveRunsError,
     EntityReferencedByPackDraftError,
+    PackBundleNotFoundError,
+    PackSystemDeleteForbiddenError,
+    PackScopeEscalationForbiddenError,
 )
 
 __all__ = [
     "EntityReferencedByPackDraftError",
     "PACKS_ERROR_CATALOG",
     "PACK_DOMAIN_ERROR_CLASSES",
+    "PackBundleNotFoundError",
     "PackClosureIncompleteError",
     "PackExecutableHookForbiddenError",
     "PackInvalidArchiveError",
     "PackPiiOrInfraLeakError",
+    "PackScopeEscalationForbiddenError",
     "PackSlotUnboundError",
+    "PackSystemDeleteForbiddenError",
     "PackVersionConflictError",
     "ResourcePinnedByActiveRunsError",
 ]

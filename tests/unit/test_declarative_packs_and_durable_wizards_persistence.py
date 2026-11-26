@@ -258,34 +258,19 @@ async def test_packs_router_and_lifespan_do_not_use_disable_sync_env_var(
     from orcia_api.routers import packs as packs_router
 
     assert "ORCIA_DISABLE_PG_BOOTSTRAP_SYNC" not in inspect.getsource(packs_router)
+    assert "DeclarativePackLoader" not in inspect.getsource(packs_router)
     assert "ORCIA_DISABLE_PG_BOOTSTRAP_SYNC" not in inspect.getsource(core_and_lifespan)
 
-    class _DummyState:
-        db_engine: Any = None
+    class _StubRepo:
+        _engine: Any = None
 
-    class _DummyApp:
-        state = _DummyState()
+        async def list_bundles_v2(self) -> list[dict[str, object]]:
+            return [{"id": "b1", "slug": "sdlc"}]
 
-    class _DummyRequest:
-        app = _DummyApp()
-
-    req: Any = _DummyRequest()
-    bundles = DeclarativePackLoader(resolve_default_packs_root()).load_all_packs()
-
-    monkeypatch.delenv("DATABASE_URL", raising=False)
-    monkeypatch.delenv("ORCIA_ENABLE_PG_SESSION_MAKER", raising=False)
-    await packs_router.sync_declarative_pack_bundles_to_pg(req, bundles)
-
-    called: list[int] = []
-
-    async def _fake_upsert(_engine: Any, passed_bundles: Any) -> list[Any]:
-        called.append(len(passed_bundles))
-        return []
-
-    req.app.state.db_engine = object()
-    monkeypatch.setattr(packs_router, "upsert_declarative_pack_bundles_sql", _fake_upsert)
-    await packs_router.sync_declarative_pack_bundles_to_pg(req, bundles)
-    assert called == [len(bundles)]
+    stub = _StubRepo()
+    assert await packs_router._list_pg_bundles(stub) == []  # type: ignore[arg-type]
+    stub._engine = object()
+    assert await packs_router._list_pg_bundles(stub) == [{"id": "b1", "slug": "sdlc"}]  # type: ignore[arg-type]
 
 
 @pytest.mark.asyncio

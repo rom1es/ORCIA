@@ -11,16 +11,13 @@ import type { SupportedWebLocale } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import type { AlertFeedbackInput } from "../shared/alertFeedback";
 import {
+  type CachedAgentsAndSkillsState,
+  type CatalogManagedLabels,
   buildAgentUpsertPayload,
   buildOptimisticAgent,
-  type CatalogManagedLabels,
   mapAgentDtoToUi,
-} from "./managedAgentsHelpers";
-import {
-  type CachedAgentsAndSkillsState,
-  mergeManagedStateWithActivePacks,
   slugifyIdentifier,
-} from "./packAgentsCatalog";
+} from "./managedAgentsHelpers";
 import { useManagedAgentExecutionActions } from "./useManagedAgentExecutionActions";
 import { useManagedAgentGovernanceActions } from "./useManagedAgentGovernanceActions";
 
@@ -34,11 +31,9 @@ export function useManagedAgentActions(params: {
     updater: (prev: CachedAgentsAndSkillsState) => CachedAgentsAndSkillsState,
   ) => void;
 }) {
-  const { activePacks, locale, catalogLabels, onFeedback, onModalError, updateManagedState } = params;
+  const { locale, catalogLabels, onFeedback, onModalError, updateManagedState } = params;
   const resolveAgents = (prev: CachedAgentsAndSkillsState): readonly UiManagedAgentItem[] =>
-    prev.agents.length > 0
-      ? prev.agents
-      : mergeManagedStateWithActivePacks(prev, activePacks).agents;
+    prev.agents;
 
   const reportError = (err: unknown, context: string, inModal = false): void => {
     const detail = formatRfc9457ErrorToBanner(err, locale, context).fullText;
@@ -262,7 +257,6 @@ export function useManagedAgentActions(params: {
   });
 
   const governanceActions = useManagedAgentGovernanceActions({
-    activePacks,
     locale,
     catalogLabels,
     onFeedback,

@@ -1,4 +1,4 @@
-"""Pure hexagonal ports for declarative APM packs v2 (`AD-19`, `Story 31.1`).
+"""Pure hexagonal ports for declarative APM packs v2 (`AD-19`, `Story 31.1`, `31.2`).
 
 Zero framework or database driver imports.
 """
@@ -26,6 +26,30 @@ class PackCodecPort(Protocol):
 
     def encode_zip_bytes(self, bundle: LoadedPackBundleV2) -> bytes:
         """Encode a pack bundle into deterministic reproducible `.zip` bytes."""
+        ...
+
+
+@runtime_checkable
+class PackCasStoragePort(Protocol):
+    """Async Content-Addressable Storage port for pack `.zip` archives (`SeaweedFS S3`)."""
+
+    async def put_archive_zip(
+        self,
+        *,
+        slug: str,
+        version: str,
+        archive_sha256: str,
+        zip_bytes: bytes,
+    ) -> str:
+        """Store `zip_bytes` under deterministic CAS key and return that key."""
+        ...
+
+    async def get_archive_zip(self, cas_key: str) -> bytes | None:
+        """Fetch raw archive `.zip` bytes for `cas_key`, or `None` if absent."""
+        ...
+
+    async def head_archive_zip(self, cas_key: str) -> bool:
+        """Return `True` if `cas_key` exists in CAS storage."""
         ...
 
 
@@ -60,4 +84,4 @@ class PackBundleRepositoryPort(Protocol):
         ...
 
 
-__all__ = ["PackBundleRepositoryPort", "PackCodecPort"]
+__all__ = ["PackBundleRepositoryPort", "PackCasStoragePort", "PackCodecPort"]

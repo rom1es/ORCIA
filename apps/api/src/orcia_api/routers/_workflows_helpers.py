@@ -1,4 +1,4 @@
-"""Internal store & RBAC helpers for `orcia_api.routers.workflows` (`Story 16.3`, `24.1`)."""
+"""Internal store & RBAC helpers for `orcia_api.routers.workflows` (`Story 16.3`, `31.2`)."""
 
 from __future__ import annotations
 
@@ -11,7 +11,6 @@ from orcia_api.dependencies import (
 )
 from orcia_api.routers._finops_scope_guards import validate_uuid
 from orcia_api.routers.auth import resolve_request_user
-from orcia_api.routers.packs import load_declarative_pack_bundles
 from orcia_core.agents.errors import ObserverModeReadOnlyError
 from orcia_core.kernel.events import WorkflowPublished
 from orcia_core.observability.logging import get_current_trace_id, get_logger
@@ -51,17 +50,11 @@ def enforce_not_observer(
 
 
 async def load_workflows_store(
-    request: Request,
+    _request: Request,
     sql_store: SqlWorkflowDefinitionsV2Store,
 ) -> dict[str, WorkflowDefinitionV2]:
-    """Merge pack-loaded workflow baselines with fresh PostgreSQL 18 persisted overrides."""
+    """Load `WorkflowDefinitionV2` baselines and overrides strictly from PostgreSQL 18."""
     store: dict[str, WorkflowDefinitionV2] = {}
-    bundles = load_declarative_pack_bundles(request)
-    for bundle in bundles.values():
-        for wf in bundle.workflows:
-            store[wf.id] = wf
-            store[wf.slug] = wf
-
     persisted = await sql_store.list_persisted_workflows()
     for saved in persisted:
         store[saved.id] = saved
@@ -72,21 +65,11 @@ async def load_workflows_store(
 
 
 async def load_vsm_definitions_from_pg18(
-    request: Request,
+    _request: Request,
     vsm_store: SqlVsmDefinitionsV2Store,
 ) -> list[ValueStreamMapSpec]:
-    """Read `ValueStreamMapSpec` rows from PG18 `vsm_definitions_v2`, seeding packs if empty."""
-    persisted = await vsm_store.list_vsm()
-    if persisted:
-        return persisted
-    bundles = load_declarative_pack_bundles(request)
-    pack_vsm_specs = [vsm for bundle in bundles.values() for vsm in bundle.vsm_specs]
-    if pack_vsm_specs:
-        await vsm_store.upsert_many_vsm(pack_vsm_specs)
-        persisted = await vsm_store.list_vsm()
-        if persisted:
-            return persisted
-    return pack_vsm_specs
+    """Read `ValueStreamMapSpec` rows strictly from PostgreSQL 18 `vsm_definitions_v2`."""
+    return await vsm_store.list_vsm()
 
 
 async def get_vsm_definition_from_pg18(

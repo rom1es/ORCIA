@@ -195,7 +195,11 @@ def resolve_default_packs_root() -> Path:
     curr = Path(__file__).resolve()
     for parent in curr.parents:
         candidate = parent / "packs"
-        if candidate.exists() and candidate.is_dir() and any(candidate.glob("*/pack.yaml")):
+        if (
+            candidate.exists()
+            and candidate.is_dir()
+            and (any(candidate.glob("*/apm.yml")) or any(candidate.glob("*/pack.yaml")))
+        ):
             return candidate
     return Path("packs")
 

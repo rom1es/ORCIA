@@ -135,18 +135,13 @@ export function consumeAssistantPrefillFromStorage(): string | null {
 }
 
 export function buildAssistantAutocompleteSuggestions(
-  activePacks: readonly { readonly packKey: string }[] = [],
+  _activePacks: readonly { readonly packKey: string }[] = [],
   isFr = true,
 ): readonly UiAssistantAutocompleteSuggestion[] {
   const autoCopy = resolveDictionaryForFlag(isFr).featureInboxAssistant.autocomplete;
   const suggestions: UiAssistantAutocompleteSuggestion[] = [];
   const seenTokens = new Set<string>();
   const cached = readCachedAgentsAndSkills();
-  const draftAgentTokens = new Set<string>(
-    (cached.agents ?? [])
-      .filter((ag) => ag.lifecycleStatus === "DRAFT" || ag.enabledOnWorkspace === false)
-      .map((ag) => ag.handle),
-  );
 
   const resolveScopeBadge = (scope: string | undefined, sourcePackKey?: string | null) =>
     scope === "PRIVATE"
@@ -179,43 +174,6 @@ export function buildAssistantAutocompleteSuggestions(
       description: sk.objective,
       badge: resolveScopeBadge(sk.visibilityScope, sk.sourcePackKey),
     });
-  }
-  for (const pack of activePacks) {
-    if (pack.packKey === "orcia-pack-sdlc") {
-      const sdlcDefaults: readonly UiAssistantAutocompleteSuggestion[] = [
-        {
-          id: "agent-architecte-solution",
-          kind: "agent",
-          token: "@architecte-solution",
-          name: autoCopy.sdlcArchitectName,
-          description: autoCopy.sdlcArchitectDesc,
-          badge: "orcia-pack-sdlc",
-        },
-        {
-          id: "agent-analyste-metier",
-          kind: "agent",
-          token: "@analyste-metier",
-          name: autoCopy.sdlcAnalystName,
-          description: autoCopy.sdlcAnalystDesc,
-          badge: "orcia-pack-sdlc",
-        },
-        {
-          id: "skill-revue-architecture",
-          kind: "skill",
-          token: "/revue-architecture",
-          name: autoCopy.sdlcReviewName,
-          description: autoCopy.sdlcReviewDesc,
-          badge: "orcia-pack-sdlc",
-        },
-      ];
-      for (const item of sdlcDefaults) {
-        if (item.kind === "agent" && draftAgentTokens.has(item.token)) continue;
-        if (!seenTokens.has(item.token)) {
-          seenTokens.add(item.token);
-          suggestions.push(item);
-        }
-      }
-    }
   }
   return suggestions;
 }

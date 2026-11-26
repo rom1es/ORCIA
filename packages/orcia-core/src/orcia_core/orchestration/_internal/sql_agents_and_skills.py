@@ -276,7 +276,8 @@ async def _delete_catalog_item(engine: AsyncEngine, resource_id: str, item_type:
         await conn.execute(
             sa.text(
                 "DELETE FROM catalog_items "
-                "WHERE resource_id = :resource_id AND item_type = :item_type"
+                "WHERE resource_id = :resource_id "
+                "AND item_type = :item_type AND pack_bundle_id IS NULL"
             ),
             {"resource_id": resource_id, "item_type": item_type},
         )

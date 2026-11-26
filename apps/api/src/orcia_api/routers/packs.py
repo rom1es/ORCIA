@@ -1,29 +1,37 @@
-"""Declarative Packs Registry & Workspace Pack Export Router (`TASK-05`, `Story 22.5`, `24.3`).
-
-Exposes:
-- `GET /api/v1/packs`: Lists hot-loaded declarative packs (`packs/<domain>/`), synchronizes
-  them idempotently into PostgreSQL 18 `declarative_pack_bundles`, and evaluates real-time
-  healthchecks for `required_connectors` via `orcia_connectors`.
-- `GET /api/v1/packs/health`: Probes real-time health of all required pack connectors
-  (combining `enterprise_connectors` PG18 config state and `OrciaConnectorProtocol.healthcheck()`).
-- `POST /api/v1/packs/export/{workspace_id}`: Synchronizes packs into PostgreSQL 18 and
-  exports a workspace / pack into a `.zip` archive.
-"""
+"""Declarative Packs Registry, Import & Delete Router (`Story 31.2`, PG18 + SeaweedFS CAS)."""
 
 from __future__ import annotations
 
 import re
 from datetime import UTC, datetime
+from typing import Annotated
 
-from fastapi import APIRouter, Query, Request, Response
+from fastapi import APIRouter, Depends, Path, Query, Request, Response
 
+from orcia_api.dependencies import (
+    get_pack_bundle_v2_repository,
+    get_pack_cas_storage,
+    get_pack_import_service,
+)
 from orcia_api.dependencies._core_providers import (
     get_configured_db_engine,
     is_pg_runtime_active,
 )
-from orcia_api.locales._router_locale_messages import get_router_copy
-from orcia_api.routers._settings_helpers import enforce_not_observer_mode
-from orcia_api.routers.auth import PROBLEM_RESPONSES, resolve_request_user
+from orcia_api.routers._packs_router_helpers import (
+    build_pack_summary_from_pg_row,
+    enforce_pack_mutation_guard,
+    evaluate_connector_requirement,
+    parse_pack_import_payload,
+    slots_to_required_connectors,
+    synthesize_zip_from_pg_row,
+    trace_id_for,
+)
+from orcia_api.routers.auth import PROBLEM_RESPONSES
+from orcia_api.schemas.packs import (
+    PackDeleteResponse,
+    PackImportEntityCountsResponse,
+    PackImportResponse,
+)
 from orcia_api.schemas.process_studio_v2 import (
     ConnectorRequirementHealthItemResponse,
     DeclarativePacksListResponse,
@@ -31,54 +39,22 @@ from orcia_api.schemas.process_studio_v2 import (
     PacksConnectorHealthResponse,
 )
 from orcia_connectors.adapters import get_default_enterprise_connectors
-from orcia_connectors.protocol import ConnectorHealthStatus, OrciaConnectorProtocol
-from orcia_core.bootstrap import (
-    list_enterprise_connectors_from_postgres18,
-    upsert_declarative_pack_bundles_sql,
-)
+from orcia_core.bootstrap import list_enterprise_connectors_from_postgres18
 from orcia_core.observability.logging import get_logger
-from orcia_core.packs.loader import (
-    DeclarativePackLoader,
-    LoadedPackBundle,
-    PackExporter,
-    RequiredConnectorSpec,
-    resolve_default_packs_root,
+from orcia_core.packs import (
+    PackBundleNotFoundError,
+    PackCasStoragePort,
+    PackImportService,
+    SqlPackBundleV2Repository,
 )
 from orcia_core.permissions.enterprise_connectors import EnterpriseConnectorRecord
-from orcia_core.permissions.errors import ObserverModeReadOnlyError
-from orcia_core.workflows import upsert_vsm_definitions_v2_sql
 
 logger = get_logger("orcia.api.packs")
-router = APIRouter(prefix="/api/v1/packs", tags=["Declarative Packs (Epic 15)"])
+router = APIRouter(prefix="/api/v1/packs", tags=["Declarative Packs (Epic 15 / Epic 31)"])
 
-
-def load_declarative_pack_bundles(request: Request) -> dict[str, LoadedPackBundle]:
-    """Load declarative packs via `DeclarativePackLoader` and cache on `request.app.state`."""
-    loader = DeclarativePackLoader(resolve_default_packs_root())
-    bundles = loader.load_all_packs()
-    request.app.state.declarative_pack_bundles = bundles
-    return bundles
-
-
-async def sync_declarative_pack_bundles_to_pg(
-    request: Request,
-    bundles: dict[str, LoadedPackBundle],
-) -> None:
-    """Idempotently upsert loaded pack bundles into PostgreSQL 18 `declarative_pack_bundles`."""
-    if not is_pg_runtime_active(request):
-        return
-    engine = get_configured_db_engine(request)
-    if engine is None:
-        return
-    try:
-        await upsert_declarative_pack_bundles_sql(engine, bundles)
-        await upsert_vsm_definitions_v2_sql(engine, bundles)
-    except Exception as exc:
-        logger.warning(
-            "declarative_pack_bundles_pg_sync_failed",
-            error_type=type(exc).__name__,
-            error=str(exc),
-        )
+PackRepoDep = Annotated[SqlPackBundleV2Repository, Depends(get_pack_bundle_v2_repository)]
+PackImportDep = Annotated[PackImportService, Depends(get_pack_import_service)]
+PackCasDep = Annotated[PackCasStoragePort | None, Depends(get_pack_cas_storage)]
 
 
 async def _load_pg_connectors_by_kind(request: Request) -> dict[str, EnterpriseConnectorRecord]:
@@ -99,92 +75,52 @@ async def _load_pg_connectors_by_kind(request: Request) -> dict[str, EnterpriseC
         return {}
 
 
-async def _evaluate_connector_requirement(
-    req_conn: RequiredConnectorSpec,
-    adapters: dict[str, OrciaConnectorProtocol],
-    pg_connectors: dict[str, EnterpriseConnectorRecord],
-) -> ConnectorRequirementHealthItemResponse:
-    kind_key = req_conn.connector_type.removeprefix("mcp:").removeprefix("atlassian-").lower()
-    pg_rec = pg_connectors.get(kind_key)
-    if pg_rec is not None and not pg_rec.enabled:
-        health = ConnectorHealthStatus(
-            connector_type=req_conn.connector_type,
-            ok=False,
-            latency_ms=0,
-            error_message=get_router_copy().connector_disabled.format(name=pg_rec.name),
-        )
-    elif (adapter := adapters.get(req_conn.connector_type)) is not None:
-        health = await adapter.healthcheck()
-    else:
-        health = ConnectorHealthStatus(
-            connector_type=req_conn.connector_type,
-            ok=False,
-            latency_ms=0,
-            error_message="Connector not registered",
-        )
-    return ConnectorRequirementHealthItemResponse(
-        connector_type=req_conn.connector_type,
-        required_scopes=req_conn.required_scopes,
-        used_for=req_conn.used_for,
-        health=health,
-    )
+async def _list_pg_bundles(repo: PackRepoDep) -> list[dict[str, object]]:
+    if getattr(repo, "_engine", None) is None:
+        return []
+    return list(await repo.list_bundles_v2())
 
 
 @router.get("", response_model=DeclarativePacksListResponse, responses=PROBLEM_RESPONSES)
-async def list_declarative_packs(request: Request) -> DeclarativePacksListResponse:
-    """Return all declarative packs from `packs/<domain>/` with PG18 sync & healthchecks."""
-    bundles = load_declarative_pack_bundles(request)
-    await sync_declarative_pack_bundles_to_pg(request, bundles)
+async def list_declarative_packs(
+    request: Request,
+    repo: PackRepoDep,
+) -> DeclarativePacksListResponse:
+    """List declarative packs strictly from PostgreSQL 18 with live connector healthchecks."""
+    rows = await _list_pg_bundles(repo)
     connectors = get_default_enterprise_connectors()
     pg_connectors = await _load_pg_connectors_by_kind(request)
-    summaries: list[DeclarativePackSummaryResponse] = []
-
-    for bundle in bundles.values():
-        m = bundle.manifest
-        health_items = [
-            await _evaluate_connector_requirement(req_conn, connectors, pg_connectors)
-            for req_conn in m.required_connectors
-        ]
-        summaries.append(
-            DeclarativePackSummaryResponse(
-                id=m.id,
-                slug=m.slug,
-                name=m.name,
-                version=m.version,
-                description=m.description,
-                rbac_namespace=m.rbac_namespace,
-                bundle_sha256=bundle.bundle_sha256,
-                agents_count=len(bundle.agents_markdown),
-                skills_count=len(bundle.skills_markdown),
-                gates_count=len(bundle.gates_specs),
-                vsm_count=len(bundle.vsm_specs),
-                workflows_count=len(bundle.workflows),
-                agents_slugs=sorted(bundle.agents_markdown.keys()),
-                skills_slugs=sorted(bundle.skills_markdown.keys()),
-                gates_slugs=sorted(bundle.gates_specs.keys()),
-                required_connectors=m.required_connectors,
-                connector_health=health_items,
-                quick_actions=m.quick_actions,
-            )
-        )
-
+    summaries: list[DeclarativePackSummaryResponse] = [
+        await build_pack_summary_from_pg_row(row, connectors, pg_connectors) for row in rows
+    ]
     return DeclarativePacksListResponse(packs=summaries)
 
 
 @router.get("/health", response_model=PacksConnectorHealthResponse, responses=PROBLEM_RESPONSES)
-async def check_packs_connectors_health(request: Request) -> PacksConnectorHealthResponse:
-    """Probe live connector health across all loaded declarative packs."""
-    bundles = load_declarative_pack_bundles(request)
+async def check_packs_connectors_health(
+    request: Request,
+    repo: PackRepoDep,
+) -> PacksConnectorHealthResponse:
+    """Probe live connector health across all PostgreSQL 18 declarative packs."""
+    rows = await _list_pg_bundles(repo)
     connectors = get_default_enterprise_connectors()
     pg_connectors = await _load_pg_connectors_by_kind(request)
     seen_types: set[str] = set()
     items: list[ConnectorRequirementHealthItemResponse] = []
-    for bundle in bundles.values():
-        for req_conn in bundle.manifest.required_connectors:
+    for row in rows:
+        raw_slots = row.get("declared_slots")
+        slots = (
+            [dict(s) for s in raw_slots if isinstance(s, dict)]
+            if isinstance(raw_slots, list)
+            else []
+        )
+        raw_manifest = row.get("manifest")
+        meta = dict(raw_manifest) if isinstance(raw_manifest, dict) else {}
+        for req_conn in slots_to_required_connectors(slots, meta):
             if req_conn.connector_type in seen_types:
                 continue
             seen_types.add(req_conn.connector_type)
-            items.append(await _evaluate_connector_requirement(req_conn, connectors, pg_connectors))
+            items.append(await evaluate_connector_requirement(req_conn, connectors, pg_connectors))
     healthy_count = sum(1 for item in items if item.health.ok)
     total_count = len(items)
     return PacksConnectorHealthResponse(
@@ -193,6 +129,99 @@ async def check_packs_connectors_health(request: Request) -> PacksConnectorHealt
         total_count=total_count,
         all_healthy=(healthy_count == total_count),
         checked_at_iso=datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+    )
+
+
+@router.post(
+    "/import",
+    response_model=PackImportResponse,
+    responses=PROBLEM_RESPONSES,
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "content": {
+                "application/json": {"schema": {"$ref": "#/components/schemas/PackImportRequest"}},
+                "multipart/form-data": {
+                    "schema": {
+                        "type": "object",
+                        "required": ["file"],
+                        "properties": {
+                            "file": {"type": "string", "format": "binary"},
+                            "scope_type": {"type": "string"},
+                            "scope_id": {"type": "string"},
+                            "replace_draft": {"type": "boolean"},
+                        },
+                    }
+                },
+            },
+        }
+    },
+)
+async def import_declarative_pack_archive(
+    request: Request,
+    import_svc: PackImportDep,
+) -> PackImportResponse:
+    """Import a validated `.zip` APM pack into PostgreSQL 18 + SeaweedFS CAS."""
+    user = enforce_pack_mutation_guard(request)
+    zip_bytes, scope_type, scope_id, replace_draft = await parse_pack_import_payload(request)
+    enforce_pack_mutation_guard(request, scope_type=scope_type, scope_id=scope_id)
+    trace_id = trace_id_for(request)
+    outcome = await import_svc.import_zip_bytes(
+        zip_bytes,
+        scope_type=scope_type,
+        scope_id=scope_id,
+        replace_draft=replace_draft,
+        allow_system_kind=False,
+        record_audit=True,
+        actor_id=user.id,
+        actor_email=user.email,
+        trace_id=trace_id,
+    )
+    return PackImportResponse(
+        bundle_id=outcome.bundle_id,
+        pack_id=outcome.pack_id,
+        slug=outcome.slug,
+        name=outcome.name,
+        version=outcome.version,
+        bundle_kind=outcome.bundle_kind,
+        scope_type=outcome.scope_type,
+        scope_id=outcome.scope_id,
+        status=outcome.status,
+        archive_sha256=outcome.archive_sha256,
+        cas_object_key=outcome.cas_object_key,
+        idempotent_noop=outcome.idempotent_noop,
+        counts=PackImportEntityCountsResponse(**outcome.counts),
+        trace_id=trace_id,
+    )
+
+
+@router.delete(
+    "/{bundle_id}",
+    response_model=PackDeleteResponse,
+    responses=PROBLEM_RESPONSES,
+)
+async def delete_declarative_pack_bundle(
+    bundle_id: Annotated[str, Path(min_length=1, max_length=128)],
+    request: Request,
+    import_svc: PackImportDep,
+) -> PackDeleteResponse:
+    """Delete an unused non-SYSTEM pack bundle (`403`/`409` guarded)."""
+    user = enforce_pack_mutation_guard(request)
+    trace_id = trace_id_for(request)
+    deleted = await import_svc.delete_bundle(
+        bundle_id,
+        allow_system_delete=False,
+        record_audit=True,
+        actor_id=user.id,
+        actor_email=user.email,
+        trace_id=trace_id,
+    )
+    return PackDeleteResponse(
+        bundle_id=deleted["bundle_id"],
+        slug=deleted["slug"],
+        version=deleted["version"],
+        deleted=True,
+        trace_id=trace_id,
     )
 
 
@@ -213,20 +242,31 @@ async def check_packs_connectors_health(request: Request) -> PacksConnectorHealt
 async def export_workspace_as_declarative_pack_zip(
     workspace_id: str,
     request: Request,
+    repo: PackRepoDep,
+    cas_storage: PackCasDep,
     pack_id: str = Query(default="orcia-pack-sdlc"),
 ) -> Response:
-    """Sync packs to PG18 and export a workspace's declarative pack into `.zip` (`CA-10.2.2`)."""
-    enforce_not_observer_mode(request)
-    if request.headers.get("Authorization"):
-        user = resolve_request_user(request)
-        if user.platform_role == "OBSERVER":
-            raise ObserverModeReadOnlyError(instance=str(request.url.path))
-    bundles = load_declarative_pack_bundles(request)
-    await sync_declarative_pack_bundles_to_pg(request, bundles)
-    bundle = bundles.get(pack_id) or next(iter(bundles.values()))
-    zip_bytes = PackExporter.export_bundle_to_zip_bytes(bundle, workspace_id=workspace_id)
+    """Export a PostgreSQL 18 / SeaweedFS CAS pack bundle as a `.zip` archive."""
+    enforce_pack_mutation_guard(request)
+    all_rows = await _list_pg_bundles(repo)
+    row = next(
+        (r for r in all_rows if r.get("pack_id") == pack_id or r.get("slug") == pack_id),
+        all_rows[0] if all_rows else None,
+    )
+    if row is None:
+        raise PackBundleNotFoundError(
+            detail_override=f"No declarative pack bundle found for {pack_id!r}.",
+            instance=str(request.url.path),
+        )
+    cas_key = str(row["cas_object_key"]) if row.get("cas_object_key") else None
+    zip_bytes: bytes | None = None
+    if cas_key and cas_storage is not None:
+        zip_bytes = await cas_storage.get_archive_zip(cas_key)
+    if zip_bytes is None:
+        zip_bytes = synthesize_zip_from_pg_row(row)
     safe_ws = re.sub(r"[^A-Za-z0-9_.-]+", "-", workspace_id).strip("-") or "workspace"
-    filename = f"{bundle.manifest.slug}-{safe_ws[:64]}.zip"
+    slug = str(row.get("slug") or "pack")
+    filename = f"{slug}-{safe_ws[:64]}.zip"
     return Response(
         content=zip_bytes,
         media_type="application/zip",

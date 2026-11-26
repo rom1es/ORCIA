@@ -1,3 +1,18 @@
+---
+name: Agent US
+description: Pilote le découpage d'une Feature en User Stories INVEST et délègue chaque étape au sous-agent spécialisé.
+x-orcia:
+  posture: PRODUCER
+  human_partner_role: PO_PM
+  llm_model_tier: complex
+  skill_refs:
+    - decoupe-us-invest
+    - diagrammes-mermaid
+  connector_slots:
+    - jira-tracker
+    - confluence-kb
+  status: active
+---
 # Agent US
 
 **Plateforme :** Rovo

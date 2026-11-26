@@ -26,7 +26,7 @@ import {
   readCachedAgentsAndSkills,
   resetCachedAgentsAndSkillsForTest,
   writeAssistantPrefillPrompt,
-} from "./packAgentsCatalog";
+} from "../../components/agentsAndSkillsBridgeStore";
 import { useCatalogRemoteTestBench } from "./useCatalogRemoteTestBench";
 import { useManagedAgentsAndSkills } from "./useManagedAgentsAndSkills";
 

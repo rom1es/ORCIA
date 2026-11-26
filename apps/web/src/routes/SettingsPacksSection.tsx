@@ -14,9 +14,6 @@ import type {
 import { DICTIONARIES, resolveLocaleForFlag } from "../i18n";
 import { formatRfc9457ErrorToBanner } from "../lib/formatRfc9457ErrorToBanner";
 import { SettingsPacksCatalogCard } from "./SettingsPacksCatalogCard";
-import { BUILTIN_INSTALLED_BUSINESS_PACKS } from "./settingsPacksPresets";
-
-export { BUILTIN_INSTALLED_BUSINESS_PACKS };
 
 export interface SettingsPacksSectionProps {
   readonly isFr: boolean;
@@ -48,7 +45,7 @@ export function SettingsPacksSection({
   const copy = DICTIONARIES[locale].routesAndWizards.settingsPacks;
   const [installedPacks, setInstalledPacks] = useState<
     readonly InstalledBusinessPackItemResponse[]
-  >(BUILTIN_INSTALLED_BUSINESS_PACKS);
+  >([]);
   const [selectedScopePath, setSelectedScopePath] = useState<string>("GLOBAL");
   const [packsLoadError, setPacksLoadError] = useState<string | null>(null);
 

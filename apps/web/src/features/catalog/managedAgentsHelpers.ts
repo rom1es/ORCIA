@@ -8,7 +8,25 @@ import type {
   UiManagedSkillItem,
 } from "@orcia/ui";
 import type { FeatureAdminCatalogSettingsDictionary } from "../../i18n/locales/feature_admin_catalog_settings_labels";
-import { slugifyIdentifier } from "./packAgentsCatalog";
+import {
+  type CachedAgentsAndSkillsState,
+  readCachedAgentsAndSkills,
+  writeCachedAgentsAndSkills,
+} from "../../components/agentsAndSkillsBridgeStore";
+
+export type { CachedAgentsAndSkillsState };
+export { readCachedAgentsAndSkills, writeCachedAgentsAndSkills };
+
+export function slugifyIdentifier(raw: string, fallback: string): string {
+  const cleaned = raw
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return cleaned || fallback;
+}
 
 import {
   DEFAULT_AGENT_GUARDRAILS,

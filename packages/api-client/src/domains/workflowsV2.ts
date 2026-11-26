@@ -1,4 +1,9 @@
 import type {
+  PackDeleteResponse,
+  PackImportRequest,
+  PackImportResponse,
+} from "../generated/packs";
+import type {
   DeclarativePacksListResponse,
   DeclarativePackSummaryResponse,
   HitlSignalRequest,
@@ -31,6 +36,9 @@ export type ApiImpactAssessmentResult = components["schemas"]["ImpactAssessmentR
 export type {
   DeclarativePacksListResponse,
   DeclarativePackSummaryResponse,
+  PackDeleteResponse,
+  PackImportRequest,
+  PackImportResponse,
   PacksConnectorHealthResponse,
   ProcessPendingRunItemResponse,
   ProcessPendingRunsListResponse,
@@ -60,6 +68,15 @@ export function createWorkflowsV2DomainClient(
     },
     getPacksHealth(): Promise<PacksConnectorHealthResponse> {
       return requestJson<PacksConnectorHealthResponse>("/api/v1/packs/health");
+    },
+    importPackArchive(payload: PackImportRequest): Promise<PackImportResponse> {
+      return requestJson<PackImportResponse>("/api/v1/packs/import", "POST", payload);
+    },
+    deletePackBundle(bundleId: string): Promise<PackDeleteResponse> {
+      return requestJson<PackDeleteResponse>(
+        `/api/v1/packs/${encodeURIComponent(bundleId)}`,
+        "DELETE",
+      );
     },
     exportWorkspacePackZip(
       workspaceId: string,

@@ -7,16 +7,28 @@ from orcia_core.packs._internal.apm_codec import (
     build_lockfile_dict,
     compute_archive_sha256,
 )
+from orcia_core.packs._internal.seaweedfs_pack_cas import (
+    SeaweedFsPackCasAdapter,
+    build_pack_cas_key,
+)
 from orcia_core.packs._internal.sql_declarative_packs import SqlPackBundleV2Repository
 from orcia_core.packs.errors import (
     EntityReferencedByPackDraftError,
+    PackBundleNotFoundError,
     PackClosureIncompleteError,
     PackExecutableHookForbiddenError,
     PackInvalidArchiveError,
     PackPiiOrInfraLeakError,
+    PackScopeEscalationForbiddenError,
     PackSlotUnboundError,
+    PackSystemDeleteForbiddenError,
     PackVersionConflictError,
     ResourcePinnedByActiveRunsError,
+)
+from orcia_core.packs.import_service import (
+    PackImportOutcome,
+    PackImportService,
+    seed_system_packs_on_engine,
 )
 from orcia_core.packs.loader import (
     DeclarativePackLoader,
@@ -50,7 +62,11 @@ from orcia_core.packs.models import (
     WorkspacePackActivation,
     WorkspacePackSlotBinding,
 )
-from orcia_core.packs.ports import PackBundleRepositoryPort, PackCodecPort
+from orcia_core.packs.ports import (
+    PackBundleRepositoryPort,
+    PackCasStoragePort,
+    PackCodecPort,
+)
 
 __all__ = [
     "ApmPackCodec",
@@ -61,8 +77,10 @@ __all__ = [
     "LoadedPackBundleV2",
     "PackAgentSpec",
     "PackBundleKind",
+    "PackBundleNotFoundError",
     "PackBundleRepositoryPort",
     "PackBundleStatus",
+    "PackCasStoragePort",
     "PackClosureIncompleteError",
     "PackCodecPort",
     "PackDnaMechanismSpec",
@@ -71,6 +89,8 @@ __all__ = [
     "PackExecutableHookForbiddenError",
     "PackExporter",
     "PackHelpArticleSpec",
+    "PackImportOutcome",
+    "PackImportService",
     "PackInstructionSpec",
     "PackInvalidArchiveError",
     "PackLockFileEntry",
@@ -80,19 +100,24 @@ __all__ = [
     "PackPolicySpec",
     "PackQuickActionSpec",
     "PackReadinessStatus",
+    "PackScopeEscalationForbiddenError",
     "PackScopeType",
     "PackSkillSpec",
     "PackSlotSpec",
     "PackSlotTargetKind",
     "PackSlotUnboundError",
     "PackSourceOrigin",
+    "PackSystemDeleteForbiddenError",
     "PackVersionConflictError",
     "QuickActionSpec",
     "RequiredConnectorSpec",
     "ResourcePinnedByActiveRunsError",
+    "SeaweedFsPackCasAdapter",
     "SqlPackBundleV2Repository",
     "WorkspacePackActivation",
     "WorkspacePackSlotBinding",
     "build_lockfile_dict",
+    "build_pack_cas_key",
     "compute_archive_sha256",
+    "seed_system_packs_on_engine",
 ]

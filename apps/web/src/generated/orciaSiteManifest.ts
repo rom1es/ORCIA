@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 64,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 248,
+    "techLeadReportsCount": 249,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -548,6 +548,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-26",
+      "phaseOrStory": "Story 31.2",
+      "reportFile": "31-2-transactional-pack-import-day0-seed-and-purge-disk-ts-hardcoding-tech-lead-report.md",
+      "domain": "Epic 31 Lot 2 — PackImportService (SeaweedFsPackCasAdapter + Atomic PG18 Materialization), Day-0 Seed Cutover, Purge of Disk/TS Pack Hardcoding & GET/POST /import/DELETE Pack Endpoints (CAP-055, CAP-056, CAP-082, CAP-090, CAP-140, CAP-200)",
+      "summary": "Closed (done, independent Testing Verifier verified): implemented PackImportService (import_service.py 295 L, seaweedfs_pack_cas.py 121 L, _sql_pack_import_tx.py 239 L, _sql_pack_delete_tx.py 158 L, 4 materializer modules <= 297 L with dynamic connector_schemes), added AND pack_bundle_id IS NULL isolation across standalone SQL queries, cut over Day-0 startup (_lifespan_infra.py) & 09_reset_db_first_boot.py / reset_day0.py to seed packs/sdlc & packs/orcia-docs (apm.yml + x-orcia:), exposed GET /api/v1/packs, POST /api/v1/packs/import, DELETE /api/v1/packs/{bundle_id} (packs.py 274 L, _packs_router_helpers.py 271 L, 0-diff OpenAPI SDK), eliminated runtime disk scans in packs.py & _workflows_helpers.py, and deleted hardcoded TS pack catalogs (packAgentsCatalog*.ts, processStudioV2StructuralPacks.ts, settingsPacksPresets.ts); all production files <= 299 L; verified 93% scoped branch coverage (114 tests), 1,232 passed tests/unit, 193 passed evals/security/contract, 10 passed PG18+Redis+S3 testcontainers, 9/9 Turbo (543 JS/TS tests), 6 passed (1.3m) Desktop Playwright E2E (08, 18, env -u ORCIA_E2E_SEED_FIXTURES), ruff (1,819 files)/mypy --strict (892 files)/lint-imports (5/5, 935 files)/lint_spine (0)/export_openapi (0-diff)/detect-secrets clean."
+    },
     {
       "date": "2026-11-26",
       "phaseOrStory": "Story 31.1",

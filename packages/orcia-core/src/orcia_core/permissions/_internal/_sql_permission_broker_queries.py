@@ -233,7 +233,8 @@ async def upsert_policy_on_conn(
     pol_uuid = str(coerce_broker_uuid(policy.id))
     find_sql = sa.text(
         "SELECT * FROM permission_broker_policies "
-        "WHERE id = CAST(:id AS uuid) OR policy_key = :pk OR uri_pattern = :up LIMIT 1"
+        "WHERE pack_bundle_id IS NULL "
+        "AND (id = CAST(:id AS uuid) OR policy_key = :pk OR uri_pattern = :up) LIMIT 1"
     )
     find_args = {"id": pol_uuid, "pk": policy.policy_key, "up": policy.uri_pattern}
     existing = (await conn.execute(find_sql, find_args)).mappings().first()
