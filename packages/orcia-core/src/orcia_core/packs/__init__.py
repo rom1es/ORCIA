@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from orcia_core.packs._internal._pack_export_scrubber import (
+    load_tenant_infra_identifiers_conn,
+    scan_rendered_files_for_leaks,
+)
+from orcia_core.packs._internal._sql_pack_composer_hydration import decode_json_dict
 from orcia_core.packs._internal.apm_codec import (
     ApmPackCodec,
     build_lockfile_dict,
@@ -17,6 +22,16 @@ from orcia_core.packs._internal.sql_pack_ontology_resolution import (
     load_workspace_active_pack_priorities_pg,
     resolve_workspace_pack_ontology_pg,
 )
+from orcia_core.packs.composer_models import (
+    ClosureMissingDependency,
+    PackClosureReport,
+    PackDraftDetail,
+    PackDraftMemberInput,
+    PackDraftMemberView,
+    PackExportResult,
+    ProseLintWarning,
+)
+from orcia_core.packs.composer_service import PackComposerService
 from orcia_core.packs.errors import (
     EntityReferencedByPackDraftError,
     PackActivationInvalidError,
@@ -101,6 +116,7 @@ from orcia_core.packs.workspace_packs_service import WorkspacePacksService
 
 __all__ = [
     "ApmPackCodec",
+    "ClosureMissingDependency",
     "DeclarativePackLoader",
     "DeclarativePackManifest",
     "EffectiveSlotBindingView",
@@ -115,12 +131,18 @@ __all__ = [
     "PackBundleStatus",
     "PackCasStoragePort",
     "PackClosureIncompleteError",
+    "PackClosureReport",
     "PackCodecPort",
+    "PackComposerService",
     "PackDnaMechanismSpec",
+    "PackDraftDetail",
     "PackDraftEntityType",
+    "PackDraftMemberInput",
+    "PackDraftMemberView",
     "PackDraftMembership",
     "PackEntityCollisionError",
     "PackExecutableHookForbiddenError",
+    "PackExportResult",
     "PackExporter",
     "PackHelpArticleSpec",
     "PackImportOutcome",
@@ -145,6 +167,7 @@ __all__ = [
     "PackSystemDeleteForbiddenError",
     "PackVersionConflictError",
     "PinnedPackManifestEntry",
+    "ProseLintWarning",
     "QualifiedEntityRef",
     "QuickActionSpec",
     "RequiredConnectorSpec",
@@ -165,15 +188,18 @@ __all__ = [
     "build_pack_cas_key",
     "build_pinned_run_lock_payload",
     "compute_archive_sha256",
+    "decode_json_dict",
     "evaluate_pack_slot_readiness",
     "format_agent_mention",
     "format_pack_resource_uri",
     "format_skill_command",
     "is_binding_effectively_bound",
+    "load_tenant_infra_identifiers_conn",
     "load_workspace_active_pack_priorities_pg",
     "parse_qualified_entity_ref",
     "resolve_workspace_entity_candidates",
     "resolve_workspace_pack_ontology_pg",
     "sanitize_workflow_inputs_for_slots",
+    "scan_rendered_files_for_leaks",
     "seed_system_packs_on_engine",
 ]

@@ -107,9 +107,20 @@ async def test_declarative_packs_and_durable_wizards_persist_in_postgres18(
             assert r_empty.status_code == 200, r_empty.text
             assert r_empty.json()["packs"] == []
 
+            karim = app1.state.auth_service.resolve_user(persona_key="karim")
+            ktok = app1.state.auth_service.jwt_manager.issue_token_pair(
+                user_id=karim.id,
+                email=karim.email,
+                role=karim.platform_role,
+                org_unit_id=karim.primary_org_unit_id,
+                archetype=karim.human_profile_archetype,
+                auth_mode="LOCAL",
+            ).access_token
+            k_hdr = {"Authorization": f"Bearer {ktok}"}
             r_missing_export = await client1.post(
                 "/api/v1/packs/export/ws-pg18-test",
                 params={"pack_id": "orcia-pack-sdlc"},
+                headers=k_hdr,
             )
             assert r_missing_export.status_code == 404
 
@@ -124,6 +135,7 @@ async def test_declarative_packs_and_durable_wizards_persist_in_postgres18(
             r_export = await client1.post(
                 "/api/v1/packs/export/ws-pg18-test",
                 params={"pack_id": "orcia-pack-sdlc"},
+                headers=k_hdr,
             )
             assert r_export.status_code == 200, r_export.text
             assert r_export.headers["content-type"].startswith("application/zip")

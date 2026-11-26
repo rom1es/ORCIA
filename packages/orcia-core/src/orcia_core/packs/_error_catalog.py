@@ -97,6 +97,16 @@ PACKS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
             "The pack references missing or non-ACTIVE agents, skills, workflows, or policies.",
         ),
     },
+    "ERR_PACK_CLOSURE_INCOMPLETE_DETAIL": {
+        "fr": LocalizedErrorCopy(
+            "Clôture transitive du pack incomplète",
+            "Dépendances manquantes ou non actives détectées : {missing_dependencies}.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Incomplete pack dependency closure",
+            "Missing or non-ACTIVE dependencies detected: {missing_dependencies}.",
+        ),
+    },
     "ERR_PACK_PII_OR_INFRA_LEAK": {
         "fr": LocalizedErrorCopy(
             "Fuite potentielle de PII, secret ou infrastructure détectée",
@@ -107,6 +117,16 @@ PACKS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
             "Potential PII, secret, or infrastructure leak detected",
             "Pack export was blocked because an internal tenant identifier, private host, secret, "
             "or unauthorized email literal remains in the rendered archive.",
+        ),
+    },
+    "ERR_PACK_PII_OR_INFRA_LEAK_DETAIL": {
+        "fr": LocalizedErrorCopy(
+            "Fuite potentielle de PII, secret ou infrastructure détectée",
+            "Export bloqué suite à des détections résiduelles : {leak_summary}.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Potential PII, secret, or infrastructure leak detected",
+            "Export blocked due to residual findings: {leak_summary}.",
         ),
     },
     "ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS": {
@@ -131,6 +151,18 @@ PACKS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
             "Entity referenced by a pack draft",
             "This resource is referenced by one or more pack drafts. Unlink the draft "
             "membership first or confirm explicit unlink.",
+        ),
+    },
+    "ERR_ENTITY_REFERENCED_BY_PACK_DRAFT_DETAIL": {
+        "fr": LocalizedErrorCopy(
+            "Entité référencée par un brouillon de pack",
+            "Cette ressource est référencée par les brouillons suivants : {draft_packs}. "
+            "Confirmez avec unlink_from_draft_packs=true pour détacher et supprimer.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Entity referenced by a pack draft",
+            "This resource is referenced by draft packs: {draft_packs}. "
+            "Pass unlink_from_draft_packs=true to detach and delete atomically.",
         ),
     },
     "ERR_PACK_BUNDLE_NOT_FOUND": {
@@ -185,6 +217,26 @@ PACKS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
             "Ambiguous pack entity reference",
             "Reference '{entity_ref}' matches multiple candidates ({candidates}). "
             "Specify the qualified reference.",
+        ),
+    },
+    "ERR_FOREIGN_KEY_CONSTRAINT_CONFLICT": {
+        "fr": LocalizedErrorCopy(
+            "Référence active bloquante",
+            "L'opération est bloquée par une contrainte d'intégrité référentielle active.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Active foreign-key constraint conflict",
+            "Operation blocked by an active referential integrity constraint.",
+        ),
+    },
+    "ERR_UNIQUE_CONSTRAINT_CONFLICT": {
+        "fr": LocalizedErrorCopy(
+            "Conflit d'unicité",
+            "Un enregistrement portant cette clé unique existe déjà.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Unique constraint conflict",
+            "A conflicting record with the same unique key already exists.",
         ),
     },
 }

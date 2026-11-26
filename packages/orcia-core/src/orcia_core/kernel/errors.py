@@ -7,7 +7,7 @@ and registers its localized FR/EN copy via `register_domain_error_catalog()`.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 
 from orcia_core.kernel._error_catalog import (
     ERROR_CATALOG,
@@ -90,6 +90,40 @@ class ResourcePinnedByActiveRunsError(OrciaDomainError):
 
     error_code = "ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS"
     http_status, type_slug = 409, "resource-pinned-by-active-runs"
+
+
+class EntityReferencedByPackDraftError(OrciaDomainError):
+    """Raised (`HTTP 409`) when deleting an entity referenced by `pack_draft_memberships`."""
+
+    error_code = "ERR_ENTITY_REFERENCED_BY_PACK_DRAFT"
+    http_status, type_slug = 409, "entity-referenced-by-pack-draft"
+
+    def __init__(
+        self,
+        *,
+        draft_packs: Sequence[Mapping[str, str]] = (),
+        detail_override: str | None = None,
+        detail_code: str | None = None,
+        detail_params: Mapping[str, object] | None = None,
+        instance: str | None = None,
+        permission_broker_hint: str | None = None,
+    ) -> None:
+        self.draft_packs = tuple(dict(item) for item in draft_packs)
+        merged_params = dict(detail_params) if detail_params is not None else {}
+        if self.draft_packs and "draft_packs" not in merged_params:
+            merged_params["draft_packs"] = ", ".join(
+                f"{p.get('pack_slug', '')}@{p.get('version', '')}" for p in self.draft_packs
+            )
+        resolved_code = detail_code
+        if resolved_code is None and detail_override is None and self.draft_packs:
+            resolved_code = "ERR_ENTITY_REFERENCED_BY_PACK_DRAFT_DETAIL"
+        super().__init__(
+            detail_override=detail_override,
+            detail_code=resolved_code,
+            detail_params=merged_params or None,
+            instance=instance,
+            permission_broker_hint=permission_broker_hint,
+        )
 
 
 class ValidationDomainError(OrciaDomainError):
@@ -177,6 +211,7 @@ __all__ = [
     "CriticalWorkflowRequiresHumanGateError",
     "DEFAULT_LOCALE",
     "ERROR_CATALOG",
+    "EntityReferencedByPackDraftError",
     "FunctionalConnectorError",
     "HumanAnchorRequiredError",
     "LocalizedErrorCopy",

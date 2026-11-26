@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 64,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 251,
+    "techLeadReportsCount": 252,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -548,6 +548,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-26",
+      "phaseOrStory": "Story 31.5",
+      "reportFile": "31-5-pack-composer-anti-hostage-unlink-closure-gate-and-scrubbed-zip-export-tech-lead-report.md",
+      "domain": "Epic 31 Lot 4 — Pack Composer (CUSTOM Drafts), Anti-Hostage Unlink Guard (409 + ?unlink_from_draft_packs=true), Closure Gate (422), Scrubbed .zip + apm.lock.yaml Export & OpenAPI SDK (CAP-055, CAP-056, CAP-082, CAP-090, CAP-140, CAP-200)",
+      "summary": "Closed (done, bmad-architect-worker APPROVED, independent Testing Verifier verified): implemented PackComposerService (253 L), 8-table typed FK SQL draft composer (_sql_pack_composer*.py), shared anti-hostage guard (pack_draft_guard.py 243 L, entity_delete_tx.py 278 L, _sql_agents_delete.py 242 L, audit_ledger PACK_DRAFT_MEMBER_UNLINKED_ON_ENTITY_DELETE), transitive closure gate + bare-handle prose linter (_pack_closure_analyzer.py 265 L, _pack_closure_helpers.py 234 L, _pack_closure_lint.py 121 L), structured-only URI/slot/tier scrubber + O(1) PII/infra/secret leak scanner + deterministic .zip renderer (_pack_export_*.py), /api/v1/packs/composer CRUD/members/publish/export & delete guards (pack_composer.py 258 L, _entity_delete_rbac.py 250 L, _packs_export_legacy_route.py 131 L, 0-diff OpenAPI SDK); all non-barrel Story 31.5 .py files <= 299 L; verified 94% 31-module scoped branch coverage (2,095 stmts / 790 branches, 136 tests), 1,296 passed tests/unit, 193 passed evals/security/contract, 15 passed (6 + 9) PG18+Redis+S3 testcontainers, 9/9 Turbo (544 JS/TS tests), ruff (1,915 files)/mypy --strict (948 files)/lint-imports (5/5, 907 files, 6,581 deps)/lint_spine (0)/export_openapi (0-diff)/detect-secrets clean, and gitnexus analyze (50,631 nodes / 218,736 edges / 849 clusters / 1,527 flows)."
+    },
     {
       "date": "2026-11-26",
       "phaseOrStory": "Story 31.4",

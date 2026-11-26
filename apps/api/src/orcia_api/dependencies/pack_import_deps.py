@@ -9,6 +9,7 @@ from fastapi import Request
 from orcia_api.dependencies._core_providers import get_configured_db_engine
 from orcia_core.packs import (
     PackCasStoragePort,
+    PackComposerService,
     PackImportService,
     SeaweedFsPackCasAdapter,
     SqlPackBundleV2Repository,
@@ -88,9 +89,26 @@ def get_workspace_packs_service(request: Request) -> WorkspacePacksService:
     return svc
 
 
+def get_pack_composer_service(request: Request) -> PackComposerService:
+    """Return `PackComposerService` wired to PG18 `db_engine` and SeaweedFS CAS."""
+    engine = get_configured_db_engine(request)
+    cas_storage = get_pack_cas_storage(request)
+    svc: PackComposerService | None = getattr(request.app.state, "pack_composer_service", None)
+    if svc is None:
+        svc = PackComposerService(engine=engine, cas_storage=cas_storage)
+        request.app.state.pack_composer_service = svc
+    else:
+        if engine is not None and getattr(svc, "_engine", None) is None:
+            svc.set_engine(engine)
+        if cas_storage is not None and getattr(svc, "_cas_storage", None) is None:
+            svc.set_cas_storage(cas_storage)
+    return svc
+
+
 __all__ = [
     "get_pack_bundle_v2_repository",
     "get_pack_cas_storage",
+    "get_pack_composer_service",
     "get_pack_import_service",
     "get_workspace_packs_service",
 ]

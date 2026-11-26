@@ -9,6 +9,11 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from orcia_core.orchestration._agents_namespacing import annotate_skills_and_agents_namespacing
+from orcia_core.orchestration._internal._sql_agents_delete import (
+    CatalogAuthCallback,
+    delete_agent_from_postgres18,
+    delete_skill_with_agent_sync,
+)
 from orcia_core.orchestration._internal._sql_agents_hydration import (
     hydrate_agent_record,
     hydrate_skill_record,
@@ -29,6 +34,7 @@ from orcia_core.orchestration.agents_and_skills_models import (
     ManagedAgentRecord,
     ManagedSkillRecord,
 )
+from orcia_core.storage.pack_draft_guard import DraftAuthCallback
 from orcia_kernel.ids import new_uuid7_str
 
 
@@ -217,31 +223,18 @@ async def persist_agent_to_postgres18(
         org_id = await _ensure_root_org_unit_id(conn)
         await conn.execute(
             sa.text(
-                """
-                INSERT INTO catalog_items (
-                    id, resource_id, uri, title, description, resource_type,
-                    source_format, version, sha256, cas_key, visibility_scope,
-                    owner_org_unit_id, owner_workspace_id, item_type, metadata_jsonb
-                )
-                VALUES (
-                    :id, :resource_id, :uri, :title, :description, 'agent',
-                    'ORCIA', :version, :sha256, :cas_key, 'SHARED_WORKSPACE',
-                    :owner_org_unit_id, :owner_workspace_id, 'USER_AGENT',
-                    CAST(:metadata_jsonb AS jsonb)
-                )
-                ON CONFLICT (resource_id) WHERE pack_bundle_id IS NULL DO UPDATE SET
-                    uri = EXCLUDED.uri,
-                    title = EXCLUDED.title,
-                    description = EXCLUDED.description,
-                    version = EXCLUDED.version,
-                    sha256 = EXCLUDED.sha256,
-                    cas_key = EXCLUDED.cas_key,
-                    owner_workspace_id = COALESCE(
-                        EXCLUDED.owner_workspace_id, catalog_items.owner_workspace_id
-                    ),
-                    item_type = EXCLUDED.item_type,
-                    metadata_jsonb = EXCLUDED.metadata_jsonb
-                """
+                "INSERT INTO catalog_items (id, resource_id, uri, title, description, "
+                "resource_type, source_format, version, sha256, cas_key, visibility_scope, "
+                "owner_org_unit_id, owner_workspace_id, item_type, metadata_jsonb) "
+                "VALUES (:id, :resource_id, :uri, :title, :description, 'agent', 'ORCIA', "
+                ":version, :sha256, :cas_key, 'SHARED_WORKSPACE', :owner_org_unit_id, "
+                ":owner_workspace_id, 'USER_AGENT', CAST(:metadata_jsonb AS jsonb)) "
+                "ON CONFLICT (resource_id) WHERE pack_bundle_id IS NULL DO UPDATE SET "
+                "uri = EXCLUDED.uri, title = EXCLUDED.title, description = EXCLUDED.description, "
+                "version = EXCLUDED.version, sha256 = EXCLUDED.sha256, cas_key = EXCLUDED.cas_key, "
+                "owner_workspace_id = COALESCE("
+                "EXCLUDED.owner_workspace_id, catalog_items.owner_workspace_id), "
+                "item_type = EXCLUDED.item_type, metadata_jsonb = EXCLUDED.metadata_jsonb"
             ),
             {
                 "id": UUID(new_uuid7_str()),
@@ -259,29 +252,42 @@ async def persist_agent_to_postgres18(
         )
 
 
-async def _delete_catalog_item(engine: AsyncEngine, resource_id: str, item_type: str) -> None:
-    async with engine.begin() as conn:
-        await conn.execute(
-            sa.text(
-                "DELETE FROM catalog_items "
-                "WHERE resource_id = :resource_id "
-                "AND item_type = :item_type AND pack_bundle_id IS NULL"
-            ),
-            {"resource_id": resource_id, "item_type": item_type},
-        )
-
-
 async def delete_skill_from_postgres18(
     engine: AsyncEngine,
     skill_id: str,
     updated_agents: tuple[ManagedAgentRecord, ...],
-) -> None:
-    """Delete a Skill from PostgreSQL 18 `catalog_items` and update detached Agents."""
-    await _delete_catalog_item(engine, skill_id, "USER_SKILL")
-    for agent in updated_agents:
-        await persist_agent_to_postgres18(engine, agent)
+    *,
+    unlink_from_draft_packs: bool = False,
+    authorize_target_cb: CatalogAuthCallback | None = None,
+    authorize_draft_cb: DraftAuthCallback | None = None,
+    actor_id: str = "system",
+    actor_email: str | None = None,
+    trace_id: str | None = None,
+    instance: str | None = None,
+) -> list[dict[str, str]]:
+    """Delete a Skill from PG18 `catalog_items` and detach Agents atomically."""
+    found, unlinked = await delete_skill_with_agent_sync(
+        engine,
+        skill_id,
+        updated_agents,
+        unlink_from_draft_packs=unlink_from_draft_packs,
+        authorize_target_cb=authorize_target_cb,
+        authorize_draft_cb=authorize_draft_cb,
+        actor_id=actor_id,
+        actor_email=actor_email,
+        trace_id=trace_id,
+        instance=instance,
+    )
+    if not found:
+        for agent in updated_agents:
+            await persist_agent_to_postgres18(engine, agent)
+    return unlinked
 
 
-async def delete_agent_from_postgres18(engine: AsyncEngine, agent_id: str) -> None:
-    """Delete an Agent from PostgreSQL 18 `catalog_items`."""
-    await _delete_catalog_item(engine, agent_id, "USER_AGENT")
+__all__ = [
+    "delete_agent_from_postgres18",
+    "delete_skill_from_postgres18",
+    "load_agents_and_skills_from_postgres18",
+    "persist_agent_to_postgres18",
+    "persist_skill_to_postgres18",
+]

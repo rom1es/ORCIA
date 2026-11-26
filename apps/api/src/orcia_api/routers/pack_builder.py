@@ -210,22 +210,5 @@ async def export_from_workspace_to_pack_endpoint(
         sanitized_payload=res.sanitized_payload,
     )
 
-    res = await svc.export_from_workspace_to_pack(
-        pack_slug=payload.pack_slug,
-        title=payload.title,
-        workspace_id=payload.workspace_id,
-        artifact_title=payload.artifact_title,
-        artifact_summary=payload.artifact_summary,
-        actor_role=payload.actor_role,
-    )
-    return ExportFromWorkspaceToPackResponse(
-        pack_id=res.pack_id,
-        pack_slug=res.pack_slug,
-        source_workspace_id=res.source_workspace_id,
-        generated_workflow_id=res.generated_workflow_id,
-        generated_blueprint_files=list(res.generated_blueprint_files),
-        authority_role=res.authority_role,
-    )
-
 
 __all__ = ["router"]

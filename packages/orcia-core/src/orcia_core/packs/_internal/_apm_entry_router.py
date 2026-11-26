@@ -63,7 +63,11 @@ def ingest_pack_entry(acc: ParsedPackEntries, *, rel_path: str, blob: bytes) -> 
         )
     elif norm.startswith("workflows/") and norm.endswith((".yaml", ".yml")):
         wf_data = load_yaml_safe(blob, source_path=rel_path)
-        if posixpath.basename(norm).startswith("vsm-"):
+        is_vsm = isinstance(wf_data, dict) and (
+            "nodes" in wf_data
+            or (posixpath.basename(norm).startswith("vsm-") and "sub_steps" not in wf_data)
+        )
+        if is_vsm:
             acc.vsm_specs.append(ValueStreamMapSpec.model_validate(wf_data))
         else:
             acc.workflows.append(WorkflowDefinitionV2.model_validate(wf_data))

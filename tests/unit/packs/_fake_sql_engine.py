@@ -38,6 +38,10 @@ class FakeSqlResult:
         items = self._mappings if self._mappings else self._rows
         return items[0] if items else None
 
+    def one(self) -> Any:
+        items = self._mappings if self._mappings else self._rows
+        return items[0]
+
     def scalar(self) -> Any:
         if self._has_scalar or self._scalar is not None:
             return self._scalar

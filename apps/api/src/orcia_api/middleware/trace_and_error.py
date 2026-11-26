@@ -7,6 +7,7 @@ from collections.abc import Awaitable, Callable, Mapping
 from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import DBAPIError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -71,6 +72,9 @@ def build_problem_response(
     instance_override: str | None = None,
     permission_broker_hint: str | None = None,
     progress_percentage: int | None = None,
+    draft_packs: list[dict[str, str]] | None = None,
+    missing_dependencies: list[dict[str, str]] | None = None,
+    leak_findings: list[dict[str, str]] | None = None,
 ) -> JSONResponse:
     """Construct a localized RFC 9457 `application/problem+json` response."""
     trace_id = _extract_request_trace_id(request)
@@ -93,6 +97,9 @@ def build_problem_response(
         trace_id=trace_id,
         permission_broker_hint=permission_broker_hint,
         progress_percentage=progress_percentage,
+        draft_packs=draft_packs,
+        missing_dependencies=missing_dependencies,
+        leak_findings=leak_findings,
     )
     logger.warning(
         "api.problem_details",
@@ -120,6 +127,9 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def handle_domain_error(request: Request, exc: OrciaDomainError) -> JSONResponse:
         mapping = resolve_domain_error_mapping(exc)
         progress_pct = getattr(exc, "progress_percentage", None)
+        raw_drafts = getattr(exc, "draft_packs", None)
+        raw_missing = getattr(exc, "missing_dependencies", None)
+        raw_leaks = getattr(exc, "leak_findings", None)
         return build_problem_response(
             request,
             status_code=mapping.http_status,
@@ -131,6 +141,9 @@ def register_exception_handlers(app: FastAPI) -> None:
             instance_override=exc.instance,
             permission_broker_hint=exc.permission_broker_hint,
             progress_percentage=progress_pct,
+            draft_packs=list(raw_drafts) if raw_drafts else None,
+            missing_dependencies=list(raw_missing) if raw_missing else None,
+            leak_findings=list(raw_leaks) if raw_leaks else None,
         )
 
     @app.exception_handler(StarletteHTTPException)
@@ -167,6 +180,67 @@ def register_exception_handlers(app: FastAPI) -> None:
             status_code=422,
             error_code="ERR_VALIDATION_FAILED",
             type_uri="https://orcia.io/problems/validation-failed",
+        )
+
+    @app.exception_handler(DBAPIError)
+    async def handle_dbapi_error(request: Request, exc: DBAPIError) -> JSONResponse:
+        trace_id = _extract_request_trace_id(request)
+        bind_trace_context(trace_id)
+        pgcode = str(getattr(getattr(exc, "orig", None), "pgcode", "") or "")
+        raw_msg = str(exc)
+        logger.warning(
+            "api.dbapi_error",
+            exc_type=type(exc).__name__,
+            pgcode=pgcode,
+            trace_id=trace_id,
+        )
+        if pgcode == "23503":
+            if "pack_draft_memberships" in raw_msg:
+                return build_problem_response(
+                    request,
+                    status_code=409,
+                    error_code="ERR_ENTITY_REFERENCED_BY_PACK_DRAFT",
+                    type_uri="https://orcia.io/problems/entity-referenced-by-pack-draft",
+                )
+            if "run_lock" in raw_msg or "workflow_runs" in raw_msg:
+                return build_problem_response(
+                    request,
+                    status_code=409,
+                    error_code="ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS",
+                    type_uri="https://orcia.io/problems/resource-pinned-by-active-runs",
+                )
+            return build_problem_response(
+                request,
+                status_code=409,
+                error_code="ERR_FOREIGN_KEY_CONSTRAINT_CONFLICT",
+                type_uri="https://orcia.io/problems/foreign-key-constraint-conflict",
+            )
+        if pgcode == "23505":
+            if "declarative_pack_bundles" in raw_msg or "uq_pack_bundle" in raw_msg:
+                return build_problem_response(
+                    request,
+                    status_code=409,
+                    error_code="ERR_PACK_VERSION_CONFLICT",
+                    type_uri="https://orcia.io/problems/pack-version-conflict",
+                )
+            return build_problem_response(
+                request,
+                status_code=409,
+                error_code="ERR_UNIQUE_CONSTRAINT_CONFLICT",
+                type_uri="https://orcia.io/problems/unique-constraint-conflict",
+            )
+        if pgcode in ("23514", "22P02", "23502"):
+            return build_problem_response(
+                request,
+                status_code=422,
+                error_code="ERR_VALIDATION_FAILED",
+                type_uri="https://orcia.io/problems/validation-failed",
+            )
+        return build_problem_response(
+            request,
+            status_code=500,
+            error_code="ERR_INTERNAL_SERVER_ERROR",
+            type_uri="https://orcia.io/problems/internal-server-error",
         )
 
     @app.exception_handler(Exception)

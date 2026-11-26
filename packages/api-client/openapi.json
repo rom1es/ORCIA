@@ -6389,6 +6389,35 @@
         "title": "ClaimTaskResponse",
         "type": "object"
       },
+      "ClosureMissingDependencyResponse": {
+        "description": "Missing or non-ACTIVE transitive dependency surfaced during closure validation.",
+        "properties": {
+          "entity_id": {
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "entity_type": {
+            "title": "Entity Type",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "referenced_by": {
+            "title": "Referenced By",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entity_type",
+          "entity_id",
+          "reason",
+          "referenced_by"
+        ],
+        "title": "ClosureMissingDependencyResponse",
+        "type": "object"
+      },
       "CodegraphActiveRepoResponse": {
         "description": "Code repository datasource enabled for codegraph indexing in the workspace.",
         "properties": {
@@ -8112,6 +8141,90 @@
         "title": "CreateOrUpdateAssistantFolderRequest",
         "type": "object"
       },
+      "CreatePackDraftRequest": {
+        "description": "Create a `CUSTOM` `DRAFT` pack bundle (`POST /api/v1/packs/composer`).",
+        "properties": {
+          "author": {
+            "default": "",
+            "title": "Author",
+            "type": "string"
+          },
+          "declared_slots": {
+            "items": {
+              "$ref": "#/components/schemas/PackComposerSlotSchema"
+            },
+            "title": "Declared Slots",
+            "type": "array"
+          },
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "license": {
+            "default": "",
+            "title": "License",
+            "type": "string"
+          },
+          "maintainers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Maintainers",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "quick_actions": {
+            "items": {
+              "$ref": "#/components/schemas/PackComposerQuickActionSchema"
+            },
+            "title": "Quick Actions",
+            "type": "array"
+          },
+          "scope_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_type": {
+            "default": "WORKSPACE",
+            "enum": [
+              "BU",
+              "TEAM",
+              "WORKSPACE"
+            ],
+            "title": "Scope Type",
+            "type": "string"
+          },
+          "slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+            "title": "Slug",
+            "type": "string"
+          },
+          "version": {
+            "default": "0.1.0",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "scope_id"
+        ],
+        "title": "CreatePackDraftRequest",
+        "type": "object"
+      },
       "CreateWorkflowTriggerRequest": {
         "additionalProperties": false,
         "description": "Create a governed workflow trigger attached to an active autonomy contract.",
@@ -8850,6 +8963,16 @@
           "trace_id": {
             "title": "Trace Id",
             "type": "string"
+          },
+          "unlinked_draft_packs": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Unlinked Draft Packs",
+            "type": "array"
           }
         },
         "required": [
@@ -12472,6 +12595,45 @@
           "trace_id"
         ],
         "title": "GrantDeleteResponse",
+        "type": "object"
+      },
+      "GuardedEntityDeleteResponse": {
+        "description": "Response payload for guarded PG18 entity `DELETE` endpoints (`Story 31.5`).",
+        "properties": {
+          "deleted_id": {
+            "title": "Deleted Id",
+            "type": "string"
+          },
+          "deleted_uuid": {
+            "title": "Deleted Uuid",
+            "type": "string"
+          },
+          "entity_type": {
+            "title": "Entity Type",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "unlinked_draft_packs": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Unlinked Draft Packs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "entity_type",
+          "deleted_id",
+          "deleted_uuid",
+          "trace_id"
+        ],
+        "title": "GuardedEntityDeleteResponse",
         "type": "object"
       },
       "GuidanceStepItemResponse": {
@@ -19002,6 +19164,136 @@
         "title": "OutboxReplayResponse",
         "type": "object"
       },
+      "PackClosureReportResponse": {
+        "description": "Transitive dependency closure & bare-handle lint preview.",
+        "properties": {
+          "auto_included_count": {
+            "default": 0,
+            "title": "Auto Included Count",
+            "type": "integer"
+          },
+          "complete": {
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "missing_dependencies": {
+            "items": {
+              "$ref": "#/components/schemas/ClosureMissingDependencyResponse"
+            },
+            "title": "Missing Dependencies",
+            "type": "array"
+          },
+          "non_active_dependencies": {
+            "items": {
+              "$ref": "#/components/schemas/ClosureMissingDependencyResponse"
+            },
+            "title": "Non Active Dependencies",
+            "type": "array"
+          },
+          "prose_lint_warnings": {
+            "items": {
+              "$ref": "#/components/schemas/ProseLintWarningResponse"
+            },
+            "title": "Prose Lint Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "complete"
+        ],
+        "title": "PackClosureReportResponse",
+        "type": "object"
+      },
+      "PackComposerQuickActionSchema": {
+        "description": "Quick action shortcut declared inside a composed pack.",
+        "properties": {
+          "icon": {
+            "default": "play",
+            "title": "Icon",
+            "type": "string"
+          },
+          "id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          },
+          "target_workflow_slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Target Workflow Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "target_workflow_slug"
+        ],
+        "title": "PackComposerQuickActionSchema",
+        "type": "object"
+      },
+      "PackComposerSlotSchema": {
+        "description": "Logical connector slot declaration inside a composed pack.",
+        "properties": {
+          "connector_kind": {
+            "default": "",
+            "title": "Connector Kind",
+            "type": "string"
+          },
+          "description_en": {
+            "default": "",
+            "title": "Description En",
+            "type": "string"
+          },
+          "description_fr": {
+            "default": "",
+            "title": "Description Fr",
+            "type": "string"
+          },
+          "required": {
+            "default": true,
+            "title": "Required",
+            "type": "boolean"
+          },
+          "required_access": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Required Access",
+            "type": "array"
+          },
+          "scheme": {
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Scheme",
+            "type": "string"
+          },
+          "slot_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Slot Key",
+            "type": "string"
+          },
+          "source_nature": {
+            "default": "",
+            "title": "Source Nature",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slot_key",
+          "scheme"
+        ],
+        "title": "PackComposerSlotSchema",
+        "type": "object"
+      },
       "PackDeleteResponse": {
         "description": "Response envelope returned after guarded pack bundle deletion.",
         "properties": {
@@ -19034,6 +19326,427 @@
           "trace_id"
         ],
         "title": "PackDeleteResponse",
+        "type": "object"
+      },
+      "PackDraftDeleteResponse": {
+        "description": "Deletion confirmation for `DELETE /api/v1/packs/composer/{draft_id}`.",
+        "properties": {
+          "bundle_id": {
+            "title": "Bundle Id",
+            "type": "string"
+          },
+          "deleted": {
+            "default": true,
+            "title": "Deleted",
+            "type": "boolean"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bundle_id",
+          "slug",
+          "version",
+          "trace_id"
+        ],
+        "title": "PackDraftDeleteResponse",
+        "type": "object"
+      },
+      "PackDraftDetailResponse": {
+        "description": "Full `CUSTOM` composer pack bundle representation.",
+        "properties": {
+          "archive_sha256": {
+            "default": "",
+            "title": "Archive Sha256",
+            "type": "string"
+          },
+          "author": {
+            "default": "",
+            "title": "Author",
+            "type": "string"
+          },
+          "bundle_id": {
+            "title": "Bundle Id",
+            "type": "string"
+          },
+          "bundle_kind": {
+            "default": "CUSTOM",
+            "title": "Bundle Kind",
+            "type": "string"
+          },
+          "cas_object_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cas Object Key"
+          },
+          "closure": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PackClosureReportResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_by_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By User Id"
+          },
+          "declared_slots": {
+            "items": {
+              "$ref": "#/components/schemas/PackComposerSlotSchema"
+            },
+            "title": "Declared Slots",
+            "type": "array"
+          },
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "license": {
+            "default": "",
+            "title": "License",
+            "type": "string"
+          },
+          "maintainers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Maintainers",
+            "type": "array"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/PackDraftMemberResponse"
+            },
+            "title": "Members",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "pack_id": {
+            "title": "Pack Id",
+            "type": "string"
+          },
+          "published_at_iso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At Iso"
+          },
+          "quick_actions": {
+            "items": {
+              "$ref": "#/components/schemas/PackComposerQuickActionSchema"
+            },
+            "title": "Quick Actions",
+            "type": "array"
+          },
+          "scope_id": {
+            "default": "",
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_type": {
+            "default": "WORKSPACE",
+            "title": "Scope Type",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "source_origin": {
+            "default": "ORCIA_COMPOSER",
+            "title": "Source Origin",
+            "type": "string"
+          },
+          "status": {
+            "default": "DRAFT",
+            "title": "Status",
+            "type": "string"
+          },
+          "trace_id": {
+            "default": "",
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "updated_at_iso": {
+            "default": "",
+            "title": "Updated At Iso",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bundle_id",
+          "pack_id",
+          "slug",
+          "name",
+          "version"
+        ],
+        "title": "PackDraftDetailResponse",
+        "type": "object"
+      },
+      "PackDraftListResponse": {
+        "description": "List envelope for `GET /api/v1/packs/composer`.",
+        "properties": {
+          "drafts": {
+            "items": {
+              "$ref": "#/components/schemas/PackDraftDetailResponse"
+            },
+            "title": "Drafts",
+            "type": "array"
+          },
+          "trace_id": {
+            "default": "",
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "title": "PackDraftListResponse",
+        "type": "object"
+      },
+      "PackDraftMemberInputSchema": {
+        "description": "Single entity selection entry for `PUT /api/v1/packs/composer/{draft_id}/members`.",
+        "properties": {
+          "entity_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "entity_slug": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Slug"
+          },
+          "entity_type": {
+            "enum": [
+              "AGENT",
+              "SKILL",
+              "INSTRUCTION",
+              "WORKFLOW_V2",
+              "VSM_V2",
+              "ONTOLOGY_CONCEPT",
+              "ONTOLOGY_RELATION",
+              "ONTOLOGY_AXIOM",
+              "DNA_MECHANISM",
+              "POLICY",
+              "HELP_ARTICLE"
+            ],
+            "title": "Entity Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entity_type",
+          "entity_id"
+        ],
+        "title": "PackDraftMemberInputSchema",
+        "type": "object"
+      },
+      "PackDraftMemberResponse": {
+        "description": "Serialized `pack_draft_memberships` entry with resolved typed surrogate FKs.",
+        "properties": {
+          "catalog_item_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Catalog Item Id"
+          },
+          "created_at_iso": {
+            "default": "",
+            "title": "Created At Iso",
+            "type": "string"
+          },
+          "dna_mechanism_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dna Mechanism Id"
+          },
+          "draft_bundle_id": {
+            "title": "Draft Bundle Id",
+            "type": "string"
+          },
+          "entity_id": {
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "entity_slug": {
+            "title": "Entity Slug",
+            "type": "string"
+          },
+          "entity_type": {
+            "enum": [
+              "AGENT",
+              "SKILL",
+              "INSTRUCTION",
+              "WORKFLOW_V2",
+              "VSM_V2",
+              "ONTOLOGY_CONCEPT",
+              "ONTOLOGY_RELATION",
+              "ONTOLOGY_AXIOM",
+              "DNA_MECHANISM",
+              "POLICY",
+              "HELP_ARTICLE"
+            ],
+            "title": "Entity Type",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "lifecycle_status": {
+            "default": "ACTIVE",
+            "title": "Lifecycle Status",
+            "type": "string"
+          },
+          "ontology_axiom_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ontology Axiom Id"
+          },
+          "ontology_concept_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ontology Concept Id"
+          },
+          "ontology_relation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ontology Relation Id"
+          },
+          "policy_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Id"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "vsm_v2_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vsm V2 Id"
+          },
+          "workflow_v2_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow V2 Id"
+          }
+        },
+        "required": [
+          "id",
+          "draft_bundle_id",
+          "entity_type",
+          "entity_id",
+          "entity_slug"
+        ],
+        "title": "PackDraftMemberResponse",
+        "type": "object"
+      },
+      "PackExportRequest": {
+        "description": "Optional options for `POST /api/v1/packs/.../export`.",
+        "properties": {
+          "auto_include_dependencies": {
+            "default": false,
+            "title": "Auto Include Dependencies",
+            "type": "boolean"
+          }
+        },
+        "title": "PackExportRequest",
         "type": "object"
       },
       "PackImportEntityCountsResponse": {
@@ -19221,6 +19934,18 @@
           "trace_id"
         ],
         "title": "PackImportResponse",
+        "type": "object"
+      },
+      "PackPublishRequest": {
+        "description": "Optional options for `POST /api/v1/packs/composer/{draft_id}/publish`.",
+        "properties": {
+          "auto_include_dependencies": {
+            "default": false,
+            "title": "Auto Include Dependencies",
+            "type": "boolean"
+          }
+        },
+        "title": "PackPublishRequest",
         "type": "object"
       },
       "PackSlotSpec": {
@@ -21010,6 +21735,24 @@
             "title": "Detail",
             "type": "string"
           },
+          "draft_packs": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Referencing draft pack bundles blocking delete (`ON DELETE RESTRICT`).",
+            "title": "Draft Packs"
+          },
           "error_code": {
             "description": "Invariant machine-readable ORCIA error code (e.g. ERR_OBSERVER_MODE_READ_ONLY).",
             "title": "Error Code",
@@ -21026,6 +21769,42 @@
             ],
             "description": "URI reference identifying the specific occurrence of the problem.",
             "title": "Instance"
+          },
+          "leak_findings": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sanitized PII, tenant infra, or secret leak findings blocking pack export.",
+            "title": "Leak Findings"
+          },
+          "missing_dependencies": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Missing or non-ACTIVE dependencies detected during pack closure validation.",
+            "title": "Missing Dependencies"
           },
           "permission_broker_hint": {
             "anyOf": [
@@ -21255,6 +22034,35 @@
           "endpoint_uri"
         ],
         "title": "ProgressiveLlmEndpointRequest",
+        "type": "object"
+      },
+      "ProseLintWarningResponse": {
+        "description": "Non-mutating bare-handle warning emitted for pack markdown prose.",
+        "properties": {
+          "entity_slug": {
+            "title": "Entity Slug",
+            "type": "string"
+          },
+          "entity_type": {
+            "title": "Entity Type",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entity_type",
+          "entity_slug",
+          "token",
+          "message"
+        ],
+        "title": "ProseLintWarningResponse",
         "type": "object"
       },
       "PublicAuthConfigResponse": {
@@ -24275,6 +25083,20 @@
           "updated_by"
         ],
         "title": "SecretStatusResponse",
+        "type": "object"
+      },
+      "SetPackDraftMembersRequest": {
+        "description": "Atomic replacement payload for a draft pack's typed memberships.",
+        "properties": {
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/PackDraftMemberInputSchema"
+            },
+            "title": "Members",
+            "type": "array"
+          }
+        },
+        "title": "SetPackDraftMembersRequest",
         "type": "object"
       },
       "SetWorkflowBaselineRequest": {
@@ -28289,6 +29111,114 @@
           }
         },
         "title": "UpdateConnectorQuotaRequest",
+        "type": "object"
+      },
+      "UpdatePackDraftRequest": {
+        "description": "Patch metadata on an existing `CUSTOM` `DRAFT` pack bundle.",
+        "properties": {
+          "author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author"
+          },
+          "declared_slots": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PackComposerSlotSchema"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Declared Slots"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "license": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "License"
+          },
+          "maintainers": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maintainers"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "quick_actions": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PackComposerQuickActionSchema"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quick Actions"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "title": "UpdatePackDraftRequest",
         "type": "object"
       },
       "UpdatePlatformAuthSettingsRequest": {
@@ -35523,6 +36453,16 @@
           },
           {
             "in": "query",
+            "name": "unlink_from_draft_packs",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Unlink From Draft Packs",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
             "name": "persona_key",
             "required": false,
             "schema": {
@@ -36539,6 +37479,16 @@
               "minLength": 1,
               "title": "Skill Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unlink_from_draft_packs",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Unlink From Draft Packs",
+              "type": "boolean"
             }
           },
           {
@@ -43068,6 +44018,151 @@
         ]
       }
     },
+    "/api/v1/catalog/instructions/{instruction_id}": {
+      "delete": {
+        "description": "Delete standalone `INSTRUCTION` row with RBAC, immutability & draft-unlink guard.",
+        "operationId": "delete_catalog_instruction_endpoint_api_v1_catalog_instructions__instruction_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instruction_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Instruction Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unlink_from_draft_packs",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Unlink From Draft Packs",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuardedEntityDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete a standalone INSTRUCTION catalog asset with anti-hostage pack-draft guard",
+        "tags": [
+          "federated-catalog"
+        ]
+      }
+    },
     "/api/v1/catalog/items": {
       "get": {
         "description": "Return discoverable Federated Catalog resources with `uri-badge` metadata.",
@@ -48574,6 +49669,151 @@
         ]
       }
     },
+    "/api/v1/help/{article_id}": {
+      "delete": {
+        "description": "Delete standalone `HELP_ARTICLE` row with RBAC, immutability & draft-unlink guard.",
+        "operationId": "delete_help_article_endpoint_api_v1_help__article_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "article_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Article Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unlink_from_draft_packs",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Unlink From Draft Packs",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuardedEntityDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete a standalone HELP_ARTICLE catalog item with anti-hostage draft guard",
+        "tags": [
+          "portal-and-help"
+        ]
+      }
+    },
     "/api/v1/inbox/notifications": {
       "get": {
         "operationId": "list_inbox_notifications_api_v1_inbox_notifications_get",
@@ -50135,6 +51375,149 @@
         ]
       }
     },
+    "/api/v1/ontology-rag/ontology/axioms/{axiom_id}": {
+      "delete": {
+        "description": "Delete an ontology axiom with `409 ERR_ENTITY_REFERENCED_BY_PACK_DRAFT` guard.",
+        "operationId": "delete_ontology_axiom_endpoint_api_v1_ontology_rag_ontology_axioms__axiom_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "axiom_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Axiom Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unlink_from_draft_packs",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Unlink From Draft Packs",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuardedEntityDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete Ontology Axiom Endpoint",
+        "tags": [
+          "ontology-rag"
+        ]
+      }
+    },
     "/api/v1/ontology-rag/ontology/concepts": {
       "get": {
         "description": "List concepts readable by caller along with edit/promotion capabilities.",
@@ -50402,6 +51785,149 @@
           }
         ],
         "summary": "Upsert Ontology Concept",
+        "tags": [
+          "ontology-rag"
+        ]
+      }
+    },
+    "/api/v1/ontology-rag/ontology/concepts/{concept_id}": {
+      "delete": {
+        "description": "Delete an ontology concept with `409 ERR_ENTITY_REFERENCED_BY_PACK_DRAFT` guard.",
+        "operationId": "delete_ontology_concept_endpoint_api_v1_ontology_rag_ontology_concepts__concept_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "concept_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Concept Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unlink_from_draft_packs",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Unlink From Draft Packs",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuardedEntityDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete Ontology Concept Endpoint",
         "tags": [
           "ontology-rag"
         ]
@@ -51122,6 +52648,149 @@
           }
         ],
         "summary": "Decide Ontology Promotion",
+        "tags": [
+          "ontology-rag"
+        ]
+      }
+    },
+    "/api/v1/ontology-rag/ontology/relations/{relation_id}": {
+      "delete": {
+        "description": "Delete an ontology relation with `409 ERR_ENTITY_REFERENCED_BY_PACK_DRAFT` guard.",
+        "operationId": "delete_ontology_relation_endpoint_api_v1_ontology_rag_ontology_relations__relation_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "relation_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Relation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unlink_from_draft_packs",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Unlink From Draft Packs",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuardedEntityDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete Ontology Relation Endpoint",
         "tags": [
           "ontology-rag"
         ]
@@ -56107,9 +57776,1348 @@
         ]
       }
     },
+    "/api/v1/packs/composer": {
+      "get": {
+        "description": "List `CUSTOM` composer pack bundles visible to the caller.",
+        "operationId": "list_pack_drafts_api_v1_packs_composer_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "scope_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "BU",
+                    "TEAM",
+                    "WORKSPACE"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Scope Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scope_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Scope Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": "DRAFT",
+              "enum": [
+                "DRAFT",
+                "PUBLISHED",
+                "DEPRECATED",
+                "ALL"
+              ],
+              "title": "Status",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackDraftListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List Pack Drafts",
+        "tags": [
+          "Pack Composer & Export (Story 31.5)"
+        ]
+      },
+      "post": {
+        "description": "Create a `CUSTOM` `DRAFT` pack bundle scoped to a workspace/team/BU.",
+        "operationId": "create_pack_draft_api_v1_packs_composer_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePackDraftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackDraftDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create Pack Draft",
+        "tags": [
+          "Pack Composer & Export (Story 31.5)"
+        ]
+      }
+    },
+    "/api/v1/packs/composer/dna-mechanisms/{mechanism_id}": {
+      "delete": {
+        "description": "Delete a `pack_dna_mechanisms` row with RBAC, immutability & `409` guard.",
+        "operationId": "delete_pack_dna_mechanism_endpoint_api_v1_packs_composer_dna_mechanisms__mechanism_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "mechanism_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Mechanism Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unlink_from_draft_packs",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Unlink From Draft Packs",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuardedEntityDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete Pack Dna Mechanism Endpoint",
+        "tags": [
+          "Pack Composer & Export (Story 31.5)"
+        ]
+      }
+    },
+    "/api/v1/packs/composer/{draft_id}": {
+      "delete": {
+        "description": "Delete a `CUSTOM` `DRAFT` bundle (`ON DELETE CASCADE` on `pack_draft_memberships`).",
+        "operationId": "delete_pack_draft_api_v1_packs_composer__draft_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackDraftDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete Pack Draft",
+        "tags": [
+          "Pack Composer & Export (Story 31.5)"
+        ]
+      },
+      "get": {
+        "description": "Fetch a composer pack draft with hydrated members & live closure preview.",
+        "operationId": "get_pack_draft_api_v1_packs_composer__draft_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackDraftDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get Pack Draft",
+        "tags": [
+          "Pack Composer & Export (Story 31.5)"
+        ]
+      },
+      "patch": {
+        "description": "Update metadata & declared slots on a mutable `CUSTOM` `DRAFT` pack.",
+        "operationId": "update_pack_draft_api_v1_packs_composer__draft_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePackDraftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackDraftDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update Pack Draft",
+        "tags": [
+          "Pack Composer & Export (Story 31.5)"
+        ]
+      }
+    },
+    "/api/v1/packs/composer/{draft_id}/export": {
+      "post": {
+        "description": "Export a composed `CUSTOM` pack draft/bundle as a scrubbed APM `.zip` + `apm.lock.yaml`.",
+        "operationId": "export_pack_draft_zip_api_v1_packs_composer__draft_id__export_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "auto_include_dependencies",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Auto Include Dependencies",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/PackExportRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "application/zip": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Export Pack Draft Zip",
+        "tags": [
+          "Pack Composer & Export (Story 31.5)"
+        ]
+      }
+    },
+    "/api/v1/packs/composer/{draft_id}/members": {
+      "put": {
+        "description": "Atomically set `pack_draft_memberships` resolving all 8 typed surrogate UUID FKs.",
+        "operationId": "set_pack_draft_members_api_v1_packs_composer__draft_id__members_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPackDraftMembersRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackDraftDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Set Pack Draft Members",
+        "tags": [
+          "Pack Composer & Export (Story 31.5)"
+        ]
+      }
+    },
+    "/api/v1/packs/composer/{draft_id}/publish": {
+      "post": {
+        "description": "Validate closure & ACTIVE readiness, scrub/scan, snapshot CAS & publish `CUSTOM` pack.",
+        "operationId": "publish_pack_draft_api_v1_packs_composer__draft_id__publish_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Draft Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "auto_include_dependencies",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Auto Include Dependencies",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/PackPublishRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackDraftDetailResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Publish Pack Draft",
+        "tags": [
+          "Pack Composer & Export (Story 31.5)"
+        ]
+      }
+    },
     "/api/v1/packs/export/{workspace_id}": {
       "post": {
-        "description": "Export a PostgreSQL 18 / SeaweedFS CAS pack bundle as a `.zip` archive.",
+        "description": "Export a PG18 / CAS pack bundle with ScopeAccessGuard, closure & leak scanning.",
         "operationId": "export_workspace_as_declarative_pack_zip_api_v1_packs_export__workspace_id__post",
         "parameters": [
           {
@@ -56145,7 +59153,7 @@
                 }
               }
             },
-            "description": "Downloadable declarative pack .zip archive"
+            "description": "Successful Response"
           },
           "401": {
             "content": {
@@ -56594,6 +59602,172 @@
         ]
       }
     },
+    "/api/v1/packs/{bundle_id}/export": {
+      "post": {
+        "description": "Export any PG18 pack bundle as a scrubbed APM `.zip` with closure & leak guards.",
+        "operationId": "export_declarative_pack_bundle_zip_api_v1_packs__bundle_id__export_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bundle_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Bundle Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "auto_include_dependencies",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Auto Include Dependencies",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/PackExportRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "application/zip": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Export Declarative Pack Bundle Zip",
+        "tags": [
+          "Declarative Packs (Epic 15 / Epic 31)"
+        ]
+      }
+    },
     "/api/v1/permissions/broker/check-access": {
       "post": {
         "description": "Execute governed connector access check with anti-Confused Deputy and Jira KB brokering.",
@@ -56857,6 +60031,151 @@
           }
         ],
         "summary": "Import a Permission Knowledge Base Markdown policy with YAML frontmatter",
+        "tags": [
+          "permission-broker"
+        ]
+      }
+    },
+    "/api/v1/permissions/broker/policies/{policy_id}": {
+      "delete": {
+        "description": "Delete a `permission_broker_policies` row with RBAC & `409` draft guard.",
+        "operationId": "delete_permission_policy_endpoint_api_v1_permissions_broker_policies__policy_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "policy_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Policy Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unlink_from_draft_packs",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Unlink From Draft Packs",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuardedEntityDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete a Permission Broker policy with anti-hostage pack-draft guard",
         "tags": [
           "permission-broker"
         ]
@@ -65983,6 +69302,147 @@
       }
     },
     "/api/v1/vsm/{vsm_id}": {
+      "delete": {
+        "description": "Delete a VSM v2 with RBAC, immutability & `409` anti-hostage guard.",
+        "operationId": "delete_vsm_v2_endpoint_api_v1_vsm__vsm_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "vsm_id",
+            "required": true,
+            "schema": {
+              "title": "Vsm Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unlink_from_draft_packs",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Unlink From Draft Packs",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuardedEntityDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete Vsm V2 Endpoint",
+        "tags": [
+          "Process Studio v2 & VSM (Epic 14)"
+        ]
+      },
       "get": {
         "description": "Fetch a single `ValueStreamMapSpec` from PG18 by ID or slug.",
         "operationId": "get_value_stream_map_api_v1_vsm__vsm_id__get",
@@ -67669,6 +71129,147 @@
       }
     },
     "/api/v1/workflows/v2/{workflow_id}": {
+      "delete": {
+        "description": "Delete a Workflow v2 with RBAC, immutability & `409` anti-hostage guard.",
+        "operationId": "delete_workflow_v2_endpoint_api_v1_workflows_v2__workflow_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workflow_id",
+            "required": true,
+            "schema": {
+              "title": "Workflow Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unlink_from_draft_packs",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Unlink From Draft Packs",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuardedEntityDeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete Workflow V2 Endpoint",
+        "tags": [
+          "Process Studio v2 & VSM (Epic 14)"
+        ]
+      },
       "get": {
         "description": "Fetch a `WorkflowDefinitionV2` by ID or slug.",
         "operationId": "get_workflow_v2_api_v1_workflows_v2__workflow_id__get",

@@ -284,4 +284,15 @@ def test_pack_import_deps_and_router_edge_branches(monkeypatch: pytest.MonkeyPat
     )
     assert ok_json.status_code == 200 and ok_json.json()["slug"] == "cov-pack"
     assert client.delete("/api/v1/packs/0195f000-0000-7000-8000-000000000001").status_code == 403
-    assert client.post("/api/v1/packs/export/ws-1").status_code == 404
+    assert client.post("/api/v1/packs/export/ws-1").status_code == 403
+    karim = app.state.auth_service.resolve_user(persona_key="karim")
+    ktok = app.state.auth_service.jwt_manager.issue_token_pair(
+        user_id=karim.id,
+        email=karim.email,
+        role=karim.platform_role,
+        org_unit_id=karim.primary_org_unit_id,
+        archetype=karim.human_profile_archetype,
+        auth_mode="LOCAL",
+    ).access_token
+    r_nf = client.post("/api/v1/packs/export/ws-1", headers={"Authorization": f"Bearer {ktok}"})
+    assert r_nf.status_code == 404

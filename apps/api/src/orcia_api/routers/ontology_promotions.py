@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Path, Query, Request
 
+from orcia_api.dependencies._core_providers import get_configured_db_engine
+from orcia_api.routers._entity_delete_rbac import (
+    build_ontology_target_authorizer,
+    prepare_entity_delete_guards,
+)
 from orcia_api.routers._ontology_promotions_handlers import (
     handle_create_promotion,
     handle_decide_promotion,
@@ -14,6 +19,9 @@ from orcia_api.routers._ontology_promotions_handlers import (
 from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.schemas import ontology_and_rag as base_s
 from orcia_api.schemas import ontology_promotions as s
+from orcia_api.schemas._pack_composer import GuardedEntityDeleteResponse
+from orcia_core.permissions.errors import ResourceNotFoundError
+from orcia_core.storage.entity_delete_tx import delete_entity_guarded_tx
 
 router = APIRouter(prefix="/api/v1/ontology-rag/ontology", tags=["ontology-rag"])
 
@@ -87,5 +95,109 @@ async def decide_ontology_promotion(
         body,
         proposal_id=proposal_id,
         fixture=fixture,
+        persona_key=persona_key,
+    )
+
+
+async def _delete_ontology_entity(
+    request: Request,
+    *,
+    entity_type: str,
+    entity_id: str,
+    unlink_from_draft_packs: bool,
+    persona_key: str | None,
+) -> GuardedEntityDeleteResponse:
+    inst = str(request.url.path)
+    user, auth_svc, trace_id, authorize_draft = await prepare_entity_delete_guards(
+        request, persona_key=persona_key
+    )
+    engine = get_configured_db_engine(request)
+    if engine is None:
+        raise ResourceNotFoundError(
+            detail_override=f"{entity_type} '{entity_id}' not found.",
+            instance=inst,
+        )
+    outcome = await delete_entity_guarded_tx(
+        engine,
+        entity_type=entity_type,
+        entity_id_or_key=entity_id,
+        unlink_from_draft_packs=unlink_from_draft_packs,
+        authorize_target_cb=build_ontology_target_authorizer(
+            auth_svc, user, entity_type=entity_type, instance=inst
+        ),
+        authorize_draft_cb=authorize_draft,
+        actor_id=user.id,
+        actor_email=user.email,
+        trace_id=trace_id,
+        instance=inst,
+    )
+    return GuardedEntityDeleteResponse(
+        entity_type=outcome.entity_type,
+        deleted_id=outcome.deleted_id,
+        deleted_uuid=outcome.deleted_uuid,
+        unlinked_draft_packs=list(outcome.unlinked_draft_packs),
+        trace_id=trace_id,
+    )
+
+
+@router.delete(
+    "/concepts/{concept_id}",
+    response_model=GuardedEntityDeleteResponse,
+    responses=PROBLEM_RESPONSES,
+)
+async def delete_ontology_concept_endpoint(
+    request: Request,
+    concept_id: str = Path(..., min_length=1, max_length=128),
+    unlink_from_draft_packs: bool = Query(default=False),
+    persona_key: str | None = Query(default=None),
+) -> GuardedEntityDeleteResponse:
+    """Delete an ontology concept with `409 ERR_ENTITY_REFERENCED_BY_PACK_DRAFT` guard."""
+    return await _delete_ontology_entity(
+        request,
+        entity_type="ONTOLOGY_CONCEPT",
+        entity_id=concept_id,
+        unlink_from_draft_packs=unlink_from_draft_packs,
+        persona_key=persona_key,
+    )
+
+
+@router.delete(
+    "/relations/{relation_id}",
+    response_model=GuardedEntityDeleteResponse,
+    responses=PROBLEM_RESPONSES,
+)
+async def delete_ontology_relation_endpoint(
+    request: Request,
+    relation_id: str = Path(..., min_length=1, max_length=128),
+    unlink_from_draft_packs: bool = Query(default=False),
+    persona_key: str | None = Query(default=None),
+) -> GuardedEntityDeleteResponse:
+    """Delete an ontology relation with `409 ERR_ENTITY_REFERENCED_BY_PACK_DRAFT` guard."""
+    return await _delete_ontology_entity(
+        request,
+        entity_type="ONTOLOGY_RELATION",
+        entity_id=relation_id,
+        unlink_from_draft_packs=unlink_from_draft_packs,
+        persona_key=persona_key,
+    )
+
+
+@router.delete(
+    "/axioms/{axiom_id}",
+    response_model=GuardedEntityDeleteResponse,
+    responses=PROBLEM_RESPONSES,
+)
+async def delete_ontology_axiom_endpoint(
+    request: Request,
+    axiom_id: str = Path(..., min_length=1, max_length=128),
+    unlink_from_draft_packs: bool = Query(default=False),
+    persona_key: str | None = Query(default=None),
+) -> GuardedEntityDeleteResponse:
+    """Delete an ontology axiom with `409 ERR_ENTITY_REFERENCED_BY_PACK_DRAFT` guard."""
+    return await _delete_ontology_entity(
+        request,
+        entity_type="ONTOLOGY_AXIOM",
+        entity_id=axiom_id,
+        unlink_from_draft_packs=unlink_from_draft_packs,
         persona_key=persona_key,
     )

@@ -5,7 +5,11 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 
 from orcia_core.packs._error_catalog import PACKS_ERROR_CATALOG
-from orcia_kernel.errors import OrciaDomainError, ResourcePinnedByActiveRunsError
+from orcia_kernel.errors import (
+    EntityReferencedByPackDraftError,
+    OrciaDomainError,
+    ResourcePinnedByActiveRunsError,
+)
 
 
 class PackExecutableHookForbiddenError(OrciaDomainError):
@@ -92,6 +96,34 @@ class PackClosureIncompleteError(OrciaDomainError):
     http_status = 422
     type_slug = "pack-closure-incomplete"
 
+    def __init__(
+        self,
+        *,
+        missing_dependencies: Sequence[Mapping[str, str]] = (),
+        detail_override: str | None = None,
+        detail_code: str | None = None,
+        detail_params: Mapping[str, object] | None = None,
+        instance: str | None = None,
+        permission_broker_hint: str | None = None,
+    ) -> None:
+        self.missing_dependencies = tuple(dict(item) for item in missing_dependencies)
+        merged_params = dict(detail_params) if detail_params is not None else {}
+        if self.missing_dependencies and "missing_dependencies" not in merged_params:
+            merged_params["missing_dependencies"] = ", ".join(
+                f"{m.get('entity_type', '')}:{m.get('entity_id', '')}"
+                for m in self.missing_dependencies
+            )
+        resolved_code = detail_code
+        if resolved_code is None and detail_override is None and self.missing_dependencies:
+            resolved_code = "ERR_PACK_CLOSURE_INCOMPLETE_DETAIL"
+        super().__init__(
+            detail_override=detail_override,
+            detail_code=resolved_code,
+            detail_params=merged_params or None,
+            instance=instance,
+            permission_broker_hint=permission_broker_hint,
+        )
+
 
 class PackPiiOrInfraLeakError(OrciaDomainError):
     """Raised (`HTTP 422`) when exported pack content contains PII, secrets, or tenant IDs."""
@@ -100,13 +132,32 @@ class PackPiiOrInfraLeakError(OrciaDomainError):
     http_status = 422
     type_slug = "pack-pii-or-infra-leak"
 
-
-class EntityReferencedByPackDraftError(OrciaDomainError):
-    """Raised (`HTTP 409`) when deleting an entity referenced by `pack_draft_memberships`."""
-
-    error_code = "ERR_ENTITY_REFERENCED_BY_PACK_DRAFT"
-    http_status = 409
-    type_slug = "entity-referenced-by-pack-draft"
+    def __init__(
+        self,
+        *,
+        leak_findings: Sequence[Mapping[str, str]] = (),
+        detail_override: str | None = None,
+        detail_code: str | None = None,
+        detail_params: Mapping[str, object] | None = None,
+        instance: str | None = None,
+        permission_broker_hint: str | None = None,
+    ) -> None:
+        self.leak_findings = tuple(dict(item) for item in leak_findings)
+        merged_params = dict(detail_params) if detail_params is not None else {}
+        if self.leak_findings and "leak_summary" not in merged_params:
+            merged_params["leak_summary"] = ", ".join(
+                f"{f.get('path', '')} ({f.get('kind', '')})" for f in self.leak_findings
+            )
+        resolved_code = detail_code
+        if resolved_code is None and detail_override is None and self.leak_findings:
+            resolved_code = "ERR_PACK_PII_OR_INFRA_LEAK_DETAIL"
+        super().__init__(
+            detail_override=detail_override,
+            detail_code=resolved_code,
+            detail_params=merged_params or None,
+            instance=instance,
+            permission_broker_hint=permission_broker_hint,
+        )
 
 
 class PackBundleNotFoundError(OrciaDomainError):

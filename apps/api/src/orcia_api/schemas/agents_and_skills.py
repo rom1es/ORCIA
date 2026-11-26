@@ -277,6 +277,7 @@ class DeleteSkillOrAgentResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
     deleted_id: str
     detached_from_agent_ids: list[str] = Field(default_factory=list)
+    unlinked_draft_packs: list[dict[str, str]] = Field(default_factory=list)
     trace_id: str
 
 

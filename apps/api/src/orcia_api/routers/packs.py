@@ -2,31 +2,33 @@
 
 from __future__ import annotations
 
-import re
 from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path, Query, Request, Response
+from fastapi import APIRouter, Body, Depends, Path, Query, Request, Response
 
 from orcia_api.dependencies import (
     get_pack_bundle_v2_repository,
     get_pack_cas_storage,
+    get_pack_composer_service,
     get_pack_import_service,
 )
 from orcia_api.dependencies._core_providers import (
     get_configured_db_engine,
     is_pg_runtime_active,
 )
+from orcia_api.routers._pack_composer_helpers import execute_export_pack_zip_handler
+from orcia_api.routers._packs_export_legacy_route import legacy_export_router
 from orcia_api.routers._packs_router_helpers import (
     build_pack_summary_from_pg_row,
     enforce_pack_mutation_guard,
     evaluate_connector_requirement,
     parse_pack_import_payload,
     slots_to_required_connectors,
-    synthesize_zip_from_pg_row,
     trace_id_for,
 )
 from orcia_api.routers.auth import PROBLEM_RESPONSES
+from orcia_api.schemas._pack_composer import PackExportRequest
 from orcia_api.schemas.packs import (
     PackDeleteResponse,
     PackImportEntityCountsResponse,
@@ -35,15 +37,14 @@ from orcia_api.schemas.packs import (
 from orcia_api.schemas.process_studio_v2 import (
     ConnectorRequirementHealthItemResponse,
     DeclarativePacksListResponse,
-    DeclarativePackSummaryResponse,
     PacksConnectorHealthResponse,
 )
 from orcia_connectors.adapters import get_default_enterprise_connectors
 from orcia_core.bootstrap import list_enterprise_connectors_from_postgres18
 from orcia_core.observability.logging import get_logger
 from orcia_core.packs import (
-    PackBundleNotFoundError,
     PackCasStoragePort,
+    PackComposerService,
     PackImportService,
     SqlPackBundleV2Repository,
 )
@@ -55,6 +56,7 @@ router = APIRouter(prefix="/api/v1/packs", tags=["Declarative Packs (Epic 15 / E
 PackRepoDep = Annotated[SqlPackBundleV2Repository, Depends(get_pack_bundle_v2_repository)]
 PackImportDep = Annotated[PackImportService, Depends(get_pack_import_service)]
 PackCasDep = Annotated[PackCasStoragePort | None, Depends(get_pack_cas_storage)]
+PackComposerDep = Annotated[PackComposerService, Depends(get_pack_composer_service)]
 
 
 async def _load_pg_connectors_by_kind(request: Request) -> dict[str, EnterpriseConnectorRecord]:
@@ -67,11 +69,7 @@ async def _load_pg_connectors_by_kind(request: Request) -> dict[str, EnterpriseC
         rows = await list_enterprise_connectors_from_postgres18(engine)
         return {rec.connector_kind.lower(): rec for rec in rows}
     except Exception as exc:
-        logger.warning(
-            "packs_pg_connectors_lookup_skipped",
-            error_type=type(exc).__name__,
-            error=str(exc),
-        )
+        logger.warning("packs_pg_connectors_lookup_skipped", error_type=type(exc).__name__)
         return {}
 
 
@@ -83,28 +81,28 @@ async def _list_pg_bundles(repo: PackRepoDep) -> list[dict[str, object]]:
 
 @router.get("", response_model=DeclarativePacksListResponse, responses=PROBLEM_RESPONSES)
 async def list_declarative_packs(
-    request: Request,
-    repo: PackRepoDep,
+    request: Request, repo: PackRepoDep
 ) -> DeclarativePacksListResponse:
     """List declarative packs strictly from PostgreSQL 18 with live connector healthchecks."""
     rows = await _list_pg_bundles(repo)
-    connectors = get_default_enterprise_connectors()
-    pg_connectors = await _load_pg_connectors_by_kind(request)
-    summaries: list[DeclarativePackSummaryResponse] = [
-        await build_pack_summary_from_pg_row(row, connectors, pg_connectors) for row in rows
-    ]
+    connectors, pg_connectors = (
+        get_default_enterprise_connectors(),
+        await _load_pg_connectors_by_kind(request),
+    )
+    summaries = [await build_pack_summary_from_pg_row(r, connectors, pg_connectors) for r in rows]
     return DeclarativePacksListResponse(packs=summaries)
 
 
 @router.get("/health", response_model=PacksConnectorHealthResponse, responses=PROBLEM_RESPONSES)
 async def check_packs_connectors_health(
-    request: Request,
-    repo: PackRepoDep,
+    request: Request, repo: PackRepoDep
 ) -> PacksConnectorHealthResponse:
     """Probe live connector health across all PostgreSQL 18 declarative packs."""
     rows = await _list_pg_bundles(repo)
-    connectors = get_default_enterprise_connectors()
-    pg_connectors = await _load_pg_connectors_by_kind(request)
+    connectors, pg_connectors = (
+        get_default_enterprise_connectors(),
+        await _load_pg_connectors_by_kind(request),
+    )
     seen_types: set[str] = set()
     items: list[ConnectorRequirementHealthItemResponse] = []
     for row in rows:
@@ -225,50 +223,32 @@ async def delete_declarative_pack_bundle(
     )
 
 
+router.include_router(legacy_export_router)
+
+
 @router.post(
-    "/export/{workspace_id}",
+    "/{bundle_id}/export",
     responses={
         **PROBLEM_RESPONSES,
-        200: {
-            "content": {
-                "application/zip": {
-                    "schema": {"type": "string", "format": "binary"},
-                }
-            },
-            "description": "Downloadable declarative pack .zip archive",
-        },
+        200: {"content": {"application/zip": {"schema": {"type": "string", "format": "binary"}}}},
     },
 )
-async def export_workspace_as_declarative_pack_zip(
-    workspace_id: str,
+async def export_declarative_pack_bundle_zip(
+    bundle_id: Annotated[str, Path(min_length=1, max_length=128)],
     request: Request,
-    repo: PackRepoDep,
-    cas_storage: PackCasDep,
-    pack_id: str = Query(default="orcia-pack-sdlc"),
+    composer_svc: PackComposerDep,
+    payload: Annotated[PackExportRequest | None, Body()] = None,
+    auto_include_dependencies: bool = Query(default=False),
+    persona_key: Annotated[str | None, Query(min_length=1, max_length=64)] = None,
 ) -> Response:
-    """Export a PostgreSQL 18 / SeaweedFS CAS pack bundle as a `.zip` archive."""
-    enforce_pack_mutation_guard(request)
-    all_rows = await _list_pg_bundles(repo)
-    row = next(
-        (r for r in all_rows if r.get("pack_id") == pack_id or r.get("slug") == pack_id),
-        all_rows[0] if all_rows else None,
+    """Export any PG18 pack bundle as a scrubbed APM `.zip` with closure & leak guards."""
+    auto_inc = auto_include_dependencies or (
+        payload.auto_include_dependencies if payload else False
     )
-    if row is None:
-        raise PackBundleNotFoundError(
-            detail_override=f"No declarative pack bundle found for {pack_id!r}.",
-            instance=str(request.url.path),
-        )
-    cas_key = str(row["cas_object_key"]) if row.get("cas_object_key") else None
-    zip_bytes: bytes | None = None
-    if cas_key and cas_storage is not None:
-        zip_bytes = await cas_storage.get_archive_zip(cas_key)
-    if zip_bytes is None:
-        zip_bytes = synthesize_zip_from_pg_row(row)
-    safe_ws = re.sub(r"[^A-Za-z0-9_.-]+", "-", workspace_id).strip("-") or "workspace"
-    slug = str(row.get("slug") or "pack")
-    filename = f"{slug}-{safe_ws[:64]}.zip"
-    return Response(
-        content=zip_bytes,
-        media_type="application/zip",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    return await execute_export_pack_zip_handler(
+        bundle_id,
+        request=request,
+        svc=composer_svc,
+        auto_include_dependencies=auto_inc,
+        persona_key=persona_key,
     )

@@ -659,6 +659,11 @@ def test_packs_health_endpoint_healthy_degraded_and_disabled(
         ]
 
     monkeypatch.setattr(packs_router, "_list_pg_bundles", _mock_pg_bundles)
+    from types import SimpleNamespace
+
+    app.state.pack_bundle_v2_repository = SimpleNamespace(
+        _engine=object(), list_bundles_v2=lambda: _mock_pg_bundles(None)
+    )
     client = TestClient(app)
 
     # Default healthy state
@@ -744,7 +749,18 @@ def test_packs_health_endpoint_healthy_degraded_and_disabled(
     assert resp_list.status_code == 200
     assert len(resp_list.json()["packs"]) >= 1
 
-    resp_export = client.post("/api/v1/packs/export/ws-story-24-3")
+    karim = app.state.auth_service.resolve_user(persona_key="karim")
+    ktok = app.state.auth_service.jwt_manager.issue_token_pair(
+        user_id=karim.id,
+        email=karim.email,
+        role=karim.platform_role,
+        org_unit_id=karim.primary_org_unit_id,
+        archetype=karim.human_profile_archetype,
+        auth_mode="LOCAL",
+    ).access_token
+    resp_export = client.post(
+        "/api/v1/packs/export/ws-story-24-3", headers={"Authorization": f"Bearer {ktok}"}
+    )
     assert resp_export.status_code == 200
     assert resp_export.headers["content-type"] == "application/zip"
 
