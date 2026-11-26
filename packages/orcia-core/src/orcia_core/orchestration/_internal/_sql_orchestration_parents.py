@@ -173,12 +173,7 @@ async def upsert_run_lock_manifest_sql(
                     CAST(:run_id AS uuid), CAST(:manifest_jsonb AS jsonb),
                     :overrides_sha256, :kb_snapshot_hash, :manifest_sha256
                 )
-                ON CONFLICT (run_id) DO UPDATE SET
-                    manifest_jsonb = EXCLUDED.manifest_jsonb,
-                    overrides_sha256 = EXCLUDED.overrides_sha256,
-                    kb_snapshot_hash = EXCLUDED.kb_snapshot_hash,
-                    manifest_sha256 = EXCLUDED.manifest_sha256,
-                    locked_at = NOW();
+                ON CONFLICT (run_id) DO NOTHING;
                 """
             ),
             {

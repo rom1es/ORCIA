@@ -339,6 +339,110 @@
         "title": "AcquireResourceLeasesResponse",
         "type": "object"
       },
+      "ActivateWorkspacePackRequest": {
+        "description": "Optional JSON body for `POST /api/v1/workspaces/{workspace_id}/packs/{slug}/activate`.",
+        "properties": {
+          "bundle_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bundle Id"
+          },
+          "priority_order": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority Order"
+          },
+          "slot_bindings": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspacePackSlotBindingInputSchema"
+            },
+            "title": "Slot Bindings",
+            "type": "array"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "title": "ActivateWorkspacePackRequest",
+        "type": "object"
+      },
+      "ActivateWorkspacePackResponse": {
+        "description": "Response envelope returned after activating a workspace pack.",
+        "properties": {
+          "activated_at_iso": {
+            "title": "Activated At Iso",
+            "type": "string"
+          },
+          "activation_id": {
+            "title": "Activation Id",
+            "type": "string"
+          },
+          "is_active": {
+            "default": true,
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "pack_bundle_id": {
+            "title": "Pack Bundle Id",
+            "type": "string"
+          },
+          "pack_slug": {
+            "title": "Pack Slug",
+            "type": "string"
+          },
+          "priority_order": {
+            "title": "Priority Order",
+            "type": "integer"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "activation_id",
+          "workspace_id",
+          "pack_bundle_id",
+          "pack_slug",
+          "version",
+          "priority_order",
+          "activated_at_iso",
+          "trace_id"
+        ],
+        "title": "ActivateWorkspacePackResponse",
+        "type": "object"
+      },
       "ActiveBackgroundTurnStatusResponse": {
         "additionalProperties": false,
         "description": "Status snapshot for `GET /api/v1/assistant/turns/active` (`Story 26.3`).",
@@ -4818,6 +4922,68 @@
         "title": "BackgroundAuditRunResponse",
         "type": "object"
       },
+      "BindWorkspacePackSlotsRequest": {
+        "description": "Request payload for binding declared connector slots on a workspace pack.",
+        "properties": {
+          "bindings": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspacePackSlotBindingInputSchema"
+            },
+            "minItems": 1,
+            "title": "Bindings",
+            "type": "array"
+          },
+          "bundle_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bundle Id"
+          }
+        },
+        "required": [
+          "bindings"
+        ],
+        "title": "BindWorkspacePackSlotsRequest",
+        "type": "object"
+      },
+      "BindWorkspacePackSlotsResponse": {
+        "description": "Response envelope after binding workspace pack connector slots.",
+        "properties": {
+          "pack_slug": {
+            "title": "Pack Slug",
+            "type": "string"
+          },
+          "slot_bindings": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspacePackSlotBindingItemResponse"
+            },
+            "title": "Slot Bindings",
+            "type": "array"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "pack_slug",
+          "slot_bindings",
+          "trace_id"
+        ],
+        "title": "BindWorkspacePackSlotsResponse",
+        "type": "object"
+      },
       "BlackboardSnapshotSchemaItem": {
         "additionalProperties": false,
         "description": "Immutable append-only checkpoint row in `blackboard_snapshots` (`AD-2`).",
@@ -8313,6 +8479,40 @@
           "schema_version"
         ],
         "title": "DbDdlIndexRequest",
+        "type": "object"
+      },
+      "DeactivateWorkspacePackResponse": {
+        "description": "Response envelope returned after deactivating a workspace pack.",
+        "properties": {
+          "is_active": {
+            "default": false,
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "pack_bundle_id": {
+            "title": "Pack Bundle Id",
+            "type": "string"
+          },
+          "pack_slug": {
+            "title": "Pack Slug",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "pack_bundle_id",
+          "pack_slug",
+          "trace_id"
+        ],
+        "title": "DeactivateWorkspacePackResponse",
         "type": "object"
       },
       "DeclarativeOverrideLayerResponse": {
@@ -20007,6 +20207,47 @@
         "title": "PilotWorkflowRunResponse",
         "type": "object"
       },
+      "PinnedPackManifestSchema": {
+        "description": "Pinned pack entry inside `run_lock_manifests`.",
+        "properties": {
+          "archive_sha256": {
+            "title": "Archive Sha256",
+            "type": "string"
+          },
+          "pack_bundle_id": {
+            "title": "Pack Bundle Id",
+            "type": "string"
+          },
+          "pack_slug": {
+            "title": "Pack Slug",
+            "type": "string"
+          },
+          "priority_order": {
+            "title": "Priority Order",
+            "type": "integer"
+          },
+          "resolved_pack_slots": {
+            "items": {
+              "$ref": "#/components/schemas/ResolvedPackSlotSchema"
+            },
+            "title": "Resolved Pack Slots",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pack_bundle_id",
+          "pack_slug",
+          "version",
+          "archive_sha256",
+          "priority_order"
+        ],
+        "title": "PinnedPackManifestSchema",
+        "type": "object"
+      },
       "PlatformAuthSettingsResponse": {
         "additionalProperties": false,
         "description": "Administrator view of exclusive authentication mode, 2FA, and OIDC configuration.",
@@ -22368,6 +22609,75 @@
         "title": "RemoteServicesListResponse",
         "type": "object"
       },
+      "ReorderWorkspacePacksRequest": {
+        "description": "Request payload for atomic priority reordering of active workspace packs.",
+        "properties": {
+          "ordered_pack_slugs": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Ordered Pack Slugs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "ordered_pack_slugs"
+        ],
+        "title": "ReorderWorkspacePacksRequest",
+        "type": "object"
+      },
+      "ReorderWorkspacePacksResponse": {
+        "description": "Response envelope returned after atomic workspace pack priority reorder.",
+        "properties": {
+          "packs": {
+            "items": {
+              "$ref": "#/components/schemas/ReorderedWorkspacePackItemResponse"
+            },
+            "title": "Packs",
+            "type": "array"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "packs",
+          "trace_id"
+        ],
+        "title": "ReorderWorkspacePacksResponse",
+        "type": "object"
+      },
+      "ReorderedWorkspacePackItemResponse": {
+        "description": "Updated priority rank for an active workspace pack.",
+        "properties": {
+          "pack_bundle_id": {
+            "title": "Pack Bundle Id",
+            "type": "string"
+          },
+          "pack_slug": {
+            "title": "Pack Slug",
+            "type": "string"
+          },
+          "priority_order": {
+            "title": "Priority Order",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pack_slug",
+          "pack_bundle_id",
+          "priority_order"
+        ],
+        "title": "ReorderedWorkspacePackItemResponse",
+        "type": "object"
+      },
       "RequestedWritePreviewInput": {
         "additionalProperties": false,
         "description": "HTTP transport input specifying an external write preview to gate (`Story 16.2`).",
@@ -22775,6 +23085,88 @@
           "staged_for_gate_publication"
         ],
         "title": "ResolvedArtifactDestinationResponse",
+        "type": "object"
+      },
+      "ResolvedPackSlotSchema": {
+        "description": "Pinned slot entry inside `run_lock_manifests`.",
+        "properties": {
+          "connector_scheme": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Connector Scheme"
+          },
+          "pack_slug": {
+            "title": "Pack Slug",
+            "type": "string"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          },
+          "scheme": {
+            "title": "Scheme",
+            "type": "string"
+          },
+          "slot_key": {
+            "title": "Slot Key",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "bound",
+              "optional_unbound"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id"
+          },
+          "target_kind": {
+            "enum": [
+              "UNBOUND",
+              "WORKSPACE_DATASOURCE",
+              "ENTERPRISE_CONNECTOR",
+              "INTERNAL"
+            ],
+            "title": "Target Kind",
+            "type": "string"
+          },
+          "target_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Uri"
+          }
+        },
+        "required": [
+          "pack_slug",
+          "slot_key",
+          "scheme",
+          "required",
+          "status",
+          "target_kind"
+        ],
+        "title": "ResolvedPackSlotSchema",
         "type": "object"
       },
       "ResourceDiscoveryResponse": {
@@ -23350,6 +23742,69 @@
           "manifest_sha256"
         ],
         "title": "RunLockManifestItem",
+        "type": "object"
+      },
+      "RunLockManifestReadResponse": {
+        "description": "Immutable `run_lock_manifests` snapshot returned by `GET /api/v1/runs/{run_id}/lock`.",
+        "properties": {
+          "locked_at_iso": {
+            "default": "",
+            "title": "Locked At Iso",
+            "type": "string"
+          },
+          "manifest_sha256": {
+            "title": "Manifest Sha256",
+            "type": "string"
+          },
+          "pinned_packs": {
+            "items": {
+              "$ref": "#/components/schemas/PinnedPackManifestSchema"
+            },
+            "title": "Pinned Packs",
+            "type": "array"
+          },
+          "resolved_pack_slots": {
+            "items": {
+              "$ref": "#/components/schemas/ResolvedPackSlotSchema"
+            },
+            "title": "Resolved Pack Slots",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workflow_id": {
+            "default": "",
+            "title": "Workflow Id",
+            "type": "string"
+          },
+          "workflow_slug": {
+            "default": "",
+            "title": "Workflow Slug",
+            "type": "string"
+          },
+          "workflow_version": {
+            "default": "",
+            "title": "Workflow Version",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "workspace_id",
+          "manifest_sha256",
+          "trace_id"
+        ],
+        "title": "RunLockManifestReadResponse",
         "type": "object"
       },
       "RunLockSourceTripletItem": {
@@ -33652,6 +34107,365 @@
           "sha256"
         ],
         "title": "WorkspaceLayerSettingsSchemaItem",
+        "type": "object"
+      },
+      "WorkspacePackItemResponse": {
+        "description": "Workspace-visible pack summary with activation state, slots & missing required slots.",
+        "properties": {
+          "activated_at_iso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activated At Iso"
+          },
+          "activated_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activated By"
+          },
+          "archive_sha256": {
+            "title": "Archive Sha256",
+            "type": "string"
+          },
+          "author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author"
+          },
+          "bundle_id": {
+            "title": "Bundle Id",
+            "type": "string"
+          },
+          "bundle_kind": {
+            "title": "Bundle Kind",
+            "type": "string"
+          },
+          "cas_object_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cas Object Key"
+          },
+          "declared_slots": {
+            "items": {
+              "$ref": "#/components/schemas/PackSlotSpec"
+            },
+            "title": "Declared Slots",
+            "type": "array"
+          },
+          "description": {
+            "default": "",
+            "title": "Description",
+            "type": "string"
+          },
+          "is_active": {
+            "default": false,
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "missing_slots": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Missing Slots",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "pack_id": {
+            "title": "Pack Id",
+            "type": "string"
+          },
+          "priority_order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority Order"
+          },
+          "readiness_ok": {
+            "default": true,
+            "title": "Readiness Ok",
+            "type": "boolean"
+          },
+          "scope_id": {
+            "title": "Scope Id",
+            "type": "string"
+          },
+          "scope_type": {
+            "title": "Scope Type",
+            "type": "string"
+          },
+          "slot_bindings": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspacePackSlotBindingItemResponse"
+            },
+            "title": "Slot Bindings",
+            "type": "array"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bundle_id",
+          "pack_id",
+          "slug",
+          "name",
+          "version",
+          "bundle_kind",
+          "scope_type",
+          "scope_id",
+          "status",
+          "archive_sha256"
+        ],
+        "title": "WorkspacePackItemResponse",
+        "type": "object"
+      },
+      "WorkspacePackSlotBindingInputSchema": {
+        "description": "Input entry for `PUT /api/v1/workspaces/{workspace_id}/packs/{slug}/slots`.",
+        "properties": {
+          "connector_scheme": {
+            "anyOf": [
+              {
+                "maxLength": 32,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Connector Scheme"
+          },
+          "slot_key": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Slot Key",
+            "type": "string"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id"
+          },
+          "target_kind": {
+            "enum": [
+              "UNBOUND",
+              "WORKSPACE_DATASOURCE",
+              "ENTERPRISE_CONNECTOR",
+              "INTERNAL"
+            ],
+            "title": "Target Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slot_key",
+          "target_kind"
+        ],
+        "title": "WorkspacePackSlotBindingInputSchema",
+        "type": "object"
+      },
+      "WorkspacePackSlotBindingItemResponse": {
+        "description": "Hydrated connector slot binding status for a workspace pack.",
+        "properties": {
+          "bound_at_iso": {
+            "default": "",
+            "title": "Bound At Iso",
+            "type": "string"
+          },
+          "bound_by": {
+            "default": "",
+            "title": "Bound By",
+            "type": "string"
+          },
+          "bound_connector_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bound Connector Id"
+          },
+          "bound_datasource_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bound Datasource Id"
+          },
+          "connector_scheme": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Connector Scheme"
+          },
+          "id": {
+            "default": "",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_effective_bound": {
+            "default": false,
+            "title": "Is Effective Bound",
+            "type": "boolean"
+          },
+          "pack_bundle_id": {
+            "default": "",
+            "title": "Pack Bundle Id",
+            "type": "string"
+          },
+          "pack_slug": {
+            "title": "Pack Slug",
+            "type": "string"
+          },
+          "slot_key": {
+            "title": "Slot Key",
+            "type": "string"
+          },
+          "target_display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Display Name"
+          },
+          "target_enabled": {
+            "default": true,
+            "title": "Target Enabled",
+            "type": "boolean"
+          },
+          "target_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Id"
+          },
+          "target_kind": {
+            "enum": [
+              "UNBOUND",
+              "WORKSPACE_DATASOURCE",
+              "ENTERPRISE_CONNECTOR",
+              "INTERNAL"
+            ],
+            "title": "Target Kind",
+            "type": "string"
+          },
+          "target_uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Uri"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "pack_slug",
+          "slot_key",
+          "target_kind"
+        ],
+        "title": "WorkspacePackSlotBindingItemResponse",
+        "type": "object"
+      },
+      "WorkspacePacksListResponse": {
+        "description": "Response envelope for `GET /api/v1/workspaces/{workspace_id}/packs`.",
+        "properties": {
+          "packs": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspacePackItemResponse"
+            },
+            "title": "Packs",
+            "type": "array"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          },
+          "workspace_id": {
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "packs",
+          "trace_id"
+        ],
+        "title": "WorkspacePacksListResponse",
         "type": "object"
       },
       "WorkspacePatchRequest": {
@@ -57438,6 +58252,141 @@
         ]
       }
     },
+    "/api/v1/runs/{run_id}/lock": {
+      "get": {
+        "description": "Return immutable `run_lock_manifests` snapshot for `run_id` (`Story 31.4`).",
+        "operationId": "get_workflow_v2_run_lock_api_v1_runs__run_id__lock_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunLockManifestReadResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get Workflow V2 Run Lock",
+        "tags": [
+          "Process Studio v2 & VSM (Epic 14)"
+        ]
+      }
+    },
     "/api/v1/runs/{run_id}/post-hoc-review": {
       "post": {
         "operationId": "review_post_hoc_autonomous_run_api_v1_runs__run_id__post_hoc_review_post",
@@ -70853,6 +71802,751 @@
         "summary": "Enforce ScopeAccessGuard on Workspace mutation (rejects READ_ONLY_OBSERVER)",
         "tags": [
           "workspaces-and-catalog"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/packs": {
+      "get": {
+        "description": "List packs visible to `workspace_id` with activation order, slot bindings & missing slots.",
+        "operationId": "list_workspace_packs_api_v1_workspaces__workspace_id__packs_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspacePacksListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List Workspace Packs",
+        "tags": [
+          "Workspace Packs & Connector Slots (Story 31.4)"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/packs/reorder": {
+      "put": {
+        "description": "Atomically reorder active workspace packs via `DEFERRABLE` priority constraint.",
+        "operationId": "reorder_workspace_packs_api_v1_workspaces__workspace_id__packs_reorder_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderWorkspacePacksRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReorderWorkspacePacksResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Reorder Workspace Packs",
+        "tags": [
+          "Workspace Packs & Connector Slots (Story 31.4)"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/packs/{slug}/activate": {
+      "post": {
+        "description": "Activate a pack in `workspace_id` (fails with `422 ERR_PACK_SLOT_UNBOUND` if unbound).",
+        "operationId": "activate_workspace_pack_api_v1_workspaces__workspace_id__packs__slug__activate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ActivateWorkspacePackRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivateWorkspacePackResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Activate Workspace Pack",
+        "tags": [
+          "Workspace Packs & Connector Slots (Story 31.4)"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/packs/{slug}/deactivate": {
+      "delete": {
+        "description": "Deactivate a pack in `workspace_id` (`is_active=FALSE, priority_order=NULL`).",
+        "operationId": "deactivate_workspace_pack_api_v1_workspaces__workspace_id__packs__slug__deactivate_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeactivateWorkspacePackResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Deactivate Workspace Pack",
+        "tags": [
+          "Workspace Packs & Connector Slots (Story 31.4)"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{workspace_id}/packs/{slug}/slots": {
+      "put": {
+        "description": "Bind declared connector slots on a workspace pack and emit `PACK_SLOTS_BOUND`.",
+        "operationId": "bind_workspace_pack_slots_api_v1_workspaces__workspace_id__packs__slug__slots_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BindWorkspacePackSlotsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BindWorkspacePackSlotsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Conflict"
+          },
+          "412": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Failed"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Unprocessable Entity"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/problem+json": {}
+            },
+            "description": "Precondition Required"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Bind Workspace Pack Slots",
+        "tags": [
+          "Workspace Packs & Connector Slots (Story 31.4)"
         ]
       }
     },

@@ -37,6 +37,7 @@ from orcia_core.permissions.workspace_sources_governance import (
     WorkspaceDatasourceRecord,
     infer_source_nature_from_scheme,
 )
+from orcia_core.storage.run_lock_guard import assert_resource_not_pinned_by_active_runs_conn
 
 
 async def create_workspace_datasource_on_postgres18(
@@ -256,6 +257,12 @@ async def delete_workspace_datasource_on_postgres18(
     wid_uuid, ds_uuid = _parse_wid_ds_uuids(workspace_id, datasource_id, instance)
     async with engine.begin() as conn:
         await ensure_workspace_datasources_schema(conn)
+        await assert_resource_not_pinned_by_active_runs_conn(
+            conn,
+            target_kind="WORKSPACE_DATASOURCE",
+            target_id=str(ds_uuid),
+            instance=instance,
+        )
         deleted = (
             await conn.execute(
                 sa.text(

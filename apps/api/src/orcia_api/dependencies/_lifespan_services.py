@@ -150,6 +150,10 @@ def init_runtime_secondary_services(
             cas_storage=getattr(app.state, "pack_cas_storage", None),
             bundle_repository=app.state.pack_bundle_v2_repository,
         )
+    if getattr(app.state, "workspace_packs_service", None) is None:
+        from orcia_core.packs import WorkspacePacksService
+
+        app.state.workspace_packs_service = WorkspacePacksService(engine=db_engine)
     if getattr(app.state, "durable_wizard_service", None) is None:
         app.state.durable_wizard_service = DurableOnboardingWizardService(
             repository=SqlWizardSessionRepository(db_engine) if db_engine is not None else None

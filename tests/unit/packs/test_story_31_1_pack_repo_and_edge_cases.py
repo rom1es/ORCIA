@@ -193,6 +193,8 @@ async def test_sql_pack_bundle_v2_delete_guards_runs_drafts_and_deactivated() ->
 
     def _make_delete_repo(mode: str) -> SqlPackBundleV2Repository:
         def _handler(sql: str, _params: dict[str, Any]) -> _FakeResult:
+            if "to_regclass('run_lock_manifests')" in sql:
+                return _FakeResult(scalar_val=True)
             if "FROM workspace_pack_activations" in sql and mode == "active_ws":
                 return _FakeResult(scalar_val=1)
             if "FROM run_lock_manifests" in sql and mode == "active_run":

@@ -82,6 +82,12 @@ from orcia_api.routers.workspace_datasources import (
 from orcia_api.routers.workspace_governance import (
     router as workspace_governance_router,
 )
+from orcia_api.routers.workspace_packs import (
+    router as workspace_packs_router,
+)
+from orcia_api.routers.workspace_packs import (
+    run_lock_router as run_lock_manifest_router,
+)
 from orcia_core import __version__
 from orcia_core.config import load_orcia_env
 from orcia_core.observability.logging import configure_logging
@@ -212,7 +218,9 @@ def create_app() -> FastAPI:
     application.include_router(pack_builder_router)
     application.include_router(agents_and_skills_router)
     application.include_router(packs_router)
+    application.include_router(workspace_packs_router)
     application.include_router(workflows_v2_router)
+    application.include_router(run_lock_manifest_router)
     application.include_router(audit_ledger_router)
     application.include_router(finops_router)
     application.include_router(autonomy_contracts_router)

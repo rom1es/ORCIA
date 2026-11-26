@@ -85,6 +85,13 @@ class ResourceNotFoundError(OrciaDomainError):
     error_code, http_status, type_slug = "ERR_RESOURCE_NOT_FOUND", 404, "resource-not-found"
 
 
+class ResourcePinnedByActiveRunsError(OrciaDomainError):
+    """Raised (`HTTP 409`) when deleting a pack, datasource, or connector pinned by active runs."""
+
+    error_code = "ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS"
+    http_status, type_slug = 409, "resource-pinned-by-active-runs"
+
+
 class ValidationDomainError(OrciaDomainError):
     error_code, http_status, type_slug = "ERR_VALIDATION_FAILED", 422, "validation-failed"
 
@@ -181,6 +188,7 @@ __all__ = [
     "RateLimitedError",
     "ReadSourceDeniedError",
     "ResourceNotFoundError",
+    "ResourcePinnedByActiveRunsError",
     "ScopeAccessDeniedError",
     "SupportedLocale",
     "TransientConnectorError",

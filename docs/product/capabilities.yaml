@@ -431,28 +431,28 @@ capabilities:
     title: Studio workflows et registre des packs
     fr: [FR-31]
     origin: epic
-    origin_ref: 8-5, 29-6, 31-2
+    origin_ref: 8-5, 29-6, 31-2, 31-4
     status: live
     kind: feature
     uj: [UJ-19]
-    db_tables: [workflow_definitions, declarative_pack_bundles, pack_dna_mechanisms]
-    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/unit/packs/test_story_31_2_pack_import_service.py, tests/unit/packs/test_story_31_2_packs_router.py, tests/integration/test_story_31_2_pack_import_and_day0_postgres18_s3.py, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx]
+    db_tables: [workflow_definitions, declarative_pack_bundles, pack_dna_mechanisms, workspace_pack_activations, workspace_pack_slot_bindings]
+    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, tests/unit/test_epic_8_settings_rbac_llm_studio_and_wizards.py, tests/unit/packs/test_story_31_2_pack_import_service.py, tests/unit/packs/test_story_31_2_packs_router.py, tests/unit/packs/test_story_31_4_workspace_packs_router.py, tests/unit/packs/test_story_31_4_slot_guard_and_errors.py, tests/unit/packs/test_story_31_4_p0_guards.py, tests/integration/test_story_31_2_pack_import_and_day0_postgres18_s3.py, tests/integration/test_story_31_4_workspace_pack_activation_slots_postgres18.py, tests/integration/test_story_31_4_hardening_guards_postgres18.py, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx]
     verification: runtime
     verified_at: "2026-11-26"
-    surfaces: { route: /settings, api: "studio_and_wizards.py, packs.py", ui: SettingsPacksSection }
+    surfaces: { route: /settings, api: "studio_and_wizards.py, packs.py, workspace_packs.py", ui: SettingsPacksSection }
   - id: CAP-056
     title: Packs métiers — catalogue backend, écran simplifié, activation unique
     fr: [FR-31]
     origin: adhoc
-    origin_ref: 2026-11-05-simplification-ecran-packs-metiers-catalogue-backend + 2026-11-05-unification-activation-unique-packs-metiers-sally-winston + 29-6 + 31-2
+    origin_ref: 2026-11-05-simplification-ecran-packs-metiers-catalogue-backend + 2026-11-05-unification-activation-unique-packs-metiers-sally-winston + 29-6 + 31-2 + 31-4
     status: live
     kind: feature
     uj: [UJ-19]
-    db_tables: [declarative_pack_bundles, catalog_items, platform_settings]
-    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/test_story_31_2_pack_import_and_day0_postgres18_s3.py]
+    db_tables: [declarative_pack_bundles, catalog_items, platform_settings, workspace_pack_activations, workspace_pack_slot_bindings]
+    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, packages/ui/src/__tests__/admin-and-studio-primitives.test.tsx, apps/web/src/__tests__/story-29-6-spaces-org-help-and-secondary-convergence.test.tsx, tests/unit/packs/test_story_31_4_workspace_packs_router.py, tests/unit/packs/test_story_31_4_p0_guards.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/test_story_31_2_pack_import_and_day0_postgres18_s3.py, tests/integration/test_story_31_4_workspace_pack_activation_slots_postgres18.py, tests/integration/test_story_31_4_hardening_guards_postgres18.py]
     verification: runtime
     verified_at: "2026-11-26"
-    surfaces: { route: /settings, api: packs.py }
+    surfaces: { route: /settings, api: "packs.py, workspace_packs.py" }
   - id: CAP-057
     title: Wizards d'initialisation durables
     fr: [FR-31]
@@ -713,15 +713,15 @@ capabilities:
     title: Services MCP, agents distants A2A et banc de test
     fr: [FR-35]
     origin: epic
-    origin_ref: 11-3 + 18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact + 29-5 + 30-5 + 30-6 + 31-3
+    origin_ref: 11-3 + 18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact + 29-5 + 30-5 + 30-6 + 31-3 + 31-4
     status: live
     kind: feature
     uj: [UJ-9, UJ-19]
-    db_tables: [catalog_items, enterprise_connectors, audit_ledger]
-    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, tests/unit/test_epic_11_story_11_3_test_bench_and_mcp_exposure.py, tests/unit/test_story_30_5_agents_lifecycle_and_mcp.py, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, tests/unit/packs/test_story_31_3_namespacing_and_flat_ontology.py, tests/integration/test_story_11_3_mcp_and_test_bench_postgres18_redis.py, tests/integration/api/test_story_30_5_agent_governance_and_lifecycle_pg18.py, tests/integration/test_story_31_3_qualified_namespacing_and_ontology_postgres18.py, tests/unit/connectors/test_story_18_3_codegraph_mcp_tools_and_providers.py]
+    db_tables: [catalog_items, enterprise_connectors, audit_ledger, workspace_pack_slot_bindings]
+    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, tests/unit/test_epic_11_story_11_3_test_bench_and_mcp_exposure.py, tests/unit/test_story_30_5_agents_lifecycle_and_mcp.py, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, tests/unit/packs/test_story_31_3_namespacing_and_flat_ontology.py, tests/unit/packs/test_story_31_4_slot_guard_and_errors.py, tests/unit/packs/test_story_31_4_workspace_packs_router.py, tests/integration/test_story_11_3_mcp_and_test_bench_postgres18_redis.py, tests/integration/api/test_story_30_5_agent_governance_and_lifecycle_pg18.py, tests/integration/test_story_31_3_qualified_namespacing_and_ontology_postgres18.py, tests/integration/test_story_31_4_workspace_pack_activation_slots_postgres18.py, tests/unit/connectors/test_story_18_3_codegraph_mcp_tools_and_providers.py]
     verification: runtime
     verified_at: "2026-11-26"
-    surfaces: { api: "mcp_and_test_bench.py + codegraph_mcp.py + _agents_lifecycle_guards.py", ui: RemoteServiceTestBenchAndMcpExposureView }
+    surfaces: { api: "mcp_and_test_bench.py + codegraph_mcp.py + _agents_lifecycle_guards.py + workspace_packs.py", ui: RemoteServiceTestBenchAndMcpExposureView }
   - id: CAP-083
     title: Atelier orcia-pack-builder (processus 1-5, generate-and-attach, validate_help)
     fr: [FR-35]
@@ -884,15 +884,15 @@ capabilities:
     title: ORCIA Process Studio v2 — Chaîne de Valeur Interactive (Macro-VSM 11 étapes), Studio 5 Blocs Control-M, Sas Externe Délégué & Arbitrage HITL 4 Actions sur Diff S3 Claim-Check
     fr: [FR-7, FR-8, FR-9, FR-15, FR-17, FR-29, FR-30, FR-35, FR-36]
     origin: epic
-    origin_ref: epic-14 (14-1..14-5) + 29-5 + 30-3 + 30-4 + 30-6
+    origin_ref: epic-14 (14-1..14-5) + 29-5 + 30-3 + 30-4 + 30-6 + 31-4
     status: live
     kind: feature
     uj: [UJ-10, UJ-19]
-    db_tables: [vsm_definitions_v2, workflow_definitions_v2, declarative_pack_bundles, claim_check_artifacts, workflow_runs, workflow_v2_runs]
-    tests: [tests/integration/api/test_dbos_return_loops_and_claim_check.py, tests/integration/api/test_story_30_3_pending_runs_and_live_guard_postgres18.py, tests/unit/core/test_generic_gate_runners_and_auto_heal.py, tests/unit/test_story_30_3_processes_live_llm_and_pending_runs.py, tests/unit/test_story_30_4_workflows_helpers_coverage.py, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-30-3-processes-pg18-pending-runs.test.tsx, apps/web/src/__tests__/story-30-4-processes-tabbed-hub-and-focus-review.test.tsx, apps/web/src/__tests__/epic-30-ux-hardening-audit.test.ts, apps/web/e2e/12-epic16-reflexive-trace-and-line-inspector.spec.ts, apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts]
+    db_tables: [vsm_definitions_v2, workflow_definitions_v2, declarative_pack_bundles, claim_check_artifacts, workflow_runs, workflow_v2_runs, run_lock_manifests, workspace_pack_activations, workspace_pack_slot_bindings]
+    tests: [tests/integration/api/test_dbos_return_loops_and_claim_check.py, tests/integration/api/test_story_30_3_pending_runs_and_live_guard_postgres18.py, tests/integration/test_story_31_4_workspace_pack_activation_slots_postgres18.py, tests/integration/test_story_31_4_hardening_guards_postgres18.py, tests/unit/core/test_generic_gate_runners_and_auto_heal.py, tests/unit/test_story_30_3_processes_live_llm_and_pending_runs.py, tests/unit/test_story_30_4_workflows_helpers_coverage.py, tests/unit/test_story_30_6_lifecycle_and_modal_guards_audit.py, tests/unit/packs/test_story_31_4_p0_guards.py, tests/unit/packs/test_story_31_4_api_helpers_cov.py, apps/web/src/__tests__/epics-14-15-process-studio-v2-and-declarative-packs.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-30-3-processes-pg18-pending-runs.test.tsx, apps/web/src/__tests__/story-30-4-processes-tabbed-hub-and-focus-review.test.tsx, apps/web/src/__tests__/epic-30-ux-hardening-audit.test.ts, apps/web/e2e/12-epic16-reflexive-trace-and-line-inspector.spec.ts, apps/web/e2e/20-process-studio-v2-finops-and-log-sink.spec.ts, apps/web/e2e/30-epic-30-ux-hardening-and-lifecycle.spec.ts]
     verification: runtime
     verified_at: "2026-11-26"
-    surfaces: { route: "/processes + /processes/vsm/$vsmId + /processes/studio/$workflowId + /processes/runs/$runId", api: "/api/v1/vsm + /api/v1/workflows/v2 + /api/v1/workflows/v2/runs + /api/v1/runs (workflows.py, _workflows_pending_runs.py)", ui: "ProcessesHubPage + ProcessCatalogCardGrid + ProcessesActiveDossiersCard + ValueStreamMapView + StepDetailSheet + ReturnLoopsSvgOverlay + WorkflowFiveBlocksCanvas + StudioCopilotSidebar + InteractiveRunDrawer + ProcessRunFocusReviewPage + ProcessRunActionBanner + ProcessRunArtifactPane + ProcessRunReasoningRail", migration: "20261108_0910_declarative_packs_and_workflows_v2.py + 20261125_303_workflow_v2_runs.py" }
+    surfaces: { route: "/processes + /processes/vsm/$vsmId + /processes/studio/$workflowId + /processes/runs/$runId", api: "/api/v1/vsm + /api/v1/workflows/v2 + /api/v1/workflows/v2/runs + /api/v1/runs + /api/v1/workspaces/{workspace_id}/packs (workflows.py, _workflows_pending_runs.py, _workflows_pack_lock_helpers.py, _workflows_run_state_helpers.py, workspace_packs.py)", ui: "ProcessesHubPage + ProcessCatalogCardGrid + ProcessesActiveDossiersCard + ValueStreamMapView + StepDetailSheet + ReturnLoopsSvgOverlay + WorkflowFiveBlocksCanvas + StudioCopilotSidebar + InteractiveRunDrawer + ProcessRunFocusReviewPage + ProcessRunActionBanner + ProcessRunArtifactPane + ProcessRunReasoningRail", migration: "20261108_0910_declarative_packs_and_workflows_v2.py + 20261125_303_workflow_v2_runs.py + 20261126_311_declarative_packs_v2.py" }
   - id: CAP-150
     title: Simplification Architecturale des Packs 100 % Déclaratifs (packs/sdlc & packs/orcia-docs), Fusion de orcia-kernel dans orcia-core.kernel & Package Unifié packages/orcia-connectors
     fr: [FR-11, FR-13, FR-14, FR-34, FR-35]
@@ -910,18 +910,18 @@ capabilities:
     title: Orchestration réflexive (Mon Assistant, Mes Agents & Processus pilotés par l'objectif), exploration chirurgicale #Lstart-end et dualité Objectif vs Jalons
     fr: [FR-1, FR-14, FR-20, FR-22, FR-24, FR-33, FR-36]
     origin: epic
-    origin_ref: epic-16 (16-1..16-4) + 30-3 + 30-4 + 30-6
+    origin_ref: epic-16 (16-1..16-4) + 30-3 + 30-4 + 30-6 + 31-4
     status: live
     kind: feature
     uj: [UJ-10, UJ-17]
-    db_tables: [reflexive_execution_sessions, workflow_definitions_v2, workflow_runs, workflow_v2_runs]
+    db_tables: [reflexive_execution_sessions, workflow_definitions_v2, workflow_runs, workflow_v2_runs, run_lock_manifests, workspace_pack_activations, workspace_pack_slot_bindings]
     verification: runtime
     verified_at: "2026-11-26"
     surfaces:
       route: "/assistant + /agents + /processes + /processes/studio/$workflowId + /processes/runs/$runId"
-      api: "/api/v1/sources/inspect-lines + /api/v1/sources/surgical-explore (sources_surgical.py) + /api/v1/executions/reflexive + /api/v1/executions/{execution_id}/trace-stream (executions_trace.py) + /api/v1/workflows/v2 + /api/v1/workflows/v2/runs + /api/v1/workflows/v2/{workflow_id}/runs (workflows.py, _workflows_pending_runs.py, _process_llm_bridge.py)"
+      api: "/api/v1/sources/inspect-lines + /api/v1/sources/surgical-explore (sources_surgical.py) + /api/v1/executions/reflexive + /api/v1/executions/{execution_id}/trace-stream (executions_trace.py) + /api/v1/workflows/v2 + /api/v1/workflows/v2/runs + /api/v1/workflows/v2/{workflow_id}/runs + /api/v1/workspaces/{workspace_id}/packs + /api/v1/runs/{run_id}/lock (workflows.py, _workflows_pending_runs.py, _workflows_pack_lock_helpers.py, _process_llm_bridge.py, workspace_packs.py, orchestration.py)"
       ui: "WorkflowOrchestrationModeSelector + WorkflowBlock2ExecutionSection + AgentExecutionTrace + agentExecutionTraceGrouping + SourceLineInspectorDrawer + AgentTestBenchSection + InteractiveRunDrawer + ProcessRunFocusReviewPage + ProcessRunActionBanner + ProcessRunArtifactPane + ProcessRunReasoningRail + AssistantSpeedSelectorAndStreamView"
-      migration: "20261111_01_reflexive_execution_sessions.py + 20261122_267_story_26_7_reflexive_execution_profile.py + 20261125_303_workflow_v2_runs.py"
+      migration: "20261111_01_reflexive_execution_sessions.py + 20261122_267_story_26_7_reflexive_execution_profile.py + 20261125_303_workflow_v2_runs.py + 20261126_311_declarative_packs_v2.py"
     tests:
       - tests/unit/connectors/test_surgical_context_explorer.py
       - tests/unit/core/test_non_deterministic_reflexive_runtime.py
@@ -930,10 +930,14 @@ capabilities:
       - tests/unit/connectors/test_bounded_workflow_v2_encapsulation.py
       - tests/unit/test_story_30_3_processes_live_llm_and_pending_runs.py
       - tests/unit/test_story_30_4_workflows_helpers_coverage.py
+      - tests/unit/packs/test_story_31_4_p0_guards.py
+      - tests/unit/packs/test_story_31_4_api_helpers_cov.py
       - tests/integration/api/test_story_16_1_sources_surgical_api.py
       - tests/integration/api/test_story_16_2_reflexive_runtime_and_sse_postgres18.py
       - tests/integration/api/test_story_16_3_dual_mode_processes_api.py
       - tests/integration/api/test_story_30_3_pending_runs_and_live_guard_postgres18.py
+      - tests/integration/test_story_31_4_workspace_pack_activation_slots_postgres18.py
+      - tests/integration/test_story_31_4_hardening_guards_postgres18.py
       - packages/ui/src/__tests__/story-16-4-agent-execution-trace-and-inspector.test.tsx
       - packages/ui/src/__tests__/story-30-3-coalesced-thought-trace.test.tsx
       - apps/web/src/__tests__/story-16-3-dual-mode-processes-studio.test.tsx

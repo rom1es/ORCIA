@@ -12,6 +12,7 @@ from orcia_core.packs import (
     PackImportService,
     SeaweedFsPackCasAdapter,
     SqlPackBundleV2Repository,
+    WorkspacePacksService,
 )
 
 
@@ -75,8 +76,21 @@ def get_pack_import_service(request: Request) -> PackImportService:
     return svc
 
 
+def get_workspace_packs_service(request: Request) -> WorkspacePacksService:
+    """Return `WorkspacePacksService` wired to PG18 `db_engine`."""
+    engine = get_configured_db_engine(request)
+    svc: WorkspacePacksService | None = getattr(request.app.state, "workspace_packs_service", None)
+    if svc is None:
+        svc = WorkspacePacksService(engine=engine)
+        request.app.state.workspace_packs_service = svc
+    elif engine is not None and not svc.has_engine():
+        svc.set_engine(engine)
+    return svc
+
+
 __all__ = [
     "get_pack_bundle_v2_repository",
     "get_pack_cas_storage",
     "get_pack_import_service",
+    "get_workspace_packs_service",
 ]

@@ -6,6 +6,24 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from orcia_api.schemas._workspace_packs import (
+    ActivateWorkspacePackRequest,
+    ActivateWorkspacePackResponse,
+    BindWorkspacePackSlotsRequest,
+    BindWorkspacePackSlotsResponse,
+    DeactivateWorkspacePackResponse,
+    PinnedPackManifestSchema,
+    ReorderedWorkspacePackItemResponse,
+    ReorderWorkspacePacksRequest,
+    ReorderWorkspacePacksResponse,
+    ResolvedPackSlotSchema,
+    RunLockManifestReadResponse,
+    WorkspacePackItemResponse,
+    WorkspacePacksListResponse,
+    WorkspacePackSlotBindingInputSchema,
+    WorkspacePackSlotBindingItemResponse,
+)
+
 
 class PackImportRequest(BaseModel):
     """JSON payload for `POST /api/v1/packs/import` (base64-encoded `.zip` archive)."""
@@ -60,8 +78,23 @@ class PackDeleteResponse(BaseModel):
 
 
 __all__ = [
+    "ActivateWorkspacePackRequest",
+    "ActivateWorkspacePackResponse",
+    "BindWorkspacePackSlotsRequest",
+    "BindWorkspacePackSlotsResponse",
+    "DeactivateWorkspacePackResponse",
     "PackDeleteResponse",
     "PackImportEntityCountsResponse",
     "PackImportRequest",
     "PackImportResponse",
+    "PinnedPackManifestSchema",
+    "ReorderWorkspacePacksRequest",
+    "ReorderWorkspacePacksResponse",
+    "ReorderedWorkspacePackItemResponse",
+    "ResolvedPackSlotSchema",
+    "RunLockManifestReadResponse",
+    "WorkspacePackItemResponse",
+    "WorkspacePackSlotBindingInputSchema",
+    "WorkspacePackSlotBindingItemResponse",
+    "WorkspacePacksListResponse",
 ]

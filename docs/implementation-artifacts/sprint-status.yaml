@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 11-26-2026 15:06
+last_updated: 11-26-2026 18:05
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -353,7 +353,7 @@ development_status:
   31-1-pack-bundles-v2-ddl-and-native-apm-codec: done
   31-2-transactional-pack-import-day0-seed-and-purge-disk-ts-hardcoding: done
   31-3-qualified-pack-namespacing-and-flat-workspace-pack-ontology: done
-  31-4-workspace-pack-activation-slot-bindings-422-guard-and-run-lock-pinning: backlog
+  31-4-workspace-pack-activation-slot-bindings-422-guard-and-run-lock-pinning: done
   31-5-pack-composer-anti-hostage-unlink-closure-gate-and-scrubbed-zip-export: backlog
   31-6-direction-c-bilingual-pack-registry-composer-slot-drawer-and-autocomplete-ui: backlog
   31-7-epic-31-red-team-security-roundtrip-e2e-help-sync-and-closure: backlog

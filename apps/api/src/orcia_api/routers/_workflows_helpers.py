@@ -37,7 +37,9 @@ def enforce_not_observer(
     user = resolve_request_user(request, persona_key=persona_key)
     access_hdr = (request.headers.get("x-orcia-access-mode") or "").strip().upper()
     if (
-        user.platform_role in ("OBSERVER", "BU_DIRECTOR")
+        user.platform_role in ("OBSERVER", "READ_ONLY_OBSERVER", "BU_DIRECTOR")
+        or "OBSERVER" in user.roles
+        or "READ_ONLY_OBSERVER" in user.roles
         or (persona_key or "").strip().lower() in _OBSERVER_PERSONAS
         or access_hdr == "READ_ONLY_OBSERVER"
     ):

@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 64,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 250,
+    "techLeadReportsCount": 251,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -548,6 +548,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-26",
+      "phaseOrStory": "Story 31.4",
+      "reportFile": "31-4-workspace-pack-activation-slot-bindings-422-guard-and-run-lock-pinning-tech-lead-report.md",
+      "domain": "Epic 31 Lot 3 — Workspace Pack Activation, Slot Bindings, 422 Unbound Guard & run_lock_manifests Pinning (D2, D5, R4, R5, A1, A2, CAP-055, CAP-056, CAP-082, CAP-140, CAP-160)",
+      "summary": "Closed (done, bmad-architect-worker APPROVED, independent Testing Verifier verified): added pure slot-readiness evaluator (slot_guard.py 269 L) & WorkspacePacksService (236 L), transactional workspace activation/deactivation/slot-binding/DEFERRABLE priority reorder SQL (_sql_workspace_pack_queries.py 294 L, _sql_workspace_pack_views.py 270 L, _sql_workspace_pack_mutations.py 288 L, _sql_workspace_pack_reorder.py 111 L, _sql_workspace_slot_bindings.py 293 L, audit_ledger PACK_SLOTS_BOUND), immutable run_lock_manifests pinning & active-run delete protection (_sql_run_lock_pinning.py 252 L, _sql_run_lock_reads.py 177 L, run_lock_guard.py 135 L, _sql_pack_delete_tx.py 146 L 409 ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS), /api/v1/workspaces/{workspace_id}/packs & /api/v1/runs/{run_id}/lock routes + fail-closed 422 ERR_PACK_SLOT_UNBOUND pre-run guard (workspace_packs.py 238 L, _workspace_packs_guards.py 147 L, _workflows_pack_lock_helpers.py 146 L, _workflows_run_state_helpers.py 89 L), and 0-diff OpenAPI 3.1 SDK; all 29 new .py files <= 300 L; verified 97% scoped branch coverage (930 stmts/274 branches, 114 tests), 193 passed evals/security/contract, 11 passed (6 + 5) PG18+Redis+S3 testcontainers, 9/9 Turbo, ruff (1,864 files)/mypy --strict (917 files)/lint-imports (5/5, 907 files, 6,581 deps)/lint_spine (0)/export_openapi (0-diff)/detect-secrets clean, and gitnexus analyze (49,879 nodes / 196,291 edges / 831 clusters / 1,524 flows)."
+    },
     {
       "date": "2026-11-26",
       "phaseOrStory": "Story 31.3",

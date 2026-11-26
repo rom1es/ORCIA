@@ -18,6 +18,7 @@ from orcia_kernel.errors import (
     ObserverModeReadOnlyError,
     OrciaDomainError,
     ResourceNotFoundError,
+    ResourcePinnedByActiveRunsError,
     ScopeAccessDeniedError,
     ValidationDomainError,
     register_domain_error_catalog,
@@ -72,11 +73,6 @@ class ResourceLeaseHeldByOtherRunError(OrciaDomainError):
 class CyclicResourceWaitDetectedError(OrciaDomainError):
     error_code = "ERR_CYCLIC_RESOURCE_WAIT_DETECTED"
     http_status, type_slug = 409, "cyclic-resource-wait-detected"
-
-
-class ResourcePinnedByActiveRunsError(OrciaDomainError):
-    error_code = "ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS"
-    http_status, type_slug = 409, "resource-pinned-by-active-runs"
 
 
 class ImmutableHarnessBoundaryError(OrciaDomainError):

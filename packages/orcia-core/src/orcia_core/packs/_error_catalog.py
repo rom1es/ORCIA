@@ -52,6 +52,40 @@ PACKS_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
             "datasource or enterprise connector.",
         ),
     },
+    "ERR_PACK_SLOT_UNBOUND_DETAIL": {
+        "fr": LocalizedErrorCopy(
+            "Slot de connecteur requis non lié",
+            "Le pack « {pack_slug} » possède des slots requis non liés ou inactifs : "
+            "{missing_slots}.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Required pack connector slot unbound",
+            "Pack '{pack_slug}' has unbound or inactive required slots: {missing_slots}.",
+        ),
+    },
+    "ERR_PACK_ACTIVATION_INVALID": {
+        "fr": LocalizedErrorCopy(
+            "Opération d'activation de pack invalide",
+            "La demande d'activation, désactivation ou réordonnancement du pack dans "
+            "l'Espace est invalide.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Invalid workspace pack activation request",
+            "The workspace pack activation, deactivation, or priority reorder request is invalid.",
+        ),
+    },
+    "ERR_PACK_SLOT_BINDING_INVALID": {
+        "fr": LocalizedErrorCopy(
+            "Liaison de slot de connecteur invalide",
+            "La liaison de slot demandée cible un slot inconnu ou une source/connecteur "
+            "incompatible ou hors périmètre.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Invalid pack connector slot binding",
+            "The requested slot binding references an unknown slot or an incompatible or "
+            "out-of-scope datasource/connector.",
+        ),
+    },
     "ERR_PACK_CLOSURE_INCOMPLETE": {
         "fr": LocalizedErrorCopy(
             "Clôture transitive du pack incomplète",

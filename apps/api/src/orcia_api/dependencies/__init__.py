@@ -57,6 +57,7 @@ from orcia_api.dependencies.pack_import_deps import (
     get_pack_bundle_v2_repository,
     get_pack_cas_storage,
     get_pack_import_service,
+    get_workspace_packs_service,
 )
 from orcia_api.dependencies.portal_and_assistant import (
     get_accostage_service,
@@ -146,6 +147,7 @@ __all__ = [
     "get_pack_bundle_v2_repository",
     "get_pack_cas_storage",
     "get_pack_import_service",
+    "get_workspace_packs_service",
     "get_permission_broker_service",
     "get_platform_settings_service",
     "get_post_hoc_audit_service",

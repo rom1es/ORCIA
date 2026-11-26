@@ -15,6 +15,7 @@ from orcia_core.packs.errors import (
     PackSystemDeleteForbiddenError,
     ResourcePinnedByActiveRunsError,
 )
+from orcia_core.storage.run_lock_guard import assert_pack_bundle_not_pinned_by_active_runs_conn
 
 
 async def delete_bundle_transactional(
@@ -70,22 +71,9 @@ async def delete_bundle_transactional(
             raise ResourcePinnedByActiveRunsError(
                 detail_override=f"Pack bundle {bundle_id!r} has active workspace activations."
             )
-        pinned = (
-            await conn.execute(
-                sa.text(
-                    "SELECT 1 FROM run_lock_manifests rlm "
-                    "JOIN workflow_runs wr ON wr.id = rlm.run_id "
-                    "WHERE wr.status NOT IN ('COMPLETED', 'FAILED', 'CANCELLED') "
-                    "AND (rlm.manifest_jsonb::text LIKE :bid_pat "
-                    "OR rlm.manifest_jsonb::text LIKE :uri_pat) LIMIT 1"
-                ),
-                {"bid_pat": f"%{bundle_id}%", "uri_pat": f"%packs/{slug}%@{version}%"},
-            )
-        ).scalar()
-        if pinned is not None:
-            raise ResourcePinnedByActiveRunsError(
-                detail_override=f"Pack bundle {bundle_id!r} is pinned by active workflow runs."
-            )
+        await assert_pack_bundle_not_pinned_by_active_runs_conn(
+            conn, bundle_id=bundle_id, slug=slug, version=version
+        )
 
         for tbl, fk_col in _OWNED_CHILD_TABLES:
             ref = (

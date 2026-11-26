@@ -36,6 +36,7 @@ from orcia_core.permissions.errors import (
     ResourceNotFoundError,
     ValidationDomainError,
 )
+from orcia_core.storage.run_lock_guard import assert_resource_not_pinned_by_active_runs_conn
 
 
 @dataclass(frozen=True, slots=True)
@@ -328,10 +329,19 @@ async def delete_enterprise_connector_on_postgres18(
     *,
     instance: str | None = None,
 ) -> None:
-    """Delete an Enterprise Connector and cascade its passthrough tokens."""
-    cid_uuid = UUID(connector_id)
+    """Delete an Enterprise Connector after checking active run locks."""
+    try:
+        cid_uuid = UUID(connector_id)
+    except (ValueError, TypeError) as exc:
+        raise ResourceNotFoundError(instance=instance) from exc
     async with engine.begin() as conn:
         await ensure_enterprise_connectors_schema(conn)
+        await assert_resource_not_pinned_by_active_runs_conn(
+            conn,
+            target_kind="ENTERPRISE_CONNECTOR",
+            target_id=str(cid_uuid),
+            instance=instance,
+        )
         res = await conn.execute(
             sa.text("DELETE FROM enterprise_connectors WHERE id = :id"),
             {"id": cid_uuid},

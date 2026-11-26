@@ -92,6 +92,18 @@ ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErrorCopy]] = {
             "The requested resource or route does not exist on the ORCIA platform.",
         ),
     },
+    "ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS": {
+        "fr": LocalizedErrorCopy(
+            "Ressource verrouillée par des exécutions actives",
+            "Suppression refusée : cette ressource est verrouillée dans le manifeste "
+            "d'une ou plusieurs exécutions actives.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Resource pinned by active runs",
+            "Deletion refused: this resource is pinned inside one or more active run lock "
+            "manifests.",
+        ),
+    },
     "ERR_VALIDATION_FAILED": {
         "fr": LocalizedErrorCopy(
             "Erreur de validation de la requête",

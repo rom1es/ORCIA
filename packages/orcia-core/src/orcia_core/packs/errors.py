@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 
 from orcia_core.packs._error_catalog import PACKS_ERROR_CATALOG
-from orcia_kernel.errors import OrciaDomainError
+from orcia_kernel.errors import OrciaDomainError, ResourcePinnedByActiveRunsError
 
 
 class PackExecutableHookForbiddenError(OrciaDomainError):
@@ -33,11 +33,56 @@ class PackVersionConflictError(OrciaDomainError):
 
 
 class PackSlotUnboundError(OrciaDomainError):
-    """Raised (`HTTP 422`) when a required pack connector slot is unbound at execution."""
+    """Raised (`HTTP 422`) when a required pack connector slot is unbound at activation/run."""
 
     error_code = "ERR_PACK_SLOT_UNBOUND"
     http_status = 422
     type_slug = "pack-slot-unbound"
+
+    def __init__(
+        self,
+        *,
+        pack_slug: str = "",
+        missing_slots: Sequence[str] = (),
+        detail_override: str | None = None,
+        detail_code: str | None = None,
+        detail_params: Mapping[str, object] | None = None,
+        instance: str | None = None,
+        permission_broker_hint: str | None = None,
+    ) -> None:
+        self.pack_slug = pack_slug
+        self.missing_slots = tuple(missing_slots)
+        merged_params = dict(detail_params) if detail_params is not None else {}
+        if pack_slug and "pack_slug" not in merged_params:
+            merged_params["pack_slug"] = pack_slug
+        if missing_slots and "missing_slots" not in merged_params:
+            merged_params["missing_slots"] = ", ".join(missing_slots)
+        resolved_code = detail_code
+        if resolved_code is None and detail_override is None and missing_slots:
+            resolved_code = "ERR_PACK_SLOT_UNBOUND_DETAIL"
+        super().__init__(
+            detail_override=detail_override,
+            detail_code=resolved_code,
+            detail_params=merged_params or None,
+            instance=instance,
+            permission_broker_hint=permission_broker_hint,
+        )
+
+
+class PackActivationInvalidError(OrciaDomainError):
+    """Raised (`HTTP 422`) on invalid activation, deactivation, or priority reorder inputs."""
+
+    error_code = "ERR_PACK_ACTIVATION_INVALID"
+    http_status = 422
+    type_slug = "pack-activation-invalid"
+
+
+class PackSlotBindingInvalidError(OrciaDomainError):
+    """Raised (`HTTP 422`) when slot binding targets an unknown slot or invalid target."""
+
+    error_code = "ERR_PACK_SLOT_BINDING_INVALID"
+    http_status = 422
+    type_slug = "pack-slot-binding-invalid"
 
 
 class PackClosureIncompleteError(OrciaDomainError):
@@ -54,14 +99,6 @@ class PackPiiOrInfraLeakError(OrciaDomainError):
     error_code = "ERR_PACK_PII_OR_INFRA_LEAK"
     http_status = 422
     type_slug = "pack-pii-or-infra-leak"
-
-
-class ResourcePinnedByActiveRunsError(OrciaDomainError):
-    """Raised (`HTTP 409`) when deleting a pack or bound slot pinned by active run locks."""
-
-    error_code = "ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS"
-    http_status = 409
-    type_slug = "resource-pinned-by-active-runs"
 
 
 class EntityReferencedByPackDraftError(OrciaDomainError):
@@ -135,6 +172,8 @@ PACK_DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     PackInvalidArchiveError,
     PackVersionConflictError,
     PackSlotUnboundError,
+    PackActivationInvalidError,
+    PackSlotBindingInvalidError,
     PackClosureIncompleteError,
     PackPiiOrInfraLeakError,
     ResourcePinnedByActiveRunsError,
@@ -149,6 +188,7 @@ __all__ = [
     "EntityReferencedByPackDraftError",
     "PACKS_ERROR_CATALOG",
     "PACK_DOMAIN_ERROR_CLASSES",
+    "PackActivationInvalidError",
     "PackBundleNotFoundError",
     "PackClosureIncompleteError",
     "PackEntityCollisionError",
@@ -156,6 +196,7 @@ __all__ = [
     "PackInvalidArchiveError",
     "PackPiiOrInfraLeakError",
     "PackScopeEscalationForbiddenError",
+    "PackSlotBindingInvalidError",
     "PackSlotUnboundError",
     "PackSystemDeleteForbiddenError",
     "PackVersionConflictError",
