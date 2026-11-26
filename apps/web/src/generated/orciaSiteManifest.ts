@@ -11,10 +11,10 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "activeRoutesCount": 29,
     "uiPrimitivesCount": 134,
     "installedPacksCount": 2,
-    "alembicMigrationsCount": 63,
+    "alembicMigrationsCount": 64,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 247,
+    "techLeadReportsCount": 248,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -264,7 +264,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "20261122_265_story_26_5_assistant_thread_messages",
     "20261122_266a_story_26_6a_llm_supports_tools",
     "20261122_267_story_26_7_reflexive_execution_profile",
-    "20261125_303_workflow_v2_runs"
+    "20261125_303_workflow_v2_runs",
+    "20261126_311_declarative_packs_v2"
   ],
   "architectureDecisions": [
     {
@@ -547,6 +548,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-26",
+      "phaseOrStory": "Story 31.1",
+      "reportFile": "31-1-pack-bundles-v2-ddl-and-native-apm-codec-tech-lead-report.md",
+      "domain": "Epic 31 Lot 1 — declarative_pack_bundles v2 DDL (20261126_311), Scoped Constituent Tables, 4 New Pack v2 Tables, 'pack' Scheme & Native APM-Superset Codec (D1, D3, D4, D6, A1, CAP-055, CAP-056, CAP-082, CAP-090)",
+      "summary": "Closed (done, independent Testing Verifier verified): shipped raw-SQL single-statement Alembic 20261126_311_declarative_packs_v2.py (294 L, upgrade -> downgrade -> upgrade on PG18) extending declarative_pack_bundles + 7 child pack_bundle_id FKs/partial unique indexes + pack_dna_mechanisms, pack_draft_memberships, workspace_pack_activations (DEFERRABLE priority + cross-workspace trigger), workspace_pack_slot_bindings, 'pack' scheme (0192c4e0-0000-7000-8000-00000000c008) + Day-0 reset guards; built hexagonal orcia_core.packs (models.py, ports.py, 8 bilingual RFC 9457 errors.py/_error_catalog.py wired in _registry_extra_classes.py, ApmPackCodec + legacy pack.yaml compat + zip-slip/zip-bomb/ERR_PACK_EXECUTABLE_HOOK_FORBIDDEN/YAML/Starlark AST & PASS-FAIL guards sharing _starlark_ast_whitelist.py, SqlPackBundleV2Repository wired in _lifespan_services.py); all 40/40 .py files <= 299 L; verified 94% scoped branch coverage (90 tests), 1,221 passed tests/unit (+ test_site_catalog_sync.py), 193 passed evals/security/contract, 4 passed PG18+Redis+S3 testcontainers, 9/9 Turbo (543 JS/TS tests), ruff (1,800 files)/mypy --strict (881 files)/lint-imports (5/5, 924 files)/lint_spine (0)/detect-secrets clean."
+    },
     {
       "date": "2026-11-26",
       "phaseOrStory": "Story 30.6",

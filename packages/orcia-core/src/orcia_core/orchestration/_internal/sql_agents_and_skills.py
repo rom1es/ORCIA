@@ -158,7 +158,7 @@ async def persist_skill_to_postgres18(
                     :owner_org_unit_id, :owner_workspace_id, 'USER_SKILL',
                     CAST(:metadata_jsonb AS jsonb)
                 )
-                ON CONFLICT (resource_id) DO UPDATE SET
+                ON CONFLICT (resource_id) WHERE pack_bundle_id IS NULL DO UPDATE SET
                     uri = EXCLUDED.uri,
                     title = EXCLUDED.title,
                     description = EXCLUDED.description,
@@ -241,7 +241,7 @@ async def persist_agent_to_postgres18(
                     :owner_org_unit_id, :owner_workspace_id, 'USER_AGENT',
                     CAST(:metadata_jsonb AS jsonb)
                 )
-                ON CONFLICT (resource_id) DO UPDATE SET
+                ON CONFLICT (resource_id) WHERE pack_bundle_id IS NULL DO UPDATE SET
                     uri = EXCLUDED.uri,
                     title = EXCLUDED.title,
                     description = EXCLUDED.description,

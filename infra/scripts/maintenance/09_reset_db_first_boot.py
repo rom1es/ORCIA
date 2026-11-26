@@ -175,6 +175,27 @@ async def reset_database_to_first_boot(
                 deleted_total += int(res.rowcount or 0)
                 cleared_tables += 1
 
+            if "declarative_pack_bundles" in existing_tables:
+                has_bundle_kind = bool(
+                    (
+                        await conn.execute(
+                            sa.text(
+                                "SELECT EXISTS (SELECT 1 FROM information_schema.columns "
+                                "WHERE table_schema = 'public' "
+                                "AND table_name = 'declarative_pack_bundles' "
+                                "AND column_name = 'bundle_kind')"
+                            )
+                        )
+                    ).scalar()
+                )
+                if has_bundle_kind:
+                    res = await conn.execute(
+                        sa.text(
+                            "DELETE FROM declarative_pack_bundles WHERE bundle_kind <> 'SYSTEM'"
+                        )
+                    )
+                    deleted_total += int(res.rowcount or 0)
+
             if dbos_tables:
                 qualified_dbos = ", ".join(quote_sql_ident("dbos", t) for t in dbos_tables)
                 await conn.execute(

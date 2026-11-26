@@ -51,9 +51,17 @@ BASE_CONNECTOR_SCHEMES: tuple[tuple[str, str, str, str], ...] = (
         "Nexus Artifact Repository Connector",
         "orcia-pack-sdlc",
     ),
+    (
+        "0192c4e0-0000-7000-8000-00000000c008",
+        "pack",
+        "Pack Déclaratif ORCIA (orcia://packs/)",
+        "core",
+    ),
 )
 
 ORDERED_MUTABLE_TABLES_TO_CLEAR: tuple[str, ...] = (
+    "workspace_pack_slot_bindings", "workspace_pack_activations",
+    "pack_draft_memberships", "pack_dna_mechanisms",
     "mcp_exposed_agents", "mcp_governed_pat_tokens",
     "jira_staged_actions", "mcp_governed_proposals", "workspace_dna_mechanisms",
     "assistant_thread_messages", "assistant_turn_feedback", "assistant_folder_shares",

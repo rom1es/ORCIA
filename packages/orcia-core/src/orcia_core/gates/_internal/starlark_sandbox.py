@@ -9,34 +9,84 @@ import time
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from orcia_kernel.errors import ValidationDomainError
-
-_CATASTROPHIC_REDOS_PATTERN = re.compile(r"\([^()]*[+*][^()]*\)[+*?]|\(\?P?<[^>]+>[^()]*[+*]\)[+*]")
-_FORBIDDEN_AST_NODES = (
-    ast.Import,
-    ast.ImportFrom,
-    ast.While,
-    ast.AsyncFunctionDef,
-    ast.ClassDef,
-    ast.Try,
-    ast.With,
-    ast.AsyncWith,
-    ast.Global,
-    ast.Nonlocal,
-    ast.Delete,
-    ast.Lambda,
-    ast.Yield,
-    ast.YieldFrom,
-    ast.Await,
+from orcia_core.gates._internal._starlark_ast_whitelist import (
+    StarlarkSandboxError,
+    validate_starlark_ast,
 )
 
+_CATASTROPHIC_REDOS_PATTERN = re.compile(r"\([^()]*[+*][^()]*\)[+*?]|\(\?P?<[^>]+>[^()]*[+*]\)[+*]")
+_MAX_STARLARK_REPEAT_COUNT = 10_000
+_MAX_STARLARK_SEQ_RESULT_LEN = 65_536
 
-class StarlarkSandboxError(ValidationDomainError, ValueError):
-    """Raised when a Starlark mechanism script violates determinism, step cap, or RE2 rules."""
 
-    def __init__(self, message: str = "Starlark mechanism sandbox error.") -> None:
-        ValidationDomainError.__init__(self, detail_override=message)
-        ValueError.__init__(self, message)
+def _safe_mult(left: Any, right: Any) -> Any:
+    seq: str | bytes | list[Any] | tuple[Any, ...] | None = None
+    count: int | None = None
+    if isinstance(left, (str, bytes, list, tuple)) and isinstance(right, int):
+        seq, count = left, right
+    elif isinstance(right, (str, bytes, list, tuple)) and isinstance(left, int):
+        seq, count = right, left
+    if (
+        seq is not None
+        and count is not None
+        and (
+            count > _MAX_STARLARK_REPEAT_COUNT
+            or len(seq) * max(0, count) > _MAX_STARLARK_SEQ_RESULT_LEN
+        )
+    ):
+        raise StarlarkSandboxError("Sequence repetition exceeds sandbox safety limit.")
+    return left * right
+
+
+class _StarlarkTickAndMultTransformer(ast.NodeTransformer):
+    """Instrument functions/loops with `_tick()` caps and guard sequence repetition."""
+
+    @staticmethod
+    def _tick_stmt(cost: int = 1) -> ast.Expr:
+        return ast.Expr(
+            value=ast.Call(
+                func=ast.Attribute(
+                    value=ast.Name(id="orcia_sys", ctx=ast.Load()),
+                    attr="_tick",
+                    ctx=ast.Load(),
+                ),
+                args=[ast.Constant(value=cost)],
+                keywords=[],
+            )
+        )
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
+        self.generic_visit(node)
+        node.body = [self._tick_stmt(1), *node.body]
+        return node
+
+    def visit_For(self, node: ast.For) -> ast.For:
+        self.generic_visit(node)
+        node.body = [self._tick_stmt(10), *node.body]
+        return node
+
+    def visit_BinOp(self, node: ast.BinOp) -> ast.AST:
+        self.generic_visit(node)
+        if isinstance(node.op, ast.Mult):
+            return ast.Call(
+                func=ast.Name(id="__orcia_mul__", ctx=ast.Load()),
+                args=[node.left, node.right],
+                keywords=[],
+            )
+        return node
+
+    def visit_AugAssign(self, node: ast.AugAssign) -> ast.AST:
+        self.generic_visit(node)
+        if isinstance(node.op, ast.Mult) and isinstance(node.target, ast.Name):
+            return ast.Assign(
+                targets=[node.target],
+                value=ast.Call(
+                    func=ast.Name(id="__orcia_mul__", ctx=ast.Load()),
+                    args=[ast.Name(id=node.target.id, ctx=ast.Load()), node.value],
+                    keywords=[],
+                ),
+            )
+        return node
 
 
 @dataclass(frozen=True, slots=True)
@@ -212,6 +262,7 @@ class StarlarkMechanismSandbox:
         env: dict[str, Any] = {
             "__builtins__": safe_builtins,
             "orcia_sys": host,
+            "__orcia_mul__": _safe_mult,
         }
         try:
             compiled = compile(tree, filename="<mechanism.star>", mode="exec")
@@ -241,24 +292,8 @@ class StarlarkMechanismSandbox:
 
     @staticmethod
     def _parse_and_verify_starlark_ast(starlark_code: str) -> ast.Module:
-        try:
-            tree = ast.parse(starlark_code, filename="<mechanism.star>", mode="exec")
-        except (SyntaxError, ValueError) as exc:
-            raise StarlarkSandboxError(f"Starlark syntax error: {exc}") from exc
-
-        for node_count, node in enumerate(ast.walk(tree), start=1):
-            if node_count > 5_000:
-                raise StarlarkSandboxError("Starlark AST exceeds 5,000 nodes limit.")
-            if isinstance(node, _FORBIDDEN_AST_NODES):
-                raise StarlarkSandboxError(
-                    f"Forbidden non-deterministic construct in Starlark: {type(node).__name__}"
-                )
-            if isinstance(node, ast.Attribute) and node.attr.startswith("_"):
-                raise StarlarkSandboxError(
-                    f"Private/dunder attribute access '{node.attr}' is forbidden in Starlark."
-                )
-            if isinstance(node, ast.Name) and node.id.startswith("__"):
-                raise StarlarkSandboxError(
-                    f"Dunder identifier '{node.id}' is forbidden in Starlark."
-                )
-        return tree
+        tree = validate_starlark_ast(starlark_code, filename="<mechanism.star>")
+        transformed = _StarlarkTickAndMultTransformer().visit(tree)
+        ast.fix_missing_locations(transformed)
+        assert isinstance(transformed, ast.Module)
+        return transformed

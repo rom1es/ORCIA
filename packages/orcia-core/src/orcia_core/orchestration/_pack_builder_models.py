@@ -212,7 +212,7 @@ async def persist_pack_and_audit_pg(
                     'PUBLISHED_ORG', :owner_org_unit_id, NULL,
                     'BUSINESS_PACK', CAST(:metadata_jsonb AS jsonb)
                 )
-                ON CONFLICT (resource_id) DO UPDATE
+                ON CONFLICT (resource_id) WHERE pack_bundle_id IS NULL DO UPDATE
                 SET version = EXCLUDED.version,
                     sha256 = EXCLUDED.sha256,
                     cas_key = EXCLUDED.cas_key,

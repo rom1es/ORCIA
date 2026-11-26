@@ -105,6 +105,10 @@ def init_runtime_secondary_services(
         app.state.connector_hub_service = ConnectorHubAndIngestionService()
     if getattr(app.state, "studio_and_pack_service", None) is None:
         app.state.studio_and_pack_service = WorkflowStudioAndPackService()
+    if getattr(app.state, "pack_bundle_v2_repository", None) is None:
+        from orcia_core.packs import SqlPackBundleV2Repository
+
+        app.state.pack_bundle_v2_repository = SqlPackBundleV2Repository(db_engine)
     if getattr(app.state, "durable_wizard_service", None) is None:
         app.state.durable_wizard_service = DurableOnboardingWizardService(
             repository=SqlWizardSessionRepository(db_engine) if db_engine is not None else None
