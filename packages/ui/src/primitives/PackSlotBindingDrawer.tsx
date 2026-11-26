@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { OrciaAlertBanner } from "./OrciaAlertBanner";
 import { OrciaDialog } from "./OrciaDialog";
 import type {
@@ -70,12 +70,18 @@ export function PackSlotBindingDrawer({
   onSaveBindings,
 }: PackSlotBindingDrawerProps): React.ReactElement {
   const [draftSelections, setDraftSelections] = useState<Record<string, string>>({});
+  const initKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!pack) {
-      setDraftSelections({});
+    if (!open || !pack) {
+      initKeyRef.current = null;
+      if (!pack) setDraftSelections({});
       return;
     }
+    const nextKey = `${pack.bundleId}:${pack.slug}`;
+    if (initKeyRef.current === nextKey) return;
+    initKeyRef.current = nextKey;
+
     const next: Record<string, string> = {};
     for (const slot of pack.declaredSlots) {
       const existing = pack.slotBindings.find((b) => b.slotKey === slot.slotKey);
@@ -84,7 +90,7 @@ export function PackSlotBindingDrawer({
         : "UNBOUND";
     }
     setDraftSelections(next);
-  }, [pack]);
+  }, [open, pack]);
 
   const missingSet = new Set([
     ...(pack?.missingSlots ?? []),

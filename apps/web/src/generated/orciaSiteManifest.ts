@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 64,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 253,
+    "techLeadReportsCount": 254,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -548,6 +548,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-26",
+      "phaseOrStory": "Story 31.7",
+      "reportFile": "31-7-epic-31-red-team-security-roundtrip-e2e-help-sync-and-closure-tech-lead-report.md",
+      "domain": "Epic 31 Lot 6 & Closure — Red-Team Security, Post-Validate P0-1/P1-1..P1-3 Remediation, Bilingual Day-0 Round-Trip Playwright E2E, Zone 4 Help & Architecture ERD Sync, capabilities.yaml & Epic 31 Closure (CAP-055, CAP-056, CAP-070, CAP-082, CAP-090, CAP-091, CAP-100, CAP-140, CAP-160, CAP-200, CAP-260)",
+      "summary": "Closed (done, epic-31: done, ACTION_ITEM-31.1..31.2: open, independent Testing Verifier verified): authored fail-closed Red-Team & RBAC suites (test_story_31_7_packs_red_team_security.py 161 L, test_story_31_7_packs_isolation_and_guards.py 295 L, _packs_red_team_fixtures.py 202 L) and bilingual fr/en Day-0 Desktop Playwright round-trip E2E (31-epic-31-declarative-apm-packs-roundtrip.spec.ts 238 L, epic31PackHelpers.ts 74 L), remediated P0-1 (_packs_scope_guards.py 189 L, packs.py 285 L, _packs_router_helpers.py 277 L, _pack_composer_helpers.py 225 L), P1-1 (_sql_agents_pack_queries.py 299 L, sql_agents_and_skills.py 297 L, _agents_namespacing.py 235 L, agents_and_skills.py 298 L, _agents_and_skills_helpers.py 287 L), P1-2 (_pack_readiness_preflight.py 88 L wired on assistant_turns.py & _mcp_assistant_ask_bridge.py), and P1-3 (test_story_3_2f mkdtemp, test_story_16_3 & test_story_30_3 lifespan + sql_workflow_v2_runs.py, _sql_workflow_v2_pending_query.py, 03_backfill_permission_broker.py), plus test_story_31_7_scope_and_pack_queries_cov.py (289 L), UI rerender/hydration fixes (PackComposerModal.tsx 293 L, PackSlotBindingDrawer.tsx 285 L, story-31-6-pack-ui-primitives.test.tsx 297 L, _pack_export_scrubber_mappers.py 266 L), Zone 4 help, architecture.md ERD (761 L), and capabilities.yaml; all source/test files <= 300 L; verified 97% scoped branch coverage (448 stmts/174 branches, 159 passed), 199 passed tests/evals+security+contract, 17 passed (14 + 3) PG18+Redis+S3 testcontainers, 9/9 Turbo (23+159+375 = 557 JS/TS tests), 8 passed (1.8m) Desktop Playwright E2E (31, 18, 09, env -u ORCIA_E2E_SEED_FIXTURES), ruff (1,925 files)/mypy --strict (950 files)/lint-imports (5/5, 907 files, 6,581 deps)/lint_spine (0)/export_openapi (0-diff)/detect-secrets clean, site:sync/site:check (254 reports, 66/66 CAPs), check_implementation_docs.py (254/254), post-sync tests/unit (1,295 passed), and gitnexus analyze (51,715 nodes / 259,114 edges / 862 clusters / 1,534 flows)."
+    },
     {
       "date": "2026-11-26",
       "phaseOrStory": "Story 31.6",

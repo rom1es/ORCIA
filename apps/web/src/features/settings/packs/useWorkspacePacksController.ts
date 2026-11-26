@@ -1,4 +1,4 @@
-import { createOrciaApiClient } from "@orcia/api-client";
+import { createOrciaApiClient, type WorkspaceDatasourceItemResponse } from "@orcia/api-client";
 import type {
   PackSlotBindingDraftEntry,
   UiWorkspacePackItem,
@@ -20,6 +20,9 @@ export function useWorkspacePacksController(params: {
   const apiClient = useMemo(() => createOrciaApiClient({ baseUrl: "", locale }), [locale]);
 
   const [packs, setPacks] = useState<readonly UiWorkspacePackItem[]>([]);
+  const [workspaceDatasources, setWorkspaceDatasources] = useState<
+    readonly WorkspaceDatasourceItemResponse[]
+  >([]);
   const [isLoading, setIsLoading] = useState(false);
   const [busySlug, setBusySlug] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -32,13 +35,21 @@ export function useWorkspacePacksController(params: {
   const loadWorkspacePacks = useCallback(async () => {
     if (!workspaceId) {
       setPacks([]);
+      setWorkspaceDatasources([]);
       return;
     }
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const res = await apiClient.listWorkspacePacks(workspaceId);
-      setPacks((res.packs ?? []).map(mapWorkspacePackDtoToUi));
+      const [packsResult, dsResult] = await Promise.allSettled([
+        apiClient.listWorkspacePacks(workspaceId),
+        apiClient.listWorkspaceDatasources(workspaceId),
+      ]);
+      if (packsResult.status === "rejected") {
+        throw packsResult.reason;
+      }
+      setPacks((packsResult.value.packs ?? []).map(mapWorkspacePackDtoToUi));
+      setWorkspaceDatasources(dsResult.status === "fulfilled" ? (dsResult.value.items ?? []) : []);
     } catch (err: unknown) {
       setErrorMessage(formatDetailedPackError(err, locale).fullText);
     } finally {
@@ -194,6 +205,7 @@ export function useWorkspacePacksController(params: {
 
   return {
     packs,
+    workspaceDatasources,
     isLoading,
     busySlug,
     errorMessage,

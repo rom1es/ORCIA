@@ -240,4 +240,58 @@ describe("Story 31.6 — @orcia/ui Pack Drawer, Composer, Unlink Dialog & Qualif
     fireEvent.click(screen.getByTestId("assistant-autocomplete-option-sdlc/reviewer"));
     expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ slug: "sdlc/reviewer", badge: "sdlc" }));
   });
+
+  it("preserves typed slug and name in PackComposerModal when scopeOptions rerenders while open", () => {
+    const baseProps = {
+      open: true,
+      draft: null,
+      availableMembers: [
+        { entityType: "AGENT" as const, entityId: "ag-1", entitySlug: "qa-bot", title: "QA Bot", lifecycleStatus: "ACTIVE" },
+      ],
+      defaultScopeId: "ws-1",
+      labels: COMPOSER_LABELS,
+      onOpenChange: () => {},
+      onSaveDraft: () => {},
+      onPublishDraft: () => {},
+      onExportDraftZip: () => {},
+    };
+    const { rerender } = render(
+      <PackComposerModal
+        {...baseProps}
+        scopeOptions={[{ id: "ws-1", label: "Workspace 1", scopeType: "WORKSPACE" }]}
+      />,
+    );
+
+    fireEvent.change(screen.getByTestId("pack-composer-slug-input"), { target: { value: "hostage-draft" } });
+    fireEvent.change(screen.getByTestId("pack-composer-name-input"), { target: { value: "Hostage Draft" } });
+
+    rerender(
+      <PackComposerModal
+        {...baseProps}
+        defaultScopeId="ws-2"
+        scopeOptions={[
+          { id: "ws-1", label: "Workspace 1", scopeType: "WORKSPACE" },
+          { id: "ws-2", label: "Workspace 2", scopeType: "WORKSPACE" },
+        ]}
+      />,
+    );
+
+    expect((screen.getByTestId("pack-composer-slug-input") as HTMLInputElement).value).toBe("hostage-draft");
+    expect((screen.getByTestId("pack-composer-name-input") as HTMLInputElement).value).toBe("Hostage Draft");
+    expect((screen.getByTestId("pack-composer-save-draft-btn") as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("preserves PackSlotBindingDrawer selections when parent pack prop refreshes", () => {
+    const mkPack = (desc: string): UiWorkspacePackItem => ({
+      bundleId: "b-rerender", packId: "orcia-pack-sdlc", slug: "sdlc", name: "SDLC", version: "1.0.0",
+      bundleKind: "SYSTEM", scopeType: "GLOBAL", scopeId: "global", status: "PUBLISHED", archiveSha256: "a".repeat(64),
+      description: desc, isActive: false, priorityOrder: null, slotBindings: [], missingSlots: ["git_repo"], readinessOk: false,
+      declaredSlots: [{ slotKey: "git_repo", scheme: "git", connectorKind: "mcp:git", sourceNature: "SOURCE_CODE", required: true, description: "Git" }],
+    });
+    const cands = [{ targetKind: "WORKSPACE_DATASOURCE" as const, targetId: "ds-1", label: "Repo 1", scheme: "git", uri: "git://1" }];
+    const { rerender } = render(<PackSlotBindingDrawer open={true} pack={mkPack("v1")} candidates={cands} labels={SLOT_DRAWER_LABELS} onOpenChange={() => {}} onSaveBindings={() => {}} />);
+    fireEvent.change(screen.getByTestId("pack-slot-select-git_repo"), { target: { value: "WORKSPACE_DATASOURCE::ds-1" } });
+    rerender(<PackSlotBindingDrawer open={true} pack={mkPack("v2")} candidates={cands} labels={SLOT_DRAWER_LABELS} onOpenChange={() => {}} onSaveBindings={() => {}} />);
+    expect((screen.getByTestId("pack-slot-select-git_repo") as HTMLSelectElement).value).toBe("WORKSPACE_DATASOURCE::ds-1");
+  });
 });

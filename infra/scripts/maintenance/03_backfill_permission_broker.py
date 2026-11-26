@@ -104,6 +104,13 @@ async def backfill_permission_broker(
         "platform_role = EXCLUDED.platform_role, "
         "primary_org_unit_id = EXCLUDED.primary_org_unit_id;"
     )
+    from uuid_utils import uuid7
+
+    scheme_sql = sa.text(
+        "INSERT INTO connector_schemes (id, scheme, display_name, pack_name, is_active) "
+        "VALUES (:id, :scheme, :display_name, 'orcia-core', TRUE) "
+        "ON CONFLICT (scheme) DO NOTHING;"
+    )
     pol_sql = sa.text(build_postgres_upsert_sql(PERMISSION_BROKER_POLICIES_UPSERT_SPEC))
     tkt_sql = sa.text(build_postgres_upsert_sql(PERMISSION_BROKER_TICKETS_UPSERT_SPEC))
 
@@ -138,6 +145,14 @@ async def backfill_permission_broker(
 
             for idx in range(0, len(DEFAULT_PERMISSION_BROKER_POLICY_SEEDS), batch_size):
                 for pol in DEFAULT_PERMISSION_BROKER_POLICY_SEEDS[idx : idx + batch_size]:
+                    await conn.execute(
+                        scheme_sql,
+                        {
+                            "id": str(uuid7()),
+                            "scheme": pol.connector_scheme,
+                            "display_name": pol.connector_scheme.upper(),
+                        },
+                    )
                     await conn.execute(
                         pol_sql,
                         {

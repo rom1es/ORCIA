@@ -71,6 +71,7 @@ def _to_candidate(
         source_pack_key=record.source_pack_key,
         explicit_pack_slug=record.pack_slug,
         explicit_tier=record.resolution_tier if record.pack_slug else None,
+        bundle_kind="SYSTEM" if record.resolution_tier == "SYSTEM_PACK" else None,
     )
     prio = (
         active_pack_priorities.get(pack_slug, None)
@@ -161,6 +162,8 @@ def _resolve_entity_reference(
     formatter = format_skill_command if default_kind == "skills" else format_agent_mention
     cands = [_to_candidate(r, active_pack_priorities=active_pack_priorities) for r in records]
     for rec, cand in zip(records, cands, strict=True):
+        if not cand.is_active_in_workspace:
+            continue
         if cand.entity_id.lower() == cleaned.lower():
             _, _, holders = rank_workspace_entity_candidates(
                 rec.slug,

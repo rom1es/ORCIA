@@ -38,6 +38,11 @@ class FakeSqlResult:
         items = self._mappings if self._mappings else self._rows
         return items[0] if items else None
 
+    def fetchone(self) -> Any:
+        if self._rows:
+            return self._rows[0]
+        return self._mappings[0] if self._mappings else None
+
     def one(self) -> Any:
         items = self._mappings if self._mappings else self._rows
         return items[0]

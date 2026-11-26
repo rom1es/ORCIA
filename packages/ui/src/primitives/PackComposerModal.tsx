@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { OrciaAlertBanner } from "./OrciaAlertBanner";
 import { OrciaDialog } from "./OrciaDialog";
 import {
@@ -79,8 +79,22 @@ export function PackComposerModal({
   const [selectedMembers, setSelectedMembers] = useState<readonly UiPackDraftMemberOption[]>([]);
   const [autoInclude, setAutoInclude] = useState(false);
 
+  const prevOpenRef = useRef(false);
+  const lastDraftIdRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      prevOpenRef.current = false;
+      lastDraftIdRef.current = null;
+      return;
+    }
+    const nextDraftId = draft?.bundleId ?? null;
+    const openedNow = !prevOpenRef.current;
+    const switchedDraft = nextDraftId !== lastDraftIdRef.current;
+    if (!openedNow && !switchedDraft) return;
+    prevOpenRef.current = true;
+    lastDraftIdRef.current = nextDraftId;
+
     if (draft) {
       setSlug(draft.slug);
       setName(draft.name);
@@ -106,6 +120,12 @@ export function PackComposerModal({
     }
     setAutoInclude(false);
   }, [open, draft, defaultScopeId, scopeOptions]);
+
+  useEffect(() => {
+    if (!open || scopeId) return;
+    const next = defaultScopeId || scopeOptions[0]?.id || "";
+    if (next) setScopeId(next);
+  }, [open, scopeId, defaultScopeId, scopeOptions]);
 
   const filteredScopes = scopeOptions.filter((opt) => opt.scopeType === scopeType);
   const effectiveScopeId = filteredScopes.some((opt) => opt.id === scopeId)

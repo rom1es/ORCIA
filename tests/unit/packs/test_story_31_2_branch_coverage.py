@@ -15,6 +15,7 @@ import pytest
 import yaml
 from fastapi.testclient import TestClient
 from tests.unit.fakes.in_memory_pack_cas import InMemoryPackCasStorage
+from tests.unit.packs._fake_sql_engine import FakeSqlEngine, FakeSqlResult
 
 from orcia_api.dependencies.pack_import_deps import (
     get_pack_bundle_v2_repository,
@@ -38,56 +39,20 @@ from orcia_core.packs._internal._sql_pack_ontology_policy_materializer import (
 )
 
 
-class _Res:
-    def __init__(
-        self,
-        *,
-        scalar: Any = None,
-        mapping: dict[str, Any] | None = None,
-        rows: list[Any] | None = None,
-    ) -> None:
-        self._scalar = scalar
-        self._mapping = mapping
-        self._rows = rows or []
-
-    def all(self) -> list[Any]:
-        return list(self._rows)
-
-    def scalar(self) -> Any:
-        return self._scalar
-
-    def scalar_one(self) -> Any:
-        return self._scalar
-
-    def first(self) -> Any:
-        return (
-            self._mapping
-            if self._mapping is not None
-            else ((self._scalar,) if self._scalar else None)
-        )
-
-    def mappings(self) -> _Res:
-        return self
-
-
-class _Conn:
-    def __init__(self, resolver: Any) -> None:
-        self._resolver = resolver
+class _RecEngine(FakeSqlEngine):
+    def __init__(self, handler: Any) -> None:
         self.queries: list[str] = []
 
-    async def execute(self, stmt: Any, params: dict[str, Any] | None = None) -> _Res:
-        sql = str(stmt)
-        self.queries.append(sql)
-        return self._resolver(sql, params or {})
+        def _wrap(sql: str, params: dict[str, Any]) -> FakeSqlResult:
+            self.queries.append(sql)
+            return handler(sql, params)
 
-
-class _Engine:
-    def __init__(self, resolver: Any) -> None:
-        self.conn = _Conn(resolver)
+        super().__init__(_wrap)
 
     @asynccontextmanager
     async def begin(self) -> Any:
-        yield self.conn
+        async with super().begin() as conn:
+            yield conn
 
 
 def _sample_zip_with_dna_and_policy(slug: str = "cov-pack") -> bytes:
@@ -125,28 +90,31 @@ async def test_delete_tx_dna_policies_and_audit_branches() -> None:
     bundle = ApmPackCodec().decode_zip_bytes(_sample_zip_with_dna_and_policy())
     bid = "0195f000-0000-7000-8000-000000000950"
 
-    def _ok_resolver(sql: str, _p: dict[str, Any]) -> _Res:
+    def _ok_resolver(sql: str, _p: dict[str, Any]) -> FakeSqlResult:
         if "SELECT id::text, pack_id" in sql:
-            return _Res(
-                mapping={
-                    "id": bid,
-                    "slug": "cov-pack",
-                    "version": "1.0.0",
-                    "bundle_kind": "IMPORTED",
-                    "scope_type": "WORKSPACE",
-                    "scope_id": "ws-1",
-                }
+            return FakeSqlResult(
+                mappings=[
+                    {
+                        "id": bid,
+                        "slug": "cov-pack",
+                        "version": "1.0.0",
+                        "bundle_kind": "IMPORTED",
+                        "scope_type": "WORKSPACE",
+                        "scope_id": "ws-1",
+                    }
+                ]
             )
         if "FROM connector_schemes" in sql:
-            return _Res(rows=[("mcp",), ("git",)])
+            return FakeSqlResult(rows=[("mcp",), ("git",)])
         if "to_regclass" in sql:
-            return _Res(scalar="audit_ledger")
-        return _Res(scalar=None)
+            return FakeSqlResult(scalar_val="audit_ledger")
+        return FakeSqlResult(scalar_val=None)
 
-    eng = _Engine(_ok_resolver)
-    await materialize_pack_mechanisms_and_policies(eng.conn, bundle_id=bid, bundle=bundle)  # type: ignore[arg-type]
-    assert any("INSERT INTO pack_dna_mechanisms" in q for q in eng.conn.queries)
-    assert any("INSERT INTO permission_broker_policies" in q for q in eng.conn.queries)
+    eng = _RecEngine(_ok_resolver)
+    async with eng.begin() as conn:
+        await materialize_pack_mechanisms_and_policies(conn, bundle_id=bid, bundle=bundle)  # type: ignore[arg-type]
+    assert any("INSERT INTO pack_dna_mechanisms" in q for q in eng.queries)
+    assert any("INSERT INTO permission_broker_policies" in q for q in eng.queries)
 
     deleted = await delete_bundle_transactional(
         eng,  # type: ignore[arg-type]
@@ -155,39 +123,42 @@ async def test_delete_tx_dna_policies_and_audit_branches() -> None:
         actor_email="a@b.c",
     )
     assert deleted == {"bundle_id": bid, "slug": "cov-pack", "version": "1.0.0"}
-    assert any("INSERT INTO audit_ledger" in q for q in eng.conn.queries)
+    assert any("INSERT INTO audit_ledger" in q for q in eng.queries)
 
-    no_audit_eng = _Engine(lambda _s, _p: _Res(scalar=None))
-    await append_pack_audit_event(
-        no_audit_eng.conn,  # type: ignore[arg-type]
-        event_type="X",
-        summary="S",
-        scope_path="GLOBAL:global",
-        actor_id="u1",
-        actor_email=None,
-        metadata={},
-    )
-    assert not any("INSERT INTO audit_ledger" in q for q in no_audit_eng.conn.queries)
+    no_audit_eng = _RecEngine(lambda _s, _p: FakeSqlResult(scalar_val=None))
+    async with no_audit_eng.begin() as conn:
+        await append_pack_audit_event(
+            conn,  # type: ignore[arg-type]
+            event_type="X",
+            summary="S",
+            scope_path="GLOBAL:global",
+            actor_id="u1",
+            actor_email=None,
+            metadata={},
+        )
+    assert not any("INSERT INTO audit_ledger" in q for q in no_audit_eng.queries)
 
-    def _mech_ref_resolver(sql: str, _p: dict[str, Any]) -> _Res:
+    def _mech_ref_resolver(sql: str, _p: dict[str, Any]) -> FakeSqlResult:
         if "SELECT id::text, pack_id" in sql:
-            return _Res(
-                mapping={
-                    "id": bid,
-                    "slug": "cov-pack",
-                    "version": "1.0.0",
-                    "bundle_kind": "IMPORTED",
-                    "scope_type": "WORKSPACE",
-                    "scope_id": "ws-1",
-                }
+            return FakeSqlResult(
+                mappings=[
+                    {
+                        "id": bid,
+                        "slug": "cov-pack",
+                        "version": "1.0.0",
+                        "bundle_kind": "IMPORTED",
+                        "scope_type": "WORKSPACE",
+                        "scope_id": "ws-1",
+                    }
+                ]
             )
         if "JOIN pack_dna_mechanisms d" in sql:
-            return _Res(scalar=1)
-        return _Res(scalar=None)
+            return FakeSqlResult(scalar_val=1)
+        return FakeSqlResult(scalar_val=None)
 
     with pytest.raises(EntityReferencedByPackDraftError):
         await delete_bundle_transactional(
-            _Engine(_mech_ref_resolver),  # type: ignore[arg-type]
+            _RecEngine(_mech_ref_resolver),  # type: ignore[arg-type]
             bundle_id_or_pack_id=bid,
         )
 
@@ -196,15 +167,15 @@ async def test_delete_tx_dna_policies_and_audit_branches() -> None:
 async def test_import_service_directory_overrides_and_empty_seed(tmp_path: Path) -> None:
     """Cover `import_directory`, scope overrides, setters, and empty seed."""
 
-    def _dir_resolver(sql: str, _p: dict[str, Any]) -> _Res:
+    def _dir_resolver(sql: str, _p: dict[str, Any]) -> FakeSqlResult:
         if "FOR UPDATE" in sql:
-            return _Res(mapping=None)
+            return FakeSqlResult(mappings=[])
         if "SELECT id FROM org_units" in sql or "INSERT INTO org_units" in sql:
-            return _Res(scalar="0195f000-0000-7000-8000-000000000001")
-        return _Res(scalar="0195f000-0000-7000-8000-000000000999")
+            return FakeSqlResult(scalar_val="0195f000-0000-7000-8000-000000000001")
+        return FakeSqlResult(scalar_val="0195f000-0000-7000-8000-000000000999")
 
     cas = InMemoryPackCasStorage()
-    eng = _Engine(_dir_resolver)
+    eng = _RecEngine(_dir_resolver)
     svc = PackImportService(engine=None, cas_storage=None)
     with pytest.raises(RuntimeError, match="AsyncEngine"):
         await svc.delete_bundle("b1")
@@ -248,6 +219,15 @@ def test_pack_import_deps_and_router_edge_branches(monkeypatch: pytest.MonkeyPat
 
     app = create_app()
     fake_svc = SimpleNamespace(
+        get_bundle=AsyncMock(
+            return_value={
+                "id": "0195f000-0000-7000-8000-000000000001",
+                "slug": "sdlc",
+                "bundle_kind": "SYSTEM",
+                "scope_type": "GLOBAL",
+                "scope_id": "global",
+            }
+        ),
         import_zip_bytes=AsyncMock(
             return_value=SimpleNamespace(
                 bundle_id="b1",
@@ -257,12 +237,12 @@ def test_pack_import_deps_and_router_edge_branches(monkeypatch: pytest.MonkeyPat
                 version="1.0.0",
                 bundle_kind="IMPORTED",
                 scope_type="WORKSPACE",
-                scope_id="ws-1",
+                scope_id="0192c4e0-0000-7000-8000-000000000201",
                 status="DRAFT",
                 archive_sha256="a" * 64,
-                cas_object_key="packs/cov-pack/1.0.0/" + ("a" * 64) + ".zip",
                 idempotent_noop=False,
                 counts={},
+                cas_object_key="packs/cov-pack/1.0.0/" + ("a" * 64) + ".zip",
             )
         ),
         delete_bundle=AsyncMock(side_effect=PackSystemDeleteForbiddenError(detail_override="sys")),
@@ -278,7 +258,7 @@ def test_pack_import_deps_and_router_edge_branches(monkeypatch: pytest.MonkeyPat
         json={
             "zip_base64": b64,
             "scope_type": "WORKSPACE",
-            "scope_id": "ws-1",
+            "scope_id": "0192c4e0-0000-7000-8000-000000000201",
             "replace_draft": True,
         },
     )

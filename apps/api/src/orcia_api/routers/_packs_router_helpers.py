@@ -45,11 +45,17 @@ def enforce_pack_mutation_guard(
     *,
     scope_type: PackScopeType | None = None,
     scope_id: str | None = None,
+    persona_key: str | None = None,
 ) -> UserIdentity:
     """Reject observer actors globally and on workspace scopes (`HTTP 403`)."""
-    user = resolve_request_user(request)
+    user = resolve_request_user(request, persona_key=persona_key)
     hdr = (request.headers.get("x-orcia-access-mode") or "").strip().upper()
-    if hdr == "READ_ONLY_OBSERVER" or user.platform_role in ("OBSERVER", "BU_DIRECTOR"):
+    if (
+        hdr == "READ_ONLY_OBSERVER"
+        or user.platform_role in ("OBSERVER", "READ_ONLY_OBSERVER", "BU_DIRECTOR")
+        or "OBSERVER" in user.roles
+        or "READ_ONLY_OBSERVER" in user.roles
+    ):
         raise ObserverModeReadOnlyError(instance=str(request.url.path))
     if scope_type == PackScopeType.WORKSPACE and scope_id:
         ws_access = get_auth_service(request).evaluator.resolve_workspace_access(user, scope_id)

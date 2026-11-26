@@ -11,6 +11,7 @@ from orcia_api.dependencies._assistant_guards import enforce_assistant_workspace
 from orcia_api.routers._assistant_context_assembly import (
     assemble_real_workspace_context_for_turn_async,
 )
+from orcia_api.routers._pack_readiness_preflight import enforce_pack_slot_readiness_preflight
 from orcia_api.routers.assistant_llm_bridge import (
     ensure_active_chat_model_if_live,
     resolve_configured_llm_endpoint,
@@ -27,6 +28,7 @@ from orcia_core.orchestration.errors import ScopeAccessDeniedError, ValidationDo
 from orcia_core.orchestration.remote_test_bench_and_mcp_exposure import (
     RemoteServiceTestBenchAndGovernedMcpService,
 )
+from orcia_core.permissions.errors import ObserverModeReadOnlyError
 from orcia_core.permissions.models import UserIdentity
 from orcia_core.ports.embedding import EmbeddingPort
 from orcia_core.ports.llm_streaming_port import LlmStreamingPort
@@ -71,6 +73,9 @@ async def invoke_mcp_assistant_ask_async(
         raise ScopeAccessDeniedError(
             detail_override=f"Assistant MCP exposure is disabled for '{workspace_slug}'."
         )
+    await enforce_pack_slot_readiness_preflight(
+        request, workspace_id=workspace_slug, prompt_text=body.prompt_text
+    )
     await ensure_active_chat_model_if_live(
         request,
         workspace_id=workspace_slug,
@@ -148,6 +153,19 @@ async def dispatch_governed_mcp_invoke_async(
         badge_fr = get_router_copy().mcp_ide_badge
         actor_type: Literal["MCP_IDE_CLIENT"] = "MCP_IDE_CLIENT"
     else:
+        if user.platform_role in ("READ_ONLY_OBSERVER", "OBSERVER"):
+            raise ObserverModeReadOnlyError(
+                detail_override="READ_ONLY_OBSERVER cannot invoke MCP tools."
+            )
+        verify_pat_fn = getattr(mcp_svc, "verify_mcp_pat_for_workspace_async", None)
+        if callable(verify_pat_fn):
+            await verify_pat_fn(raw_pat_token=body.raw_pat_token, workspace_slug=workspace_slug)
+        await enforce_pack_slot_readiness_preflight(
+            request,
+            workspace_id=workspace_slug,
+            prompt_text=body.prompt_text,
+            entity_refs=(body.agent_slug,),
+        )
         res = await mcp_svc.invoke_governed_mcp_tool_async(
             raw_pat_token=body.raw_pat_token,
             workspace_slug=workspace_slug,

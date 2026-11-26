@@ -42,6 +42,7 @@ from orcia_api.routers._assistant_workspace_context import (
     resolve_turn_history,
     to_active_turn_response,
 )
+from orcia_api.routers._pack_readiness_preflight import enforce_pack_slot_readiness_preflight
 from orcia_api.routers.assistant_background_turns import start_background_assistant_turn
 from orcia_api.routers.assistant_llm_bridge import (
     ensure_active_chat_model_if_live,
@@ -68,10 +69,8 @@ from orcia_core.ports.embedding import EmbeddingPort
 from orcia_core.ports.llm_streaming_port import LlmStreamingPort
 
 router = APIRouter(
-    prefix="/api/v1/assistant",
-    tags=["assistant-turns"],
-    responses=PROBLEM_RESPONSES,
-)
+    prefix="/api/v1/assistant", tags=["assistant-turns"], responses=PROBLEM_RESPONSES
+)  # noqa: E501
 
 CurrentUserDep = Annotated[UserIdentity, Depends(resolve_request_user)]
 TurnEngineDep = Annotated[AssistantTurnEngine, Depends(get_assistant_turn_engine)]
@@ -90,6 +89,9 @@ async def create_assistant_turn_endpoint(
     """Converged N1-N6 turn entry point (`Speed 1` & `Speed 2/3`) returning `202` + `turn_id`."""
     await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
     await enforce_active_agents_for_assistant_prompt(request, payload.user_prompt)
+    await enforce_pack_slot_readiness_preflight(
+        request, workspace_id=payload.workspace_id, prompt_text=payload.user_prompt
+    )
     effective_deep, effective_speed, resolved_speed = resolve_effective_speed(payload)
     await ensure_active_chat_model_if_live(
         request,

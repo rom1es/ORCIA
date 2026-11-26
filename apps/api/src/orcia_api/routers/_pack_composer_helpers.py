@@ -85,6 +85,10 @@ async def enforce_composer_scope_access(
             or "READ_ONLY_OBSERVER" in user.roles
         ):
             raise ObserverModeReadOnlyError(instance=path)
+    if st == "PRIVATE_USER":
+        if not scope_id.strip() or scope_id.strip() != str(user.id):
+            raise ScopeAccessDeniedError(instance=path)
+        return user, scope_id.strip()
     if st == "GLOBAL":
         if require_write:
             raise PackScopeEscalationForbiddenError(
@@ -92,6 +96,8 @@ async def enforce_composer_scope_access(
                 instance=path,
             )
         return user, scope_id
+    if not scope_id.strip():
+        raise ScopeAccessDeniedError(instance=path)
     auth_svc = get_auth_service(request)
     await sync_evaluator_topology_from_pg(request, auth_svc)
     is_admin = user.platform_role == "PLATFORM_ADMIN" or "PLATFORM_ADMIN" in user.roles

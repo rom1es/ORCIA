@@ -111,6 +111,9 @@ async def sync_from_postgres18_if_enabled(
     svc: AgentsAndSkillsManagementService,
     *,
     workspace_id: str | None = None,
+    unrestricted: bool = True,
+    allowed_workspace_ids: frozenset[str] | None = None,
+    allowed_org_ids: frozenset[str] | None = None,
 ) -> dict[str, int]:
     """Hydrate agents & skills from PG18 when DB engine is configured."""
     priorities: dict[str, int] = {}
@@ -118,7 +121,11 @@ async def sync_from_postgres18_if_enabled(
     async def _load(eng: AsyncEngine) -> None:
         nonlocal priorities
         skills, agents = await load_agents_and_skills_from_postgres18(
-            eng, workspace_id=workspace_id
+            eng,
+            workspace_id=workspace_id,
+            unrestricted=unrestricted,
+            allowed_workspace_ids=allowed_workspace_ids,
+            allowed_org_ids=allowed_org_ids,
         )
         if workspace_id:
             priorities, _ = await load_workspace_active_pack_priorities_pg(eng, workspace_id)

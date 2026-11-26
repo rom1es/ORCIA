@@ -166,6 +166,7 @@ async def test_story_31_2_day0_seed_import_cas_conflict_and_delete_postgres18_s3
             assert len((await client.get("/api/v1/vsm")).json()["items"]) >= 1
 
             ws_id = str(uuid7())
+            adm_id = str(uuid7())
             async with engine.begin() as conn:
                 ou_id = (
                     await conn.execute(sa.text("SELECT id FROM org_units LIMIT 1"))
@@ -178,10 +179,29 @@ async def test_story_31_2_day0_seed_import_cas_conflict_and_delete_postgres18_s3
                     ),
                     {"id": UUID(ws_id), "ou": ou_id},
                 )
+                await conn.execute(
+                    sa.text(
+                        "INSERT INTO users (id, email, display_name, auth_mode, "
+                        "human_profile_archetype, platform_role, primary_org_unit_id) "
+                        "VALUES (:uid, 'admin312@orcia.test', 'Admin 31.2', 'LOCAL', "
+                        "'ARCHITECT', 'PLATFORM_ADMIN', :ou)"
+                    ),
+                    {"uid": UUID(adm_id), "ou": ou_id},
+                )
+            adm_tok = app.state.auth_service.jwt_manager.issue_token_pair(
+                user_id=adm_id,
+                email="admin312@orcia.test",
+                role="PLATFORM_ADMIN",
+                org_unit_id=str(ou_id),
+                archetype="ARCHITECT",
+                auth_mode="LOCAL",
+            ).access_token
+            adm_h = {"Authorization": f"Bearer {adm_tok}"}
 
             zip_v1 = _build_pack_zip(slug="fin-audit", version="1.0.0", scope_id=ws_id)
             imp_resp = await client.post(
                 "/api/v1/packs/import",
+                headers=adm_h,
                 json={
                     "zip_base64": base64.b64encode(zip_v1).decode("ascii"),
                     "scope_type": "WORKSPACE",
@@ -208,12 +228,13 @@ async def test_story_31_2_day0_seed_import_cas_conflict_and_delete_postgres18_s3
             )
             conflict = await client.post(
                 "/api/v1/packs/import",
+                headers=adm_h,
                 json={"zip_base64": base64.b64encode(zip_diff).decode("ascii")},
             )
             assert conflict.status_code == 409
             assert conflict.json()["error_code"] == "ERR_PACK_VERSION_CONFLICT"
 
-            sys_del = await client.delete(f"/api/v1/packs/{sdlc_pack['bundle_id']}")
+            sys_del = await client.delete(f"/api/v1/packs/{sdlc_pack['bundle_id']}", headers=adm_h)
             assert sys_del.status_code == 403
             assert sys_del.json()["error_code"] == "ERR_PACK_SYSTEM_DELETE_FORBIDDEN"
 
@@ -227,7 +248,7 @@ async def test_story_31_2_day0_seed_import_cas_conflict_and_delete_postgres18_s3
                     ),
                     {"id": UUID(str(uuid7())), "ws": UUID(ws_id), "bid": UUID(bid)},
                 )
-            pin_del = await client.delete(f"/api/v1/packs/{bid}")
+            pin_del = await client.delete(f"/api/v1/packs/{bid}", headers=adm_h)
             assert pin_del.status_code == 409
             assert pin_del.json()["error_code"] == "ERR_RESOURCE_PINNED_BY_ACTIVE_RUNS"
 
@@ -240,7 +261,7 @@ async def test_story_31_2_day0_seed_import_cas_conflict_and_delete_postgres18_s3
                     ),
                     {"bid": UUID(bid)},
                 )
-            assert (await client.delete(f"/api/v1/packs/{bid}")).status_code == 200
+            assert (await client.delete(f"/api/v1/packs/{bid}", headers=adm_h)).status_code == 200
             async with engine.connect() as conn:
                 q = "SELECT COUNT(*) FROM catalog_items WHERE pack_bundle_id = CAST(:b AS uuid)"
                 assert int((await conn.execute(sa.text(q), {"b": bid})).scalar_one()) == 0

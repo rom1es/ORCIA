@@ -57674,8 +57674,28 @@
     },
     "/api/v1/packs": {
       "get": {
-        "description": "List declarative packs strictly from PostgreSQL 18 with live connector healthchecks.",
+        "description": "List declarative packs strictly from PostgreSQL 18 filtered by caller scope.",
         "operationId": "list_declarative_packs_api_v1_packs_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -59246,8 +59266,28 @@
     },
     "/api/v1/packs/health": {
       "get": {
-        "description": "Probe live connector health across all PostgreSQL 18 declarative packs.",
+        "description": "Probe live connector health across PostgreSQL 18 declarative packs visible to caller.",
         "operationId": "check_packs_connectors_health_api_v1_packs_health_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -59352,6 +59392,26 @@
       "post": {
         "description": "Import a validated `.zip` APM pack into PostgreSQL 18 + SeaweedFS CAS.",
         "operationId": "import_declarative_pack_archive_api_v1_packs_import_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -59499,6 +59559,24 @@
               "minLength": 1,
               "title": "Bundle Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "persona_key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Persona Key"
             }
           }
         ],

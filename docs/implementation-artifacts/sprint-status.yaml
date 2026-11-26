@@ -349,14 +349,14 @@ development_status:
   # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-25-epic-31-declarative-apm-packs-import-export.md
   # Decisions   : docs/implementation-artifacts/epic-31-decisions-grill-2026-11-25.md
   # Lots        : L1 31-1 -> L2 31-2 -> 31-3 -> L3 31-4 -> L4 31-5 -> L5 31-6 -> L6 31-7
-  epic-31: in-progress
+  epic-31: done
   31-1-pack-bundles-v2-ddl-and-native-apm-codec: done
   31-2-transactional-pack-import-day0-seed-and-purge-disk-ts-hardcoding: done
   31-3-qualified-pack-namespacing-and-flat-workspace-pack-ontology: done
   31-4-workspace-pack-activation-slot-bindings-422-guard-and-run-lock-pinning: done
   31-5-pack-composer-anti-hostage-unlink-closure-gate-and-scrubbed-zip-export: done
   31-6-direction-c-bilingual-pack-registry-composer-slot-drawer-and-autocomplete-ui: done
-  31-7-epic-31-red-team-security-roundtrip-e2e-help-sync-and-closure: backlog
+  31-7-epic-31-red-team-security-roundtrip-e2e-help-sync-and-closure: done
   epic-31-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1

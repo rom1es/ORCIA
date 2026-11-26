@@ -27,6 +27,11 @@ from orcia_api.routers._packs_router_helpers import (
     slots_to_required_connectors,
     trace_id_for,
 )
+from orcia_api.routers._packs_scope_guards import (
+    enforce_pack_bundle_delete_guard,
+    filter_visible_pack_rows,
+    resolve_and_authorize_import_scope,
+)
 from orcia_api.routers.auth import PROBLEM_RESPONSES
 from orcia_api.schemas._pack_composer import PackExportRequest
 from orcia_api.schemas.packs import (
@@ -59,6 +64,9 @@ PackCasDep = Annotated[PackCasStoragePort | None, Depends(get_pack_cas_storage)]
 PackComposerDep = Annotated[PackComposerService, Depends(get_pack_composer_service)]
 
 
+PersonaQuery = Annotated[str | None, Query(min_length=1, max_length=64)]
+
+
 async def _load_pg_connectors_by_kind(request: Request) -> dict[str, EnterpriseConnectorRecord]:
     if not is_pg_runtime_active(request):
         return {}
@@ -81,10 +89,14 @@ async def _list_pg_bundles(repo: PackRepoDep) -> list[dict[str, object]]:
 
 @router.get("", response_model=DeclarativePacksListResponse, responses=PROBLEM_RESPONSES)
 async def list_declarative_packs(
-    request: Request, repo: PackRepoDep
+    request: Request,
+    repo: PackRepoDep,
+    persona_key: PersonaQuery = None,
 ) -> DeclarativePacksListResponse:
-    """List declarative packs strictly from PostgreSQL 18 with live connector healthchecks."""
-    rows = await _list_pg_bundles(repo)
+    """List declarative packs strictly from PostgreSQL 18 filtered by caller scope."""
+    rows = await filter_visible_pack_rows(
+        request, await _list_pg_bundles(repo), persona_key=persona_key
+    )
     connectors, pg_connectors = (
         get_default_enterprise_connectors(),
         await _load_pg_connectors_by_kind(request),
@@ -95,10 +107,14 @@ async def list_declarative_packs(
 
 @router.get("/health", response_model=PacksConnectorHealthResponse, responses=PROBLEM_RESPONSES)
 async def check_packs_connectors_health(
-    request: Request, repo: PackRepoDep
+    request: Request,
+    repo: PackRepoDep,
+    persona_key: PersonaQuery = None,
 ) -> PacksConnectorHealthResponse:
-    """Probe live connector health across all PostgreSQL 18 declarative packs."""
-    rows = await _list_pg_bundles(repo)
+    """Probe live connector health across PostgreSQL 18 declarative packs visible to caller."""
+    rows = await filter_visible_pack_rows(
+        request, await _list_pg_bundles(repo), persona_key=persona_key
+    )
     connectors, pg_connectors = (
         get_default_enterprise_connectors(),
         await _load_pg_connectors_by_kind(request),
@@ -158,16 +174,25 @@ async def check_packs_connectors_health(
 async def import_declarative_pack_archive(
     request: Request,
     import_svc: PackImportDep,
+    persona_key: PersonaQuery = None,
 ) -> PackImportResponse:
     """Import a validated `.zip` APM pack into PostgreSQL 18 + SeaweedFS CAS."""
-    user = enforce_pack_mutation_guard(request)
-    zip_bytes, scope_type, scope_id, replace_draft = await parse_pack_import_payload(request)
-    enforce_pack_mutation_guard(request, scope_type=scope_type, scope_id=scope_id)
+    enforce_pack_mutation_guard(request, persona_key=persona_key)
+    zip_bytes, req_scope_type, req_scope_id, replace_draft = await parse_pack_import_payload(
+        request
+    )
+    user, eff_scope_type, resolved_scope_id = await resolve_and_authorize_import_scope(
+        request,
+        zip_bytes=zip_bytes,
+        req_scope_type=req_scope_type,
+        req_scope_id=req_scope_id,
+        persona_key=persona_key,
+    )
     trace_id = trace_id_for(request)
     outcome = await import_svc.import_zip_bytes(
         zip_bytes,
-        scope_type=scope_type,
-        scope_id=scope_id,
+        scope_type=eff_scope_type,
+        scope_id=resolved_scope_id,
         replace_draft=replace_draft,
         allow_system_kind=False,
         record_audit=True,
@@ -202,9 +227,15 @@ async def delete_declarative_pack_bundle(
     bundle_id: Annotated[str, Path(min_length=1, max_length=128)],
     request: Request,
     import_svc: PackImportDep,
+    persona_key: PersonaQuery = None,
 ) -> PackDeleteResponse:
     """Delete an unused non-SYSTEM pack bundle (`403`/`409` guarded)."""
-    user = enforce_pack_mutation_guard(request)
+    user = await enforce_pack_bundle_delete_guard(
+        request,
+        bundle_id=bundle_id,
+        import_svc=import_svc,
+        persona_key=persona_key,
+    )
     trace_id = trace_id_for(request)
     deleted = await import_svc.delete_bundle(
         bundle_id,

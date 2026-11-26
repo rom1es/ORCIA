@@ -5,6 +5,7 @@ import {
   extractPackLeakFindings,
   OrciaProblemError,
   type PackDraftDetailResponse,
+  type WorkspaceDatasourceItemResponse,
   type WorkspacePackItemResponse,
 } from "@orcia/api-client";
 import type {
@@ -110,6 +111,32 @@ export function mapDatasourcesToSlotCandidates(
       scheme: ds.scheme,
       uri: ds.uri,
     }));
+}
+
+export function mergeWorkspaceAndFallbackSlotCandidates(
+  pgDatasources: readonly WorkspaceDatasourceItemResponse[],
+  fallbackDatasources: readonly ControlCenterDatasourceItem[],
+  workspaceName?: string,
+): readonly UiPackSlotTargetCandidate[] {
+  const seenIds = new Set<string>();
+  const merged: UiPackSlotTargetCandidate[] = [];
+  for (const ds of pgDatasources) {
+    seenIds.add(ds.id);
+    merged.push({
+      targetKind: "WORKSPACE_DATASOURCE",
+      targetId: ds.id,
+      label: ds.alias,
+      scheme: ds.scheme,
+      uri: ds.uri,
+    });
+  }
+  for (const fallback of mapDatasourcesToSlotCandidates(fallbackDatasources, workspaceName)) {
+    if (!seenIds.has(fallback.targetId)) {
+      seenIds.add(fallback.targetId);
+      merged.push(fallback);
+    }
+  }
+  return merged;
 }
 
 export function formatDetailedPackError(

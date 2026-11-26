@@ -15,7 +15,7 @@ import { usePlatformSetup } from "../../../components/platformSetupStore";
 import { useI18n } from "../../../i18n";
 import { useAuthSessionStore } from "../../../stores/authSessionStore";
 import { PackCardItem } from "./PackCardItem";
-import { mapDatasourcesToSlotCandidates } from "./packMappers";
+import { mergeWorkspaceAndFallbackSlotCandidates } from "./packMappers";
 import { usePackComposerAndImportController } from "./usePackComposerAndImportController";
 import { useWorkspacePacksController } from "./useWorkspacePacksController";
 
@@ -87,8 +87,13 @@ export function DeclarativePacksRegistrySection({
     (w) => w.workspaceId === selectedWorkspaceId,
   )?.name;
   const slotCandidates = useMemo(
-    () => mapDatasourcesToSlotCandidates(datasources, activeWorkspaceName),
-    [datasources, activeWorkspaceName],
+    () =>
+      mergeWorkspaceAndFallbackSlotCandidates(
+        wsPacks.workspaceDatasources,
+        datasources,
+        activeWorkspaceName,
+      ),
+    [wsPacks.workspaceDatasources, datasources, activeWorkspaceName],
   );
 
   return (

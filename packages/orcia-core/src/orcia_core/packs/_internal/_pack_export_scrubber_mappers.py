@@ -105,6 +105,19 @@ def build_scrubbed_catalog_specs(
     skills: list[PackSkillSpec] = []
     instructions: list[PackInstructionSpec] = []
     help_articles: list[PackHelpArticleSpec] = []
+    skill_id_to_slug: dict[str, str] = {}
+    for row in entities.catalog_items:
+        itype = str(row.get("item_type") or "").upper()
+        rtype = str(row.get("resource_type") or "").lower()
+        if itype == "USER_SKILL" or rtype == "skill":
+            meta = decode_json_dict(row.get("metadata_jsonb"))
+            res_id = str(row.get("resource_id") or "")
+            default_slug = res_id.rsplit(":", 1)[-1] if ":" in res_id else res_id
+            sk_slug = str(meta.get("slug") or default_slug)
+            if res_id:
+                skill_id_to_slug[res_id] = sk_slug
+            if row.get("id"):
+                skill_id_to_slug[str(row["id"])] = sk_slug
 
     for row in entities.catalog_items:
         meta = decode_json_dict(row.get("metadata_jsonb"))
@@ -115,7 +128,10 @@ def build_scrubbed_catalog_specs(
         if itype == "USER_AGENT" or rtype == "agent":
             raw_skills = meta.get("skill_ids") or meta.get("skill_refs") or []
             skill_refs = [
-                norm for s in raw_skills if isinstance(s, str) and (norm := normalize_skill_ref(s))
+                norm
+                for s in raw_skills
+                if isinstance(s, str)
+                and (norm := skill_id_to_slug.get(s.strip()) or normalize_skill_ref(s))
             ]
             raw_slots = list(meta.get("connector_slots") or []) + list(
                 meta.get("allowed_rag_sources") or []

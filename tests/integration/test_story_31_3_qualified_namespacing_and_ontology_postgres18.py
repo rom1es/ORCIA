@@ -120,12 +120,17 @@ async def test_story_31_3_qualified_namespacing_and_flat_ontology_pg18(
     assert app.dependency_overrides == {}
     async with (
         app.router.lifespan_context(app),
-        AsyncClient(
-            transport=ASGITransport(app=app),
-            base_url="http://test",
-            headers={"X-Orcia-Persona": "karim"},
-        ) as client,
+        AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,
     ):
+        adm_tok = app.state.auth_service.jwt_manager.issue_token_pair(
+            user_id=admin_id,
+            email="admin313@orcia.test",
+            role="PLATFORM_ADMIN",
+            org_unit_id=org_id,
+            archetype="ARCHITECT",
+            auth_mode="LOCAL",
+        ).access_token
+        client.headers["Authorization"] = f"Bearer {adm_tok}"
         for slug, defn, instr_txt in (
             ("sdlc", "SDLC Release Gate Definition", "SDLC release checklist."),
             ("legal-audit", "Legal Audit Gate Definition", "Legal sign-off checklist."),

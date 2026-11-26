@@ -22,7 +22,9 @@ from orcia_core.orchestration._internal._sql_agents_hydration import (
 from orcia_core.orchestration._internal._sql_agents_pack_queries import (
     SQL_LOAD_AGENTS_AND_SKILLS_WITH_PACKS,
     load_workspace_pack_priorities_pg,
+    load_workspace_scope_context_pg,
     resolve_pack_tier_for_row,
+    unpack_scoped_catalog_row,
 )
 from orcia_core.orchestration._internal._sql_agents_pack_queries import (
     ensure_root_org_unit_id as _ensure_root_org_unit_id,
@@ -41,23 +43,41 @@ from orcia_kernel.ids import new_uuid7_str
 async def load_agents_and_skills_from_postgres18(
     engine: AsyncEngine,
     workspace_id: str | None = None,
+    *,
+    unrestricted: bool = True,
+    allowed_workspace_ids: frozenset[str] | None = None,
+    allowed_org_ids: frozenset[str] | None = None,
 ) -> tuple[tuple[ManagedSkillRecord, ...], tuple[ManagedAgentRecord, ...]]:
-    """Load all `USER_SKILL` and `USER_AGENT` records from PostgreSQL 18 `catalog_items`."""
+    """Load scoped `USER_SKILL` and `USER_AGENT` records from PostgreSQL 18 `catalog_items`."""
     skills: list[ManagedSkillRecord] = []
     agents: list[ManagedAgentRecord] = []
     async with engine.connect() as conn:
         active_priorities, inactive_packs = await load_workspace_pack_priorities_pg(
             conn, workspace_id
         )
+        ws_uuid, ancestor_orgs = await load_workspace_scope_context_pg(conn, workspace_id)
         rows = (await conn.execute(SQL_LOAD_AGENTS_AND_SKILLS_WITH_PACKS)).fetchall()
 
+    ws_scoped = bool(workspace_id and workspace_id.strip())
     for row in rows:
+        unpacked = unpack_scoped_catalog_row(
+            row,
+            workspace_id=workspace_id,
+            ws_uuid=ws_uuid,
+            ancestor_orgs=ancestor_orgs,
+            active_priorities=active_priorities,
+            unrestricted=unrestricted,
+            allowed_workspace_ids=allowed_workspace_ids,
+            allowed_org_ids=allowed_org_ids,
+        )
+        if unpacked is None:
+            continue
         resource_id, uri, title, description = str(row[0]), str(row[1]), str(row[2]), str(row[3])
-        version, sha256, item_type, raw_meta = str(row[5]), str(row[6]), str(row[7]), row[8]
-        col_ws = str(row[9]) if len(row) > 9 and row[9] is not None else None
-        pack_slug = str(row[10]).strip().lower() if len(row) > 10 and row[10] else None
-        bundle_kind = str(row[11]).strip().upper() if len(row) > 11 and row[11] else None
-        meta = raw_meta if isinstance(raw_meta, dict) else json.loads(str(raw_meta or "{}"))
+        version, sha256, item_type = str(row[5]), str(row[6]), str(row[7])
+        meta = unpacked["meta"]
+        col_ws = unpacked["col_ws"]
+        pack_slug = unpacked["pack_slug"]
+        bundle_kind = unpacked["bundle_kind"]
         slug = str(meta.get("slug") or resource_id)
         vis_scope = parse_visibility_scope(meta.get("visibility_scope"))
         raw_pack = meta.get("source_pack_key")
@@ -66,49 +86,33 @@ async def load_agents_and_skills_from_postgres18(
         if pack_slug and pack_slug in inactive_packs:
             enabled_in_workspace = False
         tier = resolve_pack_tier_for_row(
-            pack_slug=pack_slug, bundle_kind=bundle_kind, active_priorities=active_priorities
+            pack_slug=pack_slug,
+            bundle_kind=bundle_kind,
+            active_priorities=active_priorities,
+            workspace_scoped=ws_scoped,
         )
 
+        common = {
+            "resource_id": resource_id,
+            "uri": uri,
+            "title": title,
+            "description": description,
+            "version": version,
+            "sha256": sha256,
+            "meta": meta,
+            "slug": slug,
+            "vis_scope": vis_scope,
+            "source_pack_key": source_pack_key,
+            "enabled_in_workspace": enabled_in_workspace,
+            "column_workspace_id": col_ws,
+            "pack_slug": pack_slug,
+            "bundle_kind": bundle_kind,
+            "resolution_tier": tier,
+        }
         if item_type == "USER_SKILL":
-            skills.append(
-                hydrate_skill_record(
-                    resource_id=resource_id,
-                    uri=uri,
-                    title=title,
-                    description=description,
-                    version=version,
-                    sha256=sha256,
-                    meta=meta,
-                    slug=slug,
-                    vis_scope=vis_scope,
-                    source_pack_key=source_pack_key,
-                    enabled_in_workspace=enabled_in_workspace,
-                    column_workspace_id=col_ws,
-                    pack_slug=pack_slug,
-                    bundle_kind=bundle_kind,
-                    resolution_tier=tier,
-                )
-            )
+            skills.append(hydrate_skill_record(**common))
         elif item_type == "USER_AGENT":
-            agents.append(
-                hydrate_agent_record(
-                    resource_id=resource_id,
-                    uri=uri,
-                    title=title,
-                    description=description,
-                    version=version,
-                    sha256=sha256,
-                    meta=meta,
-                    slug=slug,
-                    vis_scope=vis_scope,
-                    source_pack_key=source_pack_key,
-                    enabled_in_workspace=enabled_in_workspace,
-                    column_workspace_id=col_ws,
-                    pack_slug=pack_slug,
-                    bundle_kind=bundle_kind,
-                    resolution_tier=tier,
-                )
-            )
+            agents.append(hydrate_agent_record(**common))
 
     return annotate_skills_and_agents_namespacing(
         tuple(skills), tuple(agents), active_pack_priorities=active_priorities or None

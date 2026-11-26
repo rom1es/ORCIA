@@ -6,7 +6,7 @@ import {
 import React, { useMemo, useState } from "react";
 import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useI18n } from "../../i18n";
-import { mapDatasourcesToSlotCandidates } from "../settings/packs/packMappers";
+import { mergeWorkspaceAndFallbackSlotCandidates } from "../settings/packs/packMappers";
 import { useWorkspacePacksController } from "../settings/packs/useWorkspacePacksController";
 
 export interface WorkspacePacksTabSectionProps {
@@ -28,8 +28,13 @@ export function WorkspacePacksTabSection({
 
   const activeWorkspaceName = workspaces.find((w) => w.workspaceId === workspaceId)?.name;
   const slotCandidates = useMemo(
-    () => mapDatasourcesToSlotCandidates(datasources, activeWorkspaceName),
-    [datasources, activeWorkspaceName],
+    () =>
+      mergeWorkspaceAndFallbackSlotCandidates(
+        wsPacks.workspaceDatasources,
+        datasources,
+        activeWorkspaceName,
+      ),
+    [wsPacks.workspaceDatasources, datasources, activeWorkspaceName],
   );
 
   return (
