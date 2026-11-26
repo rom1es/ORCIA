@@ -143,7 +143,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
         triggersButtonLabel={triggersLabels.openModalButton}
         activeTriggersCount={activeTriggersCount}
         onBackToHub={() => navigateToRoute("/processes")}
-        onOpenParentVsm={() => navigateToRoute("/processes/vsm/vsm-mon-compte-idea-to-prod")}
+        onOpenParentVsm={() => navigateToRoute("/processes/vsm/vsm-sdlc-idea-to-prod")}
         onSelectViewMode={(mode) => {
           if (mode === "what_if" && !whatIfResult) {
             handleRunWhatIfSimulation();

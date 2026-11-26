@@ -107,6 +107,10 @@ describe("Story 30.3 — Mes Processus real PG18 pending validations, zero stick
 
     await mountProcessesRoute("fr");
 
+    expect(screen.queryByTestId("processes-tab-badge-validations")).toBeNull();
+    expect(screen.getByTestId("processes-tab-catalog").getAttribute("aria-selected")).toBe("true");
+    fireEvent.click(screen.getByTestId("processes-tab-validations"));
+
     const card = await screen.findByTestId("processes-active-dossiers-card");
     expect(screen.getByTestId("processes-empty-pending-runs")).toBeDefined();
     expect(card.textContent ?? "").toContain("Aucune validation en attente");
@@ -162,7 +166,7 @@ describe("Story 30.3 — Mes Processus real PG18 pending validations, zero stick
 
     fireEvent.click(screen.getByTestId("resume-featured-dossier-btn"));
     await waitFor(() => {
-      expect(screen.getByTestId("interactive-run-hitl-drawer")).toBeDefined();
+      expect(screen.getByTestId("process-run-focus-review-page")).toBeDefined();
     });
     expect(screen.getByTestId("run-drawer-status-badge").textContent).toBe(
       "WAITING_FINAL_ANCHOR",
@@ -176,7 +180,7 @@ describe("Story 30.3 — Mes Processus real PG18 pending validations, zero stick
 
   it("shows localized RFC 9457 error alert when launching a run fails due to missing LLM/datasource", async () => {
     await mountProcessesRoute("fr");
-    await screen.findByTestId("processes-active-dossiers-card");
+    await screen.findByTestId("processes-tab-panel-catalog");
 
     const origFetch = globalThis.fetch;
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
@@ -198,7 +202,7 @@ describe("Story 30.3 — Mes Processus real PG18 pending validations, zero stick
     });
 
     fireEvent.click(screen.getByTestId("execute-workflow-btn-wf-01-qualification-prd"));
-    const banner = await screen.findByTestId("run-drawer-feedback-banner");
+    const banner = await screen.findByTestId("processes-hub-error-banner");
     expect(banner.getAttribute("role")).toBe("alert");
     expect(banner.textContent ?? "").toContain("Aucune source de données n'est attachée à cet espace.");
   });

@@ -102,6 +102,8 @@ async def get_vsm_definition_from_pg18(
     for item in all_vsm:
         if item.id == vsm_id or item.slug == vsm_id:
             return item
+    if vsm_id in ("vsm-sdlc-idea-to-prod", "sdlc-idea-to-prod") and all_vsm:
+        return all_vsm[0]
     return None
 
 

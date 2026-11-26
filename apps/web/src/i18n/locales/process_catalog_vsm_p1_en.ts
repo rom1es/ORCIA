@@ -2,7 +2,7 @@ import type { ProcessCatalogVsmPart1Dictionary } from "./process_catalog_vsm_lab
 
 export const PROCESS_CATALOG_VSM_P1_EN: ProcessCatalogVsmPart1Dictionary = {
   title: "Idea to Production",
-  subtitle: "Mon Compte Agentic Workflow",
+  subtitle: "Product & Engineering Agentic Lifecycle (SDLC)",
   knowledgeBase: {
     title: "Knowledge Base",
     description:

@@ -38,6 +38,12 @@ function buildRouteModuleBreadcrumbItems(params: {
   if (pathname.startsWith("/inbox")) {
     return [{ label: copy.inbox, route: "/inbox" }];
   }
+  if (pathname.startsWith("/processes/runs")) {
+    return [
+      { label: menuEntries.processes, route: "/processes" },
+      { label: copy.runReview },
+    ];
+  }
   if (pathname.startsWith("/processes/studio")) {
     return [
       { label: menuEntries.processes, route: "/processes" },

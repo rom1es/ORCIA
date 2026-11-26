@@ -3,22 +3,16 @@ import { OrciaDataCard, OrciaIcon, StatusBadge } from "@orcia/ui";
 import React from "react";
 import { formatI18nTemplate, useI18n } from "../../i18n";
 import {
+  extractAgentSlugFromRef,
   formatAgentHumanLabel,
-  InteractiveRunDrawer,
-} from "./execution/InteractiveRunDrawer";
-import { extractAgentSlugFromRef } from "./execution/interactiveRunFormatters";
+} from "./execution/interactiveRunFormatters";
 import type { WorkflowDefinitionV2Item } from "./processStudioV2Data";
 
 export interface ProcessesActiveDossiersCardProps {
   readonly pendingRuns: readonly ProcessPendingRunItemResponse[];
   readonly workflows: readonly WorkflowDefinitionV2Item[];
   readonly isLoadingPendingRuns: boolean;
-  readonly activeRunWorkflow: WorkflowDefinitionV2Item | null;
-  readonly activePendingRun: ProcessPendingRunItemResponse | null;
-  readonly activeWorkspaceId: string;
   readonly onOpenPendingRun: (run: ProcessPendingRunItemResponse) => void;
-  readonly onCloseRunDrawer: () => void;
-  readonly onRunStateChanged: () => void;
 }
 
 export function resolveWorkflowForPendingRun(
@@ -63,14 +57,9 @@ export function ProcessesActiveDossiersCard({
   pendingRuns,
   workflows,
   isLoadingPendingRuns,
-  activeRunWorkflow,
-  activePendingRun,
-  activeWorkspaceId,
   onOpenPendingRun,
-  onCloseRunDrawer,
-  onRunStateChanged,
 }: ProcessesActiveDossiersCardProps): React.JSX.Element {
-  const { locale, isFr, dictionary } = useI18n();
+  const { locale, dictionary } = useI18n();
   const copy = dictionary.processStudioUi.hub;
   const pendingCount = pendingRuns.filter((r) => r.is_pending).length;
   const featuredPendingRun = pendingRuns[0] ?? null;
@@ -96,7 +85,7 @@ export function ProcessesActiveDossiersCard({
         />
       }
       actions={
-        featuredPendingRun && !activeRunWorkflow ? (
+        featuredPendingRun ? (
           <button
             type="button"
             data-testid="resume-featured-dossier-btn"
@@ -109,7 +98,7 @@ export function ProcessesActiveDossiersCard({
         ) : null
       }
     >
-      {pendingRuns.length === 0 && !activeRunWorkflow ? (
+      {pendingRuns.length === 0 ? (
         <div
           data-testid="processes-empty-pending-runs"
           className="rounded border p-3 text-xs"
@@ -133,7 +122,7 @@ export function ProcessesActiveDossiersCard({
         </div>
       ) : null}
 
-      {pendingRuns.length > 0 && !activeRunWorkflow ? (
+      {pendingRuns.length > 0 ? (
         <div className="space-y-2" data-testid="processes-pending-runs-list">
           {pendingRuns.map((run) => {
             const matchedWf = workflows.find(
@@ -204,18 +193,6 @@ export function ProcessesActiveDossiersCard({
             );
           })}
         </div>
-      ) : null}
-
-      {activeRunWorkflow ? (
-        <InteractiveRunDrawer
-          key={`${activeRunWorkflow.id}-${activePendingRun?.run_id ?? "new"}-${activeWorkspaceId || "default"}`}
-          workflow={activeRunWorkflow}
-          workspaceId={activeWorkspaceId || undefined}
-          initialPendingRun={activePendingRun}
-          onRunStateChanged={onRunStateChanged}
-          onClose={onCloseRunDrawer}
-          isFr={isFr}
-        />
       ) : null}
     </OrciaDataCard>
   );

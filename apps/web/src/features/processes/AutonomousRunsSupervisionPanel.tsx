@@ -9,11 +9,18 @@ import { useShellNavigation } from "../../components/ShellContainer";
 import { useI18n } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import { formatCurrency } from "../../lib/formatters";
+import {
+  isHttp403Error,
+  resolveAutonomousScopeTarget,
+} from "./autonomousRunsScopeHelper";
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export interface AutonomousRunsSupervisionPanelProps {
+  readonly hideWhenEmptyOrUnauthorized?: boolean;
+}
 
-export function AutonomousRunsSupervisionPanel(): React.ReactElement | null {
+export function AutonomousRunsSupervisionPanel({
+  hideWhenEmptyOrUnauthorized = false,
+}: AutonomousRunsSupervisionPanelProps): React.ReactElement | null {
   const { dictionary, locale } = useI18n();
   const { activeScopeId, openHelpSection } = useShellNavigation();
   const { scopes, workspaces } = usePlatformSetup();
@@ -22,33 +29,20 @@ export function AutonomousRunsSupervisionPanel(): React.ReactElement | null {
   const [runs, setRuns] = useState<AutonomousRunSupervisionItemSchema[]>([]);
   const [busyRunId, setBusyRunId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isUnauthorized403, setIsUnauthorized403] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const scopeTarget = useMemo(() => {
-    const scopeRaw = activeScopeId.startsWith("scope-ws-")
-      ? activeScopeId.slice("scope-ws-".length)
-      : activeScopeId;
-    if (!UUID_REGEX.test(scopeRaw)) {
-      return { exactWorkspaceId: null, orgScopeId: null };
-    }
-    const matchingScope = scopes.find((s) => s.id === activeScopeId || s.id === scopeRaw);
-    if (
-      matchingScope?.level === "WORKSPACE" ||
-      workspaces.some((w) => w.workspaceId === scopeRaw)
-    ) {
-      return { exactWorkspaceId: scopeRaw, orgScopeId: null };
-    }
-    if (matchingScope?.level === "BU" || matchingScope?.level === "TEAM") {
-      return { exactWorkspaceId: null, orgScopeId: scopeRaw };
-    }
-    return { exactWorkspaceId: null, orgScopeId: null };
-  }, [activeScopeId, scopes, workspaces]);
+  const scopeTarget = useMemo(
+    () => resolveAutonomousScopeTarget(activeScopeId, scopes, workspaces),
+    [activeScopeId, scopes, workspaces],
+  );
 
   const apiClient = useMemo(() => createOrciaApiClient({ baseUrl: "" }), []);
 
   const loadAutonomousRuns = useCallback(async () => {
     try {
       setErrorMessage(null);
+      setIsUnauthorized403(false);
       const res = scopeTarget.exactWorkspaceId
         ? await apiClient.listWorkspaceAutonomousRuns(scopeTarget.exactWorkspaceId)
         : await apiClient.listAutonomousRuns(
@@ -57,6 +51,9 @@ export function AutonomousRunsSupervisionPanel(): React.ReactElement | null {
       setRuns(res.runs ?? []);
     } catch (err: unknown) {
       setRuns([]);
+      if (isHttp403Error(err)) {
+        setIsUnauthorized403(true);
+      }
       const formatted = formatRfc9457ErrorToBanner(err, locale, labels.panelTitle).fullText;
       setErrorMessage(formatted || (err instanceof Error ? err.message : labels.loadErrorBanner));
     }
@@ -138,13 +135,16 @@ export function AutonomousRunsSupervisionPanel(): React.ReactElement | null {
     ],
   );
 
+  if (hideWhenEmptyOrUnauthorized && (isUnauthorized403 || (!errorMessage && runs.length === 0))) {
+    return null;
+  }
+
   return (
     <OrciaDataCard
       testId="processes-autonomous-supervision-panel"
       title={labels.panelTitle}
       subtitle={labels.panelSubtitle}
     >
-
       {errorMessage && (
         <OrciaAlertBanner tone="crimson" role="alert" testId="autonomous-supervision-error-banner">
           {errorMessage}

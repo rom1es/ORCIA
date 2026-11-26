@@ -142,9 +142,14 @@ describe("Story 29.5 — Header & Layout Convergence Across Assistant, Processes
     const solidPrimaryBtns = hub.querySelectorAll(".orcia-ds-btn-primary");
     expect(solidPrimaryBtns.length).toBe(1);
     expect(screen.getByTestId("open-create-process-modal-btn").className).toContain("orcia-ds-btn-primary");
+    expect(screen.getByTestId("processes-hub-tabs").className).toContain("orcia-ds-tab-strip");
     expect(screen.getByTestId("workflows-hub-filter-all").className).toContain("orcia-ds-filter-pill");
     expect(screen.getByTestId("processes-catalog-card").className).toContain("orcia-ds-data-card");
 
+    const launchBtn = hub.querySelector("[data-testid^='execute-workflow-btn-']");
+    expect(launchBtn?.className).toContain("orcia-ds-btn-cobalt-outline");
+
+    fireEvent.click(screen.getByTestId("processes-tab-validations"));
     const activeDossiers = screen.getByTestId("processes-active-dossiers-card");
     expect(activeDossiers.className).toContain("orcia-ds-data-card");
     expect(activeDossiers.textContent ?? "").not.toContain("Mon Compte");
@@ -152,16 +157,14 @@ describe("Story 29.5 — Header & Layout Convergence Across Assistant, Processes
     expect(screen.getByTestId("processes-empty-pending-runs")).toBeDefined();
     expect(screen.queryByTestId("resume-featured-dossier-btn")).toBeNull();
 
-    const launchBtn = hub.querySelector("[data-testid^='execute-workflow-btn-']");
-    expect(launchBtn?.className).toContain("orcia-ds-btn-cobalt-outline");
-
     cleanup();
     vi.restoreAllMocks();
     await mountRoute("/processes", "en");
     await waitFor(() => {
       expect(screen.getByTestId("processes-page-header-title").textContent).toBe("My Processes");
     });
-    expect(screen.getByTestId("processes-active-dossiers-card").textContent ?? "").not.toContain("Mon Compte");
+    fireEvent.click(screen.getByTestId("processes-tab-value-stream"));
+    expect(screen.getByTestId("processes-hub-vsm-hero-card").textContent ?? "").not.toContain("Mon Compte");
   });
 
   it("converges Mes Agents (/agents) without mega-card, hides KPIs/filters on Tab 3, separates MCP/IDE cards & removes raw RPC jargon", async () => {

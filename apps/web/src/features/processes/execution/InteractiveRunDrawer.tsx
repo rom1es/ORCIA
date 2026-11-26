@@ -209,7 +209,7 @@ export function InteractiveRunDrawer({
           events={effectiveEvents}
           pendingWritePreview={reflexive.pendingWritePreview}
           labels={dictionary.executionTrace}
-          defaultCollapsedWhenCompleted={false}
+          defaultCollapsedWhenCompleted={true}
           onInspectLines={inspector.openInspectTarget}
           onSynthesizeNow={() => {
             void reflexive.synthesizeNow();
@@ -241,7 +241,9 @@ export function InteractiveRunDrawer({
         }}
         isStartingRun={isStartingRun}
         isSubmittingDecision={isSubmittingDecision}
-        onApproveCurrentSubStep={handleApproveCurrentSubStep}
+        onApproveCurrentSubStep={() => {
+          void handleApproveCurrentSubStep();
+        }}
         onAction1AcceptAndSign={handleAction1AcceptAndSign}
         onAction2SaveAmendedDiff={handleAction2SaveAmendedDiff}
         onAction3RejectAndLoop={() => {

@@ -8,13 +8,13 @@ import type { OrciaShowcaseManifestData } from "@orcia/ui";
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "lastSyncedDate": "2026-11-26",
   "stats": {
-    "activeRoutesCount": 28,
+    "activeRoutesCount": 29,
     "uiPrimitivesCount": 134,
     "installedPacksCount": 2,
     "alembicMigrationsCount": 63,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 244,
+    "techLeadReportsCount": 245,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -39,6 +39,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "/ontology",
     "/organization",
     "/processes",
+    "/processes/runs/$runId",
     "/processes/studio/$workflowId",
     "/processes/vsm/$vsmId",
     "/profile",
@@ -546,6 +547,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-26",
+      "phaseOrStory": "Story 30.4",
+      "reportFile": "30-4-processes-tabbed-hub-and-focus-review-action-artifact-reasoning-tech-lead-report.md",
+      "domain": "Epic 30 Lot 2 — Mes Processus Tabbed Hub (<OrciaTabStrip />), Dedicated Focus Review (/processes/runs/$runId) & Single State-Gated Decision Bar (UX30-09, UX30-10, CAP-020, CAP-021, CAP-140, CAP-160, CAP-200)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): refactored ProcessesHubPage.tsx (217 L) + useProcessesHubData.ts (171 L) with Tier-2 <OrciaTabStrip /> (Validations & Exécutions \\"
+    },
     {
       "date": "2026-11-26",
       "phaseOrStory": "Story 30.3",

@@ -15,6 +15,14 @@ export interface ProcessesValueStreamOverviewCardProps {
   readonly vsmSubtitle?: string;
 }
 
+function sanitizeVsmDisplayLabel(raw: string | undefined, fallback: string): string {
+  const cleaned = (raw ?? "").trim();
+  if (!cleaned || /mon compte/i.test(cleaned)) {
+    return fallback;
+  }
+  return cleaned;
+}
+
 export function ProcessesValueStreamOverviewCard({
   isFr,
   onOpenInteractiveVsm,
@@ -25,11 +33,13 @@ export function ProcessesValueStreamOverviewCard({
   const locale = resolveLocaleForFlag(isFr);
   const copy = resolveDictionaryForFlag(isFr).processStudioUi.hub;
   const vsmSpec = getInitialVsmSpec(locale);
+  const resolvedTitle = sanitizeVsmDisplayLabel(vsmTitle, vsmSpec.title);
+  const resolvedSubtitle = sanitizeVsmDisplayLabel(vsmSubtitle, vsmSpec.subtitle);
 
   return (
     <OrciaDataCard
       testId="processes-hub-vsm-hero-card"
-      title={`${vsmTitle ?? vsmSpec.title} — ${vsmSubtitle ?? vsmSpec.subtitle}`}
+      title={`${resolvedTitle} — ${resolvedSubtitle}`}
       subtitle={copy.vsmOverviewSubtitle}
       metaBadge={
         <span

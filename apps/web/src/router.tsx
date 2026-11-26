@@ -3,6 +3,7 @@ import { createRoute, createRouter, type RouterHistory } from "@tanstack/react-r
 import React from "react";
 import { ModuleWorkspaceView } from "./components/ModuleWorkspaceView";
 import { ProcessesHubPage } from "./features/processes/ProcessesHubPage";
+import { ProcessRunFocusReviewPage } from "./features/processes/execution/ProcessRunFocusReviewPage";
 import { WorkflowFiveBlocksCanvas } from "./features/processes/studio/WorkflowFiveBlocksCanvas";
 import { ValueStreamMapView } from "./features/processes/vsm/ValueStreamMapView";
 import { PacksRegistryPage } from "./features/settings/packs/PacksRegistryPage";
@@ -61,6 +62,16 @@ const processesStudioRoute = createRoute({
   component: function ProcessesStudioRouteComponent() {
     const { workflowId } = processesStudioRoute.useParams();
     return <WorkflowFiveBlocksCanvas workflowId={workflowId} />;
+  },
+});
+
+const processesRunFocusRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/processes/runs/$runId",
+  validateSearch: validateOrciaRouteSearch,
+  component: function ProcessesRunFocusRouteComponent() {
+    const { runId } = processesRunFocusRoute.useParams();
+    return <ProcessRunFocusReviewPage runId={runId} />;
   },
 });
 
@@ -156,6 +167,7 @@ export const routeTree = rootRoute.addChildren([
   processesRoute,
   processesVsmRoute,
   processesStudioRoute,
+  processesRunFocusRoute,
   agentsRoute,
   spacesRoute,
   organizationRoute,

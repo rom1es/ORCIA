@@ -186,6 +186,7 @@ describe("Story 16.4 — Vertical Wiring Across 3 Surfaces, Surgical Line Inspec
     seedBaseWorkspaceState();
 
     const mountProcessesRoute = async () => {
+      Object.defineProperty(window, "innerWidth", { configurable: true, writable: true, value: 1440 });
       const queryClient = createOrciaQueryClient();
       const history = createMemoryHistory({ initialEntries: ["/processes"] });
       const router = createOrciaRouter({ queryClient, history });
@@ -209,9 +210,13 @@ describe("Story 16.4 — Vertical Wiring Across 3 Surfaces, Surgical Line Inspec
     fireEvent.click(launchWfBtn);
 
     await waitFor(() => {
-      expect(screen.getByTestId("interactive-run-hitl-drawer")).toBeDefined();
+      expect(screen.getByTestId("process-run-focus-review-page")).toBeDefined();
       expect(screen.getByTestId("agent-execution-trace")).toBeDefined();
     });
+    const traceGroupBtn = screen.getByTestId("trace-group-header-btn");
+    if (traceGroupBtn.getAttribute("aria-expanded") === "false") {
+      fireEvent.click(traceGroupBtn);
+    }
     expect(screen.getByTestId("agent-execution-trace").textContent).toContain(
       "@analyste-metier",
     );
@@ -259,15 +264,15 @@ describe("Story 16.4 — Vertical Wiring Across 3 Surfaces, Surgical Line Inspec
     firstMount.unmount();
     await mountProcessesRoute();
 
-    // Story 30.3: zero sticky auto-launch on mount; pending run is hydrated from PG18 & reopened explicitly
-    expect(screen.queryByTestId("interactive-run-hitl-drawer")).toBeNull();
+    // Story 30.3 / 30.4: zero sticky auto-launch on mount; pending run is hydrated from PG18 & navigates to Focus Review
+    expect(screen.queryByTestId("process-run-focus-review-page")).toBeNull();
     const resumePendingBtn = await waitFor(() =>
       screen.getByTestId("resume-featured-dossier-btn"),
     );
     fireEvent.click(resumePendingBtn);
 
     await waitFor(() => {
-      expect(screen.getByTestId("interactive-run-hitl-drawer")).toBeDefined();
+      expect(screen.getByTestId("process-run-focus-review-page")).toBeDefined();
       expect(screen.getByTestId("trace-write-preview-card")).toBeDefined();
     });
 

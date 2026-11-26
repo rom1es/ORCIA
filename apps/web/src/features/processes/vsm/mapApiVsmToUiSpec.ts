@@ -73,12 +73,18 @@ export function mapApiVsmToUiSpec(
   }) as UiVsmSpec["phases"];
 
   const kbFoundation = apiVsm.knowledge_foundation ?? {};
+  const cleanTitle =
+    apiVsm.title && !/mon compte/i.test(apiVsm.title) ? apiVsm.title : baseSpec.title;
+  const cleanSubtitle =
+    apiVsm.subtitle && !/mon compte/i.test(apiVsm.subtitle)
+      ? apiVsm.subtitle
+      : baseSpec.subtitle;
   return {
     ...baseSpec,
     id: apiVsm.id || baseSpec.id,
     slug: apiVsm.slug || baseSpec.slug,
-    title: apiVsm.title || baseSpec.title,
-    subtitle: apiVsm.subtitle || baseSpec.subtitle,
+    title: cleanTitle,
+    subtitle: cleanSubtitle,
     knowledge_base: {
       ...baseSpec.knowledge_base,
       title: kbFoundation.title || baseSpec.knowledge_base.title,

@@ -419,11 +419,13 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     fireEvent.click(screen.getByTestId("agents-subview-tab-connections"));
     expect(screen.getByTestId("remote-service-test-bench")).toBeDefined();
 
-    // Navigate to /processes -> clean ProcessesHubPage (zero stacked legacy forms or pack builders)
+    // Navigate to /processes -> clean tabbed ProcessesHubPage (zero stacked legacy forms or pack builders)
     await act(async () => {
       await router.navigate({ to: "/processes" });
     });
     expect(screen.getByTestId("processes-hub-v2-page")).toBeDefined();
+    expect(screen.getByTestId("processes-hub-tabs")).toBeDefined();
+    fireEvent.click(screen.getByTestId("processes-tab-validations"));
     expect(screen.getByTestId("processes-active-dossiers-card")).toBeDefined();
     expect(screen.queryByTestId("settings-workflows-section")).toBeNull();
     expect(screen.queryByTestId("pack-builder-studio-view")).toBeNull();

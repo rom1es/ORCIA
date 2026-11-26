@@ -16,6 +16,7 @@ export interface ProcessCatalogCardGridProps {
   readonly filter: WorkflowHubFilter;
   readonly modesCopy: ProcessOrchestrationModesCopy;
   readonly isFr: boolean;
+  readonly launchingWorkflowId?: string | null;
   readonly onChangeFilter: (nextFilter: WorkflowHubFilter) => void;
   readonly onExecuteWorkflow: (workflowId: string) => void;
   readonly onOpenStudio: (workflowId: string) => void;
@@ -26,6 +27,7 @@ export function ProcessCatalogCardGrid({
   filter,
   modesCopy,
   isFr,
+  launchingWorkflowId = null,
   onChangeFilter,
   onExecuteWorkflow,
   onOpenStudio,
@@ -201,11 +203,16 @@ export function ProcessCatalogCardGrid({
                 <button
                   type="button"
                   data-testid={`execute-workflow-btn-${wf.id}`}
+                  disabled={launchingWorkflowId === wf.id}
                   onClick={() => onExecuteWorkflow(wf.id)}
                   className="orcia-ds-btn orcia-ds-btn-cobalt-outline orcia-ds-btn-sm"
                 >
                   <OrciaIcon name="play" />
-                  <span>{copy.launchProcessBtn}</span>
+                  <span>
+                    {launchingWorkflowId === wf.id
+                      ? copy.launchingRunBtn
+                      : copy.launchProcessBtn}
+                  </span>
                 </button>
 
                 <button

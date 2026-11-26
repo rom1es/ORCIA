@@ -137,5 +137,28 @@ export const PROCESS_VSM_EXECUTION_UI_FR: ProcessVsmExecutionUiDictionary = {
     substepAdvanceMarkdownTemplate:
       "# {title}\n\n## Étape en cours : {step}\n\nLivrable préparé : {output}",
     writePreviewActionSummaryTemplate: "Publier le livrable « {title} »",
+    backToProcessesBtn: "← Retour à Mes Processus",
+    focusReviewTitle: "Revue du dossier",
+    focusActionBannerPendingTitle: "Action attendue : votre décision",
+    focusActionBannerCompletedTitle: "Dossier validé",
+    focusActionBannerPausedTitle: "Dossier mis en pause",
+    focusActionBannerRunningTitle: "Traitement agent en cours",
+    focusActionBannerPendingHint:
+      "Relisez le livrable ci-dessous, puis validez pour passer à l'étape suivante ou demandez une correction.",
+    requestChangesBtn: "Demander une correction",
+    submitCorrectionsBtn: "Envoyer la demande de correction",
+    modePreviewLabel: "Lecture",
+    modeEditLabel: "Édition",
+    deliverableModeAriaLabel: "Mode d'affichage du livrable",
+    focusMobileTabsAriaLabel: "Sections de la revue",
+    mobileTabArtifactLabel: "Livrable",
+    mobileTabReasoningLabel: "Raisonnement de l'agent",
+    reasoningRailTitle: "Raisonnement & Trace de l'agent",
+    reasoningEmptyNote:
+      "Aucune trace de raisonnement détaillée n'a encore été enregistrée pour ce dossier.",
+    sourcesChipsHeading: "Sources consultées :",
+    loadingRunLabel: "Chargement du dossier en cours…",
+    runNotFoundBanner: "Ce dossier d'exécution est introuvable ou inaccessible dans cet espace.",
+    resumeRunBtn: "Reprendre la revue",
   },
 };

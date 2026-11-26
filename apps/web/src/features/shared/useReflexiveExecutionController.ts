@@ -109,6 +109,19 @@ export function useReflexiveExecutionController(
     [locale, storageKey, applyMappedSnapshot],
   );
 
+  const hydrateFallbackExecution = useCallback(
+    async (fallbackId: string): Promise<MappedReflexiveSnapshot | null> => {
+      // Preserve a newer session persisted for this run (e.g. pending write preview) across F5 reloads.
+      const persisted = readPersistedReflexiveId(storageKey);
+      if (persisted && persisted !== fallbackId) {
+        const current = await refreshSnapshot(persisted);
+        if (current) return current;
+      }
+      return refreshSnapshot(fallbackId);
+    },
+    [storageKey, refreshSnapshot],
+  );
+
   useEffect(() => {
     const savedId = initialExecutionId || readPersistedReflexiveId(storageKey);
     if (!savedId) return;
@@ -244,6 +257,7 @@ export function useReflexiveExecutionController(
     artifactSha256,
     startExecution,
     refreshSnapshot,
+    hydrateFallbackExecution,
     synthesizeNow,
     cancelExecution,
     approveWrite: (previewId: string) => decideWritePreview(previewId, true),

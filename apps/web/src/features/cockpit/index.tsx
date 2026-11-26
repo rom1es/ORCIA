@@ -201,6 +201,7 @@ export function CockpitFeaturePanel() {
           currentUserId={currentUserId}
           labels={dictionary.streamlinedCockpit}
           disabledMenuKeys={effectiveDisabledMenuKeys}
+          onOpenFocusReview={(lease) => navigateToRoute(`/processes/runs/${lease.runId}`)}
           onNavigateModule={(href) => navigateToRoute(href)}
         />
 
@@ -217,6 +218,7 @@ export function CockpitFeaturePanel() {
           onSelectWfKey={setSelectedWfKey}
           onChangeRunTitle={setRunTitle}
           onLaunchRun={handleLaunchRun}
+          onOpenRun={(runId) => navigateToRoute(`/processes/runs/${runId}`)}
           onNavigateToWorkspaces={() => navigateToRoute("/spaces")}
         />
 

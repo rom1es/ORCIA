@@ -40,6 +40,7 @@ export interface DeterministicSubStepItem {
   mcp_tools_allowed: string[];
   write_preview_required: boolean;
   requires_human_checkpoint: boolean;
+  human_authored_required?: boolean;
   checkpoint_question?: string | null;
   enabled: boolean;
 }
@@ -57,6 +58,7 @@ export interface WorkflowDefinitionV2Item {
   allowed_delegate_agents?: string[];
   effort?: "default" | "low" | "medium" | "high";
   execution_mode: "native_orcia" | "external_delegated";
+  human_authored_required?: boolean;
   external_tool_label?: string | null;
   external_completion_event?: string | null;
   agent_ref: string;

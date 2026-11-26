@@ -131,15 +131,29 @@ test.describe("Story 16.4 — Trace d'exécution réflexive, Inspecteur chirurgi
       page.getByTestId("execute-workflow-btn-wf-generate-orcia-documentation").click(),
     ]);
 
-    const runDrawer = page.getByTestId("interactive-run-hitl-drawer");
-    await expect(runDrawer).toBeVisible({ timeout: 20000 });
+    const focusPage = page.getByTestId("process-run-focus-review-page");
+    await expect(focusPage).toBeVisible({ timeout: 20000 });
+    if (isMobile) {
+      await page.getByTestId("focus-compact-tab-reasoning").click();
+    }
 
     const trace = page.getByTestId("agent-execution-trace");
     await expect(trace).toBeVisible({ timeout: 20000 });
+    // Reasoning Rail collapses trace groups by default once waiting/completed (UX30-10);
+    // verify collapsed default state and expand each collapsed group before inspecting details.
+    const groupButtons = page.getByTestId("trace-group-header-btn");
+    const groupCount = await groupButtons.count();
+    expect(groupCount).toBeGreaterThanOrEqual(1);
+    for (let i = 0; i < groupCount; i += 1) {
+      const btn = groupButtons.nth(i);
+      await expect(btn).toHaveAttribute("aria-expanded", "false");
+      await btn.click();
+      await expect(btn).toHaveAttribute("aria-expanded", "true");
+    }
     const traceText = await trace.innerText();
     expect(traceText.match(/Synthèse prête/g)?.length ?? 0).toBeLessThanOrEqual(1);
 
-    const drawerText = await runDrawer.innerText();
+    const drawerText = await focusPage.innerText();
     expect(drawerText).not.toMatch(FORBIDDEN_JARGON_REGEX);
 
     const delegatedBlock = page.getByTestId("trace-delegated-agent-block").first();
@@ -224,11 +238,12 @@ test.describe("Story 16.4 — Trace d'exécution réflexive, Inspecteur chirurgi
 
     await page.reload();
     await ensureCentralWorkspaceVisibleOnMobile(page, isMobile);
-    await expect(page.getByTestId("interactive-run-hitl-drawer")).toHaveCount(0);
-    await page.getByTestId("resume-featured-dossier-btn").click();
-    await expect(page.getByTestId("interactive-run-hitl-drawer")).toBeVisible({
+    await expect(page.getByTestId("process-run-focus-review-page")).toBeVisible({
       timeout: 30000,
     });
+    if (isMobile) {
+      await page.getByTestId("focus-compact-tab-reasoning").click();
+    }
     await expect(page.getByTestId("trace-write-preview-card")).toBeVisible({
       timeout: 20000,
     });

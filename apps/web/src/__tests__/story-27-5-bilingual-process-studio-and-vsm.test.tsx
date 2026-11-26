@@ -107,7 +107,7 @@ describe("Story 27.5 — Bilingual FR/EN Process Studio v2, VSM & Catalog Data",
     );
     fireEvent.click(screen.getByTestId("studio-launch-interactive-run-btn"));
     expect(screen.getByTestId("interactive-run-hitl-drawer").textContent).toContain(
-      "Deliverable Review & Decision",
+      "Expected action: your decision",
     );
   });
 });

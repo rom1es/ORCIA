@@ -18,6 +18,7 @@ import {
 } from "./interactiveRunHitlActions";
 import {
   applySnapshotContentUpdate,
+  hydrateExistingRunById,
   hydrateOrStartWorkflowRun,
 } from "./interactiveRunSyncHelpers";
 import {
@@ -42,6 +43,9 @@ export function useInteractiveProcessRunController(
   workspaceId?: string,
   initialPendingRun?: ProcessPendingRunItemResponse | null,
   onRunStateChanged?: () => void,
+  hydrateOnlyRunId?: string,
+  knownWorkflows: readonly WorkflowDefinitionV2Item[] = [],
+  onResolvedWorkflow?: (wf: WorkflowDefinitionV2Item) => void,
 ) {
   const { locale, dictionary } = useI18n();
   const processCopy = dictionary.categoryAControllers.processes;
@@ -51,12 +55,13 @@ export function useInteractiveProcessRunController(
       ? "WAITING_EXTERNAL_GATE"
       : "WAITING_SUBSTEP_HITL";
   const isGoalDriven = workflow.orchestration_type === "non_deterministic";
-  const storageKey = `orcia.reflexive_exec.process.${workflow.id}.v1`;
+  const storageKey = `orcia.reflexive_exec.process.${hydrateOnlyRunId ?? workflow.id}.v1`;
   const actorSlug = extractAgentSlugFromRef(workflow.agent_ref);
 
   const [runId, setRunId] = useState<string>(
-    () => initialPendingRun?.run_id ?? `run-${workflow.id}-01`,
+    () => hydrateOnlyRunId ?? initialPendingRun?.run_id ?? `run-${workflow.id}-01`,
   );
+  const [runNotFound, setRunNotFound] = useState<boolean>(false);
   const [iteration, setIteration] = useState<number>(1);
   const [reentryMode, setReentryMode] = useState<"initial" | "corrections">("initial");
   const [currentSubIndex, setCurrentSubIndex] = useState<number>(0);
@@ -120,29 +125,48 @@ export function useInteractiveProcessRunController(
     let cancelled = false;
     setIsStartingRun(true);
     setHasError(false);
+    setRunNotFound(false);
+
+    const callbacks = {
+      actorSlug,
+      fallbackStatus,
+      refreshSnapshot: reflexive.hydrateFallbackExecution,
+      setRunId,
+      setStatus,
+      setCurrentSubIndex,
+      setIteration,
+      setReentryMode,
+      setInlineRunTraceEvents,
+      setArtifactMarkdown,
+      setArtifactSha256,
+      markServerRunPersisted: () => { hasPersistedServerRunRef.current = true; },
+    };
 
     const startPromise = (async (): Promise<string | null> => {
       try {
+        if (hydrateOnlyRunId) {
+          const outcome = await hydrateExistingRunById({
+            locale,
+            runId: hydrateOnlyRunId,
+            workspaceId,
+            fallbackWorkflow: workflow,
+            knownWorkflows,
+            callbacks,
+            onResolvedWorkflow: (resolved) => onResolvedWorkflow?.(resolved),
+            isCancelled: () => cancelled,
+          });
+          if (!cancelled && !outcome.found) {
+            setRunNotFound(true);
+          }
+          return outcome.runId;
+        }
         const resolvedRunId = await hydrateOrStartWorkflowRun({
           locale,
           workflow,
           workspaceId,
           initialPendingRun,
           isCancelled: () => cancelled,
-          callbacks: {
-            actorSlug,
-            fallbackStatus,
-            refreshSnapshot: reflexive.refreshSnapshot,
-            setRunId,
-            setStatus,
-            setCurrentSubIndex,
-            setIteration,
-            setReentryMode,
-            setInlineRunTraceEvents,
-            setArtifactMarkdown,
-            setArtifactSha256,
-            markServerRunPersisted: () => { hasPersistedServerRunRef.current = true; },
-          },
+          callbacks,
         });
         if (!cancelled && resolvedRunId && !initialPendingRun) {
           onRunStateChangedRef.current?.();
@@ -165,7 +189,7 @@ export function useInteractiveProcessRunController(
     startRunPromiseRef.current = startPromise;
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workflow.id, initialPendingRun?.run_id]);
+  }, [hydrateOnlyRunId ?? workflow.id, initialPendingRun?.run_id]);
 
   const handleLaunchLiveInvestigation = () => {
     void reflexive.startExecution(buildGoalDrivenExecutionPayload({
@@ -182,15 +206,25 @@ export function useInteractiveProcessRunController(
     ));
   };
 
-  const handleApproveCurrentSubStep = () => {
-    executeApproveSubStep({
-      locale, workflowTitle: workflow.title, enabledSubSteps, currentSubIndex, currentSubStep,
-      status, artifactSha256, writePreviewPrompt: processCopy.writePreviewPrompt,
-      stepApprovedAdvanceTpl: processCopy.stepApprovedAdvance,
-      readyForFinalSignoff: processCopy.readyForFinalSignoff,
-      setSignedTokenPreview, setCurrentSubIndex, setArtifactMarkdown, setArtifactSha256,
-      setStatus, setStatusBanner,
-    });
+  const handleApproveCurrentSubStep = async (): Promise<void> => {
+    if (isStartingRun || isSubmittingDecision) return;
+    setIsSubmittingDecision(true);
+    setHasError(false);
+    try {
+      await executeApproveSubStep({
+        locale, runId, actorSlug,
+        hasPersistedServerRun: hasPersistedServerRunRef.current,
+        workflowTitle: workflow.title, enabledSubSteps, currentSubIndex, currentSubStep,
+        status, artifactSha256, writePreviewPrompt: processCopy.writePreviewPrompt,
+        stepApprovedAdvanceTpl: processCopy.stepApprovedAdvance,
+        readyForFinalSignoff: processCopy.readyForFinalSignoff,
+        setSignedTokenPreview, setCurrentSubIndex, setArtifactMarkdown, setArtifactSha256,
+        setStatus, setHasError, setStatusBanner,
+        onRunStateChanged: onRunStateChangedRef.current,
+      });
+    } finally {
+      setIsSubmittingDecision(false);
+    }
   };
 
   const handleAction1AcceptAndSign = async (): Promise<void> => {
@@ -246,10 +280,11 @@ export function useInteractiveProcessRunController(
   const effectiveEvents =
     reflexive.events.length > 0 ? reflexive.events : inlineRunTraceEvents;
   const effectiveTraceStatus =
-    reflexive.status ?? (effectiveEvents.length > 0 ? "COMPLETED" : null);
+    reflexive.status ??
+    (effectiveEvents.length > 0 ? (status === "RUNNING" ? "RUNNING" : "COMPLETED") : null);
 
   return {
-    dictionary, enabledSubSteps, isGoalDriven, runId, iteration, reentryMode,
+    dictionary, enabledSubSteps, isGoalDriven, runId, runNotFound, iteration, reentryMode,
     currentSubIndex, currentSubStep, status, setStatus, agentLabel,
     artifactMarkdown, setArtifactMarkdown, artifactSha256, isEditingDiff, setIsEditingDiff,
     returnLoopTargetStep, setReturnLoopTargetStep, returnLoopRemarks, setReturnLoopRemarks,

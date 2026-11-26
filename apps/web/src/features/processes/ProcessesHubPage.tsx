@@ -1,37 +1,43 @@
-import type { ProcessPendingRunItemResponse } from "@orcia/api-client";
-import { OrciaAlertBanner, OrciaPageHeader } from "@orcia/ui";
-import React, { useCallback, useEffect, useState } from "react";
+import {
+  OrciaAlertBanner,
+  OrciaPageHeader,
+  OrciaTabStrip,
+  type OrciaTabStripItem,
+} from "@orcia/ui";
+import React, { useState } from "react";
 import { CreateProcessFormDialog } from "../../components/CreateProcessFormDialog";
 import { useOptionalPlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions";
 import { useI18n } from "../../i18n";
-import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import { useAuthSessionStore } from "../../stores/authSessionStore";
 import { AutonomousRunsSupervisionPanel } from "./AutonomousRunsSupervisionPanel";
 import {
   ProcessCatalogCardGrid,
   type WorkflowHubFilter,
 } from "./ProcessCatalogCardGrid";
+import { ProcessesActiveDossiersCard } from "./ProcessesActiveDossiersCard";
 import {
-  ProcessesActiveDossiersCard,
-  resolveWorkflowForPendingRun,
-} from "./ProcessesActiveDossiersCard";
-import {
-  loadPersistedWorkflowsV2,
   savePersistedWorkflowV2,
   type WorkflowDefinitionV2Item,
 } from "./processStudioV2Data";
 import { ProcessesValueStreamOverviewCard } from "./ProcessesValueStreamOverviewCard";
-import {
-  createProcessesApiClient,
-  mapApiWorkflowV2ToUiItem,
-} from "./studio/studioLabelsAndMappers";
+import { useProcessesHubData } from "./useProcessesHubData";
 
 export type { WorkflowHubFilter };
+export type ProcessesHubTabKey = "validations" | "catalog" | "value-stream";
+
+function readInitialTabFromQuery(): ProcessesHubTabKey | null {
+  if (typeof window === "undefined") return null;
+  const raw = new URLSearchParams(window.location.search).get("tab")?.trim();
+  if (raw === "validations" || raw === "catalog" || raw === "value-stream") {
+    return raw;
+  }
+  return null;
+}
 
 export function ProcessesHubPage() {
-  const { locale, isFr, dictionary } = useI18n();
+  const { isFr, dictionary } = useI18n();
   const { activeScopeId, navigateToRoute, openHelpSection } = useShellNavigation();
   const setupCtx = useOptionalPlatformSetup();
   const authEmail = useAuthSessionStore((s) => s.email);
@@ -40,101 +46,57 @@ export function ProcessesHubPage() {
     setupCtx?.workspaces ?? [],
     authEmail,
   );
-  const effectivePendingScopeParam =
-    activeScopeId === "scope-global" || !activeWorkspaceId
-      ? "scope-global"
-      : activeWorkspaceId;
 
   const modesCopy = dictionary.processOrchestrationModes;
   const hubCopy = dictionary.processStudioUi.hub;
   const [isCreateProcessOpen, setIsCreateProcessOpen] = useState(false);
-
-  const [workflows, setWorkflows] = useState<WorkflowDefinitionV2Item[]>(() =>
-    loadPersistedWorkflowsV2(locale),
-  );
-  const [pendingRuns, setPendingRuns] = useState<ProcessPendingRunItemResponse[]>([]);
-  const [isLoadingPendingRuns, setIsLoadingPendingRuns] = useState<boolean>(true);
   const [filter, setFilter] = useState<WorkflowHubFilter>("all");
-  const [activeRunWorkflow, setActiveRunWorkflow] = useState<WorkflowDefinitionV2Item | null>(null);
-  const [activePendingRun, setActivePendingRun] = useState<ProcessPendingRunItemResponse | null>(
-    null,
+  const [userSelectedTab, setUserSelectedTab] = useState<ProcessesHubTabKey | null>(() =>
+    readInitialTabFromQuery(),
   );
-  const [hubErrorBanner, setHubErrorBanner] = useState<string | null>(null);
-  const [vsmSummary, setVsmSummary] = useState<{
-    id: string;
-    title: string;
-    subtitle: string;
-  } | null>(null);
 
-  const refreshPendingRuns = useCallback(() => {
-    const apiClient = createProcessesApiClient(locale);
-    setIsLoadingPendingRuns(true);
-    return apiClient
-      .listProcessPendingRuns({ workspaceId: effectivePendingScopeParam })
-      .then((res) => {
-        setPendingRuns(Array.isArray(res?.items) ? res.items : []);
-      })
-      .catch((err: unknown) => {
-        const formatted = formatRfc9457ErrorToBanner(
-          err,
-          locale,
-          hubCopy.pendingRunsResourceLabel,
-        );
-        setHubErrorBanner(formatted.fullText);
-      })
-      .finally(() => {
-        setIsLoadingPendingRuns(false);
-      });
-  }, [locale, effectivePendingScopeParam, hubCopy.pendingRunsResourceLabel]);
+  const {
+    workflows,
+    setWorkflows,
+    pendingRuns,
+    autonomousCount,
+    isLoadingPendingRuns,
+    launchingWorkflowId,
+    hubErrorBanner,
+    vsmSummary,
+    handleLaunchWorkflow,
+  } = useProcessesHubData({
+    activeScopeId,
+    activeWorkspaceId,
+    navigateToRoute,
+  });
 
-  useEffect(() => {
-    let cancelled = false;
-    const apiClient = createProcessesApiClient(locale);
-    setIsLoadingPendingRuns(true);
+  const attentionCount = pendingRuns.length + autonomousCount;
+  const activeTabId: ProcessesHubTabKey =
+    userSelectedTab ?? (attentionCount > 0 ? "validations" : "catalog");
 
-    Promise.all([
-      apiClient.listWorkflowsV2(),
-      apiClient.listValueStreamMaps(),
-      apiClient.listProcessPendingRuns({ workspaceId: effectivePendingScopeParam }),
-    ])
-      .then(([wfRes, vsmRes, pendingRes]) => {
-        if (cancelled) return;
-        const firstVsm = Array.isArray(vsmRes?.items) ? vsmRes.items[0] : undefined;
-        if (firstVsm?.id) {
-          setVsmSummary({
-            id: firstVsm.id,
-            title: firstVsm.title,
-            subtitle: firstVsm.subtitle,
-          });
-        }
-        setPendingRuns(Array.isArray(pendingRes?.items) ? pendingRes.items : []);
-        if (!Array.isArray(wfRes?.items) || wfRes.items.length === 0) return;
-        setWorkflows((prev) =>
-          wfRes.items.map((apiWf) => {
-            const existing = prev.find((p) => p.id === apiWf.id || p.slug === apiWf.slug);
-            const uiItem = mapApiWorkflowV2ToUiItem(apiWf, existing, locale);
-            savePersistedWorkflowV2(uiItem);
-            return uiItem;
-          }),
-        );
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        const formatted = formatRfc9457ErrorToBanner(
-          err,
-          locale,
-          hubCopy.catalogResourceLabel,
-        );
-        setHubErrorBanner(formatted.fullText);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoadingPendingRuns(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [locale, effectivePendingScopeParam, hubCopy.catalogResourceLabel]);
+  const tabs: readonly OrciaTabStripItem<ProcessesHubTabKey>[] = [
+    {
+      key: "validations",
+      label: hubCopy.tabValidationsAndRuns,
+      icon: "clock",
+      ...(attentionCount > 0 ? { count: attentionCount } : {}),
+      testId: "processes-tab-validations",
+      countTestId: "processes-tab-badge-validations",
+    },
+    {
+      key: "catalog",
+      label: hubCopy.tabBusinessProcesses,
+      icon: "processes",
+      testId: "processes-tab-catalog",
+    },
+    {
+      key: "value-stream",
+      label: hubCopy.tabValueStream,
+      icon: "compass",
+      testId: "processes-tab-value-stream",
+    },
+  ];
 
   return (
     <section
@@ -156,6 +118,16 @@ export function ProcessesHubPage() {
             {hubCopy.newProcessBtn}
           </button>
         }
+        tabs={
+          <OrciaTabStrip<ProcessesHubTabKey>
+            testId="processes-hub-tabs"
+            ariaLabel={hubCopy.tabsAriaLabel}
+            variant="underline"
+            tabs={tabs}
+            activeTabId={activeTabId}
+            onSelectTab={setUserSelectedTab}
+          />
+        }
         alertSlot={
           hubErrorBanner ? (
             <OrciaAlertBanner tone="crimson" role="alert" testId="processes-hub-error-banner">
@@ -165,40 +137,46 @@ export function ProcessesHubPage() {
         }
       />
 
-      <ProcessesActiveDossiersCard
-        pendingRuns={pendingRuns}
-        workflows={workflows}
-        isLoadingPendingRuns={isLoadingPendingRuns}
-        activeRunWorkflow={activeRunWorkflow}
-        activePendingRun={activePendingRun}
-        activeWorkspaceId={activeWorkspaceId}
-        onOpenPendingRun={(run) => {
-          setActivePendingRun(run);
-          setActiveRunWorkflow(resolveWorkflowForPendingRun(run, workflows));
-        }}
-        onCloseRunDrawer={() => {
-          setActiveRunWorkflow(null);
-          setActivePendingRun(null);
-          void refreshPendingRuns();
-        }}
-        onRunStateChanged={() => {
-          void refreshPendingRuns();
-        }}
-      />
+      {activeTabId === "validations" ? (
+        <div data-testid="processes-tab-panel-validations" className="flex flex-col gap-4">
+          <ProcessesActiveDossiersCard
+            pendingRuns={pendingRuns}
+            workflows={workflows}
+            isLoadingPendingRuns={isLoadingPendingRuns}
+            onOpenPendingRun={(run) => navigateToRoute(`/processes/runs/${run.run_id}`)}
+          />
+          <AutonomousRunsSupervisionPanel hideWhenEmptyOrUnauthorized={true} />
+        </div>
+      ) : null}
 
-      <ProcessCatalogCardGrid
-        workflows={workflows}
-        filter={filter}
-        modesCopy={modesCopy}
-        isFr={isFr}
-        onChangeFilter={setFilter}
-        onExecuteWorkflow={(wfId) => {
-          const matched = workflows.find((w) => w.id === wfId) ?? null;
-          setActivePendingRun(null);
-          setActiveRunWorkflow(matched);
-        }}
-        onOpenStudio={(wfId) => navigateToRoute(`/processes/studio/${wfId}`)}
-      />
+      {activeTabId === "catalog" ? (
+        <div data-testid="processes-tab-panel-catalog">
+          <ProcessCatalogCardGrid
+            workflows={workflows}
+            filter={filter}
+            modesCopy={modesCopy}
+            isFr={isFr}
+            launchingWorkflowId={launchingWorkflowId}
+            onChangeFilter={setFilter}
+            onExecuteWorkflow={(wfId) => {
+              void handleLaunchWorkflow(wfId);
+            }}
+            onOpenStudio={(wfId) => navigateToRoute(`/processes/studio/${wfId}`)}
+          />
+        </div>
+      ) : null}
+
+      {activeTabId === "value-stream" ? (
+        <div data-testid="processes-tab-panel-value-stream">
+          <ProcessesValueStreamOverviewCard
+            isFr={isFr}
+            vsmId={vsmSummary?.id}
+            vsmTitle={vsmSummary?.title}
+            vsmSubtitle={vsmSummary?.subtitle}
+            onOpenInteractiveVsm={(vsmId) => navigateToRoute(`/processes/vsm/${vsmId}`)}
+          />
+        </div>
+      ) : null}
 
       <CreateProcessFormDialog
         open={isCreateProcessOpen}
@@ -233,16 +211,6 @@ export function ProcessesHubPage() {
             ...prev.filter((p) => p.id !== createdV2.id),
           ]);
         }}
-      />
-
-      <AutonomousRunsSupervisionPanel />
-
-      <ProcessesValueStreamOverviewCard
-        isFr={isFr}
-        vsmId={vsmSummary?.id}
-        vsmTitle={vsmSummary?.title}
-        vsmSubtitle={vsmSummary?.subtitle}
-        onOpenInteractiveVsm={(vsmId) => navigateToRoute(`/processes/vsm/${vsmId}`)}
       />
     </section>
   );

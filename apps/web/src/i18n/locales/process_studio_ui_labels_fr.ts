@@ -44,7 +44,12 @@ export const PROCESS_STUDIO_UI_FR: ProcessStudioUiDictionary = {
     statusActiveBadge: "Actif",
     statusDraftBadge: "En préparation",
     launchProcessBtn: "Lancer ce processus",
+    launchingRunBtn: "Lancement en cours…",
     customizeInStudioBtn: "Adapter dans le Studio",
+    tabsAriaLabel: "Vues de Mes Processus",
+    tabValidationsAndRuns: "Validations & Exécutions",
+    tabBusinessProcesses: "Processus métiers",
+    tabValueStream: "Chaîne de valeur",
     vsmOverviewEyebrow: "VUE D'ENSEMBLE DU PARCOURS MÉTIER (4 PHASES · 11 ÉTAPES)",
     vsmOverviewSubtitle:
       "Visualisez comment s'articulent les 11 étapes entre les équipes et les agents IA, les points de validation humaine et l'évolution des pratiques.",

@@ -71,6 +71,7 @@ export const SHELL_BREADCRUMBS_AND_SCOPE_FR: ShellBreadcrumbsAndScopeDictionary 
     inbox: "Boîte de Réception",
     studio: "Studio",
     valueStream: "Chaîne de valeur",
+    runReview: "Revue du dossier",
     qualityGates: "Validations",
     catalog: "Catalogue",
     glossary: "Glossaire",

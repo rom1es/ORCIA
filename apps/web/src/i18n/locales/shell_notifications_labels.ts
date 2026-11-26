@@ -63,6 +63,7 @@ export interface ShellBreadcrumbsAndScopeDictionary {
     readonly inbox: string;
     readonly studio: string;
     readonly valueStream: string;
+    readonly runReview: string;
     readonly qualityGates: string;
     readonly catalog: string;
     readonly glossary: string;

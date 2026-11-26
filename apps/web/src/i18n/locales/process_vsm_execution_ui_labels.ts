@@ -108,5 +108,26 @@ export interface ProcessVsmExecutionUiDictionary {
     readonly initialArtifactMarkdownTemplate: string;
     readonly substepAdvanceMarkdownTemplate: string;
     readonly writePreviewActionSummaryTemplate: string;
+    readonly backToProcessesBtn: string;
+    readonly focusReviewTitle: string;
+    readonly focusActionBannerPendingTitle: string;
+    readonly focusActionBannerCompletedTitle: string;
+    readonly focusActionBannerPausedTitle: string;
+    readonly focusActionBannerRunningTitle: string;
+    readonly focusActionBannerPendingHint: string;
+    readonly requestChangesBtn: string;
+    readonly submitCorrectionsBtn: string;
+    readonly modePreviewLabel: string;
+    readonly modeEditLabel: string;
+    readonly deliverableModeAriaLabel: string;
+    readonly focusMobileTabsAriaLabel: string;
+    readonly mobileTabArtifactLabel: string;
+    readonly mobileTabReasoningLabel: string;
+    readonly reasoningRailTitle: string;
+    readonly reasoningEmptyNote: string;
+    readonly sourcesChipsHeading: string;
+    readonly loadingRunLabel: string;
+    readonly runNotFoundBanner: string;
+    readonly resumeRunBtn: string;
   };
 }

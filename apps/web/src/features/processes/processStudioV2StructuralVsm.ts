@@ -175,8 +175,8 @@ export function getInitialVsmSpec(locale: SupportedWebLocale = "fr") {
     ...p3.steps,
   };
   return {
-    id: "vsm-mon-compte-idea-to-prod",
-    slug: "mon-compte-idea-to-prod",
+    id: "vsm-sdlc-idea-to-prod",
+    slug: "sdlc-idea-to-prod",
     title: p1.title,
     subtitle: p1.subtitle,
     version: "2.0.0",

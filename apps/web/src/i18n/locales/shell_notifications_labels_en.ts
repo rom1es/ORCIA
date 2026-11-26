@@ -71,6 +71,7 @@ export const SHELL_BREADCRUMBS_AND_SCOPE_EN: ShellBreadcrumbsAndScopeDictionary 
     inbox: "Inbox",
     studio: "Studio",
     valueStream: "Value Stream",
+    runReview: "Run Review",
     qualityGates: "Quality Gates",
     catalog: "Catalog",
     glossary: "Glossary",

@@ -12,8 +12,11 @@ import {
   type InteractiveProcessDrawerStatus,
 } from "./interactiveRunFormatters";
 
-export function executeApproveSubStep(params: {
+export async function executeApproveSubStep(params: {
   readonly locale: SupportedWebLocale;
+  readonly runId: string;
+  readonly actorSlug: string;
+  readonly hasPersistedServerRun: boolean;
   readonly workflowTitle: string;
   readonly enabledSubSteps: readonly DeterministicSubStepItem[];
   readonly currentSubIndex: number;
@@ -28,8 +31,10 @@ export function executeApproveSubStep(params: {
   readonly setArtifactMarkdown: (md: string) => void;
   readonly setArtifactSha256: (sha: string) => void;
   readonly setStatus: (s: InteractiveProcessDrawerStatus) => void;
+  readonly setHasError: (err: boolean) => void;
   readonly setStatusBanner: (msg: string | null) => void;
-}): void {
+  readonly onRunStateChanged?: () => void;
+}): Promise<void> {
   if (params.currentSubStep?.write_preview_required && params.status !== "WAITING_WRITE_PREVIEW") {
     params.setStatus("WAITING_WRITE_PREVIEW");
     params.setStatusBanner(params.writePreviewPrompt);
@@ -37,6 +42,45 @@ export function executeApproveSubStep(params: {
   }
   if (params.status === "WAITING_WRITE_PREVIEW") {
     params.setSignedTokenPreview(`sat_${params.artifactSha256.slice(0, 16)}_hmac_ok`);
+  }
+  if (params.hasPersistedServerRun) {
+    try {
+      const updated = await createProcessesApiClient(params.locale).sendWorkflowV2HitlSignal(
+        params.runId,
+        { action: "APPROVE", actor_id: params.actorSlug },
+      );
+      if (updated?.run) {
+        const mappedStatus = mapBackendRunStatusToDrawerStatus(
+          updated.run.status,
+          "WAITING_FINAL_ANCHOR",
+        );
+        params.setStatus(mappedStatus);
+        if (typeof updated.run.current_sub_step_index === "number") {
+          params.setCurrentSubIndex(updated.run.current_sub_step_index);
+        }
+        if (mappedStatus === "WAITING_FINAL_ANCHOR") {
+          params.setStatusBanner(params.readyForFinalSignoff);
+        } else {
+          const nextSub = params.enabledSubSteps[updated.run.current_sub_step_index ?? 0];
+          params.setStatusBanner(
+            params.stepApprovedAdvanceTpl
+              .replace("{step}", params.currentSubStep?.short_label ?? "")
+              .replace("{nextStep}", nextSub?.short_label ?? ""),
+          );
+        }
+        params.onRunStateChanged?.();
+        return;
+      }
+    } catch (err: unknown) {
+      const extracted = extractLocalizedApiError(
+        err,
+        params.locale,
+        "ERR_CLIENT_PROCESS_DELIVERABLE_APPROVE",
+      );
+      params.setHasError(true);
+      params.setStatusBanner(extracted.errorMessage);
+      return;
+    }
   }
   if (params.currentSubIndex + 1 < params.enabledSubSteps.length) {
     const nextIdx = params.currentSubIndex + 1;

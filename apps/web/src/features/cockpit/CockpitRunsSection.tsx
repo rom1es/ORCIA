@@ -21,6 +21,7 @@ export interface CockpitRunsSectionProps {
   readonly onSelectWfKey: (key: string) => void;
   readonly onChangeRunTitle: (title: string) => void;
   readonly onLaunchRun: (event: React.FormEvent) => void;
+  readonly onOpenRun?: (runId: string) => void;
   readonly onNavigateToWorkspaces: () => void;
 }
 
@@ -37,6 +38,7 @@ export function CockpitRunsSection({
   onSelectWfKey,
   onChangeRunTitle,
   onLaunchRun,
+  onOpenRun,
   onNavigateToWorkspaces,
 }: CockpitRunsSectionProps): React.ReactElement {
   const { dictionary } = useI18n();
@@ -223,7 +225,19 @@ export function CockpitRunsSection({
                   ({run.workspaceName} · {formatStepKeyLabel(run.currentStepKey, isFr)})
                 </span>
               </div>
-              <StatusBadge label={formatStepStatusLabel(run.status, isFr)} tone="emerald" />
+              <div className="flex items-center gap-2">
+                <StatusBadge label={formatStepStatusLabel(run.status, isFr)} tone="emerald" />
+                {onOpenRun ? (
+                  <button
+                    type="button"
+                    data-testid={`cockpit-open-run-btn-${run.runId}`}
+                    onClick={() => onOpenRun(run.runId)}
+                    className="orcia-ds-btn orcia-ds-btn-secondary orcia-ds-btn-sm"
+                  >
+                    {dictionary.streamlinedCockpit.openFocusReviewCta}
+                  </button>
+                ) : null}
+              </div>
             </div>
           ))}
         </div>

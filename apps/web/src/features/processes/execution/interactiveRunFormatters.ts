@@ -132,3 +132,43 @@ export function buildWritePreviewExecutionPayload(
     },
   };
 }
+
+export function buildStatusHumanLabelMap(
+  execCopy: ReturnType<typeof resolveDictionaryForFlag>["processVsmExecutionUi"]["execution"],
+  iteration: number,
+): Record<InteractiveProcessDrawerStatus, string> {
+  return {
+    RUNNING: execCopy.statusRunning,
+    WAITING_EXTERNAL_GATE: execCopy.statusWaitingExternal,
+    WAITING_SUBSTEP_HITL: execCopy.statusWaitingSubstepHitl,
+    WAITING_WRITE_PREVIEW: execCopy.statusWaitingWritePreview,
+    WAITING_FINAL_ANCHOR: execCopy.statusWaitingFinalAnchor,
+    COMPLETED_APPROVED: execCopy.statusCompletedApproved,
+    RETURN_LOOP_TRIGGERED: formatI18nTemplate(execCopy.statusReturnLoopTemplate, { iteration }),
+    SLA_SUSPENDED: execCopy.statusSlaSuspended,
+    FAILED_GATES: execCopy.statusFailedGates,
+  };
+}
+
+export function buildFallbackFocusWorkflow(runId: string, defaultTitle: string) {
+  return {
+    id: runId,
+    slug: runId,
+    title: defaultTitle,
+    pack_id: "orcia-pack-custom",
+    vsm_step_num: null,
+    version: "1.0.0",
+    status: "published" as const,
+    orchestration_type: "deterministic_dbos" as const,
+    reflexive_objective: null,
+    execution_mode: "native_orcia" as const,
+    agent_ref: "@assistant",
+    skills_refs: [],
+    knowledge_base_refs: [],
+    triggers: [],
+    contract: { inputs: [], outputs: [], exit_criteria: [] },
+    sub_steps: [],
+    controls: { deterministic_gates: [], probabilistic_evaluations: [] },
+    guardrails: [],
+  };
+}

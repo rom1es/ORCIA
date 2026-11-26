@@ -37,6 +37,8 @@ test.describe("Catalogue agents, chaîne de valeur, studio cinq blocs, autonomie
     await expect(page.getByTestId("pinned-assistant-open-btn")).toBeVisible();
 
     await openProcessesHubPage(page);
+    await page.getByTestId("processes-tab-value-stream").click();
+    await expect(page.getByTestId("processes-hub-vsm-hero-card")).toBeVisible({ timeout: 15000 });
     await page.getByTestId("open-interactive-vsm-btn").click();
     await expect(page.getByTestId("vsm-interactive-view")).toBeVisible({ timeout: 30000 });
     await openVsmPage(page, "vsm-mon-compte-idea-to-prod");
@@ -70,11 +72,11 @@ test.describe("Catalogue agents, chaîne de valeur, studio cinq blocs, autonomie
 
     await page.getByTestId("studio-launch-interactive-run-btn").click();
     await expect(page.getByTestId("interactive-run-hitl-drawer")).toBeVisible({ timeout: 20000 });
-    await expect(page.getByTestId("anchor-action-1-accept-btn")).toBeVisible({ timeout: 15000 });
-    await expect(page.getByTestId("anchor-action-2-amend-diff-btn")).toBeVisible();
-    await expect(page.getByTestId("anchor-action-3-reject-loop-btn")).toBeVisible();
+    await expect(page.getByTestId("approve-substep-checkpoint-btn")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId("artifact-mode-edit-btn")).toBeVisible();
+    await expect(page.getByTestId("toggle-request-corrections-popover-btn")).toBeVisible();
     await expect(page.getByTestId("anchor-action-4-suspend-sla-btn")).toBeVisible();
-    await page.getByTestId("anchor-action-1-accept-btn").click();
+    await page.getByTestId("approve-substep-checkpoint-btn").click();
 
     await reloadClearingStorage(page);
     await expect(page.getByTestId("workflow-five-blocks-studio-page")).toBeVisible({

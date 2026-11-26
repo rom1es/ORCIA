@@ -44,7 +44,12 @@ export const PROCESS_STUDIO_UI_EN: ProcessStudioUiDictionary = {
     statusActiveBadge: "Active",
     statusDraftBadge: "Draft",
     launchProcessBtn: "Launch process",
+    launchingRunBtn: "Launching…",
     customizeInStudioBtn: "Customize in Studio",
+    tabsAriaLabel: "My Processes views",
+    tabValidationsAndRuns: "Reviews & Runs",
+    tabBusinessProcesses: "Business Processes",
+    tabValueStream: "Value Stream",
     vsmOverviewEyebrow: "END-TO-END VALUE STREAM (4 PHASES · 11 STEPS)",
     vsmOverviewSubtitle:
       "Explore how the 11 steps connect teams and AI agents, human decision points, and process improvements.",

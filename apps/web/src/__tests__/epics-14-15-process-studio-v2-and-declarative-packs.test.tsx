@@ -91,8 +91,6 @@ describe("Epics 14 & 15 — ORCIA Process Studio v2, Interactive VSM & Declarati
     );
 
     expect(screen.getByTestId("processes-hub-v2-page")).toBeDefined();
-    expect(screen.getByTestId("processes-active-dossiers-card")).toBeDefined();
-    expect(screen.getByTestId("processes-hub-vsm-hero-card")).toBeDefined();
     expect(screen.getByTestId("bounded-workflow-card-wf-01-qualification-prd")).toBeDefined();
     expect(screen.getByTestId("bounded-workflow-card-wf-08-dev-external-gate")).toBeDefined();
 
@@ -101,18 +99,25 @@ describe("Epics 14 & 15 — ORCIA Process Studio v2, Interactive VSM & Declarati
     expect(screen.queryByTestId("pack-builder-studio-view")).toBeNull();
     expect(screen.getByTestId("processes-hub-v2-page").textContent).not.toContain("DBOS Transact");
 
-    // Launch/review a dossier directly inside /processes without opening Studio
+    fireEvent.click(screen.getByTestId("processes-tab-validations"));
+    expect(screen.getByTestId("processes-active-dossiers-card")).toBeDefined();
+    fireEvent.click(screen.getByTestId("processes-tab-catalog"));
+
+    // Launch a process -> navigates to dedicated /processes/runs/$runId Focus Review, then back to /processes
     fireEvent.click(screen.getByTestId("execute-workflow-btn-wf-01-qualification-prd"));
-    expect(screen.getByTestId("interactive-run-hitl-drawer")).toBeDefined();
-    fireEvent.click(screen.getByTestId("close-interactive-run-drawer-btn"));
-    expect(screen.queryByTestId("interactive-run-hitl-drawer")).toBeNull();
+    expect(await screen.findByTestId("process-run-focus-review-page")).toBeDefined();
+    fireEvent.click(screen.getByTestId("focus-review-back-to-processes-btn"));
+    expect(await screen.findByTestId("processes-hub-v2-page")).toBeDefined();
+    fireEvent.click(screen.getByTestId("processes-tab-catalog"));
 
     // Filter by External Delegated Gate
     fireEvent.click(screen.getByTestId("workflows-hub-filter-external_delegated"));
     expect(screen.getByTestId("bounded-workflow-card-wf-08-dev-external-gate")).toBeDefined();
     fireEvent.click(screen.getByTestId("workflows-hub-filter-all"));
 
-    // Navigate to Interactive VSM (/processes/vsm/vsm-mon-compte-idea-to-prod)
+    // Navigate to Interactive VSM via Value Stream tab
+    fireEvent.click(screen.getByTestId("processes-tab-value-stream"));
+    expect(screen.getByTestId("processes-hub-vsm-hero-card")).toBeDefined();
     await act(async () => {
       fireEvent.click(screen.getByTestId("open-interactive-vsm-btn"));
     });
@@ -234,16 +239,13 @@ describe("Epics 14 & 15 — ORCIA Process Studio v2, Interactive VSM & Declarati
     );
     await waitFor(() => {
       expect(
-        (screen.getByTestId("anchor-action-2-amend-diff-btn") as HTMLButtonElement).disabled,
-      ).toBe(false);
-      expect(
         (screen.getByTestId("anchor-action-1-accept-btn") as HTMLButtonElement).disabled,
       ).toBe(false);
     });
     const initialSha = screen.getByTestId("claim-check-sha256").textContent;
 
-    // Action 2: Amend Diff in S3 -> recomputes SHA-256
-    fireEvent.click(screen.getByTestId("anchor-action-2-amend-diff-btn"));
+    // Action 2: Amend Diff in S3 via Preview / Edit toggle -> recomputes SHA-256
+    fireEvent.click(screen.getByTestId("artifact-mode-edit-btn"));
     fireEvent.change(screen.getByTestId("amend-diff-markdown-textarea"), {
       target: {
         value: "# Qualification & PRD Amendé par le PO\n\nHypothèse de gain WSJF confirmée (+30%).",
@@ -252,7 +254,8 @@ describe("Epics 14 & 15 — ORCIA Process Studio v2, Interactive VSM & Declarati
     fireEvent.click(screen.getByTestId("confirm-amend-diff-btn"));
     expect(screen.getByTestId("claim-check-sha256").textContent).not.toBe(initialSha);
 
-    // Action 3: Reject & Trigger Return Loop -> re-enters in 'corrections' mode at iter-2
+    // Action 3: Progressive disclosure -> Reject & Trigger Return Loop -> re-enters in 'corrections' mode at iter-2
+    fireEvent.click(screen.getByTestId("toggle-request-corrections-popover-btn"));
     fireEvent.click(screen.getByTestId("anchor-action-3-reject-loop-btn"));
     expect(screen.getByTestId("run-drawer-reentry-mode").textContent).toContain(
       "mode: corrections (iter-2)",

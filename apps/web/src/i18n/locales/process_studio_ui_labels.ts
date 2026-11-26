@@ -49,7 +49,12 @@ export interface ProcessStudioUiDictionary {
     readonly statusActiveBadge: string;
     readonly statusDraftBadge: string;
     readonly launchProcessBtn: string;
+    readonly launchingRunBtn: string;
     readonly customizeInStudioBtn: string;
+    readonly tabsAriaLabel: string;
+    readonly tabValidationsAndRuns: string;
+    readonly tabBusinessProcesses: string;
+    readonly tabValueStream: string;
     readonly vsmOverviewEyebrow: string;
     readonly vsmOverviewSubtitle: string;
     readonly exploreFullVsmBtn: string;

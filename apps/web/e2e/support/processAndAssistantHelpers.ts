@@ -35,11 +35,11 @@ export async function openGatesPage(page: Page): Promise<void> {
   });
 }
 
-/** Navigue vers `/processes` et attend le hub Process Studio v2. */
+/** Navigate to `/processes` and wait for the tabbed Process Studio v2 hub. */
 export async function openProcessesHubPage(page: Page): Promise<void> {
   await page.goto("/processes");
   await expect(page.getByTestId("processes-hub-v2-page")).toBeVisible({ timeout: 30000 });
-  await expect(page.getByTestId("processes-hub-vsm-hero-card")).toBeVisible({ timeout: 15000 });
+  await expect(page.getByTestId("processes-hub-tabs")).toBeVisible({ timeout: 15000 });
 }
 
 /** Navigue vers `/processes/vsm/$vsmId` et attend la carte de chaîne de valeur interactive. */

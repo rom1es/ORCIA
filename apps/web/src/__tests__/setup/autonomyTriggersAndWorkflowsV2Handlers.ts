@@ -191,7 +191,7 @@ export function handleAutonomyTriggersAndWorkflowsV2Route(params: {
       items: [
         {
           id: "vsm-mon-compte-idea-to-prod",
-          title: "Chaîne de Valeur Mon Compte",
+          title: "Chaîne de Valeur SDLC",
           subtitle: "Parcours complet en 11 étapes",
         },
       ],
@@ -297,7 +297,7 @@ export function handleAutonomyTriggersAndWorkflowsV2Route(params: {
   if (runGetMatch && method === "GET") {
     const runId = decodeURIComponent(runGetMatch[1] ?? "");
     const found = backendState.workflowV2Runs.get(runId);
-    if (!found) return jsonResponse({ detail: `Run '${runId}' not found` }, 404);
+    if (!found) return jsonResponse({ status: 404, detail: `Run '${runId}' not found` }, 404);
     return jsonResponse({ run: found });
   }
 
