@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 63,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 246,
+    "techLeadReportsCount": 247,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -547,6 +547,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-26",
+      "phaseOrStory": "Story 30.6",
+      "reportFile": "30-6-epic-30-anti-regression-audits-bilingual-e2e-and-closure-tech-lead-report.md",
+      "domain": "Epic 30 Lot 4 & Closure — Anti-Regression CI Guards, Bilingual FR/EN Playwright E2E Lock, Contextual Help & Doc Sync, and Closure (UX30-16, CAP-022, CAP-070..CAP-072, CAP-082, CAP-090, CAP-091, CAP-100, CAP-140, CAP-160)",
+      "summary": "Closed (done, epic-30: done, post-P1-1/P2-1/P2-4 independent Testing Verifier verified): added CI anti-regression audits (epic-30-ux-hardening-audit.test.ts 3/3, test_story_30_6_lifecycle_and_modal_guards_audit.py), $0 golden empty-evidence prompt evals (assistant_clean_prompt_30_6.jsonl + test_story_30_6_assistant_clean_prompt_golden.py), red-team tests (test_story_30_6_prompt_leak_and_draft_redteam.py), bilingual fr/en Day-0 Desktop Playwright E2E (30-epic-30-ux-hardening-and-lifecycle.spec.ts), test_e2e_sql_coverage_audit.py (28 specs / 62 blocks), capabilities.yaml, Zone 4 help (docs/help/{fr,en}/{assistant,processes,agents}.md), and DESIGN.md/EXPERIENCE.md; all Epic 30 production files <= 299 L (workflows.py 292 L, _workflows_pending_runs.py 295 L, dependencies/reflexive_execution.py 274 L); verified 91% 3-module branch coverage (44 tests), 1,154 passed tests/unit, 193 passed tests/evals+security+contract, 7 passed post-fix PG18+Redis integration, 9/9 Turbo (@orcia/api-client 3/20 + @orcia/ui 40/154 + @orcia/web 95/369 = 543 JS/TS tests, i18n Gates 1–4 = 0), 5 passed (1.9m) post-fix Desktop E2E (12-epic16, 20, 30; 30 passed, 1 mobile-only skipped, 0 failed full closure batch with env -u ORCIA_E2E_SEED_FIXTURES), ruff (1,776 files)/mypy --strict (866 files)/lint-imports (5/5, 907 files, 6,581 deps)/lint_spine (0)/export_openapi (0-diff)/detect-secrets clean, and gitnexus analyze (47,932 nodes / 141,600 edges / 786 clusters / 1,533 flows)."
+    },
     {
       "date": "2026-11-26",
       "phaseOrStory": "Story 30.5",

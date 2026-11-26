@@ -86,7 +86,7 @@ components:
    - **Center**: **9 Fixed Unnumbered Navigation Entries** (rendered with monochrome `<OrciaIcon />` wireframe SVGs; no "New discussion" button in the sidebar):
      - **`Cockpit`** (Active scope overview, unified 6-step onboarding checklist while `< 6/6`, priority human decisions only when pending items exist — max 3 surface blocks).
      - **`My Assistant`** (Conversational AI workspace active as soon as a chat model is configured, with `+ New conversation` & `Assistant settings` header actions, 3 tabs `Active discussion | Saved (N) | Folders (N)`, verified `[S1]`/`[G1]`/`[O1]` citations, and speed/effort selector).
-     - **`My Processes`** (Unlocked once `1` AI model is active; `Published | Drafts | Runs & Decisions` tabs across Review Focus View and Studio).
+     - **`My Processes`** (Unlocked once `1` AI model is active; `Validations & Runs | Business Processes | Value Stream` tabs across Focus Review and Studio).
      - **`My Agents`** (`Space Assistant` pinned card, `@handle` specialized agents configured in 6 governed blocks, `/skill` catalog, and `Tool Servers & MCP`).
      - **`My Spaces`** (Single active-workspace view structured in 5 unnumbered tabs: `Onboarding & Overview | Documents & Sources | Deliverables & Artifacts | Glossary & Business Rules | Members & Space Settings`, including automatic `PRIVATE_USER` personal workspace).
      - **`My Organization`** (`/organization`, directly under `My Spaces`, visible to all authenticated users: read-only org tree for standard members, scoped unit creation and member invitations according to `can_*` grants for Division/Team Leads and Admins).
@@ -206,7 +206,17 @@ To eliminate cross-screen header fragmentation and overloaded solid-Cobalt butto
 3. **White Surface Data Card (`<OrciaDataCard />`, `.orcia-ds-data-card`)**:
    - Frames KPI strips, filter bars, tables, lists, and detail panels on the `#EAF2FB` canvas (`var(--orcia-surface-card)`, `var(--orcia-border-subtle)`) with optional header bar (`icon`, `<h2>` `title`, `subtitle`, `metaBadge`, `actions`) and optional `footer`.
 4. **Three-Tier Visual Grammar & Disabled Affordance**:
-   - **Primary CTAs (`.orcia-ds-btn-primary`)**: Reserved exclusively for at most 1 primary creation/submission action per header; repeated per-row or per-card actions use secondary/subtle styling.
-   - **Tabs (`.orcia-ds-tab-strip-item`)**: Underline or neutral segmented tabs dedicated to view switching.
+   - **Primary CTAs (`.orcia-ds-btn-primary`)**: Reserved exclusively for at most 1 primary creation/submission action per header or focus action banner; repeated per-row or per-card actions use secondary/subtle styling.
+   - **Tabs (`.orcia-ds-tab-strip-item`)**: Underline or neutral segmented tabs dedicated to view switching (e.g. `Validations & Runs` | `Business Processes` | `Value Stream` on `/processes`, defaulting to `Business Processes` with zero badge when `0` pending runs exist).
    - **Filters & Scope Pills (`.orcia-ds-filter-pill`)**: Neutral rounded-full pills (`var(--color-filter-pill-bg)` -> `var(--color-filter-pill-active-bg)`).
    - **Disabled Buttons**: `.orcia-ds-btn-secondary:disabled` and `.orcia-ds-btn-ghost:disabled` enforce `opacity: 0.48; cursor: not-allowed; pointer-events: none;`, matching `.orcia-ds-btn-primary:disabled` (`0.48`) and `.orcia-ds-btn-danger:disabled` (`0.50`).
+
+## Epic 30 Interaction & Lifecycle Invariants (`UX30-01`..`UX30-16`)
+
+1. **Honest Modal Save & Inline Alerts (`AssistantGovernanceModalAndStudio`, `AgentDetailAndSandboxModal`)**:
+   - Every configuration dialog uses explicit bottom-right `<RgaaDialogFooterActions />` (`Cancel` / `Close` + primary Cobalt `Save` with `<OrciaSpinner />` and `<Enter>` submit) with zero keystroke auto-save and zero `display: none` hidden Save buttons.
+   - `isDirty` is computed strictly against hydrated server baselines so reverting a field clears `isDirty` and closes cleanly without false warnings; `Saved` confirmation appears only after server persistence succeeds; errors render inside an inline `[role="alert"]` banner inside the active modal dialog.
+2. **Focus Review (`/processes/runs/$runId`)**:
+   - Separates process execution from `/processes` tabs onto a dedicated 3-zone layout: **Zone 1** sticky `ProcessRunActionBanner` (strictly 1 state-gated primary Cobalt CTA + progressive-disclosure correction popover), **Zone 2** `ProcessRunArtifactPane` (65% desktop width, Markdown + clickable `#L` source inspection), and **Zone 3** `ProcessRunReasoningRail` (35% desktop width, `defaultCollapsedWhenCompleted={true}`).
+3. **`DRAFT` vs `ACTIVE` Agent Lifecycle (`Mes Agents`)**:
+   - New or duplicated agents start as `DRAFT` (`UNTESTED`), display factual Test Bench status (`UNTESTED | PASSED | FAILED`), stay excluded from `@agent` Assistant mentions, Process delegation, and external MCP exposure (`HTTP 422`), and promote to `ACTIVE` (`PASSED`) only upon passing Test Bench execution.

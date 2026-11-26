@@ -16,16 +16,16 @@ Cet écran vous permet de créer, paramétrer et tester des agents dédiés à u
 
 ## En 3 gestes
 
-1. Consultez la liste des agents et compétences déjà actifs sur votre Espace ou votre organisation.
-2. Cliquez sur « + Nouvel agent » pour définir son rôle, son niveau de réflexion par défaut, ses sources autorisées et ses garde-fous.
-3. Ouvrez la fiche d'un agent pour lancer un essai à blanc et vérifier ses réponses avant de l'associer à un processus.
+1. Consultez les agents et compétences disponibles : chaque nouvel agent créé ou dupliqué démarre au statut « Brouillon » (« À tester »).
+2. Cliquez sur « + Nouvel agent » ou ouvrez la fiche « Configurer & Tester (6 blocs) » pour définir son rôle, ses sources autorisées et ses garde-fous, puis validez explicitement vos modifications via « Enregistrer » en bas à droite.
+3. Lancez un essai concluant dans le Banc de Test intégré pour promouvoir l'agent au statut « Actif » (« Validé au Banc de Test ») avant de l'appeler avec @, de l'associer à un processus ou de l'exposer en outil externe.
 
 ## Un exemple réel
 
-Yanis crée l'agent « Analyste Conformité DORA », lui attribue uniquement la lecture du référentiel réglementaire de son Espace et l'interdiction d'écrire dans les outils externes sans accord humain, puis l'appelle directement depuis Mon Assistant via « @ ».
+Yanis crée l'agent « Analyste Conformité DORA » (statut initial « Brouillon »), ajuste ses blocs et clique sur « Enregistrer », puis exécute un test de vérification concluant : l'agent passe « Actif » et devient immédiatement utilisable dans Mon Assistant via « @ » et dans Mes Processus.
 
 ## Ce qui coince souvent
 
-- **Un agent n'apparaît pas dans les suggestions « @ » de Mon Assistant** : vérifiez que l'agent est bien publié sur votre Espace ou sur une portée englobant votre équipe.
-- **Une compétence refuse d'accéder à un outil externe** : contrôlez les autorisations d'outils associées à l'agent et l'état de vos connexions personnelles dans Mon Compte.
-- **Les menus Agents sont grisés au premier démarrage** : configurez au moins un modèle IA dans Administration › Modèles IA pour débloquer les essais.
+- **Un agent n'apparaît pas dans « @ » ou dans Mes Processus** : tant qu'un agent est « Brouillon » ou « À tester », il reste exclu de Mon Assistant, des processus et de l'exposition externe ; exécutez un essai concluant au Banc de Test pour l'activer.
+- **La case « Exposer en outil externe » est verrouillée** : seuls les agents personnalisés « Actifs » peuvent être exposés en outil externe (dupliquez d'abord un modèle de pack si vous souhaitez l'exposer).
+- **Les menus Agents sont grisés au premier démarrage** : configurez au moins un modèle IA dans Administration › Modèles IA pour débloquer les essais du Banc de Test.

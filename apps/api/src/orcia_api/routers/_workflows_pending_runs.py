@@ -9,10 +9,7 @@ from fastapi import HTTPException, Request
 from orcia_api.dependencies._process_llm_bridge import enforce_live_process_prerequisites
 from orcia_api.routers._agents_lifecycle_guards import enforce_active_agents_for_workflow
 from orcia_api.routers._finops_scope_guards import resolve_finops_read_scope
-from orcia_api.routers._workflows_helpers import (
-    enforce_not_observer,
-    load_workflows_store,
-)
+from orcia_api.routers._workflows_helpers import enforce_not_observer, load_workflows_store
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.process_studio_v2 import (
     HitlSignalRequest,
@@ -88,10 +85,7 @@ async def list_pending_process_runs_handler(
             eff_scope_id = None
 
     allowed_workspace_ids = await resolve_finops_read_scope(
-        request,
-        user,
-        eff_scope_type,
-        eff_scope_id,
+        request, user, eff_scope_type, eff_scope_id
     )
     rows = await sql_runs_store.list_pending_and_active_runs(
         workspace_ids=allowed_workspace_ids,
@@ -133,6 +127,16 @@ async def persist_workflow_v2_run_state(
     )
 
 
+def _remember_run_workspace(
+    runs_store: dict[str, BoundedWorkflowRunState],
+    run_id: str,
+    workspace_id: str | None,
+) -> None:
+    ws_map = getattr(runs_store, "workspaces", None)
+    if isinstance(ws_map, dict):
+        ws_map[run_id] = workspace_id
+
+
 async def load_or_rehydrate_run_state(
     runs_store: dict[str, BoundedWorkflowRunState],
     sql_runs_store: SqlWorkflowV2RunsStore,
@@ -141,6 +145,15 @@ async def load_or_rehydrate_run_state(
     """Load run state from RAM cache or cold PG18 `workflow_v2_runs` (`F5` survival)."""
     cached = runs_store.get(run_id)
     if cached is not None:
+        ws_map = getattr(runs_store, "workspaces", None)
+        if isinstance(ws_map, dict) and run_id in ws_map:
+            return cached, ws_map[run_id]
+        raw_fallback = await sql_runs_store.get_run(run_id)
+        if raw_fallback is not None:
+            ws_raw = raw_fallback.get("workspace_id")
+            ws_id = str(ws_raw).strip() if isinstance(ws_raw, str) and ws_raw.strip() else None
+            _remember_run_workspace(runs_store, run_id, ws_id)
+            return cached, ws_id
         return cached, None
     raw = await sql_runs_store.get_run(run_id)
     if raw is None:
@@ -150,7 +163,26 @@ async def load_or_rehydrate_run_state(
     clean_payload = {k: v for k, v in raw.items() if k != "workspace_id"}
     restored = BoundedWorkflowRunState.model_validate(clean_payload)
     runs_store[run_id] = restored
+    _remember_run_workspace(runs_store, run_id, ws_id)
     return restored, ws_id
+
+
+async def execute_get_workflow_v2_run_handler(
+    run_id: str,
+    request: Request,
+    runs_store: dict[str, BoundedWorkflowRunState],
+    sql_runs_store: SqlWorkflowV2RunsStore,
+    *,
+    persona_key: str | None = None,
+) -> WorkflowV2RunResponse:
+    """Resolve actor, enforce `ScopeAccessGuard` on workspace runs, and return run state."""
+    user = resolve_request_user(request, persona_key=persona_key)
+    run_state, stored_ws_id = await load_or_rehydrate_run_state(runs_store, sql_runs_store, run_id)
+    if run_state is None:
+        raise HTTPException(status_code=404, detail=f"Run '{run_id}' not found")
+    if stored_ws_id:
+        await resolve_finops_read_scope(request, user, "WORKSPACE", stored_ws_id)
+    return WorkflowV2RunResponse(run=run_state)
 
 
 async def execute_start_workflow_v2_run_handler(
@@ -205,6 +237,7 @@ async def execute_start_workflow_v2_run_handler(
     )
     run_state = BoundedWorkflowRunState.from_unified_result(unified)
     runs_store[run_id] = run_state
+    _remember_run_workspace(runs_store, run_id, resolved_ws_id)
     await persist_workflow_v2_run_state(
         sql_runs_store,
         run_state=run_state,
@@ -224,11 +257,14 @@ async def execute_hitl_signal_handler(
     *,
     persona_key: str | None = None,
 ) -> WorkflowV2RunResponse:
-    """Hydrate run state, apply HITL signal, and persist updated state in PG18."""
+    """Hydrate run state, enforce scope/observer guards, apply HITL signal, and persist."""
     run_state, stored_ws_id = await load_or_rehydrate_run_state(runs_store, sql_runs_store, run_id)
-    enforce_not_observer(request, persona_key=persona_key, workspace_id=stored_ws_id)
+    actor = enforce_not_observer(request, persona_key=persona_key, workspace_id=stored_ws_id)
     if run_state is None:
         raise HTTPException(status_code=404, detail=f"Run '{run_id}' not found")
+    if stored_ws_id:
+        await resolve_finops_read_scope(request, actor, "WORKSPACE", stored_ws_id)
+        enforce_not_observer(request, persona_key=persona_key, workspace_id=stored_ws_id)
 
     wf_store = await load_workflows_store(request, sql_store)
     wf = wf_store.get(run_state.workflow_id) or wf_store.get(run_state.workflow_slug)
@@ -237,6 +273,7 @@ async def execute_hitl_signal_handler(
 
     updated = apply_hitl_signal_to_run(wf, run_state, payload)
     runs_store[run_id] = updated
+    _remember_run_workspace(runs_store, run_id, stored_ws_id)
     await persist_workflow_v2_run_state(
         sql_runs_store,
         run_state=updated,
@@ -247,6 +284,7 @@ async def execute_hitl_signal_handler(
 
 
 __all__ = [
+    "execute_get_workflow_v2_run_handler",
     "execute_hitl_signal_handler",
     "execute_start_workflow_v2_run_handler",
     "extract_workflow_actor_slug",

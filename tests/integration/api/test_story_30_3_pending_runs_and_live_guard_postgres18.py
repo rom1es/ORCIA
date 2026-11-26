@@ -27,6 +27,7 @@ os.environ["TESTCONTAINERS_RYUK_DISABLED"] = "true"
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 _SEEDED_WS_ID = "0192c4e0-0000-7000-8000-000000000201"
+_CONF_WS_ID = "0192c4e0-0000-7000-8000-000000000203"
 _FORBIDDEN_WS_ID = "0195f000-0000-7000-8000-000000009999"
 
 
@@ -152,6 +153,7 @@ async def test_story_30_3_pg18_pending_runs_scope_guard_cold_rehydration_and_liv
             ou_uuid = UUID("0192c4e0-0000-7000-8000-000000000101")
             other_ou_uuid = UUID("0192c4e0-0000-7000-8000-000000000102")
             marc_uuid = UUID("0192c4e0-0000-7000-8000-000000000603")
+            nadia_uuid = UUID("0192c4e0-0000-7000-8000-000000000604")
             await conn.execute(
                 sa.text(
                     "INSERT INTO org_units (id, slug, name, unit_type) "
@@ -165,11 +167,18 @@ async def test_story_30_3_pg18_pending_runs_scope_guard_cold_rehydration_and_liv
                 sa.text(
                     "INSERT INTO users (id, email, display_name, auth_mode, "
                     "human_profile_archetype, platform_role, primary_org_unit_id, is_active) "
-                    "VALUES (:id, 'marc.lead@orcia.io', 'Marc', 'HYBRID', "
-                    "'TEAM_LEAD', 'CONTRIBUTOR', :ou_id, TRUE) "
+                    "VALUES (:marc_id, 'marc.lead@orcia.io', 'Marc', 'HYBRID', "
+                    "'TEAM_LEAD', 'CONTRIBUTOR', :ou_id, TRUE), "
+                    "(:nadia_id, 'nadia.dev@orcia.io', 'Nadia', 'LOCAL', "
+                    "'DEVELOPER', 'CONTRIBUTOR', :other_ou_id, TRUE) "
                     "ON CONFLICT (id) DO NOTHING;"
                 ),
-                {"id": marc_uuid, "ou_id": ou_uuid},
+                {
+                    "marc_id": marc_uuid,
+                    "nadia_id": nadia_uuid,
+                    "ou_id": ou_uuid,
+                    "other_ou_id": other_ou_uuid,
+                },
             )
             await conn.execute(
                 sa.text("UPDATE org_units SET lead_user_id = :lead_id WHERE id = :id;"),
@@ -179,11 +188,14 @@ async def test_story_30_3_pg18_pending_runs_scope_guard_cold_rehydration_and_liv
                 sa.text(
                     "INSERT INTO workspaces (id, slug, name, owner_org_unit_id, visibility_mode) "
                     "VALUES (:id, 'ws-30-3', 'Workspace 30.3', :ou_id, 'STANDARD'), "
+                    "(:conf_id, 'ws-30-3-conf', 'Confidential 30.3', :ou_id, "
+                    "'CONFIDENTIAL_RESTRICTED'), "
                     "(:fid, 'ws-30-3-forbidden', 'Forbidden WS', :other_ou_id, 'STANDARD') "
                     "ON CONFLICT (id) DO NOTHING;"
                 ),
                 {
                     "id": UUID(_SEEDED_WS_ID),
+                    "conf_id": UUID(_CONF_WS_ID),
                     "ou_id": ou_uuid,
                     "fid": UUID(_FORBIDDEN_WS_ID),
                     "other_ou_id": other_ou_uuid,
@@ -193,14 +205,20 @@ async def test_story_30_3_pg18_pending_runs_scope_guard_cold_rehydration_and_liv
                 sa.text(
                     "INSERT INTO workspace_memberships "
                     "(id, workspace_id, user_id, role, access_mode) "
-                    "VALUES (:id, :ws_id, :user_id, 'TEAM_LEAD', "
-                    "'CONTRIBUTOR_ACTION_REQUIRED') "
+                    "VALUES (:m_pay, :ws_id, :marc_id, 'TEAM_LEAD', "
+                    "'CONTRIBUTOR_ACTION_REQUIRED'), "
+                    "(:m_conf, :conf_id, :marc_id, 'TEAM_LEAD', 'CONTRIBUTOR_ACTION_REQUIRED'), "
+                    "(:m_obs, :ws_id, :nadia_id, 'OBSERVER', 'READ_ONLY_OBSERVER') "
                     "ON CONFLICT DO NOTHING;"
                 ),
                 {
-                    "id": UUID("0195f000-0000-7000-8000-000000003039"),
+                    "m_pay": UUID("0195f000-0000-7000-8000-000000003039"),
+                    "m_conf": UUID("0195f000-0000-7000-8000-000000003040"),
+                    "m_obs": UUID("0195f000-0000-7000-8000-000000003041"),
                     "ws_id": UUID(_SEEDED_WS_ID),
-                    "user_id": marc_uuid,
+                    "conf_id": UUID(_CONF_WS_ID),
+                    "marc_id": marc_uuid,
+                    "nadia_id": nadia_uuid,
                 },
             )
 
@@ -220,6 +238,14 @@ async def test_story_30_3_pg18_pending_runs_scope_guard_cold_rehydration_and_liv
             run_id = run["run_id"]
             assert run["status"] == "WAITING_SUBSTEP_HITL"
 
+            conf_start = await client1.post(
+                "/api/v1/workflows/v2/wf-01-qualification-prd/runs",
+                params={"persona_key": "marc"},
+                json={"inputs": {"demande_source": "CONF-303"}, "workspace_id": _CONF_WS_ID},
+            )
+            assert conf_start.status_code == 200, conf_start.text
+            conf_run_id = conf_start.json()["run"]["run_id"]
+
             # Unauthorized workspace rejected by ScopeAccessGuard for non-admin user
             denied = await client1.get(
                 "/api/v1/workflows/v2/runs",
@@ -227,7 +253,23 @@ async def test_story_30_3_pg18_pending_runs_scope_guard_cold_rehydration_and_liv
             )
             assert denied.status_code == 403
 
-            # Observer rejected on mutation
+            # Non-member rejected on CONFIDENTIAL_RESTRICTED GET run & RAM-hot HITL signal
+            conf_get_denied = await client1.get(
+                f"/api/v1/runs/{conf_run_id}",
+                params={"persona_key": "nadia"},
+            )
+            assert conf_get_denied.status_code == 403
+            assert conf_get_denied.json()["error_code"] == "ERR_SCOPE_ACCESS_DENIED"
+
+            conf_sig_denied = await client1.post(
+                f"/api/v1/runs/{conf_run_id}/hitl-signal",
+                params={"persona_key": "nadia"},
+                json={"action": "APPROVE", "actor_id": "nadia"},
+            )
+            assert conf_sig_denied.status_code == 403
+            assert conf_sig_denied.json()["error_code"] == "ERR_SCOPE_ACCESS_DENIED"
+
+            # Global & workspace-scoped READ_ONLY_OBSERVER rejected on RAM-hot HITL signal
             obs_sig = await client1.post(
                 f"/api/v1/runs/{run_id}/hitl-signal",
                 params={"persona_key": "claire"},
@@ -235,6 +277,14 @@ async def test_story_30_3_pg18_pending_runs_scope_guard_cold_rehydration_and_liv
             )
             assert obs_sig.status_code == 403
             assert obs_sig.json()["error_code"] == "ERR_OBSERVER_MODE_READ_ONLY"
+
+            ws_obs_sig = await client1.post(
+                f"/api/v1/runs/{run_id}/hitl-signal",
+                params={"persona_key": "nadia"},
+                json={"action": "APPROVE", "actor_id": "nadia"},
+            )
+            assert ws_obs_sig.status_code == 403
+            assert ws_obs_sig.json()["error_code"] == "ERR_OBSERVER_MODE_READ_ONLY"
 
         # Direct SQL verification in PostgreSQL 18
         async with engine.connect() as conn:
@@ -274,9 +324,27 @@ async def test_story_30_3_pg18_pending_runs_scope_guard_cold_rehydration_and_liv
             assert pending_global.status_code == 200
             assert any(item["run_id"] == run_id for item in pending_global.json()["items"])
 
-            cold_get = await client2.get(f"/api/v1/runs/{run_id}")
+            cold_get = await client2.get(
+                f"/api/v1/runs/{run_id}",
+                params={"persona_key": "marc"},
+            )
             assert cold_get.status_code == 200
             assert cold_get.json()["run"]["run_id"] == run_id
+
+            cold_conf_denied = await client2.get(
+                f"/api/v1/runs/{conf_run_id}",
+                params={"persona_key": "nadia"},
+            )
+            assert cold_conf_denied.status_code == 403
+            assert cold_conf_denied.json()["error_code"] == "ERR_SCOPE_ACCESS_DENIED"
+
+            cold_ws_obs_denied = await client2.post(
+                f"/api/v1/runs/{run_id}/hitl-signal",
+                params={"persona_key": "nadia"},
+                json={"action": "APPROVE", "actor_id": "nadia"},
+            )
+            assert cold_ws_obs_denied.status_code == 403
+            assert cold_ws_obs_denied.json()["error_code"] == "ERR_OBSERVER_MODE_READ_ONLY"
 
             # Advance through sub-steps & final anchor to COMPLETED_APPROVED
             for _ in range(4):

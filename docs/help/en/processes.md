@@ -9,25 +9,27 @@ bound_routes:
   - /processes
   - /processes/studio/$workflowId
   - /processes/vsm/$vsmId
-summary_what_for: "My Processes gathers your reusable workflows, value stream mapping, and the visual studio to define steps, delegated agents, and human approval checkpoints."
+  - /processes/runs/$runId
+summary_what_for: "My Processes separates pending validations, the business process catalog, and the value stream map, opening every run in a dedicated Focus Review centered on human decisions."
 ---
 
 ## What this screen is for
 
-Use this screen to browse, launch, and design governed business processes. Choose between milestone-driven execution (ordered steps with quality gates) and adaptive goal-driven execution while keeping full human control over approvals.
+This screen organizes your work into three tabs ("Validations & Runs", "Business Processes", and "Value Stream"). When zero runs await review, it opens straight onto "Business Processes". Each launched run opens a dedicated Focus Review highlighting the expected action, the primary deliverable, and a collapsible reasoning rail.
 
 ## In 3 steps
 
-1. Browse processes available in your Workspace and review their execution mode (Milestone-driven or Goal-driven).
-2. Click "Open Studio" to refine instructions, authorized agents, and approval gates, then save your draft.
-3. Start an execution or open the Value Stream Map to spot bottlenecks between human and automated stages.
+1. Browse "Business Processes" (selected automatically when no validations are pending) to inspect or launch a process in your active Space.
+2. Click "Open Studio" to refine instructions, authorized active agents, and approval gates, then save and publish.
+3. Open a run in Focus Review (single expected-action banner on top, deliverable pane on the left, collapsible reasoning on the right) to approve the stage, request targeted changes, or pause.
 
 ## A real example
 
-Claire opens the "Request Qualification & Scoping Brief" process, switches it to adaptive Goal-driven mode, authorizes the Product Orchestrator agent, and publishes the updated version for her team.
+Claire opens "My Processes" for her Space, launches "Request Qualification & Scoping Brief", and reviews the Focus screen: the top banner presents the single expected approval button while the deliverable remains clearly visible without being buried under agent reasoning.
 
 ## Common pitfalls
 
-- **A process remains in draft**: click "Publish" in the Studio so it becomes available for launch from the Cockpit.
-- **Studio recommends a desktop screen on mobile**: essential edits remain accessible on a phone, while full multi-block design is optimized for desktop monitors.
-- **A step is waiting for review**: open the execution drawer or visit the Cockpit to approve, amend, or loop back to an earlier step.
+- **A process run refuses to start**: verify that an active chat model is configured under Administration › AI Models and at least one source is attached to the active Space (or provide explicit run inputs).
+- **A process remains in draft**: click "Publish" in the Studio so it becomes active across your Space.
+- **Studio recommends a desktop screen on mobile**: you can review artifacts and respond to approvals on a phone, while full multi-block design is optimized for desktop monitors.
+- **A deliverable needs revisions**: click "Request changes" in the top Focus banner to target an earlier step with your feedback.

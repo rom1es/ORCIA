@@ -10,6 +10,7 @@ Wires `NonDeterministicReflexiveRuntime`, `SqlReflexiveSessionStore` (PostgreSQL
 from __future__ import annotations
 
 import os
+from typing import Any
 
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -226,13 +227,33 @@ def get_workflows_v2_runs_sql_store(request: Request) -> SqlWorkflowV2RunsStore:
     return store
 
 
+class WorkflowV2RunsCache(dict[str, BoundedWorkflowRunState]):
+    """In-memory run cache retaining each run's `workspace_id` across RAM hits."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.workspaces: dict[str, str | None] = {}
+
+    def clear(self) -> None:
+        super().clear()
+        self.workspaces.clear()
+
+    def __delitem__(self, key: str) -> None:
+        super().__delitem__(key)
+        self.workspaces.pop(key, None)
+
+    def pop(self, key: str, *args: Any) -> Any:
+        self.workspaces.pop(key, None)
+        return super().pop(key, *args)
+
+
 def get_workflow_v2_runs_store(request: Request) -> dict[str, BoundedWorkflowRunState]:
     """FastAPI `Depends` provider returning active `BoundedWorkflowRunState` inspection map."""
     store: dict[str, BoundedWorkflowRunState] | None = getattr(
         request.app.state, "workflow_v2_runs_store", None
     )
     if store is None:
-        store = {}
+        store = WorkflowV2RunsCache()
         request.app.state.workflow_v2_runs_store = store
     return store
 

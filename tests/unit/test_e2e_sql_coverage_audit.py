@@ -165,6 +165,16 @@ SPEC_ALLOWED_DOMAIN_TABLES: dict[str, frozenset[str]] = {
     "29-epic-29-canonical-headers-bilingual.spec.ts": frozenset(
         {"users", "workspaces", "user_preferences", "declarative_pack_bundles"}
     ),
+    "30-epic-30-ux-hardening-and-lifecycle.spec.ts": frozenset(
+        {
+            "user_preferences",
+            "workspace_customization_overrides",
+            "workspace_datasources",
+            "assistant_threads",
+            "workflow_v2_runs",
+            "catalog_items",
+        }
+    ),
     "shell.spec.ts": frozenset({"users", "platform_auth_settings"}),
 }
 
@@ -215,7 +225,7 @@ def _audit_spec_content(
 
 def test_all_e2e_specs_invoke_domain_postgresql_18_assertions_in_every_test_block() -> None:
     specs = sorted(E2E_DIR.glob("*.spec.ts"))
-    assert len(specs) == 27
+    assert len(specs) == 28
     assert set(SPEC_ALLOWED_DOMAIN_TABLES.keys()) == {p.name for p in specs}
 
     total_blocks = 0
@@ -237,7 +247,7 @@ def test_all_e2e_specs_invoke_domain_postgresql_18_assertions_in_every_test_bloc
         trivial_sql_blocks.extend(trivial)
         out_of_domain_blocks.extend(out_domain)
 
-    assert total_blocks == 60
+    assert total_blocks == 62
     assert blocks_missing_sql == []
     assert trivial_sql_blocks == []
     assert out_of_domain_blocks == []

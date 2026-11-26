@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 10-25-2026 09:10
-last_updated: 11-25-2026 22:16
+last_updated: 11-26-2026 11:35
 project: ORCIA
 project_key: NOKEY
 tracking_system: file-system
@@ -336,13 +336,13 @@ development_status:
   # Epic 30 — Honest Save Semantics, Clean Conversational Prompts, Real PG18 Process Runs & Focus Review, and Agent Lifecycle Hardening (UX30-01..UX30-16)
   # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-25-epic-30-assistant-processes-and-agents-ux-hardening.md
   # Lots        : L1 30-1 -> 30-2 | L2 30-3 -> 30-4 | L3 30-5 -> L4 30-6
-  epic-30: in-progress
+  epic-30: done
   30-1-assistant-settings-explicit-save-dirty-guard-and-empty-instructions: done
   30-2-assistant-conversational-prompt-cleanup-and-empty-evidence-guard: done
   30-3-processes-real-pg18-pending-runs-live-llm-and-coalesced-trace: done
   30-4-processes-tabbed-hub-and-focus-review-action-artifact-reasoning: done
   30-5-agents-pg18-mcp-sync-clean-modal-save-and-draft-active-lifecycle: done
-  30-6-epic-30-anti-regression-audits-bilingual-e2e-and-closure: backlog
+  30-6-epic-30-anti-regression-audits-bilingual-e2e-and-closure: done
   epic-30-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1

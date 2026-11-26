@@ -80,7 +80,7 @@ def test_workflows_v2_vsm_draft_whatif_runs_cold_rehydration_and_hitl_endpoints(
 
         # Cold rehydration: clear RAM cache and fetch via GET /api/v1/runs/{run_id}
         app.state.workflow_v2_runs_store.clear()
-        cold_get = client.get(f"/api/v1/runs/{run_id}")
+        cold_get = client.get(f"/api/v1/runs/{run_id}", params={"persona_key": "marc"})
         assert cold_get.status_code == 200
         assert cold_get.json()["run"]["run_id"] == run_id
 
@@ -305,3 +305,85 @@ async def test_dependencies_and_pending_runs_edge_branches(
     mem_runs: dict[str, Any] = {}
     restored, ws_id = await load_or_rehydrate_run_state(mem_runs, sql_runs, "run-rehyd-1")
     assert restored is not None and ws_id == "0195f000-0000-7000-8000-000000000111"
+
+
+def test_get_run_and_ram_hot_hitl_enforce_scope_and_workspace_observer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Enforce ScopeAccessGuard & workspace READ_ONLY_OBSERVER on GET run & hot HITL signal."""
+    from orcia_core.permissions import WorkspaceMembershipEntity
+
+    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
+    monkeypatch.setenv("ORCIA_ENV_FILE", "/nonexistent/.env")
+    monkeypatch.setenv("DATABASE_URL", "")
+    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
+
+    conf_ws_id = "0192c4e0-0000-7000-8000-000000000203"
+    pay_ws_id = "0192c4e0-0000-7000-8000-000000000201"
+    nadia_user_id = "0192c4e0-0000-7000-8000-000000000604"
+
+    app = create_app()
+    with TestClient(app) as client:
+        # 1. Start a CONFIDENTIAL_RESTRICTED run as `marc` (member of 0203)
+        conf_start = client.post(
+            "/api/v1/workflows/v2/wf-01-qualification-prd/runs",
+            params={"persona_key": "marc"},
+            json={"inputs": {"demande_source": "CONF-1"}, "workspace_id": conf_ws_id},
+        )
+        assert conf_start.status_code == 200
+        conf_run_id = conf_start.json()["run"]["run_id"]
+
+        # `nadia` is NOT a member of CONFIDENTIAL_RESTRICTED -> 403 on RAM-hot GET & POST
+        hot_get_denied = client.get(
+            f"/api/v1/runs/{conf_run_id}",
+            params={"persona_key": "nadia"},
+        )
+        assert hot_get_denied.status_code == 403
+        assert hot_get_denied.json()["error_code"] == "ERR_SCOPE_ACCESS_DENIED"
+
+        hot_hitl_denied = client.post(
+            f"/api/v1/runs/{conf_run_id}/hitl-signal",
+            params={"persona_key": "nadia"},
+            json={"action": "APPROVE", "actor_id": "nadia"},
+        )
+        assert hot_hitl_denied.status_code == 403
+        assert hot_hitl_denied.json()["error_code"] == "ERR_SCOPE_ACCESS_DENIED"
+
+        # Cold rehydration still preserves workspace_id -> 403 for `nadia`, 200 for `marc`
+        app.state.workflow_v2_runs_store.clear()
+        cold_get_denied = client.get(
+            f"/api/v1/runs/{conf_run_id}",
+            params={"persona_key": "nadia"},
+        )
+        assert cold_get_denied.status_code == 403
+        marc_get = client.get(f"/api/v1/runs/{conf_run_id}", params={"persona_key": "marc"})
+        assert marc_get.status_code == 200
+
+        # 2. Workspace-scoped READ_ONLY_OBSERVER (`nadia` has global platform_role='CONTRIBUTOR')
+        app.state.auth_service.evaluator.upsert_membership(
+            WorkspaceMembershipEntity(
+                id="0195f000-0000-7000-8000-000000003099",
+                workspace_id=pay_ws_id,
+                user_id=nadia_user_id,
+                role="OBSERVER",
+                access_mode="READ_ONLY_OBSERVER",
+            )
+        )
+        pay_start = client.post(
+            "/api/v1/workflows/v2/wf-01-qualification-prd/runs",
+            params={"persona_key": "marc"},
+            json={"inputs": {"demande_source": "PAY-OBS"}, "workspace_id": pay_ws_id},
+        )
+        assert pay_start.status_code == 200
+        pay_run_id = pay_start.json()["run"]["run_id"]
+
+        # Read allowed for workspace observer, RAM-hot HITL mutation denied with 403
+        obs_get = client.get(f"/api/v1/runs/{pay_run_id}", params={"persona_key": "nadia"})
+        assert obs_get.status_code == 200
+        obs_ws_denied = client.post(
+            f"/api/v1/runs/{pay_run_id}/hitl-signal",
+            params={"persona_key": "nadia"},
+            json={"action": "APPROVE", "actor_id": "nadia"},
+        )
+        assert obs_ws_denied.status_code == 403
+        assert obs_ws_denied.json()["error_code"] == "ERR_OBSERVER_MODE_READ_ONLY"

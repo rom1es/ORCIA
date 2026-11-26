@@ -16,16 +16,16 @@ Create, configure, and dry-run test specialized agents for specific domains (pro
 
 ## In 3 steps
 
-1. Browse active agents and skills configured for your Workspace or organization.
-2. Click "+ New agent" to define its role, default reasoning effort, authorized knowledge sources, and guardrails.
-3. Open an agent card to run a quick dry-run test before wiring it into a process or calling it from My Assistant.
+1. Browse available agents and skills: every newly created or duplicated agent starts in "Draft" status ("Untested").
+2. Click "+ New agent" or open "Configure & Test (6 blocks)" to define its role, knowledge sources, and guardrails, then confirm edits explicitly with the bottom-right "Save" button.
+3. Run a passing check in the built-in Test Bench to promote the agent to "Active" ("Validated in Test Bench") before invoking it via @, wiring it into a process, or exposing it as an external tool.
 
 ## A real example
 
-Yanis creates a "DORA Compliance Analyst" agent, grants read-only access to the Space's regulatory baseline while prohibiting unapproved external writes, and invokes it directly inside My Assistant via "@".
+Yanis creates the "DORA Compliance Analyst" agent (initially "Draft"), updates its blocks and clicks "Save", then runs a passing Test Bench verification: the agent promotes to "Active" and becomes selectable via "@" in My Assistant and in My Processes.
 
 ## Common pitfalls
 
-- **An agent is missing from "@" suggestions in My Assistant**: check that the agent is published to your active Workspace or a parent team scope.
-- **A skill cannot reach an external tool**: verify tool permissions on the agent and check your personal tool connections under My Account.
-- **Agent menus are locked at first boot**: configure at least one AI model in Administration › AI Models to unlock agent execution.
+- **An agent is missing from "@" suggestions or My Processes**: while an agent remains "Draft" or "Untested", it is blocked from My Assistant, Processes, and external tool exposure; run a passing Test Bench check to activate it.
+- **The "Expose as external tool" option is disabled**: only "Active" workspace agents can be exposed externally (duplicate a read-only pack template first if you need to customize and expose it).
+- **Agent execution fails at first boot**: configure at least one active AI model in Administration › AI Models before running the Test Bench.

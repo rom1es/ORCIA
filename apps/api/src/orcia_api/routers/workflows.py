@@ -39,10 +39,10 @@ from orcia_api.routers._workflows_helpers import (
     publish_workflow_outbox_event as _publish_workflow_outbox_event,
 )
 from orcia_api.routers._workflows_pending_runs import (
+    execute_get_workflow_v2_run_handler,
     execute_hitl_signal_handler,
     execute_start_workflow_v2_run_handler,
     list_pending_process_runs_handler,
-    load_or_rehydrate_run_state,
 )
 from orcia_api.routers._workflows_what_if import execute_workflow_what_if_simulation
 from orcia_api.routers.auth import PROBLEM_RESPONSES
@@ -255,14 +255,19 @@ async def start_workflow_v2_run(
 @router.get("/api/v1/runs/{run_id}", response_model=WorkflowV2RunResponse)
 async def get_workflow_v2_run(
     run_id: str,
+    request: Request,
     runs_store: RunsStoreDep,
     sql_runs_store: WorkflowRunsSqlStoreDep,
+    persona_key: PersonaQuery = None,
 ) -> WorkflowV2RunResponse:
     """Fetch the live or PG18-persisted state of a workflow v2 run."""
-    run_state, _ws_id = await load_or_rehydrate_run_state(runs_store, sql_runs_store, run_id)
-    if run_state is None:
-        raise HTTPException(status_code=404, detail=f"Run '{run_id}' not found")
-    return WorkflowV2RunResponse(run=run_state)
+    return await execute_get_workflow_v2_run_handler(
+        run_id,
+        request,
+        runs_store,
+        sql_runs_store,
+        persona_key=persona_key,
+    )
 
 
 @router.post("/api/v1/runs/{run_id}/hitl-signal", response_model=WorkflowV2RunResponse)
