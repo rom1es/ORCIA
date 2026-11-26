@@ -62,6 +62,7 @@ export function CatalogFeaturePanel({
   const [catalogActionFeedback, setCatalogActionFeedbackRaw] = useState<
     AlertFeedback | null
   >(null);
+  const [agentModalError, setAgentModalError] = useState<string | null>(null);
   const setCatalogActionFeedback = useCallback((next: AlertFeedbackInput) => {
     setCatalogActionFeedbackRaw(normalizeAlertFeedback(next));
   }, []);
@@ -87,21 +88,35 @@ export function CatalogFeaturePanel({
     onFeedback: setCatalogActionFeedback,
   });
 
-  const managed = useManagedAgentsAndSkills(packs, setCatalogActionFeedback, locale, catCopy);
+  const managed = useManagedAgentsAndSkills(
+    packs,
+    setCatalogActionFeedback,
+    locale,
+    catCopy,
+    setAgentModalError,
+  );
 
-  const handleExecuteAgentWithTrace = (agentId: string, prompt: string) => {
-    managed.handleExecuteAgent(agentId, prompt);
+  const handleExecuteAgentWithTrace = async (agentId: string, prompt: string): Promise<boolean> => {
     const targetAgent = managed.agents.find((a) => a.agentId === agentId);
+    if (targetAgent?.visibilityScope === "PACK") return false;
+    const ok = await managed.handleExecuteAgent(agentId, prompt);
+    if (!ok) return false;
     const isComplex = targetAgent?.thinkingLevel === "complex";
-    void sandboxReflexive.startExecution({
-      actor_slug: targetAgent?.slug || "assistant",
-      objective: prompt,
-      effort_level: isComplex ? "high" : "medium",
-      effort_mode: isComplex ? "approfondi" : "standard",
-      allow_sub_agent_delegation: true,
-      initial_resources: ["docs/product/capabilities.yaml"],
-      ...(activeWorkspaceId ? { workspace_id: activeWorkspaceId } : {}),
-    });
+    try {
+      await sandboxReflexive.startExecution({
+        actor_slug: targetAgent?.slug || "assistant",
+        objective: prompt,
+        effort_level: isComplex ? "high" : "medium",
+        effort_mode: isComplex ? "approfondi" : "standard",
+        allow_sub_agent_delegation: true,
+        initial_resources: [],
+        ...(activeWorkspaceId ? { workspace_id: activeWorkspaceId } : {}),
+      });
+    } catch (err: unknown) {
+      setAgentModalError(err instanceof Error ? err.message : String(err));
+      return false;
+    }
+    return true;
   };
 
   const feedbackBanner = catalogActionFeedback ? (
@@ -151,10 +166,13 @@ export function CatalogFeaturePanel({
           skills={managed.skills}
           labels={dictionary.agentsAndSkillsManager}
           alertSlot={feedbackBanner}
+          agentModalError={agentModalError}
+          onClearAgentModalError={() => setAgentModalError(null)}
           onCreateAgent={managed.handleCreateAgent}
           onDuplicateAgent={managed.handleDuplicateAgent}
           onToggleAgentEnabled={managed.handleToggleAgentEnabled}
           onToggleAgentMcpExposure={managed.handleToggleAgentMcpExposure}
+          onUpdateAgentLifecycle={managed.handleUpdateAgentLifecycle}
           onUpdateAgentDetails={managed.handleUpdateAgentDetails}
           onToggleAgentSkill={managed.handleToggleAgentSkill}
           onUpdateAgentThinkingLevel={managed.handleUpdateAgentThinkingLevel}

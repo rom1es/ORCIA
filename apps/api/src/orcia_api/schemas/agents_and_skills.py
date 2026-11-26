@@ -16,6 +16,8 @@ AgentDialogueMechanismSchema = Literal["questionnaire_prealable", "pause_par_blo
 AgentOutputContractFormatSchema = Literal[
     "markdown_structure", "confluence_draft", "jira_draft", "gate_risk_json"
 ]
+AgentLifecycleStatusSchema = Literal["DRAFT", "ACTIVE"]
+AgentTestBenchStatusSchema = Literal["UNTESTED", "PASSED", "FAILED"]
 
 
 class SkillItemResponse(BaseModel):
@@ -140,6 +142,8 @@ class AgentItemResponse(BaseModel):
     output_contract_format: AgentOutputContractFormatSchema = "markdown_structure"
     write_preview_required: bool = True
     test_bench_validated: bool = False
+    lifecycle_status: AgentLifecycleStatusSchema = "DRAFT"
+    test_bench_status: AgentTestBenchStatusSchema = "UNTESTED"
 
 
 class UpsertAgentRequest(BaseModel):
@@ -174,7 +178,7 @@ class UpsertAgentRequest(BaseModel):
     guardrails: list[str] | None = None
     output_contract_format: AgentOutputContractFormatSchema | None = None
     write_preview_required: bool | None = None
-    test_bench_validated: bool | None = None
+    lifecycle_status: AgentLifecycleStatusSchema | None = None
 
 
 class DuplicateAgentRequest(BaseModel):
@@ -195,7 +199,7 @@ class ToggleAgentGovernanceRequest(BaseModel):
     mcp_exposed: bool | None = None
     visibility_scope: Literal["PRIVATE", "TEAM"] | None = None
     thinking_level: AgentThinkingLevelSchema | None = None
-    test_bench_validated: bool | None = None
+    lifecycle_status: AgentLifecycleStatusSchema | None = None
 
 
 class UpdateAgentSkillsRequest(BaseModel):
@@ -238,6 +242,8 @@ class ExecuteAgentResponse(BaseModel):
     response_text: str
     invoked_skills: list[InvokedSkillTraceResponseItem] = Field(default_factory=list)
     status: Literal["SUCCEEDED"] = "SUCCEEDED"
+    test_bench_status: AgentTestBenchStatusSchema = "PASSED"
+    lifecycle_status: AgentLifecycleStatusSchema = "ACTIVE"
     trace_id: str
 
 

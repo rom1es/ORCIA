@@ -83,6 +83,7 @@ export const AgentSixBlocksBlockC: React.FC<AgentSixBlocksBlockCProps> = ({
             data-bwignore="true"
             data-form-type="other"
             data-testid={`${testIdPrefix}-agent-prompt-ref-input`}
+            disabled={readOnlyIdentity}
             value={draft.promptRef}
             onChange={(e) => onChangeDraft({ promptRef: e.target.value })}
             placeholder={studio.promptRefPlaceholder}
@@ -93,6 +94,7 @@ export const AgentSixBlocksBlockC: React.FC<AgentSixBlocksBlockCProps> = ({
           <span className="font-medium">{studio.dialogueMechanismFieldLabel}</span>
           <select
             data-testid={`${testIdPrefix}-agent-dialogue-mechanism-select`}
+            disabled={readOnlyIdentity}
             value={draft.dialogueMechanism}
             onChange={(e) =>
               onChangeDraft({
@@ -126,6 +128,7 @@ export const AgentSixBlocksBlockC: React.FC<AgentSixBlocksBlockCProps> = ({
                     data-bwignore="true"
                     data-form-type="other"
                     data-testid={`${testIdPrefix}-agent-mode-${modeKey}`}
+                    disabled={readOnlyIdentity}
                     checked={checked}
                     onChange={(e) =>
                       onChangeDraft({

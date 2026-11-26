@@ -7,6 +7,7 @@ import {
   type UiHelpValidationSummary,
 } from "@orcia/ui";
 import React, { useState } from "react";
+import { readCachedAgentsAndSkills } from "../../components/agentsAndSkillsBridgeStore";
 import {
   usePlatformSetup,
   type ConfiguredWorkflowItem,
@@ -106,7 +107,13 @@ export function ProcessStudioAndPackAuthoringSection() {
       />
 
       <PackBuilderProcessesStudioView
-        agents={[]}
+        agents={readCachedAgentsAndSkills()
+          .agents.filter((a) => a.lifecycleStatus === "ACTIVE" && a.enabledOnWorkspace !== false)
+          .map((a) => ({
+            slug: a.slug,
+            handle: a.handle,
+            roleDescription: a.roleMission,
+          }))}
         initialHumanAnchorIntent=""
         whatIfImpacts={whatIfImpacts}
         certifications={certifications}

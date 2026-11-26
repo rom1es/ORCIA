@@ -5,26 +5,12 @@ import { usePlatformSetup } from "../../components/platformSetupStore";
 import { useShellNavigation } from "../../components/ShellContainer";
 import { resolveEffectiveWorkspaceId } from "../../components/shellScopeOptions";
 import { useI18n } from "../../i18n";
-import {
-  isPlatformAdministratorSession,
-  useAuthSessionStore,
-} from "../../stores/authSessionStore";
+import { isPlatformAdministratorSession, useAuthSessionStore } from "../../stores/authSessionStore";
+import { useSyncManagedAgentsCache } from "../../components/useSyncManagedAgentsCache";
 import { useSourceLineInspector } from "../shared/useSourceLineInspector";
-import {
-  readSavedActiveFolderId,
-  writeSavedActiveFolderId,
-} from "./assistantFoldersAndPrefsStore";
-import {
-  persistCompletedInboxTurn,
-  persistInboxTurnFeedback,
-} from "./inboxTurnSyncHelpers";
-import {
-  buildAssistantAutocompleteAndRagOptions,
-  buildAssistantAutocompleteSuggestions,
-  buildAssistantModelOptions,
-  consumeAssistantPrefillFromStorage,
-  type SavedConversationTurnItem,
-} from "./savedConversationsStore";
+import { readSavedActiveFolderId, writeSavedActiveFolderId } from "./assistantFoldersAndPrefsStore";
+import { persistCompletedInboxTurn, persistInboxTurnFeedback } from "./inboxTurnSyncHelpers";
+import { buildAssistantAutocompleteAndRagOptions, buildAssistantAutocompleteSuggestions, buildAssistantModelOptions, consumeAssistantPrefillFromStorage, type SavedConversationTurnItem } from "./savedConversationsStore";
 import { useActiveEmbeddingModelStatus } from "./useActiveEmbeddingModelStatus";
 import { useAssistantStreamingTurn } from "./useAssistantStreamingTurn";
 import { useRagReindexStatus } from "./useRagReindexStatus";
@@ -149,13 +135,20 @@ export function useInboxPanelController() {
     }
     return rows.slice(-100).reverse();
   }, [savedConversations, foldersController.folders]);
-  const { agentOptions, skillOptions, orciaDocuments, ragCitations } =
-    buildAssistantAutocompleteAndRagOptions({ catalogItems, datasources, isFr });
-  const autocompleteSuggestions = buildAssistantAutocompleteSuggestions(packs, isFr);
-
-  const selectActiveConversationAndPersist = (nextConvId: string | null) => {
+  const [agentsSyncTick] = useSyncManagedAgentsCache(
+    locale,
+    dictionary.featureAdminCatalogSettings.catalog.defaultSkillOutputFormat,
+  );
+  const { agentOptions, skillOptions, orciaDocuments, ragCitations } = useMemo(
+    () => buildAssistantAutocompleteAndRagOptions({ catalogItems, datasources, isFr }),
+    [catalogItems, datasources, isFr, agentsSyncTick],
+  );
+  const autocompleteSuggestions = useMemo(
+    () => buildAssistantAutocompleteSuggestions(packs, isFr),
+    [packs, isFr, agentsSyncTick],
+  );
+  const selectActiveConversationAndPersist = (nextConvId: string | null) =>
     threads.setActiveConversationId(nextConvId);
-  };
 
   useEffect(() => {
     const onPrefill = () => {

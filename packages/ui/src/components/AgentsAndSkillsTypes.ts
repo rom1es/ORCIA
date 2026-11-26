@@ -13,6 +13,8 @@ export type AgentsAndSkillsSubTab = "AGENTS" | "SKILLS" | "CONNECTIONS";
 export type UiAgentThinkingLevel = "simple" | "medium" | "complex" | "auto";
 export type UiAgentSkillVisibilityScope = "PRIVATE" | "TEAM" | "PACK";
 export type UiAgentSkillVisibilityFilter = "ALL" | UiAgentSkillVisibilityScope;
+export type UiAgentLifecycleStatus = "DRAFT" | "ACTIVE";
+export type UiAgentTestBenchStatus = "UNTESTED" | "PASSED" | "FAILED";
 
 export interface UiManagedSkillItem {
   readonly skillId: string;
@@ -58,6 +60,8 @@ export interface UiManagedAgentItem {
   readonly outputContractFormat?: UiAgentOutputContractFormat;
   readonly writePreviewRequired?: boolean;
   readonly testBenchValidated?: boolean;
+  readonly lifecycleStatus?: UiAgentLifecycleStatus;
+  readonly testBenchStatus?: UiAgentTestBenchStatus;
 }
 
 export interface AgentsAndSkillsManagerLabels {
@@ -144,13 +148,26 @@ export interface AgentsAndSkillsManagerViewProps {
   readonly labels: AgentsAndSkillsManagerLabels;
   readonly initialTab?: AgentsAndSkillsSubTab;
   readonly alertSlot?: React.ReactNode;
+  readonly agentModalError?: string | null;
+  readonly onClearAgentModalError?: () => void;
   readonly onCreateAgent: (input: CreateAgentSixBlocksInput) => void;
-  readonly onToggleAgentSkill: (agentId: string, skillId: string, nextChecked: boolean) => void;
-  readonly onExecuteAgent: (agentId: string, prompt: string) => void;
+  readonly onToggleAgentSkill: (
+    agentId: string,
+    skillId: string,
+    nextChecked: boolean,
+  ) => Promise<boolean> | boolean | void;
+  readonly onExecuteAgent: (agentId: string, prompt: string) => Promise<boolean> | boolean | void;
   readonly onDeleteAgent: (agentId: string) => void;
   readonly onDuplicateAgent?: (agent: UiManagedAgentItem) => void;
   readonly onToggleAgentEnabled?: (agentId: string, nextEnabled: boolean) => void;
-  readonly onToggleAgentMcpExposure?: (agentId: string, nextExposed: boolean) => void;
+  readonly onToggleAgentMcpExposure?: (
+    agentId: string,
+    nextExposed: boolean,
+  ) => Promise<boolean> | boolean | void;
+  readonly onUpdateAgentLifecycle?: (
+    agentId: string,
+    nextLifecycle: UiAgentLifecycleStatus,
+  ) => Promise<boolean> | boolean | void;
   readonly onUpdateAgentDetails?: (
     agentId: string,
     patch: Partial<AgentSixBlocksDraftState> & {
@@ -161,15 +178,15 @@ export interface AgentsAndSkillsManagerViewProps {
       visibilityScope?: UiAgentSkillVisibilityScope;
       mcpExposed?: boolean;
     },
-  ) => void;
+  ) => Promise<boolean> | boolean | void;
   readonly onUpdateAgentThinkingLevel?: (
     agentId: string,
     nextThinkingLevel: UiAgentThinkingLevel,
-  ) => void;
+  ) => Promise<boolean> | boolean | void;
   readonly onUpdateAgentVisibility?: (
     agentId: string,
     nextVisibility: UiAgentSkillVisibilityScope,
-  ) => void;
+  ) => Promise<boolean> | boolean | void;
   readonly onUseAgentInAssistant?: (agent: UiManagedAgentItem) => void;
   readonly onCreateSkill: (input: CreateSkillInput) => void;
   readonly onExecuteSkill: (skillId: string, inputText: string) => void;

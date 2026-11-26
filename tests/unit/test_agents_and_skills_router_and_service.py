@@ -130,9 +130,14 @@ def test_pack_immutability_duplication_and_governance_toggles() -> None:
     assert duplicated.source_pack_key == "pack-conformite-dora"
     assert duplicated.skill_ids == (pack_skill.skill_id,)
 
-    # Toggle workspace enablement and MCP exposure
+    # Toggle workspace enablement, lifecycle activation, and MCP exposure
     disabled = svc.set_agent_enabled(pack_agent.agent_id, enabled=False)
     assert disabled.enabled_in_workspace is False
+    from orcia_core.orchestration.errors import AgentDraftLifecycleBlockedError
+
+    with pytest.raises(AgentDraftLifecycleBlockedError):
+        svc.set_agent_mcp_exposure(duplicated.agent_id, mcp_exposed=True)
+    svc.set_agent_lifecycle_status(duplicated.agent_id, lifecycle_status="ACTIVE")
     exposed = svc.set_agent_mcp_exposure(duplicated.agent_id, mcp_exposed=True)
     assert exposed.mcp_exposed is True
 
@@ -269,11 +274,20 @@ def test_agents_and_skills_fastapi_router_contract(
     assert dup_data["source_pack_key"] == "pack-achats-it"
     assert dup_data["skill_ids"] == ["skill-synthese-contrat"]
 
-    # Toggle governance on the duplicated agent
+    # DRAFT agent rejects mcp_exposed=True with HTTP 422
+    r_gov_draft = client.patch(
+        f"/api/v1/agents-and-skills/agents/{dup_id}/governance",
+        json={"mcp_exposed": True},
+    )
+    assert r_gov_draft.status_code == 422
+    assert r_gov_draft.json()["error_code"] == "ERR_DRAFT_AGENT_LIFECYCLE_BLOCKED"
+
+    # Toggle governance on the duplicated agent while activating it
     r_gov = client.patch(
         f"/api/v1/agents-and-skills/agents/{dup_id}/governance",
         json={
             "enabled_in_workspace": False,
+            "lifecycle_status": "ACTIVE",
             "mcp_exposed": True,
             "visibility_scope": "PRIVATE",
             "thinking_level": "complex",
@@ -282,6 +296,7 @@ def test_agents_and_skills_fastapi_router_contract(
     assert r_gov.status_code == 200
     gov_body = r_gov.json()
     assert gov_body["enabled_in_workspace"] is False
+    assert gov_body["lifecycle_status"] == "ACTIVE"
     assert gov_body["mcp_exposed"] is True
     assert gov_body["visibility_scope"] == "PRIVATE"
     assert gov_body["thinking_level"] == "complex"
@@ -416,7 +431,8 @@ async def test_agents_and_skills_postgres18_sql_adapter_queries() -> None:
         guardrails=["citations_obligatoires", "filtrage_dcp_pii"],
         output_contract_format="gate_risk_json",
         write_preview_required=True,
-        test_bench_validated=True,
+        lifecycle_status="ACTIVE",
+        test_bench_status="PASSED",
     )
 
     await persist_skill_to_postgres18(engine, skill)

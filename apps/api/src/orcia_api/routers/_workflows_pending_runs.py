@@ -7,6 +7,7 @@ from typing import Literal
 from fastapi import HTTPException, Request
 
 from orcia_api.dependencies._process_llm_bridge import enforce_live_process_prerequisites
+from orcia_api.routers._agents_lifecycle_guards import enforce_active_agents_for_workflow
 from orcia_api.routers._finops_scope_guards import resolve_finops_read_scope
 from orcia_api.routers._workflows_helpers import (
     enforce_not_observer,
@@ -174,6 +175,7 @@ async def execute_start_workflow_v2_run_handler(
     if wf is None:
         raise HTTPException(status_code=404, detail=f"Workflow '{workflow_id}' not found")
 
+    await enforce_active_agents_for_workflow(request, wf, instance=str(request.url.path))
     merged_resources = await enforce_live_process_prerequisites(
         request,
         user=actor,

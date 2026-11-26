@@ -497,6 +497,15 @@
             "title": "Invocation Modes",
             "type": "array"
           },
+          "lifecycle_status": {
+            "default": "DRAFT",
+            "enum": [
+              "DRAFT",
+              "ACTIVE"
+            ],
+            "title": "Lifecycle Status",
+            "type": "string"
+          },
           "llm_model_tier": {
             "default": "team_default",
             "enum": [
@@ -627,6 +636,16 @@
             "minimum": 0.0,
             "title": "Temperature",
             "type": "number"
+          },
+          "test_bench_status": {
+            "default": "UNTESTED",
+            "enum": [
+              "UNTESTED",
+              "PASSED",
+              "FAILED"
+            ],
+            "title": "Test Bench Status",
+            "type": "string"
           },
           "test_bench_validated": {
             "default": false,
@@ -10397,6 +10416,15 @@
             "title": "Invoked Skills",
             "type": "array"
           },
+          "lifecycle_status": {
+            "default": "ACTIVE",
+            "enum": [
+              "DRAFT",
+              "ACTIVE"
+            ],
+            "title": "Lifecycle Status",
+            "type": "string"
+          },
           "prompt": {
             "title": "Prompt",
             "type": "string"
@@ -10409,6 +10437,16 @@
             "const": "SUCCEEDED",
             "default": "SUCCEEDED",
             "title": "Status",
+            "type": "string"
+          },
+          "test_bench_status": {
+            "default": "PASSED",
+            "enum": [
+              "UNTESTED",
+              "PASSED",
+              "FAILED"
+            ],
+            "title": "Test Bench Status",
             "type": "string"
           },
           "thinking_level": {
@@ -26581,6 +26619,21 @@
             ],
             "title": "Enabled In Workspace"
           },
+          "lifecycle_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "DRAFT",
+                  "ACTIVE"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lifecycle Status"
+          },
           "mcp_exposed": {
             "anyOf": [
               {
@@ -26591,17 +26644,6 @@
               }
             ],
             "title": "Mcp Exposed"
-          },
-          "test_bench_validated": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Test Bench Validated"
           },
           "thinking_level": {
             "anyOf": [
@@ -27963,6 +28005,21 @@
             ],
             "title": "Invocation Modes"
           },
+          "lifecycle_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "DRAFT",
+                  "ACTIVE"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lifecycle Status"
+          },
           "llm_model_tier": {
             "anyOf": [
               {
@@ -28131,17 +28188,6 @@
               }
             ],
             "title": "Temperature"
-          },
-          "test_bench_validated": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Test Bench Validated"
           },
           "thinking_level": {
             "default": "medium",

@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 63,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 245,
+    "techLeadReportsCount": 246,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -547,6 +547,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-26",
+      "phaseOrStory": "Story 30.5",
+      "reportFile": "30-5-agents-pg18-mcp-sync-clean-modal-save-and-draft-active-lifecycle-tech-lead-report.md",
+      "domain": "Epic 30 Lot 3 — Mes Agents PG18 Governance Sync, Clean 6-Block Modal Save/Errors & Real DRAFT vs ACTIVE Lifecycle Gating (UX30-11..UX30-15, CAP-082, CAP-090, CAP-091, CAP-100, A4 rule)",
+      "summary": "Closed (done, independent Testing Sub-Agent verified): stripped client-writeable test_bench_* (P0-1), enforced readiness & DRAFT HTTP 422 across MCP (getattr safe fallback), Assistant (@agent + tools), Processes (incl. sub-steps/feedback), & Reflexive Execution (P0-3), guarded all PACK preset actions & materialized PACK duplication via POST /agents (P0-2, A4), deleted duplicate <AgentIdentityAndSkillsFields />, added useAgentDetailModalState.ts (293 L) with explicit <RgaaDialogFooterActions />, inline [role=\"alert\"], & rollback, awaited/rolled back mutations with mutationEpochRef race-guard & empty cache clear (P1-1..P1-5), all modified production files <= 298 L; verified 95% 23-module branch coverage (97 passed), 1,150 tests/unit (+ 82/82 *audit*.py post-TS-edit), 181 tests/evals+security+contract, 12 PG18+Redis integration, 9/9 Turbo (20+154+366 = 540 JS/TS tests, i18n Gates 1–4 = 0), 9 passed, 0 failed (1.9m) Playwright Desktop E2E (env -u ORCIA_E2E_SEED_FIXTURES), ruff (1,772 files)/mypy --strict (866 files)/lint-imports (5/5, 907 files)/lint_spine (0)/export_openapi (0-diff)/detect-secrets clean."
+    },
     {
       "date": "2026-11-26",
       "phaseOrStory": "Story 30.4",

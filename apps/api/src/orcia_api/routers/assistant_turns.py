@@ -10,6 +10,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Header, Query, Request
 from fastapi.responses import StreamingResponse
 
+import orcia_api.routers._assistant_context_assembly as _ctx_asm
+import orcia_api.routers._assistant_turn_consumer as _turn_consumer
 from orcia_api.dependencies import (
     get_assistant_thread_messages_repository,
     get_assistant_turn_engine,
@@ -17,6 +19,7 @@ from orcia_api.dependencies import (
     get_optional_embedding_port,
 )
 from orcia_api.dependencies._assistant_guards import enforce_assistant_workspace_guard
+from orcia_api.routers._agents_lifecycle_guards import enforce_active_agents_for_assistant_prompt
 from orcia_api.routers._assistant_background_registry import (
     get_rate_limiter_from_request,
     get_thread_turn_lock_from_request,
@@ -24,14 +27,7 @@ from orcia_api.routers._assistant_background_registry import (
     get_turn_registry_from_request,
     turn_record_to_background_state,
 )
-from orcia_api.routers._assistant_context_assembly import (
-    assemble_real_workspace_context_for_turn_async,
-)
 from orcia_api.routers._assistant_thread_messages_routes import thread_messages_router
-from orcia_api.routers._assistant_turn_consumer import (
-    SSE_STREAM_RESPONSES,
-    stream_assistant_turn_events,
-)
 from orcia_api.routers._assistant_turn_controls_routes import (
     controls_router,
     require_owned_assistant_turn,
@@ -93,6 +89,7 @@ async def create_assistant_turn_endpoint(
 ) -> AssistantTurnAcceptedResponse:
     """Converged N1-N6 turn entry point (`Speed 1` & `Speed 2/3`) returning `202` + `turn_id`."""
     await enforce_assistant_workspace_guard(request, user, payload.workspace_id, require_write=True)
+    await enforce_active_agents_for_assistant_prompt(request, payload.user_prompt)
     effective_deep, effective_speed, resolved_speed = resolve_effective_speed(payload)
     await ensure_active_chat_model_if_live(
         request,
@@ -115,7 +112,7 @@ async def create_assistant_turn_endpoint(
             resolve_configured_llm_endpoint(
                 request, requested_tier=payload.requested_tier, workspace_id=payload.workspace_id
             ),
-            assemble_real_workspace_context_for_turn_async(
+            _ctx_asm.assemble_real_workspace_context_for_turn_async(
                 request,
                 workspace_id=payload.workspace_id,
                 user_id=user.id,
@@ -265,7 +262,7 @@ async def list_active_assistant_turns_endpoint(
     )
 
 
-@router.get("/turns/{turn_id}/stream", responses=SSE_STREAM_RESPONSES)
+@router.get("/turns/{turn_id}/stream", responses=_turn_consumer.SSE_STREAM_RESPONSES)
 async def stream_assistant_turn_endpoint(
     turn_id: str,
     request: Request,
@@ -280,7 +277,7 @@ async def stream_assistant_turn_endpoint(
     locale = resolve_request_locale(request, None)
 
     async def _sse() -> AsyncIterator[str]:
-        async for evt in stream_assistant_turn_events(
+        async for evt in _turn_consumer.stream_assistant_turn_events(
             reg,
             turn_id=turn_id,
             after_cursor=cursor,

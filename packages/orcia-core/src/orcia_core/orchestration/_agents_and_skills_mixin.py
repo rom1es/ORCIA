@@ -10,12 +10,15 @@ from orcia_core.orchestration._agents_and_skills_executor import (
     duplicate_agent_into_registry,
     execute_managed_agent,
 )
+from orcia_core.orchestration._agents_and_skills_outcomes import ensure_agent_ready_for_activation
 from orcia_core.orchestration.agents_and_skills_models import (
     AgentExecutionOutcome,
+    AgentLifecycleStatus,
     ManagedAgentRecord,
     ManagedSkillRecord,
     rebuild_agent_with_skills,
 )
+from orcia_core.orchestration.errors import AgentDraftLifecycleBlockedError
 
 if TYPE_CHECKING:
     from orcia_core.orchestration.agents_and_skills_manager import AgentsAndSkillsManagementService
@@ -86,11 +89,49 @@ class AgentLifecycleMethodsMixin:
     ) -> ManagedAgentRecord:
         svc = cast("AgentsAndSkillsManagementService", self)
         agent = svc.get_agent(agent_id, instance=instance)
+        if mcp_exposed and agent.lifecycle_status == "DRAFT":
+            raise AgentDraftLifecycleBlockedError(
+                detail_code="ERR_DRAFT_AGENT_CANNOT_EXPOSE_MCP",
+                detail_params={"agent_name": agent.name},
+                instance=instance,
+            )
         updated = rebuild_agent_with_skills(
             replace(agent, mcp_exposed=mcp_exposed), agent.skill_ids
         )
         self._agents[agent_id] = updated
         return updated
+
+    def set_agent_lifecycle_status(
+        self,
+        agent_id: str,
+        *,
+        lifecycle_status: AgentLifecycleStatus,
+        instance: str | None = None,
+    ) -> ManagedAgentRecord:
+        """Transition an agent between DRAFT and ACTIVE, enforcing readiness & MCP rules."""
+        svc = cast("AgentsAndSkillsManagementService", self)
+        agent = svc.get_agent(agent_id, instance=instance)
+        if lifecycle_status == "ACTIVE":
+            ensure_agent_ready_for_activation(agent, instance=instance)
+        next_mcp = False if lifecycle_status == "DRAFT" else agent.mcp_exposed
+        updated = rebuild_agent_with_skills(
+            replace(agent, lifecycle_status=lifecycle_status, mcp_exposed=next_mcp),
+            agent.skill_ids,
+        )
+        self._agents[agent_id] = updated
+        return updated
+
+    def mark_agent_test_bench_failed(self, agent_id: str) -> ManagedAgentRecord | None:
+        """Record a factual FAILED Test Bench status when execution fails externally."""
+        agent = self._agents.get(agent_id)
+        if agent is None:
+            return None
+        failed = rebuild_agent_with_skills(
+            replace(agent, test_bench_status="FAILED", test_bench_validated=False),
+            agent.skill_ids,
+        )
+        self._agents[agent_id] = failed
+        return failed
 
     def delete_agent(
         self,

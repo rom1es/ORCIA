@@ -176,6 +176,7 @@ export const AgentSixBlocksEditorBody: React.FC<AgentSixBlocksEditorBodyProps> =
               <span className="font-medium">{studio.postureFieldLabel}</span>
               <select
                 data-testid={`${testIdPrefix}-agent-posture-select`}
+                disabled={readOnlyIdentity}
                 value={draft.posture}
                 onChange={(e) => {
                   const nextPosture = e.target.value as UiAgentPosture;
@@ -199,6 +200,7 @@ export const AgentSixBlocksEditorBody: React.FC<AgentSixBlocksEditorBodyProps> =
               <span className="font-medium">{studio.humanPartnerFieldLabel}</span>
               <select
                 data-testid={`${testIdPrefix}-agent-human-partner-select`}
+                disabled={readOnlyIdentity}
                 value={draft.humanPartnerRole}
                 onChange={(e) =>
                   onChangeDraft({
@@ -243,6 +245,7 @@ export const AgentSixBlocksEditorBody: React.FC<AgentSixBlocksEditorBodyProps> =
         <AgentSixBlocksBlockB
           draft={draft}
           labels={labels}
+          readOnlyIdentity={readOnlyIdentity}
           testIdPrefix={testIdPrefix}
           onChangeDraft={onChangeDraft}
         />
@@ -264,6 +267,7 @@ export const AgentSixBlocksEditorBody: React.FC<AgentSixBlocksEditorBodyProps> =
         skills={skills}
         activeBlock={activeBlock}
         showAllBlocks={showAllBlocks}
+        readOnlyIdentity={readOnlyIdentity}
         testIdPrefix={testIdPrefix}
         onChangeDraft={onChangeDraft}
         onToggleSkillId={onToggleSkillId}

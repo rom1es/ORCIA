@@ -11,7 +11,7 @@ import { TEST_AGENTS_AND_SKILLS_LABELS as TEST_LABELS } from "./agentsAndSkillsL
 describe("AgentsAndSkillsManagerView Studio & Governance (@orcia/ui)", () => {
   afterEach(() => cleanup());
 
-  it("displays 3 visible tabs, protects PACK agents from deletion while allowing duplication & enable/disable, and supports PRIVATE vs TEAM visibility & Assistant handoff", () => {
+  it("displays 3 visible tabs, protects PACK agents from deletion while allowing duplication & enable/disable, and supports PRIVATE vs TEAM visibility & Assistant handoff", async () => {
     const usedInAssistant: string[] = [];
 
     function RichStudioHarness() {
@@ -68,6 +68,9 @@ describe("AgentsAndSkillsManagerView Studio & Governance (@orcia/ui)", () => {
                 thinkingLevel: draft.thinkingLevel,
                 skillIds: draft.skillIds,
                 visibilityScope: draft.visibilityScope ?? "TEAM",
+                lifecycleStatus: "ACTIVE",
+                testBenchStatus: "PASSED",
+                testBenchValidated: true,
                 lastExecutionOutput: "### Analyse prête\n- **Point 1** : RAS",
               },
             ]);
@@ -131,10 +134,15 @@ describe("AgentsAndSkillsManagerView Studio & Governance (@orcia/ui)", () => {
     expect(screen.getByTestId("agents-subview-tab-skills").style.display).not.toBe("none");
     expect(screen.getByTestId("agents-subview-tab-connections").style.display).not.toBe("none");
 
-    // 2. Pack agent has no Delete button, can be disabled/enabled on space, and duplicated into a TEAM agent
+    // 2. Read-only PACK preset disables delete/enable/thinking controls and allows duplication into a TEAM copy
     expect(screen.queryByTestId("delete-agent-btn-agent-pack-arch")).toBeNull();
-    fireEvent.click(screen.getByTestId("toggle-agent-enabled-btn-agent-pack-arch"));
-    expect(screen.getByTestId("agent-disabled-badge-agent-pack-arch")).toBeDefined();
+    expect(
+      (screen.getByTestId("toggle-agent-enabled-btn-agent-pack-arch") as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(
+      (screen.getByTestId("agent-card-thinking-select-agent-pack-arch") as HTMLSelectElement)
+        .disabled,
+    ).toBe(true);
     fireEvent.click(screen.getByTestId("duplicate-agent-btn-agent-pack-arch"));
     expect(screen.getByTestId("agent-card-agent-pack-arch-copy")).toBeDefined();
     expect(screen.getByTestId("delete-agent-btn-agent-pack-arch-copy")).toBeDefined();
@@ -163,9 +171,9 @@ describe("AgentsAndSkillsManagerView Studio & Governance (@orcia/ui)", () => {
     fireEvent.click(badge);
     expect(badge.querySelector('[data-orcia-icon="team"] svg')).not.toBeNull();
     expect(badge.textContent).toContain("Équipe");
-    expect(screen.getByTestId("agent-autosaved-badge-agent-perso-1").textContent).toContain(
-      "Enregistré",
-    );
+    expect(
+      (await screen.findByTestId("agent-autosaved-badge-agent-perso-1")).textContent,
+    ).toContain("Enregistré");
 
     // 5. Change thinking level inline and verify FormattedMarkdownContent is rendered
     fireEvent.change(screen.getByTestId("agent-card-thinking-select-agent-perso-1"), {

@@ -142,6 +142,11 @@ export function buildAssistantAutocompleteSuggestions(
   const suggestions: UiAssistantAutocompleteSuggestion[] = [];
   const seenTokens = new Set<string>();
   const cached = readCachedAgentsAndSkills();
+  const draftAgentTokens = new Set<string>(
+    (cached.agents ?? [])
+      .filter((ag) => ag.lifecycleStatus === "DRAFT" || ag.enabledOnWorkspace === false)
+      .map((ag) => ag.handle),
+  );
 
   const resolveScopeBadge = (scope: string | undefined, sourcePackKey?: string | null) =>
     scope === "PRIVATE"
@@ -151,6 +156,7 @@ export function buildAssistantAutocompleteSuggestions(
         : autoCopy.badgeTeam;
 
   for (const ag of cached.agents ?? []) {
+    if (ag.lifecycleStatus === "DRAFT" || ag.enabledOnWorkspace === false) continue;
     if (seenTokens.has(ag.handle)) continue;
     seenTokens.add(ag.handle);
     suggestions.push({
@@ -203,6 +209,7 @@ export function buildAssistantAutocompleteSuggestions(
         },
       ];
       for (const item of sdlcDefaults) {
+        if (item.kind === "agent" && draftAgentTokens.has(item.token)) continue;
         if (!seenTokens.has(item.token)) {
           seenTokens.add(item.token);
           suggestions.push(item);

@@ -220,6 +220,8 @@ async def persist_agent_to_postgres18(
         "output_contract_format": agent.output_contract_format,
         "write_preview_required": agent.write_preview_required,
         "test_bench_validated": agent.test_bench_validated,
+        "lifecycle_status": agent.lifecycle_status,
+        "test_bench_status": agent.test_bench_status,
         "owner_workspace_id": agent.owner_workspace_id,
         "owner_user_id": agent.owner_user_id,
     }

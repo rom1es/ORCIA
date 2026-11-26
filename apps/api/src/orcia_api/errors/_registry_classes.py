@@ -38,6 +38,7 @@ from orcia_core.orchestration.assistant_turn_errors import (
     TurnBudgetExceededError,
 )
 from orcia_core.orchestration.errors import (
+    AgentDraftLifecycleBlockedError,
     CriticalWorkflowRequiresHumanGateError,
     HumanAnchorRequiredError,
     IntentionBeforeCodeRequiredError,
@@ -180,6 +181,7 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
     AssistantTurnInterruptedError,
     AssistantRateLimitExceededError,
     AssistantConcurrencyLimitError,
+    AgentDraftLifecycleBlockedError,
     ModelToolsUnsupportedError,
     TurnBudgetExceededError,
     HelpArticleValidationError,
@@ -190,6 +192,7 @@ DOMAIN_ERROR_CLASSES: tuple[type[OrciaDomainError], ...] = (
 __all__ = [
     "DOMAIN_ERROR_CLASSES",
     "AdminLockoutPreventedError",
+    "AgentDraftLifecycleBlockedError",
     "AssistantConcurrencyLimitError",
     "AssistantRateLimitExceededError",
     "AssistantTurnInterruptedError",

@@ -76,6 +76,7 @@ export interface components {
       human_partner_role?: "PO_PM" | "ARCHITECT" | "TECH_LEAD" | "SECURITY_QA" | "ALL";
       instructions: string;
       invocation_modes?: (string)[];
+      lifecycle_status?: "DRAFT" | "ACTIVE";
       llm_model_tier?: "team_default" | "fast" | "deep" | "discovery";
       max_tokens?: number;
       mcp_exposed?: boolean;
@@ -92,6 +93,7 @@ export interface components {
       slug: string;
       source_pack_key?: string | null;
       temperature?: number;
+      test_bench_status?: "UNTESTED" | "PASSED" | "FAILED";
       test_bench_validated?: boolean;
       thinking_level?: "simple" | "medium" | "complex" | "auto";
       uri: string;
@@ -1549,9 +1551,11 @@ export interface components {
       agent_id: string;
       agent_name: string;
       invoked_skills?: (components["schemas"]["InvokedSkillTraceResponseItem"])[];
+      lifecycle_status?: "DRAFT" | "ACTIVE";
       prompt: string;
       response_text: string;
       status?: "SUCCEEDED";
+      test_bench_status?: "UNTESTED" | "PASSED" | "FAILED";
       thinking_level: "simple" | "medium" | "complex" | "auto";
       trace_id: string;
     };
@@ -3989,8 +3993,8 @@ export interface components {
     };
     ToggleAgentGovernanceRequest: {
       enabled_in_workspace?: boolean | null;
+      lifecycle_status?: "DRAFT" | "ACTIVE" | null;
       mcp_exposed?: boolean | null;
-      test_bench_validated?: boolean | null;
       thinking_level?: "simple" | "medium" | "complex" | "auto" | null;
       visibility_scope?: "PRIVATE" | "TEAM" | null;
     };
@@ -4152,6 +4156,7 @@ export interface components {
       human_partner_role?: "PO_PM" | "ARCHITECT" | "TECH_LEAD" | "SECURITY_QA" | "ALL" | null;
       instructions: string;
       invocation_modes?: (string)[] | null;
+      lifecycle_status?: "DRAFT" | "ACTIVE" | null;
       llm_model_tier?: "team_default" | "fast" | "deep" | "discovery" | null;
       max_tokens?: number | null;
       mcp_exposed?: boolean | null;
@@ -4166,7 +4171,6 @@ export interface components {
       skill_ids?: (string)[];
       source_pack_key?: string | null;
       temperature?: number | null;
-      test_bench_validated?: boolean | null;
       thinking_level?: "simple" | "medium" | "complex" | "auto";
       version?: string;
       visibility_scope?: "PRIVATE" | "TEAM" | "PACK" | null;

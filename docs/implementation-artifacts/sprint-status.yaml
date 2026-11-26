@@ -341,7 +341,7 @@ development_status:
   30-2-assistant-conversational-prompt-cleanup-and-empty-evidence-guard: done
   30-3-processes-real-pg18-pending-runs-live-llm-and-coalesced-trace: done
   30-4-processes-tabbed-hub-and-focus-review-action-artifact-reasoning: done
-  30-5-agents-pg18-mcp-sync-clean-modal-save-and-draft-active-lifecycle: backlog
+  30-5-agents-pg18-mcp-sync-clean-modal-save-and-draft-active-lifecycle: done
   30-6-epic-30-anti-regression-audits-bilingual-e2e-and-closure: backlog
   epic-30-retrospective: optional
 action_items:

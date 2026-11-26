@@ -1,3 +1,4 @@
+import type { UiManagedAgentItem } from "@orcia/ui";
 import React from "react";
 import { formatI18nTemplate, resolveDictionaryForFlag } from "../../../i18n";
 import type { ProcessOrchestrationModesCopy } from "../../../i18n/locales/process_orchestration_modes_labels";
@@ -8,6 +9,7 @@ export interface WorkflowBlock2ExecutionSectionProps {
   readonly workflow: WorkflowDefinitionV2Item;
   readonly goalObjectiveDraft: string;
   readonly goalDelegateAgentsDraft: readonly string[];
+  readonly managedAgents?: readonly UiManagedAgentItem[];
   readonly copy: ProcessOrchestrationModesCopy;
   readonly isFr: boolean;
   readonly onChangeGoalObjective: (nextObjective: string) => void;
@@ -20,6 +22,7 @@ export function WorkflowBlock2ExecutionSection({
   workflow,
   goalObjectiveDraft,
   goalDelegateAgentsDraft,
+  managedAgents,
   copy,
   isFr,
   onChangeGoalObjective,
@@ -34,6 +37,7 @@ export function WorkflowBlock2ExecutionSection({
       <WorkflowBlock2GoalDrivenSection
         goalObjectiveDraft={goalObjectiveDraft}
         goalDelegateAgentsDraft={goalDelegateAgentsDraft}
+        managedAgents={managedAgents}
         copy={copy}
         isFr={isFr}
         onChangeGoalObjective={onChangeGoalObjective}

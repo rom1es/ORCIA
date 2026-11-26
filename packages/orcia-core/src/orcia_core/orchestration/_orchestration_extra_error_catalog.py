@@ -193,6 +193,54 @@ ORCHESTRATION_EXTRA_ERROR_CATALOG: dict[str, dict[SupportedLocale, LocalizedErro
             "Starlark rule '{mechanism_code}' ({rule_id}) failed Tier 1b certification.",
         ),
     },
+    "ERR_DRAFT_AGENT_LIFECYCLE_BLOCKED": {
+        "fr": LocalizedErrorCopy(
+            "Action refusée pour un agent en brouillon (DRAFT)",
+            "Cet agent est actuellement en brouillon (DRAFT) et doit être activé ou validé au "
+            "Banc de Test avant d'être utilisé ou exposé.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Action blocked for a DRAFT agent",
+            "This agent is currently in DRAFT status and must be activated or verified in the "
+            "Test Bench before use or external exposure.",
+        ),
+    },
+    "ERR_DRAFT_AGENT_CANNOT_EXPOSE_MCP": {
+        "fr": LocalizedErrorCopy(
+            "Exposition externe interdite sur un agent en brouillon (DRAFT)",
+            "L'agent « {agent_name} » est en brouillon (DRAFT). Validez-le au Banc de Test ou "
+            "activez-le avant de l'exposer en outil externe MCP.",
+        ),
+        "en": LocalizedErrorCopy(
+            "External MCP exposure forbidden for DRAFT agent",
+            "Agent '{agent_name}' is in DRAFT status. Pass the Test Bench or activate it "
+            "before exposing it as an external MCP tool.",
+        ),
+    },
+    "ERR_DRAFT_AGENT_INVOCATION_BLOCKED": {
+        "fr": LocalizedErrorCopy(
+            "Invocation bloquée : agent en brouillon (DRAFT)",
+            "L'agent « {agent_name} » ({agent_handle}) est en brouillon (DRAFT) et ne peut "
+            "pas encore être invoqué dans Mon Assistant ou dans un Processus.",
+        ),
+        "en": LocalizedErrorCopy(
+            "Invocation blocked: DRAFT agent",
+            "Agent '{agent_name}' ({agent_handle}) is in DRAFT status and cannot be invoked "
+            "in My Assistant or Processes yet.",
+        ),
+    },
+    "ERR_AGENT_INCOMPLETE_FOR_ACTIVATION": {
+        "fr": LocalizedErrorCopy(
+            "Agent incomplet pour l'activation",
+            "L'agent « {agent_name} » ne remplit pas encore les critères d'activation "
+            "(nom, mission, instructions requises et absence d'échec au Banc de Test).",
+        ),
+        "en": LocalizedErrorCopy(
+            "Agent incomplete for activation",
+            "Agent '{agent_name}' does not meet activation requirements yet "
+            "(name, mission, instructions required, and no failed Test Bench status).",
+        ),
+    },
 }
 
 register_domain_error_catalog(ORCHESTRATION_EXTRA_ERROR_CATALOG)

@@ -1,6 +1,8 @@
 import React from "react";
 import type {
   AgentsAndSkillsManagerLabels,
+  UiAgentLifecycleStatus,
+  UiAgentTestBenchStatus,
   UiManagedAgentItem,
 } from "./AgentsAndSkillsTypes";
 import { FormattedMarkdownContent } from "./FormattedMarkdownContent";
@@ -9,20 +11,40 @@ import { OrciaIcon } from "./icons";
 export interface AgentDetailModalHeaderProps {
   readonly agent: UiManagedAgentItem;
   readonly labels: AgentsAndSkillsManagerLabels;
-  readonly testBenchValidated: boolean;
+  readonly isPack: boolean;
+  readonly lifecycleStatus: UiAgentLifecycleStatus;
+  readonly testBenchStatus: UiAgentTestBenchStatus;
+  readonly mcpExposed: boolean;
+  readonly isUpdatingMcp?: boolean;
+  readonly isUpdatingLifecycle?: boolean;
   readonly savedFeedback: boolean;
   readonly onToggleMcpExposure: (checked: boolean) => void;
+  readonly onToggleLifecycle?: (nextLifecycle: UiAgentLifecycleStatus) => void;
   readonly onClose?: () => void;
 }
 
 export function AgentDetailModalHeader({
   agent,
   labels,
-  testBenchValidated,
+  isPack,
+  lifecycleStatus,
+  testBenchStatus,
+  mcpExposed,
+  isUpdatingMcp = false,
+  isUpdatingLifecycle = false,
   savedFeedback,
   onToggleMcpExposure,
+  onToggleLifecycle,
 }: AgentDetailModalHeaderProps): React.JSX.Element {
   const studio = labels.studio;
+  const isDraft = lifecycleStatus === "DRAFT";
+  const mcpDisabled = isPack || isDraft || isUpdatingMcp;
+  const mcpDisabledHint = isPack
+    ? studio.mcpPackPresetReadOnlyHint
+    : isDraft
+      ? studio.mcpDraftBlockedHint
+      : undefined;
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <code
@@ -32,22 +54,60 @@ export function AgentDetailModalHeader({
         {agent.handle}
       </code>
       <span
+        data-testid={`agent-modal-lifecycle-badge-${agent.agentId}`}
+        className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2 py-0.5 text-[11px] font-semibold"
+        style={{
+          color:
+            lifecycleStatus === "ACTIVE"
+              ? "var(--color-status-success)"
+              : "var(--color-arbitration-amber)",
+        }}
+      >
+        {lifecycleStatus === "ACTIVE"
+          ? studio.lifecycleActiveBadge
+          : studio.lifecycleDraftBadge}
+      </span>
+      <span
         data-testid={`agent-bench-status-badge-${agent.agentId}`}
         className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2 py-0.5 text-[11px] font-semibold"
+        style={
+          testBenchStatus === "FAILED"
+            ? { color: "var(--color-status-danger)" }
+            : undefined
+        }
       >
-        {testBenchValidated || Boolean(agent.lastExecutionOutput)
+        {testBenchStatus === "PASSED"
           ? studio.benchValidatedBadge
-          : studio.benchToTestBadge}
+          : testBenchStatus === "FAILED"
+            ? studio.benchFailedBadge
+            : studio.benchToTestBadge}
       </span>
+      {!isPack && onToggleLifecycle && (
+        <button
+          type="button"
+          data-testid={`agent-toggle-lifecycle-btn-${agent.agentId}`}
+          disabled={isUpdatingLifecycle}
+          onClick={() => onToggleLifecycle(isDraft ? "ACTIVE" : "DRAFT")}
+          className="orcia-ds-btn orcia-ds-btn-secondary text-[11px]"
+        >
+          {isDraft ? studio.activateAgentButton : studio.setDraftAgentButton}
+        </button>
+      )}
       {savedFeedback && (
         <span
+          data-testid={`agent-modal-saved-badge-${agent.agentId}`}
           className="rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2 py-0.5 text-[11px] font-semibold"
           style={{ color: "var(--color-status-success)" }}
         >
           <OrciaIcon name="check" /> {studio.savedShortBadge}
         </span>
       )}
-      <label className="inline-flex items-center gap-1.5 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2.5 py-1 text-xs font-medium">
+      <label
+        title={mcpDisabledHint || undefined}
+        className={`inline-flex items-center gap-1.5 rounded border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-secondary)] px-2.5 py-1 text-xs font-medium ${
+          mcpDisabled ? "opacity-60 cursor-not-allowed" : ""
+        }`}
+      >
         <input
           type="checkbox"
           autoComplete="off"
@@ -56,13 +116,22 @@ export function AgentDetailModalHeader({
           data-bwignore="true"
           data-form-type="other"
           data-testid={`agent-mcp-expose-checkbox-${agent.agentId}`}
-          checked={Boolean(agent.mcpExposed)}
+          disabled={mcpDisabled}
+          checked={mcpExposed}
           onChange={(e) => onToggleMcpExposure(e.target.checked)}
         />
         <span>
           <OrciaIcon name="plug" /> {studio.exposeMcpLabel}
         </span>
       </label>
+      {mcpDisabledHint ? (
+        <span
+          data-testid={`agent-mcp-disabled-hint-${agent.agentId}`}
+          className="text-[11px] text-[var(--orcia-text-secondary)]"
+        >
+          {mcpDisabledHint}
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -72,6 +141,7 @@ export interface AgentTestBenchSectionProps {
   readonly labels: AgentsAndSkillsManagerLabels;
   readonly satisfiedConditionsCount: number;
   readonly testInputValue: string;
+  readonly readOnlyPack?: boolean;
   readonly onChangeTestInput: (agentId: string, nextValue: string) => void;
   readonly onRunAgent: () => void;
   readonly sandboxTraceSlot?: React.ReactNode;
@@ -82,6 +152,7 @@ export function AgentTestBenchSection({
   labels,
   satisfiedConditionsCount,
   testInputValue,
+  readOnlyPack = false,
   onChangeTestInput,
   onRunAgent,
   sandboxTraceSlot = null,
@@ -106,26 +177,39 @@ export function AgentTestBenchSection({
           data-bwignore="true"
           data-form-type="other"
           data-testid={`agent-test-input-${agent.agentId}`}
+          disabled={readOnlyPack}
           value={testInputValue}
           onChange={(e) => onChangeTestInput(agent.agentId, e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") {
+            if (e.key === "Enter" && !readOnlyPack) {
               e.preventDefault();
               onRunAgent();
             }
           }}
           placeholder={labels.testAgentInputPlaceholder}
-          className="orcia-ds-input flex-1"
+          className="orcia-ds-input flex-1 disabled:opacity-60"
         />
         <button
           type="button"
           data-testid={`run-agent-btn-${agent.agentId}`}
-          onClick={onRunAgent}
-          className="orcia-ds-btn orcia-ds-btn-primary text-xs"
+          disabled={readOnlyPack}
+          title={readOnlyPack ? studio.mcpPackPresetReadOnlyHint : undefined}
+          onClick={() => {
+            if (!readOnlyPack) onRunAgent();
+          }}
+          className="orcia-ds-btn orcia-ds-btn-primary text-xs disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <OrciaIcon name="lightning" /> {labels.runAgentButtonLabel}
         </button>
       </div>
+      {readOnlyPack && (
+        <p
+          data-testid={`agent-bench-pack-readonly-hint-${agent.agentId}`}
+          className="text-[11px] text-[var(--orcia-text-secondary)]"
+        >
+          {studio.mcpPackPresetReadOnlyHint}
+        </p>
+      )}
       {sandboxTraceSlot ? (
         <div data-testid="agent-sandbox-trace-slot">{sandboxTraceSlot}</div>
       ) : null}

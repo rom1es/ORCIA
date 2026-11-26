@@ -1,8 +1,13 @@
+import type { AgentGovernanceStudioLabels } from "./AgentGovernanceStudioLabels";
 import type {
+  UiAgentLifecycleStatus,
   UiAgentSkillVisibilityScope,
+  UiAgentTestBenchStatus,
   UiAgentThinkingLevel,
   UiManagedAgentItem,
 } from "./AgentsAndSkillsTypes";
+
+export type { AgentGovernanceStudioLabels };
 
 export type UiAgentPosture = "PRODUCER" | "EVALUATOR_GATE";
 export type UiAgentHumanPartnerRole =
@@ -48,6 +53,8 @@ export interface AgentSixBlocksDraftState {
   readonly outputContractFormat: UiAgentOutputContractFormat;
   readonly writePreviewRequired: boolean;
   readonly testBenchValidated: boolean;
+  readonly lifecycleStatus: UiAgentLifecycleStatus;
+  readonly testBenchStatus: UiAgentTestBenchStatus;
 }
 
 export interface AgentReadinessConditionItem {
@@ -56,157 +63,6 @@ export interface AgentReadinessConditionItem {
   readonly label: string;
   readonly satisfied: boolean;
   readonly detail: string;
-}
-
-export interface AgentGovernanceStudioLabels {
-  readonly visibilityFieldLabel: string;
-  readonly visibilityShortLabel: string;
-  readonly visibilityTeamShort: string;
-  readonly visibilityPrivateShort: string;
-  readonly visibilityPackPrefix: string;
-  readonly visibilityTeamFull: string;
-  readonly visibilityPrivateFull: string;
-  readonly toggleVisibilityTitle: string;
-  readonly loadPackAgentsButton: string;
-  readonly newAgentButton: string;
-  readonly newSkillButton: string;
-  readonly testMcpButton: string;
-  readonly kpiAgentsTitle: string;
-  readonly kpiActiveSingular?: string;
-  readonly kpiActiveSuffix: string;
-  readonly kpiSkillsTitle: string;
-  readonly kpiReusableSingular?: string;
-  readonly kpiReusableSuffix: string;
-  readonly kpiOriginMcpTitle: string;
-  readonly kpiPackTeamSingular?: string;
-  readonly kpiPackTeamSuffix: string;
-  readonly searchPlaceholder: string;
-  readonly visibilityFilterAriaLabel: string;
-  readonly filterAll: string;
-  readonly filterPack: string;
-  readonly filterTeam: string;
-  readonly filterPrivate: string;
-  readonly createAgentSubtitle: string;
-  readonly createAgentDisabledReason: string;
-  readonly readinessChecklistTitle: string;
-  readonly escapeCancelHint: string;
-  readonly cancelButton: string;
-  readonly closeEscapeLabel: string;
-  readonly savedFeedbackLabel: string;
-  readonly autosaveActiveLabel: string;
-  readonly saveButtonLabel: string;
-  readonly defaultTestPromptTemplate: string;
-  readonly defaultSkillTestPromptTemplate: string;
-  readonly benchValidatedBadge: string;
-  readonly benchToTestBadge: string;
-  readonly benchShortToTestBadge: string;
-  readonly savedShortBadge: string;
-  readonly exposeMcpLabel: string;
-  readonly testBenchHeading: string;
-  readonly conditionsMetPrefix: string;
-  readonly copyHandleTitle: string;
-  readonly copySkillTitle: string;
-  readonly copiedShortLabel: string;
-  readonly copyCodeLabel: string;
-  readonly copyHandleButton: string;
-  readonly copySkillButton: string;
-  readonly postureProducerBadge: string;
-  readonly postureEvaluatorBadge: string;
-  readonly partnerBadgePrefix: string;
-  readonly disabledWorkspaceBadge: string;
-  readonly mcpActiveSingular?: string;
-  readonly mcpActiveBadge: string;
-  readonly modelPassportLabel: string;
-  readonly tempShortLabel: string;
-  readonly tokShortLabel: string;
-  readonly precisionShortLabel?: string;
-  readonly maxTokensUnitLabel?: string;
-  readonly ragShortLabel: string;
-  readonly ontologyShortLabel: string;
-  readonly outputShortLabel: string;
-  readonly writePreviewBadge: string;
-  readonly noAttachedSkillsLabel: string;
-  readonly manageBlocksButton: string;
-  readonly useInAssistantButton: string;
-  readonly configureAndTestSixBlocksButton: string;
-  readonly duplicateAndCustomizeButton: string;
-  readonly disableOnWorkspaceButton: string;
-  readonly enableOnWorkspaceButton: string;
-  readonly duplicateButton: string;
-  readonly configureAndTestSkillButton: string;
-  readonly skillParametersPrefix: string;
-  readonly skillCreateDisabledReason: string;
-  readonly skillDetailAriaPrefix: string;
-  readonly skillSandboxHeading: string;
-  readonly defaultSkillOutputFormat: string;
-  readonly pinnedAssistantTitle: string;
-  readonly pinnedAssistantBadge: string;
-  readonly pinnedAssistantDescription: string;
-  readonly pinnedAssistantSettingsButton: string;
-  readonly pinnedAssistantOpenButton: string;
-  readonly showBlockByBlockLabel: string;
-  readonly showAllSixBlocksLabel: string;
-  readonly assistantReadyPrefix: string;
-  readonly defaultHandleSlug: string;
-  readonly blockTitles: Readonly<Record<AgentStudioBlockKey, { badge: string; title: string; heading: string }>>;
-  readonly postureFieldLabel: string;
-  readonly postureProducerOption: string;
-  readonly postureEvaluatorOption: string;
-  readonly humanPartnerFieldLabel: string;
-  readonly humanPartnerRoles: Readonly<Record<UiAgentHumanPartnerRole, string>>;
-  readonly llmModelFieldLabel: string;
-  readonly llmModelTiers: Readonly<Record<UiAgentLlmModelTier, string>>;
-  readonly llmTierShortLabels?: Readonly<Record<UiAgentLlmModelTier, string>>;
-  readonly settingsPrecisionLabels?: {
-    readonly deterministic: string;
-    readonly precise: string;
-    readonly balanced: string;
-    readonly creative: string;
-    readonly contextTemplate: string;
-  };
-  readonly temperatureFieldLabel: string;
-  readonly temperatureOptions: Readonly<Record<string, string>>;
-  readonly maxTokensFieldLabel: string;
-  readonly maxTokensOptions: Readonly<Record<string, string>>;
-  readonly systemPromptSuffix: string;
-  readonly promptRefFieldLabel: string;
-  readonly promptRefPlaceholder: string;
-  readonly dialogueMechanismFieldLabel: string;
-  readonly dialogueMechanisms: Readonly<Record<UiAgentDialogueMechanism, string>>;
-  readonly invocationModesFieldLabel: string;
-  readonly invocationModes: Readonly<Record<UiAgentInvocationMode, string>>;
-  readonly ragSourcesFieldLabel: string;
-  readonly ragSourceOptions: Readonly<Record<string, string>>;
-  readonly ontologyViewsFieldLabel: string;
-  readonly ontologyViewOptions: Readonly<Record<string, string>>;
-  readonly mcpToolboxFieldLabel: string;
-  readonly mcpToolsCatalog: Readonly<Record<string, string>>;
-  readonly mcpPermissionModes: Readonly<Record<UiMcpToolPermissionMode, string>>;
-  readonly outputContractFieldLabel: string;
-  readonly outputContractFormats: Readonly<Record<UiAgentOutputContractFormat, string>>;
-  readonly writePreviewRequiredLabel: string;
-  readonly guardrailsFieldLabel: string;
-  readonly guardrailOptions: Readonly<Record<string, string>>;
-  readonly readinessConditions: {
-    readonly identityLabel: string;
-    readonly identityOkTemplate: string;
-    readonly identityMissing: string;
-    readonly postureProducerShort: string;
-    readonly postureEvaluatorShort: string;
-    readonly instructionsLabel: string;
-    readonly instructionsOkTemplate: string;
-    readonly instructionsMissing: string;
-    readonly engineLabel: string;
-    readonly engineTemplate: string;
-    readonly citationsLabel: string;
-    readonly citationsOkTemplate: string;
-    readonly citationsMissing: string;
-    readonly ragScopeLabel: string;
-    readonly ragScopeTemplate: string;
-    readonly writePreviewLabel: string;
-    readonly writePreviewValidated: string;
-    readonly writePreviewReady: string;
-  };
 }
 
 export const DEFAULT_MCP_TOOL_PERMISSIONS_MAP: Readonly<Record<string, string>> = {
@@ -223,10 +79,33 @@ export const DEFAULT_AGENT_GUARDRAILS: readonly string[] = [
   "filtrage_dcp_pii",
 ];
 
+export function resolveAgentLifecycleAndBenchStatus(agent: UiManagedAgentItem | null | undefined): {
+  readonly lifecycleStatus: UiAgentLifecycleStatus;
+  readonly testBenchStatus: UiAgentTestBenchStatus;
+} {
+  if (!agent) {
+    return { lifecycleStatus: "DRAFT", testBenchStatus: "UNTESTED" };
+  }
+  const testBenchStatus: UiAgentTestBenchStatus =
+    agent.testBenchStatus === "PASSED" ||
+    agent.testBenchStatus === "FAILED" ||
+    agent.testBenchStatus === "UNTESTED"
+      ? agent.testBenchStatus
+      : agent.testBenchValidated
+        ? "PASSED"
+        : "UNTESTED";
+  const lifecycleStatus: UiAgentLifecycleStatus =
+    agent.lifecycleStatus === "ACTIVE" || agent.lifecycleStatus === "DRAFT"
+      ? agent.lifecycleStatus
+      : "DRAFT";
+  return { lifecycleStatus, testBenchStatus };
+}
+
 export function createDefaultAgentSixBlocksDraft(
   existing?: UiManagedAgentItem | null,
 ): AgentSixBlocksDraftState {
   const posture: UiAgentPosture = existing?.posture ?? "PRODUCER";
+  const resolved = resolveAgentLifecycleAndBenchStatus(existing);
   return {
     name: existing?.name ?? "",
     roleMission: existing?.roleMission ?? "",
@@ -261,7 +140,9 @@ export function createDefaultAgentSixBlocksDraft(
     outputContractFormat:
       existing?.outputContractFormat ?? "markdown_structure",
     writePreviewRequired: existing?.writePreviewRequired ?? true,
-    testBenchValidated: existing?.testBenchValidated ?? false,
+    testBenchValidated: resolved.testBenchStatus === "PASSED",
+    lifecycleStatus: resolved.lifecycleStatus,
+    testBenchStatus: resolved.testBenchStatus,
   };
 }
 
@@ -294,4 +175,28 @@ export function formatAgentModelPassportSummary(
     ? precision.contextTemplate.replace("{window}", windowLabel)
     : `${windowLabel} context`;
   return `${tierLabel} · ${styleLabel} · ${contextLabel}`;
+}
+
+export function pickAgentComparableFields(d: AgentSixBlocksDraftState): string {
+  return JSON.stringify({
+    name: d.name,
+    roleMission: d.roleMission,
+    instructions: d.instructions,
+    thinkingLevel: d.thinkingLevel,
+    visibilityScope: d.visibilityScope,
+    posture: d.posture,
+    humanPartnerRole: d.humanPartnerRole,
+    llmModelTier: d.llmModelTier,
+    temperature: d.temperature,
+    maxTokens: d.maxTokens,
+    promptRef: d.promptRef,
+    invocationModes: d.invocationModes,
+    dialogueMechanism: d.dialogueMechanism,
+    allowedRagSources: d.allowedRagSources,
+    ontologyViews: d.ontologyViews,
+    mcpToolPermissions: d.mcpToolPermissions,
+    guardrails: d.guardrails,
+    outputContractFormat: d.outputContractFormat,
+    writePreviewRequired: d.writePreviewRequired,
+  });
 }

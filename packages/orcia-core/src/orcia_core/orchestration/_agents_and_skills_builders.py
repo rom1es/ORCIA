@@ -17,10 +17,12 @@ from orcia_core.orchestration._agents_and_skills_types import (
     AgentDialogueMechanism,
     AgentHumanPartnerRole,
     AgentKindType,
+    AgentLifecycleStatus,
     AgentLlmModelTier,
     AgentOutputContractFormat,
     AgentPostureType,
     AgentSkillVisibilityScope,
+    AgentTestBenchStatus,
     AgentThinkingLevel,
     ManagedAgentRecord,
     ManagedSkillRecord,
@@ -150,12 +152,27 @@ def build_managed_agent_record(
     output_contract_format: AgentOutputContractFormat | None = None,
     write_preview_required: bool | None = None,
     test_bench_validated: bool | None = None,
+    lifecycle_status: AgentLifecycleStatus | None = None,
+    test_bench_status: AgentTestBenchStatus | None = None,
     owner_workspace_id: str | None = None,
     owner_user_id: str | None = None,
 ) -> ManagedAgentRecord:
     """Construct a `ManagedAgentRecord` with deterministic SHA-256 digest."""
+    _ = test_bench_validated
     resolved_posture: AgentPostureType = posture or (existing.posture if existing else "PRODUCER")
     default_temp = 0.0 if resolved_posture == "EVALUATOR_GATE" else 0.2
+    resolved_bench_status: AgentTestBenchStatus = (
+        test_bench_status
+        if test_bench_status is not None
+        else (existing.test_bench_status if existing is not None else "UNTESTED")
+    )
+    resolved_bench_validated = resolved_bench_status == "PASSED"
+    if lifecycle_status is not None:
+        resolved_lifecycle: AgentLifecycleStatus = lifecycle_status
+    elif existing is not None:
+        resolved_lifecycle = existing.lifecycle_status
+    else:
+        resolved_lifecycle = "DRAFT"
     base = ManagedAgentRecord(
         agent_id=resolved_id,
         slug=slug,
@@ -245,11 +262,9 @@ def build_managed_agent_record(
             if write_preview_required is not None
             else (existing.write_preview_required if existing else True)
         ),
-        test_bench_validated=(
-            test_bench_validated
-            if test_bench_validated is not None
-            else (existing.test_bench_validated if existing else False)
-        ),
+        test_bench_validated=resolved_bench_validated,
+        lifecycle_status=resolved_lifecycle,
+        test_bench_status=resolved_bench_status,
         owner_workspace_id=(
             owner_workspace_id
             if owner_workspace_id is not None

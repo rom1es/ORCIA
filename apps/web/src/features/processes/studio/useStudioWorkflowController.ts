@@ -98,12 +98,10 @@ export function useStudioWorkflowController({
     bannerMessage?: string,
     publish = false,
   ) => {
+    const prevWorkflow = workflow;
     hasUserEditedRef.current = true;
     setWorkflow(nextWf);
     savePersistedWorkflowV2(nextWf);
-    if (bannerMessage) {
-      setStatusBanner({ tone: "success", message: bannerMessage });
-    }
     createProcessesApiClient(locale)
       .saveWorkflowV2(
         nextWf.id,
@@ -114,7 +112,11 @@ export function useStudioWorkflowController({
         workspaceId ? { workspaceId } : undefined,
       )
       .then((res) => {
-        if (!isMountedRef.current || !res?.workflow?.id) return;
+        if (!isMountedRef.current) return;
+        if (bannerMessage) {
+          setStatusBanner({ tone: "success", message: bannerMessage });
+        }
+        if (!res?.workflow?.id) return;
         const synced = mapApiWorkflowV2ToUiItem(res.workflow, nextWf, locale);
         savePersistedWorkflowV2(synced);
         if (synced.version !== nextWf.version || synced.status !== nextWf.status) {
@@ -123,6 +125,8 @@ export function useStudioWorkflowController({
       })
       .catch((err: unknown) => {
         if (!isMountedRef.current) return;
+        setWorkflow(prevWorkflow);
+        savePersistedWorkflowV2(prevWorkflow);
         setStatusBanner({
           tone: "error",
           message: formatRfc9457ErrorToBanner(

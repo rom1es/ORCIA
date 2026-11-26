@@ -20,6 +20,7 @@ const TOKEN_KEYS = ["2048", "4096", "8192", "16384"] as const;
 export interface AgentSixBlocksBlockBProps {
   readonly draft: AgentSixBlocksDraftState;
   readonly labels: AgentsAndSkillsManagerLabels;
+  readonly readOnlyIdentity?: boolean;
   readonly testIdPrefix: string;
   readonly onChangeDraft: (patch: Partial<AgentSixBlocksDraftState>) => void;
 }
@@ -27,6 +28,7 @@ export interface AgentSixBlocksBlockBProps {
 export const AgentSixBlocksBlockB: React.FC<AgentSixBlocksBlockBProps> = ({
   draft,
   labels,
+  readOnlyIdentity = false,
   testIdPrefix,
   onChangeDraft,
 }) => {
@@ -44,6 +46,7 @@ export const AgentSixBlocksBlockB: React.FC<AgentSixBlocksBlockBProps> = ({
           <span className="font-medium">{studio.llmModelFieldLabel}</span>
           <select
             data-testid={`${testIdPrefix}-agent-llm-model-tier-select`}
+            disabled={readOnlyIdentity}
             value={draft.llmModelTier}
             onChange={(e) =>
               onChangeDraft({
@@ -67,6 +70,7 @@ export const AgentSixBlocksBlockB: React.FC<AgentSixBlocksBlockBProps> = ({
                 ? "agent-thinking-level-select"
                 : "modal-agent-thinking-select"
             }
+            disabled={readOnlyIdentity}
             value={draft.thinkingLevel}
             onChange={(e) =>
               onChangeDraft({
@@ -86,6 +90,7 @@ export const AgentSixBlocksBlockB: React.FC<AgentSixBlocksBlockBProps> = ({
           <span className="font-medium">{studio.temperatureFieldLabel}</span>
           <select
             data-testid={`${testIdPrefix}-agent-temperature-select`}
+            disabled={readOnlyIdentity}
             value={String(draft.temperature)}
             onChange={(e) =>
               onChangeDraft({ temperature: Number(e.target.value) })
@@ -103,6 +108,7 @@ export const AgentSixBlocksBlockB: React.FC<AgentSixBlocksBlockBProps> = ({
           <span className="font-medium">{studio.maxTokensFieldLabel}</span>
           <select
             data-testid={`${testIdPrefix}-agent-max-tokens-select`}
+            disabled={readOnlyIdentity}
             value={String(draft.maxTokens)}
             onChange={(e) =>
               onChangeDraft({ maxTokens: Number(e.target.value) })

@@ -120,6 +120,7 @@ export const FEATURE_ADMIN_CATALOG_SETTINGS_FR: FeatureAdminCatalogSettingsDicti
     agentSkillsErrorContext: "Compétences de l'agent",
     agentThinkingErrorContext: "Niveau de réflexion",
     agentVisibilityErrorContext: "Visibilité de l'agent",
+    agentLifecycleErrorContext: "Cycle de vie de l'agent",
     agentDeleteErrorContext: "Suppression d'agent",
     agentExecuteErrorContext: "Exécution d'agent",
     skillPreviewLineTemplate:

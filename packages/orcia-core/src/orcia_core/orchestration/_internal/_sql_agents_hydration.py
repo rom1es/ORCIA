@@ -13,10 +13,12 @@ from orcia_core.orchestration.agents_and_skills_models import (
     AgentDialogueMechanism,
     AgentHumanPartnerRole,
     AgentKindType,
+    AgentLifecycleStatus,
     AgentLlmModelTier,
     AgentOutputContractFormat,
     AgentPostureType,
     AgentSkillVisibilityScope,
+    AgentTestBenchStatus,
     AgentThinkingLevel,
     ManagedAgentRecord,
     ManagedSkillRecord,
@@ -160,6 +162,19 @@ def hydrate_agent_record(
     raw_tokens = meta.get("max_tokens")
     raw_ws = meta.get("owner_workspace_id") or column_workspace_id
     raw_user = meta.get("owner_user_id")
+    raw_bench_validated = bool(meta.get("test_bench_validated", False))
+    raw_bench_status = str(meta.get("test_bench_status") or "").upper()
+    test_bench_status: AgentTestBenchStatus = (
+        cast(AgentTestBenchStatus, raw_bench_status)
+        if raw_bench_status in ("UNTESTED", "PASSED", "FAILED")
+        else ("PASSED" if raw_bench_validated else "UNTESTED")
+    )
+    raw_lifecycle = str(meta.get("lifecycle_status") or "").upper()
+    lifecycle_status: AgentLifecycleStatus = (
+        cast(AgentLifecycleStatus, raw_lifecycle)
+        if raw_lifecycle in ("DRAFT", "ACTIVE")
+        else "DRAFT"
+    )
     return ManagedAgentRecord(
         agent_id=resource_id,
         slug=slug,
@@ -194,7 +209,9 @@ def hydrate_agent_record(
         guardrails=parse_str_tuple(meta.get("guardrails"), DEFAULT_GUARDRAILS),
         output_contract_format=output_contract_format,
         write_preview_required=bool(meta.get("write_preview_required", True)),
-        test_bench_validated=bool(meta.get("test_bench_validated", False)),
+        test_bench_validated=(test_bench_status == "PASSED"),
+        lifecycle_status=lifecycle_status,
+        test_bench_status=test_bench_status,
         owner_workspace_id=str(raw_ws).strip() if raw_ws else None,
         owner_user_id=str(raw_user).strip() if raw_user else None,
     )

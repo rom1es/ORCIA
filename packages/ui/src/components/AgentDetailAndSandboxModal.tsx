@@ -1,17 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
+import { OrciaAlertBanner } from "../primitives/OrciaAlertBanner";
 import { OrciaDialog } from "../primitives/RadixDesignSystemPrimitives";
-import type {
-  AgentSixBlocksDraftState,
-  AgentStudioBlockKey,
-} from "./AgentGovernanceTypesAndDefaults";
 import {
   computeAgentReadinessChecklist,
-  createDefaultAgentSixBlocksDraft,
+  resolveAgentLifecycleAndBenchStatus,
+  type AgentSixBlocksDraftState,
 } from "./AgentGovernanceTypesAndDefaults";
-import { AgentIdentityAndSkillsFields } from "./AgentIdentityAndSkillsFields";
 import { AgentSixBlocksEditorBody } from "./AgentSixBlocksFormSections";
 import type {
   AgentsAndSkillsManagerLabels,
+  UiAgentLifecycleStatus,
   UiAgentSkillVisibilityScope,
   UiAgentThinkingLevel,
   UiManagedAgentItem,
@@ -21,32 +19,35 @@ import {
   AgentDetailModalHeader,
   AgentTestBenchSection,
 } from "./AgentTestBenchSection";
-import { OrciaIcon } from "./icons";
+import {
+  RgaaDialogFooterActions,
+  RgaaUnsavedChangesAlert,
+  type RgaaModalGuardLabels,
+} from "./RgaaModalDialog";
+import { useAgentDetailModalState } from "./useAgentDetailModalState";
 
 export interface AgentDetailAndSandboxModalProps {
   readonly agent: UiManagedAgentItem | null;
   readonly skills: readonly UiManagedSkillItem[];
   readonly labels: AgentsAndSkillsManagerLabels;
   readonly testInputValue: string;
+  readonly modalError?: string | null;
+  readonly onClearModalError?: () => void;
   readonly onChangeTestInput: (agentId: string, nextValue: string) => void;
   readonly onToggleAgentSkill: (
     agentId: string,
     skillId: string,
     nextChecked: boolean,
-  ) => void;
-  readonly onExecuteAgent: (agentId: string, prompt: string) => void;
-  readonly onUpdateAgentThinkingLevel?: (
-    agentId: string,
-    nextThinkingLevel: UiAgentThinkingLevel,
-  ) => void;
-  readonly onUpdateAgentVisibility?: (
-    agentId: string,
-    nextVisibility: UiAgentSkillVisibilityScope,
-  ) => void;
+  ) => Promise<boolean> | boolean | void;
+  readonly onExecuteAgent: (agentId: string, prompt: string) => Promise<boolean> | boolean | void;
   readonly onToggleAgentMcpExposure?: (
     agentId: string,
     nextExposed: boolean,
-  ) => void;
+  ) => Promise<boolean> | boolean | void;
+  readonly onUpdateAgentLifecycle?: (
+    agentId: string,
+    nextLifecycle: UiAgentLifecycleStatus,
+  ) => Promise<boolean> | boolean | void;
   readonly onUpdateAgentDetails?: (
     agentId: string,
     patch: Partial<AgentSixBlocksDraftState> & {
@@ -57,7 +58,7 @@ export interface AgentDetailAndSandboxModalProps {
       visibilityScope?: UiAgentSkillVisibilityScope;
       mcpExposed?: boolean;
     },
-  ) => void;
+  ) => Promise<boolean> | boolean | void;
   readonly sandboxTraceSlot?: React.ReactNode;
   readonly onClose: () => void;
 }
@@ -69,76 +70,60 @@ export const AgentDetailAndSandboxModal: React.FC<
   skills,
   labels,
   testInputValue,
+  modalError = null,
+  onClearModalError,
   onChangeTestInput,
   onToggleAgentSkill,
   onExecuteAgent,
-  onUpdateAgentThinkingLevel,
-  onUpdateAgentVisibility,
   onToggleAgentMcpExposure,
+  onUpdateAgentLifecycle,
   onUpdateAgentDetails,
   sandboxTraceSlot = null,
   onClose,
 }) => {
-  const [draft, setDraft] = useState<AgentSixBlocksDraftState>(() =>
-    createDefaultAgentSixBlocksDraft(agent),
-  );
-  const [activeBlock, setActiveBlock] = useState<AgentStudioBlockKey>("A");
-  const [showAllBlocks, setShowAllBlocks] = useState<boolean>(true);
-  const [savedFeedback, setSavedFeedback] = useState<boolean>(false);
-  const studio = labels.studio;
-
-  useEffect(() => {
-    if (agent) {
-      setDraft(createDefaultAgentSixBlocksDraft(agent));
-      setSavedFeedback(false);
-    }
-  }, [agent]);
+  const state = useAgentDetailModalState({
+    agent,
+    labels,
+    modalError,
+    testInputValue,
+    onChangeTestInput,
+    onToggleAgentSkill,
+    onExecuteAgent,
+    onToggleAgentMcpExposure,
+    onUpdateAgentLifecycle,
+    onUpdateAgentDetails,
+    onClearModalError,
+    onClose,
+  });
 
   if (!agent) return null;
 
+  const studio = labels.studio;
   const isPack = agent.visibilityScope === "PACK";
-  const visibilityScope: UiAgentSkillVisibilityScope =
-    draft.visibilityScope ?? "TEAM";
-  const readiness = computeAgentReadinessChecklist(draft, studio);
-
-  const applyDraftPatch = (patch: Partial<AgentSixBlocksDraftState>) => {
-    const next: AgentSixBlocksDraftState = { ...draft, ...patch };
-    setDraft(next);
-    setSavedFeedback(true);
-    if (patch.thinkingLevel) {
-      onUpdateAgentThinkingLevel?.(agent.agentId, patch.thinkingLevel);
-    }
-    if (patch.visibilityScope) {
-      onUpdateAgentVisibility?.(agent.agentId, patch.visibilityScope);
-    }
-    onUpdateAgentDetails?.(agent.agentId, {
-      ...next,
-      name: next.name.trim() || agent.name,
-      roleMission: next.roleMission.trim() || agent.roleMission,
-      instructions: next.instructions.trim() || agent.instructions,
-      thinkingLevel: next.thinkingLevel,
-      visibilityScope: next.visibilityScope,
-      mcpExposed: next.mcpExposed,
-    });
+  const { lifecycleStatus, testBenchStatus } = resolveAgentLifecycleAndBenchStatus(agent);
+  const readiness = computeAgentReadinessChecklist(state.draft, studio);
+  const guardLabels: RgaaModalGuardLabels = {
+    unsavedAlertTitle: studio.unsavedAlertTitle,
+    unsavedAlertMessage: studio.unsavedAlertMessage,
+    unsavedStayCta: studio.unsavedAlertStayCta,
+    unsavedDiscardCta: studio.unsavedAlertDiscardCta,
+    cancelButtonLabel: studio.cancelButton,
+    submitButtonLabel: studio.saveButtonLabel,
   };
-
-  const handleRunAgent = () => {
-    const raw = testInputValue.trim();
-    const prompt =
-      raw ||
-      studio.defaultTestPromptTemplate
-        .replace("{name}", agent.name)
-        .replace("{role}", agent.roleMission);
-    if (!raw) onChangeTestInput(agent.agentId, prompt);
-    setDraft((prev) => ({ ...prev, testBenchValidated: true }));
-    onExecuteAgent(agent.agentId, prompt);
-  };
+  const footerHint = state.savedFeedback
+    ? studio.savedFeedbackLabel
+    : state.isDirty
+      ? (studio.unsavedChangesHintLabel ?? studio.escapeCancelHint)
+      : (studio.explicitSaveHintLabel ?? studio.escapeCancelHint);
 
   return (
     <OrciaDialog
       open={true}
       onOpenChange={(nextOpen) => {
-        if (!nextOpen) onClose();
+        if (!nextOpen) state.guard.requestClose();
+      }}
+      onEscapeKeyDown={(e) => {
+        e.preventDefault();
       }}
       title={agent.name}
       testId={`agent-detail-modal-${agent.agentId}`}
@@ -149,47 +134,61 @@ export const AgentDetailAndSandboxModal: React.FC<
         <AgentDetailModalHeader
           agent={agent}
           labels={labels}
-          testBenchValidated={draft.testBenchValidated}
-          savedFeedback={savedFeedback}
+          isPack={isPack}
+          lifecycleStatus={lifecycleStatus}
+          testBenchStatus={testBenchStatus}
+          mcpExposed={state.mcpExposed}
+          isUpdatingMcp={state.isUpdatingMcp}
+          isUpdatingLifecycle={state.isUpdatingLifecycle}
+          savedFeedback={state.savedFeedback}
           onToggleMcpExposure={(checked) => {
-            onToggleAgentMcpExposure?.(agent.agentId, checked);
-            setSavedFeedback(true);
+            void state.handleToggleMcp(checked);
           }}
+          onToggleLifecycle={
+            onUpdateAgentLifecycle
+              ? (nextLifecycle) => {
+                  void state.handleToggleLifecycle(nextLifecycle);
+                }
+              : undefined
+          }
         />
       }
     >
       <div className="orcia-ds-dialog-body pt-3 space-y-4">
-        <AgentIdentityAndSkillsFields
-          agent={agent}
-          draft={draft}
-          skills={skills}
-          labels={labels}
-          isPack={isPack}
-          visibilityScope={visibilityScope}
-          onChangeDraft={applyDraftPatch}
-          onToggleAgentSkill={(agentId, skillId, checked) => {
-            onToggleAgentSkill(agentId, skillId, checked);
-            setSavedFeedback(true);
-          }}
+        <RgaaUnsavedChangesAlert
+          testIdPrefix={`agent-detail-${agent.agentId}`}
+          isOpen={state.guard.showUnsavedAlert}
+          labels={guardLabels}
+          onStay={state.guard.cancelDiscard}
+          onConfirmDiscard={state.guard.confirmDiscard}
         />
 
+        {state.displayedError ? (
+          <OrciaAlertBanner
+            tone="crimson"
+            role="alert"
+            testId={`agent-detail-modal-error-${agent.agentId}`}
+          >
+            {state.displayedError}
+          </OrciaAlertBanner>
+        ) : null}
+
         <AgentSixBlocksEditorBody
-          draft={draft}
+          draft={state.draft}
           labels={labels}
           skills={skills}
-          activeBlock={activeBlock}
-          showAllBlocks={showAllBlocks}
+          activeBlock={state.activeBlock}
+          showAllBlocks={state.showAllBlocks}
           readOnlyIdentity={isPack}
           testIdPrefix={`detail-${agent.agentId}`}
           onSelectBlock={(blk) => {
-            setActiveBlock(blk);
-            setShowAllBlocks(false);
+            state.setActiveBlock(blk);
+            state.setShowAllBlocks(false);
           }}
-          onToggleShowAllBlocks={() => setShowAllBlocks((p) => !p)}
-          onChangeDraft={applyDraftPatch}
+          onToggleShowAllBlocks={() => state.setShowAllBlocks((p) => !p)}
+          onChangeDraft={state.handleChangeDraft}
           onToggleSkillId={(skillId, checked) => {
-            onToggleAgentSkill(agent.agentId, skillId, checked);
-            setSavedFeedback(true);
+            void state.handleToggleSkill(skillId, checked);
           }}
         />
 
@@ -198,24 +197,38 @@ export const AgentDetailAndSandboxModal: React.FC<
           labels={labels}
           satisfiedConditionsCount={readiness.filter((r) => r.satisfied).length}
           testInputValue={testInputValue}
+          readOnlyPack={isPack}
           onChangeTestInput={onChangeTestInput}
-          onRunAgent={handleRunAgent}
+          onRunAgent={state.handleRunAgent}
           sandboxTraceSlot={sandboxTraceSlot}
         />
       </div>
 
       <div className="orcia-ds-dialog-footer justify-between">
-        <span className="text-[11px] text-[var(--orcia-text-secondary)]">
-          {savedFeedback ? studio.savedFeedbackLabel : studio.autosaveActiveLabel}
-        </span>
-        <button
-          type="button"
-          data-testid={`save-agent-detail-modal-btn-${agent.agentId}`}
-          onClick={() => applyDraftPatch({})}
-          className="orcia-ds-btn orcia-ds-btn-primary text-xs"
+        <span
+          data-testid={`agent-detail-footer-status-${agent.agentId}`}
+          className="text-[11px] text-[var(--orcia-text-secondary)]"
+          style={state.savedFeedback ? { color: "var(--color-status-success)" } : undefined}
         >
-          <OrciaIcon name="check" /> {studio.saveButtonLabel}
-        </button>
+          {isPack ? studio.mcpPackPresetReadOnlyHint : footerHint}
+        </span>
+        <RgaaDialogFooterActions
+          testIdPrefix={`agent-detail-${agent.agentId}`}
+          cancelTestId={`cancel-agent-detail-modal-btn-${agent.agentId}`}
+          submitTestId={`save-agent-detail-modal-btn-${agent.agentId}`}
+          cancelLabel={state.isDirty ? studio.cancelButton : studio.closeEscapeLabel}
+          submitLabel={
+            state.isSaving
+              ? (studio.savingChangesLabel ?? studio.saveButtonLabel)
+              : studio.saveButtonLabel
+          }
+          submitDisabled={isPack || !state.isDirty || state.isSaving}
+          isSubmitting={state.isSaving}
+          onCancel={state.guard.requestClose}
+          onSubmit={() => {
+            void state.handleSaveDetails();
+          }}
+        />
       </div>
     </OrciaDialog>
   );

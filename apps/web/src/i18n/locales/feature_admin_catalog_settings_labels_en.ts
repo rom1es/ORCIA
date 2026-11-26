@@ -109,7 +109,7 @@ export const FEATURE_ADMIN_CATALOG_SETTINGS_EN: FeatureAdminCatalogSettingsDicti
     mcpDisabledBanner: "MCP exposure disabled and saved.",
     defaultSkillOutputFormat: "Structured summary",
     packTemplatesLoadedBanner: "Business Pack agents and skills loaded into your studio.",
-    agentDuplicatedBannerTemplate: "Agent '{name}'duplicated and ready to customize.",
+    agentDuplicatedBannerTemplate: "Agent '{name}' duplicated and ready to customize.",
     agentDuplicateSuffix: "(Copy)",
     catalogErrorContext: "Agents catalog",
     skillErrorContext: "Skill",
@@ -120,6 +120,7 @@ export const FEATURE_ADMIN_CATALOG_SETTINGS_EN: FeatureAdminCatalogSettingsDicti
     agentSkillsErrorContext: "Agent skills",
     agentThinkingErrorContext: "Thinking level",
     agentVisibilityErrorContext: "Agent visibility",
+    agentLifecycleErrorContext: "Agent lifecycle",
     agentDeleteErrorContext: "Agent deletion",
     agentExecuteErrorContext: "Agent execution",
     skillPreviewLineTemplate:

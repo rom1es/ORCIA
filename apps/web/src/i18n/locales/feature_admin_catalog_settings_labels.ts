@@ -70,6 +70,7 @@ export interface FeatureAdminCatalogSettingsDictionary {
     readonly agentSkillsErrorContext: string;
     readonly agentThinkingErrorContext: string;
     readonly agentVisibilityErrorContext: string;
+    readonly agentLifecycleErrorContext: string;
     readonly agentDeleteErrorContext: string;
     readonly agentExecuteErrorContext: string;
     readonly skillPreviewLineTemplate: string;

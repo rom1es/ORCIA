@@ -146,24 +146,28 @@ describe("Story 16.4 — Vertical Wiring Across 3 Surfaces, Surgical Line Inspec
       </I18nProvider>,
     );
 
+    // PACK presets are read-only (P0-2); duplicate the preset into a customizable TEAM agent first
+    const duplicatePackBtn = await waitFor(() => {
+      return screen.getByTestId("duplicate-agent-btn-agent-architecte-solution");
+    });
+    fireEvent.click(duplicatePackBtn);
+
+    const editableAgentId = "agent-architecte-solution-copie";
     const openAgentBtn = await waitFor(() => {
-      const buttons = screen.getAllByTestId(/^open-agent-detail-modal-/);
-      expect(buttons.length).toBeGreaterThan(0);
-      return buttons[0]!;
+      return screen.getByTestId(`open-agent-detail-modal-btn-${editableAgentId}`);
     });
     fireEvent.click(openAgentBtn);
 
     const testInput = await waitFor(() => {
-      const inputs = screen.getAllByTestId(/^agent-test-input-/);
-      expect(inputs.length).toBeGreaterThan(0);
-      return inputs[0]!;
+      return screen.getByTestId(`agent-test-input-${editableAgentId}`);
     });
     fireEvent.change(testInput, {
       target: { value: "Audite la couverture des capacités livrées" },
     });
 
-    const runButtons = screen.getAllByTestId(/^run-agent-btn-/);
-    fireEvent.click(runButtons[0]!);
+    const runBtn = screen.getByTestId(`run-agent-btn-${editableAgentId}`);
+    expect((runBtn as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(runBtn);
 
     const pill = await waitFor(() => {
       expect(screen.getByTestId("agent-sandbox-trace-slot")).toBeDefined();

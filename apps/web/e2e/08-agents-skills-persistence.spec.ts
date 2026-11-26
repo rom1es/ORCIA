@@ -83,9 +83,16 @@ test.describe("TEST-05 · 08 — Mes Agents : Studio 6 Blocs Gouvernés, Banc de
       page.getByTestId("agent-governance-passport-agent-e2e-conformite"),
     ).toContainText("Validation avant écriture");
 
-    // Ouverture de la modale « Configurer & Tester (6 blocs) » et validation au Banc de Test intégré
+    // Ouverture de la modale « Configurer & Tester (6 blocs) » : statut initial DRAFT, puis validation au Banc de Test
+    await expect(
+      page.getByTestId("agent-lifecycle-badge-agent-e2e-conformite"),
+    ).toContainText("Brouillon");
     await page.getByTestId("open-agent-detail-modal-btn-agent-e2e-conformite").click();
     await expect(page.getByTestId("agent-detail-modal-agent-e2e-conformite")).toBeVisible();
+    await expect(page.getByTestId("edit-agent-name-input")).toHaveCount(1);
+    await expect(
+      page.getByTestId("agent-mcp-expose-checkbox-agent-e2e-conformite"),
+    ).toBeDisabled();
     await page
       .getByTestId("agent-test-input-agent-e2e-conformite")
       .fill("Vérifie le dossier d'architecture Cloud UE");
@@ -96,5 +103,26 @@ test.describe("TEST-05 · 08 — Mes Agents : Studio 6 Blocs Gouvernés, Banc de
     await expect(
       page.getByTestId("agent-bench-status-badge-agent-e2e-conformite"),
     ).toContainText("Validé au Banc de Test");
+    await expect(
+      page.getByTestId("agent-modal-lifecycle-badge-agent-e2e-conformite"),
+    ).toContainText("Actif");
+
+    // Exposition MCP et Enregistrement explicite dans la modale 6 blocs + survie au F5
+    const mcpToggleResp = page.waitForResponse(
+      (r) =>
+        r.url().includes("/api/v1/agents-and-skills/agents/agent-e2e-conformite/governance") &&
+        r.request().method() === "PATCH",
+      { timeout: 20000 },
+    );
+    await page.getByTestId("agent-mcp-expose-checkbox-agent-e2e-conformite").check();
+    expect((await mcpToggleResp).status()).toBe(200);
+    await page.getByTestId("edit-agent-role-input").fill("Analyste conformité UE & Gate contradictoire");
+    const explicitSaveResp = page.waitForResponse(
+      (r) => r.url().includes("/api/v1/agents-and-skills/agents") && r.request().method() === "POST",
+      { timeout: 20000 },
+    );
+    await page.getByTestId("save-agent-detail-modal-btn-agent-e2e-conformite").click();
+    expect((await explicitSaveResp).status()).toBe(200);
+    await expect(page.getByTestId("agent-modal-saved-badge-agent-e2e-conformite")).toBeVisible();
   });
 });

@@ -436,6 +436,7 @@ async def test_p0_p1_rag_search_ontology_mcp_and_catalog_isolation(
             "name": "Agent MCP",
             "enabled_in_workspace": True,
             "mcp_exposed": True,
+            "lifecycle_status": "ACTIVE",
             "visibility_scope": "TEAM",
             "owner_workspace_id": ws.id,
             "owner_user_id": None,

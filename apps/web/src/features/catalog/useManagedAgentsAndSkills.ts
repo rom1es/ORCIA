@@ -1,6 +1,6 @@
 import { createOrciaApiClient } from "@orcia/api-client";
 import type { UiAgentSkillVisibilityScope, UiManagedSkillItem } from "@orcia/ui";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ConfiguredPackItem } from "../../components/platformSetupStore";
 import type { SupportedWebLocale } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
@@ -26,14 +26,17 @@ export function useManagedAgentsAndSkills(
   onFeedback: (msg: AlertFeedbackInput) => void,
   locale: SupportedWebLocale,
   catalogLabels: CatalogManagedLabels,
+  onModalError?: (msg: string) => void,
 ) {
   const [managedState, setManagedState] = useState<CachedAgentsAndSkillsState>(() =>
     readCachedAgentsAndSkills(),
   );
+  const mutationEpochRef = useRef(0);
 
   const updateManagedState = (
     updater: (prev: CachedAgentsAndSkillsState) => CachedAgentsAndSkillsState,
   ) => {
+    mutationEpochRef.current += 1;
     setManagedState((prev) => {
       const next = updater(prev);
       writeCachedAgentsAndSkills(next);
@@ -43,18 +46,15 @@ export function useManagedAgentsAndSkills(
 
   useEffect(() => {
     let cancelled = false;
+    const fetchEpoch = mutationEpochRef.current;
     createOrciaApiClient({ baseUrl: "" })
       .listAgentsAndSkills()
       .then((res) => {
-        if (cancelled) return;
+        if (cancelled || mutationEpochRef.current !== fetchEpoch) return;
         const mappedSkills = (res.skills ?? []).map((s) =>
           mapSkillDtoToUi(s, catalogLabels.defaultSkillOutputFormat),
         );
         const mappedAgents = (res.agents ?? []).map(mapAgentDtoToUi);
-        if (mappedAgents.length === 0 && mappedSkills.length === 0) {
-          const cached = readCachedAgentsAndSkills();
-          if (cached.agents.length > 0 || cached.skills.length > 0) return;
-        }
         const nextState = { agents: mappedAgents, skills: mappedSkills };
         writeCachedAgentsAndSkills(nextState);
         setManagedState(nextState);
@@ -220,6 +220,7 @@ export function useManagedAgentsAndSkills(
     locale,
     catalogLabels,
     onFeedback,
+    onModalError,
     updateManagedState,
   });
 

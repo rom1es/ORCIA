@@ -12,8 +12,10 @@ import type {
   AgentsAndSkillsManagerViewProps,
   AgentsAndSkillsSubTab,
   CreateAgentSixBlocksInput,
+  UiAgentLifecycleStatus,
   UiAgentSkillVisibilityFilter,
   UiAgentSkillVisibilityScope,
+  UiAgentTestBenchStatus,
   UiAgentThinkingLevel,
   UiManagedAgentItem,
   UiManagedSkillItem,
@@ -30,8 +32,10 @@ export type {
   AgentsAndSkillsManagerViewProps,
   AgentsAndSkillsSubTab,
   CreateAgentSixBlocksInput,
+  UiAgentLifecycleStatus,
   UiAgentSkillVisibilityFilter,
   UiAgentSkillVisibilityScope,
+  UiAgentTestBenchStatus,
   UiAgentThinkingLevel,
   UiManagedAgentItem,
   UiManagedSkillItem,
@@ -45,6 +49,8 @@ export const AgentsAndSkillsManagerView: React.FC<
   labels,
   initialTab = "AGENTS",
   alertSlot,
+  agentModalError = null,
+  onClearAgentModalError,
   onCreateAgent,
   onToggleAgentSkill,
   onExecuteAgent,
@@ -52,6 +58,7 @@ export const AgentsAndSkillsManagerView: React.FC<
   onDuplicateAgent,
   onToggleAgentEnabled,
   onToggleAgentMcpExposure,
+  onUpdateAgentLifecycle,
   onUpdateAgentDetails,
   onUpdateAgentThinkingLevel,
   onUpdateAgentVisibility,
@@ -236,21 +243,25 @@ export const AgentsAndSkillsManagerView: React.FC<
                 ? (agentTestInputs[activeDetailAgent.agentId] ?? "")
                 : ""
             }
+            modalError={agentModalError}
+            onClearModalError={onClearAgentModalError}
             onChangeTestInput={(agentId, val) =>
               setAgentTestInputs((p) => ({ ...p, [agentId]: val }))
             }
             onToggleAgentSkill={onToggleAgentSkill}
             onExecuteAgent={onExecuteAgent}
-            onUpdateAgentThinkingLevel={onUpdateAgentThinkingLevel}
-            onUpdateAgentVisibility={onUpdateAgentVisibility}
             onToggleAgentMcpExposure={onToggleAgentMcpExposure}
+            onUpdateAgentLifecycle={onUpdateAgentLifecycle}
             onUpdateAgentDetails={onUpdateAgentDetails}
             sandboxTraceSlot={
               activeDetailAgent && renderAgentSandboxSlot
                 ? renderAgentSandboxSlot(activeDetailAgent)
                 : null
             }
-            onClose={() => setActiveDetailAgentId(null)}
+            onClose={() => {
+              onClearAgentModalError?.();
+              setActiveDetailAgentId(null);
+            }}
           />
         </div>
       )}

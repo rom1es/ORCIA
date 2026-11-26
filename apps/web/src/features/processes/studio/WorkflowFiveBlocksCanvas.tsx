@@ -5,6 +5,7 @@ import { resolveEffectiveWorkspaceId } from "../../../components/shellScopeOptio
 import { usePlatformSetup } from "../../../components/platformSetupStore";
 import { formatI18nTemplate, useI18n } from "../../../i18n";
 import { useAuthSessionStore } from "../../../stores/authSessionStore";
+import { useSyncManagedAgentsCache } from "../../../components/useSyncManagedAgentsCache";
 import { InteractiveRunDrawer } from "../execution/InteractiveRunDrawer";
 import { StudioCopilotSidebar } from "./StudioCopilotSidebar";
 import {
@@ -44,6 +45,10 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
   const studioCopy = dictionary.processStudioUi.studio;
   const contractLabels = dictionary.autonomyContract;
   const triggersLabels = dictionary.workflowTriggers;
+  const [, managedAgents] = useSyncManagedAgentsCache(
+    locale,
+    dictionary.featureAdminCatalogSettings.catalog.defaultSkillOutputFormat,
+  );
   const targetId = workflowId ?? "wf-01-qualification-prd";
   const [showRunDrawer, setShowRunDrawer] = useState<boolean>(false);
 
@@ -262,6 +267,7 @@ export function WorkflowFiveBlocksCanvas({ workflowId }: { workflowId?: string }
               workflow={workflow}
               goalObjectiveDraft={workflow.reflexive_objective ?? ""}
               goalDelegateAgentsDraft={workflow.allowed_delegate_agents ?? []}
+              managedAgents={managedAgents}
               copy={modesCopy}
               isFr={isFr}
               onChangeGoalObjective={handleChangeGoalObjective}

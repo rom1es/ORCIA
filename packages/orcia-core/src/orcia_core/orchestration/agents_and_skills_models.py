@@ -48,6 +48,9 @@ from orcia_core.orchestration._agents_and_skills_types import (
     AgentKindType as AgentKindType,
 )
 from orcia_core.orchestration._agents_and_skills_types import (
+    AgentLifecycleStatus as AgentLifecycleStatus,
+)
+from orcia_core.orchestration._agents_and_skills_types import (
     AgentLlmModelTier as AgentLlmModelTier,
 )
 from orcia_core.orchestration._agents_and_skills_types import (
@@ -58,6 +61,9 @@ from orcia_core.orchestration._agents_and_skills_types import (
 )
 from orcia_core.orchestration._agents_and_skills_types import (
     AgentSkillVisibilityScope as AgentSkillVisibilityScope,
+)
+from orcia_core.orchestration._agents_and_skills_types import (
+    AgentTestBenchStatus as AgentTestBenchStatus,
 )
 from orcia_core.orchestration._agents_and_skills_types import (
     AgentThinkingLevel as AgentThinkingLevel,

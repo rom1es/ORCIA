@@ -1013,6 +1013,10 @@ describe("@orcia/web empty-start UX, entity setup screens, and i18n parity", () 
     expect(screen.getAllByTestId(`agent-execution-output-${agentId}`)[0]?.textContent).toContain(
       "Analyse Conformité Fournisseur",
     );
+    // Wait for Test Bench execution API persistence so lifecycle promotes from DRAFT to ACTIVE before unmount
+    await waitFor(() => {
+      expect(screen.getByTestId(`agent-lifecycle-badge-${agentId}`).textContent).toContain("Actif");
+    });
     fireEvent.click(screen.getByTestId(`close-agent-detail-modal-btn-${agentId}`));
 
     // 3. Simulate F5 reload: unmount and re-render on /agents

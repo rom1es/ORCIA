@@ -8,6 +8,7 @@ import type { AgentsAndSkillsManagerLabels } from "./AgentsAndSkillsTypes";
 export interface AgentSixBlocksGuardrailsSectionProps {
   readonly draft: AgentSixBlocksDraftState;
   readonly labels: AgentsAndSkillsManagerLabels;
+  readonly readOnlyIdentity?: boolean;
   readonly testIdPrefix: string;
   readonly onChangeDraft: (patch: Partial<AgentSixBlocksDraftState>) => void;
 }
@@ -29,7 +30,7 @@ const GUARDRAIL_KEYS = [
 
 export const AgentSixBlocksGuardrailsSection: React.FC<
   AgentSixBlocksGuardrailsSectionProps
-> = ({ draft, labels, testIdPrefix, onChangeDraft }) => {
+> = ({ draft, labels, readOnlyIdentity = false, testIdPrefix, onChangeDraft }) => {
   const studio = labels.studio;
   const toggleArrayItem = (
     list: readonly string[],
@@ -51,6 +52,7 @@ export const AgentSixBlocksGuardrailsSection: React.FC<
           <span className="font-medium">{studio.outputContractFieldLabel}</span>
           <select
             data-testid={`${testIdPrefix}-agent-output-contract-select`}
+            disabled={readOnlyIdentity}
             value={draft.outputContractFormat}
             onChange={(e) =>
               onChangeDraft({
@@ -75,6 +77,7 @@ export const AgentSixBlocksGuardrailsSection: React.FC<
             data-bwignore="true"
             data-form-type="other"
             data-testid={`${testIdPrefix}-agent-write-preview-checkbox`}
+            disabled={readOnlyIdentity}
             checked={draft.writePreviewRequired}
             onChange={(e) =>
               onChangeDraft({ writePreviewRequired: e.target.checked })
@@ -101,6 +104,7 @@ export const AgentSixBlocksGuardrailsSection: React.FC<
                   data-bwignore="true"
                   data-form-type="other"
                   data-testid={`${testIdPrefix}-agent-guardrail-${grId}`}
+                  disabled={readOnlyIdentity}
                   checked={checked}
                   onChange={(e) =>
                     onChangeDraft({

@@ -16,6 +16,7 @@ export interface AgentSixBlocksKnowledgeToolsGuardrailsSectionsProps {
   readonly skills: readonly UiManagedSkillItem[];
   readonly activeBlock: AgentStudioBlockKey;
   readonly showAllBlocks: boolean;
+  readonly readOnlyIdentity?: boolean;
   readonly testIdPrefix: string;
   readonly onChangeDraft: (patch: Partial<AgentSixBlocksDraftState>) => void;
   readonly onToggleSkillId: (skillId: string, checked: boolean) => void;
@@ -45,6 +46,7 @@ export const AgentSixBlocksKnowledgeToolsGuardrailsSections: React.FC<
   skills,
   activeBlock,
   showAllBlocks,
+  readOnlyIdentity = false,
   testIdPrefix,
   onChangeDraft,
   onToggleSkillId,
@@ -87,6 +89,7 @@ export const AgentSixBlocksKnowledgeToolsGuardrailsSections: React.FC<
                         data-bwignore="true"
                         data-form-type="other"
                         data-testid={`${testIdPrefix}-agent-rag-${srcId}`}
+                        disabled={readOnlyIdentity}
                         checked={checked}
                         onChange={(e) =>
                           onChangeDraft({
@@ -122,6 +125,7 @@ export const AgentSixBlocksKnowledgeToolsGuardrailsSections: React.FC<
                         data-bwignore="true"
                         data-form-type="other"
                         data-testid={`${testIdPrefix}-agent-ontology-${ontId}`}
+                        disabled={readOnlyIdentity}
                         checked={checked}
                         onChange={(e) =>
                           onChangeDraft({
@@ -178,6 +182,7 @@ export const AgentSixBlocksKnowledgeToolsGuardrailsSections: React.FC<
                             ? `create-agent-skill-checkbox-${sk.skillId}`
                             : `agent-attach-skill-${sk.skillId}`
                         }
+                        disabled={readOnlyIdentity}
                         checked={checked}
                         onChange={(e) => onToggleSkillId(sk.skillId, e.target.checked)}
                       />
@@ -204,6 +209,7 @@ export const AgentSixBlocksKnowledgeToolsGuardrailsSections: React.FC<
                     <span>{studio.mcpToolsCatalog[toolKey] ?? toolKey}</span>
                     <select
                       data-testid={`${testIdPrefix}-agent-mcp-tool-${toolKey}`}
+                      disabled={readOnlyIdentity}
                       value={mode}
                       onChange={(e) =>
                         onChangeDraft({
@@ -235,6 +241,7 @@ export const AgentSixBlocksKnowledgeToolsGuardrailsSections: React.FC<
         <AgentSixBlocksGuardrailsSection
           draft={draft}
           labels={labels}
+          readOnlyIdentity={readOnlyIdentity}
           testIdPrefix={testIdPrefix}
           onChangeDraft={onChangeDraft}
         />

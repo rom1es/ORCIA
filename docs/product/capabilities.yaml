@@ -713,15 +713,15 @@ capabilities:
     title: Services MCP, agents distants A2A et banc de test
     fr: [FR-35]
     origin: epic
-    origin_ref: 11-3 + 18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact + 29-5
+    origin_ref: 11-3 + 18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact + 29-5 + 30-5
     status: live
     kind: feature
     uj: [UJ-9, UJ-19]
     db_tables: [catalog_items, enterprise_connectors, audit_ledger]
-    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, tests/unit/test_epic_11_story_11_3_test_bench_and_mcp_exposure.py, tests/integration/test_story_11_3_mcp_and_test_bench_postgres18_redis.py, tests/unit/connectors/test_story_18_3_codegraph_mcp_tools_and_providers.py]
+    tests: [apps/web/e2e/18-catalog-packs-wizards-and-mcp-bench.spec.ts, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, tests/unit/test_epic_11_story_11_3_test_bench_and_mcp_exposure.py, tests/unit/test_story_30_5_agents_lifecycle_and_mcp.py, tests/integration/test_story_11_3_mcp_and_test_bench_postgres18_redis.py, tests/integration/api/test_story_30_5_agent_governance_and_lifecycle_pg18.py, tests/unit/connectors/test_story_18_3_codegraph_mcp_tools_and_providers.py]
     verification: runtime
-    verified_at: "2026-11-25"
-    surfaces: { api: "mcp_and_test_bench.py + codegraph_mcp.py", ui: RemoteServiceTestBenchAndMcpExposureView }
+    verified_at: "2026-11-26"
+    surfaces: { api: "mcp_and_test_bench.py + codegraph_mcp.py + _agents_lifecycle_guards.py", ui: RemoteServiceTestBenchAndMcpExposureView }
   - id: CAP-083
     title: Atelier orcia-pack-builder (processus 1-5, generate-and-attach, validate_help)
     fr: [FR-35]
@@ -741,27 +741,27 @@ capabilities:
     title: Gestion, création et exécution des agents et compétences (skills)
     fr: [FR-24, FR-36]
     origin: adhoc
-    origin_ref: 2026-11-05-gestion-creation-et-execution-agents-et-competences-skills + 29-5 + 29-7
+    origin_ref: 2026-11-05-gestion-creation-et-execution-agents-et-competences-skills + 29-5 + 29-7 + 30-5
     status: live
     kind: feature
     uj: [UJ-9, UJ-19]
     db_tables: [catalog_items, catalog_acl_entries]
-    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, apps/web/e2e/29-epic-29-canonical-headers-bilingual.spec.ts, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/page-header-structure-and-visual-grammar-audit.test.tsx, packages/ui/src/__tests__/agents-and-skills.test.tsx, packages/ui/src/__tests__/agents-and-skills-studio-and-governance.test.tsx, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
+    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, apps/web/e2e/29-epic-29-canonical-headers-bilingual.spec.ts, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-30-5-agent-lifecycle-and-errors.test.tsx, apps/web/src/__tests__/page-header-structure-and-visual-grammar-audit.test.tsx, packages/ui/src/__tests__/agents-and-skills.test.tsx, packages/ui/src/__tests__/agents-and-skills-studio-and-governance.test.tsx, packages/ui/src/__tests__/story-30-5-agent-modal-save-and-status.test.tsx, tests/unit/test_story_30_5_agents_lifecycle_and_mcp.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_story_30_5_agent_governance_and_lifecycle_pg18.py]
     verification: runtime
-    verified_at: "2026-11-25"
-    surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py, _agents_and_skills_skills_routes.py)", ui: AgentsAndSkillsManagerView }
+    verified_at: "2026-11-26"
+    surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py, _agents_and_skills_skills_routes.py, _agents_lifecycle_guards.py)", ui: AgentsAndSkillsManagerView }
   - id: CAP-091
     title: Refonte complète écran Agents, Skills et MCP & Studio de Gouvernance en 6 Blocs (A..F) + Checklist 6/6 Mon Assistant
     fr: [FR-36]
     origin: adhoc
-    origin_ref: 2026-11-08-refonte-complete-ecran-agents-skills-et-mcp + 2026-11-08-refonte-creation-configuration-agent-6-blocs-gouvernes + 29-5
+    origin_ref: 2026-11-08-refonte-complete-ecran-agents-skills-et-mcp + 2026-11-08-refonte-creation-configuration-agent-6-blocs-gouvernes + 29-5 + 30-5
     status: live
     kind: feature
     uj: [UJ-19]
     db_tables: [catalog_items, catalog_acl_entries, org_units]
-    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, packages/ui/src/__tests__/agents-and-skills.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, tests/unit/test_agents_and_skills_router_and_service.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py]
+    tests: [apps/web/e2e/08-agents-skills-persistence.spec.ts, packages/ui/src/__tests__/agents-and-skills.test.tsx, packages/ui/src/__tests__/story-30-5-agent-modal-save-and-status.test.tsx, apps/web/src/__tests__/story-29-5-core-screens-header-convergence.test.tsx, apps/web/src/__tests__/story-30-5-agent-lifecycle-and-errors.test.tsx, tests/unit/test_agents_and_skills_router_and_service.py, tests/unit/test_story_30_5_agents_lifecycle_and_mcp.py, tests/integration/test_http_vertical_day0_and_agents_postgres18.py, tests/integration/api/test_story_30_5_agent_governance_and_lifecycle_pg18.py]
     verification: runtime
-    verified_at: "2026-11-25"
+    verified_at: "2026-11-26"
     surfaces: { route: /agents, api: "/api/v1/agents-and-skills (agents_and_skills.py)", ui: "AgentsAndSkillsManagerView + AgentsAndSkillsHeaderAndToolbar + AgentSixBlocksEditorBody + AgentSixBlocksKnowledgeToolsGuardrailsSections + AgentDetailAndSandboxModal + SkillDetailAndSandboxModal + WorkspaceAssistantPinnedCard" }
 
   # ───────────── Qualité transverse (hygiène — NFR, pas des fonctionnalités) ─────────────
@@ -769,7 +769,7 @@ capabilities:
     title: Garde-fous qualité UI/CI (zéro bouton muet, popups RGAA/Échap, zéro donnée fictive, anti-LastPass, séparation design system, socle Radix UI AD-22)
     fr: []
     origin: adhoc
-    origin_ref: "2026-11-04-audit-et-cablage-vertical-epics-1-a-7 + 2026-11-04-cablage-vertical-persistance-epics-8-a-12 + 2026-11-04-audit-et-factorisation-popups-rgaa-echap-annuler + 2026-11-05-audit-et-purge-integrale-donnees-fictives-et-mocks-hors-tests + 2026-11-05-audit-global-inputs-secrets-et-parade-anti-lastpass-hors-login + 2026-11-05-audit-separation-design-system-look-and-feel-logique-et-contenus + 2026-11-06-audit-global-zero-bouton-muet-cablage-callbacks-et-garde-fous-ci + 2026-11-05-unification-ux-onglets-bleu-intense-actif-bleu-pale-inactif + 2026-11-05-renommage-icone-documentation-et-message-export-html + 2026-11-08-bugs-p1-e2e-et-socle-radix-ui + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 27-1..27-8 (epic-27 bilingual FR/EN & zero-baseline lock) + 29-4 + 29-6 + 29-7 + 30-1"
+    origin_ref: "2026-11-04-audit-et-cablage-vertical-epics-1-a-7 + 2026-11-04-cablage-vertical-persistance-epics-8-a-12 + 2026-11-04-audit-et-factorisation-popups-rgaa-echap-annuler + 2026-11-05-audit-et-purge-integrale-donnees-fictives-et-mocks-hors-tests + 2026-11-05-audit-global-inputs-secrets-et-parade-anti-lastpass-hors-login + 2026-11-05-audit-separation-design-system-look-and-feel-logique-et-contenus + 2026-11-06-audit-global-zero-bouton-muet-cablage-callbacks-et-garde-fous-ci + 2026-11-05-unification-ux-onglets-bleu-intense-actif-bleu-pale-inactif + 2026-11-05-renommage-icone-documentation-et-message-export-html + 2026-11-08-bugs-p1-e2e-et-socle-radix-ui + 2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale + 27-1..27-8 (epic-27 bilingual FR/EN & zero-baseline lock) + 29-4 + 29-6 + 29-7 + 30-1 + 30-5"
     status: live
     kind: foundation
     e2e_exempt_reason: "Garde-fous transverses d'hygiène UI/CI (zéro bouton muet, modales RGAA/Échap, zéro donnée fictive, anti-LastPass, séparation @orcia/ui, socle Radix UI AD-22, verrous déterministes i18n FR/EN, grammaire visuelle Cobalt 3 niveaux & en-tête canonique) sans parcours métier isolé ; couverts par AD-17 Couches 1a/1b (audit AST/Vitest & Radix UI), contrôles CI statiques et spec E2E bilingue 23-bilingual-fr-en-i18n-and-rfc9457.spec.ts."
@@ -778,7 +778,7 @@ capabilities:
       api: e2e_test_hooks
       ui: "OrciaPageHeader + OrciaTabStrip + OrciaDataCard"
     verification: runtime
-    verified_at: "2026-11-25"
+    verified_at: "2026-11-26"
 
   # ───────────── Ajouts hors epic identifiés après audit complémentaire (rapports 06–08/11) ─────────────
   - id: CAP-043

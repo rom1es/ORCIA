@@ -9,6 +9,9 @@ from fastapi import APIRouter, Depends, Path, Query, Request
 
 from orcia_api.dependencies import get_agents_and_skills_service, get_llm_streaming_port
 from orcia_api.routers._agents_and_skills_helpers import (
+    apply_agent_governance_update as _apply_agent_governance_update,
+)
+from orcia_api.routers._agents_and_skills_helpers import (
     complete_optional_live_turn as _complete_optional_live_turn,
 )
 from orcia_api.routers._agents_and_skills_helpers import (
@@ -43,6 +46,7 @@ from orcia_api.schemas.agents_and_skills import (
     UpdateAgentSkillsRequest,
     UpsertAgentRequest,
 )
+from orcia_core.catalog.errors import ResourceNotFoundError, ValidationDomainError
 from orcia_core.orchestration import (
     AgentsAndSkillsManagementService,
     delete_agent_from_postgres18,
@@ -81,6 +85,7 @@ async def upsert_agent_endpoint(
     persona_key: PersonaQuery = None,
 ) -> AgentItemResponse:
     _enforce_not_observer(request, persona_key)
+    await _sync_from_postgres18_if_enabled(request, svc)
     agent = svc.upsert_agent(**payload.model_dump(), instance=str(request.url.path))
     await _run_pg_persistence(request, lambda eng: persist_agent_to_postgres18(eng, agent))
     return _serialize_agent(agent)
@@ -97,6 +102,7 @@ async def duplicate_agent_endpoint(
     persona_key: PersonaQuery = None,
 ) -> AgentItemResponse:
     _enforce_not_observer(request, persona_key)
+    await _sync_from_postgres18_if_enabled(request, svc)
     duplicated = svc.duplicate_agent(
         agent_id,
         new_name=payload.new_name,
@@ -118,32 +124,8 @@ async def update_agent_governance_endpoint(
     persona_key: PersonaQuery = None,
 ) -> AgentItemResponse:
     _enforce_not_observer(request, persona_key)
-    cur = svc.get_agent(agent_id, instance=str(request.url.path))
-    updated = svc.upsert_agent(
-        agent_id=cur.agent_id,
-        name=cur.name,
-        role_mission=cur.role_mission,
-        instructions=cur.instructions,
-        thinking_level=payload.thinking_level or cur.thinking_level,
-        skill_ids=cur.skill_ids,
-        version=cur.version,
-        visibility_scope=payload.visibility_scope or cur.visibility_scope,
-        source_pack_key=cur.source_pack_key,
-        enabled_in_workspace=(
-            payload.enabled_in_workspace
-            if payload.enabled_in_workspace is not None
-            else cur.enabled_in_workspace
-        ),
-        mcp_exposed=payload.mcp_exposed if payload.mcp_exposed is not None else cur.mcp_exposed,
-        agent_kind=cur.agent_kind,
-        remote_endpoint_url=cur.remote_endpoint_url,
-        test_bench_validated=(
-            payload.test_bench_validated
-            if payload.test_bench_validated is not None
-            else cur.test_bench_validated
-        ),
-        instance=str(request.url.path),
-    )
+    await _sync_from_postgres18_if_enabled(request, svc)
+    updated = _apply_agent_governance_update(svc, agent_id, payload, instance=str(request.url.path))
     await _run_pg_persistence(request, lambda eng: persist_agent_to_postgres18(eng, updated))
     return _serialize_agent(updated)
 
@@ -159,6 +141,7 @@ async def update_agent_skills_endpoint(
     persona_key: PersonaQuery = None,
 ) -> AgentItemResponse:
     _enforce_not_observer(request, persona_key)
+    await _sync_from_postgres18_if_enabled(request, svc)
     agent = svc.set_agent_skills(
         agent_id, skill_ids=payload.skill_ids, instance=str(request.url.path)
     )
@@ -176,6 +159,7 @@ async def delete_agent_endpoint(
     persona_key: PersonaQuery = None,
 ) -> DeleteSkillOrAgentResponse:
     _enforce_not_observer(request, persona_key)
+    await _sync_from_postgres18_if_enabled(request, svc)
     removed = svc.delete_agent(agent_id, instance=str(request.url.path))
     await _run_pg_persistence(
         request, lambda eng: delete_agent_from_postgres18(eng, removed.agent_id)
@@ -199,24 +183,34 @@ async def execute_agent_endpoint(
     _enforce_not_observer(request, persona_key)
     await _sync_from_postgres18_if_enabled(request, svc)
     agent = svc.get_agent(agent_id, instance=str(request.url.path))
-    live_reply = await _complete_optional_live_turn(
-        request,
-        llm_port,
-        system_prompt=(
-            f"You are ORCIA agent « {agent.name} » ({agent.handle}). "
-            f"Posture: {agent.posture} | Partner: {agent.human_partner_role}. "
-            f"Mission: {agent.role_mission}. Instructions: {agent.instructions}. "
-            "Respond in the exact same language as the user's message "
-            "(unless the user explicitly asks for another language)."
-        ),
-        user_prompt=payload.prompt,
-    )
-    outcome = svc.execute_agent(
-        agent_id,
-        prompt=payload.prompt,
-        instance=str(request.url.path),
-        llm_response_override=live_reply,
-    )
+    try:
+        live_reply = await _complete_optional_live_turn(
+            request,
+            llm_port,
+            system_prompt=(
+                f"You are ORCIA agent « {agent.name} » ({agent.handle}). "
+                f"Posture: {agent.posture} | Partner: {agent.human_partner_role}. "
+                f"Mission: {agent.role_mission}. Instructions: {agent.instructions}. "
+                "Respond in the exact same language as the user's message "
+                "(unless the user explicitly asks for another language)."
+            ),
+            user_prompt=payload.prompt,
+        )
+        outcome = svc.execute_agent(
+            agent_id,
+            prompt=payload.prompt,
+            instance=str(request.url.path),
+            llm_response_override=live_reply,
+        )
+    except (ValidationDomainError, ResourceNotFoundError):
+        raise
+    except Exception:
+        failed_agent = svc.mark_agent_test_bench_failed(agent_id)
+        if failed_agent is not None:
+            await _run_pg_persistence(
+                request, lambda eng: persist_agent_to_postgres18(eng, failed_agent)
+            )
+        raise
     validated_agent = svc.get_agent(agent_id, instance=str(request.url.path))
     await _run_pg_persistence(
         request, lambda eng: persist_agent_to_postgres18(eng, validated_agent)
@@ -232,5 +226,7 @@ async def execute_agent_endpoint(
             InvokedSkillTraceResponseItem(**asdict(inv)) for inv in outcome.invoked_skills
         ],
         status=outcome.status,
+        test_bench_status=outcome.test_bench_status,
+        lifecycle_status=outcome.lifecycle_status,
         trace_id=_trace(request),
     )

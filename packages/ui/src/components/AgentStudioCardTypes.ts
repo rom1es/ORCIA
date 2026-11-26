@@ -14,17 +14,20 @@ export interface AgentStudioCardItemProps {
   readonly onChangeTestInput?: (agentId: string, nextValue: string) => void;
   readonly onToggleAgentSkill?: (agentId: string, skillId: string, nextChecked: boolean) => void;
   readonly onExecuteAgent?: (agentId: string, prompt: string) => void;
-  readonly onDeleteAgent: (agentId: string) => void;
-  readonly onDuplicateAgent?: (agent: UiManagedAgentItem) => void;
-  readonly onToggleAgentEnabled?: (agentId: string, nextEnabled: boolean) => void;
+  readonly onDeleteAgent: (agentId: string) => Promise<boolean> | boolean | void;
+  readonly onDuplicateAgent?: (agent: UiManagedAgentItem) => Promise<boolean> | boolean | void;
+  readonly onToggleAgentEnabled?: (
+    agentId: string,
+    nextEnabled: boolean,
+  ) => Promise<boolean> | boolean | void;
   readonly onOpenDetailModal?: (agent: UiManagedAgentItem) => void;
   readonly onUpdateAgentThinkingLevel?: (
     agentId: string,
     nextThinkingLevel: UiAgentThinkingLevel,
-  ) => void;
+  ) => Promise<boolean> | boolean | void;
   readonly onUpdateAgentVisibility?: (
     agentId: string,
     nextVisibility: UiAgentSkillVisibilityScope,
-  ) => void;
+  ) => Promise<boolean> | boolean | void;
   readonly onUseAgentInAssistant?: (agent: UiManagedAgentItem) => void;
 }

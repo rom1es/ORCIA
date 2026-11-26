@@ -50,7 +50,11 @@ async def collect_authorized_mcp_specs(
     canonical_slug = workspace_slug or (ws.slug if ws is not None else workspace_id)
     mcp_specs: list[McpExposedToolSpec] = []
     for ag in loaded_agents:
-        if not ag.enabled_in_workspace or not ag.mcp_exposed:
+        if (
+            not ag.enabled_in_workspace
+            or not ag.mcp_exposed
+            or getattr(ag, "lifecycle_status", "DRAFT") == "DRAFT"
+        ):
             continue
         for raw_tool_key, raw_mode in ag.mcp_tool_permissions:
             mode = str(raw_mode or "NONE").strip().upper()

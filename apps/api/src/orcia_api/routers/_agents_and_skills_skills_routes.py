@@ -47,6 +47,7 @@ async def upsert_skill_endpoint(
     persona_key: PersonaQuery = None,
 ) -> SkillItemResponse:
     enforce_not_observer(request, persona_key)
+    await sync_from_postgres18_if_enabled(request, svc)
     skill = svc.upsert_skill(**payload.model_dump(), instance=str(request.url.path))
     await run_pg_persistence(request, lambda eng: persist_skill_to_postgres18(eng, skill))
     return serialize_skill(skill)
@@ -62,6 +63,7 @@ async def delete_skill_endpoint(
     persona_key: PersonaQuery = None,
 ) -> DeleteSkillOrAgentResponse:
     enforce_not_observer(request, persona_key)
+    await sync_from_postgres18_if_enabled(request, svc)
     removed, detached_ids = svc.delete_skill(skill_id, instance=str(request.url.path))
     updated_agents = tuple(svc.get_agent(aid) for aid in detached_ids)
     await run_pg_persistence(

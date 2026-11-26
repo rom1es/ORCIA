@@ -7,6 +7,7 @@ from dataclasses import replace
 from typing import Any
 
 from orcia_core.catalog.errors import ValidationDomainError
+from orcia_core.observability.logging import get_logger
 from orcia_core.orchestration._agents_skills_locales import get_agents_skills_copy
 from orcia_core.orchestration.agents_and_skills_models import (
     AgentExecutionOutcome,
@@ -19,6 +20,8 @@ from orcia_core.orchestration.agents_and_skills_models import (
     rebuild_agent_with_skills,
 )
 from orcia_kernel.ports import LLMPort, LlmPromptRequest
+
+logger = get_logger("orcia.core.orchestration.agents_executor")
 
 
 def execute_managed_agent(
@@ -36,84 +39,104 @@ def execute_managed_agent(
 ) -> AgentExecutionOutcome:
     """Execute a `ManagedAgentRecord` with bound skills and governed LLM resolution."""
     copy = get_agents_skills_copy()
-    traces = [
-        InvokedSkillTraceItem(
-            skill_id=s.skill_id,
-            skill_name=s.name,
-            command_handle=s.command_handle,
-            output_summary=copy.agent_trace_tpl.format(
-                name=s.name,
-                handle=s.command_handle,
-                expected_output_format=s.expected_output_format,
-                clean_prompt=clean_prompt,
-            ),
+    try:
+        traces = [
+            InvokedSkillTraceItem(
+                skill_id=s.skill_id,
+                skill_name=s.name,
+                command_handle=s.command_handle,
+                output_summary=copy.agent_trace_tpl.format(
+                    name=s.name,
+                    handle=s.command_handle,
+                    expected_output_format=s.expected_output_format,
+                    clean_prompt=clean_prompt,
+                ),
+            )
+            for sid in agent.skill_ids
+            if (s := skills_by_id.get(sid)) is not None
+            and execute_skill_fn(sid, input_text=clean_prompt, instance=instance)
+        ]
+        skills_block = (
+            "\n".join(f"- {t.output_summary}" for t in traces)
+            if traces
+            else copy.no_external_skill_used
         )
-        for sid in agent.skill_ids
-        if (s := skills_by_id.get(sid)) is not None
-        and execute_skill_fn(sid, input_text=clean_prompt, instance=instance)
-    ]
-    skills_block = (
-        "\n".join(f"- {t.output_summary}" for t in traces)
-        if traces
-        else copy.no_external_skill_used
-    )
-    model_family = ""
-    model_id = ""
-    tier = (
-        agent.llm_model_tier
-        if agent.llm_model_tier in ("simple", "medium", "complex")
-        else "medium"
-    )
-    if router is not None:
-        try:
-            resolved = router.resolve_mapping(scope_id="", tier=tier, effort="default")
-            model_family = resolved.model_family
-            model_id = resolved.model_name
-        except Exception:
-            pass
+        model_family = ""
+        model_id = ""
+        tier = (
+            agent.llm_model_tier
+            if agent.llm_model_tier in ("simple", "medium", "complex")
+            else "medium"
+        )
+        if router is not None:
+            try:
+                resolved = router.resolve_mapping(scope_id="", tier=tier, effort="default")
+                model_family = resolved.model_family
+                model_id = resolved.model_name
+            except Exception as exc:
+                logger.warning(
+                    "agent_model_routing_resolution_failed", error_type=type(exc).__name__
+                )
 
-    if llm_response_override and llm_response_override.strip():
-        llm_text = llm_response_override.strip()
-    else:
-        if not model_family or not model_id:
-            if bool(getattr(llm, "is_cassette_adapter", False)):
-                model_family = "cassette"
-                model_id = f"cassette/{agent.slug}"
-            else:
+        if llm_response_override and llm_response_override.strip():
+            llm_text = llm_response_override.strip()
+        else:
+            if not model_family or not model_id:
+                if bool(getattr(llm, "is_cassette_adapter", False)):
+                    model_family = "cassette"
+                    model_id = f"cassette/{agent.slug}"
+                else:
+                    from orcia_core.orchestration.errors import TierModelNotConfiguredError
+
+                    raise TierModelNotConfiguredError(
+                        inference_tier=tier,
+                        instance=f"agent_manager:{agent.slug}",
+                    )
+            if llm is None:
                 from orcia_core.orchestration.errors import TierModelNotConfiguredError
 
                 raise TierModelNotConfiguredError(
                     inference_tier=tier,
                     instance=f"agent_manager:{agent.slug}",
                 )
-        if llm is None:
-            from orcia_core.orchestration.errors import TierModelNotConfiguredError
-
-            raise TierModelNotConfiguredError(
-                inference_tier=tier,
-                instance=f"agent_manager:{agent.slug}",
+            llm_text = run_llm_fn(
+                llm,
+                LlmPromptRequest(
+                    system_prompt=copy.agent_system_tpl.format(
+                        name=agent.name,
+                        handle=agent.handle,
+                        role_mission=agent.role_mission,
+                        posture=agent.posture,
+                        instructions=agent.instructions,
+                    ),
+                    user_prompt=copy.agent_user_tpl.format(
+                        clean_prompt=clean_prompt, skills_block=skills_block
+                    ),
+                    model_family=model_family,
+                    model_id=model_id,
+                    execution_mode="COACHING",
+                    metadata={"agent_id": agent.agent_id, "thinking_level": agent.thinking_level},
+                ),
             )
-        llm_text = run_llm_fn(
-            llm,
-            LlmPromptRequest(
-                system_prompt=copy.agent_system_tpl.format(
-                    name=agent.name,
-                    handle=agent.handle,
-                    role_mission=agent.role_mission,
-                    posture=agent.posture,
-                    instructions=agent.instructions,
-                ),
-                user_prompt=copy.agent_user_tpl.format(
-                    clean_prompt=clean_prompt, skills_block=skills_block
-                ),
-                model_family=model_family,
-                model_id=model_id,
-                execution_mode="COACHING",
-                metadata={"agent_id": agent.agent_id, "thinking_level": agent.thinking_level},
-            ),
+        if not llm_text or not llm_text.strip():
+            raise ValidationDomainError(
+                detail_code="ERR_AGENT_TEST_PROMPT_REQUIRED", instance=instance
+            )
+    except Exception:
+        agents_by_id[agent.agent_id] = rebuild_agent_with_skills(
+            replace(agent, test_bench_validated=False, test_bench_status="FAILED"),
+            agent.skill_ids,
         )
+        raise
+
     validated_agent = rebuild_agent_with_skills(
-        replace(agent, test_bench_validated=True), agent.skill_ids
+        replace(
+            agent,
+            test_bench_validated=True,
+            test_bench_status="PASSED",
+            lifecycle_status="ACTIVE",
+        ),
+        agent.skill_ids,
     )
     agents_by_id[agent.agent_id] = validated_agent
     return format_agent_execution_outcome(validated_agent, clean_prompt, traces, llm_text)
@@ -164,7 +187,9 @@ def duplicate_agent_into_registry(
         guardrails=source.guardrails,
         output_contract_format=source.output_contract_format,
         write_preview_required=source.write_preview_required,
-        test_bench_validated=source.test_bench_validated,
+        test_bench_validated=False,
+        lifecycle_status="DRAFT",
+        test_bench_status="UNTESTED",
         instance=instance,
     )
 

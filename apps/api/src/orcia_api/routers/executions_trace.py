@@ -24,6 +24,7 @@ from orcia_api.dependencies import (
     get_reflexive_runtime_service,
 )
 from orcia_api.dependencies._process_llm_bridge import enforce_live_process_prerequisites
+from orcia_api.routers._agents_lifecycle_guards import enforce_active_agents_for_refs
 from orcia_api.routers._executions_trace_helpers import (
     enforce_not_observer as _enforce_not_observer,
 )
@@ -59,10 +60,7 @@ from orcia_core.kernel.errors import resolve_locale
 router = APIRouter(
     prefix="/api/v1/executions",
     tags=["executions-reflexive"],
-    responses={
-        **PROBLEM_RESPONSES,
-        409: PROBLEM_RESPONSES[422],
-    },
+    responses={**PROBLEM_RESPONSES, 409: PROBLEM_RESPONSES[422]},
 )
 
 ReflexiveRuntimeDep = Annotated[
@@ -89,6 +87,11 @@ async def start_reflexive_execution_endpoint(
     """Launch a reflexive execution loop (`run_in_background=True` or synchronous await)."""
     user = await _enforce_not_observer(
         request, persona_key=persona_key, workspace_id=payload.workspace_id
+    )
+    await enforce_active_agents_for_refs(
+        request,
+        [payload.actor_slug, *payload.available_delegate_agents],
+        instance=str(request.url.path),
     )
     resolved_resources = await enforce_live_process_prerequisites(
         request,
@@ -119,9 +122,7 @@ async def start_reflexive_execution_endpoint(
 
     if payload.run_in_background:
         exec_id, _task = runtime.start_background_execution(
-            actor_slug=payload.actor_slug,
-            objective=payload.objective,
-            config=config,
+            actor_slug=payload.actor_slug, objective=payload.objective, config=config
         )
         for _ in range(20):
             await asyncio.sleep(0.005)
@@ -133,11 +134,8 @@ async def start_reflexive_execution_endpoint(
             detail_params={"execution_id": exec_id},
             instance=str(request.url.path),
         )
-
     snapshot = await runtime.run_execution(
-        actor_slug=payload.actor_slug,
-        objective=payload.objective,
-        config=config,
+        actor_slug=payload.actor_slug, objective=payload.objective, config=config
     )
     return _serialize_snapshot(snapshot, _trace(request))
 

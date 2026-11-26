@@ -7,7 +7,9 @@ import {
 } from "./AgentGovernanceTypesAndDefaults";
 import type {
   AgentsAndSkillsManagerLabels,
+  UiAgentLifecycleStatus,
   UiAgentSkillVisibilityScope,
+  UiAgentTestBenchStatus,
   UiAgentThinkingLevel,
   UiManagedAgentItem,
 } from "./AgentsAndSkillsTypes";
@@ -21,7 +23,8 @@ export interface AgentStudioCardBadgesRowProps {
   readonly isEnabled: boolean;
   readonly posture: UiAgentPosture;
   readonly partnerRole: UiAgentHumanPartnerRole;
-  readonly testBenchValidated: boolean;
+  readonly lifecycleStatus: UiAgentLifecycleStatus;
+  readonly testBenchStatus: UiAgentTestBenchStatus;
   readonly copiedHandle: boolean;
   readonly autosavedBadgeVisible: boolean;
   readonly onCopyHandle: () => void;
@@ -39,7 +42,8 @@ export const AgentStudioCardBadgesRow: React.FC<
   isEnabled,
   posture,
   partnerRole,
-  testBenchValidated,
+  lifecycleStatus,
+  testBenchStatus,
   copiedHandle,
   autosavedBadgeVisible,
   onCopyHandle,
@@ -131,13 +135,45 @@ export const AgentStudioCardBadgesRow: React.FC<
         )}
 
         <span
+          data-testid={`agent-lifecycle-badge-${agent.agentId}`}
+          className="inline-flex items-center gap-1 rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px] font-semibold"
+          style={{
+            color:
+              lifecycleStatus === "ACTIVE"
+                ? "var(--color-status-success)"
+                : "var(--color-arbitration-amber)",
+          }}
+        >
+          <OrciaIcon name={lifecycleStatus === "ACTIVE" ? "check" : "clock"} size={12} />
+          {lifecycleStatus === "ACTIVE"
+            ? studio.lifecycleActiveBadge
+            : studio.lifecycleDraftBadge}
+        </span>
+
+        <span
           data-testid={`agent-test-bench-badge-${agent.agentId}`}
           className="inline-flex items-center gap-1 rounded-full border border-[var(--orcia-border-subtle)] bg-[var(--orcia-surface-primary)] px-2 py-0.5 text-[11px] font-medium"
+          style={
+            testBenchStatus === "FAILED"
+              ? { color: "var(--color-status-danger)" }
+              : undefined
+          }
         >
-          <OrciaIcon name={testBenchValidated ? "check" : "clock"} size={12} />
-          {testBenchValidated
+          <OrciaIcon
+            name={
+              testBenchStatus === "PASSED"
+                ? "check"
+                : testBenchStatus === "FAILED"
+                  ? "warning"
+                  : "clock"
+            }
+            size={12}
+          />
+          {testBenchStatus === "PASSED"
             ? studio.benchValidatedBadge
-            : studio.benchShortToTestBadge}
+            : testBenchStatus === "FAILED"
+              ? studio.benchFailedBadge
+              : studio.benchShortToTestBadge}
         </span>
 
         {!isEnabled && (
@@ -176,11 +212,13 @@ export const AgentStudioCardBadgesRow: React.FC<
         </span>
         <select
           data-testid={`agent-card-thinking-select-${agent.agentId}`}
+          disabled={isPack}
+          title={isPack ? studio.mcpPackPresetReadOnlyHint : undefined}
           value={agent.thinkingLevel}
           onChange={(e) =>
             onUpdateThinkingLevel(e.target.value as UiAgentThinkingLevel)
           }
-          className="orcia-ds-select text-[11px]"
+          className="orcia-ds-select text-[11px] disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {(["simple", "medium", "complex", "auto"] as const).map((lvl) => (
             <option key={lvl} value={lvl}>

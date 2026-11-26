@@ -114,6 +114,28 @@ class OrthogonalJudgeSovereigntyViolationError(OrciaDomainError):
     http_status, type_slug = 422, "orthogonal-judge-sovereignty-violation"
 
 
+class AgentDraftLifecycleBlockedError(OrciaDomainError):
+    """Raised when an operation targets a DRAFT or unready agent (`Story 30.5`, `UX30-15`)."""
+
+    error_code = "ERR_DRAFT_AGENT_LIFECYCLE_BLOCKED"
+    http_status, type_slug = 422, "draft-agent-lifecycle-blocked"
+
+    def __init__(
+        self,
+        *,
+        detail_override: str | None = None,
+        detail_code: str | None = None,
+        detail_params: dict[str, str | int] | None = None,
+        instance: str | None = None,
+    ) -> None:
+        super().__init__(
+            detail_override=detail_override,
+            detail_code=detail_code,
+            detail_params=detail_params,
+            instance=instance,
+        )
+
+
 class TierModelNotConfiguredError(OrciaDomainError):
     """Raised when an inference tier has no active configured AI model."""
 
@@ -145,6 +167,7 @@ class TierModelNotConfiguredError(OrciaDomainError):
 
 
 __all__ = [
+    "AgentDraftLifecycleBlockedError",
     "CriticalWorkflowRequiresHumanGateError",
     "CyclicResourceWaitDetectedError",
     "DirectSiWriteRequiresProcessGateError",

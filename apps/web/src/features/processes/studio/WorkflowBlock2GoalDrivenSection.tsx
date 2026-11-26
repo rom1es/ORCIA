@@ -1,12 +1,13 @@
-import { OrciaIcon } from "@orcia/ui";
+import { OrciaIcon, type UiManagedAgentItem } from "@orcia/ui";
 import React from "react";
 import { resolveLocaleForFlag } from "../../../i18n";
 import type { ProcessOrchestrationModesCopy } from "../../../i18n/locales/process_orchestration_modes_labels";
-import { getDelegateAgents } from "./studioLabelsAndMappers";
+import { getDelegateAgents } from "./studioCatalogLabels";
 
 export interface WorkflowBlock2GoalDrivenSectionProps {
   readonly goalObjectiveDraft: string;
   readonly goalDelegateAgentsDraft: readonly string[];
+  readonly managedAgents?: readonly UiManagedAgentItem[];
   readonly copy: ProcessOrchestrationModesCopy;
   readonly isFr: boolean;
   readonly onChangeGoalObjective: (nextObjective: string) => void;
@@ -16,12 +17,13 @@ export interface WorkflowBlock2GoalDrivenSectionProps {
 export function WorkflowBlock2GoalDrivenSection({
   goalObjectiveDraft,
   goalDelegateAgentsDraft,
+  managedAgents,
   copy,
   isFr,
   onChangeGoalObjective,
   onToggleDelegateAgent,
 }: WorkflowBlock2GoalDrivenSectionProps): React.JSX.Element {
-  const delegateAgents = getDelegateAgents(resolveLocaleForFlag(isFr));
+  const delegateAgents = getDelegateAgents(resolveLocaleForFlag(isFr), managedAgents);
 
   return (
     <div

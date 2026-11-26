@@ -12,6 +12,27 @@ from orcia_core.orchestration._agents_and_skills_types import (
     SkillExecutionOutcome,
     compute_payload_sha256,
 )
+from orcia_core.orchestration.errors import AgentDraftLifecycleBlockedError
+
+
+def ensure_agent_ready_for_activation(
+    agent: ManagedAgentRecord,
+    *,
+    instance: str | None = None,
+) -> None:
+    """Enforce mandatory readiness & non-FAILED Test Bench before setting ACTIVE status."""
+    has_instr = bool(agent.instructions.strip() or (agent.prompt_ref or "").strip())
+    if (
+        not agent.name.strip()
+        or not agent.role_mission.strip()
+        or not has_instr
+        or agent.test_bench_status == "FAILED"
+    ):
+        raise AgentDraftLifecycleBlockedError(
+            detail_code="ERR_AGENT_INCOMPLETE_FOR_ACTIVATION",
+            detail_params={"agent_name": agent.name},
+            instance=instance,
+        )
 
 
 def rebuild_agent_with_skills(
@@ -49,6 +70,8 @@ def rebuild_agent_with_skills(
             "output_contract_format": agent.output_contract_format,
             "write_preview_required": agent.write_preview_required,
             "test_bench_validated": agent.test_bench_validated,
+            "lifecycle_status": agent.lifecycle_status,
+            "test_bench_status": agent.test_bench_status,
         }
     )
     return replace(agent, skill_ids=next_skills, sha256=digest)
@@ -145,10 +168,13 @@ def format_agent_execution_outcome(
         prompt=clean_prompt,
         response_text="\n".join(lines),
         invoked_skills=tuple(traces),
+        test_bench_status=agent.test_bench_status,
+        lifecycle_status=agent.lifecycle_status,
     )
 
 
 __all__ = [
+    "ensure_agent_ready_for_activation",
     "format_agent_execution_outcome",
     "format_skill_execution_outcome",
     "rebuild_agent_with_skills",

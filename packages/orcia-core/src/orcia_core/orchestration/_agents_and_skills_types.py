@@ -25,6 +25,8 @@ AgentOutputContractFormat = Literal[
     "markdown_structure", "confluence_draft", "jira_draft", "gate_risk_json"
 ]
 McpToolPermissionMode = Literal["NONE", "READ_ONLY", "WRITE_PREVIEW"]
+AgentLifecycleStatus = Literal["DRAFT", "ACTIVE"]
+AgentTestBenchStatus = Literal["UNTESTED", "PASSED", "FAILED"]
 
 DEFAULT_INVOCATION_MODES: tuple[str, ...] = ("generer", "corrections", "section")
 DEFAULT_ALLOWED_RAG_SOURCES: tuple[str, ...] = ("all_workspace_sources",)
@@ -117,6 +119,8 @@ class ManagedAgentRecord:
     output_contract_format: AgentOutputContractFormat = "markdown_structure"
     write_preview_required: bool = True
     test_bench_validated: bool = False
+    lifecycle_status: AgentLifecycleStatus = "DRAFT"
+    test_bench_status: AgentTestBenchStatus = "UNTESTED"
     owner_workspace_id: str | None = None
     owner_user_id: str | None = None
 
@@ -157,3 +161,5 @@ class AgentExecutionOutcome:
     response_text: str
     invoked_skills: tuple[InvokedSkillTraceItem, ...]
     status: Literal["SUCCEEDED"] = "SUCCEEDED"
+    test_bench_status: AgentTestBenchStatus = "PASSED"
+    lifecycle_status: AgentLifecycleStatus = "ACTIVE"

@@ -17,6 +17,7 @@ from orcia_api.dependencies import (
     get_remote_usage_sanitizer,
 )
 from orcia_api.locales._router_locale_messages import get_router_copy
+from orcia_api.routers._agents_lifecycle_guards import enforce_active_agents_for_refs
 from orcia_api.routers._mcp_assistant_ask_bridge import dispatch_governed_mcp_invoke_async
 from orcia_api.routers.auth import resolve_request_user
 from orcia_api.schemas.mcp_test_bench import (
@@ -198,11 +199,16 @@ async def get_mcp_exposure_state(
     summary="Configure MCP exposure on a local Agent or Workspace Assistant (Story 11.3)",
 )
 async def configure_mcp_exposure(
+    request: Request,
     body: ConfigureAgentMcpExposureRequest,
     user: CurrentUserDep,
     svc: TestBenchMcpServiceDep,
 ) -> ExposedMcpAgentResponse:
     """Toggle `🔌 Exposer en MCP`, persist in PG18, and return dynamic `tools/list`."""
+    if body.mcp_exposed:
+        await enforce_active_agents_for_refs(
+            request, [body.agent_slug], instance=str(request.url.path)
+        )
     if body.pat_token_to_register:
         await svc.register_pat_mcp_token_async(
             raw_pat_token=body.pat_token_to_register,

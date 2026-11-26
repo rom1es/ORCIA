@@ -11,56 +11,87 @@ import type { SupportedWebLocale } from "../../i18n";
 import { formatRfc9457ErrorToBanner } from "../../lib/formatRfc9457ErrorToBanner";
 import type { AlertFeedbackInput } from "../shared/alertFeedback";
 import {
-  buildAgentLocalOutput,
   buildAgentUpsertPayload,
   buildOptimisticAgent,
   type CatalogManagedLabels,
+  mapAgentDtoToUi,
 } from "./managedAgentsHelpers";
 import {
   type CachedAgentsAndSkillsState,
   mergeManagedStateWithActivePacks,
-  PACK_AGENTS_BY_PACK_KEY,
-  PACK_SKILLS_BY_PACK_KEY,
   slugifyIdentifier,
 } from "./packAgentsCatalog";
+import { useManagedAgentExecutionActions } from "./useManagedAgentExecutionActions";
+import { useManagedAgentGovernanceActions } from "./useManagedAgentGovernanceActions";
 
 export function useManagedAgentActions(params: {
   readonly activePacks: readonly ConfiguredPackItem[];
   readonly locale: SupportedWebLocale;
   readonly catalogLabels: CatalogManagedLabels;
   readonly onFeedback: (msg: AlertFeedbackInput) => void;
+  readonly onModalError?: (msg: string) => void;
   readonly updateManagedState: (
     updater: (prev: CachedAgentsAndSkillsState) => CachedAgentsAndSkillsState,
   ) => void;
 }) {
-  const { activePacks, locale, catalogLabels, onFeedback, updateManagedState } = params;
+  const { activePacks, locale, catalogLabels, onFeedback, onModalError, updateManagedState } = params;
   const resolveAgents = (prev: CachedAgentsAndSkillsState): readonly UiManagedAgentItem[] =>
     prev.agents.length > 0
       ? prev.agents
       : mergeManagedStateWithActivePacks(prev, activePacks).agents;
 
-  const reportError = (err: unknown, context: string) =>
-    onFeedback({
-      tone: "crimson",
-      message: formatRfc9457ErrorToBanner(err, locale, context).fullText,
-    });
-
-  const handleCreateAgent = (draft: CreateAgentSixBlocksInput) => {
-    const optimisticAgent = buildOptimisticAgent(draft);
-    updateManagedState((prev) => ({
-      ...prev,
-      agents: [...prev.agents.filter((a) => a.agentId !== optimisticAgent.agentId), optimisticAgent],
-    }));
-    void createOrciaApiClient({ baseUrl: "" })
-      .upsertAgent(buildAgentUpsertPayload(optimisticAgent.agentId, optimisticAgent))
-      .catch((err: unknown) => reportError(err, catalogLabels.agentErrorContext));
+  const reportError = (err: unknown, context: string, inModal = false): void => {
+    const detail = formatRfc9457ErrorToBanner(err, locale, context).fullText;
+    if (inModal && onModalError) {
+      onModalError(detail);
+    } else {
+      onFeedback({ tone: "crimson", message: detail });
+    }
   };
 
-  const handleDuplicateAgent = (sourceAgent: UiManagedAgentItem) => {
+  const handleCreateAgent = async (draft: CreateAgentSixBlocksInput): Promise<boolean> => {
+    const optimisticAgent = buildOptimisticAgent(draft);
+    let previous: UiManagedAgentItem | undefined;
+    updateManagedState((prev) => {
+      previous = prev.agents.find((a) => a.agentId === optimisticAgent.agentId);
+      return {
+        ...prev,
+        agents: [
+          ...prev.agents.filter((a) => a.agentId !== optimisticAgent.agentId),
+          optimisticAgent,
+        ],
+      };
+    });
+    try {
+      const res = await createOrciaApiClient({ baseUrl: "", locale }).upsertAgent(
+        buildAgentUpsertPayload(optimisticAgent.agentId, optimisticAgent),
+      );
+      if (res?.agent_id) {
+        const synced = mapAgentDtoToUi(res);
+        updateManagedState((prev) => ({
+          ...prev,
+          agents: [...prev.agents.filter((a) => a.agentId !== synced.agentId), synced],
+        }));
+      }
+      return true;
+    } catch (err: unknown) {
+      updateManagedState((prev) => ({
+        ...prev,
+        agents: previous
+          ? [...prev.agents.filter((a) => a.agentId !== optimisticAgent.agentId), previous]
+          : prev.agents.filter((a) => a.agentId !== optimisticAgent.agentId),
+      }));
+      reportError(err, catalogLabels.agentErrorContext, false);
+      return false;
+    }
+  };
+
+  const handleDuplicateAgent = async (sourceAgent: UiManagedAgentItem): Promise<boolean> => {
     const customName = `${sourceAgent.name} ${catalogLabels.agentDuplicateSuffix}`;
     const slug = slugifyIdentifier(customName, "agent-copy");
     const agentId = slug.startsWith("agent-") ? slug : `agent-${slug}`;
     const handleSlug = slug.startsWith("agent-") ? slug.slice(6) || slug : slug;
+    const isPackSource = sourceAgent.visibilityScope === "PACK";
     const duplicated: UiManagedAgentItem = {
       ...sourceAgent,
       agentId,
@@ -68,44 +99,52 @@ export function useManagedAgentActions(params: {
       handle: `@${handleSlug}`,
       name: customName,
       visibilityScope: "TEAM",
-      sourcePackKey: null,
+      sourcePackKey: isPackSource ? sourceAgent.sourcePackKey ?? null : null,
       enabledOnWorkspace: true,
+      mcpExposed: false,
+      lifecycleStatus: "DRAFT",
+      testBenchStatus: "UNTESTED",
+      testBenchValidated: false,
     };
-    updateManagedState((prev) => ({
-      ...prev,
-      agents: [...resolveAgents(prev).filter((a) => a.agentId !== agentId), duplicated],
-    }));
-    onFeedback(catalogLabels.agentDuplicatedBannerTemplate.replace("{name}", duplicated.name));
-    void createOrciaApiClient({ baseUrl: "" })
-      .duplicateAgent(sourceAgent.agentId, { new_name: customName, visibility_scope: "TEAM" })
-      .catch((err: unknown) => reportError(err, catalogLabels.agentDuplicateErrorContext));
+    let previousAgents: readonly UiManagedAgentItem[] | undefined;
+    updateManagedState((prev) => {
+      previousAgents = prev.agents;
+      return {
+        ...prev,
+        agents: [...prev.agents.filter((a) => a.agentId !== agentId), duplicated],
+      };
+    });
+    try {
+      const client = createOrciaApiClient({ baseUrl: "", locale });
+      const res = isPackSource
+        ? await client.upsertAgent(buildAgentUpsertPayload(agentId, duplicated))
+        : await client.duplicateAgent(sourceAgent.agentId, {
+            new_name: customName,
+            visibility_scope: "TEAM",
+          });
+      if (res?.agent_id) {
+        const synced = mapAgentDtoToUi(res);
+        updateManagedState((prev) => ({
+          ...prev,
+          agents: [
+            ...prev.agents.filter((a) => a.agentId !== agentId && a.agentId !== synced.agentId),
+            synced,
+          ],
+        }));
+      }
+      onFeedback(catalogLabels.agentDuplicatedBannerTemplate.replace("{name}", duplicated.name));
+      return true;
+    } catch (err: unknown) {
+      if (previousAgents !== undefined) {
+        const restored = previousAgents;
+        updateManagedState((prev) => ({ ...prev, agents: restored }));
+      }
+      reportError(err, catalogLabels.agentDuplicateErrorContext, false);
+      return false;
+    }
   };
 
-  const handleToggleAgentEnabled = (agentId: string, nextEnabled: boolean) => {
-    updateManagedState((prev) => ({
-      ...prev,
-      agents: resolveAgents(prev).map((a) =>
-        a.agentId === agentId ? { ...a, enabledOnWorkspace: nextEnabled } : a,
-      ),
-    }));
-    void createOrciaApiClient({ baseUrl: "" })
-      .updateAgentGovernance(agentId, { enabled_in_workspace: nextEnabled })
-      .catch((err: unknown) => reportError(err, catalogLabels.agentToggleErrorContext));
-  };
-
-  const handleToggleAgentMcpExposure = (agentId: string, nextExposed: boolean) => {
-    updateManagedState((prev) => ({
-      ...prev,
-      agents: resolveAgents(prev).map((a) =>
-        a.agentId === agentId ? { ...a, mcpExposed: nextExposed } : a,
-      ),
-    }));
-    void createOrciaApiClient({ baseUrl: "" })
-      .updateAgentGovernance(agentId, { mcp_exposed: nextExposed })
-      .catch((err: unknown) => reportError(err, catalogLabels.mcpExposureErrorContext));
-  };
-
-  const handleUpdateAgentDetails = (
+  const handleUpdateAgentDetails = async (
     agentId: string,
     patch: Partial<AgentSixBlocksDraftState> & {
       name: string;
@@ -115,155 +154,129 @@ export function useManagedAgentActions(params: {
       visibilityScope?: UiAgentSkillVisibilityScope;
       mcpExposed?: boolean;
     },
-  ) => {
-    updateManagedState((prev) => ({
-      ...prev,
-      agents: resolveAgents(prev).map((a) => (a.agentId === agentId ? { ...a, ...patch } : a)),
-    }));
-    void createOrciaApiClient({ baseUrl: "" })
-      .upsertAgent(buildAgentUpsertPayload(agentId, patch))
-      .catch((err: unknown) => reportError(err, catalogLabels.agentUpdateErrorContext));
+  ): Promise<boolean> => {
+    let previous: UiManagedAgentItem | undefined;
+    updateManagedState((prev) => {
+      const list = resolveAgents(prev);
+      previous = list.find((a) => a.agentId === agentId);
+      return {
+        ...prev,
+        agents: list.map((a) => (a.agentId === agentId ? { ...a, ...patch } : a)),
+      };
+    });
+    try {
+      const res = await createOrciaApiClient({ baseUrl: "", locale }).upsertAgent(
+        buildAgentUpsertPayload(agentId, patch),
+      );
+      if (res?.agent_id) {
+        const synced = mapAgentDtoToUi(res);
+        updateManagedState((prev) => ({
+          ...prev,
+          agents: prev.agents.map((a) =>
+            a.agentId === agentId
+              ? { ...a, ...synced, lastExecutionOutput: a.lastExecutionOutput }
+              : a,
+          ),
+        }));
+      }
+      return true;
+    } catch (err: unknown) {
+      if (previous) {
+        const prevItem = previous;
+        updateManagedState((prev) => ({
+          ...prev,
+          agents: prev.agents.map((a) => (a.agentId === agentId ? prevItem : a)),
+        }));
+      }
+      reportError(err, catalogLabels.agentUpdateErrorContext, true);
+      return false;
+    }
   };
 
-  const handleToggleAgentSkill = (agentId: string, skillId: string, nextChecked: boolean) => {
+  const handleToggleAgentSkill = async (
+    agentId: string,
+    skillId: string,
+    nextChecked: boolean,
+  ): Promise<boolean> => {
+    let previousIds: readonly string[] = [];
     let nextSkillIdsForApi: string[] = [];
     updateManagedState((prev) => ({
       ...prev,
       agents: resolveAgents(prev).map((agent) => {
         if (agent.agentId !== agentId) return agent;
+        previousIds = agent.skillIds;
         const without = agent.skillIds.filter((id) => id !== skillId);
         const updatedIds = nextChecked ? [...without, skillId] : without;
         nextSkillIdsForApi = updatedIds;
         return { ...agent, skillIds: updatedIds };
       }),
     }));
-    void createOrciaApiClient({ baseUrl: "" })
-      .updateAgentSkills(agentId, { skill_ids: nextSkillIdsForApi })
-      .catch((err: unknown) => reportError(err, catalogLabels.agentSkillsErrorContext));
-  };
-
-  const handleUpdateAgentThinkingLevel = (
-    agentId: string,
-    nextThinkingLevel: UiAgentThinkingLevel,
-  ) => {
-    updateManagedState((prev) => ({
-      ...prev,
-      agents: resolveAgents(prev).map((a) =>
-        a.agentId === agentId ? { ...a, thinkingLevel: nextThinkingLevel } : a,
-      ),
-    }));
-    void createOrciaApiClient({ baseUrl: "" })
-      .updateAgentGovernance(agentId, { thinking_level: nextThinkingLevel })
-      .catch((err: unknown) => reportError(err, catalogLabels.agentThinkingErrorContext));
-  };
-
-  const handleUpdateAgentVisibility = (
-    agentId: string,
-    nextVisibility: UiAgentSkillVisibilityScope,
-  ) => {
-    updateManagedState((prev) => ({
-      ...prev,
-      agents: resolveAgents(prev).map((a) =>
-        a.agentId === agentId ? { ...a, visibilityScope: nextVisibility } : a,
-      ),
-    }));
-    if (nextVisibility === "PRIVATE" || nextVisibility === "TEAM") {
-      void createOrciaApiClient({ baseUrl: "" })
-        .updateAgentGovernance(agentId, { visibility_scope: nextVisibility })
-        .catch((err: unknown) => reportError(err, catalogLabels.agentVisibilityErrorContext));
+    try {
+      await createOrciaApiClient({ baseUrl: "", locale }).updateAgentSkills(agentId, {
+        skill_ids: nextSkillIdsForApi,
+      });
+      return true;
+    } catch (err: unknown) {
+      updateManagedState((prev) => ({
+        ...prev,
+        agents: prev.agents.map((a) =>
+          a.agentId === agentId ? { ...a, skillIds: previousIds } : a,
+        ),
+      }));
+      reportError(err, catalogLabels.agentSkillsErrorContext, true);
+      return false;
     }
   };
 
-  const handleDeleteAgent = (agentId: string) => {
-    updateManagedState((prev) => ({
-      ...prev,
-      agents: prev.agents.filter((a) => a.agentId !== agentId),
-    }));
-    void createOrciaApiClient({ baseUrl: "" })
-      .deleteAgent(agentId)
-      .catch((err: unknown) => reportError(err, catalogLabels.agentDeleteErrorContext));
-  };
-
-  const handleExecuteAgent = (agentId: string, prompt: string) => {
+  const handleDeleteAgent = async (agentId: string): Promise<boolean> => {
+    let previous: UiManagedAgentItem | undefined;
     updateManagedState((prev) => {
-      const baseAgents = prev.agents.some((a) => a.agentId === agentId)
-        ? prev.agents
-        : [
-            ...prev.agents,
-            ...Object.values(PACK_AGENTS_BY_PACK_KEY)
-              .flat()
-              .filter((a) => a.agentId === agentId),
-          ];
-      const allSkills = [
-        ...prev.skills,
-        ...Object.values(PACK_SKILLS_BY_PACK_KEY)
-          .flat()
-          .filter((sk) => !prev.skills.some((ps) => ps.skillId === sk.skillId)),
-      ];
+      previous = prev.agents.find((a) => a.agentId === agentId);
       return {
         ...prev,
-        agents: baseAgents.map((agent) =>
-          agent.agentId === agentId
-            ? {
-                ...agent,
-                testBenchValidated: true,
-                lastExecutionOutput: buildAgentLocalOutput(agent, allSkills, prompt, catalogLabels),
-              }
-            : agent,
-        ),
+        agents: prev.agents.filter((a) => a.agentId !== agentId),
       };
     });
-    void createOrciaApiClient({ baseUrl: "" })
-      .executeAgent(agentId, { prompt })
-      .then((res) =>
+    try {
+      await createOrciaApiClient({ baseUrl: "", locale }).deleteAgent(agentId);
+      return true;
+    } catch (err: unknown) {
+      if (previous) {
+        const prevItem = previous;
         updateManagedState((prev) => ({
           ...prev,
-          agents: prev.agents.map((a) =>
-            a.agentId === agentId
-              ? {
-                  ...a,
-                  testBenchValidated: true,
-                  lastExecutionOutput: res.response_text,
-                  lastInvokedSkills: (res.invoked_skills ?? []).map(
-                    (s) => `${s.skill_name} (${s.command_handle})`,
-                  ),
-                }
-              : a,
-          ),
-        })),
-      )
-      .catch((err: unknown) => {
-        const detail = formatRfc9457ErrorToBanner(
-          err,
-          locale,
-          catalogLabels.agentExecuteErrorContext,
-        ).fullText;
-        onFeedback({ tone: "crimson", message: detail });
-        updateManagedState((prev) => ({
-          ...prev,
-          agents: prev.agents.map((a) =>
-            a.agentId === agentId
-              ? {
-                  ...a,
-                  testBenchValidated: true,
-                  lastExecutionOutput: `${a.lastExecutionOutput ?? ""}\n${detail}`,
-                }
-              : a,
-          ),
+          agents: [...prev.agents.filter((a) => a.agentId !== agentId), prevItem],
         }));
-      });
+      }
+      reportError(err, catalogLabels.agentDeleteErrorContext, false);
+      return false;
+    }
   };
+
+  const { handleExecuteAgent } = useManagedAgentExecutionActions({
+    locale,
+    catalogLabels,
+    onFeedback,
+    onModalError,
+    updateManagedState,
+  });
+
+  const governanceActions = useManagedAgentGovernanceActions({
+    activePacks,
+    locale,
+    catalogLabels,
+    onFeedback,
+    onModalError,
+    updateManagedState,
+  });
 
   return {
     handleCreateAgent,
     handleDuplicateAgent,
-    handleToggleAgentEnabled,
-    handleToggleAgentMcpExposure,
     handleUpdateAgentDetails,
     handleToggleAgentSkill,
-    handleUpdateAgentThinkingLevel,
-    handleUpdateAgentVisibility,
     handleDeleteAgent,
     handleExecuteAgent,
+    ...governanceActions,
   };
 }

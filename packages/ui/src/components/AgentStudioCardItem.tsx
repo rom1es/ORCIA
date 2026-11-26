@@ -1,15 +1,19 @@
 import React, { useState } from "react";
-import type {
-  UiAgentHumanPartnerRole,
-  UiAgentOutputContractFormat,
-  UiAgentPosture,
+import {
+  resolveAgentLifecycleAndBenchStatus,
+  type UiAgentHumanPartnerRole,
+  type UiAgentOutputContractFormat,
+  type UiAgentPosture,
 } from "./AgentGovernanceTypesAndDefaults";
 import {
   AgentStudioCardBadgesRow,
   AgentStudioGovernancePassport,
 } from "./AgentStudioCardBadgesAndPassport";
 import type { AgentStudioCardItemProps } from "./AgentStudioCardTypes";
-import type { UiAgentSkillVisibilityScope } from "./AgentsAndSkillsTypes";
+import type {
+  UiAgentSkillVisibilityScope,
+  UiAgentThinkingLevel,
+} from "./AgentsAndSkillsTypes";
 import { FormattedMarkdownContent } from "./FormattedMarkdownContent";
 import { OrciaIcon } from "./icons";
 
@@ -39,9 +43,8 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
   const outputFormat: UiAgentOutputContractFormat =
     agent.outputContractFormat ?? "markdown_structure";
   const writePreviewRequired = agent.writePreviewRequired !== false;
-  const testBenchValidated = Boolean(
-    agent.testBenchValidated || agent.lastExecutionOutput || isPack,
-  );
+  const { lifecycleStatus, testBenchStatus } = resolveAgentLifecycleAndBenchStatus(agent);
+  const isDraft = lifecycleStatus === "DRAFT";
   const attachedSkills = skills.filter((sk) => agent.skillIds.includes(sk.skillId));
 
   const handleCopyHandle = () => {
@@ -58,12 +61,18 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
     setCopiedHandle(true);
   };
 
-  const handleToggleVisibilityClick = () => {
-    if (isPack) return;
+  const handleToggleVisibilityClick = async (): Promise<void> => {
+    if (isPack || !onUpdateAgentVisibility) return;
     const nextScope: UiAgentSkillVisibilityScope =
       visibilityScope === "PRIVATE" ? "TEAM" : "PRIVATE";
-    onUpdateAgentVisibility?.(agent.agentId, nextScope);
-    setAutosavedBadgeVisible(true);
+    const ok = await onUpdateAgentVisibility(agent.agentId, nextScope);
+    if (ok !== false) setAutosavedBadgeVisible(true);
+  };
+
+  const handleUpdateThinkingClick = async (lvl: UiAgentThinkingLevel): Promise<void> => {
+    if (isPack || !onUpdateAgentThinkingLevel) return;
+    const ok = await onUpdateAgentThinkingLevel(agent.agentId, lvl);
+    if (ok !== false) setAutosavedBadgeVisible(true);
   };
 
   return (
@@ -79,14 +88,16 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
         isEnabled={isEnabled}
         posture={posture}
         partnerRole={partnerRole}
-        testBenchValidated={testBenchValidated}
+        lifecycleStatus={lifecycleStatus}
+        testBenchStatus={testBenchStatus}
         copiedHandle={copiedHandle}
         autosavedBadgeVisible={autosavedBadgeVisible}
         onCopyHandle={handleCopyHandle}
-        onToggleVisibility={handleToggleVisibilityClick}
+        onToggleVisibility={() => {
+          void handleToggleVisibilityClick();
+        }}
         onUpdateThinkingLevel={(lvl) => {
-          onUpdateAgentThinkingLevel?.(agent.agentId, lvl);
-          setAutosavedBadgeVisible(true);
+          void handleUpdateThinkingClick(lvl);
         }}
       />
 
@@ -135,8 +146,12 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
             <button
               type="button"
               data-testid={`use-agent-in-assistant-btn-${agent.agentId}`}
-              onClick={() => onUseAgentInAssistant(agent)}
-              className="orcia-ds-btn orcia-ds-btn-cobalt-outline text-[11px]"
+              disabled={isDraft}
+              title={isDraft ? studio.draftAgentDisabledHint : undefined}
+              onClick={() => {
+                if (!isDraft) onUseAgentInAssistant(agent);
+              }}
+              className="orcia-ds-btn orcia-ds-btn-cobalt-outline text-[11px] disabled:opacity-50"
             >
               <OrciaIcon name="assistant" /> {studio.useInAssistantButton}
             </button>
@@ -166,8 +181,12 @@ export const AgentStudioCardItem: React.FC<AgentStudioCardItemProps> = ({
               <button
                 type="button"
                 data-testid={`toggle-agent-enabled-btn-${agent.agentId}`}
-                onClick={() => onToggleAgentEnabled?.(agent.agentId, !isEnabled)}
-                className="orcia-ds-btn orcia-ds-btn-secondary text-[11px]"
+                disabled={isPack}
+                title={isPack ? studio.mcpPackPresetReadOnlyHint : undefined}
+                onClick={() => {
+                  if (!isPack) void onToggleAgentEnabled?.(agent.agentId, !isEnabled);
+                }}
+                className="orcia-ds-btn orcia-ds-btn-secondary text-[11px] disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isEnabled
                   ? studio.disableOnWorkspaceButton

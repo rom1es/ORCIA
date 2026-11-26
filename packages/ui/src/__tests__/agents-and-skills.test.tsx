@@ -222,7 +222,7 @@ describe("AgentsAndSkillsManagerView (@orcia/ui)", () => {
     );
 
     // Toggle skill off in 1 click inside the detail modal
-    fireEvent.click(screen.getByTestId("agent-attach-skill-agent-1-skill-1"));
+    fireEvent.click(screen.getByTestId("agent-attach-skill-skill-1"));
     fireEvent.click(screen.getByTestId("run-agent-btn-agent-1"));
     expect(screen.getAllByTestId("agent-execution-output-agent-1")[0]?.textContent).toContain(
       "Réponse Juriste Conformité IA [skills=] : Analyse le contrat fournisseur BetaCorp",

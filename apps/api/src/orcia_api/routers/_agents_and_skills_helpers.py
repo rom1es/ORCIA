@@ -10,7 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from orcia_api.routers.assistant_llm_resolver import resolve_configured_llm_endpoint
 from orcia_api.routers.auth import resolve_request_user
-from orcia_api.schemas.agents_and_skills import AgentItemResponse, SkillItemResponse
+from orcia_api.schemas.agents_and_skills import (
+    AgentItemResponse,
+    SkillItemResponse,
+    ToggleAgentGovernanceRequest,
+)
 from orcia_core.catalog.errors import ObserverModeReadOnlyError
 from orcia_core.observability.logging import get_current_trace_id, get_logger
 from orcia_core.orchestration import (
@@ -19,6 +23,7 @@ from orcia_core.orchestration import (
     ManagedSkillRecord,
     load_agents_and_skills_from_postgres18,
 )
+from orcia_core.orchestration.errors import AgentDraftLifecycleBlockedError
 from orcia_core.ports.llm_streaming_port import (
     LlmEndpointConfig,
     LlmStreamingPort,
@@ -77,7 +82,8 @@ async def run_pg_persistence(
     try:
         await fn(engine)
     except Exception as exc:
-        logger.warning("agents_skills_pg_persistence_failed", error_type=type(exc).__name__)
+        logger.error("agents_skills_pg_persistence_failed", error_type=type(exc).__name__)
+        raise
 
 
 async def sync_from_postgres18_if_enabled(
@@ -124,3 +130,51 @@ async def complete_optional_live_turn(
         )
     )
     return outcome.content if outcome is not None and outcome.content else None
+
+
+def apply_agent_governance_update(
+    svc: AgentsAndSkillsManagementService,
+    agent_id: str,
+    payload: ToggleAgentGovernanceRequest,
+    *,
+    instance: str,
+) -> ManagedAgentRecord:
+    """Apply lifecycle, MCP exposure, visibility, and thinking governance rules."""
+    cur = svc.get_agent(agent_id, instance=instance)
+    target_lifecycle = payload.lifecycle_status or cur.lifecycle_status
+    if payload.lifecycle_status == "DRAFT" and payload.mcp_exposed is True:
+        raise AgentDraftLifecycleBlockedError(
+            detail_code="ERR_DRAFT_AGENT_CANNOT_EXPOSE_MCP",
+            detail_params={"agent_name": cur.name},
+            instance=instance,
+        )
+    if payload.lifecycle_status is not None and payload.lifecycle_status != cur.lifecycle_status:
+        cur = svc.set_agent_lifecycle_status(
+            agent_id,
+            lifecycle_status=payload.lifecycle_status,
+            instance=instance,
+        )
+    next_mcp = payload.mcp_exposed if payload.mcp_exposed is not None else cur.mcp_exposed
+    return svc.upsert_agent(
+        agent_id=cur.agent_id,
+        name=cur.name,
+        role_mission=cur.role_mission,
+        instructions=cur.instructions,
+        thinking_level=payload.thinking_level or cur.thinking_level,
+        skill_ids=cur.skill_ids,
+        version=cur.version,
+        visibility_scope=payload.visibility_scope or cur.visibility_scope,
+        source_pack_key=cur.source_pack_key,
+        enabled_in_workspace=(
+            payload.enabled_in_workspace
+            if payload.enabled_in_workspace is not None
+            else cur.enabled_in_workspace
+        ),
+        mcp_exposed=next_mcp,
+        agent_kind=cur.agent_kind,
+        remote_endpoint_url=cur.remote_endpoint_url,
+        test_bench_validated=cur.test_bench_validated,
+        lifecycle_status=target_lifecycle,
+        test_bench_status=cur.test_bench_status,
+        instance=instance,
+    )
