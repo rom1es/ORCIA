@@ -6,6 +6,13 @@ import json
 import time
 from pathlib import Path
 
+from scripts.agent_check_lib.coverage_gate import (
+    build_diff_cover_patch,
+    cleanup_coverage_artifacts,
+    prepare_coverage_env,
+    resolve_impacted_pg18_tests,
+    run_combined_diff_cover,
+)
 from scripts.agent_check_lib.env import ToolchainEnv
 from scripts.agent_check_lib.impact import select_impacted_targets
 from scripts.agent_check_lib.output import format_pass_line, format_skip_line
@@ -88,12 +95,17 @@ def run_stage_impact(
 
     t0 = time.monotonic()
     if plan.python_tests:
+        impact_extra = (
+            ["-n", "4", "--dist", "loadfile", "-m", "not contract_fuzz"]
+            if len(plan.python_tests) >= 20
+            else ["-m", "not contract_fuzz"]
+        )
         rc, msg = run_pytest_suite(
             env_info,
             stage="impact",
             check_key="pytest:impact",
             targets=plan.python_tests,
-            extra_args=["-m", "not contract_fuzz"],
+            extra_args=impact_extra,
             maxfail=maxfail,
         )
         if rc != 0:
@@ -124,39 +136,72 @@ def _has_package_script(repo_root: Path, script_name: str) -> bool:
 
 
 def run_stage_full(env_info: ToolchainEnv, *, no_skip: bool) -> int:
-    """Run Stage 3 (`full`): unit, evals+security+contract, Vitest, docs, `site:check`."""
+    """Run Stage 3 (`full`): unit(-n 4)+PG18+ESC under coverage, `diff-cover`, Vitest, docs."""
     root = env_info.repo_root
     sub_env = env_info.subprocess_env()
-    # Extension point for Story 32-3-combined-coverage-diff-cover-shared-pg18-infra-and-ratchet-lint
     digest = compute_worktree_digest(root, env_info)
-
-    if not no_skip and has_matching_receipt(root, "full-unit", digest):
-        print(format_skip_line("full-unit", digest))
-    else:
-        rc, msg = run_pytest_suite(
-            env_info,
-            stage="full-unit",
-            check_key="pytest:tests/unit",
-            targets=["tests/unit"],
-            extra_args=["-m", "not contract_fuzz"],
-            maxfail=None,
-        )
-        print(msg)
-        if rc != 0:
-            return rc
-        write_receipt(root, "full-unit", digest, summary="tests/unit")
-
-    rc2, msg2 = run_pytest_suite(
-        env_info,
-        stage="full",
-        check_key="pytest:evals-security-contract",
-        targets=["tests/evals", "tests/security", "tests/contract"],
-        extra_args=["-m", "not contract_fuzz"],
-        maxfail=None,
+    patch_path = root / ".agent_check" / "diff_cover.patch"
+    has_py_changes = build_diff_cover_patch(root, out_path=patch_path)
+    can_skip_unit = (
+        not no_skip
+        and has_matching_receipt(root, "full-unit", digest)
+        and (not has_py_changes or has_matching_receipt(root, "full-diff-cover", digest))
     )
-    print(msg2)
-    if rc2 != 0:
-        return rc2
+
+    cleanup_coverage_artifacts(root)
+    try:
+        cov_env = prepare_coverage_env(root, sub_env)
+        if can_skip_unit:
+            print(format_skip_line("full-unit", digest))
+        else:
+            rc, msg = run_pytest_suite(
+                env_info, stage="full-unit", check_key="pytest:tests/unit",
+                targets=["tests/unit"],
+                extra_args=["-n", "4", "--dist", "loadfile", "-m", "not contract_fuzz"],
+                coverage_parallel=True, env_override=cov_env,
+            )  # fmt: skip
+            print(msg)
+            if rc != 0:
+                return rc
+
+        esc_env = cov_env if not can_skip_unit else None
+        rc2, msg2 = run_pytest_suite(
+            env_info, stage="full", check_key="pytest:evals-security-contract",
+            targets=["tests/evals", "tests/security", "tests/contract"],
+            extra_args=["-n", "4", "--dist", "loadfile", "-m", "not contract_fuzz"],
+            coverage_parallel=not can_skip_unit, env_override=esc_env,
+        )  # fmt: skip
+        print(msg2)
+        if rc2 != 0:
+            return rc2
+
+        if not can_skip_unit:
+            impacted_pg18 = resolve_impacted_pg18_tests(root)
+            if impacted_pg18:
+                pg18_extra = (
+                    ["-n", "4", "--dist", "loadfile", "-m", "not contract_fuzz"]
+                    if len(impacted_pg18) > 1
+                    else ["-m", "not contract_fuzz"]
+                )
+                rc_pg, msg_pg = run_pytest_suite(
+                    env_info, stage="full-pg18", check_key="pytest:tests/integration",
+                    targets=impacted_pg18, extra_args=pg18_extra,
+                    coverage_parallel=True, env_override=cov_env,
+                )  # fmt: skip
+                print(msg_pg)
+                if rc_pg != 0:
+                    return rc_pg
+
+            rc_dc, msg_dc = run_combined_diff_cover(env_info, run_cmd_fn=_run_cmd, cov_env=cov_env)
+            if msg_dc:
+                print(msg_dc)
+            if rc_dc != 0:
+                return rc_dc
+            write_receipt(root, "full-unit", digest, summary="tests/unit")
+            if has_py_changes:
+                write_receipt(root, "full-diff-cover", digest, summary="diff-cover>=90")
+    finally:
+        cleanup_coverage_artifacts(root)
 
     ts_pkgs = [p for p, _ in TS_PACKAGE_FILTERS if (root / p / "package.json").is_file()]
     if ts_pkgs:

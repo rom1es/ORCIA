@@ -335,5 +335,8 @@ async def test_log_sink_scanner_cron_and_optin_workflow_published() -> None:
     assert await serve_trigger_dispatcher_daemon(once=True) == 0
 
 
-def test_worker_role_trigger_dispatcher_cli_once() -> None:
+def test_worker_role_trigger_dispatcher_cli_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    import sys
+
+    monkeypatch.delitem(sys.modules, "orcia_worker.docling_indexer", raising=False)
     assert worker_roles_main(["--role", "trigger-dispatcher", "--serve", "--once"]) == 0

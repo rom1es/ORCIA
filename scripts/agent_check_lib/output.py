@@ -106,7 +106,8 @@ def write_stage_log(repo_root: Path, stage: str, content: str) -> Path:
     logs_dir = repo_root / ".agent_check" / "logs"
     logs_dir.mkdir(parents=True, exist_ok=True)
     ts = datetime.now(tz=UTC).strftime("%Y%m%dT%H%M%SZ")
-    log_file = logs_dir / f"{stage}-{ts}.log"
+    safe_stage = stage.replace("/", "_").replace(":", "_")
+    log_file = logs_dir / f"{safe_stage}-{ts}.log"
     log_file.write_text(content, encoding="utf-8")
     try:
         return log_file.relative_to(repo_root)

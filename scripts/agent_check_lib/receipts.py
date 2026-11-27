@@ -18,7 +18,9 @@ from scripts.agent_check_lib.changes import (
 )
 from scripts.agent_check_lib.env import ToolchainEnv
 
-SKIPPABLE_STAGES: frozenset[str] = frozenset({"static", "full-unit", "full-vitest"})
+SKIPPABLE_STAGES: frozenset[str] = frozenset(
+    {"static", "full-unit", "full-vitest", "full-diff-cover"}
+)
 
 
 class BounceDecision(StrEnum):
@@ -74,6 +76,12 @@ def _runner_source_digest(repo_root: Path) -> str:
     lib_dir = scripts_dir / "agent_check_lib"
     if lib_dir.is_dir():
         runner_files.extend(sorted(lib_dir.glob("*.py")))
+    lint_lib_dir = scripts_dir / "lint_tests_lib"
+    if lint_lib_dir.is_dir():
+        runner_files.extend(sorted(lint_lib_dir.glob("*.py")))
+    ratchet_file = scripts_dir / "lint_tests_ratchet.json"
+    if ratchet_file.is_file():
+        runner_files.append(ratchet_file)
     for path in runner_files:
         rel = path.relative_to(repo_root).as_posix()
         hasher.update(rel.encode("utf-8"))

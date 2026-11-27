@@ -13,8 +13,8 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "installedPacksCount": 2,
     "alembicMigrationsCount": 64,
     "architectureDecisionsCount": 25,
-    "stackComponentsCount": 44,
-    "techLeadReportsCount": 256,
+    "stackComponentsCount": 45,
+    "techLeadReportsCount": 257,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -459,8 +459,12 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "version": "20250217.0 / 5.4.0"
     },
     {
-      "name": "pytest + pytest-asyncio (Python Unit & Async Testing)",
-      "version": "9.1.1 / 1.4.0"
+      "name": "pytest + pytest-asyncio + pytest-xdist (Python Unit, Parallel & Async Testing)",
+      "version": "9.1.1 / 1.4.0 / 3.8.0"
+    },
+    {
+      "name": "diff-cover (Changed-Lines Combined Coverage Gate)",
+      "version": "11.0.4"
     },
     {
       "name": "hypothesis (Property-Based Testing Python)",
@@ -548,6 +552,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-27",
+      "phaseOrStory": "Story 32.3",
+      "reportFile": "32-3-combined-coverage-diff-cover-shared-pg18-infra-and-ratchet-lint-tech-lead-report.md",
+      "domain": "Epic 32 Lot 3 — Combined Coverage + diff-cover, Shared PG18/App Infra, pytest-xdist, Lazy Imports & lint_tests.py Ratchet (T-D1, T-D2, T-D10, hygiene)",
+      "summary": "In-progress (hygiene)."
+    },
     {
       "date": "2026-11-27",
       "phaseOrStory": "Story 32.2",

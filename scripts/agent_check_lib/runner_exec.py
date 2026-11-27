@@ -52,16 +52,23 @@ def run_pytest_suite(
     targets: list[str],
     extra_args: list[str],
     maxfail: int | None = None,
+    coverage_parallel: bool = False,
+    env_override: dict[str, str] | None = None,
 ) -> tuple[int, str]:
     """Execute pytest with JUnit XML parsing and bounded failure digest."""
     root = env_info.repo_root
-    sub_env = env_info.subprocess_env()
+    sub_env = env_override if env_override is not None else env_info.subprocess_env()
     t0 = time.monotonic()
     with tempfile.NamedTemporaryFile(suffix=".xml", delete=False) as tmp_xml:
         xml_path = Path(tmp_xml.name)
     try:
+        prefix = (
+            [str(env_info.python_bin), "-m", "coverage", "run", "--parallel-mode", "--branch"]
+            if coverage_parallel
+            else [str(env_info.python_bin)]
+        )
         cmd = [
-            str(env_info.python_bin),
+            *prefix,
             "-m",
             "pytest",
             *targets,

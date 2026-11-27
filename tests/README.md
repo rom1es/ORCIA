@@ -10,6 +10,8 @@ Regenerate with `.venv/bin/python scripts/generate_test_fixture_index.py`.
 | File | Summary | Key Symbols |
 | :--- | :--- | :--- |
 | `tests/conftest.py` | Global pytest configuration defaulting `ORCIA_ENV` to `"test"` when unset. | *(side-effect / setup)* |
+| `tests/integration/conftest.py` | Session-scoped PG18 + Redis + SeaweedFS fixtures with xdist worker isolation. | `isolated_worker_pg18_env [@fixture]`, `shared_integration_topology [@fixture(session)]` |
+| `tests/unit/conftest.py` | Shared unit-test fixtures with isolated session-scoped app & cached `RepoSourceIndex`. | `_isolate_seeded_test_app_state [@fixture]`, `repo_source_index [@fixture(session)]`, `seeded_test_app [@fixture(session)]` |
 ## Unit Fakes (`tests/unit/fakes/`)
 
 | File | Summary | Key Symbols |
@@ -24,11 +26,14 @@ Regenerate with `.venv/bin/python scripts/generate_test_fixture_index.py`.
 | `tests/unit/fakes/in_memory_stores.py` | In-memory test fakes for unit tests (`tests/unit/fakes/`, AD-19, Story 3.2a). | `DeterministicClockFake`, `InMemoryObjectStorageFake`, `InMemoryOutboxRelay`, `InMemorySandboxFake` |
 | `tests/unit/fakes/in_memory_thread_lock.py` | In-memory fake for `ThreadTurnLockPort` for unit tests (`tests/unit/fakes/`). | `InMemoryThreadTurnLock` |
 | `tests/unit/fakes/sandbox_tdd_fake.py` | Test-only child shim for `tier2_runner.py` stubbing only `pytest`/`ruff` `subprocess.run`. | `write_tier2_subprocess_shim()` |
-| `tests/unit/fakes/workflows_seed.py` | Test-only helper seeding `workflows_v2` & `vsm_v2` RAM stores (`<= 55 L`). | `create_seeded_test_app()` |
+| `tests/unit/fakes/test_app_helpers.py` | Canonical shared unit-test app, lifespan, and cached repo AST/file index helpers. | `RepoSourceIndex`, `create_seeded_test_app()`, `get_repo_source_index()`, `run_with_lifespan()` |
+| `tests/unit/fakes/workflows_seed.py` | Test-only helper re-exporting `create_seeded_test_app()` (`<= 20 L`). | *(side-effect / setup)* |
 ## Integration Helpers (`tests/integration/`)
 
 | File | Summary | Key Symbols |
 | :--- | :--- | :--- |
+| `tests/integration/_shared_pg18_seeds_fixture.py` | Typed PostgreSQL 18 seed helpers (`seed_org_workspace_admin`, `activate_pack_with_slots`). | `ActivatedPackSlotsResult`, `SeededWorkspaceAdmin`, `activate_pack_with_slots()`, `seed_org_workspace_admin()` |
+| `tests/integration/_shared_topology_fixture.py` | Session-scoped PG18/Redis/SeaweedFS topology and `flock` template cloning helpers. | `SharedIntegrationTopology`, `clone_worker_database_from_template()`, `open_shared_integration_topology()`, `prepare_pg18_template_database()`, `resolve_worker_identity()`, `run_alembic_upgrade_head()` |
 | `tests/integration/_story_31_3_pack_fixture.py` | Test archive builder helper for Story 31.3 PG18 integration tests. | `build_overlapping_pack_zip()` |
 | `tests/integration/_story_31_4_pack_fixture.py` | Pack zip, PG18 container & topology fixtures for Story 31.4 integration tests (`<= 250 L`). | `build_dummy_lock_for_p01_test()`, `build_slot_pack_zip()`, `pg18_url [@fixture(module)]`, `run_alembic_head()`, `seed_story_31_4_hardening_extras()`, `seed_story_31_4_topology()` |
 | `tests/integration/_story_31_5_fixture.py` | PG18 + SeaweedFS S3 & 8-entity seeding helpers for Story 31.5 integration test (`<= 160 L`). | `pg18_and_seaweed_urls_315 [@fixture(module)]`, `seed_story_31_5_entities()` |

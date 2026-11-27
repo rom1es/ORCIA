@@ -107,6 +107,11 @@ def build_static_gates(
             )
         )
 
+    if (root / "scripts" / "lint_tests.py").is_file():
+        gates.append(
+            ("lint-tests", [str(env_info.python_bin), "scripts/lint_tests.py", "--ratchet"])
+        )
+
     for pkg_name in resolve_ts_packages(root, touched_files, force_all=no_skip):
         gates.append((f"ts-lint:{pkg_name}", [env_info.pnpm_bin, "--filter", pkg_name, "lint"]))
         gates.append(
