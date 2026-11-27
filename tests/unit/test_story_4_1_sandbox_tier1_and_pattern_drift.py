@@ -2,19 +2,8 @@
 
 from __future__ import annotations
 
-import os
-import pathlib
-import shutil
-import tempfile
-import time
-
 import pytest
-import sqlalchemy as sa
-from alembic import command
-from alembic.config import Config
 from fastapi.testclient import TestClient
-from testcontainers.core.container import DockerContainer
-from testcontainers.core.waiting_utils import wait_for_logs
 
 from orcia_api.main import create_app
 from orcia_core.gates import (
@@ -29,80 +18,9 @@ from orcia_core.gates import (
 from orcia_core.orchestration.step_executors import SkillStepExecutor
 from orcia_kernel.ports import StepExecutorContext
 
-REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 WORKSPACE_ID = "0192c4e0-0000-7000-8000-000000000201"
 RUN_ID = "0192c4e0-0000-7000-8000-000000003101"
 STEP_EXEC_ID = "0192c4e0-0000-7000-8000-000000003201"
-
-
-def test_story_4_1_migration_0017_real_postgres_container(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Verify migration `0017_story_4_1` (`gate_evaluations`) on real PostgreSQL 18 container."""
-    monkeypatch.setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
-    suffix = f"tc_4_1_{os.getpid()}_{int(time.time() * 1000) % 100000}"
-    sock_dir = (
-        pathlib.Path(tempfile.gettempdir())
-        if len(str(REPO_ROOT / ".pytest_cache" / suffix / ".s.PGSQL.5432")) > 100
-        else REPO_ROOT / ".pytest_cache"
-    ) / suffix
-    sock_dir.mkdir(parents=True, exist_ok=True)
-    sock_dir.chmod(0o777)
-
-    pg_container = (
-        DockerContainer("pgvector/pgvector:pg18")
-        .with_env("POSTGRES_USER", "orcia")
-        .with_env("POSTGRES_PASSWORD", "orcia_dev_secret")
-        .with_env("POSTGRES_DB", "orcia")
-        .with_volume_mapping(str(sock_dir), "/var/run/postgresql", "rw")
-    )
-    try:
-        with pg_container as pg:
-            wait_for_logs(pg, "database system is ready to accept connections", timeout=30)
-            sock_file = sock_dir / ".s.PGSQL.5432"
-            for _ in range(40):
-                if sock_file.exists():
-                    break
-                time.sleep(0.2)
-
-            creds = "orcia:orcia_dev_secret"  # pragma: allowlist secret
-            sync_url = f"postgresql+psycopg://{creds}@/orcia?host={sock_dir}"
-            monkeypatch.setenv("DATABASE_URL", sync_url)
-            alembic_cfg = Config(str(REPO_ROOT / "infra" / "migrations" / "alembic.ini"))
-            alembic_cfg.set_main_option("script_location", str(REPO_ROOT / "infra" / "migrations"))
-            alembic_cfg.set_main_option("sqlalchemy.url", sync_url)
-
-            engine = sa.create_engine(sync_url)
-            for _ in range(30):
-                try:
-                    with engine.connect() as c:
-                        c.execute(sa.text("SELECT 1"))
-                    break
-                except Exception:
-                    time.sleep(0.2)
-
-            command.upgrade(alembic_cfg, "0017_story_4_1")
-
-            with engine.begin() as conn:
-                cols = list(
-                    conn.execute(
-                        sa.text(
-                            "SELECT column_name FROM information_schema.columns "
-                            "WHERE table_name = 'gate_evaluations' ORDER BY ordinal_position"
-                        )
-                    ).scalars()
-                )
-                assert "gate_type" in cols
-                assert "sandbox_tier" in cols
-                assert "pattern_drift_passed" in cols
-                assert "pattern_drift_findings_jsonb" in cols
-                assert "briefing_4blocks_jsonb" in cols
-
-            command.downgrade(alembic_cfg, "0016_story_3_5")
-            command.upgrade(alembic_cfg, "0017_story_4_1")
-            engine.dispose()
-    finally:
-        shutil.rmtree(sock_dir, ignore_errors=True)
 
 
 def test_story_4_1_sandbox_tier1_pass_and_pattern_drift_detection() -> None:

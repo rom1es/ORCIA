@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import shutil
-import time
 from pathlib import Path
 
 import pytest
@@ -56,11 +55,9 @@ class _ContainerBucketBackend:
 @pytest.mark.asyncio
 async def test_story_11_5_help_hot_attach_pg18_redis_and_s3_cas(tmp_path: Path) -> None:
     """Verify Process 5 persists `HELP_ARTICLE` in PG18, S3 CAS, and invalidates Redis 7.4."""
-    s3_data_dir = (
-        REPO_ROOT / ".pytest_cache" / "tc_s" / f"s3_11_5_{os.getpid()}_{int(time.time() * 1000)}"
-    )
-    s3_data_dir.mkdir(parents=True, exist_ok=True)
-    s3_data_dir.chmod(0o777)
+    from tests.integration._tc_socket_helpers import prepare_tc_sock_dir
+
+    s3_data_dir = prepare_tc_sock_dir("s3_11_5")
 
     try:
         with (

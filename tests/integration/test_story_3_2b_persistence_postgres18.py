@@ -30,6 +30,7 @@ from dbos import DBOS
 from sqlalchemy.ext.asyncio import create_async_engine
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.waiting_utils import wait_for_logs
+from tests.integration._tc_socket_helpers import prepare_tc_sock_dir
 from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
 
 from orcia_core.observability._internal.otel_sqlalchemy import SqlAlchemyOtelInstrumenter
@@ -41,15 +42,10 @@ from orcia_kernel.ids import new_uuid7_str
 os.environ["TESTCONTAINERS_RYUK_DISABLED"] = "true"
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SOCK_BASE_DIR = REPO_ROOT / ".pytest_cache" / "tc_3_2b"
 
 
 def _prepare_sock_dir(name: str) -> Path:
-    unique = f"{name}_{os.getpid()}_{int(time.time() * 1000) % 100000}"
-    target = SOCK_BASE_DIR / unique
-    target.mkdir(parents=True, exist_ok=True)
-    target.chmod(0o777)
-    return target
+    return prepare_tc_sock_dir(f"3_2b_{name}")
 
 
 def _load_script_module(mod_name: str, filename: str) -> Any:

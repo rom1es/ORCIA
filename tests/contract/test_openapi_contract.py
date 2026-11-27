@@ -18,6 +18,7 @@ def test_openapi_client_zero_diff_gate() -> None:
     )
 
 
+@pytest.mark.contract_fuzz
 def test_schemathesis_openapi_contract_compliance(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

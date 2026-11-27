@@ -231,3 +231,19 @@ pnpm site:sync
 # Vérifier l'intégrité du registre des capacités (zéro route orpheline, zéro capacité live sans test, 0-diff manifeste)
 pnpm site:check
 ```
+
+---
+
+## 8. Agent Check Runner (`scripts/agent_check.py`)
+
+Agents must invoke `scripts/agent_check.py` instead of chaining `ruff && mypy && pytest` one-liners:
+
+- **Auto-resolved environment**: resolves `<repo>/.venv` (or `ORCIA_VENV`) and builds `PYTHONPATH` from `pyproject.toml` `[tool.pytest.ini_options].pythonpath` automatically across worktrees.
+- **Stages**:
+  - `static`: runs `ruff format` + `ruff check --fix` (never `--unsafe-fixes`) on touched `.py` files and prints `AUTOFIXED: <files>`, then computes the post-autofix digest and runs check-only `ruff check`, `ruff format --check`, `mypy --strict` (touched packages), `lint-imports`, `scripts/export_openapi.py --check`, TypeScript `lint` + `typecheck` (touched packages, or all on `--no-skip`), `lint_spine.py`, and `detect-secrets-hook` on touched files, stopping at the first failure.
+  - `impact`: selects touched tests, reverse-import targets (static AST graph), FastAPI router-prefix HTTP tests, fast always-run audits, and `vitest related` for touched frontend files; supports `--maxfail N` and `--explain`.
+  - `full`: runs `tests/unit` (receipt-skippable), `tests/evals tests/security tests/contract -m "not contract_fuzz"` without `--maxfail`, full Vitest suites (`full-vitest`, receipt-skippable), `scripts/check_implementation_docs.py`, and `pnpm site:check`.
+  - `all`: runs `static`, `impact`, and `full` sequentially.
+  - `fuzz`: runs slow Schemathesis fuzzing (`tests/contract -m contract_fuzz`).
+- **Output contract**: passing or skipped stages print a single line (`PASS [<stage>]: <summary> in <s>s` or `SKIP [<stage>]: receipt <digest12>`); failing stages print every failing ID (one per line), at most 3 compact tracebacks, and `LOG: .agent_check/logs/<stage>-<ts>.log`.
+- **Receipts & Bounce Rule**: deterministic stages (`static`, `full-unit`, `full-vitest`) write receipts under `.agent_check/receipts/` keyed by working-tree contents, `.venv` distributions, `pnpm-lock.yaml`, Python/Node versions, hashed `ORCIA_*` env vars, `PYTHONPATH`, and runner source (`--no-skip` forces re-execution; integration and E2E are never skippable). After a failure, if only `docs/` changed, the runner re-runs only the failed check; any other change re-runs Stage 1 + Stage 2 + the failed check.

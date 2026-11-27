@@ -10,8 +10,9 @@ import httpx
 import pytest
 import yaml  # type: ignore[import-untyped]
 from fastapi import FastAPI
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExportResult
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 
 from orcia_api.dependencies import get_log_sink_port, initialize_app_services
@@ -195,6 +196,12 @@ def test_otel_tracing_config_and_structlog_span_correlation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Verify `OTEL_TRACES_EXPORTER=none`, real `TracerProvider` correlation & runtime."""
+    monkeypatch.setattr(
+        OTLPSpanExporter,
+        "export",
+        lambda self, spans: SpanExportResult.SUCCESS,
+    )
+    monkeypatch.setattr(OTLPSpanExporter, "shutdown", lambda self: None)
     monkeypatch.setenv("OTEL_TRACES_EXPORTER", "none")
     monkeypatch.delenv("OTEL_EXPORTER_OTLP_ENDPOINT", raising=False)
     assert configure_tracing(service_name="api") is None
@@ -237,21 +244,31 @@ def test_otel_tracing_config_and_structlog_span_correlation(
     assert finished[0].attributes is not None
     assert finished[0].attributes.get("orcia.workspace_id") == "ws-otel"
 
-    app = FastAPI()
-    flags = instrument_runtime(app=app, instrument_httpx=True)
-    assert flags["fastapi"] is True
-    assert flags["httpx"] is True
-    assert instrument_runtime(app=app, instrument_httpx=True)["fastapi"] is True
-    shutdown_tracing(None)
-    monkeypatch.setenv("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT", "100")
-    shutdown_tracing(provider)
+    from opentelemetry import trace as otel_trace
+    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+    from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 
-    # Test global tracer provider idempotency cleanly (saving/restoring module global)
     import orcia_core.observability.tracing as tracing_mod
 
+    saved_httpx_instrumented = tracing_mod._HTTPX_INSTRUMENTED
     saved_global = tracing_mod._GLOBAL_TRACER_PROVIDER
-    tracing_mod._GLOBAL_TRACER_PROVIDER = None
+    saved_otel_provider = getattr(otel_trace, "_TRACER_PROVIDER", None)
+    saved_set_once_done = otel_trace._TRACER_PROVIDER_SET_ONCE._done
+
+    app = FastAPI()
     try:
+        flags = instrument_runtime(app=app, instrument_httpx=True)
+        assert flags["fastapi"] is True
+        assert flags["httpx"] is True
+        assert instrument_runtime(app=app, instrument_httpx=True)["fastapi"] is True
+        shutdown_tracing(None)
+        monkeypatch.setenv("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT", "100")
+        shutdown_tracing(provider)
+
+        # Test global tracer provider idempotency cleanly (saving/restoring OTel globals)
+        tracing_mod._GLOBAL_TRACER_PROVIDER = None
+        otel_trace._TRACER_PROVIDER = None
+        otel_trace._TRACER_PROVIDER_SET_ONCE._done = False
         g1 = configure_tracing(service_name="api-global", exporter_mode="console", set_global=True)
         g2 = configure_tracing(
             service_name="api-global-2", exporter_mode="console", set_global=True
@@ -260,6 +277,12 @@ def test_otel_tracing_config_and_structlog_span_correlation(
     finally:
         shutdown_tracing()
         tracing_mod._GLOBAL_TRACER_PROVIDER = saved_global
+        otel_trace._TRACER_PROVIDER = saved_otel_provider
+        otel_trace._TRACER_PROVIDER_SET_ONCE._done = saved_set_once_done
+        if not saved_httpx_instrumented:
+            HTTPXClientInstrumentor().uninstrument()
+        tracing_mod._HTTPX_INSTRUMENTED = saved_httpx_instrumented
+        FastAPIInstrumentor.uninstrument_app(app)
 
     # Edge cases: console exporter, unsupported exporter, otlp without endpoint, /v1/traces suffix
     monkeypatch.delenv("OTEL_TRACES_EXPORTER", raising=False)

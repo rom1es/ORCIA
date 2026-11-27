@@ -6,7 +6,7 @@
 import type { OrciaShowcaseManifestData } from "@orcia/ui";
 
 export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
-  "lastSyncedDate": "2026-11-26",
+  "lastSyncedDate": "2026-11-27",
   "stats": {
     "activeRoutesCount": 29,
     "uiPrimitivesCount": 134,
@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 64,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 254,
+    "techLeadReportsCount": 255,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -548,6 +548,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-27",
+      "phaseOrStory": "Story 32.1",
+      "reportFile": "32-1-token-first-agent-check-runner-receipts-and-suite-quick-wins-tech-lead-report.md",
+      "domain": "Epic 32 Lot 1 — Token-First agent_check.py Runner, Worktree Receipts, Bounce Rule & Suite Quick Wins (T-D4, T-D5, T-D6, hygiene)",
+      "summary": "Closed (done, independent Testing Verifier verified): built scripts/agent_check.py (74 L) + 9 scripts/agent_check_lib/ modules (<= 275 L), 21 runner unit tests (tests/unit/tooling/, <= 284 L), worktree .agent_check/receipts/ & bounce rule, relocated 6 PG18 migration tests into 2 domain-named files (tests/integration/db/test_alembic_migrations_{core,governance}_pg18.py) + /tmp socket helper (_tc_socket_helpers.py), mocked DNS/OTLP/child pytest/ruff subprocess waits (test_story_19_5, 7_0b + OTel global isolation, 4_1a), marked Schemathesis @pytest.mark.contract_fuzz, cached openapi.json per Vitest worker (openApi{RequestValidator,SchemaChecker}.ts), removed duplicate tsc from lint scripts, and updated docs/testing-strategy.md §8 & .agents/rules/bmad-model-routing.md §6; verified 93% branch coverage (scripts/agent_check_lib/), 1,323 passed (333.05 s vs 391.61 s baseline) tests/unit, 198 passed, 1 deselected (97.00 s vs 137.47 s baseline) evals/security/contract, 8/8 passed PG18 migrations + audit, 9/9 Turbo (79.02 s, 23+159+375 = 557 JS/TS tests), agent_check.py static --no-skip (PASS, 54.67 s/61.71 s) → static (SKIP, receipt 5a02fc131247), impact --explain (PASS, 18 py + 3 vitest), full --no-skip (PASS all 4 sub-stages), site:sync/site:check (255 reports, 66/66 CAPs), check_implementation_docs.py clean, and gitnexus analyze (50,382 nodes / 87,002 edges / 875 clusters / 1,534 flows)."
+    },
     {
       "date": "2026-11-26",
       "phaseOrStory": "Story 31.7",

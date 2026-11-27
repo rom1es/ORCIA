@@ -25,6 +25,7 @@ from alembic.config import Config
 from sqlalchemy.ext.asyncio import create_async_engine
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.waiting_utils import wait_for_logs
+from tests.integration._tc_socket_helpers import prepare_tc_sock_dir
 
 from orcia_core.blackboard.models import StepExecutionEntity
 from orcia_core.orchestration._internal.outbox_repository import SqlDomainEventsOutboxRepository
@@ -37,15 +38,10 @@ from orcia_worker.outbox_relay import OutboxEventBus
 os.environ["TESTCONTAINERS_RYUK_DISABLED"] = "true"
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SOCK_BASE_DIR = REPO_ROOT / ".pytest_cache" / "tc_3_2c"
 
 
 def _prepare_sock_dir(name: str) -> Path:
-    unique = f"{name}_{os.getpid()}_{int(time.time() * 1000) % 100000}"
-    target = SOCK_BASE_DIR / unique
-    target.mkdir(parents=True, exist_ok=True)
-    target.chmod(0o777)
-    return target
+    return prepare_tc_sock_dir(f"3_2c_{name}")
 
 
 def _load_script_module(mod_name: str, filename: str) -> Any:

@@ -1,20 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
-
-interface OpenApiSchema {
-  $ref?: string;
-  type?: string;
-  format?: string;
-  enum?: unknown[];
-  const?: unknown;
-  required?: string[];
-  properties?: Record<string, OpenApiSchema>;
-  additionalProperties?: boolean | OpenApiSchema;
-  items?: OpenApiSchema;
-  anyOf?: OpenApiSchema[];
-  oneOf?: OpenApiSchema[];
-  allOf?: OpenApiSchema[];
-}
+import {
+  checkValueMatchesSchema,
+  schemaAcceptsType,
+  type OpenApiSchema,
+} from "./openApiSchemaChecker";
 
 interface OpenApiParameter {
   name: string;
@@ -46,22 +36,18 @@ interface CompiledPathEntry {
   pathItem: Record<string, unknown>;
 }
 
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const VALIDATOR_CACHE_KEY = Symbol.for("orcia.vitest.openApiValidatorCache");
 
-function loadOpenApiSpec(): OpenApiSpec {
-  const specPath = path.resolve(
-    __dirname,
-    "../../../../../packages/api-client/openapi.json",
-  );
-  return JSON.parse(fs.readFileSync(specPath, "utf-8")) as OpenApiSpec;
+interface OpenApiValidatorCache {
+  mtimeMs: number;
+  spec: OpenApiSpec;
+  schemas: Record<string, OpenApiSchema>;
+  compiledPaths: CompiledPathEntry[];
 }
 
-const SPEC = loadOpenApiSpec();
-const SCHEMAS: Record<string, OpenApiSchema> = SPEC.components?.schemas ?? {};
-
-function compilePathEntries(): CompiledPathEntry[] {
+function compilePathEntries(spec: OpenApiSpec): CompiledPathEntry[] {
   const entries: CompiledPathEntry[] = [];
-  for (const [template, pathItem] of Object.entries(SPEC.paths ?? {})) {
+  for (const [template, pathItem] of Object.entries(spec.paths ?? {})) {
     const paramNames: string[] = [];
     const segments = template.split("/");
     let staticSegments = 0;
@@ -91,135 +77,30 @@ function compilePathEntries(): CompiledPathEntry[] {
   return entries;
 }
 
-const COMPILED_PATHS = compilePathEntries();
-
-function resolveSchema(schema: OpenApiSchema): OpenApiSchema {
-  if (!schema.$ref) return schema;
-  const refName = schema.$ref.split("/").pop() ?? "";
-  return SCHEMAS[refName] ?? schema;
-}
-
-function schemaAcceptsType(rawSchema: OpenApiSchema, targetType: string): boolean {
-  const schema = resolveSchema(rawSchema);
-  if (schema.type === targetType) return true;
-  const union = schema.anyOf ?? schema.oneOf ?? [];
-  return union.some((sub) => schemaAcceptsType(sub, targetType));
+function getOpenApiCache(): OpenApiValidatorCache {
+  const specPath = path.resolve(
+    __dirname,
+    "../../../../../packages/api-client/openapi.json",
+  );
+  const mtimeMs = fs.statSync(specPath).mtimeMs;
+  const globalStore = globalThis as Record<symbol, OpenApiValidatorCache | undefined>;
+  const existing = globalStore[VALIDATOR_CACHE_KEY];
+  if (existing && existing.mtimeMs === mtimeMs) {
+    return existing;
+  }
+  const spec = JSON.parse(fs.readFileSync(specPath, "utf-8")) as OpenApiSpec;
+  const cache: OpenApiValidatorCache = {
+    mtimeMs,
+    spec,
+    schemas: spec.components?.schemas ?? {},
+    compiledPaths: compilePathEntries(spec),
+  };
+  globalStore[VALIDATOR_CACHE_KEY] = cache;
+  return cache;
 }
 
 function formatError(ctx: string, message: string): Error {
   return new Error(`[vitestFetchTransport FAIL-CLOSED OpenAPI] ${ctx} : ${message}`);
-}
-
-function checkValueMatchesSchema(
-  rawSchema: OpenApiSchema,
-  value: unknown,
-  ctx: string,
-  method: string,
-): string | null {
-  const schema = resolveSchema(rawSchema);
-
-  if (schema.allOf && schema.allOf.length > 0) {
-    for (const sub of schema.allOf) {
-      const err = checkValueMatchesSchema(sub, value, ctx, method);
-      if (err) return err;
-    }
-    return null;
-  }
-
-  const unionBranches = schema.anyOf ?? schema.oneOf;
-  if (unionBranches && unionBranches.length > 0) {
-    const branchErrors: string[] = [];
-    for (const branch of unionBranches) {
-      const err = checkValueMatchesSchema(branch, value, ctx, method);
-      if (!err) return null;
-      branchErrors.push(err);
-    }
-    return `aucune branche anyOf/oneOf satisfaite (${branchErrors[0] ?? "type invalide"})`;
-  }
-
-  if (schema.const !== undefined && value !== schema.const) {
-    return `valeur attendue ${JSON.stringify(schema.const)}, reçu ${JSON.stringify(value)}`;
-  }
-
-  if (schema.enum && !schema.enum.includes(value)) {
-    return `valeur ${JSON.stringify(value)} hors enum [${schema.enum.join(", ")}]`;
-  }
-
-  const expectedType = schema.type;
-  if (expectedType === "null") {
-    return value === null ? null : `null attendu, reçu ${typeof value}`;
-  }
-  if (expectedType === "string") {
-    if (typeof value !== "string") return `string attendu, reçu ${typeof value}`;
-    if (schema.format === "uuid" && !UUID_REGEX.test(value)) {
-      return `UUID invalide (${JSON.stringify(value)}) sur champ format: "uuid"`;
-    }
-    return null;
-  }
-  if (expectedType === "integer") {
-    if (typeof value !== "number" || !Number.isInteger(value)) {
-      return `integer attendu, reçu ${JSON.stringify(value)}`;
-    }
-    return null;
-  }
-  if (expectedType === "number") {
-    if (typeof value !== "number" || Number.isNaN(value)) {
-      return `number attendu, reçu ${JSON.stringify(value)}`;
-    }
-    return null;
-  }
-  if (expectedType === "boolean") {
-    if (typeof value !== "boolean") return `boolean attendu, reçu ${typeof value}`;
-    return null;
-  }
-  if (expectedType === "array") {
-    if (!Array.isArray(value)) return `array attendu, reçu ${typeof value}`;
-    if (schema.items) {
-      for (let i = 0; i < value.length; i += 1) {
-        const err = checkValueMatchesSchema(schema.items, value[i], `${ctx}[${i}]`, method);
-        if (err) return err;
-      }
-    }
-    return null;
-  }
-  if (expectedType === "object" || schema.properties) {
-    if (typeof value !== "object" || value === null || Array.isArray(value)) {
-      return `object attendu, reçu ${Array.isArray(value) ? "array" : typeof value}`;
-    }
-    const obj = value as Record<string, unknown>;
-    const props = schema.properties ?? {};
-    for (const reqKey of schema.required ?? []) {
-      if (!(reqKey in obj) || obj[reqKey] === undefined) {
-        return `champ obligatoire '${reqKey}' manquant dans ${ctx}`;
-      }
-    }
-    const forbidExtra =
-      schema.additionalProperties === false ||
-      (schema.additionalProperties === undefined &&
-        Object.keys(props).length > 0 &&
-        ["POST", "PUT", "PATCH"].includes(method));
-    for (const [key, propVal] of Object.entries(obj)) {
-      if (propVal === undefined) continue;
-      const propSchema = props[key];
-      if (propSchema) {
-        const err = checkValueMatchesSchema(propSchema, propVal, `${ctx}.${key}`, method);
-        if (err) return `${key}: ${err}`;
-      } else if (forbidExtra) {
-        return `champ non déclaré '${key}' interdit (additionalProperties: false) dans ${ctx}`;
-      } else if (typeof schema.additionalProperties === "object") {
-        const err = checkValueMatchesSchema(
-          schema.additionalProperties,
-          propVal,
-          `${ctx}.${key}`,
-          method,
-        );
-        if (err) return `${key}: ${err}`;
-      }
-    }
-    return null;
-  }
-
-  return null;
 }
 
 export function validateRequestAgainstOpenApi(params: {
@@ -230,13 +111,14 @@ export function validateRequestAgainstOpenApi(params: {
   isMultipart: boolean;
   headers?: Headers;
 }): Response | null {
+  const { spec, schemas, compiledPaths } = getOpenApiCache();
   const { method, parsedUrl, body, hasRawBody, isMultipart } = params;
   const pathname = parsedUrl.pathname;
   const lowerMethod = method.toLowerCase();
 
   let matchedEntry: CompiledPathEntry | null = null;
   let pathValues: Record<string, string> = {};
-  for (const entry of COMPILED_PATHS) {
+  for (const entry of compiledPaths) {
     const m = entry.regex.exec(pathname);
     if (m) {
       matchedEntry = entry;
@@ -273,6 +155,7 @@ export function validateRequestAgainstOpenApi(params: {
           val,
           `path.${param.name}`,
           method,
+          schemas,
         );
         if (err) throw formatError(`${method} ${pathname}`, `path.${param.name}: ${err}`);
       }
@@ -287,12 +170,12 @@ export function validateRequestAgainstOpenApi(params: {
       }
       if (hasQuery && rawVal !== null && param.schema) {
         let typedVal: unknown = rawVal;
-        if (schemaAcceptsType(param.schema, "boolean")) {
+        if (schemaAcceptsType(param.schema, "boolean", schemas)) {
           if (rawVal === "true") typedVal = true;
           else if (rawVal === "false") typedVal = false;
         } else if (
-          schemaAcceptsType(param.schema, "integer") ||
-          schemaAcceptsType(param.schema, "number")
+          schemaAcceptsType(param.schema, "integer", schemas) ||
+          schemaAcceptsType(param.schema, "number", schemas)
         ) {
           const parsed = Number(rawVal);
           if (!Number.isNaN(parsed) && rawVal.trim() !== "") typedVal = parsed;
@@ -302,6 +185,7 @@ export function validateRequestAgainstOpenApi(params: {
           typedVal,
           `query.${param.name}`,
           method,
+          schemas,
         );
         if (err) throw formatError(`${method} ${pathname}`, `query.${param.name}: ${err}`);
       }
@@ -314,12 +198,12 @@ export function validateRequestAgainstOpenApi(params: {
       throw formatError(`${method} ${pathname}`, "corps JSON requestBody obligatoire manquant");
     }
     if (jsonContent?.schema && hasRawBody) {
-      const err = checkValueMatchesSchema(jsonContent.schema, body, "body", method);
+      const err = checkValueMatchesSchema(jsonContent.schema, body, "body", method, schemas);
       if (err) throw formatError(`${method} ${pathname}`, err);
     }
   }
 
-  const effectiveSecurity = op.security ?? SPEC.security ?? [];
+  const effectiveSecurity = op.security ?? spec.security ?? [];
   if (Array.isArray(effectiveSecurity) && effectiveSecurity.length > 0) {
     const rawAuth = params.headers?.get("Authorization") ?? "";
     const bearerMatch = /^Bearer\s+(\S+)$/i.exec(rawAuth.trim());

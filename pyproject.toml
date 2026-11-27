@@ -245,6 +245,9 @@ pythonpath = [
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 addopts = "-ra -q"
+markers = [
+    "contract_fuzz: slow Schemathesis OpenAPI property fuzzing excluded from default fast runs",
+]
 
 [tool.coverage.run]
 branch = true

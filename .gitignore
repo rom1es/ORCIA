@@ -1,5 +1,6 @@
 # Python virtual environment & caches
 .venv/
+.agent_check/
 __pycache__/
 *.py[cod]
 *$py.class
