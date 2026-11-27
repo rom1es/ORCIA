@@ -358,6 +358,19 @@ development_status:
   31-6-direction-c-bilingual-pack-registry-composer-slot-drawer-and-autocomplete-ui: done
   31-7-epic-31-red-team-security-roundtrip-e2e-help-sync-and-closure: done
   epic-31-retrospective: optional
+
+  # Epic 32 — Test Pyramid Pruning, Token Economy & Anti-Bloat Tech Debt (T-D1..T-D11)
+  # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-27-epic-32-test-pyramid-token-economy.md
+  # Evidence    : docs/implementation-artifacts/test-optimization-2026-11-27/
+  # Lots        : L1 32-1 -> L2 32-2 -> L3 32-3 -> L4 32-4 -> L5 32-5
+  # KPIs        : baseline Epics 30-31 (13 stories), evaluated on Epic 33 feature stories (real bugs caught >= 3.0 floor)
+  epic-32: in-progress
+  32-1-token-first-agent-check-runner-receipts-and-suite-quick-wins: ready-for-dev
+  32-2-agent-protocol-small-context-fixer-and-rules-diet: backlog
+  32-3-combined-coverage-diff-cover-shared-pg18-infra-and-ratchet-lint: backlog
+  32-4-repo-wide-test-pyramid-pruning-with-coverage-safety-gate: backlog
+  32-5-strict-anti-bloat-lint-openapi-vitest-mocks-and-survivor-split: backlog
+  epic-32-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
     title: "Politiques de restriction explicite (DENY prioritaire, INHERITANCE_BLOCK) sur sous-entités sensibles"
