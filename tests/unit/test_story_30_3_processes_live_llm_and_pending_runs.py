@@ -315,3 +315,5 @@ async def test_dependencies_and_pending_runs_edge_branches(
             reflexive_execution_id=None,
             state_payload={},
         )
+    with pytest.raises(RuntimeError, match="pg down"):
+        await strict_store.get_run("r-fail")

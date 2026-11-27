@@ -79,9 +79,13 @@ def _runner_source_digest(repo_root: Path) -> str:
     lint_lib_dir = scripts_dir / "lint_tests_lib"
     if lint_lib_dir.is_dir():
         runner_files.extend(sorted(lint_lib_dir.glob("*.py")))
-    ratchet_file = scripts_dir / "lint_tests_ratchet.json"
-    if ratchet_file.is_file():
-        runner_files.append(ratchet_file)
+    mock_lib_dir = scripts_dir / "generate_vitest_openapi_mocks_lib"
+    if mock_lib_dir.is_dir():
+        runner_files.extend(sorted(mock_lib_dir.glob("*.py")))
+    for cfg_name in ("lint_tests_ratchet.json", "test_budgets.json"):
+        cfg_file = scripts_dir / cfg_name
+        if cfg_file.is_file():
+            runner_files.append(cfg_file)
     for path in runner_files:
         rel = path.relative_to(repo_root).as_posix()
         hasher.update(rel.encode("utf-8"))
@@ -202,6 +206,20 @@ def clear_failure_state(repo_root: Path) -> None:
     """Remove recorded failure state once the failing check passes."""
     state_path = _failure_state_path(repo_root)
     if state_path.is_file():
+        state_path.unlink()
+
+
+def clear_failure_state_if_matches(repo_root: Path, *, prefixes: tuple[str, ...]) -> None:
+    """Remove recorded failure state only if `failed_check` matches one of `prefixes`."""
+    state_path = _failure_state_path(repo_root)
+    if not state_path.is_file():
+        return
+    try:
+        data = json.loads(state_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return
+    failed_check = str(data.get("failed_check", ""))
+    if failed_check and any(failed_check.startswith(p) for p in prefixes):
         state_path.unlink()
 
 

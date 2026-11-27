@@ -38,7 +38,12 @@ def _has_fake_sql_engine_ast(source: str) -> bool:
             if node.name in FAKE_SQL_CLASS_NAMES:
                 return True
             name_low = node.name.lower()
-            if "fake" in name_low:
+            is_inmemory = "inmemory" in name_low or "in_memory" in name_low
+            has_fake_prefix = "fake" in name_low
+            has_stub_or_mock_sql = (
+                ("stub" in name_low or "mock" in name_low) and "sql" in name_low and not is_inmemory
+            )
+            if has_fake_prefix or has_stub_or_mock_sql:
                 if any(
                     k in name_low
                     for k in (

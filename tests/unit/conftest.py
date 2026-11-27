@@ -19,6 +19,7 @@ _SESSION_APP_STATE: dict[str, Any] = {
     "base_state": None,
     "base_wf_fallback": None,
     "base_vsm_fallback": None,
+    "base_evaluator_snapshot": None,
 }
 
 
@@ -36,12 +37,24 @@ def seeded_test_app() -> FastAPI:
     _SESSION_APP_STATE["base_vsm_fallback"] = (
         copy.deepcopy(vsm_store._memory_fallback) if vsm_store is not None else None
     )
+    auth_svc = getattr(app.state, "auth_service", None)
+    ev = getattr(auth_svc, "evaluator", None)
+    _SESSION_APP_STATE["base_evaluator_snapshot"] = (
+        (
+            dict(ev._org_units_by_id),
+            dict(ev._workspaces_by_id),
+            tuple(ev._memberships),
+            tuple(ev._catalog_acls),
+        )
+        if ev is not None
+        else None
+    )
     return app
 
 
 @pytest.fixture(autouse=True)
 def _isolate_seeded_test_app_state() -> Iterator[None]:
-    """Snapshot/restore `dependency_overrides` and `app.state` if `seeded_test_app` is active."""
+    """Snapshot/restore `dependency_overrides`, `app.state`, and `evaluator` if active."""
     yield
     app: FastAPI | None = _SESSION_APP_STATE["app"]
     if app is None:
@@ -61,6 +74,17 @@ def _isolate_seeded_test_app_state() -> Iterator[None]:
     if vsm_store is not None and isinstance(base_vsm, dict):
         vsm_store._memory_fallback.clear()
         vsm_store._memory_fallback.update(copy.deepcopy(base_vsm))
+    auth_svc = getattr(app.state, "auth_service", None)
+    ev = getattr(auth_svc, "evaluator", None)
+    base_ev = _SESSION_APP_STATE["base_evaluator_snapshot"]
+    if ev is not None and isinstance(base_ev, tuple):
+        org_map, ws_map, memberships, catalog_acls = base_ev
+        ev._org_units_by_id.clear()
+        ev._org_units_by_id.update(org_map)
+        ev._workspaces_by_id.clear()
+        ev._workspaces_by_id.update(ws_map)
+        ev._memberships = tuple(memberships)
+        ev._catalog_acls = tuple(catalog_acls)
 
 
 @pytest.fixture(scope="session")

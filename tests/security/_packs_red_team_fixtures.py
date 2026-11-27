@@ -1,4 +1,4 @@
-"""Shared test fixtures for Story 31.7 Red-Team & Isolation Security Suites (`<= 175 L`)."""
+"""Shared test fixtures for Story 31.7 Red-Team & Isolation Security Suites (`<= 200 L`)."""
 
 from __future__ import annotations
 

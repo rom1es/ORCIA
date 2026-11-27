@@ -52,6 +52,7 @@ Regenerate with `.venv/bin/python scripts/generate_test_fixture_index.py`.
 | `apps/web/src/__tests__/setup/autonomyTriggersAndWorkflowsV2Handlers.ts` | Vitest setup/mock helper module. | `handleAutonomyTriggersAndWorkflowsV2Route` |
 | `apps/web/src/__tests__/setup/dnaMechanismsMockHandlers.ts` | Vitest setup/mock helper module. | `handleDnaMechanismsMockRoute` |
 | `apps/web/src/__tests__/setup/finopsAndGatesMockHandlers.ts` | Vitest setup/mock helper module. | `handleFinopsAndGatesRoute` |
+| `apps/web/src/__tests__/setup/generatedOpenApiMocks.ts` | eslint-disable | `GENERATED_OPENAPI_MOCKS`, `GeneratedOpenApiMockSpec`, `GeneratedOpenApiOperationKey`, `buildOpenApiMockPayload`, `buildOpenApiMockResponse` |
 | `apps/web/src/__tests__/setup/inboxAndBrokerMockHandlers.ts` | Vitest setup/mock helper module. | `handleInboxAndBrokerRoute` |
 | `apps/web/src/__tests__/setup/installedPacksMockHandler.ts` | Vitest setup/mock helper module. | `handleInstalledPacksRoute`, `seedVitestActivePacks` |
 | `apps/web/src/__tests__/setup/mockBackendState.ts` | Vitest setup/mock helper module. | `MockBackendState`, `MockOrganizationalUnit`, `RecordedVitestApiCall`, `backendState`, `buildInitialWorkflowsV2Map`, `buildSseStreamResponse`, `getRecordedVitestApiCalls`, `jsonResponse`, `parseJsonBody`, `problemResponse`, +7 more |

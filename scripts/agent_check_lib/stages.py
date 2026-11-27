@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
-import json
 import time
-from pathlib import Path
 
+from scripts.agent_check_lib.bounce import (
+    _has_package_script as _has_package_script,
+)
+from scripts.agent_check_lib.bounce import (
+    execute_bounce_plan,
+    run_full_vitest_and_docs,
+)
 from scripts.agent_check_lib.coverage_gate import (
     build_diff_cover_patch,
     cleanup_coverage_artifacts,
@@ -19,6 +24,7 @@ from scripts.agent_check_lib.output import format_pass_line, format_skip_line
 from scripts.agent_check_lib.receipts import (
     BounceDecision,
     clear_failure_state,
+    clear_failure_state_if_matches,
     compute_worktree_digest,
     evaluate_bounce_rule,
     has_matching_receipt,
@@ -32,18 +38,24 @@ from scripts.agent_check_lib.runner_exec import (
     run_vitest_suite,
 )
 from scripts.agent_check_lib.static_gates import (
-    TS_PACKAGE_FILTERS,
     autofix_touched_python,
     build_static_gates,
+    validate_gate_result,
 )
 
 _run_cmd = run_cmd
 
 
-def run_stage_static(env_info: ToolchainEnv, *, touched_files: list[str], no_skip: bool) -> int:
+def run_stage_static(
+    env_info: ToolchainEnv,
+    *,
+    touched_files: list[str],
+    no_skip: bool,
+    scoped_files: bool = False,
+) -> int:
     """Run Stage 1 (`static`): autofix touched `.py`, then check-only gates with receipt."""
     root = env_info.repo_root
-    if not no_skip:
+    if not no_skip and not scoped_files:
         pre_digest = compute_worktree_digest(root, env_info)
         if has_matching_receipt(root, "static", pre_digest):
             print(format_skip_line("static", pre_digest))
@@ -56,9 +68,8 @@ def run_stage_static(env_info: ToolchainEnv, *, touched_files: list[str], no_ski
     if autofixed:
         print(f"AUTOFIXED: {', '.join(autofixed)}")
 
-    # Compute digest AFTER auto-fix and BEFORE check-only gates so receipts never self-invalidate
     post_digest = compute_worktree_digest(root, env_info)
-    if not no_skip and has_matching_receipt(root, "static", post_digest):
+    if not no_skip and not scoped_files and has_matching_receipt(root, "static", post_digest):
         print(format_skip_line("static", post_digest))
         return 0
 
@@ -67,14 +78,15 @@ def run_stage_static(env_info: ToolchainEnv, *, touched_files: list[str], no_ski
         print(warn)
 
     for gate_name, cmd in gates:
-        res = _run_cmd(cmd, root, sub_env)
+        res = validate_gate_result(gate_name, _run_cmd(cmd, root, sub_env))
         if res.returncode != 0:
             return emit_check_failure(root, "static", gate_name, res, time.monotonic() - t0)
 
     elapsed = time.monotonic() - t0
     summary = f"{len(gates)} gates"
-    write_receipt(root, "static", post_digest, summary=summary)
-    clear_failure_state(root)
+    if not scoped_files:
+        write_receipt(root, "static", post_digest, summary=summary)
+    clear_failure_state_if_matches(root, prefixes=("static:",))
     print(format_pass_line("static", summary, elapsed))
     return 0
 
@@ -118,21 +130,10 @@ def run_stage_impact(
             print(vitest_err)
             return rc
 
-    clear_failure_state(root)
+    clear_failure_state_if_matches(root, prefixes=("static:", "impact:", "pytest:impact"))
     summary = f"{len(plan.python_tests)} py + {len(plan.vitest_files_by_pkg)} vitest pkg(s)"
     print(format_pass_line("impact", summary, time.monotonic() - t0))
     return 0
-
-
-def _has_package_script(repo_root: Path, script_name: str) -> bool:
-    pkg_json = repo_root / "package.json"
-    if not pkg_json.is_file():
-        return False
-    try:
-        scripts = json.loads(pkg_json.read_text(encoding="utf-8")).get("scripts", {})
-    except (OSError, json.JSONDecodeError):
-        return False
-    return script_name in scripts
 
 
 def run_stage_full(env_info: ToolchainEnv, *, no_skip: bool) -> int:
@@ -203,43 +204,16 @@ def run_stage_full(env_info: ToolchainEnv, *, no_skip: bool) -> int:
     finally:
         cleanup_coverage_artifacts(root)
 
-    ts_pkgs = [p for p, _ in TS_PACKAGE_FILTERS if (root / p / "package.json").is_file()]
-    if ts_pkgs:
-        if not no_skip and has_matching_receipt(root, "full-vitest", digest):
-            print(format_skip_line("full-vitest", digest))
-        else:
-            t_vitest = time.monotonic()
-            for pkg_rel in ts_pkgs:
-                rc_v, msg_v = run_vitest_suite(
-                    env_info, stage="full-vitest", pkg_rel=pkg_rel, files=None, t0=t_vitest
-                )
-                if rc_v != 0 and msg_v:
-                    print(msg_v)
-                    return rc_v
-            elapsed_v = time.monotonic() - t_vitest
-            write_receipt(root, "full-vitest", digest, summary=f"{len(ts_pkgs)} pkg(s)")
-            print(format_pass_line("full-vitest", f"{len(ts_pkgs)} pkg(s)", elapsed_v))
-
-    closure_checks: list[tuple[str, list[str]]] = []
-    if (root / "scripts" / "check_implementation_docs.py").is_file():
-        closure_checks.append(
-            ("check-impl-docs", [str(env_info.python_bin), "scripts/check_implementation_docs.py"])
-        )
-    if _has_package_script(root, "site:check"):
-        closure_checks.append(("site-check", [env_info.pnpm_bin, "site:check"]))
-
-    if closure_checks:
-        t_close = time.monotonic()
-        for gate_name, cmd in closure_checks:
-            res = _run_cmd(cmd, root, sub_env)
-            if res.returncode != 0:
-                return emit_check_failure(root, "full", gate_name, res, time.monotonic() - t_close)
-        print(
-            format_pass_line(
-                "full-docs-site", f"{len(closure_checks)} checks", time.monotonic() - t_close
-            )
-        )
-
+    rc_vd = run_full_vitest_and_docs(
+        env_info,
+        digest=digest,
+        no_skip=no_skip,
+        sub_env=sub_env,
+        run_cmd_fn=_run_cmd,
+        run_vitest_fn=run_vitest_suite,
+    )
+    if rc_vd != 0:
+        return rc_vd
     clear_failure_state(root)
     return 0
 
@@ -266,41 +240,31 @@ def run_with_bounce(
     no_skip: bool,
     maxfail: int | None,
     explain: bool,
+    scoped_files: bool = False,
 ) -> int:
     """Apply bounce rule when an active failure exists, else execute requested stage."""
     root = env_info.repo_root
     bounce = evaluate_bounce_rule(root)
-    if not no_skip and bounce.mode == BounceDecision.ONLY_FAILED_CHECK and bounce.failed_check:
-        if bounce.failed_check.startswith("pytest:") and bounce.failed_tests:
-            node_targets = sorted(
-                {t.split("::", 1)[0].replace(".", "/") + ".py" for t in bounce.failed_tests}
-            )
-            existing = [t for t in node_targets if (root / t).is_file()]
-            if existing:
-                rc, msg = run_pytest_suite(
-                    env_info,
-                    stage="bounce",
-                    check_key=bounce.failed_check,
-                    targets=existing,
-                    extra_args=["-m", "not contract_fuzz"],
-                    maxfail=maxfail,
-                )
-                print(msg)
-                if rc == 0:
-                    clear_failure_state(root)
-                return rc
-    elif (
-        not no_skip and bounce.mode == BounceDecision.STAGE1_STAGE2_AND_FAILED and stage == "impact"
-    ):
-        rc1 = run_stage_static(env_info, touched_files=touched_files, no_skip=no_skip)
-        if rc1 != 0:
-            return rc1
-        return run_stage_impact(
-            env_info, touched_files=touched_files, maxfail=maxfail, explain=explain
+    if not no_skip and bounce.mode != BounceDecision.NONE and stage in ("impact", "full", "all"):
+        return execute_bounce_plan(
+            env_info,
+            bounce,
+            touched_files=touched_files,
+            no_skip=no_skip,
+            maxfail=maxfail,
+            explain=explain,
+            scoped_files=scoped_files,
+            run_static_fn=run_stage_static,
+            run_impact_fn=run_stage_impact,
+            run_full_fn=run_stage_full,
+            run_pytest_fn=run_pytest_suite,
+            run_vitest_fn=run_vitest_suite,
         )
 
     if stage == "static":
-        return run_stage_static(env_info, touched_files=touched_files, no_skip=no_skip)
+        return run_stage_static(
+            env_info, touched_files=touched_files, no_skip=no_skip, scoped_files=scoped_files
+        )
     if stage == "impact":
         return run_stage_impact(
             env_info, touched_files=touched_files, maxfail=maxfail, explain=explain
@@ -308,7 +272,9 @@ def run_with_bounce(
     if stage == "full":
         return run_stage_full(env_info, no_skip=no_skip)
     if stage == "all":
-        rc1 = run_stage_static(env_info, touched_files=touched_files, no_skip=no_skip)
+        rc1 = run_stage_static(
+            env_info, touched_files=touched_files, no_skip=no_skip, scoped_files=scoped_files
+        )
         if rc1 != 0:
             return rc1
         rc2 = run_stage_impact(

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Anti-bloat & security ratchet test linter (`T-D10`, Story 32.3).
+"""Anti-bloat & security test linter (`T-D10`, Story 32.3 / 32.5 strict default).
 
 Usage:
-    .venv/bin/python scripts/lint_tests.py --ratchet
+    .venv/bin/python scripts/lint_tests.py
+    .venv/bin/python scripts/lint_tests.py --strict
 """
 
 from __future__ import annotations
@@ -68,13 +69,17 @@ def run_ratchet(
     repo_root: Path,
     ratchet_path: Path,
     *,
+    strict: bool = True,
     diff_text: str | None = None,
 ) -> tuple[int, list[str]]:
-    """Execute all 5 ratchet checks; return `(exit_code, output_lines)`."""
+    """Execute all anti-bloat & security checks; return `(exit_code, output_lines)`."""
     cfg = load_ratchet_config(ratchet_path)
     failures: list[str] = []
 
-    for rel in check_fake_sql_engines(repo_root, set(cfg["fake_sql_engine_files"])):
+    fake_sql_allowlist = set() if strict else set(cfg["fake_sql_engine_files"])
+    redundancy_allowlist = set() if strict else set(cfg["redundancy_audit_exempt_files"])
+
+    for rel in check_fake_sql_engines(repo_root, fake_sql_allowlist):
         failures.append(f"[fake-sql] New fake SQL engine in tests/unit: {rel}")
 
     for rel in check_legacy_story_test_files(repo_root, set(cfg["legacy_story_test_files"])):
@@ -85,7 +90,7 @@ def run_ratchet(
     effective_diff = collect_git_test_diff(repo_root) if diff_text is None else diff_text
     for msg in check_removed_assertions(
         effective_diff,
-        redundancy_audit_allowlist=set(cfg["redundancy_audit_exempt_files"]),
+        redundancy_audit_allowlist=redundancy_allowlist,
     ):
         failures.append(f"[removed-assert] {msg}")
 
@@ -101,9 +106,11 @@ def run_ratchet(
         lines.extend(f"FAIL [lint-tests] {f}" for f in failures)
         return 1, lines
 
+    mode_label = "strict" if strict else "ratchet"
     lines.append(
-        "PASS [lint-tests]: 0 ratchet violations "
-        f"(allowlists: fake_sql={len(cfg['fake_sql_engine_files'])}, "
+        f"PASS [lint-tests]: 0 {mode_label} violations "
+        f"(allowlists: fake_sql={len(fake_sql_allowlist)}, "
+        f"redundancy_exempt={len(redundancy_allowlist)}, "
         f"story_files={len(cfg['legacy_story_test_files'])}, "
         f"unguarded_routes={len(cfg['unguarded_routes_allowlist'])})"
     )
@@ -114,7 +121,14 @@ def main(argv: list[str] | None = None) -> int:
     """CLI entrypoint for `scripts/lint_tests.py`."""
     parser = argparse.ArgumentParser(description="ORCIA anti-bloat & security test linter.")
     parser.add_argument(
-        "--ratchet", action="store_true", help="Run ratchet checks against allowlist"
+        "--strict",
+        action="store_true",
+        help="Run strict anti-bloat checks (default mode; 0 fake-SQL & 0 redundancy exemptions).",
+    )
+    parser.add_argument(
+        "--ratchet",
+        action="store_true",
+        help="Run legacy ratchet mode allowing JSON fake_sql/redundancy allowlists.",
     )
     parser.add_argument(
         "--generate-baseline",
@@ -143,10 +157,8 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
-    if not args.ratchet:
-        parser.error("Specify --ratchet or --generate-baseline")
-
-    rc, lines = run_ratchet(repo_root, ratchet_path)
+    strict_mode = bool(args.strict or not args.ratchet)
+    rc, lines = run_ratchet(repo_root, ratchet_path, strict=strict_mode)
     for ln in lines:
         print(ln)
     return rc

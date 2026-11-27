@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 64,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 45,
-    "techLeadReportsCount": 258,
+    "techLeadReportsCount": 259,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -552,6 +552,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-27",
+      "phaseOrStory": "Story 32.5",
+      "reportFile": "32-5-strict-anti-bloat-lint-openapi-vitest-mocks-and-survivor-split-tech-lead-report.md",
+      "domain": "Epic 32 Lot 5 — Strict Anti-Bloat Lint, OpenAPI-Generated Vitest Mocks, i18n-and-shell Survivor Split, Test-Time Budgets & Epic 32 Hardening (T-D2, T-D3, T-D10, hygiene)",
+      "summary": "In-progress (hygiene)."
+    },
     {
       "date": "2026-11-27",
       "phaseOrStory": "Story 32.4",

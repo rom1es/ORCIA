@@ -90,12 +90,22 @@ def _patch_has_python_changes(patch_text: str) -> bool:
     return False
 
 
+def _committed_branch_diff_range(repo_root: Path) -> str:
+    base_ref: str | None = None
+    for candidate in ("origin/main", "main"):
+        rc_mb, mb_out = _git_output(repo_root, ["merge-base", candidate, "HEAD"])
+        if rc_mb == 0 and mb_out.strip():
+            base_ref = mb_out.strip()
+            break
+    return f"{base_ref}..HEAD" if base_ref else "HEAD~1..HEAD"
+
+
 def build_diff_cover_patch(repo_root: Path, *, out_path: Path) -> bool:
     """Write unified diff for changed `.py` files under `packages/`, `apps/`, `scripts/`."""
     if not (repo_root / ".git").exists():
         return False
     rc_status, status_out = _git_output(
-        repo_root, ["status", "--porcelain", "--", *COV_SOURCE_DIRS]
+        repo_root, ["status", "--porcelain", "-uall", "--", *COV_SOURCE_DIRS]
     )
     chunks: list[str] = []
     if rc_status == 0 and status_out.strip():
@@ -110,13 +120,7 @@ def build_diff_cover_patch(repo_root: Path, *, out_path: Path) -> bool:
                     if untracked_diff:
                         chunks.append(untracked_diff)
     else:
-        base_ref: str | None = None
-        for candidate in ("origin/main", "main"):
-            rc_mb, mb_out = _git_output(repo_root, ["merge-base", candidate, "HEAD"])
-            if rc_mb == 0 and mb_out.strip():
-                base_ref = mb_out.strip()
-                break
-        diff_range = f"{base_ref}..HEAD" if base_ref else "HEAD~1..HEAD"
+        diff_range = _committed_branch_diff_range(repo_root)
         rc_cmp, cmp_out = _git_output(repo_root, ["diff", diff_range, "--", *COV_SOURCE_DIRS])
         if rc_cmp == 0 and cmp_out:
             chunks.append(cmp_out)
@@ -186,10 +190,15 @@ def run_combined_diff_cover(
 
 
 def resolve_impacted_pg18_tests(repo_root: Path) -> list[str]:
-    """Return impacted `tests/integration/` files for changed worktree files, if any."""
+    """Return impacted `tests/integration/` files for changed worktree or branch files."""
     if not (repo_root / ".git").exists():
         return []
     touched = detect_changed_files(repo_root)
+    if not touched:
+        diff_range = _committed_branch_diff_range(repo_root)
+        rc_cmp, cmp_out = _git_output(repo_root, ["diff", "--name-only", diff_range])
+        if rc_cmp == 0 and cmp_out.strip():
+            touched = [ln.strip() for ln in cmp_out.splitlines() if ln.strip()]
     if not touched:
         return []
     return select_impacted_targets(repo_root, touched_files=touched).integration_tests

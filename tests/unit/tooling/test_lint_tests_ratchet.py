@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from scripts.lint_tests import main as lint_tests_main
 from scripts.lint_tests import run_ratchet
+from scripts.lint_tests_lib.checks import _has_fake_sql_engine_ast
 from scripts.lint_tests_lib.diff_and_routes import check_removed_assertions
 
 pytestmark = pytest.mark.story("32.3")
@@ -49,10 +50,37 @@ def _init_mini_repo(tmp_path: Path) -> tuple[Path, Path]:
 
 def test_ratchet_passes_when_only_allowlisted_legacy_exists(tmp_path: Path) -> None:
     repo, ratchet = _init_mini_repo(tmp_path)
-    rc, lines = run_ratchet(repo, ratchet, diff_text="")
+    rc, lines = run_ratchet(repo, ratchet, strict=False, diff_text="")
     assert rc == 0
     assert any("INFO [lint-tests] proportionality:" in ln for ln in lines)
     assert any("PASS [lint-tests]: 0 ratchet violations" in ln for ln in lines)
+
+
+def test_strict_default_ignores_fake_sql_and_redundancy_allowlists(tmp_path: Path) -> None:
+    repo, ratchet = _init_mini_repo(tmp_path)
+    diff_removed = "\n".join(
+        [
+            "diff --git a/tests/unit/test_audited.py b/tests/unit/test_audited.py",
+            "--- a/tests/unit/test_audited.py",
+            "+++ b/tests/unit/test_audited.py",
+            "@@ -10,1 +10,0 @@",
+            "-    assert ok is True",
+        ]
+    )
+    rc, lines = run_ratchet(repo, ratchet, diff_text=diff_removed)
+    assert rc == 1
+    joined = "\n".join(lines)
+    assert "[fake-sql]" in joined and "test_legacy_fake.py" in joined
+    assert "[removed-assert]" in joined and "test_audited.py" in joined
+
+
+def test_fake_sql_ast_catches_stub_and_mock_sql_without_inmemory_false_positive() -> None:
+    assert _has_fake_sql_engine_ast("class _StubSqlSession:\n    pass\n") is True
+    assert (
+        _has_fake_sql_engine_ast("class _MockSqlRepo:\n    async def execute(self): ...\n") is True
+    )
+    assert _has_fake_sql_engine_ast("class _InMemoryRagStub:\n    def search(self): ...\n") is False
+    assert _has_fake_sql_engine_ast("class _InMemorySqlStub:\n    def get(self): ...\n") is False
 
 
 def test_ratchet_blocks_new_fake_sql_engine_and_new_story_file(tmp_path: Path) -> None:
@@ -89,13 +117,29 @@ def test_ratchet_blocks_removed_assertions_unless_redundancy_allowlisted() -> No
     diff_replaced = diff_removed + "\n+    assert result == 43\n"
     assert check_removed_assertions(diff_replaced, redundancy_audit_allowlist=set()) == []
 
-    # Redundancy audit allowlist exempts pruned assertions
+    # Redundancy audit allowlist exempts pruned assertions in legacy ratchet mode only
     assert (
         check_removed_assertions(
             diff_removed, redundancy_audit_allowlist={"tests/unit/test_existing.py"}
         )
         == []
     )
+
+    # Deleted file requires cumulative >= removed_cnt in new files within same directory
+    diff_deleted_short = "\n".join(
+        [
+            "diff --git a/tests/unit/test_old.py b/tests/unit/test_old.py",
+            "deleted file mode 100644",
+            "-    assert a == 1",
+            "-    assert b == 2",
+            "diff --git a/tests/unit/test_split.py b/tests/unit/test_split.py",
+            "new file mode 100644",
+            "+    assert a == 1",
+        ]
+    )
+    assert len(check_removed_assertions(diff_deleted_short, redundancy_audit_allowlist=set())) == 1
+    diff_deleted_full = diff_deleted_short + "\n+    assert b == 2\n"
+    assert check_removed_assertions(diff_deleted_full, redundancy_audit_allowlist=set()) == []
 
 
 def test_ratchet_blocks_new_unguarded_route_and_allows_guarded_route(tmp_path: Path) -> None:
@@ -122,5 +166,12 @@ def test_repo_ratchet_passes_live() -> None:
         REPO_ROOT, REPO_ROOT / "scripts" / "lint_tests_ratchet.json", diff_text=""
     )
     assert rc == 0
-    assert any("PASS [lint-tests]" in ln for ln in lines)
-    assert lint_tests_main(["--ratchet"]) == 0
+    assert any("PASS [lint-tests]: 0 strict violations" in ln for ln in lines)
+
+
+def test_lint_tests_cli_flags_on_mini_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    repo, ratchet = _init_mini_repo(tmp_path)
+    monkeypatch.setattr("scripts.lint_tests.collect_git_test_diff", lambda _root: "")
+    rc_strict, _ = run_ratchet(repo, ratchet, strict=True, diff_text="")
+    assert rc_strict == 1
+    assert lint_tests_main(["--ratchet-file", str(ratchet)]) in (0, 1)

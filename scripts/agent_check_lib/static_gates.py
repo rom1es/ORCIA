@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 from pathlib import Path
 
@@ -24,7 +25,13 @@ def resolve_mypy_targets(repo_root: Path, touched_files: list[str]) -> list[str]
     if "pyproject.toml" in touched_files:
         return [
             p
-            for p in ("packages/orcia-kernel", "packages/orcia-core", "apps/api", "apps/worker")
+            for p in (
+                "packages/orcia-kernel",
+                "packages/orcia-core",
+                "packages/orcia-connectors",
+                "apps/api",
+                "apps/worker",
+            )
             if (repo_root / p).is_dir()
         ]
     targets: set[str] = set()
@@ -96,6 +103,14 @@ def build_static_gates(
             ("openapi-check", [str(env_info.python_bin), "scripts/export_openapi.py", "--check"])
         )
 
+    if (root / "scripts" / "generate_vitest_openapi_mocks.py").is_file():
+        gates.append(
+            (
+                "vitest-openapi-mocks",
+                [str(env_info.python_bin), "scripts/generate_vitest_openapi_mocks.py", "--check"],
+            )
+        )
+
     if (root / "scripts" / "check_agent_rules.py").is_file():
         gates.append(("rules-lint", [str(env_info.python_bin), "scripts/check_agent_rules.py"]))
 
@@ -108,9 +123,7 @@ def build_static_gates(
         )
 
     if (root / "scripts" / "lint_tests.py").is_file():
-        gates.append(
-            ("lint-tests", [str(env_info.python_bin), "scripts/lint_tests.py", "--ratchet"])
-        )
+        gates.append(("lint-tests", [str(env_info.python_bin), "scripts/lint_tests.py"]))
 
     for pkg_name in resolve_ts_packages(root, touched_files, force_all=no_skip):
         gates.append((f"ts-lint:{pkg_name}", [env_info.pnpm_bin, "--filter", pkg_name, "lint"]))
@@ -157,6 +170,29 @@ def autofix_touched_python(
     run_cmd([str(env_info.ruff_bin), "format", *touched_py], root, sub_env)
     run_cmd([str(env_info.ruff_bin), "check", "--fix", *touched_py], root, sub_env)
     return [rel for rel in touched_py if hash_file_bytes(root / rel) != before[rel]]
+
+
+def validate_gate_result(gate_name: str, res: CommandResult) -> CommandResult:
+    """Validate structured JSON output for gates whose CLI contract always exits 0."""
+    if gate_name != "lint-spine" or res.returncode != 0:
+        return res
+    try:
+        payload = json.loads(res.stdout)
+    except json.JSONDecodeError as exc:
+        err = res.stderr or f"lint-spine produced invalid JSON output: {exc}"
+        return CommandResult(returncode=1, stdout=res.stdout, stderr=err)
+    if not isinstance(payload, dict):
+        return CommandResult(
+            returncode=1,
+            stdout=res.stdout,
+            stderr=res.stderr or "lint-spine JSON must be an object",
+        )
+    ok = payload.get("ok") is True
+    findings_cnt = int(payload.get("total_findings", 0) or 0)
+    if not ok or findings_cnt > 0:
+        err = res.stderr or f"lint-spine failed: ok={payload.get('ok')}, findings={findings_cnt}"
+        return CommandResult(returncode=1, stdout=res.stdout, stderr=err)
+    return res
 
 
 def run_single_cmd(cmd: list[str], cwd: Path, env: dict[str, str]) -> CommandResult:

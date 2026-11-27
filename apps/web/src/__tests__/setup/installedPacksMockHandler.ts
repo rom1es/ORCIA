@@ -1,4 +1,5 @@
-import { backendState, jsonResponse } from "./mockBackendState";
+import { buildOpenApiMockResponse } from "./generatedOpenApiMocks";
+import { backendState } from "./mockBackendState";
 
 const MOCK_INSTALLED_BUSINESS_PACKS = [
   {
@@ -46,7 +47,9 @@ export function handleInstalledPacksRoute(params: {
   readonly method: string;
 }): Response | null {
   if (params.path === "/api/v1/pack-builder/installed-packs" && params.method === "GET") {
-    return jsonResponse({ packs: MOCK_INSTALLED_BUSINESS_PACKS });
+    return buildOpenApiMockResponse("GET /api/v1/pack-builder/installed-packs", {
+      packs: MOCK_INSTALLED_BUSINESS_PACKS,
+    });
   }
   return null;
 }

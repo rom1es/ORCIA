@@ -43,6 +43,7 @@ COMPOSITION_HUB_MODULES: frozenset[str] = BARREL_HUB_MODULES | frozenset(
 HUB_WIRING_SMOKE_TESTS: tuple[str, ...] = (
     "tests/unit/tooling/test_shared_test_infra.py",
     "tests/unit/test_story_7_0c_openshift_scc_kustomize_and_ready.py",
+    "tests/unit/test_openapi_security.py",
 )
 
 ROUTER_PREFIX_RE = re.compile(r'APIRouter\([^)]*prefix\s*=\s*["\']([^"\']+)["\']')

@@ -144,5 +144,6 @@ def __getattr__(name: str) -> Any:
     if name == "app":
         if _LAZY_APP is None:
             _LAZY_APP = create_app()
+        globals()["app"] = _LAZY_APP
         return _LAZY_APP
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
