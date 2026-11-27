@@ -27,8 +27,8 @@ Hybrid TS (`pnpm`/`Turborepo`, `Vite`/`TanStack Router`, `React`, `Tailwind`) + 
 ## Where Things Are
 
 - Spine/ADRs: `docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/{ARCHITECTURE-SPINE.md,adr/}`
-- Epics/Tracking: `docs/planning-artifacts/epics.md`, `docs/implementation-artifacts/sprint-status.yaml`, `docs/product/capabilities.yaml`
-- Testing/Reset: `docs/testing-strategy.md`, `scripts/agent_check.py`, `tests/README.md`, `pnpm db:reset`
+- Epics/Tracking: `docs/planning-artifacts/epics{.md,/}`, `docs/implementation-artifacts/sprint-status.yaml`, `docs/product/capabilities.yaml`
+- Testing/Reset: `docs/testing-strategy.md`, `scripts/{agent_check.py,init_worktree.sh}`, `tests/README.md`, `pnpm db:reset`
 
 <!-- /bmad:context -->
 

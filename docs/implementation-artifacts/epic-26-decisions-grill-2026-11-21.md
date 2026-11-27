@@ -7,7 +7,7 @@
 - **Related artifacts:**
   - Master plan: [`sprint-change-proposal-2026-11-21-epic-26-harnais-assistant-remediation-plan.md`](../planning-artifacts/sprint-change-proposal-2026-11-21-epic-26-harnais-assistant-remediation-plan.md)
   - Source audit: [`2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md`](./tech-lead-reports/2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md) (`H-01..H-38`)
-  - Backlog: [`epics.md` — Epic 26](../planning-artifacts/epics.md#L3048)
+  - Backlog: [`epics/epic-26.md`](../planning-artifacts/epics/epic-26.md)
   - Sprint status: [`sprint-status.yaml`](./sprint-status.yaml#L275)
 
 ---

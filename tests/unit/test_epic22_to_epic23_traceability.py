@@ -23,7 +23,7 @@ REPORTS_DIR = REPO_ROOT / "docs" / "implementation-artifacts" / "tech-lead-repor
 REPORTS_INDEX_PATH = REPORTS_DIR / "README.md"
 CAPABILITIES_PATH = REPO_ROOT / "docs" / "product" / "capabilities.yaml"
 SPRINT_STATUS_PATH = REPO_ROOT / "docs" / "implementation-artifacts" / "sprint-status.yaml"
-EPICS_PATH = REPO_ROOT / "docs" / "planning-artifacts" / "epics.md"
+EPICS_PATH = REPO_ROOT / "docs" / "planning-artifacts" / "epics" / "epic-23.md"
 
 MAX_PNG_BYTES = 450 * 1024
 

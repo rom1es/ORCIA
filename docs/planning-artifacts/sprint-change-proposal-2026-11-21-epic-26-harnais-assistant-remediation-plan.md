@@ -7,7 +7,7 @@
 - **Evidence & linked documents:**
   - Decisions record: [`epic-26-decisions-grill-2026-11-21.md`](../implementation-artifacts/epic-26-decisions-grill-2026-11-21.md) (active decisions `D1–D11` as amended by `R1–R9`)
   - Source audit: [`2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md`](../implementation-artifacts/tech-lead-reports/2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md) (`H-01..H-38`: 14 P0 [13 confirmed, 1 partial], 16 P1, 6 P2, 2 P3; 13/22 assistant endpoints uncalled by UI; ~2,100 L business logic in `apps/api/routers/`)
-  - Backlog: [`epics.md` — Epic 26](./epics.md#L3048) (13 stories with acceptance criteria)
+  - Backlog: [`epics/epic-26.md`](./epics/epic-26.md) (13 stories with acceptance criteria)
   - Sprint status: [`sprint-status.yaml`](../implementation-artifacts/sprint-status.yaml#L275)
   - Architecture spine: [`ARCHITECTURE-SPINE.md`](./architecture/architecture-ORCIA-2026-10-24/ARCHITECTURE-SPINE.md) (`AD-2`, `AD-3`, `AD-8`, `AD-10`, `AD-12`, `AD-15`, `AD-17`, `AD-19`, `AD-21`, `AD-23`, `AD-24`)
 

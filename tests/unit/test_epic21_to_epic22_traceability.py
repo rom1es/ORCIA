@@ -21,7 +21,7 @@ REPORTS_DIR = REPO_ROOT / "docs" / "implementation-artifacts" / "tech-lead-repor
 REPORTS_INDEX_PATH = REPORTS_DIR / "README.md"
 CAPABILITIES_PATH = REPO_ROOT / "docs" / "product" / "capabilities.yaml"
 SPRINT_STATUS_PATH = REPO_ROOT / "docs" / "implementation-artifacts" / "sprint-status.yaml"
-EPICS_PATH = REPO_ROOT / "docs" / "planning-artifacts" / "epics.md"
+EPICS_PATH = REPO_ROOT / "docs" / "planning-artifacts" / "epics" / "epic-22.md"
 
 MASTER_PLAN_CORE_KEYS = (
     "22-1-socle-identite-uuid-workspaces-permissions-admin-et-fin-bypass-pg",
