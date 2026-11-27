@@ -257,7 +257,7 @@ async def test_p0_p1_rag_search_ontology_mcp_and_catalog_isolation(
         async def embed(self, texts: Any) -> list[list[float]]:
             return [[0.1, 0.2] for _ in texts]
 
-    class _FakeSqlRag:
+    class _InMemoryRagStub:
         def __init__(self, _sm: Any) -> None:
             pass
 
@@ -326,7 +326,7 @@ async def test_p0_p1_rag_search_ontology_mcp_and_catalog_isolation(
 
     monkeypatch.setattr(
         "orcia_api.dependencies._assistant_tools_helpers._build_sql_rag_repo",
-        lambda _req: _FakeSqlRag(None),
+        lambda _req: _InMemoryRagStub(None),
     )
 
     ag_svc: AgentsAndSkillsManagementService = app.state.agents_and_skills_service

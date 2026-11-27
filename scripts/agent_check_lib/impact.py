@@ -40,6 +40,11 @@ COMPOSITION_HUB_MODULES: frozenset[str] = BARREL_HUB_MODULES | frozenset(
     }
 )
 
+HUB_WIRING_SMOKE_TESTS: tuple[str, ...] = (
+    "tests/unit/tooling/test_shared_test_infra.py",
+    "tests/unit/test_story_7_0c_openshift_scc_kustomize_and_ready.py",
+)
+
 ROUTER_PREFIX_RE = re.compile(r'APIRouter\([^)]*prefix\s*=\s*["\']([^"\']+)["\']')
 ROUTE_DECORATOR_RE = re.compile(
     r'@[A-Za-z_][A-Za-z0-9_]*\.(?:get|post|put|patch|delete|options|head)\(\s*["\']([^"\']+)["\']'
@@ -199,6 +204,10 @@ def select_impacted_targets(
             reasons[rel].append(f"touched_test:{rel}")
         if rel.endswith(".py") and abs_path.is_file():
             mod = _module_name_for_path(abs_path, [*roots, repo_root])
+            if mod in COMPOSITION_HUB_MODULES:
+                for smoke_rel in HUB_WIRING_SMOKE_TESTS:
+                    if (repo_root / smoke_rel).is_file():
+                        reasons[smoke_rel].append(f"hub_wiring_smoke:{mod}")
             if mod and mod not in BARREL_HUB_MODULES:
                 seed_modules.append(mod)
             if _is_router_rel(rel):

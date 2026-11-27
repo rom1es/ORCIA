@@ -10,7 +10,6 @@ import pytest
 from orcia_api.routers.bootstrap_accostage import _serialize_accostage_status
 from orcia_core.bootstrap._internal.sql_accostage_counts import (
     AccostagePg18Counts,
-    get_accostage_pg18_counts,
 )
 from orcia_core.bootstrap.progressive_accostage import AccostageStatusReport
 from orcia_core.catalog.contextual_help import (
@@ -158,55 +157,6 @@ def test_serialize_accostage_status_reflects_pg18_counts() -> None:
     assert serialized.boot_epoch == "boot-epoch-1"
 
 
-@pytest.mark.asyncio
-async def test_get_accostage_pg18_counts_maps_sql_row_and_empty_result() -> None:
-    """`get_accostage_pg18_counts` accurately converts SQL count rows and handles None rows."""
-
-    class _FakeResult:
-        def __init__(self, row: tuple[int, int, int, int, int] | None) -> None:
-            self._row = row
-
-        def first(self) -> tuple[int, int, int, int, int] | None:
-            return self._row
-
-    class _FakeConn:
-        def __init__(self, row: tuple[int, int, int, int, int] | None) -> None:
-            self._row = row
-
-        async def execute(self, _stmt: Any) -> _FakeResult:
-            return _FakeResult(self._row)
-
-    class _FakeConnectCtx:
-        def __init__(self, row: tuple[int, int, int, int, int] | None) -> None:
-            self._row = row
-
-        async def __aenter__(self) -> _FakeConn:
-            return _FakeConn(self._row)
-
-        async def __aexit__(self, *_args: object) -> None:
-            return None
-
-    class _FakeEngine:
-        def __init__(self, row: tuple[int, int, int, int, int] | None) -> None:
-            self._row = row
-
-        def connect(self) -> _FakeConnectCtx:
-            return _FakeConnectCtx(self._row)
-
-    populated = await get_accostage_pg18_counts(_FakeEngine((2, 3, 4, 1, 5)))  # type: ignore[arg-type]
-    assert populated.admin_created is True
-    assert populated.users_count == 2
-    assert populated.org_units_count == 3
-    assert populated.workspaces_count == 4
-    assert populated.models_count == 1
-    assert populated.sources_count == 5
-
-    empty = await get_accostage_pg18_counts(_FakeEngine(None))  # type: ignore[arg-type]
-    assert empty.admin_created is False
-    assert empty.users_count == 0
-    assert empty.org_units_count == 0
-
-
 def test_help_pack_normalization_and_overview_fallback_edge_cases() -> None:
     """Verify legacy pack normalization, fallback without fixed IDs, and error paths."""
     assert normalize_help_pack("") == "core"
@@ -292,122 +242,6 @@ async def test_help_redis_helpers_tolerate_transient_cache_errors() -> None:
     await invalidate_help_redis_keys_async(_FailingAsyncRedis(), sample)
     await set_cached_help_article_async(_FailingAsyncRedis(), "k", sample, ("BASE",))
     assert await get_cached_help_article_async(_FailingAsyncRedis(), "k") is None
-
-
-@pytest.mark.asyncio
-async def test_sql_contextual_help_not_found_and_missing_table_branches() -> None:
-    """Verify SQL contextual help handles empty rows, missing history, and missing tables."""
-    from orcia_core.catalog._internal.sql_contextual_help import (
-        list_pg_help_articles_sql,
-        publish_hot_help_article_sql,
-        rollback_help_article_sql,
-        seed_help_articles_to_pg18_sql,
-    )
-
-    class _UndefinedTableError(Exception):
-        pass
-
-    class _EmptyMappingsResult:
-        def mappings(self) -> _EmptyMappingsResult:
-            return self
-
-        def first(self) -> None:
-            return None
-
-        def all(self) -> list[Any]:
-            return []
-
-    class _RowMappingsResult:
-        def __init__(self, row: dict[str, Any]) -> None:
-            self._row = row
-
-        def mappings(self) -> _RowMappingsResult:
-            return self
-
-        def first(self) -> dict[str, Any]:
-            return self._row
-
-    class _SqlEngineStub:
-        def __init__(self, *, mode: str) -> None:
-            self._mode = mode
-
-        def connect(self) -> _SqlConnCtx:
-            return _SqlConnCtx(self._mode)
-
-        def begin(self) -> _SqlConnCtx:
-            return _SqlConnCtx(self._mode)
-
-    class _SqlConnCtx:
-        def __init__(self, mode: str) -> None:
-            self._mode = mode
-
-        async def __aenter__(self) -> _SqlConn:
-            return _SqlConn(self._mode)
-
-        async def __aexit__(self, *_args: object) -> None:
-            return None
-
-    class _SqlConn:
-        def __init__(self, mode: str) -> None:
-            self._mode = mode
-
-        async def execute(self, _stmt: Any, _params: Any = None) -> Any:
-            if self._mode == "missing_table":
-                raise _UndefinedTableError('relation "catalog_items" does not exist')
-            if self._mode == "no_prev_version":
-                return _RowMappingsResult(
-                    {
-                        "resource_id": "help-x",
-                        "uri": "orcia://system/help/x",
-                        "title": "X",
-                        "description": "",
-                        "version": "1.0.0",
-                        "sha256": "a" * 64,
-                        "cas_key": "cas/x",
-                        "metadata_jsonb": {},
-                    }
-                )
-            return _EmptyMappingsResult()
-
-    empty_engine: Any = _SqlEngineStub(mode="empty")
-    missing_engine: Any = _SqlEngineStub(mode="missing_table")
-    no_prev_engine: Any = _SqlEngineStub(mode="no_prev_version")
-
-    assert (
-        await publish_hot_help_article_sql(
-            empty_engine,
-            resource_id="help-none",
-            new_version="1.1.0",
-            new_title="T",
-            new_summary_what_for="S",
-            new_markdown_body="# B",
-        )
-        is None
-    )
-    assert await rollback_help_article_sql(empty_engine, resource_id="help-none") is None
-    with pytest.raises(ResourceNotFoundError):
-        await rollback_help_article_sql(no_prev_engine, resource_id="help-x")
-
-    assert await list_pg_help_articles_sql(missing_engine, lang="fr") == []
-    assert (
-        await publish_hot_help_article_sql(
-            missing_engine,
-            resource_id="help-x",
-            new_version="1.1.0",
-            new_title="T",
-            new_summary_what_for="S",
-            new_markdown_body="# B",
-        )
-        is None
-    )
-    assert await rollback_help_article_sql(missing_engine, resource_id="help-x") is None
-    assert await seed_help_articles_to_pg18_sql(missing_engine, []) == 0
-    sample = parse_declarative_help_markdown(
-        "---\nid: s\ntitle: S\nlang: fr\nbound_routes:\n  - /cockpit\n---\n"
-        "## À quoi sert cet écran\nS.\n## En 3 gestes\n- A.\n"
-        "## Un exemple réel\n- B.\n## Ce qui coince souvent\n- C.\n"
-    )
-    assert await seed_help_articles_to_pg18_sql(missing_engine, [sample]) == 0
 
 
 def test_parse_declarative_help_markdown_separates_dedicated_4_blocks_and_terms_faq() -> None:
@@ -542,56 +376,25 @@ def test_assistant_help_markdown_matches_selector_terminology_without_cockpit_bl
         assert legacy_en not in en_raw
 
 
-@pytest.mark.asyncio
-async def test_row_to_help_dict_and_seed_help_articles_persist_dedicated_4_blocks() -> None:
-    """`seed_help_articles_to_pg18_sql` stores and `row_to_help_dict` hydrates 4-block fields."""
-    import json
-
-    from orcia_core.catalog._internal.sql_contextual_help import (
-        row_to_help_dict,
-        seed_help_articles_to_pg18_sql,
-    )
-
-    executed_params: list[dict[str, Any]] = []
-
-    class _FakeExecResult:
-        def __init__(self, first_row: Any = None, rowcount: int = 1) -> None:
-            self._first = first_row
-            self.rowcount = rowcount
-
-        def first(self) -> Any:
-            return self._first
-
-    class _RecordingConn:
-        async def execute(self, stmt: Any, params: Any = None) -> _FakeExecResult:
-            sql_text = str(stmt)
-            if "FROM org_units" in sql_text:
-                return _FakeExecResult(first_row=("0195f000-0000-7000-8000-000000000010",))
-            if isinstance(params, dict):
-                executed_params.append(params)
-            return _FakeExecResult(rowcount=1)
-
-    class _RecordingBeginCtx:
-        async def __aenter__(self) -> _RecordingConn:
-            return _RecordingConn()
-
-        async def __aexit__(self, *_args: object) -> None:
-            return None
-
-    class _RecordingEngine:
-        def begin(self) -> _RecordingBeginCtx:
-            return _RecordingBeginCtx()
+def test_row_to_help_dict_hydrates_dedicated_4_blocks() -> None:
+    """`row_to_help_dict` hydrates 4-block fields and handles legacy fallback."""
+    from orcia_core.catalog._internal.sql_contextual_help import row_to_help_dict
 
     article = parse_declarative_help_markdown(
         (HELP_ROOT / "fr" / "assistant.md").read_text(encoding="utf-8")
     )
-    inserted = await seed_help_articles_to_pg18_sql(_RecordingEngine(), [article])  # type: ignore[arg-type]
-    assert inserted == 1
-    assert len(executed_params) == 1
-    stored_meta = json.loads(executed_params[0]["metadata_jsonb"])
-    assert stored_meta["real_example_text"] == article.real_example_text
-    assert stored_meta["common_pitfalls_items"] == list(article.common_pitfalls_items)
-
+    stored_meta = {
+        "lang": article.lang,
+        "pack_name": article.pack_name,
+        "bound_routes": list(article.bound_routes),
+        "summary_what_for": article.summary_what_for,
+        "step_by_step_items": list(article.step_by_step_items),
+        "real_example_text": article.real_example_text,
+        "common_pitfalls_items": list(article.common_pitfalls_items),
+        "key_terms_items": list(article.key_terms_items),
+        "faq_items": list(article.faq_items),
+        "markdown_body": article.markdown_body,
+    }
     row_dict = row_to_help_dict(
         {
             "resource_id": article.resource_id,

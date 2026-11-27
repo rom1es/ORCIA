@@ -3,12 +3,33 @@
 from __future__ import annotations
 
 import json
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from types import SimpleNamespace
+from typing import Any
+from unittest.mock import MagicMock, patch
 
 import pytest
+from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 from tests.unit.fakes.workflows_seed import create_seeded_test_app as create_app
 
+from orcia_api.dependencies.core_and_lifespan import (
+    _init_redis_and_sse,
+    _resolve_default_llm_gateway,
+    should_seed_test_personas_in_memory,
+)
+from orcia_api.dependencies.reflexive_execution import (
+    _resolve_reflexive_session_maker,
+    get_assistant_reflexive_runtime_service,
+    get_vsm_v2_sql_store,
+    get_workflows_v2_runs_sql_store,
+    get_workflows_v2_sql_store,
+)
+from orcia_api.routers._workflows_pending_runs import (
+    load_or_rehydrate_run_state,
+    resolve_workflow_run_workspace_id,
+)
 from orcia_core.agents import GatewayReflexiveLlmAdapter
 from orcia_core.agents.errors import ProcessModelNotConfiguredError
 from orcia_core.ports.llm_port import (
@@ -187,3 +208,110 @@ def test_processes_live_mode_rejects_missing_llm_with_bilingual_rfc9457_and_empt
         en_body = en_err.json()
         assert en_body["error_code"] == "ERR_NO_ACTIVE_CHAT_MODEL_DETAIL"
         assert "model" in en_body["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_dependencies_and_pending_runs_edge_branches(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Cover gateway resolver modes, store upgrades, workspace ID normalization, & rehydration."""
+    monkeypatch.delenv("ORCIA_USE_CASSETTE_LLM", raising=False)
+    monkeypatch.setenv("ORCIA_LLM_GATEWAY", "cassette")
+    assert getattr(_resolve_default_llm_gateway(), "is_cassette_adapter", False) is True
+
+    monkeypatch.setenv("ORCIA_LLM_GATEWAY", "litellm_plugin")
+    gw_plugin = _resolve_default_llm_gateway()
+    assert gw_plugin is not None
+
+    monkeypatch.setenv("ORCIA_FORCE_REAL_RUNTIME", "1")
+    assert should_seed_test_personas_in_memory() is False
+    monkeypatch.delenv("ORCIA_FORCE_REAL_RUNTIME", raising=False)
+    monkeypatch.setenv("ORCIA_ENV", "e2e")
+    assert should_seed_test_personas_in_memory() is False
+    monkeypatch.setenv("ORCIA_ENV", "local")
+    monkeypatch.setenv("ORCIA_SEED_TEST_PERSONAS", "1")
+    assert should_seed_test_personas_in_memory() is True
+
+    app = FastAPI()
+    app.state.sse_broker = MagicMock()
+    app.state.redis_client = object()
+    _init_redis_and_sse(app)
+    app.state.sse_broker.set_redis_client.assert_called_once()
+
+    fake_req = SimpleNamespace(
+        app=app,
+        headers={"X-Orcia-Workspace-Id": "scope-ws-0195f000-0000-7000-8000-000000000111"},
+    )
+    assert (
+        resolve_workflow_run_workspace_id(None, fake_req)  # type: ignore[arg-type]
+        == "0195f000-0000-7000-8000-000000000111"
+    )
+    assert (
+        resolve_workflow_run_workspace_id("scope-global", fake_req)  # type: ignore[arg-type]
+        is None
+    )
+
+    # Store upgrades from session_maker=None -> non-None
+    monkeypatch.setenv("ORCIA_ENABLE_PG_SESSION_MAKER", "1")
+    fake_engine = object()
+    with patch(
+        "orcia_api.dependencies.reflexive_execution.get_or_create_shared_db_engine",
+        return_value=fake_engine,
+    ):
+        req_obj: Request = SimpleNamespace(app=app)  # type: ignore[assignment]
+        app.state.workflows_v2_sql_store = MagicMock(_session_maker=None)
+        app.state.vsm_v2_sql_store = MagicMock(_session_maker=None)
+        app.state.workflows_v2_runs_sql_store = MagicMock(_session_maker=None)
+        assert get_workflows_v2_sql_store(req_obj)._strict_sql is True
+        assert get_vsm_v2_sql_store(req_obj)._strict_sql is True
+        assert get_workflows_v2_runs_sql_store(req_obj)._strict_sql is True
+        assert _resolve_reflexive_session_maker(req_obj) is app.state.reflexive_session_maker
+
+        app.state.llm_gateway = _resolve_default_llm_gateway()
+        app.state.surgical_explorer_service = MagicMock()
+        rt1 = get_assistant_reflexive_runtime_service(req_obj)
+        rt2 = get_assistant_reflexive_runtime_service(req_obj)
+        assert rt1 is rt2
+
+    sql_runs = SqlWorkflowV2RunsStore(session_maker=None)
+    await sql_runs.upsert_run(
+        run_id="run-rehyd-1",
+        workspace_id="0195f000-0000-7000-8000-000000000111",
+        workflow_id="wf-01",
+        workflow_slug="wf-01",
+        workflow_title="WF 01",
+        actor_slug="assistant",
+        status="WAITING_FINAL_ANCHOR",
+        reflexive_execution_id=None,
+        state_payload={
+            "run_id": "run-rehyd-1",
+            "workflow_id": "wf-01",
+            "workflow_slug": "wf-01",
+            "workflow_version": "1.0.0",
+            "execution_mode": "native_orcia",
+            "status": "WAITING_FINAL_ANCHOR",
+            "workspace_id": "0195f000-0000-7000-8000-000000000111",
+        },
+    )
+    mem_runs: dict[str, Any] = {}
+    restored, ws_id = await load_or_rehydrate_run_state(mem_runs, sql_runs, "run-rehyd-1")
+    assert restored is not None and ws_id == "0195f000-0000-7000-8000-000000000111"
+
+    @asynccontextmanager
+    async def _broken_session_ctx() -> Any:
+        raise RuntimeError("pg down")
+        yield
+
+    strict_store = SqlWorkflowV2RunsStore(session_maker=_broken_session_ctx, strict_sql=True)
+    with pytest.raises(RuntimeError, match="pg down"):
+        await strict_store.upsert_run(
+            run_id="r-fail",
+            workspace_id=None,
+            workflow_id="wf",
+            workflow_slug="wf",
+            workflow_title="WF",
+            actor_slug="a",
+            status="RUNNING",
+            reflexive_execution_id=None,
+            state_payload={},
+        )

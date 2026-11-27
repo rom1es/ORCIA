@@ -10,11 +10,6 @@ Validates:
 
 from __future__ import annotations
 
-import json
-from typing import Any
-
-import pytest
-
 from orcia_connectors.bounded_workflow_v2 import (
     HitlSignalPayload,
     apply_hitl_signal_to_run,
@@ -32,36 +27,8 @@ from orcia_core.workflows.schemas_v2 import (
 )
 
 
-async def test_sql_workflow_definitions_v2_store_session_and_fallback_paths() -> None:
-    """Verify `SqlWorkflowDefinitionsV2Store` memory fallback, SQL session path, and strict mode."""
-    rows_storage: list[tuple[str]] = []
-    fail_mode = False
-
-    class _FakeResult:
-        def __init__(self, rows: list[tuple[str]]) -> None:
-            self._rows = rows
-
-        def fetchall(self) -> list[tuple[str]]:
-            return list(self._rows)
-
-    class _FakeSession:
-        async def __aenter__(self) -> _FakeSession:
-            return self
-
-        async def __aexit__(self, *args: object) -> None:
-            return None
-
-        async def execute(self, _stmt: object, params: dict[str, Any] | None = None) -> _FakeResult:
-            if fail_mode:
-                raise RuntimeError("simulated_sql_outage")
-            if params and "spec_jsonb" in params:
-                rows_storage.clear()
-                rows_storage.append((str(params["spec_jsonb"]),))
-            return _FakeResult(rows_storage)
-
-        async def commit(self) -> None:
-            return None
-
+async def test_sql_workflow_definitions_v2_store_memory_fallback() -> None:
+    """Verify `SqlWorkflowDefinitionsV2Store` memory fallback path without fake SQL."""
     wf = WorkflowDefinitionV2(
         id="wf-mem-01",
         slug="wf-mem-01",
@@ -77,26 +44,6 @@ async def test_sql_workflow_definitions_v2_store_session_and_fallback_paths() ->
     store_mem = SqlWorkflowDefinitionsV2Store(session_maker=None)
     await store_mem.upsert_workflow(wf)
     assert len(await store_mem.list_persisted_workflows()) == 1
-
-    store_sql = SqlWorkflowDefinitionsV2Store(
-        session_maker=lambda: _FakeSession()  # type: ignore[arg-type,return-value]
-    )
-    await store_sql.upsert_workflow(wf)
-    persisted = await store_sql.list_persisted_workflows()
-    assert len(persisted) == 1
-    assert json.loads(rows_storage[0][0])["orchestration_type"] == "non_deterministic"
-
-    fail_mode = True
-    assert len(await store_sql.list_persisted_workflows()) == 1
-
-    strict_store = SqlWorkflowDefinitionsV2Store(
-        session_maker=lambda: _FakeSession(),  # type: ignore[arg-type,return-value]
-        strict_sql=True,
-    )
-    with pytest.raises(RuntimeError, match="simulated_sql_outage"):
-        await strict_store.upsert_workflow(wf)
-    with pytest.raises(RuntimeError, match="simulated_sql_outage"):
-        await strict_store.list_persisted_workflows()
 
 
 async def test_bounded_workflow_hitl_signals_external_gate_and_return_loops() -> None:

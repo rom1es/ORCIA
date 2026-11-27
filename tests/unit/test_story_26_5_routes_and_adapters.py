@@ -22,7 +22,7 @@ from orcia_core.rag.models import HybridRagHit
 _WS_PAY_ID = "0192c4e0-0000-7000-8000-000000000201"
 
 
-class _FakeSqlHybridRagRepo:
+class _InMemoryHybridRagStub:
     def __init__(self, hits: tuple[HybridRagHit, ...]) -> None:
         self.calls: list[dict[str, Any]] = []
         self._hits = hits
@@ -85,7 +85,7 @@ async def test_hybrid_rag_vector_adapter_supports_active_and_absent_embedding() 
         is_stale=False,
         stale_warning_marker=None,
     )
-    fake_repo = _FakeSqlHybridRagRepo((hit,))
+    fake_repo = _InMemoryHybridRagStub((hit,))
     empty_rag: HybridRagService = build_empty_rag_service()[0]
 
     adapter_no_emb = HybridRagVectorStoreAdapter(

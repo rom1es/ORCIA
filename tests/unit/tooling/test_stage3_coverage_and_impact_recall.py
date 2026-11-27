@@ -143,6 +143,11 @@ def test_impact_selector_selects_pg18_integration_and_epic30_31_recall() -> None
         precomputed_graph=graph,
     )
     assert plan_hub_only.integration_tests == []
+    assert "tests/unit/tooling/test_shared_test_infra.py" in plan_hub_only.python_tests
+    assert (
+        "tests/unit/test_story_7_0c_openshift_scc_kustomize_and_ready.py"
+        in plan_hub_only.python_tests
+    )
 
     plan_hub_plus_pg18 = select_impacted_targets(
         REPO_ROOT,
@@ -187,7 +192,7 @@ def test_impact_selector_selects_pg18_integration_and_epic30_31_recall() -> None
         ),
         (
             "apps/api/src/orcia_api/dependencies/_lifespan_infra.py",
-            "tests/unit/test_story_30_3_workflows_and_bridge_coverage.py",
+            "tests/unit/tooling/test_shared_test_infra.py",
             False,
         ),
         (

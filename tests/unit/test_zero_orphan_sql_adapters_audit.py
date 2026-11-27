@@ -11,30 +11,33 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
+from tests.unit.fakes.test_app_helpers import RepoSourceIndex, get_repo_source_index
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 ORCIA_CORE_PKG_DIR = REPO_ROOT / "packages" / "orcia-core" / "src" / "orcia_core"
 
-RUNTIME_ENTRY_ROOTS: tuple[Path, ...] = (
-    REPO_ROOT / "apps" / "api" / "src",
-    REPO_ROOT / "apps" / "worker" / "src",
+RUNTIME_ENTRY_REL_DIRS: tuple[str, ...] = (
+    "apps/api/src",
+    "apps/worker/src",
 )
 
-WORKSPACE_SRC_ROOTS: tuple[Path, ...] = (
-    REPO_ROOT / "packages" / "orcia-core" / "src",
-    REPO_ROOT / "packages" / "orcia-kernel" / "src",
-    REPO_ROOT / "packages" / "orcia-connectors" / "src",
-    REPO_ROOT / "apps" / "api" / "src",
-    REPO_ROOT / "apps" / "worker" / "src",
+WORKSPACE_SRC_REL_DIRS: tuple[str, ...] = (
+    "packages/orcia-core/src",
+    "packages/orcia-kernel/src",
+    "packages/orcia-connectors/src",
+    "apps/api/src",
+    "apps/worker/src",
 )
 
 
-def _build_module_index() -> tuple[dict[str, Path], dict[Path, str]]:
+def _build_module_index(
+    idx: RepoSourceIndex,
+) -> tuple[dict[str, Path], dict[Path, str]]:
     mod_to_file: dict[str, Path] = {}
     file_to_mod: dict[Path, str] = {}
-    for root in WORKSPACE_SRC_ROOTS:
-        if not root.exists():
-            continue
-        for py_file in sorted(root.rglob("*.py")):
+    for rel_dir in WORKSPACE_SRC_REL_DIRS:
+        root = (idx.repo_root / rel_dir).resolve()
+        for py_file in idx.files_under(rel_dir, suffix=".py"):
             rel = py_file.relative_to(root)
             parts = list(rel.parts)
             if parts[-1] == "__init__.py":
@@ -49,11 +52,12 @@ def _build_module_index() -> tuple[dict[str, Path], dict[Path, str]]:
 
 
 def _extract_imported_modules(
+    idx: RepoSourceIndex,
     py_file: Path,
     current_mod: str,
     mod_to_file: dict[str, Path],
 ) -> list[str]:
-    tree = ast.parse(py_file.read_text(encoding="utf-8"), filename=str(py_file))
+    tree = idx.parse_ast(py_file)
     targets: set[str] = set()
     is_pkg = py_file.name == "__init__.py"
     pkg_parts = current_mod.split(".") if is_pkg else current_mod.split(".")[:-1]
@@ -78,16 +82,15 @@ def _extract_imported_modules(
 
 
 def _collect_reachable_runtime_modules(
+    idx: RepoSourceIndex,
     mod_to_file: dict[str, Path],
     file_to_mod: dict[Path, str],
 ) -> set[str]:
     queue: list[str] = []
     visited: set[str] = set()
 
-    for root in RUNTIME_ENTRY_ROOTS:
-        if not root.exists():
-            continue
-        for py_file in sorted(root.rglob("*.py")):
+    for rel_dir in RUNTIME_ENTRY_REL_DIRS:
+        for py_file in idx.files_under(rel_dir, suffix=".py"):
             mod = file_to_mod[py_file]
             if mod not in visited:
                 visited.add(mod)
@@ -95,7 +98,7 @@ def _collect_reachable_runtime_modules(
 
     while queue:
         current = queue.pop(0)
-        for dep in _extract_imported_modules(mod_to_file[current], current, mod_to_file):
+        for dep in _extract_imported_modules(idx, mod_to_file[current], current, mod_to_file):
             if dep not in visited:
                 visited.add(dep)
                 queue.append(dep)
@@ -105,13 +108,14 @@ def _collect_reachable_runtime_modules(
 
 def test_every_core_internal_sql_adapter_is_wired_to_api_or_worker_runtime() -> None:
     """Verify 100 % of `orcia_core/**/_internal/{sql_,_sql_}*.py` adapters have runtime callers."""
-    mod_to_file, file_to_mod = _build_module_index()
-    reachable = _collect_reachable_runtime_modules(mod_to_file, file_to_mod)
+    idx = get_repo_source_index(REPO_ROOT)
+    mod_to_file, file_to_mod = _build_module_index(idx)
+    reachable = _collect_reachable_runtime_modules(idx, mod_to_file, file_to_mod)
 
     sql_adapter_files = sorted(
         path
-        for path in ORCIA_CORE_PKG_DIR.rglob("_internal/*.py")
-        if path.name.startswith(("sql_", "_sql_"))
+        for path in idx.files_under("packages/orcia-core/src/orcia_core", suffix=".py")
+        if path.parent.name == "_internal" and path.name.startswith(("sql_", "_sql_"))
     )
     assert len(sql_adapter_files) >= 50
 

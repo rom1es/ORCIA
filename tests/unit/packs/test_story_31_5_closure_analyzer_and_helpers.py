@@ -1,16 +1,12 @@
-"""Unit tests for Story 31.5 transitive closure analyzer & prose linter (`<= 270 L`)."""
+"""Unit tests for Story 31.5 transitive closure ref extraction & prose linter (`<= 120 L`)."""
 
 from __future__ import annotations
 
-from typing import Any
+from types import SimpleNamespace
 
 import pytest
-from tests.unit.packs._fake_sql_engine import FakeSqlEngine, FakeSqlResult
-from uuid_utils import uuid7
 
-from orcia_core.packs._internal._pack_closure_analyzer import (
-    analyze_and_optionally_expand_closure_conn,
-)
+from orcia_core.packs import PackComposerService, PackImportService
 from orcia_core.packs._internal._pack_closure_helpers import (
     aliases_for_member,
     extract_agent_refs,
@@ -21,9 +17,12 @@ from orcia_core.packs._internal._pack_closure_helpers import (
     lint_prose_bare_handles,
     normalized_lookup_candidates,
 )
+from orcia_core.packs._internal._pack_export_views import views_from_non_draft_entities
 from orcia_core.packs.composer_models import PackDraftMemberView
-from orcia_core.packs.errors import PackClosureIncompleteError
 from orcia_core.packs.models import PackDraftEntityType
+from orcia_core.storage.pack_draft_guard import _validated_fk_column
+
+pytestmark = pytest.mark.story("31.5")
 
 
 def test_closure_helpers_extraction_and_prose_linter() -> None:
@@ -110,139 +109,37 @@ def test_closure_helpers_extraction_and_prose_linter() -> None:
     assert {w.token for w in warnings} == {"@planner", "/check"}
 
 
-@pytest.mark.asyncio
-async def test_closure_analyzer_blocks_incomplete_and_auto_includes_transitive_deps() -> None:
-    """Verify `422 ERR_PACK_CLOSURE_INCOMPLETE`, `auto_include_dependencies=True` & DRAFT block."""
-    ws_id, bundle_id = str(uuid7()), str(uuid7())
-    wf_uid, ag_uid, sk_uid = str(uuid7()), str(uuid7()), str(uuid7())
-    inserted: list[str] = []
+def test_pack_services_require_engine_views_and_draft_guard_fk_validation() -> None:
+    """Cover unconfigured engine guards, non-draft agent view conversion, and FK allowlist."""
+    composer = PackComposerService()
+    with pytest.raises(RuntimeError, match="AsyncEngine"):
+        composer._require_engine()
+    composer.set_engine(object())  # type: ignore[arg-type]
+    composer.set_cas_storage(None)
 
-    def handler(sql: str, params: dict[str, Any]) -> FakeSqlResult:
-        if "FROM workspaces" in sql:
-            return FakeSqlResult(rows=[(ws_id, None)])
-        if "WITH RECURSIVE anc" in sql:
-            return FakeSqlResult(rows=[])
-        if "FROM workflow_definitions_v2" in sql and "WHERE id = CAST(:uid AS uuid)" in sql:
-            return FakeSqlResult(
-                rows=[
-                    (
-                        "published",
-                        {
-                            "sub_steps": [
-                                {"agent_ref": "planner", "skill_refs": []},
-                            ]
-                        },
-                    )
-                ]
-            )
-        if "FROM catalog_items WHERE id = CAST(:uid AS uuid)" in sql:
-            if params["uid"] == ag_uid:
-                return FakeSqlResult(
-                    rows=[
-                        (
-                            "Planner",
-                            {
-                                "instructions": "Ask @planner and /lint-skill.",
-                                "skill_ids": ["lint-skill"],
-                                "lifecycle_status": "ACTIVE",
-                            },
-                        )
-                    ]
-                )
-            return FakeSqlResult(
-                rows=[("Lint", {"instructions": "Run lint.", "lifecycle_status": "ACTIVE"})]
-            )
-        if "FROM catalog_items" in sql and "WHERE (id::text = :k OR resource_id = :k)" in sql:
-            k = params["k"]
-            if k == "planner":
-                return FakeSqlResult(
-                    mappings=[
-                        {
-                            "uid": ag_uid,
-                            "eid": "planner",
-                            "title": "Planner",
-                            "bid": None,
-                            "ws_id": ws_id,
-                            "metadata_jsonb": {"slug": "planner", "lifecycle_status": "ACTIVE"},
-                        }
-                    ]
-                )
-            if k == "lint-skill":
-                return FakeSqlResult(
-                    mappings=[
-                        {
-                            "uid": sk_uid,
-                            "eid": "lint-skill",
-                            "title": "Lint Skill",
-                            "bid": None,
-                            "ws_id": ws_id,
-                            "metadata_jsonb": {"slug": "lint-skill", "lifecycle_status": "ACTIVE"},
-                        }
-                    ]
-                )
-            return FakeSqlResult(mappings=[])
-        if "INSERT INTO pack_draft_memberships" in sql:
-            inserted.append(f"{params['etype']}:{params['eid']}")
-            return FakeSqlResult()
-        return FakeSqlResult(mappings=[])
+    importer = PackImportService()
+    with pytest.raises(RuntimeError, match="AsyncEngine"):
+        importer._require_engine()
+    importer.set_cas_storage(None)
 
-    eng = FakeSqlEngine(handler)
-    wf_member = PackDraftMemberView(
-        id="m-wf",
-        draft_bundle_id=bundle_id,
-        entity_type=PackDraftEntityType.WORKFLOW_V2,
-        entity_id="wf-main",
-        entity_slug="wf-main",
-        lifecycle_status="PUBLISHED",
-        workflow_v2_id=wf_uid,
+    raw_entities = SimpleNamespace(
+        catalog_items=[
+            {
+                "id": "0195f000-0000-7000-8000-000000000111",
+                "item_type": "USER_AGENT",
+                "resource_id": "ws:a1",
+            }
+        ],
+        workflows_v2=[],
+        vsms_v2=[],
+        concepts=[],
+        relations=[],
+        axioms=[],
+        dna_mechanisms=[],
+        policies=[],
     )
-    async with eng.begin() as conn:
-        with pytest.raises(PackClosureIncompleteError) as exc_info:
-            await analyze_and_optionally_expand_closure_conn(
-                conn,  # type: ignore[arg-type]
-                bundle_id=bundle_id,
-                scope_type="WORKSPACE",
-                scope_id=ws_id,
-                members=[wf_member],
-                auto_include_dependencies=False,
-                fail_on_incomplete=True,
-            )
-        assert exc_info.value.http_status == 422
-        assert exc_info.value.missing_dependencies[0]["entity_id"] == "planner"
+    views = views_from_non_draft_entities("b1", raw_entities)
+    assert views[0].entity_type == PackDraftEntityType.AGENT
 
-        report = await analyze_and_optionally_expand_closure_conn(
-            conn,  # type: ignore[arg-type]
-            bundle_id=bundle_id,
-            scope_type="WORKSPACE",
-            scope_id=ws_id,
-            members=[wf_member],
-            auto_include_dependencies=True,
-            can_mutate_draft=True,
-            fail_on_incomplete=True,
-        )
-        assert report.complete is True
-        assert report.auto_included_count == 2
-        assert inserted == ["AGENT:planner", "SKILL:lint-skill"]
-        assert {w.token for w in report.prose_lint_warnings} == {"@planner", "/lint-skill"}
-
-    draft_ag = PackDraftMemberView(
-        id="m-ag",
-        draft_bundle_id=bundle_id,
-        entity_type=PackDraftEntityType.AGENT,
-        entity_id="draft-bot",
-        entity_slug="draft-bot",
-        lifecycle_status="DRAFT",
-        catalog_item_id=sk_uid,
-    )
-    async with eng.connect() as conn:
-        with pytest.raises(PackClosureIncompleteError) as exc_draft:
-            await analyze_and_optionally_expand_closure_conn(
-                conn,  # type: ignore[arg-type]
-                bundle_id=bundle_id,
-                scope_type="WORKSPACE",
-                scope_id=ws_id,
-                members=[draft_ag],
-                require_active=True,
-                fail_on_incomplete=True,
-            )
-        assert exc_draft.value.missing_dependencies[0]["reason"] == "NON_ACTIVE_STATUS"
+    with pytest.raises(ValueError, match="Unsupported pack_draft_memberships"):
+        _validated_fk_column("evil_column; DROP TABLE")

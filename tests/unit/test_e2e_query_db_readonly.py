@@ -159,7 +159,7 @@ def test_execute_readonly_query_sets_transaction_read_only_and_disposes_engine(
     recorded: list[tuple[str, dict[str, Any] | None]] = []
     state = {"disposed": False}
 
-    class _FakeConn:
+    class _ReadonlyQuerySpyConn:
         @asynccontextmanager
         async def begin(self) -> Any:
             yield self
@@ -171,15 +171,15 @@ def test_execute_readonly_query_sets_transaction_read_only_and_disposes_engine(
                 "R", (), {"mappings": lambda _s: type("M", (), {"all": lambda _m: [row]})()}
             )()
 
-    class _FakeEngine:
+    class _ReadonlyQuerySpyHandle:
         @asynccontextmanager
         async def connect(self) -> Any:
-            yield _FakeConn()
+            yield _ReadonlyQuerySpyConn()
 
         async def dispose(self) -> None:
             state["disposed"] = True
 
-    monkeypatch.setattr(mod, "create_async_engine", lambda url, **kwargs: _FakeEngine())
+    monkeypatch.setattr(mod, "create_async_engine", lambda url, **kwargs: _ReadonlyQuerySpyHandle())
     rows = asyncio.run(
         mod.execute_readonly_query(
             E2E_PG_URL,

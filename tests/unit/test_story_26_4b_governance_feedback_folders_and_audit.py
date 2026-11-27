@@ -243,60 +243,11 @@ def test_folder_row_mapper_decodes_attachments_and_evidence_tags() -> None:
 
 
 @pytest.mark.asyncio
-async def test_persona_private_folder_isolation_and_resolve_user_uuid_provisioning(
+async def test_persona_private_folder_isolation_in_seeded_app(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Persona PRIVATE folders remain visible to owner, hidden from peers, & provision UUID."""
-    from typing import Any
-    from uuid import UUID
-
-    from orcia_core.orchestration._internal._sql_assistant_folders_queries import resolve_user_uuid
-    from orcia_core.permissions.models import UserIdentity
-
-    karim = UserIdentity(
-        id="0192c4e0-0000-7000-8000-000000000601",
-        email="karim.admin@orcia.io",
-        display_name="Karim",
-        auth_mode="OIDC",
-        human_profile_archetype="TECH_LEAD",
-        platform_role="PLATFORM_ADMIN",
-        primary_org_unit_id="0192c4e0-0000-7000-8000-000000000101",
-    )
-    executed_sql: list[str] = []
-    inserted_users: set[str] = set()
-
-    class _Res:
-        def __init__(self, rows: list[tuple[str]]) -> None:
-            self._rows = rows
-
-        def first(self) -> tuple[str] | None:
-            return self._rows[0] if self._rows else None
-
-    class _FakeConn:
-        async def execute(self, stmt: Any, params: dict[str, Any] | None = None) -> _Res:
-            sql = str(stmt)
-            executed_sql.append(sql)
-            p = params or {}
-            if "FROM users WHERE id::text" in sql:
-                uid = str(p.get("uid") or "")
-                return _Res([(uid,)] if uid in inserted_users else [])
-            if "FROM org_units WHERE id::text" in sql:
-                return _Res([])
-            if "FROM org_units ORDER BY" in sql:
-                return _Res([("0192c4e0-0000-7000-8000-000000009001",)])
-            if "INSERT INTO users" in sql:
-                inserted_users.add(str(p["uid"]))
-                return _Res([])
-            return _Res([])
-
-    resolved = await resolve_user_uuid(
-        _FakeConn(),  # type: ignore[arg-type]
-        user_id=karim.id,
-        email=karim.email,
-        user=karim,
-    )
-    assert resolved == UUID(karim.id)
-    assert any("INSERT INTO users" in s for s in executed_sql)
+    """Persona PRIVATE folders remain visible to owner and hidden from peers."""
+    karim = _make_user("0192c4e0-0000-7000-8000-000000000601", "PLATFORM_ADMIN")
 
     monkeypatch.setenv("ORCIA_ENV_FILE", "/nonexistent/.env")
     monkeypatch.delenv("DATABASE_URL", raising=False)

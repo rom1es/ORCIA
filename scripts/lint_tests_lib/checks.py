@@ -9,6 +9,22 @@ FAKE_SQL_CLASS_NAMES: frozenset[str] = frozenset(
     {"FakeSqlEngine", "_FakeEngine", "FakeSqlResult", "_FakeSqlResult"}
 )
 SQL_DISPATCH_VERBS: tuple[str, ...] = ("SELECT ", "INSERT ", "UPDATE ", "DELETE ", "FROM ")
+SQL_METHODS: frozenset[str] = frozenset(
+    {
+        "execute",
+        "scalars",
+        "scalar",
+        "scalar_one",
+        "scalar_one_or_none",
+        "mappings",
+        "fetchall",
+        "fetchone",
+        "begin",
+        "connect",
+        "commit",
+        "rollback",
+    }
+)
 
 
 def _has_fake_sql_engine_ast(source: str) -> bool:
@@ -22,8 +38,27 @@ def _has_fake_sql_engine_ast(source: str) -> bool:
             if node.name in FAKE_SQL_CLASS_NAMES:
                 return True
             name_low = node.name.lower()
-            if "fake" in name_low and any(k in name_low for k in ("sql", "engine", "session")):
-                return True
+            if "fake" in name_low:
+                if any(
+                    k in name_low
+                    for k in (
+                        "engine",
+                        "session",
+                        "sqlresult",
+                        "sql_result",
+                        "sqlconn",
+                        "mappingsresult",
+                    )
+                ):
+                    return True
+                if "sql" in name_low:
+                    method_names = {
+                        item.name
+                        for item in node.body
+                        if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))
+                    }
+                    if method_names & SQL_METHODS:
+                        return True
         elif isinstance(node, ast.ImportFrom):
             if node.module and "_fake_sql_engine" in node.module:
                 return True

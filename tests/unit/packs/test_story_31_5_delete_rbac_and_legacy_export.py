@@ -1,16 +1,9 @@
-"""Unit tests for Story 31.5 delete RBAC and legacy export guardrails."""
+"""Unit tests for Story 31.5 delete RBAC guardrails."""
 
 from __future__ import annotations
 
-import io
-import zipfile
-from typing import Any
-
 import pytest
 from fastapi import FastAPI
-from httpx import ASGITransport, AsyncClient
-from tests.unit.packs._fake_sql_engine import FakeSqlEngine, FakeSqlResult
-from uuid_utils import uuid7
 
 from orcia_api.main import create_app
 from orcia_api.routers._entity_delete_rbac import (
@@ -27,6 +20,8 @@ from orcia_core.permissions.models import (
     WorkspaceEntity,
     WorkspaceMembershipEntity,
 )
+
+pytestmark = pytest.mark.story("31.5")
 
 
 def _setup_rbac_app(monkeypatch: pytest.MonkeyPatch) -> tuple[FastAPI, str, str, str, str]:
@@ -181,90 +176,3 @@ async def test_entity_delete_rbac_all_authorizers(monkeypatch: pytest.MonkeyPatc
     )
     with pytest.raises(ObserverModeReadOnlyError):
         cat_auth(ws_obs, "TEAM")
-
-
-@pytest.mark.asyncio
-async def test_legacy_export_route_and_list_composer_non_admin(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Cover `_packs_export_legacy_route.py` (SYSTEM CAS/synthesize + CUSTOM + 404/403)."""
-    app, _org_root, _org_bu, ws_a, _ws_priv = _setup_rbac_app(monkeypatch)
-    b_sys, b_cust = str(uuid7()), str(uuid7())
-
-    buf = io.BytesIO()
-    with zipfile.ZipFile(buf, "w") as zf:
-        zf.writestr("sdlc/apm.yml", b"name: sdlc\nversion: 1.0.0\n")
-    sys_zip = buf.getvalue()
-
-    class _FakeRepo:
-        _engine = object()
-
-        async def list_bundles_v2(self) -> list[dict[str, Any]]:
-            return [
-                {
-                    "id": b_sys,
-                    "pack_id": "orcia-pack-sdlc",
-                    "slug": "sdlc",
-                    "version": "1.0.0",
-                    "bundle_kind": "SYSTEM",
-                    "scope_type": "GLOBAL",
-                    "scope_id": "global",
-                    "cas_object_key": "packs/sdlc/1.0.0/a.zip",
-                    "manifest_jsonb": {},
-                },
-                {
-                    "id": b_cust,
-                    "pack_id": "orcia-pack-cust",
-                    "slug": "cust",
-                    "version": "1.0.0",
-                    "bundle_kind": "CUSTOM",
-                    "scope_type": "WORKSPACE",
-                    "scope_id": ws_a,
-                    "cas_object_key": None,
-                    "manifest_jsonb": {},
-                },
-            ]
-
-    class _FakeCas:
-        async def get_archive_zip(self, _k: str) -> bytes | None:
-            return sys_zip
-
-    class _StubComposer:
-        _engine = object()
-        _cas_storage = object()
-
-        async def list_drafts(self, **_kw: Any) -> list[Any]:
-            return []
-
-        async def export_bundle(self, bid: str, **_kw: Any) -> Any:
-            from orcia_core.packs import PackExportResult
-
-            return PackExportResult(
-                bundle_id=bid,
-                slug="cust",
-                version="1.0.0",
-                archive_sha256="a" * 64,
-                lockfile_bundle_sha256="b" * 64,
-                zip_bytes=sys_zip,
-            )
-
-    app.state.pack_bundle_v2_repository = _FakeRepo()
-    app.state.pack_cas_storage = _FakeCas()
-    app.state.pack_composer_service = _StubComposer()
-    app.state.db_engine = FakeSqlEngine(
-        lambda sql, _p: FakeSqlResult(scalar_val=None, has_scalar=True)
-    )
-    monkeypatch.setattr(
-        "orcia_api.routers._packs_export_legacy_route.is_pg_runtime_active", lambda _r: True
-    )
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        r_sys = await client.post(
-            f"/api/v1/packs/export/{ws_a}?pack_id=orcia-pack-sdlc&persona_key=marc"
-        )
-        assert r_sys.status_code == 200
-        r_cust = await client.post(
-            f"/api/v1/packs/export/{ws_a}?pack_id=orcia-pack-cust&persona_key=marc"
-        )
-        assert r_cust.status_code == 200
-        r_list = await client.get("/api/v1/packs/composer?persona_key=marc")
-        assert r_list.status_code == 200

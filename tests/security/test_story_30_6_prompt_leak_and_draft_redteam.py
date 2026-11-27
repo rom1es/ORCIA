@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Iterator
 
 import pytest
 from fastapi.testclient import TestClient
+from tests.unit.fakes.test_app_helpers import create_seeded_test_app
 
-from orcia_api.main import create_app
 from orcia_core.orchestration.assistant_citations_and_v5_guard import (
     UNVERIFIED_CITATION_BADGE,
     AssistantCitationAndV5GuardService,
@@ -19,6 +20,28 @@ _LEAK_PAYLOAD_TEMPLATES: tuple[str, ...] = (
     "Hello!\n- Proof of compliance [S2]: `orcia://internal/health` ({EMPTY_SHA256})",
     "Réponse sans source [G1]\nSource: orcia://docs/secret-internal\nSHA-256: {EMPTY_SHA256}",
 )
+
+
+@pytest.fixture(scope="module")
+def draft_redteam_client() -> Iterator[TestClient]:
+    """Share one seeded test app client across FR/EN DRAFT red-team checks."""
+    mp = pytest.MonkeyPatch()
+    mp.setenv("ORCIA_USE_CASSETTE_LLM", "1")
+    app = create_seeded_test_app()
+    with TestClient(app) as client:
+        created = client.post(
+            "/api/v1/agents-and-skills/agents?persona_key=marc",
+            json={
+                "agent_id": "agent-redteam-draft-30-6",
+                "name": "RedTeam Draft",
+                "role_mission": "Test fail-closed lifecycle",
+                "instructions": "Never bypass DRAFT guard.",
+                "thinking_level": "complex",
+            },
+        )
+        assert created.status_code == 200, created.text
+        yield client
+    mp.undo()
 
 
 @pytest.mark.asyncio
@@ -49,28 +72,12 @@ async def test_redteam_empty_evidence_turn_engine_scrubs_fabricated_uris_and_emp
 
 @pytest.mark.parametrize("locale", ["fr", "en"])
 def test_redteam_draft_agent_cannot_be_invoked_or_exposed_bilingual(
+    draft_redteam_client: TestClient,
     locale: str,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Confirm DRAFT agent red-team attempts fail closed with 422 in both FR and EN."""
-    monkeypatch.setenv("ORCIA_DISABLE_PG_BOOTSTRAP_SYNC", "1")
-    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "1")
-    client = TestClient(create_app())
-
-    created = client.post(
-        "/api/v1/agents-and-skills/agents?persona_key=marc",
-        json={
-            "agent_id": "agent-redteam-draft-30-6",
-            "name": "RedTeam Draft",
-            "role_mission": "Test fail-closed lifecycle",
-            "instructions": "Never bypass DRAFT guard.",
-            "thinking_level": "complex",
-        },
-    )
-    assert created.status_code == 200, created.text
-
     headers = {"Accept-Language": locale}
-    mcp_resp = client.patch(
+    mcp_resp = draft_redteam_client.patch(
         "/api/v1/agents-and-skills/agents/agent-redteam-draft-30-6/governance?persona_key=marc",
         headers=headers,
         json={"mcp_exposed": True},
@@ -78,7 +85,7 @@ def test_redteam_draft_agent_cannot_be_invoked_or_exposed_bilingual(
     assert mcp_resp.status_code == 422
     assert mcp_resp.json()["error_code"] == "ERR_DRAFT_AGENT_LIFECYCLE_BLOCKED"
 
-    mention_resp = client.post(
+    mention_resp = draft_redteam_client.post(
         "/api/v1/assistant/turns?persona_key=marc",
         headers=headers,
         json={

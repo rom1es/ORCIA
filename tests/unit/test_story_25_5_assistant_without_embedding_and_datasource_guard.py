@@ -25,12 +25,6 @@ from fastapi.testclient import TestClient
 
 from orcia_api.dependencies import get_embedding_port
 from orcia_api.main import create_app
-from orcia_core.bootstrap._internal._sql_workspace_datasources_sync import (
-    assert_active_global_embedding_model_for_rag_source,
-)
-from orcia_core.bootstrap._internal.sql_workspace_datasources_mutations import (
-    create_workspace_datasource_on_postgres18,
-)
 from orcia_core.orchestration.assistant_agent import AssistantAgentService
 from orcia_core.orchestration.seeds import build_default_orchestration_setup_service
 from orcia_core.permissions import build_default_auth_and_org_service
@@ -212,122 +206,10 @@ def test_live_assistant_rejects_422_when_zero_active_chat_model_even_if_embeddin
         assert resp_turn.headers.get("content-type") == "application/problem+json"
 
 
-class _FakeResult:
-    def __init__(self, scalar_val: Any = None, row_val: Any = None) -> None:
-        self._scalar = scalar_val
-        self._row = row_val
-
-    def scalar(self) -> Any:
-        return self._scalar
-
-    def fetchone(self) -> Any:
-        return self._row
-
-    def fetchall(self) -> list[Any]:
-        return []
-
-
-class _RecordingAsyncConnection:
-    def __init__(self, *, has_active_embedding: bool) -> None:
-        self.has_active_embedding = has_active_embedding
-        self.executed_sql: list[str] = []
-
-    async def execute(self, statement: Any, _params: Any = None) -> _FakeResult:
-        sql = str(statement)
-        self.executed_sql.append(sql)
-        if "SELECT to_regclass('workspace_llm_tier_mappings')" in sql:
-            return _FakeResult(scalar_val="workspace_llm_tier_mappings")
-        if "FROM workspace_llm_tier_mappings" in sql:
-            return _FakeResult(row_val=("mod-emb-1",) if self.has_active_embedding else None)
-        if "SELECT id FROM workspaces WHERE id" in sql:
-            return _FakeResult(scalar_val=_WS_TEST)
-        if "INSERT INTO workspace_datasources" in sql:
-            return _FakeResult(
-                row_val=(
-                    "0195f000-0000-7000-8000-000000000999",
-                    _WS_TEST,
-                    "Repo Code",
-                    "git",
-                    "https://gitlab.internal/org/repo.git",
-                    None,
-                    "SERVICE_ACCOUNT",
-                    None,
-                    None,
-                    None,
-                    "SOURCE_CODE",
-                    "POLLING_24H",
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    "PENDING_INITIAL_SYNC",
-                    False,
-                    "SERVICE_ACCOUNT",
-                    None,
-                    "DISABLED",
-                    None,
-                    None,
-                )
-            )
-        return _FakeResult()
-
-
-class _FakeAsyncEngine:
-    def __init__(self, conn: _RecordingAsyncConnection) -> None:
-        self.conn = conn
-
+class _NoopBeginCtxProvider:
     @asynccontextmanager
     async def begin(self) -> Any:
-        yield self.conn
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("rag_nature", ["DOCUMENT_KB", "WORK_TRACKER", "RELATIONAL_SCHEMA"])
-async def test_create_workspace_datasource_rejects_rag_natures_before_insert_without_embedding(
-    rag_nature: str,
-) -> None:
-    """RAG source_nature != SOURCE_CODE must fail 422 before any INSERT when 0 embedding."""
-    conn = _RecordingAsyncConnection(has_active_embedding=False)
-    engine = _FakeAsyncEngine(conn)
-
-    with pytest.raises(NoActiveEmbeddingModelError) as exc_info:
-        await create_workspace_datasource_on_postgres18(
-            engine,  # type: ignore[arg-type]
-            workspace_id=_WS_TEST,
-            alias="Confluence Test",
-            scheme="confluence",
-            uri="https://confluence.internal/spaces/ENG",
-            source_nature=rag_nature,  # type: ignore[arg-type]
-            instance=f"/api/v1/workspaces/{_WS_TEST}/datasources",
-        )
-    assert exc_info.value.http_status == 422
-    assert exc_info.value.error_code == "ERR_NO_ACTIVE_EMBEDDING_MODEL"
-    assert not any("INSERT INTO workspace_datasources" in s for s in conn.executed_sql)
-
-
-@pytest.mark.asyncio
-async def test_create_workspace_datasource_allows_source_code_without_embedding() -> None:
-    """SOURCE_CODE bypasses embedding guard and proceeds to INSERT."""
-    conn = _RecordingAsyncConnection(has_active_embedding=False)
-    engine = _FakeAsyncEngine(conn)
-
-    await assert_active_global_embedding_model_for_rag_source(
-        conn,  # type: ignore[arg-type]
-        source_nature="SOURCE_CODE",
-    )
-    assert conn.executed_sql == []
-
-    rec = await create_workspace_datasource_on_postgres18(
-        engine,  # type: ignore[arg-type]
-        workspace_id=_WS_TEST,
-        alias="Repo Code",
-        scheme="git",
-        uri="https://gitlab.internal/org/repo.git",
-        source_nature="SOURCE_CODE",
-    )
-    assert rec.source_nature == "SOURCE_CODE"
-    assert any("INSERT INTO workspace_datasources" in s for s in conn.executed_sql)
+        yield object()
 
 
 @pytest.mark.asyncio
@@ -475,122 +357,20 @@ async def test_rag_guards_and_llm_resolver_branches_without_pg(
 
 
 @pytest.mark.asyncio
-async def test_datasource_mutations_validation_and_llm_resolver_pg_paths(
+async def test_llm_resolver_pg_fallback_and_exception_paths(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Cover remaining mutation error branches and PG18 LLM tier resolution fallback."""
+    """Cover PG18 LLM tier resolution mapping lookup, snapshot fallback, and exception handling."""
     from types import SimpleNamespace
 
     import orcia_core.bootstrap as bstrap
     import orcia_core.orchestration._internal.sql_ai_model_mappings as bm
     from orcia_api.routers.assistant_llm_resolver import resolve_configured_llm_endpoint
-    from orcia_core.bootstrap._internal.sql_workspace_datasources_mutations import (
-        delete_workspace_datasource_on_postgres18,
-        update_workspace_datasource_on_postgres18,
-    )
-    from orcia_core.permissions.errors import ResourceNotFoundError, ValidationDomainError
-
-    conn = _RecordingAsyncConnection(has_active_embedding=False)
-    engine = _FakeAsyncEngine(conn)
-
-    # Validation & NotFound branches on datasource mutations
-    with pytest.raises(ResourceNotFoundError):
-        await create_workspace_datasource_on_postgres18(
-            engine,  # type: ignore[arg-type]
-            workspace_id="not-a-uuid",
-            alias="A",
-            scheme="git",
-            uri="https://gitlab.internal/a.git",
-        )
-    with pytest.raises(ValidationDomainError):
-        await create_workspace_datasource_on_postgres18(
-            engine,  # type: ignore[arg-type]
-            workspace_id=_WS_TEST,
-            alias=" ",
-            scheme="git",
-            uri="https://gitlab.internal/a.git",
-        )
-
-    class _MissingWsConn(_RecordingAsyncConnection):
-        async def execute(self, statement: Any, _params: Any = None) -> _FakeResult:
-            if "SELECT id FROM workspaces WHERE id" in str(statement):
-                return _FakeResult(scalar_val=None)
-            return await super().execute(statement, _params)
-
-    with pytest.raises(ResourceNotFoundError):
-        await create_workspace_datasource_on_postgres18(
-            _FakeAsyncEngine(_MissingWsConn(has_active_embedding=False)),  # type: ignore[arg-type]
-            workspace_id=_WS_TEST,
-            alias="A",
-            scheme="git",
-            uri="https://gitlab.internal/a.git",
-            source_nature="SOURCE_CODE",
-        )
-
-    with pytest.raises(ResourceNotFoundError):
-        await update_workspace_datasource_on_postgres18(
-            engine,  # type: ignore[arg-type]
-            workspace_id=_WS_TEST,
-            datasource_id="0195f000-0000-7000-8000-000000000999",
-            alias="New",
-        )
-    with pytest.raises(ResourceNotFoundError):
-        await delete_workspace_datasource_on_postgres18(
-            engine,  # type: ignore[arg-type]
-            workspace_id=_WS_TEST,
-            datasource_id="0195f000-0000-7000-8000-000000000999",
-        )
-
-    # Switching SOURCE_CODE -> DOCUMENT_KB without active embedding must fail 422 before UPDATE
-    class _ExistingSourceConn(_RecordingAsyncConnection):
-        async def execute(self, statement: Any, _params: Any = None) -> _FakeResult:
-            sql = str(statement)
-            if "FOR UPDATE" in sql:
-                return _FakeResult(
-                    row_val=(
-                        "0195f000-0000-7000-8000-000000000999",
-                        _WS_TEST,
-                        "Repo Code",
-                        "git",
-                        "https://gitlab.internal/org/repo.git",
-                        None,
-                        "SERVICE_ACCOUNT",
-                        None,
-                        None,
-                        None,
-                        "SOURCE_CODE",
-                        "POLLING_24H",
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        "PENDING_INITIAL_SYNC",
-                        False,
-                        "SERVICE_ACCOUNT",
-                        None,
-                        "DISABLED",
-                        None,
-                        None,
-                    )
-                )
-            return await super().execute(statement, _params)
-
-    upd_conn = _ExistingSourceConn(has_active_embedding=False)
-    upd_engine = _FakeAsyncEngine(upd_conn)
-    with pytest.raises(NoActiveEmbeddingModelError):
-        await update_workspace_datasource_on_postgres18(
-            upd_engine,  # type: ignore[arg-type]
-            workspace_id=_WS_TEST,
-            datasource_id="0195f000-0000-7000-8000-000000000999",
-            source_nature="DOCUMENT_KB",
-        )
-    assert not any("UPDATE workspace_datasources" in s for s in upd_conn.executed_sql)
 
     # PG18 LLM resolver branches (mapping found, fallback to platform setup snapshot, exception log)
     app = create_app()
     fake_request = SimpleNamespace(app=app)
-    app.state.db_engine = engine
+    app.state.db_engine = _NoopBeginCtxProvider()
     app.state.platform_setup_snapshot = None
     monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "0")
 

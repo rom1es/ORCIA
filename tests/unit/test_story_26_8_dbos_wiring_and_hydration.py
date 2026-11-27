@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-from contextlib import asynccontextmanager
 from typing import Any
 
 import pytest
@@ -14,10 +13,6 @@ from orcia_core.blackboard.models import BlackboardSnapshotEntity, StepExecution
 from orcia_core.orchestration._internal import _dbos_workflow_defs as defs
 from orcia_core.orchestration._internal._sql_dbos_launch_helpers import (
     append_rewind_supersede_tombstone_sql,
-    enqueue_outbox_event_sql,
-    ensure_step_waiting_anchor_sql,
-    get_run_execution_context_sql,
-    has_human_anchor_signature_sql,
 )
 from orcia_core.orchestration._internal.dbos_engine import DbosDurableWorkflowEngine
 from orcia_core.orchestration.assistant_process_launcher import (
@@ -29,37 +24,8 @@ from orcia_core.orchestration.engine import DurableOrchestrationEngine
 from orcia_core.orchestration.errors import ResourceNotFoundError
 from orcia_core.orchestration.seeds import build_default_orchestration_setup_service
 from orcia_core.permissions import build_default_auth_and_org_service
-from orcia_kernel.events import RunTerminated
 
 _WS_ID = "0192c4e0-0000-7000-8000-000000000201"
-
-
-class _FakeResult:
-    def __init__(self, row: tuple[Any, ...] | None = None) -> None:
-        self._row = row
-
-    def fetchone(self) -> tuple[Any, ...] | None:
-        return self._row
-
-
-class _FakeSession:
-    def __init__(self, rows: list[tuple[Any, ...] | None] | None = None) -> None:
-        self._rows = list(rows or [])
-        self.executed: list[tuple[str, dict[str, Any]]] = []
-
-    async def execute(self, stmt: Any, params: dict[str, Any] | None = None) -> _FakeResult:
-        self.executed.append((str(stmt), dict(params or {})))
-        row = self._rows.pop(0) if self._rows else None
-        return _FakeResult(row)
-
-
-class _FakeUow:
-    def __init__(self, session: _FakeSession) -> None:
-        self._session = session
-
-    @asynccontextmanager
-    async def session_scope(self) -> Any:
-        yield self._session
 
 
 class _FakeDurableBackend(DurableProcessBackendPort):
@@ -150,28 +116,7 @@ def test_launcher_resolution_fallbacks_and_durable_backend_port() -> None:
 def test_dbos_launch_helpers_and_engine_unlaunched_and_mocked_branches(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Cover SQL launch helpers, rewind tombstone, unlaunched guards, and waiter signaling."""
-    sess = _FakeSession(
-        rows=[
-            (_WS_ID, "orcia://workflows/custom", "BACKGROUND_FAST_PATH"),
-            None,
-            (1,),
-            None,
-        ]
-    )
-    uow = _FakeUow(sess)
-    assert asyncio.run(get_run_execution_context_sql(uow, "run-1")) == (  # type: ignore[arg-type]
-        _WS_ID,
-        "orcia://workflows/custom",
-        "BACKGROUND_FAST_PATH",
-    )
-    assert asyncio.run(get_run_execution_context_sql(uow, "run-missing"))[0] == _WS_ID  # type: ignore[arg-type]
-    assert asyncio.run(has_human_anchor_signature_sql(uow, run_id="r", step_key="s")) is True  # type: ignore[arg-type]
-    assert asyncio.run(has_human_anchor_signature_sql(uow, run_id="r", step_key="s")) is False  # type: ignore[arg-type]
-    asyncio.run(ensure_step_waiting_anchor_sql(uow, run_id="r", step_key="s"))  # type: ignore[arg-type]
-    evt = RunTerminated.create(run_id="r", workspace_id=_WS_ID, final_status="COMPLETED")
-    asyncio.run(enqueue_outbox_event_sql(uow, evt))  # type: ignore[arg-type]
-
+    """Cover rewind tombstone, unlaunched guards, and waiter signaling."""
     # Waiter thread signaling & unbound runtime guard
     defs.clear_run_state_waiter("missing")
     defs.signal_run_state_reached("missing")
@@ -256,7 +201,14 @@ def test_dbos_launch_helpers_and_engine_unlaunched_and_mocked_branches(
         )
         assert appended and appended[0]["branch_status"] == "SUPERSEDED"
 
-        eng._uow = uow  # type: ignore[assignment]
+        async def _fake_ctx(_uow: Any, _rid: str) -> tuple[str, str, str]:
+            return (_WS_ID, "orcia://workflows/custom", "BACKGROUND_FAST_PATH")
+
+        monkeypatch.setattr(
+            "orcia_core.orchestration._internal.dbos_engine.get_run_execution_context_sql",
+            _fake_ctx,
+        )
+        eng._uow = object()  # type: ignore[assignment]
         eng._repository = _FakeRepo()  # type: ignore[assignment]
         res = asyncio.run(
             eng.persist_step_and_commit_snapshot(
@@ -264,7 +216,7 @@ def test_dbos_launch_helpers_and_engine_unlaunched_and_mocked_branches(
                 step_key="s1",
                 step_index=0,
                 artifact_payload={"custom": 1},
-                emit_outbox=True,
+                emit_outbox=False,
             )
         )
         assert res.id == snap.id

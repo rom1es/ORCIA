@@ -18,6 +18,8 @@ import re
 import zipfile
 from pathlib import Path
 
+from tests.unit.fakes.test_app_helpers import get_repo_source_index
+
 from orcia_core.packs.loader import (
     DeclarativePackLoader,
     DeclarativePackManifest,
@@ -46,14 +48,15 @@ ORCIA_CORE_SRC = REPO_ROOT / "packages" / "orcia-core" / "src" / "orcia_core"
 
 def test_core_domain_isolation_ast_and_regex() -> None:
     """Verify zero SDLC domain leak in `orcia-core` (`CA-9.1.1`)."""
+    idx = get_repo_source_index(REPO_ROOT)
     # 1. Across all of packages/orcia-core: zero occurrences of git_branch, wsjf, rovo, copilot, prd
     strict_global_pattern = re.compile(
         r"\b(git_branch|wsjf|rovo|copilot|prd)\b",
         re.IGNORECASE,
     )
-    for py_file in sorted(ORCIA_CORE_SRC.rglob("*.py")):
-        source = py_file.read_text(encoding="utf-8")
-        tree = ast.parse(source, filename=str(py_file))
+    for py_file in idx.files_under("packages/orcia-core/src/orcia_core", suffix=".py"):
+        source = idx.read_text(py_file)
+        tree = idx.parse_ast(py_file)
         for node in ast.walk(tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                 assert not strict_global_pattern.search(node.name), (
@@ -65,24 +68,23 @@ def test_core_domain_isolation_ast_and_regex() -> None:
     # 2. Across workflows, packs, storage, kernel, orchestration, and gates:
     # zero occurrences of jira, confluence, git_branch, wsjf, rovo, copilot, safe, prd
     isolated_packages = (
-        ORCIA_CORE_SRC / "workflows",
-        ORCIA_CORE_SRC / "packs",
-        ORCIA_CORE_SRC / "storage",
-        ORCIA_CORE_SRC / "kernel",
-        ORCIA_CORE_SRC / "orchestration",
-        ORCIA_CORE_SRC / "gates",
-        ORCIA_CORE_SRC / "ports",
-        ORCIA_CORE_SRC / "agents",
+        "packages/orcia-core/src/orcia_core/workflows",
+        "packages/orcia-core/src/orcia_core/packs",
+        "packages/orcia-core/src/orcia_core/storage",
+        "packages/orcia-core/src/orcia_core/kernel",
+        "packages/orcia-core/src/orcia_core/orchestration",
+        "packages/orcia-core/src/orcia_core/gates",
+        "packages/orcia-core/src/orcia_core/ports",
+        "packages/orcia-core/src/orcia_core/agents",
     )
     isolated_pattern = re.compile(
         r"\b(jira|confluence|git_branch|wsjf|rovo|copilot|safe|prd)\b",
         re.IGNORECASE,
     )
-    for folder in isolated_packages:
-        for py_file in sorted(folder.rglob("*.py")):
-            source = py_file.read_text(encoding="utf-8")
-            match = isolated_pattern.search(source)
-            assert match is None, f"Forbidden domain keyword {match.group(0)!r} found in {py_file}"
+    for py_file in idx.files_under_many(isolated_packages, suffix=".py"):
+        source = idx.read_text(py_file)
+        match = isolated_pattern.search(source)
+        assert match is None, f"Forbidden domain keyword {match.group(0)!r} found in {py_file}"
 
 
 def test_claim_check_storage_above_4kb_and_sha256_verification() -> None:

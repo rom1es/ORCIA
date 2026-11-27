@@ -14,6 +14,7 @@ from tests.unit._epic_26_closure_ast_helpers import (
     find_mutable_module_container_violations,
     find_sync_blocking_io_violations,
 )
+from tests.unit.fakes.test_app_helpers import get_repo_source_index
 
 from orcia_api.main import create_app
 from orcia_api.routers.auth import resolve_request_user
@@ -113,14 +114,14 @@ def test_every_assistant_route_has_auth_scope_and_observer_guards() -> None:
 
 def test_zero_testclient_or_blocking_sync_io_in_src_and_assistant_core() -> None:
     """Forbid `testclient`/`pytest in sys.modules` & sync I/O in `apps/api` + `orcia_core`."""
+    idx = get_repo_source_index(REPO_ROOT)
     test_branch_violations: list[str] = []
-    for root in (API_SRC_DIR, CORE_SRC_DIR):
-        for path in sorted(root.rglob("*.py")):
-            src = path.read_text(encoding="utf-8")
-            if "testclient" in src.lower() or "ORCIA_FORCE_LIVE_LLM" in src:
-                test_branch_violations.append(str(path.relative_to(REPO_ROOT)))
-            if re.search(r"['\"]pytest['\"]\s+in\s+sys\.modules", src):
-                test_branch_violations.append(str(path.relative_to(REPO_ROOT)))
+    for path in idx.files_under_many(("apps/api/src", "packages/orcia-core/src"), suffix=".py"):
+        src = idx.read_text(path)
+        if "testclient" in src.lower() or "ORCIA_FORCE_LIVE_LLM" in src:
+            test_branch_violations.append(str(path.relative_to(idx.repo_root)))
+        if re.search(r"['\"]pytest['\"]\s+in\s+sys\.modules", src):
+            test_branch_violations.append(str(path.relative_to(idx.repo_root)))
     assert test_branch_violations == [], f"Test branches in src/: {test_branch_violations}"
 
     sync_violations = find_sync_blocking_io_violations(API_SRC_DIR, CORE_SRC_DIR)
@@ -129,30 +130,33 @@ def test_zero_testclient_or_blocking_sync_io_in_src_and_assistant_core() -> None
 
 def test_zero_legacy_routes_zero_require_rag_and_zero_story26_overrides() -> None:
     """Confirm 0 legacy routes, 0 `require_rag_available`, and 0 `dependency_overrides`."""
+    idx = get_repo_source_index(REPO_ROOT)
     schema = create_app().openapi()
     paths = set(schema.get("paths", {}).keys())
     for legacy in _LEGACY_ROUTE_FRAGMENTS:
         assert not any(legacy in p for p in paths), f"Legacy route still in OpenAPI: {legacy}"
 
-    for router_file in sorted(API_ROUTERS_DIR.rglob("*.py")):
+    for router_file in idx.files_under("apps/api/src/orcia_api/routers", suffix=".py"):
         if router_file.name != "ontology_and_rag.py":
-            txt = router_file.read_text(encoding="utf-8")
+            txt = idx.read_text(router_file)
             assert "require_rag_available" not in txt, (
                 f"{router_file.name} references require_rag_available"
             )
 
-    story_26_tests = sorted((REPO_ROOT / "tests").rglob("test_story_26_*.py"))
+    story_26_tests = sorted(
+        p for p in idx.files_under("tests", suffix=".py") if p.name.startswith("test_story_26_")
+    )
     assert any(p.parent.name == "api" for p in story_26_tests)
     story_3_3 = (
         REPO_ROOT / "tests" / "unit" / "test_story_3_3_assistant_agent_5_nodes_and_context_ports.py"
     )
     for test_path in [*story_26_tests, story_3_3]:
-        txt = test_path.read_text(encoding="utf-8")
+        txt = idx.read_text(test_path)
         if test_path.name != Path(__file__).name:
             assert "require_rag_available" not in txt, (
                 f"{test_path} references require_rag_available"
             )
-        tree = ast.parse(txt, filename=test_path.name)
+        tree = idx.parse_ast(test_path)
         for node in ast.walk(tree):
             if isinstance(node, ast.Subscript) and isinstance(node.value, ast.Attribute):
                 assert node.value.attr != "dependency_overrides", (
@@ -218,19 +222,21 @@ def test_epic_26_harness_files_under_300_lines_and_single_prompt_builder() -> No
     ]
     assert oversized == [], f"Epic 26 harness files > 300 L: {oversized}"
 
+    idx = get_repo_source_index(REPO_ROOT)
     layer1_holders: list[str] = []
     raw_marker_holders: list[str] = []
     prompt_builders: list[str] = []
-    for root in (API_SRC_DIR, CORE_SRC_DIR / "orcia_core"):
-        for path in sorted(root.rglob("*.py")):
-            txt = path.read_text(encoding="utf-8")
-            rel = str(path.relative_to(REPO_ROOT))
-            if "[CONSTITUTIONAL_IMMUTABLE_LAYER_1]" in txt:
-                raw_marker_holders.append(rel)
-            if "Core operating principles:" in txt:
-                layer1_holders.append(rel)
-            if "class AssistantPromptBuilder" in txt:
-                prompt_builders.append(rel)
+    for path in idx.files_under_many(
+        ("apps/api/src", "packages/orcia-core/src/orcia_core"), suffix=".py"
+    ):
+        txt = idx.read_text(path)
+        rel = str(path.relative_to(idx.repo_root))
+        if "[CONSTITUTIONAL_IMMUTABLE_LAYER_1]" in txt:
+            raw_marker_holders.append(rel)
+        if "Core operating principles:" in txt:
+            layer1_holders.append(rel)
+        if "class AssistantPromptBuilder" in txt:
+            prompt_builders.append(rel)
 
     assert raw_marker_holders == []
     assert layer1_holders == [

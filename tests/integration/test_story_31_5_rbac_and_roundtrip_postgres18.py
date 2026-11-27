@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import io
-import os
 import zipfile
 from uuid import UUID
 
@@ -11,30 +10,24 @@ import pytest
 import sqlalchemy as sa
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine
+from tests.integration._shared_topology_fixture import SharedIntegrationTopology
 from tests.integration._story_31_4_pack_fixture import seed_story_31_4_topology
 from tests.integration._story_31_5_fixture import (
     REPO_ROOT,
-    pg18_and_seaweed_urls_315,
     seed_story_31_5_entities,
 )
 from tests.integration._story_31_5_fixture_extra import issue_tok_hdr, seed_extra_315_fixtures
 from uuid_utils import uuid7
 
-os.environ["TESTCONTAINERS_RYUK_DISABLED"] = "true"
-_PG_S3_FIXTURE = pg18_and_seaweed_urls_315
-
 
 @pytest.mark.asyncio
 async def test_story_31_5_rbac_publish_cleanup_and_rich_roundtrip(
-    pg18_and_seaweed_urls_315: tuple[str, str],
+    isolated_worker_pg18_env: SharedIntegrationTopology,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Verify publish cleanup, cross-tenant RBAC, observer export & VSM/HELP/MCP round-trip."""
-    pg_url, s3_url = pg18_and_seaweed_urls_315
-    monkeypatch.setenv("DATABASE_URL", pg_url)
-    monkeypatch.setenv("S3_ENDPOINT_URL", s3_url)
-    monkeypatch.setenv("ORCIA_ENABLE_PG_SESSION_MAKER", "1")
-    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
+    pg_url = isolated_worker_pg18_env.async_database_url
+    monkeypatch.setenv("S3_ENDPOINT_URL", isolated_worker_pg18_env.s3_endpoint_url)
     monkeypatch.setenv("ORCIA_ENV_FILE", str(REPO_ROOT / ".orcia-run" / "does-not-exist.env"))
 
     org_id, ws_a, ws_b, admin_id = str(uuid7()), str(uuid7()), str(uuid7()), str(uuid7())
@@ -185,9 +178,13 @@ async def test_story_31_5_rbac_publish_cleanup_and_rich_roundtrip(
                 ).scalar_one()
                 assert "Help Body 315" in str(help_meta.get("markdown_body", ""))
 
-            # 3. Observer exports GLOBAL SYSTEM bundle (200) vs cross-tenant ws_b denial (403)
+            # 3. Observer exports GLOBAL SYSTEM bundle (200) & legacy export (200) vs ws_b (403)
             r_obs_sys = await client.post(f"/api/v1/packs/{ex['sys_bid']}/export", headers=obs_h)
             assert r_obs_sys.status_code == 200, r_obs_sys.text
+            r_leg = await client.post(
+                f"/api/v1/packs/export/{ws_a}?pack_id=orcia-pack-rich-315", headers=adm_h
+            )
+            assert r_leg.status_code == 200, r_leg.text
             assert (await client.get("/api/v1/packs/composer", headers=wsb_h)).json()[
                 "drafts"
             ] == []

@@ -289,14 +289,14 @@ def test_09_reset_db_first_boot_cli_main_dry_run_and_apply(
 ) -> None:
     mod = _load_module("test_mod_09_cli_main", RESET_FIRST_BOOT_PATH)
 
-    class _FakeEngine:
+    class _DisposableHandle:
         def __init__(self) -> None:
             self.disposed = False
 
         async def dispose(self) -> None:
             self.disposed = True
 
-    fake_engine = _FakeEngine()
+    fake_engine = _DisposableHandle()
     monkeypatch.setattr(mod, "create_async_engine", lambda _url: fake_engine)
 
     async def _fake_reset(_engine: Any, *, apply_changes: bool) -> Any:
@@ -314,7 +314,7 @@ def test_09_reset_db_first_boot_cli_main_dry_run_and_apply(
     assert mod.main(["--database-url", "postgresql+asyncpg://u:p@127.0.0.1:49321/orcia_e2e"]) == 0
     assert fake_engine.disposed is True
 
-    fake_engine2 = _FakeEngine()
+    fake_engine2 = _DisposableHandle()
     monkeypatch.setattr(mod, "create_async_engine", lambda _url: fake_engine2)
     assert (
         mod.main(

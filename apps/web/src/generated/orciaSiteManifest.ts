@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 64,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 45,
-    "techLeadReportsCount": 257,
+    "techLeadReportsCount": 258,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -552,6 +552,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-27",
+      "phaseOrStory": "Story 32.4",
+      "reportFile": "32-4-repo-wide-test-pyramid-pruning-with-coverage-safety-gate-tech-lead-report.md",
+      "domain": "Epic 32 Lot 4 — Repo-Wide Test Pyramid Pruning with Coverage Safety Gate & Mutation Sample (T-D11, hygiene)",
+      "summary": "In-progress (hygiene)."
+    },
     {
       "date": "2026-11-27",
       "phaseOrStory": "Story 32.3",

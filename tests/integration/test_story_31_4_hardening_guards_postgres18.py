@@ -2,34 +2,27 @@
 
 from __future__ import annotations
 
-import os
-
 import pytest
 import sqlalchemy as sa
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine
+from tests.integration._shared_topology_fixture import SharedIntegrationTopology
 from tests.integration._story_31_4_pack_fixture import (
     REPO_ROOT,
     build_dummy_lock_for_p01_test,
     build_slot_pack_zip,
-    pg18_url,
     seed_story_31_4_hardening_extras,
     seed_story_31_4_topology,
 )
 from uuid_utils import uuid7
 
-os.environ["TESTCONTAINERS_RYUK_DISABLED"] = "true"
-_PG18_FIXTURE = pg18_url
-
 
 @pytest.mark.asyncio
 async def test_story_31_4_p0_p1_p2_hardening_guards_pg18(
-    pg18_url: str, monkeypatch: pytest.MonkeyPatch
+    isolated_worker_pg18_env: SharedIntegrationTopology, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Verify P0-1..5, P1-2/3/6 & P2-1/3 on real PG18 + `create_app()`."""
-    monkeypatch.setenv("DATABASE_URL", pg18_url)
-    monkeypatch.setenv("ORCIA_ENABLE_PG_SESSION_MAKER", "1")
-    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
+    pg18_url = isolated_worker_pg18_env.async_database_url
     monkeypatch.setenv("ORCIA_ENV_FILE", str(REPO_ROOT / ".orcia-run" / "does-not-exist.env"))
 
     org_id, ws_a, ws_b, admin_id = str(uuid7()), str(uuid7()), str(uuid7()), str(uuid7())

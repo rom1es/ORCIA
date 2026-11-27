@@ -6,13 +6,20 @@ import hashlib
 import io
 import zipfile
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
 import yaml
 from tests.unit.fakes.in_memory_pack_cas import InMemoryPackCasStorage
 
+from orcia_api.dependencies.pack_import_deps import (
+    get_pack_bundle_v2_repository,
+    get_pack_cas_storage,
+    get_pack_import_service,
+)
 from orcia_core.packs import (
     ApmPackCodec,
     PackBundleKind,
@@ -227,3 +234,31 @@ async def test_seed_system_packs_on_engine_discovers_sdlc_and_docs(
     outcomes = await seed_system_packs_on_engine(object())  # type: ignore[arg-type]
     assert len(outcomes) == 2
     assert set(seeded_slugs) == {"orcia-docs", "sdlc"}
+
+    # Missing packs root returns [] without touching DB, and engine=None fails closed on delete
+    assert (
+        await seed_system_packs_on_engine(object(), packs_root=Path("/nonexistent-packs-312")) == []
+    )  # type: ignore[arg-type]
+    no_eng_svc = PackImportService(engine=None, cas_storage=None)
+    with pytest.raises(RuntimeError, match="AsyncEngine"):
+        await no_eng_svc.delete_bundle("b1")
+
+
+def test_pack_import_deps_singleton_and_cas_resolution(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Cover `pack_import_deps.py` lazy CAS/repo/service resolution without fake SQL."""
+    req: Any = SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(db_engine=None)))
+    monkeypatch.delenv("ORCIA_SEAWEEDFS_ENDPOINT_URL", raising=False)
+    monkeypatch.delenv("SEAWEEDFS_S3_ENDPOINT", raising=False)
+    monkeypatch.delenv("S3_ENDPOINT_URL", raising=False)
+    assert get_pack_cas_storage(req) is None
+
+    monkeypatch.setenv("ORCIA_SEAWEEDFS_ENDPOINT_URL", "http://127.0.0.1:8333")
+    cas = get_pack_cas_storage(req)
+    assert cas is not None and get_pack_cas_storage(req) is cas
+
+    repo = get_pack_bundle_v2_repository(req)
+    svc = get_pack_import_service(req)
+    req.app.state.db_engine = object()
+    assert get_pack_bundle_v2_repository(req) is repo
+    assert get_pack_import_service(req) is svc
+    assert AsyncMock is not None

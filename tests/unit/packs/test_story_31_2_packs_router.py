@@ -3,13 +3,22 @@
 from __future__ import annotations
 
 import base64
+import io
+import zipfile
 from typing import Any
 
 from fastapi.testclient import TestClient
-from tests.unit.packs.test_story_31_2_packs_router_and_materializer import _make_sample_zip
 
 from orcia_api.main import create_app
 from orcia_core.packs import PackBundleKind, PackImportOutcome, PackScopeType
+
+
+def _make_sample_zip() -> bytes:
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("apm.yml", "name: demo-pack\nversion: 1.0.0\n")
+        zf.writestr("agents/a.agent.md", "---\nname: Agent A\n---\nInstructions.")
+    return buf.getvalue()
 
 
 def test_packs_import_and_delete_router_observer_and_multipart() -> None:
@@ -85,3 +94,6 @@ def test_packs_import_and_delete_router_observer_and_multipart() -> None:
     del_resp = client.delete("/api/v1/packs/0195f000-0000-7000-8000-000000000901")
     assert del_resp.status_code == 200
     assert del_resp.json()["deleted"] is True
+
+    empty_resp = client.post("/api/v1/packs/import", json={})
+    assert empty_resp.status_code == 422

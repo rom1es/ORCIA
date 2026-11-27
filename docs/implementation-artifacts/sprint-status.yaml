@@ -368,7 +368,7 @@ development_status:
   32-1-token-first-agent-check-runner-receipts-and-suite-quick-wins: done
   32-2-agent-protocol-small-context-fixer-and-rules-diet: done
   32-3-combined-coverage-diff-cover-shared-pg18-infra-and-ratchet-lint: done
-  32-4-repo-wide-test-pyramid-pruning-with-coverage-safety-gate: backlog
+  32-4-repo-wide-test-pyramid-pruning-with-coverage-safety-gate: done
   32-5-strict-anti-bloat-lint-openapi-vitest-mocks-and-survivor-split: backlog
   epic-32-retrospective: optional
 action_items:
