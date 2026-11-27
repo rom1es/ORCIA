@@ -56,12 +56,14 @@ UI_INDEX_FILE = REPO_ROOT / "packages" / "ui" / "src" / "index.ts"
 PACKAGES_DIR = REPO_ROOT / "packages"
 MIGRATIONS_DIR = REPO_ROOT / "infra" / "migrations" / "versions"
 REPORTS_README = REPO_ROOT / "docs" / "implementation-artifacts" / "tech-lead-reports" / "README.md"
+CAPABILITIES_INDEX_OUT = REPO_ROOT / "docs" / "product" / "capabilities-index.md"
 
 MANIFEST_TS_OUT = REPO_ROOT / "apps" / "web" / "src" / "generated" / "orciaSiteManifest.ts"
 DOCS_HTML_OUT = REPO_ROOT / "docs" / "site-catalog" / "index.html"
 DIST_HTML_OUT = REPO_ROOT / "dist" / "orcia-site" / "index.html"
 
 __all__ = [
+    "CAPABILITIES_INDEX_OUT",
     "DOCS_HTML_OUT",
     "DIST_HTML_OUT",
     "HEX_COLOR_RE",
@@ -165,11 +167,16 @@ def _run_check(expected_ts: str, expected_html: str, manifest: dict[str, Any]) -
     root_scripts_dir = REPO_ROOT / "scripts"
     if str(root_scripts_dir) not in sys.path:
         sys.path.insert(0, str(root_scripts_dir))
+    import generate_capabilities_index  # type: ignore[import-not-found]
     import generate_tlr_index  # type: ignore[import-not-found]
 
     if generate_tlr_index.run(REPORTS_README.parent, check=True) != 0:
         errors.append(
             f"Out-of-sync Tech Lead reports index: {REPORTS_README} (run `pnpm site:sync`)"
+        )
+    if generate_capabilities_index.run(check=True) != 0:
+        errors.append(
+            f"Out-of-sync capabilities index: {CAPABILITIES_INDEX_OUT} (run `pnpm site:sync`)"
         )
 
     if not DOCS_HTML_OUT.exists():
@@ -205,9 +212,11 @@ def main(argv: list[str] | None = None) -> int:
         root_scripts_dir = REPO_ROOT / "scripts"
         if str(root_scripts_dir) not in sys.path:
             sys.path.insert(0, str(root_scripts_dir))
+        import generate_capabilities_index  # type: ignore[import-not-found]
         import generate_tlr_index  # type: ignore[import-not-found]
 
         generate_tlr_index.run(REPORTS_README.parent, check=False)
+        generate_capabilities_index.run(check=False)
 
     manifest = build_manifest_data()
     expected_ts = render_typescript_manifest(manifest)
@@ -226,6 +235,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print(
         f"[site:sync OK] Generated:\n"
+        f"  - {CAPABILITIES_INDEX_OUT.relative_to(REPO_ROOT)}\n"
         f"  - {MANIFEST_TS_OUT.relative_to(REPO_ROOT)}\n"
         f"  - {DOCS_HTML_OUT.relative_to(REPO_ROOT)}\n"
         f"  - {DIST_HTML_OUT.relative_to(REPO_ROOT)}\n"

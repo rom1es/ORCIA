@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 64,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 45,
-    "techLeadReportsCount": 261,
+    "techLeadReportsCount": 262,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -586,6 +586,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "reportFile": "32-1-token-first-agent-check-runner-receipts-and-suite-quick-wins-tech-lead-report.md",
       "domain": "Epic 32 Lot 1 — Token-First agent_check.py Runner, Worktree Receipts, Bounce Rule & Suite Quick Wins (T-D4, T-D5, T-D6, hygiene)",
       "summary": "Closed (done, independent Testing Verifier verified): built scripts/agent_check.py (74 L) + 9 scripts/agent_check_lib/ modules (<= 275 L), 21 runner unit tests (tests/unit/tooling/, <= 2…"
+    },
+    {
+      "date": "2026-11-27",
+      "phaseOrStory": "Epic 13 — Ad-hoc Hygiene",
+      "reportFile": "2026-11-27-sprint-status-archive-and-capabilities-index-tech-lead-report.md",
+      "domain": "Governance & Tooling (hygiene)",
+      "summary": "Archive 31 closed epics and 64 done action items from sprint-status.yaml; add deterministic capabilities-index.md generator and drift gates"
     },
     {
       "date": "2026-11-27",

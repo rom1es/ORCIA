@@ -1,0 +1,1111 @@
+# HISTORICAL ARCHIVE — NEVER TO BE READ BY AGENTS
+# Closed epics (1-32 excluding epic-13) and completed (`done`) action_items
+# archived verbatim from `docs/implementation-artifacts/sprint-status.yaml`.
+development_status:
+  epic-1: done
+  1-1-amorçage-du-monorepo-hybride-coquille-ui-direction-c-7-modul: done
+  1-2-authentification-hybride-bi-mode-oidc-locale-arbre-hiérarchi: done
+  1-3-catalogue-fédéré-multi-sources-n-git-n-jira-n-confluence-db: done
+  1-4-exécution-passthrough-service-principal-permission-broker-ia: done
+  1-5-workflows-système-d-amorçage-gouverné-jour-0-onboarding-auto: done
+  epic-1-retrospective: done
+  epic-2: done
+  2-1-modélisation-relationnelle-graphe-de-l-ontologie-à-4-niveaux: done
+  2-2-extraction-ontologique-temps-réel-isolée-par-branche-l4-simu: done
+  2-3-indexation-différenciée-incrémentale-multi-sources-n-conflue: done
+  2-4-graphe-tripartite-multi-sources-confluence-1-n-jira-1-n-git: done
+  epic-2-retrospective: done
+  epic-3: done
+  3-1-workflow-as-code-yaml-json-gabarits-d-artefact-multi-audienc: done
+  3-2-moteur-d-orchestration-durable-checkpoints-immuables-du-blac: done
+  3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w: done
+  3-2s-spike-dbos-transact-sur-postgresql-18-timebox-2-3-jours-vali: done
+  3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in: done
+  3-2c-phase-c-bus-d-événements-de-domaine-table-outbox-transaction: done
+  3-2d-phase-d-migration-frontend-spa-pure-vite-6-tanstack-router-v: done
+  3-2e-séparation-core-et-pack-sdlc-orcia-pack-sdlc-interface-de-co: done
+  3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d: done
+  3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc: done
+  3-4-ancrages-humains-obligatoires-human-led-anchor-card-arbitrag: done # backend + UI CockpitHumanLedGovernanceSection (HumanLedAnchorCard + ArbitrationTieBreakCard) câblés (BUG-E2E-02 résolu)
+  3-5-challenge-amont-inter-steps-avec-simulation-d-impact-what-if: done
+  epic-3-retrospective: optional
+  epic-4: done
+  4-1-sandbox-déterministe-isolée-hors-processus-palier-1-wasmtime: done
+  4-1a-phase-e-sandbox-bimodale-palier-2-hors-processus-conteneur-i: done
+  4-2-gates-agentiques-avec-orthogonalité-des-modèles-pseudonymisa: done
+  4-3-gates-humaines-adaptatives-briefing-de-revue-4-blocs-review: done # backend livré ; UI non montée dans apps/web → BUG-E2E-05
+  4-4-actions-transitions-de-workflows-jira-multi-projets-staged-a: done
+  epic-4-retrospective: optional
+  epic-5: done
+  5-1-centre-de-notifications-unifié-individuel-équipe-prise-en-ch: done # claim + diffusion SSE temps réel < 500 ms OK (BUG-E2E-03 résolu)
+  5-2-supervision-multi-runs-dynamique-1-s-sélecteur-de-périmètre: done
+  5-3-expérience-responsive-à-3-breakpoints-interface-mobile-compa: done
+  5-4-coquille-globale-direction-c-enrichie-mire-login-bi-mode-mode: done
+  epic-5-retrospective: optional
+  epic-6: done
+  6-1-registre-de-provenance-auditable-immuable-audit_ledger-appen: done
+  6-2-comptabilité-finops-complète-coût-de-setup-coût-de-run-vs-tt: done
+  6-3-tableau-de-bord-exécutif-d-impact-cognitif-anti-rubber-stamp: done
+  6-4-télémétrie-finops-multi-métriques-mcp-agents-distants-remoteu: done
+  epic-6-retrospective: optional
+  epic-7: done
+  7-0a-socle-de-journalisation-unifie-12-factor-json-stdout: done
+  7-0b-puits-de-logs-parametrable-logsinkqueryport-traces-otel: done
+  7-0c-conformite-deploiement-openshift-et-clusterlogforwarder: done
+  7-1-contrat-d-autonomie-signé-identité-service-principal-scopée: done
+  7-2-déclencheurs-événementiels-idempotents-webhook-log-sink-aler: done
+  7-4-supervision-ux-des-runs-autonomes-autonomousexecutionbadge-u: done
+  epic-7-retrospective: optional
+  # Epic 8 — Settings Hub, Enterprise Governance (6-Verb RBAC/ABAC), Cognitive Routing & Studio/Wizards (AD-21)
+  # Plan : docs/planning-artifacts/sprint-change-proposal-2026-10-30-epic8-and-ux-rework.md
+  epic-8: done
+  8-1-modele-habilitations-rbac-abac-actions-hierarchie: done
+  8-2-abstraction-llm-tiers-routage-auto: done
+  8-3-coquille-settings-tanstack-router-permission-guards: done
+  8-4-hub-connecteurs-et-gestion-des-secrets: done # pragma: allowlist secret
+  8-5-studio-workflows-et-registre-des-packs: done
+  8-6-parcours-initialisation-wizards-durables: done
+  epic-8-retrospective: optional
+  # Epic 9 — Coquille Ergonomique 4 Zones (Portals/EXEMPLE), Recherche ⌘K 2 Vitesses, Compte UserSettingsModal, Accostage 1/6 & Aide Contextuelle Hybride ?
+  # Spécification : docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/draft-ux-principes-et-architecture-2026-10-30.md (Principes A, A.2, A.3, C, D, D.4, E, F, G, Section 2)
+  epic-9: done
+  9-1-coquille-4-zones-direction-c-8-menus-non-numérotés-cockpit-ép: done
+  9-2-parcours-d-accostage-progressif-jour-0-accostage-1-6-protecti: done
+  9-3-recherche-fédérée-contextuelle-cmd-k-à-2-vitesses-zero-layout: done
+  9-4-menu-déroulant-login-useraccountdropdown-modale-usersettingsm: done
+  9-5-système-d-aide-contextuelle-hybride-helparticle-catalog_items: done
+  epic-9-retrospective: optional
+  # Epic 10 — Mon Assistant Tout-en-Un (Style EXEMPLE) : Gouvernance 4 Niveaux (Mode A & Mode B), Routage 3 Vitesses (TTFT < 1,2s), Citations Déterministes [S1]/[G1]/[O1] & Dossiers Collaboratifs
+  # Spécification : docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/draft-ux-principes-et-architecture-2026-10-30.md (Principes B, H, K, K.4, K.5, K.6)
+  epic-10: done
+  10-1-gouvernance-personnalisation-4-niveaux-mon-assistant-mode-a-m: done
+  10-2-garantie-de-latence-ttft-1-2s-cache-redis-prompt-assemblé-3-v: done
+  10-3-citation-déterministe-vérification-sources-s1-g1-o1-filtrage: done
+  10-4-dossiers-thématiques-continuité-mémoire-couche-5-partage-verr: done
+  epic-10-retrospective: optional
+  # Epic 11 — Gouvernance Métier de l'Espace (Mes Espaces 5 Onglets, Glossaire ✨ À valider, Routage Artefacts 4 Niveaux), Exposition MCP Gouvernée (Agents & Assistant /api/v1/mcp) & Banc de Test MCP/A2A 🔌 + Atelier orcia-pack-builder
+  # Spécification : docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/draft-ux-principes-et-architecture-2026-10-30.md (Principes D.4, I, J, L, M.1, M.2, M.4, Sections 3 & 4)
+  epic-11: done
+  11-1-refonte-mes-espaces-5-sous-onglets-cascade-localisation-artef: done
+  11-2-cycle-de-vie-glossaire-règles-métiers-à-valider-extraction-2: done
+  11-3-déclaration-services-mcp-agents-distants-a2a-banc-de-test-à-c: done
+  11-4-pack-métier-système-orcia-pack-builder-processus-1-à-4-what-i: done
+  11-5-processus-5-generate-and-attach-help-validateur-validate_help: done
+  epic-11-retrospective: optional
+  # Epic 12 — Intégration Bout-en-Bout du Portail SPA (apps/web) : Bascule Shell 4 Zones Direction C (8 Entrées Fixes), Cockpit Épuré, Mon Assistant (Epic 10), Mes Espaces 5 Onglets, Banc de Test MCP 🔌 & Atelier orcia-pack-builder (Epic 11)
+  epic-12: done
+  12-1-bascule-apps-web-shell-4-zones-direction-c-8-entrees-cockpit: done
+  12-2-montage-ecran-mon-assistant-tout-en-un-apps-web-epic-10: done
+  12-3-montage-mes-espaces-5-onglets-adn-starlark-mcp-pack-builder: done
+  12-4-epuration-ux-zero-donnee-fictive-modale-admin-jour-0-grisage-et-purge-nfr: done
+  epic-12-retrospective: optional
+  # Epic 14 (traduction de specs/epic-09-process-studio) — ORCIA Process Studio v2 : Cartographie VSM, Studio Agentique Déterministe 5 Blocs (Control-M), Gates Multi-Niveaux Auto-Heal 3x & Portail HITL 4 Actions
+  epic-14: done
+  14-1-modele-agnostique-orcia-core-vsm-workflows-bornes-claim-check-et-seed-sdlc: done
+  14-2-vue-cartographie-chaine-de-valeur-macro-vsm-et-comparaison-3-etats: done
+  14-3-studio-conception-workflow-5-blocs-control-m-copilote-et-sous-etapes-dbos: done
+  14-4-pipeline-ordonne-gates-deterministes-auto-heal-3x-probabilistes-et-what-if: done
+  14-5-dispositifs-interaction-humaine-hitl-4-actions-et-boucles-reprise-iteratives: done
+  epic-14-retrospective: optional
+  # Epic 15 (traduction de specs/epic-10-packs-simplification) — Simplification Architecturale des Packs & Connecteurs (packages/orcia-connectors, fusion orcia-kernel dans orcia-core & Packs 100 % Déclaratifs packs/<domaine>/)
+  epic-15: done
+  15-1-creation-orcia-connectors-protocol-4-methodes-et-fusion-orcia-kernel-dans-core: done
+  15-2-chargeur-declarative-pack-loader-export-zip-et-conversion-packs-sdlc-orcia-docs: done
+  15-3-ecran-settings-packs-simplifie-et-monitoring-connecteurs-requis: done
+  epic-15-retrospective: optional
+  # Epic 16 (traduction consolidée de specs/epic-16-reflexive-agent-harness) — Orchestration Réflexive (Mon Assistant, Mes Agents & Processus Pilotés par l'Objectif), Exploration Chirurgicale #Lstart-end & Articulation avec les Processus Pilotés par les Jalons (CAP-160)
+  epic-16: done
+  16-1-quatre-primitives-exploration-chirurgicale-et-ports-hexagonaux: done
+  16-2-moteur-reflexif-non-deterministe-asyncio-sse-et-suspend-resume: done
+  16-3-double-mode-processus-objectif-vs-jalons-dispatcher-et-packs: done
+  16-4-trace-execution-ui-et-inspecteur-chirurgical-lignes-bout-en-bout: done
+  epic-16-retrospective: optional
+  # Epic 17 — Refonte Gouvernance IAM par Délégation Hiérarchique, Organigramme en Modales, Annuaire des Comptes & Mon Compte, Connecteurs Socle vs Sources Passthrough et Coquille @orcia/ui
+  epic-17: done
+  17-1-coquille-ui-direction-c-reset-boutons-icones-svg-filaires-et-5-onglets-configuration: done
+  17-2-organigramme-hierarchique-indente-modales-edition-membres-et-facturation: done
+  17-3-annuaire-comptes-matrice-roles-delegues-secops-et-suppression-secrets-exposes: done
+  17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag: done
+  17-5-refonte-hub-modeles-ia-table-sante-modale-secrets-aes256-et-drainage: done
+  epic-17-retrospective: optional
+  # Epic 18 — Refonte Multi-Nature des Sources d'Espace (/workspaces/$wsId/sources), Moteur de Fraîcheur (SHA-256 & Sonde 24h), Contrat codegraph-mcp & Service GitNexus
+  epic-18: done
+  18-1-deport-sources-espaces-url-wsid-filtres-multi-nature-et-modale-rattachement: done
+  18-2-moteur-fraicheur-webhooks-outbox-sha256-sonde-24h-et-gouvernance-gitnexus: done
+  18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact: done
+  18-4-infrastructure-docker-compose-gitnexus-mcp-volume-dedie-et-registre-capacites: done
+  epic-18-retrospective: optional
+  # Epic 19 — Hub Modèles IA Fiable, Découverte 0 Token, Test Réel & Embeddings Sémantiques (AD-24)
+  epic-19: done
+  19-1-modale-ui-champs-vides-placeholders-fournisseurs-et-suppression-puces-en-dur: done
+  19-2-decouverte-dynamique-modeles-0-token-combobox-filtrable-et-saisie-libre: done
+  19-3-test-connexion-reel-chat-max-tokens-1-et-embeddings-latence-et-rfc-9457: done
+  19-4-suppression-noms-modeles-en-dur-backend-tier-mappings-vides-et-amorcage-jour-0: done
+  19-5-usage-embedding-hub-port-hexagonal-embedding-port-et-adaptateurs-httpx: done
+  19-6-migration-alembic-suppression-hachage-sha256-prod-et-blocage-sans-modele: done
+  19-7-reindexation-bloquante-idempotente-suivi-progression-et-verrouillage-assistant: done
+  epic-19-retrospective: optional
+  # Epic 20 — Gouvernance Déléguée (« Mon Organisation » & Audit Scopé), Glossaire PG18 & ONTOLOGY_LEAD, Consolidation « Mon Compte » & Page « Profil »
+  epic-20: done
+  20-1-menu-mon-organisation-delegation-bu-team-lead-invitation-iam-et-audit-scope: done
+  20-2-menu-glossaire-persistance-ontologie-pg18-role-ontology-lead-et-promotions-l4-l1: done
+  20-3-suppression-login-top-right-popup-mon-compte-bas-gauche-et-modale-parametres-pg18: done
+  20-4-page-profil-utilisateur-kpis-tokens-series-populaires-et-telemetrie-assistant: done
+  epic-20-retrospective: optional
+  # Epic 21 — Couverture Intégrale User Journeys (UJ-1..UJ-20), Campagne E2E Vérité PG18, Captures PNG, Audit Sally × Winston & Initialisation Epic 22
+  epic-21: done
+  21-1-classification-65-capacites-feature-foundation-et-schema-capabilities-yaml: done
+  21-2-referentiel-user-journeys-uj-1-a-uj-20-prd-experience-et-coherence-auto: done
+  21-3-refactoring-sync-site-catalog-et-verrou-ci-cap-uj-spec-e2e-site-check: done
+  21-4-harnais-playwright-verite-pg18-capture-png-finale-et-maj-16-specs-existantes: done
+  21-5-nouvelles-specs-e2e-lot-a-auth-2fa-mon-organisation-inbox-et-hub-ia-broker: done
+  21-6-nouvelles-specs-e2e-lot-b-sources-codegraph-adn-ontologie-catalogue-packs-mcp: done
+  21-7-nouvelles-specs-e2e-lot-c-orchestration-studio-v2-finops-log-sink-et-assistant: done
+  21-8-campagne-e2e-integrale-captures-bilan-audit-sally-winston-et-capabilities: done
+  21-9-analyse-gitnexus-rapports-tech-lead-plan-directeur-et-initialisation-epic-22: done
+  epic-21-retrospective: optional
+  # Epic 22 — Remédiation E2E Vérité PG18, Portails & Shell Direction C, Purge Jargon, Gardes CI, Campagne & Initialisation Epic 23 (REM-01..REM-34)
+  # Plan directeur : docs/planning-artifacts/sprint-change-proposal-2026-11-18-epic-22-remediation-plan.md
+  epic-22: done
+  22-1-socle-identite-uuid-workspaces-permissions-admin-et-fin-bypass-pg: done
+  22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats: done
+  22-3-persistance-pg18-assistant-notifications-sse-et-permission-broker: done
+  22-4-persistance-pg18-orchestration-gates-et-garde-kill-switch: done
+  22-5-persistance-pg18-packs-declaratifs-et-wizards-durables: done
+  22-6-coquille-direction-c-8-entrees-mobile-companion-aide-dynamique-et-cockpit: done
+  22-7-finitions-ux-ui-erreurs-rfc9457-grilles-devise-euro-et-purge-jargon: done
+  22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime: done
+  22-8a-assainissement-fail-closed-vitest-composition-root-sans-override-et-ci-complete: done
+  22-9-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston: done
+  22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23: done
+  epic-22-retrospective: optional
+  # Epic 23 — Remédiation Finale E2E, Transport SSE Authentifié, Aide Contextuelle 4 Blocs, Unification Accostage 6 Jalons, Sobriété Cockpit, Audit SQL PG18, Campagne 110/110 & Initialisation Epic 24 (REM23-01..REM23-13)
+  # Plan directeur : docs/planning-artifacts/sprint-change-proposal-2026-11-18-epic-23-remediation-plan.md
+  epic-23: done
+  23-1-reset-jour0-e2e-truncate-cascade-connector-schemes-et-redis: done
+  23-2-transport-sse-authentifie-createrequestsse-smoke-00-et-diagnostic-401: done
+  23-3-zone-4-aide-contextuelle-fidele-a-la-route-et-4-blocs-design-md: done
+  23-4-unification-accostage-x-sur-6-fin-fantomes-jour0-et-modale-admin: done
+  23-5-sobriete-cockpit-topbar-sans-doublon-assistant-et-login: done
+  23-6a-durcissement-anti-goodhart-gardes-openapi-ast-geometrie-et-reset-pg18: done
+  23-7-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston: done
+  23-8-rapports-tech-lead-plan-correction-global-et-initialisation-epic-24: done
+  epic-23-retrospective: optional
+  # Epic 24 — Remédiation Finale Case B post-23.7 : Persistance PG18 (Jira Staged, MCP, VSM v2), Triggers UUIDv7, Waivers & ADN, CSS Tailwind v4, Navigation Zone 4, Zéro Jargon & Preuve Desktop 52/52 (REM24-01..REM24-12, USER24-BUG-1..6)
+  # Plan directeur : docs/planning-artifacts/sprint-change-proposal-2026-11-20-epic-24-remediation-plan.md
+  epic-24: done
+  24-1-persistance-pg18-actions-jira-staged-mcp-et-vsm-v2: done
+  24-2-triggers-uuidv7-sans-collision-waivers-await-adn-pg18-et-fin-default-ws: done
+  24-3-banc-mcp-audit-ledger-fin-pass-optimiste-et-assainissement-composition-root: done
+  24-4-refonte-css-tailwind-tokens-modales-rgaa-contraste-onglets-et-shell: done
+  24-5-identite-accostage-cockpit-sync-navigation-zone4-et-coherence-jour0: done
+  24-6-recherche-cmdk-filtre-langue-purge-jargon-packs-et-microcopy: done
+  24-7-reconciliation-e2e-captures-jalons-campagne-52-sur-52-et-cloture-epic-24: done
+  epic-24-retrospective: optional
+  # Epic 25 — Sobriété Cockpit Jour 0, Coquille 9 Entrées (Mon Organisation & Administration), Espace Personnel Automatique PG18, Hub Modèles IA Fiable & Découplage Mon Assistant / RAG (AD-8, AD-16, AD-24)
+  epic-25: done
+  25-1-espace-personnel-auto-pg18-accostage-unifie-et-degrisage-processus: done
+  25-2-coquille-9-entrees-mon-organisation-administration-topbar-orcia-et-selecteur-espace: done
+  25-3-sobriete-cockpit-jour0-purge-run-demo-ram-et-retrait-blocs-attente: done
+  25-4-hub-modeles-ia-suppression-fiable-spinner-unifie-erreur-locale-et-masquage-reindexation: done
+  25-5-decouplage-assistant-sans-modele-semantique-blocage-sources-rag-et-cloture-epic-25: done
+  epic-25-retrospective: optional
+  # Epic 26 — Unified, Governed & Persistent "Mon Assistant" Harness (Single Turn Engine, Governed Tool Loop, Real Context, Scope Security, Zero RAM State) (AD-3, AD-15, AD-19, AD-24, proposed AD-25)
+  # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-21-epic-26-harnais-assistant-remediation-plan.md
+  # Source audit: docs/implementation-artifacts/tech-lead-reports/2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md
+  # Decisions   : docs/implementation-artifacts/epic-26-decisions-grill-2026-11-21.md (D1-D11 amended by R1-R9)
+  # Lots        : L0 26-0 (done) | L1 26-1 (done) | L2 26-2 (done) | L3 26-3 (done) -> 26-4a (done) -> 26-4b (done) | L4 26-5 (done) | L5 26-6a (done) -> 26-6b (done) | L6 26-7 (done) -> 26-8 (done) | L7 26-9 (done) -> 26-10 (done)
+  epic-26: done
+  26-0-adr-unified-turn-engine-sse-v2-and-ssrf-policy: done
+  26-1-immediate-security-hardening-scope-observer-and-ssrf: done
+  26-2-core-llm-streaming-extraction-and-unified-prompt-builder: done
+  26-3-turn-reliability-redis-registry-async-loop-and-rate-limit: done
+  26-4a-redis-thread-locks-outbox-hub-invalidation-and-alembic-ddl: done
+  26-4b-pg18-persistence-mode-a-governance-feedback-and-folders: done
+  26-5-real-context-ontology-hybrid-rag-blackboard-and-context-budget: done
+  26-6a-llm-streaming-port-tool-calls-and-loop-budgets: done
+  26-6b-governed-assistant-tool-router-broker-v5-anchors-and-audit: done
+  26-7-unified-turn-engine-convergence-direct-cutover-and-citations: done
+  26-8-continue-in-process-dbos-pg18-and-human-anchors: done
+  26-9-ui-and-sdk-wiring-mode-a-citations-history-and-deepen: done
+  26-10-golden-evals-red-team-multi-worker-and-epic-26-closure: done
+  epic-26-retrospective: optional
+  # Epic 27 — English-Only Development & Documentation Governance, 100% Bilingual FR/EN Web Application & Deterministic i18n Controls (AD-17, AD-19, RFC 9457)
+  # Source audit: docs/implementation-artifacts/tech-lead-reports/2026-11-20-audit-i18n-chaines-codees-en-dur-tech-lead-report.md
+  # Raw inventory: docs/implementation-artifacts/archive/2026-11-20-i18n-audit-inventory-raw.md
+  # Decisions   : docs/implementation-artifacts/epic-27-decisions-grill-2026-11-23.md (D1-D4)
+  # Lots        : L0 27-1 | L1 27-2 | L2 27-3 -> 27-4 | L3 27-5 -> 27-6 | L4 27-7 | L5 27-8
+  epic-27: done
+  27-1-deterministic-i18n-ci-guardrails-and-client-error-code-foundation: done
+  27-2-category-a-client-error-codes-bridges-stores-and-rfc9457-banner: done
+  27-3-category-c-shell-contextual-help-notifications-routes-and-wizards: done
+  27-4-category-c-cockpit-assistant-workspaces-gates-catalog-and-admin: done
+  27-5-category-c-process-studio-v2-vsm-execution-and-bilingual-catalog-data: done
+  27-6-category-c-orcia-ui-design-system-primitives-typed-label-props: done
+  27-7-categories-b-and-d-bilingual-rfc9457-backend-catalogs-prompts-and-seeds: done
+  27-8-zero-baseline-lock-bilingual-e2e-verification-and-epic-27-closure: done
+  epic-27-retrospective: optional
+  # Epic 28 — Unified "Mes Espaces" (/workspaces) 5-Tab Screen, Component De-Duplication & Direction C Sobriety (WX-01..WX-06)
+  # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-23-epic-28-workspaces-unification.md
+  # Dependencies: Wait for Epic 27 (Stories 27.4 & 27.6 i18n extraction on features/workspaces & packages/ui) before starting Story 28.1
+  # Lots        : L1 28-1 -> 28-2 | L2 28-3 -> 28-4
+  epic-28: done
+  28-1-single-workspace-header-sidebar-scope-sync-and-zero-uuid-leak: done
+  28-2-canonical-five-tab-container-deduplication-and-tab1-sobriety: done
+  28-3-scoped-pg18-sources-deliverables-and-members-tabs-consolidation: done
+  28-4-tab4-glossary-dna-starlark-encapsulation-and-e2e-lock: done
+  epic-28-retrospective: optional
+  # Epic 29 — Canonical Page Headers (<OrciaPageHeader />), Multi-Workspace Scope & CONFIDENTIAL_RESTRICTED Hardening, Visual Grammar & Cross-Screen Consistency (UH-01..UH-15)
+  # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-24-epic-29-ui-headers-scope-and-screen-consistency.md
+  # Lots        : L1 29-1 | 29-2 | 29-3 -> L2 29-4 -> L3 29-5 | 29-6 -> L4 29-7
+  epic-29: done
+  29-1-multi-workspace-scope-resolution-processes-404-finops-403-and-error-empty-guard: done
+  29-2-scoped-workspace-patch-confidential-isolation-rollback-and-single-banner: done
+  29-3-assistant-prompt-sanitization-speed-tier-alignment-and-rbac-notices: done
+  29-4-canonical-page-header-tab-strip-data-card-and-visual-grammar-tokens: done
+  29-5-header-layout-convergence-assistant-processes-agents-and-finops: done
+  29-6-header-layout-convergence-workspaces-organization-help-and-secondary: done
+  29-7-icon-purge-copy-hygiene-contextual-help-ci-guard-and-epic-29-closure: done
+  epic-29-retrospective: optional
+  # Epic 30 — Honest Save Semantics, Clean Conversational Prompts, Real PG18 Process Runs & Focus Review, and Agent Lifecycle Hardening (UX30-01..UX30-16)
+  # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-25-epic-30-assistant-processes-and-agents-ux-hardening.md
+  # Lots        : L1 30-1 -> 30-2 | L2 30-3 -> 30-4 | L3 30-5 -> L4 30-6
+  epic-30: done
+  30-1-assistant-settings-explicit-save-dirty-guard-and-empty-instructions: done
+  30-2-assistant-conversational-prompt-cleanup-and-empty-evidence-guard: done
+  30-3-processes-real-pg18-pending-runs-live-llm-and-coalesced-trace: done
+  30-4-processes-tabbed-hub-and-focus-review-action-artifact-reasoning: done
+  30-5-agents-pg18-mcp-sync-clean-modal-save-and-draft-active-lifecycle: done
+  30-6-epic-30-anti-regression-audits-bilingual-e2e-and-closure: done
+  epic-30-retrospective: optional
+  # Epic 31 — Declarative APM-Compatible Business Packs, Unified Workspace Activation, Qualified Namespacing & Pack Composer (D1..D6, R1..R5, A1..A4)
+  # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-25-epic-31-declarative-apm-packs-import-export.md
+  # Decisions   : docs/implementation-artifacts/epic-31-decisions-grill-2026-11-25.md
+  # Lots        : L1 31-1 -> L2 31-2 -> 31-3 -> L3 31-4 -> L4 31-5 -> L5 31-6 -> L6 31-7
+  epic-31: done
+  31-1-pack-bundles-v2-ddl-and-native-apm-codec: done
+  31-2-transactional-pack-import-day0-seed-and-purge-disk-ts-hardcoding: done
+  31-3-qualified-pack-namespacing-and-flat-workspace-pack-ontology: done
+  31-4-workspace-pack-activation-slot-bindings-422-guard-and-run-lock-pinning: done
+  31-5-pack-composer-anti-hostage-unlink-closure-gate-and-scrubbed-zip-export: done
+  31-6-direction-c-bilingual-pack-registry-composer-slot-drawer-and-autocomplete-ui: done
+  31-7-epic-31-red-team-security-roundtrip-e2e-help-sync-and-closure: done
+  epic-31-retrospective: optional
+  # Epic 32 — Test Pyramid Pruning, Token Economy & Anti-Bloat Tech Debt (T-D1..T-D11)
+  # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-27-epic-32-test-pyramid-token-economy.md
+  # Evidence    : docs/implementation-artifacts/test-optimization-2026-11-27/
+  # Lots        : L1 32-1 -> L2 32-2 -> L3 32-3 -> L4 32-4 -> L5 32-5
+  # KPIs        : baseline Epics 30-31 (13 stories), evaluated on Epic 33 feature stories (real bugs caught >= 3.0 floor)
+  epic-32: done
+  32-1-token-first-agent-check-runner-receipts-and-suite-quick-wins: done
+  32-2-agent-protocol-small-context-fixer-and-rules-diet: done
+  32-3-combined-coverage-diff-cover-shared-pg18-infra-and-ratchet-lint: done
+  32-4-repo-wide-test-pyramid-pruning-with-coverage-safety-gate: done
+  32-5-strict-anti-bloat-lint-openapi-vitest-mocks-and-survivor-split: done
+  epic-32-retrospective: optional
+action_items:
+  - id: ACTION_ITEM-8.1
+    title: "Politiques de restriction explicite (DENY prioritaire, INHERITANCE_BLOCK) sur sous-entités sensibles"
+    status: done
+    epic: epic-8
+    story_ref: "8-1-modele-habilitations-rbac-abac-actions-hierarchie"
+    priority: P2
+    description: >
+      Extension post-MVP du moteur d'habilitation : DENY l'emporte sur tout ALLOW hérité
+      et INHERITANCE_BLOCK rompt l'héritage additif sur une sous-entité.
+  - id: ACTION_ITEM-8.2
+    title: "Granularité contextuelle du verbe execute (env == 'staging', plafond de tokens par run)"
+    status: done
+    epic: epic-8
+    story_ref: "8-1-modele-habilitations-rbac-abac-actions-hierarchie"
+    priority: P2
+    description: >
+      Conditions ABAC sur execute : restriction par environnement et plafond de budget
+      tokens/run, évaluées par le broker de permissions.
+  - id: ACTION_ITEM-8.3
+    title: "Attribut d'opacité hidden_when_unauthorized pour objets sensibles (coffres-forts, bases confidentielles)"
+    status: done
+    epic: epic-8
+    story_ref: "8-1-modele-habilitations-rbac-abac-actions-hierarchie"
+    priority: P2
+    description: >
+      Masquage total (pas de cadenas ni de découverte passive) de certains types d'objets
+      pour les utilisateurs non habilités.
+  - id: SEC-03
+    title: "Adaptateur KMS / Secret Manager externe (Infisical / HashiCorp Vault /
+      Cloud KMS) & Enveloppe DEK/KEK"
+    status: done
+    epic: epic-6
+    description: >
+      Introduire un port hexagonal `SecretProviderPort` dans `packages/orcia-kernel/ports.py`
+      avec
+      chiffrement par enveloppe (Data Encryption Key par Workspace chiffrée par une
+      Key Encryption Key
+      dans Vault/KMS) et audit immuable des rotations de clés dans `audit_ledger`.
+  - id: UX-01
+    title: "Refonte complète UX/UI (Sally / bmad-ux) selon les 11 règles fondamentales
+      (Loi de Hick, 2 typographies max, grilles, feedback, Mobile-First)"
+    status: done
+    epic: epic-1
+    description: >
+      Revoir l'ensemble des écrans `apps/web` et composants `@orcia/ui` (`packages/ui`)
+      avec l'agent
+      BMAD UX Designer (`Sally` / `bmad-ux`) pour éliminer la surcharge visuelle de
+      `ModuleWorkspaceView`
+      (séparation stricte par module selon la Loi de Hick), unifier sur 2 typographies
+      maximum
+      (`Inter`/`Geist Sans` + `JetBrains Mono`), renforcer la hiérarchie visuelle,
+      les grilles CSS,
+      les sorties de secours et les retours visuels immédiats.
+  - id: SPEC-01
+    title: "Génération systématique des spécifications `spec-{story-key}.md` et enrichissement
+      des rapports Tech Lead pour l'Epic 2"
+    action: "Spécifications et rapports Tech Lead Epic 2"
+    priority: P2
+    depends_on: []
+    ad_ref: "AD-17"
+    owner: "Amelia (Dev)"
+    status: done
+    epic: epic-2
+    description: >
+      Créer les spécifications `spec-2-1` à `spec-2-4` ainsi que `epic-2-context.md`
+      et les
+      rétrospectives `epic-1-retro-2026-10-25.md` / `epic-2-retro-2026-10-25.md` dans
+      `docs/implementation-artifacts/`.
+  - id: ARCH-M1
+    title: "Extraction du noyau partagé minimal packages/orcia-kernel & rupture des 3 cycles inter-domaines (M1, M2, Q1: 1A)"
+    action: "Créer packages/orcia-kernel (ids.py, enums.py, errors.py, events.py, ports.py) et éliminer les 3 cycles (blackboard <-> orchestration, catalog <-> bootstrap, permissions <-> bootstrap)"
+    priority: P0
+    depends_on: []
+    ad_ref: "AD-1, AD-19"
+    story_ref: "3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w"
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: done
+    epic: epic-3
+    description: >
+      Permettre à chaque domaine de packages/orcia-core d'évoluer indépendamment sans dépendance circulaire.
+  - id: ARCH-M3
+    title: "Déplacement de packages/orcia-core/schemas/ (2 060 lignes) vers apps/api/src/orcia_api/schemas/ & éclatement de domain/exceptions.py en <domaine>/errors.py (M3, M4)"
+    action: "Sortir les 10 fichiers de DTOs HTTP hors de orcia-core vers apps/api/src/orcia_api/schemas/<domaine>.py et remplacer domain/exceptions.py (risque CRITICAL 59 dépendants) par <domaine>/errors.py + registre HTTP RFC 9457 dans apps/api"
+    priority: P0
+    depends_on:
+      - ARCH-M1
+    ad_ref: "AD-1, AD-19"
+    story_ref: "3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w"
+    owner: "Amelia (Dev)"
+    status: done
+    epic: epic-3
+    description: >
+      Supprimer le couplage entre le domaine métier et le contrat REST et éliminer le point chaud domain/exceptions.py.
+  - id: ARCH-M5
+    title: "Suppression des 3 singletons d'import (_DEFAULT_*_SERVICE) et point d'assemblage unique FastAPI lifespan/Depends (M5)"
+    action: "Supprimer _DEFAULT_AUTH_SERVICE, _DEFAULT_CATALOG_SERVICE et _DEFAULT_ORCHESTRATION_SERVICE dans apps/api/src/orcia_api/routers/{auth,catalog,orchestration}.py, déplacer les 39 InMemory* dans tests/unit/fakes/ et câbler exclusivement dans dependencies.py"
+    priority: P0
+    depends_on:
+      - ARCH-M1
+    ad_ref: "AD-1, AD-19"
+    story_ref: "3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w"
+    owner: "Amelia (Dev)"
+    status: done
+    epic: epic-3
+    description: >
+      Garantir l'inversion de contrôle et un seul point d'assemblage (Composition Root) dans apps/api et apps/worker.
+  - id: ARCH-P3
+    title: "Réalignement des versions de la stack, workspace uv à 4 packages + uv.lock & Renovate (P3, Q1: 1A)"
+    action: "Structurer le workspace uv à 4 packages (packages/orcia-kernel, packages/orcia-core, apps/api, apps/worker + uv.lock), aligner les bornes minimales Python/TS sur les versions réelles validées et configurer Renovate"
+    priority: P0
+    depends_on: []
+    ad_ref: "AD-1, AD-17, AD-19"
+    story_ref: "3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w"
+    owner: "Karim (Platform) / Amelia (Dev)"
+    status: done
+    epic: epic-3
+    description: >
+      Corriger l'écart entre la Spine et pyproject.toml / package.json et garantir la reproductibilité des builds via uv.lock et pnpm-lock.yaml.
+  - id: ARCH-P4
+    title: "Vérification automatique du graphe d'imports et de l'encapsulation _internal/ par import-linter 2.7 en CI (P4, Q4: 4A)"
+    action: "Configurer import-linter 2.7 (lint-imports) pour vérifier l'ordre des couches (orcia_kernel <- orcia_core <- api/worker), l'indépendance des domaines pairs, l'encapsulation de <domaine>._internal et l'absence de fastapi/sqlalchemy/dramatiq/dbos/redis/litellm dans les modèles et ports"
+    priority: P0
+    depends_on:
+      - ARCH-M1
+      - ARCH-P3
+    ad_ref: "AD-1, AD-17, AD-19"
+    story_ref: "3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w"
+    owner: "Amelia (Dev)"
+    status: done
+    epic: epic-3
+    description: >
+      Transformer les règles d'architecture d'AD-1 et AD-19 en garde-fou bloquant de la couche 1 de tests CI.
+  - id: ARCH-P2-SPIKE
+    title: "Spike timeboxé (2–3 jours) de validation de DBOS Transact (dbos 2.14.0, MIT) sur PostgreSQL 18 (C1, C2, OQ-01)"
+    action: "Valider en parallèle de 3.2a les 8 critères Go/No-Go (DBOS.recv pause/reprise après crash, DBOS.fork_workflow, @DBOS.scheduled, SetWorkflowID sans doublon, cohabitation Blackboard append-only et Dramatiq, intégration Unit of Work SQLAlchemy 2.1 Asyncio, testabilité testcontainers) et livrer le rapport Go/No-Go"
+    priority: P0
+    depends_on: []
+    ad_ref: "AD-2, AD-13, AD-18"
+    story_ref: "3-2s-spike-dbos-transact-sur-postgresql-18-timebox-2-3-jours-vali"
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: done
+    epic: epic-3
+    description: >
+      Mener un spike court sans dépendance en parallèle de Story 3.2a pour valider formellement DBOS Transact sur PostgreSQL 18 et figer le patron de session SQLAlchemy avant d'écrire les repositories d'ARCH-P1 et d'intégrer DBOS en Story 3.2b.
+  - id: ARCH-P1
+    title: "Persistance réelle de bout en bout : repositories SQLAlchemy 2.1 Asyncio + asyncpg (Unit of Work dans <domaine>/_internal/, Q4: 4A), LiteLLMAdapter & reprise sur redémarrage (P1, C2, C6)"
+    action: "Implémenter les repositories SQLAlchemy 2.1 Async + asyncpg et la Unit of Work PostgreSQL 18 dans <domaine>/_internal/ (schéma public unique sur les migrations Alembic 0001..0011 selon le patron validé par ARCH-P2-SPIKE) et implémenter LiteLLMAdapter à côté de DeterministicCassetteLLM derrière LLMPort"
+    priority: P0
+    depends_on:
+      - ARCH-M5
+      - ARCH-P3
+      - ARCH-P4
+      - ARCH-P2-SPIKE
+    ad_ref: "AD-1, AD-2, AD-10, AD-17, AD-19"
+    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in"
+    owner: "Amelia (Dev) / Winston (Architect)"
+    status: done
+    epic: epic-3
+    description: >
+      Relier les services de tous les domaines à des repositories SQLAlchemy 2.1 Asyncio dans <domaine>/_internal/ sur PostgreSQL 18 + pgvector et livrer en Story 3.2b un Workflow Run complet traversant API -> Worker -> PostgreSQL 18 et reprenant son exécution après extinction/redémarrage des processus sans aucune perte d'état.
+  - id: ARCH-P2
+    title: "Intégration du moteur d'exécution durable transactionnel DBOS Transact (dbos 2.14.0, MIT) sur PostgreSQL 18 conditionnée au Go de Story 3.2s (P2, OQ-01, C1, C2, C4)"
+    action: "Intégrer DBOS Transact (@DBOS.workflow, @DBOS.step, DBOS.recv, @DBOS.scheduled, DBOS.fork_workflow, SetWorkflowID) sur PostgreSQL 18 (sous réserve du verdict Go d'ARCH-P2-SPIKE), conserver Dramatiq pour le délestage lourd (Docling/RAG), maintenir verts les tests de Story 3.2 et supprimer le moteur maison remplacé (0 code mort)"
+    priority: P0
+    depends_on:
+      - ARCH-P2-SPIKE
+      - ARCH-M5
+      - ARCH-P4
+    ad_ref: "AD-2, AD-13, AD-18"
+    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in"
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: done
+    epic: epic-3
+    description: >
+      Intégrer DBOS Transact en Story 3.2b après validation du spike 3.2s, sans dépendance circulaire vers ARCH-P1, en conservant les tests de Story 3.2 comme suite de non-régression et en supprimant le code mort du moteur en mémoire initial.
+  - id: ARCH-P6
+    title: "Remplacement de MinIO (AGPL-3.0, archivé en 2026) par ObjectStoragePort S3 v4 adossé à SeaweedFS (Apache-2.0) (P6, OQ-03)"
+    action: "Implémenter l'adaptateur S3 v4 SeaweedFS derrière ObjectStoragePort (orcia_kernel.ports) et remplacer l'image MinIO par SeaweedFS 4.17 (Apache-2.0) dans docker-compose.yml"
+    priority: P1
+    depends_on:
+      - ARCH-P1
+    ad_ref: "AD-5"
+    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in"
+    owner: "Karim (Platform)"
+    status: done
+    epic: epic-3
+    description: >
+      Éliminer le risque de licence AGPL-3.0 et de maintenance lié à l'archivage du dépôt communautaire MinIO en 2026 tout en conservant le contrat S3 v4 CAS immuable (cas/<sha256>).
+  - id: ARCH-P7
+    title: "Recherche lexicale BM25 native PostgreSQL 18 (tsvector + GIN + ts_rank_cd pondéré A/B/C/D + RRF k=60) sans extension AGPL (P7)"
+    action: "Implémenter en SQL réel la recherche hybride pgvector halfvec(1024) HNSW + PostgreSQL 18 tsvector GIN + ts_rank_cd pondéré fusionnés par RRF (k=60), et borner la traversée CTE du graphe tripartite à depth <= 2"
+    priority: P1
+    depends_on:
+      - ARCH-P1
+    ad_ref: "AD-8"
+    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in"
+    owner: "Amelia (Dev)"
+    status: done
+    epic: epic-3
+    description: >
+      Écarter ParadeDB pg_search (licence AGPL-3.0 et restrictions sur réplicas physiques) pour le MVP et exploiter l'indexation GIN tsvector déjà créée par la migration 0008.
+  - id: ARCH-P9
+    title: "Instrumentation OpenTelemetry de bout en bout (FastAPI, SQLAlchemy, DBOS/Dramatiq) et corrélation trace_id RFC 9457 (P9)"
+    action: "Brancher opentelemetry-sdk, opentelemetry-instrumentation-fastapi et opentelemetry-instrumentation-sqlalchemy dans apps/api et apps/worker pour propager le traceparent W3C réel dans structlog, audit_ledger et les erreurs RFC 9457"
+    priority: P0
+    depends_on:
+      - ARCH-P1
+    ad_ref: "AD-12"
+    story_ref: "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in"
+    owner: "Karim (Platform) / Amelia (Dev)"
+    status: done
+    epic: epic-3
+    description: >
+      Remplacer les identifiants de trace synthétiques par de vraies traces distribuées OpenTelemetry corrélant API, Worker, DB et enveloppes d'erreur RFC 9457.
+  - id: ARCH-M6
+    title: "Bus d'événements de domaine, table Outbox transactionnelle domain_events_outbox indépendante du moteur (OutboxRelayPort, migration 0012) & plugins entry_points (M6, M7, Q2: 2A, Q3: 3A, C3)"
+    action: "Créer la table domain_events_outbox, publier StepCompleted/ArtifactProduced/GateEvaluated/RunTerminated dans la même transaction SQL que le changement d'état, relayer de manière idempotente via OutboxRelayPort (implémentation Dramatiq ou DBOS) vers audit_finops/ontology/sse et charger les entry_points orcia.uri_resolvers / orcia.llm_gateways"
+    priority: P0
+    depends_on:
+      - ARCH-P1
+    ad_ref: "AD-12, AD-19"
+    story_ref: "3-2c-phase-c-bus-d-événements-de-domaine-table-outbox-transaction"
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: done
+    epic: epic-3
+    description: >
+      Découpler orchestration/engine.py des effets secondaires non bloquants (FinOps, audit, extraction ontologique, SSE) avec garantie transactionnelle Outbox indépendante du moteur d'orchestration (OutboxRelayPort) et extensibilité par plugins entry_points.
+  - id: ARCH-P8
+    title: "Migration de apps/web vers Vite 6 + TanStack Router v1 (SPA pure), dépendances frontend & découpage features/<domaine>/ en parallèle de 3.2b/3.2c (P8, M11, OQ-02, C7)"
+    action: "Remplacer Next.js par Vite 6 + @tanstack/react-router dans apps/web, installer @tanstack/react-query, tailwindcss, @xyflow/react et openapi-fetch, structurer apps/web/src/features/<domaine>/ et régénérer packages/api-client depuis apps/api/src/orcia_api/schemas/"
+    priority: P1
+    depends_on:
+      - ARCH-P3
+      - ARCH-M3
+    ad_ref: "AD-1, AD-15, AD-19"
+    story_ref: "3-2d-phase-d-migration-frontend-spa-pure-vite-6-tanstack-router-v"
+    owner: "Sally (UX) / Amelia (Dev)"
+    status: done
+    epic: epic-3
+    description: >
+      Décision OQ-02 issue du Deep Recon (score 4,70/5 vs 2,65/5 pour Next.js Client-First) : migrer vers Vite 6 + TanStack Router v1 dès la fin de Story 3.2a (en parallèle de 3.2b et 3.2c) et isoler chaque fonctionnalité frontend dans features/<domaine>/.
+  - id: ARCH-P5
+    title: "Sandbox déterministe bimodale hors processus (Palier 1 wasmtime-py < 5 s / 256 Mo & Palier 2 gVisor/Rootless < 60 s / 1024 Mo) & 5 rôles de déploiement isolant Docling (P5, M8, M9, Q3: 3A, Q5)"
+    action: "Isoler sandbox-runner hors processus (MCP/sous-processus) avec Palier 1 WASM (< 5s) et Palier 2 conteneur gVisor/Podman --network=none (< 60s, sans Rust selon Q5), et séparer les 5 rôles d'exécution (api, worker-orchestration, worker-indexing avec extra Docling, trigger-dispatcher, sandbox-runner)"
+    priority: P1
+    depends_on:
+      - ARCH-P1
+      - ARCH-M6
+    ad_ref: "AD-9, AD-18, AD-19"
+    story_ref: "4-1a-phase-e-sandbox-bimodale-palier-2-hors-processus-conteneur-i"
+    owner: "Sophie (SecOps) / Karim (Platform)"
+    status: done
+    epic: epic-4
+    description: >
+      Supprimer la dépendance bloquante aux user namespaces Linux sur Kubernetes (bubblewrap), offrir un budget réaliste (< 60s) pour les tests TDD d'auto-remédiation (UJ-12) et isoler Docling du serveur API et du worker d'orchestration.
+  - id: DEC-P0-CORE
+    title: "Avenant A2 — Séparation Core / pack SDLC (P0-1) et interface de connecteur unique ConnectorPort + registre orcia.connectors + table connector_schemes (P0-2)"
+    action: "Livrer la Story 3.2e : extraire le vocabulaire SDLC du Core vers packages/orcia-pack-sdlc, introduire ConnectorPort et le registre orcia.connectors, remplacer les 4 CHECK de schémas par la table connector_schemes (migrations 0013 Expand / 0014 Contract)"
+    priority: P0
+    depends_on:
+      - DEC-SEED-01
+    ad_ref: "AD-19, AD-20"
+    story_ref: "3-2e-séparation-core-et-pack-sdlc-orcia-pack-sdlc-interface-de-co"
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: done
+    epic: epic-3
+    description: >
+      Fuites L1-L6 et L11, risques K1, K2 et K6 (P0-1 + P0-2) de l'audit architecture-decoupling-audit-2026-10-28.md ; critère vérifiable : grep du vocabulaire SDLC dans packages/orcia-kernel et orchestration (référence 33 lignes / 7 fichiers) = 0 et lint-imports vert avec le contrat core-without-sdlc.
+  - id: DEC-P0-EXEC
+    title: "Avenant A2 — Exécution réelle des étapes orcia.step_executors (P0-3), taxonomie d'erreurs + ConnectorInvoker (P0-4), preuve vertical Finance (P2-2), clôture de l'écart EC-1 de 3.2b"
+    action: "Livrer la Story 3.2f : brancher DbosDurableWorkflowEngine sur l'API et le worker, supprimer le moteur simulé DurableOrchestrationEngine, introduire la taxonomie d'erreurs et ConnectorInvoker (relances, Retry-After, coupe-circuit), prouver un vertical Finance sans pack SDLC"
+    priority: P0
+    depends_on:
+      - DEC-P0-CORE
+    ad_ref: "AD-4, AD-5, AD-14, AD-20"
+    story_ref: "3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d"
+    owner: "Karim (Platform) / Amelia (Dev)"
+    status: done
+    epic: epic-3
+    description: >
+      Risques K3 et K4 (P0-3, P0-4) et preuve transverse P2-2 de l'audit, écart EC-1 (AC C4 de 3.2b non satisfait) ; critère vérifiable : run réel de bout en bout via l'API (pause, redémarrage, reprise) conforme à PROC-01 et grep "simulated" dans orchestration/ = 0.
+  - id: DEC-SEC-01
+    title: "Avenant A2 — SecretRef non sérialisable, SecretProviderPort, masquage structlog et test du secret témoin"
+    action: "Introduire SecretRef et SecretProviderPort, masquer les secrets dans structlog, appliquer une liste blanche à l'outbox et à l'audit, ajouter le test du secret témoin et supprimer la valeur par défaut api_key sk-orcia-local"
+    priority: P1
+    depends_on:
+      - DEC-P0-CORE
+      - DEC-P0-EXEC
+      - SEC-03
+    ad_ref: "AD-6, AD-12"
+    story_ref: "4-2-gates-agentiques-avec-orthogonalité-des-modèles-pseudonymisa"
+    owner: "Karim (Platform)"
+    status: done
+    epic: epic-4
+    description: >
+      Risque K5 / plan P1-1 de l'audit (NFR-SEC-4 étendu) ; le secret témoin ne doit apparaître ni dans dbos.*, audit_ledger, domain_events_outbox, step_executions ni dans les logs. SEC-03 fournit l'adaptateur Vault / Infisical.
+  - id: DEC-ACC-01
+    title: "Avenant A2 — AccessRequestChannelPort générique (Jira devient adaptateur du pack SDLC)"
+    action: "Remplacer jira_request_url par request_url générique (Expand + backfill SQL, puis Contract dans une révision ultérieure) et exposer AccessRequestChannelPort"
+    priority: P1
+    depends_on:
+      - DEC-P0-CORE
+    ad_ref: "AD-6, AD-20"
+    story_ref: "4-4-actions-transitions-de-workflows-jira-multi-projets-staged-a"
+    owner: "Winston (Architect)"
+    status: done
+    epic: epic-4
+    description: >
+      Fuite L10, risque K6 / plan P1-2 de l'audit : canal de demande d'accès couplé à Jira dans le Core (permissions/broker.py:L202-209, migration 0004:L72).
+  - id: DEC-CONC-01
+    title: "Avenant A2 — ResourceLeasePort (bail PostgreSQL + jeton de fencing), files DBOS par classe de ressource"
+    action: "Introduire la table resource_leases et ResourceLeasePort, l'ordre d'acquisition canonique, les délais d'expiration et la détection des attentes cycliques parent-enfant"
+    priority: P1
+    depends_on:
+      - DEC-P0-EXEC
+    ad_ref: "AD-4"
+    story_ref: "5-1-centre-de-notifications-unifié-individuel-équipe-prise-en-ch"
+    owner: "Karim (Platform)"
+    status: done
+    epic: epic-5
+    description: >
+      Risque K7 / plan P1-3 de l'audit : concurrence sur ressources partagées limitée au verrou de présence Redis.
+  - id: DEC-CTX-01
+    title: "Avenant A2 — ContextSourcePort, VectorStorePort et indexeurs en plugins orcia.indexers"
+    action: "Abstraire les sources de contexte (JSON, CAS, document) et le stockage vectoriel derrière des ports, et déclarer les régimes d'indexation via le point d'entrée orcia.indexers"
+    priority: P1
+    depends_on:
+      - DEC-P0-CORE
+    ad_ref: "AD-8, AD-20"
+    story_ref: "3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc"
+    owner: "Winston (Architect)"
+    status: done
+    epic: epic-3
+    description: >
+      Fuite L9, risques K8 et K6 / plan P1-4 de l'audit : contexte couplé aux régimes d'indexation SDLC (rag/models.py:L11-15, L57, L155).
+  - id: DEC-SEED-01
+    title: "Avenant A2 — Sortir les données de démonstration de rag/__init__.py et orchestration/seeds.py"
+    action: "Déplacer les données de démonstration vers bootstrap/seeder.py (upserts idempotents) ou tests/fixtures/ en Étape 0 de la Story 3.2e"
+    priority: P2
+    depends_on: []
+    ad_ref: "AD-20"
+    story_ref: "3-2e-séparation-core-et-pack-sdlc-orcia-pack-sdlc-interface-de-co"
+    owner: "Amelia (Dev)"
+    status: done
+    epic: epic-3
+    description: >
+      Fuites L7 et L8, risque K9 / plan P2-1 de l'audit : données SDLC de démonstration codées en dur dans le Core (rag/__init__.py:L49-95, orchestration/seeds.py:L29-158).
+  - id: PROC-01
+    title: "Avenant A2 — Definition of Done renforcée : run réel de bout en bout via l'API pour toute story qui touche le moteur"
+    action: "Exiger pour toute story touchant le moteur un run réel via l'API (instanciation, exécution, pause, redémarrage, reprise, 0 contenu simulé) avant passage en review"
+    priority: P1
+    depends_on: []
+    ad_ref: "AD-17"
+    story_ref: "3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d"
+    owner: "Romain (PO) / Amelia (Dev)"
+    status: done
+    epic: epic-3
+    description: >
+      Écart EC-2 de l'audit : les tests unitaires du moteur passaient sans qu'aucun run réel ne traverse l'API ; 3.2f en est la première application.
+  - id: EPIC-08-CONFIG-HUB
+    title: "Créer l'Epic 8 — Administration, Hub de Configuration & Cycle de Vie des Extensions (paramétrage post-Jour 0)"
+    action: "Rédiger l'ADR AD-21 (stockage de config à 3 niveaux, 6 verbes RBAC/ABAC, contrat SecretInput/SecretStatus, sémantique de propagation vers les runs DBOS, activation des packs par périmètre), puis ajouter l'Epic 8 et les Stories 8.1 à 8.6 (ainsi que Story 5.4) dans epics.md et development_status"
+    priority: P1
+    depends_on:
+      - DEC-SEC-01
+      - SEC-02
+    ad_ref: "AD-6, AD-16, AD-19, AD-20, AD-21"
+    story_ref: "docs/planning-artifacts/sprint-change-proposal-2026-10-30-epic8-and-ux-rework.md"
+    owner: "Winston (Architect) / John (PM)"
+    status: done
+    epic: epic-8
+    description: >
+      Formalisé le 30/10/2026 via AD-21 dans ARCHITECTURE-SPINE.md, mise à jour de DESIGN.md / EXPERIENCE.md,
+      plan directeur docs/planning-artifacts/sprint-change-proposal-2026-10-30-epic8-and-ux-rework.md et
+      ajout de l'Epic 8 complète (Stories 8.1 à 8.6) + Story 5.4 dans docs/planning-artifacts/epics.md.
+  - id: REDTEAM-V1
+    title: "Verrou V1 — Registre des Exceptions Acquittées (workspace_exception_waivers) en mode risk_or_exception_based"
+    action: "Persister (workspace_id, source_uri, source_sha256, conflict_rule_id, expires_at) lors de l'arbitrage d'un [STALE_WARNING] ou ONTOLOGY_CONFLICT pour qu'un écart connu ne redéclenche plus d'escalade humaine tant que source_sha256 est inchangé"
+    priority: P1
+    depends_on: []
+    ad_ref: "AD-11"
+    story_ref: "11-1-refonte-mes-espaces-5-sous-onglets-cascade-localisation-artef"
+    owner: "Winston (Architect) / Sally (UX)"
+    status: done
+    epic: epic-11
+    description: >
+      Parade au piège du 0 tolérance en mode risk_or_exception_based : évite que le bruit latent Confluence/Git ne ramène le Tech Lead à > 5 sollicitations/jour. S'invalide automatiquement dès que le sha256 de la source externe évolue.
+  - id: REDTEAM-V2
+    title: "Verrou V2 — ExternalEditRebaser & Marquage Automatique 🔒 HUMAN_AMENDED_EXTERNAL après édition dans Git/Confluence"
+    action: "Lors de la détection d'une divergence SHA-256 sur un artefact publié vers git:// ou confluence://, exécuter un diff par section, promouvoir les sections retouchées par l'humain en HUMAN_AMENDED_EXTERNAL (inviolables par l'agent aval) et marquer [SUPERSEDED_BY_HUMAN_COMMIT] les hypothèses antérieures contradictoires dans step_memlog_jsonb"
+    priority: P1
+    depends_on: []
+    ad_ref: "AD-3, AD-5"
+    story_ref: "11-1-refonte-mes-espaces-5-sous-onglets-cascade-localisation-artef"
+    owner: "Winston (Architect)"
+    status: done
+    epic: epic-11
+    description: >
+      Évite la friction du Rebase de Prompt où un agent régénérant une étape aval écraserait une modification manuelle poussée directement dans Git ou Confluence après publication.
+  - id: REDTEAM-V3
+    title: "Verrou V3 — Confinement Strict d'Orthogonalité par Palier de Souveraineté (SovereigntyTier C0..C3)"
+    action: "Interdire tout déclassement d'un flux C2/C3 vers une API LLM Cloud publique sous prétexte que PiiReversibleScrubber est actif ; imposer que l'orthogonalité (exécuteur != évaluateur) s'opère strictement à l'intérieur d'un palier de souveraineté >= à celui de l'Espace"
+    priority: P1
+    depends_on: []
+    ad_ref: "AD-10, AD-21"
+    story_ref: "8-2-abstraction-llm-tiers-routage-auto"
+    owner: "Winston (Architect)"
+    status: done
+    epic: epic-8
+    description: >
+      Protège la propriété intellectuelle et la logique métier propriétaire (AST, seuils de fraude, algorithmes blanchis par l'Ontologie) que le masquage PII ne couvre pas. Déjà câblé dans gates/agentic.py (_resolve_sovereign_evaluator_route) et gravé dans AD-10.
+  - id: REDTEAM-V4
+    title: "Verrou V4 — Promotion In-Flow du Glossaire dans le Briefing 4 Blocs (Top-3 pré-cochés), Plafond FIFO max 15 & 0 $ LLM sur git push"
+    action: "Intégrer les Top-3 termes L4 (>= 0.85) en cases pré-cochées dans le Briefing de Revue 4 blocs à la Gate, plafonner la file ✨ À valider à max 15 candidats actifs par Espace, purger les entrées L4 non promues après 30j, et interdire la Passe 2 LLM sur un simple git push (Passe 1 tree-sitter 0 $ seule)"
+    priority: P1
+    depends_on: []
+    ad_ref: "AD-7, AD-8, AD-11"
+    story_ref: "11-2-cycle-de-vie-glossaire-règles-métiers-à-valider-extraction-2"
+    owner: "Sally (UX) / Winston (Architect)"
+    status: done
+    epic: epic-11
+    description: >
+      Élimine la corvée d'administration d'une file ✨ À valider (142) désertée par les équipes et maîtrise le coût FinOps des branches Git.
+  - id: REDTEAM-V5
+    title: "Verrou V5 — Frontière Matérielle AssistantHarness : Exploration Libre dans Mon Assistant, Écriture SI Exclusivement par Gate de Processus"
+    action: "Bloquer matériellement toute écriture directe vers git://, confluence://, jira:// ou officialisation @v1 au Catalogue depuis le chat rapide de Mon Assistant (HTTP 422 ERR_DIRECT_SI_WRITE_REQUIRES_PROCESS_GATE) et router obligatoirement les boutons Publier / Officialiser vers la Gate de Validation & Publication d'un Processus"
+    priority: P1
+    depends_on: []
+    ad_ref: "AD-15"
+    story_ref: "10-3-citation-déterministe-vérification-sources-s1-g1-o1-filtrage"
+    owner: "Sally (UX) / Winston (Architect)"
+    status: done
+    epic: epic-10
+    description: >
+      Empêche que la rapidité de Mon Assistant (TTFT < 1,2 s) ne conduise 90 % des utilisateurs à contourner la gouvernance des Processus lors des écritures engageantes dans le SI.
+  - id: PILOT-W1-SDLC
+    title: "Coupe Minimum Lovable Pilot (3 semaines) & Workflow Pilote Semaine 1 (orcia://pack-sdlc/workflows/ticket-to-tech-spec)"
+    action: "Prioriser 6.1-6.2 (Audit/FinOps) + 9.1/9.2/9.5 (Coquille 4 zones, Accostage 1/6, Aide ?) + 10.1-10.3 (Mon Assistant TTFT < 1,2s & Citations [S1]) + 11.1-11.2 (Verrous V1..V5 & Workflow sdlc/ticket-to-tech-spec), et geler Epic 7 + 11.3-11.5 derrière feature-flag post-pilote"
+    priority: P1
+    depends_on:
+      - REDTEAM-V1
+      - REDTEAM-V2
+      - REDTEAM-V4
+      - REDTEAM-V5
+    ad_ref: "AD-20"
+    story_ref: "11-1-refonte-mes-espaces-5-sous-onglets-cascade-localisation-artef"
+    owner: "Romain (PO) / Winston (Architect) / Sally (UX)"
+    status: done
+    epic: epic-11
+    description: >
+      Workflow de référence Semaine 1 du pilote SDLC : Ticket Jira + 1 Ancrage Humain -> Traversée Graphe Tripartite & Arbitrage -> Spécification Technique & Impact AST Git (0 hallucination de symbole) -> Briefing 4 blocs & Publication Staged Jira/Git.
+  - id: POESIS-STARLARK-T1B
+    title: "Palier 1b Sandbox — Moteur de Règles Starlark Natif (starlark-pyo3 + google-re2 O(n) < 2 ms) & Compilateur Design-Time Text-to-Starlark"
+    action: "Implémenter StarlarkMechanismSandbox (packages/orcia-core/src/orcia_core/gates/_internal/starlark_sandbox.py) exposant orcia_sys (avec re_fullmatch/re_search sous google-re2 max_mem=8MB garantissant un temps linéaire O(n) anti-ReDoS et emit_effect en Action Staged) ainsi que TextToStarlarkCompilerService (validation JSON Schema préalable des vecteurs passing_test_payload/failing_test_payload + auto-test < 5 ms avec 1 retry automatique)"
+    priority: P1
+    depends_on: []
+    ad_ref: "AD-1, AD-9, AD-19"
+    story_ref: "11-2-cycle-de-vie-glossaire-règles-métiers-à-valider-extraction-2"
+    owner: "Winston (Architect) / Sally (UX)"
+    status: done
+    epic: epic-11
+    description: >
+      Emprunt ciblé à sie-operator (Poesis) sans dette JVM : permet aux Packs Métiers et aux Stewards d'écrire ou de générer en français des règles de Gate déterministes qui s'exécutent en < 2 ms et 0 $ LLM au Run-Time, sans compiler de WASI.
+  - id: POESIS-DNA-CHAIN
+    title: "Chaîne Causale ADN (DIRECTIVE ➔ NORME ➔ MÉCANISME) dans l'Ontologie N1–N3, Fil d'Ariane Causal & Gouvernance RBAC des Waivers (Verrou V1)"
+    action: "Enrichir ontology_concepts/ontology_axioms (dna_stereotype, mechanism_payload_jsonb) et ontology_relations (OPERATIONALIZES_DIRECTIVE, IMPLEMENTS_NORM) avec la CTE récursive dna_chain (< 3 ms), amorcer les Directives/Normes socles (ANSSI, RGPD, ISO 25010) dans bootstrap/seeder.py, afficher le fil d'Ariane causal sur 1 ligne dans CognitiveReviewBriefing et bloquer tout acquittement local (Verrou V1) sur une Directive 1_ENTERPRISE inviolable"
+    priority: P1
+    depends_on:
+      - REDTEAM-V1
+      - POESIS-STARLARK-T1B
+    ad_ref: "AD-7, AD-11"
+    story_ref: "11-2-cycle-de-vie-glossaire-règles-métiers-à-valider-extraction-2"
+    owner: "Winston (Architect) / Sally (UX)"
+    status: done
+    epic: epic-11
+    description: >
+      Emprunt ciblé à gsm-ontology (Poesis) sur PostgreSQL 18 sans Neo4j : relie chaque verdict de Gate Starlark/Wasm à sa Norme et à sa Directive stratégique, et empêche un TEAM_LEAD de contourner une Directive d'Entreprise inviolable.
+  - id: UX-DS-RADIX-01
+    title: "Socle Design System Open Source @orcia/ui — Intégration Radix UI Primitives (@radix-ui/react-*) + Architecture shadcn/ui (RGAA 4.1 / WAI-ARIA Complet & Tokens Direction C — AD-22)"
+    action: "Déclarer @radix-ui/react-tabs, @radix-ui/react-dialog, @radix-ui/react-select, @radix-ui/react-dropdown-menu, @radix-ui/react-tooltip et @radix-ui/react-switch dans ARCHITECTURE-SPINE.md + packages/ui/package.json, et enrichir les primitives de packages/ui/src/primitives/DesignSystemControls.tsx (OrciaTabBar, OrciaDialog, OrciaSelect, OrciaTooltip, OrciaDropdownMenu) avec la gestion native du roving tabindex, navigation clavier flèches/Home/End/Escape, focus trap, aria-controls/role=tabpanel, tout en conservant 100 % du stylage dans tokens.css (.orcia-ds-*) et la parade anti-LastPass par défaut"
+    priority: P1
+    depends_on: []
+    ad_ref: "AD-1, AD-22"
+    owner: "Sally (UX/UI) / Winston (Architect) / Amelia (Dev)"
+    status: done
+    epic: epic-13
+    description: >
+      Livré (2026-11-08, branche fix/p1-bugs-and-radix-ui) : 6 packages @radix-ui/react-* déclarés dans packages/ui/package.json
+      (lint_spine.py : 0 findings), primitives accessibles dans RadixDesignSystemPrimitives.tsx (286 lignes) et DesignSystemControls.tsx
+      (304 lignes) avec OrciaTabBar (@radix-ui/react-tabs), OrciaDialog (@radix-ui/react-dialog), OrciaRadixSelect (@radix-ui/react-select),
+      OrciaDropdownMenu (@radix-ui/react-dropdown-menu), OrciaTooltip (@radix-ui/react-tooltip) et OrciaSwitch (@radix-ui/react-switch),
+      stylage 100 % dans tokens.css (.orcia-ds-*) et 4 tests unitaires dédiés dans radix-design-system-primitives.test.tsx.
+  - id: CAP-ACT-1
+    title: "Rapprocher le registre docs/product/capabilities.yaml de l'exécution réelle (verification: docs -> runtime) et l'ajouter au manifeste /showcase"
+    action: "Rejouer les parcours réels par capacité (e2e, pnpm db:reset) et exposer le registre dans infra/scripts/sync_site_catalog.py"
+    priority: P1
+    depends_on: []
+    owner: "Amelia (Dev)"
+    status: done
+    epic: epic-13
+    description: >
+      Livré (2026-11-08, branche fix/p1-bugs-and-radix-ui) : registre capabilities.yaml synchronisé avec infra/scripts/sync_site_catalog.py,
+      statistique capabilitiesCount / liveCapabilitiesCount / verifiedCapabilitiesCount affichée dans OrciaProductShowcaseSiteView.tsx
+      (data-testid="showcase-stat-capabilities"), contrôle bloquant dans pnpm site:check (routes SPA, routeurs FastAPI, tests associés),
+      et promotion des capacités vérifiées par les tests E2E Playwright et intégration HTTP vers verification: runtime (33/54 capacités live).
+  - id: CAP-ACT-2
+    title: "PRD v2 : ajouter FR-31..FR-36 (Epics 8-12 et agents/skills) et mapping FR <-> CAP ; aligner le compteur de FR dans GEMINI.md"
+    action: "Mise à jour du PRD via bmad-prd, puis mise à jour de la FR Coverage Map de epics.md"
+    priority: P1
+    depends_on: [CAP-ACT-1]
+    owner: "John (PM)"
+    status: done
+    epic: epic-12
+    description: >
+      Le PRD ne couvre pas Mes Espaces, Mon Assistant, pack-builder, wizards, MCP/A2A, journal d'activité.
+      Les FR proposés sont listés dans le bloc proposed_fr de capabilities.yaml.
+  - id: CAP-ACT-3
+    title: "Réconcilier l'Epic 6 (audit_ledger/FinOps) avec le Journal d'activité livré hors epic (CAP-065) et statuer sur l'Epic 7"
+    action: "Auditer le code réel de /activity et /finops puis rebaser les stories 6.1 à 6.4 sur l'existant"
+    priority: P1
+    depends_on: []
+    owner: "Winston (Architect)"
+    status: done
+    epic: epic-6
+    description: >
+      Éviter un doublon entre le journal d'activité ad-hoc du 2026-11-05 et la Story 6.1 (backlog).
+      orcia_core/audit_finops ne contient aujourd'hui que errors.py.
+  - id: CAP-ACT-4
+    title: "Epic 13 « Évolutions continues » + champ capability obligatoire dans le gabarit de rapport Tech Lead"
+    action: "Créer l'epic 13 dans epics.md et sprint-status.yaml, ajouter capability: CAP-xx | none dans TECH-LEAD-REPORT-TEMPLATE.md"
+    priority: P2
+    depends_on: [CAP-ACT-1]
+    owner: "Bob (SM) / Amelia (Dev)"
+    status: done
+    epic: epic-12
+    description: >
+      Toute demande ad-hoc fonctionnelle doit créer ou mettre à jour une capacité du registre
+      et se rattacher à un FR du PRD ou à une story rétroactive.
+  - id: TEST-01
+    title: "P0 — Socle E2E bi-serveur : Playwright démarre FastAPI + Vite, reset Jour 0 déterministe, Cassette LLM"
+    action: "playwright.config.ts : webServer[] (apps/api :8000 avec ORCIA_USE_CASSETTE_LLM=true + Vite :3100 proxifiant /api), globalSetup appelant infra/scripts/maintenance/09_reset_db_first_boot.py --apply, PG18/Redis via testcontainers ou docker compose de test"
+    priority: P0
+    depends_on: []
+    owner: "Amelia (Dev)"
+    status: done
+    epic: epic-13
+    description: >
+      Aujourd'hui un seul webServer (Vite, scripts/run-next.mjs). Sans backend, tout appel /api/v1 d'un vrai navigateur échoue.
+      Prérequis de TEST-02..TEST-10. Intégrer aussi `pnpm e2e` à la CI.
+  - id: TEST-02
+    title: "P0 — Réparer shell.spec.ts obsolète (Epic 12) : sélecteurs eight-menu-item-*, modale first-boot-admin-setup-modal"
+    action: "Remplacer sidebar-nav-item-* / global-sidebar (19 occurrences, 0 eight-menu-item) par les sélecteurs de FourZoneDirectionCShell"
+    priority: P0
+    depends_on: [TEST-01]
+    owner: "Amelia (Dev)"
+    status: done
+    epic: epic-13
+    description: "Le test e2e existant ne valide plus le shell réel."
+  - id: TEST-03
+    title: "P0 — Supprimer l'angle mort isJsdom : injecter le transport @orcia/api-client au lieu de court-circuiter sous Vitest"
+    action: "Remplacer les 44 occurrences de `isJsdom` (11 fichiers apps/web/src : ShellContainer, platformSetupStore, useAssistantStreamingTurn, useManagedAgentsAndSkills…) par un client injectable (MSW ou fetch mocké au niveau transport) ; tests F5 : unmount/render rehydratés via GET simulé, puis E2E réel (TEST-04)"
+    priority: P0
+    depends_on: []
+    owner: "Amelia (Dev) / Sally (UX)"
+    status: done
+    epic: epic-13
+    description: >
+      Les tests « survie au F5 » ne prouvent aujourd'hui que le localStorage JSDOM (garde-fou n°3 de AGENTS.md non réellement vérifié).
+      Risque : régression de câblage invisible en CI.
+  - id: TEST-04
+    title: "P0 — E2E Playwright 01..05 (Jour 0 + vrai F5 BDD ; Mon Assistant SSE/citations/dossiers ; Human-Led ancrage/arbitrage ; multi-acteurs Claim SSE <500 ms + READ_ONLY_OBSERVER ; mobile 390x844 + RGAA Escape)"
+    action: "Créer apps/web/e2e/01..05-*.spec.ts (voir audit). Mapping capacités : 01→CAP-004/005/057/061 ; 02→CAP-070..076 ; 03→CAP-021/022/023 ; 04→CAP-040/050 ; 05→CAP-042/100"
+    priority: P0
+    depends_on: [TEST-01, TEST-02]
+    owner: "Amelia (Dev)"
+    status: done
+    epic: epic-13
+    description: >
+      Couche 5 AD-17 : 2 BrowserContext simultanés exigés pour le multi-acteurs. Chaque spec réussi passe les capacités visées
+      de verification: docs à runtime dans docs/product/capabilities.yaml.
+  - id: TEST-05
+    title: "P1 — E2E Playwright 06..08 (gates briefing/anti-rubber-stamp/Jira staged ; Mes Espaces ADN-Starlark-glossaire ; agents/skills + banc MCP)"
+    action: "Créer apps/web/e2e/06..08-*.spec.ts. Mapping : 06→CAP-030..033 ; 07→CAP-080/081 ; 08→CAP-082/090/091/092"
+    priority: P1
+    depends_on: [TEST-04]
+    owner: "Amelia (Dev)"
+    status: done
+    epic: epic-13
+    description: "Parcours UJ-6, UJ-2/UJ-3, UJ-9."
+  - id: TEST-06
+    title: "P2 — E2E Playwright 09..11 (pack-builder + aide ⓘ ; ⌘K 2 vitesses + Permission Broker ; Configuration/Modèles IA, Ontologie/Catalogue, Journal d'activité)"
+    action: "Créer 09..11. Mapping : 09→CAP-083/064 ; 10→CAP-062/003 ; 11→CAP-052..056/010/011/002/065 (capacités non couvertes par l'audit initial)"
+    priority: P2
+    depends_on: [TEST-05]
+    owner: "Amelia (Dev)"
+    status: done
+    epic: epic-13
+    description: >
+      L'audit externe proposait 10 specs ; le croisement avec capabilities.yaml montre que les capacités
+      Settings/Modèles IA, Ontologie/RAG, Catalogue et Journal d'activité n'ont aucun E2E : ajout d'une 11e spec.
+  - id: TEST-08
+    title: "P1 — Couche 4 : tests/evals Golden Dataset (assistant, citations, extraction ontologique) sur DeterministicCassetteLLM"
+    action: "Créer tests/evals/ avec jeux dorés et seuils (citations fantômes = 0, refus constitutionnel FR-4), exécutés en CI à 0 $"
+    priority: P1
+    depends_on: []
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: done
+    epic: epic-13
+    description: "16 tests evals à 0 $ sur Golden Datasets (citations.jsonl + assistant_and_ontology.jsonl : 0 citation fantôme, refus constitutionnel FR-4, profils humains, orthogonalité AD-10, conflit d'axiome L1)."
+  - id: TEST-09
+    title: "P1 — Couche Sécurité / Red-Team (absente) : IDOR inter-périmètres, hidden_when_unauthorized, SSRF endpoints modèles, secrets jamais en clair, READ_ONLY_OBSERVER sur toutes les mutations"
+    action: "Créer tests/security/ (paramétré sur les 163 endpoints : mutation ⇒ 403 pour observateur ; fuzz Schemathesis auth) + Playwright pour le mode observateur"
+    priority: P1
+    depends_on: [TEST-01]
+    owner: "Sophie (SecOps) / Amelia (Dev)"
+    status: done
+    epic: epic-13
+    description: "21 tests de sécurité dans tests/security/test_api_security_baseline.py (SSRF, 403 ERR_OBSERVER_MODE_READ_ONLY paramétré sur mutations, anti-escalade RBAC, masquage CONFIDENTIAL_RESTRICTED, secret canari DEC-SEC-01)."
+  - id: TEST-10
+    title: "P2 — Traçabilité test ↔ capacité : champ `tests:` dans capabilities.yaml et check CI « capacité live sans E2E ni intégration HTTP »"
+    action: "Étendre capabilities_registry.py : chaque capacité status live référence ≥1 test (unit/integration/e2e) ; rapport de couverture par couche ; seuil bloquant progressif"
+    priority: P2
+    depends_on: [TEST-04]
+    owner: "Amelia (Dev)"
+    status: done
+    epic: epic-13
+    description: >
+      Évite la dérive « fonctionnalité livrée sans test traversant ». 54/54 capacités live référencent au moins un test (seuil bloquant actif dans pnpm site:check).
+  - id: TEST-01b
+    title: "P1 — Intégrer `pnpm e2e` à la CI (aucun .github/workflows dans le dépôt) avec Docker pour la pile éphémère"
+    action: "Créer le workflow CI (job e2e : docker, uv sync, pnpm install, playwright install chromium, pnpm e2e) et publier trace/rapport en artefact"
+    priority: P1
+    depends_on: [TEST-01]
+    owner: "Amelia (Dev)"
+    status: done
+    epic: epic-13
+    description: "Socle livré (TEST-01) ; reste la exécution automatique en CI."
+  - id: BUG-E2E-01
+    title: "Dossiers de Mon Assistant non réhydratés depuis PostgreSQL après un vrai F5 (localStorage vidé)"
+    action: "Au démarrage de /assistant, appeler listAssistantFolders (GET overview) et réhydrater assistantFoldersAndPrefsStore ; retirer test.fail dans e2e/02-assistant-streaming-and-folders.spec.ts"
+    priority: P0
+    depends_on: []
+    owner: "Amelia (Dev)"
+    status: done
+    epic: epic-13
+    description: >
+      Révélé par TEST-04 (spec 02) : le dossier est créé (POST /api/v1/assistant/folders < 400) mais « Dossiers (0) » après
+      localStorage.clear() + reload. Viole le garde-fou n°3 (survie au F5 via GET). Test en test.fail jusqu'à correction.
+      Corrigé côté portail (2026-11-08, branche fix/p0-e2e-bugs) : le serveur est la source de vérité (GET overview au démarrage,
+      identifiants serveur, notes et visibilité envoyées à l'API, aucun espace de repli fictif, erreurs affichées). Spec E2E 02 verte.
+      La persistance PostgreSQL (survie au redémarrage de l'API) est suivie par BUG-E2E-01b.
+  - id: BUG-E2E-02
+    title: "HumanLedAnchorCard et ArbitrationTieBreakCard (Epic 3, FR-4/FR-5) non montés dans apps/web"
+    action: "Câbler les composants dans l'écran du run/cockpit (signature d'ancrage, arbitrage) via @orcia/api-client puis activer le test.fixme de e2e/03-human-led-anchor-and-arbitration.spec.ts"
+    priority: P0
+    depends_on: []
+    owner: "Amelia (Dev) / Sally (UX)"
+    status: done
+    epic: epic-13
+    description: >
+      Révélé par TEST-04 (spec 03). Corrigé (2026-11-08, branche fix/p0-e2e-bugs) : CockpitHumanLedGovernanceSection monté dans
+      CockpitFeaturePanel avec HumanLedAnchorCard (violet signature >= 30 car.) et ArbitrationTieBreakCard (ambre arbitrage)
+      câblés à @orcia/api-client (instantiate, anchors/sign, arbitration, arbitration/resolve, blackboard), réhydratation F5 via GET,
+      garde-fou CI requiredPropsByComponent mis à jour, et spec E2E 03-human-led-anchor-and-arbitration.spec.ts activée et verte.
+  - id: BUG-E2E-03
+    title: "GET /api/v1/events/stream (AD-4) rejoue les événements récents puis se termine : pas de diffusion SSE temps réel < 500 ms"
+    action: "Rendre le flux persistant (abonnement au SSEBroker / Redis pub-sub avec heartbeat) et consommer le flux dans apps/web (aucun EventSource aujourd'hui) ; retirer test.fail dans e2e/04-multi-actor-claim-sse.spec.ts"
+    priority: P0
+    depends_on: []
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: done
+    epic: epic-13
+    description: >
+      Révélé par TEST-04 (spec 04). Corrigé (2026-11-08, branche fix/p0-e2e-bugs) : SseBroadcastPort.subscribe() + file asyncio
+      temps réel sur GET /api/v1/events/stream (< 500 ms, AD-4), consommateur EventSource useWorkspaceEventsSse dans ShellContainer,
+      et retrait de test.fail dans e2e/04-multi-actor-claim-sse.spec.ts (2 passed).
+  - id: BUG-E2E-04
+    title: "Composition Root : identité par défaut `marc` (TEAM_LEAD) sans jeton et notifications d'amorce fictives en mémoire"
+    action: "Exiger un Bearer en dehors du mode test, supprimer la persona de repli et les seed_default_notifications à identifiants fixes de initialize_app_services (zéro donnée fictive), persister les notifications en PostgreSQL"
+    priority: P0
+    depends_on: []
+    owner: "Winston (Architect) / Amelia (Dev)"
+    status: done
+    epic: epic-13
+    description: >
+      Constaté pendant TEST-04 : resolve_user() retombe sur la persona `marc` quand aucun jeton n'est fourni (le web n'envoie pas
+      de Bearer) ; initialize_app_services() sème 4 notifications fictives (ids 0195f000-…) en mémoire, contraire à la politique
+      zéro donnée fictive et au garde-fou « jamais de singleton en mémoire en production ». Risque sécurité (usurpation) à qualifier.
+      Correctif borné livré (2026-11-08, branche fix/p0-e2e-bugs) : hors ORCIA_ENV local/test, Bearer obligatoire
+      (401 ERR_AUTH_REQUIRED) et persona_key refusé ; notifications d'amorce semées uniquement sur la pile E2E
+      (ORCIA_E2E_SEED_FIXTURES=1). Reste traité par AUTH-01 (authentification réelle de bout en bout).
+  - id: BUG-E2E-05
+    title: "CognitiveReviewBriefingGrid et ChunkValidationCard (Epic 4, FR-6/FR-19) non montés dans apps/web"
+    action: "Câbler le briefing de revue 4 blocs et la validation par découpage dans le portail via @orcia/api-client puis activer le test.fixme de e2e/06-gates-review-and-anti-rubber-stamping.spec.ts"
+    priority: P1
+    depends_on: []
+    owner: "Amelia (Dev) / Sally (UX)"
+    status: done
+    epic: epic-13
+    description: >
+      Révélé par TEST-05 (spec 06). Corrigé (2026-11-08, branche fix/p1-bugs-and-radix-ui) : GatesAdaptiveHumanReviewSection monté dans
+      GatesFeaturePanel (/gates et /processes) avec CognitiveReviewBriefingGrid (4 blocs : résumé, décisions, hypothèses, score & conflits),
+      ChunkValidationCard (validation par découpage et co-édition signée SHA-256), modale anti-rubber-stamping (< 15 s sur > 1 000 mots),
+      exécution conditionnelle des actions Jira pré-validées (PAYBUILD-101) après PASS de la Gate, réhydratation F5 via GET
+      (/api/v1/gates/human/evaluations et /api/v1/jira/actions), et spec E2E 06-gates-review-and-anti-rubber-stamping.spec.ts activée et verte.
+  - id: BUG-E2E-06
+    title: "Recherche fédérée ⌘K (vitesse 2) : l'UI reçoit 422 de l'API, avale l'erreur et affiche un résultat local fabriqué"
+    action: "Corriger l'appel searchFederated (workspace_id optionnel / périmètre GLOBAL valide) ; remplacer le .catch → localSemanticHit de ShellContainer par un état d'erreur explicite (garde-fou n°5) ; retirer test.fail dans e2e/10-command-palette-search.spec.ts"
+    priority: P1
+    depends_on: []
+    owner: "Amelia (Dev)"
+    status: done
+    epic: epic-13
+    description: >
+      Révélé par TEST-06 (spec 10). Corrigé (2026-11-08, branche fix/p1-bugs-and-radix-ui) : TwoSpeedSearchService et GET /api/v1/search
+      acceptent un workspace_id vide / scope-global / GLOBAL au Jour 0 (HTTP 200), searchFederated passe include_speed2=true&force_semantic=true,
+      ShellContainer et TopHeaderSearchCommand suppriment tout résultat fabriqué côté client (localSemanticHit) au profit d'une bannière
+      d'erreur explicite (cmdk-speed2-error-banner) et de la section Vitesse 2 (cmdk-speed2-appended-group), et test.fail retiré de
+      e2e/10-command-palette-search.spec.ts (2 passed).
+  - id: BUG-E2E-01b
+    title: "Dossiers de Mon Assistant : adaptateur PostgreSQL (tables 0025 assistant_folders / threads / shares) au lieu du service en mémoire"
+    action: "Créer l'adaptateur SQL du domaine (garde-fou n°1), l'injecter via la Composition Root, test d'intégration HTTP -> SELECT PG18, activer le test.fixme « survit au redémarrage de l'API » de e2e/02"
+    priority: P0
+    depends_on: [AUTH-01]
+    owner: "Amelia (Dev)"
+    status: done
+    epic: epic-13
+    description: >
+      Closed via Stories 26.4b and 26.10: `SqlAssistantFoldersRepository` persists folders, `working_attachments_uris`,
+      and `evidence_tags` in PG18 (`assistant_folders`, `assistant_threads`, `assistant_folder_shares`, zero `_folder_meta`
+      RAM state), verified by `test_story_26_4b_pg18_persistence_governance_feedback_folders.py` and active E2E test #3
+      in `apps/web/e2e/02-assistant-streaming-and-folders.spec.ts` (zero `test.fixme`).
+  - id: SITE-SYNC-PACKS-01
+    title: "Aligner sync_site_catalog.py et test_site_catalog_sync.py sur les packs déclaratifs packs/<domaine>/ (post-Epic 15)"
+    action: "Mettre à jour le décompte installedPacksCount dans infra/scripts/sync_site_catalog.py pour scanner packs/ au lieu de packages/orcia-pack-*"
+    priority: P2
+    depends_on: []
+    owner: "Amelia (Dev)"
+    status: done
+    epic: epic-15
+    description: >
+      Constaté lors de l'exécution globale de tests/unit/test_site_catalog_sync.py : résolu le 2026-11-15 en scannant packs/*/pack.yaml en plus de packages/orcia-pack-*.
+  - id: UX-COCKPIT-DAY0-01
+    title: "Revue complète UX/UI et fonctionnelle de l'écran Cockpit au Jour 0 post-initialisation"
+    action: "Repenser et épurer l'écran Cockpit (/cockpit) après création du premier Administrateur Plateforme (Direction C : max 3 blocs majeurs, synchronisation Accostage 1/6, masquage des cartes de démo Human-Led/Arbitrage à vide, zéro redondance raccourcis/assistant) sur la base de la capture archivée"
+    priority: P1
+    depends_on: []
+    owner: "Sally (UX) / Winston (Architect) / Amelia (Dev)"
+    status: done
+    epic: epic-25
+    story_ref: "25-1, 25-3"
+    reference_screenshot: "docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/screenshots/2026-11-15-cockpit-jour0-revue-ux-reference.jpg"
+    description: >
+      Constat utilisateur du 2026-11-15 (capture archivée) : 1) empilement > 6 bandeaux/cartes violant la règle <= 3 blocs majeurs de DESIGN.md ; 2) Accostage 1/6 affiche encore « Créer le compte Administrateur » après connexion admin ; 3) affichage prématuré des cartes HumanLedAnchorCard et ArbitrationTieBreakCard Option A/B à vide (0 run, 0 arbitrage) ; 4) redondance entre barre d'accès rapide Mon Assistant, 3 cartes raccourcis et état vide Espaces/Processus. Ne pas implémenter avant arbitrage dédié.
+  - id: IAM-ORG-DELEGATION-01
+    title: "Délégation hiérarchique effective de l'organigramme et de l'invitation de comptes pour BU_LEAD (BU, sous-BUs, équipes) et TEAM_LEAD (équipes dirigées)"
+    action: "Implémenter org_delegation.py et iam_delegated_invitation.py (contrôle descendant BU -> Sous-BU -> Team, garde anti-auto-éviction 422 ERR_ORG_UNIT_LAST_LEAD_REMOVAL_FORBIDDEN, création/invitation déléguée de comptes HUMAN bornée au périmètre : BU_LEAD -> CONTRIBUTOR/OBSERVER/TEAM_LEAD/BU_LEAD sur son sous-arbre, TEAM_LEAD -> CONTRIBUTOR/OBSERVER/TEAM_LEAD sur ses équipes, rejet 403 anti-escalade PLATFORM_ADMIN/SECOPS/SERVICE_PRINCIPAL), sécuriser POST/PATCH/DELETE /api/v1/org-units et l'invitation IAM, exposer les permissions calculées par nœud dans OpenAPI, et rouvrir l'onglet Organisation (/settings?tab=organization + modale + Nouveau membre scopée) aux BU_LEAD et TEAM_LEAD sans exposer les onglets plateforme"
+    priority: P1
+    depends_on: []
+    owner: "Winston (Architect) / Sally (UX) / Amelia (Dev)"
+    status: done
+    epic: epic-17
+    story_ref: "17-2-organigramme-hierarchique-indente-modales-edition-membres-et-facturation"
+    tech_lead_report: "docs/implementation-artifacts/tech-lead-reports/2026-11-16-cadrage-delegation-hierarchique-bu-equipe-et-invitation-comptes-tech-lead-report.md"
+    reference_screenshot: "docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/screenshots/2026-11-16-bu-lead-settings-readonly-et-doubles-icones.png"
+    description: >
+      Analyse et plan détaillés dans docs/implementation-artifacts/tech-lead-reports/2026-11-16-cadrage-delegation-hierarchique-bu-equipe-et-invitation-comptes-tech-lead-report.md
+      (capture Rouge Gorge du 2026-11-16). Corrige : 1) le verrouillage exclusif PLATFORM_ADMIN introduit le 2026-11-15 dans shellPresets.ts
+      et settingsRbacResolver.ts (SCOPED_LEAD_SETTINGS_TABS = []) ; 2) l'absence de contrôle de sous-arbre sur POST/PATCH/DELETE /api/v1/org-units
+      (_org_units_helpers.py) et de garde anti-auto-éviction du dernier responsable ; 3) l'ouverture sécurisée de la création/invitation de nouveaux
+      comptes humains (+ Nouveau membre, mot de passe temporaire LOCAL ou compte SSO) par BU_LEAD et TEAM_LEAD sur leur périmètre respectif
+      (PLATFORM_ADMIN n'est pas le seul créateur de comptes). Couvre CAP-050, CAP-051, CAP-058 et CAP-067.
+  - id: UX-AUTH-DOUBLE-ICON-01
+    title: "Suppression des doubles icônes (SVG filaire + emoji résiduel) sur le bandeau de mot de passe temporaire et le menu Mon Compte"
+    action: "Éliminer le doublon d'icône d'alerte (⚠️ ⚠️) dans TemporaryPasswordWarningBanner et les préfixes emojis résiduels (⚙️, 🔗) à côté de <OrciaIcon /> dans UserAccountDropdownMenu / dictionnaires i18n FR/EN"
+    priority: P3
+    depends_on: []
+    owner: "Sally (UX) / Amelia (Dev)"
+    status: done
+    epic: epic-17
+    story_ref: "17-1-coquille-ui-direction-c-reset-boutons-icones-svg-filaires-et-5-onglets-configuration"
+    tech_lead_report: "docs/implementation-artifacts/tech-lead-reports/2026-11-16-cadrage-delegation-hierarchique-bu-equipe-et-invitation-comptes-tech-lead-report.md"
+    reference_screenshot: "docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/screenshots/2026-11-16-bu-lead-settings-readonly-et-doubles-icones.png"
+    description: >
+      Relevé sur la capture utilisateur du 2026-11-16 (voir docs/implementation-artifacts/tech-lead-reports/2026-11-16-cadrage-delegation-hierarchique-bu-equipe-et-invitation-comptes-tech-lead-report.md) :
+      coexistence d'une icône SVG <OrciaIcon /> et d'un glyphe Unicode/emoji en dur sur TemporaryPasswordWarningBanner et dans les entrées
+      « Paramètres de mon compte » / « Mes connexions aux outils » du menu déroulant utilisateur.
+  - id: ACTION_ITEM-I18N.1
+    title: "Eradicate hardcoded FR/EN strings and locale ternaries — enforce English dev/docs, bilingual FR/EN web app & deterministic CI gates"
+    action: >
+      Scheduled and expanded into Epic 27 (Stories 27.1..27.8) under decisions D1-D4 (docs/implementation-artifacts/epic-27-decisions-grill-2026-11-23.md):
+      Lot 0 (27.1): Install 4 deterministic CI gates (TS/JSX AST ratchet, FR<->EN dictionary parity/jargon, ClientErrorCode contract, backend RFC 9457 + English dev comments) & resolveClientErrorMessage foundation;
+      Lot 1 (27.2): Remediate Category A (71 client error hits / 26 files) via ClientErrorCode;
+      Lot 2 (27.3-27.4): Remediate Category C apps/web shell, help, routes, wizards & core features;
+      Lot 3 (27.5-27.6): Remediate Category C Process Studio v2/VSM & @orcia/ui primitives via typed props;
+      Lot 4 (27.7): Remediate Categories B & D (577 + 193 backend RFC 9457 catalogs, prompts & seeds);
+      Lot 5 (27.8): Lock all ratchet baselines to 0 and verify bilingual FR/EN Playwright E2E.
+    priority: P2
+    owner: "Amelia (Dev) / Winston (Architect)"
+    status: done
+    epic: epic-27
+    tech_lead_report: "docs/implementation-artifacts/tech-lead-reports/2026-11-20-audit-i18n-chaines-codees-en-dur-tech-lead-report.md"
+    description: >
+      Raw heuristic inventory (3,809 hits / 461 files): docs/implementation-artifacts/archive/2026-11-20-i18n-audit-inventory-raw.md.
+      Tracked via Epic 27 (27-1..27-8) on branch feat/epic-27-bilingual-i18n-and-deterministic-locale-guards.
