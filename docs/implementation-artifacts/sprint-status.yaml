@@ -295,7 +295,7 @@ development_status:
 
   # Epic 27 — English-Only Development & Documentation Governance, 100% Bilingual FR/EN Web Application & Deterministic i18n Controls (AD-17, AD-19, RFC 9457)
   # Source audit: docs/implementation-artifacts/tech-lead-reports/2026-11-20-audit-i18n-chaines-codees-en-dur-tech-lead-report.md
-  # Raw inventory: docs/implementation-artifacts/tech-lead-reports/_i18n-audit-inventory-raw.md
+  # Raw inventory: docs/implementation-artifacts/archive/2026-11-20-i18n-audit-inventory-raw.md
   # Decisions   : docs/implementation-artifacts/epic-27-decisions-grill-2026-11-23.md (D1-D4)
   # Lots        : L0 27-1 | L1 27-2 | L2 27-3 -> 27-4 | L3 27-5 -> 27-6 | L4 27-7 | L5 27-8
   epic-27: done
@@ -1512,7 +1512,7 @@ action_items:
     epic: epic-27
     tech_lead_report: "docs/implementation-artifacts/tech-lead-reports/2026-11-20-audit-i18n-chaines-codees-en-dur-tech-lead-report.md"
     description: >
-      Raw heuristic inventory (3,809 hits / 461 files): docs/implementation-artifacts/tech-lead-reports/_i18n-audit-inventory-raw.md.
+      Raw heuristic inventory (3,809 hits / 461 files): docs/implementation-artifacts/archive/2026-11-20-i18n-audit-inventory-raw.md.
       Tracked via Epic 27 (27-1..27-8) on branch feat/epic-27-bilingual-i18n-and-deterministic-locale-guards.
   - id: TECH-DEBT-EPIC25-SPLIT-01
     title: "Découpage modulaire des fichiers historiques > 350 lignes touchés en Epic 25"

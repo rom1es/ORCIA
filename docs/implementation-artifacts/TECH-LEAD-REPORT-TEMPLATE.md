@@ -1,18 +1,40 @@
+---
+date: YYYY-MM-DD
+story: "{story-key}"
+domain: "[Domain / Modules] (feature|hygiene|ux|doc)"
+summary: "[One-line summary <= 200 chars for the auto-generated README index]"
+status: draft # draft | ready-for-dev | in-progress | in-review | done
+route: dispatch # oneshot | dispatch
+baseline_commit: ""
+review_loop_iteration: 0
+---
+
 # [Story N.M or YYYY-MM-DD — Implementation / Adjustment / Feature Name]
 
 > **Mandatory File Naming Convention (Must be created BEFORE any code modification)**:
 > - Ad-hoc adjustment, bugfix, or evolution outside a Story: `docs/implementation-artifacts/tech-lead-reports/{YYYY-MM-DD}-{short-slug}-tech-lead-report.md`
 > - Sprint User Story: `docs/implementation-artifacts/tech-lead-reports/{story-key}-tech-lead-report.md`
 > - **Language Policy**: Author all new Tech Lead reports in **English** (historical reports remain immutable).
+> - **Index**: Never read or edit `tech-lead-reports/README.md` manually; `pnpm site:sync` regenerates it.
+
+| BMAD Build Section | Target TLR Section |
+| :--- | :--- |
+| Frontmatter `status` / `route` / `baseline_commit` / `review_loop_iteration` | YAML Frontmatter above |
+| `<frozen-after-approval>` block | `<!-- frozen-after-approval:start -->` .. `<!-- frozen-after-approval:end -->` wrapping `## 1` |
+| `## Intent` / `## Boundaries & Constraints` | `### 1.1` & `### 1.2` |
+| `## I/O & Edge-Case Matrix` / Acceptance Criteria | `### 1.3` & `### 1.4` |
+| `## Code Map` & `## Tasks & Acceptance` | `## 2. Implementation Plan` (`- [ ]` checkboxes) |
+| `## Spec Change Log` & `## Review Triage Log` | `### 3.5` |
 
 - **Date**: YYYY-MM-DD
 - **Story / Sprint Key**: `{story-key}` or `{YYYY-MM-DD}-{short-slug}` (`Epic N` / `Cross-Cutting Adjustment`)
-- **Capability(ies)**: `CAP-xxx` (existing to update / new to create in `docs/product/capabilities.yaml`) or `none (hygiene/NFR/UX)` — classification: `feature | hygiene | ux | doc` (see `AGENTS.md` §5)
+- **Capability(ies)**: `CAP-xxx` (existing to update / new to create in `docs/product/capabilities.yaml`) or `none (hygiene/NFR/UX)` — classification: `feature | hygiene | ux | doc` (see `AGENTS.md`)
 - **Author / Context**: [Business context, primary goal, problem solved, `FR-*`, `NFR-*`, `AD-*`, `UX-DR*` requirements covered]
 - **Associated Commits**: `hash1`, `hash2`
 
 ---
 
+<!-- frozen-after-approval:start -->
 ## 1. Needs Analysis & Tech Lead Impact Study (Pre-Implementation)
 
 ### 1.1 Context & Problem Statement
@@ -26,50 +48,47 @@
 - **Exploration & Key Metrics (Database / Containers / Benchmarks)**:
   - [SQL queries / CTEs or exploratory scripts executed]
   - [Observed volumes, identified edge cases, measured signals]
-  - [Conclusions justifying technical choices]
 - **Refactoring Opportunities & Emerging Technical Debt Mitigation**:
   - [Shared primitives extracted or reused (`packages/orcia-core`, `packages/api-client`, `@orcia/ui` components)]
   - [File line-count control (`<= 300–400` lines) and modular splits performed]
-  - [Technical debt / refactoring tickets created: `Story N.Ma` in `epics.md` or `action_items` entries in `sprint-status.yaml`]
+  - [Technical debt / refactoring tickets created (`action_items` entries in `sprint-status.yaml`)]
+
+### 1.3 Acceptance Criteria *(optional for trivial changes)*
+| # | Given / When / Then Criterion |
+| :--- | :--- |
+| AC1 | [Measurable criterion] |
+
+### 1.4 I/O & Edge Cases *(optional for trivial changes)*
+| Input / Condition | Expected Output / Guard |
+| :--- | :--- |
+| [Edge case] | [Expected behavior / error code] |
+<!-- frozen-after-approval:end -->
 
 ---
 
 ## 2. Implementation Plan
 
 ### 2.1 Data Schema & Alembic Migrations (`infra/migrations/versions/...`, if applicable)
-- `infra/migrations/versions/XXXX_migration_name.py`:
-  - Tables, columns (`UUIDv7`), types, integrity constraints, and PostgreSQL 18 triggers (e.g., Append-Only `audit_ledger` / `blackboard_snapshots`).
-  - B-Tree / GIN (`tsvector`) / HNSW (`pgvector halfvec(1024)`) / partial indexes created and performance rationale.
-  - Reversibility validation (`upgrade()` and `downgrade()`).
+- [ ] `infra/migrations/versions/XXXX_migration_name.py`: tables, `UUIDv7` PKs, triggers, indexes, reversibility (`upgrade`/`downgrade`).
 
 ### 2.2 Hexagonal Core, Orchestration & Workers (`packages/orcia-core/`, `apps/worker/`, `infra/sandbox/`)
-- `packages/orcia-core/<domain>/...`:
-  - Algorithmic logic, complexity (McCabe $\le 10$), data structures, and domain invariants (zero framework imports inside `domain/` and `ports/`).
-  - Isolation rules and architectural guardrails (`AD-1` to `AD-25`: e.g., `run-lock.json` immutability, `AD-3` human anchors, `AD-10` model orthogonality, `AD-9` `--unshare-net` sandbox).
-- `apps/worker/...`:
-  - Dramatiq actors, retry idempotency guarantees, and error handling.
+- [ ] `packages/orcia-core/<domain>/...`: domain invariants (zero framework imports), McCabe <= 10, `AD-1..AD-25` isolation rules.
+- [ ] `apps/worker/...`: Dramatiq actors, retry idempotency, error handling.
 
 ### 2.3 Backend API, Security & Contracts (`apps/api/`, `packages/api-client/`)
-- `apps/api/repositories/...` & `apps/api/services/...`:
-  - New functions, recursive CTEs (`WITH RECURSIVE`), aggregation queries (zero `N+1`), multi-level scope filters (`GLOBAL | BU | TEAM | WORKSPACE`), pagination, and `Unit of Work` transactions.
-- `apps/api/routers/...` & `apps/api/dependencies/...`:
-  - Exposed FastAPI endpoints, RBAC/ABAC guards (`RunAccessGuard`, `HTTP 403` rejection in `READ_ONLY_OBSERVER`), Pydantic v2 schemas, bilingual **RFC 9457 Problem Details** error envelopes (`Accept-Language`), and OpenTelemetry `trace_id` correlation (`structlog`).
-- `packages/api-client/`:
-  - TypeScript SDK regeneration via `openapi-typescript` (`0-diff` verified).
+- [ ] `apps/api/repositories/...` & `services/...`: recursive CTEs / zero `N+1`, multi-level scope filters, `UnitOfWork`.
+- [ ] `apps/api/routers/...` & `dependencies/...`: endpoints, RBAC/ABAC (`RunAccessGuard`, `403 READ_ONLY_OBSERVER`), RFC 9457 bilingual errors, OpenTelemetry `trace_id`.
+- [ ] `packages/api-client/`: regenerate SDK via `openapi-typescript` (`0-diff`).
 
 ### 2.4 User Interface & Experience (`apps/web/`, `packages/ui/`)
-- TanStack Router routes (`apps/web/src/...`) and React 19 / `@orcia/ui` components created or modified.
-- Direction C Design Tokens compliance (`DESIGN.md` — zero raw hex colors outside `tokens.css`, Violet `#6D28D9` reserved for `human-led-anchor-card`) and the 11 fundamental UX/UI rules.
-- Full bilingual (`fr` / `en`) compatibility via typed dictionaries in `apps/web/src/i18n/locales/` (zero hardcoded strings or `locale === "fr"` ternaries).
-- Full vertical wiring via `@orcia/api-client` (zero ephemeral `useState` business stores, zero `isJsdom` short-circuits) and URL reload (`F5`) cold survival.
+- [ ] TanStack Router routes & React 19 / `@orcia/ui` components, Direction C tokens, bilingual `fr`/`en` dictionaries, vertical wiring via `@orcia/api-client` (`F5` survival).
 
 ### 2.5 Test Pyramid Impact Analysis (`AD-17` — Layers 1 to 5 + Security, Mandatory)
-- **Layer 1a (Python Unit `tests/unit/`) & Layer 1b (TS/React Unit/Component `Vitest` without `isJsdom`)**: [Unit test files created or updated]
-- **Layer 2 (Vertical Integration `HTTP FastAPI ➔ PostgreSQL 18` `tests/integration/`)**: [HTTP routes tested against PostgreSQL 18 + `SELECT` verification]
-- **Layer 3 (OpenAPI 3.1 Contracts `0-diff`, Schemathesis & `lint-imports`)**: [Impacts on HTTP schemas / `@orcia/api-client` SDK]
-- **Layer 4 (`$0` Golden Dataset AI Evals `tests/evals/`)**: [Golden datasets `tests/evals/golden/*.jsonl` impacted or added]
-- **Security / Red-Team Layer (`tests/security/`)**: [SSRF guard, `403 ERR_OBSERVER_MODE_READ_ONLY`, RBAC/ABAC, `CONFIDENTIAL_RESTRICTED` masking, zero plaintext secrets]
-- **Layer 5 (Dual-Server Playwright E2E `apps/web/e2e/*.spec.ts`)**: [Impacted Playwright specs and `data-testid` selectors, bilingual `fr`/`en` verification, and `tests:` update in `docs/product/capabilities.yaml`]
+- [ ] **Layer 1a & 1b**: `tests/unit/` (`pytest` >= 90%) & `Vitest` (no `isJsdom` short-circuits).
+- [ ] **Layer 2**: `tests/integration/` (`HTTP FastAPI -> PostgreSQL 18` + `SELECT` verification).
+- [ ] **Layer 3**: OpenAPI 3.1 `0-diff`, Schemathesis, `lint-imports`.
+- [ ] **Layer 4 & Security**: `$0` Golden Dataset evals (`tests/evals/`) & `tests/security/` (SSRF, RBAC, Observer `403`, secrets).
+- [ ] **Layer 5**: Dual-server Playwright E2E (`apps/web/e2e/*.spec.ts`) & `capabilities.yaml` `tests:` update.
 
 ---
 
@@ -78,48 +97,34 @@
 ### 3.1 Created & Modified Files
 | File | Action (Created / Modified / Refactored) | Concise Summary |
 | :--- | :--- | :--- |
-| `infra/migrations/...` | Created | ... |
-| `packages/orcia-core/...` | Created / Modified | ... |
-| `apps/api/...` | Created / Modified | ... |
-| `apps/web/...` | Created / Modified | ... |
+| `...` | Created / Modified | ... |
 
 ### 3.2 Quantitative Metrics, Coverage & Static Quality
-- **Test coverage**: [Obtained unit test coverage (`pytest` / `Vitest`, $\ge 90\%$ required)]
-- **Measured performance**: [CTE query times (`< 15 ms`), hybrid RAG (`< 50 ms`), SSE broadcast (`< 500 ms`), UI view switching (`< 1 s`)]
+- **Test coverage**: [Unit test coverage (`pytest` / `Vitest`, >= 90% required)]
 - **Static Quality & Architecture**:
   - `ruff check` & `ruff format --check`: `0` warnings
   - `mypy --strict` & `pnpm typecheck`: `0` errors
   - `lint-imports`: `5 contracts kept, 0 broken`
   - `lint_spine.py`: `ok: true, 0 findings`
-  - `gitnexus_detect_changes()`: [Verified and compliant scope]
 
 ### 3.3 AD-17 Test Pyramid & Vertical Wiring Verification
-- **Layer 1a — Python Unit Tests (`pytest` + `hypothesis`, $\ge 90\%$) & Layer 1b — Frontend TS (`Vitest` without `isJsdom`)**: [Details of verified invariants]
-- **Layer 2 — Vertical Integration `HTTP ➔ PostgreSQL 18` (`testcontainers-python`: PostgreSQL 18 + `pgvector`, Redis 7.4, SeaweedFS)**: [FastAPI route call (`AsyncClient`) + database `SELECT` verification, zero orphan SQL adapters]
-- **Layer 3 — API Contract (`openapi-typescript` `0-diff`, `Schemathesis`, `lint-imports`, `lint_spine.py`)**: [Schema and RFC 9457 error code validation]
-- **Layer 4 — AI Orchestration & Golden Dataset Evals (`DeterministicCassetteLLM`, `tests/evals/`)**: [`$0` deterministic verification of agent flows, citations, and Gates]
-- **Security / Red-Team Layer (`tests/security/`)**: [SSRF, `403 ERR_OBSERVER_MODE_READ_ONLY`, RBAC/ABAC, `CONFIDENTIAL_RESTRICTED` masking, zero secret leaks]
-- **Layer 5 — Dual-Server Playwright E2E (`pnpm e2e`), `F5` Cold Survival (`unmount()` + `render()`) & Day-0 Ground Truth (`pnpm db:reset`)**: [Desktop/Mobile E2E scenarios verified, post-reload persistence, bilingual FR/EN behavior, and `tests:` / `verification: runtime` update in `docs/product/capabilities.yaml`]
+- **Layer 1a / 1b / 2 / 3 / 4 / Security / 5**: [Exact commands run and observed pass counts]
 
 ### 3.4 Token, Duration KPIs & Flake Log (`T-D9` / Epic 32 Instrumentation)
-
-- **Token & Duration KPIs** *(populate via dev-only `.venv/bin/python scripts/agent_token_report.py --story <prefix>` when `ORCIA_TRANSCRIPTS_DIR` is set, plus `scripts/agent_check.py` stage timings)*:
+- **Token & Duration KPIs** *(via `.venv/bin/python scripts/agent_token_report.py --story <prefix>` + `scripts/agent_check.py` timings)*:
 
 | KPI | Epic 30–31 Baseline | Target | Measured (This Story) |
 | :--- | :--- | :--- | :--- |
-| Billed input tokens / story | median 66.6 M (mean 79.1 M) | ≤ 40 M (−40 %) | — |
-| Test-related tokens / story | median 27.4 M (mean 31.0 M) | ≤ 14 M (−50 %) | — |
-| Test-related turns / story | median 108 (mean 134) | ≤ 54 | — |
-| Failed check runs / story | median 24 (mean 25.6) | ≤ 10 | — |
-| Noise failures (C + E + F) | 79 % (mean 20.3 / story) | ≤ 6 / story (−70 %) | — |
-| Verifier bounces / story | median 3 (E30: 15, E31: 23) | ≤ 1 | — |
-| Real bugs caught / story (A + A2) | mean 3.0 | ≥ 3.0 (floor) | — |
-| Test-run minutes / story | mean 53 (E30: 47, E31: 59) | ≤ 20 | — |
-| `tests/unit` wall time | 392 s (333 s post-32.1) | ≤ 120 s | — |
-| Always-on rules bytes / truncation | `36,416 B` (`12,464 B` truncated) | `AGENTS.md` ≤ 12 KB, all < 24 KB, 0 truncated | — |
+| Billed input tokens / story | median 66.6 M | <= 40 M (-40%) | — |
+| Test-related tokens / story | median 27.4 M | <= 14 M (-50%) | — |
+| Always-on rules bytes / truncation | `36,416 B` (`12,464 B` trunc.) | `AGENTS.md` <= 3.5 KB, 0 truncated | — |
 
 - **Flake Log**:
 
 | Date | Test / Check ID | Stage | Symptom | Root Cause / Resolution | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | — | *(none observed)* | — | — | — | — |
+
+### 3.5 Spec Change Log & Review Triage *(optional)*
+- **Spec changes**: [Approved amendments to frozen §1]
+- **Review findings**: [Triaged blocker/major/minor dispositions]

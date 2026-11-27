@@ -70,7 +70,11 @@ async def execute_orcia_documentation_workflow(
         faq_file = root / "docs/help/fr/spaces-sources.md"
     tl_reports_dir = root / "docs/implementation-artifacts/tech-lead-reports"
     tl_reports = (
-        [p for p in tl_reports_dir.glob("*.md") if p.name != "README.md"]
+        [
+            p
+            for p in tl_reports_dir.glob("*-tech-lead-report.md")
+            if p.is_file() and not p.name.startswith("_")
+        ]
         if tl_reports_dir.exists()
         else []
     )

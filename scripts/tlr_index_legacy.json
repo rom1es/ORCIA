@@ -1,0 +1,1556 @@
+{
+  "1-1-amorçage-du-monorepo-hybride-coquille-ui-direction-c-7-modul-tech-lead-report.md": {
+    "date": "2026-10-25",
+    "domain": "Monorepo Hybride / `@orcia/ui` Direction C / `i18n` (`fr`/`en`) / Tests 5 Couches",
+    "story": "Story 1.1",
+    "summary": "Initialisation du monorepo hybride (`pnpm` + `Turborepo` / Python 3.12 `.venv`), librairie Design System isolée `@orcia/ui` (coquille 3 colonnes, 7 modules), fondation `i18n` bout-en-bout (`fr` défau…"
+  },
+  "1-2-authentification-hybride-bi-mode-oidc-locale-arbre-hiérarchi-tech-lead-report.md": {
+    "date": "2026-10-25",
+    "domain": "Auth Bi-Mode (`OIDC` + `Argon2id/TOTP`) / Arbre `OrgUnit` & `Workspaces` Multi-Sources / 5 Permissions & `AES-256-GCM`",
+    "story": "Story 1.2",
+    "summary": "Migration Alembic `0002` (9 tables `UUIDv7`), authentification bi-mode JWT `15 min` + Refresh Token Redis révocable, coffre *Passthrough* `AES-256-GCM`, évaluateur matriciel `packages/orcia-core/perm…"
+  },
+  "1-3-catalogue-fédéré-multi-sources-n-git-n-jira-n-confluence-db-tech-lead-report.md": {
+    "date": "2026-10-25",
+    "domain": "Catalogue Fédéré Multi-Sources / Cache CAS `SHA-256` (`< 50ms`) / Fusion 4 Niveaux & `run-lock.json` / Adaptateur BMAD & `uri-badge`",
+    "story": "Story 1.3",
+    "summary": "Migration Alembic `0003` (`catalog_items`, `workflow_definitions`, `workspace_customization_overrides`), `FederatedUriResolver` (`cas/<sha256>`), `FourLayerOverrideMerger` (`Base -> Team -> Workspace…"
+  },
+  "1-4-exécution-passthrough-service-principal-permission-broker-ia-tech-lead-report.md": {
+    "date": "2026-10-25",
+    "domain": "Exécution `Passthrough` vs `Service Principal` / `PermissionBrokerService` & KB YAML/Markdown / Carte Ambre `UX-DR11` & Jira",
+    "story": "Story 1.4",
+    "summary": "Migration Alembic `0004` (`permission_broker_policies`, `permission_broker_tickets`), garde-fou anti-*Confused Deputy*, interception `401/403` avec `permission_broker_hint` RFC 9457, lien Jira pré-re…"
+  },
+  "1-5-workflows-système-d-amorçage-gouverné-jour-0-onboarding-auto-tech-lead-report.md": {
+    "date": "2026-10-25",
+    "domain": "Workflows Système `orcia://system/bootstrap/*` / `ModelRouterService` ($\\ge 2$ familles LLM `AD-10`) / Onboarding `TEAM_LEAD` Multi-Workspaces & `Human-Led Anchor Card` (`UX-DR3`)",
+    "story": "Story 1.5",
+    "summary": "Migration Alembic `0005` (`llm_model_endpoints`, `system_bootstrap_runs`, `user_onboarding_states`), Gates Déterministes `init-organization`, `init-workspace`, `init-datasource` (Ancre Humaine `#6D28…"
+  },
+  "10-1-gouvernance-personnalisation-4-niveaux-mon-assistant-mode-a-m-tech-lead-report.md": {
+    "date": "2026-10-31",
+    "domain": "Gouvernance & Personnalisation à 4 Niveaux de `Mon Assistant` (Bornes `🔒 AssistantHarness` `AD-15`, Mode A Formulaire Rapide 3 Onglets, Mode B Studio Graphique & Exposition MCP `assistant.ask`)",
+    "story": "Story 10.1",
+    "summary": "`AssistantFourLevelGovernanceService` (Mode A 3 onglets `USER` / `WORKSPACE` / `5 Couches`, Règle de l'Entonnoir `ERR_FUNNEL_RULE_VIOLATION`, Mode B Studio `@xyflow/react` avec rejet `HTTP 422 ERR_IM…"
+  },
+  "10-2-garantie-de-latence-ttft-1-2s-cache-redis-prompt-assemblé-3-v-tech-lead-report.md": {
+    "date": "2026-10-31",
+    "domain": "Garantie de Latence (`TTFT < 1.2s`), Cache Redis du Prompt Assemblé (`assistant:prompt:<workspace_id>:<user_id>:<hat>`, `TTL 300s`) & 3 Vitesses Conversationnelles (`⚡ Rapide`, `@Agent / /Skill`, `🧠 Approfondi`)",
+    "story": "Story 10.2",
+    "summary": "`AssistantThreeSpeedRouterService` (cache 5 couches `< 5 ms`, invalidation sur `SETTINGS_CHANGED` / `OVERRIDE_UPDATED` / `GLOSSARY_PROMOTED`, Vitesse 1 Nœuds `1..4` `< 80 ms` + `TTFT < 1.2 s`, Vitess…"
+  },
+  "10-3-citation-déterministe-vérification-sources-s1-g1-o1-filtrage-tech-lead-report.md": {
+    "date": "2026-10-31",
+    "domain": "Citation Déterministe & Vérification des Sources (`[S1]`, `[G1]`, `[O1]`), Filtrage Dynamique par Lecteur (`READ_SOURCE`) & Verrou V5 (`AD-15` : Pas de Publication Directe)",
+    "story": "Story 10.3",
+    "summary": "`AssistantCitationAndV5GuardService` (Table des Preuves `REFERENCE > ACTIVE`, `citation_map` à `t = 80 ms`, purge `snippet` et `[S1 · 🔒 Source restreinte — Demander l'accès]`, vérificateur post-strea…"
+  },
+  "10-4-dossiers-thématiques-continuité-mémoire-couche-5-partage-verr-tech-lead-report.md": {
+    "date": "2026-10-31",
+    "domain": "Dossiers Thématiques (`📁 Dossiers`), Continuité Mémoire Couche 5, Partage Collaboratif (`🔒 Privé | 👥 Partagé | 📦 Espace`) & Verrou de Tour Redis (`SET lock:thread:<thread_id> NX EX 60`, `AD-6`)",
+    "story": "Story 10.4",
+    "summary": "Migration Alembic `0025` (`assistant_folders`, `assistant_threads`, `assistant_folder_shares`), `AssistantFoldersAndSharingService` (injection Couche 5 notes/pièces/résumés, passerelle Processus 1 cl…"
+  },
+  "11-1-refonte-mes-espaces-5-sous-onglets-cascade-localisation-artef-tech-lead-report.md": {
+    "date": "2026-10-31",
+    "domain": "Refonte de `Mes Espaces` en 5 Sous-Onglets, Cascade de Localisation à 4 Niveaux, `ExternalEditRebaser` (`Verrou V2`), `workspace_exception_waivers` Gouverné par Chaîne ADN (`Verrou V1`) & Workflow Pilote `sdlc/ticket-to-tech-spec`",
+    "story": "Story 11.1",
+    "summary": "Migration Alembic `0026` (`workspace_exception_waivers`, `HUMAN_AMENDED_EXTERNAL`), `WorkspaceGovernanceAndArtifactRoutingService` (`Verrou V1` rejetant `ERR_ENTERPRISE_DIRECTIVE_WAIVER_FORBIDDEN` su…"
+  },
+  "11-2-cycle-de-vie-glossaire-règles-métiers-à-valider-extraction-2-tech-lead-report.md": {
+    "date": "2026-10-31",
+    "domain": "Chaîne Causale ADN (`DIRECTIVE ➔ NORME ➔ MÉCANISME`), Compilateur `Text-to-Starlark` Palier 1b (`< 2 ms`), Cycle de Vie du Glossaire (`✨ À valider <= 15 FIFO`) & Promotion *In-Flow* (`Verrou V4`)",
+    "story": "Story 11.2",
+    "summary": "Migration Alembic `0027` (`dna_stereotype`, `mechanism_payload_jsonb`, `ontology_rejected_candidates`), `StarlarkMechanismSandbox` Palier 1b (`< 2 ms`, anti-ReDoS $O(n)$, effets Staged), `DnaStarlark…"
+  },
+  "11-3-déclaration-services-mcp-agents-distants-a2a-banc-de-test-à-c-tech-lead-report.md": {
+    "date": "2026-10-31",
+    "domain": "Déclaration Guidée des Services / Serveurs MCP & `@Agents Distants (MCP / A2A)`, Exposition MCP Gouvernée (`/api/v1/mcp`) et Banc de Test à Chaud en 4 Étapes (`🔌`)",
+    "story": "Story 11.3",
+    "summary": "`RemoteServiceTestBenchAndGovernedMcpService` (Banc de test 4 étapes Anti-SSRF, `🟠 En attente de jeton utilisateur (Passthrough)` non-bloquant, qualification `READ_ONLY` vs `WRITE_STAGED_REQUIRED`, D…"
+  },
+  "11-4-pack-métier-système-orcia-pack-builder-processus-1-à-4-what-i-tech-lead-report.md": {
+    "date": "2026-10-31",
+    "domain": "Pack Métier Système `packages/orcia-pack-builder` — Processus 1 à 4 (`create-business-pack`, `evolve-business-pack` *What-If*, `certify-pack-tool` Starlark Palier 1b `< 2 ms` & Palier 2, `export-from-workspace-to-pack`)",
+    "story": "Story 11.4",
+    "summary": "Package `packages/orcia-pack-builder` (`AD-20`), `PackBuilderSystemService` (Ancrage Humain Violet obligatoire, chaîne ADN `DIRECTIVE ➔ NORME ➔ MÉCANISME`, validation `pack.yaml` Palier 1a `< 5 s` +…"
+  },
+  "11-5-processus-5-generate-and-attach-help-validateur-validate_help-tech-lead-report.md": {
+    "date": "2026-10-31",
+    "domain": "Processus 5 `generate-and-attach-help`, Validateur Déterministe `validate_help_article` (Palier 1 `< 5 s`) & Rattachement à Chaud `< 100 ms` / Export Git",
+    "story": "Story 11.5",
+    "summary": "`HelpArticleDeterministicValidator` (vérification routes, composants `@orcia/ui`, 3 sections obligatoires + ancres `#`, alignement glossaire et `0` secret), `HelpGenerationAndHotAttachmentService` (p…"
+  },
+  "12-1-bascule-apps-web-shell-4-zones-direction-c-8-entrees-cockpit-tech-lead-report.md": {
+    "date": "2026-10-31",
+    "domain": "Bascule de `apps/web` sur le Shell 4 Zones Direction C (8 Entrées Fixes Non Numérotées, Recherche `⌘K`, Compte & Préférences, Colonne d'Aide Contextuelle `❓` `340px`), Unification `tokens.css` & Cockpit Épuré",
+    "story": "Story 12.1",
+    "summary": "Remplacement de `<AppShell />` par `<FourZoneDirectionCShell />` dans `ShellContainer.tsx`, câblage de `TopHeaderSearchCommand`, `UserAccountDropdownAndSettingsModal` et `ContextualHelpColumnAndCente…"
+  },
+  "12-2-montage-ecran-mon-assistant-tout-en-un-apps-web-epic-10-tech-lead-report.md": {
+    "date": "2026-10-31",
+    "domain": "Montage de l'Écran « Mon Assistant » Tout-en-Un dans `apps/web` (`/assistant` — `Epic 10` : 3 Vitesses, Dossiers `📁`, Citations `[S1]/[G1]/[O1]` & Gouvernance 4 Niveaux)",
+    "story": "Story 12.2",
+    "summary": "Extension bilingue de `epic10_labels.ts` (`assistantSpeedStream`, `assistantCitations`, `assistantFolders`) et montage de `AssistantFoldersAndCollaborativeThreadView`, `AssistantSpeedSelectorAndStrea…"
+  },
+  "12-3-montage-mes-espaces-5-onglets-adn-starlark-mcp-pack-builder-tech-lead-report.md": {
+    "date": "2026-10-31",
+    "domain": "Montage de « Mes Espaces » (5 Sous-Onglets, Chaîne ADN Starlark, Glossaire `✨ À valider`), du Banc de Test MCP/A2A `🔌` et de l'Atelier `orcia-pack-builder` dans `apps/web` (`Epic 11`)",
+    "story": "Story 12.3",
+    "summary": "Création de `epic11_labels.ts` (FR/EN) et montage de `WorkspaceFiveTabsAndExternalRebaseView` + `DnaStarlarkCompilerAndGlossaryLifecycleView` (`/spaces`, `/workspaces`), `RemoteServiceTestBenchAndMcp…"
+  },
+  "12-4-epuration-ux-zero-donnee-fictive-modale-admin-jour-0-grisage-et-purge-nfr-tech-lead-report.md": {
+    "date": "2026-10-31",
+    "domain": "Épuration UX « Zéro Donnée Fictive », Modale de Création du Compte Administrateur Jour 0, Grisage des Fonctionnalités Non Configurées, Nettoyage de la Sidebar & Purge des Libellés NFR (`Epic 12`)",
+    "story": "Story 12.4",
+    "summary": "Découpage de `UserAccountDropdownAndSettingsModal.tsx` (`UserSettingsModalTabs.tsx`), modale bloquante d'initialisation du 1er Administrateur, purge des données fictives (`PAY-142`, `SEPA`, `PSD2`) e…"
+  },
+  "16-1-quatre-primitives-exploration-chirurgicale-et-ports-hexagonaux-tech-lead-report.md": {
+    "date": "2026-11-11",
+    "domain": "Quatre Primitives d'Exploration Chirurgicale (`#Lstart-end`), Port Hexagonal `SurgicalExplorerPort`, Adaptateur Gouverné `SurgicalContextExplorer` & Routes REST `/api/v1/sources/inspect-lines` / `/surgical-explore` (`CAP-160`)",
+    "story": "Story 16.1",
+    "summary": "Création du port pur `SurgicalExplorerPort` (`orcia_core.ports`), de l'adaptateur asynchrone `SurgicalContextExplorer` (`orcia_connectors.surgical`, plafond `MAX_SURGICAL_LINES = 250`, badges `M↓`/`Y…"
+  },
+  "16-2-moteur-reflexif-non-deterministe-asyncio-sse-et-suspend-resume-tech-lead-report.md": {
+    "date": "2026-11-11",
+    "domain": "Moteur Réflexif Non-Déterministe Pur `asyncio` (`NonDeterministicReflexiveRuntime`, `0` DBOS), Streaming SSE Temps Réel (`/trace-stream`), Délégation Bornée (`depth <= 1`) & Suspend/Resume sans État sur `WritePreviewCard` (`WAITING_WRITE_PREVIEW`, Survie `F5`, `CAP-160`)",
+    "story": "Story 16.2",
+    "summary": "Création des ports `reflexive_runtime_ports.py`, du moteur `orcia_core.agents` (`Standard` `4 tours / 8k tokens` vs `Approfondi` `25 tours / 48k tokens`, séparation `cancel_execution` vs `request_syn…"
+  },
+  "16-3-double-mode-processus-objectif-vs-jalons-dispatcher-et-packs-tech-lead-report.md": {
+    "date": "2026-11-11",
+    "domain": "Double Mode de Processus (`Piloté par l'objectif` vs `Piloté par les jalons`), `ProcessExecutionDispatcher`, Encapsulation Principe 7 (`ClaimCheckPointer` + `reflexive_execution_id` sans bloat scratchpad), Persistance PG18 `SqlWorkflowDefinitionsV2Store` & Studio 5-Blocs Bilingue sans Jargon (`CAP-160`)",
+    "story": "Story 16.3",
+    "summary": "Enrichissement rétrocompatible de `WorkflowDefinitionV2` (`orchestration_type`, `reflexive_objective`, `allowed_delegate_agents`), création de `BoundedWorkflowLauncherPort` + `BoundedWorkflowLauncher…"
+  },
+  "16-4-trace-execution-ui-et-inspecteur-chirurgical-lignes-bout-en-bout-tech-lead-report.md": {
+    "date": "2026-11-11",
+    "domain": "Trace d'Exécution Vivante `<AgentExecutionTrace />` (Groupes Repliables, Délégation `@Agent`, `[Synthétiser maintenant]` vs `■ Arrêter`, `WritePreviewCard`), Inspecteur Chirurgical de Lignes `<SourceLineInspectorDrawer />` (`#Lstart-end` & Garde `READ_SOURCE` `0` ligne exposée) & Intégration Bout-en-Bout sur les 3 Surfaces (`CAP-160` `live`)",
+    "story": "Story 16.4 (Clôture Epic 16)",
+    "summary": "Création des composants purs `@orcia/ui` `<AgentExecutionTrace />` et `<SourceLineInspectorDrawer />` (`@radix-ui/react-dialog`), dictionnaires bilingues FR/EN zéro jargon, contrôleurs partagés `useS…"
+  },
+  "17-1-coquille-ui-direction-c-reset-boutons-icones-svg-filaires-et-5-onglets-configuration-tech-lead-report.md": {
+    "date": "2026-11-11",
+    "domain": "Coquille UI Direction C : Reset CSS `<button>`, Registre d'Icônes `<svg>` Filaires Monochromes `16px`, Barre de Repli Propre (`<kbd>[</kbd>`), Entrée Sidebar `Mon Compte` & 5 Onglets Adaptatifs `/settings` Gouvernés par Rôle",
+    "story": "Story 17.1 (CAP-058, CAP-060, CAP-100)",
+    "summary": "Ajout du reset `@layer base { button }` et des états `.orcia-ds-btn-danger` (`--color-stale-crimson`) dans `tokens.css` ; rendu `<svg>` filaire `24x24` `stroke=\"currentColor\"` (`strokeWidth=1.75`) da…"
+  },
+  "17-2-organigramme-hierarchique-indente-modales-edition-membres-et-facturation-tech-lead-report.md": {
+    "date": "2026-11-11",
+    "domain": "Organigramme Hiérarchique Indenté Multi-Niveaux (`BU → Sous-BU / Pôle → Équipe`), CRUD `/api/v1/org-units` PostgreSQL 18, 4 Modales RGAA d'Édition / Membres / Facturation & Suppression Sécurisée (`HTTP 409 ERR_ORG_UNIT_NOT_EMPTY`)",
+    "story": "Story 17.2 (CAP-051, CAP-067)",
+    "summary": "Migration Alembic `20261111_1702` (`billing_enabled`, `lead_user_id`, `member_user_ids_jsonb`), domaine `org_hierarchy.py` + adaptateur SQL sans `N+1` `sql_org_units.py`, synchronisation topologique…"
+  },
+  "17-3-annuaire-comptes-matrice-roles-delegues-secops-et-suppression-secrets-exposes-tech-lead-report.md": {
+    "date": "2026-11-11",
+    "domain": "Annuaire des Comptes dès le Jour 0 (`PLATFORM_ADMIN + SECOPS`, Humains & `SERVICE_PRINCIPAL`, Anti-Lockout `422`), Matrice des 6 Rôles Délégués (`BU_LEAD`), Éradication de « Lire / Voir les secrets » (`AD-21`) & Tiroir d'Isolation `SECOPS`",
+    "story": "Story 17.3 (CAP-050, CAP-051)",
+    "summary": "Migration Alembic `20261111_1703` (`iam_accounts` + `role_permission_grants.resource_kind` & `INHERITANCE_BLOCK`), domaine pur `iam_accounts.py` + `role_matrix.py`, adaptateur PG18 `sql_iam_accounts.…"
+  },
+  "17-4-connecteurs-sso-socle-mon-compte-passthrough-et-repli-referent-rag-tech-lead-report.md": {
+    "date": "2026-11-11",
+    "domain": "Registre Socle `Connecteurs & SSO` (`/api/v1/settings/connectors`, Anti-SSRF `422`, `SecretStatus` Write-Only sans pollution d'Espace), Enrichissement de `👤 Mon Compte` (`Passthrough` `AES-256-GCM` 1 fois par Connecteur + Équipes FinOps) & Synchronisation RAG dans `Mes Espaces › Sources` avec Repli sur Membre Référent (`PAUSED_REFERENT_RENEWAL_REQUIRED`)",
+    "story": "Story 17.4 (CAP-003, CAP-054, CAP-063, CAP-080)",
+    "summary": "Migration Alembic `20261111_1704` (`enterprise_connectors`, `user_connector_passthrough_tokens`, extension `workspace_datasources`), domaine pur `enterprise_connectors.py`, adaptateurs PG18 `sql_ente…"
+  },
+  "17-5-refonte-hub-modeles-ia-table-sante-modale-secrets-aes256-et-drainage-tech-lead-report.md": {
+    "date": "2026-11-14",
+    "domain": "Hub Modèles IA Pleine Largeur, Supervision Santé & Latence, Modale Dédiée avec Saisie Secrète `AES-256-GCM` (`masked_hint`), Garde-Fou Anti-SSRF (`422`), Analyse d'Impact Dépendances Workflows & Drainage sans Perte (`Story 17.5`, `AD-21`)",
+    "story": "Story 17.5 (CAP-052, CAP-053)",
+    "summary": "Migration Alembic `20261114_1705` (15 colonnes `workspace_llm_tier_mappings` réversibles), domaine pur `ai_models_governance.py` + `secret_hint.py` (`compute_secret_masked_hint`), adaptateurs Postgre…"
+  },
+  "18-1-deport-sources-espaces-url-wsid-filtres-multi-nature-et-modale-rattachement-tech-lead-report.md": {
+    "date": "2026-11-14",
+    "domain": "Déport des Sources Documentaires dans `/workspaces/$workspaceId/sources`, Filtres Multi-Nature (`DOCUMENT`, `STRUCTURED_DATA`, `SOURCE_CODE`), Modale Dédiée `OrciaDialog` & Gouvernance `GitNexus`",
+    "story": "Story 18.1 (CAP-011, CAP-080)",
+    "summary": "Migration Alembic `20261114_1801` (colonnes `codegraph_*` sur `workspace_datasources`), route TanStack `/workspaces/$workspaceId/sources`, table maîtresse `WorkspaceSourcesMasterTable.tsx`, modale `W…"
+  },
+  "18-2-moteur-fraicheur-webhooks-outbox-sha256-sonde-24h-et-gouvernance-gitnexus-tech-lead-report.md": {
+    "date": "2026-11-14",
+    "domain": "Moteur de Fraîcheur Différentiel (`SHA-256`), Webhooks `Outbox`, Sonde `24h` & Indexeur `GitNexus`",
+    "story": "Story 18.2 (CAP-011, CAP-080, CAP-180)",
+    "summary": "Migration Alembic `20261114_1802` (`datasource_webhook_deliveries` + contrainte `domain_events_outbox`), événements `DatasourceSyncRequested` et `DatasourceFreshnessEvaluated`, réconciliateur `source…"
+  },
+  "18-3-contrat-outils-normalise-codegraph-mcp-lecture-seule-et-rayon-impact-tech-lead-report.md": {
+    "date": "2026-11-14",
+    "domain": "Contrat d'Outils Normalisé `codegraph-mcp` Lecture Seule (5 Outils), Providers Interchangeables (`GitNexus` / `Sourcegraph SCIP`), Rayon d'Impact & Alerte de Dérive (`GRAPH_MOVED_SINCE_RUN_LOCK`)",
+    "story": "Story 18.3 (CAP-082, CAP-180)",
+    "summary": "Contrat normalisé à 5 outils (`codegraph_locate_symbol`, `codegraph_get_call_hierarchy`, `codegraph_find_references`, `codegraph_calculate_blast_radius`, `codegraph_read_span` avec max 250 lignes et…"
+  },
+  "18-4-infrastructure-docker-compose-gitnexus-mcp-volume-dedie-et-registre-capacites-tech-lead-report.md": {
+    "date": "2026-11-14",
+    "domain": "Infrastructure `docker-compose.yml` (`gitnexus-mcp` Isolé `:ro`), Registre des Capacités (`CAP-180`), Résorption Volumétrique & Validation Pyramide `AD-17`",
+    "story": "Story 18.4 (CAP-054, CAP-080, CAP-180)",
+    "summary": "Déploiement souverain du sidecar `gitnexus-mcp` (`ghcr.io/abhigyanpatwari/gitnexus:latest`) sur volume dédié `gitnexus_graphs:` monté en lecture seule `:ro` et réseau interne isolé `codegraph-interna…"
+  },
+  "19-1-modale-ui-champs-vides-placeholders-fournisseurs-et-suppression-puces-en-dur-tech-lead-report.md": {
+    "date": "2026-11-15",
+    "domain": "Modale UI Connecter un Modèle IA — Champs Vides, Placeholders Dynamiques par Fournisseur & Suppression des Puces Codées en Dur (D1)",
+    "story": "Story 19.1 (CAP-052, CAP-053, CAP-190)",
+    "summary": "Champs `primaryModel` et `fallbackModel` initialisés vides (`value === \"\"`) en création et lors du clic sur un préréglage fournisseur, placeholders contextuels (`mistral-large-latest` pour Mistral, `…"
+  },
+  "19-2-decouverte-dynamique-modeles-0-token-combobox-filtrable-et-saisie-libre-tech-lead-report.md": {
+    "date": "2026-11-15",
+    "domain": "Découverte Dynamique des Modèles Sans Consommation de Token (0 Token, 0 $), Combobox Filtrable & Saisie Libre (`Décision D2`)",
+    "story": "Story 19.2 (CAP-052, CAP-053, CAP-081, CAP-190)",
+    "summary": "Module pur `ai_models_discovery.py` interrogeant les métadonnées fournisseurs (`openai_compatible` `/v1/models` et repli `/api/tags`, `anthropic_messages` `/v1/models`, `gemini_native` `/v1beta/model…"
+  },
+  "19-3-test-connexion-reel-chat-max-tokens-1-embedding-dim-1024-latence-reelle-tech-lead-report.md": {
+    "date": "2026-11-15",
+    "domain": "Test de Connexion Réel Chat (`max_tokens=1`) & Embedding (Dimension 1024 Validée), Latence Réelle Mesurée, Erreurs RFC 9457 & Éradication des Latences Factices 18/42 ms (`AD-24.3`, `D3`)",
+    "story": "Story 19.3 (CAP-052, CAP-053, CAP-190)",
+    "summary": "Testeur de connectivité pur async `test_ai_model_endpoint_connection` dans `orcia_core.orchestration` (chat minimal `max_tokens=1` pour `openai_compatible`, `anthropic_messages`, `gemini_native` + em…"
+  },
+  "19-4-suppression-noms-modeles-en-dur-backend-tier-mappings-vides-et-amorcage-jour-0-tech-lead-report.md": {
+    "date": "2026-11-15",
+    "domain": "Suppression Intégrale des Noms de Modèles en Dur Côté Backend, Tier Mappings Vides, Amorçage Jour 0 Propre (`Décision D4`) & Script de Purge Idempotente",
+    "story": "Story 19.4 (CAP-052, CAP-053, CAP-190)",
+    "summary": "`DEFAULT_LLM_MODEL_ENDPOINT_SEEDS` et `build_default_tier_mappings` désormais vides `()`, `model_name` rendu obligatoire sans repli en dur (`gemini-argon`, `claude-3-7-sonnet`), exception RFC 9457 bi…"
+  },
+  "19-5-usage-embedding-hub-port-hexagonal-embedding-port-et-adaptateurs-httpx-tech-lead-report.md": {
+    "date": "2026-11-15",
+    "domain": "Usage `embedding` dans le Hub des Modèles IA, Port Hexagonal Pur `EmbeddingPort` & Adaptateurs HTTPX Asynchrones (`AD-24.5`, `D5`, `D6`)",
+    "story": "Story 19.5 (CAP-052, CAP-190)",
+    "summary": "Migration Alembic `20261115_2105` (colonne `usage: chat | embedding` et index partiel unique garantissant un seul modèle d'embedding actif au scope GLOBAL), port hexagonal pur `EmbeddingPort` (dimens…"
+  },
+  "19-6-migration-alembic-suppression-hachage-sha256-prod-et-blocage-sans-modele-tech-lead-report.md": {
+    "date": "2026-11-15",
+    "domain": "Migration Alembic `kb_chunks.embedding_model_id`, Suppression Totale du Pseudo-Hachage SHA-256 en Production, Branchement RAG & Assistant sur `EmbeddingPort` & Blocage Matériel sans Modèle Actif (`AD-24.7`, `D7`, `D8`, `D10`, `D11`, `D12`)",
+    "story": "Story 19.6 (CAP-011, CAP-070, CAP-071, CAP-190)",
+    "summary": "Migration Alembic `20261115_2206` (colonnes `embedding_model_id`, `embedding_generated_at`, RAZ vecteurs SHA-256 à NULL, statut `AWAITING_EMBEDDING_MODEL`), éradication 100% de `compute_deterministic…"
+  },
+  "19-7-reindexation-bloquante-idempotente-suivi-progression-et-verrouillage-assistant-tech-lead-report.md": {
+    "date": "2026-11-15",
+    "domain": "Réindexation Bloquante Idempotente, Suivi de Progression & Verrouillage Assistant/Recherche pendant le Job (`AD-24.8`, `D9`, `D12`, Jour 0 Sans Faux Blocage)",
+    "story": "Story 19.7 (CAP-011, CAP-052, CAP-070, CAP-071, CAP-190)",
+    "summary": "Migration Alembic `20261115_2307` (`rag_reindexing_jobs`, `rag_reindexing_pending_ingestions`, index partiel unique actif `idx_rag_reindex_single_active`, extension contrainte CHECK outbox), déclench…"
+  },
+  "2-1-modélisation-relationnelle-graphe-de-l-ontologie-à-4-niveaux-tech-lead-report.md": {
+    "date": "2026-10-25",
+    "domain": "Ontologie Relationnelle-Graphe à 4 Niveaux / Héritage CTE (`< 15 ms`) / Axiomes `immutable: true` & Triple Exécution Active",
+    "story": "Story 2.1",
+    "summary": "Migration Alembic `0006` (`ontology_concepts`, `ontology_relations`, `ontology_axioms`), `OntologyHierarchyResolver` (`3_TEAM` `Sous-Équipe -> Équipe Parente`), `ProfileSemanticTranslator` (`6` profi…"
+  },
+  "2-2-extraction-ontologique-temps-réel-isolée-par-branche-l4-simu-tech-lead-report.md": {
+    "date": "2026-10-25",
+    "domain": "Extraction Ontologique L4 Isolée par Branche (`ACTIVE` vs `SUPERSEDED`) / Simulateur d'Impact *What-If* / Promotion Gouvernée",
+    "story": "Story 2.2",
+    "summary": "Migration Alembic `0007` (`ontology_promotion_proposals`), `ImpactSimulatorService` (parcours BFS sur relations, templates, workflows et runs actifs), invalidation de branche après *Replay* et `Ontol…"
+  },
+  "2-3-indexation-différenciée-incrémentale-multi-sources-n-conflue-tech-lead-report.md": {
+    "date": "2026-10-25",
+    "domain": "Indexation Différenciée 3 Régimes (`DOC_PARENT_CHILD`, `CODE_AST_GRAPH`, `DB_DDL_ONLY`) / RAG Hybride `halfvec(1024)` + BM25 RRF (`< 50 ms`)",
+    "story": "Story 2.3",
+    "summary": "Migration Alembic `0008` (`kb_documents`, `kb_chunks` HNSW `halfvec(1024)` + GIN `tsvector`, `code_graph_edges`), rejet `HTTP 422 ERR_DDL_ONLY_TRANSACTIONAL_DATA_FORBIDDEN`, filtrage *Passthrough* et…"
+  },
+  "2-4-graphe-tripartite-multi-sources-confluence-1-n-jira-1-n-git-tech-lead-report.md": {
+    "date": "2026-10-25",
+    "domain": "Graphe Tripartite Multi-Sources (`Confluence <-> Jira <-> Git`) / Brique `data-freshness` `[STALE_WARNING]` / Audit `[DOC_OBSOLETE_SUSPECTED]`",
+    "story": "Story 2.4",
+    "summary": "Migration Alembic `0009` (`tripartite_trace_edges`, `kb_stale_alerts`), extraction regex Jira (`[A-Z][A-Z0-9]+-[0-9]+`), `TripartiteGraphAndFreshnessService` et script `05_backfill_ontology_and_rag_g…"
+  },
+  "20-1-menu-mon-organisation-delegation-bu-team-lead-invitation-iam-et-audit-scope-tech-lead-report.md": {
+    "date": "2026-11-17",
+    "domain": "Menu Dédié « Mon Organisation » (`/organization`), Délégation Stricte `BU_LEAD` / `TEAM_LEAD`, Invitation IAM Scopée, Rôle `ONTOLOGY_LEAD` & Journal d'Activité Filtré par Périmètre",
+    "story": "Story 20.1 (CAP-203, CAP-050, CAP-051, CAP-058, CAP-065, CAP-067)",
+    "summary": "Migration `20261117_2001` (`ONTOLOGY_LEAD` sur BU + index `audit_ledger.org_unit_id`), entrée gauche `/organization` sous « Mes Espaces » (`/settings` ramené à 5 onglets), gouvernance sous-arbre (`or…"
+  },
+  "20-2-menu-glossaire-persistance-ontologie-pg18-role-ontology-lead-et-promotions-l4-l1-tech-lead-report.md": {
+    "date": "2026-11-18",
+    "domain": "Menu « Glossaire » (`/ontology`), Séparation `/help`, Persistance PG18 Ontologie, Rôle `ONTOLOGY_LEAD` & Promotions Palier par Palier (`L4 -> L3 -> L2 -> L1`)",
+    "story": "Story 20.2 (CAP-010, CAP-060, CAP-064)",
+    "summary": "Migration réversible `20261117_2002` (`4_WORKSPACE` + colonnes de workflow de promotion & `09_reset_db_first_boot.py`), module pur `ontology/permissions.py` + adaptateur PG18 `_internal/sql_ontology_…"
+  },
+  "20-3-suppression-login-top-right-popup-mon-compte-bas-gauche-et-modale-parametres-pg18-tech-lead-report.md": {
+    "date": "2026-11-18",
+    "domain": "Suppression Login Top-Right, Fin du Faux Sélecteur `Rôle`, Popup « Mon Compte » Bas-Gauche (Style ChatGPT) & Modale Unifiée « Paramètres » 5 Onglets Persistée PG18",
+    "story": "Story 20.3 (CAP-060, CAP-063, CAP-064, CAP-100)",
+    "summary": "Migration réversible `20261117_2003` (`user_preferences`, `user_mcp_tokens` SHA-256 + `09_reset_db_first_boot.py`), `_mcp_token_helpers.py` (`pat_mcp_<secrets.token_urlsafe(24)>`, suppression totale…"
+  },
+  "20-4-page-profil-utilisateur-kpis-tokens-series-populaires-et-telemetrie-assistant-tech-lead-report.md": {
+    "date": "2026-11-18",
+    "domain": "Page Dédiée « Mon Profil » (`/profile`, Style ChatGPT : Identité, 4 KPIs Tokens/Séries & Éléments Populaires) & Télémétrie Tokens de `Mon Assistant`",
+    "story": "Story 20.4 (CAP-065, CAP-069)",
+    "summary": "Télémétrie tokens `Mon Assistant` (`stream_options: {\"include_usage\": true}` + extraction `usage`/`usageMetadata` + repli déterministe `estimated` dans `_assistant_usage_telemetry.py` et persistance…"
+  },
+  "2026-11-04-audit-et-cablage-vertical-epics-1-a-7-tech-lead-report.md": {
+    "date": "2026-11-04",
+    "domain": "Audit Exhaustif & Câblage Vertical des Epics 1 à 7 (`UI ➔ SDK ➔ API ➔ SQL PostgreSQL 18 / Outbox / SeaweedFS / RAG`)",
+    "story": "Epics 1–7",
+    "summary": "Ré-export public conforme `AD-19` et câblage effectif de `SqlOrchestrationRepository`, `SqlDomainEventsOutboxRepository`, `DbosSqlAlchemyUnitOfWork`, `DbosDurableWorkflowEngine`, `SqlHybridRagReposit…"
+  },
+  "2026-11-04-audit-et-factorisation-popups-rgaa-echap-annuler-tech-lead-report.md": {
+    "date": "2026-11-04",
+    "domain": "Audit & Factorisation RGAA des Popups / Modales (`@orcia/ui` & `apps/web`), Garde `useUnsavedChangesDialogGuard` (`isDirty`), Sorties `<Échap>` / `Annuler` & Validation `<Entrée>`",
+    "story": "Post-Epic 12",
+    "summary": "Création de `RgaaModalDialog.tsx` (`useUnsavedChangesDialogGuard`, `RgaaUnsavedChangesAlert`, `RgaaDialogFooterActions`, `handleRgaaSubmitKeyDown`), branchement sur `UserSettingsModal`, `AssistantGov…"
+  },
+  "2026-11-04-cablage-vertical-persistance-epics-8-a-12-tech-lead-report.md": {
+    "date": "2026-11-04",
+    "domain": "Câblage Vertical & Persistance PostgreSQL 18 des Écrans Epics 8 à 12 (`platformSetupStore.tsx`, `sql_platform_setup_store.py`, `@orcia/api-client` & Survie au `F5`)",
+    "story": "Post-Epic 12",
+    "summary": "Persistance atomique PostgreSQL 18 des 11 collections de `platformSetupStore.tsx` (`GET/PUT /api/v1/bootstrap/platform-setup-state` + synchronisation `org_units`, `workspaces`, `llm_model_endpoints`)…"
+  },
+  "2026-11-04-persistance-admin-jour0-et-reinit-bdd-tech-lead-report.md": {
+    "date": "2026-11-04",
+    "domain": "Persistance PostgreSQL 18 du 1er Administrateur Jour 0, Script `db:reset` (`09_reset_db_first_boot.py`) & Gouvernance Anti-Silos (`GEMINI.md` / `CLAUDE.md`)",
+    "story": "Post-Epic 12",
+    "summary": "Câblage vertical complet de la création et relecture du 1er Administrateur (`apps/web` $\\rightarrow$ `@orcia/api-client` $\\rightarrow$ `routers/bootstrap.py` $\\rightarrow$ `sql_first_user_guard.py` $…"
+  },
+  "2026-11-05-audit-et-purge-integrale-donnees-fictives-et-mocks-hors-tests-tech-lead-report.md": {
+    "date": "2026-11-05",
+    "domain": "Audit & Purge Intégrale « Zero Mock & Zero Fictional Data » hors `tests/` (5 Couches : Web/UI, API Composition Root, Core Domain, Maintenance SQL & Workers)",
+    "story": "Post-Epic 12",
+    "summary": "Remplacement de `DeterministicCassetteLLM` par `LiteLLMAdapter` par défaut dans `core_and_lifespan.py`, vidage par défaut de `TwoSpeedFederatedSearchService(candidates=())`, suppression de `DEFAULT_S…"
+  },
+  "2026-11-05-audit-global-inputs-secrets-et-parade-anti-lastpass-hors-login-tech-lead-report.md": {
+    "date": "2026-11-05",
+    "domain": "Dialogue Sally (UX/UI) & Winston (Architecte) — Audit Global des Champs de Saisie & Secrets (`@orcia/ui` / `apps/web`) et Parade Anti-LastPass Hors `/login`",
+    "story": "Post-Epic 12",
+    "summary": "Audit exhaustif des 35 fichiers `.tsx` contenant `<form>`, `<input>` ou `<textarea>`, remplacement de tous les `type=\"password\"` hors `/login` par `type=\"text\"` + `.orcia-masked-secret-input` (`-webk…"
+  },
+  "2026-11-05-audit-separation-design-system-look-and-feel-logique-et-contenus-tech-lead-report.md": {
+    "date": "2026-11-05",
+    "domain": "Dialogue Sally (UX/UI) & Winston (Architecte) — Audit d'Isolation du Design System `@orcia/ui`, Classes `.orcia-ds-*` (`tokens.css`), Primitives `DesignSystemControls.tsx` & Test des 4 Invariants Look & Feel",
+    "story": "Post-Epic 12",
+    "summary": "Audit complet des 3 couches (`@orcia/ui` Look & Feel, `i18n` Contenus, `apps/web` Logique), déclaration dans `tokens.css` des 22 variables CSS jusqu'alors implicites et des classes maîtresses `.orcia…"
+  },
+  "2026-11-05-audit-textes-ux-ui-zero-jargon-et-aide-contextuelle-icone-i-tech-lead-report.md": {
+    "date": "2026-11-05",
+    "domain": "Audit UX/UI Zéro Jargon Interne (`fr`/`en`), Composant `@orcia/ui` `ContextualInfoTriggerButton` (`ⓘ`) & Ouverture Ciblée de l'Aide Contextuelle Droite",
+    "story": "Post-Epic 12",
+    "summary": "Purge complète de la plomberie et du jargon interne ORCIA dans tous les dictionnaires `i18n` FR/EN et écrans `apps/web`, création du bouton `ContextualInfoTriggerButton` (`ⓘ` `18px × 18px`) dans `@or…"
+  },
+  "2026-11-05-cablage-reel-llm-envoyer-a-mon-assistant-et-feedback-ui-tech-lead-report.md": {
+    "date": "2026-11-05",
+    "domain": "Câblage Réel du Modèle IA Configuré (`Ollama` / `OpenAI` / `Anthropic`) sur le Bouton « Envoyer à Mon Assistant » (`/assistant`), Normalisation `/api/chat` (`gemma4:12b`) & Retour Visuel Immédiat",
+    "story": "Post-Epic 12 / Epic 10",
+    "summary": "Création de `assistant_llm_bridge.py` (`invoke_configured_llm_for_assistant_turn` avec résolution du palier configuré dans PostgreSQL 18 / `platform_setup_snapshot` et normalisation automatique Ollam…"
+  },
+  "2026-11-05-dialogue-sally-winston-correction-ecran-habilitations-iam-tech-lead-report.md": {
+    "date": "2026-11-05",
+    "domain": "Dialogue Sally (UX/UI) & Winston (Architecte) — Refonte & Épuration de l'Écran d'Habilitations IAM (`/settings`) & Découpage `< 400 lignes`",
+    "story": "Post-Epic 12",
+    "summary": "Grisage de la section `2. Attribuer et Gérer les Règles d'Habilitation` tant qu'aucune organisation (`BU` ou `Espace`) n'existe en base, suppression du champ texte redondant à côté de `Sur quoi ? (Pé…"
+  },
+  "2026-11-05-gestion-creation-et-execution-agents-et-competences-skills-tech-lead-report.md": {
+    "date": "2026-11-05",
+    "domain": "Gestion Complète, Création, Rattachement 1-Clic & Exécution des Compétences (`Skills`) et des Agents (`Agents`) dans `🤖 Mes Agents`",
+    "story": "Post-Epic 12",
+    "summary": "Création, rattachement en 1 clic et exécution directe des Compétences (`/skill`) et des Agents (`@agent`) dans `/agents` (`/catalog`) en 3 sous-vues (`🤖 Mes Agents`, `🛠️ Compétences`, `🔌 Connexions e…"
+  },
+  "2026-11-05-journal-activite-menu-dedie-auteurs-horodatage-et-filtres-tech-lead-report.md": {
+    "date": "2026-11-05",
+    "domain": "Dialogue Sally (UX/UI) & Winston (Architecte) — Menu Dédié `📜 Journal d'Activité` (`/activity`), Retrait de `Configuration`, Auteurs, Horodatage, Filtrage au Niveau d'Observation du Login & Séparation Aide Budgétaire",
+    "story": "Post-Epic 12",
+    "summary": "Retrait de l'onglet `Journal d'Activité` de `/settings`, ajout de l'entrée dédiée `📜 Journal d'Activité` (`eight-menu-item-activity` $\\rightarrow$ `/activity`) dans le menu de gauche, création de la…"
+  },
+  "2026-11-05-modeles-ia-authentification-test-connexion-et-scroll-independant-aide-tech-lead-report.md": {
+    "date": "2026-11-05",
+    "domain": "Refonte de l'Onglet « Modèles IA » (Fournisseur, URL API, Authentification, Bouton de Test de Connexion) & Scroll Indépendant de la Colonne d'Aide Contextuelle (`ⓘ`)",
+    "story": "Post-Epic 12",
+    "summary": "Extraction de `SettingsAiModelsSection.tsx` (Fournisseur IA sans `family-a`, Modèle principal/secours, URL Endpoint API, Mode d'authentification Clé d'API / Serveur / Local sans clé, bouton `🔌 Tester…"
+  },
+  "2026-11-05-reecriture-readme-clair-public-it-sans-jargon-interne-tech-lead-report.md": {
+    "date": "2026-11-05",
+    "domain": "Réécriture Intégrale du `README.md` Racine pour Public IT Externe (Zéro Jargon Interne, 8 Écrans, Architecture Standard & Quickstart Jour 0)",
+    "story": "Post-Epic 12",
+    "summary": "Refonte complète de `README.md` sans aucun acronyme ou code interne de conception (`AD-*`, `FR-*`, `UX-DR*`, `Direction C`, `Verrou V*`), présentation claire de la proposition de valeur, des 8 écrans…"
+  },
+  "2026-11-05-refonte-atelier-processus-clair-aide-contextuelle-et-menu-processus-tech-lead-report.md": {
+    "date": "2026-11-05",
+    "domain": "Dialogue Sally (UX/UI) & Winston (Architecte) — Refonte de l'Atelier de Processus (`SimplifiedProcessBuilderSection`), Zéro Jargon Anglais, Aide Contextuelle `ⓘ` & Montage dans `☍ Mes Processus` (`/processes`)",
+    "story": "Post-Epic 12",
+    "summary": "Création du composant unifié `SimplifiedProcessBuilderSection.tsx` (`< 300 lignes`), suppression des badges anglais bruts (`PUBLISHED`, `DRAFT`, `TRASH`, `ACTIVE_RUNS`, `PAUSED_ARBITRATION`, `(0p / 0…"
+  },
+  "2026-11-05-renommage-icone-documentation-et-message-export-html-tech-lead-report.md": {
+    "date": "2026-11-05",
+    "domain": "Renommage de l'Icône de Documentation (« Documentation ») & Simplification du Message d'Export HTML (`docs/site-catalog/index.html`)",
+    "story": "Post-Epic 12",
+    "summary": "Simplification du libellé de l'icône/bouton d'accès à la documentation (`open-orcia-showcase-site-btn` dans `ShellContainer.tsx` et `features/ontology/index.tsx`) en `Documentation` uniquement, et ép…"
+  },
+  "2026-11-05-simplification-ecran-packs-metiers-catalogue-backend-tech-lead-report.md": {
+    "date": "2026-11-05",
+    "domain": "Simplification de l'Écran « Packs Métiers » (`/settings`), Catalogue Backend `GET /api/v1/pack-builder/installed-packs` & Activation/Désactivation 1-Clic (`SettingsPacksSection.tsx`)",
+    "story": "Post-Epic 12",
+    "summary": "Suppression des 3 champs texte libres (`Identifiant du Pack`, `1.0.0`, `GLOBAL`), exposition du catalogue réel des Packs métiers installés dans le backend (`orcia-pack-sdlc`, `orcia-pack-builder` et…"
+  },
+  "2026-11-05-site-presentation-orcia-3-piliers-human-led-anti-hallucination-et-sync-auto-tech-lead-report.md": {
+    "date": "2026-11-05",
+    "domain": "Dialogue Sally (UX/UI) & Winston (Architecte) — Site Web de Présentation & Documentation Vivante d'ORCIA (`/showcase` + Export HTML Statique Autonome), 3 Espaces Étanches (Vision Macro `Human-Led` & Double Barrière Anti-Hallucination / Guide Fonctionnel 6 Dispositifs & 9 Écrans / Architecture Sous le Capot) & Synchronisation Automatique (`pnpm site:sync`)",
+    "story": "Post-Epic 12",
+    "summary": "Création du générateur et exporteur statique `infra/scripts/sync_site_catalog.py` (`pnpm site:sync` / `pnpm site:check`) produisant `apps/web/src/generated/orciaSiteManifest.ts` et le site HTML5 auto…"
+  },
+  "2026-11-05-unification-activation-unique-packs-metiers-sally-winston-tech-lead-report.md": {
+    "date": "2026-11-05",
+    "domain": "Dialogue Sally (UX/UI) & Winston (Architecte) — Unification en Une Seule Méthode d'Activation des Packs Métiers & Déduplication Hiérarchique des Périmètres (`SettingsPacksSection.tsx`, `platformSetupStore.tsx`)",
+    "story": "Post-Epic 12",
+    "summary": "Suppression de la liste déroulante de Pack (`pack-key-input`) et du bouton redondant `Activer sur ce périmètre` (`save-pack-btn`) dans l'en-tête de `SettingsPacksSection.tsx`, activation/désactivatio…"
+  },
+  "2026-11-05-unification-ux-onglets-bleu-intense-actif-bleu-pale-inactif-tech-lead-report.md": {
+    "date": "2026-11-05",
+    "domain": "Dialogue Sally (UX/UI) & Winston (Architecte) — Unification Chromatique des Onglets (Bleu Intense `#2563EB` au Focus/Sélection & Bleu Pâle `#DBEAFE` Hors Focus), Création de l'ADR `AD-22` & `ACTION_ITEM UX-DS-RADIX-01` (`Radix UI Primitives` + `shadcn/ui`)",
+    "story": "Post-Epic 12 / AD-22",
+    "summary": "Définition des tokens `--color-tab-active-*` (`#2563EB`) et `--color-tab-inactive-*` (`#DBEAFE` / `#1E3A8A`) dans `tokens.css` (`.orcia-ds-tab` et `[role=\"tab\"]`), alignement des 10 barres d'onglets…"
+  },
+  "2026-11-06-audit-global-zero-bouton-muet-cablage-callbacks-et-garde-fous-ci-tech-lead-report.md": {
+    "date": "2026-11-06",
+    "domain": "Audit Global des Anomalies d'Actions Silencieuses (A1 à A5), Câblage Exhaustif des Callbacks `@orcia/ui` dans `apps/web`, Pont LLM pour `Mes Agents` / `Compétences` & Garde-Fou CI Permanent (`zero-dead-buttons-and-silent-catches-audit.test.tsx`)",
+    "story": "Post-Epic 12 / Garde-Fou n°5",
+    "summary": "Analyse des 4 angles morts ayant masqué l'anomalie précédente, correction des 5 familles d'actions silencieuses (**A1** `Mes Agents`/`Compétences` + banc de test MCP, **A2** `PackBuilder` + `HelpArti…"
+  },
+  "2026-11-06-centre-notifications-equipes-org-et-boutons-grises-tech-lead-report.md": {
+    "date": "2026-11-06",
+    "domain": "Centre des Notifications (`🔔 Notifications`) vs Journal d'Activité (`📜 Journal d'Activité`), Clarification Sémantique « Équipe » (`TEAM`) vs « Espace de Travail » (`WORKSPACE`) & Indicateur `!` Rouge Cerclé + Infobulle Rouge sur tous les Boutons Grisés (`DisabledButtonAlertIndicator`)",
+    "story": "Post-Epic 12 / UX & Design System",
+    "summary": "Enrichissement du tiroir `🔔 Notifications` (`FourZoneDirectionCShell.tsx`, `ShellContainer.tsx`) avec badge compteur actif (`topbar-notifications-badge`), notifications actionnables et encart explica…"
+  },
+  "2026-11-06-documentation-faq-lien-workspace-org-unit-tech-lead-report.md": {
+    "date": "2026-11-06",
+    "domain": "FAQ Architecture & Modèle Métier (Winston) — Lien entre Espace de Travail (`Workspace` / `workspaces`) et Entités de l'Organisation (`OrgUnit` / `org_units`)",
+    "story": "Post-Epic 12 / Doc Architecture",
+    "summary": "Ajout de la Section 8 `FAQ Architecture & Modèle Métier (Winston)` dans `architecture.md`, création de la fiche dédiée `faq-architecture-modele-metier.md` (termes internes `OrgUnit` vs `Workspace`, d…"
+  },
+  "2026-11-06-rattachement-equipe-facturation-espaces-prives-et-selecteur-contexte-tech-lead-report.md": {
+    "date": "2026-11-06",
+    "domain": "Rattachement Multi-Équipes (`memberTeamIds`), Parcours Jour 0 du 1er Administrateur en 2 Étapes (`Option 1`), Espaces de Travail Privés Facturés à l'Équipe (`PRIVATE_USER` — `Option 2 FinOps`), Chaîne de Verrouillage Stricte des Appels IA & Sélecteur de Contexte à 3 Groupes",
+    "story": "Post-Epic 12 / Gouvernance FinOps & Modèle Métier",
+    "summary": "Parcours Jour 0 en 2 étapes (création du 1er Admin sans équipe pré-imposée puis rattachement 1-clic multi-équipes dans `/settings`), extraction de `CreateWorkspaceCard.tsx` avec sélecteur d'équipe de…"
+  },
+  "2026-11-06-refonte-assistant-minimaliste-routage-llm-et-sauvegarde-conversations-tech-lead-report.md": {
+    "date": "2026-11-06",
+    "domain": "Refonte Épurée de `💬 Mon Assistant` (« *Par quoi voulez-vous commencer ?* »), Sélecteur Unifié Modèle IA & Niveau de Réflexion (`Bas` / `Moyen` / `Élevé`), Routage Backend Réel par Palier (`assistant_llm_bridge.py`) & Conversations Sauvegardées Reprises en 1 Clic",
+    "story": "Post-Epic 12 / Epic 10 UX & LLM",
+    "summary": "Suppression de l'encombrement visuel et des clés Redis sur `/assistant`, barre de saisie unifiée avec bouton `+` et menu déroulant `Modèle IA` (`Rapide`, `Polyvalent`, `Raisonnement avancé`) + sous-m…"
+  },
+  "2026-11-06-streaming-assistant-bouton-stop-et-sous-fenetre-reflexion-tech-lead-report.md": {
+    "date": "2026-11-06",
+    "domain": "Streaming Progressif de `💬 Mon Assistant`, Bouton d'Action à Bascule Play/Stop (`▶` / `■`) & Sous-Fenêtre de Réflexion (`AssistantThinkingSubWindow`) avec Compteur Temps Réel en Secondes (`Xs`) et Réponses Intermédiaires (`intermediateOutput`)",
+    "story": "Post-Epic 12 / Epic 10 Streaming & Stop",
+    "summary": "Création de `AssistantThinkingSubWindow.tsx` (accordéon ouvert pendant la réflexion puis replié automatiquement à l'arrivée de la réponse, compteur temps réel `0s -> 1s -> 2s…` et affichage des répon…"
+  },
+  "2026-11-07-assistant-bulle-droite-actions-autosave-autocomplete-et-citations-rag-tech-lead-report.md": {
+    "date": "2026-11-07",
+    "domain": "Bulle Utilisateur Bleue Alignée à Droite, Suppression Absolue des Doublons (`display: none`), Barre d'Actions sous la Réponse (`👍`, `👎`, `📋 Copier`, `🔄 Régénérer`), Auto-Save des Réglages (`✓ Enregistré`), Menu `+` Flottant avec Autocomplétion `@Agent` / `/Compétence` & Citations RAG Cliquables",
+    "story": "Post-Epic 12 / Epic 10 Chat UX, Auto-Save, Autocomplete & RAG",
+    "summary": "Création de `AssistantPromptPlusAndAutocomplete.tsx`, `AssistantResponseFooterActionsAndCitations.tsx` et `AssistantGovernanceModeATabs.tsx` (`< 400 lignes` partout) ; masquage garanti par `style={{…"
+  },
+  "2026-11-07-assistant-dossiers-notes-reglages-et-contexte-multi-tours-llm-tech-lead-report.md": {
+    "date": "2026-11-07",
+    "domain": "Refonte Épurée de `📁 Dossiers` & `📌 Notes`, Suppression de `PRIVATE` Brut et du Double `: :`, Badge de Dossier/Note Actifs au-dessus du Prompt, Persistance (`Survie au F5`) des Dossiers & `⚙️ Réglages`, Suppression du `.split(\" \")` Frontend & Câblage Complet du Contexte Multi-Tours dans l'Appel LLM",
+    "story": "Post-Epic 12 / Epic 10 Dossiers, Notes, Réglages & Contexte Multi-Tours LLM",
+    "summary": "Masquage (`display: none`) des 3 faux onglets redondants dans `AssistantFoldersAndCollaborativeThreadView.tsx` (`296` lignes), libellés de visibilité 100 % humains (`formatFolderVisibilityLabel` : `🔒…"
+  },
+  "2026-11-07-assistant-icones-seules-sources-reelles-reflexion-minimaliste-et-pieces-jointes-tech-lead-report.md": {
+    "date": "2026-11-07",
+    "domain": "Icônes d'Actions Seules & Popover Détails (`⋯`), Sources Consultées Réelles Uniquement (`filterUsedRagSourcesForTurn`), Purge des Préfixes/Tags (`sanitizeAssistantDisplayReply`), Réflexion Ultra-Minimaliste (`Réflexion pendant Xs ›`), Pièces Jointes Intégrées dans la Saisie, Bouton Rond `▶`/`■` & Déduplication des Modèles IA",
+    "story": "Post-Epic 12 / Epic 10 UX/UI Mon Assistant",
+    "summary": "Barre d'actions sous la réponse réduite aux seules icônes (`👍`, `👎`, `📋`/`✓`, `🔄`, `📄`/`✓`, `☍`) + bouton `⋯` (`assistant-action-details-btn`) affichant le modèle et le niveau de réflexion ; suppress…"
+  },
+  "2026-11-07-assistant-reflexion-progressive-par-etape-collapse-et-flux-unifie-tech-lead-report.md": {
+    "date": "2026-11-07",
+    "domain": "Cinématique Progressive de Réflexion par Étapes (`collapse show` / `collapse hide` au fil de l'eau), Sélecteur Épuré à 2 Modes (`Standard` / `Approfondi`), Flux Visuel Unifié Sans Double Boîte ni `🤖 Mon Assistant`, Icônes Monochromes Sans Bordure & Purge de `PLATFORM_ADMIN`",
+    "story": "Post-Epic 12 / Epic 10 Réflexion Progressive & Flux Unifié",
+    "summary": "Suppression du niveau `Bas` visible au profit de 2 modes clairs (`Standard` par défaut et `Approfondi`) avec pastille courte `Standard ▾` / `Approfondi ▾` lorsqu'un seul modèle est configuré ; absenc…"
+  },
+  "2026-11-07-correction-triplon-reponse-markdown-et-boutons-redondants-assistant-tech-lead-report.md": {
+    "date": "2026-11-07",
+    "domain": "Suppression du Triplon de Réponse de `💬 Mon Assistant`, Composant `@orcia/ui` `FormattedMarkdownContent` (Titres, Blocs de Code Python/Multi-Langages avec Bouton `Copier`, Listes & Gras), Fermeture par Défaut des Onglets Redondants, Vidage Automatique de l'Input & Purge du Jargon dans `AssistantThinkingSubWindow`",
+    "story": "Post-Epic 12 / Epic 10 UX/UI & Markdown",
+    "summary": "Création de `FormattedMarkdownContent.tsx` dans `@orcia/ui` (`data-testid=\"formatted-markdown-content\"`, zéro `dangerouslySetInnerHTML`) interprétant les titres `#..####`, blocs ```` ```lang ... ```…"
+  },
+  "2026-11-07-processus-generation-documentation-orcia-pack-builder-tech-lead-report.md": {
+    "date": "2026-11-07",
+    "domain": "Intégration Native du Processus 6 `generate-orcia-documentation` dans `packages/orcia-pack-builder` & Exécution en 1 Clic dans `☍ Mes Processus` (`/processes`)",
+    "story": "Post-Epic 12 / Pack Builder & Documentation",
+    "summary": "Ajout du 6e processus gouverné `generate-orcia-documentation` (`orcia://pack-builder/workflows/generate-orcia-documentation`, `@Rédacteur-Documentation-Orcia`) dans `pack.yaml` et `orcia_pack_builder…"
+  },
+  "2026-11-07-refactorisation-agnostique-async-llm-ontologie-et-vrai-streaming-sse-tech-lead-report.md": {
+    "date": "2026-11-07",
+    "domain": "Refactorisation Agnostique Async LLM (`httpx.AsyncClient` partagé), Ontologie `L1–L4` & `AssistantHarness` 5 Couches, Internationalisation (`locale`), Modèles de Raisonnement (`<think>` / `reasoning_content`), Continuité Multi-Tours Outillée (`conversation_history` + `tools`), Vrai Streaming HTTP SSE (`resp.aiter_lines()`) & 4 Invariants Anti-Régression (`GEMINI.md` + `TID251` + Audit AST)",
+    "story": "Post-Epic 12 / Epic 10 Architecture & LLM Bridge",
+    "summary": "Correction chirurgicale des 8 défauts architecturaux de `assistant_llm_bridge.py` et `assistant_workspace.py` (découpés en modules `< 390` lignes), normalisation multi-provider agnostique (`OpenAI`,…"
+  },
+  "2026-11-07-refonte-menu-mes-agents-visibilite-packs-et-pont-assistant-tech-lead-report.md": {
+    "date": "2026-11-07",
+    "domain": "Refonte du Menu « 🤖 Mes Agents », Choix de Visibilité (`🔒 Privé` vs `👥 Équipe`), Intégration des Packs Métiers (`📦 Pack`) & Pont 1-Clic vers « 💬 Mon Assistant »",
+    "story": "Post-Epic 12 / UX & Studio Agents & Compétences",
+    "summary": "Épuration de `/agents` (2 onglets visibles `🤖 Agents` / `🛠️ Compétences`, masquage des blocs techniques parasites), gouvernance de visibilité (`🔒 Privé`, `👥 Équipe`, `📦 Pack Métier`) avec bascule 1-c…"
+  },
+  "2026-11-07-refonte-mes-espaces-et-integration-glossaire-ontologie-option-a-tech-lead-report.md": {
+    "date": "2026-11-07",
+    "domain": "Refonte Épurée de `🗂️ Mes Espaces` (`/workspaces` & `/spaces`), Partage 1-Clic d'Espace Privé vers l'Équipe (`✓ Enregistré`), Connexion Inline de Sources Documentaires, Intégration Directe du Glossaire & Règles Métiers Multi-Niveaux avec Promotion 1-Clic (`⬆️`) et Option A (Retrait de `📖 Vocabulaire` du Menu Latéral Gauche)",
+    "story": "Post-Epic 12 / Epics 9, 11 & 12 UX/UI",
+    "summary": "Création de `WorkspaceStudioCardsAndDetailView.tsx`, `WorkspaceDetailTabsPanel.tsx` et `WorkspaceGlossaryAndOntologyTab.tsx` (`< 400` lignes chacun) : filtres rapides (`Tous`, `👥 Espaces d'Équipe`, `…"
+  },
+  "2026-11-08-bugs-p1-e2e-et-socle-radix-ui-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Montage du Briefing 4 Blocs & Validation par Découpage (`BUG-E2E-05`), Correction Recherche `⌘K` Vitesse 2 sans `localSemanticHit` (`BUG-E2E-06`), Socle `Radix UI` + `shadcn/ui` dans `@orcia/ui` (`UX-DS-RADIX-01`, `AD-22`) & Promotion Runtime du Registre des Capacités (`CAP-ACT-1`)",
+    "story": "Vague P1 / Bugs E2E (BUG-E2E-05, BUG-E2E-06), Socle Radix UI (UX-DS-RADIX-01) & Registre Capacités (CAP-ACT-1)",
+    "summary": "Création de `GatesAdaptiveHumanReviewSection.tsx` (`CognitiveReviewBriefingGrid`, `ChunkValidationCard`, garde-fou `< 15 s`, actions Jira et survie `F5`), correction de `GET /api/v1/search` au Jour 0…"
+  },
+  "2026-11-08-cap-act-1-a-4-gouvernance-registre-capacites-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Contrôle CI du registre (`capabilities_registry.py` dans `site:check`), PRD v2.0 (`FR-31`..`FR-36`), Epic 13, réconciliation Epic 6, consigne `AGENTS.md` §5",
+    "story": "Ajustement Transverse / Gouvernance documentaire (CAP-ACT-1..4)",
+    "summary": "Nouveau module + 6 tests, 9 trous de couverture corrigés, `epics.md` / `sprint-status.yaml` / PRD / gabarit mis à jour."
+  },
+  "2026-11-08-centralisation-icones-ui-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Audit Exhaustif & Centralisation Intégrale des Icônes UI dans `@orcia/ui` (`packages/ui/src/components/icons/` : `ORCIA_ICONS`, `<OrciaIcon />`, `getOrciaIconGlyph`) et `apps/web` avec Réactivité Immédiate & Garde-Fou CI Anti-Régression (`icon-registry-centralization.test.tsx`)",
+    "story": "Post-Epic 12 / Design System @orcia/ui & Centralisation des Icônes",
+    "summary": "Création de la source unique de vérité `packages/ui/src/components/icons/` (`iconRegistry.ts` avec `97` clés sémantiques `OrciaIconName`, `OrciaIcon.tsx` accessible RGAA 4.1 avec `data-orcia-icon`),…"
+  },
+  "2026-11-08-coherence-sprint-status-et-bugs-p0-e2e-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Cohérence de `sprint-status.yaml` et correction des 4 bugs P0 révélés par les E2E",
+    "story": "Ajustement Transverse / Sprint & Bugs P0 (BUG-E2E-01..04)",
+    "summary": "Statuts CAP-ACT-5 / TEST-07 rectifiés, rattachements epic-13 ; correctifs P0 en cours."
+  },
+  "2026-11-08-distinction-equipes-espaces-et-sync-sql-org-units-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Distinction Visuelle Explicite `👥 Équipe` vs `📦 Espace` dans le Sélecteur d'Entête (`TopHeaderBar`) & Synchronisation Bidirectionnelle PostgreSQL 18 `org_units` / `workspaces`",
+    "story": "Ajustement Transverse / Sélecteur d'Entête & Synchronisation SQL org_units/workspaces (CAP-067, CAP-061)",
+    "summary": "Création de `shellScopeOptions.ts` (`👥 Équipe · <nom>`, `📦 Espace · <nom>`, `🔒 Espace · <nom>`, `🏢 Direction (BU) · <nom>`) et `FirstBootAdminSetupModal.tsx` (réduisant `ShellContainer.tsx` de `871`…"
+  },
+  "2026-11-08-documentation-strategie-tests-et-gouvernance-anti-dette-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Documentation de référence de la stratégie de tests `AD-17` (5 couches + Sécurité) et des 10 mécanismes automatisés anti-dette de tests",
+    "story": "Ajustement Transverse / Documentation Stratégie de Tests & Anti-Dette",
+    "summary": "Création de `docs/testing-strategy.md` et mise à jour de `README.md`, `architecture.md`, `AGENTS.md` et `CLAUDE.md`."
+  },
+  "2026-11-08-epics-14-15-process-studio-v2-et-packs-declaratifs-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Simplification Architecturale des Packs/Connecteurs (`packages/orcia-connectors` + fusion `orcia-kernel` dans `orcia_core.kernel` + `packs/sdlc` & `packs/orcia-docs` 100 % YAML/MD, `CAP-150`) & Déploiement d'ORCIA Process Studio v2 (`ValueStreamMapView` 11 étapes, `WorkflowFiveBlocksCanvas` Control-M, 4 runners déterministes Auto-Heal 3x, `ClaimCheckPointer` S3 & Portail HITL 4 Actions, `CAP-140`)",
+    "story": "Epics 14 & 15 — ORCIA Process Studio v2 & Packs 100 % Déclaratifs (TASK-01..08)",
+    "summary": "Exécution complète de `TASK-01` à `TASK-08` : suppression de `packages/orcia-pack-sdlc`, `orcia-pack-builder` et `orcia-kernel` au profit de 2 packages Python backend (`orcia-core` et `orcia-connecto…"
+  },
+  "2026-11-08-integration-gemini-argon-configuration-et-assistant-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Intégration de Google Gemini (`Gemini Argon` / `gemini-argon`) dans `⚙️ Configuration > Modèles IA` et `💬 Mon Assistant` (Mode B API Native `:generateContent` / `:streamGenerateContent?alt=sse` + `x-goog-api-key` + `thinkingConfig` & Mode A `/v1beta/openai/chat/completions`)",
+    "story": "Post-Epic 12 / Epics 6, 8 & 10 Multi-Provider Gemini Argon",
+    "summary": "Découpage modulaire de `SettingsAiModelsSection.tsx` (`660 -> 348` lignes) + `settingsAiModelsPresets.ts` (`258` lignes) avec préréglage Google Gemini sur `gemini-argon`, puces rapides `ai-model-quic…"
+  },
+  "2026-11-08-refonte-complete-ecran-agents-skills-et-mcp-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Refonte complète de `🤖 Mes Agents` (`/agents`, `CAP-091`) — 3 Onglets Visibles (`Agents`, `Compétences`, `Serveurs d'outils & MCP`), Carte Épinglée `🤖 Assistant de l'Espace`, Modales de Création/Configuration/Dry-Run & Gouvernance des Ressources `PACK`",
+    "story": "Ajustement Transverse UX/UI / Refonte écran Agents, Skills & MCP",
+    "summary": "Suppression des formulaires ouverts en permanence et des cases à cocher $N \\times M$ sur les cartes au profit de cartes sobres (`< 2s`), création et configuration/Bac à sable Dry-Run en modales RGAA…"
+  },
+  "2026-11-08-refonte-creation-configuration-agent-6-blocs-gouvernes-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Refonte de la Création, Configuration et Gouvernance des Agents LLM en 6 Blocs (`🤖 Mes Agents` : Blocs `A` Identité/Posture/Binôme, `B` Moteur Cognitif/Température/Budget, `C` Instructions/`prompt_ref`/Modes/Dialogue, `D` Cloisonnement RAG & Ontologie, `E` Toolbox MCP `READ_ONLY`/`WRITE_PREVIEW` & `/Skills`, `F` Garde-fous & Contrat de Sortie + Checklist `6/6` Conditions d'Invocation `💬 Mon Assistant` + Correction Opacité Modales `tokens.css`)",
+    "story": "Refonte Studio de Gouvernance des Agents LLM en 6 Blocs (CAP-091, CAP-090)",
+    "summary": "Résolution du fond transparent des modales (*Text Bleed*) dans `tokens.css` et suppression du double en-tête sur `/agents` ; création de `AgentGovernanceTypesAndDefaults.ts`, `AgentSixBlocksFormSecti…"
+  },
+  "2026-11-08-refonte-ux-mes-processus-et-studio-metier-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Suppression de l'empilement « Sapin de Noël » sur `/processes`, Séparation de l'Exécution de Dossiers vs Studio de Conception & Éradication du Jargon Technique (`DBOS`, `S3 Claim-Check`, `SHA-256`, `WAITING_SUBSTEP_HITL`)",
+    "story": "Refonte UX Mes Processus & Studio Métier (CAP-140, CAP-150)",
+    "summary": "Suppression du montage doublon `<ModuleWorkspaceView moduleKey=\"gates\" />` sous `/processes`, hiérarchisation de `ProcessesHubPage` autour des 3 usages réels (1. Dossiers en cours & lancement/validat…"
+  },
+  "2026-11-08-registre-capacites-fonctionnelles-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Registre unique des capacités livrées (`docs/product/capabilities.yaml`, 57 capacités, FR-31..36 proposés), tickets `CAP-ACT-1..4`",
+    "story": "Ajustement Transverse / Gouvernance documentaire",
+    "summary": "Création de `capabilities.yaml` rétro-rempli (epics + ad-hoc), `action_items` dans `sprint-status.yaml` ; aucun code applicatif modifié."
+  },
+  "2026-11-08-test-01-socle-e2e-bi-serveur-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Socle E2E bi-serveur Playwright : FastAPI + Vite + PostgreSQL 18 / Redis 7.4 éphémères, reset Jour 0 sécurisé, cassette LLM (`AD-17` Couche 5)",
+    "story": "Ajustement Transverse / Tests (TEST-01)",
+    "summary": "`infra/scripts/e2e/*`, `playwright.config.ts` (`webServer[]`, `workers: 1`), spec de fumée 2 viewports, 10 tests unitaires du garde-fou d'isolation."
+  },
+  "2026-11-08-test-01b-workflow-ci-e2e-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Workflow GitHub Actions `e2e.yml` (pile éphémère Docker + Playwright)",
+    "story": "Ajustement Transverse / CI (TEST-01b)",
+    "summary": "`.github/workflows/e2e.yml` — à valider à la première exécution CI."
+  },
+  "2026-11-08-test-02-reparation-shell-spec-e2e-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Réécriture de `shell.spec.ts` sur le shell 4 zones réel (`FourZoneDirectionCShell`, Epic 12) et l'état Jour 0",
+    "story": "Ajustement Transverse / Tests (TEST-02)",
+    "summary": "4 tests Playwright sur la pile E2E isolée, 2 viewports ; ancien parcours fictif supprimé."
+  },
+  "2026-11-08-test-03-centralisation-garde-jsdom-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Garde jsdom centralisée (`lib/runtimeEnv.ts`) + audit anti-régression ; suppression complète à venir",
+    "story": "Ajustement Transverse / Tests (TEST-03)",
+    "summary": "`apps/web/src/lib/runtimeEnv.ts`, 9 fichiers, `runtime-env-guard-audit.test.ts`."
+  },
+  "2026-11-08-test-04-e2e-p0-specs-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Specs E2E P0 sur la pile isolée : Jour 0 + vrai F5 en base, Mon Assistant, Human-Led, multi-acteurs, mobile (livraison incrémentale)",
+    "story": "Ajustement Transverse / Tests (TEST-04)",
+    "summary": "`apps/web/e2e/01..05-*.spec.ts`, helpers `support/`."
+  },
+  "2026-11-08-test-05-e2e-p1-specs-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Specs E2E P1 : Mes Espaces (org + espace + F5), agents (création + F5), gates (fixme)",
+    "story": "Ajustement Transverse / Tests (TEST-05)",
+    "summary": "`apps/web/e2e/06..08-*.spec.ts`, `support/orgAndWorkspace.ts`."
+  },
+  "2026-11-08-test-06-e2e-p2-specs-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Specs E2E P2 : aide contextuelle, ⌘K, écrans sans erreur serveur ; BUG-E2E-06",
+    "story": "Ajustement Transverse / Tests (TEST-06)",
+    "summary": "`apps/web/e2e/09..11-*.spec.ts`, `support/apiErrors.ts`."
+  },
+  "2026-11-08-test-07-a-10-pyramide-integration-evals-securite-tech-lead-report.md": {
+    "date": "2026-11-08",
+    "domain": "Intégration verticale HTTP→PG18, evals Golden Dataset citations, socle sécurité, traçabilité `tests:` ↔ capacités",
+    "story": "Ajustement Transverse / Tests (TEST-07..10)",
+    "summary": "`tests/integration/test_http_vertical_*`, `tests/evals/`, `tests/security/`, `capabilities_registry.py`."
+  },
+  "2026-11-14-suppression-org-unit-garde-pg-et-modale-dependances-tech-lead-report.md": {
+    "date": "2026-11-14",
+    "domain": "Blocage Suppression Org Unit, Garde PG (`503`), Modale Dépendances, Validation Stricte (`422`), Sélecteurs Max 10 (Parent & Membres), Modale Chaînée `+ Nouveau membre`, Déconnexion / Incognito & Mot de Passe Temporaire (12 car.)",
+    "story": "Ajustement Transverse (CAP-001, CAP-051, CAP-063, CAP-067)",
+    "summary": "Garde SQL strict (`503`), réconciliation `workspaces`, modale `ConfirmDeleteOrgUnitModal`, validation `422` utilisateurs, correctif `billingEnabled`, `<OrciaSearchableSelect maxDisplayedItems={10} />…"
+  },
+  "2026-11-15-adr-journalisation-puits-de-logs-tech-lead-report.md": {
+    "date": "2026-11-15",
+    "domain": "Journalisation 12-Factor Unifiée (JSON stdout), Puits de Logs Paramétrable (`LogSinkQueryPort`), Traces OTel OTLP & Cible OpenShift Logging",
+    "story": "Ajustement Transverse / Architecture ADR AD-23 (CAP-202)",
+    "summary": "Formalisation de la décision d'architecture AD-23 : émission 12-factor JSON unifiée sur stdout via structlog ProcessorFormatter unifiant la stdlib ; découplage complet de l'application vis-à-vis du p…"
+  },
+  "2026-11-15-anti-lastpass-matrice-roles-modale-sync-secops-et-hierarchie-bu-tech-lead-report.md": {
+    "date": "2026-11-15",
+    "domain": "Blocage extensions mots de passe (`LastPass`/`1Password`), Modale à la demande de la Matrice des 6 Rôles, Synchronisation RBAC SecOps (`iam_accounts` ↔ `/auth` ↔ `HierarchicalRbacService`) & Hiérarchie visuelle `BGPN` / `StatusBadge` cobalt pastel",
+    "story": "Correctif & UX IAM/SecOps/BU (CAP-050, CAP-051, CAP-058)",
+    "summary": "Champs `type=\"search\"` + `data-lpignore=\"true\"` & garde-fous CSS sur combobox/modales, extraction `IamRoleMatrixReferenceModal` (option A1) et renumérotation section SecOps, jointure SQL `sql_local_a…"
+  },
+  "2026-11-15-correction-blocage-chargement-session-port-3100-tech-lead-report.md": {
+    "date": "2026-11-15",
+    "domain": "Déblocage « Chargement de la session... » sur `:3100` (`hydrateSession` single-flight + timeout 5s au montage), Suppression du `baseUrl` cross-origin & Rendu autonome `/login` sans coquille 4-zones",
+    "story": "Ajustement Transverse (CAP-001, CAP-058, CAP-004)",
+    "summary": "Déclenchement automatique de `hydrateSession()` dans `ShellContainer.tsx` avec verrou `activeHydrationPromise` anti-React `StrictMode`, coordination `isInitialLoading` + auto-connexion First-Admin Jo…"
+  },
+  "2026-11-15-correction-erreur-mot-de-passe-actuel-et-repli-ui-post-modification-tech-lead-report.md": {
+    "date": "2026-11-15",
+    "domain": "Correction Erreur Mot de Passe Actuel (`ERR_AUTH_CURRENT_PASSWORD_INVALID`, `422`), Rejet SSO OIDC (`422`), Réhydratation Hash PG 18 & Masquage Complet du Formulaire Post-Succès (`CAP-001`, `CAP-063`)",
+    "story": "Ajustement Transverse Auth & UX Mon Compte (CAP-001, CAP-063)",
+    "summary": "Découpage de `_error_catalog.py` (237 l.) vers `_auth_error_catalog.py` (154 l.) et `_auth_pg_helpers.py` (317 l.) vers `_auth_password_helpers.py` (129 l.) ; propagation du hash Argon2id PG 18 dans…"
+  },
+  "2026-11-15-correction-erreur-ouverture-login-session-anonyme-et-gardes-e2e-tech-lead-report.md": {
+    "date": "2026-11-15",
+    "domain": "Correction Ouverture `/login` (`ERR_RESOURCE_NOT_FOUND`), Bootstrap Session Anonyme `200` (`GET /api/v1/auth/session`), Garde d'Hydratation `ShellContainer` & Gardes E2E `4xx`/`5xx`/Alertes",
+    "story": "Ajustement Transverse (CAP-001, CAP-058)",
+    "summary": "Redémarrage `:8000` avec `--reload` et pré-check `alembic upgrade head` dans `scripts/manage.py`, isolation erreur technique `public-config` dans `LoginScreenView.tsx`, normalisation `/api` dans `res…"
+  },
+  "2026-11-15-epic-19-correctifs-revue-architecture-tech-lead-report.md": {
+    "date": "2026-11-15",
+    "domain": "Traitement Exhaustif des 7 Findings de la Revue d'Architecture Finale Epic 19 (`VALIDATE` Winston) : Vraie Clé Maîtresse Worker, Blocage 422/503 RAG & Assistant, Dépendance Unique `require_rag_available`, Éradication `InMemory*` Prod, Normalisation URL Pure & Découpage Volumétrique `< 300 lignes`",
+    "story": "Correctifs Revue Architecture Epic 19 (CAP-011, CAP-052, CAP-070, CAP-190)",
+    "summary": "Résolution des 2 bloquants (B1: déchiffrement `ORCIA_PASSTHROUGH_MASTER_KEY` par le worker, B2: `GET /search` bloqué 422 sans modèle et 503 pendant réindexation sans repli lexical), 4 majeurs (M1: dé…"
+  },
+  "2026-11-15-epic-19-hub-modeles-ia-et-embeddings-semantiques-tech-lead-report.md": {
+    "date": "2026-11-15",
+    "domain": "Cadrage Architectural & Planification Epic 19 : Hub Modèles IA Fiable, Découverte 0 Token (`GET /models`), Test Réel Chat (`max_tokens=1`) & Embeddings (Dim 1024), Purge Noms en Dur Backend, `EmbeddingPort` Hexagonal & RAG Sans Hachage SHA-256 (`AD-24`)",
+    "story": "Epic 19 (CAP-011, CAP-052, CAP-053, CAP-070, CAP-071, CAP-190)",
+    "summary": "Analyse d'impact GitNexus (9 symboles amont, 7 flux RAG), décision d'architecture AD-24 (binds/prevents/rule), amendements AD-8 et AD-16, spécification des 7 User Stories (19.1 à 19.7) ordonnancées p…"
+  },
+  "2026-11-15-epic-19-non-regression-tests-et-couverture-tech-lead-report.md": {
+    "date": "2026-11-15",
+    "domain": "Adaptation Non-Régression de la Suite Complète Pytest aux Invariants AD-24 (0 Modèle en Dur, 0 Mock Fallback en Prod, EmbeddingPort Pur) & Rétablissement Couverture Globale ≥ 90 %",
+    "story": "Non-Régression & Couverture Epic 19 (CAP-190..194)",
+    "summary": "Résolution des 8 échecs résiduels de non-régression (injections explicites de `FakeDeterministicEmbeddingAdapter`, configuration de tiers de test sur les moteurs d'orchestration et RAG, isolation en…"
+  },
+  "2026-11-15-epuration-annuaire-iam-equipes-foncees-et-co-responsables-bu-tech-lead-report.md": {
+    "date": "2026-11-15",
+    "domain": "Épuration de l'Annuaire IAM (Équipes et BUs en Texte Foncé, Suppression Badges Redondants, Bouton Mot de Passe Conditionné par Mode Auth), Co-Responsables Multi-Leads BU (`lead_user_ids_jsonb`), Interdiction Membres Directs BU (`422 ERR_ORG_UNIT_BU_MEMBERS_FORBIDDEN`) & Synchronisation Bidirectionnelle Transactionnelle B1 Strict Auto-Nettoyante",
+    "story": "Évolution Transverse IAM & Org (CAP-050, CAP-051)",
+    "summary": "Migration réversible `20261115_1902`, domaine pur `orcia_core/permissions` (support `lead_user_ids`, garde domaine `assert_bu_has_no_members`, roll-up multi-BU dans `MatrixPermissionEvaluator`), adap…"
+  },
+  "2026-11-15-modale-jour0-jeton-admin-alertes-unifiees-et-espacement-2fa-tech-lead-report.md": {
+    "date": "2026-11-15",
+    "domain": "Modale Jour 0 Bornée (`520px` / `max-w-lg`), Fournisseur Global Bearer `@orcia/api-client` & Garde `!isHydrating` au `F5`, Unification Direction C `<OrciaAlertBanner />`, Espacement 2FA (`tokens.css` & `PlatformAuthSettingsCard`) & `UX-COCKPIT-DAY0-01`",
+    "story": "Ajustement Transverse Auth & UX (CAP-001, CAP-058, CAP-060)",
+    "summary": "Utilitaires statiques manquants ajoutés dans `tokens.css` (`.max-w-sm..2xl`, `.space-y-5/6`, `.pt-3..6`, `.mt-5/6`), contrainte de largeur de `FirstBootAdminSetupModal` et suppression du doublon `/lo…"
+  },
+  "2026-11-15-politique-authentification-exclusive-2fa-et-isolation-locale-tech-lead-report.md": {
+    "date": "2026-11-15",
+    "domain": "Politique d'Authentification Exclusive (`LOCAL` vs `SSO`), Double Facteur Configurable (`NONE | EMAIL_OTP | TOTP`), Onglet `Authentification` & `Connecteurs` (`SMTP_MAIL`), Visibilité `PLATFORM_ADMIN` & Isolation Instance Locale / Tests",
+    "story": "Ajustement Transverse (CAP-001, CAP-054, CAP-058, CAP-060, CAP-100)",
+    "summary": "Migration Alembic `20261115_1901` (`platform_auth_settings`, `auth_login_challenges`, `SMTP_MAIL`), persistance PostgreSQL 18 + livraison SMTP non bloquante + enrôlement TOTP RFC 6238, suppression de…"
+  },
+  "2026-11-15-resilience-auth-pg18-miss-ram-uvicorn-reload-tech-lead-report.md": {
+    "date": "2026-11-15",
+    "domain": "Résilience d'Authentification PostgreSQL 18 en cas de Miss RAM (`uvicorn --reload` / redémarrage worker), Méthodes Publiques `has_user_in_memory` et `verify_*_token_claims`, Middleware ASGI de Réhydratation Bearer & Survie des Sessions `/session` et `/refresh`",
+    "story": "Correctif Résilience Authentification (CAP-001)",
+    "summary": "Méthodes publiques pures `has_user_in_memory`, `verify_access_token_claims`, `verify_refresh_token_claims` sur `AuthAndOrganizationService` (sans accès d'attribut privé), pré-hydratation PostgreSQL 1…"
+  },
+  "2026-11-16-cadrage-delegation-hierarchique-bu-equipe-et-invitation-comptes-tech-lead-report.md": {
+    "date": "2026-11-16",
+    "domain": "Cadrage de la Délégation Hiérarchique d'Organisation (`BU_LEAD` / `TEAM_LEAD`), Invitation/Création Déléguée de Comptes sur Périmètre, Garde Anti-Auto-Éviction & Ticket `UX-AUTH-DOUBLE-ICON-01`",
+    "story": "Cadrage IAM & Org (IAM-ORG-DELEGATION-01, UX-AUTH-DOUBLE-ICON-01 — CAP-050, CAP-051, CAP-058, CAP-067)",
+    "summary": "Diagnostic complet des 3 verrous (UI `settingsRbacResolver.ts` / `shellPresets.ts`, domaine `evaluator.py`, API `_org_units_helpers.py` / `iam_accounts.py`) avec capture archivée (`Rouge Gorge`), for…"
+  },
+  "2026-11-16-epic-6-analyse-architecture-et-ux-winston-sally-tech-lead-report.md": {
+    "date": "2026-11-16",
+    "domain": "Analyse Préalable d'Architecture Système Winston (🏗️) et de Design UX Sally (🎨) de l'Epic 6 : Provenance Auditable Immuable (`audit_ledger`), FinOps Consolidé, Coupe-Circuits Hiérarchiques, `RemoteUsageSanitizer` MCP & Réversibilité Humaine",
+    "story": "Epic 6 — Phase 1 Analyse Préalable Winston & Sally (CAP-065, CAP-200)",
+    "summary": "Analyse d'impact GitNexus (7 symboles dont `enforce_scope_mutation_guard` critique), arbitrage frontière `lint-imports` sous `AD-19 Contract 2 & 3` via port hexagonal pur `ports/finops_telemetry.py`,…"
+  },
+  "2026-11-17-epic-6-correctifs-revue-architecture-tech-lead-report.md": {
+    "date": "2026-11-17",
+    "domain": "Traitement des 5 `BLOCKING`, 5 `MAJOR` & 3 `MINOR` de la revue `VALIDATE` Epic 6",
+    "story": "Correctifs Revue Architecture & UX Epic 6 (CAP-065, CAP-200)",
+    "summary": "Implémentation terminée et validée : correction SQL `wd.title` / CTE anti-produit-cartésien / `BU`/`TEAM`, dérogation budgétaire `sample_paused_run_id`, pont `@orcia/api-client` `auditFinops` & garde…"
+  },
+  "2026-11-17-epic-7-correctifs-revue-architecture-tech-lead-report.md": {
+    "date": "2026-11-17",
+    "domain": "Résolution Intégrale des `5 BLOCKING`, `5 MAJOR` & `3 MINOR` de la Revue `VALIDATE` Epic 7 : Composition Root PG18/Redis, RBAC/IDOR & Confinement SP, Exécution Autonome & Outbox `'PENDING'`, Redis Pub/Sub SSE, Aide Contextuelle PG18/Redis, OpenShift/Logs & Découpage `< 350` L",
+    "story": "Correctifs Revue Architecture Epic 7 (CAP-201, CAP-202)",
+    "summary": "Initialisation automatique `db_engine`, `session_maker`, `redis_client`, `secret_provider` et `RedisSseBrokerAdapter` dans l'API et `trigger-dispatcher` (`ORCIA_ENABLE_PG_SESSION_MAKER` supprimé) ; g…"
+  },
+  "2026-11-17-epic-7-rebasage-sans-agent-codeur-et-action-item-incident-tech-lead-report.md": {
+    "date": "2026-11-17",
+    "domain": "Rebasage de l'Epic 7 (`7.0a..7.4`), Retrait `Story 7.3` (Agent Codeur/Git/CI-CD) & Création `ACTION_ITEM AIOPS-INCIDENT-LOOP-01` (`AD-3`, `AD-6`, `AD-18`)",
+    "story": "Cadrage & Rebasage Epic 7 (CAP-201, CAP-202)",
+    "summary": "Audit codebase pré-implémentation de l'Epic 7 (6 fractures identifiées) : amendements `AD-3`, `AD-6` et `AD-18` (table `autonomy_contracts`, signature unique `TEAM_LEAD`/`BU_LEAD` sans co-signature `…"
+  },
+  "2026-11-17-fusion-branches-epics-6-7-16-et-harmonisation-main-tech-lead-report.md": {
+    "date": "2026-11-17",
+    "domain": "Consolidation Git Locale des Branches Epics 6, 7 & 16 sur `main`, Merge Alembic (`20261117_1601`), Intégration CodeGraph + Exécuteur Réflexif, Découpage `< 350` L & Harmonisation Full-Stack",
+    "story": "Ajustement Transverse (CAP-160, CAP-200, CAP-201, CAP-202)",
+    "summary": "Résolution des 26 conflits Git et des couplages sémantiques inter-Epics (`bounded_workflow_v2.py` modulaire + CodeGraph Epic 18, `workflows.py` + `_workflows_helpers.py` avec `WorkflowPublished` Outb…"
+  },
+  "2026-11-18-epic-20-validate-fixes-tech-lead-report.md": {
+    "date": "2026-11-18",
+    "domain": "Correctifs Intégraux des 10 Findings (`3 BLOCKING`, `4 MAJOR`, `3 MINOR`) Revue `VALIDATE` Epic 20",
+    "story": "Epic 20 VALIDATE (CAP-010, CAP-030, CAP-034, CAP-036, CAP-202)",
+    "summary": "Collision `concept_key` inter-périmètres (`OntologyScopeConflictError` HTTP `409` + `slugifyScopedConceptKey`), confinement canonique `target_scope_id` (`403`) + auth/filtrage `GET /ontology-rag/stat…"
+  },
+  "2026-11-18-rca-epic-21-enrichissement-22-8-et-story-22-8a-tech-lead-report.md": {
+    "date": "2026-11-18",
+    "domain": "Analyse des Causes Racines (`RC-1`..`RC-7`) des `47` Échecs E2E & `51/62` Capacités `failed_e2e` Epic 21 + Cadrage Enrichissement `22.8` & Story `22.8a`",
+    "story": "RCA Epic 21",
+    "summary": "Clôture cadrage documentaire : classification complète des `34` chantiers `REM-01`..`REM-34` en `7` causes racines (`RC-1`..`RC-7`), mise à jour gouvernance (`epics.md`, `sprint-status.yaml`, `sprint…"
+  },
+  "2026-11-20-audit-i18n-chaines-codees-en-dur-tech-lead-report.md": {
+    "date": "2026-11-20",
+    "domain": "Cross-Cutting i18n Audit & Deterministic Guardrails (`_i18n-audit-inventory-raw.md`)",
+    "story": "Audit / ACTION_ITEM-I18N.1",
+    "summary": "Restored & translated to English (2026-11-23): inventoried `3,809` hardcoded FR/EN occurrences across `461` files (`A=71` client errors, `B=577` server fallbacks, `C=2,816` UI labels, `D=193` backend…"
+  },
+  "2026-11-21-audit-harnais-assistant-et-plan-remediation-tech-lead-report.md": {
+    "date": "2026-11-21",
+    "domain": "Audit approfondi du harnais « Mon Assistant » (topologie, boucle d'outils, contexte, runtime, sécurité, tests) & plan de remédiation Epic 26 proposé",
+    "story": "Audit",
+    "summary": "Plan (`proposed`) : 38 constats `H-xx` (14 P0), 13/22 endpoints assistant sans appelant UI, cible = moteur de tour unique (runtime réflexif à profils) gouverné et persistant, 13 stories `26-0..26-10`…"
+  },
+  "2026-11-23-ai-model-edit-api-key-and-fr-en-locale-tech-lead-report.md": {
+    "date": "2026-11-23",
+    "domain": "AI Model Edit API Key Exposure, Localized Preset Display Names, `<= 300 L` Splits & FR/EN Assistant Locale Alignment (`CAP-052`, `CAP-053`, `CAP-074`, `CAP-076`, `CAP-190`)",
+    "story": "Cross-Cutting UX & Locale",
+    "summary": "Verified & closed (independent Testing Sub-Agent): exposed `ai-model-api-key-input` in `edit` mode (`AiModelAuthAndEndpointFields.tsx` `180` L, `useAiModelConfigModalState.ts` `278` L sending `secret…"
+  },
+  "2026-11-23-gemini-interactions-api-et-fallback-secours-tech-lead-report.md": {
+    "date": "2026-11-23",
+    "domain": "Google Gemini Interactions API (`/v1beta/interactions`), Runtime Secondary Fallback Model (`fallback_model_name`), Gemini Discovery Sorting & Frontend `protocol_mode` Resolution (`CAP-052`, `CAP-053`, `CAP-074`, `CAP-076`, `CAP-190`)",
+    "story": "Cross-Cutting Adjustment",
+    "summary": "Verified & closed (independent Testing Sub-Agent): pure `llm_gemini_interactions.py` dialect (`196` L, zero SDK `AD-19`), HTTP 400 auto-switch (`model` $\\rightarrow$ `agent`) + `fallback_model_name`…"
+  },
+  "21-1-classification-capacites-kind-uj-et-tables-pg18-tech-lead-report.md": {
+    "date": "2026-11-18",
+    "domain": "Classification des 65 Capacités (`kind: feature | foundation`, `uj`, `db_tables`, `read_only_surface`) & Validation `capabilities_registry.py`",
+    "story": "Story 21.1",
+    "summary": "Classification exhaustive des `65` capacités de `docs/product/capabilities.yaml` (`3` `foundation` avec `e2e_exempt_reason` : `CAP-006`, `CAP-100`, `CAP-202` ; `62` `feature` rattachées à `UJ-1`..`UJ…"
+  },
+  "21-2-referentiel-user-journeys-uj1-uj20-prd-et-experience-tech-lead-report.md": {
+    "date": "2026-11-18",
+    "domain": "Référentiel Complet `UJ-1`..`UJ-20` (`prd.md` §2.3 & §4.10, `AIOPS-INCIDENT-LOOP-01`), `Key Flows` (`EXPERIENCE.md` §9) & Test de Cohérence `capabilities.yaml`",
+    "story": "Story 21.2",
+    "summary": "Annotation `AIOPS-INCIDENT-LOOP-01` sur `UJ-12` (boucle d'incident sans écriture de code/Git), rédaction structurée de `UJ-13`..`UJ-20` dans `prd.md` §2.3 et ajout de `Réalise UJ-...` sur `FR-31`..`F…"
+  },
+  "21-3-decoupage-site-sync-et-verrou-ci-uj-e2e-tech-lead-report.md": {
+    "date": "2026-11-18",
+    "domain": "Découpage Modulaire `sync_site_catalog.py` (`< 350` L), Verrou CI Bloquant `CAP ↔ UJ ↔ Spec E2E` (`uj_e2e_coverage.py`) & Assainissement `capabilities.yaml`",
+    "story": "Story 21.3",
+    "summary": "Découpage de `sync_site_catalog.py` (`883 -> 220` L) en 5 modules `< 200` L (`_site_repo_parsers.py`, `_site_html_renderer.py`, `_site_html_styles.py`, `_site_html_template.py`), création du verrou C…"
+  },
+  "21-4-harnais-playwright-assertions-pg18-et-screenshots-finaux-tech-lead-report.md": {
+    "date": "2026-11-18",
+    "domain": "Harnais Playwright Vérité PostgreSQL 18 (`query_db.py` + `dbAssertions.ts`), Fixture Capture PNG Finale (`e2eCaptureFixture.ts`) & Mise à Niveau des `16` Specs Existantes",
+    "story": "Story 21.4",
+    "summary": "Création de l'exécuteur lecture seule `infra/scripts/e2e/query_db.py` (`177` L, `SET TRANSACTION READ ONLY`, garde `orcia_e2e`), du pont Playwright `dbAssertions.ts` (`98` L, `0` package npm ajouté),…"
+  },
+  "21-5-e2e-lot-a-auth-org-iam-profil-modeles-ia-et-broker-tech-lead-report.md": {
+    "date": "2026-11-18",
+    "domain": "Specs E2E Lot A (`14`–`16`), Helper `authAndOrgHelpers.ts`, Audit `data-testid`/PG18 & `capabilities.yaml`",
+    "story": "Story 21.5 (Lot A)",
+    "summary": "Rédaction complète du rapport Tech Lead, création de `apps/web/e2e/support/authAndOrgHelpers.ts` (`169` L) et des 3 specs E2E `14` (`262` L), `15` (`209` L), `16` (`236` L) sans `test.skip` avec asse…"
+  },
+  "21-6-e2e-lot-b-sources-codegraph-dna-ontologie-catalogue-packs-wizards-mcp-tech-lead-report.md": {
+    "date": "2026-11-18",
+    "domain": "Specs E2E Lot B (`17` & `18`), Helper `workspaceAndCatalogHelpers.ts`, Audit `data-testid`/PG18 & `capabilities.yaml`",
+    "story": "Story 21.6 (Lot B)",
+    "summary": "Préparation `21.6-impl` (Sections 1 & 2, `workspaceAndCatalogHelpers.ts`, audit `data-testid` / SQL vs mémoire / schémas PG18, mise à jour `capabilities.yaml`) — Section 3 à compléter par `21.6-test`."
+  },
+  "21-7-e2e-lot-c-orchestration-vsm-finops-citations-et-showcase-tech-lead-report.md": {
+    "date": "2026-11-18",
+    "domain": "Specs E2E Lot C (`19`–`21`), Helper `processAndAssistantHelpers.ts`, Audit `data-testid`/PG18 & `capabilities.yaml` (`0` backlog résiduel)",
+    "story": "Story 21.7 (Lot C)",
+    "summary": "Rédaction complète du rapport Tech Lead, création de `apps/web/e2e/support/processAndAssistantHelpers.ts` (`124` L) et des 3 specs E2E `19` (`191` L), `20` (`254` L), `21` (`220` L) sans `test.skip`…"
+  },
+  "21-8-campagne-e2e-captures-bilan-et-analyse-croisee-sally-winston-tech-lead-report.md": {
+    "date": "2026-11-18",
+    "domain": "Campagne E2E Intégrale (`110` cas / `24` specs), Captures PNG (`110/110`), Audit Croisé Sally × Winston (`REM-01`..`REM-34`) & Vérité `capabilities.yaml`",
+    "story": "Story 21.8",
+    "summary": "Exécution sans retry (`--retries=0 --max-failures=0`) de la campagne Playwright bi-serveur PostgreSQL 18 (`47` passed, `36` failed, `11` timedOut, `16` skipped), archivage de `playwright-results.json…"
+  },
+  "21-9-rapports-tech-lead-echecs-et-initialisation-epic-22-tech-lead-report.md": {
+    "date": "2026-11-18",
+    "domain": "Analyse d'Impact GitNexus, Rapports Pré-Implémentation `22-1`..`22-8`, Plan Directeur & Initialisation `Epic 22`",
+    "story": "Story 21.9",
+    "summary": "Consolidation des constats E2E (`47` échecs/`14` specs), des `34` chantiers `REM-01`..`REM-34` et des `51` capacités `failed_e2e` en `8` Stories cohérentes ; analyse d'impact GitNexus sur les `13` sy…"
+  },
+  "22-1-socle-identite-uuid-workspaces-permissions-admin-et-fin-bypass-pg-tech-lead-report.md": {
+    "date": "2026-11-18",
+    "domain": "Vague 0 (`REM-01`, `REM-02`, `REM-07`) — Unification UUIDv7 Workspaces (`0` `\"ws-1\"`), Fix `403` `PLATFORM_ADMIN` & Fin `\"marc\"` / `ORCIA_DISABLE_PG_BOOTSTRAP_SYNC`",
+    "story": "Story 22.1",
+    "summary": "Implémentée (`done`) : création `POST /api/v1/workspaces` retournant `UUIDv7` + `slug` exact (`sql_workspaces.py`), conservation `ws.slug` + membership propriétaire `PLATFORM_ADMIN`, règle `MatrixPer…"
+  },
+  "22-10-rapports-tech-lead-plan-correction-global-et-initialisation-epic-23-tech-lead-report.md": {
+    "date": "2026-11-19",
+    "domain": "Clôture Epic 22 — Rapports Tech Lead Individuels (`23-1..23-6`), Plan de Correction Global & Initialisation Complète de l'Epic 23",
+    "story": "Story 22.10",
+    "summary": "Clôture (`done`, `epic-22: done`) : analyse d'impact GitNexus (`repo: \"ORCIA\"`), `6` rapports Tech Lead pré-implémentation `23-1..23-6`, plan directeur `sprint-change-proposal-2026-11-18-epic-23-reme…"
+  },
+  "22-2-portals-orciadialog-tailwind-purge-display-none-decouplage-routes-et-contrats-tech-lead-report.md": {
+    "date": "2026-11-18",
+    "domain": "Vague 0 (`REM-03..06`, `REM-16`, `REM-24`, `REM-25`) — Portals `OrciaDialog` & Tailwind v4, Purge `display: none`, Découplage `/catalog`/`/agents`/`/help`, Invitation `/organization` & `data-testid`/Contrats",
+    "story": "Story 22.2",
+    "summary": "Implémentation & validation `AD-17` (`91.06 %` couverture ciblée, `162/162` Vitest, `4/4` intégration PG18) : activation `@tailwindcss/vite`, Portals `DialogPrimitive.Portal` + footer sticky modales,…"
+  },
+  "22-3-persistance-pg18-assistant-notifications-sse-et-permission-broker-tech-lead-report.md": {
+    "date": "2026-11-18",
+    "domain": "Vague 1 (`REM-08`, `REM-10`, `REM-13`) — Persistance PG18 `assistant_folders` (+ purge `LAYER_5`), `task_notifications`/SSE & `permission_broker_tickets` (fallback `git://*`)",
+    "story": "Story 22.3",
+    "summary": "Implémentée (`done`) : découpage modulaire `< 400` L + adaptateurs PG18 `sql_assistant_folders.py`, `sql_task_notifications.py`, `sql_resource_leases.py` et `sql_permission_broker.py` injectés au Com…"
+  },
+  "22-4-persistance-pg18-orchestration-gates-et-garde-kill-switch-tech-lead-report.md": {
+    "date": "2026-11-19",
+    "domain": "Vague 1 (`REM-09`, `REM-11`, `REM-12`) — Persistance PG18 Orchestration (`dbos_uow`, ancres, challenges, `run_lock`), Gates & Garde `KILL_SWITCH_STOPPED`",
+    "story": "Story 22.4",
+    "summary": "Implémentée (`done`) : initialisation `app.state.dbos_uow`/`dbos_datasource` au Composition Root et adaptateurs SQL PG18 (`_sql_orchestration_governance.py`, `_sql_orchestration_challenges.py`, `_sql…"
+  },
+  "22-5-persistance-pg18-packs-declaratifs-et-wizards-durables-tech-lead-report.md": {
+    "date": "2026-11-19",
+    "domain": "Vague 1 (`REM-14`, `REM-15`) — Persistance PG18 `declarative_pack_bundles` & Parcours Wizards Durables (`wizard_sessions`)",
+    "story": "Story 22.5",
+    "summary": "Clôture : upsert idempotent des packs déclaratifs dans `declarative_pack_bundles` + correctif `resolve_default_packs_root()`, persistance PG18 `wizard_sessions` (`SqlWizardSessionRepository` + `step-…"
+  },
+  "22-6-coquille-direction-c-8-entrees-mobile-companion-aide-dynamique-et-cockpit-tech-lead-report.md": {
+    "date": "2026-11-19",
+    "domain": "Vague 2 (`REM-17..21`) — Coquille Direction C `8` Entrées, Mobile Companion `< 768px`, Aide Dynamique `docs/help/` & Cockpit `<= 3` Blocs",
+    "story": "Story 22.6",
+    "summary": "Clôture : `useResponsiveBreakpoint()` + barre basse `3` onglets mobile + purge `overflow-x: hidden` `tokens.css`, scroll SSE `/assistant`, `17` fiches `docs/help/{fr,en}/*.md` dynamiques sans `Chef1`…"
+  },
+  "22-7-finitions-ux-ui-erreurs-rfc9457-grilles-devise-euro-et-purge-jargon-tech-lead-report.md": {
+    "date": "2026-11-19",
+    "domain": "Vague 3 (`REM-22`, `REM-23`, `REM-26..32`) — Finitions UX/UI, Erreurs RFC 9457 Actionnables, Grilles, Devise `€`/Dates FR, Retrait `(!)` & Purge Intégrale Jargon",
+    "story": "Story 22.7",
+    "summary": "Clôture (`done`) : formateurs `€`/dates FR (`formatters.ts`), catalogue actionnable `formatRfc9457ErrorToBanner` + `<OrciaAlertBanner role=\"alert\">`, modales `<OrciaDialog>` (`+ Nouveau processus`, `…"
+  },
+  "22-8-gardes-ci-anti-regression-campagne-e2e-110-vert-et-62-capacites-runtime-tech-lead-report.md": {
+    "date": "2026-11-19",
+    "domain": "Vague 3 (`REM-33`, `REM-34`) — Activation des `5` Gardes CI Initiales + `4` Verrous Anti-Faux-Positifs (Sync `data-testid`, Helper OpenAPI `typedApiRequest`, Purge `ORCIA_E2E_SEED_FIXTURES` + Relecture à Froid PG18, `<RouterProvider>` + `[role=\"alert\"]`), Couverture `100 %` SQL PG18 (`55/55` Blocs), `ORCIA_E2E_CAMPAIGN_DIR` & Budget `< 35s`",
+    "story": "Story 22.8",
+    "summary": "Clôture (`done`) : `6` suites gardes/verrous TS (`185/185` `@orcia/web`, `110/110` `@orcia/ui`, `13/13` `@orcia/api-client`), `2` gardes Python (`55/55` blocs E2E SQL PG18 + `_e2e/evict-memory-caches…"
+  },
+  "22-8a-assainissement-fail-closed-vitest-composition-root-sans-override-et-ci-complete-tech-lead-report.md": {
+    "date": "2026-11-19",
+    "domain": "Intercalaire Post-RCA Epic 21 — Assainissement *Fail-Closed* `vitest.setup.ts` (`openapi.json`), Test Composition Root `create_app()` sans Override sur PG18 Réel & CI GitHub Actions `5` Couches (`AD-17`)",
+    "story": "Story 22.8a",
+    "summary": "Clôture (`done`) : découpage `vitest.setup.ts` (`2 951 -> 48` L + `13` modules `< 350` L) et transport *Fail-Closed* OpenAPI 3.1 (`vitest-transport-fail-closed-openapi.test.ts` `5/5`, `313/313` tests…"
+  },
+  "22-9-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston-tech-lead-report.md": {
+    "date": "2026-11-19",
+    "domain": "Vague 4 — Campagne E2E Intégrale Vérité PostgreSQL 18 (`e2e-campaign-epic-22`), Captures PNG Finales, Bilan, Audit Croisé Sally × Winston & Vérité `capabilities.yaml`",
+    "story": "Story 22.9",
+    "summary": "Clôture (`done`) : exécution sans retry (`--retries=0 --max-failures=0 --timeout=35000`) des `110` scénarios (`24` specs) vers `e2e-campaign-epic-22/` (`7` passed, `90` failed — `3` `401` directs + `…"
+  },
+  "23-1-reset-jour0-e2e-truncate-cascade-connector-schemes-et-redis-tech-lead-report.md": {
+    "date": "2026-11-19",
+    "domain": "Vague 0 (`REM23-01` / `ARCH23-01`) — Déblocage `resetDay0()` (`TRUNCATE CASCADE` E2E isolé `orcia_e2e`), Protection `connector_schemes` & Purge Redis `FLUSHDB`",
+    "story": "Story 23.1",
+    "summary": "Clôture (`done`) : protection `connector_schemes` + garde `ON DELETE RESTRICT` sans `DISABLE TRIGGER` dans `09_reset_db_first_boot.py`, `TRUNCATE ... RESTART IDENTITY CASCADE` (`public` & `dbos`) gar…"
+  },
+  "23-2-transport-sse-authentifie-createrequestsse-smoke-00-et-diagnostic-401-tech-lead-report.md": {
+    "date": "2026-11-19",
+    "domain": "Vague 0 (`REM23-02..04` / `ARCH23-02..03`, `P0-UX-1`) — Transport SSE Authentifié `createRequestSse`, Smoke `00` (#3/#4) & Diagnostic `401` Session Expirée",
+    "story": "Story 23.2",
+    "summary": "Clôture (`done`) : extraction `assistantStreaming.ts` + `workspace_leases.py` + `OrciaRootErrorBoundary.tsx`, factorisation `createRequestSse` (`Bearer` + RFC 9457 + verrou *single-flight* `/auth/ref…"
+  },
+  "23-3-zone-4-aide-contextuelle-fidele-a-la-route-et-4-blocs-design-md-tech-lead-report.md": {
+    "date": "2026-11-19",
+    "domain": "Vague 1 (`REM23-05` / `ARCH23-04`, `P1-UX-5`, `P2-UX-8`) — Zone 4 `Aide Contextuelle` Fidèle à la Route, 4 Blocs `DESIGN.md` & Fin de Plomberie Interne",
+    "story": "Story 23.3",
+    "summary": "Clôture (`done`, validé `APPROVED` par `23.3-validate`) : séparation `real_example_text` & `common_pitfalls_items` dans `contextual_help_loader.py`/`HelpArticleSchemaItem` (SDK OpenAPI `0-diff`), déf…"
+  },
+  "23-4-unification-accostage-x-sur-6-fin-fantomes-jour0-et-modale-admin-tech-lead-report.md": {
+    "date": "2026-11-20",
+    "domain": "Vague 1 (`REM23-06..08` / `ARCH23-05`, `P1-UX-4,6,7`) — Unification `Accostage X/6` PG18, Suppression Fantômes Jour 0 (`AP`, `Notifications 4`) & Modale Admin",
+    "story": "Story 23.4",
+    "summary": "Clôture (`done`, validé **`APPROVED`** Round 2 par `23.4-validate`) : source unique PG18 `Accostage 0/6..6/6` (`progressive_accostage.py`, `sql_accostage_counts.py`, `sql_platform_setup_store.py` hyd…"
+  },
+  "23-5-sobriete-cockpit-topbar-sans-doublon-assistant-et-login-tech-lead-report.md": {
+    "date": "2026-11-20",
+    "domain": "Vague 1 (`REM23-09..12` / `ARCH23-06..09`, `P1-UX-3`, `P2-UX-8..11`, `P3-UX-12`) — Cockpit `<= 3` Blocs, `TopHeaderBar` Sans Doublon, Recherche Multi-Tenant PG18, `/assistant`, `/login` & Jalons `#10`",
+    "story": "Story 23.5",
+    "summary": "Clôture (`done`, validé **`APPROVED`** par `23.5-validate`) : réduction Cockpit à `<= 3` blocs (`CockpitOrientationCards`, `CockpitDecisionsCard`, `useCockpitGovernanceController`, `cockpit-human-led…"
+  },
+  "23-6-campagne-e2e-integrale-mobile-companion-audit-et-62-capacites-runtime-tech-lead-report.md": {
+    "date": "2026-11-19",
+    "domain": "*(Archivée / Déplacée en `ACTION_ITEM-23.6`)* — Stabilisation Specs `04`–`21` & Mobile Companion (`390×844`, `CAP-042`)",
+    "story": "Story 23.6` *(déplacée en `ACTION_ITEM-23.6`)*",
+    "summary": "Déplacée vers `action_items:` (`ACTION_ITEM-23.6`) dans `sprint-status.yaml` pour priorisation ultérieure (périmètre `--project=mobile-companion` `390×844` & `CAP-042` hors chemin critique Epic 23).…"
+  },
+  "23-6a-durcissement-anti-goodhart-gardes-openapi-ast-geometrie-et-reset-pg18-tech-lead-report.md": {
+    "date": "2026-11-20",
+    "domain": "`CAP-100` (`hygiène`) — Durcissement Anti-Goodhart : Reset PG18 Dynamique, OpenAPI `security`, Audits AST (`catch`, SQL domaine, jargon) & Contrats Géométriques Desktop",
+    "story": "Story 23.6a",
+    "summary": "Clôture (`done`, validé **`APPROVED`** Round 2 par `23.6a-validate`) : introspection dynamique `_first_boot_reset_guards.py` (`information_schema.tables`/`pg_constraint`, `dbos.* == 0`, Redis `DBSIZE…"
+  },
+  "23-7-campagne-e2e-integrale-captures-png-bilan-et-audit-croise-sally-winston-tech-lead-report.md": {
+    "date": "2026-11-20",
+    "domain": "Vague 3 — Campagne Playwright E2E Intégrale Desktop (`--project=desktop-cockpit`, `55` scénarios / `24` specs), Captures PNG (`58` `< 450 KB`), Bilan, Audit Croisé Sally × Winston (`Case B -> Epic 24`) & Vérité `capabilities.yaml` (`39 runtime / 26 failed_e2e`)",
+    "story": "Story 23.7",
+    "summary": "Clôture (`done`) : exécution sans retry ni `ORCIA_E2E_SEED_FIXTURES` sur `dd2d382` vers `e2e-campaign-epic-23/` (**`44 passed / 7 failed / 1 timedOut / 3 skipped / 0 flaky`**, `84,6 %` Desktop, `+37`…"
+  },
+  "23-8-rapports-tech-lead-plan-correction-global-et-initialisation-epic-24-tech-lead-report.md": {
+    "date": "2026-11-20",
+    "domain": "Clôture Epic 23 (`Case B -> Epic 24`) — Rapports Tech Lead `24-1..24-7`, Plan Directeur Global & Suite de Traçabilité `23 -> 24`",
+    "story": "Story 23.8",
+    "summary": "Clôture (`done`, `epic-23: done`) : verdict `Case B` sur `dd2d382` (`8` échecs/timeouts Desktop, `17` `UX23-*`, `12` `ARCH24-*`, `12` `REM24-*`), rédaction des `7` rapports `24-1..24-7` et du plan `s…"
+  },
+  "24-1-persistance-pg18-actions-jira-staged-mcp-et-vsm-v2-tech-lead-report.md": {
+    "date": "2026-11-20",
+    "domain": "Epic 24 Vague 0 — Persistance PG18 Actions Jira Staged, Propositions MCP & Workflow VSM v2 (`REM24-01`, `REM24-02`, `06 #15`, `19#2 #47`, `20#1 #48`, `UX23-01`)",
+    "story": "Story 24.1",
+    "summary": "Clôture (`done`) : migration Alembic `20261120_2401` (`jira_staged_actions`, `mcp_governed_proposals`, index `vsm_definitions_v2`), garde-fous `09_reset_db_first_boot.py`/`reset_day0.py`, `SqlJiraSta…"
+  },
+  "24-2-triggers-uuidv7-sans-collision-waivers-await-adn-pg18-et-fin-default-ws-tech-lead-report.md": {
+    "date": "2026-11-20",
+    "domain": "Epic 24 Vague 0 — Triggers UUIDv7 sans Collision, Waivers `await`, ADN Starlark PG18, RAG/Tripartite PG18 & Purge `default-ws` (`REM24-03`, `REM24-04`, `USER24-BUG-6`, `20#2 #49`, `17#3 #40`, `UX23-06`)",
+    "story": "Story 24.2",
+    "summary": "Clôture (`done`) : migration Alembic `20261120_2402` (`workspace_dna_mechanisms` + `09_reset_db_first_boot.py`), `tid.replace(\"-\", \"\")[-12:]` dans `_triggers_lifecycle_ops.py` + `trigger_key` optionn…"
+  },
+  "24-3-banc-mcp-audit-ledger-fin-pass-optimiste-et-assainissement-composition-root-tech-lead-report.md": {
+    "date": "2026-11-20",
+    "domain": "Epic 24 Vague 0 — Banc MCP, `audit_ledger`, Fin `PASS` Optimiste & Assainissement Composition Root (`REM24-05`, `REM24-06`, `18#5 #45`)",
+    "story": "Story 24.3",
+    "summary": "Clôture (`done`) : découpage `< 355` L (`remote_test_bench.py`, `governed_mcp_exposure.py`, `sql_mcp_exposure.py`), migration `20261120_2403` + persistance PG18 `mcp_exposed_agents` & hash SHA-256 `m…"
+  },
+  "24-4-refonte-css-tailwind-tokens-modales-rgaa-contraste-onglets-et-shell-tech-lead-report.md": {
+    "date": "2026-11-20",
+    "domain": "Epic 24 Vague 1 — CSS Tailwind v4 Layering, Verrouillage Scroll Shell (`USER24-BUG-1`), Modales Onglets & Clés MCP (`USER24-BUG-4A/4B/5`), `OrciaDialog` & Contraste RGAA (`REM24-07`, `UX23-02..04`, `UX23-13..14`, `UX23-16`)",
+    "story": "Story 24.4",
+    "summary": "Clôture (`done`) : ordre `tokens.css` $\\rightarrow$ `virtual:orcia-tailwind.css` (`@import \"tailwindcss/theme\" reference;` + `@theme inline reference`, `0` cycle `:root`), split `tokens*.css` (`< 280…"
+  },
+  "24-5-identite-accostage-cockpit-sync-navigation-zone4-et-coherence-jour0-tech-lead-report.md": {
+    "date": "2026-11-20",
+    "domain": "Epic 24 Vague 1 — Identité Accostage Cockpit, Route « 1. Compte Admin » (`USER24-BUG-2`), Navigation Zone 4 & Cohérence Jour 0 (`REM24-08`, `UX23-07`, `UX23-09`, `UX23-15`, `ARCH24-09`)",
+    "story": "Story 24.5",
+    "summary": "Clôture (`done`) : `first-admin` $\\rightarrow$ `/profile` (`USER24-BUG-2`, 0 `/welcome-setup`), `platform_admin_display_name` & `visible_milestones` filtrés par rôle (`ProgressiveDay0AccostageService…"
+  },
+  "24-6-recherche-cmdk-filtre-langue-purge-jargon-packs-et-microcopy-tech-lead-report.md": {
+    "date": "2026-11-20",
+    "domain": "Epic 24 Vague 1 — Recherche `Cmd+K` Filtrée Langue, Rendu Markdown Aide (`USER24-BUG-3`), Purge Jargon, Compteurs Packs & Microcopy (`REM24-09`, `REM24-10`, `UX23-05`, `UX23-08`, `UX23-10..12`, `UX23-16`)",
+    "story": "Story 24.6",
+    "summary": "Clôture (`done`) : rendu Markdown HTML (`renderInlineMarkdownNodes`) sur `/help` & Zone 4 (`USER24-BUG-3`, `0` `**` / backtick brut), filtre SQL `:locale` sur `HELP_ARTICLE` (`sql_federated_search.py…"
+  },
+  "24-7-reconciliation-e2e-captures-jalons-campagne-52-sur-52-et-cloture-epic-24-tech-lead-report.md": {
+    "date": "2026-11-20",
+    "domain": "Epic 24 Vague 2 — Réconciliation Sélecteurs E2E, Captures Jalons, Campagne Figée `52/52` & Clôture (`REM24-11`, `REM24-12`, `USER24-BUG-1..6`, `18#1 #41`, `07 #16`, `UX23-17`)",
+    "story": "Story 24.7",
+    "summary": "Clôture (`done`, `epic-24: done`, verdict Sally × Winston `Case A` : `0 P0 / 0 P1`, `3 P2` `ACTION_ITEM-24.1`, `4 P3` `ACTION_ITEM-24.2`) : `openCatalogOrAgentsPage` (`/catalog` vs `/agents`), `07-sp…"
+  },
+  "25-1-espace-personnel-auto-pg18-accostage-unifie-et-degrisage-processus-tech-lead-report.md": {
+    "date": "2026-11-20",
+    "domain": "Epic 25 — Espace Personnel Automatique PG18 Isolé par Utilisateur, Accostage Unifié `6` Jalons & Dégrisage `Mes Processus`",
+    "story": "Story 25.1",
+    "summary": "Clôture (`done`) : provisionnement SQL idempotent `sql_personal_workspace.py` (`PRIVATE_USER` / `CONFIDENTIAL_RESTRICTED`, `personal_owner_user_id`), verrou propriétaire `MatrixPermissionEvaluator` m…"
+  },
+  "25-2-coquille-9-entrees-mon-organisation-administration-topbar-orcia-et-selecteur-espace-tech-lead-report.md": {
+    "date": "2026-11-20",
+    "domain": "Epic 25 — Coquille `9` Entrées (`Mon Organisation` & `Administration` `5` Onglets), Topbar `[O] ORCIA` & Sélecteur Unifié d'Espace (`CAP-058`, `CAP-060`, `CAP-203`)",
+    "story": "Story 25.2",
+    "summary": "Clôture (`done`) : `9` entrées fixes dans `FourZoneSidebarRail` (`Mon Organisation` lecture seule pour tous rôles authentifiés hors délégation via `GET /api/v1/org-units` + `organization-readonly-acc…"
+  },
+  "25-3-sobriete-cockpit-jour0-purge-run-demo-ram-et-retrait-blocs-attente-tech-lead-report.md": {
+    "date": "2026-11-20",
+    "domain": "Epic 25 — Sobriété Cockpit Jour 0, Purge Run Démo RAM (`marc.lead@orcia.io`), Sync PG18 `_runs_by_id` & Retrait Blocs d'Attente (`CAP-005`, `CAP-023`, `CAP-060`, `CAP-100`)",
+    "story": "Story 25.3",
+    "summary": "Clôture (`done`) : purge run démo RAM dans `seeds.py` (`svc.runs == ()`), synchronisation autoritative `_runs_by_id` sur PG18 (`_orchestration_sql_hydration.py`), exposition `pending_arbitrations`/`h…"
+  },
+  "25-4-hub-modeles-ia-suppression-fiable-spinner-unifie-erreur-locale-et-masquage-reindexation-tech-lead-report.md": {
+    "date": "2026-11-20",
+    "domain": "Epic 25 — Hub Modèles IA : Suppression PG18 Fiable sans Fallback RAM, `<OrciaSpinner />` Unifié, Erreur Locale & Masquage Réindexation (`CAP-052`, `CAP-053`, `CAP-190`)",
+    "story": "Story 25.4",
+    "summary": "Clôture (`done`) : extraction `_sql_ai_model_delete_guards.py` (`165` L) sans faux positif `ILIKE` sur `workflow_definitions_v2`, blocage `409` strict sur `workflow_runs` actifs/en pause + `fallback_…"
+  },
+  "25-5-decouplage-assistant-sans-modele-semantique-blocage-sources-rag-et-cloture-epic-25-tech-lead-report.md": {
+    "date": "2026-11-21",
+    "domain": "Epic 25 — Découplage Mon Assistant / Search Speed-1 sans Modèle Sémantique, Blocage Sources RAG (`422 ERR_NO_ACTIVE_EMBEDDING_MODEL`) & Clôture Technique Epic 25 (`CAP-011`, `CAP-022`, `CAP-074`, `CAP-075`, `CAP-076`, `CAP-180`, `CAP-190`)",
+    "story": "Story 25.5",
+    "summary": "Clôture (`done`, `epic-25: done`, QA post-revue `VALIDATE` complète) : `get_optional_embedding_port` sur les 5 routes Assistant et `/search`, `require_rag_available` strict sur `/rag/search` et `/rag…"
+  },
+  "26-0-adr-unified-turn-engine-sse-v2-and-ssrf-policy-tech-lead-report.md": {
+    "date": "2026-11-21",
+    "domain": "Epic 26 Lot 0 — `AD-25` Unified Assistant Turn Engine, `AD-15`/`AD-21`/`AD-24` Amendments, ERD (`assistant_thread_messages`, `assistant_turn_feedback`), REST/SSE v2 Contract & Env-Var SSRF Policy",
+    "story": "Story 26.0",
+    "summary": "Framing ADR & contracts (`done`): authored `AD-25` (`AssistantTurnEngine`, Speed 1 fast-path + `\"Deepen\"` `parent_turn_id`, Speed 2/3 `ASSISTANT` profile, single-process `apps/api` `asyncio.Task` + R…"
+  },
+  "26-1-immediate-security-hardening-scope-observer-and-ssrf-tech-lead-report.md": {
+    "date": "2026-11-21",
+    "domain": "Epic 26 Lot 1 — Immediate Security Hardening: Pre-Stream Scope & Observer Guards, Server-Side `READ_SOURCE` / `CONFIDENTIAL_RESTRICTED`, Layer 1 Immutability, Env-Var SSRF + DNS Pinning & Credential Hygiene",
+    "story": "Story 26.1",
+    "summary": "Hardening, review fixes, E2E stabilization & module splits (`done`, `pro` review `APPROVED`): enforced pre-stream `403 ERR_OBSERVER_MODE_READ_ONLY` and UUID/slug IDOR guards via `MatrixPermissionEval…"
+  },
+  "26-10-golden-evals-red-team-multi-worker-and-epic-26-closure-tech-lead-report.md": {
+    "date": "2026-11-22",
+    "domain": "Epic 26 Lot 7 — Golden Evals, Red-Team & Multi-Worker Verification, Anti-Regression AST Audits, 0-Uncalled Route Check, `runtime` Promotion & Epic 26 Closure (`CAP-022`, `CAP-070`, `CAP-072`, `CAP-260`)",
+    "story": "Story 26.10",
+    "summary": "Closed (`done`, `epic-26: done`, post-remediation independent Testing Sub-Agent verified): authored `$0` golden eval datasets & suite (`tests/evals/test_story_26_10_assistant_golden_evals.py`), adver…"
+  },
+  "26-2-core-llm-streaming-extraction-and-unified-prompt-builder-tech-lead-report.md": {
+    "date": "2026-11-21",
+    "domain": "Epic 26 Lot 2 — Hexagonal `LlmStreamingPort` & HTTPX Multi-Provider Extraction (`openai_compatible`, `anthropic`, `gemini_native`), Unified Localized `AssistantPromptBuilder`, Prod Test/Cassette Branch Purge & `<= 300 L` Harness Splits (`CAP-069`, `CAP-074`, `CAP-076`)",
+    "story": "Story 26.2",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified): extracted `LlmStreamingPort` (`orcia_core/ports/llm_streaming_port.py`, zero SDK imports) and `httpx` multi-provider streaming + usage telemet…"
+  },
+  "26-3-turn-reliability-redis-registry-async-loop-and-rate-limit-tech-lead-report.md": {
+    "date": "2026-11-21",
+    "domain": "Epic 26 Lot 3 — Turn Reliability: Redis Registry `(workspace, user, turn_id)`, Tracked `asyncio.Task` Drain & Liveness Key, Cursor Redis Streams Replay (`?after=<cursor>`), 100% Non-Blocking Async Loop, Stream Resilience & Redis Rate Limiting (`CAP-069`, `CAP-075`)",
+    "story": "Story 26.3",
+    "summary": "Closed (`done`, Testing Sub-Agent verified): replaced global `ACTIVE_WORKSPACE_TURNS` with `AssistantTurnRegistryPort` / `AssistantRateLimiterPort` + `RedisAssistantTurnRegistry` & `RedisAssistantRat…"
+  },
+  "26-4a-redis-thread-locks-outbox-hub-invalidation-and-alembic-ddl-tech-lead-report.md": {
+    "date": "2026-11-22",
+    "domain": "Epic 26 Lot 3 — Redis Thread Turn Locks (`SET NX EX`), `domain_events_outbox` Emission, Prompt-Cache & Forged Outbox ID Deletion (`R6`), AI Hub Snapshot TTL/Invalidation, Alembic DDL Consolidation & Shared `http_client` (`CAP-071`, `CAP-073`)",
+    "story": "Story 26.4a",
+    "summary": "Closed (`done`): implemented `ThreadTurnLockPort` + `RedisThreadTurnLock` (`SET NX EX` + Lua token release) wired to `app.state.redis_client` and moved `InMemoryThreadTurnLock` exclusively to `tests/…"
+  },
+  "26-4b-pg18-persistence-mode-a-governance-feedback-and-folders-tech-lead-report.md": {
+    "date": "2026-11-22",
+    "domain": "Epic 26 Lot 3 — PostgreSQL 18 Persistence of Mode A Governance, Turn Feedback (`assistant_turn_feedback`), Folder Metadata (`working_attachments_uris` / `evidence_tags`), Phantom Citation `audit_ledger` & Deletion of RAM-Only Mode B (`CAP-070`, `CAP-072`, `CAP-073`)",
+    "story": "Story 26.4b",
+    "summary": "Closed (`done`, Testing Sub-Agent verified): shipped raw-SQL Alembic revision `20261122_264b` (`down_revision = \"20261122_264a\"`, PG18 `upgrade -> downgrade -> upgrade` verified, added `assistant_tur…"
+  },
+  "26-5-real-context-ontology-hybrid-rag-blackboard-and-context-budget-tech-lead-report.md": {
+    "date": "2026-11-22",
+    "domain": "Epic 26 Lot 4 — Real PG18 Ontology Relevance (`ProfileSemanticTranslator` & Axioms), Async `SqlHybridRagRepository`, Active Blackboard Snapshots, Server `EvidenceTable`, `assistant_thread_messages` & Token Budget Trimmer (`CAP-022`, `CAP-190`)",
+    "story": "Story 26.5",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified): shipped raw-SQL Alembic revision `20261122_265` (`assistant_thread_messages` + Day-0 reset guard), PG18 ontology/RAG/Blackboard context pipeli…"
+  },
+  "26-6a-llm-streaming-port-tool-calls-and-loop-budgets-tech-lead-report.md": {
+    "date": "2026-11-22",
+    "domain": "Epic 26 Lot 5.1 — `LlmStreamingPort` Typed Events & Native `tool_calls` on 2 Dialects (OpenAI-Compatible & Anthropic), `supports_tools` PG18 Discovery/Override & `422 ERR_MODEL_TOOLS_UNSUPPORTED`, Loop Budgets & Extended Cassettes (`CAP-074`, `CAP-076`, `CAP-190`)",
+    "story": "Story 26.6a",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified): shipped raw-SQL Alembic `20261122_266a`, typed stream events & native streamed/non-streamed `tool_calls` on `openai_compatible` + `anthropic_m…"
+  },
+  "26-6b-governed-assistant-tool-router-broker-v5-anchors-and-audit-tech-lead-report.md": {
+    "date": "2026-11-22",
+    "domain": "Epic 26 Lot 5.2 — Governed Assistant Tool Router (Dynamic PG18/RBAC/MCP Catalog, `PermissionBrokerService`, Lock V5, Deterministic Human Anchors, Sandboxed Execution, Idempotency, Anti-Injection & `audit_ledger`/`Outbox`) (`CAP-022`, `CAP-160`, `CAP-260`)",
+    "story": "Story 26.6b",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified): pure `AssistantToolExecutorPort` & `GovernedAssistantToolRouter` (`<= 300` L modular split across `56` backend files), unbounded dynamic catal…"
+  },
+  "26-7-unified-turn-engine-convergence-direct-cutover-and-citations-tech-lead-report.md": {
+    "date": "2026-11-22",
+    "domain": "Epic 26 Lot 6.1 — Unified `AssistantTurnEngine` Convergence, `execution_profile`, Server Citations (`citation_map`), MCP `assistant.ask`, Direct UI/E2E Cutover & Deletion of Legacy Routes (`CAP-022`, `CAP-071`, `CAP-072`, `CAP-160`, `CAP-260`)",
+    "story": "Story 26.7",
+    "summary": "Closed (`done`, post-remediation independent Testing Sub-Agent verified): Alembic `20261122_267` (`execution_profile` `PROCESS` vs `ASSISTANT` on `reflexive_execution_sessions`), `AssistantTurnEngine…"
+  },
+  "26-8-continue-in-process-dbos-pg18-and-human-anchors-tech-lead-report.md": {
+    "date": "2026-11-22",
+    "domain": "Epic 26 Lot 6.2 — `CONTINUE_IN_PROCESS` Wired to Durable DBOS + PG18 & Human Anchors (`WAITING_FOR_HUMAN_ANCHOR`), Direct Deletion of `/workflows/save-and-launch` (`CAP-022`, `CAP-073`, `CAP-160`, `CAP-260`)",
+    "story": "Story 26.8",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified): wired `POST /api/v1/assistant/turns/{turn_id}/approve` and `POST /api/v1/assistant/folders/{folder_id}/launch-process` via pure hexagonal `Ass…"
+  },
+  "26-9-ui-and-sdk-wiring-mode-a-citations-history-and-deepen-tech-lead-report.md": {
+    "date": "2026-11-22",
+    "domain": "Epic 26 Lot 7 — UI & SDK Wiring: Mode A Governance API, Server `citation_map` Pills, PG18 Thread History, Tool Trace, Approval Cards, \"Deepen\" Button & F5 Cold Survival (`CAP-070`, `CAP-071`, `CAP-072`, `CAP-073`, `CAP-260`)",
+    "story": "Story 26.9",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified): deleted duplicate `POST /api/v1/assistant/threads/{thread_id}/turns` + unused schemas (`0-diff` OpenAPI SDK), added `_SQL_SYNC_THREAD_TURN_COU…"
+  },
+  "27-1-deterministic-i18n-ci-guardrails-and-client-error-code-foundation-tech-lead-report.md": {
+    "date": "2026-11-23",
+    "domain": "Epic 27 Lot 0 — Deterministic i18n CI Guardrails (Gates 1–4) & Shared `ClientErrorCode` Resolution Foundation (`CAP-100`)",
+    "story": "Story 27.1",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified): created `clientErrorCodes.ts` (`111` L) + `client_errors_labels.ts` (`29` L), split `fr.ts`/`en.ts` (`355` $\\rightarrow$ `47` L) into `core_sh…"
+  },
+  "27-2-category-a-client-error-codes-bridges-stores-and-rfc9457-banner-tech-lead-report.md": {
+    "date": "2026-11-23",
+    "domain": "Epic 27 Lot 1 — Category A Remediation: Client API Bridges, SSE Stores, Controllers & `formatRfc9457ErrorToBanner` Migrated to `ClientErrorCode` (`CAP-001`..`CAP-260` `hygiene`)",
+    "story": "Story 27.2",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified on `ce4ba7bca`): expanded `ClientErrorCode` (`43` codes) + `ClientCodedError`, introduced `OrciaClientError` in `@orcia/api-client`, removed `Us…"
+  },
+  "27-3-category-c-shell-contextual-help-notifications-routes-and-wizards-tech-lead-report.md": {
+    "date": "2026-11-23",
+    "domain": "Epic 27 Lot 2 Part 1 — Category C Remediation: `apps/web` Shell, Contextual Help, Notifications, Routes & Bootstrap Wizards (`CAP-004`, `CAP-058`, `CAP-060`, `CAP-065`, `CAP-066`, `CAP-068`, `CAP-100`)",
+    "story": "Story 27.3",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified): created modular FR/EN sub-dictionaries (`contextual_help_*`, `shell_chrome_*`, `shell_notifications_*`, `routes_and_wizards_*`), migrated all…"
+  },
+  "27-4-category-c-cockpit-assistant-workspaces-gates-catalog-and-admin-tech-lead-report.md": {
+    "date": "2026-11-23",
+    "domain": "Epic 27 Lot 2 Part 2 — Category C Remediation: `apps/web` Cockpit, Inbox/Assistant, Workspaces, Gates, Catalog, Admin, Settings & Shared Features (`CAP-001`..`CAP-091`, `CAP-180`, `CAP-190`, `CAP-200`..`CAP-260`)",
+    "story": "Story 27.4",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified): created modular FR/EN sub-dictionaries (`feature_cockpit_gates_labels*`, `feature_inbox_assistant_labels*`, `feature_workspaces_labels*`, `fea…"
+  },
+  "27-5-category-c-process-studio-v2-vsm-execution-and-bilingual-catalog-data-tech-lead-report.md": {
+    "date": "2026-11-24",
+    "domain": "Epic 27 Lot 3 Part 1 — Category C Remediation: Process Studio v2, VSM, Execution Panels, Bilingual Catalog Data (`processStudioV2Data.ts`) & `apps/web/src/` Gate 1 Baseline = `0` (`CAP-020`..`CAP-036`, `CAP-140`, `CAP-160`)",
+    "story": "Story 27.5",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified): created modular FR/EN sub-dictionaries (`process_studio_ui_labels*`, `process_vsm_execution_ui_labels*`, `process_catalog_packs_and_workflows_…"
+  },
+  "27-6-category-c-orcia-ui-design-system-primitives-typed-label-props-tech-lead-report.md": {
+    "date": "2026-11-24",
+    "domain": "Epic 27 Lot 3 Part 2 — Category C Remediation: `@orcia/ui` Design System Components & Primitives via Typed Label Props (`packages/ui` Gate 1 Baseline = `0`, `CAP-060`, `CAP-090`, `CAP-091`, `CAP-100`, `CAP-200`, `CAP-260`)",
+    "story": "Story 27.6",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified): migrated all `55` remaining `packages/ui/src/` Gate 1 files (`components/`, `primitives/`, `shell/`, split `OrciaProductShowcaseSiteView.tsx`…"
+  },
+  "27-7-categories-b-and-d-bilingual-rfc9457-backend-catalogs-prompts-and-seeds-tech-lead-report.md": {
+    "date": "2026-11-24",
+    "domain": "Epic 27 Lot 4 — Categories B & D Remediation: Bilingual RFC 9457 Backend Error Catalogs (`Accept-Language`), Prompts & Seeds (Gate 4 Baseline = `0`, `CAP-001`..`CAP-260`)",
+    "story": "Story 27.7",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified): added `detail_params` interpolation on `OrciaDomainError`/`get_localized_error_text()`, registered `3` missing catalog codes (`ERR_HELP_ARTICL…"
+  },
+  "27-8-zero-baseline-lock-bilingual-e2e-verification-and-epic-27-closure-tech-lead-report.md": {
+    "date": "2026-11-24",
+    "domain": "Epic 27 Lot 5 — Permanent Zero-Baseline Lock (Gates 1–4), `orcia-connectors` Localization, Bilingual (`fr` & `en`) Playwright E2E Verification (`23-bilingual-fr-en-i18n-and-rfc9457.spec.ts`), Audit Closure & Showcase Sync (`CAP-001`, `CAP-100`)",
+    "story": "Story 27.8",
+    "summary": "Closed (`done`, `epic-27: done`, `ACTION_ITEM-I18N.1: done`, independent Testing Sub-Agent verified): locked Gates 1–4 permanently at `0` (added `packages/orcia-connectors/src` to Gate 4 `BACKEND_SRC…"
+  },
+  "28-1-single-workspace-header-sidebar-scope-sync-and-zero-uuid-leak-tech-lead-report.md": {
+    "date": "2026-11-24",
+    "domain": "Epic 28 Lot 1 — Single Compact `/workspaces` Header, Bidirectional Global Sidebar Scope Sync & Zero Raw UUID Leak (`CAP-067`, `CAP-080`)",
+    "story": "Story 28.1",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified): suppressed outer `admin` banner (`ModuleWorkspaceView.tsx`) and secondary `<nav>`/`<header>` bars (`workspaces/index.tsx`, `WorkspaceStudioCar…"
+  },
+  "28-2-canonical-five-tab-container-deduplication-and-tab1-sobriety-tech-lead-report.md": {
+    "date": "2026-11-24",
+    "domain": "Epic 28 Lot 1 — Canonical 5-Tab Workspace Container, De-Duplication of 3-Tab vs 5-Tab Panels & Direction C `total == 0` Sobriety on Tab 1 (`CAP-061`, `CAP-080`)",
+    "story": "Story 28.2",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified): deleted competing 3-tab panel `WorkspaceDetailTabsPanel.tsx` (`0` `workspace-detail-tab-*` selectors), extracted `WorkspaceFiveTabsOverviewAnd…"
+  },
+  "28-3-scoped-pg18-sources-deliverables-and-members-tabs-consolidation-tech-lead-report.md": {
+    "date": "2026-11-24",
+    "domain": "Epic 28 Lot 2 — Scoped PG18 Consolidation of Tab 2 (`Documents & Sources`), Tab 3 (`Livrables & Artefacts`) & Tab 5 (`Membres & Paramètres de l'espace`) (`CAP-067`, `CAP-080`, `CAP-180`)",
+    "story": "Story 28.3",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified): eliminated unscoped `PlatformSetupContext.datasources` duplicate in favor of scoped `listWorkspaceDatasources(wsId)` (`useWorkspaceDnaAndWaive…"
+  },
+  "28-4-tab4-glossary-dna-starlark-encapsulation-and-e2e-lock-tech-lead-report.md": {
+    "date": "2026-11-24",
+    "domain": "Epic 28 Lot 2 & Closure — Encapsulation of DNA Starlark Compiler & PG18 Glossary Candidate Queue Inside Tab 4 (`Glossaire & Règles Métiers`), `WX-01`..`WX-06` Anti-Stacking Audit, Architecture Remediation & Playwright E2E Lock (`CAP-010`, `CAP-080`, `CAP-081`, `CAP-084`, `CAP-180`)",
+    "story": "Story 28.4",
+    "summary": "Closed (`done`, `epic-28: done`, `ACTION_ITEM-28.1: open`, independent Testing Sub-Agent verified): moved `DnaStarlarkCompilerAndGlossaryLifecycleView` strictly inside Tab 4 (`glossaryTabSlot`, `Work…"
+  },
+  "29-1-multi-workspace-scope-resolution-processes-404-finops-403-and-error-empty-guard-tech-lead-report.md": {
+    "date": "2026-11-25",
+    "domain": "Epic 29 Lot 1 — Multi-Workspace Scope Resolution (`Mes Processus` 404, `FinOps` 403/Scope-Pill Sync) & Error-vs-Empty Mutual Exclusion (`UH-01`, `UH-02`, `CAP-140`, `CAP-200`, `CAP-201`)",
+    "story": "Story 29.1",
+    "summary": "Closed (`done`, independent Story 29.1 Final Verifier verified): added `GET /api/v1/autonomous-runs` multi-workspace aggregation (`list_autonomous_runs_for_workspaces_sql` `284` L, `autonomous_superv…"
+  },
+  "29-2-scoped-workspace-patch-confidential-isolation-rollback-and-single-banner-tech-lead-report.md": {
+    "date": "2026-11-25",
+    "domain": "Epic 29 Lot 1 — Scoped `PATCH /api/v1/workspaces/{id}`, Strict `CONFIDENTIAL_RESTRICTED` Isolation, Optimistic Rollback & Single Aligned Error Banner (`UH-03`, `UH-04`, `ACTION_ITEM-28.1` #1, `CAP-010`, `CAP-050`, `CAP-062`, `CAP-067`, `CAP-080`)",
+    "story": "Story 29.2",
+    "summary": "Closed (`done`, Distinct Final Re-Test verified): added `ScopeAccessGuard`-protected `PATCH /api/v1/workspaces/{id}` backed by atomic PG18 SQL (`sql_workspace_patch.py` `262` L, `_workspace_patch_hel…"
+  },
+  "29-3-assistant-prompt-sanitization-speed-tier-alignment-and-rbac-notices-tech-lead-report.md": {
+    "date": "2026-11-25",
+    "domain": "Epic 29 Lot 1 — `Mon Assistant` Prompt & Jargon Sanitization, Speed/Tier Alignment & RBAC-Gated Composer Notices (`UH-05`, `CAP-070`, `CAP-071`, `CAP-075`, `CAP-190`)",
+    "story": "Story 29.3",
+    "summary": "Closed (`done`, Distinct Final Testing Sub-Agent verified): eliminated raw UUIDv7, `SPEED_1_FAST` enum, `\"PM\"` fallback, and phantom `orcia://sources/repo-main` / `@spec-architect` defaults across 5-…"
+  },
+  "29-4-canonical-page-header-tab-strip-data-card-and-visual-grammar-tokens-tech-lead-report.md": {
+    "date": "2026-11-25",
+    "domain": "Epic 29 Lot 2 — Canonical `<OrciaPageHeader />`, `<OrciaTabStrip />`, `<OrciaDataCard />`, Three-Tier Cobalt Visual Grammar & Disabled Secondary/Ghost Button Tokens (`UH-06`, `UH-07`, `CAP-060`, `CAP-100`)",
+    "story": "Story 29.4",
+    "summary": "Closed (`done`, Distinct Testing Sub-Agent verified): shipped pure `@orcia/ui` primitives `OrciaPageHeader.tsx` (`124` L), `OrciaTabStrip.tsx` (`144` L, `underline` + `segmented`, keyboard nav & disa…"
+  },
+  "29-5-header-layout-convergence-assistant-processes-agents-and-finops-tech-lead-report.md": {
+    "date": "2026-11-25",
+    "domain": "Epic 29 Lot 3 — Header & Layout Convergence for `Mon Assistant`, `Mes Processus`, `Mes Agents` & `FinOps` (`UH-06`, `UH-09`, `UH-11`, `UH-12`, `CAP-070`, `CAP-071`, `CAP-073`, `CAP-082`, `CAP-090`, `CAP-091`, `CAP-140`, `CAP-200`, `CAP-201`)",
+    "story": "Story 29.5",
+    "summary": "Closed (`done`, Distinct Final Testing Sub-Agent verified): added `tokens-actions.css` (`67` L, `.orcia-ds-btn-cobalt-outline` + `.orcia-ds-filter-pill[role=\"tab\"]` overrides), converged `/assistant`…"
+  },
+  "29-6-header-layout-convergence-workspaces-organization-help-and-secondary-tech-lead-report.md": {
+    "date": "2026-11-25",
+    "domain": "Epic 29 Lot 3 — Header & Layout Convergence: `Mes Espaces`, `Mon Organisation`, `Aide` & Secondary Routes (`UH-06`, `UH-08`, `UH-10`, `UH-13`, `CAP-023`, `CAP-055`, `CAP-056`, `CAP-058`, `CAP-060`, `CAP-063`, `CAP-064`, `CAP-065`, `CAP-067`, `CAP-080`, `CAP-100`, `CAP-150`, `CAP-203`)",
+    "story": "Story 29.6",
+    "summary": "Closed (`done`, Distinct Final Testing Sub-Agent verified): extended `OrciaPageHeader` (`titleTestId`), `OrciaTabStrip` (`countTestId`), and `FourZoneDirectionCShell` (`helpColumnToggleDisabled` + `a…"
+  },
+  "29-7-icon-purge-copy-hygiene-contextual-help-ci-guard-and-epic-29-closure-tech-lead-report.md": {
+    "date": "2026-11-25",
+    "domain": "Epic 29 Lot 4 & Closure — Monochrome Icon Purge, Copy/Jargon Hygiene, Zone 4 Contextual Help Alignment, Header CI Guard & Epic 29 Closure (`UH-14`, `UH-15`, `CAP-060`, `CAP-064`, `CAP-090`, `CAP-100`, `CAP-203`)",
+    "story": "Story 29.7",
+    "summary": "Closed (`done`, `epic-29: done`, Final Closure Verifier verified): purged raw Unicode emojis across `ORCIA_ICONS`, `apps/web/src/i18n/locales/*.ts` (`43` files), `shellScopeOptions.ts`, `shellUnified…"
+  },
+  "3-1-workflow-as-code-yaml-json-gabarits-d-artefact-multi-audienc-tech-lead-report.md": {
+    "date": "2026-10-27",
+    "domain": "Workflow-as-Code YAML/JSON / Gabarits Multi-Audiences (`artifact_templates`) / Déclencheurs (`workflow_triggers`) / `run-lock.json` (`SHA-256`)",
+    "story": "Story 3.1",
+    "summary": "Migration Alembic `0010` (`workflow_runs`, `workflow_triggers`), `WorkflowYamlValidator` (rejet cycles DAG `ERR_WORKFLOW_CYCLE_DETECTED`, `sub-workflow depth > 3`, `ERR_WORKFLOW_ANCHOR_MISSING`), `Mu…"
+  },
+  "3-2-moteur-d-orchestration-durable-checkpoints-immuables-du-blac-tech-lead-report.md": {
+    "date": "2026-10-27",
+    "domain": "Orchestration Durable / Checkpoints Immuables `blackboard_snapshots` (`parent_snapshot_id`) / `step_executions` (`draft_artifact_jsonb`, `step_memlog_jsonb`)",
+    "story": "Story 3.2",
+    "summary": "Migration Alembic `0011` (`step_executions`, `blackboard_snapshots` avec trigger `BEFORE UPDATE OR DELETE RAISE EXCEPTION`), `DurableOrchestrationEngine` (`PAUSE` / `RESUME` / `FORK` par `parent_snap…"
+  },
+  "3-2a-phase-a-socle-du-monolithe-modulaire-packages-orcia-kernel-w-tech-lead-report.md": {
+    "date": "2026-10-27",
+    "domain": "Monolithe Modulaire (`AD-19`) / `packages/orcia-kernel` / Workspace `uv` 4 packages / `import-linter` / Composition Root",
+    "story": "Story 3.2a",
+    "summary": "Création de `packages/orcia-kernel` (`ids`, `enums`, `errors`, `events`, `ports`), rupture des 3 cycles inter-domaines (`3 -> 0`), transfert des 10 fichiers `schemas/` vers `apps/api`, éclatement de…"
+  },
+  "3-2b-phase-b-persistance-réelle-sqlalchemy-2-1-asyncio-asyncpg-in-tech-lead-report.md": {
+    "date": "2026-10-28",
+    "domain": "Persistance `SQLAlchemy 2.1 Asyncio` (`ARCH-P1`) / Moteur `DBOS Transact` (`ARCH-P2`, `C4`) / `SeaweedFS` (`ARCH-P6`) / RAG RRF SQL (`ARCH-P7`) / `OpenTelemetry` (`ARCH-P9`)",
+    "story": "Story 3.2b",
+    "summary": "Intégration de `SqlOrchestrationRepository` + `DbosDurableWorkflowEngine` sur PostgreSQL 18 (pause/reprise après redémarrage, *rewind/fork* append-only), `SqlHybridRagRepository` (`halfvec(1024)` + `…"
+  },
+  "3-2c-phase-c-bus-d-événements-de-domaine-table-outbox-transaction-tech-lead-report.md": {
+    "date": "2026-10-28",
+    "domain": "Table Outbox Transactionnelle `domain_events_outbox` (`ARCH-M6`, `Q2: 2A`) / `OutboxRelayPort` (`C3`) / Plugins `entry_points` (`M7`, `Q3: 3A`)",
+    "story": "Story 3.2c",
+    "summary": "Migration Alembic `0012` (`domain_events_outbox` + index partiel `PENDING`), `SqlDomainEventsOutboxRepository` (`SELECT ... FOR UPDATE SKIP LOCKED`), `OutboxEventBus` + `DramatiqOutboxRelay` / `DbosO…"
+  },
+  "3-2d-phase-d-migration-frontend-spa-pure-vite-6-tanstack-router-v-tech-lead-report.md": {
+    "date": "2026-10-28",
+    "domain": "SPA Pure `Vite 6 + TanStack Router v1` (`ARCH-P8`, `OQ-02`) / `TanStack Query v5` / `@xyflow/react v12` / `openapi-fetch` / Découpage `features/<domaine>/` (`M11`, `C7`)",
+    "story": "Story 3.2d",
+    "summary": "Migration de `apps/web` vers `Vite 6 + TanStack Router v1` (`createRootRouteWithContext<{ queryClient }>`, `validateSearch` typé, `loader` déclaratif), découpage en 8 modules `src/features/<domaine>/…"
+  },
+  "3-2e-séparation-core-et-pack-sdlc-orcia-pack-sdlc-interface-de-co-tech-lead-report.md": {
+    "date": "2026-10-28",
+    "domain": "Séparation Core / Pack SDLC (`AD-20`, `packages/orcia-pack-sdlc`) / `ConnectorPort` (`orcia.connectors`) / Table `connector_schemes` (`0013`–`0014`) / Hygiène Seeds (`DEC-SEED-01`)",
+    "story": "Story 3.2e",
+    "summary": "Création du 5e package `uv` `packages/orcia-pack-sdlc` (`4` contrats `lint-imports` KEPT), `0` ligne de vocabulaire SDLC dans `orcia-kernel` & `orcia-core/orchestration`, contrat universel `Connector…"
+  },
+  "3-2f-exécution-réelle-des-étapes-orcia-step_executors-taxonomie-d-tech-lead-report.md": {
+    "date": "2026-10-28",
+    "domain": "Exécution Réelle des Étapes (`orcia.step_executors`) / `ConnectorInvoker` & Disjoncteur / Validation Verticale Finance (`DEC-P0-EXEC`, `PROC-01`)",
+    "story": "Story 3.2f",
+    "summary": "Registre dynamique des 6 `StepExecutorPort` (`AGENT`, `SKILL`, `SUB_WORKFLOW`, `HUMAN_TASK`, `HTTP_ACTION`, `POST_ACTION_VERIFICATION`), suppression des chaînes simulées (`0` occurrence de `simulated…"
+  },
+  "3-2s-spike-dbos-transact-sur-postgresql-18-timebox-2-3-jours-vali-tech-lead-report.md": {
+    "date": "2026-10-27",
+    "domain": "Spike `DBOS Transact` sur PostgreSQL 18 (`ARCH-P2-SPIKE`) / `DbosSqlAlchemyUnitOfWork` (`ARCH-P1`)",
+    "story": "Story 3.2s",
+    "summary": "Verdict **🟢 GO FORMEL (`8/8` critères)** sur conteneurs réels `pgvector/pgvector:pg18` + `redis:7.4.2-alpine` (`13.33 s < 30 s`) : pause/reprise après crash (`DBOS.recv_async`/`send_async`), *fork* c…"
+  },
+  "3-3-agent-assistant-dag-5-nœuds-type-n8n-assistantharness-5-couc-tech-lead-report.md": {
+    "date": "2026-10-28",
+    "domain": "Agent Assistant DAG 5 Nœuds (`AD-15`) / `AssistantHarness` 5 Couches / `ContextSourcePort` & `VectorStorePort` (`DEC-CTX-01`) / Compositeur `@xyflow/react` & YAML (`FR-11`, `UJ-10`)",
+    "story": "Story 3.3",
+    "summary": "Implémentation de `orcia://system/workflows/assistant-agent` (5 nœuds, SSE `< 1.5 s`), `AssistantHarness` à 5 couches (refus constitutionnel `FR-4` + adaptation aux 4 Profils Humains), ports `Context…"
+  },
+  "3-4-ancrages-humains-obligatoires-human-led-anchor-card-arbitrag-tech-lead-report.md": {
+    "date": "2026-10-28",
+    "domain": "Ancrages Humains Obligatoires (`FR-4`, `UX-DR3`) / Arbitrage Humain Systématique (`FR-5`, `FR-29`, `UX-DR6`) / Politiques `tie_break_policy` (`AD-3`, `AD-18`)",
+    "story": "Story 3.4",
+    "summary": "Migration Alembic `0015` (`human_anchor_signatures`, `human_arbitration_requests`), verrouillage `>= 30` car. signé `SHA-256` et rejet `HTTP 422 ERR_HUMAN_ANCHOR_REQUIRED` pour toute identité agentiq…"
+  },
+  "3-5-challenge-amont-inter-steps-avec-simulation-d-impact-what-if-tech-lead-report.md": {
+    "date": "2026-10-28",
+    "domain": "Challenge Amont *What-If* (`FR-7`, `AD-7`, `UX-DR7`) / Replay Ciblé Step $N$ & Intra-Sous-Workflow (`FR-16`, `FR-30`, `AD-2`, `AD-18`) / `UpstreamChallengeRewindModal` (`@orcia/ui`)",
+    "story": "Story 3.5",
+    "summary": "Migration Alembic `0016` (`upstream_challenges`), `UpstreamChallengeAndReplayService` (aperçu d'impact DAG `input_uris` + ontologie, traduction sémantique profil amont, Replay Step $N$ et intra-sous-…"
+  },
+  "30-1-assistant-settings-explicit-save-dirty-guard-and-empty-instructions-tech-lead-report.md": {
+    "date": "2026-11-25",
+    "domain": "Epic 30 Lot 1 — Mon Assistant Settings Explicit Save, Honest Dirty Guard, Inline Modal Errors & Empty Personal Instructions (`UX30-01`, `UX30-02`, `UX30-03`, `CAP-070`, `CAP-100`)",
+    "story": "Story 30.1",
+    "summary": "Closed (`done`, Testing Sub-Agent verified): eliminated keystroke auto-save and 4 hidden Save buttons / 3 hidden `<select>` duplicates (`AssistantGovernanceModalAndStudio.tsx` `195` L, `useAssistantG…"
+  },
+  "30-2-assistant-conversational-prompt-cleanup-and-empty-evidence-guard-tech-lead-report.md": {
+    "date": "2026-11-25",
+    "domain": "Epic 30 Lot 1 — `Mon Assistant` Clean Conversational System Prompt, Single Layer Injection, Active `pack_key` & Empty-Evidence Anti-Hallucination Guard (`UX30-04`, `UX30-05`, `CAP-022`, `CAP-070`, `CAP-071`, `CAP-072`, `CAP-074`)",
+    "story": "Story 30.2",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified): decoupled Tab 3 UI preview cards from live conversational prompts (`_assistant_conversational_prompt.py` `162` L, `_assistant_conversational_l…"
+  },
+  "30-3-processes-real-pg18-pending-runs-live-llm-and-coalesced-trace-tech-lead-report.md": {
+    "date": "2026-11-26",
+    "domain": "Epic 30 Lot 2 — `Mes Processus` Real PG18 Pending Validations (`workflow_v2_runs`), Live Workspace LLM Guard & Coalesced Reasoning Trace (`UX30-06`, `UX30-07`, `UX30-08`, `CAP-020`, `CAP-021`, `CAP-140`, `CAP-160`)",
+    "story": "Story 30.3",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified): shipped Alembic `20261125_303_workflow_v2_runs.py` (`54` L) + `SqlWorkflowV2RunsStore` (`169` L) & unified pending-run query (`231` L) with Da…"
+  },
+  "30-4-processes-tabbed-hub-and-focus-review-action-artifact-reasoning-tech-lead-report.md": {
+    "date": "2026-11-26",
+    "domain": "Epic 30 Lot 2 — `Mes Processus` Tabbed Hub (`<OrciaTabStrip />`), Dedicated Focus Review (`/processes/runs/$runId`) & Single State-Gated Decision Bar (`UX30-09`, `UX30-10`, `CAP-020`, `CAP-021`, `CAP-140`, `CAP-160`, `CAP-200`)",
+    "story": "Story 30.4",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified): refactored `ProcessesHubPage.tsx` (`217` L) + `useProcessesHubData.ts` (`171` L) with Tier-2 `<OrciaTabStrip />` (`Validations & Exécutions` |…"
+  },
+  "30-5-agents-pg18-mcp-sync-clean-modal-save-and-draft-active-lifecycle-tech-lead-report.md": {
+    "date": "2026-11-26",
+    "domain": "Epic 30 Lot 3 — `Mes Agents` PG18 Governance Sync, Clean 6-Block Modal Save/Errors & Real `DRAFT` vs `ACTIVE` Lifecycle Gating (`UX30-11`..`UX30-15`, `CAP-082`, `CAP-090`, `CAP-091`, `CAP-100`, `A4` rule)",
+    "story": "Story 30.5",
+    "summary": "Closed (`done`, independent Testing Sub-Agent verified): stripped client-writeable `test_bench_*` (`P0-1`), enforced readiness & `DRAFT` `HTTP 422` across MCP (`getattr` safe fallback), Assistant (`@…"
+  },
+  "30-6-epic-30-anti-regression-audits-bilingual-e2e-and-closure-tech-lead-report.md": {
+    "date": "2026-11-26",
+    "domain": "Epic 30 Lot 4 & Closure — Anti-Regression CI Guards, Bilingual FR/EN Playwright E2E Lock, Contextual Help & Doc Sync, and Closure (`UX30-16`, `CAP-022`, `CAP-070`..`CAP-072`, `CAP-082`, `CAP-090`, `CAP-091`, `CAP-100`, `CAP-140`, `CAP-160`)",
+    "story": "Story 30.6",
+    "summary": "Closed (`done`, `epic-30: done`, post-`P1-1`/`P2-1`/`P2-4` independent Testing Verifier verified): added CI anti-regression audits (`epic-30-ux-hardening-audit.test.ts` `3/3`, `test_story_30_6_lifecy…"
+  },
+  "31-1-pack-bundles-v2-ddl-and-native-apm-codec-tech-lead-report.md": {
+    "date": "2026-11-26",
+    "domain": "Epic 31 Lot 1 — `declarative_pack_bundles` v2 DDL (`20261126_311`), Scoped Constituent Tables, 4 New Pack v2 Tables, `'pack'` Scheme & Native APM-Superset Codec (`D1`, `D3`, `D4`, `D6`, `A1`, `CAP-055`, `CAP-056`, `CAP-082`, `CAP-090`)",
+    "story": "Story 31.1",
+    "summary": "Closed (`done`, independent Testing Verifier verified): shipped raw-SQL single-statement Alembic `20261126_311_declarative_packs_v2.py` (`294` L, `upgrade -> downgrade -> upgrade` on PG18) extending…"
+  },
+  "31-2-transactional-pack-import-day0-seed-and-purge-disk-ts-hardcoding-tech-lead-report.md": {
+    "date": "2026-11-26",
+    "domain": "Epic 31 Lot 2 — `PackImportService` (`SeaweedFsPackCasAdapter` + Atomic PG18 Materialization), Day-0 Seed Cutover, Purge of Disk/TS Pack Hardcoding & `GET`/`POST /import`/`DELETE` Pack Endpoints (`CAP-055`, `CAP-056`, `CAP-082`, `CAP-090`, `CAP-140`, `CAP-200`)",
+    "story": "Story 31.2",
+    "summary": "Closed (`done`, independent Testing Verifier verified): implemented `PackImportService` (`import_service.py` `295` L, `seaweedfs_pack_cas.py` `121` L, `_sql_pack_import_tx.py` `239` L, `_sql_pack_del…"
+  },
+  "31-3-qualified-pack-namespacing-and-flat-workspace-pack-ontology-tech-lead-report.md": {
+    "date": "2026-11-26",
+    "domain": "Epic 31 Lot 2 — Qualified `{pack_slug}:{entity_slug}` / `@<pack>/<slug>` Namespacing & Flat Priority-Ordered Workspace Pack Ontology (`D6.a`, `R1`, `R3`, `R4`, `CAP-070`, `CAP-082`, `CAP-090`, `CAP-100`, `CAP-200`)",
+    "story": "Story 31.3",
+    "summary": "Closed (`done`, independent Testing Verifier verified): extracted pure namespacing primitives (`domain/namespacing.py` `131` L, `_namespacing_parser.py` `218` L, `packs/namespacing.py` `120` L, `cata…"
+  },
+  "31-4-workspace-pack-activation-slot-bindings-422-guard-and-run-lock-pinning-tech-lead-report.md": {
+    "date": "2026-11-26",
+    "domain": "Epic 31 Lot 3 — Workspace Pack Activation, Slot Bindings, `422` Unbound Guard & `run_lock_manifests` Pinning (`D2`, `D5`, `R4`, `R5`, `A1`, `A2`, `CAP-055`, `CAP-056`, `CAP-082`, `CAP-140`, `CAP-160`)",
+    "story": "Story 31.4",
+    "summary": "Closed (`done`, `bmad-architect-worker` `APPROVED`, independent Testing Verifier verified): added pure slot-readiness evaluator (`slot_guard.py` `269` L) & `WorkspacePacksService` (`236` L), transact…"
+  },
+  "31-5-pack-composer-anti-hostage-unlink-closure-gate-and-scrubbed-zip-export-tech-lead-report.md": {
+    "date": "2026-11-26",
+    "domain": "Epic 31 Lot 4 — Pack Composer (`CUSTOM` Drafts), Anti-Hostage Unlink Guard (`409` + `?unlink_from_draft_packs=true`), Closure Gate (`422`), Scrubbed `.zip` + `apm.lock.yaml` Export & OpenAPI SDK (`CAP-055`, `CAP-056`, `CAP-082`, `CAP-090`, `CAP-140`, `CAP-200`)",
+    "story": "Story 31.5",
+    "summary": "Closed (`done`, `bmad-architect-worker` `APPROVED`, independent Testing Verifier verified): implemented `PackComposerService` (`253` L), 8-table typed FK SQL draft composer (`_sql_pack_composer*.py`)…"
+  },
+  "31-6-direction-c-bilingual-pack-registry-composer-slot-drawer-and-autocomplete-ui-tech-lead-report.md": {
+    "date": "2026-11-26",
+    "domain": "Epic 31 Lot 5 — Direction C Bilingual (`fr`/`en`) Pack Registry, Workspace Pack Activation & Slot Binding Drawer, `CUSTOM` Pack Composer Modal, Anti-Hostage Unlink Dialog & `@pack/agent` Autocomplete Badges (`CAP-055`, `CAP-056`, `CAP-070`, `CAP-082`, `CAP-090`, `CAP-100`, `CAP-140`, `CAP-200`)",
+    "story": "Story 31.6",
+    "summary": "Closed (`done`, independent Testing Verifier verified): added typed packs/composer/multipart client (`packs.ts` `286` L, `multipartHelper.ts` `131` L, `packTypes.ts` `16` L, `unlinkFromDraftPacks` de…"
+  },
+  "31-7-epic-31-red-team-security-roundtrip-e2e-help-sync-and-closure-tech-lead-report.md": {
+    "date": "2026-11-26",
+    "domain": "Epic 31 Lot 6 & Closure — Red-Team Security, Post-Validate `P0-1`/`P1-1..P1-3` Remediation, Bilingual Day-0 Round-Trip Playwright E2E, Zone 4 Help & Architecture ERD Sync, `capabilities.yaml` & Epic 31 Closure (`CAP-055`, `CAP-056`, `CAP-070`, `CAP-082`, `CAP-090`, `CAP-091`, `CAP-100`, `CAP-140`, `CAP-160`, `CAP-200`, `CAP-260`)",
+    "story": "Story 31.7",
+    "summary": "Closed (`done`, `epic-31: done`, `ACTION_ITEM-31.1..31.2: open`, independent Testing Verifier verified): authored fail-closed Red-Team & RBAC suites (`test_story_31_7_packs_red_team_security.py` `161…"
+  },
+  "32-1-token-first-agent-check-runner-receipts-and-suite-quick-wins-tech-lead-report.md": {
+    "date": "2026-11-27",
+    "domain": "Epic 32 Lot 1 — Token-First `agent_check.py` Runner, Worktree Receipts, Bounce Rule & Suite Quick Wins (`T-D4`, `T-D5`, `T-D6`, `hygiene`)",
+    "story": "Story 32.1",
+    "summary": "Closed (`done`, independent Testing Verifier verified): built `scripts/agent_check.py` (`74` L) + 9 `scripts/agent_check_lib/` modules (`<= 275` L), 21 runner unit tests (`tests/unit/tooling/`, `<= 2…"
+  },
+  "32-2-agent-protocol-small-context-fixer-and-rules-diet-tech-lead-report.md": {
+    "date": "2026-11-27",
+    "domain": "Epic 32 Lot 2 — Agent Protocol, Small-Context Fixer, Rules Diet & Read Discipline (`T-D7`, `T-D8`, `T-D9`, `hygiene`)",
+    "story": "Story 32.2",
+    "summary": "Done (`hygiene`): canonical `AGENTS.md` diet (`6,781 B <= 12 KB`) + `GEMINI.md` removal, role playbooks under `docs/agent-playbooks/`, Stage 1 `rules-lint` + `fixture-index`, `tests/README.md`, `TECH…"
+  },
+  "32-3-combined-coverage-diff-cover-shared-pg18-infra-and-ratchet-lint-tech-lead-report.md": {
+    "date": "2026-11-27",
+    "domain": "Epic 32 Lot 3 — Combined Coverage + `diff-cover`, Shared PG18/App Infra, `pytest-xdist`, Lazy Imports & `lint_tests.py` Ratchet (`T-D1`, `T-D2`, `T-D10`, `hygiene`)",
+    "story": "Story 32.3",
+    "summary": "In-progress (`hygiene`)."
+  },
+  "32-4-repo-wide-test-pyramid-pruning-with-coverage-safety-gate-tech-lead-report.md": {
+    "date": "2026-11-27",
+    "domain": "Epic 32 Lot 4 — Repo-Wide Test Pyramid Pruning with Coverage Safety Gate & Mutation Sample (`T-D11`, `hygiene`)",
+    "story": "Story 32.4",
+    "summary": "In-progress (`hygiene`)."
+  },
+  "32-5-strict-anti-bloat-lint-openapi-vitest-mocks-and-survivor-split-tech-lead-report.md": {
+    "date": "2026-11-27",
+    "domain": "Epic 32 Lot 5 — Strict Anti-Bloat Lint, OpenAPI-Generated Vitest Mocks, `i18n-and-shell` Survivor Split, Test-Time Budgets & Epic 32 Hardening (`T-D2`, `T-D3`, `T-D10`, `hygiene`)",
+    "story": "Story 32.5",
+    "summary": "In-progress (`hygiene`)."
+  },
+  "4-1-sandbox-déterministe-isolée-hors-processus-palier-1-wasmtime-tech-lead-report.md": {
+    "date": "2026-10-30",
+    "domain": "Sandbox Hors Processus Palier 1 (`AD-9`, `NFR-SEC-1`) / Détection de *Pattern Drift* (`FR-17`) / Workflows `init-existing-project` & `init-skill` (`FR-28`, `AD-16`)",
+    "story": "Story 4.1",
+    "summary": "Migration Alembic `0017` (`gate_evaluations`), `infra/sandbox/tier1_runner.py` + `SubprocessTier1SandboxAdapter` (`< 5 000 ms`, `256 MB` RAM, zéro réseau, `/tmp` `64 MB`), `DeterministicGateService`…"
+  },
+  "4-1a-phase-e-sandbox-bimodale-palier-2-hors-processus-conteneur-i-tech-lead-report.md": {
+    "date": "2026-10-30",
+    "domain": "Sandbox Bimodale Palier 2 (`gVisor/Rootless < 60 s / 1 024 MB / --network=none`, `ARCH-P5`) / Boucle TDD `Red -> Green` (`UJ-12`) / 5 Rôles Opérationnels & Isolation `Docling` (`M9`)",
+    "story": "Story 4.1a",
+    "summary": "`infra/sandbox/tier2_runner.py` + `ContainerSandboxRunner` + `BimodalSandboxAdapter`, vérification TDD `Red -> Green` sur snapshot CAS lecture seule (`pytest`, `ruff`, `mypy`, `tsc`, `vitest`), extra…"
+  },
+  "4-2-gates-agentiques-avec-orthogonalité-des-modèles-pseudonymisa-tech-lead-report.md": {
+    "date": "2026-10-30",
+    "domain": "Gates Agentiques 5 Lentilles (`FR-18`, `AD-10`) / `PiiReversibleScrubber` (`NFR-SEC-2`) / `SecretRef` & Enveloppe DEK/KEK (`DEC-SEC-01`, `SEC-03`)",
+    "story": "Story 4.2",
+    "summary": "`AgenticGateService` (orthogonalité des familles LLM, routage souverain local `SENSITIVE`/`RESTRICTED`, purge CoT, DAG parallèle 4 lentilles + Lentille 5 synthèse `briefing_4blocks_jsonb`), `PiiRever…"
+  },
+  "4-3-gates-humaines-adaptatives-briefing-de-revue-4-blocs-review-tech-lead-report.md": {
+    "date": "2026-10-30",
+    "domain": "Gates Humaines Adaptatives (`FR-19`, `AD-11`) / Briefing 4 Blocs (`UX-DR4`) / Validation par Découpage (`UX-DR5`, `FR-6`) / Garde-fou `< 15 s` (`UX-DR10`)",
+    "story": "Story 4.3",
+    "summary": "Migration Alembic `0018` (`chunk_approvals`), `AdaptiveHumanGateService` (3 politiques `mandatory_full`, `risk_or_exception_based`, `sampling` `20 %`, actions `APPROVE`/`CO_EDIT`/`CHALLENGE`, blocage…"
+  },
+  "4-4-actions-transitions-de-workflows-jira-multi-projets-staged-a-tech-lead-report.md": {
+    "date": "2026-10-30",
+    "domain": "Actions & Transitions Jira Multi-Projets Staged aux Gates (`AD-5`, `FR-24`) / Webhook `jira:issue_updated` `< 500 ms` (`FR-16`) / Serveur MCP `/api/v1/mcp` (`AR-7`) / `DEC-ACC-01` (`AccessRequestChannelPort`)",
+    "story": "Story 4.4",
+    "summary": "Migrations Alembic `0019` (Expand + Backfill `request_url`) & `0020` (Contract `jira_request_url`), `AccessRequestChannelPort` + `JiraAccessRequestChannelAdapter`, `MultiProjectJiraStagedActionServic…"
+  },
+  "5-1-centre-de-notifications-unifié-individuel-équipe-prise-en-ch-tech-lead-report.md": {
+    "date": "2026-10-30",
+    "domain": "Centre de Notifications Unifié (`FR-20`) / Prise en Charge Atomique (`FR-21`, `UX-DR9`, `AD-12`) / `ResourceLeasePort` & Jetons de Fencing (`DEC-CONC-01`, `AD-4`)",
+    "story": "Story 5.1",
+    "summary": "Migration Alembic `0021` (`task_notifications`, `resource_leases`), abonné Outbox `notifications`, verrou atomique `lock:step:{step_execution_id}` (`NX EX 900`) + SSE `< 500 ms` (`/api/v1/events/stre…"
+  },
+  "5-2-supervision-multi-runs-dynamique-1-s-sélecteur-de-périmètre-tech-lead-report.md": {
+    "date": "2026-10-30",
+    "domain": "Supervision Multi-Runs `< 1 s` (`FR-22`) / Sélecteur `⌘W` (`UX-DR1`) / Control Center Unifié (`/workspaces`, 4 onglets fractals) / `ProductLifecycleCard` & `GuidanceDrawer` / `RunAccessGuard`",
+    "story": "Story 5.2",
+    "summary": "`ControlCenterAndRunSupervisionService` (bascule `< 1 s` sans rechargement, séparation `CONTRIBUTOR_ACTION_REQUIRED` vs `READ_ONLY_OBSERVER`, rejet `HTTP 403 ERR_OBSERVER_MODE_READ_ONLY` et `HTTP 409…"
+  },
+  "5-3-expérience-responsive-à-3-breakpoints-interface-mobile-compa-tech-lead-report.md": {
+    "date": "2026-10-30",
+    "domain": "Responsive 3 Breakpoints (`Desktop >= 1280px`, `Laptop 768-1279px`, `Mobile < 768px`, `UX-DR16`) / Mobile Companion 3 Onglets (`FR-23`, `NFR-ACC-2`) / Accessibilité `WCAG 2.2 AA` (`NFR-ACC-1`)",
+    "story": "Story 5.3",
+    "summary": "Composant `@orcia/ui` `MobileCompanionView` (barre basse 3 onglets `🔔 Inbox`, `💬 Arbitrage/Chat`, `📄 Briefing`, blocage explicite de l'édition YAML / co-édition lourde / Admin sur mobile), adaptation…"
+  },
+  "5-4-coquille-globale-direction-c-enrichie-mire-login-bi-mode-mode-tech-lead-report.md": {
+    "date": "2026-10-30",
+    "domain": "Mire `/login` Bi-Mode (`OIDC PKCE` + `Argon2id/TOTP`) / `CollapsibleAppRail` (`240px <-> 72px`, `[`) / `TopHeaderBar` (Santé `DBOS/PG18` & `Outbox`) / Accueil Anti-Empty-State (`SprintContextWidget` + `ScopedPromptBox`)",
+    "story": "Story 5.4",
+    "summary": "Composants `@orcia/ui` `BiModeLoginView`, `CollapsibleAppRail`, `TopHeaderBar`, `SprintContextWidget` et `ScopedPromptBox`, route `/login` avec redirection `beforeLoad`, raccourci `[` + badge `orcia-…"
+  },
+  "6-1-registre-de-provenance-auditable-immuable-audit_ledger-appen-tech-lead-report.md": {
+    "date": "2026-11-16",
+    "domain": "Registre de Provenance Auditable Immuable (`audit_ledger` Append-Only), Traçabilité des Tests à Chaud (`ADMIN_CONNECTION_TEST`), Export JSON/Markdown & Rebasage `/activity`",
+    "story": "Story 6.1 (CAP-065, CAP-200)",
+    "summary": "Implémentation terminée : migration Alembic `20261116_0601` (`audit_ledger`, trigger d'immutabilité PostgreSQL 18 `ERR_AUDIT_LEDGER_IMMUTABLE`, élargissement `domain_events_outbox`), domaine hexagona…"
+  },
+  "6-2-comptabilité-finops-complète-coût-de-setup-coût-de-run-vs-tt-tech-lead-report.md": {
+    "date": "2026-11-16",
+    "domain": "Comptabilité FinOps Complète (Coût de Setup + Coût de Run vs TTM), Coupe-Circuits Budgétaires / Anti-Boucles (`PAUSED_BUDGET_EXCEEDED`, `PAUSED_MAX_RETRIES`), Rallonge Budgétaire & Tableau de Bord `/finops`",
+    "story": "Story 6.2 (CAP-200)",
+    "summary": "Implémentation terminée : migration Alembic `20261116_0602` (`finops_scope_budgets`, `finops_workflow_baselines`, `finops_budget_overrides`, statuts `PAUSED_*`), découpage modulaire de `cognitive_rou…"
+  },
+  "6-3-tableau-de-bord-exécutif-d-impact-cognitif-anti-rubber-stamp-tech-lead-report.md": {
+    "date": "2026-11-17",
+    "domain": "Tableau de Bord Exécutif d'Impact Cognitif, Détection des Validations Expéditives, Indice de Réversibilité Humaine & Recommandations de Gates",
+    "story": "Story 6.3 (CAP-200)",
+    "summary": "Implémentation terminée : 3 contre-métriques FR-27 calculées en SQL pur (`sql_cognitive_impact.py`), moteur de recommandations d'ajustement des Gates (`cognitive_impact_service.py`, 99 % couverture),…"
+  },
+  "6-4-télémétrie-finops-multi-métriques-mcp-agents-distants-remoteu-tech-lead-report.md": {
+    "date": "2026-11-17",
+    "domain": "Télémétrie FinOps Multi-Métriques des Services MCP & Agents Distants (`_meta.usage` / `X-Orcia-Usage`), `RemoteUsageSanitizer`, Onglet `Services & Agents externes` & Coupe-Circuit Isolé par Connecteur",
+    "story": "Story 6.4 (CAP-200)",
+    "summary": "Implémentation terminée : migration Alembic `20261116_0604` (`finops_connector_quotas` + `09_reset_db_first_boot.py`), ports hexagonaux `ConnectorQuotaGuardPort`/`RemoteUsageSanitizerPort` dans `Conn…"
+  },
+  "7-0a-socle-de-journalisation-unifie-12-factor-json-stdout-tech-lead-report.md": {
+    "date": "2026-11-17",
+    "domain": "Socle de Journalisation Unifié 12-Factor (`JSON stdout` ECS), Masquage des Secrets (`NFR-SEC-4`), `LOG_LEVEL` Dynamique & Rotation `50 Mo`",
+    "story": "Story 7.0a (CAP-202)",
+    "summary": "Extraction `_internal/ecs_formatter.py`, `configure_logging` / `ensure_logging_configured` via `ProcessorFormatter` unifiant `structlog` et stdlib (`uvicorn`, `dramatiq`, `dbos`, `sqlalchemy`) sur `s…"
+  },
+  "7-0b-puits-de-logs-parametrable-logsinkqueryport-traces-otel-tech-lead-report.md": {
+    "date": "2026-11-17",
+    "domain": "Puits de Logs Paramétrable (`LogSinkQueryPort`), Adaptateur OpenSearch/Elasticsearch Prioritaire, Traces OTel OTLP & Profils Compose",
+    "story": "Story 7.0b (CAP-202)",
+    "summary": "Création du port pur `LogSinkQueryPort` (`kernel/log_sink_ports.py`, `ports/log_sink.py`, `NoopLogSinkAdapter`), empreinte déterministe `compute_error_fingerprint_sha256`, garde SSRF (`url_guard.py`)…"
+  },
+  "7-0c-conformite-deploiement-openshift-et-clusterlogforwarder-tech-lead-report.md": {
+    "date": "2026-11-17",
+    "domain": "Conformité OpenShift SCC `restricted` (`Dockerfile` & `Dockerfile.web` Non-Root, Kustomize `base` + `overlays/openshift`, Sidecar `sandbox-runner`, Sonde `/ready` & Contrat `ClusterLogForwarder`)",
+    "story": "Story 7.0c (CAP-202)",
+    "summary": "Ajout des sondes `< 100 ms` sans SQL `GET /ready` & `GET /api/v1/ready` + extension `HealthProbeLogFilter` et SDK OpenAPI `0-diff`, démon HTTP async interne `sandbox_daemon.py` (`python -I` sous `/tm…"
+  },
+  "7-1-contrat-d-autonomie-signé-identité-service-principal-scopée-tech-lead-report.md": {
+    "date": "2026-11-17",
+    "domain": "Contrat d'Autonomie Signé (`autonomy_contracts`), Identité `SERVICE_PRINCIPAL` Scopée sans Co-Signature `SECOPS` (`AD-3`, `AD-6`, `AD-18`), `SignedApprovalToken.issue_autonomous`, Modale Studio V2 & Suppression `WorkflowTopGovernanceBar`",
+    "story": "Story 7.1 (CAP-201)",
+    "summary": "Migration Alembic `20261117_0701` (`autonomy_contracts`, `PAUSED_AUTONOMOUS_ESCALATION`, `COMMITTED_AUTONOMOUS`, 3 événements Outbox) + `09_reset_db_first_boot.py` ; domaine pur `orcia_core.permissio…"
+  },
+  "7-2-déclencheurs-événementiels-idempotents-webhook-log-sink-aler-tech-lead-report.md": {
+    "date": "2026-11-17",
+    "domain": "Déclencheurs Événementiels Idempotents (`WEBHOOK`, `LOG_SINK_ALERT`, `CRON`, `OUTBOX_EVENT` Opt-In, `MANUAL_AUTONOMOUS`), Triple Verrou `Redis NX + UNIQUE + DBOS SetWorkflowID`, *Self-Trigger Guard*, Coupe-Circuit SSE `< 500 ms`, Factorisation HMAC (`Story 18.2`), Démon `trigger-dispatcher` & Modale Studio V2",
+    "story": "Story 7.2 (CAP-201)",
+    "summary": "Migration Alembic `20261117_0702` (`workflow_triggers`, `trigger_webhook_deliveries`, `domain_events_outbox` + `09_reset_db_first_boot.py`) ; factorisation DRY `verify_webhook_hmac_sha256` dans `orci…"
+  },
+  "7-4-supervision-ux-des-runs-autonomes-autonomousexecutionbadge-u-tech-lead-report.md": {
+    "date": "2026-11-17",
+    "domain": "Supervision UX des Exécutions Autonomes (`AutonomousExecutionBadge` Cyan/Cobalt), Arrêt d'Urgence (`KILL_SWITCH_STOPPED`), Rétablissement `@v(N-1)` + Purge Redis `< 10 ms`, Échantillonnage Qualité Post-Hoc (`10–20 %`), Regroupement Notifications & Indicateurs FinOps (`SM-A1..A3`)",
+    "story": "Story 7.4 (CAP-201)",
+    "summary": "Migration réversible `20261117_0704` (`autonomous_post_hoc_audits`, `KILL_SWITCH_STOPPED` et 3 événements Outbox + `09_reset_db_first_boot.py`) ; services `PostHocAuditService` & `AutonomousSupervisi…"
+  },
+  "8-1-modele-habilitations-rbac-abac-actions-hierarchie-tech-lead-report.md": {
+    "date": "2026-10-30",
+    "domain": "Modèle d'Habilitations Hybride `RBAC/ABAC` à 6 Verbes (`view, create, modify, delete, execute, admin`, `AD-21`) / `DENY > INHERITANCE_BLOCK > ALLOW` (`ACTION_ITEM-8.1..8.3`) / Délégation Sous-Ensemble / `PermissionGuard`",
+    "story": "Story 8.1",
+    "summary": "Migration Alembic `0022` (`role_permission_grants`), `HierarchicalRbacService` (résolution `< 5 ms`, priorité `DENY`, rupture `INHERITANCE_BLOCK`, conditions ABAC `allowed_environments` & `max_tokens…"
+  },
+  "8-2-abstraction-llm-tiers-routage-auto-tech-lead-report.md": {
+    "date": "2026-10-30",
+    "domain": "Abstraction Cognitive LLM (`simple | medium | complex | auto`) & Effort (`low | medium | high`) / `AutoTierClassifier` (`< 5 ms`, `0 $`) / Fallback Intra-Tier & Orthogonalité Générateur/Juge (`AD-10`)",
+    "story": "Story 8.2",
+    "summary": "Tables `workspace_llm_tier_mappings` & `inference_attempts` (`0022`), `CognitiveRouterService` (classification `auto` déterministe `< 5 ms`, bascule intra-tier `PRIMARY -> SECONDARY` sans regrader ve…"
+  },
+  "8-3-coquille-settings-tanstack-router-permission-guards-tech-lead-report.md": {
+    "date": "2026-10-30",
+    "domain": "Hub de Paramétrage Post-Jour 0 (`/settings`, 7 domaines) / Concurrence Optimiste `ETag` (`If-Match` -> `412 ERR_SETTINGS_CONFLICT`) / Révocation Immédiate des Sessions (`DEC-SEC-01`)",
+    "story": "Story 8.3",
+    "summary": "Table `platform_settings` (`0022`), `PlatformSettingsService` (héritage 4 niveaux `GLOBAL -> BU -> TEAM -> WORKSPACE`, contrôle optimiste `ETag` `412`, masquage des clés secrètes et révocation `revok…"
+  },
+  "8-4-hub-connecteurs-et-gestion-des-secrets-tech-lead-report.md": {
+    "date": "2026-10-30",
+    "domain": "Hub de Connecteurs (`/settings/connectors`) / `SecretField` Write-Only (`••••••••`) / Sonde de Connectivité (`< 5 s`) / Pipeline d'Ingestion RAG (`SeaweedFS -> Docling -> pgvector`)",
+    "story": "Story 8.4",
+    "summary": "`ConnectorHubAndIngestionService` (écriture write-only en coffre `vault://orcia/datasources/...`, sonde de connectivité `ERR_CONNECTOR_AUTH_FAILED` / `ERR_CONNECTOR_UNREACHABLE`, déduplication `SHA-2…"
+  },
+  "8-5-studio-workflows-et-registre-des-packs-tech-lead-report.md": {
+    "date": "2026-10-30",
+    "domain": "Studio Visuel de Workflows (`WorkflowTopGovernanceBar`, `LayersInspectorPopover`, Contrats JSON Schema, Pré-prompts `{{var}}`, Simulateur Dry-Run) & Registre des Packs SemVer",
+    "story": "Story 8.5",
+    "summary": "`StudioAndPacksService` (protection immuable `HUMAN_ANCHOR` `#6D28D9`, validation des contrats E/S et variables de pré-prompt, simulateur `run_node_dry_run` `preview_markdown_output`, export/import d…"
+  },
+  "8-6-parcours-initialisation-wizards-durables-tech-lead-report.md": {
+    "date": "2026-10-30",
+    "domain": "Parcours d'Initialisation en Wizards Durables DBOS (`/wizards`, `wizard_sessions`) & Seeding Idempotent des 4 Workflows `orcia://system/wizards/*`",
+    "story": "Story 8.6",
+    "summary": "Table `wizard_sessions` (`0022`), 4 `UpsertSpec` dans `seeder.py` (`platform-bootstrap`, `workspace-onboarding`, `connector-setup`, `pack-builder`), `DurableWizardService` (reprise idempotente, `step…"
+  },
+  "9-1-coquille-4-zones-direction-c-8-menus-non-numérotés-cockpit-ép-tech-lead-report.md": {
+    "date": "2026-10-31",
+    "domain": "Coquille 4 Zones Direction C (8 Menus Non Numérotés, Terminologie Fixe `Espace`, Cockpit Épuré `0/0/0/0` & Séparation Cockpit vs Vue Fokus de Revue `Run #ID` avec verrou Redis `AD-4`)",
+    "story": "Story 9.1",
+    "summary": "Primitives `@orcia/ui` `FourZoneDirectionCShell` (`52px`, `240px/68px`, `1fr`, `340px` avec auto-repli sur `< 1440px` quand `total >= 1`) et `StreamlinedCockpitView` (extinction `0/0/0/0`, `Tie-Break…"
+  },
+  "9-2-parcours-d-accostage-progressif-jour-0-accostage-1-6-protecti-tech-lead-report.md": {
+    "date": "2026-10-31",
+    "domain": "Parcours d'Accostage Progressif Jour 0 (`Accostage 1/6`), Protection Anti-*First-User Takeover* (`LOCK TABLE users IN EXCLUSIVE MODE` + `ORCIA_BOOTSTRAP_TOKEN`) & Palier Progressif `1 Modèle -> >= 2 Familles AD-10`",
+    "story": "Story 9.2",
+    "summary": "`ProgressiveDay0AccostageService` (`HTTP 403 ERR_INVALID_BOOTSTRAP_TOKEN` hors `local`, verrou exclusif PG18 sur `users`, Mode Essai Rapide dès `1` famille puis Gates Agentiques dès `>= 2` familles `…"
+  },
+  "9-3-recherche-fédérée-contextuelle-cmd-k-à-2-vitesses-zero-layout-tech-lead-report.md": {
+    "date": "2026-10-31",
+    "domain": "Recherche Fédérée & Contextuelle `⌘K` à 2 Vitesses (*Zero Layout Shift*, 3 Portées, 7 Familles & Deep-Linking Auto-Focus)",
+    "story": "Story 9.3",
+    "summary": "`TwoSpeedFederatedSearchService` (`GET /api/v1/search`, Vitesse 1 lexicale `< 30 ms` `0 $` en tête + Vitesse 2 sémantique `halfvec(1024)` + `RRF` cachée `300 s` en bas avec `✨ Passage proche`, filtra…"
+  },
+  "9-4-menu-déroulant-login-useraccountdropdown-modale-usersettingsm-tech-lead-report.md": {
+    "date": "2026-10-31",
+    "domain": "Menu Déroulant du Login (`UserAccountDropdown` `280px`), Modale « Paramètres de mon compte » (`UserSettingsModal` `720px` à 4 Onglets) & Double Persistance `0 ms` Anti-FOUC",
+    "story": "Story 9.4",
+    "summary": "`UserPreferencesAndMcpTokenService` (`PATCH /api/v1/users/me/preferences`, jetons IDE MCP `pat_mcp_*` hachés `SHA-256` avec expiration `30j/90j` et cibles `/api/v1/mcp/spaces/<ws_slug>` ou `/api/v1/m…"
+  },
+  "9-5-système-d-aide-contextuelle-hybride-helparticle-catalog_items-tech-lead-report.md": {
+    "date": "2026-10-31",
+    "domain": "Système d'Aide Contextuelle Hybride (`HelpArticle` dans `catalog_items` + `cas/<sha256>`), Index GIN `idx_catalog_help_routes`, Colonne `❓` (`340px`), Menu `Aide` & Seeder Git-Seeded",
+    "story": "Story 9.5",
+    "summary": "Migration Alembic `0023` (`idx_catalog_help_routes`), fiches Git-Seeded (`docs/help/{fr,en}/`, `packages/orcia-pack-sdlc/help/{fr,en}/`), `ContextualHelpResolutionService` (`GET /api/v1/help/resolve`…"
+  }
+}

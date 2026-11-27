@@ -23,7 +23,6 @@ DOCS_DIR = (
     / "implementation-artifacts"
     / "tech-lead-reports"
 )
-README_FILE = DOCS_DIR / "README.md"
 
 MANDATORY_SECTIONS = [
     re.compile(
@@ -41,17 +40,25 @@ MANDATORY_SECTIONS = [
 ]
 
 
-def check_docs() -> int:
-    if not DOCS_DIR.exists():
-        print(f"❌ Directory not found: {DOCS_DIR}")
+def check_docs(
+    docs_dir: Path = DOCS_DIR,
+    *,
+    legacy_path: Path | None = None,
+) -> int:
+    if not docs_dir.exists():
+        print(f"❌ Directory not found: {docs_dir}")
         return 1
 
-    readme_content = README_FILE.read_text(encoding="utf-8") if README_FILE.exists() else ""
+    scripts_dir = Path(__file__).resolve().parent
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+    import generate_tlr_index  # type: ignore[import-not-found]
+
     errors: list[str] = []
 
     files = [
         f
-        for f in DOCS_DIR.glob("*.md")
+        for f in docs_dir.glob("*.md")
         if f.name not in ("README.md",) and not f.name.startswith("_")
     ]
 
@@ -68,12 +75,6 @@ def check_docs() -> int:
                 "'<story-key>-tech-lead-report.md'"
             )
 
-        if file_path.name not in readme_content:
-            errors.append(
-                f"[{file_path.name}] Not referenced in "
-                "docs/implementation-artifacts/tech-lead-reports/README.md index"
-            )
-
         content = file_path.read_text(encoding="utf-8")
         for section_pattern in MANDATORY_SECTIONS:
             if not section_pattern.search(content):
@@ -82,6 +83,13 @@ def check_docs() -> int:
                     f"{section_pattern.pattern}"
                 )
 
+    gen_kwargs = {"legacy_path": legacy_path} if legacy_path is not None else {}
+    if generate_tlr_index.run(docs_dir, check=True, **gen_kwargs) != 0:
+        errors.append(
+            "docs/implementation-artifacts/tech-lead-reports/README.md is out of sync "
+            "(run `.venv/bin/python scripts/generate_tlr_index.py` or `pnpm site:sync`)"
+        )
+
     if errors:
         print("❌ Tech Lead Implementation Documentation Check Failed:")
         for err in errors:
@@ -89,8 +97,7 @@ def check_docs() -> int:
         return 1
 
     print(
-        f"✅ All {len(files)} Tech Lead report(s) comply with standards "
-        "and are indexed in README.md."
+        f"✅ All {len(files)} Tech Lead report(s) comply with standards and README.md is in sync."
     )
     return 0
 

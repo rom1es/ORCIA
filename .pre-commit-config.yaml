@@ -3,7 +3,7 @@ repos:
     rev: v4.5.0
     hooks:
     -   id: check-added-large-files
-        exclude: '^docs/implementation-artifacts/tech-lead-reports/_i18n-audit-inventory-raw\.md$'
+        exclude: '^docs/implementation-artifacts/archive/2026-11-20-i18n-audit-inventory-raw\.md$'
     -   id: check-yaml
     -   id: end-of-file-fixer
     -   id: trailing-whitespace
@@ -40,7 +40,7 @@ repos:
 
     -   id: check-implementation-docs
         name: Check Tech Lead Implementation Docs
-        entry: .venv/bin/python scripts/check_implementation_docs.py
+        entry: bash -c '.venv/bin/python scripts/generate_tlr_index.py && .venv/bin/python scripts/check_implementation_docs.py'
         language: system
         pass_filenames: false
         stages: [pre-commit]

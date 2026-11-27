@@ -162,6 +162,16 @@ def _run_check(expected_ts: str, expected_html: str, manifest: dict[str, Any]) -
     elif MANIFEST_TS_OUT.read_text(encoding="utf-8") != expected_ts:
         errors.append(f"Out-of-sync TypeScript manifest: {MANIFEST_TS_OUT} (run `pnpm site:sync`)")
 
+    root_scripts_dir = REPO_ROOT / "scripts"
+    if str(root_scripts_dir) not in sys.path:
+        sys.path.insert(0, str(root_scripts_dir))
+    import generate_tlr_index  # type: ignore[import-not-found]
+
+    if generate_tlr_index.run(REPORTS_README.parent, check=True) != 0:
+        errors.append(
+            f"Out-of-sync Tech Lead reports index: {REPORTS_README} (run `pnpm site:sync`)"
+        )
+
     if not DOCS_HTML_OUT.exists():
         errors.append(f"Missing static HTML catalog: {DOCS_HTML_OUT}")
     elif DOCS_HTML_OUT.read_text(encoding="utf-8") != expected_html:
@@ -190,6 +200,14 @@ def main(argv: list[str] | None = None) -> int:
         help="Verify that committed manifest and static HTML are up-to-date.",
     )
     args = parser.parse_args(argv)
+
+    if not args.check:
+        root_scripts_dir = REPO_ROOT / "scripts"
+        if str(root_scripts_dir) not in sys.path:
+            sys.path.insert(0, str(root_scripts_dir))
+        import generate_tlr_index  # type: ignore[import-not-found]
+
+        generate_tlr_index.run(REPORTS_README.parent, check=False)
 
     manifest = build_manifest_data()
     expected_ts = render_typescript_manifest(manifest)
