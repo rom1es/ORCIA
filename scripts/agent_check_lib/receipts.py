@@ -68,10 +68,10 @@ def _venv_dist_digest(venv_dir: Path) -> str:
 def _runner_source_digest(repo_root: Path) -> str:
     hasher = hashlib.sha256()
     runner_files: list[Path] = []
-    cli = repo_root / "scripts" / "agent_check.py"
-    if cli.is_file():
-        runner_files.append(cli)
-    lib_dir = repo_root / "scripts" / "agent_check_lib"
+    scripts_dir = repo_root / "scripts"
+    if scripts_dir.is_dir():
+        runner_files.extend(sorted(scripts_dir.glob("*.py")))
+    lib_dir = scripts_dir / "agent_check_lib"
     if lib_dir.is_dir():
         runner_files.extend(sorted(lib_dir.glob("*.py")))
     for path in runner_files:

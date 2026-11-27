@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 64,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 44,
-    "techLeadReportsCount": 255,
+    "techLeadReportsCount": 256,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -548,6 +548,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-27",
+      "phaseOrStory": "Story 32.2",
+      "reportFile": "32-2-agent-protocol-small-context-fixer-and-rules-diet-tech-lead-report.md",
+      "domain": "Epic 32 Lot 2 — Agent Protocol, Small-Context Fixer, Rules Diet & Read Discipline (T-D7, T-D8, T-D9, hygiene)",
+      "summary": "Done (hygiene): canonical AGENTS.md diet (6,781 B <= 12 KB) + GEMINI.md removal, role playbooks under docs/agent-playbooks/, Stage 1 rules-lint + fixture-index, tests/README.md, TECH-LEAD-REPORT-TEMPLATE.md KPIs & Flake Log, and dev-only scripts/agent_token_report.py (93% tooling branch coverage, agent_check.py static + full --no-skip PASS)."
+    },
     {
       "date": "2026-11-27",
       "phaseOrStory": "Story 32.1",

@@ -96,6 +96,17 @@ def build_static_gates(
             ("openapi-check", [str(env_info.python_bin), "scripts/export_openapi.py", "--check"])
         )
 
+    if (root / "scripts" / "check_agent_rules.py").is_file():
+        gates.append(("rules-lint", [str(env_info.python_bin), "scripts/check_agent_rules.py"]))
+
+    if (root / "scripts" / "generate_test_fixture_index.py").is_file():
+        gates.append(
+            (
+                "fixture-index",
+                [str(env_info.python_bin), "scripts/generate_test_fixture_index.py", "--check"],
+            )
+        )
+
     for pkg_name in resolve_ts_packages(root, touched_files, force_all=no_skip):
         gates.append((f"ts-lint:{pkg_name}", [env_info.pnpm_bin, "--filter", pkg_name, "lint"]))
         gates.append(
