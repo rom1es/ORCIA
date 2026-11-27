@@ -15,6 +15,7 @@ Hybrid TS (`pnpm`/`Turborepo`, `Vite`/`TanStack Router`, `React`, `Tailwind`) + 
 - **[R-CORE-07]** No orphan `TODO`/`FIXME`; every `TODO(key)` cites an active story or `action_items` in `sprint-status.yaml`.
 - **[R-CORE-11]** Sole committed story artifact: Tech Lead Report (`docs/implementation-artifacts/tech-lead-reports/`). For stories/non-trivial code/schema/API changes (docs/config/hygiene exempt), author §1–§2 pre-edit and §3 at closure; **never read or edit `tech-lead-reports/README.md`** (`pnpm site:sync` generates it). Grep `docs/product/capabilities.yaml` by ID; run `pnpm site:sync && pnpm site:check` when capabilities/spine/routes change. Files `<= 300–400` L.
 - **[R-CORE-12]** Run checks via `.venv/bin/python scripts/agent_check.py {static|impact|full|all|fuzz}` under `timeout -k 10s` (no chained `ruff && mypy && pytest`, no `manage_task` polling, no loosening assertions/timeouts); scope GitNexus to active worktree (`impact` pre-edit, `detect-changes` pre-commit).
+- **Worktree bootstrap**: If `.venv`, `.secrets.baseline`, or `_bmad/custom` is missing in the current checkout/worktree, run `bash scripts/init_worktree.sh` once before any Python, `pre-commit`, or BMAD command (idempotent).
 - **Layer rules (on demand)**: backend (`apps/api`, `apps/worker`, `packages/orcia-*`, `infra/migrations`) → `docs/agent-playbooks/layers/backend.md`; frontend (`apps/web`, `packages/ui`, `packages/api-client`) → `docs/agent-playbooks/layers/frontend.md`.
 
 ## Read Discipline

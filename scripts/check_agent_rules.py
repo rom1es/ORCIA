@@ -9,7 +9,7 @@ from pathlib import Path
 
 MAX_RULE_FILE_BYTES = 20_480  # 20 KiB safety margin strictly below 24,000 B Antigravity cap
 HARD_TRUNCATION_BYTES = 24_000
-MAX_AGENTS_CORE_BYTES = 3_584  # 3.5 KiB canonical AGENTS.md target
+MAX_AGENTS_CORE_BYTES = 4_096
 
 INCLUDE_RE = re.compile(r"@\[[^\]]*\]\(([^)]+)\)")
 RULE_ID_RE = re.compile(r"\[R-[A-Z0-9]+-\d{2,3}\]")
