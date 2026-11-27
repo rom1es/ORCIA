@@ -9,7 +9,7 @@ from pathlib import Path
 
 MAX_RULE_FILE_BYTES = 20_480  # 20 KiB safety margin strictly below 24,000 B Antigravity cap
 HARD_TRUNCATION_BYTES = 24_000
-MAX_AGENTS_CORE_BYTES = 12_288  # 12 KiB canonical AGENTS.md target
+MAX_AGENTS_CORE_BYTES = 3_584  # 3.5 KiB canonical AGENTS.md target
 
 INCLUDE_RE = re.compile(r"@\[[^\]]*\]\(([^)]+)\)")
 RULE_ID_RE = re.compile(r"\[R-[A-Z0-9]+-\d{2,3}\]")
@@ -70,11 +70,11 @@ def discover_always_on_rule_files(repo_root: Path) -> list[Path]:
 
 
 def discover_playbook_files(repo_root: Path) -> list[Path]:
-    """Return all on-demand role playbooks under `docs/agent-playbooks/*.md`."""
+    """Return all on-demand role and layer playbooks under `docs/agent-playbooks/**/*.md`."""
     playbooks_dir = repo_root / "docs" / "agent-playbooks"
     if not playbooks_dir.is_dir():
         return []
-    return sorted(p for p in playbooks_dir.glob("*.md") if p.is_file())
+    return sorted(p for p in playbooks_dir.rglob("*.md") if p.is_file())
 
 
 def extract_rule_ids(text: str) -> list[str]:
@@ -114,7 +114,7 @@ def lint_agent_rules(repo_root: Path) -> list[str]:
         if rule_file == agents_md and expanded_bytes > MAX_AGENTS_CORE_BYTES:
             errors.append(
                 f"[AGENTS.md] expanded size {expanded_bytes} B exceeds "
-                f"{MAX_AGENTS_CORE_BYTES:,} B (12 KB) canonical core budget"
+                f"{MAX_AGENTS_CORE_BYTES:,} B (3.5 KiB) canonical core budget"
             )
         if TRUNCATED_MARKER_RE.search(expanded):
             errors.append(f"[{rel_name}] contains '<truncated' marker (truncation risk)")

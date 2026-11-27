@@ -54,14 +54,14 @@ def test_rules_lint_passes_valid_and_detects_oversize_includes_cycles_and_dupes(
     assert rules_main(["--root", str(repo)]) == 0
     assert "PASS" in capsys.readouterr().out
 
-    # Expand @[label](path) include pushing AGENTS.md over 12 KB
+    # Expand @[label](path) include pushing AGENTS.md over MAX_AGENTS_CORE_BYTES
     (repo / "docs" / "big.md").write_text("x" * (MAX_AGENTS_CORE_BYTES + 50), encoding="utf-8")
     (repo / "AGENTS.md").write_text(
         "# Core\n- [R-CORE-01] Rule.\n@[big](docs/big.md)\n",
         encoding="utf-8",
     )
     errors = lint_agent_rules(repo)
-    assert any("12,288" in e or "AGENTS.md" in e for e in errors)
+    assert any("3,584" in e or "AGENTS.md" in e for e in errors)
 
     # Always-on rule file > 20,480 B margin (< 24,000 B cap)
     (repo / "AGENTS.md").write_text("# Core\n- [R-CORE-01] Rule.\n", encoding="utf-8")
@@ -72,7 +72,21 @@ def test_rules_lint_passes_valid_and_detects_oversize_includes_cycles_and_dupes(
     assert any("extra.md" in e for e in lint_agent_rules(repo))
     (repo / ".agents" / "rules" / "extra.md").unlink()
 
-    # Duplicate Rule ID across core and playbook
+    # Duplicate Rule ID across core and nested layer playbook (recursive scan)
+    (repo / "docs" / "agent-playbooks" / "layers").mkdir(parents=True)
+    (repo / "docs" / "agent-playbooks" / "layers" / "backend.md").write_text(
+        "# Backend\n- [R-CORE-08] Valid.\n",
+        encoding="utf-8",
+    )
+    assert lint_agent_rules(repo) == []
+
+    (repo / "docs" / "agent-playbooks" / "layers" / "backend.md").write_text(
+        "# Backend\n- [R-CORE-01] Nested Duplicate.\n",
+        encoding="utf-8",
+    )
+    assert any("R-CORE-01" in e and "layers/backend.md" in e for e in lint_agent_rules(repo))
+    (repo / "docs" / "agent-playbooks" / "layers" / "backend.md").unlink()
+
     (repo / "docs" / "agent-playbooks" / "coder.md").write_text(
         "# Coder\n- [R-CORE-01] Duplicate.\n",
         encoding="utf-8",

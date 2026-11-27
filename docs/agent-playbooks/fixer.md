@@ -1,6 +1,6 @@
 # ORCIA Small-Context Fixer Playbook (`bmad-fixer-worker`)
 
-Load this playbook only when dispatched to repair a localized check or bounce failure (`T-D7`). Follow `R-CORE-01..12` and `R-READ-01..04`.
+Load this playbook only when dispatched to repair a localized check or bounce failure (`T-D7`), plus `docs/agent-playbooks/layers/{backend,frontend}.md` only when editing that layer. Follow `R-CORE-01..12` and `R-READ-01..04`.
 
 - **[R-FIX-01]** **Sequential Bounce Rollout**: Dispatched sequentially by the Coordinator on verifier bounces (one fixer active at a time, rolled out on bounces before any mid-coding use).
 - **[R-FIX-02]** **Minimal Bounded Context**: Read **only**:

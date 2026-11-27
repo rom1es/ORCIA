@@ -1,6 +1,6 @@
 # ORCIA Testing Verifier Playbook (`bmad-dev-worker` — Testing)
 
-Load this playbook only when assigned as **Testing Verifier** (`R-ROUTE-05`). Follow `R-CORE-01..12` and `R-READ-01..04`.
+Load this playbook only when assigned as **Testing Verifier** (`R-ROUTE-05`), plus `docs/agent-playbooks/layers/{backend,frontend}.md` if auditing layer invariants. Follow `R-CORE-01..12` and `R-READ-01..04`.
 
 - **[R-VER-01]** **Strict Read/Execute-Only on Source & Tests**: Never edit `.py`, `.ts`, `.tsx`, or `.css` application or test source files. On any failure, emit a bounce digest (`R-VER-03`) so the Coordinator dispatches the Fixer or Coding worker.
 - **[R-VER-02]** **Runner-First `AD-17` Verification & Receipt Skip Policy**:
@@ -13,5 +13,5 @@ Load this playbook only when assigned as **Testing Verifier** (`R-ROUTE-05`). Fo
   4. **Classification**: `A` (new-code/test defect), `A2` (regression caused by story), or `B` (existing test outdated by approved behavior change — requires explicit approval before Fixer edits legacy tests).
 - **[R-VER-04]** **Zero Assertion or Timeout Weakening**: Never suggest or apply looser E2E selectors, relaxed assertions, or inflated timeouts to pass a failing check.
 - **[R-VER-05]** **No Polling & Bounded Execution**: Wrap every test/build/E2E command in `timeout -k 10s <seconds>`, wait for reactive task completion wakeups, and never poll `manage_task` in a loop.
-- **[R-VER-06]** **Token Telemetry, Report §3 & Traceability Closure**: Run dev-only `.venv/bin/python scripts/agent_token_report.py --story <prefix>` (exits `0` with `SKIP` if `ORCIA_TRANSCRIPTS_DIR` is unset), fill Tech Lead Report §3 (including KPI table + Flake Log from `TECH-LEAD-REPORT-TEMPLATE.md`), update `docs/product/capabilities.yaml` (`tests:`, `verification: runtime`) if applicable, and set `sprint-status.yaml` status.
-- **[R-VER-07]** **Final Synchronization Gates**: Run `pnpm site:sync && pnpm site:check`, `.venv/bin/python scripts/check_implementation_docs.py`, and `node .gitnexus/run.cjs analyze --index-only` + `detect-changes` before marking `review` or `done`.
+- **[R-VER-06]** **Token Telemetry, Report §3 & Traceability Closure**: Run dev-only `.venv/bin/python scripts/agent_token_report.py --story <prefix>` (exits `0` with `SKIP` if `ORCIA_TRANSCRIPTS_DIR` is unset), complete §3 (KPI table, Flake Log, §3.5 logs) in the story's Tech Lead Report (`docs/implementation-artifacts/tech-lead-reports/<story-key>-tech-lead-report.md`, setting frontmatter `status: done`), update `docs/product/capabilities.yaml` (`tests:`, `verification: runtime`) if applicable, and set `sprint-status.yaml` status.
+- **[R-VER-07]** **Final Synchronization Gates**: Run `pnpm site:sync && pnpm site:check` (regenerates `tech-lead-reports/README.md` — never edit manually), `.venv/bin/python scripts/check_implementation_docs.py`, and guarded GitNexus `detect-changes` (when worktree is indexed) before marking `review` or `done`.
