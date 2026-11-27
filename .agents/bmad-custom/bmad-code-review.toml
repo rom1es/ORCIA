@@ -1,0 +1,7 @@
+# Team overrides for bmad-code-review — ORCIA Full-Pyramid Test Review Enforcement (AD-17)
+
+[workflow]
+persistent_facts = [
+  "MANDATORY REVIEW: Verify coverage across all impacted AD-17 test layers (L1a Python unit >=90%, L1b Vitest without isJsdom, L2 HTTP FastAPI -> PG18 SELECT, L3 OpenAPI 0-diff + lint-imports, L4 $0 Golden evals, Security/Red-Team, and L5 Playwright bi-server E2E) plus `capabilities.yaml` `tests:` updates and completed TLR §3.",
+  "Review delegation: delegate extra codebase exploration to `bmad-scout` (`flash`) and architecture/VALIDATE sign-off to `bmad-architect-worker` (`pro`).",
+]

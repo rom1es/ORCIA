@@ -36,6 +36,7 @@ IA_REVIEW.md
 # BMad framework & GitNexus local cache
 _bmad/
 _bmad-output/
+.agents/bmad-custom/*.user.toml
 .gitnexus/
 
 # OS / IDE

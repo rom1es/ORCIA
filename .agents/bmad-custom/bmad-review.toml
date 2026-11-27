@@ -1,0 +1,9 @@
+# Team overrides for bmad-review — ORCIA Full-Pyramid Test Review Enforcement (AD-17)
+
+[workflow]
+persistent_facts = []
+
+review_guidance = [
+  "Systematically verify impact across all AD-17 test layers: Python unit (`tests/unit/`), TS/React Vitest without `isJsdom`, vertical HTTP->PG18 integration (`tests/integration/`), OpenAPI 0-diff contracts (`tests/contract/`), $0 Golden Dataset evals (`tests/evals/`), Security/Red-Team (`tests/security/`), and dual-server Playwright E2E (`apps/web/e2e/`).",
+  "Flag as blocking any `live` capability in `docs/product/capabilities.yaml` lacking `tests:`, any new `isJsdom` short-circuit, any SQL adapter without an HTTP caller, or any UI/data-testid change without matching Playwright E2E updates.",
+]

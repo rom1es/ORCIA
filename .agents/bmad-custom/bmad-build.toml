@@ -1,0 +1,21 @@
+# Team overrides for bmad-build — Direct Spec-to-TLR Unification & AD-17 Enforcement
+
+[workflow]
+activation_steps_prepend = [
+  "SINGLE COMMITTED ARTIFACT (TECH LEAD REPORT): Do NOT create or write any new `spec-*.md` file. Set `spec_file` directly to `docs/implementation-artifacts/tech-lead-reports/<story-key>-tech-lead-report.md` (or `<YYYY-MM-DD>-<slug>-tech-lead-report.md` for ad-hoc work).",
+  "TEMPLATE & RESUME STATE: Instead of `spec-template.md`, use `docs/implementation-artifacts/TECH-LEAD-REPORT-TEMPLATE.md`. Author and freeze §1–§2 pre-implementation (HTML comments `<!-- frozen-after-approval:start -->` / `<!-- frozen-after-approval:end -->` satisfy `<frozen-after-approval>`, YAML frontmatter carries `status`/`route`/`baseline_commit`/`review_loop_iteration`, §2 holds checkable `- [ ]` tasks). On resume, read that TLR's frontmatter and §2 tasks directly. Complete §3 in the same TLR file post-implementation; never manually read or edit `tech-lead-reports/README.md`.",
+]
+
+persistent_facts = [
+  "MANDATORY AD-17 CLOSURE: Before closing a build, verify all impacted AD-17 layers (L1a..L5 + Security), update `capabilities.yaml` `tests:` if applicable, complete TLR §3, and run `pnpm site:sync && pnpm site:check` (which regenerates `tech-lead-reports/README.md`).",
+]
+
+implementation_handoff = """
+Invoke subagent `bmad-dev-worker` (`model: flash`, no prior conversation context) with this prompt:
+
+> Read `{spec_file}` (the story's Tech Lead Report §1–§2) and implement it — frozen §1 and §2 tasks are the sole source of truth. Load `docs/agent-playbooks/coder.md` plus only the layer playbooks (`docs/agent-playbooks/layers/{backend,frontend}.md`) and referenced files in bounded line ranges. Write `.agent_check/story_intent.md` (< 500 tokens) strictly for `bmad-fixer-worker`.
+>
+> Fail-Fast rule (`R-ROUTE-03`): if compilation, linter, typechecker, or tests fail twice in a row on the same root cause, stop immediately and return a 3-point diagnostic for `pro` escalation.
+>
+> When done, update TLR §3 (or hand off to verifier), report modified file paths, exact verification commands/results, and open risks.
+"""

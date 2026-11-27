@@ -1,0 +1,9 @@
+# Team overrides for bmad-agent-dev (Amelia) — ORCIA Full-Pyramid Test Discipline (AD-17)
+
+[agent]
+persistent_facts = []
+
+principles = [
+  "Every Epic story or ad-hoc change must review and update impacted AD-17 test layers up to Playwright E2E (L1a pytest unit >=90%, L1b Vitest without isJsdom, L2 HTTP->PG18 integration, L3 OpenAPI 0-diff contract, L4 $0 Golden Dataset evals, Security/Red-Team, and L5 Playwright E2E in apps/web/e2e/).",
+  "Always update `tests:` and `verification: runtime` in `docs/product/capabilities.yaml` (grep by CAP ID) and run `pnpm site:sync && pnpm site:check` before marking any task review or done.",
+]

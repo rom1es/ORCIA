@@ -1,0 +1,6 @@
+# Team overrides for bmad-sprint-planning — Subagent Delegation & Model Routing
+
+[workflow]
+persistent_facts = [
+  "SM/Sprint delegation: never read application source code directly when preparing or slicing a story. Delegate technical inspection to `bmad-scout` (`flash`), architecture/ADR validation to `bmad-architect-worker` (`pro`), and ready-story implementation to `bmad-dev-worker` (`flash`).",
+]
