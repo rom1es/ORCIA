@@ -27,7 +27,7 @@ Dans ORCIA, les **Entités de l'Organisation** et l'**Espace de Travail** sont m
 
 ---
 
-### 2. Les deux liens relationnels entre `Workspace` et `OrgUnit` ([`0002_story_1_2_auth_org_workspaces_permissions.py`](file:///home/romain/Documents/Projects/ORCIA/infra/migrations/versions/0002_story_1_2_auth_org_workspaces_permissions.py))
+### 2. Les deux liens relationnels entre `Workspace` et `OrgUnit` ([`0002_story_1_2_auth_org_workspaces_permissions.py`](../../../../infra/migrations/versions/0002_story_1_2_auth_org_workspaces_permissions.py))
 
 1. **A. Lien de Propriété / Rattachement de facturation principal (`owner_org_unit_id` : `N ➔ 1`)** :
    - Chaque `Workspace` (qu'il soit collectif `STANDARD`, isolé `CONFIDENTIAL_RESTRICTED` ou privé personnel `PRIVATE_USER`) appartient obligatoirement à une `OrgUnit` propriétaire (une Équipe `TEAM` ou une Direction `BU`) via `owner_org_unit_id UUID NOT NULL REFERENCES org_units(id) ON DELETE RESTRICT`.

@@ -15,8 +15,8 @@ sources:
   - 'docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/DESIGN.md'
   - 'docs/planning-artifacts/ux-designs/ux-ORCIA-2026-10-24/EXPERIENCE.md'
 companions:
-  - 'docs/architecture.md'
-  - 'docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/visual-architecture-blueprint.html'
+  - 'docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24/architecture.md'
+  - 'docs/planning-artifacts/visuals/orcia-blueprint.html'
 ---
 
 # Architecture Spine — ORCIA Platform MVP
