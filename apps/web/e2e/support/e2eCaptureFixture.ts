@@ -2,15 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test as base, expect, type Page, type TestInfo } from "@playwright/test";
+import { resolveE2eCampaignDir } from "./e2eCampaignDir";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "../../../..");
-const rawCampaignDir = process.env.ORCIA_E2E_CAMPAIGN_DIR?.trim();
-const campaignDir = rawCampaignDir
-  ? path.isAbsolute(rawCampaignDir)
-    ? rawCampaignDir
-    : path.resolve(repoRoot, rawCampaignDir)
-  : path.join(repoRoot, "docs/implementation-artifacts/e2e-campaign-epic-22");
+const campaignDir = resolveE2eCampaignDir(repoRoot, process.env.ORCIA_E2E_CAMPAIGN_DIR);
 const screenshotsRoot = path.join(campaignDir, "screenshots");
 const manifestPath = path.join(campaignDir, "manifest.jsonl");
 const MAX_SCREENSHOT_BYTES = 440 * 1024;

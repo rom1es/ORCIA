@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 64,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 45,
-    "techLeadReportsCount": 260,
+    "techLeadReportsCount": 261,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -586,6 +586,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
       "reportFile": "32-1-token-first-agent-check-runner-receipts-and-suite-quick-wins-tech-lead-report.md",
       "domain": "Epic 32 Lot 1 — Token-First agent_check.py Runner, Worktree Receipts, Bounce Rule & Suite Quick Wins (T-D4, T-D5, T-D6, hygiene)",
       "summary": "Closed (done, independent Testing Verifier verified): built scripts/agent_check.py (74 L) + 9 scripts/agent_check_lib/ modules (<= 275 L), 21 runner unit tests (tests/unit/tooling/, <= 2…"
+    },
+    {
+      "date": "2026-11-27",
+      "phaseOrStory": "2026-11-27-e2e-campaign-debris-cleanup",
+      "reportFile": "2026-11-27-e2e-campaign-debris-cleanup-tech-lead-report.md",
+      "domain": "Repository Hygiene / E2E Campaign Artifacts / Test Governance (hygiene)",
+      "summary": "Purge 346 superseded E2E campaign screenshots/manifests/JSON dumps (~54 MB), fix e2eCaptureFixture default capture leak via pure helper, retire 4 closed-epic 21-24 traceability test files, and add bi…"
     },
     {
       "date": "2026-11-27",
