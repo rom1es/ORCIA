@@ -185,7 +185,7 @@
       </button>
       <button type="button" class="tab-btn" role="tab" aria-selected="false"
         onclick="switchTab('pillar-changelog', this)">
-        4. 🔄 Historique des Évolutions (259)
+        4. 🔄 Historique des Évolutions (260)
       </button>
     </nav>
     <section id="pillar-macro" class="pillar-panel active"
@@ -372,7 +372,7 @@
         <div class="stat-box"><strong>2</strong><span>Packs Métiers</span></div>
         <div class="stat-box"><strong>64</strong><span>Migrations</span></div>
         <div class="stat-box"><strong>25</strong><span>Décisions AD</span></div>
-        <div class="stat-box"><strong>259</strong><span>Rapports</span></div>
+        <div class="stat-box"><strong>260</strong><span>Rapports</span></div>
       </div>
       <div class="bento-grid">
         <div class="card">
@@ -380,31 +380,31 @@
           <div class="pack-item"><span class="badge badge-emerald">orcia-pack-docs@2.0.0</span><span>Pack déclaratif de génération, validation bilingue FR/EN et rattachement à chaud des articles d&#x27;aide contextuelle et guides d&#x27;administration ORCIA.</span></div>
 <div class="pack-item"><span class="badge badge-emerald">orcia-pack-sdlc@2.4.0</span><span>Chaîne de valeur de l&#x27;idée à la production (11 étapes, 4 phases, 6 jalons humains, 3 agents multi-sous-étapes et sas de contrôle externe).</span></div>
           <h3>Décisions d'Architecture</h3>
-          <div class="ad-pill"><span class="badge badge-cobalt">AD-1</span><span>Monorepo Hybride TypeScript + Python, SPA Pure (Vite 6 + TanStack Router v1), Workspace uv à 4 Packages, Injection lifespan/Depends et Garde-Fou Hexagonal (import-linter)</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-2</span><span>Orchestration Durable Transactionnelle (DBOS Transact sur PostgreSQL 18), Checkpoints Immuables du Blackboard et Séparation Brouillon / Snapshot</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-3</span><span>Garantie d&#x27;Ancrage Humain, Contrat d&#x27;Autonomie et Arbitrage Explicite au Niveau API</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-4</span><span>Verrou de Présence Atomique Unifié par Étape et Diffusion Temps Réel par SSE (&lt; 500ms)</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-5</span><span>Fédération Pure d&#x27;URI Multi-Sources (N × git://, N × jira://, N × confluence://, db://, nexus://), Actions Jira Staged aux Gates, Schéma Interne orcia:// et Stockage CAS S3 (ObjectStoragePort / SeaweedFS Apache-2.0)</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-6</span><span>Authentification Primaire Bi-Mode (OIDC &amp; Locale), Identité Déléguée Passthrough vs Service Principal Scopé, Port d&#x27;Autorisation (AuthorizationEnginePort), Permission Broker et Serveur MCP Gouverné (Résolution OQ-1 &amp; OQ-2)</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-7</span><span>Modélisation Relationnelle-Graphe de l&#x27;Ontologie à 4 Niveaux, Chaîne Causale ADN (DIRECTIVE ➔ NORME ➔ MÉCANISME), Isolation de Branche L4 et Simulation d&#x27;Impact (*What-If*)</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-8</span><span>Indexation Différenciée Incrémentale Multi-Sources (N × Confluence *Parent-Child*, N × Jira Hybride + Graphe Tripartite Unifié, N × Code *AST + Code Graph*, Schéma DB), Vecteurs halfvec(1024), Recherche Lexicale Native tsvector + RRF et Détection de Staleness</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-9</span><span>Sandbox d&#x27;Exécution Sans Réseau à Deux Paliers (Palier 1a Wasmtime &lt; 5s, Palier 1b Starlark + RE2 &lt; 2ms &amp; Palier 2 Conteneur Isolé gVisor / Podman Rootless &lt; 60s) et Compilateur Text-to-Starlark</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-10</span><span>Orthogonalité Stricte des Modèles Confinée par Palier de Souveraineté (SovereigntyTier), Pseudonymisation PII Réversible et DAG de Lentilles (incluant fact_verification) aux Gates Agentiques</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-11</span><span>Politique des Gates Humaines Adaptatives, Registre des Exceptions Acquittées (workspace_exception_waivers) Gouverné par la Chaîne Causale ADN et Garde-Fou Anti-Rubber-Stamping (Résolution OQ-3)</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-12</span><span>Journal d&#x27;Audit Immuable, Télémétrie FinOps, Instrumentation OpenTelemetry W3C TraceContext et Coupe-Circuit par Étape / Déclencheur / Arbre de Runs</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-13</span><span>Hydratation Just-In-Time par Étape, Memlog Structuré et Exécution Tri-Modale (Coaching Interactif, Fast-Path Tâche de Fond &amp; Autonome sous Contrat)</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-14</span><span>Découplage Arbre d&#x27;Équipes (OrgUnit) / Espace Solution Multi-Sources (Workspace), Centre de Pilotage Unifié Multi-Niveaux, Surcharge Déclarative à 4 Niveaux (Base → Team → Workspace → User) et Adaptateur BMAD</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-15</span><span>Architecture en Workflow de Nœuds (Type n8n), Harness de Sécurité, Prompt à 5 Couches de l&#x27;Agent Assistant et Frontière Matérielle Exploration vs Écriture SI</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-16</span><span>Amorçage Gouverné par Workflows Système (orcia://system/bootstrap/*), Onboarding Autonome d&#x27;Équipe &amp; Multi-Workspaces Multi-Sources (TEAM_LEAD) et Invariants d&#x27;Activation</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-17</span><span>Stratégie de Tests à 5 Couches et Couverture Unitaire de la Plateforme</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-18</span><span>Gouvernance de l&#x27;Autonomie sous Contrat, Déclencheurs Événementiels Idempotents (SetWorkflowID, Webhooks, Puits de Logs, Cron), Boucle Fermée Post-Action et Imbrication Bornée des Sous-Workflows (&lt;= 3)</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-19</span><span>Architecture en Monolithe Modulaire, Graphe Acyclique de Packages uv (kernel, core, api, worker), Point Unique d&#x27;Assemblage, Découplage API/Domaine (schemas &amp; errors), Événements Outbox, Plugins (entry_points / Sidecars MCP) et Déploiement Multi-Rôles</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-20</span><span>Core Agnostique et Packs Métier (orcia-pack-*), Registres d&#x27;Extension entry_points, Espace de Noms des Marqueurs et Workflow Pilote Semaine 1 (sdlc/ticket-to-tech-spec) (Avenant A2 du 28/10/2026 &amp; Arbitrage Pilote du 31/10/2026)</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-21</span><span>Gouvernance Post-Jour 0, Modèle d&#x27;Habilitations Hiérarchique à 6 Verbes (create|read|update|delete|execute|grant), Routage Cognitif Abstrait par Tiers/Effort (simple|medium|complex|auto), Contrat Secret Write-Only (SecretInput/SecretStatus), Propagation Déterministe DBOS et Studio/Shell Enrichis</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-22</span><span>Socle Design System Open Source @orcia/ui (Radix UI Primitives + Architecture shadcn/ui), Séparation Stricte Look &amp; Feel (tokens.css) / Logique (apps/web) / Contenus (i18n), Conformité RGAA 4.1 &amp; Hiérarchie Chromatique des Onglets</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-23</span><span>Journalisation 12-Factor Unifiée (JSON stdout), Puits de Logs Paramétrable (Elasticsearch/OpenSearch &amp; Loki), Port d&#x27;Interrogation Découplé (LogSinkQueryPort), Traces OpenTelemetry OTLP et Conformité OpenShift</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-24</span><span>Hub des Modèles IA Fiable, Découverte Dynamique 0 Token, Test de Connexion Réel, Port Hexagonal d&#x27;Embeddings (EmbeddingPort) et Réindexation Sémantique Bloquante</span></div>
-<div class="ad-pill"><span class="badge badge-cobalt">AD-25</span><span>Unified Assistant Turn Engine, Single-Process Redis Turn Streaming, Fixed N1–N5 Constitutional Phases &amp; Governed Tool Loop</span></div>
+          <div class="ad-pill"><span class="badge badge-cobalt">AD-1</span><span>Monorepo, SPA &amp; uv DAG</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-2</span><span>DBOS &amp; Blackboard</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-3</span><span>Human Anchors &amp; Arbitration</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-4</span><span>Presence Lock, SSE &amp; Leases</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-5</span><span>URI Federation, Jira &amp; CAS</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-6</span><span>Auth, Scoped Identity &amp; Secrets</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-7</span><span>4-Level Ontology &amp; DNA</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-8</span><span>Incremental RAG &amp; Stale</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-9</span><span>2-Tier Sandbox &amp; Starlark</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-10</span><span>Orthogonality &amp; Lens DAG</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-11</span><span>Adaptive Gates &amp; Waivers</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-12</span><span>Audit, OTel &amp; Breakers</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-13</span><span>JIT Hydration &amp; Regimes</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-14</span><span>OrgUnit/Workspace &amp; Overrides</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-15</span><span>Assistant Harness &amp; V5</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-16</span><span>Bootstrap &amp; Private Space</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-17</span><span>5-Layer Tests &amp; &gt;=90% Cov</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-18</span><span>Autonomy, Triggers &amp; Sub-WF</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-19</span><span>Modular Monolith DAG &amp; Roles</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-20</span><span>Agnostic Core &amp; Packs</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-21</span><span>Post-Day-0 Config, RBAC &amp; SSRF</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-22</span><span>@orcia/ui Radix &amp; RGAA</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-23</span><span>JSON stdout, LogSink &amp; OTLP</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-24</span><span>AI Hub, Probes &amp; Embeddings</span></div>
+<div class="ad-pill"><span class="badge badge-cobalt">AD-25</span><span>AssistantTurnEngine &amp; N1-N5</span></div>
         </div>
         <div class="card">
           <h3>Versions Verrouillées de la Stack</h3>
@@ -459,11 +459,12 @@
         </div>
       </div>
       <div class="card">
-        <h2>Chronologie des Rapports Tech Lead (259)</h2>
+        <h2>Chronologie des Rapports Tech Lead (260)</h2>
         <input type="text" class="search-input"
           placeholder="Filtrer par mot-clé, story, date ou domaine..."
           oninput="filterReports(this.value)" />
-        <div id="reports-list"><article class="report-card" data-search="2026-11-27 story 32.5 epic 32 lot 5 — strict anti-bloat lint, openapi-generated vitest mocks, i18n-and-shell survivor split, test-time budgets &amp; epic 32 hardening (t-d2, t-d3, t-d10, hygiene) in-progress (hygiene)."><div class="report-meta"><span class="badge badge-cobalt">2026-11-27</span><span class="badge badge-emerald">Story 32.5</span><code class="mono-code">32-5-strict-anti-bloat-lint-openapi-vitest-mocks-and-survivor-split-tech-lead-report.md</code></div><h4>Epic 32 Lot 5 — Strict Anti-Bloat Lint, OpenAPI-Generated Vitest Mocks, i18n-and-shell Survivor Split, Test-Time Budgets &amp; Epic 32 Hardening (T-D2, T-D3, T-D10, hygiene)</h4><p>In-progress (hygiene).</p></article>
+        <div id="reports-list"><article class="report-card" data-search="2026-11-27 ad-hoc / epic 13 agent harness / token economy / documentation governance (hygiene) in-progress (hygiene): condense spine into per-ad files, split epics.md, auto-generate this index, agents.md and bmad override diet."><div class="report-meta"><span class="badge badge-cobalt">2026-11-27</span><span class="badge badge-emerald">Ad-hoc / Epic 13</span><code class="mono-code">2026-11-27-agent-token-diet-tech-lead-report.md</code></div><h4>Agent Harness / Token Economy / Documentation Governance (hygiene)</h4><p>In-progress (hygiene): condense spine into per-AD files, split epics.md, auto-generate this index, AGENTS.md and BMAD override diet.</p></article>
+<article class="report-card" data-search="2026-11-27 story 32.5 epic 32 lot 5 — strict anti-bloat lint, openapi-generated vitest mocks, i18n-and-shell survivor split, test-time budgets &amp; epic 32 hardening (t-d2, t-d3, t-d10, hygiene) in-progress (hygiene)."><div class="report-meta"><span class="badge badge-cobalt">2026-11-27</span><span class="badge badge-emerald">Story 32.5</span><code class="mono-code">32-5-strict-anti-bloat-lint-openapi-vitest-mocks-and-survivor-split-tech-lead-report.md</code></div><h4>Epic 32 Lot 5 — Strict Anti-Bloat Lint, OpenAPI-Generated Vitest Mocks, i18n-and-shell Survivor Split, Test-Time Budgets &amp; Epic 32 Hardening (T-D2, T-D3, T-D10, hygiene)</h4><p>In-progress (hygiene).</p></article>
 <article class="report-card" data-search="2026-11-27 story 32.4 epic 32 lot 4 — repo-wide test pyramid pruning with coverage safety gate &amp; mutation sample (t-d11, hygiene) in-progress (hygiene)."><div class="report-meta"><span class="badge badge-cobalt">2026-11-27</span><span class="badge badge-emerald">Story 32.4</span><code class="mono-code">32-4-repo-wide-test-pyramid-pruning-with-coverage-safety-gate-tech-lead-report.md</code></div><h4>Epic 32 Lot 4 — Repo-Wide Test Pyramid Pruning with Coverage Safety Gate &amp; Mutation Sample (T-D11, hygiene)</h4><p>In-progress (hygiene).</p></article>
 <article class="report-card" data-search="2026-11-27 story 32.3 epic 32 lot 3 — combined coverage + diff-cover, shared pg18/app infra, pytest-xdist, lazy imports &amp; lint_tests.py ratchet (t-d1, t-d2, t-d10, hygiene) in-progress (hygiene)."><div class="report-meta"><span class="badge badge-cobalt">2026-11-27</span><span class="badge badge-emerald">Story 32.3</span><code class="mono-code">32-3-combined-coverage-diff-cover-shared-pg18-infra-and-ratchet-lint-tech-lead-report.md</code></div><h4>Epic 32 Lot 3 — Combined Coverage + diff-cover, Shared PG18/App Infra, pytest-xdist, Lazy Imports &amp; lint_tests.py Ratchet (T-D1, T-D2, T-D10, hygiene)</h4><p>In-progress (hygiene).</p></article>
 <article class="report-card" data-search="2026-11-27 story 32.2 epic 32 lot 2 — agent protocol, small-context fixer, rules diet &amp; read discipline (t-d7, t-d8, t-d9, hygiene) done (hygiene): canonical agents.md diet (6,781 b &lt;= 12 kb) + gemini.md removal, role playbooks under docs/agent-playbooks/, stage 1 rules-lint + fixture-index, tests/readme.md, tech-lead-report-template.md kpis &amp; flake log, and dev-only scripts/agent_token_report.py (93% tooling branch coverage, agent_check.py static + full --no-skip pass)."><div class="report-meta"><span class="badge badge-cobalt">2026-11-27</span><span class="badge badge-emerald">Story 32.2</span><code class="mono-code">32-2-agent-protocol-small-context-fixer-and-rules-diet-tech-lead-report.md</code></div><h4>Epic 32 Lot 2 — Agent Protocol, Small-Context Fixer, Rules Diet &amp; Read Discipline (T-D7, T-D8, T-D9, hygiene)</h4><p>Done (hygiene): canonical AGENTS.md diet (6,781 B &lt;= 12 KB) + GEMINI.md removal, role playbooks under docs/agent-playbooks/, Stage 1 rules-lint + fixture-index, tests/README.md, TECH-LEAD-REPORT-TEMPLATE.md KPIs &amp; Flake Log, and dev-only scripts/agent_token_report.py (93% tooling branch coverage, agent_check.py static + full --no-skip PASS).</p></article>

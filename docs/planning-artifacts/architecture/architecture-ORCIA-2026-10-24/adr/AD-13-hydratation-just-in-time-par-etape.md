@@ -1,0 +1,14 @@
+# AD-13 — Hydratation Just-In-Time par Étape, Memlog Structuré et Exécution Tri-Modale (Coaching Interactif, Fast-Path Tâche de Fond & Autonome sous Contrat) [ADOPTED]
+
+> Verbatim detail moved from `ARCHITECTURE-SPINE.md` on 2026-11-27 (baseline `bf44884`). The condensed binding form lives in the spine; this file is the full rationale.
+
+- **Binds:** `FR-1`, `FR-2`, `FR-3`, `FR-4`, `FR-5`, `FR-6`, `FR-11`, `FR-13`, `FR-23`, `FR-29`
+- **Prevents:** Dilution d'attention du LLM (*Context Rot*) causée par le chargement des instructions des étapes futures, perte du fil de raisonnement lors d'une reprise d'étape, ou blocage intempestif à mi-parcours d'un audit en tâche de fond (`UJ-10`) ou d'un run autonome sous contrat (`UJ-11`, `UJ-12`).
+- **Rule:** Inspiré de l'architecture `step-file` et `.memlog.md` de BMAD (avec intégration DBOS conditionnée au verdict du spike `3.2s`) :
+  1. **Hydratation Just-In-Time** : Le `@DBOS.step` d'étape n'injecte dans le contexte de l'*Agent Exécuteur* que les instructions de l'étape courante $k$ et ses entrées déclarées (`orcia://...`), jamais les instructions des étapes futures $k+1 \dots N$.
+  2. **Memlog d'Étape (`step_executions.step_memlog_jsonb`)** : Chaque étape maintient un journal append-only structuré (hypothèses écartées, décisions intermédiaires, arbitrages) distinct du livrable propre, qui alimente la génération du *Briefing de Revue*.
+  3. **Exécution Tri-Modale (`execution_regime`)** :
+     - **`INTERACTIVE_COACHING` (Mode Coaching)** : passes interactives courtes et suspension durable en `WAITING_FOR_HUMAN_ARBITRATION` (`DBOS.recv`) sur chaque ambiguïté.
+     - **`BACKGROUND_FAST_PATH` (Mode Tâche de Fond `UJ-10`)** : le workflow durable DBOS enchaîne les étapes en arrière-plan sans bloquer sur les ambiguïtés intermédiaires ; chaque choix ouvert est balisé par `[ASSUMPTION]` (marqueur du Core) et chaque constat métier par un marqueur à espace de noms fourni par un pack (ex. `sdlc.bug_code_suspected`, `sdlc.doc_obsolete_suspected` pour les écarts Doc/Code — Amendement A2, `AD-20`) dans `step_memlog_jsonb`, puis consolidé dans le rapport final pour arbitrage groupé (`FR-5`).
+     - **`AUTONOMOUS_CONTRACT` (Mode Autonome sous Contrat `UJ-11`, `UJ-12`, `FR-29`)** : réservé aux workflows ou étapes de criticité `LOW_NON_CRITICAL` ou `STANDARD` dotés d'un *Contrat d'Autonomie* signé ; exécute les étapes de bout en bout (et l'éventuelle étape de `POST_ACTION_VERIFICATION`) tant que toutes les *Gates* déterministes et agentiques ($\ge 0.85$) passent, en appliquant la `tie_break_policy` déclarée (`ONTOLOGY_AXIOM_FIRST`, `DEFER_AND_CONTINUE_WITH_ASSUMPTION` ou `PAUSE_AND_ESCALATE`).
+  4. **Exécuteurs d'Étape Réels (Amendement A2 du 28/10/2026)** : l'hydratation JIT alimente l'exécuteur résolu dans `orcia.step_executors` (`AD-2` règle 3) ; le contexte injecté provient de `ContextSourcePort` (JSON, CAS, document) et non de fichiers Markdown locaux (`DEC-CTX-01`).

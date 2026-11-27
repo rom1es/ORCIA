@@ -14,7 +14,7 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     "alembicMigrationsCount": 64,
     "architectureDecisionsCount": 25,
     "stackComponentsCount": 45,
-    "techLeadReportsCount": 259,
+    "techLeadReportsCount": 260,
     "capabilitiesCount": 66,
     "liveCapabilitiesCount": 66,
     "verifiedCapabilitiesCount": 65,
@@ -270,103 +270,103 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
   "architectureDecisions": [
     {
       "code": "AD-1",
-      "title": "Monorepo Hybride TypeScript + Python, SPA Pure (Vite 6 + TanStack Router v1), Workspace uv à 4 Packages, Injection lifespan/Depends et Garde-Fou Hexagonal (import-linter)"
+      "title": "Monorepo, SPA & uv DAG"
     },
     {
       "code": "AD-2",
-      "title": "Orchestration Durable Transactionnelle (DBOS Transact sur PostgreSQL 18), Checkpoints Immuables du Blackboard et Séparation Brouillon / Snapshot"
+      "title": "DBOS & Blackboard"
     },
     {
       "code": "AD-3",
-      "title": "Garantie d'Ancrage Humain, Contrat d'Autonomie et Arbitrage Explicite au Niveau API"
+      "title": "Human Anchors & Arbitration"
     },
     {
       "code": "AD-4",
-      "title": "Verrou de Présence Atomique Unifié par Étape et Diffusion Temps Réel par SSE (< 500ms)"
+      "title": "Presence Lock, SSE & Leases"
     },
     {
       "code": "AD-5",
-      "title": "Fédération Pure d'URI Multi-Sources (N × git://, N × jira://, N × confluence://, db://, nexus://), Actions Jira Staged aux Gates, Schéma Interne orcia:// et Stockage CAS S3 (ObjectStoragePort / SeaweedFS Apache-2.0)"
+      "title": "URI Federation, Jira & CAS"
     },
     {
       "code": "AD-6",
-      "title": "Authentification Primaire Bi-Mode (OIDC & Locale), Identité Déléguée Passthrough vs Service Principal Scopé, Port d'Autorisation (AuthorizationEnginePort), Permission Broker et Serveur MCP Gouverné (Résolution OQ-1 & OQ-2)"
+      "title": "Auth, Scoped Identity & Secrets"
     },
     {
       "code": "AD-7",
-      "title": "Modélisation Relationnelle-Graphe de l'Ontologie à 4 Niveaux, Chaîne Causale ADN (DIRECTIVE ➔ NORME ➔ MÉCANISME), Isolation de Branche L4 et Simulation d'Impact (*What-If*)"
+      "title": "4-Level Ontology & DNA"
     },
     {
       "code": "AD-8",
-      "title": "Indexation Différenciée Incrémentale Multi-Sources (N × Confluence *Parent-Child*, N × Jira Hybride + Graphe Tripartite Unifié, N × Code *AST + Code Graph*, Schéma DB), Vecteurs halfvec(1024), Recherche Lexicale Native tsvector + RRF et Détection de Staleness"
+      "title": "Incremental RAG & Stale"
     },
     {
       "code": "AD-9",
-      "title": "Sandbox d'Exécution Sans Réseau à Deux Paliers (Palier 1a Wasmtime < 5s, Palier 1b Starlark + RE2 < 2ms & Palier 2 Conteneur Isolé gVisor / Podman Rootless < 60s) et Compilateur Text-to-Starlark"
+      "title": "2-Tier Sandbox & Starlark"
     },
     {
       "code": "AD-10",
-      "title": "Orthogonalité Stricte des Modèles Confinée par Palier de Souveraineté (SovereigntyTier), Pseudonymisation PII Réversible et DAG de Lentilles (incluant fact_verification) aux Gates Agentiques"
+      "title": "Orthogonality & Lens DAG"
     },
     {
       "code": "AD-11",
-      "title": "Politique des Gates Humaines Adaptatives, Registre des Exceptions Acquittées (workspace_exception_waivers) Gouverné par la Chaîne Causale ADN et Garde-Fou Anti-Rubber-Stamping (Résolution OQ-3)"
+      "title": "Adaptive Gates & Waivers"
     },
     {
       "code": "AD-12",
-      "title": "Journal d'Audit Immuable, Télémétrie FinOps, Instrumentation OpenTelemetry W3C TraceContext et Coupe-Circuit par Étape / Déclencheur / Arbre de Runs"
+      "title": "Audit, OTel & Breakers"
     },
     {
       "code": "AD-13",
-      "title": "Hydratation Just-In-Time par Étape, Memlog Structuré et Exécution Tri-Modale (Coaching Interactif, Fast-Path Tâche de Fond & Autonome sous Contrat)"
+      "title": "JIT Hydration & Regimes"
     },
     {
       "code": "AD-14",
-      "title": "Découplage Arbre d'Équipes (OrgUnit) / Espace Solution Multi-Sources (Workspace), Centre de Pilotage Unifié Multi-Niveaux, Surcharge Déclarative à 4 Niveaux (Base → Team → Workspace → User) et Adaptateur BMAD"
+      "title": "OrgUnit/Workspace & Overrides"
     },
     {
       "code": "AD-15",
-      "title": "Architecture en Workflow de Nœuds (Type n8n), Harness de Sécurité, Prompt à 5 Couches de l'Agent Assistant et Frontière Matérielle Exploration vs Écriture SI"
+      "title": "Assistant Harness & V5"
     },
     {
       "code": "AD-16",
-      "title": "Amorçage Gouverné par Workflows Système (orcia://system/bootstrap/*), Onboarding Autonome d'Équipe & Multi-Workspaces Multi-Sources (TEAM_LEAD) et Invariants d'Activation"
+      "title": "Bootstrap & Private Space"
     },
     {
       "code": "AD-17",
-      "title": "Stratégie de Tests à 5 Couches et Couverture Unitaire de la Plateforme"
+      "title": "5-Layer Tests & >=90% Cov"
     },
     {
       "code": "AD-18",
-      "title": "Gouvernance de l'Autonomie sous Contrat, Déclencheurs Événementiels Idempotents (SetWorkflowID, Webhooks, Puits de Logs, Cron), Boucle Fermée Post-Action et Imbrication Bornée des Sous-Workflows (<= 3)"
+      "title": "Autonomy, Triggers & Sub-WF"
     },
     {
       "code": "AD-19",
-      "title": "Architecture en Monolithe Modulaire, Graphe Acyclique de Packages uv (kernel, core, api, worker), Point Unique d'Assemblage, Découplage API/Domaine (schemas & errors), Événements Outbox, Plugins (entry_points / Sidecars MCP) et Déploiement Multi-Rôles"
+      "title": "Modular Monolith DAG & Roles"
     },
     {
       "code": "AD-20",
-      "title": "Core Agnostique et Packs Métier (orcia-pack-*), Registres d'Extension entry_points, Espace de Noms des Marqueurs et Workflow Pilote Semaine 1 (sdlc/ticket-to-tech-spec) (Avenant A2 du 28/10/2026 & Arbitrage Pilote du 31/10/2026)"
+      "title": "Agnostic Core & Packs"
     },
     {
       "code": "AD-21",
-      "title": "Gouvernance Post-Jour 0, Modèle d'Habilitations Hiérarchique à 6 Verbes (create|read|update|delete|execute|grant), Routage Cognitif Abstrait par Tiers/Effort (simple|medium|complex|auto), Contrat Secret Write-Only (SecretInput/SecretStatus), Propagation Déterministe DBOS et Studio/Shell Enrichis"
+      "title": "Post-Day-0 Config, RBAC & SSRF"
     },
     {
       "code": "AD-22",
-      "title": "Socle Design System Open Source @orcia/ui (Radix UI Primitives + Architecture shadcn/ui), Séparation Stricte Look & Feel (tokens.css) / Logique (apps/web) / Contenus (i18n), Conformité RGAA 4.1 & Hiérarchie Chromatique des Onglets"
+      "title": "@orcia/ui Radix & RGAA"
     },
     {
       "code": "AD-23",
-      "title": "Journalisation 12-Factor Unifiée (JSON stdout), Puits de Logs Paramétrable (Elasticsearch/OpenSearch & Loki), Port d'Interrogation Découplé (LogSinkQueryPort), Traces OpenTelemetry OTLP et Conformité OpenShift"
+      "title": "JSON stdout, LogSink & OTLP"
     },
     {
       "code": "AD-24",
-      "title": "Hub des Modèles IA Fiable, Découverte Dynamique 0 Token, Test de Connexion Réel, Port Hexagonal d'Embeddings (EmbeddingPort) et Réindexation Sémantique Bloquante"
+      "title": "AI Hub, Probes & Embeddings"
     },
     {
       "code": "AD-25",
-      "title": "Unified Assistant Turn Engine, Single-Process Redis Turn Streaming, Fixed N1–N5 Constitutional Phases & Governed Tool Loop"
+      "title": "AssistantTurnEngine & N1-N5"
     }
   ],
   "stackComponents": [
@@ -552,6 +552,13 @@ export const ORCIA_SITE_MANIFEST: OrciaShowcaseManifestData = {
     }
   ],
   "techLeadReports": [
+    {
+      "date": "2026-11-27",
+      "phaseOrStory": "Ad-hoc / Epic 13",
+      "reportFile": "2026-11-27-agent-token-diet-tech-lead-report.md",
+      "domain": "Agent Harness / Token Economy / Documentation Governance (hygiene)",
+      "summary": "In-progress (hygiene): condense spine into per-AD files, split epics.md, auto-generate this index, AGENTS.md and BMAD override diet."
+    },
     {
       "date": "2026-11-27",
       "phaseOrStory": "Story 32.5",
