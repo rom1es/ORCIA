@@ -11,7 +11,10 @@ from tests.unit.test_epic_25_guards_and_helpers_coverage import _make_request
 from orcia_api.main import create_app
 from orcia_api.routers._finops_scope_guards import resolve_finops_read_scope
 from orcia_core.kernel.ids import new_uuid7_str
-from orcia_core.orchestration.autonomous_supervision import AutonomousSupervisionService
+from orcia_core.orchestration.autonomous_supervision import (
+    AutonomousSupervisionService,
+    PostHocAuditService,
+)
 from orcia_core.permissions import (
     OrgUnitNode,
     UserIdentity,
@@ -249,3 +252,12 @@ async def test_finops_scope_guard_accepts_role_bearing_team_lead_without_workspa
         await resolve_finops_read_scope(req, plain_contrib, "GLOBAL", None)
     with pytest.raises(ResourceNotFoundError):
         await resolve_finops_read_scope(req, role_team_lead, "TEAM", new_uuid7_str())
+
+
+def test_autonomous_supervision_service_post_hoc_property() -> None:
+    default_svc = AutonomousSupervisionService()
+    assert isinstance(default_svc.post_hoc_service, PostHocAuditService)
+
+    custom_post_hoc = PostHocAuditService()
+    injected_svc = AutonomousSupervisionService(post_hoc_service=custom_post_hoc)
+    assert injected_svc.post_hoc_service is custom_post_hoc

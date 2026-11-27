@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import math
+import socket
+from typing import Any
 
 import httpx
 import pytest
@@ -200,8 +202,17 @@ async def test_httpx_embedding_adapters_dimension_mismatch_and_http_errors() -> 
 
 
 @pytest.mark.asyncio
-async def test_httpx_embedding_adapters_edge_cases_and_network_errors() -> None:
+async def test_httpx_embedding_adapters_edge_cases_and_network_errors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test empty input, embed_query, URL variations, 400 dimension fallback, and network errors."""
+
+    def _fake_getaddrinfo(host: str, port: Any, *_args: Any, **_kwargs: Any) -> list[Any]:
+        if host == "down-host.local":
+            raise socket.gaierror(-2, "Name or service not known")
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", int(port or 443)))]
+
+    monkeypatch.setattr(socket, "getaddrinfo", _fake_getaddrinfo)
 
     # 1. Empty input
     async with httpx.AsyncClient() as client:

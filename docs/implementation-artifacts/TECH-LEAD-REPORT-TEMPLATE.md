@@ -100,3 +100,26 @@
 - **Layer 4 — AI Orchestration & Golden Dataset Evals (`DeterministicCassetteLLM`, `tests/evals/`)**: [`$0` deterministic verification of agent flows, citations, and Gates]
 - **Security / Red-Team Layer (`tests/security/`)**: [SSRF, `403 ERR_OBSERVER_MODE_READ_ONLY`, RBAC/ABAC, `CONFIDENTIAL_RESTRICTED` masking, zero secret leaks]
 - **Layer 5 — Dual-Server Playwright E2E (`pnpm e2e`), `F5` Cold Survival (`unmount()` + `render()`) & Day-0 Ground Truth (`pnpm db:reset`)**: [Desktop/Mobile E2E scenarios verified, post-reload persistence, bilingual FR/EN behavior, and `tests:` / `verification: runtime` update in `docs/product/capabilities.yaml`]
+
+### 3.4 Token, Duration KPIs & Flake Log (`T-D9` / Epic 32 Instrumentation)
+
+- **Token & Duration KPIs** *(populate via dev-only `.venv/bin/python scripts/agent_token_report.py --story <prefix>` when `ORCIA_TRANSCRIPTS_DIR` is set, plus `scripts/agent_check.py` stage timings)*:
+
+| KPI | Epic 30–31 Baseline | Target | Measured (This Story) |
+| :--- | :--- | :--- | :--- |
+| Billed input tokens / story | median 66.6 M (mean 79.1 M) | ≤ 40 M (−40 %) | — |
+| Test-related tokens / story | median 27.4 M (mean 31.0 M) | ≤ 14 M (−50 %) | — |
+| Test-related turns / story | median 108 (mean 134) | ≤ 54 | — |
+| Failed check runs / story | median 24 (mean 25.6) | ≤ 10 | — |
+| Noise failures (C + E + F) | 79 % (mean 20.3 / story) | ≤ 6 / story (−70 %) | — |
+| Verifier bounces / story | median 3 (E30: 15, E31: 23) | ≤ 1 | — |
+| Real bugs caught / story (A + A2) | mean 3.0 | ≥ 3.0 (floor) | — |
+| Test-run minutes / story | mean 53 (E30: 47, E31: 59) | ≤ 20 | — |
+| `tests/unit` wall time | 392 s (333 s post-32.1) | ≤ 120 s | — |
+| Always-on rules bytes / truncation | `36,416 B` (`12,464 B` truncated) | `AGENTS.md` ≤ 12 KB, all < 24 KB, 0 truncated | — |
+
+- **Flake Log**:
+
+| Date | Test / Check ID | Stage | Symptom | Root Cause / Resolution | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| — | *(none observed)* | — | — | — | — |

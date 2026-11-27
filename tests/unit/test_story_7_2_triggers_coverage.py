@@ -9,7 +9,6 @@ from typing import Any
 import pytest
 
 from orcia_core.kernel.errors import PolicyDeniedError, TransientConnectorError
-from orcia_core.kernel.events import TriggerFired
 from orcia_core.kernel.log_sink_ports import LogEntry, LogQuery
 from orcia_core.orchestration import (
     CreateTriggerCommand,
@@ -17,12 +16,6 @@ from orcia_core.orchestration import (
     UpdateTriggerCommand,
     WorkflowTriggerEntity,
 )
-from orcia_core.orchestration._internal._sql_workflow_triggers_queries import (
-    fmt_ts,
-    insert_outbox_and_audit,
-    row_to_trigger,
-)
-from orcia_core.orchestration._internal.sql_workflow_triggers import SqlWorkflowTriggerRepository
 from orcia_core.orchestration._triggers_log_cron import (
     LogSinkAnomalyScanner,
     cron_matches_timestamp,
@@ -104,100 +97,6 @@ class _FakeAsyncRedis:
             return False
         self._keys.add(key)
         return True
-
-
-class _FakeResult:
-    def __init__(
-        self,
-        *,
-        one: Any = None,
-        many: list[Any] | None = None,
-        scalar_val: Any = None,
-    ) -> None:
-        self._one = one
-        self._many = many or []
-        self._scalar = scalar_val
-
-    def fetchone(self) -> Any:
-        return self._one
-
-    def fetchall(self) -> list[Any]:
-        return self._many
-
-    def scalar(self) -> Any:
-        return self._scalar
-
-
-class _FakeConnCtx:
-    def __init__(self, script: list[_FakeResult]) -> None:
-        self._script = script
-        self.calls: list[tuple[str, dict[str, Any] | None]] = []
-
-    async def execute(self, stmt: Any, params: dict[str, Any] | None = None) -> _FakeResult:
-        self.calls.append((str(stmt), params))
-        if not self._script:
-            return _FakeResult()
-        return self._script.pop(0)
-
-    async def __aenter__(self) -> _FakeConnCtx:
-        return self
-
-    async def __aexit__(self, *args: Any) -> None:
-        return None
-
-
-class _FakeAsyncEngine:
-    def __init__(self, script: list[_FakeResult]) -> None:
-        self.conn = _FakeConnCtx(script)
-
-    def connect(self) -> _FakeConnCtx:
-        return self.conn
-
-    def begin(self) -> _FakeConnCtx:
-        return self.conn
-
-
-class _FakeAuditSink:
-    def __init__(self) -> None:
-        self.entries: list[Any] = []
-
-    async def record_entry(self, entry: Any, *, conn: Any = None) -> None:
-        del conn
-        self.entries.append(entry)
-
-
-def _sample_row(trigger_id: str, ws_id: str, wf_id: str) -> tuple[Any, ...]:
-    now = datetime(2026, 11, 17, 10, 0, tzinfo=UTC)
-    return (
-        trigger_id,
-        "trg-sample",
-        ws_id,
-        trigger_id,
-        "WEBHOOK",
-        wf_id,
-        new_uuid7_str(),
-        None,
-        None,
-        300,
-        "sp:auto",
-        10,
-        25.0,
-        3,
-        0.1,
-        new_uuid7_str(),
-        "ACTIVE",
-        False,
-        0,
-        now,
-        "enc-secret",
-        "fp-1",
-        "****1234",
-        now,
-        "admin-1",
-        None,
-        None,
-        None,
-    )
 
 
 async def _make_contracts() -> tuple[AutonomyContractService, str, str]:
@@ -419,102 +318,8 @@ async def test_dispatcher_crud_limits_pause_and_repo_delegation() -> None:
 
 
 @pytest.mark.asyncio
-async def test_sql_queries_and_repository_branches_with_fake_async_engine() -> None:
-    assert fmt_ts(None) is None
-    assert fmt_ts("  ") is None
-    assert fmt_ts("2026-11-17T10:00:00Z") == "2026-11-17T10:00:00Z"
-
-    tid, ws_id, wf_id = new_uuid7_str(), new_uuid7_str(), "wf-sql-cov"
-    row = _sample_row(tid, ws_id, wf_id)
-    entity, enc = row_to_trigger(row)
-    assert entity.id == tid and enc == "enc-secret"
-
-    audit_sink = _FakeAuditSink()
-    engine = _FakeAsyncEngine(
-        [
-            _FakeResult(scalar_val="domain_events_outbox"),
-            _FakeResult(),
-            _FakeResult(scalar_val="audit_ledger"),
-            _FakeResult(many=[row]),
-            _FakeResult(many=[row]),
-            _FakeResult(one=row),
-            _FakeResult(one=None),
-            _FakeResult(one=("wf-def-1",)),
-            _FakeResult(one=("dup-id",)),
-            _FakeResult(one=("wf-def-1",)),
-            _FakeResult(one=None),
-            _FakeResult(one=row),
-            _FakeResult(one=("wf-def-1",)),
-            _FakeResult(one=None),
-            _FakeResult(one=row),
-            _FakeResult(one=(tid,)),
-            _FakeResult(one=None),
-            _FakeResult(one=("deliv-1",)),
-            _FakeResult(scalar_val=3),
-            _FakeResult(scalar_val=4.5),
-            _FakeResult(one=("wf-def-1",)),
-            _FakeResult(one=("run-1",)),
-            _FakeResult(one=row),
-            _FakeResult(one=(2, "CIRCUIT_OPEN")),
-            _FakeResult(one=row),
-            _FakeResult(one=None),
-            _FakeResult(scalar_val=None),
-        ]
-    )
-    repo = SqlWorkflowTriggerRepository(engine=engine, audit_ledger_sink=audit_sink)  # type: ignore[arg-type]
-    evt = TriggerFired.create(
-        trigger_id=tid,
-        workspace_id=ws_id,
-        workflow_id=wf_id,
-        trigger_type="WEBHOOK",
-        run_id=new_uuid7_str(),
-        idempotency_key="ik-1",
-    )
-    await insert_outbox_and_audit(engine.conn, evt, audit_sink)  # type: ignore[arg-type]
-    assert len(audit_sink.entries) == 1
-
-    assert len(await repo.list_triggers(workspace_id=ws_id, workflow_id=wf_id)) == 1
-    assert len(await repo.list_active_triggers(trigger_type="WEBHOOK")) == 1
-    assert await repo.get_trigger(tid) is not None
-    assert await repo.get_trigger(tid) is None
-
-    with pytest.raises(TriggerDuplicateKeyError):
-        await repo.save_trigger(entity)
-    await repo.save_trigger(entity, clear_secret=True)
-    await repo.save_trigger(entity, encrypted_secret="new-enc")  # pragma: allowlist secret
-    await repo.delete_trigger(workspace_id=ws_id, trigger_id=tid)
-    with pytest.raises(TriggerNotFoundError):
-        await repo.delete_trigger(workspace_id=ws_id, trigger_id=tid)
-
-    assert await repo.record_webhook_delivery(trigger_id=tid, delivery_key="d1") is True
-    assert await repo.count_runs_last_hour(trigger_id=tid) == 3
-    assert await repo.sum_daily_cost_usd(trigger_id=tid) == 4.5
-    assert (
-        await repo.create_idempotent_trigger_run(
-            run_id=new_uuid7_str(),
-            trigger=entity,
-            idempotency_key="ik-1",
-            status="INITIALIZED",
-            budget_max_usd=10.0,
-        )
-        is True
-    )
-    assert await repo.mark_trigger_fired(trigger_id=tid) is not None
-    assert await repo.record_trigger_failure(trigger_id=tid, max_consecutive_failures=2) == (
-        2,
-        True,
-    )
-    assert (await repo.set_trigger_status(trigger_id=tid, status="ACTIVE")).id == tid
-    with pytest.raises(TriggerNotFoundError):
-        await repo.set_trigger_status(trigger_id=tid, status="ACTIVE")
-    await repo.publish_outbox_event(evt)
-
-
-@pytest.mark.asyncio
 async def test_dispatcher_repo_delegation_paths() -> None:
     contracts, ws_id, wf_id = await _make_contracts()
-    engine = _FakeAsyncEngine([])
-    del engine
 
     class _FakeRepo:
         def __init__(self) -> None:

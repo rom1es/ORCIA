@@ -1,4 +1,5 @@
-import { backendState, buildSseStreamResponse, jsonResponse, problemResponse } from "./mockBackendState";
+import { buildOpenApiMockResponse } from "./generatedOpenApiMocks";
+import { backendState, buildSseStreamResponse, problemResponse } from "./mockBackendState";
 
 export function handleInboxAndBrokerRoute(params: {
   path: string;
@@ -24,7 +25,7 @@ export function handleInboxAndBrokerRoute(params: {
       if (scopeFilter === "TEAM") return n.scope_kind === "TEAM";
       return true;
     });
-    return jsonResponse({
+    return buildOpenApiMockResponse("GET /api/v1/inbox/notifications", {
       workspace_id: wsId ?? "0195f000-0000-7000-8000-000000000301",
       viewer_user_id: "0195f000-0000-7000-8000-000000000001",
       amber_badge_count: items.filter((n) => n.status === "OPEN").length,
@@ -47,7 +48,7 @@ export function handleInboxAndBrokerRoute(params: {
     target.claimed_by_display_name = backendState.firstAdmin?.displayName ?? "Admin Test";
     target.presence_state = "CLAIMED_BY_ME";
     target.claimed_at = new Date().toISOString();
-    return jsonResponse({
+    return buildOpenApiMockResponse("POST /api/v1/tasks/{task_id}/claim", {
       notification: target,
       lock_key: `lock:step:${String(target.step_execution_id ?? taskId)}`,
       viewer_presence_state: "CLAIMED_BY_ME",
@@ -76,7 +77,7 @@ export function handleInboxAndBrokerRoute(params: {
     target.claimed_by_user_id = null;
     target.claimed_by_display_name = null;
     target.presence_state = "UNCLAIMED";
-    return jsonResponse({
+    return buildOpenApiMockResponse("POST /api/v1/tasks/{task_id}/release", {
       notification: target,
       lock_key: null,
       viewer_presence_state: "UNCLAIMED",
@@ -99,7 +100,11 @@ export function handleInboxAndBrokerRoute(params: {
   if (path === "/api/v1/permissions/broker/state" && method === "GET") {
     const wsId = parsedUrl.searchParams.get("workspace_id");
     const tickets = backendState.permissionBrokerTickets.filter((t) => !wsId || !t.workspace_id || t.workspace_id === wsId);
-    return jsonResponse({ policies: backendState.permissionBrokerPolicies, tickets, trace_id: "trace-vitest-broker" });
+    return buildOpenApiMockResponse("GET /api/v1/permissions/broker/state", {
+      policies: backendState.permissionBrokerPolicies,
+      tickets,
+      trace_id: "trace-vitest-broker",
+    });
   }
 
   if (path === "/api/v1/permissions/broker/check-access" && method === "POST") {
@@ -129,7 +134,7 @@ export function handleInboxAndBrokerRoute(params: {
       procedure_markdown: "### Procédure d'habilitation Dépôt Git\n1. Ouvrir la demande d'accès IAM pré-remplie.",
     };
     backendState.permissionBrokerTickets = [ticket, ...backendState.permissionBrokerTickets];
-    return jsonResponse({
+    return buildOpenApiMockResponse("POST /api/v1/permissions/broker/check-access", {
       allowed: false,
       status: "WAITING_FOR_PERMISSION",
       execution_identity: ticket.execution_identity,
@@ -165,7 +170,10 @@ export function handleInboxAndBrokerRoute(params: {
     const action = String(body.action ?? "REPLAY");
     target.step_state = action === "PAUSE" ? "PAUSED" : "REPLAYED";
     target.status = action === "PAUSE" ? "PAUSED" : "REPLAYED";
-    return jsonResponse({ ticket: target, trace_id: "trace-vitest-broker-action" });
+    return buildOpenApiMockResponse("POST /api/v1/permissions/broker/tickets/{ticket_id}/action", {
+      ticket: target,
+      trace_id: "trace-vitest-broker-action",
+    });
   }
 
   return null;

@@ -2,20 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 import pytest
-from tests.unit.packs._fake_sql_engine import FakeSqlEngine, FakeSqlResult
 from uuid_utils import uuid7
 
 from orcia_core.packs._internal._pack_export_infra_loader import (
     extract_host as _extract_host,
 )
-from orcia_core.packs._internal._pack_export_loaders import load_entities_for_export_conn
 from orcia_core.packs._internal._pack_export_scrubber import (
     TenantInfraIdentifiers,
     _is_forbidden_host_or_ip,
-    load_tenant_infra_identifiers_conn,
     scan_rendered_files_for_leaks,
 )
 from orcia_core.packs._internal._pack_export_scrubber_mappers import (
@@ -23,9 +18,10 @@ from orcia_core.packs._internal._pack_export_scrubber_mappers import (
     normalize_model_tier,
     normalize_skill_ref,
 )
-from orcia_core.packs.composer_models import PackDraftMemberView
 from orcia_core.packs.errors import PackPiiOrInfraLeakError
-from orcia_core.packs.models import PackDraftEntityType, PackSlotSpec
+from orcia_core.packs.models import PackSlotSpec
+
+pytestmark = pytest.mark.story("31.5")
 
 
 def test_host_ip_and_tier_helpers(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -83,70 +79,6 @@ def test_host_ip_and_tier_helpers(monkeypatch: pytest.MonkeyPatch) -> None:
         )
         == "orcia://packs/my-pack/skills/lint"
     )
-
-
-@pytest.mark.asyncio
-async def test_load_tenant_infra_identifiers_and_entity_loaders(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Verify tenant DB identifier loading and draft vs bundle entity queries."""
-    monkeypatch.setenv("ORCIA_LLM_ALLOWED_PRIVATE_HOSTS", "internal-llm.local")
-    ws_id, u_id, ec_id, ds_id, llm_id = [str(uuid7()) for _ in range(5)]
-
-    def handler(sql: str, _params: dict[str, Any]) -> FakeSqlResult:
-        if "SELECT to_regclass" in sql:
-            return FakeSqlResult(scalar_val="ok", has_scalar=True)
-        if "FROM workspaces" in sql:
-            return FakeSqlResult(rows=[(ws_id,)])
-        if "FROM org_units" in sql:
-            return FakeSqlResult(rows=[(str(uuid7()),)])
-        if "FROM users" in sql:
-            return FakeSqlResult(rows=[(u_id, "Creator@Corp.Test")])
-        if "FROM enterprise_connectors" in sql:
-            return FakeSqlResult(rows=[(ec_id, "GITLAB", "https://git.corp.local/api")])
-        if "FROM workspace_datasources" in sql:
-            return FakeSqlResult(
-                rows=[(ds_id, "Main Repo", "git", "SOURCE_CODE", "https://src.corp.local/r.git")]
-            )
-        if "FROM llm_model_endpoints" in sql:
-            return FakeSqlResult(rows=[(llm_id, "http://127.0.0.1:11434/v1")])
-        if "FROM catalog_items" in sql:
-            return FakeSqlResult(mappings=[{"id": str(uuid7()), "resource_id": "a1"}])
-        return FakeSqlResult(mappings=[])
-
-    eng = FakeSqlEngine(handler)
-    async with eng.connect() as conn:
-        infra = await load_tenant_infra_identifiers_conn(conn)  # type: ignore[arg-type]
-        assert ws_id in infra.tenant_uuids
-        assert "creator@corp.test" in infra.tenant_emails
-        assert "git.corp.local" in infra.tenant_hosts
-        assert "127.0.0.1" in infra.tenant_hosts
-        assert "internal-llm.local" in infra.tenant_hosts
-        assert ds_id in infra.datasource_slots_by_ref
-
-        draft_res = await load_entities_for_export_conn(
-            conn,  # type: ignore[arg-type]
-            bundle_id=str(uuid7()),
-            is_custom_draft=True,
-            members=[
-                PackDraftMemberView(
-                    id="m1",
-                    draft_bundle_id="b1",
-                    entity_type=PackDraftEntityType.AGENT,
-                    entity_id="a1",
-                    entity_slug="a1",
-                    catalog_item_id=str(uuid7()),
-                )
-            ],
-        )
-        assert len(draft_res.catalog_items) == 1
-        pub_res = await load_entities_for_export_conn(
-            conn,  # type: ignore[arg-type]
-            bundle_id=str(uuid7()),
-            is_custom_draft=False,
-            members=[],
-        )
-        assert len(pub_res.catalog_items) == 1
 
 
 def test_leak_scanner_rejects_pii_secrets_uuids_and_private_hosts() -> None:

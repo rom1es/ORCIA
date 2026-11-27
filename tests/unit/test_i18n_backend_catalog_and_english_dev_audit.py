@@ -14,17 +14,20 @@ import subprocess
 import tokenize
 from pathlib import Path
 
+from tests.unit.fakes.test_app_helpers import get_repo_source_index
+
 import orcia_api.errors.registry as error_registry
 from orcia_kernel.errors import ERROR_CATALOG, get_localized_error_text, resolve_locale
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BASELINE_PATH = Path(__file__).resolve().parent / "i18n_backend_audit_baseline.json"
-BACKEND_SRC_DIRS = (
-    REPO_ROOT / "packages" / "orcia-core" / "src",
-    REPO_ROOT / "packages" / "orcia-connectors" / "src",
-    REPO_ROOT / "apps" / "api" / "src",
-    REPO_ROOT / "apps" / "worker" / "src",
+BACKEND_SRC_REL_DIRS = (
+    "packages/orcia-core/src",
+    "packages/orcia-connectors/src",
+    "apps/api/src",
+    "apps/worker/src",
 )
+BACKEND_SRC_DIRS = tuple(REPO_ROOT / rel for rel in BACKEND_SRC_REL_DIRS)
 EXCLUDED_BACKEND_SUFFIXES = (
     "_error_catalog.py",
     "_error_catalog_2.py",
@@ -188,25 +191,25 @@ def test_rfc9457_error_catalog_bilingual_completeness() -> None:
     for cls in error_registry.DOMAIN_ERROR_CLASSES:
         assert cls.error_code in ERROR_CATALOG, f"{cls.__name__} missing in ERROR_CATALOG"
 
+    idx = get_repo_source_index(REPO_ROOT)
     ast_missing: list[str] = []
-    for base in BACKEND_SRC_DIRS:
-        for py_path in sorted(base.rglob("*.py")):
-            tree = ast.parse(py_path.read_text(encoding="utf-8"))
-            for node in ast.walk(tree):
-                if isinstance(node, ast.ClassDef) and any(
-                    "OrciaDomainError" in ast.unparse(b) for b in node.bases
-                ):
-                    for stmt in node.body:
-                        if isinstance(stmt, ast.Assign):
-                            for tgt in stmt.targets:
-                                if (
-                                    isinstance(tgt, ast.Name)
-                                    and tgt.id == "error_code"
-                                    and isinstance(stmt.value, ast.Constant)
-                                    and isinstance(stmt.value.value, str)
-                                    and stmt.value.value not in ERROR_CATALOG
-                                ):
-                                    ast_missing.append(f"{node.name}:{stmt.value.value}")
+    for py_path in idx.files_under_many(BACKEND_SRC_REL_DIRS, suffix=".py"):
+        tree = idx.parse_ast(py_path)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef) and any(
+                "OrciaDomainError" in ast.unparse(b) for b in node.bases
+            ):
+                for stmt in node.body:
+                    if isinstance(stmt, ast.Assign):
+                        for tgt in stmt.targets:
+                            if (
+                                isinstance(tgt, ast.Name)
+                                and tgt.id == "error_code"
+                                and isinstance(stmt.value, ast.Constant)
+                                and isinstance(stmt.value.value, str)
+                                and stmt.value.value not in ERROR_CATALOG
+                            ):
+                                ast_missing.append(f"{node.name}:{stmt.value.value}")
     assert ast_missing == [], f"New OrciaDomainError classes missing ERROR_CATALOG: {ast_missing}"
 
     assert resolve_locale(None) == "fr"
@@ -225,21 +228,21 @@ def test_backend_prompt_locale_neutrality_and_french_literal_ratchet() -> None:
     assert baseline["totalNonCatalogFrenchLiterals"] == 0
     assert baseline["nonCatalogFrenchFiles"] == {}
 
+    idx = get_repo_source_index(REPO_ROOT)
     regressions: list[str] = []
-    for base in BACKEND_SRC_DIRS:
-        for py_path in sorted(base.rglob("*.py")):
-            rel = py_path.relative_to(REPO_ROOT).as_posix()
-            if (
-                rel.endswith(EXCLUDED_BACKEND_SUFFIXES)
-                or rel.endswith("/errors.py")
-                or "/testing/" in rel
-            ):
-                continue
-            p_cnt, f_cnt = _scan_python_literals(py_path.read_text(encoding="utf-8"), rel)
-            if p_cnt > 0:
-                regressions.append(f"{rel}: prompt directives = {p_cnt}")
-            if f_cnt > 0:
-                regressions.append(f"{rel}: french literals = {f_cnt}")
+    for py_path in idx.files_under_many(BACKEND_SRC_REL_DIRS, suffix=".py"):
+        rel = py_path.relative_to(idx.repo_root).as_posix()
+        if (
+            rel.endswith(EXCLUDED_BACKEND_SUFFIXES)
+            or rel.endswith("/errors.py")
+            or "/testing/" in rel
+        ):
+            continue
+        p_cnt, f_cnt = _scan_python_literals(idx.read_text(py_path), rel)
+        if p_cnt > 0:
+            regressions.append(f"{rel}: prompt directives = {p_cnt}")
+        if f_cnt > 0:
+            regressions.append(f"{rel}: french literals = {f_cnt}")
     assert regressions == [], "Backend i18n regressions:\n" + "\n".join(regressions)
 
     p_syn, f_syn = _scan_python_literals(

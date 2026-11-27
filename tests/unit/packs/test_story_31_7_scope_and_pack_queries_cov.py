@@ -10,18 +10,18 @@ from unittest.mock import AsyncMock
 
 import pytest
 import yaml
-from tests.unit.packs._fake_sql_engine import FakeSqlEngine, FakeSqlResult
 
 from orcia_api.routers import _packs_scope_guards as scope_guards
 from orcia_api.routers import packs as packs_router
 from orcia_core.orchestration._internal._sql_agents_pack_queries import (
     is_pack_bundle_visible_in_scope,
-    load_workspace_scope_context_pg,
     resolve_pack_tier_for_row,
     should_include_catalog_row,
 )
 from orcia_core.packs import PackBundleNotFoundError, PackScopeEscalationForbiddenError
 from orcia_core.permissions.models import UserIdentity
+
+pytestmark = pytest.mark.story("31.7")
 
 
 def _make_system_zip(slug: str = "sys-escalate") -> bytes:
@@ -152,50 +152,6 @@ async def test_scope_guards_import_system_delete_and_authorize_ws(
         frozenset({"ws-uuid-1"}),
         frozenset(),
     )
-
-
-@pytest.mark.asyncio
-async def test_load_workspace_scope_context_pg_all_branches() -> None:
-    def _no_ws(sql: str, _p: dict[str, Any]) -> FakeSqlResult:
-        return FakeSqlResult(
-            scalar_val=None if "public.workspaces" in sql else "ok", has_scalar=True
-        )
-
-    async with FakeSqlEngine(_no_ws).connect() as conn:
-        assert await load_workspace_scope_context_pg(conn, None) == (None, frozenset())
-        assert await load_workspace_scope_context_pg(conn, "scope-ws-demo") == ("demo", frozenset())
-
-    def _no_row(sql: str, _p: dict[str, Any]) -> FakeSqlResult:
-        if "to_regclass('public.workspaces')" in sql:
-            return FakeSqlResult(scalar_val="workspaces", has_scalar=True)
-        return FakeSqlResult(rows=[])
-
-    async with FakeSqlEngine(_no_row).connect() as conn:
-        assert await load_workspace_scope_context_pg(conn, "missing") == ("missing", frozenset())
-
-    def _no_org_tbl(sql: str, _p: dict[str, Any]) -> FakeSqlResult:
-        if "to_regclass('public.workspaces')" in sql:
-            return FakeSqlResult(scalar_val="workspaces", has_scalar=True)
-        if "FROM workspaces" in sql:
-            return FakeSqlResult(rows=[("ws-uuid", "team-1")])
-        return FakeSqlResult(scalar_val=None, has_scalar=True)
-
-    async with FakeSqlEngine(_no_org_tbl).connect() as conn:
-        assert await load_workspace_scope_context_pg(conn, "ws") == (
-            "ws-uuid",
-            frozenset({"team-1"}),
-        )
-
-    def _full_cte(sql: str, _p: dict[str, Any]) -> FakeSqlResult:
-        if "to_regclass" in sql:
-            return FakeSqlResult(scalar_val="tbl", has_scalar=True)
-        if "FROM workspaces" in sql:
-            return FakeSqlResult(rows=[("ws-uuid", "team-1")])
-        return FakeSqlResult(rows=[("team-1",), ("bu-1",)])
-
-    async with FakeSqlEngine(_full_cte).connect() as conn:
-        ctx = await load_workspace_scope_context_pg(conn, "ws")
-        assert ctx == ("ws-uuid", frozenset({"team-1", "bu-1"}))
 
 
 def test_pack_tier_and_bundle_visibility_edges() -> None:

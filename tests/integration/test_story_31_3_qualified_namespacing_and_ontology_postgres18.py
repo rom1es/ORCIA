@@ -2,13 +2,6 @@
 
 from __future__ import annotations
 
-import os
-import shutil
-import subprocess
-import sys
-import tempfile
-import time
-from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -17,59 +10,11 @@ import pytest
 import sqlalchemy as sa
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine
-from testcontainers.core.container import DockerContainer
+from tests.integration._shared_topology_fixture import SharedIntegrationTopology
 from tests.integration._story_31_3_pack_fixture import build_overlapping_pack_zip
 from uuid_utils import uuid7
 
-os.environ["TESTCONTAINERS_RYUK_DISABLED"] = "true"
 REPO_ROOT = Path(__file__).resolve().parents[2]
-
-
-def _run_alembic_head(pg_url: str) -> None:
-    alembic_bin = str(Path(sys.executable).with_name("alembic"))
-    env = {
-        "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
-        "PYTHONPATH": os.environ.get("PYTHONPATH", ""),
-        "DATABASE_URL": pg_url,
-        "ORCIA_ENV_FILE": str(REPO_ROOT / ".orcia-run" / "does-not-exist.env"),
-    }
-    subprocess.run(
-        [alembic_bin, "-c", "infra/migrations/alembic.ini", "upgrade", "head"],
-        cwd=REPO_ROOT,
-        env=env,
-        check=True,
-    )
-
-
-@pytest.fixture(scope="module")
-def pg18_url() -> Iterator[str]:
-    """Start ephemeral PG18 (`/tmp` Unix socket) and run Alembic migrations."""
-    sock_dir = Path(tempfile.mkdtemp(prefix="orcia_31_3_pg18_"))
-    sock_dir.chmod(0o777)
-    pg_box = (
-        DockerContainer("pgvector/pgvector:pg18")
-        .with_env("POSTGRES_USER", "orcia")
-        .with_env("POSTGRES_PASSWORD", "orcia_dev_secret")
-        .with_env("POSTGRES_DB", "orcia")
-        .with_volume_mapping(str(sock_dir), "/var/run/postgresql", "rw")
-    )
-    try:
-        with pg_box as pg:
-            for _ in range(150):
-                out_b, err_b = pg.get_logs()
-                logs = (out_b + err_b).decode("utf-8", errors="ignore")
-                if (
-                    logs.count("database system is ready to accept connections") >= 2
-                    and (sock_dir / ".s.PGSQL.5432").exists()
-                ):
-                    break
-                time.sleep(0.2)
-            pg_auth = "orcia:orcia_dev_secret"  # pragma: allowlist secret
-            pg_url = f"postgresql+asyncpg://{pg_auth}@/orcia?host={sock_dir}"
-            _run_alembic_head(pg_url)
-            yield pg_url
-    finally:
-        shutil.rmtree(sock_dir, ignore_errors=True)
 
 
 async def _seed_pg_topology(eng: Any, org_id: str, ws_id: str, admin_id: str) -> None:
@@ -103,11 +48,10 @@ async def _seed_pg_topology(eng: Any, org_id: str, ws_id: str, admin_id: str) ->
 
 @pytest.mark.asyncio
 async def test_story_31_3_qualified_namespacing_and_flat_ontology_pg18(
-    pg18_url: str, monkeypatch: pytest.MonkeyPatch
+    isolated_worker_pg18_env: SharedIntegrationTopology, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Verify overlapping pack coexistence, DEFERRABLE priority swap, and workspace override."""
-    monkeypatch.setenv("DATABASE_URL", pg18_url)
-    monkeypatch.setenv("ORCIA_ENABLE_PG_SESSION_MAKER", "1")
+    pg18_url = isolated_worker_pg18_env.async_database_url
     monkeypatch.setenv("ORCIA_ENV_FILE", str(REPO_ROOT / ".orcia-run" / "does-not-exist.env"))
 
     org_id, ws_id, admin_id = str(uuid7()), str(uuid7()), str(uuid7())
@@ -171,10 +115,21 @@ async def test_story_31_3_qualified_namespacing_and_flat_ontology_pg18(
                     },
                 )
 
-        # 1. Both overlapping pack entities coexist with qualified_ref & is_colliding
+        # 1. Both overlapping pack entities coexist with qualified_ref & unactivated pack is hidden
+        unact_zip = build_overlapping_pack_zip(
+            slug="unact-pack", definition="Hidden", instr_text="Hidden"
+        )
+        assert (
+            await client.post(
+                "/api/v1/packs/import",
+                files={"file": ("unact.zip", unact_zip, "application/zip")},
+                data={"scope_type": "WORKSPACE", "scope_id": ws_id},
+            )
+        ).status_code == 200
         list_res = await client.get("/api/v1/agents-and-skills", params={"workspace_id": ws_id})
         assert list_res.status_code == 200
         ag_by_id = {a["agent_id"]: a for a in list_res.json()["agents"]}
+        assert "unact-pack:reviewer" not in ag_by_id
         assert ag_by_id["sdlc:reviewer"]["qualified_ref"] == "@sdlc/reviewer"
         assert ag_by_id["legal-audit:reviewer"]["qualified_ref"] == "@legal-audit/reviewer"
         assert ag_by_id["sdlc:reviewer"]["is_colliding"] is True
@@ -258,5 +213,5 @@ async def test_story_31_3_qualified_namespacing_and_flat_ontology_pg18(
                     )
                 )
             ).scalar_one()
-            assert cnt == 2 and UUID(ws_id)
+            assert cnt == 3 and UUID(ws_id)
     await eng.dispose()

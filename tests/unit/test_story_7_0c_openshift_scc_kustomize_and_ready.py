@@ -35,6 +35,11 @@ def test_ready_probes_respond_under_100ms_without_sql_and_handle_uninitialized(
     client = TestClient(app)
     trace_id = "0195f00070c07000800000000000070c"
 
+    # Warm TestClient's lazy AnyIO portal and FastAPI route-state cache without
+    # entering `with TestClient(app)` (which would trigger PG/DBOS lifespan).
+    warmup_res = client.get("/ready", headers={"X-Trace-Id": trace_id})
+    assert warmup_res.status_code == 200
+
     for path in ("/ready", "/api/v1/ready"):
         start_ns = time.monotonic_ns()
         res = client.get(path, headers={"X-Trace-Id": trace_id})
@@ -165,8 +170,11 @@ async def test_sandbox_daemon_http_auth_tmp_isolation_and_roles_cli(
                 assert "docker" not in call_src
 
 
-def test_roles_cli_serve_once_exits_cleanly() -> None:
+def test_roles_cli_serve_once_exits_cleanly(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify CLI `--serve --once` exits cleanly for operational worker roles."""
+    import sys
+
+    monkeypatch.delitem(sys.modules, "orcia_worker.docling_indexer", raising=False)
     assert (
         roles_cli_main(
             ["--role", "sandbox-runner", "--serve", "--once", "--host", "127.0.0.1", "--port", "0"]

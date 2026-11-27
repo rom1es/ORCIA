@@ -3,101 +3,48 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING, Any
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from orcia_api.dependencies import app_lifespan, initialize_app_services
-from orcia_api.errors.registry import OrciaDomainError, resolve_domain_error_mapping
-from orcia_api.middleware.trace_and_error import (
-    TraceContextMiddleware,
-    build_problem_response,
-    register_exception_handlers,
-)
-from orcia_api.openapi_security import (
-    install_openapi_bearer_security,
-    is_public_openapi_operation,
-)
-from orcia_api.routers._auth_pg_helpers import (
-    rehydrate_bearer_subject_from_pg_if_missing,
-)
-from orcia_api.routers._catalog_delete_routes import router as catalog_delete_router
-from orcia_api.routers.agents_and_skills import router as agents_and_skills_router
-from orcia_api.routers.ai_models_hub import router as ai_models_hub_router
-from orcia_api.routers.assistant_turns import router as assistant_turns_router
-from orcia_api.routers.audit_ledger import router as audit_ledger_router
-from orcia_api.routers.auth import PROBLEM_RESPONSES
-from orcia_api.routers.auth import router as auth_router
-from orcia_api.routers.auth_settings import router as auth_settings_router
-from orcia_api.routers.autonomous_supervision import router as autonomous_supervision_router
-from orcia_api.routers.autonomy_contracts import router as autonomy_contracts_router
-from orcia_api.routers.blackboard_and_engine import router as blackboard_and_engine_router
-from orcia_api.routers.bootstrap import router as bootstrap_router
-from orcia_api.routers.catalog import router as catalog_router
-from orcia_api.routers.challenge_and_replay import router as challenge_and_replay_router
-from orcia_api.routers.codegraph_mcp import router as codegraph_mcp_router
-from orcia_api.routers.control_center import router as control_center_router
-from orcia_api.routers.datasource_webhooks import (
-    router as datasource_webhooks_router,
-)
-from orcia_api.routers.dna_and_glossary import (
-    router as dna_and_glossary_router,
-)
-from orcia_api.routers.e2e_test_hooks import router as e2e_test_hooks_router
-from orcia_api.routers.enterprise_connectors import (
-    router as enterprise_connectors_router,
-)
-from orcia_api.routers.executions_trace import router as executions_trace_router
-from orcia_api.routers.finops import router as finops_router
-from orcia_api.routers.gates import router as gates_router
-from orcia_api.routers.health import probe_router as health_probe_router
-from orcia_api.routers.health import router as health_router
-from orcia_api.routers.human_gates import router as human_gates_router
-from orcia_api.routers.iam_accounts import router as iam_accounts_router
-from orcia_api.routers.inbox_and_leases import router as inbox_and_leases_router
-from orcia_api.routers.jira_and_mcp import router as jira_and_mcp_router
-from orcia_api.routers.mcp_and_test_bench import (
-    router as mcp_and_test_bench_router,
-)
-from orcia_api.routers.ontology_and_rag import router as ontology_and_rag_router
-from orcia_api.routers.ontology_promotions import router as ontology_promotions_router
-from orcia_api.routers.orchestration import router as orchestration_router
-from orcia_api.routers.org_and_workspaces import router as org_and_workspaces_router
-from orcia_api.routers.pack_builder import (
-    router as pack_builder_router,
-)
-from orcia_api.routers.pack_composer import router as pack_composer_router
-from orcia_api.routers.packs import router as packs_router
-from orcia_api.routers.permission_broker import router as permission_broker_router
-from orcia_api.routers.portal_and_help import router as portal_and_help_router
-from orcia_api.routers.settings_and_studio import router as settings_and_studio_router
-from orcia_api.routers.shell import router as shell_router
-from orcia_api.routers.sources_surgical import router as sources_surgical_router
-from orcia_api.routers.studio_and_wizards import router as studio_and_wizards_router
-from orcia_api.routers.user_account_settings import router as user_account_settings_router
-from orcia_api.routers.user_profile import router as user_profile_router
-from orcia_api.routers.workflow_triggers import router as workflow_triggers_router
-from orcia_api.routers.workflows import router as workflows_v2_router
-from orcia_api.routers.workspace_datasources import (
-    router as workspace_datasources_router,
-)
-from orcia_api.routers.workspace_governance import (
-    router as workspace_governance_router,
-)
-from orcia_api.routers.workspace_packs import (
-    router as workspace_packs_router,
-)
-from orcia_api.routers.workspace_packs import (
-    run_lock_router as run_lock_manifest_router,
-)
-from orcia_core import __version__
-from orcia_core.config import load_orcia_env
-from orcia_core.observability.logging import configure_logging
-from orcia_core.permissions.errors import ResourceNotFoundError
+if TYPE_CHECKING:
+    app: FastAPI
+
+_LAZY_APP: FastAPI | None = None
+rehydrate_bearer_subject_from_pg_if_missing: Callable[[Request], Awaitable[Any]] | None = None
+
+
+def _resolve_rehydrate_bearer_fn() -> Callable[[Request], Awaitable[Any]]:
+    if rehydrate_bearer_subject_from_pg_if_missing is not None:
+        return rehydrate_bearer_subject_from_pg_if_missing
+    from orcia_api.routers._auth_pg_helpers import (
+        rehydrate_bearer_subject_from_pg_if_missing as _default_rehydrate,
+    )
+
+    return _default_rehydrate
 
 
 def create_app() -> FastAPI:
     """Create and configure the ORCIA FastAPI application (OpenAPI 3.1.0, Composition Root)."""
+    from orcia_api._router_registry import register_all_routers
+    from orcia_api.dependencies.core_and_lifespan import app_lifespan, initialize_app_services
+    from orcia_api.errors.registry import OrciaDomainError, resolve_domain_error_mapping
+    from orcia_api.middleware.trace_and_error import (
+        TraceContextMiddleware,
+        build_problem_response,
+        register_exception_handlers,
+    )
+    from orcia_api.openapi_security import (
+        install_openapi_bearer_security,
+        is_public_openapi_operation,
+    )
+    from orcia_api.routers.auth import PROBLEM_RESPONSES
+    from orcia_core import __version__
+    from orcia_core.config import load_orcia_env
+    from orcia_core.observability.logging import configure_logging
+    from orcia_core.permissions.errors import ResourceNotFoundError
+
     load_orcia_env()
     configure_logging(service="api")
     application = FastAPI(
@@ -134,7 +81,10 @@ def create_app() -> FastAPI:
         request: Request,
         call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
-        hydrated_svc = await rehydrate_bearer_subject_from_pg_if_missing(request)
+        # Readiness/liveness probes must stay dependency-free and sub-100ms.
+        if request.url.path in ("/ready", "/api/v1/ready", "/api/v1/health"):
+            return await call_next(request)
+        hydrated_svc = await _resolve_rehydrate_bearer_fn()(request)
         if (
             request.method.upper() != "OPTIONS"
             and request.url.path.startswith("/api/")
@@ -157,9 +107,7 @@ def create_app() -> FastAPI:
                         except ResourceNotFoundError:
                             # Concurrent cache eviction may swap `app.state.auth_service`
                             # between initial rehydration and bearer verification.
-                            refreshed_svc = await rehydrate_bearer_subject_from_pg_if_missing(
-                                request
-                            )
+                            refreshed_svc = await _resolve_rehydrate_bearer_fn()(request)
                             active_svc = (
                                 getattr(request.app.state, "auth_service", None)
                                 or refreshed_svc
@@ -183,58 +131,19 @@ def create_app() -> FastAPI:
 
     application.add_middleware(TraceContextMiddleware)
     register_exception_handlers(application)
-    application.include_router(health_router)
-    application.include_router(health_probe_router)
-    application.include_router(shell_router)
-    application.include_router(auth_router)
-    application.include_router(org_and_workspaces_router)
-    application.include_router(catalog_router)
-    application.include_router(catalog_delete_router)
-    application.include_router(permission_broker_router)
-    application.include_router(gates_router)
-    application.include_router(human_gates_router)
-    application.include_router(inbox_and_leases_router)
-    application.include_router(control_center_router)
-    application.include_router(iam_accounts_router)
-    application.include_router(auth_settings_router)
-    application.include_router(enterprise_connectors_router)
-    application.include_router(ai_models_hub_router)
-    application.include_router(settings_and_studio_router)
-    application.include_router(studio_and_wizards_router)
-    application.include_router(jira_and_mcp_router)
-    application.include_router(bootstrap_router)
-    application.include_router(ontology_and_rag_router)
-    application.include_router(ontology_promotions_router)
-    application.include_router(orchestration_router)
-    application.include_router(blackboard_and_engine_router)
-    application.include_router(challenge_and_replay_router)
-    application.include_router(portal_and_help_router)
-    application.include_router(user_account_settings_router)
-    application.include_router(user_profile_router)
-    application.include_router(assistant_turns_router)
-    application.include_router(workspace_governance_router)
-    application.include_router(workspace_datasources_router)
-    application.include_router(codegraph_mcp_router)
-    application.include_router(datasource_webhooks_router)
-    application.include_router(dna_and_glossary_router)
-    application.include_router(mcp_and_test_bench_router)
-    application.include_router(pack_builder_router)
-    application.include_router(agents_and_skills_router)
-    application.include_router(pack_composer_router)
-    application.include_router(packs_router)
-    application.include_router(workspace_packs_router)
-    application.include_router(workflows_v2_router)
-    application.include_router(run_lock_manifest_router)
-    application.include_router(audit_ledger_router)
-    application.include_router(finops_router)
-    application.include_router(autonomy_contracts_router)
-    application.include_router(autonomous_supervision_router)
-    application.include_router(workflow_triggers_router)
-    application.include_router(sources_surgical_router)
-    application.include_router(executions_trace_router)
-    application.include_router(e2e_test_hooks_router)
+    register_all_routers(application)
     install_openapi_bearer_security(application)
+    # Pre-build ASGI middleware stack so the first /ready probe avoids cold stack assembly.
+    application.middleware_stack = application.build_middleware_stack()
     return application
 
 
-app = create_app()
+def __getattr__(name: str) -> Any:
+    """Provide PEP 562 lazy `orcia_api.main.app` without paying `create_app()` on import."""
+    global _LAZY_APP
+    if name == "app":
+        if _LAZY_APP is None:
+            _LAZY_APP = create_app()
+        globals()["app"] = _LAZY_APP
+        return _LAZY_APP
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

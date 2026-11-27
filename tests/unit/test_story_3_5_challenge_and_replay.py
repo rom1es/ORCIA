@@ -16,90 +16,15 @@ Covers:
 from __future__ import annotations
 
 import copy
-import os
-import shutil
-import tempfile
-import time
-from pathlib import Path
 
 import pytest
-import sqlalchemy as sa
-from alembic import command
-from alembic.config import Config
 from fastapi.testclient import TestClient
 from hypothesis import given, settings
 from hypothesis import strategies as st
-from testcontainers.core.container import DockerContainer
-from testcontainers.core.waiting_utils import wait_for_logs
 
 from orcia_api.main import create_app
 from orcia_core.blackboard.models import StepExecutionEntity
 from orcia_core.blackboard.store import AppendOnlyBlackboardStore
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
-
-
-def test_story_3_5_migration_0016_real_postgres_container(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Verify migration 0016 creates `upstream_challenges` on PostgreSQL 18."""
-    monkeypatch.setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
-    suffix = f"tc_3_5_{os.getpid()}_{int(time.time() * 1000) % 100000}"
-    sock_dir = (
-        Path(tempfile.gettempdir())
-        if len(str(REPO_ROOT / ".pytest_cache" / suffix / ".s.PGSQL.5432")) > 100
-        else REPO_ROOT / ".pytest_cache"
-    ) / suffix
-    sock_dir.mkdir(parents=True, exist_ok=True)
-    sock_dir.chmod(0o777)
-
-    pg_container = (
-        DockerContainer("pgvector/pgvector:pg18")
-        .with_env("POSTGRES_USER", "orcia")
-        .with_env("POSTGRES_PASSWORD", "orcia_dev_secret")
-        .with_env("POSTGRES_DB", "orcia")
-        .with_volume_mapping(str(sock_dir), "/var/run/postgresql", "rw")
-    )
-    try:
-        with pg_container as pg:
-            wait_for_logs(pg, "database system is ready to accept connections", timeout=30)
-            sock_file = sock_dir / ".s.PGSQL.5432"
-            for _ in range(40):
-                if sock_file.exists():
-                    break
-                time.sleep(0.2)
-
-            creds = "orcia:orcia_dev_secret"  # pragma: allowlist secret
-            sync_url = f"postgresql+psycopg://{creds}@/orcia?host={sock_dir}"
-            monkeypatch.setenv("DATABASE_URL", sync_url)
-            alembic_cfg = Config(str(REPO_ROOT / "infra" / "migrations" / "alembic.ini"))
-            alembic_cfg.set_main_option("script_location", str(REPO_ROOT / "infra" / "migrations"))
-            alembic_cfg.set_main_option("sqlalchemy.url", sync_url)
-
-            engine = sa.create_engine(sync_url)
-            for _ in range(30):
-                try:
-                    with engine.connect() as c:
-                        c.execute(sa.text("SELECT 1"))
-                    break
-                except Exception:
-                    time.sleep(0.2)
-
-            command.upgrade(alembic_cfg, "0016_story_3_5")
-
-            with engine.begin() as conn:
-                tables = set(
-                    conn.execute(
-                        sa.text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
-                    ).scalars()
-                )
-                assert "upstream_challenges" in tables
-
-            command.downgrade(alembic_cfg, "0015_story_3_4")
-            command.upgrade(alembic_cfg, "0016_story_3_5")
-            engine.dispose()
-    finally:
-        shutil.rmtree(sock_dir, ignore_errors=True)
 
 
 def test_story_3_5_upstream_challenge_what_if_and_outbox_notification(

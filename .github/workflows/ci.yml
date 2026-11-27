@@ -41,16 +41,41 @@ jobs:
           .venv/bin/ruff format --check .
 
       - name: Mypy strict
-        run: .venv/bin/mypy --strict packages/orcia-core apps/api apps/worker
+        run: .venv/bin/mypy --strict packages/orcia-kernel packages/orcia-core packages/orcia-connectors apps/api apps/worker
 
       - name: Import-Linter (AD-19)
         run: .venv/bin/lint-imports
 
       - name: Architecture Spine lint
-        run: .venv/bin/python .agent/skills/bmad-architecture/scripts/lint_spine.py --workspace docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24
+        run: |
+          .venv/bin/python -c '
+          import json, subprocess, sys
+          proc = subprocess.run(
+              [".venv/bin/python", ".agent/skills/bmad-architecture/scripts/lint_spine.py", "--workspace", "docs/planning-artifacts/architecture/architecture-ORCIA-2026-10-24"],
+              capture_output=True, text=True, check=False,
+          )
+          print(proc.stdout)
+          if proc.stderr:
+              print(proc.stderr, file=sys.stderr)
+          data = json.loads(proc.stdout)
+          if proc.returncode != 0 or data.get("ok") is not True or int(data.get("total_findings", 0) or 0) > 0:
+              sys.exit(1)
+          '
 
       - name: OpenAPI 3.1 SDK 0-diff gate
         run: .venv/bin/python scripts/export_openapi.py --check
+
+      - name: Deterministic Vitest OpenAPI Mocks 0-diff gate
+        run: .venv/bin/python scripts/generate_vitest_openapi_mocks.py --check
+
+      - name: Anti-bloat & Security Test Lint (strict)
+        run: .venv/bin/python scripts/lint_tests.py
+
+      - name: Agent Rules Lint
+        run: .venv/bin/python scripts/check_agent_rules.py
+
+      - name: Test Fixture Index check
+        run: .venv/bin/python scripts/generate_test_fixture_index.py --check
 
       - name: Documentation & Tech Lead Reports check
         run: .venv/bin/python scripts/check_implementation_docs.py
@@ -82,7 +107,8 @@ jobs:
           ORCIA_USE_CASSETTE_LLM: "true"
         run: |
           .venv/bin/pytest tests/unit tests/contract tests/conformance tests/evals tests/security \
-            --cov=packages/orcia-core --cov-report=xml:coverage-unit.xml
+            --cov=packages/orcia-core --cov=packages/orcia-connectors --cov=apps/api --cov=apps/worker \
+            --cov-report=xml:coverage-unit.xml
 
       - name: Upload coverage unit
         uses: actions/upload-artifact@v4
@@ -123,13 +149,17 @@ jobs:
           COVERAGE_FILE: .coverage.integration
           ORCIA_USE_CASSETTE_LLM: "true"
         run: |
-          .venv/bin/pytest tests/integration --cov=packages/orcia-core
+          .venv/bin/coverage run --parallel-mode --branch --source=packages/orcia-core,packages/orcia-connectors,apps/api,apps/worker \
+            -m pytest tests/integration --no-cov -q
+          .venv/bin/coverage combine .coverage.integration* || true
+          test -f .coverage || cp .coverage.integration .coverage
+          mv .coverage .coverage.integration
 
       - name: Combine Coverage & Gate >= 90% sur packages/orcia-core
         run: |
           .venv/bin/coverage combine .coverage.unit .coverage.integration
           .venv/bin/coverage xml -o coverage-combined.xml
-          .venv/bin/coverage report --fail-under=90
+          .venv/bin/coverage report --include="packages/orcia-core/*" --fail-under=90
 
       - name: Upload combined coverage report
         if: always()

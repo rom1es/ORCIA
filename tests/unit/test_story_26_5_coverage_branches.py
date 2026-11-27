@@ -2,18 +2,14 @@
 
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from datetime import UTC, datetime
 from typing import Any
-from uuid import uuid4
 
 import pytest
 
 from orcia_core.blackboard._internal.sql_blackboard_queries import (
     _parse_json_dict,
     _parse_json_list,
-    list_active_workspace_blackboard_snapshots_pg,
 )
 from orcia_core.ontology.context_ranker import (
     _compute_lexical_score,
@@ -53,59 +49,6 @@ from orcia_core.rag._context_adapters_helpers import (
 )
 from orcia_core.rag.models import HybridRagHit
 from orcia_kernel.context_ports import ContextSliceRecord, VectorSearchHitRecord
-
-
-class _FakeResult:
-    def __init__(
-        self,
-        *,
-        scalar_val: Any = None,
-        first_row: Any = None,
-        one_row: dict[str, Any] | None = None,
-        all_rows: list[dict[str, Any]] | None = None,
-    ) -> None:
-        self._scalar = scalar_val
-        self._first = first_row
-        self._one = one_row
-        self._all = all_rows or []
-
-    def scalar(self) -> Any:
-        return self._scalar
-
-    def first(self) -> Any:
-        return self._first
-
-    def mappings(self) -> _FakeResult:
-        return self
-
-    def one(self) -> Any:
-        res = self._one if self._one is not None else self._first
-        assert res is not None
-        return res
-
-    def all(self) -> list[dict[str, Any]]:
-        return self._all
-
-
-class _FakeAsyncConn:
-    def __init__(self, handler: Any) -> None:
-        self._handler = handler
-
-    async def execute(self, stmt: Any, params: dict[str, Any] | None = None) -> _FakeResult:
-        return self._handler(str(stmt), params or {})
-
-
-class _FakeAsyncEngine:
-    def __init__(self, handler: Any) -> None:
-        self._handler = handler
-
-    @asynccontextmanager
-    async def connect(self) -> Any:
-        yield _FakeAsyncConn(self._handler)
-
-    @asynccontextmanager
-    async def begin(self) -> Any:
-        yield _FakeAsyncConn(self._handler)
 
 
 def test_context_ranker_edge_branches() -> None:
@@ -370,122 +313,20 @@ async def test_sql_blackboard_and_thread_messages_unit_branches() -> None:
     assert _decode_citation_map('{"sources": [1]}') == {"sources": [1]}
     assert _decode_citation_map("[1]") == {}
 
-    ws_id = str(uuid4())
-    active_id = str(uuid4())
-    sup_id = str(uuid4())
-
-    def _bb_handler(sql: str, params: dict[str, Any]) -> _FakeResult:
-        if "SELECT to_regclass('public.workspaces')" in sql:
-            return _FakeResult(scalar_val="workspaces")
-        if "SELECT id::text FROM workspaces" in sql:
-            return _FakeResult(first_row=(ws_id,))
-        if "SELECT to_regclass" in sql:
-            return _FakeResult(scalar_val="ok", first_row=("ok", "ok"))
-        return _FakeResult(
-            all_rows=[
-                {
-                    "id": sup_id,
-                    "snapshot_key": "k0",
-                    "run_id": str(uuid4()),
-                    "step_execution_id": str(uuid4()),
-                    "parent_snapshot_id": None,
-                    "step_key": "step0",
-                    "branch_status": "SUPERSEDED",
-                    "artifact_payload_jsonb": "{}",
-                    "artifact_cas_key": "cas0",
-                    "artifact_sha256": "sha0",
-                    "memlog_summary_jsonb": "[]",
-                    "superseded_snapshot_ids_jsonb": "[]",
-                },
-                {
-                    "id": active_id,
-                    "snapshot_key": "k1",
-                    "run_id": str(uuid4()),
-                    "step_execution_id": str(uuid4()),
-                    "parent_snapshot_id": sup_id,
-                    "step_key": "step1",
-                    "branch_status": "ACTIVE",
-                    "artifact_payload_jsonb": '{"summary": "ready"}',
-                    "artifact_cas_key": "cas1",
-                    "artifact_sha256": "sha1  ",
-                    "memlog_summary_jsonb": '[{"entry_id": "e1", "summary": "ok"}]',
-                    "superseded_snapshot_ids_jsonb": f'["{sup_id}"]',
-                },
-            ]
-        )
-
-    bb_none = await list_active_workspace_blackboard_snapshots_pg(
-        _FakeAsyncEngine(_bb_handler),  # type: ignore[arg-type]
-        workspace_id="",
-    )
-    assert bb_none == ()
-    snaps = await list_active_workspace_blackboard_snapshots_pg(
-        _FakeAsyncEngine(_bb_handler),
-        workspace_id="ws-slug",
-        limit=1,  # type: ignore[arg-type]
-    )
-    assert len(snaps) == 1 and snaps[0].id == active_id
-
-    no_tbl_engine = _FakeAsyncEngine(
-        lambda _sql, _p: _FakeResult(scalar_val=None, first_row=(None, None))
-    )
-    assert (
-        await list_active_workspace_blackboard_snapshots_pg(
-            no_tbl_engine,  # type: ignore[arg-type]
-            workspace_id="missing",
-        )
-        == ()
-    )
-    assert (
-        await list_active_workspace_blackboard_snapshots_pg(
-            no_tbl_engine,  # type: ignore[arg-type]
-            workspace_id=ws_id,
-        )
-        == ()
-    )
-
-    row_payload = {
-        "id": str(uuid4()),
-        "thread_id": str(uuid4()),
-        "workspace_id": ws_id,
-        "turn_id": str(uuid4()),
-        "parent_turn_id": None,
-        "role": "user",
-        "content": "Hello",
-        "citation_map": '{"sources": []}',
-        "token_count": 2,
-        "created_at": datetime.now(UTC),
-    }
-
-    def _msg_handler(sql: str, params: dict[str, Any]) -> _FakeResult:
-        if "SELECT to_regclass" in sql:
-            return _FakeResult(scalar_val="assistant_thread_messages")
-        if "SELECT id FROM workspaces" in sql:
-            return _FakeResult(first_row=(ws_id,))
-        if "INSERT INTO assistant_thread_messages" in sql:
-            return _FakeResult(one_row=row_payload)
-        return _FakeResult(all_rows=[row_payload])
-
     repo = SqlAssistantThreadMessagesRepository()
     assert await repo.pg_tables_ready() is False
     fallback_rec = await repo.append_message(
-        thread_id=str(uuid4()), workspace_id=ws_id, turn_id=str(uuid4()), role="user", content="Hi"
+        thread_id="0195f000-0000-7000-8000-000000000701",
+        workspace_id="0195f000-0000-7000-8000-000000000702",
+        turn_id="0195f000-0000-7000-8000-000000000703",
+        role="user",
+        content="Hi",
     )
     assert fallback_rec.content == "Hi"
-    assert await repo.list_messages_for_thread(workspace_id=ws_id, thread_id=str(uuid4())) == ()
-
-    repo.set_engine(_FakeAsyncEngine(_msg_handler))  # type: ignore[arg-type]
-    assert await repo.pg_tables_ready() is True
-    assert await repo.pg_tables_ready() is True
-    saved = await repo.append_message(
-        thread_id=row_payload["thread_id"],
-        workspace_id=ws_id,
-        turn_id=row_payload["turn_id"],
-        role="user",
-        content="Hello",
+    assert (
+        await repo.list_messages_for_thread(
+            workspace_id="0195f000-0000-7000-8000-000000000702",
+            thread_id="0195f000-0000-7000-8000-000000000701",
+        )
+        == ()
     )
-    assert saved.content == "Hello"
-    listed = await repo.list_messages_for_thread(
-        workspace_id=ws_id, thread_id=row_payload["thread_id"]
-    )
-    assert len(listed) == 1 and listed[0].citation_map == {"sources": []}

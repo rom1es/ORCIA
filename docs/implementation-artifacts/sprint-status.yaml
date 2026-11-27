@@ -358,6 +358,19 @@ development_status:
   31-6-direction-c-bilingual-pack-registry-composer-slot-drawer-and-autocomplete-ui: done
   31-7-epic-31-red-team-security-roundtrip-e2e-help-sync-and-closure: done
   epic-31-retrospective: optional
+
+  # Epic 32 — Test Pyramid Pruning, Token Economy & Anti-Bloat Tech Debt (T-D1..T-D11)
+  # Master plan : docs/planning-artifacts/sprint-change-proposal-2026-11-27-epic-32-test-pyramid-token-economy.md
+  # Evidence    : docs/implementation-artifacts/test-optimization-2026-11-27/
+  # Lots        : L1 32-1 -> L2 32-2 -> L3 32-3 -> L4 32-4 -> L5 32-5
+  # KPIs        : baseline Epics 30-31 (13 stories), evaluated on Epic 33 feature stories (real bugs caught >= 3.0 floor)
+  epic-32: done
+  32-1-token-first-agent-check-runner-receipts-and-suite-quick-wins: done
+  32-2-agent-protocol-small-context-fixer-and-rules-diet: done
+  32-3-combined-coverage-diff-cover-shared-pg18-infra-and-ratchet-lint: done
+  32-4-repo-wide-test-pyramid-pruning-with-coverage-safety-gate: done
+  32-5-strict-anti-bloat-lint-openapi-vitest-mocks-and-survivor-split: done
+  epic-32-retrospective: optional
 action_items:
   - id: ACTION_ITEM-8.1
     title: "Politiques de restriction explicite (DENY prioritaire, INHERITANCE_BLOCK) sur sous-entités sensibles"
@@ -1651,3 +1664,21 @@ action_items:
     description: >
       Deferred explicitly in Epic 31 Grill Decisions (D2/R2). Epic 31 enforces single-truth WORKSPACE-only pack
       activation; automated template propagation for newly provisioned workspaces is tracked under ACTION_ITEM-31.2.
+  - id: ACTION_ITEM-32.1
+    title: "Enforce ScopeAccessGuard / RunAccessGuard on unguarded orchestration & blackboard routes"
+    action: >
+      Add ScopeAccessGuard / RunAccessGuard enforcement to unguarded workspace_id / run_id routes in
+      apps/api/src/orcia_api/routers/orchestration.py (validate_workflow_manifest, compile_artifact_template) and
+      apps/api/src/orcia_api/routers/blackboard_and_engine.py (get_run_blackboard_state, hydrate_step_context,
+      execute_workflow_step, sign_human_anchor), and remove them from scripts/lint_tests_ratchet.json.
+    priority: P1
+    depends_on: ["32-3-combined-coverage-diff-cover-shared-pg18-infra-and-ratchet-lint"]
+    owner: "Amelia (Dev) / Winston (Architect)"
+    status: open
+    epic: epic-32
+    story_ref: "32-3-combined-coverage-diff-cover-shared-pg18-infra-and-ratchet-lint"
+    ad_ref: "AD-21, T-D10, O9"
+    description: >
+      Discovered during Story 32.3 AST route-guard audit for scripts/lint_tests.py --ratchet. Tracked explicitly so
+      existing IDOR debt in orchestration.py and blackboard_and_engine.py is fixed and removed from the shrinking
+      ratchet allow-list rather than permanently exempted.

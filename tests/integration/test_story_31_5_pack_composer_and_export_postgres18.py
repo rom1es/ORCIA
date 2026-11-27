@@ -4,36 +4,25 @@ from __future__ import annotations
 
 import hashlib
 import io
-import os
 import zipfile
 
 import pytest
 import sqlalchemy as sa
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine
+from tests.integration._shared_topology_fixture import SharedIntegrationTopology
 from tests.integration._story_31_4_pack_fixture import seed_story_31_4_topology
-from tests.integration._story_31_5_fixture import (
-    REPO_ROOT,
-    pg18_and_seaweed_urls_315,
-    seed_story_31_5_entities,
-)
+from tests.integration._story_31_5_fixture import REPO_ROOT, seed_story_31_5_entities
 from uuid_utils import uuid7
-
-os.environ["TESTCONTAINERS_RYUK_DISABLED"] = "true"
-_PG_S3_FIXTURE = pg18_and_seaweed_urls_315
 
 
 @pytest.mark.asyncio
 async def test_story_31_5_composer_anti_hostage_closure_scrub_export_and_roundtrip(
-    pg18_and_seaweed_urls_315: tuple[str, str],
-    monkeypatch: pytest.MonkeyPatch,
+    isolated_worker_pg18_env: SharedIntegrationTopology, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Verify full Story 31.5 vertical path HTTP -> PG18 + SeaweedFS CAS -> fresh WS re-import."""
-    pg_url, s3_url = pg18_and_seaweed_urls_315
-    monkeypatch.setenv("DATABASE_URL", pg_url)
-    monkeypatch.setenv("S3_ENDPOINT_URL", s3_url)
-    monkeypatch.setenv("ORCIA_ENABLE_PG_SESSION_MAKER", "1")
-    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
+    pg_url = isolated_worker_pg18_env.async_database_url
+    monkeypatch.setenv("S3_ENDPOINT_URL", isolated_worker_pg18_env.s3_endpoint_url)
     monkeypatch.setenv("ORCIA_ENV_FILE", str(REPO_ROOT / ".orcia-run" / "does-not-exist.env"))
 
     org_id, ws_a, ws_b, admin_id = str(uuid7()), str(uuid7()), str(uuid7()), str(uuid7())
@@ -123,18 +112,19 @@ async def test_story_31_5_composer_anti_hostage_closure_scrub_export_and_roundtr
             assert exp_fail.json()["missing_dependencies"]
 
             # 2. Populate all 8 typed FK columns & verify via direct PG18 SQL SELECT
-            all_members = [
-                {"entity_type": "AGENT", "entity_id": eids["agent_id"]},
-                {"entity_type": "SKILL", "entity_id": eids["skill_id"]},
-                {"entity_type": "WORKFLOW_V2", "entity_id": eids["wf_id"]},
-                {"entity_type": "VSM_V2", "entity_id": eids["vsm_id"]},
-                {"entity_type": "ONTOLOGY_CONCEPT", "entity_id": eids["c1_key"]},
-                {"entity_type": "ONTOLOGY_CONCEPT", "entity_id": eids["c2_key"]},
-                {"entity_type": "ONTOLOGY_RELATION", "entity_id": eids["rel_key"]},
-                {"entity_type": "ONTOLOGY_AXIOM", "entity_id": eids["ax_key"]},
-                {"entity_type": "DNA_MECHANISM", "entity_id": eids["dna_slug"]},
-                {"entity_type": "POLICY", "entity_id": eids["pol_key"]},
-            ]
+            member_pairs = (
+                ("AGENT", "agent_id"),
+                ("SKILL", "skill_id"),
+                ("WORKFLOW_V2", "wf_id"),
+                ("VSM_V2", "vsm_id"),
+                ("ONTOLOGY_CONCEPT", "c1_key"),
+                ("ONTOLOGY_CONCEPT", "c2_key"),
+                ("ONTOLOGY_RELATION", "rel_key"),
+                ("ONTOLOGY_AXIOM", "ax_key"),
+                ("DNA_MECHANISM", "dna_slug"),
+                ("POLICY", "pol_key"),
+            )
+            all_members = [{"entity_type": t, "entity_id": eids[k]} for t, k in member_pairs]
             assert (
                 await client.put(
                     f"/api/v1/packs/composer/{draft_id}/members",
@@ -173,13 +163,42 @@ async def test_story_31_5_composer_anti_hostage_closure_scrub_export_and_roundtr
                     "pol": 1,
                 }
 
-            # 3. Anti-hostage delete guard: 409 default, unlink + audit_ledger on query param
+            # 3. Anti-hostage delete guard: 409 default, list_referencing_pack_drafts_conn & cb
+            from orcia_core.storage.pack_draft_guard import (
+                guard_or_unlink_pack_drafts_conn,
+                list_referencing_pack_drafts_conn,
+            )
+
             del_blocked = await client.delete(
                 f"/api/v1/agents-and-skills/agents/{eids['agent_id']}"
             )
             assert del_blocked.status_code == 409
             assert del_blocked.json()["error_code"] == "ERR_ENTITY_REFERENCED_BY_PACK_DRAFT"
             assert del_blocked.json()["draft_packs"][0]["pack_slug"] == "biz-custom-315"
+
+            async with eng.begin() as conn:
+                res_id = await conn.execute(
+                    sa.text("SELECT id::text FROM catalog_items WHERE resource_id = :r"),
+                    {"r": eids["agent_id"]},
+                )
+                agent_uuid = str(res_id.scalar_one())
+                refs = await list_referencing_pack_drafts_conn(
+                    conn, fk_column="catalog_item_id", target_uuid=agent_uuid
+                )
+                assert [r["pack_slug"] for r in refs] == ["biz-custom-315"]
+                cb_seen: list[str] = []
+                unlinked_cb = await guard_or_unlink_pack_drafts_conn(
+                    conn,
+                    fk_column="catalog_item_id",
+                    target_uuid=agent_uuid,
+                    entity_type="AGENT",
+                    entity_label=eids["agent_id"],
+                    unlink_from_draft_packs=True,
+                    authorize_draft_cb=lambda bid, _st, _sid: cb_seen.append(bid),
+                    scope_path=f"WORKSPACE:{ws_a}",
+                )
+                assert len(unlinked_cb) == 1 and cb_seen == [draft_id]
+                await conn.rollback()
 
             # Re-test auto_include_dependencies=true on workflow -> agent -> skill
             cr2 = await client.post(
@@ -227,53 +246,48 @@ async def test_story_31_5_composer_anti_hostage_closure_scrub_export_and_roundtr
             )
             assert imp.status_code == 200, imp.text
             assert imp.json()["slug"] == "auto-inc-315"
-            assert (
-                await client.put(
-                    f"/api/v1/workspaces/{ws_b}/packs/auto-inc-315/slots",
-                    json={
-                        "bindings": [
-                            {
-                                "slot_key": "repo_a",
-                                "target_kind": "WORKSPACE_DATASOURCE",
-                                "target_id": ds_b_id,
-                            }
-                        ]
-                    },
-                )
-            ).status_code == 200
+            slot_res = await client.put(
+                f"/api/v1/workspaces/{ws_b}/packs/auto-inc-315/slots",
+                json={
+                    "bindings": [
+                        {
+                            "slot_key": "repo_a",
+                            "target_kind": "WORKSPACE_DATASOURCE",
+                            "target_id": ds_b_id,
+                        }
+                    ]
+                },
+            )
+            assert slot_res.status_code == 200
             act = await client.post(f"/api/v1/workspaces/{ws_b}/packs/auto-inc-315/activate")
             assert act.status_code == 200, act.text
             assert act.json()["is_active"] is True
 
             # 5. Leak scanner 422 ERR_PACK_PII_OR_INFRA_LEAK on residual secret in authored text
+            leak_sql = (
+                "UPDATE catalog_items SET metadata_jsonb = jsonb_set(metadata_jsonb, "
+                "'{instructions}', to_jsonb('Leak sk-1234567890abcdef1234567890'::text)) "
+                "WHERE resource_id = :aid"
+            )
             async with eng.begin() as conn:
-                await conn.execute(
-                    sa.text(
-                        "UPDATE catalog_items SET metadata_jsonb = jsonb_set(metadata_jsonb, "
-                        "'{instructions}', to_jsonb('Leak sk-1234567890abcdef1234567890'::text)) "
-                        "WHERE resource_id = :aid"
-                    ),
-                    {"aid": eids["agent_id"]},
-                )
+                await conn.execute(sa.text(leak_sql), {"aid": eids["agent_id"]})
             leak_resp = await client.post(f"/api/v1/packs/composer/{draft_id}/export")
             assert leak_resp.status_code == 422
             assert leak_resp.json()["error_code"] == "ERR_PACK_PII_OR_INFRA_LEAK"
 
             # 6. Anti-hostage atomic unlink + audit_ledger + delete on agent
-            del_ok = await client.delete(
+            unlink_url = (
                 f"/api/v1/agents-and-skills/agents/{eids['agent_id']}?unlink_from_draft_packs=true"
             )
+            del_ok = await client.delete(unlink_url)
             assert del_ok.status_code == 200, del_ok.text
             assert len(del_ok.json()["unlinked_draft_packs"]) >= 1
+            audit_sql = (
+                "SELECT COUNT(*) FROM audit_ledger "
+                "WHERE event_type = 'PACK_DRAFT_MEMBER_UNLINKED_ON_ENTITY_DELETE'"
+            )
             async with eng.connect() as conn:
-                audit_cnt = (
-                    await conn.execute(
-                        sa.text(
-                            "SELECT COUNT(*) FROM audit_ledger "
-                            "WHERE event_type = 'PACK_DRAFT_MEMBER_UNLINKED_ON_ENTITY_DELETE'"
-                        )
-                    )
-                ).scalar_one()
+                audit_cnt = (await conn.execute(sa.text(audit_sql))).scalar_one()
                 assert int(audit_cnt) >= 1
 
             # 7. Delete draft bundle cleanly (ON DELETE CASCADE)

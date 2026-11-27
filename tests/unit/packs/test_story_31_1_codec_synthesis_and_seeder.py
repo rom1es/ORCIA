@@ -3,16 +3,12 @@
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import io
-import sys
 import zipfile
 from pathlib import Path
-from typing import Any
 
 import pytest
 import yaml  # type: ignore[import-untyped]
-from tests.unit.packs.test_story_31_1_pack_repo_and_edge_cases import _FakeResult
 
 from orcia_core.bootstrap.seeder import (
     CATALOG_ITEMS_UPSERT_SPEC,
@@ -229,9 +225,24 @@ def test_apm_codec_directory_errors_and_structured_synthesis(tmp_path: Path) -> 
     assert mech.passing_test_payload == {"ok": True}
     assert mech.failing_test_payload == {"ok": False}
 
+    pass_only_zip = _zip_of(
+        {
+            "apm.yml": b"name: passonly\nversion: 1.0.0\n",
+            "ontology/mechanisms/m_pass.star": (
+                b"def evaluate(p):\n"
+                b"    orcia_sys.assert_rule(\n"
+                b"        rule_id='R', condition=bool(p.get('ok')), message='ok'\n"
+                b"    )\n"
+            ),
+            "ontology/mechanisms/m_pass.yaml": yaml.safe_dump(
+                {"passing_test_payload": {"ok": True}}
+            ).encode(),
+        }
+    )
+    assert len(codec.decode_zip_bytes(pass_only_zip).dna_mechanisms) == 1
 
-@pytest.mark.asyncio
-async def test_seeder_and_backfill_emit_partial_where_pack_bundle_is_null() -> None:
+
+def test_seeder_emit_partial_where_pack_bundle_is_null() -> None:
     for spec in (
         CATALOG_ITEMS_UPSERT_SPEC,
         PERMISSION_BROKER_POLICIES_UPSERT_SPEC,
@@ -244,50 +255,3 @@ async def test_seeder_and_backfill_emit_partial_where_pack_bundle_is_null() -> N
         build_postgres_upsert_sql(
             UpsertSpec("catalog_items", ("resource_id",), ("title",), conflict_where="a = 1; DROP")
         )
-
-    script_path = Path("infra/scripts/maintenance/05_backfill_ontology_and_rag_graph.py")
-    spec_mod = importlib.util.spec_from_file_location("backfill_05", script_path)
-    assert spec_mod is not None and spec_mod.loader is not None
-    mod = importlib.util.module_from_spec(spec_mod)
-    sys.modules["backfill_05"] = mod
-    try:
-        spec_mod.loader.exec_module(mod)
-    finally:
-        sys.modules.pop("backfill_05", None)
-
-    executed_sqls: list[str] = []
-
-    class _FakeConn:
-        async def begin(self) -> Any:
-            class _Tx:
-                async def commit(self) -> None:
-                    return None
-
-                async def rollback(self) -> None:
-                    return None
-
-            return _Tx()
-
-        async def execute(self, stmt: Any, _params: Any = None) -> _FakeResult:
-            executed_sqls.append(str(stmt))
-            return _FakeResult(scalar_val=1)
-
-    class _Ctx:
-        async def __aenter__(self) -> _FakeConn:
-            return _FakeConn()
-
-        async def __aexit__(self, *args: Any) -> None:
-            return None
-
-    class _MockEngine:
-        def connect(self) -> _Ctx:
-            return _Ctx()
-
-    await mod.backfill_ontology_and_rag_graph(_MockEngine(), apply_changes=False)
-    assert any(
-        "ON CONFLICT (concept_key) WHERE pack_bundle_id IS NULL DO UPDATE" in s
-        for s in executed_sqls
-    )
-    assert any(
-        "ON CONFLICT (axiom_key) WHERE pack_bundle_id IS NULL DO UPDATE" in s for s in executed_sqls
-    )

@@ -2,32 +2,25 @@
 
 from __future__ import annotations
 
-import os
-
 import pytest
 import sqlalchemy as sa
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine
+from tests.integration._shared_topology_fixture import SharedIntegrationTopology
 from tests.integration._story_31_4_pack_fixture import (
     REPO_ROOT,
     build_slot_pack_zip,
-    pg18_url,
     seed_story_31_4_topology,
 )
 from uuid_utils import uuid7
 
-os.environ["TESTCONTAINERS_RYUK_DISABLED"] = "true"
-_PG18_FIXTURE = pg18_url
-
 
 @pytest.mark.asyncio
 async def test_story_31_4_activation_slots_422_guard_and_run_lock_pg18(
-    pg18_url: str, monkeypatch: pytest.MonkeyPatch
+    isolated_worker_pg18_env: SharedIntegrationTopology, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Verify workspace pack activation, slot bindings, 422 guard, reorder, run lock & 409."""
-    monkeypatch.setenv("DATABASE_URL", pg18_url)
-    monkeypatch.setenv("ORCIA_ENABLE_PG_SESSION_MAKER", "1")
-    monkeypatch.setenv("ORCIA_USE_CASSETTE_LLM", "true")
+    pg18_url = isolated_worker_pg18_env.async_database_url
     monkeypatch.setenv("ORCIA_ENV_FILE", str(REPO_ROOT / ".orcia-run" / "does-not-exist.env"))
 
     org_id, ws_a, ws_b, admin_id = str(uuid7()), str(uuid7()), str(uuid7()), str(uuid7())
@@ -135,6 +128,34 @@ async def test_story_31_4_activation_slots_422_guard_and_run_lock_pg18(
             )
             assert bad_bind.status_code == 422
 
+            bad_scheme = await client.put(
+                f"/api/v1/workspaces/{ws_a}/packs/alpha-pack/slots",
+                json={
+                    "bindings": [
+                        {
+                            "slot_key": "opt-kb",
+                            "target_kind": "WORKSPACE_DATASOURCE",
+                            "target_id": ds_a_id,
+                        }
+                    ]
+                },
+            )
+            assert bad_scheme.status_code == 422
+
+            from orcia_core.packs._internal._sql_workspace_pack_mutations import (
+                activate_workspace_pack_sql,
+            )
+            from orcia_core.packs.errors import PackActivationInvalidError
+
+            with pytest.raises(PackActivationInvalidError):
+                await activate_workspace_pack_sql(
+                    eng,
+                    workspace_id=ws_a,
+                    pack_slug="alpha-pack",
+                    priority_order=0,
+                    actor_id=admin_id,
+                )
+
             good_bind = await client.put(
                 f"/api/v1/workspaces/{ws_a}/packs/alpha-pack/slots",
                 json={
@@ -176,6 +197,10 @@ async def test_story_31_4_activation_slots_422_guard_and_run_lock_pg18(
             )
             assert reord.status_code == 200, reord.text
             assert [p["pack_slug"] for p in reord.json()["packs"]] == ["beta-pack", "alpha-pack"]
+
+            views = await client.get(f"/api/v1/workspaces/{ws_a}/packs")
+            assert views.status_code == 200
+            assert any(p["slug"] == "alpha-pack" and p["is_active"] for p in views.json()["packs"])
 
             start_run = await client.post(
                 "/api/v1/workflows/v2/wf-alpha-pack/runs",
@@ -228,26 +253,23 @@ async def test_story_31_4_activation_slots_422_guard_and_run_lock_pg18(
                     data={"scope_type": "WORKSPACE", "scope_id": ws_a},
                 )
             ).status_code == 200
-            assert (
-                await client.put(
-                    f"/api/v1/workspaces/{ws_a}/packs/alpha-pack/slots",
-                    json={
-                        "bindings": [
-                            {
-                                "slot_key": "code-repo",
-                                "target_kind": "WORKSPACE_DATASOURCE",
-                                "target_id": ds_a_id,
-                            }
-                        ]
-                    },
-                )
-            ).status_code == 200
-            assert (
-                await client.post(f"/api/v1/workspaces/{ws_a}/packs/alpha-pack/activate")
-            ).status_code == 200
-            assert (
-                await client.delete(f"/api/v1/workspaces/{ws_a}/datasources/{ds_a_id}")
-            ).status_code == 200
+            bind_body = {
+                "bindings": [
+                    {
+                        "slot_key": "code-repo",
+                        "target_kind": "WORKSPACE_DATASOURCE",
+                        "target_id": ds_a_id,
+                    }
+                ]
+            }
+            r_bind = await client.put(
+                f"/api/v1/workspaces/{ws_a}/packs/alpha-pack/slots", json=bind_body
+            )
+            assert r_bind.status_code == 200
+            r_act = await client.post(f"/api/v1/workspaces/{ws_a}/packs/alpha-pack/activate")
+            assert r_act.status_code == 200
+            r_del = await client.delete(f"/api/v1/workspaces/{ws_a}/datasources/{ds_a_id}")
+            assert r_del.status_code == 200
             blocked_run = await client.post(
                 "/api/v1/workflows/v2/wf-alpha-pack/runs",
                 json={"workspace_id": ws_a, "inputs": {"objective": "Should fail closed"}},
@@ -257,23 +279,14 @@ async def test_story_31_4_activation_slots_422_guard_and_run_lock_pg18(
             assert "code-repo" in blocked_run.json()["detail"]
 
         async with eng.connect() as conn:
-            audit_cnt = (
-                await conn.execute(
-                    sa.text(
-                        "SELECT COUNT(*) FROM audit_ledger WHERE event_type = 'PACK_SLOTS_BOUND'"
-                    )
-                )
-            ).scalar_one()
+            audit_q = "SELECT COUNT(*) FROM audit_ledger WHERE event_type = 'PACK_SLOTS_BOUND'"
+            audit_cnt = (await conn.execute(sa.text(audit_q))).scalar_one()
             assert int(audit_cnt) >= 3
-            xor_row = (
-                await conn.execute(
-                    sa.text(
-                        "SELECT is_active, priority_order FROM workspace_pack_activations "
-                        "WHERE workspace_id = CAST(:ws AS uuid) AND pack_slug = 'alpha-pack'"
-                    ),
-                    {"ws": ws_a},
-                )
-            ).first()
+            xor_q = (
+                "SELECT is_active, priority_order FROM workspace_pack_activations "
+                "WHERE workspace_id = CAST(:ws AS uuid) AND pack_slug = 'alpha-pack'"
+            )
+            xor_row = (await conn.execute(sa.text(xor_q), {"ws": ws_a})).first()
             assert xor_row is not None and bool(xor_row[0]) is True
     finally:
         await eng.dispose()

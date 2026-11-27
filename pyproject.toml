@@ -43,6 +43,8 @@ dev = [
     "pytest>=8.3.0",
     "pytest-asyncio>=0.24.0",
     "pytest-cov>=6.0.0",
+    "pytest-xdist>=3.8.0",
+    "diff-cover>=11.0.4",
     "hypothesis>=6.115.0",
     "testcontainers[postgres,redis,minio]>=4.8.0",
     "schemathesis>=3.38.0",
@@ -245,9 +247,20 @@ pythonpath = [
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 addopts = "-ra -q"
+markers = [
+    "contract_fuzz: slow Schemathesis OpenAPI property fuzzing excluded from default fast runs",
+    "story: story traceability tag for domain-named tests",
+]
 
 [tool.coverage.run]
 branch = true
+parallel = true
+source = [
+    "packages/orcia-core/src",
+    "packages/orcia-connectors/src",
+    "apps/api/src",
+    "apps/worker/src",
+]
 concurrency = ["greenlet", "thread"]
 omit = [
     "*/tests/*",

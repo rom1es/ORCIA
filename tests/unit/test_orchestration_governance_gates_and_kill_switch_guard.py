@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import json
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
@@ -23,88 +21,11 @@ from orcia_core.orchestration import (
     build_default_orchestration_setup_service,
     register_default_step_executors,
 )
-from orcia_core.orchestration._internal._sql_autonomous_rollback import (
-    restore_help_article_and_rollback_run_sql,
-)
 from orcia_core.orchestration.autonomous_supervision import AutonomousSupervisionService
 from orcia_core.permissions import build_default_auth_and_org_service
 from orcia_core.permissions.models import UserIdentity
 from orcia_core.testing.cassette_llm import DeterministicCassetteLLM
-from orcia_kernel.events import DomainEvent
 from orcia_kernel.ids import new_uuid7_str
-
-
-class _FakeMappingResult:
-    def __init__(self, *, first_row: dict[str, Any] | None = None, scalar: Any = None) -> None:
-        self._first = first_row
-        self._scalar = scalar
-
-    def mappings(self) -> _FakeMappingResult:
-        return self
-
-    def first(self) -> dict[str, Any] | None:
-        return self._first
-
-    def scalar_one_or_none(self) -> Any:
-        return self._scalar
-
-    def scalar(self) -> Any:
-        return self._scalar
-
-
-class _FakeKillSwitchConn:
-    """Fake AsyncConnection simulating a `workflow_runs` row locked at `KILL_SWITCH_STOPPED`."""
-
-    def __init__(self, *, run_id: str, workspace_id: str, contract_id: str) -> None:
-        self.run_id = run_id
-        self.workspace_id = workspace_id
-        self.contract_id = contract_id
-        self.executed_sql: list[str] = []
-
-    async def execute(self, stmt: Any, params: dict[str, Any] | None = None) -> _FakeMappingResult:
-        sql_text = str(stmt)
-        self.executed_sql.append(sql_text)
-        _ = params
-        if "UPDATE workflow_runs" in sql_text:
-            # Guard `AND status <> 'KILL_SWITCH_STOPPED'` prevents mutating KILL_SWITCH_STOPPED
-            return _FakeMappingResult(first_row=None)
-        if "SELECT id::text AS run_id" in sql_text and "FROM workflow_runs" in sql_text:
-            return _FakeMappingResult(
-                first_row={
-                    "run_id": self.run_id,
-                    "workspace_id": self.workspace_id,
-                    "status": "KILL_SWITCH_STOPPED",
-                }
-            )
-        if "FROM autonomy_contracts" in sql_text:
-            return _FakeMappingResult(scalar=self.contract_id)
-        if "FROM catalog_items" in sql_text and "HELP_ARTICLE" in sql_text:
-            return _FakeMappingResult(
-                first_row={
-                    "resource_id": "help-processes-guide",
-                    "version": "2.0.0",
-                    "sha256": "b" * 64,
-                    "cas_key": "cas/b",
-                    "metadata_jsonb": {
-                        "previous_version": "1.0.0",
-                        "previous_sha256": "a" * 64,
-                        "previous_cas_key": "cas/a",
-                        "lang": "fr",
-                        "pack_name": "core",
-                        "bound_routes": ["/processes"],
-                    },
-                }
-            )
-        return _FakeMappingResult()
-
-
-class _FakeAsyncEngine:
-    def __init__(self, conn: _FakeKillSwitchConn) -> None:
-        self._conn = conn
-
-    @asynccontextmanager
-    async def begin(self) -> AsyncIterator[_FakeKillSwitchConn]:
-        yield self._conn
 
 
 def _make_admin_user() -> UserIdentity:
@@ -118,111 +39,6 @@ def _make_admin_user() -> UserIdentity:
         primary_org_unit_id="0192c4e0-0000-7000-8000-000000000001",
         roles=("PLATFORM_ADMIN",),
     )
-
-
-@pytest.mark.asyncio
-async def test_kill_switch_stopped_status_preserved_during_sql_rollback() -> None:
-    """Post-hoc rollback SQL must never overwrite `KILL_SWITCH_STOPPED` in `workflow_runs`."""
-    run_id = new_uuid7_str()
-    ws_id = new_uuid7_str()
-    contract_id = new_uuid7_str()
-    conn = _FakeKillSwitchConn(run_id=run_id, workspace_id=ws_id, contract_id=contract_id)
-    engine = _FakeAsyncEngine(conn)
-    evt = DomainEvent(
-        event_id=new_uuid7_str(),
-        event_type="AutonomousArtifactRolledBack",
-        aggregate_type="WorkflowRun",
-        aggregate_id=run_id,
-        run_id=run_id,
-        workspace_id=ws_id,
-        payload={"run_id": run_id, "restored_version": "1.0.0"},
-        trace_id="0" * 32,
-    )
-
-    result = await restore_help_article_and_rollback_run_sql(
-        engine,  # type: ignore[arg-type]
-        run_id=run_id,
-        reviewer_user_id=new_uuid7_str(),
-        comment="Invalidation post-hoc après arrêt d'urgence",
-        help_resource_id="help-processes-guide",
-        contract_id=contract_id,
-        event=evt,
-    )
-
-    assert result is not None
-    assert result["status"] == "KILL_SWITCH_STOPPED"
-    assert result["restored_version"] == "1.0.0"
-    assert result["invalidated_redis_keys"]
-    update_stmts = [s for s in conn.executed_sql if "UPDATE workflow_runs" in s]
-    assert len(update_stmts) == 1
-    assert "status <> 'KILL_SWITCH_STOPPED'" in update_stmts[0]
-    audit_stmts = [s for s in conn.executed_sql if "INSERT INTO autonomous_post_hoc_audits" in s]
-    assert len(audit_stmts) == 1
-
-    invalid_res = await restore_help_article_and_rollback_run_sql(
-        engine,  # type: ignore[arg-type]
-        run_id="not-a-uuid",
-        reviewer_user_id=new_uuid7_str(),
-        comment=None,
-        help_resource_id=None,
-        contract_id=None,
-        event=evt,
-    )
-    assert invalid_res is None
-
-
-@pytest.mark.asyncio
-async def test_sql_rollback_normal_run_updates_status_and_resolves_help_article() -> None:
-    """Normal rollback without kill-switch transitions to ROLLED_BACK and resolves catalog item."""
-    run_id = new_uuid7_str()
-    ws_id = new_uuid7_str()
-    contract_id = new_uuid7_str()
-
-    class _NormalRollbackConn(_FakeKillSwitchConn):
-        async def execute(
-            self, stmt: Any, params: dict[str, Any] | None = None
-        ) -> _FakeMappingResult:
-            sql_text = str(stmt)
-            self.executed_sql.append(sql_text)
-            _ = params
-            if "UPDATE workflow_runs" in sql_text:
-                return _FakeMappingResult(
-                    first_row={
-                        "run_id": self.run_id,
-                        "workspace_id": self.workspace_id,
-                        "status": "ROLLED_BACK",
-                    }
-                )
-            if "SELECT resource_id" in sql_text and "FROM catalog_items" in sql_text:
-                return _FakeMappingResult(scalar="help-auto-1")
-            if "FROM autonomy_contracts" in sql_text:
-                return _FakeMappingResult(scalar=None)
-            return await super().execute(stmt, params)
-
-    conn = _NormalRollbackConn(run_id=run_id, workspace_id=ws_id, contract_id=contract_id)
-    engine = _FakeAsyncEngine(conn)
-    evt = DomainEvent(
-        event_id=new_uuid7_str(),
-        event_type="AutonomousArtifactRolledBack",
-        aggregate_type="WorkflowRun",
-        aggregate_id=run_id,
-        run_id=run_id,
-        workspace_id=ws_id,
-        payload={"run_id": run_id, "restored_version": "1.0.0"},
-        trace_id="0" * 32,
-    )
-    res = await restore_help_article_and_rollback_run_sql(
-        engine,  # type: ignore[arg-type]
-        run_id=run_id,
-        reviewer_user_id=new_uuid7_str(),
-        comment="Rollback standard",
-        help_resource_id=None,
-        contract_id=None,
-        event=evt,
-    )
-    assert res is not None
-    assert res["status"] == "ROLLED_BACK"
-    assert res["help_resource_id"] == "help-auto-1"
 
 
 @pytest.mark.asyncio
@@ -590,113 +406,12 @@ def test_sql_gate_row_mappers_preserve_metadata_and_chunk_hashes() -> None:
     assert human_record.chunks[0].human_anchor_sha256 == "a" * 64
 
 
-@pytest.mark.asyncio
-async def test_gate_parent_resolution_edge_cases_and_signature_guards() -> None:
-    """Verify UUID coercion, empty-DB parent creation, and short-chunk signature guards."""
-    from orcia_core.gates._internal._sql_gate_parents import (
-        coerce_gate_uuid,
-        ensure_chunk_anchor_signature,
-        ensure_gate_parents,
-        resolve_gate_user_id,
-    )
+def test_gate_parent_uuid_coercion() -> None:
+    """Verify deterministic UUID coercion for gate workspace/run identifiers."""
+    from orcia_core.gates._internal._sql_gate_parents import coerce_gate_uuid
 
     assert coerce_gate_uuid(None) != coerce_gate_uuid(" ")
     assert coerce_gate_uuid("ws-custom-slug") == coerce_gate_uuid("ws-custom-slug")
-
-    class _EmptyParentConn:
-        def __init__(self) -> None:
-            self.org_inserted = False
-            self.wf_inserted = False
-
-        async def execute(self, stmt: Any, params: dict[str, Any] | None = None) -> Any:
-            _ = params
-            sql = str(stmt)
-
-            class _Res:
-                def __init__(self, first_val: Any = None, scalar_val: Any = None) -> None:
-                    self._first = first_val
-                    self._scalar = scalar_val
-
-                def first(self) -> Any:
-                    return self._first
-
-                def scalar_one_or_none(self) -> Any:
-                    return self._scalar
-
-                def scalar_one(self) -> Any:
-                    return self._scalar
-
-            if "INSERT INTO org_units" in sql:
-                self.org_inserted = True
-            elif "FROM org_units" in sql:
-                val = "0192c4e0-0000-7000-8000-000000000101" if self.org_inserted else None
-                return _Res(scalar_val=val)
-            elif "INSERT INTO workflow_definitions" in sql:
-                self.wf_inserted = True
-            elif "FROM workflow_definitions" in sql:
-                val = ("0195f000-0000-7000-8000-000000000602",) if self.wf_inserted else None
-                return _Res(first_val=val, scalar_val=val[0] if val else None)
-            elif "SELECT id::text FROM step_executions WHERE id =" in sql:
-                return _Res(scalar_val=None)
-            elif "SELECT id::text FROM step_executions" in sql:
-                return _Res(scalar_val=new_uuid7_str())
-            return _Res(first_val=None, scalar_val=None)
-
-    conn = _EmptyParentConn()
-    assert await resolve_gate_user_id(conn, "  ") is None  # type: ignore[arg-type]
-    ws_id, run_id, step_id = await ensure_gate_parents(
-        conn,  # type: ignore[arg-type]
-        workspace_id="ws-non-uuid",
-        run_id="run-non-uuid",
-        step_execution_id="step-non-uuid",
-        step_key="step-arch",
-    )
-    assert ws_id and run_id and step_id
-    assert (
-        await ensure_chunk_anchor_signature(
-            conn,  # type: ignore[arg-type]
-            signature_id=None,
-            workspace_id=ws_id,
-            run_id=run_id,
-            step_execution_id=step_id,
-            step_key="step-arch",
-            chunk_key="sec-1",
-            content_markdown="Trop court",
-            content_sha256=None,
-            reviewer_user_id=None,
-        )
-        is None
-    )
-    assert (
-        await ensure_chunk_anchor_signature(
-            conn,  # type: ignore[arg-type]
-            signature_id="sig-short",
-            workspace_id=ws_id,
-            run_id=run_id,
-            step_execution_id=step_id,
-            step_key="step-arch",
-            chunk_key="sec-1",
-            content_markdown="Trop court",
-            content_sha256=None,
-            reviewer_user_id=None,
-        )
-        is None
-    )
-    assert (
-        await ensure_chunk_anchor_signature(
-            conn,  # type: ignore[arg-type]
-            signature_id="sig-no-user",
-            workspace_id=ws_id,
-            run_id=run_id,
-            step_execution_id=step_id,
-            step_key="step-arch",
-            chunk_key="sec-1",
-            content_markdown="Contenu suffisamment long dépassant largement trente caractères.",
-            content_sha256=None,
-            reviewer_user_id="unknown-user",
-        )
-        is None
-    )
 
 
 @pytest.mark.asyncio

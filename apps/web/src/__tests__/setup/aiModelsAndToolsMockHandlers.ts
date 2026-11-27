@@ -1,3 +1,4 @@
+import { buildOpenApiMockPayload, buildOpenApiMockResponse } from "./generatedOpenApiMocks";
 import { backendState, jsonResponse } from "./mockBackendState";
 
 export function handleAiModelsAndToolsRoute(params: {
@@ -11,7 +12,7 @@ export function handleAiModelsAndToolsRoute(params: {
   if (path.startsWith("/api/v1/audit/ledger") && method === "GET") {
     if (path.includes("/provenance")) {
       const runId = path.split("/")[5] ?? "0195f000-0000-7000-8000-000000000001";
-      return jsonResponse({
+      return buildOpenApiMockResponse("GET /api/v1/audit/ledger/{run_id}/provenance", {
         run_id: runId,
         root_run_id: null,
         total_events: 1,
@@ -31,7 +32,7 @@ export function handleAiModelsAndToolsRoute(params: {
     if (path.includes("/export")) {
       const runId = path.split("/")[5] ?? "0195f000-0000-7000-8000-000000000001";
       const isMd = (parsedUrl.searchParams.get("format") ?? "json") === "md";
-      return jsonResponse({
+      return buildOpenApiMockResponse("GET /api/v1/audit/ledger/{run_id}/export", {
         run_id: runId,
         format: isMd ? "md" : "json",
         content: isMd ? "# Dossier Certifié" : "{}",
@@ -58,7 +59,7 @@ export function handleAiModelsAndToolsRoute(params: {
       output_tokens: Number(e.output_tokens ?? e.outputTokens ?? 0),
       created_at: String(e.created_at ?? e.timestampIso ?? new Date().toISOString()),
     }));
-    return jsonResponse({
+    return buildOpenApiMockResponse("GET /api/v1/audit/ledger", {
       entries,
       total: entries.length,
       limit: Number(parsedUrl.searchParams.get("limit") ?? 500),
@@ -72,7 +73,7 @@ export function handleAiModelsAndToolsRoute(params: {
     const uri = String(body.endpoint_uri ?? "");
     const isGeminiNative = uri.includes("/v1beta") && !uri.includes("/openai");
     const modeLabel = isGeminiNative ? " - Mode B" : "";
-    return jsonResponse({
+    return buildOpenApiMockResponse("POST /api/v1/bootstrap/welcome-setup/llm-test", {
       ok: true,
       provider_slug: provider,
       model_name: model,
@@ -86,7 +87,10 @@ export function handleAiModelsAndToolsRoute(params: {
   }
 
   if (path === "/api/v1/bootstrap/welcome-setup/progressive-llm" && method === "POST") {
-    return jsonResponse({ status: "registered", endpoint_key: body.endpoint_key ?? "medium" });
+    return buildOpenApiMockResponse("POST /api/v1/bootstrap/welcome-setup/progressive-llm", {
+      status: "registered",
+      endpoint_key: body.endpoint_key ?? "medium",
+    });
   }
 
   if (path === "/api/v1/settings/ai-models/mappings" && method === "GET") {
@@ -95,14 +99,14 @@ export function handleAiModelsAndToolsRoute(params: {
     const isActive = parsedUrl.searchParams.get("is_active");
     if (usage) items = items.filter((m) => m.usage === usage);
     if (isActive !== null) items = items.filter((m) => String(m.is_active) === isActive);
-    return jsonResponse({ items, total: items.length });
+    return buildOpenApiMockResponse("GET /api/v1/settings/ai-models/mappings", { items, total: items.length });
   }
 
   if (path === "/api/v1/settings/ai-models/mappings" && method === "POST") {
     const newId = `0195f000-0000-7000-8300-${String(backendState.aiModelMappings.length + 1).padStart(12, "0")}`;
     const secInput = body.secret_input as { action?: string; plaintext_value?: string } | null | undefined;
     const hasSecret = Boolean(secInput && secInput.action === "set" && secInput.plaintext_value);
-    const created: Record<string, unknown> = {
+    const created = buildOpenApiMockPayload("POST /api/v1/settings/ai-models/mappings", {
       id: newId,
       scope_level: String(body.scope_level ?? "GLOBAL"),
       scope_id: body.scope_id ?? null,
@@ -128,7 +132,7 @@ export function handleAiModelsAndToolsRoute(params: {
         updated_by: hasSecret ? "admin" : null,
       },
       created_at: "2026-11-18T10:00:00Z",
-    };
+    });
     backendState.aiModelMappings = [...backendState.aiModelMappings, created];
     return jsonResponse(created, 201);
   }
@@ -252,7 +256,7 @@ export function handleAiModelsAndToolsRoute(params: {
 
   if (path === "/api/v1/mcp/exposure" && method === "GET") {
     const wsSlug = parsedUrl.searchParams.get("workspace_slug") ?? "global";
-    return jsonResponse({
+    return buildOpenApiMockResponse("GET /api/v1/mcp/exposure", {
       workspace_slug: wsSlug,
       agents: [],
       exposed_tools: ["assistant.ask", "agent.invoke", "agent.list_exposed"],
@@ -264,7 +268,7 @@ export function handleAiModelsAndToolsRoute(params: {
     const wsSlug = String(body.workspace_slug ?? "global");
     const agentSlug = String(body.agent_slug ?? "governed-mcp-connector");
     const exposed = Boolean(body.mcp_exposed ?? true);
-    return jsonResponse({
+    return buildOpenApiMockResponse("PUT /api/v1/mcp/exposure", {
       agent_slug: agentSlug,
       workspace_slug: wsSlug,
       display_name: String(body.display_name ?? agentSlug),
@@ -291,7 +295,7 @@ export function handleAiModelsAndToolsRoute(params: {
   }
 
   if (path === "/api/v1/search" && method === "GET") {
-    return jsonResponse({ hits: [] });
+    return buildOpenApiMockResponse("GET /api/v1/search", { hits: [] });
   }
 
   if (path === "/api/v1/settings/packs/installed" && method === "GET") {

@@ -10,6 +10,7 @@ import tomllib
 import pytest
 import yaml
 from fastapi.testclient import TestClient
+from tests.unit.fakes.sandbox_tdd_fake import write_tier2_subprocess_shim
 
 from orcia_api.main import create_app
 from orcia_core.gates import (
@@ -34,6 +35,16 @@ from orcia_worker.roles import (
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 WORKSPACE_ID = "0192c4e0-0000-7000-8000-000000000201"
 RUN_ID = "0192c4e0-0000-7000-8000-000000004101"
+
+
+@pytest.fixture(autouse=True)
+def _mock_tdd_subprocess(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Stub only child `pytest`/`ruff` CLI inside `tier2_runner.py`; keep real runner process."""
+    shim_path = write_tier2_subprocess_shim(tmp_path, REPO_ROOT)
+    monkeypatch.setattr(
+        "orcia_core.gates.tier2_sandbox._resolve_tier2_runner_script",
+        lambda: shim_path,
+    )
 
 
 def test_story_4_1a_container_spec_and_bimodal_tdd_red_green() -> None:

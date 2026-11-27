@@ -229,7 +229,7 @@ flowchart TD
 - **Binds:** `all`
 - **Prevents:** Régressions silencieuses dans les 8 modules du noyau d'ORCIA, faux positifs liés au mock de SQLite/Redis en mémoire, appels LLM non-déterministes et coûteux en CI, ou collisions temps réel non détectées entre utilisateurs.
 - **Rule:** Toute Story de développement de la plateforme ORCIA doit livrer ses tests automatisés selon 5 couches obligatoires :
-  1. **Tests Unitaires de la Plateforme (`pytest` + `hypothesis` côté Python ; `Vitest` + `Testing Library` côté TypeScript)** : Couverture minimale exigée de **90 %** sur `packages/orcia-core` (machines à états `orchestration`, gestionnaire `blackboard`, fusionneur 4 niveaux `catalog`, résolveur et traducteur `ontology`, calculateur RRF `rag`, règles `gates`, `PermissionBrokerService`, coupe-circuit `audit_finops`, et `AssistantHarness`), ainsi que tests unitaires isolés de chaque middleware FastAPI, étape durable DBOS/worker, store Zustand et composant UI cognitif (`< 5s` d'exécution totale, zéro réseau), complétés par `import-linter` pour vérifier l'isolation hexagonale.
+  1. **Tests Unitaires de la Plateforme (`pytest` + `pytest-xdist` + `hypothesis` côté Python ; `Vitest` + `Testing Library` côté TypeScript)** : Exécution parallèle (`-n 4 --dist loadfile`) et couverture combinée **Unit + PostgreSQL 18 réel** (`coverage run --parallel-mode` + `coverage combine`, jamais `pytest --cov` avec `testcontainers`) mesurée une fois en fin de story (`Stage 3`) avec seuil bloquant **`diff-cover >= 90 %`** sur les lignes modifiées (`packages/orcia-core`, `packages/orcia-connectors`, `apps/api`, `apps/worker`), complétés par `import-linter` et `scripts/lint_tests.py --ratchet`.
   2. **Tests d'Intégration sur Infrastructure Réelle (`testcontainers-python`)** : Interdiction d'utiliser SQLite ou un mock Redis en mémoire pour valider la persistance. Les tests d'intégration s'exécutent contre de vrais conteneurs éphémères **PostgreSQL 18 + `pgvector`** (incluant la reprise de workflows durables DBOS après redémarrage), **Redis 7** et **SeaweedFS S3** (vérification des CTE récursives L4, du verrou atomique `SET NX`, des triggers append-only `audit_ledger` et `blackboard_snapshots`, et de l'isolation de la sandbox).
   3. **Tests de Contrat OpenAPI 3.1 (`openapi-typescript` 0-diff + `Schemathesis`)** : La CI échoue si le client TypeScript généré diverge du schéma FastAPI ou si un endpoint viole le format d'erreur **RFC 9457**.
   4. **Tests d'Orchestration IA par Cassettes Déterministes (CI) & Evals (Release)** : En CI, un adaptateur `DeterministicCassetteLLM` rejoue instantanément (`0 $`, `100 %` reproductible) les scénarios d'ambiguïté (`WAITING_FOR_HUMAN_ARBITRATION`), de balises `[ASSUMPTION]` en *Fast-Path*, de blocage `403` et d'orthogonalité des modèles. Une suite d'évaluation (`orcia-evals`) sur *Golden Dataset* valide la pertinence sémantique du workflow Assistant et des Gates Agentiques.
@@ -388,7 +388,8 @@ flowchart TD
 | **Wasmtime-py (Tier-1a WASM Deterministic Structural Sandbox < 5s)** | `27.0.0` |
 | **starlark-pyo3 + google-re2 (Tier-1b Deterministic Starlark Rule Engine < 2ms & O(n) Regex)** | `0.3.2 / 1.1.20240702` |
 | **gVisor runsc / Podman Rootless (Tier-2 Isolated Container Sandbox < 60s)** | `20250217.0 / 5.4.0` |
-| **pytest + pytest-asyncio (Python Unit & Async Testing)** | `9.1.1 / 1.4.0` |
+| **pytest + pytest-asyncio + pytest-xdist (Python Unit, Parallel & Async Testing)** | `9.1.1 / 1.4.0 / 3.8.0` |
+| **diff-cover (Changed-Lines Combined Coverage Gate)** | `11.0.4` |
 | **hypothesis (Property-Based Testing Python)** | `6.170.9` |
 | **testcontainers-python (Real PG18/Redis/SeaweedFS Integration Tests)** | `4.15.0` |
 | **schemathesis (OpenAPI 3.1 Property & Fuzz Testing)** | `4.32.4` |

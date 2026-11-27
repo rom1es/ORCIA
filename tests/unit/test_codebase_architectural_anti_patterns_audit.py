@@ -13,24 +13,26 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
+from tests.unit.fakes.test_app_helpers import get_repo_source_index
+
 from orcia_api.routers.assistant_llm_providers import is_safe_llm_endpoint_url
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+API_ROUTERS_REL = "apps/api/src/orcia_api/routers"
 API_ROUTERS_DIR = REPO_ROOT / "apps" / "api" / "src" / "orcia_api" / "routers"
-ALL_PYTHON_SRC_DIRS = (
-    REPO_ROOT / "apps" / "api" / "src",
-    REPO_ROOT / "apps" / "worker" / "src",
-    REPO_ROOT / "packages" / "orcia-core" / "src",
-    REPO_ROOT / "packages" / "orcia-kernel" / "src",
+ALL_PYTHON_SRC_RELS = (
+    "apps/api/src",
+    "apps/worker/src",
+    "packages/orcia-core/src",
+    "packages/orcia-kernel/src",
 )
+ALL_PYTHON_SRC_DIRS = tuple(REPO_ROOT / r for r in ALL_PYTHON_SRC_RELS)
 
 
 def _iter_py_files(roots: tuple[Path, ...]) -> list[Path]:
-    files: list[Path] = []
-    for root in roots:
-        if root.exists():
-            files.extend(sorted(root.rglob("*.py")))
-    return files
+    idx = get_repo_source_index(REPO_ROOT)
+    rel_roots = tuple(root.resolve().relative_to(idx.repo_root).as_posix() for root in roots)
+    return list(idx.files_under_many(rel_roots))
 
 
 def test_rule_1_zero_sync_http_threads_or_on_the_fly_db_engines_in_api_routers() -> None:
@@ -58,11 +60,12 @@ def test_rule_1_zero_sync_http_threads_or_on_the_fly_db_engines_in_api_routers()
 
 def test_rule_2_zero_fake_word_split_streaming_in_sse_generators() -> None:
     """Verify no streaming generator in `apps/api` or `orcia_core` splits by `.split(' ')`."""
+    idx = get_repo_source_index(REPO_ROOT)
     violations: list[str] = []
     for path in _iter_py_files(ALL_PYTHON_SRC_DIRS):
-        rel = path.relative_to(REPO_ROOT)
-        src = path.read_text(encoding="utf-8")
-        tree = ast.parse(src, filename=str(rel))
+        rel = path.relative_to(idx.repo_root)
+        src = idx.read_text(path)
+        tree = idx.parse_ast(path)
         for node in ast.walk(tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and "stream" in node.name:
                 fn_seg = ast.get_source_segment(src, node) or ""
@@ -75,11 +78,12 @@ def test_rule_2_zero_fake_word_split_streaming_in_sse_generators() -> None:
 
 def test_rule_3_zero_vendor_coupled_functions_or_hardcoded_french_only_prompts() -> None:
     """Verify `apps/api` has zero `*ollama*` functions, hardcoded hats, or French-only rules."""
+    idx = get_repo_source_index(REPO_ROOT)
     violations: list[str] = []
     for path in _iter_py_files((REPO_ROOT / "apps" / "api" / "src",)):
-        rel = path.relative_to(REPO_ROOT)
-        src = path.read_text(encoding="utf-8")
-        tree = ast.parse(src, filename=str(rel))
+        rel = path.relative_to(idx.repo_root)
+        src = idx.read_text(path)
+        tree = idx.parse_ast(path)
         for node in ast.walk(tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 fn_lower = node.name.lower()
@@ -99,11 +103,12 @@ def test_rule_3_zero_vendor_coupled_functions_or_hardcoded_french_only_prompts()
 
 def test_rule_4_zero_silent_except_exception_in_api_routers_and_ssrf_guard() -> None:
     """Verify every `except Exception` in `apps/api/src/orcia_api/routers/` logs or re-raises."""
+    idx = get_repo_source_index(REPO_ROOT)
     violations: list[str] = []
     for path in _iter_py_files((API_ROUTERS_DIR,)):
-        rel = path.relative_to(REPO_ROOT)
-        src = path.read_text(encoding="utf-8")
-        tree = ast.parse(src, filename=str(rel))
+        rel = path.relative_to(idx.repo_root)
+        src = idx.read_text(path)
+        tree = idx.parse_ast(path)
         for node in ast.walk(tree):
             if isinstance(node, ast.ExceptHandler):
                 t_name = ast.unparse(node.type) if node.type else "bare"

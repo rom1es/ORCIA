@@ -23,7 +23,7 @@ from orcia_core.orchestration.llm_endpoint_resolver import (
 from orcia_core.permissions.errors import ObserverModeReadOnlyError, ScopeAccessDeniedError
 
 
-class _FakeBeginCtx:
+class _NoopBeginCtx:
     async def __aenter__(self) -> object:
         return object()
 
@@ -31,9 +31,9 @@ class _FakeBeginCtx:
         return None
 
 
-class _FakeEngine:
-    def begin(self) -> _FakeBeginCtx:
-        return _FakeBeginCtx()
+class _NoopBeginCtxProvider:
+    def begin(self) -> _NoopBeginCtx:
+        return _NoopBeginCtx()
 
 
 def _make_record(**overrides: Any) -> AiModelMappingRecord:
@@ -135,7 +135,7 @@ async def test_resolve_configured_llm_endpoint_all_sources(monkeypatch: pytest.M
 
     monkeypatch.setattr(sql_mappings, "resolve_decrypted_ai_model_for_tier_pg18", _fake_pg18_ok)
     ep_pg, _ = await resolve_configured_llm_endpoint_from_sources(
-        engine=_FakeEngine(),
+        engine=_NoopBeginCtxProvider(),
         vault_cipher=object(),
         snapshot=None,
         hub_svc=None,
@@ -156,7 +156,7 @@ async def test_resolve_configured_llm_endpoint_all_sources(monkeypatch: pytest.M
     for fn in (_fake_pg18_ssrf, _fake_pg18_err):
         monkeypatch.setattr(sql_mappings, "resolve_decrypted_ai_model_for_tier_pg18", fn)
         assert await resolve_configured_llm_endpoint_from_sources(
-            engine=_FakeEngine(),  # type: ignore[arg-type]
+            engine=_NoopBeginCtxProvider(),  # type: ignore[arg-type]
             vault_cipher=object(),
             snapshot=None,
             hub_svc=None,
@@ -177,7 +177,7 @@ async def test_resolve_configured_llm_endpoint_all_sources(monkeypatch: pytest.M
         return snap_obj
 
     ep_snap, ret_snap = await resolve_configured_llm_endpoint_from_sources(
-        engine=_FakeEngine(),
+        engine=_NoopBeginCtxProvider(),
         vault_cipher=None,
         snapshot=None,
         hub_svc=None,
@@ -263,7 +263,7 @@ async def test_ai_models_helpers_routes_and_key_resolution(monkeypatch: pytest.M
         get_mapping=lambda *_a, **_k: rec_env, resolve_decrypted_api_key=lambda *_a, **_k: None
     )
 
-    pg_req = _make_request(app_state=SimpleNamespace(db_engine=_FakeEngine()))
+    pg_req = _make_request(app_state=SimpleNamespace(db_engine=_NoopBeginCtxProvider()))
     for rec_item, expected_key in ((rec_enc, "plain-k"), (rec_env, "env-secret-123")):
         monkeypatch.setattr(
             helpers, "get_ai_model_mapping_pg18", lambda *_a, _r=rec_item, **_k: _async_return(_r)

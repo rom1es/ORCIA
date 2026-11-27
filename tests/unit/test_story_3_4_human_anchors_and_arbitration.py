@@ -13,88 +13,11 @@ Covers:
 
 from __future__ import annotations
 
-import os
-import shutil
-import tempfile
-import time
-from pathlib import Path
-
 import pytest
-import sqlalchemy as sa
-from alembic import command
-from alembic.config import Config
 from fastapi.testclient import TestClient
-from testcontainers.core.container import DockerContainer
-from testcontainers.core.waiting_utils import wait_for_logs
 from tests.unit.fakes.fake_embedding import FakeDeterministicEmbeddingAdapter
 
 from orcia_api.main import create_app
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
-
-
-def test_story_3_4_migration_0015_real_postgres_container(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Verify migration 0015 creates `human_anchor_signatures` and `human_arbitration_requests`."""
-    monkeypatch.setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
-    suffix = f"tc_3_4_{os.getpid()}_{int(time.time() * 1000) % 100000}"
-    sock_dir = (
-        Path(tempfile.gettempdir())
-        if len(str(REPO_ROOT / ".pytest_cache" / suffix / ".s.PGSQL.5432")) > 100
-        else REPO_ROOT / ".pytest_cache"
-    ) / suffix
-    sock_dir.mkdir(parents=True, exist_ok=True)
-    sock_dir.chmod(0o777)
-
-    pg_container = (
-        DockerContainer("pgvector/pgvector:pg18")
-        .with_env("POSTGRES_USER", "orcia")
-        .with_env("POSTGRES_PASSWORD", "orcia_dev_secret")
-        .with_env("POSTGRES_DB", "orcia")
-        .with_volume_mapping(str(sock_dir), "/var/run/postgresql", "rw")
-    )
-    try:
-        with pg_container as pg:
-            wait_for_logs(pg, "database system is ready to accept connections", timeout=30)
-            sock_file = sock_dir / ".s.PGSQL.5432"
-            for _ in range(40):
-                if sock_file.exists():
-                    break
-                time.sleep(0.2)
-
-            creds = "orcia:orcia_dev_secret"  # pragma: allowlist secret
-            sync_url = f"postgresql+psycopg://{creds}@/orcia?host={sock_dir}"
-            monkeypatch.setenv("DATABASE_URL", sync_url)
-            alembic_cfg = Config(str(REPO_ROOT / "infra" / "migrations" / "alembic.ini"))
-            alembic_cfg.set_main_option("script_location", str(REPO_ROOT / "infra" / "migrations"))
-            alembic_cfg.set_main_option("sqlalchemy.url", sync_url)
-
-            engine = sa.create_engine(sync_url)
-            for _ in range(30):
-                try:
-                    with engine.connect() as c:
-                        c.execute(sa.text("SELECT 1"))
-                    break
-                except Exception:
-                    time.sleep(0.2)
-
-            command.upgrade(alembic_cfg, "0015_story_3_4")
-
-            with engine.begin() as conn:
-                tables = set(
-                    conn.execute(
-                        sa.text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'")
-                    ).scalars()
-                )
-                assert "human_anchor_signatures" in tables
-                assert "human_arbitration_requests" in tables
-
-            command.downgrade(alembic_cfg, "0014_story_3_2e")
-            command.upgrade(alembic_cfg, "0015_story_3_4")
-            engine.dispose()
-    finally:
-        shutil.rmtree(sock_dir, ignore_errors=True)
 
 
 def test_story_3_4_mandatory_human_anchor_and_agent_rejection(

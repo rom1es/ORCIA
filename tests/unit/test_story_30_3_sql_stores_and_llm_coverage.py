@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import json
-from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi import FastAPI, Request
@@ -64,7 +63,6 @@ from orcia_core.workflows._internal._sql_workflow_v2_pending_query import (
     normalize_workflow_run_status,
     safe_uuid,
 )
-from orcia_core.workflows._internal.sql_workflow_v2_runs import SqlWorkflowV2RunsStore
 from orcia_core.workflows.schemas_v2 import (
     DeterministicControlSpec,
     ExecutionMode,
@@ -72,44 +70,6 @@ from orcia_core.workflows.schemas_v2 import (
     WorkflowContract,
     WorkflowDefinitionV2,
 )
-
-
-class _FakeSqlResult:
-    def __init__(self, row: Any = None, rows: list[dict[str, Any]] | None = None) -> None:
-        self._row = row
-        self._rows = rows or []
-
-    def first(self) -> Any:
-        return self._row
-
-    def fetchall(self) -> list[Any]:
-        return self._rows
-
-    def mappings(self) -> _FakeSqlResult:
-        return self
-
-    def all(self) -> list[dict[str, Any]]:
-        return self._rows
-
-
-class _FakeSession:
-    def __init__(self, handler: Any) -> None:
-        self._handler = handler
-        self.committed = False
-
-    async def execute(self, stmt: Any, params: dict[str, Any] | None = None) -> _FakeSqlResult:
-        return self._handler(str(stmt), params or {})
-
-    async def commit(self) -> None:
-        self.committed = True
-
-
-def _fake_session_maker(handler: Any) -> Any:
-    @asynccontextmanager
-    async def _ctx() -> Any:
-        yield _FakeSession(handler)
-
-    return _ctx
 
 
 @dataclass
@@ -144,96 +104,12 @@ class _StubPlainGateway(LlmGatewayPort):
         )
 
 
-@pytest.mark.asyncio
-async def test_sql_workflow_v2_runs_store_and_pending_query_branches() -> None:
-    """Cover SQL `upsert_run`, `get_run`, `list_pending_and_active_runs`, & status helpers."""
+def test_workflow_v2_status_and_uuid_helpers() -> None:
+    """Cover pure `safe_uuid` and `normalize_workflow_run_status` helpers."""
     assert safe_uuid(None) is None
     assert safe_uuid("not-a-uuid") is None
     assert normalize_workflow_run_status("PAUSED_CIRCUIT_BREAKER") == "PAUSED"
     assert normalize_workflow_run_status("WAITING_FOR_HUMAN_ARBITRATION") == "WAITING_SUBSTEP_HITL"
-
-    now = datetime.now(UTC)
-    ws_id = "0195f000-0000-7000-8000-000000000101"
-
-    def _ok_handler(sql: str, params: dict[str, Any]) -> _FakeSqlResult:
-        if "SELECT state_jsonb" in sql:
-            if params.get("run_id") == "missing":
-                return _FakeSqlResult(row=None)
-            return _FakeSqlResult(row=(json.dumps({"run_id": params["run_id"]}),))
-        if "UNION ALL" in sql:
-            return _FakeSqlResult(
-                rows=[
-                    {
-                        "run_id": "r-1",
-                        "workspace_id": ws_id,
-                        "workflow_id": "wf-1",
-                        "workflow_slug": "wf-1",
-                        "workflow_title": "WF 1",
-                        "actor_slug": "assistant",
-                        "status": "WAITING_FINAL_ANCHOR",
-                        "reflexive_execution_id": None,
-                        "source": "workflow_v2",
-                        "created_at": now,
-                        "updated_at": now,
-                    },
-                    {
-                        "run_id": "r-2",
-                        "workspace_id": ws_id,
-                        "workflow_id": "wf-1",
-                        "workflow_slug": "wf-1",
-                        "workflow_title": "WF 1",
-                        "actor_slug": "assistant",
-                        "status": "COMPLETED_APPROVED",
-                        "reflexive_execution_id": None,
-                        "source": "workflow_v2",
-                        "created_at": now,
-                        "updated_at": now,
-                    },
-                ]
-            )
-        return _FakeSqlResult()
-
-    store = SqlWorkflowV2RunsStore(_fake_session_maker(_ok_handler), strict_sql=True)
-    await store.upsert_run(
-        run_id="r-1",
-        workspace_id=ws_id,
-        workflow_id="wf-1",
-        workflow_slug="wf-1",
-        workflow_title="WF 1",
-        actor_slug="assistant",
-        status="WAITING_FINAL_ANCHOR",
-        reflexive_execution_id=None,
-        state_payload={"run_id": "r-1"},
-    )
-    assert (await store.get_run("r-1")) == {"run_id": "r-1"}
-    assert (await store.get_run("missing")) is None
-    assert (await store.list_pending_and_active_runs(workspace_ids=("bad-uuid",))) == []
-    pending = await store.list_pending_and_active_runs(workspace_ids=(ws_id,))
-    assert [r["run_id"] for r in pending] == ["r-1"]
-
-    def _boom_handler(_sql: str, _params: dict[str, Any]) -> _FakeSqlResult:
-        raise RuntimeError("db down")
-
-    strict_err_store = SqlWorkflowV2RunsStore(_fake_session_maker(_boom_handler), strict_sql=True)
-    with pytest.raises(RuntimeError):
-        await strict_err_store.upsert_run(
-            run_id="r-err",
-            workspace_id=None,
-            workflow_id="wf",
-            workflow_slug="wf",
-            workflow_title="WF",
-            actor_slug="a",
-            status="RUNNING",
-            reflexive_execution_id=None,
-            state_payload={},
-        )
-    with pytest.raises(RuntimeError):
-        await strict_err_store.get_run("r-err")
-    with pytest.raises(RuntimeError):
-        await strict_err_store.list_pending_and_active_runs(workspace_ids=None)
-
-    lenient_err_store = SqlWorkflowV2RunsStore(_fake_session_maker(_boom_handler), strict_sql=False)
-    assert await lenient_err_store.list_pending_and_active_runs(workspace_ids=None) == []
 
 
 @pytest.mark.asyncio
@@ -314,14 +190,6 @@ async def test_process_llm_bridge_branches(monkeypatch: pytest.MonkeyPatch) -> N
         platform_role="CONTRIBUTOR",
         primary_org_unit_id="ou-1",
     )
-    fake_conn = MagicMock()
-    fake_conn.execute = AsyncMock(return_value=_FakeSqlResult(rows=[("docs/a.md",)]))
-
-    @asynccontextmanager
-    async def _connect_ctx() -> Any:
-        yield fake_conn
-
-    fake_engine = SimpleNamespace(connect=_connect_ctx)
     fake_auth = SimpleNamespace(
         evaluator=SimpleNamespace(
             resolve_accessible_workspaces=lambda _u: [
@@ -337,21 +205,6 @@ async def test_process_llm_bridge_branches(monkeypatch: pytest.MonkeyPatch) -> N
             ),
         )
     )
-    req_sql: Any = SimpleNamespace(
-        app=SimpleNamespace(state=SimpleNamespace(db_engine=fake_engine, auth_service=fake_auth)),
-        url=SimpleNamespace(path="/api/v1/workflows/v2/wf-bridge/runs"),
-    )
-    with patch(
-        "orcia_api.dependencies._process_llm_bridge.list_workspace_datasources_from_postgres18",
-        new=AsyncMock(return_value=[SimpleNamespace(uri="docs/pg.md")]),
-    ):
-        assert await resolve_workspace_datasource_uris(
-            req_sql, workspace_id=ws_uuid, user=user
-        ) == ["docs/pg.md"]
-    assert await resolve_workspace_datasource_uris(
-        req_sql, workspace_id="scope-global", user=user
-    ) == ["docs/a.md"]
-
     req_mem: Any = SimpleNamespace(
         app=SimpleNamespace(state=SimpleNamespace(db_engine=None, auth_service=fake_auth)),
         url=SimpleNamespace(path="/api/v1/workflows/v2/wf-bridge/runs"),

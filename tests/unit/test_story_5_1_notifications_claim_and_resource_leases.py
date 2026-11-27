@@ -13,15 +13,10 @@ Covers:
 
 from __future__ import annotations
 
-import shutil
 import time
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 
 import pytest
-import sqlalchemy as sa
-from alembic import command
-from alembic.config import Config
 from fastapi.testclient import TestClient
 
 from orcia_api.main import create_app
@@ -342,93 +337,6 @@ def test_story_5_1_fastapi_endpoints_and_sse_stream() -> None:
         )
         assert res_fenced_ok.status_code == 200
         assert res_fenced_ok.json()["status"] == "COMMITTED_FENCED"
-
-
-def test_alembic_0021_story_5_1_migration_on_real_postgres18(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Verify Alembic 0021_story_5_1 upgrade/downgrade/upgrade on real PostgreSQL 18."""
-    import os
-    import tempfile
-
-    from testcontainers.core.container import DockerContainer
-    from testcontainers.core.waiting_utils import wait_for_logs
-
-    repo_root = Path(__file__).resolve().parents[2]
-    monkeypatch.setenv("TESTCONTAINERS_RYUK_DISABLED", "true")
-    suffix = f"tc_5_1_{os.getpid()}_{int(time.time() * 1000) % 100000}"
-    sock_dir_path = (
-        Path(tempfile.gettempdir())
-        if len(str(repo_root / ".pytest_cache" / suffix / ".s.PGSQL.5432")) > 100
-        else repo_root / ".pytest_cache"
-    ) / suffix
-    sock_dir_path.mkdir(parents=True, exist_ok=True)
-    sock_dir_path.chmod(0o777)
-    sock_dir = str(sock_dir_path)
-    try:
-        container = (
-            DockerContainer("pgvector/pgvector:pg18")
-            .with_env("POSTGRES_USER", "orcia")
-            .with_env("POSTGRES_PASSWORD", "orcia_dev_secret")
-            .with_env("POSTGRES_DB", "orcia")
-            .with_volume_mapping(sock_dir, "/var/run/postgresql", "rw")
-        )
-        with container as pg:
-            wait_for_logs(pg, "database system is ready to accept connections", timeout=30)
-            sock_file = Path(sock_dir) / ".s.PGSQL.5432"
-            for _ in range(50):
-                if sock_file.exists():
-                    break
-                time.sleep(0.2)
-
-            creds = "orcia:orcia_dev_secret"  # pragma: allowlist secret
-            sync_url = f"postgresql+psycopg://{creds}@/orcia?host={sock_dir}"
-            monkeypatch.setenv("DATABASE_URL", sync_url)
-            alembic_cfg = Config(str(repo_root / "infra" / "migrations" / "alembic.ini"))
-            alembic_cfg.set_main_option("script_location", str(repo_root / "infra" / "migrations"))
-            alembic_cfg.set_main_option("sqlalchemy.url", sync_url)
-            engine = sa.create_engine(sync_url)
-            for _ in range(30):
-                try:
-                    with engine.connect() as c:
-                        c.execute(sa.text("SELECT 1"))
-                    break
-                except Exception:
-                    time.sleep(0.2)
-
-            try:
-                command.upgrade(alembic_cfg, "0021_story_5_1")
-                with engine.connect() as conn:
-                    tables = {
-                        r[0]
-                        for r in conn.execute(
-                            sa.text(
-                                "SELECT table_name FROM information_schema.tables "
-                                "WHERE table_schema = 'public'"
-                            )
-                        )
-                    }
-                    assert "task_notifications" in tables
-                    assert "resource_leases" in tables
-                    step_cols = {
-                        r[0]
-                        for r in conn.execute(
-                            sa.text(
-                                "SELECT column_name FROM information_schema.columns "
-                                "WHERE table_name = 'step_executions'"
-                            )
-                        )
-                    }
-                    assert "claimed_by_user_id" in step_cols
-                    assert "claimed_at" in step_cols
-
-                # Verify downgrade to 0020_story_4_4_contract and re-upgrade to head
-                command.downgrade(alembic_cfg, "0020_story_4_4_contract")
-                command.upgrade(alembic_cfg, "head")
-            finally:
-                engine.dispose()
-    finally:
-        shutil.rmtree(sock_dir, ignore_errors=True)
 
 
 @pytest.mark.asyncio
