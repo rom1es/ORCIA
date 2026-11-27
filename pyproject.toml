@@ -196,7 +196,7 @@ src = [
     "infra",
     "scripts",
 ]
-extend-exclude = [".agent", "_bmad", ".venv", "node_modules", ".gitnexus"]
+extend-exclude = [".agent", ".bmad-archive", "_bmad", ".venv", "node_modules", ".gitnexus"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "TID"]
